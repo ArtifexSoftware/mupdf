@@ -93,6 +93,7 @@ struct pdf_write_state_s
 	pdf_obj *hints_length;
 	int page_count;
 	page_objects_list *page_object_lists;
+	int crypt_object_number;
 };
 
 /*
@@ -1657,6 +1658,11 @@ static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 	return buf;
 }
 
+static void write_data(fz_context *ctx, void *arg, const unsigned char *data, int len)
+{
+	fz_write_data(ctx, (fz_output *)arg, data, len);
+}
+
 static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
 	fz_buffer *buf, *tmp;
@@ -1701,13 +1707,13 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		addhexfilter(ctx, doc, obj);
 	}
 
-	newlen = pdf_new_int(ctx, doc, (int)len);
+	newlen = pdf_new_int(ctx, doc, pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
 	pdf_dict_put_drop(ctx, obj, PDF_NAME_Length, newlen);
 
 	fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+	pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
 	fz_write_string(ctx, opts->out, "\nstream\n");
-	fz_write_data(ctx, opts->out, data, len);
+	pdf_encrypt_data(ctx, doc->crypt, num, gen, write_data, opts->out, data, len);
 	fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
 
 	fz_drop_buffer(ctx, buf);
@@ -1767,7 +1773,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	pdf_dict_put_drop(ctx, obj, PDF_NAME_Length, newlen);
 
 	fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+	pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
 	fz_write_string(ctx, opts->out, "\nstream\n");
 	fz_write_data(ctx, opts->out, data, len);
 	fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
@@ -1845,7 +1851,7 @@ static int is_xml_metadata(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
-static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num, int gen, int skip_xrefs)
+static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num, int gen, int skip_xrefs, int unenc)
 {
 	pdf_xref_entry *entry;
 	pdf_obj *obj;
@@ -1892,13 +1898,13 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	if (!pdf_obj_num_is_stream(ctx, doc, num))
 	{
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, unenc ? NULL : doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nendobj\n\n");
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
 	}
 	else
@@ -2018,6 +2024,10 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_ID);
 			if (obj)
 				pdf_dict_put(ctx, trailer, PDF_NAME_ID, obj);
+
+			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
+			if (obj)
+				pdf_dict_put(ctx, trailer, PDF_NAME_Encrypt, obj);
 		}
 		if (main_xref_offset != 0)
 		{
@@ -2027,6 +2037,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 	}
 
 	fz_write_string(ctx, opts->out, "trailer\n");
+	/* Trailer is NOT encrypted */
 	pdf_print_obj(ctx, opts->out, trailer, opts->do_tight);
 	fz_write_string(ctx, opts->out, "\n");
 
@@ -2155,7 +2166,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
-		writeobject(ctx, doc, opts, num, 0, 0);
+		writeobject(ctx, doc, opts, num, 0, 0, 0);
 		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
@@ -2212,7 +2223,7 @@ dowriteobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num
 		if (!opts->do_incremental || pdf_xref_is_incremental(ctx, doc, num))
 		{
 			opts->ofs_list[num] = fz_tell_output(ctx, opts->out);
-			writeobject(ctx, doc, opts, num, opts->gen_list[num], 1);
+			writeobject(ctx, doc, opts, num, opts->gen_list[num], 1, num == opts->crypt_object_number);
 		}
 	}
 	else
@@ -2931,6 +2942,14 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		/* Compact xref by renumbering and removing unused objects */
 		if (opts->do_garbage >= 2 || opts->do_linear)
 			compactxref(ctx, doc, opts);
+
+		opts->crypt_object_number = 0;
+		if (doc->crypt)
+		{
+			pdf_obj *crypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
+			int crypt_num = pdf_to_num(ctx, crypt);
+			opts->crypt_object_number = opts->renumber_map[crypt_num];
+		}
 
 		/* Make renumbering affect all indirect references and update xref */
 		if (opts->do_garbage >= 2 || opts->do_linear)

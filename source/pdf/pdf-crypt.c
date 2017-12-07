@@ -1070,3 +1070,90 @@ pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt)
 
 	fz_write_printf(ctx, out, "}\n");
 }
+
+void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void (*write_data)(fz_context *ctx, void *, const unsigned char *, int), void *arg, const unsigned char *s, int n)
+{
+	unsigned char buffer[256];
+	unsigned char key[32];
+	int keylen;
+
+	if (crypt == NULL)
+	{
+		write_data(ctx, arg, s, n);
+		return;
+	}
+
+	keylen = pdf_compute_object_key(crypt, &crypt->strf, num, gen, key, 32);
+
+	if (crypt->strf.method == PDF_CRYPT_RC4)
+	{
+		fz_arc4 arc4;
+		fz_arc4_init(&arc4, key, keylen);
+		while (n > 0)
+		{
+			int len = n;
+			if (len > sizeof(buffer))
+				len = sizeof(buffer);
+			fz_arc4_encrypt(&arc4, buffer, s, len);
+			write_data(ctx, arg, buffer, len);
+			s += len;
+			n -= len;
+		}
+		return;
+	}
+
+	if (crypt->strf.method == PDF_CRYPT_AESV2 || crypt->strf.method == PDF_CRYPT_AESV3)
+	{
+		fz_aes aes;
+		unsigned char iv[16];
+
+		/* Empty strings can be represented by empty strings */
+		if (n == 0)
+			return;
+
+		if (fz_aes_setkey_enc(&aes, key, keylen * 8))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
+
+		fz_memrnd(ctx, iv, 16);
+		write_data(ctx, arg, iv, 16);
+
+		while (n > 0)
+		{
+			int len = n;
+			if (len > 16)
+				len = 16;
+			memcpy(buffer, s, len);
+			if (len != 16)
+				memset(&buffer[len], 16-len, 16-len);
+			fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buffer, buffer+16);
+			write_data(ctx, arg, buffer+16, 16);
+			s += 16;
+			n -= 16;
+		}
+		if (n == 0) {
+			memset(buffer, 16, 16);
+			fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buffer, buffer+16);
+			write_data(ctx, arg, buffer+16, 16);
+		}
+		return;
+	}
+
+	/* Should never happen, but... */
+	write_data(ctx, arg, s, n);
+}
+
+int pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, int len)
+{
+	if (crypt == NULL)
+		return len;
+
+	if (crypt->strf.method == PDF_CRYPT_AESV2 || crypt->strf.method == PDF_CRYPT_AESV3)
+	{
+		len += 16; /* 16 for IV */
+		if ((len & 15) == 0)
+			len += 16; /* Another 16 if our last block is full anyway */
+		len = (len + 15) & ~15; /* And pad to the block */
+	}
+
+	return len;
+}

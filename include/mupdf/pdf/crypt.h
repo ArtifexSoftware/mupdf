@@ -59,4 +59,8 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 */
 void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password);
 
+void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void (*fmt_str_out)(fz_context *, void *, const unsigned char *, int), void *arg, const unsigned char *s, int n);
+
+int pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, int len);
+
 #endif

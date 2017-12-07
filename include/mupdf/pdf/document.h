@@ -4,7 +4,6 @@
 typedef struct pdf_lexbuf_s pdf_lexbuf;
 typedef struct pdf_lexbuf_large_s pdf_lexbuf_large;
 typedef struct pdf_xref_s pdf_xref;
-typedef struct pdf_crypt_s pdf_crypt;
 typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
 typedef struct pdf_portfolio_s pdf_portfolio;
 
