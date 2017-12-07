@@ -1661,6 +1661,8 @@ int main(int argc, char **argv)
 
 	/* Init GLUT */
 
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+
 	glutInitErrorFunc(on_error);
 	glutInitWarningFunc(on_warning);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
@@ -1706,6 +1708,7 @@ int main(int argc, char **argv)
 		fz_debug_store(ctx);
 #endif
 
+	fz_drop_stext_page(ctx, text);
 	fz_drop_link(ctx, links);
 	fz_drop_page(ctx, page);
 	fz_drop_outline(ctx, outline);
