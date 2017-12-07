@@ -161,12 +161,14 @@ xps_load_links_in_element(fz_context *ctx, xps_document *doc, const fz_matrix *c
 static void
 xps_load_links_in_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_page *page, fz_link **link)
 {
-	fz_xml *node, *resource_tag;
+	fz_xml *root, *node, *resource_tag;
 	xps_resource *dict = NULL;
 	char base_uri[1024];
 	char *s;
 
-	if (!page->root)
+	root = fz_xml_root(page->xml);
+
+	if (!root)
 		return;
 
 	fz_strlcpy(base_uri, page->fix->name, sizeof base_uri);
@@ -174,11 +176,11 @@ xps_load_links_in_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix
 	if (s)
 		s[1] = 0;
 
-	resource_tag = fz_xml_down(fz_xml_find_down(page->root, "FixedPage.Resources"));
+	resource_tag = fz_xml_down(fz_xml_find_down(root, "FixedPage.Resources"));
 	if (resource_tag)
 		dict = xps_parse_resource_dictionary(ctx, doc, base_uri, resource_tag);
 
-	for (node = fz_xml_down(page->root); node; node = fz_xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 		xps_load_links_in_element(ctx, doc, ctm, base_uri, dict, node, link);
 
 	if (dict)

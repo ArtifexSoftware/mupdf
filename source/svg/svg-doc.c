@@ -14,7 +14,7 @@ svg_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	svg_document *doc = (svg_document*)doc_;
 	fz_drop_tree(ctx, doc->idmap, NULL);
-	fz_drop_xml(ctx, doc->root);
+	fz_drop_xml(ctx, doc->xml);
 }
 
 static int
@@ -29,7 +29,7 @@ svg_bound_page(fz_context *ctx, fz_page *page_, fz_rect *rect)
 	svg_page *page = (svg_page*)page_;
 	svg_document *doc = page->doc;
 
-	svg_parse_document_bounds(ctx, doc, doc->root);
+	svg_parse_document_bounds(ctx, doc, fz_xml_root(doc->xml));
 
 	rect->x0 = 0;
 	rect->y0 = 0;
@@ -43,7 +43,7 @@ svg_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *c
 {
 	svg_page *page = (svg_page*)page_;
 	svg_document *doc = page->doc;
-	svg_run_document(ctx, doc, doc->root, dev, ctm);
+	svg_run_document(ctx, doc, fz_xml_root(doc->xml), dev, ctm);
 }
 
 static void
@@ -87,19 +87,19 @@ static fz_document *
 svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	svg_document *doc;
-	fz_xml *root;
+	fz_xml_doc *xml;
 
-	root = fz_parse_xml(ctx, buf, 0);
+	xml = fz_parse_xml(ctx, buf, 0);
 
 	doc = fz_new_derived_document(ctx, svg_document);
 	doc->super.drop_document = svg_drop_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
 
-	doc->root = root;
+	doc->xml = xml;
 	doc->idmap = NULL;
 
-	svg_build_id_map(ctx, doc, root);
+	svg_build_id_map(ctx, doc, fz_xml_root(xml));
 
 	return (fz_document*)doc;
 }

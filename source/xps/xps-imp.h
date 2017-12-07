@@ -69,7 +69,7 @@ struct xps_page_s
 	fz_page super;
 	xps_document *doc;
 	xps_fixpage *fix;
-	fz_xml *root;
+	fz_xml_doc *xml;
 };
 
 struct xps_target_s
@@ -126,7 +126,7 @@ struct xps_resource_s
 {
 	char *name;
 	char *base_uri; /* only used in the head nodes */
-	fz_xml *base_xml; /* only used in the head nodes, to free the xml document */
+	fz_xml_doc *base_xml; /* only used in the head nodes, to free the xml document */
 	fz_xml *data;
 	xps_resource *next;
 	xps_resource *parent; /* up to the previous dict in the stack */

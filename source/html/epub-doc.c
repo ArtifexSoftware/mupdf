@@ -358,7 +358,7 @@ epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 {
 	fz_archive *zip = doc->zip;
 	fz_buffer *buf;
-	fz_xml *ncx;
+	fz_xml_doc *ncx;
 	char base_uri[2048];
 
 	fz_dirname(base_uri, path, sizeof base_uri);
@@ -367,7 +367,7 @@ epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 	ncx = fz_parse_xml(ctx, buf, 0);
 	fz_drop_buffer(ctx, buf);
 
-	doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(ncx, "navMap"), base_uri);
+	doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(fz_xml_root(ncx), "navMap"), base_uri);
 
 	fz_drop_xml(ctx, ncx);
 }
@@ -386,8 +386,8 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 {
 	fz_archive *zip = doc->zip;
 	fz_buffer *buf = NULL;
-	fz_xml *container_xml = NULL;
-	fz_xml *content_opf = NULL;
+	fz_xml_doc *container_xml = NULL;
+	fz_xml_doc *content_opf = NULL;
 	fz_xml *container, *rootfiles, *rootfile;
 	fz_xml *package, *manifest, *spine, *itemref, *metadata;
 	char base_uri[2048];
@@ -414,7 +414,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 
-		container = fz_xml_find(container_xml, "container");
+		container = fz_xml_find(fz_xml_root(container_xml), "container");
 		rootfiles = fz_xml_find_down(container, "rootfiles");
 		rootfile = fz_xml_find_down(rootfiles, "rootfile");
 		full_path = fz_xml_att(rootfile, "full-path");
@@ -430,7 +430,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 
-		package = fz_xml_find(content_opf, "package");
+		package = fz_xml_find(fz_xml_root(content_opf), "package");
 		version = fz_xml_att(package, "version");
 		if (!version || strcmp(version, "2.0"))
 			fz_warn(ctx, "unknown epub version: %s", version ? version : "<none>");

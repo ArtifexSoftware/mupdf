@@ -83,32 +83,21 @@ static fz_outline *
 xps_load_document_structure(fz_context *ctx, xps_document *doc, xps_fixdoc *fixdoc)
 {
 	xps_part *part;
-	fz_xml *root = NULL;
+	fz_xml_doc *xml = NULL;
 	fz_outline *outline = NULL;
+
+	fz_var(xml);
 
 	part = xps_read_part(ctx, doc, fixdoc->outline);
 	fz_try(ctx)
 	{
-		root = fz_parse_xml(ctx, part->data, 0);
+		xml = fz_parse_xml(ctx, part->data, 0);
+		outline = xps_parse_document_structure(ctx, doc, fz_xml_root(xml));
 	}
 	fz_always(ctx)
 	{
+		fz_drop_xml(ctx, xml);
 		xps_drop_part(ctx, doc, part);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-	if (!root)
-		return NULL;
-
-	fz_try(ctx)
-	{
-		outline = xps_parse_document_structure(ctx, doc, root);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_xml(ctx, root);
 	}
 	fz_catch(ctx)
 	{

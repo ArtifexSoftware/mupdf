@@ -6,7 +6,7 @@ typedef struct svg_document_s svg_document;
 struct svg_document_s
 {
 	fz_document super;
-	fz_xml *root;
+	fz_xml_doc *xml;
 	fz_tree *idmap;
 	float width;
 	float height;

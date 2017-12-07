@@ -2672,7 +2672,8 @@ detect_directionality(fz_context *ctx, fz_pool *pool, fz_html_box *box)
 fz_html *
 fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
-	fz_xml *xml;
+	fz_xml_doc *xml;
+	fz_xml *root;
 	fz_html *html = NULL;
 
 	fz_css_match match;
@@ -2689,6 +2690,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 
 	xml = fz_parse_xml(ctx, buf, 1);
+	root = fz_xml_root(xml);
 
 	fz_try(ctx)
 		g.css = fz_new_css(ctx);
@@ -2700,20 +2702,20 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	fz_try(ctx)
 	{
-		if (fz_xml_find(xml, "FictionBook"))
+		if (fz_xml_find(root, "FictionBook"))
 		{
 			g.is_fb2 = 1;
 			fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
 			if (fz_use_document_css(ctx))
-				fb2_load_css(ctx, g.zip, g.base_uri, g.css, xml);
-			g.images = load_fb2_images(ctx, xml);
+				fb2_load_css(ctx, g.zip, g.base_uri, g.css, root);
+			g.images = load_fb2_images(ctx, root);
 		}
 		else
 		{
 			g.is_fb2 = 0;
 			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
 			if (fz_use_document_css(ctx))
-				html_load_css(ctx, g.zip, g.base_uri, g.css, xml);
+				html_load_css(ctx, g.zip, g.base_uri, g.css, root);
 			g.images = NULL;
 		}
 
@@ -2743,7 +2745,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		fz_apply_css_style(ctx, g.set, &html->root->style, &match);
 		// TODO: transfer page margins out of this hacky box
 
-		generate_boxes(ctx, xml, html->root, &match, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
+		generate_boxes(ctx, root, html->root, &match, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
 
 		detect_directionality(ctx, g.pool, html->root);
 	}

@@ -68,6 +68,7 @@ static const struct { const char *ent; int ucs; } html_entities[] = {
 
 struct parser
 {
+	fz_pool *pool;
 	fz_xml *head;
 	int preserve_white;
 	int depth;
@@ -78,6 +79,12 @@ struct attribute
 	char name[40];
 	char *value;
 	struct attribute *next;
+};
+
+struct fz_xml_doc_s
+{
+	fz_pool *pool;
+	fz_xml *root;
 };
 
 struct fz_xml_s
@@ -220,37 +227,22 @@ fz_xml *fz_xml_find_down(fz_xml *item, const char *tag)
 	return fz_xml_find(item, tag);
 }
 
-static void xml_free_attribute(fz_context *ctx, struct attribute *att)
+fz_xml *fz_xml_root(fz_xml_doc *xml)
 {
-	while (att) {
-		struct attribute *next = att->next;
-		if (att->value)
-			fz_free(ctx, att->value);
-		fz_free(ctx, att);
-		att = next;
-	}
+	return xml ? xml->root : NULL;
 }
 
-void fz_drop_xml(fz_context *ctx, fz_xml *item)
+void fz_drop_xml(fz_context *ctx, fz_xml_doc *xml)
 {
-	while (item)
-	{
-		fz_xml *next = item->next;
-		if (item->text)
-			fz_free(ctx, item->text);
-		if (item->atts)
-			xml_free_attribute(ctx, item->atts);
-		if (item->down)
-			fz_drop_xml(ctx, item->down);
-		fz_free(ctx, item);
-		item = next;
-	}
+	if (xml)
+		fz_drop_pool(ctx, xml->pool);
 }
 
-void fz_detach_xml(fz_xml *node)
+void fz_detach_xml(fz_context *ctx, fz_xml_doc *xml, fz_xml *node)
 {
 	if (node->up)
 		node->up->down = NULL;
+	xml->root = node;
 }
 
 static size_t xml_parse_entity(int *c, char *a)
@@ -323,7 +315,7 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 		if (*ns == ':')
 			a = ns + 1;
 
-	head = fz_malloc_struct(ctx, fz_xml);
+	head = fz_pool_alloc(ctx, parser->pool, sizeof *head);
 	if (b - a > sizeof(head->name) - 1)
 		b = a + sizeof(head->name) - 1;
 	memcpy(head->name, a, b - a);
@@ -356,7 +348,7 @@ static void xml_emit_att_name(fz_context *ctx, struct parser *parser, char *a, c
 	fz_xml *head = parser->head;
 	struct attribute *att;
 
-	att = fz_malloc_struct(ctx, struct attribute);
+	att = fz_pool_alloc(ctx, parser->pool, sizeof *att);
 	if (b - a > sizeof(att->name) - 1)
 		b = a + sizeof(att->name) - 1;
 	memcpy(att->name, a, b - a);
@@ -374,7 +366,7 @@ static void xml_emit_att_value(fz_context *ctx, struct parser *parser, char *a, 
 	int c;
 
 	/* entities are all longer than UTFmax so runetochar is safe */
-	s = att->value = fz_malloc(ctx, b - a + 1);
+	s = att->value = fz_pool_alloc(ctx, parser->pool, b - a + 1);
 	while (a < b) {
 		if (*a == '&') {
 			a += xml_parse_entity(&c, a);
@@ -419,7 +411,7 @@ static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char 
 	head = parser->head;
 
 	/* entities are all longer than UTFmax so runetochar is safe */
-	s = head->text = fz_malloc(ctx, b - a + 1);
+	s = head->text = fz_pool_alloc(ctx, parser->pool, b - a + 1);
 	while (a < b) {
 		if (*a == '&') {
 			a += xml_parse_entity(&c, a);
@@ -443,7 +435,7 @@ static void xml_emit_cdata(fz_context *ctx, struct parser *parser, char *a, char
 	xml_emit_open_tag(ctx, parser, empty, empty);
 	head = parser->head;
 
-	s = head->text = fz_malloc(ctx, b - a + 1);
+	s = head->text = fz_pool_alloc(ctx, parser->pool, b - a + 1);
 	while (a < b)
 		*s++ = *a++;
 	*s = 0;
@@ -630,10 +622,11 @@ static char *convert_to_utf8(fz_context *doc, const unsigned char *s, size_t n, 
 	return (char*)s;
 }
 
-fz_xml *
+fz_xml_doc *
 fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 {
 	struct parser parser;
+	fz_xml_doc *xml = NULL;
 	fz_xml root, *node;
 	char *p, *error;
 	int dofree;
@@ -645,6 +638,7 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	n = fz_buffer_storage(ctx, buf, &s);
 
 	memset(&root, 0, sizeof(root));
+	parser.pool = fz_new_pool(ctx);
 	parser.head = &root;
 	parser.preserve_white = preserve_white;
 	parser.depth = 0;
@@ -656,6 +650,13 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 		error = xml_parse_document_imp(ctx, &parser, p);
 		if (error)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "%s", error);
+
+		for (node = root.down; node; node = node->next)
+			node->up = NULL;
+
+		xml = fz_pool_alloc(ctx, parser.pool, sizeof *xml);
+		xml->pool = parser.pool;
+		xml->root = root.down;
 	}
 	fz_always(ctx)
 	{
@@ -664,11 +665,9 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_xml(ctx, root.down);
+		fz_drop_pool(ctx, parser.pool);
 		fz_rethrow(ctx);
 	}
 
-	for (node = root.down; node; node = node->next)
-		node->up = NULL;
-	return root.down;
+	return xml;
 }

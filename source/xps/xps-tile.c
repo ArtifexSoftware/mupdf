@@ -331,7 +331,7 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 void
 xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_page *page)
 {
-	fz_xml *node;
+	fz_xml *root, *node;
 	xps_resource *dict;
 	char base_uri[1024];
 	fz_rect area;
@@ -348,7 +348,8 @@ xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, x
 	doc->opacity_top = 0;
 	doc->opacity[0] = 1;
 
-	if (!page->root)
+	root = fz_xml_root(page->xml);
+	if (!root)
 		return;
 
 	area = fz_unit_rect;
@@ -356,7 +357,7 @@ xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, x
 
 	fz_try(ctx)
 	{
-		for (node = fz_xml_down(page->root); node; node = fz_xml_next(node))
+		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 		{
 			if (fz_xml_is_tag(node, "FixedPage.Resources") && fz_xml_down(node))
 			{

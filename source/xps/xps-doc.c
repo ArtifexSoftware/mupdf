@@ -237,7 +237,7 @@ xps_parse_metadata_imp(fz_context *ctx, xps_document *doc, fz_xml *item, xps_fix
 static void
 xps_parse_metadata(fz_context *ctx, xps_document *doc, xps_part *part, xps_fixdoc *fixdoc)
 {
-	fz_xml *root;
+	fz_xml_doc *xml;
 	char buf[1024];
 	char *s;
 
@@ -258,9 +258,9 @@ xps_parse_metadata(fz_context *ctx, xps_document *doc, xps_part *part, xps_fixdo
 	doc->base_uri = buf;
 	doc->part_uri = part->name;
 
-	root = fz_parse_xml(ctx, part->data, 0);
-	xps_parse_metadata_imp(ctx, doc, root, fixdoc);
-	fz_drop_xml(ctx, root);
+	xml = fz_parse_xml(ctx, part->data, 0);
+	xps_parse_metadata_imp(ctx, doc, fz_xml_root(xml), fixdoc);
+	fz_drop_xml(ctx, xml);
 
 	doc->base_uri = NULL;
 	doc->part_uri = NULL;
@@ -325,18 +325,44 @@ xps_count_pages(fz_context *ctx, fz_document *doc_)
 	return doc->page_count;
 }
 
-static fz_xml *
+static fz_xml_doc *
 xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 {
 	xps_part *part;
-	fz_xml *root = NULL;
+	fz_xml_doc *xml = NULL;
+	fz_xml *root;
 	char *width_att;
 	char *height_att;
 
 	part = xps_read_part(ctx, doc, page->name);
 	fz_try(ctx)
 	{
-		root = fz_parse_xml(ctx, part->data, 0);
+		xml = fz_parse_xml(ctx, part->data, 0);
+
+		root = fz_xml_root(xml);
+		if (!root)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing root element");
+
+		if (fz_xml_is_tag(root, "AlternateContent"))
+		{
+			fz_xml *node = xps_lookup_alternate_content(ctx, doc, root);
+			if (!node)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing alternate root element");
+			fz_detach_xml(ctx, xml, node);
+			root = node;
+		}
+
+		if (!fz_xml_is_tag(root, "FixedPage"))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected FixedPage element");
+		width_att = fz_xml_att(root, "Width");
+		if (!width_att)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Width");
+		height_att = fz_xml_att(root, "Height");
+		if (!height_att)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Height");
+
+		page->width = atoi(width_att);
+		page->height = atoi(height_att);
 	}
 	fz_always(ctx)
 	{
@@ -344,49 +370,11 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-		root = NULL;
-	}
-	if (!root)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing root element");
-
-	if (fz_xml_is_tag(root, "AlternateContent"))
-	{
-		fz_xml *node = xps_lookup_alternate_content(ctx, doc, root);
-		if (!node)
-		{
-			fz_drop_xml(ctx, root);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing alternate root element");
-		}
-		fz_detach_xml(node);
-		fz_drop_xml(ctx, root);
-		root = node;
+		fz_drop_xml(ctx, xml);
+		fz_rethrow(ctx);
 	}
 
-	if (!fz_xml_is_tag(root, "FixedPage"))
-	{
-		fz_drop_xml(ctx, root);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "expected FixedPage element");
-	}
-
-	width_att = fz_xml_att(root, "Width");
-	if (!width_att)
-	{
-		fz_drop_xml(ctx, root);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Width");
-	}
-
-	height_att = fz_xml_att(root, "Height");
-	if (!height_att)
-	{
-		fz_drop_xml(ctx, root);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Height");
-	}
-
-	page->width = atoi(width_att);
-	page->height = atoi(height_att);
-
-	return root;
+	return xml;
 }
 
 static fz_rect *
@@ -404,7 +392,7 @@ xps_drop_page_imp(fz_context *ctx, fz_page *page_)
 {
 	xps_page *page = (xps_page*)page_;
 	fz_drop_document(ctx, &page->doc->super);
-	fz_drop_xml(ctx, page->root);
+	fz_drop_xml(ctx, page->xml);
 }
 
 fz_page *
@@ -413,7 +401,7 @@ xps_load_page(fz_context *ctx, fz_document *doc_, int number)
 	xps_document *doc = (xps_document*)doc_;
 	xps_page *page = NULL;
 	xps_fixpage *fix;
-	fz_xml *root;
+	fz_xml_doc *xml;
 	int n = 0;
 
 	fz_var(page);
@@ -422,7 +410,7 @@ xps_load_page(fz_context *ctx, fz_document *doc_, int number)
 	{
 		if (n == number)
 		{
-			root = xps_load_fixed_page(ctx, doc, fix);
+			xml = xps_load_fixed_page(ctx, doc, fix);
 			fz_try(ctx)
 			{
 				page = fz_new_derived_page(ctx, xps_page);
@@ -433,11 +421,11 @@ xps_load_page(fz_context *ctx, fz_document *doc_, int number)
 
 				page->doc = (xps_document*) fz_keep_document(ctx, (fz_document*)doc);
 				page->fix = fix;
-				page->root = root;
+				page->xml = xml;
 			}
 			fz_catch(ctx)
 			{
-				fz_drop_xml(ctx, root);
+				fz_drop_xml(ctx, xml);
 				fz_rethrow(ctx);
 			}
 			return (fz_page*)page;
