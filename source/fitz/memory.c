@@ -393,7 +393,7 @@ void fz_lock_debug_lock(fz_context *ctx, int lock)
 	}
 	fz_locks_debug[idx][lock] = 1;
 #ifdef FITZ_DEBUG_LOCKING_TIMES
-	fz_lock_taken[idx][lock] = clock();
+	fz_lock_taken[idx][lock] = ms_clock();
 #endif
 }
 
@@ -409,7 +409,7 @@ void fz_lock_debug_unlock(fz_context *ctx, int lock)
 	}
 	fz_locks_debug[idx][lock] = 0;
 #ifdef FITZ_DEBUG_LOCKING_TIMES
-	fz_lock_time[idx][lock] += clock() - fz_lock_taken[idx][lock];
+	fz_lock_time[idx][lock] += ms_clock() - fz_lock_taken[idx][lock];
 #endif
 }
 
