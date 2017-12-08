@@ -588,6 +588,7 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 	if (!pdf_is_array(ctx, text))
 		return;
 
+	p->tos.fontdesc = fontdesc;
 	n = pdf_array_len(ctx, text);
 	skip.x = skip.y = 0;
 	doc = pdf_get_bound_document(ctx, text);
