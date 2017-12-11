@@ -1082,17 +1082,8 @@ pdf_read_xref(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 	return trailer;
 }
 
-typedef struct ofs_list_s ofs_list;
-
-struct ofs_list_s
-{
-	int max;
-	int len;
-	int64_t *list;
-};
-
 static int64_t
-read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf, ofs_list *offsets)
+read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer = NULL;
 	int64_t xrefstmofs = 0;
@@ -1102,25 +1093,6 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *b
 
 	fz_try(ctx)
 	{
-		int i;
-		/* Avoid potential infinite recursion */
-		for (i = 0; i < offsets->len; i ++)
-		{
-			if (offsets->list[i] == ofs)
-				break;
-		}
-		if (i < offsets->len)
-		{
-			fz_warn(ctx, "ignoring xref recursion with offset %d", (int)ofs);
-			break;
-		}
-		if (offsets->len == offsets->max)
-		{
-			offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(*offsets->list));
-			offsets->max *= 2;
-		}
-		offsets->list[offsets->len++] = ofs;
-
 		trailer = pdf_read_xref(ctx, doc, ofs, buf);
 
 		pdf_set_populating_xref_trailer(ctx, doc, trailer);
@@ -1160,24 +1132,43 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *b
 static void
 pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf, int read_previous)
 {
-	ofs_list list;
+	int i, len, cap;
+	int64_t *offsets;
 
-	list.len = 0;
-	list.max = 10;
-	list.list = fz_malloc_array(ctx, 10, sizeof(*list.list));
+	len = 0;
+	cap = 10;
+	offsets = fz_malloc_array(ctx, cap, sizeof(*offsets));
+
 	fz_try(ctx)
 	{
 		while(ofs)
 		{
+			for (i = 0; i < len; i ++)
+			{
+				if (offsets[i] == ofs)
+					break;
+			}
+			if (i < len)
+			{
+				fz_warn(ctx, "ignoring xref section recursion at offset %lu", ofs);
+				break;
+			}
+			if (len == cap)
+			{
+				cap *= 2;
+				offsets = fz_resize_array(ctx, offsets, cap, sizeof(*offsets));
+			}
+			offsets[len++] = ofs;
+
 			pdf_populate_next_xref_level(ctx, doc);
-			ofs = read_xref_section(ctx, doc, ofs, buf, &list);
+			ofs = read_xref_section(ctx, doc, ofs, buf);
 			if (!read_previous)
 				break;
 		}
 	}
 	fz_always(ctx)
 	{
-		fz_free(ctx, list.list);
+		fz_free(ctx, offsets);
 	}
 	fz_catch(ctx)
 	{
