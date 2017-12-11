@@ -58,7 +58,7 @@ struct pdf_xref_subsec_s
 {
 	pdf_xref_subsec *next;
 	int len;
-	int64_t start;
+	int start;
 	pdf_xref_entry *table;
 };
 

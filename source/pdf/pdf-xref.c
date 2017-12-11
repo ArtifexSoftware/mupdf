@@ -673,7 +673,7 @@ static int fz_skip_string(fz_context *ctx, fz_stream *stm, const char *str)
 static int
 pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
-	int64_t len;
+	int len;
 	char *s;
 	int64_t t;
 	pdf_token tok;
@@ -704,7 +704,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		fz_strsep(&s, " "); /* ignore start */
 		if (!s)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection length missing");
-		len = fz_atoi64(fz_strsep(&s, " "));
+		len = fz_atoi(fz_strsep(&s, " "));
 		if (len < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection length must be positive");
 
@@ -766,7 +766,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 }
 
 static pdf_xref_entry *
-pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t start, int len)
+pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int start, int len)
 {
 	pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections-1];
 	pdf_xref_subsec *sub;
@@ -826,10 +826,9 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t start, int 
 static pdf_obj *
 pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
-	int len, c, xref_len, carried;
+	int start, len, c, i, xref_len, carried;
 	fz_stream *file = doc->file;
 	pdf_xref_entry *table;
-	int64_t start, i;
 	pdf_token tok;
 	size_t n;
 	char *s;
@@ -849,7 +848,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		fz_read_line(ctx, file, buf->scratch, buf->size);
 		s = buf->scratch;
-		start = fz_atoi64(fz_strsep(&s, " "));
+		start = fz_atoi(fz_strsep(&s, " "));
 		len = fz_atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
@@ -920,7 +919,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 }
 
 static void
-pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, int64_t i0, int i1, int w0, int w1, int w2)
+pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, int i0, int i1, int w0, int w1, int w2)
 {
 	pdf_xref_entry *table;
 	int i, n;
