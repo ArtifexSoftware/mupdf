@@ -6,12 +6,6 @@
 #include <limits.h>
 #include <string.h>
 
-#ifdef _MSC_VER
-#ifndef INT64_MAX
-#define INT64_MAX 9223372036854775807i64
-#endif
-#endif
-
 #undef DEBUG_PROGESSIVE_ADVANCE
 
 #ifdef DEBUG_PROGESSIVE_ADVANCE

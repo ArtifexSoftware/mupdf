@@ -25,6 +25,9 @@ typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
+#ifndef INT64_MAX
+#define INT64_MAX 9223372036854775807i64
+#endif
 #else
 #include <stdint.h> /* needed for int64_t */
 #endif
