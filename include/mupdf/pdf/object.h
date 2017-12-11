@@ -3,6 +3,9 @@
 
 typedef struct pdf_document_s pdf_document;
 
+/* Defined in PDF 1.7 according to Acrobat limit. */
+#define PDF_MAX_OBJECT_NUMBER 8388607
+
 /*
  * Dynamic objects.
  * The same type of objects as found in PDF and PostScript.

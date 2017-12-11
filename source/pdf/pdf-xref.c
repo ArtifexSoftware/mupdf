@@ -868,11 +868,12 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 			fz_seek(ctx, file, -(2 + (int)strlen(s)), SEEK_CUR);
 		}
 
-		if (ofs < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "out of range object num in xref: %d", (int)ofs);
-		if (ofs > INT64_MAX - len)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "xref section object numbers too big");
-
+		if (ofs < 0 || ofs > PDF_MAX_OBJECT_NUMBER
+				|| len < 0 || len > PDF_MAX_OBJECT_NUMBER
+				|| ofs + len - 1 > PDF_MAX_OBJECT_NUMBER)
+		{
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection object numbers are out of range");
+		}
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
 		if (ofs + len > xref_len)
 		{
@@ -933,10 +934,8 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, in
 	pdf_xref_entry *table;
 	int i, n;
 
-	if (i0 < 0 || i1 < 0 || i0 > INT_MAX - i1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "negative xref stream entry index");
-	//if (i0 + i1 > pdf_xref_len(ctx, doc))
-	//	fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream has too many entries");
+	if (i0 < 0 || i0 > PDF_MAX_OBJECT_NUMBER || i1 < 0 || i1 > PDF_MAX_OBJECT_NUMBER || i0 + i1 - 1 > PDF_MAX_OBJECT_NUMBER)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection object numbers are out of range");
 
 	table = pdf_xref_find_subsection(ctx, doc, i0, i1);
 	for (i = i0; i < i0 + i1; i++)
@@ -2086,6 +2085,10 @@ pdf_create_object(fz_context *ctx, pdf_document *doc)
 	/* TODO: reuse free object slots by properly linking free object chains in the ofs field */
 	pdf_xref_entry *entry;
 	int num = pdf_xref_len(ctx, doc);
+
+	if (num > PDF_MAX_OBJECT_NUMBER)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many objects stored in pdf");
+
 	entry = pdf_get_incremental_xref_entry(ctx, doc, num);
 	entry->type = 'f';
 	entry->ofs = -1;
