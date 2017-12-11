@@ -707,12 +707,12 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 
 		fz_read_line(ctx, doc->file, buf->scratch, buf->size);
 		s = buf->scratch;
-		fz_strsep(&s, " "); /* ignore ofs */
+		fz_strsep(&s, " "); /* ignore start */
 		if (!s)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid range marker in xref");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection length missing");
 		len = fz_atoi64(fz_strsep(&s, " "));
 		if (len < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "xref range marker must be positive");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection length must be positive");
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
@@ -738,7 +738,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		if (len > (int64_t)((INT64_MAX - t) / n))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref has too many entries");
 
-		fz_seek(ctx, doc->file, (int64_t)(t + n * len), SEEK_SET);
+		fz_seek(ctx, doc->file, t + n * len, SEEK_SET);
 	}
 
 	fz_try(ctx)
@@ -772,11 +772,11 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 }
 
 static pdf_xref_entry *
-pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t ofs, int len)
+pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t start, int len)
 {
 	pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections-1];
 	pdf_xref_subsec *sub;
-	int new_max;
+	int num_objects;
 
 	/* Different cases here. Case 1) We might be asking for a
 	 * subsection (or a subset of a subsection) that we already
@@ -788,15 +788,15 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t ofs, int le
 	/* Sanity check */
 	for (sub = xref->subsec; sub != NULL; sub = sub->next)
 	{
-		if (ofs >= sub->start && ofs + len <= sub->start + sub->len)
-			return &sub->table[ofs-sub->start]; /* Case 1 */
-		if (ofs + len > sub->start && ofs <= sub->start + sub->len)
+		if (start >= sub->start && start + len <= sub->start + sub->len)
+			return &sub->table[start-sub->start]; /* Case 1 */
+		if (start + len > sub->start && start <= sub->start + sub->len)
 			break; /* Case 3 */
 	}
 
-	new_max = xref->num_objects;
-	if (new_max < ofs + len)
-		new_max = ofs + len;
+	num_objects = xref->num_objects;
+	if (num_objects < start + len)
+		num_objects = start + len;
 
 	if (sub == NULL)
 	{
@@ -805,7 +805,7 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t ofs, int le
 		fz_try(ctx)
 		{
 			sub->table = fz_calloc(ctx, len, sizeof(pdf_xref_entry));
-			sub->start = ofs;
+			sub->start = start;
 			sub->len = len;
 			sub->next = xref->subsec;
 			xref->subsec = sub;
@@ -815,35 +815,32 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t ofs, int le
 			fz_free(ctx, sub);
 			fz_rethrow(ctx);
 		}
-		xref->num_objects = new_max;
-		if (doc->max_xref_len < new_max)
-			extend_xref_index(ctx, doc, new_max);
+		xref->num_objects = num_objects;
+		if (doc->max_xref_len < num_objects)
+			extend_xref_index(ctx, doc, num_objects);
 	}
 	else
 	{
 		/* Case 3 */
-		ensure_solid_xref(ctx, doc, new_max, doc->num_xref_sections-1);
+		ensure_solid_xref(ctx, doc, num_objects, doc->num_xref_sections-1);
 		xref = &doc->xref_sections[doc->num_xref_sections-1];
 		sub = xref->subsec;
 	}
-	return &sub->table[ofs-sub->start];
+	return &sub->table[start-sub->start];
 }
 
 static pdf_obj *
 pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
+	int len, c, xref_len, carried;
 	fz_stream *file = doc->file;
-
-	int64_t ofs;
-	int len;
-	char *s;
-	size_t n;
-	pdf_token tok;
-	int64_t i;
-	int c;
-	int xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 	pdf_xref_entry *table;
-	int carried;
+	int64_t start, i;
+	pdf_token tok;
+	size_t n;
+	char *s;
+
+	xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 
 	fz_skip_space(ctx, doc->file);
 	if (fz_skip_string(ctx, doc->file, "xref"))
@@ -858,37 +855,37 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		fz_read_line(ctx, file, buf->scratch, buf->size);
 		s = buf->scratch;
-		ofs = fz_atoi64(fz_strsep(&s, " "));
+		start = fz_atoi64(fz_strsep(&s, " "));
 		len = fz_atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
 		{
-			fz_warn(ctx, "broken xref section. proceeding anyway.");
+			fz_warn(ctx, "broken xref subsection. proceeding anyway.");
 			fz_seek(ctx, file, -(2 + (int)strlen(s)), SEEK_CUR);
 		}
 
-		if (ofs < 0 || ofs > PDF_MAX_OBJECT_NUMBER
+		if (start < 0 || start > PDF_MAX_OBJECT_NUMBER
 				|| len < 0 || len > PDF_MAX_OBJECT_NUMBER
-				|| ofs + len - 1 > PDF_MAX_OBJECT_NUMBER)
+				|| start + len - 1 > PDF_MAX_OBJECT_NUMBER)
 		{
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref subsection object numbers are out of range");
 		}
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
-		if (ofs + len > xref_len)
+		if (start + len > xref_len)
 		{
-			fz_warn(ctx, "broken xref section, proceeding anyway.");
+			fz_warn(ctx, "broken xref subsection, proceeding anyway.");
 		}
 
-		table = pdf_xref_find_subsection(ctx, doc, ofs, len);
+		table = pdf_xref_find_subsection(ctx, doc, start, len);
 
 		/* Xref entries SHOULD be 20 bytes long, but we see 19 byte
 		 * ones more frequently than we'd like (e.g. PCLm drivers).
 		 * Cope with this by 'carrying' data forward. */
 		carried = 0;
-		for (i = ofs; i < ofs + len; i++)
+		for (i = 0; i < len; i++)
 		{
-			pdf_xref_entry *entry = &table[i-ofs];
+			pdf_xref_entry *entry = &table[i];
 			n = fz_read(ctx, file, (unsigned char *) buf->scratch + carried, 20-carried);
 			if (n != 20-carried)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected EOF in xref table");
@@ -903,7 +900,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 				entry->ofs = fz_atoi64(s);
 				entry->gen = fz_atoi(s + 11);
-				entry->num = (int)i;
+				entry->num = start + i;
 				entry->type = s[17];
 				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
 					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: 0x%x (%d %d R)", s[17], entry->num, entry->gen);
