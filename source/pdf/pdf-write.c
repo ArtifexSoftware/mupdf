@@ -644,6 +644,7 @@ expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
 	{
 		opts->use_list[i] = 0;
 		opts->ofs_list[i] = 0;
+		opts->gen_list[i] = 0;
 		opts->renumber_map[i] = i;
 		opts->rev_renumber_map[i] = i;
 	}
