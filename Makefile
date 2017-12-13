@@ -72,7 +72,7 @@ QUIET_WINDRES = @ echo ' ' ' ' WINDRES $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
-CXX_CMD = $(QUIET_CXX) $(CXX) $(CFLAGS) -o $@ -c $<
+CXX_CMD = $(QUIET_CXX) $(CXX) $(filter-out -Wdeclaration-after-statement,$(CFLAGS)) -o $@ -c $<
 AR_CMD = $(QUIET_AR) $(AR) cr $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
