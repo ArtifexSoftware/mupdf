@@ -748,8 +748,8 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		trailer = pdf_parse_dict(ctx, doc, doc->file, buf);
 
 		size = pdf_to_int(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Size));
-		if (!size)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "trailer missing Size entry");
+		if (size < 0 || size > PDF_MAX_OBJECT_NUMBER + 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "trailer Size entry out of range");
 	}
 	fz_always(ctx)
 	{
