@@ -2170,7 +2170,6 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 	fz_device *dev = NULL;
 	font_info font_rec;
 	fz_text *text = NULL;
-	fz_colorspace *cs = NULL;
 	fz_matrix page_ctm;
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
@@ -2184,11 +2183,11 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 	fz_var(dlist);
 	fz_var(dev);
 	fz_var(text);
-	fz_var(cs);
 	fz_try(ctx)
 	{
 		char *contents = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Contents));
 		char *da = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_DA));
+		fz_colorspace *cs;
 		fz_point pos;
 		fz_rect rect;
 
@@ -2223,7 +2222,6 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 		fz_drop_display_list(ctx, dlist);
 		font_info_fin(ctx, &font_rec);
 		fz_drop_text(ctx, text);
-		fz_drop_colorspace(ctx, cs);
 	}
 	fz_catch(ctx)
 	{
@@ -2359,7 +2357,6 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 	fz_device *dev = NULL;
 	font_info font_rec;
 	fz_text *text = NULL;
-	fz_colorspace *cs = NULL;
 	fz_path *path = NULL;
 	fz_buffer *fzbuf = NULL;
 	fz_matrix page_ctm;
@@ -2375,7 +2372,6 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 	fz_var(dlist);
 	fz_var(dev);
 	fz_var(text);
-	fz_var(cs);
 	fz_var(fzbuf);
 	fz_try(ctx)
 	{
@@ -2384,6 +2380,7 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_rect logo_bounds;
 		fz_matrix logo_tm;
 		fz_rect rect;
+		fz_colorspace *cs = fz_device_rgb(ctx); /* Borrowed reference */
 
 		pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot_rect);
 		rect = annot_rect;
@@ -2396,7 +2393,6 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_bound_path(ctx, path, NULL, &fz_identity, &logo_bounds);
 		center_rect_within_rect(&logo_bounds, &rect, &logo_tm);
 		fz_concat(&logo_tm, &logo_tm, &page_ctm);
-		cs = fz_device_rgb(ctx); /* Borrowed reference */
 		fz_fill_path(ctx, dev, path, 0, &logo_tm, cs, logo_color, 1.0f, NULL);
 
 		get_font_info(ctx, doc, dr, da, &font_rec);
