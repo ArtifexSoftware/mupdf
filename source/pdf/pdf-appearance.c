@@ -125,6 +125,7 @@ void pdf_parse_da(fz_context *ctx, char *da, pdf_da_info *di)
 				if (!strcmp(lbuf.scratch, "Tf"))
 				{
 					di->font_size = stack[0];
+					fz_free(ctx, di->font_name);
 					di->font_name = name;
 					name = NULL;
 				}
