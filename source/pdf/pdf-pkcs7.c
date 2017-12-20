@@ -247,9 +247,33 @@ static int verify_callback(int ok, X509_STORE_CTX *ctx)
 	return ok;
 }
 
+/* Get the certificates from a PKCS7 object */
+static STACK_OF(X509) *pk7_certs(PKCS7 *pk7)
+{
+	if (pk7 == NULL)
+		return NULL;
+
+	if (PKCS7_type_is_signed(pk7))
+		return pk7->d.sign->cert;
+	else if (PKCS7_type_is_signedAndEnveloped(pk7))
+		return pk7->d.signed_and_enveloped->cert;
+	else
+		return NULL;
+}
+
+/* Get the signing certificate from a PKCS7 object */
+static X509 *pk7_signer(PKCS7 *pk7, PKCS7_SIGNER_INFO *si)
+{
+	PKCS7_ISSUER_AND_SERIAL *ias = si->issuer_and_serial;
+	STACK_OF(X509) *certs = pk7_certs(pk7);
+	if (certs == NULL)
+		return NULL;
+
+	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
+}
+
 static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
 {
-	PKCS7_SIGNER_INFO *si;
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
 	int res = 1;
@@ -297,15 +321,51 @@ static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *eb
 	for (i=0; i<sk_PKCS7_SIGNER_INFO_num(sk); i++)
 	{
 		int rc;
-		si = sk_PKCS7_SIGNER_INFO_value(sk, i);
-		rc = PKCS7_dataVerify(cert_store, ctx, p7bio, p7, si);
-		if (rc == 0)
+		int ctx_err;
+		PKCS7_SIGNER_INFO *si = sk_PKCS7_SIGNER_INFO_value(sk, i);
+		X509 *cert = pk7_signer(p7, si);
+		if (cert == NULL)
 		{
-			unsigned long err = ERR_get_error();
-			ERR_error_string_n(err, ebuf, ebufsize);
-			strncat(ebuf, ":", ebufsize);
-			err = X509_STORE_CTX_get_error(ctx);
-			strncat(ebuf, X509_verify_cert_error_string(err), ebufsize);
+			res = 0;
+			fz_strlcpy(ebuf, "Certificate missing", ebufsize);
+			goto exit;
+		}
+
+		/* Acrobat reader creates self-signed certificates that don't list
+		 * certificate signing within the key usage parameters. openssl does
+		 * not recognise those as self signed. We work around this by removing
+		 * the key usage parameters before the verification check */
+		{
+			int i = X509_get_ext_by_NID(cert, NID_key_usage, -1);
+			if (i >= 0)
+			{
+				X509_EXTENSION *ext = X509_get_ext(cert, i);
+				X509_delete_ext(cert, i);
+				X509_EXTENSION_free(ext);
+			}
+		}
+
+		rc = PKCS7_dataVerify(cert_store, ctx, p7bio, p7, si);
+		ctx_err = X509_STORE_CTX_get_error(ctx);
+
+		if (rc <= 0 || ctx_err != X509_V_OK)
+		{
+			if (rc <= 0)
+			{
+				/* dataVerify failed */
+				ERR_error_string_n(ERR_get_error(), ebuf, ebufsize);
+			}
+			else
+			{
+				int used;
+				/* dataVerify passed, but only because our verify callback
+				   skipped over some problems during the certificate trust
+				   checking stage. */
+				fz_snprintf(ebuf, ebufsize, "%s(%d): ", X509_verify_cert_error_string(ctx_err), ctx_err);
+				used = strlen(ebuf);
+				X509_NAME_oneline(X509_get_subject_name(cert), ebuf + used, ebufsize - used);
+			}
+
 			res = 0;
 			goto exit;
 		}
@@ -328,7 +388,6 @@ static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], 
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	STACK_OF(X509) *certs = NULL;
-	int t;
 	int res = 0;
 
 	bsig = BIO_new_mem_buf(sig, sig_len);
@@ -354,17 +413,7 @@ static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], 
 	if (pk7cert == NULL)
 		goto exit;
 
-	t = OBJ_obj2nid(pk7cert->type);
-	switch (t)
-	{
-	case NID_pkcs7_signed:
-	case NID_pkcs7_signedAndEnveloped:
-		certs = pk7cert->d.sign->cert;
-		break;
-
-	default:
-		break;
-	}
+	certs = pk7_certs(pk7cert);
 
 	st = X509_STORE_new();
 	if (st == NULL)
