@@ -148,6 +148,7 @@ fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const f
 
 	subpix = fz_malloc_struct(ctx, fz_pixmap);
 	*subpix = *pixmap;
+	subpix->storable.refs = 1;
 	subpix->x = rect->x0;
 	subpix->y = rect->y0;
 	subpix->w = rect->x1 - rect->x0;
