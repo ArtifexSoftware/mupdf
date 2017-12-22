@@ -549,7 +549,7 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 
 		ERR_clear_error();
 
-		pfxbio = BIO_new_file(pfile, "r");
+		pfxbio = BIO_new_file(pfile, "rb");
 		if (pfxbio == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Can't open pfx file: %s", pfile);
 
