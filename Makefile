@@ -53,6 +53,7 @@ ALL_DIR += $(OUT)/source/gprf
 ALL_DIR += $(OUT)/source/tools
 ALL_DIR += $(OUT)/source/helpers
 ALL_DIR += $(OUT)/source/helpers/mu-threads
+ALL_DIR += $(OUT)/source/helpers/pkcs7
 ALL_DIR += $(OUT)/platform/x11
 ALL_DIR += $(OUT)/platform/x11/curl
 ALL_DIR += $(OUT)/platform/gl
@@ -93,8 +94,11 @@ $(OUT)/%.a :
 $(OUT)/%.exe: $(OUT)/%.o | $(ALL_DIR)
 	$(LINK_CMD)
 
-$(OUT)/source/helpers/%.o : source/helpers/%.c | $(ALL_DIR)
+$(OUT)/source/helpers/mu-threads/%.o : source/helpers/mu-threads/%.c | $(ALL_DIR)
 	$(CC_CMD) $(THREADING_CFLAGS)
+
+$(OUT)/source/helpers/pkcs7/%.o : source/helpers/pkcs7/%.c | $(ALL_DIR)
+	$(CC_CMD)
 
 $(OUT)/source/tools/%.o : source/tools/%.c | $(ALL_DIR)
 	$(CC_CMD) $(THREADING_CFLAGS)
@@ -127,6 +131,7 @@ $(OUT)/%.o : %.cpp | $(ALL_DIR)
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 THREAD_HDR := include/mupdf/helpers/mu-threads.h
+PKCS7_HDR := $(sort $(wildcard include/mupdf/helpers/pkcs7-*.h))
 
 FITZ_SRC := $(sort $(wildcard source/fitz/*.c))
 PDF_SRC := $(sort $(wildcard source/pdf/*.c))
@@ -136,6 +141,7 @@ CBZ_SRC := $(sort $(wildcard source/cbz/*.c))
 HTML_SRC := $(sort $(wildcard source/html/*.c))
 GPRF_SRC := $(sort $(wildcard source/gprf/*.c))
 THREAD_SRC := $(sort $(wildcard source/helpers/mu-threads/*.c))
+PKCS7_SRC := $(sort $(wildcard source/helpers/pkcs7/*.c))
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
 PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
@@ -152,6 +158,8 @@ CBZ_OBJ := $(CBZ_SRC:%.c=$(OUT)/%.o)
 HTML_OBJ := $(HTML_SRC:%.c=$(OUT)/%.o)
 GPRF_OBJ := $(GPRF_SRC:%.c=$(OUT)/%.o)
 THREAD_OBJ := $(THREAD_SRC:%.c=$(OUT)/%.o)
+PKCS7_OBJ := $(PKCS7_SRC:%.c=$(OUT)/%.o)
+SIGNATURE_OBJ := $(OUT)/platform/x11/pdfapp.o $(OUT)/source/tools/pdfsign.o
 
 $(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
 $(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
@@ -163,6 +171,8 @@ $(CBZ_OBJ) : $(FITZ_HDR) $(CBZ_HDR) $(CBZ_SRC_HDR)
 $(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
 $(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
 $(THREAD_OBJ) : $(THREAD_HDR)
+$(PKCS7_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PKCS7_HDR)
+$(SIGNATURE_OBJ) : $(PKCS7_HDR)
 
 # --- Generated PDF name tables ---
 
@@ -315,6 +325,9 @@ generate: $(JAVASCRIPT_GEN)
 MUPDF_LIB = $(OUT)/libmupdf.a
 THIRD_LIB = $(OUT)/libmupdfthird.a
 THREAD_LIB = $(OUT)/libmuthreads.a
+ifeq "$(HAVE_LIBCRYPTO)" "yes"
+PKCS7_LIB = $(OUT)/libmupkcs7.a
+endif
 
 MUPDF_OBJ := \
 	$(FITZ_OBJ) \
@@ -341,11 +354,12 @@ THIRD_OBJ := \
 	$(ZLIB_OBJ) \
 	$(LCMS2_OBJ)
 
-THREAD_OBJ := $(THREAD_OBJ)
-
 $(MUPDF_LIB) : $(MUPDF_OBJ)
 $(THIRD_LIB) : $(THIRD_OBJ)
 $(THREAD_LIB) : $(THREAD_OBJ)
+ifeq "$(HAVE_LIBCRYPTO)" "yes"
+$(PKCS7_LIB) : $(PKCS7_OBJ)
+endif
 
 INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB)
 
@@ -356,7 +370,7 @@ MUTOOL_SRC := source/tools/mutool.c source/tools/muconvert.c source/tools/mudraw
 MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 $(MUTOOL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
+$(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THREADING_LIBS)
 
 MURASTER_EXE := $(OUT)/muraster
@@ -381,14 +395,14 @@ ifeq "$(HAVE_X11)" "yes"
 MUVIEW_X11_EXE := $(OUT)/mupdf-x11
 MUVIEW_X11_OBJ := $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
 $(MUVIEW_X11_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
+$(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(X11_LIBS)
 
 ifeq "$(HAVE_CURL)" "yes"
 MUVIEW_X11_CURL_EXE := $(OUT)/mupdf-x11-curl
 MUVIEW_X11_CURL_OBJ := $(addprefix $(OUT)/platform/x11/curl/, x11_main.o x11_image.o pdfapp.o curl_stream.o)
 $(MUVIEW_X11_CURL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(CURL_LIB)
+$(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(CURL_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(X11_LIBS) $(CURL_LIBS) $(SYS_CURL_DEPS)
 endif
 endif

@@ -2137,10 +2137,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-pkcs7.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-portfolio.c"
 				>
 			</File>
@@ -2285,10 +2281,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\parse.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\pdf\pdf-pkcs7.h"
 					>
 				</File>
 				<File

@@ -1,10 +1,9 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "../fitz/fitz-imp.h"
+#include "../../fitz/fitz-imp.h"
+#include "mupdf/helpers/pkcs7-openssl.h"
 
 #include <string.h>
-
-#ifdef HAVE_LIBCRYPTO
 
 /* Generated from resources/certs/AdobeCA.p7c */
 static const char AdobeCA_p7c[] = {
@@ -285,12 +284,14 @@ exit:
 
 static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 {
-	int res = SignatureError_Unknown;
+	int res = SignatureError_Okay;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
 	X509_STORE_CTX *ctx;
 
 	ctx = X509_STORE_CTX_new();
+	if (!ctx)
+		return SignatureError_Unknown;
 
 	ERR_clear_error();
 
@@ -333,31 +334,35 @@ static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 
 		if (!X509_STORE_CTX_init(ctx, cert_store, cert, certs))
 		{
-			res = 0;
-			PKCS7err(PKCS7_F_PKCS7_DATAVERIFY, ERR_R_X509_LIB);
+			res = SignatureError_Unknown;
 			goto exit;
 		}
 
-		X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_SMIME_SIGN);
+		if (!X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_SMIME_SIGN))
+		{
+			res = SignatureError_Unknown;
+			goto exit;
+		}
 
+		/* X509_verify_cert may return an error, but in all such cases
+		 * it sets a context error */
 		X509_verify_cert(ctx);
 		X509_STORE_CTX_cleanup(ctx);
 		ctx_err = X509_STORE_CTX_get_error(ctx);
 		switch (ctx_err)
 		{
 		case X509_V_OK:
-			res = SignatureError_Okay;
 			break;
 		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
 			res = SignatureError_SelfSigned;
-			break;
+			goto exit;
 		case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
 			res = SignatureError_SelfSignedInChain;
-			break;
+			goto exit;
 		default:
-			break;
+			res = SignatureError_Unknown;
+			goto exit;
 		}
-		goto exit;
 	}
 
 exit:
@@ -367,12 +372,11 @@ exit:
 	return res;
 }
 
-SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
+SignatureError pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	BIO *bdata = NULL;
-	STACK_OF(X509) *certs = NULL;
 	int res = SignatureError_Unknown;
 
 	bsig = BIO_new_mem_buf(sig, sig_len);
@@ -394,7 +398,7 @@ exit:
 	return res;
 }
 
-SignatureError pdf_pkcs7_check_certificate(char *sig, int sig_len)
+SignatureError pkcs7_openssl_check_certificate(char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -451,16 +455,24 @@ typedef struct pdf_pkcs7_designated_name_openssl_s
 	char buf[8192];
 } pdf_pkcs7_designated_name_openssl;
 
-struct pdf_pkcs7_signer_s
+void pkcs7_opensll_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
 {
+	fz_free(ctx, dn);
+}
+
+typedef struct
+{
+	pdf_pkcs7_signer base;
+	fz_context *ctx;
 	int refs;
 	X509 *x509;
 	EVP_PKEY *pkey;
-};
+} openssl_signer;
 
-void pdf_pkcs7_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
+static void signer_drop_designated_name(pdf_pkcs7_signer *signer, pdf_pkcs7_designated_name *dn)
 {
-	fz_free(ctx, dn);
+	openssl_signer *osigner = (openssl_signer *)signer;
+	fz_free(osigner->ctx, dn);
 }
 
 static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, const STACK_OF(PKCS12_SAFEBAG) *bags, const char *pw);
@@ -524,12 +536,132 @@ static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, const STACK_OF(PKCS12_
 		add_from_bag(pX509, pPkey, sk_PKCS12_SAFEBAG_value(bags, i), pw);
 }
 
-pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
+static pdf_pkcs7_signer *keep_signer(pdf_pkcs7_signer *signer)
+{
+	openssl_signer *osigner = (openssl_signer *)signer;
+	return fz_keep_imp(osigner->ctx, osigner, &osigner->refs);
+}
+
+static void drop_signer(pdf_pkcs7_signer *signer)
+{
+	openssl_signer *osigner = (openssl_signer *)signer;
+	if (fz_drop_imp(osigner->ctx, osigner, &osigner->refs))
+	{
+		X509_free(osigner->x509);
+		EVP_PKEY_free(osigner->pkey);
+		fz_free(osigner->ctx, osigner);
+	}
+}
+
+static pdf_pkcs7_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
+{
+	pdf_pkcs7_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
+	char *p;
+
+	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
+	p = strstr(dn->buf, "/CN=");
+	if (p) dn->base.cn = p+4;
+	p = strstr(dn->buf, "/O=");
+	if (p) dn->base.o = p+3;
+	p = strstr(dn->buf, "/OU=");
+	if (p) dn->base.ou = p+4;
+	p = strstr(dn->buf, "/emailAddress=");
+	if (p) dn->base.email = p+14;
+	p = strstr(dn->buf, "/C=");
+	if (p) dn->base.c = p+3;
+
+	for (p = dn->buf; *p; p++)
+		if (*p == '/')
+			*p = 0;
+
+	return (pdf_pkcs7_designated_name *)dn;
+}
+
+static pdf_pkcs7_designated_name *signer_designated_name(pdf_pkcs7_signer *signer)
+{
+	openssl_signer *osigner = (openssl_signer *)signer;
+	return x509_designated_name(osigner->ctx, osigner->x509);
+}
+
+static int signer_create_digest(pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, int *digest_len)
+{
+	openssl_signer *osigner = (openssl_signer *)signer;
+	fz_context *ctx = osigner->ctx;
+	int res = 0;
+	BIO *bdata = NULL;
+	BIO *bp7in = NULL;
+	BIO *bp7 = NULL;
+	PKCS7 *p7 = NULL;
+	PKCS7_SIGNER_INFO *si;
+
+	unsigned char *p7_ptr;
+	int p7_len;
+
+	bdata = BIO_new_stream(ctx, in);
+	if (bdata == NULL)
+		goto exit;
+
+
+	p7 = PKCS7_new();
+	if (p7 == NULL)
+		goto exit;
+
+	PKCS7_set_type(p7, NID_pkcs7_signed);
+	si = PKCS7_add_signature(p7, osigner->x509, osigner->pkey, EVP_sha1());
+	if (si == NULL)
+		goto exit;
+
+	PKCS7_add_signed_attribute(si, NID_pkcs9_contentType, V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data));
+	PKCS7_add_certificate(p7, osigner->x509);
+
+	PKCS7_content_new(p7, NID_pkcs7_data);
+	PKCS7_set_detached(p7, 1);
+
+	bp7in = PKCS7_dataInit(p7, NULL);
+	if (bp7in == NULL)
+		goto exit;
+
+	while(1)
+	{
+		char buf[4096];
+		int n = BIO_read(bdata, buf, sizeof(buf));
+		if (n <= 0)
+			break;
+		BIO_write(bp7in, buf, n);
+	}
+
+	if (!PKCS7_dataFinal(p7, bp7in))
+		goto exit;
+
+	BIO_free(bdata);
+	bdata = NULL;
+
+	bp7 = BIO_new(BIO_s_mem());
+	if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
+		goto exit;
+
+	p7_len = BIO_get_mem_data(bp7, &p7_ptr);
+	if (p7_len > *digest_len)
+		goto exit;
+
+	memcpy(digest, p7_ptr, p7_len);
+	*digest_len = p7_len;
+	res = 1;
+
+exit:
+	PKCS7_free(p7);
+	BIO_free(bdata);
+	BIO_free(bp7in);
+	BIO_free(bp7);
+	return res;
+}
+
+pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 {
 	BIO *pfxbio = NULL;
 	PKCS12 *p12 = NULL;
 	STACK_OF(PKCS7) *asafes;
-	pdf_pkcs7_signer *signer = NULL;
+	openssl_signer *signer = NULL;
 	int i;
 
 	fz_var(pfxbio);
@@ -537,7 +669,7 @@ pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const c
 	fz_var(signer);
 	fz_try(ctx)
 	{
-		signer = fz_malloc_struct(ctx, pdf_pkcs7_signer);
+		signer = fz_malloc_struct(ctx, openssl_signer);
 		signer->refs = 1;
 
 		OpenSSL_add_all_algorithms();
@@ -595,6 +727,13 @@ pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const c
 
 		if (signer->x509 == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to obtain certificate");
+
+		signer->ctx = ctx;
+		signer->base.keep = keep_signer;
+		signer->base.drop = drop_signer;
+		signer->base.designated_name = signer_designated_name;
+		signer->base.drop_designated_name = signer_drop_designated_name;
+		signer->base.create_digest = signer_create_digest;
 	}
 	fz_always(ctx)
 	{
@@ -603,129 +742,14 @@ pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const c
 	}
 	fz_catch(ctx)
 	{
-		pdf_pkcs7_drop_signer(ctx, signer);
+		drop_signer(&signer->base);
 		fz_rethrow(ctx);
 	}
 
-	return signer;
+	return &signer->base;
 }
 
-pdf_pkcs7_signer *pdf_pkcs7_keep_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-	return fz_keep_imp(ctx, signer, &signer->refs);
-}
-
-void pdf_pkcs7_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-	if (fz_drop_imp(ctx, signer, &signer->refs))
-	{
-		X509_free(signer->x509);
-		EVP_PKEY_free(signer->pkey);
-		fz_free(ctx, signer);
-	}
-}
-
-static pdf_pkcs7_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
-{
-	pdf_pkcs7_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
-	char *p;
-
-	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
-	p = strstr(dn->buf, "/CN=");
-	if (p) dn->base.cn = p+4;
-	p = strstr(dn->buf, "/O=");
-	if (p) dn->base.o = p+3;
-	p = strstr(dn->buf, "/OU=");
-	if (p) dn->base.ou = p+4;
-	p = strstr(dn->buf, "/emailAddress=");
-	if (p) dn->base.email = p+14;
-	p = strstr(dn->buf, "/C=");
-	if (p) dn->base.c = p+3;
-
-	for (p = dn->buf; *p; p++)
-		if (*p == '/')
-			*p = 0;
-
-	return (pdf_pkcs7_designated_name *)dn;
-}
-
-pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-	return x509_designated_name(ctx, signer->x509);
-}
-
-int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
-{
-	int res = 0;
-	BIO *bdata = NULL;
-	BIO *bp7in = NULL;
-	BIO *bp7 = NULL;
-	PKCS7 *p7 = NULL;
-	PKCS7_SIGNER_INFO *si;
-
-	unsigned char *p7_ptr;
-	int p7_len;
-
-	bdata = BIO_new_stream(ctx, in);
-	if (bdata == NULL)
-		goto exit;
-
-
-	p7 = PKCS7_new();
-	if (p7 == NULL)
-		goto exit;
-
-	PKCS7_set_type(p7, NID_pkcs7_signed);
-	si = PKCS7_add_signature(p7, signer->x509, signer->pkey, EVP_sha1());
-	if (si == NULL)
-		goto exit;
-
-	PKCS7_add_signed_attribute(si, NID_pkcs9_contentType, V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data));
-	PKCS7_add_certificate(p7, signer->x509);
-
-	PKCS7_content_new(p7, NID_pkcs7_data);
-	PKCS7_set_detached(p7, 1);
-
-	bp7in = PKCS7_dataInit(p7, NULL);
-	if (bp7in == NULL)
-		goto exit;
-
-	while(1)
-	{
-		char buf[4096];
-		int n = BIO_read(bdata, buf, sizeof(buf));
-		if (n <= 0)
-			break;
-		BIO_write(bp7in, buf, n);
-	}
-
-	if (!PKCS7_dataFinal(p7, bp7in))
-		goto exit;
-
-	BIO_free(bdata);
-	bdata = NULL;
-
-	bp7 = BIO_new(BIO_s_mem());
-	if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
-		goto exit;
-
-	p7_len = BIO_get_mem_data(bp7, &p7_ptr);
-	if (p7_len > *digest_len)
-		goto exit;
-
-	memcpy(digest, p7_ptr, p7_len);
-	*digest_len = p7_len;
-	res = 1;
-
-exit:
-	PKCS7_free(p7);
-	BIO_free(bdata);
-	BIO_free(bp7in);
-	BIO_free(bp7);
-	return res;
-}
-
-pdf_pkcs7_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
+pdf_pkcs7_designated_name *pkcs7_openssl_designated_name(fz_context *ctx, char *sig, int sig_len)
 {
 	pdf_pkcs7_designated_name *name = NULL;
 	PKCS7 *pk7sig = NULL;
@@ -752,61 +776,3 @@ exit:
 
 	return name;
 }
-
-
-int pdf_pkcs7_supported(fz_context *ctx)
-{
-	return 1;
-}
-
-#else /* HAVE_LIBCRYPTO */
-
-SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
-{
-	return SignatureError_Unknown;
-}
-
-SignatureError pdf_pkcs7_check_certificate(char *sig, int sig_len)
-{
-	return SignatureError_Unknown;
-}
-
-pdf_pkcs7_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
-{
-	return NULL;
-}
-
-void pdf_pkcs7_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
-{
-}
-
-pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
-{
-	return NULL;
-}
-
-pdf_pkcs7_signer *pdf_pkcs7_keep_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-	return NULL;
-}
-
-void pdf_pkcs7_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-}
-
-pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer)
-{
-	return NULL;
-}
-
-int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
-{
-	return 0;
-}
-
-int pdf_pkcs7_supported(fz_context *ctx)
-{
-	return 0;
-}
-
-#endif /* HAVE_LIBCRYPTO */

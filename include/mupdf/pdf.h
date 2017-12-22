@@ -31,8 +31,6 @@ extern "C" {
 
 #include "mupdf/pdf/clean.h"
 
-#include "mupdf/pdf/pdf-pkcs7.h"
-
 #ifdef __cplusplus
 }
 #endif

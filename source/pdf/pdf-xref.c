@@ -59,7 +59,7 @@ static void pdf_drop_xref_sections_imp(fz_context *ctx, pdf_document *doc, pdf_x
 		{
 			xref->unsaved_sigs = usig->next;
 			pdf_drop_obj(ctx, usig->field);
-			pdf_pkcs7_drop_signer(ctx, usig->signer);
+			usig->signer->drop(usig->signer);
 			fz_free(ctx, usig);
 		}
 	}
@@ -418,7 +418,7 @@ void pdf_xref_store_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_ob
 	 * saving time */
 	unsaved_sig = fz_malloc_struct(ctx, pdf_unsaved_sig);
 	unsaved_sig->field = pdf_keep_obj(ctx, field);
-	unsaved_sig->signer = pdf_pkcs7_keep_signer(ctx, signer);
+	unsaved_sig->signer = signer->keep(signer);
 	unsaved_sig->next = NULL;
 	if (xref->unsaved_sigs_end == NULL)
 		xref->unsaved_sigs_end = &xref->unsaved_sigs;

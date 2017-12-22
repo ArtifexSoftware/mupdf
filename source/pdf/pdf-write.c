@@ -2708,7 +2708,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				{
 					xref->unsaved_sigs = usig->next;
 					pdf_drop_obj(ctx, usig->field);
-					pdf_pkcs7_drop_signer(ctx, usig->signer);
+					usig->signer->drop(usig->signer);
 					fz_free(ctx, usig);
 				}
 			}
