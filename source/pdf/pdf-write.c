@@ -2864,6 +2864,23 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, pdf_write_options *in_opts)
 }
 
 static void
+change_identity(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *identity = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_ID);
+	pdf_obj *str;
+	unsigned char rnd[16];
+
+	if (pdf_array_len(ctx, identity) < 2)
+		return;
+
+	/* Maybe recalculate this in future. For now, just change the second one. */
+	fz_memrnd(ctx, rnd, 16);
+	str = pdf_new_string(ctx, doc, (char *)rnd, 16);
+	pdf_array_put_drop(ctx, identity, 1, str);
+
+}
+
+static void
 do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_write_options *in_opts)
 {
 	int lastfree;
@@ -2893,6 +2910,8 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			pdf_ensure_solid_xref(ctx, doc, xref_len);
 			preloadobjstms(ctx, doc);
+
+			change_identity(ctx, doc);
 		}
 
 		/* Sweep & mark objects from the trailer */
