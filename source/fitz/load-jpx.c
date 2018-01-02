@@ -935,13 +935,13 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 #else /* FZ_ENABLE_JPX */
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
+fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "JPX support disabled");
 }
 
 void
-fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "JPX support disabled");
 }
