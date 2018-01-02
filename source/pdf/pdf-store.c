@@ -42,7 +42,7 @@ pdf_format_key(fz_context *ctx, char *s, int n, void *key_)
 	else
 	{
 		int t;
-		char *p = pdf_sprint_obj(ctx, s, n, &t, key, 1);
+		char *p = pdf_sprint_obj(ctx, s, n, &t, key, 1, 0);
 		if (p != s) {
 			fz_strlcpy(s, p, n);
 			fz_free(ctx, p);

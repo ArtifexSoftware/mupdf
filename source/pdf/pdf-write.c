@@ -1711,14 +1711,14 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		if (opts->do_decrypt)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
-			pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			fz_write_data(ctx, opts->out, data, len);
 		}
 		else
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
-			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
+			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, doc->crypt, num, gen);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			pdf_encrypt_data(ctx, doc->crypt, num, gen, write_data, opts->out, data, len);
 		}
@@ -1787,14 +1787,14 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		if (opts->do_decrypt)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
-			pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
+			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			fz_write_data(ctx, opts->out, data, len);
 		}
 		else
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
-			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
+			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, doc->crypt, num, gen);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			pdf_encrypt_data(ctx, doc->crypt, num, gen, write_data, opts->out, data, len);
 		}
@@ -1953,13 +1953,13 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	if (!pdf_obj_num_is_stream(ctx, doc, num))
 	{
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, unenc ? NULL : doc->crypt, num, gen);
+		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nendobj\n\n");
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, unenc ? NULL : doc->crypt, num, gen);
+		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
 	}
 	else
@@ -2095,7 +2095,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 
 	fz_write_string(ctx, opts->out, "trailer\n");
 	/* Trailer is NOT encrypted */
-	pdf_print_obj(ctx, opts->out, trailer, opts->do_tight);
+	pdf_print_obj(ctx, opts->out, trailer, opts->do_tight, opts->do_ascii);
 	fz_write_string(ctx, opts->out, "\n");
 
 	pdf_drop_obj(ctx, trailer);
@@ -2769,7 +2769,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 					pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 
 				/* Write the byte range into buf, padding with spaces*/
-				ptr = pdf_sprint_obj(ctx, buf, buf_size, &i, byte_range, 1);
+				ptr = pdf_sprint_obj(ctx, buf, buf_size, &i, byte_range, 1, 0);
 				if (ptr != buf) /* should never happen, since data should fit in buf_size */
 					fz_free(ctx, ptr);
 				memset(buf+i, ' ', buf_size-i);

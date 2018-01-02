@@ -189,14 +189,14 @@ showglobalinfo(fz_context *ctx, globals *glo)
 	if (obj)
 	{
 		fz_write_printf(ctx, out, "Info object (%d 0 R):\n", pdf_to_num(ctx, obj));
-		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
+		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1, 1);
 	}
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
 	if (obj)
 	{
 		fz_write_printf(ctx, out, "\nEncryption object (%d 0 R):\n", pdf_to_num(ctx, obj));
-		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
+		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1, 1);
 	}
 
 	fz_write_printf(ctx, out, "\nPages: %d\n\n", glo->pagecount);

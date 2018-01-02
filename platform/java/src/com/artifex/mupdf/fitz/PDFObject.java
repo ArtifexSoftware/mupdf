@@ -41,10 +41,14 @@ public class PDFObject
 	public native String asString();
 	public native byte[] asByteString();
 
-	public native String toString(boolean tight);
+	public native String toString(boolean tight, boolean ascii);
+
+	public String toString(boolean tight) {
+		return toString(tight, false);
+	}
 
 	public String toString() {
-		return toString(false);
+		return toString(false, false);
 	}
 
 	public native PDFObject resolve();

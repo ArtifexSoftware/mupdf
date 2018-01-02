@@ -170,9 +170,9 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *ref);
 
 int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj);
 
-char *pdf_sprint_obj(fz_context *ctx, char *buf, int cap, int *len, pdf_obj *obj, int tight);
-void pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight);
-void pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen);
+char *pdf_sprint_obj(fz_context *ctx, char *buf, int cap, int *len, pdf_obj *obj, int tight, int ascii);
+void pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, int ascii);
+void pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, int ascii, pdf_crypt *crypt, int num, int gen);
 
 void pdf_debug_obj(fz_context *ctx, pdf_obj *obj);
 

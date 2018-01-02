@@ -1984,7 +1984,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asByteString
  * Signature: (Z)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toString
-  (JNIEnv *, jobject, jboolean);
+  (JNIEnv *, jobject, jboolean, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject

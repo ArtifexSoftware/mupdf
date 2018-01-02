@@ -40,7 +40,7 @@ static void showtrailer(void)
 		fz_write_printf(ctx, out, "trailer ");
 	else
 		fz_write_printf(ctx, out, "trailer\n");
-	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), tight);
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), tight, 1);
 	fz_write_printf(ctx, out, "\n");
 }
 
@@ -136,13 +136,13 @@ static void showobject(pdf_obj *ref)
 			if (tight)
 			{
 				fz_write_printf(ctx, out, "%d 0 obj ", num);
-				pdf_print_obj(ctx, out, obj, 1);
+				pdf_print_obj(ctx, out, obj, 1, 1);
 				fz_write_printf(ctx, out, " stream\n");
 			}
 			else
 			{
 				fz_write_printf(ctx, out, "%d 0 obj\n", num);
-				pdf_print_obj(ctx, out, obj, 0);
+				pdf_print_obj(ctx, out, obj, 0, 1);
 				fz_write_printf(ctx, out, "\nstream\n");
 				showstream(num);
 				fz_write_printf(ctx, out, "endstream\n");
@@ -155,13 +155,13 @@ static void showobject(pdf_obj *ref)
 		if (tight)
 		{
 			fz_write_printf(ctx, out, "%d 0 obj ", num);
-			pdf_print_obj(ctx, out, obj, 1);
+			pdf_print_obj(ctx, out, obj, 1, 1);
 			fz_write_printf(ctx, out, "\n");
 		}
 		else
 		{
 			fz_write_printf(ctx, out, "%d 0 obj\n", num);
-			pdf_print_obj(ctx, out, obj, 0);
+			pdf_print_obj(ctx, out, obj, 0, 1);
 			fz_write_printf(ctx, out, "\nendobj\n");
 		}
 	}
@@ -193,7 +193,7 @@ static void showgrep(void)
 			pdf_sort_dict(ctx, obj);
 
 			fz_write_printf(ctx, out, "%d 0 obj ", i);
-			pdf_print_obj(ctx, out, obj, 1);
+			pdf_print_obj(ctx, out, obj, 1, 1);
 			if (pdf_is_stream(ctx, ref))
 				fz_write_printf(ctx, out, " stream");
 			fz_write_printf(ctx, out, "\n");
@@ -203,7 +203,7 @@ static void showgrep(void)
 	}
 
 	fz_write_printf(ctx, out, "trailer ");
-	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1);
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1, 1);
 	fz_write_printf(ctx, out, "\n");
 }
 
@@ -309,7 +309,7 @@ static void showpath(char *path, pdf_obj *obj)
 			showobject(obj);
 		else
 		{
-			pdf_print_obj(ctx, out, obj, tight);
+			pdf_print_obj(ctx, out, obj, tight, 0);
 			printf("\n");
 		}
 	}

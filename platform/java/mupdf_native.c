@@ -8694,7 +8694,7 @@ FUN(PDFObject_pushPDFObject)(JNIEnv *env, jobject self, jobject jitem)
 }
 
 JNIEXPORT jstring JNICALL
-FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
+FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight, jboolean ascii)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject_safe(env, self);
@@ -8708,7 +8708,7 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 
 	fz_try(ctx)
 	{
-		s = pdf_sprint_obj(ctx, NULL, 0, &n, obj, tight);
+		s = pdf_sprint_obj(ctx, NULL, 0, &n, obj, tight, ascii);
 		string = (*env)->NewStringUTF(env, s);
 	}
 	fz_always(ctx)
