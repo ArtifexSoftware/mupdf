@@ -161,6 +161,7 @@ struct fz_context_s
 	fz_tuning_context *tuning;
 	fz_document_handler_context *handler;
 	fz_output_context *output;
+	uint16_t seed48[7];
 };
 
 /*
@@ -562,5 +563,24 @@ extern fz_alloc_context fz_alloc_default;
 
 /* Default locks */
 extern fz_locks_context fz_locks_default;
+
+/*
+	Pseudo-random numbers using a linear congruential algorithm and 48-bit
+	integer arithmetic.
+*/
+double fz_drand48(fz_context *ctx);
+int32_t fz_lrand48(fz_context *ctx);
+int32_t fz_mrand48(fz_context *ctx);
+double fz_erand48(fz_context *ctx, uint16_t xsubi[3]);
+int32_t fz_jrand48(fz_context *ctx, uint16_t xsubi[3]);
+int32_t fz_nrand48(fz_context *ctx, uint16_t xsubi[3]);
+void fz_lcong48(fz_context *ctx, uint16_t param[7]);
+uint16_t *fz_seed48(fz_context *ctx, uint16_t seed16v[3]);
+void fz_srand48(fz_context *ctx, int32_t seedval);
+
+/*
+	fz_memrnd: Fill block with len bytes of pseudo-randomness.
+*/
+void fz_memrnd(fz_context *ctx, uint8_t *block, int len);
 
 #endif

@@ -1861,6 +1861,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\random.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\separation.c"
 				>
 			</File>

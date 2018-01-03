@@ -19,6 +19,7 @@
 #include "../source/fitz/context.c"
 #include "../source/fitz/error.c"
 #include "../source/fitz/memory.c"
+#include "../source/fitz/random.c"
 #include "../source/fitz/output.c"
 #include "../source/fitz/string.c"
 #include "../source/fitz/buffer.c"
