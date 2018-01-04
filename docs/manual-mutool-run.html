@@ -35,8 +35,6 @@ mutool run script.js [ arguments ... ]
 
 <p>
 If invoked without any arguments, it will drop you into an interactive REPL (read-eval-print-loop).
-On the interactive prompt, if you prefix a line with an equal ('=') character it will automatically print the result
-of the line.
 
 <h2>
 Example scripts
@@ -212,8 +210,9 @@ If skipAnnotations is true, ignore annotations.
 If alpha is true, the page will be drawn on a transparent background, otherwise white.
 <dt>Page#toDisplayList(skipAnnotations)
 <dd>Record the contents on the page into a DisplayList.
-<dt>Page#toStructuredText()
+<dt>Page#toStructuredText(options)
 <dd>Extract the text on the page into a StructuredText object.
+The options argument is a comma separated list of flags: preserve-ligatures, preserve-whitespace, and preserve-images.
 <dt>Page#search(needle)
 <dd>Search for 'needle' text on the page, and return an array with rectangles of all matches found.
 <dt>Page#getAnnotations()
@@ -235,8 +234,8 @@ depending on whether it's an internal or external link.
 <dd>Render the annotation into a Pixmap, using the transform and colorspace.
 <dt>Annotation#toDisplayList()
 <dd>Record the contents of the annotation into a DisplayList.
-<dt>Annotation#toPDF()
-<dd>Returns the PDFObject/PDFAnnotation for the annotation, if the document is a PDF file.
+<dt>Annotation#isPDF()
+<dd>Returns true if the annotation is from a PDF document.
 </dl>
 
 <h2>
@@ -250,10 +249,10 @@ StructuredText objects hold text from a page that has been analyzed and grouped 
 <dl>
 <dt>StructuredText#search(needle)
 <dd>Search the text for all instances of 'needle', and return an array with rectangles of all matches found.
-<dt>StructuredText#highlight(rect)
-<dd>Return an array with rectangles needed to highlight a selection defined by the two corners of the rectangle.
-<dt>StructuredText#copy(rect)
-<dd>Return the text from the selection defined by the two corners of the rectangle.
+<dt>StructuredText#highlight(p, q)
+<dd>Return an array with rectangles needed to highlight a selection defined by the start and end points.
+<dt>StructuredText#copy(p, q)
+<dd>Return the text from the selection defined by the start and end points.
 </dl>
 
 <h2>
@@ -339,8 +338,9 @@ will keep all the graphics required in memory, so will increase the amount of me
 <dd>Play back the recorded device calls onto the device.
 <dt>DisplayList#toPixmap(transform, colorspace, alpha)
 <dd>Render display list to a pixmap. If alpha is true, it will render to a transparent background, otherwise white.
-<dt>DisplayList#toStructuredText(skipAnnotations)
+<dt>DisplayList#toStructuredText(options)
 <dd>Extract the text in the display list into a StructuredText object.
+The options argument is a comma separated list of flags: preserve-ligatures, preserve-whitespace, and preserve-images.
 <dt>DisplayList#search(needle)
 <dd>Search the display list text for all instances of 'needle', and return an array with rectangles of all matches found.
 <dd>
@@ -469,7 +469,7 @@ A Path object represents vector graphics as drawn by a pen. A path can be either
 <dt>Path#rect(x1, y1, x2, y2)
 <dd>Shorthand for moveTo, lineTo, lineTo, lineTo, closePath to draw a rectangle.
 <dt>Path#walk(pathWalker)
-<dd>Call moveTo, lineTo, curveTo and closePath methods on the pathWalker to replay the path.
+<dd>Call moveTo, lineTo, curveTo and closePath methods on the pathWalker object to replay the path.
 </dl>
 
 <h2>
@@ -491,7 +491,7 @@ WMode is 0 for horizontal writing, and 1 for vertical writing.
 <dt>Text#showString(font, transform, string)
 <dd>Add a simple string to the text object. Will do font substitution if the font does not have all the unicode characters required.
 <dt>Text#walk(textWalker)
-<dd>Call showGlyph on textWalker for each glyph in the text object.
+<dd>Call the showGlyph method on the textWalker object for each glyph in the text object.
 </dl>
 
 <h2>
@@ -561,42 +561,8 @@ The argument must be the same device object that was returned by the beginPage m
 </dl>
 
 <p>
-The current output formats supported are CBZ, PNG and PDF.
-
-<p>
-The image format (CBZ, PNG, etc) output options are:
-<dl>
-<dt>rotate=N
-<dd>Rotate rendered pages N degrees counterclockwise.
-<dt>resolution=N, x-resolution=N, y-resolution=N
-<dd>Render each page to an image at N pixels per inch.
-<dt>width=N
-<dd>Render pages to fit N pixels wide (ignore resolution option).
-<dt>height=N
-<dd>Render pages to fit N pixels tall (ignore resolution option).
-<dt>colorspace=(gray|rgb|cmyk)
-<dd>Render using specified colorspace.
-<dt>alpha
-<dd>Render pages with alpha channel and transparent background.
-
-</dl>
-
-<p id="pdf-write-options">
-The PDF output options are:
-<dl>
-<dt>linearize<dd>optimize for web browsers.
-<dt>garbage
-<dd>remove unused objects.
-<dt>garbage=compact<dd>Remove unused objects, and compact cross reference table.
-<dt>garbage=deduplicate<dd>Remove unused objects, compact cross reference table, and remove duplicate objects.
-<dt>pretty<dd>Pretty-print objects with indentation.
-<dt>ascii<dd>ASCII hex encode binary streams.
-<dt>compress-fonts<dd>Compress embedded fonts.
-<dt>compress-images<dd>Compress images.
-<dt>compress<dd>Compress all streams.
-<dt>decompress<dd>Decompress all streams (except when compress-fonts or compress-images).
-<dt>sanitize<dd>Clean up graphics commands in content streams.
-</dl>
+The output formats and options supported are the same as in the
+<a href="manual-mutool-convert.html">mutool convert</a> command.
 
 <h2>
 PDFDocument and PDFObject

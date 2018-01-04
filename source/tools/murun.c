@@ -4424,7 +4424,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.run", ffi_Page_run, 3);
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 4);
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
-		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 0);
+		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 1);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 		jsB_propfun(J, "Page.getAnnotations", ffi_Page_getAnnotations, 0);
 		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
@@ -4552,7 +4552,7 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "DisplayList.run", ffi_DisplayList_run, 2);
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
-		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 0);
+		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 1);
 		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 1);
 	}
 	js_setregistry(J, "fz_display_list");
