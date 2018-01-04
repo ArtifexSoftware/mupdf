@@ -3,6 +3,8 @@
 
 #include "mupdf/fitz.h"
 
+#include <stdio.h>
+
 struct fz_buffer_s
 {
 	int refs;
@@ -90,6 +92,8 @@ fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx);
 void fz_new_output_context(fz_context *ctx);
 void fz_drop_output_context(fz_context *ctx);
 fz_output_context *fz_keep_output_context(fz_context *ctx);
+
+fz_stream *fz_open_file_ptr_no_close(fz_context *ctx, FILE *file);
 
 #if defined(MEMENTO) || !defined(NDEBUG)
 #define FITZ_DEBUG_LOCKING

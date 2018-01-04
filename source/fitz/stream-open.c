@@ -144,6 +144,14 @@ fz_open_file_ptr(fz_context *ctx, FILE *file)
 	return stm;
 }
 
+fz_stream *fz_open_file_ptr_no_close(fz_context *ctx, FILE *file)
+{
+	fz_stream *stm = fz_open_file_ptr(ctx, file);
+	/* We don't own the file ptr. Ensure we don't close it */
+	stm->close = NULL;
+	return stm;
+}
+
 fz_stream *
 fz_open_file(fz_context *ctx, const char *name)
 {

@@ -5,6 +5,7 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/string-util.h"
+#include "mupdf/fitz/stream.h"
 
 /*
 	Generic output streams - generalise between outputting to a file,
@@ -62,6 +63,13 @@ typedef void (fz_output_close_fn)(fz_context *ctx, void *state);
 */
 typedef void (fz_output_drop_fn)(fz_context *ctx, void *state);
 
+/*
+	fz_stream_from_output_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	when the fz_stream_from_output is called.
+*/
+typedef fz_stream *(fz_stream_from_output_fn)(fz_context *ctx, void *state);
+
 
 struct fz_output_s
 {
@@ -71,6 +79,7 @@ struct fz_output_s
 	fz_output_tell_fn *tell;
 	fz_output_close_fn *close;
 	fz_output_drop_fn *drop;
+	fz_stream_from_output_fn *as_stream;
 };
 
 /*
@@ -170,6 +179,16 @@ void fz_close_output(fz_context *, fz_output *);
 	fz_drop_output: Free an output stream. Don't forget to close it first!
 */
 void fz_drop_output(fz_context *, fz_output *);
+
+/*
+	fz_stream_from_output: obtain the fz_output in the form of a fz_stream
+
+	This allows data to be read back from some forms of fz_output object.
+	When finished reading, the fz_stream should be released by calling
+	fz_drop_stream. Until the fz_stream is dropped, no further operations
+	should be performed on the fz_output object.
+*/
+fz_stream *fz_stream_from_output(fz_context *, fz_output *);
 
 /*
 	fz_write_data: Write data to output.

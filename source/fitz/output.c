@@ -158,6 +158,14 @@ file_drop(fz_context *ctx, void *opaque)
 		fz_warn(ctx, "cannot fclose: %s", strerror(errno));
 }
 
+static fz_stream *
+file_as_stream(fz_context *ctx, void *opaque)
+{
+	FILE *file = opaque;
+	fflush(file);
+	return fz_open_file_ptr_no_close(ctx, file);
+};
+
 fz_output *
 fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop)
 {
@@ -197,7 +205,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 			if (errno != ENOENT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
-	file = fz_fopen_utf8(filename, append ? "ab" : "wb");
+	file = fz_fopen_utf8(filename, "rb+");
 #else
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
@@ -206,7 +214,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 			if (errno != ENOENT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
-	file = fopen(filename, append ? "ab" : "wb");
+	file = fopen(filename, "rb+");
 #endif
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
@@ -214,6 +222,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	out = fz_new_output(ctx, file, file_write, NULL, file_drop);
 	out->seek = file_seek;
 	out->tell = file_tell;
+	out->as_stream = file_as_stream;
 
 	return out;
 }
@@ -291,6 +300,15 @@ fz_tell_output(fz_context *ctx, fz_output *out)
 	if (out->tell == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot tell in untellable output stream\n");
 	return out->tell(ctx, out->state);
+}
+
+fz_stream *
+fz_stream_from_output(fz_context *ctx, fz_output *out)
+{
+	if (!out) return 0;
+	if (out->as_stream == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot derive input stream from output stream");
+	return out->as_stream(ctx, out->state);
 }
 
 static void
