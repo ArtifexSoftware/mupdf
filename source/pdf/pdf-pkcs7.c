@@ -80,6 +80,92 @@ static const char AdobeCA_p7c[] = {
 #warning detect version of openssl at compile time
 #endif
 
+typedef struct
+{
+	fz_context *ctx;
+	fz_stream *stm;
+} BIO_stream_data;
+
+static int stream_read(BIO *b, char *buf, int size)
+{
+	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
+	return fz_read(data->ctx, data->stm, buf, size);
+}
+
+static long stream_ctrl(BIO *b, int cmd, long arg1, void *arg2)
+{
+	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
+	switch (cmd)
+	{
+	case BIO_C_FILE_SEEK:
+		fz_seek(data->ctx, data->stm, arg1, SEEK_SET);
+		return 0;
+	default:
+		return 1;
+	}
+}
+
+static int stream_new(BIO *b)
+{
+	BIO_stream_data *data = (BIO_stream_data *)malloc(sizeof(BIO_stream_data));
+	if (!data)
+		return 0;
+
+	data->ctx = NULL;
+	data->stm = NULL;
+
+	BIO_set_init(b, 1);
+	BIO_set_data(b, data);
+	BIO_clear_flags(b, INT_MAX);
+
+	return 1;
+}
+
+static int stream_free(BIO *b)
+{
+	if (b == NULL)
+		return 0;
+
+	free(BIO_get_data(b));
+	BIO_set_data(b, NULL);
+	BIO_set_init(b, 0);
+	BIO_clear_flags(b, INT_MAX);
+
+	return 1;
+}
+
+static long stream_callback_ctrl(BIO *b, int cmd, bio_info_cb *fp)
+{
+	return 1;
+}
+
+static BIO *BIO_new_stream(fz_context *ctx, fz_stream *stm)
+{
+	static BIO_METHOD *methods = NULL;
+	BIO *bio;
+	BIO_stream_data *data;
+
+	if (!methods)
+	{
+		methods = BIO_meth_new(BIO_TYPE_NONE, "segment reader");
+		if (!methods)
+			return NULL;
+
+		BIO_meth_set_read(methods, stream_read);
+		BIO_meth_set_ctrl(methods, stream_ctrl);
+		BIO_meth_set_create(methods, stream_new);
+		BIO_meth_set_destroy(methods, stream_free);
+		BIO_meth_set_callback_ctrl(methods, stream_callback_ctrl);
+	}
+
+	bio = BIO_new(methods);
+	data = BIO_get_data(bio);
+	data->ctx = ctx;
+	data->stm = stm;
+
+	return bio;
+}
+
 enum
 {
 	SEG_START = 0,
@@ -649,31 +735,33 @@ pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *sig
 	return (pdf_designated_name *)dn;
 }
 
-void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
+	fz_stream *in = NULL;
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	BIO *bp7in = NULL;
 	BIO *bp7 = NULL;
 	PKCS7 *p7 = NULL;
 	PKCS7_SIGNER_INFO *si;
-	FILE *f = NULL;
 
 	int (*brange)[2] = NULL;
 	int brange_len = pdf_array_len(ctx, byte_range)/2;
 
+	fz_var(in);
 	fz_var(bdata);
 	fz_var(bsegs);
 	fz_var(bp7in);
 	fz_var(bp7);
 	fz_var(p7);
-	fz_var(f);
 
 	fz_try(ctx)
 	{
 		unsigned char *p7_ptr;
 		int p7_len;
 		int i;
+
+		in = fz_stream_from_output(ctx, out);
 
 		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
 		for (i = 0; i < brange_len; i++)
@@ -682,10 +770,9 @@ void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, 
 			brange[i][1] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
 		}
 
-		bdata = BIO_new(BIO_s_file());
+		bdata = BIO_new_stream(ctx, in);
 		if (bdata == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create file BIO");
-		BIO_read_filename(bdata, filename);
 
 		bsegs = BIO_new(BIO_f_segments());
 		if (bsegs == NULL)
@@ -729,6 +816,8 @@ void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, 
 		bsegs = NULL;
 		BIO_free(bdata);
 		bdata = NULL;
+		fz_drop_stream(ctx, in);
+		in = NULL;
 
 		bp7 = BIO_new(BIO_s_mem());
 		if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
@@ -738,24 +827,19 @@ void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, 
 		if (p7_len*2 + 2 > digest_length)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Insufficient space for digest");
 
-		f = fopen(filename, "rb+");
-		if (f == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to write digest");
-
-		fseek(f, digest_offset+1, SEEK_SET);
+		fz_seek_output(ctx, out, digest_offset+1, SEEK_SET);
 
 		for (i = 0; i < p7_len; i++)
-			fprintf(f, "%02x", p7_ptr[i]);
+			fz_write_printf(ctx, out, "%02x", p7_ptr[i]);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_stream(ctx, in);
 		PKCS7_free(p7);
 		BIO_free(bsegs);
 		BIO_free(bdata);
 		BIO_free(bp7in);
 		BIO_free(bp7);
-		if (f)
-			fclose(f);
 	}
 	fz_catch(ctx)
 	{
@@ -896,7 +980,7 @@ void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 {
 }
 
-void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
 }
 

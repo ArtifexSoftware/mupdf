@@ -2624,94 +2624,101 @@ static void presize_unsaved_signature_byteranges(fz_context *ctx, pdf_document *
 	}
 }
 
-static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, const char *filename)
+static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
 	pdf_unsaved_sig *usig;
 	char buf[5120];
 	int s;
 	int i;
 	int last_end;
-	FILE *f;
+	fz_stream *stm = NULL;
+	fz_var(stm);
 
-	for (s = 0; s < doc->num_incremental_sections; s++)
+	fz_try(ctx)
 	{
-		pdf_xref *xref = &doc->xref_sections[doc->num_incremental_sections - s - 1];
-
-		if (xref->unsaved_sigs)
+		for (s = 0; s < doc->num_incremental_sections; s++)
 		{
-			pdf_obj *byte_range;
+			pdf_xref *xref = &doc->xref_sections[doc->num_incremental_sections - s - 1];
 
-			f = fopen(filename, "rb+");
-			if (!f)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s to complete signatures", filename);
-
-			/* Locate the byte ranges and contents in the saved file */
-			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
+			if (xref->unsaved_sigs)
 			{
-				char *bstr, *cstr, *fstr;
-				int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME_V, PDF_NAME_ByteRange, NULL));
-				fseek(f, opts->ofs_list[pnum], SEEK_SET);
-				(void)fread(buf, 1, sizeof(buf), f);
-				buf[sizeof(buf)-1] = 0;
+				pdf_obj *byte_range;
 
-				bstr = strstr(buf, "/ByteRange");
-				cstr = strstr(buf, "/Contents");
-				fstr = strstr(buf, "/Filter");
-
-				if (bstr && cstr && fstr && bstr < cstr && cstr < fstr)
+				stm = fz_stream_from_output(ctx, opts->out);
+				/* Locate the byte ranges and contents in the saved file */
+				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
-					usig->byte_range_start = bstr - buf + 10 + opts->ofs_list[pnum];
-					usig->byte_range_end = cstr - buf + opts->ofs_list[pnum];
-					usig->contents_start = cstr - buf + 9 + opts->ofs_list[pnum];
-					usig->contents_end = fstr - buf + opts->ofs_list[pnum];
+					char *bstr, *cstr, *fstr;
+					int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME_V, PDF_NAME_ByteRange, NULL));
+					fz_seek(ctx, stm, opts->ofs_list[pnum], SEEK_SET);
+					(void)fz_read(ctx, stm, (unsigned char *)buf, sizeof(buf));
+					buf[sizeof(buf)-1] = 0;
+
+					bstr = strstr(buf, "/ByteRange");
+					cstr = strstr(buf, "/Contents");
+					fstr = strstr(buf, "/Filter");
+
+					if (bstr && cstr && fstr && bstr < cstr && cstr < fstr)
+					{
+						usig->byte_range_start = bstr - buf + 10 + opts->ofs_list[pnum];
+						usig->byte_range_end = cstr - buf + opts->ofs_list[pnum];
+						usig->contents_start = cstr - buf + 9 + opts->ofs_list[pnum];
+						usig->contents_end = fstr - buf + opts->ofs_list[pnum];
+					}
+				}
+
+				fz_drop_stream(ctx, stm);
+				stm = NULL;
+
+				/* Recreate ByteRange with correct values. Initially store the
+				* recreated object in the first of the unsaved signatures */
+				byte_range = pdf_new_array(ctx, doc, 4);
+				pdf_dict_putl_drop(ctx, xref->unsaved_sigs->field, byte_range, PDF_NAME_V, PDF_NAME_ByteRange, NULL);
+
+				last_end = 0;
+				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
+				{
+					pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, last_end));
+					pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, usig->contents_start - last_end));
+					last_end = usig->contents_end;
+				}
+				pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, last_end));
+				pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, xref->end_ofs - last_end));
+
+				/* Copy the new ByteRange to the other unsaved signatures */
+				for (usig = xref->unsaved_sigs->next; usig; usig = usig->next)
+					pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME_V, PDF_NAME_ByteRange, NULL);
+
+				/* Write the byte range into buf, padding with spaces*/
+				i = pdf_sprint_obj(ctx, buf, sizeof(buf), byte_range, 1);
+				memset(buf+i, ' ', sizeof(buf)-i);
+
+				/* Write the byte range to the file */
+				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
+				{
+					fz_seek_output(ctx, opts->out, usig->byte_range_start, SEEK_SET);
+					fz_write_data(ctx, opts->out, buf, usig->byte_range_end - usig->byte_range_start);
+				}
+
+				/* Write the digests into the file */
+				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
+					pdf_write_digest(ctx, opts->out, byte_range, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
+
+				/* delete the unsaved_sigs records */
+				while ((usig = xref->unsaved_sigs) != NULL)
+				{
+					xref->unsaved_sigs = usig->next;
+					pdf_drop_obj(ctx, usig->field);
+					pdf_drop_signer(ctx, usig->signer);
+					fz_free(ctx, usig);
 				}
 			}
-
-			/* Recreate ByteRange with correct values. Initially store the
-			* recreated object in the first of the unsaved signatures */
-			byte_range = pdf_new_array(ctx, doc, 4);
-			pdf_dict_putl_drop(ctx, xref->unsaved_sigs->field, byte_range, PDF_NAME_V, PDF_NAME_ByteRange, NULL);
-
-			last_end = 0;
-			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
-			{
-				pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, last_end));
-				pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, usig->contents_start - last_end));
-				last_end = usig->contents_end;
-			}
-			pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, last_end));
-			pdf_array_push_drop(ctx, byte_range, pdf_new_int(ctx, doc, xref->end_ofs - last_end));
-
-			/* Copy the new ByteRange to the other unsaved signatures */
-			for (usig = xref->unsaved_sigs->next; usig; usig = usig->next)
-				pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME_V, PDF_NAME_ByteRange, NULL);
-
-			/* Write the byte range into buf, padding with spaces*/
-			i = pdf_sprint_obj(ctx, buf, sizeof(buf), byte_range, 1);
-			memset(buf+i, ' ', sizeof(buf)-i);
-
-			/* Write the byte range to the file */
-			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
-			{
-				fseek(f, usig->byte_range_start, SEEK_SET);
-				fwrite(buf, 1, usig->byte_range_end - usig->byte_range_start, f);
-			}
-
-			fclose(f);
-
-			/* Write the digests into the file */
-			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
-				pdf_write_digest(ctx, doc, filename, byte_range, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
-
-			/* delete the unsaved_sigs records */
-			while ((usig = xref->unsaved_sigs) != NULL)
-			{
-				xref->unsaved_sigs = usig->next;
-				pdf_drop_obj(ctx, usig->field);
-				pdf_drop_signer(ctx, usig->signer);
-				fz_free(ctx, usig);
-			}
 		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+		fz_rethrow(ctx);
 	}
 }
 
@@ -3054,6 +3061,8 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			doc->xref_sections[0].end_ofs = fz_tell_output(ctx, opts->out);
 		}
 
+		complete_signatures(ctx, doc, opts);
+
 		doc->dirty = 0;
 	}
 	fz_always(ctx)
@@ -3149,7 +3158,6 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	{
 		do_pdf_save_document(ctx, doc, &opts, in_opts);
 		fz_close_output(ctx, opts.out);
-		complete_signatures(ctx, doc, &opts, filename);
 	}
 	fz_always(ctx)
 	{
