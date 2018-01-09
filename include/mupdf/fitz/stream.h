@@ -399,9 +399,21 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 	if (stm->rp != stm->wp)
 		return *stm->rp;
 
-	c = stm->next(ctx, stm, 1);
-	if (c != EOF)
-		stm->rp--;
+	fz_try(ctx)
+	{
+		c = stm->next(ctx, stm, 1);
+		if (c != EOF)
+			stm->rp--;
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_warn(ctx, "read error; treating as end of file");
+		stm->error = 1;
+		c = EOF;
+	}
+	if (c == EOF)
+		stm->eof = 1;
 	return c;
 }
 
