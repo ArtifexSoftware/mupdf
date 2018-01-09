@@ -24,7 +24,7 @@ void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_widget *wid
 {
 	char msg[256];
 	printf("verifying signature on page %d\n", n+1);
-	pdf_check_signature(ctx, doc, widget, filename, msg, sizeof msg);
+	pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
 	printf("  result: '%s'\n", msg);
 }
 

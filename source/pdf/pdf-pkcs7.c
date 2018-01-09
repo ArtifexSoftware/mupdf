@@ -464,7 +464,7 @@ exit:
 	return res;
 }
 
-static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)
+static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -481,10 +481,9 @@ static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], 
 	if (pk7sig == NULL)
 		goto exit;
 
-	bdata = BIO_new(BIO_s_file());
+	bdata = BIO_new_stream(ctx, stm);
 	if (bdata == NULL)
 		goto exit;
-	BIO_read_filename(bdata, file);
 
 	bsegs = BIO_new(BIO_f_segments());
 	if (bsegs == NULL)
@@ -847,7 +846,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	}
 }
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
 {
 	int (*byte_range)[2] = NULL;
 	int byte_range_len;
@@ -877,7 +876,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
 		if (byte_range && contents)
 		{
-			res = verify_sig(contents, contents_len, file, byte_range, byte_range_len, ebuf, ebufsize);
+			res = verify_sig(ctx, doc->file, contents, contents_len, byte_range, byte_range_len, ebuf, ebufsize);
 		}
 		else
 		{
@@ -961,7 +960,7 @@ int pdf_signatures_supported(fz_context *ctx)
 
 #else /* HAVE_LIBCRYPTO */
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
 {
 	fz_strlcpy(ebuf, "This version of MuPDF was built without signature support", ebufsize);
 	return 0;
