@@ -196,6 +196,115 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 	fz_drop_pixmap(ctx, mask);
 }
 
+static void fz_adjust_image_subarea(fz_context *ctx, fz_image *image, fz_irect *subarea, int l2factor)
+{
+	int f = 1<<l2factor;
+	int bpp = image->bpc * image->n;
+	int mask;
+
+	switch (bpp)
+	{
+	case 1: mask = 8*f; break;
+	case 2: mask = 4*f; break;
+	case 4: mask = 2*f; break;
+	default: mask = (bpp & 7) == 0 ? f : 0; break;
+	}
+
+	if (mask != 0)
+	{
+		subarea->x0 &= ~(mask - 1);
+		subarea->x1 = (subarea->x1 + mask - 1) & ~(mask - 1);
+	}
+	else
+	{
+		/* Awkward case - mask cannot be a power of 2. */
+		mask = bpp*f;
+		switch (bpp)
+		{
+		case 3:
+		case 5:
+		case 7:
+		case 9:
+		case 11:
+		case 13:
+		case 15:
+		default:
+			mask *= 8;
+			break;
+		case 6:
+		case 10:
+		case 14:
+			mask *= 4;
+			break;
+		case 12:
+			mask *= 2;
+			break;
+		}
+		subarea->x0 = (subarea->x0 / mask) * mask;
+		subarea->x1 = ((subarea->x1 + mask - 1) / mask) * mask;
+	}
+
+	subarea->y0 &= ~(f - 1);
+	if (subarea->x1 > image->w)
+		subarea->x1 = image->w;
+	subarea->y1 = (subarea->y1 + f - 1) & ~(f - 1);
+	if (subarea->y1 > image->h)
+		subarea->y1 = image->h;
+}
+
+static void fz_compute_image_key(fz_context *ctx, fz_image *image, const fz_matrix *ctm,
+	fz_image_key *key, const fz_irect *subarea, int l2factor, int *w, int *h, int *dw, int *dh)
+{
+	key->refs = 1;
+	key->image = image;
+	key->l2factor = l2factor;
+
+	if (subarea == NULL)
+	{
+		key->rect.x0 = 0;
+		key->rect.y0 = 0;
+		key->rect.x1 = image->w;
+		key->rect.y1 = image->h;
+	}
+	else
+	{
+		key->rect = *subarea;
+		ctx->tuning->image_decode(ctx->tuning->image_decode_arg, image->w, image->h, key->l2factor, &key->rect);
+		fz_adjust_image_subarea(ctx, image, &key->rect, key->l2factor);
+	}
+
+	/* Based on that subarea, recalculate the extents */
+	if (ctm)
+	{
+		float frac_w = (float) (key->rect.x1 - key->rect.x0) / image->w;
+		float frac_h = (float) (key->rect.y1 - key->rect.y0) / image->h;
+		float a = ctm->a * frac_w;
+		float b = ctm->b * frac_h;
+		float c = ctm->c * frac_w;
+		float d = ctm->d * frac_h;
+		*w = sqrtf(a * a + b * b);
+		*h = sqrtf(c * c + d * d);
+	}
+	else
+	{
+		*w = image->w;
+		*h = image->h;
+	}
+
+	/* Return the true sizes to the caller */
+	if (dw)
+		*dw = *w;
+	if (dh)
+		*dh = *h;
+	if (*w > image->w)
+		*w = image->w;
+	if (*h > image->h)
+		*h = image->h;
+
+	if (*w == 0 || *h == 0)
+		key->l2factor = 0;
+}
+
 fz_pixmap *
 fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image *cimg, fz_irect *subarea, int indexed, int l2factor)
 {
@@ -209,54 +318,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 
 	if (subarea)
 	{
-		int bpp = image->bpc * image->n;
-		int mask;
-		switch (bpp)
-		{
-		case 1: mask = 8*f; break;
-		case 2: mask = 4*f; break;
-		case 4: mask = 2*f; break;
-		default: mask = (bpp & 7) == 0 ? f : 0; break;
-		}
-		if (mask != 0)
-		{
-			subarea->x0 &= ~(mask - 1);
-			subarea->x1 = (subarea->x1 + mask - 1) & ~(mask - 1);
-		}
-		else
-		{
-			/* Awkward case - mask cannot be a power of 2. */
-			mask = bpp*f;
-			switch (bpp)
-			{
-			case 3:
-			case 5:
-			case 7:
-			case 9:
-			case 11:
-			case 13:
-			case 15:
-			default:
-				mask *= 8;
-				break;
-			case 6:
-			case 10:
-			case 14:
-				mask *= 4;
-				break;
-			case 12:
-				mask *= 2;
-				break;
-			}
-			subarea->x0 = (subarea->x0 / mask) * mask;
-			subarea->x1 = ((subarea->x1 + mask - 1) / mask) * mask;
-		}
-		subarea->y0 &= ~(f - 1);
-		if (subarea->x1 > image->w)
-			subarea->x1 = image->w;
-		subarea->y1 = (subarea->y1 + f - 1) & ~(f - 1);
-		if (subarea->y1 > image->h)
-			subarea->y1 = image->h;
+		fz_adjust_image_subarea(ctx, image, subarea, l2factor);
 		w = (subarea->x1 - subarea->x0);
 		h = (subarea->y1 - subarea->y0);
 	}
@@ -556,6 +618,24 @@ void fz_default_image_decode(void *arg, int w, int h, int l2factor, fz_irect *su
 	}
 }
 
+static fz_pixmap *
+fz_find_image_tile(fz_context *ctx, fz_image *image, fz_image_key *key, fz_matrix *ctm)
+{
+	fz_pixmap *tile;
+	do
+	{
+		tile = fz_find_item(ctx, fz_drop_pixmap_imp, key, &fz_image_store_type);
+		if (tile)
+		{
+			update_ctm_for_subarea(ctm, &key->rect, image->w, image->h);
+			return tile;
+		}
+		key->l2factor--;
+	}
+	while (key->l2factor >= 0);
+	return NULL;
+}
+
 fz_pixmap *
 fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh)
 {
@@ -613,75 +693,33 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	 * we can subdivide and stay larger than the required size. We add
 	 * a fudge factor of +2 here to allow for the possibility of
 	 * expansion due to grid fitting. */
-	if (w == 0 || h == 0)
-		l2factor = 0;
-	else
-		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6; l2factor++);
-
-	/* Now figure out if we want to decode just a subarea */
-	if (subarea == NULL)
+	l2factor = 0;
+	if (w > 0 && h > 0)
 	{
-		key.rect.x0 = 0;
-		key.rect.y0 = 0;
-		key.rect.x1 = image->w;
-		key.rect.y1 = image->h;
-	}
-	else
-	{
-		key.rect = *subarea;
-		ctx->tuning->image_decode(ctx->tuning->image_decode_arg, image->w, image->h, l2factor, &key.rect);
+		while (image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6)
+			l2factor++;
 	}
 
-	/* Based on that subarea, recalculate the extents */
-	if (ctm)
+	/* First, look through the store for existing tiles */
+	if (subarea)
 	{
-		float frac_w = (float) (key.rect.x1 - key.rect.x0) / image->w;
-		float frac_h = (float) (key.rect.y1 - key.rect.y0) / image->h;
-		float a = ctm->a * frac_w;
-		float b = ctm->b * frac_h;
-		float c = ctm->c * frac_w;
-		float d = ctm->d * frac_h;
-
-		w = sqrtf(a * a + b * b);
-		h = sqrtf(c * c + d * d);
-	}
-	else
-	{
-		w = image->w;
-		h = image->h;
-	}
-
-	/* Return the true sizes to the caller */
-	if (dw)
-		*dw = w;
-	if (dh)
-		*dh = h;
-	if (w > image->w)
-		w = image->w;
-	if (h > image->h)
-		h = image->h;
-
-	if (w == 0 || h == 0)
-		l2factor = 0;
-
-	/* Can we find any suitable tiles in the cache? */
-	key.refs = 1;
-	key.image = image;
-	key.l2factor = l2factor;
-	do
-	{
-		tile = fz_find_item(ctx, fz_drop_pixmap_imp, &key, &fz_image_store_type);
+		fz_compute_image_key(ctx, image, ctm, &key, subarea, l2factor, &w, &h, dw, dh);
+		tile = fz_find_image_tile(ctx, image, &key, ctm);
 		if (tile)
-		{
-			update_ctm_for_subarea(ctm, &key.rect, image->w, image->h);
 			return tile;
-		}
-		key.l2factor--;
 	}
-	while (key.l2factor >= 0);
 
-	/* We'll have to decode the image; request the correct amount of
-	 * downscaling. */
+	/* No subarea given, or no tile for subarea found; try entire image */
+	fz_compute_image_key(ctx, image, ctm, &key, NULL, l2factor, &w, &h, dw, dh);
+	tile = fz_find_image_tile(ctx, image, &key, ctm);
+	if (tile)
+		return tile;
+
+	/* Neither subarea nor full image tile found; prepare the subarea key again */
+	if (subarea)
+		fz_compute_image_key(ctx, image, ctm, &key, subarea, l2factor, &w, &h, dw, dh);
+
+	/* We'll have to decode the image; request the correct amount of downscaling. */
 	l2factor_remaining = l2factor;
 	tile = image->get_pixmap(ctx, image, &key.rect, w, h, &l2factor_remaining);
 
@@ -692,22 +730,25 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	assert(l2factor_remaining >= 0 && l2factor_remaining <= 6);
 	if (l2factor_remaining)
 	{
-		fz_subsample_pixmap(ctx, tile, l2factor_remaining);
+		fz_try(ctx)
+			fz_subsample_pixmap(ctx, tile, l2factor_remaining);
+		fz_catch(ctx)
+		{
+			fz_drop_pixmap(ctx, tile);
+			fz_rethrow(ctx);
+		}
 	}
 
 	/* Now we try to cache the pixmap. Any failure here will just result
 	 * in us not caching. */
 	keyp = fz_malloc_struct(ctx, fz_image_key);
 	keyp->refs = 1;
-
+	keyp->image = fz_keep_image_store_key(ctx, image);
+	keyp->l2factor = l2factor;
+	keyp->rect = key.rect;
 	fz_try(ctx)
 	{
-		fz_pixmap *existing_tile;
-
-		keyp->image = fz_keep_image_store_key(ctx, image);
-		keyp->l2factor = l2factor;
-		keyp->rect = key.rect;
-		existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
+		fz_pixmap *existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
 		if (existing_tile)
 		{
 			/* We already have a tile. This must have been produced by a
