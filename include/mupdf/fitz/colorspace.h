@@ -16,6 +16,14 @@ enum
 	FZ_RI_ABSOLUTE_COLORIMETRIC,
 };
 
+enum
+{
+	FZ_COLORSPACE_IS_DEVICE = 1,
+	FZ_COLORSPACE_IS_ICC = 2,
+	FZ_COLORSPACE_IS_CAL = 4,
+	FZ_COLORSPACE_LAST_PUBLIC_FLAG = 8,
+};
+
 typedef struct fz_color_params_s fz_color_params;
 
 struct fz_color_params_s
@@ -25,7 +33,6 @@ struct fz_color_params_s
 	uint8_t op;
 	uint8_t opm;
 };
-
 
 int fz_lookup_rendering_intent(const char *name);
 char *fz_rendering_intent_name(int ri);
@@ -38,6 +45,20 @@ char *fz_rendering_intent_name(int ri);
 	number of components in the colorspace etc.
 */
 typedef struct fz_colorspace_s fz_colorspace;
+
+enum fz_colorspace_type
+{
+	FZ_COLORSPACE_NONE,
+	FZ_COLORSPACE_GRAY,
+	FZ_COLORSPACE_RGB,
+	FZ_COLORSPACE_BGR,
+	FZ_COLORSPACE_CMYK,
+	FZ_COLORSPACE_LAB,
+	FZ_COLORSPACE_INDEXED,
+	FZ_COLORSPACE_SEPARATION,
+};
+
+enum fz_colorspace_type fz_colorspace_type(fz_context *ctx, fz_colorspace *cs);
 
 /*
 	A fz_iccprofile object encapsulates details about the icc profile. It
@@ -64,13 +85,6 @@ typedef struct fz_default_colorspaces_s fz_default_colorspaces;
 int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs);
 
 /*
-	fz_colorspace_is_device_n: Return true if a colorspace is separation or devicen.
-
-	True for Separation and DeviceN colorspaces.
-*/
-int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs);
-
-/*
 	fz_colorspace_device_n_has_only_cmyk: Return true if devicen color space
 	has only colorants from the cmyk set.
 */
@@ -83,10 +97,24 @@ int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *c
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
 /*
-	fz_colorspace_is_device_gray: Return true if the color space is
-	device gray.
+	Colorspace feature test functions.
 */
+int fz_colorspace_is_gray(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_rgb(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_bgr(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_cmyk(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs);
+
+int fz_colorspace_is_device(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs);
+
 int fz_colorspace_is_device_gray(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs);
+
+int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
 
 /*
 	fz_device_gray: Get colorspace representing device specific gray.
@@ -126,16 +154,7 @@ typedef fz_colorspace *(fz_colorspace_base_fn)(const fz_colorspace *cs);
 
 typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 
-enum
-{
-	FZ_CS_DEVICE_GRAY = 1,
-	FZ_CS_DEVICE_N = 2,
-	FZ_CS_SUBTRACTIVE = 4,
-
-	FZ_CS_LAST_PUBLIC_FLAG = 4
-};
-
-fz_colorspace *fz_new_colorspace(fz_context *ctx, const char *name, int n, int flags, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
+fz_colorspace *fz_new_colorspace(fz_context *ctx, const char *name, enum fz_colorspace_type type, int flags, int n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int n, const char *name);
 const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int n);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
@@ -147,11 +166,6 @@ void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
 fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs);
 void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_devicen_n(fz_context *ctx, const fz_colorspace *cs);

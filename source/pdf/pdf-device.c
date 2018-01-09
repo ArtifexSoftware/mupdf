@@ -567,19 +567,24 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		group = pdf_new_dict(ctx, doc, 5);
 		fz_try(ctx)
 		{
-			int n = fz_colorspace_n(ctx, colorspace);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_Type, PDF_NAME_Group);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_S, PDF_NAME_Transparency);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_K, pdf_new_bool(ctx, doc, knockout));
 			pdf_dict_put_drop(ctx, group, PDF_NAME_I, pdf_new_bool(ctx, doc, isolated));
-			if (n == 0)
-			{}
-			if (n == 1)
+			switch (fz_colorspace_type(ctx, colorspace))
+			{
+			case FZ_COLORSPACE_GRAY:
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceGray);
-			else if (n == 4)
-				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
-			else
+				break;
+			case FZ_COLORSPACE_RGB:
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceRGB);
+				break;
+			case FZ_COLORSPACE_CMYK:
+				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
+				break;
+			default:
+				break;
+			}
 			group_ref = pdev->groups[num].ref = pdf_add_object(ctx, doc, group);
 		}
 		fz_always(ctx)

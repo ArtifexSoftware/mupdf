@@ -173,14 +173,17 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 	pdf_obj *tintobj = pdf_array_get(ctx, array, 3);
 	fz_colorspace *base;
 	pdf_function *tint = NULL;
+	char *colorspace_name;
 	int i, n;
-	char *colorspace_name = "DeviceN";
 
 	fz_var(tint);
 	fz_var(devn);
 
 	if (pdf_is_array(ctx, nameobj))
+	{
 		n = pdf_array_len(ctx, nameobj);
+		colorspace_name = "DeviceN";
+	}
 	else
 	{
 		n = 1;
@@ -204,7 +207,7 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 		devn->base = fz_keep_colorspace(ctx, base);  /* We drop it during the devn free... */
 		devn->tint = tint;
 
-		cs = fz_new_colorspace(ctx, colorspace_name, n, FZ_CS_SUBTRACTIVE | FZ_CS_DEVICE_N,
+		cs = fz_new_colorspace(ctx, colorspace_name, FZ_COLORSPACE_SEPARATION, 0, n,
 			fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? devicen_to_alt : devicen_to_rgb, NULL, base_devicen, NULL, free_devicen, devn,
 			sizeof(struct devicen) + base->size + pdf_function_size(ctx, tint));
 

@@ -477,16 +477,18 @@ fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
 {
 	fz_compressed_buffer *cbuf;
 	fz_buffer *buf;
-	int n;
 
-	n = fz_colorspace_n(ctx, image->colorspace);
 	cbuf = fz_compressed_image_buffer(ctx, image);
 
-	if (cbuf && cbuf->params.type == FZ_IMAGE_JPEG && (n == 1 || n == 3))
+	if (cbuf && cbuf->params.type == FZ_IMAGE_JPEG)
 	{
-		fz_write_string(ctx, out, "image/jpeg;base64,");
-		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
-		return;
+		int type = fz_colorspace_type(ctx, image->colorspace);
+		if (type == FZ_COLORSPACE_GRAY || type == FZ_COLORSPACE_RGB)
+		{
+			fz_write_string(ctx, out, "image/jpeg;base64,");
+			fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
+			return;
+		}
 	}
 	if (cbuf && cbuf->params.type == FZ_IMAGE_PNG)
 	{

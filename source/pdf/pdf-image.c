@@ -468,47 +468,58 @@ raw_or_unknown_compression:
 			pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
 
 			cs = pixmap ? pixmap->colorspace : image->colorspace;
-			n = fz_colorspace_n(ctx, cs);
-
-			if (fz_colorspace_is_indexed(ctx, cs))
+			switch (fz_colorspace_type(ctx, cs))
 			{
-				fz_colorspace *basecs;
-				unsigned char *lookup = NULL;
-				int high = 0;
-				int basen;
-				pdf_obj *arr;
+			case FZ_COLORSPACE_INDEXED:
+				{
+					fz_colorspace *basecs;
+					unsigned char *lookup = NULL;
+					int high = 0;
+					int basen;
+					pdf_obj *arr;
 
-				lookup = fz_indexed_colorspace_palette(ctx, cs, &high);
-				basecs = fz_colorspace_base(ctx, cs);
-				basen = fz_colorspace_n(ctx, basecs);
+					lookup = fz_indexed_colorspace_palette(ctx, cs, &high);
+					basecs = fz_colorspace_base(ctx, cs);
+					basen = fz_colorspace_n(ctx, basecs);
 
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, arr = pdf_new_array(ctx, doc, 4));
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, arr = pdf_new_array(ctx, doc, 4));
 
-				pdf_array_put_drop(ctx, arr, 0, PDF_NAME_Indexed);
-				if (basen <= 1)
-					pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceGray);
-				else if (basen == 3)
-					// TODO: Lab colorspace?
-					pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceRGB);
-				else if (basen == 4)
-					pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceCMYK);
-				else
-					// TODO: convert to RGB!
-					fz_throw(ctx, FZ_ERROR_GENERIC, "only indexed Gray, RGB, and CMYK colorspaces supported");
+					pdf_array_put_drop(ctx, arr, 0, PDF_NAME_Indexed);
+					switch (fz_colorspace_type(ctx, basecs))
+					{
+					case FZ_COLORSPACE_GRAY:
+						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceGray);
+						break;
+					case FZ_COLORSPACE_RGB:
+						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceRGB);
+						break;
+					case FZ_COLORSPACE_CMYK:
+						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceCMYK);
+						break;
+					default:
+						// TODO: convert to RGB!
+						fz_throw(ctx, FZ_ERROR_GENERIC, "only indexed Gray, RGB, and CMYK colorspaces supported");
+						break;
+					}
 
-				pdf_array_put_drop(ctx, arr, 2, pdf_new_int(ctx, doc, high));
-				pdf_array_put_drop(ctx, arr, 3, pdf_new_string(ctx, doc, (char *) lookup, basen * (high + 1)));
-			}
-			else if (n <= 1)
+					pdf_array_put_drop(ctx, arr, 2, pdf_new_int(ctx, doc, high));
+					pdf_array_put_drop(ctx, arr, 3, pdf_new_string(ctx, doc, (char *) lookup, basen * (high + 1)));
+				}
+				break;
+			case FZ_COLORSPACE_GRAY:
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
-			else if (n == 3)
-				// TODO: Lab colorspace?
+				break;
+			case FZ_COLORSPACE_RGB:
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
-			else if (n == 4)
+				break;
+			case FZ_COLORSPACE_CMYK:
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
-			else
+				break;
+			default:
 				// TODO: convert to RGB!
 				fz_throw(ctx, FZ_ERROR_GENERIC, "only Gray, RGB, and CMYK colorspaces supported");
+				break;
+			}
 		}
 
 		if (image->mask)

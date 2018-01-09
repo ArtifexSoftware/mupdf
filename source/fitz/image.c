@@ -542,7 +542,7 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 		/* CMYK JPEGs in XPS documents have to be inverted */
 		if (image->super.invert_cmyk_jpeg &&
 			image->buffer->params.type == FZ_IMAGE_JPEG &&
-			image->super.colorspace == fz_device_cmyk(ctx) &&
+			fz_colorspace_is_cmyk(ctx, image->super.colorspace) &&
 			image->buffer->params.u.jpeg.color_transform)
 		{
 			fz_invert_pixmap(ctx, tile);

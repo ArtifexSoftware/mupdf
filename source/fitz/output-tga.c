@@ -74,8 +74,7 @@ fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 void
 fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
-	fz_band_writer *writer = fz_new_tga_band_writer(ctx, out, pixmap->colorspace == fz_device_bgr(ctx));
-
+	fz_band_writer *writer = fz_new_tga_band_writer(ctx, out, fz_colorspace_is_bgr(ctx, pixmap->colorspace));
 	fz_try(ctx)
 	{
 		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);

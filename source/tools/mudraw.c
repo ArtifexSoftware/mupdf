@@ -848,7 +848,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				else if (output_format == OUT_PSD)
 					bander = fz_new_psd_band_writer(ctx, out);
 				else if (output_format == OUT_TGA)
-					bander = fz_new_tga_band_writer(ctx, out, colorspace == fz_device_bgr(ctx));
+					bander = fz_new_tga_band_writer(ctx, out, fz_colorspace_is_bgr(ctx, colorspace));
 				else if (output_format == OUT_PWG)
 				{
 					if (out_cs == CS_MONO)
@@ -1798,17 +1798,17 @@ int mudraw_main(int argc, char **argv)
 					case CS_MONO:
 					case CS_GRAY:
 					case CS_GRAY_ALPHA:
-						if (fz_colorspace_n(ctx, colorspace) == 1)
+						if (fz_colorspace_is_gray(ctx, colorspace))
 							okay = 1;
 						break;
 					case CS_RGB:
 					case CS_RGB_ALPHA:
-						if (fz_colorspace_n(ctx, colorspace) == 3)
+						if (fz_colorspace_is_rgb(ctx, colorspace))
 							okay = 1;
 						break;
 					case CS_CMYK:
 					case CS_CMYK_ALPHA:
-						if (fz_colorspace_n(ctx, colorspace) == 4)
+						if (fz_colorspace_is_cmyk(ctx, colorspace))
 							okay = 1;
 						break;
 					}

@@ -599,6 +599,8 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 		fz_write_string(ctx, out, "/CS/CMYK\n");
 	else if (fz_colorspace_is_indexed(ctx, img->colorspace))
 		fz_write_string(ctx, out, "/CS/I\n");
+	else
+		fz_throw(ctx, FZ_ERROR_GENERIC, "BI operator can only show mask, Gray, RGB, CMYK, or Indexed images");
 	if (img->interpolate)
 		fz_write_string(ctx, out, "/I true\n");
 	fz_write_string(ctx, out, "/D[");

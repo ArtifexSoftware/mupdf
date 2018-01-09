@@ -31,7 +31,7 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 static void
 fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
-	if (!*t->is_color && colorspace && colorspace != fz_device_gray(ctx))
+	if (!*t->is_color && colorspace && fz_colorspace_type(ctx, colorspace) != FZ_COLORSPACE_GRAY)
 	{
 		if (colorspace == fz_device_rgb(ctx))
 		{
@@ -153,7 +153,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 	{
 		if ((dev->options & FZ_TEST_OPT_SHADINGS) == 0)
 		{
-			if (shade->colorspace != fz_device_gray(ctx))
+			if (fz_colorspace_type(ctx, shade->colorspace) != FZ_COLORSPACE_GRAY)
 			{
 				/* Don't test every pixel. Upgrade us from "black and white" to "probably color" */
 				if (*dev->is_color == 0)
@@ -197,7 +197,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 		unsigned char *s;
 		fz_compressed_buffer *buffer;
 
-		if (*dev->is_color || !image->colorspace || image->colorspace == fz_device_gray(ctx))
+		if (*dev->is_color || !image->colorspace || fz_colorspace_is_gray(ctx, image->colorspace))
 			break;
 
 		if ((dev->options & FZ_TEST_OPT_IMAGES) == 0)

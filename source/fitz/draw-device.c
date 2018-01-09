@@ -125,19 +125,21 @@ static fz_colorspace *fz_default_colorspace(fz_context *ctx, fz_default_colorspa
 	if (default_cs == NULL)
 		return cs;
 
-	switch (fz_colorspace_n(ctx, cs))
+	switch (fz_colorspace_type(ctx, cs))
 	{
-	case 1:
+	case FZ_COLORSPACE_GRAY:
 		if (cs == fz_device_gray(ctx))
 			return fz_default_gray(ctx, default_cs);
 		break;
-	case 3:
+	case FZ_COLORSPACE_RGB:
 		if (cs == fz_device_rgb(ctx))
 			return fz_default_rgb(ctx, default_cs);
 		break;
-	case 4:
+	case FZ_COLORSPACE_CMYK:
 		if (cs == fz_device_cmyk(ctx))
 			return fz_default_cmyk(ctx, default_cs);
+		break;
+	default:
 		break;
 	}
 	return cs;
@@ -1667,7 +1669,7 @@ convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *m
 		converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
 		if (*eop)
 		{
-			if (fz_colorspace_n(ctx, model) != 4)
+			if (fz_colorspace_type(ctx, model) != FZ_COLORSPACE_CMYK)
 			{
 				/* Can only overprint to CMYK based spaces */
 				*eop = NULL;
@@ -1773,13 +1775,21 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			state = fz_knockout_begin(ctx, dev);
 
-		after = 0;
-		if (src_cs == fz_device_gray(ctx))
+		switch (fz_colorspace_type(ctx, src_cs))
+		{
+		case FZ_COLORSPACE_GRAY:
 			after = 1;
-		else if (fz_colorspace_is_indexed(ctx, src_cs))
-		{}
-		else if (fz_colorspace_n(ctx, src_cs) <= fz_colorspace_n(ctx, model))
-			after = 1;
+			break;
+		case FZ_COLORSPACE_INDEXED:
+			after = 0;
+			break;
+		default:
+			if (fz_colorspace_n(ctx, src_cs) <= fz_colorspace_n(ctx, model))
+				after = 1;
+			else
+				after = 0;
+			break;
+		}
 
 		if (conversion_required && !after)
 			pixmap = convert_pixmap_for_painting(ctx, pixmap, model, src_cs, state->dest, color_params, dev, &eop);

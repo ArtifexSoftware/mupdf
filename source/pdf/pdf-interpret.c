@@ -280,7 +280,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 				/* Which in CMYK means not all zeros! This should really be
 				 * a test for subtractive color spaces, but this will have
 				 * to do for now. */
-				if (colorspace == fz_device_cmyk(ctx))
+				if (fz_colorspace_is_cmyk(ctx, colorspace))
 					softmask_bc[3] = 1.0f;
 				fz_drop_colorspace(ctx, colorspace);
 

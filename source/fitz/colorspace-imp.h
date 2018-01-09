@@ -24,8 +24,8 @@ void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile);
 
 enum
 {
-	FZ_CS_HAS_CMYK = (FZ_CS_LAST_PUBLIC_FLAG<<1),
-	FZ_CS_HAS_SPOTS = (FZ_CS_LAST_PUBLIC_FLAG<<2),
+	FZ_CS_HAS_CMYK = (FZ_COLORSPACE_LAST_PUBLIC_FLAG<<1),
+	FZ_CS_HAS_SPOTS = (FZ_COLORSPACE_LAST_PUBLIC_FLAG<<2),
 	FZ_CS_HAS_CMYK_AND_SPOTS = FZ_CS_HAS_CMYK|FZ_CS_HAS_SPOTS
 };
 
@@ -34,8 +34,9 @@ struct fz_colorspace_s
 	fz_key_storable key_storable;
 	size_t size;
 	char name[24];
-	unsigned char n;
-	unsigned char flags;
+	enum fz_colorspace_type type;
+	int flags;
+	int n;
 	fz_colorspace_convert_fn *to_ccs;
 	fz_colorspace_convert_fn *from_ccs;
 	fz_colorspace_clamp_fn *clamp;
