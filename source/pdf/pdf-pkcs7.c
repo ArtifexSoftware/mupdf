@@ -69,6 +69,7 @@ static const char AdobeCA_p7c[] = {
 #include "openssl/bio.h"
 #include "openssl/asn1.h"
 #include "openssl/x509.h"
+#include "openssl/x509v3.h"
 #include "openssl/err.h"
 #include "openssl/objects.h"
 #include "openssl/pem.h"
@@ -318,15 +319,6 @@ static int verify_callback(int ok, X509_STORE_CTX *ctx)
 		ok = 1;
 		break;
 
-	case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-	case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-		/*
-			In this case, don't reset err to X509_V_OK, so that it can be reported,
-			although we do return 1, so that the digest will still be checked
-		*/
-		ok = 1;
-		break;
-
 	default:
 		break;
 	}
@@ -337,7 +329,7 @@ static int verify_callback(int ok, X509_STORE_CTX *ctx)
 /* Get the certificates from a PKCS7 object */
 static STACK_OF(X509) *pk7_certs(PKCS7 *pk7)
 {
-	if (pk7 == NULL)
+	if (pk7 == NULL || pk7->d.ptr == NULL)
 		return NULL;
 
 	if (PKCS7_type_is_signed(pk7))
@@ -349,47 +341,31 @@ static STACK_OF(X509) *pk7_certs(PKCS7 *pk7)
 }
 
 /* Get the signing certificate from a PKCS7 object */
-static X509 *pk7_signer(PKCS7 *pk7, PKCS7_SIGNER_INFO *si)
+static X509 *pk7_signer(STACK_OF(X509) *certs, PKCS7_SIGNER_INFO *si)
 {
 	PKCS7_ISSUER_AND_SERIAL *ias = si->issuer_and_serial;
-	STACK_OF(X509) *certs = pk7_certs(pk7);
 	if (certs == NULL)
 		return NULL;
 
 	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
 }
 
-static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
+static int pk7_verify_sig(PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
 {
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
 	int res = 1;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
-	X509_STORE_CTX *ctx;
 
 	ebuf[0] = 0;
 
-	ctx = X509_STORE_CTX_new();
-
-	OpenSSL_add_all_algorithms();
-
-	if (!EVP_add_digest(EVP_md5()) ||
-		!EVP_add_digest(EVP_sha1()) ||
-		!ERR_load_crypto_strings())
-		goto exit;
-
-
 	ERR_clear_error();
-	ERR_load_BIO_strings();
-	ERR_load_crypto_strings();
-	ERR_load_X509_strings();
-
-	X509_STORE_set_verify_cb_func(cert_store, verify_callback);
 
 	p7bio = PKCS7_dataInit(p7, detached);
 	if (!p7bio)
 		goto exit;
+
 
 	/* We now have to 'read' from p7bio to calculate digests etc. */
 	while (BIO_read(p7bio, readbuf, sizeof(readbuf)) > 0)
@@ -408,9 +384,63 @@ static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *eb
 	for (i=0; i<sk_PKCS7_SIGNER_INFO_num(sk); i++)
 	{
 		int rc;
+		PKCS7_SIGNER_INFO *si = sk_PKCS7_SIGNER_INFO_value(sk, i);
+		X509 *x509 = pk7_signer(pk7_certs(p7), si);
+
+		/* were we able to find the cert in passed to us */
+		if (x509 == NULL)
+		{
+			res = 0;
+			fz_strlcpy(ebuf, "No signatures", ebufsize);
+			goto exit;
+		}
+
+		rc = PKCS7_signatureVerify(p7bio, p7, si, x509);
+		if (rc <= 0)
+		{
+			ERR_error_string_n(ERR_get_error(), ebuf, ebufsize);
+			res = 0;
+			goto exit;
+		}
+	}
+
+exit:
+	ERR_free_strings();
+
+	return res;
+}
+
+static int pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7, char *ebuf, int ebufsize)
+{
+	int res = 1;
+	int i;
+	STACK_OF(PKCS7_SIGNER_INFO) *sk;
+	X509_STORE_CTX *ctx;
+
+	ebuf[0] = 0;
+
+	ctx = X509_STORE_CTX_new();
+
+	ERR_clear_error();
+
+	X509_STORE_set_verify_cb_func(cert_store, verify_callback);
+
+	/* We can now verify signatures */
+	sk = PKCS7_get_signer_info(p7);
+	if (sk == NULL)
+	{
+		/* there are no signatures on this data */
+		res = 0;
+		fz_strlcpy(ebuf, "No signatures", ebufsize);
+		goto exit;
+	}
+
+	for (i=0; i<sk_PKCS7_SIGNER_INFO_num(sk); i++)
+	{
 		int ctx_err;
 		PKCS7_SIGNER_INFO *si = sk_PKCS7_SIGNER_INFO_value(sk, i);
-		X509 *cert = pk7_signer(p7, si);
+		STACK_OF(X509) *certs = pk7_certs(p7);
+		X509 *cert = pk7_signer(certs, si);
 		if (cert == NULL)
 		{
 			res = 0;
@@ -432,26 +462,24 @@ static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *eb
 			}
 		}
 
-		rc = PKCS7_dataVerify(cert_store, ctx, p7bio, p7, si);
-		ctx_err = X509_STORE_CTX_get_error(ctx);
-
-		if (rc <= 0 || ctx_err != X509_V_OK)
+		if (!X509_STORE_CTX_init(ctx, cert_store, cert, certs))
 		{
-			if (rc <= 0)
-			{
-				/* dataVerify failed */
-				ERR_error_string_n(ERR_get_error(), ebuf, ebufsize);
-			}
-			else
-			{
-				int used;
-				/* dataVerify passed, but only because our verify callback
-				   skipped over some problems during the certificate trust
-				   checking stage. */
-				fz_snprintf(ebuf, ebufsize, "%s(%d): ", X509_verify_cert_error_string(ctx_err), ctx_err);
-				used = strlen(ebuf);
-				X509_NAME_oneline(X509_get_subject_name(cert), ebuf + used, ebufsize - used);
-			}
+			res = 0;
+			PKCS7err(PKCS7_F_PKCS7_DATAVERIFY, ERR_R_X509_LIB);
+			goto exit;
+		}
+
+		X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_SMIME_SIGN);
+
+		X509_verify_cert(ctx);
+		X509_STORE_CTX_cleanup(ctx);
+		ctx_err = X509_STORE_CTX_get_error(ctx);
+		if (ctx_err != X509_V_OK)
+		{
+			int used;
+			fz_snprintf(ebuf, ebufsize, "%s(%d): ", X509_verify_cert_error_string(ctx_err), ctx_err);
+			used = strlen(ebuf);
+			X509_NAME_oneline(X509_get_subject_name(cert), ebuf + used, ebufsize - used);
 
 			res = 0;
 			goto exit;
@@ -468,10 +496,7 @@ exit:
 static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)
 {
 	PKCS7 *pk7sig = NULL;
-	PKCS7 *pk7cert = NULL;
-	X509_STORE *st = NULL;
 	BIO *bsig = NULL;
-	BIO *bcert = NULL;
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	STACK_OF(X509) *certs = NULL;
@@ -492,6 +517,32 @@ static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, i
 
 	BIO_set_next(bsegs, bdata);
 	BIO_set_segments(bsegs, byte_range, byte_range_len);
+
+	res = pk7_verify_sig(pk7sig, bsegs, ebuf, ebufsize);
+
+exit:
+	BIO_free(bsig);
+	BIO_free(bdata);
+	BIO_free(bsegs);
+	PKCS7_free(pk7sig);
+
+	return res;
+}
+
+static int verify_cert(fz_context *ctx, char *sig, int sig_len, char *ebuf, int ebufsize)
+{
+	PKCS7 *pk7sig = NULL;
+	PKCS7 *pk7cert = NULL;
+	X509_STORE *st = NULL;
+	BIO *bsig = NULL;
+	BIO *bcert = NULL;
+	STACK_OF(X509) *certs = NULL;
+	int res = 0;
+
+	bsig = BIO_new_mem_buf(sig, sig_len);
+	pk7sig = d2i_PKCS7_bio(bsig, NULL);
+	if (pk7sig == NULL)
+		goto exit;
 
 	/* Find the certificates in the pk7 file */
 	bcert = BIO_new_mem_buf((void*)AdobeCA_p7c, sizeof AdobeCA_p7c);
@@ -517,12 +568,10 @@ static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, i
 		}
 	}
 
-	res = pk7_verify(st, pk7sig, bsegs, ebuf, ebufsize);
+	res = pk7_verify_cert(st, pk7sig, ebuf, ebufsize);
 
 exit:
 	BIO_free(bsig);
-	BIO_free(bdata);
-	BIO_free(bsegs);
 	BIO_free(bcert);
 	PKCS7_free(pk7sig);
 	PKCS7_free(pk7cert);
@@ -878,6 +927,8 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		if (byte_range && contents)
 		{
 			res = verify_sig(ctx, doc->file, contents, contents_len, byte_range, byte_range_len, ebuf, ebufsize);
+			if (res)
+				res = verify_cert(ctx, contents, contents_len, ebuf, ebufsize);
 		}
 		else
 		{
