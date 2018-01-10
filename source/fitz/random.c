@@ -70,7 +70,8 @@ uint16_t *fz_seed48(fz_context *ctx, uint16_t *s)
 
 void fz_srand48(fz_context *ctx, int32_t seed)
 {
-	fz_seed48(ctx, (uint16_t [3]){ 0x330e, seed, seed>>16 });
+	uint16_t p[3] = { 0x330e, seed, seed>>16 };
+	fz_seed48(ctx, p);
 }
 
 void fz_memrnd(fz_context *ctx, unsigned char *data, int len)
