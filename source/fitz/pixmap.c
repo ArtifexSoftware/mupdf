@@ -784,26 +784,30 @@ void
 fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b)
 {
 	unsigned char *s = pix->samples;
-	int x, y;
+	int n = pix->n;
+	int x, y, save;
 
-	if (pix->colorspace == fz_device_bgr(ctx))
+	switch (fz_colorspace_type(ctx, pix->colorspace))
 	{
-		int save = r;
+	case FZ_COLORSPACE_GRAY:
+		g = (r + g + b) / 3;
+		for (y = 0; y < pix->h; y++)
+		{
+			for (x = 0; x < pix->w; x++)
+			{
+				*s = fz_mul255(*s, g);
+				s += n;
+			}
+			s += pix->stride - pix->w * n;
+		}
+		break;
+
+	case FZ_COLORSPACE_BGR:
+		save = r;
 		r = b;
 		b = save;
-	}
-	else if (pix->colorspace == fz_device_gray(ctx))
-	{
-		g = (r + g + b) / 3;
-	}
-	else if (pix->colorspace != fz_device_rgb(ctx))
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "can only tint RGB, BGR and Gray pixmaps");
-	}
-
-	if (pix->n == 4)
-	{
-		assert(pix->alpha);
+		/* fall through */
+	case FZ_COLORSPACE_RGB:
 		for (y = 0; y < pix->h; y++)
 		{
 			for (x = 0; x < pix->w; x++)
@@ -811,23 +815,15 @@ fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b)
 				s[0] = fz_mul255(s[0], r);
 				s[1] = fz_mul255(s[1], g);
 				s[2] = fz_mul255(s[2], b);
-				s += 4;
+				s += n;
 			}
-			s += pix->stride - pix->w * 4;
+			s += pix->stride - pix->w * n;
 		}
-	}
-	else if (pix->n == 2)
-	{
-		assert(pix->alpha);
-		for (y = 0; y < pix->h; y++)
-		{
-			for (x = 0; x < pix->w; x++)
-			{
-				*s = fz_mul255(*s, g);
-				s += 2;
-			}
-			s += pix->stride - pix->w * 2;
-		}
+		break;
+
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can only tint RGB, BGR and Gray pixmaps");
+		break;
 	}
 }
 
