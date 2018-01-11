@@ -319,6 +319,7 @@ static int verify_callback(int ok, X509_STORE_CTX *ctx)
 		break;
 
 	case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+	case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
 		/*
 			In this case, don't reset err to X509_V_OK, so that it can be reported,
 			although we do return 1, so that the digest will still be checked
