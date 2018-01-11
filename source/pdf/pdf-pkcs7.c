@@ -201,7 +201,7 @@ static int bsegs_read(BIO *b, char *buf, int size)
 			}
 
 			nb = BIO_read(BIO_next(b), buf, nb);
-			if (nb < 0)
+			if (nb <= 0)
 				return read;
 
 			ctx->seg_pos += nb;
