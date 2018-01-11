@@ -354,7 +354,12 @@ static int find_context(fz_context *ctx)
 void
 fz_assert_lock_held(fz_context *ctx, int lock)
 {
-	int idx = find_context(ctx);
+	int idx;
+
+	if (ctx->locks.lock != fz_lock_default)
+		return;
+
+	idx = find_context(ctx);
 	if (idx < 0)
 		return;
 
@@ -365,7 +370,12 @@ fz_assert_lock_held(fz_context *ctx, int lock)
 void
 fz_assert_lock_not_held(fz_context *ctx, int lock)
 {
-	int idx = find_context(ctx);
+	int idx;
+
+	if (ctx->locks.lock != fz_lock_default)
+		return;
+
+	idx = find_context(ctx);
 	if (idx < 0)
 		return;
 
@@ -375,8 +385,12 @@ fz_assert_lock_not_held(fz_context *ctx, int lock)
 
 void fz_lock_debug_lock(fz_context *ctx, int lock)
 {
-	int i;
-	int idx = find_context(ctx);
+	int i, idx;
+
+	if (ctx->locks.lock != fz_lock_default)
+		return;
+
+	idx = find_context(ctx);
 	if (idx < 0)
 		return;
 
@@ -399,7 +413,12 @@ void fz_lock_debug_lock(fz_context *ctx, int lock)
 
 void fz_lock_debug_unlock(fz_context *ctx, int lock)
 {
-	int idx = find_context(ctx);
+	int idx;
+
+	if (ctx->locks.lock != fz_lock_default)
+		return;
+
+	idx = find_context(ctx);
 	if (idx < 0)
 		return;
 
