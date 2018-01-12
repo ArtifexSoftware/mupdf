@@ -5890,28 +5890,28 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
 			++len;
 
-	//  create block array
+	/* create block array */
 	barr = (*env)->NewObjectArray(env, len, cls_TextBlock, NULL);
 	if (!barr) return NULL;
 
 	for (b=0, block = page->first_block; block; ++b, block = block->next)
 	{
-		//  only do text blocks
+		/* only do text blocks */
 		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
 
-		//  make a block
+		/* make a block */
 		jblock = (*env)->NewObject(env, cls_TextBlock, mid_TextBlock_init, self);
 		if (!jblock) return NULL;
 
-		//  set block's bbox
+		/* set block's bbox */
 		jrect = to_Rect_safe(ctx, env, &(block->bbox));
 		if (!jrect) return NULL;
 
 		(*env)->SetObjectField(env, jblock, fid_TextBlock_bbox, jrect);
 		(*env)->DeleteLocalRef(env, jrect);
 
-		//  create block's line array
+		/* create block's line array */
 		len = 0;
 		for (line = block->u.t.first_line; line; line = line->next)
 			++len;
@@ -5921,64 +5921,64 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 		for (l=0, line = block->u.t.first_line; line; ++l, line = line->next)
 		{
-			//  make a line
+			/* make a line */
 			jline = (*env)->NewObject(env, cls_TextLine, mid_TextLine_init, self);
 			if (!jline) return NULL;
 
-			//  set line's bbox
+			/* set line's bbox */
 			jrect = to_Rect_safe(ctx, env, &(line->bbox));
 			if (!jrect) return NULL;
 
 			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
 			(*env)->DeleteLocalRef(env, jrect);
 
-			//  count the chars
+			/* count the chars */
 			len = 0;
 			for (ch = line->first_char; ch; ch = ch->next)
 				len++;
 
-			//  make a char array
+			/* make a char array */
 			carr = (*env)->NewObjectArray(env, len, cls_TextChar, NULL);
 			if (!carr) return NULL;
 
 			for (c=0, ch = line->first_char; ch; ++c, ch = ch->next)
 			{
-				//  create a char
+				/* create a char */
 				jchar = (*env)->NewObject(env, cls_TextChar, mid_TextChar_init, self);
 				if (!jchar) return NULL;
 
-				//  set the char's bbox
+				/* set the char's bbox */
 				jrect = to_Rect_safe(ctx, env, &(ch->bbox));
 				if (!jrect) return NULL;
 
 				(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
 				(*env)->DeleteLocalRef(env, jrect);
 
-				//  set the char's value
+				/* set the char's value */
 				(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);
 
-				//  add it to the char array
+				/* add it to the char array */
 				(*env)->SetObjectArrayElement(env, carr, c, jchar);
 				if ((*env)->ExceptionCheck(env)) return NULL;
 
 				(*env)->DeleteLocalRef(env, jchar);
 			}
 
-			//  set the line's char array
+			/* set the line's char array */
 			(*env)->SetObjectField(env, jline, fid_TextLine_chars, carr);
 
-			//  add to the line array
+			/* add to the line array */
 			(*env)->SetObjectArrayElement(env, larr, l, jline);
 			if ((*env)->ExceptionCheck(env)) return NULL;
 
 			(*env)->DeleteLocalRef(env, jline);
 		}
 
-		//  set the block's line array
+		/* set the block's line array */
 		(*env)->SetObjectField(env, jblock, fid_TextBlock_lines, larr);
 		(*env)->DeleteLocalRef(env, larr);
 
-		//  add to the block array
+		/* add to the block array */
 		(*env)->SetObjectArrayElement(env, barr, b, jblock);
 		if ((*env)->ExceptionCheck(env)) return NULL;
 
