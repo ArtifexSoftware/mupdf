@@ -5967,6 +5967,8 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 			/* set the line's char array */
 			(*env)->SetObjectField(env, jline, fid_TextLine_chars, carr);
 
+			(*env)->DeleteLocalRef(env, carr);
+
 			/* add to the line array */
 			(*env)->SetObjectArrayElement(env, larr, l, jline);
 			if ((*env)->ExceptionCheck(env)) return NULL;
