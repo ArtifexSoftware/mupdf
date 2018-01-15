@@ -354,15 +354,16 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 	stm = fz_open_memory(ctx, p + n + 2, size - n - 2);
 	stm = fz_open_flated(ctx, stm, 15);
 	fz_try(ctx)
+	{
 		cs = fz_new_icc_colorspace_from_stream(ctx, (const char *)p, stm);
+		/* drop old one in case we have multiple ICC profiles */
+		fz_drop_colorspace(ctx, info->cs);
+		info->cs = cs;
+	}
 	fz_always(ctx)
 		fz_drop_stream(ctx, stm);
 	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	/* drop old one in case we have multiple ICC profiles */
-	fz_drop_colorspace(ctx, info->cs);
-	info->cs = cs;
+		fz_warn(ctx, "cannot read embedded ICC profile");
 }
 
 static void
