@@ -212,7 +212,7 @@ direction_from_bidi_class(int bidiclass, int curdir)
 	}
 }
 
-static int
+static float
 vec_dot(const fz_point *a, const fz_point *b)
 {
 	return a->x * b->x + a->y * b->y;
