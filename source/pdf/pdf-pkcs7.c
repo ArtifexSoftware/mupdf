@@ -350,15 +350,13 @@ static X509 *pk7_signer(STACK_OF(X509) *certs, PKCS7_SIGNER_INFO *si)
 	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
 }
 
-static int pk7_verify_sig(PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
+static SignatureError pk7_verify_sig(PKCS7 *p7, BIO *detached)
 {
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
-	int res = 1;
+	int res = SignatureError_Unknown;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
-
-	ebuf[0] = 0;
 
 	ERR_clear_error();
 
@@ -373,11 +371,10 @@ static int pk7_verify_sig(PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
 
 	/* We can now verify signatures */
 	sk = PKCS7_get_signer_info(p7);
-	if (sk == NULL)
+	if (sk == NULL || sk_PKCS7_SIGNER_INFO_num(sk) <= 0)
 	{
 		/* there are no signatures on this data */
-		res = 0;
-		fz_strlcpy(ebuf, "No signatures", ebufsize);
+		res = SignatureError_NoSignatures;
 		goto exit;
 	}
 
@@ -389,17 +386,24 @@ static int pk7_verify_sig(PKCS7 *p7, BIO *detached, char *ebuf, int ebufsize)
 
 		/* were we able to find the cert in passed to us */
 		if (x509 == NULL)
-		{
-			res = 0;
-			fz_strlcpy(ebuf, "No signatures", ebufsize);
 			goto exit;
-		}
 
 		rc = PKCS7_signatureVerify(p7bio, p7, si, x509);
-		if (rc <= 0)
+		if (rc > 0)
 		{
-			ERR_error_string_n(ERR_get_error(), ebuf, ebufsize);
-			res = 0;
+			res = SignatureError_Okay;
+		}
+		else
+		{
+			long err = ERR_GET_REASON(ERR_get_error());
+			switch (err)
+			{
+			case PKCS7_R_DIGEST_FAILURE:
+				res = SignatureError_DocumentChanged;
+				break;
+			default:
+				break;
+			}
 			goto exit;
 		}
 	}
@@ -410,14 +414,12 @@ exit:
 	return res;
 }
 
-static int pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7, char *ebuf, int ebufsize)
+static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 {
-	int res = 1;
+	int res = SignatureError_Unknown;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
 	X509_STORE_CTX *ctx;
-
-	ebuf[0] = 0;
 
 	ctx = X509_STORE_CTX_new();
 
@@ -430,8 +432,7 @@ static int pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7, char *ebuf, int eb
 	if (sk == NULL)
 	{
 		/* there are no signatures on this data */
-		res = 0;
-		fz_strlcpy(ebuf, "No signatures", ebufsize);
+		res = SignatureError_NoSignatures;
 		goto exit;
 	}
 
@@ -443,8 +444,7 @@ static int pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7, char *ebuf, int eb
 		X509 *cert = pk7_signer(certs, si);
 		if (cert == NULL)
 		{
-			res = 0;
-			fz_strlcpy(ebuf, "Certificate missing", ebufsize);
+			res = SignatureError_NoCertificate;
 			goto exit;
 		}
 
@@ -474,16 +474,21 @@ static int pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7, char *ebuf, int eb
 		X509_verify_cert(ctx);
 		X509_STORE_CTX_cleanup(ctx);
 		ctx_err = X509_STORE_CTX_get_error(ctx);
-		if (ctx_err != X509_V_OK)
+		switch (ctx_err)
 		{
-			int used;
-			fz_snprintf(ebuf, ebufsize, "%s(%d): ", X509_verify_cert_error_string(ctx_err), ctx_err);
-			used = strlen(ebuf);
-			X509_NAME_oneline(X509_get_subject_name(cert), ebuf + used, ebufsize - used);
-
-			res = 0;
-			goto exit;
+		case X509_V_OK:
+			res = SignatureError_Okay;
+			break;
+		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+			res = SignatureError_SelfSigned;
+			break;
+		case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+			res = SignatureError_SelfSignedInChain;
+			break;
+		default:
+			break;
 		}
+		goto exit;
 	}
 
 exit:
@@ -493,14 +498,14 @@ exit:
 	return res;
 }
 
-static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)
+SignatureError pdf_signature_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	STACK_OF(X509) *certs = NULL;
-	int res = 0;
+	int res = SignatureError_Unknown;
 
 	bsig = BIO_new_mem_buf(sig, sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
@@ -518,7 +523,7 @@ static int verify_sig(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, i
 	BIO_set_next(bsegs, bdata);
 	BIO_set_segments(bsegs, byte_range, byte_range_len);
 
-	res = pk7_verify_sig(pk7sig, bsegs, ebuf, ebufsize);
+	res = pk7_verify_sig(pk7sig, bsegs);
 
 exit:
 	BIO_free(bsig);
@@ -529,7 +534,7 @@ exit:
 	return res;
 }
 
-static int verify_cert(fz_context *ctx, char *sig, int sig_len, char *ebuf, int ebufsize)
+SignatureError pdf_signature_check_certificate(char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -568,7 +573,7 @@ static int verify_cert(fz_context *ctx, char *sig, int sig_len, char *ebuf, int 
 		}
 	}
 
-	res = pk7_verify_cert(st, pk7sig, ebuf, ebufsize);
+	res = pk7_verify_cert(st, pk7sig);
 
 exit:
 	BIO_free(bsig);
@@ -760,12 +765,31 @@ void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 	}
 }
 
-pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *signer)
+void pdf_print_designated_name(pdf_designated_name *name, char *buf, int buflen)
+{
+	int i, n;
+	const char *part[] = {
+		"/CN=", name->cn,
+		"/O=", name->o,
+		"/OU=", name->ou,
+		"/emailAddress=", name->email,
+		"/C=", name->c};
+
+	if (buflen)
+		buf[0] = 0;
+
+	n = sizeof(part)/sizeof(*part);
+	for (i = 0; i < n; i++)
+		if (part[i])
+			fz_strlcat(buf, part[i], buflen);
+}
+
+static pdf_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
 {
 	pdf_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_designated_name_openssl);
 	char *p;
 
-	X509_NAME_oneline(X509_get_subject_name(signer->x509), dn->buf, sizeof(dn->buf));
+	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
 	p = strstr(dn->buf, "/CN=");
 	if (p) dn->base.cn = p+4;
 	p = strstr(dn->buf, "/O=");
@@ -782,6 +806,11 @@ pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *sig
 			*p = 0;
 
 	return (pdf_designated_name *)dn;
+}
+
+pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *signer)
+{
+	return x509_designated_name(ctx, signer->x509);
 }
 
 void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
@@ -896,6 +925,34 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	}
 }
 
+static pdf_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
+{
+	pdf_designated_name *name = NULL;
+	PKCS7 *pk7sig = NULL;
+	BIO *bsig = NULL;
+	STACK_OF(PKCS7_SIGNER_INFO) *sk = NULL;
+	X509 *x509 = NULL;
+
+	bsig = BIO_new_mem_buf(sig, sig_len);
+	pk7sig = d2i_PKCS7_bio(bsig, NULL);
+	if (pk7sig == NULL)
+		goto exit;
+
+	sk = PKCS7_get_signer_info(pk7sig);
+	if (sk == NULL || sk_PKCS7_SIGNER_INFO_num(sk) <= 0)
+		goto exit;
+
+	x509 = pk7_signer(pk7_certs(pk7sig), sk_PKCS7_SIGNER_INFO_value(sk, 0));
+
+	name = x509_designated_name(ctx, x509);
+
+exit:
+	BIO_free(bsig);
+	PKCS7_free(pk7sig);
+
+	return name;
+}
+
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
 {
 	int (*byte_range)[2] = NULL;
@@ -926,9 +983,60 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
 		if (byte_range && contents)
 		{
-			res = verify_sig(ctx, doc->file, contents, contents_len, byte_range, byte_range_len, ebuf, ebufsize);
-			if (res)
-				res = verify_cert(ctx, contents, contents_len, ebuf, ebufsize);
+			SignatureError err = pdf_signature_check_digest(ctx, doc->file, contents, contents_len, byte_range, byte_range_len);
+			if (err == SignatureError_Okay)
+				err = pdf_signature_check_certificate(contents, contents_len);
+			switch (err)
+			{
+			case SignatureError_Okay:
+				ebuf[0] = 0;
+				res = 1;
+				break;
+			case SignatureError_NoSignatures:
+				fz_strlcpy(ebuf, "No signatures", ebufsize);
+				break;
+			case SignatureError_NoCertificate:
+				fz_strlcpy(ebuf, "No certificate", ebufsize);
+				break;
+			case SignatureError_DocumentChanged:
+				fz_strlcpy(ebuf, "Document changed since signing", ebufsize);
+				break;
+			case SignatureError_SelfSigned:
+				fz_strlcpy(ebuf, "Self-signed certificate", ebufsize);
+				break;
+			case SignatureError_SelfSignedInChain:
+				fz_strlcpy(ebuf, "Self-signed certificate in chain", ebufsize);
+				break;
+			case SignatureError_NotTrusted:
+				fz_strlcpy(ebuf, "Certificate not trusted", ebufsize);
+				break;
+			default:
+			case SignatureError_Unknown:
+				fz_strlcpy(ebuf, "Unknown error", ebufsize);
+				break;
+			}
+
+			switch (err)
+			{
+			case SignatureError_SelfSigned:
+			case SignatureError_SelfSignedInChain:
+			case SignatureError_NotTrusted:
+				{
+					pdf_designated_name *name = pdf_cert_designated_name(ctx, contents, contents_len);
+					if (name)
+					{
+						int len;
+
+						fz_strlcat(ebuf, ": ", ebufsize);
+						len = strlen(ebuf);
+						pdf_print_designated_name(name, ebuf + len, ebufsize - len);
+						pdf_drop_designated_name(ctx, name);
+					}
+				}
+				break;
+			default:
+				break;
+			}
 		}
 		else
 		{

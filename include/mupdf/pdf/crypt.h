@@ -21,6 +21,18 @@ unsigned char *pdf_crypt_key(fz_context *ctx, pdf_document *doc);
 
 void pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt);
 
+typedef enum
+{
+	SignatureError_Okay,
+	SignatureError_NoSignatures,
+	SignatureError_NoCertificate,
+	SignatureError_DocumentChanged,
+	SignatureError_SelfSigned,
+	SignatureError_SelfSignedInChain,
+	SignatureError_NotTrusted,
+	SignatureError_Unknown
+} SignatureError;
+
 typedef struct pdf_designated_name_s
 {
 	char *cn;
