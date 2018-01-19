@@ -105,7 +105,7 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i);
 void pdf_replace_xref(fz_context *ctx, pdf_document *doc, pdf_xref_entry *entries, int n);
 void pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int num);
 int pdf_xref_is_incremental(fz_context *ctx, pdf_document *doc, int num);
-void pdf_xref_store_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_signer *signer);
+void pdf_xref_store_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer);
 int pdf_xref_obj_is_unsaved_signature(pdf_document *doc, pdf_obj *obj);
 
 void pdf_repair_xref(fz_context *ctx, pdf_document *doc);

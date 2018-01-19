@@ -498,7 +498,7 @@ exit:
 	return res;
 }
 
-SignatureError pdf_signature_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
+SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
@@ -534,7 +534,7 @@ exit:
 	return res;
 }
 
-SignatureError pdf_signature_check_certificate(char *sig, int sig_len)
+SignatureError pdf_pkcs7_check_certificate(char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -585,20 +585,20 @@ exit:
 	return res;
 }
 
-typedef struct pdf_designated_name_openssl_s
+typedef struct pdf_pkcs7_designated_name_openssl_s
 {
-	pdf_designated_name base;
+	pdf_pkcs7_designated_name base;
 	char buf[8192];
-} pdf_designated_name_openssl;
+} pdf_pkcs7_designated_name_openssl;
 
-struct pdf_signer_s
+struct pdf_pkcs7_signer_s
 {
 	int refs;
 	X509 *x509;
 	EVP_PKEY *pkey;
 };
 
-void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn)
+void pdf_pkcs7_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
 {
 	fz_free(ctx, dn);
 }
@@ -664,12 +664,12 @@ static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, const STACK_OF(PKCS12_
 		add_from_bag(pX509, pPkey, sk_PKCS12_SAFEBAG_value(bags, i), pw);
 }
 
-pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
+pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 {
 	BIO *pfxbio = NULL;
 	PKCS12 *p12 = NULL;
 	STACK_OF(PKCS7) *asafes;
-	pdf_signer *signer = NULL;
+	pdf_pkcs7_signer *signer = NULL;
 	int i;
 
 	fz_var(pfxbio);
@@ -677,7 +677,7 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 	fz_var(signer);
 	fz_try(ctx)
 	{
-		signer = fz_malloc_struct(ctx, pdf_signer);
+		signer = fz_malloc_struct(ctx, pdf_pkcs7_signer);
 		signer->refs = 1;
 
 		OpenSSL_add_all_algorithms();
@@ -743,19 +743,19 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_signer(ctx, signer);
+		pdf_pkcs7_drop_signer(ctx, signer);
 		fz_rethrow(ctx);
 	}
 
 	return signer;
 }
 
-pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer)
+pdf_pkcs7_signer *pdf_pkcs7_keep_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	return fz_keep_imp(ctx, signer, &signer->refs);
 }
 
-void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
+void pdf_pkcs7_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	if (fz_drop_imp(ctx, signer, &signer->refs))
 	{
@@ -765,28 +765,9 @@ void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 	}
 }
 
-void pdf_print_designated_name(pdf_designated_name *name, char *buf, int buflen)
+static pdf_pkcs7_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
 {
-	int i, n;
-	const char *part[] = {
-		"/CN=", name->cn,
-		"/O=", name->o,
-		"/OU=", name->ou,
-		"/emailAddress=", name->email,
-		"/C=", name->c};
-
-	if (buflen)
-		buf[0] = 0;
-
-	n = sizeof(part)/sizeof(*part);
-	for (i = 0; i < n; i++)
-		if (part[i])
-			fz_strlcat(buf, part[i], buflen);
-}
-
-static pdf_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
-{
-	pdf_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_designated_name_openssl);
+	pdf_pkcs7_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
 	char *p;
 
 	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
@@ -805,17 +786,17 @@ static pdf_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
 		if (*p == '/')
 			*p = 0;
 
-	return (pdf_designated_name *)dn;
+	return (pdf_pkcs7_designated_name *)dn;
 }
 
-pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *signer)
+pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	return x509_designated_name(ctx, signer->x509);
 }
 
-void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int brange_len, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
 {
-	fz_stream *in = NULL;
+	int res = 0;
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	BIO *bp7in = NULL;
@@ -823,111 +804,80 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	PKCS7 *p7 = NULL;
 	PKCS7_SIGNER_INFO *si;
 
-	int (*brange)[2] = NULL;
-	int brange_len = pdf_array_len(ctx, byte_range)/2;
+	unsigned char *p7_ptr;
+	int p7_len;
 
-	fz_var(in);
-	fz_var(bdata);
-	fz_var(bsegs);
-	fz_var(bp7in);
-	fz_var(bp7);
-	fz_var(p7);
+	bdata = BIO_new_stream(ctx, in);
+	if (bdata == NULL)
+		goto exit;
 
-	fz_try(ctx)
+	bsegs = BIO_new(BIO_f_segments());
+	if (bsegs == NULL)
+		goto exit;
+
+	BIO_set_next(bsegs, bdata);
+	BIO_set_segments(bsegs, brange, brange_len);
+
+	p7 = PKCS7_new();
+	if (p7 == NULL)
+		goto exit;
+
+	PKCS7_set_type(p7, NID_pkcs7_signed);
+	si = PKCS7_add_signature(p7, signer->x509, signer->pkey, EVP_sha1());
+	if (si == NULL)
+		goto exit;
+
+	PKCS7_add_signed_attribute(si, NID_pkcs9_contentType, V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data));
+	PKCS7_add_certificate(p7, signer->x509);
+
+	PKCS7_content_new(p7, NID_pkcs7_data);
+	PKCS7_set_detached(p7, 1);
+
+	bp7in = PKCS7_dataInit(p7, NULL);
+	if (bp7in == NULL)
+		goto exit;
+
+	while(1)
 	{
-		unsigned char *p7_ptr;
-		int p7_len;
-		int i;
-
-		in = fz_stream_from_output(ctx, out);
-
-		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
-		for (i = 0; i < brange_len; i++)
-		{
-			brange[i][0] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i));
-			brange[i][1] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
-		}
-
-		bdata = BIO_new_stream(ctx, in);
-		if (bdata == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create file BIO");
-
-		bsegs = BIO_new(BIO_f_segments());
-		if (bsegs == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create segment filter");
-
-		BIO_set_next(bsegs, bdata);
-		BIO_set_segments(bsegs, brange, brange_len);
-
-		p7 = PKCS7_new();
-		if (p7 == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create p7 object");
-
-		PKCS7_set_type(p7, NID_pkcs7_signed);
-		si = PKCS7_add_signature(p7, signer->x509, signer->pkey, EVP_sha1());
-		if (si == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to add signature");
-
-		PKCS7_add_signed_attribute(si, NID_pkcs9_contentType, V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data));
-		PKCS7_add_certificate(p7, signer->x509);
-
-		PKCS7_content_new(p7, NID_pkcs7_data);
-		PKCS7_set_detached(p7, 1);
-
-		bp7in = PKCS7_dataInit(p7, NULL);
-		if (bp7in == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to write to digest");
-
-		while(1)
-		{
-			char buf[4096];
-			int n = BIO_read(bsegs, buf, sizeof(buf));
-			if (n <= 0)
-				break;
-			BIO_write(bp7in, buf, n);
-		}
-
-		if (!PKCS7_dataFinal(p7, bp7in))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to write to digest");
-
-		BIO_free(bsegs);
-		bsegs = NULL;
-		BIO_free(bdata);
-		bdata = NULL;
-		fz_drop_stream(ctx, in);
-		in = NULL;
-
-		bp7 = BIO_new(BIO_s_mem());
-		if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create memory buffer for digest");
-
-		p7_len = BIO_get_mem_data(bp7, &p7_ptr);
-		if (p7_len*2 + 2 > digest_length)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Insufficient space for digest");
-
-		fz_seek_output(ctx, out, digest_offset+1, SEEK_SET);
-
-		for (i = 0; i < p7_len; i++)
-			fz_write_printf(ctx, out, "%02x", p7_ptr[i]);
+		char buf[4096];
+		int n = BIO_read(bsegs, buf, sizeof(buf));
+		if (n <= 0)
+			break;
+		BIO_write(bp7in, buf, n);
 	}
-	fz_always(ctx)
-	{
-		fz_drop_stream(ctx, in);
-		PKCS7_free(p7);
-		BIO_free(bsegs);
-		BIO_free(bdata);
-		BIO_free(bp7in);
-		BIO_free(bp7);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+
+	if (!PKCS7_dataFinal(p7, bp7in))
+		goto exit;
+
+	BIO_free(bsegs);
+	bsegs = NULL;
+	BIO_free(bdata);
+	bdata = NULL;
+
+	bp7 = BIO_new(BIO_s_mem());
+	if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
+		goto exit;
+
+	p7_len = BIO_get_mem_data(bp7, &p7_ptr);
+	if (p7_len > *digest_len)
+		goto exit;
+
+	memcpy(digest, p7_ptr, p7_len);
+	*digest_len = p7_len;
+	res = 1;
+
+exit:
+	PKCS7_free(p7);
+	BIO_free(bsegs);
+	BIO_free(bdata);
+	BIO_free(bp7in);
+	BIO_free(bp7);
+	return res;
 }
 
-static pdf_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
+pdf_pkcs7_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
 {
-	pdf_designated_name *name = NULL;
+	pdf_pkcs7_designated_name *name = NULL;
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk = NULL;
@@ -953,197 +903,58 @@ exit:
 	return name;
 }
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
-{
-	int (*byte_range)[2] = NULL;
-	int byte_range_len;
-	char *contents = NULL;
-	int contents_len;
-	int res = 0;
 
-	if (pdf_xref_obj_is_unsaved_signature(doc, ((pdf_annot *)widget)->obj))
-	{
-		fz_strlcpy(ebuf, "Signed but document yet to be saved", ebufsize);
-		if (ebufsize > 0)
-			ebuf[ebufsize-1] = 0;
-		return 0;
-	}
-
-	fz_var(byte_range);
-	fz_var(res);
-	fz_try(ctx)
-	{
-		byte_range_len = pdf_signature_widget_byte_range(ctx, doc, widget, NULL);
-		if (byte_range_len)
-		{
-			byte_range = fz_calloc(ctx, byte_range_len, sizeof(*byte_range));
-			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
-		}
-
-		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
-		if (byte_range && contents)
-		{
-			SignatureError err = pdf_signature_check_digest(ctx, doc->file, contents, contents_len, byte_range, byte_range_len);
-			if (err == SignatureError_Okay)
-				err = pdf_signature_check_certificate(contents, contents_len);
-			switch (err)
-			{
-			case SignatureError_Okay:
-				ebuf[0] = 0;
-				res = 1;
-				break;
-			case SignatureError_NoSignatures:
-				fz_strlcpy(ebuf, "No signatures", ebufsize);
-				break;
-			case SignatureError_NoCertificate:
-				fz_strlcpy(ebuf, "No certificate", ebufsize);
-				break;
-			case SignatureError_DocumentChanged:
-				fz_strlcpy(ebuf, "Document changed since signing", ebufsize);
-				break;
-			case SignatureError_SelfSigned:
-				fz_strlcpy(ebuf, "Self-signed certificate", ebufsize);
-				break;
-			case SignatureError_SelfSignedInChain:
-				fz_strlcpy(ebuf, "Self-signed certificate in chain", ebufsize);
-				break;
-			case SignatureError_NotTrusted:
-				fz_strlcpy(ebuf, "Certificate not trusted", ebufsize);
-				break;
-			default:
-			case SignatureError_Unknown:
-				fz_strlcpy(ebuf, "Unknown error", ebufsize);
-				break;
-			}
-
-			switch (err)
-			{
-			case SignatureError_SelfSigned:
-			case SignatureError_SelfSignedInChain:
-			case SignatureError_NotTrusted:
-				{
-					pdf_designated_name *name = pdf_cert_designated_name(ctx, contents, contents_len);
-					if (name)
-					{
-						int len;
-
-						fz_strlcat(ebuf, ": ", ebufsize);
-						len = strlen(ebuf);
-						pdf_print_designated_name(name, ebuf + len, ebufsize - len);
-						pdf_drop_designated_name(ctx, name);
-					}
-				}
-				break;
-			default:
-				break;
-			}
-		}
-		else
-		{
-			res = 0;
-			fz_strlcpy(ebuf, "Not signed", ebufsize);
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, byte_range);
-	}
-	fz_catch(ctx)
-	{
-		res = 0;
-		fz_strlcpy(ebuf, fz_caught_message(ctx), ebufsize);
-	}
-
-	if (ebufsize > 0)
-		ebuf[ebufsize-1] = 0;
-
-	return res;
-}
-
-void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
-{
-	pdf_signer *signer = pdf_read_pfx(ctx, sigfile, password);
-	pdf_designated_name *dn = NULL;
-	fz_buffer *fzbuf = NULL;
-
-	fz_try(ctx)
-	{
-		const char *dn_str;
-		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
-		fz_rect rect = fz_empty_rect;
-
-		pdf_signature_set_value(ctx, doc, wobj, signer);
-
-		pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME_Rect), &rect);
-		/* Create an appearance stream only if the signature is intended to be visible */
-		if (!fz_is_empty_rect(&rect))
-		{
-			dn = pdf_signer_designated_name(ctx, signer);
-			fzbuf = fz_new_buffer(ctx, 256);
-			if (!dn->cn)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name");
-
-			fz_append_printf(ctx, fzbuf, "cn=%s", dn->cn);
-
-			if (dn->o)
-				fz_append_printf(ctx, fzbuf, ", o=%s", dn->o);
-
-			if (dn->ou)
-				fz_append_printf(ctx, fzbuf, ", ou=%s", dn->ou);
-
-			if (dn->email)
-				fz_append_printf(ctx, fzbuf, ", email=%s", dn->email);
-
-			if (dn->c)
-				fz_append_printf(ctx, fzbuf, ", c=%s", dn->c);
-
-			dn_str = fz_string_from_buffer(ctx, fzbuf);
-			pdf_set_signature_appearance(ctx, doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
-		}
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_signer(ctx, signer);
-		pdf_drop_designated_name(ctx, dn);
-		fz_drop_buffer(ctx, fzbuf);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
-int pdf_signatures_supported(fz_context *ctx)
+int pdf_pkcs7_supported(fz_context *ctx)
 {
 	return 1;
 }
 
 #else /* HAVE_LIBCRYPTO */
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
+SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
 {
-	fz_strlcpy(ebuf, "This version of MuPDF was built without signature support", ebufsize);
-	return 0;
+	return SignatureError_Unknown;
 }
 
-void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
+SignatureError pdf_pkcs7_check_certificate(char *sig, int sig_len)
 {
+	return SignatureError_Unknown;
 }
 
-pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer)
+pdf_pkcs7_designated_name *pdf_cert_designated_name(fz_context *ctx, char *sig, int sig_len)
 {
 	return NULL;
 }
 
-void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
+void pdf_pkcs7_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
 {
 }
 
-void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+pdf_pkcs7_signer *pdf_pkcs7_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
+{
+	return NULL;
+}
+
+pdf_pkcs7_signer *pdf_pkcs7_keep_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
+{
+	return NULL;
+}
+
+void pdf_pkcs7_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 }
 
-int pdf_signatures_supported(fz_context *ctx)
+pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer)
+{
+	return NULL;
+}
+
+int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int brange_len, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
+{
+	return 0;
+}
+
+int pdf_pkcs7_supported(fz_context *ctx)
 {
 	return 0;
 }

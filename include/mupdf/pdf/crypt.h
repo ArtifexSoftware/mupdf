@@ -21,35 +21,7 @@ unsigned char *pdf_crypt_key(fz_context *ctx, pdf_document *doc);
 
 void pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt);
 
-typedef enum
-{
-	SignatureError_Okay,
-	SignatureError_NoSignatures,
-	SignatureError_NoCertificate,
-	SignatureError_DocumentChanged,
-	SignatureError_SelfSigned,
-	SignatureError_SelfSignedInChain,
-	SignatureError_NotTrusted,
-	SignatureError_Unknown
-} SignatureError;
-
-typedef struct pdf_designated_name_s
-{
-	char *cn;
-	char *o;
-	char *ou;
-	char *email;
-	char *c;
-}
-pdf_designated_name;
-
-void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn);
-
-pdf_signer *pdf_read_pfx(fz_context *ctx, const char *sigfile, const char *password);
-pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer);
-void pdf_drop_signer(fz_context *ctx, pdf_signer *signer);
-pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *signer);
-void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer);
+void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_pkcs7_signer *signer);
 
 /*
 	pdf_signature_widget_byte_range: retrieve the byte range for a signature widget

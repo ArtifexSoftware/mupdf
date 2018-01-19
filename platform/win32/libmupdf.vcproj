@@ -2161,6 +2161,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-signature.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-store.c"
 				>
 			</File>
@@ -2281,6 +2285,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\parse.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\pdf\pdf-pkcs7.h"
 					>
 				</File>
 				<File

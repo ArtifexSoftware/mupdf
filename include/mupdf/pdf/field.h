@@ -45,7 +45,7 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text);
 void pdf_field_set_fill_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col);
 void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col);
-void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_signer *signer);
+void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer);
 int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d);

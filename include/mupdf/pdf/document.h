@@ -535,7 +535,7 @@ void pdf_update_page(fz_context *ctx, pdf_page *page);
 */
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc);
 
-typedef struct pdf_signer_s pdf_signer;
+typedef struct pdf_pkcs7_signer_s pdf_pkcs7_signer;
 
 /* Unsaved signature fields */
 typedef struct pdf_unsaved_sig_s pdf_unsaved_sig;
@@ -547,7 +547,7 @@ struct pdf_unsaved_sig_s
 	int byte_range_end;
 	int contents_start;
 	int contents_end;
-	pdf_signer *signer;
+	pdf_pkcs7_signer *signer;
 	pdf_unsaved_sig *next;
 };
 
