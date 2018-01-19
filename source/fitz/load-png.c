@@ -7,6 +7,7 @@
 struct info
 {
 	unsigned int width, height, depth, n;
+	enum fz_colorspace_type type;
 	int interlace, indexed;
 	unsigned int size;
 	unsigned char *samples;
@@ -256,15 +257,16 @@ png_read_ihdr(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 
 	info->indexed = 0;
 	if (color == 0) /* gray */
-		info->n = 1;
+		info->n = 1, info->type = FZ_COLORSPACE_GRAY;
 	else if (color == 2) /* rgb */
-		info->n = 3;
+		info->n = 3, info->type = FZ_COLORSPACE_RGB;
 	else if (color == 4) /* gray alpha */
-		info->n = 2;
+		info->n = 2, info->type = FZ_COLORSPACE_GRAY;
 	else if (color == 6) /* rgb alpha */
-		info->n = 4;
+		info->n = 4, info->type = FZ_COLORSPACE_RGB;
 	else if (color == 3) /* indexed */
 	{
+		info->type = FZ_COLORSPACE_RGB; /* after colorspace expansion it will be */
 		info->indexed = 1;
 		info->n = 1;
 	}
@@ -527,6 +529,13 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 			fz_free(ctx, info->samples);
 			fz_rethrow(ctx);
 		}
+	}
+
+	if (info->cs && fz_colorspace_type(ctx, info->cs) != info->type)
+	{
+		fz_warn(ctx, "embedded ICC profile does not match PNG colorspace");
+		fz_drop_colorspace(ctx, info->cs);
+		info->cs = NULL;
 	}
 
 	if (info->cs == NULL)
