@@ -401,6 +401,9 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 
 			switch (tok)
 			{
+			case PDF_TOK_EOF:
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "array not closed before end of file");
+
 			case PDF_TOK_CLOSE_ARRAY:
 				op = ary;
 				goto end;
