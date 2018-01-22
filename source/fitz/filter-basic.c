@@ -15,6 +15,9 @@ fz_open_copy(fz_context *ctx, fz_stream *chain)
 struct null_filter
 {
 	fz_stream *chain;
+	fz_range *ranges;
+	int nranges;
+	int next_range;
 	size_t remain;
 	int64_t offset;
 	unsigned char buffer[4096];
@@ -25,6 +28,13 @@ next_null(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	struct null_filter *state = stm->state;
 	size_t n;
+
+	while (state->remain == 0 && state->next_range < state->nranges)
+	{
+		fz_range *range = &state->ranges[state->next_range++];
+		state->remain = range->len;
+		state->offset = range->offset;
+	}
 
 	if (state->remain == 0)
 		return EOF;
@@ -51,32 +61,52 @@ close_null(fz_context *ctx, void *state_)
 {
 	struct null_filter *state = (struct null_filter *)state_;
 	fz_stream *chain = state->chain;
+	fz_free(ctx, state->ranges);
 	fz_free(ctx, state);
 	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
+fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
 {
 	struct null_filter *state = NULL;
 
-	if (len < 0)
-		len = 0;
+	fz_var(state);
 	fz_try(ctx)
 	{
 		state = fz_malloc_struct(ctx, struct null_filter);
+		state->ranges = fz_calloc(ctx, nranges, sizeof(*ranges));
+		memcpy(state->ranges, ranges, nranges * sizeof(*ranges));
+		state->nranges = nranges;
+		state->next_range = 1;
 		state->chain = chain;
-		state->remain = len;
-		state->offset = offset;
+		state->remain = nranges ? ranges[0].len : 0;
+		state->offset = nranges ? ranges[0].offset : 0;
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, state->ranges);
+		fz_free(ctx, state);
 		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
 	return fz_new_stream(ctx, state, next_null, close_null);
 }
+
+fz_stream *
+fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
+{
+	fz_range range;
+
+	if (len < 0)
+		len = 0;
+
+	range.offset = offset;
+	range.len = len;
+	return fz_open_null_n(ctx, chain, &range, 1);
+}
+
 
 /* Concat filter concatenates several streams into one */
 
