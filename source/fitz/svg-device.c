@@ -66,6 +66,8 @@ struct svg_device_s
 	int num_images;
 	int max_images;
 	image *images;
+
+	int layers;
 };
 
 /* SVG is awkward about letting us define things within symbol definitions
@@ -1163,10 +1165,40 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
+svg_dev_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
+{
+	svg_device *sdev = (svg_device*)dev;
+	fz_output *out = sdev->out;
+
+	sdev->layers++;
+	fz_write_printf(ctx, out, "<g id=\"Layer-%d\" data-name=\"%s\">\n", sdev->layers, name);
+}
+
+static void
+svg_dev_end_layer(fz_context *ctx, fz_device *dev)
+{
+	svg_device *sdev = (svg_device*)dev;
+	fz_output *out = sdev->out;
+
+	if (sdev->layers == 0)
+		return;
+
+	sdev->layers--;
+	fz_write_printf(ctx, out, "</g>\n");
+}
+
+static void
 svg_dev_close_device(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
+
+	while (sdev->layers > 0)
+	{
+		fz_write_printf(ctx, out, "</g>\n");
+		sdev->layers--;
+	}
+
 	fz_write_printf(ctx, out, "</svg>\n");
 }
 
@@ -1225,11 +1257,15 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	dev->super.begin_tile = svg_dev_begin_tile;
 	dev->super.end_tile = svg_dev_end_tile;
 
+	dev->super.begin_layer = svg_dev_begin_layer;
+	dev->super.end_layer = svg_dev_end_layer;
+
 	dev->super.hints |= FZ_MAINTAIN_CONTAINER_STACK;
 
 	dev->out = out;
 	dev->out_store = out;
 	dev->id = 0;
+	dev->layers = 0;
 	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
 	dev->reuse_images = reuse_images;
 

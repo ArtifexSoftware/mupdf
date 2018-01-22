@@ -115,6 +115,9 @@ struct fz_device_s
 	void (*render_flags)(fz_context *, fz_device *, int set, int clear);
 	void (*set_default_colorspaces)(fz_context *, fz_device *, fz_default_colorspaces *);
 
+	void (*begin_layer)(fz_context *, fz_device *, const char *layer_name);
+	void (*end_layer)(fz_context *, fz_device *);
+
 	fz_rect d1_rect;
 
 	int error_depth;
@@ -148,6 +151,8 @@ int fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const
 void fz_end_tile(fz_context *ctx, fz_device *dev);
 void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
 void fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs);
+void fz_begin_layer(fz_context *ctx, fz_device *dev, const char *layer_name);
+void fz_end_layer(fz_context *ctx, fz_device *dev);
 fz_device *fz_new_device_of_size(fz_context *ctx, int size);
 
 #define fz_new_derived_device(CTX, TYPE) \

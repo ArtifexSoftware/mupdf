@@ -31,7 +31,9 @@ typedef enum fz_display_command_e
 	FZ_CMD_BEGIN_TILE,
 	FZ_CMD_END_TILE,
 	FZ_CMD_RENDER_FLAGS,
-	FZ_CMD_DEFAULT_COLORSPACES
+	FZ_CMD_DEFAULT_COLORSPACES,
+	FZ_CMD_BEGIN_LAYER,
+	FZ_CMD_END_LAYER
 } fz_display_command;
 
 /* The display list is a list of nodes.
@@ -165,7 +167,7 @@ fz_append_display_node(
 	const float *alpha,
 	const fz_matrix *ctm,
 	const fz_stroke_state *stroke,
-	void *private_data,
+	const void *private_data,
 	int private_data_len)
 {
 	fz_display_node node = { 0 };
@@ -1262,6 +1264,44 @@ fz_list_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colo
 }
 
 static void
+fz_list_begin_layer(fz_context *ctx, fz_device *dev, const char *layer_name)
+{
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_BEGIN_LAYER,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL,
+		NULL, /* stroke */
+		layer_name, /* private_data */
+		1+strlen(layer_name)); /* private_data_len */
+}
+
+static void
+fz_list_end_layer(fz_context *ctx, fz_device *dev)
+{
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_END_LAYER,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL, /* ctm */
+		NULL, /* stroke */
+		NULL, /* private_data */
+		0); /* private_data_len */
+}
+
+static void
 fz_list_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
@@ -1306,6 +1346,9 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev->super.render_flags = fz_list_render_flags;
 	dev->super.set_default_colorspaces = fz_list_set_default_colorspaces;
+
+	dev->super.begin_layer = fz_list_begin_layer;
+	dev->super.end_layer = fz_list_end_layer;
 
 	dev->super.drop_device = fz_list_drop_device;
 
@@ -1645,7 +1688,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 
 		if (tiled ||
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
-			n.cmd == FZ_CMD_RENDER_FLAGS || n.cmd == FZ_CMD_DEFAULT_COLORSPACES)
+			n.cmd == FZ_CMD_RENDER_FLAGS || n.cmd == FZ_CMD_DEFAULT_COLORSPACES ||
+			n.cmd == FZ_CMD_BEGIN_LAYER || n.cmd == FZ_CMD_END_LAYER)
 		{
 			empty = 0;
 		}
@@ -1777,6 +1821,12 @@ visible:
 				break;
 			case FZ_CMD_DEFAULT_COLORSPACES:
 				fz_set_default_colorspaces(ctx, dev, *(fz_default_colorspaces **)node);
+				break;
+			case FZ_CMD_BEGIN_LAYER:
+				fz_begin_layer(ctx, dev, (const char *)node);
+				break;
+			case FZ_CMD_END_LAYER:
+				fz_end_layer(ctx, dev);
 				break;
 			}
 		}

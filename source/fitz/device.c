@@ -528,6 +528,18 @@ fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspac
 		dev->set_default_colorspaces(ctx, dev, default_cs);
 }
 
+void fz_begin_layer(fz_context *ctx, fz_device *dev, const char *layer_name)
+{
+	if (dev->begin_layer)
+		dev->begin_layer(ctx, dev, layer_name);
+}
+
+void fz_end_layer(fz_context *ctx, fz_device *dev)
+{
+	if (dev->end_layer)
+		dev->end_layer(ctx, dev);
+}
+
 const fz_rect *
 fz_device_current_scissor(fz_context *ctx, fz_device *dev)
 {
