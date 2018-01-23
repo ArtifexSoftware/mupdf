@@ -303,7 +303,7 @@ lex_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 		switch (c)
 		{
 		case EOF:
-			goto end;
+			return PDF_TOK_ERROR;
 		case '(':
 			bal++;
 			*s++ = c;
@@ -319,7 +319,7 @@ lex_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 			switch (c)
 			{
 			case EOF:
-				goto end;
+				return PDF_TOK_ERROR;
 			case 'n':
 				*s++ = '\n';
 				break;
@@ -414,8 +414,9 @@ lex_hex_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 			}
 			break;
 		case '>':
-		case EOF:
 			goto end;
+		case EOF:
+			return PDF_TOK_ERROR;
 		default:
 			fz_warn(ctx, "ignoring invalid character in hex string");
 		}
