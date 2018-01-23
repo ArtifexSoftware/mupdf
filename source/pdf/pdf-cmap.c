@@ -520,7 +520,7 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					/* case 3, reduces to case 5 */
 					int new_high = tree[current].high;
 					tree[current].high = low-1;
-					add_range(ctx, cmap, high+1, new_high, tree[current].out + high + 1 - tree[current].low, 0, many);
+					add_range(ctx, cmap, high+1, new_high, tree[current].out + high + 1 - tree[current].low, 0, tree[current].many);
 				}
 				/* Now look for where to move to next (left for case 0, right for case 5) */
 				if (tree[current].low > high) {
