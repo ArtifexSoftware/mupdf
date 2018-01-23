@@ -515,11 +515,12 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 			}
 
 			else if (tok == PDF_TOK_EOF)
+			{
 				break;
+			}
+
 			else
 			{
-				if (tok == PDF_TOK_ERROR)
-					fz_read_byte(ctx, doc->file);
 				num = 0;
 				gen = 0;
 			}

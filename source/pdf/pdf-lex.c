@@ -521,32 +521,21 @@ pdf_lex(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
 		case '(':
 			return lex_string(ctx, f, buf);
 		case ')':
-			fz_warn(ctx, "lexical error (unexpected ')')");
-			continue;
+			return PDF_TOK_ERROR;
 		case '<':
 			c = fz_read_byte(ctx, f);
 			if (c == '<')
-			{
 				return PDF_TOK_OPEN_DICT;
-			}
-			else
-			{
+			if (c != EOF)
 				fz_unread_byte(ctx, f);
-				return lex_hex_string(ctx, f, buf);
-			}
+			return lex_hex_string(ctx, f, buf);
 		case '>':
 			c = fz_read_byte(ctx, f);
 			if (c == '>')
-			{
 				return PDF_TOK_CLOSE_DICT;
-			}
-			fz_warn(ctx, "lexical error (unexpected '>')");
-			if (c == EOF)
-			{
-				return PDF_TOK_EOF;
-			}
-			fz_unread_byte(ctx, f);
-			continue;
+			if (c != EOF)
+				fz_unread_byte(ctx, f);
+			return PDF_TOK_ERROR;
 		case '[':
 			return PDF_TOK_OPEN_ARRAY;
 		case ']':
@@ -585,31 +574,23 @@ pdf_lex_no_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
 			lex_name(ctx, f, buf);
 			return PDF_TOK_NAME;
 		case '(':
-			continue;
+			return PDF_TOK_ERROR; /* no strings allowed */
 		case ')':
-			continue;
+			return PDF_TOK_ERROR; /* no strings allowed */
 		case '<':
 			c = fz_read_byte(ctx, f);
 			if (c == '<')
-			{
 				return PDF_TOK_OPEN_DICT;
-			}
-			else
-			{
-				continue;
-			}
+			if (c != EOF)
+				fz_unread_byte(ctx, f);
+			return PDF_TOK_ERROR; /* no strings allowed */
 		case '>':
 			c = fz_read_byte(ctx, f);
 			if (c == '>')
-			{
 				return PDF_TOK_CLOSE_DICT;
-			}
-			if (c == EOF)
-			{
-				return PDF_TOK_EOF;
-			}
-			fz_unread_byte(ctx, f);
-			continue;
+			if (c != EOF)
+				fz_unread_byte(ctx, f);
+			return PDF_TOK_ERROR;
 		case '[':
 			return PDF_TOK_OPEN_ARRAY;
 		case ']':
