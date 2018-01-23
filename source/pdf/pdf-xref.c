@@ -1386,7 +1386,8 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		if (repaired)
 		{
 			/* pdf_repair_xref may access xref_index, so reset it properly */
-			memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
+			if (doc->xref_index)
+				memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
 			pdf_repair_xref(ctx, doc);
 			pdf_prime_xref_index(ctx, doc);
 		}
