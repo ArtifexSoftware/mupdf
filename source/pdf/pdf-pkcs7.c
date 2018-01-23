@@ -167,137 +167,6 @@ static BIO *BIO_new_stream(fz_context *ctx, fz_stream *stm)
 	return bio;
 }
 
-enum
-{
-	SEG_START = 0,
-	SEG_SIZE = 1
-};
-
-typedef struct bsegs_struct
-{
-	int (*seg)[2];
-	int nsegs;
-	int current_seg;
-	int seg_pos;
-} BIO_SEGS_CTX;
-
-static int bsegs_read(BIO *b, char *buf, int size)
-{
-	BIO_SEGS_CTX *ctx = (BIO_SEGS_CTX *) BIO_get_data(b);
-	int read = 0;
-
-	while (size > 0 && ctx->current_seg < ctx->nsegs)
-	{
-		int nb = ctx->seg[ctx->current_seg][SEG_SIZE] - ctx->seg_pos;
-
-		if (nb > size)
-			nb = size;
-
-		if (nb > 0)
-		{
-			if (ctx->seg_pos == 0)
-			{
-				if (BIO_seek(BIO_next(b), ctx->seg[ctx->current_seg][SEG_START]) < 0)
-					return read;
-			}
-
-			nb = BIO_read(BIO_next(b), buf, nb);
-			if (nb <= 0)
-				return read;
-
-			ctx->seg_pos += nb;
-			read += nb;
-			buf += nb;
-			size -= nb;
-		}
-		else
-		{
-			ctx->current_seg++;
-
-			if (ctx->current_seg < ctx->nsegs)
-				ctx->seg_pos = 0;
-		}
-	}
-
-	return read;
-}
-
-static long bsegs_ctrl(BIO *b, int cmd, long arg1, void *arg2)
-{
-	return BIO_ctrl(BIO_next(b), cmd, arg1, arg2);
-}
-
-static int bsegs_new(BIO *b)
-{
-	BIO_SEGS_CTX *ctx;
-
-	ctx = (BIO_SEGS_CTX *)malloc(sizeof(BIO_SEGS_CTX));
-	if (ctx == NULL)
-		return 0;
-
-	ctx->current_seg = 0;
-	ctx->seg_pos = 0;
-	ctx->seg = NULL;
-	ctx->nsegs = 0;
-
-	BIO_set_init(b, 1);
-	BIO_set_data(b, ctx);
-	BIO_clear_flags(b, INT_MAX);
-
-	return 1;
-}
-
-static int bsegs_free(BIO *b)
-{
-	if (b == NULL)
-		return 0;
-
-	free(BIO_get_data(b));
-	BIO_set_data(b, NULL);
-	BIO_set_init(b, 0);
-	BIO_clear_flags(b, INT_MAX);
-
-	return 1;
-}
-
-static long bsegs_callback_ctrl(BIO *b, int cmd, bio_info_cb *fp)
-{
-	return BIO_callback_ctrl(BIO_next(b), cmd, fp);
-}
-
-static BIO_METHOD *methods_bsegs = NULL;
-
-static BIO_METHOD *BIO_f_segments(void)
-{
-	if (methods_bsegs)
-		return methods_bsegs;
-
-	methods_bsegs = BIO_meth_new(BIO_TYPE_NONE, "segment reader");
-	if (!methods_bsegs)
-		return NULL;
-
-	if (!BIO_meth_set_read(methods_bsegs, bsegs_read) ||
-			!BIO_meth_set_ctrl(methods_bsegs, bsegs_ctrl) ||
-			!BIO_meth_set_create(methods_bsegs, bsegs_new) ||
-			!BIO_meth_set_destroy(methods_bsegs, bsegs_free) ||
-			!BIO_meth_set_callback_ctrl(methods_bsegs, bsegs_callback_ctrl))
-
-	{
-		BIO_meth_free(methods_bsegs);
-		methods_bsegs = NULL;
-	}
-
-	return methods_bsegs;
-}
-
-static void BIO_set_segments(BIO *b, int (*seg)[2], int nsegs)
-{
-	BIO_SEGS_CTX *ctx = (BIO_SEGS_CTX *) BIO_get_data(b);
-
-	ctx->seg = seg;
-	ctx->nsegs = nsegs;
-}
-
 static int verify_callback(int ok, X509_STORE_CTX *ctx)
 {
 	int err, depth;
@@ -498,12 +367,11 @@ exit:
 	return res;
 }
 
-SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
+SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	BIO *bdata = NULL;
-	BIO *bsegs = NULL;
 	STACK_OF(X509) *certs = NULL;
 	int res = SignatureError_Unknown;
 
@@ -516,19 +384,11 @@ SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig
 	if (bdata == NULL)
 		goto exit;
 
-	bsegs = BIO_new(BIO_f_segments());
-	if (bsegs == NULL)
-		goto exit;
-
-	BIO_set_next(bsegs, bdata);
-	BIO_set_segments(bsegs, byte_range, byte_range_len);
-
-	res = pk7_verify_sig(pk7sig, bsegs);
+	res = pk7_verify_sig(pk7sig, bdata);
 
 exit:
 	BIO_free(bsig);
 	BIO_free(bdata);
-	BIO_free(bsegs);
 	PKCS7_free(pk7sig);
 
 	return res;
@@ -794,11 +654,10 @@ pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf
 	return x509_designated_name(ctx, signer->x509);
 }
 
-int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int brange_len, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
+int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
 {
 	int res = 0;
 	BIO *bdata = NULL;
-	BIO *bsegs = NULL;
 	BIO *bp7in = NULL;
 	BIO *bp7 = NULL;
 	PKCS7 *p7 = NULL;
@@ -811,12 +670,6 @@ int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int
 	if (bdata == NULL)
 		goto exit;
 
-	bsegs = BIO_new(BIO_f_segments());
-	if (bsegs == NULL)
-		goto exit;
-
-	BIO_set_next(bsegs, bdata);
-	BIO_set_segments(bsegs, brange, brange_len);
 
 	p7 = PKCS7_new();
 	if (p7 == NULL)
@@ -840,7 +693,7 @@ int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int
 	while(1)
 	{
 		char buf[4096];
-		int n = BIO_read(bsegs, buf, sizeof(buf));
+		int n = BIO_read(bdata, buf, sizeof(buf));
 		if (n <= 0)
 			break;
 		BIO_write(bp7in, buf, n);
@@ -849,8 +702,6 @@ int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int
 	if (!PKCS7_dataFinal(p7, bp7in))
 		goto exit;
 
-	BIO_free(bsegs);
-	bsegs = NULL;
 	BIO_free(bdata);
 	bdata = NULL;
 
@@ -868,7 +719,6 @@ int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int
 
 exit:
 	PKCS7_free(p7);
-	BIO_free(bsegs);
 	BIO_free(bdata);
 	BIO_free(bp7in);
 	BIO_free(bp7);
@@ -911,7 +761,7 @@ int pdf_pkcs7_supported(fz_context *ctx)
 
 #else /* HAVE_LIBCRYPTO */
 
-SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len)
+SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	return SignatureError_Unknown;
 }
@@ -949,7 +799,7 @@ pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf
 	return NULL;
 }
 
-int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int brange_len, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
+int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len)
 {
 	return 0;
 }

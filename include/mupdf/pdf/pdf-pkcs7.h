@@ -24,7 +24,7 @@ typedef struct pdf_pkcs7_designated_name_s
 pdf_pkcs7_designated_name;
 
 /* Check a signature's digest against ranges of bytes drawn from a stream */
-SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len, int (*byte_range)[2], int byte_range_len);
+SignatureError pdf_pkcs7_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len);
 
 /* Check a singature's certificate is trusted */
 SignatureError pdf_pkcs7_check_certificate(char *sig, int sig_len);
@@ -48,7 +48,7 @@ void pdf_pkcs7_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer);
 pdf_pkcs7_designated_name *pdf_pkcs7_signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer);
 
 /* Create a signature based on ranges of bytes drawn from a steam */
-int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, int brange[][2], int brange_len, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len);
+int pdf_pkcs7_create_digest(fz_context *ctx, fz_stream *in, pdf_pkcs7_signer *signer, unsigned char *digest, int *digest_len);
 
 /* Report whether pkcs7 is supported in the current build */
 int pdf_pkcs7_supported(fz_context *ctx);

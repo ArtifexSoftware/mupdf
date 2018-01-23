@@ -1277,7 +1277,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 	}
 }
 
-int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, int (*byte_range)[2])
+int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
 	pdf_obj *br = pdf_dict_getl(ctx, annot->obj, PDF_NAME_V, PDF_NAME_ByteRange, NULL);
@@ -1287,8 +1287,8 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 	{
 		for (i = 0; i < n; i++)
 		{
-			byte_range[i][0] = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i));
-			byte_range[i][1] = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i+1));
+			byte_range[i].offset = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i));
+			byte_range[i].len = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i+1));
 		}
 	}
 

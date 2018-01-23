@@ -27,7 +27,7 @@ static void pdf_print_designated_name(pdf_pkcs7_designated_name *name, char *buf
 void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int hexdigest_offset, int hexdigest_length, pdf_pkcs7_signer *signer)
 {
 	fz_stream *in = NULL;
-	int (*brange)[2] = NULL;
+	fz_range *brange = NULL;
 	int brange_len = pdf_array_len(ctx, byte_range)/2;
 	unsigned char *digest = NULL;
 	int digest_len;
@@ -42,18 +42,18 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	{
 		int i, res;
 
-		in = fz_stream_from_output(ctx, out);
-
 		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
 		for (i = 0; i < brange_len; i++)
 		{
-			brange[i][0] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i));
-			brange[i][1] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
+			brange[i].offset = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i));
+			brange[i].len = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
 		}
+
+		in = fz_open_null_n(ctx, fz_stream_from_output(ctx, out), brange, brange_len);
 
 		digest_len = (hexdigest_length - 2) / 2;
 		digest = fz_malloc(ctx, digest_len);
-		res = pdf_pkcs7_create_digest(ctx, in, brange, brange_len, signer, digest, &digest_len);
+		res = pdf_pkcs7_create_digest(ctx, in, signer, digest, &digest_len);
 		if (!res)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "pdf_pkcs7_create_digest failed");
 
@@ -79,8 +79,9 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
 {
-	int (*byte_range)[2] = NULL;
+	fz_range *byte_range = NULL;
 	int byte_range_len;
+	fz_stream *bytes = NULL;
 	char *contents = NULL;
 	int contents_len;
 	int res = 0;
@@ -94,6 +95,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	}
 
 	fz_var(byte_range);
+	fz_var(bytes);
 	fz_var(res);
 	fz_try(ctx)
 	{
@@ -107,7 +109,10 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
 		if (byte_range && contents)
 		{
-			SignatureError err = pdf_pkcs7_check_digest(ctx, doc->file, contents, contents_len, byte_range, byte_range_len);
+			SignatureError err;
+
+			bytes = fz_open_null_n(ctx, fz_keep_stream(ctx, doc->file), byte_range, byte_range_len);
+			err = pdf_pkcs7_check_digest(ctx, bytes, contents, contents_len);
 			if (err == SignatureError_Okay)
 				err = pdf_pkcs7_check_certificate(contents, contents_len);
 			switch (err)
@@ -170,6 +175,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	}
 	fz_always(ctx)
 	{
+		fz_drop_stream(ctx, bytes);
 		fz_free(ctx, byte_range);
 	}
 	fz_catch(ctx)

@@ -26,7 +26,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 /*
 	pdf_signature_widget_byte_range: retrieve the byte range for a signature widget
 */
-int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, int (*byte_range)[2]);
+int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range);
 
 /*
 	pdf_signature_widget_contents: retrieve the contents for a signature widget
