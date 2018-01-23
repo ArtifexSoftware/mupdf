@@ -293,6 +293,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 				}
 				fz_drop_pixmap(ctx, temp);
 				temp = conv;
+				conv = NULL;
 
 				/* Now Change from our device_n colorspace into the target colorspace/spots. */
 				conv = fz_clone_pixmap_area_with_different_seps(ctx, temp, NULL, dest->colorspace, dest->seps, color_params, NULL);
@@ -343,22 +344,17 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 				}
 			}
 			fz_paint_pixmap_with_overprint(dest, conv, op);
-			fz_drop_pixmap(ctx, conv);
 		}
 	}
 	fz_always(ctx)
 	{
-		if (temp != dest)
+		if (shade->use_function)
+		{
 			fz_drop_pixmap(ctx, temp);
+			fz_drop_pixmap(ctx, conv);
+		}
 		fz_fin_cached_color_converter(ctx, &ptd.cc);
 	}
 	fz_catch(ctx)
-	{
-		if (shade->use_function)
-		{
-			fz_drop_pixmap(ctx, conv);
-			fz_drop_pixmap(ctx, temp);
-		}
 		fz_rethrow(ctx);
-	}
 }
