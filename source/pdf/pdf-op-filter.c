@@ -360,7 +360,7 @@ done_SC:
 		if (gstate->pending.stroke.miterlimit != gstate->sent.stroke.miterlimit)
 		{
 			if (p->chain->op_M)
-				p->chain->op_M(ctx, p->chain, gstate->pending.stroke.linewidth);
+				p->chain->op_M(ctx, p->chain, gstate->pending.stroke.miterlimit);
 		}
 		gstate->sent.stroke = gstate->pending.stroke;
 	}
