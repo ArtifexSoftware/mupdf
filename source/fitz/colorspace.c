@@ -3663,6 +3663,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 		fz_drop_color_converter(ctx, &cached->base);
 		fz_drop_hash_table(ctx, cached->hash);
 		fz_free(ctx, cached);
+		cc->opaque = NULL;
 		fz_rethrow(ctx);
 	}
 }
