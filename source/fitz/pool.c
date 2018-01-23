@@ -1,8 +1,12 @@
 #include "mupdf/fitz.h"
 
 #include <string.h>
+#include <stdio.h>
 
 typedef struct fz_pool_node_s fz_pool_node;
+
+#define POOL_SIZE (64<<10) /* default size of pool blocks */
+#define POOL_SELF (4<<10) /* size where allocs are put into their own blocks */
 
 struct fz_pool_s
 {
@@ -13,34 +17,47 @@ struct fz_pool_s
 struct fz_pool_node_s
 {
 	fz_pool_node *next;
-	char mem[64 << 10]; /* 64k blocks */
+	char mem[1];
 };
 
 fz_pool *fz_new_pool(fz_context *ctx)
 {
 	fz_pool *pool = fz_malloc_struct(ctx, fz_pool);
-	fz_pool_node *node = fz_malloc_struct(ctx, fz_pool_node);
+	fz_pool_node *node = fz_calloc(ctx, offsetof(fz_pool_node, mem) + POOL_SIZE, 1);
 	pool->head = pool->tail = node;
 	pool->pos = node->mem;
-	pool->end = node->mem + sizeof node->mem;
+	pool->end = node->mem + POOL_SIZE;
 	return pool;
+}
+
+static void *fz_pool_alloc_oversize(fz_context *ctx, fz_pool *pool, size_t size)
+{
+	fz_pool_node *node;
+
+	/* link in memory at the head of the list */
+	node = fz_calloc(ctx, offsetof(fz_pool_node, mem) + size, 1);
+	node->next = pool->head;
+	pool->head = node;
+
+	return node->mem;
 }
 
 void *fz_pool_alloc(fz_context *ctx, fz_pool *pool, size_t size)
 {
 	char *ptr;
 
+	if (size >= POOL_SELF)
+		return fz_pool_alloc_oversize(ctx, pool, size);
+
 	/* round size to pointer alignment (we don't expect to use doubles) */
 	size = ((size + sizeof(void*) - 1) / sizeof(void*)) * sizeof(void*);
 
 	if (pool->pos + size > pool->end)
 	{
-		fz_pool_node *node = fz_malloc_struct(ctx, fz_pool_node);
+		fz_pool_node *node = fz_calloc(ctx, offsetof(fz_pool_node, mem) + POOL_SIZE, 1);
 		pool->tail = pool->tail->next = node;
 		pool->pos = node->mem;
-		pool->end = node->mem + sizeof node->mem;
-		if (pool->pos + size > pool->end)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "out of memory: allocation too large to fit in pool");
+		pool->end = node->mem + POOL_SIZE;
 	}
 	ptr = pool->pos;
 	pool->pos += size;
