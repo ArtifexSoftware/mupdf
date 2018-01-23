@@ -216,6 +216,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
 	fz_pixmap *conv = NULL;
+	fz_color_converter cc = { 0 };
 	float color[FZ_MAX_COLORS];
 	struct paint_tri_data ptd = { 0 };
 	int i, k;
@@ -305,11 +306,10 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 				int da;
 				int sa = temp->alpha;
 				int hh = temp->h;
-
-				fz_color_converter cc;
 				int cn = fz_colorspace_n(ctx, colorspace);
 				int m = dest->n - dest->alpha;
 				int n = fz_colorspace_n(ctx, dest->colorspace);
+
 				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, colorspace, color_params);
 				for (i = 0; i < 256; i++)
 				{
@@ -350,6 +350,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 	{
 		if (shade->use_function)
 		{
+			fz_drop_color_converter(ctx, &cc);
 			fz_drop_pixmap(ctx, temp);
 			fz_drop_pixmap(ctx, conv);
 		}
