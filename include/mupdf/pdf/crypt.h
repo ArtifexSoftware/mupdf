@@ -29,6 +29,11 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range);
 
 /*
+	pdf_signature_widget_hash_bytes: retrieve an fz_stream to read the bytes hashed for the signature
+*/
+fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_widget *widget);
+
+/*
 	pdf_signature_widget_contents: retrieve the contents for a signature widget
 */
 int pdf_signature_widget_contents(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char **contents);

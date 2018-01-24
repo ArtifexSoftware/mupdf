@@ -79,8 +79,6 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
 {
-	fz_range *byte_range = NULL;
-	int byte_range_len;
 	fz_stream *bytes = NULL;
 	char *contents = NULL;
 	int contents_len;
@@ -94,24 +92,16 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		return 0;
 	}
 
-	fz_var(byte_range);
 	fz_var(bytes);
 	fz_var(res);
 	fz_try(ctx)
 	{
-		byte_range_len = pdf_signature_widget_byte_range(ctx, doc, widget, NULL);
-		if (byte_range_len)
-		{
-			byte_range = fz_calloc(ctx, byte_range_len, sizeof(*byte_range));
-			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
-		}
-
 		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
-		if (byte_range && contents)
+		if (contents)
 		{
 			SignatureError err;
 
-			bytes = fz_open_null_n(ctx, fz_keep_stream(ctx, doc->file), byte_range, byte_range_len);
+			bytes = pdf_signature_widget_hash_bytes(ctx, doc, widget);
 			err = pdf_pkcs7_check_digest(ctx, bytes, contents, contents_len);
 			if (err == SignatureError_Okay)
 				err = pdf_pkcs7_check_certificate(contents, contents_len);
@@ -176,7 +166,6 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, bytes);
-		fz_free(ctx, byte_range);
 	}
 	fz_catch(ctx)
 	{
