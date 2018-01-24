@@ -517,6 +517,10 @@ debug:
 	$(MAKE) build=debug
 sanitize:
 	$(MAKE) build=sanitize
+tofu:
+	$(MAKE) OUT=build/tofu CMAP_GEN= FONT_GEN_DROID= FONT_GEN_NOTO= FONT_GEN_HAN= FONT_GEN_SIL= XCFLAGS="-DNOCJK -DTOFU"
+tofumax:
+	$(MAKE) OUT=build/tofumax CMAP_GEN= FONT_GEN= XCFLAGS="-DNOCJK -DTOFU -DTOFU_BASE14"
 
 android: generate
 	ndk-build -j8 \
