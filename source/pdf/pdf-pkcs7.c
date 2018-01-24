@@ -89,7 +89,7 @@ typedef struct
 static int stream_read(BIO *b, char *buf, int size)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
-	return fz_read(data->ctx, data->stm, buf, size);
+	return fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
 }
 
 static long stream_ctrl(BIO *b, int cmd, long arg1, void *arg2)
