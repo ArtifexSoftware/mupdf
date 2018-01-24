@@ -227,14 +227,14 @@ int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr
 typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, size_t max);
 
 /*
-	fz_stream_close_fn: A function type for use when implementing
+	fz_stream_drop_fn: A function type for use when implementing
 	fz_streams. The supplied function of this type is called
-	when the stream is closed, to release the stream specific
+	when the stream is dropped, to release the stream specific
 	state information.
 
 	state: The stream state to release.
 */
-typedef void (fz_stream_close_fn)(fz_context *ctx, void *state);
+typedef void (fz_stream_drop_fn)(fz_context *ctx, void *state);
 
 /*
 	fz_stream_seek_fn: A function type for use when implementing
@@ -267,7 +267,7 @@ struct fz_stream_s
 	unsigned char *rp, *wp;
 	void *state;
 	fz_stream_next_fn *next;
-	fz_stream_close_fn *close;
+	fz_stream_drop_fn *drop;
 	fz_stream_seek_fn *seek;
 	fz_stream_meta_fn *meta;
 };
@@ -282,10 +282,10 @@ struct fz_stream_s
 	data. Return the number of bytes read, or EOF when there is no
 	more data.
 
-	close: Should clean up and free the internal state. May not
+	drop: Should clean up and free the internal state. May not
 	throw exceptions.
 */
-fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close);
+fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_drop_fn *drop);
 
 fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
 
