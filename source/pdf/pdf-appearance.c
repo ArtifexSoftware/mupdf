@@ -1003,12 +1003,15 @@ static pdf_xobject *load_or_create_form(fz_context *ctx, pdf_document *doc, pdf_
 			create_form = 1;
 		}
 
-		form = pdf_load_xobject(ctx, doc, formobj);
 		if (create_form)
 		{
 			fzbuf = fz_new_buffer(ctx, 1);
-			pdf_update_xobject_contents(ctx, doc, form, fzbuf);
+			pdf_update_stream(ctx, doc, formobj, fzbuf, 0);
 		}
+
+		form = pdf_load_xobject(ctx, doc, formobj);
+
+		form->iteration = 1;
 
 		copy_resources(ctx, pdf_xobject_resources(ctx, form), pdf_get_inheritable(ctx, doc, obj, PDF_NAME_DR));
 	}
