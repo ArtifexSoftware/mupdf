@@ -1478,6 +1478,14 @@ static void on_special(int key, int x, int y)
 	}
 }
 
+static void on_wheel(int wheel, int direction, int x, int y)
+{
+	ui.scroll_x = wheel == 1 ? direction : 0;
+	ui.scroll_y = wheel == 0 ? direction : 0;
+	run_main_loop();
+	ui.scroll_x = ui.scroll_y = 0;
+}
+
 static void on_mouse(int button, int action, int x, int y)
 {
 	ui.x = x;
@@ -1487,6 +1495,10 @@ static void on_mouse(int button, int action, int x, int y)
 	case GLUT_LEFT_BUTTON: ui.down = (action == GLUT_DOWN); break;
 	case GLUT_MIDDLE_BUTTON: ui.middle = (action == GLUT_DOWN); break;
 	case GLUT_RIGHT_BUTTON: ui.right = (action == GLUT_DOWN); break;
+	case 3: if (action == GLUT_DOWN) on_wheel(0, 1, x, y); break;
+	case 4: if (action == GLUT_DOWN) on_wheel(0, -1, x, y); break;
+	case 5: if (action == GLUT_DOWN) on_wheel(1, 1, x, y); break;
+	case 6: if (action == GLUT_DOWN) on_wheel(1, -1, x, y); break;
 	}
 	run_main_loop();
 }
@@ -1496,14 +1508,6 @@ static void on_motion(int x, int y)
 	ui.x = x;
 	ui.y = y;
 	glutPostRedisplay();
-}
-
-static void on_wheel(int wheel, int direction, int x, int y)
-{
-	ui.scroll_x = wheel == 1 ? direction * 10 : 0;
-	ui.scroll_y = wheel == 0 ? direction * 10 : 0;
-	run_main_loop();
-	ui.scroll_x = ui.scroll_y = 0;
 }
 
 static void on_reshape(int w, int h)
