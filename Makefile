@@ -515,6 +515,8 @@ release:
 	$(MAKE) build=release
 debug:
 	$(MAKE) build=debug
+sanitize:
+	$(MAKE) build=sanitize
 
 android: generate
 	ndk-build -j8 \
