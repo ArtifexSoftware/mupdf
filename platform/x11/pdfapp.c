@@ -1,6 +1,7 @@
 #include "pdfapp.h"
 #include "curl_stream.h"
 #include "mupdf/helpers/pkcs7-check.h"
+#include "mupdf/helpers/pkcs7-openssl.h"
 
 #include <string.h>
 #include <limits.h>
@@ -1722,17 +1723,55 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					{
 						char ebuf[256];
 
-						ebuf[0] = 0;
-						if (pdf_check_signature(ctx, idoc, widget, ebuf, sizeof(ebuf)))
+						if (pdf_dict_get(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(V)))
 						{
-							winwarn(app, "Signature is valid");
+							/* Signature is signed. Check the signature */
+							ebuf[0] = 0;
+							if (pdf_check_signature(ctx, idoc, widget, ebuf, sizeof(ebuf)))
+							{
+								winwarn(app, "Signature is valid");
+							}
+							else
+							{
+								if (ebuf[0] == 0)
+									winwarn(app, "Signature check failed for unknown reason");
+								else
+									winwarn(app, ebuf);
+							}
 						}
 						else
 						{
-							if (ebuf[0] == 0)
-								winwarn(app, "Signature check failed for unknown reason");
-							else
-								winwarn(app, ebuf);
+							/* Signature is unsigned. Offer to sign it */
+							if (winquery(app, "Select certificate and sign?") == QUERY_YES)
+							{
+								char certpath[PATH_MAX];
+								if (wingetcertpath(certpath, PATH_MAX))
+								{
+									int res;
+									char *pw = winpassword(app, "certificate");
+									pdf_pkcs7_signer *signer = pkcs7_openssl_read_pfx(ctx, certpath, pw);
+
+									fz_var(res);
+									fz_try(ctx)
+									{
+										pdf_sign_signature(ctx, idoc, widget, signer);
+										res = 1;
+									}
+									fz_always(ctx)
+									{
+										signer->drop(signer);
+									}
+									fz_catch(ctx)
+									{
+										res = 0;
+									}
+
+									if (res)
+										pdfapp_updatepage(app);
+									else
+										winwarn(app, "Signing failed");
+								}
+							}
 						}
 					}
 					break;

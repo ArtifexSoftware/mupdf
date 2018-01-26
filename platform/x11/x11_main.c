@@ -780,6 +780,16 @@ void winopenuri(pdfapp_t *app, char *buf)
 	waitpid(pid, NULL, 0);
 }
 
+int winquery(pdfapp_t *app, const char *query)
+{
+	return QUERY_NO;
+}
+
+int wingetcertpath(char *buf, int len)
+{
+	return 0;
+}
+
 static void onkey(int c, int modifiers)
 {
 	advance_scheduled = 0;

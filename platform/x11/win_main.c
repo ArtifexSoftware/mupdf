@@ -188,6 +188,16 @@ int winsavequery(pdfapp_t *app)
 	}
 }
 
+int winquery(pdfapp_t *app, const char *query)
+{
+	switch(MessageBoxA(hwndframe, query, "MuPDF", MB_YESNOCANCEL))
+	{
+	case IDYES: return QUERY_YES;
+	case IDNO:
+	default: return QUERY_NO;
+	}
+}
+
 int winfilename(wchar_t *buf, int len)
 {
 	OPENFILENAME ofn;
@@ -202,6 +212,37 @@ int winfilename(wchar_t *buf, int len)
 	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.fb2;*.zip;*.png;*.jpeg;*.tiff)\0*.zip;*.cbz;*.xps;*.epub;*.fb2;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0EPUB Files (*.epub)\0*.epub\0FictionBook 2 Files (*.fb2)\0*.fb2\0Image Files (*.png;*.jpeg;*.tiff)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	return GetOpenFileNameW(&ofn);
+}
+
+int wingetcertpath(char *buf, int len)
+{
+	wchar_t twbuf[PATH_MAX] = {0};
+	OPENFILENAME ofn;
+	buf[0] = 0;
+	memset(&ofn, 0, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = hwndframe;
+	ofn.lpstrFile = twbuf;
+	ofn.nMaxFile = PATH_MAX;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrTitle = L"MuPDF: Select certificate file";
+	ofn.lpstrFilter = L"Certificates (*.pfx)\0*.pfx\0All files\0*\0\0";
+	ofn.Flags = OFN_FILEMUSTEXIST;
+	if (GetOpenFileNameW(&ofn))
+	{
+		int code = WideCharToMultiByte(CP_UTF8, 0, twbuf, -1, buf, MIN(PATH_MAX, len), NULL, NULL);
+		if (code == 0)
+		{
+			winerror(&gapp, "cannot convert filename to utf-8");
+			return 0;
+		}
+
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 int wingetsavepath(pdfapp_t *app, char *buf, int len)
@@ -765,7 +806,7 @@ void winblit()
 	{
 		if (gapp.iscopying || justcopied)
 		{
-			pdfapp_invert(&gapp, &gapp.selr);
+			pdfapp_invert(&gapp, gapp.selr);
 			justcopied = 1;
 		}
 
@@ -805,7 +846,7 @@ void winblit()
 
 		if (gapp.iscopying || justcopied)
 		{
-			pdfapp_invert(&gapp, &gapp.selr);
+			pdfapp_invert(&gapp, gapp.selr);
 			justcopied = 1;
 		}
 	}
