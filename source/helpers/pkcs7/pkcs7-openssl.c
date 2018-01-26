@@ -671,6 +671,12 @@ pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, con
 	fz_try(ctx)
 	{
 		signer = fz_malloc_struct(ctx, openssl_signer);
+		signer->base.keep = keep_signer;
+		signer->base.drop = drop_signer;
+		signer->base.designated_name = signer_designated_name;
+		signer->base.drop_designated_name = signer_drop_designated_name;
+		signer->base.create_digest = signer_create_digest;
+		signer->ctx = ctx;
 		signer->refs = 1;
 
 		OpenSSL_add_all_algorithms();
@@ -728,13 +734,6 @@ pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, con
 
 		if (signer->x509 == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to obtain certificate");
-
-		signer->ctx = ctx;
-		signer->base.keep = keep_signer;
-		signer->base.drop = drop_signer;
-		signer->base.designated_name = signer_designated_name;
-		signer->base.drop_designated_name = signer_drop_designated_name;
-		signer->base.create_digest = signer_create_digest;
 	}
 	fz_always(ctx)
 	{
