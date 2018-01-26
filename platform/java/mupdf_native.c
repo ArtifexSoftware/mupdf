@@ -49,6 +49,9 @@ static inline jlong jlong_cast(const void *p)
 	return (jlong)(intptr_t)p;
 }
 
+/* Our vm */
+static JavaVM *jvm = NULL;
+
 /* All the cached classes/mids/fids we need. */
 
 static jclass cls_Annotation;
@@ -61,30 +64,33 @@ static jclass cls_Document;
 static jclass cls_DocumentWriter;
 static jclass cls_FloatArray;
 static jclass cls_Font;
+static jclass cls_IOException;
 static jclass cls_IllegalArgumentException;
 static jclass cls_Image;
 static jclass cls_IndexOutOfBoundsException;
 static jclass cls_IntegerArray;
-static jclass cls_IOException;
 static jclass cls_Link;
 static jclass cls_Matrix;
 static jclass cls_NativeDevice;
 static jclass cls_NullPointerException;
 static jclass cls_Object;
-static jclass cls_Outline;
 static jclass cls_OutOfMemoryError;
+static jclass cls_Outline;
+static jclass cls_PDFAnnotation;
+static jclass cls_PDFDocument;
+static jclass cls_PDFGraftMap;
+static jclass cls_PDFObject;
+static jclass cls_PDFPage;
 static jclass cls_Page;
 static jclass cls_Path;
 static jclass cls_PathWalker;
-static jclass cls_PDFAnnotation;
-static jclass cls_PDFDocument;
-static jclass cls_PDFPage;
-static jclass cls_PDFGraftMap;
-static jclass cls_PDFObject;
 static jclass cls_Pixmap;
 static jclass cls_Point;
 static jclass cls_Rect;
 static jclass cls_RuntimeException;
+static jclass cls_SeekableInputStream;
+static jclass cls_SeekableOutputStream;
+static jclass cls_SeekableStream;
 static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
@@ -101,8 +107,8 @@ static jfieldID fid_ColorSpace_pointer;
 static jfieldID fid_Cookie_pointer;
 static jfieldID fid_Device_pointer;
 static jfieldID fid_DisplayList_pointer;
-static jfieldID fid_Document_pointer;
 static jfieldID fid_DocumentWriter_pointer;
+static jfieldID fid_Document_pointer;
 static jfieldID fid_Font_pointer;
 static jfieldID fid_Image_pointer;
 static jfieldID fid_Link_bounds;
@@ -116,14 +122,14 @@ static jfieldID fid_Matrix_e;
 static jfieldID fid_Matrix_f;
 static jfieldID fid_NativeDevice_nativeInfo;
 static jfieldID fid_NativeDevice_nativeResource;
-static jfieldID fid_Page_pointer;
-static jfieldID fid_Path_pointer;
 static jfieldID fid_PDFAnnotation_pointer;
 static jfieldID fid_PDFDocument_pointer;
-static jfieldID fid_PDFPage_pointer;
 static jfieldID fid_PDFGraftMap_pointer;
-static jfieldID fid_PDFObject_pointer;
 static jfieldID fid_PDFObject_Null;
+static jfieldID fid_PDFObject_pointer;
+static jfieldID fid_PDFPage_pointer;
+static jfieldID fid_Page_pointer;
+static jfieldID fid_Path_pointer;
 static jfieldID fid_Pixmap_pointer;
 static jfieldID fid_Point_x;
 static jfieldID fid_Point_y;
@@ -174,28 +180,33 @@ static jmethodID mid_Link_init;
 static jmethodID mid_Matrix_init;
 static jmethodID mid_Object_toString;
 static jmethodID mid_Outline_init;
+static jmethodID mid_PDFAnnotation_init;
+static jmethodID mid_PDFDocument_init;
+static jmethodID mid_PDFGraftMap_init;
+static jmethodID mid_PDFObject_init;
+static jmethodID mid_PDFPage_init;
 static jmethodID mid_Page_init;
-static jmethodID mid_Path_init;
 static jmethodID mid_PathWalker_closePath;
 static jmethodID mid_PathWalker_curveTo;
 static jmethodID mid_PathWalker_lineTo;
 static jmethodID mid_PathWalker_moveTo;
-static jmethodID mid_PDFAnnotation_init;
-static jmethodID mid_PDFDocument_init;
-static jmethodID mid_PDFPage_init;
-static jmethodID mid_PDFGraftMap_init;
-static jmethodID mid_PDFObject_init;
+static jmethodID mid_Path_init;
 static jmethodID mid_Pixmap_init;
 static jmethodID mid_Point_init;
 static jmethodID mid_Rect_init;
+static jmethodID mid_SeekableInputStream_read;
+static jmethodID mid_SeekableOutputStream_write;
+static jmethodID mid_SeekableStream_close;
+static jmethodID mid_SeekableStream_position;
+static jmethodID mid_SeekableStream_seek;
 static jmethodID mid_Shade_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
 static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
-static jmethodID mid_Text_init;
 static jmethodID mid_TextLine_init;
 static jmethodID mid_TextWalker_showGlyph;
+static jmethodID mid_Text_init;
 
 #ifdef _WIN32
 static DWORD context_key;
@@ -548,6 +559,17 @@ static int find_fids(JNIEnv *env)
 	fid_Rect_y1 = get_field(&err, env, "y1", "F");
 	mid_Rect_init = get_method(&err, env, "<init>", "(FFFF)V");
 
+	cls_SeekableInputStream = get_class(&err, env, PKG"SeekableInputStream");
+	mid_SeekableInputStream_read = get_method(&err, env, "read", "([B)I");
+
+	cls_SeekableOutputStream = get_class(&err, env, PKG"SeekableOutputStream");
+	mid_SeekableOutputStream_write = get_method(&err, env, "write", "([BII)V");
+
+	cls_SeekableStream = get_class(&err, env, PKG"SeekableStream");
+	mid_SeekableStream_close = get_method(&err, env, "close", "()V");
+	mid_SeekableStream_position = get_method(&err, env, "position", "()J");
+	mid_SeekableStream_seek = get_method(&err, env, "seek", "(JI)J");
+
 	cls_Shade = get_class(&err, env, PKG"Shade");
 	fid_Shade_pointer = get_field(&err, env, "pointer", "J");
 	mid_Shade_init = get_method(&err, env, "<init>", "(J)V");
@@ -600,7 +622,47 @@ static int find_fids(JNIEnv *env)
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
 
+	/* Get and store the main JVM pointer. We need this in order to get
+	 * JNIEnv pointers on callback threads. This is specifically
+	 * guaranteed to be safe to store in a static var. */
+
+	int getvmErr = (*env)->GetJavaVM(env, &jvm);
+	if (getvmErr < 0)
+	{
+		LOGE("mupdf_native.c find_fids() GetJavaVM failed with %d", getvmErr);
+		err = 1;
+	}
+
 	return err;
+}
+
+/* When making callbacks from C to java, we may be called on threads
+ * other than the foreground. As such, we have no JNIEnv. This function
+ * handles getting us the required environment */
+static JNIEnv *jni_attach_thread(fz_context *ctx, int *detach)
+{
+	JNIEnv *env = NULL;
+	int state;
+
+	*detach = 0;
+	state = (*jvm)->GetEnv(jvm, (void*)&env, MY_JNI_VERSION);
+	if (state == JNI_EDETACHED)
+	{
+		*detach = 1;
+		state = (*jvm)->AttachCurrentThread(jvm, (void*)&env, NULL);
+	}
+
+	if (state != JNI_OK)
+		return NULL;
+
+	return env;
+}
+
+static void jni_detach_thread(int detach)
+{
+	if (!detach)
+		return;
+	(*jvm)->DetachCurrentThread(jvm);
 }
 
 static void lose_fids(JNIEnv *env)
@@ -639,6 +701,9 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Point);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
 	(*env)->DeleteGlobalRef(env, cls_RuntimeException);
+	(*env)->DeleteGlobalRef(env, cls_SeekableStream);
+	(*env)->DeleteGlobalRef(env, cls_SeekableInputStream);
+	(*env)->DeleteGlobalRef(env, cls_SeekableOutputStream);
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
@@ -1863,6 +1928,214 @@ static inline fz_text *from_Text_safe(JNIEnv *env, jobject jobj)
 {
 	if (!jobj) return NULL;
 	return CAST(fz_text *, (*env)->GetLongField(env, jobj, fid_Text_pointer));
+}
+
+/* Callbacks to implement fz_stream and fz_output using Java classes */
+
+typedef struct
+{
+	jobject stream;
+	jbyteArray array;
+	jbyte buffer[4096];
+}
+SeekableStreamState;
+
+static int call_SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
+{
+	SeekableStreamState *state = stm->state;
+	JNIEnv *env;
+	int detach;
+	int n, ch;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableInputStream_next");
+
+	n = (*env)->CallIntMethod(env, state->stream, mid_SeekableInputStream_read, state->array);
+	if ((*env)->ExceptionCheck(env)) {
+		jni_detach_thread(detach);
+		fz_throw_java(ctx, env);
+	}
+
+	if (n > 0)
+	{
+		(*env)->GetByteArrayRegion(env, state->array, 0, n, state->buffer);
+
+		/* update stm->pos so fz_tell knows the current position */
+		stm->rp = (unsigned char *)state->buffer;
+		stm->wp = stm->rp + n;
+		stm->pos += n;
+
+		ch = *stm->rp++;
+	}
+	else if (n < 0)
+	{
+		ch = EOF;
+	}
+	else
+	{
+		jni_detach_thread(detach);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no bytes read");
+	}
+
+	jni_detach_thread(detach);
+	return ch;
+}
+
+static void call_SeekableOutputStream_write(fz_context *ctx, void *streamState_, const void *buffer_, size_t count)
+{
+	SeekableStreamState *state = streamState_;
+	const jbyte *buffer = buffer_;
+	JNIEnv *env;
+	int detach;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_write");
+
+	while (count > 0)
+	{
+		size_t n = fz_minz(count, sizeof(state->buffer));
+
+		(*env)->SetByteArrayRegion(env, state->array, 0, n, buffer);
+		buffer += n;
+		count -= n;
+
+		(*env)->CallVoidMethod(env, state->stream, mid_SeekableOutputStream_write, state->array, 0, n);
+		if ((*env)->ExceptionCheck(env)) {
+			jni_detach_thread(detach);
+			fz_throw_java(ctx, env);
+		}
+	}
+
+	jni_detach_thread(detach);
+}
+
+static int64_t call_SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
+{
+	SeekableStreamState *state = streamState_;
+	JNIEnv *env;
+	int detach;
+	int64_t pos = 0;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_tell");
+
+	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_position);
+	if ((*env)->ExceptionCheck(env)) {
+		jni_detach_thread(detach);
+		fz_throw_java(ctx, env);
+	}
+
+	jni_detach_thread(detach);
+
+	return pos;
+}
+
+static void call_SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
+{
+	SeekableStreamState *state = stm->state;
+	JNIEnv *env;
+	int detach;
+	int64_t pos;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableInputStream_seek");
+
+	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
+	if ((*env)->ExceptionCheck(env)) {
+		jni_detach_thread(detach);
+		fz_throw_java(ctx, env);
+	}
+
+	stm->pos = pos;
+	stm->rp = stm->wp = (unsigned char *)state->buffer;
+
+	jni_detach_thread(detach);
+}
+
+static void call_SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64_t offset, int whence)
+{
+	SeekableStreamState *state = streamState_;
+	JNIEnv *env;
+	int detach;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_seek");
+
+	(void) (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
+	if ((*env)->ExceptionCheck(env)) {
+		jni_detach_thread(detach);
+		fz_throw_java(ctx, env);
+	}
+
+	jni_detach_thread(detach);
+}
+
+static void call_SeekableInputStream_drop(fz_context *ctx, void *streamState_)
+{
+	SeekableStreamState *state = streamState_;
+	JNIEnv *env;
+	int detach;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL) {
+		fz_warn(ctx, "cannot attach to JVM in call_SeekableInputStream_drop; leaking input stream");
+		return;
+	}
+
+	(*env)->CallVoidMethod(env, state->stream, mid_SeekableStream_close);
+	if ((*env)->ExceptionCheck(env))
+		fz_warn(ctx, "ignoring java exception in call_SeekableInputStream_drop");
+
+	(*env)->DeleteGlobalRef(env, state->stream);
+	(*env)->DeleteGlobalRef(env, state->array);
+
+	fz_free(ctx, state);
+
+	jni_detach_thread(detach);
+}
+
+static void call_SeekableOutputStream_close(fz_context *ctx, void *streamState_)
+{
+	SeekableStreamState *state = streamState_;
+	JNIEnv *env;
+	int detach;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_close");
+
+	(*env)->CallVoidMethod(env, state->stream, mid_SeekableStream_close);
+	if ((*env)->ExceptionCheck(env)) {
+		jni_detach_thread(detach);
+		fz_throw_java(ctx, env);
+	}
+
+	jni_detach_thread(detach);
+}
+
+static void call_SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
+{
+	SeekableStreamState *state = streamState_;
+	JNIEnv *env;
+	int detach;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL) {
+		fz_warn(ctx, "cannot attach to JVM in call_SeekableOutputStream_drop; leaking output stream");
+		return;
+	}
+
+	(*env)->DeleteGlobalRef(env, state->stream);
+	(*env)->DeleteGlobalRef(env, state->array);
+
+	fz_free(ctx, state);
+
+	jni_detach_thread(detach);
 }
 
 /*
@@ -4405,6 +4678,82 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
+FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jstring jmimetype)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = NULL;
+	fz_stream *stm = NULL;
+	jobject stream = NULL;
+	jbyteArray array = NULL;
+	SeekableStreamState *state = NULL;
+	const char *mimetype = NULL;
+
+	fz_var(state);
+	fz_var(stm);
+
+	if (jmimetype)
+	{
+		mimetype = (*env)->GetStringUTFChars(env, jmimetype, NULL);
+		if (!mimetype)
+			return NULL;
+	}
+
+	stream = (*env)->NewGlobalRef(env, jstream);
+	if (!stream)
+	{
+		if (mimetype)
+			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
+		return NULL;
+	}
+
+	array = (*env)->NewByteArray(env, sizeof state->buffer);
+	if (array)
+		array = (*env)->NewGlobalRef(env, array);
+	if (!array)
+	{
+		if (mimetype)
+			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
+		(*env)->DeleteGlobalRef(env, stream);
+		return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		state = fz_malloc(ctx, sizeof(SeekableStreamState));
+		state->stream = stream;
+		state->array = array;
+
+		/* create a stream and open the doc using it */
+		stm = fz_new_stream(ctx, state, call_SeekableInputStream_next, call_SeekableInputStream_drop);
+		stm->state = state;
+		stm->seek = call_SeekableInputStream_seek;
+
+		/* these are now owned by 'stm' */
+		state = NULL;
+		stream = NULL;
+		array = NULL;
+
+		doc = fz_open_document_with_stream(ctx, mimetype, stm);
+	}
+	fz_always(ctx)
+	{
+		if (mimetype)
+			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
+		fz_drop_stream(ctx, stm);
+	}
+	fz_catch(ctx)
+	{
+		if (stream) (*env)->DeleteGlobalRef(env, stream);
+		if (array) (*env)->DeleteGlobalRef(env, array);
+		fz_free(ctx, state);
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_Document_safe_own(ctx, env, doc);
+}
+
+JNIEXPORT jobject JNICALL
 FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 {
 	fz_context *ctx = get_context(env);
@@ -6701,6 +7050,86 @@ FUN(PDFDocument_canBeSavedIncrementally)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument(env, self);
 	if (!ctx || !pdf) return JNI_FALSE;
 	return pdf_can_be_saved_incrementally(ctx, pdf) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream, jstring joptions)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	SeekableStreamState *state = NULL;
+	jobject stream = NULL;
+	jbyteArray array = NULL;
+	fz_output *out;
+	const char *options = NULL;
+	int errors = 0;
+	pdf_write_options pwo;
+
+	fz_var(state);
+	fz_var(out);
+
+	if (joptions)
+	{
+		options = (*env)->GetStringUTFChars(env, joptions, NULL);
+		if (!options)
+			return 0;
+	}
+
+	stream = (*env)->NewGlobalRef(env, jstream);
+	if (!stream)
+	{
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		return 0;
+	}
+
+	array = (*env)->NewByteArray(env, sizeof state->buffer);
+	if (array)
+		array = (*env)->NewGlobalRef(env, array);
+	if (!array)
+	{
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		(*env)->DeleteGlobalRef(env, stream);
+		return 0;
+	}
+
+	fz_try(ctx)
+	{
+		state = fz_malloc(ctx, sizeof(SeekableStreamState));
+		state->stream = stream;
+		state->array = array;
+
+		out = fz_new_output(ctx, state, call_SeekableOutputStream_write, call_SeekableOutputStream_close, call_SeekableOutputStream_drop);
+		out->seek = call_SeekableOutputStream_seek;
+		out->tell = call_SeekableOutputStream_tell;
+
+		/* these are now owned by 'out' */
+		state = NULL;
+		stream = NULL;
+		array = NULL;
+
+		pdf_parse_write_options(ctx, &pwo, options);
+		pwo.errors = &errors;
+		pdf_write_document(ctx, pdf, out, &pwo);
+		fz_close_output(ctx, out);
+	}
+	fz_always(ctx)
+	{
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+	{
+		if (stream) (*env)->DeleteGlobalRef(env, stream);
+		if (array) (*env)->DeleteGlobalRef(env, array);
+		fz_free(ctx, state);
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return errors;
 }
 
 JNIEXPORT jint JNICALL

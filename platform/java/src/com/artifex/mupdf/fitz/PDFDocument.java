@@ -100,5 +100,11 @@ public class PDFDocument extends Document
 	public native PDFObject addFont(Font font);
 	public native boolean hasUnsavedChanges();
 	public native boolean canBeSavedIncrementally();
+
 	public native int save(String filename, String options);
+
+	protected native int nativeSaveWithStream(SeekableOutputStream stream, String options);
+	public int save(SeekableOutputStream stream, String options) {
+		return nativeSaveWithStream(stream, options);
+	}
 }

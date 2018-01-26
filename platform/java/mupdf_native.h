@@ -623,6 +623,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithBuf
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    openNativeWithStream
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputStream;Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Document;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithStream
+  (JNIEnv *, jclass, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    recognize
  * Signature: (Ljava/lang/String;)Z
  */
@@ -859,6 +867,17 @@ extern "C" {
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DrawDevice_newNative
   (JNIEnv *, jclass, jobject);
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_FileStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_FileStream
+#define _Included_com_artifex_mupdf_fitz_FileStream
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -1899,6 +1918,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_canBeSavedInc
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
   (JNIEnv *, jobject, jstring, jstring);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    saveWithStream
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_saveWithStream
+  (JNIEnv *, jobject, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2841,6 +2868,45 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Rect_adjustForStroke
 #ifdef __cplusplus
 extern "C" {
 #endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_SeekableInputStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_SeekableInputStream
+#define _Included_com_artifex_mupdf_fitz_SeekableInputStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_SeekableOutputStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_SeekableOutputStream
+#define _Included_com_artifex_mupdf_fitz_SeekableOutputStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_SeekableStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_SeekableStream
+#define _Included_com_artifex_mupdf_fitz_SeekableStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+#undef com_artifex_mupdf_fitz_SeekableStream_SEEK_SET
+#define com_artifex_mupdf_fitz_SeekableStream_SEEK_SET 0L
+#undef com_artifex_mupdf_fitz_SeekableStream_SEEK_CUR
+#define com_artifex_mupdf_fitz_SeekableStream_SEEK_CUR 1L
+#undef com_artifex_mupdf_fitz_SeekableStream_SEEK_END
+#define com_artifex_mupdf_fitz_SeekableStream_SEEK_END 2L
 #ifdef __cplusplus
 }
 #endif

@@ -27,6 +27,7 @@ public class Document
 
 	protected native static Document openNativeWithPath(String filename);
 	protected native static Document openNativeWithBuffer(byte buffer[], String magic);
+	protected native static Document openNativeWithStream(SeekableInputStream stream, String mimeType);
 
 	public static Document openDocument(String filename) {
 		Document doc = openNativeWithPath(filename);
@@ -36,6 +37,10 @@ public class Document
 
 	public static Document openDocument(byte buffer[], String magic) {
 		return openNativeWithBuffer(buffer, magic);
+	}
+
+	public static Document openDocument(SeekableInputStream stream, String magic) {
+		return openNativeWithStream(stream, magic);
 	}
 
 	public static native boolean recognize(String magic);
