@@ -502,7 +502,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libeay32.lib"
+				AdditionalDependencies="libcrypto.lib"
 				AdditionalLibraryDirectories="..\..\thirdparty\openssl\lib"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
@@ -1408,7 +1408,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugOpenssl|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1560,10 +1559,10 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugOpenssl|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\thirdparty\openssl\include"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
