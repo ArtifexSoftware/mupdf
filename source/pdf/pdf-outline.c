@@ -33,7 +33,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			else
 				node->uri = NULL;
 
-			if (node->uri)
+			if (node->uri && !fz_is_external_link(ctx, node->uri))
 				node->page = pdf_resolve_link(ctx, doc, node->uri, &node->x, &node->y);
 			else
 				node->page = -1;
