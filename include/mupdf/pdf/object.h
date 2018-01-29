@@ -163,6 +163,8 @@ int pdf_sprint_encrypted_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int 
 int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight);
 int pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen);
 
+void pdf_debug_obj(fz_context *ctx, pdf_obj *obj);
+
 char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src);

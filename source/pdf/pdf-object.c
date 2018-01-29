@@ -2151,6 +2151,33 @@ int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight)
 	return pdf_print_encrypted_obj(ctx, out, obj, tight, NULL, 0, 0);
 }
 
+static int pdf_debug_encrypted_obj(fz_context *ctx, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
+{
+	char buf[1024];
+	char *ptr;
+	int n;
+
+	n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
+	if ((n + 1) < sizeof buf)
+	{
+		pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, obj, tight, crypt, num, gen);
+		fwrite(buf, 1, n, stdout);
+	}
+	else
+	{
+		ptr = fz_malloc(ctx, n + 1);
+		pdf_sprint_encrypted_obj(ctx, ptr, n + 1, obj, tight, crypt, num, gen);
+		fwrite(ptr, 1, n, stdout);
+		fz_free(ctx, ptr);
+	}
+	return n;
+}
+
+void pdf_debug_obj(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_debug_encrypted_obj(ctx, obj, 0, NULL, 0, 0);
+}
+
 int pdf_obj_refs(fz_context *ctx, pdf_obj *ref)
 {
 	return (ref >= PDF_OBJ__LIMIT ? ref->refs : 0);
