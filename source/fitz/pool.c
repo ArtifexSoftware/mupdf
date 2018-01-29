@@ -5,8 +5,8 @@
 
 typedef struct fz_pool_node_s fz_pool_node;
 
-#define POOL_SIZE (64<<10) /* default size of pool blocks */
-#define POOL_SELF (4<<10) /* size where allocs are put into their own blocks */
+#define POOL_SIZE (4<<10) /* default size of pool blocks */
+#define POOL_SELF (1<<10) /* size where allocs are put into their own blocks */
 
 struct fz_pool_s
 {
