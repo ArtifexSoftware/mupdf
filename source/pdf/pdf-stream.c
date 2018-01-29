@@ -303,14 +303,13 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_ob
 		*orig_gen = 0;
 	}
 
-	fz_var(chain);
+	chain = fz_keep_stream(ctx, chain);
 
 	fz_try(ctx)
 	{
 		len = pdf_to_int(ctx, pdf_dict_get(ctx, stmobj, PDF_NAME_Length));
 
-		/* don't close chain when we close this filter */
-		chain2 = fz_keep_stream(ctx, chain);
+		chain2 = chain;
 		chain = NULL;
 		chain = fz_open_null(ctx, chain2, len, offset);
 
