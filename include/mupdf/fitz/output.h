@@ -80,6 +80,7 @@ struct fz_output_s
 	fz_output_close_fn *close;
 	fz_output_drop_fn *drop;
 	fz_stream_from_output_fn *as_stream;
+	char *bp, *wp, *ep;
 };
 
 /*
@@ -93,7 +94,7 @@ struct fz_output_s
 	close: Cleanup function to destroy state when output closed.
 	May permissibly be null.
 */
-fz_output *fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop);
+fz_output *fz_new_output(fz_context *ctx, int bufsiz, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop);
 
 /*
 	fz_new_output_with_path: Open an output stream that writes to a
@@ -169,6 +170,11 @@ void fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence);
 	Throw an error on untellable outputs.
 */
 int64_t fz_tell_output(fz_context *ctx, fz_output *out);
+
+/*
+	fz_flush_output: Flush unwritten data.
+*/
+void fz_flush_output(fz_context *ctx, fz_output *out);
 
 /*
 	fz_close_output: Flush pending output and close an output stream.

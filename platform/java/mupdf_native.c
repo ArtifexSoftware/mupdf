@@ -7100,7 +7100,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		state->stream = stream;
 		state->array = array;
 
-		out = fz_new_output(ctx, state, call_SeekableOutputStream_write, call_SeekableOutputStream_close, call_SeekableOutputStream_drop);
+		out = fz_new_output(ctx, 8192, state, call_SeekableOutputStream_write, call_SeekableOutputStream_close, call_SeekableOutputStream_drop);
 		out->seek = call_SeekableOutputStream_seek;
 		out->tell = call_SeekableOutputStream_tell;
 
