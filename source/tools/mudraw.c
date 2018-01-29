@@ -217,7 +217,6 @@ typedef struct worker_t {
 static char *output = NULL;
 static fz_output *out = NULL;
 static int output_pagenum = 0;
-static int output_append = 0;
 static int output_file_per_page = 0;
 
 static char *format = NULL;
@@ -1148,8 +1147,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_close_output(ctx, out);
 		fz_drop_output(ctx, out);
 		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
-		out = fz_new_output_with_path(ctx, text_buffer, output_append);
-		output_append = 1;
+		out = fz_new_output_with_path(ctx, text_buffer, 0);
 	}
 
 	if (bgprint.active)
