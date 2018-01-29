@@ -1920,10 +1920,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    saveWithStream
+ * Method:    nativeSaveWithStream
  * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_saveWithStream
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_nativeSaveWithStream
   (JNIEnv *, jobject, jobject, jstring);
 
 #ifdef __cplusplus
