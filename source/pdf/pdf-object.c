@@ -2155,3 +2155,75 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *ref)
 {
 	return (ref >= PDF_OBJ__LIMIT ? ref->refs : 0);
 }
+
+/* Convenience functions */
+
+void pdf_dict_put_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_bool(ctx, NULL, x));
+}
+
+void pdf_dict_put_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int64_t x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_int(ctx, NULL, x));
+}
+
+void pdf_dict_put_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key, double x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_real(ctx, NULL, x));
+}
+
+void pdf_dict_put_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_name(ctx, NULL, x));
+}
+
+void pdf_dict_put_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x, size_t n)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_string(ctx, NULL, x, n));
+}
+
+void pdf_dict_put_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_text_string(ctx, NULL, x));
+}
+
+void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_rect *x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_rect(ctx, NULL, x));
+}
+
+void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_matrix *x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_matrix(ctx, NULL, x));
+}
+
+void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_bool(ctx, NULL, x));
+}
+
+void pdf_array_push_int(fz_context *ctx, pdf_obj *array, int64_t x)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_int(ctx, NULL, x));
+}
+
+void pdf_array_push_real(fz_context *ctx, pdf_obj *array, double x)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_real(ctx, NULL, x));
+}
+
+void pdf_array_push_name(fz_context *ctx, pdf_obj *array, const char *x)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_name(ctx, NULL, x));
+}
+
+void pdf_array_push_string(fz_context *ctx, pdf_obj *array, const char *x, size_t n)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_string(ctx, NULL, x, n));
+}
+
+void pdf_array_push_text_string(fz_context *ctx, pdf_obj *array, const char *x)
+{
+	pdf_array_push_drop(ctx, array, pdf_new_text_string(ctx, NULL, x));
+}

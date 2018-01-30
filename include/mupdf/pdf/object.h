@@ -130,6 +130,22 @@ void pdf_dict_del(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(fz_context *ctx, pdf_obj *dict, const char *key);
 void pdf_sort_dict(fz_context *ctx, pdf_obj *dict);
 
+void pdf_dict_put_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int x);
+void pdf_dict_put_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int64_t x);
+void pdf_dict_put_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key, double x);
+void pdf_dict_put_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x);
+void pdf_dict_put_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x, size_t n);
+void pdf_dict_put_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const char *x);
+void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_rect *x);
+void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_matrix *x);
+
+void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x);
+void pdf_array_push_int(fz_context *ctx, pdf_obj *array, int64_t x);
+void pdf_array_push_real(fz_context *ctx, pdf_obj *array, double x);
+void pdf_array_push_name(fz_context *ctx, pdf_obj *array, const char *x);
+void pdf_array_push_string(fz_context *ctx, pdf_obj *array, const char *x, size_t n);
+void pdf_array_push_text_string(fz_context *ctx, pdf_obj *array, const char *x);
+
 /*
 	Recurse through the object structure setting the node's parent_num to num.
 	parent_num is used when a subobject is to be changed during a document edit.
