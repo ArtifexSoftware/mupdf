@@ -379,22 +379,15 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 			if (tok != PDF_TOK_INT && tok != PDF_TOK_R)
 			{
 				if (n > 0)
-				{
-					obj = pdf_new_int(ctx, doc, a);
-					pdf_array_push_drop(ctx, ary, obj);
-				}
+					pdf_array_push_int(ctx, ary, a);
 				if (n > 1)
-				{
-					obj = pdf_new_int(ctx, doc, b);
-					pdf_array_push_drop(ctx, ary, obj);
-				}
+					pdf_array_push_int(ctx, ary, b);
 				n = 0;
 			}
 
 			if (tok == PDF_TOK_INT && n == 2)
 			{
-				obj = pdf_new_int(ctx, doc, a);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_int(ctx, ary, a);
 				a = b;
 				n --;
 			}
@@ -419,8 +412,7 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 			case PDF_TOK_R:
 				if (n != 2)
 					fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot parse indirect reference in array");
-				obj = pdf_new_indirect(ctx, doc, a, b);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_drop(ctx, ary, pdf_new_indirect(ctx, doc, a, b));
 				n = 0;
 				break;
 
@@ -435,32 +427,26 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 				break;
 
 			case PDF_TOK_NAME:
-				obj = pdf_new_name(ctx, doc, buf->scratch);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_name(ctx, ary, buf->scratch);
 				break;
 			case PDF_TOK_REAL:
-				obj = pdf_new_real(ctx, doc, buf->f);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_real(ctx, ary, buf->f);
 				break;
 			case PDF_TOK_STRING:
-				obj = pdf_new_string(ctx, doc, buf->scratch, buf->len);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_string(ctx, ary, buf->scratch, buf->len);
 				break;
 			case PDF_TOK_TRUE:
-				obj = pdf_new_bool(ctx, doc, 1);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_bool(ctx, ary, 1);
 				break;
 			case PDF_TOK_FALSE:
-				obj = pdf_new_bool(ctx, doc, 0);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push_bool(ctx, ary, 0);
 				break;
 			case PDF_TOK_NULL:
-				obj = pdf_new_null(ctx, doc);
-				pdf_array_push_drop(ctx, ary, obj);
+				pdf_array_push(ctx, ary, PDF_OBJ_NULL);
 				break;
 
 			default:
-				pdf_array_push_drop(ctx, ary, pdf_new_null(ctx, doc));
+				pdf_array_push(ctx, ary, PDF_OBJ_NULL);
 				break;
 			}
 		}

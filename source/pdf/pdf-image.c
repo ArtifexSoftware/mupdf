@@ -327,8 +327,8 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	{
 		imobj = pdf_new_dict(ctx, doc, 3);
 		pdf_dict_put_drop(ctx, imobj, PDF_NAME_DecodeParms, dp = pdf_new_dict(ctx, doc, 3));
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
+		pdf_dict_put(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
+		pdf_dict_put(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
 
 		if (cbuffer)
 		{
@@ -339,60 +339,60 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				goto raw_or_unknown_compression;
 			case FZ_IMAGE_JPEG:
 				if (cp->u.jpeg.color_transform != -1)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_DCTDecode);
+					pdf_dict_put_int(ctx, dp, PDF_NAME_ColorTransform, cp->u.jpeg.color_transform);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_DCTDecode);
 				break;
 			case FZ_IMAGE_JPX:
 				if (cp->u.jpx.smask_in_data)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_SMaskInData, pdf_new_int(ctx, doc, cp->u.jpx.smask_in_data));
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_JPXDecode);
+					pdf_dict_put_int(ctx, dp, PDF_NAME_SMaskInData, cp->u.jpx.smask_in_data);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_JPXDecode);
 				break;
 			case FZ_IMAGE_FAX:
 				if (cp->u.fax.columns)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.fax.columns));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Columns, cp->u.fax.columns);
 				if (cp->u.fax.rows)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Rows, pdf_new_int(ctx, doc, cp->u.fax.rows));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Rows, cp->u.fax.rows);
 				if (cp->u.fax.k)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_K, pdf_new_int(ctx, doc, cp->u.fax.k));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_K, cp->u.fax.k);
 				if (cp->u.fax.end_of_line)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_EndOfLine, pdf_new_int(ctx, doc, cp->u.fax.end_of_line));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_EndOfLine, cp->u.fax.end_of_line);
 				if (cp->u.fax.encoded_byte_align)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_EncodedByteAlign, pdf_new_int(ctx, doc, cp->u.fax.encoded_byte_align));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_EncodedByteAlign, cp->u.fax.encoded_byte_align);
 				if (cp->u.fax.end_of_block)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_EndOfBlock, pdf_new_int(ctx, doc, cp->u.fax.end_of_block));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_EndOfBlock, cp->u.fax.end_of_block);
 				if (cp->u.fax.black_is_1)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_BlackIs1, pdf_new_int(ctx, doc, cp->u.fax.black_is_1));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_BlackIs1, cp->u.fax.black_is_1);
 				if (cp->u.fax.damaged_rows_before_error)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
+					pdf_dict_put_int(ctx, dp, PDF_NAME_DamagedRowsBeforeError, cp->u.fax.damaged_rows_before_error);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
 				break;
 			case FZ_IMAGE_FLATE:
 				if (cp->u.flate.columns)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Columns, cp->u.flate.columns);
 				if (cp->u.flate.colors)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Colors, cp->u.flate.colors);
 				if (cp->u.flate.predictor)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Predictor, cp->u.flate.predictor);
 				if (cp->u.flate.bpc)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, cp->u.flate.bpc));
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_BitsPerComponent, cp->u.flate.bpc);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+				pdf_dict_put_int(ctx, imobj, PDF_NAME_BitsPerComponent, image->bpc);
 				break;
 			case FZ_IMAGE_LZW:
 				if (cp->u.lzw.columns)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.lzw.columns));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Columns, cp->u.lzw.columns);
 				if (cp->u.lzw.colors)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.lzw.colors));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Colors, cp->u.lzw.colors);
 				if (cp->u.lzw.predictor)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_Predictor, cp->u.lzw.predictor);
 				if (cp->u.lzw.early_change)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
+					pdf_dict_put_int(ctx, dp, PDF_NAME_EarlyChange, cp->u.lzw.early_change);
 				if (cp->u.lzw.bpc)
-					pdf_dict_put_drop(ctx, dp, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, cp->u.lzw.bpc));
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
+					pdf_dict_put_int(ctx, dp, PDF_NAME_BitsPerComponent, cp->u.lzw.bpc);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
 				break;
 			case FZ_IMAGE_RLD:
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
+				pdf_dict_put(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
 				break;
 			}
 
@@ -454,18 +454,18 @@ raw_or_unknown_compression:
 			}
 		}
 
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, pixmap ? pixmap->w : image->w));
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, pixmap ? pixmap->h : image->h));
+		pdf_dict_put_int(ctx, imobj, PDF_NAME_Width, pixmap ? pixmap->w : image->w);
+		pdf_dict_put_int(ctx, imobj, PDF_NAME_Height, pixmap ? pixmap->h : image->h);
 
 		if (mask)
 		{
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
+			pdf_dict_put_bool(ctx, imobj, PDF_NAME_ImageMask, 1);
 		}
 		else
 		{
 			fz_colorspace *cs;
 
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+			pdf_dict_put_int(ctx, imobj, PDF_NAME_BitsPerComponent, image->bpc);
 
 			cs = pixmap ? pixmap->colorspace : image->colorspace;
 			switch (fz_colorspace_type(ctx, cs))
@@ -484,17 +484,17 @@ raw_or_unknown_compression:
 
 					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, arr = pdf_new_array(ctx, doc, 4));
 
-					pdf_array_put_drop(ctx, arr, 0, PDF_NAME_Indexed);
+					pdf_array_push(ctx, arr, PDF_NAME_Indexed);
 					switch (fz_colorspace_type(ctx, basecs))
 					{
 					case FZ_COLORSPACE_GRAY:
-						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceGray);
+						pdf_array_push(ctx, arr, PDF_NAME_DeviceGray);
 						break;
 					case FZ_COLORSPACE_RGB:
-						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceRGB);
+						pdf_array_push(ctx, arr, PDF_NAME_DeviceRGB);
 						break;
 					case FZ_COLORSPACE_CMYK:
-						pdf_array_put_drop(ctx, arr, 1, PDF_NAME_DeviceCMYK);
+						pdf_array_push(ctx, arr, PDF_NAME_DeviceCMYK);
 						break;
 					default:
 						// TODO: convert to RGB!
@@ -502,18 +502,18 @@ raw_or_unknown_compression:
 						break;
 					}
 
-					pdf_array_put_drop(ctx, arr, 2, pdf_new_int(ctx, doc, high));
-					pdf_array_put_drop(ctx, arr, 3, pdf_new_string(ctx, doc, (char *) lookup, basen * (high + 1)));
+					pdf_array_push_int(ctx, arr, high);
+					pdf_array_push_string(ctx, arr, (char *) lookup, basen * (high + 1));
 				}
 				break;
 			case FZ_COLORSPACE_GRAY:
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
+				pdf_dict_put(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
 				break;
 			case FZ_COLORSPACE_RGB:
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
+				pdf_dict_put(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
 				break;
 			case FZ_COLORSPACE_CMYK:
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
+				pdf_dict_put(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
 				break;
 			default:
 				// TODO: convert to RGB!

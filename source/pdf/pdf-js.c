@@ -228,7 +228,7 @@ static pdf_obj *load_color(pdf_js *js, int idx)
 			c = js_tonumber(J, -1);
 			js_pop(J, 1);
 
-			pdf_array_push_drop(ctx, color, pdf_new_real(ctx, doc, c));
+			pdf_array_push_real(ctx, color, c);
 		}
 	}
 	fz_catch(ctx)

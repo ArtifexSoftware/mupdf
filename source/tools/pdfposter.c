@@ -47,10 +47,10 @@ intersect_box(fz_context *ctx, pdf_document *doc, pdf_obj *page, pdf_obj *box_na
 		old_rect.y1 = mb->y1;
 
 	newbox = pdf_new_array(ctx, doc, 4);
-	pdf_array_push_drop(ctx, newbox, pdf_new_real(ctx, doc, old_rect.x0));
-	pdf_array_push_drop(ctx, newbox, pdf_new_real(ctx, doc, old_rect.y0));
-	pdf_array_push_drop(ctx, newbox, pdf_new_real(ctx, doc, old_rect.x1));
-	pdf_array_push_drop(ctx, newbox, pdf_new_real(ctx, doc, old_rect.y1));
+	pdf_array_push_real(ctx, newbox, old_rect.x0);
+	pdf_array_push_real(ctx, newbox, old_rect.y0);
+	pdf_array_push_real(ctx, newbox, old_rect.x1);
+	pdf_array_push_real(ctx, newbox, old_rect.y1);
 	pdf_dict_put_drop(ctx, page, box_name, newbox);
 }
 
@@ -131,10 +131,10 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 				else
 					mb.y1 = mediabox.y0 + (h/yf)*(y+1);
 
-				pdf_array_push_drop(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x0));
-				pdf_array_push_drop(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y0));
-				pdf_array_push_drop(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x1));
-				pdf_array_push_drop(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y1));
+				pdf_array_push_real(ctx, newmediabox, mb.x0);
+				pdf_array_push_real(ctx, newmediabox, mb.y0);
+				pdf_array_push_real(ctx, newmediabox, mb.x1);
+				pdf_array_push_real(ctx, newmediabox, mb.y1);
 
 				pdf_dict_put(ctx, newpageobj, PDF_NAME_Parent, pages);
 				pdf_dict_put_drop(ctx, newpageobj, PDF_NAME_MediaBox, newmediabox);
@@ -154,7 +154,7 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	}
 
 	/* Update page count and kids array */
-	pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, kidcount));
+	pdf_dict_put_int(ctx, pages, PDF_NAME_Count, kidcount);
 	pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, kids);
 }
 

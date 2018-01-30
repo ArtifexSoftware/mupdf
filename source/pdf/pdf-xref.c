@@ -2699,14 +2699,14 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		pdf_get_populating_xref_entry(ctx, doc, 0);
 
 		trailer = pdf_new_dict(ctx, doc, 2);
-		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
+		pdf_dict_put_int(ctx, trailer, PDF_NAME_Size, 3);
 		root = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_add_object_drop(ctx, doc, root));
-		pdf_dict_put_drop(ctx, root, PDF_NAME_Type, PDF_NAME_Catalog);
+		pdf_dict_put(ctx, root, PDF_NAME_Type, PDF_NAME_Catalog);
 		pages = pdf_new_dict(ctx, doc, 3);
 		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object_drop(ctx, doc, pages));
-		pdf_dict_put_drop(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
-		pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, 0));
+		pdf_dict_put(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
+		pdf_dict_put_int(ctx, pages, PDF_NAME_Count, 0);
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, pdf_new_array(ctx, doc, 1));
 
 		/* Set the trailer of the final xref section. */

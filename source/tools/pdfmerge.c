@@ -50,7 +50,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 		/* Make a new page object dictionary to hold the items we copy from the source page. */
 		page_dict = pdf_new_dict(ctx, doc_des, 4);
 
-		pdf_dict_put_drop(ctx, page_dict, PDF_NAME_Type, PDF_NAME_Page);
+		pdf_dict_put(ctx, page_dict, PDF_NAME_Type, PDF_NAME_Page);
 
 		for (i = 0; i < nelem(copy_list); i++)
 		{

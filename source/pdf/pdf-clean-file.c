@@ -169,7 +169,7 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 		int old_count = pdf_to_int(ctx, pdf_dict_get(ctx, outlines, PDF_NAME_Count));
 		pdf_dict_put(ctx, outlines, PDF_NAME_First, first);
 		pdf_dict_put(ctx, outlines, PDF_NAME_Last, last);
-		pdf_dict_put_drop(ctx, outlines, PDF_NAME_Count, pdf_new_int(ctx, doc, old_count > 0 ? nc : -nc));
+		pdf_dict_put_int(ctx, outlines, PDF_NAME_Count, old_count > 0 ? nc : -nc);
 	}
 
 	return nc;

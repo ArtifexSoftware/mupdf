@@ -124,10 +124,10 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 			pdf_dict_put_drop(ctx, page->obj, PDF_NAME_Annots, annot_arr);
 		}
 
-		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_Type, PDF_NAME_Annot);
+		pdf_dict_put(ctx, annot_obj, PDF_NAME_Type, PDF_NAME_Annot);
 
-		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_Subtype, pdf_new_name(ctx, doc, type_str));
-		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
+		pdf_dict_put_name(ctx, annot_obj, PDF_NAME_Subtype, type_str);
+		pdf_dict_put_rect(ctx, annot_obj, PDF_NAME_Rect, &rect);
 
 		/* Make printable as default */
 		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, PDF_ANNOT_IS_PRINT));
@@ -254,7 +254,6 @@ pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 void
 pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect)
 {
-	pdf_document *doc = annot->page->doc;
 	fz_rect trect = *rect;
 	fz_matrix page_ctm, inv_page_ctm;
 
@@ -262,7 +261,7 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect)
 	fz_invert_matrix(&inv_page_ctm, &page_ctm);
 	fz_transform_rect(&trect, &inv_page_ctm);
 
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &trect));
+	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME_Rect, &trect);
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -1059,10 +1058,10 @@ pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char
 		ref = pdf_add_object(ctx, doc, font);
 		pdf_dict_puts_drop(ctx, form_fonts, nbuf, ref);
 
-		pdf_dict_put_drop(ctx, font, PDF_NAME_Type, PDF_NAME_Font);
-		pdf_dict_put_drop(ctx, font, PDF_NAME_Subtype, PDF_NAME_Type1);
-		pdf_dict_put_drop(ctx, font, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font_name));
-		pdf_dict_put_drop(ctx, font, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
+		pdf_dict_put(ctx, font, PDF_NAME_Type, PDF_NAME_Font);
+		pdf_dict_put(ctx, font, PDF_NAME_Subtype, PDF_NAME_Type1);
+		pdf_dict_put_name(ctx, font, PDF_NAME_BaseFont, font_name);
+		pdf_dict_put(ctx, font, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
 
 		memcpy(da_info.col, color, sizeof(float)*3);
 		da_info.col_size = 3;

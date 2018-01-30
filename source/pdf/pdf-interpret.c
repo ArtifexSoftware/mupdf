@@ -848,13 +848,13 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 						in_text_array = 0;
 						break;
 					case PDF_TOK_REAL:
-						pdf_array_push_drop(ctx, csi->obj, pdf_new_real(ctx, doc, buf->f));
+						pdf_array_push_real(ctx, csi->obj, buf->f);
 						break;
 					case PDF_TOK_INT:
-						pdf_array_push_drop(ctx, csi->obj, pdf_new_int(ctx, doc, buf->i));
+						pdf_array_push_int(ctx, csi->obj, buf->i);
 						break;
 					case PDF_TOK_STRING:
-						pdf_array_push_drop(ctx, csi->obj, pdf_new_string(ctx, doc, buf->scratch, buf->len));
+						pdf_array_push_string(ctx, csi->obj, buf->scratch, buf->len);
 						break;
 					case PDF_TOK_EOF:
 						break;

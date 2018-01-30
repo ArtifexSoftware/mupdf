@@ -149,6 +149,6 @@ void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int ty
 		int bits = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Ff));
 		bits &= ~clearbits;
 		bits |= setbits;
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Ff, pdf_new_int(ctx, doc, bits));
+		pdf_dict_put_int(ctx, obj, PDF_NAME_Ff, bits);
 	}
 }

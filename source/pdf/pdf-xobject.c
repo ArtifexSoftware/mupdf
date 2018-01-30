@@ -134,10 +134,10 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 	fz_try(ctx)
 	{
 		dict = pdf_new_dict(ctx, doc, 0);
-		pdf_dict_put_drop(ctx, dict, PDF_NAME_BBox, pdf_new_rect(ctx, doc, bbox));
-		pdf_dict_put_drop(ctx, dict, PDF_NAME_FormType, pdf_new_int(ctx, doc, 1));
-		pdf_dict_put_drop(ctx, dict, PDF_NAME_Length, pdf_new_int(ctx, doc, 0));
-		pdf_dict_put_drop(ctx, dict, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, mat));
+		pdf_dict_put_rect(ctx, dict, PDF_NAME_BBox, bbox);
+		pdf_dict_put_int(ctx, dict, PDF_NAME_FormType, 1);
+		pdf_dict_put_int(ctx, dict, PDF_NAME_Length, 0);
+		pdf_dict_put_matrix(ctx, dict, PDF_NAME_Matrix, mat);
 
 		res = pdf_new_dict(ctx, doc, 0);
 		pdf_dict_put(ctx, dict, PDF_NAME_Resources, res);

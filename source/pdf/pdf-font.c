@@ -1546,21 +1546,21 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 	{
 		size_t len = fz_buffer_storage(ctx, buf, NULL);
 		obj = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, (int)len));
+		pdf_dict_put_int(ctx, obj, PDF_NAME_Length1, (int)len);
 		switch (ft_font_file_kind(font->ft_face))
 		{
 		case 1:
 			/* TODO: these may not be the correct values, but I doubt it matters */
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length2, pdf_new_int(ctx, doc, (int)len));
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length3, pdf_new_int(ctx, doc, 0));
+			pdf_dict_put_int(ctx, obj, PDF_NAME_Length2, len);
+			pdf_dict_put_int(ctx, obj, PDF_NAME_Length3, 0);
 			break;
 		case 2:
 			break;
 		case 3:
 			if (FT_Get_Sfnt_Table(font->ft_face, FT_SFNT_HEAD))
-				pdf_dict_put_drop(ctx, obj, PDF_NAME_Subtype, PDF_NAME_OpenType);
+				pdf_dict_put(ctx, obj, PDF_NAME_Subtype, PDF_NAME_OpenType);
 			else
-				pdf_dict_put_drop(ctx, obj, PDF_NAME_Subtype, PDF_NAME_Type1C);
+				pdf_dict_put(ctx, obj, PDF_NAME_Subtype, PDF_NAME_Type1C);
 			break;
 		}
 		ref = pdf_add_object(ctx, doc, obj);
@@ -1596,21 +1596,21 @@ pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 	{
 		fdobj = pdf_new_dict(ctx, doc, 10);
 		pdf_dict_put(ctx, fdobj, PDF_NAME_Type, PDF_NAME_FontDescriptor);
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_FontName, pdf_new_name(ctx, doc, font->name));
+		pdf_dict_put_name(ctx, fdobj, PDF_NAME_FontName, font->name);
 
 		bbox = pdf_new_array(ctx, doc, 4);
-		pdf_array_push_drop(ctx, bbox, pdf_new_real(ctx, doc, 1000.0f * font->bbox.x0));
-		pdf_array_push_drop(ctx, bbox, pdf_new_real(ctx, doc, 1000.0f * font->bbox.y0));
-		pdf_array_push_drop(ctx, bbox, pdf_new_real(ctx, doc, 1000.0f * font->bbox.x1));
-		pdf_array_push_drop(ctx, bbox, pdf_new_real(ctx, doc, 1000.0f * font->bbox.y1));
+		pdf_array_push_real(ctx, bbox, 1000.0f * font->bbox.x0);
+		pdf_array_push_real(ctx, bbox, 1000.0f * font->bbox.y0);
+		pdf_array_push_real(ctx, bbox, 1000.0f * font->bbox.x1);
+		pdf_array_push_real(ctx, bbox, 1000.0f * font->bbox.y1);
 		pdf_dict_put(ctx, fdobj, PDF_NAME_FontBBox, bbox);
 
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_ItalicAngle, pdf_new_real(ctx, doc, fontdesc->italic_angle));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Ascent, pdf_new_real(ctx, doc, fontdesc->ascent));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Descent, pdf_new_real(ctx, doc, fontdesc->descent));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_CapHeight, pdf_new_real(ctx, doc, fontdesc->cap_height));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_StemV, pdf_new_real(ctx, doc, 80));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Flags, pdf_new_real(ctx, doc, fontdesc->flags));
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_ItalicAngle, fontdesc->italic_angle);
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_Ascent, fontdesc->ascent);
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_Descent, fontdesc->descent);
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_CapHeight, fontdesc->cap_height);
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_StemV, 80);
+		pdf_dict_put_real(ctx, fdobj, PDF_NAME_Flags, fontdesc->flags);
 
 		if (fileref)
 		{
@@ -1666,7 +1666,7 @@ pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fo
 	fz_try(ctx)
 	{
 		for (i = *first_char; i <= *last_char; i++)
-			pdf_array_push_drop(ctx, arr, pdf_new_int(ctx, doc, width_table[i]));
+			pdf_array_push_int(ctx, arr, width_table[i]);
 	}
 	fz_catch(ctx)
 	{
@@ -1683,9 +1683,9 @@ pdf_add_cid_system_info(fz_context *ctx, pdf_document *doc)
 	pdf_obj *fobj = pdf_new_dict(ctx, doc, 3);
 	fz_try(ctx)
 	{
-		pdf_dict_put_drop(ctx, fobj, PDF_NAME_Ordering, pdf_new_string(ctx, doc, "Identity", strlen("Identity")));
-		pdf_dict_put_drop(ctx, fobj, PDF_NAME_Registry, pdf_new_string(ctx, doc, "Adobe", strlen("Adobe")));
-		pdf_dict_put_drop(ctx, fobj, PDF_NAME_Supplement, pdf_new_int(ctx, doc, 0));
+		pdf_dict_put_string(ctx, fobj, PDF_NAME_Ordering, "Identity", strlen("Identity"));
+		pdf_dict_put_string(ctx, fobj, PDF_NAME_Registry, "Adobe", strlen("Adobe"));
+		pdf_dict_put_int(ctx, fobj, PDF_NAME_Supplement, 0);
 	}
 	fz_catch(ctx)
 	{
@@ -1756,7 +1756,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 				else
 				{
 					/* Add prev size to run_obj */
-					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
+					pdf_array_push_int(ctx, run_obj, prev_size);
 				}
 				break;
 			case FW_START:
@@ -1768,7 +1768,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 				else
 				{
 					run_obj = pdf_new_array(ctx, doc, 10);
-					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
+					pdf_array_push_int(ctx, run_obj, prev_size);
 					state = FW_RUN;
 				}
 				new_first_code = prev_code;
@@ -1781,14 +1781,14 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 				{
 				case FW_SAME:
 					/* Add three entries. First cid, last cid and width */
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
+					pdf_array_push_int(ctx, fwobj, first_code);
+					pdf_array_push_int(ctx, fwobj, prev_code);
+					pdf_array_push_int(ctx, fwobj, prev_size);
 					break;
 				case FW_RUN:
 					if (pdf_array_len(ctx, run_obj) > 0)
 					{
-						pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
+						pdf_array_push_int(ctx, fwobj, first_code);
 						pdf_array_push(ctx, fwobj, run_obj);
 					}
 					pdf_drop_obj(ctx, run_obj);
@@ -1796,9 +1796,9 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 					break;
 				case FW_START:
 					/* Lone wolf. Not part of a consecutive run */
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
-					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
+					pdf_array_push_int(ctx, fwobj, prev_code);
+					pdf_array_push_int(ctx, fwobj, prev_code);
+					pdf_array_push_int(ctx, fwobj, prev_size);
 					break;
 				}
 
@@ -1861,13 +1861,13 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 		}
 		ps_name = FT_Get_Postscript_Name(face);
 		if (ps_name)
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, ps_name));
+			pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, ps_name);
 		else
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
+			pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, font->name);
 		pdf_dict_put(ctx, fobj, PDF_NAME_CIDSystemInfo, fsys_ref);
 		pdf_dict_put(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
 		if (font->width_table != NULL)
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_DW, pdf_new_int(ctx, doc, font->width_default));
+			pdf_dict_put_int(ctx, fobj, PDF_NAME_DW, font->width_default);
 		if (fw != NULL)
 			pdf_dict_put(ctx, fobj, PDF_NAME_W, fw);
 
@@ -2113,7 +2113,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			fobj = pdf_new_dict(ctx, doc, 10);
 			pdf_dict_put(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
 			pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_Type0);
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
+			pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, font->name);
 			pdf_dict_put(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_Identity_H);
 
 			obj_array = pdf_new_array(ctx, doc, 3);
@@ -2174,7 +2174,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		if (fref == NULL)
 		{
 			fobj = pdf_new_dict(ctx, doc, 10);
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
+			pdf_dict_put(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
 			switch (ft_kind(face))
 			{
 			case TYPE1: pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_Type1); break;
@@ -2187,7 +2187,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 				const char *ps_name = FT_Get_Postscript_Name(face);
 				if (!ps_name)
 					ps_name = font->name;
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, ps_name));
+				pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, ps_name);
 
 				fontdesc = pdf_new_font_desc(ctx);
 				fontdesc->font = fz_keep_font(ctx, font);
@@ -2199,14 +2199,14 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 				fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
 				fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc, &first_char, &last_char);
 
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_FirstChar, pdf_new_int(ctx, doc, first_char));
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_LastChar, pdf_new_int(ctx, doc, last_char));
+				pdf_dict_put_int(ctx, fobj, PDF_NAME_FirstChar, first_char);
+				pdf_dict_put_int(ctx, fobj, PDF_NAME_LastChar, last_char);
 				pdf_dict_put(ctx, fobj, PDF_NAME_Widths, fwidth_ref);
 				pdf_dict_put(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
 			}
 			else
 			{
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, clean_font_name(font->name)));
+				pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, clean_font_name(font->name));
 			}
 
 			fref = pdf_add_object(ctx, doc, fobj);

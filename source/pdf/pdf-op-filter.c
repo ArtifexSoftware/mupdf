@@ -558,12 +558,12 @@ filter_show_string(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf,
 		send_adjustment(ctx, p, skip);
 }
 
-static pdf_obj *
+static float
 adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
 {
 	float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
 	skip_dist = skip_dist / p->gstate->pending.text.size;
-	return pdf_new_real(ctx, p->doc, skip_dist * 1000);
+	return skip_dist * 1000;
 }
 
 
@@ -613,10 +613,10 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 						/* We have *some* chars to send at least */
 						if (skip.x != 0 || skip.y != 0)
 						{
-							pdf_array_push_drop(ctx, new_arr, adjustment(ctx, p, skip));
+							pdf_array_push_real(ctx, new_arr, adjustment(ctx, p, skip));
 							skip.x = skip.y = 0;
 						}
-						pdf_array_push_drop(ctx, new_arr, pdf_new_string(ctx, doc, (char *)buf+start, j-start));
+						pdf_array_push_string(ctx, new_arr, (char *)buf+start, j-start);
 					}
 					if (j != len)
 					{
@@ -643,7 +643,7 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 			}
 		}
 		if (skip.x != 0 || skip.y != 0)
-			pdf_array_push_drop(ctx, new_arr, adjustment(ctx, p, skip));
+			pdf_array_push_real(ctx, new_arr, adjustment(ctx, p, skip));
 		if (p->chain->op_TJ && pdf_array_len(ctx, new_arr))
 			p->chain->op_TJ(ctx, p->chain, new_arr);
 	}

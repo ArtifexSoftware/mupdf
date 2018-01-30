@@ -703,7 +703,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	fz_try(ctx)
 	{
 		pdf_set_field_type(ctx, doc, annot->obj, type);
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_T, pdf_new_string(ctx, doc, fieldname, strlen(fieldname)));
+		pdf_dict_put_string(ctx, annot->obj, PDF_NAME_T, fieldname, strlen(fieldname));
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
 		{
@@ -1340,8 +1340,8 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	contents = pdf_new_string(ctx, doc, buf, sizeof(buf));
 	pdf_dict_put_drop(ctx, v, PDF_NAME_Contents, contents);
 
-	pdf_dict_put_drop(ctx, v, PDF_NAME_Filter, PDF_NAME_Adobe_PPKLite);
-	pdf_dict_put_drop(ctx, v, PDF_NAME_SubFilter, PDF_NAME_adbe_pkcs7_detached);
+	pdf_dict_put(ctx, v, PDF_NAME_Filter, PDF_NAME_Adobe_PPKLite);
+	pdf_dict_put(ctx, v, PDF_NAME_SubFilter, PDF_NAME_adbe_pkcs7_detached);
 
 	/* Record details within the document structure so that contents
 	 * and byte_range can be updated with their correct values at

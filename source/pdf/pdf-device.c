@@ -313,7 +313,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 		fz_try(ctx)
 		{
 			char text[32];
-			pdf_dict_put_drop(ctx, o, (stroke ? PDF_NAME_CA : PDF_NAME_ca), pdf_new_real(ctx, doc, alpha));
+			pdf_dict_put_real(ctx, o, (stroke ? PDF_NAME_CA : PDF_NAME_ca), alpha);
 			fz_snprintf(text, sizeof(text), "ExtGState/Alp%d", i);
 			ref = pdf_add_object(ctx, doc, o);
 			pdf_dict_putp_drop(ctx, pdev->resources, text, ref);
@@ -567,20 +567,20 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		group = pdf_new_dict(ctx, doc, 5);
 		fz_try(ctx)
 		{
-			pdf_dict_put_drop(ctx, group, PDF_NAME_Type, PDF_NAME_Group);
-			pdf_dict_put_drop(ctx, group, PDF_NAME_S, PDF_NAME_Transparency);
-			pdf_dict_put_drop(ctx, group, PDF_NAME_K, pdf_new_bool(ctx, doc, knockout));
-			pdf_dict_put_drop(ctx, group, PDF_NAME_I, pdf_new_bool(ctx, doc, isolated));
+			pdf_dict_put(ctx, group, PDF_NAME_Type, PDF_NAME_Group);
+			pdf_dict_put(ctx, group, PDF_NAME_S, PDF_NAME_Transparency);
+			pdf_dict_put_bool(ctx, group, PDF_NAME_K, knockout);
+			pdf_dict_put_bool(ctx, group, PDF_NAME_I, isolated);
 			switch (fz_colorspace_type(ctx, colorspace))
 			{
 			case FZ_COLORSPACE_GRAY:
-				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceGray);
+				pdf_dict_put(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceGray);
 				break;
 			case FZ_COLORSPACE_RGB:
-				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceRGB);
+				pdf_dict_put(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceRGB);
 				break;
 			case FZ_COLORSPACE_CMYK:
-				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
+				pdf_dict_put(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
 				break;
 			default:
 				break;
@@ -602,10 +602,10 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 	form = pdf_new_dict(ctx, doc, 4);
 	fz_try(ctx)
 	{
-		pdf_dict_put_drop(ctx, form, PDF_NAME_Subtype, PDF_NAME_Form);
+		pdf_dict_put(ctx, form, PDF_NAME_Subtype, PDF_NAME_Form);
 		pdf_dict_put(ctx, form, PDF_NAME_Group, group_ref);
-		pdf_dict_put_drop(ctx, form, PDF_NAME_FormType, pdf_new_int(ctx, doc, 1));
-		pdf_dict_put_drop(ctx, form, PDF_NAME_BBox, pdf_new_rect(ctx, doc, bbox));
+		pdf_dict_put_int(ctx, form, PDF_NAME_FormType, 1);
+		pdf_dict_put_rect(ctx, form, PDF_NAME_BBox, bbox);
 		*form_ref = pdf_add_object(ctx, doc, form);
 	}
 	fz_always(ctx)
@@ -918,17 +918,17 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 	{
 		int n = fz_colorspace_n(ctx, colorspace);
 		smask = pdf_new_dict(ctx, doc, 4);
-		pdf_dict_put_drop(ctx, smask, PDF_NAME_Type, PDF_NAME_Mask);
-		pdf_dict_put_drop(ctx, smask, PDF_NAME_S, (luminosity ? PDF_NAME_Luminosity : PDF_NAME_Alpha));
+		pdf_dict_put(ctx, smask, PDF_NAME_Type, PDF_NAME_Mask);
+		pdf_dict_put(ctx, smask, PDF_NAME_S, (luminosity ? PDF_NAME_Luminosity : PDF_NAME_Alpha));
 		pdf_dict_put(ctx, smask, PDF_NAME_G, form_ref);
 		color_obj = pdf_new_array(ctx, doc, n);
 		for (i = 0; i < n; i++)
-			pdf_array_push_drop(ctx, color_obj, pdf_new_real(ctx, doc, color[i]));
+			pdf_array_push_real(ctx, color_obj, color[i]);
 		pdf_dict_put_drop(ctx, smask, PDF_NAME_BC, color_obj);
 		color_obj = NULL;
 
 		egs = pdf_new_dict(ctx, doc, 5);
-		pdf_dict_put_drop(ctx, egs, PDF_NAME_Type, PDF_NAME_ExtGState);
+		pdf_dict_put(ctx, egs, PDF_NAME_Type, PDF_NAME_ExtGState);
 		pdf_dict_put_drop(ctx, egs, PDF_NAME_SMask, pdf_add_object(ctx, doc, smask));
 
 		{
@@ -999,8 +999,8 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, fz_col
 		{
 			/* No, better make one */
 			obj = pdf_new_dict(ctx, doc, 2);
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Type, PDF_NAME_ExtGState);
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_BM, pdf_new_name(ctx, doc, fz_blendmode_name(blendmode)));
+			pdf_dict_put(ctx, obj, PDF_NAME_Type, PDF_NAME_ExtGState);
+			pdf_dict_put_name(ctx, obj, PDF_NAME_BM, fz_blendmode_name(blendmode));
 			pdf_dict_putp_drop(ctx, pdev->resources, text, obj);
 		}
 	}
