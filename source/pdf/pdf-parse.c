@@ -623,6 +623,8 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "expected object number");
 	}
 	num = buf->i;
+	if (num < 0 || num > PDF_MAX_OBJECT_NUMBER)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "object number out of range");
 
 	tok = pdf_lex(ctx, file, buf);
 	if (tok != PDF_TOK_INT)

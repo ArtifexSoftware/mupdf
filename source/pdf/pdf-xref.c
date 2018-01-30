@@ -228,8 +228,8 @@ pdf_xref_entry *pdf_get_populating_xref_entry(fz_context *ctx, pdf_document *doc
 	}
 
 	/* Prevent accidental heap underflow */
-	if (num < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "object number must not be negative (%d)", num);
+	if (num < 0 || num > PDF_MAX_OBJECT_NUMBER)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "object number out of range (%d)", num);
 
 	/* Return the pointer to the entry in the last section. */
 	xref = &doc->xref_sections[doc->num_xref_sections-1];
