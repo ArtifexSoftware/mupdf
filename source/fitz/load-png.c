@@ -503,6 +503,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 		{
 			inflateEnd(&stm);
 			fz_free(ctx, info->samples);
+			info->samples = NULL;
 		}
 		fz_rethrow(ctx);
 	}
@@ -513,6 +514,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 		if (code != Z_OK)
 		{
 			fz_free(ctx, info->samples);
+			info->samples = NULL;
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
 		}
 
@@ -527,6 +529,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 		fz_catch(ctx)
 		{
 			fz_free(ctx, info->samples);
+			info->samples = NULL;
 			fz_rethrow(ctx);
 		}
 	}
@@ -614,13 +617,13 @@ fz_load_png(fz_context *ctx, const unsigned char *p, size_t total)
 
 	fz_var(image);
 
-	png_read_image(ctx, &png, p, total, 0);
-
-	stride = (png.width * png.n * png.depth + 7) / 8;
-	alpha = (png.n == 2 || png.n == 4 || png.transparency);
-
 	fz_try(ctx)
 	{
+		png_read_image(ctx, &png, p, total, 0);
+
+		stride = (png.width * png.n * png.depth + 7) / 8;
+		alpha = (png.n == 2 || png.n == 4 || png.transparency);
+
 		if (png.indexed)
 		{
 			image = fz_new_pixmap(ctx, NULL, png.width, png.height, NULL, 1);
@@ -657,7 +660,13 @@ fz_load_png_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 {
 	struct info png;
 
-	png_read_image(ctx, &png, p, total, 1);
+	fz_try(ctx)
+		png_read_image(ctx, &png, p, total, 1);
+	fz_catch(ctx)
+	{
+		fz_drop_colorspace(ctx, png.cs);
+		fz_rethrow(ctx);
+	}
 
 	*cspacep = png.cs;
 	*wp = png.width;

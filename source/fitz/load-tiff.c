@@ -1374,6 +1374,7 @@ fz_load_tiff_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int
 	fz_always(ctx)
 	{
 		/* Clean up scratch memory */
+		fz_drop_colorspace(ctx, tiff.colorspace);
 		fz_free(ctx, tiff.colormap);
 		fz_free(ctx, tiff.stripoffsets);
 		fz_free(ctx, tiff.stripbytecounts);
@@ -1420,14 +1421,18 @@ fz_load_tiff_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len
 			fz_drop_colorspace(ctx, tiff.colorspace);
 			tiff.colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		}
-		*cspacep = tiff.colorspace;
+		*cspacep = fz_keep_colorspace(ctx, tiff.colorspace);
 	}
 	fz_always(ctx)
 	{
 		/* Clean up scratch memory */
+		fz_drop_colorspace(ctx, tiff.colorspace);
 		fz_free(ctx, tiff.colormap);
 		fz_free(ctx, tiff.stripoffsets);
 		fz_free(ctx, tiff.stripbytecounts);
+		fz_free(ctx, tiff.tileoffsets);
+		fz_free(ctx, tiff.tilebytecounts);
+		fz_free(ctx, tiff.data);
 		fz_free(ctx, tiff.samples);
 		fz_free(ctx, tiff.profile);
 	}

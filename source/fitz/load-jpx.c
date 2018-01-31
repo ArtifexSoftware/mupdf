@@ -923,7 +923,7 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	*cspacep = state.cs;
+	*cspacep = fz_keep_colorspace(ctx, state.cs);
 	*wp = state.width;
 	*hp = state.height;
 	*xresp = state.xres;

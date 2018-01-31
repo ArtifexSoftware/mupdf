@@ -379,7 +379,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr err;
 	struct jpeg_source_mgr src;
-	fz_colorspace *icc;
+	fz_colorspace *icc = NULL;
 
 	fz_try(ctx)
 	{
@@ -453,6 +453,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_colorspace(ctx, icc);
 		fz_rethrow(ctx);
 	}
 }

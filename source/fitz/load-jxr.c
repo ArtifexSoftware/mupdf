@@ -401,15 +401,15 @@ fz_load_jxr(fz_context *ctx, const unsigned char *data, size_t size)
 
 	fz_var(image);
 
-	jxr_read_image(ctx, data, size, &info, 0);
-
-	image = fz_new_pixmap(ctx, info.cspace, info.width, info.height, NULL, 1);
-
-	image->xres = info.xres;
-	image->yres = info.yres;
-
 	fz_try(ctx)
 	{
+		jxr_read_image(ctx, data, size, &info, 0);
+
+		image = fz_new_pixmap(ctx, info.cspace, info.width, info.height, NULL, 1);
+
+		image->xres = info.xres;
+		image->yres = info.yres;
+
 		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info.cspace) + 1, 8, info.stride, 0);
 		if (info.has_alpha && !info.has_premul)
 			fz_premultiply_pixmap(ctx, image);
@@ -417,7 +417,6 @@ fz_load_jxr(fz_context *ctx, const unsigned char *data, size_t size)
 	fz_always(ctx)
 	{
 		fz_free(ctx, info.samples);
-		fz_drop_colorspace(ctx, info.cspace);
 	}
 	fz_catch(ctx)
 	{
