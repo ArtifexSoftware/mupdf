@@ -1360,7 +1360,6 @@
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1368,7 +1367,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1376,7 +1374,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1384,7 +1381,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1392,7 +1388,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Memento|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1400,7 +1395,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Memento|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1415,7 +1409,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugOpenssl|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1423,7 +1416,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseOpenssl|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1431,7 +1423,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseOpenssl|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1439,7 +1430,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugGProof|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1447,7 +1437,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugGProof|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1455,7 +1444,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="MementoCommercial|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1463,7 +1451,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="MementoCommercial|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1471,7 +1458,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugCommercial|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1479,7 +1465,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugCommercial|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1487,7 +1472,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseCommercial|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1495,7 +1479,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseCommercial|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

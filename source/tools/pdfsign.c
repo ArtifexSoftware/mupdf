@@ -23,14 +23,10 @@ static void usage(void)
 
 void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_widget *widget)
 {
-#ifdef HAVE_LIBCRYPTO
 	char msg[256];
 	printf("verifying signature on page %d\n", n+1);
 	pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
 	printf("  result: '%s'\n", msg);
-#else
-	printf("No signature support in this build\n");
-#endif
 }
 
 void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)

@@ -1,8 +1,10 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "mupdf/helpers/pkcs7-openssl.h"
+
 #include "mupdf/helpers/pkcs7-check.h"
 
+#ifdef HAVE_LIBCRYPTO
+#include "mupdf/helpers/pkcs7-openssl.h"
 #include <string.h>
 
 
@@ -126,3 +128,13 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 	return res;
 }
+
+#else
+
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
+{
+	fz_strlcpy(ebuf, "No digital signing support in this build", ebufsize);
+	return 0;
+}
+
+#endif
