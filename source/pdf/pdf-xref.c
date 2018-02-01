@@ -1614,8 +1614,6 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 			ofsbuf[i] = buf->i;
 		}
 
-		fz_seek(ctx, stm, first, SEEK_SET);
-
 		for (i = 0; i < count; i++)
 		{
 			int xref_len = pdf_xref_len(ctx, doc);
