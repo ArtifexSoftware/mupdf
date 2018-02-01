@@ -10,8 +10,8 @@ struct entry
 {
 	int num;
 	int gen;
-	int ofs;
-	int stm_ofs;
+	int64_t ofs;
+	int64_t stm_ofs;
 	int stm_len;
 };
 
