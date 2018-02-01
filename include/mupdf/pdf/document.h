@@ -535,17 +535,17 @@ void pdf_update_page(fz_context *ctx, pdf_page *page);
 */
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc);
 
-typedef enum
+enum pdf_signature_error
 {
-	SignatureError_Okay,
-	SignatureError_NoSignatures,
-	SignatureError_NoCertificate,
-	SignatureError_DocumentChanged,
-	SignatureError_SelfSigned,
-	SignatureError_SelfSignedInChain,
-	SignatureError_NotTrusted,
-	SignatureError_Unknown
-} SignatureError;
+	PDF_SIGNATURE_ERROR_OKAY,
+	PDF_SIGNATURE_ERROR_NO_SIGNATURES,
+	PDF_SIGNATURE_ERROR_NO_CERTIFICATE,
+	PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED,
+	PDF_SIGNATURE_ERROR_SELF_SIGNED,
+	PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN,
+	PDF_SIGNATURE_ERROR_NOT_TRUSTED,
+	PDF_SIGNATURE_ERROR_UNKNOWN
+};
 
 typedef struct pdf_pkcs7_designated_name_s
 {

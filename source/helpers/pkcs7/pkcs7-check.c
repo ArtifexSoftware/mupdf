@@ -6,7 +6,7 @@
 #include <string.h>
 
 
-static void pdf_print_designated_name(pdf_pkcs7_designated_name *name, char *buf, int buflen)
+static void pdf_format_designated_name(pdf_pkcs7_designated_name *name, char *buf, int buflen)
 {
 	int i, n;
 	const char *part[] = {
@@ -47,47 +47,47 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
 		if (contents)
 		{
-			SignatureError err;
+			enum pdf_signature_error err;
 
 			bytes = pdf_signature_widget_hash_bytes(ctx, doc, widget);
 			err = pkcs7_openssl_check_digest(ctx, bytes, contents, contents_len);
-			if (err == SignatureError_Okay)
+			if (err == PDF_SIGNATURE_ERROR_OKAY)
 				err = pkcs7_openssl_check_certificate(contents, contents_len);
 			switch (err)
 			{
-			case SignatureError_Okay:
+			case PDF_SIGNATURE_ERROR_OKAY:
 				ebuf[0] = 0;
 				res = 1;
 				break;
-			case SignatureError_NoSignatures:
+			case PDF_SIGNATURE_ERROR_NO_SIGNATURES:
 				fz_strlcpy(ebuf, "No signatures", ebufsize);
 				break;
-			case SignatureError_NoCertificate:
+			case PDF_SIGNATURE_ERROR_NO_CERTIFICATE:
 				fz_strlcpy(ebuf, "No certificate", ebufsize);
 				break;
-			case SignatureError_DocumentChanged:
+			case PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED:
 				fz_strlcpy(ebuf, "Document changed since signing", ebufsize);
 				break;
-			case SignatureError_SelfSigned:
+			case PDF_SIGNATURE_ERROR_SELF_SIGNED:
 				fz_strlcpy(ebuf, "Self-signed certificate", ebufsize);
 				break;
-			case SignatureError_SelfSignedInChain:
+			case PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN:
 				fz_strlcpy(ebuf, "Self-signed certificate in chain", ebufsize);
 				break;
-			case SignatureError_NotTrusted:
+			case PDF_SIGNATURE_ERROR_NOT_TRUSTED:
 				fz_strlcpy(ebuf, "Certificate not trusted", ebufsize);
 				break;
 			default:
-			case SignatureError_Unknown:
+			case PDF_SIGNATURE_ERROR_UNKNOWN:
 				fz_strlcpy(ebuf, "Unknown error", ebufsize);
 				break;
 			}
 
 			switch (err)
 			{
-			case SignatureError_SelfSigned:
-			case SignatureError_SelfSignedInChain:
-			case SignatureError_NotTrusted:
+			case PDF_SIGNATURE_ERROR_SELF_SIGNED:
+			case PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN:
+			case PDF_SIGNATURE_ERROR_NOT_TRUSTED:
 				{
 					pdf_pkcs7_designated_name *name = pkcs7_openssl_designated_name(ctx, contents, contents_len);
 					if (name)
@@ -96,8 +96,8 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 						fz_strlcat(ebuf, ": ", ebufsize);
 						len = strlen(ebuf);
-						pdf_print_designated_name(name, ebuf + len, ebufsize - len);
-						pkcs7_opensll_drop_designated_name(ctx, name);
+						pdf_format_designated_name(name, ebuf + len, ebufsize - len);
+						pkcs7_openssl_drop_designated_name(ctx, name);
 					}
 				}
 				break;

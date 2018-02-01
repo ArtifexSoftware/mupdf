@@ -218,11 +218,11 @@ static X509 *pk7_signer(STACK_OF(X509) *certs, PKCS7_SIGNER_INFO *si)
 	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
 }
 
-static SignatureError pk7_verify_sig(PKCS7 *p7, BIO *detached)
+static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 {
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
-	int res = SignatureError_Unknown;
+	int res = PDF_SIGNATURE_ERROR_UNKNOWN;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
 
@@ -242,7 +242,7 @@ static SignatureError pk7_verify_sig(PKCS7 *p7, BIO *detached)
 	if (sk == NULL || sk_PKCS7_SIGNER_INFO_num(sk) <= 0)
 	{
 		/* there are no signatures on this data */
-		res = SignatureError_NoSignatures;
+		res = PDF_SIGNATURE_ERROR_NO_SIGNATURES;
 		goto exit;
 	}
 
@@ -259,7 +259,7 @@ static SignatureError pk7_verify_sig(PKCS7 *p7, BIO *detached)
 		rc = PKCS7_signatureVerify(p7bio, p7, si, x509);
 		if (rc > 0)
 		{
-			res = SignatureError_Okay;
+			res = PDF_SIGNATURE_ERROR_OKAY;
 		}
 		else
 		{
@@ -267,7 +267,7 @@ static SignatureError pk7_verify_sig(PKCS7 *p7, BIO *detached)
 			switch (err)
 			{
 			case PKCS7_R_DIGEST_FAILURE:
-				res = SignatureError_DocumentChanged;
+				res = PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED;
 				break;
 			default:
 				break;
@@ -282,16 +282,16 @@ exit:
 	return res;
 }
 
-static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
+static enum pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 {
-	int res = SignatureError_Okay;
+	int res = PDF_SIGNATURE_ERROR_OKAY;
 	int i;
 	STACK_OF(PKCS7_SIGNER_INFO) *sk;
 	X509_STORE_CTX *ctx;
 
 	ctx = X509_STORE_CTX_new();
 	if (!ctx)
-		return SignatureError_Unknown;
+		return PDF_SIGNATURE_ERROR_UNKNOWN;
 
 	ERR_clear_error();
 
@@ -302,7 +302,7 @@ static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 	if (sk == NULL)
 	{
 		/* there are no signatures on this data */
-		res = SignatureError_NoSignatures;
+		res = PDF_SIGNATURE_ERROR_NO_SIGNATURES;
 		goto exit;
 	}
 
@@ -314,7 +314,7 @@ static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 		X509 *cert = pk7_signer(certs, si);
 		if (cert == NULL)
 		{
-			res = SignatureError_NoCertificate;
+			res = PDF_SIGNATURE_ERROR_NO_CERTIFICATE;
 			goto exit;
 		}
 
@@ -334,13 +334,13 @@ static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 
 		if (!X509_STORE_CTX_init(ctx, cert_store, cert, certs))
 		{
-			res = SignatureError_Unknown;
+			res = PDF_SIGNATURE_ERROR_UNKNOWN;
 			goto exit;
 		}
 
 		if (!X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_SMIME_SIGN))
 		{
-			res = SignatureError_Unknown;
+			res = PDF_SIGNATURE_ERROR_UNKNOWN;
 			goto exit;
 		}
 
@@ -354,13 +354,13 @@ static SignatureError pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 		case X509_V_OK:
 			break;
 		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-			res = SignatureError_SelfSigned;
+			res = PDF_SIGNATURE_ERROR_SELF_SIGNED;
 			goto exit;
 		case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-			res = SignatureError_SelfSignedInChain;
+			res = PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN;
 			goto exit;
 		default:
-			res = SignatureError_Unknown;
+			res = PDF_SIGNATURE_ERROR_UNKNOWN;
 			goto exit;
 		}
 	}
@@ -372,12 +372,12 @@ exit:
 	return res;
 }
 
-SignatureError pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
+enum pdf_signature_error pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	BIO *bdata = NULL;
-	int res = SignatureError_Unknown;
+	int res = PDF_SIGNATURE_ERROR_UNKNOWN;
 
 	bsig = BIO_new_mem_buf(sig, sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
@@ -398,7 +398,7 @@ exit:
 	return res;
 }
 
-SignatureError pkcs7_openssl_check_certificate(char *sig, int sig_len)
+enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -455,7 +455,7 @@ typedef struct pdf_pkcs7_designated_name_openssl_s
 	char buf[8192];
 } pdf_pkcs7_designated_name_openssl;
 
-void pkcs7_opensll_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
+void pkcs7_openssl_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
 {
 	fz_free(ctx, dn);
 }
