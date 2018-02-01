@@ -1566,6 +1566,8 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	int i;
 	pdf_token tok;
 	pdf_xref_entry *ret_entry = NULL;
+	int xref_len;
+	int found;
 
 	fz_var(numbuf);
 	fz_var(ofsbuf);
@@ -1600,33 +1602,36 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
 		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
 
+		xref_len = pdf_xref_len(ctx, doc);
+
+		found = 0;
+
 		stm = pdf_open_stream_number(ctx, doc, num);
 		for (i = 0; i < count; i++)
 		{
 			tok = pdf_lex(ctx, stm, buf);
 			if (tok != PDF_TOK_INT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d 0 R)", num);
-			numbuf[i] = buf->i;
+			numbuf[found] = buf->i;
 
 			tok = pdf_lex(ctx, stm, buf);
 			if (tok != PDF_TOK_INT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d 0 R)", num);
-			ofsbuf[i] = buf->i;
+			ofsbuf[found] = buf->i;
+
+			if (numbuf[found] <= 0 || numbuf[found] >= xref_len)
+				fz_warn(ctx, "object stream object out of range, skipping");
+			else
+				found++;
 		}
 
-		for (i = 0; i < count; i++)
+		for (i = 0; i < found; i++)
 		{
-			int xref_len = pdf_xref_len(ctx, doc);
 			pdf_xref_entry *entry;
+
 			fz_seek(ctx, stm, first + ofsbuf[i], SEEK_SET);
 
 			obj = pdf_parse_stm_obj(ctx, doc, stm, buf);
-
-			if (numbuf[i] <= 0 || numbuf[i] >= xref_len)
-			{
-				pdf_drop_obj(ctx, obj);
-				fz_throw(ctx, FZ_ERROR_GENERIC, "object id (%d 0 R) out of range (0..%d)", numbuf[i], xref_len - 1);
-			}
 
 			entry = pdf_get_xref_entry(ctx, doc, numbuf[i]);
 
