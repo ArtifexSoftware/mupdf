@@ -1594,10 +1594,12 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 		count = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME_N));
 		first = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME_First));
 
-		if (count < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "negative number of objects in object stream");
-		if (first < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "first object in object stream resides outside stream");
+		if (count < 0 || count > PDF_MAX_OBJECT_NUMBER)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "number of objects in object stream out of range");
+		if (first < 0 || first > PDF_MAX_OBJECT_NUMBER
+				|| count < 0 || count > PDF_MAX_OBJECT_NUMBER
+				|| first + count - 1 > PDF_MAX_OBJECT_NUMBER)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "object stream object numbers are out of range");
 
 		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
 		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
