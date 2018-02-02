@@ -1281,7 +1281,6 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_catch(ctx)
 	{
 		emergency_pop_stack(ctx, dev, state);
-		fz_rethrow(ctx);
 	}
 }
 
