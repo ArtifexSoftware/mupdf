@@ -1144,7 +1144,6 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = fz_concat(in_ctm, dev->transform);
 	fz_irect bbox;
-	fz_pixmap *mask, *dest, *shape, *group_alpha;
 	fz_matrix tm, trm;
 	fz_glyph *glyph;
 	int i, gid;
@@ -1171,43 +1170,39 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 
 	fz_try(ctx)
 	{
-		mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, mask);
+		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].mask);
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
+		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
 		if (state[0].dest->alpha)
-			fz_clear_pixmap(ctx, dest);
+			fz_clear_pixmap(ctx, state[1].dest);
 		else
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, bbox, dev->default_cs);
+			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
 		if (state->shape)
 		{
-			shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, shape);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+			fz_clear_pixmap(ctx, state[1].shape);
 		}
 		else
-			shape = NULL;
+			state[1].shape = NULL;
 		if (state->group_alpha)
 		{
-			group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, group_alpha);
+			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+			fz_clear_pixmap(ctx, state[1].group_alpha);
 		}
 		else
-			group_alpha = NULL;
+			state[1].group_alpha = NULL;
 
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].scissor = bbox;
-		state[1].dest = dest;
-		state[1].mask = mask;
-		state[1].shape = shape;
-		state[1].group_alpha = group_alpha;
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Clip (text) begin\n");
 #endif
 
-		if (!fz_is_empty_irect(bbox) && mask)
+		if (!fz_is_empty_irect(bbox) && state[1].mask)
 		{
 			for (span = text->head; span; span = span->next)
 			{
@@ -1228,7 +1223,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 					{
 						int x = (int)trm.e;
 						int y = (int)trm.f;
-						draw_glyph(NULL, mask, glyph, x, y, &bbox, 0);
+						draw_glyph(NULL, state[1].mask, glyph, x, y, &bbox, 0);
 						if (state[1].shape)
 							draw_glyph(NULL, state[1].shape, glyph, x, y, &bbox, 0);
 						if (state[1].group_alpha)
