@@ -198,7 +198,8 @@ static fz_draw_state *
 fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 {
 	fz_irect bbox, ga_bbox;
-	fz_pixmap *dest, *shape;
+	fz_pixmap *dest = NULL;
+	fz_pixmap *shape = NULL;
 	fz_pixmap *ga = NULL;
 	fz_draw_state *state = &dev->stack[dev->top];
 	int isolated = state->blendmode & FZ_BLEND_ISOLATED;
@@ -209,69 +210,79 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("knockout");
 
-	bbox = fz_pixmap_bbox(ctx, state->dest);
-	bbox = fz_intersect_irect(bbox, state->scissor);
-	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
-	if (state[0].group_alpha)
+	fz_try(ctx)
 	{
-		ga_bbox = fz_pixmap_bbox(ctx, state->group_alpha);
-		ga_bbox = fz_intersect_irect(ga_bbox, state->scissor);
-		ga = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, ga_bbox, state->group_alpha->seps, state->group_alpha->alpha);
-	}
+		bbox = fz_pixmap_bbox(ctx, state->dest);
+		bbox = fz_intersect_irect(bbox, state->scissor);
+		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
+		if (state[0].group_alpha)
+		{
+			ga_bbox = fz_pixmap_bbox(ctx, state->group_alpha);
+			ga_bbox = fz_intersect_irect(ga_bbox, state->scissor);
+			ga = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, ga_bbox, state->group_alpha->seps, state->group_alpha->alpha);
+		}
 
-	if (isolated)
-	{
-		fz_clear_pixmap(ctx, dest);
-		if (ga)
-			fz_clear_pixmap(ctx, ga);
-	}
-	else
-	{
-		/* Find the last but one destination to copy */
-		int i = dev->top-1; /* i = the one on entry (i.e. the last one) */
-		fz_draw_state *prev = state;
-		while (i > 0)
-		{
-			prev = &dev->stack[--i];
-			if (prev->dest != state->dest)
-				break;
-		}
-		if (prev->dest)
-		{
-			fz_copy_pixmap_rect(ctx, dest, prev->dest, bbox, dev->default_cs);
-			if (ga)
-			{
-				if (prev->group_alpha)
-					fz_copy_pixmap_rect(ctx, ga, prev->group_alpha, ga_bbox, dev->default_cs);
-				else
-					fz_clear_pixmap(ctx, ga);
-			}
-		}
-		else
+		if (isolated)
 		{
 			fz_clear_pixmap(ctx, dest);
 			if (ga)
 				fz_clear_pixmap(ctx, ga);
 		}
-	}
+		else
+		{
+			/* Find the last but one destination to copy */
+			int i = dev->top-1; /* i = the one on entry (i.e. the last one) */
+			fz_draw_state *prev = state;
+			while (i > 0)
+			{
+				prev = &dev->stack[--i];
+				if (prev->dest != state->dest)
+					break;
+			}
+			if (prev->dest)
+			{
+				fz_copy_pixmap_rect(ctx, dest, prev->dest, bbox, dev->default_cs);
+				if (ga)
+				{
+					if (prev->group_alpha)
+						fz_copy_pixmap_rect(ctx, ga, prev->group_alpha, ga_bbox, dev->default_cs);
+					else
+						fz_clear_pixmap(ctx, ga);
+				}
+			}
+			else
+			{
+				fz_clear_pixmap(ctx, dest);
+				if (ga)
+					fz_clear_pixmap(ctx, ga);
+			}
+		}
 
-	/* Knockout groups (and only knockout groups) rely on shape */
-	shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-	fz_clear_pixmap(ctx, shape);
+		/* Knockout groups (and only knockout groups) rely on shape */
+		shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, shape);
 #ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top-1, "");
-	fz_dump_blend(ctx, "Knockout begin: background is ", dest);
-	if (shape)
-		fz_dump_blend(ctx, "/S=", shape);
-	if (ga)
-		fz_dump_blend(ctx, "/GA=", ga);
-	printf("\n");
+		dump_spaces(dev->top-1, "");
+		fz_dump_blend(ctx, "Knockout begin: background is ", dest);
+		if (shape)
+			fz_dump_blend(ctx, "/S=", shape);
+		if (ga)
+			fz_dump_blend(ctx, "/GA=", ga);
+		printf("\n");
 #endif
-	state[1].group_alpha = ga;
-	state[1].scissor = bbox;
-	state[1].dest = dest;
-	state[1].shape = shape;
-	state[1].blendmode &= ~(FZ_BLEND_MODEMASK | FZ_BLEND_ISOLATED);
+		state[1].group_alpha = ga;
+		state[1].scissor = bbox;
+		state[1].dest = dest;
+		state[1].shape = shape;
+		state[1].blendmode &= ~(FZ_BLEND_MODEMASK | FZ_BLEND_ISOLATED);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, dest);
+		fz_drop_pixmap(ctx, shape);
+		fz_drop_pixmap(ctx, ga);
+		fz_rethrow(ctx);
+	}
 
 	return &state[1];
 }
