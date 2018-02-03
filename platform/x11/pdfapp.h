@@ -77,6 +77,7 @@ struct pdfapp_s
 	fz_colorspace *colorspace;
 	int invert;
 	int tint, tint_white;
+	int useseparations;
 
 	/* presentation mode */
 	int presentation_mode;
@@ -97,6 +98,9 @@ struct pdfapp_s
 	fz_stext_page *page_text;
 	fz_link *page_links;
 	int errored;
+
+	/* separations */
+	fz_separations *seps;
 
 	/* snapback history */
 	int hist[256];

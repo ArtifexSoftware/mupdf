@@ -114,6 +114,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"c\t\t-- toggle between color and grayscale\n"
 		"i\t\t-- toggle inverted color mode\n"
 		"C\t\t-- toggle tinted color mode\n"
+		"e\t\t-- enable/disable spot color mode\n"
 		"q\t\t-- quit\n"
 	;
 }
@@ -372,6 +373,9 @@ void pdfapp_close(pdfapp_t *app)
 	fz_drop_display_list(app->ctx, app->annotations_list);
 	app->annotations_list = NULL;
 
+	fz_drop_separations(app->ctx, app->seps);
+	app->seps = NULL;
+
 	fz_drop_stext_page(app->ctx, app->page_text);
 	app->page_text = NULL;
 
@@ -554,12 +558,14 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 
 	fz_drop_display_list(app->ctx, app->page_list);
 	fz_drop_display_list(app->ctx, app->annotations_list);
+	fz_drop_separations(app->ctx, app->seps);
 	fz_drop_stext_page(app->ctx, app->page_text);
 	fz_drop_link(app->ctx, app->page_links);
 	fz_drop_page(app->ctx, app->page);
 
 	app->page_list = NULL;
 	app->annotations_list = NULL;
+	app->seps = NULL;
 	app->page_text = NULL;
 	app->page_links = NULL;
 	app->page = NULL;
@@ -577,6 +583,38 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	{
 		pdfapp_warn(app, "Cannot load page");
 		return;
+	}
+
+	if (app->useseparations)
+	{
+		fz_try(app->ctx)
+		{
+			app->seps = fz_page_separations(app->ctx, app->page);
+			if (app->seps)
+			{
+				int i, n = fz_count_separations(app->ctx, app->seps);
+				for (i = 0; i < n; i++)
+					fz_set_separation_behavior(app->ctx, app->seps, i, FZ_SEPARATION_COMPOSITE);
+			}
+			else if (fz_page_uses_overprint(app->ctx, app->page))
+			{
+				/* This page uses overprint, so we need an empty
+				 * sep object to force the overprint simulation on. */
+				app->seps = fz_new_separations(app->ctx, 0);
+			}
+			else if (fz_document_output_intent(app->ctx, app->doc))
+			{
+				/* We have an output intent. Force the overprint
+				 *simulation on, because this ensures that
+				 * we 'simulate' the output intent too. */
+				app->seps = fz_new_separations(app->ctx, 0);
+			}
+		}
+		fz_catch(app->ctx)
+		{
+			pdfapp_warn(app, "Cannot load page");
+			errored = 1;
+		}
 	}
 
 	fz_try(app->ctx)
@@ -725,7 +763,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		fz_try(app->ctx)
 		{
-			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, NULL, 1);
+			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, app->seps, 1);
 			fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 			if (app->page_list || app->annotations_list)
 			{
@@ -752,7 +790,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
-		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, NULL, 1);
+		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, app->seps, 1);
 		app->duration = 0;
 		fz_page_presentation(app->ctx, app->page, &app->transition, &app->duration);
 		if (app->duration == 0)
@@ -1102,6 +1140,15 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	case 'i':
 		app->invert ^= 1;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+		break;
+
+	case 'e':
+		app->useseparations ^= 1;
+		if (app->useseparations)
+			pdfapp_warn(app, "Using separations");
+		else
+			pdfapp_warn(app, "Not using separations");
+		pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		break;
 
 #ifndef NDEBUG
