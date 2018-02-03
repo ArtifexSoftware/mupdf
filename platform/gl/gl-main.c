@@ -129,6 +129,7 @@ static int tint_black = 0x303030;
 
 static fz_document *doc = NULL;
 static fz_page *fzpage = NULL;
+static fz_separations *seps = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
 
@@ -145,6 +146,7 @@ static int annotate_w = 12; /* to be scaled by lineheight */
 
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
+static int oldseparations = 0, currentseparations = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
@@ -463,6 +465,8 @@ void load_page(void)
 
 	fz_drop_stext_page(ctx, page_text);
 	page_text = NULL;
+	fz_drop_separations(ctx, seps);
+	seps = NULL;
 	fz_drop_link(ctx, links);
 	links = NULL;
 	fz_drop_page(ctx, fzpage);
@@ -474,6 +478,21 @@ void load_page(void)
 
 	links = fz_load_links(ctx, fzpage);
 	page_text = fz_new_stext_page_from_page(ctx, fzpage, NULL);
+
+	if (currentseparations)
+	{
+		seps = fz_page_separations(ctx, &page->super);
+		if (seps)
+		{
+			int i, n = fz_count_separations(ctx, seps);
+			for (i = 0; i < n; i++)
+				fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_COMPOSITE);
+		}
+		else if (fz_page_uses_overprint(ctx, &page->super))
+			seps = fz_new_separations(ctx, 0);
+		else if (fz_document_output_intent(ctx, doc))
+			seps = fz_new_separations(ctx, 0);
+	}
 
 	/* compute bounds here for initial window size */
 	page_bounds = fz_bound_page(ctx, fzpage);
@@ -490,7 +509,7 @@ void render_page(void)
 
 	transform_page();
 
-	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), NULL, 0);
+	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), seps, 0);
 	if (currenttint)
 	{
 		fz_tint_pixmap(ctx, pix, tint_black, tint_white);
@@ -508,7 +527,7 @@ void render_page(void)
 void render_page_if_changed(void)
 {
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
-		oldinvert != currentinvert || oldtint != currenttint)
+		oldinvert != currentinvert || oldtint != currenttint || oldseparations != currentseparations)
 	{
 		render_page();
 		oldpage = currentpage;
@@ -516,6 +535,7 @@ void render_page_if_changed(void)
 		oldrotate = currentrotate;
 		oldinvert = currentinvert;
 		oldtint = currenttint;
+		oldseparations = currentseparations;
 	}
 }
 
@@ -1055,6 +1075,7 @@ static void do_app(void)
 
 		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
+		case 'e': currentseparations = !currentseparations; break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
 		case 'W': auto_zoom_w(); break;
@@ -1170,7 +1191,7 @@ static void do_info(void)
 {
 	char buf[100];
 
-	ui_dialog_begin(500, 11 * ui.lineheight);
+	ui_dialog_begin(500, 12 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
@@ -1203,6 +1224,7 @@ static void do_info(void)
 		ui_label("Permissions: %s", buf);
 	}
 	ui_label("Page: %d / %d", currentpage + 1, fz_count_pages(ctx, doc));
+	ui_label("Spot rendering: %s.", currentseparations ? "on" : "off");
 
 	ui_dialog_end();
 }
@@ -1227,7 +1249,7 @@ static void do_help_line(char *label, char *text)
 
 static void do_help(void)
 {
-	ui_dialog_begin(500, 37 * ui.lineheight);
+	ui_dialog_begin(500, 38 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	do_help_line("MuPDF", FZ_VERSION);
@@ -1243,6 +1265,7 @@ static void do_help(void)
 	ui_spacer();
 	do_help_line("I", "toggle inverted color mode");
 	do_help_line("C", "toggle tinted color mode");
+	do_help_line("e", "enable/disable spot color mode");
 	do_help_line("f", "fullscreen window");
 	do_help_line("w", "shrink wrap window");
 	do_help_line("W or H", "fit to width or height");
@@ -1457,7 +1480,7 @@ void do_main(void)
 	if (showoutline)
 		do_outline(outline);
 
-	if (oldpage != currentpage)
+	if (oldpage != currentpage || oldseparations != currentseparations)
 	{
 		load_page();
 		update_title();
@@ -1553,6 +1576,7 @@ static void cleanup(void)
 #endif
 
 	fz_drop_stext_page(ctx, page_text);
+	fz_drop_separations(ctx, seps);
 	fz_drop_link(ctx, links);
 	fz_drop_page(ctx, fzpage);
 	fz_drop_outline(ctx, outline);
