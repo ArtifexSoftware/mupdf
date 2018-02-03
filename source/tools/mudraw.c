@@ -363,7 +363,6 @@ static void usage(void)
 #endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
 		"\t-O -\tControl spot/overprint rendering\n"
-		"\t\t 0 = No spot rendering\n"
 #ifdef FZ_ENABLE_SPOT_RENDERING
 		"\t\t 0 = No spot rendering\n"
 		"\t\t 1 = Overprint simulation (default)\n"
