@@ -4918,7 +4918,7 @@ FUN(PDFAnnotation_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		pixmap = pdf_new_pixmap_from_annot(ctx, annot, ctm, cs, alpha);
+		pixmap = pdf_new_pixmap_from_annot(ctx, annot, ctm, cs, NULL, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5537,9 +5537,9 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 	fz_try(ctx)
 	{
 		if (showExtra)
-			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, alpha);
+			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, NULL, alpha);
 		else
-			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, cs, alpha);
+			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, cs, NULL, alpha);
 	}
 	fz_catch(ctx)
 	{
@@ -6132,7 +6132,7 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 	if (!ctx || !list) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, cs, alpha);
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, cs, NULL, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);

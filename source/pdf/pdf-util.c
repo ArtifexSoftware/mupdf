@@ -35,7 +35,7 @@ pdf_new_display_list_from_annot(fz_context *ctx, pdf_annot *annot)
 	pixmap returned by fz_new_pixmap_from_page_contents.
 */
 fz_pixmap *
-pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, int alpha)
+pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -48,7 +48,7 @@ pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_c
 	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, seps, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else

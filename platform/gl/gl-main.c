@@ -490,7 +490,7 @@ void render_page(void)
 
 	transform_page();
 
-	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), 0);
+	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), NULL, 0);
 	if (currenttint)
 	{
 		fz_tint_pixmap(ctx, pix, tint_black, tint_white);

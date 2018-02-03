@@ -226,7 +226,7 @@ int pdf_get_widget_editing_state(fz_context *ctx, pdf_widget *widget);
 int pdf_toggle_widget(fz_context *ctx, pdf_widget *widget);
 
 fz_display_list *pdf_new_display_list_from_annot(fz_context *ctx, pdf_annot *annot);
-fz_pixmap *pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, int alpha);
+fz_pixmap *pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha);
 fz_stext_page *pdf_new_stext_page_from_annot(fz_context *ctx, pdf_annot *annot, const fz_stext_options *options);
 
 #endif
