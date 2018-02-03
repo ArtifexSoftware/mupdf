@@ -305,6 +305,8 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_ob
 
 	chain = fz_keep_stream(ctx, chain);
 
+	fz_var(chain);
+
 	fz_try(ctx)
 	{
 		len = pdf_to_int(ctx, pdf_dict_get(ctx, stmobj, PDF_NAME_Length));
