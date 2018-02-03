@@ -98,7 +98,7 @@ fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in)
 }
 
 static void
-fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, size_t len, int predictor)
+fz_predict_png(fz_context *ctx, fz_predict *state, unsigned char *out, unsigned char *in, size_t len, int predictor)
 {
 	int bpp = state->bpp;
 	size_t i;
@@ -109,6 +109,9 @@ fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, size_t 
 
 	switch (predictor)
 	{
+	default:
+		fz_warn(ctx, "unknown png predictor %d, treating as none", predictor);
+		/* fallthrough */
 	case 0:
 		memcpy(out, in, len);
 		break;
@@ -188,7 +191,7 @@ next_predict(fz_context *ctx, fz_stream *stm, size_t len)
 			fz_predict_tiff(state, state->out, state->in);
 		else
 		{
-			fz_predict_png(state, state->out, state->in + 1, n - 1, state->in[0]);
+			fz_predict_png(ctx, state, state->out, state->in + 1, n - 1, state->in[0]);
 			memcpy(state->ref, state->out, state->stride);
 		}
 
