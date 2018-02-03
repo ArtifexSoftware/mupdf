@@ -1827,12 +1827,13 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 		}
 
 		fz_paint_image(state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, &local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
-
+	}
+	fz_always(ctx)
+	{
+		fz_drop_pixmap(ctx, pixmap);
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			fz_knockout_end(ctx, dev);
 	}
-	fz_always(ctx)
-		fz_drop_pixmap(ctx, pixmap);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
