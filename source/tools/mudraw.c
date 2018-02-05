@@ -1143,8 +1143,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		char text_buffer[512];
 
 		bgprint_flush();
-		fz_close_output(ctx, out);
-		fz_drop_output(ctx, out);
+		if (out)
+		{
+			fz_close_output(ctx, out);
+			fz_drop_output(ctx, out);
+		}
 		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
 		out = fz_new_output_with_path(ctx, text_buffer, 0);
 	}

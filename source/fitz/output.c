@@ -208,6 +208,10 @@ fz_new_output(fz_context *ctx, int bufsiz, void *state, fz_output_write_fn *writ
 	return out;
 }
 
+static void null_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
+{
+}
+
 fz_output *
 fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 {
@@ -215,7 +219,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	fz_output *out;
 
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
-		return NULL;
+		return fz_new_output(ctx, 0, NULL, null_write, NULL, NULL);
 
 #if defined(_WIN32) || defined(_WIN64)
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
@@ -287,7 +291,6 @@ fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf)
 void
 fz_close_output(fz_context *ctx, fz_output *out)
 {
-	if (!out) return;
 	fz_flush_output(ctx, out);
 	if (out->close)
 		out->close(ctx, out->state);
@@ -297,7 +300,6 @@ fz_close_output(fz_context *ctx, fz_output *out)
 void
 fz_drop_output(fz_context *ctx, fz_output *out)
 {
-	if (!out) return;
 	if (out->close)
 		fz_warn(ctx, "dropping unclosed output");
 	if (out->drop)
@@ -310,7 +312,6 @@ fz_drop_output(fz_context *ctx, fz_output *out)
 void
 fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence)
 {
-	if (!out) return;
 	if (out->seek == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot seek in unseekable output stream\n");
 	fz_flush_output(ctx, out);
@@ -320,7 +321,6 @@ fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence)
 int64_t
 fz_tell_output(fz_context *ctx, fz_output *out)
 {
-	if (!out) return 0;
 	if (out->tell == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot tell in untellable output stream\n");
 	if (out->bp)
@@ -331,7 +331,6 @@ fz_tell_output(fz_context *ctx, fz_output *out)
 fz_stream *
 fz_stream_from_output(fz_context *ctx, fz_output *out)
 {
-	if (!out) return 0;
 	if (out->as_stream == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot derive input stream from output stream");
 	fz_flush_output(ctx, out);
@@ -347,7 +346,6 @@ fz_write_emit(fz_context *ctx, void *out, int c)
 void
 fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list args)
 {
-	if (!out) return;
 	fz_format_string(ctx, out, fz_write_emit, fmt, args);
 }
 
@@ -355,7 +353,6 @@ void
 fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
 {
 	va_list args;
-	if (!out) return;
 	va_start(args, fmt);
 	fz_format_string(ctx, out, fz_write_emit, fmt, args);
 	va_end(args);
@@ -364,81 +361,71 @@ fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
 void
 fz_flush_output(fz_context *ctx, fz_output *out)
 {
-	if (out)
+	if (out->wp > out->bp)
 	{
-		if (out->wp > out->bp)
-		{
-			out->write(ctx, out->state, out->bp, out->wp - out->bp);
-			out->wp = out->bp;
-		}
+		out->write(ctx, out->state, out->bp, out->wp - out->bp);
+		out->wp = out->bp;
 	}
 }
 
 void
 fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
-	if (out)
+	if (out->bp)
 	{
-		if (out->bp)
+		if (out->wp == out->ep)
 		{
-			if (out->wp == out->ep)
-			{
-				out->write(ctx, out->state, out->bp, out->wp - out->bp);
-				out->wp = out->bp;
-			}
-			*out->wp++ = x;
+			out->write(ctx, out->state, out->bp, out->wp - out->bp);
+			out->wp = out->bp;
 		}
-		else
-		{
-			out->write(ctx, out->state, &x, 1);
-		}
+		*out->wp++ = x;
+	}
+	else
+	{
+		out->write(ctx, out->state, &x, 1);
 	}
 }
 
 void
 fz_write_data(fz_context *ctx, fz_output *out, const void *data_, size_t size)
 {
-	if (out)
-	{
-		const char *data = data_;
+	const char *data = data_;
 
-		if (out->bp)
+	if (out->bp)
+	{
+		if (size >= out->ep - out->bp) /* too large for buffer */
 		{
-			if (size >= out->ep - out->bp) /* too large for buffer */
+			if (out->wp > out->bp)
 			{
-				if (out->wp > out->bp)
-				{
-					out->write(ctx, out->state, out->bp, out->wp - out->bp);
-					out->wp = out->bp;
-				}
-				out->write(ctx, out->state, data, size);
+				out->write(ctx, out->state, out->bp, out->wp - out->bp);
+				out->wp = out->bp;
 			}
-			else if (out->wp + size <= out->ep) /* fits in current buffer */
-			{
-				memcpy(out->wp, data, size);
-				out->wp += size;
-			}
-			else /* fits if we flush first */
-			{
-				size_t n = out->ep - out->wp;
-				memcpy(out->wp, data, n);
-				out->write(ctx, out->state, out->bp, out->ep - out->bp);
-				memcpy(out->bp, data + n, size - n);
-				out->wp = out->bp + size - n;
-			}
-		}
-		else
-		{
 			out->write(ctx, out->state, data, size);
 		}
+		else if (out->wp + size <= out->ep) /* fits in current buffer */
+		{
+			memcpy(out->wp, data, size);
+			out->wp += size;
+		}
+		else /* fits if we flush first */
+		{
+			size_t n = out->ep - out->wp;
+			memcpy(out->wp, data, n);
+			out->write(ctx, out->state, out->bp, out->ep - out->bp);
+			memcpy(out->bp, data + n, size - n);
+			out->wp = out->bp + size - n;
+		}
+	}
+	else
+	{
+		out->write(ctx, out->state, data, size);
 	}
 }
 
 void
 fz_write_string(fz_context *ctx, fz_output *out, const char *s)
 {
-	if (out)
-		fz_write_data(ctx, out, s, strlen(s));
+	fz_write_data(ctx, out, s, strlen(s));
 }
 
 void
@@ -451,8 +438,7 @@ fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>8;
 	data[3] = x;
 
-	if (out)
-		fz_write_data(ctx, out, data, 4);
+	fz_write_data(ctx, out, data, 4);
 }
 
 void
@@ -465,8 +451,7 @@ fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>16;
 	data[3] = x>>24;
 
-	if (out)
-		fz_write_data(ctx, out, data, 4);
+	fz_write_data(ctx, out, data, 4);
 }
 
 void
@@ -477,8 +462,7 @@ fz_write_int16_be(fz_context *ctx, fz_output *out, int x)
 	data[0] = x>>8;
 	data[1] = x;
 
-	if (out)
-		fz_write_data(ctx, out, data, 2);
+	fz_write_data(ctx, out, data, 2);
 }
 
 void
@@ -489,16 +473,14 @@ fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 	data[0] = x;
 	data[1] = x>>8;
 
-	if (out)
-		fz_write_data(ctx, out, data, 2);
+	fz_write_data(ctx, out, data, 2);
 }
 
 void
 fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 {
 	char data[10];
-	if (out)
-		fz_write_data(ctx, out, data, fz_runetochar(data, rune));
+	fz_write_data(ctx, out, data, fz_runetochar(data, rune));
 }
 
 void
