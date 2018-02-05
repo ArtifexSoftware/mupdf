@@ -190,6 +190,8 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 					case 16: *dp++ = get16(sp, b); break;
 					case 24: *dp++ = get24(sp, b); break;
 					case 32: *dp++ = get32(sp, b); break;
+					default:
+						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
 					}
 					b++;
 				}
