@@ -2700,6 +2700,11 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		fz_rethrow(ctx);
 	}
 
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_XML")))
+		fz_debug_xml(root, 0);
+#endif
+
 	fz_try(ctx)
 	{
 		if (fz_xml_find(root, "FictionBook"))

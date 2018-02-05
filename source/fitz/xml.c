@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static const struct { const char *ent; int ucs; } html_entities[] = {
 	{"nbsp",160}, {"iexcl",161}, {"cent",162}, {"pound",163},
@@ -95,7 +96,6 @@ struct fz_xml_s
 	fz_xml *up, *down, *tail, *prev, *next;
 };
 
-#if 0
 static void xml_indent(int n)
 {
 	while (n--) {
@@ -152,7 +152,6 @@ void fz_debug_xml(fz_xml *item, int level)
 		printf(")%s\n", item->name);
 	}
 }
-#endif
 
 fz_xml *fz_xml_prev(fz_xml *item)
 {
