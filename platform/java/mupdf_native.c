@@ -196,7 +196,6 @@ static jmethodID mid_Point_init;
 static jmethodID mid_Rect_init;
 static jmethodID mid_SeekableInputStream_read;
 static jmethodID mid_SeekableOutputStream_write;
-static jmethodID mid_SeekableStream_close;
 static jmethodID mid_SeekableStream_position;
 static jmethodID mid_SeekableStream_seek;
 static jmethodID mid_Shade_init;
@@ -566,7 +565,6 @@ static int find_fids(JNIEnv *env)
 	mid_SeekableOutputStream_write = get_method(&err, env, "write", "([BII)V");
 
 	cls_SeekableStream = get_class(&err, env, PKG"SeekableStream");
-	mid_SeekableStream_close = get_method(&err, env, "close", "()V");
 	mid_SeekableStream_position = get_method(&err, env, "position", "()J");
 	mid_SeekableStream_seek = get_method(&err, env, "seek", "(JI)J");
 
@@ -1936,7 +1934,7 @@ typedef struct
 {
 	jobject stream;
 	jbyteArray array;
-	jbyte buffer[4096];
+	jbyte buffer[8192];
 }
 SeekableStreamState;
 
@@ -2087,33 +2085,10 @@ static void call_SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 		return;
 	}
 
-	(*env)->CallVoidMethod(env, state->stream, mid_SeekableStream_close);
-	if ((*env)->ExceptionCheck(env))
-		fz_warn(ctx, "ignoring java exception in call_SeekableInputStream_drop");
-
 	(*env)->DeleteGlobalRef(env, state->stream);
 	(*env)->DeleteGlobalRef(env, state->array);
 
 	fz_free(ctx, state);
-
-	jni_detach_thread(detach);
-}
-
-static void call_SeekableOutputStream_close(fz_context *ctx, void *streamState_)
-{
-	SeekableStreamState *state = streamState_;
-	JNIEnv *env;
-	int detach;
-
-	env = jni_attach_thread(ctx, &detach);
-	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_close");
-
-	(*env)->CallVoidMethod(env, state->stream, mid_SeekableStream_close);
-	if ((*env)->ExceptionCheck(env)) {
-		jni_detach_thread(detach);
-		fz_throw_java(ctx, env);
-	}
 
 	jni_detach_thread(detach);
 }
@@ -7100,7 +7075,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		state->stream = stream;
 		state->array = array;
 
-		out = fz_new_output(ctx, 8192, state, call_SeekableOutputStream_write, call_SeekableOutputStream_close, call_SeekableOutputStream_drop);
+		out = fz_new_output(ctx, 8192, state, call_SeekableOutputStream_write, NULL, call_SeekableOutputStream_drop);
 		out->seek = call_SeekableOutputStream_seek;
 		out->tell = call_SeekableOutputStream_tell;
 

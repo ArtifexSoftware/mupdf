@@ -10,5 +10,4 @@ public interface SeekableStream
 
 	long seek(long offset, int whence) throws IOException;
 	long position() throws IOException;
-	void close() throws IOException;
 }
