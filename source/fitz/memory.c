@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 #include "fitz-imp.h"
 
+#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
