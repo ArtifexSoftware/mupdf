@@ -724,10 +724,16 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		}
 
 		cs = pdf_load_colorspace(ctx, obj);
-		if (!*seps)
-			*seps = fz_new_separations(ctx, 0);
-		fz_add_separation(ctx, *seps, name, cs, 0);
-		fz_drop_colorspace(ctx, cs);
+		fz_try(ctx)
+		{
+			if (!*seps)
+				*seps = fz_new_separations(ctx, 0);
+			fz_add_separation(ctx, *seps, name, cs, 0);
+		}
+		fz_always(ctx)
+			fz_drop_colorspace(ctx, cs);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(Indexed)))
 	{
@@ -780,10 +786,16 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		if (i == n)
 		{
 			cs = pdf_load_colorspace(ctx, obj);
-			if (!*seps)
-				*seps = fz_new_separations(ctx, 0);
-			fz_add_separation(ctx, *seps, name, cs, j);
-			fz_drop_colorspace(ctx, cs);
+			fz_try(ctx)
+			{
+				if (!*seps)
+					*seps = fz_new_separations(ctx, 0);
+				fz_add_separation(ctx, *seps, name, cs, j);
+			}
+			fz_always(ctx)
+				fz_drop_colorspace(ctx, cs);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
 		}
 	}
 }
