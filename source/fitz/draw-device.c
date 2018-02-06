@@ -2923,11 +2923,17 @@ fz_draw_close_device(fz_context *ctx, fz_device *devp)
 	if (dev->resolve_spots && dev->top)
 	{
 		fz_draw_state *state = &dev->stack[--dev->top];
-		fz_copy_pixmap_area_converting_seps(ctx, state[0].dest, state[1].dest, fz_default_color_params(ctx)/* FIXME */, dev->proof_cs, dev->default_cs);
-		fz_drop_pixmap(ctx, state[1].dest);
-		assert(state[1].mask == NULL);
-		assert(state[1].shape == NULL);
-		assert(state[1].group_alpha == NULL);
+		fz_try(ctx)
+		{
+			fz_copy_pixmap_area_converting_seps(ctx, state[0].dest, state[1].dest, fz_default_color_params(ctx)/* FIXME */, dev->proof_cs, dev->default_cs);
+			assert(state[1].mask == NULL);
+			assert(state[1].shape == NULL);
+			assert(state[1].group_alpha == NULL);
+		}
+		fz_always(ctx)
+			fz_drop_pixmap(ctx, state[1].dest);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 }
 
