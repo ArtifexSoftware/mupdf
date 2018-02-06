@@ -2,6 +2,8 @@
 
 #include <zlib.h>
 
+#include <limits.h>
+
 static void *fz_z_alloc(void *opaque, unsigned int count, unsigned int size)
 {
 	fz_context *ctx = (fz_context *)opaque;

@@ -2,6 +2,7 @@
 
 #include <zlib.h>
 
+#include <limits.h>
 #include <string.h>
 
 struct info

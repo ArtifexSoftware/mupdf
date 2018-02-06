@@ -2,6 +2,7 @@
 #include "mupdf/pdf.h"
 
 #include <float.h>
+#include <limits.h>
 #include <math.h>
 
 #include <ft2build.h>

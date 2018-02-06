@@ -3,6 +3,7 @@
 #include "../../fitz/fitz-imp.h"
 #include "mupdf/helpers/pkcs7-openssl.h"
 
+#include <limits.h>
 #include <string.h>
 
 /* Generated from resources/certs/AdobeCA.p7c */

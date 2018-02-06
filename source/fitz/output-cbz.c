@@ -1,10 +1,12 @@
 #include "mupdf/fitz.h"
 
+#include <zlib.h>
+
+#include <limits.h>
+
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
-
-#include <zlib.h>
 
 typedef struct fz_cbz_writer_s fz_cbz_writer;
 
