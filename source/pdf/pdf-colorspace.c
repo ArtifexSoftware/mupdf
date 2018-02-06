@@ -206,8 +206,6 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 	fz_try(ctx)
 	{
 		tint = pdf_load_function(ctx, tintobj, n, base->n);
-		/* RJW: fz_drop_colorspace(ctx, base);
-		 * "cannot load tint function (%d 0 R)", pdf_to_num(ctx, tintobj) */
 
 		devn = fz_malloc_struct(ctx, struct devicen);
 		devn->base = fz_keep_colorspace(ctx, base);  /* We drop it during the devn free... */
