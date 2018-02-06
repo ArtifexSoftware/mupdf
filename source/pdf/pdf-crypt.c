@@ -788,6 +788,12 @@ pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pwd_ut
 		 * stored keys. */
 		(void)pdf_authenticate_user_password(ctx, doc->crypt, (unsigned char *)password, strlen(password));
 	}
+
+	/* To match Acrobat, we choose not to allow an empty owner
+	 * password, unless the user password is also the empty one. */
+	if (*password == 0 && auth == 4)
+		return 0;
+
 	return auth;
 }
 
