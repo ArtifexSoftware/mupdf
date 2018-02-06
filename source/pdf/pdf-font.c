@@ -1737,7 +1737,8 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 					/* End of same widths for consecutive ids. Current will
 					 * be pushed as prev. below during next iteration */
 					publish = 1;
-					run_obj = pdf_new_array(ctx, doc, 10);
+					if (curr_code < face->num_glyphs)
+						run_obj = pdf_new_array(ctx, doc, 10);
 					new_state = FW_RUN;
 					/* And the new first code is our current code */
 					new_first_code = curr_code;
@@ -1802,9 +1803,12 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 					break;
 				}
 
-				state = new_state;
-				first_code = new_first_code;
-				publish = 0;
+				if (curr_code < face->num_glyphs)
+				{
+					state = new_state;
+					first_code = new_first_code;
+					publish = 0;
+				}
 			}
 
 			prev_size = curr_size;
