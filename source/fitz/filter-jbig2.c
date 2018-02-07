@@ -322,7 +322,7 @@ next_jbig2d(fz_context *ctx, fz_stream *stm, size_t len)
 
 		state->page = jbig2_page_out(state->ctx);
 		if (!state->page)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "jbig2_page_out failed");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot decode jbig2 image");
 	}
 
 	s = state->page->data;
