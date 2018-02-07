@@ -20,11 +20,12 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 }
 
 int
-pdf_is_stream(fz_context *ctx, pdf_obj *obj)
+pdf_is_stream(fz_context *ctx, pdf_obj *ref)
 {
-	pdf_document *doc = pdf_get_bound_document(ctx, obj);
-	int num = pdf_obj_parent_num(ctx, obj);
-	return pdf_obj_num_is_stream(ctx, doc, num);
+	pdf_document *doc = pdf_get_indirect_document(ctx, ref);
+	if (doc)
+		return pdf_obj_num_is_stream(ctx, doc, pdf_to_num(ctx, ref));
+	return 0;
 }
 
 /*
