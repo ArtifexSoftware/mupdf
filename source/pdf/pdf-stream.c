@@ -66,9 +66,10 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	fz_var(buf);
 
 	if ((globals = pdf_find_item(ctx, fz_drop_jbig2_globals_imp, dict)) != NULL)
-	{
 		return globals;
-	}
+
+	if (pdf_mark_obj(ctx, dict))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cyclic reference when loading JBIG2 globals");
 
 	fz_try(ctx)
 	{
@@ -79,6 +80,7 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
+		pdf_unmark_obj(ctx, dict);
 	}
 	fz_catch(ctx)
 	{
