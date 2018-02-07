@@ -78,7 +78,8 @@ FREETYPE_OBJ := $(addprefix $(FREETYPE_OUT)/, $(FREETYPE_SRC:%.c=%.o))
 $(FREETYPE_OUT):
 	$(MKDIR_CMD)
 
-FT_CFLAGS := -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON \
+FT_CFLAGS := -Wno-unused-function \
+	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON \
 	'-DFT_CONFIG_MODULES_H="slimftmodules.h"' \
 	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"'
 
