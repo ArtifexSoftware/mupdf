@@ -381,15 +381,12 @@ fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 	{
 		if (out->bp)
 		{
-			if (out->wp < out->ep)
-			{
-				*out->wp++ = x;
-			}
-			else
+			if (out->wp == out->ep)
 			{
 				out->write(ctx, out->state, out->bp, out->wp - out->bp);
 				out->wp = out->bp;
 			}
+			*out->wp++ = x;
 		}
 		else
 		{
