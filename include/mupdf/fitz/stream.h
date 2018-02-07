@@ -395,7 +395,7 @@ static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 */
 static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 {
-	int c;
+	int c = EOF;
 
 	if (stm->rp != stm->wp)
 		return *stm->rp;
