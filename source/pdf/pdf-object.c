@@ -2130,10 +2130,9 @@ int pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int t
 	char *ptr;
 	int n;
 
-	n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
-	if ((n + 1) < sizeof buf)
+	n = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, obj, tight, crypt, num, gen);
+	if (n <= sizeof buf)
 	{
-		pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, obj, tight, crypt, num, gen);
 		fz_write_data(ctx, out, buf, n);
 	}
 	else
