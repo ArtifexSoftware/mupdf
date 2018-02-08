@@ -4,6 +4,7 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf", "mupdf.vcproj", "{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
+		{22462382-B30D-42A5-BF07-EE1A35E25D21} = {22462382-B30D-42A5-BF07-EE1A35E25D21}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libthirdparty", "libthirdparty.vcproj", "{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}"
@@ -32,12 +33,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcurl", "..\..\thirdparty
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf-curl", "mupdf-curl.vcproj", "{27B53E5C-ACAB-423C-854E-BECE56D73544}"
 	ProjectSection(ProjectDependencies) = postProject
+		{22462382-B30D-42A5-BF07-EE1A35E25D21} = {22462382-B30D-42A5-BF07-EE1A35E25D21}
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 		{87EE9DA4-DE1E-4448-8324-183C98DCA588} = {87EE9DA4-DE1E-4448-8324-183C98DCA588}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mujstest", "mujstest.vcproj", "{21E28758-E4D2-4B84-8EC5-B631CEE66B30}"
 	ProjectSection(ProjectDependencies) = postProject
+		{22462382-B30D-42A5-BF07-EE1A35E25D21} = {22462382-B30D-42A5-BF07-EE1A35E25D21}
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 	EndProjectSection
 EndProject
@@ -77,6 +80,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libluratech", "libluratech.vcproj", "{B0091365-C9BA-4F40-AE2B-EF93702871B2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmuthreads", "libmuthreads.vcproj", "{DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A5053AA7-02E5-4903-B596-04F17AEB1526} = {A5053AA7-02E5-4903-B596-04F17AEB1526}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mu-office-lib", "mu-office-lib.vcproj", "{FFF91365-C9BA-4F40-AE2B-EF93702871B2}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -94,12 +100,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmutool", "libmutool.vcpr
 		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C} = {5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 		{DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B} = {DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B}
+		{22462382-B30D-42A5-BF07-EE1A35E25D21} = {22462382-B30D-42A5-BF07-EE1A35E25D21}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mutool-lura", "mutool-lura.vcproj", "{00197081-815B-4F64-BC9D-219078B1F3AA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FA8ADE21-FC8A-47E0-87E4-DCE8808BFC9B} = {FA8ADE21-FC8A-47E0-87E4-DCE8808BFC9B}
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2} = {B0091365-C9BA-4F40-AE2B-EF93702871B2}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpkcs7", "libpkcs7.vcproj", "{22462382-B30D-42A5-BF07-EE1A35E25D21}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A5053AA7-02E5-4903-B596-04F17AEB1526} = {A5053AA7-02E5-4903-B596-04F17AEB1526}
 	EndProjectSection
 EndProject
 Global
@@ -892,6 +904,50 @@ Global
 		{00197081-815B-4F64-BC9D-219078B1F3AA}.ReleaseOpenssl|Win32.ActiveCfg = ReleaseCommercial|x64
 		{00197081-815B-4F64-BC9D-219078B1F3AA}.ReleaseOpenssl|x64.ActiveCfg = ReleaseCommercial|x64
 		{00197081-815B-4F64-BC9D-219078B1F3AA}.ReleaseOpenssl|x64.Build.0 = ReleaseCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Debug|Win32.Build.0 = Debug|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Debug|x64.ActiveCfg = Debug|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Debug|x64.Build.0 = Debug|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugCommercial|Win32.ActiveCfg = DebugCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugCommercial|Win32.Build.0 = DebugCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugCommercial|x64.ActiveCfg = DebugCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugCommercial|x64.Build.0 = DebugCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugGProof|Win32.ActiveCfg = DebugGProof|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugGProof|Win32.Build.0 = DebugGProof|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugGProof|x64.ActiveCfg = DebugGProof|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugGProof|x64.Build.0 = DebugGProof|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugJava|Win32.ActiveCfg = DebugJava|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugJava|Win32.Build.0 = DebugJava|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugJava|x64.ActiveCfg = DebugJava|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugJava|x64.Build.0 = DebugJava|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugOpenssl|Win32.ActiveCfg = DebugOpenssl|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugOpenssl|Win32.Build.0 = DebugOpenssl|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugOpenssl|x64.ActiveCfg = DebugOpenssl|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.DebugOpenssl|x64.Build.0 = DebugOpenssl|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Memento|Win32.ActiveCfg = Memento|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Memento|Win32.Build.0 = Memento|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Memento|x64.ActiveCfg = Memento|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Memento|x64.Build.0 = Memento|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.MementoCommercial|Win32.ActiveCfg = MementoCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.MementoCommercial|Win32.Build.0 = MementoCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.MementoCommercial|x64.ActiveCfg = MementoCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.MementoCommercial|x64.Build.0 = MementoCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Release|Win32.ActiveCfg = Release|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Release|Win32.Build.0 = Release|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Release|x64.ActiveCfg = Release|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.Release|x64.Build.0 = Release|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseCommercial|Win32.ActiveCfg = ReleaseCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseCommercial|Win32.Build.0 = ReleaseCommercial|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseCommercial|x64.ActiveCfg = ReleaseCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseCommercial|x64.Build.0 = ReleaseCommercial|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseJava|Win32.ActiveCfg = ReleaseJava|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseJava|Win32.Build.0 = ReleaseJava|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseJava|x64.ActiveCfg = ReleaseJava|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseJava|x64.Build.0 = ReleaseJava|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseOpenssl|Win32.ActiveCfg = ReleaseOpenssl|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseOpenssl|Win32.Build.0 = ReleaseOpenssl|Win32
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseOpenssl|x64.ActiveCfg = ReleaseOpenssl|x64
+		{22462382-B30D-42A5-BF07-EE1A35E25D21}.ReleaseOpenssl|x64.Build.0 = ReleaseOpenssl|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
