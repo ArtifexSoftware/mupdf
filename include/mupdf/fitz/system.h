@@ -182,12 +182,13 @@ void fz_free_argv(int argc, char **argv);
 #endif
 
 /* GCC can do type checking of printf strings */
-#ifndef __printflike
-#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
-#define __printflike(fmtarg, firstvararg) \
-	__attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#ifdef __printflike
+#define FZ_PRINTFLIKE(F,V) __printflike(F,V)
 #else
-#define __printflike(fmtarg, firstvararg)
+#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#define FZ_PRINTFLIKE(F,V) __attribute__((__format__ (__printf__, F, V)))
+#else
+#define FZ_PRINTFLIKE(F,V)
 #endif
 #endif
 
