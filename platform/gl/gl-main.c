@@ -960,6 +960,12 @@ static void quit(void)
 	doquit = 1;
 }
 
+static void clear_search(void)
+{
+	search_hit_page = -1;
+	search_hit_count = 0;
+}
+
 static void do_app(void)
 {
 	if (ui.key == KEY_F4 && ui.mod == GLUT_ACTIVE_ALT)
@@ -972,6 +978,7 @@ static void do_app(void)
 	{
 		switch (ui.key)
 		{
+		case KEY_ESCAPE: clear_search(); break;
 		case KEY_F1: showhelp = !showhelp; break;
 		case 'o': toggle_outline(); break;
 		case 'L': showlinks = !showlinks; break;
@@ -1032,12 +1039,14 @@ static void do_app(void)
 			break;
 
 		case '/':
+			clear_search();
 			search_dir = 1;
 			showsearch = 1;
 			search_input.p = search_input.text;
 			search_input.q = search_input.end;
 			break;
 		case '?':
+			clear_search();
 			search_dir = -1;
 			showsearch = 1;
 			search_input.p = search_input.text;
