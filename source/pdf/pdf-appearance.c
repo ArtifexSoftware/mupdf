@@ -1012,8 +1012,6 @@ static pdf_xobject *load_or_create_form(fz_context *ctx, pdf_document *doc, pdf_
 
 		form = pdf_load_xobject(ctx, doc, formobj);
 
-		form->iteration = 1;
-
 		copy_resources(ctx, pdf_xobject_resources(ctx, form), pdf_get_inheritable(ctx, doc, obj, PDF_NAME_DR));
 	}
 	fz_always(ctx)
