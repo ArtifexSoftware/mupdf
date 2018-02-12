@@ -24,6 +24,27 @@ void pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt);
 void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_pkcs7_signer *signer);
 
 /*
+	User access permissions from PDF reference.
+*/
+enum
+{
+	PDF_PERM_PRINT = 1 << 2,
+	PDF_PERM_MODIFY = 1 << 3,
+	PDF_PERM_COPY = 1 << 4,
+	PDF_PERM_ANNOTATE = 1 << 5,
+	PDF_PERM_FORM = 1 << 8,
+	PDF_PERM_ACCESSIBILITY = 1 << 9, /* deprecated in pdf 2.0 (this permission is always granted) */
+	PDF_PERM_ASSEMBLE = 1 << 10,
+	PDF_PERM_PRINT_HQ = 1 << 11,
+	PDF_DEFAULT_PERM_FLAGS = 0xFFFFFFFC /* all permissions granted, reserved bits set appropriately */
+};
+
+/*
+	pdf_document_permissions: access the detailed permissions flag.
+*/
+int pdf_document_permissions(fz_context *ctx, pdf_document *doc);
+
+/*
 	pdf_signature_widget_byte_range: retrieve the byte range for a signature widget
 */
 int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range);
