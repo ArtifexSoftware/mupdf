@@ -49,4 +49,7 @@ public class NativeDevice extends Device
 
 	public native final int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id);
 	public native final void endTile();
+
+	public native final void beginLayer(String name);
+	public native final void endLayer();
 }

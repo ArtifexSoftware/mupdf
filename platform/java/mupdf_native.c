@@ -152,6 +152,7 @@ static jmethodID mid_Annotation_init;
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
 static jmethodID mid_Device_beginGroup;
+static jmethodID mid_Device_beginLayer;
 static jmethodID mid_Device_beginMask;
 static jmethodID mid_Device_beginTile;
 static jmethodID mid_Device_clipImageMask;
@@ -160,6 +161,7 @@ static jmethodID mid_Device_clipStrokePath;
 static jmethodID mid_Device_clipStrokeText;
 static jmethodID mid_Device_clipText;
 static jmethodID mid_Device_endGroup;
+static jmethodID mid_Device_endLayer;
 static jmethodID mid_Device_endMask;
 static jmethodID mid_Device_endTile;
 static jmethodID mid_Device_fillImage;
@@ -459,6 +461,8 @@ static int find_fids(JNIEnv *env)
 	mid_Device_fillImageMask = get_method(&err, env, "fillImageMask", "(L"PKG"Image;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_clipImageMask = get_method(&err, env, "clipImageMask", "(L"PKG"Image;L"PKG"Matrix;)V");
 	mid_Device_popClip = get_method(&err, env, "popClip", "()V");
+	mid_Device_beginLayer = get_method(&err, env, "beginLayer", "(Ljava/lang/String;)V");
+	mid_Device_endLayer = get_method(&err, env, "endLayer", "()V");
 	mid_Device_beginMask = get_method(&err, env, "beginMask", "(L"PKG"Rect;ZL"PKG"ColorSpace;[F)V");
 	mid_Device_endMask = get_method(&err, env, "endMask", "()V");
 	mid_Device_beginGroup = get_method(&err, env, "beginGroup", "(L"PKG"Rect;L"PKG"ColorSpace;ZZIF)V");
@@ -2341,6 +2345,31 @@ fz_java_device_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
+fz_java_device_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
+{
+	fz_java_device *jdev = (fz_java_device *)dev;
+	JNIEnv *env = jdev->env;
+	jstring jname;
+
+	jname = (*env)->NewStringUTF(env, name);
+
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginLayer, jname);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+}
+
+static void
+fz_java_device_end_layer(fz_context *ctx, fz_device *dev)
+{
+	fz_java_device *jdev = (fz_java_device *)dev;
+	JNIEnv *env = jdev->env;
+
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_endLayer);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+}
+
+static void
 fz_java_device_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *cs, const float *bc, const fz_color_params *cs_params)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
@@ -2468,6 +2497,9 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 
 		dev->super.begin_tile = fz_java_device_begin_tile;
 		dev->super.end_tile = fz_java_device_end_tile;
+
+		dev->super.begin_layer = fz_java_device_begin_layer;
+		dev->super.end_layer = fz_java_device_end_layer;
 	}
 	fz_catch(ctx)
 	{
@@ -2921,6 +2953,53 @@ FUN(NativeDevice_popClip)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(NativeDevice_beginLayer)(JNIEnv *env, jobject self, jstring jname)
+{
+	fz_context *ctx = get_context(env);
+	fz_device *dev = from_Device(env, self);
+	NativeDeviceInfo *info;
+	const char *name;
+
+	if (!ctx || !dev) return;
+
+	if (jname)
+	{
+		name = (*env)->GetStringUTFChars(env, jname, NULL);
+		if (!name) return;
+	}
+
+	info = lockNativeDevice(env, self);
+	fz_try(ctx)
+		fz_begin_layer(ctx, dev, name);
+	fz_always(ctx)
+	{
+		(*env)->ReleaseStringUTFChars(env, jname, name);
+		unlockNativeDevice(env, info);
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(NativeDevice_endLayer)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_device *dev = from_Device(env, self);
+	NativeDeviceInfo *info;
+
+	if (!ctx || !dev) return;
+
+	info = lockNativeDevice(env, self);
+	fz_try(ctx)
+		fz_end_layer(ctx, dev);
+	fz_always(ctx)
+		unlockNativeDevice(env, info);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
 
 JNIEXPORT void JNICALL
 FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean luminosity, jobject jcs, jfloatArray jcolor, jint jcp)

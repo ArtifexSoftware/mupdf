@@ -58,6 +58,8 @@ public class Device
 	public void endGroup() {}
 	public int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id) { return 0; }
 	public void endTile() {}
+	public void beginLayer(String name) {}
+	public void endLayer() {}
 
 	/* Flags */
 	public static final int FLAG_MASK = 1;

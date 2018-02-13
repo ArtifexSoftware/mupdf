@@ -1325,6 +1325,22 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_beginTile
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_endTile
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_NativeDevice
+ * Method:    beginLayer
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_beginLayer
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_NativeDevice
+ * Method:    endLayer
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_endLayer
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
