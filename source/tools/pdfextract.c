@@ -73,6 +73,7 @@ writejpeg(fz_context *ctx, const unsigned char *data, size_t len, const char *fi
 	out = fz_new_output_with_path(ctx, buf, 0);
 	fz_try(ctx)
 	{
+		printf("extracting image %s\n", buf);
 		fz_write_data(ctx, out, data, len);
 		fz_close_output(ctx, out);
 	}
@@ -102,23 +103,29 @@ static void saveimage(int num)
 		cbuf = fz_compressed_image_buffer(ctx, image);
 		fz_snprintf(buf, sizeof(buf), "img-%04d", num);
 		type = cbuf == NULL ? FZ_IMAGE_UNKNOWN : cbuf->params.type;
+
 		if (image->use_colorkey)
 			type = FZ_IMAGE_UNKNOWN;
 		if (image->use_decode)
 			type = FZ_IMAGE_UNKNOWN;
 		if (image->mask)
 			type = FZ_IMAGE_UNKNOWN;
-		switch (type)
+		if (dorgb)
 		{
-		case FZ_IMAGE_JPEG:
+			enum fz_colorspace_type ctype = fz_colorspace_type(ctx, image->colorspace);
+			if (ctype != FZ_COLORSPACE_RGB && ctype != FZ_COLORSPACE_GRAY)
+				type = FZ_IMAGE_UNKNOWN;
+		}
+
+		if (type == FZ_IMAGE_JPEG)
 		{
 			unsigned char *data;
 			size_t len = fz_buffer_storage(ctx, cbuf->buffer, &data);
-			fz_snprintf(buf, sizeof(buf), "img-%04d", num);
 			writejpeg(ctx, data, len, buf);
 			break;
 		}
-		default:
+		else
+		{
 			pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
 			writepixmap(ctx, pix, buf, dorgb);
 		}
