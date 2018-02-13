@@ -36,7 +36,6 @@ enum
 	PDF_PERM_ACCESSIBILITY = 1 << 9, /* deprecated in pdf 2.0 (this permission is always granted) */
 	PDF_PERM_ASSEMBLE = 1 << 10,
 	PDF_PERM_PRINT_HQ = 1 << 11,
-	PDF_DEFAULT_PERM_FLAGS = 0xFFFFFFFC /* all permissions granted, reserved bits set appropriately */
 };
 
 /*

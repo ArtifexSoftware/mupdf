@@ -814,7 +814,8 @@ pdf_document_permissions(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->crypt)
 		return doc->crypt->p;
-	return PDF_DEFAULT_PERM_FLAGS;
+	/* all permissions granted, reserved bits set appropriately */
+	return (int)0xFFFFFFFC;
 }
 
 unsigned char *
