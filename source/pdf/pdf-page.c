@@ -174,7 +174,13 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 				}
 			}
 		}
-		while (hit == NULL);
+		/* If i < len && hit != NULL the desired page was found in the
+		Kids array, done. If i < len && hit == NULL the found page tree
+		node contains a Kids array that contains the desired page, loop
+		back to top to extract it. When i == len the Kids array has been
+		exhausted without finding the desired page, give up.
+		*/
+		while (hit == NULL && i < len);
 	}
 	fz_always(ctx)
 	{
