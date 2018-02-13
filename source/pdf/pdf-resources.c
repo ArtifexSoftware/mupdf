@@ -29,20 +29,18 @@ pdf_preload_image_resources(fz_context *ctx, pdf_document *doc)
 	int len, k;
 	pdf_obj *obj = NULL;
 	pdf_obj *type;
-	pdf_obj *res = NULL;
 	fz_image *image = NULL;
 	unsigned char digest[16];
 
 	fz_var(obj);
 	fz_var(image);
-	fz_var(res);
 
 	fz_try(ctx)
 	{
 		len = pdf_count_objects(ctx, doc);
 		for (k = 1; k < len; k++)
 		{
-			obj = pdf_load_object(ctx, doc, k);
+			obj = pdf_new_indirect(ctx, doc, k, 0);
 			type = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
 			if (pdf_name_eq(ctx, type, PDF_NAME_Image))
 			{
