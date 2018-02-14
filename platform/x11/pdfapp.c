@@ -1684,6 +1684,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 						fz_var(opts);
 						fz_var(vals);
+						fz_var(nopts);
+						fz_var(nvals);
 
 						fz_try(ctx)
 						{
@@ -1703,7 +1705,12 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 						}
 						fz_always(ctx)
 						{
+							int i;
+							for (i=0; i < nopts; ++i)
+								fz_free(ctx, opts[i]);
 							fz_free(ctx, opts);
+							for (i=0; i < nvals; ++i)
+								fz_free(ctx, vals[i]);
 							fz_free(ctx, vals);
 						}
 						fz_catch(ctx)
