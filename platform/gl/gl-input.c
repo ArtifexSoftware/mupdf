@@ -5,13 +5,13 @@
 static void draw_string_part(float x, float y, const char *s, const char *e)
 {
 	int c;
-	ui_begin_text(ctx);
+	ui_begin_text();
 	while (s < e)
 	{
 		s += fz_chartorune(&c, s);
-		x += ui_draw_character(ctx, c, x, y + ui.baseline);
+		x += ui_draw_character(c, x, y + ui.baseline);
 	}
-	ui_end_text(ctx);
+	ui_end_text();
 }
 
 static float measure_string_part(const char *s, const char *e)
@@ -21,7 +21,7 @@ static float measure_string_part(const char *s, const char *e)
 	while (s < e)
 	{
 		s += fz_chartorune(&c, s);
-		w += ui_measure_character(ctx, c);
+		w += ui_measure_character(c);
 	}
 	return w;
 }
@@ -32,7 +32,7 @@ static char *find_string_location(char *s, char *e, float w, float x)
 	while (s < e)
 	{
 		int n = fz_chartorune(&c, s);
-		float cw = ui_measure_character(ctx, c);
+		float cw = ui_measure_character(c);
 		if (w + (cw / 2) >= x)
 			return s;
 		w += cw;
@@ -212,9 +212,11 @@ static int ui_input_key(struct input *input)
 		}
 		break;
 	case KEY_ESCAPE:
-		return -1;
+		ui.focus = NULL;
+		return UI_INPUT_CANCEL;
 	case KEY_ENTER:
-		return 1;
+		ui.focus = NULL;
+		return UI_INPUT_ACCEPT;
 	case KEY_BACKSPACE:
 		if (input->p != input->q)
 			ui_input_delete_selection(input);
@@ -279,33 +281,40 @@ static int ui_input_key(struct input *input)
 		}
 		break;
 	}
-	return 0;
+	return UI_INPUT_CONTINUE;
 }
 
-int ui_input(int x0, int y0, int x1, int y1, struct input *input)
+void ui_input_init(struct input *input, const char *text)
 {
+	fz_strlcpy(input->text, text, sizeof input->text);
+	input->end = input->text + strlen(input->text);
+	input->p = input->q = input->text;
+}
+
+int ui_input(struct input *input, int width)
+{
+	fz_irect area;
 	float px, qx;
 	char *p, *q;
 	int state;
 
-	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+	area = ui_pack(width, ui.lineheight + 4);
+
+	if (ui_mouse_inside(&area))
 	{
 		ui.hot = input;
 		if (!ui.active && ui.down)
 		{
-			input->p = find_string_location(input->text, input->end, x0 + 2, ui.x);
+			input->p = find_string_location(input->text, input->end, area.x0 + 2, ui.x);
 			ui.active = input;
 		}
 	}
 
 	if (ui.active == input)
 	{
-		input->q = find_string_location(input->text, input->end, x0 + 2, ui.x);
+		input->q = find_string_location(input->text, input->end, area.x0 + 2, ui.x);
 		ui.focus = input;
 	}
-
-	if (!ui.focus)
-		ui.focus = input;
 
 	if (ui.focus == input)
 		state = ui_input_key(input);
@@ -313,25 +322,25 @@ int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 		state = 0;
 
 	glColor4f(0, 0, 0, 1);
-	glRectf(x0, y0, x1, y1);
+	glRectf(area.x0, area.y0, area.x1, area.y1);
 
 	glColor4f(1, 1, 1, 1);
-	glRectf(x0+1, y0+1, x1-1, y1-1);
+	glRectf(area.x0+1, area.y0+1, area.x1-1, area.y1-1);
 
 	p = input->p < input->q ? input->p : input->q;
 	q = input->p > input->q ? input->p : input->q;
 
-	px = x0 + 2 + measure_string_part(input->text, p);
+	px = area.x0 + 2 + measure_string_part(input->text, p);
 	qx = px + measure_string_part(p, q);
 
-	if (ui.focus)
+	if (ui.focus == input)
 	{
 		glColor4f(0.6f, 0.6f, 1.0f, 1.0f);
-		glRectf(px, y0 + 2, qx+1, y1 - 2);
+		glRectf(px, area.y0 + 2, qx+1, area.y1 - 2);
 	}
 
 	glColor4f(0, 0, 0, 1);
-	draw_string_part(x0 + 2, y0 + 2, input->text, input->end);
+	draw_string_part(area.x0 + 2, area.y0 + 2, input->text, input->end);
 
 	return state;
 }

@@ -1,7 +1,5 @@
 #include "gl-app.h"
 
-#include "mupdf/pdf.h" /* for pdf specifics and forms */
-
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,13 +8,12 @@
 #include <unistd.h> /* for fork and exec */
 #endif
 
-#ifndef FREEGLUT
-/* freeglut extension no-ops */
-void glutExit(void) {}
-void glutMouseWheelFunc(void *fn) {}
-void glutInitErrorFunc(void *fn) {}
-void glutInitWarningFunc(void *fn) {}
-#endif
+fz_context *ctx = NULL;
+pdf_document *pdf = NULL;
+pdf_page *page = NULL;
+int page_x_ofs = 0;
+int page_y_ofs = 0;
+fz_matrix page_ctm, page_inv_ctm;
 
 enum
 {
@@ -28,30 +25,7 @@ enum
 	DEFAULT_LAYOUT_W = 450,
 	DEFAULT_LAYOUT_H = 600,
 	DEFAULT_LAYOUT_EM = 12,
-
-	/* Default UI sizes */
-	DEFAULT_UI_FONTSIZE = 15,
-	DEFAULT_UI_BASELINE = 14,
-	DEFAULT_UI_LINEHEIGHT = 18,
 };
-
-struct ui ui;
-fz_context *ctx = NULL;
-
-/* OpenGL capabilities */
-static int has_ARB_texture_non_power_of_two = 1;
-static GLint max_texture_size = 8192;
-
-static void ui_begin(void)
-{
-	ui.hot = NULL;
-}
-
-static void ui_end(void)
-{
-	if (!ui.down && !ui.middle && !ui.right)
-		ui.active = NULL;
-}
 
 static void open_browser(const char *uri)
 {
@@ -74,55 +48,6 @@ static void open_browser(const char *uri)
 		exit(0);
 	}
 #endif
-}
-
-const char *ogl_error_string(GLenum code)
-{
-#define CASE(E) case E: return #E; break
-	switch (code)
-	{
-	/* glGetError */
-	CASE(GL_NO_ERROR);
-	CASE(GL_INVALID_ENUM);
-	CASE(GL_INVALID_VALUE);
-	CASE(GL_INVALID_OPERATION);
-	CASE(GL_OUT_OF_MEMORY);
-	CASE(GL_STACK_UNDERFLOW);
-	CASE(GL_STACK_OVERFLOW);
-	default: return "(unknown)";
-	}
-#undef CASE
-}
-
-void ogl_assert(fz_context *ctx, const char *msg)
-{
-	int code = glGetError();
-	if (code != GL_NO_ERROR) {
-		fz_warn(ctx, "glGetError(%s): %s", msg, ogl_error_string(code));
-	}
-}
-
-void ui_draw_image(struct texture *tex, float x, float y)
-{
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, tex->id);
-	glEnable(GL_TEXTURE_2D);
-	glBegin(GL_TRIANGLE_STRIP);
-	{
-		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(0, tex->t);
-		glVertex2f(x + tex->x, y + tex->y + tex->h);
-		glTexCoord2f(0, 0);
-		glVertex2f(x + tex->x, y + tex->y);
-		glTexCoord2f(tex->s, tex->t);
-		glVertex2f(x + tex->x + tex->w, y + tex->y + tex->h);
-		glTexCoord2f(tex->s, 0);
-		glVertex2f(x + tex->x + tex->w, y + tex->y);
-	}
-	glEnd();
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_BLEND);
 }
 
 static const int zoom_list[] = { 18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288 };
@@ -160,9 +85,8 @@ static int layout_use_doc_css = 1;
 
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
-static fz_page *page = NULL;
+static fz_page *fzpage = NULL;
 static fz_stext_page *text = NULL;
-static pdf_document *pdf = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
 
@@ -173,18 +97,12 @@ static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
 
-static struct texture annot_tex[256];
-static int annot_count = 0;
-
-static int window_w = 1, window_h = 1;
+static int outline_w = 260;
 
 static int oldinvert = 0, currentinvert = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
-static fz_matrix page_ctm, page_inv_ctm;
-static int loaded = 0;
-static int window = 0;
 
 static int isfullscreen = 0;
 static int showoutline = 0;
@@ -192,7 +110,6 @@ static int showlinks = 0;
 static int showsearch = 0;
 static int showinfo = 0;
 static int showhelp = 0;
-static int doquit = 0;
 
 struct mark
 {
@@ -215,17 +132,6 @@ static int search_hit_page = -1;
 static int search_hit_count = 0;
 static fz_rect search_hit_bbox[5000];
 
-static unsigned int next_power_of_two(unsigned int n)
-{
-	--n;
-	n |= n >> 1;
-	n |= n >> 2;
-	n |= n >> 4;
-	n |= n >> 8;
-	n |= n >> 16;
-	return ++n;
-}
-
 static void update_title(void)
 {
 	static char buf[256];
@@ -236,42 +142,6 @@ static void update_title(void)
 		sprintf(buf, "%s - %d / %d", title, currentpage + 1, fz_count_pages(ctx, doc));
 	glutSetWindowTitle(buf);
 	glutSetIconTitle(buf);
-}
-
-void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
-{
-	if (!tex->id)
-		glGenTextures(1, &tex->id);
-	glBindTexture(GL_TEXTURE_2D, tex->id);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	tex->x = pix->x;
-	tex->y = pix->y;
-	tex->w = pix->w;
-	tex->h = pix->h;
-
-	if (has_ARB_texture_non_power_of_two)
-	{
-		if (tex->w > max_texture_size || tex->h > max_texture_size)
-			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", tex->w, tex->h, max_texture_size);
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex->w, tex->h, 0, pix->n == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pix->samples);
-		tex->s = 1;
-		tex->t = 1;
-	}
-	else
-	{
-		int w2 = next_power_of_two(tex->w);
-		int h2 = next_power_of_two(tex->h);
-		if (w2 > max_texture_size || h2 > max_texture_size)
-			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", w2, h2, max_texture_size);
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->w, tex->h, pix->n == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pix->samples);
-		tex->s = (float) tex->w / w2;
-		tex->t = (float) tex->h / h2;
-	}
 }
 
 void load_page(void)
@@ -287,55 +157,42 @@ void load_page(void)
 	text = NULL;
 	fz_drop_link(ctx, links);
 	links = NULL;
-	fz_drop_page(ctx, page);
-	page = NULL;
+	fz_drop_page(ctx, fzpage);
+	fzpage = NULL;
 
-	page = fz_load_page(ctx, doc, currentpage);
-	links = fz_load_links(ctx, page);
-	text = fz_new_stext_page_from_page(ctx, page, NULL);
+	fzpage = fz_load_page(ctx, doc, currentpage);
+	if (pdf)
+		page = (pdf_page*)fzpage;
+
+	links = fz_load_links(ctx, fzpage);
+	text = fz_new_stext_page_from_page(ctx, fzpage, NULL);
+
 
 	/* compute bounds here for initial window size */
-	fz_bound_page(ctx, page, &rect);
+	fz_bound_page(ctx, fzpage, &rect);
 	fz_transform_rect(&rect, &page_ctm);
-	fz_round_rect(&irect, &rect);
+	fz_irect_from_rect(&irect, &rect);
 	page_tex.w = irect.x1 - irect.x0;
 	page_tex.h = irect.y1 - irect.y0;
-
-	loaded = 1;
 }
 
 void render_page(void)
 {
-	fz_annot *annot;
 	fz_pixmap *pix;
 
-	if (!loaded)
-		load_page();
+	fz_scale(&page_ctm, currentzoom / 72, currentzoom / 72);
+	fz_pre_rotate(&page_ctm, -currentrotate);
+	fz_invert_matrix(&page_inv_ctm, &page_ctm);
 
-	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx), 0);
+	pix = fz_new_pixmap_from_page(ctx, fzpage, &page_ctm, fz_device_rgb(ctx), 0);
 	if (currentinvert)
 	{
 		fz_invert_pixmap(ctx, pix);
 		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
 	}
 
-	texture_from_pixmap(&page_tex, pix);
+	ui_texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
-
-	annot_count = 0;
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
-	{
-		pix = fz_new_pixmap_from_annot(ctx, annot, &page_ctm, fz_device_rgb(ctx), 1);
-		texture_from_pixmap(&annot_tex[annot_count++], pix);
-		fz_drop_pixmap(ctx, pix);
-		if (annot_count >= nelem(annot_tex))
-		{
-			fz_warn(ctx, "too many annotations to display!");
-			break;
-		}
-	}
-
-	loaded = 0;
 }
 
 static struct mark save_mark()
@@ -426,201 +283,72 @@ static void pop_future(void)
 	push_history();
 }
 
-static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
+static int count_outline(fz_outline *node)
 {
-	glColor4f(1, 1, 1, 1);
-	glRectf(x0, y0, x1, y1);
-	glColor4f(0, 0, 0, 1);
-	ui_draw_string(ctx, x0 + 2, y0 + 2 + ui.baseline, text);
-}
-
-static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max)
-{
-	static float saved_top = 0;
-	static int saved_ui_y = 0;
-	float top;
-
-	int total_h = y1 - y0;
-	int thumb_h = fz_maxi(x1 - x0, total_h * page_size / max);
-	int avail_h = total_h - thumb_h;
-
-	max -= page_size;
-
-	if (max <= 0)
-	{
-		*value = 0;
-		glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
-		glRectf(x0, y0, x1, y1);
-		return;
-	}
-
-	top = (float) *value * avail_h / max;
-
-	if (ui.down && !ui.active)
-	{
-		if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
-		{
-			if (ui.y < top)
-			{
-				ui.active = "pgdn";
-				*value -= page_size;
-			}
-			else if (ui.y >= top + thumb_h)
-			{
-				ui.active = "pgup";
-				*value += page_size;
-			}
-			else
-			{
-				ui.hot = value;
-				ui.active = value;
-				saved_top = top;
-				saved_ui_y = ui.y;
-			}
-		}
-	}
-
-	if (ui.active == value)
-	{
-		*value = (saved_top + ui.y - saved_ui_y) * max / avail_h;
-	}
-
-	if (*value < 0)
-		*value = 0;
-	else if (*value > max)
-		*value = max;
-
-	top = (float) *value * avail_h / max;
-
-	glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
-	glRectf(x0, y0, x1, y1);
-	glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
-	glRectf(x0, top, x1, top + thumb_h);
-}
-
-static int measure_outline_height(fz_outline *node)
-{
-	int h = 0;
+	int n = 0;
 	while (node)
 	{
-		h += ui.lineheight;
-		if (node->down)
-			h += measure_outline_height(node->down);
+		if (node->page >= 0)
+		{
+			n += 1;
+			if (node->down)
+				n += count_outline(node->down);
+		}
 		node = node->next;
 	}
-	return h;
+	return n;
 }
 
-static int do_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int y)
+static void do_outline_imp(struct list *list, int end, fz_outline *node, int depth)
 {
-	int h = 0;
-	int p = currentpage;
-	int n = end;
+	int selected;
 
 	while (node)
 	{
-		p = node->page;
+		int p = node->page;
 		if (p >= 0)
 		{
-			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + ui.lineheight)
-			{
-				ui.hot = node;
-				if (!ui.active && ui.down)
-				{
-					ui.active = node;
-					jump_to_page_xy(p, node->x, node->y);
-					glutPostRedisplay(); /* we changed the current page, so force a redraw */
-				}
-			}
-
-			n = end;
+			int n = end;
 			if (node->next && node->next->page >= 0)
-			{
 				n = node->next->page;
-			}
-			if (currentpage == p || (currentpage > p && currentpage < n))
-			{
-				glColor4f(0.9f, 0.9f, 0.9f, 1.0f);
-				glRectf(x0, y + h, x1, y + h + ui.lineheight);
-			}
+
+			selected = (currentpage == p || (currentpage > p && currentpage < n));
+			if (ui_list_item(list, node, depth * ui.lineheight, node->title, selected))
+				jump_to_page_xy(p, node->x, node->y);
+
+			if (node->down)
+				do_outline_imp(list, n, node->down, depth + 1);
 		}
-
-		glColor4f(0, 0, 0, 1);
-		ui_draw_string(ctx, x, y + h + ui.baseline, node->title);
-		h += ui.lineheight;
-		if (node->down)
-			h += do_outline_imp(node->down, n, x0, x1, x + ui.lineheight, y + h);
-
 		node = node->next;
 	}
-	return h;
 }
 
-static void do_outline(fz_outline *node, int outline_w)
+static void do_outline(fz_outline *node)
 {
-	static char *id = "outline";
-	static int outline_scroll_y = 0;
-	static int saved_outline_scroll_y = 0;
-	static int saved_ui_y = 0;
-
-	int outline_h;
-	int total_h;
-
-	outline_w -= ui.lineheight;
-	outline_h = window_h;
-	total_h = measure_outline_height(outline);
-
-	if (ui.x >= 0 && ui.x < outline_w && ui.y >= 0 && ui.y < outline_h)
-	{
-		ui.hot = id;
-		if (!ui.active && ui.middle)
-		{
-			ui.active = id;
-			saved_ui_y = ui.y;
-			saved_outline_scroll_y = outline_scroll_y;
-		}
-	}
-
-	if (ui.active == id)
-		outline_scroll_y = saved_outline_scroll_y + (saved_ui_y - ui.y) * 5;
-
-	if (ui.hot == id)
-		outline_scroll_y -= ui.scroll_y * ui.lineheight * 3;
-
-	ui_scrollbar(outline_w, 0, outline_w+ui.lineheight, outline_h, &outline_scroll_y, outline_h, total_h);
-
-	glScissor(0, 0, outline_w, outline_h);
-	glEnable(GL_SCISSOR_TEST);
-
-	glColor4f(1, 1, 1, 1);
-	glRectf(0, 0, outline_w, outline_h);
-
-	do_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -outline_scroll_y);
-
-	glDisable(GL_SCISSOR_TEST);
+	static struct list list = {};
+	ui_layout(L, BOTH, NW, 0, 0);
+	ui_list_begin(&list, count_outline(node), outline_w, 0);
+	do_outline_imp(&list, fz_count_pages(ctx, doc), node, 1);
+	ui_list_end(&list);
 }
 
-static void do_links(fz_link *link, int xofs, int yofs)
+static void do_links(fz_link *link)
 {
-	fz_rect r;
-	float x, y;
+	fz_rect bounds;
+	fz_irect area;
 	float link_x, link_y;
-
-	x = ui.x;
-	y = ui.y;
-
-	xofs -= page_tex.x;
-	yofs -= page_tex.y;
 
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
 	while (link)
 	{
-		r = link->rect;
-		fz_transform_rect(&r, &page_ctm);
+		bounds = link->rect;
+		fz_transform_rect(&bounds, &page_ctm);
+		fz_irect_from_rect(&area, &bounds);
+		fz_translate_irect(&area, page_x_ofs, page_y_ofs);
 
-		if (x >= xofs + r.x0 && x < xofs + r.x1 && y >= yofs + r.y0 && y < yofs + r.y1)
+		if (ui_mouse_inside(&area))
 		{
 			ui.hot = link;
 			if (!ui.active && ui.down)
@@ -635,7 +363,7 @@ static void do_links(fz_link *link, int xofs, int yofs)
 				glColor4f(0, 0, 1, 0.2f);
 			else
 				glColor4f(0, 0, 1, 0.1f);
-			glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
+			glRectf(area.x0, area.y0, area.x1, area.y1);
 		}
 
 		if (ui.active == link && !ui.down)
@@ -651,7 +379,6 @@ static void do_links(fz_link *link, int xofs, int yofs)
 						jump_to_page_xy(p, link_x, link_y);
 					else
 						fz_warn(ctx, "cannot find link destination '%s'", link->uri);
-					glutPostRedisplay(); /* we changed the current page, so force a redraw */
 				}
 			}
 		}
@@ -714,50 +441,44 @@ static void do_page_selection(int x0, int y0, int x1, int y1)
 #endif
 			ui_set_clipboard(s);
 			fz_free(ctx, s);
-			glutPostRedisplay();
 		}
 	}
 }
 
-static void do_search_hits(int xofs, int yofs)
+static void do_search_hits(void)
 {
-	fz_rect r;
+	fz_rect bounds;
+	fz_irect area;
 	int i;
-
-	xofs -= page_tex.x;
-	yofs -= page_tex.y;
 
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
 	for (i = 0; i < search_hit_count; ++i)
 	{
-		r = search_hit_bbox[i];
-
-		fz_transform_rect(&r, &page_ctm);
+		bounds = search_hit_bbox[i];
+		fz_transform_rect(&bounds, &page_ctm);
+		fz_irect_from_rect(&area, &bounds);
+		fz_translate_irect(&area, page_x_ofs, page_y_ofs);
 
 		glColor4f(1, 0, 0, 0.4f);
-		glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
+		glRectf(area.x0, area.y0, area.x1, area.y1);
 	}
 
 	glDisable(GL_BLEND);
 }
 
-static void do_forms(float xofs, float yofs)
+static void do_forms(void)
 {
 	static int do_forms_tag = 0;
 	pdf_ui_event event;
 	fz_point p;
-	int i;
-
-	for (i = 0; i < annot_count; ++i)
-		ui_draw_image(&annot_tex[i], xofs - page_tex.x, yofs - page_tex.y);
 
 	if (!pdf || search_active)
 		return;
 
-	p.x = xofs - page_tex.x + ui.x;
-	p.y = xofs - page_tex.x + ui.y;
+	p.x = page_x_ofs + ui.x;
+	p.y = page_y_ofs + ui.y;
 	fz_transform_point(&p, &page_inv_ctm);
 
 	if (ui.down && !ui.active)
@@ -771,7 +492,6 @@ static void do_forms(float xofs, float yofs)
 				ui.active = &do_forms_tag;
 			pdf_update_page(ctx, (pdf_page*)page);
 			render_page();
-			glutPostRedisplay();
 		}
 	}
 	else if (ui.active == &do_forms_tag && !ui.down)
@@ -784,7 +504,6 @@ static void do_forms(float xofs, float yofs)
 		{
 			pdf_update_page(ctx, (pdf_page*)page);
 			render_page();
-			glutPostRedisplay();
 		}
 	}
 }
@@ -814,8 +533,8 @@ static void shrinkwrap(void)
 {
 	int screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
 	int screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
-	int w = page_tex.w + canvas_x;
-	int h = page_tex.h + canvas_y;
+	int w = page_tex.w + (showoutline ? outline_w : 0);
+	int h = page_tex.h;
 	if (screen_w > 0 && w > screen_w)
 		w = screen_w;
 	if (screen_h > 0 && h > screen_h)
@@ -867,6 +586,7 @@ static void load_document(void)
 static void reload(void)
 {
 	load_document();
+	load_page();
 	render_page();
 	update_title();
 }
@@ -876,10 +596,6 @@ static void toggle_outline(void)
 	if (outline)
 	{
 		showoutline = !showoutline;
-		if (showoutline)
-			canvas_x = ui.lineheight * 16;
-		else
-			canvas_x = 0;
 		if (canvas_w == page_tex.w && canvas_h == page_tex.h)
 			shrinkwrap();
 	}
@@ -963,11 +679,6 @@ static void smart_move_forward(void)
 	}
 }
 
-static void quit(void)
-{
-	doquit = 1;
-}
-
 static void clear_search(void)
 {
 	search_hit_page = -1;
@@ -977,7 +688,7 @@ static void clear_search(void)
 static void do_app(void)
 {
 	if (ui.key == KEY_F4 && ui.mod == GLUT_ACTIVE_ALT)
-		quit();
+		glutLeaveMainLoop();
 
 	if (ui.down || ui.middle || ui.right || ui.key)
 		showinfo = showhelp = 0;
@@ -992,7 +703,7 @@ static void do_app(void)
 		case 'L': showlinks = !showlinks; break;
 		case 'i': showinfo = !showinfo; break;
 		case 'r': reload(); break;
-		case 'q': quit(); break;
+		case 'q': glutLeaveMainLoop(); break;
 
 		case 'I': currentinvert = !currentinvert; break;
 		case 'f': toggle_fullscreen(); break;
@@ -1050,6 +761,7 @@ static void do_app(void)
 			clear_search();
 			search_dir = 1;
 			showsearch = 1;
+			ui.focus = &search_input;
 			search_input.p = search_input.text;
 			search_input.q = search_input.end;
 			break;
@@ -1057,6 +769,7 @@ static void do_app(void)
 			clear_search();
 			search_dir = -1;
 			showsearch = 1;
+			ui.focus = &search_input;
 			search_input.p = search_input.text;
 			search_input.q = search_input.end;
 			break;
@@ -1072,7 +785,6 @@ static void do_app(void)
 				if (search_needle)
 					search_active = 1;
 			}
-			glutPostRedisplay();
 			break;
 		case 'n':
 			search_dir = 1;
@@ -1086,7 +798,6 @@ static void do_app(void)
 				if (search_needle)
 					search_active = 1;
 			}
-			glutPostRedisplay();
 			break;
 		}
 
@@ -1110,7 +821,7 @@ static int do_info_line(int x, int y, char *label, char *text)
 {
 	char buf[512];
 	fz_snprintf(buf, sizeof buf, "%s: %s", label, text);
-	ui_draw_string(ctx, x, y, buf);
+	ui_draw_string(x, y, buf);
 	return y + ui.lineheight;
 }
 
@@ -1170,8 +881,8 @@ static void do_info(void)
 
 static int do_help_line(int x, int y, char *label, char *text)
 {
-	ui_draw_string(ctx, x, y, label);
-	ui_draw_string(ctx, x+100, y, text);
+	ui_draw_string(x, y, label);
+	ui_draw_string(x+100, y, text);
 	return y + ui.lineheight;
 }
 
@@ -1240,20 +951,20 @@ static void do_canvas(void)
 	static int saved_scroll_y = 0;
 	static int saved_ui_x = 0;
 	static int saved_ui_y = 0;
+	fz_irect area;
+	int state;
 
-	float x, y;
+	ui_layout(ALL, BOTH, NW, 0, 0);
+	ui_pack_push(area = ui_pack(0, 0));
+	glScissor(area.x0, ui.window_h-area.y1, area.x1-area.x0, area.y1-area.y0);
+	glEnable(GL_SCISSOR_TEST);
 
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate || oldinvert != currentinvert)
-	{
-		render_page();
-		update_title();
-		oldpage = currentpage;
-		oldzoom = currentzoom;
-		oldrotate = currentrotate;
-		oldinvert = currentinvert;
-	}
+	canvas_x = area.x0;
+	canvas_y = area.y0;
+	canvas_w = area.x1 - area.x0;
+	canvas_h = area.y1 - area.y0;
 
-	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
+	if (ui_mouse_inside(&area))
 	{
 		ui.hot = doc;
 		if (!ui.active && ui.middle)
@@ -1281,51 +992,76 @@ static void do_canvas(void)
 	if (page_tex.w <= canvas_w)
 	{
 		scroll_x = 0;
-		x = canvas_x + (canvas_w - page_tex.w) / 2;
+		page_x_ofs = canvas_x + (canvas_w - page_tex.w) / 2;
 	}
 	else
 	{
 		scroll_x = fz_clamp(scroll_x, 0, page_tex.w - canvas_w);
-		x = canvas_x - scroll_x;
+		page_x_ofs = canvas_x - scroll_x;
 	}
 
 	if (page_tex.h <= canvas_h)
 	{
 		scroll_y = 0;
-		y = canvas_y + (canvas_h - page_tex.h) / 2;
+		page_y_ofs = canvas_y + (canvas_h - page_tex.h) / 2;
 	}
 	else
 	{
 		scroll_y = fz_clamp(scroll_y, 0, page_tex.h - canvas_h);
-		y = canvas_y - scroll_y;
+		page_y_ofs = canvas_y - scroll_y;
 	}
 
-	ui_draw_image(&page_tex, x - page_tex.x, y - page_tex.y);
+	page_x_ofs -= page_tex.x;
+	page_y_ofs -= page_tex.y;
+	ui_draw_image(&page_tex, page_x_ofs, page_y_ofs);
 
-	do_forms(x, y);
-
-	if (!search_active)
+	if (search_active)
 	{
-		do_links(links, x, y);
-		do_page_selection(x, y, x+page_tex.w, y+page_tex.h);
-		if (search_hit_page == currentpage && search_hit_count > 0)
-			do_search_hits(x, y);
+		ui_layout(T, X, NW, 2, 2);
+		ui_label("Searching page %d of %d.", search_page + 1, fz_count_pages(ctx, doc));
 	}
+	else
+	{
+		do_forms();
+		do_links(links);
+		do_page_selection(page_x_ofs, page_y_ofs, page_x_ofs+page_tex.w, page_y_ofs+page_tex.h);
+
+		if (search_hit_page == currentpage && search_hit_count > 0)
+			do_search_hits();
+	}
+
+	if (showsearch)
+	{
+		ui_layout(T, X, NW, 0, 0);
+		state = ui_input(&search_input, 0);
+		if (state == UI_INPUT_CANCEL)
+		{
+			showsearch = 0;
+		}
+		else if (state == UI_INPUT_ACCEPT)
+		{
+			showsearch = 0;
+			search_page = -1;
+			if (search_needle)
+			{
+				fz_free(ctx, search_needle);
+				search_needle = NULL;
+			}
+			if (search_input.end > search_input.text)
+			{
+				search_needle = fz_strdup(ctx, search_input.text);
+				search_active = 1;
+				search_page = currentpage;
+			}
+		}
+	}
+
+	ui_pack_pop();
+	glDisable(GL_SCISSOR_TEST);
 }
 
-static void run_main_loop(void)
+void run_main_loop(void)
 {
-	glViewport(0, 0, window_w, window_h);
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, window_w, window_h, 0, -1, 1);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
 	ui_begin();
 
 	if (search_active)
@@ -1368,17 +1104,22 @@ static void run_main_loop(void)
 
 	do_app();
 
-	if (doquit)
+	if (oldpage != currentpage)
 	{
-		glutDestroyWindow(window);
-#ifdef __APPLE__
-		exit(1); /* GLUT on MacOS keeps running even with no windows */
-#endif
-		return;
+		load_page();
+		update_title();
+	}
+	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate || oldinvert != currentinvert)
+	{
+		render_page();
+		oldpage = currentpage;
+		oldzoom = currentzoom;
+		oldrotate = currentrotate;
+		oldinvert = currentinvert;
 	}
 
-	canvas_w = window_w - canvas_x;
-	canvas_h = window_h - canvas_y;
+	if (showoutline)
+		do_outline(outline);
 
 	do_canvas();
 
@@ -1387,206 +1128,8 @@ static void run_main_loop(void)
 	else if (showhelp)
 		do_help();
 
-	if (showoutline)
-		do_outline(outline, canvas_x);
-
-	if (showsearch)
-	{
-		int state = ui_input(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, &search_input);
-		if (state == -1)
-		{
-			ui.focus = NULL;
-			showsearch = 0;
-			glutPostRedisplay();
-		}
-		else if (state == 1)
-		{
-			ui.focus = NULL;
-			showsearch = 0;
-			search_page = -1;
-			if (search_needle)
-			{
-				fz_free(ctx, search_needle);
-				search_needle = NULL;
-			}
-			if (search_input.end > search_input.text)
-			{
-				search_needle = fz_strdup(ctx, search_input.text);
-				search_active = 1;
-				search_page = currentpage;
-			}
-			glutPostRedisplay();
-		}
-	}
-
-	if (search_active)
-	{
-		char buf[256];
-		sprintf(buf, "Searching page %d of %d.", search_page + 1, fz_count_pages(ctx, doc));
-		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, buf);
-	}
-
 	ui_end();
-
-	glutSwapBuffers();
-
-	ogl_assert(ctx, "swap buffers");
 }
-
-#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
-static void on_keyboard(int key, int x, int y)
-#else
-static void on_keyboard(unsigned char key, int x, int y)
-#endif
-{
-#ifdef __APPLE__
-	/* Apple's GLUT has swapped DELETE and BACKSPACE */
-	if (key == 8)
-		key = 127;
-	else if (key == 127)
-		key = 8;
-#endif
-	ui.key = key;
-	ui.mod = glutGetModifiers();
-	ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
-	run_main_loop();
-	ui.key = ui.mod = ui.plain = 0;
-}
-
-static void on_special(int key, int x, int y)
-{
-	ui.key = 0;
-
-	switch (key)
-	{
-	case GLUT_KEY_INSERT: ui.key = KEY_INSERT; break;
-#ifdef GLUT_KEY_DELETE
-	case GLUT_KEY_DELETE: ui.key = KEY_DELETE; break;
-#endif
-	case GLUT_KEY_RIGHT: ui.key = KEY_RIGHT; break;
-	case GLUT_KEY_LEFT: ui.key = KEY_LEFT; break;
-	case GLUT_KEY_DOWN: ui.key = KEY_DOWN; break;
-	case GLUT_KEY_UP: ui.key = KEY_UP; break;
-	case GLUT_KEY_PAGE_UP: ui.key = KEY_PAGE_UP; break;
-	case GLUT_KEY_PAGE_DOWN: ui.key = KEY_PAGE_DOWN; break;
-	case GLUT_KEY_HOME: ui.key = KEY_HOME; break;
-	case GLUT_KEY_END: ui.key = KEY_END; break;
-	case GLUT_KEY_F1: ui.key = KEY_F1; break;
-	case GLUT_KEY_F2: ui.key = KEY_F2; break;
-	case GLUT_KEY_F3: ui.key = KEY_F3; break;
-	case GLUT_KEY_F4: ui.key = KEY_F4; break;
-	case GLUT_KEY_F5: ui.key = KEY_F5; break;
-	case GLUT_KEY_F6: ui.key = KEY_F6; break;
-	case GLUT_KEY_F7: ui.key = KEY_F7; break;
-	case GLUT_KEY_F8: ui.key = KEY_F8; break;
-	case GLUT_KEY_F9: ui.key = KEY_F9; break;
-	case GLUT_KEY_F10: ui.key = KEY_F10; break;
-	case GLUT_KEY_F11: ui.key = KEY_F11; break;
-	case GLUT_KEY_F12: ui.key = KEY_F12; break;
-	}
-
-	if (ui.key)
-	{
-		ui.mod = glutGetModifiers();
-		ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
-		run_main_loop();
-		ui.key = ui.mod = ui.plain = 0;
-	}
-}
-
-static void on_wheel(int wheel, int direction, int x, int y)
-{
-	ui.scroll_x = wheel == 1 ? direction : 0;
-	ui.scroll_y = wheel == 0 ? direction : 0;
-	run_main_loop();
-	ui.scroll_x = ui.scroll_y = 0;
-}
-
-static void on_mouse(int button, int action, int x, int y)
-{
-	ui.x = x;
-	ui.y = y;
-	switch (button)
-	{
-	case GLUT_LEFT_BUTTON: ui.down = (action == GLUT_DOWN); break;
-	case GLUT_MIDDLE_BUTTON: ui.middle = (action == GLUT_DOWN); break;
-	case GLUT_RIGHT_BUTTON: ui.right = (action == GLUT_DOWN); break;
-	case 3: if (action == GLUT_DOWN) on_wheel(0, 1, x, y); break;
-	case 4: if (action == GLUT_DOWN) on_wheel(0, -1, x, y); break;
-	case 5: if (action == GLUT_DOWN) on_wheel(1, 1, x, y); break;
-	case 6: if (action == GLUT_DOWN) on_wheel(1, -1, x, y); break;
-	}
-	run_main_loop();
-}
-
-static void on_motion(int x, int y)
-{
-	ui.x = x;
-	ui.y = y;
-	glutPostRedisplay();
-}
-
-static void on_reshape(int w, int h)
-{
-	showinfo = 0;
-	showhelp = 0;
-	window_w = w;
-	window_h = h;
-}
-
-static void on_display(void)
-{
-	run_main_loop();
-}
-
-static void on_error(const char *fmt, va_list ap)
-{
-#ifdef _WIN32
-	char buf[1000];
-	fz_vsnprintf(buf, sizeof buf, fmt, ap);
-	MessageBoxA(NULL, buf, "MuPDF GLUT Error", MB_ICONERROR);
-#else
-	fprintf(stderr, "GLUT error: ");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-#endif
-}
-
-static void on_warning(const char *fmt, va_list ap)
-{
-	fprintf(stderr, "GLUT warning: ");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-}
-
-#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
-
-void ui_set_clipboard(const char *buf)
-{
-	glutSetClipboard(GLUT_CLIPBOARD, buf);
-}
-
-const char *ui_get_clipboard(void)
-{
-	return glutGetClipboard(GLUT_CLIPBOARD);
-}
-
-#else
-
-static char *clipboard_buffer = NULL;
-
-void ui_set_clipboard(const char *buf)
-{
-	fz_free(ctx, clipboard_buffer);
-	clipboard_buffer = fz_strdup(ctx, buf);
-}
-
-const char *ui_get_clipboard(void)
-{
-	return clipboard_buffer;
-}
-
-#endif
 
 static void usage(const char *argv0)
 {
@@ -1654,74 +1197,28 @@ int main(int argc, char **argv)
 	else
 		title = filename;
 
-	/* Init MuPDF */
-
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
-
 	if (layout_css)
 	{
 		fz_buffer *buf = fz_read_file(ctx, layout_css);
 		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 		fz_drop_buffer(ctx, buf);
 	}
-
 	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	load_document();
 	load_page();
 
-	/* Init IMGUI */
-
-	memset(&ui, 0, sizeof ui);
-
-	search_input.p = search_input.text;
-	search_input.q = search_input.p;
-	search_input.end = search_input.p;
-
-	/* Init GLUT */
-
-	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
-
-	glutInitErrorFunc(on_error);
-	glutInitWarningFunc(on_warning);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowSize(page_tex.w, page_tex.h);
-	window = glutCreateWindow(title);
-
-	glutReshapeFunc(on_reshape);
-	glutDisplayFunc(on_display);
-#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
-	glutKeyboardExtFunc(on_keyboard);
-#else
-	glutKeyboardFunc(on_keyboard);
-#endif
-	glutSpecialFunc(on_special);
-	glutMouseFunc(on_mouse);
-	glutMotionFunc(on_motion);
-	glutPassiveMotionFunc(on_motion);
-	glutMouseWheelFunc(on_wheel);
-
-	has_ARB_texture_non_power_of_two = glutExtensionSupported("GL_ARB_texture_non_power_of_two");
-	if (!has_ARB_texture_non_power_of_two)
-		fz_warn(ctx, "OpenGL implementation does not support non-power of two texture sizes");
-
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-
-	ui.fontsize = DEFAULT_UI_FONTSIZE;
-	ui.baseline = DEFAULT_UI_BASELINE;
-	ui.lineheight = DEFAULT_UI_LINEHEIGHT;
-
-	ui_init_fonts(ctx, ui.fontsize);
+	ui_init(page_tex.w, page_tex.h, title);
+	ui_input_init(&search_input, "");
 
 	render_page();
 	update_title();
 
 	glutMainLoop();
 
-	ui_finish_fonts(ctx);
-
-	glutExit();
+	ui_finish();
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
@@ -1730,7 +1227,7 @@ int main(int argc, char **argv)
 
 	fz_drop_stext_page(ctx, text);
 	fz_drop_link(ctx, links);
-	fz_drop_page(ctx, page);
+	fz_drop_page(ctx, fzpage);
 	fz_drop_outline(ctx, outline);
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);

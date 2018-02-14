@@ -76,7 +76,7 @@ static void clear_font_cache(void)
 	g_cache_row_h = 0;
 }
 
-void ui_init_fonts(fz_context *ctx, float pixelsize)
+void ui_init_fonts(float pixelsize)
 {
 	const unsigned char *data;
 	int size;
@@ -98,7 +98,7 @@ void ui_init_fonts(fz_context *ctx, float pixelsize)
 	g_font_size = pixelsize;
 }
 
-void ui_finish_fonts(fz_context *ctx)
+void ui_finish_fonts(void)
 {
 	clear_font_cache();
 	fz_drop_font(ctx, g_font);
@@ -249,21 +249,21 @@ static float ui_draw_glyph(fz_font *font, int gid, float x, float y)
 	return fz_advance_glyph(ctx, font, gid, 0) * g_font_size;
 }
 
-float ui_measure_character(fz_context *ctx, int ucs)
+float ui_measure_character(int ucs)
 {
 	fz_font *font;
 	int gid = fz_encode_character_with_fallback(ctx, g_font, ucs, 0, 0, &font);
 	return fz_advance_glyph(ctx, font, gid, 0) * g_font_size;
 }
 
-float ui_draw_character(fz_context *ctx, int ucs, float x, float y)
+float ui_draw_character(int ucs, float x, float y)
 {
 	fz_font *font;
 	int gid = fz_encode_character_with_fallback(ctx, g_font, ucs, 0, 0, &font);
 	return ui_draw_glyph(font, gid, x, y);
 }
 
-void ui_begin_text(fz_context *ctx)
+void ui_begin_text(void)
 {
 	glBindTexture(GL_TEXTURE_2D, g_cache_tex);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -272,44 +272,40 @@ void ui_begin_text(fz_context *ctx)
 	glBegin(GL_QUADS);
 }
 
-void ui_end_text(fz_context *ctx)
+void ui_end_text(void)
 {
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);
 }
 
-float ui_draw_string(fz_context *ctx, float x, float y, const char *str)
+float ui_draw_string(float x, float y, const char *str)
 {
 	int ucs;
 
-	ui_begin_text(ctx);
+	ui_begin_text();
 
 	while (*str)
 	{
 		str += fz_chartorune(&ucs, str);
-		x += ui_draw_character(ctx, ucs, x, y);
+		x += ui_draw_character(ucs, x, y);
 	}
 
-	ui_end_text(ctx);
+	ui_end_text();
 
 	return x;
 }
 
-float ui_measure_string(fz_context *ctx, char *str)
+float ui_measure_string(const char *str)
 {
 	int ucs;
 	float x = 0;
 
-	ui_begin_text(ctx);
-
 	while (*str)
 	{
 		str += fz_chartorune(&ucs, str);
-		x += ui_measure_character(ctx, ucs);
+		x += ui_measure_character(ucs);
 	}
-
-	ui_end_text(ctx);
 
 	return x;
 }
