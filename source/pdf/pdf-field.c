@@ -62,7 +62,7 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	return pdf_get_string_or_stream(ctx, doc, pdf_get_inheritable(ctx, doc, field, PDF_NAME_V));
+	return pdf_load_stream_or_string_as_utf8(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME_V));
 }
 
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)

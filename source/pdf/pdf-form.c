@@ -54,7 +54,6 @@ static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 
 static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const char *text)
 {
-	pdf_obj *sobj;
 	pdf_obj *grp;
 
 	if (!text)
@@ -66,8 +65,7 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	if (grp)
 		obj = grp;
 
-	sobj = pdf_new_string(ctx, doc, text, strlen(text));
-	pdf_dict_put_drop(ctx, obj, PDF_NAME_V, sobj);
+	pdf_dict_put_text_string(ctx, obj, PDF_NAME_V, text);
 
 	pdf_field_mark_dirty(ctx, doc, obj);
 }
@@ -531,7 +529,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (val && grp)
 	{
-		pdf_obj *v = pdf_new_string(ctx, doc, val, strlen(val));
+		pdf_obj *v = pdf_new_text_string(ctx, doc, val);
 		pdf_dict_put_drop(ctx, grp, PDF_NAME_V, v);
 		recalculate(ctx, doc);
 	}
@@ -870,7 +868,7 @@ void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *f
 {
 	if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
-		pdf_obj *val = pdf_new_string(ctx, doc, text, strlen(text));
+		pdf_obj *val = pdf_new_text_string(ctx, doc, text);
 		pdf_dict_putl_drop(ctx, field, val, PDF_NAME_MK, PDF_NAME_CA, NULL);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
