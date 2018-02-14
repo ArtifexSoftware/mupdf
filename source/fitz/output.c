@@ -300,13 +300,16 @@ fz_close_output(fz_context *ctx, fz_output *out)
 void
 fz_drop_output(fz_context *ctx, fz_output *out)
 {
-	if (out->close)
-		fz_warn(ctx, "dropping unclosed output");
-	if (out->drop)
-		out->drop(ctx, out->state);
-	fz_free(ctx, out->bp);
-	if (out->state != &fz_stdout_global && out->state != &fz_stderr_global)
-		fz_free(ctx, out);
+	if (out)
+	{
+		if (out->close)
+			fz_warn(ctx, "dropping unclosed output");
+		if (out->drop)
+			out->drop(ctx, out->state);
+		fz_free(ctx, out->bp);
+		if (out->state != &fz_stdout_global && out->state != &fz_stderr_global)
+			fz_free(ctx, out);
+	}
 }
 
 void
