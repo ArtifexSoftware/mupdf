@@ -1532,7 +1532,7 @@ void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_ob
 	}
 }
 
-void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_annot_type type)
+void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, enum pdf_annot_type type)
 {
 	float color[3];
 	float alpha;
@@ -2460,7 +2460,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 
 	if (!ap || !pdf_dict_get(ctx, ap, PDF_NAME_N) || pdf_obj_is_dirty(ctx, obj))
 	{
-		fz_annot_type type = pdf_annot_type(ctx, annot);
+		enum pdf_annot_type type = pdf_annot_type(ctx, annot);
 		switch (type)
 		{
 		case PDF_ANNOT_WIDGET:

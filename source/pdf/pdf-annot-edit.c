@@ -13,7 +13,7 @@
 #define isdigit(c) (c >= '0' && c <= '9')
 
 const char *
-pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
+pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type)
 {
 	switch (type)
 	{
@@ -97,7 +97,7 @@ static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *p
 }
 
 pdf_annot *
-pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
+pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 {
 	pdf_annot *annot = NULL;
 	pdf_document *doc = page->doc;

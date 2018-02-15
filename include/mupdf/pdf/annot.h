@@ -1,7 +1,7 @@
 #ifndef MUPDF_PDF_ANNOT_H
 #define MUPDF_PDF_ANNOT_H
 
-typedef enum
+enum pdf_annot_type
 {
 	PDF_ANNOT_TEXT,
 	PDF_ANNOT_LINK,
@@ -29,9 +29,9 @@ typedef enum
 	PDF_ANNOT_WATERMARK,
 	PDF_ANNOT_3D,
 	PDF_ANNOT_UNKNOWN = -1
-} fz_annot_type;
+};
 
-const char *pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type);
+const char *pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type);
 int pdf_annot_type_from_string(fz_context *ctx, const char *subtype);
 
 enum
@@ -130,7 +130,7 @@ void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 	specified page. The returned pdf_annot structure is owned by the page
 	and does not need to be freed.
 */
-pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type);
+pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
 /*
 	pdf_delete_annot: delete an annotation

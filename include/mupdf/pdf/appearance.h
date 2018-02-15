@@ -17,7 +17,7 @@ void pdf_update_text_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj
 void pdf_update_combobox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
-void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_annot_type type);
+void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, enum pdf_annot_type type);
 void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 /*
