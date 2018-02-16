@@ -327,7 +327,7 @@ const char *
 pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot)
 {
 	check_allowed_subtypes(ctx, annot, PDF_NAME_Name, icon_name_subtypes);
-	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Name));
+	return pdf_to_name(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Name));
 }
 
 void
