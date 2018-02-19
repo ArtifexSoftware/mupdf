@@ -2175,6 +2175,7 @@ static int pdf_debug_encrypted_obj(fz_context *ctx, pdf_obj *obj, int tight, pdf
 void pdf_debug_obj(fz_context *ctx, pdf_obj *obj)
 {
 	pdf_debug_encrypted_obj(ctx, obj, 0, NULL, 0, 0);
+	putchar('\n');
 }
 
 int pdf_obj_refs(fz_context *ctx, pdf_obj *ref)
