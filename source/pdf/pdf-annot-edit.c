@@ -109,7 +109,6 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	fz_try(ctx)
 	{
 		int ind_obj_num;
-		fz_rect rect = {0.0f, 0.0f, 0.0f, 0.0f};
 		const char *type_str;
 		pdf_obj *annot_arr;
 
@@ -125,12 +124,10 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		}
 
 		pdf_dict_put(ctx, annot_obj, PDF_NAME_Type, PDF_NAME_Annot);
-
 		pdf_dict_put_name(ctx, annot_obj, PDF_NAME_Subtype, type_str);
-		pdf_dict_put_rect(ctx, annot_obj, PDF_NAME_Rect, &rect);
 
 		/* Make printable as default */
-		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, PDF_ANNOT_IS_PRINT));
+		pdf_dict_put_int(ctx, annot_obj, PDF_NAME_F, PDF_ANNOT_IS_PRINT);
 
 		annot = pdf_new_annot(ctx, page);
 		annot->ap = NULL;
