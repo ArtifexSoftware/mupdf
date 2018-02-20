@@ -323,8 +323,22 @@ pdf_annot_has_icon_name(fz_context *ctx, pdf_annot *annot)
 const char *
 pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot)
 {
+	pdf_obj *name;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_Name, icon_name_subtypes);
-	return pdf_to_name(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Name));
+	name = pdf_dict_get(ctx, annot->obj, PDF_NAME_Name);
+	if (!name)
+	{
+		pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype);
+		if (pdf_name_eq(ctx, subtype, PDF_NAME_Text))
+			return "Note";
+		if (pdf_name_eq(ctx, subtype, PDF_NAME_Stamp))
+			return "Draft";
+		if (pdf_name_eq(ctx, subtype, PDF_NAME_FileAttachment))
+			return "PushPin";
+		if (pdf_name_eq(ctx, subtype, PDF_NAME_Sound))
+			return "Speaker";
+	}
+	return pdf_to_name(ctx, name);
 }
 
 void
