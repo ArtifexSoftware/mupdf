@@ -83,23 +83,4 @@ void win_install(void)
 	RegCloseKey(software);
 }
 
-int win_open_file(char *buf, int len)
-{
-	wchar_t wbuf[2048];
-	OPENFILENAME ofn;
-	int code;
-	wbuf[0] = 0;
-	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize = sizeof(OPENFILENAME);
-	ofn.lpstrFile = wbuf;
-	ofn.nMaxFile = 2048;
-	ofn.lpstrTitle = L"MuPDF: Open PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.fb2)\0*.pdf;*.xps;*.cbz;*.epub;*.fb2\0All Files\0*\0\0";
-	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
-	code = GetOpenFileNameW(&ofn);
-	if (code)
-		WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, len, NULL, NULL);
-	return code;
-}
-
 #endif

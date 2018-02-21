@@ -931,7 +931,15 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\gl\gl-annotate.c"
+			>
+		</File>
+		<File
 			RelativePath="..\gl\gl-app.h"
+			>
+		</File>
+		<File
+			RelativePath="..\gl\gl-file.c"
 			>
 		</File>
 		<File
@@ -944,6 +952,10 @@
 		</File>
 		<File
 			RelativePath="..\gl\gl-main.c"
+			>
+		</File>
+		<File
+			RelativePath="..\gl\gl-ui.c"
 			>
 		</File>
 		<File

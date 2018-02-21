@@ -89,6 +89,7 @@ static void ui_input_delete_selection(struct input *input)
 	char *q = input->p > input->q ? input->p : input->q;
 	memmove(p, q, input->end - q);
 	input->end -= q - p;
+	*input->end = 0;
 	input->p = input->q = p;
 }
 
@@ -111,6 +112,8 @@ static int ui_input_key(struct input *input)
 {
 	switch (ui.key)
 	{
+	case 0:
+		return UI_INPUT_NONE;
 	case KEY_LEFT:
 		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 		{
@@ -213,7 +216,7 @@ static int ui_input_key(struct input *input)
 		break;
 	case KEY_ESCAPE:
 		ui.focus = NULL;
-		return UI_INPUT_CANCEL;
+		return UI_INPUT_NONE;
 	case KEY_ENTER:
 		ui.focus = NULL;
 		return UI_INPUT_ACCEPT;
@@ -281,66 +284,74 @@ static int ui_input_key(struct input *input)
 		}
 		break;
 	}
-	return UI_INPUT_CONTINUE;
+	return UI_INPUT_EDIT;
 }
 
 void ui_input_init(struct input *input, const char *text)
 {
 	fz_strlcpy(input->text, text, sizeof input->text);
 	input->end = input->text + strlen(input->text);
-	input->p = input->q = input->text;
+	input->p = input->text;
+	input->q = input->end;
 }
 
 int ui_input(struct input *input, int width)
 {
 	fz_irect area;
-	float px, qx;
+	float ax, px, qx;
 	char *p, *q;
 	int state;
 
-	area = ui_pack(width, ui.lineheight + 4);
+	area = ui_pack(width, ui.lineheight + 6);
 
 	if (ui_mouse_inside(&area))
 	{
 		ui.hot = input;
+		if (!ui.active || ui.active == input)
+			ui.cursor = GLUT_CURSOR_TEXT;
 		if (!ui.active && ui.down)
 		{
-			input->p = find_string_location(input->text, input->end, area.x0 + 2, ui.x);
+			input->p = find_string_location(input->text, input->end, area.x0 + 3, ui.x);
 			ui.active = input;
 		}
 	}
 
 	if (ui.active == input)
 	{
-		input->q = find_string_location(input->text, input->end, area.x0 + 2, ui.x);
+		input->q = find_string_location(input->text, input->end, area.x0 + 3, ui.x);
 		ui.focus = input;
 	}
 
 	if (ui.focus == input)
 		state = ui_input_key(input);
 	else
-		state = 0;
+		state = UI_INPUT_NONE;
 
-	glColor4f(0, 0, 0, 1);
-	glRectf(area.x0, area.y0, area.x1, area.y1);
-
-	glColor4f(1, 1, 1, 1);
-	glRectf(area.x0+1, area.y0+1, area.x1-1, area.y1-1);
+	ui_draw_bevel_rect(area, UI_COLOR_TEXT_BG, 1);
 
 	p = input->p < input->q ? input->p : input->q;
 	q = input->p > input->q ? input->p : input->q;
 
-	px = area.x0 + 2 + measure_string_part(input->text, p);
+	ax = area.x0 + 4;
+	px = ax + measure_string_part(input->text, p);
 	qx = px + measure_string_part(p, q);
 
 	if (ui.focus == input)
 	{
-		glColor4f(0.6f, 0.6f, 1.0f, 1.0f);
-		glRectf(px, area.y0 + 2, qx+1, area.y1 - 2);
+		glColorHex(UI_COLOR_TEXT_SEL_BG);
+		glRectf(px, area.y0 + 3, qx+1, area.y1 - 3);
+		glColorHex(UI_COLOR_TEXT_FG);
+		draw_string_part(ax, area.y0 + 3, input->text, p);
+		glColorHex(UI_COLOR_TEXT_SEL_FG);
+		draw_string_part(px, area.y0 + 3, p, q);
+		glColorHex(UI_COLOR_TEXT_FG);
+		draw_string_part(qx, area.y0 + 3, q, input->end);
 	}
-
-	glColor4f(0, 0, 0, 1);
-	draw_string_part(area.x0 + 2, area.y0 + 2, input->text, input->end);
+	else
+	{
+		glColorHex(UI_COLOR_TEXT_FG);
+		draw_string_part(ax, area.y0 + 3, input->text, input->end);
+	}
 
 	return state;
 }
