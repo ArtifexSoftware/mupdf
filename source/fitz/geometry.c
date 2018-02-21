@@ -464,6 +464,18 @@ fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b)
 	return a;
 }
 
+fz_rect *
+fz_translate_rect(fz_rect *a, float xoff, float yoff)
+{
+	if (fz_is_empty_rect(a)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	a->x0 += xoff;
+	a->y0 += yoff;
+	a->x1 += xoff;
+	a->y1 += yoff;
+	return a;
+}
+
 fz_irect *
 fz_translate_irect(fz_irect *a, int xoff, int yoff)
 {

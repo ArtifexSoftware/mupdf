@@ -575,6 +575,7 @@ fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p);
 
 	Translate a bbox by a given x and y offset. Allows for overflow.
 */
+fz_rect *fz_translate_rect(fz_rect *a, float xoff, float yoff);
 fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 
 /*
