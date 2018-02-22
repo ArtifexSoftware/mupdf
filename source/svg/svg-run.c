@@ -65,13 +65,13 @@ static const float MAGIC_CIRCLE = 0.551915f;
 
 static void approx_circle(fz_context *ctx, fz_path *path, float cx, float cy, float rx, float ry)
 {
-	float rxs = rx * MAGIC_CIRCLE;
-	float rys = ry * MAGIC_CIRCLE;
+	float mx = rx * MAGIC_CIRCLE;
+	float my = ry * MAGIC_CIRCLE;
 	fz_moveto(ctx, path, cx, cy+ry);
-	fz_curveto(ctx, path, cx + rxs, cy + ry, cx + rx, cy + rys, cx + rx, cy);
-	fz_curveto(ctx, path, cx + rx, cy - rys, cx + rxs, cy - rys, cx, cy - ry);
-	fz_curveto(ctx, path, cx - rxs, cy - ry, cx - rx, cy - rys, cx - rx, cy);
-	fz_curveto(ctx, path, cx - rx, cy + rys, cx - rxs, cy + rys, cx, cy + ry);
+	fz_curveto(ctx, path, cx + mx, cy + ry, cx + rx, cy + my, cx + rx, cy);
+	fz_curveto(ctx, path, cx + rx, cy - my, cx + mx, cy - ry, cx, cy - ry);
+	fz_curveto(ctx, path, cx - mx, cy - ry, cx - rx, cy - my, cx - rx, cy);
+	fz_curveto(ctx, path, cx - rx, cy + my, cx - mx, cy + ry, cx, cy + ry);
 	fz_closepath(ctx, path);
 }
 
