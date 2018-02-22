@@ -165,7 +165,10 @@ void pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float width);
 void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v);
+
 void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const float *v);
+void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);
+void pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point stroke[]);
 
 void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_style, int end_style);
 void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v);

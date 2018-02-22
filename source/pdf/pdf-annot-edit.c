@@ -826,6 +826,56 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 	pdf_dirty_annot(ctx, annot);
 }
 
+void
+pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot)
+{
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
+	pdf_dict_del(ctx, annot->obj, PDF_NAME_InkList);
+	pdf_dirty_annot(ctx, annot);
+}
+
+void
+pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
+{
+	pdf_document *doc = annot->page->doc;
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *ink_list, *stroke;
+	int i;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
+	if (!pdf_is_array(ctx, ink_list))
+	{
+		ink_list = pdf_new_array(ctx, doc, 10);
+		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_InkList, ink_list);
+	}
+
+	stroke = pdf_new_array(ctx, doc, n * 2);
+	fz_try(ctx)
+	{
+		for (i = 0; i < n; ++i)
+		{
+			fz_point tp = p[i];
+			fz_transform_point(&tp, &inv_page_ctm);
+			pdf_array_push_real(ctx, stroke, tp.x);
+			pdf_array_push_real(ctx, stroke, tp.y);
+		}
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, stroke);
+		fz_rethrow(ctx);
+	}
+
+	pdf_array_push_drop(ctx, ink_list, stroke);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
 static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int buf_size)
 {
 	int i;
