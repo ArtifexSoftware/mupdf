@@ -423,9 +423,14 @@ pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_st
 float
 pdf_annot_border(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *border = pdf_dict_get(ctx, annot->obj, PDF_NAME_Border);
+	pdf_obj *border, *bs, *bs_w;
+	border = pdf_dict_get(ctx, annot->obj, PDF_NAME_Border);
 	if (pdf_is_array(ctx, border))
 		return pdf_to_real(ctx, pdf_array_get(ctx, border, 2));
+	bs = pdf_dict_get(ctx, annot->obj, PDF_NAME_BS);
+	bs_w = pdf_dict_get(ctx, bs, PDF_NAME_W);
+	if (pdf_is_number(ctx, bs_w))
+		return pdf_to_real(ctx, bs_w);
 	return 1;
 }
 
