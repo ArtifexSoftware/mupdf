@@ -144,14 +144,14 @@ static void showstream(int num)
 
 static void showobject(int num)
 {
-	pdf_obj *obj;
+	pdf_obj *ref, *obj;
 
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 
-	obj = pdf_load_object(ctx, doc, num);
-
-	if (pdf_is_stream(ctx, obj))
+	ref = pdf_new_indirect(ctx, doc, num, 0);
+	obj = pdf_resolve_indirect(ctx, ref);
+	if (pdf_is_stream(ctx, ref))
 	{
 		if (showbinary)
 		{
@@ -174,7 +174,7 @@ static void showobject(int num)
 		fz_write_printf(ctx, out, "\nendobj\n\n");
 	}
 
-	pdf_drop_obj(ctx, obj);
+	pdf_drop_obj(ctx, ref);
 }
 
 static void showgrep(char *filename)
