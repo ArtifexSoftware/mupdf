@@ -608,8 +608,8 @@ pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot)
 	return pdf_array_len(ctx, vertices) / 2;
 }
 
-void
-pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2])
+fz_point
+pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i)
 {
 	pdf_obj *vertices;
 	fz_matrix page_ctm;
@@ -624,8 +624,8 @@ pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2])
 	point.x = pdf_to_real(ctx, pdf_array_get(ctx, vertices, i * 2));
 	point.y = pdf_to_real(ctx, pdf_array_get(ctx, vertices, i * 2 + 1));
 	fz_transform_point(&point, &page_ctm);
-	v[0] = point.x;
-	v[1] = point.y;
+
+	return point;
 }
 
 void
@@ -655,6 +655,56 @@ pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v)
 	}
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Vertices, vertices);
 	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_clear_annot_vertices(fz_context *ctx, pdf_annot *annot)
+{
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+	pdf_dict_del(ctx, annot->obj, PDF_NAME_Vertices);
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p)
+{
+	pdf_document *doc = annot->page->doc;
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *vertices;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	vertices = pdf_dict_get(ctx, annot->obj, PDF_NAME_Vertices);
+	if (!pdf_is_array(ctx, vertices))
+	{
+		vertices = pdf_new_array(ctx, doc, 32);
+		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Vertices, vertices);
+	}
+
+	fz_transform_point(&p, &inv_page_ctm);
+	pdf_array_push_real(ctx, vertices, p.x);
+	pdf_array_push_real(ctx, vertices, p.y);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p)
+{
+	pdf_document *doc = annot->page->doc;
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *vertices;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	fz_transform_point(&p, &inv_page_ctm);
+
+	vertices = pdf_dict_get(ctx, annot->obj, PDF_NAME_Vertices);
+	pdf_array_put_drop(ctx, vertices, i * 2 + 0, pdf_new_real(ctx, doc, p.x));
+	pdf_array_put_drop(ctx, vertices, i * 2 + 1, pdf_new_real(ctx, doc, p.y));
 }
 
 static pdf_obj *quad_point_subtypes[] = {
@@ -766,30 +816,26 @@ pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
 	return pdf_array_len(ctx, stroke) / 2;
 }
 
-void
-pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2])
+fz_point
+pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k)
 {
 	pdf_obj *ink_list;
 	pdf_obj *stroke;
 	fz_matrix page_ctm;
-	fz_point point = { 0, 0 };
+	fz_point point;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
 
 	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
 	stroke = pdf_array_get(ctx, ink_list, i);
 
-	if (v)
-	{
-		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 
-		point.x = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 0));
-		point.y = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 1));
-		fz_transform_point(&point, &page_ctm);
+	point.x = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 0));
+	point.y = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 1));
+	fz_transform_point(&point, &page_ctm);
 
-		v[0] = point.x;
-		v[1] = point.y;
-	}
+	return point;
 }
 
 void

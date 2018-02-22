@@ -157,7 +157,7 @@ void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i, float qp[8])
 
 int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i);
-void pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2]);
+fz_point pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k);
 
 void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
 void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect);
@@ -171,7 +171,6 @@ void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point stroke[]);
 
 void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_style, int end_style);
-void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v);
 void pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name);
 void pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open);
 
@@ -180,7 +179,12 @@ const char *pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_is_open(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2]);
+fz_point pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i);
+
+void pdf_clear_annot_vertices(fz_context *ctx, pdf_annot *annot);
+void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p);
+void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
+void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v);
 
 /*
 	pdf_set_text_annot_position: set the position on page for a text (sticky note) annotation.

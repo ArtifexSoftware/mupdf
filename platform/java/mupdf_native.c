@@ -9104,7 +9104,7 @@ FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
 	int i, k, n, m;
-	float v[2];
+	fz_point v;
 	jobject jinklist;
 	jfloatArray jpath;
 
@@ -9137,14 +9137,14 @@ FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
 		for (k = 0; k < m; k++)
 		{
 			fz_try(ctx)
-				pdf_annot_ink_list_stroke_vertex(ctx, annot, i, k, v);
+				v = pdf_annot_ink_list_stroke_vertex(ctx, annot, i, k);
 			fz_catch(ctx)
 			{
 				jni_rethrow(env, ctx);
 				return NULL;
 			}
 
-			(*env)->SetFloatArrayRegion(env, jpath, k * 2, 2, &v[0]);
+			(*env)->SetFloatArrayRegion(env, jpath, k * 2, 2, (float*)&v);
 			if ((*env)->ExceptionCheck(env)) return NULL;
 		}
 
@@ -9270,7 +9270,7 @@ FUN(PDFAnnotation_getVertices)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
 	int i, n;
-	float vertex[2];
+	fz_point v;
 	jobject jvertices;
 
 	if (!ctx || !annot) return NULL;
@@ -9289,14 +9289,14 @@ FUN(PDFAnnotation_getVertices)(JNIEnv *env, jobject self)
 	for (i = 0; i < n; i++)
 	{
 		fz_try(ctx)
-			pdf_annot_vertex(ctx, annot, i, vertex);
+			v = pdf_annot_vertex(ctx, annot, i);
 		fz_catch(ctx)
 		{
 			jni_rethrow(env, ctx);
 			return NULL;
 		}
 
-		(*env)->SetFloatArrayRegion(env, jvertices, i * 2, 2, &vertex[0]);
+		(*env)->SetFloatArrayRegion(env, jvertices, i * 2, 2, (float*)&v);
 		if ((*env)->ExceptionCheck(env)) return NULL;
 	}
 
