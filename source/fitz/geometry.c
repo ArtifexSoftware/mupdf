@@ -532,6 +532,17 @@ fz_transform_rect(fz_rect *restrict r, const fz_matrix *restrict m)
 	return r;
 }
 
+fz_irect *
+fz_expand_irect(fz_irect *a, int expand)
+{
+	if (fz_is_infinite_irect(a)) return a;
+	a->x0 -= expand;
+	a->y0 -= expand;
+	a->x1 += expand;
+	a->y1 += expand;
+	return a;
+}
+
 fz_rect *
 fz_expand_rect(fz_rect *a, float expand)
 {

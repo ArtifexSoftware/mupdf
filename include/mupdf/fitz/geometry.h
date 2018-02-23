@@ -561,6 +561,7 @@ fz_rect *fz_rect_from_irect(fz_rect *restrict rect, const fz_irect *restrict bbo
 	fz_expand_rect: Expand a bbox by a given amount in all directions.
 */
 fz_rect *fz_expand_rect(fz_rect *b, float expand);
+fz_irect *fz_expand_irect(fz_irect *a, int expand);
 
 /*
 	fz_include_point_in_rect: Expand a bbox to include a given point.
