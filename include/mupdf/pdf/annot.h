@@ -140,6 +140,7 @@ void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 int pdf_annot_has_ink_list(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_quad_points(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_vertices(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_line(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_interior_color(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_line_ending_styles(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_icon_name(fz_context *ctx, pdf_annot *annot);
@@ -177,6 +178,9 @@ void pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open);
 void pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int *start_style, int *end_style);
 const char *pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_is_open(fz_context *ctx, pdf_annot *annot);
+
+void pdf_annot_line(fz_context *ctx, pdf_annot *annot, fz_point *a, fz_point *b);
+void pdf_set_annot_line(fz_context *ctx, pdf_annot *annot, fz_point a, fz_point b);
 
 int pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot);
 fz_point pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i);

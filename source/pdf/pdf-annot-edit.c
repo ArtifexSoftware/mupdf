@@ -587,6 +587,60 @@ pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const flo
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color, interior_color_subtypes);
 }
 
+static pdf_obj *line_subtypes[] = {
+	PDF_NAME_Line,
+	NULL,
+};
+
+int
+pdf_annot_has_line(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_L, line_subtypes);
+}
+
+void
+pdf_annot_line(fz_context *ctx, pdf_annot *annot, fz_point *a, fz_point *b)
+{
+	fz_matrix page_ctm;
+	pdf_obj *line;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_L, line_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+
+	line = pdf_dict_get(ctx, annot->obj, PDF_NAME_L);
+	a->x = pdf_to_real(ctx, pdf_array_get(ctx, line, 0));
+	a->y = pdf_to_real(ctx, pdf_array_get(ctx, line, 1));
+	b->x = pdf_to_real(ctx, pdf_array_get(ctx, line, 2));
+	b->y = pdf_to_real(ctx, pdf_array_get(ctx, line, 3));
+	fz_transform_point(a, &page_ctm);
+	fz_transform_point(b, &page_ctm);
+}
+
+void
+pdf_set_annot_line(fz_context *ctx, pdf_annot *annot, fz_point a, fz_point b)
+{
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *line;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_L, line_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	fz_transform_point(&a, &inv_page_ctm);
+	fz_transform_point(&b, &inv_page_ctm);
+
+	line = pdf_new_array(ctx, annot->page->doc, 4);
+	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_L, line);
+	pdf_array_push_real(ctx, line, a.x);
+	pdf_array_push_real(ctx, line, a.y);
+	pdf_array_push_real(ctx, line, b.x);
+	pdf_array_push_real(ctx, line, b.y);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
 static pdf_obj *vertices_subtypes[] = {
 	PDF_NAME_PolyLine,
 	PDF_NAME_Polygon,
