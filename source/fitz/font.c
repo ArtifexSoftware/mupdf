@@ -524,6 +524,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	fz_font *font;
 	int fterr;
 	FT_ULong tag, size, i, n;
+	char namebuf[sizeof(font->name)];
 
 	fz_keep_freetype(ctx);
 
@@ -537,7 +538,27 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	}
 
 	if (!name)
-		name = face->family_name;
+	{
+		if (!face->family_name)
+		{
+			name = face->style_name;
+		}
+		else if (!face->style_name)
+		{
+			name = face->family_name;
+		}
+		else if (strstr(face->style_name, face->family_name) == face->style_name)
+		{
+			name = face->style_name;
+		}
+		else
+		{
+			fz_strlcpy(namebuf, face->family_name, sizeof(namebuf));
+			fz_strlcat(namebuf, " ", sizeof(namebuf));
+			fz_strlcat(namebuf, face->style_name, sizeof(namebuf));
+			name = namebuf;
+		}
+	}
 
 	font = fz_new_font(ctx, name, use_glyph_bbox, face->num_glyphs);
 	font->ft_face = face;
