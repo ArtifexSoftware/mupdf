@@ -839,6 +839,50 @@ pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float 
 	pdf_dirty_annot(ctx, annot);
 }
 
+void
+pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot)
+{
+	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+	pdf_dict_del(ctx, annot->obj, PDF_NAME_QuadPoints);
+	pdf_dirty_annot(ctx, annot);
+}
+
+void
+pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_rect bbox)
+{
+	pdf_document *doc = annot->page->doc;
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *quad_points;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
+	if (!pdf_is_array(ctx, quad_points))
+	{
+		quad_points = pdf_new_array(ctx, doc, 8);
+		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_QuadPoints, quad_points);
+	}
+
+	/* Contrary to the specification, the points within a QuadPoint are NOT ordered
+	 * in a counterclockwise fashion. Experiments with Adobe's implementation
+	 * indicates a cross-wise ordering is intended: ul, ur, ll, lr.
+	 */
+	fz_transform_rect(&bbox, &inv_page_ctm);
+	pdf_array_push_real(ctx, quad_points, bbox.x0); /* ul */
+	pdf_array_push_real(ctx, quad_points, bbox.y1);
+	pdf_array_push_real(ctx, quad_points, bbox.x1); /* ur */
+	pdf_array_push_real(ctx, quad_points, bbox.y1);
+	pdf_array_push_real(ctx, quad_points, bbox.x0); /* ll */
+	pdf_array_push_real(ctx, quad_points, bbox.y0);
+	pdf_array_push_real(ctx, quad_points, bbox.x1); /* lr */
+	pdf_array_push_real(ctx, quad_points, bbox.y0);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
 static pdf_obj *ink_list_subtypes[] = {
 	PDF_NAME_Ink,
 	NULL,
