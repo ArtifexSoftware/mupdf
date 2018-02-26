@@ -247,16 +247,16 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_TYPE_3D == PDF_ANNOT_3D;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_TYPE_UNKNOWN == PDF_ANNOT_UNKNOWN;
 
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE == PDF_ANNOT_LINE_ENDING_NONE;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE == PDF_ANNOT_LINE_ENDING_SQUARE;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CIRCLE == PDF_ANNOT_LINE_ENDING_CIRCLE;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_DIAMOND == PDF_ANNOT_LINE_ENDING_DIAMOND;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_OPENARROW == PDF_ANNOT_LINE_ENDING_OPENARROW;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CLOSEDARROW == PDF_ANNOT_LINE_ENDING_CLOSEDARROW;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_BUTT == PDF_ANNOT_LINE_ENDING_BUTT;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_ROPENARR == PDF_ANNOT_LINE_ENDING_ROPENARROW;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_RCLOSEDARROW == PDF_ANNOT_LINE_ENDING_RCLOSEDARROW;
-	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SLASH == PDF_ANNOT_LINE_ENDING_SLASH;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE == PDF_ANNOT_LE_NONE;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE == PDF_ANNOT_LE_SQUARE;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CIRCLE == PDF_ANNOT_LE_CIRCLE;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_DIAMOND == PDF_ANNOT_LE_DIAMOND;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_OPEN_ARROW == PDF_ANNOT_LE_OPEN_ARROW;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CLOSED_ARROW == PDF_ANNOT_LE_CLOSED_ARROW;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_BUTT == PDF_ANNOT_LE_BUTT;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_R_OPEN_ARROW == PDF_ANNOT_LE_R_OPEN_ARROW;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_R_CLOSED_ARROW == PDF_ANNOT_LE_R_CLOSED_ARROW;
+	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SLASH == PDF_ANNOT_LE_SLASH;
 
 	return valid ? 1 : 0;
 }
@@ -9379,16 +9379,19 @@ FUN(PDFAnnotation_getLineEndingStyles)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
+	enum pdf_line_ending s = 0, e = 0;
 	int line_endings[2];
 	jintArray jline_endings = NULL;
 
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		pdf_annot_line_ending_styles(ctx, annot, &line_endings[0], &line_endings[1]);
+		pdf_annot_line_ending_styles(ctx, annot, &s, &e);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
+	line_endings[0] = s;
+	line_endings[1] = e;
 	jline_endings = (*env)->NewIntArray(env, 2);
 	(*env)->SetIntArrayRegion(env, jline_endings, 0, 2, &line_endings[0]);
 	if ((*env)->ExceptionCheck(env)) return NULL;

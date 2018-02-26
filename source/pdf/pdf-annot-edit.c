@@ -350,36 +350,69 @@ pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name)
 	pdf_dirty_annot(ctx, annot);
 }
 
-static int line_ending_value(fz_context *ctx, pdf_obj *line_ending)
+enum pdf_line_ending pdf_line_ending_from_name(fz_context *ctx, pdf_obj *end)
 {
-	if (pdf_name_eq(ctx, line_ending, PDF_NAME_None)) return PDF_ANNOT_LINE_ENDING_NONE;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_Square)) return PDF_ANNOT_LINE_ENDING_SQUARE;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_Circle)) return PDF_ANNOT_LINE_ENDING_CIRCLE;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_Diamond)) return PDF_ANNOT_LINE_ENDING_DIAMOND;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_OpenArrow)) return PDF_ANNOT_LINE_ENDING_OPENARROW;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_ClosedArrow)) return PDF_ANNOT_LINE_ENDING_CLOSEDARROW;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_Butt)) return PDF_ANNOT_LINE_ENDING_BUTT;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_ROpenArrow)) return PDF_ANNOT_LINE_ENDING_ROPENARROW;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_RClosedArrow)) return PDF_ANNOT_LINE_ENDING_RCLOSEDARROW;
-	else if (pdf_name_eq(ctx, line_ending, PDF_NAME_Slash)) return PDF_ANNOT_LINE_ENDING_SLASH;
-	else return PDF_ANNOT_LINE_ENDING_NONE;
+	if (pdf_name_eq(ctx, end, PDF_NAME_None)) return PDF_ANNOT_LE_NONE;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_Square)) return PDF_ANNOT_LE_SQUARE;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_Circle)) return PDF_ANNOT_LE_CIRCLE;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_Diamond)) return PDF_ANNOT_LE_DIAMOND;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_OpenArrow)) return PDF_ANNOT_LE_OPEN_ARROW;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_ClosedArrow)) return PDF_ANNOT_LE_CLOSED_ARROW;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_Butt)) return PDF_ANNOT_LE_BUTT;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_ROpenArrow)) return PDF_ANNOT_LE_R_OPEN_ARROW;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_RClosedArrow)) return PDF_ANNOT_LE_R_CLOSED_ARROW;
+	else if (pdf_name_eq(ctx, end, PDF_NAME_Slash)) return PDF_ANNOT_LE_SLASH;
+	else return PDF_ANNOT_LE_NONE;
 }
 
-static pdf_obj *line_ending_name(fz_context *ctx, int line_ending)
+enum pdf_line_ending pdf_line_ending_from_string(fz_context *ctx, const char *end)
 {
-	switch (line_ending)
+	if (!strcmp(end, "None")) return PDF_ANNOT_LE_NONE;
+	else if (!strcmp(end, "Square")) return PDF_ANNOT_LE_SQUARE;
+	else if (!strcmp(end, "Circle")) return PDF_ANNOT_LE_CIRCLE;
+	else if (!strcmp(end, "Diamond")) return PDF_ANNOT_LE_DIAMOND;
+	else if (!strcmp(end, "OpenArrow")) return PDF_ANNOT_LE_OPEN_ARROW;
+	else if (!strcmp(end, "ClosedArrow")) return PDF_ANNOT_LE_CLOSED_ARROW;
+	else if (!strcmp(end, "Butt")) return PDF_ANNOT_LE_BUTT;
+	else if (!strcmp(end, "ROpenArrow")) return PDF_ANNOT_LE_R_OPEN_ARROW;
+	else if (!strcmp(end, "RClosedArrow")) return PDF_ANNOT_LE_R_CLOSED_ARROW;
+	else if (!strcmp(end, "Slash")) return PDF_ANNOT_LE_SLASH;
+	else return PDF_ANNOT_LE_NONE;
+}
+
+pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end)
+{
+	switch (end)
 	{
-	case PDF_ANNOT_LINE_ENDING_NONE: return PDF_NAME_None;
-	case PDF_ANNOT_LINE_ENDING_SQUARE: return PDF_NAME_Square;
-	case PDF_ANNOT_LINE_ENDING_CIRCLE: return PDF_NAME_Circle;
-	case PDF_ANNOT_LINE_ENDING_DIAMOND: return PDF_NAME_Diamond;
-	case PDF_ANNOT_LINE_ENDING_OPENARROW: return PDF_NAME_OpenArrow;
-	case PDF_ANNOT_LINE_ENDING_CLOSEDARROW: return PDF_NAME_ClosedArrow;
-	case PDF_ANNOT_LINE_ENDING_BUTT: return PDF_NAME_Butt;
-	case PDF_ANNOT_LINE_ENDING_ROPENARROW: return PDF_NAME_ROpenArrow;
-	case PDF_ANNOT_LINE_ENDING_RCLOSEDARROW: return PDF_NAME_RClosedArrow;
-	case PDF_ANNOT_LINE_ENDING_SLASH: return PDF_NAME_Slash;
-	default: fz_throw(ctx, FZ_ERROR_GENERIC, "invalid line ending style");
+	default:
+	case PDF_ANNOT_LE_NONE: return PDF_NAME_None;
+	case PDF_ANNOT_LE_SQUARE: return PDF_NAME_Square;
+	case PDF_ANNOT_LE_CIRCLE: return PDF_NAME_Circle;
+	case PDF_ANNOT_LE_DIAMOND: return PDF_NAME_Diamond;
+	case PDF_ANNOT_LE_OPEN_ARROW: return PDF_NAME_OpenArrow;
+	case PDF_ANNOT_LE_CLOSED_ARROW: return PDF_NAME_ClosedArrow;
+	case PDF_ANNOT_LE_BUTT: return PDF_NAME_Butt;
+	case PDF_ANNOT_LE_R_OPEN_ARROW: return PDF_NAME_ROpenArrow;
+	case PDF_ANNOT_LE_R_CLOSED_ARROW: return PDF_NAME_RClosedArrow;
+	case PDF_ANNOT_LE_SLASH: return PDF_NAME_Slash;
+	}
+}
+
+const char *pdf_string_from_line_ending(fz_context *ctx, enum pdf_line_ending end)
+{
+	switch (end)
+	{
+	default:
+	case PDF_ANNOT_LE_NONE: return "None";
+	case PDF_ANNOT_LE_SQUARE: return "Square";
+	case PDF_ANNOT_LE_CIRCLE: return "Circle";
+	case PDF_ANNOT_LE_DIAMOND: return "Diamond";
+	case PDF_ANNOT_LE_OPEN_ARROW: return "OpenArrow";
+	case PDF_ANNOT_LE_CLOSED_ARROW: return "ClosedArrow";
+	case PDF_ANNOT_LE_BUTT: return "Butt";
+	case PDF_ANNOT_LE_R_OPEN_ARROW: return "ROpenArrow";
+	case PDF_ANNOT_LE_R_CLOSED_ARROW: return "RClosedArrow";
+	case PDF_ANNOT_LE_SLASH: return "Slash";
 	}
 }
 
@@ -398,25 +431,29 @@ pdf_annot_has_line_ending_styles(fz_context *ctx, pdf_annot *annot)
 }
 
 void
-pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int *start_style, int *end_style)
+pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot,
+		enum pdf_line_ending *start_style,
+		enum pdf_line_ending *end_style)
 {
 	pdf_obj *style;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_LE, line_ending_subtypes);
 	style = pdf_dict_get(ctx, annot->obj, PDF_NAME_LE);
-	*start_style = line_ending_value(ctx, pdf_array_get(ctx, style, 0));
-	*end_style = line_ending_value(ctx, pdf_array_get(ctx, style, 1));
+	*start_style = pdf_line_ending_from_name(ctx, pdf_array_get(ctx, style, 0));
+	*end_style = pdf_line_ending_from_name(ctx, pdf_array_get(ctx, style, 1));
 }
 
 void
-pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_style, int end_style)
+pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot,
+		enum pdf_line_ending start_style,
+		enum pdf_line_ending end_style)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *style;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_LE, line_ending_subtypes);
 	style = pdf_new_array(ctx, doc, 2);
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_LE, style);
-	pdf_array_put_drop(ctx, style, 0, line_ending_name(ctx, start_style));
-	pdf_array_put_drop(ctx, style, 1, line_ending_name(ctx, end_style));
+	pdf_array_put_drop(ctx, style, 0, pdf_name_from_line_ending(ctx, start_style));
+	pdf_array_put_drop(ctx, style, 1, pdf_name_from_line_ending(ctx, end_style));
 	pdf_dirty_annot(ctx, annot);
 }
 

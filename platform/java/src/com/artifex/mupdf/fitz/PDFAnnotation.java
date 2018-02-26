@@ -42,11 +42,11 @@ public class PDFAnnotation extends Annotation
 	public static final int LINE_ENDING_SQUARE = 1;
 	public static final int LINE_ENDING_CIRCLE = 2;
 	public static final int LINE_ENDING_DIAMOND = 3;
-	public static final int LINE_ENDING_OPENARROW = 4;
-	public static final int LINE_ENDING_CLOSEDARROW = 5;
+	public static final int LINE_ENDING_OPEN_ARROW = 4;
+	public static final int LINE_ENDING_CLOSED_ARROW = 5;
 	public static final int LINE_ENDING_BUTT = 6;
-	public static final int LINE_ENDING_ROPENARR = 7;
-	public static final int LINE_ENDING_RCLOSEDARROW = 8;
+	public static final int LINE_ENDING_R_OPEN_ARROW = 7;
+	public static final int LINE_ENDING_R_CLOSED_ARROW = 8;
 	public static final int LINE_ENDING_SLASH = 9;
 
 	public native int getType();

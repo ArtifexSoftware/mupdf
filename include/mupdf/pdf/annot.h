@@ -32,7 +32,7 @@ enum pdf_annot_type
 };
 
 const char *pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type);
-int pdf_annot_type_from_string(fz_context *ctx, const char *subtype);
+enum pdf_annot_type pdf_annot_type_from_string(fz_context *ctx, const char *subtype);
 
 enum
 {
@@ -48,19 +48,24 @@ enum
 	PDF_ANNOT_IS_LOCKED_CONTENTS = 1 << (10-1)
 };
 
-enum
+enum pdf_line_ending
 {
-	PDF_ANNOT_LINE_ENDING_NONE = 0,
-	PDF_ANNOT_LINE_ENDING_SQUARE,
-	PDF_ANNOT_LINE_ENDING_CIRCLE,
-	PDF_ANNOT_LINE_ENDING_DIAMOND,
-	PDF_ANNOT_LINE_ENDING_OPENARROW,
-	PDF_ANNOT_LINE_ENDING_CLOSEDARROW,
-	PDF_ANNOT_LINE_ENDING_BUTT,
-	PDF_ANNOT_LINE_ENDING_ROPENARROW,
-	PDF_ANNOT_LINE_ENDING_RCLOSEDARROW,
-	PDF_ANNOT_LINE_ENDING_SLASH
+	PDF_ANNOT_LE_NONE = 0,
+	PDF_ANNOT_LE_SQUARE,
+	PDF_ANNOT_LE_CIRCLE,
+	PDF_ANNOT_LE_DIAMOND,
+	PDF_ANNOT_LE_OPEN_ARROW,
+	PDF_ANNOT_LE_CLOSED_ARROW,
+	PDF_ANNOT_LE_BUTT,
+	PDF_ANNOT_LE_R_OPEN_ARROW,
+	PDF_ANNOT_LE_R_CLOSED_ARROW,
+	PDF_ANNOT_LE_SLASH
 };
+
+enum pdf_line_ending pdf_line_ending_from_name(fz_context *ctx, pdf_obj *end);
+enum pdf_line_ending pdf_line_ending_from_string(fz_context *ctx, const char *end);
+pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
+const char *pdf_string_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 
 /*
 	pdf_first_annot: Return the first annotation on a page.
@@ -174,11 +179,11 @@ void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int 
 void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point stroke[]);
 
-void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_style, int end_style);
+void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending start_style, enum pdf_line_ending end_style);
 void pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name);
 void pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open);
 
-void pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int *start_style, int *end_style);
+void pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending *start_style, enum pdf_line_ending *end_style);
 const char *pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_is_open(fz_context *ctx, pdf_annot *annot);
 
