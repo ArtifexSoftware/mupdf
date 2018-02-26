@@ -546,7 +546,6 @@ fz_expand_irect(fz_irect *a, int expand)
 fz_rect *
 fz_expand_rect(fz_rect *a, float expand)
 {
-	if (fz_is_empty_rect(a)) return a;
 	if (fz_is_infinite_rect(a)) return a;
 	a->x0 -= expand;
 	a->y0 -= expand;
@@ -557,11 +556,11 @@ fz_expand_rect(fz_rect *a, float expand)
 
 fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p)
 {
+	if (fz_is_infinite_rect(r)) return r;
 	if (p->x < r->x0) r->x0 = p->x;
 	if (p->x > r->x1) r->x1 = p->x;
 	if (p->y < r->y0) r->y0 = p->y;
 	if (p->y > r->y1) r->y1 = p->y;
-
 	return r;
 }
 
