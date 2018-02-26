@@ -76,29 +76,17 @@ void pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat);
  * XObject
  */
 
-typedef struct pdf_xobject_s pdf_xobject;
-
-struct pdf_xobject_s
-{
-	fz_storable storable;
-	pdf_obj *obj;
-	int iteration;
-};
-
-pdf_xobject *pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 pdf_obj *pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat);
-pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
-void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
-void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_xobject *form, fz_buffer *buffer);
+void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_obj *form, fz_buffer *buffer);
 
 void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
-pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj);
-fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_xobject *xobj, fz_rect *bbox);
-fz_matrix *pdf_xobject_matrix(fz_context *ctx, pdf_xobject *xobj, fz_matrix *matrix);
-int pdf_xobject_isolated(fz_context *ctx, pdf_xobject *xobj);
-int pdf_xobject_knockout(fz_context *ctx, pdf_xobject *xobj);
-int pdf_xobject_transparency(fz_context *ctx, pdf_xobject *xobj);
-fz_colorspace *pdf_xobject_colorspace(fz_context *ctx, pdf_xobject *xobj);
+pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_obj *xobj);
+fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj, fz_rect *bbox);
+fz_matrix *pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj, fz_matrix *matrix);
+int pdf_xobject_isolated(fz_context *ctx, pdf_obj *xobj);
+int pdf_xobject_knockout(fz_context *ctx, pdf_obj *xobj);
+int pdf_xobject_transparency(fz_context *ctx, pdf_obj *xobj);
+fz_colorspace *pdf_xobject_colorspace(fz_context *ctx, pdf_obj *xobj);
 
 #endif

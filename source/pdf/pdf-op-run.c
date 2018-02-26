@@ -13,7 +13,7 @@
 typedef struct pdf_material_s pdf_material;
 typedef struct pdf_run_processor_s pdf_run_processor;
 
-static void pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf_obj *page_resources, const fz_matrix *transform, int is_smask);
+static void pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj *page_resources, const fz_matrix *transform, int is_smask);
 
 enum
 {
@@ -58,7 +58,7 @@ struct pdf_gstate_s
 
 	/* transparency */
 	int blendmode;
-	pdf_xobject *softmask;
+	pdf_obj *softmask;
 	pdf_obj *softmask_resources;
 	fz_matrix softmask_ctm;
 	float softmask_bc[FZ_MAX_COLORS];
@@ -94,7 +94,7 @@ typedef struct softmask_save_s softmask_save;
 
 struct softmask_save_s
 {
-	pdf_xobject *softmask;
+	pdf_obj *softmask;
 	pdf_obj *page_resources;
 	fz_matrix ctm;
 };
@@ -103,7 +103,7 @@ static pdf_gstate *
 begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	pdf_xobject *softmask = gstate->softmask;
+	pdf_obj *softmask = gstate->softmask;
 	fz_rect mask_bbox;
 	fz_matrix tos_save[2], save_ctm;
 	fz_matrix mask_matrix;
@@ -248,8 +248,8 @@ pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *gs, const pdf_gstate *old)
 	pdf_drop_font(ctx, gs->text.font);
 	gs->text.font = pdf_keep_font(ctx, old->text.font);
 
-	pdf_drop_xobject(ctx, gs->softmask);
-	gs->softmask = pdf_keep_xobject(ctx, old->softmask);
+	pdf_drop_obj(ctx, gs->softmask);
+	gs->softmask = pdf_keep_obj(ctx, old->softmask);
 
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, old->stroke_state);
@@ -277,7 +277,7 @@ pdf_keep_gstate(fz_context *ctx, pdf_gstate *gs)
 	if (gs->text.font)
 		pdf_keep_font(ctx, gs->text.font);
 	if (gs->softmask)
-		pdf_keep_xobject(ctx, gs->softmask);
+		pdf_keep_obj(ctx, gs->softmask);
 	if (gs->softmask_resources)
 		pdf_keep_obj(ctx, gs->softmask_resources);
 	fz_keep_stroke_state(ctx, gs->stroke_state);
@@ -289,7 +289,7 @@ pdf_drop_gstate(fz_context *ctx, pdf_gstate *gs)
 	pdf_drop_material(ctx, &gs->stroke);
 	pdf_drop_material(ctx, &gs->fill);
 	pdf_drop_font(ctx, gs->text.font);
-	pdf_drop_xobject(ctx, gs->softmask);
+	pdf_drop_obj(ctx, gs->softmask);
 	pdf_drop_obj(ctx, gs->softmask_resources);
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 }
@@ -385,7 +385,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 	/* don't apply soft masks to objects in the pattern as well */
 	if (gstate->softmask)
 	{
-		pdf_drop_xobject(ctx, gstate->softmask);
+		pdf_drop_obj(ctx, gstate->softmask);
 		gstate->softmask = NULL;
 	}
 
@@ -1190,7 +1190,7 @@ pdf_set_pattern(fz_context *ctx, pdf_run_processor *pr, int what, pdf_pattern *p
 }
 
 static void
-pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf_obj *page_resources, const fz_matrix *transform, int is_smask)
+pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj *page_resources, const fz_matrix *transform, int is_smask)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = NULL;
@@ -1211,7 +1211,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_default_colorspaces *saved_def_cs = NULL;
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
+	if (xobj == NULL || pdf_mark_obj(ctx, xobj))
 		return;
 
 	fz_var(cleanup_state);
@@ -1300,12 +1300,12 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		if (pr->default_cs != saved_def_cs)
 			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
 
-		doc = pdf_get_bound_document(ctx, xobj->obj);
+		doc = pdf_get_bound_document(ctx, xobj);
 
 		oldbot = pr->gbot;
 		pr->gbot = pr->gtop;
 
-		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj->obj, NULL);
+		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -1378,7 +1378,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		while (oldtop < pr->gtop)
 			pdf_grestore(ctx, pr);
 
-		pdf_unmark_obj(ctx, xobj->obj);
+		pdf_unmark_obj(ctx, xobj);
 	}
 	fz_catch(ctx)
 	{
@@ -1525,7 +1525,7 @@ static void pdf_run_gs_ca(fz_context *ctx, pdf_processor *proc, float alpha)
 	gstate->fill.alpha = fz_clamp(alpha, 0, 1);
 }
 
-static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *smask, pdf_obj *page_resources, float *bc, int luminosity)
+static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_obj *smask, pdf_obj *page_resources, float *bc, int luminosity)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
@@ -1533,7 +1533,7 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *
 
 	if (gstate->softmask)
 	{
-		pdf_drop_xobject(ctx, gstate->softmask);
+		pdf_drop_obj(ctx, gstate->softmask);
 		gstate->softmask = NULL;
 		pdf_drop_obj(ctx, gstate->softmask_resources);
 		gstate->softmask_resources = NULL;
@@ -1546,7 +1546,7 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *
 		if (cs)
 			cs_n = fz_colorspace_n(ctx, cs);
 		gstate->softmask_ctm = gstate->ctm;
-		gstate->softmask = pdf_keep_xobject(ctx, smask);
+		gstate->softmask = pdf_keep_obj(ctx, smask);
 		gstate->softmask_resources = pdf_keep_obj(ctx, page_resources);
 		for (i = 0; i < cs_n; ++i)
 			gstate->softmask_bc[i] = bc[i];
@@ -2000,7 +2000,7 @@ static void pdf_run_Do_image(fz_context *ctx, pdf_processor *proc, const char *n
 	pdf_show_image(ctx, pr, image);
 }
 
-static void pdf_run_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_xobject *xobj, pdf_obj *page_resources)
+static void pdf_run_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *xobj, pdf_obj *page_resources)
 {
 	pdf_run_xobject(ctx, (pdf_run_processor*)proc, xobj, page_resources, &fz_identity, 0);
 }
@@ -2074,7 +2074,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 	pdf_drop_material(ctx, &pr->gstate[0].fill);
 	pdf_drop_material(ctx, &pr->gstate[0].stroke);
 	pdf_drop_font(ctx, pr->gstate[0].text.font);
-	pdf_drop_xobject(ctx, pr->gstate[0].softmask);
+	pdf_drop_obj(ctx, pr->gstate[0].softmask);
 	fz_drop_stroke_state(ctx, pr->gstate[0].stroke_state);
 
 	while (pr->gstate[0].clip_depth--)

@@ -30,7 +30,7 @@ struct pdf_processor_s
 	void (*op_gs_BM)(fz_context *ctx, pdf_processor *proc, const char *blendmode);
 	void (*op_gs_ca)(fz_context *ctx, pdf_processor *proc, float alpha);
 	void (*op_gs_CA)(fz_context *ctx, pdf_processor *proc, float alpha);
-	void (*op_gs_SMask)(fz_context *ctx, pdf_processor *proc, pdf_xobject *smask, pdf_obj *page_resources, float *bc, int luminosity);
+	void (*op_gs_SMask)(fz_context *ctx, pdf_processor *proc, pdf_obj *smask, pdf_obj *page_resources, float *bc, int luminosity);
 	void (*op_gs_end)(fz_context *ctx, pdf_processor *proc);
 
 	/* special graphics state */
@@ -113,7 +113,7 @@ struct pdf_processor_s
 	void (*op_BI)(fz_context *ctx, pdf_processor *proc, fz_image *image);
 	void (*op_sh)(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade);
 	void (*op_Do_image)(fz_context *ctx, pdf_processor *proc, const char *name, fz_image *image);
-	void (*op_Do_form)(fz_context *ctx, pdf_processor *proc, const char *name, pdf_xobject *form, pdf_obj *page_resources);
+	void (*op_Do_form)(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *form, pdf_obj *page_resources);
 
 	/* marked content */
 	void (*op_MP)(fz_context *ctx, pdf_processor *proc, const char *tag);

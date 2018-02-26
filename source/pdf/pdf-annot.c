@@ -358,7 +358,7 @@ pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp,
 static void
 pdf_drop_annot_imp(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_drop_xobject(ctx, annot->ap);
+	pdf_drop_obj(ctx, annot->ap);
 	pdf_drop_obj(ctx, annot->obj);
 }
 
@@ -496,11 +496,11 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 				n = pdf_dict_get(ctx, n, as);
 
 			annot->ap = NULL;
+			annot->has_new_ap = 1;
 
 			if (pdf_is_stream(ctx, n))
 			{
-				annot->ap = pdf_load_xobject(ctx, doc, n);
-				annot->ap_iteration = annot->ap->iteration;
+				annot->ap = pdf_keep_obj(ctx, n);
 			}
 			else
 				fz_warn(ctx, "no appearance stream for annotation %d 0 R", pdf_to_num(ctx, annot->obj));
@@ -561,23 +561,7 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 void
 pdf_dirty_annot(fz_context *ctx, pdf_annot *annot)
 {
-	if (annot)
-	{
-		annot->dirty = 1;
-		if (annot->page && annot->page->doc)
-			annot->page->doc->dirty = 1;
-	}
-}
-
-void
-pdf_clean_annot(fz_context *ctx, pdf_annot *annot)
-{
-	if (annot)
-		annot->dirty = 0;
-}
-
-int
-pdf_annot_is_dirty(fz_context *ctx, pdf_annot *annot)
-{
-	return annot ? annot->dirty: 0;
+	annot->needs_new_ap = 1;
+	if (annot->page && annot->page->doc)
+		annot->page->doc->dirty = 1;
 }

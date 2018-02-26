@@ -107,10 +107,10 @@ struct pdf_annot_s
 	pdf_page *page;
 	pdf_obj *obj;
 
-	pdf_xobject *ap;
+	pdf_obj *ap;
 
-	int ap_iteration;
-	int dirty;
+	int needs_new_ap;
+	int has_new_ap;
 
 	pdf_annot *next;
 };
@@ -245,7 +245,5 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos,
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page);
 
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
-void pdf_clean_annot(fz_context *ctx, pdf_annot *annot);
-int pdf_annot_is_dirty(fz_context *ctx, pdf_annot *annot);
 
 #endif

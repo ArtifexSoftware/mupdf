@@ -727,7 +727,7 @@ pdf_out_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_imag
 }
 
 static void
-pdf_out_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_xobject *xobj, pdf_obj *page_resources)
+pdf_out_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *xobj, pdf_obj *page_resources)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_write_printf(ctx, out, "/%s Do\n", name);
