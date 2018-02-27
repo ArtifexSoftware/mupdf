@@ -219,10 +219,10 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 		/* Unpremultiply data */
 		for (y = 0; y < band_height; y++)
 		{
+			int prev[FZ_MAX_COLORS];
 			*dp++ = 1; /* sub prediction filter */
 			for (x = 0; x < w; x++)
 			{
-				int prev[FZ_MAX_COLORS];
 				int a = sp[n-1];
 				int inva = a ? 256*255/a : 0;
 				int p;
