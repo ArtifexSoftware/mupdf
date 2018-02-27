@@ -2744,6 +2744,7 @@ static const char *pdf_extensions[] =
 {
 	"pdf",
 	"pclm",
+	"ai",
 	NULL
 };
 
