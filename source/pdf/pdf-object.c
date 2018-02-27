@@ -2225,6 +2225,20 @@ void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_matrix(ctx, NULL, x));
 }
 
+pdf_obj *pdf_dict_put_array(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial)
+{
+	pdf_obj *obj = pdf_new_array(ctx, pdf_get_bound_document(ctx, dict), initial);
+	pdf_dict_put_drop(ctx, dict, key, obj);
+	return obj;
+}
+
+pdf_obj *pdf_dict_put_dict(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial)
+{
+	pdf_obj *obj = pdf_new_dict(ctx, pdf_get_bound_document(ctx, dict), initial);
+	pdf_dict_put_drop(ctx, dict, key, obj);
+	return obj;
+}
+
 void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x)
 {
 	pdf_array_push_drop(ctx, array, pdf_new_bool(ctx, NULL, x));
@@ -2253,4 +2267,18 @@ void pdf_array_push_string(fz_context *ctx, pdf_obj *array, const char *x, size_
 void pdf_array_push_text_string(fz_context *ctx, pdf_obj *array, const char *x)
 {
 	pdf_array_push_drop(ctx, array, pdf_new_text_string(ctx, NULL, x));
+}
+
+pdf_obj *pdf_array_push_array(fz_context *ctx, pdf_obj *array, int initial)
+{
+	pdf_obj *obj = pdf_new_array(ctx, pdf_get_bound_document(ctx, array), initial);
+	pdf_array_push_drop(ctx, array, obj);
+	return obj;
+}
+
+pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial)
+{
+	pdf_obj *obj = pdf_new_dict(ctx, pdf_get_bound_document(ctx, array), initial);
+	pdf_array_push_drop(ctx, array, obj);
+	return obj;
 }
