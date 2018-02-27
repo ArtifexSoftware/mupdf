@@ -258,8 +258,9 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos,
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.
 */
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page);
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj);
 
+void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
 
 #endif

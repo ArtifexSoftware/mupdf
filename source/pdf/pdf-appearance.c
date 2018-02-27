@@ -2451,12 +2451,13 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 	}
 }
 
-void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
+void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 {
+	pdf_document *doc = annot->page->doc;
 	pdf_obj *obj = annot->obj;
 	pdf_obj *ap = pdf_dict_get(ctx, obj, PDF_NAME_AP);
 
-	if (!ap || !pdf_dict_get(ctx, ap, PDF_NAME_N) || pdf_obj_is_dirty(ctx, obj))
+	if (!ap || !pdf_dict_get(ctx, ap, PDF_NAME_N) || pdf_obj_is_dirty(ctx, obj) || annot->needs_new_ap)
 	{
 		enum pdf_annot_type type = pdf_annot_type(ctx, annot);
 		switch (type)
@@ -2508,6 +2509,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 				pdf_update_combobox_appearance(ctx, doc, obj);
 				break;
 			}
+			annot->has_new_ap = 1;
 			break;
 		case PDF_ANNOT_TEXT:
 			pdf_update_text_annot_appearance(ctx, doc, annot);
@@ -2537,8 +2539,7 @@ pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *obj, *ap, *as, *n;
 
-	if (doc->update_appearance)
-		doc->update_appearance(ctx, doc, annot);
+	pdf_update_appearance(ctx, annot);
 
 	obj = annot->obj;
 
@@ -2550,12 +2551,8 @@ pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 		pdf_hotspot *hp = &doc->hotspot;
 
 		n = NULL;
-
 		if (hp->num == pdf_to_num(ctx, obj) && (hp->state & HOTSPOT_POINTER_DOWN))
-		{
 			n = pdf_dict_get(ctx, ap, PDF_NAME_D); /* down state */
-		}
-
 		if (n == NULL)
 			n = pdf_dict_get(ctx, ap, PDF_NAME_N); /* normal state */
 
@@ -2563,13 +2560,13 @@ pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 		if (!pdf_is_stream(ctx, n))
 			n = pdf_dict_get(ctx, n, as);
 
-		pdf_drop_obj(ctx, annot->ap);
-		annot->ap = NULL;
-
-		if (pdf_is_stream(ctx, n))
+		if (annot->ap != n)
 		{
-			annot->ap = pdf_keep_obj(ctx, n);
+			pdf_drop_obj(ctx, annot->ap);
+			annot->ap = NULL;
+			if (pdf_is_stream(ctx, n))
+				annot->ap = pdf_keep_obj(ctx, n);
+			annot->has_new_ap = 1;
 		}
-		annot->has_new_ap = 1;
 	}
 }

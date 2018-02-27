@@ -129,9 +129,6 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		/* Make printable as default */
 		pdf_dict_put_int(ctx, annot_obj, PDF_NAME_F, PDF_ANNOT_IS_PRINT);
 
-		annot = pdf_new_annot(ctx, page);
-		annot->ap = NULL;
-
 		/*
 			Both annotation object and annotation structure are now created.
 			Insert the object in the hierarchy and the structure in the
@@ -141,7 +138,9 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		pdf_update_object(ctx, doc, ind_obj_num, annot_obj);
 		ind_obj = pdf_new_indirect(ctx, doc, ind_obj_num, 0);
 		pdf_array_push(ctx, annot_arr, ind_obj);
-		annot->obj = pdf_keep_obj(ctx, ind_obj);
+
+		annot = pdf_new_annot(ctx, page, ind_obj);
+		annot->ap = NULL;
 
 		/*
 			Linking must be done after any call that might throw because
@@ -1099,20 +1098,6 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 	pdf_dirty_annot(ctx, annot);
 }
 
-static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int buf_size)
-{
-	int i;
-
-	/* Find a number X such that /FX doesn't occur as a key in fdict */
-	for (i = 0; 1; i++)
-	{
-		fz_snprintf(buf, buf_size, "F%d", i);
-
-		if (!pdf_dict_gets(ctx, fdict, buf))
-			break;
-	}
-}
-
 void
 pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 {
@@ -1297,6 +1282,20 @@ pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
 	check_allowed_subtypes(ctx, annot, PDF_NAME_T, markup_subtypes);
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_T, pdf_new_text_string(ctx, doc, author));
 	pdf_dirty_annot(ctx, annot);
+}
+
+static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int buf_size)
+{
+	int i;
+
+	/* Find a number X such that /FX doesn't occur as a key in fdict */
+	for (i = 0; 1; i++)
+	{
+		fz_snprintf(buf, buf_size, "F%d", i);
+
+		if (!pdf_dict_gets(ctx, fdict, buf))
+			break;
+	}
 }
 
 void

@@ -4430,7 +4430,7 @@ static void ffi_PDFAnnotation_updateAppearance(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	fz_try(ctx)
-		pdf_update_appearance(ctx, annot->page->doc, annot);
+		pdf_update_appearance(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 }

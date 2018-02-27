@@ -695,8 +695,6 @@ struct pdf_document_s
 	int recalculating;
 	int dirty;
 
-	void (*update_appearance)(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
-
 	pdf_doc_event_cb *event_cb;
 	void *event_cb_data;
 

@@ -9104,7 +9104,7 @@ FUN(PDFAnnotation_updateAppearance)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		pdf_dict_del(ctx, annot->obj, PDF_NAME_AP); /* nuke old AP */
-		pdf_update_appearance(ctx, annot->page->doc, annot);
+		pdf_update_appearance(ctx, annot);
 		pdf_update_annot(ctx, annot); /* ensure new AP is put into annot */
 	}
 	fz_catch(ctx)
