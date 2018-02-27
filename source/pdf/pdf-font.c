@@ -2099,7 +2099,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_font_resource(ctx, doc, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, PDF_CID_FONT_RESOURCE, font->buffer, digest);
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
@@ -2174,7 +2174,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_font_resource(ctx, doc, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, font->buffer, digest);
 		if (fref == NULL)
 		{
 			fobj = pdf_new_dict(ctx, doc, 10);
