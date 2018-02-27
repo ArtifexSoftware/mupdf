@@ -479,6 +479,23 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 	pdf_dirty_annot(ctx, annot);
 }
 
+float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *ca = pdf_dict_get(ctx, annot->obj, PDF_NAME_CA);
+	if (pdf_is_number(ctx, ca))
+		return pdf_to_real(ctx, ca);
+	return 1;
+}
+
+void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity)
+{
+	if (opacity != 1)
+		pdf_dict_put_real(ctx, annot->obj, PDF_NAME_CA, opacity);
+	else
+		pdf_dict_del(ctx, annot->obj, PDF_NAME_CA);
+	pdf_dirty_annot(ctx, annot);
+}
+
 static void pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4], pdf_obj **allowed)
 {
 	pdf_obj *arr;

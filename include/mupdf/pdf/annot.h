@@ -155,6 +155,7 @@ int pdf_annot_has_author(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
 float pdf_annot_border(fz_context *ctx, pdf_annot *annot);
+float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 
@@ -168,6 +169,7 @@ fz_point pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int
 void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
 void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect);
 void pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float width);
+void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity);
 void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 
