@@ -175,7 +175,7 @@ void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const f
 void pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_rect bbox);
 
-void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const float *v);
+void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v);
 void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point stroke[]);
 
@@ -193,10 +193,10 @@ void pdf_set_annot_line(fz_context *ctx, pdf_annot *annot, fz_point a, fz_point 
 int pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot);
 fz_point pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i);
 
+void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const fz_point *v);
 void pdf_clear_annot_vertices(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p);
 void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
-void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v);
 
 /*
 	pdf_set_text_annot_position: set the position on page for a text (sticky note) annotation.

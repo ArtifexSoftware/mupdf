@@ -720,7 +720,7 @@ pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i)
 }
 
 void
-pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v)
+pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const fz_point *v)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
@@ -738,8 +738,7 @@ pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v)
 	vertices = pdf_new_array(ctx, doc, n * 2);
 	for (i = 0; i < n; ++i)
 	{
-		point.x = v[i * 2];
-		point.y = v[i * 2 + 1];
+		point = v[i];
 		fz_transform_point(&point, &inv_page_ctm);
 		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.x));
 		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.y));
@@ -974,7 +973,7 @@ pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k
 }
 
 void
-pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const float *v)
+pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
@@ -992,11 +991,10 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 	ink_list = pdf_new_array(ctx, doc, n);
 	for (i = 0; i < n; ++i)
 	{
-		stroke = pdf_new_array(ctx, doc, count[i]);
+		stroke = pdf_new_array(ctx, doc, count[i] * 2);
 		for (k = 0; k < count[i]; ++k)
 		{
-			point.x = *v++;
-			point.y = *v++;
+			point = *v++;
 			fz_transform_point(&point, &inv_page_ctm);
 			pdf_array_push_drop(ctx, stroke, pdf_new_real(ctx, doc, point.x));
 			pdf_array_push_drop(ctx, stroke, pdf_new_real(ctx, doc, point.y));

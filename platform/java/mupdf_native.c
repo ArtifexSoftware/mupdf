@@ -9164,7 +9164,7 @@ FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
 	pdf_annot *annot = from_PDFAnnotation(env, self);
 	int i, k, n, m;
 	jfloatArray jpath;
-	float *points = NULL;
+	fz_point *points = NULL;
 	int *counts = NULL;
 
 	if (!ctx || !annot) return;
@@ -9187,7 +9187,7 @@ FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
 	fz_try(ctx)
 	{
 		counts = fz_malloc(ctx, n * sizeof(int));
-		points = fz_malloc(ctx, m * 2 * sizeof(float));
+		points = fz_malloc(ctx, m * sizeof(fz_point));
 	}
 	fz_catch(ctx)
 	{
@@ -9210,7 +9210,7 @@ FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
 			continue;
 
 		counts[i] = (*env)->GetArrayLength(env, jpath);
-		(*env)->GetFloatArrayRegion(env, jpath, 0, counts[i], &points[k]);
+		(*env)->GetFloatArrayRegion(env, jpath, 0, counts[i], (float*)&points[k]);
 		if ((*env)->ExceptionCheck(env))
 		{
 			fz_free(ctx, counts);
@@ -9328,7 +9328,7 @@ FUN(PDFAnnotation_setVertices)(JNIEnv *env, jobject self, jobject jvertices)
 	}
 
 	fz_try(ctx)
-		pdf_set_annot_vertices(ctx, annot, n, vertices);
+		pdf_set_annot_vertices(ctx, annot, n, (fz_point*)vertices);
 	fz_always(ctx)
 		fz_free(ctx, vertices);
 	fz_catch(ctx)
