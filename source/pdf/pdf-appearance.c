@@ -1007,7 +1007,7 @@ static pdf_obj *load_or_create_form(fz_context *ctx, pdf_document *doc, pdf_obj 
 		formobj = pdf_dict_get(ctx, ap, PDF_NAME(N));
 		if (formobj == NULL)
 		{
-			formobj = pdf_new_xobject(ctx, doc, rect, &mat);
+			formobj = pdf_new_xobject(ctx, doc, rect, &mat, NULL, NULL);
 			pdf_dict_put_drop(ctx, ap, PDF_NAME(N), formobj);
 			create_form = 1;
 		}
@@ -1104,7 +1104,7 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_obj *f
 		}
 
 		/* Use newbuf in place of the existing appearance stream */
-		pdf_update_xobject_contents(ctx, doc, form, newbuf);
+		pdf_update_stream(ctx, doc, form, newbuf, 0);
 	}
 	fz_always(ctx)
 	{
@@ -1523,7 +1523,7 @@ void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_ob
 			fzbuf_print_text(ctx, fzbuf, &clip, NULL, &font_rec, &mat, text);
 		}
 
-		pdf_update_xobject_contents(ctx, doc, form, fzbuf);
+		pdf_update_stream(ctx, doc, form, fzbuf, 0);
 	}
 	fz_always(ctx)
 	{
@@ -1613,7 +1613,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 	if (ap_obj == NULL)
 	{
-		ap_obj = pdf_new_xobject(ctx, doc, &trect, &fz_identity);
+		ap_obj = pdf_new_xobject(ctx, doc, &trect, &fz_identity, NULL, NULL);
 		pdf_dict_putl_drop(ctx, obj, ap_obj, PDF_NAME(AP), PDF_NAME(N), NULL);
 	}
 	else
@@ -2307,9 +2307,9 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 	fz_var(fzbuf);
 	fz_try(ctx)
 	{
-		main_ap = pdf_new_xobject(ctx, doc, &bbox, &fz_identity);
-		frm = pdf_new_xobject(ctx, doc, &bbox, &fz_identity);
-		n0 = pdf_new_xobject(ctx, doc, &bbox, &fz_identity);
+		main_ap = pdf_new_xobject(ctx, doc, &bbox, &fz_identity, NULL, NULL);
+		frm = pdf_new_xobject(ctx, doc, &bbox, &fz_identity, NULL, NULL);
+		n0 = pdf_new_xobject(ctx, doc, &bbox, &fz_identity, NULL, NULL);
 
 		pdf_dict_putl(ctx, main_ap, frm, PDF_NAME(Resources), PDF_NAME(XObject), PDF_NAME(FRM), NULL);
 		fzbuf = fz_new_buffer(ctx, 8);

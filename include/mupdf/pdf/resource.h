@@ -79,8 +79,8 @@ void pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat);
  * XObject
  */
 
-pdf_obj *pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat);
-void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_obj *form, fz_buffer *buffer);
+pdf_obj *pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *buffer);
+void pdf_update_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *xobj, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *buffer);
 
 pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_obj *xobj);
 fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj, fz_rect *bbox);
