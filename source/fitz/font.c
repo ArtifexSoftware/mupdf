@@ -635,6 +635,39 @@ fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int i
 	return font;
 }
 
+fz_font *
+fz_new_base14_font(fz_context *ctx, const char *name)
+{
+	const unsigned char *data;
+	int size;
+	data = fz_lookup_base14_font(ctx, name, &size);
+	if (!data)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font with name '%s'", name);
+	return fz_new_font_from_memory(ctx, name, data, size, 0, 0);
+}
+
+fz_font *
+fz_new_cjk_font(fz_context *ctx, int registry, int serif, int wmode)
+{
+	const unsigned char *data;
+	int size, index;
+	data = fz_lookup_cjk_font(ctx, registry, serif, wmode, &size, &index);
+	if (!data)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
+	return fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
+}
+
+fz_font *
+fz_new_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic)
+{
+	const unsigned char *data;
+	int size;
+	data = fz_lookup_builtin_font(ctx, name, is_bold, is_italic, &size);
+	if (!data)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font with name '%s'", name);
+	return fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+}
+
 static fz_matrix *
 fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
 {
