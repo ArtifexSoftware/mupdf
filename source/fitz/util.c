@@ -310,7 +310,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
-		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
