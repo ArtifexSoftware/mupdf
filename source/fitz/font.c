@@ -641,13 +641,16 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
 	if (font->flags.ft_stretch && font->width_table /* && font->wmode == 0 */)
 	{
-		FT_Fixed adv;
+		FT_Error fterr;
+		FT_Fixed adv = 0;
 		float subw;
 		float realw;
 
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
-		FT_Get_Advance(font->ft_face, gid, FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM, &adv);
+		fterr = FT_Get_Advance(font->ft_face, gid, FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM, &adv);
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		if (fterr)
+			fz_warn(ctx, "freetype getting character advance: %s", ft_error_string(fterr));
 
 		realw = adv * 1000.0f / ((FT_Face)font->ft_face)->units_per_EM;
 		if (gid < font->width_count)
@@ -1513,7 +1516,8 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
 static float
 fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {
-	FT_Fixed adv;
+	FT_Error fterr;
+	FT_Fixed adv = 0;
 	int mask;
 
 	/* Substitute font widths. */
@@ -1528,8 +1532,10 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 	if (wmode)
 		mask |= FT_LOAD_VERTICAL_LAYOUT;
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	FT_Get_Advance(font->ft_face, gid, mask, &adv);
+	fterr = FT_Get_Advance(font->ft_face, gid, mask, &adv);
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
+	if (fterr)
+		fz_warn(ctx, "freetype getting character advance: %s", ft_error_string(fterr));
 	return (float) adv / ((FT_Face)font->ft_face)->units_per_EM;
 }
 
