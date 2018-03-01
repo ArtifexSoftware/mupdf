@@ -353,7 +353,7 @@ pdf_compute_encryption_key(fz_context *ctx, pdf_crypt *crypt, unsigned char *pas
 	int i, n;
 	fz_md5 md5;
 
-	n = crypt->length / 8;
+	n = fz_clampi(crypt->length / 8, 0, 16);
 
 	/* Step 1 - copy and pad password string */
 	if (pwlen > 32)
@@ -569,12 +569,14 @@ pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 static void
 pdf_compute_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, unsigned char *output)
 {
+	int n = fz_clampi(crypt->length / 8, 0, 16);
+
 	if (crypt->r == 2)
 	{
 		fz_arc4 arc4;
 
 		pdf_compute_encryption_key(ctx, crypt, password, pwlen, crypt->key);
-		fz_arc4_init(&arc4, crypt->key, crypt->length / 8);
+		fz_arc4_init(&arc4, crypt->key, n);
 		fz_arc4_encrypt(&arc4, output, padding, 32);
 	}
 
@@ -584,9 +586,7 @@ pdf_compute_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *pass
 		unsigned char digest[16];
 		fz_md5 md5;
 		fz_arc4 arc4;
-		int i, x, n;
-
-		n = crypt->length / 8;
+		int i, x;
 
 		pdf_compute_encryption_key(ctx, crypt, password, pwlen, crypt->key);
 
@@ -649,16 +649,15 @@ pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char 
 static int
 pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *ownerpass, size_t pwlen)
 {
+	int n = fz_clampi(crypt->length / 8, 0, 16);
+
 	if (crypt->r == 2)
 	{
 		unsigned char pwbuf[32];
-		unsigned char key[32];
+		unsigned char key[16];
 		unsigned char userpass[32];
-		int n;
 		fz_md5 md5;
 		fz_arc4 arc4;
-
-		n = crypt->length / 8;
 
 		if (pwlen > 32)
 			pwlen = 32;
@@ -678,14 +677,12 @@ pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char
 	if (crypt->r == 3 || crypt->r == 4)
 	{
 		unsigned char pwbuf[32];
-		unsigned char key[32];
+		unsigned char key[16];
 		unsigned char xor[32];
 		unsigned char userpass[32];
-		int i, n, x;
+		int i, x;
 		fz_md5 md5;
 		fz_arc4 arc4;
-
-		n = crypt->length / 8;
 
 		if (pwlen > 32)
 			pwlen = 32;
@@ -699,7 +696,7 @@ pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char
 		for (i = 0; i < 50; i++)
 		{
 			fz_md5_init(&md5);
-			fz_md5_update(&md5, key, 16);
+			fz_md5_update(&md5, key, n);
 			fz_md5_final(&md5, key);
 		}
 
