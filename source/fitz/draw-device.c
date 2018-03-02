@@ -751,7 +751,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
 	fz_irect local_scissor;
-	fz_irect *scissor_ptr = &state->scissor;
+	fz_irect *scissor_ptr;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
@@ -763,6 +763,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	STACK_PUSHED("clip path");
 	model = state->dest->colorspace;
 
+	scissor_ptr = &state->scissor;
 	if (scissor)
 	{
 		fz_rect tscissor = *scissor;
@@ -827,7 +828,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	float aa_level = 2.0f/(fz_rasterizer_graphics_aa_level(rast)+2);
 	float mlw = fz_rasterizer_graphics_min_line_width(rast);
 	fz_irect local_scissor;
-	fz_irect *scissor_ptr = &state->scissor;
+	fz_irect *scissor_ptr;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, dev->default_cs);
@@ -843,6 +844,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	STACK_PUSHED("clip stroke");
 	model = state->dest->colorspace;
 
+	scissor_ptr = &state->scissor;
 	if (scissor)
 	{
 		fz_rect tscissor = *scissor;
