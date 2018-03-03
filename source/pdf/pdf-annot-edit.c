@@ -479,6 +479,21 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 	pdf_dirty_annot(ctx, annot);
 }
 
+int
+pdf_annot_quadding(fz_context *ctx, pdf_annot *annot)
+{
+	int q = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Q));
+	return (q < 0 || q > 2) ? 0 : q;
+}
+
+void
+pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q)
+{
+	q = (q < 0 || q > 2) ? 0 : q;
+	pdf_dict_put_int(ctx, annot->obj, PDF_NAME_Q, q);
+	pdf_dirty_annot(ctx, annot);
+}
+
 float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *ca = pdf_dict_get(ctx, annot->obj, PDF_NAME_CA);

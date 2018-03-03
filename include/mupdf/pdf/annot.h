@@ -62,6 +62,13 @@ enum pdf_line_ending
 	PDF_ANNOT_LE_SLASH
 };
 
+enum
+{
+	PDF_ANNOT_Q_LEFT = 0,
+	PDF_ANNOT_Q_CENTER = 1,
+	PDF_ANNOT_Q_RIGHT = 2
+};
+
 enum pdf_line_ending pdf_line_ending_from_name(fz_context *ctx, pdf_obj *end);
 enum pdf_line_ending pdf_line_ending_from_string(fz_context *ctx, const char *end);
 pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
@@ -158,6 +165,7 @@ float pdf_annot_border(fz_context *ctx, pdf_annot *annot);
 float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
+int pdf_annot_quadding(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i, float qp[8]);
@@ -172,6 +180,7 @@ void pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float width);
 void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity);
 void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
+void pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q);
 
 void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v);
 void pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot);
