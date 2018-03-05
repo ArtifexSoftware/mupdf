@@ -61,6 +61,8 @@ fz_archive *fz_open_archive_with_stream(fz_context *ctx, fz_stream *file);
 */
 fz_archive *fz_open_directory(fz_context *ctx, const char *path);
 
+int fz_is_directory(fz_context *ctx, const char *path);
+
 /*
 	fz_drop_archive: Release an open archive.
 
