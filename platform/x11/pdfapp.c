@@ -1923,13 +1923,12 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;
-
-	int x0 = app->selr.x0;
-	int x1 = app->selr.x1;
-	int y0 = app->selr.y0;
-	int y1 = app->selr.y1;
+	fz_rect sel;
 
 	pdfapp_viewctm(&ctm, app);
+	fz_invert_matrix(&ctm, &ctm);
+	sel = app->selr;
+	fz_transform_rect(&sel, &ctm);
 
 	p = 0;
 	need_newline = 0;
@@ -1947,7 +1946,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 				int c = ch->c;
 				if (c < 32)
 					c = 0xFFFD;
-				if (ch->bbox.x1 >= x0 && ch->bbox.x0 <= x1 && ch->bbox.y1 >= y0 && ch->bbox.y0 <= y1)
+				if (ch->bbox.x1 >= sel.x0 && ch->bbox.x0 <= sel.x1 && ch->bbox.y1 >= sel.y0 && ch->bbox.y0 <= sel.y1)
 				{
 					saw_text = 1;
 					if (need_newline)
