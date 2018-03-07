@@ -200,10 +200,13 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		{
 			fz_jbig2_globals *globals = NULL;
 			pdf_obj *obj = pdf_dict_get(ctx, p, PDF_NAME_JBIG2Globals);
-			if (!pdf_is_stream(ctx, obj))
-				fz_warn(ctx, "jbig2 globals is not a stream, skipping globals");
-			else
-				globals = pdf_load_jbig2_globals(ctx, doc, obj);
+			if (obj)
+			{
+				if (!pdf_is_stream(ctx, obj))
+					fz_warn(ctx, "jbig2 globals is not a stream, skipping globals");
+				else
+					globals = pdf_load_jbig2_globals(ctx, doc, obj);
+			}
 			tmp = chain;
 			chain = NULL;
 			chain = fz_open_jbig2d(ctx, tmp, globals);
