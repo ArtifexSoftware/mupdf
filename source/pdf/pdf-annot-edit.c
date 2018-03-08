@@ -271,9 +271,7 @@ pdf_copy_annot_contents(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 {
-	pdf_document *doc = annot->page->doc;
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents,
-			pdf_new_text_string(ctx, doc, text));
+	pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME_Contents, text);
 	pdf_dirty_annot(ctx, annot);
 }
 
