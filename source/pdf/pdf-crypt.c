@@ -640,8 +640,8 @@ pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char 
 }
 
 /*
- * Authenticating the owner password (PDF 1.7 algorithm 3.7
- * and ExtensionLevel 3 algorithm 3.12)
+ * Authenticating the owner password (PDF 1.7 algorithm 3.7,
+ * ExtensionLevel 3 algorithm 3.12, ExtensionLevel 8 algorithm)
  * Generates the user password from the owner password
  * and calls pdf_authenticate_user_password.
  */
@@ -649,63 +649,60 @@ pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char 
 static int
 pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *ownerpass, size_t pwlen)
 {
-	unsigned char pwbuf[32];
-	unsigned char key[32];
-	unsigned char xor[32];
-	unsigned char userpass[32];
-	int i, n, x;
-	fz_md5 md5;
-	fz_arc4 arc4;
-
-	if (crypt->r == 5)
+	if (crypt->r == 2)
 	{
-		/* PDF 1.7 ExtensionLevel 3 algorithm 3.12 */
-		pdf_compute_encryption_key_r5(ctx, crypt, ownerpass, pwlen, 1, key);
-		return !memcmp(key, crypt->o, 32);
+		unsigned char pwbuf[32];
+		unsigned char key[32];
+		unsigned char userpass[32];
+		int n;
+		fz_md5 md5;
+		fz_arc4 arc4;
+
+		n = crypt->length / 8;
+
+		if (pwlen > 32)
+			pwlen = 32;
+		memcpy(pwbuf, ownerpass, pwlen);
+		memcpy(pwbuf + pwlen, padding, 32 - pwlen);
+
+		fz_md5_init(&md5);
+		fz_md5_update(&md5, pwbuf, 32);
+		fz_md5_final(&md5, key);
+
+		fz_arc4_init(&arc4, key, n);
+		fz_arc4_encrypt(&arc4, userpass, crypt->o, 32);
+
+		return pdf_authenticate_user_password(ctx, crypt, userpass, 32);
 	}
-	else if (crypt->r == 6)
+
+	if (crypt->r == 3 || crypt->r == 4)
 	{
-		/* PDF 1.7 ExtensionLevel 8 algorithm */
-		pdf_compute_encryption_key_r6(ctx, crypt, ownerpass, pwlen, 1, key);
-		return !memcmp(key, crypt->o, 32);
-	}
+		unsigned char pwbuf[32];
+		unsigned char key[32];
+		unsigned char xor[32];
+		unsigned char userpass[32];
+		int i, n, x;
+		fz_md5 md5;
+		fz_arc4 arc4;
 
-	n = crypt->length / 8;
+		n = crypt->length / 8;
 
-	/* Step 1 -- steps 1 to 4 of PDF 1.7 algorithm 3.3 */
+		if (pwlen > 32)
+			pwlen = 32;
+		memcpy(pwbuf, ownerpass, pwlen);
+		memcpy(pwbuf + pwlen, padding, 32 - pwlen);
 
-	/* copy and pad password string */
-	if (pwlen > 32)
-		pwlen = 32;
-	memcpy(pwbuf, ownerpass, pwlen);
-	memcpy(pwbuf + pwlen, padding, 32 - pwlen);
+		fz_md5_init(&md5);
+		fz_md5_update(&md5, pwbuf, 32);
+		fz_md5_final(&md5, key);
 
-	/* take md5 hash of padded password */
-	fz_md5_init(&md5);
-	fz_md5_update(&md5, pwbuf, 32);
-	fz_md5_final(&md5, key);
-
-	/* do some voodoo 50 times (Revision 3 or greater) */
-	if (crypt->r >= 3)
-	{
 		for (i = 0; i < 50; i++)
 		{
 			fz_md5_init(&md5);
 			fz_md5_update(&md5, key, 16);
 			fz_md5_final(&md5, key);
 		}
-	}
 
-	/* Step 2 (Revision 2) */
-	if (crypt->r == 2)
-	{
-		fz_arc4_init(&arc4, key, n);
-		fz_arc4_encrypt(&arc4, userpass, crypt->o, 32);
-	}
-
-	/* Step 2 (Revision 3 or greater) */
-	if (crypt->r >= 3)
-	{
 		memcpy(userpass, crypt->o, 32);
 		for (x = 0; x < 20; x++)
 		{
@@ -714,9 +711,25 @@ pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char
 			fz_arc4_init(&arc4, xor, n);
 			fz_arc4_encrypt(&arc4, userpass, userpass, 32);
 		}
+
+		return pdf_authenticate_user_password(ctx, crypt, userpass, 32);
 	}
 
-	return pdf_authenticate_user_password(ctx, crypt, userpass, 32);
+	if (crypt->r == 5)
+	{
+		unsigned char key[32];
+		pdf_compute_encryption_key_r5(ctx, crypt, ownerpass, pwlen, 1, key);
+		return !memcmp(key, crypt->o, 32);
+	}
+
+	if (crypt->r == 6)
+	{
+		unsigned char key[32];
+		pdf_compute_encryption_key_r6(ctx, crypt, ownerpass, pwlen, 1, key);
+		return !memcmp(key, crypt->o, 32);
+	}
+
+	return 0;
 }
 
 static void pdf_docenc_from_utf8(char *password, const char *utf8, int n)
