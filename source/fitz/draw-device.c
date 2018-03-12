@@ -3283,7 +3283,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 		else
 			fz_clear_pixmap_with_value(ctx, *pixmap, 255);
 
-		dev = fz_new_draw_device(ctx, &transform, *pixmap);
+		dev = new_draw_device(ctx, &transform, *pixmap, &aa, NULL, NULL);
 	}
 	fz_catch(ctx)
 	{

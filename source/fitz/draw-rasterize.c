@@ -75,7 +75,9 @@ fz_set_rasterizer_text_aa_level(fz_context *ctx, fz_aa_context *aa, int level)
 			fz_warn(ctx, "Only the %d bit anti-aliasing rasterizer was compiled in", fz_aa_bits);
 	}
 #else
-	if (level > 6)
+	if (level > 8)
+		aa->text_bits = 0;
+	else if (level > 6)
 		aa->text_bits = 8;
 	else if (level > 4)
 		aa->text_bits = 6;
