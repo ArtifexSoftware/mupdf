@@ -1464,19 +1464,6 @@ static inline jobject to_Page_safe_own(fz_context *ctx, JNIEnv *env, fz_page *pa
 	return jobj;
 }
 
-static inline jobject to_PDFAnnotation_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_annot *annot)
-{
-	jobject jannot;
-
-	if (!ctx || !annot || !pdf) return NULL;
-
-	jannot = (*env)->NewObject(env, cls_PDFAnnotation, mid_PDFAnnotation_init, jlong_cast(annot), pdf);
-	if (!jannot)
-		pdf_drop_annots(ctx, annot);
-
-	return jannot;
-}
-
 static inline jobject to_PDFGraftMap_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_graft_map *map)
 {
 	jobject jmap;
@@ -8619,7 +8606,7 @@ FUN(PDFPage_createAnnotation)(JNIEnv *env, jobject self, jint subtype)
 		return NULL;
 	}
 
-	return to_PDFAnnotation_safe_own(ctx, env, self, annot);
+	return to_Annotation_safe(ctx, env, self, (fz_annot*)annot);
 }
 
 JNIEXPORT void JNICALL
