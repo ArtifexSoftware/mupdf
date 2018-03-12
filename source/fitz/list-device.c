@@ -1553,7 +1553,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 		{
 			if (cookie->abort)
 				break;
-			cookie->progress = progress++;
+			cookie->progress = progress;
+			progress += n.size;
 		}
 
 		node++;
@@ -1843,4 +1844,6 @@ visible:
 	fz_drop_colorspace(ctx, colorspace);
 	fz_drop_stroke_state(ctx, stroke);
 	fz_drop_path(ctx, path);
+	if (cookie)
+		cookie->progress = progress;
 }
