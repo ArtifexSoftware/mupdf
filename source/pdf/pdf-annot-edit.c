@@ -442,6 +442,20 @@ pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot,
 	*end_style = pdf_line_ending_from_name(ctx, pdf_array_get(ctx, style, 1));
 }
 
+enum pdf_line_ending
+pdf_annot_line_start_style(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *le = pdf_dict_get(ctx, annot->obj, PDF_NAME_LE);
+	return pdf_line_ending_from_name(ctx, pdf_array_get(ctx, le, 0));
+}
+
+enum pdf_line_ending
+pdf_annot_line_end_style(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *le = pdf_dict_get(ctx, annot->obj, PDF_NAME_LE);
+	return pdf_line_ending_from_name(ctx, pdf_array_get(ctx, le, 1));
+}
+
 void
 pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot,
 		enum pdf_line_ending start_style,
@@ -455,6 +469,20 @@ pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot,
 	pdf_array_put_drop(ctx, style, 0, pdf_name_from_line_ending(ctx, start_style));
 	pdf_array_put_drop(ctx, style, 1, pdf_name_from_line_ending(ctx, end_style));
 	pdf_dirty_annot(ctx, annot);
+}
+
+void
+pdf_set_annot_line_start_style(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending s)
+{
+	enum pdf_line_ending e = pdf_annot_line_end_style(ctx, annot);
+	pdf_set_annot_line_ending_styles(ctx, annot, s, e);
+}
+
+void
+pdf_set_annot_line_end_style(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending e)
+{
+	enum pdf_line_ending s = pdf_annot_line_start_style(ctx, annot);
+	pdf_set_annot_line_ending_styles(ctx, annot, s, e);
 }
 
 float
