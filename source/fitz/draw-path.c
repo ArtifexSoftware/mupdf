@@ -1000,7 +1000,7 @@ fz_dash_moveto(fz_context *ctx, struct sctx *s, float x, float y)
 	s->offset = 0;
 	s->phase = s->dash_phase;
 
-	while (s->phase >= s->dash_list[s->offset])
+	while (s->phase > 0 && s->phase >= s->dash_list[s->offset])
 	{
 		s->toggle = !s->toggle;
 		s->phase -= s->dash_list[s->offset];
