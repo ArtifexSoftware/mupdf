@@ -93,9 +93,8 @@ struct ui
 	struct layout layout_stack[32];
 	fz_irect cavity_stack[32];
 
-	struct { fz_irect area; const char *title; } popup[32];
-	fz_irect popup_area;
-	int popup_count;
+	int overlay;
+	GLuint overlay_list;
 
 	void (*dialog)(void);
 };
@@ -183,10 +182,9 @@ int ui_list_item(struct list *list, const void *id, const char *label, int selec
 int ui_list_item_x(struct list *list, const void *id, int indent, const char *label, int selected);
 void ui_list_end(struct list *list);
 
-int ui_popup(const void *id, const char *title, int is_button, int count);
+int ui_popup(const void *id, const char *label, int is_button, int count);
 int ui_popup_item(const char *title);
 void ui_popup_end(void);
-void ui_draw_popup(void);
 
 void ui_init_open_file(const char *dir, int (*filter)(const char *fn));
 int ui_open_file(char filename[]);
