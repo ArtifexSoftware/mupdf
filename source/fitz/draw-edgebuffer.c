@@ -1587,6 +1587,7 @@ static void fz_convert_edgebuffer(fz_context *ctx, fz_rasterizer *ras, int eofil
 	a = pix->alpha;
 	pl = fz_maxi(ras->clip.x0, pix->x);
 	pr = fz_mini(ras->clip.x1, pix->x + pix->w);
+	pr -= pl;
 	out = pix->samples + pix->stride * fz_maxi(ras->clip.y0 - pix->y, 0) + fz_maxi(ras->clip.x0 - pix->x, 0) * n;
 	if (scanlines > pix->y + pix->h - ras->clip.y0)
 		scanlines = pix->y + pix->h - ras->clip.y0;
