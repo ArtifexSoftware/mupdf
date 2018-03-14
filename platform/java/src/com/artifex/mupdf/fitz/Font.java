@@ -6,6 +6,11 @@ public class Font
 		Context.init();
 	}
 
+	public static final int CN = 0;
+	public static final int TW = 1;
+	public static final int JP = 2;
+	public static final int KR = 3;
+
 	private long pointer;
 
 	protected native void finalize();

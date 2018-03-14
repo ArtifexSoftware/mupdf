@@ -7054,6 +7054,28 @@ FUN(PDFDocument_addFont)(JNIEnv *env, jobject self, jobject jfont)
 }
 
 JNIEXPORT jobject JNICALL
+FUN(PDFDocument_addCJKFont)(JNIEnv *env, jobject self, jobject jfont, jint ordering)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	fz_font *font = from_Font(env, jfont);
+	pdf_obj *ind = NULL;
+
+	if (!ctx || !pdf) return NULL;
+	if (!font) { jni_throw_arg(env, "font must not be null"); return NULL; }
+
+	fz_try(ctx)
+		ind = pdf_add_cjk_font(ctx, pdf, font, ordering);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_PDFObject_safe_own(ctx, env, self, ind);
+}
+
+JNIEXPORT jobject JNICALL
 FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont)
 {
 	fz_context *ctx = get_context(env);

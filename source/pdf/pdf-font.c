@@ -2099,7 +2099,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_font_resource(ctx, doc, PDF_CID_FONT_RESOURCE, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, PDF_CID_FONT_RESOURCE, 0, font->buffer, digest);
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
@@ -2174,7 +2174,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, 0, font->buffer, digest);
 		if (fref == NULL)
 		{
 			fobj = pdf_new_dict(ctx, doc, 10);
@@ -2246,4 +2246,89 @@ pdf_font_writing_supported(fz_font *font)
 		return 1;
 	}
 	return 0;
+}
+
+/* Add a non-embedded UTF16-encoded CID-font for the CJK scripts: CNS1, GB1, Japan1, or Korea1 */
+pdf_obj *
+pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script)
+{
+	pdf_obj *fref, *font, *subfont, *fontdesc;
+	pdf_obj *dfonts, *ros;
+	fz_rect bbox = { -200, -200, 1200, 1200 };
+	unsigned char digest[16];
+
+	const char *basefont, *encoding, *ordering;
+	int supplement;
+
+	switch (script)
+	{
+	case FZ_ADOBE_CNS_1:
+		basefont = "Song";
+		encoding = "UniCNS-UTF16-H";
+		ordering = "CNS1";
+		supplement = 7;
+		break;
+	case FZ_ADOBE_GB_1:
+		basefont = "Ming";
+		encoding = "UniGB-UTF16-H";
+		ordering = "GB1";
+		supplement = 5;
+		break;
+	default:
+		script = FZ_ADOBE_JAPAN_1;
+		/* fall through */
+	case FZ_ADOBE_JAPAN_1:
+		basefont = "Mincho";
+		encoding = "UniJIS-UTF16-H";
+		ordering = "Japan1";
+		supplement = 6;
+		break;
+	case FZ_ADOBE_KOREA_1:
+		basefont = "Batang";
+		encoding = "UniKS-UTF16-H";
+		ordering = "Korea1";
+		supplement = 2;
+		break;
+	}
+
+	fref = pdf_find_font_resource(ctx, doc, PDF_CJK_FONT_RESOURCE, script, fzfont->buffer, digest);
+	if (fref)
+		return fref;
+
+	font = pdf_new_dict(ctx, doc, 5);
+	pdf_dict_put(ctx, font, PDF_NAME_Type, PDF_NAME_Font);
+	pdf_dict_put(ctx, font, PDF_NAME_Subtype, PDF_NAME_Type0);
+	pdf_dict_put_name(ctx, font, PDF_NAME_BaseFont, basefont);
+	pdf_dict_put_name(ctx, font, PDF_NAME_Encoding, encoding);
+	pdf_dict_put_drop(ctx, font, PDF_NAME_DescendantFonts, dfonts = pdf_new_array(ctx, doc, 1));
+	subfont = pdf_new_dict(ctx, doc, 5);
+	{
+		pdf_dict_put(ctx, subfont, PDF_NAME_Type, PDF_NAME_Font);
+		pdf_dict_put(ctx, subfont, PDF_NAME_Subtype, PDF_NAME_CIDFontType0);
+		pdf_dict_put_name(ctx, subfont, PDF_NAME_BaseFont, basefont);
+		pdf_dict_put_drop(ctx, subfont, PDF_NAME_CIDSystemInfo, ros = pdf_new_dict(ctx, doc, 3));
+		pdf_dict_put_text_string(ctx, ros, PDF_NAME_Registry, "Adobe");
+		pdf_dict_put_text_string(ctx, ros, PDF_NAME_Ordering, ordering);
+		pdf_dict_put_int(ctx, ros, PDF_NAME_Supplement, supplement);
+		fontdesc = pdf_new_dict(ctx, doc, 8);
+		{
+			pdf_dict_put(ctx, fontdesc, PDF_NAME_Type, PDF_NAME_FontDescriptor);
+			pdf_dict_put_text_string(ctx, fontdesc, PDF_NAME_FontName, basefont);
+			pdf_dict_put_int(ctx, fontdesc, PDF_NAME_Flags, 0);
+			pdf_dict_put_rect(ctx, fontdesc, PDF_NAME_FontBBox, &bbox);
+			pdf_dict_put_int(ctx, fontdesc, PDF_NAME_ItalicAngle, 0);
+			pdf_dict_put_int(ctx, fontdesc, PDF_NAME_Ascent, 1000);
+			pdf_dict_put_int(ctx, fontdesc, PDF_NAME_Descent, -200);
+			pdf_dict_put_int(ctx, fontdesc, PDF_NAME_StemV, 80);
+		}
+		pdf_dict_put_drop(ctx, subfont, PDF_NAME_FontDescriptor, pdf_add_object_drop(ctx, doc, fontdesc));
+	}
+	pdf_array_push_drop(ctx, dfonts, pdf_add_object_drop(ctx, doc, subfont));
+
+	fref = pdf_add_object_drop(ctx, doc, font);
+
+	/* Add ref to our font resource hash table. */
+	fref = pdf_insert_font_resource(ctx, doc, digest, fref);
+
+	return fref;
 }

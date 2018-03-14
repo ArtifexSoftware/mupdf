@@ -22,6 +22,7 @@ static void usage(void)
 		"\t%%%%MediaBox LLX LLY URX URY\n"
 		"\t%%%%Rotate Angle\n"
 		"\t%%%%Font Name Filename (or base 14 font name)\n"
+		"\t%%%%CJKFont Name Ordering (CNS1, GB1, Japan1, or Korea1)\n"
 		"\t%%%%Image Name Filename\n\n"
 		);
 	fputs(fz_pdf_write_options_usage, stderr);
@@ -58,6 +59,36 @@ static void add_font_res(pdf_obj *resources, char *name, char *path)
 	fz_drop_font(ctx, font);
 }
 
+static void add_cjkfont_res(pdf_obj *resources, char *name, char *on)
+{
+	const unsigned char *data;
+	int size, index, ordering;
+	fz_font *font;
+	pdf_obj *subres, *ref;
+
+	if (!strcmp(on, "CNS1") || !strcmp(on, "CN")) ordering = FZ_ADOBE_CNS_1;
+	else if (!strcmp(on, "GB1") || !strcmp(on, "TW")) ordering = FZ_ADOBE_GB_1;
+	else if (!strcmp(on, "Japan1") || !strcmp(on, "JP") || !strcmp(on, "JA")) ordering = FZ_ADOBE_JAPAN_1;
+	else if (!strcmp(on, "Korea1") || !strcmp(on, "KR") || !strcmp(on, "KO")) ordering = FZ_ADOBE_KOREA_1;
+	else ordering = FZ_ADOBE_JAPAN_1;
+
+	data = fz_lookup_cjk_font(ctx, ordering, 0, 0, &size, &index);
+	font = fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
+
+	subres = pdf_dict_get(ctx, resources, PDF_NAME_Font);
+	if (!subres)
+	{
+		subres = pdf_new_dict(ctx, doc, 10);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME_Font, subres);
+	}
+
+	ref = pdf_add_cjk_font(ctx, doc, font, ordering);
+	pdf_dict_puts(ctx, subres, name, ref);
+	pdf_drop_obj(ctx, ref);
+
+	fz_drop_font(ctx, font);
+}
+
 static void add_image_res(pdf_obj *resources, char *name, char *path)
 {
 	fz_image *image;
@@ -85,6 +116,7 @@ The input is a raw content stream, with commands embedded in comments:
 %%MediaBox LLX LLY URX URY
 %%Rotate Angle
 %%Font Name Filename (or base 14 font name)
+%%CJKFont Name Ordering (CNS1, GB1, Japan1, or Korea1)
 %%Image Name Filename
 */
 static void create_page(char *input)
@@ -125,6 +157,11 @@ static void create_page(char *input)
 			{
 				s = fz_strsep(&p, " ");
 				add_font_res(resources, s, p);
+			}
+			else if (!strcmp(s, "%%CJKFont"))
+			{
+				s = fz_strsep(&p, " ");
+				add_cjkfont_res(resources, s, p);
 			}
 			else if (!strcmp(s, "%%Image"))
 			{
