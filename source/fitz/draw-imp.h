@@ -19,6 +19,7 @@ static inline int fz_idiv_up(int a, int b)
 #ifdef AA_BITS
 
 #define fz_aa_scale 0
+#define fz_rasterizer_aa_scale(ras) 0
 
 #if AA_BITS > 6
 #define AA_SCALE(s, x) (x)
@@ -87,6 +88,7 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_text_bits (ctx->aa->text_bits)
 #define fz_rasterizer_aa_hscale(ras) ((ras)->aa.hscale)
 #define fz_rasterizer_aa_vscale(ras) ((ras)->aa.vscale)
+#define fz_rasterizer_aa_scale(ras) ((ras)->aa.scale)
 #define fz_rasterizer_aa_bits(ras) ((ras)->aa.bits)
 #define fz_rasterizer_aa_text_bits(ras) ((ras)->aa.text_bits)
 

@@ -515,10 +515,9 @@ even_odd_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 }
 
 static inline void
-undelta_aa(fz_context *ctx, unsigned char * restrict out, int * restrict in, int n)
+undelta_aa(fz_context *ctx, unsigned char * restrict out, int * restrict in, int n, int scale)
 {
 	int d = 0;
-	const int scale = fz_aa_scale;
 	(void)scale; /* Avoid warnings in some builds */
 
 	while (n--)
@@ -549,6 +548,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	int height, h0, rh;
 	const int hscale = fz_rasterizer_aa_hscale(&gel->super);
 	const int vscale = fz_rasterizer_aa_vscale(&gel->super);
+	const int scale = fz_rasterizer_aa_scale(&gel->super);
 
 	int xmin = fz_idiv(gel->super.bbox.x0, hscale);
 	int xmax = fz_idiv_up(gel->super.bbox.x1, hscale);
@@ -639,7 +639,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 		rh = (yc+1)*vscale - y;
 		if (yc != yd)
 		{
-			undelta_aa(ctx, alphas, deltas, skipx + clipn);
+			undelta_aa(ctx, alphas, deltas, skipx + clipn, scale);
 			blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 			memset(deltas, 0, (skipx + clipn) * sizeof(int));
 		}
@@ -662,7 +662,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 					even_odd_aa(ctx, gel, deltas, xofs, rh);
 				else
 					non_zero_winding_aa(ctx, gel, deltas, xofs, rh);
-				undelta_aa(ctx, alphas, deltas, skipx + clipn);
+				undelta_aa(ctx, alphas, deltas, skipx + clipn, scale);
 				blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 				memset(deltas, 0, (skipx + clipn) * sizeof(int));
 				yd++;
@@ -679,7 +679,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 					even_odd_aa(ctx, gel, deltas, xofs, vscale);
 				else
 					non_zero_winding_aa(ctx, gel, deltas, xofs, vscale);
-				undelta_aa(ctx, alphas, deltas, skipx + clipn);
+				undelta_aa(ctx, alphas, deltas, skipx + clipn, scale);
 				do
 				{
 					/* Do any successive whole scanlines - no need
@@ -712,7 +712,7 @@ advance:
 
 	if (yd < clip->y1)
 	{
-		undelta_aa(ctx, alphas, deltas, skipx + clipn);
+		undelta_aa(ctx, alphas, deltas, skipx + clipn, scale);
 		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 	}
 clip_ended:
