@@ -138,13 +138,13 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 }
 
 const unsigned char *
-fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *size, int *index)
+fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int wmode, int *size, int *index)
 {
 	if (index) *index = 0;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
 #ifndef TOFU_CJK_LANG
-	switch (registry) {
+	switch (ordering) {
 	case FZ_ADOBE_JAPAN_1: RETURN(han_SourceHanSansJP_Regular_otf);
 	case FZ_ADOBE_KOREA_1: RETURN(han_SourceHanSansKR_Regular_otf);
 	default:

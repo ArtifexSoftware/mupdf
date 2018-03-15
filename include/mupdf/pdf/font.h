@@ -25,13 +25,13 @@ int pdf_lookup_agl(const char *name);
 const char **pdf_lookup_agl_duplicates(int ucs);
 
 extern const unsigned short pdf_doc_encoding[256];
-extern const char * const pdf_mac_roman[256];
-extern const char * const pdf_mac_expert[256];
-extern const char * const pdf_win_ansi[256];
-extern const char * const pdf_standard[256];
+extern const char *pdf_mac_roman[256];
+extern const char *pdf_mac_expert[256];
+extern const char *pdf_win_ansi[256];
+extern const char *pdf_standard[256];
 
-extern const char * const pdf_glyph_name_from_koi8u[128];
-extern const char * const pdf_glyph_name_from_iso8859_7[128];
+extern const char *pdf_glyph_name_from_koi8u[256];
+extern const char *pdf_glyph_name_from_iso8859_7[256];
 
 int pdf_cyrillic_from_unicode(int u);
 int pdf_greek_from_unicode(int u);

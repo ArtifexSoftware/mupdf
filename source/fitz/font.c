@@ -647,11 +647,11 @@ fz_new_base14_font(fz_context *ctx, const char *name)
 }
 
 fz_font *
-fz_new_cjk_font(fz_context *ctx, int registry, int serif, int wmode)
+fz_new_cjk_font(fz_context *ctx, int ordering, int serif, int wmode)
 {
 	const unsigned char *data;
 	int size, index;
-	data = fz_lookup_cjk_font(ctx, registry, serif, wmode, &size, &index);
+	data = fz_lookup_cjk_font(ctx, ordering, serif, wmode, &size, &index);
 	if (!data)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
 	return fz_new_font_from_memory(ctx, NULL, data, size, index, 0);

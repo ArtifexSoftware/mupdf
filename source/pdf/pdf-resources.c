@@ -100,7 +100,7 @@ pdf_insert_image_resource(fz_context *ctx, pdf_document *doc, unsigned char dige
 		fz_warn(ctx, "warning: image resource already present");
 	else
 		res = pdf_keep_obj(ctx, obj);
-	return res;
+	return pdf_keep_obj(ctx, res);
 }
 
 /* We do need to come up with an effective way to see what is already in the
@@ -142,7 +142,7 @@ pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, unsigned char diges
 		fz_warn(ctx, "warning: font resource already present");
 	else
 		res = pdf_keep_obj(ctx, obj);
-	return res;
+	return pdf_keep_obj(ctx, res);
 }
 
 void

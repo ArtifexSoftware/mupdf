@@ -323,9 +323,9 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	if (imref)
 		return imref;
 
+	imobj = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 3));
 	fz_try(ctx)
 	{
-		imobj = pdf_new_dict(ctx, doc, 3);
 		pdf_dict_put_drop(ctx, imobj, PDF_NAME_DecodeParms, dp = pdf_new_dict(ctx, doc, 3));
 		pdf_dict_put(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
 		pdf_dict_put(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
@@ -527,11 +527,10 @@ raw_or_unknown_compression:
 			pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMask, pdf_add_image(ctx, doc, image->mask, 0));
 		}
 
-		imref = pdf_add_object(ctx, doc, imobj);
-		pdf_update_stream(ctx, doc, imref, buffer, 1);
+		pdf_update_stream(ctx, doc, imobj, buffer, 1);
 
 		/* Add ref to our image resource hash table. */
-		imref = pdf_insert_image_resource(ctx, doc, digest, imref);
+		imref = pdf_insert_image_resource(ctx, doc, digest, imobj);
 	}
 	fz_always(ctx)
 	{
@@ -540,9 +539,6 @@ raw_or_unknown_compression:
 		pdf_drop_obj(ctx, imobj);
 	}
 	fz_catch(ctx)
-	{
-		pdf_drop_obj(ctx, imref);
 		fz_rethrow(ctx);
-	}
 	return imref;
 }
