@@ -168,12 +168,22 @@ void pdf_parse_da(fz_context *ctx, char *da, pdf_da_info *di)
 static void get_font_info(fz_context *ctx, pdf_document *doc, pdf_obj *dr, char *da, font_info *font_rec)
 {
 	pdf_font_desc *font;
+	pdf_obj *fontobj;
 
 	pdf_parse_da(ctx, da, &font_rec->da_rec);
 	if (font_rec->da_rec.font_name == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "No font name in default appearance");
 
-	font_rec->font = font = pdf_load_font(ctx, doc, dr, pdf_dict_gets(ctx, pdf_dict_get(ctx, dr, PDF_NAME_Font), font_rec->da_rec.font_name), 0);
+	fontobj = pdf_dict_gets(ctx, pdf_dict_get(ctx, dr, PDF_NAME_Font), font_rec->da_rec.font_name);
+	if (!fontobj)
+	{
+		fz_font *helv = fz_new_base14_font(ctx, "Helvetica");
+		fz_warn(ctx, "form resource dictionary is missing the default appearance font");
+		fontobj = pdf_add_simple_font(ctx, doc, helv, PDF_SIMPLE_ENCODING_LATIN);
+		pdf_dict_puts_drop(ctx, pdf_dict_get(ctx, dr, PDF_NAME_Font), font_rec->da_rec.font_name, fontobj);
+		fz_drop_font(ctx, helv);
+	}
+	font_rec->font = font = pdf_load_font(ctx, doc, dr, fontobj, 0);
 	font_rec->lineheight = 1.0f;
 	if (font && font->ascent != 0.0f && font->descent != 0.0f)
 		font_rec->lineheight = (font->ascent - font->descent) / 1000.0f;
