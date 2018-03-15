@@ -6,6 +6,10 @@ public class Font
 		Context.init();
 	}
 
+	public static final int LATIN = 0;
+	public static final int GREEK = 1;
+	public static final int CYRILLIC = 2;
+
 	public static final int CN = 0;
 	public static final int TW = 1;
 	public static final int JP = 2;

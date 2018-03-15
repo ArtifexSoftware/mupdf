@@ -255,7 +255,7 @@ int pdfportfolio_main(int argc, char **argv)
 
 			data = fz_lookup_base14_font(ctx, "Times-Roman", &size);
 			font = fz_new_font_from_memory(ctx, "Times-Roman", data, size, 0, 0);
-			font_obj = pdf_add_simple_font(ctx, doc, font);
+			font_obj = pdf_add_simple_font(ctx, doc, font, PDF_SIMPLE_ENCODING_LATIN);
 			fz_drop_font(ctx, font);
 
 			resources = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 1));

@@ -889,6 +889,12 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_Font_LATIN
+#define com_artifex_mupdf_fitz_Font_LATIN 0L
+#undef com_artifex_mupdf_fitz_Font_GREEK
+#define com_artifex_mupdf_fitz_Font_GREEK 1L
+#undef com_artifex_mupdf_fitz_Font_CYRILLIC
+#define com_artifex_mupdf_fitz_Font_CYRILLIC 2L
 #undef com_artifex_mupdf_fitz_Font_CN
 #define com_artifex_mupdf_fitz_Font_CN 0L
 #undef com_artifex_mupdf_fitz_Font_TW
@@ -1905,10 +1911,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addImage
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    addSimpleFont
- * Signature: (Lcom/artifex/mupdf/fitz/Font;)Lcom/artifex/mupdf/fitz/PDFObject;
+ * Signature: (Lcom/artifex/mupdf/fitz/Font;I)Lcom/artifex/mupdf/fitz/PDFObject;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addSimpleFont
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument

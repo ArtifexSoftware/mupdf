@@ -7076,7 +7076,7 @@ FUN(PDFDocument_addCJKFont)(JNIEnv *env, jobject self, jobject jfont, jint order
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont)
+FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont, jint encoding)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
@@ -7087,7 +7087,7 @@ FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont)
 	if (!font) { jni_throw_arg(env, "font must not be null"); return NULL; }
 
 	fz_try(ctx)
-		ind = pdf_add_simple_font(ctx, pdf, font);
+		ind = pdf_add_simple_font(ctx, pdf, font, encoding);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);

@@ -32,10 +32,10 @@ static void usage(void)
 static fz_context *ctx = NULL;
 static pdf_document *doc = NULL;
 
-static void add_font_res(pdf_obj *resources, char *name, char *path)
+static void add_font_res(pdf_obj *resources, char *name, char *path, char *encname)
 {
 	const unsigned char *data;
-	int size;
+	int size, enc;
 	fz_font *font;
 	pdf_obj *subres, *ref;
 
@@ -52,7 +52,15 @@ static void add_font_res(pdf_obj *resources, char *name, char *path)
 		pdf_dict_put_drop(ctx, resources, PDF_NAME_Font, subres);
 	}
 
-	ref = pdf_add_simple_font(ctx, doc, font);
+	enc = PDF_SIMPLE_ENCODING_LATIN;
+	if (encname)
+	{
+		if (!strcmp(encname, "Latin")) enc = PDF_SIMPLE_ENCODING_LATIN;
+		else if (!strcmp(encname, "Greek")) enc = PDF_SIMPLE_ENCODING_GREEK;
+		else if (!strcmp(encname, "Cyrillic")) enc = PDF_SIMPLE_ENCODING_CYRILLIC;
+	}
+
+	ref = pdf_add_simple_font(ctx, doc, font, enc);
 	pdf_dict_puts(ctx, subres, name, ref);
 	pdf_drop_obj(ctx, ref);
 
@@ -125,7 +133,7 @@ static void create_page(char *input)
 	int rotate = 0;
 
 	char line[4096];
-	char *s, *p;
+	char *s, *t, *p;
 	fz_stream *stm;
 
 	fz_buffer *contents;
@@ -156,7 +164,8 @@ static void create_page(char *input)
 			else if (!strcmp(s, "%%Font"))
 			{
 				s = fz_strsep(&p, " ");
-				add_font_res(resources, s, p);
+				t = fz_strsep(&p, " ");
+				add_font_res(resources, s, t, p);
 			}
 			else if (!strcmp(s, "%%CJKFont"))
 			{

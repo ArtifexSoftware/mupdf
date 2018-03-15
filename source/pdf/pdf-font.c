@@ -2147,9 +2147,51 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 	return fref;
 }
 
-/* Creates simple font */
+/* Create simple (8-bit encoding) fonts */
+
+static void
+pdf_add_simple_font_encoding_imp(fz_context *ctx, pdf_document *doc, pdf_obj *font, const char * const glyph_names[])
+{
+	pdf_obj *enc, *diff;
+	int i, last;
+
+	pdf_dict_put_drop(ctx, font, PDF_NAME_Encoding, enc = pdf_new_dict(ctx, doc, 3));
+	pdf_dict_put(ctx, enc, PDF_NAME_BaseEncoding, PDF_NAME_WinAnsiEncoding);
+	pdf_dict_put_drop(ctx, enc, PDF_NAME_Differences, diff = pdf_new_array(ctx, doc, 129));
+	last = 0;
+	for (i = 128; i < 256; ++i)
+	{
+		const char *glyph = glyph_names[i-128];
+		if (glyph)
+		{
+			if (last != i-1)
+				pdf_array_push_int(ctx, diff, i);
+			last = i;
+			pdf_array_push_name(ctx, diff, glyph);
+		}
+	}
+}
+
+static void
+pdf_add_simple_font_encoding(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, int encoding)
+{
+	switch (encoding)
+	{
+	default:
+	case PDF_SIMPLE_ENCODING_LATIN:
+		pdf_dict_put(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
+		break;
+	case PDF_SIMPLE_ENCODING_GREEK:
+		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, pdf_glyph_name_from_iso8859_7);
+		break;
+	case PDF_SIMPLE_ENCODING_CYRILLIC:
+		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, pdf_glyph_name_from_koi8u);
+		break;
+	}
+}
+
 pdf_obj *
-pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
+pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encoding)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
@@ -2174,7 +2216,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, 0, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, encoding, font->buffer, digest);
 		if (fref == NULL)
 		{
 			fobj = pdf_new_dict(ctx, doc, 10);
@@ -2184,7 +2226,6 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			case TYPE1: pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_Type1); break;
 			case TRUETYPE: pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_TrueType); break;
 			}
-			pdf_dict_put(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
 
 			if (!is_builtin_font(ctx, font))
 			{
@@ -2212,6 +2253,8 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			{
 				pdf_dict_put_name(ctx, fobj, PDF_NAME_BaseFont, clean_font_name(font->name));
 			}
+
+			pdf_add_simple_font_encoding(ctx, doc, fobj, encoding);
 
 			fref = pdf_add_object(ctx, doc, fobj);
 
