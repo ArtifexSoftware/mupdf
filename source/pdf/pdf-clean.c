@@ -236,11 +236,15 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 			l = pdf_dict_len(ctx, obj);
 			for (i = 0; i < l; i++)
 			{
+				pdf_obj *pat_res;
 				pdf_obj *pat = pdf_dict_get_val(ctx, obj, i);
 				if (!pat)
 					continue;
+				pat_res = pdf_dict_get(ctx, pat, PDF_NAME_Resources);
+				if (pat_res == NULL)
+					pat_res = resources;
 				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME_PatternType)) == 1)
-					pdf_clean_stream_object(ctx, doc, pat, resources, cookie, 0, text_filter, after_text, proc_arg, sanitize, ascii);
+					pdf_clean_stream_object(ctx, doc, pat, pat_res, cookie, 0, text_filter, after_text, proc_arg, sanitize, ascii);
 			}
 		}
 
@@ -252,11 +256,15 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 			l = pdf_dict_len(ctx, obj);
 			for (i = 0; i < l; i++)
 			{
+				pdf_obj *xobj_res;
 				pdf_obj *xobj = pdf_dict_get_val(ctx, obj, i);
 				if (!xobj)
 					continue;
+				xobj_res = pdf_dict_get(ctx, xobj, PDF_NAME_Resources);
+				if (xobj_res == NULL)
+					xobj_res = resources;
 				if (pdf_name_eq(ctx, PDF_NAME_Form, pdf_dict_get(ctx, xobj, PDF_NAME_Subtype)))
-					pdf_clean_stream_object(ctx, doc, xobj, resources, cookie, 1, text_filter, after_text, proc_arg, sanitize, ascii);
+					pdf_clean_stream_object(ctx, doc, xobj, xobj_res, cookie, 1, text_filter, after_text, proc_arg, sanitize, ascii);
 			}
 		}
 
