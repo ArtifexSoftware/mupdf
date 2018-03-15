@@ -249,11 +249,10 @@ int64_t pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot);
 */
 void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t time);
 
-/*
-	pdf_set_free_text_details: set the position, text, font and color for a free text annotation.
-	Only base 14 fonts are supported and are specified by name.
-*/
-void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3]);
+void pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, float color[3]);
+void pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, const float color[3]);
+void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3]);
+void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, const float color[3]);
 
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.
@@ -262,5 +261,7 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj);
 
 void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
+
+void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const char *name, const char *text, const char *date);
 
 #endif

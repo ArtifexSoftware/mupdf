@@ -976,45 +976,36 @@ void pdf_field_set_fill_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 
 void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col)
 {
-	pdf_da_info di;
-	fz_buffer *fzbuf = NULL;
-	char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME(DA)));
-	unsigned char *buf;
-	int ilen;
-	size_t len;
-	pdf_obj *daobj;
+	char buf[100];
+	const char *font;
+	float size, color[3], black;
+	const char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME(DA)));
 
-	memset(&di, 0, sizeof(di));
+	pdf_parse_default_appearance(ctx, da, &font, &size, color);
 
-	fz_var(fzbuf);
-	fz_var(di);
-	fz_try(ctx)
+	switch (pdf_array_len(ctx, col))
 	{
-		int i;
-
-		pdf_parse_da(ctx, da, &di);
-		di.col_size = pdf_array_len(ctx, col);
-
-		ilen = fz_mini(di.col_size, (int)nelem(di.col));
-		for (i = 0; i < ilen; i++)
-			di.col[i] = pdf_array_get_real(ctx, col, i);
-
-		fzbuf = fz_new_buffer(ctx, 0);
-		pdf_fzbuf_print_da(ctx, fzbuf, &di);
-		len = fz_buffer_storage(ctx, fzbuf, &buf);
-		daobj = pdf_new_string(ctx, (char *)buf, len);
-		pdf_dict_put_drop(ctx, field, PDF_NAME(DA), daobj);
-		pdf_field_mark_dirty(ctx, doc, field);
+	default:
+		color[0] = color[1] = color[2] = 0;
+	case 1:
+		color[0] = color[1] = color[2] = pdf_array_get_real(ctx, col, 0);
+		break;
+	case 3:
+		color[0] = pdf_array_get_real(ctx, col, 0);
+		color[1] = pdf_array_get_real(ctx, col, 1);
+		color[2] = pdf_array_get_real(ctx, col, 2);
+		break;
+	case 4:
+		black = pdf_array_get_real(ctx, col, 3);
+		color[0] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 0) + black);
+		color[1] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 1) + black);
+		color[2] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 2) + black);
+		break;
 	}
-	fz_always(ctx)
-	{
-		pdf_da_info_fin(ctx, &di);
-		fz_drop_buffer(ctx, fzbuf);
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "%s", fz_caught_message(ctx));
-	}
+
+	pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, color);
+	pdf_dict_put_string(ctx, field, PDF_NAME(DA), buf, strlen(buf));
+	pdf_field_mark_dirty(ctx, doc, field);
 }
 
 fz_rect *pdf_bound_widget(fz_context *ctx, pdf_widget *widget, fz_rect *rect)

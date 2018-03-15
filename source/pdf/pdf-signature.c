@@ -72,6 +72,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		pdf_signature_set_value(ctx, doc, wobj, signer);
 
 		pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME(Rect)), &rect);
+
 		/* Create an appearance stream only if the signature is intended to be visible */
 		if (!fz_is_empty_rect(&rect))
 		{
@@ -95,7 +96,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 				fz_append_printf(ctx, fzbuf, ", c=%s", dn->c);
 
 			dn_str = fz_string_from_buffer(ctx, fzbuf);
-			pdf_set_signature_appearance(ctx, doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
+			pdf_update_signature_appearance(ctx, (pdf_annot *)widget, dn->cn, dn_str, NULL);
 		}
 	}
 	fz_always(ctx)

@@ -2122,6 +2122,18 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *obj)
 
 /* Convenience functions */
 
+pdf_obj *pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	pdf_obj *val = NULL;
+	while (!val && dict)
+	{
+		val = pdf_dict_get(ctx, dict, key);
+		if (!val)
+			dict = pdf_dict_get(ctx, dict, PDF_NAME(Parent));
+	}
+	return val;
+}
+
 void pdf_dict_put_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int x)
 {
 	pdf_dict_put(ctx, dict, key, x ? PDF_TRUE : PDF_FALSE);
