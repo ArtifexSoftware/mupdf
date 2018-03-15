@@ -77,9 +77,32 @@ and image resources:
 <pre>
 %%MediaBox 0 0 500 800
 %%Rotate 90
-%%Font Tm Times-Roman
-%%Font Fn0 path/to/font/file.ttf
 %%Image Im0 path/to/image.png
+</pre>
+
+<p>
+Font resources can be created by either giving the name of a standard PDF font, or by giving
+the path to a font file. If a third argument is present and either "Greek" or "Cyrillic" the
+font will be encoded using ISO 8859-7 or KOI8-U, respectively.
+
+<pre>
+%%Font Tm Times-Roman
+%%Font TmG Times-Roman Greek
+%%Font TmC Times-Roman Cyrillic
+%%Font Fn0 path/to/font/file.ttf
+%%Font Fn1 path/to/font/file.ttf Cyrillic
+</pre>
+
+<p>
+CJK fonts can also be created by passing a code for one of the 4 CID orderings:
+CN, TW, JP, or KR (Simplified Chinese, Traditional Chinese, Japanese, and Korean).
+A font file will not be embedded, so a PDF viewer will use a substitute font.
+
+<pre>
+%%CJKFont Batang KR
+%%CJKFont Mincho JP
+%%CJKFont Ming TW
+%%CJKFont Song CN
 </pre>
 
 <p>
@@ -87,7 +110,12 @@ An example input file:
 
 <pre>
 %%MediaBox 0 0 595 842
-%%Font F0 Times-Roman
+%%Font TmRm Times-Roman
+%%Font Helv-C Helvetica Cyrillic
+%%Font Helv-G Helvetica Greek
+%%CJKFont Song CN
+%%CJKFont Mincho JP
+%%CJKFont Batang KR
 %%Image I0 logo/mupdf-simplified-logo.png
 
 % Draw an image.
@@ -108,11 +136,12 @@ Q
 % Show some text.
 q
 0 0 1 rg
-BT
-/F0 24 Tf
-50 760 Td
-(Hello, world!) Tj
-ET
+BT /TmRm 24 Tf 50 760 Td (Hello, world!) Tj ET
+BT /Helv-C 24 Tf 50 730 Td <fac4d2c1d7d3d4d7d5cad4c521> Tj ET
+BT /Helv-G 24 Tf 50 700 Td <eae1ebe7ecddf1e1> Tj ET
+BT /Song 24 Tf 50 670 Td <4F60 597D> Tj ET
+BT /Mincho 24 Tf 50 640 Td <3053 3093 306b 3061 306f> Tj ET
+BT /Batang 24 Tf 50 610 Td <c548 b155 d558 c138 c694> Tj ET
 Q
 </pre>
 
