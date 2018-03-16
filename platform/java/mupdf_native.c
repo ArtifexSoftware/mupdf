@@ -8606,7 +8606,7 @@ FUN(PDFPage_createAnnotation)(JNIEnv *env, jobject self, jint subtype)
 		return NULL;
 	}
 
-	return to_Annotation_safe(ctx, env, self, (fz_annot*)annot);
+	return to_Annotation_safe(ctx, env, (fz_annot*)annot);
 }
 
 JNIEXPORT void JNICALL
