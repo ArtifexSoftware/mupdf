@@ -1175,6 +1175,7 @@ void pdf_update_text_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_obj(ctx, form);
 		fz_free(ctx, text);
 		fz_drop_buffer(ctx, fzbuf);
 		font_info_fin(ctx, &info.font_rec);
