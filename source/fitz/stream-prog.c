@@ -137,7 +137,7 @@ fz_stream *
 fz_open_file_progressive(fz_context *ctx, const char *name, int bps)
 {
 	FILE *f;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	f = fz_fopen_utf8(name, "rb");
 #else
 	f = fopen(name, "rb");

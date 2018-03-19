@@ -123,6 +123,10 @@ static __inline int signbit(double x)
 #define hypotf _hypotf
 #define atoll _atoi64
 
+#endif
+
+#ifdef _WIN32
+
 char *fz_utf8_from_wchar(const wchar_t *s);
 wchar_t *fz_wchar_from_utf8(const char *s);
 

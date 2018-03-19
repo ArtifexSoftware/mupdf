@@ -510,7 +510,7 @@ static void declare_dom(pdf_js *js)
 	/* Create the 'app' object */
 	js_newobject(J);
 	{
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 		js_pushstring(J, "WIN");
 #elif defined(__APPLE__)
 		js_pushstring(J, "MAC");

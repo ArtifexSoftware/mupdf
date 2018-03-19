@@ -21,7 +21,7 @@
 #define BLOCK_SHIFT 20
 #define BLOCK_SIZE (1<<BLOCK_SHIFT)
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include "pthread.h"
@@ -53,7 +53,7 @@ struct curl_stream_state_s
 
 	unsigned char public_buffer[4096];
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	void *thread;
 	DWORD thread_id;
 	HANDLE mutex;
@@ -65,7 +65,7 @@ struct curl_stream_state_s
 
 static void fetcher_thread(curl_stream_state *state);
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 static void
 lock(curl_stream_state *state)
 {
@@ -435,7 +435,7 @@ stream_close(fz_context *ctx, void *state_)
 	state->kill_thread = 1;
 	unlock(state);
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	WaitForSingleObject(state->thread, INFINITE);
 	CloseHandle(state->thread);
 	CloseHandle(state->mutex);
@@ -528,7 +528,7 @@ fz_stream *fz_stream_from_curl(fz_context *ctx, char *filename, void (*more_data
 
 	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, header_arrived);
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	state->mutex = CreateMutex(NULL, FALSE, NULL);
 	if (state->mutex == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "mutex creation failed");

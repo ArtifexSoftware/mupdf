@@ -14,7 +14,7 @@ int
 fz_file_exists(fz_context *ctx, const char *path)
 {
 	FILE *file;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	file = fz_fopen_utf8(path, "rb");
 #else
 	file = fopen(path, "rb");
@@ -106,14 +106,14 @@ static int next_file(fz_context *ctx, fz_stream *stm, size_t n)
 static void seek_file(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
 	fz_file_stream *state = stm->state;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	int64_t n = _fseeki64(state->file, offset, whence);
 #else
 	int64_t n = fseeko(state->file, offset, whence);
 #endif
 	if (n < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	stm->pos = _ftelli64(state->file);
 #else
 	stm->pos = ftello(state->file);
@@ -156,7 +156,7 @@ fz_stream *
 fz_open_file(fz_context *ctx, const char *name)
 {
 	FILE *file;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	file = fz_fopen_utf8(name, "rb");
 #else
 	file = fopen(name, "rb");
@@ -166,7 +166,7 @@ fz_open_file(fz_context *ctx, const char *name)
 	return fz_open_file_ptr(ctx, file);
 }
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 fz_stream *
 fz_open_file_w(fz_context *ctx, const wchar_t *name)
 {

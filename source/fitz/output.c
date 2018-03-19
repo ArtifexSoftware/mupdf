@@ -137,7 +137,7 @@ static void
 file_seek(fz_context *ctx, void *opaque, int64_t off, int whence)
 {
 	FILE *file = opaque;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	int n = _fseeki64(file, off, whence);
 #else
 	int n = fseeko(file, off, whence);
@@ -150,7 +150,7 @@ static int64_t
 file_tell(fz_context *ctx, void *opaque)
 {
 	FILE *file = opaque;
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	int64_t off = _ftelli64(file);
 #else
 	int64_t off = ftello(file);
@@ -221,7 +221,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
 		return fz_new_output(ctx, 0, NULL, null_write, NULL, NULL);
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
 	{

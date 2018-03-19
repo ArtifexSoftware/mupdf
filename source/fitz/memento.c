@@ -143,7 +143,7 @@ android_fprintf(FILE *file, const char *fmt, ...)
 #define MEMENTO_STACKTRACE_METHOD 3
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #include <windows.h>
 
 static int
