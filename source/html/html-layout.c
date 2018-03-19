@@ -795,9 +795,9 @@ static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, floa
 	float image_h = node->content.image->h * 72 / 96;
 	node->x = 0;
 	node->y = 0;
-	if (image_w > max_w)
+	if (max_w > 0 && image_w > max_w)
 		xs = max_w / image_w;
-	if (image_h > max_h)
+	if (max_h > 0 && image_h > max_h)
 		ys = max_h / image_h;
 	s = fz_min(xs, ys);
 	node->w = image_w * s;
@@ -1208,10 +1208,13 @@ static void find_accumulated_margins(fz_context *ctx, fz_html_box *box, float *w
 static void flush_line(fz_context *ctx, fz_html_box *box, float page_h, float page_w, float line_w, int align, float indent, fz_html_flow *a, fz_html_flow *b)
 {
 	float avail, line_h, baseline;
-	avail = page_h - fmodf(box->y + box->h, page_h);
 	line_h = measure_line(a, b, &baseline);
-	if (line_h > avail)
-		box->h += avail;
+	if (page_h > 0)
+	{
+		avail = page_h - fmodf(box->y + box->h, page_h);
+		if (line_h > avail)
+			box->h += avail;
+	}
 	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline, line_h);
 	box->h += line_h;
 }
@@ -1350,6 +1353,8 @@ static void layout_flow(fz_context *ctx, fz_html_box *box, fz_html_box *top, flo
 
 static int layout_block_page_break(fz_context *ctx, fz_html_box *box, float page_h, float vertical, int page_break)
 {
+	if (page_h <= 0)
+		return 0;
 	if (page_break == PB_ALWAYS || page_break == PB_LEFT || page_break == PB_RIGHT)
 	{
 		float avail = page_h - fmodf(box->y + box->h - vertical, page_h);
@@ -2470,7 +2475,19 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	html->page_margin[R] = fz_from_css_number(html->root->style.margin[R], em, em, 0);
 
 	html->page_w = w - html->page_margin[L] - html->page_margin[R];
-	html->page_h = h - html->page_margin[T] - html->page_margin[B];
+	if (html->page_w <= 72)
+		html->page_w = 72; /* enforce a minimum page size! */
+	if (h > 0)
+	{
+		html->page_h = h - html->page_margin[T] - html->page_margin[B];
+		if (html->page_h <= 72)
+			html->page_h = 72; /* enforce a minimum page size! */
+	}
+	else
+	{
+		/* h 0 means no pagination */
+		html->page_h = 0;
+	}
 
 	fz_hb_lock(ctx);
 
@@ -2501,6 +2518,9 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	{
 		fz_rethrow(ctx);
 	}
+
+	if (h == 0)
+		html->page_h = box->h;
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
