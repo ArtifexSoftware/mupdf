@@ -109,7 +109,7 @@ struct fz_css_match_s
 	fz_css_match_prop prop[64];
 };
 
-enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK };
+enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_ROW, DIS_TABLE_CELL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM };
@@ -180,10 +180,13 @@ struct fz_css_style_s
 
 enum
 {
-	BOX_BLOCK,	/* block-level: contains block, break, and flow boxes */
+	BOX_BLOCK,	/* block-level: contains block, break, flow, and table boxes */
 	BOX_BREAK,	/* block-level: empty <br> tag boxes */
 	BOX_FLOW,	/* block-level: contains only inline boxes */
 	BOX_INLINE,	/* inline-level: contains only inline boxes */
+	BOX_TABLE,	/* table: contains table-row */
+	BOX_TABLE_ROW,	/* table-row: contains table-cell */
+	BOX_TABLE_CELL,	/* table-cell: contains block */
 };
 
 struct fz_html_s
@@ -196,10 +199,10 @@ struct fz_html_s
 
 struct fz_html_box_s
 {
-	unsigned int type : 2;
+	unsigned int type : 3;
 	unsigned int is_first_flow : 1; /* for text-indent */
 	unsigned int markup_dir : 2;
-	unsigned int list_item : 27;
+	unsigned int list_item : 26;
 	float x, y, w, b; /* content */
 	float padding[4];
 	float margin[4];

@@ -550,6 +550,43 @@ static fz_html_box *insert_block_box(fz_context *ctx, fz_html_box *box, fz_html_
 	return top;
 }
 
+static fz_html_box *insert_table_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+{
+	top = insert_block_box(ctx, box, top);
+	box->type = BOX_TABLE;
+	return top;
+}
+
+static fz_html_box *insert_table_row_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+{
+	fz_html_box *table = top;
+	while (table && table->type != BOX_TABLE)
+		table = table->up;
+	if (table)
+	{
+		insert_box(ctx, box, BOX_TABLE_ROW, table);
+		return table;
+	}
+	fz_warn(ctx, "table-row not inside table element");
+	insert_block_box(ctx, box, top);
+	return top;
+}
+
+static fz_html_box *insert_table_cell_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+{
+	fz_html_box *tr = top;
+	while (tr && tr->type != BOX_TABLE_ROW)
+		tr = tr->up;
+	if (tr)
+	{
+		insert_box(ctx, box, BOX_TABLE_CELL, tr);
+		return tr;
+	}
+	fz_warn(ctx, "table-cell not inside table-row element");
+	insert_block_box(ctx, box, top);
+	return top;
+}
+
 static fz_html_box *insert_break_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
 {
 	if (top->type == BOX_BLOCK)
@@ -573,8 +610,15 @@ static fz_html_box *insert_break_box(fz_context *ctx, fz_html_box *box, fz_html_
 
 static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *top, int markup_dir, struct genstate *g)
 {
-	if (top->type == BOX_BLOCK)
+	if (top->type == BOX_FLOW || top->type == BOX_INLINE)
 	{
+		insert_box(ctx, box, BOX_INLINE, top);
+	}
+	else
+	{
+		while (top->type != BOX_BLOCK && top->type != BOX_TABLE_CELL)
+			top = top->up;
+
 		if (top->last && top->last->type == BOX_FLOW)
 		{
 			insert_box(ctx, box, BOX_INLINE, top->last);
@@ -587,14 +631,6 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 			insert_box(ctx, box, BOX_INLINE, flow);
 			g->at_bol = 1;
 		}
-	}
-	else if (top->type == BOX_FLOW)
-	{
-		insert_box(ctx, box, BOX_INLINE, top);
-	}
-	else if (top->type == BOX_INLINE)
-	{
-		insert_box(ctx, box, BOX_INLINE, top);
 	}
 }
 
@@ -735,6 +771,18 @@ generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 						if (href)
 							box->href = fz_pool_strdup(ctx, g->pool, href);
 					}
+				}
+				else if (display == DIS_TABLE)
+				{
+					top = insert_table_box(ctx, box, top);
+				}
+				else if (display == DIS_TABLE_ROW)
+				{
+					top = insert_table_row_box(ctx, box, top);
+				}
+				else if (display == DIS_TABLE_CELL)
+				{
+					top = insert_table_cell_box(ctx, box, top);
 				}
 				else
 				{
@@ -1373,6 +1421,65 @@ static int layout_block_page_break(fz_context *ctx, float *yp, float page_h, flo
 }
 
 static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top_x, float *top_b, float top_w,
+		float page_h, float vertical, hb_buffer_t *hb_buf);
+
+static void layout_table(fz_context *ctx, fz_html_box *box, fz_html_box *top, float page_h, hb_buffer_t *hb_buf)
+{
+	fz_html_box *row, *cell, *child;
+	int col, ncol = 0;
+
+	box->em = fz_from_css_number(box->style.font_size, top->em, top->em, top->em);
+	box->x = top->x;
+	box->w = fz_from_css_number(box->style.width, box->em, top->w, top->w);
+	box->y = box->b = top->b;
+
+	for (row = box->down; row; row = row->next)
+	{
+		col = 0;
+		for (cell = row->down; cell; cell = cell->next)
+			++col;
+		if (col > ncol)
+			ncol = col;
+	}
+
+	for (row = box->down; row; row = row->next)
+	{
+		col = 0;
+
+		row->em = fz_from_css_number(row->style.font_size, box->em, box->em, box->em);
+		row->x = box->x;
+		row->w = box->w;
+		row->y = row->b = box->b;
+
+		for (cell = row->down; cell; cell = cell->next)
+		{
+			float colw = row->w / ncol; // TODO: proper calculation
+
+			cell->em = fz_from_css_number(cell->style.font_size, row->em, row->em, row->em);
+			cell->y = cell->b = row->y;
+			cell->x = row->x + col * colw;
+			cell->w = colw;
+
+			for (child = cell->down; child; child = child->next)
+			{
+				if (child->type == BOX_BLOCK)
+					layout_block(ctx, child, cell->em, cell->x, &cell->b, cell->w, page_h, 0, hb_buf);
+				else if (child->type == BOX_FLOW)
+					layout_flow(ctx, child, cell, page_h, hb_buf);
+				cell->b = child->b;
+			}
+
+			if (cell->b > row->b)
+				row->b = cell->b;
+
+			++col;
+		}
+
+		box->b = row->b;
+	}
+}
+
+static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top_x, float *top_b, float top_w,
 		float page_h, float vertical, hb_buffer_t *hb_buf)
 {
 	fz_html_box *child;
@@ -1436,6 +1543,12 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 				child->margin[T] = 0;
 				first = 0;
 			}
+			box->b = child->b + child->padding[B] + child->border[B] + child->margin[B];
+		}
+		else if (child->type == BOX_TABLE)
+		{
+			layout_table(ctx, child, box, page_h, hb_buf);
+			first = 0;
 			box->b = child->b + child->padding[B] + child->border[B] + child->margin[B];
 		}
 		else if (child->type == BOX_BREAK)
@@ -1868,6 +1981,9 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 	{
 		switch (box->type)
 		{
+		case BOX_TABLE:
+		case BOX_TABLE_ROW:
+		case BOX_TABLE_CELL:
 		case BOX_BLOCK: draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
 		case BOX_FLOW: draw_flow_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
 		}
@@ -2411,6 +2527,9 @@ fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 		case BOX_BREAK: printf("break"); break;
 		case BOX_FLOW: printf("flow"); break;
 		case BOX_INLINE: printf("inline"); break;
+		case BOX_TABLE: printf("table"); break;
+		case BOX_TABLE_ROW: printf("table-row"); break;
+		case BOX_TABLE_CELL: printf("table-cell"); break;
 		}
 
 		printf(" em=%g x=%g y=%g w=%g b=%g\n", box->em, box->x, box->y, box->w, box->b);

@@ -1125,6 +1125,12 @@ fz_get_css_match_display(fz_css_match *match)
 			return DIS_LIST_ITEM;
 		if (!strcmp(value->data, "inline-block"))
 			return DIS_INLINE_BLOCK;
+		if (!strcmp(value->data, "table"))
+			return DIS_TABLE;
+		if (!strcmp(value->data, "table-row"))
+			return DIS_TABLE_ROW;
+		if (!strcmp(value->data, "table-cell"))
+			return DIS_TABLE_CELL;
 	}
 	return DIS_INLINE;
 }
