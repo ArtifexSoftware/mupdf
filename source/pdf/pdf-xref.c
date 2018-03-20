@@ -2678,6 +2678,18 @@ pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 }
 
 pdf_obj *
+pdf_add_new_dict(fz_context *ctx, pdf_document *doc, int initial)
+{
+	return pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, initial));
+}
+
+pdf_obj *
+pdf_add_new_array(fz_context *ctx, pdf_document *doc, int initial)
+{
+	return pdf_add_object_drop(ctx, doc, pdf_new_array(ctx, doc, initial));
+}
+
+pdf_obj *
 pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj, int compressed)
 {
 	pdf_obj *ind;
