@@ -2174,11 +2174,11 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 	fz_drop_buffer(ctx, x->stm_buf);
 	x->stm_buf = fz_keep_buffer(ctx, newbuf);
 
-	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, (int)fz_buffer_storage(ctx, newbuf, NULL)));
+	pdf_dict_put_int(ctx, obj, PDF_NAME_Length, (int)fz_buffer_storage(ctx, newbuf, NULL));
 	if (!compressed)
 	{
-		pdf_dict_dels(ctx, obj, "Filter");
-		pdf_dict_dels(ctx, obj, "DecodeParms");
+		pdf_dict_del(ctx, obj, PDF_NAME_Filter);
+		pdf_dict_del(ctx, obj, PDF_NAME_DecodeParms);
 	}
 }
 

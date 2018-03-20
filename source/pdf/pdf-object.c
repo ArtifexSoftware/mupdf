@@ -818,47 +818,39 @@ pdf_array_find(fz_context *ctx, pdf_obj *arr, pdf_obj *obj)
 
 pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect)
 {
-	pdf_obj *arr;
-
-	arr = pdf_new_array(ctx, doc, 4);
-
+	pdf_obj *arr = pdf_new_array(ctx, doc, 4);
 	fz_try(ctx)
 	{
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->x0));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->y0));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->x1));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->y1));
+		pdf_array_push_real(ctx, arr, rect->x0);
+		pdf_array_push_real(ctx, arr, rect->y0);
+		pdf_array_push_real(ctx, arr, rect->x1);
+		pdf_array_push_real(ctx, arr, rect->y1);
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, arr);
 		fz_rethrow(ctx);
 	}
-
 	return arr;
 }
 
 pdf_obj *pdf_new_matrix(fz_context *ctx, pdf_document *doc, const fz_matrix *mtx)
 {
-	pdf_obj *arr;
-
-	arr = pdf_new_array(ctx, doc, 6);
-
+	pdf_obj *arr = pdf_new_array(ctx, doc, 6);
 	fz_try(ctx)
 	{
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->a));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->b));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->c));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->d));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->e));
-		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->f));
+		pdf_array_push_real(ctx, arr, mtx->a);
+		pdf_array_push_real(ctx, arr, mtx->b);
+		pdf_array_push_real(ctx, arr, mtx->c);
+		pdf_array_push_real(ctx, arr, mtx->d);
+		pdf_array_push_real(ctx, arr, mtx->e);
+		pdf_array_push_real(ctx, arr, mtx->f);
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, arr);
 		fz_rethrow(ctx);
 	}
-
 	return arr;
 }
 

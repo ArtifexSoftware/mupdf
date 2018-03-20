@@ -136,7 +136,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 
 	path = pdf_to_utf8(ctx, filename);
 #ifdef _WIN32
-	if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, file_spec, "FS")), "URL") != 0)
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME_FS), PDF_NAME_URL))
 	{
 		/* move the file name into the expected place and use the expected path separator */
 		char *c;

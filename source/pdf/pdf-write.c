@@ -1616,7 +1616,7 @@ static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		{
 			pdf_array_insert(ctx, f, PDF_NAME_ASCIIHexDecode, 0);
 			if (pdf_is_array(ctx, dp))
-				pdf_array_insert_drop(ctx, dp, pdf_new_null(ctx, doc), 0);
+				pdf_array_insert(ctx, dp, PDF_OBJ_NULL, 0);
 		}
 		else
 			f = PDF_NAME_ASCIIHexDecode;

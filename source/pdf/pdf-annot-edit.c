@@ -233,8 +233,7 @@ pdf_annot_flags(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags)
 {
-	pdf_document *doc = annot->page->doc;
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
+	pdf_dict_put_int(ctx, annot->obj, PDF_NAME_F, flags);
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -341,9 +340,8 @@ pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name)
 {
-	pdf_document *doc = annot->page->doc;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_Name, icon_name_subtypes);
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Name, pdf_new_name(ctx, doc, name));
+	pdf_dict_put_name(ctx, annot->obj, PDF_NAME_Name, name);
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -602,18 +600,18 @@ static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *
 		switch (n)
 		{
 		case 1:
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
+			pdf_array_push_real(ctx, arr, color[0]);
 			break;
 		case 3:
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[1]), 1);
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[2]), 2);
+			pdf_array_push_real(ctx, arr, color[0]);
+			pdf_array_push_real(ctx, arr, color[1]);
+			pdf_array_push_real(ctx, arr, color[2]);
 			break;
 		case 4:
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[1]), 1);
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[2]), 2);
-			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[3]), 3);
+			pdf_array_push_real(ctx, arr, color[0]);
+			pdf_array_push_real(ctx, arr, color[1]);
+			pdf_array_push_real(ctx, arr, color[2]);
+			pdf_array_push_real(ctx, arr, color[3]);
 			break;
 		}
 	}
@@ -782,8 +780,8 @@ pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const fz_point 
 	{
 		point = v[i];
 		fz_transform_point(&point, &inv_page_ctm);
-		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.x));
-		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.y));
+		pdf_array_push_real(ctx, vertices, point.x);
+		pdf_array_push_real(ctx, vertices, point.y);
 	}
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Vertices, vertices);
 	pdf_dirty_annot(ctx, annot);
@@ -909,8 +907,8 @@ pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float 
 			point.x = v[i * 8 + k * 2 + 0];
 			point.y = v[i * 8 + k * 2 + 1];
 			fz_transform_point(&point, &inv_page_ctm);
-			pdf_array_push_drop(ctx, quad_points, pdf_new_real(ctx, doc, point.x));
-			pdf_array_push_drop(ctx, quad_points, pdf_new_real(ctx, doc, point.y));
+			pdf_array_push_real(ctx, quad_points, point.x);
+			pdf_array_push_real(ctx, quad_points, point.y);
 		}
 	}
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_QuadPoints, quad_points);
@@ -1038,8 +1036,8 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 		{
 			point = *v++;
 			fz_transform_point(&point, &inv_page_ctm);
-			pdf_array_push_drop(ctx, stroke, pdf_new_real(ctx, doc, point.x));
-			pdf_array_push_drop(ctx, stroke, pdf_new_real(ctx, doc, point.y));
+			pdf_array_push_real(ctx, stroke, point.x);
+			pdf_array_push_real(ctx, stroke, point.y);
 		}
 		pdf_array_push_drop(ctx, ink_list, stroke);
 	}
@@ -1100,7 +1098,6 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 void
 pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 {
-	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
 	fz_rect rect;
 	int flags;
@@ -1114,11 +1111,11 @@ pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 	rect.y1 = pt.y + TEXT_ANNOT_SIZE;
 	fz_transform_rect(&rect, &inv_page_ctm);
 
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
+	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME_Rect, &rect);
 
 	flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
 	flags |= (PDF_ANNOT_IS_NO_ZOOM|PDF_ANNOT_IS_NO_ROTATE);
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
+	pdf_dict_put_int(ctx, annot->obj, PDF_NAME_F, flags);
 }
 
 static void
@@ -1251,13 +1248,12 @@ pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 {
-	pdf_document *doc = annot->page->doc;
 	char s[40];
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME_M, markup_subtypes);
 
 	pdf_format_date(ctx, s, sizeof s, secs);
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_M, pdf_new_string(ctx, doc, s, strlen(s)));
+	pdf_dict_put_string(ctx, annot->obj, PDF_NAME_M, s, strlen(s));
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -1277,9 +1273,8 @@ pdf_copy_annot_author(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
 {
-	pdf_document *doc = annot->page->doc;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_T, markup_subtypes);
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_T, pdf_new_text_string(ctx, doc, author));
+	pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME_T, author);
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -1359,10 +1354,10 @@ pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char
 		pdf_fzbuf_print_da(ctx, fzbuf, &da_info);
 
 		da_len = fz_buffer_storage(ctx, fzbuf, &da_str);
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_DA, pdf_new_string(ctx, doc, (char *)da_str, da_len));
+		pdf_dict_put_string(ctx, annot->obj, PDF_NAME_DA, (char *)da_str, da_len);
 
 		/* FIXME: should convert to WinAnsiEncoding */
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents, pdf_new_string(ctx, doc, text, strlen(text)));
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME_Contents, text);
 
 		font_desc = pdf_load_font(ctx, doc, NULL, font, 0);
 		pdf_measure_text(ctx, font_desc, (unsigned char *)text, strlen(text), &bounds);
@@ -1380,7 +1375,7 @@ pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char
 		bounds.y0 += page_pos.y;
 		bounds.y1 += page_pos.y;
 
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &bounds));
+		pdf_dict_put_rect(ctx, annot->obj, PDF_NAME_Rect, &bounds);
 	}
 	fz_always(ctx)
 	{
