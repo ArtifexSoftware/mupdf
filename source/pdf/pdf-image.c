@@ -323,7 +323,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	if (imref)
 		return imref;
 
-	imobj = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 3));
+	imobj = pdf_add_new_dict(ctx, doc, 3);
 	fz_try(ctx)
 	{
 		dp = pdf_dict_put_dict(ctx, imobj, PDF_NAME_DecodeParms, 3);

@@ -2694,7 +2694,7 @@ pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj,
 {
 	pdf_obj *ind;
 	if (!obj)
-		ind = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 4));
+		ind = pdf_add_new_dict(ctx, doc, 4);
 	else
 		ind = pdf_add_object(ctx, doc, obj);
 	fz_try(ctx)
@@ -2730,11 +2730,9 @@ pdf_document *pdf_create_document(fz_context *ctx)
 
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_int(ctx, trailer, PDF_NAME_Size, 3);
-		root = pdf_new_dict(ctx, doc, 2);
-		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_add_object_drop(ctx, doc, root));
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, root = pdf_add_new_dict(ctx, doc, 2));
 		pdf_dict_put(ctx, root, PDF_NAME_Type, PDF_NAME_Catalog);
-		pages = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object_drop(ctx, doc, pages));
+		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pages = pdf_add_new_dict(ctx, doc, 3));
 		pdf_dict_put(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
 		pdf_dict_put_int(ctx, pages, PDF_NAME_Count, 0);
 		pdf_dict_put_array(ctx, pages, PDF_NAME_Kids, 1);

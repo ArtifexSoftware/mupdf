@@ -1695,7 +1695,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_fo
 
 	fz_var(run_obj);
 
-	fw = pdf_add_object_drop(ctx, doc, pdf_new_array(ctx, doc, 10));
+	fw = pdf_add_new_array(ctx, doc, 10);
 	fz_try(ctx)
 	{
 		prev_code = 0;
@@ -2025,7 +2025,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 	if (fref)
 		return fref;
 
-	fobj = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 10));
+	fobj = pdf_add_new_dict(ctx, doc, 10);
 	fz_try(ctx)
 	{
 		pdf_dict_put(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
@@ -2110,7 +2110,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 	case PDF_SIMPLE_ENCODING_CYRILLIC: enc = pdf_glyph_name_from_koi8u; break;
 	}
 
-	fobj = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 10));
+	fobj = pdf_add_new_dict(ctx, doc, 10);
 	fz_try(ctx)
 	{
 		pdf_dict_put(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
@@ -2209,7 +2209,7 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 	if (fref)
 		return fref;
 
-	font = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 5));
+	font = pdf_add_new_dict(ctx, doc, 5);
 	fz_try(ctx)
 	{
 		pdf_dict_put(ctx, font, PDF_NAME_Type, PDF_NAME_Font);
@@ -2217,13 +2217,13 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 		pdf_dict_put_name(ctx, font, PDF_NAME_BaseFont, basefont);
 		pdf_dict_put_name(ctx, font, PDF_NAME_Encoding, encoding);
 		dfonts = pdf_dict_put_array(ctx, font, PDF_NAME_DescendantFonts, 1);
-		pdf_array_push_drop(ctx, dfonts, pdf_add_object_drop(ctx, doc, subfont = pdf_new_dict(ctx, doc, 5)));
+		pdf_array_push_drop(ctx, dfonts, subfont = pdf_add_new_dict(ctx, doc, 5));
 		{
 			pdf_dict_put(ctx, subfont, PDF_NAME_Type, PDF_NAME_Font);
 			pdf_dict_put(ctx, subfont, PDF_NAME_Subtype, PDF_NAME_CIDFontType0);
 			pdf_dict_put_name(ctx, subfont, PDF_NAME_BaseFont, basefont);
 			pdf_add_cid_system_info(ctx, doc, subfont, "Adobe", ordering, supplement);
-			fontdesc = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 8));
+			fontdesc = pdf_add_new_dict(ctx, doc, 8);
 			pdf_dict_put_drop(ctx, subfont, PDF_NAME_FontDescriptor, fontdesc);
 			{
 				pdf_dict_put(ctx, fontdesc, PDF_NAME_Type, PDF_NAME_FontDescriptor);
