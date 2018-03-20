@@ -165,16 +165,22 @@ static void create_page(char *input)
 			{
 				s = fz_strsep(&p, " ");
 				t = fz_strsep(&p, " ");
+				if (!s || !t || !p)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Font directive missing arguments");
 				add_font_res(resources, s, t, p);
 			}
 			else if (!strcmp(s, "%%CJKFont"))
 			{
 				s = fz_strsep(&p, " ");
+				if (!s || !p)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "CJKFont directive missing arguments");
 				add_cjkfont_res(resources, s, p);
 			}
 			else if (!strcmp(s, "%%Image"))
 			{
 				s = fz_strsep(&p, " ");
+				if (!s || !p)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Image directive missing arguments");
 				add_image_res(resources, s, p);
 			}
 		}
