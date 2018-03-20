@@ -326,7 +326,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	imobj = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 3));
 	fz_try(ctx)
 	{
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_DecodeParms, dp = pdf_new_dict(ctx, doc, 3));
+		dp = pdf_dict_put_dict(ctx, imobj, PDF_NAME_DecodeParms, 3);
 		pdf_dict_put(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
 		pdf_dict_put(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
 
@@ -482,7 +482,7 @@ raw_or_unknown_compression:
 					basecs = fz_colorspace_base(ctx, cs);
 					basen = fz_colorspace_n(ctx, basecs);
 
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, arr = pdf_new_array(ctx, doc, 4));
+					arr = pdf_dict_put_array(ctx, imobj, PDF_NAME_ColorSpace, 4);
 
 					pdf_array_push(ctx, arr, PDF_NAME_Indexed);
 					switch (fz_colorspace_type(ctx, basecs))

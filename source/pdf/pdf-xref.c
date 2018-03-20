@@ -2725,7 +2725,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object_drop(ctx, doc, pages));
 		pdf_dict_put(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
 		pdf_dict_put_int(ctx, pages, PDF_NAME_Count, 0);
-		pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, pdf_new_array(ctx, doc, 1));
+		pdf_dict_put_array(ctx, pages, PDF_NAME_Kids, 1);
 
 		/* Set the trailer of the final xref section. */
 		doc->xref_sections[0].trailer = trailer;

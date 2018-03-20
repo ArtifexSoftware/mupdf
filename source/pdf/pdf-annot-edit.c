@@ -496,10 +496,9 @@ pdf_annot_border(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 {
-	pdf_document *doc = annot->page->doc;
 	pdf_obj *bs = pdf_dict_get(ctx, annot->obj, PDF_NAME_BS);
 	if (!pdf_is_dict(ctx, bs))
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_BS, bs = pdf_new_dict(ctx, doc, 1));
+		bs = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME_BS, 1);
 	pdf_dict_put_real(ctx, bs, PDF_NAME_W, w);
 	pdf_dirty_annot(ctx, annot);
 }

@@ -1180,7 +1180,7 @@ pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int ro
 		else if (pdf_is_dict(ctx, resources))
 			pdf_dict_put_drop(ctx, page_obj, PDF_NAME_Resources, pdf_add_object(ctx, doc, resources));
 		else
-			pdf_dict_put_drop(ctx, page_obj, PDF_NAME_Resources, pdf_new_dict(ctx, doc, 1));
+			pdf_dict_put_dict(ctx, page_obj, PDF_NAME_Resources, 1);
 
 		if (contents)
 			pdf_dict_put_drop(ctx, page_obj, PDF_NAME_Contents, pdf_add_stream(ctx, doc, contents, NULL, 0));
