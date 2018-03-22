@@ -2532,7 +2532,7 @@ FUN(Device_finalize)(JNIEnv *env, jobject self)
 
 typedef struct NativeDeviceInfo NativeDeviceInfo;
 
-typedef void (NativeDeviceLockFn)(JNIEnv *env, NativeDeviceInfo *info);
+typedef int (NativeDeviceLockFn)(JNIEnv *env, NativeDeviceInfo *info);
 typedef void (NativeDeviceUnlockFn)(JNIEnv *env, NativeDeviceInfo *info);
 
 struct NativeDeviceInfo
@@ -2558,10 +2558,11 @@ struct NativeDeviceInfo
 	int width;
 };
 
-static NativeDeviceInfo *lockNativeDevice(JNIEnv *env, jobject self)
+static NativeDeviceInfo *lockNativeDevice(JNIEnv *env, jobject self, int *err)
 {
 	NativeDeviceInfo *info = NULL;
 
+	*err = 0;
 	if (!(*env)->IsInstanceOf(env, self, cls_NativeDevice))
 		return NULL;
 
@@ -2573,7 +2574,11 @@ static NativeDeviceInfo *lockNativeDevice(JNIEnv *env, jobject self)
 	}
 	info->object = (*env)->GetObjectField(env, self, fid_NativeDevice_nativeResource);
 
-	info->lock(env, info);
+	if (info->lock(env, info))
+	{
+		*err = 1;
+		return NULL;
+	}
 
 	return info;
 }
@@ -2608,10 +2613,13 @@ FUN(NativeDevice_close)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_close_device(ctx, dev);
 	fz_always(ctx)
@@ -2631,12 +2639,15 @@ FUN(NativeDevice_fillPath)(JNIEnv *env, jobject self, jobject jpath, jboolean ev
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_fill_path(ctx, dev, path, even_odd, &ctm, cs, color, alpha, &cp);
 	fz_always(ctx)
@@ -2657,13 +2668,16 @@ FUN(NativeDevice_strokePath)(JNIEnv *env, jobject self, jobject jpath, jobject j
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_stroke_path(ctx, dev, path, stroke, &ctm, cs, color, alpha, &cp);
 	fz_always(ctx)
@@ -2680,11 +2694,14 @@ FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jboolean ev
 	fz_path *path = from_Path(env, jpath);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_clip_path(ctx, dev, path, even_odd, &ctm, NULL);
 	fz_always(ctx)
@@ -2702,12 +2719,15 @@ FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobje
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_clip_stroke_path(ctx, dev, path, stroke, &ctm, NULL);
 	fz_always(ctx)
@@ -2727,12 +2747,15 @@ FUN(NativeDevice_fillText)(JNIEnv *env, jobject self, jobject jtext, jobject jct
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_fill_text(ctx, dev, text, &ctm, cs, color, alpha, &cp);
 	fz_always(ctx)
@@ -2753,13 +2776,16 @@ FUN(NativeDevice_strokeText)(JNIEnv *env, jobject self, jobject jtext, jobject j
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_stroke_text(ctx, dev, text, stroke, &ctm, cs, color, alpha, &cp);
 	fz_always(ctx)
@@ -2776,11 +2802,14 @@ FUN(NativeDevice_clipText)(JNIEnv *env, jobject self, jobject jtext, jobject jct
 	fz_text *text = from_Text(env, jtext);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_clip_text(ctx, dev, text, &ctm, NULL);
 	fz_always(ctx)
@@ -2798,12 +2827,15 @@ FUN(NativeDevice_clipStrokeText)(JNIEnv *env, jobject self, jobject jtext, jobje
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_clip_stroke_text(ctx, dev, text, stroke, &ctm, NULL);
 	fz_always(ctx)
@@ -2820,11 +2852,14 @@ FUN(NativeDevice_ignoreText)(JNIEnv *env, jobject self, jobject jtext, jobject j
 	fz_text *text = from_Text(env, jtext);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_ignore_text(ctx, dev, text, &ctm);
 	fz_always(ctx)
@@ -2842,11 +2877,14 @@ FUN(NativeDevice_fillShade)(JNIEnv *env, jobject self, jobject jshd, jobject jct
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!shd) { jni_throw_arg(env, "shade must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_fill_shade(ctx, dev, shd, &ctm, alpha, &cp);
 	fz_always(ctx)
@@ -2864,11 +2902,14 @@ FUN(NativeDevice_fillImage)(JNIEnv *env, jobject self, jobject jimg, jobject jct
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!img) { jni_throw_arg(env, "image must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_fill_image(ctx, dev, img, &ctm, alpha, &cp);
 	fz_always(ctx)
@@ -2888,12 +2929,15 @@ FUN(NativeDevice_fillImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!img) { jni_throw_arg(env, "image must not be null"); return; }
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_fill_image_mask(ctx, dev, img, &ctm, cs, color, alpha, &cp);
 	fz_always(ctx)
@@ -2910,11 +2954,14 @@ FUN(NativeDevice_clipImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject
 	fz_image *img = from_Image(env, jimg);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!img) { jni_throw_arg(env, "image must not be null"); return; }
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_clip_image_mask(ctx, dev, img, &ctm, NULL);
 	fz_always(ctx)
@@ -2929,10 +2976,13 @@ FUN(NativeDevice_popClip)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_pop_clip(ctx, dev);
 	fz_always(ctx)
@@ -2948,6 +2998,7 @@ FUN(NativeDevice_beginLayer)(JNIEnv *env, jobject self, jstring jname)
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 	const char *name;
+	int err;
 
 	if (!ctx || !dev) return;
 
@@ -2957,7 +3008,9 @@ FUN(NativeDevice_beginLayer)(JNIEnv *env, jobject self, jstring jname)
 		if (!name) return;
 	}
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_begin_layer(ctx, dev, name);
 	fz_always(ctx)
@@ -2975,10 +3028,13 @@ FUN(NativeDevice_endLayer)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_end_layer(ctx, dev);
 	fz_always(ctx)
@@ -2998,11 +3054,14 @@ FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean l
 	fz_color_params cp = from_ColorParams_safe(env, jcp);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_begin_mask(ctx, dev, &rect, luminosity, cs, color, &cp);
 	fz_always(ctx)
@@ -3017,10 +3076,13 @@ FUN(NativeDevice_endMask)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_end_mask(ctx, dev);
 	fz_always(ctx)
@@ -3036,10 +3098,13 @@ FUN(NativeDevice_beginGroup)(JNIEnv *env, jobject self, jobject jrect, jboolean 
 	fz_device *dev = from_Device(env, self);
 	fz_rect rect = from_Rect(env, jrect);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_begin_group(ctx, dev, &rect, NULL, isolated, knockout, blendmode, alpha);
 	fz_always(ctx)
@@ -3054,10 +3119,13 @@ FUN(NativeDevice_endGroup)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_end_group(ctx, dev);
 	fz_always(ctx)
@@ -3076,10 +3144,13 @@ FUN(NativeDevice_beginTile)(JNIEnv *env, jobject self, jobject jarea, jobject jv
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 	int i = 0;
+	int err;
 
 	if (!ctx || !dev) return 0;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return 0;
 	fz_try(ctx)
 		i = fz_begin_tile_id(ctx, dev, &area, &view, xstep, ystep, &ctm, id);
 	fz_always(ctx)
@@ -3099,10 +3170,13 @@ FUN(NativeDevice_endTile)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !dev) return;
 
-	info = lockNativeDevice(env, self);
+	info = lockNativeDevice(env, self, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_end_tile(ctx, dev);
 	fz_always(ctx)
@@ -3163,7 +3237,9 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	fz_pixmap *pixmap = NULL;
 	unsigned char dummy;
 	NativeDeviceInfo *ninfo = NULL;
+	NativeDeviceInfo *info;
 	fz_irect bbox;
+	int err;
 
 	if (!ctx) return 0;
 
@@ -3195,10 +3271,13 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		ninfo->object = obj;
 		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, jlong_cast(ninfo));
 		(*env)->SetObjectField(env, self, fid_NativeDevice_nativeResource, obj);
-		lockNativeDevice(env,self);
-		fz_clear_pixmap_with_value(ctx, pixmap, 0xff);
-		unlockNativeDevice(env,ninfo);
-		device = fz_new_draw_device(ctx, NULL, pixmap);
+		info = lockNativeDevice(env,self,&err);
+		if (!err)
+		{
+			fz_clear_pixmap_with_value(ctx, pixmap, 0xff);
+			unlockNativeDevice(env,ninfo);
+			device = fz_new_draw_device(ctx, NULL, pixmap);
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -3208,10 +3287,18 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		return 0;
 	}
 
+	/* lockNativeDevice will already have raised a JNI error if there was one. */
+	if (err)
+	{
+		fz_drop_pixmap(ctx, pixmap);
+		fz_free(ctx, ninfo);
+		return 0;
+	}
+
 	return jlong_cast(device);
 }
 
-static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
+static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 {
 	uint8_t *pixels;
 
@@ -3220,14 +3307,17 @@ static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 
 	if (AndroidBitmap_lockPixels(env, info->object, (void **)&pixels) != ANDROID_BITMAP_RESULT_SUCCESS)
 	{
+		info->pixmap->samples = NULL;
 		jni_throw(env, FZ_ERROR_GENERIC, "bitmap lock failed in DrawDevice call");
-		return;
+		return 1;
 	}
 
 	/* Now offset pixels to allow for the page offsets */
 	pixels += sizeof(int32_t) * (info->xOffset + info->width * info->yOffset);
 
 	info->pixmap->samples = pixels;
+
+	return 0;
 }
 
 static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
@@ -3235,6 +3325,7 @@ static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
 	assert(info);
 	assert(info->object);
 
+	info->pixmap->samples = NULL;
 	if (AndroidBitmap_unlockPixels(env, info->object) != ANDROID_BITMAP_RESULT_SUCCESS)
 		jni_throw(env, FZ_ERROR_GENERIC, "bitmap unlock failed in DrawDevice call");
 }
@@ -4501,11 +4592,14 @@ FUN(Annotation_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobje
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie= from_Cookie(env, jcookie);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !annot) return;
 	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
 
-	info = lockNativeDevice(env, jdev);
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_run_annot(ctx, annot, dev, &ctm, cookie);
 	fz_always(ctx)
@@ -5197,11 +5291,14 @@ FUN(Page_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jco
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie = from_Cookie(env, jcookie);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !page) return;
 	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
 
-	info = lockNativeDevice(env, jdev);
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_run_page(ctx, page, dev, &ctm, cookie);
 	fz_always(ctx)
@@ -5219,11 +5316,14 @@ FUN(Page_runPageContents)(JNIEnv *env, jobject self, jobject jdev, jobject jctm,
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie = from_Cookie(env, jcookie);
 	NativeDeviceInfo *info;
+	int err;
 
 	if (!ctx || !page) return;
 	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
 
-	info = lockNativeDevice(env, jdev);
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_run_page_contents(ctx, page, dev, &ctm, cookie);
 	fz_always(ctx)
@@ -5594,6 +5694,7 @@ FUN(DisplayList_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobj
 	NativeDeviceInfo *info;
 	fz_rect local_rect;
 	fz_rect *rect = NULL;
+	int err;
 
 	if (!ctx || !list) return;
 	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
@@ -5605,7 +5706,9 @@ FUN(DisplayList_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobj
 		local_rect = from_Rect(env, jrect);
 	}
 
-	info = lockNativeDevice(env, jdev);
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
 	fz_try(ctx)
 		fz_run_display_list(ctx, list, dev, &ctm, rect, cookie);
 	fz_always(ctx)
