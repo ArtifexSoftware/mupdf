@@ -1401,54 +1401,52 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
 	dfonts = pdf_dict_get(ctx, dict, PDF_NAME_DescendantFonts);
 	charprocs = pdf_dict_get(ctx, dict, PDF_NAME_CharProcs);
 
-	fz_var(fontdesc);
+	if (pdf_name_eq(ctx, subtype, PDF_NAME_Type0))
+		fontdesc = pdf_load_type0_font(ctx, doc, dict);
+	else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type1))
+		fontdesc = pdf_load_simple_font(ctx, doc, dict);
+	else if (pdf_name_eq(ctx, subtype, PDF_NAME_MMType1))
+		fontdesc = pdf_load_simple_font(ctx, doc, dict);
+	else if (pdf_name_eq(ctx, subtype, PDF_NAME_TrueType))
+		fontdesc = pdf_load_simple_font(ctx, doc, dict);
+	else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type3))
+	{
+		fontdesc = pdf_load_type3_font(ctx, doc, rdb, dict);
+		type3 = 1;
+	}
+	else if (charprocs)
+	{
+		fz_warn(ctx, "unknown font format, guessing type3.");
+		fontdesc = pdf_load_type3_font(ctx, doc, rdb, dict);
+		type3 = 1;
+	}
+	else if (dfonts)
+	{
+		fz_warn(ctx, "unknown font format, guessing type0.");
+		fontdesc = pdf_load_type0_font(ctx, doc, dict);
+	}
+	else
+	{
+		fz_warn(ctx, "unknown font format, guessing type1 or truetype.");
+		fontdesc = pdf_load_simple_font(ctx, doc, dict);
+	}
 
 	fz_try(ctx)
 	{
-		if (pdf_name_eq(ctx, subtype, PDF_NAME_Type0))
-			fontdesc = pdf_load_type0_font(ctx, doc, dict);
-		else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type1))
-			fontdesc = pdf_load_simple_font(ctx, doc, dict);
-		else if (pdf_name_eq(ctx, subtype, PDF_NAME_MMType1))
-			fontdesc = pdf_load_simple_font(ctx, doc, dict);
-		else if (pdf_name_eq(ctx, subtype, PDF_NAME_TrueType))
-			fontdesc = pdf_load_simple_font(ctx, doc, dict);
-		else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type3))
-		{
-			fontdesc = pdf_load_type3_font(ctx, doc, rdb, dict);
-			type3 = 1;
-		}
-		else if (charprocs)
-		{
-			fz_warn(ctx, "unknown font format, guessing type3.");
-			fontdesc = pdf_load_type3_font(ctx, doc, rdb, dict);
-			type3 = 1;
-		}
-		else if (dfonts)
-		{
-			fz_warn(ctx, "unknown font format, guessing type0.");
-			fontdesc = pdf_load_type0_font(ctx, doc, dict);
-		}
-		else
-		{
-			fz_warn(ctx, "unknown font format, guessing type1 or truetype.");
-			fontdesc = pdf_load_simple_font(ctx, doc, dict);
-		}
-
 		/* Create glyph width table for stretching substitute fonts and text extraction. */
 		pdf_make_width_table(ctx, fontdesc);
 
+		pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
+
+		/* Load glyphs after storing, in case of cyclical dependencies */
+		if (type3)
+			pdf_load_type3_glyphs(ctx, doc, fontdesc, nested_depth);
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_font(ctx, fontdesc);
 		fz_rethrow(ctx);
 	}
-
-	pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
-
-	if (type3)
-		pdf_load_type3_glyphs(ctx, doc, fontdesc, nested_depth);
 
 	return fontdesc;
 }
