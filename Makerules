@@ -157,6 +157,7 @@ endif
 
 ifeq "$(OS)" "beagle-cross"
 CC = arm-none-linux-gnueabi-gcc
+CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
@@ -168,6 +169,7 @@ endif
 
 ifeq "$(OS)" "webos-pre-cross"
 CC = arm-none-linux-gnueabi-gcc
+CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
@@ -176,6 +178,7 @@ endif
 
 ifeq "$(OS)" "webos-pixi-cross"
 CC = arm-none-linux-gnueabi-gcc
+CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mcpu=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -ffast-math -fsingle-precision-constant
@@ -184,6 +187,7 @@ endif
 
 ifeq "$(OS)" "w64_x86-cross-mingw32"
 CC = i686-w64-mingw32-gcc
+CXX = i686-w64-mingw32-g++
 LD = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
 WINDRES = i686-w64-mingw32-windres
@@ -193,6 +197,7 @@ endif
 
 ifeq "$(OS)" "w64_amd64-cross-mingw32"
 CC = x86_64-w64-mingw32-gcc
+CXX = x86_64-w64-mingw32-g++
 LD = x86_64-w64-mingw32-gcc
 AR = x86_64-w64-mingw32-ar
 WINDRES = x86-64-mingw32-windres
@@ -226,6 +231,7 @@ endif
 
 ifeq "$(OS)" "ios"
 CC = xcrun cc
+CXX = xcrun c++
 AR = xcrun ar
 LD = xcrun ld
 RANLIB_CMD = xcrun ranlib $@
@@ -236,6 +242,7 @@ ifeq "$(OS)" "tizen-arm"
 TIZEN_TOOLS=$(TIZEN_SDK)/tools/arm-linux-gnueabi-gcc-4.6/bin/arm-linux-gnueabi-
 TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-device.core
 CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
+CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
 AR = $(TIZEN_TOOLS)ar
 LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
 CROSSCOMPILE=yes
@@ -245,6 +252,7 @@ ifeq "$(OS)" "tizen-x86"
 TIZEN_TOOLS=$(TIZEN_SDK)/tools/i386-linux-gnueabi-gcc-4.6/bin/i386-linux-gnueabi-
 TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-emulator.core
 CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
+CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
 AR = $(TIZEN_TOOLS)ar $(TIZEN_FLAGS)
 LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
 CROSSCOMPILE=yes
