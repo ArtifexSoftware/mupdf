@@ -243,6 +243,18 @@ void fz_empty_store(fz_context *ctx);
 int fz_store_scavenge(fz_context *ctx, size_t size, int *phase);
 
 /*
+	fz_store_scavenge_external: External function for callers to use
+	to scavenge while trying allocations.
+
+	size: The number of bytes we are trying to have free.
+
+	phase: What phase of the scavenge we are in. Updated on exit.
+
+	Returns non zero if we managed to free any memory.
+*/
+int fz_store_scavenge_external(fz_context *ctx, size_t size, int *phase);
+
+/*
 	fz_shrink_store: Evict items from the store until the total size of
 	the objects in the store is reduced to a given percentage of its
 	current size.

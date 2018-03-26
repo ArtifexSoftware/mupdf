@@ -776,6 +776,17 @@ scavenge(fz_context *ctx, size_t tofree)
 	return count != 0;
 }
 
+int fz_store_scavenge_external(fz_context *ctx, size_t size, int *phase)
+{
+	int ret;
+
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	ret = fz_store_scavenge(ctx, size, phase);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+
+	return ret;
+}
+
 int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 {
 	fz_store *store;
