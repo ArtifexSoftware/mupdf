@@ -41,29 +41,16 @@ static void
 close_leech(fz_context *ctx, void *state_)
 {
 	fz_leech *state = (fz_leech *)state_;
-
 	fz_drop_stream(ctx, state->chain);
+	fz_drop_buffer(ctx, state->buffer);
 	fz_free(ctx, state);
 }
 
 fz_stream *
 fz_open_leecher(fz_context *ctx, fz_stream *chain, fz_buffer *buffer)
 {
-	fz_leech *state = NULL;
-
-	fz_var(state);
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_leech);
-		state->chain = chain;
-		state->buffer = buffer;
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
-	}
+	fz_leech *state = fz_malloc_struct(ctx, fz_leech);
+	state->chain = fz_keep_stream(ctx, chain);
+	state->buffer = fz_keep_buffer(ctx, buffer);
 	return fz_new_stream(ctx, state, next_leech, close_leech);
 }

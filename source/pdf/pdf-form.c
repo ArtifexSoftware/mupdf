@@ -1292,7 +1292,7 @@ fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, p
 			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
 		}
 
-		bytes = fz_open_null_n(ctx, fz_keep_stream(ctx, doc->file), byte_range, byte_range_len);
+		bytes = fz_open_null_n(ctx, doc->file, byte_range, byte_range_len);
 	}
 	fz_always(ctx)
 	{

@@ -237,7 +237,7 @@ gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, int ct_en
 static const unsigned char *
 gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, const unsigned char *p, const unsigned char *end)
 {
-	fz_stream *stm, *lzwstm = NULL;
+	fz_stream *stm = NULL, *lzwstm = NULL;
 	unsigned int mincodesize, y;
 	fz_buffer *compressed = NULL, *uncompressed = NULL;
 	const unsigned char *ct;
@@ -258,6 +258,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, const uns
 
 	fz_var(compressed);
 	fz_var(lzwstm);
+	fz_var(stm);
 	fz_var(uncompressed);
 
 	fz_try(ctx)
@@ -309,6 +310,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, const uns
 		fz_drop_buffer(ctx, uncompressed);
 		fz_drop_buffer(ctx, compressed);
 		fz_drop_stream(ctx, lzwstm);
+		fz_drop_stream(ctx, stm);
 	}
 	fz_catch(ctx)
 	{

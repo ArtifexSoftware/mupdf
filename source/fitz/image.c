@@ -427,10 +427,6 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		if (image->use_colorkey && image->mask)
 			fz_unblend_masked_tile(ctx, tile, image);
 	}
-	fz_always(ctx)
-	{
-		fz_drop_stream(ctx, stm);
-	}
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, tile);
@@ -532,12 +528,18 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 	default:
 		native_l2factor = l2factor ? *l2factor : 0;
 		stm = fz_open_image_decomp_stream_from_buffer(ctx, image->buffer, l2factor);
-		if (l2factor)
-			native_l2factor -= *l2factor;
-
-		indexed = fz_colorspace_is_indexed(ctx, image->super.colorspace);
-		can_sub = 1;
-		tile = fz_decomp_image_from_stream(ctx, stm, image, subarea, indexed, native_l2factor);
+		fz_try(ctx)
+		{
+			if (l2factor)
+				native_l2factor -= *l2factor;
+			indexed = fz_colorspace_is_indexed(ctx, image->super.colorspace);
+			can_sub = 1;
+			tile = fz_decomp_image_from_stream(ctx, stm, image, subarea, indexed, native_l2factor);
+		}
+		fz_always(ctx)
+			fz_drop_stream(ctx, stm);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 
 		/* CMYK JPEGs in XPS documents have to be inverted */
 		if (image->super.invert_cmyk_jpeg &&
@@ -925,7 +927,7 @@ fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *imag
 void fz_set_compressed_image_buffer(fz_context *ctx, fz_compressed_image *image, fz_compressed_buffer *buf)
 {
 	assert(image != NULL && image->super.get_pixmap == compressed_image_get_pixmap);
-	((fz_compressed_image *)image)->buffer = buf;
+	((fz_compressed_image *)image)->buffer = buf; /* Note: compressed buffers are not reference counted */
 }
 
 fz_pixmap *fz_compressed_image_tile(fz_context *ctx, fz_compressed_image *image)
@@ -938,7 +940,8 @@ fz_pixmap *fz_compressed_image_tile(fz_context *ctx, fz_compressed_image *image)
 void fz_set_compressed_image_tile(fz_context *ctx, fz_compressed_image *image, fz_pixmap *pix)
 {
 	assert(image != NULL && image->super.get_pixmap == compressed_image_get_pixmap);
-	((fz_compressed_image *)image)->tile = pix;
+	fz_drop_pixmap(ctx, ((fz_compressed_image *)image)->tile);
+	((fz_compressed_image *)image)->tile = fz_keep_pixmap(ctx, pix);
 }
 
 fz_pixmap *fz_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image)

@@ -317,29 +317,17 @@ skip:
 fz_stream *
 fz_open_dctd(fz_context *ctx, fz_stream *chain, int color_transform, int l2factor, fz_stream *jpegtables)
 {
-	fz_dctd *state = NULL;
+	fz_dctd *state = fz_malloc_struct(ctx, fz_dctd);
 
-	fz_var(state);
+	state->ctx = ctx;
+	state->color_transform = color_transform;
+	state->init = 0;
+	state->l2factor = l2factor;
+	state->cinfo.client_data = NULL;
 
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_dctd);
-		state->ctx = ctx;
-		state->chain = chain;
-		state->jpegtables = jpegtables;
-		state->curr_stm = chain;
-		state->color_transform = color_transform;
-		state->init = 0;
-		state->l2factor = l2factor;
-		state->cinfo.client_data = NULL;
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
-		fz_drop_stream(ctx, jpegtables);
-		fz_rethrow(ctx);
-	}
+	state->chain = fz_keep_stream(ctx, chain);
+	state->jpegtables = fz_keep_stream(ctx, jpegtables);
+	state->curr_stm = state->chain;
 
 	return fz_new_stream(ctx, state, next_dctd, close_dctd);
 }

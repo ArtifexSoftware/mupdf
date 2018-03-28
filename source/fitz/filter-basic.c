@@ -60,10 +60,9 @@ static void
 close_null(fz_context *ctx, void *state_)
 {
 	struct null_filter *state = (struct null_filter *)state_;
-	fz_stream *chain = state->chain;
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state->ranges);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
@@ -71,23 +70,32 @@ fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
 {
 	struct null_filter *state = NULL;
 
-	fz_var(state);
+	state = fz_malloc_struct(ctx, struct null_filter);
 	fz_try(ctx)
 	{
-		state = fz_malloc_struct(ctx, struct null_filter);
-		state->ranges = fz_calloc(ctx, nranges, sizeof(*ranges));
-		memcpy(state->ranges, ranges, nranges * sizeof(*ranges));
-		state->nranges = nranges;
-		state->next_range = 1;
-		state->chain = chain;
-		state->remain = nranges ? ranges[0].len : 0;
-		state->offset = nranges ? ranges[0].offset : 0;
+		if (nranges > 0)
+		{
+			state->ranges = fz_calloc(ctx, nranges, sizeof(*ranges));
+			memcpy(state->ranges, ranges, nranges * sizeof(*ranges));
+			state->nranges = nranges;
+			state->next_range = 1;
+			state->remain = ranges[0].len;
+			state->offset = ranges[0].offset;
+		}
+		else
+		{
+			state->ranges = NULL;
+			state->nranges = 0;
+			state->next_range = 1;
+			state->remain = 0;
+			state->offset = 0;
+		}
+		state->chain = fz_keep_stream(ctx, chain);
 	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state->ranges);
 		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
@@ -303,28 +311,16 @@ static void
 close_ahxd(fz_context *ctx, void *state_)
 {
 	fz_ahxd *state = (fz_ahxd *)state_;
-	fz_stream *chain = state->chain;
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_ahxd(fz_context *ctx, fz_stream *chain)
 {
-	fz_ahxd *state = NULL;
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_ahxd);
-		state->chain = chain;
-		state->eod = 0;
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
-	}
-
+	fz_ahxd *state = fz_malloc_struct(ctx, fz_ahxd);
+	state->chain = fz_keep_stream(ctx, chain);
+	state->eod = 0;
 	return fz_new_stream(ctx, state, next_ahxd, close_ahxd);
 }
 
@@ -446,29 +442,16 @@ static void
 close_a85d(fz_context *ctx, void *state_)
 {
 	fz_a85d *state = (fz_a85d *)state_;
-	fz_stream *chain = state->chain;
-
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_a85d(fz_context *ctx, fz_stream *chain)
 {
-	fz_a85d *state = NULL;
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_a85d);
-		state->chain = chain;
-		state->eod = 0;
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
-	}
-
+	fz_a85d *state = fz_malloc_struct(ctx, fz_a85d);
+	state->chain = fz_keep_stream(ctx, chain);
+	state->eod = 0;
 	return fz_new_stream(ctx, state, next_a85d, close_a85d);
 }
 
@@ -557,31 +540,18 @@ static void
 close_rld(fz_context *ctx, void *state_)
 {
 	fz_rld *state = (fz_rld *)state_;
-	fz_stream *chain = state->chain;
-
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_rld(fz_context *ctx, fz_stream *chain)
 {
-	fz_rld *state = NULL;
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_rld);
-		state->chain = chain;
-		state->run = 0;
-		state->n = 0;
-		state->c = 0;
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
-	}
-
+	fz_rld *state = fz_malloc_struct(ctx, fz_rld);
+	state->chain = fz_keep_stream(ctx, chain);
+	state->run = 0;
+	state->n = 0;
+	state->c = 0;
 	return fz_new_stream(ctx, state, next_rld, close_rld);
 }
 
@@ -620,29 +590,16 @@ static void
 close_arc4(fz_context *ctx, void *state_)
 {
 	fz_arc4c *state = (fz_arc4c *)state_;
-	fz_stream *chain = state->chain;
-
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen)
 {
-	fz_arc4c *state = NULL;
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_arc4c);
-		state->chain = chain;
-		fz_arc4_init(&state->arc4, key, keylen);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
-	}
-
+	fz_arc4c *state = fz_malloc_struct(ctx, fz_arc4c);
+	state->chain = fz_keep_stream(ctx, chain);
+	fz_arc4_init(&state->arc4, key, keylen);
 	return fz_new_stream(ctx, state, next_arc4, close_arc4);
 }
 
@@ -722,35 +679,22 @@ static void
 close_aesd(fz_context *ctx, void *state_)
 {
 	fz_aesd *state = (fz_aesd *)state_;
-	fz_stream *chain = state->chain;
-
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_aesd(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen)
 {
-	fz_aesd *state = NULL;
-
-	fz_var(state);
-
-	fz_try(ctx)
-	{
-		state = fz_malloc_struct(ctx, fz_aesd);
-		state->chain = chain;
-		if (fz_aes_setkey_dec(&state->aes, key, keylen * 8))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
-		state->ivcount = 0;
-		state->rp = state->bp;
-		state->wp = state->bp;
-	}
-	fz_catch(ctx)
+	fz_aesd *state = fz_malloc_struct(ctx, fz_aesd);
+	if (fz_aes_setkey_dec(&state->aes, key, keylen * 8))
 	{
 		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
 	}
-
+	state->ivcount = 0;
+	state->rp = state->bp;
+	state->wp = state->bp;
+	state->chain = fz_keep_stream(ctx, chain);
 	return fz_new_stream(ctx, state, next_aesd, close_aesd);
 }

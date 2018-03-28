@@ -775,18 +775,14 @@ fz_open_faxd(fz_context *ctx, fz_stream *chain,
 	int k, int end_of_line, int encoded_byte_align,
 	int columns, int rows, int end_of_block, int black_is_1)
 {
-	fz_faxd *fax = NULL;
+	fz_faxd *fax;
 
-	fz_var(fax);
+	if (columns < 0 || columns >= INT_MAX - 7)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many columns lead to an integer overflow (%d)", columns);
 
+	fax = fz_malloc_struct(ctx, fz_faxd);
 	fz_try(ctx)
 	{
-		if (columns < 0 || columns >= INT_MAX - 7)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "too many columns lead to an integer overflow (%d)", columns);
-
-		fax = fz_malloc_struct(ctx, fz_faxd);
-		fax->chain = chain;
-
 		fax->ref = NULL;
 		fax->dst = NULL;
 
@@ -816,16 +812,14 @@ fz_open_faxd(fz_context *ctx, fz_stream *chain,
 
 		memset(fax->ref, 0, fax->stride);
 		memset(fax->dst, 0, fax->stride);
+
+		fax->chain = fz_keep_stream(ctx, chain);
 	}
 	fz_catch(ctx)
 	{
-		if (fax)
-		{
-			fz_free(ctx, fax->dst);
-			fz_free(ctx, fax->ref);
-		}
+		fz_free(ctx, fax->dst);
+		fz_free(ctx, fax->ref);
 		fz_free(ctx, fax);
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 

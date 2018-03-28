@@ -645,36 +645,28 @@ static void
 close_sgilog32(fz_context *ctx, void *state_)
 {
 	fz_sgilog32 *state = (fz_sgilog32 *)state_;
-	fz_stream *chain = state->chain;
-
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state->temp);
 	fz_free(ctx, state);
-	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
 fz_open_sgilog32(fz_context *ctx, fz_stream *chain, int w)
 {
-	fz_sgilog32 *state = NULL;
-
-	fz_var(state);
-
+	fz_sgilog32 *state = fz_malloc_struct(ctx, fz_sgilog32);
 	fz_try(ctx)
 	{
-		state = fz_malloc_struct(ctx, fz_sgilog32);
-		state->chain = chain;
 		state->run = 0;
 		state->n = 0;
 		state->c = 0;
 		state->w = w;
 		state->temp = fz_malloc(ctx, w * sizeof(uint32_t));
+		state->chain = fz_keep_stream(ctx, chain);
 	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
-
 	return fz_new_stream(ctx, state, next_sgilog32, close_sgilog32);
 }

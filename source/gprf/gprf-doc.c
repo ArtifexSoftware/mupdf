@@ -353,8 +353,9 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	unsigned char equiv[3 + FZ_MAX_SEPARATIONS][4];
 	int bytes_per_channel = image->super.w * image->super.h;
 	unsigned char *out = fz_pixmap_samples(ctx, pix);
+	fz_stream *tmp_file = NULL;
 
-	fz_var(file);
+	fz_var(tmp_file);
 
 	if (area)
 	{
@@ -404,9 +405,11 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 				read_sep[i] = 2;
 				memset(&data[i * decode_chunk_size], 0, decode_chunk_size);
 			}
-			file[i] = fz_open_file(ctx, image->file->filename);
-			fz_seek(ctx, file[i], image->offset[i], SEEK_SET);
-			file[i] = fz_open_flated(ctx, file[i], 15);
+			tmp_file = fz_open_file(ctx, image->file->filename);
+			fz_seek(ctx, tmp_file, image->offset[i], SEEK_SET);
+			file[i] = fz_open_flated(ctx, tmp_file, 15);
+			fz_drop_stream(ctx, tmp_file);
+			tmp_file = NULL;
 		}
 
 		/* Now actually do the decode */
@@ -463,6 +466,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	}
 	fz_always(ctx)
 	{
+		fz_drop_stream(ctx, tmp_file);
 		for (i = 0; i < 3+num_seps; i++)
 			fz_drop_stream(ctx, file[i]);
 	}

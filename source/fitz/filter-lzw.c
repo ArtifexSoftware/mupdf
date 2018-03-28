@@ -207,55 +207,45 @@ close_lzwd(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, int reverse_bits, int old_tiff)
 {
-	fz_lzwd *lzw = NULL;
+	fz_lzwd *lzw;
 	int i;
 
-	fz_var(lzw);
-
-	fz_try(ctx)
+	if (min_bits > MAX_BITS)
 	{
-		if (min_bits > MAX_BITS)
-		{
-			fz_warn(ctx, "out of range initial lzw code size");
-			min_bits = MAX_BITS;
-		}
-
-		lzw = fz_malloc_struct(ctx, fz_lzwd);
-		lzw->chain = chain;
-		lzw->eod = 0;
-		lzw->early_change = early_change;
-		lzw->reverse_bits = reverse_bits;
-		lzw->old_tiff = old_tiff;
-		lzw->min_bits = min_bits;
-		lzw->code_bits = lzw->min_bits;
-		lzw->code = -1;
-		lzw->next_code = LZW_FIRST(lzw);
-		lzw->old_code = -1;
-		lzw->rp = lzw->bp;
-		lzw->wp = lzw->bp;
-
-		for (i = 0; i < LZW_CLEAR(lzw); i++)
-		{
-			lzw->table[i].value = i;
-			lzw->table[i].first_char = i;
-			lzw->table[i].length = 1;
-			lzw->table[i].prev = -1;
-		}
-
-		for (i = LZW_CLEAR(lzw); i < NUM_CODES; i++)
-		{
-			lzw->table[i].value = 0;
-			lzw->table[i].first_char = 0;
-			lzw->table[i].length = 0;
-			lzw->table[i].prev = -1;
-		}
+		fz_warn(ctx, "out of range initial lzw code size");
+		min_bits = MAX_BITS;
 	}
-	fz_catch(ctx)
+
+	lzw = fz_malloc_struct(ctx, fz_lzwd);
+	lzw->eod = 0;
+	lzw->early_change = early_change;
+	lzw->reverse_bits = reverse_bits;
+	lzw->old_tiff = old_tiff;
+	lzw->min_bits = min_bits;
+	lzw->code_bits = lzw->min_bits;
+	lzw->code = -1;
+	lzw->next_code = LZW_FIRST(lzw);
+	lzw->old_code = -1;
+	lzw->rp = lzw->bp;
+	lzw->wp = lzw->bp;
+
+	for (i = 0; i < LZW_CLEAR(lzw); i++)
 	{
-		fz_free(ctx, lzw);
-		fz_drop_stream(ctx, chain);
-		fz_rethrow(ctx);
+		lzw->table[i].value = i;
+		lzw->table[i].first_char = i;
+		lzw->table[i].length = 1;
+		lzw->table[i].prev = -1;
 	}
+
+	for (i = LZW_CLEAR(lzw); i < NUM_CODES; i++)
+	{
+		lzw->table[i].value = 0;
+		lzw->table[i].first_char = 0;
+		lzw->table[i].length = 0;
+		lzw->table[i].prev = -1;
+	}
+
+	lzw->chain = fz_keep_stream(ctx, chain);
 
 	return fz_new_stream(ctx, lzw, next_lzwd, close_lzwd);
 }

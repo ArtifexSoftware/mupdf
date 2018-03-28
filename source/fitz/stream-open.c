@@ -232,7 +232,7 @@ fz_open_memory(fz_context *ctx, const unsigned char *data, size_t len)
 {
 	fz_stream *stm;
 
-	stm = fz_new_stream(ctx, NULL, next_buffer, drop_buffer);
+	stm = fz_new_stream(ctx, NULL, next_buffer, NULL);
 	stm->seek = seek_buffer;
 
 	stm->rp = (unsigned char *)data;
