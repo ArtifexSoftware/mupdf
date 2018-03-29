@@ -30,15 +30,15 @@ static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_ob
  * share the same name */
 static pdf_obj *find_head_of_field_group(fz_context *ctx, pdf_obj *obj)
 {
-	if (obj == NULL || pdf_dict_get(ctx, obj, PDF_NAME_T))
+	if (obj == NULL || pdf_dict_get(ctx, obj, PDF_NAME(T)))
 		return obj;
 	else
-		return find_head_of_field_group(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Parent));
+		return find_head_of_field_group(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Parent)));
 }
 
 static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 	if (kids)
 	{
 		int i, n = pdf_array_len(ctx, kids);
@@ -65,7 +65,7 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	if (grp)
 		obj = grp;
 
-	pdf_dict_put_text_string(ctx, obj, PDF_NAME_V, text);
+	pdf_dict_put_text_string(ctx, obj, PDF_NAME(V), text);
 
 	pdf_field_mark_dirty(ctx, doc, obj);
 }
@@ -81,7 +81,7 @@ static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, char *name, int len)
 		char *part;
 
 		field = pdf_array_get(ctx, dict, i);
-		part = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME_T));
+		part = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME(T)));
 		if (strlen(part) == (size_t)len && !memcmp(part, name, len))
 			return field;
 	}
@@ -108,7 +108,7 @@ pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name)
 		len = dot ? dot - namep : (int)strlen(namep);
 		dict = find_field(ctx, form, namep, len);
 		if (dot)
-			form = pdf_dict_get(ctx, dict, PDF_NAME_Kids);
+			form = pdf_dict_get(ctx, dict, PDF_NAME(Kids));
 	}
 
 	return dict;
@@ -123,13 +123,13 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	 * At the bottom of the hierarchy we may find widget annotations
 	 * that aren't also fields, but DV and V will not be present in their
 	 * dictionaries, and attempts to remove V will be harmless. */
-	pdf_obj *dv = pdf_dict_get(ctx, field, PDF_NAME_DV);
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
+	pdf_obj *dv = pdf_dict_get(ctx, field, PDF_NAME(DV));
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 
 	if (dv)
-		pdf_dict_put(ctx, field, PDF_NAME_V, dv);
+		pdf_dict_put(ctx, field, PDF_NAME(V), dv);
 	else
-		pdf_dict_del(ctx, field, PDF_NAME_V);
+		pdf_dict_del(ctx, field, PDF_NAME(V));
 
 	if (kids == NULL)
 	{
@@ -142,14 +142,14 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
 		case PDF_WIDGET_TYPE_CHECKBOX:
 			{
-				pdf_obj *leafv = pdf_get_inheritable(ctx, doc, field, PDF_NAME_V);
+				pdf_obj *leafv = pdf_get_inheritable(ctx, doc, field, PDF_NAME(V));
 
 				if (leafv)
 					pdf_keep_obj(ctx, leafv);
 				else
-					leafv = PDF_NAME_Off;
+					leafv = PDF_NAME(Off);
 
-				pdf_dict_put_drop(ctx, field, PDF_NAME_AS, leafv);
+				pdf_dict_put_drop(ctx, field, PDF_NAME(AS), leafv);
 			}
 			break;
 
@@ -168,7 +168,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 
 	reset_form_field(ctx, doc, field);
 
@@ -183,8 +183,8 @@ void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_obj *field)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
-	pdf_obj *exclude = pdf_dict_get(ctx, field, PDF_NAME_Exclude);
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
+	pdf_obj *exclude = pdf_dict_get(ctx, field, PDF_NAME(Exclude));
 
 	if (exclude)
 		return;
@@ -209,7 +209,7 @@ static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_ob
 */
 static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fields, int exclude)
 {
-	pdf_obj *form = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_Fields, NULL);
+	pdf_obj *form = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 	int i, n;
 	pdf_obj *result = pdf_new_array(ctx, doc, 0);
 	pdf_obj *nil = NULL;
@@ -234,7 +234,7 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 					field = pdf_lookup_field(ctx, form, pdf_to_str_buf(ctx, field));
 
 				if (field)
-					pdf_dict_put(ctx, field, PDF_NAME_Exclude, nil);
+					pdf_dict_put(ctx, field, PDF_NAME(Exclude), nil);
 			}
 
 			/* Act upon all unmarked fields */
@@ -254,7 +254,7 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 					field = pdf_lookup_field(ctx, form, pdf_to_str_buf(ctx, field));
 
 				if (field)
-					pdf_dict_del(ctx, field, PDF_NAME_Exclude);
+					pdf_dict_del(ctx, field, PDF_NAME(Exclude));
 			}
 		}
 		else
@@ -311,11 +311,11 @@ static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf
 {
 	if (a)
 	{
-		pdf_obj *type = pdf_dict_get(ctx, a, PDF_NAME_S);
+		pdf_obj *type = pdf_dict_get(ctx, a, PDF_NAME(S));
 
-		if (pdf_name_eq(ctx, type, PDF_NAME_JavaScript))
+		if (pdf_name_eq(ctx, type, PDF_NAME(JavaScript)))
 		{
-			pdf_obj *js = pdf_dict_get(ctx, a, PDF_NAME_JS);
+			pdf_obj *js = pdf_dict_get(ctx, a, PDF_NAME(JS));
 			if (js)
 			{
 				char *code = pdf_load_stream_or_string_as_utf8(ctx, js);
@@ -333,15 +333,15 @@ static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf
 				}
 			}
 		}
-		else if (pdf_name_eq(ctx, type, PDF_NAME_ResetForm))
+		else if (pdf_name_eq(ctx, type, PDF_NAME(ResetForm)))
 		{
-			reset_form(ctx, doc, pdf_dict_get(ctx, a, PDF_NAME_Fields), pdf_to_int(ctx, pdf_dict_get(ctx, a, PDF_NAME_Flags)) & 1);
+			reset_form(ctx, doc, pdf_dict_get(ctx, a, PDF_NAME(Fields)), pdf_to_int(ctx, pdf_dict_get(ctx, a, PDF_NAME(Flags))) & 1);
 		}
-		else if (pdf_name_eq(ctx, type, PDF_NAME_Named))
+		else if (pdf_name_eq(ctx, type, PDF_NAME(Named)))
 		{
-			pdf_obj *name = pdf_dict_get(ctx, a, PDF_NAME_N);
+			pdf_obj *name = pdf_dict_get(ctx, a, PDF_NAME(N));
 
-			if (pdf_name_eq(ctx, name, PDF_NAME_Print))
+			if (pdf_name_eq(ctx, name, PDF_NAME(Print)))
 				pdf_event_issue_print(ctx, doc);
 		}
 	}
@@ -349,7 +349,7 @@ static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf
 
 static void execute_action_chain(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *a = pdf_dict_get(ctx, obj, PDF_NAME_A);
+	pdf_obj *a = pdf_dict_get(ctx, obj, PDF_NAME(A));
 	pdf_js_event e;
 
 	e.target = obj;
@@ -359,7 +359,7 @@ static void execute_action_chain(fz_context *ctx, pdf_document *doc, pdf_obj *ob
 	while (a)
 	{
 		execute_action(ctx, doc, obj, a);
-		a = pdf_dict_get(ctx, a, PDF_NAME_Next);
+		a = pdf_dict_get(ctx, a, PDF_NAME(Next));
 	}
 }
 
@@ -380,7 +380,7 @@ static void execute_additional_action(fz_context *ctx, pdf_document *doc, pdf_ob
 
 static void check_off(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	pdf_dict_put(ctx, obj, PDF_NAME_AS, PDF_NAME_Off);
+	pdf_dict_put(ctx, obj, PDF_NAME(AS), PDF_NAME(Off));
 }
 
 static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj *name)
@@ -393,16 +393,16 @@ static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj 
 	if (pdf_dict_get(ctx, n, name))
 		val = name;
 	else
-		val = PDF_NAME_Off;
+		val = PDF_NAME(Off);
 
-	pdf_dict_put(ctx, chk, PDF_NAME_AS, val);
+	pdf_dict_put(ctx, chk, PDF_NAME(AS), val);
 }
 
 /* Set the values of all fields in a group defined by a node
  * in the hierarchy */
 static void set_check_grp(fz_context *ctx, pdf_document *doc, pdf_obj *grp, pdf_obj *val)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, grp, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, grp, PDF_NAME(Kids));
 
 	if (kids == NULL)
 	{
@@ -463,16 +463,16 @@ static void recalculate(fz_context *ctx, pdf_document *doc)
 
 static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME_AS);
+	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
 	int ff = pdf_get_field_flags(ctx, doc, obj);
 	int radio = ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio);
 	char *val = NULL;
-	pdf_obj *grp = radio ? pdf_dict_get(ctx, obj, PDF_NAME_Parent) : find_head_of_field_group(ctx, obj);
+	pdf_obj *grp = radio ? pdf_dict_get(ctx, obj, PDF_NAME(Parent)) : find_head_of_field_group(ctx, obj);
 
 	if (!grp)
 		grp = obj;
 
-	if (as && !pdf_name_eq(ctx, as, PDF_NAME_Off))
+	if (as && !pdf_name_eq(ctx, as, PDF_NAME(Off)))
 	{
 		/* "as" neither missing nor set to Off. Set it to Off, unless
 		 * this is a non-toggle-off radio button. */
@@ -494,7 +494,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		for (i = 0; i < len; i++)
 		{
 			key = pdf_dict_get_key(ctx, n, i);
-			if (pdf_is_name(ctx, key) && !pdf_name_eq(ctx, key, PDF_NAME_Off))
+			if (pdf_is_name(ctx, key) && !pdf_name_eq(ctx, key, PDF_NAME(Off)))
 				break;
 		}
 
@@ -506,13 +506,13 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		{
 			/* For radio buttons, first turn off all buttons in the group and
 			 * then set the one that was clicked */
-			pdf_obj *kids = pdf_dict_get(ctx, grp, PDF_NAME_Kids);
+			pdf_obj *kids = pdf_dict_get(ctx, grp, PDF_NAME(Kids));
 
 			len = pdf_array_len(ctx, kids);
 			for (i = 0; i < len; i++)
 				check_off(ctx, doc, pdf_array_get(ctx, kids, i));
 
-			pdf_dict_put(ctx, obj, PDF_NAME_AS, key);
+			pdf_dict_put(ctx, obj, PDF_NAME(AS), key);
 		}
 		else
 		{
@@ -530,7 +530,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	if (val && grp)
 	{
 		pdf_obj *v = pdf_new_text_string(ctx, doc, val);
-		pdf_dict_put_drop(ctx, grp, PDF_NAME_V, v);
+		pdf_dict_put_drop(ctx, grp, PDF_NAME(V), v);
 		recalculate(ctx, doc);
 	}
 }
@@ -562,7 +562,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	/* Skip hidden annotations. */
 	if (annot)
 	{
-		int f = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
+		int f = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(F)));
 		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW))
 			annot = NULL;
 	}
@@ -570,7 +570,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	/* Skip Link annotations. */
 	if (annot)
 	{
-		if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype), PDF_NAME_Link))
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Link)))
 			annot = NULL;
 	}
 
@@ -684,12 +684,12 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	fz_try(ctx)
 	{
 		pdf_set_field_type(ctx, doc, annot->obj, type);
-		pdf_dict_put_string(ctx, annot->obj, PDF_NAME_T, fieldname, strlen(fieldname));
+		pdf_dict_put_string(ctx, annot->obj, PDF_NAME(T), fieldname, strlen(fieldname));
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
 		{
 			int sigflags = (old_sigflags | (SigFlag_SignaturesExist|SigFlag_AppendOnly));
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, sigflags), PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_SigFlags, NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
 		}
 
 		/*
@@ -700,7 +700,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 		if (!form)
 		{
 			form = pdf_new_array(ctx, doc, 1);
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), form, PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_Fields, NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), form, PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 		}
 
 		pdf_array_push(ctx, form, annot->obj); /* Cleanup relies on this statement being last */
@@ -712,7 +712,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 		/* An empty Fields array may have been created, but that is harmless */
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, old_sigflags), PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_SigFlags, NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, old_sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
 
 		fz_rethrow(ctx);
 	}
@@ -756,7 +756,7 @@ static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 
 static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *val)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 
 	if (kids)
 	{
@@ -773,8 +773,8 @@ static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj
 		if (pdf_dict_gets(ctx, n, val))
 			oval = pdf_new_name(ctx, doc, val);
 		else
-			oval = PDF_NAME_Off;
-		pdf_dict_put_drop(ctx, field, PDF_NAME_AS, oval);
+			oval = PDF_NAME(Off);
+		pdf_dict_put_drop(ctx, field, PDF_NAME(AS), oval);
 	}
 }
 
@@ -814,7 +814,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 
 char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	const char *bs = pdf_to_name(ctx, pdf_dict_getl(ctx, field, PDF_NAME_BS, PDF_NAME_S, NULL));
+	const char *bs = pdf_to_name(ctx, pdf_dict_getl(ctx, field, PDF_NAME(BS), PDF_NAME(S), NULL));
 	switch (*bs)
 	{
 	case 'S': return "Solid";
@@ -831,19 +831,19 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 	pdf_obj *val;
 
 	if (!strcmp(text, "Solid"))
-		val = PDF_NAME_S;
+		val = PDF_NAME(S);
 	else if (!strcmp(text, "Dashed"))
-		val = PDF_NAME_D;
+		val = PDF_NAME(D);
 	else if (!strcmp(text, "Beveled"))
-		val = PDF_NAME_B;
+		val = PDF_NAME(B);
 	else if (!strcmp(text, "Inset"))
-		val = PDF_NAME_I;
+		val = PDF_NAME(I);
 	else if (!strcmp(text, "Underline"))
-		val = PDF_NAME_U;
+		val = PDF_NAME(U);
 	else
 		return;
 
-	pdf_dict_putl_drop(ctx, field, val, PDF_NAME_BS, PDF_NAME_S, NULL);
+	pdf_dict_putl_drop(ctx, field, val, PDF_NAME(BS), PDF_NAME(S), NULL);
 	pdf_field_mark_dirty(ctx, doc, field);
 }
 
@@ -852,7 +852,7 @@ void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *f
 	if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
 		pdf_obj *val = pdf_new_text_string(ctx, doc, text);
-		pdf_dict_putl_drop(ctx, field, val, PDF_NAME_MK, PDF_NAME_CA, NULL);
+		pdf_dict_putl_drop(ctx, field, val, PDF_NAME(MK), PDF_NAME(CA), NULL);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
 }
@@ -865,10 +865,10 @@ int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	/* Base response on first of children. Not ideal,
 	 * but not clear how to handle children with
 	 * differing values */
-	while ((kids = pdf_dict_get(ctx, field, PDF_NAME_Kids)) != NULL)
+	while ((kids = pdf_dict_get(ctx, field, PDF_NAME(Kids))) != NULL)
 		field = pdf_array_get(ctx, kids, 0);
 
-	f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME_F));
+	f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME(F)));
 
 	if (f & PDF_ANNOT_IS_HIDDEN)
 	{
@@ -897,8 +897,8 @@ int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, int spare)
 {
 	char *res = NULL;
-	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME_Parent);
-	char *lname = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME_T));
+	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
+	char *lname = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME(T)));
 	int llen = (int)strlen(lname);
 
 	/*
@@ -936,12 +936,12 @@ char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 
 	if (!kids)
 	{
 		int mask = (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
-		int f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME_F)) & ~mask;
+		int f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME(F))) & ~mask;
 		pdf_obj *fo;
 
 		switch (d)
@@ -960,7 +960,7 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 		}
 
 		fo = pdf_new_int(ctx, doc, f);
-		pdf_dict_put_drop(ctx, field, PDF_NAME_F, fo);
+		pdf_dict_put_drop(ctx, field, PDF_NAME(F), fo);
 	}
 	else
 	{
@@ -976,7 +976,7 @@ void pdf_field_set_fill_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	/* col == NULL mean transparent, but we can simply pass it on as with
 	 * non-NULL values because pdf_dict_putp interprets a NULL value as
 	 * delete */
-	pdf_dict_putl(ctx, field, col, PDF_NAME_MK, PDF_NAME_BG, NULL);
+	pdf_dict_putl(ctx, field, col, PDF_NAME(MK), PDF_NAME(BG), NULL);
 	pdf_field_mark_dirty(ctx, doc, field);
 }
 
@@ -984,7 +984,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 {
 	pdf_da_info di;
 	fz_buffer *fzbuf = NULL;
-	char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME_DA));
+	char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME(DA)));
 	unsigned char *buf;
 	int ilen;
 	size_t len;
@@ -1009,7 +1009,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 		pdf_fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		daobj = pdf_new_string(ctx, doc, (char *)buf, len);
-		pdf_dict_put_drop(ctx, field, PDF_NAME_DA, daobj);
+		pdf_dict_put_drop(ctx, field, PDF_NAME(DA), daobj);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
 	fz_always(ctx)
@@ -1050,7 +1050,7 @@ int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
-	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, annot->obj, PDF_NAME_MaxLen));
+	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, annot->obj, PDF_NAME(MaxLen)));
 }
 
 int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
@@ -1062,7 +1062,7 @@ int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget 
 	fz_var(code);
 	fz_try(ctx)
 	{
-		code = pdf_get_string_or_stream(ctx, doc, pdf_dict_getl(ctx, annot->obj, PDF_NAME_AA, PDF_NAME_F, PDF_NAME_JS, NULL));
+		code = pdf_get_string_or_stream(ctx, doc, pdf_dict_getl(ctx, annot->obj, PDF_NAME(AA), PDF_NAME(F), PDF_NAME(JS), NULL));
 		if (code)
 		{
 			if (strstr(code, "AFNumber_Format"))
@@ -1089,7 +1089,7 @@ int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget 
 
 static int run_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, char **text)
 {
-	pdf_obj *k = pdf_dict_getl(ctx, field, PDF_NAME_AA, PDF_NAME_K, NULL);
+	pdf_obj *k = pdf_dict_getl(ctx, field, PDF_NAME(AA), PDF_NAME(K), NULL);
 
 	if (k && doc->js)
 	{
@@ -1138,7 +1138,7 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 	if (!annot)
 		return 0;
 
-	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME_Opt);
+	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME(Opt));
 	n = pdf_array_len(ctx, optarr);
 
 	if (opts)
@@ -1184,7 +1184,7 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, 
 	if (!annot)
 		return 0;
 
-	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME_V);
+	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME(V));
 
 	if (pdf_is_string(ctx, optarr))
 	{
@@ -1236,16 +1236,16 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 				pdf_array_push_drop(ctx, optarr, opt);
 			}
 
-			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_V, optarr);
+			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(V), optarr);
 		}
 		else
 		{
 			opt = pdf_new_text_string(ctx, doc, opts[0]);
-			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_V, opt);
+			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(V), opt);
 		}
 
 		/* FIXME: when n > 1, we should be regenerating the indexes */
-		pdf_dict_del(ctx, annot->obj, PDF_NAME_I);
+		pdf_dict_del(ctx, annot->obj, PDF_NAME(I));
 
 		pdf_field_mark_dirty(ctx, doc, annot->obj);
 		if (pdf_field_dirties_document(ctx, doc, annot->obj))
@@ -1261,7 +1261,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-	pdf_obj *br = pdf_dict_getl(ctx, annot->obj, PDF_NAME_V, PDF_NAME_ByteRange, NULL);
+	pdf_obj *br = pdf_dict_getl(ctx, annot->obj, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 	int i, n = pdf_array_len(ctx, br)/2;
 
 	if (byte_range)
@@ -1309,7 +1309,7 @@ fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, p
 int pdf_signature_widget_contents(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char **contents)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-	pdf_obj *c = pdf_dict_getl(ctx, annot->obj, PDF_NAME_V, PDF_NAME_Contents, NULL);
+	pdf_obj *c = pdf_dict_getl(ctx, annot->obj, PDF_NAME(V), PDF_NAME(Contents), NULL);
 	if (contents)
 		*contents = pdf_to_str_buf(ctx, c);
 	return pdf_to_str_len(ctx, c);
@@ -1328,7 +1328,7 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 
 	vnum = pdf_create_object(ctx, doc);
 	indv = pdf_new_indirect(ctx, doc, vnum, 0);
-	pdf_dict_put_drop(ctx, field, PDF_NAME_V, indv);
+	pdf_dict_put_drop(ctx, field, PDF_NAME(V), indv);
 
 	fz_var(v);
 	fz_try(ctx)
@@ -1346,13 +1346,13 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	}
 
 	byte_range = pdf_new_array(ctx, doc, 4);
-	pdf_dict_put_drop(ctx, v, PDF_NAME_ByteRange, byte_range);
+	pdf_dict_put_drop(ctx, v, PDF_NAME(ByteRange), byte_range);
 
 	contents = pdf_new_string(ctx, doc, buf, sizeof(buf));
-	pdf_dict_put_drop(ctx, v, PDF_NAME_Contents, contents);
+	pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
 
-	pdf_dict_put(ctx, v, PDF_NAME_Filter, PDF_NAME_Adobe_PPKLite);
-	pdf_dict_put(ctx, v, PDF_NAME_SubFilter, PDF_NAME_adbe_pkcs7_detached);
+	pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
+	pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
 
 	/* Record details within the document structure so that contents
 	 * and byte_range can be updated with their correct values at

@@ -12,10 +12,10 @@ pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, p
 		fobj = pdf_dict_get(ctx, obj, key);
 
 		if (!fobj)
-			obj = pdf_dict_get(ctx, obj, PDF_NAME_Parent);
+			obj = pdf_dict_get(ctx, obj, PDF_NAME(Parent));
 	}
 
-	return fobj ? fobj : pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_AcroForm), key);
+	return fobj ? fobj : pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(AcroForm)), key);
 }
 
 char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
@@ -62,17 +62,17 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	return pdf_load_stream_or_string_as_utf8(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME_V));
+	return pdf_load_stream_or_string_as_utf8(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME(V)));
 }
 
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, obj, PDF_NAME_Ff));
+	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, obj, PDF_NAME(Ff)));
 }
 
 static pdf_obj *get_field_type_name(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	return pdf_get_inheritable(ctx, doc, obj, PDF_NAME_FT);
+	return pdf_get_inheritable(ctx, doc, obj, PDF_NAME(FT));
 }
 
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
@@ -80,7 +80,7 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	pdf_obj *type = get_field_type_name(ctx, doc, obj);
 	int flags = pdf_get_field_flags(ctx, doc, obj);
 
-	if (pdf_name_eq(ctx, type, PDF_NAME_Btn))
+	if (pdf_name_eq(ctx, type, PDF_NAME(Btn)))
 	{
 		if (flags & Ff_Pushbutton)
 			return PDF_WIDGET_TYPE_PUSHBUTTON;
@@ -89,16 +89,16 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		else
 			return PDF_WIDGET_TYPE_CHECKBOX;
 	}
-	else if (pdf_name_eq(ctx, type, PDF_NAME_Tx))
+	else if (pdf_name_eq(ctx, type, PDF_NAME(Tx)))
 		return PDF_WIDGET_TYPE_TEXT;
-	else if (pdf_name_eq(ctx, type, PDF_NAME_Ch))
+	else if (pdf_name_eq(ctx, type, PDF_NAME(Ch)))
 	{
 		if (flags & Ff_Combo)
 			return PDF_WIDGET_TYPE_COMBOBOX;
 		else
 			return PDF_WIDGET_TYPE_LISTBOX;
 	}
-	else if (pdf_name_eq(ctx, type, PDF_NAME_Sig))
+	else if (pdf_name_eq(ctx, type, PDF_NAME(Sig)))
 		return PDF_WIDGET_TYPE_SIGNATURE;
 	else
 		return PDF_WIDGET_TYPE_NOT_WIDGET;
@@ -113,42 +113,42 @@ void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int ty
 	switch(type)
 	{
 	case PDF_WIDGET_TYPE_PUSHBUTTON:
-		typename = PDF_NAME_Btn;
+		typename = PDF_NAME(Btn);
 		setbits = Ff_Pushbutton;
 		break;
 	case PDF_WIDGET_TYPE_CHECKBOX:
-		typename = PDF_NAME_Btn;
+		typename = PDF_NAME(Btn);
 		clearbits = Ff_Pushbutton;
 		setbits = Ff_Radio;
 		break;
 	case PDF_WIDGET_TYPE_RADIOBUTTON:
-		typename = PDF_NAME_Btn;
+		typename = PDF_NAME(Btn);
 		clearbits = (Ff_Pushbutton|Ff_Radio);
 		break;
 	case PDF_WIDGET_TYPE_TEXT:
-		typename = PDF_NAME_Tx;
+		typename = PDF_NAME(Tx);
 		break;
 	case PDF_WIDGET_TYPE_LISTBOX:
-		typename = PDF_NAME_Ch;
+		typename = PDF_NAME(Ch);
 		clearbits = Ff_Combo;
 		break;
 	case PDF_WIDGET_TYPE_COMBOBOX:
-		typename = PDF_NAME_Ch;
+		typename = PDF_NAME(Ch);
 		setbits = Ff_Combo;
 		break;
 	case PDF_WIDGET_TYPE_SIGNATURE:
-		typename = PDF_NAME_Sig;
+		typename = PDF_NAME(Sig);
 		break;
 	}
 
 	if (typename)
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_FT, typename);
+		pdf_dict_put_drop(ctx, obj, PDF_NAME(FT), typename);
 
 	if (setbits != 0 || clearbits != 0)
 	{
-		int bits = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Ff));
+		int bits = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Ff)));
 		bits &= ~clearbits;
 		bits |= setbits;
-		pdf_dict_put_int(ctx, obj, PDF_NAME_Ff, bits);
+		pdf_dict_put_int(ctx, obj, PDF_NAME(Ff), bits);
 	}
 }

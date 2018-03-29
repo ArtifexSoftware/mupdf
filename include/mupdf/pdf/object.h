@@ -52,15 +52,7 @@ int pdf_is_stream(fz_context *ctx, pdf_obj *obj);
 pdf_obj *pdf_resolve_obj(fz_context *ctx, pdf_obj *a);
 int pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b);
 int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b);
-
-static inline int pdf_name_eq(fz_context *ctx, pdf_obj *a, pdf_obj *b)
-{
-	if (a == b)
-		return 1;
-	if (a < PDF_OBJ_NAME__LIMIT && b < PDF_OBJ_NAME__LIMIT)
-		return 0;
-	return !pdf_objcmp_resolve(ctx, a, b);
-}
+int pdf_name_eq(fz_context *ctx, pdf_obj *a, pdf_obj *b);
 
 /* obj marking and unmarking functions - to avoid infinite recursions. */
 int pdf_obj_marked(fz_context *ctx, pdf_obj *obj);
@@ -184,5 +176,27 @@ pdf_document *pdf_get_indirect_document(fz_context *ctx, pdf_obj *obj);
 pdf_document *pdf_get_bound_document(fz_context *ctx, pdf_obj *obj);
 void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen);
 void pdf_set_int(fz_context *ctx, pdf_obj *obj, int64_t i);
+
+/* Voodoo to create PDF_NAME(Foo) macros from name-table.h */
+
+#define PDF_NAME(X) ((pdf_obj*)(intptr_t)PDF_ENUM_NAME_##X)
+
+#define PDF_MAKE_NAME(STRING,NAME) PDF_ENUM_NAME_##NAME,
+enum {
+	PDF_ENUM_DUMMY,
+#include "mupdf/pdf/name-table.h"
+	PDF_ENUM_LIMIT_NAME,
+	PDF_ENUM_NULL,
+	PDF_ENUM_TRUE,
+	PDF_ENUM_FALSE,
+	PDF_ENUM_LIMIT_OBJ
+};
+#undef PDF_MAKE_NAME
+
+#define PDF_NAME_LIMIT ((pdf_obj*)(intptr_t)PDF_ENUM_LIMIT_NAME)
+#define PDF_OBJ_LIMIT ((pdf_obj*)(intptr_t)PDF_ENUM_LIMIT_OBJ)
+#define PDF_NULL ((pdf_obj*)(intptr_t)PDF_ENUM_NULL)
+#define PDF_TRUE ((pdf_obj*)(intptr_t)PDF_ENUM_TRUE)
+#define PDF_FALSE ((pdf_obj*)(intptr_t)PDF_ENUM_FALSE)
 
 #endif

@@ -23,20 +23,20 @@ load_portfolio(fz_context *ctx, pdf_document *doc)
 	int i, n;
 	pdf_portfolio **pp;
 
-	obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Collection, PDF_NAME_Schema, NULL);
+	obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Collection), PDF_NAME(Schema), NULL);
 
 	n = pdf_dict_len(ctx, obj);
 	for (i = 0; i < n; i++)
 	{
 		pdf_obj *k = pdf_dict_get_key(ctx, obj, i);
 		pdf_obj *v = pdf_dict_get_val(ctx, obj, i);
-		int sort = pdf_to_int(ctx, pdf_dict_get(ctx, v, PDF_NAME_O));
-		pdf_obj *eo = pdf_dict_get(ctx, v, PDF_NAME_E);
+		int sort = pdf_to_int(ctx, pdf_dict_get(ctx, v, PDF_NAME(O)));
+		pdf_obj *eo = pdf_dict_get(ctx, v, PDF_NAME(E));
 		int editable = eo ? pdf_to_bool(ctx, eo) : 0;
-		pdf_obj *vo = pdf_dict_get(ctx, v, PDF_NAME_V);
+		pdf_obj *vo = pdf_dict_get(ctx, v, PDF_NAME(V));
 		int visible = vo ? pdf_to_bool(ctx, vo) : 1;
-		const char *subtype = pdf_to_name(ctx, pdf_dict_get(ctx, v, PDF_NAME_Subtype));
-		pdf_obj *name = pdf_dict_get(ctx, v, PDF_NAME_N);
+		const char *subtype = pdf_to_name(ctx, pdf_dict_get(ctx, v, PDF_NAME(Subtype)));
+		pdf_obj *name = pdf_dict_get(ctx, v, PDF_NAME(N));
 		pdf_portfolio *p = fz_malloc_struct(ctx, pdf_portfolio);
 		p->key = pdf_keep_obj(ctx, k);
 		p->val = pdf_keep_obj(ctx, v);
@@ -152,7 +152,7 @@ void pdf_reorder_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry,
 
 	/* Rewrite the underlying orderings */
 	for (p = doc->portfolio, entry = 0; p; p = p->next, entry++)
-		pdf_dict_put_int(ctx, p->val, PDF_NAME_O, entry);
+		pdf_dict_put_int(ctx, p->val, PDF_NAME(O), entry);
 }
 
 void pdf_rename_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, const char *name, int name_len)
@@ -176,7 +176,7 @@ void pdf_rename_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, 
 	s = pdf_new_string(ctx, doc, name, name_len);
 	pdf_drop_obj(ctx, p->entry.name);
 	p->entry.name = s;
-	pdf_dict_put(ctx, p->val, PDF_NAME_N, s);
+	pdf_dict_put(ctx, p->val, PDF_NAME(N), s);
 }
 
 typedef int (pdf_name_tree_map_fn)(fz_context *ctx, pdf_obj *container, pdf_obj *key, pdf_obj *val, void *arg);
@@ -196,7 +196,7 @@ do_name_tree_map(fz_context *ctx, pdf_obj *tree, pdf_name_tree_map_fn *fn, void 
 
 	fz_try(ctx)
 	{
-		pdf_obj *arr = pdf_dict_get(ctx, tree, PDF_NAME_Kids);
+		pdf_obj *arr = pdf_dict_get(ctx, tree, PDF_NAME(Kids));
 		n = pdf_array_len(ctx, arr);
 
 		for (i = n; i > 0;)
@@ -209,7 +209,7 @@ do_name_tree_map(fz_context *ctx, pdf_obj *tree, pdf_name_tree_map_fn *fn, void 
 			}
 		}
 
-		arr = pdf_dict_get(ctx, tree, PDF_NAME_Names);
+		arr = pdf_dict_get(ctx, tree, PDF_NAME(Names));
 		m = pdf_array_len(ctx, arr);
 
 		if (m & 1)
@@ -243,7 +243,7 @@ static int delete_from_node(fz_context *ctx, pdf_obj *container, pdf_obj *key, p
 {
 	pdf_obj *delete_key = (pdf_obj *)arg;
 
-	pdf_dict_del(ctx, pdf_dict_get(ctx, val, PDF_NAME_CI), delete_key);
+	pdf_dict_del(ctx, pdf_dict_get(ctx, val, PDF_NAME(CI)), delete_key);
 
 	return 0;
 }
@@ -270,11 +270,11 @@ void pdf_delete_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry)
 	*pp = p->next;
 
 	/* Delete the key from the schema */
-	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Collection, PDF_NAME_Schema, NULL);
+	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Collection), PDF_NAME(Schema), NULL);
 	pdf_dict_del(ctx, s, p->key);
 
 	/* Delete this entry from all the collection entries */
-	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Names, PDF_NAME_EmbeddedFiles, NULL);
+	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 	pdf_name_tree_map(ctx, s, delete_from_node, p->key);
 
 	pdf_drop_obj(ctx, p->entry.name);
@@ -325,10 +325,10 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 		while (p);
 
 		sc = pdf_new_dict(ctx, doc, 4);
-		pdf_dict_put_bool(ctx, sc, PDF_NAME_E, !!info->editable);
-		pdf_dict_put_bool(ctx, sc, PDF_NAME_V, !!info->visible);
-		pdf_dict_put_drop(ctx, sc, PDF_NAME_N, info->name);
-		pdf_dict_put(ctx, sc, PDF_NAME_Subtype, PDF_NAME_S);
+		pdf_dict_put_bool(ctx, sc, PDF_NAME(E), !!info->editable);
+		pdf_dict_put_bool(ctx, sc, PDF_NAME(V), !!info->visible);
+		pdf_dict_put_drop(ctx, sc, PDF_NAME(N), info->name);
+		pdf_dict_put(ctx, sc, PDF_NAME(Subtype), PDF_NAME(S));
 
 		/* Add to our linked list (in the correct sorted place) */
 		p = fz_malloc_struct(ctx, pdf_portfolio);
@@ -340,13 +340,13 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 		*pp = p;
 
 		/* Add the key to the schema */
-		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Collection, PDF_NAME_Schema, NULL);
+		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Collection), PDF_NAME(Schema), NULL);
 		pdf_dict_put(ctx, s, num_name, sc);
 
 		/* Renumber the schema entries */
 		for (num = 0, p = doc->portfolio; p; num++, p = p->next)
 		{
-			pdf_dict_put_int(ctx, p->val, PDF_NAME_O, num);
+			pdf_dict_put_int(ctx, p->val, PDF_NAME(O), num);
 			p->sort = num;
 		}
 	}
@@ -385,7 +385,7 @@ int pdf_count_portfolio_entries(fz_context *ctx, pdf_document *doc)
 	if (doc->portfolio == NULL)
 		load_portfolio(ctx, doc);
 
-	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Names, PDF_NAME_EmbeddedFiles, NULL);
+	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 	count = 0;
 	pdf_name_tree_map(ctx, s, count_nodes, &count);
 
@@ -439,7 +439,7 @@ pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int en
 	if (doc->portfolio == NULL)
 		load_portfolio(ctx, doc);
 
-	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Names, PDF_NAME_EmbeddedFiles, NULL);
+	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 	data.count = entry;
 	data.key = NULL;
 	data.val = NULL;
@@ -469,7 +469,7 @@ fz_buffer *pdf_portfolio_entry(fz_context *ctx, pdf_document *doc, int entry)
 {
 	pdf_obj *obj = pdf_portfolio_entry_obj(ctx, doc, entry);
 
-	return pdf_load_stream(ctx, pdf_dict_getl(ctx, obj, PDF_NAME_EF, PDF_NAME_F, NULL));
+	return pdf_load_stream(ctx, pdf_dict_getl(ctx, obj, PDF_NAME(EF), PDF_NAME(F), NULL));
 }
 
 pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry, int schema_entry)
@@ -496,21 +496,21 @@ pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 		lookup = NULL;
 		break;
 	case PDF_SCHEMA_FILENAME:
-		lookup = PDF_NAME_UF;
+		lookup = PDF_NAME(UF);
 		break;
 	case PDF_SCHEMA_DESC:
-		lookup = PDF_NAME_Desc;
+		lookup = PDF_NAME(Desc);
 		break;
 	case PDF_SCHEMA_MODDATE:
-		lookup = PDF_NAME_ModDate;
+		lookup = PDF_NAME(ModDate);
 		ef = 1;
 		break;
 	case PDF_SCHEMA_CREATIONDATE:
-		lookup = PDF_NAME_CreationDate;
+		lookup = PDF_NAME(CreationDate);
 		ef = 1;
 		break;
 	case PDF_SCHEMA_SIZE:
-		lookup = PDF_NAME_Size;
+		lookup = PDF_NAME(Size);
 		ef = 1;
 		break;
 	}
@@ -519,13 +519,13 @@ pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 		pdf_obj *res;
 
 		if (ef)
-			obj = pdf_dict_getl(ctx, obj, PDF_NAME_EF, PDF_NAME_F, PDF_NAME_Params, NULL);
+			obj = pdf_dict_getl(ctx, obj, PDF_NAME(EF), PDF_NAME(F), PDF_NAME(Params), NULL);
 		res = pdf_dict_get(ctx, obj, lookup);
-		if (res == NULL && pdf_name_eq(ctx, lookup, PDF_NAME_UF))
-			res = pdf_dict_get(ctx, obj, PDF_NAME_F);
+		if (res == NULL && pdf_name_eq(ctx, lookup, PDF_NAME(UF)))
+			res = pdf_dict_get(ctx, obj, PDF_NAME(F));
 		return res;
 	}
-	return pdf_dict_getl(ctx, obj, PDF_NAME_CI, p->key, NULL);
+	return pdf_dict_getl(ctx, obj, PDF_NAME(CI), p->key, NULL);
 }
 
 typedef struct
@@ -583,21 +583,21 @@ pdf_name_tree_insert(fz_context *ctx, pdf_document *doc, pdf_obj *tree, pdf_obj 
 	if (!data.found)
 	{
 		/* Completely empty name tree! */
-		pdf_dict_put_array(ctx, tree, PDF_NAME_Names, 2);
-		pdf_dict_put_array(ctx, tree, PDF_NAME_Limits, 2);
+		pdf_dict_put_array(ctx, tree, PDF_NAME(Names), 2);
+		pdf_dict_put_array(ctx, tree, PDF_NAME(Limits), 2);
 		data.found = tree;
 		data.found_index = 0;
 	}
 
-	names = pdf_dict_get(ctx, data.found, PDF_NAME_Names);
+	names = pdf_dict_get(ctx, data.found, PDF_NAME(Names));
 	if (names == NULL)
-		names = pdf_dict_put_array(ctx, data.found, PDF_NAME_Names, 2);
+		names = pdf_dict_put_array(ctx, data.found, PDF_NAME(Names), 2);
 	pdf_array_insert(ctx, names, key, 2*data.found_index);
 	pdf_array_insert(ctx, names, val, 2*data.found_index+1);
 
-	limits = pdf_dict_get(ctx, data.found, PDF_NAME_Limits);
+	limits = pdf_dict_get(ctx, data.found, PDF_NAME(Limits));
 	if (limits == NULL)
-		limits = pdf_dict_put_array(ctx, data.found, PDF_NAME_Limits, 2);
+		limits = pdf_dict_put_array(ctx, data.found, PDF_NAME(Limits), 2);
 	limit0 = pdf_array_get(ctx, limits, 0);
 	limit1 = pdf_array_get(ctx, limits, 1);
 	if (!pdf_is_string(ctx, limit0) || data.found_index == 0)
@@ -631,31 +631,31 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 	fz_try(ctx)
 	{
 		val = pdf_new_dict(ctx, doc, 6);
-		pdf_dict_put_dict(ctx, val, PDF_NAME_CI, 4);
-		ef = pdf_dict_put_dict(ctx, val, PDF_NAME_EF, 4);
-		pdf_dict_put_string(ctx, val, PDF_NAME_F, filename, filename_len);
-		pdf_dict_put_string(ctx, val, PDF_NAME_UF, unifile, unifile_len);
-		pdf_dict_put_string(ctx, val, PDF_NAME_Desc, desc, desc_len);
-		pdf_dict_put(ctx, val, PDF_NAME_Type, PDF_NAME_Filespec);
-		pdf_dict_put_drop(ctx, ef, PDF_NAME_F, (f = pdf_add_stream(ctx, doc, buf, NULL, 0)));
+		pdf_dict_put_dict(ctx, val, PDF_NAME(CI), 4);
+		ef = pdf_dict_put_dict(ctx, val, PDF_NAME(EF), 4);
+		pdf_dict_put_string(ctx, val, PDF_NAME(F), filename, filename_len);
+		pdf_dict_put_string(ctx, val, PDF_NAME(UF), unifile, unifile_len);
+		pdf_dict_put_string(ctx, val, PDF_NAME(Desc), desc, desc_len);
+		pdf_dict_put(ctx, val, PDF_NAME(Type), PDF_NAME(Filespec));
+		pdf_dict_put_drop(ctx, ef, PDF_NAME(F), (f = pdf_add_stream(ctx, doc, buf, NULL, 0)));
 		len = fz_buffer_storage(ctx, buf, NULL);
-		pdf_dict_put_int(ctx, f, PDF_NAME_DL, len);
-		pdf_dict_put_int(ctx, f, PDF_NAME_Length, len);
-		params = pdf_dict_put_dict(ctx, f, PDF_NAME_Params, 4);
-		pdf_dict_put_int(ctx, params, PDF_NAME_Size, len);
+		pdf_dict_put_int(ctx, f, PDF_NAME(DL), len);
+		pdf_dict_put_int(ctx, f, PDF_NAME(Length), len);
+		params = pdf_dict_put_dict(ctx, f, PDF_NAME(Params), 4);
+		pdf_dict_put_int(ctx, params, PDF_NAME(Size), len);
 
-		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Collection, NULL);
+		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Collection), NULL);
 		if (s == NULL)
 		{
 			s = pdf_new_dict(ctx, doc, 4);
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), s, PDF_NAME_Root, PDF_NAME_Collection, NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), s, PDF_NAME(Root), PDF_NAME(Collection), NULL);
 		}
 
-		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Names, PDF_NAME_EmbeddedFiles, NULL);
+		s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 		if (s == NULL)
 		{
 			s = pdf_new_dict(ctx, doc, 4);
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), s, PDF_NAME_Root, PDF_NAME_Names, PDF_NAME_EmbeddedFiles, NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), s, PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 		}
 		entry = pdf_name_tree_insert(ctx, doc, s, key, val);
 	}
@@ -700,17 +700,17 @@ void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 		lookup = NULL;
 		break;
 	case PDF_SCHEMA_FILENAME:
-		lookup = PDF_NAME_UF;
+		lookup = PDF_NAME(UF);
 		break;
 	case PDF_SCHEMA_DESC:
-		lookup = PDF_NAME_Desc;
+		lookup = PDF_NAME(Desc);
 		break;
 	case PDF_SCHEMA_MODDATE:
-		lookup = PDF_NAME_ModDate;
+		lookup = PDF_NAME(ModDate);
 		ef = 1;
 		break;
 	case PDF_SCHEMA_CREATIONDATE:
-		lookup = PDF_NAME_CreationDate;
+		lookup = PDF_NAME(CreationDate);
 		ef = 1;
 		break;
 	case PDF_SCHEMA_SIZE:
@@ -720,13 +720,13 @@ void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 	if (lookup)
 	{
 		if (ef)
-			obj = pdf_dict_getl(ctx, obj, PDF_NAME_EF, PDF_NAME_F, PDF_NAME_Params, NULL);
+			obj = pdf_dict_getl(ctx, obj, PDF_NAME(EF), PDF_NAME(F), PDF_NAME(Params), NULL);
 		pdf_dict_put(ctx, obj, lookup, data);
-		if (pdf_name_eq(ctx, lookup, PDF_NAME_UF))
-			pdf_dict_put(ctx, obj, PDF_NAME_F, data);
+		if (pdf_name_eq(ctx, lookup, PDF_NAME(UF)))
+			pdf_dict_put(ctx, obj, PDF_NAME(F), data);
 		return;
 	}
-	pdf_dict_putl(ctx, obj, data, PDF_NAME_CI, p->key, NULL);
+	pdf_dict_putl(ctx, obj, data, PDF_NAME(CI), p->key, NULL);
 }
 
 void pdf_drop_portfolio(fz_context *ctx, pdf_document *doc)

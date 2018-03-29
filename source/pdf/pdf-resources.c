@@ -41,8 +41,8 @@ pdf_preload_image_resources(fz_context *ctx, pdf_document *doc)
 		for (k = 1; k < len; k++)
 		{
 			obj = pdf_new_indirect(ctx, doc, k, 0);
-			type = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
-			if (pdf_name_eq(ctx, type, PDF_NAME_Image))
+			type = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
+			if (pdf_name_eq(ctx, type, PDF_NAME(Image)))
 			{
 				image = pdf_load_image(ctx, doc, obj);
 				fz_md5_image(ctx, image, digest);

@@ -23,7 +23,7 @@ resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int depth)
 
 	else if (pdf_is_dict(ctx, dest))
 	{
-		dest = pdf_dict_get(ctx, dest, PDF_NAME_D);
+		dest = pdf_dict_get(ctx, dest, PDF_NAME(D));
 		return resolve_dest_rec(ctx, doc, dest, depth+1);
 	}
 
@@ -79,19 +79,19 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 
 	x = y = 0;
 	obj = pdf_array_get(ctx, dest, 1);
-	if (pdf_name_eq(ctx, obj, PDF_NAME_XYZ))
+	if (pdf_name_eq(ctx, obj, PDF_NAME(XYZ)))
 	{
 		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
 		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 3));
 	}
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitR))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitR)))
 	{
 		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
 		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 5));
 	}
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitH) || pdf_name_eq(ctx, obj, PDF_NAME_FitBH))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitH)) || pdf_name_eq(ctx, obj, PDF_NAME(FitBH)))
 		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitV) || pdf_name_eq(ctx, obj, PDF_NAME_FitBV))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitV)) || pdf_name_eq(ctx, obj, PDF_NAME(FitBV)))
 		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
 
 	if (page >= 0)
@@ -120,12 +120,12 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 
 	if (pdf_is_dict(ctx, file_spec)) {
 #ifdef _WIN32
-		filename = pdf_dict_get(ctx, file_spec, PDF_NAME_DOS);
+		filename = pdf_dict_get(ctx, file_spec, PDF_NAME(DOS));
 #else
-		filename = pdf_dict_get(ctx, file_spec, PDF_NAME_Unix);
+		filename = pdf_dict_get(ctx, file_spec, PDF_NAME(Unix));
 #endif
 		if (!filename)
-			filename = pdf_dict_geta(ctx, file_spec, PDF_NAME_UF, PDF_NAME_F);
+			filename = pdf_dict_geta(ctx, file_spec, PDF_NAME(UF), PDF_NAME(F));
 	}
 
 	if (!pdf_is_string(ctx, filename))
@@ -136,7 +136,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 
 	path = pdf_to_utf8(ctx, filename);
 #ifdef _WIN32
-	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME_FS), PDF_NAME_URL))
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME(FS)), PDF_NAME(URL)))
 	{
 		/* move the file name into the expected place and use the expected path separator */
 		char *c;
@@ -179,16 +179,16 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 	if (!action)
 		return NULL;
 
-	obj = pdf_dict_get(ctx, action, PDF_NAME_S);
-	if (pdf_name_eq(ctx, PDF_NAME_GoTo, obj))
+	obj = pdf_dict_get(ctx, action, PDF_NAME(S));
+	if (pdf_name_eq(ctx, PDF_NAME(GoTo), obj))
 	{
-		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
+		dest = pdf_dict_get(ctx, action, PDF_NAME(D));
 		return pdf_parse_link_dest(ctx, doc, dest);
 	}
-	else if (pdf_name_eq(ctx, PDF_NAME_URI, obj))
+	else if (pdf_name_eq(ctx, PDF_NAME(URI), obj))
 	{
 		/* URI entries are ASCII strings */
-		const char *uri = pdf_to_str_buf(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
+		const char *uri = pdf_to_str_buf(ctx, pdf_dict_get(ctx, action, PDF_NAME(URI)));
 		if (!fz_is_external_link(ctx, uri))
 		{
 			pdf_obj *uri_base_obj = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/URI/Base");
@@ -200,31 +200,31 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 		}
 		return fz_strdup(ctx, uri);
 	}
-	else if (pdf_name_eq(ctx, PDF_NAME_Launch, obj))
+	else if (pdf_name_eq(ctx, PDF_NAME(Launch), obj))
 	{
-		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
+		file_spec = pdf_dict_get(ctx, action, PDF_NAME(F));
 		return pdf_parse_file_spec(ctx, doc, file_spec, NULL);
 	}
-	else if (pdf_name_eq(ctx, PDF_NAME_GoToR, obj))
+	else if (pdf_name_eq(ctx, PDF_NAME(GoToR), obj))
 	{
-		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
-		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
+		dest = pdf_dict_get(ctx, action, PDF_NAME(D));
+		file_spec = pdf_dict_get(ctx, action, PDF_NAME(F));
 		return pdf_parse_file_spec(ctx, doc, file_spec, dest);
 	}
-	else if (pdf_name_eq(ctx, PDF_NAME_Named, obj))
+	else if (pdf_name_eq(ctx, PDF_NAME(Named), obj))
 	{
-		dest = pdf_dict_get(ctx, action, PDF_NAME_N);
+		dest = pdf_dict_get(ctx, action, PDF_NAME(N));
 
-		if (pdf_name_eq(ctx, PDF_NAME_FirstPage, dest))
+		if (pdf_name_eq(ctx, PDF_NAME(FirstPage), dest))
 			pagenum = 0;
-		else if (pdf_name_eq(ctx, PDF_NAME_LastPage, dest))
+		else if (pdf_name_eq(ctx, PDF_NAME(LastPage), dest))
 			pagenum = pdf_count_pages(ctx, doc) - 1;
-		else if (pdf_name_eq(ctx, PDF_NAME_PrevPage, dest) && pagenum >= 0)
+		else if (pdf_name_eq(ctx, PDF_NAME(PrevPage), dest) && pagenum >= 0)
 		{
 			if (pagenum > 0)
 				pagenum--;
 		}
-		else if (pdf_name_eq(ctx, PDF_NAME_NextPage, dest) && pagenum >= 0)
+		else if (pdf_name_eq(ctx, PDF_NAME(NextPage), dest) && pagenum >= 0)
 		{
 			if (pagenum < pdf_count_pages(ctx, doc) - 1)
 				pagenum++;
@@ -247,26 +247,26 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, co
 	char *uri;
 	fz_link *link = NULL;
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Subtype);
-	if (!pdf_name_eq(ctx, obj, PDF_NAME_Link))
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Subtype));
+	if (!pdf_name_eq(ctx, obj, PDF_NAME(Link)))
 		return NULL;
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Rect);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Rect));
 	if (!obj)
 		return NULL;
 
 	pdf_to_rect(ctx, obj, &bbox);
 	fz_transform_rect(&bbox, page_ctm);
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Dest));
 	if (obj)
 		uri = pdf_parse_link_dest(ctx, doc, obj);
 	else
 	{
-		action = pdf_dict_get(ctx, dict, PDF_NAME_A);
+		action = pdf_dict_get(ctx, dict, PDF_NAME(A));
 		/* fall back to additional action button's down/up action */
 		if (!action)
-			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME_AA), PDF_NAME_U, PDF_NAME_D);
+			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME(AA)), PDF_NAME(U), PDF_NAME(D));
 		uri = pdf_parse_link_action(ctx, doc, action, pagenum);
 	}
 
@@ -381,7 +381,7 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 	fz_matrix matrix;
 	float w, h, x, y;
 
-	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &rect);
+	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)), &rect);
 	pdf_xobject_bbox(ctx, annot->ap, &bbox);
 	pdf_xobject_matrix(ctx, annot->ap, &matrix);
 
@@ -430,10 +430,10 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 		pdf_obj *obj = pdf_array_get(ctx, annots, i);
 		if (obj)
 		{
-			subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
-			if (pdf_name_eq(ctx, subtype, PDF_NAME_Link))
+			subtype = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
+			if (pdf_name_eq(ctx, subtype, PDF_NAME(Link)))
 				continue;
-			if (pdf_name_eq(ctx, subtype, PDF_NAME_Popup))
+			if (pdf_name_eq(ctx, subtype, PDF_NAME(Popup)))
 				continue;
 
 			annot = pdf_new_annot(ctx, page, obj);
@@ -466,7 +466,7 @@ pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 fz_rect *
 pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect);
+	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect));
 	fz_rect mediabox;
 	fz_matrix page_ctm;
 	pdf_to_rect(ctx, obj, rect);

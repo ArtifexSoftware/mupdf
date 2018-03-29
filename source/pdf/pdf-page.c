@@ -14,11 +14,11 @@ pdf_count_pages(fz_context *ctx, pdf_document *doc)
 static int
 pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int idx)
 {
-	pdf_obj *type = pdf_dict_get(ctx, node, PDF_NAME_Type);
-	if (pdf_name_eq(ctx, type, PDF_NAME_Pages))
+	pdf_obj *type = pdf_dict_get(ctx, node, PDF_NAME(Type));
+	if (pdf_name_eq(ctx, type, PDF_NAME(Pages)))
 	{
-		pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME_Kids);
-		int count = pdf_to_int(ctx, pdf_dict_get(ctx, node, PDF_NAME_Count));
+		pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
+		int count = pdf_to_int(ctx, pdf_dict_get(ctx, node, PDF_NAME(Count)));
 		int i, n = pdf_array_len(ctx, kids);
 
 		/* if Kids length is same as Count, all children must be page objects */
@@ -48,7 +48,7 @@ pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int id
 				fz_rethrow(ctx);
 		}
 	}
-	else if (pdf_name_eq(ctx, type, PDF_NAME_Page))
+	else if (pdf_name_eq(ctx, type, PDF_NAME(Page)))
 	{
 		if (idx >= doc->rev_page_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
@@ -116,7 +116,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 	{
 		do
 		{
-			kids = pdf_dict_get(ctx, node, PDF_NAME_Kids);
+			kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
 			len = pdf_array_len(ctx, kids);
 
 			if (len == 0)
@@ -142,10 +142,10 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 			for (i = 0; i < len; i++)
 			{
 				pdf_obj *kid = pdf_array_get(ctx, kids, i);
-				pdf_obj *type = pdf_dict_get(ctx, kid, PDF_NAME_Type);
-				if (type ? pdf_name_eq(ctx, type, PDF_NAME_Pages) : pdf_dict_get(ctx, kid, PDF_NAME_Kids) && !pdf_dict_get(ctx, kid, PDF_NAME_MediaBox))
+				pdf_obj *type = pdf_dict_get(ctx, kid, PDF_NAME(Type));
+				if (type ? pdf_name_eq(ctx, type, PDF_NAME(Pages)) : pdf_dict_get(ctx, kid, PDF_NAME(Kids)) && !pdf_dict_get(ctx, kid, PDF_NAME(MediaBox)))
 				{
-					int count = pdf_to_int(ctx, pdf_dict_get(ctx, kid, PDF_NAME_Count));
+					int count = pdf_to_int(ctx, pdf_dict_get(ctx, kid, PDF_NAME(Count)));
 					if (*skip < count)
 					{
 						node = kid;
@@ -158,7 +158,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 				}
 				else
 				{
-					if (type ? !pdf_name_eq(ctx, type, PDF_NAME_Page) : !pdf_dict_get(ctx, kid, PDF_NAME_MediaBox))
+					if (type ? !pdf_name_eq(ctx, type, PDF_NAME(Page)) : !pdf_dict_get(ctx, kid, PDF_NAME(MediaBox)))
 						fz_warn(ctx, "non-page object in page tree (%s)", pdf_to_name(ctx, type));
 					if (*skip == 0)
 					{
@@ -200,8 +200,8 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 pdf_obj *
 pdf_lookup_page_loc(fz_context *ctx, pdf_document *doc, int needle, pdf_obj **parentp, int *indexp)
 {
-	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-	pdf_obj *node = pdf_dict_get(ctx, root, PDF_NAME_Pages);
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+	pdf_obj *node = pdf_dict_get(ctx, root, PDF_NAME(Pages));
 	int skip = needle;
 	pdf_obj *hit;
 
@@ -223,16 +223,16 @@ pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle)
 static int
 pdf_count_pages_before_kid(fz_context *ctx, pdf_document *doc, pdf_obj *parent, int kid_num)
 {
-	pdf_obj *kids = pdf_dict_get(ctx, parent, PDF_NAME_Kids);
+	pdf_obj *kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 	int i, total = 0, len = pdf_array_len(ctx, kids);
 	for (i = 0; i < len; i++)
 	{
 		pdf_obj *kid = pdf_array_get(ctx, kids, i);
 		if (pdf_to_num(ctx, kid) == kid_num)
 			return total;
-		if (pdf_name_eq(ctx, pdf_dict_get(ctx, kid, PDF_NAME_Type), PDF_NAME_Pages))
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, kid, PDF_NAME(Type)), PDF_NAME(Pages)))
 		{
-			pdf_obj *count = pdf_dict_get(ctx, kid, PDF_NAME_Count);
+			pdf_obj *count = pdf_dict_get(ctx, kid, PDF_NAME(Count));
 			int n = pdf_to_int(ctx, count);
 			if (!pdf_is_int(ctx, count) || n < 0)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "illegal or missing count in pages tree");
@@ -251,10 +251,10 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	int total = 0;
 	pdf_obj *parent, *parent2;
 
-	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME_Type), PDF_NAME_Page))
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME(Type)), PDF_NAME(Page)))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid page object");
 
-	parent2 = parent = pdf_dict_get(ctx, node, PDF_NAME_Parent);
+	parent2 = parent = pdf_dict_get(ctx, node, PDF_NAME(Parent));
 	fz_var(parent);
 	fz_try(ctx)
 	{
@@ -264,7 +264,7 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
 			total += pdf_count_pages_before_kid(ctx, doc, parent, needle);
 			needle = pdf_to_num(ctx, parent);
-			parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
+			parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 		}
 	}
 	fz_always(ctx)
@@ -275,7 +275,7 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 			pdf_unmark_obj(ctx, parent2);
 			if (parent2 == parent)
 				break;
-			parent2 = pdf_dict_get(ctx, parent2, PDF_NAME_Parent);
+			parent2 = pdf_dict_get(ctx, parent2, PDF_NAME(Parent));
 		}
 	}
 	fz_catch(ctx)
@@ -359,7 +359,7 @@ pdf_lookup_inherited_page_item(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 				break;
 			if (pdf_mark_obj(ctx, node))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
-			node = pdf_dict_get(ctx, node, PDF_NAME_Parent);
+			node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
 		}
 		while (node);
 	}
@@ -370,7 +370,7 @@ pdf_lookup_inherited_page_item(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 			pdf_unmark_obj(ctx, node2);
 			if (node2 == node)
 				break;
-			node2 = pdf_dict_get(ctx, node2, PDF_NAME_Parent);
+			node2 = pdf_dict_get(ctx, node2, PDF_NAME(Parent));
 		}
 		while (node2);
 	}
@@ -393,10 +393,10 @@ pdf_flatten_inheritable_page_item(fz_context *ctx, pdf_obj *page, pdf_obj *key)
 void
 pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_obj *page)
 {
-	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME_MediaBox);
-	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME_CropBox);
-	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME_Rotate);
-	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME_Resources);
+	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME(MediaBox));
+	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME(CropBox));
+	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME(Rotate));
+	pdf_flatten_inheritable_page_item(ctx, page, PDF_NAME(Resources));
 }
 
 /* We need to know whether to install a page-level transparency group */
@@ -406,8 +406,8 @@ static int pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb);
 static int
 pdf_extgstate_uses_blending(fz_context *ctx, pdf_obj *dict)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_BM);
-	if (obj && !pdf_name_eq(ctx, obj, PDF_NAME_Normal))
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(BM));
+	if (obj && !pdf_name_eq(ctx, obj, PDF_NAME(Normal)))
 		return 1;
 	return 0;
 }
@@ -416,18 +416,18 @@ static int
 pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict)
 {
 	pdf_obj *obj;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
 	if (pdf_resources_use_blending(ctx, obj))
 		return 1;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_ExtGState);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 	return pdf_extgstate_uses_blending(ctx, obj);
 }
 
 static int
 pdf_xobject_uses_blending(fz_context *ctx, pdf_obj *dict)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
-	if (pdf_name_eq(ctx, pdf_dict_getp(ctx, dict, "Group/S"), PDF_NAME_Transparency))
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
+	if (pdf_name_eq(ctx, pdf_dict_getp(ctx, dict, "Group/S"), PDF_NAME(Transparency)))
 		return 1;
 	return pdf_resources_use_blending(ctx, obj);
 }
@@ -451,19 +451,19 @@ pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb)
 
 	fz_try(ctx)
 	{
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_ExtGState);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(ExtGState));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_extgstate_uses_blending(ctx, pdf_dict_get_val(ctx, obj, i)))
 				goto found;
 
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_Pattern);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(Pattern));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_pattern_uses_blending(ctx, pdf_dict_get_val(ctx, obj, i)))
 				goto found;
 
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_XObject);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(XObject));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_xobject_uses_blending(ctx, pdf_dict_get_val(ctx, obj, i)))
@@ -492,7 +492,7 @@ static int pdf_resources_use_overprint(fz_context *ctx, pdf_obj *rdb);
 static int
 pdf_extgstate_uses_overprint(fz_context *ctx, pdf_obj *dict)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_OP);
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(OP));
 	if (obj && pdf_to_bool(ctx, obj))
 		return 1;
 	return 0;
@@ -502,17 +502,17 @@ static int
 pdf_pattern_uses_overprint(fz_context *ctx, pdf_obj *dict)
 {
 	pdf_obj *obj;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
 	if (pdf_resources_use_overprint(ctx, obj))
 		return 1;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_ExtGState);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 	return pdf_extgstate_uses_overprint(ctx, obj);
 }
 
 static int
 pdf_xobject_uses_overprint(fz_context *ctx, pdf_obj *dict)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
 	return pdf_resources_use_overprint(ctx, obj);
 }
 
@@ -535,19 +535,19 @@ pdf_resources_use_overprint(fz_context *ctx, pdf_obj *rdb)
 
 	fz_try(ctx)
 	{
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_ExtGState);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(ExtGState));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_extgstate_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
 				goto found;
 
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_Pattern);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(Pattern));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_pattern_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
 				goto found;
 
-		obj = pdf_dict_get(ctx, rdb, PDF_NAME_XObject);
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME(XObject));
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 			if (pdf_xobject_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
@@ -576,46 +576,46 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 {
 	pdf_obj *obj, *transdict;
 
-	*duration = pdf_to_real(ctx, pdf_dict_get(ctx, page->obj, PDF_NAME_Dur));
+	*duration = pdf_to_real(ctx, pdf_dict_get(ctx, page->obj, PDF_NAME(Dur)));
 
-	transdict = pdf_dict_get(ctx, page->obj, PDF_NAME_Trans);
+	transdict = pdf_dict_get(ctx, page->obj, PDF_NAME(Trans));
 	if (!transdict)
 		return NULL;
 
-	obj = pdf_dict_get(ctx, transdict, PDF_NAME_D);
+	obj = pdf_dict_get(ctx, transdict, PDF_NAME(D));
 
 	transition->duration = (obj ? pdf_to_real(ctx, obj) : 1);
 
-	transition->vertical = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME_Dm), PDF_NAME_H);
-	transition->outwards = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME_M), PDF_NAME_I);
+	transition->vertical = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(Dm)), PDF_NAME(H));
+	transition->outwards = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(M)), PDF_NAME(I));
 	/* FIXME: If 'Di' is None, it should be handled differently, but
 	 * this only affects Fly, and we don't implement that currently. */
-	transition->direction = (pdf_to_int(ctx, pdf_dict_get(ctx, transdict, PDF_NAME_Di)));
+	transition->direction = (pdf_to_int(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(Di))));
 	/* FIXME: Read SS for Fly when we implement it */
 	/* FIXME: Read B for Fly when we implement it */
 
-	obj = pdf_dict_get(ctx, transdict, PDF_NAME_S);
-	if (pdf_name_eq(ctx, obj, PDF_NAME_Split))
+	obj = pdf_dict_get(ctx, transdict, PDF_NAME(S));
+	if (pdf_name_eq(ctx, obj, PDF_NAME(Split)))
 		transition->type = FZ_TRANSITION_SPLIT;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Blinds))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Blinds)))
 		transition->type = FZ_TRANSITION_BLINDS;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Box))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Box)))
 		transition->type = FZ_TRANSITION_BOX;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Wipe))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Wipe)))
 		transition->type = FZ_TRANSITION_WIPE;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Dissolve))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Dissolve)))
 		transition->type = FZ_TRANSITION_DISSOLVE;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Glitter))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Glitter)))
 		transition->type = FZ_TRANSITION_GLITTER;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Fly))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Fly)))
 		transition->type = FZ_TRANSITION_FLY;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Push))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Push)))
 		transition->type = FZ_TRANSITION_PUSH;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Cover))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Cover)))
 		transition->type = FZ_TRANSITION_COVER;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Uncover))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Uncover)))
 		transition->type = FZ_TRANSITION_UNCOVER;
-	else if (pdf_name_eq(ctx, obj, PDF_NAME_Fade))
+	else if (pdf_name_eq(ctx, obj, PDF_NAME(Fade)))
 		transition->type = FZ_TRANSITION_FADE;
 	else
 		transition->type = FZ_TRANSITION_NONE;
@@ -641,19 +641,19 @@ pdf_load_links(fz_context *ctx, pdf_page *page)
 pdf_obj *
 pdf_page_resources(fz_context *ctx, pdf_page *page)
 {
-	return pdf_lookup_inherited_page_item(ctx, page->obj, PDF_NAME_Resources);
+	return pdf_lookup_inherited_page_item(ctx, page->obj, PDF_NAME(Resources));
 }
 
 pdf_obj *
 pdf_page_contents(fz_context *ctx, pdf_page *page)
 {
-	return pdf_dict_get(ctx, page->obj, PDF_NAME_Contents);
+	return pdf_dict_get(ctx, page->obj, PDF_NAME(Contents));
 }
 
 pdf_obj *
 pdf_page_group(fz_context *ctx, pdf_page *page)
 {
-	return pdf_dict_get(ctx, page->obj, PDF_NAME_Group);
+	return pdf_dict_get(ctx, page->obj, PDF_NAME(Group));
 }
 
 void
@@ -668,11 +668,11 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	if (!page_mediabox)
 		page_mediabox = &pagebox;
 
-	obj = pdf_dict_get(ctx, pageobj, PDF_NAME_UserUnit);
+	obj = pdf_dict_get(ctx, pageobj, PDF_NAME(UserUnit));
 	if (pdf_is_real(ctx, obj))
 		userunit = pdf_to_real(ctx, obj);
 
-	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME_MediaBox), &mediabox);
+	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(MediaBox)), &mediabox);
 	if (fz_is_empty_rect(&mediabox))
 	{
 		mediabox.x0 = 0;
@@ -681,7 +681,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 		mediabox.y1 = 792;
 	}
 
-	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME_CropBox), &cropbox);
+	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(CropBox)), &cropbox);
 	if (!fz_is_empty_rect(&cropbox))
 		fz_intersect_rect(&mediabox, &cropbox);
 
@@ -693,7 +693,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	if (page_mediabox->x1 - page_mediabox->x0 < 1 || page_mediabox->y1 - page_mediabox->y0 < 1)
 		*page_mediabox = fz_unit_rect;
 
-	rotate = pdf_to_int(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME_Rotate));
+	rotate = pdf_to_int(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(Rotate)));
 
 	/* Snap page rotation to 0, 90, 180 or 270 */
 	if (rotate < 0)
@@ -732,7 +732,7 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 	int i, n;
 	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
 
-	if (pdf_name_eq(ctx, nameobj, PDF_NAME_Separation))
+	if (pdf_name_eq(ctx, nameobj, PDF_NAME(Separation)))
 	{
 		fz_colorspace *cs;
 		const char *name = pdf_to_name(ctx, pdf_array_get(ctx, obj, 1));
@@ -759,15 +759,15 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		fz_add_separation(ctx, *seps, name, cs, 0);
 		fz_drop_colorspace(ctx, cs);
 	}
-	else if (pdf_name_eq(ctx, nameobj, PDF_NAME_Indexed))
+	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(Indexed)))
 	{
 		find_seps(ctx, seps, pdf_array_get(ctx, obj, 1));
 	}
-	else if (pdf_name_eq(ctx, nameobj, PDF_NAME_DeviceN))
+	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(DeviceN)))
 	{
 		/* If the separation colorants exists for this DeviceN color space
 		 * add those prior to our search for DeviceN color */
-		pdf_obj *cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME_Colorants);
+		pdf_obj *cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME(Colorants));
 		n = pdf_dict_len(ctx, cols);
 		for (i = 0; i < n; i++)
 			find_seps(ctx, seps, pdf_dict_get_val(ctx, cols, i));
@@ -781,7 +781,7 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 	pdf_obj *arr;
 	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
 
-	if (!pdf_name_eq(ctx, nameobj, PDF_NAME_DeviceN))
+	if (!pdf_name_eq(ctx, nameobj, PDF_NAME(DeviceN)))
 		return;
 
 	arr = pdf_array_get(ctx, obj, 1);
@@ -860,14 +860,14 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 
 	fz_try(ctx)
 	{
-		search_res(ctx, seps, pdf_dict_get(ctx, res, PDF_NAME_ColorSpace), fn);
+		search_res(ctx, seps, pdf_dict_get(ctx, res, PDF_NAME(ColorSpace)), fn);
 
-		sh = pdf_dict_get(ctx, res, PDF_NAME_Shading);
+		sh = pdf_dict_get(ctx, res, PDF_NAME(Shading));
 		len = pdf_dict_len(ctx, sh);
 		for (i = 0; i < len; i++)
-			fn(ctx, seps, pdf_dict_get(ctx, pdf_dict_get_val(ctx, sh, i), PDF_NAME_ColorSpace));
+			fn(ctx, seps, pdf_dict_get(ctx, pdf_dict_get_val(ctx, sh, i), PDF_NAME(ColorSpace)));
 
-		forms = pdf_dict_get(ctx, res, PDF_NAME_XObject);
+		forms = pdf_dict_get(ctx, res, PDF_NAME(XObject));
 		len = pdf_dict_len(ctx, forms);
 
 		/* Recurse on the forms. Throw if we cycle */
@@ -878,8 +878,8 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 			if (pdf_mark_obj(ctx, xo))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in forms");
 
-			scan_page_seps(ctx, pdf_dict_get(ctx, xo, PDF_NAME_Resources), seps, fn);
-			fn(ctx, seps, pdf_dict_get(ctx, xo, PDF_NAME_ColorSpace));
+			scan_page_seps(ctx, pdf_dict_get(ctx, xo, PDF_NAME(Resources)), seps, fn);
+			fn(ctx, seps, pdf_dict_get(ctx, xo, PDF_NAME(ColorSpace)));
 			pdf_unmark_obj(ctx, xo);
 			xo = NULL;
 		}
@@ -973,7 +973,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 	/* The spec says to ignore any colors we can't understand */
 	fz_try(ctx)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
+		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultGray));
 		if (cs_obj)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
@@ -989,7 +989,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 
 	fz_try(ctx)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
+		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultRGB));
 		if (cs_obj)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
@@ -1005,7 +1005,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 
 	fz_try(ctx)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
+		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultCMYK));
 		if (cs_obj)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
@@ -1030,7 +1030,7 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 
 	default_cs = fz_new_default_colorspaces(ctx);
 	res = pdf_page_resources(ctx, page);
-	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
+	obj = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
 	if (obj)
 		pdf_load_default_colorspaces_imp(ctx, default_cs, obj);
 
@@ -1047,7 +1047,7 @@ pdf_update_default_colorspaces(fz_context *ctx, fz_default_colorspaces *old_cs, 
 	pdf_obj *obj;
 	fz_default_colorspaces *new_cs;
 
-	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
+	obj = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
 	if (!obj)
 		return fz_keep_default_colorspaces(ctx, old_cs);
 
@@ -1079,7 +1079,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	/* Pre-load annotations and links */
 	fz_try(ctx)
 	{
-		obj = pdf_dict_get(ctx, pageobj, PDF_NAME_Annots);
+		obj = pdf_dict_get(ctx, pageobj, PDF_NAME(Annots));
 		if (obj)
 		{
 			fz_rect page_mediabox;
@@ -1105,7 +1105,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	fz_try(ctx)
 	{
 		pdf_obj *resources = pdf_page_resources(ctx, page);
-		if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
+		if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME(Transparency)))
 			page->transparency = 1;
 		else if (pdf_resources_use_blending(ctx, resources))
 			page->transparency = 1;
@@ -1138,14 +1138,14 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 	int i;
 
 	pdf_lookup_page_loc(ctx, doc, at, &parent, &i);
-	kids = pdf_dict_get(ctx, parent, PDF_NAME_Kids);
+	kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 	pdf_array_delete(ctx, kids, i);
 
 	while (parent)
 	{
-		int count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME_Count));
-		pdf_dict_put_int(ctx, parent, PDF_NAME_Count, count - 1);
-		parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
+		int count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME(Count)));
+		pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count - 1);
+		parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 	}
 }
 
@@ -1171,19 +1171,19 @@ pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int ro
 	pdf_obj *page_obj = pdf_new_dict(ctx, doc, 5);
 	fz_try(ctx)
 	{
-		pdf_dict_put(ctx, page_obj, PDF_NAME_Type, PDF_NAME_Page);
-		pdf_dict_put_rect(ctx, page_obj, PDF_NAME_MediaBox, mediabox);
-		pdf_dict_put_int(ctx, page_obj, PDF_NAME_Rotate, rotate);
+		pdf_dict_put(ctx, page_obj, PDF_NAME(Type), PDF_NAME(Page));
+		pdf_dict_put_rect(ctx, page_obj, PDF_NAME(MediaBox), mediabox);
+		pdf_dict_put_int(ctx, page_obj, PDF_NAME(Rotate), rotate);
 
 		if (pdf_is_indirect(ctx, resources))
-			pdf_dict_put(ctx, page_obj, PDF_NAME_Resources, resources);
+			pdf_dict_put(ctx, page_obj, PDF_NAME(Resources), resources);
 		else if (pdf_is_dict(ctx, resources))
-			pdf_dict_put_drop(ctx, page_obj, PDF_NAME_Resources, pdf_add_object(ctx, doc, resources));
+			pdf_dict_put_drop(ctx, page_obj, PDF_NAME(Resources), pdf_add_object(ctx, doc, resources));
 		else
-			pdf_dict_put_dict(ctx, page_obj, PDF_NAME_Resources, 1);
+			pdf_dict_put_dict(ctx, page_obj, PDF_NAME(Resources), 1);
 
 		if (contents)
-			pdf_dict_put_drop(ctx, page_obj, PDF_NAME_Contents, pdf_add_stream(ctx, doc, contents, NULL, 0));
+			pdf_dict_put_drop(ctx, page_obj, PDF_NAME(Contents), pdf_add_stream(ctx, doc, contents, NULL, 0));
 	}
 	fz_catch(ctx)
 	{
@@ -1209,11 +1209,11 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 
 	if (count == 0)
 	{
-		pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-		parent = pdf_dict_get(ctx, root, PDF_NAME_Pages);
+		pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+		parent = pdf_dict_get(ctx, root, PDF_NAME(Pages));
 		if (!parent)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page tree");
-		kids = pdf_dict_get(ctx, parent, PDF_NAME_Kids);
+		kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 		if (!kids)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "malformed page tree");
 		pdf_array_insert(ctx, kids, page_ref, 0);
@@ -1222,24 +1222,24 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 	{
 		/* append after last page */
 		pdf_lookup_page_loc(ctx, doc, count - 1, &parent, &i);
-		kids = pdf_dict_get(ctx, parent, PDF_NAME_Kids);
+		kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 		pdf_array_insert(ctx, kids, page_ref, i + 1);
 	}
 	else
 	{
 		/* insert before found page */
 		pdf_lookup_page_loc(ctx, doc, at, &parent, &i);
-		kids = pdf_dict_get(ctx, parent, PDF_NAME_Kids);
+		kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 		pdf_array_insert(ctx, kids, page_ref, i);
 	}
 
-	pdf_dict_put(ctx, page_ref, PDF_NAME_Parent, parent);
+	pdf_dict_put(ctx, page_ref, PDF_NAME(Parent), parent);
 
 	/* Adjust page counts */
 	while (parent)
 	{
-		count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME_Count));
-		pdf_dict_put_int(ctx, parent, PDF_NAME_Count, count + 1);
-		parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
+		count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME(Count)));
+		pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count + 1);
+		parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 	}
 }

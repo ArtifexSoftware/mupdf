@@ -22,13 +22,13 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			*prev = node;
 			prev = &node->next;
 
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_Title);
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(Title));
 			if (obj)
 				node->title = pdf_to_utf8(ctx, obj);
 
-			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest)) != NULL)
+			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(Dest))) != NULL)
 				node->uri = pdf_parse_link_dest(ctx, doc, obj);
-			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_A)) != NULL)
+			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(A))) != NULL)
 				node->uri = pdf_parse_link_action(ctx, doc, obj, -1);
 			else
 				node->uri = NULL;
@@ -38,22 +38,22 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			else
 				node->page = -1;
 
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_First);
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(First));
 			if (obj)
 			{
 				node->down = pdf_load_outline_imp(ctx, doc, obj);
 
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Count);
+				obj = pdf_dict_get(ctx, dict, PDF_NAME(Count));
 				if (pdf_to_int(ctx, obj) > 0)
 					node->is_open = 1;
 			}
 
-			dict = pdf_dict_get(ctx, dict, PDF_NAME_Next);
+			dict = pdf_dict_get(ctx, dict, PDF_NAME(Next));
 		}
 	}
 	fz_always(ctx)
 	{
-		for (dict = odict; dict && pdf_obj_marked(ctx, dict); dict = pdf_dict_get(ctx, dict, PDF_NAME_Next))
+		for (dict = odict; dict && pdf_obj_marked(ctx, dict); dict = pdf_dict_get(ctx, dict, PDF_NAME(Next)))
 			pdf_unmark_obj(ctx, dict);
 	}
 	fz_catch(ctx)
@@ -74,9 +74,9 @@ pdf_load_outline(fz_context *ctx, pdf_document *doc)
 	pdf_load_page_tree(ctx, doc); /* cache page tree for fast link destination lookups */
 	fz_try(ctx)
 	{
-		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-		obj = pdf_dict_get(ctx, root, PDF_NAME_Outlines);
-		first = pdf_dict_get(ctx, obj, PDF_NAME_First);
+		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+		obj = pdf_dict_get(ctx, root, PDF_NAME(Outlines));
+		first = pdf_dict_get(ctx, obj, PDF_NAME(First));
 		if (first)
 			outline = pdf_load_outline_imp(ctx, doc, first);
 	}

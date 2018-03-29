@@ -25,7 +25,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 	{
 		if (own_res)
 		{
-			pdf_obj *r = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
+			pdf_obj *r = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
 			if (r)
 				orig_res = r;
 		}
@@ -44,7 +44,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		if (own_res)
 		{
 			ref = pdf_add_object(ctx, doc, res);
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Resources, ref);
+			pdf_dict_put_drop(ctx, obj, PDF_NAME(Resources), ref);
 		}
 	}
 	fz_always(ctx)
@@ -76,14 +76,14 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 
 	fz_try(ctx)
 	{
-		res = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
+		res = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
 		if (res)
 			orig_res = res;
 		res = NULL;
 
 		res = pdf_new_dict(ctx, doc, 1);
 
-		charprocs = pdf_dict_get(ctx, obj, PDF_NAME_CharProcs);
+		charprocs = pdf_dict_get(ctx, obj, PDF_NAME(CharProcs));
 		l = pdf_dict_len(ctx, charprocs);
 
 		for (i = 0; i < l; i++)
@@ -120,10 +120,10 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 		}
 
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
-		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, pdf_dict_get(ctx, orig_res, PDF_NAME_ProcSet));
+		pdf_dict_put(ctx, res, PDF_NAME(ProcSet), pdf_dict_get(ctx, orig_res, PDF_NAME(ProcSet)));
 
 		ref = pdf_add_object(ctx, doc, res);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Resources, ref);
+		pdf_dict_put_drop(ctx, obj, PDF_NAME(Resources), ref);
 	}
 	fz_always(ctx)
 	{
@@ -193,12 +193,12 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 			new_obj = pdf_new_dict(ctx, doc, 1);
 			new_ref = pdf_add_object(ctx, doc, new_obj);
 			contents = new_ref;
-			pdf_dict_put(ctx, page->obj, PDF_NAME_Contents, contents);
+			pdf_dict_put(ctx, page->obj, PDF_NAME(Contents), contents);
 		}
 		else
 		{
-			pdf_dict_del(ctx, contents, PDF_NAME_Filter);
-			pdf_dict_del(ctx, contents, PDF_NAME_DecodeParms);
+			pdf_dict_del(ctx, contents, PDF_NAME(Filter));
+			pdf_dict_del(ctx, contents, PDF_NAME(DecodeParms));
 		}
 
 		pdf_update_stream(ctx, doc, contents, buffer, 0);
@@ -209,7 +209,7 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 		 * conceivably cause changes in rendering, but we don't care. */
 
 		/* ExtGState */
-		obj = pdf_dict_get(ctx, res, PDF_NAME_ExtGState);
+		obj = pdf_dict_get(ctx, res, PDF_NAME(ExtGState));
 		if (obj)
 		{
 			int i, l;
@@ -217,10 +217,10 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 			l = pdf_dict_len(ctx, obj);
 			for (i = 0; i < l; i++)
 			{
-				pdf_obj *o = pdf_dict_get(ctx, pdf_dict_get_val(ctx, obj, i), PDF_NAME_SMask);
+				pdf_obj *o = pdf_dict_get(ctx, pdf_dict_get_val(ctx, obj, i), PDF_NAME(SMask));
 				if (!o)
 					continue;
-				o = pdf_dict_get(ctx, o, PDF_NAME_G);
+				o = pdf_dict_get(ctx, o, PDF_NAME(G));
 				if (!o)
 					continue;
 				/* Transparency group XObject */
@@ -229,7 +229,7 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 		}
 
 		/* Pattern */
-		obj = pdf_dict_get(ctx, res, PDF_NAME_Pattern);
+		obj = pdf_dict_get(ctx, res, PDF_NAME(Pattern));
 		if (obj)
 		{
 			int i, l;
@@ -240,16 +240,16 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 				pdf_obj *pat = pdf_dict_get_val(ctx, obj, i);
 				if (!pat)
 					continue;
-				pat_res = pdf_dict_get(ctx, pat, PDF_NAME_Resources);
+				pat_res = pdf_dict_get(ctx, pat, PDF_NAME(Resources));
 				if (pat_res == NULL)
 					pat_res = resources;
-				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME_PatternType)) == 1)
+				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME(PatternType))) == 1)
 					pdf_clean_stream_object(ctx, doc, pat, pat_res, cookie, 0, text_filter, after_text, proc_arg, sanitize, ascii);
 			}
 		}
 
 		/* XObject */
-		obj = pdf_dict_get(ctx, res, PDF_NAME_XObject);
+		obj = pdf_dict_get(ctx, res, PDF_NAME(XObject));
 		if (obj)
 		{
 			int i, l;
@@ -260,16 +260,16 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 				pdf_obj *xobj = pdf_dict_get_val(ctx, obj, i);
 				if (!xobj)
 					continue;
-				xobj_res = pdf_dict_get(ctx, xobj, PDF_NAME_Resources);
+				xobj_res = pdf_dict_get(ctx, xobj, PDF_NAME(Resources));
 				if (xobj_res == NULL)
 					xobj_res = resources;
-				if (pdf_name_eq(ctx, PDF_NAME_Form, pdf_dict_get(ctx, xobj, PDF_NAME_Subtype)))
+				if (pdf_name_eq(ctx, PDF_NAME(Form), pdf_dict_get(ctx, xobj, PDF_NAME(Subtype))))
 					pdf_clean_stream_object(ctx, doc, xobj, xobj_res, cookie, 1, text_filter, after_text, proc_arg, sanitize, ascii);
 			}
 		}
 
 		/* Font */
-		obj = pdf_dict_get(ctx, res, PDF_NAME_Font);
+		obj = pdf_dict_get(ctx, res, PDF_NAME(Font));
 		if (obj)
 		{
 			int i, l;
@@ -279,15 +279,15 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 				pdf_obj *o = pdf_dict_get_val(ctx, obj, i);
 				if (!o)
 					continue;
-				if (pdf_name_eq(ctx, PDF_NAME_Type3, pdf_dict_get(ctx, o, PDF_NAME_Subtype)))
+				if (pdf_name_eq(ctx, PDF_NAME(Type3), pdf_dict_get(ctx, o, PDF_NAME(Subtype))))
 					pdf_clean_type3(ctx, doc, o, resources, cookie, sanitize, ascii);
 			}
 		}
 
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
-		obj = pdf_dict_get(ctx, resources, PDF_NAME_ProcSet);
+		obj = pdf_dict_get(ctx, resources, PDF_NAME(ProcSet));
 		if (obj)
-			pdf_dict_put(ctx, res, PDF_NAME_ProcSet, obj);
+			pdf_dict_put(ctx, res, PDF_NAME(ProcSet), obj);
 
 		/* ColorSpace - no cleaning possible. */
 		/* Properties - no cleaning possible. */
@@ -297,7 +297,7 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 
 		/* Update resource dictionary */
 		res_ref = pdf_add_object(ctx, doc, res);
-		pdf_dict_put(ctx, page->obj, PDF_NAME_Resources, res_ref);
+		pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), res_ref);
 	}
 	fz_always(ctx)
 	{
@@ -326,7 +326,7 @@ void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	pdf_obj *ap;
 	int i, n;
 
-	ap = pdf_dict_get(ctx, annot->obj, PDF_NAME_AP);
+	ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));
 	if (ap == NULL)
 		return;
 

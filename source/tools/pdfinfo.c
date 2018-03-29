@@ -185,14 +185,14 @@ showglobalinfo(fz_context *ctx, globals *glo)
 
 	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", doc->version / 10, doc->version % 10);
 
-	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
+	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
 	if (obj)
 	{
 		fz_write_printf(ctx, out, "Info object (%d 0 R):\n", pdf_to_num(ctx, obj));
 		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
 	}
 
-	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
+	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
 	if (obj)
 	{
 		fz_write_printf(ctx, out, "\nEncryption object (%d 0 R):\n", pdf_to_num(ctx, obj));
@@ -209,13 +209,13 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 	pdf_obj *obj;
 	int j;
 
-	obj = pdf_dict_get(ctx, pageref, PDF_NAME_MediaBox);
+	obj = pdf_dict_get(ctx, pageref, PDF_NAME(MediaBox));
 	if (!pdf_is_array(ctx, obj))
 		return;
 
 	pdf_to_rect(ctx, obj, &bbox);
 
-	obj = pdf_dict_get(ctx, pageref, PDF_NAME_UserUnit);
+	obj = pdf_dict_get(ctx, pageref, PDF_NAME(UserUnit));
 	if (pdf_is_real(ctx, obj))
 	{
 		float unit = pdf_to_real(ctx, obj);
@@ -265,13 +265,13 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 			continue;
 		}
 
-		subtype = pdf_dict_get(ctx, fontdict, PDF_NAME_Subtype);
-		basefont = pdf_dict_get(ctx, fontdict, PDF_NAME_BaseFont);
+		subtype = pdf_dict_get(ctx, fontdict, PDF_NAME(Subtype));
+		basefont = pdf_dict_get(ctx, fontdict, PDF_NAME(BaseFont));
 		if (!basefont || pdf_is_null(ctx, basefont))
-			name = pdf_dict_get(ctx, fontdict, PDF_NAME_Name);
-		encoding = pdf_dict_get(ctx, fontdict, PDF_NAME_Encoding);
+			name = pdf_dict_get(ctx, fontdict, PDF_NAME(Name));
+		encoding = pdf_dict_get(ctx, fontdict, PDF_NAME(Encoding));
 		if (pdf_is_dict(ctx, encoding))
-			encoding = pdf_dict_get(ctx, encoding, PDF_NAME_BaseEncoding);
+			encoding = pdf_dict_get(ctx, encoding, PDF_NAME(BaseEncoding));
 
 		for (k = 0; k < glo->fonts; k++)
 			if (!pdf_objcmp(ctx, glo->font[k].u.font.obj, fontdict))
@@ -317,20 +317,20 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 			continue;
 		}
 
-		type = pdf_dict_get(ctx, imagedict, PDF_NAME_Subtype);
-		if (!pdf_name_eq(ctx, type, PDF_NAME_Image))
+		type = pdf_dict_get(ctx, imagedict, PDF_NAME(Subtype));
+		if (!pdf_name_eq(ctx, type, PDF_NAME(Image)))
 			continue;
 
-		filter = pdf_dict_get(ctx, imagedict, PDF_NAME_Filter);
+		filter = pdf_dict_get(ctx, imagedict, PDF_NAME(Filter));
 
 		altcs = NULL;
-		cs = pdf_dict_get(ctx, imagedict, PDF_NAME_ColorSpace);
+		cs = pdf_dict_get(ctx, imagedict, PDF_NAME(ColorSpace));
 		if (pdf_is_array(ctx, cs))
 		{
 			pdf_obj *cses = cs;
 
 			cs = pdf_array_get(ctx, cses, 0);
-			if (pdf_name_eq(ctx, cs, PDF_NAME_DeviceN) || pdf_name_eq(ctx, cs, PDF_NAME_Separation))
+			if (pdf_name_eq(ctx, cs, PDF_NAME(DeviceN)) || pdf_name_eq(ctx, cs, PDF_NAME(Separation)))
 			{
 				altcs = pdf_array_get(ctx, cses, 2);
 				if (pdf_is_array(ctx, altcs))
@@ -338,9 +338,9 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 			}
 		}
 
-		width = pdf_dict_get(ctx, imagedict, PDF_NAME_Width);
-		height = pdf_dict_get(ctx, imagedict, PDF_NAME_Height);
-		bpc = pdf_dict_get(ctx, imagedict, PDF_NAME_BitsPerComponent);
+		width = pdf_dict_get(ctx, imagedict, PDF_NAME(Width));
+		height = pdf_dict_get(ctx, imagedict, PDF_NAME(Height));
+		bpc = pdf_dict_get(ctx, imagedict, PDF_NAME(BitsPerComponent));
 
 		for (k = 0; k < glo->images; k++)
 			if (!pdf_objcmp(ctx, glo->image[k].u.image.obj, imagedict))
@@ -387,17 +387,17 @@ gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 			continue;
 		}
 
-		type = pdf_dict_get(ctx, xobjdict, PDF_NAME_Subtype);
-		if (!pdf_name_eq(ctx, type, PDF_NAME_Form))
+		type = pdf_dict_get(ctx, xobjdict, PDF_NAME(Subtype));
+		if (!pdf_name_eq(ctx, type, PDF_NAME(Form)))
 			continue;
 
-		subtype = pdf_dict_get(ctx, xobjdict, PDF_NAME_Subtype2);
-		if (!pdf_name_eq(ctx, subtype, PDF_NAME_PS))
+		subtype = pdf_dict_get(ctx, xobjdict, PDF_NAME(Subtype2));
+		if (!pdf_name_eq(ctx, subtype, PDF_NAME(PS)))
 			continue;
 
-		group = pdf_dict_get(ctx, xobjdict, PDF_NAME_Group);
-		groupsubtype = pdf_dict_get(ctx, group, PDF_NAME_S);
-		reference = pdf_dict_get(ctx, xobjdict, PDF_NAME_Ref);
+		group = pdf_dict_get(ctx, xobjdict, PDF_NAME(Group));
+		groupsubtype = pdf_dict_get(ctx, group, PDF_NAME(S));
+		reference = pdf_dict_get(ctx, xobjdict, PDF_NAME(Ref));
 
 		for (k = 0; k < glo->forms; k++)
 			if (!pdf_objcmp(ctx, glo->form[k].u.form.obj, xobjdict))
@@ -437,10 +437,10 @@ gatherpsobjs(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 			continue;
 		}
 
-		type = pdf_dict_get(ctx, xobjdict, PDF_NAME_Subtype);
-		subtype = pdf_dict_get(ctx, xobjdict, PDF_NAME_Subtype2);
-		if (!pdf_name_eq(ctx, type, PDF_NAME_PS) &&
-			(!pdf_name_eq(ctx, type, PDF_NAME_Form) || !pdf_name_eq(ctx, subtype, PDF_NAME_PS)))
+		type = pdf_dict_get(ctx, xobjdict, PDF_NAME(Subtype));
+		subtype = pdf_dict_get(ctx, xobjdict, PDF_NAME(Subtype2));
+		if (!pdf_name_eq(ctx, type, PDF_NAME(PS)) &&
+			(!pdf_name_eq(ctx, type, PDF_NAME(Form)) || !pdf_name_eq(ctx, subtype, PDF_NAME(PS))))
 			continue;
 
 		for (k = 0; k < glo->psobjs; k++)
@@ -478,7 +478,7 @@ gathershadings(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 			continue;
 		}
 
-		type = pdf_dict_get(ctx, shade, PDF_NAME_ShadingType);
+		type = pdf_dict_get(ctx, shade, PDF_NAME(ShadingType));
 		if (!pdf_is_int(ctx, type) || pdf_to_int(ctx, type) < 1 || pdf_to_int(ctx, type) > 7)
 		{
 			fz_warn(ctx, "not a shading type (%d 0 R)", pdf_to_num(ctx, shade));
@@ -524,7 +524,7 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 			continue;
 		}
 
-		type = pdf_dict_get(ctx, patterndict, PDF_NAME_PatternType);
+		type = pdf_dict_get(ctx, patterndict, PDF_NAME(PatternType));
 		if (!pdf_is_int(ctx, type) || pdf_to_int(ctx, type) < 1 || pdf_to_int(ctx, type) > 2)
 		{
 			fz_warn(ctx, "not a pattern type (%d 0 R)", pdf_to_num(ctx, patterndict));
@@ -533,14 +533,14 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 
 		if (pdf_to_int(ctx, type) == 1)
 		{
-			paint = pdf_dict_get(ctx, patterndict, PDF_NAME_PaintType);
+			paint = pdf_dict_get(ctx, patterndict, PDF_NAME(PaintType));
 			if (!pdf_is_int(ctx, paint) || pdf_to_int(ctx, paint) < 1 || pdf_to_int(ctx, paint) > 2)
 			{
 				fz_warn(ctx, "not a pattern paint type (%d 0 R)", pdf_to_num(ctx, patterndict));
 				paint = NULL;
 			}
 
-			tiling = pdf_dict_get(ctx, patterndict, PDF_NAME_TilingType);
+			tiling = pdf_dict_get(ctx, patterndict, PDF_NAME(TilingType));
 			if (!pdf_is_int(ctx, tiling) || pdf_to_int(ctx, tiling) < 1 || pdf_to_int(ctx, tiling) > 3)
 			{
 				fz_warn(ctx, "not a pattern tiling type (%d 0 R)", pdf_to_num(ctx, patterndict));
@@ -549,7 +549,7 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 		}
 		else
 		{
-			shading = pdf_dict_get(ctx, patterndict, PDF_NAME_Shading);
+			shading = pdf_dict_get(ctx, patterndict, PDF_NAME(Shading));
 		}
 
 		for (k = 0; k < glo->patterns; k++)
@@ -593,7 +593,7 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 
 	fz_try(ctx)
 	{
-		font = pdf_dict_get(ctx, rsrc, PDF_NAME_Font);
+		font = pdf_dict_get(ctx, rsrc, PDF_NAME(Font));
 		if (show & FONTS && font)
 		{
 			int n;
@@ -604,13 +604,13 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 			{
 				pdf_obj *obj = pdf_dict_get_val(ctx, font, i);
 
-				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
+				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
 				if (subrsrc && pdf_objcmp(ctx, rsrc, subrsrc))
 					gatherresourceinfo(ctx, glo, page, subrsrc, show);
 			}
 		}
 
-		xobj = pdf_dict_get(ctx, rsrc, PDF_NAME_XObject);
+		xobj = pdf_dict_get(ctx, rsrc, PDF_NAME(XObject));
 		if (show & (IMAGES|XOBJS) && xobj)
 		{
 			int n;
@@ -626,17 +626,17 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 			for (i = 0; i < n; i++)
 			{
 				pdf_obj *obj = pdf_dict_get_val(ctx, xobj, i);
-				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
+				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
 				if (subrsrc && pdf_objcmp(ctx, rsrc, subrsrc))
 					gatherresourceinfo(ctx, glo, page, subrsrc, show);
 			}
 		}
 
-		shade = pdf_dict_get(ctx, rsrc, PDF_NAME_Shading);
+		shade = pdf_dict_get(ctx, rsrc, PDF_NAME(Shading));
 		if (show & SHADINGS && shade)
 			gathershadings(ctx, glo, page, pageref, shade);
 
-		pattern = pdf_dict_get(ctx, rsrc, PDF_NAME_Pattern);
+		pattern = pdf_dict_get(ctx, rsrc, PDF_NAME(Pattern));
 		if (show & PATTERNS && pattern)
 		{
 			int n;
@@ -645,7 +645,7 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 			for (i = 0; i < n; i++)
 			{
 				pdf_obj *obj = pdf_dict_get_val(ctx, pattern, i);
-				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
+				subrsrc = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
 				if (subrsrc && pdf_objcmp(ctx, rsrc, subrsrc))
 					gatherresourceinfo(ctx, glo, page, subrsrc, show);
 			}
@@ -670,7 +670,7 @@ gatherpageinfo(fz_context *ctx, globals *glo, int page, int show)
 
 	gatherdimensions(ctx, glo, page, pageref);
 
-	rsrc = pdf_dict_get(ctx, pageref, PDF_NAME_Resources);
+	rsrc = pdf_dict_get(ctx, pageref, PDF_NAME(Resources));
 	gatherresourceinfo(ctx, glo, page, rsrc, show);
 }
 

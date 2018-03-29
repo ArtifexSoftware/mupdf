@@ -66,7 +66,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 
 			if (group)
 			{
-				pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME_CS);
+				pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME(CS));
 				if (cs)
 				{
 					fz_try(ctx)

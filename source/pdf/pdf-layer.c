@@ -146,7 +146,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_ocg_ui *ui, pdf_obj *
 		if (j == desc->len)
 			continue; /* OCG not found in main list! Just ignore it */
 		ui->ocg = j;
-		ui->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, o, PDF_NAME_Name));
+		ui->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, o, PDF_NAME(Name)));
 		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 		ui++;
@@ -173,14 +173,14 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 	int count;
 
 	/* Count the number of entries */
-	order = pdf_dict_get(ctx, occg, PDF_NAME_Order);
+	order = pdf_dict_get(ctx, occg, PDF_NAME(Order));
 	if (!order)
 		order = pdf_dict_getp(ctx, ocprops, "D/Order");
 	count = count_entries(ctx, order);
-	rbgroups = pdf_dict_get(ctx, occg, PDF_NAME_RBGroups);
+	rbgroups = pdf_dict_get(ctx, occg, PDF_NAME(RBGroups));
 	if (!rbgroups)
 		rbgroups = pdf_dict_getp(ctx, ocprops, "D/RBGroups");
-	locked = pdf_dict_get(ctx, occg, PDF_NAME_Locked);
+	locked = pdf_dict_get(ctx, occg, PDF_NAME(Locked));
 
 	desc->num_ui_entries = count;
 	desc->ui = Memento_label(fz_calloc(ctx, count, sizeof(pdf_ocg_ui)), "pdf_ocg_ui");
@@ -203,7 +203,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 	pdf_obj *obj, *cobj;
 	pdf_obj *name;
 
-	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_OCProperties);
+	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
 	if (!obj)
 	{
 		if (config == 0)
@@ -212,26 +212,26 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown Layer config (None known!)");
 	}
 
-	cobj = pdf_array_get(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Configs), config);
+	cobj = pdf_array_get(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Configs)), config);
 	if (!cobj)
 	{
 		if (config != 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal Layer config");
-		cobj = pdf_dict_get(ctx, obj, PDF_NAME_D);
+		cobj = pdf_dict_get(ctx, obj, PDF_NAME(D));
 		if (!cobj)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "No default Layer config");
 	}
 
 	pdf_drop_obj(ctx, desc->intent);
-	desc->intent = pdf_keep_obj(ctx, pdf_dict_get(ctx, cobj, PDF_NAME_Intent));
+	desc->intent = pdf_keep_obj(ctx, pdf_dict_get(ctx, cobj, PDF_NAME(Intent)));
 
 	len = desc->len;
-	name = pdf_dict_get(ctx, cobj, PDF_NAME_BaseState);
-	if (pdf_name_eq(ctx, name, PDF_NAME_Unchanged))
+	name = pdf_dict_get(ctx, cobj, PDF_NAME(BaseState));
+	if (pdf_name_eq(ctx, name, PDF_NAME(Unchanged)))
 	{
 		/* Do nothing */
 	}
-	else if (pdf_name_eq(ctx, name, PDF_NAME_OFF))
+	else if (pdf_name_eq(ctx, name, PDF_NAME(OFF)))
 	{
 		for (i = 0; i < len; i++)
 		{
@@ -246,7 +246,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		}
 	}
 
-	obj = pdf_dict_get(ctx, cobj, PDF_NAME_ON);
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(ON));
 	len2 = pdf_array_len(ctx, obj);
 	for (i = 0; i < len2; i++)
 	{
@@ -261,7 +261,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		}
 	}
 
-	obj = pdf_dict_get(ctx, cobj, PDF_NAME_OFF);
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(OFF));
 	len2 = pdf_array_len(ctx, obj);
 	for (i = 0; i < len2; i++)
 	{
@@ -303,16 +303,16 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 	if (!ocprops)
 		return;
 
-	obj = pdf_dict_get(ctx, ocprops, PDF_NAME_Configs);
+	obj = pdf_dict_get(ctx, ocprops, PDF_NAME(Configs));
 	if (pdf_is_array(ctx, obj))
 		obj = pdf_array_get(ctx, obj, config_num);
 	else if (config_num == 0)
-		obj = pdf_dict_get(ctx, ocprops, PDF_NAME_D);
+		obj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid layer config number");
 
-	info->creator = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Creator));
-	info->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Name));
+	info->creator = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Creator)));
+	info->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Name)));
 }
 
 void
@@ -527,7 +527,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 	/* If we've been handed a name, look it up in the properties. */
 	if (pdf_is_name(ctx, ocg))
 	{
-		ocg = pdf_dict_get(ctx, pdf_dict_get(ctx, rdb, PDF_NAME_Properties), ocg);
+		ocg = pdf_dict_get(ctx, pdf_dict_get(ctx, rdb, PDF_NAME(Properties)), ocg);
 	}
 	/* If we haven't been given an ocg at all, then we're visible */
 	if (!ocg)
@@ -536,9 +536,9 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 	fz_strlcpy(event_state, usage, sizeof event_state);
 	fz_strlcat(event_state, "State", sizeof event_state);
 
-	type = pdf_dict_get(ctx, ocg, PDF_NAME_Type);
+	type = pdf_dict_get(ctx, ocg, PDF_NAME(Type));
 
-	if (pdf_name_eq(ctx, type, PDF_NAME_OCG))
+	if (pdf_name_eq(ctx, type, PDF_NAME(OCG)))
 	{
 		/* An Optional Content Group */
 		int default_value = 0;
@@ -558,7 +558,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 
 		/* Check Intents; if our intent is not part of the set given
 		 * by the current config, we should ignore it. */
-		obj = pdf_dict_get(ctx, ocg, PDF_NAME_Intent);
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME(Intent));
 		if (pdf_is_name(ctx, obj))
 		{
 			/* If it doesn't match, it's hidden */
@@ -594,7 +594,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		 * correspond to entries in the AS list in the OCG config.
 		 * Given that we don't handle Zoom or User, or Language
 		 * dicts, this is not really a problem. */
-		obj = pdf_dict_get(ctx, ocg, PDF_NAME_Usage);
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME(Usage));
 		if (!pdf_is_dict(ctx, obj))
 			return default_value;
 		/* FIXME: Should look at Zoom (and return hidden if out of
@@ -603,39 +603,39 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		 * User is appropriate - if not return hidden. */
 		obj2 = pdf_dict_gets(ctx, obj, usage);
 		es = pdf_dict_gets(ctx, obj2, event_state);
-		if (pdf_name_eq(ctx, es, PDF_NAME_OFF))
+		if (pdf_name_eq(ctx, es, PDF_NAME(OFF)))
 		{
 			return 1;
 		}
-		if (pdf_name_eq(ctx, es, PDF_NAME_ON))
+		if (pdf_name_eq(ctx, es, PDF_NAME(ON)))
 		{
 			return 0;
 		}
 		return default_value;
 	}
-	else if (pdf_name_eq(ctx, type, PDF_NAME_OCMD))
+	else if (pdf_name_eq(ctx, type, PDF_NAME(OCMD)))
 	{
 		/* An Optional Content Membership Dictionary */
 		pdf_obj *name;
 		int combine, on = 0;
 
-		obj = pdf_dict_get(ctx, ocg, PDF_NAME_VE);
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
 		if (pdf_is_array(ctx, obj)) {
 			/* FIXME: Calculate visibility from array */
 			return 0;
 		}
-		name = pdf_dict_get(ctx, ocg, PDF_NAME_P);
+		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
 		 * Off, otherwise true means On */
-		if (pdf_name_eq(ctx, name, PDF_NAME_AllOn))
+		if (pdf_name_eq(ctx, name, PDF_NAME(AllOn)))
 		{
 			combine = 1;
 		}
-		else if (pdf_name_eq(ctx, name, PDF_NAME_AnyOff))
+		else if (pdf_name_eq(ctx, name, PDF_NAME(AnyOff)))
 		{
 			combine = 2;
 		}
-		else if (pdf_name_eq(ctx, name, PDF_NAME_AllOff))
+		else if (pdf_name_eq(ctx, name, PDF_NAME(AllOff)))
 		{
 			combine = 3;
 		}
@@ -648,7 +648,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 			return 0; /* Should never happen */
 		fz_try(ctx)
 		{
-			obj = pdf_dict_get(ctx, ocg, PDF_NAME_OCGs);
+			obj = pdf_dict_get(ctx, ocg, PDF_NAME(OCGs));
 			on = combine & 1;
 			if (pdf_is_array(ctx, obj)) {
 				int i, len;
@@ -694,11 +694,11 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 
 	fz_var(desc);
 
-	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_OCProperties);
+	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
 	if (!obj)
 		return;
 
-	configs = pdf_dict_get(ctx, obj, PDF_NAME_Configs);
+	configs = pdf_dict_get(ctx, obj, PDF_NAME(Configs));
 	if (configs == NULL)
 		num_configs = 1;
 	else if (!pdf_is_array(ctx, configs))
@@ -706,7 +706,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 	else
 		num_configs = pdf_array_len(ctx, configs);
 
-	ocg = pdf_dict_get(ctx, obj, PDF_NAME_OCGs);
+	ocg = pdf_dict_get(ctx, obj, PDF_NAME(OCGs));
 	if (!ocg || !pdf_is_array(ctx, ocg))
 		/* Not ever supposed to happen, but live with it. */
 		return;
@@ -753,19 +753,19 @@ pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc)
 		return;
 
 	/* All files with OCGs are required to have a D entry */
-	d = pdf_dict_get(ctx, ocprops, PDF_NAME_D);
+	d = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
 	if (d == NULL)
 		return;
 
-	pdf_dict_put(ctx, d, PDF_NAME_BaseState, PDF_NAME_OFF);
+	pdf_dict_put(ctx, d, PDF_NAME(BaseState), PDF_NAME(OFF));
 
 	/* We are about to delete RBGroups and Order, from D. These are
 	 * both the underlying defaults for other configs, so copy the
 	 * current values out to any config that doesn't have one
 	 * already. */
-	order = pdf_dict_get(ctx, d, PDF_NAME_Order);
-	rbgroups = pdf_dict_get(ctx, d, PDF_NAME_RBGroups);
-	configs = pdf_dict_get(ctx, ocprops, PDF_NAME_Configs);
+	order = pdf_dict_get(ctx, d, PDF_NAME(Order));
+	rbgroups = pdf_dict_get(ctx, d, PDF_NAME(RBGroups));
+	configs = pdf_dict_get(ctx, ocprops, PDF_NAME(Configs));
 	if (configs)
 	{
 		int len = pdf_array_len(ctx, configs);
@@ -773,10 +773,10 @@ pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc)
 		{
 			pdf_obj *config = pdf_array_get(ctx, configs, k);
 
-			if (order && !pdf_dict_get(ctx, config, PDF_NAME_Order))
-				pdf_dict_put(ctx, config, PDF_NAME_Order, order);
-			if (rbgroups && !pdf_dict_get(ctx, config, PDF_NAME_RBGroups))
-				pdf_dict_put(ctx, config, PDF_NAME_RBGroups, rbgroups);
+			if (order && !pdf_dict_get(ctx, config, PDF_NAME(Order)))
+				pdf_dict_put(ctx, config, PDF_NAME(Order), order);
+			if (rbgroups && !pdf_dict_get(ctx, config, PDF_NAME(RBGroups)))
+				pdf_dict_put(ctx, config, PDF_NAME(RBGroups), rbgroups);
 		}
 	}
 
@@ -791,15 +791,15 @@ pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc)
 		if (s->state)
 			pdf_array_push(ctx, on, s->obj);
 	}
-	pdf_dict_put(ctx, d, PDF_NAME_Order, order);
-	pdf_dict_put(ctx, d, PDF_NAME_ON, on);
-	pdf_dict_del(ctx, d, PDF_NAME_OFF);
-	pdf_dict_del(ctx, d, PDF_NAME_AS);
-	pdf_dict_put(ctx, d, PDF_NAME_Intent, PDF_NAME_View);
-	pdf_dict_del(ctx, d, PDF_NAME_Name);
-	pdf_dict_del(ctx, d, PDF_NAME_Creator);
-	pdf_dict_del(ctx, d, PDF_NAME_RBGroups);
-	pdf_dict_del(ctx, d, PDF_NAME_Locked);
+	pdf_dict_put(ctx, d, PDF_NAME(Order), order);
+	pdf_dict_put(ctx, d, PDF_NAME(ON), on);
+	pdf_dict_del(ctx, d, PDF_NAME(OFF));
+	pdf_dict_del(ctx, d, PDF_NAME(AS));
+	pdf_dict_put(ctx, d, PDF_NAME(Intent), PDF_NAME(View));
+	pdf_dict_del(ctx, d, PDF_NAME(Name));
+	pdf_dict_del(ctx, d, PDF_NAME(Creator));
+	pdf_dict_del(ctx, d, PDF_NAME(RBGroups));
+	pdf_dict_del(ctx, d, PDF_NAME(Locked));
 
-	pdf_dict_del(ctx, ocprops, PDF_NAME_Configs);
+	pdf_dict_del(ctx, ocprops, PDF_NAME(Configs));
 }

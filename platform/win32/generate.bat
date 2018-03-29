@@ -4,13 +4,6 @@ if not exist scripts/hexdump.c cd ../..
 if not exist scripts/hexdump.c goto usage
 if not exist generated mkdir generated
 
-cl /nologo -Iinclude scripts/namedump.c
-
-if not exist namedump.exe goto usage
-
-if not exist include/mupdf/pdf/name-table.h namedump.exe resources/pdf/names.txt include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
-if not exist source/pdf/pdf-name-table.h namedump.exe resources/pdf/names.txt include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
-
 cl /nologo -Iinclude scripts/hexdump.c setargv.obj
 cl /nologo -Iinclude scripts/cmapdump.c setargv.obj
 
@@ -159,8 +152,8 @@ if not exist generated/NotoSerifThai-Regular.c hexdump.exe generated/NotoSerifTh
 
 if not exist generated/icc-profiles.c hexdump.exe generated/icc-profiles.c resources/icc/gray.icc resources/icc/rgb.icc resources/icc/cmyk.icc resources/icc/lab.icc
 
-del namedump.obj cmapdump.obj hexdump.obj
-del namedump.exe cmapdump.exe hexdump.exe
+del cmapdump.obj hexdump.obj
+del cmapdump.exe hexdump.exe
 
 goto fin
 

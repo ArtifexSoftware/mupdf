@@ -88,13 +88,13 @@ showpage(fz_context *ctx, pdf_document *doc, fz_output *out, int page)
 
 	if (!failed)
 	{
-		failed |= showbox(ctx, out, pageref, "MediaBox", PDF_NAME_MediaBox);
-		failed |= showbox(ctx, out, pageref, "CropBox", PDF_NAME_CropBox);
-		failed |= showbox(ctx, out, pageref, "ArtBox", PDF_NAME_ArtBox);
-		failed |= showbox(ctx, out, pageref, "BleedBox", PDF_NAME_BleedBox);
-		failed |= showbox(ctx, out, pageref, "TrimBox", PDF_NAME_TrimBox);
-		failed |= shownum(ctx, out, pageref, "Rotate", PDF_NAME_Rotate);
-		failed |= shownum(ctx, out, pageref, "UserUnit", PDF_NAME_UserUnit);
+		failed |= showbox(ctx, out, pageref, "MediaBox", PDF_NAME(MediaBox));
+		failed |= showbox(ctx, out, pageref, "CropBox", PDF_NAME(CropBox));
+		failed |= showbox(ctx, out, pageref, "ArtBox", PDF_NAME(ArtBox));
+		failed |= showbox(ctx, out, pageref, "BleedBox", PDF_NAME(BleedBox));
+		failed |= showbox(ctx, out, pageref, "TrimBox", PDF_NAME(TrimBox));
+		failed |= shownum(ctx, out, pageref, "Rotate", PDF_NAME(Rotate));
+		failed |= shownum(ctx, out, pageref, "UserUnit", PDF_NAME(UserUnit));
 	}
 
 	fz_write_printf(ctx, out, "</page>\n");

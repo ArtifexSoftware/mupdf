@@ -1483,7 +1483,7 @@ static void pdf_run_gs_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	int on = pdf_name_eq(ctx, obj, PDF_NAME_ON);
+	int on = pdf_name_eq(ctx, obj, PDF_NAME(ON));
 	/* The spec says that "ON" means on, "OFF" means "Off", and
 	 * "Default" or anything else means "Meh, do what you want." */
 	gstate->stroke.color_params.bp = on;
@@ -2033,7 +2033,7 @@ static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, p
 	if (!tag || strcmp(tag, "OC"))
 		return;
 
-	str = pdf_to_str_buf(ctx, pdf_dict_get(ctx, cooked, PDF_NAME_Name));
+	str = pdf_to_str_buf(ctx, pdf_dict_get(ctx, cooked, PDF_NAME(Name)));
 	if (str == NULL)
 		str = "UnnamedLayer";
 

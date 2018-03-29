@@ -618,9 +618,9 @@ static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
 		pdf_obj *root, *acroform;
 
 		/* Find the form array */
-		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-		acroform = pdf_dict_get(ctx, root, PDF_NAME_AcroForm);
-		js->form = pdf_dict_get(ctx, acroform, PDF_NAME_Fields);
+		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+		acroform = pdf_dict_get(ctx, root, PDF_NAME(AcroForm));
+		js->form = pdf_dict_get(ctx, acroform, PDF_NAME(Fields));
 
 		/* Initialise the javascript engine, passing the fz_context for use in memory allocation. */
 		js->imp = js_newstate(pdf_js_alloc, ctx, 0);
@@ -649,7 +649,7 @@ static void pdf_js_load_document_level(pdf_js *js)
 	pdf_obj *javascript;
 	int len, i;
 
-	javascript = pdf_load_name_tree(ctx, doc, PDF_NAME_JavaScript);
+	javascript = pdf_load_name_tree(ctx, doc, PDF_NAME(JavaScript));
 	len = pdf_dict_len(ctx, javascript);
 
 	fz_try(ctx)
@@ -657,7 +657,7 @@ static void pdf_js_load_document_level(pdf_js *js)
 		for (i = 0; i < len; i++)
 		{
 			pdf_obj *fragment = pdf_dict_get_val(ctx, javascript, i);
-			pdf_obj *code = pdf_dict_get(ctx, fragment, PDF_NAME_JS);
+			pdf_obj *code = pdf_dict_get(ctx, fragment, PDF_NAME(JS));
 			char *codebuf = pdf_load_stream_or_string_as_utf8(ctx, code);
 			pdf_js_execute(js, codebuf);
 			fz_free(ctx, codebuf);

@@ -66,12 +66,12 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	fz_rect mediabox;
 	fz_matrix page_ctm;
 
-	oldroot = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-	pages = pdf_dict_get(ctx, oldroot, PDF_NAME_Pages);
+	oldroot = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+	pages = pdf_dict_get(ctx, oldroot, PDF_NAME(Pages));
 
 	root = pdf_new_dict(ctx, doc, 2);
-	pdf_dict_put(ctx, root, PDF_NAME_Type, pdf_dict_get(ctx, oldroot, PDF_NAME_Type));
-	pdf_dict_put(ctx, root, PDF_NAME_Pages, pdf_dict_get(ctx, oldroot, PDF_NAME_Pages));
+	pdf_dict_put(ctx, root, PDF_NAME(Type), pdf_dict_get(ctx, oldroot, PDF_NAME(Type)));
+	pdf_dict_put(ctx, root, PDF_NAME(Pages), pdf_dict_get(ctx, oldroot, PDF_NAME(Pages)));
 
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
@@ -136,13 +136,13 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 				pdf_array_push_real(ctx, newmediabox, mb.x1);
 				pdf_array_push_real(ctx, newmediabox, mb.y1);
 
-				pdf_dict_put(ctx, newpageobj, PDF_NAME_Parent, pages);
-				pdf_dict_put_drop(ctx, newpageobj, PDF_NAME_MediaBox, newmediabox);
+				pdf_dict_put(ctx, newpageobj, PDF_NAME(Parent), pages);
+				pdf_dict_put_drop(ctx, newpageobj, PDF_NAME(MediaBox), newmediabox);
 
-				intersect_box(ctx, doc, newpageobj, PDF_NAME_CropBox, &mb);
-				intersect_box(ctx, doc, newpageobj, PDF_NAME_BleedBox, &mb);
-				intersect_box(ctx, doc, newpageobj, PDF_NAME_TrimBox, &mb);
-				intersect_box(ctx, doc, newpageobj, PDF_NAME_ArtBox, &mb);
+				intersect_box(ctx, doc, newpageobj, PDF_NAME(CropBox), &mb);
+				intersect_box(ctx, doc, newpageobj, PDF_NAME(BleedBox), &mb);
+				intersect_box(ctx, doc, newpageobj, PDF_NAME(TrimBox), &mb);
+				intersect_box(ctx, doc, newpageobj, PDF_NAME(ArtBox), &mb);
 
 				/* Store page object in new kids array */
 				pdf_drop_obj(ctx, newpageobj);
@@ -154,8 +154,8 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	}
 
 	/* Update page count and kids array */
-	pdf_dict_put_int(ctx, pages, PDF_NAME_Count, kidcount);
-	pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, kids);
+	pdf_dict_put_int(ctx, pages, PDF_NAME(Count), kidcount);
+	pdf_dict_put_drop(ctx, pages, PDF_NAME(Kids), kids);
 }
 
 int pdfposter_main(int argc, char **argv)

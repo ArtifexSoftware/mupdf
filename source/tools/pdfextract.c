@@ -22,14 +22,14 @@ static void usage(void)
 
 static int isimage(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
-	return pdf_name_eq(ctx, type, PDF_NAME_Image);
+	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
+	return pdf_name_eq(ctx, type, PDF_NAME(Image));
 }
 
 static int isfontdesc(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME_Type);
-	return pdf_name_eq(ctx, type, PDF_NAME_FontDescriptor);
+	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME(Type));
+	return pdf_name_eq(ctx, type, PDF_NAME(FontDescriptor));
 }
 
 static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
@@ -152,38 +152,38 @@ static void savefont(pdf_obj *dict, int num)
 	size_t len;
 	unsigned char *data;
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontName);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(FontName));
 	if (obj)
 		fontname = pdf_to_name(ctx, obj);
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(FontFile));
 	if (obj)
 	{
 		stream = obj;
 		ext = "pfa";
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile2);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(FontFile2));
 	if (obj)
 	{
 		stream = obj;
 		ext = "ttf";
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile3);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(FontFile3));
 	if (obj)
 	{
 		stream = obj;
 
-		obj = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
+		obj = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
 		if (obj && !pdf_is_name(ctx, obj))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid font descriptor subtype");
 
-		if (pdf_name_eq(ctx, obj, PDF_NAME_Type1C))
+		if (pdf_name_eq(ctx, obj, PDF_NAME(Type1C)))
 			ext = "cff";
-		else if (pdf_name_eq(ctx, obj, PDF_NAME_CIDFontType0C))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME(CIDFontType0C)))
 			ext = "cid";
-		else if (pdf_name_eq(ctx, obj, PDF_NAME_OpenType))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME(OpenType)))
 			ext = "otf";
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unhandled font type '%s'", pdf_to_name(ctx, obj));

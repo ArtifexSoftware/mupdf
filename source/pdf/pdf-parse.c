@@ -442,11 +442,11 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 				pdf_array_push_bool(ctx, ary, 0);
 				break;
 			case PDF_TOK_NULL:
-				pdf_array_push(ctx, ary, PDF_OBJ_NULL);
+				pdf_array_push(ctx, ary, PDF_NULL);
 				break;
 
 			default:
-				pdf_array_push(ctx, ary, PDF_OBJ_NULL);
+				pdf_array_push(ctx, ary, PDF_NULL);
 				break;
 			}
 		}

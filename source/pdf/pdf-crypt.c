@@ -58,20 +58,20 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 
 	/* Common to all security handlers (PDF 1.7 table 3.18) */
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Filter);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
 	if (!pdf_is_name(ctx, obj))
 	{
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unspecified encryption handler");
 	}
-	if (!pdf_name_eq(ctx, PDF_NAME_Standard, obj))
+	if (!pdf_name_eq(ctx, PDF_NAME(Standard), obj))
 	{
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption handler: '%s'", pdf_to_name(ctx, obj));
 	}
 
 	crypt->v = 0;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_V);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(V));
 	if (pdf_is_int(ctx, obj))
 		crypt->v = pdf_to_int(ctx, obj);
 	if (crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
@@ -82,7 +82,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 
 	/* Standard security handler (PDF 1.7 table 3.19) */
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_R);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(R));
 	if (pdf_is_int(ctx, obj))
 		crypt->r = pdf_to_int(ctx, obj);
 	else if (crypt->v <= 4)
@@ -107,7 +107,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown crypt revision %d", r);
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_O);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(O));
 	if (pdf_is_string(ctx, obj) && pdf_to_str_len(ctx, obj) == 32)
 		memcpy(crypt->o, pdf_to_str_buf(ctx, obj), 32);
 	/* /O and /U are supposed to be 48 bytes long for revision 5 and 6, they're often longer, though */
@@ -119,7 +119,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing owner password");
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_U);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(U));
 	if (pdf_is_string(ctx, obj) && pdf_to_str_len(ctx, obj) == 32)
 		memcpy(crypt->u, pdf_to_str_buf(ctx, obj), 32);
 	/* /O and /U are supposed to be 48 bytes long for revision 5 and 6, they're often longer, though */
@@ -136,7 +136,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing user password");
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_P);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(P));
 	if (pdf_is_int(ctx, obj))
 		crypt->p = pdf_to_int(ctx, obj);
 	else
@@ -147,7 +147,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 
 	if (crypt->r == 5 || crypt->r == 6)
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_OE);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(OE));
 		if (!pdf_is_string(ctx, obj) || pdf_to_str_len(ctx, obj) != 32)
 		{
 			pdf_drop_crypt(ctx, crypt);
@@ -155,7 +155,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		}
 		memcpy(crypt->oe, pdf_to_str_buf(ctx, obj), 32);
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_UE);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(UE));
 		if (!pdf_is_string(ctx, obj) || pdf_to_str_len(ctx, obj) != 32)
 		{
 			pdf_drop_crypt(ctx, crypt);
@@ -165,7 +165,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	}
 
 	crypt->encrypt_metadata = 1;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_EncryptMetadata);
+	obj = pdf_dict_get(ctx, dict, PDF_NAME(EncryptMetadata));
 	if (pdf_is_bool(ctx, obj))
 		crypt->encrypt_metadata = pdf_to_bool(ctx, obj);
 
@@ -185,7 +185,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	crypt->length = 40;
 	if (crypt->v == 2 || crypt->v == 4)
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_Length);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(Length));
 		if (pdf_is_int(ctx, obj))
 			crypt->length = pdf_to_int(ctx, obj);
 
@@ -225,7 +225,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		crypt->strf.method = PDF_CRYPT_NONE;
 		crypt->strf.length = crypt->length;
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_CF);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(CF));
 		if (pdf_is_dict(ctx, obj))
 		{
 			crypt->cf = pdf_keep_obj(ctx, obj);
@@ -237,11 +237,11 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 
 		fz_try(ctx)
 		{
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_StmF);
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(StmF));
 			if (pdf_is_name(ctx, obj))
 				pdf_parse_crypt_filter(ctx, &crypt->stmf, crypt, obj);
 
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_StrF);
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(StrF));
 			if (pdf_is_name(ctx, obj))
 				pdf_parse_crypt_filter(ctx, &crypt->strf, crypt, obj);
 		}
@@ -279,8 +279,8 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 {
 	pdf_obj *obj;
 	pdf_obj *dict;
-	int is_identity = (pdf_name_eq(ctx, name, PDF_NAME_Identity));
-	int is_stdcf = (!is_identity && pdf_name_eq(ctx, name, PDF_NAME_StdCF));
+	int is_identity = (pdf_name_eq(ctx, name, PDF_NAME(Identity)));
+	int is_stdcf = (!is_identity && pdf_name_eq(ctx, name, PDF_NAME(StdCF)));
 
 	if (!is_identity && !is_stdcf)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Crypt Filter not Identity or StdCF (%d 0 R)", pdf_to_num(ctx, crypt->cf));
@@ -297,22 +297,22 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 	dict = pdf_dict_get(ctx, crypt->cf, name);
 	if (pdf_is_dict(ctx, dict))
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_CFM);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(CFM));
 		if (pdf_is_name(ctx, obj))
 		{
-			if (pdf_name_eq(ctx, PDF_NAME_None, obj))
+			if (pdf_name_eq(ctx, PDF_NAME(None), obj))
 				cf->method = PDF_CRYPT_NONE;
-			else if (pdf_name_eq(ctx, PDF_NAME_V2, obj))
+			else if (pdf_name_eq(ctx, PDF_NAME(V2), obj))
 				cf->method = PDF_CRYPT_RC4;
-			else if (pdf_name_eq(ctx, PDF_NAME_AESV2, obj))
+			else if (pdf_name_eq(ctx, PDF_NAME(AESV2), obj))
 				cf->method = PDF_CRYPT_AESV2;
-			else if (pdf_name_eq(ctx, PDF_NAME_AESV3, obj))
+			else if (pdf_name_eq(ctx, PDF_NAME(AESV3), obj))
 				cf->method = PDF_CRYPT_AESV3;
 			else
 				fz_warn(ctx, "unknown encryption method: %s", pdf_to_name(ctx, obj));
 		}
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_Length);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(Length));
 		if (pdf_is_int(ctx, obj))
 			cf->length = pdf_to_int(ctx, obj);
 	}
@@ -1035,7 +1035,7 @@ pdf_open_crypt(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, int num, int
 fz_stream *
 pdf_open_crypt_with_filter(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, pdf_obj *name, int num, int gen)
 {
-	if (!pdf_name_eq(ctx, name, PDF_NAME_Identity))
+	if (!pdf_name_eq(ctx, name, PDF_NAME(Identity)))
 	{
 		pdf_crypt_filter cf;
 		pdf_parse_crypt_filter(ctx, &cf, crypt, name);

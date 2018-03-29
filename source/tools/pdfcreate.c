@@ -45,11 +45,11 @@ static void add_font_res(pdf_obj *resources, char *name, char *path, char *encna
 	else
 		font = fz_new_font_from_file(ctx, NULL, path, 0, 0);
 
-	subres = pdf_dict_get(ctx, resources, PDF_NAME_Font);
+	subres = pdf_dict_get(ctx, resources, PDF_NAME(Font));
 	if (!subres)
 	{
 		subres = pdf_new_dict(ctx, doc, 10);
-		pdf_dict_put_drop(ctx, resources, PDF_NAME_Font, subres);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME(Font), subres);
 	}
 
 	enc = PDF_SIMPLE_ENCODING_LATIN;
@@ -83,11 +83,11 @@ static void add_cjkfont_res(pdf_obj *resources, char *name, char *on)
 	data = fz_lookup_cjk_font(ctx, ordering, 0, 0, &size, &index);
 	font = fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
 
-	subres = pdf_dict_get(ctx, resources, PDF_NAME_Font);
+	subres = pdf_dict_get(ctx, resources, PDF_NAME(Font));
 	if (!subres)
 	{
 		subres = pdf_new_dict(ctx, doc, 10);
-		pdf_dict_put_drop(ctx, resources, PDF_NAME_Font, subres);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME(Font), subres);
 	}
 
 	ref = pdf_add_cjk_font(ctx, doc, font, ordering);
@@ -104,11 +104,11 @@ static void add_image_res(pdf_obj *resources, char *name, char *path)
 
 	image = fz_new_image_from_file(ctx, path);
 
-	subres = pdf_dict_get(ctx, resources, PDF_NAME_XObject);
+	subres = pdf_dict_get(ctx, resources, PDF_NAME(XObject));
 	if (!subres)
 	{
 		subres = pdf_new_dict(ctx, doc, 10);
-		pdf_dict_put_drop(ctx, resources, PDF_NAME_XObject, subres);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME(XObject), subres);
 	}
 
 	ref = pdf_add_image(ctx, doc, image, 0);

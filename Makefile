@@ -147,7 +147,7 @@ PKCS7_SRC += $(wildcard source/helpers/pkcs7/pkcs7-openssl.c)
 endif
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
-PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
+PDF_SRC_HDR := $(wildcard source/pdf/*.h)
 XPS_SRC_HDR := $(wildcard source/xps/*.h)
 SVG_SRC_HDR := $(wildcard source/svg/*.h)
 HTML_SRC_HDR := $(wildcard source/html/*.h)
@@ -176,23 +176,6 @@ $(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
 $(THREAD_OBJ) : $(THREAD_HDR)
 $(PKCS7_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PKCS7_HDR)
 $(SIGNATURE_OBJ) : $(PKCS7_HDR)
-
-# --- Generated PDF name tables ---
-
-NAMEDUMP_EXE := $(OUT)/scripts/namedump.exe
-
-include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
-NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
-$(NAME_GEN) : resources/pdf/names.txt
-	$(QUIET_GEN) $(NAMEDUMP_EXE) resources/pdf/names.txt $(NAME_GEN)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(NAME_GEN) : $(NAMEDUMP_EXE)
-endif
-
-$(OUT)/source/pdf/pdf-object.o : source/pdf/pdf-name-table.h
-
-generate: $(NAME_GEN)
 
 # --- Generated embedded font files ---
 
@@ -522,7 +505,7 @@ all: libs apps
 clean:
 	rm -rf $(OUT)
 nuke:
-	rm -rf build/* generated $(NAME_GEN)
+	rm -rf build/* generated
 
 release:
 	$(MAKE) build=release
