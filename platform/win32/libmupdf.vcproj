@@ -2573,18 +2573,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\generated\pdf-cmap-extra.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\pdf-cmap-utf32.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\pdf-cmap-utf8.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\generated\pdf-js-util.c"
 				>
 			</File>

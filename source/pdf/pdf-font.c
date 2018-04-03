@@ -1058,12 +1058,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 		if (pdf_is_name(ctx, encoding))
 		{
-			if (pdf_name_eq(ctx, encoding, PDF_NAME(Identity_H)))
-				cmap = pdf_new_identity_cmap(ctx, 0, 2);
-			else if (pdf_name_eq(ctx, encoding, PDF_NAME(Identity_V)))
-				cmap = pdf_new_identity_cmap(ctx, 1, 2);
-			else
-				cmap = pdf_load_system_cmap(ctx, pdf_to_name(ctx, encoding));
+			cmap = pdf_load_system_cmap(ctx, pdf_to_name(ctx, encoding));
 		}
 		else if (pdf_is_indirect(ctx, encoding))
 		{

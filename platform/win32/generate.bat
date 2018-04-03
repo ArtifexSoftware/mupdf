@@ -10,10 +10,7 @@ cl /nologo -Iinclude scripts/cmapdump.c setargv.obj
 if not exist hexdump.exe goto usage
 if not exist cmapdump.exe goto usage
 
-if not exist generated/pdf-cmap-cjk.c cmapdump.exe generated/pdf-cmap-cjk.c resources\cmaps\cjk\*
-if not exist generated/pdf-cmap-extra.c cmapdump.exe generated/pdf-cmap-extra.c resources\cmaps\extra\*
-if not exist generated/pdf-cmap-utf8.c cmapdump.exe generated/pdf-cmap-utf8.c resources\cmaps\utf8\*
-if not exist generated/pdf-cmap-utf32.c cmapdump.exe generated/pdf-cmap-utf32.c resources\cmaps\utf32\*
+if not exist generated/pdf-cmap-cjk.c cmapdump.exe generated/pdf-cmap-cjk.c resources\cmaps\*
 
 if not exist generated/pdf-js-util.c hexdump.exe -0 generated/pdf-js-util.c source/pdf/pdf-js-util.js
 

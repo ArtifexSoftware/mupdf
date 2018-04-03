@@ -4,24 +4,16 @@
 #include <string.h>
 
 #ifdef NOCJK
-#define CJK_CMAPS 0
-#endif
 
-#ifndef CJK_CMAPS
-#define CJK_CMAPS 1
-#endif
+pdf_cmap *
+pdf_load_builtin_cmap(fz_context *ctx, const char *name)
+{
+	if (!strcmp(name, "Identity-H")) return pdf_new_identity_cmap(ctx, 0, 2);
+	if (!strcmp(name, "Identity-V")) return pdf_new_identity_cmap(ctx, 1, 2);
+	return NULL;
+}
 
-#ifndef EXTRA_CMAPS
-#define EXTRA_CMAPS 0
-#endif
-#ifndef UTF8_CMAPS
-#define UTF8_CMAPS 0
-#endif
-#ifndef UTF32_CMAPS
-#define UTF32_CMAPS 0
-#endif
-
-#if CJK_CMAPS
+#else
 
 extern pdf_cmap pdf_cmap_83pv_RKSJ_H;
 extern pdf_cmap pdf_cmap_90ms_RKSJ_H;
@@ -60,6 +52,8 @@ extern pdf_cmap pdf_cmap_GBpc_EUC_V;
 extern pdf_cmap pdf_cmap_H;
 extern pdf_cmap pdf_cmap_HKscs_B5_H;
 extern pdf_cmap pdf_cmap_HKscs_B5_V;
+extern pdf_cmap pdf_cmap_Identity_H;
+extern pdf_cmap pdf_cmap_Identity_V;
 extern pdf_cmap pdf_cmap_KSC_EUC_H;
 extern pdf_cmap pdf_cmap_KSC_EUC_V;
 extern pdf_cmap pdf_cmap_KSCms_UHC_H;
@@ -83,7 +77,6 @@ extern pdf_cmap pdf_cmap_UniJIS_UCS2_HW_V;
 extern pdf_cmap pdf_cmap_UniJIS_UCS2_V;
 extern pdf_cmap pdf_cmap_UniJIS_UTF16_H;
 extern pdf_cmap pdf_cmap_UniJIS_UTF16_V;
-extern pdf_cmap pdf_cmap_UniJIS_X16;
 extern pdf_cmap pdf_cmap_UniJIS_X;
 extern pdf_cmap pdf_cmap_UniKS_UCS2_H;
 extern pdf_cmap pdf_cmap_UniKS_UCS2_V;
@@ -92,10 +85,7 @@ extern pdf_cmap pdf_cmap_UniKS_UTF16_V;
 extern pdf_cmap pdf_cmap_UniKS_X;
 extern pdf_cmap pdf_cmap_V;
 
-struct table { const char *name; pdf_cmap *cmap; };
-
-static const struct table table_cjk[] =
-{
+const struct { const char *name; pdf_cmap *cmap; } table[] = {
 	{"83pv-RKSJ-H",&pdf_cmap_83pv_RKSJ_H},
 	{"90ms-RKSJ-H",&pdf_cmap_90ms_RKSJ_H},
 	{"90ms-RKSJ-V",&pdf_cmap_90ms_RKSJ_V},
@@ -133,6 +123,8 @@ static const struct table table_cjk[] =
 	{"H",&pdf_cmap_H},
 	{"HKscs-B5-H",&pdf_cmap_HKscs_B5_H},
 	{"HKscs-B5-V",&pdf_cmap_HKscs_B5_V},
+	{"Identity-H",&pdf_cmap_Identity_H},
+	{"Identity-V",&pdf_cmap_Identity_V},
 	{"KSC-EUC-H",&pdf_cmap_KSC_EUC_H},
 	{"KSC-EUC-V",&pdf_cmap_KSC_EUC_V},
 	{"KSCms-UHC-H",&pdf_cmap_KSCms_UHC_H},
@@ -157,7 +149,6 @@ static const struct table table_cjk[] =
 	{"UniJIS-UTF16-H",&pdf_cmap_UniJIS_UTF16_H},
 	{"UniJIS-UTF16-V",&pdf_cmap_UniJIS_UTF16_V},
 	{"UniJIS-X",&pdf_cmap_UniJIS_X},
-	{"UniJIS-X16",&pdf_cmap_UniJIS_X16},
 	{"UniKS-UCS2-H",&pdf_cmap_UniKS_UCS2_H},
 	{"UniKS-UCS2-V",&pdf_cmap_UniKS_UCS2_V},
 	{"UniKS-UTF16-H",&pdf_cmap_UniKS_UTF16_H},
@@ -166,247 +157,10 @@ static const struct table table_cjk[] =
 	{"V",&pdf_cmap_V},
 };
 
-#if EXTRA_CMAPS
-
-extern pdf_cmap pdf_cmap_78_EUC_H;
-extern pdf_cmap pdf_cmap_78_EUC_V;
-extern pdf_cmap pdf_cmap_78_H;
-extern pdf_cmap pdf_cmap_78_RKSJ_H;
-extern pdf_cmap pdf_cmap_78_RKSJ_V;
-extern pdf_cmap pdf_cmap_78_V;
-extern pdf_cmap pdf_cmap_78ms_RKSJ_H;
-extern pdf_cmap pdf_cmap_78ms_RKSJ_V;
-extern pdf_cmap pdf_cmap_90pv_RKSJ_V;
-extern pdf_cmap pdf_cmap_Add_H;
-extern pdf_cmap pdf_cmap_Add_V;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_0;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_1;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_2;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_3;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_4;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_5;
-extern pdf_cmap pdf_cmap_Adobe_CNS1_6;
-extern pdf_cmap pdf_cmap_Adobe_GB1_0;
-extern pdf_cmap pdf_cmap_Adobe_GB1_1;
-extern pdf_cmap pdf_cmap_Adobe_GB1_2;
-extern pdf_cmap pdf_cmap_Adobe_GB1_3;
-extern pdf_cmap pdf_cmap_Adobe_GB1_4;
-extern pdf_cmap pdf_cmap_Adobe_GB1_5;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_0;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_1;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_2;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_3;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_4;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_5;
-extern pdf_cmap pdf_cmap_Adobe_Japan1_6;
-extern pdf_cmap pdf_cmap_Adobe_Korea1_0;
-extern pdf_cmap pdf_cmap_Adobe_Korea1_1;
-extern pdf_cmap pdf_cmap_Adobe_Korea1_2;
-extern pdf_cmap pdf_cmap_B5_H;
-extern pdf_cmap pdf_cmap_B5_V;
-extern pdf_cmap pdf_cmap_CNS1_H;
-extern pdf_cmap pdf_cmap_CNS1_V;
-extern pdf_cmap pdf_cmap_CNS2_H;
-extern pdf_cmap pdf_cmap_CNS2_V;
-extern pdf_cmap pdf_cmap_ETHK_B5_H;
-extern pdf_cmap pdf_cmap_ETHK_B5_V;
-extern pdf_cmap pdf_cmap_Ext_H;
-extern pdf_cmap pdf_cmap_Ext_V;
-extern pdf_cmap pdf_cmap_GBT_EUC_H;
-extern pdf_cmap pdf_cmap_GBT_EUC_V;
-extern pdf_cmap pdf_cmap_GBT_H;
-extern pdf_cmap pdf_cmap_GBT_V;
-extern pdf_cmap pdf_cmap_GBTpc_EUC_H;
-extern pdf_cmap pdf_cmap_GBTpc_EUC_V;
-extern pdf_cmap pdf_cmap_GB_H;
-extern pdf_cmap pdf_cmap_GB_V;
-extern pdf_cmap pdf_cmap_HKdla_B5_H;
-extern pdf_cmap pdf_cmap_HKdla_B5_V;
-extern pdf_cmap pdf_cmap_HKdlb_B5_H;
-extern pdf_cmap pdf_cmap_HKdlb_B5_V;
-extern pdf_cmap pdf_cmap_HKgccs_B5_H;
-extern pdf_cmap pdf_cmap_HKgccs_B5_V;
-extern pdf_cmap pdf_cmap_HKm314_B5_H;
-extern pdf_cmap pdf_cmap_HKm314_B5_V;
-extern pdf_cmap pdf_cmap_HKm471_B5_H;
-extern pdf_cmap pdf_cmap_HKm471_B5_V;
-extern pdf_cmap pdf_cmap_Hankaku;
-extern pdf_cmap pdf_cmap_Hiragana;
-extern pdf_cmap pdf_cmap_KSC_H;
-extern pdf_cmap pdf_cmap_KSC_Johab_H;
-extern pdf_cmap pdf_cmap_KSC_Johab_V;
-extern pdf_cmap pdf_cmap_KSC_V;
-extern pdf_cmap pdf_cmap_KSCpc_EUC_V;
-extern pdf_cmap pdf_cmap_Katakana;
-extern pdf_cmap pdf_cmap_NWP_H;
-extern pdf_cmap pdf_cmap_NWP_V;
-extern pdf_cmap pdf_cmap_RKSJ_H;
-extern pdf_cmap pdf_cmap_RKSJ_V;
-extern pdf_cmap pdf_cmap_Roman;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF16_H;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF16_V;
-extern pdf_cmap pdf_cmap_UniJISPro_UCS2_HW_V;
-extern pdf_cmap pdf_cmap_UniJISPro_UCS2_V;
-extern pdf_cmap pdf_cmap_WP_Symbol;
-
-static const struct table table_extra[] =
+pdf_cmap *
+pdf_load_builtin_cmap(fz_context *ctx, const char *name)
 {
-	{"78-EUC-H",&pdf_cmap_78_EUC_H},
-	{"78-EUC-V",&pdf_cmap_78_EUC_V},
-	{"78-H",&pdf_cmap_78_H},
-	{"78-RKSJ-H",&pdf_cmap_78_RKSJ_H},
-	{"78-RKSJ-V",&pdf_cmap_78_RKSJ_V},
-	{"78-V",&pdf_cmap_78_V},
-	{"78ms-RKSJ-H",&pdf_cmap_78ms_RKSJ_H},
-	{"78ms-RKSJ-V",&pdf_cmap_78ms_RKSJ_V},
-	{"90pv-RKSJ-V",&pdf_cmap_90pv_RKSJ_V},
-	{"Add-H",&pdf_cmap_Add_H},
-	{"Add-V",&pdf_cmap_Add_V},
-	{"Adobe-CNS1-0",&pdf_cmap_Adobe_CNS1_0},
-	{"Adobe-CNS1-1",&pdf_cmap_Adobe_CNS1_1},
-	{"Adobe-CNS1-2",&pdf_cmap_Adobe_CNS1_2},
-	{"Adobe-CNS1-3",&pdf_cmap_Adobe_CNS1_3},
-	{"Adobe-CNS1-4",&pdf_cmap_Adobe_CNS1_4},
-	{"Adobe-CNS1-5",&pdf_cmap_Adobe_CNS1_5},
-	{"Adobe-CNS1-6",&pdf_cmap_Adobe_CNS1_6},
-	{"Adobe-GB1-0",&pdf_cmap_Adobe_GB1_0},
-	{"Adobe-GB1-1",&pdf_cmap_Adobe_GB1_1},
-	{"Adobe-GB1-2",&pdf_cmap_Adobe_GB1_2},
-	{"Adobe-GB1-3",&pdf_cmap_Adobe_GB1_3},
-	{"Adobe-GB1-4",&pdf_cmap_Adobe_GB1_4},
-	{"Adobe-GB1-5",&pdf_cmap_Adobe_GB1_5},
-	{"Adobe-Japan1-0",&pdf_cmap_Adobe_Japan1_0},
-	{"Adobe-Japan1-1",&pdf_cmap_Adobe_Japan1_1},
-	{"Adobe-Japan1-2",&pdf_cmap_Adobe_Japan1_2},
-	{"Adobe-Japan1-3",&pdf_cmap_Adobe_Japan1_3},
-	{"Adobe-Japan1-4",&pdf_cmap_Adobe_Japan1_4},
-	{"Adobe-Japan1-5",&pdf_cmap_Adobe_Japan1_5},
-	{"Adobe-Japan1-6",&pdf_cmap_Adobe_Japan1_6},
-	{"Adobe-Korea1-0",&pdf_cmap_Adobe_Korea1_0},
-	{"Adobe-Korea1-1",&pdf_cmap_Adobe_Korea1_1},
-	{"Adobe-Korea1-2",&pdf_cmap_Adobe_Korea1_2},
-	{"B5-H",&pdf_cmap_B5_H},
-	{"B5-V",&pdf_cmap_B5_V},
-	{"CNS1-H",&pdf_cmap_CNS1_H},
-	{"CNS1-V",&pdf_cmap_CNS1_V},
-	{"CNS2-H",&pdf_cmap_CNS2_H},
-	{"CNS2-V",&pdf_cmap_CNS2_V},
-	{"ETHK-B5-H",&pdf_cmap_ETHK_B5_H},
-	{"ETHK-B5-V",&pdf_cmap_ETHK_B5_V},
-	{"Ext-H",&pdf_cmap_Ext_H},
-	{"Ext-V",&pdf_cmap_Ext_V},
-	{"GB-H",&pdf_cmap_GB_H},
-	{"GB-V",&pdf_cmap_GB_V},
-	{"GBT-EUC-H",&pdf_cmap_GBT_EUC_H},
-	{"GBT-EUC-V",&pdf_cmap_GBT_EUC_V},
-	{"GBT-H",&pdf_cmap_GBT_H},
-	{"GBT-V",&pdf_cmap_GBT_V},
-	{"GBTpc-EUC-H",&pdf_cmap_GBTpc_EUC_H},
-	{"GBTpc-EUC-V",&pdf_cmap_GBTpc_EUC_V},
-	{"HKdla-B5-H",&pdf_cmap_HKdla_B5_H},
-	{"HKdla-B5-V",&pdf_cmap_HKdla_B5_V},
-	{"HKdlb-B5-H",&pdf_cmap_HKdlb_B5_H},
-	{"HKdlb-B5-V",&pdf_cmap_HKdlb_B5_V},
-	{"HKgccs-B5-H",&pdf_cmap_HKgccs_B5_H},
-	{"HKgccs-B5-V",&pdf_cmap_HKgccs_B5_V},
-	{"HKm314-B5-H",&pdf_cmap_HKm314_B5_H},
-	{"HKm314-B5-V",&pdf_cmap_HKm314_B5_V},
-	{"HKm471-B5-H",&pdf_cmap_HKm471_B5_H},
-	{"HKm471-B5-V",&pdf_cmap_HKm471_B5_V},
-	{"Hankaku",&pdf_cmap_Hankaku},
-	{"Hiragana",&pdf_cmap_Hiragana},
-	{"KSC-H",&pdf_cmap_KSC_H},
-	{"KSC-Johab-H",&pdf_cmap_KSC_Johab_H},
-	{"KSC-Johab-V",&pdf_cmap_KSC_Johab_V},
-	{"KSC-V",&pdf_cmap_KSC_V},
-	{"KSCpc-EUC-V",&pdf_cmap_KSCpc_EUC_V},
-	{"Katakana",&pdf_cmap_Katakana},
-	{"NWP-H",&pdf_cmap_NWP_H},
-	{"NWP-V",&pdf_cmap_NWP_V},
-	{"RKSJ-H",&pdf_cmap_RKSJ_H},
-	{"RKSJ-V",&pdf_cmap_RKSJ_V},
-	{"Roman",&pdf_cmap_Roman},
-	{"UniJIS2004-UTF16-H",&pdf_cmap_UniJIS2004_UTF16_H},
-	{"UniJIS2004-UTF16-V",&pdf_cmap_UniJIS2004_UTF16_V},
-	{"UniJISPro-UCS2-HW-V",&pdf_cmap_UniJISPro_UCS2_HW_V},
-	{"UniJISPro-UCS2-V",&pdf_cmap_UniJISPro_UCS2_V},
-	{"WP-Symbol",&pdf_cmap_WP_Symbol},
-};
-#endif
-
-#if UTF8_CMAPS
-
-extern pdf_cmap pdf_cmap_UniCNS_UTF8_H;
-extern pdf_cmap pdf_cmap_UniCNS_UTF8_V;
-extern pdf_cmap pdf_cmap_UniGB_UTF8_H;
-extern pdf_cmap pdf_cmap_UniGB_UTF8_V;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF8_H;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF8_V;
-extern pdf_cmap pdf_cmap_UniJISPro_UTF8_V;
-extern pdf_cmap pdf_cmap_UniJIS_UTF8_H;
-extern pdf_cmap pdf_cmap_UniJIS_UTF8_V;
-extern pdf_cmap pdf_cmap_UniJIS_X8;
-extern pdf_cmap pdf_cmap_UniKS_UTF8_H;
-extern pdf_cmap pdf_cmap_UniKS_UTF8_V;
-
-static const struct table table_utf8[] =
-{
-	{"UniCNS-UTF8-H",&pdf_cmap_UniCNS_UTF8_H},
-	{"UniCNS-UTF8-V",&pdf_cmap_UniCNS_UTF8_V},
-	{"UniGB-UTF8-H",&pdf_cmap_UniGB_UTF8_H},
-	{"UniGB-UTF8-V",&pdf_cmap_UniGB_UTF8_V},
-	{"UniJIS-UTF8-H",&pdf_cmap_UniJIS_UTF8_H},
-	{"UniJIS-UTF8-V",&pdf_cmap_UniJIS_UTF8_V},
-	{"UniJIS-X8",&pdf_cmap_UniJIS_X8},
-	{"UniJIS2004-UTF8-H",&pdf_cmap_UniJIS2004_UTF8_H},
-	{"UniJIS2004-UTF8-V",&pdf_cmap_UniJIS2004_UTF8_V},
-	{"UniJISPro-UTF8-V",&pdf_cmap_UniJISPro_UTF8_V},
-	{"UniKS-UTF8-H",&pdf_cmap_UniKS_UTF8_H},
-	{"UniKS-UTF8-V",&pdf_cmap_UniKS_UTF8_V},
-};
-#endif
-
-#if UTF32_CMAPS
-
-extern pdf_cmap pdf_cmap_UniCNS_UTF32_H;
-extern pdf_cmap pdf_cmap_UniCNS_UTF32_V;
-extern pdf_cmap pdf_cmap_UniGB_UTF32_H;
-extern pdf_cmap pdf_cmap_UniGB_UTF32_V;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF32_H;
-extern pdf_cmap pdf_cmap_UniJIS2004_UTF32_V;
-extern pdf_cmap pdf_cmap_UniJISX02132004_UTF32_H;
-extern pdf_cmap pdf_cmap_UniJISX02132004_UTF32_V;
-extern pdf_cmap pdf_cmap_UniJISX0213_UTF32_H;
-extern pdf_cmap pdf_cmap_UniJISX0213_UTF32_V;
-extern pdf_cmap pdf_cmap_UniJIS_UTF32_H;
-extern pdf_cmap pdf_cmap_UniJIS_UTF32_V;
-extern pdf_cmap pdf_cmap_UniJIS_X32;
-extern pdf_cmap pdf_cmap_UniKS_UTF32_H;
-extern pdf_cmap pdf_cmap_UniKS_UTF32_V;
-
-static const struct table table_utf32[] =
-{
-	{"UniCNS-UTF32-H",&pdf_cmap_UniCNS_UTF32_H},
-	{"UniCNS-UTF32-V",&pdf_cmap_UniCNS_UTF32_V},
-	{"UniGB-UTF32-H",&pdf_cmap_UniGB_UTF32_H},
-	{"UniGB-UTF32-V",&pdf_cmap_UniGB_UTF32_V},
-	{"UniJIS-UTF32-H",&pdf_cmap_UniJIS_UTF32_H},
-	{"UniJIS-UTF32-V",&pdf_cmap_UniJIS_UTF32_V},
-	{"UniJIS-X32",&pdf_cmap_UniJIS_X32},
-	{"UniJIS2004-UTF32-H",&pdf_cmap_UniJIS2004_UTF32_H},
-	{"UniJIS2004-UTF32-V",&pdf_cmap_UniJIS2004_UTF32_V},
-	{"UniJISX0213-UTF32-H",&pdf_cmap_UniJISX0213_UTF32_H},
-	{"UniJISX0213-UTF32-V",&pdf_cmap_UniJISX0213_UTF32_V},
-	{"UniJISX02132004-UTF32-H",&pdf_cmap_UniJISX02132004_UTF32_H},
-	{"UniJISX02132004-UTF32-V",&pdf_cmap_UniJISX02132004_UTF32_V},
-	{"UniKS-UTF32-H",&pdf_cmap_UniKS_UTF32_H},
-	{"UniKS-UTF32-V",&pdf_cmap_UniKS_UTF32_V},
-};
-#endif
-
-static pdf_cmap *
-pdf_load_builtin_cmap_imp(const struct table *table, int r, const char *name)
-{
+	int r = nelem(table)-1;
 	int l = 0;
 	while (l <= r)
 	{
@@ -419,31 +173,6 @@ pdf_load_builtin_cmap_imp(const struct table *table, int r, const char *name)
 		else
 			return table[m].cmap;
 	}
-	return NULL;
-}
-
-pdf_cmap *
-pdf_load_builtin_cmap(fz_context *ctx, const char *name)
-{
-	pdf_cmap *cmap = NULL;
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_cjk, nelem(table_cjk)-1, name);
-#if EXTRA_CMAPS
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_extra, nelem(table_extra)-1, name);
-#endif
-#if UTF8_CMAPS
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_utf8, nelem(table_utf8)-1, name);
-#endif
-#if UTF32_CMAPS
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_utf32, nelem(table_utf32)-1, name);
-#endif
-	return cmap;
-}
-
-#else
-
-pdf_cmap *
-pdf_load_builtin_cmap(fz_context *ctx, const char *name)
-{
 	return NULL;
 }
 
