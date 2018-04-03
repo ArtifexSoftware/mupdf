@@ -159,7 +159,7 @@ void fz_free_argv(int argc, char **argv);
 
 /* restrict is standard in C99, but not in all C++ compilers. */
 #if __STDC_VERSION__ == 199901L /* C99 */
-#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
+#elif _MSC_VER >= 1600 /* MSVC 10 or newer */
 #define restrict __restrict
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
 #define restrict __restrict
