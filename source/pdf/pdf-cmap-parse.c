@@ -217,8 +217,8 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 					while (lo <= hi)
 					{
-						dststr[i-1] ++;
 						pdf_map_one_to_many(ctx, cmap, lo, dststr, i);
+						dststr[i-1] ++;
 						lo ++;
 					}
 				}
