@@ -172,7 +172,7 @@ def dumpcmap(filename):
 		print "};"
 		print
 
-	print "pdf_cmap pdf_cmap_%s = {" % cname
+	print "static pdf_cmap cmap_%s = {" % cname
 	print "\t{ -1, pdf_drop_cmap_imp },"
 	print "\t/* cmapname */ \"%s\"," % cmapname
 	print "\t/* usecmap */ \"%s\", NULL," % usecmap
@@ -210,9 +210,6 @@ def dumpcmap(filename):
 	print "};"
 
 print "/* This is an automatically generated file. Do not edit. */"
-print
-print '#include "mupdf/fitz.h"'
-print '#include "mupdf/pdf.h"'
 
 for arg in sys.argv[1:]:
 	dumpcmap(arg)

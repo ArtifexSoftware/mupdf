@@ -5,12 +5,8 @@ if not exist scripts/hexdump.c goto usage
 if not exist generated mkdir generated
 
 cl /nologo -Iinclude scripts/hexdump.c setargv.obj
-cl /nologo -Iinclude scripts/cmapdump.c setargv.obj
 
 if not exist hexdump.exe goto usage
-if not exist cmapdump.exe goto usage
-
-if not exist generated/pdf-cmap-cjk.c cmapdump.exe generated/pdf-cmap-cjk.c resources\cmaps\*
 
 if not exist generated/pdf-js-util.c hexdump.exe -0 generated/pdf-js-util.c source/pdf/pdf-js-util.js
 
@@ -149,8 +145,8 @@ if not exist generated/NotoSerifThai-Regular.c hexdump.exe generated/NotoSerifTh
 
 if not exist generated/icc-profiles.c hexdump.exe generated/icc-profiles.c resources/icc/gray.icc resources/icc/rgb.icc resources/icc/cmyk.icc resources/icc/lab.icc
 
-del cmapdump.obj hexdump.obj
-del cmapdump.exe hexdump.exe
+del hexdump.obj
+del hexdump.exe
 
 goto fin
 

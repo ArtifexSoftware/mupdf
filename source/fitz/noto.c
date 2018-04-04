@@ -33,7 +33,7 @@
 #define TOFU_SIL
 #endif
 
-#ifdef NOCJK
+#ifdef NO_CJK
 #define TOFU_CJK
 #endif
 

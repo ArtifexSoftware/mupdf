@@ -239,55 +239,14 @@ generate: $(ICC_GEN)
 
 # --- Generated CMap files ---
 
-CMAPDUMP_EXE := $(OUT)/scripts/cmapdump.exe
+CMAP_GEN := $(notdir $(sort $(wildcard resources/cmaps/*)))
+CMAP_GEN := $(CMAP_GEN:%=source/pdf/cmaps/%.h)
 
-CMAP_CJK_SRC := $(sort $(wildcard resources/cmaps/cjk/*))
-CMAP_EXTRA_SRC := $(sort $(wildcard resources/cmaps/extra/*))
-CMAP_UTF8_SRC := $(sort $(wildcard resources/cmaps/utf8/*))
-CMAP_UTF32_SRC := $(sort $(wildcard resources/cmaps/utf32/*))
-
-CMAP_GEN := \
-	generated/pdf-cmap-cjk.c \
-	generated/pdf-cmap-extra.c \
-	generated/pdf-cmap-utf8.c \
-	generated/pdf-cmap-utf32.c
-CMAP_OBJ := $(CMAP_GEN:%.c=$(OUT)/%.o)
-
-generated/pdf-cmap-cjk.c : $(CMAP_CJK_SRC) | generated
-	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_CJK_SRC)
-generated/pdf-cmap-extra.c : $(CMAP_EXTRA_SRC) | generated
-	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_EXTRA_SRC)
-generated/pdf-cmap-utf8.c : $(CMAP_UTF8_SRC) | generated
-	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_UTF8_SRC)
-generated/pdf-cmap-utf32.c : $(CMAP_UTF32_SRC) | generated
-	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_UTF32_SRC)
-
-$(CMAP_OBJ) : $(CMAP_GEN)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(CMAP_GEN) : $(CMAPDUMP_EXE)
-endif
+source/pdf/cmaps/%.h: resources/cmaps/%
+	$(MKTGTDIR)
+	$(QUIET_GEN) python scripts/cmapdump.py > $@ $<
 
 generate: $(CMAP_GEN)
-
-$(OUT)/scripts/cmapdump.o : \
-	$(NAME_GEN) \
-	include/mupdf/pdf/cmap.h \
-	source/fitz/context.c \
-	source/fitz/error.c \
-	source/fitz/memory.c \
-	source/fitz/output.c \
-	source/fitz/string.c \
-	source/fitz/buffer.c \
-	source/fitz/stream-open.c \
-	source/fitz/stream-read.c \
-	source/fitz/strtof.c \
-	source/fitz/ftoa.c \
-	source/fitz/printf.c \
-	source/fitz/time.c \
-	source/pdf/pdf-lex.c \
-	source/pdf/pdf-cmap.c \
-	source/pdf/pdf-cmap-parse.c \
 
 # --- Generated embedded javascript files ---
 
