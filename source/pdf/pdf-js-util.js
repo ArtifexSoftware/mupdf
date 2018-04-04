@@ -1,26 +1,82 @@
 var MuPDF = {
-	monthName: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-	shortMonthName: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
-	dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+	monthName: [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	],
+	shortMonthName: [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec'
+	],
+	dayName: [
+		'Sunday',
+		'Monday',
+		'Tuesday',
+		'Wednesday',
+		'Thursday',
+		'Friday',
+		'Saturday'
+	],
+	dateFormats: [
+		'm/d',
+		'm/d/yy',
+		'mm/dd/yy',
+		'mm/yy',
+		'd-mmm',
+		'd-mmm-yy',
+		'dd-mm-yy',
+		'yy-mm-dd',
+		'mmm-yy',
+		'mmmm-yy',
+		'mmm d, yyyy',
+		'mmmm d, yyyy',
+		'm/d/yy h:MM tt',
+		'm/d/yy HH:MM'
+	],
+	timeFormats: [
+		'HH:MM',
+		'h:MM tt',
+		'HH:MM:ss',
+		'h:MM:ss tt'
+	],
 
-	padZeros: function(num, places) {
+	padZeros: function (num, places) {
 		var s = String(num)
 		while (s.length < places)
-			s = '0' + s
+			s = '0' + s;
 		return s;
 	},
 
-	convertCase: function(str, cmd) {
+	convertCase: function (str, cmd) {
 		switch (cmd) {
-			case '>': return str.toUpperCase();
-			case '<': return str.toLowerCase();
-			default: return str;
+		case '>': return str.toUpperCase();
+		case '<': return str.toLowerCase();
+		default: return str;
 		}
 	},
 };
 
-/* display must be kept in sync with an enum in pdf_form.c */
+// display must be kept in sync with an enum in pdf_form.c
 var display = {
 	visible: 0,
 	hidden: 1,
@@ -29,160 +85,135 @@ var display = {
 };
 
 var border = {
-	s: "Solid",
-	d: "Dashed",
-	b: "Beveled",
-	i: "Inset",
-	u: "Underline",
+	s: 'Solid',
+	d: 'Dashed',
+	b: 'Beveled',
+	i: 'Inset',
+	u: 'Underline',
 };
 
 var color = {
-	transparent: [ "T" ],
-	black: [ "G", 0 ],
-	white: [ "G", 1 ],
-	red: [ "RGB", 1,0,0 ],
-	green: [ "RGB", 0,1,0 ],
-	blue: [ "RGB", 0,0,1 ],
-	cyan: [ "CMYK", 1,0,0,0 ],
-	magenta: [ "CMYK", 0,1,0,0 ],
-	yellow: [ "CMYK", 0,0,1,0 ],
-	dkGray: [ "G", 0.25 ],
-	gray: [ "G", 0.5 ],
-	ltGray: [ "G", 0.75 ],
+	transparent: [ 'T' ],
+	black: [ 'G', 0 ],
+	white: [ 'G', 1 ],
+	red: [ 'RGB', 1, 0, 0 ],
+	green: [ 'RGB', 0, 1, 0 ],
+	blue: [ 'RGB', 0, 0, 1 ],
+	cyan: [ 'CMYK', 1, 0, 0, 0 ],
+	magenta: [ 'CMYK', 0, 1, 0, 0 ],
+	yellow: [ 'CMYK', 0, 0, 1, 0 ],
+	dkGray: [ 'G', 0.25 ],
+	gray: [ 'G', 0.5 ],
+	ltGray: [ 'G', 0.75 ],
 };
 
 var util = {};
 
-util.printd = function(fmt, d)
-{
-	var regexp = /(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g;
+util.printd = function (fmt, d) {
+	if (!d) return null;
 	var res = '';
-	var i;
-
-	if (!d)
-		return null;
-
-	var tokens = fmt.match(regexp);
+	var tokens = fmt.match(/(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g);
 	var length = tokens ? tokens.length : 0;
-
-	for (i = 0; i < length; i++)
-	{
-		switch(tokens[i])
-		{
-			case 'mmmm': res += MuPDF.monthName[d.getMonth()]; break;
-			case 'mmm': res += MuPDF.monthName[d.getMonth()].substring(0,3); break;
-			case 'mm': res += MuPDF.padZeros(d.getMonth()+1, 2); break;
-			case 'm': res += d.getMonth()+1; break;
-			case 'dddd': res += MuPDF.dayName[d.getDay()]; break;
-			case 'ddd': res += MuPDF.dayName[d.getDay()].substring(0,3); break;
-			case 'dd': res += MuPDF.padZeros(d.getDate(), 2); break;
-			case 'd': res += d.getDate(); break;
-			case 'yyyy': res += d.getFullYear(); break;
-			case 'yy': res += d.getFullYear()%100; break;
-			case 'HH': res += MuPDF.padZeros(d.getHours(), 2); break;
-			case 'H': res += d.getHours(); break;
-			case 'hh': res += MuPDF.padZeros((d.getHours()+11)%12+1, 2); break;
-			case 'h': res += (d.getHours()+11)%12+1; break;
-			case 'MM': res += MuPDF.padZeros(d.getMinutes(), 2); break;
-			case 'M': res += d.getMinutes(); break;
-			case 'ss': res += MuPDF.padZeros(d.getSeconds(), 2); break;
-			case 's': res += d.getSeconds(); break;
-			case 'tt': res += d.getHours() < 12 ? 'am' : 'pm'; break;
-			case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
-			default: res += tokens[i];
+	var i;
+	for (i = 0; i < length; ++i) {
+		switch (tokens[i]) {
+		case 'mmmm': res += MuPDF.monthName[d.getMonth()]; break;
+		case 'mmm': res += MuPDF.monthName[d.getMonth()].substring(0, 3); break;
+		case 'mm': res += MuPDF.padZeros(d.getMonth()+1, 2); break;
+		case 'm': res += d.getMonth()+1; break;
+		case 'dddd': res += MuPDF.dayName[d.getDay()]; break;
+		case 'ddd': res += MuPDF.dayName[d.getDay()].substring(0, 3); break;
+		case 'dd': res += MuPDF.padZeros(d.getDate(), 2); break;
+		case 'd': res += d.getDate(); break;
+		case 'yyyy': res += d.getFullYear(); break;
+		case 'yy': res += d.getFullYear()%100; break;
+		case 'HH': res += MuPDF.padZeros(d.getHours(), 2); break;
+		case 'H': res += d.getHours(); break;
+		case 'hh': res += MuPDF.padZeros((d.getHours()+11)%12+1, 2); break;
+		case 'h': res += (d.getHours()+11)%12+1; break;
+		case 'MM': res += MuPDF.padZeros(d.getMinutes(), 2); break;
+		case 'M': res += d.getMinutes(); break;
+		case 'ss': res += MuPDF.padZeros(d.getSeconds(), 2); break;
+		case 's': res += d.getSeconds(); break;
+		case 'tt': res += d.getHours() < 12 ? 'am' : 'pm'; break;
+		case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
+		default: res += tokens[i];
 		}
 	}
-
 	return res;
 }
 
-util.printx = function(fmt, val)
-{
+util.printx = function (fmt, val) {
 	var cs = '=';
 	var res = '';
-	var i = 0;
-	var m;
+	var i, m;
 	var length = fmt ? fmt.length : 0;
-
-	while (i < length)
-	{
-		switch (fmt.charAt(i))
-		{
-			case '\\':
-				i++;
-				if (i >= length) return res;
+	for (i = 0; i < length; ++i) {
+		switch (fmt.charAt(i)) {
+		case '\\':
+			if (++i < length)
 				res += fmt.charAt(i);
-				break;
-
-			case 'X':
-				m = val.match(/\w/);
-				if (!m) return res;
-				res += MuPDF.convertCase(m[0],cs);
-				val = val.replace(/^\W*\w/,'');
-				break;
-
-			case 'A':
-				m = val.match(/[A-Za-z]/);
-				if (!m) return res;
-				res += MuPDF.convertCase(m[0],cs);
-				val = val.replace(/^[^A-Za-z]*[A-Za-z]/,'');
-				break;
-
-			case '9':
-				m = val.match(/\d/);
-				if (!m) return res;
+			break;
+		case 'X':
+			m = val.match(/\w/);
+			if (m) {
+				res += MuPDF.convertCase(m[0], cs);
+				val = val.replace(/^\W*\w/, '');
+			}
+			break;
+		case 'A':
+			m = val.match(/[A-Za-z]/);
+			if (m) {
+				res += MuPDF.convertCase(m[0], cs);
+				val = val.replace(/^[^A-Za-z]*[A-Za-z]/, '');
+			}
+			break;
+		case '9':
+			m = val.match(/\d/);
+			if (m) {
 				res += m[0];
-				val = val.replace(/^\D*\d/,'');
-				break;
-
-			case '*':
-				res += val;
-				val = '';
-				break;
-
-			case '?':
-				if (!val) return res;
-				res += MuPDF.convertCase(val.charAt(0),cs);
+				val = val.replace(/^\D*\d/, '');
+			}
+			break;
+		case '*':
+			res += val;
+			val = '';
+			break;
+		case '?':
+			if (val) {
+				res += MuPDF.convertCase(val.charAt(0), cs);
 				val = val.substring(1);
-				break;
-
-			case '=':
-			case '>':
-			case '<':
-				cs = fmt.charAt(i);
-				break;
-
-			default:
-				res += MuPDF.convertCase(fmt.charAt(i),cs);
-				break;
+			}
+			break;
+		case '=':
+		case '>':
+		case '<':
+			cs = fmt.charAt(i);
+			break;
+		default:
+			res += MuPDF.convertCase(fmt.charAt(i), cs);
+			break;
 		}
-
-		i++;
 	}
-
 	return res;
 }
 
-util.printf = function()
-{
+util.printf = function () {
 	var i;
 
 	if (arguments.length < 1)
-		return "";
+		return '';
 
-	var res = "";
+	var res = '';
 	var arg_i = 1;
 	var regexp = /%[^dfsx]*[dfsx]|[^%]*/g;
 	var tokens = arguments[0].match(regexp);
 	var length = tokens ? tokens.length : 0;
 
-	for (i = 0; i < length; i++)
-	{
+	for (i = 0; i < length; i++) {
 		var tok = tokens[i];
-		if (tok.match(/^%/))
-		{
-			if (arg_i < arguments.length)
-			{
+		if (tok.match(/^%/)) {
+			if (arg_i < arguments.length) {
 				var val = arguments[arg_i++];
 				var fval = '';
 				var neg = false;
@@ -192,21 +223,26 @@ util.printf = function()
 				var prec_re = /^\.\d+/;
 				var conv_re = /^[dfsx]/;
 
-				tok = tok.replace(/^%/, "");
+				tok = tok.replace(/^%/, '');
 				var decsep = tok.match(decsep_re);
-				if (decsep) decsep = decsep[0];
-				tok = tok.replace(decsep_re, "");
+				if (decsep)
+					decsep = decsep[0];
+				tok = tok.replace(decsep_re, '');
 				var flags = tok.match(flags_re);
-				if (flags) flags = flags[0];
-				tok = tok.replace(flags_re, "");
+				if (flags)
+					flags = flags[0];
+				tok = tok.replace(flags_re, '');
 				var width = tok.match(width_re);
-				if (width) width = width[0];
-				tok = tok.replace(width_re, "");
+				if (width)
+					width = width[0];
+				tok = tok.replace(width_re, '');
 				var prec = tok.match(prec_re);
-				if (prec) prec = prec[0];
-				tok = tok.replace(prec_re, "");
+				if (prec)
+					prec = prec[0];
+				tok = tok.replace(prec_re, '');
 				var conv = tok.match(conv_re);
-				if (conv) conv = conv[0];
+				if (conv)
+					conv = conv[0];
 
 				prec = prec ? Number(prec.replace(/^\./, '')) : 0;
 				var poschar = (flags && flags.match(/[+ ]/)) ? flags.match(/[+ ]/)[0] : '';
@@ -215,83 +251,75 @@ util.printf = function()
 				var point = '.';
 				var thou = '';
 
-				if (decsep)
-				{
-					switch(decsep)
-					{
-						case ',0': thou = ','; break;
-						case ',1': break;
-						case ',2': thou = '.'; point = ','; break;
-						case ',3': point = ','; break;
+				if (decsep) {
+					switch (decsep) {
+					case ',0': thou = ','; break;
+					case ',1': break;
+					case ',2': thou = '.'; point = ','; break;
+					case ',3': point = ','; break;
 					}
 				}
 
-				switch(conv)
-				{
-					case 'x':
-						val = Math.floor(val);
-						neg = (val < 0);
-						if (neg)
-							val = -val;
+				switch (conv) {
+				case 'x':
+					val = Math.floor(val);
+					neg = (val < 0);
+					if (neg)
+						val = -val;
 
-						// Convert to hex
-						while (val)
-						{
-							fval = '0123456789ABCDEF'.charAt(val%16) + fval;
-							val = Math.floor(val/16);
+					// Convert to hex
+					while (val) {
+						fval = '0123456789ABCDEF'.charAt(val%16) + fval;
+						val = Math.floor(val/16);
+					}
+
+					if (neg)
+						fval = '-' + fval;
+					else
+						fval = poschar + fval;
+					break;
+
+				case 'd':
+					fval = String(Math.floor(val));
+					break;
+
+				case 's':
+					// Always pad strings with space
+					pad = ' ';
+					fval = String(val);
+					break;
+
+				case 'f':
+					fval = String(val);
+
+					if (prec) {
+						var frac = fval.match(/\.\d+/);
+						if (frac) {
+							frac = frac[0];
+							// Matched string includes the dot, so make it
+							// prec+1 in length
+							if (frac.length > prec+1)
+								frac = frac.substring(0, prec+1);
+							else if (frac.length < prec+1)
+								frac += new Array(prec+1-frac.length+1).join('0');
+
+							fval = fval.replace(/\.\d+/, frac);
 						}
-
-						if (neg)
-							fval = '-' + fval;
-						else
-							fval = poschar + fval;
-						break;
-
-					case 'd':
-						fval = String(Math.floor(val));
-						break;
-
-					case 's':
-						// Always pad strings with space
-						pad = ' ';
-						fval = String(val);
-						break;
-
-					case 'f':
-						fval = String(val);
-
-						if (prec)
-						{
-							var frac = fval.match(/\.\d+/);
-							if (frac)
-							{
-								frac = frac[0];
-								// Matched string includes the dot, so make it
-								// prec+1 in length
-								if (frac.length > prec+1)
-									frac = frac.substring(0, prec+1);
-								else if(frac.length < prec+1)
-									frac += new Array(prec+1-frac.length+1).join('0');
-
-								fval = fval.replace(/\.\d+/, frac);
-							}
-						}
-						break;
+					}
+					break;
 				}
 
-				if (conv.match(/[fd]/))
-				{
+				if (conv.match(/[fd]/)) {
 					if (fval >= 0)
 						fval = poschar + fval;
 
 					if (point !== '.')
 						fval.replace(/\./, point);
 
-					if (thou)
-					{
+					if (thou) {
 						var intpart = fval.match(/\d+/)[0];
 						intpart = new Array(2-(intpart.length+2)%3+1).join('0') + intpart;
-						intpart = intpart.match(/.../g).join(thou).replace(/^0*[,.]?/,'');
+						intpart = intpart.match(/.../g).join(thou).replace(/^0*[,.]?/, '');
 						fval = fval.replace(/\d+/, intpart);
 					}
 				}
@@ -301,9 +329,7 @@ util.printf = function()
 
 				res += fval;
 			}
-		}
-		else
-		{
+		} else {
 			res += tok;
 		}
 	}
@@ -311,53 +337,41 @@ util.printf = function()
 	return res;
 }
 
-function AFMergeChange(event)
-{
+function AFMergeChange(event) {
 	return event.value;
 }
 
-function AFMakeNumber(str)
-{
+function AFMakeNumber(str) {
 	var nums = str.match(/\d+/g);
-
 	if (!nums)
 		return null;
-
 	var res = nums.join('.');
-
 	if (str.match(/^[^0-9]*\./))
 		res = '0.'+res;
-
 	return res * (str.match(/-/) ? -1.0 : 1.0);
 }
 
-function AFExtractTime(dt)
-{
+function AFExtractTime(dt) {
 	var ampm = dt.match(/(am|pm)/);
 	dt = dt.replace(/(am|pm)/, '');
 	var t = dt.match(/\d{1,2}:\d{1,2}:\d{1,2}/);
 	dt = dt.replace(/\d{1,2}:\d{1,2}:\d{1,2}/, '');
-	if (!t)
-	{
+	if (!t) {
 		t = dt.match(/\d{1,2}:\d{1,2}/);
 		dt = dt.replace(/\d{1,2}:\d{1,2}/, '');
 	}
-
 	return [dt, t?t[0]+(ampm?ampm[0]:''):''];
 }
 
-function AFParseDateOrder(fmt)
-{
+function AFParseDateOrder(fmt) {
 	var i;
 	var order = '';
 
 	// Ensure all present with those not added in default order
-	fmt += "mdy";
+	fmt += 'mdy';
 
-	for (i = 0; i < fmt.length; i++)
-	{
+	for (i = 0; i < fmt.length; i++) {
 		var c = fmt.charAt(i);
-
 		if ('ymd'.indexOf(c) !== -1 && order.indexOf(c) === -1)
 			order += c;
 	}
@@ -365,15 +379,12 @@ function AFParseDateOrder(fmt)
 	return order;
 }
 
-function AFMatchMonth(d)
-{
+function AFMatchMonth(d) {
 	var m = d.match(MuPDF.monthPattern);
-
 	return m ? MuPDF.shortMonthName.indexOf(m[0]) : null;
 }
 
-function AFParseTime(str, d)
-{
+function AFParseTime(str, d) {
 	if (!str)
 		return d;
 
@@ -389,17 +400,15 @@ function AFParseTime(str, d)
 
 	sec = 0;
 
-	switch (nums.length)
-	{
-		case 3:
-			sec = parseInt(nums[2]);
-		case 2:
-			hour = parseInt(nums[0]);
-			min = parseInt(nums[1]);
-			break;
-
-		default:
-			return null;
+	switch (nums.length) {
+	case 3:
+		sec = parseInt(nums[2]);
+	case 2:
+		hour = parseInt(nums[0]);
+		min = parseInt(nums[1]);
+		break;
+	default:
+		return null;
 	}
 
 	ampm = ampm && ampm[0]
@@ -417,8 +426,7 @@ function AFParseTime(str, d)
 	return d;
 }
 
-function AFParseDateEx(d, fmt)
-{
+function AFParseDateEx(d, fmt) {
 	var i;
 	var dt = AFExtractTime(d);
 	var nums = dt[0].match(/\d+/g);
@@ -429,39 +437,34 @@ function AFParseDateEx(d, fmt)
 	var month = dout.getMonth();
 	var date = dout.getDate();
 
-	dout.setHours(12,0,0);
+	dout.setHours(12, 0, 0);
 
 	if (!nums || nums.length < 1 || nums.length > 3)
 		return null;
 
-	if (nums.length < 3 && text_month)
-	{
+	if (nums.length < 3 && text_month) {
 		// Use the text month rather than one of the numbers
 		month = text_month;
-		order = order.replace('m','');
+		order = order.replace('m', '');
 	}
 
 	order = order.substring(0, nums.length);
 
 	// If year and month specified but not date then use the 1st
-	if (order === "ym" || (order === "y" && text_month))
+	if (order === 'ym' || (order === 'y' && text_month))
 		date = 1;
 
-	for (i = 0; i < nums.length; i++)
-	{
-		switch (order.charAt(i))
-		{
-			case 'y': year = parseInt(nums[i]); break;
-			case 'm': month = parseInt(nums[i]) - 1; break;
-			case 'd': date = parseInt(nums[i]); break;
+	for (i = 0; i < nums.length; i++) {
+		switch (order.charAt(i)) {
+		case 'y': year = parseInt(nums[i]); break;
+		case 'm': month = parseInt(nums[i]) - 1; break;
+		case 'd': date = parseInt(nums[i]); break;
 		}
 	}
 
-	if (year < 100)
-	{
-		if (fmt.search("yyyy") !== -1)
+	if (year < 100) {
+		if (fmt.search('yyyy') !== -1)
 			return null;
-
 		if (year >= 50)
 			year = 1900 + year;
 		else if (year >= 0)
@@ -476,61 +479,43 @@ function AFParseDateEx(d, fmt)
 	return AFParseTime(dt[1], dout);
 }
 
-function AFDate_KeystrokeEx(fmt)
-{
-	if (event.willCommit && !AFParseDateEx(event.value, fmt))
-	{
-		app.alert("The date/time entered ("+event.value+") does not match the format ("+fmt+") of the field [ "+event.target.name+" ]");
+function AFDate_KeystrokeEx(fmt) {
+	if (event.willCommit && !AFParseDateEx(event.value, fmt)) {
+		app.alert('The date/time entered ('+event.value+') does not match the format ('+fmt+') of the field [ '+event.target.name+' ]');
 		event.rc = false;
 	}
 }
 
-function AFDate_Keystroke(index)
-{
-	var formats = ['m/d','m/d/yy','mm/dd/yy','mm/yy','d-mmm','d-mmm-yy','dd-mm-yy','yy-mm-dd',
-				'mmm-yy','mmmm-yy','mmm d, yyyy','mmmm d, yyyy','m/d/yy h:MM tt','m/d/yy HH:MM'];
-	AFDate_KeystrokeEx(formats[index]);
+function AFDate_Keystroke(index) {
+	AFDate_KeystrokeEx(MuPDF.dateFormats[index]);
 }
 
-function AFDate_FormatEx(fmt)
-{
+function AFDate_FormatEx(fmt) {
 	var d = AFParseDateEx(event.value, fmt);
-
-	event.value = d ? util.printd(fmt, d) : "";
-}
-
-function AFDate_Format(index)
-{
-	var formats = ['m/d','m/d/yy','mm/dd/yy','mm/yy','d-mmm','d-mmm-yy','dd-mm-yy','yy-mm-dd',
-				'mmm-yy','mmmm-yy','mmm d, yyyy','mmmm d, yyyy','m/d/yy h:MM tt','m/d/yy HH:MM'];
-	AFDate_FormatEx(formats[index]);
-}
-
-function AFTime_Keystroke(index)
-{
-	if (event.willCommit && !AFParseTime(event.value, null))
-	{
-		app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
-		event.rc = false;
-	}
-}
-
-function AFTime_FormatEx(fmt)
-{
-	var d = AFParseTime(event.value, null);
-
 	event.value = d ? util.printd(fmt, d) : '';
 }
 
-function AFTime_Format(index)
-{
-	var formats = ['HH:MM','h:MM tt','HH:MM:ss','h:MM:ss tt'];
-
-	AFTime_FormatEx(formats[index]);
+function AFDate_Format(index) {
+	AFDate_FormatEx(MuPDF.dateFormats[index]);
 }
 
-function AFSpecial_KeystrokeEx(fmt)
-{
+function AFTime_Keystroke(index) {
+	if (event.willCommit && !AFParseTime(event.value, null)) {
+		app.alert('The value entered ('+event.value+') does not match the format of the field [ '+event.target.name+' ]');
+		event.rc = false;
+	}
+}
+
+function AFTime_FormatEx(fmt) {
+	var d = AFParseTime(event.value, null);
+	event.value = d ? util.printd(fmt, d) : '';
+}
+
+function AFTime_Format(index) {
+	AFTime_FormatEx(MuPDF.timeFormats[index]);
+}
+
+function AFSpecial_KeystrokeEx(fmt) {
 	var cs = '=';
 	var val = event.value;
 	var res = '';
@@ -538,78 +523,72 @@ function AFSpecial_KeystrokeEx(fmt)
 	var m;
 	var length = fmt ? fmt.length : 0;
 
-	while (i < length)
-	{
-		switch (fmt.charAt(i))
-		{
-			case '\\':
-				i++;
-				if (i >= length)
-					break;
-				res += fmt.charAt(i);
-				if (val && val.charAt(0) === fmt.charAt(i))
-					val = val.substring(1);
+	while (i < length) {
+		switch (fmt.charAt(i)) {
+		case '\\':
+			i++;
+			if (i >= length)
 				break;
-
-			case 'X':
-				m = val.match(/^\w/);
-				if (!m)
-				{
-					event.rc = false;
-					break;
-				}
-				res += MuPDF.convertCase(m[0],cs);
+			res += fmt.charAt(i);
+			if (val && val.charAt(0) === fmt.charAt(i))
 				val = val.substring(1);
-				break;
+			break;
 
-			case 'A':
-				m = val.match(/^[A-Za-z]/);
-				if (!m)
-				{
-					event.rc = false;
-					break;
-				}
-				res += MuPDF.convertCase(m[0],cs);
+		case 'X':
+			m = val.match(/^\w/);
+			if (!m) {
+				event.rc = false;
+				break;
+			}
+			res += MuPDF.convertCase(m[0], cs);
+			val = val.substring(1);
+			break;
+
+		case 'A':
+			m = val.match(/^[A-Za-z]/);
+			if (!m) {
+				event.rc = false;
+				break;
+			}
+			res += MuPDF.convertCase(m[0], cs);
+			val = val.substring(1);
+			break;
+
+		case '9':
+			m = val.match(/^\d/);
+			if (!m) {
+				event.rc = false;
+				break;
+			}
+			res += m[0];
+			val = val.substring(1);
+			break;
+
+		case '*':
+			res += val;
+			val = '';
+			break;
+
+		case '?':
+			if (!val) {
+				event.rc = false;
+				break;
+			}
+			res += MuPDF.convertCase(val.charAt(0), cs);
+			val = val.substring(1);
+			break;
+
+		case '=':
+		case '>':
+		case '<':
+			cs = fmt.charAt(i);
+			break;
+
+		default:
+			res += fmt.charAt(i);
+			if (val && val.charAt(0) === fmt.charAt(i))
 				val = val.substring(1);
-				break;
-
-			case '9':
-				m = val.match(/^\d/);
-				if (!m)
-				{
-					event.rc = false;
-					break;
-				}
-				res += m[0];
-				val = val.substring(1);
-				break;
-
-			case '*':
-				res += val;
-				val = '';
-				break;
-
-			case '?':
-				if (!val)
-				{
-					event.rc = false;
-					break;
-				}
-				res += MuPDF.convertCase(val.charAt(0),cs);
-				val = val.substring(1);
-				break;
-
-			case '=':
-			case '>':
-			case '<':
-				cs = fmt.charAt(i);
-				break;
-
-			default:
-				res += fmt.charAt(i);
-				if (val && val.charAt(0) === fmt.charAt(i))
-					val = val.substring(1);
-				break;
+			break;
 		}
 
 		i++;
@@ -618,87 +597,71 @@ function AFSpecial_KeystrokeEx(fmt)
 	if (event.rc)
 		event.value = res;
 	else if (event.willCommit)
-		app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ] should be "+fmt);
+		app.alert('The value entered ('+event.value+') does not match the format of the field [ '+event.target.name+' ] should be '+fmt);
 }
 
-function AFSpecial_Keystroke(index)
-{
-	if (event.willCommit)
-	{
-		switch (index)
-		{
-			case 0:
-				if (!event.value.match(/^\d{5}$/))
-					event.rc = false;
-				break;
-			case 1:
-				if (!event.value.match(/^\d{5}[-. ]?\d{4}$/))
-					event.rc = false;
-				break;
-			case 2:
-				if (!event.value.match(/^((\(\d{3}\)|\d{3})[-. ]?)?\d{3}[-. ]?\d{4}$/))
-					event.rc = false;
-				break;
-			case 3:
-				if (!event.value.match(/^\d{3}[-. ]?\d{2}[-. ]?\d{4}$/))
-					event.rc = false;
-				break;
-		}
-
-		if (!event.rc)
-			app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
-	}
-}
-
-function AFSpecial_Format(index)
-{
-	var res;
-
-	switch (index)
-	{
+function AFSpecial_Keystroke(index) {
+	if (event.willCommit) {
+		switch (index) {
 		case 0:
-			res = util.printx('99999', event.value);
+			if (!event.value.match(/^\d{5}$/))
+				event.rc = false;
 			break;
 		case 1:
-			res = util.printx('99999-9999', event.value);
+			if (!event.value.match(/^\d{5}[-. ]?\d{4}$/))
+				event.rc = false;
 			break;
 		case 2:
-			res = util.printx('9999999999', event.value);
-			res = util.printx(res.length >= 10 ? '(999) 999-9999' : '999-9999', event.value);
+			if (!event.value.match(/^((\(\d{3}\)|\d{3})[-. ]?)?\d{3}[-. ]?\d{4}$/))
+				event.rc = false;
 			break;
 		case 3:
-			res = util.printx('999-99-9999', event.value);
+			if (!event.value.match(/^\d{3}[-. ]?\d{2}[-. ]?\d{4}$/))
+				event.rc = false;
 			break;
+		}
+		if (!event.rc)
+			app.alert('The value entered ('+event.value+') does not match the format of the field [ '+event.target.name+' ]');
 	}
+}
 
+function AFSpecial_Format(index) {
+	var res;
+	switch (index) {
+	case 0:
+		res = util.printx('99999', event.value);
+		break;
+	case 1:
+		res = util.printx('99999-9999', event.value);
+		break;
+	case 2:
+		res = util.printx('9999999999', event.value);
+		res = util.printx(res.length >= 10 ? '(999) 999-9999' : '999-9999', event.value);
+		break;
+	case 3:
+		res = util.printx('999-99-9999', event.value);
+		break;
+	}
 	event.value = res ? res : '';
 }
 
-function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend)
-{
-	if (sepStyle & 2)
-	{
+function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend) {
+	if (sepStyle & 2) {
 		if (!event.value.match(/^[+-]?\d*[,.]?\d*$/))
 			event.rc = false;
-	}
-	else
-	{
+	} else {
 		if (!event.value.match(/^[+-]?\d*\.?\d*$/))
 			event.rc = false;
 	}
-
-	if (event.willCommit)
-	{
+	if (event.willCommit) {
 		if (!event.value.match(/\d/))
 			event.rc = false;
-
 		if (!event.rc)
-			app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
+			app.alert('The value entered ('+event.value+') does not match the format of the field [ '+event.target.name+' ]');
 	}
 }
 
-function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyPrepend)
-{
+function AFNumber_Format(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend) {
 	var val = event.value;
 	var fracpart;
 	var intpart;
@@ -713,31 +676,29 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 	if (!groups)
 		return;
 
-	switch (groups.length)
-	{
-		case 0:
-			return;
-		case 1:
-			fracpart = '';
-			intpart = groups[0];
-			break;
-		default:
-			fracpart = groups.pop();
-			intpart = groups.join('');
-			break;
+	switch (groups.length) {
+	case 0:
+		return;
+	case 1:
+		fracpart = '';
+		intpart = groups[0];
+		break;
+	default:
+		fracpart = groups.pop();
+		intpart = groups.join('');
+		break;
 	}
 
 	// Remove leading zeros
-	intpart = intpart.replace(/^0*/,'');
+	intpart = intpart.replace(/^0*/, '');
 	if (!intpart)
 		intpart = '0';
 
-	if ((sepStyle & 1) === 0)
-	{
+	if ((sepStyle & 1) === 0) {
 		// Add the thousands sepearators: pad to length multiple of 3 with zeros,
 		// split into 3s, join with separator, and remove the leading zeros
 		intpart = new Array(2-(intpart.length+2)%3+1).join('0') + intpart;
-		intpart = intpart.match(/.../g).join(separator).replace(/^0*/,'');
+		intpart = intpart.match(/.../g).join(separator).replace(/^0*/, '');
 	}
 
 	if (!intpart)
@@ -745,7 +706,7 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 
 	// Adjust fractional part to correct number of decimal places
 	fracpart += new Array(nDec+1).join('0');
-	fracpart = fracpart.substring(0,nDec);
+	fracpart = fracpart.substring(0, nDec);
 
 	if (fracpart)
 		intpart += point+fracpart;
@@ -755,19 +716,17 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 	else
 		intpart += strCurrency;
 
-	if (/-/.test(val))
-	{
-		switch (negStyle)
-		{
-			case 0:
-				intpart = '-'+intpart;
-				break;
-			case 1:
-				break;
-			case 2:
-			case 3:
-				intpart = '('+intpart+')';
-				break;
+	if (/-/.test(val)) {
+		switch (negStyle) {
+		case 0:
+			intpart = '-'+intpart;
+			break;
+		case 1:
+			break;
+		case 2:
+		case 3:
+			intpart = '('+intpart+')';
+			break;
 		}
 	}
 
@@ -777,70 +736,41 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 	event.value = intpart;
 }
 
-function AFPercent_Keystroke(nDec, sepStyle)
-{
-	AFNumber_Keystroke(nDec, sepStyle, 0, 0, "", true);
+function AFPercent_Keystroke(nDec, sepStyle) {
+	AFNumber_Keystroke(nDec, sepStyle, 0, 0, '', true);
 }
 
-function AFPercent_Format(nDec, sepStyle)
-{
+function AFPercent_Format(nDec, sepStyle) {
 	var val = AFMakeNumber(event.value);
-
-	if (!val)
-	{
+	if (!val) {
 		event.value = '';
 		return;
 	}
-
 	event.value = (val * 100) + '';
-
-	AFNumber_Format(nDec, sepStyle, 0, 0, "%", false);
+	AFNumber_Format(nDec, sepStyle, 0, 0, '%', false);
 }
 
-function AFSimple_Calculate(op, list)
-{
+function AFSimple_Calculate(op, list) {
 	var i, res;
 
-	switch (op)
-	{
-		case 'SUM':
-			res = 0;
-			break;
-		case 'PRD':
-			res = 1;
-			break;
-		case 'AVG':
-			res = 0;
-			break;
+	switch (op) {
+	case 'SUM': res = 0; break;
+	case 'PRD': res = 1; break;
+	case 'AVG': res = 0; break;
 	}
 
 	if (typeof list === 'string')
 		list = list.split(/ *, */);
 
-	for (i = 0; i < list.length; i++)
-	{
+	for (i = 0; i < list.length; i++) {
 		var field = MuPDF_Doc.getField(list[i]);
 		var value = Number(field.value);
-
-		switch (op)
-		{
-			case 'SUM':
-				res += value;
-				break;
-			case 'PRD':
-				res *= value;
-				break;
-			case 'AVG':
-				res += value;
-				break;
-			case 'MIN':
-				if (i === 0 || value < res)
-					res = value;
-				break;
-			case 'MAX':
-				if (i === 0 || value > res)
-					res = value;
-				break;
+		switch (op) {
+		case 'SUM': res += value; break;
+		case 'PRD': res *= value; break;
+		case 'AVG': res += value; break;
+		case 'MIN': if (i === 0 || value < res) res = value; break;
+		case 'MAX': if (i === 0 || value > res) res = value; break;
 		}
 	}
 
@@ -850,30 +780,24 @@ function AFSimple_Calculate(op, list)
 	event.value = res;
 }
 
-function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit)
-{
-	if (upperCheck && event.value > upperLimit)
-	{
+function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit) {
+	if (upperCheck && event.value > upperLimit) {
 		event.rc = false;
 	}
-
-	if (lowerCheck && event.value < lowerLimit)
-	{
+	if (lowerCheck && event.value < lowerLimit) {
 		event.rc = false;
 	}
-
-	if (!event.rc)
-	{
+	if (!event.rc) {
 		if (lowerCheck && upperCheck)
-			app.alert(util.printf("The entered value ("+event.value+") must be greater than or equal to %s and less than or equal to %s", lowerLimit, upperLimit));
+			app.alert(util.printf('The entered value ('+event.value+') must be greater than or equal to %s and less than or equal to %s', lowerLimit, upperLimit));
 		else if (lowerCheck)
-			app.alert(util.printf("The entered value ("+event.value+") must be greater than or equal to %s", lowerLimit));
+			app.alert(util.printf('The entered value ('+event.value+') must be greater than or equal to %s', lowerLimit));
 		else
-			app.alert(util.printf("The entered value ("+event.value+") must be less than or equal to %s", upperLimit));
+			app.alert(util.printf('The entered value ('+event.value+') must be less than or equal to %s', upperLimit));
 	}
 }
 
 app.plugIns = [];
-app.viewerType = "Reader";
-app.language = "ENU";
+app.viewerType = 'Reader';
+app.language = 'ENU';
 app.viewerVersion = NaN;
