@@ -27,6 +27,8 @@ int pdfmerge_main(int argc, char *argv[]);
 int pdfportfolio_main(int argc, char *argv[]);
 int pdfsign_main(int argc, char *argv[]);
 
+int cmapdump_main(int argc, char *argv[]);
+
 static struct {
 	int (*func)(int argc, char *argv[]);
 	char *name;
@@ -57,6 +59,9 @@ static struct {
 #endif
 #if FZ_ENABLE_PDF
 	{ pdfshow_main, "show", "show internal pdf objects" },
+#ifndef NDEBUG
+	{ cmapdump_main, "cmapdump", "dump CMap resource as C source file" },
+#endif
 #endif
 };
 

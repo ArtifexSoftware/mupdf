@@ -789,6 +789,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\source\tools\cmapdump.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\source\tools\muconvert.c"
 			>
 		</File>

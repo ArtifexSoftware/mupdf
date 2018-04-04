@@ -348,7 +348,7 @@ INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB)
 # --- Tools and Apps ---
 
 MUTOOL_EXE := $(OUT)/mutool
-MUTOOL_SRC := source/tools/mutool.c source/tools/muconvert.c source/tools/mudraw.c source/tools/murun.c source/tools/mutrace.c
+MUTOOL_SRC := source/tools/mutool.c source/tools/muconvert.c source/tools/mudraw.c source/tools/murun.c source/tools/mutrace.c source/tools/cmapdump.c
 MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 $(MUTOOL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
