@@ -311,6 +311,7 @@ ensure_space(fz_context *ctx, size_t tofree)
 	fz_item *item, *prev;
 	size_t count;
 	fz_store *store = ctx->store;
+	fz_item *to_be_freed = NULL;
 
 	fz_assert_lock_held(ctx, FZ_LOCK_ALLOC);
 
@@ -333,41 +334,68 @@ ensure_space(fz_context *ctx, size_t tofree)
 		return 0;
 	}
 
-	/* Actually free the items */
+	/* Now move all the items to be freed onto 'to_be_freed' */
 	count = 0;
 	for (item = store->tail; item; item = prev)
 	{
 		prev = item->prev;
-		if (item->val->refs == 1)
-		{
-			/* Free this item. Evict has to drop the lock to
-			 * manage that, which could cause prev to be removed
-			 * in the meantime. To avoid that we bump its reference
-			 * count here. This may cause another simultaneous
-			 * evict process to fail to make enough space as prev is
-			 * pinned - but that will only happen if we're near to
-			 * the limit anyway, and it will only cause something to
-			 * not be cached. */
-			count += item->size;
-			if (prev)
-			{
-				(void)Memento_takeRef(prev->val);
-				prev->val->refs++;
-			}
-			evict(ctx, item); /* Drops then retakes lock */
-			/* So the store has 1 reference to prev, as do we, so
-			 * no other evict process can have thrown prev away in
-			 * the meantime. So we are safe to just decrement its
-			 * reference count here. */
-			if (prev)
-			{
-				(void)Memento_dropRef(prev->val);
-				--prev->val->refs;
-			}
+		if (item->val->refs != 1)
+			continue;
 
-			if (count >= tofree)
-				return count;
+		store->size -= item->size;
+
+		/* Unlink from the linked list */
+		if (item->next)
+			item->next->prev = item->prev;
+		else
+			store->tail = item->prev;
+		if (item->prev)
+			item->prev->next = item->next;
+		else
+			store->head = item->next;
+
+		/* Remove from the hash table */
+		if (item->type->make_hash_key)
+		{
+			fz_store_hash hash = { NULL };
+			hash.drop = item->val->drop;
+			if (item->type->make_hash_key(ctx, &hash, item->key))
+				fz_hash_remove(ctx, store->hash, &hash);
 		}
+
+		/* Link into to_be_freed */
+		item->next = to_be_freed;
+		to_be_freed = item;
+
+		count += item->size;
+		if (count >= tofree)
+			break;
+	}
+
+	/* Now we can safely drop the lock and free our pending items. These
+	 * have all been removed from both the store list, and the hash table,
+	 * so they can't be 'found' by anyone else in the meantime. */
+
+	while (to_be_freed)
+	{
+		fz_item *item = to_be_freed;
+		int drop;
+
+		to_be_freed = to_be_freed->next;
+
+		/* Drop a reference to the value (freeing if required) */
+		if (item->val->refs > 0)
+			(void)Memento_dropRef(item->val);
+		drop = (item->val->refs > 0 && --item->val->refs == 0);
+
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+		if (drop)
+			item->val->drop(ctx, item->val);
+
+		/* Always drops the key and drop the item */
+		item->type->drop_key(ctx, item->key);
+		fz_free(ctx, item);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
 	}
 
 	return count;
