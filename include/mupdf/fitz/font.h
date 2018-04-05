@@ -72,7 +72,6 @@ typedef struct
 
 	unsigned int fake_bold : 1; /* synthesize bold */
 	unsigned int fake_italic : 1; /* synthesize italic */
-	unsigned int force_hinting : 1; /* force hinting for DynaLab fonts */
 	unsigned int has_opentype : 1; /* has opentype shaping tables */
 	unsigned int invalid_bbox : 1;
 } fz_font_flags_t;

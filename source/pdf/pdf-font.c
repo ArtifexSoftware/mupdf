@@ -1329,8 +1329,9 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 	face = fontdesc->font->ft_face;
 	if (ft_kind(face) == TRUETYPE)
 	{
-		if (FT_IS_TRICKY(face) || is_dynalab(fontdesc->font->name))
-			fontdesc->font->flags.force_hinting = 1;
+		/* FreeType's own 'tricky' font detection needs a bit of help */
+		if (is_dynalab(fontdesc->font->name))
+			face->face_flags |= FT_FACE_FLAG_TRICKY;
 
 		if (fontdesc->ascent == 0.0f)
 			fontdesc->ascent = 1000.0f * face->ascender / face->units_per_EM;

@@ -48,7 +48,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->flags.ft_substitute = 0;
 	font->flags.fake_bold = 0;
 	font->flags.fake_italic = 0;
-	font->flags.force_hinting = 0;
 	font->flags.has_opentype = 0;
 
 	font->t3matrix = fz_identity;
@@ -776,21 +775,6 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 			goto retry_unhinted;
 		}
 	}
-	else if (font->flags.force_hinting)
-	{
-		/*
-		Enable hinting, but keep the huge char size so that
-		it is hinted for a character. This will in effect nullify
-		the effect of grid fitting. This form of hinting should
-		only be used for DynaLab and similar tricky TrueType fonts,
-		so that we get the correct outline shape.
-		*/
-		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
-		if (fterr) {
-			fz_warn(ctx, "freetype load hinted glyph (gid %d): %s", gid, ft_error_string(fterr));
-			goto retry_unhinted;
-		}
-	}
 	else
 	{
 retry_unhinted:
@@ -1037,7 +1021,6 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	FT_BBox cbox;
 	FT_Matrix m;
 	FT_Vector v;
-	int ft_flags;
 	fz_rect *bounds = &font->bbox_table[gid];
 
 	// TODO: refactor loading into fz_load_ft_glyph
@@ -1060,15 +1043,6 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	v.x = local_trm.e * 65536;
 	v.y = local_trm.f * 65536;
 
-	if (font->flags.force_hinting)
-	{
-		ft_flags = FT_LOAD_NO_BITMAP;
-	}
-	else
-	{
-		ft_flags = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING;
-	}
-
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 	/* Set the char size to scale=face->units_per_EM to effectively give
 	 * us unscaled results. This avoids quantisation. We then apply the
@@ -1078,7 +1052,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 		fz_warn(ctx, "freetype setting character size: %s", ft_error_string(fterr));
 	FT_Set_Transform(face, &m, &v);
 
-	fterr = FT_Load_Glyph(face, gid, ft_flags);
+	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 	if (fterr)
 	{
 		fz_warn(ctx, "freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
@@ -1182,7 +1156,6 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 	FT_Face face = font->ft_face;
 	int fterr;
 	fz_matrix local_trm = *trm;
-	int ft_flags;
 
 	const int scale = face->units_per_EM;
 	const float recip = 1.0f / scale;
@@ -1195,19 +1168,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 
-	if (font->flags.force_hinting)
-	{
-		ft_flags = FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
-		fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
-		if (fterr)
-			fz_warn(ctx, "freetype setting character size: %s", ft_error_string(fterr));
-	}
-	else
-	{
-		ft_flags = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
-	}
-
-	fterr = FT_Load_Glyph(face, gid, ft_flags);
+	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM);
 	if (fterr)
 	{
 		fz_warn(ctx, "freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
