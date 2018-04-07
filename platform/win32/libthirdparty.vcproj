@@ -888,13 +888,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.c"
 				>
@@ -1024,19 +1017,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\phix_manager.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.c"
 				>
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\ppix_manager.c"
 				>
 			</File>
 			<File
@@ -1084,10 +1069,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\thix_manager.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\thread.c"
 				>
 			</File>
@@ -1097,10 +1078,6 @@
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tls_keys.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c"
 				>
 			</File>
 		</Filter>

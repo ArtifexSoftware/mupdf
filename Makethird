@@ -377,7 +377,6 @@ ifneq "$(wildcard $(OPENJPEG_DIR)/openjpeg.h)" ""
 OPENJPEG_OUT := $(OUT)/thirdparty/openjpeg
 OPENJPEG_SRC := \
 	bio.c \
-	cidx_manager.c \
 	cio.c \
 	dwt.c \
 	event.c \
@@ -389,16 +388,12 @@ OPENJPEG_SRC := \
 	mct.c \
 	mqc.c \
 	openjpeg.c \
-	phix_manager.c \
 	pi.c \
-	ppix_manager.c \
 	raw.c \
 	t1.c \
 	t2.c \
 	tcd.c \
 	tgt.c \
-	thix_manager.c \
-	tpix_manager.c \
 	thread.c
 
 OPENJPEG_OBJ := $(addprefix $(OPENJPEG_OUT)/, $(OPENJPEG_SRC:%.c=%.o))
@@ -406,9 +401,9 @@ OPENJPEG_OBJ := $(addprefix $(OPENJPEG_OUT)/, $(OPENJPEG_SRC:%.c=%.o))
 $(OPENJPEG_OUT):
 	$(MKDIR_CMD)
 $(OPENJPEG_OUT)/%.o: $(OPENJPEG_DIR)/%.c | $(OPENJPEG_OUT)
-	$(CC_CMD) -DOPJ_STATIC -DOPJ_HAVE_STDINT_H -DOPJ_HAVE_INTTYPES_H -DUSE_JPIP
+	$(CC_CMD) $(OPENJPEG_CFLAGS)
 
-OPENJPEG_CFLAGS += -I$(OPENJPEG_DIR)
+OPENJPEG_CFLAGS += -I$(OPENJPEG_DIR) -DOPJ_STATIC -DOPJ_HAVE_STDINT_H -DOPJ_HAVE_INTTYPES_H
 else
 OPENJPEG_CFLAGS := $(SYS_OPENJPEG_CFLAGS)
 OPENJPEG_LIBS := $(SYS_OPENJPEG_LIBS)
