@@ -362,8 +362,8 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 void
 pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int length, fz_stream *file_stm, int indexed, fz_compressed_image *image)
 {
-	fz_stream *istm, *leech, *decomp;
-	fz_pixmap *pixmap;
+	fz_stream *istm = NULL, *leech = NULL, *decomp = NULL;
+	fz_pixmap *pixmap = NULL;
 	fz_compressed_buffer *bc;
 	int dummy_l2factor = 0;
 
