@@ -1,11 +1,13 @@
 # Macros:
 [attr]tabs		whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=4
 [attr]spaces		whitespace=trailing-space,space-before-tab,tabs-in-indent
+[attr]makefile		whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=8
 
 # Source files:
 *			text=auto
-Make*			tabs
-*.mk			tabs
+Make*			makefile
+*.mk			makefile
+*.make			makefile
 *.[chm]			tabs
 *.java			tabs
 *.xml			tabs

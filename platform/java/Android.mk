@@ -129,6 +129,7 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftgasp.c \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftglyph.c \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftinit.c \
+	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftlcdfil.c \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftstroke.c \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftsynth.c \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftsystem.c \

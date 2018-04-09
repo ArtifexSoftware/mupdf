@@ -1,144 +1,145 @@
 # Configuration for the Makefile
 
-OS ?= $(shell uname)
+OS := $(shell uname)
 OS := $(OS:MINGW%=MINGW)
 OS := $(OS:MSYS%=MINGW)
 OS := $(OS:Windows_NT=MINGW)
 OS := $(OS:Darwin=MACOS)
 
-HAVE_LIBDL ?= yes
-
-CFLAGS += -Wall -Wdeclaration-after-statement
-
-ifeq (,$(findstring -fembed-bitcode,$(XCFLAGS)))
-# clang does not support these in combination with -fembed-bitcode
-CFLAGS += -ffunction-sections -fdata-sections
+ifeq ($(findstring -fembed-bitcode,$(XCFLAGS)),)
+  # clang does not support these in combination with -fembed-bitcode
+  CFLAGS += -ffunction-sections -fdata-sections
 endif
 
-ifeq "$(OS)" "MACOS"
-LDREMOVEUNREACH := -Wl,-dead_strip
+ifeq ($(OS),MACOS)
+  LDREMOVEUNREACH := -Wl,-dead_strip
 else
-LDREMOVEUNREACH := -Wl,--gc-sections
+  LDREMOVEUNREACH := -Wl,--gc-sections
 endif
 
-SANITIZE_FLAGS := -fsanitize=address
+SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
 
-ifeq "$(build)" "debug"
-CFLAGS += -pipe -g
-LDFLAGS += -g
-else ifeq "$(build)" "release"
-CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
-LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
-else ifeq "$(build)" "small"
-CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
-LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
-else ifeq "$(build)" "valgrind"
-CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND -fno-omit-frame-pointer
-LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
-else ifeq "$(build)" "sanitize"
-CFLAGS += -pipe -g -fno-omit-frame-pointer $(SANITIZE_FLAGS)
-LDFLAGS += -g $(SANITIZE_FLAGS)
-else ifeq "$(build)" "sanitize-release"
-CFLAGS += -pipe -O2 -DNDEBUG -fno-omit-frame-pointer $(SANITIZE_FLAGS)
-LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s $(SANITIZE_FLAGS)
-else ifeq "$(build)" "profile"
-CFLAGS += -pipe -O2 -DNDEBUG -pg
-LDFLAGS += -pg
-else ifeq "$(build)" "coverage"
-CFLAGS += -pipe -g -pg -fprofile-arcs -ftest-coverage
-LIBS += -lgcov
-else ifeq "$(build)" "native"
-CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
-LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
-else ifeq "$(build)" "memento"
-CFLAGS += -pipe -g -DMEMENTO
-LDFLAGS += -g -d -rdynamic
-ifeq "$(HAVE_LIBDL)" "yes"
-CFLAGS += -DHAVE_LIBDL
-LIBS += -ldl
-endif
-else ifeq "$(build)" "gperf"
-CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -DGPERF
-LIBS += -lprofiler
+ifeq ($(build),debug)
+  CFLAGS += -pipe -g
+  LDFLAGS += -g
+else ifeq ($(build),release)
+  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
+  LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
+else ifeq ($(build),small)
+  CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
+  LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
+else ifeq ($(build),valgrind)
+  CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND -fno-omit-frame-pointer
+  LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
+else ifeq ($(build),sanitize)
+  CFLAGS += -pipe -g -fno-omit-frame-pointer $(SANITIZE_FLAGS)
+  LDFLAGS += -g $(SANITIZE_FLAGS)
+else ifeq ($(build),sanitize-release)
+  CFLAGS += -pipe -O2 -DNDEBUG -fno-omit-frame-pointer $(SANITIZE_FLAGS)
+  LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s $(SANITIZE_FLAGS)
+else ifeq ($(build),profile)
+  CFLAGS += -pipe -O2 -DNDEBUG -pg
+  LDFLAGS += -pg
+else ifeq ($(build),coverage)
+  CFLAGS += -pipe -g -pg -fprofile-arcs -ftest-coverage
+  LIBS += -lgcov
+else ifeq ($(build),native)
+  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
+  LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
+else ifeq ($(build),memento)
+  CFLAGS += -pipe -g -DMEMENTO
+  LDFLAGS += -g -d -rdynamic
+  ifneq ($(HAVE_LIBDL),no)
+    CFLAGS += -DHAVE_LIBDL
+    LIBS += -ldl
+  endif
+else ifeq ($(build),gperf)
+  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -DGPERF
+  LIBS += -lprofiler
 else
-$(error unknown build setting: '$(build)')
+  $(error unknown build setting: '$(build)')
 endif
 
-# Windows (MINGW) build doesn't use system libraries.
-ifeq "$(OS)" "MINGW"
-
-WINDRES := windres
-HAVE_X11 ?= no
-HAVE_WIN32 := yes
-
-# Mac OS X doesn't have pkg-config so we hard code paths.
-else ifeq "$(OS)" "MACOS"
-
-HAVE_X11 ?= no
-
-HAVE_GLUT ?= yes
-SYS_GLUT_CFLAGS := -Wno-deprecated-declarations
-SYS_GLUT_LIBS := -framework GLUT -framework OpenGL
-
-CC = xcrun cc
-AR = xcrun ar
-LD = xcrun ld
-RANLIB_CMD = xcrun ranlib $@
-
-# Linux uses pkg-config for system libraries.
-else ifeq "$(OS)" "Linux"
-
-HAVE_PTHREAD := yes
-SYS_PTHREAD_CFLAGS :=
-SYS_PTHREAD_LIBS := -lpthread
-
-HAVE_GLUT := yes
-SYS_GLUT_CFLAGS :=
-SYS_GLUT_LIBS := -lglut -lGL
-
-ifeq "$(shell pkg-config --exists 'libcrypto >= 1.1.0' && echo yes)" "yes"
-HAVE_LIBCRYPTO := yes
-SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO $(shell pkg-config --cflags libcrypto)
-SYS_LIBCRYPTO_LIBS := $(shell pkg-config --libs libcrypto)
-endif
-
-ifeq "$(shell pkg-config --exists libcurl && echo yes)" "yes"
-HAVE_CURL := yes
-SYS_CURL_CFLAGS := $(shell pkg-config --cflags libcurl)
-SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
-ifeq "$(shell pkg-config --exists openssl && echo yes)" "yes"
-HAVE_OPENSSL_SSL := yes
-SYS_CURL_CFLAGS += $(shell pkg-config --cflags openssl)
-SYS_CURL_DEPS += $(shell pkg-config --libs openssl)
-endif
-endif
-SYS_CURL_DEPS += -lpthread -lrt
-
-ifeq "$(shell pkg-config --exists x11 xext && echo yes)" "yes"
-HAVE_X11 := yes
-SYS_X11_CFLAGS := $(shell pkg-config --cflags x11 xext)
-SYS_X11_LIBS := $(shell pkg-config --libs x11 xext)
-endif
-
-ifeq "$(shell pkg-config --exists harfbuzz && echo yes)" "yes"
-SYS_HARFBUZZ_CFLAGS := $(shell pkg-config --cflags harfbuzz)
-SYS_HARFBUZZ_LIBS := $(shell pkg-config --libs harfbuzz)
-endif
-
-ifeq "$(shell pkg-config --exists freetype2 && echo yes)" "yes"
-SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
-SYS_FREETYPE_LIBS := $(shell pkg-config --libs freetype2)
-endif
-
-ifeq "$(shell pkg-config --exists libopenjp2 && echo yes)" "yes"
-SYS_OPENJPEG_CFLAGS := $(shell pkg-config --cflags libopenjp2)
-SYS_OPENJPEG_LIBS := $(shell pkg-config --libs libopenjp2)
-endif
-
+# Default system libraries
+SYS_FREETYPE_LIBS := -lfreetype2
+SYS_HARFBUZZ_LIBS := -lharfbuzz
 SYS_JBIG2DEC_LIBS := -ljbig2dec
+SYS_JPEGXR_LIBS := -ljpegxr
+SYS_LCMS2_LIBS := -llcms2-art
 SYS_LIBJPEG_LIBS := -ljpeg
+SYS_MUJS_LIBS := -lmujs
+SYS_OPENJPEG_LIBS := -lopenjp2
 SYS_ZLIB_LIBS := -lz
+
+ifeq ($(OS),MINGW)
+  WINDRES := windres
+  HAVE_WIN32 := yes
+
+else ifeq ($(OS),MACOS)
+  HAVE_GLUT := yes
+  SYS_GLUT_CFLAGS := -Wno-deprecated-declarations
+  SYS_GLUT_LIBS := -framework GLUT -framework OpenGL
+  CC = xcrun cc
+  AR = xcrun ar
+  LD = xcrun ld
+  RANLIB = xcrun ranlib
+
+else ifeq ($(OS),Linux)
+  ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
+	SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
+	SYS_FREETYPE_LIBS := $(shell pkg-config --libs freetype2)
+  endif
+  ifeq ($(shell pkg-config --exists harfbuzz && echo yes),yes)
+	SYS_HARFBUZZ_CFLAGS := $(shell pkg-config --cflags harfbuzz)
+	SYS_HARFBUZZ_LIBS := $(shell pkg-config --libs harfbuzz)
+  endif
+  ifeq ($(shell pkg-config --exists lcms2 && echo yes),yes)
+	SYS_LCMS2_CFLAGS := $(shell pkg-config --cflags lcms2)
+	SYS_LCMS2_LIBS := $(shell pkg-config --libs lcms2)
+  endif
+  ifeq ($(shell pkg-config --exists libjpeg && echo yes),yes)
+	SYS_LIBJPEG_CFLAGS := $(shell pkg-config --cflags libjpeg)
+	SYS_LIBJPEG_LIBS := $(shell pkg-config --libs libjpeg)
+  endif
+  ifeq ($(shell pkg-config --exists libopenjp2 && echo yes),yes)
+	SYS_OPENJPEG_CFLAGS := $(shell pkg-config --cflags libopenjp2)
+	SYS_OPENJPEG_LIBS := $(shell pkg-config --libs libopenjp2)
+  endif
+  ifeq ($(shell pkg-config --exists zlib && echo yes),yes)
+	SYS_ZLIB_CFLAGS := $(shell pkg-config --cflags zlib)
+	SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
+  endif
+
+  HAVE_CURL := $(shell pkg-config --exists libcurl && echo yes)
+  ifeq ($(HAVE_CURL),yes)
+	SYS_CURL_CFLAGS := $(shell pkg-config --cflags libcurl)
+	SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
+  endif
+
+  HAVE_GLUT := yes
+  ifeq ($(HAVE_GLUT),yes)
+	SYS_GLUT_CFLAGS :=
+	SYS_GLUT_LIBS := -lglut -lGL
+  endif
+
+  HAVE_X11 := $(shell pkg-config --exists x11 xext && echo yes)
+  ifeq ($(HAVE_X11),yes)
+	X11_CFLAGS := $(shell pkg-config --cflags x11 xext)
+	X11_LIBS := $(shell pkg-config --libs x11 xext)
+  endif
+
+  HAVE_LIBCRYPTO := $(shell pkg-config --exists 'libcrypto >= 1.1.0' && echo yes)
+  ifeq ($(HAVE_LIBCRYPTO),yes)
+	LIBCRYPTO_CFLAGS := $(shell pkg-config --cflags libcrypto) -DHAVE_LIBCRYPTO
+	LIBCRYPTO_LIBS := $(shell pkg-config --libs libcrypto)
+  endif
+
+  HAVE_PTHREAD := yes
+  ifeq ($(HAVE_PTHREAD),yes)
+	PTHREAD_CFLAGS :=
+	PTHREAD_LIBS := -lpthread
+  endif
 
 endif
 
@@ -161,10 +162,9 @@ CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
-CROSSCOMPILE=yes
 HAVE_PTHREAD := yes
-SYS_PTHREAD_CFLAGS :=
-SYS_PTHREAD_LIBS := -lpthread
+PTHREAD_CFLAGS :=
+PTHREAD_LIBS := -lpthread
 endif
 
 ifeq "$(OS)" "webos-pre-cross"
@@ -173,7 +173,6 @@ CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
-CROSSCOMPILE=yes
 endif
 
 ifeq "$(OS)" "webos-pixi-cross"
@@ -182,7 +181,6 @@ CXX = arm-none-linux-gnueabi-g++
 LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mcpu=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -ffast-math -fsingle-precision-constant
-CROSSCOMPILE=yes
 endif
 
 ifeq "$(OS)" "w64_x86-cross-mingw32"
@@ -191,7 +189,6 @@ CXX = i686-w64-mingw32-g++
 LD = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
 WINDRES = i686-w64-mingw32-windres
-CROSSCOMPILE=yes
 HAVE_WIN32=yes
 endif
 
@@ -201,7 +198,6 @@ CXX = x86_64-w64-mingw32-g++
 LD = x86_64-w64-mingw32-gcc
 AR = x86_64-w64-mingw32-ar
 WINDRES = x86-64-mingw32-windres
-CROSSCOMPILE=yes
 HAVE_WIN32=yes
 endif
 
@@ -214,7 +210,6 @@ CXX = $(PNACL_CXX)
 LD = $(PNACL_LD)
 AR = $(PNACL_LIB)
 CFLAGS += -D__NACL__
-CROSSCOMPILE=yes
 
 # Don't install libjpeg, libz, or libfreetype, since these are already
 # provided by naclports and the versions compiled here cause problems
@@ -230,12 +225,11 @@ endif
 # The following section works for both device and simulator builds.
 
 ifeq "$(OS)" "ios"
-CC = xcrun cc
-CXX = xcrun c++
-AR = xcrun ar
-LD = xcrun ld
-RANLIB_CMD = xcrun ranlib $@
-CROSSCOMPILE=yes
+  CC = xcrun cc
+  CXX = xcrun c++
+  AR = xcrun ar
+  LD = xcrun ld
+  RANLIB = xcrun ranlib
 endif
 
 ifeq "$(OS)" "tizen-arm"
@@ -245,7 +239,6 @@ CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
 CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
 AR = $(TIZEN_TOOLS)ar
 LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
-CROSSCOMPILE=yes
 endif
 
 ifeq "$(OS)" "tizen-x86"
@@ -255,16 +248,4 @@ CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
 CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
 AR = $(TIZEN_TOOLS)ar $(TIZEN_FLAGS)
 LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
-CROSSCOMPILE=yes
-endif
-
-ifeq "$(HAVE_WIN32)" "yes"
-WIN32_LIBS=-lcomdlg32 -lgdi32
-LDFLAGS += -Wl,-subsystem,windows
-endif
-
-# TODO: If crosscompiling, why not just call "make libs" instead of this exception?
-ifeq "$(CROSSCOMPILE)" "yes"
-HAVE_X11 ?= no
-HAVE_GLUT ?= no
 endif

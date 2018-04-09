@@ -1,6 +1,8 @@
 # Optional thirdparty libraryes
 thirdparty/luratech
 thirdparty/jpegxr
+thirdparty/mapping-resources-pdf
+thirdparty/cmap-resources
 
 # Generated files:
 build
@@ -19,6 +21,7 @@ cscope.*
 .gradle
 *.xcworkspace
 *.xcuserdatad
+user.make
 
 # Test files:
 *.pdf
