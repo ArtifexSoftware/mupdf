@@ -656,10 +656,6 @@
 			RelativePath="..\..\generated\StandardSymbolsPS.c"
 			>
 		</File>
-		<File
-			RelativePath="..\..\generated\icc-profiles.c"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

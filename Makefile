@@ -223,19 +223,16 @@ generate: $(FONT_GEN)
 
 # --- Generated ICC profiles ---
 
-ICC_BIN := resources/icc/gray.icc resources/icc/rgb.icc resources/icc/cmyk.icc resources/icc/lab.icc
-ICC_GEN := generated/icc-profiles.c
-ICC_OBJ := $(ICC_GEN:%.c=$(OUT)/%.o)
+source/fitz/icc/gray.icc.h: resources/icc/gray.icc
+	$(QUIET_GEN) xxd -i $< | sed 's/unsigned/static const unsigned/' > $@
+source/fitz/icc/rgb.icc.h: resources/icc/rgb.icc
+	$(QUIET_GEN) xxd -i $< | sed 's/unsigned/static const unsigned/' > $@
+source/fitz/icc/cmyk.icc.h: resources/icc/cmyk.icc
+	$(QUIET_GEN) xxd -i $< | sed 's/unsigned/static const unsigned/' > $@
+source/fitz/icc/lab.icc.h: resources/icc/lab.icc
+	$(QUIET_GEN) xxd -i $< | sed 's/unsigned/static const unsigned/' > $@
 
-$(ICC_OBJ) : $(ICC_GEN)
-$(ICC_GEN) : $(ICC_BIN) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $(ICC_BIN)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(ICC_GEN) : $(HEXDUMP_EXE)
-endif
-
-generate: $(ICC_GEN)
+generate: source/fitz/icc/gray.icc.h source/fitz/icc/rgb.icc.h source/fitz/icc/cmyk.icc.h source/fitz/icc/lab.icc.h
 
 # --- Generated CMap files ---
 
