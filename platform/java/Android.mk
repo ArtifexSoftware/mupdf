@@ -72,7 +72,8 @@ LOCAL_SRC_FILES += \
 	$(wildcard $(MUPDF_PATH)/source/cbz/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/gprf/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/html/*.c) \
-	$(wildcard $(MUPDF_PATH)/generated/*.c) \
+	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/urw/*.c) \
+	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/sil/*.c) \
 
 include $(BUILD_STATIC_LIBRARY)
 

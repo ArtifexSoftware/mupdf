@@ -70,6 +70,7 @@ QUIET_MKDIR = @ echo ' ' ' ' MKDIR $@ ;
 QUIET_RM = @ echo ' ' ' ' RM $@ ;
 QUIET_TAGS = @ echo ' ' ' ' TAGS $@ ;
 QUIET_WINDRES = @ echo ' ' ' ' WINDRES $@ ;
+QUIET_OBJCOPY = @ echo ' ' ' ' OBJCOPY $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
@@ -80,6 +81,7 @@ MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 RM_CMD = $(QUIET_RM) rm -f $@
 TAGS_CMD = $(QUIET_TAGS) ctags $^
 WINDRES_CMD = $(QUIET_WINDRES) $(WINDRES) $< $@
+OBJCOPY_CMD = $(QUIET_OBJCOPY) mkdir -p $(dir $@) ; $(LD) -r -b binary -o $@ $<
 
 # --- Rules ---
 
@@ -181,42 +183,25 @@ $(SIGNATURE_OBJ) : $(PKCS7_HDR)
 
 HEXDUMP_EXE := $(OUT)/scripts/hexdump.exe
 
-FONT_BIN_DROID := $(sort $(wildcard resources/fonts/droid/*.ttf))
-FONT_BIN_NOTO := $(sort $(wildcard resources/fonts/noto/*.ttf))
-FONT_BIN_HAN := $(sort $(wildcard resources/fonts/han/*.otf))
-FONT_BIN_URW := $(sort $(wildcard resources/fonts/urw/*.cff))
-FONT_BIN_SIL := $(sort $(wildcard resources/fonts/sil/*.cff))
+FONT_BIN :=  $(sort $(wildcard resources/fonts/urw/*.cff))
+FONT_BIN += $(sort $(wildcard resources/fonts/han/*.otf))
+FONT_BIN += $(sort $(wildcard resources/fonts/droid/*.ttf))
+FONT_BIN += $(sort $(wildcard resources/fonts/noto/*.ttf))
+FONT_BIN += $(sort $(wildcard resources/fonts/sil/*.cff))
 
-FONT_GEN_DROID := $(subst resources/fonts/droid/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
-FONT_GEN_NOTO := $(subst resources/fonts/noto/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
-FONT_GEN_HAN := $(subst resources/fonts/han/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_HAN))))
-FONT_GEN_URW := $(subst resources/fonts/urw/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_URW))))
-FONT_GEN_SIL := $(subst resources/fonts/sil/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_SIL))))
+FONT_GEN := $(FONT_BIN:%=generated/%.c)
 
-FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_HAN) $(FONT_BIN_URW) $(FONT_BIN_SIL)
-FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_HAN) $(FONT_GEN_URW) $(FONT_GEN_SIL)
-FONT_OBJ := $(FONT_GEN:%.c=$(OUT)/%.o)
+generated/%.cff.c : %.cff $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
+generated/%.otf.c : %.otf $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
+generated/%.ttf.c : %.ttf $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
 
-generated/%.c : resources/fonts/droid/%.ttf $(HEXDUMP_EXE) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -s $@ $<
-generated/%.c : resources/fonts/noto/%.ttf $(HEXDUMP_EXE) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -s $@ $<
-generated/%.c : resources/fonts/han/%.otf $(HEXDUMP_EXE) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -s $@ $<
-generated/%.c : resources/fonts/urw/%.cff $(HEXDUMP_EXE) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -s $@ $<
-generated/%.c : resources/fonts/sil/%.cff $(HEXDUMP_EXE) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -s $@ $<
-
-$(FONT_OBJ) : $(FONT_GEN)
-$(FONT_GEN_DROID) : $(FONT_BIN_DROID)
-$(FONT_GEN_NOTO) : $(FONT_BIN_NOTO)
-$(FONT_GEN_HAN) : $(FONT_BIN_HAN)
-$(FONT_GEN_URW) : $(FONT_BIN_URW)
-$(FONT_GEN_SIL) : $(FONT_BIN_SIL)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(FONT_GEN) : $(HEXDUMP_EXE)
+ifeq "$(OS)" "Linux"
+  FONT_OBJ := $(FONT_BIN:%=$(OUT)/%.o)
+  $(OUT)/%.cff.o : %.cff ; $(OBJCOPY_CMD)
+  $(OUT)/%.otf.o : %.otf ; $(OBJCOPY_CMD)
+  $(OUT)/%.ttf.o : %.ttf ; $(OBJCOPY_CMD)
+else
+  FONT_OBJ := $(FONT_GEN:%.c=$(OUT)/%.o)
 endif
 
 generate: $(FONT_GEN)
@@ -459,10 +444,6 @@ debug:
 	$(MAKE) build=debug
 sanitize:
 	$(MAKE) build=sanitize
-tofu:
-	$(MAKE) OUT=build/tofu CMAP_GEN= FONT_GEN_DROID= FONT_GEN_NOTO= FONT_GEN_HAN= FONT_GEN_SIL= XCFLAGS="-DNOCJK -DTOFU"
-tofumax:
-	$(MAKE) OUT=build/tofumax CMAP_GEN= FONT_GEN= XCFLAGS="-DNOCJK -DTOFU -DTOFU_BASE14"
 
 android: generate
 	ndk-build -j8 \

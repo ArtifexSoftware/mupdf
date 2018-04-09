@@ -50,9 +50,10 @@
 
 #define RETURN(NAME) \
 	do { \
-	extern const int fz_resources_fonts_ ## NAME ## _size; \
-	extern const unsigned char fz_resources_fonts_ ## NAME []; \
-	return *size = fz_resources_fonts_ ## NAME ## _size, fz_resources_fonts_ ## NAME; \
+	extern const unsigned char _binary_resources_fonts_##NAME##_start[]; \
+	extern const unsigned char _binary_resources_fonts_##NAME##_end; \
+	return *size = &_binary_resources_fonts_##NAME##_end - _binary_resources_fonts_##NAME##_start, \
+		_binary_resources_fonts_##NAME##_start; \
 	} while (0)
 
 const unsigned char *

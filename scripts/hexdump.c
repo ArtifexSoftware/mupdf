@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int zero, string;
+static int string;
 
 static int
 hexdump(FILE *fo, FILE *fi)
@@ -48,14 +48,8 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	zero = 0;
 	string = 0;
 	optind = 1;
-
-	if (!strcmp(argv[optind], "-0")) {
-		++optind;
-		zero = 1;
-	}
 
 	if (!strcmp(argv[optind], "-s")) {
 		++optind;
@@ -106,19 +100,11 @@ main(int argc, char **argv)
 		size = ftell(fi);
 		fseek(fi, 0, SEEK_SET);
 
-		fprintf(fo, "const int fz_%s_size = %d;\n", filename, size + zero);
-		fprintf(fo, "const unsigned char fz_%s[] =", filename);
+		fprintf(fo, "const unsigned char _binary_%s_start[%d] =", filename, size);
 		fprintf(fo, string ? "\n" : " {\n");
 		hexdump(fo, fi);
-		if (!zero)
-		{
-			fprintf(fo, string ? ";\n" : "};\n");
-		}
-		else
-		{
-			/* zero-terminate so we can hexdump text files into C strings */
-			fprintf(fo, string ? ";\n" : "0};\n");
-		}
+		fprintf(fo, string ? ";\n" : "};\n");
+		fprintf(fo, "const unsigned char _binary_%s_end;\n", filename);
 
 		fclose(fi);
 	}

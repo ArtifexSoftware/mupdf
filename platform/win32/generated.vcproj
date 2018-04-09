@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="generate.bat"
-				ReBuildCommandLine="del /q ..\..\generated ..\..\include\mupdf\pdf\name-table.h ..\..\source\pdf\pdf-name-table.h &amp;&amp; generate.bat"
-				CleanCommandLine="del /q ..\..\generated ..\..\include\mupdf\pdf\name-table.h ..\..\source\pdf\pdf-name-table.h"
+				BuildCommandLine="cd ..\.. &amp;&amp; nmake /nologo -f scripts\fontdump.nmake"
+				ReBuildCommandLine="cd ..\.. &amp;&amp; del /q /s generated\resources &amp;&amp;  nmake /nologo -f scripts\fontdump.nmake"
+				CleanCommandLine="cd ..\.. &amp;&amp; del /q /s generated\resources"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
@@ -43,62 +43,38 @@
 			Name="scripts"
 			>
 			<File
-				RelativePath="..\..\scripts\bin2hex.c"
+				RelativePath="..\..\scripts\cmapdump.py"
 				>
 			</File>
 			<File
-				RelativePath="..\..\scripts\cmapdump.c"
+				RelativePath="..\..\scripts\fontdump.nmake"
 				>
 			</File>
 			<File
-				RelativePath="..\..\scripts\cquote.c"
+				RelativePath="..\..\scripts\hexdump.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\scripts\fontdump.c"
+				RelativePath="..\..\scripts\jsdump.sed"
 				>
 			</File>
 			<File
-				RelativePath="..\..\scripts\namedump.c"
+				RelativePath="..\..\scripts\runcmapdump.sh"
 				>
 			</File>
 			<File
-				RelativePath="..\..\resources\pdf\names.txt"
+				RelativePath="..\..\scripts\runfontdump.sh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\scripts\runiccdump.sh"
+				>
+			</File>
+			<File
+				RelativePath="..\..\scripts\runjsdump.sh"
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="generated"
-			>
-			<File
-				RelativePath="..\..\generated\gen_adobe_ca.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_cmap_cns.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_cmap_gb.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_cmap_japan.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_cmap_korea.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_js_util.h"
-				>
-			</File>
-		</Filter>
-		<File
-			RelativePath=".\generate.bat"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
