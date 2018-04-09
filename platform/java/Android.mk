@@ -59,6 +59,7 @@ LOCAL_CFLAGS := \
 	-D_FILE_OFFSET_BITS=32 \
 	-DTOFU_NOTO -DTOFU_CJK \
 	-DAA_BITS=8 \
+	-DOPJ_STATIC -DOPJ_HAVE_INTTYPES_H -DOPJ_HAVE_STDINT_H \
 
 LOCAL_CFLAGS += \
 	$(MUPDF_EXTRA_CFLAGS)
@@ -102,14 +103,14 @@ LOCAL_CFLAGS := \
 	'-DFT_CONFIG_MODULES_H="slimftmodules.h"' \
 	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"' \
 	-DHAVE_STDINT_H \
-	-DOPJ_STATIC -DOPJ_HAVE_INTTYPES_H -DOPJ_HAVE_STDINT_H -DUSE_JPIP \
+	-DOPJ_STATIC -DOPJ_HAVE_INTTYPES_H -DOPJ_HAVE_STDINT_H \
 
 LOCAL_CFLAGS += \
 	$(MUPDF_EXTRA_CFLAGS)
 
 LOCAL_CPPFLAGS := \
 	-ffunction-sections -fdata-sections \
-	-fno-rtti -fno-exceptions -fvisibility-inlines-hidden --std=c++0x \
+	-fno-rtti -fno-exceptions -fvisibility-inlines-hidden \
 	-DHAVE_OT -DHAVE_UCDN -DHB_NO_MT \
 	-Dhb_malloc_impl=fz_hb_malloc \
 	-Dhb_calloc_impl=fz_hb_calloc \
@@ -259,7 +260,6 @@ LOCAL_SRC_FILES += \
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/bio.c \
-	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/cidx_manager.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/cio.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/dwt.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/event.c \
@@ -271,17 +271,13 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/mct.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/mqc.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/openjpeg.c \
-	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/phix_manager.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/pi.c \
-	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/ppix_manager.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/raw.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/t1.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/t2.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/tcd.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/tgt.c \
-	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/thix_manager.c \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/thread.c \
-	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2/tpix_manager.c \
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/zlib/adler32.c \
