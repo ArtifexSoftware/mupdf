@@ -123,7 +123,7 @@ The input is a raw content stream, with commands embedded in comments:
 
 %%MediaBox LLX LLY URX URY
 %%Rotate Angle
-%%Font Name Filename (or base 14 font name)
+%%Font Name Filename (or base 14 font name) [Encoding (Latin, Greek or Cyrillic)]
 %%CJKFont Name Ordering (CNS1, GB1, Japan1, or Korea1)
 %%Image Name Filename
 */
@@ -165,7 +165,7 @@ static void create_page(char *input)
 			{
 				s = fz_strsep(&p, " ");
 				t = fz_strsep(&p, " ");
-				if (!s || !t || !p)
+				if (!s || !t)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Font directive missing arguments");
 				add_font_res(resources, s, t, p);
 			}
