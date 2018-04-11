@@ -33,6 +33,8 @@ depending on your environment.
 
 //Include the MuPDF header file, and pthread's header file.
 #include <mupdf/fitz.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 // A convenience function for dying abruptly on pthread errors.
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
 
 		// Create a white pixmap using the correct dimensions.
 
-		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_round_rect(&rbox, &bbox), 0);
+		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_round_rect(&rbox, &bbox), NULL, 0);
 		fz_clear_pixmap_with_value(ctx, pix, 0xff);
 
 		// Populate the data structure to be sent to the
