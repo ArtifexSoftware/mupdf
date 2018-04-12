@@ -888,7 +888,6 @@
 				>
 			</File>
 			<File
-			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.c"
 				>
 			</File>
