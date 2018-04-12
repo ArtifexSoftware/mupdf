@@ -212,9 +212,7 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 	pdf_obj *form = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 	int i, n;
 	pdf_obj *result = pdf_new_array(ctx, doc, 0);
-	pdf_obj *nil = NULL;
 
-	fz_var(nil);
 	fz_try(ctx)
 	{
 		/* The 'fields' array not being present signals that all fields
@@ -222,10 +220,7 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 		if (exclude || !fields)
 		{
 			/* mark the fields we don't want to act upon */
-			nil = pdf_new_null(ctx, doc);
-
 			n = pdf_array_len(ctx, fields);
-
 			for (i = 0; i < n; i++)
 			{
 				pdf_obj *field = pdf_array_get(ctx, fields, i);
@@ -234,7 +229,7 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 					field = pdf_lookup_field(ctx, form, pdf_to_str_buf(ctx, field));
 
 				if (field)
-					pdf_dict_put(ctx, field, PDF_NAME(Exclude), nil);
+					pdf_dict_put(ctx, field, PDF_NAME(Exclude), PDF_NULL);
 			}
 
 			/* Act upon all unmarked fields */
@@ -272,10 +267,6 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 					add_field_hierarchy_to_array(ctx, result, field);
 			}
 		}
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, nil);
 	}
 	fz_catch(ctx)
 	{
@@ -529,7 +520,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (val && grp)
 	{
-		pdf_obj *v = pdf_new_text_string(ctx, doc, val);
+		pdf_obj *v = pdf_new_text_string(ctx, val);
 		pdf_dict_put_drop(ctx, grp, PDF_NAME(V), v);
 		recalculate(ctx, doc);
 	}
@@ -689,7 +680,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
 		{
 			int sigflags = (old_sigflags | (SigFlag_SignaturesExist|SigFlag_AppendOnly));
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
 		}
 
 		/*
@@ -712,7 +703,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 		/* An empty Fields array may have been created, but that is harmless */
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, doc, old_sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
+			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, old_sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
 
 		fz_rethrow(ctx);
 	}
@@ -771,7 +762,7 @@ static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj
 		pdf_obj *oval;
 
 		if (pdf_dict_gets(ctx, n, val))
-			oval = pdf_new_name(ctx, doc, val);
+			oval = pdf_new_name(ctx, val);
 		else
 			oval = PDF_NAME(Off);
 		pdf_dict_put_drop(ctx, field, PDF_NAME(AS), oval);
@@ -851,7 +842,7 @@ void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *f
 {
 	if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
-		pdf_obj *val = pdf_new_text_string(ctx, doc, text);
+		pdf_obj *val = pdf_new_text_string(ctx, text);
 		pdf_dict_putl_drop(ctx, field, val, PDF_NAME(MK), PDF_NAME(CA), NULL);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
@@ -959,7 +950,7 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 			break;
 		}
 
-		fo = pdf_new_int(ctx, doc, f);
+		fo = pdf_new_int(ctx, f);
 		pdf_dict_put_drop(ctx, field, PDF_NAME(F), fo);
 	}
 	else
@@ -1008,7 +999,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 		fzbuf = fz_new_buffer(ctx, 0);
 		pdf_fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
-		daobj = pdf_new_string(ctx, doc, (char *)buf, len);
+		daobj = pdf_new_string(ctx, (char *)buf, len);
 		pdf_dict_put_drop(ctx, field, PDF_NAME(DA), daobj);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
@@ -1232,7 +1223,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 
 			for (i = 0; i < n; i++)
 			{
-				opt = pdf_new_text_string(ctx, doc, opts[i]);
+				opt = pdf_new_text_string(ctx, opts[i]);
 				pdf_array_push_drop(ctx, optarr, opt);
 			}
 
@@ -1240,7 +1231,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 		}
 		else
 		{
-			opt = pdf_new_text_string(ctx, doc, opts[0]);
+			opt = pdf_new_text_string(ctx, opts[0]);
 			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(V), opt);
 		}
 
@@ -1348,7 +1339,7 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	byte_range = pdf_new_array(ctx, doc, 4);
 	pdf_dict_put_drop(ctx, v, PDF_NAME(ByteRange), byte_range);
 
-	contents = pdf_new_string(ctx, doc, buf, sizeof(buf));
+	contents = pdf_new_string(ctx, buf, sizeof(buf));
 	pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
 
 	pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));

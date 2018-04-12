@@ -892,7 +892,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					{
 						pdf_drop_obj(ctx, csi->obj);
 						csi->obj = NULL;
-						csi->obj = pdf_new_name(ctx, doc, buf->scratch);
+						csi->obj = pdf_new_name(ctx, buf->scratch);
 					}
 					else
 						fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
@@ -929,7 +929,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 							pdf_drop_obj(ctx, csi->obj);
 							csi->obj = NULL;
 						}
-						csi->obj = pdf_new_string(ctx, doc, buf->scratch, buf->len);
+						csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
 					}
 					break;
 

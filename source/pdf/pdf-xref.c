@@ -1955,7 +1955,7 @@ object_updated:
 
 	if (x->type == 'f')
 	{
-		x->obj = pdf_new_null(ctx, doc);
+		x->obj = PDF_NULL;
 	}
 	else if (x->type == 'n')
 	{

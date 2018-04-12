@@ -504,7 +504,7 @@ send_adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
 	{
 		float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
 		skip_dist = skip_dist / p->gstate->pending.text.size;
-		skip_obj = pdf_new_real(ctx, p->doc, skip_dist * 1000);
+		skip_obj = pdf_new_real(ctx, skip_dist * 1000);
 
 		pdf_array_insert(ctx, arr, skip_obj, 0);
 

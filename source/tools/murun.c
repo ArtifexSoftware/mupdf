@@ -2932,9 +2932,9 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		float f = js_tonumber(J, idx);
 		fz_try(ctx)
 			if (f == (int)f)
-				obj = pdf_new_int(ctx, pdf, f);
+				obj = pdf_new_int(ctx, f);
 			else
-				obj = pdf_new_real(ctx, pdf, f);
+				obj = pdf_new_real(ctx, f);
 		fz_catch(ctx)
 			rethrow(J);
 		return obj;
@@ -2944,29 +2944,20 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		const char *s = js_tostring(J, idx);
 		fz_try(ctx)
 			if (s[0] == '(' && s[1] != 0)
-				obj = pdf_new_string(ctx, pdf, s+1, strlen(s)-2);
+				obj = pdf_new_string(ctx, s+1, strlen(s)-2);
 			else
-				obj = pdf_new_name(ctx, pdf, s);
+				obj = pdf_new_name(ctx, s);
 		fz_catch(ctx)
 			rethrow(J);
 		return obj;
 	}
 
 	if (js_isboolean(J, idx)) {
-		int b = js_toboolean(J, idx);
-		fz_try(ctx)
-			obj = pdf_new_bool(ctx, pdf, b);
-		fz_catch(ctx)
-			rethrow(J);
-		return obj;
+		return js_toboolean(J, idx) ? PDF_TRUE : PDF_FALSE;
 	}
 
 	if (js_isnull(J, idx)) {
-		fz_try(ctx)
-			obj = pdf_new_null(ctx, pdf);
-		fz_catch(ctx)
-			rethrow(J);
-		return obj;
+		return PDF_NULL;
 	}
 
 	if (js_isarray(J, idx)) {
@@ -3398,37 +3389,22 @@ static void ffi_PDFDocument_save(js_State *J)
 
 static void ffi_PDFDocument_newNull(js_State *J)
 {
-	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj = NULL;
-	fz_try(ctx)
-		obj = pdf_new_null(ctx, pdf);
-	fz_catch(ctx)
-		rethrow(J);
-	ffi_pushobj(J, obj);
+	ffi_pushobj(J, PDF_NULL);
 }
 
 static void ffi_PDFDocument_newBoolean(js_State *J)
 {
-	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int val = js_toboolean(J, 1);
-	pdf_obj *obj = NULL;
-	fz_try(ctx)
-		obj = pdf_new_bool(ctx, pdf, val);
-	fz_catch(ctx)
-		rethrow(J);
-	ffi_pushobj(J, obj);
+	ffi_pushobj(J, val ? PDF_TRUE : PDF_FALSE);
 }
 
 static void ffi_PDFDocument_newInteger(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int val = js_tointeger(J, 1);
 	pdf_obj *obj = NULL;
 	fz_try(ctx)
-		obj = pdf_new_int(ctx, pdf, val);
+		obj = pdf_new_int(ctx, val);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushobj(J, obj);
@@ -3437,11 +3413,10 @@ static void ffi_PDFDocument_newInteger(js_State *J)
 static void ffi_PDFDocument_newReal(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	float val = js_tonumber(J, 1);
 	pdf_obj *obj = NULL;
 	fz_try(ctx)
-		obj = pdf_new_real(ctx, pdf, val);
+		obj = pdf_new_real(ctx, val);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushobj(J, obj);
@@ -3450,12 +3425,11 @@ static void ffi_PDFDocument_newReal(js_State *J)
 static void ffi_PDFDocument_newString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *val = js_tostring(J, 1);
 	pdf_obj *obj = NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_text_string(ctx, pdf, val);
+		obj = pdf_new_text_string(ctx, val);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushobj(J, obj);
@@ -3464,7 +3438,6 @@ static void ffi_PDFDocument_newString(js_State *J)
 static void ffi_PDFDocument_newByteString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int n, i;
 	char *buf;
 	pdf_obj *obj = NULL;
@@ -3490,7 +3463,7 @@ static void ffi_PDFDocument_newByteString(js_State *J)
 	js_endtry(J);
 
 	fz_try(ctx)
-		obj = pdf_new_string(ctx, pdf, buf, n);
+		obj = pdf_new_string(ctx, buf, n);
 	fz_always(ctx)
 		fz_free(ctx, buf);
 	fz_catch(ctx)
@@ -3501,11 +3474,10 @@ static void ffi_PDFDocument_newByteString(js_State *J)
 static void ffi_PDFDocument_newName(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *val = js_tostring(J, 1);
 	pdf_obj *obj = NULL;
 	fz_try(ctx)
-		obj = pdf_new_name(ctx, pdf, val);
+		obj = pdf_new_name(ctx, val);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushobj(J, obj);

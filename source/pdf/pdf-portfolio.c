@@ -173,7 +173,7 @@ void pdf_rename_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, 
 	if (p == NULL || entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "entry out of range in pdf_rename_portfolio_schema");
 
-	s = pdf_new_string(ctx, doc, name, name_len);
+	s = pdf_new_string(ctx, name, name_len);
 	pdf_drop_obj(ctx, p->entry.name);
 	p->entry.name = s;
 	pdf_dict_put(ctx, p->val, PDF_NAME(N), s);
@@ -316,7 +316,7 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 			num_name = NULL;
 			num++;
 			fz_snprintf(str_name, sizeof str_name, "%d", num);
-			num_name = pdf_new_name(ctx, doc, str_name);
+			num_name = pdf_new_name(ctx, str_name);
 			p = doc->portfolio;
 			for (p = doc->portfolio; p; p = p->next)
 				if (pdf_name_eq(ctx, num_name, p->key))
@@ -627,7 +627,7 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 	if (doc->portfolio == NULL)
 		load_portfolio(ctx, doc);
 
-	key = pdf_new_string(ctx, doc, name, name_len);
+	key = pdf_new_string(ctx, name, name_len);
 	fz_try(ctx)
 	{
 		val = pdf_new_dict(ctx, doc, 6);

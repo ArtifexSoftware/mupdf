@@ -570,7 +570,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 				fz_try(ctx)
 				{
-					length = pdf_new_int(ctx, doc, list[i].stm_len);
+					length = pdf_new_int(ctx, list[i].stm_len);
 					pdf_dict_get_put_drop(ctx, dict, PDF_NAME(Length), length, &old_obj);
 					if (old_obj)
 						orphan_object(ctx, doc, old_obj);
@@ -610,7 +610,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
-		obj = pdf_new_int(ctx, doc, maxnum + 1);
+		obj = pdf_new_int(ctx, maxnum + 1);
 		pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size), obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;

@@ -820,7 +820,7 @@ static void renumberobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			{
 				int o = pdf_to_num(ctx, val);
 				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
-					val = pdf_new_null(ctx, doc);
+					val = PDF_NULL;
 				else
 					val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
 				pdf_dict_put_drop(ctx, obj, key, val);
@@ -842,7 +842,7 @@ static void renumberobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			{
 				int o = pdf_to_num(ctx, val);
 				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
-					val = pdf_new_null(ctx, doc);
+					val = PDF_NULL;
 				else
 					val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
 				pdf_array_put_drop(ctx, obj, i, val);
@@ -1188,21 +1188,21 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		opts->rev_renumber_map[params_num] = params_num;
 		opts->gen_list[params_num] = 0;
 		pdf_dict_put_real(ctx, params_obj, PDF_NAME(Linearized), 1.0f);
-		opts->linear_l = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_l = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(L), opts->linear_l);
-		opts->linear_h0 = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_h0 = pdf_new_int(ctx, INT_MIN);
 		o = pdf_new_array(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, params_obj, PDF_NAME(H), o);
 		pdf_array_push(ctx, o, opts->linear_h0);
-		opts->linear_h1 = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_h1 = pdf_new_int(ctx, INT_MIN);
 		pdf_array_push(ctx, o, opts->linear_h1);
-		opts->linear_o = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_o = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(O), opts->linear_o);
-		opts->linear_e = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_e = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(E), opts->linear_e);
-		opts->linear_n = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_n = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(N), opts->linear_n);
-		opts->linear_t = pdf_new_int(ctx, doc, INT_MIN);
+		opts->linear_t = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(T), opts->linear_t);
 
 		/* Primary hint stream */
@@ -1215,7 +1215,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		opts->rev_renumber_map[hint_num] = hint_num;
 		opts->gen_list[hint_num] = 0;
 		pdf_dict_put_int(ctx, hint_obj, PDF_NAME(P), 0);
-		opts->hints_s = pdf_new_int(ctx, doc, INT_MIN);
+		opts->hints_s = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, hint_obj, PDF_NAME(S), opts->hints_s);
 		/* FIXME: Do we have thumbnails? Do a T entry */
 		/* FIXME: Do we have outlines? Do an O entry */
@@ -1226,7 +1226,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		/* FIXME: Do we have logical structure hierarchy? Do a C entry */
 		/* FIXME: Do L, Page Label hint table */
 		pdf_dict_put(ctx, hint_obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
-		opts->hints_length = pdf_new_int(ctx, doc, INT_MIN);
+		opts->hints_length = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, hint_obj, PDF_NAME(Length), opts->hints_length);
 		pdf_get_xref_entry(ctx, doc, hint_num)->stm_ofs = -1;
 	}
@@ -1668,7 +1668,6 @@ static void write_data(fz_context *ctx, void *arg, const unsigned char *data, in
 static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
 	fz_buffer *buf, *tmp;
-	pdf_obj *newlen;
 	pdf_obj *obj;
 	size_t len;
 	unsigned char *data;
@@ -1709,8 +1708,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		addhexfilter(ctx, doc, obj);
 	}
 
-	newlen = pdf_new_int(ctx, doc, pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
-	pdf_dict_put_drop(ctx, obj, PDF_NAME(Length), newlen);
+	pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
 
 	fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
@@ -2008,7 +2006,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 	{
 		trailer = pdf_new_dict(ctx, doc, 5);
 
-		nobj = pdf_new_int(ctx, doc, to);
+		nobj = pdf_new_int(ctx, to);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME(Size), nobj);
 
 		if (first)
@@ -2031,7 +2029,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 		}
 		if (main_xref_offset != 0)
 		{
-			nobj = pdf_new_int(ctx, doc, main_xref_offset);
+			nobj = pdf_new_int(ctx, main_xref_offset);
 			pdf_dict_put_drop(ctx, trailer, PDF_NAME(Prev), nobj);
 		}
 	}
@@ -2893,7 +2891,7 @@ change_identity(fz_context *ctx, pdf_document *doc)
 
 	/* Maybe recalculate this in future. For now, just change the second one. */
 	fz_memrnd(ctx, rnd, 16);
-	str = pdf_new_string(ctx, doc, (char *)rnd, 16);
+	str = pdf_new_string(ctx, (char *)rnd, 16);
 	pdf_array_put_drop(ctx, identity, 1, str);
 
 }

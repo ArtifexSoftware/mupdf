@@ -309,16 +309,16 @@ pdf_from_ucs2(fz_context *ctx, unsigned short *src)
 }
 
 pdf_obj *
-pdf_to_utf8_name(fz_context *ctx, pdf_document *doc, pdf_obj *src)
+pdf_to_utf8_name(fz_context *ctx, pdf_obj *src)
 {
 	char *buf = pdf_to_utf8(ctx, src);
-	pdf_obj *dst = pdf_new_name(ctx, doc, buf);
+	pdf_obj *dst = pdf_new_name(ctx, buf);
 	fz_free(ctx, buf);
 	return dst;
 }
 
 static pdf_obj *
-pdf_new_text_string_utf16be(fz_context *ctx, pdf_document *doc, const char *s)
+pdf_new_text_string_utf16be(fz_context *ctx, const char *s)
 {
 	int c, i = 0, n = fz_utflen(s);
 	unsigned char *p = fz_malloc(ctx, n * 2 + 2);
@@ -332,7 +332,7 @@ pdf_new_text_string_utf16be(fz_context *ctx, pdf_document *doc, const char *s)
 		p[i++] = (c) & 0xff;
 	}
 	fz_try(ctx)
-		obj = pdf_new_string(ctx, doc, (char*)p, i);
+		obj = pdf_new_string(ctx, (char*)p, i);
 	fz_always(ctx)
 		fz_free(ctx, p);
 	fz_catch(ctx)
@@ -345,16 +345,16 @@ pdf_new_text_string_utf16be(fz_context *ctx, pdf_document *doc, const char *s)
  * In theory, we could also use PDFDocEncoding.
  */
 pdf_obj *
-pdf_new_text_string(fz_context *ctx, pdf_document *doc, const char *s)
+pdf_new_text_string(fz_context *ctx, const char *s)
 {
 	int i = 0;
 	while (s[i] != 0)
 	{
 		if (((unsigned char)s[i]) >= 128)
-			return pdf_new_text_string_utf16be(ctx, doc, s);
+			return pdf_new_text_string_utf16be(ctx, s);
 		++i;
 	}
-	return pdf_new_string(ctx, doc, s, i);
+	return pdf_new_string(ctx, s, i);
 }
 
 pdf_obj *
@@ -491,7 +491,7 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 			if (tok != PDF_TOK_NAME)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "invalid key in dict");
 
-			key = pdf_new_name(ctx, doc, buf->scratch);
+			key = pdf_new_name(ctx, buf->scratch);
 
 			tok = pdf_lex(ctx, file, buf);
 
@@ -505,12 +505,12 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 				val = pdf_parse_dict(ctx, doc, file, buf);
 				break;
 
-			case PDF_TOK_NAME: val = pdf_new_name(ctx, doc, buf->scratch); break;
-			case PDF_TOK_REAL: val = pdf_new_real(ctx, doc, buf->f); break;
-			case PDF_TOK_STRING: val = pdf_new_string(ctx, doc, buf->scratch, buf->len); break;
-			case PDF_TOK_TRUE: val = pdf_new_bool(ctx, doc, 1); break;
-			case PDF_TOK_FALSE: val = pdf_new_bool(ctx, doc, 0); break;
-			case PDF_TOK_NULL: val = pdf_new_null(ctx, doc); break;
+			case PDF_TOK_NAME: val = pdf_new_name(ctx, buf->scratch); break;
+			case PDF_TOK_REAL: val = pdf_new_real(ctx, buf->f); break;
+			case PDF_TOK_STRING: val = pdf_new_string(ctx, buf->scratch, buf->len); break;
+			case PDF_TOK_TRUE: val = PDF_TRUE; break;
+			case PDF_TOK_FALSE: val = PDF_FALSE; break;
+			case PDF_TOK_NULL: val = PDF_NULL; break;
 
 			case PDF_TOK_INT:
 				/* 64-bit to allow for numbers > INT_MAX and overflow */
@@ -519,7 +519,7 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 				if (tok == PDF_TOK_CLOSE_DICT || tok == PDF_TOK_NAME ||
 					(tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "ID")))
 				{
-					val = pdf_new_int(ctx, doc, a);
+					val = pdf_new_int(ctx, a);
 					pdf_dict_put(ctx, dict, key, val);
 					pdf_drop_obj(ctx, val);
 					val = NULL;
@@ -538,11 +538,11 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 					}
 				}
 				fz_warn(ctx, "invalid indirect reference in dict");
-				val = pdf_new_null(ctx, doc);
+				val = PDF_NULL;
 				break;
 
 			default:
-				val = pdf_new_null(ctx, doc);
+				val = PDF_NULL;
 				break;
 			}
 
@@ -576,13 +576,13 @@ pdf_parse_stm_obj(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbu
 		return pdf_parse_array(ctx, doc, file, buf);
 	case PDF_TOK_OPEN_DICT:
 		return pdf_parse_dict(ctx, doc, file, buf);
-	case PDF_TOK_NAME: return pdf_new_name(ctx, doc, buf->scratch); break;
-	case PDF_TOK_REAL: return pdf_new_real(ctx, doc, buf->f); break;
-	case PDF_TOK_STRING: return pdf_new_string(ctx, doc, buf->scratch, buf->len); break;
-	case PDF_TOK_TRUE: return pdf_new_bool(ctx, doc, 1); break;
-	case PDF_TOK_FALSE: return pdf_new_bool(ctx, doc, 0); break;
-	case PDF_TOK_NULL: return pdf_new_null(ctx, doc); break;
-	case PDF_TOK_INT: return pdf_new_int(ctx, doc, buf->i); break;
+	case PDF_TOK_NAME: return pdf_new_name(ctx, buf->scratch);
+	case PDF_TOK_REAL: return pdf_new_real(ctx, buf->f);
+	case PDF_TOK_STRING: return pdf_new_string(ctx, buf->scratch, buf->len);
+	case PDF_TOK_TRUE: return PDF_TRUE;
+	case PDF_TOK_FALSE: return PDF_FALSE;
+	case PDF_TOK_NULL: return PDF_NULL;
+	case PDF_TOK_INT: return pdf_new_int(ctx, buf->i);
 	default: fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown token in object stream");
 	}
 }
@@ -641,12 +641,12 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 		obj = pdf_parse_dict(ctx, doc, file, buf);
 		break;
 
-	case PDF_TOK_NAME: obj = pdf_new_name(ctx, doc, buf->scratch); break;
-	case PDF_TOK_REAL: obj = pdf_new_real(ctx, doc, buf->f); break;
-	case PDF_TOK_STRING: obj = pdf_new_string(ctx, doc, buf->scratch, buf->len); break;
-	case PDF_TOK_TRUE: obj = pdf_new_bool(ctx, doc, 1); break;
-	case PDF_TOK_FALSE: obj = pdf_new_bool(ctx, doc, 0); break;
-	case PDF_TOK_NULL: obj = pdf_new_null(ctx, doc); break;
+	case PDF_TOK_NAME: obj = pdf_new_name(ctx, buf->scratch); break;
+	case PDF_TOK_REAL: obj = pdf_new_real(ctx, buf->f); break;
+	case PDF_TOK_STRING: obj = pdf_new_string(ctx, buf->scratch, buf->len); break;
+	case PDF_TOK_TRUE: obj = PDF_TRUE; break;
+	case PDF_TOK_FALSE: obj = PDF_FALSE; break;
+	case PDF_TOK_NULL: obj = PDF_NULL; break;
 
 	case PDF_TOK_INT:
 		a = buf->i;
@@ -654,7 +654,7 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 
 		if (tok == PDF_TOK_STREAM || tok == PDF_TOK_ENDOBJ)
 		{
-			obj = pdf_new_int(ctx, doc, a);
+			obj = pdf_new_int(ctx, a);
 			read_next_token = 0;
 			break;
 		}
@@ -671,7 +671,7 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "expected 'R' keyword (%d %d R)", num, gen);
 
 	case PDF_TOK_ENDOBJ:
-		obj = pdf_new_null(ctx, doc);
+		obj = PDF_NULL;
 		read_next_token = 0;
 		break;
 

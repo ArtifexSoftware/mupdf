@@ -228,7 +228,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	}
 
 	/* Update page count and kids array */
-	countobj = pdf_new_int(ctx, doc, pdf_array_len(ctx, kids));
+	countobj = pdf_new_int(ctx, pdf_array_len(ctx, kids));
 	pdf_dict_put_drop(ctx, pages, PDF_NAME(Count), countobj);
 	pdf_dict_put_drop(ctx, pages, PDF_NAME(Kids), kids);
 
@@ -261,7 +261,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 			dest = pdf_array_get(ctx, dest ? dest : val, 0);
 			if (dest_is_valid_page(ctx, dest, page_object_nums, pagecount))
 			{
-				pdf_obj *key_str = pdf_new_string(ctx, doc, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
+				pdf_obj *key_str = pdf_new_string(ctx, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
 				pdf_array_push_drop(ctx, names_list, key_str);
 				pdf_array_push(ctx, names_list, val);
 			}

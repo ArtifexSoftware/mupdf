@@ -15,13 +15,11 @@ typedef struct pdf_crypt_s pdf_crypt;
 
 typedef struct pdf_obj_s pdf_obj;
 
-pdf_obj *pdf_new_null(fz_context *ctx, pdf_document *doc);
-pdf_obj *pdf_new_bool(fz_context *ctx, pdf_document *doc, int b);
-pdf_obj *pdf_new_int(fz_context *ctx, pdf_document *doc, int64_t i);
-pdf_obj *pdf_new_real(fz_context *ctx, pdf_document *doc, float f);
-pdf_obj *pdf_new_name(fz_context *ctx, pdf_document *doc, const char *str);
-pdf_obj *pdf_new_string(fz_context *ctx, pdf_document *doc, const char *str, size_t len);
-pdf_obj *pdf_new_text_string(fz_context *ctx, pdf_document *doc, const char *s);
+pdf_obj *pdf_new_int(fz_context *ctx, int64_t i);
+pdf_obj *pdf_new_real(fz_context *ctx, float f);
+pdf_obj *pdf_new_name(fz_context *ctx, const char *str);
+pdf_obj *pdf_new_string(fz_context *ctx, const char *str, size_t len);
+pdf_obj *pdf_new_text_string(fz_context *ctx, const char *s);
 pdf_obj *pdf_new_indirect(fz_context *ctx, pdf_document *doc, int num, int gen);
 pdf_obj *pdf_new_array(fz_context *ctx, pdf_document *doc, int initialcap);
 pdf_obj *pdf_new_dict(fz_context *ctx, pdf_document *doc, int initialcap);
@@ -163,7 +161,7 @@ char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src);
 unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src);
-pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_document *doc, pdf_obj *src);
+pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
 char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
 void pdf_to_ucs2_buf(fz_context *ctx, unsigned short *buffer, pdf_obj *src);
 

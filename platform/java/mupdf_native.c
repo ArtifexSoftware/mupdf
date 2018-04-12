@@ -6596,13 +6596,7 @@ FUN(PDFDocument_newNull)(JNIEnv *env, jobject self)
 
 	if (!ctx || !pdf) return NULL;
 
-	fz_try(ctx)
-		obj = pdf_new_null(ctx, pdf);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
+	obj = PDF_NULL;
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 	if (!jobj)
@@ -6620,13 +6614,7 @@ FUN(PDFDocument_newBoolean)(JNIEnv *env, jobject self, jboolean b)
 
 	if (!ctx || !pdf) return NULL;
 
-	fz_try(ctx)
-		obj = pdf_new_bool(ctx, pdf, b);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
+	obj = b ? PDF_TRUE : PDF_FALSE;
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 	if (!jobj)
@@ -6645,7 +6633,7 @@ FUN(PDFDocument_newInteger)(JNIEnv *env, jobject self, jint i)
 	if (!ctx || !pdf) return NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_int(ctx, pdf, i);
+		obj = pdf_new_int(ctx, i);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6669,7 +6657,7 @@ FUN(PDFDocument_newReal)(JNIEnv *env, jobject self, jfloat f)
 	if (!ctx || !pdf) return NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_real(ctx, pdf, f);
+		obj = pdf_new_real(ctx, f);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6698,7 +6686,7 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 	if (!s) return NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_text_string(ctx, pdf, s);
+		obj = pdf_new_text_string(ctx, s);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jstring, s);
 	fz_catch(ctx)
@@ -6743,7 +6731,7 @@ FUN(PDFDocument_newByteString)(JNIEnv *env, jobject self, jobject jbs)
 	}
 
 	fz_try(ctx)
-		obj = pdf_new_string(ctx, pdf, (char *) bs, bslen);
+		obj = pdf_new_string(ctx, (char *) bs, bslen);
 	fz_always(ctx)
 		fz_free(ctx, bs);
 	fz_catch(ctx)
@@ -6774,7 +6762,7 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 	if (!name) return NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_name(ctx, pdf, name);
+		obj = pdf_new_name(ctx, name);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jname, name);
 	fz_catch(ctx)
@@ -7413,8 +7401,7 @@ FUN(PDFObject_newNull)(JNIEnv *env, jclass cls)
 
 	if (!ctx) return 0;
 
-	/* Not nice to pass doc as NULL, but it is unused */
-	return jlong_cast(pdf_new_null(ctx, NULL));
+	return jlong_cast(PDF_NULL);
 }
 
 JNIEXPORT jint JNICALL
@@ -7938,18 +7925,11 @@ FUN(PDFObject_putArrayBoolean)(JNIEnv *env, jobject self, jint index, jboolean b
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		val = pdf_new_bool(ctx, pdf, b);
-		pdf_array_put(ctx, arr, index, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_array_put(ctx, arr, index, b ? PDF_TRUE : PDF_FALSE);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -7959,18 +7939,11 @@ FUN(PDFObject_putArrayInteger)(JNIEnv *env, jobject self, jint index, jint i)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		val = pdf_new_int(ctx, pdf, i);
-		pdf_array_put(ctx, arr, index, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_array_put_drop(ctx, arr, index, pdf_new_int(ctx, i));
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -7980,18 +7953,11 @@ FUN(PDFObject_putArrayFloat)(JNIEnv *env, jobject self, jint index, jfloat f)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		val = pdf_new_real(ctx, pdf, f);
-		pdf_array_put(ctx, arr, index, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_array_put_drop(ctx, arr, index, pdf_new_real(ctx, f));
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8002,7 +7968,6 @@ FUN(PDFObject_putArrayString)(JNIEnv *env, jobject self, jint index, jstring jst
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
 	const char *str = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !arr) return;
 	if (jstr)
@@ -8013,13 +7978,13 @@ FUN(PDFObject_putArrayString)(JNIEnv *env, jobject self, jint index, jstring jst
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		val = str ? pdf_new_string(ctx, pdf, str, strlen(str)) : NULL;
-		pdf_array_put(ctx, arr, index, val);
+		if (str)
+			pdf_array_put_drop(ctx, arr, index, pdf_new_string(ctx, str, strlen(str)));
+		else
+			pdf_array_put(ctx, arr, index, PDF_NULL);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		if (str)
 			(*env)->ReleaseStringUTFChars(env, jstr, str);
 	}
@@ -8049,7 +8014,6 @@ FUN(PDFObject_putDictionaryStringBoolean)(JNIEnv *env, jobject self, jstring jna
 	pdf_obj *dict = from_PDFObject(env, self);
 	const char *name = NULL;
 	pdf_obj *key = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jname)
@@ -8060,14 +8024,11 @@ FUN(PDFObject_putDictionaryStringBoolean)(JNIEnv *env, jobject self, jstring jna
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		key = name ? pdf_new_name(ctx, pdf, name) : NULL;
-		val = pdf_new_bool(ctx, pdf, b);
-		pdf_dict_put(ctx, dict, key, val);
+		key = name ? pdf_new_name(ctx, name) : NULL;
+		pdf_dict_put(ctx, dict, key, b ? PDF_TRUE : PDF_FALSE);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		pdf_drop_obj(ctx, key);
 		if (name)
 			(*env)->ReleaseStringUTFChars(env, jname, name);
@@ -8083,7 +8044,6 @@ FUN(PDFObject_putDictionaryStringInteger)(JNIEnv *env, jobject self, jstring jna
 	pdf_obj *dict = from_PDFObject(env, self);
 	const char *name = NULL;
 	pdf_obj *key = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jname)
@@ -8094,14 +8054,11 @@ FUN(PDFObject_putDictionaryStringInteger)(JNIEnv *env, jobject self, jstring jna
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		key = name ? pdf_new_name(ctx, pdf, name) : NULL;
-		val = pdf_new_int(ctx, pdf, i);
-		pdf_dict_put(ctx, dict, key, val);
+		key = name ? pdf_new_name(ctx, name) : NULL;
+		pdf_dict_put_int(ctx, dict, key, i);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		pdf_drop_obj(ctx, key);
 		if (name)
 			(*env)->ReleaseStringUTFChars(env, jname, name);
@@ -8117,7 +8074,6 @@ FUN(PDFObject_putDictionaryStringFloat)(JNIEnv *env, jobject self, jstring jname
 	pdf_obj *dict = from_PDFObject(env, self);
 	const char *name = NULL;
 	pdf_obj *key = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jname)
@@ -8128,14 +8084,11 @@ FUN(PDFObject_putDictionaryStringFloat)(JNIEnv *env, jobject self, jstring jname
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		key = name ? pdf_new_name(ctx, pdf, name) : NULL;
-		val = pdf_new_real(ctx, pdf, f);
-		pdf_dict_put(ctx, dict, key, val);
+		key = name ? pdf_new_name(ctx, name) : NULL;
+		pdf_dict_put_real(ctx, dict, key, f);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		pdf_drop_obj(ctx, key);
 		if (name)
 			(*env)->ReleaseStringUTFChars(env, jname, name);
@@ -8149,11 +8102,9 @@ FUN(PDFObject_putDictionaryStringString)(JNIEnv *env, jobject self, jstring jnam
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
-	pdf_document *pdf = pdf_get_bound_document(ctx, dict);
 	const char *name = NULL;
 	const char *str = NULL;
 	pdf_obj *key = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jname)
@@ -8173,13 +8124,14 @@ FUN(PDFObject_putDictionaryStringString)(JNIEnv *env, jobject self, jstring jnam
 
 	fz_try(ctx)
 	{
-		key = name ? pdf_new_name(ctx, pdf, name) : NULL;
-		val = val ? pdf_new_string(ctx, pdf, str, strlen(str)) : NULL;
-		pdf_dict_put(ctx, dict, key, val);
+		key = name ? pdf_new_name(ctx, name) : NULL;
+		if (str)
+			pdf_dict_put_string(ctx, dict, key, str, strlen(str));
+		else
+			pdf_dict_put(ctx, dict, key, PDF_NULL);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		pdf_drop_obj(ctx, key);
 		if (str)
 			(*env)->ReleaseStringUTFChars(env, jstr, str);
@@ -8195,7 +8147,6 @@ FUN(PDFObject_putDictionaryStringPDFObject)(JNIEnv *env, jobject self, jstring j
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
-	pdf_document *pdf = pdf_get_bound_document(ctx, dict);
 	pdf_obj *val = from_PDFObject(env, jobj);
 	const char *name = NULL;
 	pdf_obj *key = NULL;
@@ -8209,7 +8160,7 @@ FUN(PDFObject_putDictionaryStringPDFObject)(JNIEnv *env, jobject self, jstring j
 
 	fz_try(ctx)
 	{
-		key = name ? pdf_new_name(ctx, pdf, name) : NULL;
+		key = name ? pdf_new_name(ctx, name) : NULL;
 		pdf_dict_put(ctx, dict, key, val);
 	}
 	fz_always(ctx)
@@ -8228,18 +8179,11 @@ FUN(PDFObject_putDictionaryPDFObjectBoolean)(JNIEnv *env, jobject self, jobject 
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
 	pdf_obj *name = from_PDFObject(env, jname);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		val = pdf_new_bool(ctx, pdf, b);
-		pdf_dict_put(ctx, dict, name, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_dict_put(ctx, dict, name, b ? PDF_TRUE : PDF_FALSE);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8250,18 +8194,11 @@ FUN(PDFObject_putDictionaryPDFObjectInteger)(JNIEnv *env, jobject self, jobject 
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
 	pdf_obj *name = from_PDFObject(env, jname);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		val = pdf_new_int(ctx, pdf, i);
-		pdf_dict_put(ctx, dict, name, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_dict_put_int(ctx, dict, name, i);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8272,18 +8209,11 @@ FUN(PDFObject_putDictionaryPDFObjectFloat)(JNIEnv *env, jobject self, jobject jn
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
 	pdf_obj *name = from_PDFObject(env, jname);
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		val = pdf_new_real(ctx, pdf, f);
-		pdf_dict_put(ctx, dict, name, val);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, val);
+		pdf_dict_put_real(ctx, dict, name, f);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8295,7 +8225,6 @@ FUN(PDFObject_putDictionaryPDFObjectString)(JNIEnv *env, jobject self, jobject j
 	pdf_obj *dict = from_PDFObject(env, self);
 	pdf_obj *name = from_PDFObject(env, jname);
 	const char *str = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jstr)
@@ -8306,13 +8235,13 @@ FUN(PDFObject_putDictionaryPDFObjectString)(JNIEnv *env, jobject self, jobject j
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		val = str ? pdf_new_string(ctx, pdf, str, strlen(str)) : NULL;
-		pdf_dict_put(ctx, dict, name, val);
+		if (str)
+			pdf_dict_put_string(ctx, dict, name, str, strlen(str));
+		else
+			pdf_dict_put(ctx, dict, name, PDF_NULL);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		if (str)
 			(*env)->ReleaseStringUTFChars(env, jstr, str);
 	}
@@ -8356,7 +8285,6 @@ FUN(PDFObject_deleteDictionaryString)(JNIEnv *env, jobject self, jstring jname)
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
 	const char *name = NULL;
-	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return;
 	if (jname)
@@ -8367,13 +8295,10 @@ FUN(PDFObject_deleteDictionaryString)(JNIEnv *env, jobject self, jstring jname)
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, dict);
-		val = name ? pdf_new_name(ctx, pdf, name) : NULL;
-		pdf_dict_del(ctx, dict, val);
+		pdf_dict_dels(ctx, dict, name);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, val);
 		if (name)
 			(*env)->ReleaseStringUTFChars(env, jname, name);
 	}
@@ -8579,18 +8504,11 @@ FUN(PDFObject_pushBoolean)(JNIEnv *env, jobject self, jboolean b)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *item = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		item = pdf_new_bool(ctx, pdf, b);
-		pdf_array_push(ctx, arr, item);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, item);
+		pdf_array_push_bool(ctx, arr, b);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8600,18 +8518,11 @@ FUN(PDFObject_pushInteger)(JNIEnv *env, jobject self, jint i)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *item = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		item = pdf_new_int(ctx, pdf, i);
-		pdf_array_push(ctx, arr, item);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, item);
+		pdf_array_push_int(ctx, arr, i);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8621,18 +8532,11 @@ FUN(PDFObject_pushFloat)(JNIEnv *env, jobject self, jfloat f)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
-	pdf_obj *item = NULL;
 
 	if (!ctx || !arr) return;
 
 	fz_try(ctx)
-	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		item = pdf_new_real(ctx, pdf, f);
-		pdf_array_push(ctx, arr, item);
-	}
-	fz_always(ctx)
-		pdf_drop_obj(ctx, item);
+		pdf_array_push_real(ctx, arr, f);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8643,7 +8547,6 @@ FUN(PDFObject_pushString)(JNIEnv *env, jobject self, jstring jstr)
 	fz_context *ctx = get_context(env);
 	pdf_obj *arr = from_PDFObject(env, self);
 	const char *str = NULL;
-	pdf_obj *item = NULL;
 
 	if (!ctx || !arr) return;
 	if (jstr)
@@ -8654,13 +8557,13 @@ FUN(PDFObject_pushString)(JNIEnv *env, jobject self, jstring jstr)
 
 	fz_try(ctx)
 	{
-		pdf_document *pdf = pdf_get_bound_document(ctx, arr);
-		item = str ? pdf_new_string(ctx, pdf, str, strlen(str)) : NULL;
-		pdf_array_push(ctx, arr, item);
+		if (str)
+			pdf_array_push_string(ctx, arr, str, strlen(str));
+		else
+			pdf_array_push(ctx, arr, PDF_NULL);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, item);
 		if (str)
 			(*env)->ReleaseStringUTFChars(env, jstr, str);
 	}

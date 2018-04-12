@@ -295,10 +295,8 @@ pdf_annot_is_open(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open)
 {
-	pdf_document *doc = annot->page->doc;
 	check_allowed_subtypes(ctx, annot, PDF_NAME(Open), open_subtypes);
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(Open),
-			pdf_new_bool(ctx, doc, is_open));
+	pdf_dict_put_bool(ctx, annot->obj, PDF_NAME(Open), is_open);
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -821,7 +819,6 @@ void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p)
 
 void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p)
 {
-	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *vertices;
 
@@ -833,8 +830,8 @@ void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p)
 	fz_transform_point(&p, &inv_page_ctm);
 
 	vertices = pdf_dict_get(ctx, annot->obj, PDF_NAME(Vertices));
-	pdf_array_put_drop(ctx, vertices, i * 2 + 0, pdf_new_real(ctx, doc, p.x));
-	pdf_array_put_drop(ctx, vertices, i * 2 + 1, pdf_new_real(ctx, doc, p.y));
+	pdf_array_put_drop(ctx, vertices, i * 2 + 0, pdf_new_real(ctx, p.x));
+	pdf_array_put_drop(ctx, vertices, i * 2 + 1, pdf_new_real(ctx, p.y));
 }
 
 static pdf_obj *quad_point_subtypes[] = {
