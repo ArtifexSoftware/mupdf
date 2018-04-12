@@ -31,8 +31,6 @@ pdf_obj *pdf_copy_array(fz_context *ctx, pdf_obj *array);
 pdf_obj *pdf_copy_dict(fz_context *ctx, pdf_obj *dict);
 pdf_obj *pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj);
 
-pdf_obj *pdf_new_obj_from_str(fz_context *ctx, pdf_document *doc, const char *src);
-
 pdf_obj *pdf_keep_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_drop_obj(fz_context *ctx, pdf_obj *obj);
 

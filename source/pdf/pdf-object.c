@@ -1730,30 +1730,6 @@ int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj)
 	}
 }
 
-pdf_obj *pdf_new_obj_from_str(fz_context *ctx, pdf_document *doc, const char *src)
-{
-	pdf_obj *result = NULL;
-	pdf_lexbuf lexbuf;
-	fz_stream *stream = fz_open_memory(ctx, (unsigned char *)src, strlen(src));
-
-	pdf_lexbuf_init(ctx, &lexbuf, PDF_LEXBUF_SMALL);
-	fz_try(ctx)
-	{
-		result = pdf_parse_stm_obj(ctx, doc, stream, &lexbuf);
-	}
-	fz_always(ctx)
-	{
-		pdf_lexbuf_fin(ctx, &lexbuf);
-		fz_drop_stream(ctx, stream);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return result;
-}
-
 /* Pretty printing objects */
 
 struct fmt
