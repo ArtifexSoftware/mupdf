@@ -355,13 +355,13 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				if (cp->u.fax.k)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(K), cp->u.fax.k);
 				if (cp->u.fax.end_of_line)
-					pdf_dict_put_int(ctx, dp, PDF_NAME(EndOfLine), cp->u.fax.end_of_line);
+					pdf_dict_put_bool(ctx, dp, PDF_NAME(EndOfLine), cp->u.fax.end_of_line);
 				if (cp->u.fax.encoded_byte_align)
-					pdf_dict_put_int(ctx, dp, PDF_NAME(EncodedByteAlign), cp->u.fax.encoded_byte_align);
+					pdf_dict_put_bool(ctx, dp, PDF_NAME(EncodedByteAlign), cp->u.fax.encoded_byte_align);
 				if (cp->u.fax.end_of_block)
-					pdf_dict_put_int(ctx, dp, PDF_NAME(EndOfBlock), cp->u.fax.end_of_block);
+					pdf_dict_put_bool(ctx, dp, PDF_NAME(EndOfBlock), cp->u.fax.end_of_block);
 				if (cp->u.fax.black_is_1)
-					pdf_dict_put_int(ctx, dp, PDF_NAME(BlackIs1), cp->u.fax.black_is_1);
+					pdf_dict_put_bool(ctx, dp, PDF_NAME(BlackIs1), cp->u.fax.black_is_1);
 				if (cp->u.fax.damaged_rows_before_error)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(DamagedRowsBeforeError), cp->u.fax.damaged_rows_before_error);
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(CCITTFaxDecode));
