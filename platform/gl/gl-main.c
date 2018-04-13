@@ -58,7 +58,11 @@ static void open_browser(const char *uri)
 #endif
 }
 
-static const int zoom_list[] = { 18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288 };
+static const int zoom_list[] = {
+	24, 36, 48, 60, 72, 84, 96, 108,
+	120, 144, 168, 192, 228, 264,
+	300, 350, 400, 450, 500, 550, 600
+};
 
 static int zoom_in(int oldres)
 {
@@ -102,8 +106,8 @@ static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
 
-static int outline_w = 260;
-static int annotate_w = 220;
+static int outline_w = 14; /* to be scaled by lineheight */
+static int annotate_w = 12; /* to be scaled by lineheight */
 
 static int oldinvert = 0, currentinvert = 0;
 static int oldpage = 0, currentpage = 0;
@@ -1365,6 +1369,9 @@ int main(int argc, char **argv)
 		ui_init_open_file(".", document_filter);
 		ui.dialog = do_open_document_dialog;
 	}
+
+	annotate_w *= ui.lineheight;
+	outline_w *= ui.lineheight;
 
 	glutMainLoop();
 
