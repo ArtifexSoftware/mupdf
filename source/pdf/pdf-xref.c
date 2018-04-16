@@ -833,7 +833,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	pdf_xref_entry *table;
 	pdf_token tok;
 	size_t n;
-	char *s;
+	char *s, *e;
 
 	xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 
@@ -885,24 +885,40 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 			if (n != 20-carried)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected EOF in xref table");
 			n += carried;
+			buf->scratch[n] = '\0';
 			if (!entry->type)
 			{
 				s = buf->scratch;
+				e = s + n;
+
+				entry->num = start + i;
 
 				/* broken pdfs where line start with white space */
-				while (*s != '\0' && iswhite(*s))
+				while (s < e && iswhite(*s))
 					s++;
 
-				entry->ofs = fz_atoi64(s);
-				entry->gen = fz_atoi(s + 11);
-				entry->num = start + i;
-				entry->type = s[17];
-				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
-					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: 0x%x (%d %d R)", s[17], entry->num, entry->gen);
+				if (s == e || !isdigit(*s))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "xref offset missing");
+				while (s < e && isdigit(*s))
+					entry->ofs = entry->ofs * 10 + *s++ - '0';
+
+				while (s < e && iswhite(*s))
+					s++;
+				if (s == e || !isdigit(*s))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "xref generation number missing");
+				while (s < e && isdigit(*s))
+					entry->gen = entry->gen * 10 + *s++ - '0';
+
+				while (s < e && iswhite(*s))
+					s++;
+				if (s == e || (*s != 'f' && *s != 'n' && *s != 'o'))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: 0x%x (%d %d R)", s == e ? 0 : *s, entry->num, entry->gen);
+				entry->type = *s++;
+
 				/* If the last byte of our buffer isn't an EOL (or space), carry one byte forward */
-				carried = s[19] > 32;
+				carried = buf->scratch[19] > 32;
 				if (carried)
-					s[0] = s[19];
+					buf->scratch[0] = buf->scratch[19];
 			}
 		}
 		if (carried)
