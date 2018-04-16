@@ -68,9 +68,7 @@ static int dest_is_valid(fz_context *ctx, pdf_obj *o, int page_count, int *page_
 	if (p == NULL)
 	{}
 	else if (pdf_is_string(ctx, p))
-	{
 		return string_in_names_list(ctx, p, names_list);
-	}
 	else if (!dest_is_valid_page(ctx, pdf_array_get(ctx, p, 0), page_object_nums, page_count))
 		return 0;
 
@@ -278,8 +276,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		pdf_drop_obj(ctx, olddests);
 	}
 
-	/* Edit each pages /Annot list to remove any links that point to
-	 * nowhere. */
+	/* Edit each pages /Annot list to remove any links that point to nowhere. */
 	for (i = 0; i < pagecount; i++)
 	{
 		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);

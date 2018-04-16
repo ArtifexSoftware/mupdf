@@ -183,20 +183,17 @@ void pdf_set_int(fz_context *ctx, pdf_obj *obj, int64_t i);
 
 #define PDF_MAKE_NAME(STRING,NAME) PDF_ENUM_NAME_##NAME,
 enum {
-	PDF_ENUM_DUMMY,
-#include "mupdf/pdf/name-table.h"
-	PDF_ENUM_LIMIT_NAME,
 	PDF_ENUM_NULL,
 	PDF_ENUM_TRUE,
 	PDF_ENUM_FALSE,
-	PDF_ENUM_LIMIT_OBJ
+#include "mupdf/pdf/name-table.h"
+	PDF_ENUM_LIMIT,
 };
 #undef PDF_MAKE_NAME
 
-#define PDF_NAME_LIMIT ((pdf_obj*)(intptr_t)PDF_ENUM_LIMIT_NAME)
-#define PDF_OBJ_LIMIT ((pdf_obj*)(intptr_t)PDF_ENUM_LIMIT_OBJ)
 #define PDF_NULL ((pdf_obj*)(intptr_t)PDF_ENUM_NULL)
 #define PDF_TRUE ((pdf_obj*)(intptr_t)PDF_ENUM_TRUE)
 #define PDF_FALSE ((pdf_obj*)(intptr_t)PDF_ENUM_FALSE)
+#define PDF_LIMIT ((pdf_obj*)(intptr_t)PDF_ENUM_LIMIT)
 
 #endif
