@@ -14,6 +14,8 @@
 #define DEBUGMESS(A) do { } while (0)
 #endif
 
+#define isdigit(c) (c >= '0' && c <= '9')
+
 static inline int iswhite(int ch)
 {
 	return
@@ -626,7 +628,7 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 			while (i < n && iswhite(buf[i]))
 				i ++;
 			doc->startxref = 0;
-			while (i < n && buf[i] >= '0' && buf[i] <= '9')
+			while (i < n && isdigit(buf[i]))
 			{
 				if (doc->startxref >= INT64_MAX/10)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "startxref too large");
@@ -696,7 +698,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	while (1)
 	{
 		c = fz_peek_byte(ctx, doc->file);
-		if (!(c >= '0' && c <= '9'))
+		if (!isdigit(c))
 			break;
 
 		fz_read_line(ctx, doc->file, buf->scratch, buf->size);
@@ -843,7 +845,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	while (1)
 	{
 		c = fz_peek_byte(ctx, file);
-		if (!(c >= '0' && c <= '9'))
+		if (!isdigit(c))
 			break;
 
 		fz_read_line(ctx, file, buf->scratch, buf->size);
@@ -1067,7 +1069,7 @@ pdf_read_xref(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 	c = fz_peek_byte(ctx, doc->file);
 	if (c == 'x')
 		trailer = pdf_read_old_xref(ctx, doc, buf);
-	else if (c >= '0' && c <= '9')
+	else if (isdigit(c))
 		trailer = pdf_read_new_xref(ctx, doc, buf);
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize xref format");
