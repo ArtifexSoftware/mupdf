@@ -106,6 +106,7 @@ $(OUT)/source/tools/%.o : source/tools/%.c | $(ALL_DIR)
 	$(CC_CMD) $(THREADING_CFLAGS)
 
 $(OUT)/generated/%.o : generated/%.c | $(ALL_DIR)
+	@ mkdir -p $(dir $@)
 	$(CC_CMD) -O0
 
 $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
@@ -184,8 +185,9 @@ $(SIGNATURE_OBJ) : $(PKCS7_HDR)
 HEXDUMP_EXE := $(OUT)/scripts/hexdump.exe
 
 FONT_BIN :=  $(sort $(wildcard resources/fonts/urw/*.cff))
-FONT_BIN += $(sort $(wildcard resources/fonts/han/*.otf))
+FONT_BIN += $(sort $(wildcard resources/fonts/han/*.ttc))
 FONT_BIN += $(sort $(wildcard resources/fonts/droid/*.ttf))
+FONT_BIN += $(sort $(wildcard resources/fonts/noto/*.otf))
 FONT_BIN += $(sort $(wildcard resources/fonts/noto/*.ttf))
 FONT_BIN += $(sort $(wildcard resources/fonts/sil/*.cff))
 
@@ -194,12 +196,14 @@ FONT_GEN := $(FONT_BIN:%=generated/%.c)
 generated/%.cff.c : %.cff $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
 generated/%.otf.c : %.otf $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
 generated/%.ttf.c : %.ttf $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
+generated/%.ttc.c : %.ttc $(HEXDUMP_EXE) ; $(QUIET_GEN) mkdir -p $(dir $@) ; $(HEXDUMP_EXE) -s $@ $<
 
 ifeq "$(OS)" "Linux"
   FONT_OBJ := $(FONT_BIN:%=$(OUT)/%.o)
   $(OUT)/%.cff.o : %.cff ; $(OBJCOPY_CMD)
   $(OUT)/%.otf.o : %.otf ; $(OBJCOPY_CMD)
   $(OUT)/%.ttf.o : %.ttf ; $(OBJCOPY_CMD)
+  $(OUT)/%.ttc.o : %.ttc ; $(OBJCOPY_CMD)
 else
   FONT_OBJ := $(FONT_GEN:%.c=$(OUT)/%.o)
 endif

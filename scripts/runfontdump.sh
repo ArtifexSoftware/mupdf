@@ -2,7 +2,7 @@
 # Create Makefile for win32 nmake to build fontdump resources.
 # Also generate fontdump resources locally.
 
-FONTS="resources/fonts/urw/*.cff resources/fonts/han/*.otf resources/fonts/droid/*.ttf resources/fonts/noto/*.ttf resources/fonts/sil/*.cff"
+FONTS="resources/fonts/urw/*.cff resources/fonts/han/*.ttc resources/fonts/droid/*.ttf resources/fonts/noto/*.ttf resources/fonts/noto/*.otf resources/fonts/sil/*.cff"
 OUT=scripts/fontdump.nmake.tmp
 
 echo -e >$OUT "# This is an automatically generated file. Do not edit. */"

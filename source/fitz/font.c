@@ -1648,6 +1648,13 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 #ifndef TOFU_CJK_LANG
 	if (script == UCDN_SCRIPT_HAN)
 	{
+		font = fz_load_fallback_font(ctx, script, FZ_LANG_zh_Hant, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
+		if (font)
+		{
+			gid = fz_encode_character(ctx, font, unicode);
+			if (gid > 0)
+				return *out_font = font, gid;
+		}
 		font = fz_load_fallback_font(ctx, script, FZ_LANG_ja, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
 		if (font)
 		{
@@ -1656,13 +1663,6 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 				return *out_font = font, gid;
 		}
 		font = fz_load_fallback_font(ctx, script, FZ_LANG_ko, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
-		if (font)
-		{
-			gid = fz_encode_character(ctx, font, unicode);
-			if (gid > 0)
-				return *out_font = font, gid;
-		}
-		font = fz_load_fallback_font(ctx, script, FZ_LANG_zh_Hant, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
 		if (font)
 		{
 			gid = fz_encode_character(ctx, font, unicode);
