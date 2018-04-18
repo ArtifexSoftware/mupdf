@@ -3264,16 +3264,25 @@ static void ffi_PDFDocument_addCJKFont(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_font *font = js_touserdata(J, 1, "fz_font");
 	const char *on = js_tostring(J, 2);
+	const char *wm = js_tostring(J, 3);
+	const char *ss = js_tostring(J, 4);
 	int ord = FZ_ADOBE_JAPAN_1;
+	int wmode = 0;
+	int serif = 1;
 	pdf_obj *ind = NULL;
 
-	if (!strcmp(on, "CNS1") || !strcmp(on, "CN")) ord = FZ_ADOBE_CNS_1;
-	else if (!strcmp(on, "GB1") || !strcmp(on, "TW")) ord = FZ_ADOBE_GB_1;
+	if (!strcmp(on, "CNS1") || !strcmp(on, "TW") || !strcmp(on, "TC") || !strcmp(on, "Hant")) ord = FZ_ADOBE_CNS_1;
+	else if (!strcmp(on, "GB1") || !strcmp(on, "CN") || !strcmp(on, "SC") || !strcmp(on, "Hans")) ord = FZ_ADOBE_GB_1;
 	else if (!strcmp(on, "Korea1") || !strcmp(on, "KR") || !strcmp(on, "KO")) ord = FZ_ADOBE_KOREA_1;
 	else if (!strcmp(on, "Japan1") || !strcmp(on, "JP") || !strcmp(on, "JA")) ord = FZ_ADOBE_JAPAN_1;
 
+	if (!strcmp(wm, "V"))
+		wmode = 1;
+	if (!strcmp(ss, "sans") || !strcmp(ss, "sans-serif"))
+		serif = 0;
+
 	fz_try(ctx)
-		ind = pdf_add_cjk_font(ctx, pdf, font, ord);
+		ind = pdf_add_cjk_font(ctx, pdf, font, ord, wmode, serif);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -4676,7 +4685,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 2);
 		jsB_propfun(J, "PDFDocument.addRawStream", ffi_PDFDocument_addRawStream, 2);
 		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 2);
-		jsB_propfun(J, "PDFDocument.addCJKFont", ffi_PDFDocument_addCJKFont, 2);
+		jsB_propfun(J, "PDFDocument.addCJKFont", ffi_PDFDocument_addCJKFont, 4);
 		jsB_propfun(J, "PDFDocument.addFont", ffi_PDFDocument_addFont, 1);
 		jsB_propfun(J, "PDFDocument.addImage", ffi_PDFDocument_addImage, 1);
 		jsB_propfun(J, "PDFDocument.addPage", ffi_PDFDocument_addPage, 4);

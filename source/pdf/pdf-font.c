@@ -2158,27 +2158,28 @@ pdf_font_writing_supported(fz_font *font)
 
 /* Add a non-embedded UTF16-encoded CID-font for the CJK scripts: CNS1, GB1, Japan1, or Korea1 */
 pdf_obj *
-pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script)
+pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script, int wmode, int serif)
 {
 	pdf_obj *fref, *font, *subfont, *fontdesc;
 	pdf_obj *dfonts;
 	fz_rect bbox = { -200, -200, 1200, 1200 };
 	unsigned char digest[16];
+	int flags;
 
 	const char *basefont, *encoding, *ordering;
 	int supplement;
 
 	switch (script)
 	{
-	case FZ_ADOBE_CNS_1:
-		basefont = "Song";
-		encoding = "UniCNS-UTF16-H";
+	case FZ_ADOBE_CNS_1: /* traditional chinese */
+		basefont = serif ? "Ming" : "Fangti";
+		encoding = wmode ? "UniCNS-UTF16-V" : "UniCNS-UTF16-H";
 		ordering = "CNS1";
 		supplement = 7;
 		break;
-	case FZ_ADOBE_GB_1:
-		basefont = "Ming";
-		encoding = "UniGB-UTF16-H";
+	case FZ_ADOBE_GB_1: /* simplified chinese */
+		basefont = serif ? "Song" : "Heiti";
+		encoding = wmode ? "UniGB-UTF16-V" : "UniGB-UTF16-H";
 		ordering = "GB1";
 		supplement = 5;
 		break;
@@ -2186,18 +2187,22 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 		script = FZ_ADOBE_JAPAN_1;
 		/* fall through */
 	case FZ_ADOBE_JAPAN_1:
-		basefont = "Mincho";
-		encoding = "UniJIS-UTF16-H";
+		basefont = serif ? "Mincho" : "Gothic";
+		encoding = wmode ? "UniJIS-UTF16-V" : "UniJIS-UTF16-H";
 		ordering = "Japan1";
 		supplement = 6;
 		break;
 	case FZ_ADOBE_KOREA_1:
-		basefont = "Batang";
-		encoding = "UniKS-UTF16-H";
+		basefont = serif ? "Batang" : "Dotum";
+		encoding = wmode ? "UniKS-UTF16-V" : "UniKS-UTF16-H";
 		ordering = "Korea1";
 		supplement = 2;
 		break;
 	}
+
+	flags = PDF_FD_SYMBOLIC;
+	if (serif)
+		flags |= PDF_FD_SERIF;
 
 	fref = pdf_find_font_resource(ctx, doc, PDF_CJK_FONT_RESOURCE, script, fzfont->buffer, digest);
 	if (fref)
@@ -2222,8 +2227,8 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 			{
 				pdf_dict_put(ctx, fontdesc, PDF_NAME(Type), PDF_NAME(FontDescriptor));
 				pdf_dict_put_text_string(ctx, fontdesc, PDF_NAME(FontName), basefont);
-				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Flags), 0);
 				pdf_dict_put_rect(ctx, fontdesc, PDF_NAME(FontBBox), &bbox);
+				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Flags), flags);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(ItalicAngle), 0);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Ascent), 1000);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Descent), -200);

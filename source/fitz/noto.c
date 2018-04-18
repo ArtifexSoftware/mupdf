@@ -188,7 +188,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	case UCDN_SCRIPT_KATAKANA:
 		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, 0, size, NULL);
 	case UCDN_SCRIPT_BOPOMOFO:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB_1, serif, 0, size, NULL);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, 0, size, NULL);
 	case UCDN_SCRIPT_HAN:
 		switch (language)
 		{
