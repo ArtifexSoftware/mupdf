@@ -406,7 +406,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, const cha
 		int len;
 		int index;
 
-		data = fz_lookup_cjk_font(ctx, ros, serif, fontdesc->wmode, &len, &index);
+		data = fz_lookup_cjk_font(ctx, ros, serif, &len, &index);
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
 

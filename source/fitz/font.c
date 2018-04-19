@@ -374,6 +374,7 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 	fz_font **fontp;
 	const unsigned char *data;
 	int index;
+	int subfont;
 	int size;
 
 	if (script < 0 || script > nelem(ctx->font->fallback))
@@ -408,9 +409,9 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 		*fontp = fz_load_system_fallback_font(ctx, script, language, serif, bold, italic);
 		if (!*fontp)
 		{
-			data = fz_lookup_noto_font(ctx, script, language, serif, &size);
+			data = fz_lookup_noto_font(ctx, script, language, serif, &size, &subfont);
 			if (data)
-				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, subfont, 0);
 		}
 	}
 
@@ -646,11 +647,11 @@ fz_new_base14_font(fz_context *ctx, const char *name)
 }
 
 fz_font *
-fz_new_cjk_font(fz_context *ctx, int ordering, int serif, int wmode)
+fz_new_cjk_font(fz_context *ctx, int ordering, int serif)
 {
 	const unsigned char *data;
 	int size, index;
-	data = fz_lookup_cjk_font(ctx, ordering, serif, wmode, &size, &index);
+	data = fz_lookup_cjk_font(ctx, ordering, serif, &size, &index);
 	if (!data)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
 	return fz_new_font_from_memory(ctx, NULL, data, size, index, 0);

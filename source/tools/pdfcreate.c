@@ -90,7 +90,7 @@ static void add_cjkfont_res(pdf_obj *resources, char *name, char *on, char *wm, 
 	else
 		serif = 1;
 
-	data = fz_lookup_cjk_font(ctx, ordering, serif, wmode, &size, &index);
+	data = fz_lookup_cjk_font(ctx, ordering, serif, &size, &index);
 	font = fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
 
 	subres = pdf_dict_get(ctx, resources, PDF_NAME(Font));

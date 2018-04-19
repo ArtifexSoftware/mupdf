@@ -297,7 +297,7 @@ const unsigned char *fz_lookup_icc(fz_context *ctx, const char *name, size_t *le
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *len, int *index);
+const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int *len, int *index);
 
 /*
 	fz_lookup_noto_font: Search the builtin noto fonts for a match.
@@ -315,7 +315,7 @@ const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len);
+const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len, int *subfont);
 
 /*
 	fz_lookup_noto_symbol_font: Search the builtin noto fonts
@@ -443,7 +443,7 @@ fz_font *fz_new_font_from_file(fz_context *ctx, const char *name, const char *pa
 
 /* Create a new font from one of the built-in fonts. */
 fz_font *fz_new_base14_font(fz_context *ctx, const char *name);
-fz_font *fz_new_cjk_font(fz_context *ctx, int registry, int serif, int wmode);
+fz_font *fz_new_cjk_font(fz_context *ctx, int registry, int serif);
 fz_font *fz_new_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic);
 
 /*

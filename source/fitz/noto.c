@@ -139,9 +139,9 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 }
 
 const unsigned char *
-fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int wmode, int *size, int *index)
+fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int *size, int *subfont)
 {
-	if (index) *index = 0;
+	*subfont = 0;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
 #ifndef TOFU_CJK_LANG
@@ -169,10 +169,12 @@ fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int wmode, int *siz
 	if (serif) { RETURN(noto_Noto ## SERIF ## _Regular_ttf); } else { RETURN(noto_Noto ## SANS ## _Regular_ttf); }
 
 const unsigned char *
-fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *size)
+fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *size, int *subfont)
 {
 	/* TODO: Noto(SansSyriacEstrangela); */
 	/* TODO: Noto(SansSyriacWestern); */
+
+	*subfont = 0;
 
 	switch (script)
 	{
@@ -183,20 +185,20 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 		break;
 
 	case UCDN_SCRIPT_HANGUL:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, 0, size, NULL);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, size, subfont);
 	case UCDN_SCRIPT_HIRAGANA:
 	case UCDN_SCRIPT_KATAKANA:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, 0, size, NULL);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, size, subfont);
 	case UCDN_SCRIPT_BOPOMOFO:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, 0, size, NULL);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, size, subfont);
 	case UCDN_SCRIPT_HAN:
 		switch (language)
 		{
-		case FZ_LANG_ja: return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, 0, size, NULL);
-		case FZ_LANG_ko: return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, 0, size, NULL);
-		case FZ_LANG_zh_Hant: return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, 0, size, NULL);
+		case FZ_LANG_ja: return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, size, subfont);
+		case FZ_LANG_ko: return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, size, subfont);
+		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB_1, serif, size, subfont);
 		default:
-		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB_1, serif, 0, size, NULL);
+		case FZ_LANG_zh_Hant: return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, size, subfont);
 		}
 
 #ifndef TOFU_NOTO
