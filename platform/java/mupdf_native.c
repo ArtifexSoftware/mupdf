@@ -769,9 +769,9 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 		switch (language) {
 		case FZ_LANG_ja: return load_noto_cjk(ctx, JP);
 		case FZ_LANG_ko: return load_noto_cjk(ctx, KR);
-		case FZ_LANG_zh_Hant: return load_noto_cjk(ctx, TC);
-		default:
 		case FZ_LANG_zh_Hans: return load_noto_cjk(ctx, SC);
+		default:
+		case FZ_LANG_zh_Hant: return load_noto_cjk(ctx, TC);
 		}
 
 	case UCDN_SCRIPT_LATIN: return NOTO2("NotoSans", "DroidSans");

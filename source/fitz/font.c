@@ -388,8 +388,8 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 		{
 		case FZ_LANG_ja: index = UCDN_LAST_SCRIPT + 1; break;
 		case FZ_LANG_ko: index = UCDN_LAST_SCRIPT + 2; break;
-		case FZ_LANG_zh_Hant: index = UCDN_LAST_SCRIPT + 3; break;
-		case FZ_LANG_zh_Hans: index = UCDN_LAST_SCRIPT + 4; break;
+		case FZ_LANG_zh_Hans: index = UCDN_LAST_SCRIPT + 3; break;
+		case FZ_LANG_zh_Hant: index = UCDN_LAST_SCRIPT + 4; break;
 		}
 	}
 	if (script == UCDN_SCRIPT_ARABIC)
