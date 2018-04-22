@@ -286,6 +286,8 @@ void fz_load_pnm_info(fz_context *ctx, const unsigned char *data, size_t size, i
 
 int fz_load_tiff_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len);
 fz_pixmap *fz_load_tiff_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage);
+int fz_load_pnm_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len);
+fz_pixmap *fz_load_pnm_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage);
 
 /*
 	fz_image_resolution: Request the natural resolution
