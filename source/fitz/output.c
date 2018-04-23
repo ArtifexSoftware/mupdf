@@ -291,6 +291,8 @@ fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf)
 void
 fz_close_output(fz_context *ctx, fz_output *out)
 {
+	if (out == NULL)
+		return;
 	fz_flush_output(ctx, out);
 	if (out->close)
 		out->close(ctx, out->state);

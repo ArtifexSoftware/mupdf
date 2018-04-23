@@ -1959,7 +1959,7 @@ int mudraw_main(int argc, char **argv)
 	}
 	else
 #endif
-	if (output_format == OUT_GPROOF)
+	if (output_format == OUT_GPROOF || output_format == OUT_SVG)
 	{
 		/* No output file to close */
 	}
