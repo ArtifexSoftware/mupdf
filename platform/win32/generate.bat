@@ -8,8 +8,6 @@ cl /nologo -Iinclude scripts/hexdump.c setargv.obj
 
 if not exist hexdump.exe goto usage
 
-if not exist generated/pdf-js-util.c hexdump.exe -0 generated/pdf-js-util.c source/pdf/pdf-js-util.js
-
 if not exist generated/DroidSansFallback.c hexdump.exe generated/DroidSansFallback.c resources/fonts/droid/DroidSansFallback.ttf
 if not exist generated/DroidSansFallbackFull.c hexdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttf
 

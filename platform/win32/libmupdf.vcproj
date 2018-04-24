@@ -2081,10 +2081,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-js-util.js"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-js.c"
 				>
 			</File>
@@ -2564,10 +2560,6 @@
 		<Filter
 			Name="generated"
 			>
-			<File
-				RelativePath="..\..\generated\pdf-js-util.c"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -247,20 +247,10 @@ generate: $(CMAP_GEN)
 
 # --- Generated embedded javascript files ---
 
-JAVASCRIPT_SRC := source/pdf/pdf-js-util.js
-JAVASCRIPT_GEN := generated/pdf-js-util.c
-JAVASCRIPT_OBJ := $(JAVASCRIPT_GEN:%.c=$(OUT)/%.o)
+source/pdf/js/util.js.h: source/pdf/js/util.js scripts/jsdump.sed
+	$(QUIET_GEN) sed -f scripts/jsdump.sed < $< > $@
 
-$(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) -0 $@ $(JAVASCRIPT_SRC)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(JAVASCRIPT_GEN) : $(HEXDUMP_EXE)
-endif
-
-$(JAVASCRIPT_OBJ) : $(JAVASCRIPT_GEN)
-
-generate: $(JAVASCRIPT_GEN)
+generate: source/pdf/js/util.js.h
 
 # --- Library ---
 
