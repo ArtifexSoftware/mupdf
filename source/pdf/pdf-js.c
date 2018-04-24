@@ -583,7 +583,7 @@ static void preload_helpers(pdf_js *js)
 
 	js_dostring(js->imp,
 #include "js/util.js.h"
-		   );
+	);
 }
 
 void pdf_drop_js(fz_context *ctx, pdf_js *js)
@@ -696,14 +696,14 @@ void pdf_js_execute(pdf_js *js, char *source)
 	{
 		if (js_ploadstring(js->imp, "[pdf]", source))
 		{
-			fz_warn(js->ctx, "%s", js_tostring(js->imp, -1));
+			fz_warn(js->ctx, "%s", js_trystring(js->imp, -1, "Error"));
 			js_pop(js->imp, 1);
 			return;
 		}
 		js_getregistry(js->imp, "Doc"); /* set 'this' to the Doc object */
 		if (js_pcall(js->imp, 0))
 		{
-			fz_warn(js->ctx, "%s", js_tostring(js->imp, -1));
+			fz_warn(js->ctx, "%s", js_trystring(js->imp, -1, "Error"));
 			js_pop(js->imp, 1);
 			return;
 		}

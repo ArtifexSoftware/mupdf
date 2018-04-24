@@ -59,21 +59,6 @@ var MuPDF = {
 		'HH:MM:ss',
 		'h:MM:ss tt'
 	],
-
-	padZeros: function (num, places) {
-		var s = String(num)
-		while (s.length < places)
-			s = '0' + s;
-		return s;
-	},
-
-	convertCase: function (str, cmd) {
-		switch (cmd) {
-		case '>': return str.toUpperCase();
-		case '<': return str.toLowerCase();
-		default: return str;
-		}
-	},
 };
 
 // display must be kept in sync with an enum in pdf_form.c
@@ -85,31 +70,149 @@ var display = {
 };
 
 var border = {
-	s: 'Solid',
-	d: 'Dashed',
-	b: 'Beveled',
-	i: 'Inset',
-	u: 'Underline',
+	b: 'beveled',
+	d: 'dashed',
+	i: 'inset',
+	s: 'solid',
+	u: 'underline',
 };
 
 var color = {
 	transparent: [ 'T' ],
 	black: [ 'G', 0 ],
 	white: [ 'G', 1 ],
+	gray: [ 'G', 0.5 ],
+	ltGray: [ 'G', 0.75 ],
+	dkGray: [ 'G', 0.25 ],
 	red: [ 'RGB', 1, 0, 0 ],
 	green: [ 'RGB', 0, 1, 0 ],
 	blue: [ 'RGB', 0, 0, 1 ],
 	cyan: [ 'CMYK', 1, 0, 0, 0 ],
 	magenta: [ 'CMYK', 0, 1, 0, 0 ],
 	yellow: [ 'CMYK', 0, 0, 1, 0 ],
-	dkGray: [ 'G', 0.25 ],
-	gray: [ 'G', 0.5 ],
-	ltGray: [ 'G', 0.75 ],
+};
+
+color.convert = function (c, colorspace) {
+	switch (colorspace) {
+	case 'G':
+		if (c[0] === 'RGB')
+			return [ 'G', c[1] * 0.3 + c[2] * 0.59 + c[3] * 0.11 ];
+		if (c[0] === 'CMYK')
+			return [ 'CMYK', 1 - Math.min(1, c[1] * 0.3 + c[2] * 0.59 + c[3] * 0.11 + c[4])];
+		break;
+	case 'RGB':
+		if (c[0] === 'G')
+			return [ 'RGB', c[1], c[1], c[1] ];
+		if (c[0] === 'CMYK')
+			return [ 'RGB',
+				1 - Math.min(1, c[1] + c[4]),
+				1 - Math.min(1, c[2] + c[4]),
+				1 - Math.min(1, c[3] + c[4]) ];
+		break;
+	case 'CMYK':
+		if (c[0] === 'G')
+			return [ 'CMYK', 0, 0, 0, 1 - c[1] ];
+		if (c[0] === 'RGB')
+			return [ 'CMYK', 1 - c[1], 1 - c[2], 1 - c[3], 0 ];
+		break;
+	}
+	return c;
+}
+
+color.equal = function (a, b) {
+	var i, n
+	if (a[0] === 'G')
+		a = color.convert(a, b[0]);
+	else
+		b = color.convert(b, a[0]);
+	if (a[0] !== b[0])
+		return false;
+	switch (a[0]) {
+	case 'G': n = 1; break;
+	case 'RGB': n = 3; break;
+	case 'CMYK': n = 4; break;
+	default: n = 0; break;
+	}
+	for (i = 1; i <= n; ++i)
+		if (a[i] !== b[i])
+			return false;
+	return true;
+}
+
+var font = {
+	Cour: 'Courier',
+	CourB: 'Courier-Bold',
+	CourBI: 'Courier-BoldOblique',
+	CourI: 'Courier-Oblique',
+	Helv: 'Helvetica',
+	HelvB: 'Helvetica-Bold',
+	HelvBI: 'Helvetica-BoldOblique',
+	HelvI: 'Helvetica-Oblique',
+	Symbol: 'Symbol',
+	Times: 'Times-Roman',
+	TimesB: 'Times-Bold',
+	TimesBI: 'Times-BoldItalic',
+	TimesI: 'Times-Italic',
+	ZapfD: 'ZapfDingbats',
+};
+
+var highlight = {
+	i: 'invert',
+	n: 'none',
+	o: 'outline',
+	p: 'push',
+};
+
+var position = {
+	textOnly: 0,
+	iconOnly: 1,
+	iconTextV: 2,
+	textIconV: 3,
+	iconTextH: 4,
+	textIconH: 5,
+	overlay: 6,
+};
+
+var scaleHow = {
+	proportional: 0,
+	anamorphic: 1,
+};
+
+var scaleWhen = {
+	always: 0,
+	never: 1,
+	tooBig: 2,
+	tooSmall: 3,
+};
+
+var style = {
+	ch: 'check',
+	ci: 'circle',
+	cr: 'cross',
+	di: 'diamond',
+	sq: 'square',
+	st: 'star',
+};
+
+var zoomtype = {
+	fitH: 'FitHeight',
+	fitP: 'FitPage',
+	fitV: 'FitVisibleWidth',
+	fitW: 'FitWidth',
+	none: 'NoVary',
+	pref: 'Preferred',
+	refW: 'ReflowWidth',
 };
 
 var util = {};
 
 util.printd = function (fmt, d) {
+	function padZeros(num, places) {
+		var s = String(num)
+		while (s.length < places)
+			s = '0' + s;
+		return s;
+	}
 	if (!d) return null;
 	var res = '';
 	var tokens = fmt.match(/(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g);
@@ -144,6 +247,13 @@ util.printd = function (fmt, d) {
 }
 
 util.printx = function (fmt, val) {
+	function convertCase(str, cmd) {
+		switch (cmd) {
+		case '>': return str.toUpperCase();
+		case '<': return str.toLowerCase();
+		default: return str;
+		}
+	}
 	var cs = '=';
 	var res = '';
 	var i, m;
@@ -157,14 +267,14 @@ util.printx = function (fmt, val) {
 		case 'X':
 			m = val.match(/\w/);
 			if (m) {
-				res += MuPDF.convertCase(m[0], cs);
+				res += convertCase(m[0], cs);
 				val = val.replace(/^\W*\w/, '');
 			}
 			break;
 		case 'A':
 			m = val.match(/[A-Za-z]/);
 			if (m) {
-				res += MuPDF.convertCase(m[0], cs);
+				res += convertCase(m[0], cs);
 				val = val.replace(/^[^A-Za-z]*[A-Za-z]/, '');
 			}
 			break;
@@ -181,7 +291,7 @@ util.printx = function (fmt, val) {
 			break;
 		case '?':
 			if (val) {
-				res += MuPDF.convertCase(val.charAt(0), cs);
+				res += convertCase(val.charAt(0), cs);
 				val = val.substring(1);
 			}
 			break;
@@ -191,7 +301,7 @@ util.printx = function (fmt, val) {
 			cs = fmt.charAt(i);
 			break;
 		default:
-			res += MuPDF.convertCase(fmt.charAt(i), cs);
+			res += convertCase(fmt.charAt(i), cs);
 			break;
 		}
 	}
@@ -523,6 +633,14 @@ function AFSpecial_KeystrokeEx(fmt) {
 	var m;
 	var length = fmt ? fmt.length : 0;
 
+	function convertCase(str, cmd) {
+		switch (cmd) {
+		case '>': return str.toUpperCase();
+		case '<': return str.toLowerCase();
+		default: return str;
+		}
+	}
+
 	while (i < length) {
 		switch (fmt.charAt(i)) {
 		case '\\':
@@ -540,7 +658,7 @@ function AFSpecial_KeystrokeEx(fmt) {
 				event.rc = false;
 				break;
 			}
-			res += MuPDF.convertCase(m[0], cs);
+			res += convertCase(m[0], cs);
 			val = val.substring(1);
 			break;
 
@@ -550,7 +668,7 @@ function AFSpecial_KeystrokeEx(fmt) {
 				event.rc = false;
 				break;
 			}
-			res += MuPDF.convertCase(m[0], cs);
+			res += convertCase(m[0], cs);
 			val = val.substring(1);
 			break;
 
@@ -574,7 +692,7 @@ function AFSpecial_KeystrokeEx(fmt) {
 				event.rc = false;
 				break;
 			}
-			res += MuPDF.convertCase(val.charAt(0), cs);
+			res += convertCase(val.charAt(0), cs);
 			val = val.substring(1);
 			break;
 
@@ -781,12 +899,10 @@ function AFSimple_Calculate(op, list) {
 }
 
 function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit) {
-	if (upperCheck && event.value > upperLimit) {
+	if (upperCheck && event.value > upperLimit)
 		event.rc = false;
-	}
-	if (lowerCheck && event.value < lowerLimit) {
+	if (lowerCheck && event.value < lowerLimit)
 		event.rc = false;
-	}
 	if (!event.rc) {
 		if (lowerCheck && upperCheck)
 			app.alert(util.printf('The entered value ('+event.value+') must be greater than or equal to %s and less than or equal to %s', lowerLimit, upperLimit));
