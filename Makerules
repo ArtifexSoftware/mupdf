@@ -143,109 +143,42 @@ else ifeq ($(OS),Linux)
 
 endif
 
-# The following section is an example of how to simply do cross-compilation
-# using these Makefiles. It builds for a beagleboard running ARM linux,
-# compiling on windows with the CodeSourcery G++ compilers.
-# Invoke this as:
-#      make OS=beagle-cross build=release
-# This does rely on the generated directory being populated with the cmap
-# files etc first. Either:
-#   1) do 'make generate' first (this relies on you having an appropriate host
-#   base C compiler set up - such as you would have on unix or in windows
-#   cygwin)
-#   2) do a non cross compile build (e.g. windows in MSVC) first.
-#   3) download the generated files from mupdf.com.
+# The following section has various cross compilation configurations.
+#
+# Invoke these as:
+#      make OS=mingw32-cross
+#
+# This does rely on the generated directory being populated with the font files.
+# On a unix-like system, run 'make generate' before doing the cross compile.
+# On Windows, run 'nmake -f scripts\fontdump.nmake' in a Visual Studio command prompt.
 
-ifeq "$(OS)" "beagle-cross"
-CC = arm-none-linux-gnueabi-gcc
-CXX = arm-none-linux-gnueabi-g++
-LD = arm-none-linux-gnueabi-gcc
-AR = arm-none-linux-gnueabi-ar
-CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
-HAVE_PTHREAD := yes
-PTHREAD_CFLAGS :=
-PTHREAD_LIBS := -lpthread
+ifeq "$(OS)" "mingw32-cross"
+  OUT := build/$(OS)/$(build)
+  CC = i686-w64-mingw32-gcc
+  CXX = i686-w64-mingw32-g++
+  LD = i686-w64-mingw32-gcc
+  AR = i686-w64-mingw32-ar
+  WINDRES = i686-w64-mingw32-windres
+  HAVE_WIN32=yes
 endif
 
-ifeq "$(OS)" "webos-pre-cross"
-CC = arm-none-linux-gnueabi-gcc
-CXX = arm-none-linux-gnueabi-g++
-LD = arm-none-linux-gnueabi-gcc
-AR = arm-none-linux-gnueabi-ar
-CFLAGS += -O3 -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
+ifeq "$(OS)" "mingw64-cross"
+  OUT := build/$(OS)/$(build)
+  CC = x86_64-w64-mingw32-gcc
+  CXX = x86_64-w64-mingw32-g++
+  LD = x86_64-w64-mingw32-gcc
+  AR = x86_64-w64-mingw32-ar
+  WINDRES = x86_64-w64-mingw32-windres
+  HAVE_WIN32=yes
 endif
-
-ifeq "$(OS)" "webos-pixi-cross"
-CC = arm-none-linux-gnueabi-gcc
-CXX = arm-none-linux-gnueabi-g++
-LD = arm-none-linux-gnueabi-gcc
-AR = arm-none-linux-gnueabi-ar
-CFLAGS += -O3 -mcpu=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -ffast-math -fsingle-precision-constant
-endif
-
-ifeq "$(OS)" "w64_x86-cross-mingw32"
-CC = i686-w64-mingw32-gcc
-CXX = i686-w64-mingw32-g++
-LD = i686-w64-mingw32-gcc
-AR = i686-w64-mingw32-ar
-WINDRES = i686-w64-mingw32-windres
-HAVE_WIN32=yes
-endif
-
-ifeq "$(OS)" "w64_amd64-cross-mingw32"
-CC = x86_64-w64-mingw32-gcc
-CXX = x86_64-w64-mingw32-g++
-LD = x86_64-w64-mingw32-gcc
-AR = x86_64-w64-mingw32-ar
-WINDRES = x86-64-mingw32-windres
-HAVE_WIN32=yes
-endif
-
-ifeq "$(OS)" "pnacl-cross"
-VALID_TOOLCHAINS := pnacl
-TARGET = mupdf
-include $(NACL_SDK_ROOT)/tools/common.mk
-CC = $(PNACL_CC)
-CXX = $(PNACL_CXX)
-LD = $(PNACL_LD)
-AR = $(PNACL_LIB)
-CFLAGS += -D__NACL__
-
-# Don't install libjpeg, libz, or libfreetype, since these are already
-# provided by naclports and the versions compiled here cause problems
-# with nacl.
-install-nacl-libs: $(OUT)/libmupdf.a $(OUT)/libmujs.a $(OUT)/libjbig2dec.a $(OUT)/libopenjpeg.a
-	install -d $(LIBDIR)/$(TOOLCHAIN)/$(CONFIG)/
-	install $(OUT)/libmupdf.a $(OUT)/libmujs.a $(OUT)/libjbig2dec.a $(OUT)/libopenjpeg.a $(LIBDIR)/$(TOOLCHAIN)/$(CONFIG)/
-endif
-
 
 # Most variables when building for iOS are set up in ios/build_libs.sh,
 # which is called from the Xcode project as a "Run Script" build step.
 # The following section works for both device and simulator builds.
-
 ifeq "$(OS)" "ios"
   CC = xcrun cc
   CXX = xcrun c++
   AR = xcrun ar
   LD = xcrun ld
   RANLIB = xcrun ranlib
-endif
-
-ifeq "$(OS)" "tizen-arm"
-TIZEN_TOOLS=$(TIZEN_SDK)/tools/arm-linux-gnueabi-gcc-4.6/bin/arm-linux-gnueabi-
-TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-device.core
-CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
-CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
-AR = $(TIZEN_TOOLS)ar
-LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
-endif
-
-ifeq "$(OS)" "tizen-x86"
-TIZEN_TOOLS=$(TIZEN_SDK)/tools/i386-linux-gnueabi-gcc-4.6/bin/i386-linux-gnueabi-
-TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-emulator.core
-CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
-CXX = $(TIZEN_TOOLS)g++ $(TIZEN_FLAGS)
-AR = $(TIZEN_TOOLS)ar $(TIZEN_FLAGS)
-LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
 endif
