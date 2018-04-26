@@ -1237,6 +1237,10 @@ void do_main(void)
 
 void run_main_loop(void)
 {
+	if (currentinvert)
+		glClearColor(0, 0, 0, 1);
+	else
+		glClearColor(0.3f, 0.3f, 0.3f, 1);
 	ui_begin();
 	fz_try(ctx)
 	{

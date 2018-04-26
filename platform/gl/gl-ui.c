@@ -457,7 +457,6 @@ void ui_begin(void)
 	ui.overlay = 0;
 
 	glViewport(0, 0, ui.window_w, ui.window_h);
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
