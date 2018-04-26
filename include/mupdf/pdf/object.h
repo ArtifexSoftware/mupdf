@@ -129,6 +129,11 @@ void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_
 pdf_obj *pdf_dict_put_array(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial);
 pdf_obj *pdf_dict_put_dict(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial);
 
+int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep);
+
 void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x);
 void pdf_array_push_int(fz_context *ctx, pdf_obj *array, int64_t x);
 void pdf_array_push_real(fz_context *ctx, pdf_obj *array, double x);
@@ -137,6 +142,10 @@ void pdf_array_push_string(fz_context *ctx, pdf_obj *array, const char *x, size_
 void pdf_array_push_text_string(fz_context *ctx, pdf_obj *array, const char *x);
 pdf_obj *pdf_array_push_array(fz_context *ctx, pdf_obj *array, int initial);
 pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial);
+
+int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index);
+int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index);
+float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index);
 
 /*
 	Recurse through the object structure setting the node's parent_num to num.

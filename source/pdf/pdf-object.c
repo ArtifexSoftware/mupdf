@@ -2221,3 +2221,41 @@ pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial)
 	pdf_array_push_drop(ctx, array, obj);
 	return obj;
 }
+
+int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_bool(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_int(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_real(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep)
+{
+	pdf_obj *val = pdf_dict_get(ctx, dict, key);
+	if (sizep)
+		*sizep = pdf_to_str_len(ctx, val);
+	return pdf_to_str_buf(ctx, val);
+}
+
+int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_bool(ctx, pdf_array_get(ctx, array, index));
+}
+
+int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_int(ctx, pdf_array_get(ctx, array, index));
+}
+
+float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_real(ctx, pdf_array_get(ctx, array, index));
+}
