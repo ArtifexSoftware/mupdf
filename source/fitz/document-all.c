@@ -5,7 +5,6 @@ extern fz_document_handler xps_document_handler;
 extern fz_document_handler svg_document_handler;
 extern fz_document_handler cbz_document_handler;
 extern fz_document_handler img_document_handler;
-extern fz_document_handler tiff_document_handler;
 extern fz_document_handler html_document_handler;
 extern fz_document_handler epub_document_handler;
 extern fz_document_handler gprf_document_handler;
@@ -27,9 +26,6 @@ void fz_register_document_handlers(fz_context *ctx)
 #if FZ_ENABLE_IMG
 	fz_register_document_handler(ctx, &img_document_handler);
 #endif /* FZ_ENABLE_IMG */
-#if FZ_ENABLE_TIFF
-	fz_register_document_handler(ctx, &tiff_document_handler);
-#endif /* FZ_ENABLE_TIFF */
 #if FZ_ENABLE_HTML
 	fz_register_document_handler(ctx, &html_document_handler);
 #endif /* FZ_ENABLE_HTML */

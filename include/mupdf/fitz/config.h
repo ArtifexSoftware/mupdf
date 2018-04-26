@@ -29,7 +29,6 @@
 /* #define FZ_ENABLE_SVG 1 */
 /* #define FZ_ENABLE_CBZ 1 */
 /* #define FZ_ENABLE_IMG 1 */
-/* #define FZ_ENABLE_TIFF 1 */
 /* #define FZ_ENABLE_HTML 1 */
 /* #define FZ_ENABLE_EPUB 1 */
 /* #define FZ_ENABLE_GPRF 1 */
@@ -135,10 +134,6 @@
 #ifndef FZ_ENABLE_IMG
 #define FZ_ENABLE_IMG 1
 #endif /* FZ_ENABLE_IMG */
-
-#ifndef FZ_ENABLE_TIFF
-#define FZ_ENABLE_TIFF 1
-#endif /* FZ_ENABLE_TIFF */
 
 #ifndef FZ_ENABLE_HTML
 #define FZ_ENABLE_HTML 1

@@ -1424,10 +1424,6 @@
 				RelativePath="..\..\source\cbz\muimg.c"
 				>
 			</File>
-			<File
-				RelativePath="..\..\source\cbz\mutiff.c"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="svg"
