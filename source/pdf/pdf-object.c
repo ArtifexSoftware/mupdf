@@ -402,9 +402,11 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 	if (a == b)
 		return 0;
 
+	/* a or b is null, true, or false */
 	if (a <= PDF_FALSE || b <= PDF_FALSE)
 		return 1;
 
+	/* a is a constant name */
 	if (a < PDF_LIMIT)
 	{
 		if (b < PDF_LIMIT)
@@ -414,6 +416,7 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 		return strcmp(PDF_NAME_LIST[(intptr_t)a], NAME(b)->n);
 	}
 
+	/* b is a constant name */
 	if (b < PDF_LIMIT)
 	{
 		if (a->kind != PDF_NAME)
@@ -421,6 +424,7 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 		return strcmp(NAME(a)->n, PDF_NAME_LIST[(intptr_t)b]);
 	}
 
+	/* both a and b are allocated objects */
 	if (a->kind != b->kind)
 		return 1;
 
