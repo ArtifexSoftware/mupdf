@@ -280,7 +280,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 			if (pdf_is_array(ctx, bc))
 			{
 				for (k = 0; k < colorspace_n; k++)
-					softmask_bc[k] = pdf_to_real(ctx, pdf_array_get(ctx, bc, k));
+					softmask_bc[k] = pdf_array_get_real(ctx, bc, k);
 			}
 
 			s = pdf_dict_get(ctx, obj, PDF_NAME(S));
@@ -1047,7 +1047,7 @@ pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 void
 pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_cookie *cookie)
 {
-	int flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(F)));
+	int flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
 
 	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
 		return;

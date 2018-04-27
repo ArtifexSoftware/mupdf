@@ -32,10 +32,10 @@ intersect_box(fz_context *ctx, pdf_document *doc, pdf_obj *page, pdf_obj *box_na
 	if (box == NULL)
 		return;
 
-	old_rect.x0 = pdf_to_real(ctx, pdf_array_get(ctx, box, 0));
-	old_rect.y0 = pdf_to_real(ctx, pdf_array_get(ctx, box, 1));
-	old_rect.x1 = pdf_to_real(ctx, pdf_array_get(ctx, box, 2));
-	old_rect.y1 = pdf_to_real(ctx, pdf_array_get(ctx, box, 3));
+	old_rect.x0 = pdf_array_get_real(ctx, box, 0);
+	old_rect.y0 = pdf_array_get_real(ctx, box, 1);
+	old_rect.x1 = pdf_array_get_real(ctx, box, 2);
+	old_rect.y1 = pdf_array_get_real(ctx, box, 3);
 
 	if (old_rect.x0 < mb->x0)
 		old_rect.x0 = mb->x0;

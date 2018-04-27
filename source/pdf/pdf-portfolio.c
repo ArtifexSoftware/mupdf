@@ -30,7 +30,7 @@ load_portfolio(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_obj *k = pdf_dict_get_key(ctx, obj, i);
 		pdf_obj *v = pdf_dict_get_val(ctx, obj, i);
-		int sort = pdf_to_int(ctx, pdf_dict_get(ctx, v, PDF_NAME(O)));
+		int sort = pdf_dict_get_int(ctx, v, PDF_NAME(O));
 		pdf_obj *eo = pdf_dict_get(ctx, v, PDF_NAME(E));
 		int editable = eo ? pdf_to_bool(ctx, eo) : 0;
 		pdf_obj *vo = pdf_dict_get(ctx, v, PDF_NAME(V));

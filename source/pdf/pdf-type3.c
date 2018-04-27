@@ -122,8 +122,8 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		pdf_set_default_hmtx(ctx, fontdesc, 0);
 
-		first = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(FirstChar)));
-		last = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(LastChar)));
+		first = pdf_dict_get_int(ctx, dict, PDF_NAME(FirstChar));
+		last = pdf_dict_get_int(ctx, dict, PDF_NAME(LastChar));
 
 		if (first < 0 || last > 255 || first > last)
 			first = last = 0;
@@ -136,7 +136,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		for (i = first; i <= last; i++)
 		{
-			float w = pdf_to_real(ctx, pdf_array_get(ctx, widths, i - first));
+			float w = pdf_array_get_real(ctx, widths, i - first);
 			w = font->t3matrix.a * w * 1000;
 			font->t3widths[i] = w * 0.001f;
 			pdf_add_hmtx(ctx, fontdesc, i, i, w);

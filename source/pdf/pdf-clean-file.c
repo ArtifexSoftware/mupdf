@@ -164,7 +164,7 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 	}
 	else
 	{
-		int old_count = pdf_to_int(ctx, pdf_dict_get(ctx, outlines, PDF_NAME(Count)));
+		int old_count = pdf_dict_get_int(ctx, outlines, PDF_NAME(Count));
 		pdf_dict_put(ctx, outlines, PDF_NAME(First), first);
 		pdf_dict_put(ctx, outlines, PDF_NAME(Last), last);
 		pdf_dict_put_int(ctx, outlines, PDF_NAME(Count), old_count > 0 ? nc : -nc);

@@ -26,8 +26,8 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
 		for (i = 0; i < brange_len; i++)
 		{
-			brange[i].offset = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i));
-			brange[i].len = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
+			brange[i].offset = pdf_array_get_int(ctx, byte_range, 2*i);
+			brange[i].len = pdf_array_get_int(ctx, byte_range, 2*i+1);
 		}
 
 		in = fz_open_null_n(ctx, fz_stream_from_output(ctx, out), brange, brange_len);

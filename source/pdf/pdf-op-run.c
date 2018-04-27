@@ -1444,7 +1444,7 @@ static void pdf_run_d(fz_context *ctx, pdf_processor *proc, pdf_obj *array, floa
 	gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(ctx, gstate->stroke_state, len);
 	gstate->stroke_state->dash_len = len;
 	for (i = 0; i < len; i++)
-		gstate->stroke_state->dash_list[i] = pdf_to_real(ctx, pdf_array_get(ctx, array, i));
+		gstate->stroke_state->dash_list[i] = pdf_array_get_real(ctx, array, i);
 	gstate->stroke_state->dash_phase = phase;
 }
 
@@ -2033,8 +2033,8 @@ static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, p
 	if (!tag || strcmp(tag, "OC"))
 		return;
 
-	str = pdf_to_str_buf(ctx, pdf_dict_get(ctx, cooked, PDF_NAME(Name)));
-	if (str == NULL)
+	str = pdf_dict_get_string(ctx, cooked, PDF_NAME(Name), NULL);
+	if (strlen(str) == 0)
 		str = "UnnamedLayer";
 
 	fz_begin_layer(ctx, pr->dev, str);

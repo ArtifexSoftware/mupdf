@@ -64,10 +64,10 @@ pdf_load_function_based_shading(fz_context *ctx, pdf_document *doc, fz_shade *sh
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Domain));
 	if (obj)
 	{
-		x0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-		x1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-		y0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-		y1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 3));
+		x0 = pdf_array_get_real(ctx, obj, 0);
+		x1 = pdf_array_get_real(ctx, obj, 1);
+		y0 = pdf_array_get_real(ctx, obj, 2);
+		y1 = pdf_array_get_real(ctx, obj, 3);
 	}
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
@@ -107,26 +107,26 @@ pdf_load_linear_shading(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf
 	int e0, e1;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Coords));
-	shade->u.l_or_r.coords[0][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-	shade->u.l_or_r.coords[0][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-	shade->u.l_or_r.coords[1][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-	shade->u.l_or_r.coords[1][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 3));
+	shade->u.l_or_r.coords[0][0] = pdf_array_get_real(ctx, obj, 0);
+	shade->u.l_or_r.coords[0][1] = pdf_array_get_real(ctx, obj, 1);
+	shade->u.l_or_r.coords[1][0] = pdf_array_get_real(ctx, obj, 2);
+	shade->u.l_or_r.coords[1][1] = pdf_array_get_real(ctx, obj, 3);
 
 	d0 = 0;
 	d1 = 1;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Domain));
 	if (obj)
 	{
-		d0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-		d1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
+		d0 = pdf_array_get_real(ctx, obj, 0);
+		d1 = pdf_array_get_real(ctx, obj, 1);
 	}
 
 	e0 = e1 = 0;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Extend));
 	if (obj)
 	{
-		e0 = pdf_to_bool(ctx, pdf_array_get(ctx, obj, 0));
-		e1 = pdf_to_bool(ctx, pdf_array_get(ctx, obj, 1));
+		e0 = pdf_array_get_bool(ctx, obj, 0);
+		e1 = pdf_array_get_bool(ctx, obj, 1);
 	}
 
 	pdf_sample_shade_function(ctx, shade, funcs, func, d0, d1);
@@ -143,28 +143,28 @@ pdf_load_radial_shading(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf
 	int e0, e1;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Coords));
-	shade->u.l_or_r.coords[0][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-	shade->u.l_or_r.coords[0][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-	shade->u.l_or_r.coords[0][2] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-	shade->u.l_or_r.coords[1][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 3));
-	shade->u.l_or_r.coords[1][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 4));
-	shade->u.l_or_r.coords[1][2] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 5));
+	shade->u.l_or_r.coords[0][0] = pdf_array_get_real(ctx, obj, 0);
+	shade->u.l_or_r.coords[0][1] = pdf_array_get_real(ctx, obj, 1);
+	shade->u.l_or_r.coords[0][2] = pdf_array_get_real(ctx, obj, 2);
+	shade->u.l_or_r.coords[1][0] = pdf_array_get_real(ctx, obj, 3);
+	shade->u.l_or_r.coords[1][1] = pdf_array_get_real(ctx, obj, 4);
+	shade->u.l_or_r.coords[1][2] = pdf_array_get_real(ctx, obj, 5);
 
 	d0 = 0;
 	d1 = 1;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Domain));
 	if (obj)
 	{
-		d0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-		d1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
+		d0 = pdf_array_get_real(ctx, obj, 0);
+		d1 = pdf_array_get_real(ctx, obj, 1);
 	}
 
 	e0 = e1 = 0;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Extend));
 	if (obj)
 	{
-		e0 = pdf_to_bool(ctx, pdf_array_get(ctx, obj, 0));
-		e1 = pdf_to_bool(ctx, pdf_array_get(ctx, obj, 1));
+		e0 = pdf_array_get_bool(ctx, obj, 0);
+		e1 = pdf_array_get_bool(ctx, obj, 1);
 	}
 
 	pdf_sample_shade_function(ctx, shade, funcs, func, d0, d1);
@@ -201,23 +201,23 @@ pdf_load_mesh_params(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 		shade->u.m.c1[i] = 1;
 	}
 
-	shade->u.m.vprow = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(VerticesPerRow)));
-	shade->u.m.bpflag = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BitsPerFlag)));
-	shade->u.m.bpcoord = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BitsPerCoordinate)));
-	shade->u.m.bpcomp = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BitsPerComponent)));
+	shade->u.m.vprow = pdf_dict_get_int(ctx, dict, PDF_NAME(VerticesPerRow));
+	shade->u.m.bpflag = pdf_dict_get_int(ctx, dict, PDF_NAME(BitsPerFlag));
+	shade->u.m.bpcoord = pdf_dict_get_int(ctx, dict, PDF_NAME(BitsPerCoordinate));
+	shade->u.m.bpcomp = pdf_dict_get_int(ctx, dict, PDF_NAME(BitsPerComponent));
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Decode));
 	if (pdf_array_len(ctx, obj) >= 6)
 	{
 		n = fz_mini(FZ_MAX_COLORS, (pdf_array_len(ctx, obj) - 4) / 2);
-		shade->u.m.x0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-		shade->u.m.x1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-		shade->u.m.y0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-		shade->u.m.y1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 3));
+		shade->u.m.x0 = pdf_array_get_real(ctx, obj, 0);
+		shade->u.m.x1 = pdf_array_get_real(ctx, obj, 1);
+		shade->u.m.y0 = pdf_array_get_real(ctx, obj, 2);
+		shade->u.m.y1 = pdf_array_get_real(ctx, obj, 3);
 		for (i = 0; i < n; i++)
 		{
-			shade->u.m.c0[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 4 + i * 2));
-			shade->u.m.c1[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 5 + i * 2));
+			shade->u.m.c0[i] = pdf_array_get_real(ctx, obj, 4 + i * 2);
+			shade->u.m.c1[i] = pdf_array_get_real(ctx, obj, 5 + i * 2);
 		}
 	}
 
@@ -341,7 +341,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 		{
 			shade->use_background = 1;
 			for (i = 0; i < n; i++)
-				shade->background[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+				shade->background[i] = pdf_array_get_real(ctx, obj, i);
 		}
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(BBox));

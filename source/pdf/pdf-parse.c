@@ -10,10 +10,10 @@ pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *r)
 		*r = fz_empty_rect;
 	else
 	{
-		float a = pdf_to_real(ctx, pdf_array_get(ctx, array, 0));
-		float b = pdf_to_real(ctx, pdf_array_get(ctx, array, 1));
-		float c = pdf_to_real(ctx, pdf_array_get(ctx, array, 2));
-		float d = pdf_to_real(ctx, pdf_array_get(ctx, array, 3));
+		float a = pdf_array_get_real(ctx, array, 0);
+		float b = pdf_array_get_real(ctx, array, 1);
+		float c = pdf_array_get_real(ctx, array, 2);
+		float d = pdf_array_get_real(ctx, array, 3);
 		r->x0 = fz_min(a, c);
 		r->y0 = fz_min(b, d);
 		r->x1 = fz_max(a, c);
@@ -29,12 +29,12 @@ pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *m)
 		*m = fz_identity;
 	else
 	{
-		m->a = pdf_to_real(ctx, pdf_array_get(ctx, array, 0));
-		m->b = pdf_to_real(ctx, pdf_array_get(ctx, array, 1));
-		m->c = pdf_to_real(ctx, pdf_array_get(ctx, array, 2));
-		m->d = pdf_to_real(ctx, pdf_array_get(ctx, array, 3));
-		m->e = pdf_to_real(ctx, pdf_array_get(ctx, array, 4));
-		m->f = pdf_to_real(ctx, pdf_array_get(ctx, array, 5));
+		m->a = pdf_array_get_real(ctx, array, 0);
+		m->b = pdf_array_get_real(ctx, array, 1);
+		m->c = pdf_array_get_real(ctx, array, 2);
+		m->d = pdf_array_get_real(ctx, array, 3);
+		m->e = pdf_array_get_real(ctx, array, 4);
+		m->f = pdf_array_get_real(ctx, array, 5);
 	}
 	return m;
 }

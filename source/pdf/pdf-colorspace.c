@@ -52,7 +52,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 		cs_alt = NULL;
 	}
 
-	n = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(N)));
+	n = pdf_dict_get_int(ctx, dict, PDF_NAME(N));
 
 	fz_try(ctx)
 	{
@@ -320,7 +320,7 @@ pdf_load_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float 
 
 	for (i = 0; i < 3; i++)
 	{
-		wp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+		wp[i] = pdf_array_get_real(ctx, obj, i);
 		if (wp[i] < 0)
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint numbers must be positive");
 	}
@@ -332,7 +332,7 @@ pdf_load_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float 
 	{
 		for (i = 0; i < 3; i++)
 		{
-			bp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			bp[i] = pdf_array_get_real(ctx, obj, i);
 			if (bp[i] < 0)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "BlackPoint numbers must be positive");
 		}
@@ -350,7 +350,7 @@ pdf_load_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float 
 	{
 		for (i = 0; i < 3; i++)
 		{
-			gamma[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			gamma[i] = pdf_array_get_real(ctx, obj, i);
 			if (gamma[i] <= 0)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "Gamma must be greater than zero");
 		}
@@ -398,7 +398,7 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 		if (pdf_array_len(ctx, obj) == 9)
 		{
 			for (i = 0; i < 9; i++)
-				matrix[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+				matrix[i] = pdf_array_get_real(ctx, obj, i);
 		}
 	}
 	fz_catch(ctx)

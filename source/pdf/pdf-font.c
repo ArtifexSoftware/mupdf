@@ -661,7 +661,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		if (descriptor && pdf_is_string(ctx, pdf_dict_get(ctx, descriptor, PDF_NAME(FontName))) &&
 			!pdf_dict_get(ctx, dict, PDF_NAME(ToUnicode)) &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Encoding)), PDF_NAME(WinAnsiEncoding)) &&
-			pdf_to_int(ctx, pdf_dict_get(ctx, descriptor, PDF_NAME(Flags))) == 4)
+			pdf_dict_get_int(ctx, descriptor, PDF_NAME(Flags)) == 4)
 		{
 			char *cp936fonts[] = {
 				"\xCB\xCE\xCC\xE5", "SimSun,Regular",
@@ -900,15 +900,15 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		{
 			int first, last;
 
-			first = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(FirstChar)));
-			last = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(LastChar)));
+			first = pdf_dict_get_int(ctx, dict, PDF_NAME(FirstChar));
+			last = pdf_dict_get_int(ctx, dict, PDF_NAME(LastChar));
 
 			if (first < 0 || last > 255 || first > last)
 				first = last = 0;
 
 			for (i = 0; i < last - first + 1; i++)
 			{
-				int wid = pdf_to_int(ctx, pdf_array_get(ctx, widths, i));
+				int wid = pdf_array_get_int(ctx, widths, i);
 				pdf_add_hmtx(ctx, fontdesc, i + first, i + first, wid);
 			}
 		}
@@ -1032,26 +1032,15 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 		{
 			pdf_obj *cidinfo;
-			char tmpstr[64];
-			int tmplen;
+			const char *reg, *ord;
 
 			cidinfo = pdf_dict_get(ctx, dict, PDF_NAME(CIDSystemInfo));
 			if (!cidinfo)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "cid font is missing info");
 
-			obj = pdf_dict_get(ctx, cidinfo, PDF_NAME(Registry));
-			tmplen = fz_mini(sizeof tmpstr - 1, pdf_to_str_len(ctx, obj));
-			memcpy(tmpstr, pdf_to_str_buf(ctx, obj), tmplen);
-			tmpstr[tmplen] = '\0';
-			fz_strlcpy(collection, tmpstr, sizeof collection);
-
-			fz_strlcat(collection, "-", sizeof collection);
-
-			obj = pdf_dict_get(ctx, cidinfo, PDF_NAME(Ordering));
-			tmplen = fz_mini(sizeof tmpstr - 1, pdf_to_str_len(ctx, obj));
-			memcpy(tmpstr, pdf_to_str_buf(ctx, obj), tmplen);
-			tmpstr[tmplen] = '\0';
-			fz_strlcat(collection, tmpstr, sizeof collection);
+			reg = pdf_dict_get_string(ctx, cidinfo, PDF_NAME(Registry), NULL);
+			ord = pdf_dict_get_string(ctx, cidinfo, PDF_NAME(Ordering), NULL);
+			fz_snprintf(collection, sizeof collection, "%s-%s", reg, ord);
 		}
 
 		/* Encoding */
@@ -1156,14 +1145,14 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 			n = pdf_array_len(ctx, widths);
 			for (i = 0; i < n; )
 			{
-				c0 = pdf_to_int(ctx, pdf_array_get(ctx, widths, i));
+				c0 = pdf_array_get_int(ctx, widths, i);
 				obj = pdf_array_get(ctx, widths, i + 1);
 				if (pdf_is_array(ctx, obj))
 				{
 					m = pdf_array_len(ctx, obj);
 					for (k = 0; k < m; k++)
 					{
-						w = pdf_to_int(ctx, pdf_array_get(ctx, obj, k));
+						w = pdf_array_get_int(ctx, obj, k);
 						pdf_add_hmtx(ctx, fontdesc, c0 + k, c0 + k, w);
 					}
 					i += 2;
@@ -1171,7 +1160,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 				else
 				{
 					c1 = pdf_to_int(ctx, obj);
-					w = pdf_to_int(ctx, pdf_array_get(ctx, widths, i + 2));
+					w = pdf_array_get_int(ctx, widths, i + 2);
 					pdf_add_hmtx(ctx, fontdesc, c0, c1, w);
 					i += 3;
 				}
@@ -1190,8 +1179,8 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 			obj = pdf_dict_get(ctx, dict, PDF_NAME(DW2));
 			if (obj)
 			{
-				dw2y = pdf_to_int(ctx, pdf_array_get(ctx, obj, 0));
-				dw2w = pdf_to_int(ctx, pdf_array_get(ctx, obj, 1));
+				dw2y = pdf_array_get_int(ctx, obj, 0);
+				dw2w = pdf_array_get_int(ctx, obj, 1);
 			}
 
 			pdf_set_default_vmtx(ctx, fontdesc, dw2y, dw2w);
@@ -1204,16 +1193,16 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 				n = pdf_array_len(ctx, widths);
 				for (i = 0; i < n; )
 				{
-					c0 = pdf_to_int(ctx, pdf_array_get(ctx, widths, i));
+					c0 = pdf_array_get_int(ctx, widths, i);
 					obj = pdf_array_get(ctx, widths, i + 1);
 					if (pdf_is_array(ctx, obj))
 					{
 						int m = pdf_array_len(ctx, obj);
 						for (k = 0; k * 3 < m; k ++)
 						{
-							w = pdf_to_int(ctx, pdf_array_get(ctx, obj, k * 3 + 0));
-							x = pdf_to_int(ctx, pdf_array_get(ctx, obj, k * 3 + 1));
-							y = pdf_to_int(ctx, pdf_array_get(ctx, obj, k * 3 + 2));
+							w = pdf_array_get_int(ctx, obj, k * 3 + 0);
+							x = pdf_array_get_int(ctx, obj, k * 3 + 1);
+							y = pdf_array_get_int(ctx, obj, k * 3 + 2);
 							pdf_add_vmtx(ctx, fontdesc, c0 + k, c0 + k, x, y, w);
 						}
 						i += 2;
@@ -1221,9 +1210,9 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 					else
 					{
 						c1 = pdf_to_int(ctx, obj);
-						w = pdf_to_int(ctx, pdf_array_get(ctx, widths, i + 2));
-						x = pdf_to_int(ctx, pdf_array_get(ctx, widths, i + 3));
-						y = pdf_to_int(ctx, pdf_array_get(ctx, widths, i + 4));
+						w = pdf_array_get_int(ctx, widths, i + 2);
+						x = pdf_array_get_int(ctx, widths, i + 3);
+						y = pdf_array_get_int(ctx, widths, i + 4);
 						pdf_add_vmtx(ctx, fontdesc, c0, c1, x, y, w);
 						i += 5;
 					}
@@ -1283,13 +1272,13 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 	/* Prefer BaseFont; don't bother with FontName */
 	fontname = basefont;
 
-	fontdesc->flags = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Flags)));
-	fontdesc->italic_angle = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(ItalicAngle)));
-	fontdesc->ascent = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Ascent)));
-	fontdesc->descent = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Descent)));
-	fontdesc->cap_height = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(CapHeight)));
-	fontdesc->x_height = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(XHeight)));
-	fontdesc->missing_width = pdf_to_real(ctx, pdf_dict_get(ctx, dict, PDF_NAME(MissingWidth)));
+	fontdesc->flags = pdf_dict_get_int(ctx, dict, PDF_NAME(Flags));
+	fontdesc->italic_angle = pdf_dict_get_real(ctx, dict, PDF_NAME(ItalicAngle));
+	fontdesc->ascent = pdf_dict_get_real(ctx, dict, PDF_NAME(Ascent));
+	fontdesc->descent = pdf_dict_get_real(ctx, dict, PDF_NAME(Descent));
+	fontdesc->cap_height = pdf_dict_get_real(ctx, dict, PDF_NAME(CapHeight));
+	fontdesc->x_height = pdf_dict_get_real(ctx, dict, PDF_NAME(XHeight));
+	fontdesc->missing_width = pdf_dict_get_real(ctx, dict, PDF_NAME(MissingWidth));
 
 	obj1 = pdf_dict_get(ctx, dict, PDF_NAME(FontFile));
 	obj2 = pdf_dict_get(ctx, dict, PDF_NAME(FontFile2));

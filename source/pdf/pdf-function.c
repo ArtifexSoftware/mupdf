@@ -956,7 +956,7 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 		fz_warn(ctx, "too many sample function dimension sizes");
 	for (i = 0; i < func->m; i++)
 	{
-		func->u.sa.size[i] = pdf_to_int(ctx, pdf_array_get(ctx, obj, i));
+		func->u.sa.size[i] = pdf_array_get_int(ctx, obj, i);
 		if (func->u.sa.size[i] <= 0)
 		{
 			fz_warn(ctx, "non-positive sample function dimension size");
@@ -981,8 +981,8 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 
 		for (i = 0; i < ranges; i++)
 		{
-			func->u.sa.encode[i][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 0));
-			func->u.sa.encode[i][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 1));
+			func->u.sa.encode[i][0] = pdf_array_get_real(ctx, obj, i * 2 + 0);
+			func->u.sa.encode[i][1] = pdf_array_get_real(ctx, obj, i * 2 + 1);
 		}
 	}
 
@@ -1001,8 +1001,8 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 
 		for (i = 0; i < ranges; i++)
 		{
-			func->u.sa.decode[i][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 0));
-			func->u.sa.decode[i][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 1));
+			func->u.sa.decode[i][0] = pdf_array_get_real(ctx, obj, i * 2 + 0);
+			func->u.sa.decode[i][1] = pdf_array_get_real(ctx, obj, i * 2 + 1);
 		}
 	}
 
@@ -1188,7 +1188,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 			fz_warn(ctx, "wrong number of C0 constants for exponential function");
 
 		for (i = 0; i < ranges; i++)
-			func->u.e.c0[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			func->u.e.c0[i] = pdf_array_get_real(ctx, obj, i);
 	}
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(C1));
@@ -1199,7 +1199,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 			fz_warn(ctx, "wrong number of C1 constants for exponential function");
 
 		for (i = 0; i < ranges; i++)
-			func->u.e.c1[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			func->u.e.c1[i] = pdf_array_get_real(ctx, obj, i);
 	}
 }
 
@@ -1320,8 +1320,8 @@ load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 
 		for (i = 0; i < ranges; i++)
 		{
-			func->u.st.encode[i * 2 + 0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 0));
-			func->u.st.encode[i * 2 + 1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 1));
+			func->u.st.encode[i * 2 + 0] = pdf_array_get_real(ctx, obj, i * 2 + 0);
+			func->u.st.encode[i * 2 + 1] = pdf_array_get_real(ctx, obj, i * 2 + 1);
 		}
 	}
 }
@@ -1466,8 +1466,8 @@ pdf_load_function(fz_context *ctx, pdf_obj *dict, int in, int out)
 	func->m = fz_clampi(pdf_array_len(ctx, obj) / 2, 1, MAX_M);
 	for (i = 0; i < func->m; i++)
 	{
-		func->domain[i][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 0));
-		func->domain[i][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 1));
+		func->domain[i][0] = pdf_array_get_real(ctx, obj, i * 2 + 0);
+		func->domain[i][1] = pdf_array_get_real(ctx, obj, i * 2 + 1);
 	}
 
 	/* required for type0 and type4, optional otherwise */
@@ -1478,8 +1478,8 @@ pdf_load_function(fz_context *ctx, pdf_obj *dict, int in, int out)
 		func->n = fz_clampi(pdf_array_len(ctx, obj) / 2, 1, MAX_N);
 		for (i = 0; i < func->n; i++)
 		{
-			func->range[i][0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 0));
-			func->range[i][1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i * 2 + 1));
+			func->range[i][0] = pdf_array_get_real(ctx, obj, i * 2 + 0);
+			func->range[i][1] = pdf_array_get_real(ctx, obj, i * 2 + 1);
 		}
 	}
 	else

@@ -23,7 +23,7 @@ int pdf_xobject_isolated(fz_context *ctx, pdf_obj *xobj)
 {
 	pdf_obj *group = pdf_dict_get(ctx, xobj, PDF_NAME(Group));
 	if (group)
-		return pdf_to_bool(ctx, pdf_dict_get(ctx, group, PDF_NAME(I)));
+		return pdf_dict_get_bool(ctx, group, PDF_NAME(I));
 	return 0;
 }
 
@@ -31,7 +31,7 @@ int pdf_xobject_knockout(fz_context *ctx, pdf_obj *xobj)
 {
 	pdf_obj *group = pdf_dict_get(ctx, xobj, PDF_NAME(Group));
 	if (group)
-		return pdf_to_bool(ctx, pdf_dict_get(ctx, group, PDF_NAME(K)));
+		return pdf_dict_get_bool(ctx, group, PDF_NAME(K));
 	return 0;
 }
 

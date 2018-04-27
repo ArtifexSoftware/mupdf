@@ -72,20 +72,14 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 
 static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, char *name, int len)
 {
-	pdf_obj *field;
-
 	int i, n = pdf_array_len(ctx, dict);
-
 	for (i = 0; i < n; i++)
 	{
-		char *part;
-
-		field = pdf_array_get(ctx, dict, i);
-		part = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME(T)));
+		pdf_obj *field = pdf_array_get(ctx, dict, i);
+		const char *part = pdf_dict_get_string(ctx, field, PDF_NAME(T), NULL);
 		if (strlen(part) == (size_t)len && !memcmp(part, name, len))
 			return field;
 	}
-
 	return NULL;
 }
 
@@ -326,7 +320,7 @@ static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf
 		}
 		else if (pdf_name_eq(ctx, type, PDF_NAME(ResetForm)))
 		{
-			reset_form(ctx, doc, pdf_dict_get(ctx, a, PDF_NAME(Fields)), pdf_to_int(ctx, pdf_dict_get(ctx, a, PDF_NAME(Flags))) & 1);
+			reset_form(ctx, doc, pdf_dict_get(ctx, a, PDF_NAME(Fields)), pdf_dict_get_int(ctx, a, PDF_NAME(Flags)) & 1);
 		}
 		else if (pdf_name_eq(ctx, type, PDF_NAME(Named)))
 		{
@@ -553,7 +547,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	/* Skip hidden annotations. */
 	if (annot)
 	{
-		int f = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(F)));
+		int f = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
 		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW))
 			annot = NULL;
 	}
@@ -859,7 +853,7 @@ int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	while ((kids = pdf_dict_get(ctx, field, PDF_NAME(Kids))) != NULL)
 		field = pdf_array_get(ctx, kids, 0);
 
-	f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME(F)));
+	f = pdf_dict_get_int(ctx, field, PDF_NAME(F));
 
 	if (f & PDF_ANNOT_IS_HIDDEN)
 	{
@@ -889,7 +883,7 @@ static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, 
 {
 	char *res = NULL;
 	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
-	char *lname = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME(T)));
+	const char *lname = pdf_dict_get_string(ctx, field, PDF_NAME(T), NULL);
 	int llen = (int)strlen(lname);
 
 	/*
@@ -932,7 +926,7 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 	if (!kids)
 	{
 		int mask = (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
-		int f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME(F))) & ~mask;
+		int f = pdf_dict_get_int(ctx, field, PDF_NAME(F)) & ~mask;
 		pdf_obj *fo;
 
 		switch (d)
@@ -994,7 +988,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 
 		ilen = fz_mini(di.col_size, (int)nelem(di.col));
 		for (i = 0; i < ilen; i++)
-			di.col[i] = pdf_to_real(ctx, pdf_array_get(ctx, col, i));
+			di.col[i] = pdf_array_get_real(ctx, col, i);
 
 		fzbuf = fz_new_buffer(ctx, 0);
 		pdf_fzbuf_print_da(ctx, fzbuf, &di);
@@ -1259,8 +1253,8 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 	{
 		for (i = 0; i < n; i++)
 		{
-			byte_range[i].offset = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i));
-			byte_range[i].len = pdf_to_int(ctx, pdf_array_get(ctx, br, 2*i+1));
+			byte_range[i].offset = pdf_array_get_int(ctx, br, 2*i);
+			byte_range[i].len = pdf_array_get_int(ctx, br, 2*i+1);
 		}
 	}
 

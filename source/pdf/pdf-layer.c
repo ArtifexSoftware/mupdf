@@ -67,7 +67,7 @@ struct pdf_ocg_descriptor_s
 	pdf_ocg_entry *ocgs;
 
 	pdf_obj *intent;
-	char *usage;
+	const char *usage;
 
 	int num_ui_entries;
 	pdf_ocg_ui *ui;
@@ -146,7 +146,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_ocg_ui *ui, pdf_obj *
 		if (j == desc->len)
 			continue; /* OCG not found in main list! Just ignore it */
 		ui->ocg = j;
-		ui->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, o, PDF_NAME(Name)));
+		ui->name = pdf_dict_get_string(ctx, o, PDF_NAME(Name), NULL);
 		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 		ui++;
@@ -311,8 +311,8 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid layer config number");
 
-	info->creator = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Creator)));
-	info->name = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Name)));
+	info->creator = pdf_dict_get_string(ctx, obj, PDF_NAME(Creator), NULL);
+	info->name = pdf_dict_get_string(ctx, obj, PDF_NAME(Name), NULL);
 }
 
 void

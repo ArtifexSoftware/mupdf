@@ -243,7 +243,7 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 				pat_res = pdf_dict_get(ctx, pat, PDF_NAME(Resources));
 				if (pat_res == NULL)
 					pat_res = resources;
-				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME(PatternType))) == 1)
+				if (pdf_dict_get_int(ctx, pat, PDF_NAME(PatternType)) == 1)
 					pdf_clean_stream_object(ctx, doc, pat, pat_res, cookie, 0, text_filter, after_text, proc_arg, sanitize, ascii);
 			}
 		}

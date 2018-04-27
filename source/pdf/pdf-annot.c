@@ -81,18 +81,18 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 	obj = pdf_array_get(ctx, dest, 1);
 	if (pdf_name_eq(ctx, obj, PDF_NAME(XYZ)))
 	{
-		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
-		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 3));
+		x = pdf_array_get_int(ctx, dest, 2);
+		y = pdf_array_get_int(ctx, dest, 3);
 	}
 	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitR)))
 	{
-		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
-		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 5));
+		x = pdf_array_get_int(ctx, dest, 2);
+		y = pdf_array_get_int(ctx, dest, 5);
 	}
 	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitH)) || pdf_name_eq(ctx, obj, PDF_NAME(FitBH)))
-		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+		y = pdf_array_get_int(ctx, dest, 2);
 	else if (pdf_name_eq(ctx, obj, PDF_NAME(FitV)) || pdf_name_eq(ctx, obj, PDF_NAME(FitBV)))
-		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+		x = pdf_array_get_int(ctx, dest, 2);
 
 	if (page >= 0)
 	{
@@ -154,7 +154,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 #endif
 
 	if (pdf_is_array(ctx, dest))
-		fz_snprintf(buf, sizeof buf, "#page=%d", pdf_to_int(ctx, pdf_array_get(ctx, dest, 0)) + 1);
+		fz_snprintf(buf, sizeof buf, "#page=%d", pdf_array_get_int(ctx, dest, 0) + 1);
 	else if (pdf_is_name(ctx, dest))
 		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_name(ctx, dest));
 	else if (pdf_is_string(ctx, dest))
@@ -188,7 +188,7 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 	else if (pdf_name_eq(ctx, PDF_NAME(URI), obj))
 	{
 		/* URI entries are ASCII strings */
-		const char *uri = pdf_to_str_buf(ctx, pdf_dict_get(ctx, action, PDF_NAME(URI)));
+		const char *uri = pdf_dict_get_string(ctx, action, PDF_NAME(URI), NULL);
 		if (!fz_is_external_link(ctx, uri))
 		{
 			pdf_obj *uri_base_obj = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/URI/Base");

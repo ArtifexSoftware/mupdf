@@ -210,7 +210,7 @@ pdf_repair_obj_stm(fz_context *ctx, pdf_document *doc, int stm_num)
 	{
 		obj = pdf_load_object(ctx, doc, stm_num);
 
-		count = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME(N)));
+		count = pdf_dict_get_int(ctx, obj, PDF_NAME(N));
 
 		pdf_drop_obj(ctx, obj);
 

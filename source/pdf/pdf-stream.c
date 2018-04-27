@@ -93,11 +93,11 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 static void
 build_compression_params(fz_context *ctx, pdf_obj *f, pdf_obj *p, fz_compression_params *params)
 {
-	int predictor = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME(Predictor)));
+	int predictor = pdf_dict_get_int(ctx, p, PDF_NAME(Predictor));
 	pdf_obj *columns_obj = pdf_dict_get(ctx, p, PDF_NAME(Columns));
 	int columns = pdf_to_int(ctx, columns_obj);
-	int colors = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME(Colors)));
-	int bpc = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME(BitsPerComponent)));
+	int colors = pdf_dict_get_int(ctx, p, PDF_NAME(Colors));
+	int bpc = pdf_dict_get_int(ctx, p, PDF_NAME(BitsPerComponent));
 
 	params->type = FZ_IMAGE_RAW;
 
@@ -294,7 +294,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *file_stm, pdf_document *doc, pdf
 	}
 
 	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
-	len = pdf_to_int(ctx, pdf_dict_get(ctx, stmobj, PDF_NAME(Length)));
+	len = pdf_dict_get_int(ctx, stmobj, PDF_NAME(Length));
 	null_stm = fz_open_null(ctx, file_stm, len, offset);
 	if (doc->crypt && !hascrypt)
 	{
@@ -471,7 +471,7 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 
 	dict = pdf_load_object(ctx, doc, num);
 
-	len = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Length)));
+	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
 
 	pdf_drop_obj(ctx, dict);
 
@@ -576,7 +576,7 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 
 	dict = pdf_load_object(ctx, doc, num);
 
-	len = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Length)));
+	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
 	len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
 	n = pdf_array_len(ctx, obj);

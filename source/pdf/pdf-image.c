@@ -113,7 +113,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		if (obj)
 		{
 			for (i = 0; i < n * 2; i++)
-				decode[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+				decode[i] = pdf_array_get_real(ctx, obj, i);
 		}
 		else if (fz_colorspace_is_lab(ctx, colorspace) || fz_colorspace_is_lab_icc(ctx, colorspace))
 		{
@@ -147,7 +147,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				{
 					use_colorkey = 1;
 					for (i = 0; i < n; i++)
-						colorkey[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i)) * 255;
+						colorkey[i] = pdf_array_get_real(ctx, obj, i) * 255;
 				}
 			}
 		}
@@ -161,7 +161,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 					fz_warn(ctx, "invalid value in color key mask");
 					use_colorkey = 0;
 				}
-				colorkey[i] = pdf_to_int(ctx, pdf_array_get(ctx, obj, i));
+				colorkey[i] = pdf_array_get_int(ctx, obj, i);
 			}
 		}
 
@@ -263,7 +263,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 			int i;
 
 			for (i = 0; i < pix->n * 2; i++)
-				decode[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+				decode[i] = pdf_array_get_real(ctx, obj, i);
 
 			fz_decode_tile(ctx, pix, decode);
 		}

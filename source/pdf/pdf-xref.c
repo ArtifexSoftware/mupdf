@@ -749,7 +749,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 
 		trailer = pdf_parse_dict(ctx, doc, doc->file, buf);
 
-		size = pdf_to_int(ctx, pdf_dict_get(ctx, trailer, PDF_NAME(Size)));
+		size = pdf_dict_get_int(ctx, trailer, PDF_NAME(Size));
 		if (size < 0 || size > PDF_MAX_OBJECT_NUMBER + 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "trailer Size entry out of range");
 	}
@@ -1016,9 +1016,9 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 		obj = pdf_dict_get(ctx, trailer, PDF_NAME(W));
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing W entry (%d  R)", num);
-		w0 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 0));
-		w1 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 1));
-		w2 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 2));
+		w0 = pdf_array_get_int(ctx, obj, 0);
+		w1 = pdf_array_get_int(ctx, obj, 1);
+		w2 = pdf_array_get_int(ctx, obj, 2);
 
 		if (w0 < 0)
 			fz_warn(ctx, "xref stream objects have corrupt type");
@@ -1044,8 +1044,8 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 			int n = pdf_array_len(ctx, index);
 			for (t = 0; t < n; t += 2)
 			{
-				int i0 = pdf_to_int(ctx, pdf_array_get(ctx, index, t + 0));
-				int i1 = pdf_to_int(ctx, pdf_array_get(ctx, index, t + 1));
+				int i0 = pdf_array_get_int(ctx, index, t + 0);
+				int i1 = pdf_array_get_int(ctx, index, t + 1);
 				pdf_read_new_xref_section(ctx, doc, stm, i0, i1, w0, w1, w2);
 			}
 		}
@@ -1298,23 +1298,23 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 		lin = pdf_to_int(ctx, o);
 		if (lin != 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected version of Linearized tag (%d)", lin);
-		len = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(L)));
+		len = pdf_dict_get_int(ctx, dict, PDF_NAME(L));
 		if (len != doc->file_length)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "File has been updated since linearization");
 
 		pdf_read_xref_sections(ctx, doc, fz_tell(ctx, doc->file), &doc->lexbuf.base, 0);
 
-		doc->linear_page_count = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(N)));
+		doc->linear_page_count = pdf_dict_get_int(ctx, dict, PDF_NAME(N));
 		doc->linear_page_refs = fz_resize_array(ctx, doc->linear_page_refs, doc->linear_page_count, sizeof(pdf_obj *));
 		memset(doc->linear_page_refs, 0, doc->linear_page_count * sizeof(pdf_obj*));
 		doc->linear_obj = dict;
 		doc->linear_pos = fz_tell(ctx, doc->file);
-		doc->linear_page1_obj_num = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(O)));
+		doc->linear_page1_obj_num = pdf_dict_get_int(ctx, dict, PDF_NAME(O));
 		doc->linear_page_refs[0] = pdf_new_indirect(ctx, doc, doc->linear_page1_obj_num, 0);
 		doc->linear_page_num = 0;
 		hint = pdf_dict_get(ctx, dict, PDF_NAME(H));
-		doc->hint_object_offset = pdf_to_int(ctx, pdf_array_get(ctx, hint, 0));
-		doc->hint_object_length = pdf_to_int(ctx, pdf_array_get(ctx, hint, 1));
+		doc->hint_object_offset = pdf_array_get_int(ctx, hint, 0);
+		doc->hint_object_length = pdf_array_get_int(ctx, hint, 1);
 
 		entry = pdf_get_populating_xref_entry(ctx, doc, 0);
 		entry->type = 'f';
@@ -1609,8 +1609,8 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	{
 		pdf_mark_obj(ctx, objstm);
 
-		count = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME(N)));
-		first = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME(First)));
+		count = pdf_dict_get_int(ctx, objstm, PDF_NAME(N));
+		first = pdf_dict_get_int(ctx, objstm, PDF_NAME(First));
 
 		if (count < 0 || count > PDF_MAX_OBJECT_NUMBER)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "number of objects in object stream out of range");
@@ -2344,7 +2344,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		if (dict == NULL || !pdf_is_dict(ctx, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "malformed hint object");
 
-		shared_hint_offset = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME(S)));
+		shared_hint_offset = pdf_dict_get_int(ctx, dict, PDF_NAME(S));
 
 		/* Malloc the structures (use realloc to cope with the fact we
 		 * may try this several times before enough data is loaded) */

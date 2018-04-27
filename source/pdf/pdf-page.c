@@ -18,7 +18,7 @@ pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int id
 	if (pdf_name_eq(ctx, type, PDF_NAME(Pages)))
 	{
 		pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
-		int count = pdf_to_int(ctx, pdf_dict_get(ctx, node, PDF_NAME(Count)));
+		int count = pdf_dict_get_int(ctx, node, PDF_NAME(Count));
 		int i, n = pdf_array_len(ctx, kids);
 
 		/* if Kids length is same as Count, all children must be page objects */
@@ -145,7 +145,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 				pdf_obj *type = pdf_dict_get(ctx, kid, PDF_NAME(Type));
 				if (type ? pdf_name_eq(ctx, type, PDF_NAME(Pages)) : pdf_dict_get(ctx, kid, PDF_NAME(Kids)) && !pdf_dict_get(ctx, kid, PDF_NAME(MediaBox)))
 				{
-					int count = pdf_to_int(ctx, pdf_dict_get(ctx, kid, PDF_NAME(Count)));
+					int count = pdf_dict_get_int(ctx, kid, PDF_NAME(Count));
 					if (*skip < count)
 					{
 						node = kid;
@@ -576,7 +576,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 {
 	pdf_obj *obj, *transdict;
 
-	*duration = pdf_to_real(ctx, pdf_dict_get(ctx, page->obj, PDF_NAME(Dur)));
+	*duration = pdf_dict_get_real(ctx, page->obj, PDF_NAME(Dur));
 
 	transdict = pdf_dict_get(ctx, page->obj, PDF_NAME(Trans));
 	if (!transdict)
@@ -590,7 +590,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 	transition->outwards = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(M)), PDF_NAME(I));
 	/* FIXME: If 'Di' is None, it should be handled differently, but
 	 * this only affects Fly, and we don't implement that currently. */
-	transition->direction = (pdf_to_int(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(Di))));
+	transition->direction = (pdf_dict_get_int(ctx, transdict, PDF_NAME(Di)));
 	/* FIXME: Read SS for Fly when we implement it */
 	/* FIXME: Read B for Fly when we implement it */
 
@@ -1143,7 +1143,7 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 
 	while (parent)
 	{
-		int count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME(Count)));
+		int count = pdf_dict_get_int(ctx, parent, PDF_NAME(Count));
 		pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count - 1);
 		parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 	}
@@ -1238,7 +1238,7 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 	/* Adjust page counts */
 	while (parent)
 	{
-		count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME(Count)));
+		count = pdf_dict_get_int(ctx, parent, PDF_NAME(Count));
 		pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count + 1);
 		parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 	}
