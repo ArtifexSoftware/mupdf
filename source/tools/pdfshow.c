@@ -177,9 +177,9 @@ static void showobject(int num)
 	pdf_drop_obj(ctx, ref);
 }
 
-static void showgrep(char *filename)
+static void showgrep(void)
 {
-	pdf_obj *obj;
+	pdf_obj *ref, *obj;
 	int i, len;
 
 	len = pdf_count_objects(ctx, doc);
@@ -190,7 +190,8 @@ static void showgrep(char *filename)
 		{
 			fz_try(ctx)
 			{
-				obj = pdf_load_object(ctx, doc, i);
+				ref = pdf_new_indirect(ctx, doc, i, 0);
+				obj = pdf_resolve_indirect(ctx, ref);
 			}
 			fz_catch(ctx)
 			{
@@ -200,15 +201,17 @@ static void showgrep(char *filename)
 
 			pdf_sort_dict(ctx, obj);
 
-			fz_write_printf(ctx, out, "%s:%d: ", filename, i);
+			fz_write_printf(ctx, out, "%d 0 obj ", i);
 			pdf_print_obj(ctx, out, obj, 1);
+			if (pdf_is_stream(ctx, ref))
+				fz_write_printf(ctx, out, " stream");
 			fz_write_printf(ctx, out, "\n");
 
-			pdf_drop_obj(ctx, obj);
+			pdf_drop_obj(ctx, ref);
 		}
 	}
 
-	fz_write_printf(ctx, out, "%s:trailer: ", filename);
+	fz_write_printf(ctx, out, "trailer ");
 	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1);
 	fz_write_printf(ctx, out, "\n");
 }
@@ -294,7 +297,7 @@ int pdfshow_main(int argc, char **argv)
 			case 'e': showencrypt(); break;
 			case 'x': showxref(); break;
 			case 'p': showpagetree(); break;
-			case 'g': showgrep(filename); break;
+			case 'g': showgrep(); break;
 			case 'o': showoutline(); break;
 			default: showobject(atoi(argv[fz_optind])); break;
 			}
