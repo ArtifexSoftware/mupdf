@@ -7,49 +7,43 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
 static fz_output *out = NULL;
 static int showbinary = 0;
 static int showdecode = 1;
+static int tight = 0;
 static int showcolumn;
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: mutool show [options] file.pdf [grep] [xref] [trailer] [pagetree] [outline] [object numbers]\n");
-	fprintf(stderr, "\t-p -\tpassword\n");
-	fprintf(stderr, "\t-o -\toutput file\n");
-	fprintf(stderr, "\t-b\tprint streams as binary data\n");
-	fprintf(stderr, "\t-e\tprint encoded streams (don't decode)\n");
+	fprintf(stderr,
+		"usage: mutool show [options] file.pdf ( xref | outline | grep | <path> ) *\n"
+		"\t-p -\tpassword\n"
+		"\t-o -\toutput file\n"
+		"\t-e\tleave stream contents in their original form\n"
+		"\t-b\tprint only stream contents, as raw binary data\n"
+		"\t-g\tprint only object, one line per object, suitable for grep\n"
+		"\tpath: path to an object, starting with either an object number,\n"
+		"\t\t'pages', 'trailer', or a property in the trailer;\n"
+		"\t\tpath elements separated by '.' or '/'.\n"
+	);
 	exit(1);
 }
 
 static void showtrailer(void)
 {
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-	fz_write_printf(ctx, out, "trailer\n");
-	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 0);
+	if (tight)
+		fz_write_printf(ctx, out, "trailer ");
+	else
+		fz_write_printf(ctx, out, "trailer\n");
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), tight);
 	fz_write_printf(ctx, out, "\n");
 }
 
-static void showencrypt(void)
-{
-	pdf_obj *encrypt;
-
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-	encrypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
-	if (!encrypt)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "document not encrypted");
-	fz_write_printf(ctx, out, "encryption dictionary\n");
-	pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, encrypt), 0);
-	fz_write_printf(ctx, out, "\n");
-}
-
-void
-pdf_print_xref(fz_context *ctx, pdf_document *doc)
+static void showxref(void)
 {
 	int i;
 	int xref_len = pdf_xref_len(ctx, doc);
@@ -57,39 +51,23 @@ pdf_print_xref(fz_context *ctx, pdf_document *doc)
 	for (i = 0; i < xref_len; i++)
 	{
 		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
-		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
+		fz_write_printf(ctx, out, "%05d: %010d %05d %c \n",
+				i,
 				(int)entry->ofs,
 				entry->gen,
-				entry->type ? entry->type : '-',
-				(int)entry->stm_ofs,
-				entry->stm_buf);
+				entry->type ? entry->type : '-');
 	}
 }
 
-static void showxref(void)
-{
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-	pdf_print_xref(ctx, doc);
-	fz_write_printf(ctx, out, "\n");
-}
-
-static void showpagetree(void)
+static void showpages(void)
 {
 	pdf_obj *ref;
-	int count;
-	int i;
-
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-
-	count = pdf_count_pages(ctx, doc);
-	for (i = 0; i < count; i++)
+	int i, n = pdf_count_pages(ctx, doc);
+	for (i = 0; i < n; ++i)
 	{
 		ref = pdf_lookup_page_obj(ctx, doc, i);
 		fz_write_printf(ctx, out, "page %d = %d 0 R\n", i + 1, pdf_to_num(ctx, ref));
 	}
-	fz_write_printf(ctx, out, "\n");
 }
 
 static void showsafe(unsigned char *buf, size_t n)
@@ -142,15 +120,10 @@ static void showstream(int num)
 	fz_drop_stream(ctx, stm);
 }
 
-static void showobject(int num)
+static void showobject(pdf_obj *ref)
 {
-	pdf_obj *ref, *obj;
-
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-
-	ref = pdf_new_indirect(ctx, doc, num, 0);
-	obj = pdf_resolve_indirect(ctx, ref);
+	pdf_obj *obj = pdf_resolve_indirect(ctx, ref);
+	int num = pdf_to_num(ctx, ref);
 	if (pdf_is_stream(ctx, ref))
 	{
 		if (showbinary)
@@ -159,22 +132,38 @@ static void showobject(int num)
 		}
 		else
 		{
-			fz_write_printf(ctx, out, "%d 0 obj\n", num);
-			pdf_print_obj(ctx, out, obj, 0);
-			fz_write_printf(ctx, out, "\nstream\n");
-			showstream(num);
-			fz_write_printf(ctx, out, "endstream\n");
-			fz_write_printf(ctx, out, "endobj\n\n");
+			if (tight)
+			{
+				fz_write_printf(ctx, out, "%d 0 obj ", num);
+				pdf_print_obj(ctx, out, obj, 1);
+				fz_write_printf(ctx, out, " stream\n");
+			}
+			else
+			{
+				fz_write_printf(ctx, out, "%d 0 obj\n", num);
+				pdf_print_obj(ctx, out, obj, 0);
+				fz_write_printf(ctx, out, "\nstream\n");
+				showstream(num);
+				fz_write_printf(ctx, out, "endstream\n");
+				fz_write_printf(ctx, out, "endobj\n");
+			}
 		}
 	}
 	else
 	{
-		fz_write_printf(ctx, out, "%d 0 obj\n", num);
-		pdf_print_obj(ctx, out, obj, 0);
-		fz_write_printf(ctx, out, "\nendobj\n\n");
+		if (tight)
+		{
+			fz_write_printf(ctx, out, "%d 0 obj ", num);
+			pdf_print_obj(ctx, out, obj, 1);
+			fz_write_printf(ctx, out, "\n");
+		}
+		else
+		{
+			fz_write_printf(ctx, out, "%d 0 obj\n", num);
+			pdf_print_obj(ctx, out, obj, 0);
+			fz_write_printf(ctx, out, "\nendobj\n");
+		}
 	}
-
-	pdf_drop_obj(ctx, ref);
 }
 
 static void showgrep(void)
@@ -242,6 +231,83 @@ static void showoutline(void)
 		fz_rethrow(ctx);
 }
 
+#define SEP ".[]/"
+
+static int isnumber(char *s)
+{
+	while (*s)
+	{
+		if (*s < '0' || *s > '9')
+			return 0;
+		++s;
+	}
+	return 1;
+}
+
+static void showpath(char *sel)
+{
+	pdf_obj *obj = NULL;
+	int pages = 0;
+	char *part;
+	while ((part = strsep(&sel, SEP)) != NULL)
+	{
+		if (strlen(part) == 0)
+			continue;
+		if (!obj)
+		{
+			if (!strcmp(part, "trailer"))
+				obj = pdf_trailer(ctx, doc);
+			else if (!strcmp(part, "pages"))
+				pages = 1;
+			else if (pages)
+				obj = pdf_lookup_page_obj(ctx, doc, atoi(part)-1);
+			else if (isnumber(part))
+				obj = pdf_new_indirect(ctx, doc, atoi(part), 0);
+			else
+				obj = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part);
+			if (!obj && !pages)
+				break;
+		}
+		else
+		{
+			if (isnumber(part))
+				obj = pdf_array_get(ctx, obj, atoi(part));
+			else
+				obj = pdf_dict_gets(ctx, obj, part);
+		}
+	}
+	if (obj)
+	{
+		if (pdf_is_indirect(ctx, obj))
+			showobject(obj);
+		else
+		{
+			pdf_print_obj(ctx, out, obj, tight);
+			printf("\n");
+		}
+	}
+	else
+	{
+		printf("null\n");
+	}
+}
+
+static void show(char *sel)
+{
+	if (!strcmp(sel, "trailer"))
+		showtrailer();
+	else if (!strcmp(sel, "xref"))
+		showxref();
+	else if (!strcmp(sel, "pages"))
+		showpages();
+	else if (!strcmp(sel, "grep"))
+		showgrep();
+	else if (!strcmp(sel, "outline"))
+		showoutline();
+	else
+		showpath(sel);
+}
+
 int pdfshow_main(int argc, char **argv)
 {
 	char *password = NULL; /* don't throw errors if encrypted */
@@ -256,7 +322,7 @@ int pdfshow_main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = fz_getopt(argc, argv, "p:o:be")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:beg")) != -1)
 	{
 		switch (c)
 		{
@@ -264,6 +330,7 @@ int pdfshow_main(int argc, char **argv)
 		case 'o': output = fz_optarg; break;
 		case 'b': showbinary = 1; break;
 		case 'e': showdecode = 0; break;
+		case 'g': tight = 1; break;
 		default: usage(); break;
 		}
 	}
@@ -290,19 +357,7 @@ int pdfshow_main(int argc, char **argv)
 			showtrailer();
 
 		while (fz_optind < argc)
-		{
-			switch (argv[fz_optind][0])
-			{
-			case 't': showtrailer(); break;
-			case 'e': showencrypt(); break;
-			case 'x': showxref(); break;
-			case 'p': showpagetree(); break;
-			case 'g': showgrep(); break;
-			case 'o': showoutline(); break;
-			default: showobject(atoi(argv[fz_optind])); break;
-			}
-			fz_optind++;
-		}
+			show(argv[fz_optind++]);
 
 		fz_close_output(ctx, out);
 	}
