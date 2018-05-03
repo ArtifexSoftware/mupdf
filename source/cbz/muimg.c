@@ -79,7 +79,7 @@ img_load_page(fz_context *ctx, fz_document *doc_, int number)
 	img_document *doc = (img_document*)doc_;
 	fz_pixmap *pixmap = NULL;
 	fz_image *image = NULL;
-	img_page *page;
+	img_page *page = NULL;
 
 	if (number < 0 || number >= doc->page_count)
 		return NULL;
