@@ -217,19 +217,7 @@
 						Name="han"
 						>
 						<File
-							RelativePath="..\..\generated\resources\fonts\han\SourceHanSansCN-Regular.otf.c"
-							>
-						</File>
-						<File
-							RelativePath="..\..\generated\resources\fonts\han\SourceHanSansJP-Regular.otf.c"
-							>
-						</File>
-						<File
-							RelativePath="..\..\generated\resources\fonts\han\SourceHanSansKR-Regular.otf.c"
-							>
-						</File>
-						<File
-							RelativePath="..\..\generated\resources\fonts\han\SourceHanSansTW-Regular.otf.c"
+							RelativePath="..\..\generated\resources\fonts\han\SourceHanSerif-Regular.ttc.c"
 							>
 						</File>
 					</Filter>
@@ -249,10 +237,6 @@
 						Name="noto"
 						>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoEmoji-Regular.ttf.c"
-							>
-						</File>
-						<File
 							RelativePath="..\..\generated\resources\fonts\noto\NotoKufiArabic-Regular.ttf.c"
 							>
 						</File>
@@ -265,127 +249,135 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSans-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSans-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansArmenian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansAdlam-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansAvestan-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansAhom-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBalinese-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBamum-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansArabic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBatak-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansAvestan-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBengali-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBamum-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBrahmi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBassaVah-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBuginese-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBatak-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBuhid-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBengali-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCanadianAboriginal-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBhaiksuki-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCarian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBrahmi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCham-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBuginese-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCherokee-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansBuhid-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCoptic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCanadianAboriginal-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCuneiform-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCarian-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCypriot-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansChakma-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansDeseret-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCham-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansDevanagari-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCherokee-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCoptic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansEthiopic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCuneiform-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGeorgian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansCypriot-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGlagolitic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansDeseret-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGothic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGujarati-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGurmukhi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansElbasan-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansHanunoo-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGlagolitic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansHebrew-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansGothic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansImperialAramaic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansHanunoo-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansInscriptionalPahlavi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansHatran-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansImperialAramaic-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansInscriptionalPahlavi-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -393,63 +385,75 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKaithi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKaithi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKannada-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKayahLi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKayahLi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKharoshthi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKharoshthi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLepcha-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansKhmer-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLimbu-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLao-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLinearA-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLepcha-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLinearB-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLimbu-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLisu-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLinearB-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLycian-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLisu-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLydian-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLycian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansLydian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMandaic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMalayalam-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansManichaean-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMandaic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMarchen-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMendeKikakui-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMeroitic-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMiao-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -457,39 +461,59 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMyanmar-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMro-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNewTaiLue-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansMultani-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNKo-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNabataean-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOgham-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNewa-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOlChiki-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNewTaiLue-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldItalic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansNKo-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldPersian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOgham-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldSouthArabian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOlChiki-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldTurkic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldItalic-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldNorthArabian-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldPermic-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldPersian-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldSouthArabian-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOldTurkic-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -497,51 +521,75 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOsmanya-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOsage-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPhagsPa-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansOsmanya-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPhoenician-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPahawhHmong-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansRejang-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPalmyrene-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansRunic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPauCinHau-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSamaritan-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPhagsPa-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSaurashtra-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansPhoenician-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansShavian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansRejang-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSinhala-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansRunic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSundanese-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSamaritan-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSylotiNagri-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSaurashtra-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSymbols-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSharada-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansShavian-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSoraSompeng-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSundanese-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSylotiNagri-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSymbols-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansSymbols2-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -557,15 +605,15 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTagalog-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTagalog-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTagbanwa-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTagbanwa-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTaiLe-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTaiLe-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -573,15 +621,7 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTaiViet-Regular.ttf.c"
-							>
-						</File>
-						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTamil-Regular.ttf.c"
-							>
-						</File>
-						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTelugu-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTaiViet-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -589,71 +629,79 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansThai-Regular.ttf.c"
-							>
-						</File>
-						<File
 							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTifinagh-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansUgaritic-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansUgaritic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansVai-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansVai-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSansYi-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSansYi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerif-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerif-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifArmenian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifArmenian-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifBalinese-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifEthiopic-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifGeorgian-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifGeorgian-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifGujarati-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifGujarati-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifKannada-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifGurmukhi-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifKhmer-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifHebrew-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifLao-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifKannada-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifKhmer-Regular.otf.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifTamil-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifLao-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifMyanmar-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifSinhala-Regular.otf.c"
+							>
+						</File>
+						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifTamil-Regular.otf.c"
 							>
 						</File>
 						<File
@@ -661,7 +709,7 @@
 							>
 						</File>
 						<File
-							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifThai-Regular.ttf.c"
+							RelativePath="..\..\generated\resources\fonts\noto\NotoSerifThai-Regular.otf.c"
 							>
 						</File>
 					</Filter>
