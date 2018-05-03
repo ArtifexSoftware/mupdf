@@ -8,7 +8,7 @@ OUT=scripts/fontdump.nmake.tmp
 echo -e >$OUT "# This is an automatically generated file. Do not edit. */"
 echo -e >>$OUT "default: generate"
 echo -e >>$OUT "hexdump.exe: scripts/hexdump.c"
-echo -e >>$OUT "\tcl /nologo scripts/hexdump.c setargv.obj"
+echo -e >>$OUT "\tcl scripts/hexdump.c setargv.obj"
 
 mkdir -p build
 cc -O2 -o build/hexdump.exe scripts/hexdump.c

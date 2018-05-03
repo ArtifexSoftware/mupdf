@@ -1,7 +1,7 @@
 # This is an automatically generated file. Do not edit. *\
 default: generate
 hexdump.exe: scripts\hexdump.c
-	cl \nologo scripts\hexdump.c setargv.obj
+	cl scripts\hexdump.c setargv.obj
 generated\resources\fonts\droid:
 	mkdir generated\resources\fonts\droid
 generated\resources\fonts\han:
