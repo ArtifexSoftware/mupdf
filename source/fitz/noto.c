@@ -17,7 +17,7 @@
 	Define TOFU_CJK to skip DroidSansFallback (and the above).
 
 	Define TOFU_NOTO to skip ALL non-CJK noto fonts.
-	Define TOFU_SYMBOL to skip symbol font.
+	Define TOFU_SYMBOL to skip symbol fonts.
 	Define TOFU_EMOJI to skip emoji/extended symbol font.
 
 	Define TOFU_SIL to skip the SIL fonts (warning: makes EPUB documents ugly).
@@ -343,7 +343,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 }
 
 const unsigned char *
-fz_lookup_noto_symbol_font(fz_context *ctx, int *size)
+fz_lookup_noto_symbol1_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_SYMBOL
 	RETURN(noto_NotoSansSymbols_Regular_otf);
@@ -353,10 +353,20 @@ fz_lookup_noto_symbol_font(fz_context *ctx, int *size)
 }
 
 const unsigned char *
+fz_lookup_noto_symbol2_font(fz_context *ctx, int *size)
+{
+#ifndef TOFU_SYMBOL
+	RETURN(noto_NotoSansSymbols2_Regular_otf);
+#else
+	return *size = 0, NULL;
+#endif
+}
+
+const unsigned char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_EMOJI
-	RETURN(noto_NotoSansSymbols2_Regular_otf);
+	RETURN(noto_NotoEmoji_Regular_ttf);
 #else
 	return *size = 0, NULL;
 #endif

@@ -318,7 +318,7 @@ const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif
 const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len, int *subfont);
 
 /*
-	fz_lookup_noto_symbol_font: Search the builtin noto fonts
+	fz_lookup_noto_symbol[12]_font: Search the builtin noto fonts
 	for a symbol font. Whether a font is present or not will
 	depend on the configuration in which MuPDF is built.
 
@@ -327,7 +327,8 @@ const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, 
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_noto_symbol_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_symbol1_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_symbol2_font(fz_context *ctx, int *len);
 
 /*
 	fz_lookup_noto_emoji_font: Search the builtin noto fonts
@@ -360,24 +361,6 @@ const unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
 	Returns a new font handle, or NULL if not available.
 */
 fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic);
-
-/*
-	fz_load_fallback_symbol_font: Try to load a fallback
-	symbol font. Whether a font is present or not will
-	depend on the configuration in which MuPDF is built.
-
-	Returns a new font handle, or NULL if not available.
-*/
-fz_font *fz_load_fallback_symbol_font(fz_context *ctx);
-
-/*
-	fz_load_fallback_emoji_font: Try to load a fallback
-	emoji font. Whether a font is present or not will
-	depend on the configuration in which MuPDF is built.
-
-	Returns a new font handle, or NULL if not available.
-*/
-fz_font *fz_load_fallback_emoji_font(fz_context *ctx);
 
 /*
 	fz_new_type3_font: Create a new (empty) type3 font.

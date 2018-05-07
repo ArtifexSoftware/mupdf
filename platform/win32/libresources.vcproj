@@ -238,6 +238,10 @@
 						Name="noto"
 						>
 						<File
+							RelativePath="..\..\generated\resources\fonts\noto\NotoEmoji-Regular.ttf.c"
+							>
+						</File>
+						<File
 							RelativePath="..\..\generated\resources\fonts\noto\NotoKufiArabic-Regular.ttf.c"
 							>
 						</File>

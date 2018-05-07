@@ -63,6 +63,9 @@ generated\resources\fonts\droid\DroidSansFallback.ttf.c: resources\fonts\droid\D
 generate: generated\resources\fonts\droid\DroidSansFallbackFull.ttf.c
 generated\resources\fonts\droid\DroidSansFallbackFull.ttf.c: resources\fonts\droid\DroidSansFallbackFull.ttf generated\resources\fonts\droid hexdump.exe
 	hexdump.exe generated\resources\fonts\droid\DroidSansFallbackFull.ttf.c resources\fonts\droid\DroidSansFallbackFull.ttf
+generate: generated\resources\fonts\noto\NotoEmoji-Regular.ttf.c
+generated\resources\fonts\noto\NotoEmoji-Regular.ttf.c: resources\fonts\noto\NotoEmoji-Regular.ttf generated\resources\fonts\noto hexdump.exe
+	hexdump.exe generated\resources\fonts\noto\NotoEmoji-Regular.ttf.c resources\fonts\noto\NotoEmoji-Regular.ttf
 generate: generated\resources\fonts\noto\NotoKufiArabic-Regular.ttf.c
 generated\resources\fonts\noto\NotoKufiArabic-Regular.ttf.c: resources\fonts\noto\NotoKufiArabic-Regular.ttf generated\resources\fonts\noto hexdump.exe
 	hexdump.exe generated\resources\fonts\noto\NotoKufiArabic-Regular.ttf.c resources\fonts\noto\NotoKufiArabic-Regular.ttf
