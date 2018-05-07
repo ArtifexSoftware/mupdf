@@ -25,7 +25,7 @@ endif
 
 default: $(MUPDF_JAVA) libmupdf.jar
 
-MUPDF_CORE := ../../build/java/libmupdf.a ../../build/java/libmupdfthird.a
+MUPDF_CORE := ../../build/java/libmupdf.a ../../build/java/libmupdf-third.a
 ifeq "$(OS)" "Linux"
 $(MUPDF_CORE) : .FORCE
 	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC FREETYPE_DIR=/foo ZLIB_DIR=/foo libs
