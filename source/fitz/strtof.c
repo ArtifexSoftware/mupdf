@@ -332,8 +332,8 @@ starts_with(const char **s, const char *string)
 			*tailptr = (char *) s;	\
 	while (0)
 
-static float
-strtof_internal(const char *string, char **tailptr, int exp_format)
+float
+fz_strtof(const char *string, char **tailptr)
 {
 	/* FIXME: error (1/2 + 1/256) ulp  */
 	const char *s;
@@ -421,7 +421,7 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 	}
 
 	/* Parse exponent. */
-	if (exp_format && (*s == 'e' || *s == 'E'))
+	if (*s == 'e' || *s == 'E')
 	{
 		int exp_negative = 0;
 		int exp = 0;
@@ -456,16 +456,4 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 
 	SET_TAILPTR(tailptr, s);
 	return scale_integer_to_float(M, N, negative);
-}
-
-float
-fz_strtof(const char *string, char **tailptr)
-{
-	return strtof_internal(string, tailptr, 1);
-}
-
-float
-fz_strtof_no_exp(const char *string, char **tailptr)
-{
-	return strtof_internal(string, tailptr, 0);
 }

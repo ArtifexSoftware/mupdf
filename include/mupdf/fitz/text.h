@@ -159,15 +159,6 @@ void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *tr
 fz_rect *fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 
 /*
-	fz_clone_text: Clone a text object.
-
-	text: The text object to clone.
-
-	Throws an exception on allocation failure.
-*/
-fz_text *fz_clone_text(fz_context *ctx, const fz_text *text);
-
-/*
 	Convert ISO 639 (639-{1,2,3,5}) language specification
 	strings losslessly to a 15 bit fz_text_language code.
 

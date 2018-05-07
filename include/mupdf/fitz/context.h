@@ -12,7 +12,6 @@
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
 typedef struct fz_error_stack_slot_s fz_error_stack_slot;
-typedef struct fz_id_context_s fz_id_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_colorspace_context_s fz_colorspace_context;
@@ -148,7 +147,6 @@ struct fz_context_s
 	void *user;
 	const fz_alloc_context *alloc;
 	fz_locks_context locks;
-	fz_id_context *id;
 	fz_error_context *error;
 	fz_warn_context *warn;
 	fz_font_context *font;
@@ -535,22 +533,6 @@ void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
 	block is left unchanged).
 */
 void *fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
-
-/*
-	fz_strdup_no_throw: Duplicate a C string (with scavenging)
-
-	s: The string to duplicate.
-
-	Returns a pointer to a duplicated string. Returns NULL on failure
-	to allocate.
-*/
-char *fz_strdup_no_throw(fz_context *ctx, const char *s);
-
-/*
-	fz_gen_id: Generate an id (guaranteed unique within this family of
-	contexts).
-*/
-int fz_gen_id(fz_context *ctx);
 
 struct fz_warn_context_s
 {

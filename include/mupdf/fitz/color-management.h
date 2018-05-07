@@ -77,7 +77,6 @@ struct fz_cmm_engine_s {
 	fz_cmm_fin_link_fn *fin_link;
 	fz_cmm_init_profile_fn *init_profile;
 	fz_cmm_fin_profile_fn *fin_profile;
-	int avoid_white_fix_flag;
 };
 
 /*

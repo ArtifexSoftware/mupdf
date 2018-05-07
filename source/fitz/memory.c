@@ -212,16 +212,6 @@ fz_strdup(fz_context *ctx, const char *s)
 	return ns;
 }
 
-char *
-fz_strdup_no_throw(fz_context *ctx, const char *s)
-{
-	size_t len = strlen(s) + 1;
-	char *ns = fz_malloc_no_throw(ctx, len);
-	if (ns)
-		memcpy(ns, s, len);
-	return ns;
-}
-
 static void *
 fz_malloc_default(void *opaque, size_t size)
 {

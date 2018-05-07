@@ -3276,14 +3276,6 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Text_newNative
 
 /*
  * Class:     com_artifex_mupdf_fitz_Text
- * Method:    cloneNative
- * Signature: (Lcom/artifex/mupdf/fitz/Text;)J
- */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Text_cloneNative
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Text
  * Method:    showGlyph
  * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;IIZ)V
  */

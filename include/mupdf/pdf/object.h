@@ -169,10 +169,7 @@ void pdf_debug_obj(fz_context *ctx, pdf_obj *obj);
 char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src);
-unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src);
 pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
-char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
-void pdf_to_ucs2_buf(fz_context *ctx, unsigned short *buffer, pdf_obj *src);
 
 fz_rect *pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *rect);
 fz_matrix *pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *mat);

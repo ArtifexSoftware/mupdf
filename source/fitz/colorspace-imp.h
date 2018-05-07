@@ -12,7 +12,6 @@
 #define FZ_ICC_PROFILE_CMYK "DeviceCMYK"
 #define FZ_ICC_PROFILE_LAB "Lab"
 
-int fz_cmm_avoid_white_fix_flag(fz_context *ctx);
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 void fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
 void fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots);

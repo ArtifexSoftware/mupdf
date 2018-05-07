@@ -15,7 +15,6 @@ typedef struct
 	int len;
 } fz_range;
 
-fz_stream *fz_open_copy(fz_context *ctx, fz_stream *chain);
 fz_stream *fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges);
 fz_stream *fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
 fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);

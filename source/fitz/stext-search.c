@@ -4,59 +4,6 @@
 #include <limits.h>
 #include <assert.h>
 
-int fz_stext_char_count(fz_context *ctx, fz_stext_page *page)
-{
-	fz_stext_block *block;
-	fz_stext_line *line;
-	fz_stext_char *ch;
-	int len = 0;
-
-	for (block = page->first_block; block; block = block->next)
-	{
-		if (block->type != FZ_STEXT_BLOCK_TEXT)
-			continue;
-		for (line = block->u.t.first_line; line; line = line->next)
-		{
-			for (ch = line->first_char; ch; ch = ch->next)
-				++len;
-			++len; /* pseudo-newline */
-		}
-	}
-
-	return len;
-}
-
-const fz_stext_char *fz_stext_char_at(fz_context *ctx, fz_stext_page *page, int idx)
-{
-	static const fz_stext_char space = { ' ', {0,0}, {0,0,0,0}, 0, NULL, NULL };
-	static const fz_stext_char zero = { '\0', {0,0}, {0,0,0,0}, 0, NULL, NULL };
-	fz_stext_block *block;
-	fz_stext_line *line;
-	fz_stext_char *ch;
-	int ofs = 0;
-
-	for (block = page->first_block; block; block = block->next)
-	{
-		if (block->type != FZ_STEXT_BLOCK_TEXT)
-			continue;
-		for (line = block->u.t.first_line; line; line = line->next)
-		{
-			for (ch = line->first_char; ch; ch = ch->next)
-			{
-				if (ofs == idx)
-					return ch;
-				++ofs;
-			}
-
-			/* pseudo-newline */
-			if (idx == ofs)
-				return &space;
-			++ofs;
-		}
-	}
-	return &zero;
-}
-
 /* Enumerate marked selection */
 
 static float dist2(float a, float b)

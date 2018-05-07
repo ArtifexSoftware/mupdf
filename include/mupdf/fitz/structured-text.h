@@ -103,9 +103,6 @@ struct fz_stext_char_s
 
 extern const char *fz_stext_options_usage;
 
-int fz_stext_char_count(fz_context *ctx, fz_stext_page *page);
-const fz_stext_char *fz_stext_char_at(fz_context *ctx, fz_stext_page *page, int idx);
-
 /*
 	fz_new_stext_page: Create an empty text page.
 

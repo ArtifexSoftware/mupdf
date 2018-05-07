@@ -46,6 +46,3 @@ GLOBAL(jpeg_cust_mem_data *)
 			j_cust_mem_get_large_ptr get_large,
 			j_custmem_free_large_ptr free_large,
 			j_custmem_open_backing_store_ptr open_backing_store);
-
-GLOBAL(jpeg_cust_mem_data *)
-	jpeg_cust_mem_set_private(jpeg_cust_mem_data *custm, void *priv);

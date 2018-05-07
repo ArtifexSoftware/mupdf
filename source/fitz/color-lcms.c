@@ -356,6 +356,5 @@ fz_cmm_engine fz_cmm_engine_lcms = {
 	fz_lcms_fin_link,
 	fz_lcms_init_profile,
 	fz_lcms_fin_profile,
-	cmsFLAGS_NOWHITEONWHITEFIXUP
 };
 #endif

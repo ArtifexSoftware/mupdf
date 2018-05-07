@@ -2,14 +2,6 @@
 
 #include <string.h>
 
-/* Pretend we have a filter that just copies data forever */
-
-fz_stream *
-fz_open_copy(fz_context *ctx, fz_stream *chain)
-{
-	return fz_keep_stream(ctx, chain);
-}
-
 /* Null filter copies a specified amount of data */
 
 struct null_filter

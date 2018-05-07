@@ -142,13 +142,6 @@ int fz_utflen(const char *s);
 float fz_strtof(const char *s, char **es);
 
 /*
-	fz_strtof_no_exp: Like fz_strtof, but does not recognize exponent
-	format. So fz_strtof_no_exp("1.5e20", &tail) will return 1.5 and tail
-	will point to "e20".
-*/
-
-float fz_strtof_no_exp(const char *string, char **tailptr);
-/*
 	fz_grisu: Compute decimal integer m, exp such that:
 		f = m * 10^exp
 		m is as short as possible without losing exactness

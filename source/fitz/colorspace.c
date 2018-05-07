@@ -91,14 +91,6 @@ int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs)
 
 /* CMM module */
 
-int
-fz_cmm_avoid_white_fix_flag(fz_context *ctx)
-{
-	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
-		return ctx->colorspace->cmm->avoid_white_fix_flag;
-	return 0;
-}
-
 void
 fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
 {
@@ -3744,18 +3736,6 @@ clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
 
 	for (i = 0; i < profile->num_devcomp; i++)
 		dst[i] = fz_clamp(src[i], 0, 1);
-}
-
-void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs)
-{
-	fz_iccprofile *profile;
-
-	if (cs == NULL || !fz_colorspace_is_icc(ctx, cs))
-		return;
-
-	profile = cs->data;
-	profile->bgr = 1;
-	return;
 }
 
 fz_colorspace *

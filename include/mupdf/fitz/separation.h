@@ -52,17 +52,11 @@ void fz_set_separation_behavior(fz_context *ctx, fz_separations *sep, int separa
 /* Test for the current behavior of a separation */
 fz_separation_behavior fz_separation_current_behavior(fz_context *ctx, const fz_separations *sep, int separation);
 
-/* Quick test for all separations composite (the common case) */
-int fz_separations_all_composite(fz_context *ctx, const fz_separations *sep);
-
 /* Read separation name */
 const char *fz_separation_name(fz_context *ctx, const fz_separations *sep, int separation);
 
 /* Count the number of separations */
 int fz_count_separations(fz_context *ctx, const fz_separations *sep);
-
-/* Find out if separations are controllable. */
-int fz_separations_controllable(fz_context *ctx, const fz_separations *seps);
 
 /* Return the number of active separations. */
 int fz_count_active_separations(fz_context *ctx, const fz_separations *seps);

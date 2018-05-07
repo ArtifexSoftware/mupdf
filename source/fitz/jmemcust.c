@@ -155,14 +155,4 @@ jpeg_cust_mem_init(jpeg_cust_mem_data *custm, void *priv,
 	return lcustm;
 }
 
-GLOBAL(jpeg_cust_mem_data *)
-jpeg_cust_mem_set_private(jpeg_cust_mem_data *custm, void *priv)
-{
-	if (custm)
-	{
-		custm->priv = priv;
-	}
-	return custm;
-}
-
 #endif /* !defined(SHARE_JPEG) || SHARE_JPEG==0 */

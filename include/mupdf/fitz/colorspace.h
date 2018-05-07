@@ -166,7 +166,6 @@ void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
 fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs);
-void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_devicen_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);

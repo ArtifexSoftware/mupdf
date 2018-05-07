@@ -285,12 +285,6 @@ void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *re
 void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 
 /*
-	fz_unmultiply_pixmap: Convert a pixmap from premultiplied to
-	non-premultiplied format.
-*/
-void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
-
-/*
 	fz_convert_pixmap: Convert an existing pixmap to a desired
 	colorspace. Other properties of the pixmap, such as resolution
 	and position are copied to the converted pixmap.
