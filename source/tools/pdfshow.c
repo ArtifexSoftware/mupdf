@@ -249,7 +249,7 @@ static void showpath(char *sel)
 	pdf_obj *obj = NULL;
 	int pages = 0;
 	char *part;
-	while ((part = strsep(&sel, SEP)) != NULL)
+	while ((part = fz_strsep(&sel, SEP)) != NULL)
 	{
 		if (strlen(part) == 0)
 			continue;
