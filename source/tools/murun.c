@@ -437,14 +437,18 @@ struct color {
 
 static fz_matrix ffi_tomatrix(js_State *J, int idx)
 {
-	fz_matrix matrix;
-	js_getindex(J, idx, 0); matrix.a = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 1); matrix.b = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 2); matrix.c = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 3); matrix.d = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 4); matrix.e = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 5); matrix.f = js_tonumber(J, -1); js_pop(J, 1);
-	return matrix;
+	if (js_iscoercible(J, idx))
+	{
+		fz_matrix matrix;
+		js_getindex(J, idx, 0); matrix.a = js_tonumber(J, -1); js_pop(J, 1);
+		js_getindex(J, idx, 1); matrix.b = js_tonumber(J, -1); js_pop(J, 1);
+		js_getindex(J, idx, 2); matrix.c = js_tonumber(J, -1); js_pop(J, 1);
+		js_getindex(J, idx, 3); matrix.d = js_tonumber(J, -1); js_pop(J, 1);
+		js_getindex(J, idx, 4); matrix.e = js_tonumber(J, -1); js_pop(J, 1);
+		js_getindex(J, idx, 5); matrix.f = js_tonumber(J, -1); js_pop(J, 1);
+		return matrix;
+	}
+	return fz_identity;
 }
 
 static void ffi_pushmatrix(js_State *J, fz_matrix matrix)
@@ -2312,6 +2316,21 @@ static void ffi_Image_toPixmap(js_State *J)
 
 	js_getregistry(J, "fz_pixmap");
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+}
+
+static void ffi_Shade_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_shade *shade = js_touserdata(J, 0, "fz_shade");
+	fz_matrix ctm = ffi_tomatrix(J, 1);
+	fz_rect bounds;
+
+	fz_try(ctx)
+		fz_bound_shade(ctx, shade, &ctm, &bounds);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushrect(J, bounds);
 }
 
 static void ffi_new_Font(js_State *J)
@@ -4575,6 +4594,7 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Shade.bound", ffi_Shade_bound, 1);
 	}
 	js_setregistry(J, "fz_shade");
 
