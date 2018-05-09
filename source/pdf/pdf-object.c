@@ -1987,17 +1987,17 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 {
 	char buf[256];
 
-	if (!obj)
-		fmt_puts(ctx, fmt, "<NULL>");
+	if (obj == PDF_NULL)
+		fmt_puts(ctx, fmt, "null");
+	else if (obj == PDF_TRUE)
+		fmt_puts(ctx, fmt, "true");
+	else if (obj == PDF_FALSE)
+		fmt_puts(ctx, fmt, "false");
 	else if (pdf_is_indirect(ctx, obj))
 	{
 		fz_snprintf(buf, sizeof buf, "%d %d R", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
 		fmt_puts(ctx, fmt, buf);
 	}
-	else if (pdf_is_null(ctx, obj))
-		fmt_puts(ctx, fmt, "null");
-	else if (pdf_is_bool(ctx, obj))
-		fmt_puts(ctx, fmt, pdf_to_bool(ctx, obj) ? "true" : "false");
 	else if (pdf_is_int(ctx, obj))
 	{
 		fz_snprintf(buf, sizeof buf, "%d", pdf_to_int(ctx, obj));
