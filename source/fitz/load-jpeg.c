@@ -24,7 +24,7 @@ static void *
 fz_jpg_mem_alloc(j_common_ptr cinfo, size_t size)
 {
 	fz_context *ctx = JZ_CTX_FROM_CINFO(cinfo);
-	return fz_malloc(ctx, size);
+	return fz_malloc_no_throw(ctx, size);
 }
 
 static void

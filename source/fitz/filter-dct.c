@@ -46,7 +46,7 @@ static void *
 fz_dct_mem_alloc(j_common_ptr cinfo, size_t size)
 {
 	fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
-	return fz_malloc(state->ctx, size);
+	return fz_malloc_no_throw(state->ctx, size);
 }
 
 static void
