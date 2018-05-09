@@ -633,13 +633,6 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 
 		fz_bound_path(ctx, path, (dostroke ? gstate->stroke_state : NULL), &gstate->ctm, &bbox);
 
-		if (pr->clip)
-		{
-			gstate->clip_depth++;
-			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, &gstate->ctm, &bbox);
-			pr->clip = 0;
-		}
-
 		if (pr->super.hidden)
 			dostroke = dofill = 0;
 
@@ -728,6 +721,14 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 
 		if (dofill || dostroke)
 			pdf_end_group(ctx, pr, &softmask);
+
+		if (pr->clip)
+		{
+			gstate = pr->gstate + pr->gtop; /* in case it was changed by pdf_begin_group */
+			gstate->clip_depth++;
+			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, &gstate->ctm, &bbox);
+			pr->clip = 0;
+		}
 	}
 	fz_always(ctx)
 	{
