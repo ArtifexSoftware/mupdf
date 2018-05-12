@@ -295,14 +295,20 @@ static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 	int gid = ft_cid_to_gid(fontdesc, cid);
 	FT_Fixed adv;
 	int fterr;
+	FT_Face face = fontdesc->font->ft_face;
+	FT_UShort units_per_EM;
 
-	fterr = FT_Get_Advance(fontdesc->font->ft_face, gid, mask, &adv);
+	fterr = FT_Get_Advance(face, gid, mask, &adv);
 	if (fterr)
 	{
 		fz_warn(ctx, "freetype advance glyph (gid %d): %s", gid, ft_error_string(fterr));
 		return 0;
 	}
-	return adv * 1000 / ((FT_Face)fontdesc->font->ft_face)->units_per_EM;
+	units_per_EM = face->units_per_EM;
+	if (units_per_EM == 0)
+		units_per_EM = 2048;
+
+	return adv * 1000 / units_per_EM;
 }
 
 static const struct { int code; const char *name; } mre_diff_table[] =
