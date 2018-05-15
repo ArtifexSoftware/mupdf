@@ -148,7 +148,6 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 	pdf_processor *proc_filter = NULL;
 	pdf_obj *new_obj = NULL;
 	pdf_obj *new_ref = NULL;
-	pdf_obj *res_ref = NULL;
 	pdf_obj *res = NULL;
 	pdf_obj *obj;
 	pdf_obj *contents;
@@ -158,7 +157,6 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 	fz_var(new_obj);
 	fz_var(new_ref);
 	fz_var(res);
-	fz_var(res_ref);
 	fz_var(proc_buffer);
 	fz_var(proc_filter);
 
@@ -174,13 +172,12 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 		{
 			res = pdf_new_dict(ctx, doc, 1);
 			proc_filter = pdf_new_filter_processor_with_text_filter(ctx, doc, proc_buffer, resources, res, text_filter, after_text, proc_arg);
-
 			pdf_process_contents(ctx, proc_filter, doc, resources, contents, cookie);
 			pdf_close_processor(ctx, proc_filter);
 		}
 		else
 		{
-			res = pdf_deep_copy_obj(ctx, resources);
+			res = pdf_keep_obj(ctx, resources);
 			pdf_process_contents(ctx, proc_buffer, doc, resources, contents, cookie);
 		}
 		pdf_close_processor(ctx, proc_buffer);
@@ -296,8 +293,10 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 			(*proc_fn)(ctx, buffer, res, proc_arg);
 
 		/* Update resource dictionary */
-		res_ref = pdf_add_object(ctx, doc, res);
-		pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), res_ref);
+		if (sanitize)
+		{
+			pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), res);
+		}
 	}
 	fz_always(ctx)
 	{
@@ -306,7 +305,6 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, new_obj);
 		pdf_drop_obj(ctx, new_ref);
-		pdf_drop_obj(ctx, res_ref);
 		pdf_drop_obj(ctx, res);
 	}
 	fz_catch(ctx)
