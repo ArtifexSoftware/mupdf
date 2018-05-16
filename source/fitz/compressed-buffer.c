@@ -8,6 +8,8 @@ fz_drop_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf)
 {
 	if (buf)
 	{
+		if (buf->params.type == FZ_IMAGE_JBIG2)
+			fz_drop_jbig2_globals(ctx, buf->params.u.jbig2.globals);
 		fz_drop_buffer(ctx, buf->buffer);
 		fz_free(ctx, buf);
 	}
@@ -64,6 +66,10 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_stream *tail, fz_compression_par
 				*l2factor -= our_l2factor;
 			}
 			head = fz_open_dctd(ctx, tail, params->u.jpeg.color_transform, our_l2factor, NULL);
+			break;
+
+		case FZ_IMAGE_JBIG2:
+			head = fz_open_jbig2d(ctx, tail, fz_keep_jbig2_globals(ctx, params->u.jbig2.globals));
 			break;
 
 		case FZ_IMAGE_RLD:

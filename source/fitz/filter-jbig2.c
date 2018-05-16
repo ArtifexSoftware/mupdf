@@ -28,7 +28,13 @@ struct fz_jbig2d_s
 	int idx;
 };
 
-static void
+fz_jbig2_globals *
+fz_keep_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
+{
+	return fz_keep_storable(ctx, &globals->storable);
+}
+
+void
 fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
 {
 	fz_drop_storable(ctx, &globals->storable);
@@ -268,7 +274,13 @@ struct fz_jbig2d_s
 	unsigned char buffer[4096];
 };
 
-static void
+fz_jbig2_globals *
+fz_keep_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
+{
+	return fz_keep_storable(ctx, &globals->storable);
+}
+
+void
 fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
 {
 	fz_drop_storable(ctx, &globals->storable);

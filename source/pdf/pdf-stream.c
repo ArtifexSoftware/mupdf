@@ -58,7 +58,7 @@ pdf_stream_has_crypt(fz_context *ctx, pdf_obj *stm)
 }
 
 static fz_jbig2_globals *
-pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
+pdf_load_jbig2_globals(fz_context *ctx, pdf_obj *dict)
 {
 	fz_jbig2_globals *globals;
 	fz_buffer *buf = NULL;
@@ -149,6 +149,20 @@ build_compression_params(fz_context *ctx, pdf_obj *f, pdf_obj *p, fz_compression
 		params->u.lzw.bpc = bpc;
 		params->u.lzw.early_change = (ec ? pdf_to_int(ctx, ec) : 1);
 	}
+	else if (pdf_name_eq(ctx, f, PDF_NAME(JBIG2Decode)))
+	{
+		pdf_obj *g = pdf_dict_get(ctx, p, PDF_NAME(JBIG2Globals));
+
+		params->type = FZ_IMAGE_JBIG2;
+		params->u.jbig2.globals = NULL;
+		if (g)
+		{
+			if (!pdf_is_stream(ctx, g))
+				fz_warn(ctx, "jbig2 globals is not a stream, skipping globals");
+			else
+				params->u.jbig2.globals = pdf_load_jbig2_globals(ctx, g);
+		}
+	}
 }
 
 /*
@@ -180,18 +194,7 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		return fz_open_a85d(ctx, chain);
 
 	else if (pdf_name_eq(ctx, f, PDF_NAME(JBIG2Decode)))
-	{
-		fz_jbig2_globals *globals = NULL;
-		pdf_obj *obj = pdf_dict_get(ctx, p, PDF_NAME(JBIG2Globals));
-		if (obj)
-		{
-			if (!pdf_is_stream(ctx, obj))
-				fz_warn(ctx, "jbig2 globals is not a stream, skipping globals");
-			else
-				globals = pdf_load_jbig2_globals(ctx, doc, obj);
-		}
-		return fz_open_jbig2d(ctx, chain, globals); /* takes ownership of jbig2_globals */
-	}
+		return fz_open_jbig2d(ctx, chain, params->u.jbig2.globals); /* takes ownership of jbig2_globals */
 
 	else if (pdf_name_eq(ctx, f, PDF_NAME(JPXDecode)))
 		return fz_keep_stream(ctx, chain); /* JPX decoding is special cased in the image loading code */

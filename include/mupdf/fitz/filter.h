@@ -34,6 +34,8 @@ fz_stream *fz_open_predict(fz_context *ctx, fz_stream *chain, int predictor, int
 fz_stream *fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals);
 
 fz_jbig2_globals *fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf);
+fz_jbig2_globals *fz_keep_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals);
+void fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals);
 void fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals);
 
 /* Extra filters for tiff */
