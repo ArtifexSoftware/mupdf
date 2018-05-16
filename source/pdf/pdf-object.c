@@ -1255,14 +1255,12 @@ pdf_dict_get_put_drop(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val,
 void
 pdf_dict_puts(fz_context *ctx, pdf_obj *obj, const char *key, pdf_obj *val)
 {
-	pdf_document *doc;
 	pdf_obj *keyobj;
 
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
 
-	doc = DICT(obj)->doc;
 	keyobj = pdf_new_name(ctx, key);
 
 	fz_try(ctx)
