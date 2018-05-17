@@ -119,7 +119,6 @@ static void saveimage(pdf_obj *ref)
 			unsigned char *data;
 			size_t len = fz_buffer_storage(ctx, cbuf->buffer, &data);
 			writejpeg(ctx, data, len, buf);
-			break;
 		}
 		else
 		{
@@ -131,7 +130,6 @@ static void saveimage(pdf_obj *ref)
 	{
 		fz_drop_image(ctx, image);
 		fz_drop_pixmap(ctx, pix);
-		pdf_drop_obj(ctx, ref);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
