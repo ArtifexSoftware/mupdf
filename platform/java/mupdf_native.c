@@ -759,9 +759,9 @@ static fz_font *load_noto_arabic(fz_context *ctx)
 
 static fz_font *load_noto_try(fz_context *ctx, const char *stem)
 {
-	fz_font *font = load_noto(ctx, buf, "NotoSerif", stem, "-Regular", 0);
-	if (!font) font = load_noto(ctx, buf, "NotoSans", stem, "-Regular", 0);
-	if (!font) font = load_noto(ctx, buf, "DroidSans", stem, "-Regular", 0);
+	fz_font *font = load_noto(ctx, "NotoSerif", stem, "-Regular", 0);
+	if (!font) font = load_noto(ctx, "NotoSans", stem, "-Regular", 0);
+	if (!font) font = load_noto(ctx, "DroidSans", stem, "-Regular", 0);
 	return font;
 }
 
