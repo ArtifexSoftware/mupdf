@@ -885,6 +885,14 @@ static void toggle_outline(void)
 	}
 }
 
+static void set_zoom(int z, int cx, int cy)
+{
+	z = fz_clamp(z, MINRES, MAXRES);
+	scroll_x = (scroll_x + cx - canvas_x) * z / currentzoom - cx + canvas_x;
+	scroll_y = (scroll_y + cy - canvas_y) * z / currentzoom - cy + canvas_y;
+	currentzoom = z;
+}
+
 static void auto_zoom_w(void)
 {
 	currentzoom = fz_clamp(currentzoom * canvas_w / page_tex.w, MINRES, MAXRES);
@@ -992,9 +1000,9 @@ static void do_app(void)
 		case 'W': auto_zoom_w(); break;
 		case 'H': auto_zoom_h(); break;
 		case 'Z': auto_zoom(); break;
-		case 'z': currentzoom = number > 0 ? number : DEFRES; break;
-		case '+': currentzoom = zoom_in(currentzoom); break;
-		case '-': currentzoom = zoom_out(currentzoom); break;
+		case 'z': set_zoom(number > 0 ? number : DEFRES, canvas_w/2, canvas_h/2); break;
+		case '+': set_zoom(zoom_in(currentzoom), ui.x, ui.y); break;
+		case '-': set_zoom(zoom_out(currentzoom), ui.x, ui.y); break;
 		case '[': currentrotate += 90; break;
 		case ']': currentrotate -= 90; break;
 		case 'k': case KEY_UP: scroll_y -= 10; break;
@@ -1088,7 +1096,6 @@ static void do_app(void)
 			number = 0;
 
 		currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
-		currentzoom = fz_clamp(currentzoom, MINRES, MAXRES);
 		while (currentrotate < 0) currentrotate += 360;
 		while (currentrotate >= 360) currentrotate -= 360;
 
