@@ -404,6 +404,7 @@ done_SC:
 				p->chain->op_Ts(ctx, p->chain, gstate->pending.text.rise);
 		}
 		pdf_drop_font(ctx, gstate->sent.text.font);
+		gstate->sent.text = gstate->pending.text;
 		gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
 	}
 }
