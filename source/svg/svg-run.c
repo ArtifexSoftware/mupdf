@@ -1058,52 +1058,50 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 static void
 svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *state)
 {
-	char *tag = fz_xml_tag(root);
-
-	if (!strcmp(tag, "svg"))
+	if (fz_xml_is_tag(root, "svg"))
 		svg_run_svg(ctx, dev, doc, root, state);
 
-	else if (!strcmp(tag, "g"))
+	else if (fz_xml_is_tag(root, "g"))
 		svg_run_g(ctx, dev, doc, root, state);
 
-	else if (!strcmp(tag, "title"))
+	else if (fz_xml_is_tag(root, "title"))
 		;
-	else if (!strcmp(tag, "desc"))
-		;
-
-	else if (!strcmp(tag, "defs"))
-		;
-	else if (!strcmp(tag, "symbol"))
+	else if (fz_xml_is_tag(root, "desc"))
 		;
 
-	else if (!strcmp(tag, "use"))
+	else if (fz_xml_is_tag(root, "defs"))
+		;
+	else if (fz_xml_is_tag(root, "symbol"))
+		;
+
+	else if (fz_xml_is_tag(root, "use"))
 		svg_run_use(ctx, dev, doc, root, state);
 
-	else if (!strcmp(tag, "path"))
+	else if (fz_xml_is_tag(root, "path"))
 		svg_run_path(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "rect"))
+	else if (fz_xml_is_tag(root, "rect"))
 		svg_run_rect(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "circle"))
+	else if (fz_xml_is_tag(root, "circle"))
 		svg_run_circle(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "ellipse"))
+	else if (fz_xml_is_tag(root, "ellipse"))
 		svg_run_ellipse(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "line"))
+	else if (fz_xml_is_tag(root, "line"))
 		svg_run_line(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "polyline"))
+	else if (fz_xml_is_tag(root, "polyline"))
 		svg_run_polyline(ctx, dev, doc, root, state);
-	else if (!strcmp(tag, "polygon"))
+	else if (fz_xml_is_tag(root, "polygon"))
 		svg_run_polygon(ctx, dev, doc, root, state);
 
 #if 0
-	else if (!strcmp(tag, "image"))
+	else if (fz_xml_is_tag(root, "image"))
 		svg_parse_image(ctx, doc, root);
-	else if (!strcmp(tag, "text"))
+	else if (fz_xml_is_tag(root, "text"))
 		svg_run_text(ctx, dev, doc, root);
-	else if (!strcmp(tag, "tspan"))
+	else if (fz_xml_is_tag(root, "tspan"))
 		svg_run_text_span(ctx, dev, doc, root);
-	else if (!strcmp(tag, "tref"))
+	else if (fz_xml_is_tag(root, "tref"))
 		svg_run_text_ref(ctx, dev, doc, root);
-	else if (!strcmp(tag, "textPath"))
+	else if (fz_xml_is_tag(root, "textPath"))
 		svg_run_text_path(ctx, dev, doc, root);
 #endif
 
