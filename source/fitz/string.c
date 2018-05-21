@@ -14,6 +14,13 @@ fz_tolower(int c)
 	return c;
 }
 
+size_t
+fz_strnlen(const char *s, size_t n)
+{
+	const char *p = memchr(s, 0, n);
+	return p ? p - s : n;
+}
+
 int
 fz_strcasecmp(const char *a, const char *b)
 {

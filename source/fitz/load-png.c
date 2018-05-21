@@ -347,7 +347,7 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 	fz_stream *mstm = NULL, *zstm = NULL;
 	fz_colorspace *cs = NULL;
 	size_t m = fz_mini(80, size);
-	size_t n = strnlen((const char *)p, m);
+	size_t n = fz_strnlen((const char *)p, m);
 	if (n + 2 > m)
 	{
 		fz_warn(ctx, "invalid ICC profile name");
