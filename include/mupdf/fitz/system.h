@@ -57,10 +57,12 @@ typedef unsigned __int64 uint64_t;
 	Some differences in libc can be smoothed over
 */
 
-#ifdef __APPLE__
+#ifndef __STRICT_ANSI__
+#if defined(__APPLE__)
 #define HAVE_SIGSETJMP
-#elif defined(__unix) && !defined(__NACL__)
+#elif defined(__unix)
 #define HAVE_SIGSETJMP
+#endif
 #endif
 
 /*
@@ -147,10 +149,10 @@ void fz_free_argv(int argc, char **argv);
 /* inline is standard in C++. For some compilers we can enable it within C too. */
 
 #ifndef __cplusplus
-#if __STDC_VERSION__ == 199901L /* C99 */
-#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
+#if defined (__STDC_VERSION_) && (__STDC_VERSION__ >= 199901L) /* C99 */
+#elif defined(_MSC_VER) && (_MSC_VER >= 1500) /* MSVC 9 or newer */
 #define inline __inline
-#elif __GNUC__ >= 3 /* GCC 3 or newer */
+#elif defined(__GNUC__) && (__GNUC__ >= 3) /* GCC 3 or newer */
 #define inline __inline
 #else /* Unknown or ancient */
 #define inline
@@ -158,10 +160,10 @@ void fz_free_argv(int argc, char **argv);
 #endif
 
 /* restrict is standard in C99, but not in all C++ compilers. */
-#if __STDC_VERSION__ == 199901L /* C99 */
-#elif _MSC_VER >= 1600 /* MSVC 10 or newer */
+#if defined (__STDC_VERSION_) && (__STDC_VERSION__ >= 199901L) /* C99 */
+#elif defined(_MSC_VER) && (_MSC_VER >= 1600) /* MSVC 10 or newer */
 #define restrict __restrict
-#elif __GNUC__ >= 3 /* GCC 3 or newer */
+#elif defined(__GNUC__) && (__GNUC__ >= 3) /* GCC 3 or newer */
 #define restrict __restrict
 #else /* Unknown or ancient */
 #define restrict
@@ -179,7 +181,7 @@ void fz_free_argv(int argc, char **argv);
 #endif
 
 /* Flag unused parameters, for use with 'static inline' functions in headers. */
-#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#if defined(__GNUC__) && (__GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7)
 #define FZ_UNUSED __attribute__((__unused__))
 #else
 #define FZ_UNUSED
@@ -189,7 +191,7 @@ void fz_free_argv(int argc, char **argv);
 #ifdef __printflike
 #define FZ_PRINTFLIKE(F,V) __printflike(F,V)
 #else
-#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#if defined(__GNUC__) && (__GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7)
 #define FZ_PRINTFLIKE(F,V) __attribute__((__format__ (__printf__, F, V)))
 #else
 #define FZ_PRINTFLIKE(F,V)
