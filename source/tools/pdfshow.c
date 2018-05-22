@@ -28,7 +28,8 @@ static void usage(void)
 		"\t-g\tprint only object, one line per object, suitable for grep\n"
 		"\tpath: path to an object, starting with either an object number,\n"
 		"\t\t'pages', 'trailer', or a property in the trailer;\n"
-		"\t\tpath elements separated by '.' or '/'.\n"
+		"\t\tpath elements separated by '.' or '/'. Path elements must be\n"
+		"\t\tarray index numbers, dictionary property names, or '*'.\n"
 	);
 	exit(1);
 }
@@ -244,39 +245,59 @@ static int isnumber(char *s)
 	return 1;
 }
 
-static void showpath(char *sel)
+static void showpath(char *path, pdf_obj *obj)
 {
-	pdf_obj *obj = NULL;
-	int pages = 0;
-	char *part;
-	while ((part = fz_strsep(&sel, SEP)) != NULL)
+	if (path && path[0])
 	{
-		if (strlen(part) == 0)
-			continue;
-		if (!obj)
+		char *part = fz_strsep(&path, SEP);
+		if (part && part[0])
 		{
-			if (!strcmp(part, "trailer"))
-				obj = pdf_trailer(ctx, doc);
-			else if (!strcmp(part, "pages"))
-				pages = 1;
-			else if (pages)
-				obj = pdf_lookup_page_obj(ctx, doc, atoi(part)-1);
+			if (!strcmp(part, "*"))
+			{
+				int i, n;
+				char buf[1000];
+				if (pdf_is_array(ctx, obj))
+				{
+					n = pdf_array_len(ctx, obj);
+					for (i = 0; i < n; ++i)
+					{
+						if (path)
+						{
+							fz_strlcpy(buf, path, sizeof buf);
+							showpath(buf, pdf_array_get(ctx, obj, i));
+						}
+						else
+							showpath(NULL, pdf_array_get(ctx, obj, i));
+					}
+				}
+				else if (pdf_is_dict(ctx, obj))
+				{
+					n = pdf_dict_len(ctx, obj);
+					for (i = 0; i < n; ++i)
+					{
+						if (path)
+						{
+							fz_strlcpy(buf, path, sizeof buf);
+							showpath(buf, pdf_dict_get_val(ctx, obj, i));
+						}
+						else
+							showpath(NULL, pdf_dict_get_val(ctx, obj, i));
+					}
+				}
+				else
+				{
+					printf("null\n");
+				}
+			}
 			else if (isnumber(part))
-				obj = pdf_new_indirect(ctx, doc, atoi(part), 0);
+				showpath(path, pdf_array_get(ctx, obj, atoi(part)));
 			else
-				obj = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part);
-			if (!obj && !pages)
-				break;
+				showpath(path, pdf_dict_gets(ctx, obj, part));
 		}
 		else
-		{
-			if (isnumber(part))
-				obj = pdf_array_get(ctx, obj, atoi(part));
-			else
-				obj = pdf_dict_gets(ctx, obj, part);
-		}
+			printf("null\n");
 	}
-	if (obj)
+	else
 	{
 		if (pdf_is_indirect(ctx, obj))
 			showobject(obj);
@@ -286,10 +307,63 @@ static void showpath(char *sel)
 			printf("\n");
 		}
 	}
+}
+
+static void showpathpage(char *path)
+{
+	if (path)
+	{
+		char *part = fz_strsep(&path, SEP);
+		if (part && part[0])
+		{
+			if (!strcmp(part, "*"))
+			{
+				int i, n;
+				char buf[1000];
+				n = pdf_count_pages(ctx, doc);
+				for (i = 0; i < n; ++i)
+				{
+					if (path)
+					{
+						fz_strlcpy(buf, path, sizeof buf);
+						showpath(buf, pdf_lookup_page_obj(ctx, doc, i));
+					}
+					else
+						showpath(NULL, pdf_lookup_page_obj(ctx, doc, i));
+				}
+			}
+			else if (isnumber(part))
+				showpath(path, pdf_lookup_page_obj(ctx, doc, atoi(part)-1));
+			else
+				printf("null\n");
+		}
+		else
+			printf("null\n");
+	}
 	else
 	{
-		printf("null\n");
+		showpages();
 	}
+}
+
+static void showpathroot(char *path)
+{
+	char buf[2000], *list = buf, *part;
+	fz_strlcpy(buf, path, sizeof buf);
+	part = fz_strsep(&list, SEP);
+	if (part && part[0])
+	{
+		if (!strcmp(part, "trailer"))
+			showpath(list, pdf_trailer(ctx, doc));
+		else if (!strcmp(part, "pages"))
+			showpathpage(list);
+		else if (isnumber(part))
+			showpath(list, pdf_new_indirect(ctx, doc, atoi(part), 0));
+		else
+			showpath(list, pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part));
+	}
+	else
+		printf("null\n");
 }
 
 static void show(char *sel)
@@ -305,7 +379,7 @@ static void show(char *sel)
 	else if (!strcmp(sel, "outline"))
 		showoutline();
 	else
-		showpath(sel);
+		showpathroot(sel);
 }
 
 int pdfshow_main(int argc, char **argv)
