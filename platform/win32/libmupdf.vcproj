@@ -1840,10 +1840,6 @@
 			Name="pdf"
 			>
 			<File
-				RelativePath="..\..\source\pdf\pdf-annot-edit.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-annot.c"
 				>
 			</File>
@@ -1945,6 +1941,10 @@
 			</File>
 			<File
 				RelativePath="..\..\source\pdf\pdf-lex.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\pdf\pdf-link.c"
 				>
 			</File>
 			<File
