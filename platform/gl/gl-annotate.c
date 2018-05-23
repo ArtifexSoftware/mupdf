@@ -355,7 +355,7 @@ static void do_annotate_contents(void)
 	}
 
 	ui_label("Contents:");
-	if (ui_input(&input, 0) >= UI_INPUT_EDIT)
+	if (ui_input(&input, 0, 5) >= UI_INPUT_EDIT)
 		pdf_set_annot_contents(ctx, selected_annot, input.text);
 }
 

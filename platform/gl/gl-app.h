@@ -138,8 +138,9 @@ enum
 
 struct input
 {
-	char text[256];
+	char text[16*1024];
 	char *end, *p, *q;
+	int scroll;
 };
 
 struct list
@@ -174,7 +175,7 @@ int ui_slider(int *value, int min, int max, int width);
 int ui_select(const void *id, const char *current, const char *options[], int n);
 
 void ui_input_init(struct input *input, const char *text);
-int ui_input(struct input *input, int width);
+int ui_input(struct input *input, int width, int height);
 void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max);
 
 void ui_list_begin(struct list *list, int count, int req_w, int req_h);

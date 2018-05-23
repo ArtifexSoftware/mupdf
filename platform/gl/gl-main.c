@@ -608,7 +608,7 @@ static void password_dialog(void)
 	{
 		ui_layout(T, X, NW, 2, 2);
 		ui_label("Password:");
-		is = ui_input(&input_password, 200);
+		is = ui_input(&input_password, 200, 1);
 
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
@@ -1135,7 +1135,7 @@ static void do_canvas(void)
 		ui_layout(L, NONE, W, 2, 0);
 		ui_label("Search:");
 		ui_layout(ALL, X, E, 2, 0);
-		if (ui_input(&search_input, 0) == UI_INPUT_ACCEPT)
+		if (ui_input(&search_input, 0, 1) == UI_INPUT_ACCEPT)
 		{
 			showsearch = 0;
 			search_page = -1;
