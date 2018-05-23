@@ -371,6 +371,7 @@ static const char *line_ending_styles[] = {
 	"None", "Square", "Circle", "Diamond", "OpenArrow", "ClosedArrow", "Butt",
 	"ROpenArrow", "RClosedArrow", "Slash" };
 static const char *quadding_names[] = { "Left", "Center", "Right" };
+static const char *font_names[] = { "Cour", "Helv", "TiRo", "Symb", "ZaDb", };
 
 static int should_edit_border(enum pdf_annot_type subtype)
 {
@@ -514,11 +515,38 @@ void do_annotate_panel(void)
 
 		if (subtype == PDF_ANNOT_FREE_TEXT)
 		{
+			int font_choice, color_choice, size_changed;
 			int q = pdf_annot_quadding(ctx, selected_annot);
+			const char *text_font;
+			static float text_size_f, text_color[3];
+			static int text_size;
 			ui_label("Text Alignment:");
 			choice = ui_select("Q", quadding_names[q], quadding_names, nelem(quadding_names));
 			if (choice != -1)
 				pdf_set_annot_quadding(ctx, selected_annot, choice);
+
+			pdf_annot_default_appearance(ctx, selected_annot, &text_font, &text_size_f, text_color);
+			text_size = text_size_f;
+
+			ui_label("Text Font:");
+			font_choice = ui_select("DA/Font", text_font, font_names, nelem(font_names));
+			ui_label("Text Size: %d", text_size);
+			size_changed = ui_slider(&text_size, 8, 36, 256);
+			ui_label("Text Color:");
+			color_choice = ui_select("DA/Color", name_from_hex(hex_from_color(3, text_color)), color_names+1, nelem(color_names)-1);
+			if (font_choice != -1 || color_choice != -1 || size_changed)
+			{
+				if (font_choice != -1)
+					text_font = font_names[font_choice];
+				if (color_choice != -1)
+				{
+					text_color[0] = ((color_values[color_choice+1]>>16) & 0xff) / 255.0f;
+					text_color[1] = ((color_values[color_choice+1]>>8) & 0xff) / 255.0f;
+					text_color[2] = ((color_values[color_choice+1]) & 0xff) / 255.0f;
+				}
+				pdf_set_annot_default_appearance(ctx, selected_annot, text_font, text_size, text_color);
+			}
+			ui_spacer();
 		}
 
 		if (subtype == PDF_ANNOT_LINE)
