@@ -270,6 +270,7 @@ void
 pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 {
 	pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(Contents), text);
+	pdf_dict_del(ctx, annot->obj, PDF_NAME(RC)); /* not supported */
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -496,6 +497,10 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 	if (!pdf_is_dict(ctx, bs))
 		bs = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(BS), 1);
 	pdf_dict_put_real(ctx, bs, PDF_NAME(W), w);
+
+	pdf_dict_del(ctx, annot->obj, PDF_NAME(Border)); /* deprecated */
+	pdf_dict_del(ctx, annot->obj, PDF_NAME(BE)); /* not supported */
+
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -1352,5 +1357,9 @@ pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *
 	pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, color);
 
 	pdf_dict_put_string(ctx, annot->obj, PDF_NAME(DA), buf, strlen(buf));
+
+	pdf_dict_del(ctx, annot->obj, PDF_NAME(DS)); /* not supported */
+	pdf_dict_del(ctx, annot->obj, PDF_NAME(RC)); /* not supported */
+
 	pdf_dirty_annot(ctx, annot);
 }
