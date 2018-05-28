@@ -75,7 +75,7 @@ $(OUT)/source/helpers/mu-threads/%.o : source/helpers/mu-threads/%.c
 	$(CC_CMD) $(THREADING_CFLAGS)
 
 $(OUT)/source/helpers/pkcs7/%.o : source/helpers/pkcs7/%.c
-	$(CC_CMD)
+	$(CC_CMD) $(LIBCRYPTO_CFLAGS)
 
 $(OUT)/source/tools/%.o : source/tools/%.c
 	$(CC_CMD) -Wall $(THIRD_CFLAGS) $(THREADING_CFLAGS)
@@ -211,7 +211,7 @@ MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 MUTOOL_EXE := $(OUT)/mutool
 $(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREAD_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS)
+	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
 INSTALL_APPS += $(MUTOOL_EXE)
 
 ifeq ($(HAVE_GLUT),yes)
@@ -229,7 +229,7 @@ ifeq ($(HAVE_X11),yes)
   MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_main.o
   MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_image.o
   $(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS)
+	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS)
   INSTALL_APPS += $(MUVIEW_X11_EXE)
 endif
 
@@ -239,7 +239,7 @@ ifeq ($(HAVE_WIN32),yes)
   MUVIEW_WIN32_OBJ += $(OUT)/platform/x11/win_main.o
   MUVIEW_WIN32_OBJ += $(OUT)/platform/x11/win_res.o
   $(MUVIEW_WIN32_EXE) : $(MUVIEW_WIN32_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(WIN32_LDFLAGS) $(WIN32_LIBS)
+	$(LINK_CMD) $(THIRD_LIBS) $(WIN32_LDFLAGS) $(WIN32_LIBS) $(LIBCRYPTO_LIBS)
   INSTALL_APPS += $(MUVIEW_WIN32_EXE)
 endif
 
@@ -260,7 +260,7 @@ EXTRA_APPS += $(MJSGEN_EXE)
 MUJSTEST_OBJ := $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
 MUJSTEST_EXE := $(OUT)/mujstest
 $(MUJSTEST_EXE) : $(MUJSTEST_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS)
+	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
 EXTRA_APPS += $(MUJSTEST_EXE)
 
 ifeq ($(HAVE_X11),yes)
@@ -271,7 +271,7 @@ ifeq ($(HAVE_CURL),yes)
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_image.o
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/curl_stream.o
   $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(CURL_LIBS)
+	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(CURL_LIBS) $(LIBCRYPTO_LIBS)
   EXTRA_APPS += $(MUVIEW_X11_CURL_EXE)
 endif
 endif
