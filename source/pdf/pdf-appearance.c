@@ -341,22 +341,46 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 	fz_expand_rect(rect, lw);
 }
 
-static fz_rect pdf_rect_from_quad_point(fz_context *ctx, pdf_obj *qp, int i)
+/* Contrary to the specification, the points within a QuadPoint are NOT
+ * ordered in a counter-clockwise fashion starting with the lower left.
+ * Experiments with Adobe's implementation indicates a cross-wise
+ * ordering is intended: ul, ur, ll, lr.
+ */
+enum { UL, UR, LL, LR };
+
+static float
+extract_quad(fz_context *ctx, fz_point *quad, pdf_obj *obj, int i)
 {
-	fz_rect box;
+	float dx, dy;
+	quad[0].x = pdf_array_get_real(ctx, obj, i+0);
+	quad[0].y = pdf_array_get_real(ctx, obj, i+1);
+	quad[1].x = pdf_array_get_real(ctx, obj, i+2);
+	quad[1].y = pdf_array_get_real(ctx, obj, i+3);
+	quad[2].x = pdf_array_get_real(ctx, obj, i+4);
+	quad[2].y = pdf_array_get_real(ctx, obj, i+5);
+	quad[3].x = pdf_array_get_real(ctx, obj, i+6);
+	quad[3].y = pdf_array_get_real(ctx, obj, i+7);
+	dx = quad[UL].x - quad[LL].x;
+	dy = quad[UL].y - quad[LL].y;
+	return sqrtf(dx * dx + dy * dy);
+}
 
-	/* Contrary to the specification, the points within a QuadPoint are NOT
-	 * ordered in a counterclockwise fashion starting with the lower left.
-	 * Experiments with Adobe's implementation indicates a cross-wise
-	 * ordering is intended: ul, ur, ll, lr.
-	 */
+static void
+union_quad(fz_rect *rect, const fz_point quad[4], float lw)
+{
+	fz_rect tmp;
+	tmp.x0 = fz_min(fz_min(quad[0].x, quad[1].x), fz_min(quad[2].x, quad[3].x));
+	tmp.y0 = fz_min(fz_min(quad[0].y, quad[1].y), fz_min(quad[2].y, quad[3].y));
+	tmp.x1 = fz_max(fz_max(quad[0].x, quad[1].x), fz_max(quad[2].x, quad[3].x));
+	tmp.y1 = fz_max(fz_max(quad[0].y, quad[1].y), fz_max(quad[2].y, quad[3].y));
+	fz_expand_rect(&tmp, lw);
+	fz_union_rect(rect, &tmp);
+}
 
-	box.x0 = pdf_array_get_real(ctx, qp, i+4); /* ll */
-	box.y0 = pdf_array_get_real(ctx, qp, i+5);
-	box.x1 = pdf_array_get_real(ctx, qp, i+2); /* ur */
-	box.y1 = pdf_array_get_real(ctx, qp, i+3);
-
-	return box;
+static fz_point
+lerp_point(fz_point a, fz_point b, float t)
+{
+	return fz_make_point(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y));
 }
 
 static void
@@ -364,7 +388,8 @@ pdf_write_highlight_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 {
 	pdf_obj *res_egs, *res_egs_h;
 	pdf_obj *qp;
-	float opacity;
+	fz_point quad[4], mquad[4], v;
+	float opacity, h, m, dx, dy, vn;
 	int i, n;
 
 	*rect = fz_empty_rect;
@@ -389,19 +414,36 @@ pdf_write_highlight_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	{
 		for (i = 0; i < n; i += 8)
 		{
-			fz_rect box = pdf_rect_from_quad_point(ctx, qp, i);
-			float h = box.y1 - box.y0;
-			float m = h / 4.2425f; /* magic number that matches adobe's appearance */
-			fz_append_printf(ctx, buf, "%g %g m\n", box.x0, box.y0);
+			h = extract_quad(ctx, quad, qp, i);
+			m = h / 4.2425f; /* magic number that matches adobe's appearance */
+			dx = quad[LR].x - quad[LL].x;
+			dy = quad[LR].y - quad[LL].y;
+			vn = sqrtf(dx * dx + dy * dy);
+			v = fz_make_point(dx * m / vn, dy * m / vn);
+
+			mquad[LL].x = quad[LL].x - v.x - v.y;
+			mquad[LL].y = quad[LL].y - v.y + v.x;
+			mquad[UL].x = quad[UL].x - v.x + v.y;
+			mquad[UL].y = quad[UL].y - v.y - v.x;
+			mquad[LR].x = quad[LR].x + v.x - v.y;
+			mquad[LR].y = quad[LR].y + v.y + v.x;
+			mquad[UR].x = quad[UR].x + v.x + v.y;
+			mquad[UR].y = quad[UR].y + v.y - v.x;
+
+			fz_append_printf(ctx, buf, "%g %g m\n", quad[LL].x, quad[LL].y);
 			fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n",
-					box.x0-m, box.y0+m, box.x0-m, box.y1-m, box.x0, box.y1);
-			fz_append_printf(ctx, buf, "%g %g l\n", box.x1, box.y1);
+				mquad[LL].x, mquad[LL].y,
+				mquad[UL].x, mquad[UL].y,
+				quad[UL].x, quad[UL].y);
+			fz_append_printf(ctx, buf, "%g %g l\n", quad[UR].x, quad[UR].y);
 			fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n",
-					box.x1+m, box.y1-m, box.x1+m, box.y0+m, box.x1, box.y0);
+				mquad[UR].x, mquad[UR].y,
+				mquad[LR].x, mquad[LR].y,
+				quad[LR].x, quad[LR].y);
 			fz_append_printf(ctx, buf, "f\n");
-			box.x0 -= m;
-			box.x1 += m;
-			fz_union_rect(rect, &box);
+
+			union_quad(rect, quad, h/16);
+			union_quad(rect, mquad, 0);
 		}
 	}
 }
@@ -409,6 +451,8 @@ pdf_write_highlight_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 static void
 pdf_write_underline_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect)
 {
+	fz_point quad[4], a, b;
+	float h;
 	pdf_obj *qp;
 	int i, n;
 
@@ -422,17 +466,19 @@ pdf_write_underline_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	{
 		for (i = 0; i < n; i += 8)
 		{
-			fz_rect box = pdf_rect_from_quad_point(ctx, qp, i);
-			float h = box.y1 - box.y0;
-
 			/* Acrobat draws the line at 1/7 of the box width from the bottom
 			 * of the box and 1/16 thick of the box width. */
+
+			h = extract_quad(ctx, quad, qp, i);
+			a = lerp_point(quad[LL], quad[UL], 1/7.0f);
+			b = lerp_point(quad[LR], quad[UR], 1/7.0f);
+
 			fz_append_printf(ctx, buf, "%g w\n", h/16);
-			fz_append_printf(ctx, buf, "%g %g m\n", box.x0, box.y0 + h/7);
-			fz_append_printf(ctx, buf, "%g %g l\n", box.x1, box.y0 + h/7);
+			fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
+			fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
 			fz_append_printf(ctx, buf, "S\n");
 
-			fz_union_rect(rect, &box);
+			union_quad(rect, quad, h/16);
 		}
 	}
 }
@@ -440,6 +486,8 @@ pdf_write_underline_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 static void
 pdf_write_strike_out_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect)
 {
+	fz_point quad[4], a, b;
+	float h;
 	pdf_obj *qp;
 	int i, n;
 
@@ -452,17 +500,19 @@ pdf_write_strike_out_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *bu
 		*rect = fz_empty_rect;
 		for (i = 0; i < n; i += 8)
 		{
-			fz_rect box = pdf_rect_from_quad_point(ctx, qp, i);
-			float h = box.y1 - box.y0;
-
 			/* Acrobat draws the line at 3/7 of the box width from the bottom
 			 * of the box and 1/16 thick of the box width. */
+
+			h = extract_quad(ctx, quad, qp, i);
+			a = lerp_point(quad[LL], quad[UL], 3/7.0f);
+			b = lerp_point(quad[LR], quad[UR], 3/7.0f);
+
 			fz_append_printf(ctx, buf, "%g w\n", h/16);
-			fz_append_printf(ctx, buf, "%g %g m\n", box.x0, box.y0 + 3*h/7);
-			fz_append_printf(ctx, buf, "%g %g l\n", box.x1, box.y0 + 3*h/7);
+			fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
+			fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
 			fz_append_printf(ctx, buf, "S\n");
 
-			fz_union_rect(rect, &box);
+			union_quad(rect, quad, h/16);
 		}
 	}
 }
@@ -470,6 +520,8 @@ pdf_write_strike_out_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *bu
 static void
 pdf_write_squiggly_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect)
 {
+	fz_point quad[4], a, b, c, v;
+	float h, x, w;
 	pdf_obj *qp;
 	int i, n;
 
@@ -483,24 +535,31 @@ pdf_write_squiggly_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	{
 		for (i = 0; i < n; i += 8)
 		{
-			fz_rect box = pdf_rect_from_quad_point(ctx, qp, i);
-			float h = box.y1 - box.y0;
-			float x = box.x0;
 			int up = 1;
+			h = extract_quad(ctx, quad, qp, i);
+			v = fz_make_point(quad[LR].x - quad[LL].x, quad[LR].y - quad[LL].y);
+			w = sqrtf(v.x * v.x + v.y * v.y);
+			x = 0;
 
 			fz_append_printf(ctx, buf, "%g w\n", h/16);
-			fz_append_printf(ctx, buf, "%g %g m\n", box.x0, box.y0);
-			while (x < box.x1)
+			fz_append_printf(ctx, buf, "%g %g m\n", quad[LL].x, quad[LL].y);
+			while (x < w)
 			{
 				x += h/7;
-				fz_append_printf(ctx, buf, "%g %g l\n", x, box.y0 + (up?h/7:0));
+				a = lerp_point(quad[LL], quad[LR], x/w);
+				if (up)
+				{
+					b = lerp_point(quad[UL], quad[UR], x/w);
+					c = lerp_point(a, b, 1/7.0f);
+					fz_append_printf(ctx, buf, "%g %g l\n", c.x, c.y);
+				}
+				else
+					fz_append_printf(ctx, buf, "%g %g l\n", a.x, a.y);
 				up = !up;
 			}
 			fz_append_printf(ctx, buf, "S\n");
 
-			box.x1 = x;
-			fz_expand_rect(&box, h/16);
-			fz_union_rect(rect, &box);
+			union_quad(rect, quad, h/16);
 		}
 	}
 }
