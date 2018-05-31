@@ -8,9 +8,12 @@ struct null_filter
 {
 	fz_stream *chain;
 	fz_range *ranges;
+	int look_for_endstream;
 	int nranges;
 	int next_range;
 	size_t remain;
+	unsigned int extras;
+	unsigned int size;
 	int64_t offset;
 	unsigned char buffer[4096];
 };
@@ -19,7 +22,9 @@ static int
 next_null(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	struct null_filter *state = stm->state;
-	size_t n;
+	size_t n, i, nbytes_in_buffer;
+	const char *rp;
+	unsigned int size;
 
 	while (state->remain == 0 && state->next_range < state->nranges)
 	{
@@ -29,7 +34,7 @@ next_null(fz_context *ctx, fz_stream *stm, size_t max)
 	}
 
 	if (state->remain == 0)
-		return EOF;
+		goto maybe_ended;
 	fz_seek(ctx, state->chain, state->offset, 0);
 	n = fz_available(ctx, state->chain, max);
 	if (n > state->remain)
@@ -40,11 +45,87 @@ next_null(fz_context *ctx, fz_stream *stm, size_t max)
 	stm->rp = state->buffer;
 	stm->wp = stm->rp + n;
 	if (n == 0)
-		return EOF;
+		goto maybe_ended;
 	state->chain->rp += n;
 	state->remain -= n;
 	state->offset += (int64_t)n;
 	stm->pos += (int64_t)n;
+	return *stm->rp++;
+
+maybe_ended:
+	if (state->look_for_endstream == 0)
+		return EOF;
+
+	/* We should distrust the stream length, and check for end
+	 * marker before terminating the stream - this is to cope
+	 * with files with duff "Length" values. */
+	fz_seek(ctx, state->chain, state->offset, 0);
+
+	/* Move any data left over in our buffer down to the start.
+	 * Ordinarily, there won't be any, but this allows for the
+	 * case where we were part way through matching a stream end
+	 * marker when the buffer filled before. */
+	nbytes_in_buffer = state->extras;
+	if (nbytes_in_buffer)
+		memmove(state->buffer, stm->rp, nbytes_in_buffer);
+	stm->rp = state->buffer;
+	stm->wp = stm->rp + nbytes_in_buffer;
+
+	/* In most sane files, we'll get "\nendstream" instantly. We
+	 * should only need (say) 32 bytes to be sure. For crap files
+	 * where we overread regularly, don't harm performance by
+	 * working in small chunks. */
+	state->size *= 2;
+	if (state->size > sizeof(state->buffer))
+		state->size = sizeof(state->buffer);
+#define END_CHECK_SIZE 32
+	size = state->size;
+	while (nbytes_in_buffer < size)
+	{
+		n = fz_available(ctx, state->chain, size - nbytes_in_buffer);
+		if (n == 0)
+			break;
+		if (n > size - nbytes_in_buffer)
+			n = size - nbytes_in_buffer;
+		memcpy(stm->wp, state->chain->rp, n);
+		stm->wp += n;
+		state->chain->rp += n;
+		nbytes_in_buffer += n;
+	}
+
+	*stm->wp = 0; /* Be friendly to strcmp */
+	rp = (char *)state->buffer;
+	n = 0;
+	/* If we don't have at least 11 bytes in the buffer, then we don't have
+	 * enough bytes for the worst case terminator. Also, we're dangerously
+	 * close to the end of the file. Don't risk overrunning the buffer. */
+	if (nbytes_in_buffer >= 11)
+		for (i = 0; i < nbytes_in_buffer - 11; )
+		{
+			n = i;
+			if (rp[i] == '\r')
+				i++;
+			if (rp[i] == '\n')
+				i++;
+			if (rp[i++] != 'e')
+				continue;
+			if (rp[i++] != 'n')
+				continue;
+			if (rp[i++] != 'd')
+				continue;
+			if (memcmp(&rp[i], "stream", 6) == 0 || (memcmp(&rp[i], "obj", 3) == 0))
+				break;
+			i++;
+		}
+
+	/* We have at least n bytes before we hit an end marker */
+	state->offset += (int64_t)nbytes_in_buffer - state->extras;
+	state->extras = nbytes_in_buffer - n;
+	stm->wp = stm->rp + n;
+	stm->pos += n;
+
+	if (n == 0)
+		return EOF;
 	return *stm->rp++;
 }
 
@@ -57,8 +138,8 @@ close_null(fz_context *ctx, void *state_)
 	fz_free(ctx, state);
 }
 
-fz_stream *
-fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
+static fz_stream *
+fz_open_null_n_terminator(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges, int terminator)
 {
 	struct null_filter *state = NULL;
 
@@ -69,10 +150,13 @@ fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
 		{
 			state->ranges = fz_calloc(ctx, nranges, sizeof(*ranges));
 			memcpy(state->ranges, ranges, nranges * sizeof(*ranges));
+			state->look_for_endstream = terminator;
 			state->nranges = nranges;
 			state->next_range = 1;
 			state->remain = ranges[0].len;
 			state->offset = ranges[0].offset;
+			state->extras = 0;
+			state->size = END_CHECK_SIZE>>1;
 		}
 		else
 		{
@@ -95,6 +179,12 @@ fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
 }
 
 fz_stream *
+fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges)
+{
+	return fz_open_null_n_terminator(ctx, chain, ranges, nranges, 0);
+}
+
+fz_stream *
 fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
 {
 	fz_range range;
@@ -104,9 +194,21 @@ fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
 
 	range.offset = offset;
 	range.len = len;
-	return fz_open_null_n(ctx, chain, &range, 1);
+	return fz_open_null_n_terminator(ctx, chain, &range, 1, 0);
 }
 
+fz_stream *
+fz_open_pdf_stream(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
+{
+	fz_range range;
+
+	if (len < 0)
+		len = 0;
+
+	range.offset = offset;
+	range.len = len;
+	return fz_open_null_n_terminator(ctx, chain, &range, 1, 1);
+}
 
 /* Concat filter concatenates several streams into one */
 

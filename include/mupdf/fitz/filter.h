@@ -17,6 +17,7 @@ typedef struct
 
 fz_stream *fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges);
 fz_stream *fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
+fz_stream *fz_open_pdf_stream(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
 fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);
 void fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain); /* Ownership of chain is passed in */
 fz_stream *fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen);

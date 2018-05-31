@@ -298,7 +298,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *file_stm, pdf_document *doc, pdf
 
 	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
 	len = pdf_dict_get_int(ctx, stmobj, PDF_NAME(Length));
-	null_stm = fz_open_null(ctx, file_stm, len, offset);
+	null_stm = fz_open_pdf_stream(ctx, file_stm, len, offset);
 	if (doc->crypt && !hascrypt)
 	{
 		fz_try(ctx)
