@@ -420,6 +420,7 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 void
 pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 {
+	pdf_document *doc = page->doc;
 	pdf_annot *annot;
 	pdf_obj *subtype;
 	int i, n;
@@ -444,6 +445,9 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 			}
 			fz_catch(ctx)
 				fz_warn(ctx, "could not update appearance for annotation");
+
+			if (doc->focus_obj == obj)
+				doc->focus = annot;
 
 			*page->annot_tailp = annot;
 			page->annot_tailp = &annot->next;
