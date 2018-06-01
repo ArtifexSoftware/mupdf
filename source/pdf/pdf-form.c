@@ -716,19 +716,28 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	pdf_obj *v = pdf_dict_getp(ctx, field, "AA/V");
+	pdf_obj *f = pdf_dict_getp(ctx, field, "AA/F");
 
 	if (v && doc->js)
 	{
 		pdf_js_event e;
-
 		e.target = field;
 		e.value = fz_strdup(ctx, text);
 		pdf_js_setup_event(doc->js, &e);
 		execute_action(ctx, doc, field, v);
-
 		if (!pdf_js_get_event(doc->js)->rc)
 			return 0;
-
+		text = pdf_js_get_event(doc->js)->value;
+	}
+	if (f && doc->js)
+	{
+		pdf_js_event e;
+		e.target = field;
+		e.value = fz_strdup(ctx, text);
+		pdf_js_setup_event(doc->js, &e);
+		execute_action(ctx, doc, field, f);
+		if (!pdf_js_get_event(doc->js)->rc)
+			return 0;
 		text = pdf_js_get_event(doc->js)->value;
 	}
 
