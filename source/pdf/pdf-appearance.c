@@ -858,8 +858,8 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		res_font = pdf_dict_put_dict(ctx, *res, PDF_NAME(Font), 1);
 		pdf_dict_puts_drop(ctx, res_font, fontname, pdf_add_simple_font(ctx, annot->page->doc, font, 0));
 
-		fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		fz_append_string(ctx, buf, "BT\n");
+		fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		fz_append_printf(ctx, buf, "/%s %g Tf\n", fontname, size);
 		fz_append_printf(ctx, buf, "%g TL\n", size);
 		fz_append_printf(ctx, buf, "%g %g Td\n", x+lw, y+h-lw);
@@ -921,6 +921,8 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
 
+	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
+
 	text = pdf_field_value(ctx, annot->page->doc, annot->obj);
 	fz_try(ctx)
 		write_variable_text(ctx, annot, buf, res, text, font, size, color, q,
@@ -929,6 +931,8 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_free(ctx, text);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
 
 static void
