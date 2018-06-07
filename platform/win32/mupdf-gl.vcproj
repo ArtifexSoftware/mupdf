@@ -122,7 +122,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;_DEBUG"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;WIN64;_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -274,7 +274,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;_DEBUG;MEMENTO=1"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;WIN64;_DEBUG;MEMENTO=1"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -420,7 +420,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;NDEBUG"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;WIN64;NDEBUG"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -573,7 +573,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;_DEBUG;MEMENTO"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -719,7 +719,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;_DEBUG"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;WIN64;_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -875,7 +875,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\include;..\..\thirdparty\freeglut\include;..\..\scripts\freetype;..\..\thirdparty\freetype\include"
-				PreprocessorDefinitions="WIN64;NDEBUG"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;WIN64;NDEBUG"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
