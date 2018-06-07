@@ -428,6 +428,7 @@ static jmethodID get_static_method(int *failed, JNIEnv *env, const char *method,
 static int find_fids(JNIEnv *env)
 {
 	int err = 0;
+	int getvmErr;
 
 	cls_Annotation = get_class(&err, env, PKG"Annotation");
 	fid_Annotation_pointer = get_field(&err, env, "pointer", "J");
@@ -628,7 +629,7 @@ static int find_fids(JNIEnv *env)
 	 * JNIEnv pointers on callback threads. This is specifically
 	 * guaranteed to be safe to store in a static var. */
 
-	int getvmErr = (*env)->GetJavaVM(env, &jvm);
+	getvmErr = (*env)->GetJavaVM(env, &jvm);
 	if (getvmErr < 0)
 	{
 		LOGE("mupdf_native.c find_fids() GetJavaVM failed with %d", getvmErr);
