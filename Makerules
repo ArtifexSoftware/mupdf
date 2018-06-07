@@ -45,7 +45,7 @@ else ifeq ($(build),coverage)
   CFLAGS += -pipe -g -pg -fprofile-arcs -ftest-coverage
   LIBS += -lgcov
 else ifeq ($(build),native)
-  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
+  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),memento)
   CFLAGS += -pipe -g -DMEMENTO
