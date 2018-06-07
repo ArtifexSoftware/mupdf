@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="bin2coff"
+	Version="8.00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="bin2coff (ttf)"
+			DisplayName="bin2coff (ttf)"
+			CommandLine="Release\bin2coff.exe $(InputPath) Release\libresources\$(InputName)_ttf.obj _binary_resources_fonts_$(InputName)_ttf&#x0D;&#x0A;Release\bin2coff.exe $(InputPath) x64\Release\libresources\$(InputName)_ttf.obj _binary_resources_fonts_$(InputName)_ttf 64bit&#x0D;&#x0A;&#x0D;&#x0A;"
+			Outputs="$(IntDir)\$(InputName)_ttf.obj"
+			FileExtensions="*.ttf"
+			ExecutionDescription="Embedding TTF"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="bin2coff (otf)"
+			DisplayName="bin2coff (otf)"
+			CommandLine="Release\bin2coff.exe $(InputPath) Release\libresources\$(InputName)_otf.obj _binary_resources_fonts_$(InputName)_otf&#x0D;&#x0A;Release\bin2coff.exe $(InputPath) x64\Release\libresources\$(InputName)_otf.obj _binary_resources_fonts_$(InputName)_otf 64bit&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
+			Outputs="$(IntDir)\$(InputName)_otf.obj"
+			FileExtensions="*.otf"
+			ExecutionDescription="Embedding OTF"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="bin2coff (cff)"
+			DisplayName="bin2coff (cff)"
+			CommandLine="Release\bin2coff.exe $(InputPath) Release\libresources\$(InputName)_cff.obj _binary_resources_fonts_$(InputName)_cff&#x0D;&#x0A;Release\bin2coff.exe $(InputPath) x64\Release\libresources\$(InputName)_cff.obj _binary_resources_fonts_$(InputName)_cff 64bit&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
+			Outputs="$(IntDir)\$(InputName)_cff.obj"
+			FileExtensions="*.cff"
+			ExecutionDescription="Embedding CFF"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="bin2coff (ttc)"
+			DisplayName="bin2coff (ttc)"
+			CommandLine="Release\bin2coff.exe $(InputPath) Release\libresources\$(InputName)_ttc.obj _binary_resources_fonts_$(InputName)_ttc&#x0D;&#x0A;Release\bin2coff.exe $(InputPath) x64\Release\libresources\$(InputName)_ttc.obj _binary_resources_fonts_$(InputName)_ttc 64bit&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
+			Outputs="$(IntDir)\$(InputName)_ttc.obj"
+			FileExtensions="*.ttc"
+			ExecutionDescription="Embedding TTC"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

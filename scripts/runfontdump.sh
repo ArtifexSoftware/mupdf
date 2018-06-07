@@ -7,31 +7,36 @@ OUT=scripts/fontdump.nmake.tmp
 
 echo -e >$OUT "# This is an automatically generated file. Do not edit. */"
 echo -e >>$OUT "default: generate"
-echo -e >>$OUT "hexdump.exe: scripts/hexdump.c"
-echo -e >>$OUT "\tcl scripts/hexdump.c setargv.obj"
+echo -e >>$OUT "bin2coff.exe: scripts/bin2coff.c"
+echo -e >>$OUT "\tcl scripts/bin2coff.c"
 
 mkdir -p build
-cc -O2 -o build/hexdump.exe scripts/hexdump.c
+cc -O2 -o build/bin2coff.exe scripts/bin2coff.c
 
 DIRS=$(dirname $FONTS | sort -u)
-for D in $DIRS
+for DIR in $DIRS
 do
-	echo -e >>$OUT "generated/$D:"
-	echo -e >>$OUT "\tmkdir generated/$D"
+	echo -e >>$OUT "generated/$DIR:"
+	echo -e >>$OUT "\tmkdir generated/$DIR"
 done
 
-for F in $FONTS
+for FILE in $FONTS
 do
-	C=$(echo generated/$F.c)
-	D=$(dirname $C)
+	NAME=$(echo _binary_$FILE | tr '/.-' '___')
+	OBJ=$(echo generated/$FILE.obj)
+	OBJ64=$(echo generated/$FILE.x64.obj)
+	DIR=$(dirname $OBJ)
 
-	echo $C
-	mkdir -p $D
-	#./build/hexdump.exe -s $C $F
+	echo $OBJ
+	mkdir -p $DIR
+	./build/bin2coff.exe $FILE $OBJ $NAME
+	./build/bin2coff.exe $FILE $OBJ64 $NAME 64bit
 
-	echo -e >>$OUT "generate: $C"
-	echo -e >>$OUT "$C: $F $D hexdump.exe"
-	echo -e >>$OUT "\thexdump.exe $C $F"
+	echo -e >>$OUT "generate: $OBJ $OBJ64"
+	echo -e >>$OUT "$OBJ: $FILE $DIR bin2coff.exe"
+	echo -e >>$OUT "\tbin2coff.exe $FILE $OBJ $NAME"
+	echo -e >>$OUT "$OBJ64: $FILE $DIR bin2coff.exe"
+	echo -e >>$OUT "\tbin2coff.exe $FILE $OBJ64 $NAME 64bit"
 done
 
 tr / \\\\ < $OUT > scripts/fontdump.nmake
