@@ -2,7 +2,7 @@
  * bin2coff: converts a data object into a Win32 linkable COFF binary object
  * Copyright (c) 2011 Pete Batard <pete@akeo.ie>
  * This file is part of the libwdi project: http://libwdi.sf.net
- * Modified 2018 by Artifex Software to rename '-' characters to '_' in symbols.
+ * Modifications Copyright (c) 2018 by Artifex Software
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,12 @@
  * http://webster.cs.ucr.edu/Page_TechDocs/pe.txt
  * http://www.delorie.com/djgpp/doc/coff/
  * http://pierrelib.pagesperso-orange.fr/exec_formats/MS_Symbol_Type_v1.0.pdf
+ */
+
+/*
+  Updates from Artifex Software Inc.
+    + Automatically rename '-' to '_' in generated symbols.
+    + Accept 'Win32' and 'x64' as flags.
  */
 
 #include <stdio.h>
@@ -223,6 +229,17 @@ typedef struct {
 
 #pragma pack(pop)
 
+static int check_64bit(const char *arg, int *x86_32)
+{
+	if ((strcmp(arg, "64bit") == 0) || (strcmp(arg, "x64") == 0))
+		*x86_32 = 0; /* 0 = 64bit */
+	else if ((strcmp(arg, "32bit") == 0) || (strcmp(arg, "Win32") == 0))
+		*x86_32 = 1; /* 1 = 32bit */
+	else
+		return 0;
+	return 1;
+}
+
 int
 #ifdef DDKBUILD
 __cdecl
@@ -230,7 +247,7 @@ __cdecl
 main (int argc, char *argv[])
 {
 	const uint16_t endian_test = 0xBE00;
-	int x86_32, short_label, short_size;
+	int x86_32, short_label, short_size, last_arg;
 	int i, r = 1;
 	char* label;
 	FILE *fd = NULL;
@@ -243,12 +260,12 @@ main (int argc, char *argv[])
 	SIZE_TYPE* data_size;
 
 	if ((argc < 3) || (argc > 5)) {
-		fprintf(stderr, "\nUsage: bin2coff bin obj [label] [64bit]\n\n");
+		fprintf(stderr, "\nUsage: bin2coff bin obj [label] [64bit|Win32|x64]\n\n");
 		fprintf(stderr, "  bin  : source binary data\n");
 		fprintf(stderr, "  obj  : target object file, in MS COFF format.\n");
 		fprintf(stderr, "  label: identifier for the extern data. If not provided, the name of the\n");
 		fprintf(stderr, "         binary file without extension is used.\n");
-		fprintf(stderr, "  64bit: produce a 64 bit compatible object - symbols are generated without\n");
+		fprintf(stderr, "  64bit:\n  Win32:\n  x64  : produce a 64 bit compatible object - symbols are generated without\n");
 		fprintf(stderr, "         leading underscores and machine type is set to x86_x64.\n\n");
 		fprintf(stderr, "With your linker set properly, typical access from a C source is:\n\n");
 		fprintf(stderr, "    extern uint8_t  label[]     /* binary data         */\n");
@@ -271,10 +288,15 @@ main (int argc, char *argv[])
 	size = (size_t)ftell(fd);
 	fseek(fd, 0, SEEK_SET);
 
-	x86_32 = (((argc >= 4) && (strcmp(argv[3], "64bit") == 0)) || ((argc >= 5) && (strcmp(argv[4], "64bit") == 0)))?0:1;
+	x86_32 = 0;
+	last_arg = argc;
+	if (argc >= 4 && check_64bit(argv[4], &x86_32))
+		last_arg = 4;
+	else if (argc >= 5 && check_64bit(argv[5], &x86_32))
+		last_arg = 5;
 
 	/* Label setup */
-	if ( (argc < 4) || ((argc == 4) && (!x86_32)) ) {
+	if (argc < last_arg) {
 		for (i=(int)strlen(argv[1])-1; i>=0; i--) {
 			if (argv[1][i] == '.') {
 				argv[1][i] = 0;

@@ -755,22 +755,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSansNarrow-BdOblique.cff"
-					>
-				</File>
-				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSansNarrow-Bold.cff"
-					>
-				</File>
-				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSansNarrow-Oblique.cff"
-					>
-				</File>
-				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSansNarrow-Regular.cff"
-					>
-				</File>
-				<File
 					RelativePath="..\..\resources\fonts\urw\StandardSymbolsPS.cff"
 					>
 				</File>
