@@ -918,22 +918,31 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 }
 
 static void
-pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
+pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	const char *font;
 	float size, color[3];
 	char *text;
-	int q;
+	float w, h, t;
+	int q, r;
 
+	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
+
+	w = rect->x1 - rect->x0;
+	h = rect->y1 - rect->y0;
+	if (r == 90 || r == 270)
+		t = h, h = w, w = t;
+	fz_rotate(matrix, r);
+	*bbox = fz_make_rect(0, 0, w, h);
 
 	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
 
 	text = pdf_field_value(ctx, annot->page->doc, annot->obj);
 	fz_try(ctx)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q,
-				rect->x0, rect->y0, rect->x1-rect->x0, rect->y1-rect->y0, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, 0, 0, w, h, 0);
 	fz_always(ctx)
 		fz_free(ctx, text);
 	fz_catch(ctx)
@@ -943,19 +952,21 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 }
 
 static void
-pdf_write_ch_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
+pdf_write_ch_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
-	pdf_write_tx_widget_appearance(ctx, annot, buf, rect, res);
+	pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 }
 
 static void
-pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
+pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
 	if (pdf_name_eq(ctx, ft, PDF_NAME(Tx)))
-		pdf_write_tx_widget_appearance(ctx, annot, buf, rect, res);
+		pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Ch)))
-		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, res);
+		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream for %s widgets", pdf_to_name(ctx, ft));
 }
@@ -969,9 +980,7 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream");
 	case PDF_ANNOT_WIDGET:
-		pdf_write_widget_appearance(ctx, annot, buf, rect, res);
-		*matrix = fz_identity;
-		*bbox = *rect;
+		pdf_write_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 		break;
 	case PDF_ANNOT_INK:
 		pdf_write_ink_appearance(ctx, annot, buf, rect);
