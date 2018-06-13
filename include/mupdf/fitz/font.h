@@ -593,6 +593,8 @@ void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int
 float fz_font_ascender(fz_context *ctx, fz_font *font);
 float fz_font_descender(fz_context *ctx, fz_font *font);
 
+void fz_font_digest(fz_context *ctx, fz_font *font, unsigned char digest[16]);
+
 /*
 	Internal functions for our Harfbuzz integration
 	to work around the lack of thread safety.

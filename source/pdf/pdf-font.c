@@ -2010,7 +2010,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 	pdf_obj *dfonts = NULL;
 	unsigned char digest[16];
 
-	fref = pdf_find_font_resource(ctx, doc, PDF_CID_FONT_RESOURCE, 0, font->buffer, digest);
+	fref = pdf_find_font_resource(ctx, doc, PDF_CID_FONT_RESOURCE, 0, font, digest);
 	if (fref)
 		return fref;
 
@@ -2087,7 +2087,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 	const char **enc;
 	unsigned char digest[16];
 
-	fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, encoding, font->buffer, digest);
+	fref = pdf_find_font_resource(ctx, doc, PDF_SIMPLE_FONT_RESOURCE, encoding, font, digest);
 	if (fref)
 		return fref;
 
@@ -2199,7 +2199,7 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 	if (serif)
 		flags |= PDF_FD_SERIF;
 
-	fref = pdf_find_font_resource(ctx, doc, PDF_CJK_FONT_RESOURCE, script, fzfont->buffer, digest);
+	fref = pdf_find_font_resource(ctx, doc, PDF_CJK_FONT_RESOURCE, script, fzfont, digest);
 	if (fref)
 		return fref;
 

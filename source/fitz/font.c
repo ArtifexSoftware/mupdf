@@ -1814,3 +1814,15 @@ fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font)
 {
 	return font ? &font->shaper_data : NULL;
 }
+
+void fz_font_digest(fz_context *ctx, fz_font *font, unsigned char digest[16])
+{
+	if (!font->buffer)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no font file for digest");
+	if (!font->has_digest)
+	{
+		fz_md5_buffer(ctx, font->buffer, font->digest);
+		font->has_digest = 1;
+	}
+	memcpy(digest, font->digest, 16);
+}

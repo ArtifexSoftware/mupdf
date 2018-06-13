@@ -39,6 +39,10 @@ struct fz_font_s
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];
+
+	/* cached md5sum for caching */
+	int has_digest;
+	unsigned char digest[16];
 };
 
 #endif
