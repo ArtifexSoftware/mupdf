@@ -204,12 +204,27 @@ void update_title(void)
 	glutSetIconTitle(buf);
 }
 
-void load_page(void)
+void transform_page(void)
 {
-	fz_irect area;
+	fz_rect rect = page_bounds;
+	fz_matrix matrix;
+
+	draw_page_bounds = page_bounds;
 
 	fz_scale(&draw_page_ctm, currentzoom / 72, currentzoom / 72);
 	fz_pre_rotate(&draw_page_ctm, -currentrotate);
+
+	/* fix the page origin at 0,0 after rotation */
+	fz_transform_rect(&rect, &draw_page_ctm);
+	fz_translate(&matrix, -rect.x0, -rect.y0);
+	fz_concat(&draw_page_ctm, &draw_page_ctm, &matrix);
+
+	fz_transform_rect(&draw_page_bounds, &draw_page_ctm);
+}
+
+void load_page(void)
+{
+	fz_irect area;
 
 	/* clear all editor selections */
 	selected_annot = NULL;
@@ -230,8 +245,8 @@ void load_page(void)
 
 	/* compute bounds here for initial window size */
 	fz_bound_page(ctx, fzpage, &page_bounds);
-	draw_page_bounds = page_bounds;
-	fz_transform_rect(&draw_page_bounds, &draw_page_ctm);
+	transform_page();
+
 	fz_irect_from_rect(&area, &draw_page_bounds);
 	page_tex.w = area.x1 - area.x0;
 	page_tex.h = area.y1 - area.y0;
@@ -241,8 +256,7 @@ void render_page(void)
 {
 	fz_pixmap *pix;
 
-	fz_scale(&draw_page_ctm, currentzoom / 72, currentzoom / 72);
-	fz_pre_rotate(&draw_page_ctm, -currentrotate);
+	transform_page();
 
 	pix = fz_new_pixmap_from_page(ctx, fzpage, &draw_page_ctm, fz_device_rgb(ctx), 0);
 	if (currentinvert)
