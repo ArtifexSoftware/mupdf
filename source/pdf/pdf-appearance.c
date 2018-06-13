@@ -873,24 +873,31 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 }
 
 static void
-pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
+pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	const char *font;
 	float size, color[3];
 	char *text;
-	float x, y, w, h, lw;
-	int q;
+	float x, y, w, h, t, lw;
+	int q, r;
 
+	/* /Rotate is an undocumented annotation property supported by Adobe */
+	r = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Rotate));
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
 
-	x = rect->x0;
-	y = rect->y0;
+	x = y = 0;
 	w = rect->x1 - rect->x0;
 	h = rect->y1 - rect->y0;
+	if (r == 90 || r == 270)
+		t = h, h = w, w = t;
+
+	fz_rotate(matrix, r);
+	*bbox = fz_make_rect(0, 0, w, h);
 
 	if (pdf_write_fill_color_appearance(ctx, annot, buf))
-		fz_append_printf(ctx, buf, "%g %g %g %g re\nf\n", x, y, w, h);
+		fz_append_printf(ctx, buf, "0 0 %g %g re\nf\n", w, h);
 
 	lw = pdf_write_border_appearance(ctx, annot, buf);
 	if (lw > 0)
@@ -955,7 +962,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 
 static void
 pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
-		fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	switch (pdf_annot_type(ctx, annot))
 	{
@@ -1031,9 +1038,7 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		*matrix = fz_identity;
 		break;
 	case PDF_ANNOT_FREE_TEXT:
-		pdf_write_free_text_appearance(ctx, annot, buf, rect, res);
-		*matrix = fz_identity;
-		*bbox = *rect;
+		pdf_write_free_text_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 		break;
 	}
 }
