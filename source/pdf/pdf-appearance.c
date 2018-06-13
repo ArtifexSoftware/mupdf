@@ -637,7 +637,7 @@ pdf_write_icon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 }
 
 static float
-measure_stamp_string(fz_context *ctx, fz_font *font, const char *text)
+measure_simple_string(fz_context *ctx, fz_font *font, const char *text)
 {
 	float w = 0;
 	while (*text)
@@ -678,7 +678,7 @@ write_stamp_string(fz_context *ctx, fz_buffer *buf, fz_font *font, const char *t
 static void
 write_stamp(fz_context *ctx, fz_buffer *buf, fz_font *font, const char *text, float y, float h)
 {
-	float tw = measure_stamp_string(ctx, font, text) * h;
+	float tw = measure_simple_string(ctx, font, text) * h;
 	fz_append_string(ctx, buf, "BT\n");
 	fz_append_printf(ctx, buf, "/Times %g Tf\n", h);
 	fz_append_printf(ctx, buf, "%g %g Td\n", (190-tw)/2, y);
@@ -804,10 +804,10 @@ break_simple_string(fz_context *ctx, fz_font *font, float size, const char *a, c
 
 static void
 write_simple_string_with_quadding(fz_context *ctx, fz_buffer *buf, fz_font *font, float size,
-		const char *a, float maxw, int q)
+	const char *a, float maxw, int q)
 {
 	const char *b;
-	float px = 0, x, w;
+	float px = 0, x = 0, w;
 	while (*a)
 	{
 		w = break_simple_string(ctx, font, size, a, &b, maxw);
@@ -844,11 +844,21 @@ static const char *full_font_name(const char **name)
 
 static void
 write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res,
-		char *text, const char *fontname, float size, float color[3], int q,
-		float x, float y, float w, float h, float lw)
+	const char *text, const char *fontname, float size, float color[3], int q,
+	float w, float h, float padding, int multiline)
 {
 	pdf_obj *res_font;
 	fz_font *font;
+	float lineheight;
+	float baseline;
+
+	w -= padding * 2;
+	h -= padding * 2;
+	if (size == 0)
+		size = multiline ? 12 : h;
+
+	lineheight = size * 1.15f; /* empirically derived from Adobe reader */
+	baseline = size * 0.8f;
 
 	font = fz_new_base14_font(ctx, full_font_name(&fontname));
 	fz_try(ctx)
@@ -861,9 +871,27 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		fz_append_string(ctx, buf, "BT\n");
 		fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		fz_append_printf(ctx, buf, "/%s %g Tf\n", fontname, size);
-		fz_append_printf(ctx, buf, "%g TL\n", size);
-		fz_append_printf(ctx, buf, "%g %g Td\n", x+lw, y+h-lw);
-		write_simple_string_with_quadding(ctx, buf, font, size, text, w-lw*2, q);
+		if (multiline)
+		{
+			fz_append_printf(ctx, buf, "%g TL\n", lineheight);
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h+(size-baseline));
+			write_simple_string_with_quadding(ctx, buf, font, size, text, w, q);
+		}
+		else
+		{
+			float tx = 0, ty = (h - size) / 2;
+			if (q > 0)
+			{
+				float tw = measure_simple_string(ctx, font, text) * size;
+				if (q == 1)
+					tx = (w - tw) / 2;
+				else
+					tx = (w - tw);
+			}
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding+tx, padding+h-baseline-ty);
+			write_simple_string(ctx, buf, text, text + strlen(text));
+			fz_append_printf(ctx, buf, " Tj\n");
+		}
 		fz_append_string(ctx, buf, "ET\n");
 	}
 	fz_always(ctx)
@@ -879,7 +907,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	const char *font;
 	float size, color[3];
 	char *text;
-	float x, y, w, h, t, lw;
+	float w, h, t, b;
 	int q, r;
 
 	/* /Rotate is an undocumented annotation property supported by Adobe */
@@ -887,7 +915,6 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
 
-	x = y = 0;
 	w = rect->x1 - rect->x0;
 	h = rect->y1 - rect->y0;
 	if (r == 90 || r == 270)
@@ -899,18 +926,16 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (pdf_write_fill_color_appearance(ctx, annot, buf))
 		fz_append_printf(ctx, buf, "0 0 %g %g re\nf\n", w, h);
 
-	lw = pdf_write_border_appearance(ctx, annot, buf);
-	if (lw > 0)
+	b = pdf_write_border_appearance(ctx, annot, buf);
+	if (b > 0)
 	{
 		fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]);
-		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", x+lw/2, y+lw/2, w-lw, h-lw);
-		x += size * 0.2f;
-		w -= size * 0.4f;
+		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
 	text = pdf_copy_annot_contents(ctx, annot);
 	fz_try(ctx)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, x, y, w, h, lw);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1);
 	fz_always(ctx)
 		fz_free(ctx, text);
 	fz_catch(ctx)
@@ -919,15 +944,16 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 static void
 pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
-	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res,
+	const char *text, int ff)
 {
 	const char *font;
 	float size, color[3];
-	char *text;
-	float w, h, t;
+	float w, h, t, b;
 	int q, r;
 
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
+	b = pdf_annot_border(ctx, annot);
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
 
@@ -940,22 +966,20 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
 
-	text = pdf_field_value(ctx, annot->page->doc, annot->obj);
-	fz_try(ctx)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, 0, 0, w, h, 0);
-	fz_always(ctx)
-		fz_free(ctx, text);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	if (ff & Ff_Multiline)
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 1);
+	else
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 0);
 
 	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
 
 static void
 pdf_write_ch_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
-	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res,
+	const char *text, int ff)
 {
-	pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
+	pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
 }
 
 static void
@@ -963,10 +987,27 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
+	int ff = pdf_get_field_flags(ctx, annot->page->doc, annot->obj);
 	if (pdf_name_eq(ctx, ft, PDF_NAME(Tx)))
-		pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
+	{
+		char *text = pdf_field_value(ctx, annot->page->doc, annot->obj);
+		fz_try(ctx)
+			pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
+		fz_always(ctx)
+			fz_free(ctx, text);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Ch)))
-		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
+	{
+		char *text = pdf_field_value(ctx, annot->page->doc, annot->obj);
+		fz_try(ctx)
+			pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
+		fz_always(ctx)
+			fz_free(ctx, text);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream for %s widgets", pdf_to_name(ctx, ft));
 }
