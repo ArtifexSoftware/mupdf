@@ -229,6 +229,8 @@ struct fz_font_context_s
 	fz_load_system_fallback_font_fn *load_fallback_font;
 
 	/* Cached fallback fonts */
+	fz_font *base14[14];
+	fz_font *cjk[8];
 	struct { fz_font *serif, *sans; } fallback[256];
 	fz_font *symbol1, *symbol2;
 	fz_font *emoji;
@@ -302,6 +304,10 @@ void fz_drop_font_context(fz_context *ctx)
 	{
 		int i;
 
+		for (i = 0; i < nelem(ctx->font->base14); ++i)
+			fz_drop_font(ctx, ctx->font->base14[i]);
+		for (i = 0; i < nelem(ctx->font->cjk); ++i)
+			fz_drop_font(ctx, ctx->font->cjk[i]);
 		for (i = 0; i < nelem(ctx->font->fallback); ++i)
 		{
 			fz_drop_font(ctx, ctx->font->fallback[i].serif);
@@ -649,15 +655,45 @@ fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int i
 	return font;
 }
 
+static int
+find_base14_index(const char *name)
+{
+	if (!strcmp(name, "Courier")) return 0;
+	if (!strcmp(name, "Courier-Oblique")) return 1;
+	if (!strcmp(name, "Courier-Bold")) return 2;
+	if (!strcmp(name, "Courier-BoldOblique")) return 3;
+	if (!strcmp(name, "Helvetica")) return 4;
+	if (!strcmp(name, "Helvetica-Oblique")) return 5;
+	if (!strcmp(name, "Helvetica-Bold")) return 6;
+	if (!strcmp(name, "Helvetica-BoldOblique")) return 7;
+	if (!strcmp(name, "Times-Roman")) return 8;
+	if (!strcmp(name, "Times-Italic")) return 9;
+	if (!strcmp(name, "Times-Bold")) return 10;
+	if (!strcmp(name, "Times-BoldItalic")) return 11;
+	if (!strcmp(name, "Symbol")) return 12;
+	if (!strcmp(name, "ZapfDingbats")) return 13;
+	return -1;
+}
+
 fz_font *
 fz_new_base14_font(fz_context *ctx, const char *name)
 {
 	const unsigned char *data;
 	int size;
-	data = fz_lookup_base14_font(ctx, name, &size);
-	if (!data)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font with name '%s'", name);
-	return fz_new_font_from_memory(ctx, name, data, size, 0, 0);
+	int x = find_base14_index(name);
+	if (x >= 0)
+	{
+		if (ctx->font->base14[x])
+			return fz_keep_font(ctx, ctx->font->base14[x]);
+		data = fz_lookup_base14_font(ctx, name, &size);
+		if (data)
+		{
+			ctx->font->base14[x] = fz_new_font_from_memory(ctx, name, data, size, 0, 1);
+			ctx->font->base14[x]->flags.is_serif = (name[0] == 'T'); /* Times-Roman */
+			return fz_keep_font(ctx, ctx->font->base14[x]);
+		}
+	}
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font with name '%s'", name);
 }
 
 fz_font *
@@ -665,10 +701,19 @@ fz_new_cjk_font(fz_context *ctx, int ordering, int serif)
 {
 	const unsigned char *data;
 	int size, index;
-	data = fz_lookup_cjk_font(ctx, ordering, serif, &size, &index);
-	if (!data)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
-	return fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
+	int x = (ordering * 2) + !!serif;
+	if (x >= 0 && x < nelem(ctx->font->cjk))
+	{
+		if (ctx->font->cjk[x])
+			return fz_keep_font(ctx, ctx->font->cjk[x]);
+		data = fz_lookup_cjk_font(ctx, ordering, serif, &size, &index);
+		if (data)
+		{
+			ctx->font->cjk[x] = fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
+			return fz_keep_font(ctx, ctx->font->cjk[x]);
+		}
+	}
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
 }
 
 fz_font *
