@@ -359,6 +359,58 @@ static void do_annotate_contents(void)
 		pdf_set_annot_contents(ctx, selected_annot, input.text);
 }
 
+static void do_widget_value()
+{
+	int ff, type;
+	char *value;
+
+	ff = pdf_get_field_flags(ctx, selected_annot->page->doc, selected_annot->obj);
+	type = pdf_field_type(ctx, selected_annot->page->doc, selected_annot->obj);
+
+	if (type == PDF_WIDGET_TYPE_TEXT)
+	{
+		static pdf_annot *last_annot = NULL;
+		static struct input input;
+		ui_label("Value:");
+		if (selected_annot != last_annot)
+		{
+			last_annot = selected_annot;
+			value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
+			ui_input_init(&input, value);
+			fz_free(ctx, value);
+		}
+		if (ui_input(&input, 0, (ff & Ff_Multiline) ? 5 : 1) >= UI_INPUT_EDIT)
+		{
+			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, input.text);
+			pdf_dirty_annot(ctx, selected_annot);
+		}
+	}
+	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
+	{
+		char **options;
+		int n, choice;
+		ui_label("Value:");
+		n = pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, NULL);
+		options = fz_malloc_array(ctx, n, sizeof(char*));
+		pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, options);
+		value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
+		choice = ui_select("Widget/Ch", value, (const char **)options, n);
+		if (choice >= 0)
+		{
+			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, options[choice]);
+			pdf_dirty_annot(ctx, selected_annot);
+		}
+		fz_free(ctx, value);
+		fz_free(ctx, options);
+	}
+	else
+	{
+		value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
+		ui_label("Value: %s", value);
+		fz_free(ctx, value);
+	}
+}
+
 static const char *file_attachment_icons[] = { "Graph", "Paperclip", "PushPin", "Tag" };
 static const char *sound_icons[] = { "Speaker", "Mic" };
 static const char *stamp_icons[] = {
@@ -468,8 +520,14 @@ void do_annotate_panel(void)
 	{
 		char buf[256];
 		int num = pdf_to_num(ctx, annot->obj);
-		const char *type = pdf_string_from_annot_type(ctx, pdf_annot_type(ctx, annot));
-		fz_snprintf(buf, sizeof buf, "%d: %s", num, type);
+		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
+		if (subtype == PDF_ANNOT_WIDGET)
+		{
+			pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
+			fz_snprintf(buf, sizeof buf, "%d: Widget %s", num, pdf_to_name(ctx, ft));
+		}
+		else
+			fz_snprintf(buf, sizeof buf, "%d: %s", num, pdf_string_from_annot_type(ctx, subtype));
 		if (ui_list_item(&annot_list, annot->obj, buf, selected_annot == annot))
 			selected_annot = annot;
 	}
@@ -509,7 +567,10 @@ void do_annotate_panel(void)
 
 		ui_spacer();
 
-		do_annotate_contents();
+		if (subtype == PDF_ANNOT_WIDGET)
+			do_widget_value();
+		else
+			do_annotate_contents();
 
 		ui_spacer();
 
