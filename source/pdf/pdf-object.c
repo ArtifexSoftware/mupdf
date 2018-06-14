@@ -2235,6 +2235,11 @@ float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 	return pdf_to_real(ctx, pdf_dict_get(ctx, dict, key));
 }
 
+const char *pdf_dict_get_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_name(ctx, pdf_dict_get(ctx, dict, key));
+}
+
 const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep)
 {
 	pdf_obj *val = pdf_dict_get(ctx, dict, key);
