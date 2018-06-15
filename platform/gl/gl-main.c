@@ -93,6 +93,7 @@ static float layout_h = DEFAULT_LAYOUT_H;
 static float layout_em = DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
 static int layout_use_doc_css = 1;
+static int enable_js = 1;
 
 static fz_document *doc = NULL;
 static fz_page *fzpage = NULL;
@@ -674,7 +675,8 @@ static void load_document(void)
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 	{
-		pdf_enable_js(ctx, pdf);
+		if (enable_js)
+			pdf_enable_js(ctx, pdf);
 		if (anchor)
 			currentpage = pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
 	}
@@ -1280,6 +1282,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
 	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
 	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
+	fprintf(stderr, "\t-J\tdisable javascript in PDF forms\n");
 	exit(1);
 }
 
@@ -1315,7 +1318,7 @@ int main(int argc, char **argv)
 	int c;
 
 	glutInit(&argc, argv);
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:X")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJ")) != -1)
 	{
 		switch (c)
 		{
@@ -1328,6 +1331,7 @@ int main(int argc, char **argv)
 		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
 		case 'X': layout_use_doc_css = 0; break;
+		case 'J': enable_js = !enable_js; break;
 		}
 	}
 
