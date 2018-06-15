@@ -860,7 +860,7 @@
 "\n"
 "function AFPercent_Format(nDec, sepStyle) {\n"
 "var val = AFMakeNumber(event.value);\n"
-"if (!val) {\n"
+"if (val == null) {\n"
 "event.value = '';\n"
 "return;\n"
 "}\n"

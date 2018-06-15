@@ -860,7 +860,7 @@ function AFPercent_Keystroke(nDec, sepStyle) {
 
 function AFPercent_Format(nDec, sepStyle) {
 	var val = AFMakeNumber(event.value);
-	if (!val) {
+	if (val == null) {
 		event.value = '';
 		return;
 	}
