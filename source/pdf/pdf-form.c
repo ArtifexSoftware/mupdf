@@ -292,7 +292,7 @@ static void reset_form(fz_context *ctx, pdf_document *doc, pdf_obj *fields, int 
 	}
 }
 
-static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *a)
+void pdf_execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 {
 	if (a)
 	{
@@ -343,7 +343,7 @@ static void execute_action_chain(fz_context *ctx, pdf_document *doc, pdf_obj *ob
 
 	while (a)
 	{
-		execute_action(ctx, doc, obj, a);
+		pdf_execute_action(ctx, doc, obj, a);
 		a = pdf_dict_get(ctx, a, PDF_NAME(Next));
 	}
 }
@@ -359,7 +359,7 @@ static void execute_additional_action(fz_context *ctx, pdf_document *doc, pdf_ob
 		e.target = obj;
 		e.value = "";
 		pdf_js_setup_event(doc->js, &e);
-		execute_action(ctx, doc, obj, a);
+		pdf_execute_action(ctx, doc, obj, a);
 	}
 }
 
@@ -428,7 +428,7 @@ static void recalculate(fz_context *ctx, pdf_document *doc)
 					e.target = field;
 					e.value = pdf_field_value(ctx, doc, field);
 					pdf_js_setup_event(doc->js, &e);
-					execute_action(ctx, doc, field, calc);
+					pdf_execute_action(ctx, doc, field, calc);
 					/* A calculate action, updates event.value. We need
 					* to place the value in the field */
 					update_field_value(ctx, doc, field, pdf_js_get_event(doc->js)->value);
@@ -716,7 +716,6 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	pdf_obj *v = pdf_dict_getp(ctx, field, "AA/V");
-	pdf_obj *f = pdf_dict_getp(ctx, field, "AA/F");
 
 	if (v && doc->js)
 	{
@@ -724,18 +723,7 @@ static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 		e.target = field;
 		e.value = fz_strdup(ctx, text);
 		pdf_js_setup_event(doc->js, &e);
-		execute_action(ctx, doc, field, v);
-		if (!pdf_js_get_event(doc->js)->rc)
-			return 0;
-		text = pdf_js_get_event(doc->js)->value;
-	}
-	if (f && doc->js)
-	{
-		pdf_js_event e;
-		e.target = field;
-		e.value = fz_strdup(ctx, text);
-		pdf_js_setup_event(doc->js, &e);
-		execute_action(ctx, doc, field, f);
+		pdf_execute_action(ctx, doc, field, v);
 		if (!pdf_js_get_event(doc->js)->rc)
 			return 0;
 		text = pdf_js_get_event(doc->js)->value;
@@ -1083,7 +1071,7 @@ static int run_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, cha
 		e.target = field;
 		e.value = *text;
 		pdf_js_setup_event(doc->js, &e);
-		execute_action(ctx, doc, field, k);
+		pdf_execute_action(ctx, doc, field, k);
 
 		if (!pdf_js_get_event(doc->js)->rc)
 			return 0;

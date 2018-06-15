@@ -213,4 +213,6 @@ void pdf_event_issue_exec_dialog(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, const char *url, int new_frame);
 void pdf_event_issue_mail_doc(fz_context *ctx, pdf_document *doc, pdf_mail_doc_event *event);
 
+void pdf_execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *a);
+
 #endif
