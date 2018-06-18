@@ -95,7 +95,7 @@ struct fz_stext_char_s
 {
 	int c;
 	fz_point origin;
-	fz_rect bbox;
+	fz_quad quad;
 	float size;
 	fz_font *font;
 	fz_stext_char *next;
@@ -141,16 +141,16 @@ void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page 
 /*
 	fz_search_stext_page: Search for occurrence of 'needle' in text page.
 
-	Return the number of hits and store hit bboxes in the passed in array.
+	Return the number of hits and store hit quads in the passed in array.
 
 	NOTE: This is an experimental interface and subject to change without notice.
 */
-int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_rect *hit_bbox, int hit_max);
+int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_quad *quads, int max_quads);
 
 /*
-	fz_highlight_selection: Return a list of rectangles to highlight lines inside the selection points.
+	fz_highlight_selection: Return a list of quads to highlight lines inside the selection points.
 */
-int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_rect *hit_bbox, int hit_max);
+int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads);
 
 /*
 	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection.

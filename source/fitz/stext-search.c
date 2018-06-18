@@ -11,6 +11,20 @@ static float dist2(float a, float b)
 	return a * a + b * b;
 }
 
+static float hdist(fz_point *dir, fz_point *a, fz_point *b)
+{
+	float dx = b->x - a->x;
+	float dy = b->y - a->y;
+	return fz_abs(dx * dir->x + dy * dir->y);
+}
+
+static float vdist(fz_point *dir, fz_point *a, fz_point *b)
+{
+	float dx = b->x - a->x;
+	float dy = b->y - a->y;
+	return fz_abs(dx * dir->y + dy * dir->x);
+}
+
 static int line_length(fz_stext_line *line)
 {
 	fz_stext_char *ch;
@@ -43,8 +57,8 @@ static int find_closest_in_line(fz_stext_line *line, int idx, fz_point p)
 
 	for (ch = line->first_char; ch; ch = ch->next)
 	{
-		float mid_x = (ch->bbox.x0 + ch->bbox.x1) / 2;
-		float mid_y = (ch->bbox.y0 + ch->bbox.y1) / 2;
+		float mid_x = (ch->quad.ul.x + ch->quad.ur.x + ch->quad.ll.x + ch->quad.lr.x) / 4;
+		float mid_y = (ch->quad.ul.y + ch->quad.ur.y + ch->quad.ll.y + ch->quad.lr.y) / 4;
 		float this_dist = dist2(p.x - mid_x, p.y - mid_y);
 		if (this_dist < closest_dist)
 		{
@@ -171,7 +185,7 @@ fz_enumerate_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 struct highlight
 {
 	int len, cap;
-	fz_rect *box;
+	fz_quad *box;
 	float hfuzz, vfuzz;
 };
 
@@ -180,80 +194,23 @@ static void on_highlight_char(fz_context *ctx, void *arg, fz_stext_line *line, f
 	struct highlight *hits = arg;
 	float vfuzz = ch->size * hits->vfuzz;
 	float hfuzz = ch->size * hits->hfuzz;
-	fz_rect bbox;
-
-	if (line->dir.x > line->dir.y)
-	{
-		bbox.x0 = ch->bbox.x0;
-		bbox.x1 = ch->bbox.x1;
-		bbox.y0 = line->bbox.y0;
-		bbox.y1 = line->bbox.y1;
-	}
-	else
-	{
-		bbox.x0 = line->bbox.x0;
-		bbox.x1 = line->bbox.x1;
-		bbox.y0 = ch->bbox.y0;
-		bbox.y1 = ch->bbox.y1;
-	}
 
 	if (hits->len > 0)
 	{
-		fz_rect *end = &hits->box[hits->len-1];
-		if (fz_abs(bbox.y0 - end->y0) < vfuzz && fz_abs(bbox.y1 - end->y1) < vfuzz)
+		fz_quad *end = &hits->box[hits->len-1];
+		if (hdist(&line->dir, &end->lr, &ch->quad.ll) < hfuzz
+			&& vdist(&line->dir, &end->lr, &ch->quad.ll) < vfuzz
+			&& hdist(&line->dir, &end->ur, &ch->quad.ul) < hfuzz
+			&& vdist(&line->dir, &end->ur, &ch->quad.ul) < vfuzz)
 		{
-			if (bbox.x1 < end->x0)
-			{
-				if (end->x0 - bbox.x1 < hfuzz)
-				{
-					end->x0 = bbox.x0;
-					return;
-				}
-			}
-			else if (bbox.x0 > end->x1)
-			{
-				if (bbox.x0 - end->x1 < hfuzz)
-				{
-					end->x1 = bbox.x1;
-					return;
-				}
-			}
-			else
-			{
-				end->x0 = fz_min(bbox.x0, end->x0);
-				end->x1 = fz_max(bbox.x1, end->x1);
-				return;
-			}
-		}
-		if (fz_abs(bbox.x0 - end->x0) < vfuzz && fz_abs(bbox.x1 - end->x1) < vfuzz)
-		{
-			if (bbox.y1 < end->y0)
-			{
-				if (end->y0 - bbox.y1 < hfuzz)
-				{
-					end->y0 = bbox.y0;
-					return;
-				}
-			}
-			else if (bbox.y0 > end->y1)
-			{
-				if (bbox.y0 - end->y1 < hfuzz)
-				{
-					end->y1 = bbox.y1;
-					return;
-				}
-			}
-			else
-			{
-				end->y0 = fz_min(bbox.y0, end->y0);
-				end->y1 = fz_max(bbox.y1, end->y1);
-				return;
-			}
+			end->ur = ch->quad.ur;
+			end->lr = ch->quad.lr;
+			return;
 		}
 	}
 
 	if (hits->len < hits->cap)
-		hits->box[hits->len++] = bbox;
+		hits->box[hits->len++] = ch->quad;
 }
 
 static void on_highlight_line(fz_context *ctx, void *arg, fz_stext_line *line)
@@ -261,14 +218,14 @@ static void on_highlight_line(fz_context *ctx, void *arg, fz_stext_line *line)
 }
 
 int
-fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_rect *hit_bbox, int hit_max)
+fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads)
 {
 	struct callbacks cb;
 	struct highlight hits;
 
 	hits.len = 0;
-	hits.cap = hit_max;
-	hits.box = hit_bbox;
+	hits.cap = max_quads;
+	hits.box = quads;
 	hits.hfuzz = 0.5f;
 	hits.vfuzz = 0.1f;
 
@@ -387,7 +344,7 @@ static const char *find_string(const char *s, const char *needle, const char **e
 }
 
 int
-fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, fz_rect *hit_bbox, int hit_max)
+fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, fz_quad *quads, int max_quads)
 {
 	struct highlight hits;
 	fz_stext_block *block;
@@ -401,8 +358,8 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, f
 		return 0;
 
 	hits.len = 0;
-	hits.cap = hit_max;
-	hits.box = hit_bbox;
+	hits.cap = max_quads;
+	hits.box = quads;
 	hits.hfuzz = 0.1f;
 	hits.vfuzz = 0.1f;
 

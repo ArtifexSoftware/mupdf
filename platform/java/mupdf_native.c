@@ -86,6 +86,7 @@ static jclass cls_Path;
 static jclass cls_PathWalker;
 static jclass cls_Pixmap;
 static jclass cls_Point;
+static jclass cls_Quad;
 static jclass cls_Rect;
 static jclass cls_RuntimeException;
 static jclass cls_SeekableInputStream;
@@ -133,6 +134,14 @@ static jfieldID fid_Path_pointer;
 static jfieldID fid_Pixmap_pointer;
 static jfieldID fid_Point_x;
 static jfieldID fid_Point_y;
+static jfieldID fid_Quad_ul_x;
+static jfieldID fid_Quad_ul_y;
+static jfieldID fid_Quad_ur_x;
+static jfieldID fid_Quad_ur_y;
+static jfieldID fid_Quad_ll_x;
+static jfieldID fid_Quad_ll_y;
+static jfieldID fid_Quad_lr_x;
+static jfieldID fid_Quad_lr_y;
 static jfieldID fid_Rect_x0;
 static jfieldID fid_Rect_x1;
 static jfieldID fid_Rect_y0;
@@ -142,7 +151,7 @@ static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
 static jfieldID fid_TextBlock_bbox;
 static jfieldID fid_TextBlock_lines;
-static jfieldID fid_TextChar_bbox;
+static jfieldID fid_TextChar_quad;
 static jfieldID fid_TextChar_c;
 static jfieldID fid_TextLine_bbox;
 static jfieldID fid_TextLine_chars;
@@ -195,6 +204,7 @@ static jmethodID mid_PathWalker_moveTo;
 static jmethodID mid_Path_init;
 static jmethodID mid_Pixmap_init;
 static jmethodID mid_Point_init;
+static jmethodID mid_Quad_init;
 static jmethodID mid_Rect_init;
 static jmethodID mid_SeekableInputStream_read;
 static jmethodID mid_SeekableOutputStream_write;
@@ -556,6 +566,17 @@ static int find_fids(JNIEnv *env)
 	fid_Point_x = get_field(&err, env, "x", "F");
 	fid_Point_y = get_field(&err, env, "y", "F");
 
+	cls_Quad = get_class(&err, env, PKG"Quad");
+	fid_Quad_ul_x = get_field(&err, env, "ul_x", "F");
+	fid_Quad_ul_y = get_field(&err, env, "ul_y", "F");
+	fid_Quad_ur_x = get_field(&err, env, "ur_x", "F");
+	fid_Quad_ur_y = get_field(&err, env, "ur_y", "F");
+	fid_Quad_ll_x = get_field(&err, env, "ll_x", "F");
+	fid_Quad_ll_y = get_field(&err, env, "ll_y", "F");
+	fid_Quad_lr_x = get_field(&err, env, "lr_x", "F");
+	fid_Quad_lr_y = get_field(&err, env, "lr_y", "F");
+	mid_Quad_init = get_method(&err, env, "<init>", "(FFFFFFFF)V");
+
 	cls_Rect = get_class(&err, env, PKG"Rect");
 	fid_Rect_x0 = get_field(&err, env, "x0", "F");
 	fid_Rect_x1 = get_field(&err, env, "x1", "F");
@@ -596,7 +617,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_TextChar = get_class(&err, env, PKG"StructuredText$TextChar");
 	mid_TextChar_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextChar_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
+	fid_TextChar_quad = get_field(&err, env, "bbox", "L"PKG"Quad;");
 	fid_TextChar_c = get_field(&err, env, "c", "I");
 
 	cls_TextLine = get_class(&err, env, PKG"StructuredText$TextLine");
@@ -702,6 +723,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_PDFObject);
 	(*env)->DeleteGlobalRef(env, cls_Pixmap);
 	(*env)->DeleteGlobalRef(env, cls_Point);
+	(*env)->DeleteGlobalRef(env, cls_Quad);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
 	(*env)->DeleteGlobalRef(env, cls_RuntimeException);
 	(*env)->DeleteGlobalRef(env, cls_SeekableStream);
@@ -1447,25 +1469,36 @@ static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, const fz_rect *
 	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
 }
 
-static inline jobjectArray to_jRectArray_safe(fz_context *ctx, JNIEnv *env, const fz_rect *rects, jint n)
+static inline jobject to_Quad_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quad)
+{
+	if (!ctx || !quad) return NULL;
+
+	return (*env)->NewObject(env, cls_Quad, mid_Quad_init,
+		quad->ul.x, quad->ul.y,
+		quad->ur.x, quad->ur.y,
+		quad->ll.x, quad->ll.y,
+		quad->lr.x, quad->lr.y);
+}
+
+static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quads, jint n)
 {
 	jobjectArray arr;
 	int i;
 
-	if (!ctx || !rects) return NULL;
+	if (!ctx || !quads) return NULL;
 
-	arr = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
+	arr = (*env)->NewObjectArray(env, n, cls_Quad, NULL);
 	if (!arr) return NULL;
 
 	for (i = 0; i < n; i++)
 	{
-		jobject jrect = to_Rect_safe(ctx, env, &rects[i]);
-		if (!jrect) return NULL;
+		jobject jquad = to_Quad_safe(ctx, env, &quads[i]);
+		if (!jquad) return NULL;
 
-		(*env)->SetObjectArrayElement(env, arr, i, jrect);
+		(*env)->SetObjectArrayElement(env, arr, i, jquad);
 		if ((*env)->ExceptionCheck(env)) return NULL;
 
-		(*env)->DeleteLocalRef(env, jrect);
+		(*env)->DeleteLocalRef(env, jquad);
 	}
 
 	return arr;
@@ -5554,7 +5587,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	fz_rect hits[256];
+	fz_quad hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -5574,7 +5607,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jRectArray_safe(ctx, env, hits, n);
+	return to_jQuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5872,7 +5905,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
-	fz_rect hits[256];
+	fz_quad hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -5892,7 +5925,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jRectArray_safe(ctx, env, hits, n);
+	return to_jQuadArray_safe(ctx, env, hits, n);
 }
 
 /* Buffer interface */
@@ -6359,7 +6392,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
-	fz_rect hits[256];
+	fz_quad hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -6379,7 +6412,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jRectArray_safe(ctx, env, hits, n);
+	return to_jQuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -6389,7 +6422,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jpt1, jobject j
 	fz_stext_page *text = from_StructuredText(env, self);
 	fz_point pt1 = from_Point(env, jpt1);
 	fz_point pt2 = from_Point(env, jpt2);
-	fz_rect hits[1000];
+	fz_quad hits[1000];
 	int n = 0;
 
 	if (!ctx || !text) return NULL;
@@ -6402,7 +6435,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jpt1, jobject j
 		return NULL;
 	}
 
-	return to_jRectArray_safe(ctx, env, hits, n);
+	return to_jQuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -6443,6 +6476,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 	jobject larr = NULL;
 	jobject carr = NULL;
 	jobject jrect = NULL;
+	jobject jquad = NULL;
 
 	int len;
 	int b;
@@ -6522,11 +6556,11 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 				if (!jchar) return NULL;
 
 				/* set the char's bbox */
-				jrect = to_Rect_safe(ctx, env, &(ch->bbox));
-				if (!jrect) return NULL;
+				jquad = to_Quad_safe(ctx, env, &ch->quad);
+				if (!jquad) return NULL;
 
-				(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
-				(*env)->DeleteLocalRef(env, jrect);
+				(*env)->SetObjectField(env, jchar, fid_TextChar_quad, jquad);
+				(*env)->DeleteLocalRef(env, jquad);
 
 				/* set the char's value */
 				(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);

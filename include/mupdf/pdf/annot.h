@@ -184,7 +184,7 @@ void pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q);
 
 void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v);
 void pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot);
-void pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_rect bbox);
+void pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_quad quad);
 
 void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v);
 void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);

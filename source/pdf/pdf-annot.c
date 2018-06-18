@@ -1058,7 +1058,7 @@ pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot)
 }
 
 void
-pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_rect bbox)
+pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_quad quad)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
@@ -1080,15 +1080,15 @@ pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_rect bbox)
 	 * in a counterclockwise fashion. Experiments with Adobe's implementation
 	 * indicates a cross-wise ordering is intended: ul, ur, ll, lr.
 	 */
-	fz_transform_rect(&bbox, &inv_page_ctm);
-	pdf_array_push_real(ctx, quad_points, bbox.x0); /* ul */
-	pdf_array_push_real(ctx, quad_points, bbox.y1);
-	pdf_array_push_real(ctx, quad_points, bbox.x1); /* ur */
-	pdf_array_push_real(ctx, quad_points, bbox.y1);
-	pdf_array_push_real(ctx, quad_points, bbox.x0); /* ll */
-	pdf_array_push_real(ctx, quad_points, bbox.y0);
-	pdf_array_push_real(ctx, quad_points, bbox.x1); /* lr */
-	pdf_array_push_real(ctx, quad_points, bbox.y0);
+	fz_transform_quad(&quad, &inv_page_ctm);
+	pdf_array_push_real(ctx, quad_points, quad.ul.x);
+	pdf_array_push_real(ctx, quad_points, quad.ul.y);
+	pdf_array_push_real(ctx, quad_points, quad.ur.x);
+	pdf_array_push_real(ctx, quad_points, quad.ur.y);
+	pdf_array_push_real(ctx, quad_points, quad.ll.x);
+	pdf_array_push_real(ctx, quad_points, quad.ll.y);
+	pdf_array_push_real(ctx, quad_points, quad.lr.x);
+	pdf_array_push_real(ctx, quad_points, quad.lr.y);
 
 	pdf_dirty_annot(ctx, annot);
 }

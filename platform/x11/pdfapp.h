@@ -131,7 +131,7 @@ struct pdfapp_s
 	int searchdir;
 	char search[512];
 	int searchpage;
-	fz_rect hit_bbox[512];
+	fz_quad hit_bbox[512];
 	int hit_count;
 
 	/* client context storage */

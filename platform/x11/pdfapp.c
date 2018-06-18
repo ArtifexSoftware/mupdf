@@ -1050,7 +1050,7 @@ void pdfapp_inverthit(pdfapp_t *app)
 
 	for (i = 0; i < app->hit_count; i++)
 	{
-		bbox = app->hit_bbox[i];
+		bbox = fz_rect_from_quad(app->hit_bbox[i]);
 		pdfapp_invert(app, fz_transform_rect(&bbox, &ctm));
 	}
 }
@@ -1938,10 +1938,11 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			int saw_text = 0;
 			for (ch = line->first_char; ch; ch = ch->next)
 			{
+				fz_rect bbox = fz_rect_from_quad(ch->quad);
 				int c = ch->c;
 				if (c < 32)
 					c = 0xFFFD;
-				if (ch->bbox.x1 >= sel.x0 && ch->bbox.x0 <= sel.x1 && ch->bbox.y1 >= sel.y0 && ch->bbox.y0 <= sel.y1)
+				if (bbox.x1 >= sel.x0 && bbox.x0 <= sel.x1 && bbox.y1 >= sel.y0 && bbox.y0 <= sel.y1)
 				{
 					saw_text = 1;
 					if (need_newline)

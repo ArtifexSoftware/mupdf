@@ -2896,6 +2896,17 @@ extern "C" {
 }
 #endif
 #endif
+/* Header for class com_artifex_mupdf_fitz_Quad */
+
+#ifndef _Included_com_artifex_mupdf_fitz_Quad
+#define _Included_com_artifex_mupdf_fitz_Quad
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
 /* Header for class com_artifex_mupdf_fitz_Rect */
 
 #ifndef _Included_com_artifex_mupdf_fitz_Rect
@@ -3185,7 +3196,7 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StructuredText_finalize
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    search
- * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Rect;
+ * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_search
   (JNIEnv *, jobject, jstring);
@@ -3193,7 +3204,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_search
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    highlight
- * Signature: (Lcom/artifex/mupdf/fitz/Point;Lcom/artifex/mupdf/fitz/Point;)[Lcom/artifex/mupdf/fitz/Rect;
+ * Signature: (Lcom/artifex/mupdf/fitz/Point;Lcom/artifex/mupdf/fitz/Point;)[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_highlight
   (JNIEnv *, jobject, jobject, jobject);

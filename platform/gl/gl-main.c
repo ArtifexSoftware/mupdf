@@ -142,7 +142,7 @@ static int search_dir = 1;
 static int search_page = -1;
 static int search_hit_page = -1;
 static int search_hit_count = 0;
-static fz_rect search_hit_bbox[5000];
+static fz_quad search_hit_quads[5000];
 
 static char error_message[256];
 static void error_dialog(void)
@@ -467,7 +467,7 @@ static void do_links(fz_link *link)
 static void do_page_selection(void)
 {
 	static fz_point pt = { 0, 0 };
-	fz_rect hits[1000];
+	fz_quad hits[1000];
 	int i, n;
 
 	if (ui_mouse_inside(&view_page_area))
@@ -495,11 +495,17 @@ static void do_page_selection(void)
 		glEnable(GL_BLEND);
 
 		glColor4f(1, 1, 1, 1);
+		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
 		{
-			fz_transform_rect(&hits[i], &view_page_ctm);
-			glRectf(hits[i].x0, hits[i].y0, hits[i].x1 + 1, hits[i].y1 + 1);
+			fz_quad thit = hits[i];
+			fz_transform_quad(&thit, &view_page_ctm);
+			glVertex2f(thit.ul.x, thit.ul.y);
+			glVertex2f(thit.ur.x, thit.ur.y);
+			glVertex2f(thit.lr.x, thit.lr.y);
+			glVertex2f(thit.ll.x, thit.ll.y);
 		}
+		glEnd();
 
 		glDisable(GL_BLEND);
 
@@ -519,23 +525,24 @@ static void do_page_selection(void)
 
 static void do_search_hits(void)
 {
-	fz_rect bounds;
-	fz_irect area;
 	int i;
 
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
+	glColor4f(1, 0, 0, 0.4f);
+	glBegin(GL_QUADS);
 	for (i = 0; i < search_hit_count; ++i)
 	{
-		bounds = search_hit_bbox[i];
-		fz_transform_rect(&bounds, &view_page_ctm);
-		fz_irect_from_rect(&area, &bounds);
-
-		glColor4f(1, 0, 0, 0.4f);
-		glRectf(area.x0, area.y0, area.x1, area.y1);
+		fz_quad thit = search_hit_quads[i];
+		fz_transform_quad(&thit, &view_page_ctm);
+		glVertex2f(thit.ul.x, thit.ul.y);
+		glVertex2f(thit.ur.x, thit.ur.y);
+		glVertex2f(thit.lr.x, thit.lr.y);
+		glVertex2f(thit.ll.x, thit.ll.y);
 	}
 
+	glEnd();
 	glDisable(GL_BLEND);
 }
 
@@ -1192,7 +1199,7 @@ void do_main(void)
 		while (glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
 		{
 			search_hit_count = fz_search_page_number(ctx, doc, search_page, search_needle,
-					search_hit_bbox, nelem(search_hit_bbox));
+					search_hit_quads, nelem(search_hit_quads));
 			if (search_hit_count)
 			{
 				search_active = 0;

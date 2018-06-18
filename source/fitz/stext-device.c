@@ -124,16 +124,6 @@ add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, c
 	return line;
 }
 
-static float min4(float a, float b, float c, float d)
-{
-	return fz_min(fz_min(a, b), fz_min(c, d));
-}
-
-static float max4(float a, float b, float c, float d)
-{
-	return fz_max(fz_max(a, b), fz_max(c, d));
-}
-
 static fz_stext_char *
 add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, const fz_matrix *trm, fz_font *font, float size, int c, fz_point *p, fz_point *q)
 {
@@ -171,10 +161,10 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, cons
 	fz_transform_vector(&a, trm);
 	fz_transform_vector(&d, trm);
 
-	ch->bbox.x0 = min4(p->x + a.x, q->x + a.x, p->x + d.x, q->x + d.x);
-	ch->bbox.x1 = max4(p->x + a.x, q->x + a.x, p->x + d.x, q->x + d.x);
-	ch->bbox.y0 = min4(p->y + a.y, q->y + a.y, p->y + d.y, q->y + d.y);
-	ch->bbox.y1 = max4(p->y + a.y, q->y + a.y, p->y + d.y, q->y + d.y);
+	ch->quad.ll = fz_make_point(p->x + d.x, p->y + d.y);
+	ch->quad.ul = fz_make_point(p->x + a.x, p->y + a.y);
+	ch->quad.lr = fz_make_point(q->x + d.x, q->y + d.y);
+	ch->quad.ur = fz_make_point(q->x + a.x, q->y + a.y);
 
 	return ch;
 }
@@ -648,7 +638,10 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 		for (line = block->u.t.first_line; line; line = line->next)
 		{
 			for (ch = line->first_char; ch; ch = ch->next)
-				fz_union_rect(&line->bbox, &ch->bbox);
+			{
+				fz_rect bbox = fz_rect_from_quad(ch->quad);
+				fz_union_rect(&line->bbox, &bbox);
+			}
 			fz_union_rect(&block->bbox, &line->bbox);
 		}
 	}

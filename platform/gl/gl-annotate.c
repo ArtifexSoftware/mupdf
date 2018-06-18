@@ -1040,7 +1040,7 @@ static void do_edit_quad_points(void)
 {
 	static fz_point pt = { 0, 0 };
 	static int marking = 0;
-	fz_rect hits[1000];
+	fz_quad hits[1000];
 	int i, n;
 
 	if (ui_mouse_inside(&view_page_area))
@@ -1071,12 +1071,17 @@ static void do_edit_quad_points(void)
 		glEnable(GL_BLEND);
 
 		glColor4f(1, 1, 1, 1);
+		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
 		{
-			fz_rect thit = hits[i];
-			fz_transform_rect(&thit, &view_page_ctm);
-			glRectf(thit.x0, thit.y0, thit.x1 + 1, thit.y1 + 1);
+			fz_quad thit = hits[i];
+			fz_transform_quad(&thit, &view_page_ctm);
+			glVertex2f(thit.ul.x, thit.ul.y);
+			glVertex2f(thit.ur.x, thit.ur.y);
+			glVertex2f(thit.lr.x, thit.lr.y);
+			glVertex2f(thit.ll.x, thit.ll.y);
 		}
+		glEnd();
 
 		glDisable(GL_BLEND);
 

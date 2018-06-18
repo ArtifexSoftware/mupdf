@@ -343,7 +343,7 @@ fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number
 }
 
 int
-fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_rect *hit_bbox, int hit_max)
+fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_quad *hit_bbox, int hit_max)
 {
 	fz_stext_page *text;
 	int count = 0;
@@ -359,7 +359,7 @@ fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needl
 }
 
 int
-fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *hit_bbox, int hit_max)
+fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_quad *hit_bbox, int hit_max)
 {
 	fz_stext_page *text;
 	int count = 0;
@@ -375,7 +375,7 @@ fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *hit_
 }
 
 int
-fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_rect *hit_bbox, int hit_max)
+fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_quad *hit_bbox, int hit_max)
 {
 	fz_page *page;
 	int count = 0;
