@@ -637,4 +637,13 @@ void fz_gridfit_matrix(int as_tiled, fz_matrix *m);
 
 float fz_matrix_max_expansion(const fz_matrix *m);
 
+typedef struct fz_quad_s fz_quad;
+struct fz_quad_s
+{
+	fz_point ul, ur, ll, lr;
+};
+
+fz_rect fz_rect_from_quad(fz_quad q);
+fz_quad *fz_transform_quad(fz_quad *q, const fz_matrix *m);
+
 #endif

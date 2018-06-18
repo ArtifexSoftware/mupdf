@@ -577,3 +577,24 @@ int fz_contains_rect(const fz_rect *a, const fz_rect *b)
 		(a->x1 >= b->x1) &&
 		(a->y1 >= b->y1));
 }
+
+fz_rect
+fz_rect_from_quad(fz_quad q)
+{
+	fz_rect r;
+	r.x0 = MIN4(q.ll.x, q.lr.x, q.ul.x, q.ur.x);
+	r.y0 = MIN4(q.ll.y, q.lr.y, q.ul.y, q.ur.y);
+	r.x1 = MAX4(q.ll.x, q.lr.x, q.ul.x, q.ur.x);
+	r.y1 = MAX4(q.ll.y, q.lr.y, q.ul.y, q.ur.y);
+	return r;
+}
+
+fz_quad *
+fz_transform_quad(fz_quad *q, const fz_matrix *m)
+{
+	fz_transform_point(&q->ul, m);
+	fz_transform_point(&q->ur, m);
+	fz_transform_point(&q->ll, m);
+	fz_transform_point(&q->lr, m);
+	return q;
+}
