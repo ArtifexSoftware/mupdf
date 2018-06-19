@@ -100,7 +100,7 @@ int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw,
 	is true, then the export values will be returned and not the list
 	values if there are export values present.
 */
-int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, char *opts[]);
+int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
 
 /*
 	pdf_choice_widget_is_multiselect: returns whether a list box or
@@ -115,13 +115,13 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	with NULL as the array to find out how big the array need to
 	be. The filled in elements should not be freed by the caller.
 */
-int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *opts[]);
+int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[]);
 
 /*
 	pdf_widget_set_value: set the value of a choice widget. The
 	caller should pass the number of options selected and an
 	array of their names
 */
-void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, char *opts[]);
+void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[]);
 
 #endif

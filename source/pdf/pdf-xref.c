@@ -2220,7 +2220,7 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 	if (strstr(key, "info:") == key)
 	{
 		pdf_obj *info;
-		char *s;
+		const char *s;
 		int n;
 
 		info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
@@ -2231,9 +2231,8 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 		if (!info)
 			return -1;
 
-		s = pdf_to_utf8(ctx, info);
+		s = pdf_to_text_string(ctx, info);
 		n = (int)fz_strlcpy(buf, s, size);
-		fz_free(ctx, s);
 		return n;
 	}
 

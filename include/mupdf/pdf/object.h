@@ -79,6 +79,8 @@ int pdf_to_int(fz_context *ctx, pdf_obj *obj);
 int64_t pdf_to_int64(fz_context *ctx, pdf_obj *obj);
 float pdf_to_real(fz_context *ctx, pdf_obj *obj);
 const char *pdf_to_name(fz_context *ctx, pdf_obj *obj);
+const char *pdf_to_text_string(fz_context *ctx, pdf_obj *obj);
+const char *pdf_to_string(fz_context *ctx, pdf_obj *obj, size_t *sizep);
 char *pdf_to_str_buf(fz_context *ctx, pdf_obj *obj);
 int pdf_to_str_len(fz_context *ctx, pdf_obj *obj);
 int pdf_to_num(fz_context *ctx, pdf_obj *obj);
@@ -135,6 +137,7 @@ int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 const char *pdf_dict_get_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep);
+const char *pdf_dict_get_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 
 void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x);
 void pdf_array_push_int(fz_context *ctx, pdf_obj *array, int64_t x);
@@ -148,6 +151,8 @@ pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial);
 int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index);
 int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index);
 float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index);
+const char *pdf_array_get_string(fz_context *ctx, pdf_obj *array, int index, size_t *sizep);
+const char *pdf_array_get_text_string(fz_context *ctx, pdf_obj *array, int index);
 
 /*
 	Recurse through the object structure setting the node's parent_num to num.
@@ -168,10 +173,10 @@ int pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int t
 
 void pdf_debug_obj(fz_context *ctx, pdf_obj *obj);
 
-char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
-char *pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src);
+char *pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *srcptr, size_t srclen);
+char *pdf_new_utf8_from_pdf_string_obj(fz_context *ctx, pdf_obj *src);
+char *pdf_new_utf8_from_pdf_stream_obj(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src);
-pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
 
 fz_rect *pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *rect);
 fz_matrix *pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *mat);

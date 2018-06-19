@@ -314,10 +314,9 @@ static void do_annotate_author(void)
 {
 	if (pdf_annot_has_author(ctx, selected_annot))
 	{
-		char *author = pdf_copy_annot_author(ctx, selected_annot);
-		if (author && strlen(author) > 0)
+		const char *author = pdf_get_annot_author(ctx, selected_annot);
+		if (strlen(author) > 0)
 			ui_label("Author: %s", author);
-		fz_free(ctx, author);
 	}
 }
 
@@ -344,14 +343,13 @@ static void do_annotate_contents(void)
 {
 	static pdf_annot *last_annot = NULL;
 	static struct input input;
-	char *contents;
+	const char *contents;
 
 	if (selected_annot != last_annot)
 	{
 		last_annot = selected_annot;
-		contents = pdf_copy_annot_contents(ctx, selected_annot);
+		contents = pdf_get_annot_contents(ctx, selected_annot);
 		ui_input_init(&input, contents);
-		fz_free(ctx, contents);
 	}
 
 	ui_label("Contents:");
@@ -387,7 +385,7 @@ static void do_widget_value()
 	}
 	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
 	{
-		char **options;
+		const char **options;
 		int n, choice;
 		ui_label("Value:");
 		n = pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, NULL);

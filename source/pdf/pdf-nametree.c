@@ -140,9 +140,13 @@ pdf_load_name_tree_imp(fz_context *ctx, pdf_obj *dict, pdf_document *doc, pdf_ob
 			pdf_obj *val = pdf_array_get(ctx, names, i + 1);
 			if (pdf_is_string(ctx, key))
 			{
-				key = pdf_to_utf8_name(ctx, key);
-				pdf_dict_put(ctx, dict, key, val);
-				pdf_drop_obj(ctx, key);
+				key = pdf_new_name(ctx, pdf_to_text_string(ctx, key));
+				fz_try(ctx)
+					pdf_dict_put(ctx, dict, key, val);
+				fz_always(ctx)
+					pdf_drop_obj(ctx, key);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 			}
 			else if (pdf_is_name(ctx, key))
 			{

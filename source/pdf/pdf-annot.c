@@ -392,10 +392,10 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect)
 	pdf_dirty_annot(ctx, annot);
 }
 
-char *
-pdf_copy_annot_contents(fz_context *ctx, pdf_annot *annot)
+const char *
+pdf_get_annot_contents(fz_context *ctx, pdf_annot *annot)
 {
-	return pdf_to_utf8(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Contents)));
+	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(Contents));
 }
 
 void
@@ -1397,11 +1397,11 @@ pdf_annot_has_author(fz_context *ctx, pdf_annot *annot)
 	return is_allowed_subtype(ctx, annot, PDF_NAME(T), markup_subtypes);
 }
 
-char *
-pdf_copy_annot_author(fz_context *ctx, pdf_annot *annot)
+const char *
+pdf_get_annot_author(fz_context *ctx, pdf_annot *annot)
 {
 	check_allowed_subtypes(ctx, annot, PDF_NAME(T), markup_subtypes);
-	return pdf_to_utf8(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(T)));
+	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(T));
 }
 
 void

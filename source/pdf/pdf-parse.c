@@ -80,9 +80,11 @@ skip_language_code_utf8(const unsigned char *s, size_t n, size_t i)
 	return 0;
 }
 
+/* Convert Unicode/PdfDocEncoding string into utf-8 */
 char *
-pdf_to_utf8_imp(fz_context *ctx, const unsigned char *srcptr, size_t srclen)
+pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen)
 {
+	const unsigned char *srcptr = (const unsigned char*)ssrcptr;
 	char *dstptr, *dst;
 	size_t dstlen = 0;
 	int ucs;
@@ -168,30 +170,29 @@ pdf_to_utf8_imp(fz_context *ctx, const unsigned char *srcptr, size_t srclen)
 	return dst;
 }
 
-/* Convert Unicode/PdfDocEncoding string into utf-8 */
+/* Convert text string object to UTF-8 */
 char *
-pdf_to_utf8(fz_context *ctx, pdf_obj *src)
+pdf_new_utf8_from_pdf_string_obj(fz_context *ctx, pdf_obj *src)
 {
-	unsigned char *srcptr;
+	const char *srcptr;
 	size_t srclen;
-	srcptr = (unsigned char *) pdf_to_str_buf(ctx, src);
-	srclen = pdf_to_str_len(ctx, src);
-	return pdf_to_utf8_imp(ctx, srcptr, srclen);
+	srcptr = pdf_to_string(ctx, src, &srclen);
+	return pdf_new_utf8_from_pdf_string(ctx, srcptr, srclen);
 }
 
 /* Load text stream and convert to UTF-8 */
 char *
-pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src)
+pdf_new_utf8_from_pdf_stream_obj(fz_context *ctx, pdf_obj *src)
 {
 	fz_buffer *stmbuf;
-	unsigned char *srcptr;
+	char *srcptr;
 	size_t srclen;
 	char *dst = NULL;
 
 	stmbuf = pdf_load_stream(ctx, src);
-	srclen = fz_buffer_storage(ctx, stmbuf, &srcptr);
+	srclen = fz_buffer_storage(ctx, stmbuf, (unsigned char **)&srcptr);
 	fz_try(ctx)
-		dst = pdf_to_utf8_imp(ctx, srcptr, srclen);
+		dst = pdf_new_utf8_from_pdf_string(ctx, srcptr, srclen);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, stmbuf);
 	fz_catch(ctx)
@@ -204,17 +205,8 @@ char *
 pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src)
 {
 	if (pdf_is_stream(ctx, src))
-		return pdf_load_stream_as_utf8(ctx, src);
-	return pdf_to_utf8(ctx, src);
-}
-
-pdf_obj *
-pdf_to_utf8_name(fz_context *ctx, pdf_obj *src)
-{
-	char *buf = pdf_to_utf8(ctx, src);
-	pdf_obj *dst = pdf_new_name(ctx, buf);
-	fz_free(ctx, buf);
-	return dst;
+		return pdf_new_utf8_from_pdf_stream_obj(ctx, src);
+	return pdf_new_utf8_from_pdf_string_obj(ctx, src);
 }
 
 static pdf_obj *

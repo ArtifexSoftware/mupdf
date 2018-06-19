@@ -1102,7 +1102,7 @@ int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw,
 }
 
 /* Get either the listed value or the export value. */
-int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, char *opts[])
+int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -1122,11 +1122,11 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 			/* If it is a two element array, the second item is the one that we want if we want the listing value. */
 			if (m == 2)
 				if (exportval)
-					opts[i] = pdf_to_utf8(ctx, pdf_array_get(ctx, pdf_array_get(ctx, optarr, i), 0));
+					opts[i] = pdf_array_get_text_string(ctx, pdf_array_get(ctx, optarr, i), 0);
 				else
-					opts[i] = pdf_to_utf8(ctx, pdf_array_get(ctx, pdf_array_get(ctx, optarr, i), 1));
+					opts[i] = pdf_array_get_text_string(ctx, pdf_array_get(ctx, optarr, i), 1);
 			else
-				opts[i] = pdf_to_utf8(ctx, pdf_array_get(ctx, optarr, i));
+				opts[i] = pdf_array_get_text_string(ctx, optarr, i);
 		}
 	}
 	return n;
@@ -1148,7 +1148,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	}
 }
 
-int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *opts[])
+int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -1162,32 +1162,27 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, 
 	if (pdf_is_string(ctx, optarr))
 	{
 		if (opts)
-			opts[0] = pdf_to_utf8(ctx, optarr);
-
+			opts[0] = pdf_to_text_string(ctx, optarr);
 		return 1;
 	}
 	else
 	{
 		n = pdf_array_len(ctx, optarr);
-
 		if (opts)
 		{
 			for (i = 0; i < n; i++)
 			{
 				pdf_obj *elem = pdf_array_get(ctx, optarr, i);
-
 				if (pdf_is_array(ctx, elem))
 					elem = pdf_array_get(ctx, elem, 1);
-
-				opts[i] = pdf_to_utf8(ctx, elem);
+				opts[i] = pdf_to_text_string(ctx, elem);
 			}
 		}
-
 		return n;
 	}
 }
 
-void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, char *opts[])
+void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr = NULL, *opt;

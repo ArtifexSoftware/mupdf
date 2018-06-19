@@ -906,11 +906,12 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 {
 	const char *font;
 	float size, color[3];
-	char *text;
+	const char *text;
 	float w, h, t, b;
 	int q, r;
 
 	/* /Rotate is an undocumented annotation property supported by Adobe */
+	text = pdf_get_annot_contents(ctx, annot);
 	r = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Rotate));
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
@@ -933,13 +934,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
-	text = pdf_copy_annot_contents(ctx, annot);
-	fz_try(ctx)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1);
-	fz_always(ctx)
-		fz_free(ctx, text);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1);
 }
 
 static void

@@ -3837,19 +3837,14 @@ static void ffi_PDFObject_asString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	char *string = NULL;
+	const char *string = NULL;
 
 	fz_try(ctx)
-		string = pdf_to_utf8(ctx, obj);
+		string = pdf_to_text_string(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
 
-	if (js_try(J)) {
-		fz_free(ctx, string);
-		js_throw(J);
-	}
 	js_pushstring(J, string);
-	fz_free(ctx, string);
 	js_endtry(J);
 }
 
@@ -3858,12 +3853,11 @@ static void ffi_PDFObject_asByteString(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
 	const char *buf;
-	int i, len = 0;
+	size_t i, len = 0;
 
-	fz_try(ctx) {
-		buf = pdf_to_str_buf(ctx, obj);
-		len = pdf_to_str_len(ctx, obj);
-	} fz_catch(ctx)
+	fz_try(ctx)
+		buf = pdf_to_string(ctx, obj, &len);
+	fz_catch(ctx)
 		rethrow(J);
 
 	js_newarray(J);
@@ -4076,21 +4070,14 @@ static void ffi_PDFAnnotation_getContents(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	char *contents = NULL;
+	const char *contents = NULL;
 
 	fz_try(ctx)
-		contents = pdf_copy_annot_contents(ctx, annot);
+		contents = pdf_get_annot_contents(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 
-	if (js_try(J)) {
-		fz_free(ctx, contents);
-		js_throw(J);
-	}
 	js_pushstring(J, contents);
-	js_endtry(J);
-
-	fz_free(ctx, contents);
 }
 
 static void ffi_PDFAnnotation_setContents(js_State *J)
@@ -4375,21 +4362,14 @@ static void ffi_PDFAnnotation_getAuthor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	char *author = NULL;
+	const char *author = NULL;
 
 	fz_try(ctx)
-		author = pdf_copy_annot_author(ctx, annot);
+		author = pdf_get_annot_author(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 
-	if (js_try(J)) {
-		fz_free(ctx, author);
-		js_throw(J);
-	}
 	js_pushstring(J, author);
-	js_endtry(J);
-
-	fz_free(ctx, author);
 }
 
 static void ffi_PDFAnnotation_setAuthor(js_State *J)

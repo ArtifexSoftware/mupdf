@@ -81,7 +81,7 @@ char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 	return inittext;
 }
 
-int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *vals[])
+int winchoiceinput(pdfapp_t *app, int nopts, const char *opts[], int *nvals, const char *vals[])
 {
 	return 0;
 }

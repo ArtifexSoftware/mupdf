@@ -59,6 +59,7 @@ typedef struct pdf_obj_num_s
 typedef struct pdf_obj_string_s
 {
 	pdf_obj super;
+	char *text; /* utf8 encoded text string */
 	unsigned int len;
 	char buf[1];
 } pdf_obj_string;
@@ -141,6 +142,7 @@ pdf_new_string(fz_context *ctx, const char *str, size_t len)
 	obj->super.refs = 1;
 	obj->super.kind = PDF_STRING;
 	obj->super.flags = 0;
+	obj->text = NULL;
 	obj->len = l;
 	memcpy(obj->buf, str, len);
 	obj->buf[len] = '\0';
@@ -334,6 +336,32 @@ int pdf_to_str_len(fz_context *ctx, pdf_obj *obj)
 	if (OBJ_IS_STRING(obj))
 		return STRING(obj)->len;
 	return 0;
+}
+
+const char *pdf_to_string(fz_context *ctx, pdf_obj *obj, size_t *sizep)
+{
+	RESOLVE(obj);
+	if (OBJ_IS_STRING(obj))
+	{
+		if (sizep)
+			*sizep = STRING(obj)->len;
+		return STRING(obj)->buf;
+	}
+	if (sizep)
+		*sizep = 0;
+	return "";
+}
+
+const char *pdf_to_text_string(fz_context *ctx, pdf_obj *obj)
+{
+	RESOLVE(obj);
+	if (OBJ_IS_STRING(obj))
+	{
+		if (!STRING(obj)->text)
+			STRING(obj)->text = pdf_new_utf8_from_pdf_string(ctx, STRING(obj)->buf, STRING(obj)->len);
+		return STRING(obj)->text;
+	}
+	return "";
 }
 
 void pdf_set_int(fz_context *ctx, pdf_obj *obj, int64_t i)
@@ -1669,6 +1697,11 @@ pdf_drop_obj(fz_context *ctx, pdf_obj *obj)
 				pdf_drop_array(ctx, obj);
 			else if (obj->kind == PDF_DICT)
 				pdf_drop_dict(ctx, obj);
+			else if (obj->kind == PDF_STRING)
+			{
+				fz_free(ctx, STRING(obj)->text);
+				fz_free(ctx, obj);
+			}
 			else
 				fz_free(ctx, obj);
 		}
@@ -2254,10 +2287,12 @@ const char *pdf_dict_get_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 
 const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep)
 {
-	pdf_obj *val = pdf_dict_get(ctx, dict, key);
-	if (sizep)
-		*sizep = pdf_to_str_len(ctx, val);
-	return pdf_to_str_buf(ctx, val);
+	return pdf_to_string(ctx, pdf_dict_get(ctx, dict, key), sizep);
+}
+
+const char *pdf_dict_get_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_text_string(ctx, pdf_dict_get(ctx, dict, key));
 }
 
 int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index)
@@ -2273,4 +2308,14 @@ int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index)
 float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index)
 {
 	return pdf_to_real(ctx, pdf_array_get(ctx, array, index));
+}
+
+const char *pdf_array_get_string(fz_context *ctx, pdf_obj *array, int index, size_t *sizep)
+{
+	return pdf_to_string(ctx, pdf_array_get(ctx, array, index), sizep);
+}
+
+const char *pdf_array_get_text_string(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_text_string(ctx, pdf_array_get(ctx, array, index));
 }

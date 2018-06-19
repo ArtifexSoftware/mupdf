@@ -134,7 +134,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 		return NULL;
 	}
 
-	path = pdf_to_utf8(ctx, filename);
+	path = fz_strdup(ctx, pdf_to_text_string(ctx, filename));
 #ifdef _WIN32
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME(FS)), PDF_NAME(URL)))
 	{
