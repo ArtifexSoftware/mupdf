@@ -1478,6 +1478,11 @@ void
 pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3])
 {
 	pdf_obj *da = pdf_dict_get(ctx, annot->obj, PDF_NAME(DA));
+	if (!da)
+	{
+		pdf_obj *trailer = pdf_trailer(ctx, annot->page->doc);
+		da = pdf_dict_getl(ctx, trailer, PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(DA), NULL);
+	}
 	pdf_parse_default_appearance(ctx, pdf_to_str_buf(ctx, da), font, size, color);
 }
 
