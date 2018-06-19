@@ -198,9 +198,12 @@ fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
 void
 fz_free(fz_context *ctx, void *p)
 {
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	ctx->alloc->free(ctx->alloc->user, p);
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	if (p)
+	{
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		ctx->alloc->free(ctx->alloc->user, p);
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
 }
 
 char *
