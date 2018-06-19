@@ -832,6 +832,34 @@ write_simple_string_with_quadding(fz_context *ctx, fz_buffer *buf, fz_font *font
 	}
 }
 
+static void
+write_comb_string(fz_context *ctx, fz_buffer *buf, const char *a, const char *b, fz_font *font, float cell_w)
+{
+	float gw, pad, carry = 0;
+	fz_append_byte(ctx, buf, '[');
+	while (a < b)
+	{
+		int c, g;
+
+		a += fz_chartorune(&c, a);
+		/* WinAnsi is close enough to Latin-1 to not matter. Use middle dot for unencodable characters. */
+		if (c >= 256) c = REPLACEMENT;
+
+		g = fz_encode_character(ctx, font, c);
+		gw = fz_advance_glyph(ctx, font, g, 0) * 1000;
+		pad = (cell_w - gw) / 2;
+		fz_append_printf(ctx, buf, "%g", -(carry + pad));
+		carry = pad;
+
+		fz_append_byte(ctx, buf, '(');
+		if (c == '(' || c == ')' || c == '\\')
+			fz_append_byte(ctx, buf, '\\');
+		fz_append_byte(ctx, buf, c);
+		fz_append_byte(ctx, buf, ')');
+	}
+	fz_append_string(ctx, buf, "] TJ\n");
+}
+
 static const char *full_font_name(const char **name)
 {
 	if (!strcmp(*name, "Cour")) return "Courier";
@@ -845,7 +873,7 @@ static const char *full_font_name(const char **name)
 static void
 write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res,
 	const char *text, const char *fontname, float size, float color[3], int q,
-	float w, float h, float padding, int multiline)
+	float w, float h, float padding, int multiline, int comb)
 {
 	pdf_obj *res_font;
 	fz_font *font;
@@ -871,7 +899,13 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		fz_append_string(ctx, buf, "BT\n");
 		fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		fz_append_printf(ctx, buf, "/%s %g Tf\n", fontname, size);
-		if (multiline)
+		if (comb > 0)
+		{
+			float ty = (h - size) / 2;
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline-ty);
+			write_comb_string(ctx, buf, text, text + strlen(text), font, (w * 1000 / size) / comb);
+		}
+		else if (multiline)
 		{
 			fz_append_printf(ctx, buf, "%g TL\n", lineheight);
 			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h+(size-baseline));
@@ -934,7 +968,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
-	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1);
+	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1, 0);
 }
 
 static void
@@ -961,10 +995,15 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
 
-	if (ff & Ff_Multiline)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 1);
+	if (ff & Ff_Comb)
+	{
+		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, maxlen);
+	}
+	else if (ff & Ff_Multiline)
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 1, 0);
 	else
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 0, 0);
 
 	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
