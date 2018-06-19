@@ -880,17 +880,27 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 	float lineheight;
 	float baseline;
 
-	w -= padding * 2;
-	h -= padding * 2;
-	if (size == 0)
-		size = multiline ? 12 : h;
-
-	lineheight = size * 1.15f; /* empirically derived from Adobe reader */
-	baseline = size * 0.8f;
-
 	font = fz_new_base14_font(ctx, full_font_name(&fontname));
 	fz_try(ctx)
 	{
+		w -= padding * 2;
+		h -= padding * 2;
+
+		if (size == 0)
+		{
+			if (multiline)
+				size = 12;
+			else
+			{
+				size = w / measure_simple_string(ctx, font, text);
+				if (size > h)
+					size = h;
+			}
+		}
+
+		lineheight = size * 1.15f; /* empirically derived from Adobe reader */
+		baseline = size * 0.8f;
+
 		/* /Resources << /Font << /Helv %d 0 R >> >> */
 		*res = pdf_new_dict(ctx, annot->page->doc, 1);
 		res_font = pdf_dict_put_dict(ctx, *res, PDF_NAME(Font), 1);
