@@ -1,3 +1,8 @@
+#!/bin/bash
+#
+# Make sure AFDKO version 65322 May 27 2016 is installed, for the 'tx' tool.
+# The 2017 65781 April 3 2017 version produces larger CFF files.
+
 EXCL_PCL=\
 uniEFBF,uniEFC0,uniEFC1,uniEFC2,uniEFC3,uniEFC4,uniEFC5,uniEFC6,\
 uniEFC7,uniEFC8,uniEFC9,uniEFCA,uniEFCB,uniEFCC,uniEFCD,uniEFCE,\

@@ -71,9 +71,9 @@ fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 	if (!strcmp(name, "Courier-Bold")) RETURN(urw,NimbusMonoPS_Bold_cff);
 	if (!strcmp(name, "Courier-BoldOblique")) RETURN(urw,NimbusMonoPS_BoldItalic_cff);
 	if (!strcmp(name, "Helvetica")) RETURN(urw,NimbusSans_Regular_cff);
-	if (!strcmp(name, "Helvetica-Oblique")) RETURN(urw,NimbusSans_Oblique_cff);
+	if (!strcmp(name, "Helvetica-Oblique")) RETURN(urw,NimbusSans_Italic_cff);
 	if (!strcmp(name, "Helvetica-Bold")) RETURN(urw,NimbusSans_Bold_cff);
-	if (!strcmp(name, "Helvetica-BoldOblique")) RETURN(urw,NimbusSans_BoldOblique_cff);
+	if (!strcmp(name, "Helvetica-BoldOblique")) RETURN(urw,NimbusSans_BoldItalic_cff);
 	if (!strcmp(name, "Times-Roman")) RETURN(urw,NimbusRoman_Regular_cff);
 	if (!strcmp(name, "Times-Italic")) RETURN(urw,NimbusRoman_Italic_cff);
 	if (!strcmp(name, "Times-Bold")) RETURN(urw,NimbusRoman_Bold_cff);
@@ -103,9 +103,9 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 	}
 	if (!strcmp(name, "Helvetica") || !strcmp(name, "Arial")) {
 		FAMILY(urw, NimbusSans_Regular_cff,
-				NimbusSans_Oblique_cff,
+				NimbusSans_Italic_cff,
 				NimbusSans_Bold_cff,
-				NimbusSans_BoldOblique_cff)
+				NimbusSans_BoldItalic_cff)
 	}
 	if (!strcmp(name, "Times") || !strcmp(name, "Times Roman") || !strcmp(name, "Times New Roman")) {
 		FAMILY(urw, NimbusRoman_Regular_cff,

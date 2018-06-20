@@ -743,11 +743,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSans-BoldOblique.cff"
+					RelativePath="..\..\resources\fonts\urw\NimbusSans-BoldItalic.cff"
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\urw\NimbusSans-Oblique.cff"
+					RelativePath="..\..\resources\fonts\urw\NimbusSans-Italic.cff"
 					>
 				</File>
 				<File
