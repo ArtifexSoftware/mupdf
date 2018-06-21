@@ -22,9 +22,9 @@
 <li><a href="#cloning-the-context">Cloning the context</a>
 </ul>
 
-<h2><a id="basic-mupdf-usage-example">
+<h2><a id="basic-mupdf-usage-example"></a>
 Basic MuPDF usage example
-</a></h2>
+</h2>
 
 <p>
 For an example of how to use MuPDF in the most basic way, see
@@ -33,9 +33,9 @@ To limit the complexity and give an easier introduction
 this code has no error handling at all, but any serious piece of code
 using MuPDF should use the error handling strategies described below.
 
-<h2><a id="common-function-arguments">
+<h2><a id="common-function-arguments"></a>
 Common function arguments
-</a></h2>
+</h2>
 
 <p>
 Most functions in MuPDF's interface take a context argument.
@@ -55,9 +55,9 @@ parsing or rendering pages of the document. It contains for example:
 Without the set of locks and accompanying functions the context and
 its proxies may only be used in a single-threaded application.
 
-<h2><a id="error-handling">
+<h2><a id="error-handling"></a>
 Error handling
-</a></h2>
+</h2>
 
 <p>
 MuPDF uses a set of exception handling macros to simplify error return
@@ -207,9 +207,9 @@ Things to note about this:
 	NULL things.
 </ol>
 
-<h2><a id="multi-threading">
+<h2><a id="multi-threading"></a>
 Multi-threading
-</a></h2>
+</h2>
 
 <p>
 First off, study the basic usage example in
@@ -336,9 +336,9 @@ For an example of how to do multi-threading see
 <a href="examples/multi-threaded.c">docs/examples/multi-threaded.c</a>
 which has a main thread and one rendering thread per page.
 
-<h2><a id="cloning-the-context">
+<h2><a id="cloning-the-context"></a>
 Cloning the context
-</a></h2>
+</h2>
 
 <p>
 As described above, every context contains an exception stack which is
