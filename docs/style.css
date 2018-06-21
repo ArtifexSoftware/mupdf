@@ -1,7 +1,5 @@
-h1, nav, footer { font-family: sans-serif; }
+h1, footer { font-family: sans-serif; }
 
-a { text-decoration: none; }
-a:hover { text-decoration: underline; }
 h2 { font-size: 1.25rem; }
 h3 { font-size: 1.25rem; }
 ul li { list-style-type: circle; }
@@ -18,18 +16,12 @@ h1 {
 header {
 	color: white;
 	background: no-repeat;
-	background-color: #36648b;
+	background-color: #506b80;
 	background-image: url("logo/mupdf-icon.png");
 	background-position: bottom right;
 	padding-right: 72px;
 	min-height: 72px;
 }
-nav {
-	padding: 0.75rem 2rem;
-	background-color: #ddd;
-	no-text-transform: uppercase;
-}
-nav a { color: #303030; padding-right: 2rem; }
 article {
 	max-width: 50rem;
 	margin: 2rem;
