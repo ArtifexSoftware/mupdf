@@ -1203,7 +1203,9 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 		fz_matrix matrix = fz_identity;
 		fz_buffer *buf = fz_new_buffer(ctx, 1024);
 		pdf_obj *res = NULL;
+		pdf_obj *new_ap_n = NULL;
 		fz_var(res);
+		fz_var(new_ap_n);
 		fz_try(ctx)
 		{
 			pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)), &rect);
@@ -1217,22 +1219,24 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 					ap = pdf_new_dict(ctx, annot->page->doc, 1);
 					pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(AP), ap);
 				}
-				ap_n = pdf_new_xobject(ctx, annot->page->doc, &bbox, &matrix, res, buf);
-				pdf_dict_put_drop(ctx, ap, PDF_NAME(N), ap_n);
+				new_ap_n = pdf_new_xobject(ctx, annot->page->doc, &bbox, &matrix, res, buf);
+				pdf_dict_put(ctx, ap, PDF_NAME(N), new_ap_n);
 			}
 			else
 			{
+				new_ap_n = pdf_keep_obj(ctx, ap_n);
 				pdf_update_xobject(ctx, annot->page->doc, ap_n, &bbox, &matrix, res, buf);
 			}
 
 			pdf_drop_obj(ctx, annot->ap);
 			annot->ap = NULL;
-			annot->ap = pdf_keep_obj(ctx, ap_n);
+			annot->ap = pdf_keep_obj(ctx, new_ap_n);
 		}
 		fz_always(ctx)
 		{
 			fz_drop_buffer(ctx, buf);
 			pdf_drop_obj(ctx, res);
+			pdf_drop_obj(ctx, new_ap_n);
 		}
 		fz_catch(ctx)
 			fz_warn(ctx, "cannot create appearance stream");
