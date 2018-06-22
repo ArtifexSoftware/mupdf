@@ -80,11 +80,10 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 			pdf_dict_put(ctx, form, PDF_NAME(Resources), res);
 		ind = pdf_add_stream(ctx, doc, contents, form, 0);
 	}
-	fz_catch(ctx)
-	{
+	fz_always(ctx)
 		pdf_drop_obj(ctx, form);
+	fz_catch(ctx)
 		fz_rethrow(ctx);
-	}
 	return ind;
 }
 
