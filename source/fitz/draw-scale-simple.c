@@ -497,7 +497,7 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 }
 
 static void
-scale_row_to_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int len, i, j, n;
@@ -557,31 +557,31 @@ scale_row_to_temp(unsigned char * restrict dst, const unsigned char * restrict s
 #ifdef ARCH_ARM
 
 static void
-scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp1(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp2(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp3(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp4(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 __attribute__((naked));
 
 static void
-scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+scale_row_from_temp(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int width, int n, int row)
 __attribute__((naked));
 
 static void
-scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+scale_row_from_temp_alpha(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int width, int n, int row)
 __attribute__((naked));
 
 static void
-scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp1(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -648,7 +648,7 @@ scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp2(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -718,7 +718,7 @@ scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp3(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -801,7 +801,7 @@ scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp4(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -875,7 +875,7 @@ scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+scale_row_from_temp(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int width, int n, int row)
 {
 	asm volatile(
 	ENTER_ARM
@@ -957,7 +957,7 @@ scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict
 }
 
 static void
-scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+scale_row_from_temp_alpha(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int width, int n, int row)
 {
 	asm volatile(
 	ENTER_ARM
@@ -1008,7 +1008,7 @@ scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * re
 #else
 
 static void
-scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp1(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -1047,7 +1047,7 @@ scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp2(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -1092,7 +1092,7 @@ scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp3(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -1145,7 +1145,7 @@ scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
+scale_row_to_temp4(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -1202,7 +1202,7 @@ scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row)
+scale_row_from_temp(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int w, int n, int row)
 {
 	const int *contrib = &weights->index[weights->index[row]];
 	int len, x;
@@ -1228,7 +1228,7 @@ scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict
 }
 
 static void
-scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row)
+scale_row_from_temp_alpha(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int w, int n, int row)
 {
 	const int *contrib = &weights->index[weights->index[row]];
 	int len, x;
@@ -1261,7 +1261,7 @@ scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * re
 
 #ifdef SINGLE_PIXEL_SPECIALS
 static void
-duplicate_single_pixel(unsigned char * restrict dst, const unsigned char * restrict src, int n, int forcealpha, int w, int h, int stride)
+duplicate_single_pixel(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, int n, int forcealpha, int w, int h, int stride)
 {
 	int i;
 
@@ -1286,7 +1286,7 @@ duplicate_single_pixel(unsigned char * restrict dst, const unsigned char * restr
 }
 
 static void
-scale_single_row(unsigned char * restrict dst, int dstride, const unsigned char * restrict src, const fz_weights * restrict weights, int src_w, int h, int forcealpha)
+scale_single_row(unsigned char * FZ_RESTRICT dst, int dstride, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int src_w, int h, int forcealpha)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j, n, nf;
@@ -1355,7 +1355,7 @@ scale_single_row(unsigned char * restrict dst, int dstride, const unsigned char 
 }
 
 static void
-scale_single_col(unsigned char * restrict dst, int dstride, const unsigned char * restrict src, int sstride, const fz_weights * restrict weights, int src_w, int n, int w, int forcealpha)
+scale_single_col(unsigned char * FZ_RESTRICT dst, int dstride, const unsigned char * FZ_RESTRICT src, int sstride, const fz_weights * FZ_RESTRICT weights, int src_w, int n, int w, int forcealpha)
 {
 	const int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j;
@@ -1431,7 +1431,7 @@ scale_single_col(unsigned char * restrict dst, int dstride, const unsigned char 
 #endif /* SINGLE_PIXEL_SPECIALS */
 
 static void
-get_alpha_edge_values(const fz_weights * restrict rows, int * restrict tp, int * restrict bp)
+get_alpha_edge_values(const fz_weights * FZ_RESTRICT rows, int * FZ_RESTRICT tp, int * FZ_RESTRICT bp)
 {
 	const int *contrib = &rows->index[rows->index[0]];
 	int len, i, t, b;
@@ -1469,7 +1469,7 @@ get_alpha_edge_values(const fz_weights * restrict rows, int * restrict tp, int *
 }
 
 static void
-adjust_alpha_edges(fz_pixmap * restrict pix, const fz_weights * restrict rows, const fz_weights * restrict cols)
+adjust_alpha_edges(fz_pixmap * FZ_RESTRICT pix, const fz_weights * FZ_RESTRICT rows, const fz_weights * FZ_RESTRICT cols)
 {
 	int t, l, r, b, tl, tr, bl, br, x, y;
 	unsigned char *dp = pix->samples;
@@ -1751,8 +1751,8 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
-		void (*row_scale_in)(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights);
-		void (*row_scale_out)(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row);
+		void (*row_scale_in)(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights);
+		void (*row_scale_out)(unsigned char * FZ_RESTRICT dst, const unsigned char * FZ_RESTRICT src, const fz_weights * FZ_RESTRICT weights, int w, int n, int row);
 
 		temp_span = contrib_cols->count * src->n;
 		temp_rows = contrib_rows->max_len;

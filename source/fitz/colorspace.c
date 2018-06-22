@@ -2130,8 +2130,8 @@ fast_cmyk_to_rgb_ARM(unsigned char *dst, unsigned char *src, int n)
 }
 #endif
 
-static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned char *restrict const pg, unsigned char *restrict const pb,
-				unsigned int *restrict const C, unsigned int *restrict const M, unsigned int *restrict const Y, unsigned int *restrict const K,
+static inline void cached_cmyk_conv(unsigned char *FZ_RESTRICT const pr, unsigned char *FZ_RESTRICT const pg, unsigned char *FZ_RESTRICT const pb,
+				unsigned int *FZ_RESTRICT const C, unsigned int *FZ_RESTRICT const M, unsigned int *FZ_RESTRICT const Y, unsigned int *FZ_RESTRICT const K,
 				unsigned int c, unsigned int m, unsigned int y, unsigned int k)
 {
 #ifdef SLOWCMYK

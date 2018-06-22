@@ -70,7 +70,7 @@ init_get1_tables(void)
 }
 
 void
-fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale)
+fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * FZ_RESTRICT src, int n, int depth, size_t stride, int scale)
 {
 	int pad, x, y, k, skip;
 	int w = dst->w;

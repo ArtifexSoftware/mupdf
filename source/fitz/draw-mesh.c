@@ -6,7 +6,7 @@
 
 enum { MAXN = 2 + FZ_MAX_COLORS };
 
-static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0, int cx1, const int *restrict v0, const int *restrict v1, int n)
+static void paint_scan(fz_pixmap *FZ_RESTRICT pix, int y, int fx0, int fx1, int cx0, int cx1, const int *FZ_RESTRICT v0, const int *FZ_RESTRICT v1, int n)
 {
 	unsigned char *p;
 	int c[MAXN], dc[MAXN];
@@ -68,7 +68,7 @@ struct edge_data_s
 	int v[2*MAXN];
 };
 
-static inline void prepare_edge(const float *restrict vtop, const float *restrict vbot, edge_data *restrict edge, float y, int n)
+static inline void prepare_edge(const float *FZ_RESTRICT vtop, const float *FZ_RESTRICT vbot, edge_data *FZ_RESTRICT edge, float y, int n)
 {
 	float r = 1.0f / (vbot[1] - vtop[1]);
 	float t = (y - vtop[1]) * r;

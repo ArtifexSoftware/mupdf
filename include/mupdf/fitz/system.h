@@ -161,12 +161,13 @@ void fz_free_argv(int argc, char **argv);
 
 /* restrict is standard in C99, but not in all C++ compilers. */
 #if defined (__STDC_VERSION_) && (__STDC_VERSION__ >= 199901L) /* C99 */
+#define FZ_RESTRICT restrict
 #elif defined(_MSC_VER) && (_MSC_VER >= 1600) /* MSVC 10 or newer */
-#define restrict __restrict
+#define FZ_RESTRICT __restrict
 #elif defined(__GNUC__) && (__GNUC__ >= 3) /* GCC 3 or newer */
-#define restrict __restrict
+#define FZ_RESTRICT __restrict
 #else /* Unknown or ancient */
-#define restrict
+#define FZ_RESTRICT
 #endif
 
 /* noreturn is a GCC extension */

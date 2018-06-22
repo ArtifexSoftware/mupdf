@@ -515,7 +515,7 @@ even_odd_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 }
 
 static inline void
-undelta_aa(fz_context *ctx, unsigned char * restrict out, int * restrict in, int n, int scale)
+undelta_aa(fz_context *ctx, unsigned char * FZ_RESTRICT out, int * FZ_RESTRICT in, int n, int scale)
 {
 	int d = 0;
 	(void)scale; /* Avoid warnings in some builds */

@@ -293,7 +293,7 @@ static inline fz_matrix fz_make_matrix(float a, float b, float c, float d, float
 	return m;
 }
 
-static inline fz_matrix *fz_copy_matrix(fz_matrix *restrict m, const fz_matrix *restrict s)
+static inline fz_matrix *fz_copy_matrix(fz_matrix *FZ_RESTRICT m, const fz_matrix *FZ_RESTRICT s)
 {
 	*m = *s;
 	return m;
@@ -487,7 +487,7 @@ float fz_matrix_expansion(const fz_matrix *m); /* sumatrapdf */
 	Should both rectangles be infinite, then the intersection is
 	also infinite.
 */
-fz_rect *fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b);
+fz_rect *fz_intersect_rect(fz_rect *FZ_RESTRICT a, const fz_rect *FZ_RESTRICT b);
 
 /*
 	fz_intersect_irect: Compute intersection of two bounding boxes.
@@ -495,7 +495,7 @@ fz_rect *fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b);
 	Similar to fz_intersect_rect but operates on two bounding
 	boxes instead of two rectangles.
 */
-fz_irect *fz_intersect_irect(fz_irect *restrict a, const fz_irect *restrict b);
+fz_irect *fz_intersect_irect(fz_irect *FZ_RESTRICT a, const fz_irect *FZ_RESTRICT b);
 
 /*
 	fz_union_rect: Compute union of two rectangles.
@@ -507,7 +507,7 @@ fz_irect *fz_intersect_irect(fz_irect *restrict a, const fz_irect *restrict b);
 	non-empty rectangle. Should both rectangles be empty, then the
 	union is also empty.
 */
-fz_rect *fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b);
+fz_rect *fz_union_rect(fz_rect *FZ_RESTRICT a, const fz_rect *FZ_RESTRICT b);
 
 /*
 	fz_irect_from_rect: Convert a rect into the minimal bounding box
@@ -525,7 +525,7 @@ fz_rect *fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b);
 	Returns bbox (updated).
 */
 
-fz_irect *fz_irect_from_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
+fz_irect *fz_irect_from_rect(fz_irect *FZ_RESTRICT bbox, const fz_rect *FZ_RESTRICT rect);
 
 /*
 	fz_round_rect: Round rectangle coordinates.
@@ -541,7 +541,7 @@ fz_irect *fz_irect_from_rect(fz_irect *restrict bbox, const fz_rect *restrict re
 	allows for a small amount of rounding error when calculating
 	the bbox.
 */
-fz_irect *fz_round_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
+fz_irect *fz_round_rect(fz_irect *FZ_RESTRICT bbox, const fz_rect *FZ_RESTRICT rect);
 
 /*
 	fz_rect_from_irect: Convert a bbox into a rect.
@@ -555,7 +555,7 @@ fz_irect *fz_round_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
 
 	Returns rect (updated).
 */
-fz_rect *fz_rect_from_irect(fz_rect *restrict rect, const fz_irect *restrict bbox);
+fz_rect *fz_rect_from_irect(fz_rect *FZ_RESTRICT rect, const fz_irect *FZ_RESTRICT bbox);
 
 /*
 	fz_expand_rect: Expand a bbox by a given amount in all directions.
@@ -597,8 +597,8 @@ int fz_contains_rect(const fz_rect *a, const fz_rect *b);
 
 	Returns transform (unchanged).
 */
-fz_point *fz_transform_point(fz_point *restrict point, const fz_matrix *restrict transform);
-fz_point *fz_transform_point_xy(fz_point *restrict point, const fz_matrix *restrict transform, float x, float y);
+fz_point *fz_transform_point(fz_point *FZ_RESTRICT point, const fz_matrix *FZ_RESTRICT transform);
+fz_point *fz_transform_point_xy(fz_point *FZ_RESTRICT point, const fz_matrix *FZ_RESTRICT transform, float x, float y);
 
 /*
 	fz_transform_vector: Apply a transformation to a vector.
@@ -609,7 +609,7 @@ fz_point *fz_transform_point_xy(fz_point *restrict point, const fz_matrix *restr
 
 	vector: Pointer to vector to update.
 */
-fz_point *fz_transform_vector(fz_point *restrict vector, const fz_matrix *restrict transform);
+fz_point *fz_transform_vector(fz_point *FZ_RESTRICT vector, const fz_matrix *FZ_RESTRICT transform);
 
 /*
 	fz_transform_rect: Apply a transform to a rectangle.
@@ -626,7 +626,7 @@ fz_point *fz_transform_vector(fz_point *restrict vector, const fz_matrix *restri
 	fz_empty_rect and fz_infinite_rect, may be used but are
 	returned unchanged as expected.
 */
-fz_rect *fz_transform_rect(fz_rect *restrict rect, const fz_matrix *restrict transform);
+fz_rect *fz_transform_rect(fz_rect *FZ_RESTRICT rect, const fz_matrix *FZ_RESTRICT transform);
 
 /*
 	fz_normalize_vector: Normalize a vector to length one.
