@@ -1424,7 +1424,7 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 	color[0] = color[1] = color[2] = 0;
 
 	fz_strlcpy(buf, da, sizeof buf);
-	while ((tok = fz_strsep(&p, " ")) != NULL)
+	while ((tok = fz_strsep(&p, " \n\r\t")) != NULL)
 	{
 		if (tok[0] == 0)
 			;
