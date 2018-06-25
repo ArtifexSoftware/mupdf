@@ -99,8 +99,7 @@ push_clip_stack(fz_context *ctx, fz_device *dev, const fz_rect *rect, int flags)
 		dev->container[0].scissor = *rect;
 	else
 	{
-		dev->container[dev->container_len].scissor = dev->container[dev->container_len-1].scissor;
-		fz_intersect_rect(&dev->container[dev->container_len].scissor, rect);
+		dev->container[dev->container_len].scissor = fz_intersect_rect(dev->container[dev->container_len-1].scissor, *rect);
 	}
 	dev->container[dev->container_len].flags = flags;
 	dev->container[dev->container_len].user = 0;
@@ -149,8 +148,7 @@ fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd,
 		{
 			if (scissor == NULL)
 			{
-				fz_rect bbox;
-				fz_bound_path(ctx, path, NULL, ctm, &bbox);
+				fz_rect bbox = fz_bound_path(ctx, path, NULL, *ctm);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_path);
 			}
 			else
@@ -182,8 +180,7 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 		{
 			if (scissor == NULL)
 			{
-				fz_rect bbox;
-				fz_bound_path(ctx, path, stroke, ctm, &bbox);
+				fz_rect bbox = fz_bound_path(ctx, path, stroke, *ctm);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_stroke_path);
 			}
 			else
@@ -235,8 +232,7 @@ fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matr
 		{
 			if (scissor == NULL)
 			{
-				fz_rect bbox;
-				fz_bound_text(ctx, text, NULL, ctm, &bbox);
+				fz_rect bbox = fz_bound_text(ctx, text, NULL, *ctm);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_text);
 			}
 			else
@@ -268,8 +264,7 @@ fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 		{
 			if (scissor == NULL)
 			{
-				fz_rect bbox;
-				fz_bound_text(ctx, text, stroke, ctm, &bbox);
+				fz_rect bbox = fz_bound_text(ctx, text, stroke, *ctm);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_stroke_text);
 			}
 			else
@@ -354,8 +349,7 @@ fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 		{
 			if (scissor == NULL)
 			{
-				fz_rect bbox = fz_unit_rect;
-				fz_transform_rect(&bbox, ctm);
+				fz_rect bbox = fz_transform_rect(fz_unit_rect, *ctm);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_image_mask);
 			}
 			else

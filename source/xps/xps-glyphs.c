@@ -344,7 +344,7 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs, int b
  * Calculate metrics for positioning.
  */
 fz_text *
-xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
+xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	fz_font *font, float size, float originx, float originy,
 	int is_sideways, int bidi_level,
 	char *indices, char *unicode)
@@ -369,11 +369,9 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	}
 
 	if (is_sideways)
-	{
-		fz_pre_scale(fz_rotate(&tm, 90), -size, size);
-	}
+		tm = fz_pre_scale(fz_rotate(90), -size, size);
 	else
-		fz_scale(&tm, size, -size);
+		tm = fz_scale(size, -size);
 
 	text = fz_new_text(ctx);
 
@@ -454,7 +452,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			}
 
 			dir = bidi_level & 1 ? FZ_BIDI_RTL : FZ_BIDI_LTR;
-			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
+			fz_show_glyph(ctx, text, font, tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
 
 			x += advance * 0.01f * size;
 		}
@@ -464,7 +462,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 }
 
 void
-xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
+xps_parse_glyphs(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 		char *base_uri, xps_resource *dict, fz_xml *root)
 {
 	fz_device *dev = doc->dev;
@@ -504,8 +502,6 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	fz_text *text;
 	fz_rect area;
-
-	fz_matrix local_ctm;
 
 	/*
 	 * Extract attributes and extended attributes.
@@ -576,20 +572,20 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	 * Set up graphics state.
 	 */
 
-	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
+	ctm = xps_parse_transform(ctx, doc, transform_att, transform_tag, ctm);
 
 	if (clip_att || clip_tag)
-		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);
+		xps_clip(ctx, doc, ctm, dict, clip_att, clip_tag);
 
 	font_size = fz_atof(font_size_att);
 
-	text = xps_parse_glyphs_imp(ctx, doc, &local_ctm, font, font_size,
+	text = xps_parse_glyphs_imp(ctx, doc, ctm, font, font_size,
 			fz_atof(origin_x_att), fz_atof(origin_y_att),
 			is_sideways, bidi_level, indices_att, unicode_att);
 
-	fz_bound_text(ctx, text, NULL, &local_ctm, &area);
+	area = fz_bound_text(ctx, text, NULL, ctm);
 
-	xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	/* If it's a solid color brush fill/stroke do a simple fill */
 
@@ -610,7 +606,7 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			samples[0] *= fz_atof(fill_opacity_att);
 		xps_set_color(ctx, doc, colorspace, samples);
 
-		fz_fill_text(ctx, dev, text, &local_ctm,
+		fz_fill_text(ctx, dev, text, &ctm,
 			doc->colorspace, doc->color, doc->alpha, NULL);
 	}
 
@@ -618,8 +614,8 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	if (fill_tag)
 	{
-		fz_clip_text(ctx, dev, text, &local_ctm, &area);
-		xps_parse_brush(ctx, doc, &local_ctm, &area, fill_uri, dict, fill_tag);
+		fz_clip_text(ctx, dev, text, &ctm, &area);
+		xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
 		fz_pop_clip(ctx, dev);
 	}
 

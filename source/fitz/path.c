@@ -576,13 +576,12 @@ fz_rectto(fz_context *ctx, fz_path *path, float x1, float y1, float x2, float y2
 	path->current = path->begin;
 }
 
-static inline fz_rect *bound_expand(fz_rect *r, const fz_point *p)
+static inline void bound_expand(fz_rect *r, fz_point p)
 {
-	if (p->x < r->x0) r->x0 = p->x;
-	if (p->y < r->y0) r->y0 = p->y;
-	if (p->x > r->x1) r->x1 = p->x;
-	if (p->y > r->y1) r->y1 = p->y;
-	return r;
+	if (p.x < r->x0) r->x0 = p.x;
+	if (p.y < r->y0) r->y0 = p.y;
+	if (p.x > r->x1) r->x1 = p.x;
+	if (p.y > r->y1) r->y1 = p.y;
 }
 
 void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *proc, void *arg)
@@ -834,7 +833,7 @@ void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *pr
 
 typedef struct
 {
-	const fz_matrix *ctm;
+	fz_matrix ctm;
 	fz_rect rect;
 	fz_point move;
 	int trailing_move;
@@ -845,10 +844,7 @@ static void
 bound_moveto(fz_context *ctx, void *arg_, float x, float y)
 {
 	bound_path_arg *arg = (bound_path_arg *)arg_;
-
-	arg->move.x = x;
-	arg->move.y = y;
-	fz_transform_point(&arg->move, arg->ctm);
+	arg->move = fz_transform_point_xy(x, y, arg->ctm);
 	arg->trailing_move = 1;
 }
 
@@ -856,11 +852,7 @@ static void
 bound_lineto(fz_context *ctx, void *arg_, float x, float y)
 {
 	bound_path_arg *arg = (bound_path_arg *)arg_;
-	fz_point p;
-
-	p.x = x;
-	p.y = y;
-	fz_transform_point(&p, arg->ctm);
+	fz_point p = fz_transform_point_xy(x, y, arg->ctm);
 	if (arg->first)
 	{
 		arg->rect.x0 = arg->rect.x1 = p.x;
@@ -868,12 +860,11 @@ bound_lineto(fz_context *ctx, void *arg_, float x, float y)
 		arg->first = 0;
 	}
 	else
-		bound_expand(&arg->rect, &p);
-
+		bound_expand(&arg->rect, p);
 	if (arg->trailing_move)
 	{
 		arg->trailing_move = 0;
-		bound_expand(&arg->rect, &arg->move);
+		bound_expand(&arg->rect, arg->move);
 	}
 }
 
@@ -881,11 +872,7 @@ static void
 bound_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y2, float x3, float y3)
 {
 	bound_path_arg *arg = (bound_path_arg *)arg_;
-	fz_point p;
-
-	p.x = x1;
-	p.y = y1;
-	fz_transform_point(&p, arg->ctm);
+	fz_point p = fz_transform_point_xy(x1, y1, arg->ctm);
 	if (arg->first)
 	{
 		arg->rect.x0 = arg->rect.x1 = p.x;
@@ -893,17 +880,13 @@ bound_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y
 		arg->first = 0;
 	}
 	else
-		bound_expand(&arg->rect, &p);
-	p.x = x2;
-	p.y = y2;
-	bound_expand(&arg->rect, fz_transform_point(&p, arg->ctm));
-	p.x = x3;
-	p.y = y3;
-	bound_expand(&arg->rect, fz_transform_point(&p, arg->ctm));
+		bound_expand(&arg->rect, p);
+	bound_expand(&arg->rect, fz_transform_point_xy(x2, y2, arg->ctm));
+	bound_expand(&arg->rect, fz_transform_point_xy(x3, y3, arg->ctm));
 	if (arg->trailing_move)
 	{
 		arg->trailing_move = 0;
-		bound_expand(&arg->rect, &arg->move);
+		bound_expand(&arg->rect, arg->move);
 	}
 }
 
@@ -915,8 +898,8 @@ static const fz_path_walker bound_path_walker =
 	NULL
 };
 
-fz_rect *
-fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r)
+fz_rect
+fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm)
 {
 	bound_path_arg arg;
 
@@ -929,15 +912,14 @@ fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *strok
 
 	if (!arg.first && stroke)
 	{
-		fz_adjust_rect_for_stroke(ctx, &arg.rect, stroke, ctm);
+		arg.rect = fz_adjust_rect_for_stroke(ctx, arg.rect, stroke, ctm);
 	}
 
-	*r = arg.rect;
-	return r;
+	return arg.rect;
 }
 
-fz_rect *
-fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_rect
+fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *stroke, fz_matrix ctm)
 {
 	float expand;
 
@@ -951,15 +933,15 @@ fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect *r, const fz_stroke_state *st
 	if ((stroke->linejoin == FZ_LINEJOIN_MITER || stroke->linejoin == FZ_LINEJOIN_MITER_XPS) && stroke->miterlimit > 1)
 		expand *= stroke->miterlimit;
 
-	r->x0 -= expand;
-	r->y0 -= expand;
-	r->x1 += expand;
-	r->y1 += expand;
+	r.x0 -= expand;
+	r.y0 -= expand;
+	r.x1 += expand;
+	r.y1 += expand;
 	return r;
 }
 
 void
-fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
+fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 {
 	int i, k, n;
 	fz_point p, p1, p2, p3, q, s;
@@ -967,7 +949,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 	if (path->packed)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot transform a packed path");
 
-	if (ctm->b == 0 && ctm->c == 0)
+	if (ctm.b == 0 && ctm.c == 0)
 	{
 		/* Simple, in place transform */
 		i = 0;
@@ -1008,16 +990,14 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			case FZ_HORIZTO:
 			case FZ_HORIZTOCLOSE:
 				q.x = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.x;
 				n = 0;
 				break;
 			case FZ_VERTTO:
 			case FZ_VERTTOCLOSE:
 				q.y = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.y;
 				n = 0;
 				break;
@@ -1028,8 +1008,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			{
 				q.x = path->coords[k];
 				q.y = path->coords[k+1];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.x;
 				path->coords[k++] = p.y;
 				n--;
@@ -1055,7 +1034,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			i++;
 		}
 	}
-	else if (ctm->a == 0 && ctm->d == 0)
+	else if (ctm.a == 0 && ctm.d == 0)
 	{
 		/* In place transform with command rewriting */
 		i = 0;
@@ -1095,32 +1074,28 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 				break;
 			case FZ_HORIZTO:
 				q.x = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.y;
 				path->cmds[i] = FZ_VERTTO;
 				n = 0;
 				break;
 			case FZ_HORIZTOCLOSE:
 				q.x = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.y;
 				path->cmds[i] = FZ_VERTTOCLOSE;
 				n = 0;
 				break;
 			case FZ_VERTTO:
 				q.y = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.x;
 				path->cmds[i] = FZ_HORIZTO;
 				n = 0;
 				break;
 			case FZ_VERTTOCLOSE:
 				q.y = path->coords[k];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.x;
 				path->cmds[i] = FZ_HORIZTOCLOSE;
 				n = 0;
@@ -1130,10 +1105,9 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			}
 			while (n > 0)
 			{
-				p.x = path->coords[k];
-				p.y = path->coords[k+1];
-				q = p;
-				fz_transform_point(&p, ctm);
+				q.x = path->coords[k];
+				q.y = path->coords[k+1];
+				p = fz_transform_point(q, ctm);
 				path->coords[k++] = p.x;
 				path->coords[k++] = p.y;
 				n--;
@@ -1240,10 +1214,10 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 				p3.x = p.x;
 				p3.y = p2.y;
 				s = p;
-				fz_transform_point(&p, ctm);
-				fz_transform_point(&p1, ctm);
-				fz_transform_point(&p2, ctm);
-				fz_transform_point(&p3, ctm);
+				p = fz_transform_point(p, ctm);
+				p1 = fz_transform_point(p1, ctm);
+				p2 = fz_transform_point(p2, ctm);
+				p3 = fz_transform_point(p3, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				path->coords[coord_write++] = p1.x;
@@ -1260,8 +1234,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 				break;
 			case FZ_HORIZTO:
 				q.x = path->coords[coord_read++];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				path->cmds[cmd_write-1] = FZ_LINETO;
@@ -1270,7 +1243,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			case FZ_HORIZTOCLOSE:
 				p.x = path->coords[coord_read++];
 				p.y = q.y;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(p, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				path->cmds[cmd_write-1] = FZ_LINETOCLOSE;
@@ -1279,8 +1252,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 				break;
 			case FZ_VERTTO:
 				q.y = path->coords[coord_read++];
-				p = q;
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(q, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				path->cmds[cmd_write-1] = FZ_LINETO;
@@ -1289,7 +1261,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			case FZ_VERTTOCLOSE:
 				p.x = q.x;
 				p.y = path->coords[coord_read++];
-				fz_transform_point(&p, ctm);
+				p = fz_transform_point(p, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				path->cmds[cmd_write-1] = FZ_LINETOCLOSE;
@@ -1301,10 +1273,9 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 			}
 			while (n > 0)
 			{
-				p.x = path->coords[coord_read++];
-				p.y = path->coords[coord_read++];
-				q = p;
-				fz_transform_point(&p, ctm);
+				q.x = path->coords[coord_read++];
+				q.y = path->coords[coord_read++];
+				p = fz_transform_point(q, ctm);
 				path->coords[coord_write++] = p.x;
 				path->coords[coord_write++] = p.y;
 				n--;

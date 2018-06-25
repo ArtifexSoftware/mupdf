@@ -29,75 +29,77 @@
 
 const fz_matrix fz_identity = { 1, 0, 0, 1, 0, 0 };
 
-fz_matrix *
-fz_concat(fz_matrix *dst, const fz_matrix *one, const fz_matrix *two)
+fz_matrix
+fz_concat(fz_matrix one, fz_matrix two)
 {
-	fz_matrix dst2;
-	dst2.a = one->a * two->a + one->b * two->c;
-	dst2.b = one->a * two->b + one->b * two->d;
-	dst2.c = one->c * two->a + one->d * two->c;
-	dst2.d = one->c * two->b + one->d * two->d;
-	dst2.e = one->e * two->a + one->f * two->c + two->e;
-	dst2.f = one->e * two->b + one->f * two->d + two->f;
-	*dst = dst2;
+	fz_matrix dst;
+	dst.a = one.a * two.a + one.b * two.c;
+	dst.b = one.a * two.b + one.b * two.d;
+	dst.c = one.c * two.a + one.d * two.c;
+	dst.d = one.c * two.b + one.d * two.d;
+	dst.e = one.e * two.a + one.f * two.c + two.e;
+	dst.f = one.e * two.b + one.f * two.d + two.f;
 	return dst;
 }
 
-fz_matrix *
-fz_scale(fz_matrix *m, float sx, float sy)
+fz_matrix
+fz_scale(float sx, float sy)
 {
-	m->a = sx; m->b = 0;
-	m->c = 0; m->d = sy;
-	m->e = 0; m->f = 0;
+	fz_matrix m;
+	m.a = sx; m.b = 0;
+	m.c = 0; m.d = sy;
+	m.e = 0; m.f = 0;
 	return m;
 }
 
-fz_matrix *
-fz_pre_scale(fz_matrix *mat, float sx, float sy)
+fz_matrix
+fz_pre_scale(fz_matrix m, float sx, float sy)
 {
-	mat->a *= sx;
-	mat->b *= sx;
-	mat->c *= sy;
-	mat->d *= sy;
-	return mat;
+	m.a *= sx;
+	m.b *= sx;
+	m.c *= sy;
+	m.d *= sy;
+	return m;
 }
 
-fz_matrix *
-fz_post_scale(fz_matrix *mat, float sx, float sy)
+fz_matrix
+fz_post_scale(fz_matrix m, float sx, float sy)
 {
-	mat->a *= sx;
-	mat->b *= sy;
-	mat->c *= sx;
-	mat->d *= sy;
-	mat->e *= sx;
-	mat->f *= sy;
-	return mat;
+	m.a *= sx;
+	m.b *= sy;
+	m.c *= sx;
+	m.d *= sy;
+	m.e *= sx;
+	m.f *= sy;
+	return m;
 }
 
-fz_matrix *
-fz_shear(fz_matrix *mat, float h, float v)
+fz_matrix
+fz_shear(float h, float v)
 {
-	mat->a = 1; mat->b = v;
-	mat->c = h; mat->d = 1;
-	mat->e = 0; mat->f = 0;
-	return mat;
+	fz_matrix m;
+	m.a = 1; m.b = v;
+	m.c = h; m.d = 1;
+	m.e = 0; m.f = 0;
+	return m;
 }
 
-fz_matrix *
-fz_pre_shear(fz_matrix *mat, float h, float v)
+fz_matrix
+fz_pre_shear(fz_matrix m, float h, float v)
 {
-	float a = mat->a;
-	float b = mat->b;
-	mat->a += v * mat->c;
-	mat->b += v * mat->d;
-	mat->c += h * a;
-	mat->d += h * b;
-	return mat;
+	float a = m.a;
+	float b = m.b;
+	m.a += v * m.c;
+	m.b += v * m.d;
+	m.c += h * a;
+	m.d += h * b;
+	return m;
 }
 
-fz_matrix *
-fz_rotate(fz_matrix *m, float theta)
+fz_matrix
+fz_rotate(float theta)
 {
+	fz_matrix m;
 	float s;
 	float c;
 
@@ -132,14 +134,14 @@ fz_rotate(fz_matrix *m, float theta)
 		c = cosf(theta * FZ_PI / 180);
 	}
 
-	m->a = c; m->b = s;
-	m->c = -s; m->d = c;
-	m->e = 0; m->f = 0;
+	m.a = c; m.b = s;
+	m.c = -s; m.d = c;
+	m.e = 0; m.f = 0;
 	return m;
 }
 
-fz_matrix *
-fz_pre_rotate(fz_matrix *m, float theta)
+fz_matrix
+fz_pre_rotate(fz_matrix m, float theta)
 {
 	while (theta < 0)
 		theta += 360;
@@ -152,90 +154,90 @@ fz_pre_rotate(fz_matrix *m, float theta)
 	}
 	else if (fabsf(90.0f - theta) < FLT_EPSILON)
 	{
-		float a = m->a;
-		float b = m->b;
-		m->a = m->c;
-		m->b = m->d;
-		m->c = -a;
-		m->d = -b;
+		float a = m.a;
+		float b = m.b;
+		m.a = m.c;
+		m.b = m.d;
+		m.c = -a;
+		m.d = -b;
 	}
 	else if (fabsf(180.0f - theta) < FLT_EPSILON)
 	{
-		m->a = -m->a;
-		m->b = -m->b;
-		m->c = -m->c;
-		m->d = -m->d;
+		m.a = -m.a;
+		m.b = -m.b;
+		m.c = -m.c;
+		m.d = -m.d;
 	}
 	else if (fabsf(270.0f - theta) < FLT_EPSILON)
 	{
-		float a = m->a;
-		float b = m->b;
-		m->a = -m->c;
-		m->b = -m->d;
-		m->c = a;
-		m->d = b;
+		float a = m.a;
+		float b = m.b;
+		m.a = -m.c;
+		m.b = -m.d;
+		m.c = a;
+		m.d = b;
 	}
 	else
 	{
 		float s = sinf(theta * FZ_PI / 180);
 		float c = cosf(theta * FZ_PI / 180);
-		float a = m->a;
-		float b = m->b;
-		m->a = c * a + s * m->c;
-		m->b = c * b + s * m->d;
-		m->c =-s * a + c * m->c;
-		m->d =-s * b + c * m->d;
+		float a = m.a;
+		float b = m.b;
+		m.a = c * a + s * m.c;
+		m.b = c * b + s * m.d;
+		m.c =-s * a + c * m.c;
+		m.d =-s * b + c * m.d;
 	}
 
 	return m;
 }
 
-fz_matrix *
-fz_translate(fz_matrix *m, float tx, float ty)
+fz_matrix
+fz_translate(float tx, float ty)
 {
-	m->a = 1; m->b = 0;
-	m->c = 0; m->d = 1;
-	m->e = tx; m->f = ty;
+	fz_matrix m;
+	m.a = 1; m.b = 0;
+	m.c = 0; m.d = 1;
+	m.e = tx; m.f = ty;
 	return m;
 }
 
-fz_matrix *
-fz_pre_translate(fz_matrix *mat, float tx, float ty)
+fz_matrix
+fz_pre_translate(fz_matrix m, float tx, float ty)
 {
-	mat->e += tx * mat->a + ty * mat->c;
-	mat->f += tx * mat->b + ty * mat->d;
-	return mat;
+	m.e += tx * m.a + ty * m.c;
+	m.f += tx * m.b + ty * m.d;
+	return m;
 }
 
-fz_matrix *
-fz_invert_matrix(fz_matrix *dst, const fz_matrix *src)
+fz_matrix
+fz_invert_matrix(fz_matrix src)
 {
-	/* Be careful to cope with dst == src */
-	float a = src->a;
-	float det = a * src->d - src->b * src->c;
+	float a = src.a;
+	float det = a * src.d - src.b * src.c;
 	if (det < -FLT_EPSILON || det > FLT_EPSILON)
 	{
+		fz_matrix dst;
 		float rdet = 1 / det;
-		dst->a = src->d * rdet;
-		dst->b = -src->b * rdet;
-		dst->c = -src->c * rdet;
-		dst->d = a * rdet;
-		a = -src->e * dst->a - src->f * dst->c;
-		dst->f = -src->e * dst->b - src->f * dst->d;
-		dst->e = a;
+		dst.a = src.d * rdet;
+		dst.b = -src.b * rdet;
+		dst.c = -src.c * rdet;
+		dst.d = a * rdet;
+		a = -src.e * dst.a - src.f * dst.c;
+		dst.f = -src.e * dst.b - src.f * dst.d;
+		dst.e = a;
+		return dst;
 	}
-	else
-		*dst = *src;
-	return dst;
+	return src;
 }
 
 int
-fz_try_invert_matrix(fz_matrix *dst, const fz_matrix *src)
+fz_try_invert_matrix(fz_matrix *dst, fz_matrix src)
 {
-	double sa = (double)src->a;
-	double sb = (double)src->b;
-	double sc = (double)src->c;
-	double sd = (double)src->d;
+	double sa = (double)src.a;
+	double sb = (double)src.b;
+	double sc = (double)src.c;
+	double sd = (double)src.d;
 	double da, db, dc, dd;
 	double det = sa * sd - sb * sc;
 	if (det >= -DBL_EPSILON && det <= DBL_EPSILON)
@@ -249,77 +251,79 @@ fz_try_invert_matrix(fz_matrix *dst, const fz_matrix *src)
 	dst->c = (float)dc;
 	dd = sa * det;
 	dst->d = (float)dd;
-	da = -src->e * da - src->f * dc;
-	dst->f = (float)(-src->e * db - src->f * dd);
+	da = -src.e * da - src.f * dc;
+	dst->f = (float)(-src.e * db - src.f * dd);
 	dst->e = (float)da;
 	return 0;
 }
 
 int
-fz_is_rectilinear(const fz_matrix *m)
+fz_is_rectilinear(fz_matrix m)
 {
-	return (fabsf(m->b) < FLT_EPSILON && fabsf(m->c) < FLT_EPSILON) ||
-		(fabsf(m->a) < FLT_EPSILON && fabsf(m->d) < FLT_EPSILON);
+	return (fabsf(m.b) < FLT_EPSILON && fabsf(m.c) < FLT_EPSILON) ||
+		(fabsf(m.a) < FLT_EPSILON && fabsf(m.d) < FLT_EPSILON);
 }
 
 float
-fz_matrix_expansion(const fz_matrix *m)
+fz_matrix_expansion(fz_matrix m)
 {
-	return sqrtf(fabsf(m->a * m->d - m->b * m->c));
+	return sqrtf(fabsf(m.a * m.d - m.b * m.c));
 }
 
 float
-fz_matrix_max_expansion(const fz_matrix *m)
+fz_matrix_max_expansion(fz_matrix m)
 {
-	float max = fabsf(m->a);
-	float x = fabsf(m->b);
+	float max = fabsf(m.a);
+	float x = fabsf(m.b);
 	if (max < x)
 		max = x;
-	x = fabsf(m->c);
+	x = fabsf(m.c);
 	if (max < x)
 		max = x;
-	x = fabsf(m->d);
+	x = fabsf(m.d);
 	if (max < x)
 		max = x;
 	return max;
 }
 
-fz_point *
-fz_transform_point(fz_point *p, const fz_matrix *m)
+fz_point
+fz_transform_point(fz_point p, fz_matrix m)
 {
-	float x = p->x;
-	p->x = x * m->a + p->y * m->c + m->e;
-	p->y = x * m->b + p->y * m->d + m->f;
+	float x = p.x;
+	p.x = x * m.a + p.y * m.c + m.e;
+	p.y = x * m.b + p.y * m.d + m.f;
 	return p;
 }
 
-fz_point *
-fz_transform_point_xy(fz_point *p, const fz_matrix *m, float x, float y)
+fz_point
+fz_transform_point_xy(float x, float y, fz_matrix m)
 {
-	p->x = x * m->a + y * m->c + m->e;
-	p->y = x * m->b + y * m->d + m->f;
+	fz_point p;
+	p.x = x * m.a + y * m.c + m.e;
+	p.y = x * m.b + y * m.d + m.f;
 	return p;
 }
 
-fz_point *
-fz_transform_vector(fz_point *p, const fz_matrix *m)
+fz_point
+fz_transform_vector(fz_point p, fz_matrix m)
 {
-	float x = p->x;
-	p->x = x * m->a + p->y * m->c;
-	p->y = x * m->b + p->y * m->d;
+	float x = p.x;
+	p.x = x * m.a + p.y * m.c;
+	p.y = x * m.b + p.y * m.d;
 	return p;
 }
 
-void
-fz_normalize_vector(fz_point *p)
+fz_point
+fz_normalize_vector(fz_point p)
 {
-	float len = p->x * p->x + p->y * p->y;
+	float len = p.x * p.x + p.y * p.y;
 	if (len != 0)
 	{
 		len = sqrtf(len);
-		p->x /= len;
-		p->y /= len;
+		p.x /= len;
+		p.y /= len;
 	}
+	return p;
 }
 
 /* Rectangles and bounding boxes */
@@ -336,246 +340,229 @@ const fz_irect fz_infinite_irect = { 1, 1, -1, -1 };
 const fz_irect fz_empty_irect = { 0, 0, 0, 0 };
 const fz_irect fz_unit_bbox = { 0, 0, 1, 1 };
 
-fz_irect *
-fz_irect_from_rect(fz_irect *b, const fz_rect *r)
+fz_irect
+fz_irect_from_rect(fz_rect r)
 {
+	fz_irect b;
 	if (fz_is_empty_rect(r))
 	{
-		b->x0 = 0;
-		b->y0 = 0;
-		b->x1 = 0;
-		b->y1 = 0;
+		b.x0 = 0;
+		b.y0 = 0;
+		b.x1 = 0;
+		b.y1 = 0;
 	}
 	else
 	{
-		b->x0 = fz_clamp(floorf(r->x0), MIN_SAFE_INT, MAX_SAFE_INT);
-		b->y0 = fz_clamp(floorf(r->y0), MIN_SAFE_INT, MAX_SAFE_INT);
-		b->x1 = fz_clamp(ceilf(r->x1), MIN_SAFE_INT, MAX_SAFE_INT);
-		b->y1 = fz_clamp(ceilf(r->y1), MIN_SAFE_INT, MAX_SAFE_INT);
+		b.x0 = fz_clamp(floorf(r.x0), MIN_SAFE_INT, MAX_SAFE_INT);
+		b.y0 = fz_clamp(floorf(r.y0), MIN_SAFE_INT, MAX_SAFE_INT);
+		b.x1 = fz_clamp(ceilf(r.x1), MIN_SAFE_INT, MAX_SAFE_INT);
+		b.y1 = fz_clamp(ceilf(r.y1), MIN_SAFE_INT, MAX_SAFE_INT);
 	}
 	return b;
 }
 
-fz_rect *
-fz_rect_from_irect(fz_rect *r, const fz_irect *a)
+fz_rect
+fz_rect_from_irect(fz_irect a)
 {
-	r->x0 = a->x0;
-	r->y0 = a->y0;
-	r->x1 = a->x1;
-	r->y1 = a->y1;
+	fz_rect r;
+	r.x0 = a.x0;
+	r.y0 = a.y0;
+	r.x1 = a.x1;
+	r.y1 = a.y1;
 	return r;
 }
 
-fz_irect *
-fz_round_rect(fz_irect * b, const fz_rect *r)
+fz_irect
+fz_round_rect(fz_rect r)
 {
+	fz_irect b;
 	int i;
 
-	i = floorf(r->x0 + 0.001f);
-	b->x0 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
-	i = floorf(r->y0 + 0.001f);
-	b->y0 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
-	i = ceilf(r->x1 - 0.001f);
-	b->x1 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
-	i = ceilf(r->y1 - 0.001f);
-	b->y1 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
+	i = floorf(r.x0 + 0.001f);
+	b.x0 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
+	i = floorf(r.y0 + 0.001f);
+	b.y0 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
+	i = ceilf(r.x1 - 0.001f);
+	b.x1 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
+	i = ceilf(r.y1 - 0.001f);
+	b.y1 = fz_clamp(i, MIN_SAFE_INT, MAX_SAFE_INT);
 
 	return b;
 }
 
-fz_rect *
-fz_intersect_rect(fz_rect *a, const fz_rect *b)
+fz_rect
+fz_intersect_rect(fz_rect a, fz_rect b)
 {
 	/* Check for empty box before infinite box */
-	if (fz_is_empty_rect(a)) return a;
-	if (fz_is_empty_rect(b)) {
-		*a = fz_empty_rect;
-		return a;
-	}
+	if (fz_is_empty_rect(a)) return fz_empty_rect;
+	if (fz_is_empty_rect(b)) return fz_empty_rect;
 	if (fz_is_infinite_rect(b)) return a;
-	if (fz_is_infinite_rect(a)) {
-		*a = *b;
-		return a;
-	}
-	if (a->x0 < b->x0)
-		a->x0 = b->x0;
-	if (a->y0 < b->y0)
-		a->y0 = b->y0;
-	if (a->x1 > b->x1)
-		a->x1 = b->x1;
-	if (a->y1 > b->y1)
-		a->y1 = b->y1;
-	if (a->x1 < a->x0 || a->y1 < a->y0)
-		*a = fz_empty_rect;
+	if (fz_is_infinite_rect(a)) return b;
+	if (a.x0 < b.x0)
+		a.x0 = b.x0;
+	if (a.y0 < b.y0)
+		a.y0 = b.y0;
+	if (a.x1 > b.x1)
+		a.x1 = b.x1;
+	if (a.y1 > b.y1)
+		a.y1 = b.y1;
+	if (a.x1 < a.x0 || a.y1 < a.y0)
+		return fz_empty_rect;
 	return a;
 }
 
-fz_irect *
-fz_intersect_irect(fz_irect *a, const fz_irect *b)
+fz_irect
+fz_intersect_irect(fz_irect a, fz_irect b)
 {
 	/* Check for empty box before infinite box */
-	if (fz_is_empty_irect(a)) return a;
-	if (fz_is_empty_irect(b))
-	{
-		*a = fz_empty_irect;
-		return a;
-	}
+	if (fz_is_empty_irect(a)) return fz_empty_irect;
+	if (fz_is_empty_irect(b)) return fz_empty_irect;
 	if (fz_is_infinite_irect(b)) return a;
-	if (fz_is_infinite_irect(a))
-	{
-		*a = *b;
-		return a;
-	}
-	if (a->x0 < b->x0)
-		a->x0 = b->x0;
-	if (a->y0 < b->y0)
-		a->y0 = b->y0;
-	if (a->x1 > b->x1)
-		a->x1 = b->x1;
-	if (a->y1 > b->y1)
-		a->y1 = b->y1;
-	if (a->x1 < a->x0 || a->y1 < a->y0)
-		*a = fz_empty_irect;
+	if (fz_is_infinite_irect(a)) return b;
+	if (a.x0 < b.x0)
+		a.x0 = b.x0;
+	if (a.y0 < b.y0)
+		a.y0 = b.y0;
+	if (a.x1 > b.x1)
+		a.x1 = b.x1;
+	if (a.y1 > b.y1)
+		a.y1 = b.y1;
+	if (a.x1 < a.x0 || a.y1 < a.y0)
+		return fz_empty_irect;
 	return a;
 }
 
-fz_rect *
-fz_union_rect(fz_rect *a, const fz_rect *b)
+fz_rect
+fz_union_rect(fz_rect a, fz_rect b)
 {
 	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(b)) return a;
-	if (fz_is_empty_rect(a)) {
-		*a = *b;
-		return a;
-	}
+	if (fz_is_empty_rect(a)) return b;
 	if (fz_is_infinite_rect(a)) return a;
-	if (fz_is_infinite_rect(b)) {
-		*a = *b;
-		return a;
-	}
-	if (a->x0 > b->x0)
-		a->x0 = b->x0;
-	if (a->y0 > b->y0)
-		a->y0 = b->y0;
-	if (a->x1 < b->x1)
-		a->x1 = b->x1;
-	if (a->y1 < b->y1)
-		a->y1 = b->y1;
+	if (fz_is_infinite_rect(b)) return b;
+	if (a.x0 > b.x0)
+		a.x0 = b.x0;
+	if (a.y0 > b.y0)
+		a.y0 = b.y0;
+	if (a.x1 < b.x1)
+		a.x1 = b.x1;
+	if (a.y1 < b.y1)
+		a.y1 = b.y1;
 	return a;
 }
 
-fz_rect *
-fz_translate_rect(fz_rect *a, float xoff, float yoff)
+fz_rect
+fz_translate_rect(fz_rect a, float xoff, float yoff)
 {
 	if (fz_is_empty_rect(a)) return a;
 	if (fz_is_infinite_rect(a)) return a;
-	a->x0 += xoff;
-	a->y0 += yoff;
-	a->x1 += xoff;
-	a->y1 += yoff;
+	a.x0 += xoff;
+	a.y0 += yoff;
+	a.x1 += xoff;
+	a.y1 += yoff;
 	return a;
 }
 
-fz_irect *
-fz_translate_irect(fz_irect *a, int xoff, int yoff)
+fz_irect
+fz_translate_irect(fz_irect a, int xoff, int yoff)
 {
 	int t;
 
 	if (fz_is_empty_irect(a)) return a;
 	if (fz_is_infinite_irect(a)) return a;
-	a->x0 = ADD_WITH_SAT(t, a->x0, xoff);
-	a->y0 = ADD_WITH_SAT(t, a->y0, yoff);
-	a->x1 = ADD_WITH_SAT(t, a->x1, xoff);
-	a->y1 = ADD_WITH_SAT(t, a->y1, yoff);
+	a.x0 = ADD_WITH_SAT(t, a.x0, xoff);
+	a.y0 = ADD_WITH_SAT(t, a.y0, yoff);
+	a.x1 = ADD_WITH_SAT(t, a.x1, xoff);
+	a.y1 = ADD_WITH_SAT(t, a.y1, yoff);
 	return a;
 }
 
-fz_rect *
-fz_transform_rect(fz_rect *r, const fz_matrix *m)
+fz_rect
+fz_transform_rect(fz_rect r, fz_matrix m)
 {
 	fz_point s, t, u, v;
 
 	if (fz_is_infinite_rect(r))
 		return r;
 
-	if (fabsf(m->b) < FLT_EPSILON && fabsf(m->c) < FLT_EPSILON)
+	if (fabsf(m.b) < FLT_EPSILON && fabsf(m.c) < FLT_EPSILON)
 	{
-		if (m->a < 0)
+		if (m.a < 0)
 		{
-			float f = r->x0;
-			r->x0 = r->x1;
-			r->x1 = f;
+			float f = r.x0;
+			r.x0 = r.x1;
+			r.x1 = f;
 		}
-		if (m->d < 0)
+		if (m.d < 0)
 		{
-			float f = r->y0;
-			r->y0 = r->y1;
-			r->y1 = f;
+			float f = r.y0;
+			r.y0 = r.y1;
+			r.y1 = f;
 		}
-		fz_transform_point(fz_rect_min(r), m);
-		fz_transform_point(fz_rect_max(r), m);
+		s = fz_transform_point_xy(r.x0, r.y0, m);
+		t = fz_transform_point_xy(r.x1, r.y1, m);
+		r.x0 = s.x; r.y0 = s.y;
+		r.x1 = t.x; r.y1 = t.y;
 		return r;
 	}
 
-	s.x = r->x0; s.y = r->y0;
-	t.x = r->x0; t.y = r->y1;
-	u.x = r->x1; u.y = r->y1;
-	v.x = r->x1; v.y = r->y0;
-	fz_transform_point(&s, m);
-	fz_transform_point(&t, m);
-	fz_transform_point(&u, m);
-	fz_transform_point(&v, m);
-	r->x0 = MIN4(s.x, t.x, u.x, v.x);
-	r->y0 = MIN4(s.y, t.y, u.y, v.y);
-	r->x1 = MAX4(s.x, t.x, u.x, v.x);
-	r->y1 = MAX4(s.y, t.y, u.y, v.y);
+	s.x = r.x0; s.y = r.y0;
+	t.x = r.x0; t.y = r.y1;
+	u.x = r.x1; u.y = r.y1;
+	v.x = r.x1; v.y = r.y0;
+	s = fz_transform_point(s, m);
+	t = fz_transform_point(t, m);
+	u = fz_transform_point(u, m);
+	v = fz_transform_point(v, m);
+	r.x0 = MIN4(s.x, t.x, u.x, v.x);
+	r.y0 = MIN4(s.y, t.y, u.y, v.y);
+	r.x1 = MAX4(s.x, t.x, u.x, v.x);
+	r.y1 = MAX4(s.y, t.y, u.y, v.y);
 	return r;
 }
 
-fz_irect *
-fz_expand_irect(fz_irect *a, int expand)
+fz_irect
+fz_expand_irect(fz_irect a, int expand)
 {
 	if (fz_is_infinite_irect(a)) return a;
-	a->x0 -= expand;
-	a->y0 -= expand;
-	a->x1 += expand;
-	a->y1 += expand;
+	a.x0 -= expand;
+	a.y0 -= expand;
+	a.x1 += expand;
+	a.y1 += expand;
 	return a;
 }
 
-fz_rect *
-fz_expand_rect(fz_rect *a, float expand)
+fz_rect
+fz_expand_rect(fz_rect a, float expand)
 {
 	if (fz_is_infinite_rect(a)) return a;
-	a->x0 -= expand;
-	a->y0 -= expand;
-	a->x1 += expand;
-	a->y1 += expand;
+	a.x0 -= expand;
+	a.y0 -= expand;
+	a.x1 += expand;
+	a.y1 += expand;
 	return a;
 }
 
-fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p)
+fz_rect fz_include_point_in_rect(fz_rect r, fz_point p)
 {
 	if (fz_is_infinite_rect(r)) return r;
-	if (p->x < r->x0) r->x0 = p->x;
-	if (p->x > r->x1) r->x1 = p->x;
-	if (p->y < r->y0) r->y0 = p->y;
-	if (p->y > r->y1) r->y1 = p->y;
+	if (p.x < r.x0) r.x0 = p.x;
+	if (p.x > r.x1) r.x1 = p.x;
+	if (p.y < r.y0) r.y0 = p.y;
+	if (p.y > r.y1) r.y1 = p.y;
 	return r;
 }
 
-int fz_contains_rect(const fz_rect *a, const fz_rect *b)
+int fz_contains_rect(fz_rect a, fz_rect b)
 {
-	if (a == NULL || b == NULL)
-		return 0;
 	if (fz_is_empty_rect(b))
 		return 1;
 	if (fz_is_empty_rect(a))
 		return 0;
-	return ((a->x0 <= b->x0) &&
-		(a->y0 <= b->y0) &&
-		(a->x1 >= b->x1) &&
-		(a->y1 >= b->y1));
+	return ((a.x0 <= b.x0) &&
+		(a.y0 <= b.y0) &&
+		(a.x1 >= b.x1) &&
+		(a.y1 >= b.y1));
 }
 
 fz_rect
@@ -589,13 +576,13 @@ fz_rect_from_quad(fz_quad q)
 	return r;
 }
 
-fz_quad *
-fz_transform_quad(fz_quad *q, const fz_matrix *m)
+fz_quad
+fz_transform_quad(fz_quad q, const fz_matrix m)
 {
-	fz_transform_point(&q->ul, m);
-	fz_transform_point(&q->ur, m);
-	fz_transform_point(&q->ll, m);
-	fz_transform_point(&q->lr, m);
+	q.ul = fz_transform_point(q.ul, m);
+	q.ur = fz_transform_point(q.ur, m);
+	q.ll = fz_transform_point(q.ll, m);
+	q.lr = fz_transform_point(q.lr, m);
 	return q;
 }
 

@@ -74,15 +74,16 @@ htdoc_drop_page(fz_context *ctx, fz_page *page_)
 {
 }
 
-static fz_rect *
-htdoc_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
+static fz_rect
+htdoc_bound_page(fz_context *ctx, fz_page *page_)
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	bbox->x0 = 0;
-	bbox->y0 = 0;
-	bbox->x1 = doc->html->page_w + doc->html->page_margin[L] + doc->html->page_margin[R];
-	bbox->y1 = doc->html->page_h + doc->html->page_margin[T] + doc->html->page_margin[B];
+	fz_rect bbox;
+	bbox.x0 = 0;
+	bbox.y0 = 0;
+	bbox.x1 = doc->html->page_w + doc->html->page_margin[L] + doc->html->page_margin[R];
+	bbox.y1 = doc->html->page_h + doc->html->page_margin[T] + doc->html->page_margin[B];
 	return bbox;
 }
 
@@ -91,7 +92,7 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	fz_draw_html(ctx, dev, ctm, doc->html, page->number);
+	fz_draw_html(ctx, dev, *ctm, doc->html, page->number);
 }
 
 static fz_link *

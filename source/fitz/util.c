@@ -6,11 +6,9 @@ fz_display_list *
 fz_new_display_list_from_page(fz_context *ctx, fz_page *page)
 {
 	fz_display_list *list;
-	fz_rect bounds;
 	fz_device *dev = NULL;
 
-	list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
-
+	list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
 	fz_try(ctx)
 	{
 		dev = fz_new_list_device(ctx, list);
@@ -50,10 +48,9 @@ fz_display_list *
 fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
 {
 	fz_display_list *list;
-	fz_rect bounds;
 	fz_device *dev = NULL;
 
-	list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
+	list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
 
 	fz_try(ctx)
 	{
@@ -78,10 +75,9 @@ fz_display_list *
 fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
 {
 	fz_display_list *list;
-	fz_rect bounds;
 	fz_device *dev = NULL;
 
-	list = fz_new_display_list(ctx, fz_bound_annot(ctx, annot, &bounds));
+	list = fz_new_display_list(ctx, fz_bound_annot(ctx, annot));
 
 	fz_try(ctx)
 	{
@@ -106,15 +102,15 @@ fz_pixmap *
 fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
-	fz_irect irect;
+	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
-	fz_bound_display_list(ctx, list, &rect);
-	fz_transform_rect(&rect, ctm);
-	fz_round_rect(&irect, &rect);
+	rect = fz_bound_display_list(ctx, list);
+	rect = fz_transform_rect(rect, *ctm);
+	bbox = fz_round_rect(rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -143,15 +139,15 @@ fz_pixmap *
 fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
-	fz_irect irect;
+	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
-	fz_bound_page(ctx, page, &rect);
-	fz_transform_rect(&rect, ctm);
-	fz_round_rect(&irect, &rect);
+	rect = fz_bound_page(ctx, page);
+	rect = fz_transform_rect(rect, *ctm);
+	bbox = fz_round_rect(rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -180,15 +176,15 @@ fz_pixmap *
 fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
-	fz_irect irect;
+	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
-	fz_bound_annot(ctx, annot, &rect);
-	fz_transform_rect(&rect, ctm);
-	fz_round_rect(&irect, &rect);
+	rect = fz_bound_annot(ctx, annot);
+	rect = fz_transform_rect(rect, *ctm);
+	bbox = fz_round_rect(rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -217,15 +213,15 @@ fz_pixmap *
 fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
-	fz_irect irect;
+	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
-	fz_bound_page(ctx, page, &rect);
-	fz_transform_rect(&rect, ctm);
-	fz_round_rect(&irect, &rect);
+	rect = fz_bound_page(ctx, page);
+	rect = fz_transform_rect(rect, *ctm);
+	bbox = fz_round_rect(rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -271,12 +267,11 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, cons
 {
 	fz_stext_page *text;
 	fz_device *dev = NULL;
-	fz_rect mediabox;
 
 	if (list == NULL)
 		return NULL;
 
-	text = fz_new_stext_page(ctx, fz_bound_display_list(ctx, list, &mediabox));
+	text = fz_new_stext_page(ctx, fz_bound_display_list(ctx, list));
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
@@ -301,12 +296,11 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 {
 	fz_stext_page *text;
 	fz_device *dev = NULL;
-	fz_rect mediabox;
 
 	if (page == NULL)
 		return NULL;
 
-	text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
+	text = fz_new_stext_page(ctx, fz_bound_page(ctx, page));
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);

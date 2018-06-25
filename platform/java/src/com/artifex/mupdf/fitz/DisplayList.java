@@ -15,10 +15,10 @@ public class DisplayList
 		pointer = 0;
 	}
 
-	private native long newNative();
+	private native long newNative(Rect mediabox);
 
-	public DisplayList() {
-		pointer = newNative();
+	public DisplayList(Rect mediabox) {
+		pointer = newNative(mediabox);
 	}
 
 	private DisplayList(long p) {

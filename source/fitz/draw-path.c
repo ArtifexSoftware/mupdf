@@ -268,9 +268,8 @@ int
 fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_matrix *ctm, float flatness, const fz_irect *scissor, fz_irect *bbox)
 {
 	flatten_arg arg;
-	fz_irect local_bbox;
 
-	if (fz_reset_rasterizer(ctx, rast, scissor))
+	if (fz_reset_rasterizer(ctx, rast, *scissor))
 	{
 		arg.rast = rast;
 		arg.ctm = ctm;
@@ -300,9 +299,8 @@ fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, 
 	if (!bbox)
 		return 0;
 
-	local_bbox = *scissor;
-	fz_bound_rasterizer(ctx, rast, bbox);
-	return fz_is_empty_irect(fz_intersect_irect(bbox, &local_bbox));
+	*bbox = fz_bound_rasterizer(ctx, rast);
+	return fz_is_empty_irect(fz_intersect_irect(*bbox, *scissor));
 }
 
 enum {
@@ -1456,16 +1454,16 @@ do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, con
 		if (s.dash_total == 0)
 			return 1;
 
-		fz_scissor_rasterizer(ctx, rast, &s.rect);
-		if (fz_try_invert_matrix(&inv, ctm))
+		s.rect = fz_scissor_rasterizer(ctx, rast);
+		if (fz_try_invert_matrix(&inv, *ctm))
 			return 1;
-		fz_transform_rect(&s.rect, &inv);
+		s.rect = fz_transform_rect(s.rect, inv);
 		s.rect.x0 -= linewidth;
 		s.rect.x1 += linewidth;
 		s.rect.y0 -= linewidth;
 		s.rect.y1 += linewidth;
 
-		max_expand = fz_matrix_max_expansion(ctm);
+		max_expand = fz_matrix_max_expansion(*ctm);
 		if (s.dash_total >= 0.01f && s.dash_total * max_expand >= 0.5f)
 		{
 			proc = &dash_proc;
@@ -1481,14 +1479,14 @@ do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, con
 	if (!bbox)
 		return 0;
 
-	return fz_is_empty_irect(fz_bound_rasterizer(ctx, rast, bbox));
+	*bbox = fz_bound_rasterizer(ctx, rast);
+	return fz_is_empty_irect(*bbox);
 }
 
 int
 fz_flatten_stroke_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor, fz_irect *bbox)
 {
-
-	if (fz_reset_rasterizer(ctx, rast, scissor))
+	if (fz_reset_rasterizer(ctx, rast, *scissor))
 	{
 		if (do_flatten_stroke(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox))
 			return 1;

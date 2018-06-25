@@ -687,7 +687,7 @@ void ui_dialog_begin(int w, int h)
 	y = (ui.window_h-h)/3;
 	area = fz_make_irect(x, y, x+w, y+h);
 	ui_draw_bevel_rect(area, UI_COLOR_PANEL, 0);
-	fz_expand_irect(&area, -14);
+	area = fz_expand_irect(area, -14);
 	ui_pack_push(area);
 }
 

@@ -137,7 +137,7 @@ static struct glyph *lookup_glyph(fz_font *font, int gid, float *xp, float *yp)
 	int w, h;
 
 	/* match fitz's glyph cache quantization */
-	fz_scale(&trm, g_font_size, -g_font_size);
+	trm = fz_scale(g_font_size, -g_font_size);
 	trm.e = *xp;
 	trm.f = *yp;
 	fz_subpixel_adjust(ctx, &trm, &subpix_trm, &subx, &suby);

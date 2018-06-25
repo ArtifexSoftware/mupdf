@@ -3304,7 +3304,7 @@ pdf_writer_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_try(ctx)
 	{
 		fz_close_device(ctx, dev);
-		obj = pdf_add_page(ctx, wri->pdf, &wri->mediabox, 0, wri->resources, wri->contents);
+		obj = pdf_add_page(ctx, wri->pdf, wri->mediabox, 0, wri->resources, wri->contents);
 		pdf_insert_page(ctx, wri->pdf, -1, obj);
 	}
 	fz_always(ctx)

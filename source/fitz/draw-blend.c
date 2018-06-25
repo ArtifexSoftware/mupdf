@@ -1073,7 +1073,6 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap * FZ_RES
 	unsigned char *sp;
 	unsigned char *dp;
 	fz_irect bbox;
-	fz_irect bbox2;
 	int x, y, w, h, n;
 	int da, sa;
 	int complement;
@@ -1098,9 +1097,7 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap * FZ_RES
 		}
 	}
 
-	fz_pixmap_bbox_no_ctx(dst, &bbox);
-	fz_pixmap_bbox_no_ctx(src, &bbox2);
-	fz_intersect_irect(&bbox, &bbox2);
+	bbox = fz_intersect_irect(fz_pixmap_bbox(ctx, src), fz_pixmap_bbox(ctx, dst));
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -1298,15 +1295,14 @@ fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap
 {
 	unsigned char *sp;
 	unsigned char *dp;
-	fz_irect bbox;
-	fz_irect bbox2;
+	fz_irect sbox, dbox, bbox;
 	int x, y, w, h, n;
 	int da, sa;
 	const unsigned char *hp;
 
-	fz_pixmap_bbox_no_ctx(dst, &bbox);
-	fz_pixmap_bbox_no_ctx(src, &bbox2);
-	fz_intersect_irect(&bbox, &bbox2);
+	dbox = fz_pixmap_bbox_no_ctx(dst);
+	sbox = fz_pixmap_bbox_no_ctx(src);
+	bbox = fz_intersect_irect(dbox, sbox);
 
 	x = bbox.x0;
 	y = bbox.y0;

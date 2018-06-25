@@ -466,10 +466,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DisplayList_finalize
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    newNative
- * Signature: ()J
+ * Signature: (Lcom/artifex/mupdf/fitz/Rect;)J
  */
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DisplayList_newNative
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList

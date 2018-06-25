@@ -65,7 +65,7 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 /*
 	pdf_bound_widget: get the bounding box of a widget.
 */
-fz_rect *pdf_bound_widget(fz_context *ctx, pdf_widget *widget, fz_rect *);
+fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
 /*
 	pdf_text_widget_text: Get the text currently displayed in

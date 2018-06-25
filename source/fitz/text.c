@@ -40,7 +40,7 @@ fz_drop_text(fz_context *ctx, const fz_text *textc)
 }
 
 static fz_text_span *
-fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, const fz_matrix *trm)
+fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, fz_matrix trm)
 {
 	fz_text_span *span = fz_malloc_struct(ctx, fz_text_span);
 	span->font = fz_keep_font(ctx, font);
@@ -48,14 +48,14 @@ fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_b
 	span->bidi_level = bidi_level;
 	span->markup_dir = markup_dir;
 	span->language = language;
-	span->trm = *trm;
+	span->trm = trm;
 	span->trm.e = 0;
 	span->trm.f = 0;
 	return span;
 }
 
 static fz_text_span *
-fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, const fz_matrix *trm)
+fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, fz_matrix trm)
 {
 	if (!text->tail)
 	{
@@ -66,10 +66,10 @@ fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int b
 		text->tail->bidi_level != bidi_level ||
 		text->tail->markup_dir != markup_dir ||
 		text->tail->language != language ||
-		text->tail->trm.a != trm->a ||
-		text->tail->trm.b != trm->b ||
-		text->tail->trm.c != trm->c ||
-		text->tail->trm.d != trm->d)
+		text->tail->trm.a != trm.a ||
+		text->tail->trm.b != trm.b ||
+		text->tail->trm.c != trm.c ||
+		text->tail->trm.d != trm.d)
 	{
 		text->tail = text->tail->next = fz_new_text_span(ctx, font, wmode, bidi_level, markup_dir, language, trm);
 	}
@@ -89,7 +89,7 @@ fz_grow_text_span(fz_context *ctx, fz_text_span *span, int n)
 }
 
 void
-fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int gid, int ucs, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language lang)
+fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, int gid, int ucs, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language lang)
 {
 	fz_text_span *span;
 
@@ -102,8 +102,8 @@ fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *tr
 
 	span->items[span->len].ucs = ucs;
 	span->items[span->len].gid = gid;
-	span->items[span->len].x = trm->e;
-	span->items[span->len].y = trm->f;
+	span->items[span->len].x = trm.e;
+	span->items[span->len].y = trm.f;
 	span->len++;
 }
 
@@ -118,24 +118,25 @@ fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *tr
 	{
 		s += fz_chartorune(&ucs, s);
 		gid = fz_encode_character_with_fallback(ctx, user_font, ucs, 0, language, &font);
-		fz_show_glyph(ctx, text, font, trm, gid, ucs, wmode, bidi_level, markup_dir, language);
+		fz_show_glyph(ctx, text, font, *trm, gid, ucs, wmode, bidi_level, markup_dir, language);
 		adv = fz_advance_glyph(ctx, font, gid, wmode);
 		if (wmode == 0)
-			fz_pre_translate(trm, adv, 0);
+			*trm = fz_pre_translate(*trm, adv, 0);
 		else
-			fz_pre_translate(trm, 0, -adv);
+			*trm = fz_pre_translate(*trm, 0, -adv);
 	}
 }
 
-fz_rect *
-fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *bbox)
+fz_rect
+fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm)
 {
 	fz_text_span *span;
 	fz_matrix tm, trm;
 	fz_rect gbox;
+	fz_rect bbox;
 	int i;
 
-	*bbox = fz_empty_rect;
+	bbox = fz_empty_rect;
 
 	for (span = text->head; span; span = span->next)
 	{
@@ -148,9 +149,9 @@ fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *strok
 				{
 					tm.e = span->items[i].x;
 					tm.f = span->items[i].y;
-					fz_concat(&trm, &tm, ctm);
-					fz_bound_glyph(ctx, span->font, span->items[i].gid, &trm, &gbox);
-					fz_union_rect(bbox, &gbox);
+					trm = fz_concat(tm, ctm);
+					gbox = fz_bound_glyph(ctx, span->font, span->items[i].gid, trm);
+					bbox = fz_union_rect(bbox, gbox);
 				}
 			}
 		}
@@ -159,13 +160,13 @@ fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *strok
 	if (!fz_is_empty_rect(bbox))
 	{
 		if (stroke)
-			fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
+			bbox = fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
 
 		/* Compensate for the glyph cache limited positioning precision */
-		bbox->x0 -= 1;
-		bbox->y0 -= 1;
-		bbox->x1 += 1;
-		bbox->y1 += 1;
+		bbox.x0 -= 1;
+		bbox.y0 -= 1;
+		bbox.x1 += 1;
+		bbox.y1 += 1;
 	}
 
 	return bbox;

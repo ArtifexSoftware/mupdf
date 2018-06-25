@@ -79,12 +79,12 @@ void pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat);
  * XObject
  */
 
-pdf_obj *pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *buffer);
-void pdf_update_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *xobj, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *buffer);
+pdf_obj *pdf_new_xobject(fz_context *ctx, pdf_document *doc, fz_rect bbox, fz_matrix matrix, pdf_obj *res, fz_buffer *buffer);
+void pdf_update_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *xobj, fz_rect bbox, fz_matrix mat, pdf_obj *res, fz_buffer *buffer);
 
 pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_obj *xobj);
-fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj, fz_rect *bbox);
-fz_matrix *pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj, fz_matrix *matrix);
+fz_rect pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj);
+fz_matrix pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj);
 int pdf_xobject_isolated(fz_context *ctx, pdf_obj *xobj);
 int pdf_xobject_knockout(fz_context *ctx, pdf_obj *xobj);
 int pdf_xobject_transparency(fz_context *ctx, pdf_obj *xobj);

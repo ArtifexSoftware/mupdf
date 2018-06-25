@@ -71,10 +71,10 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 		pdf_signature_set_value(ctx, doc, wobj, signer);
 
-		pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME(Rect)), &rect);
+		rect = pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME(Rect)));
 
 		/* Create an appearance stream only if the signature is intended to be visible */
-		if (!fz_is_empty_rect(&rect))
+		if (!fz_is_empty_rect(rect))
 		{
 			dn = signer->designated_name(signer);
 			fzbuf = fz_new_buffer(ctx, 256);

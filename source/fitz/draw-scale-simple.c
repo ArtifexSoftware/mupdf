@@ -1526,7 +1526,7 @@ adjust_alpha_edges(fz_pixmap * FZ_RESTRICT pix, const fz_weights * FZ_RESTRICT r
 }
 
 fz_pixmap *
-fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_irect *clip)
+fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, const fz_irect *clip)
 {
 	return fz_scale_pixmap_cached(ctx, src, x, y, w, h, clip, NULL, NULL);
 }

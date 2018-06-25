@@ -377,13 +377,14 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 	return xml;
 }
 
-static fz_rect *
-xps_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bounds)
+static fz_rect
+xps_bound_page(fz_context *ctx, fz_page *page_)
 {
 	xps_page *page = (xps_page*)page_;
-	bounds->x0 = bounds->y0 = 0;
-	bounds->x1 = page->fix->width * 72.0f / 96.0f;
-	bounds->y1 = page->fix->height * 72.0f / 96.0f;
+	fz_rect bounds;
+	bounds.x0 = bounds.y0 = 0;
+	bounds.x1 = page->fix->width * 72.0f / 96.0f;
+	bounds.y1 = page->fix->height * 72.0f / 96.0f;
 	return bounds;
 }
 

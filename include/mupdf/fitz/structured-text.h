@@ -111,7 +111,7 @@ extern const char *fz_stext_options_usage;
 
 	mediabox: optional mediabox information.
 */
-fz_stext_page *fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox);
+fz_stext_page *fz_new_stext_page(fz_context *ctx, fz_rect mediabox);
 void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
 
 /*

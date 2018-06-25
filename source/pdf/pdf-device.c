@@ -207,8 +207,8 @@ pdf_dev_ctm(fz_context *ctx, pdf_device *pdev, const fz_matrix *ctm)
 
 	if (memcmp(&gs->ctm, ctm, sizeof(*ctm)) == 0)
 		return;
-	fz_invert_matrix(&inverse, &gs->ctm);
-	fz_concat(&inverse, ctm, &inverse);
+	inverse = fz_invert_matrix(gs->ctm);
+	inverse = fz_concat(*ctm, inverse);
 	gs->ctm = *ctm;
 	fz_append_printf(ctx, gs->buf, "%M cm\n", &inverse);
 }
@@ -446,7 +446,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 	tm.e = span->items[0].x;
 	tm.f = span->items[0].y;
 
-	fz_invert_matrix(&inv_tm, &tm);
+	inv_tm = fz_invert_matrix(tm);
 
 	fz_append_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
 
@@ -459,7 +459,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		/* transform difference from expected pen position into font units. */
 		d.x = it->x - tm.e;
 		d.y = it->y - tm.f;
-		fz_transform_vector(&d, &inv_tm);
+		d = fz_transform_vector(d, inv_tm);
 		dx = (int)(d.x * 1000 + (d.x < 0 ? -0.5f : 0.5f));
 		dy = (int)(d.y * 1000 + (d.y < 0 ? -0.5f : 0.5f));
 
@@ -483,9 +483,9 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 
 		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
 		if (span->wmode == 0)
-			fz_pre_translate(&tm, adv, 0);
+			tm = fz_pre_translate(tm, adv, 0);
 		else
-			fz_pre_translate(&tm, 0, adv);
+			tm = fz_pre_translate(tm, 0, adv);
 	}
 
 	fz_append_string(ctx, gs->buf, ">]TJ\n");
@@ -605,7 +605,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		pdf_dict_put(ctx, form, PDF_NAME(Subtype), PDF_NAME(Form));
 		pdf_dict_put(ctx, form, PDF_NAME(Group), group_ref);
 		pdf_dict_put_int(ctx, form, PDF_NAME(FormType), 1);
-		pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), bbox);
+		pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), *bbox);
 		*form_ref = pdf_add_object(ctx, doc, form);
 	}
 	fz_always(ctx)
@@ -822,8 +822,8 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	pdf_dev_alpha(ctx, pdev, alpha, 0);
 
 	/* PDF images are upside down, so fiddle the ctm */
-	fz_pre_scale(&local_ctm, 1, -1);
-	fz_pre_translate(&local_ctm, 0, -1);
+	local_ctm = fz_pre_scale(local_ctm, 1, -1);
+	local_ctm = fz_pre_translate(local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
 	fz_append_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
 
@@ -862,8 +862,8 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
 
 	/* PDF images are upside down, so fiddle the ctm */
-	fz_pre_scale(&local_ctm, 1, -1);
-	fz_pre_translate(&local_ctm, 0, -1);
+	local_ctm = fz_pre_scale(local_ctm, 1, -1);
+	local_ctm = fz_pre_translate(local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
 	fz_append_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
 

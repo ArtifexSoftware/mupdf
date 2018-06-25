@@ -87,7 +87,7 @@ pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 /*
 	pdf_bound_annot: Return the rectangle for an annotation on a page.
 */
-fz_rect *pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
+fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_annot_type: Return the type of an annotation
@@ -132,7 +132,7 @@ pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which);
 int pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp, float *yp);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, int pagenum, const fz_matrix *page_ctm);
 
-void pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm);
+fz_matrix pdf_annot_transform(fz_context *ctx, pdf_annot *annot);
 void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
 void pdf_update_annot(fz_context *ctx, pdf_annot *annot);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
@@ -160,7 +160,7 @@ int pdf_annot_has_open(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_author(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
+fz_rect pdf_annot_rect(fz_context *ctx, pdf_annot *annot);
 float pdf_annot_border(fz_context *ctx, pdf_annot *annot);
 float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
@@ -178,7 +178,7 @@ int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i);
 fz_point pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k);
 
 void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
-void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect);
+void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect);
 void pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float width);
 void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity);
 void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);

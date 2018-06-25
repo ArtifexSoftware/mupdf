@@ -213,7 +213,7 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 	if (!pdf_is_array(ctx, obj))
 		return;
 
-	pdf_to_rect(ctx, obj, &bbox);
+	bbox = pdf_to_rect(ctx, obj);
 
 	obj = pdf_dict_get(ctx, pageref, PDF_NAME(UserUnit));
 	if (pdf_is_real(ctx, obj))

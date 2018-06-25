@@ -39,7 +39,7 @@ struct fz_link_s
 	char *uri;
 };
 
-fz_link *fz_new_link(fz_context *ctx, const fz_rect *bbox, void *doc, const char *uri);
+fz_link *fz_new_link(fz_context *ctx, fz_rect bbox, void *doc, const char *uri);
 fz_link *fz_keep_link(fz_context *ctx, fz_link *link);
 
 /*

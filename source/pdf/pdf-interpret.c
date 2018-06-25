@@ -1072,8 +1072,7 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_p
 
 	if (proc->op_q && proc->op_cm && proc->op_Do_form && proc->op_Q && annot->ap)
 	{
-		fz_matrix matrix;
-		pdf_annot_transform(ctx, annot, &matrix);
+		fz_matrix matrix = pdf_annot_transform(ctx, annot);
 		proc->op_q(ctx, proc);
 		proc->op_cm(ctx, proc,
 			matrix.a, matrix.b,
@@ -1179,14 +1178,14 @@ pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *te
 		tos->char_ty = w1 * text->size + text->char_space;
 	}
 
-	fz_concat(trm, &tsm, &tos->tm);
+	*trm = fz_concat(tsm, tos->tm);
 
 	tos->cid = cid;
 	tos->gid = pdf_font_cid_to_gid(ctx, fontdesc, cid);
 	tos->fontdesc = fontdesc;
 
 	/* Compensate for the glyph cache limited positioning precision */
-	fz_expand_rect(fz_bound_glyph(ctx, fontdesc->font, tos->gid, trm, &tos->char_bbox), 1);
+	tos->char_bbox = fz_expand_rect(fz_bound_glyph(ctx, fontdesc->font, tos->gid, *trm), 1);
 
 	return tos->gid;
 }
@@ -1194,15 +1193,14 @@ pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *te
 void
 pdf_tos_move_after_char(fz_context *ctx, pdf_text_object_state *tos)
 {
-	fz_union_rect(&tos->text_bbox, &tos->char_bbox);
-
-	fz_pre_translate(&tos->tm, tos->char_tx, tos->char_ty);
+	tos->text_bbox = fz_union_rect(tos->text_bbox, tos->char_bbox);
+	tos->tm = fz_pre_translate(tos->tm, tos->char_tx, tos->char_ty);
 }
 
 void
 pdf_tos_translate(pdf_text_object_state *tos, float tx, float ty)
 {
-	fz_pre_translate(&tos->tlm, tx, ty);
+	tos->tlm = fz_pre_translate(tos->tlm, tx, ty);
 	tos->tm = tos->tlm;
 }
 
@@ -1221,6 +1219,6 @@ pdf_tos_set_matrix(pdf_text_object_state *tos, float a, float b, float c, float 
 void
 pdf_tos_newline(pdf_text_object_state *tos, float leading)
 {
-	fz_pre_translate(&tos->tlm, 0, -leading);
+	tos->tlm = fz_pre_translate(tos->tlm, 0, -leading);
 	tos->tm = tos->tlm;
 }

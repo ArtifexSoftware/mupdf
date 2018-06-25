@@ -267,7 +267,7 @@ static inline void fz_drop_rasterizer(fz_context *ctx, fz_rasterizer *r)
 
 	After this, the edges should be 'inserted' into the rasterizer.
 */
-int fz_reset_rasterizer(fz_context *ctx, fz_rasterizer *r, const fz_irect *clip);
+int fz_reset_rasterizer(fz_context *ctx, fz_rasterizer *r, fz_irect clip);
 
 /*
 	fz_insert_rasterizer: Insert an edge into a rasterizer.
@@ -342,13 +342,13 @@ static inline void fz_postindex_rasterizer(fz_context *ctx, fz_rasterizer *r)
 	fz_bound_rasterizer: Once a set of edges has been fed into a
 	rasterizer, the (device space) bounding box can be retrieved.
 */
-fz_irect *fz_bound_rasterizer(fz_context *ctx, const fz_rasterizer *rast, fz_irect *bbox);
+fz_irect fz_bound_rasterizer(fz_context *ctx, const fz_rasterizer *rast);
 
 /*
 	fz_scissor_rasterizer: Retrieve the clipping box with which the
 	rasterizer was reset.
 */
-fz_rect *fz_scissor_rasterizer(fz_context *ctx, const fz_rasterizer *rast, fz_rect *r);
+fz_rect fz_scissor_rasterizer(fz_context *ctx, const fz_rasterizer *rast);
 
 /*
 	fz_convert_rasterizer: Convert the set of edges that have

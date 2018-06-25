@@ -115,7 +115,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_SOUND:
 		{
 			fz_rect icon_rect = { 12, 12, 12+20, 12+20 };
-			pdf_set_annot_rect(ctx, selected_annot, &icon_rect);
+			pdf_set_annot_rect(ctx, selected_annot, icon_rect);
 			pdf_set_annot_color(ctx, selected_annot, 3, yellow);
 		}
 		break;
@@ -123,7 +123,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_FREE_TEXT:
 		{
 			fz_rect text_rect = { 12, 12, 12+200, 12+100 };
-			pdf_set_annot_rect(ctx, selected_annot, &text_rect);
+			pdf_set_annot_rect(ctx, selected_annot, text_rect);
 			pdf_set_annot_border(ctx, selected_annot, 0);
 			pdf_set_annot_default_appearance(ctx, selected_annot, "Helv", 12, black);
 		}
@@ -132,7 +132,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_STAMP:
 		{
 			fz_rect stamp_rect = { 12, 12, 12+190, 12+50 };
-			pdf_set_annot_rect(ctx, selected_annot, &stamp_rect);
+			pdf_set_annot_rect(ctx, selected_annot, stamp_rect);
 			pdf_set_annot_color(ctx, selected_annot, 3, red);
 		}
 		break;
@@ -140,7 +140,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_CARET:
 		{
 			fz_rect caret_rect = { 12, 12, 12+18, 12+15 };
-			pdf_set_annot_rect(ctx, selected_annot, &caret_rect);
+			pdf_set_annot_rect(ctx, selected_annot, caret_rect);
 			pdf_set_annot_color(ctx, selected_annot, 3, blue);
 		}
 		break;
@@ -158,7 +158,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_CIRCLE:
 		{
 			fz_rect shape_rect = { 12, 12, 12+100, 12+50 };
-			pdf_set_annot_rect(ctx, selected_annot, &shape_rect);
+			pdf_set_annot_rect(ctx, selected_annot, shape_rect);
 			pdf_set_annot_border(ctx, selected_annot, 1);
 			pdf_set_annot_color(ctx, selected_annot, 3, red);
 		}
@@ -553,8 +553,8 @@ void do_annotate_panel(void)
 
 		/* common annotation properties */
 
-		pdf_annot_rect(ctx, selected_annot, &rect);
-		fz_irect_from_rect(&irect, &rect);
+		rect = pdf_annot_rect(ctx, selected_annot);
+		irect = fz_irect_from_rect(rect);
 		ui_label("Rect: %d %d %d %d", irect.x0, irect.y0, irect.x1, irect.y1);
 
 		do_annotate_flags();
@@ -778,9 +778,8 @@ static void do_edit_icon(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 			moving = 0;
 			if (fz_abs(start_pt.x - rect->x0) > 0.1f || fz_abs(start_pt.x - rect->y0) > 0.1f)
 			{
-				fz_rect trect = *rect;
-				fz_transform_rect(&trect, &view_page_inv_ctm);
-				pdf_set_annot_rect(ctx, selected_annot, &trect);
+				fz_rect trect = fz_transform_rect(*rect, view_page_inv_ctm);
+				pdf_set_annot_rect(ctx, selected_annot, trect);
 			}
 		}
 	}
@@ -800,7 +799,7 @@ static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	static fz_rect start_rect;
 	static int state = ER_NONE;
 
-	fz_expand_irect(&area, 5);
+	area = fz_expand_irect(area, 5);
 	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
 	{
 		ui.hot = selected_annot;
@@ -839,9 +838,8 @@ static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 			state = ER_NONE;
 			if (rects_differ(&start_rect, rect, 1))
 			{
-				fz_rect trect = *rect;
-				fz_transform_rect(&trect, &view_page_inv_ctm);
-				pdf_set_annot_rect(ctx, selected_annot, &trect);
+				fz_rect trect = fz_transform_rect(*rect, view_page_inv_ctm);
+				pdf_set_annot_rect(ctx, selected_annot, trect);
 			}
 		}
 	}
@@ -856,7 +854,7 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	fz_point a, b;
 	float lw;
 
-	fz_expand_irect(&area, 5);
+	area = fz_expand_irect(area, 5);
 	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
 	{
 		ui.hot = selected_annot;
@@ -864,12 +862,12 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 		{
 			ui.active = selected_annot;
 			pdf_annot_line(ctx, selected_annot, &start_a, &start_b);
-			fz_transform_point(&start_a, &view_page_ctm);
-			fz_transform_point(&start_b, &view_page_ctm);
+			start_a = fz_transform_point(start_a, view_page_ctm);
+			start_b = fz_transform_point(start_b, view_page_ctm);
 			a_grab = fz_make_irect(start_a.x, start_a.y, start_a.x, start_a.y);
 			b_grab = fz_make_irect(start_b.x, start_b.y, start_b.x, start_b.y);
-			fz_expand_irect(&a_grab, 10);
-			fz_expand_irect(&b_grab, 10);
+			a_grab = fz_expand_irect(a_grab, 10);
+			b_grab = fz_expand_irect(b_grab, 10);
 			state = EL_NONE;
 			if (ui_mouse_inside(&a_grab)) state |= EL_A;
 			if (ui_mouse_inside(&b_grab)) state |= EL_B;
@@ -895,7 +893,7 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 		rect->x1 = fz_max(a.x, b.x);
 		rect->y1 = fz_max(a.y, b.y);
 		lw = pdf_annot_border(ctx, selected_annot);
-		fz_expand_rect(rect, fz_matrix_expansion(&view_page_ctm) * lw);
+		*rect = fz_expand_rect(*rect, fz_matrix_expansion(view_page_ctm) * lw);
 
 		/* cancel on right click */
 		if (ui.right)
@@ -907,8 +905,8 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 			state = EL_NONE;
 			if (points_differ(&start_a, &a, 1) || points_differ(&start_b, &b, 1))
 			{
-				fz_transform_point(&a, &view_page_inv_ctm);
-				fz_transform_point(&b, &view_page_inv_ctm);
+				a = fz_transform_point(a, view_page_inv_ctm);
+				b = fz_transform_point(b, view_page_inv_ctm);
 				pdf_set_annot_line(ctx, selected_annot, a, b);
 			}
 		}
@@ -938,11 +936,11 @@ static void do_edit_polygon(fz_irect canvas_area, int close)
 		if (n > 0)
 		{
 			p = pdf_annot_vertex(ctx, selected_annot, n-1);
-			fz_transform_point(&p, &view_page_ctm);
+			p = fz_transform_point(p, view_page_ctm);
 			if (close)
 			{
 				a = pdf_annot_vertex(ctx, selected_annot, 0);
-				fz_transform_point(&a, &view_page_ctm);
+				a = fz_transform_point(a, view_page_ctm);
 			}
 			glBegin(GL_LINE_STRIP);
 			glColor4f(1, 0, 0, 1);
@@ -966,8 +964,7 @@ static void do_edit_polygon(fz_irect canvas_area, int close)
 		/* commit point on mouse-up */
 		if (!ui.down)
 		{
-			fz_point p = { ui.x, ui.y };
-			fz_transform_point(&p, &view_page_inv_ctm);
+			fz_point p = fz_transform_point_xy(ui.x, ui.y, view_page_inv_ctm);
 			pdf_add_annot_vertex(ctx, selected_annot, p);
 			drawing = 0;
 		}
@@ -1029,7 +1026,7 @@ static void do_edit_ink(fz_irect canvas_area)
 			if (n > 1)
 			{
 				for (i = 0; i < n; ++i)
-					fz_transform_point(&p[i], &view_page_inv_ctm);
+					p[i] = fz_transform_point(p[i], view_page_inv_ctm);
 				pdf_add_annot_ink_list(ctx, selected_annot, n, p);
 			}
 			drawing = 0;
@@ -1064,8 +1061,8 @@ static void do_edit_quad_points(void)
 		fz_point page_a = { pt.x, pt.y };
 		fz_point page_b = { ui.x, ui.y };
 
-		fz_transform_point(&page_a, &view_page_inv_ctm);
-		fz_transform_point(&page_b, &view_page_inv_ctm);
+		page_a = fz_transform_point(page_a, view_page_inv_ctm);
+		page_b = fz_transform_point(page_b, view_page_inv_ctm);
 
 		n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
 
@@ -1076,8 +1073,7 @@ static void do_edit_quad_points(void)
 		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
 		{
-			fz_quad thit = hits[i];
-			fz_transform_quad(&thit, &view_page_ctm);
+			fz_quad thit = fz_transform_quad(hits[i], view_page_ctm);
 			glVertex2f(thit.ul.x, thit.ul.y);
 			glVertex2f(thit.ur.x, thit.ur.y);
 			glVertex2f(thit.lr.x, thit.lr.y);
@@ -1114,9 +1110,9 @@ void do_annotate_canvas(fz_irect canvas_area)
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
-		pdf_bound_annot(ctx, annot, &bounds);
-		fz_transform_rect(&bounds, &view_page_ctm);
-		fz_irect_from_rect(&area, &bounds);
+		bounds = pdf_bound_annot(ctx, annot);
+		bounds = fz_transform_rect(bounds, view_page_ctm);
+		area = fz_irect_from_rect(bounds);
 
 		if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
 		{
@@ -1189,7 +1185,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 			glEnable(GL_BLEND);
 			glColor4f(1, 1, 1, 1);
 			glBegin(GL_LINE_LOOP);
-			fz_irect_from_rect(&area, &bounds);
+			area = fz_irect_from_rect(bounds);
 			glVertex2f(area.x0-0.5f, area.y0-0.5f);
 			glVertex2f(area.x1+0.5f, area.y0-0.5f);
 			glVertex2f(area.x1+0.5f, area.y1+0.5f);

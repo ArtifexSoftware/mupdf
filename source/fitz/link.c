@@ -2,13 +2,13 @@
 #include "fitz-imp.h"
 
 fz_link *
-fz_new_link(fz_context *ctx, const fz_rect *bbox, void *doc, const char *uri)
+fz_new_link(fz_context *ctx, fz_rect bbox, void *doc, const char *uri)
 {
 	fz_link *link;
 
 	link = fz_malloc_struct(ctx, fz_link);
 	link->refs = 1;
-	link->rect = *bbox;
+	link->rect = bbox;
 	link->next = NULL;
 	link->doc = doc; /* don't take reference */
 	link->uri = NULL;

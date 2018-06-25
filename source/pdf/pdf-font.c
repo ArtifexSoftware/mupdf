@@ -1591,7 +1591,7 @@ pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_fo
 		bbox.y0 = font->bbox.y0 * 1000;
 		bbox.x1 = font->bbox.x1 * 1000;
 		bbox.y1 = font->bbox.y1 * 1000;
-		pdf_dict_put_rect(ctx, fdobj, PDF_NAME(FontBBox), &bbox);
+		pdf_dict_put_rect(ctx, fdobj, PDF_NAME(FontBBox), bbox);
 
 		pdf_dict_put_int(ctx, fdobj, PDF_NAME(ItalicAngle), 0);
 		pdf_dict_put_int(ctx, fdobj, PDF_NAME(Ascent), face->ascender * 1000.0f / face->units_per_EM);
@@ -2226,7 +2226,7 @@ pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script
 			{
 				pdf_dict_put(ctx, fontdesc, PDF_NAME(Type), PDF_NAME(FontDescriptor));
 				pdf_dict_put_text_string(ctx, fontdesc, PDF_NAME(FontName), basefont);
-				pdf_dict_put_rect(ctx, fontdesc, PDF_NAME(FontBBox), &bbox);
+				pdf_dict_put_rect(ctx, fontdesc, PDF_NAME(FontBBox), bbox);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Flags), flags);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(ItalicAngle), 0);
 				pdf_dict_put_int(ctx, fontdesc, PDF_NAME(Ascent), 1000);

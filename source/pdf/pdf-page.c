@@ -623,13 +623,13 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 	return transition;
 }
 
-fz_rect *
-pdf_bound_page(fz_context *ctx, pdf_page *page, fz_rect *mediabox)
+fz_rect
+pdf_bound_page(fz_context *ctx, pdf_page *page)
 {
 	fz_matrix page_ctm;
-	pdf_page_transform(ctx, page, mediabox, &page_ctm);
-	fz_transform_rect(mediabox, &page_ctm);
-	return mediabox;
+	fz_rect mediabox;
+	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+	return fz_transform_rect(mediabox, page_ctm);
 }
 
 fz_link *
@@ -661,7 +661,6 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 {
 	pdf_obj *obj;
 	fz_rect mediabox, cropbox, realbox, pagebox;
-	fz_matrix tmp;
 	float userunit = 1;
 	int rotate;
 
@@ -672,8 +671,8 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	if (pdf_is_real(ctx, obj))
 		userunit = pdf_to_real(ctx, obj);
 
-	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(MediaBox)), &mediabox);
-	if (fz_is_empty_rect(&mediabox))
+	mediabox = pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(MediaBox)));
+	if (fz_is_empty_rect(mediabox))
 	{
 		mediabox.x0 = 0;
 		mediabox.y0 = 0;
@@ -681,9 +680,9 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 		mediabox.y1 = 792;
 	}
 
-	pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(CropBox)), &cropbox);
-	if (!fz_is_empty_rect(&cropbox))
-		fz_intersect_rect(&mediabox, &cropbox);
+	cropbox = pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(CropBox)));
+	if (!fz_is_empty_rect(cropbox))
+		mediabox = fz_intersect_rect(mediabox, cropbox);
 
 	page_mediabox->x0 = fz_min(mediabox.x0, mediabox.x1);
 	page_mediabox->y0 = fz_min(mediabox.y0, mediabox.y1);
@@ -708,16 +707,14 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	 * to PDF user space (arbitrary page origin, y ascending, UserUnit dpi). */
 
 	/* Make left-handed and scale by UserUnit */
-	fz_scale(page_ctm, userunit, -userunit);
+	*page_ctm = fz_scale(userunit, -userunit);
 
 	/* Rotate */
-	fz_pre_rotate(page_ctm, -rotate);
+	*page_ctm = fz_pre_rotate(*page_ctm, -rotate);
 
 	/* Translate page origin to 0,0 */
-	realbox = *page_mediabox;
-	fz_transform_rect(&realbox, page_ctm);
-	fz_translate(&tmp, -realbox.x0, -realbox.y0);
-	fz_concat(page_ctm, page_ctm, &tmp);
+	realbox = fz_transform_rect(*page_mediabox, *page_ctm);
+	*page_ctm = fz_concat(*page_ctm, fz_translate(-realbox.x0, -realbox.y0));
 }
 
 void
@@ -1166,7 +1163,7 @@ pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end)
 }
 
 pdf_obj *
-pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents)
+pdf_add_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, pdf_obj *resources, fz_buffer *contents)
 {
 	pdf_obj *page_obj = pdf_new_dict(ctx, doc, 5);
 	fz_try(ctx)

@@ -1599,7 +1599,7 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 	return vertical;
 }
 
-static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
+static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf)
 {
 	fz_html_flow *node;
 	fz_text *text;
@@ -1652,7 +1652,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			{
 				if (text)
 				{
-					fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), prev_color, 1, NULL);
+					fz_fill_text(ctx, dev, text, &ctm, fz_device_rgb(ctx), prev_color, 1, NULL);
 					fz_drop_text(ctx, text);
 					text = NULL;
 				}
@@ -1711,7 +1711,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 						{
 							trm.e = x + walker.glyph_pos[i].x_offset * node_scale;
 							trm.f = y - walker.glyph_pos[i].y_offset * node_scale - page_top;
-							fz_show_glyph(ctx, text, walker.font, &trm,
+							fz_show_glyph(ctx, text, walker.font, trm,
 									walker.glyph_info[i].codepoint, c,
 									0, node->bidi_level, box->markup_dir, node->markup_lang);
 							c = -1; /* for subsequent glyphs in x-to-many mappings */
@@ -1721,7 +1721,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 					/* no glyph found (many-to-many or many-to-one mapping) */
 					if (c != -1)
 					{
-						fz_show_glyph(ctx, text, walker.font, &trm,
+						fz_show_glyph(ctx, text, walker.font, trm,
 								-1, c,
 								0, node->bidi_level, box->markup_dir, node->markup_lang);
 					}
@@ -1739,29 +1739,28 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 		{
 			if (text)
 			{
-				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, NULL);
+				fz_fill_text(ctx, dev, text, &ctm, fz_device_rgb(ctx), color, 1, NULL);
 				fz_drop_text(ctx, text);
 				text = NULL;
 			}
 			if (style->visibility == V_VISIBLE)
 			{
-				fz_matrix local_ctm = *ctm;
-				fz_pre_translate(&local_ctm, node->x, node->y - page_top);
-				fz_pre_scale(&local_ctm, node->w, node->h);
-				fz_fill_image(ctx, dev, node->content.image, &local_ctm, 1, NULL);
+				fz_matrix itm = fz_pre_translate(ctm, node->x, node->y - page_top);
+				itm = fz_pre_scale(itm, node->w, node->h);
+				fz_fill_image(ctx, dev, node->content.image, &itm, 1, NULL);
 			}
 		}
 	}
 
 	if (text)
 	{
-		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, NULL);
+		fz_fill_text(ctx, dev, text, &ctm, fz_device_rgb(ctx), color, 1, NULL);
 		fz_drop_text(ctx, text);
 		text = NULL;
 	}
 }
 
-static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1)
+static void draw_rect(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1)
 {
 	if (color.a > 0)
 	{
@@ -1779,7 +1778,7 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, flo
 		rgb[1] = color.g / 255.0f;
 		rgb[2] = color.b / 255.0f;
 
-		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f, NULL);
+		fz_fill_path(ctx, dev, path, 0, &ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f, NULL);
 
 		fz_drop_path(ctx, path);
 	}
@@ -1875,7 +1874,7 @@ static fz_html_flow *find_list_mark_anchor(fz_context *ctx, fz_html_box *box)
 	return NULL;
 }
 
-static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, int n)
+static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, int n)
 {
 	fz_font *font;
 	fz_text *text;
@@ -1887,7 +1886,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 	char buf[40];
 	int c, g;
 
-	fz_scale(&trm, box->em, -box->em);
+	trm = fz_scale(box->em, -box->em);
 
 	line = find_list_mark_anchor(ctx, box);
 	if (line)
@@ -1929,7 +1928,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		{
 			s += fz_chartorune(&c, s);
 			g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, FZ_LANG_UNSET, &font);
-			fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+			fz_show_glyph(ctx, text, font, trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 			trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
 		}
 
@@ -1937,7 +1936,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		color[1] = box->style.color.g / 255.0f;
 		color[2] = box->style.color.b / 255.0f;
 
-		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, NULL);
+		fz_fill_text(ctx, dev, text, &ctm, fz_device_rgb(ctx), color, 1, NULL);
 	}
 	fz_always(ctx)
 		fz_drop_text(ctx, text);
@@ -1945,7 +1944,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		fz_rethrow(ctx);
 }
 
-static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
+static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf)
 {
 	float x0, y0, x1, y1;
 
@@ -1991,9 +1990,8 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 }
 
 void
-fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, int page)
+fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int page)
 {
-	fz_matrix local_ctm = *ctm;
 	hb_buffer_t *hb_buf = NULL;
 	fz_html_box *box;
 	int unlocked = 0;
@@ -2008,7 +2006,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 			html->page_w + html->page_margin[L] + html->page_margin[R],
 			html->page_h + html->page_margin[T] + html->page_margin[B]);
 
-	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T]);
+	ctm = fz_pre_translate(ctm, html->page_margin[L], html->page_margin[T]);
 
 	fz_hb_lock(ctx);
 	fz_try(ctx)
@@ -2018,7 +2016,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 		unlocked = 1;
 
 		for (box = html->root->down; box; box = box->next)
-			draw_block_box(ctx, box, page_top, page_bot, dev, &local_ctm, hb_buf);
+			draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf);
 	}
 	fz_always(ctx)
 	{
@@ -2127,7 +2125,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 				dest = href;
 			}
 
-			link = fz_new_link(ctx, &bbox, NULL, dest);
+			link = fz_new_link(ctx, bbox, NULL, dest);
 			link->next = head;
 			head = link;
 		}

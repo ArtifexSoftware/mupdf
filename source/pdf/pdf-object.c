@@ -811,15 +811,15 @@ pdf_array_find(fz_context *ctx, pdf_obj *arr, pdf_obj *obj)
 	return -1;
 }
 
-pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect)
+pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, fz_rect rect)
 {
 	pdf_obj *arr = pdf_new_array(ctx, doc, 4);
 	fz_try(ctx)
 	{
-		pdf_array_push_real(ctx, arr, rect->x0);
-		pdf_array_push_real(ctx, arr, rect->y0);
-		pdf_array_push_real(ctx, arr, rect->x1);
-		pdf_array_push_real(ctx, arr, rect->y1);
+		pdf_array_push_real(ctx, arr, rect.x0);
+		pdf_array_push_real(ctx, arr, rect.y0);
+		pdf_array_push_real(ctx, arr, rect.x1);
+		pdf_array_push_real(ctx, arr, rect.y1);
 	}
 	fz_catch(ctx)
 	{
@@ -829,17 +829,17 @@ pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect)
 	return arr;
 }
 
-pdf_obj *pdf_new_matrix(fz_context *ctx, pdf_document *doc, const fz_matrix *mtx)
+pdf_obj *pdf_new_matrix(fz_context *ctx, pdf_document *doc, fz_matrix mtx)
 {
 	pdf_obj *arr = pdf_new_array(ctx, doc, 6);
 	fz_try(ctx)
 	{
-		pdf_array_push_real(ctx, arr, mtx->a);
-		pdf_array_push_real(ctx, arr, mtx->b);
-		pdf_array_push_real(ctx, arr, mtx->c);
-		pdf_array_push_real(ctx, arr, mtx->d);
-		pdf_array_push_real(ctx, arr, mtx->e);
-		pdf_array_push_real(ctx, arr, mtx->f);
+		pdf_array_push_real(ctx, arr, mtx.a);
+		pdf_array_push_real(ctx, arr, mtx.b);
+		pdf_array_push_real(ctx, arr, mtx.c);
+		pdf_array_push_real(ctx, arr, mtx.d);
+		pdf_array_push_real(ctx, arr, mtx.e);
+		pdf_array_push_real(ctx, arr, mtx.f);
 	}
 	fz_catch(ctx)
 	{
@@ -2198,12 +2198,12 @@ void pdf_dict_put_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, cons
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_text_string(ctx, x));
 }
 
-void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_rect *x)
+void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_rect x)
 {
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_rect(ctx, NULL, x));
 }
 
-void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, const fz_matrix *x)
+void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_matrix x)
 {
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_matrix(ctx, NULL, x));
 }

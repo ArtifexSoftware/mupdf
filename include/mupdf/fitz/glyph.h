@@ -16,7 +16,7 @@ typedef struct fz_glyph_s fz_glyph;
 /*
 	fz_glyph_bbox: Return the bounding box for a glyph.
 */
-fz_irect *fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph, fz_irect *bbox);
+fz_irect fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph);
 
 /*
 	fz_glyph_width: Return the width of the glyph in pixels.
@@ -120,7 +120,7 @@ struct fz_glyph_s
 	unsigned char data[1];
 };
 
-fz_irect *fz_glyph_bbox_no_ctx(fz_glyph *src, fz_irect *bbox);
+fz_irect fz_glyph_bbox_no_ctx(fz_glyph *src);
 
 static inline size_t
 fz_glyph_size(fz_context *ctx, fz_glyph *glyph)

@@ -230,13 +230,13 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 
 	fz_try(ctx)
 	{
-		fz_concat(&local_ctm, &shade->matrix, ctm);
+		local_ctm = fz_concat(shade->matrix, *ctm);
 
 		if (shade->use_function)
 		{
 			/* We need to use alpha = 1 here, because the shade might not fill
 			 * the bbox. */
-			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 1);
+			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), *bbox, NULL, 1);
 			fz_clear_pixmap(ctx, temp);
 		}
 		else
@@ -249,7 +249,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 		ptd.bbox = bbox;
 
 		fz_init_cached_color_converter(ctx, &ptd.cc, NULL, temp->colorspace, colorspace, color_params);
-		fz_process_shade(ctx, shade, &local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
+		fz_process_shade(ctx, shade, local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)
 		{
@@ -275,7 +275,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 				int n = fz_colorspace_n(ctx, colorspace);
 
 				/* alpha = 1 here for the same reason as earlier */
-				conv = fz_new_pixmap_with_bbox(ctx, colorspace, bbox, NULL, 1);
+				conv = fz_new_pixmap_with_bbox(ctx, colorspace, *bbox, NULL, 1);
 				d = conv->samples;
 				while (hh--)
 				{
@@ -322,7 +322,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 				}
 				fz_drop_color_converter(ctx, &cc);
 
-				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, dest->seps, 1);
+				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, *bbox, dest->seps, 1);
 				d = conv->samples;
 				da = conv->alpha;
 				while (hh--)

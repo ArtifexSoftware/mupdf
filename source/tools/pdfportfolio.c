@@ -263,7 +263,7 @@ int pdfportfolio_main(int argc, char **argv)
 
 			contents = fz_new_buffer_from_shared_data(ctx, (const unsigned char *)template, strlen(template));
 
-			page_obj = pdf_add_page(ctx, doc, &mediabox, 0, resources, contents);
+			page_obj = pdf_add_page(ctx, doc, mediabox, 0, resources, contents);
 			pdf_insert_page(ctx, doc, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);
 			pdf_drop_obj(ctx, resources);

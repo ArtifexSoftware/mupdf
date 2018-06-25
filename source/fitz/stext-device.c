@@ -34,7 +34,7 @@ const char *fz_stext_options_usage =
 	"\n";
 
 fz_stext_page *
-fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox)
+fz_new_stext_page(fz_context *ctx, fz_rect mediabox)
 {
 	fz_pool *pool = fz_new_pool(ctx);
 	fz_stext_page *page = NULL;
@@ -42,7 +42,7 @@ fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox)
 	{
 		page = fz_pool_alloc(ctx, pool, sizeof(*page));
 		page->pool = pool;
-		page->mediabox = *mediabox;
+		page->mediabox = mediabox;
 		page->first_block = NULL;
 		page->last_block = NULL;
 	}
@@ -97,11 +97,7 @@ add_image_block_to_page(fz_context *ctx, fz_stext_page *page, const fz_matrix *c
 	block->type = FZ_STEXT_BLOCK_IMAGE;
 	block->u.i.transform = *ctm;
 	block->u.i.image = fz_keep_image(ctx, image);
-	block->bbox.x0 = 0;
-	block->bbox.y0 = 0;
-	block->bbox.x1 = 1;
-	block->bbox.y1 = 1;
-	fz_transform_rect(&block->bbox, ctm);
+	block->bbox = fz_transform_rect(fz_unit_rect, *ctm);
 	return block;
 }
 
@@ -125,7 +121,7 @@ add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, c
 }
 
 static fz_stext_char *
-add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, const fz_matrix *trm, fz_font *font, float size, int c, fz_point *p, fz_point *q)
+add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_matrix trm, fz_font *font, float size, int c, fz_point *p, fz_point *q)
 {
 	fz_stext_char *ch = fz_pool_alloc(ctx, page->pool, sizeof *line->first_char);
 	fz_point a, d;
@@ -158,8 +154,8 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, cons
 		a.y = 0;
 		d.y = 0;
 	}
-	fz_transform_vector(&a, trm);
-	fz_transform_vector(&d, trm);
+	a = fz_transform_vector(a, trm);
+	d = fz_transform_vector(d, trm);
 
 	ch->quad.ll = fz_make_point(p->x + d.x, p->y + d.y);
 	ch->quad.ul = fz_make_point(p->x + a.x, p->y + a.y);
@@ -209,7 +205,7 @@ vec_dot(const fz_point *a, const fz_point *b)
 }
 
 static void
-fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix *trm, float adv, int wmode)
+fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode)
 {
 	fz_stext_page *page = dev->page;
 	fz_stext_block *cur_block;
@@ -238,9 +234,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		dir.x = 0;
 		dir.y = -1;
 	}
-	fz_transform_vector(&dir, trm);
-	ndir = dir;
-	fz_normalize_vector(&ndir);
+	dir = fz_transform_vector(dir, trm);
+	ndir = fz_normalize_vector(dir);
 
 	size = fz_matrix_expansion(trm);
 
@@ -261,17 +256,17 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	 */
 	if (wmode == 0)
 	{
-		p.x = trm->e;
-		p.y = trm->f;
-		q.x = trm->e + adv * dir.x;
-		q.y = trm->f + adv * dir.y;
+		p.x = trm.e;
+		p.y = trm.f;
+		q.x = trm.e + adv * dir.x;
+		q.y = trm.f + adv * dir.y;
 	}
 	else
 	{
-		p.x = trm->e - adv * dir.x;
-		p.y = trm->f - adv * dir.y;
-		q.x = trm->e;
-		q.y = trm->f;
+		p.x = trm.e - adv * dir.x;
+		p.y = trm.f - adv * dir.y;
+		q.x = trm.e;
+		q.y = trm.f;
 	}
 
 	/* Find current position to enter new text. */
@@ -391,11 +386,11 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	dev->pen = q;
 
 	dev->new_obj = 0;
-	dev->trm = *trm;
+	dev->trm = trm;
 }
 
 static void
-fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix *trm, float adv, int wmode)
+fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode)
 {
 	/* ignore when one unicode character maps to multiple glyphs */
 	if (c == -1)
@@ -466,7 +461,7 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, i
 }
 
 static void
-fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, const fz_matrix *ctm)
+fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix ctm)
 {
 	fz_font *font = span->font;
 	fz_matrix tm = span->trm;
@@ -479,14 +474,14 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 
 	tm.e = 0;
 	tm.f = 0;
-	fz_concat(&trm, &tm, ctm);
+	trm = fz_concat(tm, ctm);
 
 	for (i = 0; i < span->len; i++)
 	{
 		/* Calculate new pen location and delta */
 		tm.e = span->items[i].x;
 		tm.f = span->items[i].y;
-		fz_concat(&trm, &tm, ctm);
+		trm = fz_concat(tm, ctm);
 
 		/* Calculate bounding box and new pen position based on font metrics */
 		if (span->items[i].gid >= 0)
@@ -494,7 +489,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 		else
 			adv = 0;
 
-		fz_add_stext_char(ctx, dev, font, span->items[i].ucs, span->items[i].gid, &trm, adv, span->wmode);
+		fz_add_stext_char(ctx, dev, font, span->items[i].ucs, span->items[i].gid, trm, adv, span->wmode);
 	}
 }
 
@@ -506,7 +501,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, ctm);
+		fz_stext_extract(ctx, tdev, span, *ctm);
 }
 
 static void
@@ -517,7 +512,7 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, ctm);
+		fz_stext_extract(ctx, tdev, span, *ctm);
 }
 
 static void
@@ -527,7 +522,7 @@ fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, ctm);
+		fz_stext_extract(ctx, tdev, span, *ctm);
 }
 
 static void
@@ -537,7 +532,7 @@ fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, 
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, ctm);
+		fz_stext_extract(ctx, tdev, span, *ctm);
 }
 
 static void
@@ -547,7 +542,7 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, ctm);
+		fz_stext_extract(ctx, tdev, span, *ctm);
 }
 
 /* Images and shadings */
@@ -580,11 +575,11 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 	fz_rect bounds;
 	fz_irect bbox;
 
-	fz_bound_shade(ctx, shade, &ctm, &bounds);
-	fz_intersect_rect(&bounds, scissor);
-	fz_irect_from_rect(&bbox, &bounds);
+	bounds = fz_bound_shade(ctx, shade, ctm);
+	bounds = fz_intersect_rect(bounds, *scissor);
+	bbox = fz_irect_from_rect(bounds);
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox, NULL, !shade->use_background);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), bbox, NULL, !shade->use_background);
 	fz_try(ctx)
 	{
 		if (shade->use_background)
@@ -638,11 +633,8 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 		for (line = block->u.t.first_line; line; line = line->next)
 		{
 			for (ch = line->first_char; ch; ch = ch->next)
-			{
-				fz_rect bbox = fz_rect_from_quad(ch->quad);
-				fz_union_rect(&line->bbox, &bbox);
-			}
-			fz_union_rect(&block->bbox, &line->bbox);
+				line->bbox = fz_union_rect(line->bbox, fz_rect_from_quad(ch->quad));
+			block->bbox = fz_union_rect(block->bbox, line->bbox);
 		}
 	}
 

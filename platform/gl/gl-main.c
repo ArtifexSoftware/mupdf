@@ -207,20 +207,18 @@ void update_title(void)
 
 void transform_page(void)
 {
-	fz_rect rect = page_bounds;
+	fz_rect rect;
 	fz_matrix matrix;
 
-	draw_page_bounds = page_bounds;
-
-	fz_scale(&draw_page_ctm, currentzoom / 72, currentzoom / 72);
-	fz_pre_rotate(&draw_page_ctm, -currentrotate);
+	draw_page_ctm = fz_scale(currentzoom / 72, currentzoom / 72);
+	draw_page_ctm = fz_pre_rotate(draw_page_ctm, -currentrotate);
 
 	/* fix the page origin at 0,0 after rotation */
-	fz_transform_rect(&rect, &draw_page_ctm);
-	fz_translate(&matrix, -rect.x0, -rect.y0);
-	fz_concat(&draw_page_ctm, &draw_page_ctm, &matrix);
+	rect = fz_transform_rect(page_bounds, draw_page_ctm);
+	matrix = fz_translate(-rect.x0, -rect.y0);
+	draw_page_ctm = fz_concat(draw_page_ctm, matrix);
 
-	fz_transform_rect(&draw_page_bounds, &draw_page_ctm);
+	draw_page_bounds = fz_transform_rect(page_bounds, draw_page_ctm);
 }
 
 void load_page(void)
@@ -245,10 +243,10 @@ void load_page(void)
 	page_text = fz_new_stext_page_from_page(ctx, fzpage, NULL);
 
 	/* compute bounds here for initial window size */
-	fz_bound_page(ctx, fzpage, &page_bounds);
+	page_bounds = fz_bound_page(ctx, fzpage);
 	transform_page();
 
-	fz_irect_from_rect(&area, &draw_page_bounds);
+	area = fz_irect_from_rect(draw_page_bounds);
 	page_tex.w = area.x1 - area.x0;
 	page_tex.h = area.y1 - area.y0;
 }
@@ -281,16 +279,14 @@ static struct mark save_mark()
 {
 	struct mark mark;
 	mark.page = currentpage;
-	mark.scroll.x = scroll_x;
-	mark.scroll.y = scroll_y;
-	fz_transform_point(&mark.scroll, &view_page_inv_ctm);
+	mark.scroll = fz_transform_point_xy(scroll_x, scroll_y, view_page_inv_ctm);
 	return mark;
 }
 
 static void restore_mark(struct mark mark)
 {
 	currentpage = mark.page;
-	fz_transform_point(&mark.scroll, &draw_page_ctm);
+	mark.scroll = fz_transform_point(mark.scroll, draw_page_ctm);
 	scroll_x = mark.scroll.x;
 	scroll_y = mark.scroll.y;
 }
@@ -337,9 +333,8 @@ static void jump_to_page(int newpage)
 
 static void jump_to_page_xy(int newpage, float x, float y)
 {
-	fz_point p = { x, y };
+	fz_point p = fz_transform_point_xy(x, y, draw_page_ctm);
 	newpage = fz_clampi(newpage, 0, fz_count_pages(ctx, doc) - 1);
-	fz_transform_point(&p, &draw_page_ctm);
 	clear_future();
 	push_history();
 	currentpage = newpage;
@@ -427,8 +422,8 @@ static void do_links(fz_link *link)
 	while (link)
 	{
 		bounds = link->rect;
-		fz_transform_rect(&bounds, &view_page_ctm);
-		fz_irect_from_rect(&area, &bounds);
+		bounds = fz_transform_rect(link->rect, view_page_ctm);
+		area = fz_irect_from_rect(bounds);
 
 		if (ui_mouse_inside(&area))
 		{
@@ -493,8 +488,8 @@ static void do_page_selection(void)
 		fz_point page_a = { pt.x, pt.y };
 		fz_point page_b = { ui.x, ui.y };
 
-		fz_transform_point(&page_a, &view_page_inv_ctm);
-		fz_transform_point(&page_b, &view_page_inv_ctm);
+		page_a = fz_transform_point(page_a, view_page_inv_ctm);
+		page_b = fz_transform_point(page_b, view_page_inv_ctm);
 
 		if (ui.mod == GLUT_ACTIVE_CTRL)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_WORDS);
@@ -510,8 +505,7 @@ static void do_page_selection(void)
 		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
 		{
-			fz_quad thit = hits[i];
-			fz_transform_quad(&thit, &view_page_ctm);
+			fz_quad thit = fz_transform_quad(hits[i], view_page_ctm);
 			glVertex2f(thit.ul.x, thit.ul.y);
 			glVertex2f(thit.ur.x, thit.ur.y);
 			glVertex2f(thit.lr.x, thit.lr.y);
@@ -546,8 +540,7 @@ static void do_search_hits(void)
 	glBegin(GL_QUADS);
 	for (i = 0; i < search_hit_count; ++i)
 	{
-		fz_quad thit = search_hit_quads[i];
-		fz_transform_quad(&thit, &view_page_ctm);
+		fz_quad thit = fz_transform_quad(search_hit_quads[i], view_page_ctm);
 		glVertex2f(thit.ul.x, thit.ul.y);
 		glVertex2f(thit.ur.x, thit.ur.y);
 		glVertex2f(thit.lr.x, thit.lr.y);
@@ -567,9 +560,7 @@ static void do_forms(void)
 	if (!pdf || search_active)
 		return;
 
-	p.x = ui.x;
-	p.y = ui.y;
-	fz_transform_point(&p, &view_page_inv_ctm);
+	p = fz_transform_point_xy(ui.x, ui.y, view_page_inv_ctm);
 
 	if (ui.down && !ui.active)
 	{
@@ -1131,10 +1122,9 @@ static void do_canvas(void)
 	view_page_ctm = draw_page_ctm;
 	view_page_ctm.e += page_x;
 	view_page_ctm.f += page_y;
-	fz_invert_matrix(&view_page_inv_ctm, &view_page_ctm);
-	view_page_bounds = page_bounds;
-	fz_transform_rect(&view_page_bounds, &view_page_ctm);
-	fz_irect_from_rect(&view_page_area, &view_page_bounds);
+	view_page_inv_ctm = fz_invert_matrix(view_page_ctm);
+	view_page_bounds = fz_transform_rect(page_bounds, view_page_ctm);
+	view_page_area = fz_irect_from_rect(view_page_bounds);
 
 	ui_draw_image(&page_tex, page_x, page_y);
 

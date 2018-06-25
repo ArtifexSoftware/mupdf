@@ -138,7 +138,7 @@ fz_keep_glyph_cache(fz_context *ctx)
 float
 fz_subpixel_adjust(fz_context *ctx, fz_matrix *ctm, fz_matrix *subpix_ctm, unsigned char *qe, unsigned char *qf)
 {
-	float size = fz_matrix_expansion(ctm);
+	float size = fz_matrix_expansion(*ctm);
 	int q;
 	float pix_e, pix_f, r;
 

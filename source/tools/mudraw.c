@@ -517,9 +517,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	fz_try(ctx)
 	{
 		if (list)
-			fz_bound_display_list(ctx, list, &mediabox);
+			mediabox = fz_bound_display_list(ctx, list);
 		else
-			fz_bound_page(ctx, page, &mediabox);
+			mediabox = fz_bound_page(ctx, page);
 	}
 	fz_catch(ctx)
 	{
@@ -564,7 +564,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_matrix ctm;
 
 		zoom = resolution / 72;
-		fz_pre_scale(fz_rotate(&ctm, rotation), zoom, zoom);
+		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
 
 		fz_var(text);
 
@@ -573,7 +573,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_stext_options stext_options;
 
 			stext_options.flags = (output_format == OUT_HTML || output_format == OUT_XHTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
-			text = fz_new_stext_page(ctx, &mediabox);
+			text = fz_new_stext_page(ctx, mediabox);
 			dev = fz_new_stext_device(ctx,  text, &stext_options);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -638,7 +638,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 
-			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, resources, contents);
+			page_obj = pdf_add_page(ctx, pdfout, mediabox, rotation, resources, contents);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);
 		}
@@ -669,9 +669,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_var(out);
 
 		zoom = resolution / 72;
-		fz_pre_rotate(fz_scale(&ctm, zoom, zoom), rotation);
-		tbounds = mediabox;
-		fz_transform_rect(&tbounds, &ctm);
+		ctm = fz_pre_rotate(fz_scale(zoom, zoom), rotation);
+		tbounds = fz_transform_rect(mediabox, ctm);
 
 		fz_try(ctx)
 		{
@@ -721,15 +720,15 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_var(bit);
 
 		zoom = resolution / 72;
-		fz_pre_scale(fz_rotate(&ctm, rotation), zoom, zoom);
+		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
 
 		if (output_format == OUT_TGA)
 		{
-			fz_pre_scale(fz_pre_translate(&ctm, 0, -height), 1, -1);
+			ctm = fz_pre_scale(fz_pre_translate(ctm, 0, -height), 1, -1);
 		}
 
-		tbounds = mediabox;
-		fz_round_rect(&ibounds, fz_transform_rect(&tbounds, &ctm));
+		tbounds = fz_transform_rect(mediabox, ctm);
+		ibounds = fz_round_rect(tbounds);
 
 		/* Make local copies of our width/height */
 		w = width;
@@ -776,13 +775,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				else
 					scaley = scalex;
 			}
-			fz_scale(&scale_mat, scalex, scaley);
-			fz_concat(&ctm, &ctm, &scale_mat);
-			tbounds = mediabox;
-			fz_transform_rect(&tbounds, &ctm);
+			scale_mat = fz_scale(scalex, scaley);
+			ctm = fz_concat(ctm, scale_mat);
+			tbounds = fz_transform_rect(mediabox, ctm);
 		}
-		fz_round_rect(&ibounds, &tbounds);
-		fz_rect_from_irect(&tbounds, &ibounds);
+		ibounds = fz_round_rect(tbounds);
+		tbounds = fz_rect_from_irect(ibounds);
 
 		fz_try(ctx)
 		{
@@ -812,7 +810,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
 					workers[band].list = list;
-					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, seps, alpha);
+					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, band_ibounds, seps, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 #ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
@@ -824,7 +822,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			else
 			{
-				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, seps, alpha);
+				pix = fz_new_pixmap_with_bbox(ctx, colorspace, band_ibounds, seps, alpha);
 				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
 			}
 
@@ -1030,7 +1028,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_device *dev = NULL;
 	int start;
 	fz_cookie cookie = { 0 };
-	fz_rect bounds;
 	fz_separations *seps = NULL;
 
 	fz_var(list);
@@ -1082,7 +1079,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_try(ctx)
 		{
-			list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
+			list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
 			dev = fz_new_list_device(ctx, list);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);

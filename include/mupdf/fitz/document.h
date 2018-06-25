@@ -127,7 +127,7 @@ typedef void (fz_page_drop_page_fn)(fz_context *ctx, fz_page *page);
 	bounding box of a page. See fz_bound_page for more
 	information.
 */
-typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
+typedef fz_rect (fz_page_bound_page_fn)(fz_context *ctx, fz_page *page);
 
 /*
 	fz_page_run_page_contents_fn: Type for a function to run the
@@ -186,7 +186,7 @@ typedef int (fz_page_uses_overprint_fn)(fz_context *ctx, fz_page *page);
 
 typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
-typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
+typedef fz_rect (fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot);
 typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
 /*
@@ -469,7 +469,7 @@ fz_page *fz_new_page_of_size(fz_context *ctx, int size);
 	fz_bound_page: Determine the size of a page at 72 dpi.
 
 */
-fz_rect *fz_bound_page(fz_context *ctx, fz_page *page, fz_rect *rect);
+fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
 
 /*
 	fz_run_page: Run a page through a device.

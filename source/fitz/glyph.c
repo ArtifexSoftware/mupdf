@@ -24,23 +24,25 @@ fz_drop_glyph_imp(fz_context *ctx, fz_storable *glyph_)
 	fz_free(ctx, glyph);
 }
 
-fz_irect *
-fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph, fz_irect *bbox)
+fz_irect
+fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph)
 {
-	bbox->x0 = glyph->x;
-	bbox->y0 = glyph->y;
-	bbox->x1 = glyph->x + glyph->w;
-	bbox->y1 = glyph->y + glyph->h;
+	fz_irect bbox;
+	bbox.x0 = glyph->x;
+	bbox.y0 = glyph->y;
+	bbox.x1 = glyph->x + glyph->w;
+	bbox.y1 = glyph->y + glyph->h;
 	return bbox;
 }
 
-fz_irect *
-fz_glyph_bbox_no_ctx(fz_glyph *glyph, fz_irect *bbox)
+fz_irect
+fz_glyph_bbox_no_ctx(fz_glyph *glyph)
 {
-	bbox->x0 = glyph->x;
-	bbox->y0 = glyph->y;
-	bbox->x1 = glyph->x + glyph->w;
-	bbox->y1 = glyph->y + glyph->h;
+	fz_irect bbox;
+	bbox.x0 = glyph->x;
+	bbox.y0 = glyph->y;
+	bbox.x1 = glyph->x + glyph->w;
+	bbox.y1 = glyph->y + glyph->h;
 	return bbox;
 }
 

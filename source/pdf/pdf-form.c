@@ -534,7 +534,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 
 	for (annot = page->annots; annot; annot = annot->next)
 	{
-		pdf_bound_annot(ctx, annot, &bbox);
+		bbox = pdf_bound_annot(ctx, annot);
 		if (pt->x >= bbox.x0 && pt->x <= bbox.x1)
 			if (pt->y >= bbox.y0 && pt->y <= bbox.y1)
 				break;
@@ -996,9 +996,9 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	pdf_field_mark_dirty(ctx, doc, field);
 }
 
-fz_rect *pdf_bound_widget(fz_context *ctx, pdf_widget *widget, fz_rect *rect)
+fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget)
 {
-	return pdf_bound_annot(ctx, (pdf_annot*)widget, rect);
+	return pdf_bound_annot(ctx, (pdf_annot*)widget);
 }
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw)

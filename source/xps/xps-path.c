@@ -49,7 +49,7 @@ xps_parse_point(fz_context *ctx, xps_document *doc, char *s_in, float *x, float 
  * calculated by th0, and on exit, a point is generated for us at th0.
  */
 static void
-xps_draw_arc_segment(fz_context *ctx, xps_document *doc, fz_path *path, const fz_matrix *mtx, float th0, float th1, int iscw)
+xps_draw_arc_segment(fz_context *ctx, xps_document *doc, fz_path *path, fz_matrix mtx, float th0, float th1, int iscw)
 {
 	float t, d;
 	fz_point p;
@@ -63,7 +63,7 @@ xps_draw_arc_segment(fz_context *ctx, xps_document *doc, fz_path *path, const fz
 	{
 		for (t = th0 + d; t < th1 - d/2; t += d)
 		{
-			fz_transform_point_xy(&p, mtx, cosf(t), sinf(t));
+			p = fz_transform_point_xy(cosf(t), sinf(t), mtx);
 			fz_lineto(ctx, path, p.x, p.y);
 		}
 	}
@@ -72,7 +72,7 @@ xps_draw_arc_segment(fz_context *ctx, xps_document *doc, fz_path *path, const fz
 		th0 += FZ_PI * 2;
 		for (t = th0 - d; t > th1 + d/2; t -= d)
 		{
-			fz_transform_point_xy(&p, mtx, cosf(t), sinf(t));
+			p = fz_transform_point_xy(cosf(t), sinf(t), mtx);
 			fz_lineto(ctx, path, p.x, p.y);
 		}
 	}
@@ -80,7 +80,7 @@ xps_draw_arc_segment(fz_context *ctx, xps_document *doc, fz_path *path, const fz
 
 /* Given two vectors find the angle between them. */
 static float
-angle_between(const fz_point u, const fz_point v)
+angle_between(fz_point u, fz_point v)
 {
 	float det = u.x * v.y - u.y * v.x;
 	float sign = (det < 0 ? -1 : 1);
@@ -140,8 +140,8 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
 	else
 		sign = -1;
 
-	fz_rotate(&rotmat, rotation_angle);
-	fz_rotate(&revmat, -rotation_angle);
+	rotmat = fz_rotate(rotation_angle);
+	revmat = fz_rotate(-rotation_angle);
 
 	/* http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes */
 	/* Conversion from endpoint to center parameterization */
@@ -158,7 +158,7 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
 	/* F.6.5.1 */
 	pt.x = (x1 - x2) / 2;
 	pt.y = (y1 - y2) / 2;
-	fz_transform_vector(&pt, &revmat);
+	pt = fz_transform_vector(pt, revmat);
 	x1t = pt.x;
 	y1t = pt.y;
 
@@ -184,7 +184,7 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
 	/* F.6.5.3 */
 	pt.x = cxt;
 	pt.y = cyt;
-	fz_transform_vector(&pt, &rotmat);
+	pt = fz_transform_vector(pt, rotmat);
 	cx = pt.x + (x1 + x2) / 2;
 	cy = pt.y + (y1 + y2) / 2;
 
@@ -207,8 +207,8 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
 			dth -= ((FZ_PI / 180) * 360);
 	}
 
-	fz_pre_scale(fz_pre_rotate(fz_translate(&mtx, cx, cy), rotation_angle), rx, ry);
-	xps_draw_arc_segment(ctx, doc, path, &mtx, th1, th1 + dth, is_clockwise);
+	mtx = fz_pre_scale(fz_pre_rotate(fz_translate(cx, cy), rotation_angle), rx, ry);
+	xps_draw_arc_segment(ctx, doc, path, mtx, th1, th1 + dth, is_clockwise);
 
 	fz_lineto(ctx, path, point_x, point_y);
 }
@@ -719,7 +719,7 @@ xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, 
 			*fill_rule = 0;
 	}
 
-	xps_parse_transform(ctx, doc, transform_att, transform_tag, &transform, &fz_identity);
+	transform = xps_parse_transform(ctx, doc, transform_att, transform_tag, fz_identity);
 
 	if (figures_att)
 		path = xps_parse_abbreviated_geometry(ctx, doc, figures_att, fill_rule);
@@ -736,7 +736,7 @@ xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, 
 	}
 
 	if (transform_att || transform_tag)
-		fz_transform_path(ctx, path, &transform);
+		fz_transform_path(ctx, path, transform);
 
 	return path;
 }
@@ -755,7 +755,7 @@ xps_parse_line_cap(char *attr)
 }
 
 void
-xps_clip(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_resource *dict, char *clip_att, fz_xml *clip_tag)
+xps_clip(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_resource *dict, char *clip_att, fz_xml *clip_tag)
 {
 	fz_device *dev = doc->dev;
 	fz_path *path;
@@ -767,7 +767,7 @@ xps_clip(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_resource 
 		path = xps_parse_path_geometry(ctx, doc, dict, clip_tag, 0, &fill_rule);
 	else
 		path = fz_new_path(ctx);
-	fz_clip_path(ctx, dev, path, fill_rule == 0, ctm, NULL);
+	fz_clip_path(ctx, dev, path, fill_rule == 0, &ctm, NULL);
 	fz_drop_path(ctx, path);
 }
 
@@ -777,7 +777,7 @@ xps_clip(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_resource 
  */
 
 void
-xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *root)
+xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, fz_xml *root)
 {
 	fz_device *dev = doc->dev;
 
@@ -822,7 +822,6 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	fz_rect area;
 	int fill_rule;
 	int dash_len = 0;
-	fz_matrix local_ctm;
 
 	/*
 	 * Extract attributes and extended attributes.
@@ -963,10 +962,10 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 		}
 	}
 
-	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
+	ctm = xps_parse_transform(ctx, doc, transform_att, transform_tag, ctm);
 
 	if (clip_att || clip_tag)
-		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);
+		xps_clip(ctx, doc, ctm, dict, clip_att, clip_tag);
 
 	fz_try(ctx)
 	{
@@ -985,17 +984,16 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 
 		if (stroke_att || stroke_tag)
 		{
-			fz_bound_path(ctx, stroke_path, stroke, &local_ctm, &area);
+			area = fz_bound_path(ctx, stroke_path, stroke, ctm);
 			if (stroke_path != path && (fill_att || fill_tag)) {
-				fz_rect bounds;
-				fz_bound_path(ctx, path, NULL, &local_ctm, &bounds);
-				fz_union_rect(&area, &bounds);
+				fz_rect bounds = fz_bound_path(ctx, path, NULL, ctm);
+				area = fz_union_rect(area, bounds);
 			}
 		}
 		else
-			fz_bound_path(ctx, path, NULL, &local_ctm, &area);
+			area = fz_bound_path(ctx, path, NULL, ctm);
 
-		xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+		xps_begin_opacity(ctx, doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 		if (fill_att)
 		{
@@ -1003,14 +1001,14 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 			if (fill_opacity_att)
 				samples[0] *= fz_atof(fill_opacity_att);
 			xps_set_color(ctx, doc, colorspace, samples);
-			fz_fill_path(ctx, dev, path, fill_rule == 0, &local_ctm,
+			fz_fill_path(ctx, dev, path, fill_rule == 0, &ctm,
 				doc->colorspace, doc->color, doc->alpha, NULL);
 		}
 
 		if (fill_tag)
 		{
-			fz_clip_path(ctx, dev, path, fill_rule == 0, &local_ctm, &area);
-			xps_parse_brush(ctx, doc, &local_ctm, &area, fill_uri, dict, fill_tag);
+			fz_clip_path(ctx, dev, path, fill_rule == 0, &ctm, &area);
+			xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
 			fz_pop_clip(ctx, dev);
 		}
 
@@ -1020,14 +1018,14 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 			if (stroke_opacity_att)
 				samples[0] *= fz_atof(stroke_opacity_att);
 			xps_set_color(ctx, doc, colorspace, samples);
-			fz_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm,
+			fz_stroke_path(ctx, dev, stroke_path, stroke, &ctm,
 				doc->colorspace, doc->color, doc->alpha, NULL);
 		}
 
 		if (stroke_tag)
 		{
-			fz_clip_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm, &area);
-			xps_parse_brush(ctx, doc, &local_ctm, &area, stroke_uri, dict, stroke_tag);
+			fz_clip_stroke_path(ctx, dev, stroke_path, stroke, &ctm, &area);
+			xps_parse_brush(ctx, doc, ctm, area, stroke_uri, dict, stroke_tag);
 			fz_pop_clip(ctx, dev);
 		}
 

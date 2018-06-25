@@ -58,13 +58,10 @@ pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		pat->ystep = pdf_dict_get_real(ctx, dict, PDF_NAME(YStep));
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(BBox));
-		pdf_to_rect(ctx, obj, &pat->bbox);
+		pat->bbox = pdf_to_rect(ctx, obj);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
-		if (obj)
-			pdf_to_matrix(ctx, obj, &pat->matrix);
-		else
-			pat->matrix = fz_identity;
+		pat->matrix = pdf_to_matrix(ctx, obj);
 
 		pat->resources = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
 		if (pat->resources)

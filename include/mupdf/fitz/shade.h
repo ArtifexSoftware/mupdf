@@ -115,7 +115,7 @@ void fz_drop_shade_imp(fz_context *ctx, fz_storable *shade);
 
 	Returns r, updated to contain the bounds for the shading.
 */
-fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *r);
+fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 
 /*
 	fz_paint_shade: Render a shade to a given pixmap.
@@ -194,7 +194,7 @@ typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz
 	process_arg: An opaque argument passed through from caller
 	to callback functions.
 */
-void fz_process_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
+void fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm,
 			fz_shade_prepare_fn *prepare,
 			fz_shade_process_fn *process,
 			void *process_arg);

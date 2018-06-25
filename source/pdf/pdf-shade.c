@@ -54,7 +54,6 @@ pdf_load_function_based_shading(fz_context *ctx, pdf_document *doc, fz_shade *sh
 	pdf_obj *obj;
 	float x0, y0, x1, y1;
 	float fv[2];
-	fz_matrix matrix;
 	int xx, yy;
 	float *p;
 	int n = fz_colorspace_n(ctx, shade->colorspace);
@@ -70,12 +69,7 @@ pdf_load_function_based_shading(fz_context *ctx, pdf_document *doc, fz_shade *sh
 		y1 = pdf_array_get_real(ctx, obj, 3);
 	}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
-	if (obj)
-		pdf_to_matrix(ctx, obj, &matrix);
-	else
-		matrix = fz_identity;
-	shade->u.f.matrix = matrix;
+	shade->u.f.matrix = pdf_to_matrix(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Matrix)));
 	shade->u.f.xdivs = FUNSEGS;
 	shade->u.f.ydivs = FUNSEGS;
 	shade->u.f.fn_vals = fz_malloc(ctx, (FUNSEGS+1)*(FUNSEGS+1)*n*sizeof(float));
@@ -346,7 +340,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(BBox));
 		if (pdf_is_array(ctx, obj))
-			pdf_to_rect(ctx, obj, &shade->bbox);
+			shade->bbox = pdf_to_rect(ctx, obj);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Function));
 		if (pdf_is_dict(ctx, obj))
@@ -449,10 +443,7 @@ pdf_load_shading(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	if (pdf_dict_get(ctx, dict, PDF_NAME(PatternType)))
 	{
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
-		if (obj)
-			pdf_to_matrix(ctx, obj, &mat);
-		else
-			mat = fz_identity;
+		mat = pdf_to_matrix(ctx, obj);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 		if (obj)

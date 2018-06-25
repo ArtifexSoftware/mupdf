@@ -33,7 +33,7 @@ xps_lookup_alternate_content(fz_context *ctx, xps_document *doc, fz_xml *node)
 }
 
 void
-xps_parse_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
+xps_parse_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *node)
 {
 	if (doc->cookie && doc->cookie->abort)
 		return;
@@ -51,7 +51,7 @@ xps_parse_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const 
 }
 
 void
-xps_parse_element(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
+xps_parse_element(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *node)
 {
 	if (doc->cookie && doc->cookie->abort)
 		return;
@@ -71,7 +71,7 @@ xps_parse_element(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, cons
 }
 
 void
-xps_begin_opacity(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
+xps_begin_opacity(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict,
 	char *opacity_att, fz_xml *opacity_mask_tag)
 {
@@ -109,7 +109,7 @@ xps_begin_opacity(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, cons
 
 	if (opacity_mask_tag)
 	{
-		fz_begin_mask(ctx, dev, area, 0, NULL, NULL, NULL);
+		fz_begin_mask(ctx, dev, &area, 0, NULL, NULL, NULL);
 		xps_parse_brush(ctx, doc, ctm, area, base_uri, dict, opacity_mask_tag);
 		fz_end_mask(ctx, dev);
 	}
@@ -134,9 +134,10 @@ xps_end_opacity(fz_context *ctx, xps_document *doc, char *base_uri, xps_resource
 	}
 }
 
-static void
-xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform, fz_matrix *matrix)
+static fz_matrix
+xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform)
 {
+	fz_matrix matrix;
 	float args[6];
 	char *s = transform;
 	int i;
@@ -154,40 +155,38 @@ xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform, 
 			s++;
 	}
 
-	matrix->a = args[0]; matrix->b = args[1];
-	matrix->c = args[2]; matrix->d = args[3];
-	matrix->e = args[4]; matrix->f = args[5];
+	matrix.a = args[0]; matrix.b = args[1];
+	matrix.c = args[2]; matrix.d = args[3];
+	matrix.e = args[4]; matrix.f = args[5];
+	return matrix;
 }
 
-static void
-xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_matrix *matrix)
+static fz_matrix
+xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root)
 {
-	char *transform;
-
-	*matrix = fz_identity;
-
 	if (fz_xml_is_tag(root, "MatrixTransform"))
 	{
-		transform = fz_xml_att(root, "Matrix");
+		char *transform = fz_xml_att(root, "Matrix");
 		if (transform)
-			xps_parse_render_transform(ctx, doc, transform, matrix);
+			return xps_parse_render_transform(ctx, doc, transform);
 	}
+	return fz_identity;
 }
 
-void
-xps_parse_transform(fz_context *ctx, xps_document *doc, char *att, fz_xml *tag, fz_matrix *transform, const fz_matrix *ctm)
+fz_matrix
+xps_parse_transform(fz_context *ctx, xps_document *doc, char *att, fz_xml *tag, fz_matrix ctm)
 {
-	*transform = fz_identity;
 	if (att)
-		xps_parse_render_transform(ctx, doc, att, transform);
+		return fz_concat(xps_parse_render_transform(ctx, doc, att), ctm);
 	if (tag)
-		xps_parse_matrix_transform(ctx, doc, tag, transform);
-	fz_concat(transform, transform, ctm);
+		return fz_concat(xps_parse_matrix_transform(ctx, doc, tag), ctm);
+	return ctm;
 }
 
-void
-xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text, fz_rect *rect)
+fz_rect
+xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text)
 {
+	fz_rect rect;
 	float args[4];
 	char *s = text;
 	int i;
@@ -204,10 +203,11 @@ xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text, fz_rect *rec
 			s++;
 	}
 
-	rect->x0 = args[0];
-	rect->y0 = args[1];
-	rect->x1 = args[0] + args[2];
-	rect->y1 = args[1] + args[3];
+	rect.x0 = args[0];
+	rect.y0 = args[1];
+	rect.x1 = args[0] + args[2];
+	rect.y1 = args[1] + args[3];
+	return rect;
 }
 
 static int count_commas(char *s)

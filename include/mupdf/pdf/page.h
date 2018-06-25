@@ -58,7 +58,7 @@ fz_link *pdf_load_links(fz_context *ctx, pdf_page *page);
 	exists (visible area after cropping), otherwise the media box will
 	be used (possibly including printing marks).
 */
-fz_rect *pdf_bound_page(fz_context *ctx, pdf_page *page, fz_rect *);
+fz_rect pdf_bound_page(fz_context *ctx, pdf_page *page);
 
 /*
 	pdf_run_page: Interpret a loaded page and render it on a device.

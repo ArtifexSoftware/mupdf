@@ -38,6 +38,6 @@ fz_annot *fz_next_annot(fz_context *ctx, fz_annot *annot);
 /*
 	fz_bound_annot: Return the bounding rectangle of the annotation.
 */
-fz_rect *fz_bound_annot(fz_context *ctx, fz_annot *annot, fz_rect *rect);
+fz_rect fz_bound_annot(fz_context *ctx, fz_annot *annot);
 
 #endif

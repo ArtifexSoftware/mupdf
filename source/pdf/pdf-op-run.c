@@ -116,8 +116,8 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	save->ctm = gstate->softmask_ctm;
 	save_ctm = gstate->ctm;
 
-	pdf_xobject_bbox(ctx, softmask, &mask_bbox);
-	pdf_xobject_matrix(ctx, softmask, &mask_matrix);
+	mask_bbox = pdf_xobject_bbox(ctx, softmask);
+	mask_matrix = pdf_xobject_matrix(ctx, softmask);
 
 	pdf_tos_save(ctx, &pr->tos, tos_save);
 
@@ -125,8 +125,8 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 		mask_bbox = fz_infinite_rect;
 	else
 	{
-		fz_transform_rect(&mask_bbox, &mask_matrix);
-		fz_transform_rect(&mask_bbox, &gstate->softmask_ctm);
+		mask_bbox = fz_transform_rect(mask_bbox, mask_matrix);
+		mask_bbox = fz_transform_rect(mask_bbox, gstate->softmask_ctm);
 	}
 	gstate->softmask = NULL;
 	gstate->softmask_resources = NULL;
@@ -208,7 +208,7 @@ pdf_show_shade(fz_context *ctx, pdf_run_processor *pr, fz_shade *shd)
 	if (pr->super.hidden)
 		return;
 
-	fz_bound_shade(ctx, shd, &gstate->ctm, &bbox);
+	bbox = fz_bound_shade(ctx, shd, gstate->ctm);
 
 	gstate = pdf_begin_group(ctx, pr, &bbox, &softmask);
 
@@ -389,8 +389,8 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 		gstate->softmask = NULL;
 	}
 
-	fz_concat(&ptm, &pat->matrix, &pat_gstate->ctm);
-	fz_invert_matrix(&invptm, &ptm);
+	ptm = fz_concat(pat->matrix, pat_gstate->ctm);
+	invptm = fz_invert_matrix(ptm);
 
 	/* The parent_ctm is amended with our pattern matrix */
 	gparent_save = pr->gparent;
@@ -403,8 +403,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 		/* patterns are painted using the parent_ctm. area = bbox of
 		 * shape to be filled in device space. Map it back to pattern
 		 * space. */
-		local_area = *area;
-		fz_transform_rect(&local_area, &invptm);
+		local_area = fz_transform_rect(*area, invptm);
 
 		fx0 = (local_area.x0 - pat->bbox.x0) / pat->xstep;
 		fy0 = (local_area.y0 - pat->bbox.y0) / pat->ystep;
@@ -474,8 +473,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 			{
 				for (x = x0; x < x1; x++)
 				{
-					gstate->ctm = ptm;
-					fz_pre_translate(&gstate->ctm, x * pat->xstep, y * pat->ystep);
+					gstate->ctm = fz_pre_translate(ptm, x * pat->xstep, y * pat->ystep);
 					pdf_gsave(ctx, pr);
 					fz_try(ctx)
 						pdf_process_contents(ctx, (pdf_processor*)pr, pat->document, pat->resources, pat->contents, NULL);
@@ -547,11 +545,9 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 		return;
 
 	/* PDF has images bottom-up, so flip them right side up here */
-	image_ctm = gstate->ctm;
-	fz_pre_scale(fz_pre_translate(&image_ctm, 0, 1), 1, -1);
+	image_ctm = fz_pre_scale(fz_pre_translate(gstate->ctm, 0, 1), 1, -1);
 
-	bbox = fz_unit_rect;
-	fz_transform_rect(&bbox, &image_ctm);
+	bbox = fz_transform_rect(fz_unit_rect, image_ctm);
 
 	if (image->mask && gstate->blendmode)
 	{
@@ -631,7 +627,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 		if (doclose)
 			fz_closepath(ctx, path);
 
-		fz_bound_path(ctx, path, (dostroke ? gstate->stroke_state : NULL), &gstate->ctm, &bbox);
+		bbox = fz_bound_path(ctx, path, (dostroke ? gstate->stroke_state : NULL), gstate->ctm);
 
 		if (pr->super.hidden)
 			dostroke = dofill = 0;
@@ -778,11 +774,9 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 
 	fz_try(ctx)
 	{
-		fz_rect tb = pr->tos.text_bbox;
-
-		fz_transform_rect(&tb, &gstate->ctm);
+		fz_rect tb = fz_transform_rect(pr->tos.text_bbox, gstate->ctm);
 		if (dostroke)
-			fz_adjust_rect_for_stroke(ctx, &tb, gstate->stroke_state, &gstate->ctm);
+			tb = fz_adjust_rect_for_stroke(ctx, tb, gstate->stroke_state, gstate->ctm);
 
 		/* Don't bother sending a text group with nothing in it */
 		if (!text->head)
@@ -925,8 +919,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 		/* Render the glyph stream direct here (only happens for
 		 * type3 glyphs that seem to inherit current graphics
 		 * attributes, or type 3 glyphs within type3 glyphs). */
-		fz_matrix composed;
-		fz_concat(&composed, &trm, &gstate->ctm);
+		fz_matrix composed = fz_concat(trm, gstate->ctm);
 		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, &composed, gstate, pr->nested_depth, pr->default_cs);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
@@ -947,11 +940,11 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 	}
 
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, &trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, &trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 
 	pdf_tos_move_after_char(ctx, &pr->tos);
 }
@@ -963,9 +956,9 @@ pdf_show_space(fz_context *ctx, pdf_run_processor *pr, float tadj)
 	pdf_font_desc *fontdesc = gstate->text.font;
 
 	if (fontdesc->wmode == 0)
-		fz_pre_translate(&pr->tos.tm, tadj * gstate->text.scale, 0);
+		pr->tos.tm = fz_pre_translate(pr->tos.tm, tadj * gstate->text.scale, 0);
 	else
-		fz_pre_translate(&pr->tos.tm, 0, tadj);
+		pr->tos.tm = fz_pre_translate(pr->tos.tm, 0, tadj);
 }
 
 static void
@@ -1232,13 +1225,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 
 		gstate = pr->gstate + pr->gtop;
 
-		pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
-		pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
+		xobj_bbox = pdf_xobject_bbox(ctx, xobj);
+		xobj_matrix = pdf_xobject_matrix(ctx, xobj);
 		transparency = pdf_xobject_transparency(ctx, xobj);
 
 		/* apply xobject's transform matrix */
-		fz_concat(&local_transform, &xobj_matrix, &local_transform);
-		fz_concat(&gstate->ctm, &local_transform, &gstate->ctm);
+		local_transform = fz_concat(xobj_matrix, local_transform);
+		gstate->ctm = fz_concat(local_transform, gstate->ctm);
 
 		/* The gparent is updated with the modified ctm */
 		gparent_save_ctm = pr->gstate[pr->gparent].ctm;
@@ -1247,11 +1240,9 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		/* apply soft mask, create transparency group and reset state */
 		if (transparency)
 		{
-			fz_rect bbox;
 			int isolated = pdf_xobject_isolated(ctx, xobj);
 
-			bbox = xobj_bbox;
-			fz_transform_rect(&bbox, &gstate->ctm);
+			fz_rect bbox = fz_transform_rect(xobj_bbox, gstate->ctm);
 
 			/* Remember that we tried to call begin_softmask. Even
 			 * if it throws an error, we must call end_softmask. */
@@ -1582,7 +1573,7 @@ static void pdf_run_cm(fz_context *ctx, pdf_processor *proc, float a, float b, f
 	m.d = d;
 	m.e = e;
 	m.f = f;
-	fz_concat(&gstate->ctm, &m, &gstate->ctm);
+	gstate->ctm = fz_concat(m, gstate->ctm);
 }
 
 /* path construction */

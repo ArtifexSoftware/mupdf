@@ -3,40 +3,42 @@
 
 #include <string.h>
 
-fz_rect *
-pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *r)
+fz_rect
+pdf_to_rect(fz_context *ctx, pdf_obj *array)
 {
 	if (!pdf_is_array(ctx, array))
-		*r = fz_empty_rect;
+		return fz_empty_rect;
 	else
 	{
 		float a = pdf_array_get_real(ctx, array, 0);
 		float b = pdf_array_get_real(ctx, array, 1);
 		float c = pdf_array_get_real(ctx, array, 2);
 		float d = pdf_array_get_real(ctx, array, 3);
-		r->x0 = fz_min(a, c);
-		r->y0 = fz_min(b, d);
-		r->x1 = fz_max(a, c);
-		r->y1 = fz_max(b, d);
+		fz_rect r;
+		r.x0 = fz_min(a, c);
+		r.y0 = fz_min(b, d);
+		r.x1 = fz_max(a, c);
+		r.y1 = fz_max(b, d);
+		return r;
 	}
-	return r;
 }
 
-fz_matrix *
-pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *m)
+fz_matrix
+pdf_to_matrix(fz_context *ctx, pdf_obj *array)
 {
 	if (!pdf_is_array(ctx, array))
-		*m = fz_identity;
+		return fz_identity;
 	else
 	{
-		m->a = pdf_array_get_real(ctx, array, 0);
-		m->b = pdf_array_get_real(ctx, array, 1);
-		m->c = pdf_array_get_real(ctx, array, 2);
-		m->d = pdf_array_get_real(ctx, array, 3);
-		m->e = pdf_array_get_real(ctx, array, 4);
-		m->f = pdf_array_get_real(ctx, array, 5);
+		fz_matrix m;
+		m.a = pdf_array_get_real(ctx, array, 0);
+		m.b = pdf_array_get_real(ctx, array, 1);
+		m.c = pdf_array_get_real(ctx, array, 2);
+		m.d = pdf_array_get_real(ctx, array, 3);
+		m.e = pdf_array_get_real(ctx, array, 4);
+		m.f = pdf_array_get_real(ctx, array, 5);
+		return m;
 	}
-	return m;
 }
 
 static int

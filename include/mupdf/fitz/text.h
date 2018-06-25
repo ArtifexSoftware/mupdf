@@ -113,7 +113,7 @@ void fz_drop_text(fz_context *ctx, const fz_text *text);
 
 	Throws exception on failure to allocate.
 */
-void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int glyph, int unicode, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
+void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, int glyph, int unicode, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
 
 /*
 	fz_show_string: Add a UTF8 string to a text object.
@@ -156,7 +156,7 @@ void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *tr
 	Returns a pointer to r, which is updated to contain the
 	bounding box for the text object.
 */
-fz_rect *fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
+fz_rect fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm);
 
 /*
 	Convert ISO 639 (639-{1,2,3,5}) language specification

@@ -214,7 +214,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			m.e = args[4];
 			m.f = args[5];
 
-			fz_concat(transform, transform, &m);
+			*transform = fz_concat(*transform, m);
 		}
 
 		else if (!strcmp(keyword, "translate"))
@@ -222,15 +222,15 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			if (nargs != 2)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "wrong number of arguments to translate(): %d", nargs);
 
-			fz_pre_translate(transform, args[0], args[1]);
+			*transform = fz_pre_translate(*transform, args[0], args[1]);
 		}
 
 		else if (!strcmp(keyword, "scale"))
 		{
 			if (nargs == 1)
-				fz_pre_scale(transform, args[0], args[0]);
+				*transform = fz_pre_scale(*transform, args[0], args[0]);
 			else if (nargs == 2)
-				fz_pre_scale(transform, args[0], args[1]);
+				*transform = fz_pre_scale(*transform, args[0], args[1]);
 			else
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "wrong number of arguments to scale(): %d", nargs);
 		}
@@ -239,7 +239,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 		{
 			if (nargs != 1)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "wrong number of arguments to rotate(): %d", nargs);
-			fz_pre_rotate(transform, args[0]);
+			*transform = fz_pre_rotate(*transform, args[0]);
 		}
 
 		else if (!strcmp(keyword, "skewX"))
@@ -256,7 +256,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			m.e = 0;
 			m.f = 0;
 
-			fz_concat(transform, transform, &m);
+			*transform = fz_concat(*transform, m);
 		}
 
 		else if (!strcmp(keyword, "skewY"))
@@ -273,7 +273,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			m.e = 0;
 			m.f = 0;
 
-			fz_concat(transform, transform, &m);
+			*transform = fz_concat(*transform, m);
 		}
 
 		else

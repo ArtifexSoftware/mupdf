@@ -1462,22 +1462,22 @@ static inline jobject to_Point_safe(fz_context *ctx, JNIEnv *env, fz_point point
 	return (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
 }
 
-static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
+static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, fz_rect rect)
 {
-	if (!ctx || !rect) return NULL;
+	if (!ctx) return NULL;
 
-	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
+	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect.x0, rect.y0, rect.x1, rect.y1);
 }
 
-static inline jobject to_Quad_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quad)
+static inline jobject to_Quad_safe(fz_context *ctx, JNIEnv *env, fz_quad quad)
 {
-	if (!ctx || !quad) return NULL;
+	if (!ctx) return NULL;
 
 	return (*env)->NewObject(env, cls_Quad, mid_Quad_init,
-		quad->ul.x, quad->ul.y,
-		quad->ur.x, quad->ur.y,
-		quad->ll.x, quad->ll.y,
-		quad->lr.x, quad->lr.y);
+		quad.ul.x, quad.ul.y,
+		quad.ur.x, quad.ur.y,
+		quad.ll.x, quad.ll.y,
+		quad.lr.x, quad.lr.y);
 }
 
 static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quads, jint n)
@@ -1492,7 +1492,7 @@ static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, cons
 
 	for (i = 0; i < n; i++)
 	{
-		jobject jquad = to_Quad_safe(ctx, env, &quads[i]);
+		jobject jquad = to_Quad_safe(ctx, env, quads[i]);
 		if (!jquad) return NULL;
 
 		(*env)->SetObjectArrayElement(env, arr, i, jquad);
@@ -4108,7 +4108,7 @@ FUN(Path_transform)(JNIEnv *env, jobject self, jobject jctm)
 	if (!ctx || !path) return;
 
 	fz_try(ctx)
-		fz_transform_path(ctx, path, &ctm);
+		fz_transform_path(ctx, path, ctm);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -4146,14 +4146,14 @@ FUN(Path_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return NULL; }
 
 	fz_try(ctx)
-		fz_bound_path(ctx, path, stroke, &ctm, &rect);
+		rect = fz_bound_path(ctx, path, stroke, ctm);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return to_Rect_safe(ctx, env, &rect);
+	return to_Rect_safe(ctx, env, rect);
 }
 
 typedef struct
@@ -4247,7 +4247,7 @@ FUN(Rect_adjustForStroke)(JNIEnv *env, jobject self, jobject jstroke, jobject jc
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
 
 	fz_try(ctx)
-		fz_adjust_rect_for_stroke(ctx, &rect, stroke, &ctm);
+		rect = fz_adjust_rect_for_stroke(ctx, rect, stroke, ctm);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -4424,14 +4424,14 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return NULL; }
 
 	fz_try(ctx)
-		fz_bound_text(ctx, text, stroke, &ctm, &rect);
+		rect = fz_bound_text(ctx, text, stroke, ctm);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return to_Rect_safe(ctx, env, &rect);
+	return to_Rect_safe(ctx, env, rect);
 }
 
 JNIEXPORT void JNICALL
@@ -4446,7 +4446,7 @@ FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject jfont, jobject jtrm, jint
 	if (!font) { jni_throw_arg(env, "font must not be null"); return; }
 
 	fz_try(ctx)
-		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, text, font, trm, glyph, unicode, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -4773,14 +4773,14 @@ FUN(Annotation_getBounds)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		fz_bound_annot(ctx, annot, &rect);
+		rect = fz_bound_annot(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return to_Rect_safe(ctx, env, &rect);
+	return to_Rect_safe(ctx, env, rect);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5386,14 +5386,14 @@ FUN(Page_getBounds)(JNIEnv *env, jobject self)
 	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-		fz_bound_page(ctx, page, &rect);
+		rect = fz_bound_page(ctx, page);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return to_Rect_safe(ctx, env, &rect);
+	return to_Rect_safe(ctx, env, rect);
 }
 
 JNIEXPORT void JNICALL
@@ -5553,7 +5553,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jobject juri = NULL;
 		int page = 0;
 
-		jbounds = to_Rect_safe(ctx, env, &link->rect);
+		jbounds = to_Rect_safe(ctx, env, link->rect);
 		if (!jbounds) return NULL;
 
 		if (fz_is_external_link(ctx, link->uri))
@@ -5692,10 +5692,8 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		fz_rect mediabox;
-
 		ctm = fz_identity;
-		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
+		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page));
 		dev = fz_new_stext_device(ctx, text, NULL);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
@@ -5778,16 +5776,17 @@ FUN(Cookie_abort)(JNIEnv *env, jobject self)
 /* DisplayList interface */
 
 JNIEXPORT jlong JNICALL
-FUN(DisplayList_newNative)(JNIEnv *env, jobject self)
+FUN(DisplayList_newNative)(JNIEnv *env, jobject self, jobject jmediabox)
 {
 	fz_context *ctx = get_context(env);
+	fz_rect mediabox = from_Rect(env, jmediabox);
 
 	fz_display_list *list = NULL;
 
 	if (!ctx) return 0;
 
 	fz_try(ctx)
-		list = fz_new_display_list(ctx, NULL);
+		list = fz_new_display_list(ctx, mediabox);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6513,7 +6512,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 		if (!jblock) return NULL;
 
 		/* set block's bbox */
-		jrect = to_Rect_safe(ctx, env, &(block->bbox));
+		jrect = to_Rect_safe(ctx, env, block->bbox);
 		if (!jrect) return NULL;
 
 		(*env)->SetObjectField(env, jblock, fid_TextBlock_bbox, jrect);
@@ -6534,7 +6533,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 			if (!jline) return NULL;
 
 			/* set line's bbox */
-			jrect = to_Rect_safe(ctx, env, &(line->bbox));
+			jrect = to_Rect_safe(ctx, env, line->bbox);
 			if (!jrect) return NULL;
 
 			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
@@ -6556,7 +6555,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 				if (!jchar) return NULL;
 
 				/* set the char's bbox */
-				jquad = to_Quad_safe(ctx, env, &ch->quad);
+				jquad = to_Quad_safe(ctx, env, ch->quad);
 				if (!jquad) return NULL;
 
 				(*env)->SetObjectField(env, jchar, fid_TextChar_quad, jquad);
@@ -7129,7 +7128,7 @@ FUN(PDFDocument_addPageBuffer)(JNIEnv *env, jobject self, jobject jmediabox, jin
 	if (!contents) { jni_throw_arg(env, "contents must not be null"); return NULL; }
 
 	fz_try(ctx)
-		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
+		ind = pdf_add_page(ctx, pdf, mediabox, rotate, resources, contents);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -7165,7 +7164,7 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 		size_t len = strlen(scontents);
 		data = fz_malloc(ctx, len);
 		contents = fz_new_buffer_from_data(ctx, data, len);
-		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
+		ind = pdf_add_page(ctx, pdf, mediabox, rotate, resources, contents);
 	}
 	fz_always(ctx)
 	{
@@ -8951,14 +8950,14 @@ FUN(PDFAnnotation_getRect)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		pdf_annot_rect(ctx, annot, &rect);
+		rect = pdf_annot_rect(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return to_Rect_safe(ctx, env, &rect);
+	return to_Rect_safe(ctx, env, rect);
 }
 
 JNIEXPORT void JNICALL
@@ -8971,7 +8970,7 @@ FUN(PDFAnnotation_setRect)(JNIEnv *env, jobject self, jobject jrect)
 	if (!ctx || !annot) return;
 
 	fz_try(ctx)
-		pdf_set_annot_rect(ctx, annot, &rect);
+		pdf_set_annot_rect(ctx, annot, rect);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }

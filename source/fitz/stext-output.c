@@ -465,7 +465,7 @@ text_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediab
 		wri->page = NULL;
 	}
 
-	wri->page = fz_new_stext_page(ctx, mediabox);
+	wri->page = fz_new_stext_page(ctx, *mediabox);
 	return fz_new_stext_device(ctx, wri->page, &wri->opts);
 }
 

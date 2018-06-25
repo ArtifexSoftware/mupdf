@@ -38,7 +38,7 @@ fz_save_gproof(fz_context *ctx, const char *pdf_file, fz_document *doc, const ch
 			int w, h;
 
 			page = fz_load_page(ctx, doc, i);
-			fz_bound_page(ctx, page, &rect);
+			rect = fz_bound_page(ctx, page);
 			fz_drop_page(ctx, page);
 			page = NULL;
 

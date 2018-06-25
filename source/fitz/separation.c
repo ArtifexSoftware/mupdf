@@ -241,7 +241,7 @@ fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const 
 		bbox = &local_bbox;
 	}
 
-	dst = fz_new_pixmap_with_bbox(ctx, dcs, bbox, dseps, src->alpha);
+	dst = fz_new_pixmap_with_bbox(ctx, dcs, *bbox, dseps, src->alpha);
 	if (src->flags & FZ_PIXMAP_FLAG_INTERPOLATE)
 		dst->flags |= FZ_PIXMAP_FLAG_INTERPOLATE;
 	else

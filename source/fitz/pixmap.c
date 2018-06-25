@@ -103,27 +103,27 @@ fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h, fz_separ
 }
 
 fz_pixmap *
-fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r, fz_separations *seps, int alpha)
+fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbox, fz_separations *seps, int alpha)
 {
 	fz_pixmap *pixmap;
-	pixmap = fz_new_pixmap(ctx, colorspace, r->x1 - r->x0, r->y1 - r->y0, seps, alpha);
-	pixmap->x = r->x0;
-	pixmap->y = r->y0;
+	pixmap = fz_new_pixmap(ctx, colorspace, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0, seps, alpha);
+	pixmap->x = bbox.x0;
+	pixmap->y = bbox.y0;
 	return pixmap;
 }
 
 fz_pixmap *
-fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r, fz_separations *seps, int alpha, unsigned char *samples)
+fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbox, fz_separations *seps, int alpha, unsigned char *samples)
 {
-	int w = r->x1 - r->x0;
+	int w = bbox.x1 - bbox.x0;
 	int stride;
 	int s = fz_count_active_separations(ctx, seps);
 	fz_pixmap *pixmap;
 	if (!colorspace && s == 0) alpha = 1;
 	stride = (fz_colorspace_n(ctx, colorspace) + s + alpha) * w;
-	pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, r->y1 - r->y0, seps, alpha, stride, samples);
-	pixmap->x = r->x0;
-	pixmap->y = r->y0;
+	pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, bbox.y1 - bbox.y0, seps, alpha, stride, samples);
+	pixmap->x = bbox.x0;
+	pixmap->y = bbox.y0;
 	return pixmap;
 }
 
@@ -162,23 +162,25 @@ fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const f
 	return subpix;
 }
 
-fz_irect *
-fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix, fz_irect *bbox)
+fz_irect
+fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix)
 {
-	bbox->x0 = pix->x;
-	bbox->y0 = pix->y;
-	bbox->x1 = pix->x + pix->w;
-	bbox->y1 = pix->y + pix->h;
+	fz_irect bbox;
+	bbox.x0 = pix->x;
+	bbox.y0 = pix->y;
+	bbox.x1 = pix->x + pix->w;
+	bbox.y1 = pix->y + pix->h;
 	return bbox;
 }
 
-fz_irect *
-fz_pixmap_bbox_no_ctx(const fz_pixmap *pix, fz_irect *bbox)
+fz_irect
+fz_pixmap_bbox_no_ctx(const fz_pixmap *pix)
 {
-	bbox->x0 = pix->x;
-	bbox->y0 = pix->y;
-	bbox->x1 = pix->x + pix->w;
-	bbox->y1 = pix->y + pix->h;
+	fz_irect bbox;
+	bbox.x0 = pix->x;
+	bbox.y0 = pix->y;
+	bbox.x1 = pix->x + pix->w;
+	bbox.y1 = pix->y + pix->h;
 	return bbox;
 }
 
@@ -593,25 +595,23 @@ fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colors
 }
 
 void
-fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *b, const fz_default_colorspaces *default_cs)
+fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_irect b, const fz_default_colorspaces *default_cs)
 {
 	unsigned char *srcp;
 	unsigned char *destp;
 	int y, w, destspan, srcspan;
-	fz_irect local_b, bb;
 
-	local_b = *b;
-	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
-	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, src, &bb));
-	w = local_b.x1 - local_b.x0;
-	y = local_b.y1 - local_b.y0;
+	b = fz_intersect_irect(b, fz_pixmap_bbox(ctx, dest));
+	b = fz_intersect_irect(b, fz_pixmap_bbox(ctx, src));
+	w = b.x1 - b.x0;
+	y = b.y1 - b.y0;
 	if (w <= 0 || y <= 0)
 		return;
 
 	srcspan = src->stride;
-	srcp = src->samples + (unsigned int)(srcspan * (local_b.y0 - src->y) + src->n * (local_b.x0 - src->x));
+	srcp = src->samples + (unsigned int)(srcspan * (b.y0 - src->y) + src->n * (b.x0 - src->x));
 	destspan = dest->stride;
-	destp = dest->samples + (unsigned int)(destspan * (local_b.y0 - dest->y) + dest->n * (local_b.x0 - dest->x));
+	destp = dest->samples + (unsigned int)(destspan * (b.y0 - dest->y) + dest->n * (b.x0 - dest->x));
 
 	if (src->n == dest->n)
 	{
@@ -629,8 +629,8 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_i
 		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dest->colorspace, src->colorspace);
 		fz_pixmap fake_src = *src;
 
-		fake_src.x = local_b.x0;
-		fake_src.y = local_b.y0;
+		fake_src.x = b.x0;
+		fake_src.y = b.y0;
 		fake_src.w = w;
 		fake_src.h = y;
 		fake_src.samples = srcp;
@@ -640,21 +640,19 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_i
 }
 
 void
-fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, const fz_irect *b)
+fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, fz_irect b)
 {
 	unsigned char *destp;
 	int x, y, w, k, destspan;
-	fz_irect bb;
-	fz_irect local_b = *b;
 
-	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
-	w = local_b.x1 - local_b.x0;
-	y = local_b.y1 - local_b.y0;
+	b = fz_intersect_irect(b, fz_pixmap_bbox(ctx, dest));
+	w = b.x1 - b.x0;
+	y = b.y1 - b.y0;
 	if (w <= 0 || y <= 0)
 		return;
 
 	destspan = dest->stride;
-	destp = dest->samples + (unsigned int)(destspan * (local_b.y0 - dest->y) + dest->n * (local_b.x0 - dest->x));
+	destp = dest->samples + (unsigned int)(destspan * (b.y0 - dest->y) + dest->n * (b.x0 - dest->x));
 
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
 	if (fz_colorspace_n(ctx, dest->colorspace) == 4)
@@ -733,11 +731,10 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 	fz_pixmap *alpha;
 	unsigned char *sp, *dp;
 	int w, h, sstride, dstride;
-	fz_irect bbox;
 
 	assert(gray->n == 1);
 
-	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, gray, &bbox), 0, 1);
+	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, gray), 0, 1);
 	dp = alpha->samples;
 	dstride = alpha->stride;
 	sp = gray->samples;
@@ -822,15 +819,15 @@ fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 }
 
-void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *rect)
+void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, fz_irect rect)
 {
 	unsigned char *p;
 	int x, y, n;
 
-	int x0 = fz_clampi(rect->x0 - image->x, 0, image->w);
-	int x1 = fz_clampi(rect->x1 - image->x, 0, image->w);
-	int y0 = fz_clampi(rect->y0 - image->y, 0, image->h);
-	int y1 = fz_clampi(rect->y1 - image->y, 0, image->h);
+	int x0 = fz_clampi(rect.x0 - image->x, 0, image->w);
+	int x1 = fz_clampi(rect.x1 - image->x, 0, image->w);
+	int y0 = fz_clampi(rect.y0 - image->y, 0, image->h);
+	int y1 = fz_clampi(rect.y1 - image->y, 0, image->h);
 
 	for (y = y0; y < y1; y++)
 	{

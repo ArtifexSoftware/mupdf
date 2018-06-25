@@ -188,53 +188,56 @@ fz_rasterizer_graphics_min_line_width(fz_rasterizer *ras)
 	return ras->aa.min_line_width;
 }
 
-fz_irect *
-fz_bound_rasterizer(fz_context *ctx, const fz_rasterizer *rast, fz_irect *bbox)
+fz_irect
+fz_bound_rasterizer(fz_context *ctx, const fz_rasterizer *rast)
 {
+	fz_irect bbox;
 	const int hscale = fz_rasterizer_aa_hscale(rast);
 	const int vscale = fz_rasterizer_aa_vscale(rast);
 
 	if (rast->bbox.x1 < rast->bbox.x0 || rast->bbox.y1 < rast->bbox.y0)
 	{
-		*bbox = fz_empty_irect;
+		bbox = fz_empty_irect;
 	}
 	else
 	{
-		bbox->x0 = fz_idiv(rast->bbox.x0, hscale);
-		bbox->y0 = fz_idiv(rast->bbox.y0, vscale);
-		bbox->x1 = fz_idiv_up(rast->bbox.x1, hscale);
-		bbox->y1 = fz_idiv_up(rast->bbox.y1, vscale);
+		bbox.x0 = fz_idiv(rast->bbox.x0, hscale);
+		bbox.y0 = fz_idiv(rast->bbox.y0, vscale);
+		bbox.x1 = fz_idiv_up(rast->bbox.x1, hscale);
+		bbox.y1 = fz_idiv_up(rast->bbox.y1, vscale);
 	}
 	return bbox;
 }
 
-fz_rect *fz_scissor_rasterizer(fz_context *ctx, const fz_rasterizer *rast, fz_rect *r)
+fz_rect fz_scissor_rasterizer(fz_context *ctx, const fz_rasterizer *rast)
 {
+	fz_rect r;
 	const int hscale = fz_rasterizer_aa_hscale(rast);
 	const int vscale = fz_rasterizer_aa_vscale(rast);
 
-	r->x0 = ((float)rast->clip.x0) / hscale;
-	r->y0 = ((float)rast->clip.y0) / vscale;
-	r->x1 = ((float)rast->clip.x1) / hscale;
-	r->y1 = ((float)rast->clip.y1) / vscale;
+	r.x0 = ((float)rast->clip.x0) / hscale;
+	r.y0 = ((float)rast->clip.y0) / vscale;
+	r.x1 = ((float)rast->clip.x1) / hscale;
+	r.y1 = ((float)rast->clip.y1) / vscale;
 
 	return r;
 }
 
-static fz_irect *fz_clip_rasterizer(fz_context *ctx, const fz_rasterizer *rast, fz_irect *r)
+static fz_irect fz_clip_rasterizer(fz_context *ctx, const fz_rasterizer *rast)
 {
+	fz_irect r;
 	const int hscale = fz_rasterizer_aa_hscale(rast);
 	const int vscale = fz_rasterizer_aa_vscale(rast);
 
-	r->x0 = fz_idiv(rast->clip.x0, hscale);
-	r->y0 = fz_idiv(rast->clip.y0, vscale);
-	r->x1 = fz_idiv_up(rast->clip.x1, hscale);
-	r->y1 = fz_idiv_up(rast->clip.y1, vscale);
+	r.x0 = fz_idiv(rast->clip.x0, hscale);
+	r.y0 = fz_idiv(rast->clip.y0, vscale);
+	r.x1 = fz_idiv_up(rast->clip.x1, hscale);
+	r.y1 = fz_idiv_up(rast->clip.y1, vscale);
 
 	return r;
 }
 
-int fz_reset_rasterizer(fz_context *ctx, fz_rasterizer *rast, const fz_irect *clip)
+int fz_reset_rasterizer(fz_context *ctx, fz_rasterizer *rast, fz_irect clip)
 {
 	const int hscale = fz_rasterizer_aa_hscale(rast);
 	const int vscale = fz_rasterizer_aa_vscale(rast);
@@ -245,10 +248,10 @@ int fz_reset_rasterizer(fz_context *ctx, fz_rasterizer *rast, const fz_irect *cl
 		rast->clip.x1 = rast->clip.y1 = BBOX_MAX;
 	}
 	else {
-		rast->clip.x0 = clip->x0 * hscale;
-		rast->clip.x1 = clip->x1 * hscale;
-		rast->clip.y0 = clip->y0 * vscale;
-		rast->clip.y1 = clip->y1 * vscale;
+		rast->clip.x0 = clip.x0 * hscale;
+		rast->clip.x1 = clip.x1 * hscale;
+		rast->clip.y0 = clip.y0 * vscale;
+		rast->clip.y1 = clip.y1 * vscale;
 	}
 
 	rast->bbox.x0 = rast->bbox.y0 = BBOX_MAX;
@@ -299,12 +302,9 @@ fz_rasterizer *fz_new_rasterizer(fz_context *ctx, const fz_aa_context *aa)
 
 void fz_convert_rasterizer(fz_context *ctx, fz_rasterizer *r, int eofill, fz_pixmap *pix, unsigned char *colorbv, fz_overprint *eop)
 {
-	fz_irect clip, scissor;
-	fz_irect pixmap_clip;
-
-	if (fz_is_empty_irect(fz_intersect_irect(fz_bound_rasterizer(ctx, r, &clip), fz_pixmap_bbox_no_ctx(pix, &pixmap_clip))))
-		return;
-	if (fz_is_empty_irect(fz_intersect_irect(&clip, fz_clip_rasterizer(ctx, r, &scissor))))
-		return;
-	r->fns.convert(ctx, r, eofill, &clip, pix, colorbv, eop);
+	fz_irect clip = fz_bound_rasterizer(ctx, r);
+	clip = fz_intersect_irect(clip, fz_pixmap_bbox_no_ctx(pix));
+	clip = fz_intersect_irect(clip, fz_clip_rasterizer(ctx, r));
+	if (!fz_is_empty_irect(clip))
+		r->fns.convert(ctx, r, eofill, &clip, pix, colorbv, eop);
 }

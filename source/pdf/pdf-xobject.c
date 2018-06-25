@@ -7,16 +7,16 @@ pdf_xobject_resources(fz_context *ctx, pdf_obj *xobj)
 	return pdf_dict_get(ctx, xobj, PDF_NAME(Resources));
 }
 
-fz_rect *
-pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj, fz_rect *bbox)
+fz_rect
+pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj)
 {
-	return pdf_to_rect(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(BBox)), bbox);
+	return pdf_to_rect(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(BBox)));
 }
 
-fz_matrix *
-pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj, fz_matrix *matrix)
+fz_matrix
+pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj)
 {
-	return pdf_to_matrix(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(Matrix)), matrix);
+	return pdf_to_matrix(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(Matrix)));
 }
 
 int pdf_xobject_isolated(fz_context *ctx, pdf_obj *xobj)
@@ -65,7 +65,7 @@ pdf_xobject_colorspace(fz_context *ctx, pdf_obj *xobj)
 }
 
 pdf_obj *
-pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *contents)
+pdf_new_xobject(fz_context *ctx, pdf_document *doc, fz_rect bbox, fz_matrix matrix, pdf_obj *res, fz_buffer *contents)
 {
 	pdf_obj *ind = NULL;
 	pdf_obj *form = pdf_new_dict(ctx, doc, 5);
@@ -74,8 +74,7 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		pdf_dict_put(ctx, form, PDF_NAME(Type), PDF_NAME(XObject));
 		pdf_dict_put(ctx, form, PDF_NAME(Subtype), PDF_NAME(Form));
 		pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), bbox);
-		if (mat)
-			pdf_dict_put_matrix(ctx, form, PDF_NAME(Matrix), mat);
+		pdf_dict_put_matrix(ctx, form, PDF_NAME(Matrix), matrix);
 		if (res)
 			pdf_dict_put(ctx, form, PDF_NAME(Resources), res);
 		ind = pdf_add_stream(ctx, doc, contents, form, 0);
@@ -88,13 +87,10 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 }
 
 void
-pdf_update_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *form, const fz_rect *bbox, const fz_matrix *mat, pdf_obj *res, fz_buffer *contents)
+pdf_update_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *form, fz_rect bbox, fz_matrix matrix, pdf_obj *res, fz_buffer *contents)
 {
 	pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), bbox);
-	if (mat)
-		pdf_dict_put_matrix(ctx, form, PDF_NAME(Matrix), mat);
-	else
-		pdf_dict_del(ctx, form, PDF_NAME(Matrix));
+	pdf_dict_put_matrix(ctx, form, PDF_NAME(Matrix), matrix);
 	if (res)
 		pdf_dict_put(ctx, form, PDF_NAME(Resources), res);
 	else

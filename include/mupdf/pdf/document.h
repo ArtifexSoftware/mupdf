@@ -822,7 +822,7 @@ fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *med
 	contents: The page contents for the new page (typically
 	create by pdf_page_write).
 */
-pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents);
+pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, pdf_obj *resources, fz_buffer *contents);
 
 /*
 	pdf_insert_page: Insert a page previously created by

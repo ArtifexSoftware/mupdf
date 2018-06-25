@@ -323,7 +323,7 @@ void fz_closepath(fz_context *ctx, fz_path *path);
 	Throws exceptions if the path is packed, or on failure
 	to allocate.
 */
-void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transform);
+void fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix transform);
 
 /*
 	fz_bound_path: Return a bounding rectangle for a path.
@@ -341,8 +341,8 @@ void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transfor
 
 	Returns r, updated to contain the bounding rectangle.
 */
-fz_rect *fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
-fz_rect *fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);
+fz_rect fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm);
+fz_rect fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect rect, const fz_stroke_state *stroke, fz_matrix ctm);
 
 extern const fz_stroke_state fz_default_stroke_state;
 

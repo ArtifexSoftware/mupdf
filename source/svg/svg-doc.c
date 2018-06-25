@@ -23,19 +23,15 @@ svg_count_pages(fz_context *ctx, fz_document *doc_)
 	return 1;
 }
 
-static fz_rect *
-svg_bound_page(fz_context *ctx, fz_page *page_, fz_rect *rect)
+static fz_rect
+svg_bound_page(fz_context *ctx, fz_page *page_)
 {
 	svg_page *page = (svg_page*)page_;
 	svg_document *doc = page->doc;
 
 	svg_parse_document_bounds(ctx, doc, fz_xml_root(doc->xml));
 
-	rect->x0 = 0;
-	rect->y0 = 0;
-	rect->x1 = doc->width;
-	rect->y1 = doc->height;
-	return rect;
+	return fz_make_rect(0, 0, doc->width, doc->height);
 }
 
 static void

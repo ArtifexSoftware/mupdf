@@ -207,7 +207,7 @@ static void create_page(char *input)
 	}
 	fz_drop_stream(ctx, stm);
 
-	page = pdf_add_page(ctx, doc, &mediabox, rotate, resources, contents);
+	page = pdf_add_page(ctx, doc, mediabox, rotate, resources, contents);
 	pdf_insert_page(ctx, doc, -1, page);
 	pdf_drop_obj(ctx, page);
 

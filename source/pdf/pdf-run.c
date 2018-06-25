@@ -16,7 +16,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		fz_set_default_colorspaces(ctx, dev, default_cs);
 
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
-	fz_concat(&local_ctm, &page_ctm, ctm);
+	local_ctm = fz_concat(page_ctm, *ctm);
 
 	fz_try(ctx)
 	{
@@ -54,11 +54,11 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	fz_try(ctx)
 	{
 		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
-		fz_concat(&local_ctm, &page_ctm, ctm);
+		local_ctm = fz_concat(page_ctm, *ctm);
+		mediabox = fz_transform_rect(mediabox, local_ctm);
 
 		resources = pdf_page_resources(ctx, page);
 		contents = pdf_page_contents(ctx, page);
-
 
 		if (page->transparency)
 		{
@@ -78,7 +78,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 			else
 				colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
 
-			fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
+			fz_begin_group(ctx, dev, &mediabox, colorspace, 1, 0, 0, 1);
 			fz_drop_colorspace(ctx, colorspace);
 			colorspace = NULL;
 		}

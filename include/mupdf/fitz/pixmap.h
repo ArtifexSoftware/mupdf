@@ -21,7 +21,7 @@ typedef struct fz_overprint_s fz_overprint;
 /*
 	fz_pixmap_bbox: Return the bounding box for a pixmap.
 */
-fz_irect *fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix, fz_irect *bbox);
+fz_irect fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix);
 
 /*
 	fz_pixmap_width: Return the width of the pixmap in pixels.
@@ -83,7 +83,7 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h, fz_se
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *bbox, fz_separations *seps, int alpha);
+fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbox, fz_separations *seps, int alpha);
 
 /*
 	fz_new_pixmap_with_data: Create a new pixmap, with its origin at
@@ -133,7 +133,7 @@ fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, i
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *rect, fz_separations *seps, int alpha, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_irect rect, fz_separations *seps, int alpha, unsigned char *samples);
 
 /*
 	fz_new_pixmap_from_pixmap: Create a new pixmap that represents
@@ -244,7 +244,7 @@ void fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *c
 
 	r: the rectangle.
 */
-void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, const fz_irect *r);
+void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, fz_irect r);
 
 /*
 	fz_clear_pixmap_with_value: Sets all components (including alpha) of
@@ -274,7 +274,7 @@ void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b);
 	pixmap. All components of all pixels in the rectangle are inverted
 	(except alpha, which is unchanged).
 */
-void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *rect);
+void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, fz_irect rect);
 
 /*
 	fz_gamma_pixmap: Apply gamma correction to a pixmap. All components
@@ -367,12 +367,12 @@ enum
 
 void fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
-void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *r, const fz_default_colorspaces *default_cs);
+void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_irect r, const fz_default_colorspaces *default_cs);
 void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray);
 size_t fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
-fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_irect *clip);
+fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, const fz_irect *clip);
 
 typedef struct fz_scale_cache_s fz_scale_cache;
 
@@ -382,7 +382,7 @@ fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x
 
 void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
-fz_irect *fz_pixmap_bbox_no_ctx(const fz_pixmap *src, fz_irect *bbox);
+fz_irect fz_pixmap_bbox_no_ctx(const fz_pixmap *src);
 
 void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode);
 void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval);

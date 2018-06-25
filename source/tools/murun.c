@@ -1829,7 +1829,7 @@ static void ffi_Page_bound(js_State *J)
 	fz_rect bounds;
 
 	fz_try(ctx)
-		fz_bound_page(ctx, page, &bounds);
+		bounds = fz_bound_page(ctx, page);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2017,7 +2017,7 @@ static void ffi_Annotation_bound(js_State *J)
 	fz_rect bounds;
 
 	fz_try(ctx)
-		fz_bound_annot(ctx, annot, &bounds);
+		bounds = fz_bound_annot(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2107,7 +2107,7 @@ static void ffi_new_Pixmap(js_State *J)
 	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds, 0, alpha);
+		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, bounds, 0, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2339,7 +2339,7 @@ static void ffi_Shade_bound(js_State *J)
 	fz_rect bounds;
 
 	fz_try(ctx)
-		fz_bound_shade(ctx, shade, &ctm, &bounds);
+		bounds = fz_bound_shade(ctx, shade, ctm);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2459,7 +2459,7 @@ static void ffi_Text_showGlyph(js_State *J)
 	int wmode = js_isdefined(J, 5) ? js_toboolean(J, 5) : 0;
 
 	fz_try(ctx)
-		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, text, font, trm, glyph, unicode, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -2687,7 +2687,7 @@ static void ffi_Path_bound(js_State *J)
 	fz_rect bounds;
 
 	fz_try(ctx)
-		fz_bound_path(ctx, path, &stroke, &ctm, &bounds);
+		bounds = fz_bound_path(ctx, path, &stroke, ctm);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2701,7 +2701,7 @@ static void ffi_Path_transform(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 
 	fz_try(ctx)
-		fz_transform_path(ctx, path, &ctm);
+		fz_transform_path(ctx, path, ctm);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -2713,7 +2713,7 @@ static void ffi_new_DisplayList(js_State *J)
 	fz_display_list *list = NULL;
 
 	fz_try(ctx)
-		list = fz_new_display_list(ctx, &mediabox);
+		list = fz_new_display_list(ctx, mediabox);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -3354,7 +3354,7 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
-		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
+		ind = pdf_add_page(ctx, pdf, mediabox, rotate, resources, contents);
 	fz_always(ctx) {
 		fz_drop_buffer(ctx, contents);
 		pdf_drop_obj(ctx, resources);
@@ -4110,7 +4110,7 @@ static void ffi_PDFAnnotation_getRect(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	fz_rect rect;
 	fz_try(ctx)
-		pdf_annot_rect(ctx, annot, &rect);
+		rect = pdf_annot_rect(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushrect(J, rect);
@@ -4122,7 +4122,7 @@ static void ffi_PDFAnnotation_setRect(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	fz_rect rect = ffi_torect(J, 1);
 	fz_try(ctx)
-		pdf_set_annot_rect(ctx, annot, &rect);
+		pdf_set_annot_rect(ctx, annot, rect);
 	fz_catch(ctx)
 		rethrow(J);
 }

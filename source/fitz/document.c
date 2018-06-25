@@ -328,25 +328,23 @@ fz_load_page(fz_context *ctx, fz_document *doc, int number)
 fz_link *
 fz_load_links(fz_context *ctx, fz_page *page)
 {
-	if (page && page->load_links && page)
+	if (page && page->load_links)
 		return page->load_links(ctx, page);
 	return NULL;
 }
 
-fz_rect *
-fz_bound_page(fz_context *ctx, fz_page *page, fz_rect *r)
+fz_rect
+fz_bound_page(fz_context *ctx, fz_page *page)
 {
-	if (page && page->bound_page && page && r)
-		return page->bound_page(ctx, page, r);
-	if (r)
-		*r = fz_empty_rect;
-	return r;
+	if (page && page->bound_page)
+		return page->bound_page(ctx, page);
+	return fz_empty_rect;
 }
 
 fz_annot *
 fz_first_annot(fz_context *ctx, fz_page *page)
 {
-	if (page && page->first_annot && page)
+	if (page && page->first_annot)
 		return page->first_annot(ctx, page);
 	return NULL;
 }
@@ -359,14 +357,12 @@ fz_next_annot(fz_context *ctx, fz_annot *annot)
 	return NULL;
 }
 
-fz_rect *
-fz_bound_annot(fz_context *ctx, fz_annot *annot, fz_rect *rect)
+fz_rect
+fz_bound_annot(fz_context *ctx, fz_annot *annot)
 {
-	if (annot && annot->bound_annot && rect)
-		return annot->bound_annot(ctx, annot, rect);
-	if (rect)
-		*rect = fz_empty_rect;
-	return rect;
+	if (annot && annot->bound_annot)
+		return annot->bound_annot(ctx, annot);
+	return fz_empty_rect;
 }
 
 void

@@ -176,7 +176,7 @@ static void filter_flush(fz_context *ctx, pdf_filter_processor *p, int flush)
 					gstate->pending.ctm.e,
 					gstate->pending.ctm.f);
 
-			fz_concat(&gstate->sent.ctm, &current, &gstate->pending.ctm);
+			gstate->sent.ctm = fz_concat(current, gstate->pending.ctm);
 			gstate->pending.ctm.a = 1;
 			gstate->pending.ctm.b = 0;
 			gstate->pending.ctm.c = 0;
@@ -450,9 +450,9 @@ filter_show_space(fz_context *ctx, pdf_filter_processor *p, float tadj)
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
 
 	if (fontdesc->wmode == 0)
-		fz_pre_translate(&p->tos.tm, tadj * gstate->pending.text.scale, 0);
+		p->tos.tm = fz_pre_translate(p->tos.tm, tadj * gstate->pending.text.scale, 0);
 	else
-		fz_pre_translate(&p->tos.tm, 0, tadj);
+		p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 }
 
 /* Process a string (from buf, of length len), from position *pos onwards.
@@ -633,12 +633,12 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 				if (fontdesc->wmode == 0)
 				{
 					skip.x += tadj;
-					fz_pre_translate(&p->tos.tm, tadj * p->gstate->pending.text.scale, 0);
+					p->tos.tm = fz_pre_translate(p->tos.tm, tadj * p->gstate->pending.text.scale, 0);
 				}
 				else
 				{
 					skip.y += tadj;
-					fz_pre_translate(&p->tos.tm, 0, tadj);
+					p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 				}
 
 			}
@@ -822,7 +822,7 @@ pdf_filter_cm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_gstate *gstate = gstate_to_update(ctx, p);
-	fz_matrix old, ctm;
+	fz_matrix ctm;
 
 	/* If we're being given an identity matrix, don't bother sending it */
 	if (a == 1 && b == 0 && c == 0 && d == 1 && e == 0 && f == 0)
@@ -835,8 +835,7 @@ pdf_filter_cm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 	ctm.e = e;
 	ctm.f = f;
 
-	old = gstate->pending.ctm;
-	fz_concat(&gstate->pending.ctm, &ctm, &old);
+	gstate->pending.ctm = fz_concat(ctm, gstate->pending.ctm);
 }
 
 /* path construction */
@@ -1038,9 +1037,7 @@ pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 		p->chain->op_ET(ctx, p->chain);
 	if (p->after_text)
 	{
-		fz_matrix ctm;
-
-		fz_concat(&ctm, &p->gstate->sent.ctm, &p->gstate->pending.ctm);
+		fz_matrix ctm = fz_concat(p->gstate->sent.ctm, p->gstate->pending.ctm);
 		if (p->chain->op_q)
 			p->chain->op_q(ctx, p->chain);
 		p->after_text(ctx, p->opaque, p->doc, p->chain, &ctm);

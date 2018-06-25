@@ -409,7 +409,7 @@ int ui_input(struct input *input, int width, int height)
 
 	area = ui_pack(width, ui.lineheight * height + 6);
 	ui_draw_bevel_rect(area, UI_COLOR_TEXT_BG, 1);
-	fz_expand_irect(&area, -2);
+	area = fz_expand_irect(area, -2);
 
 	if (height > 1)
 		area.x1 -= ui.lineheight;

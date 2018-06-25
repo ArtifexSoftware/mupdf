@@ -113,9 +113,9 @@ static void pdf_write_arrow_appearance(fz_context *ctx, fz_buffer *buf, fz_rect 
 	v = rotate_vector(angle, 8.8f*r, -4.5f*r);
 	b = fz_make_point(x + v.x, y + v.y);
 
-	fz_include_point_in_rect(rect, &a);
-	fz_include_point_in_rect(rect, &b);
-	fz_expand_rect(rect, w);
+	*rect = fz_include_point_in_rect(*rect, a);
+	*rect = fz_include_point_in_rect(*rect, b);
+	*rect = fz_expand_rect(*rect, w);
 
 	fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 	fz_append_printf(ctx, buf, "%g %g l\n", x, y);
@@ -182,8 +182,8 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 		fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
 		fz_append_string(ctx, buf, "S\n");
-		fz_include_point_in_rect(rect, &a);
-		fz_include_point_in_rect(rect, &b);
+		*rect = fz_include_point_in_rect(*rect, a);
+		*rect = fz_include_point_in_rect(*rect, b);
 	}
 	/* PDF 1.6 */
 	else if (cap == PDF_NAME(ROpenArrow))
@@ -208,8 +208,8 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 		fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
 		fz_append_string(ctx, buf, "S\n");
-		fz_include_point_in_rect(rect, &a);
-		fz_include_point_in_rect(rect, &b);
+		*rect = fz_include_point_in_rect(*rect, a);
+		*rect = fz_include_point_in_rect(*rect, b);
 	}
 }
 
@@ -247,7 +247,7 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, w, ic, pdf_array_get(ctx, le, 0));
 		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx/l, -dy/l, w, ic, pdf_array_get(ctx, le, 1));
 	}
-	fz_expand_rect(rect, fz_max(1, w));
+	*rect = fz_expand_rect(*rect, fz_max(1, w));
 }
 
 static void
@@ -323,14 +323,14 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 				rect->y0 = rect->y1 = p.y;
 			}
 			else
-				fz_include_point_in_rect(rect, &p);
+				*rect = fz_include_point_in_rect(*rect, p);
 			if (i == 0)
 				fz_append_printf(ctx, buf, "%g %g m\n", p.x, p.y);
 			else
 				fz_append_printf(ctx, buf, "%g %g l\n", p.x, p.y);
 		}
 		fz_append_string(ctx, buf, close ? "s" : "S");
-		fz_expand_rect(rect, lw);
+		*rect = fz_expand_rect(*rect, lw);
 	}
 }
 
@@ -363,12 +363,12 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 				rect->y0 = rect->y1 = p.y;
 			}
 			else
-				fz_include_point_in_rect(rect, &p);
+				*rect = fz_include_point_in_rect(*rect, p);
 			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, k == 0 ? 'm' : 'l');
 		}
 	}
 	fz_append_printf(ctx, buf, "S");
-	fz_expand_rect(rect, lw);
+	*rect = fz_expand_rect(*rect, lw);
 }
 
 /* Contrary to the specification, the points within a QuadPoint are NOT
@@ -398,13 +398,12 @@ extract_quad(fz_context *ctx, fz_point *quad, pdf_obj *obj, int i)
 static void
 union_quad(fz_rect *rect, const fz_point quad[4], float lw)
 {
-	fz_rect tmp;
-	tmp.x0 = fz_min(fz_min(quad[0].x, quad[1].x), fz_min(quad[2].x, quad[3].x));
-	tmp.y0 = fz_min(fz_min(quad[0].y, quad[1].y), fz_min(quad[2].y, quad[3].y));
-	tmp.x1 = fz_max(fz_max(quad[0].x, quad[1].x), fz_max(quad[2].x, quad[3].x));
-	tmp.y1 = fz_max(fz_max(quad[0].y, quad[1].y), fz_max(quad[2].y, quad[3].y));
-	fz_expand_rect(&tmp, lw);
-	fz_union_rect(rect, &tmp);
+	fz_rect qbox;
+	qbox.x0 = fz_min(fz_min(quad[0].x, quad[1].x), fz_min(quad[2].x, quad[3].x));
+	qbox.y0 = fz_min(fz_min(quad[0].y, quad[1].y), fz_min(quad[2].y, quad[3].y));
+	qbox.x1 = fz_max(fz_max(quad[0].x, quad[1].x), fz_max(quad[2].x, quad[3].x));
+	qbox.y1 = fz_max(fz_max(quad[0].y, quad[1].y), fz_max(quad[2].y, quad[3].y));
+	*rect = fz_union_rect(*rect, fz_expand_rect(qbox, lw));
 }
 
 static fz_point
@@ -745,7 +744,7 @@ pdf_write_stamp_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz
 
 		pdf_write_fill_color_appearance(ctx, annot, buf);
 		pdf_write_stroke_color_appearance(ctx, annot, buf);
-		fz_rotate(&rotate, 0.6f);
+		rotate = fz_rotate(0.6f);
 		fz_append_printf(ctx, buf, "%M cm\n", &rotate);
 		fz_append_string(ctx, buf, "2 w\n2 2 186 44 re\nS\n");
 
@@ -995,7 +994,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (r == 90 || r == 270)
 		t = h, h = w, w = t;
 
-	fz_rotate(matrix, r);
+	*matrix = fz_rotate(r);
 	*bbox = fz_make_rect(0, 0, w, h);
 
 	if (pdf_write_fill_color_appearance(ctx, annot, buf))
@@ -1029,7 +1028,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	h = rect->y1 - rect->y0;
 	if (r == 90 || r == 270)
 		t = h, h = w, w = t;
-	fz_rotate(matrix, r);
+	*matrix = fz_rotate(r);
 	*bbox = fz_make_rect(0, 0, w, h);
 
 	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
@@ -1253,9 +1252,9 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 
 		fz_try(ctx)
 		{
-			pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)), &rect);
+			rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
 			pdf_write_appearance(ctx, annot, buf, &rect, &bbox, &matrix, &res);
-			pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), &rect);
+			pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
 
 			if (!ap_n)
 			{
@@ -1264,13 +1263,13 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 					ap = pdf_new_dict(ctx, annot->page->doc, 1);
 					pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(AP), ap);
 				}
-				new_ap_n = pdf_new_xobject(ctx, annot->page->doc, &bbox, &matrix, res, buf);
+				new_ap_n = pdf_new_xobject(ctx, annot->page->doc, bbox, matrix, res, buf);
 				pdf_dict_put(ctx, ap, PDF_NAME(N), new_ap_n);
 			}
 			else
 			{
 				new_ap_n = pdf_keep_obj(ctx, ap_n);
-				pdf_update_xobject(ctx, annot->page->doc, ap_n, &bbox, &matrix, res, buf);
+				pdf_update_xobject(ctx, annot->page->doc, ap_n, bbox, matrix, res, buf);
 			}
 
 			pdf_drop_obj(ctx, annot->ap);
