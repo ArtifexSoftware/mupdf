@@ -598,3 +598,13 @@ fz_transform_quad(fz_quad *q, const fz_matrix *m)
 	fz_transform_point(&q->lr, m);
 	return q;
 }
+
+int fz_is_point_inside_rect(fz_point p, fz_rect r)
+{
+	return (p.x >= r.x0 && p.x < r.x1 && p.y >= r.y0 && p.y < r.y1);
+}
+
+int fz_is_point_inside_irect(int x, int y, fz_irect r)
+{
+	return (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1);
+}
