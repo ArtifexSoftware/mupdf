@@ -223,8 +223,8 @@ static void on_keyboard(unsigned char key, int x, int y)
 	ui.mod = glutGetModifiers();
 	ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
 	run_main_loop();
+	ui.key = ui.plain = 0;
 	ui_invalidate(); // TODO: leave this to caller
-	ui.key = ui.mod = ui.plain = 0;
 }
 
 static void on_special(int key, int x, int y)
@@ -266,8 +266,8 @@ static void on_special(int key, int x, int y)
 		ui.mod = glutGetModifiers();
 		ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
 		run_main_loop();
+		ui.key = ui.plain = 0;
 		ui_invalidate(); // TODO: leave this to caller
-		ui.key = ui.mod = ui.plain = 0;
 	}
 }
 
@@ -275,6 +275,7 @@ static void on_wheel(int wheel, int direction, int x, int y)
 {
 	ui.scroll_x = wheel == 1 ? direction : 0;
 	ui.scroll_y = wheel == 0 ? direction : 0;
+	ui.mod = glutGetModifiers();
 	run_main_loop();
 	ui_invalidate(); // TODO: leave this to caller
 	ui.scroll_x = ui.scroll_y = 0;
@@ -318,6 +319,7 @@ static void on_mouse(int button, int action, int x, int y)
 		case GLUT_RIGHT_BUTTON: ui.right = 0; break;
 		}
 	}
+	ui.mod = glutGetModifiers();
 	run_main_loop();
 	ui_invalidate(); // TODO: leave this to caller
 }
@@ -326,6 +328,7 @@ static void on_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
+	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
@@ -333,6 +336,7 @@ static void on_passive_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
+	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
