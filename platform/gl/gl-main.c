@@ -489,6 +489,11 @@ static void do_page_selection(void)
 		fz_transform_point(&page_a, &view_page_inv_ctm);
 		fz_transform_point(&page_b, &view_page_inv_ctm);
 
+		if (ui.mod == GLUT_ACTIVE_CTRL)
+			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_WORDS);
+		else if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_LINES);
+
 		n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
 
 		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */

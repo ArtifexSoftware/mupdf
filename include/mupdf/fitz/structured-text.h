@@ -152,6 +152,15 @@ int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needl
 */
 int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads);
 
+enum
+{
+	FZ_SELECT_CHARS,
+	FZ_SELECT_WORDS,
+	FZ_SELECT_LINES,
+};
+
+fz_quad fz_snap_selection(fz_context *ctx, fz_stext_page *page, fz_point *ap, fz_point *bp, int mode);
+
 /*
 	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection.
 

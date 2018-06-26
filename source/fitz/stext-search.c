@@ -180,6 +180,73 @@ fz_enumerate_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	}
 }
 
+fz_quad
+fz_snap_selection(fz_context *ctx, fz_stext_page *page, fz_point *a, fz_point *b, int mode)
+{
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+	fz_quad handles;
+	int idx, start, end;
+	int pc;
+
+	start = find_closest_in_page(page, *a);
+	end = find_closest_in_page(page, *b);
+
+	if (start > end)
+		idx = start, start = end, end = idx;
+
+	handles.ll = handles.ul = *a;
+	handles.lr = handles.ur = *b;
+
+	idx = 0;
+	for (block = page->first_block; block; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
+			continue;
+		for (line = block->u.t.first_line; line; line = line->next)
+		{
+			pc = '\n';
+			for (ch = line->first_char; ch; ch = ch->next)
+			{
+				if (idx <= start)
+				{
+					if (mode == FZ_SELECT_CHARS
+						|| (mode == FZ_SELECT_WORDS && (pc == ' ' || pc == '\n'))
+						|| (mode == FZ_SELECT_LINES && (pc == '\n')))
+					{
+						handles.ll = ch->quad.ll;
+						handles.ul = ch->quad.ul;
+						*a = ch->origin;
+					}
+				}
+				if (idx >= end)
+				{
+					if (mode == FZ_SELECT_CHARS
+						|| (mode == FZ_SELECT_WORDS && (ch->c == ' ')))
+					{
+						handles.lr = ch->quad.ll;
+						handles.ur = ch->quad.ul;
+						*b = ch->origin;
+						return handles;
+					}
+					if (!ch->next)
+					{
+						handles.lr = ch->quad.lr;
+						handles.ur = ch->quad.ur;
+						*b = ch->quad.lr;
+						return handles;
+					}
+				}
+				pc = ch->c;
+				++idx;
+			}
+		}
+	}
+
+	return handles;
+}
+
 /* Highlight selection */
 
 struct highlight
