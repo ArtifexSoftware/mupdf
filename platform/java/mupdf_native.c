@@ -617,7 +617,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_TextChar = get_class(&err, env, PKG"StructuredText$TextChar");
 	mid_TextChar_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextChar_quad = get_field(&err, env, "bbox", "L"PKG"Quad;");
+	fid_TextChar_quad = get_field(&err, env, "quad", "L"PKG"Quad;");
 	fid_TextChar_c = get_field(&err, env, "c", "I");
 
 	cls_TextLine = get_class(&err, env, PKG"StructuredText$TextLine");
@@ -8470,22 +8470,19 @@ FUN(PDFObject_asString)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
-	char *str = NULL;
-	jstring jstr;
+	const char *str = NULL;
 
 	if (!ctx || !obj) return NULL;
 
 	fz_try(ctx)
-		str = pdf_to_utf8(ctx, obj);
+		str = pdf_to_text_string(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	jstr = (*env)->NewStringUTF(env, str);
-	fz_free(ctx, str);
-	return jstr;
+	return (*env)->NewStringUTF(env, str);
 }
 
 JNIEXPORT jobject JNICALL
@@ -8828,8 +8825,7 @@ FUN(PDFAnnotation_getContents)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	char *contents = NULL;
-	jstring result;
+	const char *contents = NULL;
 
 	if (!ctx || !annot) return NULL;
 
@@ -8841,8 +8837,7 @@ FUN(PDFAnnotation_getContents)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	result = (*env)->NewStringUTF(env, contents);
-	return result;
+	return (*env)->NewStringUTF(env, contents);
 }
 
 JNIEXPORT void JNICALL
@@ -8873,8 +8868,7 @@ FUN(PDFAnnotation_getAuthor)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	char *author = NULL;
-	jstring result;
+	const char *author = NULL;
 
 	if (!ctx || !annot) return NULL;
 
@@ -8886,9 +8880,7 @@ FUN(PDFAnnotation_getAuthor)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	result = (*env)->NewStringUTF(env, author);
-	fz_free(ctx, author);
-	return result;
+	return (*env)->NewStringUTF(env, author);
 }
 
 JNIEXPORT void JNICALL
