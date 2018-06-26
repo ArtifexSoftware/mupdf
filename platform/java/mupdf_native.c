@@ -8830,7 +8830,7 @@ FUN(PDFAnnotation_getContents)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		contents = pdf_get_annot_contents(ctx, annot);
+		contents = pdf_annot_contents(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -8873,7 +8873,7 @@ FUN(PDFAnnotation_getAuthor)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		author = pdf_get_annot_author(ctx, annot);
+		author = pdf_annot_author(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);

@@ -4086,7 +4086,7 @@ static void ffi_PDFAnnotation_getContents(js_State *J)
 	const char *contents = NULL;
 
 	fz_try(ctx)
-		contents = pdf_get_annot_contents(ctx, annot);
+		contents = pdf_annot_contents(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -4378,7 +4378,7 @@ static void ffi_PDFAnnotation_getAuthor(js_State *J)
 	const char *author = NULL;
 
 	fz_try(ctx)
-		author = pdf_get_annot_author(ctx, annot);
+		author = pdf_annot_author(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
 

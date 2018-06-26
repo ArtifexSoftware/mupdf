@@ -220,9 +220,9 @@ void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
 void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
 
 /*
-	pdf_get_annot_contents: return the contents of an annotation.
+	pdf_annot_contents: return the contents of an annotation.
 */
-const char *pdf_get_annot_contents(fz_context *ctx, pdf_annot *annot);
+const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_set_annot_contents: set the contents of an annotation.
@@ -230,9 +230,9 @@ const char *pdf_get_annot_contents(fz_context *ctx, pdf_annot *annot);
 void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
 /*
-	pdf_get_annot_author: return the author of an annotation.
+	pdf_annot_author: return the author of an annotation.
 */
-const char *pdf_get_annot_author(fz_context *ctx, pdf_annot *annot);
+const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_set_annot_author: set the author of an annotation.

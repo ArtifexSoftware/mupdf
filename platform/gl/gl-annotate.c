@@ -314,7 +314,7 @@ static void do_annotate_author(void)
 {
 	if (pdf_annot_has_author(ctx, selected_annot))
 	{
-		const char *author = pdf_get_annot_author(ctx, selected_annot);
+		const char *author = pdf_annot_author(ctx, selected_annot);
 		if (strlen(author) > 0)
 			ui_label("Author: %s", author);
 	}
@@ -348,7 +348,7 @@ static void do_annotate_contents(void)
 	if (selected_annot != last_annot)
 	{
 		last_annot = selected_annot;
-		contents = pdf_get_annot_contents(ctx, selected_annot);
+		contents = pdf_annot_contents(ctx, selected_annot);
 		ui_input_init(&input, contents);
 	}
 
