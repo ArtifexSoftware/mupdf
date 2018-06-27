@@ -668,18 +668,9 @@ void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity)
 	pdf_dirty_annot(ctx, annot);
 }
 
-static void pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4], pdf_obj **allowed)
+static void pdf_annot_color_imp(fz_context *ctx, pdf_obj *arr, int *n, float color[4])
 {
-	pdf_obj *arr;
-	int len;
-
-	if (allowed)
-		check_allowed_subtypes(ctx, annot, key, allowed);
-
-	arr = pdf_dict_get(ctx, annot->obj, key);
-	len = pdf_array_len(ctx, arr);
-
-	switch (len)
+	switch (pdf_array_len(ctx, arr))
 	{
 	case 0:
 		if (n)
@@ -763,7 +754,22 @@ static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *
 void
 pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
-	pdf_annot_color_imp(ctx, annot, PDF_NAME(C), n, color, NULL);
+	pdf_obj *c = pdf_dict_get(ctx, annot->obj, PDF_NAME(C));
+	pdf_annot_color_imp(ctx, c, n, color);
+}
+
+void
+pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
+{
+	pdf_obj *mk_bg = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BG));
+	pdf_annot_color_imp(ctx, mk_bg, n, color);
+}
+
+void
+pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
+{
+	pdf_obj *mk_bc = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BC));
+	pdf_annot_color_imp(ctx, mk_bc, n, color);
 }
 
 void
@@ -790,7 +796,8 @@ pdf_annot_has_interior_color(fz_context *ctx, pdf_annot *annot)
 void
 pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
-	pdf_annot_color_imp(ctx, annot, PDF_NAME(IC), n, color, interior_color_subtypes);
+	pdf_obj *ic = pdf_dict_get(ctx, annot->obj, PDF_NAME(IC));
+	pdf_annot_color_imp(ctx, ic, n, color);
 }
 
 void

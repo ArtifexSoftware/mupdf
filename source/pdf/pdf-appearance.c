@@ -65,6 +65,36 @@ static int pdf_write_interior_fill_color_appearance(fz_context *ctx, pdf_annot *
 	return 1;
 }
 
+static int pdf_write_MK_BG_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
+{
+	float color[4];
+	int n;
+	pdf_annot_MK_BG(ctx, annot, &n, color);
+	switch (n)
+	{
+	default: return 0;
+	case 1: fz_append_printf(ctx, buf, "%g g\n", color[0]); break;
+	case 3: fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]); break;
+	case 4: fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]); break;
+	}
+	return 1;
+}
+
+static int pdf_write_MK_BC_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
+{
+	float color[4];
+	int n;
+	pdf_annot_MK_BC(ctx, annot, &n, color);
+	switch (n)
+	{
+	default: return 0;
+	case 1: fz_append_printf(ctx, buf, "%g G\n", color[0]); break;
+	case 3: fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]); break;
+	case 4: fz_append_printf(ctx, buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]); break;
+	}
+	return 1;
+}
+
 static fz_point rotate_vector(float angle, float x, float y)
 {
 	float ca = cosf(angle);
@@ -992,7 +1022,6 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	int q, r;
 
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
-	b = pdf_annot_border(ctx, annot);
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, color);
 
@@ -1005,15 +1034,27 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 	fz_append_string(ctx, buf, "/Tx BMC\nq\n");
 
+	if (pdf_write_MK_BG_appearance(ctx, annot, buf))
+		fz_append_printf(ctx, buf, "0 0 %g %g re\nf\n", w, h);
+
+	b = pdf_write_border_appearance(ctx, annot, buf);
+	if (b > 0)
+	{
+		if (pdf_write_MK_BC_appearance(ctx, annot, buf))
+			fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
+		else
+			b = 0;
+	}
+
 	if (ff & Ff_Comb)
 	{
 		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
 		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, maxlen);
 	}
 	else if (ff & Ff_Multiline)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 1, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1, 0);
 	else
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 2, 0, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 0, 0);
 
 	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
