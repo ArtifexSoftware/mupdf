@@ -1647,6 +1647,7 @@ void pdf_dirty_obj(fz_context *ctx, pdf_obj *obj)
 
 void pdf_clean_obj(fz_context *ctx, pdf_obj *obj)
 {
+	RESOLVE(obj);
 	if (obj < PDF_LIMIT)
 		return;
 	obj->flags &= ~PDF_FLAGS_DIRTY;
