@@ -747,11 +747,9 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
-	fz_irect bbox;
+	fz_irect bbox, pixmap_bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
-	fz_irect local_scissor;
-	fz_irect *scissor_ptr;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
@@ -763,14 +761,19 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	STACK_PUSHED("clip path");
 	model = state->dest->colorspace;
 
-	scissor_ptr = &state->scissor;
 	if (scissor)
 	{
-		fz_rect tscissor = *scissor;
-		fz_transform_rect(&tscissor, &dev->transform);
-		scissor_ptr = fz_intersect_irect(fz_irect_from_rect(&local_scissor, &tscissor), scissor_ptr);
+		fz_rect rect = *scissor;
+		fz_transform_rect(&rect, &dev->transform);
+		fz_irect_from_rect(&bbox, &rect);
+		fz_intersect_irect(&bbox, &state->scissor);
+		fz_intersect_irect(&bbox, fz_pixmap_bbox(ctx, state->dest, &pixmap_bbox));
 	}
-	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), scissor_ptr);
+	else
+	{
+		bbox = state->scissor;
+		fz_intersect_irect(&bbox, fz_pixmap_bbox(ctx, state->dest, &pixmap_bbox));
+	}
 
 	if (fz_flatten_fill_path(ctx, rast, path, &ctm, flatness, &bbox, &bbox) || fz_is_rect_rasterizer(ctx, rast))
 	{
@@ -822,13 +825,11 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	float linewidth = stroke->linewidth;
-	fz_irect bbox;
+	fz_irect bbox, pixmap_bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
 	float aa_level = 2.0f/(fz_rasterizer_graphics_aa_level(rast)+2);
 	float mlw = fz_rasterizer_graphics_min_line_width(rast);
-	fz_irect local_scissor;
-	fz_irect *scissor_ptr;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, dev->default_cs);
@@ -844,14 +845,20 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	STACK_PUSHED("clip stroke");
 	model = state->dest->colorspace;
 
-	scissor_ptr = &state->scissor;
 	if (scissor)
 	{
-		fz_rect tscissor = *scissor;
-		fz_transform_rect(&tscissor, &dev->transform);
-		scissor_ptr = fz_intersect_irect(fz_irect_from_rect(&local_scissor, &tscissor), scissor_ptr);
+		fz_rect rect = *scissor;
+		fz_transform_rect(&rect, &dev->transform);
+		fz_irect_from_rect(&bbox, &rect);
+		fz_intersect_irect(&bbox, &state->scissor);
+		fz_intersect_irect(&bbox, fz_pixmap_bbox(ctx, state->dest, &pixmap_bbox));
 	}
-	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), scissor_ptr);
+	else
+	{
+		bbox = state->scissor;
+		fz_intersect_irect(&bbox, fz_pixmap_bbox(ctx, state->dest, &pixmap_bbox));
+	}
+
 
 	if (fz_flatten_stroke_path(ctx, rast, path, stroke, &ctm, flatness, linewidth, &bbox, &bbox))
 	{
