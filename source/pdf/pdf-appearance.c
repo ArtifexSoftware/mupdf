@@ -1076,7 +1076,9 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 			fz_rethrow(ctx);
 	}
 	else
+	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream for %s widgets", pdf_to_name(ctx, ft));
+	}
 }
 
 static void
@@ -1170,9 +1172,6 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	pdf_obj *subtype;
 	pdf_obj *ap, *ap_n, *as;
 
-	if (annot->ap && !annot->needs_new_ap)
-		return;
-
 	subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype));
 	if (subtype == PDF_NAME(Popup))
 		return;
@@ -1185,16 +1184,13 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	if (!pdf_is_stream(ctx, ap_n))
 		ap_n = pdf_dict_get(ctx, ap_n, as);
 
-	if (pdf_is_stream(ctx, ap_n))
+	if (annot->ap != ap_n)
 	{
-		fz_try(ctx)
-		{
-			pdf_drop_obj(ctx, annot->ap);
-			annot->ap = NULL;
+		pdf_drop_obj(ctx, annot->ap);
+		annot->ap = NULL;
+		if (pdf_is_stream(ctx, ap_n))
 			annot->ap = pdf_keep_obj(ctx, ap_n);
-		}
-		fz_catch(ctx)
-			fz_warn(ctx, "cannot load appearance stream");
+		annot->has_new_ap = 1;
 	}
 
 	if (!annot->ap || annot->needs_new_ap)
@@ -1206,6 +1202,14 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 		pdf_obj *new_ap_n = NULL;
 		fz_var(res);
 		fz_var(new_ap_n);
+
+		annot->needs_new_ap = 0;
+
+		/* Ignore Btn widgets */
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
+			if (pdf_name_eq(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT)), PDF_NAME(Btn)))
+				return;
+
 		fz_try(ctx)
 		{
 			pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)), &rect);
@@ -1231,6 +1235,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 			pdf_drop_obj(ctx, annot->ap);
 			annot->ap = NULL;
 			annot->ap = pdf_keep_obj(ctx, new_ap_n);
+			annot->has_new_ap = 1;
 		}
 		fz_always(ctx)
 		{
@@ -1239,10 +1244,9 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 			pdf_drop_obj(ctx, new_ap_n);
 		}
 		fz_catch(ctx)
+		{
 			fz_warn(ctx, "cannot create appearance stream");
-
-		annot->needs_new_ap = 0;
-		annot->has_new_ap = 1;
+		}
 	}
 }
 
