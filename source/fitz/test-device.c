@@ -61,7 +61,7 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 }
 
 static void
-fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, const fz_matrix *ctm,
+fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
@@ -78,7 +78,7 @@ fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int eve
 
 static void
 fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -93,7 +93,7 @@ fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const
 }
 
 static void
-fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_matrix *ctm,
+fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
@@ -110,7 +110,7 @@ fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const f
 
 static void
 fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -142,7 +142,7 @@ prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 }
 
 static void
-fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -177,7 +177,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 				arg.dev = dev;
 				arg.shade = shade;
 				arg.color_params = color_params;
-				fz_process_shade(ctx, shade, *ctm, prepare_vertex, NULL, &arg);
+				fz_process_shade(ctx, shade, ctm, prepare_vertex, NULL, &arg);
 			}
 		}
 	}
@@ -186,7 +186,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 }
 
 static void
-fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -363,7 +363,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 }
 
 static void
-fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm,
+fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
@@ -381,7 +381,7 @@ fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, const
 }
 
 static void
-fz_test_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
+fz_test_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -389,7 +389,7 @@ fz_test_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int eve
 }
 
 static void
-fz_test_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
+fz_test_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -397,7 +397,7 @@ fz_test_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, 
 }
 
 static void
-fz_test_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
+fz_test_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -405,7 +405,7 @@ fz_test_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const f
 }
 
 static void
-fz_test_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
+fz_test_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -413,7 +413,7 @@ fz_test_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, 
 }
 
 static void
-fz_test_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_matrix *ctm)
+fz_test_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -421,7 +421,7 @@ fz_test_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const
 }
 
 static void
-fz_test_clip_image_mask(fz_context *ctx, fz_device *dev_, fz_image *img, const fz_matrix *ctm, const fz_rect *scissor)
+fz_test_clip_image_mask(fz_context *ctx, fz_device *dev_, fz_image *img, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -469,7 +469,7 @@ fz_test_end_group(fz_context *ctx, fz_device *dev_)
 }
 
 static int
-fz_test_begin_tile(fz_context *ctx, fz_device *dev_, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
+fz_test_begin_tile(fz_context *ctx, fz_device *dev_, const fz_rect *area, const fz_rect *view, float xstep, float ystep, fz_matrix ctm, int id)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 

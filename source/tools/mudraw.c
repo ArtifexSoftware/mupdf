@@ -461,7 +461,7 @@ file_level_trailers(fz_context *ctx)
 
 }
 
-static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
+static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_matrix ctm, const fz_rect *tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
 {
 	fz_device *dev = NULL;
 
@@ -476,7 +476,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		else
 			fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device_with_proof(ctx, NULL, pix, proof_cs);
+		dev = fz_new_draw_device_with_proof(ctx, fz_identity, pix, proof_cs);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		if (alphabits_graphics == 0)
@@ -538,9 +538,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
+				fz_run_display_list(ctx, list, dev, fz_identity, &fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, cookie);
+				fz_run_page(ctx, page, dev, fz_identity, cookie);
 			fz_write_printf(ctx, out, "</page>\n");
 			fz_close_device(ctx, dev);
 		}
@@ -578,9 +578,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &ctm, &fz_infinite_rect, cookie);
+				fz_run_display_list(ctx, list, dev, ctm, &fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, &ctm, cookie);
+				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
@@ -631,9 +631,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			dev = pdf_page_write(ctx, pdfout, &mediabox, &resources, &contents);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, cookie);
+				fz_run_display_list(ctx, list, dev, fz_identity, NULL, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, cookie);
+				fz_run_page(ctx, page, dev, fz_identity, cookie);
 			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
@@ -686,9 +686,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, cookie);
+				fz_run_display_list(ctx, list, dev, ctm, &tbounds, cookie);
 			else
-				fz_run_page(ctx, page, dev, &ctm, cookie);
+				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_close_device(ctx, dev);
 			fz_close_output(ctx, out);
 		}
@@ -880,7 +880,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, page, list, &ctm, &tbounds, cookie, band * band_height, pix, &bit);
+					drawband(ctx, page, list, ctm, &tbounds, cookie, band * band_height, pix, &bit);
 
 				if (output)
 				{
@@ -1083,7 +1083,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			dev = fz_new_list_device(ctx, list);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-			fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+			fz_run_page(ctx, page, dev, fz_identity, &cookie);
 			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
@@ -1115,9 +1115,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_try(ctx)
 		{
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, NULL);
+				fz_run_display_list(ctx, list, dev, fz_identity, &fz_infinite_rect, NULL);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+				fz_run_page(ctx, page, dev, fz_identity, &cookie);
 			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
@@ -1314,7 +1314,7 @@ static void worker_thread(void *arg)
 		mu_wait_semaphore(&me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
-			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
+			drawband(me->ctx, NULL, me->list, me->ctm, &me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
 		mu_trigger_semaphore(&me->stop);
 	}

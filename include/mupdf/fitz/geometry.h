@@ -273,6 +273,12 @@ static inline fz_matrix fz_make_matrix(float a, float b, float c, float d, float
 	return m;
 }
 
+static inline int fz_is_identity(fz_matrix m)
+{
+	return m.a == 1 && m.b == 0 && m.c == 0 && m.d == 1 && m.e == 0 && m.f == 0;
+}
+
+
 /*
 	fz_concat: Multiply two matrices.
 

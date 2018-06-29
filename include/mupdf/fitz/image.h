@@ -44,7 +44,7 @@ typedef struct fz_pixmap_image_s fz_pixmap_image;
 
 	Returns a non NULL pixmap pointer. May throw exceptions.
 */
-fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *trans, int *w, int *h);
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *w, int *h);
 
 /*
 	fz_drop_image: Drop a reference to an image.

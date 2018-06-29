@@ -2,9 +2,9 @@
 #include "mupdf/pdf.h"
 
 static void
-pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
+pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
-	fz_matrix local_ctm, page_ctm;
+	fz_matrix page_ctm;
 	fz_rect mediabox;
 	pdf_processor *proc = NULL;
 	fz_default_colorspaces *default_cs;
@@ -16,11 +16,11 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		fz_set_default_colorspaces(ctx, dev, default_cs);
 
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
-	local_ctm = fz_concat(page_ctm, *ctm);
+	ctm = fz_concat(page_ctm, ctm);
 
 	fz_try(ctx)
 	{
-		proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0, default_cs);
+		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, 0, default_cs);
 		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
 		pdf_close_processor(ctx, proc);
 	}
@@ -34,9 +34,9 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 }
 
 static void
-pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
-	fz_matrix local_ctm, page_ctm;
+	fz_matrix page_ctm;
 	pdf_obj *resources;
 	pdf_obj *contents;
 	fz_rect mediabox;
@@ -54,8 +54,8 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	fz_try(ctx)
 	{
 		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
-		local_ctm = fz_concat(page_ctm, *ctm);
-		mediabox = fz_transform_rect(mediabox, local_ctm);
+		ctm = fz_concat(page_ctm, ctm);
+		mediabox = fz_transform_rect(mediabox, ctm);
 
 		resources = pdf_page_resources(ctx, page);
 		contents = pdf_page_contents(ctx, page);
@@ -83,7 +83,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 			colorspace = NULL;
 		}
 
-		proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0, default_cs);
+		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, 0, default_cs);
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 		pdf_close_processor(ctx, proc);
 	}
@@ -102,7 +102,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 		fz_end_group(ctx, dev);
 }
 
-void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
 	int nocache;
@@ -128,7 +128,7 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
-void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	pdf_page *page = annot->page;
 	pdf_document *doc = page->doc;
@@ -155,7 +155,7 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, const fz_m
 }
 
 static void
-pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_annot *annot;
 
@@ -182,7 +182,7 @@ pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *pag
 }
 
 void
-pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	int nocache = !!(dev->hints & FZ_NO_CACHE);
 
@@ -207,14 +207,14 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_d
 }
 
 void
-pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
 	pdf_run_page_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
 }
 
 void
-pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nested_depth, fz_default_colorspaces *default_cs)
+pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, int nested_depth, fz_default_colorspaces *default_cs)
 {
 	pdf_processor *proc;
 

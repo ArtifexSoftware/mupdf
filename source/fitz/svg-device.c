@@ -156,24 +156,24 @@ svg_dev_path(fz_context *ctx, svg_device *sdev, const fz_path *path)
 }
 
 static void
-svg_dev_ctm(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm)
+svg_dev_ctm(fz_context *ctx, svg_device *sdev, fz_matrix ctm)
 {
 	fz_output *out = sdev->out;
 
-	if (ctm->a != 1.0f || ctm->b != 0 || ctm->c != 0 || ctm->d != 1.0f || ctm->e != 0 || ctm->f != 0)
+	if (ctm.a != 1.0f || ctm.b != 0 || ctm.c != 0 || ctm.d != 1.0f || ctm.e != 0 || ctm.f != 0)
 	{
 		fz_write_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
-			ctm->a, ctm->b, ctm->c, ctm->d, ctm->e, ctm->f);
+			ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
 	}
 }
 
 static void
-svg_dev_stroke_state(fz_context *ctx, svg_device *sdev, const fz_stroke_state *stroke_state, const fz_matrix *ctm)
+svg_dev_stroke_state(fz_context *ctx, svg_device *sdev, const fz_stroke_state *stroke_state, fz_matrix ctm)
 {
 	fz_output *out = sdev->out;
 	float exp;
 
-	exp = fz_matrix_expansion(*ctm);
+	exp = fz_matrix_expansion(ctm);
 	if (exp == 0)
 		exp = 1;
 	exp = stroke_state->linewidth/exp;
@@ -313,7 +313,7 @@ svg_cluster_advance(fz_context *ctx, const fz_text_span *span, int i, int end)
 }
 
 static void
-svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
+svg_dev_text_span(fz_context *ctx, svg_device *sdev, fz_matrix ctm, const fz_text_span *span)
 {
 	fz_output *out = sdev->out;
 	char font_family[100];
@@ -340,7 +340,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	final_tm.e = 0;
 	final_tm.f = 0;
 	inv_tm = fz_invert_matrix(final_tm);
-	final_tm = fz_concat(final_tm, *ctm);
+	final_tm = fz_concat(final_tm, ctm);
 
 	tm.e = span->items[0].x;
 	tm.f = span->items[0].y;
@@ -419,7 +419,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 }
 
 static font *
-svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *span, const fz_matrix *ctm)
+svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *span, fz_matrix ctm)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -473,7 +473,7 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 			/* Need to send this one */
 			fz_rect rect;
 			fz_path *path;
-			path = fz_outline_glyph(ctx, span->font, gid, &fz_identity);
+			path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
 			if (path)
 			{
 				rect = fz_bound_path(ctx, path, NULL, fz_identity);
@@ -494,7 +494,7 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 				shift.f = -rect.y0;
 				out = start_def(ctx, sdev);
 				fz_write_printf(ctx, out, "<symbol id=\"font_%x_%x\">\n", fnt->id, gid);
-				fz_run_t3_glyph(ctx, span->font, gid, &shift, dev);
+				fz_run_t3_glyph(ctx, span->font, gid, shift, dev);
 			}
 			fz_write_printf(ctx, out, "</symbol>\n");
 			out = end_def(ctx, sdev);
@@ -506,40 +506,38 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 }
 
 static void
-svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_span *span, const fz_matrix *ctm,
+svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_span *span, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, font *fnt, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-
-	fz_matrix local_trm, local_trm2;
-	int i;
 	fz_matrix shift = { 1, 0, 0, 1, 0, 0};
+	fz_matrix trm, mtx;
+	int i;
 
 	/* Rely on the fact that trm.{e,f} == 0 */
-	local_trm.a = span->trm.a;
-	local_trm.b = span->trm.b;
-	local_trm.c = span->trm.c;
-	local_trm.d = span->trm.d;
-	local_trm.e = 0;
-	local_trm.f = 0;
+	trm.a = span->trm.a;
+	trm.b = span->trm.b;
+	trm.c = span->trm.c;
+	trm.d = span->trm.d;
+	trm.e = 0;
+	trm.f = 0;
 
 	for (i=0; i < span->len; i++)
 	{
 		fz_text_item *it = &span->items[i];
 		int gid = it->gid;
-
 		if (gid < 0)
 			continue;
 
 		shift.e = fnt->sentlist[gid].x_off;
 		shift.f = fnt->sentlist[gid].y_off;
-		local_trm.e = it->x;
-		local_trm.f = it->y;
-		local_trm2 = fz_concat(local_trm, *ctm);
-		local_trm2 = fz_concat(shift, local_trm2);
+		trm.e = it->x;
+		trm.f = it->y;
+		mtx = fz_concat(shift, fz_concat(trm, ctm));
+
 		fz_write_printf(ctx, out, "<use xlink:href=\"#font_%x_%x\"", fnt->id, gid);
-		svg_dev_ctm(ctx, sdev, &local_trm2);
+		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
 		fz_write_printf(ctx, out, "/>\n");
 	}
@@ -547,40 +545,39 @@ svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_s
 
 static void
 svg_dev_text_span_as_paths_stroke(fz_context *ctx, fz_device *dev, const fz_text_span *span,
-	const fz_stroke_state *stroke, const fz_matrix *ctm,
+	const fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, font *fnt, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-	fz_matrix local_trm, local_trm2;
-	int i;
 	fz_matrix shift = { 1, 0, 0, 1, 0, 0};
+	fz_matrix trm, mtx;
+	int i;
 
 	/* Rely on the fact that trm.{e,f} == 0 */
-	local_trm.a = span->trm.a;
-	local_trm.b = span->trm.b;
-	local_trm.c = span->trm.c;
-	local_trm.d = span->trm.d;
-	local_trm.e = 0;
-	local_trm.f = 0;
+	trm.a = span->trm.a;
+	trm.b = span->trm.b;
+	trm.c = span->trm.c;
+	trm.d = span->trm.d;
+	trm.e = 0;
+	trm.f = 0;
 
 	for (i=0; i < span->len; i++)
 	{
 		fz_text_item *it = &span->items[i];
 		int gid = it->gid;
-
 		if (gid < 0)
 			continue;
 
 		shift.e = fnt->sentlist[gid].x_off;
 		shift.f = fnt->sentlist[gid].y_off;
-		local_trm.e = it->x;
-		local_trm.f = it->y;
-		local_trm2 = fz_concat(local_trm, *ctm);
-		local_trm2 = fz_concat(shift, local_trm2);
+		trm.e = it->x;
+		trm.f = it->y;
+		mtx = fz_concat(shift, fz_concat(trm, ctm));
+
 		fz_write_printf(ctx, out, "<use xlink:href=\"#font_%x_%x\"", fnt->id, gid);
-		svg_dev_stroke_state(ctx, sdev, stroke, &local_trm2);
-		svg_dev_ctm(ctx, sdev, &local_trm2);
+		svg_dev_stroke_state(ctx, sdev, stroke, mtx);
+		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_stroke_color(ctx, sdev, colorspace, color, alpha, color_params);
 		fz_write_printf(ctx, out, "/>\n");
 	}
@@ -589,7 +586,7 @@ svg_dev_text_span_as_paths_stroke(fz_context *ctx, fz_device *dev, const fz_text
 /* Entry points */
 
 static void
-svg_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
+svg_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -605,7 +602,7 @@ svg_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 }
 
 static void
-svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
+svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -613,14 +610,14 @@ svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 	fz_write_printf(ctx, out, "<path");
 	svg_dev_ctm(ctx, sdev, ctm);
-	svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
+	svg_dev_stroke_state(ctx, sdev, stroke, fz_identity);
 	svg_dev_stroke_color(ctx, sdev, colorspace, color, alpha, color_params);
 	svg_dev_path(ctx, sdev, path);
 	fz_write_printf(ctx, out, "/>\n");
 }
 
 static void
-svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
+svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -640,7 +637,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 }
 
 static void
-svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
+svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 
@@ -649,14 +646,14 @@ svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 	int num = sdev->id++;
 	float white[3] = { 1, 1, 1 };
 
-	bounds = fz_bound_path(ctx, path, stroke, *ctm);
+	bounds = fz_bound_path(ctx, path, stroke, ctm);
 
 	out = start_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_write_printf(ctx, out, "<path");
 	svg_dev_ctm(ctx, sdev, ctm);
-	svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
+	svg_dev_stroke_state(ctx, sdev, stroke, fz_identity);
 	svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 1, NULL);
 	svg_dev_path(ctx, sdev, path);
 	fz_write_printf(ctx, out, "/>\n</mask>\n");
@@ -665,7 +662,7 @@ svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 }
 
 static void
-svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
+svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -693,7 +690,7 @@ svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 }
 
 static void
-svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
+svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -721,7 +718,7 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
+svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -732,7 +729,7 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	font *fnt;
 	fz_text_span *span;
 
-	bounds = fz_bound_text(ctx, text, NULL, *ctm);
+	bounds = fz_bound_text(ctx, text, NULL, ctm);
 
 	out = start_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
@@ -761,7 +758,7 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 }
 
 static void
-svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
+svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 
@@ -772,7 +769,7 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	font *fnt;
 	fz_text_span *span;
 
-	bounds = fz_bound_text(ctx, text, NULL, *ctm);
+	bounds = fz_bound_text(ctx, text, NULL, ctm);
 
 	out = start_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
@@ -783,7 +780,7 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 		for (span = text->head; span; span = span->next)
 		{
 			fz_write_printf(ctx, out, "<text");
-			svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
+			svg_dev_stroke_state(ctx, sdev, stroke, fz_identity);
 			svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 1, NULL);
 			svg_dev_text_span(ctx, sdev, ctm, span);
 		}
@@ -802,7 +799,7 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 }
 
 static void
-svg_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
+svg_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -879,29 +876,29 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 }
 
 static void
-svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
 
-	fz_matrix local_ctm = *ctm;
+	fz_matrix local_ctm = ctm;
 	fz_matrix scale = { 0 };
 
 	scale.a = 1.0f / image->w;
 	scale.d = 1.0f / image->h;
 
-	local_ctm = fz_concat(scale, *ctm);
+	local_ctm = fz_concat(scale, ctm);
 	fz_write_printf(ctx, out, "<g");
 	if (alpha != 1.0f)
 		fz_write_printf(ctx, out, " opacity=\"%g\"", alpha);
-	svg_dev_ctm(ctx, sdev, &local_ctm);
+	svg_dev_ctm(ctx, sdev, local_ctm);
 	fz_write_printf(ctx, out, ">\n");
 	svg_send_image(ctx, sdev, image, color_params);
 	fz_write_printf(ctx, out, "</g>\n");
 }
 
 static void
-svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -914,7 +911,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 	if (dev->container_len == 0)
 		return;
 
-	bbox = fz_round_rect(fz_intersect_rect(fz_bound_shade(ctx, shade, *ctm), dev->container[dev->container_len-1].scissor));
+	bbox = fz_round_rect(fz_intersect_rect(fz_bound_shade(ctx, shade, ctm), dev->container[dev->container_len-1].scissor));
 	if (fz_is_empty_irect(bbox))
 		return;
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), bbox, NULL, 1);
@@ -944,19 +941,19 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
+svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
-	fz_matrix local_ctm = *ctm;
+	fz_matrix local_ctm = ctm;
 	fz_matrix scale = { 0 };
 	int mask = sdev->id++;
 
 	scale.a = 1.0f / image->w;
 	scale.d = 1.0f / image->h;
 
-	local_ctm = fz_concat(scale, *ctm);
+	local_ctm = fz_concat(scale, ctm);
 	out = start_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<mask id=\"ma%d\">\n", mask);
 	svg_send_image(ctx, sdev, image, color_params);
@@ -964,26 +961,26 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	out = end_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"", image->w, image->h);
 	svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
-	svg_dev_ctm(ctx, sdev, &local_ctm);
+	svg_dev_ctm(ctx, sdev, local_ctm);
 	fz_write_printf(ctx, out, " mask=\"url(#ma%d)\"/>\n", mask);
 }
 
 static void
-svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
+svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
-	fz_matrix local_ctm = *ctm;
+	fz_matrix local_ctm = ctm;
 	fz_matrix scale = { 0 };
 	int mask = sdev->id++;
 
 	scale.a = 1.0f / image->w;
 	scale.d = 1.0f / image->h;
 
-	local_ctm = fz_concat(scale, *ctm);
+	local_ctm = fz_concat(scale, ctm);
 	out = start_def(ctx, sdev);
 	fz_write_printf(ctx, out, "<mask id=\"ma%d\">\n<g", mask);
-	svg_dev_ctm(ctx, sdev, &local_ctm);
+	svg_dev_ctm(ctx, sdev, local_ctm);
 	fz_write_printf(ctx, out, ">\n");
 	svg_send_image(ctx, sdev, image, NULL/* FIXME */);
 	fz_write_printf(ctx, out, "</g>\n</mask>\n");
@@ -1053,7 +1050,7 @@ svg_dev_end_group(fz_context *ctx, fz_device *dev)
 }
 
 static int
-svg_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
+svg_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, fz_matrix ctm, int id)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -1071,7 +1068,7 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 	t = &sdev->tiles[num];
 	t->area = *area;
 	t->view = *view;
-	t->ctm = *ctm;
+	t->ctm = ctm;
 	t->pattern = sdev->id++;
 	t->step.x = xstep;
 	t->step.y = ystep;
@@ -1140,7 +1137,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 	 * undo the current one to allow for this */
 	inverse = fz_invert_matrix(t->ctm);
 	fz_write_printf(ctx, out, "<g");
-	svg_dev_ctm(ctx, sdev, &inverse);
+	svg_dev_ctm(ctx, sdev, inverse);
 	fz_write_printf(ctx, out, ">\n");
 
 	w = t->view.x1 - t->view.x0;
@@ -1158,7 +1155,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 
 	/* Finally, fill a rectangle with the pattern. */
 	fz_write_printf(ctx, out, "<rect");
-	svg_dev_ctm(ctx, sdev, &t->ctm);
+	svg_dev_ctm(ctx, sdev, t->ctm);
 	fz_write_printf(ctx, out, " fill=\"url(#pa%d)\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"/>\n",
 		t->pattern, t->area.x0, t->area.y0, t->area.x1 - t->area.x0, t->area.y1 - t->area.y0);
 }

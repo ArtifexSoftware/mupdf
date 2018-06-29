@@ -35,9 +35,9 @@ FUNCTION_NAME(NAME,N,NAME2,NAME3)(const unsigned char * FZ_RESTRICT colorbv,
 #ifndef N
 				const int n1,
 #endif
-				int span, unsigned char * FZ_RESTRICT dp, const fz_glyph * FZ_RESTRICT glyph, int w, int h, int skip_x, int skip_y
+				int span, unsigned char * FZ_RESTRICT dp, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y
 #ifdef EOP
-				, const fz_overprint * FZ_RESTRICT eop
+				, const fz_overprint *eop
 #endif
 				)
 {

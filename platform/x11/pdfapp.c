@@ -690,14 +690,14 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		if (no_cache)
 			fz_enable_device_hints(app->ctx, mdev, FZ_NO_CACHE);
 		cookie.incomplete_ok = 1;
-		fz_run_page_contents(app->ctx, app->page, mdev, &fz_identity, &cookie);
+		fz_run_page_contents(app->ctx, app->page, mdev, fz_identity, &cookie);
 		fz_close_device(app->ctx, mdev);
 		fz_drop_device(app->ctx, mdev);
 		mdev = NULL;
 		app->annotations_list = fz_new_display_list(app->ctx, fz_infinite_rect);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
 		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
-			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);
+			fz_run_annot(app->ctx, annot, mdev, fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -758,7 +758,7 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 		app->annotations_list = fz_new_display_list(app->ctx, fz_infinite_rect);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
 		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
-			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);
+			fz_run_annot(app->ctx, annot, mdev, fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -784,7 +784,7 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 	app->errored = errored;
 }
 
-static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix *ctm, const fz_rect *rect, fz_cookie *cookie)
+static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix ctm, const fz_rect *rect, fz_cookie *cookie)
 {
 	if (app->page_list)
 		fz_run_display_list(app->ctx, app->page_list, dev, ctm, rect, cookie);
@@ -815,10 +815,10 @@ static void pdfapp_updatepage(pdfapp_t *app)
 			ibounds = fz_round_rect(bounds);
 			bounds = fz_rect_from_irect(ibounds);
 			fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, ibounds);
-			idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
+			idev = fz_new_draw_device_with_bbox(app->ctx, fz_identity, app->image, &ibounds);
 			fz_try(app->ctx)
 			{
-				pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
+				pdfapp_runpage(app, idev, ctm, &bounds, NULL);
 				fz_close_device(app->ctx, idev);
 			}
 			fz_always(app->ctx)
@@ -885,7 +885,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			tdev = fz_new_stext_device(app->ctx, app->page_text, NULL);
 			fz_try(app->ctx)
 			{
-				pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
+				pdfapp_runpage(app, tdev, fz_identity, &fz_infinite_rect, &cookie);
 				fz_close_device(app->ctx, tdev);
 			}
 			fz_always(app->ctx)
@@ -935,8 +935,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 			if (app->page_list || app->annotations_list)
 			{
-				idev = fz_new_draw_device(app->ctx, NULL, app->image);
-				pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
+				idev = fz_new_draw_device(app->ctx, fz_identity, app->image);
+				pdfapp_runpage(app, idev, ctm, &bounds, &cookie);
 				fz_close_device(app->ctx, idev);
 			}
 			if (app->invert)

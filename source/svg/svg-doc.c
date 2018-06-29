@@ -35,7 +35,7 @@ svg_bound_page(fz_context *ctx, fz_page *page_)
 }
 
 static void
-svg_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+svg_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	svg_page *page = (svg_page*)page_;
 	svg_document *doc = page->doc;

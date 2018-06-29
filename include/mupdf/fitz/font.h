@@ -496,7 +496,7 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid);
 
 	dev: The device to render onto.
 */
-void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, struct fz_device_s *dev);
+void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, struct fz_device_s *dev);
 
 /*
 	fz_decouple_type3_font: Internal function to remove the

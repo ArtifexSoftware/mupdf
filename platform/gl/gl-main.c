@@ -257,7 +257,7 @@ void render_page(void)
 
 	transform_page();
 
-	pix = fz_new_pixmap_from_page(ctx, fzpage, &draw_page_ctm, fz_device_rgb(ctx), 0);
+	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), 0);
 	if (currentinvert)
 	{
 		fz_invert_pixmap(ctx, pix);

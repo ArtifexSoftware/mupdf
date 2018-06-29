@@ -33,7 +33,7 @@ xps_paint_tiling_brush_clipped(fz_context *ctx, xps_document *doc, fz_matrix ctm
 	fz_lineto(ctx, path, viewbox.x1, viewbox.y1);
 	fz_lineto(ctx, path, viewbox.x1, viewbox.y0);
 	fz_closepath(ctx, path);
-	fz_clip_path(ctx, dev, path, 0, &ctm, NULL);
+	fz_clip_path(ctx, dev, path, 0, ctm, NULL);
 	fz_drop_path(ctx, path);
 	c->func(ctx, doc, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
 	fz_pop_clip(ctx, dev);
@@ -183,7 +183,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rec
 			fz_rect bigview = viewbox;
 			bigview.x1 = bigview.x0 + xstep;
 			bigview.y1 = bigview.y0 + ystep;
-			fz_begin_tile(ctx, dev, &area, &bigview, xstep, ystep, &ctm);
+			fz_begin_tile(ctx, dev, &area, &bigview, xstep, ystep, ctm);
 			xps_paint_tiling_brush(ctx, doc, ctm, viewbox, tile_mode, &c);
 			fz_end_tile(ctx, dev);
 		}
@@ -367,13 +367,13 @@ xps_parse_fixed_page(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_page
 }
 
 void
-xps_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+xps_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	xps_page *page = (xps_page*)page_;
 	xps_document *doc = page->doc;
 	fz_matrix page_ctm;
 
-	page_ctm = fz_pre_scale(*ctm, 72.0f / 96.0f, 72.0f / 96.0f);
+	page_ctm = fz_pre_scale(ctm, 72.0f / 96.0f, 72.0f / 96.0f);
 
 	doc->cookie = cookie;
 	doc->dev = dev;

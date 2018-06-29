@@ -151,7 +151,7 @@ cbz_bound_page(fz_context *ctx, fz_page *page_)
 }
 
 static void
-cbz_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+cbz_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	cbz_page *page = (cbz_page*)page_;
 	fz_matrix local_ctm;
@@ -162,8 +162,8 @@ cbz_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *c
 	fz_image_resolution(image, &xres, &yres);
 	w = image->w * DPI / xres;
 	h = image->h * DPI / yres;
-	local_ctm = fz_pre_scale(*ctm, w, h);
-	fz_fill_image(ctx, dev, image, &local_ctm, 1, NULL);
+	local_ctm = fz_pre_scale(ctm, w, h);
+	fz_fill_image(ctx, dev, image, local_ctm, 1, NULL);
 }
 
 static void

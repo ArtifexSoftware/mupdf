@@ -149,7 +149,7 @@ epub_bound_page(fz_context *ctx, fz_page *page_)
 }
 
 static void
-epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	epub_page *page = (epub_page*)page_;
 	epub_document *doc = page->doc;
@@ -162,7 +162,7 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 		int cn = count_chapter_pages(ch);
 		if (n < count + cn)
 		{
-			fz_draw_html(ctx, dev, *ctm, ch->html, n-count);
+			fz_draw_html(ctx, dev, ctm, ch->html, n-count);
 			break;
 		}
 		count += cn;

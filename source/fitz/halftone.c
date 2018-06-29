@@ -156,11 +156,11 @@ typedef void (threshold_fn)(const unsigned char *ht_line, const unsigned char *p
 
 #ifdef ARCH_ARM
 static void
-do_threshold_1(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char *FZ_RESTRICT out, int w, int ht_len)
+do_threshold_1(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char * FZ_RESTRICT out, int w, int ht_len)
 __attribute__((naked));
 
 static void
-do_threshold_1(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char *FZ_RESTRICT out, int w, int ht_len)
+do_threshold_1(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char * FZ_RESTRICT out, int w, int ht_len)
 {
 	asm volatile(
 	ENTER_ARM
@@ -348,11 +348,11 @@ static void do_threshold_1(const unsigned char * FZ_RESTRICT ht_line, const unsi
 */
 #ifdef ARCH_ARM
 static void
-do_threshold_4(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char *FZ_RESTRICT out, int w, int ht_len)
+do_threshold_4(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char * FZ_RESTRICT out, int w, int ht_len)
 __attribute__((naked));
 
 static void
-do_threshold_4(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char *FZ_RESTRICT out, int w, int ht_len)
+do_threshold_4(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char * FZ_RESTRICT out, int w, int ht_len)
 {
 	asm volatile(
 	ENTER_ARM

@@ -293,7 +293,7 @@ pdf_load_type7_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 /* Load all of the shading dictionary parameters, then switch on the shading type. */
 
 static fz_shade *
-pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix *transform)
+pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, fz_matrix transform)
 {
 	fz_shade *shade = NULL;
 	pdf_function *func[FZ_MAX_COLORS] = { NULL };
@@ -314,7 +314,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 		shade->type = FZ_MESH_TYPE4;
 		shade->use_background = 0;
 		shade->use_function = 0;
-		shade->matrix = *transform;
+		shade->matrix = transform;
 		shade->bbox = fz_infinite_rect;
 
 		shade->colorspace = NULL;
@@ -458,13 +458,13 @@ pdf_load_shading(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "missing shading dictionary");
 
-		shade = pdf_load_shading_dict(ctx, doc, obj, &mat);
+		shade = pdf_load_shading_dict(ctx, doc, obj, mat);
 	}
 
 	/* Naked shading dictionary */
 	else
 	{
-		shade = pdf_load_shading_dict(ctx, doc, dict, &fz_identity);
+		shade = pdf_load_shading_dict(ctx, doc, dict, fz_identity);
 	}
 
 	pdf_store_item(ctx, dict, shade, fz_shade_size(ctx, shade));

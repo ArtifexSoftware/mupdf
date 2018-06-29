@@ -7,7 +7,7 @@
 
 typedef unsigned char byte;
 
-typedef void (paintfn_t)(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop);
+typedef void (paintfn_t)(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint *eop);
 
 static inline int lerp(int a, int b, int t)
 {
@@ -3868,7 +3868,7 @@ fz_gridfit_matrix(int as_tiled, fz_matrix m)
 /* Draw an image with an affine transform on destination */
 
 static void
-fz_paint_image_imp(fz_pixmap * FZ_RESTRICT dst, const fz_irect *scissor, fz_pixmap * FZ_RESTRICT shape, fz_pixmap * FZ_RESTRICT group_alpha, const fz_pixmap * FZ_RESTRICT img, const fz_matrix * FZ_RESTRICT ctm, const byte * FZ_RESTRICT color, int alpha, int lerp_allowed, int as_tiled, const fz_overprint * FZ_RESTRICT eop)
+fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, const byte *color, int alpha, int lerp_allowed, int as_tiled, const fz_overprint *eop)
 {
 	byte *dp, *sp, *hp, *gp;
 	int u, v, fa, fb, fc, fd;
@@ -3877,35 +3877,34 @@ fz_paint_image_imp(fz_pixmap * FZ_RESTRICT dst, const fz_irect *scissor, fz_pixm
 	fz_irect bbox;
 	int dolerp;
 	paintfn_t *paintfn;
-	fz_matrix local_ctm;
 	int is_rectilinear;
 
 	if (alpha == 0)
 		return;
 
 	/* grid fit the image */
-	local_ctm = fz_gridfit_matrix(as_tiled, *ctm);
+	ctm = fz_gridfit_matrix(as_tiled, ctm);
 
 	/* turn on interpolation for upscaled and non-rectilinear transforms */
 	dolerp = 0;
-	is_rectilinear = fz_is_rectilinear(local_ctm);
+	is_rectilinear = fz_is_rectilinear(ctm);
 	if (!is_rectilinear)
 		dolerp = lerp_allowed;
-	if (sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b) > img->w)
+	if (sqrtf(ctm.a * ctm.a + ctm.b * ctm.b) > img->w)
 		dolerp = lerp_allowed;
-	if (sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d) > img->h)
+	if (sqrtf(ctm.c * ctm.c + ctm.d * ctm.d) > img->h)
 		dolerp = lerp_allowed;
 
 	/* except when we shouldn't, at large magnifications */
 	if (!(img->flags & FZ_PIXMAP_FLAG_INTERPOLATE))
 	{
-		if (sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b) > img->w * 2)
+		if (sqrtf(ctm.a * ctm.a + ctm.b * ctm.b) > img->w * 2)
 			dolerp = 0;
-		if (sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d) > img->h * 2)
+		if (sqrtf(ctm.c * ctm.c + ctm.d * ctm.d) > img->h * 2)
 			dolerp = 0;
 	}
 
-	bbox = fz_irect_from_rect(fz_transform_rect(fz_unit_rect, local_ctm));
+	bbox = fz_irect_from_rect(fz_transform_rect(fz_unit_rect, ctm));
 	bbox = fz_intersect_irect(bbox, *scissor);
 
 	x = bbox.x0;
@@ -3934,21 +3933,21 @@ fz_paint_image_imp(fz_pixmap * FZ_RESTRICT dst, const fz_irect *scissor, fz_pixm
 		return;
 
 	/* map from screen space (x,y) to image space (u,v) */
-	local_ctm = fz_pre_scale(local_ctm, 1.0f / img->w, 1.0f / img->h);
-	local_ctm = fz_invert_matrix(local_ctm);
+	ctm = fz_pre_scale(ctm, 1.0f / img->w, 1.0f / img->h);
+	ctm = fz_invert_matrix(ctm);
 
-	fa = (int)(local_ctm.a *= 65536.0f);
-	fb = (int)(local_ctm.b *= 65536.0f);
-	fc = (int)(local_ctm.c *= 65536.0f);
-	fd = (int)(local_ctm.d *= 65536.0f);
-	local_ctm.e *= 65536.0f;
-	local_ctm.f *= 65536.0f;
+	fa = (int)(ctm.a *= 65536.0f);
+	fb = (int)(ctm.b *= 65536.0f);
+	fc = (int)(ctm.c *= 65536.0f);
+	fd = (int)(ctm.d *= 65536.0f);
+	ctm.e *= 65536.0f;
+	ctm.f *= 65536.0f;
 
 	/* Calculate initial texture positions. Do a half step to start. */
 	/* Bug 693021: Keep calculation in float for as long as possible to
 	 * avoid overflow. */
-	u = (int)((local_ctm.a * x) + (local_ctm.c * y) + local_ctm.e + ((local_ctm.a + local_ctm.c) * .5f));
-	v = (int)((local_ctm.b * x) + (local_ctm.d * y) + local_ctm.f + ((local_ctm.b + local_ctm.d) * .5f));
+	u = (int)((ctm.a * x) + (ctm.c * y) + ctm.e + ((ctm.a + ctm.c) * .5f));
+	v = (int)((ctm.b * x) + (ctm.d * y) + ctm.f + ((ctm.b + ctm.d) * .5f));
 
 	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
 	da = dst->alpha;
@@ -4063,14 +4062,14 @@ fz_paint_image_imp(fz_pixmap * FZ_RESTRICT dst, const fz_irect *scissor, fz_pixm
 }
 
 void
-fz_paint_image_with_color(fz_pixmap * FZ_RESTRICT dst, const fz_irect * FZ_RESTRICT scissor, fz_pixmap * FZ_RESTRICT shape, fz_pixmap * FZ_RESTRICT group_alpha, const fz_pixmap * FZ_RESTRICT img, const fz_matrix * FZ_RESTRICT ctm, const byte * FZ_RESTRICT color, int lerp_allowed, int as_tiled, const fz_overprint * FZ_RESTRICT eop)
+fz_paint_image_with_color(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, const byte *color, int lerp_allowed, int as_tiled, const fz_overprint *eop)
 {
 	assert(img->n == 1);
 	fz_paint_image_imp(dst, scissor, shape, group_alpha, img, ctm, color, 255, lerp_allowed, as_tiled, eop);
 }
 
 void
-fz_paint_image(fz_pixmap * FZ_RESTRICT dst, const fz_irect * FZ_RESTRICT scissor, fz_pixmap * FZ_RESTRICT shape, fz_pixmap * FZ_RESTRICT group_alpha, const fz_pixmap * FZ_RESTRICT img, const fz_matrix * FZ_RESTRICT ctm, int alpha, int lerp_allowed, int as_tiled, const fz_overprint * FZ_RESTRICT eop)
+fz_paint_image(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, int alpha, int lerp_allowed, int as_tiled, const fz_overprint *eop)
 {
 	fz_paint_image_imp(dst, scissor, shape, group_alpha, img, ctm, NULL, alpha, lerp_allowed, as_tiled, eop);
 }

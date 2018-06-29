@@ -252,7 +252,7 @@ static void fz_adjust_image_subarea(fz_context *ctx, fz_image *image, fz_irect *
 		subarea->y1 = image->h;
 }
 
-static void fz_compute_image_key(fz_context *ctx, fz_image *image, const fz_matrix *ctm,
+static void fz_compute_image_key(fz_context *ctx, fz_image *image, fz_matrix *ctm,
 	fz_image_key *key, const fz_irect *subarea, int l2factor, int *w, int *h, int *dw, int *dh)
 {
 	key->refs = 1;
@@ -1142,10 +1142,10 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 	ctm = fz_pre_scale(image->transform, w, h);
 
 	fz_clear_pixmap(ctx, pix); /* clear to transparent */
-	dev = fz_new_draw_device(ctx, &ctm, pix);
+	dev = fz_new_draw_device(ctx, ctm, pix);
 	fz_try(ctx)
 	{
-		fz_run_display_list(ctx, image->list, dev, &fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, image->list, dev, fz_identity, NULL, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)

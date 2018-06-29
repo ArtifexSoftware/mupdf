@@ -366,7 +366,7 @@ fz_bound_annot(fz_context *ctx, fz_annot *annot)
 }
 
 void
-fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
+fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
 	if (page && page->run_page_contents && page)
 	{
@@ -383,7 +383,7 @@ fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const fz_ma
 }
 
 void
-fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
+fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
 	if (annot && annot->run_annot)
 	{
@@ -400,7 +400,7 @@ fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *
 }
 
 void
-fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
+fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
 	fz_annot *annot;
 

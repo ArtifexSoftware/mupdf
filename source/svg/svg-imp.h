@@ -20,7 +20,7 @@ float svg_parse_length(const char *str, float percent, float font_size);
 float svg_parse_angle(const char *str);
 
 void svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb);
-void svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *ctm);
+fz_matrix svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix transform);
 
 int svg_is_whitespace_or_comma(int c);
 int svg_is_whitespace(int c);
@@ -30,6 +30,6 @@ int svg_is_digit(int c);
 /* Graphics content parsing. */
 
 void svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root);
-void svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *dev, const fz_matrix *ctm);
+void svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *dev, fz_matrix ctm);
 
 #endif

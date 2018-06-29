@@ -606,15 +606,14 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 			samples[0] *= fz_atof(fill_opacity_att);
 		xps_set_color(ctx, doc, colorspace, samples);
 
-		fz_fill_text(ctx, dev, text, &ctm,
-			doc->colorspace, doc->color, doc->alpha, NULL);
+		fz_fill_text(ctx, dev, text, ctm, doc->colorspace, doc->color, doc->alpha, NULL);
 	}
 
 	/* If it's a complex brush, use the charpath as a clip mask */
 
 	if (fill_tag)
 	{
-		fz_clip_text(ctx, dev, text, &ctm, &area);
+		fz_clip_text(ctx, dev, text, ctm, &area);
 		xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
 		fz_pop_clip(ctx, dev);
 	}

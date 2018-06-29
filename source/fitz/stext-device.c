@@ -91,13 +91,13 @@ add_text_block_to_page(fz_context *ctx, fz_stext_page *page)
 }
 
 static fz_stext_block *
-add_image_block_to_page(fz_context *ctx, fz_stext_page *page, const fz_matrix *ctm, fz_image *image)
+add_image_block_to_page(fz_context *ctx, fz_stext_page *page, fz_matrix ctm, fz_image *image)
 {
 	fz_stext_block *block = add_block_to_page(ctx, page);
 	block->type = FZ_STEXT_BLOCK_IMAGE;
-	block->u.i.transform = *ctm;
+	block->u.i.transform = ctm;
 	block->u.i.image = fz_keep_image(ctx, image);
-	block->bbox = fz_transform_rect(fz_unit_rect, *ctm);
+	block->bbox = fz_transform_rect(fz_unit_rect, ctm);
 	return block;
 }
 
@@ -494,61 +494,61 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_m
 }
 
 static void
-fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
+fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, *ctm);
+		fz_stext_extract(ctx, tdev, span, ctm);
 }
 
 static void
-fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
+fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, *ctm);
+		fz_stext_extract(ctx, tdev, span, ctm);
 }
 
 static void
-fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
+fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, *ctm);
+		fz_stext_extract(ctx, tdev, span, ctm);
 }
 
 static void
-fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
+fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, *ctm);
+		fz_stext_extract(ctx, tdev, span, ctm);
 }
 
 static void
-fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
+fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
-		fz_stext_extract(ctx, tdev, span, *ctm);
+		fz_stext_extract(ctx, tdev, span, ctm);
 }
 
 /* Images and shadings */
 
 static void
-fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 
@@ -560,7 +560,7 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_mat
 }
 
 static void
-fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm,
+fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ctm,
 		fz_colorspace *cspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_fill_image(ctx, dev, img, ctm, alpha, color_params);
@@ -586,7 +586,7 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 			fz_fill_pixmap_with_color(ctx, pix, shade->colorspace, shade->background, color_params);
 		else
 			fz_clear_pixmap(ctx, pix);
-		fz_paint_shade(ctx, shade, NULL, &ctm, pix, color_params, &bbox, NULL);
+		fz_paint_shade(ctx, shade, NULL, ctm, pix, color_params, &bbox, NULL);
 		img = fz_new_image_from_pixmap(ctx, pix, NULL);
 	}
 	fz_always(ctx)
@@ -604,13 +604,13 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 }
 
 static void
-fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
-	fz_matrix local_ctm = *ctm;
+	fz_matrix local_ctm = ctm;
 	const fz_rect *scissor = fz_device_current_scissor(ctx, dev);
 	fz_image *image = fz_new_image_from_shade(ctx, shade, &local_ctm, color_params, scissor);
 	fz_try(ctx)
-		fz_stext_fill_image(ctx, dev, image, &local_ctm, alpha, color_params);
+		fz_stext_fill_image(ctx, dev, image, local_ctm, alpha, color_params);
 	fz_always(ctx)
 		fz_drop_image(ctx, image);
 	fz_catch(ctx)

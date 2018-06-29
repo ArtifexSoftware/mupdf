@@ -211,7 +211,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -230,7 +230,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, cons
 
 	fz_try(ctx)
 	{
-		local_ctm = fz_concat(shade->matrix, *ctm);
+		local_ctm = fz_concat(shade->matrix, ctm);
 
 		if (shade->use_function)
 		{

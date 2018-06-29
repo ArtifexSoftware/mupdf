@@ -107,8 +107,8 @@ fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, int 
 	span->len++;
 }
 
-void
-fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language)
+fz_matrix
+fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language)
 {
 	fz_font *font;
 	int gid, ucs;
@@ -118,13 +118,15 @@ fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *tr
 	{
 		s += fz_chartorune(&ucs, s);
 		gid = fz_encode_character_with_fallback(ctx, user_font, ucs, 0, language, &font);
-		fz_show_glyph(ctx, text, font, *trm, gid, ucs, wmode, bidi_level, markup_dir, language);
+		fz_show_glyph(ctx, text, font, trm, gid, ucs, wmode, bidi_level, markup_dir, language);
 		adv = fz_advance_glyph(ctx, font, gid, wmode);
 		if (wmode == 0)
-			*trm = fz_pre_translate(*trm, adv, 0);
+			trm = fz_pre_translate(trm, adv, 0);
 		else
-			*trm = fz_pre_translate(*trm, 0, -adv);
+			trm = fz_pre_translate(trm, 0, -adv);
 	}
+
+	return trm;
 }
 
 fz_rect

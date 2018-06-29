@@ -39,13 +39,13 @@ static void svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, 
 static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->fill_opacity;
-	fz_fill_path(ctx, dev, path, state->fill_rule, &state->transform, fz_device_rgb(ctx), state->fill_color, opacity, NULL);
+	fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_color, opacity, NULL);
 }
 
 static void svg_stroke(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->stroke_opacity;
-	fz_stroke_path(ctx, dev, path, &state->stroke, &state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, NULL);
+	fz_stroke_path(ctx, dev, path, &state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, NULL);
 }
 
 static void svg_draw_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
@@ -316,7 +316,7 @@ svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 }
 
 static void
-svg_add_arc_segment(fz_context *ctx, fz_path *path, const fz_matrix *mtx, float th0, float th1, int iscw)
+svg_add_arc_segment(fz_context *ctx, fz_path *path, fz_matrix mtx, float th0, float th1, int iscw)
 {
 	float t, d;
 	fz_point p;
@@ -330,7 +330,7 @@ svg_add_arc_segment(fz_context *ctx, fz_path *path, const fz_matrix *mtx, float 
 	{
 		for (t = th0 + d; t < th1 - d/2; t += d)
 		{
-			p = fz_transform_point_xy(cosf(t), sinf(t), *mtx);
+			p = fz_transform_point_xy(cosf(t), sinf(t), mtx);
 			fz_lineto(ctx, path, p.x, p.y);
 		}
 	}
@@ -339,7 +339,7 @@ svg_add_arc_segment(fz_context *ctx, fz_path *path, const fz_matrix *mtx, float 
 		th0 += FZ_PI * 2;
 		for (t = th0 - d; t > th1 + d/2; t -= d)
 		{
-			p = fz_transform_point_xy(cosf(t), sinf(t), *mtx);
+			p = fz_transform_point_xy(cosf(t), sinf(t), mtx);
 			fz_lineto(ctx, path, p.x, p.y);
 		}
 	}
@@ -458,7 +458,7 @@ svg_add_arc(fz_context *ctx, fz_path *path,
 	}
 
 	mtx = fz_pre_scale(fz_pre_rotate(fz_translate(cx, cy), rotation_angle), rx, ry);
-	svg_add_arc_segment(ctx, path, &mtx, th1, th1 + dth, is_clockwise);
+	svg_add_arc_segment(ctx, path, mtx, th1, th1 + dth, is_clockwise);
 
 	fz_lineto(ctx, path, point_x, point_y);
 }
@@ -842,7 +842,6 @@ void
 svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
 	fz_stroke_state *stroke = &state->stroke;
-	fz_matrix *transform = &state->transform;
 
 	char *transform_att = fz_xml_att(node, "transform");
 
@@ -872,7 +871,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 
 	if (transform_att)
 	{
-		svg_parse_transform(ctx, doc, transform_att, transform);
+		state->transform = svg_parse_transform(ctx, doc, transform_att, state->transform);
 	}
 
 	if (font_size_att)
@@ -1156,14 +1155,14 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 }
 
 void
-svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *dev, const fz_matrix *ctm)
+svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *dev, fz_matrix ctm)
 {
 	svg_state state;
 
 	svg_parse_document_bounds(ctx, doc, root);
 
 	/* Initial graphics state */
-	state.transform = *ctm;
+	state.transform = ctm;
 	state.stroke = fz_default_stroke_state;
 
 	state.viewport_w = DEF_WIDTH;

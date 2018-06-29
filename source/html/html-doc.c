@@ -88,11 +88,11 @@ htdoc_bound_page(fz_context *ctx, fz_page *page_)
 }
 
 static void
-htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	fz_draw_html(ctx, dev, *ctm, doc->html, page->number);
+	fz_draw_html(ctx, dev, ctm, doc->html, page->number);
 }
 
 static fz_link *

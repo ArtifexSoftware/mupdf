@@ -12,7 +12,7 @@ fz_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 int xps_count_pages(fz_context *ctx, fz_document *doc);
 fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int number);
 fz_outline *xps_load_outline(fz_context *ctx, fz_document *doc);
-void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
+void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
 fz_link *xps_load_links(fz_context *ctx, fz_page *page);
 int xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
 

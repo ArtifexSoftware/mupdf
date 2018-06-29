@@ -12,7 +12,7 @@ fz_new_display_list_from_page(fz_context *ctx, fz_page *page)
 	fz_try(ctx)
 	{
 		dev = fz_new_list_device(ctx, list);
-		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -55,7 +55,7 @@ fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
 	fz_try(ctx)
 	{
 		dev = fz_new_list_device(ctx, list);
-		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -82,7 +82,7 @@ fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
 	fz_try(ctx)
 	{
 		dev = fz_new_list_device(ctx, list);
-		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
+		fz_run_annot(ctx, annot, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -99,7 +99,7 @@ fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
 }
 
 fz_pixmap *
-fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
+fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -107,7 +107,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 	fz_device *dev = NULL;
 
 	rect = fz_bound_display_list(ctx, list);
-	rect = fz_transform_rect(rect, *ctm);
+	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
@@ -119,7 +119,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
-		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, list, dev, fz_identity, NULL, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -136,7 +136,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
+fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -144,7 +144,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	fz_device *dev = NULL;
 
 	rect = fz_bound_page(ctx, page);
-	rect = fz_transform_rect(rect, *ctm);
+	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
@@ -156,7 +156,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
-		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -173,7 +173,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 }
 
 fz_pixmap *
-fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
+fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, fz_matrix ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -181,7 +181,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	fz_device *dev = NULL;
 
 	rect = fz_bound_annot(ctx, annot);
-	rect = fz_transform_rect(rect, *ctm);
+	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
@@ -193,7 +193,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
-		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
+		fz_run_annot(ctx, annot, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -210,7 +210,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
+fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -218,7 +218,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	fz_device *dev = NULL;
 
 	rect = fz_bound_page(ctx, page);
-	rect = fz_transform_rect(rect, *ctm);
+	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
@@ -230,7 +230,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
-		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -247,7 +247,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
+fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha)
 {
 	fz_page *page;
 	fz_pixmap *pix = NULL;
@@ -275,7 +275,7 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, cons
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
-		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, list, dev, fz_identity, NULL, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -304,7 +304,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
-		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)

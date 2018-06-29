@@ -122,8 +122,7 @@ void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm,
 
 	font: The font the string should be added in.
 
-	trm: The transform to use. Will be updated according
-	to the advance of the string on exit.
+	trm: The transform to use.
 
 	s: The utf-8 string to add.
 
@@ -137,9 +136,9 @@ void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm,
 	language: The language in use (if known, 0 otherwise)
 	(e.g. FZ_LANG_zh_Hans).
 
-	Throws exception on failure to allocate.
+	Returns the transform updated with the advance width of the string.
 */
-void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
+fz_matrix fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
 
 /*
 	fz_bound_text: Find the bounds of a given text object.

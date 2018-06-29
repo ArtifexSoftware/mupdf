@@ -134,7 +134,7 @@ typedef fz_rect (fz_page_bound_page_fn)(fz_context *ctx, fz_page *page);
 	contents of a page. See fz_run_page_contents for more
 	information.
 */
-typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	fz_page_load_links_fn: Type for a function to load the links
@@ -187,7 +187,7 @@ typedef int (fz_page_uses_overprint_fn)(fz_context *ctx, fz_page *page);
 typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_rect (fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot);
-typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	Structure definition is public so other classes can
@@ -490,7 +490,7 @@ fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
 	fields inside cookie are continually updated while the page is
 	rendering.
 */
-void fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+void fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	fz_run_page_contents: Run a page through a device. Just the main
@@ -512,7 +512,7 @@ void fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix
 	fields inside cookie are continually updated while the page is
 	rendering.
 */
-void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	fz_run_annot: Run an annotation through a device.
@@ -535,7 +535,7 @@ void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const 
 	fields inside cookie are continually updated while the page is
 	rendering.
 */
-void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	fz_keep_page: Keep a reference to a loaded page.

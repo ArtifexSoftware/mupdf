@@ -436,7 +436,7 @@ filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
 	}
 
 	if (p->text_filter)
-		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, &trm, &p->tos.char_bbox);
+		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, trm, p->tos.char_bbox);
 
 	pdf_tos_move_after_char(ctx, &p->tos);
 
@@ -1040,7 +1040,7 @@ pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 		fz_matrix ctm = fz_concat(p->gstate->sent.ctm, p->gstate->pending.ctm);
 		if (p->chain->op_q)
 			p->chain->op_q(ctx, p->chain);
-		p->after_text(ctx, p->opaque, p->doc, p->chain, &ctm);
+		p->after_text(ctx, p->opaque, p->doc, p->chain, ctm);
 		if (p->chain->op_Q)
 			p->chain->op_Q(ctx, p->chain);
 	}
