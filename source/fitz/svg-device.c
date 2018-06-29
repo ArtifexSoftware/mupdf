@@ -855,14 +855,11 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 		id = sdev->id++;
 		out = start_def(ctx, sdev);
 		fz_write_printf(ctx, out, "<symbol id=\"im%d\" viewBox=\"0 0 %d %d\">\n", id, img->w, img->h);
-	}
 
-	fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
-	fz_write_image_as_data_uri(ctx, out, img);
-	fz_write_printf(ctx, out, "\"/>\n");
+		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
+		fz_write_image_as_data_uri(ctx, out, img);
+		fz_write_printf(ctx, out, "\"/>\n");
 
-	if (sdev->reuse_images)
-	{
 		fz_write_printf(ctx, out, "</symbol>\n");
 		out = end_def(ctx, sdev);
 
@@ -872,6 +869,12 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 
 		fz_write_printf(ctx, out, "<use xlink:href=\"#im%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
 				id, img->w, img->h);
+	}
+	else
+	{
+		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
+		fz_write_image_as_data_uri(ctx, out, img);
+		fz_write_printf(ctx, out, "\"/>\n");
 	}
 }
 
