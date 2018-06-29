@@ -903,7 +903,7 @@ static const char *full_font_name(const char **name)
 static void
 write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res,
 	const char *text, const char *fontname, float size, float color[3], int q,
-	float w, float h, float padding, int multiline, int comb)
+	float w, float h, float xpadding, float ypadding, int multiline, int comb)
 {
 	pdf_obj *res_font;
 	fz_font *font;
@@ -913,8 +913,8 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 	font = fz_new_base14_font(ctx, full_font_name(&fontname));
 	fz_try(ctx)
 	{
-		w -= padding * 2;
-		h -= padding * 2;
+		w -= xpadding * 2;
+		h -= ypadding * 2;
 
 		if (size == 0)
 		{
@@ -942,13 +942,13 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		if (comb > 0)
 		{
 			float ty = (h - size) / 2;
-			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline-ty);
+			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding, ypadding+h-baseline-ty);
 			write_comb_string(ctx, buf, text, text + strlen(text), font, (w * 1000 / size) / comb);
 		}
 		else if (multiline)
 		{
 			fz_append_printf(ctx, buf, "%g TL\n", lineheight);
-			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h+(size-baseline));
+			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding, ypadding+h+(size-baseline));
 			write_simple_string_with_quadding(ctx, buf, font, size, text, w, q);
 		}
 		else
@@ -962,7 +962,7 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 				else
 					tx = (w - tw);
 			}
-			fz_append_printf(ctx, buf, "%g %g Td\n", padding+tx, padding+h-baseline-ty);
+			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding+tx, ypadding+h-baseline-ty);
 			write_simple_string(ctx, buf, text, text + strlen(text));
 			fz_append_printf(ctx, buf, " Tj\n");
 		}
@@ -1008,7 +1008,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
-	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1, 0);
+	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, b*2, 1, 0);
 }
 
 static void
@@ -1049,12 +1049,12 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (ff & Ff_Comb)
 	{
 		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, maxlen);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, 0, maxlen);
 	}
 	else if (ff & Ff_Multiline)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 1, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2+2, b*2, 1, 0);
 	else
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, 0, 0);
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2+2, b*2, 0, 0);
 
 	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
