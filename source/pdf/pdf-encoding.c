@@ -123,3 +123,22 @@ int pdf_greek_from_unicode(int u)
 	}
 	return -1;
 }
+
+int pdf_winansi_from_unicode(int u)
+{
+	int l = 0;
+	int r = nelem(winansi_from_unicode) - 1;
+	if (u < 128)
+		return u;
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		if (u < winansi_from_unicode[m].u)
+			r = m - 1;
+		else if (u > winansi_from_unicode[m].u)
+			l = m + 1;
+		else
+			return winansi_from_unicode[m].c;
+	}
+	return -1;
+}

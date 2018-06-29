@@ -2,6 +2,7 @@
 #
 # ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MISC/KOI8-U.TXT
 # ftp://ftp.unicode.org/Public/MAPPINGS/ISO8859/8859-7.TXT
+# ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT
 #
 
 glyphs = {}
@@ -15,7 +16,8 @@ for line in open("scripts/glyphlist.txt").readlines():
 def load_table(fn):
 	table = [0] * 256
 	for line in open(fn).readlines():
-		if line[0] != '#':
+		line = line.strip()
+		if line[0] != '#' and not line.endswith("#UNDEFINED"):
 			line = line.split()
 			c = int(line[0][2:], base=16)
 			u = int(line[1][2:], base=16)
@@ -47,3 +49,4 @@ def dump_table(name, table):
 
 dump_table("koi8u", load_table("scripts/KOI8-U.TXT"))
 dump_table("iso8859_7", load_table("scripts/8859-7.TXT"))
+dump_table("winansi", load_table("scripts/CP1252.TXT"))

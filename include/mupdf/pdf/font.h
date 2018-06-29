@@ -35,6 +35,7 @@ extern const char *pdf_glyph_name_from_iso8859_7[256];
 
 int pdf_cyrillic_from_unicode(int u);
 int pdf_greek_from_unicode(int u);
+int pdf_winansi_from_unicode(int u);
 
 typedef struct pdf_font_desc_s pdf_font_desc;
 typedef struct pdf_hmtx_s pdf_hmtx;
