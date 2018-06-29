@@ -324,7 +324,7 @@ struct fz_pclm_writer_s
 };
 
 static fz_device *
-pclm_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+pclm_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_pclm_writer *wri = (fz_pclm_writer*)wri_;
 	return fz_new_draw_device_with_options(ctx, &wri->draw, mediabox, &wri->pixmap);

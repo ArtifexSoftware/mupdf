@@ -539,7 +539,7 @@ static void winblit(pdfapp_t *app)
 
 		if (gapp.iscopying || justcopied)
 		{
-			pdfapp_invert(&gapp, &gapp.selr);
+			pdfapp_invert(&gapp, gapp.selr);
 			justcopied = 1;
 		}
 
@@ -582,7 +582,7 @@ static void winblit(pdfapp_t *app)
 
 		if (gapp.iscopying || justcopied)
 		{
-			pdfapp_invert(&gapp, &gapp.selr);
+			pdfapp_invert(&gapp, gapp.selr);
 			justcopied = 1;
 		}
 	}

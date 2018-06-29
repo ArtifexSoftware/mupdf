@@ -151,7 +151,7 @@ int fz_font_is_monospaced(fz_context *ctx, fz_font *font);
 	Returns a pointer to the font bbox (or NULL if the
 	font is NULL).
 */
-fz_rect *fz_font_bbox(fz_context *ctx, fz_font *font);
+fz_rect fz_font_bbox(fz_context *ctx, fz_font *font);
 
 /*
 	fz_load_system_font_fn: Type for user supplied system font loading hook.

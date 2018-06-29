@@ -119,7 +119,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matri
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
-		fz_run_display_list(ctx, list, dev, fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -275,7 +275,7 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, cons
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
-		fz_run_display_list(ctx, list, dev, fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)

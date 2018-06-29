@@ -796,7 +796,7 @@ pdf_obj *pdf_graft_mapped_object(fz_context *ctx, pdf_graft_map *map, pdf_obj *o
 	pcontents: Pointer to a place to put the created
 	contents buffer.
 */
-fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, pdf_obj **presources, fz_buffer **pcontents);
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, fz_rect mediabox, pdf_obj **presources, fz_buffer **pcontents);
 
 /*
 	pdf_add_page: Create a pdf_obj within a document that

@@ -68,19 +68,19 @@ static void save_pdf_dialog(void)
 	}
 }
 
-static int rects_differ(const fz_rect *a, const fz_rect *b, float threshold)
+static int rects_differ(fz_rect a, fz_rect b, float threshold)
 {
-	if (fz_abs(a->x0 - b->x0) > threshold) return 1;
-	if (fz_abs(a->y0 - b->y0) > threshold) return 1;
-	if (fz_abs(a->x1 - b->x1) > threshold) return 1;
-	if (fz_abs(a->y1 - b->y1) > threshold) return 1;
+	if (fz_abs(a.x0 - b.x0) > threshold) return 1;
+	if (fz_abs(a.y0 - b.y0) > threshold) return 1;
+	if (fz_abs(a.x1 - b.x1) > threshold) return 1;
+	if (fz_abs(a.y1 - b.y1) > threshold) return 1;
 	return 0;
 }
 
-static int points_differ(const fz_point *a, const fz_point *b, float threshold)
+static int points_differ(fz_point a, fz_point b, float threshold)
 {
-	if (fz_abs(a->x - b->x) > threshold) return 1;
-	if (fz_abs(a->y - b->y) > threshold) return 1;
+	if (fz_abs(a.x - b.x) > threshold) return 1;
+	if (fz_abs(a.y - b.y) > threshold) return 1;
 	return 0;
 }
 
@@ -836,7 +836,7 @@ static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 		if (!ui.down)
 		{
 			state = ER_NONE;
-			if (rects_differ(&start_rect, rect, 1))
+			if (rects_differ(start_rect, *rect, 1))
 			{
 				fz_rect trect = fz_transform_rect(*rect, view_page_inv_ctm);
 				pdf_set_annot_rect(ctx, selected_annot, trect);
@@ -903,7 +903,7 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 		if (!ui.down)
 		{
 			state = EL_NONE;
-			if (points_differ(&start_a, &a, 1) || points_differ(&start_b, &b, 1))
+			if (points_differ(start_a, a, 1) || points_differ(start_b, b, 1))
 			{
 				a = fz_transform_point(a, view_page_inv_ctm);
 				b = fz_transform_point(b, view_page_inv_ctm);

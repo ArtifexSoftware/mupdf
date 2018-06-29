@@ -526,7 +526,7 @@ pdf_dev_end_text(fz_context *ctx, pdf_device *pdev)
 }
 
 static int
-pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz_rect *bbox, int isolated, int knockout, float alpha, fz_colorspace *colorspace)
+pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect bbox, int isolated, int knockout, float alpha, fz_colorspace *colorspace)
 {
 	pdf_document *doc = pdev->doc;
 	int num;
@@ -605,7 +605,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		pdf_dict_put(ctx, form, PDF_NAME(Subtype), PDF_NAME(Form));
 		pdf_dict_put(ctx, form, PDF_NAME(Group), group_ref);
 		pdf_dict_put_int(ctx, form, PDF_NAME(FormType), 1);
-		pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), *bbox);
+		pdf_dict_put_rect(ctx, form, PDF_NAME(BBox), bbox);
 		*form_ref = pdf_add_object(ctx, doc, form);
 	}
 	fz_always(ctx)
@@ -662,7 +662,7 @@ pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
-pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, const fz_rect *scissor)
+pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
@@ -676,7 +676,7 @@ pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 }
 
 static void
-pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
@@ -731,7 +731,7 @@ pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
+pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
@@ -745,7 +745,7 @@ pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 }
 
 static void
-pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
@@ -871,7 +871,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 }
 
 static void
-pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, const fz_rect *scissor)
+pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
@@ -891,7 +891,7 @@ pdf_dev_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
@@ -975,7 +975,7 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
+pdf_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
@@ -1029,7 +1029,7 @@ pdf_dev_end_group(fz_context *ctx, fz_device *dev)
 }
 
 static int
-pdf_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, fz_matrix ctm, int id)
+pdf_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm, int id)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
@@ -1078,7 +1078,7 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topctm, const fz_rect *mediabox, pdf_obj *resources, fz_buffer *buf)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topctm, fz_rect mediabox, pdf_obj *resources, fz_buffer *buf)
 {
 	pdf_device *dev = fz_new_derived_device(ctx, pdf_device);
 
@@ -1145,10 +1145,9 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 	return (fz_device*)dev;
 }
 
-fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
-	const fz_rect *mediabox, pdf_obj **presources, fz_buffer **pcontents)
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, fz_rect mediabox, pdf_obj **presources, fz_buffer **pcontents)
 {
-	fz_matrix pagectm = { 1, 0, 0, -1, -mediabox->x0, mediabox->y1 };
+	fz_matrix pagectm = { 1, 0, 0, -1, -mediabox.x0, mediabox.y1 };
 	*presources = pdf_new_dict(ctx, doc, 0);
 	*pcontents = fz_new_buffer(ctx, 0);
 	return pdf_new_pdf_device(ctx, doc, pagectm, mediabox, *presources, *pcontents);

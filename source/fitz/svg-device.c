@@ -617,7 +617,7 @@ svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
-svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, const fz_rect *scissor)
+svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -637,7 +637,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 }
 
 static void
-svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 
@@ -718,7 +718,7 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
+svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -758,7 +758,7 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 }
 
 static void
-svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 
@@ -919,7 +919,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 
 	fz_try(ctx)
 	{
-		fz_paint_shade(ctx, shade, NULL, ctm, pix, color_params, &bbox, NULL);
+		fz_paint_shade(ctx, shade, NULL, ctm, pix, color_params, bbox, NULL);
 		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix, color_params);
 		if (alpha != 1.0f)
 			fz_write_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);
@@ -966,7 +966,7 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 }
 
 static void
-svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, const fz_rect *scissor)
+svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -999,7 +999,7 @@ svg_dev_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-svg_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+svg_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -1028,7 +1028,7 @@ svg_dev_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-svg_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
+svg_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -1050,7 +1050,7 @@ svg_dev_end_group(fz_context *ctx, fz_device *dev)
 }
 
 static int
-svg_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, fz_matrix ctm, int id)
+svg_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm, int id)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -1066,8 +1066,8 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 	}
 	num = sdev->num_tiles++;
 	t = &sdev->tiles[num];
-	t->area = *area;
-	t->view = *view;
+	t->area = area;
+	t->view = view;
 	t->ctm = ctm;
 	t->pattern = sdev->id++;
 	t->step.x = xstep;

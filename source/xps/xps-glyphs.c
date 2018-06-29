@@ -613,7 +613,7 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 
 	if (fill_tag)
 	{
-		fz_clip_text(ctx, dev, text, ctm, &area);
+		fz_clip_text(ctx, dev, text, ctm, area);
 		xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
 		fz_pop_clip(ctx, dev);
 	}

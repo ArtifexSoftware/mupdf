@@ -61,7 +61,7 @@ fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 	for example scaling and rotation, see fz_scale, fz_rotate and
 	fz_concat. Set to fz_identity if no transformation is desired.
 
-	area: Only the part of the contents of the display list
+	scissor: Only the part of the contents of the display list
 	visible within this area will be considered when the list is
 	run through the device. This does not imply for tile objects
 	contained in the display list.
@@ -73,7 +73,7 @@ fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 	progress information back to the caller. The fields inside
 	cookie are continually updated while the page is being run.
 */
-void fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_matrix ctm, const fz_rect *area, fz_cookie *cookie);
+void fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_rect scissor, fz_cookie *cookie);
 
 /*
 	fz_keep_display_list: Keep a reference to a display list.

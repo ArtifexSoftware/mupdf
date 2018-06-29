@@ -410,7 +410,7 @@ struct fz_pwg_writer_s
 };
 
 static fz_device *
-pwg_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+pwg_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_pwg_writer *wri = (fz_pwg_writer*)wri_;
 	return fz_new_draw_device_with_options(ctx, &wri->draw, mediabox, &wri->pixmap);

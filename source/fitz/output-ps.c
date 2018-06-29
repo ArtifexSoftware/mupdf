@@ -290,7 +290,7 @@ struct fz_ps_writer_s
 };
 
 static fz_device *
-ps_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+ps_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_ps_writer *wri = (fz_ps_writer*)wri_;
 	wri->count++;

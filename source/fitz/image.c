@@ -1145,7 +1145,7 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 	dev = fz_new_draw_device(ctx, ctm, pix);
 	fz_try(ctx)
 	{
-		fz_run_display_list(ctx, image->list, dev, fz_identity, NULL, NULL);
+		fz_run_display_list(ctx, image->list, dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)

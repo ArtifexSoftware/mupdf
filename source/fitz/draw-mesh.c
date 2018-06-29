@@ -99,7 +99,7 @@ static inline void step_edge(edge_data *edge, int n)
 }
 
 static void
-fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, const fz_irect *bbox)
+fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, fz_irect bbox)
 {
 	edge_data e0, e1;
 	int top, mid, bot;
@@ -113,19 +113,19 @@ fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, const fz_irect *bbox)
 	if (v[top][1] == v[bot][1]) return;
 
 	/* Test if the triangle is completely outside the scissor rect */
-	if (v[bot][1] < bbox->y0) return;
-	if (v[top][1] > bbox->y1) return;
+	if (v[bot][1] < bbox.y0) return;
+	if (v[top][1] > bbox.y1) return;
 
 	/* Magic! Ensure that mid/top/bot are all different */
 	mid = 3^top^bot;
 
 	assert(top != bot && top != mid && mid != bot);
 
-	minx = fz_maxi(bbox->x0, pix->x);
-	maxx = fz_mini(bbox->x1, pix->x + pix->w);
+	minx = fz_maxi(bbox.x0, pix->x);
+	maxx = fz_mini(bbox.x1, pix->x + pix->w);
 
-	y = ceilf(fz_max(bbox->y0, v[top][1]));
-	y1 = ceilf(fz_min(bbox->y1, v[mid][1]));
+	y = ceilf(fz_max(bbox.y0, v[top][1]));
+	y1 = ceilf(fz_min(bbox.y1, v[mid][1]));
 
 	n -= 2;
 	prepare_edge(v[top], v[bot], &e0, y, n);
@@ -143,7 +143,7 @@ fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, const fz_irect *bbox)
 		while (y < y1);
 	}
 
-	y1 = ceilf(fz_min(bbox->y1, v[bot][1]));
+	y1 = ceilf(fz_min(bbox.y1, v[bot][1]));
 	if (y < y1)
 	{
 		prepare_edge(v[mid], v[bot], &e1, y, n);
@@ -165,7 +165,7 @@ struct paint_tri_data
 {
 	const fz_shade *shade;
 	fz_pixmap *dest;
-	const fz_irect *bbox;
+	fz_irect bbox;
 	fz_color_converter cc;
 };
 
@@ -211,7 +211,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, fz_irect bbox, const fz_overprint *op)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -234,9 +234,8 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 
 		if (shade->use_function)
 		{
-			/* We need to use alpha = 1 here, because the shade might not fill
-			 * the bbox. */
-			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), *bbox, NULL, 1);
+			/* We need to use alpha = 1 here, because the shade might not fill the bbox. */
+			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 1);
 			fz_clear_pixmap(ctx, temp);
 		}
 		else
@@ -275,7 +274,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 				int n = fz_colorspace_n(ctx, colorspace);
 
 				/* alpha = 1 here for the same reason as earlier */
-				conv = fz_new_pixmap_with_bbox(ctx, colorspace, *bbox, NULL, 1);
+				conv = fz_new_pixmap_with_bbox(ctx, colorspace, bbox, NULL, 1);
 				d = conv->samples;
 				while (hh--)
 				{
@@ -322,7 +321,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 				}
 				fz_drop_color_converter(ctx, &cc);
 
-				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, *bbox, dest->seps, 1);
+				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, dest->seps, 1);
 				d = conv->samples;
 				da = conv->alpha;
 				while (hh--)

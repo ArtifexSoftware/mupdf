@@ -164,7 +164,7 @@ void pdfapp_autozoom_horizontal(pdfapp_t *app);
 void pdfapp_autozoom_vertical(pdfapp_t *app);
 void pdfapp_autozoom(pdfapp_t *app);
 
-void pdfapp_invert(pdfapp_t *app, const fz_rect *rect);
+void pdfapp_invert(pdfapp_t *app, fz_rect rect);
 void pdfapp_inverthit(pdfapp_t *app);
 
 void pdfapp_postblit(pdfapp_t *app);

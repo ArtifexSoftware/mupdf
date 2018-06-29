@@ -51,7 +51,7 @@ static void runpage(fz_context *ctx, fz_document *doc, int number)
 		if (use_display_list)
 		{
 			list = fz_new_display_list_from_page(ctx, page);
-			fz_run_display_list(ctx, list, dev, fz_identity, NULL, NULL);
+			fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, NULL);
 		}
 		else
 		{

@@ -1307,7 +1307,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 	dev = fz_new_bbox_device(ctx, &font->bbox_table[gid]);
 	fz_try(ctx)
 	{
-		fz_run_display_list(ctx, list, dev, font->t3matrix, &fz_infinite_rect, NULL);
+		fz_run_display_list(ctx, list, dev, font->t3matrix, fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -1401,7 +1401,7 @@ fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_devic
 		return;
 
 	ctm = fz_concat(font->t3matrix, trm);
-	fz_run_display_list(ctx, list, dev, ctm, &fz_infinite_rect, NULL);
+	fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, NULL);
 }
 
 fz_pixmap *
@@ -1791,9 +1791,9 @@ fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font)
 	return font ? font->t3procs : NULL;
 }
 
-fz_rect *fz_font_bbox(fz_context *ctx, fz_font *font)
+fz_rect fz_font_bbox(fz_context *ctx, fz_font *font)
 {
-	return font ? &font->bbox : NULL;
+	return font->bbox;
 }
 
 void *fz_font_ft_face(fz_context *ctx, fz_font *font)

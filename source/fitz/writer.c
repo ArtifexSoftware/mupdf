@@ -185,7 +185,7 @@ fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 }
 
 fz_device *
-fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox)
+fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox)
 {
 	if (!wri)
 		return NULL;

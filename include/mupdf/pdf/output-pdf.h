@@ -11,7 +11,7 @@
 	is not an array, and that is it not shared with other objects/pages.
 */
 fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topctm,
-		const fz_rect *mediabox, pdf_obj *resources, fz_buffer *contents);
+		fz_rect mediabox, pdf_obj *resources, fz_buffer *contents);
 
 void pdf_localise_page_resources(fz_context *ctx, pdf_document *doc);
 

@@ -20,7 +20,7 @@ struct fz_cbz_writer_s
 };
 
 static fz_device *
-cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
 	return fz_new_draw_device_with_options(ctx, &wri->options, mediabox, &wri->pixmap);
@@ -105,7 +105,7 @@ struct fz_pixmap_writer_s
 };
 
 static fz_device *
-pixmap_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+pixmap_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
 	return fz_new_draw_device_with_options(ctx, &wri->options, mediabox, &wri->pixmap);

@@ -82,31 +82,31 @@ fz_bbox_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 }
 
 static void
-fz_bbox_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, const fz_rect *scissor)
+fz_bbox_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
 {
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, NULL, ctm), 1);
 }
 
 static void
-fz_bbox_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+fz_bbox_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, stroke, ctm), 1);
 }
 
 static void
-fz_bbox_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, const fz_rect *scissor)
+fz_bbox_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm, fz_rect scissor)
 {
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, NULL, ctm), 1);
 }
 
 static void
-fz_bbox_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, const fz_rect *scissor)
+fz_bbox_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, stroke, ctm), 1);
 }
 
 static void
-fz_bbox_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, const fz_rect *scissor)
+fz_bbox_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, fz_rect scissor)
 {
 	fz_bbox_add_rect(ctx, dev, fz_transform_rect(fz_unit_rect, ctm), 1);
 }
@@ -122,10 +122,10 @@ fz_bbox_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_bbox_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+fz_bbox_begin_mask(fz_context *ctx, fz_device *dev, fz_rect rect, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
 	fz_bbox_device *bdev = (fz_bbox_device*)dev;
-	fz_bbox_add_rect(ctx, dev, *rect, 1);
+	fz_bbox_add_rect(ctx, dev, rect, 1);
 	bdev->ignore++;
 }
 
@@ -138,9 +138,9 @@ fz_bbox_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_bbox_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
+fz_bbox_begin_group(fz_context *ctx, fz_device *dev, fz_rect rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
-	fz_bbox_add_rect(ctx, dev, *rect, 1);
+	fz_bbox_add_rect(ctx, dev, rect, 1);
 }
 
 static void
@@ -150,10 +150,10 @@ fz_bbox_end_group(fz_context *ctx, fz_device *dev)
 }
 
 static int
-fz_bbox_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, fz_matrix ctm, int id)
+fz_bbox_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm, int id)
 {
 	fz_bbox_device *bdev = (fz_bbox_device*)dev;
-	fz_bbox_add_rect(ctx, dev, fz_transform_rect(*area, ctm), 0);
+	fz_bbox_add_rect(ctx, dev, fz_transform_rect(area, ctm), 0);
 	bdev->ignore++;
 	return 0;
 }

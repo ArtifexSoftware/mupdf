@@ -78,7 +78,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 			else
 				colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
 
-			fz_begin_group(ctx, dev, &mediabox, colorspace, 1, 0, 0, 1);
+			fz_begin_group(ctx, dev, mediabox, colorspace, 1, 0, 0, 1);
 			fz_drop_colorspace(ctx, colorspace);
 			colorspace = NULL;
 		}
