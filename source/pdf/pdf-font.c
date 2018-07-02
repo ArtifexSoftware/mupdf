@@ -1480,49 +1480,6 @@ pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc)
 
 /* Font creation */
 
-fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, size_t len, fz_rect *acc)
-{
-	size_t i;
-	int w = 0;
-
-	for (i = 0; i < len; i++)
-		w += pdf_lookup_hmtx(ctx, fontdesc, buf[i]).w;
-
-	acc->x0 = 0;
-	acc->x1 = w / 1000.0f;
-	acc->y0 = fontdesc->descent / 1000.0f;
-	acc->y1 = fontdesc->ascent / 1000.0f;
-
-	return acc;
-}
-
-float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, size_t len, float room, size_t *count)
-{
-	pdf_hmtx h;
-	size_t i = 0;
-	float x = 0.0f;
-
-	while(i < len)
-	{
-		float span;
-
-		h = pdf_lookup_hmtx(ctx, fontdesc, buf[i]);
-
-		span = h.w * fontsize / 1000.0f;
-
-		if (x + span > room)
-			break;
-
-		x += span;
-		i ++;
-	}
-
-	if (count)
-		*count = i;
-
-	return x;
-}
-
 static pdf_obj*
 pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
