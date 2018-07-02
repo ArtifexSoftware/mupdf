@@ -266,6 +266,13 @@ void render_page(void)
 		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
 	}
 
+	if (pdf)
+	{
+		pdf_annot *annot;
+		for (annot = page->annots; annot; annot = annot->next)
+			annot->has_new_ap = 0;
+	}
+
 	ui_texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 }
@@ -573,8 +580,8 @@ static void do_forms(void)
 		{
 			if (pdf->focus)
 				ui.active = &do_forms_tag;
-			pdf_update_page(ctx, (pdf_page*)page);
-			render_page();
+			if (pdf_update_page(ctx, page))
+				render_page();
 		}
 	}
 	else if (ui.active == &do_forms_tag && !ui.down)
@@ -585,8 +592,8 @@ static void do_forms(void)
 		event.event.pointer.ptype = PDF_POINTER_UP;
 		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
 		{
-			pdf_update_page(ctx, (pdf_page*)page);
-			render_page();
+			if (pdf_update_page(ctx, page))
+				render_page();
 		}
 	}
 }

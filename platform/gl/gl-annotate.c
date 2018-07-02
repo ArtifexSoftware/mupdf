@@ -357,7 +357,7 @@ static void do_annotate_contents(void)
 		pdf_set_annot_contents(ctx, selected_annot, input.text);
 }
 
-static void do_widget_value()
+static void do_widget_value(void)
 {
 	int ff, type;
 	char *value;
@@ -380,7 +380,8 @@ static void do_widget_value()
 		if (ui_input(&input, 0, (ff & Ff_Multiline) ? 5 : 1) >= UI_INPUT_EDIT)
 		{
 			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, input.text);
-			pdf_dirty_annot(ctx, selected_annot);
+			if (pdf_update_page(ctx, selected_annot->page))
+				render_page();
 		}
 	}
 	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
@@ -396,7 +397,8 @@ static void do_widget_value()
 		if (choice >= 0)
 		{
 			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, options[choice]);
-			pdf_dirty_annot(ctx, selected_annot);
+			if (pdf_update_page(ctx, selected_annot->page))
+				render_page();
 		}
 		fz_free(ctx, value);
 		fz_free(ctx, options);
