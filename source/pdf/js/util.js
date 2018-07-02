@@ -1,3 +1,8 @@
+Error.prototype.toString = function() {
+	if (this.stackTrace) return this.name + ': ' + this.message + this.stackTrace;
+	return this.name + ': ' + this.message;
+};
+
 var MuPDF = {
 	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
 	monthName: [
