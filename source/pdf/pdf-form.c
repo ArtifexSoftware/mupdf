@@ -42,14 +42,10 @@ static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 	if (kids)
 	{
 		int i, n = pdf_array_len(ctx, kids);
-
 		for (i = 0; i < n; i++)
 			pdf_field_mark_dirty(ctx, doc, pdf_array_get(ctx, kids, i));
 	}
-	else
-	{
-		pdf_dirty_obj(ctx, field);
-	}
+	pdf_dirty_obj(ctx, field);
 }
 
 static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const char *text)
@@ -622,14 +618,18 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	return changed;
 }
 
-void pdf_update_page(fz_context *ctx, pdf_page *page)
+int
+pdf_update_page(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
-
+	int changed = 0;
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		pdf_update_annot(ctx, annot);
+		if (annot->has_new_ap)
+			changed = 1;
 	}
+	return changed;
 }
 
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc)
