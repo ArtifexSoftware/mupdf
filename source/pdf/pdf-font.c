@@ -1083,7 +1083,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		/* Apply encoding */
 
 		cidtogidmap = pdf_dict_get(ctx, dict, PDF_NAME(CIDToGIDMap));
-		if (pdf_is_indirect(ctx, cidtogidmap))
+		if (pdf_is_stream(ctx, cidtogidmap))
 		{
 			fz_buffer *buf;
 			size_t z, len;
@@ -1099,6 +1099,10 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 				fontdesc->cid_to_gid[z] = (data[z * 2] << 8) + data[z * 2 + 1];
 
 			fz_drop_buffer(ctx, buf);
+		}
+		else if (!pdf_name_eq(ctx, PDF_NAME(Identity), cidtogidmap))
+		{
+			fz_warn(ctx, "ignoring unknown CIDToGIDMap entry");
 		}
 
 		/* if font is external, cidtogidmap should not be identity */
