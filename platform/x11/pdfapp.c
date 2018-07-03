@@ -605,7 +605,7 @@ int pdfapp_preclose(pdfapp_t *app)
 
 static void pdfapp_viewctm(fz_matrix *mat, pdfapp_t *app)
 {
-	*mat = fz_pre_rotate(fz_scale(app->resolution/72.0f, app->resolution/72.0f), app->rotate);
+	*mat = fz_transform_page(app->page_bbox, app->resolution, app->rotate);
 }
 
 static void pdfapp_panview(pdfapp_t *app, int newx, int newy)

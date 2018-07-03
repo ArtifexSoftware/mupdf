@@ -417,6 +417,14 @@ fz_matrix fz_translate(float tx, float ty);
 fz_matrix fz_pre_translate(fz_matrix m, float tx, float ty);
 
 /*
+	fz_transform_page: Create transform matrix to draw page
+	at a given resolution and rotation. Adjusts the scaling
+	factors so that the page covers whole number of
+	pixels and adjust the page origin to be at 0,0.
+*/
+fz_matrix fz_transform_page(fz_rect mediabox, float resolution, float rotate);
+
+/*
 	fz_invert_matrix: Create an inverse matrix.
 
 	inverse: Place to store inverse matrix.

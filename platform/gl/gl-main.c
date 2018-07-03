@@ -207,17 +207,7 @@ void update_title(void)
 
 void transform_page(void)
 {
-	fz_rect rect;
-	fz_matrix matrix;
-
-	draw_page_ctm = fz_scale(currentzoom / 72, currentzoom / 72);
-	draw_page_ctm = fz_pre_rotate(draw_page_ctm, -currentrotate);
-
-	/* fix the page origin at 0,0 after rotation */
-	rect = fz_transform_rect(page_bounds, draw_page_ctm);
-	matrix = fz_translate(-rect.x0, -rect.y0);
-	draw_page_ctm = fz_concat(draw_page_ctm, matrix);
-
+	draw_page_ctm = fz_transform_page(page_bounds, currentzoom, currentrotate);
 	draw_page_bounds = fz_transform_rect(page_bounds, draw_page_ctm);
 }
 
@@ -846,8 +836,8 @@ static void do_app(void)
 		case 'z': set_zoom(number > 0 ? number : DEFRES, canvas_w/2, canvas_h/2); break;
 		case '+': set_zoom(zoom_in(currentzoom), ui.x, ui.y); break;
 		case '-': set_zoom(zoom_out(currentzoom), ui.x, ui.y); break;
-		case '[': currentrotate += 90; break;
-		case ']': currentrotate -= 90; break;
+		case '[': currentrotate -= 90; break;
+		case ']': currentrotate += 90; break;
 		case 'k': case KEY_UP: scroll_y -= 10; break;
 		case 'j': case KEY_DOWN: scroll_y += 10; break;
 		case 'h': case KEY_LEFT: scroll_x -= 10; break;

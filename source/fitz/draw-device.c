@@ -3217,52 +3217,44 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 fz_device *
 fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, fz_rect mediabox, fz_pixmap **pixmap)
 {
+	fz_aa_context aa = *ctx->aa;
 	float x_zoom = opts->x_resolution / 72.0f;
 	float y_zoom = opts->y_resolution / 72.0f;
-	int w = opts->width;
-	int h = opts->height;
-	fz_rect bounds;
-	fz_irect ibounds;
+	float page_w = mediabox.x1 - mediabox.x0;
+	float page_h = mediabox.y1 - mediabox.y0;
+	float w = opts->width;
+	float h = opts->height;
+	float x_scale, y_scale;
 	fz_matrix transform;
-	fz_device *dev = NULL;
-	fz_aa_context aa = *ctx->aa;
+	fz_irect bbox;
+	fz_device *dev;
 
 	fz_set_rasterizer_graphics_aa_level(ctx, &aa, opts->graphics);
 	fz_set_rasterizer_text_aa_level(ctx, &aa, opts->text);
 
-	transform = fz_pre_rotate(fz_scale(x_zoom, y_zoom), opts->rotate);
-	bounds = mediabox;
-	ibounds = fz_round_rect(fz_transform_rect(bounds, transform));
-
-	/* If width or height are set, we may need to adjust the transform */
-	if (w || h)
+	if (w > 0)
 	{
-		float scalex = 1;
-		float scaley = 1;
-		if (w != 0)
-			scalex = w / (bounds.x1 - bounds.x0);
-		if (h != 0)
-			scaley = h / (bounds.y1 - bounds.y0);
-		if (scalex != scaley)
-		{
-			if (w == 0)
-				scalex = scaley;
-			else if (h == 0)
-				scaley = scalex;
-			else if (scalex > scaley)
-				scalex = scaley;
-			else
-				scaley = scalex;
-		}
-		if (scalex != 1 || scaley != 1)
-		{
-			transform = fz_pre_scale(transform, scalex, scaley);
-			bounds = mediabox;
-			ibounds = fz_round_rect(fz_transform_rect(bounds, transform));
-		}
+		x_scale = w / page_w;
+		if (h > 0)
+			y_scale = h / page_h;
+		else
+			y_scale = floorf(page_h * x_scale + 0.5f) / page_h;
+	}
+	else if (h > 0)
+	{
+		y_scale = h / page_h;
+		x_scale = floorf(page_w * y_scale + 0.5f) / page_w;
+	}
+	else
+	{
+		x_scale = floorf(page_w * x_zoom + 0.5f) / page_w;
+		y_scale = floorf(page_h * y_zoom + 0.5f) / page_h;
 	}
 
-	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, ibounds, NULL/* FIXME */, opts->alpha);
+	transform = fz_pre_rotate(fz_scale(x_scale, y_scale), opts->rotate);
+	bbox = fz_irect_from_rect(fz_transform_rect(mediabox, transform));
+
+	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, bbox, NULL, opts->alpha);
 	fz_try(ctx)
 	{
 		fz_set_pixmap_resolution(ctx, *pixmap, opts->x_resolution, opts->y_resolution);
