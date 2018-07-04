@@ -117,7 +117,14 @@ float ui_draw_character(int ucs, float x, float y);
 void ui_end_text(void);
 
 float ui_draw_string(float x, float y, const char *str);
+void ui_draw_string_part(float x, float y, const char *s, const char *e);
 float ui_measure_string(const char *str);
+float ui_measure_string_part(const char *s, const char *e);
+
+struct line { char *a, *b; };
+
+int ui_break_lines(char *a, struct line *lines, int nlines, int width, int *maxwidth);
+void ui_draw_lines(float x, float y, struct line *lines, int n);
 
 struct texture
 {
@@ -158,6 +165,8 @@ int ui_mouse_inside(fz_irect *area);
 void ui_layout(enum side side, enum fill fill, enum anchor anchor, int padx, int pady);
 fz_irect ui_pack_layout(int slave_w, int slave_h, enum side side, enum fill fill, enum anchor anchor, int padx, int pady);
 fz_irect ui_pack(int slave_w, int slave_h);
+int ui_available_width(void);
+int ui_available_height(void);
 void ui_pack_push(fz_irect cavity);
 void ui_pack_pop(void);
 

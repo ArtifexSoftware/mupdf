@@ -282,30 +282,108 @@ void ui_end_text(void)
 float ui_draw_string(float x, float y, const char *str)
 {
 	int ucs;
-
 	ui_begin_text();
-
 	while (*str)
 	{
 		str += fz_chartorune(&ucs, str);
-		x += ui_draw_character(ucs, x, y);
+		x += ui_draw_character(ucs, x, y + ui.baseline);
 	}
-
 	ui_end_text();
-
 	return x;
+}
+
+void ui_draw_string_part(float x, float y, const char *s, const char *e)
+{
+	int c;
+	ui_begin_text();
+	while (s < e)
+	{
+		s += fz_chartorune(&c, s);
+		x += ui_draw_character(c, x, y + ui.baseline);
+	}
+	ui_end_text();
 }
 
 float ui_measure_string(const char *str)
 {
 	int ucs;
 	float x = 0;
-
 	while (*str)
 	{
 		str += fz_chartorune(&ucs, str);
 		x += ui_measure_character(ucs);
 	}
-
 	return x;
+}
+
+float ui_measure_string_part(const char *s, const char *e)
+{
+	int c;
+	float w = 0;
+	while (s < e)
+	{
+		s += fz_chartorune(&c, s);
+		w += ui_measure_character(c);
+	}
+	return w;
+}
+
+int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *maxwidth)
+{
+	char *next, *b = a;
+	int c, n = 0;
+	float x = 0, w = 0;
+	if (maxwidth)
+		*maxwidth = 0;
+	while (*b)
+	{
+		next = b + fz_chartorune(&c, b);
+		if (c == '\n' || c == '\r')
+		{
+			if (n + 1 < maxlines)
+			{
+				if (maxwidth && x > *maxwidth)
+					*maxwidth = x;
+				lines[n].a = a;
+				lines[n].b = b;
+				++n;
+				a = next;
+				x = 0;
+			}
+		}
+		else
+		{
+			w = ui_measure_character(c);
+			if (x + w > width && (n + 1 < maxlines))
+			{
+				if (maxwidth && x > *maxwidth)
+					*maxwidth = x;
+				lines[n].a = a;
+				lines[n].b = b;
+				++n;
+				a = b;
+				x = w;
+			}
+			else
+			{
+				x += w;
+			}
+		}
+		b = next;
+	}
+	if (maxwidth && x > *maxwidth)
+		*maxwidth = x;
+	lines[n].a = a;
+	lines[n].b = b;
+	return n + 1;
+}
+
+void ui_draw_lines(float x, float y, struct line *lines, int n)
+{
+	int i;
+	for (i = 0; i < n; ++i)
+	{
+		ui_draw_string_part(x, y, lines[i].a, lines[i].b);
+		y += ui.lineheight;
+	}
 }

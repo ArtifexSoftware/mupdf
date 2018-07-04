@@ -3,74 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 
-struct line { char *a, *b; };
-
-static int break_lines(char *a, char *end, struct line *lines, int maxlines, int width)
-{
-	char *next, *b = a;
-	int c, n = 0;
-	float x = 0, w = 0;
-	while (b < end)
-	{
-		next = b + fz_chartorune(&c, b);
-		if (c == '\n' || c == '\r')
-		{
-			if (n + 1 < maxlines)
-			{
-				lines[n].a = a;
-				lines[n].b = b;
-				++n;
-				a = next;
-				x = 0;
-			}
-		}
-		else
-		{
-			w = ui_measure_character(c);
-			if (x + w > width && (n + 1 < maxlines))
-			{
-				lines[n].a = a;
-				lines[n].b = b;
-				++n;
-				a = b;
-				x = w;
-			}
-			else
-			{
-				x += w;
-			}
-		}
-		b = next;
-	}
-	lines[n].a = a;
-	lines[n].b = b;
-	return n + 1;
-}
-
-static void draw_string_part(float x, float y, const char *s, const char *e)
-{
-	int c;
-	ui_begin_text();
-	while (s < e)
-	{
-		s += fz_chartorune(&c, s);
-		x += ui_draw_character(c, x, y + ui.baseline);
-	}
-	ui_end_text();
-}
-
-static float measure_string_part(const char *s, const char *e)
-{
-	int c;
-	float w = 0;
-	while (s < e)
-	{
-		s += fz_chartorune(&c, s);
-		w += ui_measure_character(c);
-	}
-	return w;
-}
-
 static char *find_string_location(char *s, char *e, float w, float x)
 {
 	int c;
@@ -414,7 +346,7 @@ int ui_input(struct input *input, int width, int height)
 	if (height > 1)
 		area.x1 -= ui.lineheight;
 
-	n = break_lines(input->text, input->end, lines, nelem(lines), area.x1-area.x0-2);
+	n = ui_break_lines(input->text, lines, nelem(lines), area.x1-area.x0-2, NULL);
 
 	if (height > 1)
 		ui_scrollbar(area.x1, area.y0, area.x1+ui.lineheight, area.y1, &input->scroll, 1, fz_maxi(0, n-height)+1);
@@ -454,54 +386,54 @@ int ui_input(struct input *input, int width, int height)
 		{
 			if (p >= a && p <= b && q >= a && q <= b)
 			{
-				float px = ax + measure_string_part(a, p);
-				float qx = px + measure_string_part(p, q);
+				float px = ax + ui_measure_string_part(a, p);
+				float qx = px + ui_measure_string_part(p, q);
 				glColorHex(UI_COLOR_TEXT_SEL_BG);
 				glRectf(px, ay, qx+1, ay + ui.lineheight);
 				glColorHex(UI_COLOR_TEXT_FG);
-				draw_string_part(ax, ay, a, p);
+				ui_draw_string_part(ax, ay, a, p);
 				glColorHex(UI_COLOR_TEXT_SEL_FG);
-				draw_string_part(px, ay, p, q);
+				ui_draw_string_part(px, ay, p, q);
 				glColorHex(UI_COLOR_TEXT_FG);
-				draw_string_part(qx, ay, q, b);
+				ui_draw_string_part(qx, ay, q, b);
 			}
 			else if (p < a && q >= a && q <= b)
 			{
-				float qx = ax + measure_string_part(a, q);
+				float qx = ax + ui_measure_string_part(a, q);
 				glColorHex(UI_COLOR_TEXT_SEL_BG);
 				glRectf(ax, ay, qx+1, ay + ui.lineheight);
 				glColorHex(UI_COLOR_TEXT_SEL_FG);
-				draw_string_part(ax, ay, a, q);
+				ui_draw_string_part(ax, ay, a, q);
 				glColorHex(UI_COLOR_TEXT_FG);
-				draw_string_part(qx, ay, q, b);
+				ui_draw_string_part(qx, ay, q, b);
 			}
 			else if (p >= a && p <= b && q > b)
 			{
-				float px = ax + measure_string_part(a, p);
+				float px = ax + ui_measure_string_part(a, p);
 				glColorHex(UI_COLOR_TEXT_SEL_BG);
 				glRectf(px, ay, bx, ay + ui.lineheight);
 				glColorHex(UI_COLOR_TEXT_FG);
-				draw_string_part(ax, ay, a, p);
+				ui_draw_string_part(ax, ay, a, p);
 				glColorHex(UI_COLOR_TEXT_SEL_FG);
-				draw_string_part(px, ay, p, b);
+				ui_draw_string_part(px, ay, p, b);
 			}
 			else if (p < a && q > b)
 			{
 				glColorHex(UI_COLOR_TEXT_SEL_BG);
 				glRectf(ax, ay, bx, ay + ui.lineheight);
 				glColorHex(UI_COLOR_TEXT_SEL_FG);
-				draw_string_part(ax, ay, a, b);
+				ui_draw_string_part(ax, ay, a, b);
 			}
 			else
 			{
 				glColorHex(UI_COLOR_TEXT_FG);
-				draw_string_part(ax, ay, a, b);
+				ui_draw_string_part(ax, ay, a, b);
 			}
 		}
 		else
 		{
 			glColorHex(UI_COLOR_TEXT_FG);
-			draw_string_part(ax, ay, a, b);
+			ui_draw_string_part(ax, ay, a, b);
 		}
 		ay += ui.lineheight;
 	}

@@ -631,6 +631,16 @@ fz_irect ui_pack(int slave_w, int slave_h)
 	return ui_pack_layout(slave_w, slave_h, ui.layout->side, ui.layout->fill, ui.layout->anchor, ui.layout->padx, ui.layout->pady);
 }
 
+int ui_available_width(void)
+{
+	return ui.cavity->x1 - ui.cavity->x0 - ui.layout->padx * 2;
+}
+
+int ui_available_height(void)
+{
+	return ui.cavity->y1 - ui.cavity->y0 - ui.layout->pady * 2;
+}
+
 void ui_pack_push(fz_irect cavity)
 {
 	*(++ui.cavity) = cavity;
@@ -704,7 +714,8 @@ void ui_spacer(void)
 void ui_label(const char *fmt, ...)
 {
 	char buf[512];
-	int width;
+	struct line lines[20];
+	int avail, used, n;
 	fz_irect area;
 	va_list ap;
 
@@ -712,10 +723,11 @@ void ui_label(const char *fmt, ...)
 	fz_vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
 
-	width = ui_measure_string(buf);
-	area = ui_pack(width, ui.lineheight);
+	avail = ui_available_width();
+	n = ui_break_lines(buf, lines, nelem(lines), avail, &used);
+	area = ui_pack(used, n * ui.lineheight);
 	glColorHex(UI_COLOR_TEXT_FG);
-	ui_draw_string(area.x0, area.y0 + ui.baseline, buf);
+	ui_draw_lines(area.x0, area.y0, lines, n);
 }
 
 int ui_button(const char *label)
@@ -735,7 +747,7 @@ int ui_button(const char *label)
 	pressed = (ui.hot == label && ui.active == label && ui.down);
 	ui_draw_bevel_rect(area, UI_COLOR_BUTTON, pressed);
 	glColorHex(UI_COLOR_TEXT_FG);
-	ui_draw_string(text_x + pressed, area.y0+3 + ui.baseline + pressed, label);
+	ui_draw_string(text_x + pressed, area.y0+3 + pressed, label);
 
 	return ui.hot == label && ui.active == label && !ui.down;
 }
@@ -748,7 +760,7 @@ int ui_checkbox(const char *label, int *value)
 	int pressed;
 
 	glColorHex(UI_COLOR_TEXT_FG);
-	ui_draw_string(mark.x1 + 4, area.y0 + ui.baseline, label);
+	ui_draw_string(mark.x1 + 4, area.y0, label);
 
 	if (ui_mouse_inside(&area))
 	{
@@ -991,12 +1003,12 @@ int ui_list_item_x(struct list *list, const void *id, int indent, const char *la
 			glColorHex(UI_COLOR_TEXT_SEL_BG);
 			glRectf(area.x0, area.y0, area.x1, area.y1);
 			glColorHex(UI_COLOR_TEXT_SEL_FG);
-			ui_draw_string(area.x0 + indent, area.y0 + ui.baseline, label);
+			ui_draw_string(area.x0 + indent, area.y0, label);
 		}
 		else
 		{
 			glColorHex(UI_COLOR_TEXT_FG);
-			ui_draw_string(area.x0 + indent, area.y0 + ui.baseline, label);
+			ui_draw_string(area.x0 + indent, area.y0, label);
 		}
 	}
 
@@ -1036,7 +1048,7 @@ int ui_popup(const void *id, const char *label, int is_button, int count)
 	{
 		ui_draw_bevel_rect(area, UI_COLOR_BUTTON, pressed);
 		glColorHex(UI_COLOR_TEXT_FG);
-		ui_draw_string(area.x0 + 6+pressed, area.y0+3 + ui.baseline+pressed, label);
+		ui_draw_string(area.x0 + 6+pressed, area.y0+3+pressed, label);
 		glBegin(GL_TRIANGLES);
 		glVertex2f(area.x1+pressed-8-10, area.y0+pressed+9);
 		glVertex2f(area.x1+pressed-8, area.y0+pressed+9);
@@ -1048,7 +1060,7 @@ int ui_popup(const void *id, const char *label, int is_button, int count)
 		fz_irect arrow = { area.x1-22, area.y0+2, area.x1-2, area.y1-2 };
 		ui_draw_bevel_rect(area, UI_COLOR_TEXT_BG, 1);
 		glColorHex(UI_COLOR_TEXT_FG);
-		ui_draw_string(area.x0 + 6, area.y0+3 + ui.baseline, label);
+		ui_draw_string(area.x0 + 6, area.y0+3, label);
 		ui_draw_ibevel_rect(arrow, UI_COLOR_BUTTON, pressed);
 
 		glColorHex(UI_COLOR_TEXT_FG);
@@ -1101,12 +1113,12 @@ int ui_popup_item(const char *title)
 		glColorHex(UI_COLOR_TEXT_SEL_BG);
 		glRectf(area.x0, area.y0, area.x1, area.y1);
 		glColorHex(UI_COLOR_TEXT_SEL_FG);
-		ui_draw_string(area.x0 + 4, area.y0 + ui.baseline, title);
+		ui_draw_string(area.x0 + 4, area.y0, title);
 	}
 	else
 	{
 		glColorHex(UI_COLOR_TEXT_FG);
-		ui_draw_string(area.x0 + 4, area.y0 + ui.baseline, title);
+		ui_draw_string(area.x0 + 4, area.y0, title);
 	}
 
 	return ui.hot == title && !ui.down;
