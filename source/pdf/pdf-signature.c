@@ -69,8 +69,6 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
 		fz_rect rect = fz_empty_rect;
 
-		pdf_signature_set_value(ctx, doc, wobj, signer);
-
 		rect = pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME(Rect)));
 
 		/* Create an appearance stream only if the signature is intended to be visible */
@@ -98,6 +96,8 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 			dn_str = fz_string_from_buffer(ctx, fzbuf);
 			pdf_update_signature_appearance(ctx, (pdf_annot *)widget, dn->cn, dn_str, NULL);
 		}
+
+		pdf_signature_set_value(ctx, doc, wobj, signer);
 	}
 	fz_always(ctx)
 	{
