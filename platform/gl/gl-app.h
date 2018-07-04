@@ -201,8 +201,8 @@ int ui_open_file(char filename[]);
 void ui_init_save_file(const char *path, int (*filter)(const char *fn));
 int ui_save_file(char filename[], void (*extra_panel)(void));
 
-void ui_show_warning_dialog(const char *message);
-void ui_show_error_dialog(const char *message);
+void ui_show_warning_dialog(const char *fmt, ...);
+void ui_show_error_dialog(const char *fmt, ...);
 
 /* Theming */
 
@@ -242,6 +242,7 @@ extern char filename[];
 void run_main_loop(void);
 void do_annotate_panel(void);
 void do_annotate_canvas(fz_irect canvas_area);
+void do_widget_panel(void);
 void render_page(void);
 void update_title(void);
 void reload(void);

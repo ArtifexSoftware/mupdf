@@ -947,6 +947,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\gl\gl-form.c"
+			>
+		</File>
+		<File
 			RelativePath="..\gl\gl-input.c"
 			>
 		</File>

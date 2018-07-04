@@ -147,7 +147,7 @@ static fz_quad search_hit_quads[5000];
 static char error_message[256];
 static void error_dialog(void)
 {
-	ui_dialog_begin(500, (ui.gridsize+4)*3);
+	ui_dialog_begin(500, (ui.gridsize+4)*4);
 	ui_layout(T, NONE, NW, 2, 2);
 	ui_label("%C %s", 0x1f4a3, error_message); /* BOMB */
 	ui_layout(B, NONE, S, 2, 2);
@@ -155,16 +155,19 @@ static void error_dialog(void)
 		exit(1);
 	ui_dialog_end();
 }
-void ui_show_error_dialog(const char *message)
+void ui_show_error_dialog(const char *fmt, ...)
 {
-	fz_strlcpy(error_message, message, sizeof error_message);
+	va_list ap;
+	va_start(ap, fmt);
+	fz_vsnprintf(error_message, sizeof error_message, fmt, ap);
+	va_end(ap);
 	ui.dialog = error_dialog;
 }
 
 static char warning_message[256];
 static void warning_dialog(void)
 {
-	ui_dialog_begin(500, (ui.gridsize+4)*3);
+	ui_dialog_begin(500, (ui.gridsize+4)*4);
 	ui_layout(T, NONE, NW, 2, 2);
 	ui_label("%C %s", 0x26a0, warning_message); /* WARNING SIGN */
 	ui_layout(B, NONE, S, 2, 2);
@@ -172,9 +175,12 @@ static void warning_dialog(void)
 		ui.dialog = NULL;
 	ui_dialog_end();
 }
-void ui_show_warning_dialog(const char *message)
+void ui_show_warning_dialog(const char *fmt, ...)
 {
-	fz_strlcpy(warning_message, message, sizeof warning_message);
+	va_list ap;
+	va_start(ap, fmt);
+	fz_vsnprintf(warning_message, sizeof warning_message, fmt, ap);
+	va_end(ap);
 	ui.dialog = warning_dialog;
 }
 
@@ -1265,7 +1271,7 @@ void run_main_loop(void)
 			do_main();
 	}
 	fz_catch(ctx)
-		ui_show_error_dialog(fz_caught_message(ctx));
+		ui_show_error_dialog("%s", fz_caught_message(ctx));
 	ui_end();
 }
 
@@ -1364,7 +1370,7 @@ int main(int argc, char **argv)
 		}
 		fz_catch(ctx)
 		{
-			ui_show_error_dialog(fz_caught_message(ctx));
+			ui_show_error_dialog("%s", fz_caught_message(ctx));
 		}
 
 		fz_try(ctx)
@@ -1377,7 +1383,7 @@ int main(int argc, char **argv)
 		}
 		fz_catch(ctx)
 		{
-			ui_show_error_dialog(fz_caught_message(ctx));
+			ui_show_error_dialog("%s", fz_caught_message(ctx));
 		}
 	}
 	else

@@ -62,7 +62,7 @@ static void save_pdf_dialog(void)
 			}
 			fz_catch(ctx)
 			{
-				ui_show_warning_dialog(fz_caught_message(ctx));
+				ui_show_warning_dialog("%s", fz_caught_message(ctx));
 			}
 		}
 	}
@@ -357,60 +357,6 @@ static void do_annotate_contents(void)
 		pdf_set_annot_contents(ctx, selected_annot, input.text);
 }
 
-static void do_widget_value(void)
-{
-	int ff, type;
-	char *value;
-
-	ff = pdf_get_field_flags(ctx, selected_annot->page->doc, selected_annot->obj);
-	type = pdf_field_type(ctx, selected_annot->page->doc, selected_annot->obj);
-
-	if (type == PDF_WIDGET_TYPE_TEXT)
-	{
-		static pdf_annot *last_annot = NULL;
-		static struct input input;
-		ui_label("Value:");
-		if (selected_annot != last_annot)
-		{
-			last_annot = selected_annot;
-			value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
-			ui_input_init(&input, value);
-			fz_free(ctx, value);
-		}
-		if (ui_input(&input, 0, (ff & Ff_Multiline) ? 5 : 1) >= UI_INPUT_EDIT)
-		{
-			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, input.text);
-			if (pdf_update_page(ctx, selected_annot->page))
-				render_page();
-		}
-	}
-	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
-	{
-		const char **options;
-		int n, choice;
-		ui_label("Value:");
-		n = pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, NULL);
-		options = fz_malloc_array(ctx, n, sizeof(char*));
-		pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, options);
-		value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
-		choice = ui_select("Widget/Ch", value, (const char **)options, n);
-		if (choice >= 0)
-		{
-			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, options[choice]);
-			if (pdf_update_page(ctx, selected_annot->page))
-				render_page();
-		}
-		fz_free(ctx, value);
-		fz_free(ctx, options);
-	}
-	else
-	{
-		value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
-		ui_label("Value: %s", value);
-		fz_free(ctx, value);
-	}
-}
-
 static const char *file_attachment_icons[] = { "Graph", "Paperclip", "PushPin", "Tag" };
 static const char *sound_icons[] = { "Speaker", "Mic" };
 static const char *stamp_icons[] = {
@@ -568,7 +514,7 @@ void do_annotate_panel(void)
 		ui_spacer();
 
 		if (subtype == PDF_ANNOT_WIDGET)
-			do_widget_value();
+			do_widget_panel();
 		else
 			do_annotate_contents();
 

@@ -295,7 +295,7 @@ static void list_drives(void)
 void ui_init_open_file(const char *dir, int (*filter)(const char *fn))
 {
 	fc.filter = filter;
-	load_dir(".");
+	load_dir(dir);
 }
 
 int ui_open_file(char filename[PATH_MAX])
