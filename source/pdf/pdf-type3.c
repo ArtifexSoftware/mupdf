@@ -55,11 +55,9 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		fontdesc = pdf_new_font_desc(ctx);
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(FontMatrix));
-		matrix = pdf_to_matrix(ctx, obj);
-
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(FontBBox));
-		bbox = fz_transform_rect(pdf_to_rect(ctx, obj), matrix);
+		matrix = pdf_dict_get_matrix(ctx, dict, PDF_NAME(FontMatrix));
+		bbox = pdf_dict_get_rect(ctx, dict, PDF_NAME(FontBBox));
+		bbox = fz_transform_rect(bbox, matrix);
 
 		font = fz_new_type3_font(ctx, buf, matrix);
 		fontdesc->font = font;

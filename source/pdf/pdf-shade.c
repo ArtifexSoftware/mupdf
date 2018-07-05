@@ -69,7 +69,7 @@ pdf_load_function_based_shading(fz_context *ctx, pdf_document *doc, fz_shade *sh
 		y1 = pdf_array_get_real(ctx, obj, 3);
 	}
 
-	shade->u.f.matrix = pdf_to_matrix(ctx, pdf_dict_get(ctx, dict, PDF_NAME(Matrix)));
+	shade->u.f.matrix = pdf_dict_get_matrix(ctx, dict, PDF_NAME(Matrix));
 	shade->u.f.xdivs = FUNSEGS;
 	shade->u.f.ydivs = FUNSEGS;
 	shade->u.f.fn_vals = fz_malloc(ctx, (FUNSEGS+1)*(FUNSEGS+1)*n*sizeof(float));
@@ -442,8 +442,7 @@ pdf_load_shading(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	/* Type 2 pattern dictionary */
 	if (pdf_dict_get(ctx, dict, PDF_NAME(PatternType)))
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
-		mat = pdf_to_matrix(ctx, obj);
+		mat = pdf_dict_get_matrix(ctx, dict, PDF_NAME(Matrix));
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 		if (obj)

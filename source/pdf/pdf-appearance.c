@@ -1213,7 +1213,7 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 	fz_rect rect;
 	float w, h, size, name_w;
 
-	rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
+	rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
 
 	fz_var(helv);
 	fz_var(zadb);
@@ -1334,7 +1334,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 
 		fz_try(ctx)
 		{
-			rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
+			rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
 			pdf_write_appearance(ctx, annot, buf, &rect, &bbox, &matrix, &res);
 			pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
 

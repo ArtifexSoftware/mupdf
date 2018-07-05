@@ -2296,6 +2296,16 @@ const char *pdf_dict_get_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *ke
 	return pdf_to_text_string(ctx, pdf_dict_get(ctx, dict, key));
 }
 
+fz_rect pdf_dict_get_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_rect(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+fz_matrix pdf_dict_get_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_matrix(ctx, pdf_dict_get(ctx, dict, key));
+}
+
 int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index)
 {
 	return pdf_to_bool(ctx, pdf_array_get(ctx, array, index));
@@ -2319,4 +2329,14 @@ const char *pdf_array_get_string(fz_context *ctx, pdf_obj *array, int index, siz
 const char *pdf_array_get_text_string(fz_context *ctx, pdf_obj *array, int index)
 {
 	return pdf_to_text_string(ctx, pdf_array_get(ctx, array, index));
+}
+
+fz_rect pdf_array_get_rect(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_rect(ctx, pdf_array_get(ctx, array, index));
+}
+
+fz_matrix pdf_array_get_matrix(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_matrix(ctx, pdf_array_get(ctx, array, index));
 }

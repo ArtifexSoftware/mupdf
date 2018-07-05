@@ -10,13 +10,13 @@ pdf_xobject_resources(fz_context *ctx, pdf_obj *xobj)
 fz_rect
 pdf_xobject_bbox(fz_context *ctx, pdf_obj *xobj)
 {
-	return pdf_to_rect(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(BBox)));
+	return pdf_dict_get_rect(ctx, xobj, PDF_NAME(BBox));
 }
 
 fz_matrix
 pdf_xobject_matrix(fz_context *ctx, pdf_obj *xobj)
 {
-	return pdf_to_matrix(ctx, pdf_dict_get(ctx, xobj, PDF_NAME(Matrix)));
+	return pdf_dict_get_matrix(ctx, xobj, PDF_NAME(Matrix));
 }
 
 int pdf_xobject_isolated(fz_context *ctx, pdf_obj *xobj)

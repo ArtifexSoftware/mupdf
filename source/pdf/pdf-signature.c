@@ -67,9 +67,9 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	{
 		const char *dn_str;
 		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
-		fz_rect rect = fz_empty_rect;
+		fz_rect rect;
 
-		rect = pdf_to_rect(ctx, pdf_dict_get(ctx, wobj, PDF_NAME(Rect)));
+		rect = pdf_dict_get_rect(ctx, wobj, PDF_NAME(Rect));
 
 		/* Create an appearance stream only if the signature is intended to be visible */
 		if (!fz_is_empty_rect(rect))

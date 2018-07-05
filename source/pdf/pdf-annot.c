@@ -38,7 +38,7 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 	fz_matrix matrix;
 	float w, h, x, y;
 
-	rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
+	rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
 	bbox = pdf_xobject_bbox(ctx, annot->ap);
 	matrix = pdf_xobject_matrix(ctx, annot->ap);
 
@@ -127,9 +127,10 @@ pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 fz_rect
 pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 {
-	fz_rect annot_rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
 	fz_matrix page_ctm;
+	fz_rect annot_rect;
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	annot_rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
 	return fz_transform_rect(annot_rect, page_ctm);
 }
 
@@ -370,11 +371,10 @@ fz_rect
 pdf_annot_rect(fz_context *ctx, pdf_annot *annot)
 {
 	fz_matrix page_ctm;
-	fz_rect rect;
+	fz_rect annot_rect;
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-	rect = pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Rect)));
-	fz_transform_rect(rect, page_ctm);
-	return rect;
+	annot_rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+	return fz_transform_rect(annot_rect, page_ctm);
 }
 
 void
