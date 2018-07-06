@@ -611,7 +611,7 @@ void do_annotate_panel(void)
 			static int border;
 			border = pdf_annot_border(ctx, selected_annot);
 			ui_label("Border: %d", border);
-			if (ui_slider(&border, 0, 10, 100))
+			if (ui_slider(&border, 0, 12, 100))
 				pdf_set_annot_border(ctx, selected_annot, border);
 		}
 
