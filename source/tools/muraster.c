@@ -636,7 +636,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 				cookie->errors += w->cookie.errors;
 			}
 			else
-				status = drawband(ctx, render->page, render->list, ctm, &tbounds, cookie, band_start, pix, &bit);
+				status = drawband(ctx, render->page, render->list, ctm, tbounds, cookie, band_start, pix, &bit);
 
 			if (status != RENDER_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Render failed");
@@ -1328,7 +1328,7 @@ static void worker_thread(void *arg)
 		DEBUG_THREADS(("Worker %d woken for band_start %d\n", me->num, me->band_start));
 		me->status = RENDER_OK;
 		if (me->band_start >= 0)
-			me->status = drawband(me->ctx, NULL, me->list, me->ctm, &me->tbounds, &me->cookie, me->band_start, me->pix, &me->bit);
+			me->status = drawband(me->ctx, NULL, me->list, me->ctm, me->tbounds, &me->cookie, me->band_start, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band_start %d (status=%d)\n", me->num, me->band_start, me->status));
 		mu_trigger_semaphore(&me->stop);
 	}

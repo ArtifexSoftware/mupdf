@@ -817,7 +817,7 @@ MuError MuOfficePage_getSize(	MuOfficePage *page,
 	if (!doc)
 		return MuError_BadNull;
 
-	fz_bound_page(doc->ctx, page->page, &rect);
+	rect = fz_bound_page(doc->ctx, page->page);
 
 	/* MuPDF measures in points (72ths of an inch). This API wants
 	 * 90ths of an inch, so adjust. */
@@ -858,7 +858,7 @@ MuError MuOfficePage_calculateZoom(	MuOfficePage *page,
 	if (!doc)
 		return MuError_BadNull;
 
-	fz_bound_page(doc->ctx, page->page, &rect);
+	rect = fz_bound_page(doc->ctx, page->page);
 
 	/* MuPDF measures in points (72ths of an inch). This API wants
 	 * 90ths of an inch, so adjust. */
@@ -903,7 +903,7 @@ MuError MuOfficePage_getSizeForZoom(	MuOfficePage *page,
 	if (!doc)
 		return MuError_BadNull;
 
-	fz_bound_page(doc->ctx, page->page, &rect);
+	rect = fz_bound_page(doc->ctx, page->page);
 
 	/* MuPDF measures in points (72ths of an inch). This API wants
 	 * 90ths of an inch, so adjust. */
@@ -980,7 +980,6 @@ static void render_worker(void *arg)
 	fz_device *dev = NULL;
 	float scalex;
 	float scaley;
-	fz_matrix matrix;
 	fz_rect page_bounds;
 	int locked = 0;
 
@@ -1022,7 +1021,7 @@ static void render_worker(void *arg)
 		/* Be a bit clever with the scaling to make sure we get
 		 * integer width/heights. First calculate the target
 		 * width/height. */
-		fz_bound_page(ctx, render->page->page, &page_bounds);
+		page_bounds = fz_bound_page(ctx, render->page->page);
 		scalex = (int)(90 * render->zoom * (page_bounds.x1 - page_bounds.x0) / 72 + 0.5f);
 		scaley = (int)(90 * render->zoom * (page_bounds.y1 - page_bounds.y0) / 72 + 0.5f);
 		/* Now calculate the actual scale factors required */
@@ -1030,8 +1029,8 @@ static void render_worker(void *arg)
 		scaley /= (page_bounds.y1 - page_bounds.y0);
 		/* Render the list */
 		fz_clear_pixmap_with_value(ctx, pixmap, 0xFF);
-		dev = fz_new_draw_device(ctx, fz_post_scale(fz_translate(&matrix, -page_bounds.x0, -page_bounds.y0), scalex, scaley), pixmap);
-		fz_run_display_list(ctx, page->list, dev, &fz_identity, NULL, NULL);
+		dev = fz_new_draw_device(ctx, fz_post_scale(fz_translate(-page_bounds.x0, -page_bounds.y0), scalex, scaley), pixmap);
+		fz_run_display_list(ctx, page->list, dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
