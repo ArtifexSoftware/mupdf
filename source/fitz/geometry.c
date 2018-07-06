@@ -600,7 +600,7 @@ fz_rect_from_quad(fz_quad q)
 }
 
 fz_quad
-fz_transform_quad(fz_quad q, const fz_matrix m)
+fz_transform_quad(fz_quad q, fz_matrix m)
 {
 	q.ul = fz_transform_point(q.ul, m);
 	q.ur = fz_transform_point(q.ur, m);

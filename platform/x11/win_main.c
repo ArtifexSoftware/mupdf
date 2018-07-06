@@ -335,8 +335,8 @@ static char td_textinput[1024] = "";
 static int td_retry = 0;
 static int cd_nopts;
 static int *cd_nvals;
-static char **cd_opts;
-static char **cd_vals;
+static const char **cd_opts;
+static const char **cd_vals;
 static int pd_okay = 0;
 
 INT_PTR CALLBACK
