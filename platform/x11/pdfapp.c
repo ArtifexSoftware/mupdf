@@ -1682,8 +1682,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					{
 						int nopts;
 						int nvals;
-						const char **opts = NULL;
-						const char **vals = NULL;
+						char **opts = NULL;
+						char **vals = NULL;
 
 						fz_var(opts);
 						fz_var(vals);
@@ -1719,6 +1719,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					break;
 
 				case PDF_WIDGET_TYPE_SIGNATURE:
+#ifdef HAVE_LIBCRYPTO
 					if (state == -1)
 					{
 						char ebuf[256];
@@ -1774,6 +1775,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 							}
 						}
 					}
+#else
+					winwarn(app, "Cannot check signatures as no libcrypto!");
+#endif
 					break;
 				}
 			}

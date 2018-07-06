@@ -15,6 +15,7 @@ static struct input cert_password;
 
 static void do_sign(void)
 {
+#ifdef HAVE_LIBCRYPTO
 	pdf_pkcs7_signer *signer = NULL;
 
 	fz_var(signer);
@@ -35,6 +36,9 @@ static void do_sign(void)
 
 	if (pdf_update_page(ctx, selected_annot->page))
 		render_page();
+#else
+	ui_show_warning_dialog("Document not signed as no LIBCRYPTO.");
+#endif
 }
 
 static void cert_password_dialog(void)
@@ -113,14 +117,14 @@ void do_widget_panel(void)
 	}
 	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
 	{
-		const char **options;
+		char **options;
 		int n, choice;
 		ui_label("Value:");
 		n = pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, NULL);
 		options = fz_malloc_array(ctx, n, sizeof(char*));
 		pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, options);
 		value = pdf_field_value(ctx, selected_annot->page->doc, selected_annot->obj);
-		choice = ui_select("Widget/Ch", value, (const char **)options, n);
+		choice = ui_select("Widget/Ch", value, options, n);
 		if (choice >= 0)
 		{
 			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, options[choice]);
