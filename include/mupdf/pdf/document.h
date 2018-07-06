@@ -514,26 +514,6 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry, int schema_entry, pdf_obj *data);
 
 /*
-	pdf_update_page: Update a page for the sake of changes caused by a call
-	to pdf_pass_event or annotation editing functions.
-
-	pdf_update_page regenerates any appearance streams that are out of
-	date, checks for cases where different appearance streams should be
-	selected because of state changes, and records internally each
-	annotation that has changed appearance.
-
-	Each annotation that has changed has its has_new_ap flag set to true.
-
-	Note that a call to pdf_pass_event for one page may lead to changes on
-	any other, so an app should call pdf_update_page for every page it
-	currently displays. Also it is important that the pdf_page object is
-	the one used to last render the page. If instead the app were to drop
-	the page and reload it then a call to pdf_update_page would not
-	reliably be able to report all changed areas.
-*/
-int pdf_update_page(fz_context *ctx, pdf_page *page);
-
-/*
 	Determine whether changes have been made since the
 	document was opened or last saved.
 */

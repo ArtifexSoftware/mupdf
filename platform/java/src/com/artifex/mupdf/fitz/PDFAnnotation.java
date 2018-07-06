@@ -92,4 +92,6 @@ public class PDFAnnotation extends Annotation
 	public native void setIsOpen(boolean open);
 
 	public native void updateAppearance();
+
+	public native boolean update();
 }

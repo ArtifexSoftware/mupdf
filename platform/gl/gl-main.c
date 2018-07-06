@@ -260,13 +260,6 @@ void render_page(void)
 		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
 	}
 
-	if (pdf)
-	{
-		pdf_annot *annot;
-		for (annot = page->annots; annot; annot = annot->next)
-			annot->has_new_ap = 0;
-	}
-
 	ui_texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 }

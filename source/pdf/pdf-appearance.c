@@ -1373,11 +1373,12 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	}
 }
 
-void
+int
 pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *obj, *ap, *as, *n;
+	int changed = 0;
 
 	/* TODO: handle form field updates without using the annot pdf_obj dirty flag */
 	obj = annot->obj;
@@ -1415,4 +1416,8 @@ pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 			annot->has_new_ap = 1;
 		}
 	}
+
+	changed = annot->has_new_ap;
+	annot->has_new_ap = 0;
+	return changed;
 }

@@ -1689,6 +1689,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setIsOpen
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_updateAppearance
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    update
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_update
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2468,6 +2476,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_createAnnotation
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_deleteAnnotation
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    update
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFPage_update
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

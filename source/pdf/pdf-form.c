@@ -633,8 +633,7 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 	int changed = 0;
 	for (annot = page->annots; annot; annot = annot->next)
 	{
-		pdf_update_annot(ctx, annot);
-		if (annot->has_new_ap)
+		if (pdf_update_annot(ctx, annot))
 			changed = 1;
 	}
 	return changed;

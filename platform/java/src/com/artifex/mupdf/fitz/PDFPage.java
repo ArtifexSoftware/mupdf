@@ -10,4 +10,6 @@ public class PDFPage extends Page
 
 	public native PDFAnnotation createAnnotation(int subtype);
 	public native void deleteAnnotation(Annotation annot);
+
+	public native boolean update();
 }

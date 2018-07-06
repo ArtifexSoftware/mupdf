@@ -134,7 +134,6 @@ fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, 
 
 fz_matrix pdf_annot_transform(fz_context *ctx, pdf_annot *annot);
 void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
-void pdf_update_annot(fz_context *ctx, pdf_annot *annot);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 
 /*
@@ -261,10 +260,41 @@ void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const c
 	pdf_new_annot: Internal function for creating a new pdf annotation.
 */
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj);
-
-void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
 
+/*
+	Recreate the appearance stream for an annotation.
+*/
+void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
 void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const char *name, const char *text, const char *date);
+
+/*
+	Regenerate any appearance streams that are out of date and check for
+	cases where a different appearance stream should be selected because of
+	state changes.
+
+	Note that a call to pdf_pass_event for one page may lead to changes on
+	any other, so an app should call pdf_update_annot for every annotation
+	it currently displays. Also it is important that the pdf_annot object
+	is the one used to last render the annotation. If instead the app were
+	to drop the page or annotations and reload them then a call to
+	pdf_update_annot would not reliably be able to report all changed
+	annotations.
+
+	Returns true if the annotation appearance has changed since the last time
+	pdf_update_annot was called or the annotation was first loaded.
+*/
+int pdf_update_annot(fz_context *ctx, pdf_annot *annot);
+
+/*
+	Loop through all annotations on the page and update them. Return true
+	if any of them were changed (by either event or javascript actions, or
+	by annotation editing) and need re-rendering.
+
+	If you need more granularity, loop through the annotations and call
+	pdf_update_annot for each one to detect changes on a per-annotation
+	basis.
+*/
+int pdf_update_page(fz_context *ctx, pdf_page *page);
 
 #endif

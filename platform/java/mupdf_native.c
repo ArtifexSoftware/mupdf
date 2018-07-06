@@ -8761,6 +8761,23 @@ FUN(PDFPage_deleteAnnotation)(JNIEnv *env, jobject self, jobject jannot)
 		jni_rethrow(env, ctx);
 }
 
+JNIEXPORT jboolean JNICALL
+FUN(PDFPage_update)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	jboolean changed = 0;
+
+	if (!ctx || !page) return 0;
+
+	fz_try(ctx)
+		changed = pdf_update_page(ctx, page);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return changed;
+}
+
 /* PDFAnnotation interface */
 
 JNIEXPORT jint JNICALL
@@ -9211,13 +9228,26 @@ FUN(PDFAnnotation_updateAppearance)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return;
 
 	fz_try(ctx)
-	{
-		pdf_dict_del(ctx, annot->obj, PDF_NAME(AP)); /* nuke old AP */
 		pdf_update_appearance(ctx, annot);
-		pdf_update_annot(ctx, annot); /* ensure new AP is put into annot */
-	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_update)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jboolean changed = 0;
+
+	if (!ctx || !annot) return 0;
+
+	fz_try(ctx)
+		changed = pdf_update_annot(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return changed;
 }
 
 JNIEXPORT jobject JNICALL

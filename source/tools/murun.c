@@ -4040,6 +4040,18 @@ static void ffi_PDFPage_deleteAnnotation(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFPage_update(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = js_touserdata(J, 0, "pdf_page");
+	int changed = 0;
+	fz_try(ctx)
+		changed = pdf_update_page(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, changed);
+}
+
 static void ffi_PDFAnnotation_getType(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4435,6 +4447,18 @@ static void ffi_PDFAnnotation_updateAppearance(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_update(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int changed = 0;
+	fz_try(ctx)
+		changed = pdf_update_annot(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, changed);
+}
+
 #endif /* FZ_ENABLE_PDF */
 
 int murun_main(int argc, char **argv)
@@ -4737,6 +4761,7 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "PDFPage.createAnnotation", ffi_PDFPage_createAnnotation, 1);
 		jsB_propfun(J, "PDFPage.deleteAnnotation", ffi_PDFPage_deleteAnnotation, 1);
+		jsB_propfun(J, "PDFPage.update", ffi_PDFPage_update, 0);
 	}
 	js_setregistry(J, "pdf_page");
 
@@ -4765,6 +4790,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.setModificationDate", ffi_PDFAnnotation_setModificationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
+		jsB_propfun(J, "PDFAnnotation.update", ffi_PDFAnnotation_update, 0);
 	}
 	js_setregistry(J, "pdf_annot");
 

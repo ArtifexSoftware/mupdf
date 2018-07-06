@@ -799,40 +799,15 @@ static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix ctm, f
 
 static void pdfapp_updatepage(pdfapp_t *app)
 {
-	fz_device *idev;
-	fz_matrix ctm;
-	pdf_annot *pannot;
-
-	pdfapp_viewctm(&ctm, app);
-	pdf_update_page(app->ctx, (pdf_page *)app->page);
-	pdfapp_recreate_annotationslist(app);
-
-	for (pannot = pdf_first_annot(app->ctx, (pdf_page*)app->page); pannot; pannot = pdf_next_annot(app->ctx, pannot))
+	if (pdf_update_page(app->ctx, (pdf_page*)app->page))
 	{
-		if (pannot->has_new_ap)
-		{
-			fz_annot *annot = (fz_annot*)pannot;
-			fz_rect bounds;
-			fz_irect ibounds;
-			bounds = fz_transform_rect(fz_bound_annot(app->ctx, annot), ctm);
-			ibounds = fz_round_rect(bounds);
-			bounds = fz_rect_from_irect(ibounds);
-			fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, ibounds);
-			idev = fz_new_draw_device_with_bbox(app->ctx, fz_identity, app->image, &ibounds);
-			fz_try(app->ctx)
-			{
-				pdfapp_runpage(app, idev, ctm, bounds, NULL);
-				fz_close_device(app->ctx, idev);
-			}
-			fz_always(app->ctx)
-				fz_drop_device(app->ctx, idev);
-			fz_catch(app->ctx)
-				fz_rethrow(app->ctx);
-			pannot->has_new_ap = 0;
-		}
+		pdfapp_recreate_annotationslist(app);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 	}
-
-	pdfapp_showpage(app, 0, 0, 1, 0, 0);
+	else
+	{
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
+	}
 }
 
 void pdfapp_reloadpage(pdfapp_t *app)
