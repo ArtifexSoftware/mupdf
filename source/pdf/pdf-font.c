@@ -1100,7 +1100,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 			fz_drop_buffer(ctx, buf);
 		}
-		else if (!pdf_name_eq(ctx, PDF_NAME(Identity), cidtogidmap))
+		else if (cidtogidmap && !pdf_name_eq(ctx, PDF_NAME(Identity), cidtogidmap))
 		{
 			fz_warn(ctx, "ignoring unknown CIDToGIDMap entry");
 		}
