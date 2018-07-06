@@ -62,6 +62,11 @@ size_t fz_strlcpy(char *dst, const char *src, size_t n);
 size_t fz_strlcat(char *dst, const char *src, size_t n);
 
 /*
+	fz_memmem: Find the start of the first occurrence of the substring needle in haystack.
+*/
+void *fz_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen);
+
+/*
 	fz_dirname: extract the directory component from a path.
 */
 void fz_dirname(char *dir, const char *path, size_t dirsize);
