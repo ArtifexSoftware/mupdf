@@ -117,7 +117,7 @@ void do_widget_panel(void)
 	}
 	else if (type == PDF_WIDGET_TYPE_COMBOBOX || type == PDF_WIDGET_TYPE_LISTBOX)
 	{
-		char **options;
+		const char **options;
 		int n, choice;
 		ui_label("Value:");
 		n = pdf_choice_widget_options(ctx, selected_annot->page->doc, selected_annot, 0, NULL);

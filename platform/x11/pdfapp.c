@@ -1682,8 +1682,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					{
 						int nopts;
 						int nvals;
-						char **opts = NULL;
-						char **vals = NULL;
+						const char **opts = NULL;
+						const char **vals = NULL;
 
 						fz_var(opts);
 						fz_var(vals);
