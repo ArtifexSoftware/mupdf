@@ -298,7 +298,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *file_stm, pdf_document *doc, pdf
 
 	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
 	len = pdf_dict_get_int(ctx, stmobj, PDF_NAME(Length));
-	null_stm = fz_open_pdf_stream(ctx, file_stm, len, offset);
+	null_stm = fz_open_endstream_filter(ctx, file_stm, len, offset);
 	if (doc->crypt && !hascrypt)
 	{
 		fz_try(ctx)
@@ -359,7 +359,7 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 
 	if (imparams)
 		imparams->type = FZ_IMAGE_RAW;
-	return fz_open_null(ctx, file_stm, length, fz_tell(ctx, file_stm));
+	return fz_open_null_filter(ctx, file_stm, length, fz_tell(ctx, file_stm));
 }
 
 void

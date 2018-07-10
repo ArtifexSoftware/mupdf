@@ -1245,7 +1245,7 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 		for (i = 0; i < n; i++)
 		{
 			byte_range[i].offset = pdf_array_get_int(ctx, br, 2*i);
-			byte_range[i].len = pdf_array_get_int(ctx, br, 2*i+1);
+			byte_range[i].length = pdf_array_get_int(ctx, br, 2*i+1);
 		}
 	}
 
@@ -1268,7 +1268,7 @@ fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, p
 			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
 		}
 
-		bytes = fz_open_null_n(ctx, doc->file, byte_range, byte_range_len);
+		bytes = fz_open_range_filter(ctx, doc->file, byte_range, byte_range_len);
 	}
 	fz_always(ctx)
 	{

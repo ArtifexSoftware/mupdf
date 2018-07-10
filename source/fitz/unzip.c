@@ -286,7 +286,7 @@ static fz_stream *open_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 
 	method = read_zip_entry_header(ctx, zip, ent);
 	if (method == 0)
-		return fz_open_null(ctx, file, ent->usize, fz_tell(ctx, file));
+		return fz_open_null_filter(ctx, file, ent->usize, fz_tell(ctx, file));
 	if (method == 8)
 		return fz_open_flated(ctx, file, -15);
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown zip method: %d", method);

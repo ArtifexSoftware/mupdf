@@ -118,7 +118,7 @@ static fz_stream *open_tar_entry(fz_context *ctx, fz_archive *arch, const char *
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find named tar archive entry");
 
 	fz_seek(ctx, file, ent->offset + 512, 0);
-	return fz_open_null(ctx, file, ent->size, fz_tell(ctx, file));
+	return fz_open_null_filter(ctx, file, ent->size, fz_tell(ctx, file));
 }
 
 static fz_buffer *read_tar_entry(fz_context *ctx, fz_archive *arch, const char *name)

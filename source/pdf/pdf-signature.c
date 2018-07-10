@@ -29,11 +29,11 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 		for (i = 0; i < brange_len; i++)
 		{
 			brange[i].offset = pdf_array_get_int(ctx, byte_range, 2*i);
-			brange[i].len = pdf_array_get_int(ctx, byte_range, 2*i+1);
+			brange[i].length = pdf_array_get_int(ctx, byte_range, 2*i+1);
 		}
 
 		stm = fz_stream_from_output(ctx, out);
-		in = fz_open_null_n(ctx, stm, brange, brange_len);
+		in = fz_open_range_filter(ctx, stm, brange, brange_len);
 
 		digest_len = (hexdigest_length - 2) / 2;
 		digest = fz_malloc(ctx, digest_len);

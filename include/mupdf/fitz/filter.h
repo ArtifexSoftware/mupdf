@@ -12,12 +12,12 @@ typedef struct fz_jbig2_globals_s fz_jbig2_globals;
 typedef struct
 {
 	int64_t offset;
-	int len;
+	size_t length;
 } fz_range;
 
-fz_stream *fz_open_null_n(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges);
-fz_stream *fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
-fz_stream *fz_open_pdf_stream(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
+fz_stream *fz_open_null_filter(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
+fz_stream *fz_open_range_filter(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges);
+fz_stream *fz_open_endstream_filter(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
 fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);
 void fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain); /* Ownership of chain is passed in */
 fz_stream *fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen);
