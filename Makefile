@@ -123,9 +123,7 @@ THREAD_SRC := source/helpers/mu-threads/mu-threads.c
 THREAD_OBJ := $(THREAD_SRC:%.c=$(OUT)/%.o)
 
 PKCS7_SRC := source/helpers/pkcs7/pkcs7-check.c
-ifeq ($(HAVE_LIBCRYPTO),yes)
-  PKCS7_SRC += source/helpers/pkcs7/pkcs7-openssl.c
-endif
+PKCS7_SRC += source/helpers/pkcs7/pkcs7-openssl.c
 PKCS7_OBJ := $(PKCS7_SRC:%.c=$(OUT)/%.o)
 
 # --- Generated embedded font files ---

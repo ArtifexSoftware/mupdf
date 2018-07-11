@@ -1,7 +1,42 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "../../fitz/fitz-imp.h"
+#include "../../fitz/fitz-imp.h" /* for fz_keep/drop_imp */
+
 #include "mupdf/helpers/pkcs7-openssl.h"
+
+#ifndef HAVE_LIBCRYPTO
+
+enum pdf_signature_error
+pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
+{
+	return PDF_SIGNATURE_ERROR_UNKNOWN;
+}
+
+/* Check a singature's certificate is trusted */
+enum pdf_signature_error
+pkcs7_openssl_check_certificate(char *sig, int sig_len)
+{
+	return PDF_SIGNATURE_ERROR_UNKNOWN;
+}
+
+pdf_pkcs7_designated_name *
+pkcs7_openssl_designated_name(fz_context *ctx, char *sig, int sig_len)
+{
+	return NULL;
+}
+
+void
+pkcs7_openssl_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
+{
+}
+
+pdf_pkcs7_signer *
+pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
+{
+	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
+}
+
+#else
 
 #include <limits.h>
 #include <string.h>
@@ -776,3 +811,5 @@ exit:
 
 	return name;
 }
+
+#endif

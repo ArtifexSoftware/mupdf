@@ -15,7 +15,6 @@ static struct input cert_password;
 
 static void do_sign(void)
 {
-#ifdef HAVE_LIBCRYPTO
 	pdf_pkcs7_signer *signer = NULL;
 
 	fz_var(signer);
@@ -36,9 +35,6 @@ static void do_sign(void)
 
 	if (pdf_update_page(ctx, selected_annot->page))
 		render_page();
-#else
-	ui_show_warning_dialog("Document not signed as no LIBCRYPTO.");
-#endif
 }
 
 static void cert_password_dialog(void)
