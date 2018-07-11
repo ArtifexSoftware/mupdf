@@ -343,49 +343,10 @@ pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *x
 	return fz_atoi(name) - 1;
 }
 
-static pdf_obj *
-pdf_lookup_inherited_page_item(fz_context *ctx, pdf_obj *node, pdf_obj *key)
-{
-	pdf_obj *node2 = node;
-	pdf_obj *val = NULL;
-
-	fz_var(node);
-	fz_try(ctx)
-	{
-		do
-		{
-			val = pdf_dict_get(ctx, node, key);
-			if (val)
-				break;
-			if (pdf_mark_obj(ctx, node))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
-			node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
-		}
-		while (node);
-	}
-	fz_always(ctx)
-	{
-		do
-		{
-			pdf_unmark_obj(ctx, node2);
-			if (node2 == node)
-				break;
-			node2 = pdf_dict_get(ctx, node2, PDF_NAME(Parent));
-		}
-		while (node2);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return val;
-}
-
 static void
 pdf_flatten_inheritable_page_item(fz_context *ctx, pdf_obj *page, pdf_obj *key)
 {
-	pdf_obj *val = pdf_lookup_inherited_page_item(ctx, page, key);
+	pdf_obj *val = pdf_dict_get_inheritable(ctx, page, key);
 	if (val)
 		pdf_dict_put(ctx, page, key, val);
 }
@@ -641,7 +602,7 @@ pdf_load_links(fz_context *ctx, pdf_page *page)
 pdf_obj *
 pdf_page_resources(fz_context *ctx, pdf_page *page)
 {
-	return pdf_lookup_inherited_page_item(ctx, page->obj, PDF_NAME(Resources));
+	return pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(Resources));
 }
 
 pdf_obj *
@@ -671,7 +632,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	if (pdf_is_real(ctx, obj))
 		userunit = pdf_to_real(ctx, obj);
 
-	mediabox = pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(MediaBox)));
+	mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox)));
 	if (fz_is_empty_rect(mediabox))
 	{
 		mediabox.x0 = 0;
@@ -680,7 +641,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 		mediabox.y1 = 792;
 	}
 
-	cropbox = pdf_to_rect(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(CropBox)));
+	cropbox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(CropBox)));
 	if (!fz_is_empty_rect(cropbox))
 		mediabox = fz_intersect_rect(mediabox, cropbox);
 
@@ -692,7 +653,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	if (page_mediabox->x1 - page_mediabox->x0 < 1 || page_mediabox->y1 - page_mediabox->y0 < 1)
 		*page_mediabox = fz_unit_rect;
 
-	rotate = pdf_to_int(ctx, pdf_lookup_inherited_page_item(ctx, pageobj, PDF_NAME(Rotate)));
+	rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(Rotate)));
 
 	/* Snap page rotation to 0, 90, 180 or 270 */
 	if (rotate < 0)

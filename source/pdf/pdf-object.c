@@ -2156,15 +2156,42 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *obj)
 
 /* Convenience functions */
 
-pdf_obj *pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+pdf_obj *
+pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 {
+	pdf_obj *node2 = node;
 	pdf_obj *val = NULL;
-	while (!val && dict)
+
+	fz_var(node);
+	fz_try(ctx)
 	{
-		val = pdf_dict_get(ctx, dict, key);
-		if (!val)
-			dict = pdf_dict_get(ctx, dict, PDF_NAME(Parent));
+		do
+		{
+			val = pdf_dict_get(ctx, node, key);
+			if (val)
+				break;
+			if (pdf_mark_obj(ctx, node))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in tree (parents)");
+			node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
+		}
+		while (node);
 	}
+	fz_always(ctx)
+	{
+		do
+		{
+			pdf_unmark_obj(ctx, node2);
+			if (node2 == node)
+				break;
+			node2 = pdf_dict_get(ctx, node2, PDF_NAME(Parent));
+		}
+		while (node2);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
 	return val;
 }
 
