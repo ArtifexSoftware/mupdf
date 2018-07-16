@@ -92,6 +92,11 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c
 $(OUT)/platform/gl/%.o : platform/gl/%.c
 	$(CC_CMD) -Wall $(GLUT_CFLAGS)
 
+ifeq ($(HAVE_OBJCOPY),yes)
+  $(OUT)/source/fitz/noto.o : source/fitz/noto.c
+	$(CC_CMD) -Wall -Wdeclaration-after-statement -DHAVE_OBJCOPY $(THIRD_CFLAGS)
+endif
+
 $(OUT)/source/%.o : source/%.c
 	$(CC_CMD) -Wall -Wdeclaration-after-statement $(THIRD_CFLAGS)
 
@@ -144,7 +149,7 @@ generated/%.otf.c : %.otf $(HEXDUMP_EXE) ; $(QUIET_GEN) $(MKTGTDIR) ; $(HEXDUMP_
 generated/%.ttf.c : %.ttf $(HEXDUMP_EXE) ; $(QUIET_GEN) $(MKTGTDIR) ; $(HEXDUMP_EXE) -s $@ $<
 generated/%.ttc.c : %.ttc $(HEXDUMP_EXE) ; $(QUIET_GEN) $(MKTGTDIR) ; $(HEXDUMP_EXE) -s $@ $<
 
-ifeq ($(OS),Linux)
+ifeq ($(HAVE_OBJCOPY),yes)
   MUPDF_OBJ += $(FONT_BIN:%=$(OUT)/%.o)
   $(OUT)/%.cff.o : %.cff ; $(OBJCOPY_CMD)
   $(OUT)/%.otf.o : %.otf ; $(OBJCOPY_CMD)

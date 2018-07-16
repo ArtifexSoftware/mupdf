@@ -86,6 +86,8 @@ else ifeq ($(OS),MACOS)
   RANLIB = xcrun ranlib
 
 else ifeq ($(OS),Linux)
+  HAVE_OBJCOPY := yes
+
   ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
 	SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
 	SYS_FREETYPE_LIBS := $(shell pkg-config --libs freetype2)

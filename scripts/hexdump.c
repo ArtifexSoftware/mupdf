@@ -37,7 +37,7 @@ main(int argc, char **argv)
 {
 	FILE *fo;
 	FILE *fi;
-	char filename[256];
+	char name[256];
 	char *basename;
 	char *p;
 	int i, optind, size;
@@ -81,7 +81,7 @@ main(int argc, char **argv)
 		else
 			basename = argv[i];
 
-		if (strlen(basename) >= sizeof(filename))
+		if (strlen(basename) >= sizeof(name))
 		{
 			fclose(fi);
 			fclose(fo);
@@ -89,8 +89,8 @@ main(int argc, char **argv)
 			return 1;
 		}
 
-		strcpy(filename, argv[i]);
-		for (p = filename; *p; ++p)
+		strcpy(name, basename);
+		for (p = name; *p; ++p)
 		{
 			if (*p == '/' || *p == '.' || *p == '\\' || *p == '-')
 				*p = '_';
@@ -100,11 +100,11 @@ main(int argc, char **argv)
 		size = ftell(fi);
 		fseek(fi, 0, SEEK_SET);
 
-		fprintf(fo, "const unsigned char _binary_%s_start[%d] =", filename, size);
+		fprintf(fo, "const unsigned char _binary_%s[%d] =", name, size);
 		fprintf(fo, string ? "\n" : " {\n");
 		hexdump(fo, fi);
 		fprintf(fo, string ? ";\n" : "};\n");
-		fprintf(fo, "const unsigned char _binary_%s_end;\n", filename);
+		fprintf(fo, "unsigned int _binary_%s_size = %d;\n", name, size);
 
 		fclose(fi);
 	}

@@ -45,20 +45,22 @@
 #define TOFU_EMOJI
 #endif
 
-#ifdef _WIN32
+#ifdef HAVE_OBJCOPY
 #define RETURN(FORGE,NAME) \
 	do { \
-	extern unsigned char _binary_resources_fonts_##NAME[]; \
-	extern unsigned int _binary_resources_fonts_##NAME##_size; \
-	return *size = _binary_resources_fonts_##NAME##_size, _binary_resources_fonts_##NAME; \
+	extern unsigned char _binary_resources_fonts_##FORGE##_##NAME##_start; \
+	extern unsigned char _binary_resources_fonts_##FORGE##_##NAME##_end; \
+	return *size = \
+		&_binary_resources_fonts_##FORGE##_##NAME##_end - \
+		&_binary_resources_fonts_##FORGE##_##NAME##_start, \
+		&_binary_resources_fonts_##FORGE##_##NAME##_start; \
 	} while (0)
 #else
 #define RETURN(FORGE,NAME) \
 	do { \
-	extern const unsigned char _binary_resources_fonts_##FORGE##_##NAME##_start[]; \
-	extern const unsigned char _binary_resources_fonts_##FORGE##_##NAME##_end; \
-	return *size = &_binary_resources_fonts_##FORGE##_##NAME##_end - _binary_resources_fonts_##FORGE##_##NAME##_start, \
-		_binary_resources_fonts_##FORGE##_##NAME##_start; \
+	extern unsigned char _binary_##NAME[]; \
+	extern unsigned int _binary_##NAME##_size; \
+	return *size = _binary_##NAME##_size, _binary_##NAME; \
 	} while (0)
 #endif
 

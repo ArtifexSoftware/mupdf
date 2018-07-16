@@ -22,7 +22,7 @@ done
 
 for FILE in $FONTS
 do
-	NAME=$(echo _binary_$FILE | tr '/.-' '___')
+	NAME=$(echo _binary_$(basename $FILE) | tr '/.-' '___')
 	OBJ=$(echo generated/$FILE.obj)
 	OBJ64=$(echo generated/$FILE.x64.obj)
 	DIR=$(dirname $OBJ)
