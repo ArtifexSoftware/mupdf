@@ -3364,7 +3364,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 
 	fz_try(ctx)
 	{
-		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &bbox, NULL, 1, &dummy);
+		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), bbox, NULL, 1, &dummy);
 		pixmap->stride = width * sizeof(int32_t);
 		ninfo = fz_malloc(ctx, sizeof(*ninfo));
 		ninfo->pixmap = pixmap;
@@ -3382,7 +3382,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		{
 			fz_clear_pixmap_with_value(ctx, pixmap, 0xff);
 			unlockNativeDevice(env,ninfo);
-			device = fz_new_draw_device(ctx, NULL, pixmap);
+			device = fz_new_draw_device(ctx, fz_identity, pixmap);
 		}
 	}
 	fz_catch(ctx)
