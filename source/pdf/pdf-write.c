@@ -2177,6 +2177,8 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 	{
 		fz_rethrow(ctx);
 	}
+
+	doc->has_old_style_xrefs = 0;
 }
 
 static void
@@ -2865,6 +2867,9 @@ int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
 		return 0;
 	if (doc->crypt != NULL)
 		return 0;
+	if (doc->has_xref_streams && doc->has_old_style_xrefs)
+		return 0;
+
 	return 1;
 }
 

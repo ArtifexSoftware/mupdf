@@ -933,6 +933,8 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	if (tok != PDF_TOK_OPEN_DICT)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer dictionary");
 
+	doc->has_old_style_xrefs = 1;
+
 	return pdf_parse_dict(ctx, doc, file, buf);
 }
 

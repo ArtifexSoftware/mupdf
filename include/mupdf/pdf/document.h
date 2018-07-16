@@ -635,6 +635,7 @@ struct pdf_document_s
 	int *xref_index;
 	int freeze_updates;
 	int has_xref_streams;
+	int has_old_style_xrefs;
 
 	int rev_page_count;
 	pdf_rev_page_map *rev_page_map;
