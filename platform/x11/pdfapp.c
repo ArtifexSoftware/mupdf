@@ -549,6 +549,8 @@ static int pdfapp_save(pdfapp_t *app)
 		{
 			wincopyfile(app->docpath, buf);
 			pdf_save_document(app->ctx, idoc, buf, &opts);
+			pdfapp_close(app);
+			pdfapp_open(app, buf, 1);
 			return 1;
 		}
 
