@@ -2710,6 +2710,8 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 					usig->signer->drop(usig->signer);
 					fz_free(ctx, usig);
 				}
+
+				xref->unsaved_sigs_end = NULL;
 			}
 		}
 	}

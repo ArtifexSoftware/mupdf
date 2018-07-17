@@ -1282,6 +1282,7 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 		fz_drop_font(ctx, helv);
 		fz_drop_font(ctx, zadb);
 		pdf_drop_obj(ctx, res);
+		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
 	{

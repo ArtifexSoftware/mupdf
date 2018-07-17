@@ -7,12 +7,14 @@
 
 void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int hexdigest_offset, int hexdigest_length, pdf_pkcs7_signer *signer)
 {
+	fz_stream *stm = NULL;
 	fz_stream *in = NULL;
 	fz_range *brange = NULL;
 	int brange_len = pdf_array_len(ctx, byte_range)/2;
 	unsigned char *digest = NULL;
 	int digest_len;
 
+	fz_var(stm);
 	fz_var(in);
 	fz_var(brange);
 
@@ -30,7 +32,8 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 			brange[i].len = pdf_array_get_int(ctx, byte_range, 2*i+1);
 		}
 
-		in = fz_open_null_n(ctx, fz_stream_from_output(ctx, out), brange, brange_len);
+		stm = fz_stream_from_output(ctx, out);
+		in = fz_open_null_n(ctx, stm, brange, brange_len);
 
 		digest_len = (hexdigest_length - 2) / 2;
 		digest = fz_malloc(ctx, digest_len);
@@ -40,6 +43,8 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 
 		fz_drop_stream(ctx, in);
 		in = NULL;
+		fz_drop_stream(ctx, stm);
+		stm = NULL;
 
 		fz_seek_output(ctx, out, hexdigest_offset+1, SEEK_SET);
 
@@ -50,6 +55,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	{
 		fz_free(ctx, digest);
 		fz_free(ctx, brange);
+		fz_drop_stream(ctx, stm);
 		fz_drop_stream(ctx, in);
 	}
 	fz_catch(ctx)
