@@ -72,7 +72,7 @@ static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, char *name, int len)
 	for (i = 0; i < n; i++)
 	{
 		pdf_obj *field = pdf_array_get(ctx, dict, i);
-		const char *part = pdf_dict_get_string(ctx, field, PDF_NAME(T), NULL);
+		const char *part = pdf_dict_get_text_string(ctx, field, PDF_NAME(T));
 		if (strlen(part) == (size_t)len && !memcmp(part, name, len))
 			return field;
 	}
@@ -676,7 +676,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	fz_try(ctx)
 	{
 		pdf_set_field_type(ctx, doc, annot->obj, type);
-		pdf_dict_put_string(ctx, annot->obj, PDF_NAME(T), fieldname, strlen(fieldname));
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(T), fieldname);
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
 		{
@@ -887,7 +887,7 @@ static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, 
 {
 	char *res = NULL;
 	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
-	const char *lname = pdf_dict_get_string(ctx, field, PDF_NAME(T), NULL);
+	const char *lname = pdf_dict_get_text_string(ctx, field, PDF_NAME(T));
 	int llen = (int)strlen(lname);
 
 	/*
