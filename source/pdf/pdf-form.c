@@ -132,7 +132,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
 		case PDF_WIDGET_TYPE_CHECKBOX:
 			{
-				pdf_obj *leafv = pdf_get_inheritable(ctx, doc, field, PDF_NAME(V));
+				pdf_obj *leafv = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
 
 				if (leafv)
 					pdf_keep_obj(ctx, leafv);
@@ -974,7 +974,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	char buf[100];
 	const char *font;
 	float size, color[3], black;
-	const char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME(DA)));
+	const char *da = pdf_to_str_buf(ctx, pdf_dict_get_inheritable(ctx, field, PDF_NAME(DA)));
 
 	pdf_parse_default_appearance(ctx, da, &font, &size, color);
 
@@ -1031,38 +1031,26 @@ int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
-	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, annot->obj, PDF_NAME(MaxLen)));
+	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
 }
 
 int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
-	char *code = NULL;
 	int type = PDF_WIDGET_CONTENT_UNRESTRAINED;
-
-	fz_var(code);
-	fz_try(ctx)
+	pdf_obj *js = pdf_dict_getl(ctx, annot->obj, PDF_NAME(AA), PDF_NAME(F), PDF_NAME(JS), NULL);
+	if (js)
 	{
-		code = pdf_get_string_or_stream(ctx, doc, pdf_dict_getl(ctx, annot->obj, PDF_NAME(AA), PDF_NAME(F), PDF_NAME(JS), NULL));
-		if (code)
-		{
-			if (strstr(code, "AFNumber_Format"))
-				type = PDF_WIDGET_CONTENT_NUMBER;
-			else if (strstr(code, "AFSpecial_Format"))
-				type = PDF_WIDGET_CONTENT_SPECIAL;
-			else if (strstr(code, "AFDate_FormatEx"))
-				type = PDF_WIDGET_CONTENT_DATE;
-			else if (strstr(code, "AFTime_FormatEx"))
-				type = PDF_WIDGET_CONTENT_TIME;
-		}
-	}
-	fz_always(ctx)
-	{
+		char *code = pdf_load_stream_or_string_as_utf8(ctx, js);
+		if (strstr(code, "AFNumber_Format"))
+			type = PDF_WIDGET_CONTENT_NUMBER;
+		else if (strstr(code, "AFSpecial_Format"))
+			type = PDF_WIDGET_CONTENT_SPECIAL;
+		else if (strstr(code, "AFDate_FormatEx"))
+			type = PDF_WIDGET_CONTENT_DATE;
+		else if (strstr(code, "AFTime_FormatEx"))
+			type = PDF_WIDGET_CONTENT_TIME;
 		fz_free(ctx, code);
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "failure in fz_text_widget_content_type");
 	}
 
 	return type;
