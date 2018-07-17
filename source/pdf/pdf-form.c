@@ -400,10 +400,14 @@ static void set_check_grp(fz_context *ctx, pdf_document *doc, pdf_obj *grp, pdf_
 
 static void recalculate(fz_context *ctx, pdf_document *doc)
 {
+	pdf_js_event e = {NULL, NULL};
+
 	if (doc->recalculating)
 		return;
 
 	doc->recalculating = 1;
+
+	fz_var(e);
 	fz_try(ctx)
 	{
 		pdf_obj *co = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/CO");
@@ -424,6 +428,9 @@ static void recalculate(fz_context *ctx, pdf_document *doc)
 					e.target = field;
 					e.value = pdf_field_value(ctx, doc, field);
 					pdf_js_setup_event(doc->js, &e);
+					/* e.value has been copied. We can free it */
+					fz_free(ctx, e.value);
+					e.value = NULL;
 					pdf_execute_action(ctx, doc, field, calc);
 					/* A calculate action, updates event.value. We need
 					* to place the value in the field */
@@ -434,6 +441,7 @@ static void recalculate(fz_context *ctx, pdf_document *doc)
 	}
 	fz_always(ctx)
 	{
+		fz_free(ctx, e.value);
 		doc->recalculating = 0;
 	}
 	fz_catch(ctx)
