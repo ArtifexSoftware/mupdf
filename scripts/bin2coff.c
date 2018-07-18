@@ -292,9 +292,9 @@ main (int argc, char *argv[])
 
 	x86_32 = 0;
 	last_arg = argc;
-	if (argc >= 4 && check_64bit(argv[4], &x86_32))
+	if (argc >= 4 && check_64bit(argv[3], &x86_32))
 		last_arg = 4;
-	else if (argc >= 5 && check_64bit(argv[5], &x86_32))
+	else if (argc >= 5 && check_64bit(argv[4], &x86_32))
 		last_arg = 5;
 
 	/* Label setup */
