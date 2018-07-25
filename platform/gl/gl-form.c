@@ -104,7 +104,7 @@ void do_widget_panel(void)
 			ui_input_init(&input, value);
 			fz_free(ctx, value);
 		}
-		if (ui_input(&input, 0, (ff & Ff_Multiline) ? 5 : 1) >= UI_INPUT_EDIT)
+		if (ui_input(&input, 0, (ff & PDF_TX_FIELD_IS_MULTILINE) ? 5 : 1) >= UI_INPUT_EDIT)
 		{
 			pdf_field_set_value(ctx, selected_annot->page->doc, selected_annot->obj, input.text);
 			if (pdf_update_page(ctx, selected_annot->page))

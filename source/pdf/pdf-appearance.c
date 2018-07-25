@@ -1045,12 +1045,12 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 			b = 0;
 	}
 
-	if (ff & Ff_Comb)
+	if (ff & PDF_TX_FIELD_IS_COMB)
 	{
 		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
 		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, 0, maxlen);
 	}
-	else if (ff & Ff_Multiline)
+	else if (ff & PDF_TX_FIELD_IS_MULTILINE)
 		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2+2, b*2, 1, 0);
 	else
 		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2+2, b*2, 0, 0);

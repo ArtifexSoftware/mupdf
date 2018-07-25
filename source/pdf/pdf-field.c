@@ -25,9 +25,9 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (pdf_name_eq(ctx, type, PDF_NAME(Btn)))
 	{
-		if (flags & Ff_Pushbutton)
+		if (flags & PDF_BTN_FIELD_IS_PUSHBUTTON)
 			return PDF_WIDGET_TYPE_PUSHBUTTON;
-		else if (flags & Ff_Radio)
+		else if (flags & PDF_BTN_FIELD_IS_RADIO)
 			return PDF_WIDGET_TYPE_RADIOBUTTON;
 		else
 			return PDF_WIDGET_TYPE_CHECKBOX;
@@ -36,7 +36,7 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		return PDF_WIDGET_TYPE_TEXT;
 	else if (pdf_name_eq(ctx, type, PDF_NAME(Ch)))
 	{
-		if (flags & Ff_Combo)
+		if (flags & PDF_CH_FIELD_IS_COMBO)
 			return PDF_WIDGET_TYPE_COMBOBOX;
 		else
 			return PDF_WIDGET_TYPE_LISTBOX;
@@ -57,27 +57,27 @@ void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int ty
 	{
 	case PDF_WIDGET_TYPE_PUSHBUTTON:
 		typename = PDF_NAME(Btn);
-		setbits = Ff_Pushbutton;
+		setbits = PDF_BTN_FIELD_IS_PUSHBUTTON;
 		break;
 	case PDF_WIDGET_TYPE_CHECKBOX:
 		typename = PDF_NAME(Btn);
-		clearbits = Ff_Pushbutton;
-		setbits = Ff_Radio;
+		clearbits = PDF_BTN_FIELD_IS_PUSHBUTTON;
+		setbits = PDF_BTN_FIELD_IS_RADIO;
 		break;
 	case PDF_WIDGET_TYPE_RADIOBUTTON:
 		typename = PDF_NAME(Btn);
-		clearbits = (Ff_Pushbutton|Ff_Radio);
+		clearbits = (PDF_BTN_FIELD_IS_PUSHBUTTON|PDF_BTN_FIELD_IS_RADIO);
 		break;
 	case PDF_WIDGET_TYPE_TEXT:
 		typename = PDF_NAME(Tx);
 		break;
 	case PDF_WIDGET_TYPE_LISTBOX:
 		typename = PDF_NAME(Ch);
-		clearbits = Ff_Combo;
+		clearbits = PDF_CH_FIELD_IS_COMBO;
 		break;
 	case PDF_WIDGET_TYPE_COMBOBOX:
 		typename = PDF_NAME(Ch);
-		setbits = Ff_Combo;
+		setbits = PDF_CH_FIELD_IS_COMBO;
 		break;
 	case PDF_WIDGET_TYPE_SIGNATURE:
 		typename = PDF_NAME(Sig);

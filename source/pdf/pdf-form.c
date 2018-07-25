@@ -21,8 +21,8 @@ enum
 static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
 	int ff = pdf_get_field_flags(ctx, doc, field);
-	if (ff & Ff_NoExport) return 0;
-	if (ff & Ff_ReadOnly) return 0;
+	if (ff & PDF_FIELD_IS_NO_EXPORT) return 0;
+	if (ff & PDF_FIELD_IS_READ_ONLY) return 0;
 	return 1;
 }
 
@@ -454,7 +454,8 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
 	int ff = pdf_get_field_flags(ctx, doc, obj);
-	int radio = ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio);
+	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
+	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
 	char *val = NULL;
 	pdf_obj *grp = radio ? pdf_dict_get(ctx, obj, PDF_NAME(Parent)) : find_head_of_field_group(ctx, obj);
 
@@ -465,7 +466,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	{
 		/* "as" neither missing nor set to Off. Set it to Off, unless
 		 * this is a non-toggle-off radio button. */
-		if ((ff & (Ff_Pushbutton|Ff_NoToggleToOff|Ff_Radio)) != (Ff_NoToggleToOff|Ff_Radio))
+		if (radio && !(ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF))
 		{
 			check_off(ctx, doc, obj);
 			val = "Off";
@@ -1138,7 +1139,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	{
 	case PDF_WIDGET_TYPE_LISTBOX:
 	case PDF_WIDGET_TYPE_COMBOBOX:
-		return (pdf_get_field_flags(ctx, doc, annot->obj) & Ff_MultiSelect) != 0;
+		return (pdf_get_field_flags(ctx, doc, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
 	default:
 		return 0;
 	}

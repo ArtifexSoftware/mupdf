@@ -4,33 +4,26 @@
 /* Field flags */
 enum
 {
-	/* Common to all field types */
-	Ff_ReadOnly = 1 << (1-1),
-	Ff_Required = 1 << (2-1),
-	Ff_NoExport = 1 << (3-1),
+	/* All fields */
+	PDF_FIELD_IS_READ_ONLY = 1,
+	PDF_FIELD_IS_REQUIRED = 1 << 1,
+	PDF_FIELD_IS_NO_EXPORT = 1 << 2,
 
 	/* Text fields */
-	Ff_Multiline = 1 << (13-1),
-	Ff_Password = 1 << (14-1),
-
-	Ff_FileSelect = 1 << (21-1),
-	Ff_DoNotSpellCheck = 1 << (23-1),
-	Ff_DoNotScroll = 1 << (24-1),
-	Ff_Comb = 1 << (25-1),
-	Ff_RichText = 1 << (26-1),
+	PDF_TX_FIELD_IS_MULTILINE = 1 << 12,
+	PDF_TX_FIELD_IS_PASSWORD = 1 << 13,
+	PDF_TX_FIELD_IS_COMB = 1 << 24,
 
 	/* Button fields */
-	Ff_NoToggleToOff = 1 << (15-1),
-	Ff_Radio = 1 << (16-1),
-	Ff_Pushbutton = 1 << (17-1),
-	Ff_RadioInUnison = 1 << (26-1),
+	PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF = 1 << 14,
+	PDF_BTN_FIELD_IS_RADIO = 1 << 15,
+	PDF_BTN_FIELD_IS_PUSHBUTTON = 1 << 16,
 
 	/* Choice fields */
-	Ff_Combo = 1 << (18-1),
-	Ff_Edit = 1 << (19-1),
-	Ff_Sort = 1 << (20-1),
-	Ff_MultiSelect = 1 << (22-1),
-	Ff_CommitOnSelCHange = 1 << (27-1),
+	PDF_CH_FIELD_IS_COMBO = 1 << 17,
+	PDF_CH_FIELD_IS_EDIT = 1 << 18,
+	PDF_CH_FIELD_IS_SORT = 1 << 19,
+	PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21,
 };
 
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
