@@ -13,6 +13,13 @@
 #include <unistd.h> /* for fork and exec */
 #endif
 
+#ifdef __APPLE__
+void glutLeaveMainLoop(void)
+{
+	exit(0);
+}
+#endif
+
 fz_context *ctx = NULL;
 pdf_document *pdf = NULL;
 pdf_page *page = NULL;
