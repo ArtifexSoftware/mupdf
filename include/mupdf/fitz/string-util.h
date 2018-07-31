@@ -80,8 +80,8 @@ char *fz_urldecode(char *url);
 	fz_format_output_path: create output file name using a template.
 		If the path contains %[0-9]*d, the first such pattern will be replaced
 		with the page number. If the template does not contain such a pattern, the page
-		number will be inserted before the file suffix. If the template does not have
-		a file suffix, the page number will be added to the end.
+		number will be inserted before the filename extension. If the template does not have
+		a filename extension, the page number will be added to the end.
 */
 void fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page);
 

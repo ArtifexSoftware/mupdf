@@ -15,8 +15,8 @@ static pdf_write_options save_opts;
 
 static int pdf_filter(const char *fn)
 {
-	const char *suffix = strrchr(fn, '.');
-	if (suffix && !fz_strcasecmp(suffix, ".pdf"))
+	const char *extension = strrchr(fn, '.');
+	if (extension && !fz_strcasecmp(extension, ".pdf"))
 		return 1;
 	return 0;
 }

@@ -309,7 +309,7 @@ void fz_register_document_handlers(fz_context *ctx);
 	fz_recognize_document: Given a magic find a document
 	handler that can handle a document of this type.
 
-	magic: Can be a file extension (including initial period) or
+	magic: Can be a filename extension (including initial period) or
 	a mimetype.
 */
 const fz_document_handler *fz_recognize_document(fz_context *ctx, const char *magic);

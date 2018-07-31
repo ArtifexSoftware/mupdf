@@ -270,7 +270,7 @@ void MuOfficeLib_destroy(MuOfficeLib *mu);
 MuOfficeDocType MuOfficeLib_getDocTypeFromFileExtension(const char *path);
 
 /**
- * Return a list of file extensions supported by Mu Office library.
+ * Return a list of filename extensions supported by Mu Office library.
  *
  * @return    comma-delimited list of extensions, without the leading ".".
  *            The caller should free the returned pointer..
