@@ -804,10 +804,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\jbig2dec\jbig2_metadata.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\thirdparty\jbig2dec\jbig2_mmr.c"
 				>
 			</File>

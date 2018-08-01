@@ -346,7 +346,7 @@ next_jbig2d(fz_context *ctx, fz_stream *stm, size_t len)
 	return *stm->rp++;
 }
 
-static int
+static void
 error_callback(void *data, const char *msg, Jbig2Severity severity, int32_t seg_idx)
 {
 	fz_context *ctx = data;
@@ -354,7 +354,6 @@ error_callback(void *data, const char *msg, Jbig2Severity severity, int32_t seg_
 		fz_warn(ctx, "jbig2dec error: %s (segment %d)", msg, seg_idx);
 	else if (severity == JBIG2_SEVERITY_WARNING)
 		fz_warn(ctx, "jbig2dec warning: %s (segment %d)", msg, seg_idx);
-	return 0;
 }
 
 static void *fz_jbig2_alloc(Jbig2Allocator *allocator, size_t size)
