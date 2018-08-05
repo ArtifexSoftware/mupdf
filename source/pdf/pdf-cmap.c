@@ -362,7 +362,7 @@ dump_splay(cmap_splay *tree, unsigned int node, int depth, const char *pre)
 {
 	int i;
 
-	if (node == EMPTY)
+	if (tree == NULL || node == EMPTY)
 		return;
 
 	for (i = 0; i < depth; i++)
@@ -440,6 +440,19 @@ static void walk_splay(cmap_splay *tree, unsigned int node, void (*fn)(cmap_spla
 }
 
 #ifdef CHECK_SPLAY
+
+static int
+tree_has_overlap(cmap_splay *tree, int node, int low, int high)
+{
+	if (tree[node].left != EMPTY)
+		if (tree_has_overlap(tree, tree[node].left, low, high))
+			return 1;
+	if (tree[node].right != EMPTY)
+		if (tree_has_overlap(tree, tree[node].right, low, high))
+			return 1;
+	return (tree[node].low < low && low < tree[node].high) || (tree[node].low < high && high < tree[node].high);
+}
+
 static void
 do_check(cmap_splay *node, void *arg)
 {
@@ -451,6 +464,7 @@ do_check(cmap_splay *node, void *arg)
 		tree[node->left].high < node->low));
 	assert(node->right == EMPTY || (tree[node->right].parent == num &&
 		node->high < tree[node->right].low));
+	assert(!tree_has_overlap(tree, num, node->low, node->high));
 }
 
 static void
