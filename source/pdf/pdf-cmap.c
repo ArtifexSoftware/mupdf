@@ -543,6 +543,12 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					tree[current].low = high + 1;
 					if (tree[current].low > tree[current].high)
 					{
+						/* update lt/gt references that will be moved/stale after deleting current */
+						if (gt == cmap->tlen - 1)
+							gt = current;
+						if (lt == cmap->tlen - 1)
+							lt = current;
+						/* delete_node() moves the element at cmap->tlen-1 into current */
 						move = delete_node(cmap, current);
 						current = EMPTY;
 						continue;
