@@ -717,6 +717,10 @@ function AFSpecial_KeystrokeEx(fmt) {
 		i++;
 	}
 
+	//  If there are characters left over in the value, it's not a match.
+	if (val.length > 0)
+		event.rc = false;
+
 	if (event.rc)
 		event.value = res;
 	else if (event.willCommit)
