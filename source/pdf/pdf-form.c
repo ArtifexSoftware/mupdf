@@ -983,6 +983,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	{
 	default:
 		color[0] = color[1] = color[2] = 0;
+		break;
 	case 1:
 		color[0] = color[1] = color[2] = pdf_array_get_real(ctx, col, 0);
 		break;
