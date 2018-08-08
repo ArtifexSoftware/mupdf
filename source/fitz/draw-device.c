@@ -93,8 +93,8 @@ static void dump_spaces(int x, const char *s)
 #endif
 
 #ifdef DUMP_STACK_CHANGES
-#define STACK_PUSHED(A) stack_change(ctx, dev, ">" ## A)
-#define STACK_POPPED(A) stack_change(ctx, dev, "<" ## A)
+#define STACK_PUSHED(A) stack_change(ctx, dev, ">" A)
+#define STACK_POPPED(A) stack_change(ctx, dev, "<" A)
 #define STACK_CONVERT(A) stack_change(ctx, dev, A)
 
 static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
