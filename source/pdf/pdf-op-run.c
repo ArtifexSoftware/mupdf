@@ -1213,6 +1213,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	fz_var(oldbot);
 	fz_var(cs);
 	fz_var(saved_def_cs);
+	fz_var(transparency);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
