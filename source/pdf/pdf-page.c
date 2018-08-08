@@ -882,14 +882,13 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
 	pdf_document *doc = page->doc;
 
+	/* We are about to destroy the annotation records for this page and so,
+	 * if doc->focus refers to one of them, it must be NULLed */
+	if (doc->focus && doc->focus->page == page)
+		doc->focus = NULL;
+
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
-
-	/* doc->focus, when not NULL, refers to one of
-	 * the annotations and must be NULLed when the
-	 * annotations are destroyed. doc->focus_obj
-	 * keeps track of the actual annotation object. */
-	doc->focus = NULL;
 
 	pdf_drop_obj(ctx, page->obj);
 
