@@ -419,6 +419,9 @@ lex_hex_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 		{
 		case IS_WHITE:
 			break;
+		default:
+			fz_warn(ctx, "invalid character in hex string");
+			/* fall through */
 		case IS_HEX:
 			if (x)
 			{
@@ -432,11 +435,13 @@ lex_hex_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 			}
 			break;
 		case '>':
+			if (x)
+			{
+				*s++ = a * 16; /* pad truncated string with '0' */
+			}
 			goto end;
 		case EOF:
 			return PDF_TOK_ERROR;
-		default:
-			fz_warn(ctx, "ignoring invalid character in hex string");
 		}
 	}
 end:
