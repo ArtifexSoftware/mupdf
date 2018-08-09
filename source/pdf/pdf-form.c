@@ -1061,6 +1061,10 @@ static int run_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, cha
 {
 	pdf_obj *k = pdf_dict_getl(ctx, field, PDF_NAME(AA), PDF_NAME(K), NULL);
 
+	/* Return 1 on empty string */
+	if (*text[0] == 0)
+		return 1;
+
 	if (k && doc->js)
 	{
 		pdf_js_event e;
