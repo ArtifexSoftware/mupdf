@@ -8766,9 +8766,9 @@ FUN(PDFPage_update)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_page *page = from_PDFPage(env, self);
-	jboolean changed = 0;
+	jboolean changed = JNI_FALSE;
 
-	if (!ctx || !page) return 0;
+	if (!ctx || !page) return JNI_FALSE;
 
 	fz_try(ctx)
 		changed = pdf_update_page(ctx, page);
@@ -9238,9 +9238,9 @@ FUN(PDFAnnotation_update)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	jboolean changed = 0;
+	jboolean changed = JNI_FALSE;
 
-	if (!ctx || !annot) return 0;
+	if (!ctx || !annot) return JNI_FALSE;
 
 	fz_try(ctx)
 		changed = pdf_update_annot(ctx, annot);
