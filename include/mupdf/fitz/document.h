@@ -209,6 +209,7 @@ struct fz_annot_s
 struct fz_page_s
 {
 	int refs;
+	int number; /* page number */
 	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
 	fz_page_run_page_contents_fn *run_page_contents;
@@ -219,6 +220,7 @@ struct fz_page_s
 	fz_page_separation_disabled_fn *separation_disabled;
 	fz_page_separations_fn *separations;
 	fz_page_uses_overprint_fn *overprint;
+	fz_page **prev, *next; /* linked list of currently open pages */
 };
 
 /*
@@ -245,6 +247,7 @@ struct fz_document_s
 	fz_document_output_intent_fn *get_output_intent;
 	int did_layout;
 	int is_reflowable;
+	fz_page *open; /* linked list of currently open pages */
 };
 
 /*
