@@ -217,18 +217,21 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colors
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	rect = fz_bound_page(ctx, page);
 	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_bbox(ctx, cs, bbox, 0, alpha);
-	if (alpha)
-		fz_clear_pixmap(ctx, pix);
-	else
-		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
 	{
+		if (alpha)
+			fz_clear_pixmap(ctx, pix);
+		else
+			fz_clear_pixmap_with_value(ctx, pix, 0xFF);
+
 		dev = fz_new_draw_device(ctx, ctm, pix);
 		fz_run_page(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
