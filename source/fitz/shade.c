@@ -314,6 +314,7 @@ fz_process_shade_type4(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	const float *c0 = shade->u.m.c0;
 	const float *c1 = shade->u.m.c1;
 	float x, y, c[FZ_MAX_COLORS];
+	int first_triangle = 1;
 
 	fz_try(ctx)
 	{
@@ -326,8 +327,22 @@ fz_process_shade_type4(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 				c[i] = read_sample(ctx, stream, bpcomp, c0[i], c1[i]);
 			fz_prepare_vertex(ctx, painter, vd, ctm, x, y, c);
 
+			if (first_triangle)
+			{
+				if (flag != 0)
+				{
+					fz_warn(ctx, "ignoring non-zero edge flags for first vertex in mesh");
+					flag = 0;
+				}
+				first_triangle = 0;
+			}
+
 			switch (flag)
 			{
+			default:
+				fz_warn(ctx, "ignoring out of range edge flag in mesh");
+				/* fallthrough */
+
 			case 0: /* start new triangle */
 				SWAP(va, vd);
 
