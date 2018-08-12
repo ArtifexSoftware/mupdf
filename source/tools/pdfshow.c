@@ -358,7 +358,11 @@ static void showpathroot(char *path)
 		else if (!strcmp(part, "pages"))
 			showpathpage(list);
 		else if (isnumber(part))
-			showpath(list, pdf_new_indirect(ctx, doc, atoi(part), 0));
+		{
+			pdf_obj *num = pdf_new_indirect(ctx, doc, atoi(part), 0);
+			showpath(list, num);
+			pdf_drop_obj(ctx, num);
+		}
 		else
 			showpath(list, pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part));
 	}
