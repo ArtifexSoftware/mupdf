@@ -1950,6 +1950,8 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 	fz_colorspace *model = state->dest->colorspace;
 	fz_irect clip;
 
+	fz_var(pixmap);
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
@@ -1979,10 +1981,10 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(tscissor));
 	}
 
-	pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
-
 	fz_try(ctx)
 	{
+		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
+
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
 
