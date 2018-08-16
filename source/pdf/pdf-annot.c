@@ -1488,7 +1488,7 @@ pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *f
 void
 pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3])
 {
-	pdf_obj *da = pdf_dict_get(ctx, annot->obj, PDF_NAME(DA));
+	pdf_obj *da = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(DA));
 	if (!da)
 	{
 		pdf_obj *trailer = pdf_trailer(ctx, annot->page->doc);
