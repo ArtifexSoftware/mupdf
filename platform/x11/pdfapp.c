@@ -1716,6 +1716,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 									winwarn(app, ebuf);
 							}
 						}
+#ifdef HAVE_LIBCRYPTO
 						else
 						{
 							/* Signature is unsigned. Offer to sign it */
@@ -1750,6 +1751,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 								}
 							}
 						}
+#endif /* HAVE_LIBCRYPTO */
 					}
 					break;
 				}
