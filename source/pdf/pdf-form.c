@@ -466,7 +466,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	{
 		/* "as" neither missing nor set to Off. Set it to Off, unless
 		 * this is a non-toggle-off radio button. */
-		if (radio && !(ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF))
+		if (!(radio && (ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF)))
 		{
 			check_off(ctx, doc, obj);
 			val = "Off";
