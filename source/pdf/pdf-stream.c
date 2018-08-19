@@ -251,10 +251,7 @@ build_filter_chain_drop(fz_context *ctx, fz_stream *chain, pdf_document *doc, pd
 		}
 	}
 	fz_catch(ctx)
-	{
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
-	}
 	return chain;
 }
 
