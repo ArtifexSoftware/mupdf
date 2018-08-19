@@ -186,7 +186,7 @@ static inline int ps_overflow(ps_stack *st, int n)
 
 static inline int ps_underflow(ps_stack *st, int n)
 {
-	return n < 0 || st->sp - n < 0;
+	return n < 0 || n > st->sp;
 }
 
 static inline int ps_is_type(ps_stack *st, int t)
@@ -316,7 +316,7 @@ ps_roll(ps_stack *st, int n, int j)
 static void
 ps_index(ps_stack *st, int n)
 {
-	if (!ps_overflow(st, 1) && !ps_underflow(st, n))
+	if (!ps_overflow(st, 1) && !ps_underflow(st, n + 1))
 	{
 		st->stack[st->sp] = st->stack[st->sp - n - 1];
 		st->sp++;
