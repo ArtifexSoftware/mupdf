@@ -277,6 +277,7 @@ static int ui_input_key(struct input *input, int multiline)
 		break;
 	case KEY_CTL_U:
 		input->p = input->q = input->end = input->text;
+		*input->end = 0;
 		break;
 	case KEY_CTL_C:
 	case KEY_CTL_X:
