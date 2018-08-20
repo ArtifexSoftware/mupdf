@@ -241,18 +241,18 @@ pdf_drop_material(fz_context *ctx, pdf_material *mat)
 }
 
 static void
-pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *gs, const pdf_gstate *old)
+pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *dst, const pdf_gstate *src)
 {
-	gs->ctm = old->ctm;
+	dst->ctm = src->ctm;
 
-	pdf_drop_font(ctx, gs->text.font);
-	gs->text.font = pdf_keep_font(ctx, old->text.font);
+	pdf_drop_font(ctx, dst->text.font);
+	dst->text.font = pdf_keep_font(ctx, src->text.font);
 
-	pdf_drop_obj(ctx, gs->softmask);
-	gs->softmask = pdf_keep_obj(ctx, old->softmask);
+	pdf_drop_obj(ctx, dst->softmask);
+	dst->softmask = pdf_keep_obj(ctx, src->softmask);
 
-	fz_drop_stroke_state(ctx, gs->stroke_state);
-	gs->stroke_state = fz_keep_stroke_state(ctx, old->stroke_state);
+	fz_drop_stroke_state(ctx, dst->stroke_state);
+	dst->stroke_state = fz_keep_stroke_state(ctx, src->stroke_state);
 }
 
 static void
@@ -1079,11 +1079,11 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, fz_matrix ctm)
 }
 
 static void
-pdf_copy_gstate(fz_context *ctx, pdf_gstate *gs, pdf_gstate *old)
+pdf_copy_gstate(fz_context *ctx, pdf_gstate *dst, pdf_gstate *src)
 {
-	pdf_drop_gstate(ctx, gs);
-	*gs = *old;
-	pdf_keep_gstate(ctx, gs);
+	pdf_drop_gstate(ctx, dst);
+	*dst = *src;
+	pdf_keep_gstate(ctx, dst);
 }
 
 /*
