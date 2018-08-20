@@ -90,7 +90,7 @@ static void app_alert(js_State *J)
 	event.message = js_tostring(J, 1);
 	event.icon_type = js_tointeger(J, 2);
 	event.button_group_type = js_tointeger(J, 3);
-	event.title = js_tostring(J, 4);
+	event.title = js_isdefined(J, 4) ? js_tostring(J, 4) : "PDF Alert";
 	event.button_pressed = 0; /* WIP WIP WIP IS THIS CORRECT? */
 
 	fz_try(js->ctx)
