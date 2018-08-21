@@ -532,7 +532,8 @@ int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc)
 
 int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event)
 {
-	pdf_annot *annot;
+	pdf_annot *a;
+	pdf_annot *annot = NULL;
 	pdf_hotspot *hp = &doc->hotspot;
 	fz_point *pt = &(ui_event->event.pointer.pt);
 	int changed = 0;
@@ -541,12 +542,12 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	if (page == NULL)
 		return 0;
 
-	for (annot = page->annots; annot; annot = annot->next)
+	for (a = page->annots; a; a = a->next)
 	{
-		bbox = pdf_bound_annot(ctx, annot);
+		bbox = pdf_bound_annot(ctx, a);
 		if (pt->x >= bbox.x0 && pt->x <= bbox.x1)
 			if (pt->y >= bbox.y0 && pt->y <= bbox.y1)
-				break;
+				annot = a;
 	}
 
 	/* Skip hidden annotations. */
