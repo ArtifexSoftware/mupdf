@@ -5,7 +5,10 @@
 
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	return pdf_load_stream_or_string_as_utf8(ctx, pdf_dict_get_inheritable(ctx, field, PDF_NAME(V)));
+	pdf_obj *v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
+	if (pdf_is_name(ctx, v))
+		return fz_strdup(ctx, pdf_to_name(ctx, v));
+	return pdf_load_stream_or_string_as_utf8(ctx, v);
 }
 
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
