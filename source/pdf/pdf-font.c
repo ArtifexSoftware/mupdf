@@ -1387,6 +1387,9 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
 	pdf_font_desc *fontdesc = NULL;
 	int type3 = 0;
 
+	if (pdf_obj_marked(ctx, dict))
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "Recursive Type3 font definition.");
+
 	if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
 	{
 		return fontdesc;
@@ -1426,17 +1429,20 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
 		fontdesc = pdf_load_simple_font(ctx, doc, dict);
 	}
 
+	pdf_mark_obj(ctx, dict);
 	fz_try(ctx)
 	{
 		/* Create glyph width table for stretching substitute fonts and text extraction. */
 		pdf_make_width_table(ctx, fontdesc);
 
-		pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
-
-		/* Load glyphs after storing, in case of cyclical dependencies */
+		/* Load CharProcs */
 		if (type3)
 			pdf_load_type3_glyphs(ctx, doc, fontdesc, nested_depth);
+
+		pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
 	}
+	fz_always(ctx)
+		pdf_unmark_obj(ctx, dict);
 	fz_catch(ctx)
 	{
 		pdf_drop_font(ctx, fontdesc);
