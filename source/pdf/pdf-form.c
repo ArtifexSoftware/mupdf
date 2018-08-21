@@ -456,7 +456,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	int ff = pdf_get_field_flags(ctx, doc, obj);
 	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
 	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
-	char *val = NULL;
+	pdf_obj *val = NULL;
 	pdf_obj *grp = radio ? pdf_dict_get(ctx, obj, PDF_NAME(Parent)) : find_head_of_field_group(ctx, obj);
 
 	if (!grp)
@@ -464,32 +464,32 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (as && !pdf_name_eq(ctx, as, PDF_NAME(Off)))
 	{
-		/* "as" neither missing nor set to Off. Set it to Off, unless
+		/* AS neither missing nor set to Off. Set it to Off, unless
 		 * this is a non-toggle-off radio button. */
 		if (!(radio && (ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF)))
 		{
 			check_off(ctx, doc, obj);
-			val = "Off";
+			val = PDF_NAME(Off);
 		}
 	}
 	else
 	{
-		pdf_obj *n, *key = NULL;
+		pdf_obj *n, *key;
 		int len, i;
 
-		n = pdf_dict_getp(ctx, obj, "AP/N");
+		n = pdf_dict_getl(ctx, obj, PDF_NAME(AP), PDF_NAME(N), NULL);
 
-		/* Look for a key that isn't "Off" */
+		/* Look for an appearance state that isn't "Off" */
 		len = pdf_dict_len(ctx, n);
 		for (i = 0; i < len; i++)
 		{
 			key = pdf_dict_get_key(ctx, n, i);
 			if (pdf_is_name(ctx, key) && !pdf_name_eq(ctx, key, PDF_NAME(Off)))
-				break;
+				val = key;
 		}
 
 		/* If we found no alternative value to Off then we have no value to use */
-		if (!key)
+		if (!val)
 			return;
 
 		if (radio)
@@ -502,7 +502,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 			for (i = 0; i < len; i++)
 				check_off(ctx, doc, pdf_array_get(ctx, kids, i));
 
-			pdf_dict_put(ctx, obj, PDF_NAME(AS), key);
+			pdf_dict_put(ctx, obj, PDF_NAME(AS), val);
 		}
 		else
 		{
@@ -510,17 +510,13 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 			 * below which all fields share a name with the clicked one. Set
 			 * all to the same value. This may cause the group to act like
 			 * radio buttons, if each have distinct "On" values */
-			if (grp)
-				set_check_grp(ctx, doc, grp, key);
-			else
-				set_check(ctx, doc, obj, key);
+			set_check_grp(ctx, doc, grp, val);
 		}
 	}
 
 	if (val && grp)
 	{
-		pdf_obj *v = pdf_new_text_string(ctx, val);
-		pdf_dict_put_drop(ctx, grp, PDF_NAME(V), v);
+		pdf_dict_put(ctx, grp, PDF_NAME(V), val);
 		recalculate(ctx, doc);
 	}
 }
