@@ -244,10 +244,19 @@ lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 	{
 		if (s == e)
 		{
-			if (e - lb->scratch >= 127)
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "name too long");
-			s += pdf_lexbuf_grow(ctx, lb);
-			e = lb->scratch + fz_mini(127, lb->size);
+			if (e - lb->scratch < 127)
+			{
+				s += pdf_lexbuf_grow(ctx, lb);
+				e = lb->scratch + fz_mini(127, lb->size);
+			}
+			else
+			{
+				/* truncate names that are too long */
+				fz_warn(ctx, "name is too long");
+				*s = 0;
+				lb->len = s - lb->scratch;
+				s = NULL;
+			}
 		}
 		c = lex_byte(ctx, f);
 		switch (c)
@@ -283,22 +292,25 @@ lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 					goto illegal;
 				}
 			}
-			*s++ = (hex[0] << 4) + hex[1];
+			if (s) *s++ = (hex[0] << 4) + hex[1];
 			break;
 illegal:
 			if (i == 1)
 				fz_unread_byte(ctx, f);
-			*s++ = '#';
+			if (s) *s++ = '#';
 			continue;
 		}
 		default:
-			*s++ = c;
+			if (s) *s++ = c;
 			break;
 		}
 	}
 end:
-	*s = '\0';
-	lb->len = s - lb->scratch;
+	if (s)
+	{
+		*s = '\0';
+		lb->len = s - lb->scratch;
+	}
 }
 
 static int
