@@ -1320,7 +1320,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	{
 		fz_rect rect, bbox;
 		fz_matrix matrix = fz_identity;
-		fz_buffer *buf = fz_new_buffer(ctx, 1024);
+		fz_buffer *buf;
 		pdf_obj *res = NULL;
 		pdf_obj *new_ap_n = NULL;
 		fz_var(res);
@@ -1333,6 +1333,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 			if (pdf_name_eq(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT)), PDF_NAME(Btn)))
 				return;
 
+		buf = fz_new_buffer(ctx, 1024);
 		fz_try(ctx)
 		{
 			rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
