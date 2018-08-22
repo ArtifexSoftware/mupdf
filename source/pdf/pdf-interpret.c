@@ -64,13 +64,13 @@ pdf_clear_stack(fz_context *ctx, pdf_csi *csi)
 }
 
 static pdf_font_desc *
-load_font_or_hail_mary(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *font, int depth, fz_cookie *cookie)
+load_font_or_hail_mary(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *font, fz_cookie *cookie)
 {
 	pdf_font_desc *desc;
 
 	fz_try(ctx)
 	{
-		desc = pdf_load_font(ctx, doc, rdb, font, depth);
+		desc = pdf_load_font(ctx, doc, rdb, font);
 	}
 	fz_catch(ctx)
 	{
@@ -192,7 +192,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 	{
 		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
 		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
-		pdf_font_desc *font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, font_ref, 0, csi->cookie);
+		pdf_font_desc *font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, font_ref, csi->cookie);
 		fz_try(ctx)
 			proc->op_Tf(ctx, proc, "ExtGState", font, pdf_to_real(ctx, font_size));
 		fz_always(ctx)
@@ -657,7 +657,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			fontobj = pdf_dict_gets(ctx, fontres, csi->name);
 			if (!fontobj)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Font resource '%s'", csi->name);
-			font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, 0, csi->cookie);
+			font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, csi->cookie);
 			fz_try(ctx)
 				proc->op_Tf(ctx, proc, csi->name, font, s[0]);
 			fz_always(ctx)

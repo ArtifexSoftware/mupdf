@@ -4,9 +4,9 @@
 #include "../fitz/font-imp.h"
 
 static void
-pdf_run_glyph_func(fz_context *ctx, void *doc, void *rdb, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, int nested_depth, fz_default_colorspaces *default_cs)
+pdf_run_glyph_func(fz_context *ctx, void *doc, void *rdb, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs)
 {
-	pdf_run_glyph(ctx, doc, (pdf_obj *)rdb, contents, dev, ctm, gstate, nested_depth, default_cs);
+	pdf_run_glyph(ctx, doc, (pdf_obj *)rdb, contents, dev, ctm, gstate, default_cs);
 }
 
 static void
@@ -190,7 +190,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 	return fontdesc;
 }
 
-void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, int nested_depth)
+void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
 {
 	int i;
 
@@ -200,7 +200,7 @@ void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fo
 		{
 			if (fontdesc->font->t3procs[i])
 			{
-				fz_prepare_t3_glyph(ctx, fontdesc->font, i, nested_depth);
+				fz_prepare_t3_glyph(ctx, fontdesc->font, i);
 				fontdesc->size += 0; // TODO: display list size calculation
 			}
 		}

@@ -72,8 +72,6 @@ struct pdf_run_processor_s
 
 	fz_default_colorspaces *default_cs;
 
-	int nested_depth;
-
 	/* path object state */
 	fz_path *path;
 	int clip;
@@ -903,9 +901,8 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 
 	gid = pdf_tos_make_trm(ctx, &pr->tos, &gstate->text, fontdesc, cid, &trm);
 
-	/* If we are a type3 font within a type 3 font, or are otherwise
-	 * uncachable, then render direct. */
-	render_direct = (!fz_font_ft_face(ctx, fontdesc->font) && pr->nested_depth > 0) || !fz_glyph_cacheable(ctx, fontdesc->font, gid);
+	/* If we are uncachable, then render direct. */
+	render_direct = !fz_glyph_cacheable(ctx, fontdesc->font, gid);
 
 	/* flush buffered text if rendermode has changed */
 	if (!pr->tos.text || gstate->text.render != pr->tos.text_mode || render_direct)
@@ -920,7 +917,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 		 * type3 glyphs that seem to inherit current graphics
 		 * attributes, or type 3 glyphs within type3 glyphs). */
 		fz_matrix composed = fz_concat(trm, gstate->ctm);
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->nested_depth, pr->default_cs);
+		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
 	}
@@ -1831,16 +1828,12 @@ static void pdf_run_dquote(fz_context *ctx, pdf_processor *proc, float aw, float
 static void pdf_run_d0(fz_context *ctx, pdf_processor *proc, float wx, float wy)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	if (pr->nested_depth > 1)
-		return;
 	pr->dev->flags |= FZ_DEVFLAG_COLOR;
 }
 
 static void pdf_run_d1(fz_context *ctx, pdf_processor *proc, float wx, float wy, float llx, float lly, float urx, float ury)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	if (pr->nested_depth > 1)
-		return;
 	pr->dev->flags |= FZ_DEVFLAG_MASK | FZ_DEVFLAG_BBOX_DEFINED;
 	pr->dev->flags &= ~(FZ_DEVFLAG_FILLCOLOR_UNDEFINED |
 				FZ_DEVFLAG_STROKECOLOR_UNDEFINED |
@@ -2081,7 +2074,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 }
 
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, int nested, fz_default_colorspaces *default_cs)
+pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -2214,8 +2207,6 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char
 	proc->dev = dev;
 
 	proc->default_cs = fz_keep_default_colorspaces(ctx, default_cs);
-
-	proc->nested_depth = nested;
 
 	proc->path = NULL;
 	proc->clip = 0;

@@ -115,8 +115,8 @@ int pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid);
 const unsigned char *pdf_lookup_substitute_font(fz_context *ctx, int mono, int serif, int bold, int italic, int *len);
 
 pdf_font_desc *pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
-void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, int nested_depth);
-pdf_font_desc *pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj, int nested_depth);
+void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc);
+pdf_font_desc *pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
 pdf_font_desc *pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc);
 
 pdf_font_desc *pdf_new_font_desc(fz_context *ctx);
@@ -125,7 +125,7 @@ void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
 void pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc);
 
-void pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, int nested_depth, fz_default_colorspaces *default_cs);
+void pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs);
 
 pdf_obj *pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encoding);
 pdf_obj *pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font);

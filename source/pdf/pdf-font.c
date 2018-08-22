@@ -1379,7 +1379,7 @@ pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 }
 
 pdf_font_desc *
-pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
+pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict)
 {
 	pdf_obj *subtype;
 	pdf_obj *dfonts;
@@ -1437,7 +1437,7 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
 
 		/* Load CharProcs */
 		if (type3)
-			pdf_load_type3_glyphs(ctx, doc, fontdesc, nested_depth);
+			pdf_load_type3_glyphs(ctx, doc, fontdesc);
 
 		pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
 	}

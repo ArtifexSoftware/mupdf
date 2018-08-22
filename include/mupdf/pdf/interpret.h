@@ -179,12 +179,8 @@ struct pdf_csi_s
 	defined within the PDF reference manual, and others are possible.
 
 	gstate: The initial graphics state.
-
-	nested: The nested depth of this interpreter. This should be
-	0 for an initial call, and will be incremented in nested calls
-	due to Type 3 fonts.
 */
-pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, int nested, fz_default_colorspaces *default_cs);
+pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs);
 
 /*
 	pdf_new_buffer_processor: Create a buffer processor. This
