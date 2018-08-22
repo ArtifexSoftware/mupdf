@@ -338,10 +338,11 @@ pdf_grestore(fz_context *ctx, pdf_run_processor *pr)
 	}
 }
 
-static void
-pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_gstate *pat_gstate, fz_rect area, int what)
+static pdf_gstate *
+pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int pat_gstate_num, fz_rect area, int what)
 {
 	pdf_gstate *gstate;
+	pdf_gstate *pat_gstate;
 	int gparent_save;
 	fz_matrix ptm, invptm, gparent_save_ctm;
 	int x0, y0, x1, y1;
@@ -351,6 +352,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 
 	pdf_gsave(ctx, pr);
 	gstate = pr->gstate + pr->gtop;
+	pat_gstate = pr->gstate + pat_gstate_num;
 
 	/* Patterns are run with the gstate of the parent */
 	pdf_copy_pattern_gstate(ctx, gstate, pat_gstate);
@@ -494,6 +496,8 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 	}
 
 	pdf_grestore(ctx, pr);
+
+	return pr->gstate + pr->gtop;
 }
 
 static void
@@ -514,7 +518,7 @@ pdf_show_image_imp(fz_context *ctx, pdf_run_processor *pr, fz_image *image, fz_m
 	{
 		fz_clip_image_mask(ctx, pr->dev, image, image_ctm, bbox);
 		fz_try(ctx)
-			pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], bbox, PDF_FILL);
+			gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, bbox, PDF_FILL);
 		fz_always(ctx)
 			fz_pop_clip(ctx, pr->dev);
 		fz_catch(ctx)
@@ -665,7 +669,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->fill.pattern)
 				{
 					fz_clip_path(ctx, pr->dev, path, even_odd, gstate->ctm, bbox);
-					pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], bbox, PDF_FILL);
+					gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, bbox, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -695,7 +699,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, gstate->ctm, bbox);
-					pdf_show_pattern(ctx, pr, gstate->stroke.pattern, &pr->gstate[gstate->stroke.gstate_num], bbox, PDF_STROKE);
+					gstate = pdf_show_pattern(ctx, pr, gstate->stroke.pattern, gstate->stroke.gstate_num, bbox, PDF_STROKE);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -718,7 +722,6 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 
 		if (pr->clip)
 		{
-			gstate = pr->gstate + pr->gtop; /* in case it was changed by pdf_begin_group */
 			gstate->clip_depth++;
 			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, gstate->ctm, bbox);
 			pr->clip = 0;
@@ -818,7 +821,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->fill.pattern)
 				{
 					fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
-					pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], tb, PDF_FILL);
+					gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, tb, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -848,7 +851,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, gstate->ctm, tb);
-					pdf_show_pattern(ctx, pr, gstate->stroke.pattern, &pr->gstate[gstate->stroke.gstate_num], tb, PDF_STROKE);
+					gstate = pdf_show_pattern(ctx, pr, gstate->stroke.pattern, gstate->stroke.gstate_num, tb, PDF_STROKE);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
