@@ -546,11 +546,12 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 				annot = a;
 	}
 
-	/* Skip hidden annotations. */
+	/* Skip hidden annotations and read-only widgets. */
 	if (annot)
 	{
+		int ff = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Ff));
 		int f = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
-		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW))
+		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW) || ff & PDF_FIELD_IS_READ_ONLY)
 			annot = NULL;
 	}
 
