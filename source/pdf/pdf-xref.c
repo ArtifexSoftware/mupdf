@@ -1099,15 +1099,13 @@ static int64_t
 read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer = NULL;
+	pdf_obj *prevobj;
 	int64_t xrefstmofs = 0;
 	int64_t prevofs = 0;
 
-	fz_var(trailer);
-
+	trailer = pdf_read_xref(ctx, doc, ofs, buf);
 	fz_try(ctx)
 	{
-		trailer = pdf_read_xref(ctx, doc, ofs, buf);
-
 		pdf_set_populating_xref_trailer(ctx, doc, trailer);
 
 		/* FIXME: do we overwrite free entries properly? */
@@ -1126,18 +1124,18 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *b
 			pdf_drop_obj(ctx, pdf_read_xref(ctx, doc, xrefstmofs, buf));
 		}
 
-		prevofs = pdf_to_int64(ctx, pdf_dict_get(ctx, trailer, PDF_NAME(Prev)));
-		if (prevofs < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "negative xref stream offset for previous xref stream");
+		prevobj = pdf_dict_get(ctx, trailer, PDF_NAME(Prev));
+		if (pdf_is_int(ctx, prevobj))
+		{
+			prevofs = pdf_to_int64(ctx, prevobj);
+			if (prevofs <= 0)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid offset for previous xref section");
+		}
 	}
 	fz_always(ctx)
-	{
 		pdf_drop_obj(ctx, trailer);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	return prevofs;
 }
