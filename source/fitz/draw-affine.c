@@ -4044,6 +4044,10 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 
 	if (dolerp)
 	{
+		/* image size overflows 16.16 fixed point math */
+		if (sw >= 32768 || sh >= 32768)
+			return;
+
 		u -= 32768;
 		v -= 32768;
 		sw = (sw<<16) + 32768;
