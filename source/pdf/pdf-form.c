@@ -1289,40 +1289,45 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	int vnum;
 	pdf_obj *byte_range;
 	pdf_obj *contents;
-	char buf[2048];
-
-	memset(buf, 0, sizeof(buf));
+	int max_digest_size;
+	char *buf = NULL;
 
 	vnum = pdf_create_object(ctx, doc);
 	indv = pdf_new_indirect(ctx, doc, vnum, 0);
 	pdf_dict_put_drop(ctx, field, PDF_NAME(V), indv);
 
+	max_digest_size = signer->max_digest_size(signer);
+
 	fz_var(v);
+	fz_var(buf);
 	fz_try(ctx)
 	{
 		v = pdf_new_dict(ctx, doc, 4);
 		pdf_update_object(ctx, doc, vnum, v);
+
+		buf = fz_calloc(ctx, max_digest_size, 1);
+
+		byte_range = pdf_new_array(ctx, doc, 4);
+		pdf_dict_put_drop(ctx, v, PDF_NAME(ByteRange), byte_range);
+
+		contents = pdf_new_string(ctx, buf, max_digest_size);
+		pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
+
+		pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
+		pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
+
+		/* Record details within the document structure so that contents
+		* and byte_range can be updated with their correct values at
+		* saving time */
+		pdf_xref_store_unsaved_signature(ctx, doc, field, signer);
 	}
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, v);
+		fz_free(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
-
-	byte_range = pdf_new_array(ctx, doc, 4);
-	pdf_dict_put_drop(ctx, v, PDF_NAME(ByteRange), byte_range);
-
-	contents = pdf_new_string(ctx, buf, sizeof(buf));
-	pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
-
-	pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
-	pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
-
-	/* Record details within the document structure so that contents
-	 * and byte_range can be updated with their correct values at
-	 * saving time */
-	pdf_xref_store_unsaved_signature(ctx, doc, field, signer);
 }
