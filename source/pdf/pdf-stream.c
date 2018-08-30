@@ -193,9 +193,6 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 	else if (pdf_name_eq(ctx, f, PDF_NAME(ASCII85Decode)) || pdf_name_eq(ctx, f, PDF_NAME(A85)))
 		return fz_open_a85d(ctx, chain);
 
-	else if (pdf_name_eq(ctx, f, PDF_NAME(JBIG2Decode)))
-		return fz_open_jbig2d(ctx, chain, params->u.jbig2.globals); /* takes ownership of jbig2_globals */
-
 	else if (pdf_name_eq(ctx, f, PDF_NAME(JPXDecode)))
 		return fz_keep_stream(ctx, chain); /* JPX decoding is special cased in the image loading code */
 
