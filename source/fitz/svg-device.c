@@ -177,8 +177,6 @@ svg_dev_stroke_state(fz_context *ctx, svg_device *sdev, const fz_stroke_state *s
 	if (exp == 0)
 		exp = 1;
 	exp = stroke_state->linewidth/exp;
-	if (exp < 1)
-		exp = 1;
 
 	fz_write_printf(ctx, out, " stroke-width=\"%g\"", exp);
 	fz_write_printf(ctx, out, " stroke-linecap=\"%s\"",
