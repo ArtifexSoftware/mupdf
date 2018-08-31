@@ -609,10 +609,12 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	int knockout_group = 0;
 	char errmess[256] = "";
 	int err = FZ_ERROR_NONE;
+	int innerclip = 0;
 
 	fz_var(knockout_group);
 	fz_var(bbox);
 	fz_var(path);
+	fz_var(innerclip);
 
 	if (dostroke) {
 		if (pr->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED))
@@ -675,17 +677,21 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->fill.pattern)
 				{
 					fz_clip_path(ctx, pr->dev, path, even_odd, gstate->ctm, bbox);
+					innerclip = 1;
 					gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, bbox, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
+					innerclip = 0;
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
 					fz_clip_path(ctx, pr->dev, path, even_odd, gstate->ctm, bbox);
+					innerclip = 1;
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
 					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
 					fz_pop_clip(ctx, pr->dev);
+					innerclip = 0;
 				}
 				break;
 			}
@@ -705,16 +711,20 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, gstate->ctm, bbox);
+					innerclip = 1;
 					gstate = pdf_show_pattern(ctx, pr, gstate->stroke.pattern, gstate->stroke.gstate_num, bbox, PDF_STROKE);
 					fz_pop_clip(ctx, pr->dev);
+					innerclip = 0;
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, gstate->ctm, bbox);
+					innerclip = 1;
 					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.color_params);
 					fz_pop_clip(ctx, pr->dev);
+					innerclip = 0;
 				}
 				break;
 			}
@@ -722,6 +732,20 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	}
 	fz_always(ctx)
 	{
+		if (innerclip)
+		{
+			fz_try(ctx)
+			{
+				fz_pop_clip(ctx, pr->dev);
+			}
+			fz_catch(ctx)
+			{
+				/* Postpone the problem */
+				err = fz_caught(ctx);
+				strcpy(errmess, fz_caught_message(ctx));
+			}
+		}
+
 		if (knockout_group)
 		{
 			fz_try(ctx)
@@ -731,6 +755,8 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			fz_catch(ctx)
 			{
 				/* Postpone the problem */
+				if (err)
+					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
 				err = fz_caught(ctx);
 				strcpy(errmess, fz_caught_message(ctx));
 			}
