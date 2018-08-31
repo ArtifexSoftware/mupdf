@@ -41,6 +41,7 @@ fz_pixmap *fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, fz_matrix 
 fz_stext_page *fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options);
 fz_stext_page *fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_stext_options *options);
 fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, const fz_stext_options *options);
+fz_stext_page *fz_new_stext_page_from_annot(fz_context *ctx, fz_annot *annot, const fz_stext_options *options);
 
 /*
 	fz_new_buffer_from_stext_page: Convert structured text into plain text.

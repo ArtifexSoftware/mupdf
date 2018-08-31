@@ -339,6 +339,37 @@ fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number
 	return text;
 }
 
+fz_stext_page *
+fz_new_stext_page_from_annot(fz_context *ctx, fz_annot *annot, const fz_stext_options *options)
+{
+	fz_stext_page *text;
+	fz_device *dev = NULL;
+
+	fz_var(dev);
+
+	if (annot == NULL)
+		return NULL;
+
+	text = fz_new_stext_page(ctx, fz_bound_annot(ctx, annot));
+	fz_try(ctx)
+	{
+		dev = fz_new_stext_device(ctx, text, options);
+		fz_run_annot(ctx, annot, dev, fz_identity, NULL);
+		fz_close_device(ctx, dev);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_stext_page(ctx, text);
+		fz_rethrow(ctx);
+	}
+
+	return text;
+}
+
 int
 fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_quad *hit_bbox, int hit_max)
 {
