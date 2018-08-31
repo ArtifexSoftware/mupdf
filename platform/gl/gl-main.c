@@ -129,6 +129,7 @@ static int showlinks = 0;
 static int showsearch = 0;
 static int showinfo = 0;
 static int showhelp = 0;
+int showform = 0;
 
 struct mark
 {
@@ -547,44 +548,6 @@ static void do_search_hits(void)
 	glDisable(GL_BLEND);
 }
 
-static void do_forms(void)
-{
-	static int do_forms_tag = 0;
-	pdf_ui_event event;
-	fz_point p;
-
-	if (!pdf || search_active)
-		return;
-
-	p = fz_transform_point_xy(ui.x, ui.y, view_page_inv_ctm);
-
-	if (ui.down && !ui.active)
-	{
-		event.etype = PDF_EVENT_TYPE_POINTER;
-		event.event.pointer.pt = p;
-		event.event.pointer.ptype = PDF_POINTER_DOWN;
-		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
-		{
-			if (pdf->focus)
-				ui.active = &do_forms_tag;
-			if (pdf_update_page(ctx, page))
-				render_page();
-		}
-	}
-	else if (ui.active == &do_forms_tag && !ui.down)
-	{
-		ui.active = NULL;
-		event.etype = PDF_EVENT_TYPE_POINTER;
-		event.event.pointer.pt = p;
-		event.event.pointer.ptype = PDF_POINTER_UP;
-		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
-		{
-			if (pdf_update_page(ctx, page))
-				render_page();
-		}
-	}
-}
-
 static void toggle_fullscreen(void)
 {
 	static int win_x = 0, win_y = 0;
@@ -829,6 +792,7 @@ static void do_app(void)
 		case 'a': toggle_annotate(); break;
 		case 'o': toggle_outline(); break;
 		case 'L': showlinks = !showlinks; break;
+		case 'F': showform = !showform; break;
 		case 'i': showinfo = !showinfo; break;
 		case 'r': reload(); break;
 		case 'q': glutLeaveMainLoop(); break;
@@ -1140,7 +1104,7 @@ static void do_canvas(void)
 		}
 		else
 		{
-			do_forms();
+			do_widget_canvas(area);
 			do_links(links);
 			do_page_selection();
 		}
