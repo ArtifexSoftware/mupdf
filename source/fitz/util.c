@@ -8,6 +8,8 @@ fz_new_display_list_from_page(fz_context *ctx, fz_page *page)
 	fz_display_list *list;
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
 	fz_try(ctx)
 	{
@@ -77,6 +79,8 @@ fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
 	fz_display_list *list;
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	list = fz_new_display_list(ctx, fz_bound_annot(ctx, annot));
 
 	fz_try(ctx)
@@ -105,6 +109,8 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matri
 	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
+
+	fz_var(dev);
 
 	rect = fz_bound_display_list(ctx, list);
 	rect = fz_transform_rect(rect, ctm);
@@ -143,6 +149,8 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, fz_matrix ctm, 
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	rect = fz_bound_page(ctx, page);
 	rect = fz_transform_rect(rect, ctm);
 	bbox = fz_round_rect(rect);
@@ -179,6 +187,8 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, fz_matrix ctm, fz_col
 	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_device *dev = NULL;
+
+	fz_var(dev);
 
 	rect = fz_bound_annot(ctx, annot);
 	rect = fz_transform_rect(rect, ctm);
@@ -271,6 +281,8 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, cons
 	fz_stext_page *text;
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	if (list == NULL)
 		return NULL;
 
@@ -299,6 +311,8 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 {
 	fz_stext_page *text;
 	fz_device *dev = NULL;
+
+	fz_var(dev);
 
 	if (page == NULL)
 		return NULL;
