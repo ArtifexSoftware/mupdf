@@ -422,7 +422,7 @@ void ui_init(int w, int h, const char *title)
 	ui.lineheight = DEFAULT_UI_LINEHEIGHT * ui_scale;
 	ui.gridsize = DEFAULT_UI_GRIDSIZE * ui_scale;
 
-	ui_init_fonts(ui.fontsize);
+	ui_init_fonts();
 
 	ui.overlay_list = glGenLists(1);
 }

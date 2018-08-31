@@ -109,7 +109,7 @@ void ui_finish(void);
 void ui_set_clipboard(const char *buf);
 const char *ui_get_clipboard(void);
 
-void ui_init_fonts(float pixelsize);
+void ui_init_fonts(void);
 void ui_finish_fonts(void);
 float ui_measure_character(int ucs);
 void ui_begin_text(void);
