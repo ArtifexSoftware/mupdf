@@ -752,10 +752,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\libjpeg\jmemnobs.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\thirdparty\libjpeg\jquant1.c"
 				>
 			</File>

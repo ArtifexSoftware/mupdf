@@ -843,6 +843,7 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Memento|x64"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -857,7 +858,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="MementoOpenSSL|x64"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
