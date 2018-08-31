@@ -1,4 +1,10 @@
 #include "mupdf/fitz.h"
+#include "../fitz/fitz-imp.h"
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #if FZ_ENABLE_GPRF
 /* Choose whether to call gs via an exe or via an API */
@@ -9,8 +15,6 @@
 #ifdef GSVIEW_WIN
 #define GS_API_NULL_STDIO
 #endif
-
-#include "mupdf/fitz.h"
 
 #if defined(USE_GS_API)
 
@@ -153,17 +157,18 @@ gprf_drop_page_imp(fz_context *ctx, fz_page *page_)
 	fz_drop_gprf_file(ctx, page->file);
 }
 
-static fz_rect *
-gprf_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
+static fz_rect
+gprf_bound_page(fz_context *ctx, fz_page *page_)
 {
 	gprf_page *page = (gprf_page*)page_;
 	gprf_document *doc = page->doc;
+	fz_rect bbox;
 
 	/* BBox is in points, not pixels */
-	bbox->x0 = 0;
-	bbox->y0 = 0;
-	bbox->x1 = 72.0f * page->width / doc->res;
-	bbox->y1 = 72.0f * page->height / doc->res;
+	bbox.x0 = 0;
+	bbox.y0 = 0;
+	bbox.x1 = 72.0f * page->width / doc->res;
+	bbox.y1 = 72.0f * page->height / doc->res;
 
 	return bbox;
 }
