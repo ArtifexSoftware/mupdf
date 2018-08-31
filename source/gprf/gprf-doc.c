@@ -658,6 +658,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 		fz_snprintf(arg_lp, sizeof(arg_lp), "-dLastPage=%d", page->number+1);
 		argv[argc++] = arg_lp;
 		argv[argc++] = "-I%rom%Resource/Init/";
+		argv[argc++] = "-dSAFER";
 		fz_snprintf(arg_g, sizeof(arg_g), "-g%dx%d", page->width, page->height);
 		argv[argc++] = arg_g;
 		argv[argc++] = doc->pdf_filename;
@@ -685,7 +686,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 #else
 		char gs_command[1024];
 		/* Invoke gs to convert to a temp file. */
-		fz_snprintf(gs_command, sizeof(gs_command), "gswin32c.exe -sDEVICE=gprf %s %s -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
+		fz_snprintf(gs_command, sizeof(gs_command), "gswin32c.exe -sDEVICE=gprf %s %s -dSAFER -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
 			print_profile == NULL ? "-dUsePDFX3Profile" : print_profile, disp_profile,
 			filename, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
 		fz_system(ctx, gs_command);
