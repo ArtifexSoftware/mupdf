@@ -607,30 +607,14 @@ generate_page(fz_context *ctx, gprf_page *page)
 
 	/* Set up the icc profiles */
 	if (strlen(doc->display_profile) == 0)
-	{
-		len = sizeof("-sPostRenderProfile=srgb.icc");
-		disp_profile = (char*)fz_malloc(ctx, len + 1);
-		fz_snprintf(disp_profile, sizeof(disp_profile), "-sPostRenderProfile=srgb.icc");
-	}
+		disp_profile = fz_asprintf(ctx, "-sPostRenderProfile=srgb.icc");
 	else
-	{
-		len = sizeof("-sPostRenderProfile=" QUOTE QUOTE); /* with quotes */
-		disp_profile = (char*)fz_malloc(ctx, len + strlen(doc->display_profile) + 1);
-		fz_snprintf(disp_profile, sizeof(disp_profile), "-sPostRenderProfile=" QUOTE "%s" QUOTE, doc->display_profile);
-	}
+		disp_profile = fz_asprintf(ctx, "-sPostRenderProfile=" QUOTE "%s" QUOTE, doc->display_profile);
 
 	if (strlen(doc->print_profile) == 0)
-	{
-		len = sizeof("-sOutputICCProfile=default_cmyk.icc");
-		print_profile = (char*)fz_malloc(ctx, len + 1);
-		fz_snprintf(print_profile, sizeof(print_profile), "-sOutputICCProfile=default_cmyk.icc");
-	}
+		print_profile = fz_asprintf(ctx, "-sOutputICCProfile=default_cmyk.icc");
 	else if (strcmp(doc->print_profile, "<EMBEDDED>") != 0)
-	{
-		len = sizeof("-sOutputICCProfile=" QUOTE QUOTE); /* with quotes */
-		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
-		fz_snprintf(print_profile, sizeof(print_profile), "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
-	}
+		print_profile = fz_asprintf(ctx, "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
 
 	fz_try(ctx)
 	{
