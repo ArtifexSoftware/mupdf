@@ -1827,9 +1827,14 @@ int mudraw_main(int argc, char **argv)
 	}
 	else
 #endif
-	if (output_format == OUT_GPROOF || output_format == OUT_SVG)
+	if (output_format == OUT_GPROOF)
 	{
 		/* GPROOF files are saved direct. Do not open "output". */
+		if (!output)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "output filename required when saving GProof file");
+	}
+	else if (output_format == OUT_SVG)
+	{
 		/* SVG files are always opened for each page. Do not open "output". */
 	}
 	else if (output && (output[0] != '-' || output[1] != 0) && *output != 0)
