@@ -635,7 +635,7 @@ static void password_dialog(void)
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
 		{
 			ui_layout(R, NONE, S, 0, 0);
-			if (ui_button("Cancel"))
+			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
 				exit(1);
 			ui_spacer();
 			if (ui_button("Okay") || is == UI_INPUT_ACCEPT)
