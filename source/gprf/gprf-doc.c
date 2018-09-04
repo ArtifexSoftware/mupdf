@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #if FZ_ENABLE_GPRF
 /* Choose whether to call gs via an exe or via an API */
@@ -103,7 +102,7 @@ fz_drop_gprf_file(fz_context *ctx, gprf_file *file)
 {
 	if (fz_drop_imp(ctx, file, &file->refs))
 	{
-		unlink(file->filename);
+		remove(file->filename);
 		fz_free(ctx, file->filename);
 		fz_free(ctx, file);
 	}
@@ -588,7 +587,6 @@ generate_page(fz_context *ctx, gprf_page *page)
 	char *filename;
 	char *disp_profile = NULL;
 	char *print_profile = NULL;
-	int len;
 
 	/* put the page file in the same directory as the gproof file */
 	fz_snprintf(nameroot, sizeof(nameroot), "gprf_%d_", page->number);
@@ -685,7 +683,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	}
 	fz_catch(ctx)
 	{
-		unlink(filename);
+		remove(filename);
 		fz_free(ctx, filename);
 		fz_rethrow(ctx);
 	}
