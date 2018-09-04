@@ -71,6 +71,21 @@ fz_lcms_num_devcomps(cmsContext cmm_ctx, fz_iccprofile *profile)
 	return cmsChannelsOf(cmm_ctx, cmsGetColorSpace(cmm_ctx, profile->cmm_handle));
 }
 
+static char *
+fz_lcms_description(cmsContext cmm_ctx, fz_iccprofile *profile)
+{
+	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
+	cmsMLU *descMLU;
+	char *desc;
+	size_t size;
+
+	descMLU = cmsReadTag(cmm_ctx, profile->cmm_handle, cmsSigProfileDescriptionTag);
+	size = cmsMLUgetASCII(cmm_ctx, descMLU, "en", "US", NULL, 0);
+	desc = fz_malloc(ctx, size);
+	cmsMLUgetASCII(cmm_ctx, descMLU, "en", "US", desc, size);
+	return desc;
+}
+
 static void
 fz_lcms_premultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s)
 {
@@ -333,6 +348,7 @@ fz_lcms_init_profile(fz_cmm_instance *instance, fz_iccprofile *profile)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cmsOpenProfileFromMem failed");
 	}
 	profile->num_devcomp = fz_lcms_num_devcomps(cmm_ctx, profile);
+	profile->desc = fz_lcms_description(cmm_ctx, profile);
 
 	DEBUG_LCMS_MEM(("@@@@@@@ Create Profile End:: mupdf ctx = %p lcms ctx = %p profile = %p profile_cmm = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
 }
@@ -341,9 +357,11 @@ static void
 fz_lcms_fin_profile(fz_cmm_instance *instance, fz_iccprofile *profile)
 {
 	cmsContext cmm_ctx = (cmsContext)instance;
+	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
 	DEBUG_LCMS_MEM(("Free Profile:: profile = %p \n", (void*) profile->cmm_handle));
 	if (profile->cmm_handle != NULL)
 		cmsCloseProfile(cmm_ctx, profile->cmm_handle);
+	fz_free(ctx, profile->desc);
 	profile->cmm_handle = NULL;
 }
 

@@ -3757,7 +3757,7 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
 	int flags = FZ_COLORSPACE_IS_ICC;
-	const char *name = colorspace_name_from_type(type);
+	const char *name;
 	int num;
 
 	profile = fz_malloc_struct(ctx, fz_iccprofile);
@@ -3805,6 +3805,11 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC profile did not match expected colorspace type");
 
 		fz_md5_icc(ctx, profile);
+
+		if (profile->desc)
+			name = profile->desc;
+		else
+			name = colorspace_name_from_type(type);
 
 		cs = fz_new_colorspace(ctx, name, type, flags, profile->num_devcomp,
 			NULL,

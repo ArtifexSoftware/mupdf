@@ -41,6 +41,7 @@ struct fz_colorspace_s
 
 struct fz_iccprofile_s
 {
+	char *desc;
 	int num_devcomp;
 	int bgr;
 	fz_buffer *buffer;
