@@ -116,35 +116,70 @@ static inline int read_value(const unsigned char *data, int bytes, int is_big_en
 	return value;
 }
 
-/* FIXME: We may need to worry about profiles spread out
- * across multiple markers. */
+enum {
+	MAX_ICC_PARTS = 256
+};
+
 static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr init_marker)
 {
-	const unsigned char *data;
-	int size;
+	const char idseq[] = { 'I', 'C', 'C', '_', 'P', 'R', 'O', 'F', 'I', 'L', 'E', '\0'};
 	jpeg_saved_marker_ptr marker = init_marker;
-	fz_buffer *buff = NULL;
+	fz_buffer *buf = NULL;
 	fz_colorspace *cs = NULL;
+	int part = 1;
+	int parts = MAX_ICC_PARTS;
+	const unsigned char *data;
+	size_t size;
 
-	for (marker = init_marker; marker != NULL; marker = marker->next)
-	{
-		if (marker->marker == JPEG_APP0 + 2)
-		{
-			data = (const unsigned char *)marker->data + 14;
-			size = marker->data_length - 14;
-			break;
-		}
-	}
-	if (marker == NULL)
+	fz_var(buf);
+	fz_var(cs);
+
+	if (init_marker == NULL)
 		return NULL;
 
 	fz_try(ctx)
 	{
-		buff = fz_new_buffer_from_copied_data(ctx, data, size);
-		cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buff);
+		while (part < parts && marker != NULL)
+		{
+			for (marker = init_marker; marker != NULL; marker = marker->next)
+			{
+				if (marker->marker != JPEG_APP0 + 2)
+					continue;
+				if (marker->data_length < nelem(idseq) + 2)
+					continue;
+				if (memcmp(marker->data, idseq, nelem(idseq)))
+					continue;
+				if (marker->data[nelem(idseq)] != part)
+					continue;
+
+				if (parts == MAX_ICC_PARTS)
+					parts = marker->data[nelem(idseq) + 1];
+				else if (marker->data[nelem(idseq) + 1] != parts)
+					fz_warn(ctx, "inconsistent number of icc profile chunks in jpeg");
+				if (part > parts)
+				{
+					fz_warn(ctx, "skipping out of range icc profile chunk in jpeg");
+					continue;
+				}
+
+				data = marker->data + 14;
+				size = marker->data_length - 14;
+
+				if (!buf)
+					buf = fz_new_buffer_from_copied_data(ctx, data, size);
+				else
+					fz_append_data(ctx, buf, data, size);
+
+				part++;
+				break;
+			}
+		}
+
+		if (buf)
+			cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buf);
 	}
 	fz_always(ctx)
-		fz_drop_buffer(ctx, buff);
+		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
 		fz_warn(ctx, "could not load ICC profile in JPEG image");
 
