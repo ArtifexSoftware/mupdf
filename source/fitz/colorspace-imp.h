@@ -6,12 +6,6 @@
 #include "mupdf/fitz/color-management.h"
 #include "mupdf/fitz/pixmap.h"
 
-#define FZ_ICC_PROFILE_GRAY "DeviceGray"
-#define FZ_ICC_PROFILE_RGB "DeviceRGB"
-#define FZ_ICC_PROFILE_BGR "DeviceBGR"
-#define FZ_ICC_PROFILE_CMYK "DeviceCMYK"
-#define FZ_ICC_PROFILE_LAB "Lab"
-
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 void fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
 void fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots);

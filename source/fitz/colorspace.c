@@ -150,7 +150,7 @@ void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
 #ifdef NO_ICC
 
 const unsigned char *
-fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
+fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
 {
 	return *size = 0, NULL;
 }
@@ -163,23 +163,23 @@ fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 #include "icc/lab.icc.h"
 
 const unsigned char *
-fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
+fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
 {
 	if (fz_get_cmm_engine(ctx) == NULL)
 		return *size = 0, NULL;
-	if (!strcmp(name, FZ_ICC_PROFILE_GRAY)) {
+	if (type == FZ_COLORSPACE_GRAY) {
 		*size = resources_icc_gray_icc_len;
 		return resources_icc_gray_icc;
 	}
-	if (!strcmp(name, FZ_ICC_PROFILE_RGB) || !strcmp(name, FZ_ICC_PROFILE_BGR)) {
+	if (type == FZ_COLORSPACE_RGB || type == FZ_COLORSPACE_BGR) {
 		*size = resources_icc_rgb_icc_len;
 		return resources_icc_rgb_icc;
 	}
-	if (!strcmp(name, FZ_ICC_PROFILE_CMYK)) {
+	if (type == FZ_COLORSPACE_CMYK) {
 		*size = resources_icc_cmyk_icc_len;
 		return resources_icc_cmyk_icc;
 	}
-	if (!strcmp(name, FZ_ICC_PROFILE_LAB)) {
+	if (type == FZ_COLORSPACE_LAB) {
 		*size = resources_icc_lab_icc_len;
 		return resources_icc_lab_icc;
 	}
@@ -850,11 +850,11 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	fz_new_cmm_context(ctx);
 	if (engine)
 	{
-		cct->gray = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_GRAY, 1, NULL);
-		cct->rgb = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_RGB, 3, NULL);
-		cct->bgr = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_BGR, 3, NULL);
-		cct->cmyk = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_CMYK, 4, NULL);
-		cct->lab = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_LAB, 3, NULL);
+		cct->gray = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_GRAY, NULL);
+		cct->rgb = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, NULL);
+		cct->bgr = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_BGR, NULL);
+		cct->cmyk = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_CMYK, NULL);
+		cct->lab = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_LAB, NULL);
 	}
 	else
 		set_no_icc(cct);
@@ -3736,17 +3736,29 @@ clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], 0, 1);
 }
 
+static const char *colorspace_name_from_type(int type)
+{
+	switch (type) {
+	default: return "Unknown";
+	case FZ_COLORSPACE_GRAY: return "Gray";
+	case FZ_COLORSPACE_RGB: return "RGB";
+	case FZ_COLORSPACE_BGR: return "BGR";
+	case FZ_COLORSPACE_CMYK: return "CMYK";
+	case FZ_COLORSPACE_LAB: return "Lab";
+	}
+}
+
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf)
+fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *buf)
 {
 #ifdef NO_ICC
 	fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Profiles not supported in NO_ICC build");
 #else
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
-	int is_lab = 0;
-	enum fz_colorspace_type type = FZ_COLORSPACE_NONE;
 	int flags = FZ_COLORSPACE_IS_ICC;
+	const char *name = colorspace_name_from_type(type);
+	int num;
 
 	profile = fz_malloc_struct(ctx, fz_iccprofile);
 	fz_try(ctx)
@@ -3755,10 +3767,9 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 		{
 			size_t size;
 			const unsigned char *data;
-			data = fz_lookup_icc(ctx, name, &size);
+			data = fz_lookup_icc(ctx, type, &size);
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
-			is_lab = (strcmp(name, FZ_ICC_PROFILE_LAB) == 0);
-			profile->bgr = (strcmp(name, FZ_ICC_PROFILE_BGR) == 0);
+			profile->bgr = (type == FZ_COLORSPACE_BGR);
 			flags |= FZ_COLORSPACE_IS_DEVICE;
 		}
 		else
@@ -3768,58 +3779,64 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 
 		fz_cmm_init_profile(ctx, profile);
 
-		/* Check if correct type, if a particular type was expected */
-		if (num != 0 && num != profile->num_devcomp)
+		if (type == FZ_COLORSPACE_NONE)
 		{
-			fz_drop_buffer(ctx, profile->buffer);
-			fz_cmm_fin_profile(ctx, profile);
-			fz_free(ctx, profile);
-			break;
+			switch (profile->num_devcomp)
+			{
+			default: type = FZ_COLORSPACE_SEPARATION; break;
+			case 1: type = FZ_COLORSPACE_GRAY; break;
+			case 3: type = FZ_COLORSPACE_RGB; break;
+			case 4: type = FZ_COLORSPACE_CMYK; break;
+			}
 		}
+
+		switch (type)
+		{
+		default: num = profile->num_devcomp; break;
+		case FZ_COLORSPACE_GRAY: num = 1; break;
+		case FZ_COLORSPACE_RGB: num = 3; break;
+		case FZ_COLORSPACE_BGR: num = 3; break;
+		case FZ_COLORSPACE_LAB: num = 3; break;
+		case FZ_COLORSPACE_CMYK: num = 4; break;
+		}
+
+		/* Check if correct type, if a particular type was expected */
+		if (num != profile->num_devcomp)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC profile did not match expected colorspace type");
 
 		fz_md5_icc(ctx, profile);
 
-		switch (profile->num_devcomp)
+		cs = fz_new_colorspace(ctx, name, type, flags, profile->num_devcomp,
+			NULL,
+			NULL,
+			NULL,
+			(type == FZ_COLORSPACE_LAB) ? clamp_lab_icc : clamp_default_icc,
+			free_icc,
+			profile, sizeof(profile));
+
+		switch (type)
 		{
 		default:
-			type = FZ_COLORSPACE_SEPARATION;
 			break;
-		case 1:
-			type = FZ_COLORSPACE_GRAY;
-			break;
-		case 3:
-			if (is_lab)
-				type = FZ_COLORSPACE_LAB;
-			else if (profile->bgr)
-				type = FZ_COLORSPACE_BGR;
-			else
-				type = FZ_COLORSPACE_RGB;
-			break;
-		case 4:
-			type = FZ_COLORSPACE_CMYK;
-			break;
-		}
-
-		cs = fz_new_colorspace(ctx, name, type, flags, profile->num_devcomp, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
-
-		switch (profile->num_devcomp)
-		{
-		case 1:
+		case FZ_COLORSPACE_GRAY:
 			fz_colorspace_name_colorant(ctx, cs, 0, "Gray");
 			break;
-		case 3:
-			if (is_lab)
-			{
-				fz_colorspace_name_colorant(ctx, cs, 0, "L*");
-				fz_colorspace_name_colorant(ctx, cs, 1, "a*");
-				fz_colorspace_name_colorant(ctx, cs, 2, "b*");
-			} else {
-				fz_colorspace_name_colorant(ctx, cs, profile->bgr ? 2 : 0, "Red");
-				fz_colorspace_name_colorant(ctx, cs, 1, "Green");
-				fz_colorspace_name_colorant(ctx, cs, profile->bgr ? 0 : 2, "Blue");
-			}
+		case FZ_COLORSPACE_LAB:
+			fz_colorspace_name_colorant(ctx, cs, 0, "L*");
+			fz_colorspace_name_colorant(ctx, cs, 1, "a*");
+			fz_colorspace_name_colorant(ctx, cs, 2, "b*");
 			break;
-		case 4:
+		case FZ_COLORSPACE_RGB:
+			fz_colorspace_name_colorant(ctx, cs, 0, "Red");
+			fz_colorspace_name_colorant(ctx, cs, 1, "Green");
+			fz_colorspace_name_colorant(ctx, cs, 2, "Blue");
+			break;
+		case FZ_COLORSPACE_BGR:
+			fz_colorspace_name_colorant(ctx, cs, 2, "Red");
+			fz_colorspace_name_colorant(ctx, cs, 1, "Green");
+			fz_colorspace_name_colorant(ctx, cs, 0, "Blue");
+			break;
+		case FZ_COLORSPACE_CMYK:
 			fz_colorspace_name_colorant(ctx, cs, 0, "Cyan");
 			fz_colorspace_name_colorant(ctx, cs, 1, "Magenta");
 			fz_colorspace_name_colorant(ctx, cs, 2, "Yellow");
@@ -3837,12 +3854,12 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 #endif
 }
 
-fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, const char *name, const char *path)
+fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, enum fz_colorspace_type type, const char *path)
 {
 	fz_colorspace *cs = NULL;
 	fz_buffer *buffer = fz_read_file(ctx, path);
 	fz_try(ctx)
-		cs = fz_new_icc_colorspace(ctx, name, 0, buffer);
+		cs = fz_new_icc_colorspace(ctx, type, buffer);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)
@@ -3850,12 +3867,12 @@ fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, const char *name
 	return cs;
 }
 
-fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, const char *name, fz_stream *in)
+fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, enum fz_colorspace_type type, fz_stream *in)
 {
 	fz_colorspace *cs = NULL;
 	fz_buffer *buffer = fz_read_all(ctx, in, 1024);
 	fz_try(ctx)
-		cs = fz_new_icc_colorspace(ctx, name, 0, buffer);
+		cs = fz_new_icc_colorspace(ctx, type, buffer);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)

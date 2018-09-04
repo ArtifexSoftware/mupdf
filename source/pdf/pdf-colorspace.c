@@ -58,13 +58,13 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	{
 		if (fz_get_cmm_engine(ctx))
 		{
-			const char *name;
-			if (n == 1) name = "ICCBased-Gray";
-			else if (n == 3) name = "ICCBased-RGB";
-			else if (n == 4) name = "ICCBased-CMYK";
-			else name = "ICCBased";
+			enum fz_colorspace_type type;
+			if (n == 1) type = FZ_COLORSPACE_GRAY;
+			else if (n == 3) type = FZ_COLORSPACE_RGB;
+			else if (n == 4) type = FZ_COLORSPACE_CMYK;
+			else type = FZ_COLORSPACE_NONE;
 			buffer = pdf_load_stream(ctx, dict);
-			cs = fz_new_icc_colorspace(ctx, name, n, buffer);
+			cs = fz_new_icc_colorspace(ctx, type, buffer);
 		}
 	}
 	fz_always(ctx)

@@ -1593,7 +1593,7 @@ int mudraw_main(int argc, char **argv)
 	}
 
 	if (proof_filename)
-		proof_cs = fz_new_icc_colorspace_from_file(ctx, NULL, proof_filename);
+		proof_cs = fz_new_icc_colorspace_from_file(ctx, FZ_COLORSPACE_NONE, proof_filename);
 
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
@@ -1757,7 +1757,7 @@ int mudraw_main(int argc, char **argv)
 		break;
 	case CS_ICC:
 		fz_try(ctx)
-			colorspace = fz_new_icc_colorspace_from_file(ctx, NULL, icc_filename);
+			colorspace = fz_new_icc_colorspace_from_file(ctx, FZ_COLORSPACE_NONE, icc_filename);
 		fz_catch(ctx)
 		{
 			fprintf(stderr, "Invalid ICC destination color space\n");

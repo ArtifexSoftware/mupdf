@@ -1141,7 +1141,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		fz_try(ctx)
 		{
 			buff = fz_new_buffer_from_copied_data(ctx, tiff->profile, tiff->profilesize);
-			tiff->colorspace = fz_new_icc_colorspace(ctx, NULL, 0, buff);
+			tiff->colorspace = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buff);
 		}
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);

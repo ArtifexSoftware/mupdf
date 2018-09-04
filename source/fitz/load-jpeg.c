@@ -141,7 +141,7 @@ static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr
 	fz_try(ctx)
 	{
 		buff = fz_new_buffer_from_copied_data(ctx, data, size);
-		cs = fz_new_icc_colorspace(ctx, NULL, 0, buff);
+		cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buff);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buff);
