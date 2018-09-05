@@ -10,10 +10,10 @@ public class Font
 	public static final int GREEK = 1;
 	public static final int CYRILLIC = 2;
 
-	public static final int CN = 0;
-	public static final int TW = 1;
-	public static final int JP = 2;
-	public static final int KR = 3;
+	public static final int ADOBE_CNS = 0;
+	public static final int ADOBE_GB = 1;
+	public static final int ADOBE_JAPAN = 2;
+	public static final int ADOBE_KOREA = 3;
 
 	private long pointer;
 

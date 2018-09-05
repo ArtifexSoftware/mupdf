@@ -55,7 +55,7 @@ fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font);
 const char *ft_error_string(int err);
 
 /* common CJK font collections */
-enum { FZ_ADOBE_CNS_1, FZ_ADOBE_GB_1, FZ_ADOBE_JAPAN_1, FZ_ADOBE_KOREA_1 };
+enum { FZ_ADOBE_CNS, FZ_ADOBE_GB, FZ_ADOBE_JAPAN, FZ_ADOBE_KOREA };
 
 /*
 	fz_font_flags_t: Every fz_font carries a set of flags
@@ -169,12 +169,12 @@ typedef fz_font *(fz_load_system_font_fn)(fz_context *ctx, const char *name, int
 	fz_load_system_cjk_font_fn: Type for user supplied cjk font loading hook.
 
 	name: The name of the font to load.
-	ros: The registry from which to load the font (e.g. FZ_ADOBE_KOREA_1)
+	ordering: The ordering for which to load the font (e.g. FZ_ADOBE_KOREA)
 	serif: 1 if a serif font is desired, 0 otherwise.
 
 	Returns a new font handle, or NULL if no font found (or on error).
 */
-typedef fz_font *(fz_load_system_cjk_font_fn)(fz_context *ctx, const char *name, int ros, int serif);
+typedef fz_font *(fz_load_system_cjk_font_fn)(fz_context *ctx, const char *name, int ordering, int serif);
 
 /*
 	fz_load_system_fallback_font_fn: Type for user supplied fallback font loading hook.
@@ -224,14 +224,14 @@ fz_font *fz_load_system_font(fz_context *ctx, const char *name, int bold, int it
 
 	name: The name of the desired font.
 
-	ros: The registry to load the font from (e.g. FZ_ADOBE_KOREA_1)
+	ordering: The ordering to load the font from (e.g. FZ_ADOBE_KOREA)
 
 	serif: 1 if serif desired, 0 otherwise.
 
 	Returns a new font handle, or NULL if no matching font was found
 	(or on error).
 */
-fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int serif);
+fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ordering, int serif);
 
 /*
 	fz_lookup_builtin_font: Search the builtin fonts for a match.
@@ -265,7 +265,6 @@ const unsigned char *fz_lookup_builtin_font(fz_context *ctx, const char *name, i
 */
 const unsigned char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 
-/* ToDo:  Share fz_lookup_builtin_font and fz_lookup_icc?  Check with Tor */
 /*
 	fz_lookup_icc: Search for icc profile.
 
@@ -282,22 +281,21 @@ const unsigned char *fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type name
 	Whether a font is present or not will depend on the
 	configuration in which MuPDF is built.
 
-	registry: The desired registry to lookup in (e.g.
-	FZ_ADOBE_KOREA_1).
+	ordering: The desired ordering of the font (e.g. FZ_ADOBE_KOREA).
 
-	serif: 1 if serif desired, 0 otherwise.
+	size: Pointer to a place to receive the length of the discovered font buffer.
 
-	wmode: 1 for vertical mode, 0 for horizontal.
-
-	len: Pointer to a place to receive the length of the discovered
-	font buffer.
-
-	index: Pointer to a place to store the index of the discovered
-	font.
+	subfont: Pointer to a place to store the subfont index of the discovered font.
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int *len, int *index);
+const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int ordering, int *len, int *index);
+
+/*
+	fz_lookup_cjk_ordering_by_language: Return the matching FZ_ADOBE_* ordering
+	for the given language tag, such as "zh-Hant", "zh-Hans", "ja", or "ko".
+*/
+int fz_lookup_cjk_ordering_by_language(const char *name);
 
 /*
 	fz_lookup_noto_font: Search the builtin noto fonts for a match.
@@ -308,14 +306,12 @@ const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif
 
 	lang: The language desired (e.g. FZ_LANG_ja).
 
-	serif: 1 if serif desired, 0 otherwise.
-
 	len: Pointer to a place to receive the length of the discovered
 	font buffer.
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len, int *subfont);
+const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont);
 
 /*
 	fz_lookup_noto_symbol[12]_font: Search the builtin noto fonts
@@ -426,7 +422,7 @@ fz_font *fz_new_font_from_file(fz_context *ctx, const char *name, const char *pa
 
 /* Create a new font from one of the built-in fonts. */
 fz_font *fz_new_base14_font(fz_context *ctx, const char *name);
-fz_font *fz_new_cjk_font(fz_context *ctx, int registry, int serif);
+fz_font *fz_new_cjk_font(fz_context *ctx, int ordering);
 fz_font *fz_new_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic);
 
 /*

@@ -495,7 +495,8 @@ In PDF there are also special Type3 fonts.
 <dl>
 <dt>new Font(fontName or fileName)
 <dd>Create a new font, either using a built-in font name or a filename.
-The built-in fonts are: Times-Roman, Times-Italic, Times-Bold, Times-BoldItalic,
+<br>The built-in standard PDF fonts are:
+Times-Roman, Times-Italic, Times-Bold, Times-BoldItalic,
 Helvetica, Helvetica-Oblique, Helvetica-Bold, Helvetica-BoldOblique,
 Courier, Courier-Oblique, Courier-Bold, Courier-BoldOblique,
 Symbol, and ZapfDingbats.
@@ -759,7 +760,7 @@ Encoding is either "Latin" (CP-1252), "Greek" (ISO-8859-7), or "Cyrillic" (KOI-8
 The default is "Latin".
 <dt>PDFDocument#addCJKFont(font, language, wmode, style)
 <dd>Create a PDF object from the Font object as a UTF-16 encoded CID font for the given
-language ("TC", "SC", "KR", or "JP"),
+language ("zh-Hant", "zh-Hans", "ko", or "ja"),
 writing mode ("H" or "V"),
 and style ("serif" or "sans-serif").
 <dt>PDFDocument#addFont(font)

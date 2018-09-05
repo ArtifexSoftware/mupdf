@@ -83,15 +83,16 @@ font will be encoded using ISO 8859-7 or KOI8-U, respectively.
 </pre>
 
 <p>
-CJK fonts can also be created by passing a code for one of the 4 CID orderings:
-CN, TW, JP, or KR (Simplified Chinese, Traditional Chinese, Japanese, and Korean).
+CJK fonts can be created by passing a language tag for one of the 4 CID orderings:
+zh-Hant, zh-Hans, ja, or ko (Traditional Chinese, Simplified Chinese, Japanese, Korean).
+The CJK font will use the UTF-16 encoding.
 A font file will not be embedded, so a PDF viewer will use a substitute font.
 
 <pre>
-%%CJKFont Batang KR
-%%CJKFont Mincho JP
-%%CJKFont Ming TW
-%%CJKFont Song CN
+%%CJKFont Batang ko
+%%CJKFont Mincho ja
+%%CJKFont Ming zh-Hant
+%%CJKFont Song zh-Hans
 </pre>
 
 <p>
@@ -102,9 +103,9 @@ An example input file:
 %%Font TmRm Times-Roman
 %%Font Helv-C Helvetica Cyrillic
 %%Font Helv-G Helvetica Greek
-%%CJKFont Song CN
-%%CJKFont Mincho JP
-%%CJKFont Batang KR
+%%CJKFont Song zh-Hant
+%%CJKFont Mincho ja
+%%CJKFont Batang ko
 %%Image I0 logo/mupdf-simplified-logo.png
 
 % Draw an image.

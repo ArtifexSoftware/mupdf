@@ -797,14 +797,14 @@ extern "C" {
 #define com_artifex_mupdf_fitz_Font_GREEK 1L
 #undef com_artifex_mupdf_fitz_Font_CYRILLIC
 #define com_artifex_mupdf_fitz_Font_CYRILLIC 2L
-#undef com_artifex_mupdf_fitz_Font_CN
-#define com_artifex_mupdf_fitz_Font_CN 0L
-#undef com_artifex_mupdf_fitz_Font_TW
-#define com_artifex_mupdf_fitz_Font_TW 1L
-#undef com_artifex_mupdf_fitz_Font_JP
-#define com_artifex_mupdf_fitz_Font_JP 2L
-#undef com_artifex_mupdf_fitz_Font_KR
-#define com_artifex_mupdf_fitz_Font_KR 3L
+#undef com_artifex_mupdf_fitz_Font_ADOBE_CNS
+#define com_artifex_mupdf_fitz_Font_ADOBE_CNS 0L
+#undef com_artifex_mupdf_fitz_Font_ADOBE_GB
+#define com_artifex_mupdf_fitz_Font_ADOBE_GB 1L
+#undef com_artifex_mupdf_fitz_Font_ADOBE_JAPAN
+#define com_artifex_mupdf_fitz_Font_ADOBE_JAPAN 2L
+#undef com_artifex_mupdf_fitz_Font_ADOBE_KOREA
+#define com_artifex_mupdf_fitz_Font_ADOBE_KOREA 3L
 /*
  * Class:     com_artifex_mupdf_fitz_Font
  * Method:    finalize

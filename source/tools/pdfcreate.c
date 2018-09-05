@@ -22,7 +22,7 @@ static void usage(void)
 		"\t%%%%MediaBox LLX LLY URX URY\n"
 		"\t%%%%Rotate Angle\n"
 		"\t%%%%Font Name Filename (or base 14 font name)\n"
-		"\t%%%%CJKFont Name Ordering WMode Style (Ordering=CNS1|GB1|Japan1|Korea1, WMode=H|V, Style=serif|sans)\n"
+		"\t%%%%CJKFont Name Language WMode Style (Language=zh-Hant|zh-Hans|ja|ko, WMode=H|V, Style=serif|sans)\n"
 		"\t%%%%Image Name Filename\n\n"
 		);
 	fputs(fz_pdf_write_options_usage, stderr);
@@ -55,9 +55,12 @@ static void add_font_res(pdf_obj *resources, char *name, char *path, char *encna
 	enc = PDF_SIMPLE_ENCODING_LATIN;
 	if (encname)
 	{
-		if (!strcmp(encname, "Latin")) enc = PDF_SIMPLE_ENCODING_LATIN;
-		else if (!strcmp(encname, "Greek")) enc = PDF_SIMPLE_ENCODING_GREEK;
-		else if (!strcmp(encname, "Cyrillic")) enc = PDF_SIMPLE_ENCODING_CYRILLIC;
+		if (!strcmp(encname, "Latin") || !strcmp(encname, "Latn"))
+			enc = PDF_SIMPLE_ENCODING_LATIN;
+		else if (!strcmp(encname, "Greek") || !strcmp(encname, "Grek"))
+			enc = PDF_SIMPLE_ENCODING_GREEK;
+		else if (!strcmp(encname, "Cyrillic") || !strcmp(encname, "Cyrl"))
+			enc = PDF_SIMPLE_ENCODING_CYRILLIC;
 	}
 
 	ref = pdf_add_simple_font(ctx, doc, font, enc);
@@ -67,18 +70,14 @@ static void add_font_res(pdf_obj *resources, char *name, char *path, char *encna
 	fz_drop_font(ctx, font);
 }
 
-static void add_cjkfont_res(pdf_obj *resources, char *name, char *on, char *wm, char *style)
+static void add_cjkfont_res(pdf_obj *resources, char *name, char *lang, char *wm, char *style)
 {
 	const unsigned char *data;
 	int size, index, ordering, wmode, serif;
 	fz_font *font;
 	pdf_obj *subres, *ref;
 
-	if (!strcmp(on, "CNS1") || !strcmp(on, "TW") || !strcmp(on, "TC") || !strcmp(on, "Hant")) ordering = FZ_ADOBE_CNS_1;
-	else if (!strcmp(on, "GB1") || !strcmp(on, "CN") || !strcmp(on, "SC") || !strcmp(on, "Hans")) ordering = FZ_ADOBE_GB_1;
-	else if (!strcmp(on, "Japan1") || !strcmp(on, "JP") || !strcmp(on, "JA")) ordering = FZ_ADOBE_JAPAN_1;
-	else if (!strcmp(on, "Korea1") || !strcmp(on, "KR") || !strcmp(on, "KO")) ordering = FZ_ADOBE_KOREA_1;
-	else ordering = FZ_ADOBE_JAPAN_1;
+	ordering = fz_lookup_cjk_ordering_by_language(lang);
 
 	if (wm && !strcmp(wm, "V"))
 		wmode = 1;
@@ -90,7 +89,7 @@ static void add_cjkfont_res(pdf_obj *resources, char *name, char *on, char *wm, 
 	else
 		serif = 1;
 
-	data = fz_lookup_cjk_font(ctx, ordering, serif, &size, &index);
+	data = fz_lookup_cjk_font(ctx, ordering, &size, &index);
 	font = fz_new_font_from_memory(ctx, NULL, data, size, index, 0);
 
 	subres = pdf_dict_get(ctx, resources, PDF_NAME(Font));
@@ -134,7 +133,7 @@ The input is a raw content stream, with commands embedded in comments:
 %%MediaBox LLX LLY URX URY
 %%Rotate Angle
 %%Font Name Filename (or base 14 font name) [Encoding (Latin, Greek or Cyrillic)]
-%%CJKFont Name Ordering WMode Style (Ordering=CNS1|GB1|Japan1|Korea1, WMode=H|V, Style=serif|sans)
+%%CJKFont Name Language WMode Style (Language=zh-Hant|zh-Hans|ja|ko, WMode=H|V, Style=serif|sans)
 %%Image Name Filename
 */
 static void create_page(char *input)
@@ -183,12 +182,12 @@ static void create_page(char *input)
 			else if (!strcmp(s, "%%CJKFont"))
 			{
 				char *name = fz_strsep(&p, " ");
-				char *ordering = fz_strsep(&p, " ");
+				char *lang = fz_strsep(&p, " ");
 				char *wmode = fz_strsep(&p, " ");
 				char *style = fz_strsep(&p, " ");
-				if (!name || !ordering)
+				if (!name || !lang)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "CJKFont directive missing arguments");
-				add_cjkfont_res(resources, name, ordering, wmode, style);
+				add_cjkfont_res(resources, name, lang, wmode, style);
 			}
 			else if (!strcmp(s, "%%Image"))
 			{

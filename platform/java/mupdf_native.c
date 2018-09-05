@@ -258,10 +258,10 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_Font_GREEK == PDF_SIMPLE_ENCODING_GREEK;
 	valid &= com_artifex_mupdf_fitz_Font_CYRILLIC == PDF_SIMPLE_ENCODING_CYRILLIC;
 
-	valid &= com_artifex_mupdf_fitz_Font_CN == FZ_ADOBE_CNS_1;
-	valid &= com_artifex_mupdf_fitz_Font_TW == FZ_ADOBE_GB_1;
-	valid &= com_artifex_mupdf_fitz_Font_JP == FZ_ADOBE_JAPAN_1;
-	valid &= com_artifex_mupdf_fitz_Font_KR == FZ_ADOBE_KOREA_1;
+	valid &= com_artifex_mupdf_fitz_Font_ADOBE_CNS == FZ_ADOBE_CNS;
+	valid &= com_artifex_mupdf_fitz_Font_ADOBE_GB == FZ_ADOBE_GB;
+	valid &= com_artifex_mupdf_fitz_Font_ADOBE_JAPAN == FZ_ADOBE_JAPAN;
+	valid &= com_artifex_mupdf_fitz_Font_ADOBE_KOREA == FZ_ADOBE_KOREA;
 
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE == PDF_ANNOT_LE_NONE;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE == PDF_ANNOT_LE_SQUARE;
@@ -1020,10 +1020,10 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 fz_font *load_droid_cjk_font(fz_context *ctx, const char *name, int ros, int serif)
 {
 	switch (ros) {
-	case FZ_ADOBE_CNS_1: return load_noto_cjk(ctx, TC);
-	case FZ_ADOBE_GB_1: return load_noto_cjk(ctx, SC);
-	case FZ_ADOBE_JAPAN_1: return load_noto_cjk(ctx, JP);
-	case FZ_ADOBE_KOREA_1: return load_noto_cjk(ctx, KR);
+	case FZ_ADOBE_CNS: return load_noto_cjk(ctx, TC);
+	case FZ_ADOBE_GB: return load_noto_cjk(ctx, SC);
+	case FZ_ADOBE_JAPAN: return load_noto_cjk(ctx, JP);
+	case FZ_ADOBE_KOREA: return load_noto_cjk(ctx, KR);
 	}
 	return NULL;
 }

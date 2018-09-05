@@ -139,18 +139,18 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 }
 
 const unsigned char *
-fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int *size, int *subfont)
+fz_lookup_cjk_font(fz_context *ctx, int ordering, int *size, int *subfont)
 {
 	*subfont = 0;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
 #ifndef TOFU_CJK_LANG
 	switch (ordering) {
-	case FZ_ADOBE_JAPAN_1: *subfont=0; RETURN(han, SourceHanSerif_Regular_ttc);
-	case FZ_ADOBE_KOREA_1: *subfont=1; RETURN(han, SourceHanSerif_Regular_ttc);
-	case FZ_ADOBE_GB_1: *subfont=2; RETURN(han, SourceHanSerif_Regular_ttc);
+	case FZ_ADOBE_JAPAN: *subfont=0; RETURN(han, SourceHanSerif_Regular_ttc);
+	case FZ_ADOBE_KOREA: *subfont=1; RETURN(han, SourceHanSerif_Regular_ttc);
+	case FZ_ADOBE_GB: *subfont=2; RETURN(han, SourceHanSerif_Regular_ttc);
 	default:
-	case FZ_ADOBE_CNS_1: *subfont=3; RETURN(han, SourceHanSerif_Regular_ttc);
+	case FZ_ADOBE_CNS: *subfont=3; RETURN(han, SourceHanSerif_Regular_ttc);
 	}
 #else
 	RETURN(droid, DroidSansFallbackFull_ttf);
@@ -163,8 +163,21 @@ fz_lookup_cjk_font(fz_context *ctx, int ordering, int serif, int *size, int *sub
 #endif
 }
 
+int
+fz_lookup_cjk_ordering_by_language(const char *name)
+{
+	if (!strcmp(name, "zh-Hant")) return FZ_ADOBE_CNS;
+	if (!strcmp(name, "zh-TW")) return FZ_ADOBE_CNS;
+	if (!strcmp(name, "zh-HK")) return FZ_ADOBE_CNS;
+	if (!strcmp(name, "zh-Hans")) return FZ_ADOBE_GB;
+	if (!strcmp(name, "zh-CN")) return FZ_ADOBE_GB;
+	if (!strcmp(name, "ja")) return FZ_ADOBE_JAPAN;
+	if (!strcmp(name, "ko")) return FZ_ADOBE_KOREA;
+	return -1;
+}
+
 const unsigned char *
-fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *size, int *subfont)
+fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont)
 {
 	/* TODO: Noto(SansSyriacEstrangela); */
 	/* TODO: Noto(SansSyriacWestern); */
@@ -180,20 +193,20 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 		break;
 
 	case UCDN_SCRIPT_HANGUL:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, size, subfont);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA, size, subfont);
 	case UCDN_SCRIPT_HIRAGANA:
 	case UCDN_SCRIPT_KATAKANA:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, size, subfont);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN, size, subfont);
 	case UCDN_SCRIPT_BOPOMOFO:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, size, subfont);
+		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS, size, subfont);
 	case UCDN_SCRIPT_HAN:
 		switch (language)
 		{
-		case FZ_LANG_ja: return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN_1, serif, size, subfont);
-		case FZ_LANG_ko: return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA_1, serif, size, subfont);
-		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB_1, serif, size, subfont);
+		case FZ_LANG_ja: return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN, size, subfont);
+		case FZ_LANG_ko: return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA, size, subfont);
+		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB, size, subfont);
 		default:
-		case FZ_LANG_zh_Hant: return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS_1, serif, size, subfont);
+		case FZ_LANG_zh_Hant: return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS, size, subfont);
 		}
 
 	case UCDN_SCRIPT_BRAILLE: break; /* no dedicated font; fallback to NotoSansSymbols will cover this */
