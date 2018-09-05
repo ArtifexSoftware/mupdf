@@ -3817,7 +3817,7 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 			NULL,
 			(type == FZ_COLORSPACE_LAB) ? clamp_lab_icc : clamp_default_icc,
 			free_icc,
-			profile, sizeof(profile));
+			profile, sizeof(*profile));
 
 		switch (type)
 		{
