@@ -4882,12 +4882,14 @@ int murun_main(int argc, char **argv)
 			"a[4] * b[1] + a[5] * b[3] + b[5]];}");
 
 	if (argc > 1) {
+		js_pushstring(J, argv[1]);
+		js_setglobal(J, "scriptPath");
 		js_newarray(J);
-		for (i = 1; i < argc; ++i) {
+		for (i = 2; i < argc; ++i) {
 			js_pushstring(J, argv[i]);
-			js_setindex(J, -2, i - 1);
+			js_setindex(J, -2, i - 2);
 		}
-		js_setglobal(J, "argv");
+		js_setglobal(J, "scriptArgs");
 		if (js_dofile(J, argv[1]))
 			return 1;
 	} else {

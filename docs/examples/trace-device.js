@@ -93,10 +93,10 @@ var traceDevice = {
 	},
 }
 
-if (argv.length != 3)
+if (scriptArgs.length != 2)
 	print("usage: mutool run trace-device.js document.pdf pageNumber")
 else {
-	var doc = new Document(argv[1]);
-	var page = doc.loadPage(parseInt(argv[2])-1);
+	var doc = new Document(scriptArgs[0]);
+	var page = doc.loadPage(parseInt(scriptArgs[1])-1);
 	page.run(traceDevice, Identity);
 }

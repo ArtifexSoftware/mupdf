@@ -54,14 +54,14 @@ function pdfmerge() {
 	var srcDoc, dstDoc, i
 
 	dstDoc = new PDFDocument()
-	for (i = 2; i < argv.length; ++i) {
-		srcDoc = new PDFDocument(argv[i])
+	for (i = 1; i < scriptArgs.length; ++i) {
+		srcDoc = new PDFDocument(scriptArgs[i])
 		copyAllPages(dstDoc, srcDoc)
 	}
-	dstDoc.save(argv[1], "compress")
+	dstDoc.save(scriptArgs[0], "compress")
 }
 
-if (argv.length < 3)
+if (scriptArgs.length < 2)
 	print("usage: mutool run pdf-merge.js output.pdf input1.pdf input2.pdf ...")
 else
 	pdfmerge()

@@ -27,13 +27,13 @@ function addJPXPage(filename) {
 	doc.insertPage(-1, doc.addPage(mediabox, 0, resources, contents));
 }
 
-var i, n = argv.length;
-if (n < 2) {
+var i, n = scriptArgs.length;
+if (n < 1) {
 	print("usage: mutool run jpx-to-pdf.js file.jpx ...");
 	quit();
 }
-for (i = 1; i < n; ++i) {
-	addJPXPage(argv[i]);
+for (i = 0; i < n; ++i) {
+	addJPXPage(scriptArgs[i]);
 }
 
 doc.save("out.pdf", "ascii,pretty");
