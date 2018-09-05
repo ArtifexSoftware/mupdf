@@ -71,14 +71,17 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)
 	{
-		if (!alt)
+		if (!alt) {
+			fz_drop_colorspace(ctx, cs_alt);
 			fz_rethrow(ctx);
+		}
 	}
 
 	if (cs)
 	{
 		if (n != 1 && n != 3 && n != 4)
 		{
+			fz_drop_colorspace(ctx, cs_alt);
 			fz_drop_colorspace(ctx, cs);
 			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Based must have 1, 3 or 4 components");
 		}
@@ -94,7 +97,10 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	 * or because we aren't in an ICC workflow. If we aren't allowed
 	 * to return the alternate, then that's all she wrote. */
 	if (!alt)
+	{
+		fz_drop_colorspace(ctx, cs_alt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Unable to read ICC workflow");
+	}
 
 	/* If we have an alternate we are allowed to use, return that. */
 	if (cs_alt)
