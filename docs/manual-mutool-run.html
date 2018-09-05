@@ -753,8 +753,15 @@ Pages consist of a content stream, and a resource dictionary containing all of t
 <dl>
 <dt>PDFDocument#addPage(mediabox, rotate, resources, contents)
 <dd>Create a new page object. Note: this function does NOT add it to the page tree.
-<dt>PDFDocument#addSimpleFont(font)
-<dd>Create a PDF object from the Font object as a WinAnsiEncoding encoded simple font.
+<dt>PDFDocument#addSimpleFont(font, encoding)
+<dd>Create a PDF object from the Font object as a simple font.
+Encoding is either "Latin" (CP-1252), "Greek" (ISO-8859-7), or "Cyrillic" (KOI-8U).
+The default is "Latin".
+<dt>PDFDocument#addCJKFont(font, language, wmode, style)
+<dd>Create a PDF object from the Font object as a UTF-16 encoded CID font for the given
+language ("TC", "SC", "KR", or "JP"),
+writing mode ("H" or "V"),
+and style ("serif" or "sans-serif").
 <dt>PDFDocument#addFont(font)
 <dd>Create a PDF object from the Font object as an Identity-H encoded CID font.
 <dt>PDFDocument#addImage(image)
