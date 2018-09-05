@@ -3235,11 +3235,11 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_copy
 
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
- * Method:    getBlocks
- * Signature: ()[Lcom/artifex/mupdf/fitz/StructuredText/TextBlock;
+ * Method:    walk
+ * Signature: (Lcom/artifex/mupdf/fitz/StructuredTextWalker;)V
  */
-JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_getBlocks
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StructuredText_walk
+  (JNIEnv *, jobject, jobject);
 
 #ifdef __cplusplus
 }
@@ -3271,6 +3271,28 @@ extern "C" {
 
 #ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextBlock
 #define _Included_com_artifex_mupdf_fitz_StructuredText_TextBlock
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredText_BlockWalker */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_BlockWalker
+#define _Included_com_artifex_mupdf_fitz_StructuredText_BlockWalker
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredTextWalker */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredTextWalker
+#define _Included_com_artifex_mupdf_fitz_StructuredTextWalker
 #ifdef __cplusplus
 extern "C" {
 #endif

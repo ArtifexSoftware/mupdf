@@ -476,6 +476,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\StructuredTextWalker.java"
+				>
+			</File>
+			<File
 				RelativePath="..\java\src\com\artifex\mupdf\fitz\Text.java"
 				>
 			</File>

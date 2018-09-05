@@ -95,6 +95,7 @@ static jclass cls_SeekableStream;
 static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
+static jclass cls_StructuredTextWalker;
 static jclass cls_Text;
 static jclass cls_TextBlock;
 static jclass cls_TextChar;
@@ -213,6 +214,12 @@ static jmethodID mid_SeekableStream_seek;
 static jmethodID mid_Shade_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
+static jmethodID mid_StructuredTextWalker_onImageBlock;
+static jmethodID mid_StructuredTextWalker_beginTextBlock;
+static jmethodID mid_StructuredTextWalker_endTextBlock;
+static jmethodID mid_StructuredTextWalker_beginLine;
+static jmethodID mid_StructuredTextWalker_endLine;
+static jmethodID mid_StructuredTextWalker_onChar;
 static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
 static jmethodID mid_TextLine_init;
@@ -267,6 +274,10 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_R_OPEN_ARROW == PDF_ANNOT_LE_R_OPEN_ARROW;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_R_CLOSED_ARROW == PDF_ANNOT_LE_R_CLOSED_ARROW;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SLASH == PDF_ANNOT_LE_SLASH;
+
+	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_CHARS == FZ_SELECT_CHARS;
+	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_WORDS == FZ_SELECT_WORDS;
+	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_LINES == FZ_SELECT_LINES;
 
 	return valid ? 1 : 0;
 }
@@ -606,6 +617,14 @@ static int find_fids(JNIEnv *env)
 	fid_StructuredText_pointer = get_field(&err, env, "pointer", "J");
 	mid_StructuredText_init = get_method(&err, env, "<init>", "(J)V");
 
+	cls_StructuredTextWalker = get_class(&err, env, PKG"StructuredTextWalker");
+	mid_StructuredTextWalker_onImageBlock = get_method(&err, env, "onImageBlock", "(L"PKG"Rect;L"PKG"Matrix;L"PKG"Image;)V");
+	mid_StructuredTextWalker_beginTextBlock = get_method(&err, env, "beginTextBlock", "(L"PKG"Rect;)V");
+	mid_StructuredTextWalker_endTextBlock = get_method(&err, env, "endTextBlock", "()V");
+	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;I)V");
+	mid_StructuredTextWalker_endLine = get_method(&err, env, "endLine", "()V");
+	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;)V");
+
 	cls_Text = get_class(&err, env, PKG"Text");
 	fid_Text_pointer = get_field(&err, env, "pointer", "J");
 	mid_Text_init = get_method(&err, env, "<init>", "(J)V");
@@ -732,6 +751,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
+	(*env)->DeleteGlobalRef(env, cls_StructuredTextWalker);
 	(*env)->DeleteGlobalRef(env, cls_Text);
 	(*env)->DeleteGlobalRef(env, cls_TextBlock);
 	(*env)->DeleteGlobalRef(env, cls_TextChar);
@@ -1365,6 +1385,13 @@ static inline jobject to_Image_safe(fz_context *ctx, JNIEnv *env, fz_image *img)
 		fz_drop_image(ctx, img);
 
 	return jimg;
+}
+
+static inline jobject to_Matrix_safe(fz_context *ctx, JNIEnv *env, fz_matrix mat)
+{
+	if (!ctx) return NULL;
+
+	return (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat.a, mat.b, mat.c, mat.d, mat.e, mat.f);
 }
 
 static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document *doc, fz_outline *outline)
@@ -6463,136 +6490,92 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 	return jstring;
 }
 
-JNIEXPORT jobject JNICALL
-FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
+JNIEXPORT void JNICALL
+FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *page = from_StructuredText(env, self);
-
-	jobject barr = NULL;
-	jobject larr = NULL;
-	jobject carr = NULL;
-	jobject jrect = NULL;
-	jobject jquad = NULL;
-
-	int len;
-	int b;
-	int l;
-	int c;
-
 	fz_stext_block *block = NULL;
 	fz_stext_line *line = NULL;
 	fz_stext_char *ch = NULL;
+	jobject jbbox = NULL;
+	jobject jtrm = NULL;
+	jobject jimage = NULL;
+	jobject jorigin = NULL;
+	jobject jfont = NULL;
+	jobject jquad = NULL;
 
-	jobject jblock = NULL;
-	jobject jline = NULL;
-	jobject jchar = NULL;
+	if (!ctx || !page) return;
+	if (!walker) { jni_throw_arg(env, "walker must not be null"); return; }
 
-	if (!ctx || !page) return NULL;
+	if (page->first_block == NULL)
+		return; /* structured text has no blocks to walk */
 
-	len = 0;
 	for (block = page->first_block; block; block = block->next)
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
-			++len;
-
-	/* create block array */
-	barr = (*env)->NewObjectArray(env, len, cls_TextBlock, NULL);
-	if (!barr) return NULL;
-
-	for (b=0, block = page->first_block; block; ++b, block = block->next)
 	{
-		/* only do text blocks */
-		if (block->type != FZ_STEXT_BLOCK_TEXT)
-			continue;
+		jbbox = to_Rect_safe(ctx, env, block->bbox);
+		if (!jbbox) return;
 
-		/* make a block */
-		jblock = (*env)->NewObject(env, cls_TextBlock, mid_TextBlock_init, self);
-		if (!jblock) return NULL;
-
-		/* set block's bbox */
-		jrect = to_Rect_safe(ctx, env, block->bbox);
-		if (!jrect) return NULL;
-
-		(*env)->SetObjectField(env, jblock, fid_TextBlock_bbox, jrect);
-		(*env)->DeleteLocalRef(env, jrect);
-
-		/* create block's line array */
-		len = 0;
-		for (line = block->u.t.first_line; line; line = line->next)
-			++len;
-
-		larr = (*env)->NewObjectArray(env, len, cls_TextLine, NULL);
-		if (!larr) return NULL;
-
-		for (l=0, line = block->u.t.first_line; line; ++l, line = line->next)
+		if (block->type == FZ_STEXT_BLOCK_IMAGE)
 		{
-			/* make a line */
-			jline = (*env)->NewObject(env, cls_TextLine, mid_TextLine_init, self);
-			if (!jline) return NULL;
+			jtrm = to_Matrix_safe(ctx, env, block->u.i.transform);
+			if (!jtrm) return;
 
-			/* set line's bbox */
-			jrect = to_Rect_safe(ctx, env, line->bbox);
-			if (!jrect) return NULL;
+			jimage = to_Image_safe(ctx, env, block->u.i.image);
+			if (!jimage) return;
 
-			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
-			(*env)->DeleteLocalRef(env, jrect);
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_onImageBlock, jbbox, jtrm, jimage);
+			if ((*env)->ExceptionCheck(env)) return;
 
-			/* count the chars */
-			len = 0;
-			for (ch = line->first_char; ch; ch = ch->next)
-				len++;
+			(*env)->DeleteLocalRef(env, jbbox);
+			(*env)->DeleteLocalRef(env, jimage);
+			(*env)->DeleteLocalRef(env, jtrm);
+		}
+		else if (block->type == FZ_STEXT_BLOCK_TEXT)
+		{
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginTextBlock, jbbox);
+			if ((*env)->ExceptionCheck(env)) return;
 
-			/* make a char array */
-			carr = (*env)->NewObjectArray(env, len, cls_TextChar, NULL);
-			if (!carr) return NULL;
+			(*env)->DeleteLocalRef(env, jbbox);
 
-			for (c=0, ch = line->first_char; ch; ++c, ch = ch->next)
+			for (line = block->u.t.first_line; line; line = line->next)
 			{
-				/* create a char */
-				jchar = (*env)->NewObject(env, cls_TextChar, mid_TextChar_init, self);
-				if (!jchar) return NULL;
+				jbbox = to_Rect_safe(ctx, env, line->bbox);
+				if (!jbbox) return;
 
-				/* set the char's bbox */
-				jquad = to_Quad_safe(ctx, env, ch->quad);
-				if (!jquad) return NULL;
+				(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginLine, jbbox, line->wmode);
+				if ((*env)->ExceptionCheck(env)) return;
 
-				(*env)->SetObjectField(env, jchar, fid_TextChar_quad, jquad);
-				(*env)->DeleteLocalRef(env, jquad);
+				(*env)->DeleteLocalRef(env, jbbox);
 
-				/* set the char's value */
-				(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);
+				for (ch = line->first_char; ch; ch = ch->next)
+				{
+					jorigin = to_Point_safe(ctx, env, ch->origin);
+					if (!jorigin) return;
 
-				/* add it to the char array */
-				(*env)->SetObjectArrayElement(env, carr, c, jchar);
-				if ((*env)->ExceptionCheck(env)) return NULL;
+					jfont = to_Font_safe(ctx, env, ch->font);
+					if (!jfont) return;
 
-				(*env)->DeleteLocalRef(env, jchar);
+					jquad = to_Quad_safe(ctx, env, ch->quad);
+					if (!jquad) return;
+
+					(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_onChar,
+						ch->c, jorigin, jfont, ch->size, jquad);
+					if ((*env)->ExceptionCheck(env)) return;
+
+					(*env)->DeleteLocalRef(env, jquad);
+					(*env)->DeleteLocalRef(env, jfont);
+					(*env)->DeleteLocalRef(env, jorigin);
+				}
+
+				(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_endLine);
+				if ((*env)->ExceptionCheck(env)) return;
 			}
 
-			/* set the line's char array */
-			(*env)->SetObjectField(env, jline, fid_TextLine_chars, carr);
-
-			(*env)->DeleteLocalRef(env, carr);
-
-			/* add to the line array */
-			(*env)->SetObjectArrayElement(env, larr, l, jline);
-			if ((*env)->ExceptionCheck(env)) return NULL;
-
-			(*env)->DeleteLocalRef(env, jline);
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_endTextBlock);
+			if ((*env)->ExceptionCheck(env)) return;
 		}
-
-		/* set the block's line array */
-		(*env)->SetObjectField(env, jblock, fid_TextBlock_lines, larr);
-		(*env)->DeleteLocalRef(env, larr);
-
-		/* add to the block array */
-		(*env)->SetObjectArrayElement(env, barr, b, jblock);
-		if ((*env)->ExceptionCheck(env)) return NULL;
-
-		(*env)->DeleteLocalRef(env, jblock);
 	}
-
-	return barr;
 }
 
 /* PDFDocument interface */
