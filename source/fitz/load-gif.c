@@ -354,6 +354,46 @@ gif_read_pte(fz_context *ctx, struct info *info, const unsigned char *p, const u
 	return gif_read_subblocks(ctx, info, p + 15, end, NULL);
 }
 
+static const unsigned char *
+gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char *end)
+{
+	fz_colorspace *cs = NULL;
+	fz_stream *bstm = NULL;
+	fz_pixmap *newpix;
+	fz_buffer *icc;
+
+	icc = fz_new_buffer(ctx, 0);
+
+	fz_var(bstm);
+	fz_var(cs);
+
+	fz_try(ctx)
+	{
+		p = gif_read_subblocks(ctx, info, p, end, icc);
+		bstm = fz_open_buffer(ctx, icc);
+
+		cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, bstm);
+		if (fz_colorspace_n(ctx, cs) != 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components in ICC profile");
+
+		newpix = fz_convert_pixmap(ctx, info->pix, cs, NULL, NULL, NULL, 1);
+		fz_drop_pixmap(ctx, info->pix);
+		info->pix = newpix;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, cs);
+		fz_drop_stream(ctx, bstm);
+		fz_drop_buffer(ctx, icc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return p;
+}
+
 /*
 NETSCAPE2.0
 	http://odur.let.rug.nl/~kleiweg/gif/netscape.html
@@ -383,7 +423,7 @@ static const unsigned char *
 gif_read_ae(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char *end)
 {
 	static char *ignorable[] = {
-		"NETSACPE2.0", "ANIMEXTS1.0", "ICCRGBG1012", "XMP DataXMP",
+		"NETSACPE2.0", "ANIMEXTS1.0", "XMP DataXMP",
 		"ZGATEXTI5\0\0", "ZGATILEI5\0\0", "ZGANPIMGI5\0", "ZGACTRLI5\0\0",
 		"ZGAVECTI5\0\0", "ZGAALPHAI5\0", "ZGATITLE4.0", "ZGATEXTI4.0",
 	};
@@ -404,6 +444,9 @@ gif_read_ae(fz_context *ctx, struct info *info, const unsigned char *p, const un
 		extension[8] = '\0';
 		fz_warn(ctx, "ignoring unsupported application extension '%s' in gif image", extension);
 	}
+
+	if (!memcmp(&p[3], "ICCRGBG1012", 11))
+		return gif_read_icc(ctx, info, p + 14, end);
 
 	return gif_read_subblocks(ctx, info, p + 14, end, NULL);
 }
