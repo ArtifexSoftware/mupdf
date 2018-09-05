@@ -8,6 +8,10 @@ public class StructuredText
 		Context.init();
 	}
 
+	public static final int SELECT_CHARS = 0;
+	public static final int SELECT_WORDS = 1;
+	public static final int SELECT_LINES = 2;
+
 	private long pointer;
 
 	protected native void finalize();
@@ -23,6 +27,7 @@ public class StructuredText
 
 	public native Quad[] search(String needle);
 	public native Quad[] highlight(Point a, Point b);
+	public native Quad snapSelection(Point a, Point b, int mode);
 	public native String copy(Point a, Point b);
 
 	public native void walk(StructuredTextWalker walker);

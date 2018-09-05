@@ -6463,6 +6463,33 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jpt1, jobject j
 }
 
 JNIEXPORT jobject JNICALL
+FUN(StructuredText_snapSelection)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2, jint mode)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *text = from_StructuredText(env, self);
+	fz_point pt1 = from_Point(env, jpt1);
+	fz_point pt2 = from_Point(env, jpt2);
+	fz_quad quad;
+
+	if (!ctx || !text) return NULL;
+
+	fz_try(ctx)
+		quad = fz_snap_selection(ctx, text, &pt1, &pt2, mode);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	(*env)->SetFloatField(env, jpt1, fid_Point_x, pt1.x);
+	(*env)->SetFloatField(env, jpt1, fid_Point_y, pt1.y);
+	(*env)->SetFloatField(env, jpt2, fid_Point_x, pt2.x);
+	(*env)->SetFloatField(env, jpt2, fid_Point_y, pt2.y);
+
+	return to_Quad_safe(ctx, env, quad);
+}
+
+JNIEXPORT jobject JNICALL
 FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 {
 	fz_context *ctx = get_context(env);
