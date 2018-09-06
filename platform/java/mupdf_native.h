@@ -66,8 +66,6 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Annotation_advance
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef com_artifex_mupdf_fitz_Buffer_DEFAULT_BUFFER_SIZE
-#define com_artifex_mupdf_fitz_Buffer_DEFAULT_BUFFER_SIZE 1024L
 /*
  * Class:     com_artifex_mupdf_fitz_Buffer
  * Method:    finalize
