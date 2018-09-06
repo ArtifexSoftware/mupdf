@@ -44,7 +44,7 @@ public class NativeDevice extends Device
 
 	public native final void beginMask(Rect rect, boolean luminosity, ColorSpace cs, float bc[], int cp);
 	public native final void endMask();
-	public native final void beginGroup(Rect rect, boolean isolated, boolean knockout, int blendmode, float alpha);
+	public native final void beginGroup(Rect rect, ColorSpace cs, boolean isolated, boolean knockout, int blendmode, float alpha);
 	public native final void endGroup();
 
 	public native final int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id);
