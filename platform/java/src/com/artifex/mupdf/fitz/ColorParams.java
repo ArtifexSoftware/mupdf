@@ -13,7 +13,7 @@ public final class ColorParams
 	public static final int OPM = 128;
 
 	public static RenderingIntent RI(int flags) {
-		switch (flags>>3) {
+		switch (flags & 3) {
 			default:
 			case 0: return RenderingIntent.PERCEPTUAL;
 			case 1: return RenderingIntent.RELATIVE_COLORIMETRIC;
