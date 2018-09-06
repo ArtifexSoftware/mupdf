@@ -61,19 +61,6 @@ abstract public class Device
 	abstract public void beginLayer(String name);
 	abstract public void endLayer();
 
-	/* Flags */
-	public static final int FLAG_MASK = 1;
-	public static final int FLAG_COLOR = 2;
-	public static final int FLAG_UNCACHEABLE = 4;
-	public static final int FLAG_FILLCOLOR_UNDEFINED = 8;
-	public static final int FLAG_STROKECOLOR_UNDEFINED = 16;
-	public static final int FLAG_STARTCAP_UNDEFINED = 32;
-	public static final int FLAG_DASHCAP_UNDEFINED = 64;
-	public static final int FLAG_ENDCAP_UNDEFINED = 128;
-	public static final int FLAG_LINEJOIN_UNDEFINED = 256;
-	public static final int FLAG_MITERLIMIT_UNDEFINED = 512;
-	public static final int FLAG_LINEWIDTH_UNDEFINED = 1024;
-
 	/* PDF 1.4 -- standard separable */
 	public static final int BLEND_NORMAL = 0;
 	public static final int BLEND_MULTIPLY = 1;
@@ -93,13 +80,4 @@ abstract public class Device
 	public static final int BLEND_SATURATION = 13;
 	public static final int BLEND_COLOR = 14;
 	public static final int BLEND_LUMINOSITY = 15;
-
-	/* For packing purposes */
-	public static final int BLEND_MODEMASK = 15;
-	public static final int BLEND_ISOLATED = 16;
-	public static final int BLEND_KNOCKOUT = 32;
-
-	/* Device hints */
-	public static final int IGNORE_IMAGE = 1;
-	public static final int IGNORE_SHADE = 2;
 }

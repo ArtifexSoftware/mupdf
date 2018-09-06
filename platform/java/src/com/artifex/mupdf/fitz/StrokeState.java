@@ -6,15 +6,15 @@ public class StrokeState
 		Context.init();
 	}
 
-	public static final int LINECAP_BUTT = 0;
-	public static final int LINECAP_ROUND = 1;
-	public static final int LINECAP_SQUARE = 2;
-	public static final int LINECAP_TRIANGLE = 3;
+	public static final int LINE_CAP_BUTT = 0;
+	public static final int LINE_CAP_ROUND = 1;
+	public static final int LINE_CAP_SQUARE = 2;
+	public static final int LINE_CAP_TRIANGLE = 3;
 
-	public static final int LINEJOIN_MITER = 0;
-	public static final int LINEJOIN_ROUND = 1;
-	public static final int LINEJOIN_BEVEL = 2;
-	public static final int LINEJOIN_MITER_XPS = 3;
+	public static final int LINE_JOIN_MITER = 0;
+	public static final int LINE_JOIN_ROUND = 1;
+	public static final int LINE_JOIN_BEVEL = 2;
+	public static final int LINE_JOIN_MITER_XPS = 3;
 
 	private long pointer;
 
