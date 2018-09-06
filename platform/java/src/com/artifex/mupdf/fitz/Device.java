@@ -1,6 +1,6 @@
 package com.artifex.mupdf.fitz;
 
-public class Device
+abstract public class Device
 {
 	static {
 		Context.init();
@@ -37,29 +37,29 @@ public class Device
 	 * };
 	 */
 
-	public void close() {}
-	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void clipPath(Path path, boolean evenOdd, Matrix ctm) {}
-	public void clipStrokePath(Path path, StrokeState stroke, Matrix ctm) {}
-	public void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void clipText(Text text, Matrix ctm) {}
-	public void clipStrokeText(Text text, StrokeState stroke, Matrix ctm) {}
-	public void ignoreText(Text text, Matrix ctm) {}
-	public void fillShade(Shade shd, Matrix ctm, float alpha) {}
-	public void fillImage(Image img, Matrix ctm, float alpha) {}
-	public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void clipImageMask(Image img, Matrix ctm) {}
-	public void popClip() {}
-	public void beginMask(Rect area, boolean luminosity, ColorSpace cs, float bc[]) {}
-	public void endMask() {}
-	public void beginGroup(Rect area, ColorSpace cs, boolean isolated, boolean knockout, int blendmode, float alpha) {}
-	public void endGroup() {}
-	public int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id) { return 0; }
-	public void endTile() {}
-	public void beginLayer(String name) {}
-	public void endLayer() {}
+	abstract public void close();
+	abstract public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp);
+	abstract public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp);
+	abstract public void clipPath(Path path, boolean evenOdd, Matrix ctm);
+	abstract public void clipStrokePath(Path path, StrokeState stroke, Matrix ctm);
+	abstract public void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp);
+	abstract public void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp);
+	abstract public void clipText(Text text, Matrix ctm);
+	abstract public void clipStrokeText(Text text, StrokeState stroke, Matrix ctm);
+	abstract public void ignoreText(Text text, Matrix ctm);
+	abstract public void fillShade(Shade shd, Matrix ctm, float alpha, int cp);
+	abstract public void fillImage(Image img, Matrix ctm, float alpha, int cp);
+	abstract public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp);
+	abstract public void clipImageMask(Image img, Matrix ctm);
+	abstract public void popClip();
+	abstract public void beginMask(Rect area, boolean luminosity, ColorSpace cs, float bc[], int cp);
+	abstract public void endMask();
+	abstract public void beginGroup(Rect area, ColorSpace cs, boolean isolated, boolean knockout, int blendmode, float alpha);
+	abstract public void endGroup();
+	abstract public int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id);
+	abstract public void endTile();
+	abstract public void beginLayer(String name);
+	abstract public void endLayer();
 
 	/* Flags */
 	public static final int FLAG_MASK = 1;
