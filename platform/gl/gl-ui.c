@@ -375,7 +375,9 @@ void ui_init(int w, int h, const char *title)
 {
 	float ui_scale;
 
+#ifndef FREEGLUT
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+#endif
 
 	glutInitErrorFunc(on_error);
 	glutInitWarningFunc(on_warning);
