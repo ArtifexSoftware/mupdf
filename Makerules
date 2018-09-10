@@ -154,6 +154,16 @@ endif
 # On a unix-like system, run 'make generate' before doing the cross compile.
 # On Windows, run 'nmake -f scripts\fontdump.nmake' in a Visual Studio command prompt.
 
+ifeq "$(OS)" "wasm"
+  OUT := build/wasm/$(build)
+  CC = emcc
+  CXX = em++
+  HAVE_GLUT=no
+  HAVE_X11=no
+  HAVE_OBJCOPY=no
+  HAVE_LIBCRYPTO=no
+endif
+
 ifeq "$(OS)" "mingw32-cross"
   OUT := build/$(OS)/$(build)
   CC = i686-w64-mingw32-gcc

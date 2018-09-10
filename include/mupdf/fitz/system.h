@@ -61,7 +61,9 @@ typedef unsigned __int64 uint64_t;
 #if defined(__APPLE__)
 #define HAVE_SIGSETJMP
 #elif defined(__unix)
+#ifndef __EMSCRIPTEN__
 #define HAVE_SIGSETJMP
+#endif
 #endif
 #endif
 

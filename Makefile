@@ -371,6 +371,9 @@ watch:
 java:
 	$(MAKE) -C platform/java
 
+wasm:
+	$(MAKE) -C platform/wasm
+
 tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh' -or -name '*.java')
 	$(TAGS_CMD)
 
