@@ -1161,7 +1161,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexb
 			}
 			if (i < len)
 			{
-				fz_warn(ctx, "ignoring xref section recursion at offset %lu", ofs);
+				fz_warn(ctx, "ignoring xref section recursion at offset %d", (int)ofs);
 				break;
 			}
 			if (len == cap)
