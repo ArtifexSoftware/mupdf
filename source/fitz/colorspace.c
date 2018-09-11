@@ -3769,7 +3769,6 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 			const unsigned char *data;
 			data = fz_lookup_icc(ctx, type, &size);
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
-			profile->bgr = (type == FZ_COLORSPACE_BGR);
 			flags |= FZ_COLORSPACE_IS_DEVICE;
 		}
 		else
@@ -3789,6 +3788,8 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 			case 4: type = FZ_COLORSPACE_CMYK; break;
 			}
 		}
+
+		profile->bgr = (type == FZ_COLORSPACE_BGR);
 
 		switch (type)
 		{
