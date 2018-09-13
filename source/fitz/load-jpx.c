@@ -634,18 +634,6 @@ static OPJ_BOOL fz_opj_stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
 	return OPJ_TRUE;
 }
 
-static int
-l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
-{
-	int i;
-
-	for (i = 0; max_w != 0 && w != max_w; i++)
-		max_w >>= 1;
-	if (max_w == 0)
-		return -1;
-	return i;
-}
-
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
@@ -654,15 +642,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	opj_codec_t *codec;
 	opj_image_t *jpx;
 	opj_stream_t *stream;
-	unsigned char *p;
 	OPJ_CODEC_FORMAT format;
-	int a, n, w, h, depth, sgnd;
-	int x, y, k, v, stride;
+	int a, n, w, h;
+	int x, y, k;
 	stream_block sb;
-	unsigned int max_w, max_h;
-	int sub_w[FZ_MAX_COLORS];
-	int sub_h[FZ_MAX_COLORS];
-	int upsample_required = 0;
 	OPJ_UINT32 i;
 
 	fz_var(img);
@@ -724,9 +707,6 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	if (!jpx)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "opj_decode failed");
 
-	depth = jpx->comps[0].prec;
-	sgnd = jpx->comps[0].sgnd;
-
 	/* Count number of alpha and color channels */
 	n = a = 0;
 	for (i = 0; i < jpx->numcomps; ++i)
@@ -736,6 +716,22 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		else
 			++n;
 	}
+
+	for (k = 1; k < n + a; k++)
+	{
+		if (!jpx->comps[k].data)
+		{
+			opj_image_destroy(jpx);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image components are missing data");
+		}
+	}
+
+	state->width = w = jpx->x1 - jpx->x0;
+	state->height = h = jpx->y1 - jpx->y0;
+	state->xres = 72; /* openjpeg does not read the JPEG 2000 resc box */
+	state->yres = 72; /* openjpeg does not read the JPEG 2000 resc box */
+
+	state->cs = NULL;
 
 	if (defcs)
 	{
@@ -765,44 +761,6 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		}
 	}
 
-	max_w = jpx->comps[0].w;
-	max_h = jpx->comps[0].h;
-	for (k = 1; k < n + a; k++)
-	{
-		if (max_w < jpx->comps[k].w)
-			max_w = jpx->comps[k].w;
-		if (max_h < jpx->comps[k].w)
-			max_h = jpx->comps[k].h;
-		if (!jpx->comps[k].data)
-		{
-			opj_image_destroy(jpx);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image components are missing data");
-		}
-		if (jpx->comps[k].prec != jpx->comps[0].prec)
-		{
-			opj_image_destroy(jpx);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image components have different precision");
-		}
-	}
-
-	for (k = 0; k < n + a; k++)
-	{
-		sub_w[k] = l2subfactor(ctx, max_w, jpx->comps[k].w);
-		sub_h[k] = l2subfactor(ctx, max_h, jpx->comps[k].h);
-		if (sub_w[k] == -1 || sub_h[k] == -1)
-		{
-			opj_image_destroy(jpx);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image components are of incompatible dimensions");
-		}
-		if (sub_w[k] != 0 || sub_h[k] != 0)
-			upsample_required = 1;
-	}
-
-	state->width = w = (int)max_w;
-	state->height = h = (int)max_h;
-	state->xres = 72; /* openjpeg does not read the JPEG 2000 resc box */
-	state->yres = 72; /* openjpeg does not read the JPEG 2000 resc box */
-
 	if (onlymeta)
 	{
 		opj_image_destroy(jpx);
@@ -811,58 +769,53 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 
 	fz_try(ctx)
 	{
+		unsigned char *samples;
+		int stride, comps;
+
 		a = !!a; /* ignore any superfluous alpha channels */
 		img = fz_new_pixmap(ctx, state->cs, w, h, NULL, a);
+		stride = fz_pixmap_stride(ctx, img);
+		comps = fz_pixmap_components(ctx, img);
+		samples = fz_pixmap_samples(ctx, img);
 
-		p = img->samples;
-		if (upsample_required)
+		fz_clear_pixmap_with_value(ctx, img, 0);
+
+		for (k = 0; k < comps; k++)
 		{
-			stride = img->stride;
-			for (y = 0; y < h; y++)
+			opj_image_comp_t *comp = &(jpx->comps[k]);
+			int oy = comp->y0 * comp->dy - jpx->y0;
+			int ox = comp->x0 * comp->dx - jpx->x0;
+
+			for (y = 0; y < comp->h; y++)
 			{
-				for (k = 0; k < n + a; k++)
+				for (x = 0; x < comp->w; x++)
 				{
-					int sh = sub_h[k];
-					int sw = sub_w[k];
-					int yy = (y>>sh) * (jpx->comps[k].w >> sw);
-					OPJ_INT32 *data = &jpx->comps[k].data[yy];
-					for (x = 0; x < w; x ++)
+					OPJ_INT32 v;
+					int dx;
+					int dy;
+
+					v = comp->data[y * comp->w + x];
+
+					if (comp->sgnd)
+						v = v + (1 << (comp->prec - 1));
+					if (comp->prec > 8)
+						v = v >> (comp->prec - 8);
+					else if (comp->prec < 8)
+						v = v << (8 - comp->prec);
+
+					for (dy = 0; dy < comp->dy; dy++)
 					{
-						v = data[x>>sw];
-						if (sgnd)
-							v = v + (1 << (depth - 1));
-						if (depth > 8)
-							v = v >> (depth - 8);
-						else if (depth < 8)
-							v = v << (8 - depth);
-						*p = v;
-						p += n + a;
+						for (dx = 0; dx < comp->dx; dx++)
+						{
+							int xx = ox + x * comp->dx + dx;
+							int yy = oy + y * comp->dy + dy;
+
+							if (xx < w && yy < h)
+								samples[yy * stride + xx * comps + k] = v;
+						}
 					}
-					p += 1 - w * (n + a);
+
 				}
-				p += stride - (n + a);
-			}
-		}
-		else
-		{
-			stride = img->stride - w * (n + a);
-			for (y = 0; y < h; y++)
-			{
-				for (x = 0; x < w; x++)
-				{
-					for (k = 0; k < n + a; k++)
-					{
-						v = jpx->comps[k].data[y * w + x];
-						if (sgnd)
-							v = v + (1 << (depth - 1));
-						if (depth > 8)
-							v = v >> (depth - 8);
-						else if (depth < 8)
-							v = v << (8 - depth);
-						*p++ = v;
-					}
-				}
-				p += stride;
 			}
 		}
 
