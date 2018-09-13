@@ -1016,11 +1016,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.c"
+				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\sparse_array.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.h"
+				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\sparse_array.h"
 				>
 			</File>
 			<File

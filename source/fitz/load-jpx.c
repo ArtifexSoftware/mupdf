@@ -575,7 +575,7 @@ void opj_free(void *ptr)
 	fz_free(ctx, ptr);
 }
 
-void * opj_aligned_malloc(size_t size)
+static void * opj_aligned_malloc_n(size_t alignment, size_t size)
 {
 	uint8_t *ptr;
 	int off;
@@ -583,13 +583,23 @@ void * opj_aligned_malloc(size_t size)
 	if (size == 0)
 		return NULL;
 
-	size += 16 + sizeof(uint8_t);
+	size += alignment + sizeof(uint8_t);
 	ptr = opj_malloc(size);
 	if (ptr == NULL)
 		return NULL;
-	off = 16-(((int)(intptr_t)ptr) & 15);
+	off = alignment-(((int)(intptr_t)ptr) & (alignment - 1));
 	ptr[off-1] = off;
 	return ptr + off;
+}
+
+void * opj_aligned_malloc(size_t size)
+{
+	return opj_aligned_malloc_n(16, size);
+}
+
+void * opj_aligned_32_malloc(size_t size)
+{
+	return opj_aligned_malloc_n(32, size);
 }
 
 void opj_aligned_free(void* ptr_)

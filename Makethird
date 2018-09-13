@@ -307,6 +307,7 @@ else
 OPENJPEG_CFLAGS += -Ithirdparty/openjpeg/src/lib/openjp2
 OPENJPEG_CFLAGS += -DOPJ_STATIC
 OPENJPEG_CFLAGS += -DOPJ_HAVE_STDINT_H -DOPJ_HAVE_INTTYPES_H
+OPENJPEG_CFLAGS += -DMUTEX_pthread=0
 
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/bio.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/cio.c
@@ -321,7 +322,7 @@ THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/mct.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/mqc.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/openjpeg.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/pi.c
-THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/raw.c
+THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/sparse_array.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/t1.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/t2.c
 THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/tcd.c
