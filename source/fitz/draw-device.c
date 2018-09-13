@@ -1486,7 +1486,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 		eop = resolve_color(ctx, &op, shade->background, colorspace, alpha, cp, colorbv, state->dest);
 
 		n = dest->n;
-		if (eop)
+		if (fz_overprint_required(eop))
 		{
 			for (y = scissor.y0; y < scissor.y1; y++)
 			{

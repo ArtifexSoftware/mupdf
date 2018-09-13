@@ -2766,7 +2766,7 @@ fz_paint_glyph(const unsigned char * FZ_RESTRICT colorbv, fz_pixmap * FZ_RESTRIC
 	}
 	else
 	{
-		assert(dst->alpha && dst->n == 1 && dst->colorspace == NULL && eop == 0);
+		assert(dst->alpha && dst->n == 1 && dst->colorspace == NULL && !fz_overprint_required(eop));
 		fz_paint_glyph_mask(dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y);
 	}
 }
