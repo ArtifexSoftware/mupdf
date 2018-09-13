@@ -211,7 +211,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, fz_irect bbox, const fz_overprint *op)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, fz_irect bbox, const fz_overprint *eop)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -342,7 +342,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 					s += temp->stride - temp->w * temp->n;
 				}
 			}
-			fz_paint_pixmap_with_overprint(dest, conv, op);
+			fz_paint_pixmap_with_overprint(dest, conv, eop);
 		}
 	}
 	fz_always(ctx)

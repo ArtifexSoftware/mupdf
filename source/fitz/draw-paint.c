@@ -2333,7 +2333,7 @@ fz_paint_pixmap_alpha(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_RESTRICT
 }
 
 void
-fz_paint_pixmap_with_overprint(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_RESTRICT src, const fz_overprint *op)
+fz_paint_pixmap_with_overprint(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_RESTRICT src, const fz_overprint *eop)
 {
 	const unsigned char *sp;
 	unsigned char *dp;
@@ -2363,14 +2363,14 @@ fz_paint_pixmap_with_overprint(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ
 	da = dst->alpha;
 
 	n -= sa;
-	fn = fz_get_span_painter(da, sa, n, 255, op);
+	fn = fz_get_span_painter(da, sa, n, 255, eop);
 	assert(fn);
 	if (fn == NULL)
 		return;
 
 	while (h--)
 	{
-		(*fn)(dp, da, sp, sa, n, w, 255, op);
+		(*fn)(dp, da, sp, sa, n, w, 255, eop);
 		sp += src->stride;
 		dp += dst->stride;
 	}

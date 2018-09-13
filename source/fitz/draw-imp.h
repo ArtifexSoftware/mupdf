@@ -463,7 +463,7 @@ void fz_paint_pixmap(fz_pixmap *dst, const fz_pixmap *src, int alpha);
 void fz_paint_pixmap_alpha(fz_pixmap *dst, const fz_pixmap *src, int alpha);
 void fz_paint_pixmap_with_mask(fz_pixmap *dst, const fz_pixmap *src, const fz_pixmap *msk);
 void fz_paint_pixmap_with_bbox(fz_pixmap *dst, const fz_pixmap *src, int alpha, fz_irect bbox);
-void fz_paint_pixmap_with_overprint(fz_pixmap *dst, const fz_pixmap *src, const fz_overprint *op);
+void fz_paint_pixmap_with_overprint(fz_pixmap *dst, const fz_pixmap *src, const fz_overprint *eop);
 
 void fz_blend_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int isolated, const fz_pixmap *shape);
 void fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, const fz_pixmap *shape);
