@@ -298,34 +298,59 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		if (state->xres == 0 || state->yres == 0)
 			state->xres = state->yres = 72;
 
+		state->cs = NULL;
+
 		if (defcs)
 		{
 			if (fz_colorspace_n(ctx, defcs) == nchans)
 			{
-				state->cs = defcs;
+				state->cs = fz_keep_colorspace(ctx, defcs);
 			}
 			else
 			{
 				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", nchans, fz_colorspace_n(ctx, defcs), fz_colorspace_name(ctx, defcs));
-				defcs = NULL;
 			}
 		}
 
-		if (!defcs)
+		if (!state->cs && colorspace == cJP2_Colorspace_Palette_ICCa)
+		{
+			unsigned char *iccprofile = NULL;
+			unsigned long size = 0;
+			fz_stream *cstm = NULL;
+			fz_var(cstm);
+
+			err = JP2_Decompress_GetICC(doc, &iccprofile, &size);
+			if (err != cJP2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get ICC color profile: %d", (int) err);
+
+			fz_try(ctx)
+			{
+				cstm = fz_open_memory(ctx, iccprofile, size);
+				state->cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, cstm);
+			}
+			fz_always(ctx)
+				fz_drop_stream(ctx, cstm);
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
+			}
+		}
+
+		if (!state->cs)
 		{
 			switch (colors)
 			{
-			case 4: state->cs = fz_device_cmyk(ctx); break;
+			case 4: state->cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx)); break;
 			case 3: if (colorspace == cJP2_Colorspace_CIE_LABa)
-					state->cs = fz_device_lab(ctx);
+					state->cs = fz_keep_colorspace(ctx, fz_device_lab(ctx));
 				else
-					state->cs = fz_device_rgb(ctx);
+					state->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				break;
-			case 1: state->cs = fz_device_gray(ctx); break;
+			case 1: state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx)); break;
 			case 0: if (alphas == 1)
 				{
 					/* alpha only images are rendered as grayscale */
-					state->cs = fz_device_gray(ctx);
+					state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 					colors = 1;
 					alphas = 0;
 					break;
@@ -337,6 +362,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_colorspace(ctx, state->cs);
 		JP2_Decompress_End(doc);
 		fz_rethrow(ctx);
 	}
@@ -411,7 +437,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		}
 	}
 	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, state->cs);
 		JP2_Decompress_End(doc);
+	}
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, state->pix);
@@ -436,7 +465,7 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 
 	jpx_read_image(ctx, &state, data, size, NULL, 1);
 
-	*cspacep = fz_keep_colorspace(ctx, state.cs); /* state.cs is a borrowed device colorspace */
+	*cspacep = state.cs;
 	*wp = state.width;
 	*hp = state.height;
 	*xresp = state.xres;
@@ -737,22 +766,39 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	{
 		if (fz_colorspace_n(ctx, defcs) == n)
 		{
-			state->cs = defcs;
+			state->cs = fz_keep_colorspace(ctx, defcs);
 		}
 		else
 		{
 			fz_warn(ctx, "jpx file and dict colorspace do not match");
-			defcs = NULL;
 		}
 	}
 
-	if (!defcs)
+	if (!state->cs && jpx->icc_profile_buf)
+	{
+		fz_stream *cstm = NULL;
+		fz_var(cstm);
+
+		fz_try(ctx)
+		{
+			cstm = fz_open_memory(ctx, jpx->icc_profile_buf, jpx->icc_profile_len);
+			state->cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, cstm);
+		}
+		fz_always(ctx)
+			fz_drop_stream(ctx, cstm);
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
+		}
+	}
+
+	if (!state->cs)
 	{
 		switch (n)
 		{
-		case 1: state->cs = fz_device_gray(ctx); break;
-		case 3: state->cs = fz_device_rgb(ctx); break;
-		case 4: state->cs = fz_device_cmyk(ctx); break;
+		case 1: state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx)); break;
+		case 3: state->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx)); break;
+		case 4: state->cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx)); break;
 		default:
 			{
 				opj_image_destroy(jpx);
@@ -825,7 +871,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_premultiply_pixmap(ctx, img);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, state->cs);
 		opj_image_destroy(jpx);
+	}
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, img);
@@ -869,7 +918,7 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	*cspacep = fz_keep_colorspace(ctx, state.cs);
+	*cspacep = state.cs;
 	*wp = state.width;
 	*hp = state.height;
 	*xresp = state.xres;
