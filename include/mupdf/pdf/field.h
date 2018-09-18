@@ -39,6 +39,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer);
 int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+const char *pdf_field_label(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d);
 pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name);
 void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field);

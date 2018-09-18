@@ -922,6 +922,16 @@ char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return get_field_name(ctx, doc, field, 0);
 }
 
+const char *pdf_field_label(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	pdf_obj *label = pdf_dict_get_inheritable(ctx, field, PDF_NAME(TU));
+	if (!label)
+		label = pdf_dict_get_inheritable(ctx, field, PDF_NAME(T));
+	if (label)
+		return pdf_to_text_string(ctx, label);
+	return "Text Field";
+}
+
 void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
