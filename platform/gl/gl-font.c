@@ -330,39 +330,69 @@ float ui_measure_string_part(const char *s, const char *e)
 
 int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *maxwidth)
 {
-	char *next, *b = a;
+	char *next, *space = NULL, *b = a;
 	int c, n = 0;
-	float x = 0, w = 0;
+	float space_x, x = 0, w = 0;
+
 	if (maxwidth)
 		*maxwidth = 0;
+
 	while (*b)
 	{
 		next = b + fz_chartorune(&c, b);
-		if (c == '\n' || c == '\r')
+		if (c == '\r' || c == '\n')
 		{
-			if (n + 1 < maxlines)
+			if (lines && n < maxlines)
 			{
-				if (maxwidth && x > *maxwidth)
-					*maxwidth = x;
 				lines[n].a = a;
 				lines[n].b = b;
 				++n;
-				a = next;
-				x = 0;
 			}
+			if (maxwidth && *maxwidth < x)
+				*maxwidth = x;
+			a = next;
+			x = 0;
+			space = NULL;
 		}
 		else
 		{
-			w = ui_measure_character(c);
-			if (x + w > width && (n + 1 < maxlines))
+			if (c == ' ')
 			{
-				if (maxwidth && x > *maxwidth)
-					*maxwidth = x;
-				lines[n].a = a;
-				lines[n].b = b;
-				++n;
-				a = b;
-				x = w;
+				space = b;
+				space_x = x;
+			}
+
+			w = ui_measure_character(c);
+			if (x + w > width)
+			{
+				if (space)
+				{
+					if (lines && n < maxlines)
+					{
+						lines[n].a = a;
+						lines[n].b = space;
+						++n;
+					}
+					if (maxwidth && *maxwidth < space_x)
+						*maxwidth = space_x;
+					a = next = space + 1;
+					x = 0;
+					space = NULL;
+				}
+				else
+				{
+					if (lines && n < maxlines)
+					{
+						lines[n].a = a;
+						lines[n].b = b;
+						++n;
+					}
+					if (maxwidth && *maxwidth < x)
+						*maxwidth = x;
+					a = b;
+					x = w;
+					space = NULL;
+				}
 			}
 			else
 			{
@@ -371,11 +401,16 @@ int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *ma
 		}
 		b = next;
 	}
-	if (maxwidth && x > *maxwidth)
+
+	if (lines && n < maxlines)
+	{
+		lines[n].a = a;
+		lines[n].b = b;
+		++n;
+	}
+	if (maxwidth && *maxwidth < x)
 		*maxwidth = x;
-	lines[n].a = a;
-	lines[n].b = b;
-	return n + 1;
+	return n;
 }
 
 void ui_draw_lines(float x, float y, struct line *lines, int n)
