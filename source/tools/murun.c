@@ -2357,6 +2357,8 @@ static void ffi_new_Font(js_State *J)
 
 	fz_try(ctx) {
 		data = fz_lookup_base14_font(ctx, name, &size);
+		if (!data)
+			data = fz_lookup_cjk_font_by_language(ctx, name, &size, &index);
 		if (data)
 			font = fz_new_font_from_memory(ctx, name, data, size, index, 0);
 		else

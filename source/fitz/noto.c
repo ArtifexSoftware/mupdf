@@ -177,6 +177,15 @@ fz_lookup_cjk_ordering_by_language(const char *name)
 }
 
 const unsigned char *
+fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int *subfont)
+{
+	int ordering = fz_lookup_cjk_ordering_by_language(lang);
+	if (ordering >= 0)
+		return fz_lookup_cjk_font(ctx, ordering, size, subfont);
+	return *size = 0, *subfont = 0, NULL;
+}
+
+const unsigned char *
 fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont)
 {
 	/* TODO: Noto(SansSyriacEstrangela); */

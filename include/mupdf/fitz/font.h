@@ -290,6 +290,7 @@ const unsigned char *fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type name
 	Returns a pointer to the font file data, or NULL if not present.
 */
 const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int ordering, int *len, int *index);
+const unsigned char *fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int *subfont);
 
 /*
 	fz_lookup_cjk_ordering_by_language: Return the matching FZ_ADOBE_* ordering
