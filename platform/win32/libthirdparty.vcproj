@@ -1131,10 +1131,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\freetype\src\base\ftfntfmt.c"
-					>
-				</File>
-				<File
 					RelativePath="..\..\thirdparty\freetype\src\base\ftgasp.c"
 					>
 				</File>
