@@ -493,7 +493,8 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 		/* Remove page from the list of open pages */
 		if (page->next != NULL)
 			page->next->prev = page->prev;
-		*page->prev = page->next;
+		if (page->prev != NULL)
+			*page->prev = page->next;
 
 		if (page->drop_page)
 			page->drop_page(ctx, page);
