@@ -3059,7 +3059,7 @@ new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *dest, const fz_
 	 * to trigger on later.
 	 */
 	if (dest->seps || dev->proof_cs != NULL)
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 		dev->resolve_spots = 1;
 #else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Spot rendering (and overprint/overprint simulation) not available in this build");

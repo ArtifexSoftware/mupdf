@@ -1455,7 +1455,7 @@ paint_affine_lerp_alpha_N(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 }
 #endif /* FZ_PLOTTERS_N */
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static void
 paint_affine_lerp_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -1474,7 +1474,7 @@ paint_affine_lerp_alpha_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 static paintfn_t *
 fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 	if (fz_overprint_required(eop))
 	{
 		if (alpha == 255)
@@ -1672,7 +1672,7 @@ fallback:
 	return NULL;
 }
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static paintfn_t *
 fz_paint_affine_lerp_spots(int da, int sa, int fa, int fb, int dn, int sn, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -2584,7 +2584,7 @@ paint_affine_near_alpha_N(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 }
 #endif /* FZ_PLOTTERS_N */
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static void
 paint_affine_near_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -2603,7 +2603,7 @@ paint_affine_near_alpha_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 static paintfn_t *
 fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 	if (fz_overprint_required(eop))
 	{
 		if (alpha == 255)
@@ -3052,7 +3052,7 @@ fallback:
 	return NULL;
 }
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static paintfn_t *
 fz_paint_affine_near_spots(int da, int sa, int fa, int fb, int dn, int sn, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -3506,7 +3506,7 @@ paint_affine_color_lerp_N(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 }
 #endif /* FZ_PLOTTERS_N */
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static void
 paint_affine_color_lerp_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -3518,7 +3518,7 @@ paint_affine_color_lerp_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 static paintfn_t *
 fz_paint_affine_color_lerp(int da, int sa, int fa, int fb, int n, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 	if (fz_overprint_required(eop))
 		return paint_affine_color_lerp_N_op;
 #endif /* FZ_ENABLE_SPOT_RENDERING */
@@ -3541,7 +3541,7 @@ fz_paint_affine_color_lerp(int da, int sa, int fa, int fb, int n, int alpha, con
 	return NULL;
 }
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static paintfn_t *
 fz_paint_affine_color_lerp_spots(int da, int sa, int fa, int fb, int dn, int sn, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -3622,7 +3622,7 @@ paint_affine_color_near_N(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 }
 #endif /* FZ_PLOTTERS_N */
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static void
 paint_affine_color_near_da_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -3641,7 +3641,7 @@ paint_affine_color_near_N_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 static paintfn_t *
 fz_paint_affine_color_near(int da, int sa, int fa, int fb, int n, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 	if (fz_overprint_required(eop))
 		return da ? paint_affine_color_near_da_N_op : paint_affine_color_near_N_op;
 #endif /* FZ_ENABLE_SPOT_RENDERING */
@@ -3665,7 +3665,7 @@ fz_paint_affine_color_near(int da, int sa, int fa, int fb, int n, int alpha, con
 	}
 }
 
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static paintfn_t *
 fz_paint_affine_color_near_spots(int da, int sa, int fa, int fb, int dn, int sn, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
@@ -4000,7 +4000,7 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 	}
 	else
 #endif /* FZ_PLOTTERS_RGB */
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 	if (sn != dn)
 	{
 		if (dolerp)

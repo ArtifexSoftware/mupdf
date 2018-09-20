@@ -1203,7 +1203,7 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 JNIEXPORT jint JNICALL
 FUN(Context_gprfSupportedNative)(JNIEnv * env, jclass class)
 {
-#ifdef FZ_ENABLE_GPRF
+#if FZ_ENABLE_GPRF
 	return JNI_TRUE;
 #else
 	return JNI_FALSE;
@@ -4910,7 +4910,7 @@ static char *make_tmp_gproof_path(const char *path)
 JNIEXPORT jstring JNICALL
 FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstring jPrintProfile, jstring jDisplayProfile, jint inResolution)
 {
-#ifdef FZ_ENABLE_GPRF
+#if FZ_ENABLE_GPRF
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
 	char *tmp;

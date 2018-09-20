@@ -262,7 +262,7 @@ static int lowmemory = 0;
 static int errored = 0;
 static fz_colorspace *colorspace;
 static fz_colorspace *oi = NULL;
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 static int spots = SPOTS_OVERPRINT_SIM;
 #else
 static int spots = SPOTS_NONE;
@@ -363,7 +363,7 @@ static void usage(void)
 #endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
 		"\t-O -\tControl spot/overprint rendering\n"
-#ifdef FZ_ENABLE_SPOT_RENDERING
+#if FZ_ENABLE_SPOT_RENDERING
 		"\t\t 0 = No spot rendering\n"
 		"\t\t 1 = Overprint simulation (default)\n"
 		"\t\t 2 = Full spot rendering\n"
