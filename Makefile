@@ -90,7 +90,7 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c
 	$(CC_CMD) -Wall $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
 
 $(OUT)/platform/gl/%.o : platform/gl/%.c
-	$(CC_CMD) -Wall $(GLUT_CFLAGS)
+	$(CC_CMD) -Wall $(THIRD_CFLAGS) $(GLUT_CFLAGS)
 
 ifeq ($(HAVE_OBJCOPY),yes)
   $(OUT)/source/fitz/noto.o : source/fitz/noto.c
