@@ -18,22 +18,32 @@ List of changes since the last release.
 	* Can create, edit, and delete most annotation types.
 	* Can create appearance streams for most annotation types.
 	* Can create appearance streams for Tx form fields.
+	* Can create appearance streams for Ch form fields.
+
+* Form filling in mupdf-gl:
+	* Can click buttons, checkboxes, and radioboxes.
+	* Can fill out text fields using dialog box.
+	* Can select choice options using dialog box.
+	* Can verify and sign digital signatures.
 
 * Improved UI for mupdf-gl:
 	* Password dialog.
 	* Error dialog.
 	* Open/save file dialog.
-	* Annotation editing mode.
+	* Snap selection to words or lines by holding control or control+shift.
+	* Save and restore current location, bookmarks, and navigation history.
 
 * Bug fixes:
 	* Improved CJK character fallback handling in EPUB.
 
 * API changes:
+	* Pass rectangle and matrix structs by value.
 	* Replaced PDF_NAME_Xxx macros with PDF_NAME(Xxx).
 	* Added PDF_TRUE, PDF_FALSE, and PDF_NULL constant pdf_obj* macros.
 	* Added helper functions: pdf_dict_get_int, etc.
 	* Removed 'doc' argument in pdf_new_int, etc.
 	* Quads instead of rects when highlighting and searching text.
+	* mutool run: Pass arguments to script in scriptArgs global.
 
 List of changes in MuPDF 1.13.0
 
