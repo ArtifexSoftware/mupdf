@@ -986,14 +986,23 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 	fz_colorspace *oi;
 
 	default_cs = fz_new_default_colorspaces(ctx);
-	res = pdf_page_resources(ctx, page);
-	obj = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
-	if (obj)
-		pdf_load_default_colorspaces_imp(ctx, default_cs, obj);
 
-	oi = pdf_document_output_intent(ctx, doc);
-	if (oi)
-		fz_set_default_output_intent(ctx, default_cs, oi);
+	fz_try(ctx)
+	{
+		res = pdf_page_resources(ctx, page);
+		obj = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
+		if (obj)
+			pdf_load_default_colorspaces_imp(ctx, default_cs, obj);
+
+		oi = pdf_document_output_intent(ctx, doc);
+		if (oi)
+			fz_set_default_output_intent(ctx, default_cs, oi);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_default_colorspaces(ctx, default_cs);
+		fz_rethrow(ctx);
+	}
 
 	return default_cs;
 }
