@@ -92,27 +92,27 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 				colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
 
 			fz_begin_group(ctx, dev, mediabox, colorspace, 1, 0, 0, 1);
-			fz_drop_colorspace(ctx, colorspace);
-			colorspace = NULL;
 		}
 
 		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs);
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 		pdf_close_processor(ctx, proc);
+
+		if (page->transparency)
+		{
+			fz_end_group(ctx, dev);
+		}
 	}
 	fz_always(ctx)
 	{
-		fz_drop_default_colorspaces(ctx, default_cs);
 		pdf_drop_processor(ctx, proc);
+		fz_drop_colorspace(ctx, colorspace);
+		fz_drop_default_colorspaces(ctx, default_cs);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_colorspace(ctx, colorspace);
 		fz_rethrow(ctx);
 	}
-
-	if (page->transparency)
-		fz_end_group(ctx, dev);
 }
 
 void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
