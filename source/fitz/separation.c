@@ -198,11 +198,11 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 	/* We need to clone us a separation structure, with all
 	 * the composite separations marked as enabled. */
 	clone = fz_malloc_struct(ctx, fz_separations);
+	clone->refs = 1;
+	clone->controllable = 0;
 
 	fz_try(ctx)
 	{
-		clone->refs = 1;
-		clone->controllable = 0;
 		for (i = 0; i < n; i++)
 		{
 			fz_separation_behavior beh = sep_state(sep, i);
