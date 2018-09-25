@@ -92,7 +92,7 @@ static void sig_dialog(void)
 {
 	const char *label = pdf_field_label(ctx, sig_widget->page->doc, sig_widget->obj);
 
-	ui_dialog_begin(400, ui.gridsize*3 + ui.lineheight*10);
+	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
 	{
 		ui_layout(T, X, NW, 2, 2);
 
@@ -141,7 +141,7 @@ static void tx_dialog(void)
 	int lbl_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
 	int is;
 
-	ui_dialog_begin(400, ui.gridsize*3 + ui.lineheight*(tx_h+lbl_h-1));
+	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*(tx_h+lbl_h-2));
 	{
 		ui_layout(T, X, NW, 2, 2);
 		ui_label("%s", label);
@@ -194,7 +194,7 @@ static void ch_dialog(void)
 	pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, options);
 	value = pdf_field_value(ctx, ch_widget->page->doc, ch_widget->obj);
 
-	ui_dialog_begin(400, ui.gridsize*3 + ui.lineheight*label_h);
+	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*(label_h-1));
 	{
 		ui_layout(T, X, NW, 2, 2);
 

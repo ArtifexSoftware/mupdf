@@ -346,8 +346,8 @@ int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *ma
 			{
 				lines[n].a = a;
 				lines[n].b = b;
-				++n;
 			}
+			++n;
 			if (maxwidth && *maxwidth < x)
 				*maxwidth = x;
 			a = next;
@@ -371,8 +371,8 @@ int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *ma
 					{
 						lines[n].a = a;
 						lines[n].b = space;
-						++n;
 					}
+					++n;
 					if (maxwidth && *maxwidth < space_x)
 						*maxwidth = space_x;
 					a = next = space + 1;
@@ -385,8 +385,8 @@ int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *ma
 					{
 						lines[n].a = a;
 						lines[n].b = b;
-						++n;
 					}
+					++n;
 					if (maxwidth && *maxwidth < x)
 						*maxwidth = x;
 					a = b;
@@ -406,11 +406,11 @@ int ui_break_lines(char *a, struct line *lines, int maxlines, int width, int *ma
 	{
 		lines[n].a = a;
 		lines[n].b = b;
-		++n;
 	}
+	++n;
 	if (maxwidth && *maxwidth < x)
 		*maxwidth = x;
-	return n;
+	return n < maxlines ? n : maxlines;
 }
 
 void ui_draw_lines(float x, float y, struct line *lines, int n)
