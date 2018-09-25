@@ -339,11 +339,12 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 		pdf_xref *xref = &doc->xref_sections[0];
 		pdf_xref *pxref;
 		pdf_xref_entry *new_table = fz_calloc(ctx, xref->num_objects, sizeof(pdf_xref_entry));
-		pdf_xref_subsec *sub;
+		pdf_xref_subsec *sub = NULL;
 		pdf_obj *trailer = NULL;
 		int i;
 
 		fz_var(trailer);
+		fz_var(sub);
 		fz_try(ctx)
 		{
 			sub = fz_malloc_struct(ctx, pdf_xref_subsec);
@@ -354,19 +355,21 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 			memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
 			/* xref->num_objects is already correct */
 			xref->subsec = sub;
+			sub = NULL;
 			xref->trailer = trailer;
 			xref->pre_repair_trailer = NULL;
 			xref->unsaved_sigs = NULL;
 			xref->unsaved_sigs_end = NULL;
-			sub->next = NULL;
-			sub->len = xref->num_objects;
-			sub->start = 0;
-			sub->table = new_table;
+			xref->subsec->next = NULL;
+			xref->subsec->len = xref->num_objects;
+			xref->subsec->start = 0;
+			xref->subsec->table = new_table;
 			doc->num_xref_sections++;
 			doc->num_incremental_sections++;
 		}
 		fz_catch(ctx)
 		{
+			fz_free(ctx, sub);
 			fz_free(ctx, new_table);
 			pdf_drop_obj(ctx, trailer);
 			fz_rethrow(ctx);
