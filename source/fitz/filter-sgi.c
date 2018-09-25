@@ -313,22 +313,19 @@ fz_open_sgilog16(fz_context *ctx, fz_stream *chain, int w)
 {
 	fz_sgilog16 *state = NULL;
 
-	fz_var(state);
-
+	state = fz_malloc_struct(ctx, fz_sgilog16);
 	fz_try(ctx)
 	{
-		state = fz_malloc_struct(ctx, fz_sgilog16);
-		state->chain = chain;
 		state->run = 0;
 		state->n = 0;
 		state->c = 0;
 		state->w = w;
 		state->temp = fz_malloc(ctx, w * sizeof(uint16_t));
+		state->chain = fz_keep_stream(ctx, chain);
 	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
