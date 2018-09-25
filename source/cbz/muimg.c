@@ -82,7 +82,7 @@ img_load_page(fz_context *ctx, fz_document *doc_, int number)
 	img_page *page = NULL;
 
 	if (number < 0 || number >= doc->page_count)
-		return NULL;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load page %d", number);
 
 	fz_var(pixmap);
 	fz_var(image);
