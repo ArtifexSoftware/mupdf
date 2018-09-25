@@ -3855,6 +3855,7 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 		fz_drop_buffer(ctx, profile->buffer);
 		fz_cmm_fin_profile(ctx, profile);
 		fz_free(ctx, profile);
+		fz_rethrow(ctx);
 	}
 	return cs;
 #endif
