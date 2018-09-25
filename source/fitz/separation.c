@@ -230,7 +230,7 @@ fz_pixmap *
 fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *dseps, const fz_color_params *color_params, fz_default_colorspaces *default_cs)
 {
 	fz_irect local_bbox;
-	fz_pixmap *dst;
+	fz_pixmap *dst, *pix;
 
 	if (bbox == NULL)
 	{
@@ -247,7 +247,15 @@ fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const 
 	else
 		dst->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
-	return fz_copy_pixmap_area_converting_seps(ctx, dst, src, color_params, NULL, default_cs);
+	fz_try(ctx)
+		pix = fz_copy_pixmap_area_converting_seps(ctx, dst, src, color_params, NULL, default_cs);
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, dst);
+		fz_rethrow(ctx);
+	}
+
+	return pix;
 }
 
 /*
