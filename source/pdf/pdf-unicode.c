@@ -83,8 +83,12 @@ pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font,
 	if (pdf_is_stream(ctx, cmapstm))
 	{
 		pdf_cmap *ucs_from_cpt = pdf_load_embedded_cmap(ctx, doc, cmapstm);
-		font->to_unicode = pdf_remap_cmap(ctx, font->encoding, ucs_from_cpt);
-		pdf_drop_cmap(ctx, ucs_from_cpt);
+		fz_try(ctx)
+			font->to_unicode = pdf_remap_cmap(ctx, font->encoding, ucs_from_cpt);
+		fz_always(ctx)
+			pdf_drop_cmap(ctx, ucs_from_cpt);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 		font->size += pdf_cmap_size(ctx, font->to_unicode);
 	}
 
