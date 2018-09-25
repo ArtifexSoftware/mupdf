@@ -523,6 +523,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_display_list(ctx, list);
 		fz_drop_separations(ctx, seps);
 		fz_drop_page(ctx, page);
 		fz_rethrow(ctx);
