@@ -2388,6 +2388,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_default_colorspaces(ctx, proc->default_cs);
 		fz_drop_path(ctx, proc->path);
 		fz_free(ctx, proc);
 		fz_rethrow(ctx);
