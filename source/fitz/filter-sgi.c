@@ -311,9 +311,8 @@ close_sgilog16(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_sgilog16(fz_context *ctx, fz_stream *chain, int w)
 {
-	fz_sgilog16 *state = NULL;
+	fz_sgilog16 *state = fz_malloc_struct(ctx, fz_sgilog16);
 
-	state = fz_malloc_struct(ctx, fz_sgilog16);
 	fz_try(ctx)
 	{
 		state->run = 0;
@@ -325,6 +324,7 @@ fz_open_sgilog16(fz_context *ctx, fz_stream *chain, int w)
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, state->temp);
 		fz_free(ctx, state);
 		fz_rethrow(ctx);
 	}
@@ -478,22 +478,19 @@ close_sgilog24(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_sgilog24(fz_context *ctx, fz_stream *chain, int w)
 {
-	fz_sgilog24 *state = NULL;
-
-	fz_var(state);
+	fz_sgilog24 *state = fz_malloc_struct(ctx, fz_sgilog24);
 
 	fz_try(ctx)
 	{
-		state = fz_malloc_struct(ctx, fz_sgilog24);
-		state->chain = chain;
 		state->err = 0;
 		state->w = w;
 		state->temp = fz_malloc(ctx, w * 3);
+		state->chain = fz_keep_stream(ctx, chain);
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, state->temp);
 		fz_free(ctx, state);
-		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
@@ -662,6 +659,7 @@ fz_open_sgilog32(fz_context *ctx, fz_stream *chain, int w)
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, state->temp);
 		fz_free(ctx, state);
 		fz_rethrow(ctx);
 	}
