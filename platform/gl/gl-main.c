@@ -17,8 +17,10 @@ char *realpath(const char *path, char *resolved_path); /* in gl-file.c */
 #endif
 
 #ifdef __APPLE__
+static void cleanup(void);
 void glutLeaveMainLoop(void)
 {
+	cleanup();
 	exit(0);
 }
 #endif
@@ -280,6 +282,9 @@ static void save_history(void)
 
 	fz_var(out);
 
+	if (!doc)
+		return;
+
 	if (!realpath(filename, absname))
 		return;
 
@@ -360,11 +365,7 @@ static void error_dialog(void)
 	ui_label("%C %s", 0x1f4a3, error_message); /* BOMB */
 	ui_layout(B, NONE, S, 2, 2);
 	if (ui_button("Quit") || ui.key == KEY_ENTER || ui.key == KEY_ESCAPE || ui.key == 'q')
-	{
-		if (doc)
-			save_history();
-		exit(1);
-	}
+		glutLeaveMainLoop();
 	ui_dialog_end();
 }
 void ui_show_error_dialog(const char *fmt, ...)
@@ -805,7 +806,7 @@ static void password_dialog(void)
 		{
 			ui_layout(R, NONE, S, 0, 0);
 			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
-				exit(1);
+				glutLeaveMainLoop();
 			ui_spacer();
 			if (ui_button("Okay") || is == UI_INPUT_ACCEPT)
 			{
@@ -986,10 +987,7 @@ static void clear_search(void)
 static void do_app(void)
 {
 	if (ui.key == KEY_F4 && ui.mod == GLUT_ACTIVE_ALT)
-	{
-		save_history();
 		glutLeaveMainLoop();
-	}
 
 	if (ui.down || ui.middle || ui.right || ui.key)
 		showinfo = showhelp = 0;
@@ -1006,7 +1004,7 @@ static void do_app(void)
 		case 'F': showform = !showform; break;
 		case 'i': showinfo = !showinfo; break;
 		case 'r': reload(); break;
-		case 'q': save_history(); glutLeaveMainLoop(); break;
+		case 'q': glutLeaveMainLoop(); break;
 
 		case 'I': currentinvert = !currentinvert; break;
 		case 'f': toggle_fullscreen(); break;
@@ -1477,8 +1475,9 @@ static void do_open_document_dialog(void)
 	{
 		ui.dialog = NULL;
 		if (filename[0] == 0)
-			exit(0);
-		load_document();
+			glutLeaveMainLoop();
+		else
+			load_document();
 		if (doc)
 		{
 			load_page();
@@ -1487,6 +1486,25 @@ static void do_open_document_dialog(void)
 			update_title();
 		}
 	}
+}
+
+static void cleanup(void)
+{
+	save_history();
+
+	ui_finish();
+
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
+		fz_debug_store(ctx);
+#endif
+
+	fz_drop_stext_page(ctx, page_text);
+	fz_drop_link(ctx, links);
+	fz_drop_page(ctx, fzpage);
+	fz_drop_outline(ctx, outline);
+	fz_drop_document(ctx, doc);
+	fz_drop_context(ctx);
 }
 
 #ifdef _MSC_VER
@@ -1577,19 +1595,7 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
-	ui_finish();
-
-#ifndef NDEBUG
-	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
-		fz_debug_store(ctx);
-#endif
-
-	fz_drop_stext_page(ctx, page_text);
-	fz_drop_link(ctx, links);
-	fz_drop_page(ctx, fzpage);
-	fz_drop_outline(ctx, outline);
-	fz_drop_document(ctx, doc);
-	fz_drop_context(ctx);
+	cleanup();
 
 	return 0;
 }
