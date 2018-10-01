@@ -4899,7 +4899,11 @@ int murun_main(int argc, char **argv)
 		}
 		js_setglobal(J, "scriptArgs");
 		if (js_dofile(J, argv[1]))
+		{
+			js_freestate(J);
+			fz_drop_context(ctx);
 			return 1;
+		}
 	} else {
 		char line[256];
 		fputs(PS1, stdout);
