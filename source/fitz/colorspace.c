@@ -835,7 +835,6 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	if (cct->cmm == engine)
 		return;
 
-	fz_drop_cmm_context(ctx);
 	fz_drop_colorspace(ctx, cct->gray);
 	fz_drop_colorspace(ctx, cct->rgb);
 	fz_drop_colorspace(ctx, cct->bgr);
@@ -846,8 +845,12 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	cct->bgr = NULL;
 	cct->cmyk = NULL;
 	cct->lab = NULL;
+
+	fz_drop_cmm_context(ctx);
 	cct->cmm = engine;
+
 	fz_new_cmm_context(ctx);
+
 	if (engine)
 	{
 		cct->gray = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_GRAY, NULL);
