@@ -152,6 +152,8 @@ int pdfmerge_main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "error: Cannot create destination document.\n");
+		fz_flush_warnings(ctx);
+		fz_drop_context(ctx);
 		exit(1);
 	}
 
@@ -159,37 +161,30 @@ int pdfmerge_main(int argc, char **argv)
 	while (fz_optind < argc)
 	{
 		input = argv[fz_optind++];
+		doc_src = pdf_open_document(ctx, input);
+
 		fz_try(ctx)
 		{
-			pdf_drop_document(ctx, doc_src);
-			doc_src = pdf_open_document(ctx, input);
 			if (fz_optind == argc || !fz_is_page_range(ctx, argv[fz_optind]))
 				merge_range("1-N");
 			else
 				merge_range(argv[fz_optind++]);
 		}
+		fz_always(ctx)
+			pdf_drop_document(ctx, doc_src);
 		fz_catch(ctx)
-		{
 			fprintf(stderr, "error: Cannot merge document '%s'.\n", input);
-			exit(1);
-		}
 	}
 
-	fz_try(ctx)
+	if (fz_optind == argc)
 	{
-		pdf_save_document(ctx, doc_des, output, &opts);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_document(ctx, doc_des);
-		pdf_drop_document(ctx, doc_src);
-	}
-	fz_catch(ctx)
-	{
-		fprintf(stderr, "error: Cannot save output file: '%s'.\n", output);
-		exit(1);
+		fz_try(ctx)
+			pdf_save_document(ctx, doc_des, output, &opts);
+		fz_catch(ctx)
+			fprintf(stderr, "error: Cannot save output file: '%s'.\n", output);
 	}
 
+	pdf_drop_document(ctx, doc_des);
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);
 	return 0;
