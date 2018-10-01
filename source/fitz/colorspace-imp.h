@@ -26,7 +26,7 @@ struct fz_colorspace_s
 {
 	fz_key_storable key_storable;
 	size_t size;
-	char name[24];
+	char *name;
 	enum fz_colorspace_type type;
 	int flags;
 	int n;

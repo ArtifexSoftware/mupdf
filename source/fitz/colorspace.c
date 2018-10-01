@@ -225,6 +225,7 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 		cs->free_data(ctx, cs);
 	for (i = 0; i < FZ_MAX_COLORS; i++)
 		fz_free(ctx, cs->colorant[i]);
+	fz_free(ctx, cs->name);
 	fz_free(ctx, cs);
 }
 
@@ -251,7 +252,13 @@ fz_new_colorspace(fz_context *ctx,
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_KEY_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
-	fz_strlcpy(cs->name, name ? name : "UNKNOWN", sizeof cs->name);
+	fz_try(ctx)
+		cs->name = fz_strdup(ctx, name ? name : "UNKNOWN");
+	fz_catch(ctx)
+	{
+		fz_free(ctx, cs);
+		fz_rethrow(ctx);
+	}
 	cs->type = type;
 	cs->flags = flags;
 	cs->n = n;
