@@ -2766,14 +2766,20 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 	{
 		pdf_annot *annot;
 		pdf_page *page = pdf_load_page(ctx, doc, i);
-		pdf_clean_page_contents(ctx, doc, page, NULL, NULL, NULL, sanitize, ascii);
 
-		for (annot = pdf_first_annot(ctx, page); annot != NULL; annot = pdf_next_annot(ctx, annot))
+		fz_try(ctx)
 		{
-			pdf_clean_annot_contents(ctx, doc, annot, NULL, NULL, NULL, sanitize, ascii);
-		}
+			pdf_clean_page_contents(ctx, doc, page, NULL, NULL, NULL, sanitize, ascii);
 
-		fz_drop_page(ctx, &page->super);
+			for (annot = pdf_first_annot(ctx, page); annot != NULL; annot = pdf_next_annot(ctx, annot))
+			{
+				pdf_clean_annot_contents(ctx, doc, annot, NULL, NULL, NULL, sanitize, ascii);
+			}
+		}
+		fz_always(ctx)
+			fz_drop_page(ctx, &page->super);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 }
 
