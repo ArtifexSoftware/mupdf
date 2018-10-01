@@ -525,7 +525,7 @@ raw_or_unknown_compression:
 
 		if (image->mask)
 		{
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, image->mask, 0));
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, image->mask, 1));
 		}
 
 		pdf_update_stream(ctx, doc, imobj, buffer, 1);
