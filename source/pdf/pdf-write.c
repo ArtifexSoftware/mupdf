@@ -2568,20 +2568,26 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 static void
 make_hint_stream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	fz_buffer *buf = fz_new_buffer(ctx, 100);
+	fz_buffer *buf;
+	pdf_obj *obj = NULL;
 
+	fz_var(obj);
+
+	buf = fz_new_buffer(ctx, 100);
 	fz_try(ctx)
 	{
 		make_page_offset_hints(ctx, doc, opts, buf);
-		pdf_update_stream(ctx, doc, pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1), buf, 0);
+		obj = pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1);
+		pdf_update_stream(ctx, doc, obj, buf, 0);
 		opts->hintstream_len = (int)fz_buffer_storage(ctx, buf, NULL);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, obj);
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
-	{
-		fz_drop_buffer(ctx, buf);
 		fz_rethrow(ctx);
-	}
 }
 
 #ifdef DEBUG_WRITING
