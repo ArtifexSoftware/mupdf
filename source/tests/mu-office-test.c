@@ -267,10 +267,10 @@ save_png(const MuOfficeBitmap *bitmap, const char *filename)
 		exit(EXIT_FAILURE);
 	}
 
+	pix = fz_new_pixmap_with_data(ctx, fz_device_rgb(ctx), bitmap->width, bitmap->height, NULL, 1, bitmap->lineSkip, bitmap->memptr);
+
 	fz_try(ctx)
 	{
-		pix = fz_new_pixmap_with_data(ctx, fz_device_rgb(ctx), bitmap->width, bitmap->height, NULL, 1, bitmap->lineSkip, bitmap->memptr);
-
 		fz_save_pixmap_as_png(ctx, pix, filename);
 	}
 	fz_always(ctx)
