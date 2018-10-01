@@ -1077,7 +1077,10 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 		fz_drop_font(ctx, pdev->cid_fonts[i]);
 
 	for (i = pdev->num_groups - 1; i >= 0; i--)
+	{
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
+		fz_drop_colorspace(ctx, pdev->groups[i].colorspace);
+	}
 
 	pdf_drop_obj(ctx, pdev->resources);
 	fz_free(ctx, pdev->cid_fonts);
