@@ -66,7 +66,6 @@ struct pdf_device_s
 
 	pdf_document *doc;
 	pdf_obj *resources;
-	fz_buffer *buffer;
 
 	int in_text;
 
@@ -1061,7 +1060,10 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 	int i;
 
 	for (i = pdev->num_gstates-1; i >= 0; i--)
+	{
+		fz_drop_buffer(ctx, pdev->gstates[i].buf);
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
+	}
 
 	for (i = pdev->num_cid_fonts-1; i >= 0; i--)
 		fz_drop_font(ctx, pdev->cid_fonts[i]);
@@ -1069,7 +1071,6 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 	for (i = pdev->num_groups - 1; i >= 0; i--)
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
 
-	fz_drop_buffer(ctx, pdev->buffer);
 	pdf_drop_obj(ctx, pdev->resources);
 	fz_free(ctx, pdev->cid_fonts);
 	fz_free(ctx, pdev->image_indices);
@@ -1111,10 +1112,13 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 	dev->super.begin_tile = pdf_dev_begin_tile;
 	dev->super.end_tile = pdf_dev_end_tile;
 
+	fz_var(buf);
+
 	fz_try(ctx)
 	{
-		dev->buffer = fz_keep_buffer(ctx, buf);
-		if (!buf)
+		if (buf)
+			buf = fz_keep_buffer(ctx, buf);
+		else
 			buf = fz_new_buffer(ctx, 256);
 		dev->doc = doc;
 		dev->resources = pdf_keep_obj(ctx, resources);
@@ -1136,8 +1140,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 	}
 	fz_catch(ctx)
 	{
-		if (dev->gstates && dev->buffer == NULL)
-			fz_drop_buffer(ctx, dev->gstates[0].buf);
+		fz_drop_buffer(ctx, buf);
 		fz_free(ctx, dev);
 		fz_rethrow(ctx);
 	}
