@@ -30,7 +30,7 @@ static pdf_document *doc_src = NULL;
 static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 {
 	pdf_obj *page_ref;
-	pdf_obj *page_dict;
+	pdf_obj *page_dict = NULL;
 	pdf_obj *obj;
 	pdf_obj *ref = NULL;
 	int i;
@@ -41,6 +41,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 		PDF_NAME(Rotate), PDF_NAME(UserUnit) };
 
 	fz_var(ref);
+	fz_var(page_dict);
 
 	fz_try(ctx)
 	{
@@ -60,13 +61,14 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 		}
 
 		/* Add the page object to the destination document. */
-		ref = pdf_add_object_drop(ctx, doc_des, page_dict);
+		ref = pdf_add_object(ctx, doc_des, page_dict);
 
 		/* Insert it into the page tree. */
 		pdf_insert_page(ctx, doc_des, page_to - 1, ref);
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_obj(ctx, page_dict);
 		pdf_drop_obj(ctx, ref);
 	}
 	fz_catch(ctx)
