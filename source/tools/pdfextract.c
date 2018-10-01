@@ -229,8 +229,9 @@ static void extractobject(int num)
 		if (isfontdesc(ref))
 			savefont(ref);
 
-		pdf_drop_obj(ctx, ref);
 	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, ref);
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "ignoring object %d", num);
