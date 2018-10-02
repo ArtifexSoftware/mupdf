@@ -463,7 +463,10 @@ pwg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_always(ctx)
 		fz_drop_device(ctx, dev);
 	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, wri->pixmap);
 		fz_rethrow(ctx);
+	}
 
 	if (wri->mono)
 	{
@@ -471,17 +474,22 @@ pwg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 		fz_try(ctx)
 			fz_write_bitmap_as_pwg_page(ctx, wri->out, bitmap, &wri->pwg);
 		fz_always(ctx)
+		{
 			fz_drop_bitmap(ctx, bitmap);
+			fz_drop_pixmap(ctx, wri->pixmap);
+		}
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
 	else
 	{
-		fz_write_pixmap_as_pwg_page(ctx, wri->out, wri->pixmap, &wri->pwg);
+		fz_try(ctx)
+			fz_write_pixmap_as_pwg_page(ctx, wri->out, wri->pixmap, &wri->pwg);
+		fz_always(ctx)
+			fz_drop_pixmap(ctx, wri->pixmap);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void
