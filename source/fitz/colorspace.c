@@ -3081,11 +3081,13 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 			}
 		}
 		fz_always(ctx)
+		{
 			fz_drop_color_converter(ctx, &cc);
+			fz_drop_hash_table(ctx, lookup);
+		}
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 
-		fz_drop_hash_table(ctx, lookup);
 	}
 }
 
