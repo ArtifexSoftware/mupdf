@@ -1878,17 +1878,7 @@ fz_rasterizer *
 fz_new_edgebuffer(fz_context *ctx, fz_edgebuffer_rule rule)
 {
 	fz_edgebuffer *eb;
-
 	eb = fz_new_derived_rasterizer(ctx, fz_edgebuffer, rule == FZ_EDGEBUFFER_ANY_PART_OF_PIXEL ? &edgebuffer_app : &edgebuffer_cop);
-	fz_try(ctx)
-	{
-		eb->app = rule == FZ_EDGEBUFFER_ANY_PART_OF_PIXEL;
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, eb);
-		fz_rethrow(ctx);
-	}
-
+	eb->app = rule == FZ_EDGEBUFFER_ANY_PART_OF_PIXEL;
 	return &eb->super;
 }
