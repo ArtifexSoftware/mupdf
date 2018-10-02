@@ -83,19 +83,24 @@ static fz_document *
 svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	svg_document *doc;
-	fz_xml_doc *xml;
-
-	xml = fz_parse_xml(ctx, buf, 0);
 
 	doc = fz_new_derived_document(ctx, svg_document);
 	doc->super.drop_document = svg_drop_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
 
-	doc->xml = xml;
 	doc->idmap = NULL;
 
-	svg_build_id_map(ctx, doc, fz_xml_root(xml));
+	fz_try(ctx)
+	{
+		doc->xml = fz_parse_xml(ctx, buf, 0);
+		svg_build_id_map(ctx, doc, fz_xml_root(doc->xml));
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_document(ctx, &doc->super);
+		fz_rethrow(ctx);
+	}
 
 	return (fz_document*)doc;
 }
