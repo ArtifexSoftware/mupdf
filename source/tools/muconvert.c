@@ -78,11 +78,10 @@ static void runpage(int number)
 		mediabox = fz_bound_page(ctx, page);
 		dev = fz_begin_page(ctx, out, mediabox);
 		fz_run_page(ctx, page, dev, fz_identity, NULL);
+		fz_end_page(ctx, out);
 	}
 	fz_always(ctx)
 	{
-		if (dev)
-			fz_end_page(ctx, out);
 		fz_drop_page(ctx, page);
 	}
 	fz_catch(ctx)
