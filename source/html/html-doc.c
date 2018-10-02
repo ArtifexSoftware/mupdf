@@ -155,16 +155,21 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.lookup_metadata = htdoc_lookup_metadata;
 	doc->super.is_reflowable = 1;
 
-	doc->zip = fz_open_directory(ctx, ".");
-	doc->set = fz_new_html_font_set(ctx);
-
-	buf = fz_read_all(ctx, file, 0);
 	fz_try(ctx)
+	{
+		doc->zip = fz_open_directory(ctx, ".");
+		doc->set = fz_new_html_font_set(ctx);
+
+		buf = fz_read_all(ctx, file, 0);
 		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
+	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
+	{
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
+	}
 
 	return &doc->super;
 }
