@@ -185,6 +185,7 @@ static void showgrep(void)
 			}
 			fz_catch(ctx)
 			{
+				pdf_drop_obj(ctx, ref);
 				fz_warn(ctx, "skipping object (%d 0 R)", i);
 				continue;
 			}
