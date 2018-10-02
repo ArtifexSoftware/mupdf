@@ -117,10 +117,10 @@ xps_open_document_with_directory(fz_context *ctx, const char *directory)
 
 	doc = fz_malloc_struct(ctx, xps_document);
 	xps_init_document(ctx, doc);
-	doc->zip = fz_open_directory(ctx, directory);
 
 	fz_try(ctx)
 	{
+		doc->zip = fz_open_directory(ctx, directory);
 		xps_read_page_list(ctx, doc);
 	}
 	fz_catch(ctx)
