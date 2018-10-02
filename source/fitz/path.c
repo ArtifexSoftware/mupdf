@@ -1544,6 +1544,7 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, new_path->coords);
 		fz_free(ctx, new_path->cmds);
 		fz_free(ctx, new_path);
 		fz_rethrow(ctx);
