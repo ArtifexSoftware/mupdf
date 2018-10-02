@@ -215,7 +215,6 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			fz_warn(ctx, "cannot find font resource part '%s'", partname);
 			return NULL;
 		}
@@ -236,7 +235,6 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			fz_warn(ctx, "cannot load font resource '%s'", partname);
 			return NULL;
 		}

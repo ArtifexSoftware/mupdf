@@ -124,7 +124,6 @@ xps_load_outline(fz_context *ctx, fz_document *doc_)
 			}
 			fz_catch(ctx)
 			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				outline = NULL;
 			}
 			if (!outline)
