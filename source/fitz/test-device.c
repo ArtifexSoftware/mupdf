@@ -185,6 +185,141 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix 
 		fz_fill_shade(ctx, dev->passthrough, shade, ctm, alpha, color_params);
 }
 
+static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *dev, fz_image *image, fz_stream *stream, const fz_color_params *color_params)
+{
+	unsigned int count = (unsigned int)image->w * (unsigned int)image->h;
+	unsigned int i;
+
+	if (image->colorspace == fz_device_rgb(ctx))
+	{
+		int threshold_u8 = dev->threshold * 255;
+		for (i = 0; i < count; i++)
+		{
+			int r = fz_read_byte(ctx, stream);
+			int g = fz_read_byte(ctx, stream);
+			int b = fz_read_byte(ctx, stream);
+			if (is_rgb_color_u8(threshold_u8, r, g, b))
+			{
+				*dev->is_color = 1;
+				dev->resolved = 1;
+				if (dev->passthrough == NULL)
+					fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+				break;
+			}
+		}
+	}
+	else
+	{
+		fz_color_converter cc;
+		unsigned int n = (unsigned int)image->n;
+
+		fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), image->colorspace, color_params);
+
+		fz_try(ctx)
+		{
+			for (i = 0; i < count; i++)
+			{
+				float cs[FZ_MAX_COLORS];
+				float ds[FZ_MAX_COLORS];
+				unsigned int k;
+
+				for (k = 0; k < n; k++)
+					cs[k] = fz_read_byte(ctx, stream) / 255.0f;
+
+				cc.convert(ctx, &cc, ds, cs);
+
+				if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
+				{
+					*dev->is_color = 1;
+					dev->resolved = 1;
+					if (dev->passthrough == NULL)
+						fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+					break;
+				}
+			}
+		}
+		fz_always(ctx)
+			fz_fin_cached_color_converter(ctx, &cc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
+}
+
+static void
+fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, const fz_color_params *color_params)
+{
+	unsigned int count, i, k, h, sa, ss;
+	unsigned char *s;
+
+	count = pix->w;
+	h = pix->h;
+	s = pix->samples;
+	sa = pix->alpha;
+	ss = pix->stride - pix->w * pix->n;
+
+	if (pix->colorspace == fz_device_rgb(ctx))
+	{
+		int threshold_u8 = dev->threshold * 255;
+		while (h--)
+		{
+			for (i = 0; i < count; i++)
+			{
+				if ((!sa || s[3] != 0) && is_rgb_color_u8(threshold_u8, s[0], s[1], s[2]))
+				{
+					*dev->is_color = 1;
+					dev->resolved = 1;
+					if (dev->passthrough == NULL)
+						fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+					break;
+				}
+				s += 3 + sa;
+			}
+			s += ss;
+		}
+	}
+	else
+	{
+		fz_color_converter cc;
+		unsigned int n = (unsigned int)pix->n-1;
+
+		fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), pix->colorspace, color_params);
+
+		fz_try(ctx)
+		{
+			while (h--)
+			{
+				for (i = 0; i < count; i++)
+				{
+					float cs[FZ_MAX_COLORS];
+					float ds[FZ_MAX_COLORS];
+
+					for (k = 0; k < n; k++)
+						cs[k] = (*s++) / 255.0f;
+					if (sa && *s++ == 0)
+						continue;
+
+					cc.convert(ctx, &cc, ds, cs);
+
+					if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
+					{
+						*dev->is_color = 1;
+						dev->resolved = 1;
+						if (dev->passthrough == NULL)
+							fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+						break;
+					}
+				}
+				s += ss;
+			}
+		}
+		fz_always(ctx)
+			fz_fin_cached_color_converter(ctx, &cc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
+}
+
+
 static void
 fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
 {
@@ -192,9 +327,6 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix 
 
 	while (dev->resolved == 0) /* So we can break out */
 	{
-		fz_pixmap *pix;
-		unsigned int count, i, k, h, sa, ss;
-		unsigned char *s;
 		fz_compressed_buffer *buffer;
 
 		if (*dev->is_color || !image->colorspace || fz_colorspace_is_gray(ctx, image->colorspace))
@@ -215,147 +347,26 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix 
 		if (buffer && image->bpc == 8)
 		{
 			fz_stream *stream = fz_open_compressed_buffer(ctx, buffer);
-			count = (unsigned int)image->w * (unsigned int)image->h;
-			if (image->colorspace == fz_device_rgb(ctx))
-			{
-				int threshold_u8 = dev->threshold * 255;
-				for (i = 0; i < count; i++)
-				{
-					int r = fz_read_byte(ctx, stream);
-					int g = fz_read_byte(ctx, stream);
-					int b = fz_read_byte(ctx, stream);
-					if (is_rgb_color_u8(threshold_u8, r, g, b))
-					{
-						*dev->is_color = 1;
-						dev->resolved = 1;
-						fz_drop_stream(ctx, stream);
-						if (dev->passthrough == NULL)
-							fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
-						break;
-					}
-				}
-			}
-			else
-			{
-				fz_color_converter cc;
-				unsigned int n = (unsigned int)image->n;
-
-				fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), image->colorspace, color_params);
-
-				fz_try(ctx)
-				{
-					for (i = 0; i < count; i++)
-					{
-						float cs[FZ_MAX_COLORS];
-						float ds[FZ_MAX_COLORS];
-
-						for (k = 0; k < n; k++)
-							cs[k] = fz_read_byte(ctx, stream) / 255.0f;
-
-						cc.convert(ctx, &cc, ds, cs);
-
-						if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
-						{
-							*dev->is_color = 1;
-							dev->resolved = 1;
-							if (dev->passthrough == NULL)
-							{
-								fz_drop_stream(ctx, stream);
-								fz_fin_cached_color_converter(ctx, &cc);
-								fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
-							}
-							break;
-						}
-					}
-				}
-				fz_always(ctx)
-					fz_fin_cached_color_converter(ctx, &cc);
-				fz_catch(ctx)
-					fz_rethrow(ctx);
-			}
-			fz_drop_stream(ctx, stream);
-			break;
-		}
-
-		pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
-		if (pix == NULL) /* Should never happen really, but... */
-			break;
-
-		count = pix->w;
-		h = pix->h;
-		s = pix->samples;
-		sa = pix->alpha;
-		ss = pix->stride - pix->w * pix->n;
-
-		if (pix->colorspace == fz_device_rgb(ctx))
-		{
-			int threshold_u8 = dev->threshold * 255;
-			while (h--)
-			{
-				for (i = 0; i < count; i++)
-				{
-					if ((!sa || s[3] != 0) && is_rgb_color_u8(threshold_u8, s[0], s[1], s[2]))
-					{
-						*dev->is_color = 1;
-						dev->resolved = 1;
-						if (dev->passthrough == NULL)
-						{
-							fz_drop_pixmap(ctx, pix);
-							fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
-						}
-						break;
-					}
-					s += 3 + sa;
-				}
-				s += ss;
-			}
-		}
-		else
-		{
-			fz_color_converter cc;
-			unsigned int n = (unsigned int)pix->n-1;
-
-			fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), pix->colorspace, color_params);
-
 			fz_try(ctx)
-			{
-				while (h--)
-				{
-					for (i = 0; i < count; i++)
-					{
-						float cs[FZ_MAX_COLORS];
-						float ds[FZ_MAX_COLORS];
-
-						for (k = 0; k < n; k++)
-							cs[k] = (*s++) / 255.0f;
-						if (sa && *s++ == 0)
-							continue;
-
-						cc.convert(ctx, &cc, ds, cs);
-
-						if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
-						{
-							*dev->is_color = 1;
-							dev->resolved = 1;
-							if (dev->passthrough == NULL)
-							{
-								fz_fin_cached_color_converter(ctx, &cc);
-								fz_drop_pixmap(ctx, pix);
-								fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
-							}
-							break;
-						}
-					}
-					s += ss;
-				}
-			}
+				fz_test_fill_compressed_8bpc_image(ctx, dev, image, stream, color_params);
 			fz_always(ctx)
-				fz_fin_cached_color_converter(ctx, &cc);
+				fz_drop_stream(ctx, stream);
 			fz_catch(ctx)
 				fz_rethrow(ctx);
 		}
+		else
+		{
+			fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
+			if (pix == NULL) /* Should never happen really, but... */
+				break;
 
-		fz_drop_pixmap(ctx, pix);
+			fz_try(ctx)
+				fz_test_fill_other_image(ctx, dev, pix, color_params);
+			fz_always(ctx)
+				fz_drop_pixmap(ctx, pix);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
+		}
 		break;
 	}
 	if (dev->passthrough)
