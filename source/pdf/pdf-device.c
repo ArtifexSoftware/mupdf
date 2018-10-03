@@ -901,14 +901,14 @@ static void
 pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	pdf_document *doc = pdev->doc;
 	gstate *gs;
 	pdf_obj *smask = NULL;
+	char egsname[32];
 	pdf_obj *egs = NULL;
-	pdf_obj *egs_ref;
+	pdf_obj *egss;
 	pdf_obj *form_ref;
 	pdf_obj *color_obj = NULL;
-	int i;
+	int i, n;
 
 	fz_var(smask);
 	fz_var(egs);
@@ -921,39 +921,28 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 
 	fz_try(ctx)
 	{
-		int n = fz_colorspace_n(ctx, colorspace);
-		smask = pdf_new_dict(ctx, doc, 4);
+		fz_snprintf(egsname, sizeof(egsname), "SM%d", pdev->num_smasks++);
+		egss = pdf_dict_get(ctx, pdev->resources, PDF_NAME(ExtGState));
+		egs = pdf_dict_puts_dict(ctx, egss, egsname, 1);
+
+		pdf_dict_put(ctx, egs, PDF_NAME(Type), PDF_NAME(ExtGState));
+		smask = pdf_dict_put_dict(ctx, egs, PDF_NAME(SMask), 4);
+
 		pdf_dict_put(ctx, smask, PDF_NAME(Type), PDF_NAME(Mask));
 		pdf_dict_put(ctx, smask, PDF_NAME(S), (luminosity ? PDF_NAME(Luminosity) : PDF_NAME(Alpha)));
 		pdf_dict_put(ctx, smask, PDF_NAME(G), form_ref);
-		color_obj = pdf_new_array(ctx, doc, n);
+
+		n = fz_colorspace_n(ctx, colorspace);
+		color_obj = pdf_dict_put_array(ctx, smask, PDF_NAME(BC), n);
 		for (i = 0; i < n; i++)
 			pdf_array_push_real(ctx, color_obj, color[i]);
-		pdf_dict_put_drop(ctx, smask, PDF_NAME(BC), color_obj);
-		color_obj = NULL;
 
-		egs = pdf_new_dict(ctx, doc, 5);
-		pdf_dict_put(ctx, egs, PDF_NAME(Type), PDF_NAME(ExtGState));
-		pdf_dict_put_drop(ctx, egs, PDF_NAME(SMask), pdf_add_object(ctx, doc, smask));
-
-		{
-			char text[32];
-			fz_snprintf(text, sizeof(text), "ExtGState/SM%d", pdev->num_smasks++);
-			egs_ref = pdf_add_object(ctx, doc, egs);
-			pdf_dict_putp_drop(ctx, pdev->resources, text, egs_ref);
-		}
 		gs = CURRENT_GSTATE(pdev);
 		fz_append_printf(ctx, gs->buf, "/SM%d gs\n", pdev->num_smasks-1);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, smask);
-		pdf_drop_obj(ctx, egs);
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, form_ref);
-		pdf_drop_obj(ctx, color_obj);
 		fz_rethrow(ctx);
 	}
 
