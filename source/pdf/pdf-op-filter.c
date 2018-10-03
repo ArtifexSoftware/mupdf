@@ -519,26 +519,16 @@ static void
 send_adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
 {
 	pdf_obj *arr = pdf_new_array(ctx, p->doc, 1);
-	pdf_obj *skip_obj = NULL;
-
-	fz_var(skip_obj);
-
 	fz_try(ctx)
 	{
 		float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
 		skip_dist = skip_dist / p->gstate->pending.text.size;
-		skip_obj = pdf_new_real(ctx, skip_dist * 1000);
-
-		pdf_array_insert(ctx, arr, skip_obj, 0);
-
+		pdf_array_push_real(ctx, arr, skip_dist * 1000);
 		if (p->chain->op_TJ)
 			p->chain->op_TJ(ctx, p->chain, arr);
 	}
 	fz_always(ctx)
-	{
 		pdf_drop_obj(ctx, arr);
-		pdf_drop_obj(ctx, skip_obj);
-	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }

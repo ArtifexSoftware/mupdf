@@ -1902,11 +1902,10 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 		if (!ap)
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 1);
 		new_ap_n = pdf_new_xobject(ctx, annot->page->doc, rect, fz_identity, res, buf);
-		pdf_dict_put(ctx, ap, PDF_NAME(N), new_ap_n);
-
 		pdf_drop_obj(ctx, annot->ap);
 		annot->ap = new_ap_n;
 		annot->has_new_ap = 1;
+		pdf_dict_put(ctx, ap, PDF_NAME(N), new_ap_n);
 	}
 	fz_always(ctx)
 	{
