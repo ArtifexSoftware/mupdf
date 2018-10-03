@@ -40,10 +40,11 @@ void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
 
 int pdfsign_main(int argc, char **argv)
 {
-	fz_context *ctx = NULL;
-	pdf_document *doc = NULL;
+	fz_context *ctx;
+	pdf_document *doc;
 	char *password = "";
 	int i, n, c;
+	pdf_page *page = NULL;
 
 	while ((c = fz_getopt(argc, argv, "p:")) != -1)
 	{
@@ -66,9 +67,11 @@ int pdfsign_main(int argc, char **argv)
 		exit(1);
 	}
 
+	fz_var(page);
+
+	doc = pdf_open_document(ctx, filename);
 	fz_try(ctx)
 	{
-		doc = pdf_open_document(ctx, filename);
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", filename);
@@ -76,16 +79,20 @@ int pdfsign_main(int argc, char **argv)
 		n = pdf_count_pages(ctx, doc);
 		for (i = 0; i < n; ++i)
 		{
-			pdf_page *page = pdf_load_page(ctx, doc, i);
+			page = pdf_load_page(ctx, doc, i);
 			verify_page(ctx, doc, i, page);
 			fz_drop_page(ctx, (fz_page*)page);
+			page = NULL;
 		}
 	}
+	fz_always(ctx)
+		pdf_drop_document(ctx, doc);
 	fz_catch(ctx)
 	{
+		fz_drop_page(ctx, (fz_page*)page);
+		fprintf(stderr, "error verify signatures: %s\n", fz_caught_message(ctx));
 	}
 
-	pdf_drop_document(ctx, doc);
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);
 	return 0;
