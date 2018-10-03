@@ -1840,24 +1840,29 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 static void
 pdf_load_hinted_page(fz_context *ctx, pdf_document *doc, int pagenum)
 {
+	pdf_obj *page = NULL;
+
 	if (!doc->hints_loaded || !doc->linear_page_refs)
 		return;
 
 	if (doc->linear_page_refs[pagenum])
 		return;
 
+	fz_var(page);
+
 	fz_try(ctx)
 	{
 		int num = doc->hint_page[pagenum].number;
-		pdf_obj *page = pdf_load_object(ctx, doc, num);
+		page = pdf_load_object(ctx, doc, num);
 		if (pdf_name_eq(ctx, PDF_NAME(Page), pdf_dict_get(ctx, page, PDF_NAME(Type))))
 		{
 			/* We have found the page object! */
 			DEBUGMESS((ctx, "LoadHintedPage pagenum=%d num=%d", pagenum, num));
 			doc->linear_page_refs[pagenum] = pdf_new_indirect(ctx, doc, num, 0);
 		}
-		pdf_drop_obj(ctx, page);
 	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, page);
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
