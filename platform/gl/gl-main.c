@@ -13,6 +13,7 @@
 
 #ifndef _WIN32
 #include <unistd.h> /* for fork and exec */
+#else
 char *realpath(const char *path, char *resolved_path); /* in gl-file.c */
 #endif
 
