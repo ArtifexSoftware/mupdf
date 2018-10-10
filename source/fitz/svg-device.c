@@ -53,6 +53,7 @@ struct svg_device_s
 	fz_buffer *defs_buffer;
 	int def_count;
 
+	int *save_id;
 	int id;
 
 	int num_tiles;
@@ -1196,6 +1197,9 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 		sdev->layers--;
 	}
 
+	if (sdev->save_id)
+		*sdev->save_id = sdev->id;
+
 	fz_write_printf(ctx, out, "</svg>\n");
 }
 
@@ -1221,7 +1225,7 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, sdev->images);
 }
 
-fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images)
+fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images, int *id)
 {
 	svg_device *dev = fz_new_derived_device(ctx, svg_device);
 
@@ -1261,7 +1265,8 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 
 	dev->out = out;
 	dev->out_store = out;
-	dev->id = 0;
+	dev->save_id = id;
+	dev->id = id ? *id : 0;
 	dev->layers = 0;
 	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
 	dev->reuse_images = reuse_images;
