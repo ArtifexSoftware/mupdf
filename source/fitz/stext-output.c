@@ -80,7 +80,7 @@ fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
 
-	fz_write_printf(ctx, out, "<img style=\"top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
+	fz_write_printf(ctx, out, "<img style=\"position:absolute;top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
 	fz_write_image_as_data_uri(ctx, out, block->u.i.image);
 	fz_write_string(ctx, out, "\">\n");
 }
@@ -101,7 +101,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 		x = line->bbox.x0;
 		y = line->bbox.y0;
 
-		fz_write_printf(ctx, out, "<p style=\"top:%dpt;left:%dpt;\">", y, x);
+		fz_write_printf(ctx, out, "<p style=\"position:absolute;margin:0;padding:0;top:%dpt;left:%dpt\">", y, x);
 		font = NULL;
 
 		for (ch = line->first_char; ch; ch = ch->next)
@@ -148,7 +148,7 @@ fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page
 	int w = page->mediabox.x1 - page->mediabox.x0;
 	int h = page->mediabox.y1 - page->mediabox.y0;
 
-	fz_write_printf(ctx, out, "<div style=\"width:%dpt;height:%dpt\">\n", w, h);
+	fz_write_printf(ctx, out, "<div style=\"position:relative;width:%dpt;height:%dpt;background-color:white\">\n", w, h);
 
 	for (block = page->first_block; block; block = block->next)
 	{
@@ -169,9 +169,7 @@ fz_print_stext_header_as_html(fz_context *ctx, fz_output *out)
 	fz_write_string(ctx, out, "<head>\n");
 	fz_write_string(ctx, out, "<style>\n");
 	fz_write_string(ctx, out, "body{background-color:gray}\n");
-	fz_write_string(ctx, out, "div{position:relative;background-color:white;margin:1em auto}\n");
-	fz_write_string(ctx, out, "p{position:absolute;margin:0}\n");
-	fz_write_string(ctx, out, "img{position:absolute}\n");
+	fz_write_string(ctx, out, "div{margin:1em auto}\n");
 	fz_write_string(ctx, out, "</style>\n");
 	fz_write_string(ctx, out, "</head>\n");
 	fz_write_string(ctx, out, "<body>\n");
