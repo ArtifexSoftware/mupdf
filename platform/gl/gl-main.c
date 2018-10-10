@@ -849,22 +849,23 @@ static void load_document(void)
 	fz_catch(ctx)
 		outline = NULL;
 
+	load_history();
+
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 	{
 		if (enable_js)
 			pdf_enable_js(ctx, pdf);
 		if (anchor)
-			currentpage = pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
+			jump_to_page(pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL));
 	}
 	else
 	{
 		if (anchor)
-			currentpage = fz_atoi(anchor) - 1;
+			jump_to_page(fz_atoi(anchor) - 1);
 	}
 	anchor = NULL;
 
-	load_history();
 	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
 }
 
