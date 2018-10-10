@@ -527,14 +527,14 @@ fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
 		int type = fz_colorspace_type(ctx, image->colorspace);
 		if (type == FZ_COLORSPACE_GRAY || type == FZ_COLORSPACE_RGB)
 		{
-			fz_write_string(ctx, out, "image/jpeg;base64,");
+			fz_write_string(ctx, out, "data:image/jpeg;base64,");
 			fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
 			return;
 		}
 	}
 	if (cbuf && cbuf->params.type == FZ_IMAGE_PNG)
 	{
-		fz_write_string(ctx, out, "image/png;base64,");
+		fz_write_string(ctx, out, "data:image/png;base64,");
 		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
 		return;
 	}
@@ -542,7 +542,22 @@ fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
 	buf = fz_new_buffer_from_image_as_png(ctx, image, NULL);
 	fz_try(ctx)
 	{
-		fz_write_string(ctx, out, "image/png;base64,");
+		fz_write_string(ctx, out, "data:image/png;base64,");
+		fz_write_base64_buffer(ctx, out, buf, 1);
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_write_pixmap_as_data_uri(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
+{
+	fz_buffer *buf = fz_new_buffer_from_pixmap_as_png(ctx, pixmap, NULL);
+	fz_try(ctx)
+	{
+		fz_write_string(ctx, out, "data:image/png;base64,");
 		fz_write_base64_buffer(ctx, out, buf, 1);
 	}
 	fz_always(ctx)

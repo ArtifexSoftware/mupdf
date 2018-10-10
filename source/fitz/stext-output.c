@@ -80,7 +80,7 @@ fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
 
-	fz_write_printf(ctx, out, "<img style=\"position:absolute;top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
+	fz_write_printf(ctx, out, "<img style=\"position:absolute;top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"", y, x, w, h);
 	fz_write_image_as_data_uri(ctx, out, block->u.i.image);
 	fz_write_string(ctx, out, "\">\n");
 }
@@ -190,7 +190,7 @@ fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *b
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
 
-	fz_write_printf(ctx, out, "<p><img width=\"%d\" height=\"%d\" src=\"data:", w, h);
+	fz_write_printf(ctx, out, "<p><img width=\"%d\" height=\"%d\" src=\"", w, h);
 	fz_write_image_as_data_uri(ctx, out, block->u.i.image);
 	fz_write_string(ctx, out, "\"/></p>\n");
 }

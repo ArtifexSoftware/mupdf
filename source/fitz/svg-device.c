@@ -855,7 +855,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 		out = start_def(ctx, sdev);
 		fz_write_printf(ctx, out, "<symbol id=\"im%d\" viewBox=\"0 0 %d %d\">\n", id, img->w, img->h);
 
-		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
+		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"", img->w, img->h);
 		fz_write_image_as_data_uri(ctx, out, img);
 		fz_write_printf(ctx, out, "\"/>\n");
 
@@ -871,7 +871,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 	}
 	else
 	{
-		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
+		fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"", img->w, img->h);
 		fz_write_image_as_data_uri(ctx, out, img);
 		fz_write_printf(ctx, out, "\"/>\n");
 	}
@@ -906,9 +906,6 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 	fz_output *out = sdev->out;
 	fz_irect bbox;
 	fz_pixmap *pix;
-	fz_buffer *buf = NULL;
-
-	fz_var(buf);
 
 	if (dev->container_len == 0)
 		return;
@@ -922,18 +919,16 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 	fz_try(ctx)
 	{
 		fz_paint_shade(ctx, shade, NULL, ctm, pix, color_params, bbox, NULL);
-		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix, color_params);
 		if (alpha != 1.0f)
 			fz_write_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);
-		fz_write_printf(ctx, out, "<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,", pix->x, pix->y, pix->w, pix->h);
-		fz_write_base64_buffer(ctx, out, buf, 1);
+		fz_write_printf(ctx, out, "<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" xlink:href=\"", pix->x, pix->y, pix->w, pix->h);
+		fz_write_pixmap_as_data_uri(ctx, out, pix);
 		fz_write_printf(ctx, out, "\"/>\n");
 		if (alpha != 1.0f)
 			fz_write_printf(ctx, out, "</g>\n");
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, buf);
 		fz_drop_pixmap(ctx, pix);
 	}
 	fz_catch(ctx)
