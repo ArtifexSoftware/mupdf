@@ -1,6 +1,6 @@
 #include "mupdf/fitz.h"
 
-#ifndef NO_ICC
+#if FZ_ENABLE_ICC
 #include "lcms2mt.h"
 #include "lcms2mt_plugin.h"
 #include "colorspace-imp.h"

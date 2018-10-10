@@ -34,6 +34,11 @@
 /* #define FZ_ENABLE_GPRF 1 */
 
 /*
+	Choose whether to enable ICC color profiles.
+*/
+/* #define FZ_ENABLE_ICC 1 */
+
+/*
 	Choose whether to enable JPEG2000 decoding.
 	By default, it is enabled, but due to frequent security
 	issues with the third party libraries we support disabling
@@ -78,9 +83,6 @@
 
 /* To skip the SIL fonts, enable: */
 /* #define TOFU_SIL */
-
-/* To skip the ICC profiles, enable: */
-/* #define NO_ICC */
 
 /* To skip the Base14 fonts, enable: */
 /* #define TOFU_BASE14 */
@@ -158,6 +160,10 @@
 #ifndef FZ_ENABLE_JS
 #define FZ_ENABLE_JS 1
 #endif /* FZ_ENABLE_JS */
+
+#ifndef FZ_ENABLE_ICC
+#define FZ_ENABLE_ICC 1
+#endif /* FZ_ENABLE_ICC */
 
 /* If Epub and HTML are both disabled, disable SIL fonts */
 #if FZ_ENABLE_HTML == 0 && FZ_ENABLE_EPUB == 0

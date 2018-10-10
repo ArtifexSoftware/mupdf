@@ -274,10 +274,10 @@ static int num_workers = 0;
 static worker_t *workers;
 static fz_band_writer *bander = NULL;
 
-#ifdef NO_ICC
-static fz_cmm_engine *icc_engine = NULL;
-#else
+#if FZ_ENABLE_ICC
 static fz_cmm_engine *icc_engine = &fz_cmm_engine_lcms;
+#else
+static fz_cmm_engine *icc_engine = NULL;
 #endif
 
 static const char *layer_config = NULL;

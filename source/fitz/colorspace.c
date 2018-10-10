@@ -147,15 +147,7 @@ void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
 
 #define SLOWCMYK
 
-#ifdef NO_ICC
-
-const unsigned char *
-fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
-{
-	return *size = 0, NULL;
-}
-
-#else
+#if FZ_ENABLE_ICC
 
 #include "icc/gray.icc.h"
 #include "icc/rgb.icc.h"
@@ -183,6 +175,14 @@ fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
 		*size = resources_icc_lab_icc_len;
 		return resources_icc_lab_icc;
 	}
+	return *size = 0, NULL;
+}
+
+#else
+
+const unsigned char *
+fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
+{
 	return *size = 0, NULL;
 }
 
@@ -835,10 +835,7 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	if (!cct)
 		return;
 
-#ifdef NO_ICC
-	if (engine)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC workflow not supported in NO_ICC build");
-#else
+#if FZ_ENABLE_ICC
 	if (cct->cmm == engine)
 		return;
 
@@ -885,6 +882,9 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	}
 	else
 		set_no_icc(cct);
+#else
+	if (engine)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC workflow not supported in FZ_ENABLE_ICC=0 build");
 #endif
 }
 
@@ -893,10 +893,10 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
 	set_no_icc(ctx->colorspace);
-#ifdef NO_ICC
-	fz_set_cmm_engine(ctx, NULL);
-#else
+#if FZ_ENABLE_ICC
 	fz_set_cmm_engine(ctx, &fz_cmm_engine_lcms);
+#else
+	fz_set_cmm_engine(ctx, NULL);
 #endif
 }
 
@@ -3735,6 +3735,7 @@ const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 	return cs ? cs->name : "";
 }
 
+#if FZ_ENABLE_ICC
 static void
 free_icc(fz_context *ctx, fz_colorspace *cs)
 {
@@ -3775,13 +3776,12 @@ static const char *colorspace_name_from_type(int type)
 	case FZ_COLORSPACE_LAB: return "Lab";
 	}
 }
+#endif
 
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *buf)
 {
-#ifdef NO_ICC
-	fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Profiles not supported in NO_ICC build");
-#else
+#if FZ_ENABLE_ICC
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
 	int flags = FZ_COLORSPACE_IS_ICC;
@@ -3886,6 +3886,8 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 		fz_rethrow(ctx);
 	}
 	return cs;
+#else
+	fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Profiles not supported in FZ_ENABLE_ICC=0 build");
 #endif
 }
 
