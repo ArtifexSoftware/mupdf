@@ -6,7 +6,7 @@
 	Enable the following for spot (and hence overprint/overprint
 	simulation) capable rendering. This forces FZ_PLOTTERS_N on.
 */
-#define FZ_ENABLE_SPOT_RENDERING 1
+/* #define FZ_ENABLE_SPOT_RENDERING 1 */
 
 /*
 	Choose which plotters we need.
@@ -89,6 +89,10 @@
 /* ---------- DO NOT EDIT ANYTHING UNDER THIS LINE ---------- */
 
 #ifndef FZ_ENABLE_SPOT_RENDERING
+#define FZ_ENABLE_SPOT_RENDERING 1
+#endif
+
+#if FZ_ENABLE_SPOT_RENDERING
 #undef FZ_PLOTTERS_N
 #define FZ_PLOTTERS_N 1
 #endif /* FZ_ENABLE_SPOT_RENDERING */
