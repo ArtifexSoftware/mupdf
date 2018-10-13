@@ -1864,11 +1864,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\lcms2\include\lcms2art.h"
+				RelativePath="..\..\thirdparty\lcms2\include\lcms2mt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\lcms2\include\lcms2art_plugin.h"
+				RelativePath="..\..\thirdparty\lcms2\include\lcms2mt_plugin.h"
 				>
 			</File>
 		</Filter>
