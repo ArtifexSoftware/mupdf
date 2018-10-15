@@ -304,7 +304,7 @@ static void
 pdf_out_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "%g Tz\n", scale);
+	fz_write_printf(ctx, out, "%g Tz\n", scale*100);
 }
 
 static void
