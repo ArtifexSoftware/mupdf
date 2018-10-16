@@ -174,6 +174,9 @@ void fz_convert_color(fz_context *ctx, const fz_color_params *params, const fz_c
 
 typedef struct fz_color_converter_s fz_color_converter;
 
+void fz_unmultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s, const unsigned char *in);
+void fz_premultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s);
+
 /* This structure is public because it allows us to avoid dynamic allocations.
  * Callers should only rely on the convert entry - the rest of the structure
  * is subject to change without notice.

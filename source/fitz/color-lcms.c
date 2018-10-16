@@ -86,43 +86,6 @@ fz_lcms_description(cmsContext cmm_ctx, fz_iccprofile *profile)
 	return desc;
 }
 
-static void
-fz_lcms_premultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s)
-{
-	unsigned char a;
-	int k;
-	int n1 = n-1;
-
-	for (; w > 0; w--)
-	{
-		a = s[n1];
-		for (k = 0; k < c; k++)
-			s[k] = fz_mul255(s[k], a);
-		s += n;
-	}
-}
-
-static void
-fz_lcms_unmultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s, const unsigned char *in)
-{
-	int a, inva;
-	int k;
-	int n1 = n-1;
-
-	for (; w > 0; w--)
-	{
-		a = in[n1];
-		inva = a ? 255 * 256 / a : 0;
-		for (k = 0; k < c; k++)
-			s[k] = (in[k] * inva) >> 8;
-		for (;k < n1; k++)
-			s[k] = in[k];
-		s[n1] = a;
-		s += n;
-		in += n;
-	}
-}
-
 /* Transform pixmap */
 void
 fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
@@ -166,9 +129,9 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 		buffer = fz_malloc(ctx, ss);
 		for (; h > 0; h--)
 		{
-			fz_lcms_unmultiply_row(ctx, sn, sc, sw, buffer, inputpos);
+			fz_unmultiply_row(ctx, sn, sc, sw, buffer, inputpos);
 			cmsDoTransform(cmm_ctx, hTransform, buffer, outputpos, sw);
-			fz_lcms_premultiply_row(ctx, dn, dc, dw, outputpos);
+			fz_premultiply_row(ctx, dn, dc, dw, outputpos);
 			inputpos += ss;
 			outputpos += ds;
 		}
