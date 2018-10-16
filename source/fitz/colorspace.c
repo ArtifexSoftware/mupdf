@@ -180,8 +180,6 @@ void fz_unmultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s, c
 	}
 }
 
-#define SLOWCMYK
-
 #if FZ_ENABLE_ICC
 
 #include "icc/gray.icc.h"
@@ -692,81 +690,9 @@ static void rgb_to_bgr(fz_context *ctx, const fz_colorspace *cs, const float *rg
 
 static void cmyk_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *cmyk, float *rgb)
 {
-#ifdef SLOWCMYK /* from poppler */
-	float c = cmyk[0], m = cmyk[1], y = cmyk[2], k = cmyk[3];
-	float r, g, b, x;
-	float cm = c * m;
-	float c1m = m - cm;
-	float cm1 = c - cm;
-	float c1m1 = 1 - m - cm1;
-	float c1m1y = c1m1 * y;
-	float c1m1y1 = c1m1 - c1m1y;
-	float c1my = c1m * y;
-	float c1my1 = c1m - c1my;
-	float cm1y = cm1 * y;
-	float cm1y1 = cm1 - cm1y;
-	float cmy = cm * y;
-	float cmy1 = cm - cmy;
-
-	/* this is a matrix multiplication, unrolled for performance */
-	x = c1m1y1 * k;		/* 0 0 0 1 */
-	r = g = b = c1m1y1 - x;	/* 0 0 0 0 */
-	r += 0.1373f * x;
-	g += 0.1216f * x;
-	b += 0.1255f * x;
-
-	x = c1m1y * k;		/* 0 0 1 1 */
-	r += 0.1098f * x;
-	g += 0.1020f * x;
-	x = c1m1y - x;		/* 0 0 1 0 */
-	r += x;
-	g += 0.9490f * x;
-
-	x = c1my1 * k;		/* 0 1 0 1 */
-	r += 0.1412f * x;
-	x = c1my1 - x;		/* 0 1 0 0 */
-	r += 0.9255f * x;
-	b += 0.5490f * x;
-
-	x = c1my * k;		/* 0 1 1 1 */
-	r += 0.1333f * x;
-	x = c1my - x;		/* 0 1 1 0 */
-	r += 0.9294f * x;
-	g += 0.1098f * x;
-	b += 0.1412f * x;
-
-	x = cm1y1 * k;		/* 1 0 0 1 */
-	g += 0.0588f * x;
-	b += 0.1412f * x;
-	x = cm1y1 - x;		/* 1 0 0 0 */
-	g += 0.6784f * x;
-	b += 0.9373f * x;
-
-	x = cm1y * k;		/* 1 0 1 1 */
-	g += 0.0745f * x;
-	x = cm1y - x;		/* 1 0 1 0 */
-	g += 0.6510f * x;
-	b += 0.3137f * x;
-
-	x = cmy1 * k;		/* 1 1 0 1 */
-	b += 0.0078f * x;
-	x = cmy1 - x;		/* 1 1 0 0 */
-	r += 0.1804f * x;
-	g += 0.1922f * x;
-	b += 0.5725f * x;
-
-	x = cmy * (1-k);	/* 1 1 1 0 */
-	r += 0.2118f * x;
-	g += 0.2119f * x;
-	b += 0.2235f * x;
-	rgb[0] = fz_clamp(r, 0, 1);
-	rgb[1] = fz_clamp(g, 0, 1);
-	rgb[2] = fz_clamp(b, 0, 1);
-#else
 	rgb[0] = 1 - fz_min(1, cmyk[0] + cmyk[3]);
 	rgb[1] = 1 - fz_min(1, cmyk[1] + cmyk[3]);
 	rgb[2] = 1 - fz_min(1, cmyk[2] + cmyk[3]);
-#endif
 }
 
 static void rgb_to_cmyk(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *cmyk)
@@ -1999,333 +1925,6 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
-#ifdef ARCH_ARM
-static void
-fast_cmyk_to_rgb_ARM(unsigned char *dst, unsigned char *src, int n)
-__attribute__((naked));
-
-static void
-fast_cmyk_to_rgb_ARM(unsigned char *dst, unsigned char *src, int n)
-{
-	asm volatile(
-	ENTER_ARM
-	"stmfd	r13!,{r4-r11,r14}					\n"
-	"@ r0 = dst							\n"
-	"@ r1 = src							\n"
-	"@ r2 = n							\n"
-	"mov	r12, #0			@ r12= CMYK = 0			\n"
-	"b	2f			@ enter loop			\n"
-	"1:				@ White or Black		\n"
-	"@ Cunning trick: On entry r11 = 0 if black, r11 = FF if white	\n"
-	"eor    r12,r11,#0xFF           @ r12= FF if black, 0 if white  \n"
-	"ldrb	r7, [r1],#1		@ r8 = s[4]			\n"
-	"strb	r11,[r0],#1		@ d[0] = r			\n"
-	"strb	r11,[r0],#1		@ d[1] = g			\n"
-	"strb	r11,[r0],#1		@ d[2] = b			\n"
-	"strb	r7, [r0],#1		@ d[3] = s[4]			\n"
-	"mov    r12,r12,LSL #24         @ r12 = CMYK                    \n"
-	"subs	r2, r2, #1		@ r2 = n--			\n"
-	"beq	9f							\n"
-	"2:				@ Main loop starts here		\n"
-	"ldrb	r3, [r1], #4		@ r3 = c			\n"
-	"ldrb	r6, [r1, #-1]		@ r6 = k			\n"
-	"ldrb	r5, [r1, #-2]		@ r5 = y			\n"
-	"ldrb	r4, [r1, #-3]		@ r4 = m			\n"
-	"eors	r11,r6, #0xFF		@ if (k == 255)			\n"
-	"beq	1b			@   goto black			\n"
-	"orr	r7, r3, r4, LSL #8					\n"
-	"orr	r14,r5, r6, LSL #8					\n"
-	"orrs	r7, r7, r14,LSL #16	@ r7 = cmyk			\n"
-	"beq	1b			@ if (cmyk == 0) white		\n"
-	"@ At this point, we have to decode a new pixel			\n"
-	"@ r0 = dst  r1 = src  r2 = n  r7 = cmyk			\n"
-	"3:				@ unmatched			\n"
-	"stmfd	r13!,{r0-r1,r7}		@ stash regs for space		\n"
-	"add	r3, r3, r3, LSR #7	@ r3 = c += c>>7		\n"
-	"add	r4, r4, r4, LSR #7	@ r4 = m += m>>7		\n"
-	"add	r5, r5, r5, LSR #7	@ r5 = y += y>>7		\n"
-	"add	r6, r6, r6, LSR #7	@ r6 = k += k>>7		\n"
-	"mov	r5, r5, LSR #1		@ sacrifice 1 bit of Y		\n"
-	"mul	r8, r3, r4		@ r8 = cm     = c * m		\n"
-	"rsb	r9, r8, r4, LSL #8	@ r9 = c1m    = (m<<8) - cm	\n"
-	"rsb	r3, r8, r3, LSL #8	@ r3 = cm1    = (c<<8) - cm	\n"
-	"rsb	r4, r4, #0x100		@ r4 = 256-m			\n"
-	"rsb	r4, r3, r4, LSL #8	@ r4 = c1m1   =((256-m)<<8)-cm1	\n"
-	"mul	r7, r4, r5		@ r7 = c1m1y  = c1m1 * y	\n"
-	"rsb	r4, r7, r4, LSL #7	@ r4 = c1m1y1 = (c1m1<<7)-c1m1y	\n"
-	"mul	r10,r9, r5		@ r10= c1my   = c1m * y		\n"
-	"rsb	r9, r10,r9, LSL #7	@ r9 = c1my1  = (c1m<<7) - c1my \n"
-	"mul	r11,r3, r5		@ r11= cm1y   = cm1 * y		\n"
-	"rsb	r3, r11,r3, LSL #7	@ r3 = cm1y1  = (cm1<<7) - cm1y	\n"
-	"mul	r5, r8, r5		@ r5 = cmy    = cm * y		\n"
-	"rsb	r8, r5, r8, LSL #7	@ r8 = cmy1   = (cm<<7) - cmy	\n"
-	"@ Register recap:						\n"
-	"@ r3 = cm1y1							\n"
-	"@ r4 = c1m1y1							\n"
-	"@ r5 = cmy							\n"
-	"@ r6 = k							\n"
-	"@ r7 = c1m1y							\n"
-	"@ r8 = cmy1							\n"
-	"@ r9 = c1my1							\n"
-	"@ r10= c1my							\n"
-	"@ r11= cm1y							\n"
-	"@ The actual matrix multiplication				\n"
-	"mul	r14,r4, r6		@ r14= x1 = c1m1y1 * k		\n"
-	"rsb	r4, r14,r4, LSL #8	@ r4 = x0 = (c1m1y1<<8) - x1	\n"
-	"add	r4, r4, r14,LSR #8-5	@ r4 = b = x0 + 32*(x1>>8)	\n"
-	"sub	r1, r4, r14,LSR #8	@ r1 = g = x0 + 31*(x1>>8)	\n"
-	"add	r0, r1, r14,LSR #8-2	@ r0 = r = x0 + 35*(x1>>8)	\n"
-	"								\n"
-	"mul	r14,r7, r6		@ r14= x1 = c1m1y * k		\n"
-	"rsb	r7, r14,r7, LSL #8	@ r7 = x0 = (c1m1y<<8) - x1	\n"
-	"add	r0, r0, r7		@ r0 = r += x0			\n"
-	"add	r1, r1, r7		@ r1 = g += (x0>>8 * 256)	\n"
-	"sub	r1, r1, r7, LSR #8-3	@                    248	\n"
-	"sub	r1, r1, r7, LSR #8-2	@                    244	\n"
-	"sub	r1, r1, r7, LSR #8	@                    243	\n"
-	"sub	r7, r14,r14,LSR #3	@ r7 = 28*(x1>>5)		\n"
-	"add	r0, r0, r7, LSR #8-5	@ r0 = r += 28 * x1		\n"
-	"sub	r7, r7, r14,LSR #4	@ r7 = 26*(x1>>5)		\n"
-	"add	r1, r1, r7, LSR #8-5	@ r1 = g += 26 * x1		\n"
-	"								\n"
-	"mul	r14,r9, r6		@ r14= x1 = c1my1 * k		\n"
-	"sub	r9, r9, r14,LSR #8	@ r9 = x0>>8 = c1my1 - (x1>>8)	\n"
-	"add	r0, r0, r14,LSR #8-5	@ r0 = r += (x1>>8)*32		\n"
-	"add	r0, r0, r14,LSR #8-2	@ r0 = r += (x1>>8)*36		\n"
-	"mov	r14,#237		@ r14= 237			\n"
-	"mla	r0,r14,r9,r0		@ r14= r += x0*237		\n"
-	"mov	r14,#141		@ r14= 141			\n"
-	"mla	r4,r14,r9,r4		@ r14= b += x0*141		\n"
-	"								\n"
-	"mul	r14,r10,r6		@ r14= x1 = c1my * k		\n"
-	"sub	r10,r10,r14,LSR #8	@ r10= x0>>8 = c1my - (x1>>8)	\n"
-	"add	r0, r0, r14,LSR #8-5	@ r0 = r += 32 * x1		\n"
-	"add	r0, r0, r14,LSR #8-1	@ r0 = r += 34 * x1		\n"
-	"mov	r14,#238		@ r14= 238			\n"
-	"mla	r0,r14,r10,r0		@ r0 = r += 238 * x0		\n"
-	"mov	r14,#28			@ r14= 28			\n"
-	"mla	r1,r14,r10,r1		@ r1 = g += 28 * x0		\n"
-	"mov	r14,#36			@ r14= 36			\n"
-	"mla	r4,r14,r10,r4		@ r4 = b += 36 * x0		\n"
-	"								\n"
-	"mul	r14,r3, r6		@ r14= x1 = cm1y1 * k		\n"
-	"sub	r3, r3, r14,LSR #8	@ r3 = x1>>8 = cm1y1 - (x1>>8)	\n"
-	"add	r1, r1, r14,LSR #8-4	@ r1 = g += 16*x1		\n"
-	"sub	r1, r1, r14,LSR #8	@           15*x1		\n"
-	"add	r4, r4, r14,LSR #8-5	@ r4 = b += 32*x1		\n"
-	"add	r4, r4, r14,LSR #8-2	@           36*x1		\n"
-	"mov	r14,#174		@ r14= 174			\n"
-	"mla	r1, r14,r3, r1		@ r1 = g += 174 * x0		\n"
-	"mov	r14,#240		@ r14= 240			\n"
-	"mla	r4, r14,r3, r4		@ r4 = b += 240 * x0		\n"
-	"								\n"
-	"mul	r14,r11,r6		@ r14= x1 = cm1y * k		\n"
-	"sub	r11,r11,r14,LSR #8	@ r11= x0>>8 = cm1y - (x1>>8)	\n"
-	"add	r1, r1, r14,LSR #8-4	@ r1 = g += x1 * 16		\n"
-	"add	r1, r1, r14,LSR #8	@           x1 * 17		\n"
-	"add	r1, r1, r14,LSR #8-1	@           x1 * 19		\n"
-	"mov	r14,#167		@ r14 = 167			\n"
-	"mla	r1, r14,r11,r1		@ r1 = g += 167 * x0		\n"
-	"mov	r14,#80			@ r14 = 80			\n"
-	"mla	r4, r14,r11,r4		@ r4 = b += 80 * x0		\n"
-	"								\n"
-	"mul	r14,r8, r6		@ r14= x1 = cmy1 * k		\n"
-	"sub	r8, r8, r14,LSR #8	@ r8 = x0>>8 = cmy1 - (x1>>8)	\n"
-	"add	r4, r4, r14,LSR #8-1	@ r4 = b += x1 * 2		\n"
-	"mov	r14,#46			@ r14=46			\n"
-	"mla	r0, r14,r8, r0		@ r0 = r += 46 * x0		\n"
-	"mov	r14,#49			@ r14=49			\n"
-	"mla	r1, r14,r8, r1		@ r1 = g += 49 * x0		\n"
-	"mov	r14,#147		@ r14=147			\n"
-	"mla	r4, r14,r8, r4		@ r4 = b += 147 * x0		\n"
-	"								\n"
-	"rsb	r6, r6, #256		@ r6 = k = 256-k		\n"
-	"mul	r14,r5, r6		@ r14= x0 = cmy * (256-k)	\n"
-	"mov	r11,#54			@ r11= 54			\n"
-	"mov	r14,r14,LSR #8		@ r14= (x0>>8)			\n"
-	"mov	r8,#57			@ r8 = 57			\n"
-	"mla	r0,r14,r11,r0		@ r0 = r += 54*x0		\n"
-	"mla	r1,r14,r11,r1		@ r1 = g += 54*x0		\n"
-	"mla	r4,r14,r8, r4		@ r4 = b += 57*x0		\n"
-	"								\n"
-	"sub	r8, r0, r0, LSR #8	@ r8 = r -= (r>>8)		\n"
-	"sub	r9, r1, r1, LSR #8	@ r9 = g -= (r>>8)		\n"
-	"sub	r10,r4, r4, LSR #8	@ r10= b -= (r>>8)		\n"
-	"ldmfd	r13!,{r0-r1,r12}					\n"
-	"mov	r8, r8, LSR #23		@ r8 = r>>23			\n"
-	"mov	r9, r9, LSR #23		@ r9 = g>>23			\n"
-	"mov	r10,r10,LSR #23		@ r10= b>>23			\n"
-	"ldrb	r14,[r1],#1		@ r8 = s[4]			\n"
-	"strb	r8, [r0],#1		@ d[0] = r			\n"
-	"strb	r9, [r0],#1		@ d[1] = g			\n"
-	"strb	r10,[r0],#1		@ d[2] = b			\n"
-	"strb	r14,[r0],#1		@ d[3] = s[4]			\n"
-	"subs	r2, r2, #1		@ r2 = n--			\n"
-	"beq	9f							\n"
-	"@ At this point, we've just decoded a pixel			\n"
-	"@ r0 = dst  r1 = src  r2 = n  r8 = r  r9 = g  r10= b r12= CMYK \n"
-	"4:								\n"
-	"ldrb	r3, [r1], #4		@ r3 = c			\n"
-	"ldrb	r6, [r1, #-1]		@ r6 = k			\n"
-	"ldrb	r5, [r1, #-2]		@ r5 = y			\n"
-	"ldrb	r4, [r1, #-3]		@ r4 = m			\n"
-	"eors	r11,r6, #0xFF		@ if (k == 255)			\n"
-	"beq	1b			@   goto black			\n"
-	"orr	r7, r3, r4, LSL #8					\n"
-	"orr	r14,r5, r6, LSL #8					\n"
-	"orrs	r7, r7, r14,LSL #16	@ r7 = cmyk			\n"
-	"beq	1b			@ if (cmyk == 0) white		\n"
-	"cmp	r7, r12			@ if (cmyk != CMYK)		\n"
-	"bne	3b			@   not the same, loop		\n"
-	"@ If we get here, we just matched a pixel we have just decoded \n"
-	"ldrb	r3, [r1],#1		@ r8 = s[4]			\n"
-	"strb	r8, [r0],#1		@ d[0] = r			\n"
-	"strb	r9, [r0],#1		@ d[1] = g			\n"
-	"strb	r10,[r0],#1		@ d[2] = b			\n"
-	"strb	r3, [r0],#1		@ d[3] = s[4]			\n"
-	"subs	r2, r2, #1		@ r2 = n--			\n"
-	"bne	4b							\n"
-	"9:								\n"
-	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb		\n"
-	ENTER_THUMB
-	);
-}
-#endif
-
-static inline void cached_cmyk_conv(unsigned char * FZ_RESTRICT pr, unsigned char * FZ_RESTRICT pg, unsigned char * FZ_RESTRICT pb,
-				unsigned int * FZ_RESTRICT C, unsigned int * FZ_RESTRICT M, unsigned int * FZ_RESTRICT Y, unsigned int * FZ_RESTRICT K,
-				unsigned int c, unsigned int m, unsigned int y, unsigned int k)
-{
-#ifdef SLOWCMYK
-	unsigned int r, g, b;
-	unsigned int cm, c1m, cm1, c1m1, c1m1y, c1m1y1, c1my, c1my1, cm1y, cm1y1, cmy, cmy1;
-	unsigned int x0, x1;
-
-	if (c == *C && m == *M && y == *Y && k == *K)
-	{
-		/* Nothing to do */
-	}
-	else if (k == 0 && c == 0 && m == 0 && y == 0)
-	{
-		*C = 0;
-		*M = 0;
-		*Y = 0;
-		*K = 0;
-		*pr = *pg = *pb = 255;
-	}
-	else if (k == 255)
-	{
-		*C = 0;
-		*M = 0;
-		*Y = 0;
-		*K = 255;
-		*pr = *pg = *pb = 0;
-	}
-	else
-	{
-		*C = c;
-		*M = m;
-		*Y = y;
-		*K = k;
-		c += c>>7;
-		m += m>>7;
-		y += y>>7;
-		k += k>>7;
-		y >>= 1; /* Ditch 1 bit of Y to avoid overflow */
-		cm = c * m;
-		c1m = (m<<8) - cm;
-		cm1 = (c<<8) - cm;
-		c1m1 = ((256 - m)<<8) - cm1;
-		c1m1y = c1m1 * y;
-		c1m1y1 = (c1m1<<7) - c1m1y;
-		c1my = c1m * y;
-		c1my1 = (c1m<<7) - c1my;
-		cm1y = cm1 * y;
-		cm1y1 = (cm1<<7) - cm1y;
-		cmy = cm * y;
-		cmy1 = (cm<<7) - cmy;
-
-		/* this is a matrix multiplication, unrolled for performance */
-		x1 = c1m1y1 * k;	/* 0 0 0 1 */
-		x0 = (c1m1y1<<8) - x1;	/* 0 0 0 0 */
-		x1 = x1>>8;		/* From 23 fractional bits to 15 */
-		r = g = b = x0;
-		r += 35 * x1;	/* 0.1373f */
-		g += 31 * x1;	/* 0.1216f */
-		b += 32 * x1;	/* 0.1255f */
-
-		x1 = c1m1y * k;		/* 0 0 1 1 */
-		x0 = (c1m1y<<8) - x1;	/* 0 0 1 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		r += 28 * x1;	/* 0.1098f */
-		g += 26 * x1;	/* 0.1020f */
-		r += x0;
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		g += 243 * x0;	/* 0.9490f */
-
-		x1 = c1my1 * k;		/* 0 1 0 1 */
-		x0 = (c1my1<<8) - x1;	/* 0 1 0 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		r += 36 * x1;	/* 0.1412f */
-		r += 237 * x0;	/* 0.9255f */
-		b += 141 * x0;	/* 0.5490f */
-
-		x1 = c1my * k;		/* 0 1 1 1 */
-		x0 = (c1my<<8) - x1;	/* 0 1 1 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		r += 34 * x1;	/* 0.1333f */
-		r += 238 * x0;	/* 0.9294f */
-		g += 28 * x0;	/* 0.1098f */
-		b += 36 * x0;	/* 0.1412f */
-
-		x1 = cm1y1 * k;		/* 1 0 0 1 */
-		x0 = (cm1y1<<8) - x1;	/* 1 0 0 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		g += 15 * x1;	/* 0.0588f */
-		b += 36 * x1;	/* 0.1412f */
-		g += 174 * x0;	/* 0.6784f */
-		b += 240 * x0;	/* 0.9373f */
-
-		x1 = cm1y * k;		/* 1 0 1 1 */
-		x0 = (cm1y<<8) - x1;	/* 1 0 1 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		g += 19 * x1;	/* 0.0745f */
-		g += 167 * x0;	/* 0.6510f */
-		b += 80 * x0;	/* 0.3137f */
-
-		x1 = cmy1 * k;		/* 1 1 0 1 */
-		x0 = (cmy1<<8) - x1;	/* 1 1 0 0 */
-		x1 >>= 8;		/* From 23 fractional bits to 15 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		b += 2 * x1;	/* 0.0078f */
-		r += 46 * x0;	/* 0.1804f */
-		g += 49 * x0;	/* 0.1922f */
-		b += 147 * x0;	/* 0.5725f */
-
-		x0 = cmy * (256-k);	/* 1 1 1 0 */
-		x0 >>= 8;		/* From 23 fractional bits to 15 */
-		r += 54 * x0;	/* 0.2118f */
-		g += 54 * x0;	/* 0.2119f */
-		b += 57 * x0;	/* 0.2235f */
-
-		r -= (r>>8);
-		g -= (g>>8);
-		b -= (b>>8);
-		*pr = r>>23;
-		*pg = g>>23;
-		*pb = b>>23;
-	}
-#else
-	*pr = 255 - (unsigned char)fz_mini(c + k, 255);
-	*pg = 255 - (unsigned char)fz_mini(m + k, 255);
-	*pb = 255 - (unsigned char)fz_mini(y + k, 255);
-#endif
-}
-
 static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
@@ -2374,22 +1973,14 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		{
 			if (sa)
 			{
-#ifdef ARCH_ARM
-				if (h == 1)
-				{
-					fast_cmyk_to_rgb_ARM(d, s, w);
-					return;
-				}
-#endif
 				while (h--)
 				{
 					size_t ww = w;
 					while (ww--)
 					{
-						cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-						d[0] = r;
-						d[1] = g;
-						d[2] = b;
+						d[0] = 255 - fz_mini(s[0] + s[3], 255);
+						d[1] = 255 - fz_mini(s[1] + s[3], 255);
+						d[2] = 255 - fz_mini(s[2] + s[3], 255);
 						d[3] = s[4];
 						s += 5;
 						d += 4;
@@ -2405,10 +1996,9 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 					size_t ww = w;
 					while (ww--)
 					{
-						cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-						d[0] = r;
-						d[1] = g;
-						d[2] = b;
+						d[0] = 255 - fz_mini(s[0] + s[3], 255);
+						d[1] = 255 - fz_mini(s[1] + s[3], 255);
+						d[2] = 255 - fz_mini(s[2] + s[3], 255);
 						d[3] = 255;
 						s += 4;
 						d += 4;
@@ -2425,10 +2015,9 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 				size_t ww = w;
 				while (ww--)
 				{
-					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-					d[0] = r;
-					d[1] = g;
-					d[2] = b;
+					d[0] = 255 - fz_mini(s[0] + s[3], 255);
+					d[1] = 255 - fz_mini(s[1] + s[3], 255);
+					d[2] = 255 - fz_mini(s[2] + s[3], 255);
 					s += 4;
 					d += 3;
 				}
@@ -2446,10 +2035,9 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			size_t ww = w;
 			while (ww--)
 			{
-				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-				d[0] = r;
-				d[1] = g;
-				d[2] = b;
+				d[0] = 255 - fz_mini(s[0] + s[3], 255);
+				d[1] = 255 - fz_mini(s[1] + s[3], 255);
+				d[2] = 255 - fz_mini(s[2] + s[3], 255);
 				s += 4;
 				d += 3;
 				for (i=ss; i > 0; i--)
@@ -2469,10 +2057,9 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			size_t ww = w;
 			while (ww--)
 			{
-				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-				d[0] = r;
-				d[1] = g;
-				d[2] = b;
+				d[0] = 255 - fz_mini(s[0] + s[3], 255);
+				d[1] = 255 - fz_mini(s[1] + s[3], 255);
+				d[2] = 255 - fz_mini(s[2] + s[3], 255);
 				s += sn;
 				d += dn;
 				if (da)
@@ -2537,10 +2124,9 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 					size_t ww = w;
 					while (ww--)
 					{
-						cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-						d[0] = b;
-						d[1] = g;
-						d[2] = r;
+						d[0] = 255 - fz_mini(s[2] + s[3], 255);
+						d[1] = 255 - fz_mini(s[1] + s[3], 255);
+						d[2] = 255 - fz_mini(s[0] + s[3], 255);
 						d[3] = s[4];
 						s += 5;
 						d += 4;
@@ -2556,10 +2142,9 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 					size_t ww = w;
 					while (ww--)
 					{
-						cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-						d[0] = b;
-						d[1] = g;
-						d[2] = r;
+						d[0] = 255 - fz_mini(s[2] + s[3], 255);
+						d[1] = 255 - fz_mini(s[1] + s[3], 255);
+						d[2] = 255 - fz_mini(s[0] + s[3], 255);
 						d[3] = 255;
 						s += 4;
 						d += 4;
@@ -2579,10 +2164,9 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 				size_t ww = w;
 				while (ww--)
 				{
-					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-					d[0] = b;
-					d[1] = g;
-					d[2] = r;
+					d[0] = 255 - fz_mini(s[2] + s[3], 255);
+					d[1] = 255 - fz_mini(s[1] + s[3], 255);
+					d[2] = 255 - fz_mini(s[0] + s[3], 255);
 					s += 4;
 					d += 3;
 				}
@@ -2600,10 +2184,9 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			size_t ww = w;
 			while (ww--)
 			{
-				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-				d[0] = b;
-				d[1] = g;
-				d[2] = r;
+				d[0] = 255 - fz_mini(s[2] + s[3], 255);
+				d[1] = 255 - fz_mini(s[1] + s[3], 255);
+				d[2] = 255 - fz_mini(s[0] + s[3], 255);
 				s += 4;
 				d += 3;
 				for (i=ss; i > 0; i--)
@@ -2623,10 +2206,9 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			size_t ww = w;
 			while (ww--)
 			{
-				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
-				d[0] = b;
-				d[1] = g;
-				d[2] = r;
+				d[0] = 255 - fz_mini(s[2] + s[3], 255);
+				d[1] = 255 - fz_mini(s[1] + s[3], 255);
+				d[2] = 255 - fz_mini(s[0] + s[3], 255);
 				s += sn;
 				d += dn;
 				if (da)
@@ -3405,29 +2987,17 @@ cmyk2g(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 static void
 cmyk2rgb(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 {
-#ifdef SLOWCMYK
-	cmyk_to_rgb(ctx, NULL, sv, dv);
-#else
 	dv[0] = 1 - fz_min(sv[0] + sv[3], 1);
 	dv[1] = 1 - fz_min(sv[1] + sv[3], 1);
 	dv[2] = 1 - fz_min(sv[2] + sv[3], 1);
-#endif
 }
 
 static void
 cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 {
-#ifdef SLOWCMYK
-	float rgb[3];
-	cmyk_to_rgb(ctx, NULL, sv, rgb);
-	dv[0] = rgb[2];
-	dv[1] = rgb[1];
-	dv[2] = rgb[0];
-#else
 	dv[0] = 1 - fz_min(sv[2] + sv[3], 1);
 	dv[1] = 1 - fz_min(sv[1] + sv[3], 1);
 	dv[2] = 1 - fz_min(sv[0] + sv[3], 1);
-#endif
 }
 
 void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *is, const fz_colorspace *ds, const fz_colorspace *ss, const fz_color_params *params)
