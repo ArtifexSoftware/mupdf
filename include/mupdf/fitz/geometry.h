@@ -15,6 +15,14 @@ static inline int fz_mul255(int a, int b)
 }
 
 /*
+	Undo alpha premultiplication.
+*/
+static inline int fz_div255(int c, int a)
+{
+	return a ? c * (255 * 256 / a) >> 8 : 0;
+}
+
+/*
 	Expand a value A from the 0...255 range to the 0..256 range
 */
 #define FZ_EXPAND(A) ((A)+((A)>>7))

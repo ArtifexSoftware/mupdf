@@ -1085,128 +1085,66 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
+	int k, g;
+	int a = 255;
+	int i;
 
-	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			g = s[0];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 0;
-						d[1] = 0;
-						d[2] = 0;
-						d[3] = 255 - s[0];
-						d[4] = s[1];
-						s += 2;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[1+ss];
+				g = fz_div255(g, a);
+			}
+
+			k = 255 - g;
+
+			if (da)
+			{
+				*d++ = 0;
+				*d++ = 0;
+				*d++ = 0;
+				*d++ = fz_mul255(k, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 0;
-						d[1] = 0;
-						d[2] = 0;
-						d[3] = 255 - s[0];
-						d[4] = 255;
-						s++;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = 0;
+				*d++ = 0;
+				*d++ = 0;
+				*d++ = k;
 			}
-		}
-		else
-		{
-			while (h--)
+
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					d[0] = 0;
-					d[1] = 0;
-					d[2] = 0;
-					d[3] = 255 - s[0];
-					s++;
-					d += 4;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		int i;
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
-			{
-				d[0] = 0;
-				d[1] = 0;
-				d[2] = 0;
-				d[3] = 255 - s[0];
 				s += 1;
-				d += 4;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				d[0] = 0;
-				d[1] = 0;
-				d[2] = 0;
-				d[3] = 255 - s[0];
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 1 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
@@ -1475,148 +1413,76 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
+	int c, m, y, k, r, g, b;
+	int a = 255;
+	int i;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			r = s[0];
+			g = s[1];
+			b = s[2];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = s[0];
-						unsigned char m = s[1];
-						unsigned char y = s[2];
-						unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-						d[0] = c - k;
-						d[1] = m - k;
-						d[2] = y - k;
-						d[3] = k;
-						d[4] = s[3];
-						s += 4;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[3+ss];
+				r = fz_div255(r, a);
+				g = fz_div255(g, a);
+				b = fz_div255(b, a);
+			}
+
+			c = 255 - r;
+			m = 255 - g;
+			y = 255 - b;
+			k = fz_mini(c, fz_mini(m, y));
+			c = c - k;
+			m = m - k;
+			y = y - k;
+
+			if (da)
+			{
+				*d++ = fz_mul255(c, a);
+				*d++ = fz_mul255(m, a);
+				*d++ = fz_mul255(y, a);
+				*d++ = fz_mul255(k, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = s[0];
-						unsigned char m = s[1];
-						unsigned char y = s[2];
-						unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-						d[0] = c - k;
-						d[1] = m - k;
-						d[2] = y - k;
-						d[3] = k;
-						d[4] = 255;
-						s += 3;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = c;
+				*d++ = m;
+				*d++ = y;
+				*d++ = k;
 			}
-		}
-		else
-		{
-			while (h--)
+
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					unsigned char c = s[0];
-					unsigned char m = s[1];
-					unsigned char y = s[2];
-					unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-					d[0] = c - k;
-					d[1] = m - k;
-					d[2] = y - k;
-					d[3] = k;
-					s += 3;
-					d += 4;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			int i;
-			size_t ww = w;
-			while (ww--)
-			{
-				unsigned char c = s[0];
-				unsigned char m = s[1];
-				unsigned char y = s[2];
-				unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-				d[0] = c - k;
-				d[1] = m - k;
-				d[2] = y - k;
-				d[3] = k;
 				s += 3;
-				d += 4;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				unsigned char c = s[0];
-				unsigned char m = s[1];
-				unsigned char y = s[2];
-				unsigned char k = (unsigned char)(255 - fz_maxi(c, fz_maxi(m, y)));
-				d[0] = c + k;
-				d[1] = m + k;
-				d[2] = y + k;
-				d[3] = 255 - k;
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 3 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
@@ -1634,148 +1500,76 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
+	int c, m, y, k, r, g, b;
+	int a = 255;
+	int i;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			b = s[0];
+			g = s[1];
+			r = s[2];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = s[2];
-						unsigned char m = s[1];
-						unsigned char y = s[0];
-						unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-						d[0] = c - k;
-						d[1] = m - k;
-						d[2] = y - k;
-						d[3] = k;
-						d[4] = s[3];
-						s += 4;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[3+ss];
+				r = fz_div255(r, a);
+				g = fz_div255(g, a);
+				b = fz_div255(b, a);
+			}
+
+			c = 255 - r;
+			m = 255 - g;
+			y = 255 - b;
+			k = fz_mini(c, fz_mini(m, y));
+			c = c - k;
+			m = m - k;
+			y = y - k;
+
+			if (da)
+			{
+				*d++ = fz_mul255(c, a);
+				*d++ = fz_mul255(m, a);
+				*d++ = fz_mul255(y, a);
+				*d++ = fz_mul255(k, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = s[2];
-						unsigned char m = s[1];
-						unsigned char y = s[0];
-						unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-						d[0] = c - k;
-						d[1] = m - k;
-						d[2] = y - k;
-						d[3] = k;
-						d[4] = 255;
-						s += 3;
-						d += 5;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = c;
+				*d++ = m;
+				*d++ = y;
+				*d++ = k;
 			}
-		}
-		else
-		{
-			while (h--)
+
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					unsigned char c = s[2];
-					unsigned char m = s[1];
-					unsigned char y = s[0];
-					unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-					d[0] = c - k;
-					d[1] = m - k;
-					d[2] = y - k;
-					d[3] = k;
-					s += 3;
-					d += 4;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			int i;
-			size_t ww = w;
-			while (ww--)
-			{
-				unsigned char c = s[2];
-				unsigned char m = s[1];
-				unsigned char y = s[0];
-				unsigned char k = (unsigned char)fz_mini(c, fz_mini(m, y));
-				d[0] = c - k;
-				d[1] = m - k;
-				d[2] = y - k;
-				d[3] = k;
 				s += 3;
-				d += 4;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				unsigned char c = s[2];
-				unsigned char m = s[1];
-				unsigned char y = s[0];
-				unsigned char k = (unsigned char)(255 - fz_maxi(c, fz_maxi(m, y)));
-				d[0] = c + k;
-				d[1] = m + k;
-				d[2] = y + k;
-				d[3] = 255 - k;
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 3 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
@@ -1793,128 +1587,66 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
+	int c, m, y, k, g;
+	int a = 255;
+	int i;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			c = s[0];
+			m = s[1];
+			y = s[2];
+			k = s[3];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = fz_mul255(s[0], 77);
-						unsigned char m = fz_mul255(s[1], 150);
-						unsigned char y = fz_mul255(s[2], 28);
-						d[0] = 255 - (unsigned char)fz_mini(c + m + y + s[3], 255);
-						d[1] = s[4];
-						s += 5;
-						d += 2;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[4+ss];
+				c = fz_div255(c, a);
+				m = fz_div255(m, a);
+				y = fz_div255(y, a);
+				k = fz_div255(k, a);
+			}
+
+			g = 255 - fz_mini(c + m + y + k, 255);
+
+			if (da)
+			{
+				*d++ = fz_mul255(g, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						unsigned char c = fz_mul255(s[0], 77);
-						unsigned char m = fz_mul255(s[1], 150);
-						unsigned char y = fz_mul255(s[2], 28);
-						d[0] = 255 - (unsigned char)fz_mini(c + m + y + s[3], 255);
-						d[1] = 255;
-						s += 3;
-						d += 2;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = g;
 			}
-		}
-		else
-		{
-			while (h--)
+
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					unsigned char c = fz_mul255(s[0], 77);
-					unsigned char m = fz_mul255(s[1], 150);
-					unsigned char y = fz_mul255(s[2], 28);
-					d[0] = 255 - (unsigned char)fz_mini(c + m + y + s[3], 255);
-					s += 4;
-					d++;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			int i;
-			size_t ww = w;
-			while (ww--)
-			{
-				unsigned char c = fz_mul255(s[0], 77);
-				unsigned char m = fz_mul255(s[1], 150);
-				unsigned char y = fz_mul255(s[2], 28);
-				d[0] = 255 - (unsigned char)fz_mini(c + m + y + s[3], 255);
 				s += 4;
-				d++;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				unsigned char c = fz_mul255(255 - s[0], 77);
-				unsigned char m = fz_mul255(255 - s[1], 150);
-				unsigned char y = fz_mul255(255 - s[2], 28);
-				d[0] = (unsigned char)fz_maxi(s[3] - c - m - y, 0);
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 4 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
@@ -1932,134 +1664,72 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
-	unsigned int C,M,Y,K;
-	unsigned char r,g,b;
+	int c, m, y, k, r, g, b;
+	int a = 255;
+	int i;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	C = 0;
-	M = 0;
-	Y = 0;
-	K = 0;
-	r = 255;
-	g = 255;
-	b = 255;
-
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			c = s[0];
+			m = s[1];
+			y = s[2];
+			k = s[3];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 255 - fz_mini(s[0] + s[3], 255);
-						d[1] = 255 - fz_mini(s[1] + s[3], 255);
-						d[2] = 255 - fz_mini(s[2] + s[3], 255);
-						d[3] = s[4];
-						s += 5;
-						d += 4;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[4+ss];
+				c = fz_div255(c, a);
+				m = fz_div255(m, a);
+				y = fz_div255(y, a);
+				k = fz_div255(k, a);
+			}
+
+			r = 255 - fz_mini(c + k, 255);
+			g = 255 - fz_mini(m + k, 255);
+			b = 255 - fz_mini(y + k, 255);
+
+			if (da)
+			{
+				*d++ = fz_mul255(r, a);
+				*d++ = fz_mul255(g, a);
+				*d++ = fz_mul255(b, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 255 - fz_mini(s[0] + s[3], 255);
-						d[1] = 255 - fz_mini(s[1] + s[3], 255);
-						d[2] = 255 - fz_mini(s[2] + s[3], 255);
-						d[3] = 255;
-						s += 4;
-						d += 4;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = r;
+				*d++ = g;
+				*d++ = b;
 			}
-		}
-		else
-		{
-			while (h--)
+
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					d[0] = 255 - fz_mini(s[0] + s[3], 255);
-					d[1] = 255 - fz_mini(s[1] + s[3], 255);
-					d[2] = 255 - fz_mini(s[2] + s[3], 255);
-					s += 4;
-					d += 3;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			int i;
-			size_t ww = w;
-			while (ww--)
-			{
-				d[0] = 255 - fz_mini(s[0] + s[3], 255);
-				d[1] = 255 - fz_mini(s[1] + s[3], 255);
-				d[2] = 255 - fz_mini(s[2] + s[3], 255);
 				s += 4;
-				d += 3;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				d[0] = 255 - fz_mini(s[0] + s[3], 255);
-				d[1] = 255 - fz_mini(s[1] + s[3], 255);
-				d[2] = 255 - fz_mini(s[2] + s[3], 255);
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 4 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
@@ -2077,137 +1747,72 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	int da = dst->alpha;
 	ptrdiff_t d_line_inc = dst->stride - w * dn;
 	ptrdiff_t s_line_inc = src->stride - w * sn;
-	unsigned int C,M,Y,K;
-	unsigned char r,g,b;
+	int c, m, y, k, r, g, b;
+	int a = 255;
+	int i;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
 	if (copy_spots && ss != ds)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
-	if (!da && sa)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "integer overflow");
 
-	C = 0;
-	M = 0;
-	Y = 0;
-	K = 0;
-	r = 255;
-	g = 255;
-	b = 255;
-
-	if (d_line_inc == 0 && s_line_inc == 0)
+	while (h--)
 	{
-		w *= h;
-		h = 1;
-	}
-
-	if (ss == 0 && ds == 0)
-	{
-		/* Common, no spots case */
-		if (da)
+		size_t ww = w;
+		while (ww--)
 		{
+			c = s[0];
+			m = s[1];
+			y = s[2];
+			k = s[3];
+
 			if (sa)
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 255 - fz_mini(s[2] + s[3], 255);
-						d[1] = 255 - fz_mini(s[1] + s[3], 255);
-						d[2] = 255 - fz_mini(s[0] + s[3], 255);
-						d[3] = s[4];
-						s += 5;
-						d += 4;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				a = s[4+ss];
+				c = fz_div255(c, a);
+				m = fz_div255(m, a);
+				y = fz_div255(y, a);
+				k = fz_div255(k, a);
+			}
+
+			r = 255 - fz_mini(c + k, 255);
+			g = 255 - fz_mini(m + k, 255);
+			b = 255 - fz_mini(y + k, 255);
+
+			if (da)
+			{
+				*d++ = fz_mul255(b, a);
+				*d++ = fz_mul255(g, a);
+				*d++ = fz_mul255(r, a);
 			}
 			else
 			{
-				while (h--)
-				{
-					size_t ww = w;
-					while (ww--)
-					{
-						d[0] = 255 - fz_mini(s[2] + s[3], 255);
-						d[1] = 255 - fz_mini(s[1] + s[3], 255);
-						d[2] = 255 - fz_mini(s[0] + s[3], 255);
-						d[3] = 255;
-						s += 4;
-						d += 4;
-					}
-					d += d_line_inc;
-					s += s_line_inc;
-				}
+				*d++ = b;
+				*d++ = g;
+				*d++ = r;
 			}
-		}
-		else
-		{
-			/* We shouldn't lose alpha */
-			assert(src->alpha == 0);
 
-			while (h--)
+			if (copy_spots)
 			{
-				size_t ww = w;
-				while (ww--)
-				{
-					d[0] = 255 - fz_mini(s[2] + s[3], 255);
-					d[1] = 255 - fz_mini(s[1] + s[3], 255);
-					d[2] = 255 - fz_mini(s[0] + s[3], 255);
-					s += 4;
-					d += 3;
-				}
-				d += d_line_inc;
-				s += s_line_inc;
-			}
-		}
-	}
-	else if (copy_spots)
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			int i;
-			size_t ww = w;
-			while (ww--)
-			{
-				d[0] = 255 - fz_mini(s[2] + s[3], 255);
-				d[1] = 255 - fz_mini(s[1] + s[3], 255);
-				d[2] = 255 - fz_mini(s[0] + s[3], 255);
 				s += 4;
-				d += 3;
-				for (i=ss; i > 0; i--)
+				for (i=ss; i > 0; --i)
 					*d++ = *s++;
-				if (da)
-					*d++ = sa ? *s++ : 255;
+				s += sa;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
-		}
-	}
-	else
-	{
-		/* Slower, spots capable version */
-		while (h--)
-		{
-			size_t ww = w;
-			while (ww--)
+			else
 			{
-				d[0] = 255 - fz_mini(s[2] + s[3], 255);
-				d[1] = 255 - fz_mini(s[1] + s[3], 255);
-				d[2] = 255 - fz_mini(s[0] + s[3], 255);
-				s += sn;
-				d += dn;
-				if (da)
-					d[-1] = sa ? s[-1] : 255;
+				s += 4 + ss + sa;
+				d += ds;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
+
+			if (da)
+			{
+				*d++ = a;
+			}
 		}
+		d += d_line_inc;
+		s += s_line_inc;
 	}
 }
 
