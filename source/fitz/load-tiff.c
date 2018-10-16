@@ -1134,6 +1134,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
+#if FZ_ENALBE_ICC
 	if (tiff->profile)
 	{
 		fz_buffer *buff = NULL;
@@ -1152,6 +1153,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			tiff->colorspace = NULL;
 		}
 	}
+#endif
 
 	if (tiff->colorspace == NULL)
 	{

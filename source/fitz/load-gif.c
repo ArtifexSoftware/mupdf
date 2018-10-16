@@ -357,6 +357,7 @@ gif_read_pte(fz_context *ctx, struct info *info, const unsigned char *p, const u
 static const unsigned char *
 gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char *end)
 {
+#if FZ_ENABLE_ICC
 	fz_colorspace *cs = NULL;
 	fz_stream *bstm = NULL;
 	fz_pixmap *newpix;
@@ -367,9 +368,10 @@ gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const u
 	fz_var(bstm);
 	fz_var(cs);
 
+	p = gif_read_subblocks(ctx, info, p, end, icc);
+
 	fz_try(ctx)
 	{
-		p = gif_read_subblocks(ctx, info, p, end, icc);
 		bstm = fz_open_buffer(ctx, icc);
 
 		cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, bstm);
@@ -388,10 +390,13 @@ gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const u
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow(ctx);
+		fz_warn(ctx, "cannot read embedded ICC profile");
 	}
 
 	return p;
+#else
+	return gif_read_subblocks(ctx, info, p, end, NULL);
+#endif
 }
 
 /*

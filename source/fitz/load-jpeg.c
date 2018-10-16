@@ -122,6 +122,7 @@ enum {
 
 static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr init_marker)
 {
+#if FZ_ENABLE_ICC
 	const char idseq[] = { 'I', 'C', 'C', '_', 'P', 'R', 'O', 'F', 'I', 'L', 'E', '\0'};
 	jpeg_saved_marker_ptr marker = init_marker;
 	fz_buffer *buf = NULL;
@@ -184,6 +185,9 @@ static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr
 		fz_warn(ctx, "could not load ICC profile in JPEG image");
 
 	return cs;
+#else
+	return NULL;
+#endif
 }
 
 static int extract_exif_resolution(jpeg_saved_marker_ptr marker, int *xres, int *yres)

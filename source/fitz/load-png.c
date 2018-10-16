@@ -344,6 +344,7 @@ png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 static void
 png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
+#if FZ_ENABLE_ICC
 	fz_stream *mstm = NULL, *zstm = NULL;
 	fz_colorspace *cs = NULL;
 	size_t m = fz_mini(80, size);
@@ -373,6 +374,7 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 	}
 	fz_catch(ctx)
 		fz_warn(ctx, "cannot read embedded ICC profile");
+#endif
 }
 
 static void

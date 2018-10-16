@@ -312,6 +312,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			}
 		}
 
+#if FZ_ENABLE_ICC
 		if (!state->cs && colorspace == cJP2_Colorspace_Palette_ICCa)
 		{
 			unsigned char *iccprofile = NULL;
@@ -335,6 +336,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 				fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
 			}
 		}
+#endif
 
 		if (!state->cs)
 		{
@@ -784,6 +786,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		}
 	}
 
+#if FZ_ENABLE_ICC
 	if (!state->cs && jpx->icc_profile_buf)
 	{
 		fz_stream *cstm = NULL;
@@ -801,6 +804,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
 		}
 	}
+#endif
 
 	if (!state->cs)
 	{
