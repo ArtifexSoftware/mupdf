@@ -953,11 +953,10 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1088,11 +1087,10 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1228,11 +1226,10 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1353,11 +1350,10 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1481,11 +1477,10 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots || ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1641,11 +1636,10 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1801,11 +1795,10 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1943,11 +1936,10 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	unsigned char r,g,b;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -2089,11 +2081,10 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	unsigned char r,g,b;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -2236,11 +2227,10 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
-	if ((copy_spots && ss != ds) || (!da && sa))
-	{
-		assert("This should never happen" == NULL);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
-	}
+	if (copy_spots && ss != ds)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "incompatible number of spots when converting pixmap");
+	if (!da && sa)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot drop alpha when converting pixmap");
 
 	if ((int)w < 0 || h < 0)
 		return;
