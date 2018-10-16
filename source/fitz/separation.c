@@ -683,8 +683,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	else
 	{
 		/* Use a standard pixmap converter to convert the process + alpha. */
-		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
-		pc(ctx, dst, src, proof_cs, default_cs, NULL, 0);
+		fz_convert_pixmap_samples(ctx, dst, src, proof_cs, default_cs, NULL, 0);
 
 		/* And handle the spots ourselves. First make a map of what spots go where. */
 		/* We want to set it up so that:

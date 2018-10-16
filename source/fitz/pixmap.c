@@ -626,16 +626,13 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_irect b
 	}
 	else
 	{
-		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dest->colorspace, src->colorspace);
 		fz_pixmap fake_src = *src;
-
 		fake_src.x = b.x0;
 		fake_src.y = b.y0;
 		fake_src.w = w;
 		fake_src.h = y;
 		fake_src.samples = srcp;
-
-		pc(ctx, dest, &fake_src, NULL, default_cs, fz_default_color_params(ctx), 0);
+		fz_convert_pixmap_samples(ctx, dest, &fake_src, NULL, default_cs, fz_default_color_params(ctx), 0);
 	}
 }
 
@@ -873,6 +870,12 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 	return sizeof(*pix) + pix->n * pix->w * pix->h;
 }
 
+void fz_convert_pixmap_samples(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
+{
+	fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
+	pc(ctx, dst, src, prf, default_cs, color_params, copy_spots);
+}
+
 fz_pixmap *
 fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params, int keep_alpha)
 {
@@ -897,8 +900,7 @@ fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorsp
 
 	fz_try(ctx)
 	{
-		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, ds, pix->colorspace);
-		pc(ctx, cvt, pix, prf, default_cs, color_params, 1);
+		fz_convert_pixmap_samples(ctx, cvt, pix, prf, default_cs, color_params, 1);
 	}
 	fz_catch(ctx)
 	{
