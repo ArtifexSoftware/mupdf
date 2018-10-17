@@ -724,10 +724,10 @@ Global
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|x64.ActiveCfg = Release|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|x64.Build.0 = Release|x64
-		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|Win32.ActiveCfg = MementoCommercial|Win32
-		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|Win32.Build.0 = MementoCommercial|Win32
-		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|x64.ActiveCfg = MementoCommercial|x64
-		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|x64.Build.0 = MementoCommercial|x64
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|Win32.ActiveCfg = DebugCommercial|Win32
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|Win32.Build.0 = DebugCommercial|Win32
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|x64.ActiveCfg = DebugCommercial|x64
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoCommercial|x64.Build.0 = DebugCommercial|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoOpenSSL|Win32.ActiveCfg = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoOpenSSL|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoOpenSSL|x64.ActiveCfg = Release|x64
