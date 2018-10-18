@@ -394,6 +394,8 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 		if (pcl->features & HACK__IS_A_LJET4PJL)
 			fz_write_string(ctx, out, "\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n");
 		fz_write_string(ctx, out, "\033E"); /* reset printer */
+		/* Reset the margins */
+		fz_write_string(ctx, out, "\033&10e-180u36Z");
 		/* If the printer supports it, set orientation */
 		if (pcl->features & PCL_HAS_ORIENTATION)
 		{
@@ -1211,7 +1213,7 @@ mono_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int ss, int band_s
 	pcl = &writer->options;
 
 	/* Transfer raster graphics. */
-	for (y = 0; y < h; y++, data += ss)
+	for (y = 0; y < band_height; y++, data += ss)
 	{
 		const unsigned char *end_data = data + line_size;
 
