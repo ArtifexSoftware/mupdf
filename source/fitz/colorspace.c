@@ -2112,6 +2112,7 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	ptrdiff_t s_line_inc = src->stride - w * src->n;
 	int da = dst->alpha;
 	int sa = src->alpha;
+	int alpha = 255;
 
 	fz_colorspace *ss = src->colorspace;
 	fz_colorspace *ds = dst->colorspace;
@@ -2127,6 +2128,10 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 
 	srcn = ss->n;
 	dstn = ds->n;
+
+	/* No spot colors allowed here! */
+	assert(src->s == 0);
+	assert(dst->s == 0);
 
 	assert(src->w == dst->w && src->h == dst->h);
 	assert(src->n == srcn + sa);
@@ -2149,17 +2154,35 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 			size_t ww = w;
 			while (ww--)
 			{
-				srcv[0] = *s++ / 255.0f * 100;
-				srcv[1] = *s++ - 128;
-				srcv[2] = *s++ - 128;
+				if (sa)
+				{
+					alpha = s[4];
+					srcv[0] = fz_div255(s[0], alpha) / 255.0f * 100;
+					srcv[1] = fz_div255(s[1], alpha) - 128;
+					srcv[2] = fz_div255(s[2], alpha) - 128;
+					s += 4;
+				}
+				else
+				{
+					srcv[0] = s[0] / 255.0f * 100;
+					srcv[1] = s[1] - 128;
+					srcv[2] = s[2] - 128;
+					s += 3;
+				}
 
 				cc.convert(ctx, &cc, dstv, srcv);
 
-				for (k = 0; k < dstn; k++)
-					*d++ = dstv[k] * 255;
 				if (da)
-					*d++ = (sa ? *s : 255);
-				s += sa;
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = fz_mul255(dstv[k] * 255, alpha);
+					*d++ = alpha;
+				}
+				else
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = dstv[k] * 255;
+				}
 			}
 			d += d_line_inc;
 			s += s_line_inc;
@@ -2178,16 +2201,33 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 			size_t ww = w;
 			while (ww--)
 			{
-				for (k = 0; k < srcn; k++)
-					srcv[k] = *s++ / 255.0f;
+				if (sa)
+				{
+					alpha = s[srcn];
+					for (k = 0; k < srcn; k++)
+						srcv[k] = fz_div255(s[k], alpha) / 255.0f;
+					s += srcn + 1;
+				}
+				else
+				{
+					for (k = 0; k < srcn; k++)
+						srcv[k] = s[k] / 255.0f;
+					s += srcn;
+				}
 
 				cc.convert(ctx, &cc, dstv, srcv);
 
-				for (k = 0; k < dstn; k++)
-					*d++ = dstv[k] * 255;
 				if (da)
-					*d++ = (sa ? *s : 255);
-				s += sa;
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = fz_mul255(dstv[k] * 255, alpha);
+					*d++ = alpha;
+				}
+				else
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = dstv[k] * 255;
+				}
 			}
 			d += d_line_inc;
 			s += s_line_inc;
@@ -2216,12 +2256,28 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 			size_t ww = w;
 			while (ww--)
 			{
-				i = *s++;
-				for (k = 0; k < dstn; k++)
-					*d++ = lookup[i * dstn + k];
+				if (sa)
+				{
+					alpha = s[1];
+					i = fz_div255(s[0], alpha);
+					s += 2;
+				}
+				else
+				{
+					i = *s++;
+				}
+
 				if (da)
-					*d++ = (sa ? *s : 255);
-				s += sa;
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = fz_mul255(lookup[i * dstn + k], alpha);
+					*d++ = alpha;
+				}
+				else
+				{
+					for (k = 0; k < dstn; k++)
+						*d++ = lookup[i * dstn + k];
+				}
 			}
 			d += d_line_inc;
 			s += s_line_inc;
@@ -2238,7 +2294,7 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 		unsigned char *dold;
 		fz_color_converter cc;
 
-		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
+		lookup = fz_new_hash_table(ctx, 509, srcn+sa, -1, NULL);
 		fz_find_color_converter(ctx, &cc, NULL, ds, ss, color_params);
 
 		fz_try(ctx)
@@ -2248,15 +2304,10 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 				size_t ww = w;
 				while (ww--)
 				{
-					if (*s == *sold && memcmp(sold,s,srcn) == 0)
+					if (*s == *sold && memcmp(sold,s,srcn+sa) == 0)
 					{
 						sold = s;
-						memcpy(d, dold, dstn);
-						d += dstn;
-						s += srcn;
-						if (da)
-							*d++ = (sa ? *s : 255);
-						s += sa;
+						memcpy(d, dold, dstn+da);
 					}
 					else
 					{
@@ -2265,28 +2316,41 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 						color = fz_hash_find(ctx, lookup, s);
 						if (color)
 						{
-							memcpy(d, color, dstn);
-							s += srcn;
-							d += dstn;
-							if (da)
-								*d++ = (sa ? *s : 255);
-							s += sa;
+							memcpy(d, color, dstn+da);
 						}
 						else
 						{
-							for (k = 0; k < srcn; k++)
-								srcv[k] = *s++ / 255.0f;
-							cc.convert(ctx, &cc, dstv, srcv);
-							for (k = 0; k < dstn; k++)
-								*d++ = dstv[k] * 255;
+							if (sa)
+							{
+								alpha = s[srcn];
+								for (k = 0; k < srcn; k++)
+									srcv[k] = fz_div255(s[k], alpha) / 255.0f;
+							}
+							else
+							{
+								for (k = 0; k < srcn; k++)
+									srcv[k] = s[k] / 255.0f;
+							}
 
-							fz_hash_insert(ctx, lookup, s - srcn, d - dstn);
+							cc.convert(ctx, &cc, dstv, srcv);
 
 							if (da)
-								*d++ = (sa ? *s : 255);
-							s += sa;
+							{
+								for (k = 0; k < dstn; k++)
+									d[k] = fz_mul255(dstv[k] * 255, alpha);
+								d[k] = alpha;
+							}
+							else
+							{
+								for (k = 0; k < dstn; k++)
+									d[k] = dstv[k] * 255;
+							}
+
+							fz_hash_insert(ctx, lookup, s, d);
 						}
 					}
+					s += srcn + sa;
+					d += dstn + da;
 				}
 				d += d_line_inc;
 				s += s_line_inc;
