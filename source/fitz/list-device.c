@@ -1750,7 +1750,7 @@ visible:
 				break;
 			case FZ_CMD_BEGIN_MASK:
 				fz_unpack_color_params(&color_params, n.flags);
-				fz_begin_mask(ctx, dev, trans_rect, n.flags, colorspace, color, &color_params);
+				fz_begin_mask(ctx, dev, trans_rect, n.flags & 1, colorspace, color, &color_params);
 				break;
 			case FZ_CMD_END_MASK:
 				fz_end_mask(ctx, dev);
