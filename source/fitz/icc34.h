@@ -134,7 +134,6 @@ authorization from SunSoft Inc.
  */
 #define icAny                           1
 
-
 /*------------------------------------------------------------------------*/
 /*
  * Use this area to translate platform definitions of long
@@ -142,7 +141,6 @@ authorization from SunSoft Inc.
  * typedefs. Signatures are 4 byte quantities.
  *
  */
-
 
 #ifdef PACKAGE_NAME
 /*
@@ -184,7 +182,6 @@ typedef int32_t    icInt64Number[2];
 #elif defined(__sgi)
 #include "sgidefs.h"
 
-
 /*
  * Number definitions
  */
@@ -201,7 +198,6 @@ typedef short           icInt16Number;
 typedef __int32_t       icInt32Number;
 typedef __int32_t       icInt64Number[2];
 
-
 #elif defined(__GNUC__) || defined(__unix__) || defined(__unix)
 
 #include <sys/types.h>
@@ -211,7 +207,6 @@ typedef __int32_t       icInt64Number[2];
 #if defined (__MINGW) || defined(__MINGW32__) || defined(HAVE_STDINT_H)
 #include <stdint.h>
 #endif
-
 
 typedef uint8_t   icUInt8Number;
 typedef uint16_t  icUInt16Number;
@@ -228,13 +223,11 @@ typedef u_int32_t  icUInt64Number[2];
 
 #endif /* defined(__sun) || defined(__hpux) || defined (__MINGW) || defined(__MINGW32__) || defined(HAVE_STDINT_H) */
 
-
 /* Signed numbers */
 typedef int8_t     icInt8Number;
 typedef int16_t    icInt16Number;
 typedef int32_t    icInt32Number;
 typedef int32_t    icInt64Number[2];
-
 
 #else /* default definitions */
 
@@ -254,7 +247,6 @@ typedef short           icInt16Number;
 typedef long            icInt32Number;
 typedef long            icInt64Number[2];
 
-
 #endif  /* default defs */
 
 /* Base types */
@@ -262,7 +254,6 @@ typedef long            icInt64Number[2];
 typedef icInt32Number    icSignature;
 typedef icInt32Number    icS15Fixed16Number;
 typedef icUInt32Number   icU16Fixed16Number;
-
 
 /*------------------------------------------------------------------------*/
 /* public tags and sizes */
@@ -490,7 +481,6 @@ typedef enum {
 	icIlluminantF8                      = 0x00000008L,
 	icMaxEnumIluminant                  = 0xFFFFFFFFL
 } icIlluminant;
-
 
 /*------------------------------------------------------------------------*/
 /*

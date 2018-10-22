@@ -439,7 +439,6 @@ file_level_headers(fz_context *ctx)
 		fz_parse_pclm_options(ctx, &opts, "compression=flate");
 		bander = fz_new_pclm_band_writer(ctx, out, &opts);
 	}
-
 }
 
 static void
@@ -458,7 +457,6 @@ file_level_trailers(fz_context *ctx)
 
 	if (output_format == OUT_PCLM)
 		fz_drop_band_writer(ctx, bander);
-
 }
 
 static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_matrix ctm, fz_rect tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
@@ -2045,7 +2043,6 @@ int mudraw_main(int argc, char **argv)
 	}
 
 	fz_drop_context(ctx);
-
 
 #ifndef DISABLE_MUTHREADS
 	fin_mudraw_locks();

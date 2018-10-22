@@ -536,7 +536,6 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 			colorbv[i] = colorfv[i] * 255;
 		for (; i < n; i++)
 			colorbv[i] = 0;
-
 	}
 	colorbv[i] = alpha * 255;
 
@@ -2465,7 +2464,6 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	{
 		fz_rethrow(ctx);
 	}
-
 }
 
 typedef struct

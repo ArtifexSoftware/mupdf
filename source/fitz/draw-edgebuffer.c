@@ -1435,7 +1435,6 @@ static void mark_line_app(fz_context *ctx, fz_edgebuffer *eb, fixed sx, fixed sy
 		t = sy, sy = ey, ey = t;
 	}
 	do_mark_line_app(ctx, eb, sx, sy, ex, ey, rev);
-
 }
 
 static void fz_insert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, float fsx, float fsy, float fex, float fey, int rev)

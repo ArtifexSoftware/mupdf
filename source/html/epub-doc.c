@@ -478,7 +478,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
 }
 
 static fz_outline *

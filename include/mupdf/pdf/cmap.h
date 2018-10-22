@@ -61,7 +61,6 @@ struct pdf_cmap_s
 
 	int tlen, tcap, ttop;
 	cmap_splay *tree;
-
 };
 
 pdf_cmap *pdf_new_cmap(fz_context *ctx);

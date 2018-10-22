@@ -1012,7 +1012,6 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 	case UCDN_SCRIPT_NUSHU: return load_noto_try(ctx, "Nushu");
 	case UCDN_SCRIPT_SOYOMBO: return load_noto_try(ctx, "Soyombo");
 	case UCDN_SCRIPT_ZANABAZAR_SQUARE: return load_noto_try(ctx, "ZanabazarSquare");
-
 	}
 	return NULL;
 }
@@ -3210,7 +3209,6 @@ FUN(NativeDevice_endLayer)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
-
 
 JNIEXPORT void JNICALL
 FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean luminosity, jobject jcs, jfloatArray jcolor, jint jcp)

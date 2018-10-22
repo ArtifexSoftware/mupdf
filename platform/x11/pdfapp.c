@@ -252,7 +252,6 @@ static int make_fake_doc(pdfapp_t *app)
 
 		pdf = pdf_create_document(ctx);
 
-
 		contents = fz_new_buffer(ctx, 100);
 		fz_append_printf(ctx, contents, "1 0 0 RG %g w 0 0 m %g %g l 0 %g m %g 0 l s\n",
 			fz_min(mediabox.x1, mediabox.y1) / 20,

@@ -59,7 +59,6 @@ static char lorem[] =
 "pulvinar at. Proin sed arcu vel odio tempus lobortis sed posuere ipsum. Ut "
 "feugiat pellentesque tortor nec ornare.\n";
 
-
 static void usage(void)
 {
 	fprintf(stderr, "usage: mjsgen [-p password] input.pdf output.mjs\n");

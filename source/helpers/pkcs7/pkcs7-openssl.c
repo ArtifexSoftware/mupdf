@@ -268,7 +268,6 @@ static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 	if (!p7bio)
 		goto exit;
 
-
 	/* We now have to 'read' from p7bio to calculate digests etc. */
 	while (BIO_read(p7bio, readbuf, sizeof(readbuf)) > 0)
 		;

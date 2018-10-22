@@ -7,7 +7,6 @@
 #include "mupdf/helpers/pkcs7-openssl.h"
 #include <string.h>
 
-
 static void pdf_format_designated_name(pdf_pkcs7_designated_name *name, char *buf, int buflen)
 {
 	int i, n;

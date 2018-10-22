@@ -173,7 +173,6 @@ void ui_draw_bevel_imp(fz_irect area, unsigned ot, unsigned it, unsigned ib, uns
 	glRectf(area.x0+1, area.y1-2, area.x1-2, area.y1-1);
 }
 
-
 void ui_draw_bevel(fz_irect area, int depressed)
 {
 	if (depressed)
@@ -872,7 +871,6 @@ void ui_splitter(int *x, int min, int max, enum side side)
 		glColorHex(UI_COLOR_BEVEL_1);
 		glRectf(area.x0+3, area.y0, area.x0+4, area.y1);
 	}
-
 }
 
 void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max)

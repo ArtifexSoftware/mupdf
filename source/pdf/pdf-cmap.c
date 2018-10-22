@@ -94,7 +94,6 @@ pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned in
 	cmap->codespace_len ++;
 }
 
-
 struct cmap_splay_s {
 	unsigned int low;
 	unsigned int high;
@@ -510,8 +509,6 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 			return;
 		}
 	}
-
-
 
 	tree = cmap->tree;
 

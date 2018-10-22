@@ -33,5 +33,4 @@ void fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
 */
 fz_band_writer *fz_new_tga_band_writer(fz_context *ctx, fz_output *out, int is_bgr);
 
-
 #endif

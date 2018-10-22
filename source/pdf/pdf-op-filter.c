@@ -567,7 +567,6 @@ adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
 	return skip_dist * 1000;
 }
 
-
 static void
 filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 {
@@ -640,7 +639,6 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 					skip.y += tadj;
 					p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 				}
-
 			}
 		}
 		if (skip.x != 0 || skip.y != 0)

@@ -273,7 +273,6 @@ static void *ft_realloc(FT_Memory memory, long cur_size, long new_size, void *bl
 	return fz_resize_array_no_throw(ctx, block, 1, new_size);
 }
 
-
 void fz_new_font_context(fz_context *ctx)
 {
 	ctx->font = fz_malloc_struct(ctx, fz_font_context);

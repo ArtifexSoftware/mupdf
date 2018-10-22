@@ -223,7 +223,6 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 				fz_colorspace_name_colorant(ctx, cs, i, pdf_to_name(ctx, pdf_array_get(ctx, nameobj, i)));
 		else
 			fz_colorspace_name_colorant(ctx, cs, 0, pdf_to_name(ctx, nameobj));
-
 	}
 	fz_always(ctx)
 		fz_drop_colorspace(ctx, base);

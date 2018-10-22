@@ -53,7 +53,6 @@ And thus:
 
 as required.
 
-
 Alpha blending on top of compositing:
 =====================================
 
@@ -461,7 +460,6 @@ fz_blend_nonseparable_gray(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTR
 				}
 				if (bal)
 					bp[n] = ba + sa - saba;
-
 			}
 		}
 		sp += n + sal;

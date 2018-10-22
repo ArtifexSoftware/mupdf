@@ -1723,7 +1723,6 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	{
 		fz_rethrow(ctx);
 	}
-
 }
 
 static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
@@ -2928,7 +2927,6 @@ change_identity(fz_context *ctx, pdf_document *doc)
 	fz_memrnd(ctx, rnd, 16);
 	str = pdf_new_string(ctx, (char *)rnd, 16);
 	pdf_array_put_drop(ctx, identity, 1, str);
-
 }
 
 static void

@@ -1721,7 +1721,6 @@ fz_paint_affine_lerp_spots(int da, int sa, int fa, int fb, int dn, int sn, int a
 }
 #endif /* FZ_ENABLE_SPOT_RENDERING */
 
-
 #if FZ_PLOTTERS_RGB
 static void
 paint_affine_lerp_da_sa_g2rgb(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn1, int sn1, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint * FZ_RESTRICT eop)

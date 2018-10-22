@@ -45,8 +45,6 @@
 	special case code in the edgebuffer based rasterizer to cope with this.
 */
 
-
-
 static void
 line(fz_context *ctx, fz_rasterizer *rast, fz_matrix ctm, float x0, float y0, float x1, float y1)
 {
@@ -838,7 +836,6 @@ fz_stroke_closepath(fz_context *ctx, sctx *s)
 
 	fz_gap_rasterizer(ctx, s->rast);
 }
-
 
 static void
 fz_stroke_bezier(fz_context *ctx, struct sctx *s,

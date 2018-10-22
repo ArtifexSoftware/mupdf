@@ -4,7 +4,6 @@
 
 #include <string.h>
 
-
 void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int hexdigest_offset, int hexdigest_length, pdf_pkcs7_signer *signer)
 {
 	fz_stream *stm = NULL;

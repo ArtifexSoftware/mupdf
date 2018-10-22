@@ -70,7 +70,6 @@ typedef void (fz_output_drop_fn)(fz_context *ctx, void *state);
 */
 typedef fz_stream *(fz_stream_from_output_fn)(fz_context *ctx, void *state);
 
-
 struct fz_output_s
 {
 	void *state;

@@ -223,19 +223,15 @@ static void extractobject(int num)
 	fz_try(ctx)
 	{
 		ref = pdf_new_indirect(ctx, doc, num, 0);
-
 		if (isimage(ref))
 			saveimage(ref);
 		if (isfontdesc(ref))
 			savefont(ref);
-
 	}
 	fz_always(ctx)
 		pdf_drop_obj(ctx, ref);
 	fz_catch(ctx)
-	{
 		fz_warn(ctx, "ignoring object %d", num);
-	}
 }
 
 int pdfextract_main(int argc, char **argv)

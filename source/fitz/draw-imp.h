@@ -54,7 +54,6 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_rasterizer_aa_bits(ras) 4
 #define fz_rasterizer_aa_text_bits(ras) 4
 
-
 #elif AA_BITS > 0
 #define AA_SCALE(s, x) ((x * 255) >> 2)
 #define fz_aa_hscale 2
@@ -426,7 +425,6 @@ float fz_rasterizer_graphics_min_line_width(fz_rasterizer *ras);
 	min_line_width: The minimum line width to use (in pixels).
 */
 void fz_set_rasterizer_graphics_min_line_width(fz_context *ctx, fz_aa_context *aa, float min_line_width);
-
 
 fz_rasterizer *fz_new_gel(fz_context *ctx);
 

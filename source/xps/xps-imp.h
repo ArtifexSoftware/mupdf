@@ -83,7 +83,6 @@ void xps_read_page_list(fz_context *ctx, xps_document *doc);
 void xps_print_page_list(fz_context *ctx, xps_document *doc);
 void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
-
 /*
  * Images, fonts, and colorspaces.
  */

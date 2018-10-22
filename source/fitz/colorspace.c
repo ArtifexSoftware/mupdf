@@ -3480,7 +3480,6 @@ fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc)
 	if (link)
 		fz_drop_icclink(ctx, link);
 	cc->link = NULL;
-
 }
 
 void

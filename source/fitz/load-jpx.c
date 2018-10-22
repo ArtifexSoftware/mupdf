@@ -870,7 +870,6 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 								samples[yy * stride + xx * comps + k] = v;
 						}
 					}
-
 				}
 			}
 		}

@@ -318,7 +318,6 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area
 		xps_drop_resource_dictionary(ctx, doc, new_dict);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
 }
 
 void

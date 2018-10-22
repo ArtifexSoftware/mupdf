@@ -117,7 +117,6 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
-
 fz_display_list *
 fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h)
 {
