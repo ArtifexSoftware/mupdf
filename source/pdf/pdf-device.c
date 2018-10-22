@@ -940,6 +940,7 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, smask);
+		pdf_drop_obj(ctx, egs);
 	}
 	fz_catch(ctx)
 	{
@@ -959,14 +960,13 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
-	fz_buffer *buf = fz_keep_buffer(ctx, gs->buf);
 	pdf_obj *form_ref = (pdf_obj *)gs->on_pop_arg;
 
 	/* Here we do part of the pop, but not all of it. */
 	pdf_dev_end_text(ctx, pdev);
-	fz_append_string(ctx, buf, "Q\n");
-	pdf_update_stream(ctx, doc, form_ref, buf, 0);
-	fz_drop_buffer(ctx, buf);
+	fz_append_string(ctx, gs->buf, "Q\n");
+	pdf_update_stream(ctx, doc, form_ref, gs->buf, 0);
+	fz_drop_buffer(ctx, gs->buf);
 	gs->buf = fz_keep_buffer(ctx, gs[-1].buf);
 	gs->on_pop_arg = NULL;
 	pdf_drop_obj(ctx, form_ref);
