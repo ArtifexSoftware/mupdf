@@ -36,9 +36,17 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 	int i;
 
 	/* Copy as few key/value pairs as we can. Do not include items that reference other pages. */
-	static pdf_obj * const copy_list[] = { PDF_NAME(Contents), PDF_NAME(Resources),
-		PDF_NAME(MediaBox), PDF_NAME(CropBox), PDF_NAME(BleedBox), PDF_NAME(TrimBox), PDF_NAME(ArtBox),
-		PDF_NAME(Rotate), PDF_NAME(UserUnit) };
+	static pdf_obj * const copy_list[] = {
+		PDF_NAME(Contents),
+		PDF_NAME(Resources),
+		PDF_NAME(MediaBox),
+		PDF_NAME(CropBox),
+		PDF_NAME(BleedBox),
+		PDF_NAME(TrimBox),
+		PDF_NAME(ArtBox),
+		PDF_NAME(Rotate),
+		PDF_NAME(UserUnit)
+	};
 
 	fz_var(ref);
 	fz_var(page_dict);
