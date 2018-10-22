@@ -912,8 +912,6 @@ color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int b
 	int w = writer->super.w;
 	int h = writer->super.h;
 	int xres = writer->super.xres;
-	int yres = writer->super.yres;
-	int y = 0;
 	int cw;
 	int x;
 
@@ -967,16 +965,12 @@ color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int b
 static void
 color_pcl_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 {
-	color_pcl_band_writer *writer = (color_pcl_band_writer *)writer_;
-	fz_output *out = writer->super.out;
-
 }
 
 static void
 color_pcl_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 {
 	color_pcl_band_writer *writer = (color_pcl_band_writer *)writer_;
-
 	fz_free(ctx, writer->linebuf);
 }
 
@@ -1189,7 +1183,6 @@ mono_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int ss, int band_s
 	mono_pcl_band_writer *writer = (mono_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;
 	int w = writer->super.w;
-	int h = writer->super.h;
 	int yres = writer->super.yres;
 	const unsigned char *out_data;
 	int y, rmask, line_size;
