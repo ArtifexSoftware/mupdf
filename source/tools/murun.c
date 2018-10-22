@@ -3002,23 +3002,26 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 	}
 
 	if (js_isarray(J, idx)) {
-		pdf_obj *val;
 		int i, n = js_getlength(J, idx);
+		pdf_obj *val;
 		fz_try(ctx)
 			obj = pdf_new_array(ctx, pdf, n);
 		fz_catch(ctx)
 			rethrow(J);
+		if (js_try(J)) {
+			pdf_drop_obj(ctx, obj);
+			js_throw(J);
+		}
 		for (i = 0; i < n; ++i) {
 			js_getindex(J, idx, i);
 			val = ffi_toobj(J, pdf, -1);
 			fz_try(ctx)
-				pdf_array_push(ctx, obj, val);
-			fz_always(ctx)
-				pdf_drop_obj(ctx, val);
+				pdf_array_push_drop(ctx, obj, val);
 			fz_catch(ctx)
 				rethrow(J);
 			js_pop(J, 1);
 		}
+		js_endtry(J);
 		return obj;
 	}
 
@@ -3029,19 +3032,22 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 			obj = pdf_new_dict(ctx, pdf, 0);
 		fz_catch(ctx)
 			rethrow(J);
+		if (js_try(J)) {
+			pdf_drop_obj(ctx, obj);
+			js_throw(J);
+		}
 		js_pushiterator(J, idx, 1);
 		while ((key = js_nextiterator(J, -1))) {
 			js_getproperty(J, idx, key);
 			val = ffi_toobj(J, pdf, -1);
 			fz_try(ctx)
-				pdf_dict_puts(ctx, obj, key, val);
-			fz_always(ctx)
-				pdf_drop_obj(ctx, val);
+				pdf_dict_puts_drop(ctx, obj, key, val);
 			fz_catch(ctx)
 				rethrow(J);
 			js_pop(J, 1);
 		}
 		js_pop(J, 1);
+		js_endtry(J);
 		return obj;
 	}
 
