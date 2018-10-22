@@ -734,9 +734,13 @@ pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
+
+	pdf_dev_end_text(ctx, pdev);
+	pdf_dev_push(ctx, pdev);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 0);
+		pdf_dev_begin_text(ctx, pdev, span->trm, 7);
 		pdf_dev_ctm(ctx, pdev, ctm);
 		pdf_dev_font(ctx, pdev, span->font);
 		pdf_dev_text_span(ctx, pdev, span);
@@ -748,9 +752,13 @@ pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
+
+	pdf_dev_end_text(ctx, pdev);
+	pdf_dev_push(ctx, pdev);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 0);
+		pdf_dev_begin_text(ctx, pdev, span->trm, 7);
 		pdf_dev_font(ctx, pdev, span->font);
 		pdf_dev_ctm(ctx, pdev, ctm);
 		pdf_dev_text_span(ctx, pdev, span);
