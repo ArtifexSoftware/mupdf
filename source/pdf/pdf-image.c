@@ -506,6 +506,7 @@ raw_or_unknown_compression:
 					pdf_array_push_string(ctx, arr, (char *) lookup, basen * (high + 1));
 				}
 				break;
+			case FZ_COLORSPACE_NONE:
 			case FZ_COLORSPACE_GRAY:
 				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(DeviceGray));
 				break;
