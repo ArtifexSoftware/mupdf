@@ -1132,7 +1132,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 		dev->max_gstates = 1;
 
 		if (!fz_is_identity(topctm))
-			fz_append_printf(ctx, buf, "%M cm\n", topctm);
+			fz_append_printf(ctx, buf, "%M cm\n", &topctm);
 	}
 	fz_catch(ctx)
 	{
