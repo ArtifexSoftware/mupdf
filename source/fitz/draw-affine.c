@@ -5,13 +5,20 @@
 #include <float.h>
 #include <assert.h>
 
+/* Number of fraction bits for fixed point math */
+#define PREC 16
+#define MASK ((1<<PREC)-1)
+#define ONE (1<<PREC)
+#define HALF (1<<(PREC-1))
+#define LIMIT (1<<(31-PREC))
+
 typedef unsigned char byte;
 
 typedef void (paintfn_t)(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn, int sn, int alpha, const byte * FZ_RESTRICT color, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp, const fz_overprint *eop);
 
 static inline int lerp(int a, int b, int t)
 {
-	return a + (((b - a) * t) >> 16);
+	return a + (((b - a) * t) >> PREC);
 }
 
 static inline int bilerp(int a, int b, int c, int d, int u, int v)
@@ -23,8 +30,8 @@ static inline const byte *sample_nearest(const byte *s, int w, int h, int str, i
 {
 	if (u < 0) u = 0;
 	if (v < 0) v = 0;
-	if (u >= (w>>16)) u = (w>>16) - 1;
-	if (v >= (h>>16)) v = (h>>16) - 1;
+	if (u >= (w>>PREC)) u = (w>>PREC) - 1;
+	if (v >= (h>>PREC)) v = (h>>PREC) - 1;
 	return s + v * str + u * n;
 }
 
@@ -37,12 +44,12 @@ template_affine_alpha_N_lerp(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, sn1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi+1);
@@ -85,12 +92,12 @@ template_affine_alpha_N_lerp_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_R
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, sn1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi+1);
@@ -136,12 +143,12 @@ template_affine_alpha_g2rgb_lerp(byte * FZ_RESTRICT dp, int da, const byte * FZ_
 {
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, 1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi+1);
@@ -179,14 +186,14 @@ static inline void
 template_affine_alpha_N_near_fa0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn1, int sn1, int alpha, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
 	int k;
-	int ui = u >> 16;
+	int ui = u >> PREC;
 	TRACK_FN();
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (sn1+sa);
 	do
 	{
-		int vi = v >> 16;
+		int vi = v >> PREC;
 		if (vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss);
@@ -221,13 +228,13 @@ static inline void
 template_affine_alpha_N_near_fb0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn1, int sn1, int alpha, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
 	int k;
-	int vi = v >> 16;
+	int vi = v >> PREC;
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
 	do
 	{
-		int ui = u >> 16;
+		int ui = u >> PREC;
 		if (ui >= 0 && ui < sw)
 		{
 			const byte *sample = sp + (ui * (sn1+sa));
@@ -265,8 +272,8 @@ template_affine_alpha_N_near(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (sn1+sa));
@@ -305,8 +312,8 @@ template_affine_alpha_N_near_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_R
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (sn1+sa));
@@ -343,13 +350,13 @@ template_affine_alpha_N_near_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_R
 static inline void
 template_affine_alpha_g2rgb_near_fa0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int alpha, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
-	int ui = u >> 16;
+	int ui = u >> PREC;
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (1+sa);
 	do
 	{
-		int vi = v >> 16;
+		int vi = v >> PREC;
 		if (vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss);
@@ -383,13 +390,13 @@ template_affine_alpha_g2rgb_near_fa0(byte * FZ_RESTRICT dp, int da, const byte *
 static inline void
 template_affine_alpha_g2rgb_near_fb0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int alpha, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
-	int vi = v >> 16;
+	int vi = v >> PREC;
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
 	do
 	{
-		int ui = u >> 16;
+		int ui = u >> PREC;
 		if (ui >= 0 && ui < sw)
 		{
 			const byte *sample = sp + (ui * (1+sa));
@@ -425,8 +432,8 @@ template_affine_alpha_g2rgb_near(byte * FZ_RESTRICT dp, int da, const byte * FZ_
 {
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (1+sa));
@@ -466,12 +473,12 @@ template_affine_N_lerp(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT s
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, sn1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi+1);
@@ -513,12 +520,12 @@ template_affine_N_lerp_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, sn1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, sn1+sa, ui, vi+1);
@@ -560,12 +567,12 @@ template_affine_solid_g2rgb_lerp(byte * FZ_RESTRICT dp, int da, const byte * FZ_
 {
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, 1+sa, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi+1);
@@ -601,13 +608,13 @@ static inline void
 template_affine_N_near_fa0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn1, int sn1, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
 	int k;
-	int ui = u >> 16;
+	int ui = u >> PREC;
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui*(sn1+sa);
 	do
 	{
-		int vi = v >> 16;
+		int vi = v >> PREC;
 		if (vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss);
@@ -670,13 +677,13 @@ static inline void
 template_affine_N_near_fb0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int dn1, int sn1, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
 	int k;
-	int vi = v >> 16;
+	int vi = v >> PREC;
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
 	do
 	{
-		int ui = u >> 16;
+		int ui = u >> PREC;
 		if (ui >= 0 && ui < sw)
 		{
 			const byte *sample = sp + (ui * (sn1+sa));
@@ -742,8 +749,8 @@ template_affine_N_near(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT s
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (sn1+sa));
@@ -810,8 +817,8 @@ template_affine_N_near_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (sn1+sa));
@@ -874,13 +881,13 @@ template_affine_N_near_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRIC
 static inline void
 template_affine_solid_g2rgb_near_fa0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
-	int ui = u >> 16;
+	int ui = u >> PREC;
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (1+sa);
 	do
 	{
-		int vi = v >> 16;
+		int vi = v >> PREC;
 		if (vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss);
@@ -928,13 +935,13 @@ template_affine_solid_g2rgb_near_fa0(byte * FZ_RESTRICT dp, int da, const byte *
 static inline void
 template_affine_solid_g2rgb_near_fb0(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, byte * FZ_RESTRICT hp, byte * FZ_RESTRICT gp)
 {
-	int vi = v >> 16;
+	int vi = v >> PREC;
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
 	do
 	{
-		int ui = u >> 16;
+		int ui = u >> PREC;
 		if (ui >= 0 && ui < sw)
 		{
 			const byte *sample = sp + (ui * (1+sa));
@@ -984,8 +991,8 @@ template_affine_solid_g2rgb_near(byte * FZ_RESTRICT dp, int da, const byte * FZ_
 {
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			const byte *sample = sp + (vi * ss) + (ui * (1+sa));
@@ -1041,12 +1048,12 @@ template_affine_color_N_lerp(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, 1, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, 1, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1, ui, vi+1);
@@ -1084,12 +1091,12 @@ template_affine_color_N_lerp_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_R
 
 	do
 	{
-		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
+		if (u + HALF >= 0 && u + ONE < sw && v + HALF >= 0 && v + ONE < sh)
 		{
-			int ui = u >> 16;
-			int vi = v >> 16;
-			int uf = u & 0xffff;
-			int vf = v & 0xffff;
+			int ui = u >> PREC;
+			int vi = v >> PREC;
+			int uf = u & MASK;
+			int vf = v & MASK;
 			const byte *a = sample_nearest(sp, sw, sh, ss, 1, ui, vi);
 			const byte *b = sample_nearest(sp, sw, sh, ss, 1, ui+1, vi);
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1, ui, vi+1);
@@ -1128,8 +1135,8 @@ template_affine_color_N_near(byte * FZ_RESTRICT dp, int da, const byte * FZ_REST
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			int ma = sp[vi * ss + ui];
@@ -1165,8 +1172,8 @@ template_affine_color_N_near_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_R
 
 	do
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
+		int ui = u >> PREC;
+		int vi = v >> PREC;
 		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
 		{
 			int ma = sp[vi * ss + ui];
@@ -3946,12 +3953,12 @@ fz_paint_image_imp(fz_context *ctx,
 	ctm = fz_pre_scale(ctm, 1.0f / img->w, 1.0f / img->h);
 	ctm = fz_invert_matrix(ctm);
 
-	fa = (int)(ctm.a *= 65536.0f);
-	fb = (int)(ctm.b *= 65536.0f);
-	fc = (int)(ctm.c *= 65536.0f);
-	fd = (int)(ctm.d *= 65536.0f);
-	ctm.e *= 65536.0f;
-	ctm.f *= 65536.0f;
+	fa = (int)(ctm.a *= ONE);
+	fb = (int)(ctm.b *= ONE);
+	fc = (int)(ctm.c *= ONE);
+	fd = (int)(ctm.d *= ONE);
+	ctm.e *= ONE;
+	ctm.f *= ONE;
 
 	/* Calculate initial texture positions. Do a half step to start. */
 	/* Bug 693021: Keep calculation in float for as long as possible to
@@ -3989,8 +3996,8 @@ fz_paint_image_imp(fz_context *ctx,
 		gp = NULL;
 	}
 
-	/* image size overflows 16.16 fixed point math */
-	if (sw >= 32768 || sh >= 32768)
+	/* image size overflows fixed point math */
+	if (sw >= LIMIT || sh >= LIMIT)
 	{
 		fz_warn(ctx, "image too large for fixed point math: %d x %d", sw, sh);
 		return;
@@ -4061,10 +4068,10 @@ fz_paint_image_imp(fz_context *ctx,
 
 	if (dolerp)
 	{
-		u -= 32768;
-		v -= 32768;
-		sw = (sw<<16) + 32768;
-		sh = (sh<<16) + 32768;
+		u -= HALF;
+		v -= HALF;
+		sw = (sw<<PREC) + HALF;
+		sh = (sh<<PREC) + HALF;
 	}
 
 	while (h--)
