@@ -3867,7 +3867,18 @@ fz_gridfit_matrix(int as_tiled, fz_matrix m)
 /* Draw an image with an affine transform on destination */
 
 static void
-fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, const byte *color, int alpha, int lerp_allowed, int as_tiled, const fz_overprint *eop)
+fz_paint_image_imp(fz_context *ctx,
+	fz_pixmap *dst,
+	const fz_irect *scissor,
+	fz_pixmap *shape,
+	fz_pixmap *group_alpha,
+	fz_pixmap *img,
+	fz_matrix ctm,
+	const byte *color,
+	int alpha,
+	int lerp_allowed,
+	int as_tiled,
+	const fz_overprint *eop)
 {
 	byte *dp, *sp, *hp, *gp;
 	int u, v, fa, fb, fc, fd;
@@ -3978,6 +3989,13 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 		gp = NULL;
 	}
 
+	/* image size overflows 16.16 fixed point math */
+	if (sw >= 32768 || sh >= 32768)
+	{
+		fz_warn(ctx, "image too large for fixed point math: %d x %d", sw, sh);
+		return;
+	}
+
 	/* TODO: if (fb == 0 && fa == 1) call fz_paint_span */
 
 	/* Sometimes we can get an alpha only input to be
@@ -4043,10 +4061,6 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 
 	if (dolerp)
 	{
-		/* image size overflows 16.16 fixed point math */
-		if (sw >= 32768 || sh >= 32768)
-			return;
-
 		u -= 32768;
 		v -= 32768;
 		sw = (sw<<16) + 32768;
@@ -4065,14 +4079,14 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 }
 
 void
-fz_paint_image_with_color(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, const byte *color, int lerp_allowed, int as_tiled, const fz_overprint *eop)
+fz_paint_image_with_color(fz_context *ctx, fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, fz_pixmap *img, fz_matrix ctm, const byte *color, int lerp_allowed, int as_tiled, const fz_overprint *eop)
 {
 	assert(img->n == 1);
-	fz_paint_image_imp(dst, scissor, shape, group_alpha, img, ctm, color, 255, lerp_allowed, as_tiled, eop);
+	fz_paint_image_imp(ctx, dst, scissor, shape, group_alpha, img, ctm, color, 255, lerp_allowed, as_tiled, eop);
 }
 
 void
-fz_paint_image(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, const fz_pixmap *img, fz_matrix ctm, int alpha, int lerp_allowed, int as_tiled, const fz_overprint *eop)
+fz_paint_image(fz_context *ctx, fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *group_alpha, fz_pixmap *img, fz_matrix ctm, int alpha, int lerp_allowed, int as_tiled, const fz_overprint *eop)
 {
-	fz_paint_image_imp(dst, scissor, shape, group_alpha, img, ctm, NULL, alpha, lerp_allowed, as_tiled, eop);
+	fz_paint_image_imp(ctx, dst, scissor, shape, group_alpha, img, ctm, NULL, alpha, lerp_allowed, as_tiled, eop);
 }

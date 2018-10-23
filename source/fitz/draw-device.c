@@ -1036,7 +1036,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 					fz_matrix mat;
 					mat.a = pixmap->w; mat.b = mat.c = 0; mat.d = pixmap->h;
 					mat.e = x + pixmap->x; mat.f = y + pixmap->y;
-					fz_paint_image(state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
+					fz_paint_image(ctx, state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
 				}
 				fz_drop_glyph(ctx, glyph);
 			}
@@ -1815,7 +1815,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, fz_matrix 
 				pixmap = convert_pixmap_for_painting(ctx, pixmap, model, src_cs, state->dest, color_params, dev, &eop);
 		}
 
-		fz_paint_image(state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
+		fz_paint_image(ctx, state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
 	}
 	fz_always(ctx)
 	{
@@ -1925,7 +1925,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 
 		eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 
-		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
+		fz_paint_image_with_color(ctx, state->dest, &state->scissor, state->shape, state->group_alpha, pixmap, local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
 
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			fz_knockout_end(ctx, dev);
@@ -2030,7 +2030,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 		if (state[1].group_alpha)
 			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
 #endif
-		fz_paint_image(state[1].mask, &bbox, state[1].shape, state[1].group_alpha, pixmap, local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
+		fz_paint_image(ctx, state[1].mask, &bbox, state[1].shape, state[1].group_alpha, pixmap, local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(ctx, " to get ", state[1].mask);
 		if (state[1].shape)
