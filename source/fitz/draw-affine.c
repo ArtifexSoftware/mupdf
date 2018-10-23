@@ -6,7 +6,7 @@
 #include <assert.h>
 
 /* Number of fraction bits for fixed point math */
-#define PREC 16
+#define PREC 14
 #define MASK ((1<<PREC)-1)
 #define ONE (1<<PREC)
 #define HALF (1<<(PREC-1))
