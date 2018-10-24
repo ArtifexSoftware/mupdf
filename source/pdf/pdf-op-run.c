@@ -2199,21 +2199,30 @@ static void pdf_run_END(fz_context *ctx, pdf_processor *proc)
 }
 
 static void
-pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
+pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
 	while (pr->gtop)
 		pdf_grestore(ctx, pr);
 
-	pdf_drop_material(ctx, &pr->gstate[0].fill);
-	pdf_drop_material(ctx, &pr->gstate[0].stroke);
-	pdf_drop_font(ctx, pr->gstate[0].text.font);
-	pdf_drop_obj(ctx, pr->gstate[0].softmask);
-	fz_drop_stroke_state(ctx, pr->gstate[0].stroke_state);
-
-	while (pr->gstate[0].clip_depth--)
+	while (pr->gstate[0].clip_depth)
+	{
 		fz_pop_clip(ctx, pr->dev);
+		pr->gstate[0].clip_depth--;
+	}
+}
+
+static void
+pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_run_processor *pr = (pdf_run_processor *)proc;
+
+	while (pr->gtop >= 0)
+	{
+		pdf_drop_gstate(ctx, &pr->gstate[pr->gtop]);
+		pr->gtop--;
+	}
 
 	fz_drop_path(ctx, pr->path);
 	fz_drop_text(ctx, pr->tos.text);
@@ -2230,6 +2239,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char
 	{
 		proc->super.usage = usage;
 
+		proc->super.close_processor = pdf_close_run_processor;
 		proc->super.drop_processor = pdf_drop_run_processor;
 
 		/* general graphics state */
