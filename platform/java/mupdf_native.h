@@ -456,7 +456,7 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toStructuredTe
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    search
- * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Rect;
+ * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_DisplayList_search
   (JNIEnv *, jobject, jstring);
@@ -2441,7 +2441,7 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toStructuredText
 /*
  * Class:     com_artifex_mupdf_fitz_Page
  * Method:    search
- * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Rect;
+ * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Page_search
   (JNIEnv *, jobject, jstring);

@@ -24,6 +24,14 @@ public class Rect
 		this.y1 = y1;
 	}
 
+	public Rect(Quad q)
+	{
+		this.x0 = q.ll_x;
+		this.y0 = q.ll_y;
+		this.x1 = q.ur_x;
+		this.y1 = q.ur_y;
+	}
+
 	public Rect(Rect r)
 	{
 		this(r.x0, r.y0, r.x1, r.y1);

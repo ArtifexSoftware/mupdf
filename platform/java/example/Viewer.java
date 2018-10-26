@@ -32,7 +32,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected TextField searchField;
 	protected Button searchPrevButton, searchNextButton;
 	protected int searchHitPage = -1;
-	protected Rect searchHits[];
+	protected Quad searchHits[];
 
 	protected List outlineList;
 	protected Vector<Outline> flatOutline;
@@ -319,7 +319,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		int oldPageNumber = pageNumber;
 		int oldLayoutEm = layoutEm;
 		int oldZoomLevel = zoomLevel;
-		Rect[] oldSearchHits = searchHits;
+		Quad[] oldSearchHits = searchHits;
 
 		if (source == firstButton)
 			pageNumber = 0;

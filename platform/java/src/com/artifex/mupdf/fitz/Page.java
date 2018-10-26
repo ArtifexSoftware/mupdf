@@ -43,7 +43,7 @@ public class Page
 		return toStructuredText(null);
 	}
 
-	public native Rect[] search(String needle);
+	public native Quad[] search(String needle);
 
 	public native byte[] textAsHtml();
 
