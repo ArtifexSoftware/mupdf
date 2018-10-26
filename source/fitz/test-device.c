@@ -396,7 +396,8 @@ fz_test_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int eve
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_clip_path(ctx, dev->passthrough, path, even_odd, ctm, scissor);
+	if (dev->passthrough)
+		fz_clip_path(ctx, dev->passthrough, path, even_odd, ctm, scissor);
 }
 
 static void
@@ -404,7 +405,8 @@ fz_test_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, 
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_clip_stroke_path(ctx, dev->passthrough, path, stroke, ctm, scissor);
+	if (dev->passthrough)
+		fz_clip_stroke_path(ctx, dev->passthrough, path, stroke, ctm, scissor);
 }
 
 static void
@@ -412,7 +414,8 @@ fz_test_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matr
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_clip_text(ctx, dev->passthrough, text, ctm, scissor);
+	if (dev->passthrough)
+		fz_clip_text(ctx, dev->passthrough, text, ctm, scissor);
 }
 
 static void
@@ -420,7 +423,8 @@ fz_test_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, 
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_clip_stroke_text(ctx, dev->passthrough, text, stroke, ctm, scissor);
+	if (dev->passthrough)
+		fz_clip_stroke_text(ctx, dev->passthrough, text, stroke, ctm, scissor);
 }
 
 static void
@@ -428,7 +432,8 @@ fz_test_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_ma
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_ignore_text(ctx, dev->passthrough, text, ctm);
+	if (dev->passthrough)
+		fz_ignore_text(ctx, dev->passthrough, text, ctm);
 }
 
 static void
@@ -436,7 +441,8 @@ fz_test_clip_image_mask(fz_context *ctx, fz_device *dev_, fz_image *img, fz_matr
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_clip_image_mask(ctx, dev->passthrough, img, ctm, scissor);
+	if (dev->passthrough)
+		fz_clip_image_mask(ctx, dev->passthrough, img, ctm, scissor);
 }
 
 static void
@@ -444,7 +450,8 @@ fz_test_pop_clip(fz_context *ctx, fz_device *dev_)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_pop_clip(ctx, dev->passthrough);
+	if (dev->passthrough)
+		fz_pop_clip(ctx, dev->passthrough);
 }
 
 static void
@@ -452,7 +459,8 @@ fz_test_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect rect, int luminosit
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_begin_mask(ctx, dev->passthrough, rect, luminosity, cs, bc, color_params);
+	if (dev->passthrough)
+		fz_begin_mask(ctx, dev->passthrough, rect, luminosity, cs, bc, color_params);
 }
 
 static void
@@ -460,7 +468,8 @@ fz_test_end_mask(fz_context *ctx, fz_device *dev_)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_end_mask(ctx, dev->passthrough);
+	if (dev->passthrough)
+		fz_end_mask(ctx, dev->passthrough);
 }
 
 static void
@@ -468,7 +477,8 @@ fz_test_begin_group(fz_context *ctx, fz_device *dev_, fz_rect rect, fz_colorspac
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_begin_group(ctx, dev->passthrough, rect, cs, isolated, knockout, blendmode, alpha);
+	if (dev->passthrough)
+		fz_begin_group(ctx, dev->passthrough, rect, cs, isolated, knockout, blendmode, alpha);
 }
 
 static void
@@ -476,7 +486,8 @@ fz_test_end_group(fz_context *ctx, fz_device *dev_)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_end_group(ctx, dev->passthrough);
+	if (dev->passthrough)
+		fz_end_group(ctx, dev->passthrough);
 }
 
 static int
@@ -484,7 +495,10 @@ fz_test_begin_tile(fz_context *ctx, fz_device *dev_, fz_rect area, fz_rect view,
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	return fz_begin_tile_id(ctx, dev->passthrough, area, view, xstep, ystep, ctm, id);
+	if (dev->passthrough)
+		return fz_begin_tile_id(ctx, dev->passthrough, area, view, xstep, ystep, ctm, id);
+	else
+		return 0;
 }
 
 static void
@@ -492,7 +506,8 @@ fz_test_end_tile(fz_context *ctx, fz_device *dev_)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_end_tile(ctx, dev->passthrough);
+	if (dev->passthrough)
+		fz_end_tile(ctx, dev->passthrough);
 }
 
 fz_device *
