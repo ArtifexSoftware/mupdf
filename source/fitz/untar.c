@@ -85,7 +85,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		blocks = (size + 511) / 512;
 		fz_seek(ctx, file, blocks * 512, 1);
 
-		if (typeflag != '0')
+		if (typeflag != '0' && typeflag != '\0')
 			continue;
 
 		tar->entries = fz_resize_array(ctx, tar->entries, tar->count + 1, sizeof *tar->entries);
@@ -174,18 +174,24 @@ static int count_tar_entries(fz_context *ctx, fz_archive *arch)
 int
 fz_is_tar_archive(fz_context *ctx, fz_stream *file)
 {
-	const unsigned char signature[6] = { 'u', 's', 't', 'a', 'r', ' ' };
+	const unsigned char gnusignature[6] = { 'u', 's', 't', 'a', 'r', ' ' };
+	const unsigned char paxsignature[6] = { 'u', 's', 't', 'a', 'r', '\0' };
+	const unsigned char v7signature[6] = { '\0', '\0', '\0', '\0', '\0', '\0' };
 	unsigned char data[6];
 	size_t n;
 
 	fz_seek(ctx, file, 257, 0);
 	n = fz_read(ctx, file, data, nelem(data));
-	if (n != nelem(signature))
+	if (n != nelem(data))
 		return 0;
-	if (memcmp(data, signature, nelem(signature)))
-		return 0;
+	if (!memcmp(data, gnusignature, nelem(gnusignature)))
+		return 1;
+	if (!memcmp(data, paxsignature, nelem(paxsignature)))
+		return 1;
+	if (!memcmp(data, v7signature, nelem(v7signature)))
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 fz_archive *
