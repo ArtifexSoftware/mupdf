@@ -472,27 +472,28 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 			/* Need to send this one */
 			fz_rect rect;
 			fz_path *path;
-			path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
-			if (path)
+			out = start_def(ctx, sdev);
+			fz_write_printf(ctx, out, "<symbol id=\"font_%x_%x\">\n", fnt->id, gid);
+			if (fz_font_ft_face(ctx, span->font))
 			{
-				rect = fz_bound_path(ctx, path, NULL, fz_identity);
-				shift.e = -rect.x0;
-				shift.f = -rect.y0;
-				fz_transform_path(ctx, path, shift);
-				out = start_def(ctx, sdev);
-				fz_write_printf(ctx, out, "<symbol id=\"font_%x_%x\">\n", fnt->id, gid);
-				fz_write_printf(ctx, out, "<path");
-				svg_dev_path(ctx, sdev, path);
-				fz_write_printf(ctx, out, "/>\n");
-				fz_drop_path(ctx, path);
+				path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
+				if (path)
+				{
+					rect = fz_bound_path(ctx, path, NULL, fz_identity);
+					shift.e = -rect.x0;
+					shift.f = -rect.y0;
+					fz_transform_path(ctx, path, shift);
+					fz_write_printf(ctx, out, "<path");
+					svg_dev_path(ctx, sdev, path);
+					fz_write_printf(ctx, out, "/>\n");
+					fz_drop_path(ctx, path);
+				}
 			}
-			else
+			else if (fz_font_t3_procs(ctx, span->font))
 			{
 				rect = fz_bound_glyph(ctx, span->font, gid, fz_identity);
 				shift.e = -rect.x0;
 				shift.f = -rect.y0;
-				out = start_def(ctx, sdev);
-				fz_write_printf(ctx, out, "<symbol id=\"font_%x_%x\">\n", fnt->id, gid);
 				fz_run_t3_glyph(ctx, span->font, gid, shift, dev);
 			}
 			fz_write_printf(ctx, out, "</symbol>\n");
