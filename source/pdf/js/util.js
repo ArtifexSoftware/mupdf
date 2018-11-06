@@ -554,6 +554,19 @@ function AFParseDateEx(d, fmt) {
 
 	dout.setHours(12, 0, 0);
 
+	if (nums.length == 1 && nums[0].length == fmt.length && !text_month) {
+		// One number string, exactly matching the format string in length.
+		// Split it into separate strings to match the fmt
+		var num = nums[0];
+		nums = [""];
+		for (i = 0; i < fmt.length; i++)
+		{
+			nums[nums.length-1] += num.charAt(i);
+			if (i+1 < fmt.length && fmt.charAt(i) != fmt.charAt(i+1))
+				nums.push("");
+		}
+	}
+
 	if (!nums || nums.length < 1 || nums.length > 3)
 		return null;
 
