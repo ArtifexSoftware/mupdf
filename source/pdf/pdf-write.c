@@ -1769,12 +1769,12 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			addhexfilter(ctx, doc, obj);
 		}
 
-		pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
+		pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, doc->crypt, num, gen, (int)len));
 
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nstream\n");
-		fz_write_data(ctx, opts->out, data, len);
+		pdf_encrypt_data(ctx, doc->crypt, num, gen, write_data, opts->out, data, len);
 		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
 	}
 	fz_always(ctx)
