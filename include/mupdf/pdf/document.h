@@ -879,6 +879,7 @@ struct pdf_write_options_s
 	int do_linear; /* Write linearised. */
 	int do_clean; /* Clean content streams. */
 	int do_sanitize; /* Sanitize content streams. */
+	int do_decrypt; /* Save without decryption. */
 	int continue_on_error; /* If set, errors are (optionally) counted and writing continues. */
 	int *errors; /* Pointer to a place to store a count of errors */
 };

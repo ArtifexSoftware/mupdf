@@ -39,6 +39,7 @@ static void save_pdf_options(void)
 	ui_checkbox("Compress images", &save_opts.do_compress_images);
 	ui_checkbox("Compress fonts", &save_opts.do_compress_fonts);
 	ui_checkbox("Decompress", &save_opts.do_decompress);
+	ui_checkbox("Decrypt", &save_opts.do_decrypt);
 	ui_checkbox("Garbage collect", &save_opts.do_garbage);
 	ui_checkbox("Linearize", &save_opts.do_linear);
 	ui_checkbox("Clean syntax", &save_opts.do_clean);
