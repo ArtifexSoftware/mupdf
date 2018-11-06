@@ -1538,7 +1538,7 @@ static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 	if (modifiers & (1<<2))
 	{
 		/* zoom in/out if ctrl is pressed */
-		if (dir < 0)
+		if (dir > 0)
 			app->resolution = zoom_in(app->resolution);
 		else
 			app->resolution = zoom_out(app->resolution);
