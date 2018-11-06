@@ -1568,12 +1568,15 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 	FT_Fixed adv = 0;
 	int mask;
 
-	/* Substitute font widths. */
-	if (font->width_table)
+	/* PDF and substitute font widths. */
+	if (!font->flags.ft_substitute || font->flags.ft_stretch)
 	{
-		if (gid < font->width_count)
-			return font->width_table[gid] / 1000.0f;
-		return font->width_default / 1000.0f;
+		if (font->width_table)
+		{
+			if (gid < font->width_count)
+				return font->width_table[gid] / 1000.0f;
+			return font->width_default / 1000.0f;
+		}
 	}
 
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
