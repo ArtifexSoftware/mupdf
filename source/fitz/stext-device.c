@@ -317,20 +317,25 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 			{
 				if (fabsf(spacing) < size * SPACE_DIST)
 				{
-					/* Motion is in line, and small. */
+					/* Motion is in line and small enough to ignore. */
 					new_line = 0;
 				}
-				else if (spacing >= size * SPACE_DIST && spacing < size * SPACE_MAX_DIST)
+				else if (fabsf(spacing) > size * SPACE_MAX_DIST)
 				{
-					/* Motion is in line, but large enough to warrant us adding a space. */
-					if (dev->lastchar != ' ' && wmode == 0)
-						add_space = 1;
+					/* Motion is in line and large enough to warrant splitting to a new line */
+					new_line = 1;
+				}
+				else if (spacing < 0)
+				{
+					/* Motion is backward in line! Ignore this odd spacing. */
 					new_line = 0;
 				}
 				else
 				{
-					/* Motion is in line, but large enough to warrant splitting to a new line */
-					new_line = 1;
+					/* Motion is forward in line and large enough to warrant us adding a space. */
+					if (dev->lastchar != ' ' && wmode == 0)
+						add_space = 1;
+					new_line = 0;
 				}
 			}
 
