@@ -566,7 +566,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 
 		w = pnm->width;
 		h = pnm->height;
-		n = fz_colorspace_n(ctx, pnm->cs);
+		n = fz_colorspace_n(ctx, pnm->cs) + pnm->alpha;
 
 		/* some encoders incorrectly pack bits into bytes and invert the image */
 		packed = 0;
