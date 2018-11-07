@@ -10,6 +10,10 @@
 #include "mupdf/helpers/pkcs7-check.h"
 #include "mupdf/helpers/pkcs7-openssl.h"
 
+static pdf_widget *sig_widget;
+static char sig_status[500];
+static int sig_result;
+
 static char cert_filename[PATH_MAX];
 static struct input cert_password;
 
@@ -22,7 +26,7 @@ static void do_sign(void)
 	fz_try(ctx)
 	{
 		signer = pkcs7_openssl_read_pfx(ctx, cert_filename, cert_password.text);
-		pdf_sign_signature(ctx, pdf, selected_annot, signer);
+		pdf_sign_signature(ctx, pdf, sig_widget, signer);
 		ui_show_warning_dialog("Signed document successfully.");
 	}
 	fz_always(ctx)
@@ -33,7 +37,7 @@ static void do_sign(void)
 	fz_catch(ctx)
 		ui_show_warning_dialog("%s", fz_caught_message(ctx));
 
-	if (pdf_update_page(ctx, selected_annot->page))
+	if (pdf_update_page(ctx, sig_widget->page))
 		render_page();
 }
 
@@ -83,10 +87,6 @@ static void cert_file_dialog(void)
 			ui.dialog = NULL;
 	}
 }
-
-static pdf_widget *sig_widget;
-static char sig_status[500];
-static int sig_result;
 
 static void sig_dialog(void)
 {
