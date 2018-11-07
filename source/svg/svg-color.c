@@ -176,7 +176,7 @@ static int unhex(int chr)
 }
 
 void
-svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb)
+svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 {
 	int i, l, m, r, cmp;
 

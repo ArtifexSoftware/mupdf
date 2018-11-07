@@ -118,34 +118,22 @@ svg_parse_angle(const char *str)
 
 /* Coordinate transformations */
 fz_matrix
-svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix transform)
+svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matrix transform)
 {
 	char keyword[20];
 	int keywordlen;
-	char number[20];
-	int numberlen;
 	float args[6];
 	int nargs;
-	int first = 1;
 
 	nargs = 0;
 	keywordlen = 0;
 
 	while (*str)
 	{
-		while (svg_is_whitespace(*str))
+		while (svg_is_whitespace_or_comma(*str))
 			str ++;
 		if (*str == 0)
 			break;
-
-		if (!first)
-		{
-			if (*str == ',')
-				str ++;
-			while (svg_is_whitespace(*str))
-				str ++;
-		}
-		first = 0;
 
 		/*
 		 * Parse keyword and opening parenthesis.
@@ -173,23 +161,10 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix tra
 		nargs = 0;
 		while (*str && *str != ')' && nargs < 6)
 		{
-			if (nargs > 0 && *str == ',')
+			while (svg_is_whitespace_or_comma(*str))
 				str ++;
-			while (svg_is_whitespace(*str))
-				str ++;
-
-			numberlen = 0;
-			while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
-				number[numberlen++] = *str++;
-			number[numberlen] = 0;
-
-			if (numberlen == 0)
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "expected number in transform attribute");
-
-			args[nargs++] = fz_atof(number);
-
-			while (svg_is_whitespace(*str))
-				str ++;
+			if (svg_is_digit(*str))
+				str = svg_lex_number(&args[nargs++], str);
 		}
 
 		if (*str != ')')

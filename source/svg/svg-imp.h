@@ -15,12 +15,12 @@ struct svg_document_s
 /* Parse basic data type units. */
 
 const char *svg_lex_number(float *fp, const char *str);
-float svg_parse_number(const char *str, float min,float max, float inherit);
+float svg_parse_number(const char *str, float min, float max, float inherit);
 float svg_parse_length(const char *str, float percent, float font_size);
 float svg_parse_angle(const char *str);
 
-void svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb);
-fz_matrix svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix transform);
+void svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb);
+fz_matrix svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matrix transform);
 
 int svg_is_whitespace_or_comma(int c);
 int svg_is_whitespace(int c);
