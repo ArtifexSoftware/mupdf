@@ -22,7 +22,7 @@ SANITIZE_FLAGS += -fsanitize=leak
 
 ifeq ($(build),debug)
   CFLAGS += -pipe -g
-  LDFLAGS += -g $(LDREMOVEUNREACH)
+  LDFLAGS += -g
 else ifeq ($(build),release)
   CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
