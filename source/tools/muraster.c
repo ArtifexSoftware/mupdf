@@ -157,6 +157,21 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 	these for configuration.
 */
 
+/* Unless we have specifically disabled threading, enable it. */
+#ifndef DISABLE_MUTHREADS
+#ifndef MURASTER_THREADS
+#define MURASTER_THREADS 1
+#endif
+#endif
+
+/* If we have threading, and we haven't already configured BGPRINT,
+ * enable it. */
+#if MURASTER_THREADS != 0
+#ifndef MURASTER_CONFIG_BGPRINT
+#define MURASTER_CONFIG_BGPRINT 1
+#endif
+#endif
+
 #ifdef MURASTER_CONFIG_X_RESOLUTION
 #define X_RESOLUTION MURASTER_CONFIG_X_RESOLUTION
 #else
@@ -612,7 +627,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 			pix = fz_new_pixmap_with_bbox(ctx, colorspace, ibounds, NULL, 0);
 			fz_set_pixmap_resolution(ctx, pix, x_resolution, y_resolution);
 		}
-		fz_write_header(ctx, render->bander, pix->w, total_height, pix->n, pix->alpha, pix->xres, pix->yres, pagenum, pix->colorspace, pix->seps);
 
 		for (band = 0; band < bands; band++)
 		{
@@ -715,7 +729,7 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 		{
 			int w = render->ibounds.x1 - render->ibounds.x0;
 			int h = render->ibounds.y1 - render->ibounds.y0;
-			fz_write_header(ctx, render->bander, w, h, 0, render->n, 0, 0, 0, 0, NULL);
+			fz_write_header(ctx, render->bander, w, h, render->n, 0, 0, 0, 0, 0, NULL);
 		}
 		fz_catch(ctx)
 		{
