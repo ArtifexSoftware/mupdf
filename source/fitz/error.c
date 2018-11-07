@@ -123,7 +123,7 @@ FZ_NORETURN static void throw(fz_context *ctx)
 	}
 }
 
-void *fz_push_try(fz_context *ctx)
+fz_jmp_buf *fz_push_try(fz_context *ctx)
 {
 	/* If we would overflow the exception stack, throw an exception instead
 	 * of entering the try block. We assume that we always have room for
@@ -154,7 +154,7 @@ void *fz_push_try(fz_context *ctx)
 		ctx->error->top++;
 		ctx->error->top->code = 0;
 	}
-	return ctx->error->top->buffer;
+	return &ctx->error->top->buffer;
 }
 
 int fz_do_try(fz_context *ctx)

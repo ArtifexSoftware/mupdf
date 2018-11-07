@@ -57,12 +57,12 @@ void fz_var_imp(void *);
 	attention to the man behind the curtain.
 */
 
-void *fz_push_try(fz_context *ctx);
+fz_jmp_buf *fz_push_try(fz_context *ctx);
 int fz_do_try(fz_context *ctx);
 int fz_do_always(fz_context *ctx);
 int fz_do_catch(fz_context *ctx);
 
-#define fz_try(ctx) if (!fz_setjmp(fz_push_try(ctx))) if (fz_do_try(ctx)) do
+#define fz_try(ctx) if (!fz_setjmp(*fz_push_try(ctx))) if (fz_do_try(ctx)) do
 #define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
 #define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
 
