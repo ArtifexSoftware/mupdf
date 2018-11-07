@@ -1105,6 +1105,35 @@ tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 	}
 }
 
+static int
+tiff_components_from_photometric(int photometric)
+{
+	switch (photometric)
+	{
+	case 0: /* WhiteIsZero */
+		return 1;
+	case 1: /* BlackIsZero */
+		return 1;
+	case 2: /* RGB */
+		return 3;
+	case 3: /* RGBPal */
+		return 3;
+	case 5: /* CMYK */
+		return 4;
+	case 6: /* YCbCr */
+		return 3;
+	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
+	case 9: /* ICC Style L*a*b* encoding */
+		return 3;
+	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
+		return 1;
+	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
+		return 3;
+	default:
+		return 0;
+	}
+}
+
 static void
 tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 {
@@ -1143,6 +1172,8 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		{
 			buff = fz_new_buffer_from_copied_data(ctx, tiff->profile, tiff->profilesize);
 			tiff->colorspace = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buff);
+			if (fz_colorspace_n(ctx, tiff->colorspace) != tiff_components_from_photometric(tiff->photometric))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "embedded ICC profile colorspace mismatch");
 		}
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);
