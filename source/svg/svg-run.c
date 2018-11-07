@@ -2,7 +2,6 @@
 #include "svg-imp.h"
 
 #include <string.h>
-#include <stdio.h> /* for sscanf */
 #include <math.h>
 
 /* default page size */
@@ -794,8 +793,6 @@ svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 void
 svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
-	//fz_matrix *transform = &state->transform;
-
 	char *x_att = fz_xml_att(node, "x");
 	char *y_att = fz_xml_att(node, "y");
 	char *w_att = fz_xml_att(node, "width");
@@ -811,29 +808,36 @@ svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *
 	if (w_att) w = svg_parse_length(w_att, state->viewbox_w, state->fontsize);
 	if (h_att) h = svg_parse_length(h_att, state->viewbox_h, state->fontsize);
 
-	/* TODO: new transform */
-	fz_warn(ctx, "push viewport: %g %g %g %g", x, y, w, h);
-
 	state->viewport_w = w;
 	state->viewport_h = h;
+}
+
+static void
+svg_lex_viewbox(const char *s, float *x, float *y, float *w, float *h)
+{
+	while (svg_is_whitespace_or_comma(*s)) ++s;
+	if (svg_is_digit(*s)) s = svg_lex_number(x, s);
+	while (svg_is_whitespace_or_comma(*s)) ++s;
+	if (svg_is_digit(*s)) s = svg_lex_number(y, s);
+	while (svg_is_whitespace_or_comma(*s)) ++s;
+	if (svg_is_digit(*s)) s = svg_lex_number(w, s);
+	while (svg_is_whitespace_or_comma(*s)) ++s;
+	if (svg_is_digit(*s)) s = svg_lex_number(h, s);
 }
 
 /* svg, symbol, image, foreignObject plus marker, pattern, view can use viewBox to set the transform */
 void
 svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
-	//fz_matrix *transform = &state->transform;
-	//float port_w = state->viewport_w;
-	//float port_h = state->viewport_h;
-	float min_x, min_y, box_w, box_h;
-
 	char *viewbox_att = fz_xml_att(node, "viewBox");
 	if (viewbox_att)
 	{
-		sscanf(viewbox_att, "%g %g %g %g", &min_x, &min_y, &box_w, &box_h);
-
-		/* scale and translate to fit [x y w h] to [0 0 viewport.w viewport.h] */
-		fz_warn(ctx, "push viewbox: %g %g %g %g", min_x, min_y, box_w, box_h);
+		/* scale and translate to fit [min-x min-y w h] to [0 0 viewport.w viewport.h] */
+		float min_x, min_y, box_w, box_h;
+		svg_lex_viewbox(viewbox_att, &min_x, &min_y, &box_w, &box_h);
+		state->transform = fz_concat(state->transform, fz_translate(-min_x, -min_y));
+		state->transform = fz_concat(state->transform,
+			fz_scale(state->viewport_w / box_w, state->viewport_h / box_h));
 	}
 }
 
@@ -1138,7 +1142,7 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 	if (w_att == NULL && h_att == NULL && viewbox_att != NULL)
 	{
 		float min_x, min_y, box_w, box_h;
-		sscanf(viewbox_att, "%g %g %g %g", &min_x, &min_y, &box_w, &box_h);
+		svg_lex_viewbox(viewbox_att, &min_x, &min_y, &box_w, &box_h);
 		doc->width = box_w;
 		doc->height = box_h;
 	}
