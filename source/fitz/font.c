@@ -199,6 +199,8 @@ float fz_font_ascender(fz_context *ctx, fz_font *font)
 	else
 	{
 		FT_Face face = font->ft_face;
+		if (face->ascender == 0)
+			return 0.8f;
 		return (float)face->ascender / face->units_per_EM;
 	}
 }
@@ -210,6 +212,8 @@ float fz_font_descender(fz_context *ctx, fz_font *font)
 	else
 	{
 		FT_Face face = font->ft_face;
+		if (face->descender == 0)
+			return -0.2f;
 		return (float)face->descender / face->units_per_EM;
 	}
 }
