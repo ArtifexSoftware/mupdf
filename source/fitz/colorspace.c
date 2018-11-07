@@ -1945,7 +1945,7 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 }
 
 static void
-icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
+icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_extras)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
@@ -1957,7 +1957,7 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	/* Handle DeviceGray to CMYK as K only. See note in Section 6.3 of PDF spec 1.7. */
 	if (fz_colorspace_is_device_gray(ctx, srcs) && fz_colorspace_is_cmyk(ctx, dsts))
 	{
-		fast_gray_to_cmyk(ctx, dst, src, prf, default_cs, color_params, copy_spots);
+		fast_gray_to_cmyk(ctx, dst, src, prf, default_cs, color_params, copy_extras);
 		return;
 	}
 
@@ -1986,7 +1986,11 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	inputpos = src->samples;
 	outputpos = dst->samples;
 
-	link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_spots, &src_n);
+	/* If we have alpha channels, set copy_extras so that the LCMS transform also copies the alpha channels. */
+	if (src->alpha || dst->alpha)
+		copy_extras = 1;
+
+	link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
 
 	if (link->is_identity)
 	{
