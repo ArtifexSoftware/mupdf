@@ -259,6 +259,7 @@ static int invert = 0;
 static int band_height = 0;
 static int lowmemory = 0;
 
+static int quiet = 0;
 static int errored = 0;
 static fz_colorspace *colorspace = NULL;
 static fz_colorspace *oi = NULL;
@@ -321,6 +322,7 @@ static void usage(void)
 		"\t\tvector: svg, pdf, trace\n"
 		"\t\ttext: txt, html, stext\n"
 		"\n"
+		"\t-q\tbe quiet (don't print progress messages)\n"
 		"\t-s -\tshow extra information:\n"
 		"\t\tm - show memory use\n"
 		"\t\tt - show timings\n"
@@ -995,7 +997,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
-	fprintf(stderr, "\n");
+	if (!quiet || showfeatures || showtime || showmd5)
+		fprintf(stderr, "\n");
 
 	if (lowmemory)
 		fz_empty_store(ctx);
@@ -1028,6 +1031,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	int start;
 	fz_cookie cookie = { 0 };
 	fz_separations *seps = NULL;
+	const char *features = "";
 
 	fz_var(list);
 	fz_var(dev);
@@ -1131,7 +1135,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
-		fprintf(stderr, " %s", iscolor ? "color" : "grayscale");
+		features = iscolor ? " color" : " grayscale";
 	}
 
 	if (output_file_per_page)
@@ -1153,7 +1157,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint_flush();
 		if (bgprint.active)
 		{
-			fprintf(stderr, "page %s %d", filename, pagenum);
+			if (!quiet || showfeatures || showtime || showmd5)
+				fprintf(stderr, "page %s %d%s", filename, pagenum, features);
 		}
 
 		bgprint.started = 1;
@@ -1172,7 +1177,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 	else
 	{
-		fprintf(stderr, "page %s %d", filename, pagenum);
+		if (!quiet || showfeatures || showtime || showmd5)
+			fprintf(stderr, "page %s %d%s", filename, pagenum, features);
 		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
 	}
 }
@@ -1469,11 +1475,13 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
+	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
 	{
 		switch (c)
 		{
 		default: usage(); break;
+
+		case 'q': quiet = 1; break;
 
 		case 'p': password = fz_optarg; break;
 
@@ -1847,6 +1855,7 @@ int mudraw_main(int argc, char **argv)
 			}
 			else
 			{
+				quiet = 1; /* automatically be quiet if printing to stdout */
 #ifdef _WIN32
 				/* Windows specific code to make stdout binary. */
 				if (output_format != OUT_TEXT && output_format != OUT_STEXT && output_format != OUT_HTML && output_format != OUT_XHTML && output_format != OUT_TRACE)
