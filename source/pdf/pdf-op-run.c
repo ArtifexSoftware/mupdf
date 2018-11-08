@@ -2155,7 +2155,7 @@ static void pdf_run_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
 	if (!tag)
-		tag = "UnnamedLayer";
+		tag = "Untitled";
 
 	fz_begin_layer(ctx, pr->dev, tag);
 }
@@ -2165,12 +2165,12 @@ static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, p
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	const char *str;
 
-	if (!tag || strcmp(tag, "OC"))
-		return;
+	if (!tag)
+		tag = "Untitled";
 
-	str = pdf_dict_get_string(ctx, cooked, PDF_NAME(Name), NULL);
+	str = pdf_dict_get_text_string(ctx, cooked, PDF_NAME(Name));
 	if (strlen(str) == 0)
-		str = "UnnamedLayer";
+		str = tag;
 
 	fz_begin_layer(ctx, pr->dev, str);
 }

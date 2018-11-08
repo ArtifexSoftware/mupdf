@@ -351,14 +351,14 @@ static void
 fz_trace_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_write_printf(ctx, out, "<layer name=\"%s\">\n", name);
+	fz_write_printf(ctx, out, "<layer name=\"%s\"/>\n", name);
 }
 
 static void
 fz_trace_end_layer(fz_context *ctx, fz_device *dev)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_write_printf(ctx, out, "</layer>\n");
+	fz_write_printf(ctx, out, "<end_layer/>\n");
 }
 
 fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out)
