@@ -34,7 +34,11 @@ enum
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching);
 static void pdfapp_updatepage(pdfapp_t *app);
 
-static const int zoomlist[] = { 18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288 };
+static const int zoomlist[] = {
+	18, 24, 36, 54, 72, 96, 120, 144, 180,
+	216, 288, 360, 432, 504, 576, 648, 720,
+	792, 864, 936, 1008, 1080, 1152
+};
 
 static int zoom_in(int oldres)
 {
