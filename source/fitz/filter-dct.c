@@ -182,8 +182,8 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 		jpeg_create_decompress(cinfo);
 		state->init = 1;
 
-		/* Skip over any stray returns at the start of the stream */
-		while ((c = fz_peek_byte(ctx, state->chain)) == '\n' || c == '\r')
+		/* Skip over any stray whitespace at the start of the stream */
+		while ((c = fz_peek_byte(ctx, state->chain)) == '\n' || c == '\r' || c == ' ')
 			(void)fz_read_byte(ctx, state->chain);
 
 		cinfo->src = &state->srcmgr;
