@@ -126,6 +126,11 @@ static void new_annot(int type)
 	case PDF_ANNOT_FREE_TEXT:
 		{
 			fz_rect text_rect = { 12, 12, 12+200, 12+100 };
+
+			/* Use undocumented Adobe property to match page rotation. */
+			int rot = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(Rotate)));
+			pdf_dict_put_int(ctx, selected_annot->obj, PDF_NAME(Rotate), rot);
+
 			pdf_set_annot_rect(ctx, selected_annot, text_rect);
 			pdf_set_annot_border(ctx, selected_annot, 0);
 			pdf_set_annot_default_appearance(ctx, selected_annot, "Helv", 12, black);
