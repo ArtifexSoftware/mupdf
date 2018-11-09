@@ -1165,7 +1165,7 @@ static void do_help_line(char *label, char *text)
 	ui_panel_begin(0, ui.lineheight, 0, 0, 0);
 	{
 		ui_layout(L, NONE, W, 0, 0);
-		ui_panel_begin(100, ui.lineheight, 0, 0, 0);
+		ui_panel_begin(150, ui.lineheight, 0, 0, 0);
 		ui_layout(R, NONE, W, 20, 0);
 		ui_label("%s", label);
 		ui_panel_end();
@@ -1180,7 +1180,7 @@ static void do_help_line(char *label, char *text)
 
 static void do_help(void)
 {
-	ui_dialog_begin(500, 35 * ui.lineheight);
+	ui_dialog_begin(500, 36 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	do_help_line("MuPDF", FZ_VERSION);
@@ -1190,6 +1190,7 @@ static void do_help(void)
 	do_help_line("o", "show/hide outline");
 	do_help_line("a", "show/hide annotation editor");
 	do_help_line("L", "show/hide links");
+	do_help_line("F", "show/hide form fields");
 	do_help_line("r", "reload file");
 	do_help_line("q", "quit");
 	ui_spacer();
