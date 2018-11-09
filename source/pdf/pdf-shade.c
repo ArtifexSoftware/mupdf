@@ -1,9 +1,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-/* FIXME: Remove this somehow */
-#define FUNSEGS 32 /* size of sampled mesh for function-based shadings */
-
 /* Sample various functions into lookup tables */
 
 static void
@@ -47,6 +44,8 @@ pdf_sample_shade_function(fz_context *ctx, fz_shade *shade, int funcs, pdf_funct
 }
 
 /* Type 1-3 -- Function-based, linear and radial shadings */
+
+#define FUNSEGS 64 /* size of sampled mesh for function-based shadings */
 
 static void
 pdf_load_function_based_shading(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_obj *dict, pdf_function *func)
