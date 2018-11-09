@@ -95,6 +95,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"W\t\t-- zoom to fit window width\n"
 		"H\t\t-- zoom to fit window height\n"
 		"Z\t\t-- zoom to fit page\n"
+		"z\t\t-- reset zoom\n"
 		"[\t\t-- decrease font size (EPUB only)\n"
 		"]\t\t-- increase font size (EPUB only)\n"
 		"w\t\t-- shrinkwrap\n"
@@ -148,6 +149,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 
 void pdfapp_setresolution(pdfapp_t *app, int res)
 {
+	app->default_resolution = res;
 	app->resolution = res;
 }
 
@@ -1247,6 +1249,10 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 	case 'Z':
 		pdfapp_autozoom(app);
+		break;
+	case 'z':
+		app->resolution = app->default_resolution;
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 	case 'L':

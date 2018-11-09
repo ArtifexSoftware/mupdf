@@ -931,6 +931,7 @@ int main(int argc, char **argv)
 	gapp.transitions_enabled = 1;
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
+	gapp.default_resolution = resolution;
 	gapp.resolution = resolution;
 	gapp.pageno = pageno;
 
