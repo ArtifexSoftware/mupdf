@@ -881,7 +881,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		char buf2[64];
 		size_t len;
 
-		sprintf(buf2, " - %d/%d (%d dpi)",
+		sprintf(buf2, " - %d/%d (%g dpi)",
 				app->pageno, app->pagecount, app->resolution);
 		len = MAX_TITLE-strlen(buf2);
 		if (strlen(app->doctitle) > len)

@@ -70,7 +70,7 @@ struct pdfapp_s
 	int pagecount;
 
 	/* current view params */
-	int resolution;
+	float resolution;
 	int rotate;
 	fz_pixmap *image;
 	int grayscale;
