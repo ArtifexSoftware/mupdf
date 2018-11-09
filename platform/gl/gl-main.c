@@ -116,6 +116,7 @@ static fz_link *links = NULL;
 static int number = 0;
 
 static struct texture page_tex = { 0 };
+static int screen_w = 0, screen_h = 0;
 static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
@@ -779,8 +780,6 @@ static void toggle_fullscreen(void)
 
 static void shrinkwrap(void)
 {
-	int screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
-	int screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
 	int w = page_tex.w + (showoutline ? outline_w + 4 : 0) + (showannotate ? annotate_w : 0);
 	int h = page_tex.h;
 	if (screen_w > 0 && w > screen_w)
@@ -1519,6 +1518,10 @@ int main(int argc, char **argv)
 	int c;
 
 	glutInit(&argc, argv);
+
+	screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
+	screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
+
 	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJ")) != -1)
 	{
 		switch (c)
@@ -1561,6 +1564,20 @@ int main(int argc, char **argv)
 		}
 		fz_always(ctx)
 		{
+			float sx = 1, sy = 1;
+			if (screen_w > 0 && page_tex.w > screen_w)
+				sx = (float)screen_w / page_tex.w;
+			if (screen_h > 0 && page_tex.h > screen_h)
+				sy = (float)screen_h / page_tex.h;
+			if (sy < sx)
+				sx = sy;
+			if (sx < 1)
+			{
+				currentzoom *= sx;
+				page_tex.w *= sx;
+				page_tex.h *= sx;
+			}
+
 			ui_init(page_tex.w, page_tex.h, "MuPDF: Loading...");
 			ui_input_init(&search_input, "");
 		}
