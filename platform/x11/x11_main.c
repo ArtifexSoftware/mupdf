@@ -982,24 +982,30 @@ int main(int argc, char **argv)
 						break;
 
 					case XK_Up:
+					case XK_KP_Up:
 						len = 1; buf[0] = 'k';
 						break;
 					case XK_Down:
+					case XK_KP_Down:
 						len = 1; buf[0] = 'j';
 						break;
 
 					case XK_Left:
+					case XK_KP_Left:
 						len = 1; buf[0] = 'b';
 						break;
 					case XK_Right:
+					case XK_KP_Right:
 						len = 1; buf[0] = ' ';
 						break;
 
 					case XK_Page_Up:
+					case XK_KP_Page_Up:
 					case XF86XK_Back:
 						len = 1; buf[0] = ',';
 						break;
 					case XK_Page_Down:
+					case XK_KP_Page_Down:
 					case XF86XK_Forward:
 						len = 1; buf[0] = '.';
 						break;
