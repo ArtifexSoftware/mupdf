@@ -1147,6 +1147,9 @@ fz_recognize_image_format(fz_context *ctx, unsigned char p[8])
 		return FZ_IMAGE_GIF;
 	if (p[0] == 'B' && p[1] == 'M')
 		return FZ_IMAGE_BMP;
+	if (p[0] == 0x97 && p[1] == 'J' && p[2] == 'B' && p[3] == '2' &&
+		p[4] == '\r' && p[5] == '\n'  && p[6] == 0x1a && p[7] == '\n')
+		return FZ_IMAGE_JBIG2;
 	return FZ_IMAGE_UNKNOWN;
 }
 
@@ -1195,6 +1198,9 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		break;
 	case FZ_IMAGE_BMP:
 		fz_load_bmp_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		break;
+	case FZ_IMAGE_JBIG2:
+		fz_load_jbig2_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");

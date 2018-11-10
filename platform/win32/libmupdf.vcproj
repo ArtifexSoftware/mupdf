@@ -2020,6 +2020,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\load-jbig2.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\load-jpeg.c"
 				>
 			</File>

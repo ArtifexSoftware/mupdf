@@ -168,6 +168,12 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *file)
 			doc->load_subimage = fz_load_pnm_subimage;
 			doc->format = "PNM";
 		}
+		else if (fmt == FZ_IMAGE_JBIG2)
+		{
+			doc->page_count = fz_load_jbig2_subimage_count(ctx, data, len);
+			doc->load_subimage = fz_load_jbig2_subimage;
+			doc->format = "JBIG2";
+		}
 		else
 		{
 			doc->page_count = 1;
@@ -189,6 +195,8 @@ static const char *img_extensions[] =
 	"gif",
 	"hdp",
 	"j2k",
+	"jb2",
+	"jbig2",
 	"jfif",
 	"jfif-tbnl",
 	"jp2",
@@ -222,6 +230,8 @@ static const char *img_mimetypes[] =
 	"image/png",
 	"image/tiff",
 	"image/vnd.ms-photo",
+	"image/x-jb2",
+	"image/x-jbig2",
 	"image/x-portable-anymap",
 	"image/x-portable-arbitrarymap",
 	"image/x-portable-bitmap",
