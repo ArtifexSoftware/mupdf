@@ -106,6 +106,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	fz_matrix tos_save[2], save_ctm;
 	fz_matrix mask_matrix;
 	fz_colorspace *mask_colorspace;
+	int saved_blendmode;
 
 	save->softmask = softmask;
 	if (softmask == NULL)
@@ -135,13 +136,19 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	if (gstate->luminosity && !mask_colorspace)
 		mask_colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 
+	saved_blendmode = gstate->blendmode;
+
 	fz_try(ctx)
 	{
 		fz_begin_mask(ctx, pr->dev, mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc, &gstate->fill.color_params);
+		gstate->blendmode = 0;
 		pdf_run_xobject(ctx, pr, softmask, save->page_resources, fz_identity, 1);
 	}
 	fz_always(ctx)
+	{
 		fz_drop_colorspace(ctx, mask_colorspace);
+		gstate->blendmode = saved_blendmode;
+	}
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
