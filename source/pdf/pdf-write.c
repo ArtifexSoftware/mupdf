@@ -1813,29 +1813,41 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	}
 }
 
-static int is_image_filter(const char *s)
+static int is_image_filter(pdf_obj *s)
 {
-	if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF") ||
-		!strcmp(s, "DCTDecode") || !strcmp(s, "DCT") ||
-		!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL") ||
-		!strcmp(s, "JBIG2Decode") ||
-		!strcmp(s, "JPXDecode"))
-		return 1;
-	return 0;
+	return
+		s == PDF_NAME(CCITTFaxDecode) || s == PDF_NAME(CCF) ||
+		s == PDF_NAME(DCTDecode) || s == PDF_NAME(DCT) ||
+		s == PDF_NAME(RunLengthDecode) || s == PDF_NAME(RL) ||
+		s == PDF_NAME(JBIG2Decode) ||
+		s == PDF_NAME(JPXDecode);
 }
 
 static int filter_implies_image(fz_context *ctx, pdf_obj *o)
 {
-	if (!o)
-		return 0;
 	if (pdf_is_name(ctx, o))
-		return is_image_filter(pdf_to_name(ctx, o));
+		return is_image_filter(o);
 	if (pdf_is_array(ctx, o))
 	{
 		int i, len;
 		len = pdf_array_len(ctx, o);
 		for (i = 0; i < len; i++)
-			if (is_image_filter(pdf_to_name(ctx, pdf_array_get(ctx, o, i))))
+			if (is_image_filter(pdf_array_get(ctx, o, i)))
+				return 1;
+	}
+	return 0;
+}
+
+static int is_jpx_filter(fz_context *ctx, pdf_obj *o)
+{
+	if (o == PDF_NAME(JPXDecode))
+		return 1;
+	if (pdf_is_array(ctx, o))
+	{
+		int i, len;
+		len = pdf_array_len(ctx, o);
+		for (i = 0; i < len; i++)
+			if (pdf_array_get(ctx, o, i) == PDF_NAME(JPXDecode))
 				return 1;
 	}
 	return 0;
@@ -1873,6 +1885,15 @@ static int is_font_stream(fz_context *ctx, pdf_obj *obj)
 		return 1;
 	return 0;
 }
+
+static int is_jpx_stream(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_obj *o;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME(Filter)), is_jpx_filter(ctx, o))
+		return 1;
+	return 0;
+}
+
 
 static int is_xml_metadata(fz_context *ctx, pdf_obj *obj)
 {
@@ -1949,6 +1970,8 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			if (opts->do_compress_fonts && is_font_stream(ctx, obj))
 				do_deflate = 1, do_expand = 0;
 			if (is_xml_metadata(ctx, obj))
+				do_deflate = 0, do_expand = 0;
+			if (is_jpx_stream(ctx, obj))
 				do_deflate = 0, do_expand = 0;
 			if (do_expand)
 				expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
