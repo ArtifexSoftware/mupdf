@@ -56,6 +56,8 @@ struct svg_device_s
 	int *save_id;
 	int id;
 
+	int blend_bitmask;
+
 	int num_tiles;
 	int max_tiles;
 	tile *tiles;
@@ -1031,11 +1033,48 @@ svg_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
 
+	/* SVG only supports normal/multiply/screen/darken/lighten,
+	 * but we'll send them all, as the spec says that unrecognised
+	 * ones are treated as normal. */
+	static char *blend_names[] = {
+		"normal",	/* FZ_BLEND_NORMAL */
+		"multiply",	/* FZ_BLEND_MULTIPLY */
+		"screen",	/* FZ_BLEND_SCREEN */
+		"overlay",	/* FZ_BLEND_OVERLAY */
+		"darken",	/* FZ_BLEND_DARKEN */
+		"lighten",	/* FZ_BLEND_LIGHTEN */
+		"color_dodge",	/* FZ_BLEND_COLOR_DODGE */
+		"color_burn",	/* FZ_BLEND_COLOR_BURN */
+		"hard_light",	/* FZ_BLEND_HARD_LIGHT */
+		"soft_light",	/* FZ_BLEND_SOFT_LIGHT */
+		"difference",	/* FZ_BLEND_DIFFERENCE */
+		"exclusion",	/* FZ_BLEND_EXCLUSION */
+		"hue",		/* FZ_BLEND_HUE */
+		"saturation",	/* FZ_BLEND_SATURATION */
+		"color",	/* FZ_BLEND_COLOR */
+		"luminosity",	/* FZ_BLEND_LUMINOSITY */
+	};
+
+	if (blendmode < FZ_BLEND_NORMAL || blendmode > FZ_BLEND_LUMINOSITY)
+		blendmode = FZ_BLEND_NORMAL;
+	if (blendmode != FZ_BLEND_NORMAL && (sdev->blend_bitmask & (1<<blendmode)) == 0)
+	{
+		sdev->blend_bitmask |= (1<<blendmode);
+		out = start_def(ctx, sdev);
+		fz_write_printf(ctx, out,
+				"<filter id=\"blend_%d\"><feBlend mode=\"%s\" in2=\"BackgroundImage\" in=\"SourceGraphic\"/></filter>\n",
+				blendmode, blend_names[blendmode]);
+		out = end_def(ctx, sdev);
+	}
+
 	/* SVG 1.1 doesn't support adequate blendmodes/knockout etc, so just ignore it for now */
 	if (alpha == 1)
-		fz_write_printf(ctx, out, "<g>\n");
+		fz_write_printf(ctx, out, "<g");
 	else
-		fz_write_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);
+		fz_write_printf(ctx, out, "<g opacity=\"%g\"", alpha);
+	if (blendmode != FZ_BLEND_NORMAL)
+		fz_write_printf(ctx, out, " filter=\"url(#blend_%d)\"", blendmode);
+	fz_write_printf(ctx, out, ">\n");
 }
 
 static void
@@ -1196,6 +1235,7 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 	if (sdev->save_id)
 		*sdev->save_id = sdev->id;
 
+	fz_write_printf(ctx, out, "</g>\n");
 	fz_write_printf(ctx, out, "</svg>\n");
 }
 
@@ -1273,6 +1313,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 		"xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" "
 		"width=\"%gpt\" height=\"%gpt\" viewBox=\"0 0 %g %g\">\n",
 		page_width, page_height, page_width, page_height);
+	fz_write_printf(ctx, out, "<g enable-background=\"new\">\n");
 
 	return (fz_device*)dev;
 }
