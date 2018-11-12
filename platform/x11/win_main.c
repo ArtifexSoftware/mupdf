@@ -1167,13 +1167,13 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) <= 0)
 		{
-			handlemouse(oldx, oldy, 4, 1);
-			handlemouse(oldx, oldy, 4, -1);
+			handlemouse(oldx, oldy, 5, 1);
+			handlemouse(oldx, oldy, 5, -1);
 		}
 		else
 		{
-			handlemouse(oldx, oldy, 5, 1);
-			handlemouse(oldx, oldy, 5, -1);
+			handlemouse(oldx, oldy, 4, 1);
+			handlemouse(oldx, oldy, 4, -1);
 		}
 		return 0;
 
