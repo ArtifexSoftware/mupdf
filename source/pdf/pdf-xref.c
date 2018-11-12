@@ -2814,7 +2814,7 @@ void pdf_mark_xref(fz_context *ctx, pdf_document *doc)
 				pdf_xref_entry *entry = &sub->table[e];
 				if (entry->obj)
 				{
-					entry->flags |= PDF_OBJ_FLAG_MARK;
+					entry->marked = 1;
 				}
 			}
 		}
@@ -2869,7 +2869,7 @@ void pdf_clear_xref_to_mark(fz_context *ctx, pdf_document *doc)
 				 * been updated */
 				if (entry->obj != NULL && entry->stm_buf == NULL)
 				{
-					if ((entry->flags & PDF_OBJ_FLAG_MARK) == 0 && pdf_obj_refs(ctx, entry->obj) == 1)
+					if (!entry->marked && pdf_obj_refs(ctx, entry->obj) == 1)
 					{
 						pdf_drop_obj(ctx, entry->obj);
 						entry->obj = NULL;

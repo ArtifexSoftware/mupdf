@@ -41,18 +41,13 @@ typedef struct pdf_xref_entry_s pdf_xref_entry;
 struct pdf_xref_entry_s
 {
 	char type;		/* 0=unset (f)ree i(n)use (o)bjstm */
-	unsigned char flags;	/* bit 0 = marked */
+	unsigned char marked;	/* marked to keep alive with pdf_mark_xref */
 	unsigned short gen;	/* generation / objstm index */
 	int num;		/* original object number (for decryption after renumbering) */
 	int64_t ofs;		/* file offset / objstm object number */
 	int64_t stm_ofs;	/* on-disk stream */
 	fz_buffer *stm_buf;	/* in-memory stream (for updated objects) */
 	pdf_obj *obj;		/* stored/cached object */
-};
-
-enum
-{
-	PDF_OBJ_FLAG_MARK = 1,
 };
 
 typedef struct pdf_xref_subsec_s pdf_xref_subsec;
