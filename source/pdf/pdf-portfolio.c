@@ -23,6 +23,9 @@ load_portfolio(fz_context *ctx, pdf_document *doc)
 	int i, n;
 	pdf_portfolio **pp;
 
+	if (doc->portfolio)
+		return;
+
 	obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Collection), PDF_NAME(Schema), NULL);
 
 	n = pdf_dict_len(ctx, obj);
@@ -77,17 +80,15 @@ load_portfolio(fz_context *ctx, pdf_document *doc)
 int pdf_count_portfolio_schema(fz_context *ctx, pdf_document *doc)
 {
 	pdf_portfolio *port;
-	int i;
+	int n;
 
-	if (!doc)
-		return 0;
+	load_portfolio(ctx, doc);
 
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	n = 0;
+	for (port = doc->portfolio; port; port = port->next)
+		++n;
 
-	for (i = 0, port = doc->portfolio; port; port = port->next, i++);
-
-	return i;
+	return n;
 }
 
 /*
@@ -107,11 +108,7 @@ void pdf_portfolio_schema_info(fz_context *ctx, pdf_document *doc, int entry, pd
 {
 	pdf_portfolio *p;
 
-	if (!doc || !info)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_portfolio_schema_info call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	p = doc->portfolio;
 	while (p && entry > 0)
@@ -128,11 +125,7 @@ void pdf_reorder_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry,
 	pdf_portfolio **pp;
 	pdf_portfolio *p;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_portfolio_schema_info call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	/* Take p out */
 	pp = &doc->portfolio;
@@ -160,11 +153,7 @@ void pdf_rename_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, 
 	pdf_portfolio *p;
 	pdf_obj *s;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_rename_portfolio_schema call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	p = doc->portfolio;
 	while (p && entry > 0)
@@ -254,11 +243,7 @@ void pdf_delete_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry)
 	pdf_portfolio *p;
 	pdf_obj *s;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_delete_portfolio_schema call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	pp = &doc->portfolio;
 	while (*pp && entry > 0)
@@ -293,11 +278,7 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 	char str_name[32];
 	pdf_obj *num_name = NULL;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_add_portfolio_schema call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	fz_var(num_name);
 	fz_var(sc);
@@ -379,11 +360,7 @@ int pdf_count_portfolio_entries(fz_context *ctx, pdf_document *doc)
 	pdf_obj *s;
 	int count;
 
-	if (!doc)
-		return 0;
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 	count = 0;
@@ -425,7 +402,7 @@ static int find_entry(fz_context *ctx, pdf_obj *container, pdf_obj *key, pdf_obj
 	is borrowed, so call pdf_keep_obj on it if you wish to keep
 	it.
 */
-pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int entry, pdf_obj **name)
+static pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int entry, pdf_obj **name)
 {
 	struct find_data data;
 	pdf_obj *s;
@@ -433,11 +410,7 @@ pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int en
 	if (name)
 		*name = NULL;
 
-	if (!doc)
-		return NULL;
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	s = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Names), PDF_NAME(EmbeddedFiles), NULL);
 	data.count = entry;
@@ -450,7 +423,7 @@ pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int en
 	return data.val;
 }
 
-pdf_obj *pdf_portfolio_entry_obj(fz_context *ctx, pdf_document *doc, int entry)
+static pdf_obj *pdf_portfolio_entry_obj(fz_context *ctx, pdf_document *doc, int entry)
 {
 	pdf_obj *name;
 
@@ -621,11 +594,7 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 
 	fz_var(val);
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_add_portfolio_entry call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	/* Portfolios were introduced in PDF 1.7. */
 	if (doc->version < 17)
@@ -680,11 +649,7 @@ void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 	pdf_obj *obj, *lookup;
 	int ef = 0;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad pdf_add_portfolio_entry call");
-
-	if (doc->portfolio == NULL)
-		load_portfolio(ctx, doc);
+	load_portfolio(ctx, doc);
 
 	obj = pdf_portfolio_entry_obj_name(ctx, doc, entry, NULL);
 	if (!obj)

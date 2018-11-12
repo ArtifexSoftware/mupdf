@@ -393,40 +393,6 @@ int pdf_count_portfolio_entries(fz_context *ctx, pdf_document *doc);
 fz_buffer *pdf_portfolio_entry(fz_context *ctx, pdf_document *doc, int entry);
 
 /*
-	pdf_portfolio_entry_obj_name: Retrieve the object and
-	name of a given portfolio entry.
-
-	doc: The document in question.
-
-	entry: A value in the 0..m-1 range, where m is the
-	value returned from pdf_count_portfolio_entries.
-
-	name: Pointer to a place to store the pointer to the
-	object representing the name. This is a borrowed
-	reference - do not drop it.
-
-	Returns a pointer to the pdf_object representing the
-	object. This is a borrowed reference - do not drop
-	it.
-*/
-pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int entry, pdf_obj **name);
-
-/*
-	pdf_portfolio_entry_obj: Retrieve the object
-	representing a given portfolio entry.
-
-	doc: The document in question.
-
-	entry: A value in the 0..m-1 range, where m is the
-	value returned from pdf_count_portfolio_entries.
-
-	Returns a pointer to the pdf_object representing the
-	object. This is a borrowed reference - do not drop
-	it.
-*/
-pdf_obj *pdf_portfolio_entry_obj(fz_context *ctx, pdf_document *doc, int entry);
-
-/*
 	pdf_portfolio_entry_name: Retrieve the name of
 	a given portfolio entry.
 
