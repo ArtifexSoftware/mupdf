@@ -468,32 +468,21 @@ pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 	name: The name to use for this entry (as used in the
 	PDF name tree for the collection).
 
-	name_len: The byte length of name.
-
 	desc: The description to use for this entry (as used
 	in the 'Desc' entry in the Collection entry).
 
-	desc_len: The byte length of desc.
-
 	filename: The filename to use for this entry (as used
-	in the 'F' entry in the collection entry).
-
-	filename_len: The byte length of filename.
-
-	unifilename: The filename to use for this entry (as used
-	in the 'UF' entry in the collection entry).
-
-	unifilename_len: The byte length of unifilename.
+	in the 'F' and 'UF' entries in the collection entry).
 
 	buf: The buffer containing the embedded file to add.
 
 	Returns the entry number for this new entry.
 */
 int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
-				const char *name, int name_len,
-				const char *desc, int desc_len,
-				const char *filename, int filename_len,
-				const char *unifile, int unifile_len, fz_buffer *buf);
+	const char *name,
+	const char *desc,
+	const char *filename,
+	fz_buffer *buf);
 
 /*
 	pdf_set_portfolio_entry_info: Set part of the entry

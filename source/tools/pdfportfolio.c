@@ -186,10 +186,9 @@ pdfportfolio_add(int argc, char **argv)
 
 	buf = fz_read_file(ctx, filename);
 	pdf_add_portfolio_entry(ctx, doc,
-			ename, strlen(ename), /* name */
-			ename, strlen(ename), /* desc */
-			ename, strlen(ename), /* filename */
-			ename, strlen(ename), /* unifile */
+			ename, /* name */
+			ename, /* desc */
+			filename, /* filename */
 			buf);
 	fz_drop_buffer(ctx, buf);
 }

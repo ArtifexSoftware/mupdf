@@ -609,10 +609,10 @@ pdf_name_tree_insert(fz_context *ctx, pdf_document *doc, pdf_obj *tree, pdf_obj 
 }
 
 int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
-				const char *name, int name_len,
-				const char *desc, int desc_len,
-				const char *filename, int filename_len,
-				const char *unifile, int unifile_len, fz_buffer *buf)
+				const char *name,
+				const char *desc,
+				const char *filename,
+				fz_buffer *buf)
 {
 	int len, entry = 0;
 	pdf_obj *ef, *f, *params, *s;
@@ -631,15 +631,15 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 	if (doc->version < 17)
 		doc->version = 17;
 
-	key = pdf_new_string(ctx, name, name_len);
+	key = pdf_new_text_string(ctx, name);
 	fz_try(ctx)
 	{
 		val = pdf_new_dict(ctx, doc, 6);
 		pdf_dict_put_dict(ctx, val, PDF_NAME(CI), 4);
 		ef = pdf_dict_put_dict(ctx, val, PDF_NAME(EF), 4);
-		pdf_dict_put_string(ctx, val, PDF_NAME(F), filename, filename_len);
-		pdf_dict_put_string(ctx, val, PDF_NAME(UF), unifile, unifile_len);
-		pdf_dict_put_string(ctx, val, PDF_NAME(Desc), desc, desc_len);
+		pdf_dict_put_string(ctx, val, PDF_NAME(F), filename, strlen(filename));
+		pdf_dict_put_text_string(ctx, val, PDF_NAME(UF), filename);
+		pdf_dict_put_text_string(ctx, val, PDF_NAME(Desc), desc);
 		pdf_dict_put(ctx, val, PDF_NAME(Type), PDF_NAME(Filespec));
 		pdf_dict_put_drop(ctx, ef, PDF_NAME(F), (f = pdf_add_stream(ctx, doc, buf, NULL, 0)));
 		len = fz_buffer_storage(ctx, buf, NULL);
