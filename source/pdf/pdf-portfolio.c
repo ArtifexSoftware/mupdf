@@ -627,6 +627,10 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 	if (doc->portfolio == NULL)
 		load_portfolio(ctx, doc);
 
+	/* Portfolios were introduced in PDF 1.7. */
+	if (doc->version < 17)
+		doc->version = 17;
+
 	key = pdf_new_string(ctx, name, name_len);
 	fz_try(ctx)
 	{
