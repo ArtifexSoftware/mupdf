@@ -3866,7 +3866,6 @@ static void ffi_PDFObject_asString(js_State *J)
 		rethrow(J);
 
 	js_pushstring(J, string);
-	js_endtry(J);
 }
 
 static void ffi_PDFObject_asByteString(js_State *J)
