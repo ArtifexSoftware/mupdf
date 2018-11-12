@@ -16,6 +16,4 @@ void pdf_drop_ocg(fz_context *ctx, pdf_document *doc);
 
 int pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const char *usage, pdf_obj *ocg);
 
-void pdf_drop_portfolio(fz_context *ctx, pdf_document *doc);
-
 #endif

@@ -833,10 +833,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\source\tools\pdfportfolio.c"
-			>
-		</File>
-		<File
 			RelativePath="..\..\source\tools\pdfposter.c"
 			>
 		</File>

@@ -2388,10 +2388,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-portfolio.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-repair.c"
 				>
 			</File>

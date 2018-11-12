@@ -1538,7 +1538,6 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	fz_free(ctx, doc->type3_fonts);
 
 	pdf_drop_ocg(ctx, doc);
-	pdf_drop_portfolio(ctx, doc);
 
 	pdf_empty_store(ctx, doc);
 
