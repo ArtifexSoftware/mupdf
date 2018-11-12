@@ -59,10 +59,14 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef __STRICT_ANSI__
 #if defined(__APPLE__)
-#define HAVE_SIGSETJMP
+#ifndef HAVE_SIGSETJMP
+#define HAVE_SIGSETJMP 1
+#endif
 #elif defined(__unix)
 #ifndef __EMSCRIPTEN__
-#define HAVE_SIGSETJMP
+#ifndef HAVE_SIGSETJMP
+#define HAVE_SIGSETJMP 1
+#endif
 #endif
 #endif
 #endif
@@ -75,7 +79,7 @@ typedef unsigned __int64 uint64_t;
 	makes a large speed difference on MacOSX (and probably other
 	platforms too.
 */
-#ifdef HAVE_SIGSETJMP
+#if HAVE_SIGSETJMP
 #define fz_setjmp(BUF) sigsetjmp(BUF, 0)
 #define fz_longjmp(BUF,VAL) siglongjmp(BUF, VAL)
 #define fz_jmp_buf sigjmp_buf
