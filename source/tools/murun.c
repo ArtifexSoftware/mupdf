@@ -2320,10 +2320,16 @@ static void ffi_Image_toPixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_image *image = js_touserdata(J, 0, "fz_image");
+	fz_matrix matrix_, *matrix = NULL;
 	fz_pixmap *pixmap = NULL;
 
+	if (js_isnumber(J, 1) && js_isnumber(J, 2)) {
+		matrix_ = fz_scale(js_tonumber(J, 1), js_tonumber(J, 2));
+		matrix = &matrix_;
+	}
+
 	fz_try(ctx)
-		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
+		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, matrix, NULL, NULL);
 	fz_catch(ctx)
 		rethrow(J);
 
