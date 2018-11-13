@@ -1573,7 +1573,7 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 	int mask;
 
 	/* PDF and substitute font widths. */
-	if (!font->flags.ft_substitute || font->flags.ft_stretch)
+	if (font->flags.ft_stretch)
 	{
 		if (font->width_table)
 		{
