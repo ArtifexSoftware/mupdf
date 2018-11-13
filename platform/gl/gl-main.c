@@ -1587,9 +1587,17 @@ int main(int argc, char **argv)
 				sx = sy;
 			if (sx < 1)
 			{
+				fz_irect area;
+
 				currentzoom *= sx;
-				page_tex.w *= sx;
-				page_tex.h *= sx;
+
+				/* compute bounds here for initial window size */
+				page_bounds = fz_bound_page(ctx, fzpage);
+				transform_page();
+
+				area = fz_irect_from_rect(draw_page_bounds);
+				page_tex.w = area.x1 - area.x0;
+				page_tex.h = area.y1 - area.y0;
 			}
 
 			ui_init(page_tex.w, page_tex.h, "MuPDF: Loading...");
