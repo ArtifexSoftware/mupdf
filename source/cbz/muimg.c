@@ -200,6 +200,7 @@ static const char *img_extensions[] =
 	"pam",
 	"pbm",
 	"pgm",
+	"pkm",
 	"png",
 	"pnm",
 	"ppm",

@@ -21,6 +21,7 @@ static const char *cbz_ext_list[] = {
 	".pam",
 	".pbm",
 	".pgm",
+	".pkm",
 	".png",
 	".pnm",
 	".ppm",
