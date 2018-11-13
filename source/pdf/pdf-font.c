@@ -20,6 +20,8 @@
 #define FT_SFNT_HEAD ft_sfnt_head
 #endif
 
+#define pdf_win_ansi fz_glyph_name_from_windows_1252
+
 static void pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict,
 	const char *collection, const char *basefont, int iscidfont);
 
@@ -2037,10 +2039,10 @@ pdf_add_simple_font_encoding(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, 
 		pdf_dict_put(ctx, fobj, PDF_NAME(Encoding), PDF_NAME(WinAnsiEncoding));
 		break;
 	case PDF_SIMPLE_ENCODING_GREEK:
-		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, pdf_glyph_name_from_iso8859_7);
+		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, fz_glyph_name_from_iso8859_7);
 		break;
 	case PDF_SIMPLE_ENCODING_CYRILLIC:
-		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, pdf_glyph_name_from_koi8u);
+		pdf_add_simple_font_encoding_imp(ctx, doc, fobj, fz_glyph_name_from_koi8u);
 		break;
 	}
 }
@@ -2061,9 +2063,9 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 	switch (encoding)
 	{
 	default: enc = pdf_win_ansi; break;
-	case PDF_SIMPLE_ENCODING_LATIN: enc = pdf_win_ansi; break;
-	case PDF_SIMPLE_ENCODING_GREEK: enc = pdf_glyph_name_from_iso8859_7; break;
-	case PDF_SIMPLE_ENCODING_CYRILLIC: enc = pdf_glyph_name_from_koi8u; break;
+	case PDF_SIMPLE_ENCODING_LATIN: enc = fz_glyph_name_from_windows_1252; break;
+	case PDF_SIMPLE_ENCODING_GREEK: enc = fz_glyph_name_from_iso8859_7; break;
+	case PDF_SIMPLE_ENCODING_CYRILLIC: enc = fz_glyph_name_from_koi8u; break;
 	}
 
 	fobj = pdf_add_new_dict(ctx, doc, 10);

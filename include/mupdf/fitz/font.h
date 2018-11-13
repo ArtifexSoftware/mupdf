@@ -9,6 +9,29 @@
 /* forward declaration for circular dependency */
 struct fz_device_s;
 
+/* Various font encoding tables and lookup functions */
+
+extern const char *fz_glyph_name_from_iso8859_1[256];
+extern const char *fz_glyph_name_from_iso8859_7[256];
+extern const char *fz_glyph_name_from_koi8u[256];
+extern const char *fz_glyph_name_from_windows_1250[256];
+extern const char *fz_glyph_name_from_windows_1251[256];
+extern const char *fz_glyph_name_from_windows_1252[256];
+
+extern unsigned short fz_unicode_from_iso8859_1[256];
+extern unsigned short fz_unicode_from_iso8859_7[256];
+extern unsigned short fz_unicode_from_koi8u[256];
+extern unsigned short fz_unicode_from_windows_1250[256];
+extern unsigned short fz_unicode_from_windows_1251[256];
+extern unsigned short fz_unicode_from_windows_1252[256];
+
+int fz_iso8859_1_from_unicode(int u);
+int fz_iso8859_7_from_unicode(int u);
+int fz_koi8u_from_unicode(int u);
+int fz_windows_1250_from_unicode(int u);
+int fz_windows_1251_from_unicode(int u);
+int fz_windows_1252_from_unicode(int u);
+
 /*
 	An abstract font handle.
 */

@@ -1900,6 +1900,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\encodings.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\error.c"
 				>
 			</File>

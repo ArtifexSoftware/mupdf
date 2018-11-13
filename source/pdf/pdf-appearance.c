@@ -673,7 +673,7 @@ measure_simple_string(fz_context *ctx, fz_font *font, const char *text)
 	{
 		int c, g;
 		text += fz_chartorune(&c, text);
-		c = pdf_winansi_from_unicode(c);
+		c = fz_windows_1252_from_unicode(c);
 		if (c < 0) c = REPLACEMENT;
 		g = fz_encode_character(ctx, font, c);
 		w += fz_advance_glyph(ctx, font, g, 0);
@@ -689,7 +689,7 @@ write_simple_string(fz_context *ctx, fz_buffer *buf, const char *a, const char *
 	{
 		int c;
 		a += fz_chartorune(&c, a);
-		c = pdf_winansi_from_unicode(c);
+		c = fz_windows_1252_from_unicode(c);
 		if (c < 0) c = REPLACEMENT;
 		if (c == '(' || c == ')' || c == '\\')
 			fz_append_byte(ctx, buf, '\\');
@@ -871,7 +871,7 @@ write_comb_string(fz_context *ctx, fz_buffer *buf, const char *a, const char *b,
 		int c, g;
 
 		a += fz_chartorune(&c, a);
-		c = pdf_winansi_from_unicode(c);
+		c = fz_windows_1252_from_unicode(c);
 		if (c < 0) c = REPLACEMENT;
 
 		g = fz_encode_character(ctx, font, c);
