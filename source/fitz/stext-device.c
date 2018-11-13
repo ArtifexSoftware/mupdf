@@ -659,7 +659,13 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 		for (line = block->u.t.first_line; line; line = line->next)
 		{
 			for (ch = line->first_char; ch; ch = ch->next)
-				line->bbox = fz_union_rect(line->bbox, fz_rect_from_quad(ch->quad));
+			{
+				fz_rect ch_box = fz_rect_from_quad(ch->quad);
+				if (ch == line->first_char)
+					line->bbox = ch_box;
+				else
+					line->bbox = fz_union_rect(line->bbox, ch_box);
+			}
 			block->bbox = fz_union_rect(block->bbox, line->bbox);
 		}
 	}
