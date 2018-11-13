@@ -185,8 +185,7 @@ fz_image *fz_new_image_of_size(fz_context *ctx,
 	interpolate: 1 if interpolation should be used when decoding
 	this image, 0 otherwise.
 
-	imagemask: 1 if this is an imagemask (i.e. transparent), 0
-	otherwise.
+	imagemask: 1 if this is an imagemask (i.e. transparency bitmap mask), 0 otherwise.
 
 	decode: NULL, or a pointer to to a decode array. The default
 	decode array is [0 1] (repeated n times, for n color components).

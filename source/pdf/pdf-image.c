@@ -299,7 +299,7 @@ pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 }
 
 pdf_obj *
-pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
+pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 {
 	fz_pixmap *pixmap = NULL;
 	pdf_obj *imobj = NULL;
@@ -457,7 +457,7 @@ raw_or_unknown_compression:
 		pdf_dict_put_int(ctx, imobj, PDF_NAME(Width), pixmap ? pixmap->w : image->w);
 		pdf_dict_put_int(ctx, imobj, PDF_NAME(Height), pixmap ? pixmap->h : image->h);
 
-		if (mask)
+		if (image->imagemask)
 		{
 			pdf_dict_put_bool(ctx, imobj, PDF_NAME(ImageMask), 1);
 		}
@@ -525,7 +525,7 @@ raw_or_unknown_compression:
 
 		if (image->mask)
 		{
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, image->mask, 1));
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, image->mask));
 		}
 
 		pdf_update_stream(ctx, doc, imobj, buffer, 1);

@@ -120,7 +120,7 @@ static void add_image_res(pdf_obj *resources, char *name, char *path)
 		pdf_dict_put_drop(ctx, resources, PDF_NAME(XObject), subres);
 	}
 
-	ref = pdf_add_image(ctx, doc, image, 0);
+	ref = pdf_add_image(ctx, doc, image);
 	pdf_dict_puts(ctx, subres, name, ref);
 	pdf_drop_obj(ctx, ref);
 

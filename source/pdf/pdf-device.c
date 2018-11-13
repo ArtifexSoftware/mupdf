@@ -819,7 +819,7 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix c
 	gstate *gs = CURRENT_GSTATE(pdev);
 
 	pdf_dev_end_text(ctx, pdev);
-	im_res = pdf_add_image(ctx, pdev->doc, image, 0);
+	im_res = pdf_add_image(ctx, pdev->doc, image);
 	if (im_res == NULL)
 	{
 		fz_warn(ctx, "pdf_add_image: problem adding image resource");
@@ -856,7 +856,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 	gstate *gs = CURRENT_GSTATE(pdev);
 
 	pdf_dev_end_text(ctx, pdev);
-	im_res = pdf_add_image(ctx, pdev->doc, image, 1);
+	im_res = pdf_add_image(ctx, pdev->doc, image);
 	if (im_res == NULL)
 	{
 		fz_warn(ctx, "pdf_add_image: problem adding image resource");

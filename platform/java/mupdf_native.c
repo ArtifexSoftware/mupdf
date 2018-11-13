@@ -7269,7 +7269,7 @@ FUN(PDFDocument_addImage)(JNIEnv *env, jobject self, jobject jimage)
 	if (!image) { jni_throw_arg(env, "image must not be null"); return NULL; }
 
 	fz_try(ctx)
-		ind = pdf_add_image(ctx, pdf, image, 0);
+		ind = pdf_add_image(ctx, pdf, image);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);

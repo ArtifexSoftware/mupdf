@@ -3283,7 +3283,7 @@ static void ffi_PDFDocument_addImage(js_State *J)
 	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
-		ind = pdf_add_image(ctx, pdf, image, 0);
+		ind = pdf_add_image(ctx, pdf, image);
 	fz_catch(ctx)
 		rethrow(J);
 
