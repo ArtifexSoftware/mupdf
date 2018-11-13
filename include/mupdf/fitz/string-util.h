@@ -97,6 +97,7 @@ char *fz_cleanname(char *name);
 	Case insensitive (ASCII only) string comparison.
 */
 int fz_strcasecmp(const char *a, const char *b);
+int fz_strncasecmp(const char *a, const char *b, int n);
 
 /*
 	FZ_UTFMAX: Maximum number of bytes in a decoded rune (maximum length returned by fz_chartorune).

@@ -22,6 +22,16 @@ fz_strnlen(const char *s, size_t n)
 }
 
 int
+fz_strncasecmp(const char *a, const char *b, int n)
+{
+	if (!n--)
+		return 0;
+	for (; *a && *b && n && (*a == *b || fz_tolower(*a) == fz_tolower(*b)); a++, b++, n--)
+		;
+	return fz_tolower(*a) - fz_tolower(*b);
+}
+
+int
 fz_strcasecmp(const char *a, const char *b)
 {
 	while (fz_tolower(*a) == fz_tolower(*b))
