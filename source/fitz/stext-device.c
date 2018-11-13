@@ -24,6 +24,7 @@ struct fz_stext_device_s
 	int curdir;
 	int lastchar;
 	int flags;
+	const fz_text *lasttext;
 };
 
 const char *fz_stext_options_usage =
@@ -504,9 +505,13 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
+	if (text == tdev->lasttext)
+		return;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
+	fz_drop_text(ctx, tdev->lasttext);
+	tdev->lasttext = fz_keep_text(ctx, text);
 }
 
 static void
@@ -515,9 +520,13 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
+	if (text == tdev->lasttext)
+		return;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
+	fz_drop_text(ctx, tdev->lasttext);
+	tdev->lasttext = fz_keep_text(ctx, text);
 }
 
 static void
@@ -525,9 +534,13 @@ fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
+	if (text == tdev->lasttext)
+		return;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
+	fz_drop_text(ctx, tdev->lasttext);
+	tdev->lasttext = fz_keep_text(ctx, text);
 }
 
 static void
@@ -535,9 +548,13 @@ fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, 
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
+	if (text == tdev->lasttext)
+		return;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
+	fz_drop_text(ctx, tdev->lasttext);
+	tdev->lasttext = fz_keep_text(ctx, text);
 }
 
 static void
@@ -545,9 +562,13 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_ma
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
+	if (text == tdev->lasttext)
+		return;
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
+	fz_drop_text(ctx, tdev->lasttext);
+	tdev->lasttext = fz_keep_text(ctx, text);
 }
 
 /* Images and shadings */
@@ -650,6 +671,8 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 static void
 fz_stext_drop_device(fz_context *ctx, fz_device *dev)
 {
+	fz_stext_device *tdev = (fz_stext_device*)dev;
+	fz_drop_text(ctx, tdev->lasttext);
 }
 
 fz_stext_options *
@@ -697,6 +720,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->trm = fz_identity;
 	dev->lastchar = ' ';
 	dev->curdir = 1;
+	dev->lasttext = NULL;
 
 	return (fz_device*)dev;
 }
