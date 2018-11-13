@@ -33,7 +33,6 @@ static HWND hwndframe = NULL;
 static HWND hwndview = NULL;
 static HDC hdc;
 static HBRUSH bgbrush;
-static HBRUSH shbrush;
 static BITMAPINFO *dibinf = NULL;
 static HCURSOR arrowcurs, handcurs, waitcurs, caretcurs;
 static LRESULT CALLBACK frameproc(HWND, UINT, WPARAM, LPARAM);
@@ -664,7 +663,6 @@ void winopen()
 
 	/* And a background color */
 	bgbrush = CreateSolidBrush(RGB(0x70,0x70,0x70));
-	shbrush = CreateSolidBrush(RGB(0x40,0x40,0x40));
 
 	/* Init DIB info for buffer */
 	dibinf = malloc(sizeof(BITMAPINFO) + 12);
@@ -801,6 +799,7 @@ void winblit()
 	int x1 = gapp.panx + image_w;
 	int y1 = gapp.pany + image_h;
 	RECT r;
+	HBRUSH brush;
 
 	if (gapp.image)
 	{
@@ -851,29 +850,22 @@ void winblit()
 		}
 	}
 
+	if (gapp.invert)
+		brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	else
+		brush = bgbrush;
+
 	/* Grey background */
 	r.top = 0; r.bottom = gapp.winh;
 	r.left = 0; r.right = x0;
-	FillRect(hdc, &r, bgbrush);
+	FillRect(hdc, &r, brush);
 	r.left = x1; r.right = gapp.winw;
-	FillRect(hdc, &r, bgbrush);
+	FillRect(hdc, &r, brush);
 	r.left = 0; r.right = gapp.winw;
 	r.top = 0; r.bottom = y0;
-	FillRect(hdc, &r, bgbrush);
+	FillRect(hdc, &r, brush);
 	r.top = y1; r.bottom = gapp.winh;
-	FillRect(hdc, &r, bgbrush);
-
-	/* Drop shadow */
-	r.left = x0 + 2;
-	r.right = x1 + 2;
-	r.top = y1;
-	r.bottom = y1 + 2;
-	FillRect(hdc, &r, shbrush);
-	r.left = x1;
-	r.right = x1 + 2;
-	r.top = y0 + 2;
-	r.bottom = y1;
-	FillRect(hdc, &r, shbrush);
+	FillRect(hdc, &r, brush);
 
 	winblitsearch();
 }

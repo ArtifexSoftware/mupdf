@@ -92,7 +92,6 @@ static int transition_dirty = 0;
 static int dirtysearch = 0;
 static char *password = "";
 static XColor xbgcolor;
-static XColor xshcolor;
 static int reqw = 0;
 static int reqh = 0;
 static char copylatin1[1024 * 16] = "";
@@ -226,12 +225,7 @@ static void winopen(void)
 	xbgcolor.green = 0x7000;
 	xbgcolor.blue = 0x7000;
 
-	xshcolor.red = 0x4000;
-	xshcolor.green = 0x4000;
-	xshcolor.blue = 0x4000;
-
 	XAllocColor(xdpy, DefaultColormap(xdpy, xscr), &xbgcolor);
-	XAllocColor(xdpy, DefaultColormap(xdpy, xscr), &xshcolor);
 
 	xwin = XCreateWindow(xdpy, DefaultRootWindow(xdpy),
 		10, 10, 200, 100, 0,
@@ -527,15 +521,14 @@ static void winblit(pdfapp_t *app)
 		int x1 = gapp.panx + image_w;
 		int y1 = gapp.pany + image_h;
 
-		XSetForeground(xdpy, xgc, xbgcolor.pixel);
+		if (app->invert)
+			XSetForeground(xdpy, xgc, BlackPixel(xdpy, DefaultScreen(xdpy)));
+		else
+			XSetForeground(xdpy, xgc, xbgcolor.pixel);
 		fillrect(0, 0, x0, gapp.winh);
 		fillrect(x1, 0, gapp.winw - x1, gapp.winh);
 		fillrect(0, 0, gapp.winw, y0);
 		fillrect(0, y1, gapp.winw, gapp.winh - y1);
-
-		XSetForeground(xdpy, xgc, xshcolor.pixel);
-		fillrect(x0+2, y1, image_w, 2);
-		fillrect(x1, y0+2, 2, image_h);
 
 		if (gapp.iscopying || justcopied)
 		{
