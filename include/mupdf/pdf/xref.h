@@ -117,6 +117,4 @@ int pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t 
 
 pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum);
 
-void pdf_print_xref(fz_context *ctx, pdf_document *);
-
 #endif
