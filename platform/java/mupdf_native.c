@@ -4867,6 +4867,7 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 
 /* Document interface */
 
+#if FZ_ENABLE_GPRF
 static char *make_tmp_gproof_path(const char *path)
 {
 	FILE *f;
@@ -4904,6 +4905,7 @@ static char *make_tmp_gproof_path(const char *path)
 	LOGE("Rewritten to %s\n", buf);
 	return buf;
 }
+#endif
 
 JNIEXPORT jstring JNICALL
 FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstring jPrintProfile, jstring jDisplayProfile, jint inResolution)
