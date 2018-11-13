@@ -581,8 +581,50 @@ parse_attribute_value:
 	return "end of data in attribute value";
 }
 
-static char *convert_to_utf8(fz_context *doc, const unsigned char *s, size_t n, int *dofree)
+static int startswith(const char *a, const char *b)
 {
+	return !fz_strncasecmp(a, b, strlen(b));
+}
+
+static const unsigned short *find_xml_encoding(char *s)
+{
+	const unsigned short *table = NULL;
+	char *end, *xml, *enc;
+
+	end = strchr(s, '>');
+	if (end)
+	{
+		*end = 0;
+		xml = strstr(s, "<?xml");
+		if (xml)
+		{
+			enc = strstr(xml, "encoding=");
+			if (enc)
+			{
+				enc += 10;
+				if (startswith(enc, "iso-8859-1") || startswith(enc, "latin1"))
+					table = fz_unicode_from_iso8859_1;
+				else if (startswith(enc, "iso-8859-7") || startswith(enc, "greek"))
+					table = fz_unicode_from_iso8859_7;
+				else if (startswith(enc, "koi8"))
+					table = fz_unicode_from_koi8u;
+				else if (startswith(enc, "windows-1250"))
+					table = fz_unicode_from_windows_1250;
+				else if (startswith(enc, "windows-1251"))
+					table = fz_unicode_from_windows_1251;
+				else if (startswith(enc, "windows-1252"))
+					table = fz_unicode_from_windows_1252;
+			}
+		}
+		*end = '>';
+	}
+
+	return table;
+}
+
+static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *dofree)
+{
+	const unsigned short *table;
 	const unsigned char *e = s + n;
 	char *dst, *d;
 	int c;
@@ -607,6 +649,18 @@ static char *convert_to_utf8(fz_context *doc, const unsigned char *s, size_t n, 
 			c = s[0] | s[1] << 8;
 			d += fz_runetochar(d, c);
 			s += 2;
+		}
+		*d = 0;
+		*dofree = 1;
+		return dst;
+	}
+
+	table = find_xml_encoding((char*)s);
+	if (table) {
+		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
+		while (*s) {
+			c = table[*s++];
+			d += fz_runetochar(d, c);
 		}
 		*d = 0;
 		*dofree = 1;
