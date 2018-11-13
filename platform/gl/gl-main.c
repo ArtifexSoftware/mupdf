@@ -12,7 +12,7 @@
 #endif
 
 #ifndef _WIN32
-#include <unistd.h> /* for fork and exec */
+#include <unistd.h> /* for fork, exec, and getcwd */
 #else
 char *realpath(const char *path, char *resolved_path); /* in gl-file.c */
 #endif
@@ -50,6 +50,20 @@ enum
 
 static void open_browser(const char *uri)
 {
+	char buf[PATH_MAX];
+
+	/* Relative file:// URI, make it absolute! */
+	if (!strncmp(uri, "file://", 7) && uri[7] != '/')
+	{
+		char buf_base[PATH_MAX];
+		char buf_cwd[PATH_MAX];
+		fz_dirname(buf_base, filename, sizeof buf_base);
+		getcwd(buf_cwd, sizeof buf_cwd);
+		fz_snprintf(buf, sizeof buf, "file://%s/%s/%s", buf_cwd, buf_base, uri+7);
+		fz_cleanname(buf+7);
+		uri = buf;
+	}
+
 #ifdef _WIN32
 	ShellExecuteA(NULL, "open", uri, 0, 0, SW_SHOWNORMAL);
 #else

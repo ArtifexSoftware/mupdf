@@ -138,17 +138,11 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 #ifdef _WIN32
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME(FS)), PDF_NAME(URL)))
 	{
-		/* move the file name into the expected place and use the expected path separator */
-		char *c;
+		/* Fix up the drive letter (change "/C/Documents/Foo" to "C:/Documents/Foo") */
 		if (path[0] == '/' && (('A' <= path[1] && path[1] <= 'Z') || ('a' <= path[1] && path[1] <= 'z')) && path[2] == '/')
 		{
 			path[0] = path[1];
 			path[1] = ':';
-		}
-		for (c = path; *c; c++)
-		{
-			if (*c == '/')
-				*c = '\\';
 		}
 	}
 #endif
