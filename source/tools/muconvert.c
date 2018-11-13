@@ -42,7 +42,7 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\t\traster: cbz, png, pnm, pgm, ppm, pam, tga, pbm, pkm.\n"
+		"\t\t\traster: cbz, png, pnm, pgm, ppm, pam, pbm, pkm.\n"
 		"\t\t\tprint-raster: pcl, pclm, ps, pwg.\n"
 		"\t\t\tvector: pdf, svg.\n"
 		"\t\t\ttext: html, xhtml, text, stext.\n"

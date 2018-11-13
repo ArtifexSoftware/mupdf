@@ -68,11 +68,6 @@ fz_document_writer *fz_new_png_pixmap_writer(fz_context *ctx, const char *path, 
 	return fz_new_pixmap_writer(ctx, path, options, "out-%04d.png", 0, fz_save_pixmap_as_png);
 }
 
-fz_document_writer *fz_new_tga_pixmap_writer(fz_context *ctx, const char *path, const char *options)
-{
-	return fz_new_pixmap_writer(ctx, path, options, "out-%04d.tga", 0, fz_save_pixmap_as_tga);
-}
-
 fz_document_writer *fz_new_pam_pixmap_writer(fz_context *ctx, const char *path, const char *options)
 {
 	return fz_new_pixmap_writer(ctx, path, options, "out-%04d.pam", 0, fz_save_pixmap_as_pam);
@@ -125,8 +120,6 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 
 	if (!fz_strcasecmp(format, "png"))
 		return fz_new_png_pixmap_writer(ctx, path, options);
-	if (!fz_strcasecmp(format, "tga"))
-		return fz_new_tga_pixmap_writer(ctx, path, options);
 	if (!fz_strcasecmp(format, "pam"))
 		return fz_new_pam_pixmap_writer(ctx, path, options);
 	if (!fz_strcasecmp(format, "pnm"))

@@ -4731,7 +4731,7 @@ int murun_main(int argc, char **argv)
 		// Pixmap.scale()
 
 		jsB_propfun(J, "Pixmap.saveAsPNG", ffi_Pixmap_saveAsPNG, 1);
-		// Pixmap.saveAsPNM, PAM, TGA, PWG, PCL
+		// Pixmap.saveAsPNM, PAM, PWG, PCL
 
 		// Pixmap.halftone() -> Bitmap
 		// Pixmap.md5()

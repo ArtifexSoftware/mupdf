@@ -69,7 +69,6 @@ extern "C" {
 #include "mupdf/fitz/output-ps.h"
 #include "mupdf/fitz/output-psd.h"
 #include "mupdf/fitz/output-svg.h"
-#include "mupdf/fitz/output-tga.h"
 
 #ifdef __cplusplus
 }

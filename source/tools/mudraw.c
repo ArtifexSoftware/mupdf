@@ -35,7 +35,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 enum {
 	OUT_NONE,
-	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
+	OUT_PNG, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
 	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT, OUT_PCLM,
 	OUT_TRACE, OUT_SVG,
@@ -74,7 +74,6 @@ static const suffix_t suffix_table[] =
 #endif
 	{ ".psd", OUT_PSD, 1 },
 	{ ".ps", OUT_PS, 0 },
-	{ ".tga", OUT_TGA, 0 },
 
 	{ ".txt", OUT_TEXT, 0 },
 	{ ".text", OUT_TEXT, 0 },
@@ -131,7 +130,6 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PCLM, CS_RGB, { CS_RGB, CS_GRAY } },
 	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PSD, CS_CMYK, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_ICC } },
-	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
@@ -318,7 +316,7 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\traster: png, tga, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
+		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
 		"\t\tvector: svg, pdf, trace\n"
 		"\t\ttext: txt, html, stext\n"
 		"\n"
@@ -723,11 +721,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		zoom = resolution / 72;
 		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
 
-		if (output_format == OUT_TGA)
-		{
-			ctm = fz_pre_scale(fz_pre_translate(ctm, 0, -height), 1, -1);
-		}
-
 		tbounds = fz_transform_rect(mediabox, ctm);
 		ibounds = fz_round_rect(tbounds);
 
@@ -844,8 +837,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_ps_band_writer(ctx, out);
 				else if (output_format == OUT_PSD)
 					bander = fz_new_psd_band_writer(ctx, out);
-				else if (output_format == OUT_TGA)
-					bander = fz_new_tga_band_writer(ctx, out, fz_colorspace_is_bgr(ctx, colorspace));
 				else if (output_format == OUT_PWG)
 				{
 					if (out_cs == CS_MONO)
@@ -1710,9 +1701,9 @@ int mudraw_main(int argc, char **argv)
 
 		if (band_height)
 		{
-			if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD && output_format != OUT_TGA)
+			if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD)
 			{
-				fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PS, PSD, PNG and TGA outputs\n");
+				fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PS, PSD, and PNG outputs\n");
 				exit(1);
 			}
 			if (showmd5)
