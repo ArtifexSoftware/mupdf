@@ -1053,6 +1053,67 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 }
 
 static void
+svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
+{
+	svg_state local_state = *inherit_state;
+	float x=0, y=0, w=0, h=0;
+	const char *data;
+
+	static const char *jpeg_uri = "data:image/jpeg;base64,";
+	static const char *png_uri = "data:image/png;base64,";
+
+	char *href_att = fz_xml_att(root, "xlink:href");
+	char *x_att = fz_xml_att(root, "x");
+	char *y_att = fz_xml_att(root, "y");
+	char *w_att = fz_xml_att(root, "width");
+	char *h_att = fz_xml_att(root, "height");
+
+	svg_parse_common(ctx, doc, root, &local_state);
+	if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
+	if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
+	if (w_att) w = svg_parse_length(w_att, local_state.viewbox_w, local_state.fontsize);
+	if (h_att) h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
+
+	if (w <= 0 || h <= 0)
+		return;
+
+	local_state.transform = fz_pre_translate(local_state.transform, x, y);
+	local_state.transform = fz_pre_scale(local_state.transform, w, h);
+
+	if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
+		data = href_att + strlen(jpeg_uri);
+	else if (!strncmp(href_att, png_uri, strlen(png_uri)))
+		data = href_att + strlen(png_uri);
+	else
+		data = NULL;
+	if (data)
+	{
+		fz_image *img = NULL;
+		fz_buffer *buf;
+
+		fz_var(img);
+
+		buf = fz_new_buffer_from_base64(ctx, data, 0);
+		fz_try(ctx)
+		{
+			img = fz_new_image_from_buffer(ctx, buf);
+			fz_fill_image(ctx, dev, img, local_state.transform, 1, NULL);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_buffer(ctx, buf);
+			fz_drop_image(ctx, img);
+		}
+		fz_catch(ctx)
+			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
+	}
+	else
+	{
+		fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
+	}
+}
+
+static void
 svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *state)
 {
 	if (fz_xml_is_tag(root, "svg"))
@@ -1089,9 +1150,10 @@ svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root
 	else if (fz_xml_is_tag(root, "polygon"))
 		svg_run_polygon(ctx, dev, doc, root, state);
 
-#if 0
 	else if (fz_xml_is_tag(root, "image"))
-		svg_parse_image(ctx, doc, root);
+		svg_run_image(ctx, dev, doc, root, state);
+
+#if 0
 	else if (fz_xml_is_tag(root, "text"))
 		svg_run_text(ctx, dev, doc, root);
 	else if (fz_xml_is_tag(root, "tspan"))

@@ -80,7 +80,7 @@ fz_buffer *
 fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size)
 {
 	fz_buffer *buf = fz_new_buffer(ctx, size);
-	const char *end = data + size;
+	const char *end = data + (size > 0 ? size : strlen(data));
 	const char *s = data;
 	fz_try(ctx)
 	{
