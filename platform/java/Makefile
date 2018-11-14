@@ -1,5 +1,8 @@
 OS ?= $(shell uname)
 
+JAVA := java
+JAVAC := javac
+
 ifeq "$(OS)" "Darwin"
 MUPDF_JAVA := libmupdf_java64.jnilib
 JAVA_CFLAGS := \
@@ -41,13 +44,13 @@ LIBRARY_JAVA_CLASSES := $(subst src/com/artifex/mupdf/fitz/,com.artifex.mupdf.fi
 JAVAC_FLAGS := $(JAVAC_XFLAGS) -source 1.7 -target 1.7
 
 $(LIBRARY_JAVA_OBJECTS) : $(LIBRARY_JAVA_SOURCES)
-	javac $(JAVAC_FLAGS) $^
+	$(JAVAC) $(JAVAC_FLAGS) $^
 
 EXAMPLE_JAVA_SOURCES := $(sort $(wildcard example/*.java))
 EXAMPLE_JAVA_OBJECTS := $(EXAMPLE_JAVA_SOURCES:%.java=%.class)
 
 $(EXAMPLE_JAVA_OBJECTS) : $(EXAMPLE_JAVA_SOURCES)
-	javac $(JAVAC_FLAGS) -classpath .:src $^
+	$(JAVAC) $(JAVAC_FLAGS) -classpath .:src $^
 
 libmupdf.jar : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
@@ -65,10 +68,10 @@ $(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
 	$(CC) -shared -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. java -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. $(JAVA) -classpath .:src example.Viewer
 
 gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. gdb --args java -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. gdb --args $(JAVA) -classpath .:src example.Viewer
 
 clean:
 	rm -f src/com/artifex/mupdf/fitz/*.class
