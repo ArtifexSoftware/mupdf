@@ -1591,6 +1591,7 @@ int main(int argc, char **argv)
 				fz_irect area;
 
 				currentzoom *= sx;
+				oldzoom = currentzoom;
 
 				/* compute bounds here for initial window size */
 				page_bounds = fz_bound_page(ctx, fzpage);
