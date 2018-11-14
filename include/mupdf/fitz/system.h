@@ -15,6 +15,7 @@
 #include <stddef.h> /* needed for size_t */
 #include <stdarg.h> /* needed for va_list vararg functions */
 #include <setjmp.h> /* needed for the try/catch macros */
+#include <stdio.h> /* useful for debug printfs */
 
 #if defined(_MSC_VER) && (_MSC_VER < 1700) /* MSVC older than VS2012 */
 typedef signed char int8_t;
