@@ -117,9 +117,9 @@ void fz_debug_xml(fz_xml *item, int level)
 			default:
 				if (c < 32 || c > 127) {
 					putchar('\\');
-					putchar('0' + ((c >> 6) & 7));
-					putchar('0' + ((c >> 3) & 7));
-					putchar('0' + ((c) & 7));
+					putchar('x');
+					putchar("0123456789ABCDEF"[(c>>4) & 15]);
+					putchar("0123456789ABCDEF"[(c) & 15]);
 				} else {
 					putchar(c);
 				}
