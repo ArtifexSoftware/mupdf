@@ -155,6 +155,7 @@ struct list
 	fz_irect area;
 	int scroll_y;
 	int item_y;
+	int is_tree;
 };
 
 void ui_begin(void);
@@ -187,9 +188,12 @@ void ui_input_init(struct input *input, const char *text);
 int ui_input(struct input *input, int width, int height);
 void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max);
 
+void ui_tree_begin(struct list *list, int count, int req_w, int req_h, int is_tree);
+int ui_tree_item(struct list *list, const void *id, const char *label, int selected, int depth, int is_branch, int *is_open);
+void ui_tree_end(struct list *list);
+
 void ui_list_begin(struct list *list, int count, int req_w, int req_h);
 int ui_list_item(struct list *list, const void *id, const char *label, int selected);
-int ui_list_item_x(struct list *list, const void *id, int indent, const char *label, int selected);
 void ui_list_end(struct list *list);
 
 int ui_popup(const void *id, const char *label, int is_button, int count);

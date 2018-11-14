@@ -353,6 +353,7 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			outline->uri = fz_strdup(ctx, path);
 			outline->page = -1;
 			outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
+			outline->is_open = 1;
 		}
 		node = fz_xml_find_next(node, "navPoint");
 	}
