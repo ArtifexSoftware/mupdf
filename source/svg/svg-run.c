@@ -793,18 +793,12 @@ svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 void
 svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
-	char *x_att = fz_xml_att(node, "x");
-	char *y_att = fz_xml_att(node, "y");
 	char *w_att = fz_xml_att(node, "width");
 	char *h_att = fz_xml_att(node, "height");
 
-	float x = 0;
-	float y = 0;
 	float w = state->viewport_w;
 	float h = state->viewport_h;
 
-	if (x_att) x = svg_parse_length(x_att, state->viewbox_w, state->fontsize);
-	if (y_att) y = svg_parse_length(y_att, state->viewbox_h, state->fontsize);
 	if (w_att) w = svg_parse_length(w_att, state->viewbox_w, state->fontsize);
 	if (h_att) h = svg_parse_length(h_att, state->viewbox_h, state->fontsize);
 
