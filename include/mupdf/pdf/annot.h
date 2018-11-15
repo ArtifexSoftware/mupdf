@@ -141,6 +141,7 @@ void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 	specified page. The returned pdf_annot structure is owned by the page
 	and does not need to be freed.
 */
+pdf_annot *pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
 /*
