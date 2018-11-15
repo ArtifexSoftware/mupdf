@@ -65,7 +65,7 @@ mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
 		$(JAVA_CFLAGS)
 
 $(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
-	$(CC) -shared -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
+	$(CC) -shared -z noexecstack -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. $(JAVA) -classpath .:src example.Viewer
