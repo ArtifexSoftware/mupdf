@@ -18,35 +18,17 @@ pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int id
 	if (pdf_name_eq(ctx, type, PDF_NAME(Pages)))
 	{
 		pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
-		int count = pdf_dict_get_int(ctx, node, PDF_NAME(Count));
 		int i, n = pdf_array_len(ctx, kids);
 
-		/* if Kids length is same as Count, all children must be page objects */
-		if (n == count)
-		{
+		if (pdf_mark_obj(ctx, node))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree");
+		fz_try(ctx)
 			for (i = 0; i < n; ++i)
-			{
-				if (idx >= doc->rev_page_count)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
-				doc->rev_page_map[idx].page = idx;
-				doc->rev_page_map[idx].object = pdf_to_num(ctx, pdf_array_get(ctx, kids, i));
-				++idx;
-			}
-		}
-
-		/* else Kids may contain intermediate nodes */
-		else
-		{
-			if (pdf_mark_obj(ctx, node))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree");
-			fz_try(ctx)
-				for (i = 0; i < n; ++i)
-					idx = pdf_load_page_tree_imp(ctx, doc, pdf_array_get(ctx, kids, i), idx);
-			fz_always(ctx)
-				pdf_unmark_obj(ctx, node);
-			fz_catch(ctx)
-				fz_rethrow(ctx);
-		}
+				idx = pdf_load_page_tree_imp(ctx, doc, pdf_array_get(ctx, kids, i), idx);
+		fz_always(ctx)
+			pdf_unmark_obj(ctx, node);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 	else if (pdf_name_eq(ctx, type, PDF_NAME(Page)))
 	{
