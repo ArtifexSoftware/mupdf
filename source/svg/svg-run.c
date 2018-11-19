@@ -5,7 +5,7 @@
 #include <math.h>
 
 /* default page size */
-#define DEF_WIDTH 12
+#define DEF_WIDTH 612
 #define DEF_HEIGHT 792
 #define DEF_FONTSIZE 12
 
@@ -832,6 +832,8 @@ svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *s
 		state->transform = fz_concat(state->transform, fz_translate(-min_x, -min_y));
 		state->transform = fz_concat(state->transform,
 			fz_scale(state->viewport_w / box_w, state->viewport_h / box_h));
+		state->viewbox_w = box_w;
+		state->viewbox_h = box_h;
 	}
 }
 
