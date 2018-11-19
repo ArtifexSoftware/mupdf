@@ -72,15 +72,10 @@ static const char *fb2_default_css =
 "@page{margin:2em 2em}"
 "FictionBook{display:block;margin:0;line-height:1.2em}"
 "stylesheet,binary{display:none}"
-#ifdef FB2_FRONT_MATTER
 "description>*{display:none}"
 "description>title-info{display:block}"
 "description>title-info>*{display:none}"
-"description>title-info>annotation{display:block;page-break-before:always;page-break-after:always}"
 "description>title-info>coverpage{display:block;page-break-before:always;page-break-after:always}"
-#else
-"description{display:none}"
-#endif
 "body,section,title,subtitle,p,cite,epigraph,text-author,date,poem,stanza,v,empty-line{display:block}"
 "image{display:block}"
 "p>image{display:inline}"
