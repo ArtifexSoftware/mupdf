@@ -159,17 +159,25 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 
 int fz_do_try(fz_context *ctx)
 {
+#ifdef __COVERITY__
+	return 1;
+#else
 	return ctx->error->top->code == 0;
+#endif
 }
 
 int fz_do_always(fz_context *ctx)
 {
+#ifdef __COVERITY__
+	return 1;
+#else
 	if (ctx->error->top->code < 3)
 	{
 		ctx->error->top->code++;
 		return 1;
 	}
 	return 0;
+#endif
 }
 
 int fz_do_catch(fz_context *ctx)
@@ -189,6 +197,7 @@ const char *fz_caught_message(fz_context *ctx)
 	return ctx->error->message;
 }
 
+/* coverity[+kill] */
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
 	ctx->error->errcode = code;
@@ -212,6 +221,7 @@ FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list a
 	throw(ctx);
 }
 
+/* coverity[+kill] */
 FZ_NORETURN void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 {
 	va_list ap;
@@ -220,6 +230,7 @@ FZ_NORETURN void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 	va_end(ap);
 }
 
+/* coverity[+kill] */
 FZ_NORETURN void fz_rethrow(fz_context *ctx)
 {
 	assert(ctx && ctx->error && ctx->error->errcode >= FZ_ERROR_NONE);
