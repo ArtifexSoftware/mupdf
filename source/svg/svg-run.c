@@ -796,14 +796,11 @@ svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *
 	char *w_att = fz_xml_att(node, "width");
 	char *h_att = fz_xml_att(node, "height");
 
-	float w = state->viewport_w;
-	float h = state->viewport_h;
+	if (w_att)
+		state->viewport_w = svg_parse_length(w_att, state->viewbox_w, state->fontsize);
+	if (h_att)
+		state->viewport_h = svg_parse_length(h_att, state->viewbox_h, state->fontsize);
 
-	if (w_att) w = svg_parse_length(w_att, state->viewbox_w, state->fontsize);
-	if (h_att) h = svg_parse_length(h_att, state->viewbox_h, state->fontsize);
-
-	state->viewport_w = w;
-	state->viewport_h = h;
 }
 
 static void
@@ -985,6 +982,19 @@ svg_run_svg(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 {
 	svg_state local_state = *inherit_state;
 	fz_xml *node;
+
+	char *w_att = fz_xml_att(root, "width");
+	char *h_att = fz_xml_att(root, "height");
+	char *viewbox_att = fz_xml_att(root, "viewBox");
+
+	/* get default viewport from viewBox if width and/or height is missing */
+	if (viewbox_att && (!w_att || !h_att))
+	{
+		float x, y;
+		svg_lex_viewbox(viewbox_att, &x, &y, &local_state.viewbox_w, &local_state.viewbox_h);
+		if (!w_att) local_state.viewport_w = local_state.viewbox_w;
+		if (!h_att) local_state.viewport_h = local_state.viewbox_h;
+	}
 
 	svg_parse_viewport(ctx, doc, root, &local_state);
 	svg_parse_viewbox(ctx, doc, root, &local_state);
