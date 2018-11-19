@@ -2520,15 +2520,15 @@ fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 		switch (flow->type) {
 		case FLOW_WORD: printf("word "); break;
 		case FLOW_SPACE: printf("space"); break;
-		case FLOW_SBREAK: printf("sbrk"); break;
-		case FLOW_SHYPHEN: printf("shy"); break;
+		case FLOW_SBREAK: printf("sbrk "); break;
+		case FLOW_SHYPHEN: printf("shy  "); break;
 		case FLOW_BREAK: printf("break"); break;
 		case FLOW_IMAGE: printf("image"); break;
 		case FLOW_ANCHOR: printf("anchor"); break;
 		}
 		printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
 		if (flow->type == FLOW_IMAGE)
-			printf(" h=%g\n", flow->h);
+			printf(" h=%g", flow->h);
 		if (flow->type == FLOW_WORD)
 			printf(" text='%s'", flow->content.text);
 		printf("\n");
