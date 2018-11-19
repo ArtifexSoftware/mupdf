@@ -205,9 +205,18 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 		default:
 			if (c < 32 || c > 127) {
 				fmtputc(out, '\\');
-				fmtputc(out, '0' + ((c >> 6) & 7));
-				fmtputc(out, '0' + ((c >> 3) & 7));
-				fmtputc(out, '0' + ((c) & 7));
+				if (sq == '(')
+				{
+					fmtputc(out, '0' + ((c >> 6) & 7));
+					fmtputc(out, '0' + ((c >> 3) & 7));
+					fmtputc(out, '0' + ((c) & 7));
+				}
+				else
+				{
+					fmtputc(out, 'x');
+					fmtputc(out, "0123456789ABCDEF"[(c>>4)&15]);
+					fmtputc(out, "0123456789ABCDEF"[(c)&15]);
+				}
 			} else {
 				if (c == sq || c == eq)
 					fmtputc(out, '\\');
