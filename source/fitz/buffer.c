@@ -165,6 +165,12 @@ fz_trim_buffer(fz_context *ctx, fz_buffer *buf)
 }
 
 void
+fz_clear_buffer(fz_context *ctx, fz_buffer *buf)
+{
+	buf->len = 0;
+}
+
+void
 fz_terminate_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	/* ensure that there is a zero-byte after the end of the data */

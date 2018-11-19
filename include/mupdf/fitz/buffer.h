@@ -99,6 +99,9 @@ void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 */
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
+/* Delete all contents in buffer. */
+void fz_clear_buffer(fz_context *ctx, fz_buffer *buf);
+
 /*
 	fz_append_buffer: Append the contents of source buffer to destination buffer.
 */

@@ -202,7 +202,8 @@ struct fz_html_box_s
 	unsigned int type : 3;
 	unsigned int is_first_flow : 1; /* for text-indent */
 	unsigned int markup_dir : 2;
-	unsigned int list_item : 26;
+	unsigned int heading : 3; /* h1..h6 */
+	unsigned int list_item : 23;
 	float x, y, w, b; /* content */
 	float padding[4];
 	float margin[4];
@@ -281,6 +282,7 @@ void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
 void fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em);
 void fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int page);
+fz_outline *fz_load_html_outline(fz_context *ctx, fz_html *node);
 
 float fz_find_html_target(fz_context *ctx, fz_html *html, const char *id);
 fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri, void *doc);
