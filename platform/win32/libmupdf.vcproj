@@ -2448,10 +2448,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\include\mupdf\pdf-tools.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\include\mupdf\pdf.h"
 				>
 			</File>
