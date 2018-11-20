@@ -23,7 +23,7 @@ struct fz_pclm_options_s
 };
 
 /*
-	fz_parse_pclm_options: Parse PCLm options.
+	Parse PCLm options.
 
 	Currently defined options and values are as follows:
 

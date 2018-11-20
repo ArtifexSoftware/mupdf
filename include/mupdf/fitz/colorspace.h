@@ -78,20 +78,20 @@ typedef struct fz_icclink_s fz_icclink;
 typedef struct fz_default_colorspaces_s fz_default_colorspaces;
 
 /*
-	fz_colorspace_is_subtractive: Return true if a colorspace is subtractive.
+	Return true if a colorspace is subtractive.
 
 	True for CMYK, Separation and DeviceN colorspaces.
 */
 int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs);
 
 /*
-	fz_colorspace_device_n_has_only_cmyk: Return true if devicen color space
+	Return true if devicen color space
 	has only colorants from the cmyk set.
 */
 int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
 /*
-	fz_colorspace_device_n_has_cmyk: Return true if devicen color space has cyan
+	Return true if devicen color space has cyan
 	magenta yellow or black as one of its colorants.
 */
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
@@ -117,32 +117,32 @@ int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
 
 /*
-	fz_device_gray: Get colorspace representing device specific gray.
+	Get colorspace representing device specific gray.
 */
 fz_colorspace *fz_device_gray(fz_context *ctx);
 
 /*
-	fz_device_rgb: Get colorspace representing device specific rgb.
+	Get colorspace representing device specific rgb.
 */
 fz_colorspace *fz_device_rgb(fz_context *ctx);
 
 /*
-	fz_device_bgr: Get colorspace representing device specific bgr.
+	Get colorspace representing device specific bgr.
 */
 fz_colorspace *fz_device_bgr(fz_context *ctx);
 
 /*
-	fz_device_cmyk: Get colorspace representing device specific CMYK.
+	Get colorspace representing device specific CMYK.
 */
 fz_colorspace *fz_device_cmyk(fz_context *ctx);
 
 /*
-	fz_device_lab: Get colorspace representing device specific LAB.
+	Get colorspace representing device specific LAB.
 */
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
 /*
-	fz_default_color_params: Get default color params for general color conversion.
+	Get default color params for general color conversion.
 */
 const fz_color_params *fz_default_color_params(fz_context *ctx);
 

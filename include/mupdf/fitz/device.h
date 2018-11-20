@@ -159,13 +159,13 @@ fz_device *fz_new_device_of_size(fz_context *ctx, int size);
 	((TYPE *)Memento_label(fz_new_device_of_size(ctx,sizeof(TYPE)),#TYPE))
 
 /*
-	fz_close_device: Signal the end of input, and flush any buffered output.
+	Signal the end of input, and flush any buffered output.
 	This is NOT called implicitly on fz_drop_device.
 */
 void fz_close_device(fz_context *ctx, fz_device *dev);
 
 /*
-	fz_drop_device: Free a device of any type and its resources.
+	Free a device of any type and its resources.
 	Don't forget to call fz_close_device before dropping the device,
 	or you may get incomplete output!
 */
@@ -174,14 +174,14 @@ void fz_drop_device(fz_context *ctx, fz_device *dev);
 fz_device *fz_keep_device(fz_context *ctx, fz_device *dev);
 
 /*
-	fz_enable_device_hints : Enable hints in a device.
+	Enable hints in a device.
 
 	hints: mask of hints to enable.
 */
 void fz_enable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 
 /*
-	fz_disable_device_hints : Disable hints in a device.
+	Disable hints in a device.
 
 	hints: mask of hints to disable.
 */
@@ -263,12 +263,12 @@ struct fz_cookie_s
 };
 
 /*
-	fz_new_trace_device: Create a device to print a debug trace of all device calls.
+	Create a device to print a debug trace of all device calls.
 */
 fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out);
 
 /*
-	fz_new_bbox_device: Create a device to compute the bounding
+	Create a device to compute the bounding
 	box of all marks on a page.
 
 	The returned bounding box will be the union of all bounding
@@ -277,7 +277,7 @@ fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out);
 fz_device *fz_new_bbox_device(fz_context *ctx, fz_rect *rectp);
 
 /*
-	fz_new_test_device: Create a device to test for features.
+	Create a device to test for features.
 
 	Currently only tests for the presence of non-grayscale colors.
 
@@ -316,7 +316,7 @@ enum
 };
 
 /*
-	fz_new_draw_device: Create a device to draw on a pixmap.
+	Create a device to draw on a pixmap.
 
 	dest: Target pixmap for the draw device. See fz_new_pixmap*
 	for how to obtain a pixmap. The pixmap is not cleared by the
@@ -329,7 +329,7 @@ enum
 fz_device *fz_new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *dest);
 
 /*
-	fz_new_draw_device_with_bbox: Create a device to draw on a pixmap.
+	Create a device to draw on a pixmap.
 
 	dest: Target pixmap for the draw device. See fz_new_pixmap*
 	for how to obtain a pixmap. The pixmap is not cleared by the
@@ -345,7 +345,7 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *d
 fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_matrix transform, fz_pixmap *dest, const fz_irect *clip);
 
 /*
-	fz_new_draw_device_with_proof: Create a device to draw on a pixmap.
+	Create a device to draw on a pixmap.
 
 	dest: Target pixmap for the draw device. See fz_new_pixmap*
 	for how to obtain a pixmap. The pixmap is not cleared by the
@@ -361,7 +361,7 @@ fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_matrix transform, fz
 fz_device *fz_new_draw_device_with_proof(fz_context *ctx, fz_matrix transform, fz_pixmap *dest, fz_colorspace *proof_cs);
 
 /*
-	fz_new_draw_device_with_bbox_proof: Create a device to draw on a pixmap.
+	Create a device to draw on a pixmap.
 
 	dest: Target pixmap for the draw device. See fz_new_pixmap*
 	for how to obtain a pixmap. The pixmap is not cleared by the
@@ -401,12 +401,12 @@ struct fz_draw_options_s
 extern const char *fz_draw_options_usage;
 
 /*
-	fz_parse_draw_options: Parse draw device options from a comma separated key-value string.
+	Parse draw device options from a comma separated key-value string.
 */
 fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *options, const char *string);
 
 /*
-	fz_new_draw_device_with_options: Create a new pixmap and draw device, using the specified options.
+	Create a new pixmap and draw device, using the specified options.
 
 	options: Options to configure the draw device, and choose the resolution and colorspace.
 	mediabox: The bounds of the page in points.

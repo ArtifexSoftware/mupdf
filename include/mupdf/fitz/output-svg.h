@@ -12,7 +12,7 @@ enum {
 };
 
 /*
-	fz_new_svg_device: Create a device that outputs (single page)
+	Create a device that outputs (single page)
 		SVG files to the given output stream.
 
 	output: The output stream to send the constructed SVG page to.

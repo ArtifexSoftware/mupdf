@@ -166,7 +166,7 @@ struct pdf_csi_s
 /* Functions to set up pdf_process structures */
 
 /*
-	pdf_new_run_processor: Create a new "run" processor. This maps
+	Create a new "run" processor. This maps
 	from PDF operators to fz_device level calls.
 
 	dev: The device to which the resulting device calls are to be
@@ -183,7 +183,7 @@ struct pdf_csi_s
 pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs);
 
 /*
-	pdf_new_buffer_processor: Create a buffer processor. This
+	Create a buffer processor. This
 	collects the incoming PDF operator stream into an fz_buffer.
 
 	buffer: The (possibly empty) buffer to which operators will be
@@ -195,7 +195,7 @@ pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix 
 pdf_processor *pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode);
 
 /*
-	pdf_new_output_processor: Create an output processor. This
+	Create an output processor. This
 	sends the incoming PDF operator stream to an fz_output stream.
 
 	out: The output stream to which operators will be sent.
@@ -206,7 +206,7 @@ pdf_processor *pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int 
 pdf_processor *pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode);
 
 /*
-	pdf_new_filter_processor: Create a filter processor. This
+	Create a filter processor. This
 	filters the PDF operators it is fed, and passes them down
 	(with some changes) to the child filter.
 
@@ -247,7 +247,7 @@ typedef int (pdf_text_filter_fn)(fz_context *ctx, void *opaque, int *ucsbuf, int
 typedef void (pdf_after_text_object_fn)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain, fz_matrix ctm);
 
 /*
-	pdf_new_filter_processor_with_text_filter: Create a filter
+	Create a filter
 	processor with a filter function for text. This filters the
 	PDF operators it is fed, and passes them down (with some
 	changes) to the child filter.

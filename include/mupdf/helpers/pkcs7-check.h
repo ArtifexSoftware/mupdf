@@ -2,7 +2,7 @@
 #define MUPDF_PKCS7_CHECK_H
 
 /*
-	pdf_check_signature: check a signature's certificate chain and digest
+	check a signature's certificate chain and digest
 
 	This is a helper function defined to provide compatibility with older
 	versions of mupdf

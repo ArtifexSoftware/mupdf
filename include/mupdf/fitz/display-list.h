@@ -25,7 +25,7 @@
 typedef struct fz_display_list_s fz_display_list;
 
 /*
-	fz_new_display_list: Create an empty display list.
+	Create an empty display list.
 
 	A display list contains drawing commands (text, images, etc.).
 	Use fz_new_list_device for populating the list.
@@ -35,7 +35,7 @@ typedef struct fz_display_list_s fz_display_list;
 fz_display_list *fz_new_display_list(fz_context *ctx, fz_rect mediabox);
 
 /*
-	fz_new_list_device: Create a rendering device for a display list.
+	Create a rendering device for a display list.
 
 	When the device is rendering a page it will populate the
 	display list with drawing commands (text, images, etc.). The
@@ -49,7 +49,7 @@ fz_display_list *fz_new_display_list(fz_context *ctx, fz_rect mediabox);
 fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 
 /*
-	fz_run_display_list: (Re)-run a display list through a device.
+	(Re)-run a display list through a device.
 
 	list: A display list, created by fz_new_display_list and
 	populated with objects from a page by running fz_run_page on a
@@ -76,18 +76,18 @@ fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 void fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_rect scissor, fz_cookie *cookie);
 
 /*
-	fz_keep_display_list: Keep a reference to a display list.
+	Keep a reference to a display list.
 */
 fz_display_list *fz_keep_display_list(fz_context *ctx, fz_display_list *list);
 
 /*
-	fz_drop_display_list: Drop a reference to a display list, freeing it
+	Drop a reference to a display list, freeing it
 	if the reference count reaches zero.
 */
 void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 
 /*
-	fz_bound_display_list: Return the bounding box of the page recorded in a display list.
+	Return the bounding box of the page recorded in a display list.
 */
 fz_rect fz_bound_display_list(fz_context *ctx, fz_display_list *list);
 

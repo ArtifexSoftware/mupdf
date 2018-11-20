@@ -18,48 +18,48 @@
 */
 
 /*
-	fz_cmm_new_instance_fn: Create a new instance of the color
+	Create a new instance of the color
 	management engine, tied to the given context.
 */
 typedef fz_cmm_instance *(fz_cmm_new_instance_fn)(fz_context *ctx);
 
 /*
-	fz_cmm_drop_instance_fn: Drop a given instance of the color
+	Drop a given instance of the color
 	management engine. No further calls will be made to this
 	instance.
 */
 typedef void (fz_cmm_drop_instance_fn)(fz_cmm_instance *instance);
 
 /*
-	fz_cmm_transform_pixmap_fn: Transform a pixmap according
+	Transform a pixmap according
 	to a link.
 */
 typedef void (fz_cmm_transform_pixmap_fn)(fz_cmm_instance *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 
 /*
-	fz_cmm_transform_color_fn: Transform some color values according
+	Transform some color values according
 	to a link.
 */
 typedef void (fz_cmm_transform_color_fn)(fz_cmm_instance *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
 
 /*
-	fz_cmm_init_link_fn: Create a new link between icc profiles.
+	Create a new link between icc profiles.
 */
 typedef void (fz_cmm_init_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots);
 
 /*
-	fz_cmm_fin_link_fn: Drop a link.
+	Drop a link.
 */
 typedef void (fz_cmm_fin_link_fn)(fz_cmm_instance *ctx, fz_icclink *link);
 
 /*
-	fz_cmm_init_profile_fn: Create the cmm specific data for the given
+	Create the cmm specific data for the given
 	profile. The cmm handle is stored to profile->cmm_handle.
 */
 typedef void (fz_cmm_init_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
 
 /*
-	fz_cmm_fin_profile_fn: Drop the cmm specific data for the given
+	Drop the cmm specific data for the given
 	profile.
 */
 typedef void (fz_cmm_fin_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
@@ -80,14 +80,14 @@ struct fz_cmm_engine_s {
 };
 
 /*
-	fz_get_cmm_engine: Read details of the current color
+	Read details of the current color
 	management engine. If NULL, we are working without
 	color management.
 */
 const fz_cmm_engine *fz_get_cmm_engine(fz_context *ctx);
 
 /*
-	fz_set_cmm_engine: Set the color management engine to
+	Set the color management engine to
 	be used. This should only ever be called on the "base"
 	context before cloning it, and before opening any files.
 

@@ -48,7 +48,7 @@ fz_link *fz_keep_link(fz_context *ctx, fz_link *link);
 int fz_is_external_link(fz_context *ctx, const char *uri);
 
 /*
-	fz_drop_link: Drop and free a list of links.
+	Drop and free a list of links.
 */
 void fz_drop_link(fz_context *ctx, fz_link *link);
 

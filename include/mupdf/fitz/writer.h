@@ -10,7 +10,7 @@
 typedef struct fz_document_writer_s fz_document_writer;
 
 /*
-	fz_document_writer_begin_page_fn: Function type to start
+	Function type to start
 	the process of writing a page to a document.
 
 	mediabox: page size rectangle in points.
@@ -20,7 +20,7 @@ typedef struct fz_document_writer_s fz_document_writer;
 typedef fz_device *(fz_document_writer_begin_page_fn)(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox);
 
 /*
-	fz_document_writer_end_page_fn: Function type to end the
+	Function type to end the
 	process of writing a page to a document.
 
 	dev: The device created by the begin_page function.
@@ -28,7 +28,7 @@ typedef fz_device *(fz_document_writer_begin_page_fn)(fz_context *ctx, fz_docume
 typedef void (fz_document_writer_end_page_fn)(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
 
 /*
-	fz_document_writer_close_writer_fn: Function type to end
+	Function type to end
 	the process of writing pages to a document.
 
 	This writes any file level trailers required. After this
@@ -37,7 +37,7 @@ typedef void (fz_document_writer_end_page_fn)(fz_context *ctx, fz_document_write
 typedef void (fz_document_writer_close_writer_fn)(fz_context *ctx, fz_document_writer *wri);
 
 /*
-	fz_document_writer_drop_writer_fn: Function type to discard
+	Function type to discard
 	an fz_document_writer. This may be called at any time during
 	the process to release all the resources owned by the writer.
 
@@ -61,7 +61,7 @@ struct fz_document_writer_s
 };
 
 /*
-	fz_new_document_writer_of_size: Internal function to allocate a
+	Internal function to allocate a
 	block for a derived document_writer structure, with the base
 	structure's function pointers populated correctly, and the extra
 	space zero initialised.
@@ -79,7 +79,7 @@ int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char
 int fz_option_eq(const char *a, const char *b);
 
 /*
-	fz_new_document_writer: Create a new fz_document_writer, for a
+	Create a new fz_document_writer, for a
 	file of the given type.
 
 	path: The document name to write (or NULL for default)
@@ -111,7 +111,7 @@ fz_document_writer *fz_new_pbm_pixmap_writer(fz_context *ctx, const char *path, 
 fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 
 /*
-	fz_begin_page: Called to start the process of writing a page to
+	Called to start the process of writing a page to
 	a document.
 
 	mediabox: page size rectangle in points.
@@ -121,13 +121,13 @@ fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, 
 fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox);
 
 /*
-	fz_end_page: Called to end the process of writing a page to a
+	Called to end the process of writing a page to a
 	document.
 */
 void fz_end_page(fz_context *ctx, fz_document_writer *wri);
 
 /*
-	fz_close_document_writer: Called to end the process of writing
+	Called to end the process of writing
 	pages to a document.
 
 	This writes any file level trailers required. After this
@@ -136,7 +136,7 @@ void fz_end_page(fz_context *ctx, fz_document_writer *wri);
 void fz_close_document_writer(fz_context *ctx, fz_document_writer *wri);
 
 /*
-	fz_drop_document_writer: Called to discard a fz_document_writer.
+	Called to discard a fz_document_writer.
 	This may be called at any time during the process to release all
 	the resources owned by the writer.
 

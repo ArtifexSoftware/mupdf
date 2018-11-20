@@ -2,7 +2,7 @@
 #define MUPDF_PDF_OUTPUT_PDF_H
 
 /*
-	pdf_new_pdf_device: Create a pdf device. Rendering to the device creates
+	Create a pdf device. Rendering to the device creates
 	new pdf content. WARNING: this device is work in progress. It doesn't
 	currently support all rendering cases.
 

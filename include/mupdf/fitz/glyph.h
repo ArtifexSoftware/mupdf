@@ -14,22 +14,22 @@
 typedef struct fz_glyph_s fz_glyph;
 
 /*
-	fz_glyph_bbox: Return the bounding box for a glyph.
+	Return the bounding box for a glyph.
 */
 fz_irect fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph);
 
 /*
-	fz_glyph_width: Return the width of the glyph in pixels.
+	Return the width of the glyph in pixels.
 */
 int fz_glyph_width(fz_context *ctx, fz_glyph *glyph);
 
 /*
-	fz_glyph_height: Return the height of the glyph in pixels.
+	Return the height of the glyph in pixels.
 */
 int fz_glyph_height(fz_context *ctx, fz_glyph *glyph);
 
 /*
-	fz_new_glyph_from_pixmap: Create a new glyph from a pixmap
+	Create a new glyph from a pixmap
 
 	Returns a pointer to the new glyph. Throws exception on failure to
 	allocate.
@@ -37,7 +37,7 @@ int fz_glyph_height(fz_context *ctx, fz_glyph *glyph);
 fz_glyph *fz_new_glyph_from_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_new_glyph_from_8bpp_data: Create a new glyph from 8bpp data
+	Create a new glyph from 8bpp data
 
 	x, y: X and Y position for the glyph
 
@@ -53,7 +53,7 @@ fz_glyph *fz_new_glyph_from_pixmap(fz_context *ctx, fz_pixmap *pix);
 fz_glyph *fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
 
 /*
-	fz_new_glyph_from_1bpp_data: Create a new glyph from 1bpp data
+	Create a new glyph from 1bpp data
 
 	x, y: X and Y position for the glyph
 
@@ -69,7 +69,7 @@ fz_glyph *fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int 
 fz_glyph *fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
 
 /*
-	fz_keep_glyph: Take a reference to a glyph.
+	Take a reference to a glyph.
 
 	pix: The glyph to increment the reference for.
 
@@ -78,7 +78,7 @@ fz_glyph *fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int 
 fz_glyph *fz_keep_glyph(fz_context *ctx, fz_glyph *pix);
 
 /*
-	fz_drop_glyph: Drop a reference and free a glyph.
+	Drop a reference and free a glyph.
 
 	Decrement the reference count for the glyph. When no
 	references remain the glyph will be freed.

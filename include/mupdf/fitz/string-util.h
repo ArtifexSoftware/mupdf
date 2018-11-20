@@ -11,13 +11,13 @@
 */
 
 /*
-	fz_strnlen: Return strlen(s), if that is less than maxlen, or maxlen if
+	Return strlen(s), if that is less than maxlen, or maxlen if
 	there is no null byte ('\0') among the first maxlen bytes.
 */
 size_t fz_strnlen(const char *s, size_t maxlen);
 
 /*
-	fz_strsep: Given a pointer to a C string (or a pointer to NULL) break
+	Given a pointer to a C string (or a pointer to NULL) break
 	it at the first occurrence of a delimiter char (from a given set).
 
 	stringp: Pointer to a C string pointer (or NULL). Updated on exit to
@@ -33,7 +33,7 @@ size_t fz_strnlen(const char *s, size_t maxlen);
 char *fz_strsep(char **stringp, const char *delim);
 
 /*
-	fz_strlcpy: Copy at most n-1 chars of a string into a destination
+	Copy at most n-1 chars of a string into a destination
 	buffer with null termination, returning the real length of the
 	initial string (excluding terminator).
 
@@ -48,7 +48,7 @@ char *fz_strsep(char **stringp, const char *delim);
 size_t fz_strlcpy(char *dst, const char *src, size_t n);
 
 /*
-	fz_strlcat: Concatenate 2 strings, with a maximum length.
+	Concatenate 2 strings, with a maximum length.
 
 	dst: pointer to first string in a buffer of n bytes.
 
@@ -62,22 +62,22 @@ size_t fz_strlcpy(char *dst, const char *src, size_t n);
 size_t fz_strlcat(char *dst, const char *src, size_t n);
 
 /*
-	fz_memmem: Find the start of the first occurrence of the substring needle in haystack.
+	Find the start of the first occurrence of the substring needle in haystack.
 */
 void *fz_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen);
 
 /*
-	fz_dirname: extract the directory component from a path.
+	extract the directory component from a path.
 */
 void fz_dirname(char *dir, const char *path, size_t dirsize);
 
 /*
-	fz_urldecode: decode url escapes.
+	decode url escapes.
 */
 char *fz_urldecode(char *url);
 
 /*
-	fz_format_output_path: create output file name using a template.
+	create output file name using a template.
 		If the path contains %[0-9]*d, the first such pattern will be replaced
 		with the page number. If the template does not contain such a pattern, the page
 		number will be inserted before the filename extension. If the template does not have
@@ -86,7 +86,7 @@ char *fz_urldecode(char *url);
 void fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page);
 
 /*
-	fz_cleanname: rewrite path to the shortest string that names the same path.
+	rewrite path to the shortest string that names the same path.
 
 	Eliminates multiple and trailing slashes, interprets "." and "..".
 	Overwrites the string in place.
@@ -105,7 +105,7 @@ int fz_strncasecmp(const char *a, const char *b, int n);
 enum { FZ_UTFMAX = 4 };
 
 /*
-	fz_chartorune: UTF8 decode a single rune from a sequence of chars.
+	UTF8 decode a single rune from a sequence of chars.
 
 	rune: Pointer to an int to assign the decoded 'rune' to.
 
@@ -116,7 +116,7 @@ enum { FZ_UTFMAX = 4 };
 int fz_chartorune(int *rune, const char *str);
 
 /*
-	fz_runetochar: UTF8 encode a rune to a sequence of chars.
+	UTF8 encode a rune to a sequence of chars.
 
 	str: Pointer to a place to put the UTF8 encoded character.
 
@@ -127,7 +127,7 @@ int fz_chartorune(int *rune, const char *str);
 int fz_runetochar(char *str, int rune);
 
 /*
-	fz_runelen: Count how many chars are required to represent a rune.
+	Count how many chars are required to represent a rune.
 
 	rune: The rune to encode.
 
@@ -136,7 +136,7 @@ int fz_runetochar(char *str, int rune);
 int fz_runelen(int rune);
 
 /*
-	fz_utflen: Count how many runes the UTF-8 encoded string
+	Count how many runes the UTF-8 encoded string
 	consists of.
 
 	s: The UTF-8 encoded, NUL-terminated text string.
@@ -146,7 +146,7 @@ int fz_runelen(int rune);
 int fz_utflen(const char *s);
 
 /*
-	fz_strtof: Locale-independent decimal to binary
+	Locale-independent decimal to binary
 	conversion. On overflow return (-)INFINITY and set errno to ERANGE. On
 	underflow return 0 and set errno to ERANGE. Special inputs (case
 	insensitive): "NAN", "INF" or "INFINITY".
@@ -154,7 +154,7 @@ int fz_utflen(const char *s);
 float fz_strtof(const char *s, char **es);
 
 /*
-	fz_grisu: Compute decimal integer m, exp such that:
+	Compute decimal integer m, exp such that:
 		f = m * 10^exp
 		m is as short as possible without losing exactness
 	Assumes special cases (0, NaN, +Inf, -Inf) have been handled.

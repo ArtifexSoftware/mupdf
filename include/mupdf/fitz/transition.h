@@ -39,7 +39,7 @@ struct fz_transition_s
 };
 
 /*
-	fz_generate_transition: Generate a frame of a transition.
+	Generate a frame of a transition.
 
 	tpix: Target pixmap
 	opix: Old pixmap

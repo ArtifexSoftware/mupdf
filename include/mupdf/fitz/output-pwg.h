@@ -53,7 +53,7 @@ struct fz_pwg_options_s
 };
 
 /*
-	fz_save_pixmap_as_pwg: Save a pixmap as a pwg
+	Save a pixmap as a pwg
 
 	filename: The filename to save as (including extension).
 
@@ -65,7 +65,7 @@ struct fz_pwg_options_s
 void fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);
 
 /*
-	fz_save_bitmap_as_pwg: Save a bitmap as a pwg
+	Save a bitmap as a pwg
 
 	filename: The filename to save as (including extension).
 
@@ -102,13 +102,13 @@ void fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixma
 void fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
 /*
-	fz_new_mono_pwg_band_writer: Generate a new band writer for
+	Generate a new band writer for
 	PWG format images.
 */
 fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);
 
 /*
-	fz_new_pwg_band_writer: Generate a new band writer for
+	Generate a new band writer for
 	contone PWG format images.
 */
 fz_band_writer *fz_new_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);

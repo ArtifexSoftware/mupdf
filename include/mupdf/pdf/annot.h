@@ -75,27 +75,27 @@ pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 const char *pdf_string_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 
 /*
-	pdf_first_annot: Return the first annotation on a page.
+	Return the first annotation on a page.
 */
 pdf_annot *pdf_first_annot(fz_context *ctx, pdf_page *page);
 
 /*
-	pdf_next_annot: Return the next annotation on a page.
+	Return the next annotation on a page.
 */
 pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_bound_annot: Return the rectangle for an annotation on a page.
+	Return the rectangle for an annotation on a page.
 */
 fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_annot_type: Return the type of an annotation
+	Return the type of an annotation
 */
 int pdf_annot_type(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_run_annot: Interpret an annotation and render it on a device.
+	Interpret an annotation and render it on a device.
 
 	page: A page loaded by pdf_load_page.
 
@@ -138,7 +138,7 @@ void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 
 /*
-	pdf_create_annot: create a new annotation of the specified type on the
+	create a new annotation of the specified type on the
 	specified page. The returned pdf_annot structure is owned by the page
 	and does not need to be freed.
 */
@@ -146,7 +146,7 @@ pdf_annot *pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
 /*
-	pdf_delete_annot: delete an annotation
+	delete an annotation
 */
 void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 
@@ -219,37 +219,37 @@ void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p);
 void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
 
 /*
-	pdf_set_text_annot_position: set the position on page for a text (sticky note) annotation.
+	set the position on page for a text (sticky note) annotation.
 */
 void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
 
 /*
-	pdf_annot_contents: return the contents of an annotation.
+	return the contents of an annotation.
 */
 const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_set_annot_contents: set the contents of an annotation.
+	set the contents of an annotation.
 */
 void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
 /*
-	pdf_annot_author: return the author of an annotation.
+	return the author of an annotation.
 */
 const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_set_annot_author: set the author of an annotation.
+	set the author of an annotation.
 */
 void pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author);
 
 /*
-	pdf_annot_modification_date: Get annotation's modification date in seconds since the epoch.
+	Get annotation's modification date in seconds since the epoch.
 */
 int64_t pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_set_annot_modification_date: Set annotation's modification date in seconds since the epoch.
+	Set annotation's modification date in seconds since the epoch.
 */
 void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t time);
 
@@ -259,7 +259,7 @@ void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char 
 void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, const float color[3]);
 
 /*
-	pdf_new_annot: Internal function for creating a new pdf annotation.
+	Internal function for creating a new pdf annotation.
 */
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);

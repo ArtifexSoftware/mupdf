@@ -37,7 +37,7 @@ typedef struct pdf_ui_event_s
 } pdf_ui_event;
 
 /*
-	pdf_init_ui_pointer_event: Set up a pointer event
+	Set up a pointer event
 */
 void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
 
@@ -49,7 +49,7 @@ void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
 */
 
 /*
-	pdf_pass_event: Pass a UI event to an interactive
+	Pass a UI event to an interactive
 	document.
 
 	Returns a boolean indication of whether the ui_event was
@@ -76,7 +76,7 @@ enum
 };
 
 /*
-	pdf_set_doc_event_callback: set the function via which to receive
+	set the function via which to receive
 	document events.
 */
 void pdf_set_doc_event_callback(fz_context *ctx, pdf_document *doc, pdf_doc_event_cb *event_cb, void *data);
@@ -86,7 +86,7 @@ void pdf_set_doc_event_callback(fz_context *ctx, pdf_document *doc, pdf_doc_even
 */
 
 /*
-	pdf_alert_event: details of an alert event. In response the app should
+	details of an alert event. In response the app should
 	display an alert dialog with the buttons specified by "button_type_group".
 	If "check_box_message" is non-NULL, a checkbox should be displayed in
 	the lower-left corned along with the message.
@@ -136,7 +136,7 @@ enum
 };
 
 /*
-	pdf_access_alert_event: access the details of an alert event
+	access the details of an alert event
 	The returned pointer and all the data referred to by the
 	structure are owned by mupdf and need not be freed by the
 	caller.
@@ -144,7 +144,7 @@ enum
 pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
-	pdf_access_exec_menu_item_event: access the details of am execMenuItem
+	access the details of am execMenuItem
 	event, which consists of just the name of the menu item
 */
 const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event);
@@ -160,14 +160,14 @@ typedef struct
 } pdf_launch_url_event;
 
 /*
-	pdf_access_launch_url_event: access the details of a launch-url
+	access the details of a launch-url
 	event. The returned pointer and all data referred to by the structure
 	are owned by mupdf and need not be freed by the caller.
 */
 pdf_launch_url_event *pdf_access_launch_url_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
-	pdf_mail_doc_event: details of a mail_doc event. The app should save
+	details of a mail_doc event. The app should save
 	the current state of the document and email it using the specified
 	parameters.
 */
@@ -182,7 +182,7 @@ typedef struct
 } pdf_mail_doc_event;
 
 /*
-	pdf_access_mail_doc_event: access the details of a mail-doc event.
+	access the details of a mail-doc event.
 */
 pdf_mail_doc_event *pdf_access_mail_doc_event(fz_context *ctx, pdf_doc_event *event);
 

@@ -80,7 +80,7 @@ typedef struct fz_shade_s
 } fz_shade;
 
 /*
-	fz_keep_shade: Add a reference to a fz_shade.
+	Add a reference to a fz_shade.
 
 	shade: The reference to keep.
 
@@ -89,7 +89,7 @@ typedef struct fz_shade_s
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 
 /*
-	fz_drop_shade: Drop a reference to a fz_shade.
+	Drop a reference to a fz_shade.
 
 	shade: The reference to drop. If this is the last
 	reference, shade will be destroyed.
@@ -97,7 +97,7 @@ fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 
 /*
-	fz_drop_shade_imp: Internal function to destroy a
+	Internal function to destroy a
 	shade. Only exposed for use with the fz_store.
 
 	shade: The reference to destroy.
@@ -105,7 +105,7 @@ void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 void fz_drop_shade_imp(fz_context *ctx, fz_storable *shade);
 
 /*
-	fz_bound_shade: Bound a given shading.
+	Bound a given shading.
 
 	shade: The shade to bound.
 
@@ -118,7 +118,7 @@ void fz_drop_shade_imp(fz_context *ctx, fz_storable *shade);
 fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 
 /*
-	fz_paint_shade: Render a shade to a given pixmap.
+	Render a shade to a given pixmap.
 
 	shade: The shade to paint.
 
@@ -150,7 +150,7 @@ struct fz_vertex_s
 };
 
 /*
-	fz_shade_prepare_fn: Callback function type for use with
+	Callback function type for use with
 	fz_process_shade.
 
 	arg: Opaque pointer from fz_process_shade caller.
@@ -162,7 +162,7 @@ struct fz_vertex_s
 typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
 
 /*
-	fz_shade_process_fn: Callback function type for use with
+	Callback function type for use with
 	fz_process_shade.
 
 	arg: Opaque pointer from fz_process_shade caller.
@@ -174,7 +174,7 @@ typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, con
 typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
 
 /*
-	fz_process_shade: Process a shade, using supplied callback
+	Process a shade, using supplied callback
 	functions. This decomposes the shading to a mesh (even ones
 	that are not natively meshes, such as linear or radial
 	shadings), and processes triangles from those meshes.

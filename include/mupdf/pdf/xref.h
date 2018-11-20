@@ -2,22 +2,22 @@
 #define MUPDF_PDF_XREF_H
 
 /*
-	pdf_create_object: Allocate a slot in the xref table and return a fresh unused object number.
+	Allocate a slot in the xref table and return a fresh unused object number.
 */
 int pdf_create_object(fz_context *ctx, pdf_document *doc);
 
 /*
-	pdf_delete_object: Remove object from xref table, marking the slot as free.
+	Remove object from xref table, marking the slot as free.
 */
 void pdf_delete_object(fz_context *ctx, pdf_document *doc, int num);
 
 /*
-	pdf_update_object: Replace object in xref table with the passed in object.
+	Replace object in xref table with the passed in object.
 */
 void pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *obj);
 
 /*
-	pdf_update_stream: Replace stream contents for object in xref table with the passed in buffer.
+	Replace stream contents for object in xref table with the passed in buffer.
 
 	The buffer contents must match the /Filter setting if 'compressed' is true.
 	If 'compressed' is false, the /Filter and /DecodeParms entries are deleted.

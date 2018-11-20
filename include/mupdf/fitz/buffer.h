@@ -13,19 +13,19 @@
 typedef struct fz_buffer_s fz_buffer;
 
 /*
-	fz_keep_buffer: Increment the reference count for a buffer.
+	Increment the reference count for a buffer.
 
 	Returns a pointer to the buffer.
 */
 fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_drop_buffer: Decrement the reference count for a buffer.
+	Decrement the reference count for a buffer.
 */
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_buffer_storage: Retrieve internal memory of buffer.
+	Retrieve internal memory of buffer.
 
 	datap: Output parameter that will be pointed to the data.
 
@@ -34,13 +34,13 @@ void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 size_t fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap);
 
 /*
-	fz_string_from_buffer: Ensure that a buffer's data ends in a
+	Ensure that a buffer's data ends in a
 	0 byte, and return a pointer to it.
 */
 const char *fz_string_from_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_new_buffer: Create a new buffer.
+	Create a new buffer.
 
 	capacity: Initial capacity.
 
@@ -49,7 +49,7 @@ const char *fz_string_from_buffer(fz_context *ctx, fz_buffer *buf);
 fz_buffer *fz_new_buffer(fz_context *ctx, size_t capacity);
 
 /*
-	fz_new_buffer_from_data: Create a new buffer with existing data.
+	Create a new buffer with existing data.
 
 	data: Pointer to existing data.
 	size: Size of existing data.
@@ -64,23 +64,23 @@ fz_buffer *fz_new_buffer(fz_context *ctx, size_t capacity);
 fz_buffer *fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, size_t size);
 
 /*
-	fz_new_buffer_from_shared_data: Like fz_new_buffer, but does not take ownership.
+	Like fz_new_buffer, but does not take ownership.
 */
 fz_buffer *fz_new_buffer_from_shared_data(fz_context *ctx, const unsigned char *data, size_t size);
 
 /*
-	fz_new_buffer_from_copied_data: Create a new buffer containing a copy of the passed data.
+	Create a new buffer containing a copy of the passed data.
 */
 fz_buffer *
 fz_new_buffer_from_copied_data(fz_context *ctx, const unsigned char *data, size_t size);
 
 /*
-	fz_new_buffer_from_base64: Create a new buffer with data decoded from a base64 input string.
+	Create a new buffer with data decoded from a base64 input string.
 */
 fz_buffer *fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size);
 
 /*
-	fz_resize_buffer: Ensure that a buffer has a given capacity,
+	Ensure that a buffer has a given capacity,
 	truncating data if required.
 
 	capacity: The desired capacity for the buffer. If the current size
@@ -89,13 +89,13 @@ fz_buffer *fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t s
 void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, size_t capacity);
 
 /*
-	fz_grow_buffer: Make some space within a buffer (i.e. ensure that
+	Make some space within a buffer (i.e. ensure that
 	capacity > size).
 */
 void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_trim_buffer: Trim wasted capacity from a buffer by resizing internal memory.
+	Trim wasted capacity from a buffer by resizing internal memory.
 */
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
@@ -103,7 +103,7 @@ void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_clear_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_append_buffer: Append the contents of source buffer to destination buffer.
+	Append the contents of source buffer to destination buffer.
 */
 void fz_append_buffer(fz_context *ctx, fz_buffer *destination, fz_buffer *source);
 
@@ -128,7 +128,7 @@ void fz_append_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_l
 void fz_append_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 
 /*
-	fz_terminate_buffer: Zero-terminate buffer in order to use as a C string.
+	Zero-terminate buffer in order to use as a C string.
 
 	This byte is invisible and does not affect the length of the buffer as returned by fz_buffer_storage.
 	The zero byte is written *after* the data, and subsequent writes will overwrite the terminating byte.
@@ -136,12 +136,12 @@ void fz_append_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 void fz_terminate_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_md5_buffer: Create MD5 digest of buffer contents.
+	Create MD5 digest of buffer contents.
 */
 void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16]);
 
 /*
-	fz_buffer_extract: Take ownership of buffer contents.
+	Take ownership of buffer contents.
 	Performs the same task as fz_buffer_storage, but ownership of
 	the data buffer returns with this call. The buffer is left
 	empty.

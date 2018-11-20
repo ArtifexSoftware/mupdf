@@ -22,7 +22,7 @@ typedef struct fz_compressed_image_s fz_compressed_image;
 typedef struct fz_pixmap_image_s fz_pixmap_image;
 
 /*
-	fz_get_pixmap_from_image: Called to get a handle to a pixmap from an image.
+	Called to get a handle to a pixmap from an image.
 
 	image: The image to retrieve a pixmap from.
 
@@ -47,14 +47,14 @@ typedef struct fz_pixmap_image_s fz_pixmap_image;
 fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *w, int *h);
 
 /*
-	fz_drop_image: Drop a reference to an image.
+	Drop a reference to an image.
 
 	image: The image to drop a reference to.
 */
 void fz_drop_image(fz_context *ctx, fz_image *image);
 
 /*
-	fz_keep_image: Increment the reference count of an image.
+	Increment the reference count of an image.
 
 	image: The image to take a reference to.
 
@@ -66,13 +66,13 @@ fz_image *fz_keep_image_store_key(fz_context *ctx, fz_image *image);
 void fz_drop_image_store_key(fz_context *ctx, fz_image *image);
 
 /*
-	fz_drop_image_fn: Function type to destroy an images data
+	Function type to destroy an images data
 	when it's reference count reaches zero.
 */
 typedef void (fz_drop_image_fn)(fz_context *ctx, fz_image *image);
 
 /*
-	fz_get_pixmap_fn: Function type to get a decoded pixmap
+	Function type to get a decoded pixmap
 	for an image.
 
 	im: The image to decode.
@@ -97,7 +97,7 @@ typedef void (fz_drop_image_fn)(fz_context *ctx, fz_image *image);
 typedef fz_pixmap *(fz_image_get_pixmap_fn)(fz_context *ctx, fz_image *im, fz_irect *subarea, int w, int h, int *l2factor);
 
 /*
-	fz_image_get_size_fn: Function type to get the given storage
+	Function type to get the given storage
 	size for an image.
 
 	Returns the size in bytes used for a given image.
@@ -105,7 +105,7 @@ typedef fz_pixmap *(fz_image_get_pixmap_fn)(fz_context *ctx, fz_image *im, fz_ir
 typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
 
 /*
-	fz_new_image_of_size: Internal function to make a new fz_image structure
+	Internal function to make a new fz_image structure
 	for a derived class.
 
 	w,h: Width and height of the created image.
@@ -170,7 +170,7 @@ fz_image *fz_new_image_of_size(fz_context *ctx,
 	((T*)Memento_label(fz_new_image_of_size(CTX,W,H,B,CS,X,Y,I,IM,D,C,M,sizeof(T),G,S,Z),#T))
 
 /*
-	fz_new_image_from_compressed_buffer: Create an image based on
+	Create an image based on
 	the data in the supplied compressed buffer.
 
 	w,h: Width and height of the created image.
@@ -204,7 +204,7 @@ fz_image *fz_new_image_of_size(fz_context *ctx,
 fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
 
 /*
-	fz_new_image_from_pixmap: Create an image from the given
+	Create an image from the given
 	pixmap.
 
 	pixmap: The pixmap to base the image upon. A new reference
@@ -217,14 +217,14 @@ fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
 
 /*
-	fz_new_image_from_buffer: Create a new image from a
+	Create a new image from a
 	buffer of data, inferring its type from the format
 	of the data.
 */
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 
 /*
-	fz_image_from_file: Create a new image from the contents
+	Create a new image from the contents
 	of a file, inferring its type from the format of the
 	data.
 */
@@ -289,7 +289,7 @@ int fz_load_pnm_subimage_count(fz_context *ctx, const unsigned char *buf, size_t
 fz_pixmap *fz_load_pnm_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage);
 
 /*
-	fz_image_resolution: Request the natural resolution
+	Request the natural resolution
 	of an image.
 
 	xres, yres: Pointers to ints to be updated with the
@@ -302,7 +302,7 @@ fz_pixmap *fz_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg);
 void fz_set_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg, fz_pixmap *pix);
 
 /*
-	fz_compressed_image_buffer: Retrieve the underlying compressed
+	Retrieve the underlying compressed
 	data for an image.
 
 	Returns a pointer to the underlying data buffer for an image,
@@ -316,7 +316,7 @@ fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *imag
 void fz_set_compressed_image_buffer(fz_context *ctx, fz_compressed_image *cimg, fz_compressed_buffer *buf);
 
 /*
-	fz_pixmap_image_tile: Retried the underlying fz_pixmap
+	Retried the underlying fz_pixmap
 	for an image.
 
 	Returns a pointer to the underlying fz_pixmap for an image,

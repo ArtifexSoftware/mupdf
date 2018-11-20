@@ -157,7 +157,7 @@ typedef struct fz_store_type_s
 } fz_store_type;
 
 /*
-	fz_store_new_context: Create a new store inside the context
+	Create a new store inside the context
 
 	max: The maximum size (in bytes) that the store is allowed to grow
 	to. FZ_STORE_UNLIMITED means no limit.
@@ -165,17 +165,17 @@ typedef struct fz_store_type_s
 void fz_new_store_context(fz_context *ctx, size_t max);
 
 /*
-	fz_drop_store_context: Drop a reference to the store.
+	Drop a reference to the store.
 */
 void fz_drop_store_context(fz_context *ctx);
 
 /*
-	fz_keep_store_context: Take a reference to the store.
+	Take a reference to the store.
 */
 fz_store *fz_keep_store_context(fz_context *ctx);
 
 /*
-	fz_store_item: Add an item to the store.
+	Add an item to the store.
 
 	Add an item into the store, returning NULL for success. If an item
 	with the same key is found in the store, then our item will not be
@@ -195,7 +195,7 @@ fz_store *fz_keep_store_context(fz_context *ctx);
 void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, const fz_store_type *type);
 
 /*
-	fz_find_item: Find an item within the store.
+	Find an item within the store.
 
 	drop: The function used to free the value (to ensure we get a value
 	of the correct type).
@@ -210,7 +210,7 @@ void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, cons
 void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type);
 
 /*
-	fz_remove_item: Remove an item from the store.
+	Remove an item from the store.
 
 	If an item indexed by the given key exists in the store, remove it.
 
@@ -224,12 +224,12 @@ void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_
 void fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type);
 
 /*
-	fz_empty_store: Evict everything from the store.
+	Evict everything from the store.
 */
 void fz_empty_store(fz_context *ctx);
 
 /*
-	fz_store_scavenge: Internal function used as part of the scavenging
+	Internal function used as part of the scavenging
 	allocator; when we fail to allocate memory, before returning a
 	failure to the caller, we try to scavenge space within the store by
 	evicting at least 'size' bytes. The allocator then retries.
@@ -243,7 +243,7 @@ void fz_empty_store(fz_context *ctx);
 int fz_store_scavenge(fz_context *ctx, size_t size, int *phase);
 
 /*
-	fz_store_scavenge_external: External function for callers to use
+	External function for callers to use
 	to scavenge while trying allocations.
 
 	size: The number of bytes we are trying to have free.
@@ -255,7 +255,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase);
 int fz_store_scavenge_external(fz_context *ctx, size_t size, int *phase);
 
 /*
-	fz_shrink_store: Evict items from the store until the total size of
+	Evict items from the store until the total size of
 	the objects in the store is reduced to a given percentage of its
 	current size.
 
@@ -270,12 +270,12 @@ typedef int (fz_store_filter_fn)(fz_context *ctx, void *arg, void *key);
 void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const fz_store_type *type);
 
 /*
-	fz_debug_store: Dump the contents of the store for debugging.
+	Dump the contents of the store for debugging.
 */
 void fz_debug_store(fz_context *ctx);
 
 /*
-	fz_defer_reap_start: Increment the defer reap count.
+	Increment the defer reap count.
 
 	No reap operations will take place (except for those
 	triggered by an immediate failed malloc) until the
@@ -290,7 +290,7 @@ void fz_debug_store(fz_context *ctx);
 void fz_defer_reap_start(fz_context *ctx);
 
 /*
-	fz_defer_reap_end: Decrement the defer reap count.
+	Decrement the defer reap count.
 
 	If the defer reap count returns to 0, and the store
 	has reapable objects in, a reap pass will begin.

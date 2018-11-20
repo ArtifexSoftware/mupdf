@@ -38,7 +38,7 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 #define fz_new_band_writer(C,M,O) ((M *)Memento_label(fz_new_band_writer_of_size(ctx, sizeof(M), O), #M))
 
 /*
-	fz_write_header: Cause a band writer to write the header for
+	Cause a band writer to write the header for
 	a banded image with the given properties/dimensions etc. This
 	also configures the bandwriter for the format of the data to be
 	passed in future calls.
@@ -62,7 +62,7 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs, fz_separations *seps);
 
 /*
-	fz_write_band: Cause a band writer to write the next band
+	Cause a band writer to write the next band
 	of data for an image.
 
 	stride: The byte offset from the first byte of the data

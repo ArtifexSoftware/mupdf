@@ -13,7 +13,7 @@
 typedef struct fz_bitmap_s fz_bitmap;
 
 /*
-	fz_keep_bitmap: Take a reference to a bitmap.
+	Take a reference to a bitmap.
 
 	bit: The bitmap to increment the reference for.
 
@@ -22,7 +22,7 @@ typedef struct fz_bitmap_s fz_bitmap;
 fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
-	fz_drop_bitmap: Drop a reference and free a bitmap.
+	Drop a reference and free a bitmap.
 
 	Decrement the reference count for the bitmap. When no
 	references remain the pixmap will be freed.
@@ -39,7 +39,7 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 typedef struct fz_halftone_s fz_halftone;
 
 /*
-	fz_new_bitmap_from_pixmap: Make a bitmap from a pixmap and a halftone.
+	Make a bitmap from a pixmap and a halftone.
 
 	pix: The pixmap to generate from. Currently must be a single color
 	component with no alpha.
@@ -52,7 +52,7 @@ typedef struct fz_halftone_s fz_halftone;
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
 /*
-	fz_new_bitmap_from_pixmap_band: Make a bitmap from a pixmap and a
+	Make a bitmap from a pixmap and a
 	halftone, allowing for the position of the pixmap within an
 	overall banded rendering.
 
@@ -78,7 +78,7 @@ struct fz_bitmap_s
 };
 
 /*
-	fz_new_bitmap: Create a new bitmap.
+	Create a new bitmap.
 
 	w, h: Width and Height for the bitmap
 
@@ -92,7 +92,7 @@ struct fz_bitmap_s
 fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yres);
 
 /*
-	fz_bitmap_details: Retrieve details of a given bitmap.
+	Retrieve details of a given bitmap.
 
 	bitmap: The bitmap to query.
 
@@ -107,14 +107,14 @@ fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yre
 void fz_bitmap_details(fz_bitmap *bitmap, int *w, int *h, int *n, int *stride);
 
 /*
-	fz_clear_bitmap: Clear a previously created bitmap.
+	Clear a previously created bitmap.
 
 	bit: The bitmap to clear.
 */
 void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
-	fz_default_halftone: Create a 'default' halftone structure
+	Create a 'default' halftone structure
 	for the given number of components.
 
 	num_comps: The number of components to use.
@@ -126,13 +126,13 @@ void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 
 /*
-	fz_keep_halftone: Take an additional reference to a
+	Take an additional reference to a
 	halftone.
 */
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 
 /*
-	fz_drop_halftone: Drop a reference to a halftone. If the
+	Drop a reference to a halftone. If the
 	reference count reaches zero, ht will be destroyed.
 */
 void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);

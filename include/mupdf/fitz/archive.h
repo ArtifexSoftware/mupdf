@@ -22,7 +22,7 @@ struct fz_archive_s
 };
 
 /*
-	fz_new_archive: Create and initialize an archive struct.
+	Create and initialize an archive struct.
 */
 fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 
@@ -30,7 +30,7 @@ fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 	((M*)Memento_label(fz_new_archive_of_size(C, F, sizeof(M)), #M))
 
 /*
-	fz_open_archive: Open a zip or tar archive
+	Open a zip or tar archive
 
 	Open a file and identify its archive type based on the archive
 	signature contained inside.
@@ -40,7 +40,7 @@ fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 fz_archive *fz_open_archive(fz_context *ctx, const char *filename);
 
 /*
-	fz_open_archive_with_stream: Open zip or tar archive stream.
+	Open zip or tar archive stream.
 
 	Open an archive using a seekable stream object rather than
 	opening a file or directory on disk.
@@ -48,7 +48,7 @@ fz_archive *fz_open_archive(fz_context *ctx, const char *filename);
 fz_archive *fz_open_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
-	fz_open_directory: Open a directory as if it was an archive.
+	Open a directory as if it was an archive.
 
 	A special case where a directory is opened as if it was an
 	archive.
@@ -64,26 +64,26 @@ fz_archive *fz_open_directory(fz_context *ctx, const char *path);
 int fz_is_directory(fz_context *ctx, const char *path);
 
 /*
-	fz_drop_archive: Release an open archive.
+	Release an open archive.
 
 	Any allocations for the archive are freed.
 */
 void fz_drop_archive(fz_context *ctx, fz_archive *arch);
 
 /*
-	fz_archive_format: Returns the name of the archive format.
+	Returns the name of the archive format.
 */
 const char *fz_archive_format(fz_context *ctx, fz_archive *arch);
 
 /*
-	fz_count_archive_entries: Number of entries in archive.
+	Number of entries in archive.
 
 	Will always return a value >= 0.
 */
 int fz_count_archive_entries(fz_context *ctx, fz_archive *arch);
 
 /*
-	fz_list_archive_entry: Get listed name of entry position idx.
+	Get listed name of entry position idx.
 
 	idx: Must be a value >= 0 < return value from
 	fz_count_archive_entries. If not in range NULL will be
@@ -92,7 +92,7 @@ int fz_count_archive_entries(fz_context *ctx, fz_archive *arch);
 const char *fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx);
 
 /*
-	fz_has_archive_entry: Check if entry by given name exists.
+	Check if entry by given name exists.
 
 	If named entry does not exist 0 will be returned, if it does
 	exist 1 is returned.
@@ -103,7 +103,7 @@ const char *fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx);
 int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /*
-	fz_open_archive_entry: Opens an archive entry as a stream.
+	Opens an archive entry as a stream.
 
 	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
@@ -111,7 +111,7 @@ int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /*
-	fz_read_archive_entry: Reads all bytes in an archive entry
+	Reads all bytes in an archive entry
 	into a buffer.
 
 	name: Entry name to look for, this must be an exact match to
@@ -121,14 +121,14 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /*
-	fz_is_tar_archive: Detect if stream object is a tar achieve.
+	Detect if stream object is a tar achieve.
 
 	Assumes that the stream object is seekable.
 */
 int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
 
 /*
-	fz_open_tar_archive: Open a tar archive file.
+	Open a tar archive file.
 
 	An exception is throw if the file is not a tar archive as
 	indicated by the presence of a tar signature.
@@ -139,7 +139,7 @@ int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
 fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
 
 /*
-	fz_open_tar_archive_with_stream: Open a tar archive stream.
+	Open a tar archive stream.
 
 	Open an archive using a seekable stream object rather than
 	opening a file or directory on disk.
@@ -151,14 +151,14 @@ fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
 fz_archive *fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
-	fz_is_zip_archive: Detect if stream object is a zip archive.
+	Detect if stream object is a zip archive.
 
 	Assumes that the stream object is seekable.
 */
 int fz_is_zip_archive(fz_context *ctx, fz_stream *file);
 
 /*
-	fz_open_zip_archive: Open a zip archive file.
+	Open a zip archive file.
 
 	An exception is throw if the file is not a zip archive as
 	indicated by the presence of a zip signature.
@@ -169,7 +169,7 @@ int fz_is_zip_archive(fz_context *ctx, fz_stream *file);
 fz_archive *fz_open_zip_archive(fz_context *ctx, const char *path);
 
 /*
-	fz_open_zip_archive: Open a zip archive stream.
+	Open a zip archive stream.
 
 	Open an archive using a seekable stream object rather than
 	opening a file or directory on disk.

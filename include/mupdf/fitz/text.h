@@ -65,14 +65,14 @@ struct fz_text_s
 };
 
 /*
-	fz_new_text: Create a new empty fz_text object.
+	Create a new empty fz_text object.
 
 	Throws exception on failure to allocate.
 */
 fz_text *fz_new_text(fz_context *ctx);
 
 /*
-	fz_keep_text: Add a reference to a fz_text.
+	Add a reference to a fz_text.
 
 	text: text object to keep a reference to.
 
@@ -81,7 +81,7 @@ fz_text *fz_new_text(fz_context *ctx);
 fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
 
 /*
-	fz_drop_text: Drop a reference to the object, freeing
+	Drop a reference to the object, freeing
 	if it is the last one.
 
 	text: Object to drop the reference to.
@@ -89,7 +89,7 @@ fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
 void fz_drop_text(fz_context *ctx, const fz_text *text);
 
 /*
-	fz_show_glyph: Add a glyph/unicode value to a text object.
+	Add a glyph/unicode value to a text object.
 
 	text: Text object to add to.
 
@@ -116,7 +116,7 @@ void fz_drop_text(fz_context *ctx, const fz_text *text);
 void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, int glyph, int unicode, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
 
 /*
-	fz_show_string: Add a UTF8 string to a text object.
+	Add a UTF8 string to a text object.
 
 	text: Text object to add to.
 
@@ -141,7 +141,7 @@ void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm,
 fz_matrix fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
 
 /*
-	fz_bound_text: Find the bounds of a given text object.
+	Find the bounds of a given text object.
 
 	text: The text object to find the bounds of.
 

@@ -12,7 +12,7 @@
 #include "mupdf/fitz/image.h"
 
 /*
-	fz_save_pixmap_as_png: Save a pixmap as a PNG image file.
+	Save a pixmap as a PNG image file.
 */
 void fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
 
@@ -22,7 +22,7 @@ void fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filen
 void fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap);
 
 /*
-	fz_new_png_band_writer: Obtain a fz_band_writer instance
+	Obtain a fz_band_writer instance
 	for producing PNG output.
 */
 fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out);

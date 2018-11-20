@@ -36,7 +36,7 @@ struct fz_pcl_options_s
 };
 
 /*
-	fz_pcl_preset: Initialize PCL option struct for a given preset.
+	Initialize PCL option struct for a given preset.
 
 	Currently defined presets include:
 
@@ -57,7 +57,7 @@ struct fz_pcl_options_s
 void fz_pcl_preset(fz_context *ctx, fz_pcl_options *opts, const char *preset);
 
 /*
-	fz_parse_pcl_options: Parse PCL options.
+	Parse PCL options.
 
 	Currently defined options and values are as follows:
 

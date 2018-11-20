@@ -109,7 +109,7 @@ struct fz_stext_char_s
 extern const char *fz_stext_options_usage;
 
 /*
-	fz_new_stext_page: Create an empty text page.
+	Create an empty text page.
 
 	The text page is filled out by the text device to contain the blocks
 	and lines of text on the page.
@@ -120,31 +120,31 @@ fz_stext_page *fz_new_stext_page(fz_context *ctx, fz_rect mediabox);
 void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
 
 /*
-	fz_print_stext_page_as_html: Output a page to a file in HTML (visual) format.
+	Output a page to a file in HTML (visual) format.
 */
 void fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page);
 void fz_print_stext_header_as_html(fz_context *ctx, fz_output *out);
 void fz_print_stext_trailer_as_html(fz_context *ctx, fz_output *out);
 
 /*
-	fz_print_stext_page_as_xhtml: Output a page to a file in XHTML (semantic) format.
+	Output a page to a file in XHTML (semantic) format.
 */
 void fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page);
 void fz_print_stext_header_as_xhtml(fz_context *ctx, fz_output *out);
 void fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out);
 
 /*
-	fz_print_stext_page_as_xml: Output a page to a file in XML format.
+	Output a page to a file in XML format.
 */
 void fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_print_stext_page_as_text: Output a page to a file in UTF-8 format.
+	Output a page to a file in UTF-8 format.
 */
 void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_search_stext_page: Search for occurrence of 'needle' in text page.
+	Search for occurrence of 'needle' in text page.
 
 	Return the number of hits and store hit quads in the passed in array.
 
@@ -153,7 +153,7 @@ void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page 
 int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_quad *quads, int max_quads);
 
 /*
-	fz_highlight_selection: Return a list of quads to highlight lines inside the selection points.
+	Return a list of quads to highlight lines inside the selection points.
 */
 int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads);
 
@@ -167,14 +167,14 @@ enum
 fz_quad fz_snap_selection(fz_context *ctx, fz_stext_page *page, fz_point *ap, fz_point *bp, int mode);
 
 /*
-	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection.
+	Return a newly allocated UTF-8 string with the text for a given selection.
 
 	crlf: If true, write "\r\n" style line endings (otherwise "\n" only).
 */
 char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, int crlf);
 
 /*
-	struct fz_stext_options: Options for creating a pixmap and draw device.
+	Options for creating a pixmap and draw device.
 */
 typedef struct fz_stext_options_s fz_stext_options;
 
@@ -184,12 +184,12 @@ struct fz_stext_options_s
 };
 
 /*
-	fz_parse_stext_options: Parse stext device options from a comma separated key-value string.
+	Parse stext device options from a comma separated key-value string.
 */
 fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string);
 
 /*
-	fz_new_stext_device: Create a device to extract the text on a page.
+	Create a device to extract the text on a page.
 
 	Gather the text on a page into blocks and lines.
 
