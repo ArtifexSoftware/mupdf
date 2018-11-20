@@ -2836,8 +2836,9 @@ fz_html *
 fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	fz_xml_doc *xml;
-	fz_xml *root;
+	fz_xml *root, *node;
 	fz_html *html = NULL;
+	char *title;
 
 	fz_css_match match;
 	struct genstate g;
@@ -2916,6 +2917,26 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		generate_boxes(ctx, root, html->root, &match, 0, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
 
 		detect_directionality(ctx, g.pool, html->root);
+
+		if (g.is_fb2)
+		{
+			node = fz_xml_find(root, "FictionBook");
+			node = fz_xml_find_down(node, "description");
+			node = fz_xml_find_down(node, "title-info");
+			node = fz_xml_find_down(node, "book-title");
+			title = fz_xml_text(fz_xml_down(node));
+			if (title)
+				html->title = fz_pool_strdup(ctx, g.pool, title);
+		}
+		else
+		{
+			node = fz_xml_find(root, "html");
+			node = fz_xml_find_down(node, "head");
+			node = fz_xml_find_down(node, "title");
+			title = fz_xml_text(fz_xml_down(node));
+			if (title)
+				html->title = fz_pool_strdup(ctx, g.pool, title);
+		}
 	}
 	fz_always(ctx)
 	{

@@ -195,6 +195,7 @@ struct fz_html_s
 	float page_w, page_h;
 	float page_margin[4];
 	fz_html_box *root;
+	char *title;
 };
 
 struct fz_html_box_s
