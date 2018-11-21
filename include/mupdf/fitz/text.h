@@ -71,21 +71,7 @@ struct fz_text_s
 */
 fz_text *fz_new_text(fz_context *ctx);
 
-/*
-	Add a reference to a fz_text.
-
-	text: text object to keep a reference to.
-
-	Return the same text pointer.
-*/
 fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
-
-/*
-	Drop a reference to the object, freeing
-	if it is the last one.
-
-	text: Object to drop the reference to.
-*/
 void fz_drop_text(fz_context *ctx, const fz_text *text);
 
 /*

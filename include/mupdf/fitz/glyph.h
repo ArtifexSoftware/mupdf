@@ -13,9 +13,6 @@
 */
 typedef struct fz_glyph_s fz_glyph;
 
-/*
-	Return the bounding box for a glyph.
-*/
 fz_irect fz_glyph_bbox(fz_context *ctx, fz_glyph *glyph);
 
 /*

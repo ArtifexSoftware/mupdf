@@ -148,21 +148,7 @@ fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colo
 */
 fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const fz_irect *rect);
 
-/*
-	Take a reference to a pixmap.
-
-	pix: The pixmap to increment the reference for.
-
-	Returns pix.
-*/
 fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
-
-/*
-	Drop a reference and free a pixmap.
-
-	Decrement the reference count for the pixmap. When no
-	references remain the pixmap will be freed.
-*/
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*

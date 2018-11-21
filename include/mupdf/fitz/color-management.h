@@ -47,9 +47,6 @@ typedef void (fz_cmm_transform_color_fn)(fz_cmm_instance *ctx, fz_icclink *link,
 */
 typedef void (fz_cmm_init_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots);
 
-/*
-	Drop a link.
-*/
 typedef void (fz_cmm_fin_link_fn)(fz_cmm_instance *ctx, fz_icclink *link);
 
 /*

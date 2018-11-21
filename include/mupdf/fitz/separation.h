@@ -34,10 +34,7 @@ typedef enum
 /* Create a new separations structure (initially empty) */
 fz_separations *fz_new_separations(fz_context *ctx, int controllable);
 
-/* Keep a reference */
 fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *sep);
-
-/* Drop a reference */
 void fz_drop_separations(fz_context *ctx, fz_separations *sep);
 
 /* Add a separation (null terminated name, colorspace) */
@@ -52,10 +49,7 @@ void fz_set_separation_behavior(fz_context *ctx, fz_separations *sep, int separa
 /* Test for the current behavior of a separation */
 fz_separation_behavior fz_separation_current_behavior(fz_context *ctx, const fz_separations *sep, int separation);
 
-/* Read separation name */
 const char *fz_separation_name(fz_context *ctx, const fz_separations *sep, int separation);
-
-/* Count the number of separations */
 int fz_count_separations(fz_context *ctx, const fz_separations *sep);
 
 /* Return the number of active separations. */

@@ -91,9 +91,6 @@ pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 */
 void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
-/*
-	Keep a reference to an open document.
-*/
 pdf_document *pdf_keep_document(fz_context *ctx, pdf_document *doc);
 
 /*
@@ -445,14 +442,8 @@ struct pdf_document_s
 	PDF creation
 */
 
-/*
-	Create a blank PDF document
-*/
 pdf_document *pdf_create_document(fz_context *ctx);
 
-/*
-	Deep copy objects between documents.
-*/
 typedef struct pdf_graft_map_s pdf_graft_map;
 
 /*
@@ -479,14 +470,7 @@ pdf_obj *pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj);
 */
 pdf_graft_map *pdf_new_graft_map(fz_context *ctx, pdf_document *dst);
 
-/*
-	Keep a reference to a graft map object.
-*/
 pdf_graft_map *pdf_keep_graft_map(fz_context *ctx, pdf_graft_map *map);
-
-/*
-	Drop a graft map.
-*/
 void pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map);
 
 /*

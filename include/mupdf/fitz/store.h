@@ -164,14 +164,7 @@ typedef struct fz_store_type_s
 */
 void fz_new_store_context(fz_context *ctx, size_t max);
 
-/*
-	Drop a reference to the store.
-*/
 void fz_drop_store_context(fz_context *ctx);
-
-/*
-	Take a reference to the store.
-*/
 fz_store *fz_keep_store_context(fz_context *ctx);
 
 /*
@@ -223,9 +216,6 @@ void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_
 */
 void fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type);
 
-/*
-	Evict everything from the store.
-*/
 void fz_empty_store(fz_context *ctx);
 
 /*
@@ -269,9 +259,6 @@ typedef int (fz_store_filter_fn)(fz_context *ctx, void *arg, void *key);
 
 void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const fz_store_type *type);
 
-/*
-	Dump the contents of the store for debugging.
-*/
 void fz_debug_store(fz_context *ctx);
 
 /*

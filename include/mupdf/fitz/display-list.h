@@ -75,15 +75,7 @@ fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 */
 void fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_rect scissor, fz_cookie *cookie);
 
-/*
-	Keep a reference to a display list.
-*/
 fz_display_list *fz_keep_display_list(fz_context *ctx, fz_display_list *list);
-
-/*
-	Drop a reference to a display list, freeing it
-	if the reference count reaches zero.
-*/
 void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 
 /*

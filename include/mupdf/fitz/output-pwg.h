@@ -76,14 +76,8 @@ void fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, i
 */
 void fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg);
 
-/*
-	Output a pixmap to an output stream as a pwg raster.
-*/
 void fz_write_pixmap_as_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
 
-/*
-	Output a bitmap to an output stream as a pwg raster.
-*/
 void fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
 /*

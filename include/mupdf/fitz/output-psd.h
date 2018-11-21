@@ -11,20 +11,10 @@
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/image.h"
 
-/*
-	Save a pixmap as a PSD image file.
-*/
 void fz_save_pixmap_as_psd(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
 
-/*
-	Write a pixmap to an output stream in PSD format.
-*/
 void fz_write_pixmap_as_psd(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap);
 
-/*
-	Obtain a fz_band_writer instance
-	for producing PSD output.
-*/
 fz_band_writer *fz_new_psd_band_writer(fz_context *ctx, fz_output *out);
 
 #endif

@@ -468,9 +468,6 @@ void *fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size);
 */
 char *fz_strdup(fz_context *ctx, const char *s);
 
-/*
-	Frees an allocation.
-*/
 void fz_free(fz_context *ctx, void *p);
 
 /*
@@ -530,10 +527,7 @@ struct fz_warn_context_s
 	int count;
 };
 
-/* Default allocator */
 extern fz_alloc_context fz_alloc_default;
-
-/* Default locks */
 extern fz_locks_context fz_locks_default;
 
 /*

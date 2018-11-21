@@ -116,34 +116,12 @@ int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
 int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
 
-/*
-	Get colorspace representing device specific gray.
-*/
 fz_colorspace *fz_device_gray(fz_context *ctx);
-
-/*
-	Get colorspace representing device specific rgb.
-*/
 fz_colorspace *fz_device_rgb(fz_context *ctx);
-
-/*
-	Get colorspace representing device specific bgr.
-*/
 fz_colorspace *fz_device_bgr(fz_context *ctx);
-
-/*
-	Get colorspace representing device specific CMYK.
-*/
 fz_colorspace *fz_device_cmyk(fz_context *ctx);
-
-/*
-	Get colorspace representing device specific LAB.
-*/
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
-/*
-	Get default color params for general color conversion.
-*/
 const fz_color_params *fz_default_color_params(fz_context *ctx);
 
 typedef void (fz_colorspace_convert_fn)(fz_context *ctx, const fz_colorspace *cs, const float *src, float *dst);

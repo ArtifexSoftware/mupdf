@@ -36,9 +36,6 @@ typedef struct pdf_ui_event_s
 	} event;
 } pdf_ui_event;
 
-/*
-	Set up a pointer event
-*/
 void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
 
 /*
@@ -182,9 +179,6 @@ typedef struct
 	const char *message;
 } pdf_mail_doc_event;
 
-/*
-	access the details of a mail-doc event.
-*/
 pdf_mail_doc_event *pdf_access_mail_doc_event(fz_context *ctx, pdf_doc_event *event);
 
 void pdf_event_issue_alert(fz_context *ctx, pdf_document *doc, pdf_alert_event *event);

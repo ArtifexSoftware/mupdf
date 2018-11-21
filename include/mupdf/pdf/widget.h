@@ -39,19 +39,10 @@ enum
 */
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
 
-/*
-	get first widget when enumerating
-*/
 pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page);
 
-/*
-	get next widget when enumerating
-*/
 pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 
-/*
-	create a new widget of a specific type
-*/
 pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname);
 
 /*
@@ -62,15 +53,8 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 */
 int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
-/*
-	get the bounding box of a widget.
-*/
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
-/*
-	Get the text currently displayed in
-	a text widget.
-*/
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
 /*
@@ -102,10 +86,6 @@ int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw,
 */
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
 
-/*
-	returns whether a list box or
-	combo box supports selection of multiple options
-*/
 int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
 /*

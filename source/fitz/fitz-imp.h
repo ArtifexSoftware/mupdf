@@ -39,27 +39,9 @@ enum
 	fz_device_container_stack_is_group = 128,
 };
 
-/*
-	fz_new_font_context: Initialise the font context.
-
-	For internal use only.
-*/
 void fz_new_font_context(fz_context *ctx);
 
-/*
-	fz_keep_font_context: Increment the ref count for
-	the current font context.
-
-	For internal use only.
-*/
 fz_font_context *fz_keep_font_context(fz_context *ctx);
-
-/*
-	fz_drop_font_context: Drop the ref count for the
-	current font context.
-
-	For internal use only.
-*/
 void fz_drop_font_context(fz_context *ctx);
 
 /* Tuning context implementation details */

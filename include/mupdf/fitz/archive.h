@@ -21,9 +21,6 @@ struct fz_archive_s
 	fz_stream *(*open_entry)(fz_context *ctx, fz_archive *arch, const char *name);
 };
 
-/*
-	Create and initialize an archive struct.
-*/
 fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 
 #define fz_new_derived_archive(C,F,M) \
@@ -63,16 +60,7 @@ fz_archive *fz_open_directory(fz_context *ctx, const char *path);
 
 int fz_is_directory(fz_context *ctx, const char *path);
 
-/*
-	Release an open archive.
-
-	Any allocations for the archive are freed.
-*/
 void fz_drop_archive(fz_context *ctx, fz_archive *arch);
-
-/*
-	Returns the name of the archive format.
-*/
 const char *fz_archive_format(fz_context *ctx, fz_archive *arch);
 
 /*

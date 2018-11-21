@@ -74,14 +74,7 @@ enum pdf_line_ending pdf_line_ending_from_string(fz_context *ctx, const char *en
 pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 const char *pdf_string_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 
-/*
-	Return the first annotation on a page.
-*/
 pdf_annot *pdf_first_annot(fz_context *ctx, pdf_page *page);
-
-/*
-	Return the next annotation on a page.
-*/
 pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
@@ -89,9 +82,6 @@ pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 */
 fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
 
-/*
-	Return the type of an annotation
-*/
 int pdf_annot_type(fz_context *ctx, pdf_annot *annot);
 
 /*
@@ -145,9 +135,6 @@ void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 pdf_annot *pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
-/*
-	delete an annotation
-*/
 void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 
 int pdf_annot_has_ink_list(fz_context *ctx, pdf_annot *annot);
@@ -223,24 +210,10 @@ void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
 */
 void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
 
-/*
-	return the contents of an annotation.
-*/
 const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
-
-/*
-	set the contents of an annotation.
-*/
 void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
-/*
-	return the author of an annotation.
-*/
 const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
-
-/*
-	set the author of an annotation.
-*/
 void pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author);
 
 /*

@@ -12,21 +12,7 @@
 */
 typedef struct fz_bitmap_s fz_bitmap;
 
-/*
-	Take a reference to a bitmap.
-
-	bit: The bitmap to increment the reference for.
-
-	Returns bit.
-*/
 fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
-
-/*
-	Drop a reference and free a bitmap.
-
-	Decrement the reference count for the bitmap. When no
-	references remain the pixmap will be freed.
-*/
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
@@ -106,11 +92,6 @@ fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yre
 */
 void fz_bitmap_details(fz_bitmap *bitmap, int *w, int *h, int *n, int *stride);
 
-/*
-	Clear a previously created bitmap.
-
-	bit: The bitmap to clear.
-*/
 void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
@@ -125,16 +106,7 @@ void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 */
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 
-/*
-	Take an additional reference to a
-	halftone.
-*/
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
-
-/*
-	Drop a reference to a halftone. If the
-	reference count reaches zero, ht will be destroyed.
-*/
 void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);
 
 #endif

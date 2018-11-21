@@ -46,20 +46,7 @@ typedef struct fz_pixmap_image_s fz_pixmap_image;
 */
 fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *w, int *h);
 
-/*
-	Drop a reference to an image.
-
-	image: The image to drop a reference to.
-*/
 void fz_drop_image(fz_context *ctx, fz_image *image);
-
-/*
-	Increment the reference count of an image.
-
-	image: The image to take a reference to.
-
-	Returns a pointer to the image.
-*/
 fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
 
 fz_image *fz_keep_image_store_key(fz_context *ctx, fz_image *image);

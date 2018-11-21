@@ -83,13 +83,6 @@ fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 */
 fz_stream *fz_open_leecher(fz_context *ctx, fz_stream *chain, fz_buffer *buf);
 
-/*
-	Close an open stream.
-
-	Drops a reference for the stream. Once no references remain
-	the stream will be closed, as will any file descriptor the
-	stream is using.
-*/
 void fz_drop_stream(fz_context *ctx, fz_stream *stm);
 
 /*

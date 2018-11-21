@@ -29,9 +29,6 @@ void fz_drop_xml(fz_context *ctx, fz_xml_doc *xml);
 */
 void fz_detach_xml(fz_context *ctx, fz_xml_doc *xml, fz_xml *node);
 
-/*
-	Get the root node for the document.
-*/
 fz_xml *fz_xml_root(fz_xml_doc *xml);
 
 /*

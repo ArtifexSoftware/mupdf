@@ -38,14 +38,8 @@ enum
 	PDF_PERM_PRINT_HQ = 1 << 11,
 };
 
-/*
-	access the detailed permissions flag.
-*/
 int pdf_document_permissions(fz_context *ctx, pdf_document *doc);
 
-/*
-	retrieve the byte range for a signature widget
-*/
 int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range);
 
 /*
@@ -53,14 +47,8 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 */
 fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_widget *widget);
 
-/*
-	retrieve the contents for a signature widget
-*/
 int pdf_signature_widget_contents(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char **contents);
 
-/*
-	sign a signature form field
-*/
 void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, pdf_pkcs7_signer *signer);
 
 void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void (*fmt_str_out)(fz_context *, void *, const unsigned char *, int), void *arg, const unsigned char *s, int n);

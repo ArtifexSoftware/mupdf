@@ -208,29 +208,10 @@ void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t siz
 */
 void fz_write_string(fz_context *ctx, fz_output *out, const char *s);
 
-/*
-	Write a big-endian 32-bit binary integer.
-*/
 void fz_write_int32_be(fz_context *ctx, fz_output *out, int x);
-
-/*
-	Write a little-endian 32-bit binary integer.
-*/
 void fz_write_int32_le(fz_context *ctx, fz_output *out, int x);
-
-/*
-	Write a big-endian 16-bit binary integer.
-*/
 void fz_write_int16_be(fz_context *ctx, fz_output *out, int x);
-
-/*
-	Write a little-endian 16-bit binary integer.
-*/
 void fz_write_int16_le(fz_context *ctx, fz_output *out, int x);
-
-/*
-	Write a single byte.
-*/
 void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 
 /*
@@ -238,9 +219,6 @@ void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 */
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 
-/*
-	Write base64 encoded data.
-*/
 void fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline);
 void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, int newline);
 
@@ -273,9 +251,6 @@ size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
 */
 size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
-/*
-	Print to allocated string.
-*/
 char *fz_asprintf(fz_context *ctx, const char *fmt, ...);
 
 /*
@@ -289,9 +264,6 @@ char *fz_asprintf(fz_context *ctx, const char *fmt, ...);
 */
 char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 
-/*
-	Save contents of a buffer to file.
-*/
 void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
 
 /*

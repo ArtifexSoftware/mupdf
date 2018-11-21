@@ -341,25 +341,10 @@ fz_document *fz_open_document(fz_context *ctx, const char *filename);
 */
 fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
 
-/*
-	Create and initialize a document struct.
-*/
 void *fz_new_document_of_size(fz_context *ctx, int size);
-
 #define fz_new_derived_document(C,M) ((M*)Memento_label(fz_new_document_of_size(C, sizeof(M)), #M))
 
-/*
-	Keep a reference to an open document.
-*/
 fz_document *fz_keep_document(fz_context *ctx, fz_document *doc);
-
-/*
-	Release an open document.
-
-	The resource store in the context associated with fz_document
-	is emptied, and any allocations for the document are freed when
-	the last reference is dropped.
-*/
 void fz_drop_document(fz_context *ctx, fz_document *doc);
 
 /*
@@ -460,17 +445,12 @@ fz_page *fz_load_page(fz_context *ctx, fz_document *doc, int number);
 */
 fz_link *fz_load_links(fz_context *ctx, fz_page *page);
 
-/*
-	Create and initialize a page struct.
-*/
 fz_page *fz_new_page_of_size(fz_context *ctx, int size);
-
 #define fz_new_derived_page(CTX,TYPE) \
 	((TYPE *)Memento_label(fz_new_page_of_size(CTX,sizeof(TYPE)),#TYPE))
 
 /*
 	Determine the size of a page at 72 dpi.
-
 */
 fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
 
@@ -540,14 +520,7 @@ void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_mat
 */
 void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
-/*
-	Keep a reference to a loaded page.
-*/
 fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
-
-/*
-	Free a loaded page.
-*/
 void fz_drop_page(fz_context *ctx, fz_page *page);
 
 /*
@@ -619,10 +592,6 @@ fz_colorspace *fz_document_output_intent(fz_context *ctx, fz_document *doc);
 */
 fz_separations *fz_page_separations(fz_context *ctx, fz_page *page);
 
-/*
-	Find out whether a given page requests
-	overprint.
-*/
 int fz_page_uses_overprint(fz_context *ctx, fz_page *page);
 
 /*

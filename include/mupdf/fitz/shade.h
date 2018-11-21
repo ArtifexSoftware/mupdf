@@ -79,21 +79,7 @@ typedef struct fz_shade_s
 	fz_compressed_buffer *buffer;
 } fz_shade;
 
-/*
-	Add a reference to a fz_shade.
-
-	shade: The reference to keep.
-
-	Returns shade.
-*/
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
-
-/*
-	Drop a reference to a fz_shade.
-
-	shade: The reference to drop. If this is the last
-	reference, shade will be destroyed.
-*/
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 
 /*

@@ -79,12 +79,6 @@ typedef struct
 */
 void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *walker, void *arg);
 
-/*
-	Create an empty path, and return
-	a reference to it.
-
-	Throws exception on failure to allocate.
-*/
 fz_path *fz_new_path(fz_context *ctx);
 
 /*
@@ -96,14 +90,6 @@ fz_path *fz_new_path(fz_context *ctx);
 	this can cause race conditions.
 */
 fz_path *fz_keep_path(fz_context *ctx, const fz_path *path);
-
-/*
-	Drop a reference to a path,
-	destroying the path if it is the last
-	reference.
-
-	Never throws exceptions.
-*/
 void fz_drop_path(fz_context *ctx, const fz_path *path);
 
 /*

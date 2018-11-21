@@ -173,18 +173,7 @@ void fz_drop_device(fz_context *ctx, fz_device *dev);
 
 fz_device *fz_keep_device(fz_context *ctx, fz_device *dev);
 
-/*
-	Enable hints in a device.
-
-	hints: mask of hints to enable.
-*/
 void fz_enable_device_hints(fz_context *ctx, fz_device *dev, int hints);
-
-/*
-	Disable hints in a device.
-
-	hints: mask of hints to disable.
-*/
 void fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 
 /*

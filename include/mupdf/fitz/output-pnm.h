@@ -8,44 +8,22 @@
 #include "mupdf/fitz/pixmap.h"
 #include "mupdf/fitz/bitmap.h"
 
-/*
-	Save a pixmap as a PNM image file.
-*/
 void fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
-
 void fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
-
 fz_band_writer *fz_new_pnm_band_writer(fz_context *ctx, fz_output *out);
 
-/*
-	Save a pixmap as a PAM image file.
-*/
 void fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
-
 void fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
-
 fz_band_writer *fz_new_pam_band_writer(fz_context *ctx, fz_output *out);
 
-/*
-	Save a bitmap as a PBM image file.
-*/
 void fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, const char *filename);
-
 void fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
-
 fz_band_writer *fz_new_pbm_band_writer(fz_context *ctx, fz_output *out);
-
 void fz_save_pixmap_as_pbm(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
 
-/*
-	Save a 4bpp cmyk bitmap as a PAM image file.
-*/
 void fz_save_bitmap_as_pkm(fz_context *ctx, fz_bitmap *bitmap, const char *filename);
-
 void fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
-
 fz_band_writer *fz_new_pkm_band_writer(fz_context *ctx, fz_output *out);
-
 void fz_save_pixmap_as_pkm(fz_context *ctx, fz_pixmap *pixmap, const char *filename);
 
 #endif

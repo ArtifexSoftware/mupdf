@@ -12,16 +12,7 @@
 */
 typedef struct fz_buffer_s fz_buffer;
 
-/*
-	Increment the reference count for a buffer.
-
-	Returns a pointer to the buffer.
-*/
 fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
-
-/*
-	Decrement the reference count for a buffer.
-*/
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
@@ -39,13 +30,6 @@ size_t fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 */
 const char *fz_string_from_buffer(fz_context *ctx, fz_buffer *buf);
 
-/*
-	Create a new buffer.
-
-	capacity: Initial capacity.
-
-	Returns pointer to new buffer.
-*/
 fz_buffer *fz_new_buffer(fz_context *ctx, size_t capacity);
 
 /*
@@ -99,12 +83,8 @@ void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 */
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
-/* Delete all contents in buffer. */
 void fz_clear_buffer(fz_context *ctx, fz_buffer *buf);
 
-/*
-	Append the contents of source buffer to destination buffer.
-*/
 void fz_append_buffer(fz_context *ctx, fz_buffer *destination, fz_buffer *source);
 
 /*
@@ -135,9 +115,6 @@ void fz_append_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 */
 void fz_terminate_buffer(fz_context *ctx, fz_buffer *buf);
 
-/*
-	Create MD5 digest of buffer contents.
-*/
 void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16]);
 
 /*

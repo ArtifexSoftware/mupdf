@@ -156,24 +156,9 @@ fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font);
 */
 const char *fz_font_name(fz_context *ctx, fz_font *font);
 
-/*
-	Returns true if the font is bold.
-*/
 int fz_font_is_bold(fz_context *ctx, fz_font *font);
-
-/*
-	Returns true if the font is italic.
-*/
 int fz_font_is_italic(fz_context *ctx, fz_font *font);
-
-/*
-	Returns true if the font is serif.
-*/
 int fz_font_is_serif(fz_context *ctx, fz_font *font);
-
-/*
-	Returns true if the font is monospaced.
-*/
 int fz_font_is_monospaced(fz_context *ctx, fz_font *font);
 
 /*
@@ -618,9 +603,6 @@ int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicod
 */
 void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size);
 
-/*
-	Get font ascender and descender values.
-*/
 float fz_font_ascender(fz_context *ctx, fz_font *font);
 float fz_font_descender(fz_context *ctx, fz_font *font);
 
