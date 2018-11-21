@@ -2012,23 +2012,6 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	}
 }
 
-static void count_encrypted_data(fz_context *ctx, void *arg, const unsigned char *str, int len)
-{
-	int *encrypted_len = (int *)arg;
-	int added = 0;
-	int i;
-	unsigned char c;
-
-	for (i = 0; i < len; i++) {
-		c = (unsigned char)str[i];
-		if (c != 0 && strchr("()\\\n\r\t\b\f", c))
-			added ++;
-		else if (c < 32 || c >= 127)
-			added += 3;
-	}
-	*encrypted_len += added;
-}
-
 static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 {
 	char buf[256];
@@ -2057,14 +2040,10 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	else if (pdf_is_string(ctx, obj))
 	{
 		unsigned char *str = (unsigned char *)pdf_to_str_buf(ctx, obj);
-		int len = pdf_to_str_len(ctx, obj);
-		int encoded_len = 0;
-
-		pdf_encrypt_data(ctx, fmt->crypt, fmt->num, fmt->gen, count_encrypted_data, &encoded_len, str, len);
-		if (encoded_len < 2*len)
-			fmt_str(ctx, fmt, obj);
-		else
+		if (fmt->crypt || (str[0]==0xff && str[1]==0xfe) || (str[0]==0xfe && str[1] == 0xff))
 			fmt_hex(ctx, fmt, obj);
+		else
+			fmt_str(ctx, fmt, obj);
 	}
 	else if (pdf_is_name(ctx, obj))
 		fmt_name(ctx, fmt, obj);
