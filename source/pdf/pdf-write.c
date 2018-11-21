@@ -1909,6 +1909,9 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	pdf_obj *obj;
 	pdf_obj *type;
 
+	if (opts->do_decrypt)
+		unenc = 1;
+
 	fz_try(ctx)
 	{
 		obj = pdf_load_object(ctx, doc, num);
@@ -1956,7 +1959,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, doc->crypt, num, gen);
+		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, unenc ? NULL : doc->crypt, num, gen);
 		fz_write_string(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
 	}
 	else
