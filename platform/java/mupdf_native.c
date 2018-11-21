@@ -8708,9 +8708,7 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 
 	fz_try(ctx)
 	{
-		n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
-		s = fz_malloc(ctx, n + 1);
-		pdf_sprint_obj(ctx, s, n + 1, obj, tight);
+		s = pdf_sprint_obj(ctx, NULL, 0, &n, obj, tight);
 		string = (*env)->NewStringUTF(env, s);
 	}
 	fz_always(ctx)

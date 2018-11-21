@@ -40,7 +40,14 @@ pdf_format_key(fz_context *ctx, char *s, int n, void *key_)
 	if (pdf_is_indirect(ctx, key))
 		fz_snprintf(s, n, "(%d 0 R)", pdf_to_num(ctx, key));
 	else
-		pdf_sprint_obj(ctx, s, n, key, 1);
+	{
+		int t;
+		char *p = pdf_sprint_obj(ctx, s, n, &t, key, 1);
+		if (p != s) {
+			fz_strlcpy(s, p, n);
+			fz_free(ctx, p);
+		}
+	}
 }
 
 static const fz_store_type pdf_obj_store_type =

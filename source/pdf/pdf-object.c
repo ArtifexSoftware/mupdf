@@ -1756,7 +1756,8 @@ int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj)
 
 struct fmt
 {
-	char *buf;
+	char *buf; /* original static buffer */
+	char *ptr; /* buffer we're writing to, maybe dynamically reallocated */
 	int cap;
 	int len;
 	int indent;
@@ -1801,8 +1802,21 @@ static inline void fmt_putc(fz_context *ctx, struct fmt *fmt, int c)
 	}
 	fmt->sep = 0;
 
-	if (fmt->buf && fmt->len < fmt->cap)
-		fmt->buf[fmt->len] = c;
+	if (fmt->len >= fmt->cap)
+	{
+		fmt->cap *= 2;
+		if (fmt->buf == fmt->ptr)
+		{
+			fmt->ptr = fz_malloc(ctx, fmt->cap);
+			memcpy(fmt->ptr, fmt->buf, fmt->len);
+		}
+		else
+		{
+			fmt->ptr = fz_resize_array(ctx, fmt->ptr, fmt->cap, 1);
+		}
+	}
+
+	fmt->ptr[fmt->len] = c;
 
 	if (c == '\n')
 		fmt->col = 0;
@@ -2062,8 +2076,8 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 		fmt_puts(ctx, fmt, "<unknown object>");
 }
 
-int
-pdf_sprint_encrypted_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
+static char *
+pdf_sprint_encrypted_obj(fz_context *ctx, char *buf, int cap, int *len, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
 {
 	struct fmt fmt;
 
@@ -2072,73 +2086,68 @@ pdf_sprint_encrypted_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int tigh
 	fmt.sep = 0;
 	fmt.last = 0;
 
+	if (!buf || cap == 0)
+	{
+		fmt.cap = 1024;
+		fmt.buf = NULL;
+		fmt.ptr = fz_malloc(ctx, fmt.cap);
+	}
+	else
+	{
+		fmt.cap = cap;
+		fmt.buf = buf;
+		fmt.ptr = buf;
+	}
+
 	fmt.tight = tight;
-	fmt.buf = s;
-	fmt.cap = n;
 	fmt.len = 0;
 	fmt.crypt = crypt;
 	fmt.num = num;
 	fmt.gen = gen;
 	fmt_obj(ctx, &fmt, obj);
 
-	if (fmt.buf && fmt.len < fmt.cap)
-		fmt.buf[fmt.len] = '\0';
+	fmt_putc(ctx, &fmt, 0);
 
-	return fmt.len;
+	return *len = fmt.len-1, fmt.ptr;
 }
 
-int
-pdf_sprint_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int tight)
+char *
+pdf_sprint_obj(fz_context *ctx, char *buf, int cap, int *len, pdf_obj *obj, int tight)
 {
-	return pdf_sprint_encrypted_obj(ctx, s, n, obj, tight, NULL, 0, 0);
+	return pdf_sprint_encrypted_obj(ctx, buf, cap, len, obj, tight, NULL, 0, 0);
 }
 
-int pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
+void pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
 {
 	char buf[1024];
 	char *ptr;
 	int n;
 
-	n = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, obj, tight, crypt, num, gen);
-	if (n <= sizeof buf)
-	{
-		fz_write_data(ctx, out, buf, n);
-	}
-	else
-	{
-		ptr = fz_malloc(ctx, n + 1);
-		pdf_sprint_encrypted_obj(ctx, ptr, n + 1, obj, tight, crypt, num, gen);
+	ptr = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, &n, obj, tight, crypt, num, gen);
+	fz_try(ctx)
 		fz_write_data(ctx, out, ptr, n);
-		fz_free(ctx, ptr);
-	}
-	return n;
+	fz_always(ctx)
+		if (ptr != buf)
+			fz_free(ctx, ptr);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
-int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight)
+void pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight)
 {
-	return pdf_print_encrypted_obj(ctx, out, obj, tight, NULL, 0, 0);
+	pdf_print_encrypted_obj(ctx, out, obj, tight, NULL, 0, 0);
 }
 
-static int pdf_debug_encrypted_obj(fz_context *ctx, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
+static void pdf_debug_encrypted_obj(fz_context *ctx, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
 {
 	char buf[1024];
 	char *ptr;
 	int n;
 
-	n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
-	if ((n + 1) < sizeof buf)
-	{
-		pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, obj, tight, crypt, num, gen);
-		fwrite(buf, 1, n, stdout);
-	}
-	else
-	{
-		ptr = fz_malloc(ctx, n + 1);
-		pdf_sprint_encrypted_obj(ctx, ptr, n + 1, obj, tight, crypt, num, gen);
-		fwrite(ptr, 1, n, stdout);
+	ptr = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, &n, obj, tight, crypt, num, gen);
+	fwrite(ptr, 1, n, stdout);
+	if (ptr != buf)
 		fz_free(ctx, ptr);
-	}
-	return n;
 }
 
 void pdf_debug_obj(fz_context *ctx, pdf_obj *obj)
