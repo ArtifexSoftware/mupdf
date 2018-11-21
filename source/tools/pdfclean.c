@@ -26,6 +26,7 @@ static void usage(void)
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
 		"\t-gggg\tin addition to -ggg check streams for duplication\n"
 		"\t-l\tlinearize PDF\n"
+		"\t-D\tsave file without encryption\n"
 		"\t-a\tascii hex encode binary streams\n"
 		"\t-d\tdecompress streams\n"
 		"\t-z\tdeflate uncompressed streams\n"
