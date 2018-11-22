@@ -296,7 +296,7 @@ static void showpath(char *path, pdf_obj *obj)
 				}
 			}
 			else if (isnumber(part))
-				showpath(path, pdf_array_get(ctx, obj, atoi(part)));
+				showpath(path, pdf_array_get(ctx, obj, atoi(part)-1));
 			else
 				showpath(path, pdf_dict_gets(ctx, obj, part));
 		}
