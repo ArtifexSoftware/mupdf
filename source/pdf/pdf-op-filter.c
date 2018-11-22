@@ -1367,12 +1367,12 @@ pdf_filter_k(fz_context *ctx, pdf_processor *proc, float c, float m, float y, fl
 /* shadings, images, xobjects */
 
 static void
-pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
+pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, FLUSH_ALL);
 	if (p->chain->op_BI)
-		p->chain->op_BI(ctx, p->chain, img);
+		p->chain->op_BI(ctx, p->chain, img, colorspace);
 }
 
 static void

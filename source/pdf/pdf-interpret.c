@@ -90,11 +90,12 @@ load_font_or_hail_mary(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj
 }
 
 static fz_image *
-parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm)
+parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm, char *csname, int cslen)
 {
 	pdf_document *doc = csi->doc;
 	pdf_obj *rdb = csi->rdb;
 	pdf_obj *obj = NULL;
+	pdf_obj *cs;
 	fz_image *img = NULL;
 	int ch, found;
 
@@ -104,6 +105,15 @@ parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm)
 	fz_try(ctx)
 	{
 		obj = pdf_parse_dict(ctx, doc, stm, &doc->lexbuf.base);
+
+		if (csname)
+		{
+			cs = pdf_dict_get(ctx, obj, PDF_NAME(CS));
+			if (!pdf_is_indirect(ctx, cs) && pdf_is_name(ctx, cs))
+				fz_strlcpy(csname, pdf_to_name(ctx, cs), cslen);
+			else
+				csname[0] = 0;
+		}
 
 		/* read whitespace after ID keyword */
 		ch = fz_read_byte(ctx, stm);
@@ -557,6 +567,7 @@ static void
 pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream *stm, char *word)
 {
 	float *s = csi->stack;
+	char csname[40];
 	int key;
 
 	key = word[0];
@@ -725,11 +736,11 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 	/* shadings, images, xobjects */
 	case B('B','I'):
 		{
-			fz_image *img = parse_inline_image(ctx, csi, stm);
+			fz_image *img = parse_inline_image(ctx, csi, stm, csname, sizeof csname);
 			fz_try(ctx)
 			{
 				if (proc->op_BI)
-					proc->op_BI(ctx, proc, img);
+					proc->op_BI(ctx, proc, img, csname[0] ? csname : NULL);
 			}
 			fz_always(ctx)
 				fz_drop_image(ctx, img);

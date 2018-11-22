@@ -566,7 +566,7 @@ pdf_out_k(fz_context *ctx, pdf_processor *proc, float c, float m, float y, float
 /* shadings, images, xobjects */
 
 static void
-pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
+pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	int ahx = ((pdf_output_processor*)proc)->ahxencode;
@@ -597,10 +597,10 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 		fz_write_string(ctx, out, "/CS/RGB\n");
 	else if (img->colorspace == fz_device_cmyk(ctx))
 		fz_write_string(ctx, out, "/CS/CMYK\n");
-	else if (fz_colorspace_is_indexed(ctx, img->colorspace))
-		fz_write_string(ctx, out, "/CS/I\n");
+	else if (colorspace)
+		fz_write_printf(ctx, out, "/CS/%s\n", colorspace);
 	else
-		fz_throw(ctx, FZ_ERROR_GENERIC, "BI operator can only show mask, Gray, RGB, CMYK, or Indexed images");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "BI operator can only show ImageMask, Gray, RGB, or CMYK images");
 	if (img->interpolate)
 		fz_write_string(ctx, out, "/I true\n");
 	fz_write_string(ctx, out, "/D[");

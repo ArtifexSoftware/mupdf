@@ -110,7 +110,7 @@ struct pdf_processor_s
 	void (*op_k)(fz_context *ctx, pdf_processor *proc, float c, float m, float y, float k);
 
 	/* shadings, images, xobjects */
-	void (*op_BI)(fz_context *ctx, pdf_processor *proc, fz_image *image);
+	void (*op_BI)(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace_name);
 	void (*op_sh)(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade);
 	void (*op_Do_image)(fz_context *ctx, pdf_processor *proc, const char *name, fz_image *image);
 	void (*op_Do_form)(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *form, pdf_obj *page_resources);
