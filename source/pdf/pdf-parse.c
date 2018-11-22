@@ -60,6 +60,36 @@ rune_from_utf16be(int *out, const unsigned char *s, const unsigned char *end)
 	return 1;
 }
 
+static int
+rune_from_utf16le(int *out, const unsigned char *s, const unsigned char *end)
+{
+	if (s + 2 <= end)
+	{
+		int a = s[1] << 8 | s[0];
+		if (a >= 0xD800 && a <= 0xDFFF && s + 4 <= end)
+		{
+			int b = s[3] << 8 | s[2];
+			*out = ((a - 0xD800) << 10) + (b - 0xDC00) + 0x10000;
+			return 4;
+		}
+		*out = a;
+		return 2;
+	}
+	*out = FZ_REPLACEMENT_CHARACTER;
+	return 1;
+}
+
+static size_t
+skip_language_code_utf16le(const unsigned char *s, size_t n, size_t i)
+{
+	/* skip language escape codes */
+	if (i + 6 <= n && s[i+1] == 0 && s[i+0] == 27 && s[i+5] == 0 && s[i+4] == 27)
+		return 6;
+	else if (i + 8 <= n && s[i+1] == 0 && s[i+0] == 27 && s[i+7] == 0 && s[i+6] == 27)
+		return 8;
+	return 0;
+}
+
 static size_t
 skip_language_code_utf16be(const unsigned char *s, size_t n, size_t i)
 {
@@ -119,6 +149,38 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 			else
 			{
 				i += rune_from_utf16be(&ucs, srcptr + i, srcptr + srclen);
+				dstptr += fz_runetochar(dstptr, ucs);
+			}
+		}
+	}
+
+	/* UTF-16LE */
+	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
+	{
+		i = 2;
+		while (i + 2 <= srclen)
+		{
+			n = skip_language_code_utf16le(srcptr, srclen, i);
+			if (n)
+				i += n;
+			else
+			{
+				i += rune_from_utf16le(&ucs, srcptr + i, srcptr + srclen);
+				dstlen += fz_runelen(ucs);
+			}
+		}
+
+		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+
+		i = 2;
+		while (i + 2 <= srclen)
+		{
+			n = skip_language_code_utf16le(srcptr, srclen, i);
+			if (n)
+				i += n;
+			else
+			{
+				i += rune_from_utf16le(&ucs, srcptr + i, srcptr + srclen);
 				dstptr += fz_runetochar(dstptr, ucs);
 			}
 		}
