@@ -148,11 +148,11 @@ static float oldrotate = 0, currentrotate = 0;
 
 static int isfullscreen = 0;
 static int showoutline = 0;
-static int showannotate = 0;
 static int showlinks = 0;
 static int showsearch = 0;
 static int showinfo = 0;
 static int showhelp = 0;
+int showannotate = 0;
 int showform = 0;
 
 struct mark
@@ -926,7 +926,7 @@ static void toggle_outline(void)
 	}
 }
 
-static void toggle_annotate(void)
+void toggle_annotate(void)
 {
 	if (pdf)
 	{
@@ -1358,16 +1358,13 @@ static void do_canvas(void)
 	}
 	else
 	{
-		if (showannotate)
+		if (pdf)
 		{
 			do_annotate_canvas(area);
-		}
-		else
-		{
 			do_widget_canvas(area);
-			do_links(links);
-			do_page_selection();
 		}
+		do_links(links);
+		do_page_selection();
 
 		if (search_hit_page == currentpage && search_hit_count > 0)
 			do_search_hits();

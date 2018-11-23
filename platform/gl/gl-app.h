@@ -243,7 +243,9 @@ extern fz_rect page_bounds, draw_page_bounds, view_page_bounds;
 extern fz_irect view_page_area;
 extern char filename[];
 extern int showform;
+extern int showannotate;
 
+void toggle_annotate();
 void run_main_loop(void);
 void do_annotate_panel(void);
 void do_annotate_canvas(fz_irect canvas_area);

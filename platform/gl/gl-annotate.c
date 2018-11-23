@@ -10,6 +10,8 @@
 #define PATH_MAX 2048
 #endif
 
+static int is_draw_mode = 0;
+
 static char save_filename[PATH_MAX];
 static pdf_write_options save_opts;
 
@@ -103,6 +105,19 @@ static void new_annot(int type)
 		pdf_set_annot_author(ctx, selected_annot, getuser());
 
 	pdf_update_appearance(ctx, selected_annot);
+
+	switch (type)
+	{
+	case PDF_ANNOT_INK:
+	case PDF_ANNOT_POLYGON:
+	case PDF_ANNOT_POLY_LINE:
+	case PDF_ANNOT_HIGHLIGHT:
+	case PDF_ANNOT_UNDERLINE:
+	case PDF_ANNOT_STRIKE_OUT:
+	case PDF_ANNOT_SQUIGGLY:
+		is_draw_mode = 1;
+		break;
+	}
 
 	render_page();
 }
@@ -555,26 +570,56 @@ void do_annotate_panel(void)
 
 		if (pdf_annot_has_quad_points(ctx, selected_annot))
 		{
-			n = pdf_annot_quad_point_count(ctx, selected_annot);
-			ui_label("QuadPoints: %d", n);
-			if (ui_button("Clear"))
-				pdf_clear_annot_quad_points(ctx, selected_annot);
+			if (is_draw_mode)
+			{
+				n = pdf_annot_quad_point_count(ctx, selected_annot);
+				ui_label("QuadPoints: %d", n);
+				if (ui_button("Clear"))
+					pdf_clear_annot_quad_points(ctx, selected_annot);
+				if (ui_button("Done"))
+					is_draw_mode = 0;
+			}
+			else
+			{
+				if (ui_button("Edit"))
+					is_draw_mode = 1;
+			}
 		}
 
 		if (pdf_annot_has_vertices(ctx, selected_annot))
 		{
-			n = pdf_annot_vertex_count(ctx, selected_annot);
-			ui_label("Vertices: %d", n);
-			if (ui_button("Clear"))
-				pdf_clear_annot_vertices(ctx, selected_annot);
+			if (is_draw_mode)
+			{
+				n = pdf_annot_vertex_count(ctx, selected_annot);
+				ui_label("Vertices: %d", n);
+				if (ui_button("Clear"))
+					pdf_clear_annot_vertices(ctx, selected_annot);
+				if (ui_button("Done"))
+					is_draw_mode = 0;
+			}
+			else
+			{
+				if (ui_button("Edit"))
+					is_draw_mode = 1;
+			}
 		}
 
 		if (pdf_annot_has_ink_list(ctx, selected_annot))
 		{
-			n = pdf_annot_ink_list_count(ctx, selected_annot);
-			ui_label("InkList: %d strokes", n);
-			if (ui_button("Clear"))
-				pdf_clear_annot_ink_list(ctx, selected_annot);
+			if (is_draw_mode)
+			{
+				n = pdf_annot_ink_list_count(ctx, selected_annot);
+				ui_label("InkList: %d strokes", n);
+				if (ui_button("Clear"))
+					pdf_clear_annot_ink_list(ctx, selected_annot);
+				if (ui_button("Done"))
+					is_draw_mode = 0;
+			}
+			else
+			{
+				if (ui_button("Edit"))
+					is_draw_mode = 1;
+			}
 		}
 
 		if (selected_annot && selected_annot->needs_new_ap)
@@ -968,6 +1013,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 	fz_rect bounds;
 	fz_irect area;
 	pdf_annot *annot;
+	const void *nothing = ui.hot;
 
 	int was_dirty = pdf->dirty;
 
@@ -984,10 +1030,15 @@ void do_annotate_canvas(fz_irect canvas_area)
 		if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
 		{
 			ui.hot = annot;
-			if (!ui.active && ui.right)
+			if (!ui.active && ui.down)
 			{
-				ui.active = annot;
-				selected_annot = annot;
+				if (selected_annot != annot)
+				{
+					if (!selected_annot && !showannotate)
+						toggle_annotate();
+					ui.active = annot;
+					selected_annot = annot;
+				}
 			}
 		}
 
@@ -1028,21 +1079,25 @@ void do_annotate_canvas(fz_irect canvas_area)
 				do_edit_rect(canvas_area, area, &bounds);
 				break;
 			case PDF_ANNOT_POLYGON:
-				do_edit_polygon(canvas_area, 1);
+				if (is_draw_mode)
+					do_edit_polygon(canvas_area, 1);
 				break;
 			case PDF_ANNOT_POLY_LINE:
-				do_edit_polygon(canvas_area, 0);
+				if (is_draw_mode)
+					do_edit_polygon(canvas_area, 0);
 				break;
 
 			case PDF_ANNOT_INK:
-				do_edit_ink(canvas_area);
+				if (is_draw_mode)
+					do_edit_ink(canvas_area);
 				break;
 
 			case PDF_ANNOT_HIGHLIGHT:
 			case PDF_ANNOT_UNDERLINE:
 			case PDF_ANNOT_STRIKE_OUT:
 			case PDF_ANNOT_SQUIGGLY:
-				do_edit_quad_points();
+				if (is_draw_mode)
+					do_edit_quad_points();
 				break;
 			}
 
@@ -1069,11 +1124,14 @@ void do_annotate_canvas(fz_irect canvas_area)
 		}
 	}
 
-	if (ui_mouse_inside(&canvas_area) && ui.right)
+	if (ui_mouse_inside(&canvas_area) && ui.down)
 	{
-		if (!ui.active)
+		if (!ui.active && ui.hot == nothing)
 			selected_annot = NULL;
 	}
+
+	if (ui.right)
+		is_draw_mode = 0;
 
 	if (was_dirty != pdf->dirty)
 		update_title();
