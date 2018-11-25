@@ -94,8 +94,6 @@ fz_path *fz_new_path(fz_context *ctx);
 	No modifications should be carried out on a path
 	to which more than one reference is held, as
 	this can cause race conditions.
-
-	Never throws exceptions.
 */
 fz_path *fz_keep_path(fz_context *ctx, const fz_path *path);
 
@@ -117,16 +115,12 @@ void fz_drop_path(fz_context *ctx, const fz_path *path);
 	grow with some spare space. Once a path has
 	been fully constructed, this call allows the
 	excess space to be trimmed.
-
-	Never throws exceptions.
 */
 void fz_trim_path(fz_context *ctx, fz_path *path);
 
 /*
 	Return the number of
 	bytes required to pack a path.
-
-	Never throws exceptions.
 */
 int fz_packed_path_size(const fz_path *path);
 
@@ -372,8 +366,6 @@ fz_stroke_state *fz_new_stroke_state_with_dash_len(fz_context *ctx, int len);
 	No modifications should be carried out on a stroke
 	state to which more than one reference is held, as
 	this can cause race conditions.
-
-	Never throws exceptions.
 */
 fz_stroke_state *fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
 
@@ -381,8 +373,6 @@ fz_stroke_state *fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *st
 	Drop a reference to a stroke
 	state structure, destroying the structure if it is
 	the last reference.
-
-	Never throws exceptions.
 */
 void fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
 
