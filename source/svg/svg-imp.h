@@ -12,8 +12,6 @@ struct svg_document_s
 	float height;
 };
 
-/* Parse basic data type units. */
-
 const char *svg_lex_number(float *fp, const char *str);
 float svg_parse_number(const char *str, float min, float max, float inherit);
 float svg_parse_length(const char *str, float percent, float font_size);
@@ -26,8 +24,6 @@ int svg_is_whitespace_or_comma(int c);
 int svg_is_whitespace(int c);
 int svg_is_alpha(int c);
 int svg_is_digit(int c);
-
-/* Graphics content parsing. */
 
 void svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root);
 void svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *dev, fz_matrix ctm);

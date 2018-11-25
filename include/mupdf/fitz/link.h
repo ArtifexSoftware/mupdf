@@ -5,10 +5,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 
-/*
-	Links
-*/
-
 typedef struct fz_link_s fz_link;
 
 /*

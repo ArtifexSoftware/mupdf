@@ -25,10 +25,6 @@ enum
 };
 
 /*
-	Widgets that may appear in PDF forms
-*/
-
-/*
 	returns the currently focused widget
 
 	Widgets can become focused as a result of passing in ui events.

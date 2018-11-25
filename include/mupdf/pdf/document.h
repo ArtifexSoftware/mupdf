@@ -438,10 +438,6 @@ struct pdf_document_s
 	pdf_obj **orphans;
 };
 
-/*
-	PDF creation
-*/
-
 pdf_document *pdf_create_document(fz_context *ctx);
 
 typedef struct pdf_graft_map_s pdf_graft_map;

@@ -1,10 +1,6 @@
 #ifndef MUPDF_PDF_CRYPT_H
 #define MUPDF_PDF_CRYPT_H
 
-/*
- * Encryption
- */
-
 pdf_crypt *pdf_new_crypt(fz_context *ctx, pdf_obj *enc, pdf_obj *id);
 void pdf_drop_crypt(fz_context *ctx, pdf_crypt *crypt);
 

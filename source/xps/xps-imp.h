@@ -4,9 +4,6 @@
 typedef struct xps_document_s xps_document;
 typedef struct xps_page_s xps_page;
 
-/*
- * fz_document api functions
- */
 fz_document *xps_open_document(fz_context *ctx, const char *filename);
 fz_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 int xps_count_pages(fz_context *ctx, fz_document *doc);
@@ -16,17 +13,9 @@ void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix ctm,
 fz_link *xps_load_links(fz_context *ctx, fz_page *page);
 int xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
 
-/*
- * Memory, and string functions.
- */
-
 int xps_strcasecmp(char *a, char *b);
 void xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size);
 char *xps_parse_point(fz_context *ctx, xps_document *doc, char *s_in, float *x, float *y);
-
-/*
- * Container parts.
- */
 
 typedef struct xps_part_s xps_part;
 
@@ -39,10 +28,6 @@ struct xps_part_s
 int xps_has_part(fz_context *ctx, xps_document *doc, char *partname);
 xps_part *xps_read_part(fz_context *ctx, xps_document *doc, char *partname);
 void xps_drop_part(fz_context *ctx, xps_document *doc, xps_part *part);
-
-/*
- * Document structure.
- */
 
 typedef struct xps_fixdoc_s xps_fixdoc;
 typedef struct xps_fixpage_s xps_fixpage;
@@ -83,10 +68,6 @@ void xps_read_page_list(fz_context *ctx, xps_document *doc);
 void xps_print_page_list(fz_context *ctx, xps_document *doc);
 void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
-/*
- * Images, fonts, and colorspaces.
- */
-
 typedef struct xps_font_cache_s xps_font_cache;
 
 struct xps_font_cache_s
@@ -115,10 +96,6 @@ void xps_print_path(fz_context *ctx, xps_document *doc);
 void xps_parse_color(fz_context *ctx, xps_document *doc, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
 void xps_set_color(fz_context *ctx, xps_document *doc, fz_colorspace *colorspace, float *samples);
 
-/*
- * Resource dictionaries.
- */
-
 typedef struct xps_resource_s xps_resource;
 
 struct xps_resource_s
@@ -136,10 +113,6 @@ void xps_drop_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resour
 void xps_resolve_resource_reference(fz_context *ctx, xps_document *doc, xps_resource *dict, char **attp, fz_xml **tagp, char **urip);
 
 void xps_print_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict);
-
-/*
- * Fixed page/graphics parsing.
- */
 
 void xps_parse_fixed_page(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_page *page);
 void xps_parse_canvas(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *node);
@@ -172,10 +145,6 @@ void xps_parse_element(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rec
 void xps_clip(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_resource *dict, char *clip_att, fz_xml *clip_tag);
 
 fz_xml *xps_lookup_alternate_content(fz_context *ctx, xps_document *doc, fz_xml *node);
-
-/*
- * The interpreter context.
- */
 
 typedef struct xps_entry_s xps_entry;
 

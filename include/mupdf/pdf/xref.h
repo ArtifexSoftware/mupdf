@@ -32,10 +32,6 @@ pdf_obj *pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_
 pdf_obj *pdf_add_new_dict(fz_context *ctx, pdf_document *doc, int initial);
 pdf_obj *pdf_add_new_array(fz_context *ctx, pdf_document *doc, int initial);
 
-/*
- * xref and object / stream api
- */
-
 typedef struct pdf_xref_entry_s pdf_xref_entry;
 
 struct pdf_xref_entry_s

@@ -96,9 +96,6 @@ int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *c
 */
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
-/*
-	Colorspace feature test functions.
-*/
 int fz_colorspace_is_gray(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_rgb(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_bgr(fz_context *ctx, const fz_colorspace *cs);
@@ -187,9 +184,6 @@ struct fz_cal_colorspace_s {
 	fz_iccprofile *profile;
 };
 
-/*
-	icc methods
-*/
 fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *buf, fz_colorspace *alternate);
 fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, enum fz_colorspace_type type, const char *path);
 fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, enum fz_colorspace_type type, fz_stream *in);
@@ -198,7 +192,6 @@ fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspac
 fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);
 const fz_colorspace *fz_alternate_colorspace(fz_context *ctx, const fz_colorspace *cs);
 
-/* Default cs */
 fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
 fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
 void fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);

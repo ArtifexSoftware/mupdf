@@ -10,9 +10,6 @@
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/separation.h"
 
-/*
-	Document interface
-*/
 typedef struct fz_document_s fz_document;
 typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;

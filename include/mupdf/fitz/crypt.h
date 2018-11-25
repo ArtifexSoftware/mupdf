@@ -3,12 +3,6 @@
 
 #include "mupdf/fitz/system.h"
 
-/*
- * Basic crypto functions.
- * Independent of the rest of fitz.
- * For further encapsulation in filters, or not.
- */
-
 /* md5 digests */
 
 typedef struct fz_md5_s fz_md5;

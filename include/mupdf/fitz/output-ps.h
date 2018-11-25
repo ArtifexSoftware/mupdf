@@ -7,9 +7,6 @@
 #include "mupdf/fitz/band-writer.h"
 #include "mupdf/fitz/pixmap.h"
 
-/*
-	PS (image) output
-*/
 void fz_write_pixmap_as_ps(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap);
 
 void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append);

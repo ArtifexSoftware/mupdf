@@ -3,10 +3,6 @@
 
 #include "mupdf/pdf/cmap.h"
 
-/*
- * Font
- */
-
 enum
 {
 	PDF_FD_FIXED_PITCH = 1 << 0,

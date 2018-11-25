@@ -1,10 +1,6 @@
 #ifndef MUPDF_PDF_PARSE_H
 #define MUPDF_PDF_PARSE_H
 
-/*
- * tokenizer and low-level object parser
- */
-
 typedef enum
 {
 	PDF_TOK_ERROR, PDF_TOK_EOF,

@@ -5,10 +5,6 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/geometry.h"
 
-/*
-	Contexts
-*/
-
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
 typedef struct fz_error_stack_slot_s fz_error_stack_slot;
