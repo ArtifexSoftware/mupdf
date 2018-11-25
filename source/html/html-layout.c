@@ -2060,289 +2060,73 @@ fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int 
 	}
 }
 
-static int is_internal_uri(const char *uri)
+void
+fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 {
-	while (*uri >= 'a' && *uri <= 'z')
-		++uri;
-	if (uri[0] == ':' && uri[1] == '/' && uri[2] == '/')
-		return 0;
-	return 1;
-}
+	fz_html_box *box = html->root;
+	hb_buffer_t *hb_buf = NULL;
+	int unlocked = 0;
 
-static const char *box_href(fz_html_box *box)
-{
-	while (box)
+	fz_var(hb_buf);
+	fz_var(unlocked);
+
+	html->page_margin[T] = fz_from_css_number(html->root->style.margin[T], em, em, 0);
+	html->page_margin[B] = fz_from_css_number(html->root->style.margin[B], em, em, 0);
+	html->page_margin[L] = fz_from_css_number(html->root->style.margin[L], em, em, 0);
+	html->page_margin[R] = fz_from_css_number(html->root->style.margin[R], em, em, 0);
+
+	html->page_w = w - html->page_margin[L] - html->page_margin[R];
+	if (html->page_w <= 72)
+		html->page_w = 72; /* enforce a minimum page size! */
+	if (h > 0)
 	{
-		const char *href = box->href;
-		if (href)
-			return href;
-		box = box->up;
+		html->page_h = h - html->page_margin[T] - html->page_margin[B];
+		if (html->page_h <= 72)
+			html->page_h = 72; /* enforce a minimum page size! */
 	}
-	return NULL;
-}
-
-static int has_same_href(fz_html_box *box, const char *old_href)
-{
-	while (box)
+	else
 	{
-		const char *href = box->href;
-		if (href)
-			return !strcmp(old_href, href);
-		box = box->up;
+		/* h 0 means no pagination */
+		html->page_h = 0;
 	}
-	return 0;
-}
 
-static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *head, int page, float page_h, const char *dir, const char *file)
-{
-	fz_link *link;
-	fz_html_flow *next;
-	char path[2048];
-	fz_rect bbox;
-	const char *dest;
-	const char *href;
-	float end;
+	fz_hb_lock(ctx);
 
-	while (flow)
+	fz_try(ctx)
 	{
-		href = box_href(flow->box);
-		next = flow->next;
-		if (href && (int)(flow->y / page_h) == page)
-		{
-			/* Coalesce contiguous flow boxes into one link node */
-			end = flow->x + flow->w;
-			while (next &&
-					next->y == flow->y &&
-					next->h == flow->h &&
-					has_same_href(next->box, href))
-			{
-				end = next->x + next->w;
-				next = next->next;
-			}
+		hb_buf = hb_buffer_create();
+		unlocked = 1;
+		fz_hb_unlock(ctx);
 
-			bbox.x0 = flow->x;
-			bbox.y0 = flow->y - page * page_h;
-			bbox.x1 = end;
-			bbox.y1 = bbox.y0 + flow->h;
-			if (flow->type != FLOW_IMAGE)
-			{
-				/* flow->y is the baseline, adjust bbox appropriately */
-				bbox.y0 -= 0.8f * flow->h;
-				bbox.y1 -= 0.8f * flow->h;
-			}
+		box->em = em;
+		box->w = html->page_w;
+		box->b = box->y;
 
-			if (is_internal_uri(href))
-			{
-				if (href[0] == '#')
-				{
-					fz_strlcpy(path, file, sizeof path);
-					fz_strlcat(path, href, sizeof path);
-				}
-				else
-				{
-					fz_strlcpy(path, dir, sizeof path);
-					fz_strlcat(path, "/", sizeof path);
-					fz_strlcat(path, href, sizeof path);
-				}
-				fz_urldecode(path);
-				fz_cleanname(path);
-
-				dest = path;
-			}
-			else
-			{
-				dest = href;
-			}
-
-			link = fz_new_link(ctx, bbox, NULL, dest);
-			link->next = head;
-			head = link;
-		}
-		flow = next;
-	}
-	return head;
-}
-
-static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, int page, float page_h, const char *dir, const char *file)
-{
-	while (box)
-	{
-		if (box->flow_head)
-			head = load_link_flow(ctx, box->flow_head, head, page, page_h, dir, file);
 		if (box->down)
-			head = load_link_box(ctx, box->down, head, page, page_h, dir, file);
-		box = box->next;
-	}
-	return head;
-}
-
-fz_link *
-fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *file, void *doc)
-{
-	fz_link *link, *head;
-	char dir[2048];
-	fz_dirname(dir, file, sizeof dir);
-
-	head = load_link_box(ctx, html->root, NULL, page, html->page_h, dir, file);
-
-	for (link = head; link; link = link->next)
-	{
-		/* Adjust for page margins */
-		link->rect.x0 += html->page_margin[L];
-		link->rect.x1 += html->page_margin[L];
-		link->rect.y0 += html->page_margin[T];
-		link->rect.y1 += html->page_margin[T];
-
-		/* Set document pointer */
-		link->doc = doc;
-	}
-
-	return head;
-}
-
-static fz_html_flow *
-find_first_content(fz_html_box *box)
-{
-	while (box)
-	{
-		if (box->type == BOX_FLOW)
-			return box->flow_head;
-		box = box->down;
-	}
-	return NULL;
-}
-
-static float
-find_flow_target(fz_html_flow *flow, const char *id)
-{
-	while (flow)
-	{
-		if (flow->box->id && !strcmp(id, flow->box->id))
-			return flow->y;
-		flow = flow->next;
-	}
-	return -1;
-}
-
-static float
-find_box_target(fz_html_box *box, const char *id)
-{
-	float y;
-	while (box)
-	{
-		if (box->id && !strcmp(id, box->id))
 		{
-			fz_html_flow *flow = find_first_content(box);
-			if (flow)
-				return flow->y;
-			return box->y;
+			layout_block(ctx, box->down, box->em, box->x, &box->b, box->w, html->page_h, 0, hb_buf);
+			box->b = box->down->b;
 		}
-		if (box->type == BOX_FLOW)
-		{
-			y = find_flow_target(box->flow_head, id);
-			if (y >= 0)
-				return y;
-		}
-		else
-		{
-			y = find_box_target(box->down, id);
-			if (y >= 0)
-				return y;
-		}
-		box = box->next;
 	}
-	return -1;
-}
-
-float
-fz_find_html_target(fz_context *ctx, fz_html *html, const char *id)
-{
-	return find_box_target(html->root, id);
-}
-
-static fz_html_flow *
-make_flow_bookmark(fz_context *ctx, fz_html_flow *flow, float y)
-{
-	while (flow)
+	fz_always(ctx)
 	{
-		if (flow->y >= y)
-			return flow;
-		flow = flow->next;
+		if (unlocked)
+			fz_hb_lock(ctx);
+		hb_buffer_destroy(hb_buf);
+		fz_hb_unlock(ctx);
 	}
-	return NULL;
-}
-
-static fz_html_flow *
-make_box_bookmark(fz_context *ctx, fz_html_box *box, float y)
-{
-	fz_html_flow *mark;
-	while (box)
+	fz_catch(ctx)
 	{
-		if (box->type == BOX_FLOW)
-		{
-			if (box->y >= y)
-			{
-				mark = make_flow_bookmark(ctx, box->flow_head, y);
-				if (mark)
-					return mark;
-			}
-		}
-		else
-		{
-			mark = make_box_bookmark(ctx, box->down, y);
-			if (mark)
-				return mark;
-		}
-		box = box->next;
+		fz_rethrow(ctx);
 	}
-	return NULL;
-}
 
-fz_bookmark
-fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page)
-{
-	return (fz_bookmark)make_box_bookmark(ctx, html->root, page * html->page_h);
-}
+	if (h == 0)
+		html->page_h = box->b;
 
-static int
-lookup_flow_bookmark(fz_context *ctx, fz_html_flow *flow, fz_html_flow *mark)
-{
-	while (flow)
-	{
-		if (flow == mark)
-			return 1;
-		flow = flow->next;
-	}
-	return 0;
-}
-
-static int
-lookup_box_bookmark(fz_context *ctx, fz_html_box *box, fz_html_flow *mark)
-{
-	while (box)
-	{
-		if (box->type == BOX_FLOW)
-		{
-			if (lookup_flow_bookmark(ctx, box->flow_head, mark))
-				return 1;
-		}
-		else
-		{
-			if (lookup_box_bookmark(ctx, box->down, mark))
-				return 1;
-		}
-		box = box->next;
-	}
-	return 0;
-}
-
-int
-fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark)
-{
-	fz_html_flow *flow = (fz_html_flow*)mark;
-	if (flow && lookup_box_bookmark(ctx, html->root, flow))
-		return (int)(flow->y / html->page_h);
-	return -1;
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
+		fz_debug_html(ctx, html->root);
+#endif
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
@@ -2479,196 +2263,6 @@ load_fb2_images(fz_context *ctx, fz_xml *root)
 	}
 
 	return images;
-}
-
-static void indent(int level)
-{
-	while (level-- > 0)
-		putchar('\t');
-}
-
-static void
-fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
-{
-	fz_html_box *sbox = NULL;
-	while (flow)
-	{
-		if (flow->box != sbox) {
-			if (sbox) {
-				indent(level);
-				printf("}\n");
-			}
-			sbox = flow->box;
-			indent(level);
-			printf("span em=%g font=%s", sbox->em, fz_font_name(ctx, sbox->style.font));
-			if (fz_font_is_serif(ctx, sbox->style.font))
-				printf(" serif");
-			else
-				printf(" sans");
-			if (fz_font_is_monospaced(ctx, sbox->style.font))
-				printf(" monospaced");
-			if (fz_font_is_bold(ctx, sbox->style.font))
-				printf(" bold");
-			if (fz_font_is_italic(ctx, sbox->style.font))
-				printf(" italic");
-			printf("\n");
-			indent(level);
-			printf("{\n");
-		}
-
-		indent(level+1);
-		switch (flow->type) {
-		case FLOW_WORD: printf("word "); break;
-		case FLOW_SPACE: printf("space"); break;
-		case FLOW_SBREAK: printf("sbrk "); break;
-		case FLOW_SHYPHEN: printf("shy  "); break;
-		case FLOW_BREAK: printf("break"); break;
-		case FLOW_IMAGE: printf("image"); break;
-		case FLOW_ANCHOR: printf("anchor"); break;
-		}
-		printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
-		if (flow->type == FLOW_IMAGE)
-			printf(" h=%g", flow->h);
-		if (flow->type == FLOW_WORD)
-			printf(" text='%s'", flow->content.text);
-		printf("\n");
-		if (flow->breaks_line) {
-			indent(level+1);
-			printf("*\n");
-		}
-
-		flow = flow->next;
-	}
-	indent(level);
-	printf("}\n");
-}
-
-static void
-fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
-{
-	while (box)
-	{
-		indent(level);
-		switch (box->type) {
-		case BOX_BLOCK: printf("block"); break;
-		case BOX_BREAK: printf("break"); break;
-		case BOX_FLOW: printf("flow"); break;
-		case BOX_INLINE: printf("inline"); break;
-		case BOX_TABLE: printf("table"); break;
-		case BOX_TABLE_ROW: printf("table-row"); break;
-		case BOX_TABLE_CELL: printf("table-cell"); break;
-		}
-
-		printf(" em=%g x=%g y=%g w=%g b=%g\n", box->em, box->x, box->y, box->w, box->b);
-
-		indent(level);
-		printf("{\n");
-		if (box->type == BOX_BLOCK) {
-			indent(level+1);
-			printf("margin=%g %g %g %g\n", box->margin[0], box->margin[1], box->margin[2], box->margin[3]);
-		}
-		if (box->is_first_flow) {
-			indent(level+1);
-			printf("is-first-flow\n");
-		}
-		if (box->list_item) {
-			indent(level+1);
-			printf("list=%d\n", box->list_item);
-		}
-		if (box->id) {
-			indent(level+1);
-			printf("id=%s\n", box->id);
-		}
-		if (box->href) {
-			indent(level+1);
-			printf("href=%s\n", box->href);
-		}
-
-		if (box->down)
-			fz_debug_html_box(ctx, box->down, level + 1);
-		if (box->flow_head)
-			fz_debug_html_flow(ctx, box->flow_head, level + 1);
-
-		indent(level);
-		printf("}\n");
-
-		box = box->next;
-	}
-}
-
-void
-fz_debug_html(fz_context *ctx, fz_html_box *box)
-{
-	fz_debug_html_box(ctx, box, 0);
-}
-
-void
-fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
-{
-	fz_html_box *box = html->root;
-	hb_buffer_t *hb_buf = NULL;
-	int unlocked = 0;
-
-	fz_var(hb_buf);
-	fz_var(unlocked);
-
-	html->page_margin[T] = fz_from_css_number(html->root->style.margin[T], em, em, 0);
-	html->page_margin[B] = fz_from_css_number(html->root->style.margin[B], em, em, 0);
-	html->page_margin[L] = fz_from_css_number(html->root->style.margin[L], em, em, 0);
-	html->page_margin[R] = fz_from_css_number(html->root->style.margin[R], em, em, 0);
-
-	html->page_w = w - html->page_margin[L] - html->page_margin[R];
-	if (html->page_w <= 72)
-		html->page_w = 72; /* enforce a minimum page size! */
-	if (h > 0)
-	{
-		html->page_h = h - html->page_margin[T] - html->page_margin[B];
-		if (html->page_h <= 72)
-			html->page_h = 72; /* enforce a minimum page size! */
-	}
-	else
-	{
-		/* h 0 means no pagination */
-		html->page_h = 0;
-	}
-
-	fz_hb_lock(ctx);
-
-	fz_try(ctx)
-	{
-		hb_buf = hb_buffer_create();
-		unlocked = 1;
-		fz_hb_unlock(ctx);
-
-		box->em = em;
-		box->w = html->page_w;
-		box->b = box->y;
-
-		if (box->down)
-		{
-			layout_block(ctx, box->down, box->em, box->x, &box->b, box->w, html->page_h, 0, hb_buf);
-			box->b = box->down->b;
-		}
-	}
-	fz_always(ctx)
-	{
-		if (unlocked)
-			fz_hb_lock(ctx);
-		hb_buffer_destroy(hb_buf);
-		fz_hb_unlock(ctx);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	if (h == 0)
-		html->page_h = box->b;
-
-#ifndef NDEBUG
-	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
-		fz_debug_html(ctx, html->root);
-#endif
 }
 
 typedef struct
@@ -2953,140 +2547,123 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	return html;
 }
 
-struct outline_parser
+static void indent(int level)
 {
-	fz_html *html;
-	fz_buffer *cat;
-	fz_outline *head;
-	fz_outline **tail[6];
-	fz_outline **down[6];
-	int level[6];
-	int current;
-	int id;
-};
+	while (level-- > 0)
+		putchar('\t');
+}
 
 static void
-cat_html_flow(fz_context *ctx, fz_buffer *cat, fz_html_flow *flow)
+fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 {
+	fz_html_box *sbox = NULL;
 	while (flow)
 	{
-		switch (flow->type)
-		{
-		case FLOW_WORD:
-			fz_append_string(ctx, cat, flow->content.text);
-			break;
-		case FLOW_SPACE:
-		case FLOW_BREAK:
-			fz_append_byte(ctx, cat, ' ');
-			break;
-		default:
-			break;
+		if (flow->box != sbox) {
+			if (sbox) {
+				indent(level);
+				printf("}\n");
+			}
+			sbox = flow->box;
+			indent(level);
+			printf("span em=%g font=%s", sbox->em, fz_font_name(ctx, sbox->style.font));
+			if (fz_font_is_serif(ctx, sbox->style.font))
+				printf(" serif");
+			else
+				printf(" sans");
+			if (fz_font_is_monospaced(ctx, sbox->style.font))
+				printf(" monospaced");
+			if (fz_font_is_bold(ctx, sbox->style.font))
+				printf(" bold");
+			if (fz_font_is_italic(ctx, sbox->style.font))
+				printf(" italic");
+			printf("\n");
+			indent(level);
+			printf("{\n");
 		}
+
+		indent(level+1);
+		switch (flow->type) {
+		case FLOW_WORD: printf("word "); break;
+		case FLOW_SPACE: printf("space"); break;
+		case FLOW_SBREAK: printf("sbrk "); break;
+		case FLOW_SHYPHEN: printf("shy  "); break;
+		case FLOW_BREAK: printf("break"); break;
+		case FLOW_IMAGE: printf("image"); break;
+		case FLOW_ANCHOR: printf("anchor"); break;
+		}
+		printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
+		if (flow->type == FLOW_IMAGE)
+			printf(" h=%g", flow->h);
+		if (flow->type == FLOW_WORD)
+			printf(" text='%s'", flow->content.text);
+		printf("\n");
+		if (flow->breaks_line) {
+			indent(level+1);
+			printf("*\n");
+		}
+
 		flow = flow->next;
 	}
+	indent(level);
+	printf("}\n");
 }
 
 static void
-cat_html_box(fz_context *ctx, fz_buffer *cat, fz_html_box *box)
+fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 {
 	while (box)
 	{
-		cat_html_flow(ctx, cat, box->flow_head);
-		cat_html_box(ctx, cat, box->down);
-		box = box->next;
-	}
-}
-
-static const char *
-cat_html_text(fz_context *ctx, struct outline_parser *x, fz_html_box *box)
-{
-	if (!x->cat)
-		x->cat = fz_new_buffer(ctx, 1024);
-	else
-		fz_clear_buffer(ctx, x->cat);
-
-	cat_html_flow(ctx, x->cat, box->flow_head);
-	cat_html_box(ctx, x->cat, box->down);
-
-	return fz_string_from_buffer(ctx, x->cat);
-}
-
-static void
-add_html_outline(fz_context *ctx, struct outline_parser *x, fz_html_box *box)
-{
-	fz_outline *node;
-	char buf[100];
-
-	node = fz_new_outline(ctx);
-	fz_try(ctx)
-	{
-		node->title = fz_strdup(ctx, cat_html_text(ctx, x, box));
-		if (!box->id)
-		{
-			fz_snprintf(buf, sizeof buf, "'%d", x->id++);
-			box->id = fz_pool_strdup(ctx, x->html->pool, buf);
+		indent(level);
+		switch (box->type) {
+		case BOX_BLOCK: printf("block"); break;
+		case BOX_BREAK: printf("break"); break;
+		case BOX_FLOW: printf("flow"); break;
+		case BOX_INLINE: printf("inline"); break;
+		case BOX_TABLE: printf("table"); break;
+		case BOX_TABLE_ROW: printf("table-row"); break;
+		case BOX_TABLE_CELL: printf("table-cell"); break;
 		}
-		node->uri = fz_asprintf(ctx, "#%s", box->id);
-		node->is_open = 1;
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, node);
-		fz_rethrow(ctx);
-	}
 
-	if (x->level[x->current] < box->heading && x->current < 5)
-	{
-		x->tail[x->current+1] = x->down[x->current];
-		x->current += 1;
-	}
-	else
-	{
-		while (x->current > 0 && x->level[x->current] > box->heading)
-		{
-			x->current -= 1;
+		printf(" em=%g x=%g y=%g w=%g b=%g\n", box->em, box->x, box->y, box->w, box->b);
+
+		indent(level);
+		printf("{\n");
+		if (box->type == BOX_BLOCK) {
+			indent(level+1);
+			printf("margin=%g %g %g %g\n", box->margin[0], box->margin[1], box->margin[2], box->margin[3]);
 		}
-	}
-	x->level[x->current] = box->heading;
+		if (box->is_first_flow) {
+			indent(level+1);
+			printf("is-first-flow\n");
+		}
+		if (box->list_item) {
+			indent(level+1);
+			printf("list=%d\n", box->list_item);
+		}
+		if (box->id) {
+			indent(level+1);
+			printf("id=%s\n", box->id);
+		}
+		if (box->href) {
+			indent(level+1);
+			printf("href=%s\n", box->href);
+		}
 
-	*(x->tail[x->current]) = node;
-	x->tail[x->current] = &node->next;
-	x->down[x->current] = &node->down;
-}
-
-static void
-load_html_outline(fz_context *ctx, struct outline_parser *x, fz_html_box *box)
-{
-	while (box)
-	{
-		if (box->heading)
-			add_html_outline(ctx, x, box);
 		if (box->down)
-			load_html_outline(ctx, x, box->down);
+			fz_debug_html_box(ctx, box->down, level + 1);
+		if (box->flow_head)
+			fz_debug_html_flow(ctx, box->flow_head, level + 1);
+
+		indent(level);
+		printf("}\n");
+
 		box = box->next;
 	}
 }
 
-fz_outline *
-fz_load_html_outline(fz_context *ctx, fz_html *html)
+void
+fz_debug_html(fz_context *ctx, fz_html_box *box)
 {
-	struct outline_parser state;
-	state.html = html;
-	state.cat = NULL;
-	state.head = NULL;
-	state.tail[0] = &state.head;
-	state.down[0] = NULL;
-	state.level[0] = 99;
-	state.current = 0;
-	state.id = 1;
-	fz_try(ctx)
-		load_html_outline(ctx, &state, html->root);
-	fz_always(ctx)
-		fz_drop_buffer(ctx, state.cat);
-	fz_catch(ctx)
-	{
-		fz_drop_outline(ctx, state.head);
-		state.head = NULL;
-	}
-	return state.head;
+	fz_debug_html_box(ctx, box, 0);
 }

@@ -2791,6 +2791,10 @@
 				RelativePath="..\..\source\html\html-layout.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\source\html\html-outline.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="gprf"

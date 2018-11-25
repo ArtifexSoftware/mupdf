@@ -290,5 +290,6 @@ fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char
 void fz_drop_html(fz_context *ctx, fz_html *html);
 fz_bookmark fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page);
 int fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark);
+void fz_debug_html(fz_context *ctx, fz_html_box *box);
 
 #endif
