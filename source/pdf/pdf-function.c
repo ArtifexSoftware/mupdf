@@ -141,37 +141,6 @@ struct ps_stack_s
 	int sp;
 };
 
-void
-pdf_print_ps_stack(fz_context *ctx, fz_output *out, ps_stack *st)
-{
-	int i;
-
-	fz_write_printf(ctx, out, "stack:");
-
-	for (i = 0; i < st->sp; i++)
-	{
-		switch (st->stack[i].type)
-		{
-		case PS_BOOL:
-			if (st->stack[i].u.b)
-				fz_write_printf(ctx, out, " true");
-			else
-				fz_write_printf(ctx, out, " false");
-			break;
-
-		case PS_INT:
-			fz_write_printf(ctx, out, " %d", st->stack[i].u.i);
-			break;
-
-		case PS_REAL:
-			fz_write_printf(ctx, out, " %g", st->stack[i].u.f);
-			break;
-		}
-	}
-
-	fz_write_printf(ctx, out, "\n");
-}
-
 static void
 ps_init_stack(ps_stack *st)
 {
