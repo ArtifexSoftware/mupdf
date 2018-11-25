@@ -150,27 +150,7 @@ pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *event);
 const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
-	pdf_submit_event: details of a submit event. The app should submit
-	the specified data to the specified url. "get" determines whether
-	to use the GET or POST method.
-*/
-typedef struct
-{
-	char *url;
-	char *data;
-	int data_len;
-	int get;
-} pdf_submit_event;
-
-/*
-	pdf_access_submit_event: access the details of a submit event
-	The returned pointer and all data referred to by the structure are
-	owned by mupdf and need not be freed by the caller.
-*/
-pdf_submit_event *pdf_access_submit_event(fz_context *ctx, pdf_doc_event *event);
-
-/*
-	pdf_launch_url_event: details of a launch-url event. The app should
+	details of a launch-url event. The app should
 	open the url, either in a new frame or in the current window.
 */
 typedef struct
