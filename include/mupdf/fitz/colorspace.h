@@ -226,7 +226,7 @@ fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_
 void fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
 fz_default_colorspaces *fz_clone_default_colorspaces(fz_context *ctx, fz_default_colorspaces *base);
 
-/* Do we want to make fz_default_colorspaces public and get rid of these? */
+/* FIXME: Do we want to make fz_default_colorspaces public and get rid of these? */
 void fz_set_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 void fz_set_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 void fz_set_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
