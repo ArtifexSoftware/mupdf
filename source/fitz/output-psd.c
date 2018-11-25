@@ -141,7 +141,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	if (s != 0)
 	{
 		fz_write_data(ctx, out, ressig, 4);
-		fz_write_int16_be(ctx, out , 0x03EE);
+		fz_write_int16_be(ctx, out, 0x03EE);
 		fz_write_int16_be(ctx, out, 0); /* PString */
 		fz_write_int32_be(ctx, out, (len + 1)&~1);
 		for (i = 0; i < s; i++) {

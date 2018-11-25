@@ -3,7 +3,7 @@ var Q = JSON.stringify
 var pathPrinter = {
 	moveTo: function (x,y) { print("moveTo", x, y) },
 	lineTo: function (x,y) { print("lineTo", x, y) },
-	curveTo: function (x1,y1,x2,y2,x3,y3) { print("curveTo", x1, y1, x2, y2, x3 ,y3) },
+	curveTo: function (x1,y1,x2,y2,x3,y3) { print("curveTo", x1, y1, x2, y2, x3, y3) },
 	closePath: function () { print("closePath") },
 }
 

@@ -86,15 +86,15 @@ struct fz_device_s
 	void (*close_device)(fz_context *, fz_device *);
 	void (*drop_device)(fz_context *, fz_device *);
 
-	void (*fill_path)(fz_context *, fz_device *, const fz_path *, int even_odd, fz_matrix , fz_colorspace *, const float *color, float alpha, const fz_color_params *);
-	void (*stroke_path)(fz_context *, fz_device *, const fz_path *, const fz_stroke_state *, fz_matrix , fz_colorspace *, const float *color, float alpha, const fz_color_params *);
-	void (*clip_path)(fz_context *, fz_device *, const fz_path *, int even_odd, fz_matrix , fz_rect scissor);
-	void (*clip_stroke_path)(fz_context *, fz_device *, const fz_path *, const fz_stroke_state *, fz_matrix , fz_rect scissor);
+	void (*fill_path)(fz_context *, fz_device *, const fz_path *, int even_odd, fz_matrix, fz_colorspace *, const float *color, float alpha, const fz_color_params *);
+	void (*stroke_path)(fz_context *, fz_device *, const fz_path *, const fz_stroke_state *, fz_matrix, fz_colorspace *, const float *color, float alpha, const fz_color_params *);
+	void (*clip_path)(fz_context *, fz_device *, const fz_path *, int even_odd, fz_matrix, fz_rect scissor);
+	void (*clip_stroke_path)(fz_context *, fz_device *, const fz_path *, const fz_stroke_state *, fz_matrix, fz_rect scissor);
 
-	void (*fill_text)(fz_context *, fz_device *, const fz_text *, fz_matrix , fz_colorspace *, const float *color, float alpha, const fz_color_params *);
-	void (*stroke_text)(fz_context *, fz_device *, const fz_text *, const fz_stroke_state *, fz_matrix , fz_colorspace *, const float *color, float alpha, const fz_color_params *);
-	void (*clip_text)(fz_context *, fz_device *, const fz_text *, fz_matrix , fz_rect scissor);
-	void (*clip_stroke_text)(fz_context *, fz_device *, const fz_text *, const fz_stroke_state *, fz_matrix , fz_rect scissor);
+	void (*fill_text)(fz_context *, fz_device *, const fz_text *, fz_matrix, fz_colorspace *, const float *color, float alpha, const fz_color_params *);
+	void (*stroke_text)(fz_context *, fz_device *, const fz_text *, const fz_stroke_state *, fz_matrix, fz_colorspace *, const float *color, float alpha, const fz_color_params *);
+	void (*clip_text)(fz_context *, fz_device *, const fz_text *, fz_matrix, fz_rect scissor);
+	void (*clip_stroke_text)(fz_context *, fz_device *, const fz_text *, const fz_stroke_state *, fz_matrix, fz_rect scissor);
 	void (*ignore_text)(fz_context *, fz_device *, const fz_text *, fz_matrix );
 
 	void (*fill_shade)(fz_context *, fz_device *, fz_shade *shd, fz_matrix ctm, float alpha, const fz_color_params *color_params);

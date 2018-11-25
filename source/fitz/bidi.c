@@ -416,7 +416,7 @@ create_levels(fz_context *ctx,
 		int resolveWhiteSpace,
 		int flags)
 {
-	fz_bidi_level *levels , *plevels;
+	fz_bidi_level *levels, *plevels;
 	fz_bidi_chartype *types = NULL;
 	fz_bidi_chartype *ptypes;
 	fz_bidi_level baseLevel;

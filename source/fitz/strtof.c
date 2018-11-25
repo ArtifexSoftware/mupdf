@@ -18,7 +18,7 @@
    The implementation uses a self-made floating point type, 'strtof_fp_t', with
    a 32-bit significand. The steps of the algorithm are
 
-   INPUT: Up to 9 decimal digits d1 , ... d9 and an exponent dexp.
+   INPUT: Up to 9 decimal digits d1, ... d9 and an exponent dexp.
    OUTPUT: A float corresponding to the number d1 ... d9 * 10^dexp.
 
    1) Convert the integer d1 ... d9 to an strtof_fp_t x.
