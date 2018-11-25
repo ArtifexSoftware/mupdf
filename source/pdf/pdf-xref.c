@@ -1,6 +1,5 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "pdf-imp.h"
 
 #include <assert.h>
 #include <limits.h>

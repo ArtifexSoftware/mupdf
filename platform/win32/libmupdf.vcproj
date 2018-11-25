@@ -2316,10 +2316,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-imp.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-interpret-imp.h"
 				>
 			</File>
