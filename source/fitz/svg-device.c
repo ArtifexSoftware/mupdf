@@ -490,6 +490,10 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 					fz_write_printf(ctx, out, "/>\n");
 					fz_drop_path(ctx, path);
 				}
+				else
+				{
+					rect = fz_empty_rect;
+				}
 			}
 			else if (fz_font_t3_procs(ctx, span->font))
 			{
