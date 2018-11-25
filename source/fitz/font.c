@@ -28,6 +28,46 @@
 /* 20 degrees */
 #define SHEAR 0.36397f
 
+int ft_char_index(void *face, int cid)
+{
+	int gid = FT_Get_Char_Index(face, cid);
+	if (gid == 0)
+		gid = FT_Get_Char_Index(face, 0xf000 + cid);
+
+	/* some chinese fonts only ship the similarly looking 0x2026 */
+	if (gid == 0 && cid == 0x22ef)
+		gid = FT_Get_Char_Index(face, 0x2026);
+
+	return gid;
+}
+
+int ft_name_index(void *face, const char *name)
+{
+	int code = FT_Get_Name_Index(face, (char*)name);
+	if (code == 0)
+	{
+		int unicode = fz_unicode_from_glyph_name(name);
+		if (unicode)
+		{
+			const char **dupnames = fz_duplicate_glyph_names_from_unicode(unicode);
+			while (*dupnames)
+			{
+				code = FT_Get_Name_Index(face, (char*)*dupnames);
+				if (code)
+					break;
+				dupnames++;
+			}
+			if (code == 0)
+			{
+				char buf[10];
+				sprintf(buf, "uni%04X", unicode);
+				code = FT_Get_Name_Index(face, buf);
+			}
+		}
+	}
+	return code;
+}
+
 static void fz_drop_freetype(fz_context *ctx);
 
 static fz_font *
@@ -1670,6 +1710,20 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 		return FT_Get_Char_Index(font->ft_face, ucs);
 	}
 	return ucs;
+}
+
+int
+fz_encode_character_by_glyph_name(fz_context *ctx, fz_font *font, const char *glyphname)
+{
+	int glyph = 0;
+	if (font->ft_face)
+	{
+		glyph = ft_name_index(font->ft_face, glyphname);
+		if (glyph == 0)
+			glyph = ft_char_index(font->ft_face, fz_unicode_from_glyph_name(glyphname));
+	}
+	// TODO: type3 fonts (not needed for now)
+	return glyph;
 }
 
 /* FIXME: This should take language too eventually, to allow for fonts where we can select different

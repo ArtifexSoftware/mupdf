@@ -2292,6 +2292,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-font-add.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-form.c"
 				>
 			</File>

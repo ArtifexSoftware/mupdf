@@ -83,6 +83,8 @@ fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font);
 	of a freetype error.
 */
 const char *ft_error_string(int err);
+int ft_char_index(void *face, int cid);
+int ft_name_index(void *face, const char *name);
 
 /* common CJK font collections */
 enum { FZ_ADOBE_CNS, FZ_ADOBE_GB, FZ_ADOBE_JAPAN, FZ_ADOBE_KOREA };
@@ -568,6 +570,7 @@ float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph, int wmode);
 	unknown.
 */
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
+int fz_encode_character_by_glyph_name(fz_context *ctx, fz_font *font, const char *glyphname);
 
 /*
 	fz_encode_character_with_fallback: Find the glyph id for
