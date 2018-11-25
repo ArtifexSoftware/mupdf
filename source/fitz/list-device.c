@@ -1506,8 +1506,6 @@ int fz_display_list_is_empty(fz_context *ctx, const fz_display_list *list)
 	populated with objects from a page by running fz_run_page on a
 	device obtained from fz_new_list_device.
 
-	dev: Device obtained from fz_new_*_device.
-
 	ctm: Transform to apply to display list contents. May include
 	for example scaling and rotation, see fz_scale, fz_rotate and
 	fz_concat. Set to fz_identity if no transformation is desired.

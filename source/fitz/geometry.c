@@ -545,16 +545,10 @@ const fz_irect fz_unit_bbox = { 0, 0, 1, 1 };
 	Convert a rect into the minimal bounding box
 	that covers the rectangle.
 
-	bbox: Place to store the returned bbox.
-
-	rect: The rectangle to convert to a bbox.
-
 	Coordinates in a bounding box are integers, so rounding of the
 	rects coordinates takes place. The top left corner is rounded
 	upwards and left while the bottom right corner is rounded
 	downwards and to the right.
-
-	Returns bbox (updated).
 */
 fz_irect
 fz_irect_from_rect(fz_rect r)
