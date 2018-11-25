@@ -20,7 +20,25 @@
 #define FT_SFNT_HEAD ft_sfnt_head
 #endif
 
-#define pdf_win_ansi fz_glyph_name_from_windows_1252
+void
+pdf_load_encoding(const char **estrings, const char *encoding)
+{
+	const char * const *bstrings = NULL;
+	int i;
+
+	if (!strcmp(encoding, "StandardEncoding"))
+		bstrings = fz_glyph_name_from_adobe_standard;
+	if (!strcmp(encoding, "MacRomanEncoding"))
+		bstrings = fz_glyph_name_from_mac_roman;
+	if (!strcmp(encoding, "MacExpertEncoding"))
+		bstrings = fz_glyph_name_from_mac_expert;
+	if (!strcmp(encoding, "WinAnsiEncoding"))
+		bstrings = fz_glyph_name_from_windows_1252;
+
+	if (bstrings)
+		for (i = 0; i < 256; i++)
+			estrings[i] = bstrings[i];
+}
 
 static void pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict,
 	const char *collection, const char *basefont, int iscidfont);
@@ -190,10 +208,10 @@ static int ft_name_index(FT_Face face, const char *name)
 	int code = FT_Get_Name_Index(face, (char*)name);
 	if (code == 0)
 	{
-		int unicode = pdf_lookup_agl(name);
+		int unicode = fz_unicode_from_glyph_name(name);
 		if (unicode)
 		{
-			const char **dupnames = pdf_lookup_agl_duplicates(unicode);
+			const char **dupnames = fz_duplicate_glyph_names_from_unicode(unicode);
 			while (*dupnames)
 			{
 				code = FT_Get_Name_Index(face, (char*)*dupnames);
@@ -340,7 +358,7 @@ static int lookup_mre_code(const char *name)
 		if (!strcmp(name, mre_diff_table[i].name))
 			return mre_diff_table[i].code;
 	for (i = 0; i < 256; i++)
-		if (pdf_mac_roman[i] && !strcmp(name, pdf_mac_roman[i]))
+		if (fz_glyph_name_from_mac_roman[i] && !strcmp(name, fz_glyph_name_from_mac_roman[i]))
 			return i;
 	return -1;
 }
@@ -807,7 +825,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				{
 					if (estrings[i])
 					{
-						int unicode = pdf_lookup_agl(estrings[i]);
+						int unicode = fz_unicode_from_glyph_name(estrings[i]);
 						if (unicode > 0)
 							glyph = ft_char_index(face, unicode);
 						else
@@ -866,7 +884,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				}
 				else
 				{
-					estrings[i] = (char*) pdf_win_ansi[i]; /* discard const */
+					estrings[i] = (char*) fz_glyph_name_from_windows_1252[i]; /* discard const */
 				}
 			}
 		}
@@ -875,8 +893,8 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		if (kind == TYPE1 && symbolic)
 		{
 			for (i = 0; i < 256; i++)
-				if (etable[i] && estrings[i] && !pdf_lookup_agl(estrings[i]))
-					estrings[i] = (char*) pdf_standard[i];
+				if (etable[i] && estrings[i] && !fz_unicode_from_glyph_name(estrings[i]))
+					estrings[i] = (char*) fz_glyph_name_from_adobe_standard[i];
 		}
 
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
@@ -1601,7 +1619,7 @@ pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz
 		{
 			glyph = ft_name_index(font->ft_face, encoding[i]);
 			if (glyph == 0)
-				glyph = ft_char_index(font->ft_face, pdf_lookup_agl(encoding[i]));
+				glyph = ft_char_index(font->ft_face, fz_unicode_from_glyph_name(encoding[i]));
 		}
 		if (glyph > 0)
 		{
@@ -2062,7 +2080,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 
 	switch (encoding)
 	{
-	default: enc = pdf_win_ansi; break;
+	default:
 	case PDF_SIMPLE_ENCODING_LATIN: enc = fz_glyph_name_from_windows_1252; break;
 	case PDF_SIMPLE_ENCODING_GREEK: enc = fz_glyph_name_from_iso8859_7; break;
 	case PDF_SIMPLE_ENCODING_CYRILLIC: enc = fz_glyph_name_from_koi8u; break;

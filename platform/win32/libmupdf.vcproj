@@ -2280,14 +2280,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-encoding.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\source\pdf\pdf-encodings.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-event.c"
 				>
 			</File>

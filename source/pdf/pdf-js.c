@@ -57,7 +57,7 @@ static char *pdf_from_utf8(fz_context *ctx, const char *utf8)
 
 	while ((c = *utf8) != 0)
 	{
-		if ((c & 0x80) == 0 && pdf_doc_encoding[c] == c)
+		if ((c & 0x80) == 0 && fz_unicode_from_pdf_doc_encoding[c] == c)
 		{
 			pdf[i++] = c;
 			utf8++ ;
@@ -69,10 +69,10 @@ static char *pdf_from_utf8(fz_context *ctx, const char *utf8)
 
 			utf8 += fz_chartorune(&rune, utf8);
 
-			for (j = 0; j < sizeof(pdf_doc_encoding) && pdf_doc_encoding[j] != rune; j++)
+			for (j = 0; j < 256 && fz_unicode_from_pdf_doc_encoding[j] != rune; j++)
 				;
 
-			if (j < sizeof(pdf_doc_encoding))
+			if (j < 256)
 				pdf[i++] = j;
 		}
 	}

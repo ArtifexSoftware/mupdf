@@ -219,13 +219,13 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 	else
 	{
 		for (i = 0; i < srclen; i++)
-			dstlen += fz_runelen(pdf_doc_encoding[srcptr[i]]);
+			dstlen += fz_runelen(fz_unicode_from_pdf_doc_encoding[srcptr[i]]);
 
 		dstptr = dst = fz_malloc(ctx, dstlen + 1);
 
 		for (i = 0; i < srclen; i++)
 		{
-			ucs = pdf_doc_encoding[srcptr[i]];
+			ucs = fz_unicode_from_pdf_doc_encoding[srcptr[i]];
 			dstptr += fz_runetochar(dstptr, ucs);
 		}
 	}

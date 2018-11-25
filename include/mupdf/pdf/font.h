@@ -21,14 +21,6 @@ enum
 };
 
 void pdf_load_encoding(const char **estrings, const char *encoding);
-int pdf_lookup_agl(const char *name);
-const char **pdf_lookup_agl_duplicates(int ucs);
-
-extern const unsigned short pdf_doc_encoding[256];
-extern const char *pdf_mac_roman[256];
-extern const char *pdf_mac_expert[256];
-extern const char *pdf_win_ansi[256];
-extern const char *pdf_standard[256];
 
 typedef struct pdf_font_desc_s pdf_font_desc;
 typedef struct pdf_hmtx_s pdf_hmtx;
