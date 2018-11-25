@@ -13,6 +13,15 @@ struct pdf_graft_map_s
 	int *dst_from_src;
 };
 
+/*
+	Prepare a graft map object to allow objects
+	to be deep copied from one document to the given one, avoiding
+	problems with duplicated child objects.
+
+	dst: The document to copy objects to.
+
+	Note: all the source objects must come from the same document.
+*/
 pdf_graft_map *
 pdf_new_graft_map(fz_context *ctx, pdf_document *dst)
 {
@@ -43,7 +52,17 @@ pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 	}
 }
 
-/* Graft object from dst to source */
+/*
+	Return a deep copied object equivalent to the
+	supplied object, suitable for use within the given document.
+
+	dst: The document in which the returned object is to be used.
+
+	obj: The object deep copy.
+
+	Note: If grafting multiple objects, you should use a pdf_graft_map
+	to avoid potential duplication of target objects.
+*/
 pdf_obj *
 pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj)
 {
@@ -67,6 +86,19 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj)
 	return obj;
 }
 
+/*
+	Return a deep copied object equivalent
+	to the supplied object, suitable for use within the target
+	document of the map.
+
+	map: A map targeted at the document in which the returned
+	object is to be used.
+
+	obj: The object deep copy.
+
+	Note: Copying multiple objects via the same graft map ensures
+	that any shared child are not duplicated more than once.
+*/
 pdf_obj *
 pdf_graft_mapped_object(fz_context *ctx, pdf_graft_map *map, pdf_obj *obj)
 {

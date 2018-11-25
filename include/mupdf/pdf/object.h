@@ -49,7 +49,6 @@ int pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b);
 int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b);
 int pdf_name_eq(fz_context *ctx, pdf_obj *a, pdf_obj *b);
 
-/* obj marking and unmarking functions - to avoid infinite recursions. */
 int pdf_obj_marked(fz_context *ctx, pdf_obj *obj);
 int pdf_mark_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
@@ -57,12 +56,10 @@ void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int memo);
 int pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int *memo);
 
-/* obj dirty bit support. */
 int pdf_obj_is_dirty(fz_context *ctx, pdf_obj *obj);
 void pdf_dirty_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_clean_obj(fz_context *ctx, pdf_obj *obj);
 
-/* safe, silent failure, no error reporting on type mismatches */
 int pdf_to_bool(fz_context *ctx, pdf_obj *obj);
 int pdf_to_int(fz_context *ctx, pdf_obj *obj);
 int64_t pdf_to_int64(fz_context *ctx, pdf_obj *obj);
@@ -148,12 +145,6 @@ const char *pdf_array_get_text_string(fz_context *ctx, pdf_obj *array, int index
 fz_rect pdf_array_get_rect(fz_context *ctx, pdf_obj *array, int index);
 fz_matrix pdf_array_get_matrix(fz_context *ctx, pdf_obj *array, int index);
 
-/*
-	Recurse through the object structure setting the node's parent_num to num.
-	parent_num is used when a subobject is to be changed during a document edit.
-	The whole containing hierarchy is moved to the incremental xref section, so
-	to be later written out as an incremental file update.
-*/
 void pdf_set_obj_parent(fz_context *ctx, pdf_obj *obj, int num);
 
 int pdf_obj_refs(fz_context *ctx, pdf_obj *ref);

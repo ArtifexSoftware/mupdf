@@ -174,6 +174,13 @@ fz_bbox_drop_device(fz_context *ctx, fz_device *dev)
 		fz_warn(ctx, "items left on stack in bbox device: %d", bdev->top);
 }
 
+/*
+	Create a device to compute the bounding
+	box of all marks on a page.
+
+	The returned bounding box will be the union of all bounding
+	boxes of all objects on a page.
+*/
 fz_device *
 fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 {

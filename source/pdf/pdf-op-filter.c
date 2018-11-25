@@ -1503,12 +1503,65 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 	fz_free(ctx, p->font_name);
 }
 
+/*
+	Create a filter processor. This
+	filters the PDF operators it is fed, and passes them down
+	(with some changes) to the child filter.
+
+	The changes made by the filter are:
+
+	* No operations are allowed to change the top level gstate.
+	Additional q/Q operators are inserted to prevent this.
+
+	* Repeated/unnecessary colour operators are removed (so,
+	for example, "0 0 0 rg 0 1 rg 0.5 g" would be sanitised to
+	"0.5 g")
+
+	The intention of these changes is to provide a simpler,
+	but equivalent stream, repairing problems with mismatched
+	operators, maintaining structure (such as BMC, EMC calls)
+	and leaving the graphics state in an known (default) state
+	so that subsequent operations (such as synthesising new
+	operators to be appended to the stream) are easier.
+
+	The net graphical effect of the filtered operator stream
+	should be identical to the incoming operator stream.
+
+	chain: The child processor to which the filtered operators
+	will be fed.
+
+	old_res: The incoming resource dictionary.
+
+	new_res: An (initially empty) resource dictionary that will
+	be populated by copying entries from the old dictionary to
+	the new one as they are used. At the end therefore, this
+	contains exactly those resource objects actually required.
+
+*/
 pdf_processor *
 pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb)
 {
 	return pdf_new_filter_processor_with_text_filter(ctx, doc, chain, old_rdb, new_rdb, NULL, NULL, NULL);
 }
 
+/*
+	Create a filter
+	processor with a filter function for text. This filters the
+	PDF operators it is fed, and passes them down (with some
+	changes) to the child filter.
+
+	See pdf_new_filter_processor for documentation.
+
+	text_filter: A function called to assess whether a given
+	character should be removed or not.
+
+	after_text_object: A function to be called after each text object.
+	This allows the caller to insert some extra content if
+	required.
+
+	text_filter_opaque: Opaque value to be passed to the
+	text_filter function.
+*/
 pdf_processor *
 pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after, void *text_filter_opaque)
 {

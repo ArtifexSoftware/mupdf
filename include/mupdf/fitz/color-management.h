@@ -76,27 +76,8 @@ struct fz_cmm_engine_s {
 	fz_cmm_fin_profile_fn *fin_profile;
 };
 
-/*
-	Read details of the current color
-	management engine. If NULL, we are working without
-	color management.
-*/
 const fz_cmm_engine *fz_get_cmm_engine(fz_context *ctx);
 
-/*
-	Set the color management engine to
-	be used. This should only ever be called on the "base"
-	context before cloning it, and before opening any files.
-
-	Attempting to change the engine in use once a file has
-	been opened, or to use different color management engine
-	for the same file in different threads will lead to
-	undefined behaviour, including crashing.
-
-	Using different ICC engines for different files using
-	different sets of fz_contexts should theoretically be
-	possible.
-*/
 void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine);
 
 /*

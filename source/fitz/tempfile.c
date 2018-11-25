@@ -9,6 +9,15 @@
 
 #include <stdio.h>
 
+/*
+	Get a temporary filename based upon 'base'.
+
+	'hint' is the path of a file (normally the existing document file)
+	supplied to give the function an idea of what directory to use. This
+	may or may not be used depending on the implementation's whim.
+
+	The returned path must be freed.
+*/
 char *fz_tempfilename(fz_context *ctx, const char *base, const char *dir)
 {
 	char *p = tmpnam(NULL);

@@ -135,11 +135,48 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	}
 }
 
+/*
+	Clean a loaded pages rendering operations,
+	with an optional post processing step.
+
+	Firstly, this filters the PDF operators used to avoid (some cases
+	of) repetition, and leaves the page in a balanced state with an
+	unchanged top level matrix etc. At the same time, the resources
+	used by the page contents are collected.
+
+	Next, the resources themselves are cleaned (as appropriate) in the
+	same way.
+
+	Next, an optional post processing stage is called.
+
+	Finally, the page contents and resources in the documents page tree
+	are replaced by these processed versions.
+
+	Annotations remain unaffected.
+
+	page: A page loaded by pdf_load_page.
+
+	cookie: A pointer to an optional fz_cookie structure that can be used
+	to track progress, collect errors etc.
+*/
 void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *arg, int sanitize, int ascii)
 {
 	pdf_filter_page_contents(ctx, doc, page, cookie, proc_fn, NULL, NULL, arg, sanitize, ascii);
 }
 
+/*
+	Performs the same task as
+	pdf_clean_page_contents, but with an optional text filter
+	function.
+
+	text_filter: Function to assess whether a given character
+	should be kept (return 0) or removed (return 1).
+
+	after_text: Function called after each text object is closed
+	to allow other output to be sent.
+
+	arg: Opaque value to be passed to callback functions.
+*/
 void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
 		pdf_page_contents_process_fn *proc_fn, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *proc_arg,
 		int sanitize, int ascii)
@@ -313,11 +350,48 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 	}
 }
 
+/*
+	Clean a loaded annotations rendering operations,
+	with an optional post processing step.
+
+	Each appearance stream in the annotation is processed.
+
+	Firstly, this filters the PDF operators used to avoid (some cases
+	of) repetition, and leaves the page in a balanced state with an
+	unchanged top level matrix etc. At the same time, the resources
+	used by the page contents are collected.
+
+	Next, the resources themselves are cleaned (as appropriate) in the
+	same way.
+
+	Next, an optional post processing stage is called.
+
+	Finally, the updated stream of operations is reinserted into the
+	appearance stream.
+
+	annot: An annotation loaded by pdf_load_annot.
+
+	cookie: A pointer to an optional fz_cookie structure that can be used
+	to track progress, collect errors etc.
+*/
 void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg, int sanitize, int ascii)
 {
 	pdf_filter_annot_contents(ctx, doc, annot, cookie, proc_fn, NULL, NULL, proc_arg, sanitize, ascii);
 }
 
+/*
+	Performs the same task as
+	pdf_clean_annot_contents, but with an optional text filter
+	function.
+
+	text_filter: Function to assess whether a given character
+	should be kept (return 0) or removed (return 1).
+
+	after_text: Function called after each text object is closed
+	to allow other output to be sent.
+
+	arg: Opaque value to be passed to callback functions.
+*/
 void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
 	pdf_page_contents_process_fn *proc, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg, int sanitize, int ascii)
 {

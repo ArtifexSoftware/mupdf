@@ -1556,6 +1556,12 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	fz_defer_reap_end(ctx);
 }
 
+/*
+	Closes and frees an opened PDF document.
+
+	The resource store in the context associated with pdf_document
+	is emptied.
+*/
 void
 pdf_drop_document(fz_context *ctx, pdf_document *doc)
 {
@@ -2103,6 +2109,9 @@ pdf_count_objects(fz_context *ctx, pdf_document *doc)
 	return pdf_xref_len(ctx, doc);
 }
 
+/*
+	Allocate a slot in the xref table and return a fresh unused object number.
+*/
 int
 pdf_create_object(fz_context *ctx, pdf_document *doc)
 {
@@ -2124,6 +2133,9 @@ pdf_create_object(fz_context *ctx, pdf_document *doc)
 	return num;
 }
 
+/*
+	Remove object from xref table, marking the slot as free.
+*/
 void
 pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 {
@@ -2149,6 +2161,9 @@ pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 	x->obj = NULL;
 }
 
+/*
+	Replace object in xref table with the passed in object.
+*/
 void
 pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 {
@@ -2177,6 +2192,13 @@ pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 	pdf_set_obj_parent(ctx, newobj, num);
 }
 
+/*
+	Replace stream contents for object in xref table with the passed in buffer.
+
+	The buffer contents must match the /Filter setting if 'compressed' is true.
+	If 'compressed' is false, the /Filter and /DecodeParms entries are deleted.
+	The /Length entry is updated.
+*/
 void
 pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *newbuf, int compressed)
 {
@@ -2278,6 +2300,15 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
+/*
+	Opens a PDF document.
+
+	Same as pdf_open_document, but takes a stream instead of a
+	filename to locate the PDF document to open. Increments the
+	reference count of the stream. See fz_open_file,
+	fz_open_file_w or fz_open_fd for opening a stream, and
+	fz_drop_stream for closing an open stream.
+*/
 pdf_document *
 pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
@@ -2294,6 +2325,23 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
+/*
+	Open a PDF document.
+
+	Open a PDF document by reading its cross reference table, so
+	MuPDF can locate PDF objects inside the file. Upon an broken
+	cross reference table or other parse errors MuPDF will restart
+	parsing the file from the beginning to try to rebuild a
+	(hopefully correct) cross reference table to allow further
+	processing of the file.
+
+	The returned pdf_document should be used when calling most
+	other PDF functions. Note that it wraps the context, so those
+	functions implicitly get access to the global state in
+	context.
+
+	filename: a path to a file as it would be given to open(2).
+*/
 pdf_document *
 pdf_open_document(fz_context *ctx, const char *filename)
 {
@@ -2651,6 +2699,10 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 	return doc->linear_page_refs[pagenum];
 }
 
+/*
+		Down-cast generic fitz objects into pdf specific variants.
+		Returns NULL if the objects are not from a PDF document.
+*/
 pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
 {
 	return (pdf_document *)((ptr && ptr->count_pages == (fz_document_count_pages_fn*)pdf_count_pages) ? ptr : NULL);
@@ -2666,6 +2718,10 @@ pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr)
 	return (pdf_annot *)((ptr && ptr->bound_annot == (fz_annot_bound_fn*)pdf_bound_annot) ? ptr : NULL);
 }
 
+/*
+	down-cast a fz_document to a pdf_document.
+	Returns NULL if underlying document is not PDF
+*/
 pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc)
 {
 	return pdf_document_from_fz_document(ctx, doc);

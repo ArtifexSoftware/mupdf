@@ -1,5 +1,11 @@
 #include "mupdf/fitz.h"
 
+/*
+	Opens an archive entry as a stream.
+
+	name: Entry name to look for, this must be an exact match to
+	the entry name in the archive.
+*/
 fz_stream *
 fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
@@ -8,6 +14,13 @@ fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	return arch->open_entry(ctx, arch, name);
 }
 
+/*
+	Reads all bytes in an archive entry
+	into a buffer.
+
+	name: Entry name to look for, this must be an exact match to
+	the entry name in the archive.
+*/
 fz_buffer *
 fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
@@ -16,6 +29,15 @@ fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	return arch->read_entry(ctx, arch, name);
 }
 
+/*
+	Check if entry by given name exists.
+
+	If named entry does not exist 0 will be returned, if it does
+	exist 1 is returned.
+
+	name: Entry name to look for, this must be an exact match to
+	the entry name in the archive.
+*/
 int
 fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
@@ -24,6 +46,13 @@ fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	return arch->has_entry(ctx, arch, name);
 }
 
+/*
+	Get listed name of entry position idx.
+
+	idx: Must be a value >= 0 < return value from
+	fz_count_archive_entries. If not in range NULL will be
+	returned.
+*/
 const char *
 fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx)
 {
@@ -31,6 +60,12 @@ fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot list archive entries");
 	return arch->list_entry(ctx, arch, idx);
 }
+
+/*
+	Number of entries in archive.
+
+	Will always return a value >= 0.
+*/
 int
 fz_count_archive_entries(fz_context *ctx, fz_archive *arch)
 {
@@ -54,6 +89,12 @@ fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size)
 	return arch;
 }
 
+/*
+	Open zip or tar archive stream.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+*/
 fz_archive *
 fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
@@ -69,6 +110,14 @@ fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 	return arch;
 }
 
+/*
+	Open a zip or tar archive
+
+	Open a file and identify its archive type based on the archive
+	signature contained inside.
+
+	filename: a path to a file as it would be given to open(2).
+*/
 fz_archive *
 fz_open_archive(fz_context *ctx, const char *filename)
 {

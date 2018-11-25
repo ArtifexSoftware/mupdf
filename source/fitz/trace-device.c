@@ -361,6 +361,9 @@ fz_trace_end_layer(fz_context *ctx, fz_device *dev)
 	fz_write_printf(ctx, out, "<end_layer/>\n");
 }
 
+/*
+	Create a device to print a debug trace of all device calls.
+*/
 fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out)
 {
 	fz_trace_device *dev = fz_new_derived_device(ctx, fz_trace_device);

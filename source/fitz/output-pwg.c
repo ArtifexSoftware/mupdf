@@ -8,6 +8,9 @@ typedef struct {
 	fz_pwg_options pwg;
 } pwg_band_writer;
 
+/*
+	Output the file header to a pwg stream, ready for pages to follow it.
+*/
 void
 fz_write_pwg_file_header(fz_context *ctx, fz_output *out)
 {
@@ -95,6 +98,9 @@ pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 	fz_write_data(ctx, out, pwg ? pwg->page_size_name : zero, 64);
 }
 
+/*
+	Output a page to a pwg stream to follow a header, or other pages.
+*/
 void
 fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
@@ -111,6 +117,9 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 		fz_rethrow(ctx);
 }
 
+/*
+	Output a bitmap page to a pwg stream to follow a header, or other pages.
+*/
 void
 fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
 {
@@ -141,6 +150,16 @@ fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 	fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
 }
 
+/*
+	Save a pixmap as a pwg
+
+	filename: The filename to save as (including extension).
+
+	append: If non-zero, then append a new page to existing file.
+
+	pwg: NULL, or a pointer to an options structure (initialised to zero
+	before being filled in, for future expansion).
+*/
 void
 fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg)
 {
@@ -158,6 +177,16 @@ fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int ap
 		fz_rethrow(ctx);
 }
 
+/*
+	Save a bitmap as a pwg
+
+	filename: The filename to save as (including extension).
+
+	append: If non-zero, then append a new page to existing file.
+
+	pwg: NULL, or a pointer to an options structure (initialised to zero
+	before being filled in, for future expansion).
+*/
 void
 fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg)
 {
@@ -259,6 +288,10 @@ pwg_write_mono_band(fz_context *ctx, fz_band_writer *writer_, int stride, int ba
 	}
 }
 
+/*
+	Generate a new band writer for
+	PWG format images.
+*/
 fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg)
 {
 	pwg_band_writer *writer = fz_new_band_writer(ctx, pwg_band_writer, out);
@@ -368,6 +401,10 @@ pwg_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	}
 }
 
+/*
+	Generate a new band writer for
+	contone PWG format images.
+*/
 fz_band_writer *fz_new_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg)
 {
 	pwg_band_writer *writer = fz_new_band_writer(ctx, pwg_band_writer, out);

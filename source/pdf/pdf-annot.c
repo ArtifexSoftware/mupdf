@@ -57,6 +57,9 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 	return fz_pre_scale(fz_translate(x, y), w, h);
 }
 
+/*
+	Internal function for creating a new pdf annotation.
+*/
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 {
 	pdf_annot *annot;
@@ -124,6 +127,9 @@ pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 	return annot ? annot->next : NULL;
 }
 
+/*
+	Return the rectangle for an annotation on a page.
+*/
 fz_rect
 pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 {
@@ -239,6 +245,11 @@ static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *p
 		fz_throw(ctx, FZ_ERROR_GENERIC, "%s annotations have no %s property", pdf_to_name(ctx, subtype), pdf_to_name(ctx, property));
 }
 
+/*
+	create a new annotation of the specified type on the
+	specified page. The returned pdf_annot structure is owned by the page
+	and does not need to be freed.
+*/
 pdf_annot *
 pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 {
@@ -1344,6 +1355,9 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 	pdf_dirty_annot(ctx, annot);
 }
 
+/*
+	set the position on page for a text (sticky note) annotation.
+*/
 void
 pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 {
@@ -1487,6 +1501,9 @@ static pdf_obj *markup_subtypes[] = {
 	NULL,
 };
 
+/*
+	Get annotation's modification date in seconds since the epoch.
+*/
 int64_t
 pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 {
@@ -1494,6 +1511,9 @@ pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 	return date ? pdf_parse_date(ctx, pdf_to_str_buf(ctx, date)) : 0;
 }
 
+/*
+	Set annotation's modification date in seconds since the epoch.
+*/
 void
 pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 {

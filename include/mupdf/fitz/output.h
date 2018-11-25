@@ -82,130 +82,38 @@ struct fz_output_s
 	char *bp, *wp, *ep;
 };
 
-/*
-	Create a new output object with the given
-	internal state and function pointers.
-
-	state: Internal state (opaque to everything but implementation).
-
-	write: Function to output a given buffer.
-
-	close: Cleanup function to destroy state when output closed.
-	May permissibly be null.
-*/
 fz_output *fz_new_output(fz_context *ctx, int bufsiz, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop);
 
-/*
-	Open an output stream that writes to a
-	given path.
-
-	filename: The filename to write to (specified in UTF-8).
-
-	append: non-zero if we should append to the file, rather than
-	overwriting it.
-*/
 fz_output *fz_new_output_with_path(fz_context *, const char *filename, int append);
 
-/*
-	Open an output stream that appends
-	to a buffer.
-
-	buf: The buffer to append to.
-*/
 fz_output *fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf);
 
-/*
-	The standard out output stream. By default
-	this stream writes to stdout. This may be overridden
-	using fz_set_stdout.
-*/
 fz_output *fz_stdout(fz_context *ctx);
 
-/*
-	The standard error output stream. By default
-	this stream writes to stderr. This may be overridden
-	using fz_set_stderr.
-*/
 fz_output *fz_stderr(fz_context *ctx);
 
-/*
-	Replace default standard output stream
-	with a given stream.
-
-	out: The new stream to use.
-*/
 void fz_set_stdout(fz_context *ctx, fz_output *out);
 
-/*
-	Replace default standard error stream
-	with a given stream.
-
-	err: The new stream to use.
-*/
 void fz_set_stderr(fz_context *ctx, fz_output *err);
 
-/*
-	Format and write data to an output stream.
-	See fz_vsnprintf for formatting details.
-*/
 void fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
 
-/*
-	va_list version of fz_write_printf.
-*/
 void fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
 
-/*
-	Seek to the specified file position.
-	See fseek for arguments.
-
-	Throw an error on unseekable outputs.
-*/
 void fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence);
 
-/*
-	Return the current file position.
-
-	Throw an error on untellable outputs.
-*/
 int64_t fz_tell_output(fz_context *ctx, fz_output *out);
 
-/*
-	Flush unwritten data.
-*/
 void fz_flush_output(fz_context *ctx, fz_output *out);
 
-/*
-	Flush pending output and close an output stream.
-*/
 void fz_close_output(fz_context *, fz_output *);
 
-/*
-	Free an output stream. Don't forget to close it first!
-*/
 void fz_drop_output(fz_context *, fz_output *);
 
-/*
-	obtain the fz_output in the form of a fz_stream
-
-	This allows data to be read back from some forms of fz_output object.
-	When finished reading, the fz_stream should be released by calling
-	fz_drop_stream. Until the fz_stream is dropped, no further operations
-	should be performed on the fz_output object.
-*/
 fz_stream *fz_stream_from_output(fz_context *, fz_output *);
 
-/*
-	Write data to output.
-
-	data: Pointer to data to write.
-	size: Size of data to write in bytes.
-*/
 void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size);
 
-/*
-	Write a string. Does not write zero terminator.
-*/
 void fz_write_string(fz_context *ctx, fz_output *out, const char *s);
 
 void fz_write_int32_be(fz_context *ctx, fz_output *out, int x);
@@ -214,71 +122,23 @@ void fz_write_int16_be(fz_context *ctx, fz_output *out, int x);
 void fz_write_int16_le(fz_context *ctx, fz_output *out, int x);
 void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 
-/*
-	Write a UTF-8 encoded unicode character.
-*/
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 
 void fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline);
 void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, int newline);
 
-/*
-	Our customised 'printf'-like string formatter.
-	Takes %c, %d, %s, %u, %x, as usual.
-	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03u, %04x, etc).
-	%g output in "as short as possible hopefully lossless non-exponent" form,
-	see fz_ftoa for specifics.
-	%f and %e output as usual.
-	%C outputs a utf8 encoded int.
-	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
-	%q and %( output escaped strings in C/PDF syntax.
-	%l{d,u,x} indicates that the values are int64_t.
-	%z{d,u,x} indicates that the value is a size_t.
+void fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args);
 
-	user: An opaque pointer that is passed to the emit function.
-	emit: A function pointer called to emit output bytes as the string is being formatted.
-*/
-void
-fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args);
-
-/*
-	A vsnprintf work-alike, using our custom formatter.
-*/
 size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
 
-/*
-	The non va_list equivalent of fz_vsnprintf.
-*/
 size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
 char *fz_asprintf(fz_context *ctx, const char *fmt, ...);
 
-/*
-	Get a temporary filename based upon 'base'.
-
-	'hint' is the path of a file (normally the existing document file)
-	supplied to give the function an idea of what directory to use. This
-	may or may not be used depending on the implementation's whim.
-
-	The returned path must be freed.
-*/
 char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 
 void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
 
-/*
-	Compression and other filtering outputs.
-
-	These outputs write encoded data to another output. Create a filter
-	output with the destination, write to the filter, then drop it when
-	you're done. These can also be chained together, for example to write
-	ASCII Hex encoded, Deflate compressed, and RC4 encrypted data to a
-	buffer output.
-
-	Output streams don't use reference counting, so make sure to drop all
-	of the filters in the reverse order of creation so that data is flushed
-	properly.
-*/
 fz_output *fz_new_asciihex_output(fz_context *ctx, fz_output *chain);
 fz_output *fz_new_ascii85_output(fz_context *ctx, fz_output *chain);
 fz_output *fz_new_rle_output(fz_context *ctx, fz_output *chain);

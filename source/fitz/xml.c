@@ -104,6 +104,9 @@ static void xml_indent(int n)
 	}
 }
 
+/*
+	Pretty-print an XML tree to stdout.
+*/
 void fz_debug_xml(fz_xml *item, int level)
 {
 	if (item->text)
@@ -153,36 +156,58 @@ void fz_debug_xml(fz_xml *item, int level)
 	}
 }
 
+/*
+	Return previous sibling of XML node.
+*/
 fz_xml *fz_xml_prev(fz_xml *item)
 {
 	return item ? item->prev : NULL;
 }
 
+/*
+	Return next sibling of XML node.
+*/
 fz_xml *fz_xml_next(fz_xml *item)
 {
 	return item ? item->next : NULL;
 }
 
+/*
+	Return parent of XML node.
+*/
 fz_xml *fz_xml_up(fz_xml *item)
 {
 	return item ? item->up : NULL;
 }
 
+/*
+	Return first child of XML node.
+*/
 fz_xml *fz_xml_down(fz_xml *item)
 {
 	return item ? item->down : NULL;
 }
 
+/*
+	Return the text content of an XML node.
+	Return NULL if the node is a tag.
+*/
 char *fz_xml_text(fz_xml *item)
 {
 	return item ? item->text : NULL;
 }
 
+/*
+	Return tag of XML node. Return NULL for text nodes.
+*/
 char *fz_xml_tag(fz_xml *item)
 {
 	return item && item->name[0] ? item->name : NULL;
 }
 
+/*
+	Return true if the tag name matches.
+*/
 int fz_xml_is_tag(fz_xml *item, const char *name)
 {
 	if (!item)
@@ -190,6 +215,10 @@ int fz_xml_is_tag(fz_xml *item, const char *name)
 	return !strcmp(item->name, name);
 }
 
+/*
+	Return the value of an attribute of an XML node.
+	NULL if the attribute doesn't exist.
+*/
 char *fz_xml_att(fz_xml *item, const char *name)
 {
 	struct attribute *att;
@@ -231,12 +260,19 @@ fz_xml *fz_xml_root(fz_xml_doc *xml)
 	return xml ? xml->root : NULL;
 }
 
+/*
+	Free the XML node and all its children and siblings.
+*/
 void fz_drop_xml(fz_context *ctx, fz_xml_doc *xml)
 {
 	if (xml)
 		fz_drop_pool(ctx, xml->pool);
 }
 
+/*
+	Detach a node from the tree, unlinking it from its parent,
+	and setting the document root to the node.
+*/
 void fz_detach_xml(fz_context *ctx, fz_xml_doc *xml, fz_xml *node)
 {
 	if (node->up)
@@ -675,6 +711,11 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 	return (char*)s;
 }
 
+/*
+	Parse the contents of buffer into a tree of xml nodes.
+
+	preserve_white: whether to keep or delete all-whitespace nodes.
+*/
 fz_xml_doc *
 fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 {

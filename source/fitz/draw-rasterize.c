@@ -31,18 +31,30 @@ void fz_drop_aa_context(fz_context *ctx)
 #endif
 }
 
+/*
+	Get the number of bits of antialiasing we are
+	using (for graphics). Between 0 and 8.
+*/
 int
 fz_aa_level(fz_context *ctx)
 {
 	return fz_aa_bits;
 }
 
+/*
+	Get the number of bits of antialiasing we are
+	using for graphics. Between 0 and 8.
+*/
 int
 fz_graphics_aa_level(fz_context *ctx)
 {
 	return fz_aa_bits;
 }
 
+/*
+	Get the number of bits of antialiasing we are
+	using for text. Between 0 and 8.
+*/
 int
 fz_text_aa_level(fz_context *ctx)
 {
@@ -145,6 +157,13 @@ fz_set_rasterizer_graphics_aa_level(fz_context *ctx, fz_aa_context *aa, int leve
 #endif
 }
 
+/*
+	Set the number of bits of antialiasing we should
+	use (for both text and graphics).
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
 void
 fz_set_aa_level(fz_context *ctx, int level)
 {
@@ -152,18 +171,38 @@ fz_set_aa_level(fz_context *ctx, int level)
 	fz_set_rasterizer_text_aa_level(ctx, ctx->aa, level);
 }
 
+/*
+	Set the number of bits of antialiasing we
+	should use for text.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
 void
 fz_set_text_aa_level(fz_context *ctx, int level)
 {
 	fz_set_rasterizer_text_aa_level(ctx, ctx->aa, level);
 }
 
+/*
+	Set the number of bits of antialiasing we
+	should use for graphics.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
 void
 fz_set_graphics_aa_level(fz_context *ctx, int level)
 {
 	fz_set_rasterizer_graphics_aa_level(ctx, ctx->aa, level);
 }
 
+/*
+	Set the minimum line width to be
+	used for stroked lines.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
 void
 fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width)
 {
@@ -173,6 +212,12 @@ fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width)
 	ctx->aa->min_line_width = min_line_width;
 }
 
+/*
+	Get the minimum line width to be
+	used for stroked lines.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
 float
 fz_graphics_min_line_width(fz_context *ctx)
 {

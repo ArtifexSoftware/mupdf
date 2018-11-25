@@ -495,11 +495,18 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+/*
+	Determine whether changes have been made since the
+	document was opened or last saved.
+*/
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc)
 {
 	return doc->dirty;
 }
 
+/*
+	Unfocus the currently focussed annotation, if there is one.
+*/
 void pdf_clear_focus(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->focus_obj)
@@ -512,6 +519,9 @@ void pdf_clear_focus(fz_context *ctx, pdf_document *doc)
 	}
 }
 
+/*
+	Move the focus to a specified annotation.
+*/
 void pdf_focus_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 {
 	pdf_clear_focus(ctx, doc);
@@ -523,6 +533,10 @@ void pdf_focus_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 	execute_additional_action(ctx, doc, annot->obj, "AA/Fo");
 }
 
+/*
+	Toggle the state of a specified annotation. Applies only to check-box
+	and radio-button widgets.
+*/
 int pdf_toggle_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 {
 	switch (pdf_widget_type(ctx, (pdf_widget*)annot))
@@ -536,6 +550,15 @@ int pdf_toggle_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 	return 0;
 }
 
+/*
+	Pass a UI event to an interactive
+	document.
+
+	Returns a boolean indication of whether the ui_event was
+	handled. Example of use for the return value: when considering
+	passing the events that make up a drag, if the down event isn't
+	accepted then don't send the move events or the up event.
+*/
 int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event)
 {
 	pdf_annot *a;
@@ -619,6 +642,15 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	return changed;
 }
 
+/*
+	Loop through all annotations on the page and update them. Return true
+	if any of them were changed (by either event or javascript actions, or
+	by annotation editing) and need re-rendering.
+
+	If you need more granularity, loop through the annotations and call
+	pdf_update_annot for each one to detect changes on a per-annotation
+	basis.
+*/
 int
 pdf_update_page(fz_context *ctx, pdf_page *page)
 {
@@ -632,6 +664,15 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 	return changed;
 }
 
+/*
+	returns the currently focused widget
+
+	Widgets can become focused as a result of passing in ui events.
+	NULL is returned if there is no currently focused widget. An
+	app may wish to create a native representative of the focused
+	widget, e.g., to collect the text for a text widget, rather than
+	routing key strokes through pdf_pass_event.
+*/
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc)
 {
 	return (pdf_widget *)doc->focus;
@@ -705,6 +746,12 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	return (pdf_widget *)annot;
 }
 
+/*
+	find out the type of a widget.
+
+	The type determines what widget subclass the widget
+	can safely be cast to.
+*/
 int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
@@ -1031,6 +1078,10 @@ char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 	return text;
 }
 
+/*
+	get the maximum number of
+	characters permitted in a text widget
+*/
 int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1038,6 +1089,10 @@ int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
 }
 
+/*
+	get the type of content
+	required by a text widget
+*/
 int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1086,6 +1141,11 @@ static int run_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, cha
 	return 1;
 }
 
+/*
+	Update the text of a text widget.
+	The text is first validated and accepted only if it passes. The
+	function returns whether validation passed.
+*/
 int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *text)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1105,7 +1165,14 @@ int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw,
 	return accepted;
 }
 
-/* Get either the listed value or the export value. */
+/*
+	get the list of options for a list
+	box or combo box. Returns the number of options and fills in their
+	names within the supplied array. Should first be called with a
+	NULL array to find out how big the array should be.  If exportval
+	is true, then the export values will be returned and not the list
+	values if there are export values present.
+*/
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1152,6 +1219,13 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	}
 }
 
+/*
+	get the value of a choice widget.
+	Returns the number of options currently selected and fills in
+	the supplied array with their strings. Should first be called
+	with NULL as the array to find out how big the array need to
+	be. The filled in elements should not be freed by the caller.
+*/
 int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1186,6 +1260,11 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, 
 	}
 }
 
+/*
+	set the value of a choice widget. The
+	caller should pass the number of options selected and an
+	array of their names
+*/
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
@@ -1248,6 +1327,9 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 	return n;
 }
 
+/*
+	retrieve an fz_stream to read the bytes hashed for the signature
+*/
 fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_widget *widget)
 {
 	fz_range *byte_range = NULL;
@@ -1337,6 +1419,14 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	}
 }
 
+/*
+	Update internal state appropriate for editing this field. When editing
+	is true, updating the text of the text widget will not have any
+	side-effects such as changing other widgets or running javascript.
+	This state is intended for the period when a text widget is having
+	characters typed into it. The state should be reverted at the end of
+	the edit sequence and the text newly updated.
+*/
 void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editing)
 {
 	widget->ignore_trigger_events = editing;

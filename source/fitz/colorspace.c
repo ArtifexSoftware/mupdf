@@ -44,6 +44,11 @@ int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs)
 	return cs && (cs->type == FZ_COLORSPACE_SEPARATION);
 }
 
+/*
+	Return true if a colorspace is subtractive.
+
+	True for CMYK, Separation and DeviceN colorspaces.
+*/
 int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && (cs->type == FZ_COLORSPACE_CMYK || cs->type == FZ_COLORSPACE_SEPARATION);
@@ -79,11 +84,19 @@ int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs)
 	return fz_colorspace_is_device(ctx, cs) && fz_colorspace_is_cmyk(ctx, cs);
 }
 
+/*
+	Return true if devicen color space
+	has only colorants from the cmyk set.
+*/
 int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && ((cs->flags & FZ_CS_HAS_CMYK_AND_SPOTS) == FZ_CS_HAS_CMYK);
 }
 
+/*
+	Return true if devicen color space has cyan
+	magenta yellow or black as one of its colorants.
+*/
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && (cs->flags & FZ_CS_HAS_CMYK);
@@ -187,6 +200,15 @@ void fz_unmultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s, c
 #include "icc/cmyk.icc.h"
 #include "icc/lab.icc.h"
 
+/*
+	Search for icc profile.
+
+	name: The name of the profile desired (gray-icc, rgb-icc, cmyk-icc or lab-icc).
+
+	len: Pointer to a place to receive the length of the discovered.
+
+	Returns a pointer to the icc file data, or NULL if not present.
+*/
 const unsigned char *
 fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type type, size_t *size)
 {
@@ -771,6 +793,11 @@ static fz_colorspace *default_cmyk = &k_default_cmyk;
 static fz_colorspace *default_lab = &k_default_lab;
 static fz_color_params *default_color_params = &k_default_color_params;
 
+/*
+	Read details of the current color
+	management engine. If NULL, we are working without
+	color management.
+*/
 const fz_cmm_engine *fz_get_cmm_engine(fz_context *ctx)
 {
 	return ctx->colorspace ? ctx->colorspace->cmm : NULL;
@@ -786,6 +813,20 @@ set_no_icc(fz_colorspace_context *cct)
 	cct->lab = default_lab;
 }
 
+/*
+	Set the color management engine to
+	be used. This should only ever be called on the "base"
+	context before cloning it, and before opening any files.
+
+	Attempting to change the engine in use once a file has
+	been opened, or to use different color management engine
+	for the same file in different threads will lead to
+	undefined behaviour, including crashing.
+
+	Using different ICC engines for different files using
+	different sets of fz_contexts should theoretically be
+	possible.
+*/
 void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 {
 	fz_colorspace_context *cct;

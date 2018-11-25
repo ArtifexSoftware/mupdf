@@ -60,12 +60,6 @@ struct fz_document_writer_s
 	fz_device *dev;
 };
 
-/*
-	Internal function to allocate a
-	block for a derived document_writer structure, with the base
-	structure's function pointers populated correctly, and the extra
-	space zero initialised.
-*/
 fz_document_writer *fz_new_document_writer_of_size(fz_context *ctx, size_t size,
 		fz_document_writer_begin_page_fn *begin_page,
 		fz_document_writer_end_page_fn *end_page,
@@ -78,18 +72,6 @@ fz_document_writer *fz_new_document_writer_of_size(fz_context *ctx, size_t size,
 int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val);
 int fz_option_eq(const char *a, const char *b);
 
-/*
-	Create a new fz_document_writer, for a
-	file of the given type.
-
-	path: The document name to write (or NULL for default)
-
-	format: Which format to write (currently cbz, html, pdf, pam, pbm,
-	pgm, pkm, png, ppm, pnm, svg, text, xhtml)
-
-	options: NULL, or pointer to comma separated string to control
-	file generation.
-*/
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
 fz_document_writer *fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options);
@@ -110,39 +92,12 @@ fz_document_writer *fz_new_ppm_pixmap_writer(fz_context *ctx, const char *path, 
 fz_document_writer *fz_new_pbm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 
-/*
-	Called to start the process of writing a page to
-	a document.
-
-	mediabox: page size rectangle in points.
-
-	Returns a fz_device to write page contents to.
-*/
 fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox);
 
-/*
-	Called to end the process of writing a page to a
-	document.
-*/
 void fz_end_page(fz_context *ctx, fz_document_writer *wri);
 
-/*
-	Called to end the process of writing
-	pages to a document.
-
-	This writes any file level trailers required. After this
-	completes successfully the file is up to date and complete.
-*/
 void fz_close_document_writer(fz_context *ctx, fz_document_writer *wri);
 
-/*
-	Called to discard a fz_document_writer.
-	This may be called at any time during the process to release all
-	the resources owned by the writer.
-
-	Calling drop without having previously called close may leave
-	the file in an inconsistent state.
-*/
 void fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri);
 
 fz_document_writer *fz_new_pixmap_writer(fz_context *ctx, const char *path, const char *options, const char *default_path, int n,

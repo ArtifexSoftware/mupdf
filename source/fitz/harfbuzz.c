@@ -113,6 +113,11 @@ static fz_context *get_hb_context(void)
 	return fz_hb_secret;
 }
 
+/*
+	Lock against Harfbuzz being called
+	simultaneously in several threads. This reuses
+	FZ_LOCK_FREETYPE.
+*/
 void fz_hb_lock(fz_context *ctx)
 {
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
@@ -120,6 +125,10 @@ void fz_hb_lock(fz_context *ctx)
 	set_hb_context(ctx);
 }
 
+/*
+	Unlock after a Harfbuzz call. This reuses
+	FZ_LOCK_FREETYPE.
+*/
 void fz_hb_unlock(fz_context *ctx)
 {
 	set_hb_context(NULL);

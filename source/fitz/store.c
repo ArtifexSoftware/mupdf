@@ -40,6 +40,12 @@ struct fz_store_s
 	int needs_reaping;
 };
 
+/*
+	Create a new store inside the context
+
+	max: The maximum size (in bytes) that the store is allowed to grow
+	to. FZ_STORE_UNLIMITED means no limit.
+*/
 void
 fz_new_store_context(fz_context *ctx, size_t max)
 {
@@ -426,6 +432,24 @@ touch(fz_store *store, fz_item *item)
 	item->prev = NULL;
 }
 
+/*
+	Add an item to the store.
+
+	Add an item into the store, returning NULL for success. If an item
+	with the same key is found in the store, then our item will not be
+	inserted, and the function will return a pointer to that value
+	instead. This function takes its own reference to val, as required
+	(i.e. the caller maintains ownership of its own reference).
+
+	key: The key used to index the item.
+
+	val: The value to store.
+
+	itemsize: The size in bytes of the value (as counted towards the
+	store size).
+
+	type: Functions used to manipulate the key.
+*/
 void *
 fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_store_type *type)
 {
@@ -563,6 +587,19 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 	return NULL;
 }
 
+/*
+	Find an item within the store.
+
+	drop: The function used to free the value (to ensure we get a value
+	of the correct type).
+
+	key: The key used to index the item.
+
+	type: Functions used to manipulate the key.
+
+	Returns NULL for not found, otherwise returns a pointer to the value
+	indexed by key to which a reference has been taken.
+*/
 void *
 fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type)
 {
@@ -619,6 +656,18 @@ fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_
 	return NULL;
 }
 
+/*
+	Remove an item from the store.
+
+	If an item indexed by the given key exists in the store, remove it.
+
+	drop: The function used to free the value (to ensure we get a value
+	of the correct type).
+
+	key: The key used to find the item to remove.
+
+	type: Functions used to manipulate the key.
+*/
 void
 fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type)
 {
@@ -804,6 +853,16 @@ scavenge(fz_context *ctx, size_t tofree)
 	return count != 0;
 }
 
+/*
+	External function for callers to use
+	to scavenge while trying allocations.
+
+	size: The number of bytes we are trying to have free.
+
+	phase: What phase of the scavenge we are in. Updated on exit.
+
+	Returns non zero if we managed to free any memory.
+*/
 int fz_store_scavenge_external(fz_context *ctx, size_t size, int *phase)
 {
 	int ret;
@@ -815,6 +874,18 @@ int fz_store_scavenge_external(fz_context *ctx, size_t size, int *phase)
 	return ret;
 }
 
+/*
+	Internal function used as part of the scavenging
+	allocator; when we fail to allocate memory, before returning a
+	failure to the caller, we try to scavenge space within the store by
+	evicting at least 'size' bytes. The allocator then retries.
+
+	size: The number of bytes we are trying to have free.
+
+	phase: What phase of the scavenge we are in. Updated on exit.
+
+	Returns non zero if we managed to free any memory.
+*/
 int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 {
 	fz_store *store;
@@ -870,6 +941,15 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 	return 0;
 }
 
+/*
+	Evict items from the store until the total size of
+	the objects in the store is reduced to a given percentage of its
+	current size.
+
+	percent: %age of current size to reduce the store to.
+
+	Returns non zero if we managed to free enough memory, zero otherwise.
+*/
 int
 fz_shrink_store(fz_context *ctx, unsigned int percent)
 {
@@ -972,6 +1052,19 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const f
 	}
 }
 
+/*
+	Increment the defer reap count.
+
+	No reap operations will take place (except for those
+	triggered by an immediate failed malloc) until the
+	defer reap count returns to 0.
+
+	Call this at the start of a process during which you
+	potentially might drop many reapable objects.
+
+	It is vital that every fz_defer_reap_start is matched
+	by a fz_defer_reap_end call.
+*/
 void fz_defer_reap_start(fz_context *ctx)
 {
 	if (ctx->store == NULL)
@@ -982,6 +1075,18 @@ void fz_defer_reap_start(fz_context *ctx)
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
+/*
+	Decrement the defer reap count.
+
+	If the defer reap count returns to 0, and the store
+	has reapable objects in, a reap pass will begin.
+
+	Call this at the end of a process during which you
+	potentially might drop many reapable objects.
+
+	It is vital that every fz_defer_reap_start is matched
+	by a fz_defer_reap_end call.
+*/
 void fz_defer_reap_end(fz_context *ctx)
 {
 	int reap;

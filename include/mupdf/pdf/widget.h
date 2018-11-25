@@ -24,15 +24,6 @@ enum
 	PDF_WIDGET_CONTENT_TIME
 };
 
-/*
-	returns the currently focused widget
-
-	Widgets can become focused as a result of passing in ui events.
-	NULL is returned if there is no currently focused widget. An
-	app may wish to create a native representative of the focused
-	widget, e.g., to collect the text for a text widget, rather than
-	routing key strokes through pdf_pass_event.
-*/
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
 
 pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page);
@@ -41,63 +32,24 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 
 pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname);
 
-/*
-	find out the type of a widget.
-
-	The type determines what widget subclass the widget
-	can safely be cast to.
-*/
 int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
-/*
-	get the maximum number of
-	characters permitted in a text widget
-*/
 int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
-/*
-	get the type of content
-	required by a text widget
-*/
 int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
-/*
-	Update the text of a text widget.
-	The text is first validated and accepted only if it passes. The
-	function returns whether validation passed.
-*/
 int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *text);
 
-/*
-	get the list of options for a list
-	box or combo box. Returns the number of options and fills in their
-	names within the supplied array. Should first be called with a
-	NULL array to find out how big the array should be.  If exportval
-	is true, then the export values will be returned and not the list
-	values if there are export values present.
-*/
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
 
 int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 
-/*
-	get the value of a choice widget.
-	Returns the number of options currently selected and fills in
-	the supplied array with their strings. Should first be called
-	with NULL as the array to find out how big the array need to
-	be. The filled in elements should not be freed by the caller.
-*/
 int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[]);
 
-/*
-	set the value of a choice widget. The
-	caller should pass the number of options selected and an
-	array of their names
-*/
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[]);
 
 #endif

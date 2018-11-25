@@ -140,6 +140,9 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	}
 }
 
+/*
+	Output a page to a file in HTML (visual) format.
+*/
 void
 fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
@@ -277,6 +280,9 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 	fz_write_string(ctx, out, "</p>\n");
 }
 
+/*
+	Output a page to a file in XHTML (semantic) format.
+*/
 void
 fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
@@ -322,6 +328,9 @@ fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out)
 
 /* Detailed XML dump of the entire structured text data */
 
+/*
+	Output a page to a file in XML format.
+*/
 void
 fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
@@ -404,6 +413,9 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 
 /* Plain text */
 
+/*
+	Output a page to a file in UTF-8 format.
+*/
 void
 fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {

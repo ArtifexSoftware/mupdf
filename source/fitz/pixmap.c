@@ -30,6 +30,29 @@ fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix_)
 	fz_free(ctx, pix);
 }
 
+/*
+	Create a new pixmap, with its origin at
+	(0,0) using the supplied data block.
+
+	cs: The colorspace to use for the pixmap, or NULL for an alpha
+	plane/mask.
+
+	w: The width of the pixmap (in pixels)
+
+	h: The height of the pixmap (in pixels)
+
+	seps: Details of separations.
+
+	alpha: 0 for no alpha, 1 for alpha.
+
+	stride: The byte offset from the pixel data in a row to the pixel
+	data in the next row.
+
+	samples: The data block to keep the samples in.
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
 fz_pixmap *
 fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, fz_separations *seps, int alpha, int stride, unsigned char *samples)
 {
@@ -92,6 +115,23 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	return pix;
 }
 
+/*
+	Create a new pixmap, with its origin at (0,0)
+
+	cs: The colorspace to use for the pixmap, or NULL for an alpha
+	plane/mask.
+
+	w: The width of the pixmap (in pixels)
+
+	h: The height of the pixmap (in pixels)
+
+	seps: Details of separations.
+
+	alpha: 0 for no alpha, 1 for alpha.
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
 fz_pixmap *
 fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h, fz_separations *seps, int alpha)
 {
@@ -102,6 +142,27 @@ fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h, fz_separ
 	return fz_new_pixmap_with_data(ctx, colorspace, w, h, seps, alpha, stride, NULL);
 }
 
+/*
+	Create a pixmap of a given size,
+	location and pixel format.
+
+	The bounding box specifies the size of the created pixmap and
+	where it will be located. The colorspace determines the number
+	of components per pixel. Alpha is always present. Pixmaps are
+	reference counted, so drop references using fz_drop_pixmap.
+
+	colorspace: Colorspace format used for the created pixmap. The
+	pixmap will keep a reference to the colorspace.
+
+	bbox: Bounding box specifying location/size of created pixmap.
+
+	seps: Details of separations.
+
+	alpha: 0 for no alpha, 1 for alpha.
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
 fz_pixmap *
 fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbox, fz_separations *seps, int alpha)
 {
@@ -112,6 +173,29 @@ fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbo
 	return pixmap;
 }
 
+/*
+	Create a pixmap of a given size,
+	location and pixel format, using the supplied data block.
+
+	The bounding box specifies the size of the created pixmap and
+	where it will be located. The colorspace determines the number
+	of components per pixel. Alpha is always present. Pixmaps are
+	reference counted, so drop references using fz_drop_pixmap.
+
+	colorspace: Colorspace format used for the created pixmap. The
+	pixmap will keep a reference to the colorspace.
+
+	rect: Bounding box specifying location/size of created pixmap.
+
+	seps: Details of separations.
+
+	alpha: Number of alpha planes (0 or 1).
+
+	samples: The data block to keep the samples in.
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
 fz_pixmap *
 fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_irect bbox, fz_separations *seps, int alpha, unsigned char *samples)
 {
@@ -127,6 +211,17 @@ fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_
 	return pixmap;
 }
 
+/*
+	Create a new pixmap that represents
+	a subarea of the specified pixmap. A reference is taken to his
+	pixmap that will be dropped on destruction.
+
+	The supplied rectangle must be wholly contained within the original
+	pixmap.
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
 fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const fz_irect *rect)
 {
 	fz_irect local_rect;
@@ -162,6 +257,9 @@ fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const f
 	return subpix;
 }
 
+/*
+	Return the bounding box for a pixmap.
+*/
 fz_irect
 fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix)
 {
@@ -184,6 +282,11 @@ fz_pixmap_bbox_no_ctx(const fz_pixmap *pix)
 	return bbox;
 }
 
+/*
+	Return the colorspace of a pixmap
+
+	Returns colorspace.
+*/
 fz_colorspace *
 fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
 {
@@ -192,60 +295,100 @@ fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
 	return pix->colorspace;
 }
 
+/*
+	Return the x value of the pixmap in pixels.
+*/
 int
 fz_pixmap_x(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->x;
 }
 
+/*
+	Return the y value of the pixmap in pixels.
+*/
 int
 fz_pixmap_y(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->y;
 }
 
+/*
+	Return the width of the pixmap in pixels.
+*/
 int
 fz_pixmap_width(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->w;
 }
 
+/*
+	Return the height of the pixmap in pixels.
+*/
 int
 fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->h;
 }
 
+/*
+	Return the number of components in a pixmap.
+
+	Returns the number of components (including spots and alpha).
+*/
 int
 fz_pixmap_components(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->n;
 }
 
+/*
+	Return the number of colorants in a pixmap.
+
+	Returns the number of colorants (components, less any spots and alpha).
+*/
 int
 fz_pixmap_colorants(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->n - pix->alpha - pix->s;
 }
 
+/*
+	Return the number of spots in a pixmap.
+
+	Returns the number of spots (components, less colorants and alpha). Does not throw exceptions.
+*/
 int
 fz_pixmap_spots(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->s;
 }
 
+/*
+	Return the number of alpha planes in a pixmap.
+
+	Returns the number of alphas. Does not throw exceptions.
+*/
 int
 fz_pixmap_alpha(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->alpha;
 }
 
+/*
+	Return the number of bytes in a row in the pixmap.
+*/
 int
 fz_pixmap_stride(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->stride;
 }
 
+/*
+	Returns a pointer to the pixel data of a pixmap.
+
+	Returns the pointer.
+*/
 unsigned char *
 fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix)
 {
@@ -477,6 +620,12 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int spots, int stride, i
 	}
 }
 
+/*
+	Sets all components (including alpha) of
+	all pixels in a pixmap to 0.
+
+	pix: The pixmap to clear.
+*/
 void
 fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
@@ -506,6 +655,15 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 }
 
+/*
+	Clears a pixmap with the given value.
+
+	pix: The pixmap to clear.
+
+	value: Values in the range 0 to 255 are valid. Each component
+	sample for each pixel in the pixmap will be set to this value,
+	while alpha will always be set to 255 (non-transparent).
+*/
 /* This function is horrible, and should be removed from the
  * API and replaced with a less magic one. */
 void
@@ -563,6 +721,9 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 	}
 }
 
+/*
+	Fill pixmap with solid color.
+*/
 void
 fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colorspace, float *color, const fz_color_params *color_params)
 {
@@ -636,6 +797,17 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_irect b
 	}
 }
 
+/*
+	Clears a subrect of a pixmap with the given value.
+
+	pix: The pixmap to clear.
+
+	value: Values in the range 0 to 255 are valid. Each component
+	sample for each pixel in the pixmap will be set to this value,
+	while alpha will always be set to 255 (non-transparent).
+
+	r: the rectangle.
+*/
 void
 fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, fz_irect b)
 {
@@ -749,6 +921,12 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 	return alpha;
 }
 
+/*
+	Tint all the pixels in an RGB, BGR, or Gray pixmap.
+
+	black: Map black to this hexadecimal RGB color.
+	white: Map white to this hexadecimal RGB color.
+*/
 void
 fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white)
 {
@@ -806,6 +984,10 @@ fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white)
 	}
 }
 
+/*
+	Invert all the pixels in a pixmap. All components
+	of all pixels are inverted (except alpha, which is unchanged).
+*/
 void
 fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
@@ -826,6 +1008,11 @@ fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 }
 
+/*
+	Invert all the pixels in a given rectangle of a
+	pixmap. All components of all pixels in the rectangle are inverted
+	(except alpha, which is unchanged).
+*/
 void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, fz_irect rect)
 {
 	unsigned char *p;
@@ -848,6 +1035,12 @@ void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, fz_irect rect)
 	}
 }
 
+/*
+	Apply gamma correction to a pixmap. All components
+	of all pixels are modified (except alpha, which is unchanged).
+
+	gamma: The gamma value to apply; 1.0 for no change.
+*/
 void
 fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
 {
@@ -886,6 +1079,25 @@ void fz_convert_pixmap_samples(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, 
 	pc(ctx, dst, src, prf, default_cs, color_params, copy_spots);
 }
 
+/*
+	Convert an existing pixmap to a desired
+	colorspace. Other properties of the pixmap, such as resolution
+	and position are copied to the converted pixmap.
+
+	pix: The pixmap to convert.
+
+	default_cs: If NULL pix->colorspace is used. It is possible that the data
+	may need to be interpreted as one of the color spaces in default_cs.
+
+	cs_des: Desired colorspace, may be NULL to denote alpha-only.
+
+	prf: Proofing color space through which we need to convert.
+
+	color_params: Parameters that may be used in conversion (e.g. ri).
+
+	keep_alpha: If 0 any alpha component is removed, otherwise
+	alpha is kept if present in the pixmap.
+*/
 fz_pixmap *
 fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params, int keep_alpha)
 {
@@ -1292,6 +1504,9 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 	tile->samples = fz_resize_array(ctx, tile->samples, dst_w * n, dst_h);
 }
 
+/*
+	Set the pixels per inch resolution of the pixmap.
+*/
 void
 fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yres)
 {
@@ -1299,6 +1514,9 @@ fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yres)
 	pix->yres = yres;
 }
 
+/*
+	Return the md5 digest for a pixmap
+*/
 void
 fz_md5_pixmap(fz_context *ctx, fz_pixmap *pix, unsigned char digest[16])
 {

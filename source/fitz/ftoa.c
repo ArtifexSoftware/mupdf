@@ -269,6 +269,12 @@ digit_gen_mix_grisu2(diy_fp_t D_upper, diy_fp_t delta, char* buffer, int* K)
 	return len;
 }
 
+/*
+	Compute decimal integer m, exp such that:
+		f = m * 10^exp
+		m is as short as possible without losing exactness
+	Assumes special cases (0, NaN, +Inf, -Inf) have been handled.
+*/
 int
 fz_grisu(float v, char* buffer, int* K)
 {

@@ -52,6 +52,14 @@ do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 	return NULL;
 }
 
+/*
+	Allocate a block of memory (with scavenging)
+
+	size: The number of bytes to allocate.
+
+	Returns a pointer to the allocated block. May return NULL if size is
+	0. Throws exception on failure to allocate.
+*/
 void *
 fz_malloc(fz_context *ctx, size_t size)
 {
@@ -66,6 +74,14 @@ fz_malloc(fz_context *ctx, size_t size)
 	return p;
 }
 
+/*
+	Allocate a block of memory (with scavenging)
+
+	size: The number of bytes to allocate.
+
+	Returns a pointer to the allocated block. May return NULL if size is
+	0. Returns NULL on failure to allocate.
+*/
 void *
 fz_malloc_no_throw(fz_context *ctx, size_t size)
 {
@@ -75,6 +91,17 @@ fz_malloc_no_throw(fz_context *ctx, size_t size)
 	return do_scavenging_malloc(ctx, size);
 }
 
+/*
+	Allocate a block of (non zeroed) memory (with
+	scavenging). Equivalent to fz_calloc without the memory clearing.
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Throws exception on failure to allocate.
+*/
 void *
 fz_malloc_array(fz_context *ctx, size_t count, size_t size)
 {
@@ -92,6 +119,18 @@ fz_malloc_array(fz_context *ctx, size_t count, size_t size)
 	return p;
 }
 
+/*
+	Allocate a block of (non zeroed) memory
+	(with scavenging). Equivalent to fz_calloc_no_throw without the
+	memory clearing.
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to allocate.
+*/
 void *
 fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
 {
@@ -109,6 +148,16 @@ fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
 	return do_scavenging_malloc(ctx, count * size);
 }
 
+/*
+	Allocate a zeroed block of memory (with scavenging)
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Throws exception on failure to allocate.
+*/
 void *
 fz_calloc(fz_context *ctx, size_t count, size_t size)
 {
@@ -131,6 +180,16 @@ fz_calloc(fz_context *ctx, size_t count, size_t size)
 	return p;
 }
 
+/*
+	Allocate a zeroed block of memory (with scavenging)
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to allocate.
+*/
 void *
 fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size)
 {
@@ -155,6 +214,19 @@ fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size)
 	return p;
 }
 
+/*
+	Resize a block of memory (with scavenging).
+
+	p: The existing block to resize
+
+	count: The number of objects to resize to.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the resized block. May return NULL if size
+	and/or count are 0. Throws exception on failure to resize (original
+	block is left unchanged).
+*/
 void *
 fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size)
 {
@@ -175,6 +247,19 @@ fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size)
 	return np;
 }
 
+/*
+	Resize a block of memory (with scavenging).
+
+	p: The existing block to resize
+
+	count: The number of objects to resize to.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the resized block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to resize (original
+	block is left unchanged).
+*/
 void *
 fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
 {
@@ -206,6 +291,14 @@ fz_free(fz_context *ctx, void *p)
 	}
 }
 
+/*
+	Duplicate a C string (with scavenging)
+
+	s: The string to duplicate.
+
+	Returns a pointer to a duplicated string. Throws exception on failure
+	to allocate.
+*/
 char *
 fz_strdup(fz_context *ctx, const char *s)
 {

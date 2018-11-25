@@ -77,23 +77,10 @@ typedef struct fz_icclink_s fz_icclink;
 */
 typedef struct fz_default_colorspaces_s fz_default_colorspaces;
 
-/*
-	Return true if a colorspace is subtractive.
-
-	True for CMYK, Separation and DeviceN colorspaces.
-*/
 int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs);
 
-/*
-	Return true if devicen color space
-	has only colorants from the cmyk set.
-*/
 int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
-/*
-	Return true if devicen color space has cyan
-	magenta yellow or black as one of its colorants.
-*/
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
 int fz_colorspace_is_gray(fz_context *ctx, const fz_colorspace *cs);

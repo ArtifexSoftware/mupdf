@@ -284,6 +284,9 @@ static void on_highlight_line(fz_context *ctx, void *arg, fz_stext_line *line)
 {
 }
 
+/*
+	Return a list of quads to highlight lines inside the selection points.
+*/
 int
 fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads)
 {
@@ -329,6 +332,11 @@ static void on_copy_line_lf(fz_context *ctx, void *arg, fz_stext_line *line)
 	fz_append_byte(ctx, buffer, '\n');
 }
 
+/*
+	Return a newly allocated UTF-8 string with the text for a given selection.
+
+	crlf: If true, write "\r\n" style line endings (otherwise "\n" only).
+*/
 char *
 fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, int crlf)
 {
@@ -410,6 +418,13 @@ static const char *find_string(const char *s, const char *needle, const char **e
 	return *endp = NULL, NULL;
 }
 
+/*
+	Search for occurrence of 'needle' in text page.
+
+	Return the number of hits and store hit quads in the passed in array.
+
+	NOTE: This is an experimental interface and subject to change without notice.
+*/
 int
 fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, fz_quad *quads, int max_quads)
 {

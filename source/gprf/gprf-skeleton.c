@@ -2,6 +2,22 @@
 
 #include <string.h>
 
+/*
+	Given a currently open document, create a
+	gproof skeleton file from that document.
+
+	doc_filename: The name of the currently opened document file.
+
+	doc: The currently opened document.
+
+	filename: The filename of the desired gproof file.
+
+	res: The resolution at which proofing should be done.
+
+	print_profile: The filename of the ICC profile for the printer we are proofing
+
+	display_profile: The filename of the ICC profile for our display device
+*/
 void
 fz_save_gproof(fz_context *ctx, const char *pdf_file, fz_document *doc, const char *filename, int res,
 				const char *print_profile, const char *display_profile)

@@ -52,59 +52,22 @@ struct fz_pwg_options_s
 	char page_size_name[64];
 };
 
-/*
-	Save a pixmap as a pwg
-
-	filename: The filename to save as (including extension).
-
-	append: If non-zero, then append a new page to existing file.
-
-	pwg: NULL, or a pointer to an options structure (initialised to zero
-	before being filled in, for future expansion).
-*/
 void fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);
 
-/*
-	Save a bitmap as a pwg
-
-	filename: The filename to save as (including extension).
-
-	append: If non-zero, then append a new page to existing file.
-
-	pwg: NULL, or a pointer to an options structure (initialised to zero
-	before being filled in, for future expansion).
-*/
 void fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg);
 
 void fz_write_pixmap_as_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
 
 void fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
-/*
-	Output the file header to a pwg stream, ready for pages to follow it.
-*/
 void fz_write_pwg_file_header(fz_context *ctx, fz_output *out);
 
-/*
-	Output a page to a pwg stream to follow a header, or other pages.
-*/
 void fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
 
-/*
-	Output a bitmap page to a pwg stream to follow a header, or other pages.
-*/
 void fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
-/*
-	Generate a new band writer for
-	PWG format images.
-*/
 fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);
 
-/*
-	Generate a new band writer for
-	contone PWG format images.
-*/
 fz_band_writer *fz_new_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);
 
 #endif

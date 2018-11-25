@@ -2240,6 +2240,21 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 	fz_free(ctx, pr->gstate);
 }
 
+/*
+	Create a new "run" processor. This maps
+	from PDF operators to fz_device level calls.
+
+	dev: The device to which the resulting device calls are to be
+	sent.
+
+	ctm: The initial transformation matrix to use.
+
+	usage: A NULL terminated string that describes the 'usage' of
+	this interpretation. Typically 'View', though 'Print' is also
+	defined within the PDF reference manual, and others are possible.
+
+	gstate: The initial graphics state.
+*/
 pdf_processor *
 pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs)
 {

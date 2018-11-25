@@ -45,15 +45,6 @@ void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
 	callback.
 */
 
-/*
-	Pass a UI event to an interactive
-	document.
-
-	Returns a boolean indication of whether the ui_event was
-	handled. Example of use for the return value: when considering
-	passing the events that make up a drag, if the down event isn't
-	accepted then don't send the move events or the up event.
-*/
 int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event);
 
 struct pdf_doc_event_s
@@ -133,18 +124,8 @@ enum
 	PDF_ALERT_BUTTON_YES
 };
 
-/*
-	access the details of an alert event
-	The returned pointer and all the data referred to by the
-	structure are owned by mupdf and need not be freed by the
-	caller.
-*/
 pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *event);
 
-/*
-	access the details of am execMenuItem
-	event, which consists of just the name of the menu item
-*/
 const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
@@ -157,11 +138,6 @@ typedef struct
 	int new_frame;
 } pdf_launch_url_event;
 
-/*
-	access the details of a launch-url
-	event. The returned pointer and all data referred to by the structure
-	are owned by mupdf and need not be freed by the caller.
-*/
 pdf_launch_url_event *pdf_access_launch_url_event(fz_context *ctx, pdf_doc_event *event);
 
 /*

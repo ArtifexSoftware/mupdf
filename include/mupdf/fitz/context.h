@@ -82,15 +82,6 @@ enum
 	FZ_ERROR_COUNT
 };
 
-/*
-	Flush any repeated warnings.
-
-	Repeated warnings are buffered, counted and eventually printed
-	along with the number of repetitions. Call fz_flush_warnings
-	to force printing of the latest buffered warning and the
-	number of repetitions, for example to make sure that all
-	warnings are printed before exiting an application.
-*/
 void fz_flush_warnings(fz_context *ctx);
 
 /*
@@ -162,75 +153,16 @@ enum {
 	FZ_STORE_DEFAULT = 256 << 20,
 };
 
-/*
-	Allocate context containing global state.
-
-	The global state contains an exception stack, resource store,
-	etc. Most functions in MuPDF take a context argument to be
-	able to reference the global state. See fz_drop_context for
-	freeing an allocated context.
-
-	alloc: Supply a custom memory allocator through a set of
-	function pointers. Set to NULL for the standard library
-	allocator. The context will keep the allocator pointer, so the
-	data it points to must not be modified or freed during the
-	lifetime of the context.
-
-	locks: Supply a set of locks and functions to lock/unlock
-	them, intended for multi-threaded applications. Set to NULL
-	when using MuPDF in a single-threaded applications. The
-	context will keep the locks pointer, so the data it points to
-	must not be modified or freed during the lifetime of the
-	context.
-
-	max_store: Maximum size in bytes of the resource store, before
-	it will start evicting cached resources such as fonts and
-	images. FZ_STORE_UNLIMITED can be used if a hard limit is not
-	desired. Use FZ_STORE_DEFAULT to get a reasonable size.
-
-	May return NULL.
-*/
 fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, size_t max_store, const char *version);
 
 #define fz_new_context(alloc, locks, max_store) fz_new_context_imp(alloc, locks, max_store, FZ_VERSION)
 
-/*
-	Make a clone of an existing context.
-
-	This function is meant to be used in multi-threaded
-	applications where each thread requires its own context, yet
-	parts of the global state, for example caching, are shared.
-
-	ctx: Context obtained from fz_new_context to make a copy of.
-	ctx must have had locks and lock/functions setup when created.
-	The two contexts will share the memory allocator, resource
-	store, locks and lock/unlock functions. They will each have
-	their own exception stacks though.
-
-	May return NULL.
-*/
 fz_context *fz_clone_context(fz_context *ctx);
 
-/*
-	Free a context and its global state.
-
-	The context and all of its global state is freed, and any
-	buffered warnings are flushed (see fz_flush_warnings). If NULL
-	is passed in nothing will happen.
-*/
 void fz_drop_context(fz_context *ctx);
 
-/*
-	Set the user field in the context.
-
-	NULL initially, this field can be set to any opaque value
-	required by the user. It is copied on clones.
-*/
 void fz_set_user_context(fz_context *ctx, void *user);
 
-/*
-	Read the user field from the context.
-*/
 void *fz_user_context(fz_context *ctx);
 
 /*
@@ -272,105 +204,32 @@ typedef void (fz_tune_image_decode_fn)(void *arg, int w, int h, int l2factor, fz
 */
 typedef int (fz_tune_image_scale_fn)(void *arg, int dst_w, int dst_h, int src_w, int src_h);
 
-/*
-	Set the tuning function to use for
-	image decode.
-
-	image_decode: Function to use.
-
-	arg: Opaque argument to be passed to tuning function.
-*/
 void fz_tune_image_decode(fz_context *ctx, fz_tune_image_decode_fn *image_decode, void *arg);
 
-/*
-	Set the tuning function to use for
-	image scaling.
-
-	image_scale: Function to use.
-
-	arg: Opaque argument to be passed to tuning function.
-*/
 void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, void *arg);
 
-/*
-	Get the number of bits of antialiasing we are
-	using (for graphics). Between 0 and 8.
-*/
 int fz_aa_level(fz_context *ctx);
 
-/*
-	Set the number of bits of antialiasing we should
-	use (for both text and graphics).
-
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
-*/
 void fz_set_aa_level(fz_context *ctx, int bits);
 
-/*
-	Get the number of bits of antialiasing we are
-	using for text. Between 0 and 8.
-*/
 int fz_text_aa_level(fz_context *ctx);
 
-/*
-	Set the number of bits of antialiasing we
-	should use for text.
-
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
-*/
 void fz_set_text_aa_level(fz_context *ctx, int bits);
 
-/*
-	Get the number of bits of antialiasing we are
-	using for graphics. Between 0 and 8.
-*/
 int fz_graphics_aa_level(fz_context *ctx);
 
-/*
-	Set the number of bits of antialiasing we
-	should use for graphics.
-
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
-*/
 void fz_set_graphics_aa_level(fz_context *ctx, int bits);
 
-/*
-	Get the minimum line width to be
-	used for stroked lines.
-
-	min_line_width: The minimum line width to use (in pixels).
-*/
 float fz_graphics_min_line_width(fz_context *ctx);
 
-/*
-	Set the minimum line width to be
-	used for stroked lines.
-
-	min_line_width: The minimum line width to use (in pixels).
-*/
 void fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width);
 
-/*
-	Get the user stylesheet source text.
-*/
 const char *fz_user_css(fz_context *ctx);
 
-/*
-	Set the user stylesheet source text for use with HTML and EPUB.
-*/
 void fz_set_user_css(fz_context *ctx, const char *text);
 
-/*
-	Return whether to respect document styles in HTML and EPUB.
-*/
 int fz_use_document_css(fz_context *ctx);
 
-/*
-	Toggle whether to respect document styles in HTML and EPUB.
-*/
 void fz_set_use_document_css(fz_context *ctx, int use);
 
 /*
@@ -389,26 +248,8 @@ void fz_set_use_document_css(fz_context *ctx, int use);
 	store being freed.
 */
 
-/*
-	Allocate a block of memory (with scavenging)
-
-	size: The number of bytes to allocate.
-
-	Returns a pointer to the allocated block. May return NULL if size is
-	0. Throws exception on failure to allocate.
-*/
 void *fz_malloc(fz_context *ctx, size_t size);
 
-/*
-	Allocate a zeroed block of memory (with scavenging)
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Throws exception on failure to allocate.
-*/
 void *fz_calloc(fz_context *ctx, size_t count, size_t size);
 
 /*
@@ -426,95 +267,20 @@ void *fz_calloc(fz_context *ctx, size_t count, size_t size);
 #define fz_malloc_struct(CTX, STRUCT) \
 	((STRUCT *)Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT))
 
-/*
-	Allocate a block of (non zeroed) memory (with
-	scavenging). Equivalent to fz_calloc without the memory clearing.
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Throws exception on failure to allocate.
-*/
 void *fz_malloc_array(fz_context *ctx, size_t count, size_t size);
 
-/*
-	Resize a block of memory (with scavenging).
-
-	p: The existing block to resize
-
-	count: The number of objects to resize to.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the resized block. May return NULL if size
-	and/or count are 0. Throws exception on failure to resize (original
-	block is left unchanged).
-*/
 void *fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size);
 
-/*
-	Duplicate a C string (with scavenging)
-
-	s: The string to duplicate.
-
-	Returns a pointer to a duplicated string. Throws exception on failure
-	to allocate.
-*/
 char *fz_strdup(fz_context *ctx, const char *s);
 
 void fz_free(fz_context *ctx, void *p);
 
-/*
-	Allocate a block of memory (with scavenging)
-
-	size: The number of bytes to allocate.
-
-	Returns a pointer to the allocated block. May return NULL if size is
-	0. Returns NULL on failure to allocate.
-*/
 void *fz_malloc_no_throw(fz_context *ctx, size_t size);
 
-/*
-	Allocate a zeroed block of memory (with scavenging)
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to allocate.
-*/
 void *fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size);
 
-/*
-	Allocate a block of (non zeroed) memory
-	(with scavenging). Equivalent to fz_calloc_no_throw without the
-	memory clearing.
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to allocate.
-*/
 void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
 
-/*
-	Resize a block of memory (with scavenging).
-
-	p: The existing block to resize
-
-	count: The number of objects to resize to.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the resized block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to resize (original
-	block is left unchanged).
-*/
 void *fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
 
 struct fz_warn_context_s
@@ -526,10 +292,6 @@ struct fz_warn_context_s
 extern fz_alloc_context fz_alloc_default;
 extern fz_locks_context fz_locks_default;
 
-/*
-	Pseudo-random numbers using a linear congruential algorithm and 48-bit
-	integer arithmetic.
-*/
 double fz_drand48(fz_context *ctx);
 int32_t fz_lrand48(fz_context *ctx);
 int32_t fz_mrand48(fz_context *ctx);
@@ -540,9 +302,6 @@ void fz_lcong48(fz_context *ctx, uint16_t param[7]);
 uint16_t *fz_seed48(fz_context *ctx, uint16_t seed16v[3]);
 void fz_srand48(fz_context *ctx, int32_t seedval);
 
-/*
-	Fill block with len bytes of pseudo-randomness.
-*/
 void fz_memrnd(fz_context *ctx, uint8_t *block, int len);
 
 #endif
