@@ -31,20 +31,15 @@ static int ft_font_file_kind(FT_Face face)
 	return 0;
 }
 
-enum { UNKNOWN, TYPE1, TRUETYPE };
-
-static int ft_kind(FT_Face face)
+static int is_truetype(FT_Face face)
 {
-#ifdef FT_FONT_FORMATS_H
-	const char *kind = FT_Get_Font_Format(face);
-#else
-	const char *kind = FT_Get_X11_Font_Format(face);
-#endif
-	if (!strcmp(kind, "TrueType")) return TRUETYPE;
-	if (!strcmp(kind, "Type 1")) return TYPE1;
-	if (!strcmp(kind, "CFF")) return TYPE1;
-	if (!strcmp(kind, "CID Type 1")) return TYPE1;
-	return UNKNOWN;
+	return ft_font_file_kind(face) == 2;
+}
+
+static int is_postscript(FT_Face face)
+{
+	int kind = ft_font_file_kind(face);
+	return (kind == 1 || kind == 3);
 }
 
 static int is_builtin_font(fz_context *ctx, fz_font *font)
@@ -341,11 +336,10 @@ pdf_add_descendant_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_try(ctx)
 	{
 		pdf_dict_put(ctx, fobj, PDF_NAME(Type), PDF_NAME(Font));
-		switch (ft_kind(face))
-		{
-		case TYPE1: pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(CIDFontType0)); break;
-		case TRUETYPE: pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(CIDFontType2)); break;
-		}
+		if (is_truetype(face))
+			pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(CIDFontType2));
+		else
+			pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(CIDFontType0));
 
 		pdf_add_cid_system_info(ctx, doc, fobj, "Adobe", "Identity", 0);
 
@@ -639,11 +633,10 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 	fz_try(ctx)
 	{
 		pdf_dict_put(ctx, fobj, PDF_NAME(Type), PDF_NAME(Font));
-		switch (ft_kind(face))
-		{
-		case TYPE1: pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(Type1)); break;
-		case TRUETYPE: pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(TrueType)); break;
-		}
+		if (is_truetype(face))
+			pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(TrueType));
+		else
+			pdf_dict_put(ctx, fobj, PDF_NAME(Subtype), PDF_NAME(Type1));
 
 		if (!is_builtin_font(ctx, font))
 		{
@@ -679,11 +672,10 @@ pdf_font_writing_supported(fz_font *font)
 {
 	if (font->ft_face == NULL)
 		return 0;
-
-	if (ft_kind(font->ft_face) == TYPE1 || ft_kind(font->ft_face) == TRUETYPE)
-	{
+	if (is_truetype(font->ft_face))
 		return 1;
-	}
+	if (is_postscript(font->ft_face))
+		return 1;
 	return 0;
 }
 
