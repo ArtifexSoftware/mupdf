@@ -29,9 +29,10 @@ struct fz_stext_device_s
 
 const char *fz_stext_options_usage =
 	"Text output options:\n"
+	"\tinhibit-spaces: don't add spaces between gaps in the text\n"
+	"\tpreserve-images: keep images in output\n"
 	"\tpreserve-ligatures: do not expand ligatures into constituent characters\n"
 	"\tpreserve-whitespace: do not convert all whitespace into space characters\n"
-	"\tpreserve-images: keep images in output\n"
 	"\n";
 
 fz_stext_page *
@@ -384,7 +385,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	}
 
 	/* Add synthetic space */
-	if (add_space)
+	if (add_space && !(dev->flags & FZ_STEXT_INHIBIT_SPACES))
 		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', &dev->pen, &p);
 
 	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q);
@@ -694,6 +695,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_PRESERVE_WHITESPACE;
 	if (fz_has_option(ctx, string, "preserve-images", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_PRESERVE_IMAGES;
+	if (fz_has_option(ctx, string, "inhibit-spaces", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_INHIBIT_SPACES;
 
 	return opts;
 }
@@ -720,6 +723,8 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 		dev->super.fill_image_mask = fz_stext_fill_image_mask;
 	}
 
+	if (opts)
+		dev->flags = opts->flags;
 	dev->page = page;
 	dev->pen.x = 0;
 	dev->pen.y = 0;

@@ -37,12 +37,17 @@ typedef struct fz_stext_page_s fz_stext_page;
 	FZ_STEXT_PRESERVE_IMAGES: If this option is set, then images will
 	be stored in the structured text structure. The default is to ignore
 	all images.
+
+	FZ_STEXT_INHIBIT_SPACES: If this option is set, we will not try to
+	add missing space characters where there are large gaps between
+	characters.
 */
 enum
 {
 	FZ_STEXT_PRESERVE_LIGATURES = 1,
 	FZ_STEXT_PRESERVE_WHITESPACE = 2,
 	FZ_STEXT_PRESERVE_IMAGES = 4,
+	FZ_STEXT_INHIBIT_SPACES = 8,
 };
 
 /*
