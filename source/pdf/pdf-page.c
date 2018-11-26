@@ -344,6 +344,16 @@ pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_obj *page)
 
 /* We need to know whether to install a page-level transparency group */
 
+/*
+ * Object memo flags - allows us to secretly remember "a memo" (a bool) in an
+ * object, and to read back whether there was a memo, and if so, what it was.
+ */
+enum
+{
+	PDF_FLAGS_MEMO_BM = 0,
+	PDF_FLAGS_MEMO_OP = 1
+};
+
 static int pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb);
 
 static int

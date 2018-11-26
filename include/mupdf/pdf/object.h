@@ -55,16 +55,6 @@ int pdf_obj_marked(fz_context *ctx, pdf_obj *obj);
 int pdf_mark_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
 
-/* obj memo functions - allows us to secretly remember "a memo" (a bool) in
- * an object, and to read back whether there was a memo, and if so, what it
- * was. */
-
-enum
-{
-	PDF_FLAGS_MEMO_BM = 0,
-	PDF_FLAGS_MEMO_OP = 1
-};
-
 void pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int memo);
 int pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int *memo);
 
