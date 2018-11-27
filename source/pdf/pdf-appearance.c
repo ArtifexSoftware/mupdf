@@ -1096,7 +1096,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		pdf_document *doc = annot->page->doc;
 		pdf_obj *f = pdf_dict_getl(ctx, annot->obj, PDF_NAME(AA), PDF_NAME(F), NULL);
 		char *text = NULL;
-		if (f && doc->js)
+		if (f && doc->js && !annot->ignore_trigger_events)
 		{
 			pdf_js_event e;
 			e.target = annot->obj;

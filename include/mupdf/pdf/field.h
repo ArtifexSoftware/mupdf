@@ -30,7 +30,7 @@ int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int type);
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field);
-int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text);
+int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events);
 char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text);
 void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text);

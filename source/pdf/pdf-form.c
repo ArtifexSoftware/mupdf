@@ -719,11 +719,11 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 	return PDF_WIDGET_TYPE_NOT_WIDGET;
 }
 
-static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
+static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events)
 {
 	pdf_obj *v = pdf_dict_getp(ctx, field, "AA/V");
 
-	if (v && doc->js)
+	if (v && doc->js && !ignore_trigger_events)
 	{
 		pdf_js_event e;
 		e.target = field;
@@ -773,14 +773,14 @@ static int set_checkbox_value(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	return 1;
 }
 
-int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
+int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events)
 {
 	int res = 0;
 
 	switch (pdf_field_type(ctx, doc, field))
 	{
 	case PDF_WIDGET_TYPE_TEXT:
-		res = set_text_field_value(ctx, doc, field, text);
+		res = set_text_field_value(ctx, doc, field, text, ignore_trigger_events);
 		break;
 
 	case PDF_WIDGET_TYPE_CHECKBOX:
@@ -795,7 +795,8 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 		break;
 	}
 
-	recalculate(ctx, doc);
+	if (!ignore_trigger_events)
+		recalculate(ctx, doc);
 
 	return res;
 }
@@ -1098,9 +1099,9 @@ int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw,
 
 	fz_try(ctx)
 	{
-		accepted = run_keystroke(ctx, doc, annot->obj, &text);
+		accepted = tw->ignore_trigger_events ? 1 : run_keystroke(ctx, doc, annot->obj, &text);
 		if (accepted)
-			accepted = pdf_field_set_value(ctx, doc, annot->obj, text);
+			accepted = pdf_field_set_value(ctx, doc, annot->obj, text, tw->ignore_trigger_events);
 	}
 	fz_catch(ctx)
 	{
@@ -1340,4 +1341,9 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	{
 		fz_rethrow(ctx);
 	}
+}
+
+void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editing)
+{
+	widget->ignore_trigger_events = editing;
 }

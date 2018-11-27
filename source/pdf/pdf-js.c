@@ -322,7 +322,7 @@ static void field_setValue(js_State *J)
 	const char *value = js_tostring(J, 1);
 
 	fz_try(js->ctx)
-		(void)pdf_field_set_value(js->ctx, js->doc, field, value);
+		(void)pdf_field_set_value(js->ctx, js->doc, field, value, 0);
 	fz_catch(js->ctx)
 		rethrow(js);
 }

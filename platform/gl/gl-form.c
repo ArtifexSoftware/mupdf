@@ -156,7 +156,7 @@ static void tx_dialog(void)
 			ui_spacer();
 			if (ui_button("Okay") || is == UI_INPUT_ACCEPT)
 			{
-				pdf_field_set_value(ctx, tx_widget->page->doc, tx_widget->obj, tx_input.text);
+				pdf_field_set_value(ctx, tx_widget->page->doc, tx_widget->obj, tx_input.text, 0);
 				if (pdf_update_page(ctx, tx_widget->page))
 					render_page();
 				ui.dialog = NULL;
@@ -201,7 +201,7 @@ static void ch_dialog(void)
 		ui_label("%s", label);
 		choice = ui_select("Widget/Ch", value, options, n);
 		if (choice >= 0)
-			pdf_field_set_value(ctx, ch_widget->page->doc, ch_widget->obj, options[choice]);
+			pdf_field_set_value(ctx, ch_widget->page->doc, ch_widget->obj, options[choice], 0);
 
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);

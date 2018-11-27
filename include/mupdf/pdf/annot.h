@@ -118,6 +118,7 @@ struct pdf_annot_s
 
 	int needs_new_ap;
 	int has_new_ap;
+	int ignore_trigger_events;
 
 	pdf_annot *next;
 };
@@ -297,5 +298,15 @@ int pdf_update_annot(fz_context *ctx, pdf_annot *annot);
 	basis.
 */
 int pdf_update_page(fz_context *ctx, pdf_page *page);
+
+/*
+	pdf_set_widget_editing_state: Update internal state appropriate for editing
+	this field. When editing is true, updating the text of the text widget will not
+	have any side-effects such as changing other widgets or running javascript.s
+	This state is intended for the period when a text widget is having characters
+	typed into it. The state should be reverted at the end of the edit sequence
+	and the text newly updated.
+*/
+void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editing);
 
 #endif
