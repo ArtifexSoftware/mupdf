@@ -108,4 +108,12 @@ public class PDFDocument extends Document
 	public int save(SeekableOutputStream stream, String options) {
 		return nativeSaveWithStream(stream, options);
 	}
+
+	public interface JsEventListener {
+		void onAlert(String message);
+	}
+	public native void enableJs();
+	public native void disableJs();
+	public native boolean isJsSupported();
+	public native void setJsEventListener(JsEventListener listener);
 }

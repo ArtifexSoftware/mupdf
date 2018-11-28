@@ -19,6 +19,14 @@ public class Annotation
 		pointer = p;
 	}
 
+	public boolean equals(Annotation other) {
+		return (this.pointer == other.pointer);
+	}
+
+	public boolean equals(long other) {
+		return (this.pointer == other);
+	}
+
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
 	public native Rect getBounds();
