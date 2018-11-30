@@ -269,9 +269,6 @@ pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		pdf_dict_put(ctx, annot_obj, PDF_NAME(Type), PDF_NAME(Annot));
 		pdf_dict_put_name(ctx, annot_obj, PDF_NAME(Subtype), type_str);
 
-		/* Make printable as default */
-		pdf_dict_put_int(ctx, annot_obj, PDF_NAME(F), PDF_ANNOT_IS_PRINT);
-
 		/*
 			Both annotation object and annotation structure are now created.
 			Insert the object in the hierarchy and the structure in the
@@ -319,6 +316,8 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	static const float yellow[3] = { 1, 1, 0 };
 	static const float magenta[3] = { 1, 0, 1 };
 
+	int flags = PDF_ANNOT_IS_PRINT; /* Make printable as default */
+
 	pdf_annot *annot = pdf_create_annot_raw(ctx, page, type);
 
 	switch (type)
@@ -331,8 +330,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	case PDF_ANNOT_SOUND:
 		{
 			fz_rect icon_rect = { 12, 12, 12+20, 12+20 };
-			pdf_set_annot_flags(ctx, annot,
-				PDF_ANNOT_IS_PRINT | PDF_ANNOT_IS_NO_ZOOM | PDF_ANNOT_IS_NO_ROTATE);
+			flags = PDF_ANNOT_IS_PRINT | PDF_ANNOT_IS_NO_ZOOM | PDF_ANNOT_IS_NO_ROTATE;
 			pdf_set_annot_rect(ctx, annot, icon_rect);
 			pdf_set_annot_color(ctx, annot, 3, yellow);
 		}
@@ -408,6 +406,9 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		pdf_set_annot_color(ctx, annot, 3, magenta);
 		break;
 	}
+
+	pdf_dict_put(ctx, annot->obj, PDF_NAME(P), page->obj);
+	pdf_dict_put_int(ctx, annot->obj, PDF_NAME(F), flags);
 
 	return annot;
 }
