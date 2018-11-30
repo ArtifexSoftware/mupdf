@@ -1992,19 +1992,24 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 
 	link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
 
-	if (link->is_identity)
+	fz_try(ctx)
 	{
-		for (i = 0; i < src->h; i++)
+		if (link->is_identity)
 		{
-			memcpy(outputpos, inputpos, src->stride);
-			inputpos = inputpos + src->stride;
-			outputpos = outputpos + dst->stride;
+			for (i = 0; i < src->h; i++)
+			{
+				memcpy(outputpos, inputpos, src->stride);
+				inputpos = inputpos + src->stride;
+				outputpos = outputpos + dst->stride;
+			}
 		}
+		else
+			fz_cmm_transform_pixmap(ctx, link, dst, src);
 	}
-	else
-		fz_cmm_transform_pixmap(ctx, link, dst, src);
-
-	fz_drop_icclink(ctx, link);
+	fz_always(ctx)
+		fz_drop_icclink(ctx, link);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /* Drill down through the base spaces until we get the either a pdf-cal or
