@@ -1163,72 +1163,70 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
+	switch (tiff->photometric)
+	{
+	case 0: /* WhiteIsZero -- inverted */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+		break;
+	case 1: /* BlackIsZero */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+		break;
+	case 2: /* RGB */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		break;
+	case 3: /* RGBPal */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		break;
+	case 5: /* CMYK */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
+		break;
+	case 6: /* YCbCr */
+		/* it's probably a jpeg ... we let jpeg convert to rgb */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		break;
+	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
+	case 9: /* ICC Style L*a*b* encoding */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_lab(ctx));
+		break;
+	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+		if (tiff->bitspersample != 8)
+			tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
+	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		if (tiff->bitspersample != 8)
+			tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
+	}
+
 #if FZ_ENABLE_ICC
 	if (tiff->profile)
 	{
 		fz_buffer *buff = NULL;
-
+		fz_colorspace *icc = NULL;
+		fz_var(buff);
 		fz_try(ctx)
 		{
 			buff = fz_new_buffer_from_copied_data(ctx, tiff->profile, tiff->profilesize);
-			tiff->colorspace = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, buff);
-			if (fz_colorspace_n(ctx, tiff->colorspace) != tiff_components_from_photometric(tiff->photometric))
+			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, tiff->colorspace), buff, tiff->colorspace);
+			if (fz_colorspace_n(ctx, tiff->colorspace) != tiff_components_from_photometric(tiff->photometric)) {
+				fz_drop_colorspace(ctx, icc);
 				fz_throw(ctx, FZ_ERROR_GENERIC, "embedded ICC profile colorspace mismatch");
+			}
+			fz_drop_colorspace(ctx, tiff->colorspace);
+			tiff->colorspace = icc;
 		}
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);
 		fz_catch(ctx)
-		{
 			fz_warn(ctx, "Failed to read ICC Profile from tiff");
-			fz_drop_colorspace(ctx, tiff->colorspace);
-			tiff->colorspace = NULL;
-		}
 	}
 #endif
-
-	if (tiff->colorspace == NULL)
-	{
-		switch (tiff->photometric)
-		{
-		case 0: /* WhiteIsZero -- inverted */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
-			break;
-		case 1: /* BlackIsZero */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
-			break;
-		case 2: /* RGB */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-			break;
-		case 3: /* RGBPal */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-			break;
-		case 5: /* CMYK */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
-			break;
-		case 6: /* YCbCr */
-				/* it's probably a jpeg ... we let jpeg convert to rgb */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-			break;
-		case 8: /* Direct L*a*b* encoding. a*, b* signed values */
-		case 9: /* ICC Style L*a*b* encoding */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_lab(ctx));
-			break;
-		case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
-			if (tiff->bitspersample != 8)
-				tiff->bitspersample = 8;
-			tiff->stride >>= 1;
-			break;
-		case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
-			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-			if (tiff->bitspersample != 8)
-				tiff->bitspersample = 8;
-			tiff->stride >>= 1;
-			break;
-		default:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
-		}
-	}
 
 	switch (tiff->resolutionunit)
 	{

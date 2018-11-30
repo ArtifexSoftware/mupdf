@@ -821,11 +821,11 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	{
 		fz_try(ctx)
 		{
-			cct->gray = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_GRAY, NULL);
-			cct->rgb = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, NULL);
-			cct->bgr = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_BGR, NULL);
-			cct->cmyk = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_CMYK, NULL);
-			cct->lab = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_LAB, NULL);
+			cct->gray = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_GRAY, NULL, NULL);
+			cct->rgb = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, NULL, NULL);
+			cct->bgr = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_BGR, NULL, NULL);
+			cct->cmyk = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_CMYK, NULL, NULL);
+			cct->lab = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_LAB, NULL, NULL);
 		}
 		fz_catch(ctx)
 		{
@@ -1949,10 +1949,14 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
-	fz_icclink *link;
+	const fz_colorspace *srcs_alt = fz_alternate_colorspace(ctx, srcs);
+	const fz_colorspace *dsts_alt = fz_alternate_colorspace(ctx, dsts);
+	fz_icclink *link = NULL;
 	int i;
 	unsigned char *inputpos, *outputpos;
 	int src_n;
+
+	fz_var(link);
 
 	/* Handle DeviceGray to CMYK as K only. See note in Section 6.3 of PDF spec 1.7. */
 	if (fz_colorspace_is_device_gray(ctx, srcs) && fz_colorspace_is_cmyk(ctx, dsts))
@@ -1964,18 +1968,18 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	/* Check if we have to do a color space default substitution */
 	if (default_cs)
 	{
-		switch (fz_colorspace_type(ctx, src->colorspace))
+		switch (fz_colorspace_type(ctx, srcs))
 		{
 		case FZ_COLORSPACE_GRAY:
-			if (src->colorspace == fz_device_gray(ctx))
+			if (srcs == fz_device_gray(ctx))
 				srcs = fz_default_gray(ctx, default_cs);
 			break;
 		case FZ_COLORSPACE_RGB:
-			if (src->colorspace == fz_device_rgb(ctx))
+			if (srcs == fz_device_rgb(ctx))
 				srcs = fz_default_rgb(ctx, default_cs);
 			break;
 		case FZ_COLORSPACE_CMYK:
-			if (src->colorspace == fz_device_cmyk(ctx))
+			if (srcs == fz_device_cmyk(ctx))
 				srcs = fz_default_cmyk(ctx, default_cs);
 			break;
 		default:
@@ -1990,7 +1994,50 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	if (src->alpha || dst->alpha)
 		copy_extras = 1;
 
-	link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
+	/* Attempt to use the original colorspaces, or their alternates if they exist */
+	fz_try(ctx)
+		link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+		link = NULL;
+	}
+
+	if (!link && srcs_alt)
+	{
+		fz_try(ctx)
+			link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs_alt, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+			link = NULL;
+		}
+	}
+
+	if (!link && dsts_alt)
+	{
+		fz_try(ctx)
+			link = fz_get_icc_link(ctx, dsts_alt, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+			link = NULL;
+		}
+	}
+
+	if (!link && srcs_alt && dsts_alt)
+	{
+		fz_try(ctx)
+			link = fz_get_icc_link(ctx, dsts_alt, dst->s + dst->alpha, srcs_alt, src->s + src->alpha, prf, color_params, 1, copy_extras, &src_n);
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+			link = NULL;
+		}
+	}
+
+	if (!link)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot link ICC colorspace to destination colorspace (or their alternates)");
 
 	fz_try(ctx)
 	{
@@ -2738,10 +2785,57 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 			else
 				cc->convert = icc_base_conv_color;
 
-			/* Special case: Do not set link if we are doing DeviceGray to CMYK. */
 			/* Handle DeviceGray to CMYK as K only. See note in Section 6.3 of PDF spec 1.7. */
 			if (!(fz_colorspace_is_device_gray(ctx, ss_base) && fz_colorspace_is_cmyk(ctx, ds)))
-				cc->link = fz_get_icc_link(ctx, ds, 0, ss_base, 0, is, params, 2, 0, &cc->n);
+			{
+				const fz_colorspace *ss_base_alt = fz_alternate_colorspace(ctx, ss_base);
+				const fz_colorspace *ds_alt = fz_alternate_colorspace(ctx, ds);
+
+				/* Attempt to use the original colorspaces, or their alternates if they exist */
+				fz_try(ctx)
+					cc->link = fz_get_icc_link(ctx, ds, 0, ss_base, 0, is, params, 2, 0, &cc->n);
+				fz_catch(ctx)
+				{
+					fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+					cc->link = NULL;
+				}
+
+				if (!cc->link && ss_base_alt)
+				{
+					fz_try(ctx)
+						cc->link = fz_get_icc_link(ctx, ds, 0, ss_base_alt, 0, is, params, 2, 0, &cc->n);
+					fz_catch(ctx)
+					{
+						fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+						cc->link = NULL;
+					}
+				}
+
+				if (!cc->link && ds_alt)
+				{
+					fz_try(ctx)
+						cc->link = fz_get_icc_link(ctx, ds_alt, 0, ss_base, 0, is, params, 2, 0, &cc->n);
+					fz_catch(ctx)
+					{
+						fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+						cc->link = NULL;
+					}
+				}
+
+				if (!cc->link && ds_alt && ss_base_alt)
+				{
+					fz_try(ctx)
+						cc->link = fz_get_icc_link(ctx, ds_alt, 0, ss_base_alt, 0, is, params, 2, 0, &cc->n);
+					fz_catch(ctx)
+					{
+						fz_warn(ctx, "cannot link ICC colorspace to destination colorspace, trying alternate colorspace");
+						cc->link = NULL;
+					}
+				}
+
+				if (!cc->link)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot link ICC colorspace to destination colorspace (or their alternates)");
+			}
 		}
 		else
 			cc->convert = std_conv_color;
@@ -3013,6 +3107,7 @@ static void
 free_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile = cs->data;
+	fz_drop_colorspace(ctx, profile->alternate);
 	fz_drop_buffer(ctx, profile->buffer);
 	fz_cmm_fin_profile(ctx, profile);
 	fz_free(ctx, profile);
@@ -3052,7 +3147,7 @@ static const char *colorspace_name_from_type(int type)
 #endif
 
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *buf)
+fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *buf, fz_colorspace *alternate)
 {
 #if FZ_ENABLE_ICC
 	fz_colorspace *cs = NULL;
@@ -3113,6 +3208,8 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 		else
 			name = colorspace_name_from_type(type);
 
+		profile->alternate = fz_keep_colorspace(ctx, alternate);
+
 		cs = fz_new_colorspace(ctx, name, type, flags, profile->num_devcomp,
 			NULL,
 			NULL,
@@ -3164,12 +3261,22 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 #endif
 }
 
+const fz_colorspace *fz_alternate_colorspace(fz_context *ctx, const fz_colorspace *cs)
+{
+	fz_iccprofile *profile = cs->data;
+
+	if (!fz_colorspace_is_icc(ctx, cs))
+		return NULL;
+
+	return profile->alternate;
+}
+
 fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, enum fz_colorspace_type type, const char *path)
 {
 	fz_colorspace *cs = NULL;
 	fz_buffer *buffer = fz_read_file(ctx, path);
 	fz_try(ctx)
-		cs = fz_new_icc_colorspace(ctx, type, buffer);
+		cs = fz_new_icc_colorspace(ctx, type, buffer, NULL);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)
@@ -3182,7 +3289,7 @@ fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, enum fz_colors
 	fz_colorspace *cs = NULL;
 	fz_buffer *buffer = fz_read_all(ctx, in, 1024);
 	fz_try(ctx)
-		cs = fz_new_icc_colorspace(ctx, type, buffer);
+		cs = fz_new_icc_colorspace(ctx, type, buffer, NULL);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)

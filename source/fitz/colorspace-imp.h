@@ -47,6 +47,7 @@ struct fz_iccprofile_s
 	fz_buffer *buffer;
 	unsigned char md5[16];
 	void *cmm_handle;
+	fz_colorspace *alternate;
 };
 
 struct fz_icclink_s

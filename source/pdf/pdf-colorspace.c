@@ -64,7 +64,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 			else if (n == 4) type = FZ_COLORSPACE_CMYK;
 			else type = FZ_COLORSPACE_NONE;
 			buffer = pdf_load_stream(ctx, dict);
-			cs = fz_new_icc_colorspace(ctx, type, buffer);
+			cs = fz_new_icc_colorspace(ctx, type, buffer, cs_alt);
 		}
 	}
 	fz_always(ctx)
