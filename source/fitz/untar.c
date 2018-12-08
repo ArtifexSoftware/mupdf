@@ -9,7 +9,7 @@ typedef struct fz_tar_archive_s fz_tar_archive;
 struct tar_entry_s
 {
 	char *name;
-	int offset, size;
+	int64_t offset, size;
 };
 
 struct fz_tar_archive_s
@@ -25,9 +25,9 @@ static inline int isoctdigit(char c)
 	return c >= '0' && c <= '7';
 }
 
-static inline int otoi(const char *s)
+static inline int64_t otoi(const char *s)
 {
-	int value = 0;
+	int64_t value = 0;
 
 	while (*s && isoctdigit(*s))
 	{
@@ -54,7 +54,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 	char name[100];
 	char octsize[12];
 	char typeflag;
-	int offset, blocks, size;
+	int64_t offset, blocks, size;
 	size_t n;
 
 	tar->count = 0;
