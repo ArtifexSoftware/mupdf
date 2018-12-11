@@ -71,6 +71,9 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 #endif
+#ifndef HAVE_SIGSETJMP
+#define HAVE_SIGSETJMP 0
+#endif
 
 /*
 	Where possible (i.e. on platforms on which they are provided), use
