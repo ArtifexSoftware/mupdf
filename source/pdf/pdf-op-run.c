@@ -147,6 +147,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, mask_colorspace);
+		gstate = pr->gstate + pr->gtop;
 		gstate->blendmode = saved_blendmode;
 	}
 	fz_catch(ctx)
