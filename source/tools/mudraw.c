@@ -1298,7 +1298,17 @@ typedef struct
 	size_t current;
 	size_t peak;
 	size_t total;
+	size_t limit;
 } trace_info;
+
+static void *hit_memory_limit(trace_info *info, int is_malloc, size_t oldsize, size_t size)
+{
+	if (is_malloc)
+		printf("Memory limit (%zu) hit upon malloc(%zu) when %zu already allocated.\n", info->limit, size, info->current);
+	else
+		printf("Memory limit (%zu) hit upon realloc(%zu) from %zu bytes when %zu already allocated.\n", info->limit, size, oldsize, info->current);
+	return NULL;
+}
 
 static void *
 trace_malloc(void *arg, size_t size)
@@ -1307,6 +1317,10 @@ trace_malloc(void *arg, size_t size)
 	trace_header *p;
 	if (size == 0)
 		return NULL;
+	if (size > SIZE_MAX - sizeof(trace_header))
+		return NULL;
+	if (info->limit > 0 && size > info->limit - info->current)
+		return hit_memory_limit(info, 1, 0, size);
 	p = malloc(size + sizeof(trace_header));
 	if (p == NULL)
 		return NULL;
@@ -1344,7 +1358,11 @@ trace_realloc(void *arg, void *p_, size_t size)
 	}
 	if (p == NULL)
 		return trace_malloc(arg, size);
+	if (size > SIZE_MAX - sizeof(trace_header))
+		return NULL;
 	oldsize = p[-1].size;
+	if (size > info->limit - info->current + oldsize)
+		return hit_memory_limit(info, 0, oldsize, size);
 	p = realloc(&p[-1], size + sizeof(trace_header));
 	if (p == NULL)
 		return NULL;
@@ -1364,7 +1382,7 @@ static void worker_thread(void *arg)
 	int band;
 
 	do
-	{
+{
 		DEBUG_THREADS(("Worker %d waiting\n", me->num));
 		mu_wait_semaphore(&me->start);
 		band = me->band;
@@ -1572,13 +1590,15 @@ int mudraw_main(int argc, char **argv)
 	fz_document *doc = NULL;
 	int c;
 	fz_context *ctx;
-	trace_info info = { 0, 0, 0 };
-	fz_alloc_context alloc_ctx = { &info, trace_malloc, trace_realloc, trace_free };
+	trace_info trace_info = { 0, 0, 0, 0 };
+	fz_alloc_context trace_alloc_ctx = { &trace_info, trace_malloc, trace_realloc, trace_free };
+	fz_alloc_context *alloc_ctx = NULL;
 	fz_locks_context *locks = NULL;
+	size_t max_store = FZ_STORE_DEFAULT;
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:a")) != -1)
+	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:am:")) != -1)
 	{
 		switch (c)
 		{
@@ -1646,6 +1666,7 @@ int mudraw_main(int argc, char **argv)
 			fprintf(stderr, "Threads not enabled in this build\n");
 			break;
 #endif
+		case 'm': trace_info.limit = fz_atoi64(fz_optarg);
 		case 'L': lowmemory = 1; break;
 		case 'P':
 #ifndef DISABLE_MUTHREADS
@@ -1696,7 +1717,13 @@ int mudraw_main(int argc, char **argv)
 	}
 #endif
 
-	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), locks, (lowmemory ? 1 : FZ_STORE_DEFAULT));
+	if (trace_info.limit || showmemory)
+		alloc_ctx = &trace_alloc_ctx;
+
+	if (lowmemory)
+		max_store = 1;
+
+	ctx = fz_new_context(alloc_ctx, locks, max_store);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");
@@ -2214,10 +2241,10 @@ int mudraw_main(int argc, char **argv)
 	fin_mudraw_locks();
 #endif /* DISABLE_MUTHREADS */
 
-	if (showmemory)
+	if (trace_info.limit || showmemory)
 	{
 		char buf[100];
-		fz_snprintf(buf, sizeof buf, "Memory use total=%zu peak=%zu current=%zu", info.total, info.peak, info.current);
+		fz_snprintf(buf, sizeof buf, "Memory use total=%zu peak=%zu current=%zu", trace_info.total, trace_info.peak, trace_info.current);
 		fprintf(stderr, "%s\n", buf);
 	}
 
