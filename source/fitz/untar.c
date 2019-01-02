@@ -76,6 +76,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		n = fz_read(ctx, file, (unsigned char *) octsize, nelem(octsize));
 		if (n < nelem(octsize))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in tar entry size");
+		octsize[nelem(octsize) - 1] = '\0';
 		size = otoi(octsize);
 
 		fz_seek(ctx, file, 20, 1);
