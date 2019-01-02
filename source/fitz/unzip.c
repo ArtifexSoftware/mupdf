@@ -166,17 +166,17 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 			if (type == ZIP64_EXTRA_FIELD_SIG)
 			{
 				int sizeleft = size;
-				if (usize == -1 && sizeleft >= 8)
+				if (usize == 0xFFFFFFFF && sizeleft >= 8)
 				{
 					usize = fz_read_uint64_le(ctx, file);
 					sizeleft -= 8;
 				}
-				if (csize == -1 && sizeleft >= 8)
+				if (csize == 0xFFFFFFFF && sizeleft >= 8)
 				{
 					csize = fz_read_uint64_le(ctx, file);
 					sizeleft -= 8;
 				}
-				if (offset == -1 && sizeleft >= 8)
+				if (offset == 0xFFFFFFFF && sizeleft >= 8)
 				{
 					offset = fz_read_uint64_le(ctx, file);
 					sizeleft -= 8;
