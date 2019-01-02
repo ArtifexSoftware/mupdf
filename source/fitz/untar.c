@@ -3,6 +3,10 @@
 
 #include <string.h>
 
+#if !defined (INT32_MAX)
+#define INT32_MAX 2147483647L
+#endif
+
 typedef struct tar_entry_s tar_entry;
 typedef struct fz_tar_archive_s fz_tar_archive;
 
@@ -78,6 +82,8 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in tar entry size");
 		octsize[nelem(octsize) - 1] = '\0';
 		size = otoi(octsize);
+		if (size > INT32_MAX)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "tar archive entry larger than 2 GB");
 
 		fz_seek(ctx, file, 20, 1);
 		typeflag = fz_read_byte(ctx, file);

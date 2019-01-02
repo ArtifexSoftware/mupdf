@@ -114,8 +114,6 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 
 		if (count == 0xFFFF)
 		{
-			if (count64 > INT32_MAX)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 			count = count64;
 		}
 		if (offset == 0xFFFFFFFF)
@@ -186,8 +184,8 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 			fz_seek(ctx, file, size, 1);
 			metasize -= 4 + size;
 		}
-		if (usize < 0 || csize < 0 || offset < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB are not supported");
+		if (usize > INT32_MAX || csize > INT32_MAX)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zip archive entry larger than 2 GB");
 
 		fz_seek(ctx, file, commentsize, 1);
 
