@@ -244,7 +244,7 @@ static void ensure_zip_entries(fz_context *ctx, fz_zip_archive *zip)
 	maxback = fz_minz(size, 0xFFFF + sizeof buf);
 	back = fz_minz(maxback, sizeof buf);
 
-	while (back < maxback)
+	while (back <= maxback)
 	{
 		fz_seek(ctx, file, (int64_t)(size - back), 0);
 		n = fz_read(ctx, file, buf, sizeof buf);
