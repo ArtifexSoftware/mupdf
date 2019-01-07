@@ -494,12 +494,12 @@ static void ffi_pushquad(js_State *J, fz_quad quad)
 	js_newarray(J);
 	js_pushnumber(J, quad.ul.x); js_setindex(J, -2, 0);
 	js_pushnumber(J, quad.ul.y); js_setindex(J, -2, 1);
-	js_pushnumber(J, quad.ur.x); js_setindex(J, -2, 0);
-	js_pushnumber(J, quad.ur.y); js_setindex(J, -2, 1);
-	js_pushnumber(J, quad.ll.x); js_setindex(J, -2, 0);
-	js_pushnumber(J, quad.ll.y); js_setindex(J, -2, 1);
-	js_pushnumber(J, quad.lr.x); js_setindex(J, -2, 0);
-	js_pushnumber(J, quad.lr.y); js_setindex(J, -2, 1);
+	js_pushnumber(J, quad.ur.x); js_setindex(J, -2, 2);
+	js_pushnumber(J, quad.ur.y); js_setindex(J, -2, 3);
+	js_pushnumber(J, quad.ll.x); js_setindex(J, -2, 4);
+	js_pushnumber(J, quad.ll.y); js_setindex(J, -2, 5);
+	js_pushnumber(J, quad.lr.x); js_setindex(J, -2, 6);
+	js_pushnumber(J, quad.lr.y); js_setindex(J, -2, 7);
 }
 
 static fz_irect ffi_toirect(js_State *J, int idx)
