@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdio.h> /* for sscanf */
+#include <math.h> /* for pow */
 
 static inline int unhex(int a)
 {
@@ -222,6 +223,13 @@ static int count_commas(char *s)
 	return n;
 }
 
+static float sRGB_from_scRGB(float x)
+{
+	if (x < 0.0031308f)
+		return 12.92f * x;
+	return 1.055f * pow(x, 1/2.4f) - 0.055f;
+}
+
 void
 xps_parse_color(fz_context *ctx, xps_document *doc, char *base_uri, char *string,
 		fz_colorspace **csp, float *samples)
@@ -267,6 +275,11 @@ xps_parse_color(fz_context *ctx, xps_document *doc, char *base_uri, char *string
 			sscanf(string, "sc#%g,%g,%g", samples + 1, samples + 2, samples + 3);
 		if (count_commas(string) == 3)
 			sscanf(string, "sc#%g,%g,%g,%g", samples, samples + 1, samples + 2, samples + 3);
+
+		/* Convert from scRGB gamma 1.0 to sRGB gamma */
+		samples[1] = sRGB_from_scRGB(samples[1]);
+		samples[2] = sRGB_from_scRGB(samples[2]);
+		samples[3] = sRGB_from_scRGB(samples[3]);
 	}
 
 	else if (strstr(string, "ContextColor ") == string)
