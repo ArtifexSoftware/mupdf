@@ -1098,6 +1098,9 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 	if (w <= 0 || h <= 0)
 		return;
 
+	if (!href_att)
+		return;
+
 	local_state.transform = fz_pre_translate(local_state.transform, x, y);
 	local_state.transform = fz_pre_scale(local_state.transform, w, h);
 
