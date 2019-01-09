@@ -427,7 +427,7 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, f
 	hits.len = 0;
 	hits.cap = max_quads;
 	hits.box = quads;
-	hits.hfuzz = 0.1f;
+	hits.hfuzz = 0.5f;
 	hits.vfuzz = 0.1f;
 
 	buffer = fz_new_buffer_from_stext_page(ctx, page);
