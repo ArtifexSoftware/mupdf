@@ -260,7 +260,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void updateOutline() {
-		Outline[] outline = doc.loadOutline();
+		Outline[] outline;
+		try {
+			outline = doc.loadOutline();
+		} catch (Exception ex) {
+			outline = null;
+		}
 		outlineList.removeAll();
 		if (outline != null) {
 			flatOutline = new Vector<Outline>();
