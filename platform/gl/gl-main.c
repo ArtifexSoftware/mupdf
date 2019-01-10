@@ -1478,6 +1478,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
 	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
 	fprintf(stderr, "\t-J\tdisable javascript in PDF forms\n");
+	fprintf(stderr, "\t-A -\tset anti-aliasing level (0-8,9,10)\n");
 	exit(1);
 }
 
@@ -1530,6 +1531,7 @@ int main_utf8(int argc, char **argv)
 int main(int argc, char **argv)
 #endif
 {
+	int aa_level = 8;
 	int c;
 
 	glutInit(&argc, argv);
@@ -1537,7 +1539,7 @@ int main(int argc, char **argv)
 	screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
 	screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJ")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:")) != -1)
 	{
 		switch (c)
 		{
@@ -1551,6 +1553,7 @@ int main(int argc, char **argv)
 		case 'U': layout_css = fz_optarg; break;
 		case 'X': layout_use_doc_css = 0; break;
 		case 'J': enable_js = !enable_js; break;
+		case 'A': aa_level = fz_atoi(fz_optarg); break;
 		}
 	}
 
@@ -1563,6 +1566,7 @@ int main(int argc, char **argv)
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_set_use_document_css(ctx, layout_use_doc_css);
+	fz_set_aa_level(ctx, aa_level);
 
 	if (fz_optind < argc)
 	{
