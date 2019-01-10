@@ -526,6 +526,42 @@ int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc)
 	return doc->dirty;
 }
 
+void pdf_clear_focus(fz_context *ctx, pdf_document *doc)
+{
+	if (doc->focus_obj)
+	{
+		/* Execute the blur action */
+		execute_additional_action(ctx, doc, doc->focus_obj, "AA/Bl");
+		doc->focus = NULL;
+		pdf_drop_obj(ctx, doc->focus_obj);
+		doc->focus_obj = NULL;
+	}
+}
+
+void pdf_focus_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
+{
+	pdf_clear_focus(ctx, doc);
+
+	doc->focus = annot;
+	doc->focus_obj = pdf_keep_obj(ctx, annot->obj);
+
+	/* Execute the focus action */
+	execute_additional_action(ctx, doc, annot->obj, "AA/Fo");
+}
+
+int pdf_toggle_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
+{
+	switch (pdf_widget_type(ctx, (pdf_widget*)annot))
+	{
+	case PDF_WIDGET_TYPE_RADIOBUTTON:
+	case PDF_WIDGET_TYPE_CHECKBOX:
+		toggle_check_box(ctx, doc, annot->obj);
+		return 1;
+	}
+
+	return 0;
+}
+
 int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event)
 {
 	pdf_annot *a;
@@ -569,25 +605,16 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 			switch (ui_event->event.pointer.ptype)
 			{
 			case PDF_POINTER_DOWN:
-				if (doc->focus_obj)
-				{
-					/* Execute the blur action */
-					execute_additional_action(ctx, doc, doc->focus_obj, "AA/Bl");
-					doc->focus = NULL;
-					pdf_drop_obj(ctx, doc->focus_obj);
-					doc->focus_obj = NULL;
-				}
+				pdf_clear_focus(ctx, doc);
 
 				if (annot)
 				{
-					doc->focus = annot;
-					doc->focus_obj = pdf_keep_obj(ctx, annot->obj);
+					pdf_focus_annot(ctx, doc, annot);
 
 					hp->num = pdf_to_num(ctx, annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
 					changed = 1;
-					/* Execute the down and focus actions */
-					execute_additional_action(ctx, doc, annot->obj, "AA/Fo");
+					/* Execute the down action */
 					execute_additional_action(ctx, doc, annot->obj, "AA/D");
 				}
 				break;
@@ -601,15 +628,8 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 
 				if (annot)
 				{
-					switch (pdf_widget_type(ctx, (pdf_widget*)annot))
-					{
-					case PDF_WIDGET_TYPE_RADIOBUTTON:
-					case PDF_WIDGET_TYPE_CHECKBOX:
-						/* FIXME: treating radio buttons like check boxes, for now */
-						toggle_check_box(ctx, doc, annot->obj);
+					if (pdf_toggle_annot(ctx, doc, annot))
 						changed = 1;
-						break;
-					}
 
 					/* Execute the up action */
 					execute_additional_action(ctx, doc, annot->obj, "AA/U");
