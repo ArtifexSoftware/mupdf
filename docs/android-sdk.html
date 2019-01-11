@@ -160,9 +160,8 @@ For example, to open the PDF file in ~/Download/example.pdf:
 
 <pre>
 public void startMuPDFActivityWithExampleFile() {
-	File dir = Environment.getExternalStoragePublicDirectory
-		(Environment.DIRECTORY_DOWNLOADS);
-	File file = new File(dir, "example.pdf")
+	File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+	File file = new File(dir, "example.pdf");
 	Uri uri = Uri.fromFile(file);
 	startMuPDFActivity(uri);
 }
