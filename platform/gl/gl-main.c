@@ -1138,7 +1138,7 @@ static void do_info(void)
 {
 	char buf[100];
 
-	ui_dialog_begin(500, 10 * ui.lineheight);
+	ui_dialog_begin(500, 11 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
@@ -1170,6 +1170,7 @@ static void do_info(void)
 			fz_strlcat(buf, "none", sizeof buf);
 		ui_label("Permissions: %s", buf);
 	}
+	ui_label("Page: %d / %d", currentpage + 1, fz_count_pages(ctx, doc));
 
 	ui_dialog_end();
 }
