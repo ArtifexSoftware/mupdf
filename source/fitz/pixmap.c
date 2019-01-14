@@ -750,21 +750,32 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 }
 
 void
-fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b)
+fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white)
 {
 	unsigned char *s = pix->samples;
 	int n = pix->n;
 	int x, y, save;
+	int rb = (black>>16)&255;
+	int gb = (black>>8)&255;
+	int bb = (black)&255;
+	int rw = (white>>16)&255;
+	int gw = (white>>8)&255;
+	int bw = (white)&255;
+	int rm = (rw - rb);
+	int gm = (gw - gb);
+	int bm = (bw - bb);
 
 	switch (fz_colorspace_type(ctx, pix->colorspace))
 	{
 	case FZ_COLORSPACE_GRAY:
-		g = (r + g + b) / 3;
+		gw = (rw + gw + bw) / 3;
+		gb = (rb + gb + bb) / 3;
+		gm = gw - gb;
 		for (y = 0; y < pix->h; y++)
 		{
 			for (x = 0; x < pix->w; x++)
 			{
-				*s = fz_mul255(*s, g);
+				*s = gb + fz_mul255(*s, gm);
 				s += n;
 			}
 			s += pix->stride - pix->w * n;
@@ -772,18 +783,17 @@ fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b)
 		break;
 
 	case FZ_COLORSPACE_BGR:
-		save = r;
-		r = b;
-		b = save;
+		save = rm; rm = bm; bm = save;
+		save = rb; rb = bb; bb = save;
 		/* fall through */
 	case FZ_COLORSPACE_RGB:
 		for (y = 0; y < pix->h; y++)
 		{
 			for (x = 0; x < pix->w; x++)
 			{
-				s[0] = fz_mul255(s[0], r);
-				s[1] = fz_mul255(s[1], g);
-				s[2] = fz_mul255(s[2], b);
+				s[0] = rb + fz_mul255(s[0], rm);
+				s[1] = gb + fz_mul255(s[1], gm);
+				s[2] = bb + fz_mul255(s[2], bm);
 				s += n;
 			}
 			s += pix->stride - pix->w * n;

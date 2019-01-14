@@ -261,13 +261,12 @@ void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
 void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	Tint all the pixels in an RGB or Gray pixmap.
+	Tint all the pixels in an RGB, BGR, or Gray pixmap.
 
-	Multiplies all the samples with the input color argument.
-
-	r,g,b: The color to tint with, in 0 to 255 range.
+	black: Map black to this hexadecimal RGB color.
+	white: Map white to this hexadecimal RGB color.
 */
-void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b);
+void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white);
 
 /*
 	Invert all the pixels in a given rectangle of a

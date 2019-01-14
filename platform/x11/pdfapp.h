@@ -77,7 +77,7 @@ struct pdfapp_s
 	int grayscale;
 	fz_colorspace *colorspace;
 	int invert;
-	int tint, tint_r, tint_g, tint_b;
+	int tint, tint_white;
 
 	/* presentation mode */
 	int presentation_mode;

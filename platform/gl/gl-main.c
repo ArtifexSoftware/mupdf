@@ -121,6 +121,8 @@ static float layout_em = DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
 static int layout_use_doc_css = 1;
 static int enable_js = 1;
+static int tint_white = 0xFFFFF0;
+static int tint_black = 0x303030;
 
 static fz_document *doc = NULL;
 static fz_page *fzpage = NULL;
@@ -138,6 +140,7 @@ static int canvas_y = 0, canvas_h = 100;
 static int outline_w = 14; /* to be scaled by lineheight */
 static int annotate_w = 12; /* to be scaled by lineheight */
 
+static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
@@ -483,6 +486,10 @@ void render_page(void)
 	transform_page();
 
 	pix = fz_new_pixmap_from_page(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), 0);
+	if (currenttint)
+	{
+		fz_tint_pixmap(ctx, pix, tint_black, tint_white);
+	}
 	if (currentinvert)
 	{
 		fz_invert_pixmap(ctx, pix);
@@ -1022,6 +1029,7 @@ static void do_app(void)
 		case 'r': reload(); break;
 		case 'q': glutLeaveMainLoop(); break;
 
+		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
@@ -1195,7 +1203,7 @@ static void do_help_line(char *label, char *text)
 
 static void do_help(void)
 {
-	ui_dialog_begin(500, 36 * ui.lineheight);
+	ui_dialog_begin(500, 37 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	do_help_line("MuPDF", FZ_VERSION);
@@ -1210,6 +1218,7 @@ static void do_help(void)
 	do_help_line("q", "quit");
 	ui_spacer();
 	do_help_line("I", "toggle inverted color mode");
+	do_help_line("C", "toggle tinted color mode");
 	do_help_line("f", "fullscreen window");
 	do_help_line("w", "shrink wrap window");
 	do_help_line("W or H", "fit to width or height");
@@ -1419,13 +1428,15 @@ void do_main(void)
 		load_page();
 		update_title();
 	}
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate || oldinvert != currentinvert)
+	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
+		oldinvert != currentinvert || oldtint != currenttint)
 	{
 		render_page();
 		oldpage = currentpage;
 		oldzoom = currentzoom;
 		oldrotate = currentrotate;
 		oldinvert = currentinvert;
+		oldtint = currenttint;
 	}
 
 	if (showoutline)
@@ -1480,6 +1491,8 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
 	fprintf(stderr, "\t-J\tdisable javascript in PDF forms\n");
 	fprintf(stderr, "\t-A -\tset anti-aliasing level (0-8,9,10)\n");
+	fprintf(stderr, "\t-B -\tset black tint color (default: 303030)\n");
+	fprintf(stderr, "\t-C -\tset white tint color (default: FFFFF0)\n");
 	exit(1);
 }
 
@@ -1540,7 +1553,7 @@ int main(int argc, char **argv)
 	screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
 	screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:")) != -1)
 	{
 		switch (c)
 		{
@@ -1555,6 +1568,8 @@ int main(int argc, char **argv)
 		case 'X': layout_use_doc_css = 0; break;
 		case 'J': enable_js = !enable_js; break;
 		case 'A': aa_level = fz_atoi(fz_optarg); break;
+		case 'C': currenttint = 1; tint_white = strtol(fz_optarg, NULL, 16); break;
+		case 'B': currenttint = 1; tint_black = strtol(fz_optarg, NULL, 16); break;
 		}
 	}
 

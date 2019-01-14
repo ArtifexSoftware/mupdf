@@ -146,9 +146,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 #else
 	app->colorspace = fz_device_rgb(ctx);
 #endif
-	app->tint_r = 255;
-	app->tint_g = 250;
-	app->tint_b = 240;
+	app->tint_white = 0xFFFAF0;
 }
 
 void pdfapp_setresolution(pdfapp_t *app, int res)
@@ -929,7 +927,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			if (app->invert)
 				fz_invert_pixmap(app->ctx, app->image);
 			if (app->tint)
-				fz_tint_pixmap(app->ctx, app->image, app->tint_r, app->tint_g, app->tint_b);
+				fz_tint_pixmap(app->ctx, app->image, 0, app->tint_white);
 		}
 		fz_always(app->ctx)
 			fz_drop_device(app->ctx, idev);
