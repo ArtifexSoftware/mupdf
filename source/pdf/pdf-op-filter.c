@@ -436,7 +436,11 @@ filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
 	}
 
 	if (p->text_filter)
-		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, trm, p->tos.char_bbox);
+	{
+		fz_matrix ctm = fz_concat(gstate->sent.ctm, gstate->pending.ctm);
+
+		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, trm, fz_transform_rect(p->tos.char_bbox, ctm));
+	}
 
 	pdf_tos_move_after_char(ctx, &p->tos);
 
