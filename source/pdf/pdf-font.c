@@ -33,7 +33,7 @@ pdf_load_encoding(const char **estrings, const char *encoding)
 	if (!strcmp(encoding, "MacExpertEncoding"))
 		bstrings = fz_glyph_name_from_mac_expert;
 	if (!strcmp(encoding, "WinAnsiEncoding"))
-		bstrings = fz_glyph_name_from_windows_1252;
+		bstrings = fz_glyph_name_from_win_ansi;
 
 	if (bstrings)
 		for (i = 0; i < 256; i++)
@@ -820,7 +820,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				}
 				else
 				{
-					estrings[i] = (char*) fz_glyph_name_from_windows_1252[i]; /* discard const */
+					estrings[i] = (char*) fz_glyph_name_from_win_ansi[i]; /* discard const */
 				}
 			}
 		}

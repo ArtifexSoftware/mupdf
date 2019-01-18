@@ -17,6 +17,7 @@ extern const char *fz_glyph_name_from_iso8859_7[256];
 extern const char *fz_glyph_name_from_koi8u[256];
 extern const char *fz_glyph_name_from_mac_expert[256];
 extern const char *fz_glyph_name_from_mac_roman[256];
+extern const char *fz_glyph_name_from_win_ansi[256];
 extern const char *fz_glyph_name_from_windows_1250[256];
 extern const char *fz_glyph_name_from_windows_1251[256];
 extern const char *fz_glyph_name_from_windows_1252[256];
