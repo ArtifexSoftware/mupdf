@@ -39,7 +39,7 @@ fz_unicode_from_glyph_name(const char *name)
 	char buf[64];
 	char *p;
 	int l = 0;
-	int r = nelem(agl_name_list) - 1;
+	int r = nelem(single_name_list) - 1;
 	int code = 0;
 
 	fz_strlcpy(buf, name, sizeof buf);
@@ -53,13 +53,13 @@ fz_unicode_from_glyph_name(const char *name)
 	while (l <= r)
 	{
 		int m = (l + r) >> 1;
-		int c = strcmp(buf, agl_name_list[m]);
+		int c = strcmp(buf, single_name_list[m]);
 		if (c < 0)
 			r = m - 1;
 		else if (c > 0)
 			l = m + 1;
 		else
-			return agl_code_list[m];
+			return single_code_list[m];
 	}
 
 	if (buf[0] == 'u' && buf[1] == 'n' && buf[2] == 'i')
