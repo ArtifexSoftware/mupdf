@@ -32,6 +32,7 @@ def readlist(filename):
 				aglseen[name] = True
 
 readlist("scripts/glyphlist.txt")
+readlist("scripts/texglyphlist.txt")
 
 for name, ucslist in agl:
 	num = len(ucslist)
