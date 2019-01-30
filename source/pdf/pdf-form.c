@@ -359,11 +359,6 @@ static void execute_additional_action(fz_context *ctx, pdf_document *doc, pdf_ob
 	}
 }
 
-static void check_off(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
-{
-	pdf_dict_put(ctx, obj, PDF_NAME(AS), PDF_NAME(Off));
-}
-
 static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj *name)
 {
 	pdf_obj *n = pdf_dict_getp(ctx, chk, "AP/N");
@@ -457,7 +452,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
 	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
 	pdf_obj *val = NULL;
-	pdf_obj *grp = radio ? pdf_dict_get(ctx, obj, PDF_NAME(Parent)) : find_head_of_field_group(ctx, obj);
+	pdf_obj *grp = find_head_of_field_group(ctx, obj);
 
 	if (!grp)
 		grp = obj;
@@ -468,7 +463,6 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		 * this is a non-toggle-off radio button. */
 		if (!(radio && (ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF)))
 		{
-			check_off(ctx, doc, obj);
 			val = PDF_NAME(Off);
 		}
 	}
@@ -485,38 +479,17 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		{
 			key = pdf_dict_get_key(ctx, n, i);
 			if (pdf_is_name(ctx, key) && !pdf_name_eq(ctx, key, PDF_NAME(Off)))
+			{
 				val = key;
-		}
-
-		/* If we found no alternative value to Off then we have no value to use */
-		if (!val)
-			return;
-
-		if (radio)
-		{
-			/* For radio buttons, first turn off all buttons in the group and
-			 * then set the one that was clicked */
-			pdf_obj *kids = pdf_dict_get(ctx, grp, PDF_NAME(Kids));
-
-			len = pdf_array_len(ctx, kids);
-			for (i = 0; i < len; i++)
-				check_off(ctx, doc, pdf_array_get(ctx, kids, i));
-
-			pdf_dict_put(ctx, obj, PDF_NAME(AS), val);
-		}
-		else
-		{
-			/* For check boxes, we have located the node of the field hierarchy
-			 * below which all fields share a name with the clicked one. Set
-			 * all to the same value. This may cause the group to act like
-			 * radio buttons, if each have distinct "On" values */
-			set_check_grp(ctx, doc, grp, val);
+				break;
+			}
 		}
 	}
 
 	if (val && grp)
 	{
 		pdf_dict_put(ctx, grp, PDF_NAME(V), val);
+		set_check_grp(ctx, doc, grp, val);
 		recalculate(ctx, doc);
 	}
 }
