@@ -500,6 +500,20 @@ void render_page(void)
 	fz_drop_pixmap(ctx, pix);
 }
 
+void render_page_if_changed(void)
+{
+	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
+		oldinvert != currentinvert || oldtint != currenttint)
+	{
+		render_page();
+		oldpage = currentpage;
+		oldzoom = currentzoom;
+		oldrotate = currentrotate;
+		oldinvert = currentinvert;
+		oldtint = currenttint;
+	}
+}
+
 static struct mark save_mark()
 {
 	struct mark mark;
@@ -1283,9 +1297,19 @@ static void do_canvas(void)
 
 	if (ui.hot == doc)
 	{
-		scroll_x -= ui.scroll_x * ui.lineheight * 3;
-		scroll_y -= ui.scroll_y * ui.lineheight * 3;
+		if (ui.mod == 0)
+		{
+			scroll_x -= ui.scroll_x * ui.lineheight * 3;
+			scroll_y -= ui.scroll_y * ui.lineheight * 3;
+		}
+		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		{
+			if (ui.scroll_y > 0) set_zoom(zoom_in(currentzoom), ui.x, ui.y);
+			if (ui.scroll_y < 0) set_zoom(zoom_out(currentzoom), ui.x, ui.y);
+		}
 	}
+
+	render_page_if_changed();
 
 	if (ui.active == doc)
 	{
@@ -1427,16 +1451,6 @@ void do_main(void)
 	{
 		load_page();
 		update_title();
-	}
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
-		oldinvert != currentinvert || oldtint != currenttint)
-	{
-		render_page();
-		oldpage = currentpage;
-		oldzoom = currentzoom;
-		oldrotate = currentrotate;
-		oldinvert = currentinvert;
-		oldtint = currenttint;
 	}
 
 	if (showoutline)
