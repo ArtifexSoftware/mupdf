@@ -47,14 +47,6 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Annotation_getBounds
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Annotation_toDisplayList
   (JNIEnv *, jobject);
 
-/*
- * Class:     com_artifex_mupdf_fitz_Annotation
- * Method:    advance
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Annotation_advance
-  (JNIEnv *, jobject);
-
 #ifdef __cplusplus
 }
 #endif

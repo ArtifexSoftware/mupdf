@@ -4784,25 +4784,6 @@ FUN(Annotation_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobje
 		jni_rethrow(env, ctx);
 }
 
-JNIEXPORT jlong JNICALL
-FUN(Annotation_advance)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_annot *annot = from_Annotation(env, self);
-
-	if (!ctx || !annot) return 0;
-
-	fz_try(ctx)
-		annot = fz_next_annot(ctx, annot);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return 0;
-	}
-
-	return jlong_cast(annot);
-}
-
 JNIEXPORT jobject JNICALL
 FUN(Annotation_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolean alpha)
 {
