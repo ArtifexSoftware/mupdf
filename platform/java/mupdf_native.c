@@ -1524,13 +1524,6 @@ static inline jobject to_Point_safe(fz_context *ctx, JNIEnv *env, fz_point point
 	return (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
 }
 
-static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, fz_rect rect)
-{
-	if (!ctx) return NULL;
-
-	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect.x0, rect.y0, rect.x1, rect.y1);
-}
-
 static inline jobject to_Quad_safe(fz_context *ctx, JNIEnv *env, fz_quad quad)
 {
 	if (!ctx) return NULL;
@@ -1564,6 +1557,13 @@ static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, cons
 	}
 
 	return arr;
+}
+
+static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, fz_rect rect)
+{
+	if (!ctx) return NULL;
+
+	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect.x0, rect.y0, rect.x1, rect.y1);
 }
 
 /* Conversion functions: C to Java. Take ownership of fitz object. None of these throw fitz exceptions. */
