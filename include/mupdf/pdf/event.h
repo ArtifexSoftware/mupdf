@@ -80,6 +80,7 @@ enum
 	document events.
 */
 void pdf_set_doc_event_callback(fz_context *ctx, pdf_document *doc, pdf_doc_event_cb *event_cb, void *data);
+void *pdf_get_doc_event_callback_data(fz_context *ctx, pdf_document *doc);
 
 /*
 	The various types of document events

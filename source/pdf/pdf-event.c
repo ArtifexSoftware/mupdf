@@ -142,3 +142,8 @@ void pdf_set_doc_event_callback(fz_context *ctx, pdf_document *doc, pdf_doc_even
 	doc->event_cb = fn;
 	doc->event_cb_data = data;
 }
+
+void *pdf_get_doc_event_callback_data(fz_context *ctx, pdf_document *doc)
+{
+	return doc->event_cb_data;
+}
