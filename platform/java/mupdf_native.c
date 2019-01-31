@@ -9416,9 +9416,9 @@ FUN(PDFAnnotation_isOpen)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int open = 0;
+	jboolean open = JNI_FALSE;
 
-	if (!ctx || !annot) return 0;
+	if (!ctx || !annot) return JNI_FALSE;
 
 	fz_try(ctx)
 		open = pdf_annot_is_open(ctx, annot);
