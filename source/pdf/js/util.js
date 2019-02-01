@@ -4,7 +4,7 @@ Error.prototype.toString = function() {
 };
 
 var MuPDF = {
-	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
+	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i,
 	monthName: [
 		'January',
 		'February',
@@ -20,18 +20,18 @@ var MuPDF = {
 		'December'
 	],
 	shortMonthName: [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
+		'jan',
+		'feb',
+		'mar',
+		'apr',
+		'may',
+		'jun',
+		'jul',
+		'aug',
+		'sep',
+		'oct',
+		'nov',
+		'dec'
 	],
 	dayName: [
 		'Sunday',
@@ -496,7 +496,7 @@ function AFParseDateOrder(fmt) {
 
 function AFMatchMonth(d) {
 	var m = d.match(MuPDF.monthPattern);
-	return m ? MuPDF.shortMonthName.indexOf(m[0]) : null;
+	return m ? MuPDF.shortMonthName.indexOf(m[0].toLowerCase()) : null;
 }
 
 function AFParseTime(str, d) {
@@ -554,6 +554,9 @@ function AFParseDateEx(d, fmt) {
 
 	dout.setHours(12, 0, 0);
 
+	if (!nums)
+		return null;
+
 	if (nums.length == 1 && nums[0].length == fmt.length && !text_month) {
 		// One number string, exactly matching the format string in length.
 		// Split it into separate strings to match the fmt
@@ -567,7 +570,12 @@ function AFParseDateEx(d, fmt) {
 		}
 	}
 
-	if (!nums || nums.length < 1 || nums.length > 3)
+	// Need at least two parts of the date, but one
+	// can come from text_month. text_month is
+	// ignored if we have three numbers.
+	var total = nums.length + (text_month ? 1 : 0);
+
+	if (total < 2 || nums.length > 3)
 		return null;
 
 	if (nums.length < 3 && text_month) {
@@ -579,7 +587,7 @@ function AFParseDateEx(d, fmt) {
 	order = order.substring(0, nums.length);
 
 	// If year and month specified but not date then use the 1st
-	if (order === 'ym' || (order === 'y' && text_month))
+	if (order === 'ym' || order === 'my' || (order === 'y' && text_month))
 		date = 1;
 
 	for (i = 0; i < nums.length; i++) {
