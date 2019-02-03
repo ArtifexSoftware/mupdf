@@ -10046,6 +10046,48 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 	return accepted;
 }
 
+JNIEXPORT void JNICALL
+FUN(PDFWidget_setEditingState)(JNIEnv *env, jobject self, jboolean val)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+
+	if (!ctx || !widget)
+		return;
+
+	fz_try(ctx)
+	{
+		pdf_set_widget_editing_state(ctx, widget, val);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_getEditingState)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	jboolean state = JNI_FALSE;
+
+	if (!ctx || !widget)
+		return JNI_FALSE;
+
+	fz_var(state);
+	fz_try(ctx)
+	{
+		state = pdf_get_widget_editing_state(ctx, widget);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+
+	return state;
+}
+
 JNIEXPORT jobject JNICALL
 FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 {
