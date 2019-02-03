@@ -2515,9 +2515,9 @@ extern "C" {
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    setValue
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;)Z
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setValue
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setValue
   (JNIEnv *, jobject, jstring);
 
 /*

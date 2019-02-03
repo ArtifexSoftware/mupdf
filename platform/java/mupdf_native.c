@@ -9989,22 +9989,25 @@ FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 	return jval;
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 {
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	const char *val;
+	int accepted = JNI_FALSE;
 
 	if (!ctx || !widget)
-		return;
+		return JNI_FALSE;
 
 	val = (*env)->GetStringUTFChars(env, jval, NULL);
 
+	fz_var(accepted);
 	fz_try(ctx)
 	{
-		pdf_text_widget_set_text(ctx, widget->page->doc, widget, (char *)val);
-		pdf_update_page(ctx, widget->page);
+		accepted = pdf_text_widget_set_text(ctx, widget->page->doc, widget, (char *)val);
+		if (accepted)
+			pdf_update_page(ctx, widget->page);
 	}
 	fz_always(ctx)
 	{
@@ -10014,6 +10017,8 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 	{
 		jni_rethrow(env, ctx);
 	}
+
+	return accepted ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jobject JNICALL
