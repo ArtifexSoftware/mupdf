@@ -1340,3 +1340,8 @@ void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editi
 {
 	widget->ignore_trigger_events = editing;
 }
+
+int pdf_get_widget_editing_state(fz_context *ctx, pdf_widget *widget)
+{
+	return widget->ignore_trigger_events;
+}

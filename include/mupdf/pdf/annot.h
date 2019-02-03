@@ -309,6 +309,8 @@ int pdf_update_page(fz_context *ctx, pdf_page *page);
 */
 void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editing);
 
+int pdf_get_widget_editing_state(fz_context *ctx, pdf_widget *widget);
+
 /*
 	Unfocus the currently focussed annotation, if there is one.
 */
