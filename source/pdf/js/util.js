@@ -319,22 +319,34 @@ function AFMergeChange(event) {
 	if (event.selStart >= 0)
 		prefix = value.substring(0, event.selStart);
 	else
-		prefix = "";
+		prefix = '';
 	if (event.selEnd >= 0 && event.selEnd <= value.length)
 		postfix = value.substring(event.selEnd, value.length);
 	else
-		postfix = "";
+		postfix = '';
 	return prefix + event.change + postfix;
 }
 
-function AFMakeNumber(str) {
-	var nums = str.match(/\d+/g);
+function AFExtractNums(string) {
+	if (string.charAt(0) == '.' || string.charAt(0) == ',')
+		string = '0' + string;
+	return string.match(/\d+/g);
+}
+
+function AFMakeNumber(string) {
+	if (typeof string == 'number')
+		return string;
+	if (typeof string != 'string')
+		return null;
+	var nums = AFExtractNums(string);
 	if (!nums)
 		return null;
-	var res = nums.join('.');
-	if (str.match(/^[^0-9]*\./))
-		res = '0.'+res;
-	return res * (str.match(/-/) ? -1.0 : 1.0);
+	var result = nums.join('.');
+	if (string.indexOf('-.') >= 0)
+		result = '0.' + result;
+	if (string.indexOf('-') >= 0)
+		return -result;
+	return result;
 }
 
 function AFExtractTime(dt) {
@@ -432,12 +444,12 @@ function AFParseDateEx(d, fmt) {
 		// One number string, exactly matching the format string in length.
 		// Split it into separate strings to match the fmt
 		var num = nums[0];
-		nums = [""];
+		nums = [''];
 		for (i = 0; i < fmt.length; i++)
 		{
 			nums[nums.length-1] += num.charAt(i);
 			if (i+1 < fmt.length && fmt.charAt(i) != fmt.charAt(i+1))
-				nums.push("");
+				nums.push('');
 		}
 	}
 
@@ -681,78 +693,32 @@ function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bC
 }
 
 function AFNumber_Format(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend) {
-	var val = event.value;
-	var fracpart;
-	var intpart;
-	var point = sepStyle&2 ? ',' : '.';
-	var separator = sepStyle&2 ? '.' : ',';
-
-	if (/^\D*\./.test(val))
-		val = '0'+val;
-
-	var groups = val.match(/\d+/g);
-
-	if (!groups)
+	var value = AFMakeNumber(event.value);
+	var fmt = '%,' + sepStyle + '.' + nDec + 'f';
+	console.println('AFNumber_Format', fmt, value);
+	if (value == null) {
+		event.value = '';
 		return;
-
-	switch (groups.length) {
-	case 0:
-		return;
-	case 1:
-		fracpart = '';
-		intpart = groups[0];
-		break;
-	default:
-		fracpart = groups.pop();
-		intpart = groups.join('');
-		break;
 	}
-
-	// Remove leading zeros
-	intpart = intpart.replace(/^0*/, '');
-	if (!intpart)
-		intpart = '0';
-
-	if ((sepStyle & 1) === 0) {
-		// Add the thousands sepearators: pad to length multiple of 3 with zeros,
-		// split into 3s, join with separator, and remove the leading zeros
-		intpart = new Array(2-(intpart.length+2)%3+1).join('0') + intpart;
-		intpart = intpart.match(/.../g).join(separator).replace(/^0*/, '');
-	}
-
-	if (!intpart)
-		intpart = '0';
-
-	// Adjust fractional part to correct number of decimal places
-	fracpart += new Array(nDec+1).join('0');
-	fracpart = fracpart.substring(0, nDec);
-
-	if (fracpart)
-		intpart += point+fracpart;
-
 	if (bCurrencyPrepend)
-		intpart = strCurrency+intpart;
+		fmt = strCurrency + fmt;
 	else
-		intpart += strCurrency;
-
-	if (/-/.test(val)) {
-		switch (negStyle) {
-		case 0:
-			intpart = '-'+intpart;
-			break;
-		case 1:
-			break;
-		case 2:
-		case 3:
-			intpart = '('+intpart+')';
-			break;
-		}
+		fmt = fmt + strCurrency;
+	if (value < 0) {
+		/* negStyle: 0=MinusBlack, 1=Red, 2=ParensBlack, 3=ParensRed */
+		value = Math.abs(value);
+		if (negStyle == 2 || negStyle == 3)
+			fmt = '(' + fmt + ')';
+		else if (negStyle == 0)
+			fmt = '-' + fmt;
+		if (negStyle == 1 || negStyle == 3)
+			event.target.textColor = color.red;
+		else
+			event.target.textColor = color.black;
+	} else {
+		event.target.textColor = color.black;
 	}
-
-	if (negStyle&1)
-		event.target.textColor = /-/.test(val) ? color.red : color.black;
-
-	event.value = intpart;
+	event.value = util.printf(fmt, value);
 }
 
 function AFPercent_Keystroke(nDec, sepStyle) {
@@ -826,7 +792,7 @@ Date.prototype.getYear = Date.prototype.getFullYear;
 Date.prototype.setYear = Date.prototype.setFullYear;
 Date.prototype.toGMTString = Date.prototype.toUTCString;
 
-console.clear = function() { console.println("--- clear console ---\n"); };
+console.clear = function() { console.println('--- clear console ---\n'); };
 console.show = function(){};
 console.hide = function(){};
 
