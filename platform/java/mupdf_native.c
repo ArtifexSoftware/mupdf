@@ -9924,7 +9924,6 @@ FUN(PDFPage_selectWidgetAtNative)(JNIEnv *env, jobject self, jint x, jint y)
 {
 	fz_context *ctx = get_context(env);
 	pdf_page *page = from_PDFPage(env, self);
-	int changed = 0;
 	pdf_ui_event event;
 	fz_point fzpt = {x, y};
 	pdf_document *doc = page->doc;
@@ -9938,11 +9937,9 @@ FUN(PDFPage_selectWidgetAtNative)(JNIEnv *env, jobject self, jint x, jint y)
 		event.etype = PDF_EVENT_TYPE_POINTER;
 		event.event.pointer.pt = fzpt;
 		event.event.pointer.ptype = PDF_POINTER_DOWN;
-		changed = pdf_pass_event(ctx, doc, page, &event);
+		pdf_pass_event(ctx, doc, page, &event);
 		event.event.pointer.ptype = PDF_POINTER_UP;
-		changed |= pdf_pass_event(ctx, doc, page, &event);
-		if (changed)
-			pdf_update_page(ctx, page);
+		pdf_pass_event(ctx, doc, page, &event);
 		focus = pdf_focused_widget(ctx, doc);
 	}
 	fz_catch(ctx)
@@ -10006,8 +10003,6 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 	fz_try(ctx)
 	{
 		accepted = pdf_text_widget_set_text(ctx, widget->page->doc, widget, (char *)val);
-		if (accepted)
-			pdf_update_page(ctx, widget->page);
 	}
 	fz_always(ctx)
 	{
