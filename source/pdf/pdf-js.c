@@ -303,16 +303,21 @@ static void field_getValue(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
 	pdf_obj *field = js_touserdata(J, 0, "Field");
-	char *val = NULL;
+	char *str = NULL, *end;
+	double num;
 
 	fz_try(js->ctx)
-		val = pdf_field_value(js->ctx, js->doc, field);
+		str = pdf_field_value(js->ctx, js->doc, field);
 	fz_catch(js->ctx)
 		rethrow(js);
 
-	js_pushstring(J, val ? val : "");
+	num = strtod(str, &end);
+	if (*end == 0)
+		js_pushnumber(J, num);
+	else
+		js_pushstring(J, str);
 
-	fz_free(js->ctx, val);
+	fz_free(js->ctx, str);
 }
 
 static void field_setValue(js_State *J)
