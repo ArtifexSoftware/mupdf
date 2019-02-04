@@ -1447,14 +1447,14 @@ void do_main(void)
 
 	do_app();
 
+	if (showoutline)
+		do_outline(outline);
+
 	if (oldpage != currentpage)
 	{
 		load_page();
 		update_title();
 	}
-
-	if (showoutline)
-		do_outline(outline);
 
 	if (showannotate)
 	{
