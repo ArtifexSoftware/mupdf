@@ -460,11 +460,9 @@ void pdf_form_calculate(fz_context *ctx, pdf_document *doc)
 					e.target = field;
 					e.value = pdf_field_value(ctx, field);
 					pdf_js_setup_event(doc->js, &e);
-					/* e.value has been copied. We can free it */
-					fz_free(ctx, e.value);
-					e.value = NULL;
+
 					pdf_execute_action(ctx, doc, field, calc, "AA/C");
-					if (pdf_js_get_event(doc->js)->rc)
+					if (pdf_js_get_event(doc->js)->rc && strcmp(e.value, pdf_js_get_event(doc->js)->value))
 					{
 						/* A calculate action, updates event.value. We need
 						* to place the value in the field */
