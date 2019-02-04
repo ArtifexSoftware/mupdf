@@ -464,9 +464,12 @@ void pdf_form_calculate(fz_context *ctx, pdf_document *doc)
 					fz_free(ctx, e.value);
 					e.value = NULL;
 					pdf_execute_action(ctx, doc, field, calc, "AA/C");
-					/* A calculate action, updates event.value. We need
-					* to place the value in the field */
-					update_field_value(ctx, doc, field, pdf_js_get_event(doc->js)->value);
+					if (pdf_js_get_event(doc->js)->rc)
+					{
+						/* A calculate action, updates event.value. We need
+						* to place the value in the field */
+						update_field_value(ctx, doc, field, pdf_js_get_event(doc->js)->value);
+					}
 				}
 			}
 		}
