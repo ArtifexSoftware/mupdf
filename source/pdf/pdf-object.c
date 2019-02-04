@@ -1849,6 +1849,18 @@ static inline void fmt_sep(fz_context *ctx, struct fmt *fmt)
 	fmt->sep = 1;
 }
 
+static int is_binary_string(fz_context *ctx, pdf_obj *obj)
+{
+	unsigned char *s = (unsigned char *)pdf_to_str_buf(ctx, obj);
+	int i, n = pdf_to_str_len(ctx, obj);
+	for (i = 0; i < n; ++i)
+	{
+		if (s[i] > 126) return 1;
+		if (s[i] < 32 && (s[i] != '\t' && s[i] != '\n' && s[i] != '\r')) return 1;
+	}
+	return 0;
+}
+
 static void fmt_str_out(fz_context *ctx, void *fmt_, const unsigned char *s, int n)
 {
 	struct fmt *fmt = (struct fmt *)fmt_;
@@ -2041,7 +2053,11 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	else if (pdf_is_string(ctx, obj))
 	{
 		unsigned char *str = (unsigned char *)pdf_to_str_buf(ctx, obj);
-		if (fmt->ascii || fmt->crypt || (str[0]==0xff && str[1]==0xfe) || (str[0]==0xfe && str[1] == 0xff))
+		if (fmt->crypt
+			|| (fmt->ascii && is_binary_string(ctx, obj))
+			|| (str[0]==0xff && str[1]==0xfe)
+			|| (str[0]==0xfe && str[1] == 0xff)
+			)
 			fmt_hex(ctx, fmt, obj);
 		else
 			fmt_str(ctx, fmt, obj);
