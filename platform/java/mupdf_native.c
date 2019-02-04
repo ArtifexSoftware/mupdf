@@ -9987,12 +9987,12 @@ FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jboolean JNICALL
-FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
+FUN(PDFWidget_setTextValue)(JNIEnv *env, jobject self, jstring jval)
 {
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	const char *val;
-	int accepted = JNI_FALSE;
+	jboolean accepted = JNI_FALSE;
 
 	if (!ctx || !widget)
 		return JNI_FALSE;
@@ -10013,7 +10013,37 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 		jni_rethrow(env, ctx);
 	}
 
-	return accepted ? JNI_TRUE : JNI_FALSE;
+	return accepted;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	const char *val;
+	jboolean accepted = JNI_FALSE;
+
+	if (!ctx || !widget)
+		return JNI_FALSE;
+
+	val = (*env)->GetStringUTFChars(env, jval, NULL);
+
+	fz_var(accepted);
+	fz_try(ctx)
+	{
+		accepted = pdf_field_set_value(ctx, widget->page->doc, widget->obj, (char *)val, widget->ignore_trigger_events);
+	}
+	fz_always(ctx)
+	{
+		(*env)->ReleaseStringUTFChars(env, jval, val);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+
+	return accepted;
 }
 
 JNIEXPORT jobject JNICALL

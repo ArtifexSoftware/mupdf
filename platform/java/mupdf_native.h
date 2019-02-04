@@ -2514,6 +2514,14 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT 2097152L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    setTextValue
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    setValue
  * Signature: (Ljava/lang/String;)Z
  */
