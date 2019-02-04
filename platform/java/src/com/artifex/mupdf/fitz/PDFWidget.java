@@ -54,6 +54,7 @@ public class PDFWidget extends PDFAnnotation
 	public native Quad[] textQuads();
 	public native void setEditingState(boolean state);
 	public native boolean getEditingState();
+	public native boolean toggle();
 
 	// These don't change after creation, so are cached in java fields.
 	private int kind;

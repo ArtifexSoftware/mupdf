@@ -10046,6 +10046,29 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 	return accepted;
 }
 
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_toggle)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	jboolean accepted = JNI_FALSE;
+
+	if (!ctx || !widget)
+		return JNI_FALSE;
+
+	fz_var(accepted);
+	fz_try(ctx)
+	{
+		accepted = pdf_toggle_annot(ctx, widget->page->doc, widget);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+
+	return accepted;
+}
+
 JNIEXPORT void JNICALL
 FUN(PDFWidget_setEditingState)(JNIEnv *env, jobject self, jboolean val)
 {

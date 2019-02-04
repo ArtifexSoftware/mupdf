@@ -2560,6 +2560,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setEditingState
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getEditingState
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    toggle
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_toggle
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
