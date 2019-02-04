@@ -664,7 +664,12 @@ static void pdf_js_load_document_level(pdf_js *js)
 			pdf_obj *fragment = pdf_dict_get_val(ctx, javascript, i);
 			pdf_obj *code = pdf_dict_get(ctx, fragment, PDF_NAME(JS));
 			char *codebuf = pdf_load_stream_or_string_as_utf8(ctx, code);
-			pdf_js_execute(js, codebuf);
+			char buf[100];
+			if (pdf_is_indirect(ctx, code))
+				fz_snprintf(buf, sizeof buf, "%d", pdf_to_num(ctx, code));
+			else
+				fz_snprintf(buf, sizeof buf, "Root/Names/JavaScript/Names/%d/JS", (i+1)*2);
+			pdf_js_execute(js, buf, codebuf);
 			fz_free(ctx, codebuf);
 		}
 	}
@@ -695,11 +700,11 @@ pdf_js_event *pdf_js_get_event(pdf_js *js)
 	return js ? &js->event : NULL;
 }
 
-void pdf_js_execute(pdf_js *js, char *source)
+void pdf_js_execute(pdf_js *js, const char *name, char *source)
 {
 	if (js)
 	{
-		if (js_ploadstring(js->imp, "[pdf]", source))
+		if (js_ploadstring(js->imp, name, source))
 		{
 			fz_warn(js->ctx, "%s", js_trystring(js->imp, -1, "Error"));
 			js_pop(js->imp, 1);
@@ -744,6 +749,6 @@ void pdf_disable_js(fz_context *ctx, pdf_document *doc) { }
 int pdf_js_supported(fz_context *ctx, pdf_document *doc) { return 0; }
 void pdf_js_setup_event(pdf_js *js, pdf_js_event *e) { }
 pdf_js_event *pdf_js_get_event(pdf_js *js) { return NULL; }
-void pdf_js_execute(pdf_js *js, char *code) { }
+void pdf_js_execute(pdf_js *js, const char *name, char *code) { }
 
 #endif /* FZ_ENABLE_JS */

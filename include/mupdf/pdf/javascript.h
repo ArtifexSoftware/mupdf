@@ -15,6 +15,6 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js);
 
 void pdf_js_setup_event(pdf_js *js, pdf_js_event *e);
 pdf_js_event *pdf_js_get_event(pdf_js *js);
-void pdf_js_execute(pdf_js *js, char *code);
+void pdf_js_execute(pdf_js *js, const char *name, char *code);
 
 #endif

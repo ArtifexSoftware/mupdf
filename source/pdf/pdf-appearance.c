@@ -1107,7 +1107,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 				fz_free(ctx, e.value);
 			fz_catch(ctx)
 				fz_rethrow(ctx);
-			pdf_execute_action(ctx, doc, annot->obj, f);
+			pdf_execute_action(ctx, doc, annot->obj, f, "AA/F");
 			if (pdf_js_get_event(doc->js)->rc)
 				text = fz_strdup(ctx, pdf_js_get_event(doc->js)->value);
 			else
