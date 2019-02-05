@@ -554,18 +554,16 @@ static void declare_dom(pdf_js *js)
 	}
 	js_setregistry(J, "Field");
 
-	/* Create the Doc prototype object */
-	js_newobject(J);
+	/* Put all of the Doc methods in the global object, which is used as
+	 * the 'this' binding for regular non-strict function calls. */
+	js_pushglobal(J);
 	{
 		addmethod(J, "Doc.getField", doc_getField, 1);
 		addmethod(J, "Doc.resetForm", doc_resetForm, 0);
 		addmethod(J, "Doc.print", doc_print, 0);
 		addmethod(J, "Doc.mailDoc", doc_mailDoc, 6);
 	}
-	js_setregistry(J, "Doc");
-
-	js_getregistry(J, "Doc");
-	js_setglobal(J, "MuPDF_Doc"); /* for pdf-util.js use */
+	js_pop(J, 1);
 }
 
 static void preload_helpers(pdf_js *js)
@@ -710,7 +708,7 @@ void pdf_js_execute(pdf_js *js, const char *name, char *source)
 			js_pop(js->imp, 1);
 			return;
 		}
-		js_getregistry(js->imp, "Doc"); /* set 'this' to the Doc object */
+		js_pushundefined(js->imp);
 		if (js_pcall(js->imp, 0))
 		{
 			fz_warn(js->ctx, "%s", js_trystring(js->imp, -1, "Error"));

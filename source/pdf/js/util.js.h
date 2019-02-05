@@ -911,7 +911,7 @@
 "list = list.split(/ *, */);\n"
 "\n"
 "for (i = 0; i < list.length; i++) {\n"
-"var field = MuPDF_Doc.getField(list[i]);\n"
+"var field = this.getField(list[i]);\n"
 "var value = Number(field.value);\n"
 "switch (op) {\n"
 "case 'SUM': res += value; break;\n"

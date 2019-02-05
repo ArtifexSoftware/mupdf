@@ -911,7 +911,7 @@ function AFSimple_Calculate(op, list) {
 		list = list.split(/ *, */);
 
 	for (i = 0; i < list.length; i++) {
-		var field = MuPDF_Doc.getField(list[i]);
+		var field = this.getField(list[i]);
 		var value = Number(field.value);
 		switch (op) {
 		case 'SUM': res += value; break;
