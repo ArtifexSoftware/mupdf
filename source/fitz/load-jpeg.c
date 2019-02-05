@@ -302,7 +302,7 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 	struct jpeg_error_mgr err;
 	struct jpeg_source_mgr src;
 	unsigned char *row[1], *sp, *dp;
-	fz_colorspace *colorspace;
+	fz_colorspace *colorspace = NULL;
 	unsigned int x;
 	int k, stride;
 	fz_pixmap *image = NULL;
