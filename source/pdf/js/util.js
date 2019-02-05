@@ -943,6 +943,18 @@ function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit) {
 	}
 }
 
+/* Compatibility ECMAScript functions */
+String.prototype.substr = function (start, length) {
+	if (start < 0)
+		start = this.length + start;
+	if (length === undefined)
+		return this.substring(start, this.length);
+	return this.substring(start, start + length);
+}
+Date.prototype.getYear = Date.prototype.getFullYear;
+Date.prototype.setYear = Date.prototype.setFullYear;
+Date.prototype.toGMTString = Date.prototype.toUTCString;
+
 app.plugIns = [];
 app.viewerType = 'Reader';
 app.language = 'ENU';
