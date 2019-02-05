@@ -66,7 +66,7 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	pdf_field_mark_dirty(ctx, doc, obj);
 }
 
-static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, char *name, int len)
+static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, const char *name, int len)
 {
 	int i, n = pdf_array_len(ctx, dict);
 	for (i = 0; i < n; i++)
@@ -79,10 +79,10 @@ static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, char *name, int len)
 	return NULL;
 }
 
-pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name)
+pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, const char *name)
 {
-	char *dot;
-	char *namep;
+	const char *dot;
+	const char *namep;
 	pdf_obj *dict = NULL;
 	int len;
 

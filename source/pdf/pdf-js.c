@@ -49,39 +49,6 @@ static pdf_js *unpack_arguments(js_State *J, ...)
 	return js_getcontext(J);
 }
 
-static char *pdf_from_utf8(fz_context *ctx, const char *utf8)
-{
-	char *pdf = fz_malloc(ctx, strlen(utf8)+1);
-	int i = 0;
-	unsigned char c;
-
-	while ((c = *utf8) != 0)
-	{
-		if ((c & 0x80) == 0 && fz_unicode_from_pdf_doc_encoding[c] == c)
-		{
-			pdf[i++] = c;
-			utf8++ ;
-		}
-		else
-		{
-			int rune;
-			int j;
-
-			utf8 += fz_chartorune(&rune, utf8);
-
-			for (j = 0; j < 256 && fz_unicode_from_pdf_doc_encoding[j] != rune; j++)
-				;
-
-			if (j < 256)
-				pdf[i++] = j;
-		}
-	}
-
-	pdf[i] = 0;
-
-	return pdf;
-}
-
 static void app_alert(js_State *J)
 {
 	pdf_js *js = unpack_arguments(J, "cMsg", "nIcon", "nType", "cTitle", 0);
@@ -149,11 +116,8 @@ static void field_buttonSetCaption(js_State *J)
 	pdf_js *js = js_getcontext(J);
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	const char *cCaption = js_tostring(J, 1);
-	char *caption = pdf_from_utf8(js->ctx, cCaption);
 	fz_try(js->ctx)
-		pdf_field_set_button_caption(js->ctx, js->doc, field, caption);
-	fz_always(js->ctx)
-		fz_free(js->ctx, caption);
+		pdf_field_set_button_caption(js->ctx, js->doc, field, cCaption);
 	fz_catch(js->ctx)
 		rethrow(js);
 }
@@ -388,13 +352,10 @@ static void doc_getField(js_State *J)
 	pdf_js *js = js_getcontext(J);
 	fz_context *ctx = js->ctx;
 	const char *cName = js_tostring(J, 1);
-	char *name = pdf_from_utf8(ctx, cName);
 	pdf_obj *dict = NULL;
 
 	fz_try(ctx)
-		dict = pdf_lookup_field(ctx, js->form, name);
-	fz_always(ctx)
-		fz_free(ctx, name);
+		dict = pdf_lookup_field(ctx, js->form, cName);
 	fz_catch(ctx)
 		rethrow(js);
 
@@ -409,28 +370,10 @@ static void doc_getField(js_State *J)
 	}
 }
 
-static void reset_field(pdf_js *js, const char *cName)
-{
-	fz_context *ctx = js->ctx;
-	if (cName)
-	{
-		char *name = pdf_from_utf8(ctx, cName);
-		fz_try(ctx)
-		{
-			pdf_obj *field = js_touserdata(js->imp, 0, "Field");
-			if (field)
-				pdf_field_reset(ctx, js->doc, field);
-		}
-		fz_always(ctx)
-			fz_free(ctx, name);
-		fz_catch(ctx)
-			rethrow(js);
-	}
-}
-
 static void doc_resetForm(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
+	pdf_obj *field;
 	fz_context *ctx = js->ctx;
 	int i, n;
 
@@ -441,7 +384,9 @@ static void doc_resetForm(js_State *J)
 		for (i = 0; i < n; ++i)
 		{
 			js_getindex(J, 1, i);
-			reset_field(js, js_tostring(J, -1));
+			field = pdf_lookup_field(ctx, js->form, js_tostring(J, -1));
+			if (field)
+				pdf_field_reset(ctx, js->doc, field);
 			js_pop(J, 1);
 		}
 	}
