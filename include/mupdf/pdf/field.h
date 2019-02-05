@@ -26,6 +26,7 @@ enum
 	PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21,
 };
 
+void pdf_form_recalculate(fz_context *ctx, pdf_document *doc);
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int type);

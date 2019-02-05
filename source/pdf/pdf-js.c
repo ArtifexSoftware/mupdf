@@ -487,6 +487,15 @@ static void doc_mailDoc(js_State *J)
 		rethrow(js);
 }
 
+static void doc_calculateNow(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	fz_try(js->ctx)
+		pdf_form_recalculate(js->ctx, js->doc);
+	fz_catch(js->ctx)
+		rethrow(js);
+}
+
 static void addmethod(js_State *J, const char *name, js_CFunction fun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -560,6 +569,7 @@ static void declare_dom(pdf_js *js)
 	{
 		addmethod(J, "Doc.getField", doc_getField, 1);
 		addmethod(J, "Doc.resetForm", doc_resetForm, 0);
+		addmethod(J, "Doc.calculateNow", doc_calculateNow, 0);
 		addmethod(J, "Doc.print", doc_print, 0);
 		addmethod(J, "Doc.mailDoc", doc_mailDoc, 6);
 	}

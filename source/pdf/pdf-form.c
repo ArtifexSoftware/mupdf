@@ -394,7 +394,7 @@ static void set_check_grp(fz_context *ctx, pdf_document *doc, pdf_obj *grp, pdf_
 	}
 }
 
-static void recalculate(fz_context *ctx, pdf_document *doc)
+void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
 {
 	pdf_js_event e = {NULL, NULL};
 
@@ -491,7 +491,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	{
 		pdf_dict_put(ctx, grp, PDF_NAME(V), val);
 		set_check_grp(ctx, doc, grp, val);
-		recalculate(ctx, doc);
+		pdf_form_recalculate(ctx, doc);
 	}
 }
 
@@ -790,7 +790,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 	}
 
 	if (!ignore_trigger_events)
-		recalculate(ctx, doc);
+		pdf_form_recalculate(ctx, doc);
 
 	return res;
 }
