@@ -435,14 +435,9 @@ static void set_check_grp(fz_context *ctx, pdf_document *doc, pdf_obj *grp, pdf_
 	}
 }
 
-void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
+void pdf_form_calculate(fz_context *ctx, pdf_document *doc)
 {
 	pdf_js_event e = {NULL, NULL};
-
-	if (doc->recalculating)
-		return;
-
-	doc->recalculating = 1;
 
 	fz_var(e);
 	fz_try(ctx)
@@ -479,7 +474,7 @@ void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
 	fz_always(ctx)
 	{
 		fz_free(ctx, e.value);
-		doc->recalculating = 0;
+		doc->recalculate = 0;
 	}
 	fz_catch(ctx)
 	{
@@ -532,7 +527,7 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	{
 		pdf_dict_put(ctx, grp, PDF_NAME(V), val);
 		set_check_grp(ctx, doc, grp, val);
-		pdf_form_recalculate(ctx, doc);
+		doc->recalculate = 1;
 	}
 }
 
@@ -684,6 +679,8 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 }
 
 /*
+	Recalculate form fields if necessary.
+
 	Loop through all annotations on the page and update them. Return true
 	if any of them were changed (by either event or javascript actions, or
 	by annotation editing) and need re-rendering.
@@ -697,6 +694,10 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
 	int changed = 0;
+
+	if (page->doc->recalculate)
+		pdf_form_calculate(ctx, page->doc);
+
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		if (pdf_update_annot(ctx, annot))
@@ -833,7 +834,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 	}
 
 	if (!ignore_trigger_events)
-		pdf_form_recalculate(ctx, doc);
+		doc->recalculate = 1;
 
 	return res;
 }

@@ -436,7 +436,7 @@ static void doc_calculateNow(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
 	fz_try(js->ctx)
-		pdf_form_recalculate(js->ctx, js->doc);
+		pdf_form_calculate(js->ctx, js->doc);
 	fz_catch(js->ctx)
 		rethrow(js);
 }

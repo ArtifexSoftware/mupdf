@@ -279,7 +279,7 @@ struct pdf_document_s
 
 	pdf_js *js;
 
-	int recalculating;
+	int recalculate;
 	int dirty;
 
 	pdf_doc_event_cb *event_cb;
