@@ -264,7 +264,7 @@ void do_widget_canvas(fz_irect canvas_area)
 		}
 	}
 
-	for (widget = pdf_first_widget(ctx, pdf, page); widget; widget = pdf_next_widget(ctx, widget))
+	for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 	{
 		bounds = pdf_bound_widget(ctx, widget);
 		bounds = fz_transform_rect(bounds, view_page_ctm);

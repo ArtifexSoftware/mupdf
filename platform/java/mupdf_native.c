@@ -5688,7 +5688,6 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_page *page = from_PDFPage(env, self);
-	pdf_document *doc = page->doc;
 	pdf_widget *widget;
 	jobjectArray jwidgets = NULL;
 	int count = 0;
@@ -5698,7 +5697,7 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		for (widget = pdf_first_widget(ctx, doc, (pdf_page *)page); widget; widget = pdf_next_widget(ctx, widget))
+		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 			count++;
 	}
 	fz_catch(ctx)
@@ -5717,7 +5716,7 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 	{
 		int i = 0;
 
-		for (widget = pdf_first_widget(ctx, doc, (pdf_page *)page); widget; widget = pdf_next_widget(ctx, widget))
+		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 		{
 			jobject jwidget;
 

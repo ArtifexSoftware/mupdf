@@ -24,11 +24,10 @@ enum
 	PDF_WIDGET_CONTENT_TIME
 };
 
-pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
-
-pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page);
-
+pdf_widget *pdf_first_widget(fz_context *ctx, pdf_page *page);
 pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
+
+pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
 
 pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname);
 
@@ -37,19 +36,13 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-
 int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-
 int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-
 int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *text);
 
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
-
 int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-
 int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[]);
-
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[]);
 
 #endif

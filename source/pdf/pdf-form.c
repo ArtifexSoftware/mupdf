@@ -678,7 +678,7 @@ pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc)
 	return (pdf_widget *)doc->focus;
 }
 
-pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page)
+pdf_widget *pdf_first_widget(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot = page->annots;
 
