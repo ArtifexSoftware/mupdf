@@ -2483,11 +2483,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\pdf\field.h"
+					RelativePath="..\..\include\mupdf\pdf\font.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\pdf\font.h"
+					RelativePath="..\..\include\mupdf\pdf\form.h"
 					>
 				</File>
 				<File
@@ -2520,10 +2520,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\resource.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\pdf\widget.h"
 					>
 				</File>
 				<File

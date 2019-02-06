@@ -20,8 +20,7 @@ extern "C" {
 #include "mupdf/pdf/interpret.h"
 
 #include "mupdf/pdf/annot.h"
-#include "mupdf/pdf/field.h"
-#include "mupdf/pdf/widget.h"
+#include "mupdf/pdf/form.h"
 #include "mupdf/pdf/event.h"
 #include "mupdf/pdf/javascript.h"
 
