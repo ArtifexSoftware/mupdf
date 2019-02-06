@@ -29,8 +29,6 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
 
-pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname);
-
 int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);

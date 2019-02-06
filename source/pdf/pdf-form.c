@@ -701,51 +701,6 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous)
 	return (pdf_widget *)annot;
 }
 
-pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname)
-{
-	pdf_obj *form = NULL;
-	int old_sigflags = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/SigFlags"));
-	pdf_annot *annot = pdf_create_annot(ctx, page, PDF_ANNOT_WIDGET);
-
-	fz_try(ctx)
-	{
-		pdf_set_field_type(ctx, doc, annot->obj, type);
-		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(T), fieldname);
-
-		if (type == PDF_WIDGET_TYPE_SIGNATURE)
-		{
-			int sigflags = (old_sigflags | (SigFlag_SignaturesExist|SigFlag_AppendOnly));
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
-		}
-
-		/*
-		pdf_create_annot will have linked the new widget into the page's
-		annot array. We also need it linked into the document's form
-		*/
-		form = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
-		if (!form)
-		{
-			form = pdf_new_array(ctx, doc, 1);
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), form, PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
-		}
-
-		pdf_array_push(ctx, form, annot->obj); /* Cleanup relies on this statement being last */
-	}
-	fz_catch(ctx)
-	{
-		pdf_delete_annot(ctx, page, annot);
-
-		/* An empty Fields array may have been created, but that is harmless */
-
-		if (type == PDF_WIDGET_TYPE_SIGNATURE)
-			pdf_dict_putl_drop(ctx, pdf_trailer(ctx, doc), pdf_new_int(ctx, old_sigflags), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(SigFlags), NULL);
-
-		fz_rethrow(ctx);
-	}
-
-	return (pdf_widget *)annot;
-}
-
 /*
 	find out the type of a widget.
 
