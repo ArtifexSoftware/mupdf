@@ -26,15 +26,15 @@ char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return pdf_load_stream_or_string_as_utf8(ctx, v);
 }
 
-int pdf_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+int pdf_field_flags(fz_context *ctx, pdf_obj *obj)
 {
 	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, obj, PDF_NAME(Ff)));
 }
 
-int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+int pdf_field_type(fz_context *ctx, pdf_obj *obj)
 {
 	pdf_obj *type = pdf_dict_get_inheritable(ctx, obj, PDF_NAME(FT));
-	int flags = pdf_field_flags(ctx, doc, obj);
+	int flags = pdf_field_flags(ctx, obj);
 	if (pdf_name_eq(ctx, type, PDF_NAME(Btn)))
 	{
 		if (flags & PDF_BTN_FIELD_IS_PUSHBUTTON)
@@ -61,7 +61,7 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	int ff = pdf_field_flags(ctx, doc, field);
+	int ff = pdf_field_flags(ctx, field);
 	if (ff & PDF_FIELD_IS_NO_EXPORT) return 0;
 	if (ff & PDF_FIELD_IS_READ_ONLY) return 0;
 	return 1;
@@ -168,7 +168,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		 * In some cases we need to update the appearance state;
 		 * in others we need to mark the field as dirty so that
 		 * the appearance stream will be regenerated. */
-		switch (pdf_field_type(ctx, doc, field))
+		switch (pdf_field_type(ctx, field))
 		{
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
 		case PDF_WIDGET_TYPE_CHECKBOX:
@@ -490,7 +490,7 @@ void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
 static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
-	int ff = pdf_field_flags(ctx, doc, obj);
+	int ff = pdf_field_flags(ctx, obj);
 	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
 	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
 	pdf_obj *val = NULL;
@@ -752,7 +752,7 @@ int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
 	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_WIDGET)
-		return pdf_field_type(ctx, pdf_get_bound_document(ctx, annot->obj), annot->obj);
+		return pdf_field_type(ctx, annot->obj);
 	return PDF_WIDGET_TYPE_NOT_WIDGET;
 }
 
@@ -814,7 +814,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 {
 	int res = 0;
 
-	switch (pdf_field_type(ctx, doc, field))
+	switch (pdf_field_type(ctx, field))
 	{
 	case PDF_WIDGET_TYPE_TEXT:
 		res = set_text_field_value(ctx, doc, field, text, ignore_trigger_events);
@@ -875,7 +875,7 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 
 void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
-	if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
+	if (pdf_field_type(ctx, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
 		pdf_obj *val = pdf_new_text_string(ctx, text);
 		pdf_dict_putl_drop(ctx, field, val, PDF_NAME(MK), PDF_NAME(CA), NULL);
@@ -1205,11 +1205,11 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 
 	if (!annot) return 0;
 
-	switch (pdf_field_type(ctx, doc, annot->obj))
+	switch (pdf_field_type(ctx, annot->obj))
 	{
 	case PDF_WIDGET_TYPE_LISTBOX:
 	case PDF_WIDGET_TYPE_COMBOBOX:
-		return (pdf_field_flags(ctx, doc, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
+		return (pdf_field_flags(ctx, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
 	default:
 		return 0;
 	}
