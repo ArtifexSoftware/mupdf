@@ -34,7 +34,7 @@ void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
 	pdf_annot *annot;
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 		if (pdf_annot_type(ctx, annot) == PDF_ANNOT_WIDGET)
-			if (pdf_widget_type(ctx, annot) == PDF_WIDGET_TYPE_SIGNATURE)
+			if (pdf_widget_type(ctx, annot) == PDF_WIDGET_TYPE_SIG)
 				verify_signature(ctx, doc, n, annot);
 }
 

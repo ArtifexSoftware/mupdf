@@ -11,23 +11,22 @@ public class PDFWidget extends PDFAnnotation
 	}
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/widget.h */
-	public static final int TYPE_NOT_WIDGET = -1;
-	public static final int TYPE_PUSHBUTTON = 0;
-	public static final int TYPE_CHECKBOX = 1;
-	public static final int TYPE_RADIOBUTTON = 2;
-	public static final int TYPE_TEXT = 3;
-	public static final int TYPE_LISTBOX = 4;
-	public static final int TYPE_COMBOBOX = 5;
-	public static final int TYPE_SIGNATURE = 6;
+	public static final int TYPE_UNKNOWN = 0;
+	public static final int TYPE_BTN_PUSH = 1;
+	public static final int TYPE_BTN_CHECK = 2;
+	public static final int TYPE_BTN_RADIO = 3;
+	public static final int TYPE_TX = 4;
+	public static final int TYPE_CH_COMBO = 5;
+	public static final int TYPE_CH_LIST = 6;
+	public static final int TYPE_SIG = 7;
 
-	public static final int CONTENT_UNRESTRAINED = 0;
-	public static final int CONTENT_NUMBER = 1;
-	public static final int CONTENT_SPECIAL = 2;
-	public static final int CONTENT_DATE = 3;
-	public static final int CONTENT_TIME = 4;
+	public static final int TX_FORMAT_NONE = 0;
+	public static final int TX_FORMAT_NUMBER = 1;
+	public static final int TX_FORMAT_SPECIAL = 2;
+	public static final int TX_FORMAT_DATE = 3;
+	public static final int TX_FORMAT_TIME = 4;
 
 	/* Field flags */
-
 	public static final int PDF_FIELD_IS_READ_ONLY = 1;
 	public static final int PDF_FIELD_IS_REQUIRED = 1 << 1;
 	public static final int PDF_FIELD_IS_NO_EXPORT = 1 << 2;
@@ -59,13 +58,13 @@ public class PDFWidget extends PDFAnnotation
 	// These don't change after creation, so are cached in java fields.
 	private int kind;
 	private int fieldFlags;
-	private int contentType; /* text field content type */
+	private int textFormat; /* text field formatting type */
 	private int maxLen; /* text field max length */
 	private String[] options; /* choice field option list */
 
 	public int getKind() { return kind; }
 	public int getFieldFlags() { return fieldFlags; }
 	public int getMaxLen() { return maxLen; }
-	public int getContentType() { return contentType; }
+	public int getTextFormat() { return textFormat; }
 	public String[] getOptions() { return options; }
 }

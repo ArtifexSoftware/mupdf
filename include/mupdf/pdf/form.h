@@ -2,26 +2,26 @@
 #define MUPDF_PDF_FORM_H
 
 /* Types of widget */
-enum
+enum pdf_widget_type
 {
-	PDF_WIDGET_TYPE_NOT_WIDGET = -1,
-	PDF_WIDGET_TYPE_PUSHBUTTON,
-	PDF_WIDGET_TYPE_CHECKBOX,
-	PDF_WIDGET_TYPE_RADIOBUTTON,
-	PDF_WIDGET_TYPE_TEXT,
-	PDF_WIDGET_TYPE_LISTBOX,
-	PDF_WIDGET_TYPE_COMBOBOX,
-	PDF_WIDGET_TYPE_SIGNATURE
+	PDF_WIDGET_TYPE_UNKNOWN,
+	PDF_WIDGET_TYPE_BTN_PUSH,
+	PDF_WIDGET_TYPE_BTN_CHECK,
+	PDF_WIDGET_TYPE_BTN_RADIO,
+	PDF_WIDGET_TYPE_TX,
+	PDF_WIDGET_TYPE_CH_COMBO,
+	PDF_WIDGET_TYPE_CH_LIST,
+	PDF_WIDGET_TYPE_SIG
 };
 
 /* Types of text widget content */
-enum
+enum pdf_widget_tx_format
 {
-	PDF_WIDGET_CONTENT_UNRESTRAINED,
-	PDF_WIDGET_CONTENT_NUMBER,
-	PDF_WIDGET_CONTENT_SPECIAL,
-	PDF_WIDGET_CONTENT_DATE,
-	PDF_WIDGET_CONTENT_TIME
+	PDF_WIDGET_TX_FORMAT_NONE,
+	PDF_WIDGET_TX_FORMAT_NUMBER,
+	PDF_WIDGET_TX_FORMAT_SPECIAL,
+	PDF_WIDGET_TX_FORMAT_DATE,
+	PDF_WIDGET_TX_FORMAT_TIME
 };
 
 pdf_widget *pdf_first_widget(fz_context *ctx, pdf_page *page);
@@ -29,13 +29,13 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
 
-int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
+enum pdf_widget_type pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-int pdf_text_widget_content_type(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
+int pdf_text_widget_format(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *text);
 
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
@@ -54,18 +54,25 @@ enum
 	/* Text fields */
 	PDF_TX_FIELD_IS_MULTILINE = 1 << 12,
 	PDF_TX_FIELD_IS_PASSWORD = 1 << 13,
+	PDF_TX_FIELD_IS_FILE_SELECT = 1 << 20,
+	PDF_TX_FIELD_IS_DO_NOT_SPELL_CHECK = 1 << 22,
+	PDF_TX_FIELD_IS_DO_NOT_SCROLL = 1 << 23,
 	PDF_TX_FIELD_IS_COMB = 1 << 24,
+	PDF_TX_FIELD_IS_RICH_TEXT = 1 << 25,
 
 	/* Button fields */
 	PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF = 1 << 14,
 	PDF_BTN_FIELD_IS_RADIO = 1 << 15,
 	PDF_BTN_FIELD_IS_PUSHBUTTON = 1 << 16,
+	PDF_BTN_FIELD_IS_RADIOS_IN_UNISON = 1 << 25,
 
 	/* Choice fields */
 	PDF_CH_FIELD_IS_COMBO = 1 << 17,
 	PDF_CH_FIELD_IS_EDIT = 1 << 18,
 	PDF_CH_FIELD_IS_SORT = 1 << 19,
 	PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21,
+	PDF_CH_FIELD_IS_DO_NOT_SPELL_CHECK = 1 << 22,
+	PDF_CH_FIELD_IS_COMMIT_ON_SEL_CHANGE = 1 << 26,
 };
 
 void pdf_form_calculate(fz_context *ctx, pdf_document *doc);

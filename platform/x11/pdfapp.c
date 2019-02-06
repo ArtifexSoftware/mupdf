@@ -1662,7 +1662,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			{
 				switch (pdf_widget_type(ctx, widget))
 				{
-				case PDF_WIDGET_TYPE_TEXT:
+				default:
+					break;
+				case PDF_WIDGET_TYPE_TX:
 					{
 						char *text = pdf_text_widget_text(ctx, idoc, widget);
 						char *current_text = text;
@@ -1679,8 +1681,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 						pdfapp_updatepage(app);
 					}
 					break;
-				case PDF_WIDGET_TYPE_LISTBOX:
-				case PDF_WIDGET_TYPE_COMBOBOX:
+				case PDF_WIDGET_TYPE_CH_LIST:
+				case PDF_WIDGET_TYPE_CH_COMBO:
 					{
 						int nopts;
 						int nvals;
@@ -1720,7 +1722,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					}
 					break;
 
-				case PDF_WIDGET_TYPE_SIGNATURE:
+				case PDF_WIDGET_TYPE_SIG:
 					if (state == -1)
 					{
 						char ebuf[256];

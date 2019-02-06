@@ -162,7 +162,7 @@ static jfieldID fid_TextLine_chars;
 static jfieldID fid_Text_pointer;
 static jfieldID fid_PDFWidget_pointer;
 static jfieldID fid_PDFWidget_kind;
-static jfieldID fid_PDFWidget_contentType;
+static jfieldID fid_PDFWidget_textFormat;
 static jfieldID fid_PDFWidget_maxLen;
 static jfieldID fid_PDFWidget_fieldFlags;
 static jfieldID fid_PDFWidget_options;
@@ -337,20 +337,20 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_WORDS == FZ_SELECT_WORDS;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_LINES == FZ_SELECT_LINES;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_NOT_WIDGET == PDF_WIDGET_TYPE_NOT_WIDGET;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_PUSHBUTTON == PDF_WIDGET_TYPE_PUSHBUTTON;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CHECKBOX == PDF_WIDGET_TYPE_CHECKBOX;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_RADIOBUTTON == PDF_WIDGET_TYPE_RADIOBUTTON;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_TEXT == PDF_WIDGET_TYPE_TEXT;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_LISTBOX == PDF_WIDGET_TYPE_LISTBOX;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_COMBOBOX == PDF_WIDGET_TYPE_COMBOBOX;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_SIGNATURE == PDF_WIDGET_TYPE_SIGNATURE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN == PDF_WIDGET_TYPE_UNKNOWN;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_PUSH == PDF_WIDGET_TYPE_BTN_PUSH;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_CHECK == PDF_WIDGET_TYPE_BTN_CHECK;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_RADIO == PDF_WIDGET_TYPE_BTN_RADIO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_TX == PDF_WIDGET_TYPE_TX;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CH_COMBO == PDF_WIDGET_TYPE_CH_COMBO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CH_LIST == PDF_WIDGET_TYPE_CH_LIST;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_SIG == PDF_WIDGET_TYPE_SIG;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_CONTENT_UNRESTRAINED == PDF_WIDGET_CONTENT_UNRESTRAINED;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_CONTENT_NUMBER == PDF_WIDGET_CONTENT_NUMBER;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_CONTENT_SPECIAL == PDF_WIDGET_CONTENT_SPECIAL;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_CONTENT_DATE == PDF_WIDGET_CONTENT_DATE;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_CONTENT_TIME == PDF_WIDGET_CONTENT_TIME;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_NONE == PDF_WIDGET_TX_FORMAT_NONE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_NUMBER == PDF_WIDGET_TX_FORMAT_NUMBER;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_SPECIAL == PDF_WIDGET_TX_FORMAT_SPECIAL;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_DATE == PDF_WIDGET_TX_FORMAT_DATE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_TIME == PDF_WIDGET_TX_FORMAT_TIME;
 
 	return valid ? 1 : 0;
 }
@@ -728,7 +728,7 @@ static int find_fids(JNIEnv *env)
 	cls_PDFWidget = get_class(&err, env, PKG"PDFWidget");
 	fid_PDFWidget_pointer = get_field(&err, env, "pointer", "J");
 	fid_PDFWidget_kind = get_field(&err, env, "kind", "I");
-	fid_PDFWidget_contentType = get_field(&err, env, "contentType", "I");
+	fid_PDFWidget_textFormat = get_field(&err, env, "textFormat", "I");
 	fid_PDFWidget_maxLen = get_field(&err, env, "maxLen", "I");
 	fid_PDFWidget_fieldFlags = get_field(&err, env, "fieldFlags", "I");
 	fid_PDFWidget_options = get_field(&err, env, "options", "[Ljava/lang/String;");
@@ -1756,7 +1756,7 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 	fz_try(ctx)
 	{
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_kind, pdf_widget_type(ctx, widget));
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_contentType, pdf_text_widget_content_type(ctx, widget->page->doc, widget));
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget->page->doc, widget));
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, pdf_field_flags(ctx, widget->obj));
 

@@ -294,15 +294,17 @@ void do_widget_canvas(fz_irect canvas_area)
 		{
 			switch (pdf_widget_type(ctx, widget))
 			{
-			case PDF_WIDGET_TYPE_TEXT:
+			default:
+				break;
+			case PDF_WIDGET_TYPE_TX:
 				show_tx_dialog(widget);
 				break;
-			case PDF_WIDGET_TYPE_LISTBOX:
-			case PDF_WIDGET_TYPE_COMBOBOX:
+			case PDF_WIDGET_TYPE_CH_COMBO:
+			case PDF_WIDGET_TYPE_CH_LIST:
 				ui.dialog = ch_dialog;
 				ch_widget = widget;
 				break;
-			case PDF_WIDGET_TYPE_SIGNATURE:
+			case PDF_WIDGET_TYPE_SIG:
 				show_sig_dialog(widget);
 				break;
 			}
