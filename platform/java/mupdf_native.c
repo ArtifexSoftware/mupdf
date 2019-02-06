@@ -1758,7 +1758,7 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_kind, pdf_widget_type(ctx, widget));
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_contentType, pdf_text_widget_content_type(ctx, widget->page->doc, widget));
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, pdf_get_field_flags(ctx, widget->page->doc, widget->obj));
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, pdf_field_flags(ctx, widget->page->doc, widget->obj));
 
 		nopts = pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, NULL);
 		if (nopts > 0)

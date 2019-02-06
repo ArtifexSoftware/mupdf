@@ -135,7 +135,7 @@ static struct input tx_input;
 
 static void tx_dialog(void)
 {
-	int ff = pdf_get_field_flags(ctx, tx_widget->page->doc, tx_widget->obj);
+	int ff = pdf_field_flags(ctx, tx_widget->page->doc, tx_widget->obj);
 	const char *label = pdf_field_label(ctx, tx_widget->page->doc, tx_widget->obj);
 	int tx_h = (ff & PDF_TX_FIELD_IS_MULTILINE) ? 10 : 1;
 	int lbl_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
@@ -286,7 +286,7 @@ void do_widget_canvas(fz_irect canvas_area)
 			glDisable(GL_BLEND);
 		}
 
-		if (pdf_get_field_flags(ctx, NULL, widget->obj) & PDF_FIELD_IS_READ_ONLY)
+		if (pdf_field_flags(ctx, NULL, widget->obj) & PDF_FIELD_IS_READ_ONLY)
 			continue;
 
 		if ((ui.hot == widget && ui.active == widget && !ui.down) ||

@@ -71,7 +71,7 @@ enum
 void pdf_form_recalculate(fz_context *ctx, pdf_document *doc);
 
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *field);
-int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+int pdf_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events);

@@ -1090,7 +1090,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
-	int ff = pdf_get_field_flags(ctx, annot->page->doc, annot->obj);
+	int ff = pdf_field_flags(ctx, annot->page->doc, annot->obj);
 	if (pdf_name_eq(ctx, ft, PDF_NAME(Tx)))
 	{
 		pdf_document *doc = annot->page->doc;

@@ -26,7 +26,7 @@ char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return pdf_load_stream_or_string_as_utf8(ctx, v);
 }
 
-int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+int pdf_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, obj, PDF_NAME(Ff)));
 }
@@ -34,7 +34,7 @@ int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *type = pdf_dict_get_inheritable(ctx, obj, PDF_NAME(FT));
-	int flags = pdf_get_field_flags(ctx, doc, obj);
+	int flags = pdf_field_flags(ctx, doc, obj);
 	if (pdf_name_eq(ctx, type, PDF_NAME(Btn)))
 	{
 		if (flags & PDF_BTN_FIELD_IS_PUSHBUTTON)
@@ -61,7 +61,7 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	int ff = pdf_get_field_flags(ctx, doc, field);
+	int ff = pdf_field_flags(ctx, doc, field);
 	if (ff & PDF_FIELD_IS_NO_EXPORT) return 0;
 	if (ff & PDF_FIELD_IS_READ_ONLY) return 0;
 	return 1;
@@ -490,7 +490,7 @@ void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
 static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
-	int ff = pdf_get_field_flags(ctx, doc, obj);
+	int ff = pdf_field_flags(ctx, doc, obj);
 	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
 	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
 	pdf_obj *val = NULL;
@@ -1209,7 +1209,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	{
 	case PDF_WIDGET_TYPE_LISTBOX:
 	case PDF_WIDGET_TYPE_COMBOBOX:
-		return (pdf_get_field_flags(ctx, doc, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
+		return (pdf_field_flags(ctx, doc, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
 	default:
 		return 0;
 	}
