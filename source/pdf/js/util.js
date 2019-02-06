@@ -955,6 +955,10 @@ Date.prototype.getYear = Date.prototype.getFullYear;
 Date.prototype.setYear = Date.prototype.setFullYear;
 Date.prototype.toGMTString = Date.prototype.toUTCString;
 
+console.clear = function() { console.println("--- clear console ---\n"); };
+console.show = function(){};
+console.hide = function(){};
+
 app.plugIns = [];
 app.viewerType = 'Reader';
 app.language = 'ENU';

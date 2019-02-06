@@ -441,6 +441,18 @@ static void doc_calculateNow(js_State *J)
 		rethrow(js);
 }
 
+static void console_println(js_State *J)
+{
+	int i, top = js_gettop(J);
+	for (i = 1; i < top; ++i) {
+		const char *s = js_tostring(J, i);
+		if (i > 1) putchar(' ');
+		fputs(s, stdout);
+	}
+	putchar('\n');
+	js_pushundefined(J);
+}
+
 static void addmethod(js_State *J, const char *name, js_CFunction fun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -507,6 +519,13 @@ static void declare_dom(pdf_js *js)
 		addmethod(J, "Field.buttonSetCaption", field_buttonSetCaption, 1);
 	}
 	js_setregistry(J, "Field");
+
+	/* Create the console object */
+	js_newobject(J);
+	{
+		addmethod(J, "console.println", console_println, 1);
+	}
+	js_defglobal(J, "console", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
 
 	/* Put all of the Doc methods in the global object, which is used as
 	 * the 'this' binding for regular non-strict function calls. */
