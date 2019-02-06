@@ -2284,10 +2284,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-field.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-font.c"
 				>
 			</File>
