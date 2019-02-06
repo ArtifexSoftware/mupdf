@@ -18,7 +18,7 @@ enum
 	SigFlag_AppendOnly = 2
 };
 
-char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+char *pdf_field_value(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
 	if (pdf_is_name(ctx, v))
@@ -463,7 +463,7 @@ void pdf_form_recalculate(fz_context *ctx, pdf_document *doc)
 					pdf_js_event e;
 
 					e.target = field;
-					e.value = pdf_field_value(ctx, doc, field);
+					e.value = pdf_field_value(ctx, field);
 					pdf_js_setup_event(doc->js, &e);
 					/* e.value has been copied. We can free it */
 					fz_free(ctx, e.value);
@@ -1065,7 +1065,7 @@ char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 	fz_var(text);
 	fz_try(ctx)
 	{
-		text = pdf_field_value(ctx, doc, annot->obj);
+		text = pdf_field_value(ctx, annot->obj);
 	}
 	fz_catch(ctx)
 	{

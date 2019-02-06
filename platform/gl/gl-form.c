@@ -170,7 +170,7 @@ static void tx_dialog(void)
 void show_tx_dialog(pdf_widget *widget)
 {
 	char *value;
-	value = pdf_field_value(ctx, widget->page->doc, widget->obj);
+	value = pdf_field_value(ctx, widget->obj);
 	ui_input_init(&tx_input, value);
 	fz_free(ctx, value);
 	ui.focus = &tx_input;
@@ -192,7 +192,7 @@ static void ch_dialog(void)
 	n = pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, NULL);
 	options = fz_malloc_array(ctx, n, sizeof(char*));
 	pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, options);
-	value = pdf_field_value(ctx, ch_widget->page->doc, ch_widget->obj);
+	value = pdf_field_value(ctx, ch_widget->obj);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*(label_h-1));
 	{

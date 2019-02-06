@@ -271,7 +271,7 @@ static void field_getValue(js_State *J)
 	double num;
 
 	fz_try(js->ctx)
-		str = pdf_field_value(js->ctx, js->doc, field);
+		str = pdf_field_value(js->ctx, field);
 	fz_catch(js->ctx)
 		rethrow(js);
 

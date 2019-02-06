@@ -1100,7 +1100,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		{
 			pdf_js_event e;
 			e.target = annot->obj;
-			e.value = pdf_field_value(ctx, doc, annot->obj);
+			e.value = pdf_field_value(ctx, annot->obj);
 			fz_try(ctx)
 				pdf_js_setup_event(doc->js, &e);
 			fz_always(ctx)
@@ -1111,11 +1111,11 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 			if (pdf_js_get_event(doc->js)->rc)
 				text = fz_strdup(ctx, pdf_js_get_event(doc->js)->value);
 			else
-				text = pdf_field_value(ctx, doc, annot->obj);
+				text = pdf_field_value(ctx, annot->obj);
 		}
 		else
 		{
-			text = pdf_field_value(ctx, doc, annot->obj);
+			text = pdf_field_value(ctx, annot->obj);
 		}
 		fz_try(ctx)
 			pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
@@ -1126,7 +1126,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Ch)))
 	{
-		char *text = pdf_field_value(ctx, annot->page->doc, annot->obj);
+		char *text = pdf_field_value(ctx, annot->obj);
 		fz_try(ctx)
 			pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
 		fz_always(ctx)
