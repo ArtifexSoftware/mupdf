@@ -77,14 +77,14 @@ static pdf_obj *find_head_of_field_group(fz_context *ctx, pdf_obj *obj)
 		return find_head_of_field_group(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Parent)));
 }
 
-static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+static void pdf_field_mark_dirty(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 	if (kids)
 	{
 		int i, n = pdf_array_len(ctx, kids);
 		for (i = 0; i < n; i++)
-			pdf_field_mark_dirty(ctx, doc, pdf_array_get(ctx, kids, i));
+			pdf_field_mark_dirty(ctx, pdf_array_get(ctx, kids, i));
 	}
 	pdf_dirty_obj(ctx, field);
 }
@@ -104,7 +104,7 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 
 	pdf_dict_put_text_string(ctx, obj, PDF_NAME(V), text);
 
-	pdf_field_mark_dirty(ctx, doc, obj);
+	pdf_field_mark_dirty(ctx, obj);
 }
 
 static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, const char *name, int len)
@@ -188,7 +188,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 			break;
 
 		default:
-			pdf_field_mark_dirty(ctx, doc, field);
+			pdf_field_mark_dirty(ctx, field);
 			break;
 		}
 	}
@@ -838,7 +838,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 	return res;
 }
 
-char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+char *pdf_field_border_style(fz_context *ctx, pdf_obj *field)
 {
 	const char *bs = pdf_to_name(ctx, pdf_dict_getl(ctx, field, PDF_NAME(BS), PDF_NAME(S), NULL));
 	switch (*bs)
@@ -852,7 +852,7 @@ char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return "Solid";
 }
 
-void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
+void pdf_field_set_border_style(fz_context *ctx, pdf_obj *field, const char *text)
 {
 	pdf_obj *val;
 
@@ -870,20 +870,20 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 		return;
 
 	pdf_dict_putl_drop(ctx, field, val, PDF_NAME(BS), PDF_NAME(S), NULL);
-	pdf_field_mark_dirty(ctx, doc, field);
+	pdf_field_mark_dirty(ctx, field);
 }
 
-void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
+void pdf_field_set_button_caption(fz_context *ctx, pdf_obj *field, const char *text)
 {
 	if (pdf_field_type(ctx, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
 		pdf_obj *val = pdf_new_text_string(ctx, text);
 		pdf_dict_putl_drop(ctx, field, val, PDF_NAME(MK), PDF_NAME(CA), NULL);
-		pdf_field_mark_dirty(ctx, doc, field);
+		pdf_field_mark_dirty(ctx, field);
 	}
 }
 
-int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+int pdf_field_display(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *kids;
 	int f, res = Display_Visible;
@@ -920,7 +920,7 @@ int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
  * get the field name in a char buffer that has spare room to
  * add more characters at the end.
  */
-static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, int spare)
+static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare)
 {
 	char *res = NULL;
 	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
@@ -936,7 +936,7 @@ static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, 
 
 	if (parent)
 	{
-		res = get_field_name(ctx, doc, parent, spare);
+		res = get_field_name(ctx, parent, spare);
 	}
 	else
 	{
@@ -955,22 +955,23 @@ static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, 
 	return res;
 }
 
-char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+/* Note: This function allocates a string for the return value that you must free manually. */
+char *pdf_field_name(fz_context *ctx, pdf_obj *field)
 {
-	return get_field_name(ctx, doc, field, 0);
+	return get_field_name(ctx, field, 0);
 }
 
-const char *pdf_field_label(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+const char *pdf_field_label(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *label = pdf_dict_get_inheritable(ctx, field, PDF_NAME(TU));
 	if (!label)
 		label = pdf_dict_get_inheritable(ctx, field, PDF_NAME(T));
 	if (label)
 		return pdf_to_text_string(ctx, label);
-	return "Text Field";
+	return "Unnamed";
 }
 
-void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d)
+void pdf_field_set_display(fz_context *ctx, pdf_obj *field, int d)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
 
@@ -1003,20 +1004,20 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 		int i, n = pdf_array_len(ctx, kids);
 
 		for (i = 0; i < n; i++)
-			pdf_field_set_display(ctx, doc, pdf_array_get(ctx, kids, i), d);
+			pdf_field_set_display(ctx, pdf_array_get(ctx, kids, i), d);
 	}
 }
 
-void pdf_field_set_fill_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col)
+void pdf_field_set_fill_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 {
 	/* col == NULL mean transparent, but we can simply pass it on as with
 	 * non-NULL values because pdf_dict_putp interprets a NULL value as
 	 * delete */
 	pdf_dict_putl(ctx, field, col, PDF_NAME(MK), PDF_NAME(BG), NULL);
-	pdf_field_mark_dirty(ctx, doc, field);
+	pdf_field_mark_dirty(ctx, field);
 }
 
-void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col)
+void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 {
 	char buf[100];
 	const char *font;
@@ -1048,7 +1049,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 
 	pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, color);
 	pdf_dict_put_string(ctx, field, PDF_NAME(DA), buf, strlen(buf));
-	pdf_field_mark_dirty(ctx, doc, field);
+	pdf_field_mark_dirty(ctx, field);
 }
 
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget)
@@ -1294,7 +1295,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 		/* FIXME: when n > 1, we should be regenerating the indexes */
 		pdf_dict_del(ctx, annot->obj, PDF_NAME(I));
 
-		pdf_field_mark_dirty(ctx, doc, annot->obj);
+		pdf_field_mark_dirty(ctx, annot->obj);
 		if (pdf_field_dirties_document(ctx, doc, annot->obj))
 			doc->dirty = 1;
 	}

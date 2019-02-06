@@ -117,7 +117,7 @@ static void field_buttonSetCaption(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	const char *cCaption = js_tostring(J, 1);
 	fz_try(js->ctx)
-		pdf_field_set_button_caption(js->ctx, js->doc, field, cCaption);
+		pdf_field_set_button_caption(js->ctx, field, cCaption);
 	fz_catch(js->ctx)
 		rethrow(js);
 }
@@ -128,10 +128,10 @@ static void field_getName(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	char *name = NULL;
 	fz_try(js->ctx)
-		name = pdf_field_name(js->ctx, js->doc, field);
+		name = pdf_field_name(js->ctx, field);
 	fz_catch(js->ctx)
 		rethrow(js);
-	js_pushstring(J, name); /* to utf8? */
+	js_pushstring(J, name);
 }
 
 static void field_setName(js_State *J)
@@ -146,7 +146,7 @@ static void field_getDisplay(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	int display = 0;
 	fz_try(js->ctx)
-		display = pdf_field_display(js->ctx, js->doc, field);
+		display = pdf_field_display(js->ctx, field);
 	fz_catch(js->ctx)
 		rethrow(js);
 	js_pushnumber(J, display);
@@ -158,7 +158,7 @@ static void field_setDisplay(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	int display = js_tonumber(J, 1);
 	fz_try(js->ctx)
-		pdf_field_set_display(js->ctx, js->doc, field, display);
+		pdf_field_set_display(js->ctx, field, display);
 	fz_catch(js->ctx)
 		rethrow(js);
 }
@@ -215,7 +215,7 @@ static void field_setFillColor(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	pdf_obj *color = load_color(js, 1);
 	fz_try(js->ctx)
-		pdf_field_set_fill_color(js->ctx, js->doc, field, color);
+		pdf_field_set_fill_color(js->ctx, field, color);
 	fz_always(js->ctx)
 		pdf_drop_obj(js->ctx, color);
 	fz_catch(js->ctx)
@@ -233,7 +233,7 @@ static void field_setTextColor(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	pdf_obj *color = load_color(js, 1);
 	fz_try(js->ctx)
-		pdf_field_set_text_color(js->ctx, js->doc, field, color);
+		pdf_field_set_text_color(js->ctx, field, color);
 	fz_always(js->ctx)
 		pdf_drop_obj(js->ctx, color);
 	fz_catch(js->ctx)
@@ -246,7 +246,7 @@ static void field_getBorderStyle(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	const char *border_style = NULL;
 	fz_try(js->ctx)
-		border_style = pdf_field_border_style(js->ctx, js->doc, field);
+		border_style = pdf_field_border_style(js->ctx, field);
 	fz_catch(js->ctx)
 		rethrow(js);
 	js_pushstring(J, border_style);
@@ -258,7 +258,7 @@ static void field_setBorderStyle(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	const char *border_style = js_tostring(J, 1);
 	fz_try(js->ctx)
-		pdf_field_set_border_style(js->ctx, js->doc, field, border_style);
+		pdf_field_set_border_style(js->ctx, field, border_style);
 	fz_catch(js->ctx)
 		rethrow(js);
 }

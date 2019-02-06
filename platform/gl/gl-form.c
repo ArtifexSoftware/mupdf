@@ -90,7 +90,7 @@ static void cert_file_dialog(void)
 
 static void sig_dialog(void)
 {
-	const char *label = pdf_field_label(ctx, sig_widget->page->doc, sig_widget->obj);
+	const char *label = pdf_field_label(ctx, sig_widget->obj);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
 	{
@@ -136,7 +136,7 @@ static struct input tx_input;
 static void tx_dialog(void)
 {
 	int ff = pdf_field_flags(ctx, tx_widget->obj);
-	const char *label = pdf_field_label(ctx, tx_widget->page->doc, tx_widget->obj);
+	const char *label = pdf_field_label(ctx, tx_widget->obj);
 	int tx_h = (ff & PDF_TX_FIELD_IS_MULTILINE) ? 10 : 1;
 	int lbl_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
 	int is;
@@ -187,7 +187,7 @@ static void ch_dialog(void)
 	int n, choice;
 	int label_h;
 
-	label = pdf_field_label(ctx, ch_widget->page->doc, ch_widget->obj);
+	label = pdf_field_label(ctx, ch_widget->obj);
 	label_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
 	n = pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, NULL);
 	options = fz_malloc_array(ctx, n, sizeof(char*));
