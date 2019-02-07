@@ -65,7 +65,6 @@ pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
 
 pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr);
 pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr);
-pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr);
 
 int pdf_needs_password(fz_context *ctx, pdf_document *doc);
 

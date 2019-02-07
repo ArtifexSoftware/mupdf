@@ -54,7 +54,6 @@ extern "C" {
 #include "mupdf/fitz/link.h"
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/document.h"
-#include "mupdf/fitz/annotation.h"
 
 #include "mupdf/fitz/util.h"
 

@@ -1,5 +1,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+#include "../fitz/fitz-imp.h" // ick!
 
 #include <string.h>
 #include <time.h>
@@ -10,11 +11,21 @@
 
 #define isdigit(c) (c >= '0' && c <= '9')
 
-static void
-pdf_drop_annot_imp(fz_context *ctx, pdf_annot *annot)
+pdf_annot *
+pdf_keep_annot(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_drop_obj(ctx, annot->ap);
-	pdf_drop_obj(ctx, annot->obj);
+	return fz_keep_imp(ctx, annot, &annot->refs);
+}
+
+void
+pdf_drop_annot(fz_context *ctx, pdf_annot *annot)
+{
+	if (fz_drop_imp(ctx, annot, &annot->refs))
+	{
+		pdf_drop_obj(ctx, annot->ap);
+		pdf_drop_obj(ctx, annot->obj);
+		fz_free(ctx, annot);
+	}
 }
 
 void
@@ -23,7 +34,7 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 	while (annot)
 	{
 		pdf_annot *next = annot->next;
-		fz_drop_annot(ctx, &annot->super);
+		pdf_drop_annot(ctx, annot);
 		annot = next;
 	}
 }
@@ -58,17 +69,13 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 /*
 	Internal function for creating a new pdf annotation.
 */
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
+static pdf_annot *
+pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 {
 	pdf_annot *annot;
 
-	annot = fz_new_derived_annot(ctx, pdf_annot);
-
-	annot->super.drop_annot = (fz_annot_drop_fn*)pdf_drop_annot_imp;
-	annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
-	annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
-	annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
-
+	annot = fz_malloc_struct(ctx, pdf_annot);
+	annot->refs = 1;
 	annot->page = page; /* only borrowed, as the page owns the annot */
 	annot->obj = pdf_keep_obj(ctx, obj);
 
@@ -419,7 +426,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	pdf_dict_put(ctx, annot->obj, PDF_NAME(P), page->obj);
 	pdf_dict_put_int(ctx, annot->obj, PDF_NAME(F), flags);
 
-	return annot;
+	return pdf_keep_annot(ctx, annot);
 }
 
 void
@@ -467,7 +474,7 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	 * removing it here may break files if multiple pages use the same annot. */
 
 	/* And free it. */
-	fz_drop_annot(ctx, &annot->super);
+	pdf_drop_annot(ctx, annot);
 
 	doc->dirty = 1;
 }

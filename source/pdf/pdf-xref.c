@@ -2713,11 +2713,6 @@ pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr)
 	return (pdf_page *)((ptr && ptr->bound_page == (fz_page_bound_page_fn*)pdf_bound_page) ? ptr : NULL);
 }
 
-pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr)
-{
-	return (pdf_annot *)((ptr && ptr->bound_annot == (fz_annot_bound_fn*)pdf_bound_annot) ? ptr : NULL);
-}
-
 /*
 	down-cast a fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF

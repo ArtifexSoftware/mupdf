@@ -2,13 +2,37 @@ package com.artifex.mupdf.fitz;
 
 import java.util.Date;
 
-public class PDFAnnotation extends Annotation
+public class PDFAnnotation
 {
 	static {
 		Context.init();
 	}
 
-	protected PDFAnnotation(long p) { super(p); }
+	private long pointer;
+
+	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
+	}
+
+	protected PDFAnnotation(long p) {
+		pointer = p;
+	}
+
+	public boolean equals(PDFAnnotation other) {
+		return (this.pointer == other.pointer);
+	}
+
+	public boolean equals(long other) {
+		return (this.pointer == other);
+	}
+
+	public native void run(Device dev, Matrix ctm, Cookie cookie);
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native Rect getBounds();
+	public native DisplayList toDisplayList();
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/annot.h */
 	public static final int TYPE_TEXT = 0;

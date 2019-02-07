@@ -693,7 +693,6 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 
 	fz_try(app->ctx)
 	{
-		fz_annot *annot;
 		/* Create display lists */
 		app->page_list = fz_new_display_list(app->ctx, fz_infinite_rect);
 		mdev = fz_new_list_device(app->ctx, app->page_list);
@@ -706,8 +705,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		mdev = NULL;
 		app->annotations_list = fz_new_display_list(app->ctx, fz_infinite_rect);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
-			fz_run_annot(app->ctx, annot, mdev, fz_identity, &cookie);
+		fz_run_page_extras(app->ctx, app->page, mdev, fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -763,12 +761,10 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 
 	fz_try(app->ctx)
 	{
-		fz_annot *annot;
 		/* Create display list */
 		app->annotations_list = fz_new_display_list(app->ctx, fz_infinite_rect);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
-			fz_run_annot(app->ctx, annot, mdev, fz_identity, &cookie);
+		fz_run_page_extras(app->ctx, app->page, mdev, fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -1807,21 +1803,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 				pdfapp_gotopage(app, fz_resolve_link(ctx, app->doc, link->uri, NULL, NULL) + 1);
 			return;
 		}
-	}
-	else
-	{
-		fz_annot *annot;
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
-		{
-			fz_rect rect = fz_bound_annot(app->ctx, annot);
-			if (x >= rect.x0 && x < rect.x1)
-				if (y >= rect.y0 && y < rect.y1)
-					break;
-		}
-		if (annot)
-			wincursor(app, CARET);
-		else
-			wincursor(app, ARROW);
 	}
 
 	if (state == 1 && !processed)

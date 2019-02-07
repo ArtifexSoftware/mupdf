@@ -217,6 +217,32 @@ pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *pag
 	}
 }
 
+void pdf_run_page_extras(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+{
+	pdf_document *doc = page->doc;
+	int nocache;
+
+	nocache = !!(dev->hints & FZ_NO_CACHE);
+	if (nocache)
+		pdf_mark_xref(ctx, doc);
+
+	fz_try(ctx)
+	{
+		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
+	}
+	fz_always(ctx)
+	{
+		if (nocache)
+			pdf_clear_xref_to_mark(ctx, doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
+		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
+}
+
 /*
 	Interpret a loaded page and render it on a device.
 

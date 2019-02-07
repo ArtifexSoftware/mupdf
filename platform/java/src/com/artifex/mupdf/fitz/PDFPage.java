@@ -8,8 +8,9 @@ public class PDFPage extends Page
 
 	private PDFPage(long p) { super(p); }
 
+	public native PDFAnnotation[] getAnnotations();
 	public native PDFAnnotation createAnnotation(int subtype);
-	public native void deleteAnnotation(Annotation annot);
+	public native void deleteAnnotation(PDFAnnotation annot);
 
 	public native boolean update();
 

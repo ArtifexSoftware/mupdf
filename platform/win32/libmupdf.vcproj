@@ -2416,6 +2416,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-util.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-write.c"
 				>
 			</File>

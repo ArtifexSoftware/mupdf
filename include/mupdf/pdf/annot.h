@@ -74,6 +74,9 @@ enum pdf_line_ending pdf_line_ending_from_string(fz_context *ctx, const char *en
 pdf_obj *pdf_name_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 const char *pdf_string_from_line_ending(fz_context *ctx, enum pdf_line_ending end);
 
+pdf_annot *pdf_keep_annot(fz_context *ctx, pdf_annot *annot);
+void pdf_drop_annot(fz_context *ctx, pdf_annot *annot);
+
 pdf_annot *pdf_first_annot(fz_context *ctx, pdf_page *page);
 pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
@@ -85,7 +88,8 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix 
 
 struct pdf_annot_s
 {
-	fz_annot super;
+	int refs;
+
 	pdf_page *page;
 	pdf_obj *obj;
 
@@ -200,7 +204,6 @@ void pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const ch
 void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3]);
 void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, const float color[3]);
 
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
 
 void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
@@ -219,5 +222,9 @@ void pdf_clear_focus(fz_context *ctx, pdf_document *doc);
 void pdf_focus_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
 int pdf_toggle_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
+
+fz_display_list *pdf_new_display_list_from_annot(fz_context *ctx, pdf_annot *annot);
+fz_pixmap *pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, int alpha);
+fz_stext_page *pdf_new_stext_page_from_annot(fz_context *ctx, pdf_annot *annot, const fz_stext_options *options);
 
 #endif

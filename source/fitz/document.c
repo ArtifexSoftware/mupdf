@@ -505,30 +505,6 @@ fz_bound_page(fz_context *ctx, fz_page *page)
 	return fz_empty_rect;
 }
 
-fz_annot *
-fz_first_annot(fz_context *ctx, fz_page *page)
-{
-	if (page && page->first_annot)
-		return page->first_annot(ctx, page);
-	return NULL;
-}
-
-fz_annot *
-fz_next_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (annot && annot->next_annot)
-		return annot->next_annot(ctx, annot);
-	return NULL;
-}
-
-fz_rect
-fz_bound_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (annot && annot->bound_annot)
-		return annot->bound_annot(ctx, annot);
-	return fz_empty_rect;
-}
-
 /*
 	Run a page through a device. Just the main
 	page content, without the annotations, if any.
@@ -552,7 +528,7 @@ fz_bound_annot(fz_context *ctx, fz_annot *annot)
 void
 fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	if (page && page->run_page_contents && page)
+	if (page && page->run_page_contents)
 	{
 		fz_try(ctx)
 		{
@@ -567,34 +543,16 @@ fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix t
 }
 
 /*
-	Run an annotation through a device.
-
-	page: Page obtained from fz_load_page.
-
-	annot: an annotation.
-
-	dev: Device obtained from fz_new_*_device.
-
-	transform: Transform to apply to page. May include for example
-	scaling and rotation, see fz_scale, fz_rotate and fz_concat.
-	Set to fz_identity if no transformation is desired.
-
-	cookie: Communication mechanism between caller and library
-	rendering the page. Intended for multi-threaded applications,
-	while single-threaded applications set cookie to NULL. The
-	caller may abort an ongoing rendering of a page. Cookie also
-	communicates progress information back to the caller. The
-	fields inside cookie are continually updated while the page is
-	rendering.
+	Run the extra content on a page (such as annotations and widgets) through a device.
 */
 void
-fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+fz_run_page_extras(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	if (annot && annot->run_annot)
+	if (page && page->run_page_extras)
 	{
 		fz_try(ctx)
 		{
-			annot->run_annot(ctx, annot, dev, transform, cookie);
+			page->run_page_extras(ctx, page, dev, transform, cookie);
 		}
 		fz_catch(ctx)
 		{
@@ -626,55 +584,8 @@ fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transfo
 void
 fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	fz_annot *annot;
-
 	fz_run_page_contents(ctx, page, dev, transform, cookie);
-
-	if (cookie && cookie->progress_max != -1)
-	{
-		int count = 1;
-		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
-			count++;
-		cookie->progress_max += count;
-	}
-
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
-	{
-		/* Check the cookie for aborting */
-		if (cookie)
-		{
-			if (cookie->abort)
-				break;
-			cookie->progress++;
-		}
-
-		fz_run_annot(ctx, annot, dev, transform, cookie);
-	}
-}
-
-fz_annot *
-fz_new_annot_of_size(fz_context *ctx, int size)
-{
-	fz_annot *annot = Memento_label(fz_calloc(ctx, 1, size), "fz_annot");
-	annot->refs = 1;
-	return annot;
-}
-
-fz_annot *
-fz_keep_annot(fz_context *ctx, fz_annot *annot)
-{
-	return fz_keep_imp(ctx, annot, &annot->refs);
-}
-
-void
-fz_drop_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (fz_drop_imp(ctx, annot, &annot->refs))
-	{
-		if (annot->drop_annot)
-			annot->drop_annot(ctx, annot);
-		fz_free(ctx, annot);
-	}
+	fz_run_page_extras(ctx, page, dev, transform, cookie);
 }
 
 fz_page *

@@ -13,7 +13,6 @@
 typedef struct fz_document_s fz_document;
 typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;
-typedef struct fz_annot_s fz_annot;
 typedef intptr_t fz_bookmark;
 
 typedef enum
@@ -131,20 +130,13 @@ typedef fz_rect (fz_page_bound_page_fn)(fz_context *ctx, fz_page *page);
 	contents of a page. See fz_run_page_contents for more
 	information.
 */
-typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+typedef void (fz_page_run_page_fn)(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 /*
 	Type for a function to load the links
 	from a page. See fz_load_links for more information.
 */
 typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
-
-/*
-	Type for a function to load the
-	annotations from a page. See fz_first_annot for more
-	information.
-*/
-typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
 
 /*
 	Type for a function to
@@ -181,24 +173,6 @@ typedef fz_separations *(fz_page_separations_fn)(fz_context *ctx, fz_page *page)
 */
 typedef int (fz_page_uses_overprint_fn)(fz_context *ctx, fz_page *page);
 
-typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
-typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
-typedef fz_rect (fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot);
-typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
-
-/*
-	Structure definition is public so other classes can
-	derive from it. Do not access the members directly.
-*/
-struct fz_annot_s
-{
-	int refs;
-	fz_annot_drop_fn *drop_annot;
-	fz_annot_bound_fn *bound_annot;
-	fz_annot_run_fn *run_annot;
-	fz_annot_next_fn *next_annot;
-};
-
 /*
 	Structure definition is public so other classes can
 	derive from it. Do not access the members directly.
@@ -209,9 +183,9 @@ struct fz_page_s
 	int number; /* page number */
 	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
-	fz_page_run_page_contents_fn *run_page_contents;
+	fz_page_run_page_fn *run_page_contents;
+	fz_page_run_page_fn *run_page_extras;
 	fz_page_load_links_fn *load_links;
-	fz_page_first_annot_fn *first_annot;
 	fz_page_page_presentation_fn *page_presentation;
 	fz_page_control_separation_fn *control_separation;
 	fz_page_separation_disabled_fn *separation_disabled;
@@ -337,8 +311,7 @@ fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
 void fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
-
-void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+void fz_run_page_extras(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
 void fz_drop_page(fz_context *ctx, fz_page *page);

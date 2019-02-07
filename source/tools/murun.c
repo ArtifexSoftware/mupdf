@@ -216,12 +216,6 @@ static void ffi_gc_fz_page(js_State *J, void *page)
 	fz_drop_page(ctx, page);
 }
 
-static void ffi_gc_fz_annot(js_State *J, void *annot)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_drop_annot(ctx, annot);
-}
-
 static void ffi_gc_fz_colorspace(js_State *J, void *colorspace)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -290,6 +284,12 @@ static void ffi_gc_fz_document_writer(js_State *J, void *wri)
 
 #if FZ_ENABLE_PDF
 
+static void ffi_gc_pdf_annot(js_State *J, void *annot)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_drop_annot(ctx, annot);
+}
+
 static void ffi_gc_pdf_document(js_State *J, void *doc)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -348,47 +348,6 @@ static void ffi_pushpage(js_State *J, fz_page *page)
 	}
 }
 
-static fz_annot *ffi_toannot(js_State *J, int idx)
-{
-	if (js_isuserdata(J, idx, "pdf_annot"))
-		return js_touserdata(J, idx, "pdf_annot");
-	return js_touserdata(J, idx, "fz_annot");
-}
-
-static void ffi_pushannot(js_State *J, fz_annot *annot)
-{
-	fz_context *ctx = js_getcontext(J);
-	pdf_annot *pannot = pdf_annot_from_fz_annot(ctx, annot);
-	if (pannot) {
-		int subtype;
-		fz_try(ctx)
-			subtype = pdf_annot_type(ctx, pannot);
-		fz_catch(ctx)
-			rethrow(J);
-		switch (subtype) {
-		default: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_TEXT: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_LINK: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_FREE_TEXT: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_LINE: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_SQUARE: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_CIRCLE: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_POLYGON: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_POLY_LINE: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_HIGHLIGHT: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_UNDERLINE: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_SQUIGGLY: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_STRIKE_OUT: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_STAMP: js_getregistry(J, "pdf_annot"); break;
-		case PDF_ANNOT_INK: js_getregistry(J, "pdf_annot"); break;
-		}
-		js_newuserdata(J, "pdf_annot", fz_keep_annot(ctx, annot), ffi_gc_fz_annot);
-	} else {
-		js_getregistry(J, "fz_annot");
-		js_newuserdata(J, "fz_annot", fz_keep_annot(ctx, annot), ffi_gc_fz_annot);
-	}
-}
-
 #else
 
 static fz_document *ffi_todocument(js_State *J, int idx)
@@ -411,18 +370,6 @@ static void ffi_pushpage(js_State *J, fz_page *page)
 {
 	js_getregistry(J, "fz_page");
 	js_newuserdata(J, "fz_page", page, ffi_gc_fz_page);
-}
-
-static fz_annot *ffi_toannot(js_State *J, int idx)
-{
-	return js_touserdata(J, idx, "fz_annot");
-}
-
-static void ffi_pushannot(js_State *J, fz_annot *annot)
-{
-	fz_context *ctx = js_getcontext(J);
-	js_getregistry(J, "fz_annot");
-	js_newuserdata(J, "fz_annot", fz_keep_annot(ctx, annot), ffi_gc_fz_annot);
 }
 
 #endif /* FZ_ENABLE_PDF */
@@ -1950,31 +1897,6 @@ static void ffi_Page_search(js_State *J)
 	}
 }
 
-static void ffi_Page_getAnnotations(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_page *page = ffi_topage(J, 0);
-	fz_annot *annot = NULL;
-	int i = 0;
-
-	js_newarray(J);
-
-	fz_try(ctx)
-		annot = fz_first_annot(ctx, page);
-	fz_catch(ctx)
-		rethrow(J);
-
-	while (annot) {
-		ffi_pushannot(J, annot);
-		js_setindex(J, -2, i++);
-
-		fz_try(ctx)
-			annot = fz_next_annot(ctx, annot);
-		fz_catch(ctx)
-			rethrow(J);
-	}
-}
-
 static void ffi_Page_getLinks(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2003,85 +1925,6 @@ static void ffi_Page_getLinks(js_State *J)
 	}
 
 	fz_drop_link(ctx, links);
-}
-
-static void ffi_Annotation_isPDF(js_State *J)
-{
-	js_pushboolean(J, js_isuserdata(J, 0, "pdf_annot"));
-}
-
-static void ffi_Annotation_bound(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_annot *annot = ffi_toannot(J, 0);
-	fz_rect bounds;
-
-	fz_try(ctx)
-		bounds = fz_bound_annot(ctx, annot);
-	fz_catch(ctx)
-		rethrow(J);
-
-	ffi_pushrect(J, bounds);
-}
-
-static void ffi_Annotation_run(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_annot *annot = ffi_toannot(J, 0);
-	fz_device *device = NULL;
-	fz_matrix ctm = ffi_tomatrix(J, 2);
-
-	if (js_isuserdata(J, 1, "fz_device")) {
-		device = js_touserdata(J, 1, "fz_device");
-		fz_try(ctx)
-			fz_run_annot(ctx, annot, device, ctm, NULL);
-		fz_catch(ctx)
-			rethrow(J);
-	} else {
-		device = new_js_device(ctx, J);
-		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
-		fz_try(ctx) {
-			fz_run_annot(ctx, annot, device, ctm, NULL);
-			fz_close_device(ctx, device);
-		}
-		fz_always(ctx)
-			fz_drop_device(ctx, device);
-		fz_catch(ctx)
-			rethrow(J);
-	}
-}
-
-static void ffi_Annotation_toDisplayList(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_annot *annot = ffi_toannot(J, 0);
-	fz_display_list *list = NULL;
-
-	fz_try(ctx)
-		list = fz_new_display_list_from_annot(ctx, annot);
-	fz_catch(ctx)
-		rethrow(J);
-
-	js_getregistry(J, "fz_display_list");
-	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
-}
-
-static void ffi_Annotation_toPixmap(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_annot *annot = ffi_toannot(J, 0);
-	fz_matrix ctm = ffi_tomatrix(J, 1);
-	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
-	int alpha = js_toboolean(J, 3);
-	fz_pixmap *pixmap = NULL;
-
-	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_annot(ctx, annot, ctm, colorspace, alpha);
-	fz_catch(ctx)
-		rethrow(J);
-
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
@@ -4040,6 +3883,31 @@ static void ffi_PDFObject_forEach(js_State *J)
 	}
 }
 
+static void ffi_PDFPage_getAnnotations(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = js_touserdata(J, 0, "pdf_page");
+	pdf_annot *annot = NULL;
+	int i = 0;
+
+	js_newarray(J);
+
+	fz_try(ctx)
+		annot = pdf_first_annot(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	while (annot) {
+		js_newuserdata(J, "pdf_annot", pdf_keep_annot(ctx, annot), ffi_gc_pdf_annot);
+		js_setindex(J, -2, i++);
+
+		fz_try(ctx)
+			annot = pdf_next_annot(ctx, annot);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
 static void ffi_PDFPage_createAnnotation(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4055,7 +3923,7 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	}
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushannot(J, (fz_annot*)annot);
+	js_newuserdata(J, "pdf_annot", annot, ffi_gc_pdf_annot);
 }
 
 static void ffi_PDFPage_deleteAnnotation(js_State *J)
@@ -4079,6 +3947,80 @@ static void ffi_PDFPage_update(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushboolean(J, changed);
+}
+
+static void ffi_PDFAnnotation_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_rect bounds;
+
+	fz_try(ctx)
+		bounds = pdf_bound_annot(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushrect(J, bounds);
+}
+
+static void ffi_PDFAnnotation_run(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_device *device = NULL;
+	fz_matrix ctm = ffi_tomatrix(J, 2);
+
+	if (js_isuserdata(J, 1, "fz_device")) {
+		device = js_touserdata(J, 1, "fz_device");
+		fz_try(ctx)
+			pdf_run_annot(ctx, annot, device, ctm, NULL);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		device = new_js_device(ctx, J);
+		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
+		fz_try(ctx) {
+			pdf_run_annot(ctx, annot, device, ctm, NULL);
+			fz_close_device(ctx, device);
+		}
+		fz_always(ctx)
+			fz_drop_device(ctx, device);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_PDFAnnotation_toDisplayList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_display_list *list = NULL;
+
+	fz_try(ctx)
+		list = pdf_new_display_list_from_annot(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_display_list");
+	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
+}
+
+static void ffi_PDFAnnotation_toPixmap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_matrix ctm = ffi_tomatrix(J, 1);
+	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
+	int alpha = js_toboolean(J, 3);
+	fz_pixmap *pixmap = NULL;
+
+	fz_try(ctx)
+		pixmap = pdf_new_pixmap_from_annot(ctx, annot, ctm, colorspace, alpha);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
 static void ffi_PDFAnnotation_getType(js_State *J)
@@ -4565,20 +4507,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
 		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 1);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
-		jsB_propfun(J, "Page.getAnnotations", ffi_Page_getAnnotations, 0);
 		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
 	}
 	js_setregistry(J, "fz_page");
-
-	js_newobject(J);
-	{
-		jsB_propfun(J, "Annotation.isPDF", ffi_Annotation_isPDF, 0);
-		jsB_propfun(J, "Annotation.bound", ffi_Annotation_bound, 0);
-		jsB_propfun(J, "Annotation.run", ffi_Annotation_run, 2);
-		jsB_propfun(J, "Annotation.toPixmap", ffi_Annotation_toPixmap, 3);
-		jsB_propfun(J, "Annotation.toDisplayList", ffi_Annotation_toDisplayList, 0);
-	}
-	js_setregistry(J, "fz_annot");
 
 	js_newobject(J);
 	{
@@ -4789,6 +4720,7 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "fz_page");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFPage.getAnnotations", ffi_PDFPage_getAnnotations, 0);
 		jsB_propfun(J, "PDFPage.createAnnotation", ffi_PDFPage_createAnnotation, 1);
 		jsB_propfun(J, "PDFPage.deleteAnnotation", ffi_PDFPage_deleteAnnotation, 1);
 		jsB_propfun(J, "PDFPage.update", ffi_PDFPage_update, 0);
@@ -4798,6 +4730,10 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "fz_annot");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFAnnotation.bound", ffi_PDFAnnotation_bound, 0);
+		jsB_propfun(J, "PDFAnnotation.run", ffi_PDFAnnotation_run, 2);
+		jsB_propfun(J, "PDFAnnotation.toPixmap", ffi_PDFAnnotation_toPixmap, 3);
+		jsB_propfun(J, "PDFAnnotation.toDisplayList", ffi_PDFAnnotation_toDisplayList, 0);
 		jsB_propfun(J, "PDFAnnotation.getType", ffi_PDFAnnotation_getType, 0);
 		jsB_propfun(J, "PDFAnnotation.getFlags", ffi_PDFAnnotation_getFlags, 0);
 		jsB_propfun(J, "PDFAnnotation.setFlags", ffi_PDFAnnotation_setFlags, 1);
