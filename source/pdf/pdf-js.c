@@ -370,6 +370,19 @@ static void doc_getField(js_State *J)
 	}
 }
 
+static void doc_getNumPages(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	int pages = pdf_count_pages(js->ctx, js->doc);
+	js_pushnumber(J, pages);
+}
+
+static void doc_setNumPages(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	fz_warn(js->ctx, "Unexpected call to doc_setNumPages");
+}
+
 static void doc_resetForm(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
@@ -531,6 +544,7 @@ static void declare_dom(pdf_js *js)
 	 * the 'this' binding for regular non-strict function calls. */
 	js_pushglobal(J);
 	{
+		addproperty(J, "Doc.numPages", doc_getNumPages, doc_setNumPages);
 		addmethod(J, "Doc.getField", doc_getField, 1);
 		addmethod(J, "Doc.resetForm", doc_resetForm, 0);
 		addmethod(J, "Doc.calculateNow", doc_calculateNow, 0);
