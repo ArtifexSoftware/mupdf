@@ -115,6 +115,7 @@ fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, 
 fz_matrix pdf_annot_transform(fz_context *ctx, pdf_annot *annot);
 void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
+void pdf_drop_widgets(fz_context *ctx, pdf_widget *widget_list);
 
 pdf_annot *pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);

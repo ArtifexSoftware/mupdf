@@ -114,8 +114,16 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 			if (doc->focus_obj == obj)
 				doc->focus = annot;
 
-			*page->annot_tailp = annot;
-			page->annot_tailp = &annot->next;
+			if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
+			{
+				*page->widget_tailp = annot;
+				page->widget_tailp = &annot->next;
+			}
+			else
+			{
+				*page->annot_tailp = annot;
+				page->annot_tailp = &annot->next;
+			}
 		}
 	}
 }
@@ -123,13 +131,13 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 pdf_annot *
 pdf_first_annot(fz_context *ctx, pdf_page *page)
 {
-	return page ? page->annots : NULL;
+	return page->annots;
 }
 
 pdf_annot *
 pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 {
-	return annot ? annot->next : NULL;
+	return annot->next;
 }
 
 /*

@@ -87,6 +87,7 @@ struct pdf_page_s
 
 	fz_link *links;
 	pdf_annot *annots, **annot_tailp;
+	pdf_widget *widgets, **widget_tailp;
 };
 
 enum

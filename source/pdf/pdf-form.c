@@ -609,9 +609,9 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	if (page == NULL)
 		return 0;
 
-	for (a = page->annots; a; a = a->next)
+	for (a = page->widgets; a; a = a->next)
 	{
-		bbox = pdf_bound_annot(ctx, a);
+		bbox = pdf_bound_widget(ctx, a);
 		if (pt->x >= bbox.x0 && pt->x <= bbox.x1)
 			if (pt->y >= bbox.y0 && pt->y <= bbox.y1)
 				annot = a;
@@ -623,13 +623,6 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 		int ff = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Ff));
 		int f = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
 		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW) || ff & PDF_FIELD_IS_READ_ONLY)
-			annot = NULL;
-	}
-
-	/* Skip Link annotations. */
-	if (annot)
-	{
-		if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Link)))
 			annot = NULL;
 	}
 
@@ -695,16 +688,19 @@ int
 pdf_update_page(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
+	pdf_widget *widget;
 	int changed = 0;
 
 	if (page->doc->recalculate)
 		pdf_form_calculate(ctx, page->doc);
 
 	for (annot = page->annots; annot; annot = annot->next)
-	{
 		if (pdf_update_annot(ctx, annot))
 			changed = 1;
-	}
+	for (widget = page->widgets; widget; widget = widget->next)
+		if (pdf_update_annot(ctx, widget))
+			changed = 1;
+
 	return changed;
 }
 
@@ -719,43 +715,24 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 */
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc)
 {
-	return (pdf_widget *)doc->focus;
+	return doc->focus;
 }
 
 pdf_widget *pdf_first_widget(fz_context *ctx, pdf_page *page)
 {
-	pdf_annot *annot = page->annots;
-
-	while (annot && pdf_annot_type(ctx, annot) != PDF_ANNOT_WIDGET)
-		annot = annot->next;
-
-	return (pdf_widget *)annot;
+	return page->widgets;
 }
 
-pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous)
+pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *widget)
 {
-	pdf_annot *annot = (pdf_annot *)previous;
-
-	if (annot)
-		annot = annot->next;
-
-	while (annot && pdf_annot_type(ctx, annot) != PDF_ANNOT_WIDGET)
-		annot = annot->next;
-
-	return (pdf_widget *)annot;
+	return widget->next;
 }
 
-/*
-	find out the type of a widget.
-
-	The type determines what widget subclass the widget
-	can safely be cast to.
-*/
 enum pdf_widget_type pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 {
-	pdf_annot *annot = (pdf_annot *)widget;
-	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_WIDGET)
-		return pdf_field_type(ctx, annot->obj);
+	pdf_obj *subtype = pdf_dict_get(ctx, widget->obj, PDF_NAME(Subtype));
+	if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
+		return pdf_field_type(ctx, widget->obj);
 	return PDF_WIDGET_TYPE_UNKNOWN;
 }
 
@@ -1055,9 +1032,39 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 	pdf_field_mark_dirty(ctx, field);
 }
 
-fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget)
+pdf_widget *
+pdf_keep_widget(fz_context *ctx, pdf_widget *widget)
 {
-	return pdf_bound_annot(ctx, (pdf_annot*)widget);
+	return pdf_keep_annot(ctx, widget);
+}
+
+void
+pdf_drop_widget(fz_context *ctx, pdf_widget *widget)
+{
+	pdf_drop_annot(ctx, widget);
+}
+
+void
+pdf_drop_widgets(fz_context *ctx, pdf_widget *widget)
+{
+	while (widget)
+	{
+		pdf_widget *next = widget->next;
+		pdf_drop_widget(ctx, widget);
+		widget = next;
+	}
+}
+
+fz_rect
+pdf_bound_widget(fz_context *ctx, pdf_widget *widget)
+{
+	return pdf_bound_annot(ctx, widget);
+}
+
+int
+pdf_update_widget(fz_context *ctx, pdf_widget *widget)
+{
+	return pdf_update_annot(ctx, widget);
 }
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw)

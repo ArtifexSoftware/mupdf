@@ -392,8 +392,7 @@ void do_annotate_panel(void)
 
 	n = 0;
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
-		if (pdf_annot_type(ctx, annot) != PDF_ANNOT_WIDGET)
-			++n;
+		++n;
 
 	ui_list_begin(&annot_list, n, 0, ui.lineheight * 10 + 4);
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
@@ -401,12 +400,9 @@ void do_annotate_panel(void)
 		char buf[256];
 		int num = pdf_to_num(ctx, annot->obj);
 		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
-		if (subtype != PDF_ANNOT_WIDGET)
-		{
-			fz_snprintf(buf, sizeof buf, "%d: %s", num, pdf_string_from_annot_type(ctx, subtype));
-			if (ui_list_item(&annot_list, annot->obj, buf, selected_annot == annot))
-				selected_annot = annot;
-		}
+		fz_snprintf(buf, sizeof buf, "%d: %s", num, pdf_string_from_annot_type(ctx, subtype));
+		if (ui_list_item(&annot_list, annot->obj, buf, selected_annot == annot))
+			selected_annot = annot;
 	}
 	ui_list_end(&annot_list);
 
@@ -1020,8 +1016,6 @@ void do_annotate_canvas(fz_irect canvas_area)
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
 		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
-		if (subtype == PDF_ANNOT_WIDGET)
-			continue;
 
 		bounds = pdf_bound_annot(ctx, annot);
 		bounds = fz_transform_rect(bounds, view_page_ctm);

@@ -912,6 +912,7 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
+	pdf_drop_widgets(ctx, page->widgets);
 
 	pdf_drop_obj(ctx, page->obj);
 
@@ -940,6 +941,8 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->links = NULL;
 	page->annots = NULL;
 	page->annot_tailp = &page->annots;
+	page->widgets = NULL;
+	page->widget_tailp = &page->widgets;
 	page->incomplete = 0;
 
 	return page;
