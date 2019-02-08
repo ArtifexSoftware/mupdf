@@ -153,29 +153,39 @@ fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
 }
 
 static void
-fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
+fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image, const fz_irect *isa)
 {
-	fz_pixmap *mask = fz_get_pixmap_from_image(ctx, image->mask, NULL, NULL, NULL, NULL);
-	unsigned char *s = mask->samples;
-	unsigned char *d = tile->samples;
+	fz_pixmap *mask;
+	unsigned char *s, *d = tile->samples;
 	int n = tile->n;
 	int k;
-	int sstride = mask->stride - mask->w * mask->n;
-	int dstride = tile->stride - tile->w * tile->n;
-	int h = mask->h;
+	int sstride, dstride = tile->stride - tile->w * tile->n;
+	int h;
+	fz_irect subarea;
 
-	if (tile->w != mask->w || tile->h != mask->h)
+	/* We need at least as much of the mask as there was of the tile. */
+	if (isa)
+		subarea = *isa;
+	else
 	{
-		fz_warn(ctx, "mask must be of same size as image for /Matte");
-		fz_drop_pixmap(ctx, mask);
-		return;
+		subarea.x0 = 0;
+		subarea.y0 = 0;
+		subarea.x1 = tile->w;
+		subarea.y1 = tile->h;
 	}
 
-	if (mask->w != 0)
+	mask = fz_get_pixmap_from_image(ctx, image->mask, &subarea, NULL, NULL, NULL);
+	s = mask->samples;
+	if (isa)
+		s += (isa->x0 - subarea.x0) * mask->n + (isa->y0 - subarea.y0) * mask->stride;
+	sstride = mask->stride - tile->w * mask->n;
+	h = tile->h;
+
+	if (tile->w != 0)
 	{
 		while (h--)
 		{
-			int w = mask->w;
+			int w = tile->w;
 			do
 			{
 				if (*s == 0)
@@ -315,7 +325,18 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 	int f = 1<<l2factor;
 	int w = image->w;
 	int h = image->h;
+	int matte = image->use_colorkey && image->mask;
 
+	if (matte)
+	{
+		/* Can't do l2factor decoding */
+		if (image->w != image->mask->w || image->h != image->mask->h)
+		{
+			fz_warn(ctx, "mask must be of same size as image for /Matte");
+			matte = 0;
+		}
+		assert(l2factor == 0);
+	}
 	if (subarea)
 	{
 		fz_adjust_image_subarea(ctx, image, subarea, l2factor);
@@ -424,8 +445,8 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		}
 
 		/* pre-blended matte color */
-		if (image->use_colorkey && image->mask)
-			fz_unblend_masked_tile(ctx, tile, image);
+		if (matte)
+			fz_unblend_masked_tile(ctx, tile, image, subarea);
 	}
 	fz_catch(ctx)
 	{
@@ -480,6 +501,16 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 	int indexed;
 	fz_pixmap *tile;
 	int can_sub = 0;
+	int local_l2factor;
+
+	/* If we are using matte, then the decode code requires both image and tile sizes
+	 * to match. The simplest way to ensure this is to do no native l2factor decoding.
+	 */
+	if (image->super.use_colorkey && image->super.mask)
+	{
+		local_l2factor = 0;
+		l2factor = &local_l2factor;
+	}
 
 	/* We need to make a new one. */
 	/* First check for ones that we can't decode using streams */
@@ -749,7 +780,8 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	tile = image->get_pixmap(ctx, image, &key.rect, w, h, &l2factor_remaining);
 
 	/* Update the ctm to allow for subareas. */
-	update_ctm_for_subarea(ctm, &key.rect, image->w, image->h);
+	if (ctm)
+		update_ctm_for_subarea(ctm, &key.rect, image->w, image->h);
 
 	/* l2factor_remaining is updated to the amount of subscaling left to do */
 	assert(l2factor_remaining >= 0 && l2factor_remaining <= 6);
