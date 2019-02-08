@@ -20,7 +20,7 @@ static int showcolumn;
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: mutool show [options] file.pdf ( xref | outline | grep | <path> ) *\n"
+		"usage: mutool show [options] file.pdf ( xref | outline | grep | js | <path> ) *\n"
 		"\t-p -\tpassword\n"
 		"\t-o -\toutput file\n"
 		"\t-e\tleave stream contents in their original form\n"
@@ -238,6 +238,44 @@ static void showoutline(void)
 		fz_rethrow(ctx);
 }
 
+static void showtext(char *buf)
+{
+	while (*buf)
+	{
+		if (*buf == '\r')
+		{
+			++buf;
+			if (*buf == '\n')
+				++buf;
+			fz_write_byte(ctx, out, '\n');
+		}
+		else
+		{
+			fz_write_byte(ctx, out, *buf);
+			++buf;
+		}
+	}
+}
+
+static void showjs(void)
+{
+	pdf_obj *tree;
+	int i;
+
+	tree = pdf_load_name_tree(ctx, doc, PDF_NAME(JavaScript));
+	for (i = 0; i < pdf_dict_len(ctx, tree); ++i)
+	{
+		pdf_obj *name = pdf_dict_get_key(ctx, tree, i);
+		pdf_obj *action = pdf_dict_get_val(ctx, tree, i);
+		pdf_obj *js = pdf_dict_get(ctx, action, PDF_NAME(JS));
+		char *src = pdf_load_stream_or_string_as_utf8(ctx, js);
+		fz_write_printf(ctx, out, "// %s\n", pdf_to_name(ctx, name));
+		showtext(src);
+		fz_write_byte(ctx, out, '\n');
+		fz_free(ctx, src);
+	}
+}
+
 #define SEP ".[]/"
 
 static int isnumber(char *s)
@@ -388,6 +426,8 @@ static void show(char *sel)
 		showgrep();
 	else if (!strcmp(sel, "outline"))
 		showoutline();
+	else if (!strcmp(sel, "js"))
+		showjs();
 	else
 		showpathroot(sel);
 }
