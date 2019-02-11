@@ -340,24 +340,24 @@ install: libs apps
 	install -d $(DESTDIR)$(incdir)/mupdf
 	install -d $(DESTDIR)$(incdir)/mupdf/fitz
 	install -d $(DESTDIR)$(incdir)/mupdf/pdf
-	install include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
-	install include/mupdf/fitz/*.h $(DESTDIR)$(incdir)/mupdf/fitz
-	install include/mupdf/pdf/*.h $(DESTDIR)$(incdir)/mupdf/pdf
+	install -m 644 include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
+	install -m 644 include/mupdf/fitz/*.h $(DESTDIR)$(incdir)/mupdf/fitz
+	install -m 644 include/mupdf/pdf/*.h $(DESTDIR)$(incdir)/mupdf/pdf
 
 	install -d $(DESTDIR)$(libdir)
-	install $(INSTALL_LIBS) $(DESTDIR)$(libdir)
+	install -m 644 $(INSTALL_LIBS) $(DESTDIR)$(libdir)
 
 	install -d $(DESTDIR)$(bindir)
-	install $(INSTALL_APPS) $(DESTDIR)$(bindir)
+	install -m 755 $(INSTALL_APPS) $(DESTDIR)$(bindir)
 
 	install -d $(DESTDIR)$(mandir)/man1
-	install docs/man/*.1 $(DESTDIR)$(mandir)/man1
+	install -m 644 docs/man/*.1 $(DESTDIR)$(mandir)/man1
 
 	install -d $(DESTDIR)$(docdir)
 	install -d $(DESTDIR)$(docdir)/examples
-	install README COPYING CHANGES $(DESTDIR)$(docdir)
-	install docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
-	install docs/examples/* $(DESTDIR)$(docdir)/examples
+	install -m 644 README COPYING CHANGES $(DESTDIR)$(docdir)
+	install -m 644 docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
+	install -m 644 docs/examples/* $(DESTDIR)$(docdir)/examples
 
 tarball:
 	bash scripts/archive.sh
