@@ -96,12 +96,12 @@ int main(int argc, char **argv)
 
 	/* Compute a transformation matrix for the zoom and rotation desired. */
 	/* The default resolution without scaling is 72 dpi. */
-	fz_scale(&ctm, zoom / 100, zoom / 100);
-	fz_pre_rotate(&ctm, rotate);
+	ctm = fz_scale(zoom / 100, zoom / 100);
+	ctm = fz_pre_rotate(ctm, rotate);
 
 	/* Render page to an RGB pixmap. */
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, &ctm, fz_device_rgb(ctx), 0);
+		pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, ctm, fz_device_rgb(ctx), 0);
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "cannot render page: %s\n", fz_caught_message(ctx));
