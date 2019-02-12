@@ -370,6 +370,17 @@ static void on_warning(const char *fmt, va_list ap)
 	fprintf(stderr, "\n");
 }
 
+static void on_timer(int timer_id)
+{
+	if (reloadrequested)
+	{
+		reload();
+		ui_invalidate();
+		reloadrequested = 0;
+	}
+	glutTimerFunc(500, on_timer, 0);
+}
+
 void ui_init(int w, int h, const char *title)
 {
 	float ui_scale;
@@ -384,6 +395,7 @@ void ui_init(int w, int h, const char *title)
 	glutInitWindowSize(w, h);
 	glutCreateWindow(title);
 
+	glutTimerFunc(500, on_timer, 0);
 	glutReshapeFunc(on_reshape);
 	glutDisplayFunc(on_display);
 #if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)

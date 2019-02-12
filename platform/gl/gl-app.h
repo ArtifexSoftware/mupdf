@@ -244,6 +244,7 @@ extern fz_irect view_page_area;
 extern char filename[];
 extern int showform;
 extern int showannotate;
+extern int reloadrequested;
 
 void toggle_annotate();
 void run_main_loop(void);

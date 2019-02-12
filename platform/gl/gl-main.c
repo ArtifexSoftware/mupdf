@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _WIN32
+#include <signal.h>
+#endif
 
 #include "mujs.h"
 
@@ -1550,6 +1553,16 @@ static void cleanup(void)
 	fz_drop_context(ctx);
 }
 
+int reloadrequested = 0;
+
+#ifndef _WIN32
+static void signal_handler(int signal)
+{
+	if (signal == SIGHUP)
+		reloadrequested = 1;
+}
+#endif
+
 #ifdef _MSC_VER
 int main_utf8(int argc, char **argv)
 #else
@@ -1558,6 +1571,10 @@ int main(int argc, char **argv)
 {
 	int aa_level = 8;
 	int c;
+
+#ifndef _WIN32
+	signal(SIGHUP, signal_handler);
+#endif
 
 	glutInit(&argc, argv);
 
