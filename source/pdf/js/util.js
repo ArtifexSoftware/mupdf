@@ -453,7 +453,19 @@ util.printf = function () {
 }
 
 function AFMergeChange(event) {
-	return event.value;
+	var prefix, postfix;
+	var value = event.value;
+	if (event.willCommit)
+		return value;
+	if (event.selStart >= 0)
+		prefix = value.substring(0, event.selStart);
+	else
+		prefix = "";
+	if (event.selEnd >= 0 && event.selEnd <= value.length)
+		postfix = value.substring(event.selEnd, value.length);
+	else
+		postfix = "";
+	return prefix + event.change + postfix;
 }
 
 function AFMakeNumber(str) {
