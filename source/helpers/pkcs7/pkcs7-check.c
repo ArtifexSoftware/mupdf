@@ -35,7 +35,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 	if (pdf_xref_obj_is_unsaved_signature(doc, ((pdf_annot *)widget)->obj))
 	{
-		fz_strlcpy(ebuf, "Signed but document yet to be saved", ebufsize);
+		fz_strlcpy(ebuf, "Signed but document yet to be saved.", ebufsize);
 		if (ebufsize > 0)
 			ebuf[ebufsize-1] = 0;
 		return 0;
@@ -99,6 +99,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 						len = strlen(ebuf);
 						pdf_format_designated_name(name, ebuf + len, ebufsize - len);
 						pkcs7_openssl_drop_designated_name(ctx, name);
+						fz_strlcat(ebuf, ".", ebufsize);
 					}
 				}
 				break;
@@ -109,7 +110,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		else
 		{
 			res = 0;
-			fz_strlcpy(ebuf, "Not signed", ebufsize);
+			fz_strlcpy(ebuf, "Not signed.", ebufsize);
 		}
 	}
 	fz_always(ctx)
