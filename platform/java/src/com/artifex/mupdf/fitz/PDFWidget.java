@@ -47,24 +47,83 @@ public class PDFWidget extends PDFAnnotation
 	public static final int PDF_CH_FIELD_IS_SORT = 1 << 19;
 	public static final int PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21;
 
-	public native boolean setTextValue(String val);
-	public native boolean setValue(String val);
-	public native String getValue();
-	public native Quad[] textQuads();
-	public native void setEditingState(boolean state);
-	public native boolean getEditingState();
-	public native boolean toggle();
-
 	// These don't change after creation, so are cached in java fields.
-	private int kind;
+	private int fieldType;
 	private int fieldFlags;
 	private int textFormat; /* text field formatting type */
 	private int maxLen; /* text field max length */
 	private String[] options; /* choice field option list */
 
-	public int getKind() { return kind; }
-	public int getFieldFlags() { return fieldFlags; }
-	public int getMaxLen() { return maxLen; }
-	public int getTextFormat() { return textFormat; }
-	public String[] getOptions() { return options; }
+	/* All fields */
+
+	public int getFieldType() {
+		return fieldType;
+	}
+	public int getFieldFlags() {
+		return fieldFlags;
+	}
+	public boolean isReadOnly() {
+		return (getFieldFlags() & PDF_FIELD_IS_READ_ONLY) != 0;
+	}
+	public native String getValue();
+	public native boolean setValue(String val);
+
+	/* Button fields */
+
+	public boolean isButton() {
+		int ft = getFieldType();
+		return ft == TYPE_BTN_PUSH || ft == TYPE_BTN_CHECK || ft == TYPE_BTN_RADIO;
+	}
+	public boolean isPushButton() {
+		return getFieldType() == TYPE_BTN_PUSH;
+	}
+	public boolean isCheckbox() {
+		return getFieldType() == TYPE_BTN_CHECK;
+	}
+	public boolean isRadioButton() {
+		return getFieldType() == TYPE_BTN_RADIO;
+	}
+	public native boolean toggle();
+
+	/* Text fields */
+
+	public boolean isText() {
+		return getFieldType() == TYPE_TX;
+	}
+	public boolean isMultiline() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_MULTILINE) != 0;
+	}
+	public boolean isPassword() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_PASSWORD) != 0;
+	}
+	public boolean isComb() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_COMB) != 0;
+	}
+	public int getMaxLen() {
+		return maxLen;
+	}
+	public int getTextFormat() {
+		return textFormat;
+	}
+	public native Quad[] textQuads();
+	public native void setEditingState(boolean state);
+	public native boolean getEditingState();
+	// TODO: eventKeystroke() instead
+	public native boolean setTextValue(String val);
+
+	/* Choice fields */
+
+	public boolean isChoice() {
+		int ft = getFieldType();
+		return ft == TYPE_CH_COMBO || ft == TYPE_CH_LIST;
+	}
+	public boolean isComboBox() {
+		return getFieldType() == TYPE_CH_COMBO;
+	}
+	public boolean isListBox() {
+		return getFieldType() == TYPE_CH_LIST;
+	}
+	public String[] getOptions() {
+		return options;
+	}
 }

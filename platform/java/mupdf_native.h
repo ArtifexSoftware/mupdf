@@ -2509,11 +2509,11 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT 2097152L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    setTextValue
- * Signature: (Ljava/lang/String;)Z
+ * Method:    getValue
+ * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getValue
+  (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
@@ -2525,10 +2525,10 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setValue
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    getValue
- * Signature: ()Ljava/lang/String;
+ * Method:    toggle
+ * Signature: ()Z
  */
-JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getValue
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_toggle
   (JNIEnv *, jobject);
 
 /*
@@ -2557,11 +2557,11 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getEditingState
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    toggle
- * Signature: ()Z
+ * Method:    setTextValue
+ * Signature: (Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_toggle
-  (JNIEnv *, jobject);
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
+  (JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus
 }

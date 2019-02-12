@@ -158,12 +158,12 @@ static jfieldID fid_TextChar_c;
 static jfieldID fid_TextLine_bbox;
 static jfieldID fid_TextLine_chars;
 static jfieldID fid_Text_pointer;
-static jfieldID fid_PDFWidget_pointer;
-static jfieldID fid_PDFWidget_kind;
-static jfieldID fid_PDFWidget_textFormat;
-static jfieldID fid_PDFWidget_maxLen;
 static jfieldID fid_PDFWidget_fieldFlags;
+static jfieldID fid_PDFWidget_fieldType;
+static jfieldID fid_PDFWidget_maxLen;
 static jfieldID fid_PDFWidget_options;
+static jfieldID fid_PDFWidget_pointer;
+static jfieldID fid_PDFWidget_textFormat;
 
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
@@ -720,7 +720,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_PDFWidget = get_class(&err, env, PKG"PDFWidget");
 	fid_PDFWidget_pointer = get_field(&err, env, "pointer", "J");
-	fid_PDFWidget_kind = get_field(&err, env, "kind", "I");
+	fid_PDFWidget_fieldType = get_field(&err, env, "fieldType", "I");
 	fid_PDFWidget_textFormat = get_field(&err, env, "textFormat", "I");
 	fid_PDFWidget_maxLen = get_field(&err, env, "maxLen", "I");
 	fid_PDFWidget_fieldFlags = get_field(&err, env, "fieldFlags", "I");
@@ -1754,19 +1754,26 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 
 	fz_try(ctx)
 	{
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_kind, pdf_widget_type(ctx, widget));
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget->page->doc, widget));
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, pdf_field_flags(ctx, widget->obj));
-
-		nopts = pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, NULL);
-		if (nopts > 0)
+		int fieldType = pdf_widget_type(ctx, widget);
+		int fieldFlags = pdf_field_flags(ctx, widget->obj);
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldType, fieldType);
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, fieldFlags);
+		if (fieldType == PDF_WIDGET_TYPE_TX)
 		{
-			opts = fz_malloc(ctx, nopts * sizeof(*opts));
-			pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, opts);
-			jopts = to_StringArray_safe(ctx, env, opts, nopts);
-			if (jopts)
-				(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget->page->doc, widget));
+		}
+		if (fieldType == PDF_WIDGET_TYPE_CH_COMBO || fieldType == PDF_WIDGET_TYPE_CH_LIST)
+		{
+			nopts = pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, NULL);
+			if (nopts > 0)
+			{
+				opts = fz_malloc(ctx, nopts * sizeof(*opts));
+				pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, opts);
+				jopts = to_StringArray_safe(ctx, env, opts, nopts);
+				if (jopts)
+					(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
+			}
 		}
 	}
 	fz_always(ctx)
