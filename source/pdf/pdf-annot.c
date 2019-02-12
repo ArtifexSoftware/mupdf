@@ -8,8 +8,6 @@
 #define timegm _mkgmtime
 #endif
 
-#define TEXT_ANNOT_SIZE (25.0f)
-
 #define isdigit(c) (c >= '0' && c <= '9')
 
 static void
@@ -1353,32 +1351,6 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 	pdf_array_push_drop(ctx, ink_list, stroke);
 
 	pdf_dirty_annot(ctx, annot);
-}
-
-/*
-	set the position on page for a text (sticky note) annotation.
-*/
-void
-pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
-{
-	fz_matrix page_ctm, inv_page_ctm;
-	fz_rect rect;
-	int flags;
-
-	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-	inv_page_ctm = fz_invert_matrix(page_ctm);
-
-	rect.x0 = pt.x;
-	rect.x1 = pt.x + TEXT_ANNOT_SIZE;
-	rect.y0 = pt.y;
-	rect.y1 = pt.y + TEXT_ANNOT_SIZE;
-	rect = fz_transform_rect(rect, inv_page_ctm);
-
-	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
-
-	flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
-	flags |= (PDF_ANNOT_IS_NO_ZOOM|PDF_ANNOT_IS_NO_ROTATE);
-	pdf_dict_put_int(ctx, annot->obj, PDF_NAME(F), flags);
 }
 
 static void

@@ -185,8 +185,6 @@ void pdf_clear_annot_vertices(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_vertex(fz_context *ctx, pdf_annot *annot, fz_point p);
 void pdf_set_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, fz_point p);
 
-void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
-
 const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
 void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
