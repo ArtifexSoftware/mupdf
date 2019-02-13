@@ -836,6 +836,34 @@ static void pdf_annot_color_imp(fz_context *ctx, pdf_obj *arr, int *n, float col
 	}
 }
 
+static int pdf_annot_color_rgb(fz_context *ctx, pdf_obj *arr, float rgb[3])
+{
+	float color[4];
+	int n;
+	pdf_annot_color_imp(ctx, arr, &n, color);
+	if (n == 0)
+	{
+		return 0;
+	}
+	else if (n == 1)
+	{
+		rgb[0] = rgb[1] = rgb[2] = color[0];
+	}
+	else if (n == 3)
+	{
+		rgb[0] = color[0];
+		rgb[1] = color[1];
+		rgb[2] = color[2];
+	}
+	else if (n == 4)
+	{
+		rgb[0] = 1 - fz_min(1, color[0] + color[3]);
+		rgb[1] = 1 - fz_min(1, color[1] + color[3]);
+		rgb[2] = 1 - fz_min(1, color[2] + color[3]);
+	}
+	return 1;
+}
+
 static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
 {
 	pdf_document *doc = annot->page->doc;
@@ -893,11 +921,25 @@ pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 	pdf_annot_color_imp(ctx, mk_bg, n, color);
 }
 
+int
+pdf_annot_MK_BG_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3])
+{
+	pdf_obj *mk_bg = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BG));
+	return pdf_annot_color_rgb(ctx, mk_bg, rgb);
+}
+
 void
 pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
 	pdf_obj *mk_bc = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BC));
 	pdf_annot_color_imp(ctx, mk_bc, n, color);
+}
+
+int
+pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3])
+{
+	pdf_obj *mk_bc = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BC));
+	return pdf_annot_color_rgb(ctx, mk_bc, rgb);
 }
 
 void

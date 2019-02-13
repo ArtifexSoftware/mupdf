@@ -145,6 +145,8 @@ int pdf_annot_quadding(fz_context *ctx, pdf_annot *annot);
 
 void pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
+int pdf_annot_MK_BG_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
+int pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
 
 int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i, float qp[8]);

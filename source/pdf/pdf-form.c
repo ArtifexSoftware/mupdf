@@ -391,6 +391,27 @@ void pdf_calculate_form(fz_context *ctx, pdf_document *doc)
 	}
 }
 
+static pdf_obj *find_on_state(fz_context *ctx, pdf_obj *dict)
+{
+	int i, n = pdf_dict_len(ctx, dict);
+	for (i = 0; i < n; ++i)
+	{
+		pdf_obj *key = pdf_dict_get_key(ctx, dict, i);
+		if (key != PDF_NAME(Off))
+			return key;
+	}
+	return NULL;
+}
+
+pdf_obj *pdf_button_field_on_state(fz_context *ctx, pdf_obj *field)
+{
+	pdf_obj *ap = pdf_dict_get(ctx, field, PDF_NAME(AP));
+	pdf_obj *on = find_on_state(ctx, pdf_dict_get(ctx, ap, PDF_NAME(N)));
+	if (!on) on = find_on_state(ctx, pdf_dict_get(ctx, ap, PDF_NAME(D)));
+	if (!on) on = PDF_NAME(Yes);
+	return on;
+}
+
 static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));

@@ -87,6 +87,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col);
 int pdf_field_display(fz_context *ctx, pdf_obj *field);
 void pdf_field_set_display(fz_context *ctx, pdf_obj *field, int d);
 const char *pdf_field_label(fz_context *ctx, pdf_obj *field);
+pdf_obj *pdf_button_field_on_state(fz_context *ctx, pdf_obj *field);
 
 int pdf_set_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events);
 int pdf_set_text_field_value(fz_context *ctx, pdf_widget *widget, const char *value);
