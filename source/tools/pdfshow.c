@@ -333,7 +333,7 @@ static void showpath(char *path, pdf_obj *obj)
 					printf("null\n");
 				}
 			}
-			else if (isnumber(part))
+			else if (isnumber(part) && pdf_is_array(ctx, obj))
 				showpath(path, pdf_array_get(ctx, obj, atoi(part)-1));
 			else
 				showpath(path, pdf_dict_gets(ctx, obj, part));
