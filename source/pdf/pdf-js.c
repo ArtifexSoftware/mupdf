@@ -13,7 +13,6 @@ struct pdf_js_s
 	fz_context *ctx;
 	pdf_document *doc;
 	pdf_obj *form;
-	pdf_js_event event;
 	js_State *imp;
 };
 
@@ -267,7 +266,8 @@ static void field_getValue(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
 	pdf_obj *field = js_touserdata(J, 0, "Field");
-	char *str = NULL, *end;
+	const char *str = NULL;
+	char *end;
 	double num;
 
 	fz_try(js->ctx)
@@ -276,12 +276,10 @@ static void field_getValue(js_State *J)
 		rethrow(js);
 
 	num = strtod(str, &end);
-	if (*end == 0)
+	if (*str && *end == 0)
 		js_pushnumber(J, num);
 	else
 		js_pushstring(J, str);
-
-	fz_free(js->ctx, str);
 }
 
 static void field_setValue(js_State *J)
@@ -291,60 +289,9 @@ static void field_setValue(js_State *J)
 	const char *value = js_tostring(J, 1);
 
 	fz_try(js->ctx)
-		(void)pdf_field_set_value(js->ctx, js->doc, field, value, 0);
+		(void)pdf_set_field_value(js->ctx, js->doc, field, value, 0);
 	fz_catch(js->ctx)
 		rethrow(js);
-}
-
-static void event_getTarget(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	js_getregistry(J, "Field");
-	js_newuserdata(J, "Field", pdf_keep_obj(js->ctx, js->event.target), field_finalize);
-}
-
-static void event_setTarget(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	fz_warn(js->ctx, "Unexpected call to event_setTarget");
-}
-
-static void event_getValue(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	const char *v = js->event.value;
-	js_pushstring(J, v ? v : "");
-}
-
-static void event_setValue(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	const char *value = js_tostring(J, 1);
-	fz_free(js->ctx, js->event.value);
-	js->event.value = fz_strdup(js->ctx, value);
-}
-
-static void event_getWillCommit(js_State *J)
-{
-	js_pushnumber(J, 1);
-}
-
-static void event_setWillCommit(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	fz_warn(js->ctx, "Unexpected call to event_setWillCommit");
-}
-
-static void event_getRC(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	js_pushnumber(J, js->event.rc);
-}
-
-static void event_setRC(js_State *J)
-{
-	pdf_js *js = js_getcontext(J);
-	js->event.rc = js_tointeger(js->imp, 1);
 }
 
 static void doc_getField(js_State *J)
@@ -449,7 +396,7 @@ static void doc_calculateNow(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
 	fz_try(js->ctx)
-		pdf_form_calculate(js->ctx, js->doc);
+		pdf_calculate_form(js->ctx, js->doc);
 	fz_catch(js->ctx)
 		rethrow(js);
 }
@@ -512,12 +459,6 @@ static void declare_dom(pdf_js *js)
 
 	/* Create the 'event' object */
 	js_newobject(J);
-	{
-		addproperty(J, "event.target", event_getTarget, event_setTarget);
-		addproperty(J, "event.value", event_getValue, event_setValue);
-		addproperty(J, "event.willCommit", event_getWillCommit, event_setWillCommit);
-		addproperty(J, "event.rc", event_getRC, event_setRC);
-	}
 	js_defglobal(J, "event", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
 
 	/* Create the Field prototype object */
@@ -582,7 +523,6 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js)
 	if (js)
 	{
 		js_freestate(js->imp);
-		fz_free(ctx, js->event.value);
 		fz_free(ctx, js);
 	}
 }
@@ -665,28 +605,109 @@ static void pdf_js_load_document_level(pdf_js *js)
 		fz_rethrow(ctx);
 }
 
-void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
+void pdf_js_event_init(pdf_js *js, pdf_obj *target, const char *value, int willCommit)
 {
 	if (js)
 	{
-		fz_context *ctx = js->ctx;
-		char *ev = e->value ? e->value : "";
-		char *v = fz_strdup(ctx, ev);
+		char *end;
+		double num;
 
-		fz_free(ctx, js->event.value);
-		js->event.value = v;
+		js_getglobal(js->imp, "event");
+		{
+			js_pushboolean(js->imp, 1);
+			js_setproperty(js->imp, -2, "rc");
 
-		js->event.target = e->target;
-		js->event.rc = 1;
+			js_pushboolean(js->imp, willCommit);
+			js_setproperty(js->imp, -2, "willCommit");
+
+			js_getregistry(js->imp, "Field");
+			js_newuserdata(js->imp, "Field", pdf_keep_obj(js->ctx, target), field_finalize);
+			js_setproperty(js->imp, -2, "target");
+
+			num = strtod(value, &end);
+			if (*value && *end == 0)
+				js_pushnumber(js->imp, num);
+			else
+				js_pushstring(js->imp, value);
+			js_setproperty(js->imp, -2, "value");
+		}
+		js_pop(js->imp, 1);
 	}
 }
 
-pdf_js_event *pdf_js_get_event(pdf_js *js)
+int pdf_js_event_result(pdf_js *js)
 {
-	return js ? &js->event : NULL;
+	int rc = 1;
+	if (js)
+	{
+		js_getglobal(js->imp, "event");
+		js_getproperty(js->imp, -1, "rc");
+		rc = js_tryboolean(js->imp, -1, 1);
+		js_pop(js->imp, 2);
+	}
+	return rc;
 }
 
-void pdf_js_execute(pdf_js *js, const char *name, char *source)
+void pdf_js_event_init_keystroke(pdf_js *js, pdf_obj *target, pdf_keystroke_event *event)
+{
+	if (js)
+	{
+		pdf_js_event_init(js, target, event->value, event->willCommit);
+		js_getglobal(js->imp, "event");
+		{
+			js_pushstring(js->imp, event->change);
+			js_setproperty(js->imp, -2, "change");
+			js_pushnumber(js->imp, event->selStart);
+			js_setproperty(js->imp, -2, "selStart");
+			js_pushnumber(js->imp, event->selEnd);
+			js_setproperty(js->imp, -2, "selEnd");
+		}
+		js_pop(js->imp, 1);
+	}
+}
+
+int pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt)
+{
+	int rc = 1;
+	if (js)
+	{
+		js_getglobal(js->imp, "event");
+		{
+			js_getproperty(js->imp, -1, "rc");
+			rc = js_tryboolean(js->imp, -1, 1);
+			js_pop(js->imp, 1);
+			if (rc)
+			{
+				js_getproperty(js->imp, -1, "change");
+				evt->newChange = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				js_pop(js->imp, 1);
+				js_getproperty(js->imp, -1, "selStart");
+				evt->selStart = js_tryinteger(js->imp, -1, 0);
+				js_pop(js->imp, 1);
+				js_getproperty(js->imp, -1, "selEnd");
+				evt->selEnd = js_tryinteger(js->imp, -1, 0);
+				js_pop(js->imp, 1);
+			}
+		}
+		js_pop(js->imp, 1);
+	}
+	return rc;
+}
+
+char *pdf_js_event_value(pdf_js *js)
+{
+	char *value = NULL;
+	if (js)
+	{
+		js_getglobal(js->imp, "event");
+		js_getproperty(js->imp, -1, "value");
+		value = fz_strdup(js->ctx, js_trystring(js->imp, -1, "undefined"));
+		js_pop(js->imp, 2);
+	}
+	return value;
+}
+
+void pdf_js_execute(pdf_js *js, const char *name, const char *source)
 {
 	if (js)
 	{
@@ -733,8 +754,11 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js) { }
 void pdf_enable_js(fz_context *ctx, pdf_document *doc) { }
 void pdf_disable_js(fz_context *ctx, pdf_document *doc) { }
 int pdf_js_supported(fz_context *ctx, pdf_document *doc) { return 0; }
-void pdf_js_setup_event(pdf_js *js, pdf_js_event *e) { }
-pdf_js_event *pdf_js_get_event(pdf_js *js) { return NULL; }
+void pdf_js_event_init(pdf_js *js, pdf_obj *target, const char *value) { }
+void pdf_js_event_init_keystroke(pdf_js *js, pdf_obj *target, const char *value, pdf_keystroke_event *evt) { }
+void pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt) { }
+int pdf_js_event_result(pdf_js *js) { return 1; }
+char *pdf_js_event_value(pdf_js *js) { return ""; }
 void pdf_js_execute(pdf_js *js, const char *name, char *code) { }
 
 #endif /* FZ_ENABLE_JS */

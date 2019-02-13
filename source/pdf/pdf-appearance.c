@@ -1093,23 +1093,13 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	int ff = pdf_field_flags(ctx, annot->obj);
 	if (pdf_name_eq(ctx, ft, PDF_NAME(Tx)))
 	{
-		pdf_document *doc = annot->page->doc;
-		pdf_obj *f = pdf_dict_getl(ctx, annot->obj, PDF_NAME(AA), PDF_NAME(F), NULL);
-		char *text = NULL;
-		if (f && doc->js && !annot->ignore_trigger_events)
+		char *format = NULL;
+		const char *text = NULL;
+		if (!annot->ignore_trigger_events)
 		{
-			pdf_js_event e;
-			e.target = annot->obj;
-			e.value = pdf_field_value(ctx, annot->obj);
-			fz_try(ctx)
-				pdf_js_setup_event(doc->js, &e);
-			fz_always(ctx)
-				fz_free(ctx, e.value);
-			fz_catch(ctx)
-				fz_rethrow(ctx);
-			pdf_execute_action(ctx, doc, annot->obj, f, "AA/F");
-			if (pdf_js_get_event(doc->js)->rc)
-				text = fz_strdup(ctx, pdf_js_get_event(doc->js)->value);
+			format = pdf_field_event_format(ctx, annot->page->doc, annot->obj);
+			if (format)
+				text = format;
 			else
 				text = pdf_field_value(ctx, annot->obj);
 		}
@@ -1120,19 +1110,14 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		fz_try(ctx)
 			pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
 		fz_always(ctx)
-			fz_free(ctx, text);
+			fz_free(ctx, format);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Ch)))
 	{
-		char *text = pdf_field_value(ctx, annot->obj);
-		fz_try(ctx)
-			pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
-		fz_always(ctx)
-			fz_free(ctx, text);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		const char *text = pdf_field_value(ctx, annot->obj);
+		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
 	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Sig)))
 	{
@@ -1314,7 +1299,7 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 }
 
 /*
-	Recreate the appearance stream for an annotation.
+	Recreate the appearance stream for an annotation, if necessary.
 */
 void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 {
@@ -1327,12 +1312,22 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	if (subtype == PDF_NAME(Link))
 		return;
 
+	/* Check if the field is dirtied by JS events */
+	if (pdf_obj_is_dirty(ctx, annot->obj))
+		annot->needs_new_ap = 1;
+
+	/* Check if the current appearance has been swapped */
 	as = pdf_dict_get(ctx, annot->obj, PDF_NAME(AS));
 	ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));
 	ap_n = pdf_dict_get(ctx, ap, PDF_NAME(N));
+	if (annot->is_hot && annot->is_active && subtype == PDF_NAME(Widget))
+	{
+		pdf_obj *ap_d = pdf_dict_get(ctx, ap, PDF_NAME(D));
+		if (ap_d)
+			ap_n = ap_d;
+	}
 	if (!pdf_is_stream(ctx, ap_n))
 		ap_n = pdf_dict_get(ctx, ap_n, as);
-
 	if (annot->ap != ap_n)
 	{
 		pdf_drop_obj(ctx, annot->ap);
@@ -1398,6 +1393,8 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 			fz_warn(ctx, "cannot create appearance stream");
 		}
 	}
+
+	pdf_clean_obj(ctx, annot->obj);
 }
 
 /*
@@ -1419,46 +1416,9 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 int
 pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_document *doc = annot->page->doc;
-	pdf_obj *obj, *ap, *as, *n;
-	int changed = 0;
-
-	/* TODO: handle form field updates without using the annot pdf_obj dirty flag */
-	obj = annot->obj;
-	if (pdf_obj_is_dirty(ctx, obj))
-	{
-		pdf_clean_obj(ctx, obj);
-		annot->needs_new_ap = 1;
-	}
+	int changed;
 
 	pdf_update_appearance(ctx, annot);
-
-	ap = pdf_dict_get(ctx, obj, PDF_NAME(AP));
-	as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
-
-	if (pdf_is_dict(ctx, ap))
-	{
-		pdf_hotspot *hp = &doc->hotspot;
-
-		n = NULL;
-		if (hp->num == pdf_to_num(ctx, obj) && (hp->state & HOTSPOT_POINTER_DOWN))
-			n = pdf_dict_get(ctx, ap, PDF_NAME(D)); /* down state */
-		if (n == NULL)
-			n = pdf_dict_get(ctx, ap, PDF_NAME(N)); /* normal state */
-
-		/* lookup current state in sub-dictionary */
-		if (!pdf_is_stream(ctx, n))
-			n = pdf_dict_get(ctx, n, as);
-
-		if (annot->ap != n)
-		{
-			pdf_drop_obj(ctx, annot->ap);
-			annot->ap = NULL;
-			if (pdf_is_stream(ctx, n))
-				annot->ap = pdf_keep_obj(ctx, n);
-			annot->has_new_ap = 1;
-		}
-	}
 
 	changed = annot->has_new_ap;
 	annot->has_new_ap = 0;

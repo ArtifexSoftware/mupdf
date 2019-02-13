@@ -9,7 +9,6 @@ typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
 typedef struct pdf_page_s pdf_page;
 typedef struct pdf_annot_s pdf_annot;
 typedef struct pdf_annot_s pdf_widget;
-typedef struct pdf_hotspot_s pdf_hotspot;
 typedef struct pdf_js_s pdf_js;
 
 enum
@@ -33,12 +32,6 @@ struct pdf_lexbuf_large_s
 {
 	pdf_lexbuf base;
 	char buffer[PDF_LEXBUF_LARGE - PDF_LEXBUF_SMALL];
-};
-
-struct pdf_hotspot_s
-{
-	int num;
-	int state;
 };
 
 /*
@@ -202,7 +195,6 @@ struct pdf_document_s
 	int64_t file_size;
 	pdf_crypt *crypt;
 	pdf_ocg_descriptor *ocg;
-	pdf_hotspot hotspot;
 	fz_colorspace *oi;
 
 	int max_xref_len;
@@ -272,9 +264,6 @@ struct pdf_document_s
 	int resources_localised;
 
 	pdf_lexbuf_large lexbuf;
-
-	pdf_annot *focus;
-	pdf_obj *focus_obj;
 
 	pdf_js *js;
 

@@ -1484,10 +1484,50 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setIsOpen
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    updateAppearance
+ * Method:    eventEnter
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_updateAppearance
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventEnter
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    eventExit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventExit
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    eventDown
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventDown
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    eventUp
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventUp
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    eventFocus
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventFocus
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    eventBlur
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_eventBlur
   (JNIEnv *, jobject);
 
 /*
@@ -2342,14 +2382,6 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFPage_update
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getWidgetsNative
   (JNIEnv *, jobject);
 
-/*
- * Class:     com_artifex_mupdf_fitz_PDFPage
- * Method:    selectWidgetAtNative
- * Signature: (II)J
- */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PDFPage_selectWidgetAtNative
-  (JNIEnv *, jobject, jint, jint);
-
 #ifdef __cplusplus
 }
 #endif
@@ -2533,6 +2565,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_toggle
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    setTextValue
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    textQuads
  * Signature: ()[Lcom/artifex/mupdf/fitz/Quad;
  */
@@ -2541,26 +2581,26 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_textQuads
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    setEditingState
+ * Method:    setEditing
  * Signature: (Z)V
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setEditingState
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setEditing
   (JNIEnv *, jobject, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    getEditingState
+ * Method:    isEditing
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getEditingState
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isEditing
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    setTextValue
+ * Method:    setChoiceValue
  * Signature: (Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
   (JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus

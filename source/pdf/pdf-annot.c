@@ -85,7 +85,6 @@ pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 void
 pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 {
-	pdf_document *doc = page->doc;
 	pdf_annot *annot;
 	pdf_obj *subtype;
 	int i, n;
@@ -110,9 +109,6 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 			}
 			fz_catch(ctx)
 				fz_warn(ctx, "could not update appearance for annotation");
-
-			if (doc->focus_obj == obj)
-				doc->focus = annot;
 
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
 			{
@@ -464,13 +460,6 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	/* If the removed annotation was the last in the list adjust the end pointer */
 	if (*annotptr == NULL)
 		page->annot_tailp = annotptr;
-
-	/* If the removed annotation has the focus, blur it. */
-	if (doc->focus == annot)
-	{
-		doc->focus = NULL;
-		doc->focus_obj = NULL;
-	}
 
 	/* Remove the annot from the "Annots" array. */
 	annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));

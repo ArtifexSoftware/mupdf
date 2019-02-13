@@ -27,16 +27,12 @@ enum pdf_widget_tx_format
 pdf_widget *pdf_first_widget(fz_context *ctx, pdf_page *page);
 pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 
-pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc);
-
 enum pdf_widget_type pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
 fz_rect pdf_bound_widget(fz_context *ctx, pdf_widget *widget);
 
-char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
 int pdf_text_widget_format(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
-int pdf_text_widget_set_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw, char *text);
 
 int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[]);
 int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_widget *tw);
@@ -75,12 +71,13 @@ enum
 	PDF_CH_FIELD_IS_COMMIT_ON_SEL_CHANGE = 1 << 26,
 };
 
-void pdf_form_calculate(fz_context *ctx, pdf_document *doc);
+void pdf_calculate_form(fz_context *ctx, pdf_document *doc);
+void pdf_reset_form(fz_context *ctx, pdf_document *doc, pdf_obj *fields, int exclude);
 
 int pdf_field_type(fz_context *ctx, pdf_obj *field);
 int pdf_field_flags(fz_context *ctx, pdf_obj *field);
 char *pdf_field_name(fz_context *ctx, pdf_obj *field);
-char *pdf_field_value(fz_context *ctx, pdf_obj *field);
+const char *pdf_field_value(fz_context *ctx, pdf_obj *field);
 
 char *pdf_field_border_style(fz_context *ctx, pdf_obj *field);
 void pdf_field_set_border_style(fz_context *ctx, pdf_obj *field, const char *text);
@@ -91,10 +88,52 @@ int pdf_field_display(fz_context *ctx, pdf_obj *field);
 void pdf_field_set_display(fz_context *ctx, pdf_obj *field, int d);
 const char *pdf_field_label(fz_context *ctx, pdf_obj *field);
 
-int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events);
+int pdf_set_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events);
+int pdf_set_text_field_value(fz_context *ctx, pdf_widget *widget, const char *value);
+int pdf_set_choice_field_value(fz_context *ctx, pdf_widget *widget, const char *value);
+
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer);
+
 void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 
 pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, const char *name);
+
+/* Form text field editing events: */
+
+typedef struct pdf_keystroke_event_s
+{
+	const char *value;
+	const char *change;
+	int selStart, selEnd;
+	int willCommit;
+	char *newChange;
+} pdf_keystroke_event;
+
+int pdf_field_event_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_keystroke_event *evt);
+int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *value);
+void pdf_field_event_calculate(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+char *pdf_field_event_format(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+
+/* Call these to trigger actions from various UI events: */
+
+void pdf_document_event_will_close(fz_context *ctx, pdf_document *doc);
+void pdf_document_event_will_save(fz_context *ctx, pdf_document *doc);
+void pdf_document_event_did_save(fz_context *ctx, pdf_document *doc);
+void pdf_document_event_will_print(fz_context *ctx, pdf_document *doc);
+void pdf_document_event_did_print(fz_context *ctx, pdf_document *doc);
+
+void pdf_page_event_open(fz_context *ctx, pdf_page *page);
+void pdf_page_event_close(fz_context *ctx, pdf_page *page);
+
+void pdf_annot_event_enter(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_exit(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_down(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_up(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_focus(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_blur(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_page_open(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_page_close(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_page_visible(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_event_page_invisible(fz_context *ctx, pdf_annot *annot);
 
 #endif

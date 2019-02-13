@@ -126,7 +126,12 @@ public class PDFAnnotation
 	public native boolean isOpen();
 	public native void setIsOpen(boolean open);
 
-	public native void updateAppearance();
+	public native void eventEnter();
+	public native void eventExit();
+	public native void eventDown();
+	public native void eventUp();
+	public native void eventFocus();
+	public native void eventBlur();
 
 	public native boolean update();
 }

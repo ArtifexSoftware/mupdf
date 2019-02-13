@@ -36,7 +36,6 @@ enum
 };
 
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching);
-static void pdfapp_updatepage(pdfapp_t *app);
 
 static const int zoomlist[] = {
 	18, 24, 36, 54, 72, 96, 120, 144, 180,
@@ -748,48 +747,6 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	app->errored = errored;
 }
 
-static void pdfapp_recreate_annotationslist(pdfapp_t *app)
-{
-	fz_device *mdev = NULL;
-	int errored = 0;
-	fz_cookie cookie = { 0 };
-
-	fz_var(mdev);
-
-	fz_drop_display_list(app->ctx, app->annotations_list);
-	app->annotations_list = NULL;
-
-	fz_try(app->ctx)
-	{
-		/* Create display list */
-		app->annotations_list = fz_new_display_list(app->ctx, fz_infinite_rect);
-		mdev = fz_new_list_device(app->ctx, app->annotations_list);
-		fz_run_page_extras(app->ctx, app->page, mdev, fz_identity, &cookie);
-		if (cookie.incomplete)
-		{
-			app->incomplete = 1;
-			//pdfapp_warn(app, "Incomplete page rendering");
-		}
-		else if (cookie.errors)
-		{
-			pdfapp_warn(app, "Errors found on page");
-			errored = 1;
-		}
-		fz_close_device(app->ctx, mdev);
-	}
-	fz_always(app->ctx)
-	{
-		fz_drop_device(app->ctx, mdev);
-	}
-	fz_catch(app->ctx)
-	{
-		pdfapp_warn(app, "Cannot load page");
-		errored = 1;
-	}
-
-	app->errored = errored;
-}
-
 static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix ctm, fz_rect scissor, fz_cookie *cookie)
 {
 	if (app->page_list)
@@ -799,19 +756,6 @@ static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix ctm, f
 }
 
 #define MAX_TITLE 256
-
-static void pdfapp_updatepage(pdfapp_t *app)
-{
-	if (pdf_update_page(app->ctx, (pdf_page*)app->page))
-	{
-		pdfapp_recreate_annotationslist(app);
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
-	}
-	else
-	{
-		pdfapp_showpage(app, 0, 0, 1, 0, 0);
-	}
-}
 
 void pdfapp_reloadpage(pdfapp_t *app)
 {
@@ -1632,158 +1576,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	ctm = fz_invert_matrix(ctm);
 
 	p = fz_transform_point(p, ctm);
-
-	if (btn == 1 && (state == 1 || state == -1))
-	{
-		pdf_ui_event event;
-		pdf_document *idoc = pdf_specifics(app->ctx, app->doc);
-
-		event.etype = PDF_EVENT_TYPE_POINTER;
-		event.event.pointer.pt = p;
-		if (state == 1)
-			event.event.pointer.ptype = PDF_POINTER_DOWN;
-		else /* state == -1 */
-			event.event.pointer.ptype = PDF_POINTER_UP;
-
-		if (idoc && pdf_pass_event(ctx, idoc, (pdf_page *)app->page, &event))
-		{
-			pdf_widget *widget;
-
-			widget = pdf_focused_widget(ctx, idoc);
-
-			app->nowaitcursor = 1;
-			pdfapp_updatepage(app);
-
-			if (widget)
-			{
-				switch (pdf_widget_type(ctx, widget))
-				{
-				default:
-					break;
-				case PDF_WIDGET_TYPE_TX:
-					{
-						char *text = pdf_text_widget_text(ctx, idoc, widget);
-						char *current_text = text;
-						int retry = 0;
-
-						do
-						{
-							current_text = wintextinput(app, current_text, retry);
-							retry = 1;
-						}
-						while (current_text && !pdf_text_widget_set_text(ctx, idoc, widget, current_text));
-
-						fz_free(app->ctx, text);
-						pdfapp_updatepage(app);
-					}
-					break;
-				case PDF_WIDGET_TYPE_CH_LIST:
-				case PDF_WIDGET_TYPE_CH_COMBO:
-					{
-						int nopts;
-						int nvals;
-						const char **opts = NULL;
-						const char **vals = NULL;
-
-						fz_var(opts);
-						fz_var(vals);
-						fz_var(nopts);
-						fz_var(nvals);
-
-						fz_try(ctx)
-						{
-							nopts = pdf_choice_widget_options(ctx, idoc, widget, 0, NULL);
-							opts = fz_malloc(ctx, nopts * sizeof(*opts));
-							(void)pdf_choice_widget_options(ctx, idoc, widget, 0, opts);
-
-							nvals = pdf_choice_widget_value(ctx, idoc, widget, NULL);
-							vals = fz_malloc(ctx, MAX(nvals,nopts) * sizeof(*vals));
-							(void)pdf_choice_widget_value(ctx, idoc, widget, vals);
-
-							if (winchoiceinput(app, nopts, opts, &nvals, vals))
-							{
-								pdf_choice_widget_set_value(ctx, idoc, widget, nvals, vals);
-								pdfapp_updatepage(app);
-							}
-						}
-						fz_always(ctx)
-						{
-							fz_free(ctx, opts);
-							fz_free(ctx, vals);
-						}
-						fz_catch(ctx)
-						{
-							pdfapp_warn(app, "setting of choice failed");
-						}
-					}
-					break;
-
-				case PDF_WIDGET_TYPE_SIG:
-					if (state == -1)
-					{
-						char ebuf[256];
-
-						if (pdf_dict_get(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(V)))
-						{
-							/* Signature is signed. Check the signature */
-							ebuf[0] = 0;
-							if (pdf_check_signature(ctx, idoc, widget, ebuf, sizeof(ebuf)))
-							{
-								winwarn(app, "Signature is valid");
-							}
-							else
-							{
-								if (ebuf[0] == 0)
-									winwarn(app, "Signature check failed for unknown reason");
-								else
-									winwarn(app, ebuf);
-							}
-						}
-#ifdef HAVE_LIBCRYPTO
-						else
-						{
-							/* Signature is unsigned. Offer to sign it */
-							if (winquery(app, "Select certificate and sign?") == QUERY_YES)
-							{
-								char certpath[PATH_MAX];
-								if (wingetcertpath(certpath, PATH_MAX))
-								{
-									int res;
-									char *pw = winpassword(app, "certificate");
-									pdf_pkcs7_signer *signer = pkcs7_openssl_read_pfx(ctx, certpath, pw);
-
-									fz_var(res);
-									fz_try(ctx)
-									{
-										pdf_sign_signature(ctx, idoc, widget, signer);
-										res = 1;
-									}
-									fz_always(ctx)
-									{
-										signer->drop(signer);
-									}
-									fz_catch(ctx)
-									{
-										res = 0;
-									}
-
-									if (res)
-										pdfapp_updatepage(app);
-									else
-										winwarn(app, "Signing failed");
-								}
-							}
-						}
-#endif /* HAVE_LIBCRYPTO */
-					}
-					break;
-				}
-			}
-
-			app->nowaitcursor = 0;
-			processed = 1;
-		}
-	}
 
 	for (link = app->page_links; link; link = link->next)
 	{

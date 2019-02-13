@@ -1,51 +1,12 @@
 #ifndef MUPDF_PDF_EVENT_H
 #define MUPDF_PDF_EVENT_H
 
-enum
-{
-	HOTSPOT_POINTER_DOWN = 0x1,
-	HOTSPOT_POINTER_OVER = 0x2
-};
-
-/* Types of UI event */
-enum
-{
-	PDF_EVENT_TYPE_POINTER,
-};
-
-/* Types of pointer event */
-enum
-{
-	PDF_POINTER_DOWN,
-	PDF_POINTER_UP,
-};
-
-/*
-	UI events that can be passed to an interactive document.
-*/
-typedef struct pdf_ui_event_s
-{
-	int etype;
-	union
-	{
-		struct
-		{
-			int ptype;
-			fz_point pt;
-		} pointer;
-	} event;
-} pdf_ui_event;
-
-void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
-
 /*
 	Document events: the objects via which MuPDF informs the calling app
 	of occurrences emanating from the document, possibly from user interaction
 	or javascript execution. MuPDF informs the app of document events via a
 	callback.
 */
-
-int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event);
 
 struct pdf_doc_event_s
 {
@@ -163,7 +124,5 @@ void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, const ch
 void pdf_event_issue_exec_dialog(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, const char *url, int new_frame);
 void pdf_event_issue_mail_doc(fz_context *ctx, pdf_document *doc, pdf_mail_doc_event *event);
-
-void pdf_execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *a, const char *name);
 
 #endif

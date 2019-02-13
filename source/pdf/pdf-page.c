@@ -903,13 +903,6 @@ pdf_page_uses_overprint(fz_context *ctx, pdf_page *page)
 static void
 pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
-	pdf_document *doc = page->doc;
-
-	/* We are about to destroy the annotation records for this page and so,
-	 * if doc->focus refers to one of them, it must be NULLed */
-	if (doc->focus && doc->focus->page == page)
-		doc->focus = NULL;
-
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
 	pdf_drop_widgets(ctx, page->widgets);

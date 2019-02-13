@@ -95,6 +95,9 @@ struct pdf_annot_s
 
 	pdf_obj *ap;
 
+	int is_hot;
+	int is_active;
+
 	int needs_new_ap;
 	int has_new_ap;
 	int ignore_trigger_events;
@@ -218,11 +221,7 @@ void pdf_set_widget_editing_state(fz_context *ctx, pdf_widget *widget, int editi
 
 int pdf_get_widget_editing_state(fz_context *ctx, pdf_widget *widget);
 
-void pdf_clear_focus(fz_context *ctx, pdf_document *doc);
-
-void pdf_focus_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
-
-int pdf_toggle_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
+int pdf_toggle_widget(fz_context *ctx, pdf_widget *widget);
 
 fz_display_list *pdf_new_display_list_from_annot(fz_context *ctx, pdf_annot *annot);
 fz_pixmap *pdf_new_pixmap_from_annot(fz_context *ctx, pdf_annot *annot, fz_matrix ctm, fz_colorspace *cs, int alpha);

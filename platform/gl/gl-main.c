@@ -457,6 +457,8 @@ void load_page(void)
 	fz_irect area;
 
 	/* clear all editor selections */
+	if (selected_annot && pdf_annot_type(ctx, selected_annot) == PDF_ANNOT_WIDGET)
+		pdf_annot_event_blur(ctx, selected_annot);
 	selected_annot = NULL;
 
 	fz_drop_stext_page(ctx, page_text);

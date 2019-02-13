@@ -105,11 +105,32 @@ public class PDFWidget extends PDFAnnotation
 	public int getTextFormat() {
 		return textFormat;
 	}
-	public native Quad[] textQuads();
-	public native void setEditingState(boolean state);
-	public native boolean getEditingState();
-	// TODO: eventKeystroke() instead
 	public native boolean setTextValue(String val);
+
+	/* WIP in-line text editing support */
+	public native Quad[] textQuads();
+	public native void setEditing(boolean state);
+	public native boolean isEditing();
+
+	private String originalValue;
+	public void startEditing() {
+		setEditing(true);
+		originalValue = getValue();
+	}
+	public void cancelEditing() {
+		setValue(originalValue);
+		setEditing(false);
+	}
+	public boolean commitEditing(String newValue) {
+		setValue(originalValue);
+		setEditing(false);
+		if (setTextValue(newValue)) {
+			return true;
+		} else {
+			setEditing(true);
+			return false;
+		}
+	}
 
 	/* Choice fields */
 
@@ -126,4 +147,5 @@ public class PDFWidget extends PDFAnnotation
 	public String[] getOptions() {
 		return options;
 	}
+	public native boolean setChoiceValue(String val);
 }

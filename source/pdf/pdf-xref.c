@@ -1504,7 +1504,6 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	pdf_drop_xref_sections(ctx, doc);
 	fz_free(ctx, doc->xref_index);
 
-	pdf_drop_obj(ctx, doc->focus_obj);
 	fz_drop_stream(ctx, doc->file);
 	pdf_drop_crypt(ctx, doc->crypt);
 
