@@ -1060,10 +1060,44 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 static void
 pdf_write_ch_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
-	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res,
-	const char *text, int ff)
+	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
-	pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
+	int ff = pdf_field_flags(ctx, annot->obj);
+	if (ff & PDF_CH_FIELD_IS_COMBO)
+	{
+		/* TODO: Pop-down arrow */
+		pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res,
+			pdf_field_value(ctx, annot->obj), 0);
+	}
+	else
+	{
+		fz_buffer *text = fz_new_buffer(ctx, 1024);
+		fz_try(ctx)
+		{
+			pdf_obj *opt = pdf_dict_get(ctx, annot->obj, PDF_NAME(Opt));
+			int i = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(TI));
+			int n = pdf_array_len(ctx, opt);
+			/* TODO: Scrollbar */
+			/* TODO: Highlight selected items */
+			if (i < 0)
+				i = 0;
+			for (; i < n; ++i)
+			{
+				pdf_obj *val = pdf_array_get(ctx, opt, i);
+				if (pdf_is_array(ctx, val))
+					fz_append_string(ctx, text, pdf_array_get_text_string(ctx, val, 1));
+				else
+					fz_append_string(ctx, text, pdf_to_text_string(ctx, val));
+				fz_append_byte(ctx, text, '\n');
+			}
+			pdf_write_tx_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res,
+				fz_string_from_buffer(ctx, text), PDF_TX_FIELD_IS_MULTILINE);
+		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, text);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
 }
 
 static void
@@ -1090,9 +1124,9 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
-	int ff = pdf_field_flags(ctx, annot->obj);
 	if (pdf_name_eq(ctx, ft, PDF_NAME(Tx)))
 	{
+		int ff = pdf_field_flags(ctx, annot->obj);
 		char *format = NULL;
 		const char *text = NULL;
 		if (!annot->ignore_trigger_events)
@@ -1116,8 +1150,7 @@ pdf_write_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Ch)))
 	{
-		const char *text = pdf_field_value(ctx, annot->obj);
-		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res, text, ff);
+		pdf_write_ch_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 	}
 	else if (pdf_name_eq(ctx, ft, PDF_NAME(Sig)))
 	{
