@@ -9902,11 +9902,7 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 		}
 		break;
 
-	case PDF_DOCUMENT_EVENT_PRINT:
-	case PDF_DOCUMENT_EVENT_EXEC_MENU_ITEM:
-	case PDF_DOCUMENT_EVENT_EXEC_DIALOG:
-	case PDF_DOCUMENT_EVENT_LAUNCH_URL:
-	case PDF_DOCUMENT_EVENT_MAIL_DOC:
+	default:
 		jni_detach_thread(detach);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "event not yet implemented");
 		break;

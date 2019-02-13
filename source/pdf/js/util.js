@@ -799,3 +799,4 @@ app.plugIns = [];
 app.viewerType = 'Reader';
 app.language = 'ENU';
 app.viewerVersion = NaN;
+app.execDialog = function () { return 'cancel'; }

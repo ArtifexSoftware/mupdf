@@ -799,3 +799,4 @@
 "app.viewerType = 'Reader';\n"
 "app.language = 'ENU';\n"
 "app.viewerVersion = NaN;\n"
+"app.execDialog = function () { return 'cancel'; }\n"

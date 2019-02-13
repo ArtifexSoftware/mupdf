@@ -195,10 +195,6 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 		}
 		break;
 
-	case PDF_DOCUMENT_EVENT_EXEC_DIALOG:
-		pdfapp_warn(app, "The document attempted to open a dialog box. (Not supported)");
-		break;
-
 	case PDF_DOCUMENT_EVENT_LAUNCH_URL:
 		{
 			pdf_launch_url_event *launch_url = pdf_access_launch_url_event(ctx, event);

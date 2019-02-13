@@ -79,16 +79,6 @@ void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, const ch
 	}
 }
 
-void pdf_event_issue_exec_dialog(fz_context *ctx, pdf_document *doc)
-{
-	pdf_doc_event e;
-
-	e.type = PDF_DOCUMENT_EVENT_EXEC_DIALOG;
-
-	if (doc->event_cb)
-		doc->event_cb(ctx, doc, &e, doc->event_cb_data);
-}
-
 typedef struct
 {
 	pdf_doc_event base;

@@ -21,7 +21,6 @@ enum
 	PDF_DOCUMENT_EVENT_MAIL_DOC,
 	PDF_DOCUMENT_EVENT_SUBMIT,
 	PDF_DOCUMENT_EVENT_EXEC_MENU_ITEM,
-	PDF_DOCUMENT_EVENT_EXEC_DIALOG
 };
 
 /*
@@ -121,7 +120,6 @@ pdf_mail_doc_event *pdf_access_mail_doc_event(fz_context *ctx, pdf_doc_event *ev
 void pdf_event_issue_alert(fz_context *ctx, pdf_document *doc, pdf_alert_event *event);
 void pdf_event_issue_print(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, const char *item);
-void pdf_event_issue_exec_dialog(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, const char *url, int new_frame);
 void pdf_event_issue_mail_doc(fz_context *ctx, pdf_document *doc, pdf_mail_doc_event *event);
 
