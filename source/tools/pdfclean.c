@@ -34,6 +34,8 @@ static void usage(void)
 		"\t-i\tcompress image streams\n"
 		"\t-c\tclean content streams\n"
 		"\t-s\tsanitize content streams\n"
+		"\t-A\tcreate appearance streams for annotations\n"
+		"\t-AA\trecreate appearance streams for annotations\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	exit(1);
@@ -52,7 +54,7 @@ int pdfclean_main(int argc, char **argv)
 	opts.continue_on_error = 1;
 	opts.errors = &errors;
 
-	while ((c = fz_getopt(argc, argv, "adfgilp:sczD")) != -1)
+	while ((c = fz_getopt(argc, argv, "adfgilp:sczDA")) != -1)
 	{
 		switch (c)
 		{
@@ -68,6 +70,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'c': opts.do_clean += 1; break;
 		case 's': opts.do_sanitize += 1; break;
 		case 'D': opts.do_decrypt += 1; break;
+		case 'A': opts.do_appearance += 1; break;
 		default: usage(); break;
 		}
 	}

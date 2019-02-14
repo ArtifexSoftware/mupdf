@@ -2961,6 +2961,13 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		else
 			opts->do_garbage = fz_atoi(val);
 	}
+	if (fz_has_option(ctx, args, "appearance", &val))
+	{
+		if (fz_option_eq(val, "yes"))
+			opts->do_appearance = 1;
+		else if (fz_option_eq(val, "all"))
+			opts->do_appearance = 2;
+	}
 
 	return opts;
 }
