@@ -1870,6 +1870,25 @@ static int is_binary_string(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
+static int is_longer_than_hex(fz_context *ctx, pdf_obj *obj)
+{
+	unsigned char *s = (unsigned char *)pdf_to_str_buf(ctx, obj);
+	int i, n = pdf_to_str_len(ctx, obj);
+	int m = 0;
+	for (i = 0; i < n; ++i)
+	{
+		if (s[i] > 126)
+			m += 4;
+		else if (strchr("\n\r\t\b\f()\\", s[i]))
+			m += 2;
+		else if (s[i] < 32)
+			m += 4;
+		else
+			m += 1;
+	}
+	return m > (n * 2);
+}
+
 static void fmt_str_out(fz_context *ctx, void *fmt_, const unsigned char *s, int n)
 {
 	struct fmt *fmt = (struct fmt *)fmt_;
@@ -2066,6 +2085,7 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 			|| (fmt->ascii && is_binary_string(ctx, obj))
 			|| (str[0]==0xff && str[1]==0xfe)
 			|| (str[0]==0xfe && str[1] == 0xff)
+			|| is_longer_than_hex(ctx, obj)
 			)
 			fmt_hex(ctx, fmt, obj);
 		else
