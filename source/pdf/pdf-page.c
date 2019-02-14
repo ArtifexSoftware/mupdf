@@ -872,16 +872,24 @@ pdf_page_separations(fz_context *ctx, pdf_page *page)
 	pdf_obj *res = pdf_page_resources(ctx, page);
 	fz_separations *seps = NULL;
 
-	/* Run through and look for separations first. This is
-	 * because separations are simplest to deal with, and
-	 * because DeviceN may be implemented on top of separations.
-	 */
-	scan_page_seps(ctx, res, &seps, find_seps);
+	fz_try(ctx)
+	{
+		/* Run through and look for separations first. This is
+		 * because separations are simplest to deal with, and
+		 * because DeviceN may be implemented on top of separations.
+		 */
+		scan_page_seps(ctx, res, &seps, find_seps);
 
-	/* Now run through again, and look for DeviceNs. These may
-	 * have spot colors in that aren't defined in terms of
-	 * separations. */
-	scan_page_seps(ctx, res, &seps, find_devn);
+		/* Now run through again, and look for DeviceNs. These may
+		 * have spot colors in that aren't defined in terms of
+		 * separations. */
+		scan_page_seps(ctx, res, &seps, find_devn);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_separations(ctx, seps);
+		fz_rethrow(ctx);
+	}
 
 	return seps;
 }
