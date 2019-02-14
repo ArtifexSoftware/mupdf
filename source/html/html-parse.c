@@ -1270,7 +1270,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_pool(ctx, g.pool);
+		fz_drop_html(ctx, html);
 		fz_rethrow(ctx);
 	}
 
