@@ -185,7 +185,10 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 			metasize -= 4 + size;
 		}
 		if (usize > INT32_MAX || csize > INT32_MAX)
+		{
+			fz_free(ctx, name);
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zip archive entry larger than 2 GB");
+		}
 
 		fz_seek(ctx, file, commentsize, 1);
 
