@@ -118,6 +118,7 @@ void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_rect x);
 void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_matrix x);
 pdf_obj *pdf_dict_put_array(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial);
 pdf_obj *pdf_dict_put_dict(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial);
+pdf_obj *pdf_dict_puts_dict(fz_context *ctx, pdf_obj *dict, const char *key, int initial);
 
 int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key);

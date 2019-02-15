@@ -2271,6 +2271,13 @@ pdf_obj *pdf_dict_put_dict(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int ini
 	return obj;
 }
 
+pdf_obj *pdf_dict_puts_dict(fz_context *ctx, pdf_obj *dict, const char *key, int initial)
+{
+	pdf_obj *obj = pdf_new_dict(ctx, pdf_get_bound_document(ctx, dict), initial);
+	pdf_dict_puts_drop(ctx, dict, key, obj);
+	return obj;
+}
+
 void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x)
 {
 	pdf_array_push(ctx, array, x ? PDF_TRUE : PDF_FALSE);
