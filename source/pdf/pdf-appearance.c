@@ -912,19 +912,18 @@ static const char *full_font_name(const char **name)
 static void
 write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res,
 	const char *text, const char *fontname, float size, float color[3], int q,
-	float w, float h, float xpadding, float ypadding, int multiline, int comb)
+	float w, float h, float padding, float baseline, float lineheight,
+	int multiline, int comb, int adjust_baseline)
 {
 	pdf_obj *res_font;
 	fz_font *font;
-	float lineheight;
-	float baseline;
+
+	w -= padding * 2;
+	h -= padding * 2;
 
 	font = fz_new_base14_font(ctx, full_font_name(&fontname));
 	fz_try(ctx)
 	{
-		w -= xpadding * 2;
-		h -= ypadding * 2;
-
 		if (size == 0)
 		{
 			if (multiline)
@@ -937,8 +936,15 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 			}
 		}
 
-		lineheight = size * 1.15f; /* empirically derived from Adobe reader */
-		baseline = size * 0.8f;
+		lineheight = size * lineheight;
+		baseline = size * baseline;
+
+		if (adjust_baseline)
+		{
+			/* Make sure baseline is inside rectangle */
+			if (baseline + 0.2f * size > h)
+				baseline = h - 0.2f * size;
+		}
 
 		/* /Resources << /Font << /Helv %d 0 R >> >> */
 		*res = pdf_new_dict(ctx, annot->page->doc, 1);
@@ -951,13 +957,13 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		if (multiline)
 		{
 			fz_append_printf(ctx, buf, "%g TL\n", lineheight);
-			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding, ypadding+h);
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline+lineheight);
 			write_simple_string_with_quadding(ctx, buf, font, size, text, w, q);
 		}
 		else if (comb > 0)
 		{
 			float ty = (h - size) / 2;
-			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding, ypadding+h-baseline-ty);
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline-ty);
 			write_comb_string(ctx, buf, text, text + strlen(text), font, (w * 1000 / size) / comb);
 		}
 		else
@@ -971,7 +977,7 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 				else
 					tx = (w - tw);
 			}
-			fz_append_printf(ctx, buf, "%g %g Td\n", xpadding+tx, ypadding+h-baseline-ty);
+			fz_append_printf(ctx, buf, "%g %g Td\n", padding+tx, padding+h-baseline-ty);
 			write_simple_string(ctx, buf, text, text + strlen(text));
 			fz_append_printf(ctx, buf, " Tj\n");
 		}
@@ -1017,7 +1023,10 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
-	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2, b*2, 1, 0);
+	fz_append_printf(ctx, buf, "%g %g %g %g re\nW\nn\n", b, b, w-b*2, h-b*2);
+
+	write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2,
+		0.8f, 1.2f, 1, 0, 0);
 }
 
 static void
@@ -1028,6 +1037,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	const char *font;
 	float size, color[3];
 	float w, h, t, b;
+	int has_bc;
 	int q, r;
 
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
@@ -1047,23 +1057,40 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "0 0 %g %g re\nf\n", w, h);
 
 	b = pdf_write_border_appearance(ctx, annot, buf);
-	if (b > 0)
+	if (b > 0 && pdf_write_MK_BC_appearance(ctx, annot, buf))
 	{
-		if (pdf_write_MK_BC_appearance(ctx, annot, buf))
-			fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
-		else
-			b = 0;
+		fz_append_printf(ctx, buf, "%g %g %g %g re\ns\n", b/2, b/2, w-b, h-b);
+		has_bc = 1;
 	}
 
+	fz_append_printf(ctx, buf, "%g %g %g %g re\nW\nn\n", b, b, w-b*2, h-b*2);
+
 	if (ff & PDF_TX_FIELD_IS_MULTILINE)
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b+2, b+3, 1, 0);
+	{
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2,
+			1.116f, 1.116f, 1, 0, 1);
+	}
 	else if (ff & PDF_TX_FIELD_IS_COMB)
 	{
 		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0, 0, 0, maxlen);
+		if (has_bc && maxlen > 1)
+		{
+			float cell_w = (w - 2 * b) / maxlen;
+			int i;
+			for (i = 1; i < maxlen; ++i)
+			{
+				float x = b + cell_w * i;
+				fz_append_printf(ctx, buf, "%g %g m %g %g l s\n", x, b, x, h-b);
+			}
+		}
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, 0,
+			0.8f, 1.2f, 0, maxlen, 0);
 	}
 	else
-		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b+2, b, 0, 0);
+	{
+		write_variable_text(ctx, annot, buf, res, text, font, size, color, q, w, h, b*2,
+			0.8f, 1.2f, 0, 0, 0);
+	}
 
 	fz_append_string(ctx, buf, "Q\nEMC\n");
 }
@@ -1311,7 +1338,7 @@ static pdf_obj *draw_push_button(fz_context *ctx, pdf_annot *annot, fz_rect bbox
 		}
 		if (down)
 			fz_append_string(ctx, buf, "1 0 0 1 2 -2 cm\n");
-		write_variable_text(ctx, annot, buf, &res, caption, font, size, color, 1, w, h, b*2+4, b*2+4, 0, 0);
+		write_variable_text(ctx, annot, buf, &res, caption, font, size, color, 1, w, h, b+6, 0.8f, 1.2f, 0, 0, 0);
 		fz_append_string(ctx, buf, "Q\n");
 
 		ap = pdf_new_xobject(ctx, annot->page->doc, bbox, matrix, res, buf);
@@ -1375,7 +1402,7 @@ static pdf_obj *draw_check_button(fz_context *ctx, pdf_annot *annot, fz_rect bbo
 		if (b > 0 && pdf_write_MK_BC_appearance(ctx, annot, buf))
 			fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 		if (yes)
-			write_variable_text(ctx, annot, buf, &res, "3", "ZaDb", h, black, 0, w, h, b+h/10, b, 0, 0);
+			write_variable_text(ctx, annot, buf, &res, "3", "ZaDb", h, black, 0, w, h, b+h/10, 0.8f, 1.2f, 0, 0, 0);
 		fz_append_string(ctx, buf, "Q\n");
 		ap = pdf_new_xobject(ctx, annot->page->doc, bbox, matrix, res, buf);
 	}
@@ -1427,10 +1454,10 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			AC = pdf_dict_get(ctx, MK, PDF_NAME(AC));
 
 			label = pdf_to_text_string(ctx, CA);
-			ap_n = draw_push_button(ctx, annot, bbox, matrix,  w, h, label, font, size, color, 0);
+			ap_n = draw_push_button(ctx, annot, bbox, matrix, w, h, label, font, size, color, 0);
 
 			label = pdf_to_text_string(ctx, AC ? AC : CA);
-			ap_d = draw_push_button(ctx, annot, bbox, matrix,  w, h, label, font, size, color, 1);
+			ap_d = draw_push_button(ctx, annot, bbox, matrix, w, h, label, font, size, color, 1);
 
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 2);
 			pdf_dict_put(ctx, ap, PDF_NAME(N), ap_n);
