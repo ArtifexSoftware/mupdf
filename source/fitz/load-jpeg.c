@@ -391,6 +391,7 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 	}
 	fz_always(ctx)
 	{
+		fz_drop_colorspace(ctx, colorspace);
 		fz_free(ctx, row[0]);
 		row[0] = NULL;
 
