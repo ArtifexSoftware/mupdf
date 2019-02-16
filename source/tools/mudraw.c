@@ -1884,6 +1884,12 @@ int mudraw_main(int argc, char **argv)
 
 					doc = fz_open_document(ctx, filename);
 
+					if (fz_needs_password(ctx, doc))
+					{
+						if (!fz_authenticate_password(ctx, doc, password))
+							fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
+					}
+
 					/* Once document is open check for output intent colorspace */
 					oi = fz_document_output_intent(ctx, doc);
 					if (oi)
@@ -1899,12 +1905,6 @@ int mudraw_main(int argc, char **argv)
 								colorspace = fz_keep_colorspace(ctx, oi);
 							}
 						}
-					}
-
-					if (fz_needs_password(ctx, doc))
-					{
-						if (!fz_authenticate_password(ctx, doc, password))
-							fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 					}
 
 					fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
