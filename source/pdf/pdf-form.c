@@ -977,10 +977,7 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 	pdf_obj *optarr;
 	int i, n, m;
 
-	if (!annot)
-		return 0;
-
-	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME(Opt));
+	optarr = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(Opt));
 	n = pdf_array_len(ctx, optarr);
 
 	if (opts)
