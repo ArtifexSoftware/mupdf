@@ -609,9 +609,6 @@ void pdf_js_event_init(pdf_js *js, pdf_obj *target, const char *value, int willC
 {
 	if (js)
 	{
-		char *end;
-		double num;
-
 		js_getglobal(js->imp, "event");
 		{
 			js_pushboolean(js->imp, 1);
@@ -624,11 +621,7 @@ void pdf_js_event_init(pdf_js *js, pdf_obj *target, const char *value, int willC
 			js_newuserdata(js->imp, "Field", pdf_keep_obj(js->ctx, target), field_finalize);
 			js_setproperty(js->imp, -2, "target");
 
-			num = strtod(value, &end);
-			if (*value && *end == 0)
-				js_pushnumber(js->imp, num);
-			else
-				js_pushstring(js->imp, value);
+			js_pushstring(js->imp, value);
 			js_setproperty(js->imp, -2, "value");
 		}
 		js_pop(js->imp, 1);
