@@ -1037,7 +1037,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	const char *font;
 	float size, color[3];
 	float w, h, t, b;
-	int has_bc;
+	int has_bc = 0;
 	int q, r;
 
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
