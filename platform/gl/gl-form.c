@@ -275,6 +275,23 @@ void do_widget_canvas(fz_irect canvas_area)
 			glDisable(GL_BLEND);
 		}
 
+		if (ui.active == widget || (!ui.active && ui.hot == widget))
+		{
+			glLineStipple(1, 0xAAAA);
+			glEnable(GL_LINE_STIPPLE);
+			glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
+			glEnable(GL_BLEND);
+			glColor4f(1, 1, 1, 1);
+			glBegin(GL_LINE_LOOP);
+			glVertex2f(area.x0-0.5f, area.y0-0.5f);
+			glVertex2f(area.x1+0.5f, area.y0-0.5f);
+			glVertex2f(area.x1+0.5f, area.y1+0.5f);
+			glVertex2f(area.x0-0.5f, area.y1+0.5f);
+			glEnd();
+			glDisable(GL_BLEND);
+			glDisable(GL_LINE_STIPPLE);
+		}
+
 		if (ui.hot == widget && ui.active == widget && !ui.down)
 		{
 			pdf_annot_event_up(ctx, widget);
