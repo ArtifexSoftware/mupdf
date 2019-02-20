@@ -413,6 +413,172 @@ static void console_println(js_State *J)
 	js_pushundefined(J);
 }
 
+static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int s, int z, int w, int base, int value)
+{
+	static const char *digits = "0123456789abcdef";
+	char buf[40];
+	unsigned int a;
+	int i;
+
+	// TODO: decimal separator
+
+	if (value < 0)
+	{
+		s = '-';
+		a = -value;
+	}
+	else
+	{
+		a = value;
+	}
+
+	i = 0;
+	if (a == 0)
+		buf[i++] = '0';
+	while (a)
+	{
+		buf[i++] = digits[a % base];
+		a /= base;
+	}
+	if (z == '0')
+		while (i < w - !!s)
+			buf[i++] = z;
+	if (s)
+		buf[i++] = s;
+	while (i < w)
+		buf[i++] = z;
+	if (z == ' ')
+		while (i < w)
+			buf[i++] = z;
+	while (i > 0)
+		fz_append_byte(ctx, out, buf[--i]);
+}
+
+static void util_printf_f(fz_context *ctx, fz_buffer *out, int ds, int s, int z, int w, int p, double value)
+{
+	// TODO: decimal separator
+	if (s == '+')
+		fz_append_printf(ctx, out, "%+*.*f", w, p, value);
+	else if (z == ' ')
+		fz_append_printf(ctx, out, "% *.*f", w, p, value);
+	else
+		fz_append_printf(ctx, out, "%*.*f", w, p, value);
+}
+
+static void util_printf(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	fz_context *ctx = js->ctx;
+	const char *fmt = js_tostring(J, 1);
+	fz_buffer *out = NULL;
+	int ds, w, p, s, z, special;
+	int c, i = 1;
+	int failed = 0;
+	const char *str;
+
+	fz_var(out);
+	fz_try(ctx)
+	{
+		out = fz_new_buffer(ctx, 256);
+
+		while ((c = *fmt++) != 0)
+		{
+			if (c == '%')
+			{
+				c = *fmt++;
+
+				ds = 1;
+				if (c == ',')
+				{
+					c = *fmt++;
+					if (!c)
+						break;
+					ds = c - '0';
+				}
+
+				s = z = 0;
+				while (c == ' ' || c == '+' || c == '0' || c == '#')
+				{
+					if (c == '+') s = '+';
+					else if (c == ' ') z = ' ';
+					else if (c == '0') z = (z != ' ' ? '0' : z);
+					else if (c == '#') special = 1;
+					c = *fmt++;
+				}
+				if (!z)
+					z = ' ';
+				if (!c)
+					break;
+
+				w = 0;
+				while (c >= '0' && c <= '9')
+				{
+					w = w * 10 + (c - '0');
+					c = *fmt++;
+				}
+				if (!c)
+					break;
+
+				p = 6;
+				if (c == '.')
+				{
+					c = *fmt++;
+					if (c >= '0' && c <= '9')
+						p = 0;
+					while (c >= '0' && c <= '9')
+					{
+						p = p * 10 + (c - '0');
+						c = *fmt++;
+					}
+				}
+				if (!c)
+					break;
+
+				switch (c)
+				{
+				case '%':
+					fz_append_byte(ctx, out, '%');
+					break;
+				case 'x':
+					util_printf_d(ctx, out, ds, s, z, w, 16, js_tryinteger(J, ++i, 0));
+					break;
+				case 'd':
+					util_printf_d(ctx, out, ds, s, z, w, 10, js_tryinteger(J, ++i, 0));
+					break;
+				case 'f':
+					util_printf_f(ctx, out, ds, s, z, w, p, js_trynumber(J, ++i, 0));
+					break;
+				case 's':
+				default:
+					fz_append_string(ctx, out, js_trystring(J, ++i, ""));
+				}
+			}
+			else
+			{
+				fz_append_byte(ctx, out, c);
+			}
+		}
+
+		str = fz_string_from_buffer(ctx, out);
+		if (js_try(J))
+		{
+			failed = 1;
+		}
+		else
+		{
+			js_pushstring(J, str);
+			js_endtry(J);
+		}
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, out);
+	fz_catch(ctx)
+		rethrow(js);
+
+	if (failed)
+		js_throw(J);
+}
+
 static void addmethod(js_State *J, const char *name, js_CFunction fun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -438,6 +604,19 @@ static void declare_dom(pdf_js *js)
 	js_pushglobal(J);
 	js_defglobal(J, "global", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
 
+	/* Create the 'event' object */
+	js_newobject(J);
+	js_defglobal(J, "event", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
+
+	/* Create the 'util' object */
+	js_newobject(J);
+	{
+		// TODO: util.printd
+		// TODO: util.printx
+		addmethod(J, "util.printf", util_printf, 1);
+	}
+	js_defglobal(J, "util", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
+
 	/* Create the 'app' object */
 	js_newobject(J);
 	{
@@ -456,10 +635,6 @@ static void declare_dom(pdf_js *js)
 		addmethod(J, "app.launchURL", app_launchURL, 2);
 	}
 	js_defglobal(J, "app", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
-
-	/* Create the 'event' object */
-	js_newobject(J);
-	js_defglobal(J, "event", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
 
 	/* Create the Field prototype object */
 	js_newobject(J);
