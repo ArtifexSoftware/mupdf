@@ -412,53 +412,33 @@ pdf_obj *pdf_button_field_on_state(fz_context *ctx, pdf_obj *field)
 	return on;
 }
 
-static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	pdf_obj *as = pdf_dict_get(ctx, obj, PDF_NAME(AS));
-	int ff = pdf_field_flags(ctx, obj);
-	int button_mask = PDF_BTN_FIELD_IS_RADIO | PDF_BTN_FIELD_IS_PUSHBUTTON;
-	int radio = ((ff & button_mask) == PDF_BTN_FIELD_IS_RADIO);
-	pdf_obj *val = NULL;
-	pdf_obj *grp = find_head_of_field_group(ctx, obj);
+	int ff = pdf_field_flags(ctx, field);
+	int is_radio = (ff & PDF_BTN_FIELD_IS_RADIO);
+	int is_no_toggle_to_off = (ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF);
+	pdf_obj *grp, *as, *val;
 
+	grp = find_head_of_field_group(ctx, field);
 	if (!grp)
-		grp = obj;
+		grp = field;
 
-	if (as && !pdf_name_eq(ctx, as, PDF_NAME(Off)))
+	/* TODO: check V value as well as or instead of AS? */
+	as = pdf_dict_get(ctx, field, PDF_NAME(AS));
+	if (as && as != PDF_NAME(Off))
 	{
-		/* AS neither missing nor set to Off. Set it to Off, unless
-		 * this is a non-toggle-off radio button. */
-		if (!(radio && (ff & PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF)))
-		{
-			val = PDF_NAME(Off);
-		}
+		if (is_radio && is_no_toggle_to_off)
+			return;
+		val = PDF_NAME(Off);
 	}
 	else
 	{
-		pdf_obj *n, *key;
-		int len, i;
-
-		n = pdf_dict_getl(ctx, obj, PDF_NAME(AP), PDF_NAME(N), NULL);
-
-		/* Look for an appearance state that isn't "Off" */
-		len = pdf_dict_len(ctx, n);
-		for (i = 0; i < len; i++)
-		{
-			key = pdf_dict_get_key(ctx, n, i);
-			if (pdf_is_name(ctx, key) && !pdf_name_eq(ctx, key, PDF_NAME(Off)))
-			{
-				val = key;
-				break;
-			}
-		}
+		val = pdf_button_field_on_state(ctx, field);
 	}
 
-	if (val && grp)
-	{
-		pdf_dict_put(ctx, grp, PDF_NAME(V), val);
-		set_check_grp(ctx, doc, grp, val);
-		doc->recalculate = 1;
-	}
+	pdf_dict_put(ctx, grp, PDF_NAME(V), val);
+	set_check_grp(ctx, doc, grp, val);
+	doc->recalculate = 1;
 }
 
 /*
