@@ -333,26 +333,6 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 		if (argc)
 			retainpages(ctx, &glo, argc, argv);
 
-		if (opts->do_appearance > 0)
-		{
-			int i, n = pdf_count_pages(ctx, glo.doc);
-			for (i = 0; i < n; ++i)
-			{
-				page = pdf_load_page(ctx, glo.doc, i);
-				if (opts->do_appearance > 1)
-				{
-					pdf_annot *annot;
-					for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
-						annot->needs_new_ap = 1;
-					for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
-						annot->needs_new_ap = 1;
-				}
-				pdf_update_page(ctx, page);
-				fz_drop_page(ctx, &page->super);
-				page = NULL;
-			}
-		}
-
 		pdf_save_document(ctx, glo.doc, outfile, opts);
 	}
 	fz_always(ctx)

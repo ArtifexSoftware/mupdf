@@ -3282,6 +3282,31 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	if (in_opts->do_incremental && in_opts->do_decrypt)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with decryption");
 
+	if (in_opts->do_appearance > 0)
+	{
+		int i, n = pdf_count_pages(ctx, doc);
+		for (i = 0; i < n; ++i)
+		{
+			pdf_page *page = pdf_load_page(ctx, doc, i);
+			fz_try(ctx)
+			{
+				if (in_opts->do_appearance > 1)
+				{
+					pdf_annot *annot;
+					for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+						annot->needs_new_ap = 1;
+					for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+						annot->needs_new_ap = 1;
+				}
+				pdf_update_page(ctx, page);
+			}
+			fz_always(ctx)
+				fz_drop_page(ctx, &page->super);
+			fz_catch(ctx)
+				fz_warn(ctx, "could not create annotation appearances");
+		}
+	}
+
 	prepare_for_save(ctx, doc, in_opts);
 
 	if (in_opts->do_incremental)
