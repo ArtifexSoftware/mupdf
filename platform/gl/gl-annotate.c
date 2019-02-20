@@ -414,6 +414,9 @@ void do_annotate_panel(void)
 		int n, choice;
 		pdf_obj *obj;
 
+		if (subtype == PDF_ANNOT_WIDGET)
+			return;
+
 		if (ui_button("Delete"))
 		{
 			pdf_delete_annot(ctx, page, selected_annot);
