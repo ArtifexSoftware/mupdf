@@ -33,7 +33,7 @@ void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
 {
 	pdf_widget *widget;
 	for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
-		if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIG)
+		if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE)
 			verify_signature(ctx, doc, n, widget);
 }
 

@@ -12,13 +12,13 @@ public class PDFWidget extends PDFAnnotation
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/widget.h */
 	public static final int TYPE_UNKNOWN = 0;
-	public static final int TYPE_BTN_PUSH = 1;
-	public static final int TYPE_BTN_CHECK = 2;
-	public static final int TYPE_BTN_RADIO = 3;
-	public static final int TYPE_TX = 4;
-	public static final int TYPE_CH_COMBO = 5;
-	public static final int TYPE_CH_LIST = 6;
-	public static final int TYPE_SIG = 7;
+	public static final int TYPE_BUTTON = 1;
+	public static final int TYPE_CHECKBOX = 2;
+	public static final int TYPE_COMBOBOX = 3;
+	public static final int TYPE_LISTBOX = 4;
+	public static final int TYPE_RADIOBUTTON = 5;
+	public static final int TYPE_SIGNATURE = 6;
+	public static final int TYPE_TEXT = 7;
 
 	public static final int TX_FORMAT_NONE = 0;
 	public static final int TX_FORMAT_NUMBER = 1;
@@ -72,23 +72,23 @@ public class PDFWidget extends PDFAnnotation
 
 	public boolean isButton() {
 		int ft = getFieldType();
-		return ft == TYPE_BTN_PUSH || ft == TYPE_BTN_CHECK || ft == TYPE_BTN_RADIO;
+		return ft == TYPE_BUTTON || ft == TYPE_CHECKBOX || ft == TYPE_RADIOBUTTON;
 	}
 	public boolean isPushButton() {
-		return getFieldType() == TYPE_BTN_PUSH;
+		return getFieldType() == TYPE_BUTTON;
 	}
 	public boolean isCheckbox() {
-		return getFieldType() == TYPE_BTN_CHECK;
+		return getFieldType() == TYPE_CHECKBOX;
 	}
 	public boolean isRadioButton() {
-		return getFieldType() == TYPE_BTN_RADIO;
+		return getFieldType() == TYPE_RADIOBUTTON;
 	}
 	public native boolean toggle();
 
 	/* Text fields */
 
 	public boolean isText() {
-		return getFieldType() == TYPE_TX;
+		return getFieldType() == TYPE_TEXT;
 	}
 	public boolean isMultiline() {
 		return (getFieldFlags() & PDF_TX_FIELD_IS_MULTILINE) != 0;
@@ -136,13 +136,13 @@ public class PDFWidget extends PDFAnnotation
 
 	public boolean isChoice() {
 		int ft = getFieldType();
-		return ft == TYPE_CH_COMBO || ft == TYPE_CH_LIST;
+		return ft == TYPE_COMBOBOX || ft == TYPE_LISTBOX;
 	}
 	public boolean isComboBox() {
-		return getFieldType() == TYPE_CH_COMBO;
+		return getFieldType() == TYPE_COMBOBOX;
 	}
 	public boolean isListBox() {
-		return getFieldType() == TYPE_CH_LIST;
+		return getFieldType() == TYPE_LISTBOX;
 	}
 	public String[] getOptions() {
 		return options;

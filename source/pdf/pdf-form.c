@@ -50,25 +50,25 @@ int pdf_field_type(fz_context *ctx, pdf_obj *obj)
 	if (pdf_name_eq(ctx, type, PDF_NAME(Btn)))
 	{
 		if (flags & PDF_BTN_FIELD_IS_PUSHBUTTON)
-			return PDF_WIDGET_TYPE_BTN_PUSH;
+			return PDF_WIDGET_TYPE_BUTTON;
 		else if (flags & PDF_BTN_FIELD_IS_RADIO)
-			return PDF_WIDGET_TYPE_BTN_RADIO;
+			return PDF_WIDGET_TYPE_RADIOBUTTON;
 		else
-			return PDF_WIDGET_TYPE_BTN_CHECK;
+			return PDF_WIDGET_TYPE_CHECKBOX;
 	}
 	else if (pdf_name_eq(ctx, type, PDF_NAME(Tx)))
-		return PDF_WIDGET_TYPE_TX;
+		return PDF_WIDGET_TYPE_TEXT;
 	else if (pdf_name_eq(ctx, type, PDF_NAME(Ch)))
 	{
 		if (flags & PDF_CH_FIELD_IS_COMBO)
-			return PDF_WIDGET_TYPE_CH_COMBO;
+			return PDF_WIDGET_TYPE_COMBOBOX;
 		else
-			return PDF_WIDGET_TYPE_CH_LIST;
+			return PDF_WIDGET_TYPE_LISTBOX;
 	}
 	else if (pdf_name_eq(ctx, type, PDF_NAME(Sig)))
-		return PDF_WIDGET_TYPE_SIG;
+		return PDF_WIDGET_TYPE_SIGNATURE;
 	else
-		return PDF_WIDGET_TYPE_UNKNOWN;
+		return PDF_WIDGET_TYPE_BUTTON;
 }
 
 static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_obj *field)
@@ -182,8 +182,8 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		 * the appearance stream will be regenerated. */
 		switch (pdf_field_type(ctx, field))
 		{
-		case PDF_WIDGET_TYPE_BTN_RADIO:
-		case PDF_WIDGET_TYPE_BTN_CHECK:
+		case PDF_WIDGET_TYPE_CHECKBOX:
+		case PDF_WIDGET_TYPE_RADIOBUTTON:
 			{
 				pdf_obj *leafv = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
 
@@ -196,7 +196,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 			}
 			break;
 
-		case PDF_WIDGET_TYPE_BTN_PUSH:
+		case PDF_WIDGET_TYPE_BUTTON:
 			break;
 
 		default:
@@ -480,8 +480,8 @@ int pdf_toggle_widget(fz_context *ctx, pdf_widget *widget)
 	{
 	default:
 		return 0;
-	case PDF_WIDGET_TYPE_BTN_RADIO:
-	case PDF_WIDGET_TYPE_BTN_CHECK:
+	case PDF_WIDGET_TYPE_CHECKBOX:
+	case PDF_WIDGET_TYPE_RADIOBUTTON:
 		toggle_check_box(ctx, widget->page->doc, widget->obj);
 		return 1;
 	}
@@ -534,7 +534,7 @@ enum pdf_widget_type pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 	pdf_obj *subtype = pdf_dict_get(ctx, widget->obj, PDF_NAME(Subtype));
 	if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
 		return pdf_field_type(ctx, widget->obj);
-	return PDF_WIDGET_TYPE_UNKNOWN;
+	return PDF_WIDGET_TYPE_BUTTON;
 }
 
 static int set_validated_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events)
@@ -589,14 +589,14 @@ int pdf_set_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 
 	switch (pdf_field_type(ctx, field))
 	{
-	case PDF_WIDGET_TYPE_TX:
-	case PDF_WIDGET_TYPE_CH_LIST:
-	case PDF_WIDGET_TYPE_CH_COMBO:
+	case PDF_WIDGET_TYPE_TEXT:
+	case PDF_WIDGET_TYPE_COMBOBOX:
+	case PDF_WIDGET_TYPE_LISTBOX:
 		accepted = set_validated_field_value(ctx, doc, field, text, ignore_trigger_events);
 		break;
 
-	case PDF_WIDGET_TYPE_BTN_CHECK:
-	case PDF_WIDGET_TYPE_BTN_RADIO:
+	case PDF_WIDGET_TYPE_CHECKBOX:
+	case PDF_WIDGET_TYPE_RADIOBUTTON:
 		accepted = set_checkbox_value(ctx, doc, field, text);
 		break;
 
@@ -649,7 +649,7 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_obj *field, const char *tex
 
 void pdf_field_set_button_caption(fz_context *ctx, pdf_obj *field, const char *text)
 {
-	if (pdf_field_type(ctx, field) == PDF_WIDGET_TYPE_BTN_PUSH)
+	if (pdf_field_type(ctx, field) == PDF_WIDGET_TYPE_BUTTON)
 	{
 		pdf_obj *val = pdf_new_text_string(ctx, text);
 		pdf_dict_putl_drop(ctx, field, val, PDF_NAME(MK), PDF_NAME(CA), NULL);
@@ -1006,8 +1006,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 
 	switch (pdf_field_type(ctx, annot->obj))
 	{
-	case PDF_WIDGET_TYPE_CH_LIST:
-	case PDF_WIDGET_TYPE_CH_COMBO:
+	case PDF_WIDGET_TYPE_LISTBOX:
 		return (pdf_field_flags(ctx, annot->obj) & PDF_CH_FIELD_IS_MULTI_SELECT) != 0;
 	default:
 		return 0;

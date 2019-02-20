@@ -335,13 +335,13 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_SELECT_LINES == FZ_SELECT_LINES;
 
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN == PDF_WIDGET_TYPE_UNKNOWN;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_PUSH == PDF_WIDGET_TYPE_BTN_PUSH;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_CHECK == PDF_WIDGET_TYPE_BTN_CHECK;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BTN_RADIO == PDF_WIDGET_TYPE_BTN_RADIO;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_TX == PDF_WIDGET_TYPE_TX;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CH_COMBO == PDF_WIDGET_TYPE_CH_COMBO;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CH_LIST == PDF_WIDGET_TYPE_CH_LIST;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_SIG == PDF_WIDGET_TYPE_SIG;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BUTTON == PDF_WIDGET_TYPE_BUTTON;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CHECKBOX == PDF_WIDGET_TYPE_CHECKBOX;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_COMBOBOX == PDF_WIDGET_TYPE_COMBOBOX;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_LISTBOX == PDF_WIDGET_TYPE_LISTBOX;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_RADIOBUTTON == PDF_WIDGET_TYPE_RADIOBUTTON;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_SIGNATURE == PDF_WIDGET_TYPE_SIGNATURE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_TEXT == PDF_WIDGET_TYPE_TEXT;
 
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_NONE == PDF_WIDGET_TX_FORMAT_NONE;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_NUMBER == PDF_WIDGET_TX_FORMAT_NUMBER;
@@ -1758,12 +1758,12 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 		int fieldFlags = pdf_field_flags(ctx, widget->obj);
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldType, fieldType);
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, fieldFlags);
-		if (fieldType == PDF_WIDGET_TYPE_TX)
+		if (fieldType == PDF_WIDGET_TYPE_TEXT)
 		{
 			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
 			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget->page->doc, widget));
 		}
-		if (fieldType == PDF_WIDGET_TYPE_CH_COMBO || fieldType == PDF_WIDGET_TYPE_CH_LIST)
+		if (fieldType == PDF_WIDGET_TYPE_COMBOBOX || fieldType == PDF_WIDGET_TYPE_LISTBOX)
 		{
 			nopts = pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, NULL);
 			if (nopts > 0)

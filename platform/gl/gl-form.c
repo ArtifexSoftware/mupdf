@@ -286,19 +286,19 @@ void do_widget_canvas(fz_irect canvas_area)
 			{
 			default:
 				break;
-			case PDF_WIDGET_TYPE_BTN_CHECK:
-			case PDF_WIDGET_TYPE_BTN_RADIO:
+			case PDF_WIDGET_TYPE_CHECKBOX:
+			case PDF_WIDGET_TYPE_RADIOBUTTON:
 				pdf_toggle_widget(ctx, widget);
 				break;
-			case PDF_WIDGET_TYPE_TX:
+			case PDF_WIDGET_TYPE_TEXT:
 				show_tx_dialog(widget);
 				break;
-			case PDF_WIDGET_TYPE_CH_COMBO:
-			case PDF_WIDGET_TYPE_CH_LIST:
+			case PDF_WIDGET_TYPE_COMBOBOX:
+			case PDF_WIDGET_TYPE_LISTBOX:
 				ui.dialog = ch_dialog;
 				ch_widget = widget;
 				break;
-			case PDF_WIDGET_TYPE_SIG:
+			case PDF_WIDGET_TYPE_SIGNATURE:
 				show_sig_dialog(widget);
 				break;
 			}
