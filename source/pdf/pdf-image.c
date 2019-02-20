@@ -308,7 +308,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 	pdf_obj *imref = NULL;
 	fz_compressed_buffer *cbuffer;
 	unsigned char digest[16];
-	int n;
+	int i, n;
 
 	/* If we can maintain compression, do so */
 	cbuffer = fz_compressed_image_buffer(ctx, image);
@@ -400,6 +400,13 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 				pdf_dict_del(ctx, imobj, PDF_NAME(DecodeParms));
 
 			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
+
+			if (image->use_decode)
+			{
+				pdf_obj *ary = pdf_dict_put_array(ctx, imobj, PDF_NAME(Decode), image->n * 2);
+				for (i = 0; i < image->n * 2; ++i)
+					pdf_array_push_real(ctx, ary, image->decode[i]);
+			}
 		}
 		else
 		{
