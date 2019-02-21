@@ -606,20 +606,26 @@ static void pop_future(void)
 	push_history();
 }
 
-static int count_outline(fz_outline *node)
+static int count_outline(fz_outline *node, int end)
 {
-	int n = 0;
+	int is_selected, n, p;
+	int count = 0;
 	while (node)
 	{
-		if (node->page >= 0)
+		p = node->page;
+		if (p >= 0)
 		{
-			n += 1;
-			if (node->down && node->is_open)
-				n += count_outline(node->down);
+			count += 1;
+			n = end;
+			if (node->next && node->next->page >= 0)
+				n = node->next->page;
+			is_selected = (currentpage == p || (currentpage > p && currentpage < n));
+			if (node->down && (node->is_open || is_selected))
+				count += count_outline(node->down, end);
 		}
 		node = node->next;
 	}
-	return n;
+	return count;
 }
 
 static void do_outline_imp(struct list *list, int end, fz_outline *node, int depth)
@@ -640,7 +646,7 @@ static void do_outline_imp(struct list *list, int end, fz_outline *node, int dep
 			if (ui_tree_item(list, node, node->title, selected, depth, !!node->down, &node->is_open))
 				jump_to_page_xy(p, node->x, node->y);
 
-			if (node->down && was_open)
+			if (node->down && (was_open || selected))
 				do_outline_imp(list, n, node->down, depth + 1);
 		}
 		node = node->next;
@@ -651,7 +657,7 @@ static void do_outline(fz_outline *node)
 {
 	static struct list list;
 	ui_layout(L, BOTH, NW, 0, 0);
-	ui_tree_begin(&list, count_outline(node), outline_w, 0, 1);
+	ui_tree_begin(&list, count_outline(node, fz_count_pages(ctx, doc)), outline_w, 0, 1);
 	do_outline_imp(&list, fz_count_pages(ctx, doc), node, 0);
 	ui_tree_end(&list);
 	ui_splitter(&outline_w, 150, 500, R);
