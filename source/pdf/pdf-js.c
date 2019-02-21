@@ -413,18 +413,16 @@ static void console_println(js_State *J)
 	js_pushundefined(J);
 }
 
-static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int s, int z, int w, int base, int value)
+static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int sign, int pad, int w, int base, int value)
 {
 	static const char *digits = "0123456789abcdef";
-	char buf[40];
+	char buf[50];
 	unsigned int a;
-	int i;
-
-	// TODO: decimal separator
+	int i, m = 0;
 
 	if (value < 0)
 	{
-		s = '-';
+		sign = '-';
 		a = -value;
 	}
 	else
@@ -433,36 +431,99 @@ static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int s, int z,
 	}
 
 	i = 0;
-	if (a == 0)
-		buf[i++] = '0';
-	while (a)
+	do
 	{
 		buf[i++] = digits[a % base];
 		a /= base;
+		if (a > 0 && ++m == 3)
+		{
+			if (ds == 0) buf[i++] = ',';
+			if (ds == 2) buf[i++] = '.';
+			m = 0;
+		}
+	} while (a);
+
+	if (sign)
+	{
+		if (pad == '0')
+			while (i < w - 1)
+				buf[i++] = pad;
+		buf[i++] = sign;
 	}
-	if (z == '0')
-		while (i < w - !!s)
-			buf[i++] = z;
-	if (s)
-		buf[i++] = s;
 	while (i < w)
-		buf[i++] = z;
-	if (z == ' ')
-		while (i < w)
-			buf[i++] = z;
+		buf[i++] = pad;
+
 	while (i > 0)
 		fz_append_byte(ctx, out, buf[--i]);
 }
 
-static void util_printf_f(fz_context *ctx, fz_buffer *out, int ds, int s, int z, int w, int p, double value)
+static void util_printf_f(fz_context *ctx, fz_buffer *out, int ds, int sign, int pad, int special, int w, int p, double value)
 {
-	// TODO: decimal separator
-	if (s == '+')
-		fz_append_printf(ctx, out, "%+*.*f", w, p, value);
-	else if (z == ' ')
-		fz_append_printf(ctx, out, "% *.*f", w, p, value);
+	char buf[40], *point, *digits = buf;
+	int n = 0;
+	int m = 0;
+
+	fz_snprintf(buf, sizeof buf, "%.*f", p, value);
+
+	if (*digits == '-')
+	{
+		sign = '-';
+		++digits;
+	}
+
+	if (*digits != '.' && (*digits < '0' || *digits > '9'))
+	{
+		fz_append_string(ctx, out, "nan");
+		return;
+	}
+
+	n = strlen(digits);
+	if (sign)
+		++n;
+	point = strchr(digits, '.');
+	if (point)
+		m = 3 - (point - digits) % 3;
 	else
-		fz_append_printf(ctx, out, "%*.*f", w, p, value);
+	{
+		m = 3 - n % 3;
+		if (special)
+			++n;
+	}
+	if (m == 3)
+		m = 0;
+
+	if (pad == '0' && sign)
+		fz_append_byte(ctx, out, sign);
+	for (; n < w; ++n)
+		fz_append_byte(ctx, out, pad);
+	if (pad == ' ' && sign)
+		fz_append_byte(ctx, out, sign);
+
+	while (*digits && *digits != '.')
+	{
+		fz_append_byte(ctx, out, *digits++);
+		if (++m == 3 && *digits && *digits != '.')
+		{
+			if (ds == 0) fz_append_byte(ctx, out, ',');
+			if (ds == 2) fz_append_byte(ctx, out, '.');
+			m = 0;
+		}
+	}
+
+	if (*digits == '.' || special)
+	{
+		if (ds == 0 || ds == 1)
+			fz_append_byte(ctx, out, '.');
+		else
+			fz_append_byte(ctx, out, ',');
+	}
+
+	if (*digits == '.')
+	{
+		++digits;
+		while (*digits)
+			fz_append_byte(ctx, out, *digits++);
+	}
 }
 
 static void util_printf(js_State *J)
@@ -471,7 +532,7 @@ static void util_printf(js_State *J)
 	fz_context *ctx = js->ctx;
 	const char *fmt = js_tostring(J, 1);
 	fz_buffer *out = NULL;
-	int ds, w, p, s, z, special;
+	int ds, w, p, sign, pad, special;
 	int c, i = 1;
 	int failed = 0;
 	const char *str;
@@ -496,17 +557,19 @@ static void util_printf(js_State *J)
 					ds = c - '0';
 				}
 
-				s = z = 0;
+				special = 0;
+				sign = 0;
+				pad = ' ';
 				while (c == ' ' || c == '+' || c == '0' || c == '#')
 				{
-					if (c == '+') s = '+';
-					else if (c == ' ') z = ' ';
-					else if (c == '0') z = (z != ' ' ? '0' : z);
+					if (c == '+') sign = '+';
+					else if (c == ' ') sign = ' ';
+					else if (c == '0') pad = '0';
 					else if (c == '#') special = 1;
 					c = *fmt++;
 				}
-				if (!z)
-					z = ' ';
+				if (!pad)
+					pad = ' ';
 				if (!c)
 					break;
 
@@ -519,17 +582,19 @@ static void util_printf(js_State *J)
 				if (!c)
 					break;
 
-				p = 6;
+				p = 0;
 				if (c == '.')
 				{
 					c = *fmt++;
-					if (c >= '0' && c <= '9')
-						p = 0;
 					while (c >= '0' && c <= '9')
 					{
 						p = p * 10 + (c - '0');
 						c = *fmt++;
 					}
+				}
+				else
+				{
+					special = 1;
 				}
 				if (!c)
 					break;
@@ -540,13 +605,13 @@ static void util_printf(js_State *J)
 					fz_append_byte(ctx, out, '%');
 					break;
 				case 'x':
-					util_printf_d(ctx, out, ds, s, z, w, 16, js_tryinteger(J, ++i, 0));
+					util_printf_d(ctx, out, ds, sign, pad, w, 16, js_tryinteger(J, ++i, 0));
 					break;
 				case 'd':
-					util_printf_d(ctx, out, ds, s, z, w, 10, js_tryinteger(J, ++i, 0));
+					util_printf_d(ctx, out, ds, sign, pad, w, 10, js_tryinteger(J, ++i, 0));
 					break;
 				case 'f':
-					util_printf_f(ctx, out, ds, s, z, w, p, js_trynumber(J, ++i, 0));
+					util_printf_f(ctx, out, ds, sign, pad, special, w, p, js_trynumber(J, ++i, 0));
 					break;
 				case 's':
 				default:
