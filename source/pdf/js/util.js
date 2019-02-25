@@ -695,7 +695,6 @@ function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bC
 function AFNumber_Format(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend) {
 	var value = AFMakeNumber(event.value);
 	var fmt = '%,' + sepStyle + '.' + nDec + 'f';
-	console.println('AFNumber_Format', fmt, value);
 	if (value == null) {
 		event.value = '';
 		return;

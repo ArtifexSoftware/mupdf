@@ -695,7 +695,6 @@
 "function AFNumber_Format(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend) {\n"
 "var value = AFMakeNumber(event.value);\n"
 "var fmt = '%,' + sepStyle + '.' + nDec + 'f';\n"
-"console.println('AFNumber_Format', fmt, value);\n"
 "if (value == null) {\n"
 "event.value = '';\n"
 "return;\n"
