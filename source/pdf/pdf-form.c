@@ -186,17 +186,16 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
 			{
 				pdf_obj *leafv = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
-
-				if (leafv)
-					pdf_keep_obj(ctx, leafv);
-				else
+				if (!leafv)
 					leafv = PDF_NAME(Off);
-
-				pdf_dict_put_drop(ctx, field, PDF_NAME(AS), leafv);
+				pdf_dict_put(ctx, field, PDF_NAME(AS), leafv);
 			}
+			pdf_field_mark_dirty(ctx, field);
 			break;
 
 		case PDF_WIDGET_TYPE_BUTTON:
+		case PDF_WIDGET_TYPE_SIGNATURE:
+			/* Pushbuttons and signatures have no value to reset. */
 			break;
 
 		default:
