@@ -264,34 +264,30 @@ util.printd = function (fmt, d) {
 }
 
 util.printx = function (fmt, val) {
-	function convertCase(str, cmd) {
-		switch (cmd) {
-		case '>': return str.toUpperCase();
-		case '<': return str.toLowerCase();
-		default: return str;
-		}
-	}
-	var cs = '=';
+	function toUpper(str) { return str.toUpperCase(); }
+	function toLower(str) { return str.toLowerCase(); }
+	function toSame(str) { return str; }
+	var convertCase = toSame;
 	var res = '';
 	var i, m;
-	var length = fmt ? fmt.length : 0;
-	for (i = 0; i < length; ++i) {
+	var n = fmt ? fmt.length : 0;
+	for (i = 0; i < n; ++i) {
 		switch (fmt.charAt(i)) {
 		case '\\':
-			if (++i < length)
+			if (++i < n)
 				res += fmt.charAt(i);
 			break;
 		case 'X':
 			m = val.match(/\w/);
 			if (m) {
-				res += convertCase(m[0], cs);
+				res += convertCase(m[0]);
 				val = val.replace(/^\W*\w/, '');
 			}
 			break;
 		case 'A':
 			m = val.match(/[A-Za-z]/);
 			if (m) {
-				res += convertCase(m[0], cs);
+				res += convertCase(m[0]);
 				val = val.replace(/^[^A-Za-z]*[A-Za-z]/, '');
 			}
 			break;
@@ -303,22 +299,26 @@ util.printx = function (fmt, val) {
 			}
 			break;
 		case '*':
-			res += val;
+			res += convertCase(val);
 			val = '';
 			break;
 		case '?':
-			if (val) {
-				res += convertCase(val.charAt(0), cs);
+			if (val !== '') {
+				res += convertCase(val.charAt(0));
 				val = val.substring(1);
 			}
 			break;
 		case '=':
+			convertCase = toSame;
+			break;
 		case '>':
+			convertCase = toUpper;
+			break;
 		case '<':
-			cs = fmt.charAt(i);
+			convertCase = toLower;
 			break;
 		default:
-			res += convertCase(fmt.charAt(i), cs);
+			res += convertCase(fmt.charAt(i));
 			break;
 		}
 	}
@@ -549,21 +549,15 @@ function AFTime_Format(index) {
 }
 
 function AFSpecial_KeystrokeEx(fmt) {
-	var cs = '=';
+	function toUpper(str) { return str.toUpperCase(); }
+	function toLower(str) { return str.toLowerCase(); }
+	function toSame(str) { return str; }
+	var convertCase = toSame;
 	var val = event.value;
 	var res = '';
 	var i = 0;
 	var m;
 	var length = fmt ? fmt.length : 0;
-
-	function convertCase(str, cmd) {
-		switch (cmd) {
-		case '>': return str.toUpperCase();
-		case '<': return str.toLowerCase();
-		default: return str;
-		}
-	}
-
 	while (i < length) {
 		switch (fmt.charAt(i)) {
 		case '\\':
@@ -581,7 +575,7 @@ function AFSpecial_KeystrokeEx(fmt) {
 				event.rc = false;
 				break;
 			}
-			res += convertCase(m[0], cs);
+			res += convertCase(m[0]);
 			val = val.substring(1);
 			break;
 
@@ -591,7 +585,7 @@ function AFSpecial_KeystrokeEx(fmt) {
 				event.rc = false;
 				break;
 			}
-			res += convertCase(m[0], cs);
+			res += convertCase(m[0]);
 			val = val.substring(1);
 			break;
 
@@ -606,23 +600,27 @@ function AFSpecial_KeystrokeEx(fmt) {
 			break;
 
 		case '*':
-			res += val;
+			res += convertCase(val);
 			val = '';
 			break;
 
 		case '?':
-			if (!val) {
+			if (val === '') {
 				event.rc = false;
 				break;
 			}
-			res += convertCase(val.charAt(0), cs);
+			res += convertCase(val.charAt(0));
 			val = val.substring(1);
 			break;
 
 		case '=':
+			convertCase = toSame;
+			break;
 		case '>':
+			convertCase = toUpper;
+			break;
 		case '<':
-			cs = fmt.charAt(i);
+			convertCase = toLower;
 			break;
 
 		default:
