@@ -880,7 +880,6 @@ static void load_document(void)
 		{
 			fz_drop_document(ctx, doc);
 			doc = NULL;
-			fprintf(stderr, "Invalid password.\n");
 			ui_input_init(&input_password, "");
 			ui.focus = &input_password;
 			ui.dialog = password_dialog;
