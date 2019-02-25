@@ -397,157 +397,167 @@ function AFMakeNumber(string) {
 	return +result;
 }
 
-function AFExtractTime(dt) {
-	var ampm = dt.match(/(am|pm)/);
-	dt = dt.replace(/(am|pm)/, '');
-	var t = dt.match(/\d{1,2}:\d{1,2}:\d{1,2}/);
-	dt = dt.replace(/\d{1,2}:\d{1,2}:\d{1,2}/, '');
-	if (!t) {
-		t = dt.match(/\d{1,2}:\d{1,2}/);
-		dt = dt.replace(/\d{1,2}:\d{1,2}/, '');
+function AFExtractTime(string) {
+	var pattern = /\d\d?:\d\d?(:\d\d?)?\s*(am|pm)?/i;
+	var match = pattern.exec(string);
+	if (match) {
+		var prefix = string.substring(0, match.index);
+		var suffix = string.substring(match.index + match[0].length);
+		return [ prefix + suffix, match[0] ];
 	}
-	return [dt, t?t[0]+(ampm?ampm[0]:''):''];
+	return null;
 }
 
 function AFParseDateOrder(fmt) {
-	var i;
 	var order = '';
-
-	// Ensure all present with those not added in default order
-	fmt += 'mdy';
-
-	for (i = 0; i < fmt.length; i++) {
+	fmt += 'mdy'; // Default order if any parts are missing.
+	for (var i = 0; i < fmt.length; i++) {
 		var c = fmt.charAt(i);
-		if ('ymd'.indexOf(c) !== -1 && order.indexOf(c) === -1)
+		if ((c == 'y' || c == 'm' || c == 'd') && order.indexOf(c) < 0)
 			order += c;
 	}
-
 	return order;
 }
 
 function AFMatchMonth(date) {
-	var monthPattern = /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i;
-	var shortMonthName = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-	var month = date.match(monthPattern);
+	var names = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+	var month = date.match(/Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i);
 	if (month)
-		return shortMonthName.indexOf(month[0].toLowerCase());
+		return names.indexOf(month[0].toLowerCase());
 	return null;
 }
 
-function AFParseTime(str, d) {
-	if (!str)
-		return d;
-
-	if (!d)
-		d = new Date();
-
-	var ampm = str.match(/(am|pm)/);
-	var nums = str.match(/\d+/g);
-	var hour, min, sec;
-
-	if (!nums)
+function AFParseTime(string, date) {
+	if (!date)
+		date = new Date();
+	if (!string)
+		return date;
+	var nums = AFExtractNums(string);
+	if (!nums || nums.length < 2 || nums.length > 3)
 		return null;
-
-	sec = 0;
-
-	switch (nums.length) {
-	case 3:
-		sec = parseInt(nums[2]);
-	case 2:
-		hour = parseInt(nums[0]);
-		min = parseInt(nums[1]);
-		break;
-	default:
+	var hour = nums[0];
+	var min = nums[1];
+	var sec = (nums.length == 3) ? nums[2] : 0;
+	if (hour < 12 && (/pm/i).test(string))
+		hour += 12;
+	if (hour >= 12 && (/am/i).test(string))
+		hour -= 12;
+	date.setHours(hour, min, sec);
+	if (date.getHours() != hour || date.getMinutes() != min || date.getSeconds() != sec)
 		return null;
-	}
-
-	ampm = ampm && ampm[0]
-
-	if (ampm === 'am' && hour < 12)
-		hour = 12 + hour;
-	if (ampm === 'pm' && hour >= 12)
-		hour = 0 + hour - 12;
-
-	d.setHours(hour, min, sec);
-
-	if (d.getHours() !== hour || d.getMinutes() !== min || d.getSeconds() !== sec)
-		return null;
-
-	return d;
+	return date;
 }
 
-function AFParseDateEx(d, fmt) {
+function AFMakeDate(out, year, month, date, time)
+{
+	if (year < 50)
+		year += 2000;
+	if (year < 100)
+		year += 1900;
+	out.setFullYear(year, month, date);
+	if (out.getFullYear() != year || out.getMonth() != month || out.getDate() != date)
+		return null;
+	if (time)
+		out = AFParseTime(time, out);
+	else
+		out.setHours(0, 0, 0);
+	return out;
+}
+
+function AFParseDateEx(string, fmt) {
+	var out = new Date();
+	var year = out.getFullYear();
+	var month;
+	var date;
 	var i;
-	var dt = AFExtractTime(d);
-	var nums = dt[0].match(/\d+/g);
+
+	out.setHours(12, 0, 0);
+
 	var order = AFParseDateOrder(fmt);
-	var text_month = AFMatchMonth(dt[0]);
-	var dout = new Date();
-	var year = dout.getFullYear();
-	var month = dout.getMonth();
-	var date = dout.getDate();
 
-	dout.setHours(12, 0, 0);
+	var time = AFExtractTime(string);
+	if (time) {
+		string = time[0];
+		time = time[1];
+	}
 
+	var nums = AFExtractNums(string);
 	if (!nums)
 		return null;
 
-	if (nums.length == 1 && nums[0].length == fmt.length && !text_month) {
-		// One number string, exactly matching the format string in length.
-		// Split it into separate strings to match the fmt
-		var num = nums[0];
-		nums = [''];
-		for (i = 0; i < fmt.length; i++)
-		{
-			nums[nums.length-1] += num.charAt(i);
-			if (i+1 < fmt.length && fmt.charAt(i) != fmt.charAt(i+1))
-				nums.push('');
+	if (nums.length == 3) {
+		year = nums[order.indexOf('y')];
+		month = nums[order.indexOf('m')];
+		date = nums[order.indexOf('d')];
+		return AFMakeDate(out, year, month-1, date, time);
+	}
+
+	month = AFMatchMonth(string);
+
+	if (nums.length == 2) {
+		// We have a textual month.
+		if (month) {
+			if (order.indexOf('y') < order.indexOf('d')) {
+				year = nums[0];
+				date = nums[1];
+			} else {
+				year = nums[1];
+				date = nums[0];
+			}
+		}
+
+		// Year before date: set year and month.
+		else if (order.indexOf('y') < order.indexOf('d')) {
+			if (order.indexOf('y') < order.indexOf('m')) {
+				year = nums[0];
+				month = nums[1];
+			} else {
+				year = nums[1];
+				month = nums[0];
+			}
+		}
+
+		// Date before year: set date and month.
+		else {
+			if (order.indexOf('d') < order.indexOf('m')) {
+				date = nums[0];
+				month = nums[1];
+			} else {
+				date = nums[1];
+				month = nums[0];
+			}
+		}
+
+		return AFMakeDate(out, year, month-1, date, time);
+	}
+
+	if (nums.length == 1) {
+		if (month) {
+			if (order.indexOf('y') < order.indexOf('d')) {
+				year = nums[0];
+				date = 1;
+			} else {
+				date = nums[0];
+			}
+			return AFMakeDate(out, year, month-1, date, time);
+		}
+
+		// Only one number: must match format exactly!
+		if (string.length == fmt.length) {
+			year = month = date = '';
+			for (i = 0; i < fmt.length; ++i) {
+				switch (fmt.charAt(i)) {
+				case '\\': ++i; break;
+				case 'y': year += string.charAt(i); break;
+				case 'm': month += string.charAt(i); break;
+				case 'd': date += string.charAt(i); break;
+				}
+			}
+			return AFMakeDate(out, year, month-1, date, time);
 		}
 	}
 
-	// Need at least two parts of the date, but one
-	// can come from text_month. text_month is
-	// ignored if we have three numbers.
-	var total = nums.length + (text_month ? 1 : 0);
-
-	if (total < 2 || nums.length > 3)
-		return null;
-
-	if (nums.length < 3 && text_month) {
-		// Use the text month rather than one of the numbers
-		month = text_month;
-		order = order.replace('m', '');
-	}
-
-	order = order.substring(0, nums.length);
-
-	// If year and month specified but not date then use the 1st
-	if (order === 'ym' || order === 'my' || (order === 'y' && text_month))
-		date = 1;
-
-	for (i = 0; i < nums.length; i++) {
-		switch (order.charAt(i)) {
-		case 'y': year = parseInt(nums[i]); break;
-		case 'm': month = parseInt(nums[i]) - 1; break;
-		case 'd': date = parseInt(nums[i]); break;
-		}
-	}
-
-	if (year < 100) {
-		if (fmt.search('yyyy') !== -1)
-			return null;
-		if (year >= 50)
-			year = 1900 + year;
-		else if (year >= 0)
-			year = 2000 + year;
-	}
-
-	dout.setFullYear(year, month, date);
-
-	if (dout.getFullYear() !== year || dout.getMonth() !== month || dout.getDate() !== date)
-		return null;
-
-	return AFParseTime(dt[1], dout);
+	return null;
 }
 
 var AFDate_oldFormats = [
