@@ -12,4 +12,7 @@ public class Link
 		this.uri = uri;
 	}
 
+	public String toString() {
+		return "Link(b="+bounds+",page="+page+",uri="+uri+")";
+	}
 }
