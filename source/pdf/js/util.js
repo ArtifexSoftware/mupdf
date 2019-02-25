@@ -3,69 +3,6 @@ Error.prototype.toString = function() {
 	return this.name + ': ' + this.message;
 };
 
-var MuPDF = {
-	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i,
-	monthName: [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	],
-	shortMonthName: [
-		'jan',
-		'feb',
-		'mar',
-		'apr',
-		'may',
-		'jun',
-		'jul',
-		'aug',
-		'sep',
-		'oct',
-		'nov',
-		'dec'
-	],
-	dayName: [
-		'Sunday',
-		'Monday',
-		'Tuesday',
-		'Wednesday',
-		'Thursday',
-		'Friday',
-		'Saturday'
-	],
-	dateFormats: [
-		'm/d',
-		'm/d/yy',
-		'mm/dd/yy',
-		'mm/yy',
-		'd-mmm',
-		'd-mmm-yy',
-		'dd-mm-yy',
-		'yy-mm-dd',
-		'mmm-yy',
-		'mmmm-yy',
-		'mmm d, yyyy',
-		'mmmm d, yyyy',
-		'm/d/yy h:MM tt',
-		'm/d/yy HH:MM'
-	],
-	timeFormats: [
-		'HH:MM',
-		'h:MM tt',
-		'HH:MM:ss',
-		'h:MM:ss tt'
-	],
-};
-
 // display must be kept in sync with an enum in pdf_form.c
 var display = {
 	visible: 0,
@@ -209,22 +146,109 @@ var zoomtype = {
 	refW: 'ReflowWidth',
 };
 
+util.scand = function (fmt, input) {
+	if (fmt === 0) fmt = 'D:yyyymmddHHMMss';
+	else if (fmt === 1) fmt = 'yyyy.mm.dd HH:MM:ss';
+	else if (fmt === 2) fmt = 'yyyy/mm/dd HH:MM:ss';
+	var monthName = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+	var dayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+	var shortMonthName = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+	var shortDayName = ['sun','mon','tue','wed','thu','fri','sat'];
+	var digitRE = /^[\d]+/;
+	var alphaRE = /^[A-Za-z]+/;
+	var tokens = fmt.match(/(\\.|m+|d+|y+|H+|h+|M+|s+|t+|[^\\mdyHhMst]+)/g);
+	var i, n = tokens ? tokens.length : 0;
+	var y=1970, m=1, d=1, H=0, M=0, s=0, t='';
+	function nextZeroNumber(w) {
+		var number = parseInt(input.substring(0, w), 10);
+		input = input.substring(w);
+		return number;
+	}
+	function nextNumber() {
+		var word = input.match(digitRE)[0];
+		input = input.substring(word.length);
+		return parseInt(word, 10);
+	}
+	function nextWord(list) {
+		var word = input.match(alphaRE)[0];
+		input = input.substring(word.length);
+		return list.indexOf(word.toLowerCase()) + 1;
+	}
+	try {
+		for (i = 0; i < n; ++i) {
+			var tok = tokens[i];
+			switch (tok) {
+			default:
+				if (tok[0] == '\\') {
+					if (input.substring(0, 1) != tok[1])
+						return null;
+					input = input.substring(1);
+				} else {
+					if (input.substring(0, tok.length) != tok)
+						return null;
+					input = input.substring(tok.length);
+				}
+				break;
+			case 'yy':
+				y = nextZeroNumber(2);
+				y += (y < 50) ? 2000 : 1900;
+				break;
+			case 'mmmm': m = nextWord(monthName); break;
+			case 'mmm': m = nextWord(shortMonthName); break;
+			case 'dddd': nextWord(dayName); break;
+			case 'ddd': nextWord(shortDayName); break;
+			case 'tt':
+				t = input.substring(0, 2).toLowerCase();
+				if (t !== 'am' && t !== 'pm')
+					return null;
+				input = input.substring(2);
+				break;
+			case 't':
+				t = input.substring(0, 1).toLowerCase() + 'm';
+				if (t !== 'am' && t !== 'pm')
+					return null;
+				input = input.substring(1);
+				break;
+			case 'yyyy': y = nextZeroNumber(4); break;
+			case 'mm': m = nextZeroNumber(2); break;
+			case 'dd': d = nextZeroNumber(2); break;
+			case 'HH': case 'hh': H = nextZeroNumber(2); break;
+			case 'MM': M = nextZeroNumber(2); break;
+			case 'ss': s = nextZeroNumber(2); break;
+			case 'm': m = nextNumber(); break;
+			case 'd': d = nextNumber(); break;
+			case 'H': case 'h': H = nextNumber(); break;
+			case 'M': M = nextNumber(); break;
+			case 's': s = nextNumber(); break;
+			}
+		}
+	} catch (x) {
+		return null;
+	}
+	if (t === 'pm' && H < 12)
+		H += 12;
+	if (t === 'am' && H >= 12)
+		H -= 12;
+	return new Date(y, m-1, d, H, M, s);
+}
+
 util.printd = function (fmt, d) {
+	var monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+	var dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 	function padZeros(num, places) {
 		var s = String(num)
 		while (s.length < places)
 			s = '0' + s;
 		return s;
 	}
-	if (!(d instanceof Date))
-		return null;
+	if (fmt == 0) fmt = "D:yyyymmddHHMMss";
+	else if (fmt == 1) fmt = "yyyy.mm.dd HH:MM:ss";
+	else if (fmt == 2) fmt = "yyyy/mm/dd HH:MM:ss";
+	if (!d)
+		d = new Date();
+	else if (!(d instanceof Date))
+		d = new Date(d);
 	var res = '';
-	if (fmt == 0)
-		fmt = "D:yyyymmddHHMMss+00'00'";
-	else if (fmt == 1)
-		fmt = "YYYY.MM.DD HH:MM:ss +00'00'";
-	else if (fmt == 2)
-		fmt = "YYYY/MM/DD HH:MM:ss";
 	var tokens = fmt.match(/(\\.|m+|d+|y+|H+|h+|M+|s+|t+|[^\\mdyHhMst]+)/g);
 	var length = tokens ? tokens.length : 0;
 	var tok, i;
@@ -238,12 +262,12 @@ util.printd = function (fmt, d) {
 			else
 				res += tok;
 			break;
-		case 'mmmm': res += MuPDF.monthName[d.getMonth()]; break;
-		case 'mmm': res += MuPDF.monthName[d.getMonth()].substring(0, 3); break;
+		case 'mmmm': res += monthName[d.getMonth()]; break;
+		case 'mmm': res += monthName[d.getMonth()].substring(0, 3); break;
 		case 'mm': res += padZeros(d.getMonth()+1, 2); break;
 		case 'm': res += d.getMonth()+1; break;
-		case 'dddd': res += MuPDF.dayName[d.getDay()]; break;
-		case 'ddd': res += MuPDF.dayName[d.getDay()].substring(0, 3); break;
+		case 'dddd': res += dayName[d.getDay()]; break;
+		case 'ddd': res += dayName[d.getDay()].substring(0, 3); break;
 		case 'dd': res += padZeros(d.getDate(), 2); break;
 		case 'd': res += d.getDate(); break;
 		case 'yyyy': res += d.getFullYear(); break;
@@ -391,9 +415,13 @@ function AFParseDateOrder(fmt) {
 	return order;
 }
 
-function AFMatchMonth(d) {
-	var m = d.match(MuPDF.monthPattern);
-	return m ? MuPDF.shortMonthName.indexOf(m[0].toLowerCase()) : null;
+function AFMatchMonth(date) {
+	var monthPattern = /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i;
+	var shortMonthName = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+	var month = date.match(monthPattern);
+	if (month)
+		return shortMonthName.indexOf(month[0].toLowerCase());
+	return null;
 }
 
 function AFParseTime(str, d) {
@@ -512,6 +540,23 @@ function AFParseDateEx(d, fmt) {
 	return AFParseTime(dt[1], dout);
 }
 
+var AFDate_oldFormats = [
+	'm/d',
+	'm/d/yy',
+	'mm/dd/yy',
+	'mm/yy',
+	'd-mmm',
+	'd-mmm-yy',
+	'dd-mm-yy',
+	'yy-mm-dd',
+	'mmm-yy',
+	'mmmm-yy',
+	'mmm d, yyyy',
+	'mmmm d, yyyy',
+	'm/d/yy h:MM tt',
+	'm/d/yy HH:MM'
+];
+
 function AFDate_KeystrokeEx(fmt) {
 	if (event.willCommit && !AFParseDateEx(event.value, fmt)) {
 		app.alert('The date/time entered ('+event.value+') does not match the format ('+fmt+') of the field [ '+event.target.name+' ]');
@@ -520,7 +565,7 @@ function AFDate_KeystrokeEx(fmt) {
 }
 
 function AFDate_Keystroke(index) {
-	AFDate_KeystrokeEx(MuPDF.dateFormats[index]);
+	AFDate_KeystrokeEx(AFDate_oldFormats[index]);
 }
 
 function AFDate_FormatEx(fmt) {
@@ -529,7 +574,7 @@ function AFDate_FormatEx(fmt) {
 }
 
 function AFDate_Format(index) {
-	AFDate_FormatEx(MuPDF.dateFormats[index]);
+	AFDate_FormatEx(AFDate_oldFormats[index]);
 }
 
 function AFTime_Keystroke(index) {
@@ -545,7 +590,8 @@ function AFTime_FormatEx(fmt) {
 }
 
 function AFTime_Format(index) {
-	AFTime_FormatEx(MuPDF.timeFormats[index]);
+	var formats = [ 'HH:MM', 'h:MM tt', 'HH:MM:ss', 'h:MM:ss tt' ];
+	AFTime_FormatEx(formats[index]);
 }
 
 function AFSpecial_KeystrokeEx(fmt) {
