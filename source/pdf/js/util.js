@@ -216,13 +216,28 @@ util.printd = function (fmt, d) {
 			s = '0' + s;
 		return s;
 	}
-	if (!d) return null;
+	if (!(d instanceof Date))
+		return null;
 	var res = '';
-	var tokens = fmt.match(/(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g);
+	if (fmt == 0)
+		fmt = "D:yyyymmddHHMMss+00'00'";
+	else if (fmt == 1)
+		fmt = "YYYY.MM.DD HH:MM:ss +00'00'";
+	else if (fmt == 2)
+		fmt = "YYYY/MM/DD HH:MM:ss";
+	var tokens = fmt.match(/(\\.|m+|d+|y+|H+|h+|M+|s+|t+|[^\\mdyHhMst]+)/g);
 	var length = tokens ? tokens.length : 0;
-	var i;
+	var tok, i;
 	for (i = 0; i < length; ++i) {
-		switch (tokens[i]) {
+		tok = tokens[i];
+		switch (tok)
+		{
+		default:
+			if (tok[0] == '\\')
+				res += tok[1];
+			else
+				res += tok;
+			break;
 		case 'mmmm': res += MuPDF.monthName[d.getMonth()]; break;
 		case 'mmm': res += MuPDF.monthName[d.getMonth()].substring(0, 3); break;
 		case 'mm': res += padZeros(d.getMonth()+1, 2); break;
@@ -243,7 +258,6 @@ util.printd = function (fmt, d) {
 		case 's': res += d.getSeconds(); break;
 		case 'tt': res += d.getHours() < 12 ? 'am' : 'pm'; break;
 		case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
-		default: res += tokens[i];
 		}
 	}
 	return res;
