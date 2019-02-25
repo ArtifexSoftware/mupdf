@@ -379,6 +379,7 @@ void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen)
 		return; /* This should never happen */
 	if (newlen < 0 || (unsigned int)newlen > STRING(obj)->len)
 		return; /* This should never happen */
+	STRING(obj)->buf[newlen] = 0;
 	STRING(obj)->len = newlen;
 }
 

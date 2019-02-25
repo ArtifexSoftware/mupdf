@@ -199,11 +199,11 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 	else if (pdf_name_eq(ctx, PDF_NAME(URI), obj))
 	{
 		/* URI entries are ASCII strings */
-		const char *uri = pdf_dict_get_string(ctx, action, PDF_NAME(URI), NULL);
+		const char *uri = pdf_dict_get_text_string(ctx, action, PDF_NAME(URI));
 		if (!fz_is_external_link(ctx, uri))
 		{
 			pdf_obj *uri_base_obj = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/URI/Base");
-			const char *uri_base = uri_base_obj ? pdf_to_str_buf(ctx, uri_base_obj) : "file://";
+			const char *uri_base = uri_base_obj ? pdf_to_text_string(ctx, uri_base_obj) : "file://";
 			char *new_uri = fz_malloc(ctx, strlen(uri_base) + strlen(uri) + 1);
 			strcpy(new_uri, uri_base);
 			strcat(new_uri, uri);
