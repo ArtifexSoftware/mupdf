@@ -147,9 +147,9 @@ var zoomtype = {
 };
 
 util.scand = function (fmt, input) {
-	if (fmt === 0) fmt = 'D:yyyymmddHHMMss';
-	else if (fmt === 1) fmt = 'yyyy.mm.dd HH:MM:ss';
-	else if (fmt === 2) fmt = 'yyyy/mm/dd HH:MM:ss';
+	if (fmt == 0) fmt = 'D:yyyymmddHHMMss';
+	else if (fmt == 1) fmt = 'yyyy.mm.dd HH:MM:ss';
+	else if (fmt == 2) fmt = 'm/d/yy h:MM:ss tt';
 	var monthName = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 	var dayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 	var shortMonthName = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
@@ -241,9 +241,9 @@ util.printd = function (fmt, d) {
 			s = '0' + s;
 		return s;
 	}
-	if (fmt == 0) fmt = "D:yyyymmddHHMMss";
-	else if (fmt == 1) fmt = "yyyy.mm.dd HH:MM:ss";
-	else if (fmt == 2) fmt = "yyyy/mm/dd HH:MM:ss";
+	if (fmt == 0) fmt = 'D:yyyymmddHHMMss';
+	else if (fmt == 1) fmt = 'yyyy.mm.dd HH:MM:ss';
+	else if (fmt == 2) fmt = 'm/d/yy h:MM:ss tt';
 	if (!d)
 		d = new Date();
 	else if (!(d instanceof Date))
