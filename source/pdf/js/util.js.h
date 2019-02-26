@@ -360,7 +360,7 @@
 "result = '0.' + result;\n"
 "if (string.indexOf('-') >= 0)\n"
 "return -result;\n"
-"return result;\n"
+"return +result;\n"
 "}\n"
 "\n"
 "function AFExtractTime(dt) {\n"

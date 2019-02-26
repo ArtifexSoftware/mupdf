@@ -360,7 +360,7 @@ function AFMakeNumber(string) {
 		result = '0.' + result;
 	if (string.indexOf('-') >= 0)
 		return -result;
-	return result;
+	return +result;
 }
 
 function AFExtractTime(dt) {
