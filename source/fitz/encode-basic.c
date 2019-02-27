@@ -2,6 +2,20 @@
 
 #include <zlib.h>
 
+/*
+	Compression and other filtering outputs.
+
+	These outputs write encoded data to another output. Create a filter
+	output with the destination, write to the filter, then close and drop
+	it when you're done. These can also be chained together, for example to
+	write ASCII Hex encoded, Deflate compressed, and RC4 encrypted data to
+	a buffer output.
+
+	Output streams don't use reference counting, so make sure to close all
+	of the filters in the reverse order of creation so that data is flushed
+	properly.
+*/
+
 struct ahx
 {
 	fz_output *chain;
@@ -39,19 +53,6 @@ static void ahx_drop(fz_context *ctx, void *opaque)
 	fz_free(ctx, state);
 }
 
-/*
-	Compression and other filtering outputs.
-
-	These outputs write encoded data to another output. Create a filter
-	output with the destination, write to the filter, then drop it when
-	you're done. These can also be chained together, for example to write
-	ASCII Hex encoded, Deflate compressed, and RC4 encrypted data to a
-	buffer output.
-
-	Output streams don't use reference counting, so make sure to drop all
-	of the filters in the reverse order of creation so that data is flushed
-	properly.
-*/
 fz_output *
 fz_new_asciihex_output(fz_context *ctx, fz_output *chain)
 {
