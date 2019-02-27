@@ -232,59 +232,69 @@ util.scand = function (fmt, input) {
 	return new Date(y, m-1, d, H, M, s);
 }
 
-util.printd = function (fmt, d) {
-	var monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-	var dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-	function padZeros(num, places) {
-		var s = String(num)
-		while (s.length < places)
-			s = '0' + s;
-		return s;
-	}
-	if (fmt == 0) fmt = 'D:yyyymmddHHMMss';
-	else if (fmt == 1) fmt = 'yyyy.mm.dd HH:MM:ss';
-	else if (fmt == 2) fmt = 'm/d/yy h:MM:ss tt';
-	if (!d)
-		d = new Date();
-	else if (!(d instanceof Date))
-		d = new Date(d);
-	var res = '';
-	var tokens = fmt.match(/(\\.|m+|d+|y+|H+|h+|M+|s+|t+|[^\\mdyHhMst]+)/g);
-	var length = tokens ? tokens.length : 0;
-	var tok, i;
-	for (i = 0; i < length; ++i) {
-		tok = tokens[i];
-		switch (tok)
-		{
-		default:
-			if (tok[0] == '\\')
-				res += tok[1];
-			else
-				res += tok;
-			break;
-		case 'mmmm': res += monthName[d.getMonth()]; break;
-		case 'mmm': res += monthName[d.getMonth()].substring(0, 3); break;
-		case 'mm': res += padZeros(d.getMonth()+1, 2); break;
-		case 'm': res += d.getMonth()+1; break;
-		case 'dddd': res += dayName[d.getDay()]; break;
-		case 'ddd': res += dayName[d.getDay()].substring(0, 3); break;
-		case 'dd': res += padZeros(d.getDate(), 2); break;
-		case 'd': res += d.getDate(); break;
-		case 'yyyy': res += d.getFullYear(); break;
-		case 'yy': res += d.getFullYear()%100; break;
-		case 'HH': res += padZeros(d.getHours(), 2); break;
-		case 'H': res += d.getHours(); break;
-		case 'hh': res += padZeros((d.getHours()+11)%12+1, 2); break;
-		case 'h': res += (d.getHours()+11)%12+1; break;
-		case 'MM': res += padZeros(d.getMinutes(), 2); break;
-		case 'M': res += d.getMinutes(); break;
-		case 'ss': res += padZeros(d.getSeconds(), 2); break;
-		case 's': res += d.getSeconds(); break;
-		case 'tt': res += d.getHours() < 12 ? 'am' : 'pm'; break;
-		case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
+util.printd = function (fmt, date) {
+	var monthName = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	];
+	var dayName = [
+		'Sunday',
+		'Monday',
+		'Tuesday',
+		'Wednesday',
+		'Thursday',
+		'Friday',
+		'Saturday'
+	];
+	if (fmt === 0)
+		fmt = 'D:yyyymmddHHMMss';
+	else if (fmt === 1)
+		fmt = 'yyyy.mm.dd HH:MM:ss';
+	else if (fmt === 2)
+		fmt = 'm/d/yy h:MM:ss tt';
+	if (!date)
+		date = new Date();
+	else if (!(date instanceof Date))
+		date = new Date(date);
+	var tokens = fmt.match(/(\\.|m+|d+|y+|H+|h+|M+|s+|t+|[^\\mdyHhMst]*)/g);
+	var out = '';
+	for (var i = 0; i < tokens.length; ++i) {
+		var token = tokens[i];
+		switch (token) {
+		case 'mmmm': out += monthName[date.getMonth()]; break;
+		case 'mmm': out += monthName[date.getMonth()].substring(0, 3); break;
+		case 'mm': out += util.printf('%02d', date.getMonth()+1); break;
+		case 'm': out += date.getMonth()+1; break;
+		case 'dddd': out += dayName[date.getDay()]; break;
+		case 'ddd': out += dayName[date.getDay()].substring(0, 3); break;
+		case 'dd': out += util.printf('%02d', date.getDate()); break;
+		case 'd': out += date.getDate(); break;
+		case 'yyyy': out += date.getFullYear(); break;
+		case 'yy': out += date.getFullYear() % 100; break;
+		case 'HH': out += util.printf('%02d', date.getHours()); break;
+		case 'H': out += date.getHours(); break;
+		case 'hh': out += util.printf('%02d', (date.getHours()+11)%12+1); break;
+		case 'h': out += (date.getHours() + 11) % 12 + 1; break;
+		case 'MM': out += util.printf('%02d', date.getMinutes()); break;
+		case 'M': out += date.getMinutes(); break;
+		case 'ss': out += util.printf('%02d', date.getSeconds()); break;
+		case 's': out += date.getSeconds(); break;
+		case 'tt': out += date.getHours() < 12 ? 'am' : 'pm'; break;
+		case 't': out += date.getHours() < 12 ? 'a' : 'p'; break;
+		default: out += (token[0] == '\\') ? token[1] : token; break;
 		}
 	}
-	return res;
+	return out;
 }
 
 util.printx = function (fmt, val) {
