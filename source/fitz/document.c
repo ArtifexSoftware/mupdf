@@ -543,16 +543,36 @@ fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix t
 }
 
 /*
-	Run the extra content on a page (such as annotations and widgets) through a device.
+	Run the annotations on a page through a device.
 */
 void
-fz_run_page_extras(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+fz_run_page_annots(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	if (page && page->run_page_extras)
+	if (page && page->run_page_annots)
 	{
 		fz_try(ctx)
 		{
-			page->run_page_extras(ctx, page, dev, transform, cookie);
+			page->run_page_annots(ctx, page, dev, transform, cookie);
+		}
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) != FZ_ERROR_ABORT)
+				fz_rethrow(ctx);
+		}
+	}
+}
+
+/*
+	Run the widgets on a page through a device.
+*/
+void
+fz_run_page_widgets(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+{
+	if (page && page->run_page_widgets)
+	{
+		fz_try(ctx)
+		{
+			page->run_page_widgets(ctx, page, dev, transform, cookie);
 		}
 		fz_catch(ctx)
 		{
@@ -585,7 +605,8 @@ void
 fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
 	fz_run_page_contents(ctx, page, dev, transform, cookie);
-	fz_run_page_extras(ctx, page, dev, transform, cookie);
+	fz_run_page_annots(ctx, page, dev, transform, cookie);
+	fz_run_page_widgets(ctx, page, dev, transform, cookie);
 }
 
 fz_page *

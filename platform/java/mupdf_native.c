@@ -5528,7 +5528,7 @@ FUN(Page_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolean alpha)
+FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolean alpha, jboolean showExtra)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
@@ -5539,7 +5539,12 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, alpha);
+	{
+		if (showExtra)
+			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, alpha);
+		else
+			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, cs, alpha);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5613,6 +5618,56 @@ FUN(Page_runPageContents)(JNIEnv *env, jobject self, jobject jdev, jobject jctm,
 		return;
 	fz_try(ctx)
 		fz_run_page_contents(ctx, page, dev, ctm, cookie);
+	fz_always(ctx)
+		unlockNativeDevice(env, info);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Page_runPageAnnots)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_device *dev = from_Device(env, jdev);
+	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_cookie *cookie = from_Cookie(env, jcookie);
+	NativeDeviceInfo *info;
+	int err;
+
+	if (!ctx || !page) return;
+	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
+
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
+	fz_try(ctx)
+		fz_run_page_annots(ctx, page, dev, ctm, cookie);
+	fz_always(ctx)
+		unlockNativeDevice(env, info);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Page_runPageWidgets)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_device *dev = from_Device(env, jdev);
+	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_cookie *cookie = from_Cookie(env, jcookie);
+	NativeDeviceInfo *info;
+	int err;
+
+	if (!ctx || !page) return;
+	if (!dev) { jni_throw_arg(env, "device must not be null"); return; }
+
+	info = lockNativeDevice(env, jdev, &err);
+	if (err)
+		return;
+	fz_try(ctx)
+		fz_run_page_widgets(ctx, page, dev, ctm, cookie);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -5841,7 +5896,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean no_annotations)
+FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean showExtra)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
@@ -5850,10 +5905,10 @@ FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean no_annotations)
 	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-		if (no_annotations)
-			list = fz_new_display_list_from_page_contents(ctx, page);
-		else
+		if (showExtra)
 			list = fz_new_display_list_from_page(ctx, page);
+		else
+			list = fz_new_display_list_from_page_contents(ctx, page);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);

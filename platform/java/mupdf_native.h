@@ -2634,14 +2634,6 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getBounds
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
- * Method:    toPixmap
- * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;Z)Lcom/artifex/mupdf/fitz/Pixmap;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toPixmap
-  (JNIEnv *, jobject, jobject, jobject, jboolean);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Page
  * Method:    run
  * Signature: (Lcom/artifex/mupdf/fitz/Device;Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/Cookie;)V
  */
@@ -2658,11 +2650,35 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_runPageContents
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    runPageAnnots
+ * Signature: (Lcom/artifex/mupdf/fitz/Device;Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/Cookie;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_runPageAnnots
+  (JNIEnv *, jobject, jobject, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    runPageWidgets
+ * Signature: (Lcom/artifex/mupdf/fitz/Device;Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/Cookie;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_runPageWidgets
+  (JNIEnv *, jobject, jobject, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
  * Method:    getLinks
  * Signature: ()[Lcom/artifex/mupdf/fitz/Link;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Page_getLinks
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    toPixmap
+ * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;ZZ)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toPixmap
+  (JNIEnv *, jobject, jobject, jobject, jboolean, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page

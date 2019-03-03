@@ -184,7 +184,8 @@ struct fz_page_s
 	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
 	fz_page_run_page_fn *run_page_contents;
-	fz_page_run_page_fn *run_page_extras;
+	fz_page_run_page_fn *run_page_annots;
+	fz_page_run_page_fn *run_page_widgets;
 	fz_page_load_links_fn *load_links;
 	fz_page_page_presentation_fn *page_presentation;
 	fz_page_control_separation_fn *control_separation;
@@ -311,7 +312,8 @@ fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
 void fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
-void fz_run_page_extras(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+void fz_run_page_annots(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+void fz_run_page_widgets(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 
 fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
 void fz_drop_page(fz_context *ctx, fz_page *page);

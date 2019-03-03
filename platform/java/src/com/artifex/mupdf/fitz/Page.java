@@ -21,10 +21,10 @@ public class Page
 
 	public native Rect getBounds();
 
-	public native Pixmap toPixmap(Matrix ctm, ColorSpace cs, boolean alpha);
-
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);
+	public native void runPageAnnots(Device dev, Matrix ctm, Cookie cookie);
+	public native void runPageWidgets(Device dev, Matrix ctm, Cookie cookie);
 
 	public void run(Device dev, Matrix ctm) {
 		run(dev, ctm, null);
@@ -32,9 +32,17 @@ public class Page
 
 	public native Link[] getLinks();
 
-	public native DisplayList toDisplayList(boolean no_annotations);
-	public native StructuredText toStructuredText(String options);
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace cs, boolean alpha, boolean showExtras);
+	public Pixmap toPixmap(Matrix ctm, ColorSpace cs, boolean alpha) {
+		return toPixmap(ctm, cs, alpha, true);
+	}
 
+	public native DisplayList toDisplayList(boolean showExtras);
+	public DisplayList toDisplayList() {
+		return toDisplayList(true);
+	}
+
+	public native StructuredText toStructuredText(String options);
 	public StructuredText toStructuredText() {
 		return toStructuredText(null);
 	}
