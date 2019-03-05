@@ -1389,9 +1389,9 @@ pdf_eval_function(fz_context *ctx, pdf_function *func, const float *in, int inle
 
 	if (inlen < func->m)
 	{
-		for (i = 0; i < func->m; ++i)
+		for (i = 0; i < inlen; ++i)
 			fakein[i] = in[i];
-		for (; i < inlen; ++i)
+		for (; i < func->m; ++i)
 			fakein[i] = 0;
 		in = fakein;
 	}
