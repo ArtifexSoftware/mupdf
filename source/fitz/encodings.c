@@ -8,7 +8,6 @@
 #include "glyphlist.h"
 
 #define FROM_UNICODE(ENC) \
-{ \
 	int l = 0; \
 	int r = nelem(ENC##_from_unicode) - 1; \
 	if (u < 128) \
@@ -24,14 +23,13 @@
 			return ENC##_from_unicode[m].c; \
 	} \
 	return -1; \
-}
 
-int fz_iso8859_1_from_unicode(int u) FROM_UNICODE(iso8859_1)
-int fz_iso8859_7_from_unicode(int u) FROM_UNICODE(iso8859_7)
-int fz_koi8u_from_unicode(int u) FROM_UNICODE(koi8u)
-int fz_windows_1250_from_unicode(int u) FROM_UNICODE(windows_1250)
-int fz_windows_1251_from_unicode(int u) FROM_UNICODE(windows_1251)
-int fz_windows_1252_from_unicode(int u) FROM_UNICODE(windows_1252)
+int fz_iso8859_1_from_unicode(int u) { FROM_UNICODE(iso8859_1) }
+int fz_iso8859_7_from_unicode(int u) { FROM_UNICODE(iso8859_7) }
+int fz_koi8u_from_unicode(int u) { FROM_UNICODE(koi8u) }
+int fz_windows_1250_from_unicode(int u) { FROM_UNICODE(windows_1250) }
+int fz_windows_1251_from_unicode(int u) { FROM_UNICODE(windows_1251) }
+int fz_windows_1252_from_unicode(int u) { FROM_UNICODE(windows_1252) }
 
 int
 fz_unicode_from_glyph_name(const char *name)
