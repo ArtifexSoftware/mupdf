@@ -257,6 +257,13 @@ fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const f
 	return subpix;
 }
 
+fz_pixmap *fz_clone_pixmap(fz_context *ctx, fz_pixmap *old)
+{
+	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, old->colorspace, fz_make_irect(old->x, old->y, old->w, old->h), old->seps, old->alpha);
+	memcpy(pix->samples, old->samples, pix->stride * pix->h);
+	return pix;
+}
+
 /*
 	Return the bounding box for a pixmap.
 */
