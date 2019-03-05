@@ -58,7 +58,7 @@ ifdef RANLIB
   RANLIB_CMD = $(QUIET_RANLIB) $(RANLIB) $@
 endif
 LINK_CMD = $(QUIET_LINK) $(MKTGTDIR) ; $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-TAGS_CMD = $(QUIET_TAGS) ctags $^
+TAGS_CMD = $(QUIET_TAGS) ctags -R
 WINDRES_CMD = $(QUIET_WINDRES) $(MKTGTDIR) ; $(WINDRES) $< $@
 OBJCOPY_CMD = $(QUIET_OBJCOPY) $(MKTGTDIR) ; $(LD) -r -b binary -o $@ $<
 
@@ -374,7 +374,7 @@ java:
 wasm:
 	$(MAKE) -C platform/wasm
 
-tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh' -or -name '*.java')
+tags:
 	$(TAGS_CMD)
 
 cscope.files: $(shell find include source platform -name '*.[ch]')
@@ -404,4 +404,4 @@ android: generate
 		APP_PLATFORM=android-16 \
 		APP_OPTIM=$(build)
 
-.PHONY: all clean nuke install third libs apps generate
+.PHONY: all clean nuke install third libs apps generate tags
