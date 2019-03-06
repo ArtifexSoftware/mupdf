@@ -392,15 +392,19 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 	{
 		fz_free(ctx, row[0]);
 		row[0] = NULL;
+
+		/* We call jpeg_abort rather than the more usual
+		 * jpeg_finish_decompress here. This has the same effect,
+		 * but doesn't spew warnings if we didn't read enough data etc.
+		 * Annoyingly jpeg_abort can throw
+		 */
 		fz_try(ctx)
-		{
-			/* Annoyingly, jpeg_finish_decompress can throw */
-			jpeg_finish_decompress(&cinfo);
-		}
+			jpeg_abort((j_common_ptr)&cinfo);
 		fz_catch(ctx)
 		{
 			/* Ignore any errors here */
 		}
+
 		jpeg_destroy_decompress(&cinfo);
 		fz_jpg_mem_term(&cinfo);
 	}
