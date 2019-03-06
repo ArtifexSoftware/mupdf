@@ -254,18 +254,6 @@ $(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS)
 EXTRA_APPS += $(MURASTER_EXE)
 
-MJSGEN_OBJ := $(OUT)/source/tools/mjsgen.o
-MJSGEN_EXE := $(OUT)/mjsgen
-$(MJSGEN_EXE) : $(MJSGEN_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
-	$(LINK_CMD) $(THIRD_LIBS)
-EXTRA_APPS += $(MJSGEN_EXE)
-
-MUJSTEST_OBJ := $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
-MUJSTEST_EXE := $(OUT)/mujstest
-$(MUJSTEST_EXE) : $(MUJSTEST_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
-EXTRA_APPS += $(MUJSTEST_EXE)
-
 ifeq ($(HAVE_X11),yes)
 ifeq ($(HAVE_CURL),yes)
   MUVIEW_X11_CURL_EXE := $(OUT)/mupdf-x11-curl
