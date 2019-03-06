@@ -8,9 +8,13 @@
 
 #ifdef SHARE_JPEG
 
-#define JZ_CTX_FROM_CINFO(c) (fz_context *)(c->client_data)
+#define JZ_CTX_FROM_CINFO(c) (fz_context *)((c)->client_data)
 
-#define fz_jpg_mem_init(ctx, cinfo)
+static void fz_jpg_mem_init(j_common_ptr cinfo, fz_context *ctx)
+{
+	cinfo->client_data = ctx;
+}
+
 #define fz_jpg_mem_term(cinfo)
 
 #else /* SHARE_JPEG */
@@ -35,12 +39,10 @@ fz_jpg_mem_free(j_common_ptr cinfo, void *object, size_t size)
 }
 
 static void
-fz_jpg_mem_init(fz_context *ctx, struct jpeg_decompress_struct *cinfo)
+fz_jpg_mem_init(j_common_ptr cinfo, fz_context *ctx)
 {
 	jpeg_cust_mem_data *custmptr;
-
 	custmptr = fz_malloc_struct(ctx, jpeg_cust_mem_data);
-
 	if (!jpeg_cust_mem_init(custmptr, (void *) ctx, NULL, NULL, NULL,
 				fz_jpg_mem_alloc, fz_jpg_mem_free,
 				fz_jpg_mem_alloc, fz_jpg_mem_free, NULL))
@@ -48,14 +50,13 @@ fz_jpg_mem_init(fz_context *ctx, struct jpeg_decompress_struct *cinfo)
 		fz_free(ctx, custmptr);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot initialize custom JPEG memory handler");
 	}
-
 	cinfo->client_data = custmptr;
 }
 
 static void
-fz_jpg_mem_term(struct jpeg_decompress_struct *cinfo)
+fz_jpg_mem_term(j_common_ptr cinfo)
 {
-	if(cinfo->client_data)
+	if (cinfo->client_data)
 	{
 		fz_context *ctx = JZ_CTX_FROM_CINFO(cinfo);
 		fz_free(ctx, cinfo->client_data);
@@ -313,15 +314,15 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 
 	row[0] = NULL;
 
+	cinfo.client_data = NULL;
+	fz_jpg_mem_init((j_common_ptr)&cinfo, ctx);
+
 	fz_try(ctx)
 	{
 		cinfo.mem = NULL;
 		cinfo.global_state = 0;
-		cinfo.client_data = ctx;
 		cinfo.err = jpeg_std_error(&err);
 		err.error_exit = error_exit;
-
-		fz_jpg_mem_init(ctx, &cinfo);
 
 		jpeg_create_decompress(&cinfo);
 
@@ -406,7 +407,7 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 		}
 
 		jpeg_destroy_decompress(&cinfo);
-		fz_jpg_mem_term(&cinfo);
+		fz_jpg_mem_term((j_common_ptr)&cinfo);
 	}
 	fz_catch(ctx)
 	{
@@ -431,11 +432,11 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 	{
 		cinfo.mem = NULL;
 		cinfo.global_state = 0;
-		cinfo.client_data = ctx;
 		cinfo.err = jpeg_std_error(&err);
 		err.error_exit = error_exit;
 
-		fz_jpg_mem_init(ctx, &cinfo);
+		cinfo.client_data = NULL;
+		fz_jpg_mem_init((j_common_ptr)&cinfo, ctx);
 
 		jpeg_create_decompress(&cinfo);
 
@@ -493,7 +494,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 	fz_always(ctx)
 	{
 		jpeg_destroy_decompress(&cinfo);
-		fz_jpg_mem_term(&cinfo);
+		fz_jpg_mem_term((j_common_ptr)&cinfo);
 	}
 	fz_catch(ctx)
 	{

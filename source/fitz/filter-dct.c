@@ -33,10 +33,14 @@ struct fz_dctd_s
 
 #ifdef SHARE_JPEG
 
-#define JZ_DCT_STATE_FROM_CINFO(c) (fz_dctd *)(c->client_data)
+#define JZ_DCT_STATE_FROM_CINFO(c) (fz_dctd *)((c)->client_data)
 
-#define fz_dct_mem_init(st)
-#define fz_dct_mem_term(st)
+static void fz_dct_mem_init(struct jpeg_decompress_struct *cinfo, fz_dctd *state)
+{
+	cinfo->client_data = state;
+}
+
+#define fz_dct_mem_term(cinfo)
 
 #else /* SHARE_JPEG */
 
@@ -57,13 +61,10 @@ fz_dct_mem_free(j_common_ptr cinfo, void *object, size_t size)
 }
 
 static void
-fz_dct_mem_init(fz_dctd *state)
+fz_dct_mem_init(struct jpeg_decompress_struct *cinfo, fz_dctd *state)
 {
-	j_common_ptr cinfo = (j_common_ptr)&state->cinfo;
 	jpeg_cust_mem_data *custmptr;
-
 	custmptr = fz_malloc_struct(state->ctx, jpeg_cust_mem_data);
-
 	if (!jpeg_cust_mem_init(custmptr, (void *) state, NULL, NULL, NULL,
 				fz_dct_mem_alloc, fz_dct_mem_free,
 				fz_dct_mem_alloc, fz_dct_mem_free, NULL))
@@ -71,17 +72,17 @@ fz_dct_mem_init(fz_dctd *state)
 		fz_free(state->ctx, custmptr);
 		fz_throw(state->ctx, FZ_ERROR_GENERIC, "cannot initialize custom JPEG memory handler");
 	}
-
 	cinfo->client_data = custmptr;
 }
 
 static void
-fz_dct_mem_term(fz_dctd *state)
+fz_dct_mem_term(struct jpeg_decompress_struct *cinfo)
 {
-	if(state->cinfo.client_data)
+	if (cinfo->client_data)
 	{
-		fz_free(state->ctx, state->cinfo.client_data);
-		state->cinfo.client_data = NULL;
+		fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
+		fz_free(state->ctx, cinfo->client_data);
+		cinfo->client_data = NULL;
 	}
 }
 
@@ -157,6 +158,7 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 	j_decompress_ptr cinfo = &state->cinfo;
 	unsigned char *p = state->buffer;
 	unsigned char *ep;
+	int c;
 
 	if (max > sizeof(state->buffer))
 		max = sizeof(state->buffer);
@@ -166,22 +168,13 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 	{
 		if (!state->init)
 		{
-			int c;
-
-			cinfo->src = NULL;
-			cinfo->client_data = state;
-			cinfo->err = &state->errmgr;
-			jpeg_std_error(cinfo->err);
-			cinfo->err->error_exit = error_exit_dct;
-
-			fz_dct_mem_init(state);
-
-			jpeg_create_decompress(cinfo);
 			state->init = 1;
 
 			/* Skip over any stray whitespace at the start of the stream */
 			while ((c = fz_peek_byte(ctx, state->chain)) == '\n' || c == '\r' || c == ' ')
 				(void)fz_read_byte(ctx, state->chain);
+
+			jpeg_create_decompress(cinfo);
 
 			cinfo->src = &state->srcmgr;
 			cinfo->src->init_source = init_source_dct;
@@ -308,7 +301,7 @@ close_dctd(fz_context *ctx, void *state_)
 		jpeg_destroy_decompress(&state->cinfo);
 	}
 
-	fz_dct_mem_term(state);
+	fz_dct_mem_term(&state->cinfo);
 
 	if (state->cinfo.src)
 		state->curr_stm->rp = state->curr_stm->wp - state->cinfo.src->bytes_in_buffer;
@@ -324,16 +317,29 @@ fz_stream *
 fz_open_dctd(fz_context *ctx, fz_stream *chain, int color_transform, int l2factor, fz_stream *jpegtables)
 {
 	fz_dctd *state = fz_malloc_struct(ctx, fz_dctd);
+	j_decompress_ptr cinfo = &state->cinfo;
 
 	state->ctx = ctx;
+
+	fz_try(ctx)
+		fz_dct_mem_init(cinfo, state);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, state);
+		fz_rethrow(ctx);
+	}
+
 	state->color_transform = color_transform;
 	state->init = 0;
 	state->l2factor = l2factor;
-	state->cinfo.client_data = NULL;
-
 	state->chain = fz_keep_stream(ctx, chain);
 	state->jpegtables = fz_keep_stream(ctx, jpegtables);
 	state->curr_stm = state->chain;
+
+	cinfo->src = NULL;
+	cinfo->err = &state->errmgr;
+	jpeg_std_error(cinfo->err);
+	cinfo->err->error_exit = error_exit_dct;
 
 	return fz_new_stream(ctx, state, next_dctd, close_dctd);
 }
