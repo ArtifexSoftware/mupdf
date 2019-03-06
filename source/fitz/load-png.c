@@ -466,10 +466,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 
 		code = inflateInit(&stm);
 		if (code != Z_OK)
-		{
-			fz_free(ctx, info->samples);
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
-		}
 	}
 
 	fz_try(ctx)
