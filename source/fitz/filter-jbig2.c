@@ -386,6 +386,12 @@ fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf)
 	globals->alloc.alloc.realloc = fz_jbig2_realloc;
 
 	jctx = jbig2_ctx_new((Jbig2Allocator *) &globals->alloc, JBIG2_OPTIONS_EMBEDDED, NULL, error_callback, ctx);
+	if (!jctx)
+	{
+		fz_free(ctx, globals);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot allocate jbig2 globals context");
+	}
+
 	jbig2_data_in(jctx, buf->data, buf->len);
 
 	FZ_INIT_STORABLE(globals, 1, fz_drop_jbig2_globals_imp);
@@ -415,7 +421,15 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
 	state->alloc.alloc.alloc = fz_jbig2_alloc;
 	state->alloc.alloc.free = fz_jbig2_free;
 	state->alloc.alloc.realloc = fz_jbig2_realloc;
+
 	state->ctx = jbig2_ctx_new((Jbig2Allocator *) &state->alloc, JBIG2_OPTIONS_EMBEDDED, globals ? globals->gctx : NULL, error_callback, ctx);
+	if (state->ctx == NULL)
+	{
+		fz_drop_jbig2_globals(ctx, state->gctx);
+		fz_free(ctx, state);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot allocate jbig2 context");
+	}
+
 	state->page = NULL;
 	state->idx = 0;
 	state->chain = fz_keep_stream(ctx, chain);
