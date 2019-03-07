@@ -723,7 +723,10 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 				return; /* Got that one already */
 		}
 
-		cs = pdf_load_colorspace(ctx, obj);
+		fz_try(ctx)
+			cs = pdf_load_colorspace(ctx, obj);
+		fz_catch(ctx)
+			return; /* ignore broken colorspace */
 		fz_try(ctx)
 		{
 			if (!*seps)
@@ -785,7 +788,10 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 
 		if (i == n)
 		{
-			cs = pdf_load_colorspace(ctx, obj);
+			fz_try(ctx)
+				cs = pdf_load_colorspace(ctx, obj);
+			fz_catch(ctx)
+				continue; /* ignore broken colorspace */
 			fz_try(ctx)
 			{
 				if (!*seps)
@@ -803,76 +809,43 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 typedef void (res_finder_fn)(fz_context *ctx, fz_separations **seps, pdf_obj *obj);
 
 static void
-search_res(fz_context *ctx, fz_separations **seps, pdf_obj *res, res_finder_fn *fn)
+scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_fn *fn, pdf_obj *clearme)
 {
-	int i = 0;
-	int len = pdf_dict_len(ctx, res);
-
-	fz_var(i);
-
-	while (i < len)
-	{
-		fz_try(ctx)
-		{
-			do
-			{
-				fn(ctx, seps, pdf_dict_get_val(ctx, res, i++));
-			}
-			while (i < len);
-		}
-		fz_catch(ctx)
-		{
-			/* Don't die because a single separation failed to load */
-		}
-	}
-}
-
-static void
-scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_fn *fn)
-{
-	pdf_obj *forms;
-	pdf_obj *sh;
-	pdf_obj *xo = NULL;
-	int i, len;
-
-	fz_var(xo);
+	pdf_obj *dict;
+	pdf_obj *obj;
+	int i, n;
 
 	if (pdf_mark_obj(ctx, res))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in resources");
+		return; /* already been here */
 
-	fz_try(ctx)
+	/* remember to clear this resource dictionary at the end */
+	pdf_array_push(ctx, clearme, res);
+
+	dict = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
+	n = pdf_dict_len(ctx, dict);
+	for (i = 0; i < n; i++)
 	{
-		search_res(ctx, seps, pdf_dict_get(ctx, res, PDF_NAME(ColorSpace)), fn);
-
-		sh = pdf_dict_get(ctx, res, PDF_NAME(Shading));
-		len = pdf_dict_len(ctx, sh);
-		for (i = 0; i < len; i++)
-			fn(ctx, seps, pdf_dict_get(ctx, pdf_dict_get_val(ctx, sh, i), PDF_NAME(ColorSpace)));
-
-		forms = pdf_dict_get(ctx, res, PDF_NAME(XObject));
-		len = pdf_dict_len(ctx, forms);
-
-		/* Recurse on the forms. Throw if we cycle */
-		for (i = 0; i < len; i++)
-		{
-			xo = pdf_dict_get_val(ctx, forms, i);
-
-			if (pdf_mark_obj(ctx, xo))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in forms");
-
-			scan_page_seps(ctx, pdf_dict_get(ctx, xo, PDF_NAME(Resources)), seps, fn);
-			fn(ctx, seps, pdf_dict_get(ctx, xo, PDF_NAME(ColorSpace)));
-			pdf_unmark_obj(ctx, xo);
-			xo = NULL;
-		}
+		obj = pdf_dict_get_val(ctx, dict, i);
+		fn(ctx, seps, obj);
 	}
-	fz_always(ctx)
+
+	dict = pdf_dict_get(ctx, res, PDF_NAME(Shading));
+	n = pdf_dict_len(ctx, dict);
+	for (i = 0; i < n; i++)
 	{
-		pdf_unmark_obj(ctx, xo);
-		pdf_unmark_obj(ctx, res);
+		obj = pdf_dict_get_val(ctx, dict, i);
+		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)));
 	}
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+
+	dict = pdf_dict_get(ctx, res, PDF_NAME(XObject));
+	n = pdf_dict_len(ctx, dict);
+	for (i = 0; i < n; i++)
+	{
+		obj = pdf_dict_get_val(ctx, dict, i);
+		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)));
+		/* Recurse on XObject forms. */
+		scan_page_seps(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Resources)), seps, fn, clearme);
+	}
 }
 
 /*
@@ -882,20 +855,45 @@ fz_separations *
 pdf_page_separations(fz_context *ctx, pdf_page *page)
 {
 	pdf_obj *res = pdf_page_resources(ctx, page);
+	pdf_obj *clearme = NULL;
 	fz_separations *seps = NULL;
 
+	clearme = pdf_new_array(ctx, page->doc, 100);
 	fz_try(ctx)
 	{
 		/* Run through and look for separations first. This is
 		 * because separations are simplest to deal with, and
 		 * because DeviceN may be implemented on top of separations.
 		 */
-		scan_page_seps(ctx, res, &seps, find_seps);
+		scan_page_seps(ctx, res, &seps, find_seps, clearme);
+	}
+	fz_always(ctx)
+	{
+		int i, n = pdf_array_len(ctx, clearme);
+		for (i = 0; i < n; ++i)
+			pdf_unmark_obj(ctx, pdf_array_get(ctx, clearme, i));
+		pdf_drop_obj(ctx, clearme);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_separations(ctx, seps);
+		fz_rethrow(ctx);
+	}
 
+	clearme = pdf_new_array(ctx, page->doc, 100);
+	fz_try(ctx)
+	{
 		/* Now run through again, and look for DeviceNs. These may
 		 * have spot colors in that aren't defined in terms of
 		 * separations. */
-		scan_page_seps(ctx, res, &seps, find_devn);
+		scan_page_seps(ctx, res, &seps, find_devn, clearme);
+	}
+	fz_always(ctx)
+	{
+		int i, n = pdf_array_len(ctx, clearme);
+		for (i = 0; i < n; ++i)
+			pdf_unmark_obj(ctx, pdf_array_get(ctx, clearme, i));
+		pdf_drop_obj(ctx, clearme);
 	}
 	fz_catch(ctx)
 	{
