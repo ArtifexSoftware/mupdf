@@ -464,6 +464,8 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 			 * by a corrupt file. */
 			else if (tok == PDF_TOK_OPEN_DICT)
 			{
+				pdf_obj *dictobj;
+
 				fz_try(ctx)
 				{
 					dict = pdf_parse_dict(ctx, doc, doc->file, buf);
@@ -480,37 +482,35 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 				fz_try(ctx)
 				{
-					obj = pdf_dict_get(ctx, dict, PDF_NAME(Encrypt));
-					if (obj)
+					dictobj = pdf_dict_get(ctx, dict, PDF_NAME(Encrypt));
+					if (dictobj)
 					{
 						pdf_drop_obj(ctx, encrypt);
-						encrypt = pdf_keep_obj(ctx, obj);
+						encrypt = pdf_keep_obj(ctx, dictobj);
 					}
 
-					obj = pdf_dict_get(ctx, dict, PDF_NAME(ID));
-					if (obj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME(Encrypt))))
+					dictobj = pdf_dict_get(ctx, dict, PDF_NAME(ID));
+					if (dictobj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME(Encrypt))))
 					{
 						pdf_drop_obj(ctx, id);
-						id = pdf_keep_obj(ctx, obj);
+						id = pdf_keep_obj(ctx, dictobj);
 					}
 
-					obj = pdf_dict_get(ctx, dict, PDF_NAME(Root));
-					if (obj)
-						add_root(ctx, obj, &roots, &num_roots, &max_roots);
+					dictobj = pdf_dict_get(ctx, dict, PDF_NAME(Root));
+					if (dictobj)
+						add_root(ctx, dictobj, &roots, &num_roots, &max_roots);
 
-					obj = pdf_dict_get(ctx, dict, PDF_NAME(Info));
-					if (obj)
+					dictobj = pdf_dict_get(ctx, dict, PDF_NAME(Info));
+					if (dictobj)
 					{
 						pdf_drop_obj(ctx, info);
-						info = pdf_keep_obj(ctx, obj);
+						info = pdf_keep_obj(ctx, dictobj);
 					}
 				}
 				fz_always(ctx)
 					pdf_drop_obj(ctx, dict);
 				fz_catch(ctx)
 					fz_rethrow(ctx);
-
-				obj = NULL;
 			}
 
 			else if (tok == PDF_TOK_EOF)
