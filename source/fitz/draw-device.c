@@ -537,7 +537,10 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 		for (i = 0; i < c; i++)
 			colorbv[i] = colorfv[i] * 255;
 		for (; i < n; i++)
+		{
+			colorfv[i] = 0;
 			colorbv[i] = 0;
+		}
 	}
 	colorbv[i] = alpha * 255;
 
