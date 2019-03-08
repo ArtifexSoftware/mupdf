@@ -4727,8 +4727,7 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_page");
 
-	js_getregistry(J, "fz_annot");
-	js_newobjectx(J);
+	js_newobject(J);
 	{
 		jsB_propfun(J, "PDFAnnotation.bound", ffi_PDFAnnotation_bound, 0);
 		jsB_propfun(J, "PDFAnnotation.run", ffi_PDFAnnotation_run, 2);
