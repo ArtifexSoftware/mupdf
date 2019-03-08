@@ -1096,6 +1096,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	case '+':
 	case '=':
+	case '#':
 		app->resolution = zoom_in(app->resolution);
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
