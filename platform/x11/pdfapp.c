@@ -1230,9 +1230,18 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 * Page navigation
 	 */
 
-	case 'g':
+	/* free letters:  e o u v x y  */
+
+	case 'd':
+		app->dirpage = app->pageno;
+		break;
+
 	case '\n':
 	case '\r':
+		pdfapp_gotopage(app, app->dirpage);
+		break;
+
+	case 'g':
 		if (app->numberlen > 0)
 			pdfapp_gotopage(app, atoi(app->number));
 		else

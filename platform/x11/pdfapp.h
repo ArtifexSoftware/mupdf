@@ -116,6 +116,8 @@ struct pdfapp_s
 	/* event handling state */
 	char number[256];
 	int numberlen;
+	/* directory/favorite page */
+	int dirpage;
 
 	int ispanning;
 	int panx, pany;
