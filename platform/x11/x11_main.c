@@ -997,6 +997,13 @@ int main(int argc, char **argv)
 					case XF86XK_Forward:
 						len = 1; buf[0] = '.';
 						break;
+
+					case XK_Home:
+						len = 1; buf[0] = 'g';
+						break;
+					case XK_End:
+						len = 1; buf[0] = 'G';
+						break;
 					}
 				if (xevt.xkey.state & ControlMask && keysym == XK_c)
 					docopy(&gapp, XA_CLIPBOARD);
