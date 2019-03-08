@@ -42,14 +42,23 @@ static int eval_print(js_State *J, const char *source)
 		js_pop(J, 1);
 		return 1;
 	}
-	js_pushglobal(J);
+	js_pushundefined(J);
 	if (js_pcall(J, 0)) {
 		fprintf(stderr, "%s\n", js_trystring(J, -1, "Error"));
 		js_pop(J, 1);
 		return 1;
 	}
-	if (js_isdefined(J, -1))
+	if (js_isdefined(J, -1)) {
+		js_getglobal(J, "repr");
+		js_pushundefined(J);
+		js_copy(J, -3);
+		if (js_pcall(J, 1)) {
+			fprintf(stderr, "%s\n", js_trystring(J, -1, "Error"));
+			js_pop(J, 2);
+			return 1;
+		}
 		printf("%s\n", js_trystring(J, -1, "can't convert to string"));
+	}
 	js_pop(J, 1);
 	return 0;
 }
@@ -191,6 +200,56 @@ static const char *stacktrace_js =
 	"if (this.stackTrace) return this.name + ': ' + this.message + this.stackTrace;\n"
 	"return this.name + ': ' + this.message;\n"
 	"};\n"
+;
+
+static const char *repr_js =
+	"function repr(x) {\n"
+		"var q = JSON.stringify;\n"
+		"var a,s,i,n,k,p;\n"
+		"if (x === undefined) return 'undefined';\n"
+		"if (x === null) return 'null';\n"
+		"if (x === true) return 'true';\n"
+		"if (x === false) return 'false';\n"
+		"if (x === Math) return 'Math';\n"
+		"if (x === JSON) return 'JSON';\n"
+		"switch (typeof x) {\n"
+		"case 'number': return (x === 0 && 1/x < 0) ? '-0' : String(x);\n"
+		"case 'string': return q(x);\n"
+		"case 'object':\n"
+			"if (x instanceof Boolean) return '(new Boolean('+x+'))';\n"
+			"if (x instanceof Number) {\n"
+				"x = +x;\n"
+				"if (x === 0 && 1/x < 0) return '(new Number(-0))';\n"
+				"return '(new Number('+x+'))';\n"
+			"}\n"
+			"if (x instanceof String) return '(new String('+q(x)+'))';\n"
+			"if (x instanceof RegExp) return x.toString();\n"
+			"if (x instanceof Date) return '(new Date('+x.valueOf()+'))';\n"
+			"if (x instanceof Error) return '(new '+x.name+'('+q(x.message)+'))';\n"
+			"if (x instanceof Function) return x.toString();\n"
+			"if (x instanceof Userdata) return x.toString();\n"
+			"if (x instanceof Array) {\n"
+				"s = '[';\n"
+				"for (i=0, n=x.length; i < n; ++i) {\n"
+					"if (i > 0) s += ', ';\n"
+					"s += repr(x[i]);\n"
+				"}\n"
+				"return s+']';\n"
+			"}\n"
+			"p = /^(\\d+|[A-Za-z_]\\w*)$/;\n"
+			"a = Object.keys(x);\n"
+			"s = '{';\n"
+			"for (i=0, n=a.length; i < n; ++i) {\n"
+				"k = a[i];\n"
+				"if (i > 0) s += ', ';\n"
+				"s += p.test(k) ? k : q(k);\n"
+				"s += ':';\n"
+				"s += repr(x[k]);\n"
+			"}\n"
+			"return s+'}';\n"
+		"}\n"
+		"return x.toString();\n"
+	"}\n"
 ;
 
 /* destructors */
@@ -4469,10 +4528,19 @@ int murun_main(int argc, char **argv)
 
 	js_dostring(J, require_js);
 	js_dostring(J, stacktrace_js);
+	js_dostring(J, repr_js);
 
 	/* mupdf module */
 
-	js_newobject(J);
+	/* Create superclass for all userdata objects */
+	js_dostring(J, "function Userdata() { throw new Error('Userdata is not callable'); }");
+	js_getglobal(J, "Userdata");
+	js_getproperty(J, -1, "prototype");
+	js_setregistry(J, "Userdata");
+	js_pop(J, 1);
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
@@ -4483,7 +4551,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_buffer");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Document.isPDF", ffi_Document_isPDF, 0);
 		jsB_propfun(J, "Document.needsPassword", ffi_Document_needsPassword, 0);
@@ -4498,7 +4567,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_document");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Page.isPDF", ffi_Page_isPDF, 0);
 		jsB_propfun(J, "Page.bound", ffi_Page_bound, 0);
@@ -4511,7 +4581,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_page");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Device.close", ffi_Device_close, 0);
 
@@ -4545,7 +4616,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_device");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
@@ -4569,13 +4641,15 @@ int murun_main(int argc, char **argv)
 		js_setregistry(J, "DeviceCMYK");
 	}
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Shade.bound", ffi_Shade_bound, 1);
 	}
 	js_setregistry(J, "fz_shade");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Image.getWidth", ffi_Image_getWidth, 0);
 		jsB_propfun(J, "Image.getHeight", ffi_Image_getHeight, 0);
@@ -4591,7 +4665,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_image");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Font.getName", ffi_Font_getName, 0);
 		jsB_propfun(J, "Font.encodeCharacter", ffi_Font_encodeCharacter, 1);
@@ -4599,7 +4674,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_font");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Text.walk", ffi_Text_walk, 1);
 		jsB_propfun(J, "Text.showGlyph", ffi_Text_showGlyph, 5);
@@ -4607,7 +4683,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_text");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Path.walk", ffi_Path_walk, 1);
 		jsB_propfun(J, "Path.moveTo", ffi_Path_moveTo, 2);
@@ -4622,7 +4699,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_path");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "DisplayList.run", ffi_DisplayList_run, 2);
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
@@ -4631,7 +4709,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_display_list");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 1);
 		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 2);
@@ -4639,7 +4718,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_stext_page");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Pixmap.bound", ffi_Pixmap_bound, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
@@ -4670,7 +4750,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_pixmap");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "DocumentWriter.beginPage", ffi_DocumentWriter_beginPage, 1);
 		jsB_propfun(J, "DocumentWriter.endPage", ffi_DocumentWriter_endPage, 0);
@@ -4727,7 +4808,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_page");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "PDFAnnotation.bound", ffi_PDFAnnotation_bound, 0);
 		jsB_propfun(J, "PDFAnnotation.run", ffi_PDFAnnotation_run, 2);
@@ -4759,7 +4841,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_annot");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 1);
 		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 2);
@@ -4792,7 +4875,8 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_obj");
 
-	js_newobject(J);
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
 	{
 		jsB_propfun(J, "PDFGraftMap.graftObject", ffi_PDFGraftMap_graftObject, 1);
 	}
