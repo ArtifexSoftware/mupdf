@@ -1185,7 +1185,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'h':
-		app->panx += fz_pixmap_width(app->ctx, app->image) / 10;
+		app->panx += fz_pixmap_width(app->ctx, app->image) / 20;
 		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
@@ -1199,7 +1199,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			}
 			else
 			{
-				app->pany -= h / 10;
+				app->pany -= h / 20;
 				pdfapp_showpage(app, 0, 0, 1, 0, 0);
 			}
 			break;
@@ -1215,14 +1215,14 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			}
 			else
 			{
-				app->pany += h / 10;
+				app->pany += h / 20;
 				pdfapp_showpage(app, 0, 0, 1, 0, 0);
 			}
 			break;
 		}
 
 	case 'l':
-		app->panx -= fz_pixmap_width(app->ctx, app->image) / 10;
+		app->panx -= fz_pixmap_width(app->ctx, app->image) / 20;
 		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
