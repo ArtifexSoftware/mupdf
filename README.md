@@ -2,18 +2,22 @@
 
 I've fixed and enhanced the keyboard interface:
 
- - **Space**:     scroll down till page end, next page
- - **Backspace**: scroll up to page top, previous page
+ - [number] **Space**: scroll down till bottom, next page [jump to page]
+ - **Backspace**: scroll up to top, previous page
  - **End**: goto last page
- - **Home**: got first page
- - **#**: (extra) zoom in
+ - **Home**: goto first page
+ - [number] **Page_Down**: top of next page [jump forward]
+ - [number] **Page_Up**: top of previous page [jump backward]
+ - **Up, Down, Left, Right**: in-page scroll
+ - **,**: -5 pages
+ - **.**: +5 pages
  - **Enter**: load dirpage
  - **d**: save dirpage
+ - **#**: (extra) zoom in
+ - **Escape**: quit
 
-    ==>provide a favorite/directory page
-
-        (defaults to 1 or the page parameter)
-
+    *dirpage* ==> provides a favorite/directory page
+    (defaults to 1 or the page parameter)
 
 *Build*:
 
