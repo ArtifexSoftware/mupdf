@@ -237,6 +237,39 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 			}
 		}
 	}
+	else if (depth > 0 && depth <= 8 * sizeof(int))
+	{
+		fz_stream *stm;
+		int x, k;
+		int skipbits = 8 * stride - w * n * depth;
+
+		stm = fz_open_memory(ctx, sp, h * stride);
+		fz_try(ctx)
+		{
+			for (y = 0; y < h; y++)
+			{
+				for (x = 0; x < w; x++)
+				{
+					for (k = 0; k < n; k++)
+					{
+						if (depth <= 8)
+							*dp++ = fz_read_bits(ctx, stm, depth);
+						else
+							*dp++ = fz_read_bits(ctx, stm, depth) >> (depth - 8);
+					}
+					if (skip == -1)
+						*dp++ = 255;
+				}
+
+				dp += dst->stride - w * (n + (skip == -1));
+				(void) fz_read_bits(ctx, stm, skipbits);
+			}
+		}
+		fz_always(ctx)
+			fz_drop_stream(ctx, stm);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
 }
