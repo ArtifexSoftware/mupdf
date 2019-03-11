@@ -69,11 +69,97 @@ init_get1_tables(void)
 	once = 1;
 }
 
+static void
+fz_unpack_mono_line_unscaled(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_1[*sp++], 8);
+		dp += 8;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_1[VGMASK(*sp, w - x)], w - x);
+}
+
+static void
+fz_unpack_mono_line_scaled(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_255[*sp++], 8);
+		dp += 8;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_255[VGMASK(*sp, w - x)], w - x);
+}
+
+static void
+fz_unpack_mono_line_unscaled_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_1p[*sp++], 16);
+		dp += 16;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_1p[VGMASK(*sp, w - x)], (w - x) << 1);
+}
+
+static void
+fz_unpack_mono_line_scaled_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_255p[*sp++], 16);
+		dp += 16;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_255p[VGMASK(*sp, w - x)], (w - x) << 1);
+}
+
+static void
+fz_unpack_line(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int len = w * n;
+	while (len--)
+		*dp++ = *sp++;
+}
+
+static void
+fz_unpack_line_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int x, k;
+
+	for (x = 0; x < w; x++)
+	{
+		for (k = 0; k < n; k++)
+			*dp++ = *sp++;
+		*dp++ = 255;
+	}
+}
+
 void
 fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int depth, size_t stride, int scale)
 {
-	int pad, x, y, k, skip;
+	int pad, y, skip;
 	int w = dst->w;
+	int h = dst->h;
 
 	pad = 0;
 	skip = 0;
@@ -98,7 +184,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 		}
 	}
 
-	for (y = 0; y < dst->h; y++)
+	for (y = 0; y < h; y++)
 	{
 		unsigned char *sp = src + (y * stride);
 		unsigned char *dp = dst->samples + (y * dst->stride);
@@ -106,77 +192,22 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 		/* Specialized loops */
 
 		if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_1[*sp++], 8);
-				dp += 8;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_1[VGMASK(*sp, w - x)], w - x);
-		}
-
+			fz_unpack_mono_line_unscaled(dp, sp, w, n);
 		else if (n == 1 && depth == 1 && scale == 255 && !pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_255[*sp++], 8);
-				dp += 8;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_255[VGMASK(*sp, w - x)], w - x);
-		}
-
+			fz_unpack_mono_line_scaled(dp, sp, w, n);
 		else if (n == 1 && depth == 1 && scale == 1 && pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_1p[*sp++], 16);
-				dp += 16;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_1p[VGMASK(*sp, w - x)], (w - x) << 1);
-		}
-
+			fz_unpack_mono_line_unscaled_with_padding(dp, sp, w, n);
 		else if (n == 1 && depth == 1 && scale == 255 && pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_255p[*sp++], 16);
-				dp += 16;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_255p[VGMASK(*sp, w - x)], (w - x) << 1);
-		}
-
+			fz_unpack_mono_line_scaled_with_padding(dp, sp, w, n);
 		else if (depth == 8 && !pad && !skip)
-		{
-			int len = w * n;
-			while (len--)
-				*dp++ = *sp++;
-		}
-
+			fz_unpack_line(dp, sp, w, n);
 		else if (depth == 8 && pad && !skip)
-		{
-			for (x = 0; x < w; x++)
-			{
-				for (k = 0; k < n; k++)
-					*dp++ = *sp++;
-				*dp++ = 255;
-			}
-		}
-
+			fz_unpack_line_with_padding(dp, sp, w, n);
 		else if (depth == 1 || depth == 2 || depth == 4 || depth == 8 || depth  == 16 || depth == 24 || depth == 32)
 		{
 			int b = 0;
+			int x, k;
+
 			for (x = 0; x < w; x++)
 			{
 				for (k = 0; k < n; k++)
