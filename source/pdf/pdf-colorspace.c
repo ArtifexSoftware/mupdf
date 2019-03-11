@@ -591,7 +591,7 @@ pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 fz_colorspace *
 pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
 {
-#ifndef NOICC
+#if FZ_ENABLE_ICC
 	if (!doc->oi)
 		doc->oi = pdf_load_output_intent(ctx, doc);
 #endif
