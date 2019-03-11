@@ -969,22 +969,21 @@ int main(int argc, char **argv)
 						len = 1; buf[0] = '\033';
 						break;
 
-					case XK_Up:
-					case XK_KP_Up:
-						len = 1; buf[0] = 'k';
+					case XK_Left:
+					case XK_KP_Left:
+						len = 1; buf[0] = 'h';
 						break;
 					case XK_Down:
 					case XK_KP_Down:
 						len = 1; buf[0] = 'j';
 						break;
-
-					case XK_Left:
-					case XK_KP_Left:
-						len = 1; buf[0] = 'b';
+					case XK_Up:
+					case XK_KP_Up:
+						len = 1; buf[0] = 'k';
 						break;
 					case XK_Right:
 					case XK_KP_Right:
-						len = 1; buf[0] = ' ';
+						len = 1; buf[0] = 'l';
 						break;
 
 					case XK_Page_Up:
