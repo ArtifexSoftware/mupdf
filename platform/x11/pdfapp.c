@@ -1291,31 +1291,20 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case ' ':
-		panto = DONT_PAN;
-		if (modifiers & 1)
-		{
-			if (app->numberlen > 0)
-				app->pageno -= atoi(app->number);
-			else
-				app->pageno--;
-		}
+		panto = PAN_TO_TOP;
+		if (app->numberlen > 0)
+			pdfapp_gotopage(app, atoi(app->number));
 		else
 		{
-			if (app->numberlen > 0)
-				app->pageno += atoi(app->number);
+			int h = fz_pixmap_height(app->ctx, app->image);
+			if (h <= app->winh || app->pany <= app->winh - h)
+			{
+				app->pageno++;
+			}
 			else
 			{
-				int h = fz_pixmap_height(app->ctx, app->image);
-				if (h <= app->winh || app->pany <= app->winh - h)
-				{
-					panto = PAN_TO_TOP;
-					app->pageno++;
-				}
-				else
-				{
-					app->pany -= h / 2;
-					pdfapp_showpage(app, 0, 0, 1, 0, 0);
-				}
+				app->pany -= h / 2;
+				pdfapp_showpage(app, 0, 0, 1, 0, 0);
 			}
 		}
 		break;
