@@ -1,3 +1,38 @@
+### *mupdf-x11* - A very fast pdf viewer (for Linux)!
+
+I've fixed and enhanced the keyboard interface:
+
+ - **Space**:     scroll down till page end, next page
+ - **Backspace**: scroll up to page top, previous page
+ - **End**: goto last page
+ - **Home**: got first page
+ - **#**: (extra) zoom in
+ - **Enter**: load dirpage
+ - **d**: save dirpage
+
+    ==>provide a favorite/directory page
+
+        (defaults to 1 or the page parameter)
+
+
+*Build*:
+
+```
+git clone --branch update --recurse-submodules https://github.com/linuxCowboy/mupdf.git
+
+sudo apt install xorg-dev
+
+cd mupdf; make HAVE_GLUT=no
+
+cp build/release/mupdf-x11 ~/bin/mupdf
+
+mupdf ct-magazine.pdf 6
+```
+
+Enjoy!
+
+-----
+
 ABOUT
 
 MuPDF is a lightweight open source software framework for viewing and converting
