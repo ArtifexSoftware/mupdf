@@ -1190,36 +1190,14 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'j':
-		{
-			int h = fz_pixmap_height(app->ctx, app->image);
-			if (h <= app->winh || app->pany <= app->winh - h)
-			{
-				panto = PAN_TO_TOP;
-				app->pageno++;
-			}
-			else
-			{
-				app->pany -= h / 20;
-				pdfapp_showpage(app, 0, 0, 1, 0, 0);
-			}
-			break;
-		}
+		app->pany -= fz_pixmap_height(app->ctx, app->image) / 20;
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
+		break;
 
 	case 'k':
-		{
-			int h = fz_pixmap_height(app->ctx, app->image);
-			if (h <= app->winh || app->pany == 0)
-			{
-				panto = PAN_TO_BOTTOM;
-				app->pageno--;
-			}
-			else
-			{
-				app->pany += h / 20;
-				pdfapp_showpage(app, 0, 0, 1, 0, 0);
-			}
-			break;
-		}
+		app->pany += fz_pixmap_height(app->ctx, app->image) / 20;
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
+		break;
 
 	case 'l':
 		app->panx -= fz_pixmap_width(app->ctx, app->image) / 20;
