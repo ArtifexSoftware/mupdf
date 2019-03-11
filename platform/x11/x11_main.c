@@ -989,12 +989,12 @@ int main(int argc, char **argv)
 					case XK_Page_Up:
 					case XK_KP_Page_Up:
 					case XF86XK_Back:
-						len = 1; buf[0] = ',';
+						len = 1; buf[0] = 'x';
 						break;
 					case XK_Page_Down:
 					case XK_KP_Page_Down:
 					case XF86XK_Forward:
-						len = 1; buf[0] = '.';
+						len = 1; buf[0] = 'v';
 						break;
 
 					case XK_Home:

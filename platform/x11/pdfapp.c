@@ -1209,7 +1209,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 * Page navigation
 	 */
 
-	/* free letters:  e o u v x y  */
+	/* free letters:  e o u y  */
 
 	case 'd':
 		app->dirpage = app->pageno;
@@ -1270,24 +1270,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 * Back and forth ...
 	 */
 
-	case ',':
-		panto = PAN_TO_BOTTOM;
-		if (app->numberlen > 0)
-			app->pageno -= atoi(app->number);
-		else
-			app->pageno--;
-		break;
-
-	case '.':
-		panto = PAN_TO_TOP;
-		if (app->numberlen > 0)
-			app->pageno += atoi(app->number);
-		else
-			app->pageno++;
-		break;
-
 	case '\b':
-	case 'b':
 		panto = DONT_PAN;
 		if (app->numberlen > 0)
 			app->pageno -= atoi(app->number);
@@ -1335,6 +1318,30 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 				}
 			}
 		}
+		break;
+
+	case 'x':
+		panto = PAN_TO_TOP;
+		if (app->numberlen > 0)
+			app->pageno -= atoi(app->number);
+		else
+			app->pageno--;
+		break;
+	case 'v':
+		panto = PAN_TO_TOP;
+		if (app->numberlen > 0)
+			app->pageno += atoi(app->number);
+		else
+			app->pageno++;
+		break;
+
+	case ',':
+		panto = PAN_TO_TOP;
+		app->pageno -= 5;
+		break;
+	case '.':
+		panto = PAN_TO_TOP;
+		app->pageno += 5;
 		break;
 
 	case '<':
