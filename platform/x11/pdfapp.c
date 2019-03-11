@@ -1064,6 +1064,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	switch (c)
 	{
 	case 'q':
+	case '\033':
 		winclose(app);
 		break;
 
