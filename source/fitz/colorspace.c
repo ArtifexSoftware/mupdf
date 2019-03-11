@@ -2921,6 +2921,12 @@ indexed_to_alt(fz_context *ctx, const fz_colorspace *cs, const float *color, flo
 	i = fz_clampi(i, 0, idx->high);
 	for (k = 0; k < n; k++)
 		alt[k] = idx->lookup[i * n + k] / 255.0f;
+	if (fz_colorspace_is_lab(ctx, idx->base))
+	{
+		alt[0] = alt[0] * 100;
+		alt[1] = alt[1] * 255 - 128;
+		alt[2] = alt[2] * 255 - 128;
+	}
 }
 
 static void
