@@ -237,6 +237,7 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 
 	glo->dim[glo->dims - 1].page = page;
 	glo->dim[glo->dims - 1].pageref = pageref;
+	glo->dim[glo->dims - 1].u.dim.bbox = NULL;
 	glo->dim[glo->dims - 1].u.dim.bbox = fz_malloc(ctx, sizeof(fz_rect));
 	memcpy(glo->dim[glo->dims - 1].u.dim.bbox, &bbox, sizeof (fz_rect));
 
