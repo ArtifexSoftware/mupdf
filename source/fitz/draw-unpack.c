@@ -174,7 +174,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 			}
 		}
 
-		else
+		else if (depth == 1 || depth == 2 || depth == 4 || depth == 8 || depth  == 16 || depth == 24 || depth == 32)
 		{
 			int b = 0;
 			for (x = 0; x < w; x++)
@@ -190,8 +190,6 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 					case 16: *dp++ = get16(sp, b); break;
 					case 24: *dp++ = get24(sp, b); break;
 					case 32: *dp++ = get32(sp, b); break;
-					default:
-						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
 					}
 					b++;
 				}
@@ -200,6 +198,8 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 					*dp++ = 255;
 			}
 		}
+		else
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
 	}
 }
 
