@@ -892,10 +892,6 @@ static fz_font *load_noto_try(fz_context *ctx, const char *stem)
 
 enum { JP, KR, SC, TC };
 
-#define NOTO3(NAME1, NAME2, NAME3) load_noto3(ctx, NAME1 "-Regular", NAME2 "-Regular", NAME3 "-Regular")
-#define NOTO2(NAME1, NAME2) load_noto3(ctx, NAME1 "-Regular", NAME2 "-Regular", NULL)
-#define NOTO(NAME) load_noto_try(ctx, NAME)
-
 fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
 	switch (script)
