@@ -170,7 +170,7 @@ static size_t data_arrived(void *ptr, size_t size, size_t nmemb, void *state_)
 			/* We got a range header, and the correct http response
 			 * code. We can assume that byte fetches are accepted
 			 * and we'll run without progressive mode. */
-			state->content_length = len = state->total_length;
+			len = state->total_length;
 			state->map_length = (len+BLOCK_SIZE-1)>>BLOCK_SHIFT;
 			state->map = fz_malloc_no_throw(state->ctx, (state->map_length+7)>>3);
 			state->buffer = fz_malloc_no_throw(state->ctx, len);
@@ -181,6 +181,7 @@ static size_t data_arrived(void *ptr, size_t size, size_t nmemb, void *state_)
 				exit(1);
 			}
 			memset(state->map, 0, (state->map_length+7)>>3);
+			state->content_length = len;
 		}
 		else
 		{
