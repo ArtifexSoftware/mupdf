@@ -11,6 +11,7 @@ I've fixed and enhanced the keyboard interface:
  - **Up, Down, Left, Right**: in-page scroll
  - **,**: -5 pages
  - **.**: +5 pages
+ - **Tab**: toggle smartmove
  - **Enter**: load dirpage
  - **d**: save dirpage
  - **#**: (extra) zoom in
@@ -18,6 +19,9 @@ I've fixed and enhanced the keyboard interface:
 
     *dirpage* ==> provides a favorite/directory page
     (defaults to 1 or the page parameter)
+
+    *smartmove* ==> keep pan position with page change
+
 
 *Build*:
 
@@ -32,8 +36,6 @@ cp build/release/mupdf-x11 ~/bin/mupdf
 
 mupdf ct-magazine.pdf 6
 ```
-
-Enjoy!
 
 -----
 
