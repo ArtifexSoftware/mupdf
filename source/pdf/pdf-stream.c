@@ -481,9 +481,12 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 
 	dict = pdf_load_object(ctx, doc, num);
 
-	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
-
-	pdf_drop_obj(ctx, dict);
+	fz_try(ctx)
+		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+	fz_always(ctx)
+		pdf_drop_obj(ctx, dict);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	stm = pdf_open_raw_stream_number(ctx, doc, num);
 
@@ -585,15 +588,23 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	}
 
 	dict = pdf_load_object(ctx, doc, num);
-
-	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
-	len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
-	n = pdf_array_len(ctx, obj);
-	for (i = 0; i < n; i++)
-		len = pdf_guess_filter_length(len, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
-
-	pdf_drop_obj(ctx, dict);
+	fz_try(ctx)
+	{
+		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
+		len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
+		n = pdf_array_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			len = pdf_guess_filter_length(len, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, dict);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 
 	stm = pdf_open_image_stream(ctx, doc, num, params);
 
