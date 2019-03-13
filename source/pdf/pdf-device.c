@@ -825,17 +825,24 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix c
 		fz_warn(ctx, "pdf_add_image: problem adding image resource");
 		return;
 	}
-	pdf_dev_alpha(ctx, pdev, alpha, 0);
 
-	/* PDF images are upside down, so fiddle the ctm */
-	ctm = fz_pre_scale(ctm, 1, -1);
-	ctm = fz_pre_translate(ctm, 0, -1);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	fz_append_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
+	fz_try(ctx)
+	{
+		pdf_dev_alpha(ctx, pdev, alpha, 0);
 
-	/* Possibly add to page resources */
-	pdf_dev_add_image_res(ctx, dev, im_res);
-	pdf_drop_obj(ctx, im_res);
+		/* PDF images are upside down, so fiddle the ctm */
+		ctm = fz_pre_scale(ctm, 1, -1);
+		ctm = fz_pre_translate(ctm, 0, -1);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		fz_append_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
+
+		/* Possibly add to page resources */
+		pdf_dev_add_image_res(ctx, dev, im_res);
+	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, im_res);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -862,19 +869,26 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 		fz_warn(ctx, "pdf_add_image: problem adding image resource");
 		return;
 	}
-	fz_append_string(ctx, gs->buf, "q\n");
-	pdf_dev_alpha(ctx, pdev, alpha, 0);
-	pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
 
-	/* PDF images are upside down, so fiddle the ctm */
-	ctm = fz_pre_scale(ctm, 1, -1);
-	ctm = fz_pre_translate(ctm, 0, -1);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	fz_append_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
+	fz_try(ctx)
+	{
+		fz_append_string(ctx, gs->buf, "q\n");
+		pdf_dev_alpha(ctx, pdev, alpha, 0);
+		pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
 
-	/* Possibly add to page resources */
-	pdf_dev_add_image_res(ctx, dev, im_res);
-	pdf_drop_obj(ctx, im_res);
+		/* PDF images are upside down, so fiddle the ctm */
+		ctm = fz_pre_scale(ctm, 1, -1);
+		ctm = fz_pre_translate(ctm, 0, -1);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		fz_append_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
+
+		/* Possibly add to page resources */
+		pdf_dev_add_image_res(ctx, dev, im_res);
+	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, im_res);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
