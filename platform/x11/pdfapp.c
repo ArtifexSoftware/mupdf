@@ -1278,7 +1278,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		panto = PAN_TO_BOTTOM;
 		int h = fz_pixmap_height(app->ctx, app->image);
 
-		if (h <= app->winh || app->pany == 0)
+		if (h <= app->winh || app->pany == 0 || app->smartmove)
 		{
 			app->pageno--;
 		}
@@ -1296,7 +1296,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		else
 		{
 			int h = fz_pixmap_height(app->ctx, app->image);
-			if (h <= app->winh || app->pany <= app->winh - h)
+			if (h <= app->winh || app->pany <= app->winh - h || app->smartmove)
 			{
 				app->pageno++;
 			}
@@ -1407,6 +1407,9 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	if (app->pageno != oldpage)
 	{
+		if (app->smartmove)
+			panto = DONT_PAN;
+
 		switch (panto)
 		{
 		case PAN_TO_TOP:
