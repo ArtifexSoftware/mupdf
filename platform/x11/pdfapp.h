@@ -118,6 +118,8 @@ struct pdfapp_s
 	int numberlen;
 	/* directory/favorite page */
 	int dirpage;
+	/* toggle smart move */
+	int smartmove;
 
 	int ispanning;
 	int panx, pany;

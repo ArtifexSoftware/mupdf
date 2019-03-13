@@ -1209,7 +1209,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 * Page navigation
 	 */
 
-	/* free letters:  e o u y  */
+	/* free letters:  b e o u y  */
 
 	case 'd':
 		app->dirpage = app->pageno;
@@ -1218,6 +1218,10 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	case '\n':
 	case '\r':
 		pdfapp_gotopage(app, app->dirpage);
+		break;
+
+	case '\t':
+		app->smartmove ^= 1;
 		break;
 
 	case 'g':

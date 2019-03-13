@@ -924,6 +924,7 @@ int main(int argc, char **argv)
 	gapp.resolution = resolution;
 	gapp.pageno = pageno;
 	gapp.dirpage = pageno;
+	gapp.smartmove = 0;
 
 	tmo_at.tv_sec = 0;
 	tmo_at.tv_usec = 0;
