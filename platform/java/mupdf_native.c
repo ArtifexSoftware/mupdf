@@ -5117,6 +5117,8 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jst
 
 	fz_var(state);
 	fz_var(stm);
+	fz_var(stream);
+	fz_var(array);
 
 	if (jmimetype)
 	{
@@ -7556,6 +7558,8 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 
 	fz_var(state);
 	fz_var(out);
+	fz_var(stream);
+	fz_var(array);
 
 	if (joptions)
 	{
