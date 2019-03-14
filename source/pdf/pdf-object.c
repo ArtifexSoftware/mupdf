@@ -1879,10 +1879,10 @@ static int is_longer_than_hex(fz_context *ctx, pdf_obj *obj)
 	{
 		if (s[i] > 126)
 			m += 4;
-		else if (s[i] < 32)
-			m += 4;
 		else if (strchr("\n\r\t\b\f()\\", s[i]))
 			m += 2;
+		else if (s[i] < 32)
+			m += 4;
 		else
 			m += 1;
 	}
