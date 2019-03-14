@@ -639,12 +639,6 @@ pdf_load_stream_number(fz_context *ctx, pdf_document *doc, int num)
 	return pdf_load_image_stream(ctx, doc, num, NULL, NULL);
 }
 
-fz_buffer *
-pdf_load_stream_truncated(fz_context *ctx, pdf_document *doc, int num, int *truncated)
-{
-	return pdf_load_image_stream(ctx, doc, num, NULL, truncated);
-}
-
 fz_compressed_buffer *
 pdf_load_compressed_stream(fz_context *ctx, pdf_document *doc, int num)
 {

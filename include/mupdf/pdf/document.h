@@ -290,8 +290,6 @@ struct pdf_write_options_s
 	int do_sanitize; /* Sanitize content streams. */
 	int do_decrypt; /* Save without decryption. */
 	int do_appearance; /* (Re)create appearance streams. */
-	int continue_on_error; /* If set, errors are (optionally) counted and writing continues. */
-	int *errors; /* Pointer to a place to store a count of errors */
 };
 
 pdf_write_options *pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);

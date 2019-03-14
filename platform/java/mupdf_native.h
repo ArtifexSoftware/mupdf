@@ -1802,17 +1802,17 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_canBeSavedInc
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    save
- * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
   (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    nativeSaveWithStream
- * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;)I
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;)V
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_nativeSaveWithStream
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_nativeSaveWithStream
   (JNIEnv *, jobject, jobject, jstring);
 
 /*

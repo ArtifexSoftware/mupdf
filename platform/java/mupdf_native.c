@@ -7580,7 +7580,7 @@ FUN(PDFDocument_canBeSavedIncrementally)(JNIEnv *env, jobject self)
 	return pdf_can_be_saved_incrementally(ctx, pdf) ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
@@ -7590,7 +7590,6 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	jbyteArray array = NULL;
 	fz_output *out;
 	const char *options = NULL;
-	int errors = 0;
 	pdf_write_options pwo;
 
 	fz_var(state);
@@ -7602,7 +7601,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	{
 		options = (*env)->GetStringUTFChars(env, joptions, NULL);
 		if (!options)
-			return 0;
+			return;
 	}
 
 	stream = (*env)->NewGlobalRef(env, jstream);
@@ -7610,7 +7609,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	{
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
-		return 0;
+		return;
 	}
 
 	array = (*env)->NewByteArray(env, sizeof state->buffer);
@@ -7621,7 +7620,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
-		return 0;
+		return;
 	}
 
 	fz_try(ctx)
@@ -7640,7 +7639,6 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		array = NULL;
 
 		pdf_parse_write_options(ctx, &pwo, options);
-		pwo.errors = &errors;
 		pdf_write_document(ctx, pdf, out, &pwo);
 		fz_close_output(ctx, out);
 	}
@@ -7656,13 +7654,10 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		if (array) (*env)->DeleteGlobalRef(env, array);
 		fz_free(ctx, state);
 		jni_rethrow(env, ctx);
-		return 0;
 	}
-
-	return errors;
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
@@ -7670,13 +7665,12 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 	const char *filename = NULL;
 	const char *options = NULL;
 	pdf_write_options pwo;
-	int errors = 0;
 
-	if (!ctx || !pdf) return 0;
-	if (!jfilename) { jni_throw_arg(env, "filename must not be null"); return 0; }
+	if (!ctx || !pdf) return;
+	if (!jfilename) { jni_throw_arg(env, "filename must not be null"); return; }
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
-	if (!filename) return 0;
+	if (!filename) return;
 
 	if (joptions)
 	{
@@ -7684,14 +7678,13 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 		if (!options)
 		{
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
-			return 0;
+			return;
 		}
 	}
 
 	fz_try(ctx)
 	{
 		pdf_parse_write_options(ctx, &pwo, options);
-		pwo.errors = &errors;
 		pdf_save_document(ctx, pdf, filename, &pwo);
 	}
 	fz_always(ctx)
@@ -7702,8 +7695,6 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
-
-	return errors;
 }
 
 /* PDFObject interface */

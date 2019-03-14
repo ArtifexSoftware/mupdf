@@ -51,9 +51,6 @@ int pdfclean_main(int argc, char **argv)
 	int errors = 0;
 	fz_context *ctx;
 
-	opts.continue_on_error = 1;
-	opts.errors = &errors;
-
 	while ((c = fz_getopt(argc, argv, "adfgilp:sczDA")) != -1)
 	{
 		switch (c)

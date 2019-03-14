@@ -74,8 +74,7 @@ struct pdf_write_state_s
 	int64_t *ofs_list;
 	int *gen_list;
 	int *renumber_map;
-	int continue_on_error;
-	int *errors;
+
 	/* The following extras are required for linearization */
 	int *rev_renumber_map;
 	int start;
@@ -1229,7 +1228,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		pdf_dict_put(ctx, hint_obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
 		opts->hints_length = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, hint_obj, PDF_NAME(Length), opts->hints_length);
-		pdf_get_xref_entry(ctx, doc, hint_num)->stm_ofs = -1;
+		pdf_get_xref_entry(ctx, doc, hint_num)->stm_ofs = 0;
 	}
 	fz_always(ctx)
 	{
@@ -1742,7 +1741,6 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 {
 	fz_buffer *buf = NULL, *tmp_flate = NULL, *tmp_hex = NULL;
 	pdf_obj *obj = NULL;
-	int truncated = 0;
 	size_t len;
 	unsigned char *data;
 
@@ -1753,10 +1751,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 	fz_try(ctx)
 	{
-		buf = pdf_load_stream_truncated(ctx, doc, num, (opts->continue_on_error ? &truncated : NULL));
-		if (truncated && opts->errors)
-			(*opts->errors)++;
-
+		buf = pdf_load_stream_number(ctx, doc, num);
 		obj = pdf_copy_dict(ctx, obj_orig);
 		pdf_dict_del(ctx, obj, PDF_NAME(Filter));
 		pdf_dict_del(ctx, obj, PDF_NAME(DecodeParms));
@@ -1907,9 +1902,14 @@ static int is_xml_metadata(fz_context *ctx, pdf_obj *obj)
 
 static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num, int gen, int skip_xrefs, int unenc)
 {
-	pdf_xref_entry *entry;
-	pdf_obj *obj;
-	pdf_obj *type;
+	pdf_obj *obj = NULL;
+	fz_buffer *buf = NULL;
+	int do_deflate = 0;
+	int do_expand = 0;
+	int skip = 0;
+
+	fz_var(obj);
+	fz_var(buf);
 
 	if (opts->do_decrypt)
 		unenc = 1;
@@ -1917,89 +1917,60 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	fz_try(ctx)
 	{
 		obj = pdf_load_object(ctx, doc, num);
+
+		/* skip ObjStm and XRef objects */
+		if (pdf_is_dict(ctx, obj))
+		{
+			pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME(Type));
+			if (type == PDF_NAME(ObjStm))
+			{
+				opts->use_list[num] = 0;
+				skip = 1;
+			}
+			if (skip_xrefs && type == PDF_NAME(XRef))
+			{
+				opts->use_list[num] = 0;
+				skip = 1;
+			}
+		}
+
+		if (!skip)
+		{
+			if (pdf_obj_num_is_stream(ctx, doc, num))
+			{
+				do_deflate = opts->do_compress;
+				do_expand = opts->do_expand;
+				if (opts->do_compress_images && is_image_stream(ctx, obj))
+					do_deflate = 1, do_expand = 0;
+				if (opts->do_compress_fonts && is_font_stream(ctx, obj))
+					do_deflate = 1, do_expand = 0;
+				if (is_xml_metadata(ctx, obj))
+					do_deflate = 0, do_expand = 0;
+				if (is_jpx_stream(ctx, obj))
+					do_deflate = 0, do_expand = 0;
+
+				if (do_expand)
+					expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
+				else
+					copystream(ctx, doc, opts, obj, num, gen, do_deflate);
+			}
+			else
+			{
+				fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
+				pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : doc->crypt, num, gen);
+				fz_write_string(ctx, opts->out, "\nendobj\n\n");
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		pdf_drop_obj(ctx, obj);
 	}
 	fz_catch(ctx)
 	{
-		if (opts->continue_on_error)
-		{
-			fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
-			if (opts->errors)
-				(*opts->errors)++;
-			fz_warn(ctx, "%s", fz_caught_message(ctx));
-			return;
-		}
-		else
-			fz_rethrow(ctx);
+		fz_rethrow(ctx);
 	}
-
-	/* skip ObjStm and XRef objects */
-	if (pdf_is_dict(ctx, obj))
-	{
-		type = pdf_dict_get(ctx, obj, PDF_NAME(Type));
-		if (pdf_name_eq(ctx, type, PDF_NAME(ObjStm)))
-		{
-			opts->use_list[num] = 0;
-			pdf_drop_obj(ctx, obj);
-			return;
-		}
-		if (skip_xrefs && pdf_name_eq(ctx, type, PDF_NAME(XRef)))
-		{
-			opts->use_list[num] = 0;
-			pdf_drop_obj(ctx, obj);
-			return;
-		}
-	}
-
-	entry = pdf_get_xref_entry(ctx, doc, num);
-	if (!pdf_obj_num_is_stream(ctx, doc, num))
-	{
-		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : doc->crypt, num, gen);
-		fz_write_string(ctx, opts->out, "\nendobj\n\n");
-	}
-	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
-	{
-		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : doc->crypt, num, gen);
-		fz_write_string(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
-	}
-	else
-	{
-		fz_try(ctx)
-		{
-			int do_deflate = opts->do_compress;
-			int do_expand = opts->do_expand;
-			if (opts->do_compress_images && is_image_stream(ctx, obj))
-				do_deflate = 1, do_expand = 0;
-			if (opts->do_compress_fonts && is_font_stream(ctx, obj))
-				do_deflate = 1, do_expand = 0;
-			if (is_xml_metadata(ctx, obj))
-				do_deflate = 0, do_expand = 0;
-			if (is_jpx_stream(ctx, obj))
-				do_deflate = 0, do_expand = 0;
-			if (do_expand)
-				expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
-			else
-				copystream(ctx, doc, opts, obj, num, gen, do_deflate);
-		}
-		fz_catch(ctx)
-		{
-			if (opts->continue_on_error)
-			{
-				fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
-				if (opts->errors)
-					(*opts->errors)++;
-				fz_warn(ctx, "%s", fz_caught_message(ctx));
-			}
-			else
-			{
-				pdf_drop_obj(ctx, obj);
-				fz_rethrow(ctx);
-			}
-		}
-	}
-
-	pdf_drop_obj(ctx, obj);
 }
 
 static void writexrefsubsect(fz_context *ctx, pdf_write_state *opts, int from, int to)
@@ -2865,8 +2836,6 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	opts->gen_list = NULL;
 	opts->renumber_map = NULL;
 	opts->rev_renumber_map = NULL;
-	opts->continue_on_error = in_opts->continue_on_error;
-	opts->errors = in_opts->errors;
 
 	expand_lists(ctx, opts, xref_len);
 }
@@ -2947,8 +2916,6 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_sanitize = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "incremental", &val))
 		opts->do_incremental = fz_option_eq(val, "yes");
-	if (fz_has_option(ctx, args, "continue-on-error", &val))
-		opts->continue_on_error = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "decrypt", &val))
 		opts->do_decrypt = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "garbage", &val))
