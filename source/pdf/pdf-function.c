@@ -839,12 +839,10 @@ load_postscript_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	int codeptr;
 	pdf_lexbuf buf;
 	pdf_token tok;
-	int locked = 0;
 
 	pdf_lexbuf_init(ctx, &buf, PDF_LEXBUF_SMALL);
 
 	fz_var(stream);
-	fz_var(locked);
 
 	fz_try(ctx)
 	{
