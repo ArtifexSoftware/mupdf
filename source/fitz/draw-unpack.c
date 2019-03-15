@@ -257,11 +257,11 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 						else
 							*dp++ = fz_read_bits(ctx, stm, depth) >> (depth - 8);
 					}
-					if (skip == -1)
+					if (pad)
 						*dp++ = 255;
 				}
 
-				dp += dst->stride - w * (n + (skip == -1));
+				dp += dst->stride - w * (n + (pad > 0));
 				(void) fz_read_bits(ctx, stm, skipbits);
 			}
 		}
