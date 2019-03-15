@@ -120,31 +120,37 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 		return;
 
 	path = fz_new_path(ctx);
-	if (rx == 0 || ry == 0)
+	fz_try(ctx)
 	{
-		fz_moveto(ctx, path, x, y);
-		fz_lineto(ctx, path, x + w, y);
-		fz_lineto(ctx, path, x + w, y + h);
-		fz_lineto(ctx, path, x, y + h);
-	}
-	else
-	{
-		float rxs = rx * MAGIC_CIRCLE;
-		float rys = rx * MAGIC_CIRCLE;
-		fz_moveto(ctx, path, x + w - rx, y);
-		fz_curveto(ctx, path, x + w - rxs, y, x + w, y + rys, x + w, y + ry);
-		fz_lineto(ctx, path, x + w, y + h - ry);
-		fz_curveto(ctx, path, x + w, y + h - rys, x + w - rxs, y + h, x + w - rx, y + h);
-		fz_lineto(ctx, path, x + rx, y + h);
-		fz_curveto(ctx, path, x + rxs, y + h, x, y + h - rys, x, y + h - rx);
-		fz_lineto(ctx, path, x, y + rx);
-		fz_curveto(ctx, path, x, y + rxs, x + rxs, y, x + rx, y);
-	}
-	fz_closepath(ctx, path);
+		if (rx == 0 || ry == 0)
+		{
+			fz_moveto(ctx, path, x, y);
+			fz_lineto(ctx, path, x + w, y);
+			fz_lineto(ctx, path, x + w, y + h);
+			fz_lineto(ctx, path, x, y + h);
+		}
+		else
+		{
+			float rxs = rx * MAGIC_CIRCLE;
+			float rys = rx * MAGIC_CIRCLE;
+			fz_moveto(ctx, path, x + w - rx, y);
+			fz_curveto(ctx, path, x + w - rxs, y, x + w, y + rys, x + w, y + ry);
+			fz_lineto(ctx, path, x + w, y + h - ry);
+			fz_curveto(ctx, path, x + w, y + h - rys, x + w - rxs, y + h, x + w - rx, y + h);
+			fz_lineto(ctx, path, x + rx, y + h);
+			fz_curveto(ctx, path, x + rxs, y + h, x, y + h - rys, x, y + h - rx);
+			fz_lineto(ctx, path, x, y + rx);
+			fz_curveto(ctx, path, x, y + rxs, x + rxs, y, x + rx, y);
+		}
+		fz_closepath(ctx, path);
 
-	svg_draw_path(ctx, dev, doc, path, &local_state);
+		svg_draw_path(ctx, dev, doc, path, &local_state);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
-	fz_drop_path(ctx, path);
 }
 
 static void
@@ -171,9 +177,15 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 		return;
 
 	path = fz_new_path(ctx);
-	approx_circle(ctx, path, cx, cy, r, r);
-	svg_draw_path(ctx, dev, doc, path, &local_state);
-	fz_drop_path(ctx, path);
+	fz_try(ctx)
+	{
+		approx_circle(ctx, path, cx, cy, r, r);
+		svg_draw_path(ctx, dev, doc, path, &local_state);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -204,9 +216,15 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 		return;
 
 	path = fz_new_path(ctx);
-	approx_circle(ctx, path, cx, cy, rx, ry);
-	svg_draw_path(ctx, dev, doc, path, &local_state);
-	fz_drop_path(ctx, path);
+	fz_try(ctx)
+	{
+		approx_circle(ctx, path, cx, cy, rx, ry);
+		svg_draw_path(ctx, dev, doc, path, &local_state);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -234,10 +252,16 @@ svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	if (local_state.stroke_is_set)
 	{
 		fz_path *path = fz_new_path(ctx);
-		fz_moveto(ctx, path, x1, y1);
-		fz_lineto(ctx, path, x2, y2);
-		svg_stroke(ctx, dev, doc, path, &local_state);
-		fz_drop_path(ctx, path);
+		fz_try(ctx)
+		{
+			fz_moveto(ctx, path, x1, y1);
+			fz_lineto(ctx, path, x2, y2);
+			svg_stroke(ctx, dev, doc, path, &local_state);
+		}
+		fz_always(ctx)
+			fz_drop_path(ctx, path);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 }
 
@@ -259,31 +283,38 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 	nargs = 0;
 
 	path = fz_new_path(ctx);
-
-	while (*str)
+	fz_try(ctx)
 	{
-		while (svg_is_whitespace_or_comma(*str))
-			str ++;
-
-		if (svg_is_digit(*str))
+		while (*str)
 		{
-			str = svg_lex_number(&number, str);
-			args[nargs++] = number;
-		}
+			while (svg_is_whitespace_or_comma(*str))
+				str ++;
 
-		if (nargs == 2)
-		{
-			if (isfirst)
+			if (svg_is_digit(*str))
 			{
-				fz_moveto(ctx, path, args[0], args[1]);
-				isfirst = 0;
+				str = svg_lex_number(&number, str);
+				args[nargs++] = number;
 			}
-			else
+
+			if (nargs == 2)
 			{
-				fz_lineto(ctx, path, args[0], args[1]);
+				if (isfirst)
+				{
+					fz_moveto(ctx, path, args[0], args[1]);
+					isfirst = 0;
+				}
+				else
+				{
+					fz_lineto(ctx, path, args[0], args[1]);
+				}
+				nargs = 0;
 			}
-			nargs = 0;
 		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_path(ctx, path);
+		fz_rethrow(ctx);
 	}
 
 	return path;
@@ -299,8 +330,12 @@ svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *nod
 	if (local_state.stroke_is_set)
 	{
 		fz_path *path = svg_parse_polygon_imp(ctx, doc, node, 0);
-		svg_stroke(ctx, dev, doc, path, &local_state);
-		fz_drop_path(ctx, path);
+		fz_try(ctx)
+			svg_stroke(ctx, dev, doc, path, &local_state);
+		fz_always(ctx)
+			fz_drop_path(ctx, path);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 }
 
@@ -313,8 +348,12 @@ svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 	svg_parse_common(ctx, doc, node, &local_state);
 
 	path = svg_parse_polygon_imp(ctx, doc, node, 1);
-	svg_draw_path(ctx, dev, doc, path, &local_state);
-	fz_drop_path(ctx, path);
+	fz_try(ctx)
+		svg_draw_path(ctx, dev, doc, path, &local_state);
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -468,7 +507,7 @@ svg_add_arc(fz_context *ctx, fz_path *path,
 static fz_path *
 svg_parse_path_data(fz_context *ctx, svg_document *doc, const char *str)
 {
-	fz_path *path = fz_new_path(ctx);
+	fz_path *path;
 
 	fz_point p;
 	float x1, y1, x2, y2;
@@ -486,6 +525,7 @@ svg_parse_path_data(fz_context *ctx, svg_document *doc, const char *str)
 	cmd = 0;
 	nargs = 0;
 
+	path = fz_new_path(ctx);
 	fz_try(ctx)
 	{
 		fz_moveto(ctx, path, 0.0f, 0.0f); /* for the case of opening 'm' */
@@ -787,8 +827,12 @@ svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	if (d_att)
 	{
 		fz_path *path = svg_parse_path_data(ctx, doc, d_att);
-		svg_draw_path(ctx, dev, doc, path, &local_state);
-		fz_drop_path(ctx, path);
+		fz_try(ctx)
+			svg_draw_path(ctx, dev, doc, path, &local_state);
+		fz_always(ctx)
+			fz_drop_path(ctx, path);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 }
 
