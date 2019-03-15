@@ -45,8 +45,8 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 	n = (len > 0 ? fread(buf, 1, len, ps->file) : 0);
 	if (n < len && ferror(ps->file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
-	stm->rp = ps->buffer + stm->pos;
-	stm->wp = ps->buffer + stm->pos + n;
+	stm->rp = ps->buffer;
+	stm->wp = ps->buffer + n;
 	stm->pos += (int64_t)n;
 	if (n == 0)
 		return EOF;
