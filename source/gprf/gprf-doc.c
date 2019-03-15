@@ -877,7 +877,7 @@ gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 }
 
 static void
-gprf_close_document(fz_context *ctx, fz_document *doc_)
+gprf_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	gprf_document *doc = (gprf_document*)doc_;
 
@@ -903,7 +903,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	gprf_document *doc;
 
 	doc = fz_new_derived_document(ctx, gprf_document);
-	doc->super.drop_document = gprf_close_document;
+	doc->super.drop_document = gprf_drop_document;
 	doc->super.count_pages = gprf_count_pages;
 	doc->super.load_page = gprf_load_page;
 	doc->super.lookup_metadata = gprf_lookup_metadata;
