@@ -230,8 +230,6 @@ xps_draw_one_radial_gradient(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	shade->u.l_or_r.extend[0] = extend;
 	shade->u.l_or_r.extend[1] = extend;
 
-	xps_sample_gradient_stops(ctx, doc, shade, stops, count);
-
 	shade->u.l_or_r.coords[0][0] = x0;
 	shade->u.l_or_r.coords[0][1] = y0;
 	shade->u.l_or_r.coords[0][2] = r0;
@@ -239,9 +237,15 @@ xps_draw_one_radial_gradient(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = r1;
 
-	fz_fill_shade(ctx, dev, shade, ctm, 1, fz_default_color_params(ctx));
-
-	fz_drop_shade(ctx, shade);
+	fz_try(ctx)
+	{
+		xps_sample_gradient_stops(ctx, doc, shade, stops, count);
+		fz_fill_shade(ctx, dev, shade, ctm, 1, fz_default_color_params(ctx));
+	}
+	fz_always(ctx)
+		fz_drop_shade(ctx, shade);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*
@@ -268,8 +272,6 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	shade->u.l_or_r.extend[0] = extend;
 	shade->u.l_or_r.extend[1] = extend;
 
-	xps_sample_gradient_stops(ctx, doc, shade, stops, count);
-
 	shade->u.l_or_r.coords[0][0] = x0;
 	shade->u.l_or_r.coords[0][1] = y0;
 	shade->u.l_or_r.coords[0][2] = 0;
@@ -277,9 +279,15 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = 0;
 
-	fz_fill_shade(ctx, dev, shade, ctm, doc->opacity[doc->opacity_top], fz_default_color_params(ctx));
-
-	fz_drop_shade(ctx, shade);
+	fz_try(ctx)
+	{
+		xps_sample_gradient_stops(ctx, doc, shade, stops, count);
+		fz_fill_shade(ctx, dev, shade, ctm, doc->opacity[doc->opacity_top], fz_default_color_params(ctx));
+	}
+	fz_always(ctx)
+		fz_drop_shade(ctx, shade);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*

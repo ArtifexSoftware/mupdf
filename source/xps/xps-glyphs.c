@@ -84,9 +84,23 @@ static void
 xps_insert_font(fz_context *ctx, xps_document *doc, char *name, fz_font *font)
 {
 	xps_font_cache *cache = fz_malloc_struct(ctx, xps_font_cache);
-	cache->name = fz_strdup(ctx, name);
-	cache->font = fz_keep_font(ctx, font);
-	cache->next = doc->font_table;
+	cache->font = NULL;
+	cache->name = NULL;
+
+	fz_try(ctx)
+	{
+		cache->font = fz_keep_font(ctx, font);
+		cache->name = fz_strdup(ctx, name);
+		cache->next = doc->font_table;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_font(ctx, cache->font);
+		fz_free(ctx, cache->name);
+		fz_free(ctx, cache);
+		fz_rethrow(ctx);
+	}
+
 	doc->font_table = cache;
 }
 
@@ -225,9 +239,12 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 		if (strstr(part->name, ".ODTTF"))
 			xps_deobfuscate_font_resource(ctx, doc, part);
 
+		fz_var(font);
 		fz_try(ctx)
 		{
 			font = fz_new_font_from_buffer(ctx, NULL, part->data, subfontid, 1);
+			xps_select_best_font_encoding(ctx, doc, font);
+			xps_insert_font(ctx, doc, fakename, font);
 		}
 		fz_always(ctx)
 		{
@@ -235,6 +252,7 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 		}
 		fz_catch(ctx)
 		{
+			fz_drop_font(ctx, font);
 			fz_warn(ctx, "cannot load font resource '%s'", partname);
 			return NULL;
 		}
@@ -249,9 +267,6 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 			flags->fake_italic = italic;
 			flags->is_italic = italic;
 		}
-
-		xps_select_best_font_encoding(ctx, doc, font);
-		xps_insert_font(ctx, doc, fakename, font);
 	}
 	return font;
 }

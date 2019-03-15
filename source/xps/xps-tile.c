@@ -26,15 +26,23 @@ static void
 xps_paint_tiling_brush_clipped(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect viewbox, struct closure *c)
 {
 	fz_device *dev = doc->dev;
+	fz_path *path;
 
-	fz_path *path = fz_new_path(ctx);
-	fz_moveto(ctx, path, viewbox.x0, viewbox.y0);
-	fz_lineto(ctx, path, viewbox.x0, viewbox.y1);
-	fz_lineto(ctx, path, viewbox.x1, viewbox.y1);
-	fz_lineto(ctx, path, viewbox.x1, viewbox.y0);
-	fz_closepath(ctx, path);
-	fz_clip_path(ctx, dev, path, 0, ctm, fz_infinite_rect);
-	fz_drop_path(ctx, path);
+	path = fz_new_path(ctx);
+	fz_try(ctx)
+	{
+		fz_moveto(ctx, path, viewbox.x0, viewbox.y0);
+		fz_lineto(ctx, path, viewbox.x0, viewbox.y1);
+		fz_lineto(ctx, path, viewbox.x1, viewbox.y1);
+		fz_lineto(ctx, path, viewbox.x1, viewbox.y0);
+		fz_closepath(ctx, path);
+		fz_clip_path(ctx, dev, path, 0, ctm, fz_infinite_rect);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 	c->func(ctx, doc, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
 	fz_pop_clip(ctx, dev);
 }

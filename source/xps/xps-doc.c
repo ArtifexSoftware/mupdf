@@ -259,11 +259,18 @@ xps_parse_metadata(fz_context *ctx, xps_document *doc, xps_part *part, xps_fixdo
 	doc->part_uri = part->name;
 
 	xml = fz_parse_xml(ctx, part->data, 0);
-	xps_parse_metadata_imp(ctx, doc, fz_xml_root(xml), fixdoc);
-	fz_drop_xml(ctx, xml);
-
-	doc->base_uri = NULL;
-	doc->part_uri = NULL;
+	fz_try(ctx)
+	{
+		xps_parse_metadata_imp(ctx, doc, fz_xml_root(xml), fixdoc);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_xml(ctx, xml);
+		doc->base_uri = NULL;
+		doc->part_uri = NULL;
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
