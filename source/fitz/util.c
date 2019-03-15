@@ -52,8 +52,9 @@ fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
 	fz_display_list *list;
 	fz_device *dev = NULL;
 
-	list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
+	fz_var(dev);
 
+	list = fz_new_display_list(ctx, fz_bound_page(ctx, page));
 	fz_try(ctx)
 	{
 		dev = fz_new_list_device(ctx, list);

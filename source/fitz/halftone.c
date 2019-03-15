@@ -565,14 +565,13 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	fz_halftone *ht_ = NULL;
 	threshold_fn *thresh;
 
+	fz_var(ht_line);
+
 	if (!pix)
 		return NULL;
 
 	if (pix->alpha != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap may not have alpha channel to convert to bitmap");
-
-	fz_var(ht_line);
-	fz_var(out);
 
 	n = pix->n;
 

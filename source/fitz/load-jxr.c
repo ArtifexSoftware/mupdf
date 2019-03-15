@@ -284,6 +284,9 @@ jxr_read_image(fz_context *ctx, const unsigned char *data, int size, struct info
 	jxr_image_t alpha = NULL;
 	int rc, i;
 
+	fz_var(image);
+	fz_var(alpha);
+
 	fz_try(ctx)
 	{
 		container = jxr_create_container();

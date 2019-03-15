@@ -8303,6 +8303,8 @@ FUN(PDFObject_putDictionaryStringBoolean)(JNIEnv *env, jobject self, jstring jna
 		if (!name) return;
 	}
 
+	fz_var(key);
+
 	fz_try(ctx)
 	{
 		key = name ? pdf_new_name(ctx, name) : NULL;
@@ -8333,6 +8335,8 @@ FUN(PDFObject_putDictionaryStringInteger)(JNIEnv *env, jobject self, jstring jna
 		if (!name) return;
 	}
 
+	fz_var(key);
+
 	fz_try(ctx)
 	{
 		key = name ? pdf_new_name(ctx, name) : NULL;
@@ -8362,6 +8366,8 @@ FUN(PDFObject_putDictionaryStringFloat)(JNIEnv *env, jobject self, jstring jname
 		name = (*env)->GetStringUTFChars(env, jname, NULL);
 		if (!name) return;
 	}
+
+	fz_var(key);
 
 	fz_try(ctx)
 	{
@@ -8403,6 +8409,8 @@ FUN(PDFObject_putDictionaryStringString)(JNIEnv *env, jobject self, jstring jnam
 		}
 	}
 
+	fz_var(key);
+
 	fz_try(ctx)
 	{
 		key = name ? pdf_new_name(ctx, name) : NULL;
@@ -8438,6 +8446,8 @@ FUN(PDFObject_putDictionaryStringPDFObject)(JNIEnv *env, jobject self, jstring j
 		name = (*env)->GetStringUTFChars(env, jname, NULL);
 		if (!name) return;
 	}
+
+	fz_var(key);
 
 	fz_try(ctx)
 	{

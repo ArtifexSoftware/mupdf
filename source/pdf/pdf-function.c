@@ -914,8 +914,6 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	int bps;
 	int i;
 
-	fz_var(stream);
-
 	func->u.sa.samples = NULL;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Size));
