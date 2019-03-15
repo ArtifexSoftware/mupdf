@@ -77,6 +77,7 @@ clean:
 	rm -f src/com/artifex/mupdf/fitz/*.class
 	rm -f example/*.class
 	rm -f mupdf_native.o
+	rm -f libmupdf.jar
 	rm -f $(MUPDF_JAVA)
 	rm -f ../../build/java/*.h
 
