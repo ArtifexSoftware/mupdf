@@ -365,19 +365,27 @@ static void
 epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 {
 	fz_archive *zip = doc->zip;
-	fz_buffer *buf;
-	fz_xml_doc *ncx;
+	fz_buffer *buf = NULL;
+	fz_xml_doc *ncx = NULL;
 	char base_uri[2048];
 
-	fz_dirname(base_uri, path, sizeof base_uri);
+	fz_var(buf);
+	fz_var(ncx);
 
-	buf = fz_read_archive_entry(ctx, zip, path);
-	ncx = fz_parse_xml(ctx, buf, 0);
-	fz_drop_buffer(ctx, buf);
-
-	doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(fz_xml_root(ncx), "navMap"), base_uri);
-
-	fz_drop_xml(ctx, ncx);
+	fz_try(ctx)
+	{
+		fz_dirname(base_uri, path, sizeof base_uri);
+		buf = fz_read_archive_entry(ctx, zip, path);
+		ncx = fz_parse_xml(ctx, buf, 0);
+		doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(fz_xml_root(ncx), "navMap"), base_uri);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_xml(ctx, ncx);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static char *
