@@ -92,7 +92,9 @@ static void seek_prog(fz_context *ctx, fz_stream *stm, int64_t offset, int whenc
 static void close_prog(fz_context *ctx, void *state)
 {
 	prog_state *ps = (prog_state *)state;
-	fclose(ps->file);
+	int n = fclose(ps->file);
+	if (n < 0)
+		fz_warn(ctx, "cannot fclose: %s", strerror(errno));
 	fz_free(ctx, state);
 }
 
