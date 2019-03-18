@@ -253,7 +253,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 					for (k = 0; k < n; k++)
 					{
 						if (depth <= 8)
-							*dp++ = fz_read_bits(ctx, stm, depth);
+							*dp++ = fz_read_bits(ctx, stm, depth) << (8 - depth);
 						else
 							*dp++ = fz_read_bits(ctx, stm, depth) >> (depth - 8);
 					}
