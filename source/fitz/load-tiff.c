@@ -21,7 +21,8 @@ struct tiff
 	unsigned order;
 
 	/* offset of first ifd */
-	unsigned ifd_offset;
+	unsigned *ifd_offsets;
+	int ifds;
 
 	/* where we can find the strips of image data */
 	unsigned rowsperstrip;
@@ -1001,13 +1002,16 @@ tiff_read_header(fz_context *ctx, struct tiff *tiff, const unsigned char *buf, s
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a TIFF file, wrong version marker");
 
 	/* get offset of IFD */
-	tiff->ifd_offset = tiff_readlong(tiff);
+	tiff->ifd_offsets = fz_malloc_array(ctx, 1, sizeof (unsigned));
+	tiff->ifd_offsets[0] = tiff_readlong(tiff);
+	tiff->ifds = 1;
 }
 
 static unsigned
 tiff_next_ifd(fz_context *ctx, struct tiff *tiff, unsigned offset)
 {
 	unsigned count;
+	int i;
 
 	if (offset > (unsigned)(tiff->ep - tiff->bp))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid IFD offset %u", offset);
@@ -1021,13 +1025,21 @@ tiff_next_ifd(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	tiff->rp += count * 12;
 	offset = tiff_readlong(tiff);
 
+	for (i = 0; i < tiff->ifds; i++)
+		if (tiff->ifd_offsets[i] == offset)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in IFDs detected");
+
+	tiff->ifd_offsets = fz_resize_array(ctx, tiff->ifd_offsets, tiff->ifds + 1, sizeof (unsigned));
+	tiff->ifd_offsets[tiff->ifds] = offset;
+	tiff->ifds++;
+
 	return offset;
 }
 
 static void
 tiff_seek_ifd(fz_context *ctx, struct tiff *tiff, int subimage)
 {
-	unsigned offset = tiff->ifd_offset;
+	unsigned offset = tiff->ifd_offsets[0];
 
 	while (subimage--)
 	{
@@ -1412,6 +1424,7 @@ fz_load_tiff_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int
 		fz_free(ctx, tiff.data);
 		fz_free(ctx, tiff.samples);
 		fz_free(ctx, tiff.profile);
+		fz_free(ctx, tiff.ifd_offsets);
 	}
 	fz_catch(ctx)
 	{
@@ -1464,6 +1477,7 @@ fz_load_tiff_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len
 		fz_free(ctx, tiff.data);
 		fz_free(ctx, tiff.samples);
 		fz_free(ctx, tiff.profile);
+		fz_free(ctx, tiff.ifd_offsets);
 	}
 	fz_catch(ctx)
 	{
@@ -1484,14 +1498,21 @@ fz_load_tiff_subimage_count(fz_context *ctx, const unsigned char *buf, size_t le
 	unsigned subimage_count = 0;
 	struct tiff tiff = { 0 };
 
-	tiff_read_header(ctx, &tiff, buf, len);
+	fz_try(ctx)
+	{
+		tiff_read_header(ctx, &tiff, buf, len);
 
-	offset = tiff.ifd_offset;
+		offset = tiff.ifd_offsets[0];
 
-	do {
-		subimage_count++;
-		offset = tiff_next_ifd(ctx, &tiff, offset);
-	} while (offset != 0);
+		do {
+			subimage_count++;
+			offset = tiff_next_ifd(ctx, &tiff, offset);
+		} while (offset != 0);
+	}
+	fz_always(ctx)
+		fz_free(ctx, tiff.ifd_offsets);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return subimage_count;
 }
