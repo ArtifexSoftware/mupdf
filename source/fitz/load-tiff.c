@@ -1101,6 +1101,8 @@ tiff_components_from_photometric(int photometric)
 		return 3;
 	case 3: /* RGBPal */
 		return 3;
+	case 4: /* Transparency Mask */
+		return 1;
 	case 5: /* CMYK */
 		return 4;
 	case 6: /* YCbCr */
@@ -1159,6 +1161,9 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		break;
 	case 3: /* RGBPal */
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		break;
+	case 4: /* Transparency mask */
+		tiff->colorspace = NULL;
 		break;
 	case 5: /* CMYK */
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
@@ -1370,7 +1375,7 @@ fz_load_tiff_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int
 		tiff_decode_samples(ctx, &tiff);
 
 		/* Expand into fz_pixmap struct */
-		alpha = tiff.extrasamples != 0;
+		alpha = tiff.extrasamples != 0 || tiff.colorspace == NULL;
 		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, NULL, alpha);
 		image->xres = tiff.xresolution;
 		image->yres = tiff.yresolution;
