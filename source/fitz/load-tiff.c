@@ -1089,33 +1089,31 @@ tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 }
 
 static int
-tiff_components_from_photometric(int photometric)
+tiff_colorspace_type_from_photometric(int photometric)
 {
 	switch (photometric)
 	{
 	case 0: /* WhiteIsZero */
-		return 1;
 	case 1: /* BlackIsZero */
-		return 1;
+		return FZ_COLORSPACE_GRAY;
 	case 2: /* RGB */
-		return 3;
 	case 3: /* RGBPal */
-		return 3;
-	case 4: /* Transparency Mask */
-		return 1;
+		return FZ_COLORSPACE_RGB;
+	case 4: /* Transparency mask */
+		return FZ_COLORSPACE_NONE;
 	case 5: /* CMYK */
-		return 4;
-	case 6: /* YCbCr */
-		return 3;
+		return FZ_COLORSPACE_CMYK;
+	case 6: /* YCbCr, it's probably a jpeg ... we let jpeg convert to rgb */
+		return FZ_COLORSPACE_RGB;
 	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
 	case 9: /* ICC Style L*a*b* encoding */
-		return 3;
+		return FZ_COLORSPACE_LAB;
 	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
-		return 1;
+		return FZ_COLORSPACE_GRAY;
 	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
-		return 3;
+		return FZ_COLORSPACE_RGB;
 	default:
-		return 0;
+		return FZ_COLORSPACE_NONE;
 	}
 }
 
@@ -1202,19 +1200,32 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		{
 			buff = fz_new_buffer_from_copied_data(ctx, tiff->profile, tiff->profilesize);
 			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, tiff->colorspace), buff, tiff->colorspace);
-			if (fz_colorspace_n(ctx, tiff->colorspace) != tiff_components_from_photometric(tiff->photometric)) {
-				fz_drop_colorspace(ctx, icc);
-				fz_throw(ctx, FZ_ERROR_GENERIC, "embedded ICC profile colorspace mismatch");
+			if (fz_colorspace_type(ctx, icc) == tiff_colorspace_type_from_photometric(tiff->photometric))
+			{
+				fz_drop_colorspace(ctx, tiff->colorspace);
+				tiff->colorspace = icc;
 			}
-			fz_drop_colorspace(ctx, tiff->colorspace);
-			tiff->colorspace = icc;
+			else
+			{
+				fz_warn(ctx, "ignoring ICC profile that does not match photometric");
+				fz_drop_colorspace(ctx, icc);
+			}
 		}
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);
 		fz_catch(ctx)
-			fz_warn(ctx, "Failed to read ICC Profile from tiff");
+		{
+			fz_warn(ctx, "ignoring broken ICC profile");
+		}
 	}
 #endif
+
+	if (!tiff->colorspace && tiff->samplesperpixel < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too few components for transparency mask");
+	if (tiff->colorspace && tiff->colormap && tiff->samplesperpixel < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too few components for RGBPal");
+	if (tiff->colorspace && !tiff->colormap && tiff->samplesperpixel < fz_colorspace_n(ctx, tiff->colorspace))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "fewer components per pixel than indicated by colorspace");
 
 	switch (tiff->resolutionunit)
 	{
