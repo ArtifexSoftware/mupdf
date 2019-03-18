@@ -188,7 +188,7 @@ static inline void tiff_putcomp(unsigned char *line, int x, int bpc, int value)
 static void
 tiff_unpredict_line(unsigned char *line, int width, int comps, int bits)
 {
-	unsigned char left[32];
+	unsigned char left[FZ_MAX_COLORS];
 	int i, k, v;
 
 	for (k = 0; k < comps; k++)
@@ -1220,6 +1220,8 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	}
 #endif
 
+	if (tiff->samplesperpixel == 0 || tiff->samplesperpixel >= FZ_MAX_COLORS)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "components per pixel out of range");
 	if (!tiff->colorspace && tiff->samplesperpixel < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too few components for transparency mask");
 	if (tiff->colorspace && tiff->colormap && tiff->samplesperpixel < 1)
