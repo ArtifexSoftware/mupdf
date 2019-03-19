@@ -276,7 +276,7 @@ static void field_getValue(js_State *J)
 		rethrow(js);
 
 	num = strtod(str, &end);
-	if (*end == 0)
+	if (*str && *end == 0)
 		js_pushnumber(J, num);
 	else
 		js_pushstring(J, str);
