@@ -305,25 +305,21 @@ ps_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_band_writer *bw;
 
 	fz_try(ctx)
-		fz_close_device(ctx, dev);
-	fz_always(ctx)
-		fz_drop_device(ctx, dev);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	bw = fz_new_ps_band_writer(ctx, wri->out);
-	fz_try(ctx)
 	{
+		fz_close_device(ctx, dev);
+		bw = fz_new_ps_band_writer(ctx, wri->out);
 		fz_write_header(ctx, bw, pix->w, pix->h, pix->n, pix->alpha, pix->xres, pix->yres, 0, pix->colorspace, pix->seps);
 		fz_write_band(ctx, bw, pix->stride, pix->h, pix->samples);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
 		fz_drop_band_writer(ctx, bw);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void

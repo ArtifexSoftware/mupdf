@@ -485,31 +485,33 @@ text_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_text_writer *wri = (fz_text_writer*)wri_;
 
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
+		switch (wri->format)
+		{
+		default:
+		case FZ_FORMAT_TEXT:
+			fz_print_stext_page_as_text(ctx, wri->out, wri->page);
+			break;
+		case FZ_FORMAT_HTML:
+			fz_print_stext_page_as_html(ctx, wri->out, wri->page);
+			break;
+		case FZ_FORMAT_XHTML:
+			fz_print_stext_page_as_xhtml(ctx, wri->out, wri->page);
+			break;
+		case FZ_FORMAT_STEXT:
+			fz_print_stext_page_as_xml(ctx, wri->out, wri->page);
+			break;
+		}
+	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_stext_page(ctx, wri->page);
+		wri->page = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	switch (wri->format)
-	{
-	default:
-	case FZ_FORMAT_TEXT:
-		fz_print_stext_page_as_text(ctx, wri->out, wri->page);
-		break;
-	case FZ_FORMAT_HTML:
-		fz_print_stext_page_as_html(ctx, wri->out, wri->page);
-		break;
-	case FZ_FORMAT_XHTML:
-		fz_print_stext_page_as_xhtml(ctx, wri->out, wri->page);
-		break;
-	case FZ_FORMAT_STEXT:
-		fz_print_stext_page_as_xml(ctx, wri->out, wri->page);
-		break;
-	}
-
-	fz_drop_stext_page(ctx, wri->page);
-	wri->page = NULL;
 }
 
 static void

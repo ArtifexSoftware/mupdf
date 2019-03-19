@@ -30,30 +30,28 @@ static void
 cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
-	fz_buffer *buffer;
+	fz_buffer *buffer = NULL;
 	char name[40];
 
+	fz_var(buffer);
+
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
-	fz_always(ctx)
-		fz_drop_device(ctx, dev);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	wri->count += 1;
-
-	fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
-
-	buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap, NULL);
-	fz_try(ctx)
+		wri->count += 1;
+		fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
+		buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap, NULL);
 		fz_write_zip_entry(ctx, wri->zip, name, buffer, 0);
+	}
 	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
 		fz_drop_buffer(ctx, buffer);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void
@@ -118,18 +116,20 @@ pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	char path[PATH_MAX];
 
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
+		wri->count += 1;
+		fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
+		wri->save(ctx, wri->pixmap, path);
+	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	wri->count += 1;
-
-	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
-	wri->save(ctx, wri->pixmap, path);
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void

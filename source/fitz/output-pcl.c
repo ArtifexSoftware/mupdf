@@ -1482,31 +1482,32 @@ static void
 pcl_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_pcl_writer *wri = (fz_pcl_writer*)wri_;
+	fz_bitmap *bitmap = NULL;
+
+	fz_var(bitmap);
 
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
+		if (wri->mono)
+		{
+			bitmap = fz_new_bitmap_from_pixmap(ctx, wri->pixmap, NULL);
+			fz_write_bitmap_as_pcl(ctx, wri->out, bitmap, &wri->pcl);
+		}
+		else
+		{
+			fz_write_pixmap_as_pcl(ctx, wri->out, wri->pixmap, &wri->pcl);
+		}
+	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_bitmap(ctx, bitmap);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	if (wri->mono)
-	{
-		fz_bitmap *bitmap = fz_new_bitmap_from_pixmap(ctx, wri->pixmap, NULL);
-		fz_try(ctx)
-			fz_write_bitmap_as_pcl(ctx, wri->out, bitmap, &wri->pcl);
-		fz_always(ctx)
-			fz_drop_bitmap(ctx, bitmap);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
-	}
-	else
-	{
-		fz_write_pixmap_as_pcl(ctx, wri->out, wri->pixmap, &wri->pcl);
-	}
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void

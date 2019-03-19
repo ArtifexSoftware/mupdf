@@ -346,17 +346,19 @@ pclm_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_pixmap *pix = wri->pixmap;
 
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
+		fz_write_header(ctx, wri->bander, pix->w, pix->h, pix->n, pix->alpha, pix->xres, pix->yres, wri->pagenum++, pix->colorspace, pix->seps);
+		fz_write_band(ctx, wri->bander, pix->stride, pix->h, pix->samples);
+	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_pixmap(ctx, pix);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_write_header(ctx, wri->bander, pix->w, pix->h, pix->n, pix->alpha, pix->xres, pix->yres, wri->pagenum++, pix->colorspace, pix->seps);
-	fz_write_band(ctx, wri->bander, pix->stride, pix->h, pix->samples);
-
-	fz_drop_pixmap(ctx, pix);
-	wri->pixmap = NULL;
 }
 
 static void
