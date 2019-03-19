@@ -223,6 +223,8 @@ fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox)
 {
 	if (!wri)
 		return NULL;
+	if (wri->dev)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "called begin page without ending the previous page");
 	wri->dev = wri->begin_page(ctx, wri, mediabox);
 	return wri->dev;
 }
