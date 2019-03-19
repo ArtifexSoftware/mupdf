@@ -116,4 +116,5 @@ public class PDFDocument extends Document
 	public native void disableJs();
 	public native boolean isJsSupported();
 	public native void setJsEventListener(JsEventListener listener);
+	public native void calculate(); /* Recalculate form fields. Not needed if using page.update(). */
 }

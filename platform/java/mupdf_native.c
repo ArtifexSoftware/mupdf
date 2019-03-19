@@ -10060,6 +10060,26 @@ FUN(PDFDocument_setJsEventListener)(JNIEnv *env, jobject self, jobject listener)
 }
 
 JNIEXPORT void JNICALL
+FUN(PDFDocument_calculate)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument_safe(env, self);
+
+	if (!ctx || !pdf)
+		return;
+
+	fz_try(ctx)
+	{
+		if (pdf->recalculate)
+			pdf_calculate_form(ctx, pdf);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+}
+
+JNIEXPORT void JNICALL
 FUN(PDFWidget_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);

@@ -1847,6 +1847,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_isJsSupported
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_setJsEventListener
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    calculate
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_calculate
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
