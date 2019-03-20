@@ -1040,7 +1040,7 @@ tiff_seek_ifd(fz_context *ctx, struct tiff *tiff, int subimage)
 	tiff->rp = tiff->bp + offset;
 
 	if (tiff->rp < tiff->bp || tiff->rp > tiff->ep)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid IFD offset %u", tiff->ifd_offset);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid IFD offset %u", offset);
 }
 
 static void
