@@ -120,9 +120,6 @@ struct fz_device_s
 
 	fz_rect d1_rect;
 
-	int error_depth;
-	char errmess[256];
-
 	int container_len;
 	int container_cap;
 	fz_device_container_stack *container;
