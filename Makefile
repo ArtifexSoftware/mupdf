@@ -215,7 +215,13 @@ MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 MUTOOL_EXE := $(OUT)/mutool
 $(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREAD_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
-INSTALL_APPS += $(MUTOOL_EXE)
+TOOL_APPS += $(MUTOOL_EXE)
+
+MURASTER_OBJ := $(OUT)/source/tools/muraster.o
+MURASTER_EXE := $(OUT)/muraster
+$(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
+	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS)
+TOOL_APPS += $(MURASTER_EXE)
 
 ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
@@ -223,7 +229,7 @@ ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl
   $(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(GLUT_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(WIN32_LDFLAGS) $(GLUT_LIBS)
-  INSTALL_APPS += $(MUVIEW_GLUT_EXE)
+  VIEW_APPS += $(MUVIEW_GLUT_EXE)
 endif
 
 ifeq ($(HAVE_X11),yes)
@@ -233,7 +239,7 @@ ifeq ($(HAVE_X11),yes)
   MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_image.o
   $(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS)
-  INSTALL_APPS += $(MUVIEW_X11_EXE)
+  VIEW_APPS += $(MUVIEW_X11_EXE)
 endif
 
 ifeq ($(HAVE_WIN32),yes)
@@ -243,16 +249,8 @@ ifeq ($(HAVE_WIN32),yes)
   MUVIEW_WIN32_OBJ += $(OUT)/platform/x11/win_res.o
   $(MUVIEW_WIN32_EXE) : $(MUVIEW_WIN32_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(WIN32_LDFLAGS) $(WIN32_LIBS) $(LIBCRYPTO_LIBS)
-  INSTALL_APPS += $(MUVIEW_WIN32_EXE)
+  VIEW_APPS += $(MUVIEW_WIN32_EXE)
 endif
-
-# --- Extra tools and viewers ---
-
-MURASTER_OBJ := $(OUT)/source/tools/muraster.o
-MURASTER_EXE := $(OUT)/muraster
-$(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS)
-EXTRA_APPS += $(MURASTER_EXE)
 
 ifeq ($(HAVE_X11),yes)
 ifeq ($(HAVE_CURL),yes)
@@ -263,7 +261,7 @@ ifeq ($(HAVE_CURL),yes)
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/curl_stream.o
   $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(CURL_LIBS) $(LIBCRYPTO_LIBS)
-  EXTRA_APPS += $(MUVIEW_X11_CURL_EXE)
+  VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
 endif
 endif
 
@@ -318,11 +316,10 @@ mandir ?= $(prefix)/share/man
 docdir ?= $(prefix)/share/doc/mupdf
 
 third: $(THIRD_LIB)
-extra-libs: $(CURL_LIB) $(GLUT_LIB)
+extra-libs: $(GLUT_LIB)
 libs: $(INSTALL_LIBS)
-apps: $(INSTALL_APPS)
-extra-apps: $(EXTRA_APPS)
-extra: extra-libs extra-apps
+tools: $(TOOL_APPS)
+apps: $(TOOL_APPS) $(VIEW_APPS)
 
 install: libs apps
 	install -d $(DESTDIR)$(incdir)/mupdf
@@ -336,7 +333,8 @@ install: libs apps
 	install -m 644 $(INSTALL_LIBS) $(DESTDIR)$(libdir)
 
 	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(INSTALL_APPS) $(DESTDIR)$(bindir)
+	install -m 755 $(TOOL_APPS) $(DESTDIR)$(bindir)
+	install -m 755 $(VIEW_APPS) $(DESTDIR)$(bindir)
 
 	install -d $(DESTDIR)$(mandir)/man1
 	install -m 644 docs/man/*.1 $(DESTDIR)$(mandir)/man1
