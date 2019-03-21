@@ -332,8 +332,11 @@ tarball:
 
 # --- Clean and Default ---
 
-WATCH_SRCS := $(shell find include source platform -type f -name '*.[ch]')
+WATCH_SRCS = $(shell find include source platform -type f -name '*.[ch]')
 watch:
+	@ inotifywait -q -e modify $(WATCH_SRCS)
+
+watch-recompile:
 	@ while ! inotifywait -q -e modify $(WATCH_SRCS) ; do time -p $(MAKE) ; done
 
 java:
