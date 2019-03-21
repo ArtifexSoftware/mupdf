@@ -945,9 +945,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				}
 				else
 				{
-					cookie->errors++;
-					fz_warn(ctx, "unrecoverable error; ignoring rest of page: %s", fz_caught_message(ctx));
-					tok = PDF_TOK_EOF;
+					fz_rethrow(ctx);
 				}
 			}
 			else
@@ -966,8 +964,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				}
 				else
 				{
-					fz_warn(ctx, "unrecoverable error; ignoring rest of page: %s", fz_caught_message(ctx));
-					tok = PDF_TOK_EOF;
+					fz_rethrow(ctx);
 				}
 			}
 
