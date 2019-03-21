@@ -1216,20 +1216,28 @@ fz_list_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colo
 {
 	fz_default_colorspaces *default_cs2 = fz_keep_default_colorspaces(ctx, default_cs);
 
-	fz_append_display_node(
-		ctx,
-		dev,
-		FZ_CMD_DEFAULT_COLORSPACES,
-		0, /* flags */
-		NULL,
-		NULL, /* path */
-		NULL, /* color */
-		NULL, /* colorspace */
-		NULL, /* alpha */
-		NULL, /* ctm */
-		NULL, /* stroke */
-		&default_cs2, /* private_data */
-		sizeof(default_cs2)); /* private_data_len */
+	fz_try(ctx)
+	{
+		fz_append_display_node(
+			ctx,
+			dev,
+			FZ_CMD_DEFAULT_COLORSPACES,
+			0, /* flags */
+			NULL,
+			NULL, /* path */
+			NULL, /* color */
+			NULL, /* colorspace */
+			NULL, /* alpha */
+			NULL, /* ctm */
+			NULL, /* stroke */
+			&default_cs2, /* private_data */
+			sizeof(default_cs2)); /* private_data_len */
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_default_colorspaces(ctx, default_cs2);
+		fz_rethrow(ctx);
+	}
 }
 
 static void

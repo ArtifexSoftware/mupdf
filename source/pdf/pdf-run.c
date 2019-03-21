@@ -7,17 +7,18 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	fz_matrix page_ctm;
 	fz_rect mediabox;
 	pdf_processor *proc = NULL;
-	fz_default_colorspaces *default_cs;
+	fz_default_colorspaces *default_cs = NULL;
 	int flags;
 
 	fz_var(proc);
-
-	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
-	if (default_cs)
-		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_var(default_cs);
 
 	fz_try(ctx)
 	{
+		default_cs = pdf_load_default_colorspaces(ctx, doc, page);
+		if (default_cs)
+			fz_set_default_colorspaces(ctx, dev, default_cs);
+
 		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 
 		flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
@@ -54,18 +55,19 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	pdf_obj *contents;
 	fz_rect mediabox;
 	pdf_processor *proc = NULL;
-	fz_default_colorspaces *default_cs;
+	fz_default_colorspaces *default_cs = NULL;
 	fz_colorspace *colorspace = NULL;
 
 	fz_var(proc);
 	fz_var(colorspace);
-
-	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
-	if (default_cs)
-		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_var(default_cs);
 
 	fz_try(ctx)
 	{
+		default_cs = pdf_load_default_colorspaces(ctx, doc, page);
+		if (default_cs)
+			fz_set_default_colorspaces(ctx, dev, default_cs);
+
 		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 		ctm = fz_concat(page_ctm, ctm);
 		mediabox = fz_transform_rect(mediabox, ctm);
