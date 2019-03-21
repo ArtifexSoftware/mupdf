@@ -1925,14 +1925,14 @@ int mudraw_main(int argc, char **argv)
 					}
 
 					bgprint_flush();
+				}
+				fz_always(ctx)
+				{
 					fz_drop_document(ctx, doc);
 					doc = NULL;
 				}
 				fz_catch(ctx)
 				{
-					fz_drop_document(ctx, doc);
-					doc = NULL;
-
 					if (!ignore_errors)
 						fz_rethrow(ctx);
 
