@@ -960,6 +960,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			}
 		}
+
 	}
 	fz_always(ctx)
 	{
