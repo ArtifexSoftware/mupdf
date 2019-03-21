@@ -369,7 +369,10 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				do
 					c = fz_read_byte(ctx, doc->file);
 				while (c != EOF && !is_white(c));
-				continue;
+				if (c == EOF)
+					tok = PDF_TOK_EOF;
+				else
+					continue;
 			}
 
 			/* If we have the next token already, then we'll jump
