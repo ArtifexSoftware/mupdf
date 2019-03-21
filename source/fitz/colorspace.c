@@ -1986,6 +1986,9 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 }
 
 static void
+std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots);
+
+static void
 icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_extras)
 {
 	fz_colorspace *srcs = src->colorspace;
@@ -2078,7 +2081,11 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	}
 
 	if (!link)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot link ICC colorspace to destination colorspace (or their alternates)");
+	{
+		fz_warn(ctx, "cannot link ICC colorspace to destination colorspace (or their alternates)");
+		std_conv_pixmap(ctx, dst, src, prf, default_cs, color_params, copy_extras);
+		return;
+	}
 
 	fz_try(ctx)
 	{
@@ -2756,6 +2763,20 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 	dv[2] = 1 - fz_min(sv[0] + sv[3], 1);
 }
 
+static fz_colorspace *
+fz_device_colorspace(fz_context *ctx, fz_colorspace *cs)
+{
+	switch (fz_colorspace_type(ctx, cs))
+	{
+	default: return NULL;
+	case FZ_COLORSPACE_GRAY: return fz_device_gray(ctx);
+	case FZ_COLORSPACE_RGB: return fz_device_rgb(ctx);
+	case FZ_COLORSPACE_BGR: return fz_device_bgr(ctx);
+	case FZ_COLORSPACE_CMYK: return fz_device_cmyk(ctx);
+	case FZ_COLORSPACE_LAB: return fz_device_lab(ctx);
+	}
+}
+
 void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
 {
 	if (ds == NULL)
@@ -2875,7 +2896,14 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorsp
 				}
 
 				if (!cc->link)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot link ICC colorspace to destination colorspace (or their alternates)");
+				{
+					fz_warn(ctx, "cannot link ICC colorspace to destination colorspace (or their alternates)");
+					ss = fz_device_colorspace(ctx, ss);
+					ds = fz_device_colorspace(ctx, ds);
+					if (!ss || !ds)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot link broken ICC colorspaces via device space equivalents");
+					fz_find_color_converter(ctx, cc, NULL, ds, ss, params);
+				}
 			}
 		}
 		else
