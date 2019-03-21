@@ -830,14 +830,6 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	int doinvisible;
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
-	int innerclip = 0;
-	fz_rect tb;
-	char errmess[256] = "";
-	int err = FZ_ERROR_NONE;
-
-	fz_var(innerclip);
-	fz_var(knockout_group);
-	fz_var(tb);
 
 	text = pdf_tos_get_text(ctx, &pr->tos);
 	if (!text)
@@ -859,10 +851,9 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	if (pr->super.hidden)
 		dostroke = dofill = 0;
 
-	tb = fz_transform_rect(pr->tos.text_bbox, gstate->ctm);
-
 	fz_try(ctx)
 	{
+		fz_rect tb = fz_transform_rect(pr->tos.text_bbox, gstate->ctm);
 		if (dostroke)
 			tb = fz_adjust_rect_for_stroke(ctx, tb, gstate->stroke_state, gstate->ctm);
 
@@ -908,21 +899,17 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->fill.pattern)
 				{
 					fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
-					innerclip = 1;
 					gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, tb, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
-					innerclip = 0;
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
 					fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
-					innerclip = 1;
 					/* Page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm */
 					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
 					fz_pop_clip(ctx, pr->dev);
-					innerclip = 0;
 				}
 				break;
 			}
@@ -942,101 +929,41 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, gstate->ctm, tb);
-					innerclip = 1;
 					gstate = pdf_show_pattern(ctx, pr, gstate->stroke.pattern, gstate->stroke.gstate_num, tb, PDF_STROKE);
 					fz_pop_clip(ctx, pr->dev);
-					innerclip = 0;
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, gstate->ctm, tb);
-					innerclip = 1;
 					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.color_params);
 					fz_pop_clip(ctx, pr->dev);
-					innerclip = 0;
 				}
 				break;
 			}
 		}
 
-	}
-	fz_always(ctx)
-	{
-		if (innerclip)
-		{
-			fz_try(ctx)
-			{
-				fz_pop_clip(ctx, pr->dev);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
-		}
-
 		if (knockout_group)
-		{
-			fz_try(ctx)
-			{
-				fz_end_group(ctx, pr->dev);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				if (err)
-					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
-		}
+			fz_end_group(ctx, pr->dev);
 
 		if (dofill || dostroke)
-		{
-			fz_try(ctx)
-			{
-				pdf_end_group(ctx, pr, &softmask);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				if (err)
-					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
-		}
+			pdf_end_group(ctx, pr, &softmask);
 
 		if (doclip)
 		{
-			fz_try(ctx)
-			{
-				gstate->clip_depth++;
-				fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				if (err)
-					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
+			gstate->clip_depth++;
+			fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
 		}
-
+	}
+	fz_always(ctx)
+	{
 		fz_drop_text(ctx, text);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
-
-	/* Rethrow postponed errors */
-	if (err)
-		fz_throw(ctx, err, "%s", errmess);
 
 	return pr->gstate + pr->gtop;
 }
