@@ -3275,6 +3275,8 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 	const char *name;
 	int num;
 
+	fz_var(cs);
+
 	profile = fz_malloc_struct(ctx, fz_iccprofile);
 	fz_try(ctx)
 	{
@@ -3336,6 +3338,7 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 			(type == FZ_COLORSPACE_LAB) ? clamp_lab_icc : clamp_default_icc,
 			free_icc,
 			profile, sizeof(*profile));
+		profile = NULL;
 
 		switch (type)
 		{
@@ -3369,7 +3372,9 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_buffer(ctx, profile->buffer);
+		fz_drop_colorspace(ctx, cs);
+		if (profile)
+			fz_drop_buffer(ctx, profile->buffer);
 		fz_cmm_fin_profile(ctx, profile);
 		fz_free(ctx, profile);
 		fz_rethrow(ctx);
