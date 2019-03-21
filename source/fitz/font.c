@@ -736,7 +736,19 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		}
 	}
 
-	font = fz_new_font(ctx, name, use_glyph_bbox, face->num_glyphs);
+	fz_try(ctx)
+		font = fz_new_font(ctx, name, use_glyph_bbox, face->num_glyphs);
+	fz_catch(ctx)
+	{
+		fz_lock(ctx, FZ_LOCK_FREETYPE);
+		fterr = FT_Done_Face(face);
+		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		if (fterr)
+			fz_warn(ctx, "freetype finalizing face: %s", ft_error_string(fterr));
+		fz_drop_freetype(ctx);
+		fz_rethrow(ctx);
+	}
+
 	font->ft_face = face;
 	fz_set_font_bbox(ctx, font,
 		(float) face->bbox.xMin / face->units_per_EM,
