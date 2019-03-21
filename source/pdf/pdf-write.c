@@ -1669,13 +1669,14 @@ static void write_data(fz_context *ctx, void *arg, const unsigned char *data, in
 
 static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
-	fz_buffer *tmp = NULL, *buf = NULL;
+	fz_buffer *tmp_flate = NULL, *tmp_hex = NULL, *buf = NULL;
 	pdf_obj *obj = NULL;
 	size_t len;
 	unsigned char *data;
 
 	fz_var(buf);
-	fz_var(tmp);
+	fz_var(tmp_flate);
+	fz_var(tmp_hex);
 	fz_var(obj);
 
 	fz_try(ctx)
@@ -1688,8 +1689,8 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		{
 			size_t clen;
 			unsigned char *cdata;
-			tmp = deflatebuf(ctx, data, len);
-			clen = fz_buffer_storage(ctx, tmp, &cdata);
+			tmp_flate = deflatebuf(ctx, data, len);
+			clen = fz_buffer_storage(ctx, tmp_flate, &cdata);
 			if (clen < len)
 			{
 				len = clen;
@@ -1700,8 +1701,8 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 		if (opts->do_ascii && isbinarystream(ctx, buf))
 		{
-			tmp = hexbuf(ctx, data, len);
-			len = fz_buffer_storage(ctx, tmp, &data);
+			tmp_hex = hexbuf(ctx, data, len);
+			len = fz_buffer_storage(ctx, tmp_hex, &data);
 			addhexfilter(ctx, doc, obj);
 		}
 
@@ -1727,7 +1728,8 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, tmp);
+		fz_drop_buffer(ctx, tmp_hex);
+		fz_drop_buffer(ctx, tmp_flate);
 		fz_drop_buffer(ctx, buf);
 		pdf_drop_obj(ctx, obj);
 	}
@@ -1739,14 +1741,15 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
-	fz_buffer *buf = NULL, *tmp = NULL;
+	fz_buffer *buf = NULL, *tmp_flate = NULL, *tmp_hex = NULL;
 	pdf_obj *obj = NULL;
 	int truncated = 0;
 	size_t len;
 	unsigned char *data;
 
 	fz_var(buf);
-	fz_var(tmp);
+	fz_var(tmp_flate);
+	fz_var(tmp_hex);
 	fz_var(obj);
 
 	fz_try(ctx)
@@ -1764,8 +1767,8 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		{
 			unsigned char *cdata;
 			size_t clen;
-			tmp = deflatebuf(ctx, data, len);
-			clen = fz_buffer_storage(ctx, tmp, &cdata);
+			tmp_flate = deflatebuf(ctx, data, len);
+			clen = fz_buffer_storage(ctx, tmp_flate, &cdata);
 			if (clen < len)
 			{
 				len = clen;
@@ -1776,8 +1779,8 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 		if (opts->do_ascii && isbinarystream(ctx, buf))
 		{
-			tmp = hexbuf(ctx, data, len);
-			len = fz_buffer_storage(ctx, tmp, &data);
+			tmp_hex = hexbuf(ctx, data, len);
+			len = fz_buffer_storage(ctx, tmp_hex, &data);
 			addhexfilter(ctx, doc, obj);
 		}
 
@@ -1802,7 +1805,8 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, tmp);
+		fz_drop_buffer(ctx, tmp_hex);
+		fz_drop_buffer(ctx, tmp_flate);
 		fz_drop_buffer(ctx, buf);
 		pdf_drop_obj(ctx, obj);
 	}
