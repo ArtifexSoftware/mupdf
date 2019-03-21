@@ -131,31 +131,24 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	gstate->softmask_resources = NULL;
 	gstate->ctm = gstate->softmask_ctm;
 
-	mask_colorspace = pdf_xobject_colorspace(ctx, softmask);
+	saved_blendmode = gstate->blendmode;
 
+	mask_colorspace = pdf_xobject_colorspace(ctx, softmask);
 	if (gstate->luminosity && !mask_colorspace)
 		mask_colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
-
-	saved_blendmode = gstate->blendmode;
 
 	fz_try(ctx)
 	{
 		fz_begin_mask(ctx, pr->dev, mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc, &gstate->fill.color_params);
 		gstate->blendmode = 0;
 		pdf_run_xobject(ctx, pr, softmask, save->page_resources, fz_identity, 1);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_colorspace(ctx, mask_colorspace);
 		gstate = pr->gstate + pr->gtop;
 		gstate->blendmode = saved_blendmode;
 	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, mask_colorspace);
 	fz_catch(ctx)
-	{
-		/* FIXME: Ignore error - nasty, but if we throw from
-		 * here the clip stack would be messed up. */
-		/* TODO: pass cookie here to increase the cookie error count */
-	}
+		fz_rethrow(ctx);
 
 	fz_end_mask(ctx, pr->dev);
 
