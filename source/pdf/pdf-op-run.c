@@ -515,31 +515,22 @@ pdf_show_image_imp(fz_context *ctx, pdf_run_processor *pr, fz_image *image, fz_m
 	if (image->colorspace)
 	{
 		fz_fill_image(ctx, pr->dev, image, image_ctm, gstate->fill.alpha, &gstate->fill.color_params);
-		return;
 	}
-
-	if (gstate->fill.kind == PDF_MAT_COLOR)
-		fz_fill_image_mask(ctx, pr->dev, image, image_ctm,
-				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.color_params);
+	else if (gstate->fill.kind == PDF_MAT_COLOR)
+	{
+		fz_fill_image_mask(ctx, pr->dev, image, image_ctm, gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.color_params);
+	}
 	else if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.pattern)
 	{
 		fz_clip_image_mask(ctx, pr->dev, image, image_ctm, bbox);
-		fz_try(ctx)
-			gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, bbox, PDF_FILL);
-		fz_always(ctx)
-			fz_pop_clip(ctx, pr->dev);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		gstate = pdf_show_pattern(ctx, pr, gstate->fill.pattern, gstate->fill.gstate_num, bbox, PDF_FILL);
+		fz_pop_clip(ctx, pr->dev);
 	}
 	else if (gstate->fill.kind == PDF_MAT_SHADE && gstate->fill.shade)
 	{
 		fz_clip_image_mask(ctx, pr->dev, image, image_ctm, bbox);
-		fz_try(ctx)
-			fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
-		fz_always(ctx)
-			fz_pop_clip(ctx, pr->dev);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
+		fz_pop_clip(ctx, pr->dev);
 	}
 }
 
@@ -562,47 +553,23 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 	{
 		/* apply blend group even though we skip the soft mask */
 		fz_begin_group(ctx, pr->dev, bbox, NULL, 0, 0, gstate->blendmode, 1);
-
-		fz_try(ctx)
-			fz_clip_image_mask(ctx, pr->dev, image->mask, image_ctm, bbox);
-		fz_catch(ctx)
-		{
-			fz_end_group(ctx, pr->dev);
-			fz_rethrow(ctx);
-		}
-
-		fz_try(ctx)
-			pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
-		fz_always(ctx)
-		{
-			fz_pop_clip(ctx, pr->dev);
-			fz_end_group(ctx, pr->dev);
-		}
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		fz_clip_image_mask(ctx, pr->dev, image->mask, image_ctm, bbox);
+		pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
+		fz_pop_clip(ctx, pr->dev);
+		fz_end_group(ctx, pr->dev);
 	}
 	else if (image->mask)
 	{
 		fz_clip_image_mask(ctx, pr->dev, image->mask, image_ctm, bbox);
-		fz_try(ctx)
-			pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
-		fz_always(ctx)
-			fz_pop_clip(ctx, pr->dev);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
+		fz_pop_clip(ctx, pr->dev);
 	}
 	else
 	{
 		softmask_save softmask = { NULL };
-
 		gstate = pdf_begin_group(ctx, pr, bbox, &softmask);
-
-		fz_try(ctx)
-			pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
-		fz_always(ctx)
-			pdf_end_group(ctx, pr, &softmask);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
+		pdf_show_image_imp(ctx, pr, image, image_ctm, bbox);
+		pdf_end_group(ctx, pr, &softmask);
 	}
 }
 
