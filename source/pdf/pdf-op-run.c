@@ -1201,7 +1201,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	int gparent_save;
 	fz_matrix gparent_save_ctm;
 	int cleanup_state = 0;
-	int err = FZ_ERROR_NONE;
 	char errmess[256] = "";
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
@@ -1322,7 +1321,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 			fz_catch(ctx)
 			{
 				/* Postpone the problem */
-				err = fz_caught(ctx);
 				strcpy(errmess, fz_caught_message(ctx));
 			}
 		}
@@ -1352,9 +1350,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 				fz_catch(ctx)
 				{
 					/* Postpone the problem */
-					if (err)
-						fz_warn(ctx, "ignoring error: %s", errmess);
-					err = fz_caught(ctx);
+					if (errmess[0])
+						fz_warn(ctx, "%s", errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
@@ -1367,9 +1364,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 				fz_catch(ctx)
 				{
 					/* Postpone the problem */
-					if (err)
-						fz_warn(ctx, "ignoring error: %s", errmess);
-					err = fz_caught(ctx);
+					if (errmess[0])
+						fz_warn(ctx, "%s", errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
@@ -1389,8 +1385,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	}
 
 	/* Rethrow postponed errors */
-	if (err)
-		fz_throw(ctx, err, "%s", errmess);
+	if (errmess[0])
+		fz_throw(ctx, FZ_ERROR_GENERIC, "%s", errmess);
 }
 
 /* general graphics state */
