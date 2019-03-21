@@ -614,12 +614,6 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	fz_rect bbox;
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
-	char errmess[256] = "";
-	int err = FZ_ERROR_NONE;
-
-	fz_var(knockout_group);
-	fz_var(bbox);
-	fz_var(path);
 
 	if (dostroke) {
 		if (pr->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED))
@@ -726,67 +720,28 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			}
 		}
-	}
-	fz_always(ctx)
-	{
+
 		if (knockout_group)
-		{
-			fz_try(ctx)
-			{
-				fz_end_group(ctx, pr->dev);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
-		}
+			fz_end_group(ctx, pr->dev);
 
 		if (dofill || dostroke)
-		{
-			fz_try(ctx)
-			{
-				pdf_end_group(ctx, pr, &softmask);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				if (err)
-					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
-		}
+			pdf_end_group(ctx, pr, &softmask);
 
 		if (pr->clip)
 		{
-			fz_try(ctx)
-			{
-				gstate->clip_depth++;
-				fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, gstate->ctm, bbox);
-				pr->clip = 0;
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				if (err)
-					fz_warn(ctx, "ignoring error: %s", fz_caught_message(ctx));
-				err = fz_caught(ctx);
-				strcpy(errmess, fz_caught_message(ctx));
-			}
+			gstate->clip_depth++;
+			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, gstate->ctm, bbox);
+			pr->clip = 0;
 		}
-
+	}
+	fz_always(ctx)
+	{
 		fz_drop_path(ctx, path);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
-
-	/* Rethrow postponed errors */
-	if (err)
-		fz_throw(ctx, err, "%s", errmess);
 }
 
 /*
