@@ -1167,7 +1167,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	softmask_save softmask = { NULL };
 	int gparent_save;
 	fz_matrix gparent_save_ctm;
-	int cleanup_state = 0;
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
 	fz_matrix xobj_matrix;
@@ -1180,13 +1179,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj))
 		return;
 
-	fz_var(cleanup_state);
-	fz_var(gstate);
-	fz_var(oldtop);
-	fz_var(oldbot);
 	fz_var(cs);
-	fz_var(saved_def_cs);
-	fz_var(transparency);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
@@ -1217,14 +1210,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 
 			fz_rect bbox = fz_transform_rect(xobj_bbox, gstate->ctm);
 
-			/* Remember that we tried to call begin_softmask. Even
-			 * if it throws an error, we must call end_softmask. */
-			cleanup_state = 1;
 			gstate = begin_softmask(ctx, pr, &softmask);
 
-			/* Remember that we tried to call fz_begin_group. Even
-			 * if it throws an error, we must call fz_end_group. */
-			cleanup_state = 2;
 			if (isolated)
 				cs = pdf_xobject_colorspace(ctx, xobj);
 			fz_begin_group(ctx, pr->dev, bbox,
@@ -1238,9 +1225,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 			gstate->fill.alpha = 1;
 		}
 
-		/* Remember that we tried to save for the clippath. Even if it
-		 * throws an error, we must pop it. */
-		cleanup_state = 3;
 		pdf_gsave(ctx, pr); /* Save here so the clippath doesn't persist */
 
 		/* clip to the bounds */
@@ -1271,17 +1255,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		pr->gbot = pr->gtop;
 
 		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj, NULL);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_colorspace(ctx, cs);
-
-		if (saved_def_cs)
-		{
-			fz_drop_default_colorspaces(ctx, pr->default_cs);
-			pr->default_cs = saved_def_cs;
-			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
-		}
 
 		/* Undo any gstate mismatches due to the pdf_process_contents call */
 		if (oldbot != -1)
@@ -1293,20 +1266,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 			pr->gbot = oldbot;
 		}
 
-		if (cleanup_state >= 3)
-			pdf_grestore(ctx, pr); /* Remove the state we pushed for the clippath */
+		pdf_grestore(ctx, pr); /* Remove the state we pushed for the clippath */
 
 		/* wrap up transparency stacks */
 		if (transparency)
 		{
-			if (cleanup_state >= 2)
-			{
-				fz_end_group(ctx, pr->dev);
-			}
-			if (cleanup_state >= 1)
-			{
-				end_softmask(ctx, pr, &softmask);
-			}
+			fz_end_group(ctx, pr->dev);
+			end_softmask(ctx, pr, &softmask);
 		}
 
 		pr->gstate[pr->gparent].ctm = gparent_save_ctm;
@@ -1315,6 +1281,16 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		while (oldtop < pr->gtop)
 			pdf_grestore(ctx, pr);
 
+		if (saved_def_cs)
+		{
+			fz_drop_default_colorspaces(ctx, pr->default_cs);
+			pr->default_cs = saved_def_cs;
+			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, cs);
 		pdf_unmark_obj(ctx, xobj);
 	}
 	fz_catch(ctx)
