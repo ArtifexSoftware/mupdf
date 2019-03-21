@@ -1168,7 +1168,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	int gparent_save;
 	fz_matrix gparent_save_ctm;
 	int cleanup_state = 0;
-	char errmess[256] = "";
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
 	fz_matrix xobj_matrix;
@@ -1281,15 +1280,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		{
 			fz_drop_default_colorspaces(ctx, pr->default_cs);
 			pr->default_cs = saved_def_cs;
-			fz_try(ctx)
-			{
-				fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
-			}
-			fz_catch(ctx)
-			{
-				/* Postpone the problem */
-				strcpy(errmess, fz_caught_message(ctx));
-			}
+			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
 		}
 
 		/* Undo any gstate mismatches due to the pdf_process_contents call */
@@ -1310,31 +1301,11 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		{
 			if (cleanup_state >= 2)
 			{
-				fz_try(ctx)
-				{
-					fz_end_group(ctx, pr->dev);
-				}
-				fz_catch(ctx)
-				{
-					/* Postpone the problem */
-					if (errmess[0])
-						fz_warn(ctx, "%s", errmess);
-					strcpy(errmess, fz_caught_message(ctx));
-				}
+				fz_end_group(ctx, pr->dev);
 			}
 			if (cleanup_state >= 1)
 			{
-				fz_try(ctx)
-				{
-					end_softmask(ctx, pr, &softmask);
-				}
-				fz_catch(ctx)
-				{
-					/* Postpone the problem */
-					if (errmess[0])
-						fz_warn(ctx, "%s", errmess);
-					strcpy(errmess, fz_caught_message(ctx));
-				}
+				end_softmask(ctx, pr, &softmask);
 			}
 		}
 
@@ -1350,10 +1321,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	{
 		fz_rethrow(ctx);
 	}
-
-	/* Rethrow postponed errors */
-	if (errmess[0])
-		fz_throw(ctx, FZ_ERROR_GENERIC, "%s", errmess);
 }
 
 /* general graphics state */
