@@ -308,6 +308,8 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *font
 {
 	FT_Face face;
 	const char *clean_name = pdf_clean_font_name(fontname);
+	if (clean_name == fontname)
+		clean_name = "Times-Roman";
 
 	fontdesc->font = fz_load_system_font(ctx, fontname, 0, 0, !has_descriptor);
 	if (!fontdesc->font)
