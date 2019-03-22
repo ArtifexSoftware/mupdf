@@ -319,7 +319,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *font
 
 		data = fz_lookup_base14_font(ctx, clean_name, &len);
 		if (!data)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font: '%s'", fontname);
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find builtin font: '%s'", fontname);
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 		fontdesc->font->flags.is_serif = !!strstr(clean_name, "Times");
@@ -344,7 +344,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *f
 
 		data = pdf_lookup_substitute_font(ctx, mono, serif, bold, italic, &len);
 		if (!data)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find substitute font");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find substitute font");
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 		fontdesc->font->flags.fake_bold = bold && !fontdesc->font->flags.is_bold;
@@ -372,7 +372,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, const cha
 
 		data = fz_lookup_cjk_font(ctx, ros, &size, &subfont);
 		if (!data)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find builtin CJK font");
 
 		/* A glyph bbox cache is too big for CJK fonts. */
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, size, subfont, 0);
@@ -1005,7 +1005,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		{
 			fterr = FT_Select_Charmap(face, ft_encoding_unicode);
 			if (fterr)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "no unicode cmap when emulating CID font: %s", ft_error_string(fterr));
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "no unicode cmap when emulating CID font: %s", ft_error_string(fterr));
 
 			if (!strcmp(collection, "Adobe-CNS1"))
 				fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-CNS1-UCS2");
