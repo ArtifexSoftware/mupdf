@@ -1777,7 +1777,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		if (opts->do_ascii && isbinarystream(ctx, buf))
 		{
 			tmp = hexbuf(ctx, data, len);
-			len = fz_buffer_storage(ctx, buf, &data);
+			len = fz_buffer_storage(ctx, tmp, &data);
 			addhexfilter(ctx, doc, obj);
 		}
 
