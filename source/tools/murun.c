@@ -49,15 +49,7 @@ static int eval_print(js_State *J, const char *source)
 		return 1;
 	}
 	if (js_isdefined(J, -1)) {
-		js_getglobal(J, "repr");
-		js_pushundefined(J);
-		js_copy(J, -3);
-		if (js_pcall(J, 1)) {
-			fprintf(stderr, "%s\n", js_trystring(J, -1, "Error"));
-			js_pop(J, 2);
-			return 1;
-		}
-		printf("%s\n", js_trystring(J, -1, "can't convert to string"));
+		printf("%s\n", js_tryrepr(J, -1, "can't convert to string"));
 	}
 	js_pop(J, 1);
 	return 0;
@@ -200,56 +192,6 @@ static const char *stacktrace_js =
 	"if (this.stackTrace) return this.name + ': ' + this.message + this.stackTrace;\n"
 	"return this.name + ': ' + this.message;\n"
 	"};\n"
-;
-
-static const char *repr_js =
-	"function repr(x) {\n"
-		"var q = JSON.stringify;\n"
-		"var a,s,i,n,k,p;\n"
-		"if (x === undefined) return 'undefined';\n"
-		"if (x === null) return 'null';\n"
-		"if (x === true) return 'true';\n"
-		"if (x === false) return 'false';\n"
-		"if (x === Math) return 'Math';\n"
-		"if (x === JSON) return 'JSON';\n"
-		"switch (typeof x) {\n"
-		"case 'number': return (x === 0 && 1/x < 0) ? '-0' : String(x);\n"
-		"case 'string': return q(x);\n"
-		"case 'object':\n"
-			"if (x instanceof Boolean) return '(new Boolean('+x+'))';\n"
-			"if (x instanceof Number) {\n"
-				"x = +x;\n"
-				"if (x === 0 && 1/x < 0) return '(new Number(-0))';\n"
-				"return '(new Number('+x+'))';\n"
-			"}\n"
-			"if (x instanceof String) return '(new String('+q(x)+'))';\n"
-			"if (x instanceof RegExp) return x.toString();\n"
-			"if (x instanceof Date) return '(new Date('+x.valueOf()+'))';\n"
-			"if (x instanceof Error) return '(new '+x.name+'('+q(x.message)+'))';\n"
-			"if (x instanceof Function) return x.toString();\n"
-			"if (x instanceof Userdata) return x.toString();\n"
-			"if (x instanceof Array) {\n"
-				"s = '[';\n"
-				"for (i=0, n=x.length; i < n; ++i) {\n"
-					"if (i > 0) s += ', ';\n"
-					"s += repr(x[i]);\n"
-				"}\n"
-				"return s+']';\n"
-			"}\n"
-			"p = /^(\\d+|[A-Za-z_]\\w*)$/;\n"
-			"a = Object.keys(x);\n"
-			"s = '{';\n"
-			"for (i=0, n=a.length; i < n; ++i) {\n"
-				"k = a[i];\n"
-				"if (i > 0) s += ', ';\n"
-				"s += p.test(k) ? k : q(k);\n"
-				"s += ':';\n"
-				"s += repr(x[k]);\n"
-			"}\n"
-			"return s+'}';\n"
-		"}\n"
-		"return x.toString();\n"
-	"}\n"
 ;
 
 /* destructors */
@@ -4528,7 +4470,6 @@ int murun_main(int argc, char **argv)
 
 	js_dostring(J, require_js);
 	js_dostring(J, stacktrace_js);
-	js_dostring(J, repr_js);
 
 	/* mupdf module */
 
