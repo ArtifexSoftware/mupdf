@@ -698,9 +698,11 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	fz_pixmap *tile;
 	int l2factor, l2factor_remaining;
 	fz_image_key key;
-	fz_image_key *keyp;
+	fz_image_key *keyp = NULL;
 	int w;
 	int h;
+
+	fz_var(keyp);
 
 	if (!image)
 		return NULL;
@@ -796,16 +798,19 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 		}
 	}
 
-	/* Now we try to cache the pixmap. Any failure here will just result
-	 * in us not caching. */
-	keyp = fz_malloc_struct(ctx, fz_image_key);
-	keyp->refs = 1;
-	keyp->image = fz_keep_image_store_key(ctx, image);
-	keyp->l2factor = l2factor;
-	keyp->rect = key.rect;
 	fz_try(ctx)
 	{
-		fz_pixmap *existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
+		fz_pixmap *existing_tile;
+
+		/* Now we try to cache the pixmap. Any failure here will just result
+		 * in us not caching. */
+		keyp = fz_malloc_struct(ctx, fz_image_key);
+		keyp->refs = 1;
+		keyp->image = fz_keep_image_store_key(ctx, image);
+		keyp->l2factor = l2factor;
+		keyp->rect = key.rect;
+
+		existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
 		if (existing_tile)
 		{
 			/* We already have a tile. This must have been produced by a
