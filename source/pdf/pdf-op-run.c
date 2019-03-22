@@ -152,7 +152,6 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		/* FIXME: Ignore error - nasty, but if we throw from
 		 * here the clip stack would be messed up. */
 		/* TODO: pass cookie here to increase the cookie error count */

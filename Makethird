@@ -11,7 +11,6 @@ ifeq ($(USE_SYSTEM_LIBS),yes)
   USE_SYSTEM_OPENJPEG := yes
   USE_SYSTEM_ZLIB := yes
   USE_SYSTEM_GLUT := yes
-  USE_SYSTEM_CURL := yes
 endif
 
 ifeq ($(OS),MACOS)
@@ -374,37 +373,5 @@ $(OUT)/thirdparty/freeglut/%.o: thirdparty/freeglut/%.c
 
 GLUT_CFLAGS := -Ithirdparty/freeglut/include
 GLUT_LIBS := -lGL -lX11 -lXrandr
-
-endif
-
-# --- cURL ---
-
-ifeq ($(USE_SYSTEM_CURL),yes)
-  CURL_CFLAGS := $(SYS_CURL_CFLAGS)
-  CURL_LIBS := $(SYS_CURL_LIBS)
-else
-
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/*.c))
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/vauth/*.c))
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/vtls/*.c))
-
-CURL_OBJ := $(CURL_SRC:%.c=$(OUT)/%.o)
-
-LOCAL_CURL_CFLAGS += -DHAVE_CONFIG_H
-LOCAL_CURL_CFLAGS += -DBUILDING_LIBCURL
-LOCAL_CURL_CFLAGS += -DCURL_STATICLIB
-LOCAL_CURL_CFLAGS += -DCURL_DISABLE_LDAP
-LOCAL_CURL_CFLAGS += -Ithirdparty/curl/include
-LOCAL_CURL_CFLAGS += -Ithirdparty/curl/lib
-
-CURL_LIB := $(OUT)/libcurl.a
-
-$(CURL_LIB): $(CURL_OBJ)
-
-$(OUT)/thirdparty/curl/%.o: thirdparty/curl/%.c
-	$(CC_CMD) $(LOCAL_CURL_CFLAGS)
-
-CURL_CFLAGS := -Ithirdparty/curl/include
-CURL_LIBS := -lpthread
 
 endif

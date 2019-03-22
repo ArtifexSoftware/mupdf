@@ -551,7 +551,6 @@ static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		/* Leave broken */
 	}
 
@@ -1921,7 +1920,6 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		if (opts->continue_on_error)
 		{
 			fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
@@ -1986,7 +1984,6 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			if (opts->continue_on_error)
 			{
 				fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);

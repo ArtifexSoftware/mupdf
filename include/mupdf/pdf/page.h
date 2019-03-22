@@ -84,17 +84,10 @@ struct pdf_page_s
 
 	int transparency;
 	int overprint;
-	int incomplete;
 
 	fz_link *links;
 	pdf_annot *annots, **annot_tailp;
 	pdf_widget *widgets, **widget_tailp;
-};
-
-enum
-{
-	PDF_PAGE_INCOMPLETE_CONTENTS = 1,
-	PDF_PAGE_INCOMPLETE_ANNOTS = 2
 };
 
 #endif

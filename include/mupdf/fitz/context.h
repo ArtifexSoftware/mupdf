@@ -69,7 +69,6 @@ void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap);
 void fz_warn(fz_context *ctx, const char *fmt, ...) FZ_PRINTFLIKE(2,3);
 const char *fz_caught_message(fz_context *ctx);
 int fz_caught(fz_context *ctx);
-void fz_rethrow_if(fz_context *ctx, int errcode);
 
 enum
 {
@@ -78,8 +77,7 @@ enum
 	FZ_ERROR_GENERIC = 2,
 	FZ_ERROR_SYNTAX = 3,
 	FZ_ERROR_MINOR = 4,
-	FZ_ERROR_TRYLATER = 5,
-	FZ_ERROR_ABORT = 6,
+	FZ_ERROR_ABORT = 5,
 	FZ_ERROR_COUNT
 };
 

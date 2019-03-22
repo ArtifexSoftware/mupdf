@@ -947,7 +947,6 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->annot_tailp = &page->annots;
 	page->widgets = NULL;
 	page->widget_tailp = &page->widgets;
-	page->incomplete = 0;
 
 	return page;
 }
@@ -970,8 +969,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-			fz_warn(ctx, "Error while reading DefaultGray: %s", fz_caught_message(ctx));
+		fz_warn(ctx, "Error while reading DefaultGray: %s", fz_caught_message(ctx));
 	}
 
 	fz_try(ctx)
@@ -986,8 +984,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-			fz_warn(ctx, "Error while reading DefaultRGB: %s", fz_caught_message(ctx));
+		fz_warn(ctx, "Error while reading DefaultRGB: %s", fz_caught_message(ctx));
 	}
 
 	fz_try(ctx)
@@ -1002,8 +999,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-			fz_warn(ctx, "Error while reading DefaultCMYK: %s", fz_caught_message(ctx));
+		fz_warn(ctx, "Error while reading DefaultCMYK: %s", fz_caught_message(ctx));
 	}
 }
 
@@ -1073,14 +1069,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	pdf_annot *annot;
 	pdf_obj *pageobj, *obj;
 
-	if (doc->file_reading_linearly)
-	{
-		pageobj = pdf_progressive_advance(ctx, doc, number);
-		if (pageobj == NULL)
-			fz_throw(ctx, FZ_ERROR_TRYLATER, "page %d not available yet", number);
-	}
-	else
-		pageobj = pdf_lookup_page_obj(ctx, doc, number);
+	pageobj = pdf_lookup_page_obj(ctx, doc, number);
 
 	page = pdf_new_page(ctx, doc);
 	page->obj = pdf_keep_obj(ctx, pageobj);
@@ -1100,14 +1089,8 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-		{
-			fz_drop_page(ctx, &page->super);
-			fz_rethrow(ctx);
-		}
-		page->incomplete |= PDF_PAGE_INCOMPLETE_ANNOTS;
-		fz_drop_link(ctx, page->links);
-		page->links = NULL;
+		fz_drop_page(ctx, &page->super);
+		fz_rethrow(ctx);
 	}
 
 	/* Scan for transparency and overprint */
@@ -1129,12 +1112,8 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-		{
-			fz_drop_page(ctx, &page->super);
-			fz_rethrow(ctx);
-		}
-		page->incomplete |= PDF_PAGE_INCOMPLETE_CONTENTS;
+		fz_drop_page(ctx, &page->super);
+		fz_rethrow(ctx);
 	}
 
 	return page;

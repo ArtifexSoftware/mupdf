@@ -1,5 +1,4 @@
 #include "pdfapp.h"
-#include "curl_stream.h"
 #include "mupdf/helpers/pkcs7-check.h"
 #include "mupdf/helpers/pkcs7-openssl.h"
 
@@ -27,12 +26,6 @@ enum panning
 	DONT_PAN = 0,
 	PAN_TO_TOP,
 	PAN_TO_BOTTOM
-};
-
-enum
-{
-	PDFAPP_OUTLINE_DEFERRED = 1,
-	PDFAPP_OUTLINE_LOAD_NOW = 2
 };
 
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching);
@@ -217,27 +210,6 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 	}
 }
 
-void pdfapp_open(pdfapp_t *app, char *filename, int reload)
-{
-	pdfapp_open_progressive(app, filename, reload, 0);
-}
-
-#ifdef HAVE_CURL
-static void
-pdfapp_more_data(void *app_, int complete)
-{
-	pdfapp_t *app = (pdfapp_t *)app_;
-
-	if (complete && app->outline_deferred == PDFAPP_OUTLINE_DEFERRED)
-	{
-		app->outline_deferred = PDFAPP_OUTLINE_LOAD_NOW;
-		winreloadpage(app);
-	}
-	else if (app->incomplete)
-		winreloadpage(app);
-}
-#endif
-
 static int make_fake_doc(pdfapp_t *app)
 {
 	fz_context *ctx = app->ctx;
@@ -283,7 +255,7 @@ static int make_fake_doc(pdfapp_t *app)
 	return 0;
 }
 
-void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
+void pdfapp_open(pdfapp_t *app, char *filename, int reload)
 {
 	fz_context *ctx = app->ctx;
 	char *password = "";
@@ -302,57 +274,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 
 		fz_set_use_document_css(ctx, app->layout_use_doc_css);
 
-#ifdef HAVE_CURL
-		if (!strncmp(filename, "http://", 7) || !strncmp(filename, "https://", 8))
-		{
-			app->stream = fz_stream_from_curl(ctx, filename, pdfapp_more_data, app);
-			while (1)
-			{
-				fz_try(ctx)
-				{
-					fz_seek(ctx, app->stream, 0, SEEK_SET);
-					app->doc = fz_open_document_with_stream(ctx, filename, app->stream);
-				}
-				fz_catch(ctx)
-				{
-					if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-					{
-						pdfapp_warn(app, "not enough data to open yet");
-						continue;
-					}
-					fz_rethrow(ctx);
-				}
-				break;
-			}
-		}
-		else
-#endif
-		if (bps == 0)
-		{
-			app->doc = fz_open_document(ctx, filename);
-		}
-		else
-		{
-			fz_stream *stream = fz_open_file_progressive(ctx, filename, bps);
-			while (1)
-			{
-				fz_try(ctx)
-				{
-					fz_seek(ctx, stream, 0, SEEK_SET);
-					app->doc = fz_open_document_with_stream(ctx, filename, stream);
-				}
-				fz_catch(ctx)
-				{
-					if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-					{
-						pdfapp_warn(app, "not enough data to open yet");
-						continue;
-					}
-					fz_rethrow(ctx);
-				}
-				break;
-			}
-		}
+		app->doc = fz_open_document(ctx, filename);
 	}
 	fz_catch(ctx)
 	{
@@ -401,39 +323,18 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 
 		fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 
-		while (1)
+		app->pagecount = fz_count_pages(app->ctx, app->doc);
+		if (app->pagecount <= 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "No pages in document");
+
+		fz_try(ctx)
 		{
-			fz_try(ctx)
-			{
-				app->pagecount = fz_count_pages(app->ctx, app->doc);
-				if (app->pagecount <= 0)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "No pages in document");
-			}
-			fz_catch(ctx)
-			{
-				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-				{
-					pdfapp_warn(app, "not enough data to count pages yet");
-					continue;
-				}
-				fz_rethrow(ctx);
-			}
-			break;
+			app->outline = fz_load_outline(app->ctx, app->doc);
 		}
-		while (1)
+		fz_catch(ctx)
 		{
-			fz_try(ctx)
-			{
-				app->outline = fz_load_outline(app->ctx, app->doc);
-			}
-			fz_catch(ctx)
-			{
-				app->outline = NULL;
-				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-					app->outline_deferred = PDFAPP_OUTLINE_DEFERRED;
-				else
-					pdfapp_warn(app, "failed to load outline");
-			}
+			app->outline = NULL;
+			pdfapp_warn(app, "failed to load outline");
 			break;
 		}
 	}
@@ -499,10 +400,6 @@ void pdfapp_close(pdfapp_t *app)
 
 	fz_drop_document(app->ctx, app->doc);
 	app->doc = NULL;
-
-#ifdef HAVE_CURL
-	fz_drop_stream(app->ctx, app->stream);
-#endif
 
 	fz_flush_warnings(app->ctx);
 }
@@ -670,8 +567,6 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	app->page_bbox.x1 = 100;
 	app->page_bbox.y1 = 100;
 
-	app->incomplete = 0;
-
 	fz_try(app->ctx)
 	{
 		app->page = fz_load_page(app->ctx, app->doc, app->pageno - 1);
@@ -679,10 +574,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	}
 	fz_catch(app->ctx)
 	{
-		if (fz_caught(app->ctx) == FZ_ERROR_TRYLATER)
-			app->incomplete = 1;
-		else
-			pdfapp_warn(app, "Cannot load page");
+		pdfapp_warn(app, "Cannot load page");
 		return;
 	}
 
@@ -693,7 +585,6 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		mdev = fz_new_list_device(app->ctx, app->page_list);
 		if (no_cache)
 			fz_enable_device_hints(app->ctx, mdev, FZ_NO_CACHE);
-		cookie.incomplete_ok = 1;
 		fz_run_page_contents(app->ctx, app->page, mdev, fz_identity, &cookie);
 		fz_close_device(app->ctx, mdev);
 		fz_drop_device(app->ctx, mdev);
@@ -702,12 +593,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
 		fz_run_page_annots(app->ctx, app->page, mdev, fz_identity, &cookie);
 		fz_run_page_widgets(app->ctx, app->page, mdev, fz_identity, &cookie);
-		if (cookie.incomplete)
-		{
-			app->incomplete = 1;
-			//pdfapp_warn(app, "Incomplete page rendering");
-		}
-		else if (cookie.errors)
+		if (cookie.errors)
 		{
 			pdfapp_warn(app, "Errors found on page");
 			errored = 1;
@@ -720,13 +606,8 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	}
 	fz_catch(app->ctx)
 	{
-		if (fz_caught(app->ctx) == FZ_ERROR_TRYLATER)
-			app->incomplete = 1;
-		else
-		{
-			pdfapp_warn(app, "Cannot load page");
-			errored = 1;
-		}
+		pdfapp_warn(app, "Cannot load page");
+		errored = 1;
 	}
 
 	fz_try(app->ctx)
@@ -735,9 +616,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	}
 	fz_catch(app->ctx)
 	{
-		if (fz_caught(app->ctx) == FZ_ERROR_TRYLATER)
-			app->incomplete = 1;
-		else if (!errored)
+		if (!errored)
 			pdfapp_warn(app, "Cannot load page");
 	}
 
@@ -756,14 +635,6 @@ static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix ctm, f
 
 void pdfapp_reloadpage(pdfapp_t *app)
 {
-	if (app->outline_deferred == PDFAPP_OUTLINE_LOAD_NOW)
-	{
-		fz_try(app->ctx)
-			app->outline = fz_load_outline(app->ctx, app->doc);
-		fz_catch(app->ctx)
-			app->outline = NULL;
-		app->outline_deferred = 0;
-	}
 	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
 

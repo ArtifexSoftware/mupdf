@@ -2156,10 +2156,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\stream-prog.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\stream-read.c"
 				>
 			</File>

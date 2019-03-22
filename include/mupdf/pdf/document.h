@@ -215,52 +215,6 @@ struct pdf_document_s
 
 	int repair_attempted;
 
-	/* State indicating which file parsing method we are using */
-	int file_reading_linearly;
-	int64_t file_length;
-
-	int linear_page_count;
-	pdf_obj *linear_obj; /* Linearized object (if used) */
-	pdf_obj **linear_page_refs; /* Page objects for linear loading */
-	int linear_page1_obj_num;
-
-	/* The state for the pdf_progressive_advance parser */
-	int64_t linear_pos;
-	int linear_page_num;
-
-	int hint_object_offset;
-	int hint_object_length;
-	int hints_loaded; /* Set to 1 after the hints loading has completed,
-			   * whether successful or not! */
-	/* Page n references shared object references:
-	 *   hint_shared_ref[i]
-	 * where
-	 *      i = s to e-1
-	 *	s = hint_page[n]->index
-	 *	e = hint_page[n+1]->index
-	 * Shared object reference r accesses objects:
-	 *   rs to re-1
-	 * where
-	 *   rs = hint_shared[r]->number
-	 *   re = hint_shared[r]->count + rs
-	 * These are guaranteed to lie within the region starting at
-	 * hint_shared[r]->offset of length hint_shared[r]->length
-	 */
-	struct
-	{
-		int number; /* Page object number */
-		int64_t offset; /* Offset of page object */
-		int64_t index; /* Index into shared hint_shared_ref */
-	} *hint_page;
-	int *hint_shared_ref;
-	struct
-	{
-		int number; /* Object number of first object */
-		int64_t offset; /* Offset of first object */
-	} *hint_shared;
-	int hint_obj_offsets_max;
-	int64_t *hint_obj_offsets;
-
 	int resources_localised;
 
 	pdf_lexbuf_large lexbuf;

@@ -56,7 +56,6 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			/* Don't let a broken object at EOF overwrite a good one */
 			if (file->eof)
 				fz_rethrow(ctx);
@@ -104,16 +103,6 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 		if (!pdf_is_indirect(ctx, obj) && pdf_is_int(ctx, obj))
 			stm_len = pdf_to_int(ctx, obj);
 
-		if (doc->file_reading_linearly && page)
-		{
-			obj = pdf_dict_get(ctx, dict, PDF_NAME(Type));
-			if (!pdf_is_indirect(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME(Page)))
-			{
-				pdf_drop_obj(ctx, *page);
-				*page = pdf_keep_obj(ctx, dict);
-			}
-		}
-
 		pdf_drop_obj(ctx, dict);
 	}
 
@@ -151,7 +140,6 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 			}
 			fz_catch(ctx)
 			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				fz_warn(ctx, "cannot find endstream token, falling back to scanning");
 			}
 			if (tok == PDF_TOK_ENDSTREAM)
@@ -377,7 +365,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				tok = pdf_lex_no_string(ctx, doc->file, buf);
 			fz_catch(ctx)
 			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				fz_warn(ctx, "skipping ahead to next token");
 				do
 					c = fz_read_byte(ctx, doc->file);
@@ -422,7 +409,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				}
 				fz_catch(ctx)
 				{
-					fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 					/* If we haven't seen a root yet, there is nothing
 					 * we can do, but give up. Otherwise, we'll make
 					 * do. */
@@ -472,7 +458,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				}
 				fz_catch(ctx)
 				{
-					fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 					/* If this was the real trailer dict
 					 * it was broken, in which case we are
 					 * in trouble. Keep going though in

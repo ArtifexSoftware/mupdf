@@ -148,8 +148,6 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_m
 	{
 		fz_rethrow(ctx);
 	}
-	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 /*
@@ -186,8 +184,6 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix 
 	{
 		fz_rethrow(ctx);
 	}
-	if (page->incomplete & PDF_PAGE_INCOMPLETE_ANNOTS)
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 static void
@@ -266,8 +262,6 @@ void pdf_run_page_annots(fz_context *ctx, pdf_page *page, fz_device *dev, fz_mat
 	{
 		fz_rethrow(ctx);
 	}
-	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
@@ -292,8 +286,6 @@ void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_ma
 	{
 		fz_rethrow(ctx);
 	}
-	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 /*
@@ -333,8 +325,6 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_d
 	{
 		fz_rethrow(ctx);
 	}
-	if (page->incomplete)
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 /*

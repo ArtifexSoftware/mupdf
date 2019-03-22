@@ -20,8 +20,6 @@ typedef struct fz_stream_s fz_stream;
 
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
 
-fz_stream *fz_open_file_progressive(fz_context *ctx, const char *filename, int bps);
-
 fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
 
 fz_stream *fz_open_memory(fz_context *ctx, const unsigned char *data, size_t len);
@@ -64,14 +62,6 @@ int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
 
-enum
-{
-	FZ_STREAM_META_PROGRESSIVE = 1,
-	FZ_STREAM_META_LENGTH = 2
-};
-
-int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
-
 /*
 	A function type for use when implementing
 	fz_streams. The supplied function of this type is called
@@ -110,16 +100,6 @@ typedef void (fz_stream_drop_fn)(fz_context *ctx, void *state);
 */
 typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, int64_t offset, int whence);
 
-/*
-	A function type for use when implementing
-	fz_streams. The supplied function of this type is called when
-	fz_meta is requested, and the arguments are as defined for
-	fz_meta.
-
-	The stream can find it's private state in stm->state.
-*/
-typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
-
 struct fz_stream_s
 {
 	int refs;
@@ -133,7 +113,6 @@ struct fz_stream_s
 	fz_stream_next_fn *next;
 	fz_stream_drop_fn *drop;
 	fz_stream_seek_fn *seek;
-	fz_stream_meta_fn *meta;
 };
 
 fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_drop_fn *drop);
@@ -173,7 +152,6 @@ static inline size_t fz_available(fz_context *ctx, fz_stream *stm, size_t max)
 		c = stm->next(ctx, stm, max);
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
@@ -207,7 +185,6 @@ static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 		c = stm->next(ctx, stm, 1);
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
@@ -241,7 +218,6 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;

@@ -134,11 +134,6 @@ fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated)
 	}
 	fz_catch(ctx)
 	{
-		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-		{
-			fz_drop_buffer(ctx, buf);
-			fz_rethrow(ctx);
-		}
 		if (truncated)
 		{
 			*truncated = 1;
@@ -236,30 +231,6 @@ fz_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 	}
 	else
 		fz_warn(ctx, "cannot seek");
-}
-
-/*
-	Perform a meta call on a stream (typically to
-	request meta information about a stream).
-
-	stm: The stream to query.
-
-	key: The meta request identifier.
-
-	size: Meta request specific parameter - typically the size of
-	the data block pointed to by ptr.
-
-	ptr: Meta request specific parameter - typically a pointer to
-	a block of data to be filled in.
-
-	Returns -1 if this stream does not support this meta operation,
-	or a meta operation specific return value.
-*/
-int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr)
-{
-	if (!stm || !stm->meta)
-		return -1;
-	return stm->meta(ctx, stm, key, size, ptr);
 }
 
 /*
