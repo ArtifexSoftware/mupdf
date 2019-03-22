@@ -30,6 +30,9 @@ typedef struct fz_gel_s
 	fz_edge *edges;
 	int acap, alen;
 	fz_edge **active;
+	int bcap;
+	unsigned char *alphas;
+	int *deltas;
 } fz_gel;
 
 static int
@@ -51,6 +54,8 @@ fz_drop_gel(fz_context *ctx, fz_rasterizer *rast)
 		return;
 	fz_free(ctx, gel->active);
 	fz_free(ctx, gel->edges);
+	fz_free(ctx, gel->alphas);
+	fz_free(ctx, gel->deltas);
 	fz_free(ctx, gel);
 }
 
@@ -546,6 +551,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	int y, e;
 	int yd, yc;
 	int height, h0, rh;
+	int bcap;
 	const int hscale = fz_rasterizer_aa_hscale(&gel->super);
 	const int vscale = fz_rasterizer_aa_vscale(&gel->super);
 	const int scale = fz_rasterizer_aa_scale(&gel->super);
@@ -565,14 +571,20 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	assert(clip->x0 >= xmin);
 	assert(clip->x1 <= xmax);
 
-	alphas = fz_malloc_no_throw(ctx, xmax - xmin + 1);
-	deltas = fz_malloc_no_throw(ctx, (xmax - xmin + 2) * sizeof(int));
-	if (alphas == NULL || deltas == NULL)
+	bcap = xmax - xmin + 2; /* big enough for both alphas and deltas */
+	if (bcap > gel->bcap)
 	{
-		fz_free(ctx, alphas);
-		fz_free(ctx, deltas);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "scan conversion failed (malloc failure)");
+		gel->bcap = bcap;
+		fz_free(ctx, gel->alphas);
+		fz_free(ctx, gel->deltas);
+		gel->alphas = NULL;
+		gel->deltas = NULL;
+		alphas = gel->alphas = fz_malloc_array(ctx, bcap, sizeof (unsigned char));
+		deltas = gel->deltas = fz_malloc_array(ctx, bcap, sizeof (int));
 	}
+	alphas = gel->alphas;
+	deltas = gel->deltas;
+
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
 	gel->alen = 0;
 
@@ -716,8 +728,7 @@ advance:
 		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 	}
 clip_ended:
-	fz_free(ctx, deltas);
-	fz_free(ctx, alphas);
+	;
 }
 
 /*
