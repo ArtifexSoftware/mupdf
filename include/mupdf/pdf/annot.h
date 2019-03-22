@@ -82,7 +82,7 @@ pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
 fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
 
-int pdf_annot_type(fz_context *ctx, pdf_annot *annot);
+enum pdf_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot);
 
 void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
 

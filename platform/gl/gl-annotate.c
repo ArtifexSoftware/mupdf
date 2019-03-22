@@ -510,6 +510,8 @@ void do_annotate_panel(void)
 			ui_label("Icon:");
 			switch (pdf_annot_type(ctx, selected_annot))
 			{
+			default:
+				break;
 			case PDF_ANNOT_TEXT:
 				choice = ui_select("Icon", name, text_icons, nelem(text_icons));
 				if (choice != -1)

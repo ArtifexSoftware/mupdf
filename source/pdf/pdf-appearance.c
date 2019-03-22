@@ -1206,7 +1206,8 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 	switch (pdf_annot_type(ctx, annot))
 	{
 	default:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create appearance stream for %s annotations",
+			pdf_dict_get_name(ctx, annot->obj, PDF_NAME(Subtype)));
 	case PDF_ANNOT_WIDGET:
 		pdf_write_widget_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 		break;

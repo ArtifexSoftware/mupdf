@@ -93,7 +93,7 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 	for (i = 0; i < n; ++i)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, annots, i);
-		if (obj)
+		if (pdf_is_dict(ctx, obj))
 		{
 			subtype = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(Link)))
@@ -476,7 +476,7 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	doc->dirty = 1;
 }
 
-int
+enum pdf_annot_type
 pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *obj = annot->obj;
