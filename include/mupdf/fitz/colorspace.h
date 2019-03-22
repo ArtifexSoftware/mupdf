@@ -77,28 +77,28 @@ typedef struct fz_icclink_s fz_icclink;
 */
 typedef struct fz_default_colorspaces_s fz_default_colorspaces;
 
-int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_device_n_has_cmyk(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_is_gray(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_rgb(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_bgr(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_cmyk(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_gray(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_rgb(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_bgr(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_cmyk(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_device_n(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_is_device(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_device(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_icc(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_cal(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_is_device_gray(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_device_gray(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_is_device_cmyk(fz_context *ctx, fz_colorspace *cs);
 
-int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs);
 
 fz_colorspace *fz_device_gray(fz_context *ctx);
 fz_colorspace *fz_device_rgb(fz_context *ctx);
@@ -108,17 +108,17 @@ fz_colorspace *fz_device_lab(fz_context *ctx);
 
 const fz_color_params *fz_default_color_params(fz_context *ctx);
 
-typedef void (fz_colorspace_convert_fn)(fz_context *ctx, const fz_colorspace *cs, const float *src, float *dst);
+typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, const float *src, float *dst);
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
-typedef fz_colorspace *(fz_colorspace_base_fn)(const fz_colorspace *cs);
+typedef fz_colorspace *(fz_colorspace_base_fn)(fz_colorspace *cs);
 
-typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
+typedef void (fz_colorspace_clamp_fn)(fz_colorspace *cs, const float *src, float *dst);
 
 fz_colorspace *fz_new_colorspace(fz_context *ctx, const char *name, enum fz_colorspace_type type, int flags, int n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int n, const char *name);
-const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int n);
+const char *fz_colorspace_colorant(fz_context *ctx, fz_colorspace *cs, int n);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 fz_colorspace *fz_keep_colorspace_store_key(fz_context *ctx, fz_colorspace *colorspace);
@@ -127,12 +127,12 @@ void fz_drop_colorspace_store_key(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
-fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
-int fz_colorspace_devicen_n(fz_context *ctx, const fz_colorspace *cs);
-const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
-void fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out);
-void fz_convert_color(fz_context *ctx, const fz_color_params *params, const fz_colorspace *intcs, const fz_colorspace *dscs, float *dstv, const fz_colorspace *srcs, const float *srcv);
+fz_colorspace *fz_colorspace_base(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_n(fz_context *ctx, fz_colorspace *cs);
+int fz_colorspace_devicen_n(fz_context *ctx, fz_colorspace *cs);
+const char *fz_colorspace_name(fz_context *ctx, fz_colorspace *cs);
+void fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *out);
+void fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *intcs, fz_colorspace *dscs, float *dstv, fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;
 
@@ -146,15 +146,15 @@ void fz_premultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s);
 struct fz_color_converter_s
 {
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
-	const fz_colorspace *ds;
-	const fz_colorspace *ss;
-	const fz_colorspace *is;
+	fz_colorspace *ds;
+	fz_colorspace *ss;
+	fz_colorspace *is;
 	void *opaque;
 	void *link;
 	int n;
 };
 
-void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *is, const fz_colorspace *ds, const fz_colorspace *ss, const fz_color_params *params);
+void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc);
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
@@ -176,8 +176,8 @@ fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, enum fz_colorspa
 fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, enum fz_colorspace_type type, fz_stream *in);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, float *gamma, float *matrix);
 fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal);
-fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);
-const fz_colorspace *fz_alternate_colorspace(fz_context *ctx, const fz_colorspace *cs);
+fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs);
+fz_colorspace *fz_alternate_colorspace(fz_context *ctx, fz_colorspace *cs);
 
 fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
 fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);

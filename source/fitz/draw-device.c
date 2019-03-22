@@ -391,7 +391,7 @@ colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 }
 
 static fz_overprint *
-set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, const fz_colorspace *src, int opm)
+set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_colorspace *src, int opm)
 {
 	int dn, sn, i, j, dc;
 

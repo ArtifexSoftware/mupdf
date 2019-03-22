@@ -963,7 +963,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 
 /* Convert a color given in terms of one colorspace,
  * to a color in terms of another colorspace/separations. */
-void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_separations *dst_seps, float *dst_color, const fz_colorspace *src_cs, const float *src_color)
+void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_params, fz_colorspace *dst_cs, const fz_separations *dst_seps, float *dst_color, fz_colorspace *src_cs, const float *src_color)
 {
 	int i, j, n, dc, ds, dn, pred;
 	float remainders[FZ_MAX_COLORS];
@@ -1056,7 +1056,7 @@ found_process:
 }
 
 /* Get the equivalent separation color in a given colorspace. */
-void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int i, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_colorspace *prf, float *convert)
+void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int i, const fz_color_params *color_params, fz_colorspace *dst_cs, fz_colorspace *prf, float *convert)
 {
 	float colors[FZ_MAX_COLORS];
 

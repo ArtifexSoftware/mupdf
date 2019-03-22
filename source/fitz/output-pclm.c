@@ -102,7 +102,7 @@ new_obj(fz_context *ctx, pclm_band_writer *writer)
 }
 
 static void
-pclm_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+pclm_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	pclm_band_writer *writer = (pclm_band_writer *)writer_;
 	fz_output *out = writer->super.out;

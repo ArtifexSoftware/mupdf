@@ -53,7 +53,7 @@ fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 }
 
 static void
-ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+ps_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	ps_band_writer *writer = (ps_band_writer *)writer_;
 	fz_output *out = writer->super.out;

@@ -319,7 +319,7 @@ fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit)
 }
 
 static void
-pbm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
+pbm_write_header(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -332,7 +332,7 @@ pbm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *c
 }
 
 static void
-pkm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
+pkm_write_header(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;

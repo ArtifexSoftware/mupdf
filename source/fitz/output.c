@@ -667,7 +667,7 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 
 	seps: Separation details (or NULL).
 */
-void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs, fz_separations *seps)
+void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, fz_colorspace *cs, fz_separations *seps)
 {
 	if (writer == NULL || writer->band == NULL)
 		return;

@@ -60,7 +60,7 @@ typedef struct psd_band_writer_s
 } psd_band_writer;
 
 static void
-psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+psd_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	psd_band_writer *writer = (psd_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
@@ -77,7 +77,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
 	unsigned char *data;
 	size_t size = fz_buffer_storage(ctx, buffer, &data);
-	const fz_colorspace *cs_cmyk = cs;
+	fz_colorspace *cs_cmyk = cs;
 	if (fz_colorspace_n(ctx, cs) != 4)
 		cs_cmyk = fz_device_cmyk(ctx);
 

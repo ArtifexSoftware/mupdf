@@ -9,37 +9,37 @@
 
 /* Colorspace feature tests */
 
-int fz_colorspace_is_gray(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_gray(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->type == FZ_COLORSPACE_GRAY;
 }
 
-int fz_colorspace_is_rgb(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_rgb(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->type == FZ_COLORSPACE_RGB;
 }
 
-int fz_colorspace_is_bgr(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_bgr(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->type == FZ_COLORSPACE_BGR;
 }
 
-int fz_colorspace_is_cmyk(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_cmyk(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->type == FZ_COLORSPACE_CMYK;
 }
 
-int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->type == FZ_COLORSPACE_LAB;
 }
 
-int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->type == FZ_COLORSPACE_INDEXED);
 }
 
-int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_device_n(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->type == FZ_COLORSPACE_SEPARATION);
 }
@@ -49,37 +49,37 @@ int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs)
 
 	True for CMYK, Separation and DeviceN colorspaces.
 */
-int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->type == FZ_COLORSPACE_CMYK || cs->type == FZ_COLORSPACE_SEPARATION);
 }
 
-int fz_colorspace_is_device(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_device(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->flags & FZ_COLORSPACE_IS_DEVICE);
 }
 
-int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->flags & FZ_COLORSPACE_IS_ICC);
 }
 
-int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_cal(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->flags & FZ_COLORSPACE_IS_CAL);
 }
 
-int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	return fz_colorspace_is_lab(ctx, cs) && fz_colorspace_is_icc(ctx, cs);
 }
 
-int fz_colorspace_is_device_gray(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_device_gray(fz_context *ctx, fz_colorspace *cs)
 {
 	return fz_colorspace_is_device(ctx, cs) && fz_colorspace_is_gray(ctx, cs);
 }
 
-int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_device_cmyk(fz_context *ctx, fz_colorspace *cs)
 {
 	return fz_colorspace_is_device(ctx, cs) && fz_colorspace_is_cmyk(ctx, cs);
 }
@@ -88,7 +88,7 @@ int fz_colorspace_is_device_cmyk(fz_context *ctx, const fz_colorspace *cs)
 	Return true if devicen color space
 	has only colorants from the cmyk set.
 */
-int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && ((cs->flags & FZ_CS_HAS_CMYK_AND_SPOTS) == FZ_CS_HAS_CMYK);
 }
@@ -97,7 +97,7 @@ int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, const fz_colorspace *c
 	Return true if devicen color space has cyan
 	magenta yellow or black as one of its colorants.
 */
-int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_device_n_has_cmyk(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->flags & FZ_CS_HAS_CMYK);
 }
@@ -285,7 +285,7 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 }
 
 static void
-clamp_default(const fz_colorspace *cs, const float *src, float *dst)
+clamp_default(fz_colorspace *cs, const float *src, float *dst)
 {
 	int i;
 
@@ -468,7 +468,7 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 }
 
 static fz_iccprofile *
-get_base_icc_profile(fz_context *ctx, const fz_colorspace *cs)
+get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_colorspace *base;
 	fz_cal_colorspace *cal;
@@ -526,7 +526,7 @@ fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
 
 /* Create icc profile from calrgb, calgray values */
 static fz_iccprofile *
-fz_icc_from_cal(fz_context *ctx, const fz_colorspace *cs)
+fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_cal_colorspace *cal_data = cs->data;
 	fz_iccprofile *profile;
@@ -551,7 +551,7 @@ fz_icc_from_cal(fz_context *ctx, const fz_colorspace *cs)
 }
 
 static fz_iccprofile *
-fz_get_icc_from_cal(fz_context *ctx, const fz_colorspace *cs)
+fz_get_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_cal_colorspace *cal;
 	fz_iccprofile *icc = NULL;
@@ -592,7 +592,7 @@ fz_get_icc_from_cal(fz_context *ctx, const fz_colorspace *cs)
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, const fz_colorspace *dst, int dst_extras, const fz_colorspace *src, int src_extras, const fz_colorspace *prf, const fz_color_params *rend, int num_bytes, int copy_spots, int *src_n)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, int dst_extras, fz_colorspace *src, int src_extras, fz_colorspace *prf, const fz_color_params *rend, int num_bytes, int copy_spots, int *src_n)
 {
 	fz_icclink *link = NULL;
 	fz_iccprofile *src_icc = NULL;
@@ -674,14 +674,14 @@ fz_get_icc_link(fz_context *ctx, const fz_colorspace *dst, int dst_extras, const
 }
 
 /* Device colorspace definitions */
-static void gray_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *gray, float *rgb)
+static void gray_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *gray, float *rgb)
 {
 	rgb[0] = gray[0];
 	rgb[1] = gray[0];
 	rgb[2] = gray[0];
 }
 
-static void rgb_to_gray(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *gray)
+static void rgb_to_gray(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *gray)
 {
 	float r = rgb[0];
 	float g = rgb[1];
@@ -689,35 +689,35 @@ static void rgb_to_gray(fz_context *ctx, const fz_colorspace *cs, const float *r
 	gray[0] = r * 0.3f + g * 0.59f + b * 0.11f;
 }
 
-static void rgb_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *xyz)
+static void rgb_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *xyz)
 {
 	xyz[0] = rgb[0];
 	xyz[1] = rgb[1];
 	xyz[2] = rgb[2];
 }
 
-static void bgr_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *bgr, float *rgb)
+static void bgr_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *bgr, float *rgb)
 {
 	rgb[0] = bgr[2];
 	rgb[1] = bgr[1];
 	rgb[2] = bgr[0];
 }
 
-static void rgb_to_bgr(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *bgr)
+static void rgb_to_bgr(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *bgr)
 {
 	bgr[0] = rgb[2];
 	bgr[1] = rgb[1];
 	bgr[2] = rgb[0];
 }
 
-static void cmyk_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *cmyk, float *rgb)
+static void cmyk_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *cmyk, float *rgb)
 {
 	rgb[0] = 1 - fz_min(1, cmyk[0] + cmyk[3]);
 	rgb[1] = 1 - fz_min(1, cmyk[1] + cmyk[3]);
 	rgb[2] = 1 - fz_min(1, cmyk[2] + cmyk[3]);
 }
 
-static void rgb_to_cmyk(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *cmyk)
+static void rgb_to_cmyk(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *cmyk)
 {
 	float c, m, y, k;
 	c = 1 - rgb[0];
@@ -738,7 +738,7 @@ static inline float fung(float x)
 }
 
 static void
-lab_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *lab, float *rgb)
+lab_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *lab, float *rgb)
 {
 	/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
 	float lstar, astar, bstar, l, m, n, x, y, z, r, g, b;
@@ -760,7 +760,7 @@ lab_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *lab, float *rg
 }
 
 static void
-rgb_to_lab(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *lab)
+rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 {
 	fz_warn(ctx, "cannot convert into L*a*b colorspace");
 	lab[0] = rgb[0];
@@ -770,7 +770,7 @@ rgb_to_lab(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *la
 
 /* This could be different for a, b */
 static void
-clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
+clamp_lab(fz_colorspace *cs, const float *src, float *dst)
 {
 	int i;
 
@@ -1990,8 +1990,8 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
-	const fz_colorspace *srcs_alt = fz_alternate_colorspace(ctx, srcs);
-	const fz_colorspace *dsts_alt = fz_alternate_colorspace(ctx, dsts);
+	fz_colorspace *srcs_alt = fz_alternate_colorspace(ctx, srcs);
+	fz_colorspace *dsts_alt = fz_alternate_colorspace(ctx, dsts);
 	fz_icclink *link = NULL;
 	int i;
 	unsigned char *inputpos, *outputpos;
@@ -2508,8 +2508,8 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 
 /* Used for testing all color managed color spaces.  If it is icc, cal or
  * has a base space that is managed */
-static const fz_colorspace *
-fz_colorspace_cm(fz_context *ctx, const fz_colorspace *cs)
+static fz_colorspace *
+fz_colorspace_cm(fz_context *ctx, fz_colorspace *cs)
 {
 	while (cs)
 	{
@@ -2565,7 +2565,7 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	}
 	else
 	{
-		const fz_colorspace *ss_base = fz_colorspace_cm(ctx, ss);
+		fz_colorspace *ss_base = fz_colorspace_cm(ctx, ss);
 		if (ss_base != NULL && fz_colorspace_cm(ctx, ds))
 		{
 			if (ss_base == ss)
@@ -2583,7 +2583,7 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 static void
 icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
-	const fz_colorspace *dsts = cc->ds;
+	fz_colorspace *dsts = cc->ds;
 	int src_n = cc->n;
 	int dst_n = dsts->n;
 
@@ -2620,7 +2620,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 static void
 icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
-	const fz_colorspace *srcs = cc->ss;
+	fz_colorspace *srcs = cc->ss;
 
 	float local_src_map[FZ_MAX_COLORS];
 	float local_src_map2[FZ_MAX_COLORS];
@@ -2645,8 +2645,8 @@ std_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 {
 	float rgb[3];
 	int i;
-	const fz_colorspace *srcs = cc->ss;
-	const fz_colorspace *dsts = cc->ds;
+	fz_colorspace *srcs = cc->ss;
+	fz_colorspace *dsts = cc->ds;
 
 	if (srcs == NULL)
 		srcs = fz_device_rgb(ctx);
@@ -2756,7 +2756,7 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 	dv[2] = 1 - fz_min(sv[0] + sv[3], 1);
 }
 
-void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *is, const fz_colorspace *ds, const fz_colorspace *ss, const fz_color_params *params)
+void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
 {
 	if (ds == NULL)
 		ds = fz_device_gray(ctx);
@@ -2818,7 +2818,7 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 	}
 	else
 	{
-		const fz_colorspace *ss_base = fz_colorspace_cm(ctx, ss);
+		fz_colorspace *ss_base = fz_colorspace_cm(ctx, ss);
 		if (ss_base != NULL && fz_colorspace_cm(ctx, ds))
 		{
 			if (ss_base == ss)
@@ -2829,8 +2829,8 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 			/* Handle DeviceGray to CMYK as K only. See note in Section 6.3 of PDF spec 1.7. */
 			if (!(fz_colorspace_is_device_gray(ctx, ss_base) && fz_colorspace_is_cmyk(ctx, ds)))
 			{
-				const fz_colorspace *ss_base_alt = fz_alternate_colorspace(ctx, ss_base);
-				const fz_colorspace *ds_alt = fz_alternate_colorspace(ctx, ds);
+				fz_colorspace *ss_base_alt = fz_alternate_colorspace(ctx, ss_base);
+				fz_colorspace *ds_alt = fz_alternate_colorspace(ctx, ds);
 
 				/* Attempt to use the original colorspaces, or their alternates if they exist */
 				fz_try(ctx)
@@ -2893,7 +2893,7 @@ fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc)
 }
 
 void
-fz_convert_color(fz_context *ctx, const fz_color_params *params, const fz_colorspace *is, const fz_colorspace *ds, float *dv, const fz_colorspace *ss, const float *sv)
+fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *is, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
 {
 	fz_color_converter cc;
 	fz_find_color_converter(ctx, &cc, is, ds, ss, params);
@@ -2911,7 +2911,7 @@ struct indexed
 };
 
 static void
-indexed_to_alt(fz_context *ctx, const fz_colorspace *cs, const float *color, float *alt)
+indexed_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
 {
 	struct indexed *idx = cs->data;
 	int i, k;
@@ -2930,7 +2930,7 @@ indexed_to_alt(fz_context *ctx, const fz_colorspace *cs, const float *color, flo
 }
 
 static void
-indexed_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *color, float *rgb)
+indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
 {
 	float alt[FZ_MAX_COLORS];
 	struct indexed *idx = cs->data;
@@ -2949,7 +2949,7 @@ free_indexed(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_colorspace *
-base_indexed(const fz_colorspace *cs)
+base_indexed(fz_colorspace *cs)
 {
 	struct indexed *idx = cs->data;
 
@@ -2957,7 +2957,7 @@ base_indexed(const fz_colorspace *cs)
 }
 
 static void
-clamp_indexed(const fz_colorspace *cs, const float *in, float *out)
+clamp_indexed(fz_colorspace *cs, const float *in, float *out)
 {
 	struct indexed *idx = cs->data;
 
@@ -3134,17 +3134,17 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	fz_free(ctx, cc);
 }
 
-fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs)
+fz_colorspace *fz_colorspace_base(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && cs->get_base ? cs->get_base(cs) : NULL;
 }
 
-int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_n(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs ? cs->n : 0;
 }
 
-const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
+const char *fz_colorspace_name(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs ? cs->name : "";
 }
@@ -3162,7 +3162,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 
 /* This could be different for a* b* */
 static void
-clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
+clamp_lab_icc(fz_colorspace *cs, const float *src, float *dst)
 {
 	dst[0] = (fz_clamp(src[0], 0, 100)) / 100.0f;
 	dst[1] = (fz_clamp(src[1], -128, 127) + 128.0f) / 256;
@@ -3171,7 +3171,7 @@ clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
 
 /* Embedded icc profiles could have different range */
 static void
-clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
+clamp_default_icc(fz_colorspace *cs, const float *src, float *dst)
 {
 	int i;
 	fz_iccprofile *profile = cs->data;
@@ -3308,7 +3308,7 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, fz_buffer *
 #endif
 }
 
-const fz_colorspace *fz_alternate_colorspace(fz_context *ctx, const fz_colorspace *cs)
+fz_colorspace *fz_alternate_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile = cs->data;
 
@@ -3348,7 +3348,7 @@ fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, enum fz_colors
  * data for output formats.
  */
 fz_buffer *
-fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs)
+fz_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile;
 
@@ -3412,7 +3412,7 @@ fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, f
 }
 
 void
-fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out)
+fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *out)
 {
 	cs->clamp(cs, in, out);
 }
@@ -3608,7 +3608,7 @@ void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int i, cons
 	}
 }
 
-const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int i)
+const char *fz_colorspace_colorant(fz_context *ctx, fz_colorspace *cs, int i)
 {
 	if (!cs || i < 0 || i >= cs->n)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Colorant out of range");

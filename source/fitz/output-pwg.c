@@ -205,7 +205,7 @@ fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 }
 
 static void
-pwg_write_mono_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+pwg_write_mono_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	pwg_band_writer *writer = (pwg_band_writer *)writer_;
 
@@ -307,7 +307,7 @@ fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, con
 }
 
 static void
-pwg_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+pwg_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	pwg_band_writer *writer = (pwg_band_writer *)writer_;
 	int n = writer->super.n;

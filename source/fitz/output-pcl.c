@@ -772,7 +772,7 @@ typedef struct color_pcl_band_writer_s
 } color_pcl_band_writer;
 
 static void
-color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	color_pcl_band_writer *writer = (color_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;
@@ -1175,7 +1175,7 @@ typedef struct mono_pcl_band_writer_s
 } mono_pcl_band_writer;
 
 static void
-mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	mono_pcl_band_writer *writer = (mono_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;

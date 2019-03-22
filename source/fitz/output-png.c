@@ -96,7 +96,7 @@ typedef struct png_band_writer_s
 } png_band_writer;
 
 static void
-png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
+png_write_icc(fz_context *ctx, png_band_writer *writer, fz_colorspace *cs)
 {
 	fz_output *out = writer->super.out;
 	size_t size, csize;
@@ -132,7 +132,7 @@ png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
 }
 
 static void
-png_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+png_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
