@@ -1007,6 +1007,7 @@ pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	}
 	fz_catch(ctx)
 	{
+		proc->close_processor = NULL; /* aborted run, don't warn about unclosed processor */
 		fz_rethrow(ctx);
 	}
 }

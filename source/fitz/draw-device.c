@@ -2952,9 +2952,6 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 	fz_drop_colorspace(ctx, dev->proof_cs);
 
 	/* pop and free the stacks */
-	if (dev->top > 0)
-		fz_warn(ctx, "items left on stack in draw device: %d", dev->top);
-
 	while(dev->top-- > 0)
 	{
 		fz_draw_state *state = &dev->stack[dev->top];

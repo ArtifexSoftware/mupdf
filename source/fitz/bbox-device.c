@@ -166,14 +166,6 @@ fz_bbox_end_tile(fz_context *ctx, fz_device *dev)
 	bdev->ignore--;
 }
 
-static void
-fz_bbox_drop_device(fz_context *ctx, fz_device *dev)
-{
-	fz_bbox_device *bdev = (fz_bbox_device*)dev;
-	if (bdev->top > 0)
-		fz_warn(ctx, "items left on stack in bbox device: %d", bdev->top);
-}
-
 /*
 	Create a device to compute the bounding
 	box of all marks on a page.
@@ -185,8 +177,6 @@ fz_device *
 fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 {
 	fz_bbox_device *dev = fz_new_derived_device(ctx, fz_bbox_device);
-
-	dev->super.drop_device = fz_bbox_drop_device;
 
 	dev->super.fill_path = fz_bbox_fill_path;
 	dev->super.stroke_path = fz_bbox_stroke_path;
