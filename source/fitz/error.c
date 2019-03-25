@@ -112,7 +112,7 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 
 FZ_NORETURN static void throw(fz_context *ctx)
 {
-	if (ctx->error->top >= ctx->error->stack)
+	if (ctx->error->top > ctx->error->stack)
 	{
 		ctx->error->top->code += 2;
 		fz_longjmp(ctx->error->top->buffer, 1);
