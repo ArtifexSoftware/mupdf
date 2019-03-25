@@ -144,13 +144,12 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 		pdf_run_xobject(ctx, pr, softmask, save->page_resources, fz_identity, 1);
 		gstate = pr->gstate + pr->gtop;
 		gstate->blendmode = saved_blendmode;
+		fz_end_mask(ctx, pr->dev);
 	}
 	fz_always(ctx)
 		fz_drop_colorspace(ctx, mask_colorspace);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_end_mask(ctx, pr->dev);
 
 	pdf_tos_restore(ctx, &pr->tos, tos_save);
 
@@ -1265,6 +1264,11 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	}
 	fz_catch(ctx)
 	{
+		/* Note: Any SYNTAX errors should have been swallowed
+		 * by pdf_process_contents, but in case any escape from other
+		 * functions, recast the error type here to be safe. */
+		if (fz_caught(ctx) == FZ_ERROR_SYNTAX)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in xobject");
 		fz_rethrow(ctx);
 	}
 }

@@ -923,7 +923,6 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 		fz_catch(ctx)
 		{
 			int caught = fz_caught(ctx);
-
 			if (cookie)
 			{
 				if (caught == FZ_ERROR_ABORT)
@@ -1080,6 +1079,11 @@ pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_o
 	}
 	fz_catch(ctx)
 	{
+		/* Note: Any SYNTAX errors should have been swallowed
+		 * by pdf_process_stream, but in case any escape from other
+		 * functions, recast the error type here to be safe. */
+		if (fz_caught(ctx) == FZ_ERROR_SYNTAX)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in content stream");
 		fz_rethrow(ctx);
 	}
 }
