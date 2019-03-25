@@ -110,11 +110,12 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
  *             catch region entered with state = 1.
  */
 
-FZ_NORETURN static void throw(fz_context *ctx)
+FZ_NORETURN static void throw(fz_context *ctx, int code)
 {
 	if (ctx->error->top > ctx->error->stack)
 	{
 		ctx->error->top->state += 2;
+		ctx->error->top->code = code;
 		fz_longjmp(ctx->error->top->buffer, 1);
 	}
 	else
@@ -140,7 +141,6 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 	 * starting to use the last level. */
 	if (ctx->error->top + 2 >= ctx->error->stack + nelem(ctx->error->stack))
 	{
-		ctx->error->errcode = FZ_ERROR_GENERIC;
 		fz_strlcpy(ctx->error->message, "exception stack overflow!", sizeof ctx->error->message);
 
 		fz_flush_warnings(ctx);
@@ -157,6 +157,7 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 		/* We need to arrive in the always/catch block as if throw had taken place. */
 		ctx->error->top++;
 		ctx->error->top->state = 2;
+		ctx->error->top->code = FZ_ERROR_GENERIC;
 	}
 	else
 	{
@@ -191,6 +192,7 @@ int fz_do_always(fz_context *ctx)
 
 int fz_do_catch(fz_context *ctx)
 {
+	ctx->error->errcode = ctx->error->top->code;
 	return (ctx->error->top--)->state > 1;
 }
 
@@ -209,7 +211,6 @@ const char *fz_caught_message(fz_context *ctx)
 /* coverity[+kill] */
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
-	ctx->error->errcode = code;
 	fz_vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, ap);
 	ctx->error->message[sizeof(ctx->error->message) - 1] = 0;
 
@@ -227,7 +228,7 @@ FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list a
 #endif
 	}
 
-	throw(ctx);
+	throw(ctx, code);
 }
 
 /* coverity[+kill] */
@@ -243,7 +244,7 @@ FZ_NORETURN void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 FZ_NORETURN void fz_rethrow(fz_context *ctx)
 {
 	assert(ctx && ctx->error && ctx->error->errcode >= FZ_ERROR_NONE);
-	throw(ctx);
+	throw(ctx, ctx->error->errcode);
 }
 
 void fz_rethrow_if(fz_context *ctx, int err)

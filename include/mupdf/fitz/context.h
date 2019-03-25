@@ -33,7 +33,7 @@ struct fz_alloc_context_s
 
 struct fz_error_stack_slot_s
 {
-	int state;
+	int state, code;
 	fz_jmp_buf buffer;
 };
 
