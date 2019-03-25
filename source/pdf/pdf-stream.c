@@ -14,7 +14,10 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
 		return 0;
 
-	entry = pdf_cache_object(ctx, doc, num);
+	fz_try(ctx)
+		entry = pdf_cache_object(ctx, doc, num);
+	fz_catch(ctx)
+		return 0;
 
 	return entry->stm_ofs != 0 || entry->stm_buf;
 }
