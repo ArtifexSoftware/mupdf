@@ -404,8 +404,12 @@ static void showpathroot(char *path)
 		else if (isnumber(part))
 		{
 			pdf_obj *num = pdf_new_indirect(ctx, doc, atoi(part), 0);
-			showpath(list, num);
-			pdf_drop_obj(ctx, num);
+			fz_try(ctx)
+				showpath(list, num);
+			fz_always(ctx)
+				pdf_drop_obj(ctx, num);
+			fz_catch(ctx)
+				;
 		}
 		else
 			showpath(list, pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part));
