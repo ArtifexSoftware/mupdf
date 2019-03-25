@@ -1145,13 +1145,16 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	int transparency = 0;
 	pdf_document *doc;
 	fz_colorspace *cs = NULL;
-	fz_default_colorspaces *saved_def_cs = NULL;
+	fz_default_colorspaces *save_default_cs = NULL;
+	fz_default_colorspaces *xobj_default_cs = NULL;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj))
 		return;
 
 	fz_var(cs);
+	fz_var(save_default_cs);
+	fz_var(xobj_default_cs);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
@@ -1214,12 +1217,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		if (!resources)
 			resources = page_resources;
 
-		saved_def_cs = pr->default_cs;
-		pr->default_cs = NULL;
-		pr->default_cs = pdf_update_default_colorspaces(ctx, saved_def_cs, resources);
-
-		if (pr->default_cs != saved_def_cs)
-			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
+		save_default_cs = pr->default_cs;
+		xobj_default_cs = pdf_update_default_colorspaces(ctx, pr->default_cs, resources);
+		if (xobj_default_cs != save_default_cs)
+		{
+			fz_set_default_colorspaces(ctx, pr->dev, xobj_default_cs);
+			pr->default_cs = xobj_default_cs;
+		}
 
 		doc = pdf_get_bound_document(ctx, xobj);
 
@@ -1253,15 +1257,15 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		while (oldtop < pr->gtop)
 			pdf_grestore(ctx, pr);
 
-		if (saved_def_cs)
+		if (xobj_default_cs != save_default_cs)
 		{
-			fz_drop_default_colorspaces(ctx, pr->default_cs);
-			pr->default_cs = saved_def_cs;
-			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
+			fz_set_default_colorspaces(ctx, pr->dev, save_default_cs);
 		}
 	}
 	fz_always(ctx)
 	{
+		pr->default_cs = save_default_cs;
+		fz_drop_default_colorspaces(ctx, xobj_default_cs);
 		fz_drop_colorspace(ctx, cs);
 		pdf_unmark_obj(ctx, xobj);
 	}
