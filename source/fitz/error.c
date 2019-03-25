@@ -81,40 +81,40 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 
 /* Error context */
 
-/* When we first setjmp, code is set to 0. Whenever we throw, we add 2 to
- * this code. Whenever we enter the always block, we add 1.
+/* When we first setjmp, state is set to 0. Whenever we throw, we add 2 to
+ * this state. Whenever we enter the always block, we add 1.
  *
- * fz_push_try sets code to 0.
+ * fz_push_try sets state to 0.
  * If (fz_throw called within fz_try)
- *     fz_throw makes code = 2.
+ *     fz_throw makes state = 2.
  *     If (no always block present)
- *         enter catch region with code = 2. OK.
+ *         enter catch region with state = 2. OK.
  *     else
- *         fz_always entered as code < 3; Makes code = 3;
+ *         fz_always entered as state < 3; Makes state = 3;
  *         if (fz_throw called within fz_always)
- *             fz_throw makes code = 5
+ *             fz_throw makes state = 5
  *             fz_always is not reentered.
- *             catch region entered with code = 5. OK.
+ *             catch region entered with state = 5. OK.
  *         else
- *             catch region entered with code = 3. OK
+ *             catch region entered with state = 3. OK
  * else
  *     if (no always block present)
- *         catch region not entered as code = 0. OK.
+ *         catch region not entered as state = 0. OK.
  *     else
- *         fz_always entered as code < 3. makes code = 1
+ *         fz_always entered as state < 3. makes state = 1
  *         if (fz_throw called within fz_always)
- *             fz_throw makes code = 3;
- *             fz_always NOT entered as code >= 3
- *             catch region entered with code = 3. OK.
+ *             fz_throw makes state = 3;
+ *             fz_always NOT entered as state >= 3
+ *             catch region entered with state = 3. OK.
  *         else
- *             catch region entered with code = 1.
+ *             catch region entered with state = 1.
  */
 
 FZ_NORETURN static void throw(fz_context *ctx)
 {
 	if (ctx->error->top > ctx->error->stack)
 	{
-		ctx->error->top->code += 2;
+		ctx->error->top->state += 2;
 		fz_longjmp(ctx->error->top->buffer, 1);
 	}
 	else
@@ -156,12 +156,12 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 
 		/* We need to arrive in the always/catch block as if throw had taken place. */
 		ctx->error->top++;
-		ctx->error->top->code = 2;
+		ctx->error->top->state = 2;
 	}
 	else
 	{
 		ctx->error->top++;
-		ctx->error->top->code = 0;
+		ctx->error->top->state = 0;
 	}
 	return &ctx->error->top->buffer;
 }
@@ -171,7 +171,7 @@ int fz_do_try(fz_context *ctx)
 #ifdef __COVERITY__
 	return 1;
 #else
-	return ctx->error->top->code == 0;
+	return ctx->error->top->state == 0;
 #endif
 }
 
@@ -180,9 +180,9 @@ int fz_do_always(fz_context *ctx)
 #ifdef __COVERITY__
 	return 1;
 #else
-	if (ctx->error->top->code < 3)
+	if (ctx->error->top->state < 3)
 	{
-		ctx->error->top->code++;
+		ctx->error->top->state++;
 		return 1;
 	}
 	return 0;
@@ -191,7 +191,7 @@ int fz_do_always(fz_context *ctx)
 
 int fz_do_catch(fz_context *ctx)
 {
-	return (ctx->error->top--)->code > 1;
+	return (ctx->error->top--)->state > 1;
 }
 
 int fz_caught(fz_context *ctx)
