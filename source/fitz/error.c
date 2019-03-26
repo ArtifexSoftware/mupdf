@@ -115,6 +115,8 @@ FZ_NORETURN static void throw(fz_context *ctx, int code)
 	if (ctx->error->top > ctx->error->stack)
 	{
 		ctx->error->top->state += 2;
+		if (ctx->error->top->code != FZ_ERROR_NONE)
+			fz_warn(ctx, "clobbering previous error code and message (throw in always block?)");
 		ctx->error->top->code = code;
 		fz_longjmp(ctx->error->top->buffer, 1);
 	}
@@ -163,6 +165,7 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 	{
 		ctx->error->top++;
 		ctx->error->top->state = 0;
+		ctx->error->top->code = FZ_ERROR_NONE;
 	}
 	return &ctx->error->top->buffer;
 }
