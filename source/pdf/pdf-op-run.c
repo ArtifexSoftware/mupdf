@@ -170,6 +170,9 @@ end_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	gstate->softmask = save->softmask;
 	gstate->softmask_resources = save->page_resources;
 	gstate->softmask_ctm = save->ctm;
+	save->softmask = NULL;
+	save->page_resources = NULL;
+
 	fz_pop_clip(ctx, pr->dev);
 }
 
@@ -1264,6 +1267,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	}
 	fz_catch(ctx)
 	{
+		pdf_drop_obj(ctx, softmask.softmask);
+		pdf_drop_obj(ctx, softmask.page_resources);
 		/* Note: Any SYNTAX errors should have been swallowed
 		 * by pdf_process_contents, but in case any escape from other
 		 * functions, recast the error type here to be safe. */
