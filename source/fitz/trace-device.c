@@ -447,6 +447,28 @@ fz_trace_end_layer(fz_context *ctx, fz_device *dev_)
 	fz_write_printf(ctx, out, "<end_layer/>\n");
 }
 
+static void
+fz_trace_render_flags(fz_context *ctx, fz_device *dev_, int set, int clear)
+{
+	fz_trace_device *dev = (fz_trace_device*)dev_;
+	fz_output *out = dev->out;
+	fz_trace_indent(ctx, out, dev->depth);
+	fz_write_printf(ctx, out, "<render_flags set=\"0x%x\" clear=\"0x%x\"/>\n", set, clear);
+}
+
+static void
+fz_trace_set_default_colorspaces(fz_context *ctx, fz_device *dev_, fz_default_colorspaces *dcs)
+{
+	fz_trace_device *dev = (fz_trace_device*)dev_;
+	fz_output *out = dev->out;
+	fz_trace_indent(ctx, out, dev->depth);
+	fz_write_printf(ctx, out, "<set_default_colorspaces");
+	fz_write_printf(ctx, out, " gray=\"%s\"", fz_colorspace_name(ctx, fz_default_gray(ctx, dcs)));
+	fz_write_printf(ctx, out, " rgb=\"%s\"", fz_colorspace_name(ctx, fz_default_rgb(ctx, dcs)));
+	fz_write_printf(ctx, out, " cmyk=\"%s\"", fz_colorspace_name(ctx, fz_default_cmyk(ctx, dcs)));
+	fz_write_printf(ctx, out, " oi=\"%s\"/>\n",fz_colorspace_name(ctx, fz_default_output_intent(ctx, dcs)));
+}
+
 /*
 	Create a device to print a debug trace of all device calls.
 */
@@ -482,6 +504,9 @@ fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out)
 
 	dev->super.begin_layer = fz_trace_begin_layer;
 	dev->super.end_layer = fz_trace_end_layer;
+
+	dev->super.render_flags = fz_trace_render_flags;
+	dev->super.set_default_colorspaces = fz_trace_set_default_colorspaces;
 
 	dev->out = out;
 
