@@ -76,6 +76,20 @@ int fz_lookup_blendmode(const char *name);
 char *fz_blendmode_name(int blendmode);
 
 typedef struct fz_device_container_stack_s fz_device_container_stack;
+struct fz_device_container_stack_s
+{
+	fz_rect scissor;
+	int type;
+	int user;
+};
+
+enum
+{
+	fz_device_container_stack_is_clip,
+	fz_device_container_stack_is_mask,
+	fz_device_container_stack_is_group,
+	fz_device_container_stack_is_tile,
+};
 
 struct fz_device_s
 {
@@ -170,8 +184,7 @@ enum
 {
 	/* Hints */
 	FZ_DONT_INTERPOLATE_IMAGES = 1,
-	FZ_MAINTAIN_CONTAINER_STACK = 2,
-	FZ_NO_CACHE = 4,
+	FZ_NO_CACHE = 2,
 };
 
 /*

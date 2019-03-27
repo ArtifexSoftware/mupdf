@@ -743,7 +743,6 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 
 	if (opts && (opts->flags & FZ_STEXT_PRESERVE_IMAGES))
 	{
-		dev->super.hints |= FZ_MAINTAIN_CONTAINER_STACK;
 		dev->super.fill_shade = fz_stext_fill_shade;
 		dev->super.fill_image = fz_stext_fill_image;
 		dev->super.fill_image_mask = fz_stext_fill_image_mask;

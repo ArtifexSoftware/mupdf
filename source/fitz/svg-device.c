@@ -914,10 +914,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 	fz_irect bbox;
 	fz_pixmap *pix;
 
-	if (dev->container_len == 0)
-		return;
-
-	bbox = fz_round_rect(fz_intersect_rect(fz_bound_shade(ctx, shade, ctm), dev->container[dev->container_len-1].scissor));
+	bbox = fz_round_rect(fz_intersect_rect(fz_bound_shade(ctx, shade, ctm), fz_device_current_scissor(ctx, dev)));
 	if (fz_is_empty_irect(bbox))
 		return;
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), bbox, NULL, 1);
@@ -1024,7 +1021,7 @@ svg_dev_end_mask(fz_context *ctx, fz_device *dev)
 	int mask = 0;
 
 	if (dev->container_len > 0)
-		mask = (int)dev->container[dev->container_len-1].user;
+		mask = dev->container[dev->container_len-1].user;
 
 	fz_write_printf(ctx, out, "\"/>\n</mask>\n");
 	out = end_def(ctx, sdev);
@@ -1316,8 +1313,6 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 
 	dev->super.begin_layer = svg_dev_begin_layer;
 	dev->super.end_layer = svg_dev_end_layer;
-
-	dev->super.hints |= FZ_MAINTAIN_CONTAINER_STACK;
 
 	dev->out = out;
 	dev->out_store = out;
