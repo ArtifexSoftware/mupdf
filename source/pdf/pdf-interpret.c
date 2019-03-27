@@ -629,9 +629,10 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			pdf_font_desc *font;
 			fontres = pdf_dict_get(ctx, csi->rdb, PDF_NAME(Font));
 			fontobj = pdf_dict_gets(ctx, fontres, csi->name);
-			if (!fontobj)
-				fz_throw(ctx, FZ_ERROR_MINOR, "cannot find Font resource '%s'", csi->name);
-			font = pdf_load_font(ctx, csi->doc, csi->rdb, fontobj);
+			if (pdf_is_dict(ctx, fontobj))
+				font = pdf_load_font(ctx, csi->doc, csi->rdb, fontobj);
+			else
+				font = pdf_load_hail_mary_font(ctx, csi->doc);
 			fz_try(ctx)
 				proc->op_Tf(ctx, proc, csi->name, font, s[0]);
 			fz_always(ctx)

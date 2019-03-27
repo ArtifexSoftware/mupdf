@@ -99,6 +99,7 @@ const unsigned char *pdf_lookup_substitute_font(fz_context *ctx, int mono, int s
 pdf_font_desc *pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
 void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc);
 pdf_font_desc *pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
+pdf_font_desc *pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc);
 
 pdf_font_desc *pdf_new_font_desc(fz_context *ctx);
 pdf_font_desc *pdf_keep_font(fz_context *ctx, pdf_font_desc *fontdesc);

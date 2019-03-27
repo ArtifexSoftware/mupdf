@@ -586,8 +586,9 @@ select_unknown_cmap(FT_Face face)
 }
 
 static pdf_font_desc *
-pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const char *basefont)
+pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
+	const char *basefont;
 	pdf_obj *descriptor;
 	pdf_obj *encoding;
 	pdf_obj *widths;
@@ -614,6 +615,8 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 	fz_try(ctx)
 	{
 		fontdesc = pdf_new_font_desc(ctx);
+
+		basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BaseFont)));
 
 		descriptor = pdf_dict_get(ctx, dict, PDF_NAME(FontDescriptor));
 		if (descriptor)
@@ -895,11 +898,68 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 	return fontdesc;
 }
 
-static pdf_font_desc *
-pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
+static int
+hail_mary_make_hash_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
-	const char *basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BaseFont)));
-	return pdf_load_simple_font_by_name(ctx, doc, dict, basefont);
+	hash->u.pi.i = 0;
+	hash->u.pi.ptr = NULL;
+	return 1;
+}
+
+static void *
+hail_mary_keep_key(fz_context *ctx, void *key)
+{
+	return key;
+}
+
+static void
+hail_mary_drop_key(fz_context *ctx, void *key)
+{
+}
+
+static int
+hail_mary_cmp_key(fz_context *ctx, void *k0, void *k1)
+{
+	return k0 == k1;
+}
+
+static void
+hail_mary_format_key(fz_context *ctx, char *s, int n, void *key_)
+{
+	fz_strlcpy(s, "(hail mary font)", n);
+}
+
+static int hail_mary_store_key; /* Dummy */
+
+static const fz_store_type hail_mary_store_type =
+{
+	hail_mary_make_hash_key,
+	hail_mary_keep_key,
+	hail_mary_drop_key,
+	hail_mary_cmp_key,
+	hail_mary_format_key,
+	NULL
+};
+
+pdf_font_desc *
+pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc)
+{
+	pdf_font_desc *fontdesc;
+	pdf_font_desc *existing;
+
+	if ((fontdesc = fz_find_item(ctx, pdf_drop_font_imp, &hail_mary_store_key, &hail_mary_store_type)) != NULL)
+	{
+		return fontdesc;
+	}
+
+	/* FIXME: Get someone with a clue about fonts to fix this */
+	fontdesc = pdf_load_simple_font(ctx, doc, NULL);
+
+	existing = fz_store_item(ctx, &hail_mary_store_key, fontdesc, fontdesc->size, &hail_mary_store_type);
+	assert(existing == NULL);
+	(void)existing; /* Silence warning in release builds */
+
+	return fontdesc;
 }
 
 /*
