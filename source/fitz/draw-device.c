@@ -737,7 +737,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_colorspace *model;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
@@ -809,7 +809,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	float mlw = fz_rasterizer_graphics_min_line_width(rast);
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, dev->default_cs);
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -1136,7 +1136,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 	fz_rasterizer *rast = dev->rast;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	state = push_stack(ctx, dev, "clip text");
 
