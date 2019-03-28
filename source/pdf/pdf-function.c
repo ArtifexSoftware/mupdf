@@ -1330,7 +1330,7 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 
 	in = lerp(in, low, high, func->u.st.encode[i * 2 + 0], func->u.st.encode[i * 2 + 1]);
 
-	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->u.st.funcs[i]->n);
+	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->n);
 }
 
 /*
