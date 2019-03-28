@@ -126,11 +126,10 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 char *
 pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_obj *dest)
 {
-	pdf_obj *filename=NULL;
-	char *path = NULL;
-	char *uri = NULL;
-	char buf[256];
-	size_t n;
+	pdf_obj *filename = NULL;
+	const char *path;
+	char *uri;
+	char frag[256];
 
 	if (pdf_is_string(ctx, file_spec))
 		filename = file_spec;
@@ -151,34 +150,28 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 		return NULL;
 	}
 
-	path = fz_strdup(ctx, pdf_to_text_string(ctx, filename));
+	if (pdf_is_array(ctx, dest))
+		fz_snprintf(frag, sizeof frag, "#page=%d", pdf_array_get_int(ctx, dest, 0) + 1);
+	else if (pdf_is_name(ctx, dest))
+		fz_snprintf(frag, sizeof frag, "#%s", pdf_to_name(ctx, dest));
+	else if (pdf_is_string(ctx, dest))
+		fz_snprintf(frag, sizeof frag, "#%s", pdf_to_str_buf(ctx, dest));
+	else
+		frag[0] = 0;
+
+	path = pdf_to_text_string(ctx, filename);
+	uri = NULL;
 #ifdef _WIN32
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, file_spec, PDF_NAME(FS)), PDF_NAME(URL)))
 	{
 		/* Fix up the drive letter (change "/C/Documents/Foo" to "C:/Documents/Foo") */
 		if (path[0] == '/' && (('A' <= path[1] && path[1] <= 'Z') || ('a' <= path[1] && path[1] <= 'z')) && path[2] == '/')
-		{
-			path[0] = path[1];
-			path[1] = ':';
-		}
+			uri = fz_asprintf(ctx, "file://%c:%s%s", path[1], path+2, frag);
 	}
 #endif
+	if (!uri)
+		uri = fz_asprintf(ctx, "file://%s%s", path, frag);
 
-	if (pdf_is_array(ctx, dest))
-		fz_snprintf(buf, sizeof buf, "#page=%d", pdf_array_get_int(ctx, dest, 0) + 1);
-	else if (pdf_is_name(ctx, dest))
-		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_name(ctx, dest));
-	else if (pdf_is_string(ctx, dest))
-		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_str_buf(ctx, dest));
-	else
-		buf[0] = 0;
-
-	n = 7 + strlen(path) + strlen(buf) + 1;
-	uri = fz_malloc(ctx, n);
-	fz_strlcpy(uri, "file://", n);
-	fz_strlcat(uri, path, n);
-	fz_strlcat(uri, buf, n);
-	fz_free(ctx, path);
 	return uri;
 }
 
