@@ -200,68 +200,68 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 
 	state = push_stack(ctx, dev, "knockout");
 
+	bbox = fz_pixmap_bbox(ctx, state->dest);
+	bbox = fz_intersect_irect(bbox, state->scissor);
+	state[1].dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
+	if (state[0].group_alpha)
 	{
-		bbox = fz_pixmap_bbox(ctx, state->dest);
-		bbox = fz_intersect_irect(bbox, state->scissor);
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
-		if (state[0].group_alpha)
-		{
-			ga_bbox = fz_pixmap_bbox(ctx, state->group_alpha);
-			ga_bbox = fz_intersect_irect(ga_bbox, state->scissor);
-			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, ga_bbox, state->group_alpha->seps, state->group_alpha->alpha);
-		}
+		ga_bbox = fz_pixmap_bbox(ctx, state->group_alpha);
+		ga_bbox = fz_intersect_irect(ga_bbox, state->scissor);
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, ga_bbox, state->group_alpha->seps, state->group_alpha->alpha);
+	}
 
-		if (isolated)
+	if (isolated)
+	{
+		fz_clear_pixmap(ctx, state[1].dest);
+		if (state[1].group_alpha)
+			fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+	else
+	{
+		/* Find the last but one destination to copy */
+		int i = dev->top-1; /* i = the one on entry (i.e. the last one) */
+		fz_draw_state *prev = state;
+		while (i > 0)
+		{
+			prev = &dev->stack[--i];
+			if (prev->dest != state->dest)
+				break;
+		}
+		if (prev->dest)
+		{
+			fz_copy_pixmap_rect(ctx, state[1].dest, prev->dest, bbox, dev->default_cs);
+			if (state[1].group_alpha)
+			{
+				if (prev->group_alpha)
+					fz_copy_pixmap_rect(ctx, state[1].group_alpha, prev->group_alpha, ga_bbox, dev->default_cs);
+				else
+					fz_clear_pixmap(ctx, state[1].group_alpha);
+			}
+		}
+		else
 		{
 			fz_clear_pixmap(ctx, state[1].dest);
 			if (state[1].group_alpha)
 				fz_clear_pixmap(ctx, state[1].group_alpha);
 		}
-		else
-		{
-			/* Find the last but one destination to copy */
-			int i = dev->top-1; /* i = the one on entry (i.e. the last one) */
-			fz_draw_state *prev = state;
-			while (i > 0)
-			{
-				prev = &dev->stack[--i];
-				if (prev->dest != state->dest)
-					break;
-			}
-			if (prev->dest)
-			{
-				fz_copy_pixmap_rect(ctx, state[1].dest, prev->dest, bbox, dev->default_cs);
-				if (state[1].group_alpha)
-				{
-					if (prev->group_alpha)
-						fz_copy_pixmap_rect(ctx, state[1].group_alpha, prev->group_alpha, ga_bbox, dev->default_cs);
-					else
-						fz_clear_pixmap(ctx, state[1].group_alpha);
-				}
-			}
-			else
-			{
-				fz_clear_pixmap(ctx, state[1].dest);
-				if (state[1].group_alpha)
-					fz_clear_pixmap(ctx, state[1].group_alpha);
-			}
-		}
-
-		/* Knockout groups (and only knockout groups) rely on shape */
-		state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, state[1].shape);
-#ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "");
-		fz_dump_blend(ctx, "Knockout begin: background is ", state[1].dest);
-		if (state[1].shape)
-			fz_dump_blend(ctx, "/S=", state[1].shape);
-		if (state[1].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
-		printf("\n");
-#endif
-		state[1].scissor = bbox;
-		state[1].blendmode &= ~(FZ_BLEND_MODEMASK | FZ_BLEND_ISOLATED);
 	}
+
+	/* Knockout groups (and only knockout groups) rely on shape */
+	state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	fz_clear_pixmap(ctx, state[1].shape);
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "");
+	fz_dump_blend(ctx, "Knockout begin: background is ", state[1].dest);
+	if (state[1].shape)
+		fz_dump_blend(ctx, "/S=", state[1].shape);
+	if (state[1].group_alpha)
+		fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+	printf("\n");
+#endif
+
+	state[1].scissor = bbox;
+	state[1].blendmode &= ~(FZ_BLEND_MODEMASK | FZ_BLEND_ISOLATED);
 
 	return &state[1];
 }
@@ -474,7 +474,14 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 }
 
 static fz_overprint *
-resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspace *colorspace, float alpha, const fz_color_params *color_params, unsigned char *colorbv, fz_pixmap *dest)
+resolve_color(fz_context *ctx,
+	fz_overprint *op,
+	const float *color,
+	fz_colorspace *colorspace,
+	float alpha,
+	const fz_color_params *color_params,
+	unsigned char *colorbv,
+	fz_pixmap *dest)
 {
 	float colorfv[FZ_MAX_COLORS];
 	int i;
@@ -709,6 +716,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 		colorbv[0] = 255 * alpha;
 		fz_convert_rasterizer(ctx, rast, 0, state->group_alpha, colorbv, 0);
 	}
+
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top, "");
 	fz_dump_blend(ctx, "After stroke ", state->dest);
@@ -767,29 +775,28 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 		return;
 	}
 
+	state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	fz_clear_pixmap(ctx, state[1].mask);
+	state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
+	fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
+	if (state[1].shape)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, state[1].mask);
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
-		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
-		if (state[1].shape)
-		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].shape);
-		}
-		if (state[1].group_alpha)
-		{
-			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].group_alpha);
-		}
-
-		fz_convert_rasterizer(ctx, rast, even_odd, state[1].mask, NULL, 0);
-
-		state[1].scissor = bbox;
-#ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Clip (non-rectangular) begin\n");
-#endif
+		state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].shape);
 	}
+	if (state[1].group_alpha)
+	{
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+
+	fz_convert_rasterizer(ctx, rast, even_odd, state[1].mask, NULL, 0);
+
+	state[1].scissor = bbox;
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "Clip (non-rectangular) begin\n");
+#endif
 }
 
 static void
@@ -843,37 +850,36 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 		return;
 	}
 
+	state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	fz_clear_pixmap(ctx, state[1].mask);
+	/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
+	 * we have a choice. We can either create the new destination WITH alpha, or
+	 * we can copy the old pixmap contents in. We opt for the latter here, but
+	 * may want to revisit this decision in the future. */
+	state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
+	if (state[0].dest->alpha)
+		fz_clear_pixmap(ctx, state[1].dest);
+	else
+		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
+	if (state->shape)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, state[1].mask);
-		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
-		 * we have a choice. We can either create the new destination WITH alpha, or
-		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in the future. */
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
-		if (state[0].dest->alpha)
-			fz_clear_pixmap(ctx, state[1].dest);
-		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
-		if (state->shape)
-		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].shape);
-		}
-		if (state->group_alpha)
-		{
-			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].group_alpha);
-		}
-
-		fz_convert_rasterizer(ctx, rast, 0, state[1].mask, NULL, 0);
-
-		state[1].blendmode |= FZ_BLEND_ISOLATED;
-		state[1].scissor = bbox;
-#ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Clip (stroke) begin\n");
-#endif
+		state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].shape);
 	}
+	if (state->group_alpha)
+	{
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+
+	fz_convert_rasterizer(ctx, rast, 0, state[1].mask, NULL, 0);
+
+	state[1].blendmode |= FZ_BLEND_ISOLATED;
+	state[1].scissor = bbox;
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "Clip (stroke) begin\n");
+#endif
 }
 
 static void
@@ -1151,97 +1157,96 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(tscissor));
 	}
 
+	state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	fz_clear_pixmap(ctx, state[1].mask);
+	/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
+	 * we have a choice. We can either create the new destination WITH alpha, or
+	 * we can copy the old pixmap contents in. We opt for the latter here, but
+	 * may want to revisit this decision in the future. */
+	state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
+	if (state[0].dest->alpha)
+		fz_clear_pixmap(ctx, state[1].dest);
+	else
+		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
+	if (state->shape)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, state[1].mask);
-		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
-		 * we have a choice. We can either create the new destination WITH alpha, or
-		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in the future. */
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
-		if (state[0].dest->alpha)
-			fz_clear_pixmap(ctx, state[1].dest);
-		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
-		if (state->shape)
-		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].shape);
-		}
-		else
-			state[1].shape = NULL;
-		if (state->group_alpha)
-		{
-			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].group_alpha);
-		}
-		else
-			state[1].group_alpha = NULL;
+		state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].shape);
+	}
+	else
+		state[1].shape = NULL;
+	if (state->group_alpha)
+	{
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+	else
+		state[1].group_alpha = NULL;
 
-		state[1].blendmode |= FZ_BLEND_ISOLATED;
-		state[1].scissor = bbox;
+	state[1].blendmode |= FZ_BLEND_ISOLATED;
+	state[1].scissor = bbox;
+
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Clip (text) begin\n");
+	dump_spaces(dev->top-1, "Clip (text) begin\n");
 #endif
 
-		if (!fz_is_empty_irect(bbox) && state[1].mask)
+	if (!fz_is_empty_irect(bbox) && state[1].mask)
+	{
+		for (span = text->head; span; span = span->next)
 		{
-			for (span = text->head; span; span = span->next)
+			tm = span->trm;
+
+			for (i = 0; i < span->len; i++)
 			{
-				tm = span->trm;
+				gid = span->items[i].gid;
+				if (gid < 0)
+					continue;
 
-				for (i = 0; i < span->len; i++)
+				tm.e = span->items[i].x;
+				tm.f = span->items[i].y;
+				trm = fz_concat(tm, ctm);
+
+				glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state[1].dest->alpha, fz_rasterizer_text_aa_level(rast));
+				if (glyph)
 				{
-					gid = span->items[i].gid;
-					if (gid < 0)
-						continue;
-
-					tm.e = span->items[i].x;
-					tm.f = span->items[i].y;
-					trm = fz_concat(tm, ctm);
-
-					glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state[1].dest->alpha, fz_rasterizer_text_aa_level(rast));
-					if (glyph)
+					int x = (int)trm.e;
+					int y = (int)trm.f;
+					draw_glyph(NULL, state[1].mask, glyph, x, y, &bbox, 0);
+					if (state[1].shape)
+						draw_glyph(NULL, state[1].shape, glyph, x, y, &bbox, 0);
+					if (state[1].group_alpha)
+						draw_glyph(NULL, state[1].group_alpha, glyph, x, y, &bbox, 0);
+					fz_drop_glyph(ctx, glyph);
+				}
+				else
+				{
+					fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
+					if (path)
 					{
-						int x = (int)trm.e;
-						int y = (int)trm.f;
-						draw_glyph(NULL, state[1].mask, glyph, x, y, &bbox, 0);
-						if (state[1].shape)
-							draw_glyph(NULL, state[1].shape, glyph, x, y, &bbox, 0);
-						if (state[1].group_alpha)
-							draw_glyph(NULL, state[1].group_alpha, glyph, x, y, &bbox, 0);
-						fz_drop_glyph(ctx, glyph);
+						fz_pixmap *old_dest;
+						float white = 1;
+
+						old_dest = state[1].dest;
+						state[1].dest = state[1].mask;
+						state[1].mask = NULL;
+						fz_try(ctx)
+						{
+							fz_draw_fill_path(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), &white, 1, NULL);
+						}
+						fz_always(ctx)
+						{
+							state[1].mask = state[1].dest;
+							state[1].dest = old_dest;
+							fz_drop_path(ctx, path);
+						}
+						fz_catch(ctx)
+						{
+							fz_rethrow(ctx);
+						}
 					}
 					else
 					{
-						fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
-						if (path)
-						{
-							fz_pixmap *old_dest;
-							float white = 1;
-
-							old_dest = state[1].dest;
-							state[1].dest = state[1].mask;
-							state[1].mask = NULL;
-							fz_try(ctx)
-							{
-								fz_draw_fill_path(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), &white, 1, NULL);
-							}
-							fz_always(ctx)
-							{
-								state[1].mask = state[1].dest;
-								state[1].dest = old_dest;
-								fz_drop_path(ctx, path);
-							}
-							fz_catch(ctx)
-							{
-								fz_rethrow(ctx);
-							}
-						}
-						else
-						{
-							fz_warn(ctx, "cannot render glyph for clipping");
-						}
+						fz_warn(ctx, "cannot render glyph for clipping");
 					}
 				}
 			}
@@ -1276,98 +1281,97 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(tscissor));
 	}
 
+	state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	fz_clear_pixmap(ctx, mask);
+	/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
+	 * we have a choice. We can either create the new destination WITH alpha, or
+	 * we can copy the old pixmap contents in. We opt for the latter here, but
+	 * may want to revisit this decision in the future. */
+	state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
+	if (state[0].dest->alpha)
+		fz_clear_pixmap(ctx, state[1].dest);
+	else
+		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
+	if (state->shape)
 	{
-		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		fz_clear_pixmap(ctx, mask);
-		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
-		 * we have a choice. We can either create the new destination WITH alpha, or
-		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in the future. */
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha);
-		if (state[0].dest->alpha)
-			fz_clear_pixmap(ctx, state[1].dest);
-		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, bbox, dev->default_cs);
-		if (state->shape)
-		{
-			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, shape);
-		}
-		else
-			shape = state->shape;
-		if (state->group_alpha)
-		{
-			state[1].group_alpha = group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, group_alpha);
-		}
-		else
-			group_alpha = NULL;
+		state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, shape);
+	}
+	else
+		shape = state->shape;
+	if (state->group_alpha)
+	{
+		state[1].group_alpha = group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, group_alpha);
+	}
+	else
+		group_alpha = NULL;
 
-		state[1].blendmode |= FZ_BLEND_ISOLATED;
-		state[1].scissor = bbox;
+	state[1].blendmode |= FZ_BLEND_ISOLATED;
+	state[1].scissor = bbox;
+
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Clip (stroke text) begin\n");
+	dump_spaces(dev->top-1, "Clip (stroke text) begin\n");
 #endif
 
-		if (!fz_is_empty_irect(bbox))
+	if (!fz_is_empty_irect(bbox))
+	{
+		for (span = text->head; span; span = span->next)
 		{
-			for (span = text->head; span; span = span->next)
+			tm = span->trm;
+
+			for (i = 0; i < span->len; i++)
 			{
-				tm = span->trm;
+				gid = span->items[i].gid;
+				if (gid < 0)
+					continue;
 
-				for (i = 0; i < span->len; i++)
+				tm.e = span->items[i].x;
+				tm.f = span->items[i].y;
+				trm = fz_concat(tm, ctm);
+
+				glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, ctm, stroke, &state->scissor, aa);
+				if (glyph)
 				{
-					gid = span->items[i].gid;
-					if (gid < 0)
-						continue;
-
-					tm.e = span->items[i].x;
-					tm.f = span->items[i].y;
-					trm = fz_concat(tm, ctm);
-
-					glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, ctm, stroke, &state->scissor, aa);
-					if (glyph)
+					int x = (int)trm.e;
+					int y = (int)trm.f;
+					draw_glyph(NULL, mask, glyph, x, y, &bbox, 0);
+					if (shape)
+						draw_glyph(NULL, shape, glyph, x, y, &bbox, 0);
+					if (group_alpha)
+						draw_glyph(NULL, group_alpha, glyph, x, y, &bbox, 0);
+					fz_drop_glyph(ctx, glyph);
+				}
+				else
+				{
+					fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
+					if (path)
 					{
-						int x = (int)trm.e;
-						int y = (int)trm.f;
-						draw_glyph(NULL, mask, glyph, x, y, &bbox, 0);
-						if (shape)
-							draw_glyph(NULL, shape, glyph, x, y, &bbox, 0);
-						if (group_alpha)
-							draw_glyph(NULL, group_alpha, glyph, x, y, &bbox, 0);
-						fz_drop_glyph(ctx, glyph);
+						fz_pixmap *old_dest;
+						float white = 1;
+
+						state = &dev->stack[dev->top];
+						old_dest = state[0].dest;
+						state[0].dest = state[0].mask;
+						state[0].mask = NULL;
+						fz_try(ctx)
+						{
+							fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), &white, 1, NULL);
+						}
+						fz_always(ctx)
+						{
+							state[0].mask = state[0].dest;
+							state[0].dest = old_dest;
+							fz_drop_path(ctx, path);
+						}
+						fz_catch(ctx)
+						{
+							fz_rethrow(ctx);
+						}
 					}
 					else
 					{
-						fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
-						if (path)
-						{
-							fz_pixmap *old_dest;
-							float white = 1;
-
-							state = &dev->stack[dev->top];
-							old_dest = state[0].dest;
-							state[0].dest = state[0].mask;
-							state[0].mask = NULL;
-							fz_try(ctx)
-							{
-								fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), &white, 1, NULL);
-							}
-							fz_always(ctx)
-							{
-								state[0].mask = state[0].dest;
-								state[0].dest = old_dest;
-								fz_drop_path(ctx, path);
-							}
-							fz_catch(ctx)
-							{
-								fz_rethrow(ctx);
-							}
-						}
-						else
-						{
-							fz_warn(ctx, "cannot render glyph for stroked clipping");
-						}
+						fz_warn(ctx, "cannot render glyph for stroked clipping");
 					}
 				}
 			}
@@ -2126,55 +2130,53 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, fz_rect area, int luminosit
 	 * don't carry forward knockout or isolated. */
 	state[1].blendmode = 0;
 
+	/* If luminosity, then we generate a mask from the greyscale value of the shapes.
+	 * If !luminosity, then we generate a mask from the alpha value of the shapes.
+	 */
+	if (luminosity)
+		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 0);
+	else
+		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+	if (state->shape)
 	{
-		/* If luminosity, then we generate a mask from the greyscale value of the shapes.
-		 * If !luminosity, then we generate a mask from the alpha value of the shapes.
+		/* FIXME: If we ever want to support AIS true, then
+		 * we probably want to create a shape pixmap here,
+		 * using: shape = fz_new_pixmap_with_bbox(NULL, bbox);
+		 * then, in the end_mask code, we create the mask
+		 * from this rather than dest.
 		 */
-		if (luminosity)
-			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 0);
-		else
-			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-		if (state->shape)
-		{
-			/* FIXME: If we ever want to support AIS true, then
-			 * we probably want to create a shape pixmap here,
-			 * using: shape = fz_new_pixmap_with_bbox(NULL, bbox);
-			 * then, in the end_mask code, we create the mask
-			 * from this rather than dest.
-			 */
-			state[1].shape = shape = NULL;
-		}
-		if (state->group_alpha)
-		{
-			state[1].group_alpha = group_alpha = NULL;
-		}
+		state[1].shape = shape = NULL;
+	}
+	if (state->group_alpha)
+	{
+		state[1].group_alpha = group_alpha = NULL;
+	}
 
-		if (luminosity)
-		{
-			float bc;
-			if (!colorspace)
-				colorspace = fz_device_gray(ctx);
-			fz_convert_color(ctx, color_params, NULL, fz_device_gray(ctx), &bc, colorspace, colorfv);
-			fz_clear_pixmap_with_value(ctx, dest, bc * 255);
-			if (shape)
-				fz_clear_pixmap_with_value(ctx, shape, 255);
-			if (group_alpha)
-				fz_clear_pixmap_with_value(ctx, group_alpha, 255);
-		}
-		else
-		{
-			fz_clear_pixmap(ctx, dest);
-			if (shape)
-				fz_clear_pixmap(ctx, shape);
-			if (group_alpha)
-				fz_clear_pixmap(ctx, group_alpha);
-		}
+	if (luminosity)
+	{
+		float bc;
+		if (!colorspace)
+			colorspace = fz_device_gray(ctx);
+		fz_convert_color(ctx, color_params, NULL, fz_device_gray(ctx), &bc, colorspace, colorfv);
+		fz_clear_pixmap_with_value(ctx, dest, bc * 255);
+		if (shape)
+			fz_clear_pixmap_with_value(ctx, shape, 255);
+		if (group_alpha)
+			fz_clear_pixmap_with_value(ctx, group_alpha, 255);
+	}
+	else
+	{
+		fz_clear_pixmap(ctx, dest);
+		if (shape)
+			fz_clear_pixmap(ctx, shape);
+		if (group_alpha)
+			fz_clear_pixmap(ctx, group_alpha);
+	}
 
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Mask begin\n");
+	dump_spaces(dev->top-1, "Mask begin\n");
 #endif
-		state[1].scissor = bbox;
-	}
+	state[1].scissor = bbox;
 }
 
 static void
@@ -2267,55 +2269,54 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, fz_rect area, fz_colorspac
 	trect = fz_transform_rect(area, dev->transform);
 	bbox = fz_intersect_irect(fz_irect_from_rect(trect), state->scissor);
 
-	{
 #ifndef ATTEMPT_KNOCKOUT_AND_ISOLATED
-		knockout = 0;
-		isolated = 1;
+	knockout = 0;
+	isolated = 1;
 #endif
 
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha || isolated);
+	state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, state[0].dest->alpha || isolated);
 
-		if (isolated)
-		{
-			fz_clear_pixmap(ctx, dest);
-			state[1].group_alpha = NULL;
-		}
-		else
-		{
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, bbox, dev->default_cs);
-			state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, state[1].group_alpha);
-		}
-
-		/* shape is inherited from the previous group */
-		state[1].alpha = alpha;
-#ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "");
-		{
-			char text[240];
-			char atext[80];
-			char btext[80];
-			if (alpha != 1)
-				sprintf(atext, " (alpha %g)", alpha);
-			else
-				atext[0] = 0;
-			if (blendmode != 0)
-				sprintf(btext, " (blend %d)", blendmode);
-			else
-				btext[0] = 0;
-			sprintf(text, "Group begin%s%s%s%s: background is ", isolated ? " (isolated)" : "", knockout ? " (knockout)" : "", atext, btext);
-			fz_dump_blend(ctx, text, state[1].dest);
-		}
-		if (state[1].shape)
-			fz_dump_blend(ctx, "/S=", state[1].shape);
-		if (state[1].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
-		printf("\n");
-#endif
-
-		state[1].scissor = bbox;
-		state[1].blendmode = blendmode | (isolated ? FZ_BLEND_ISOLATED : 0) | (knockout ? FZ_BLEND_KNOCKOUT : 0);
+	if (isolated)
+	{
+		fz_clear_pixmap(ctx, dest);
+		state[1].group_alpha = NULL;
 	}
+	else
+	{
+		fz_copy_pixmap_rect(ctx, dest, state[0].dest, bbox, dev->default_cs);
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+
+	/* shape is inherited from the previous group */
+	state[1].alpha = alpha;
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "");
+	{
+		char text[240];
+		char atext[80];
+		char btext[80];
+		if (alpha != 1)
+			sprintf(atext, " (alpha %g)", alpha);
+		else
+			atext[0] = 0;
+		if (blendmode != 0)
+			sprintf(btext, " (blend %d)", blendmode);
+		else
+			btext[0] = 0;
+		sprintf(text, "Group begin%s%s%s%s: background is ", isolated ? " (isolated)" : "", knockout ? " (knockout)" : "", atext, btext);
+		fz_dump_blend(ctx, text, state[1].dest);
+	}
+	if (state[1].shape)
+		fz_dump_blend(ctx, "/S=", state[1].shape);
+	if (state[1].group_alpha)
+		fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+	printf("\n");
+#endif
+
+	state[1].scissor = bbox;
+	state[1].blendmode = blendmode | (isolated ? FZ_BLEND_ISOLATED : 0) | (knockout ? FZ_BLEND_KNOCKOUT : 0);
 }
 
 static void
@@ -2358,68 +2359,66 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 		printf(" (knockout)");
 #endif
 
+	if (state[0].dest->colorspace != state[1].dest->colorspace)
 	{
-		if (state[0].dest->colorspace != state[1].dest->colorspace)
-		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params(ctx), 1);
-			fz_drop_pixmap(ctx, state[1].dest);
-			state[1].dest = converted;
-		}
+		fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params(ctx), 1);
+		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = converted;
+	}
 
-		if ((blendmode == 0) && (state[0].shape == state[1].shape) && (state[0].group_alpha == state[1].group_alpha))
-			fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
-		else
-			fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].group_alpha);
+	if ((blendmode == 0) && (state[0].shape == state[1].shape) && (state[0].group_alpha == state[1].group_alpha))
+		fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
+	else
+		fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].group_alpha);
 
-		if (state[0].shape != state[1].shape)
+	if (state[0].shape != state[1].shape)
+	{
+		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
+		 * isn't alpha * 255, as the blend back fails to take account of alpha. */
+		if (state[0].shape)
 		{
-			/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
-			 * isn't alpha * 255, as the blend back fails to take account of alpha. */
-			if (state[0].shape)
-			{
-				if (state[1].shape)
-					fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
-				else
-					fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
-			}
-		}
-		assert(state[0].group_alpha == NULL || state[0].group_alpha != state[1].group_alpha);
-		if (state[0].group_alpha && state[0].group_alpha != state[1].group_alpha)
-		{
-			/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf uses an isolated group,
-			 * and goes wrong if this is 255 * alpha, as an alpha effectively gets
-			 * applied twice. CATX5233 page 7 uses a non-isolated group, and goes wrong
-			 * if alpha isn't applied here. */
-			if (state[1].group_alpha)
-				fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, isolated ? 255 : alpha * 255);
+			if (state[1].shape)
+				fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
 			else
-				fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, isolated ? 255 : alpha * 255);
+				fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
 		}
+	}
+	assert(state[0].group_alpha == NULL || state[0].group_alpha != state[1].group_alpha);
+	if (state[0].group_alpha && state[0].group_alpha != state[1].group_alpha)
+	{
+		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf uses an isolated group,
+		 * and goes wrong if this is 255 * alpha, as an alpha effectively gets
+		 * applied twice. CATX5233 page 7 uses a non-isolated group, and goes wrong
+		 * if alpha isn't applied here. */
+		if (state[1].group_alpha)
+			fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, isolated ? 255 : alpha * 255);
+		else
+			fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, isolated ? 255 : alpha * 255);
+	}
 
-		assert(state[0].dest != state[1].dest);
+	assert(state[0].dest != state[1].dest);
 
 #ifdef DUMP_GROUP_BLENDS
-		fz_dump_blend(ctx, " to get ", state[0].dest);
-		if (state[0].shape)
-			fz_dump_blend(ctx, "/S=", state[0].shape);
-		if (state[0].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-		printf("\n");
+	fz_dump_blend(ctx, " to get ", state[0].dest);
+	if (state[0].shape)
+		fz_dump_blend(ctx, "/S=", state[0].shape);
+	if (state[0].group_alpha)
+		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+	printf("\n");
 #endif
 
-		if (state[0].shape != state[1].shape)
-		{
-			fz_drop_pixmap(ctx, state[1].shape);
-			state[1].shape = NULL;
-		}
-		fz_drop_pixmap(ctx, state[1].group_alpha);
-		state[1].group_alpha = NULL;
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = NULL;
-
-		if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
-			fz_knockout_end(ctx, dev);
+	if (state[0].shape != state[1].shape)
+	{
+		fz_drop_pixmap(ctx, state[1].shape);
+		state[1].shape = NULL;
 	}
+	fz_drop_pixmap(ctx, state[1].group_alpha);
+	state[1].group_alpha = NULL;
+	fz_drop_pixmap(ctx, state[1].dest);
+	state[1].dest = NULL;
+
+	if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
+		fz_knockout_end(ctx, dev);
 }
 
 typedef struct
@@ -2594,45 +2593,45 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, fz_rect area, fz_rect view,
 			state[1].encache = 0;
 			state[1].area = fz_irect_from_rect(area);
 			state[1].ctm = ctm;
+			state[1].scissor = bbox;
+
 #ifdef DUMP_GROUP_BLENDS
 			dump_spaces(dev->top-1, "Tile begin (cached)\n");
 #endif
 
-			state[1].scissor = bbox;
 			fz_drop_tile_record(ctx, tile);
 			return 1;
 		}
 	}
 
+	/* Patterns can be transparent, so we need to have an alpha here. */
+	state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, 1);
+	fz_clear_pixmap(ctx, dest);
+	shape = state[0].shape;
+	if (shape)
 	{
-		/* Patterns can be transparent, so we need to have an alpha here. */
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, bbox, state[0].dest->seps, 1);
-		fz_clear_pixmap(ctx, dest);
-		shape = state[0].shape;
-		if (shape)
-		{
-			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, shape);
-		}
-		group_alpha = state[0].group_alpha;
-		if (group_alpha)
-		{
-			state[1].group_alpha = group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, group_alpha);
-		}
-		state[1].blendmode |= FZ_BLEND_ISOLATED;
-		state[1].xstep = xstep;
-		state[1].ystep = ystep;
-		state[1].id = id;
-		state[1].encache = 1;
-		state[1].area = fz_irect_from_rect(area);
-		state[1].ctm = ctm;
-#ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Tile begin\n");
-#endif
-
-		state[1].scissor = bbox;
+		state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, shape);
 	}
+	group_alpha = state[0].group_alpha;
+	if (group_alpha)
+	{
+		state[1].group_alpha = group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+		fz_clear_pixmap(ctx, group_alpha);
+	}
+
+	state[1].blendmode |= FZ_BLEND_ISOLATED;
+	state[1].xstep = xstep;
+	state[1].ystep = ystep;
+	state[1].id = id;
+	state[1].encache = 1;
+	state[1].area = fz_irect_from_rect(area);
+	state[1].ctm = ctm;
+	state[1].scissor = bbox;
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "Tile begin\n");
+#endif
 
 	return 0;
 }
