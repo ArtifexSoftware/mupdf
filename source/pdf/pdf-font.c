@@ -972,6 +972,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 	pdf_obj *widths;
 	pdf_obj *descriptor;
 	pdf_font_desc *fontdesc = NULL;
+	fz_buffer *buf = NULL;
 	pdf_cmap *cmap;
 	FT_Face face;
 	char collection[256];
@@ -982,6 +983,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 	int dw;
 
 	fz_var(fontdesc);
+	fz_var(buf);
 
 	fz_try(ctx)
 	{
@@ -1038,7 +1040,6 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		cidtogidmap = pdf_dict_get(ctx, dict, PDF_NAME(CIDToGIDMap));
 		if (pdf_is_stream(ctx, cidtogidmap))
 		{
-			fz_buffer *buf;
 			size_t z, len;
 			unsigned char *data;
 
@@ -1050,8 +1051,6 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 			fontdesc->size += fontdesc->cid_to_gid_len * sizeof(unsigned short);
 			for (z = 0; z < fontdesc->cid_to_gid_len; z++)
 				fontdesc->cid_to_gid[z] = (data[z * 2] << 8) + data[z * 2 + 1];
-
-			fz_drop_buffer(ctx, buf);
 		}
 		else if (cidtogidmap && !pdf_name_eq(ctx, PDF_NAME(Identity), cidtogidmap))
 		{
@@ -1185,6 +1184,8 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 			pdf_end_vmtx(ctx, fontdesc);
 		}
 	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
 	{
 		pdf_drop_font(ctx, fontdesc);
