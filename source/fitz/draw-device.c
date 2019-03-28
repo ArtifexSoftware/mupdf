@@ -2167,10 +2167,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 	fz_draw_state *state;
 
 	if (dev->top == 0)
-	{
-		fz_warn(ctx, "Unexpected draw_end_mask");
-		return;
-	}
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected end mask");
 
 	state = convert_stack(ctx, dev, "mask");
 
@@ -2312,10 +2309,7 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	fz_draw_state *state;
 
 	if (dev->top == 0)
-	{
-		fz_warn(ctx, "Unexpected end_group");
-		return;
-	}
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected end group");
 
 	state = pop_stack(ctx, dev, "group");
 
@@ -2639,10 +2633,7 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_pixmap *group_alpha = NULL;
 
 	if (dev->top == 0)
-	{
-		fz_warn(ctx, "Unexpected end_tile");
-		return;
-	}
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected end tile");
 
 	state = pop_stack(ctx, dev, "tile");
 
