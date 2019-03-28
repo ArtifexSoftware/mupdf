@@ -302,17 +302,22 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 
 	fz_blend_pixmap_knockout(ctx, state[0].dest, state[1].dest, state[1].shape);
 	fz_drop_pixmap(ctx, state[1].dest);
+	state[1].dest = NULL;
+
 	if (state[1].group_alpha && state[0].group_alpha != state[1].group_alpha)
 	{
 		if (state[0].group_alpha)
 			fz_blend_pixmap_knockout(ctx, state[0].group_alpha, state[1].group_alpha, state[1].shape);
 		fz_drop_pixmap(ctx, state[1].group_alpha);
+		state[1].group_alpha = NULL;
 	}
+
 	if (state[0].shape != state[1].shape)
 	{
 		if (state[0].shape)
 			fz_paint_pixmap(state[0].shape, state[1].shape, 255);
 		fz_drop_pixmap(ctx, state[1].shape);
+		state[1].shape = NULL;
 	}
 
 #ifdef DUMP_GROUP_BLENDS
@@ -2038,19 +2043,25 @@ fz_draw_pop_clip(fz_context *ctx, fz_device *devp)
 			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
 		fz_dump_blend(ctx, " with ", state[1].mask);
 #endif
+
 		fz_paint_pixmap_with_mask(state[0].dest, state[1].dest, state[1].mask);
 		if (state[0].shape != state[1].shape)
 		{
 			fz_paint_pixmap_with_mask(state[0].shape, state[1].shape, state[1].mask);
 			fz_drop_pixmap(ctx, state[1].shape);
+			state[1].shape = NULL;
 		}
 		if (state[0].group_alpha != state[1].group_alpha)
 		{
 			fz_paint_pixmap_with_mask(state[0].group_alpha, state[1].group_alpha, state[1].mask);
 			fz_drop_pixmap(ctx, state[1].group_alpha);
+			state[1].group_alpha = NULL;
 		}
 		fz_drop_pixmap(ctx, state[1].mask);
+		state[1].mask = NULL;
 		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = NULL;
+
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(ctx, " to get ", state[0].dest);
 		if (state[0].shape)
@@ -2384,9 +2395,14 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 #endif
 
 		if (state[0].shape != state[1].shape)
+		{
 			fz_drop_pixmap(ctx, state[1].shape);
+			state[1].shape = NULL;
+		}
 		fz_drop_pixmap(ctx, state[1].group_alpha);
+		state[1].group_alpha = NULL;
 		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = NULL;
 
 		if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
 			fz_knockout_end(ctx, dev);
@@ -2789,8 +2805,11 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	}
 
 	fz_drop_pixmap(ctx, state[1].dest);
+	state[1].dest = NULL;
 	fz_drop_pixmap(ctx, state[1].shape);
+	state[1].shape = NULL;
 	fz_drop_pixmap(ctx, state[1].group_alpha);
+	state[1].group_alpha = NULL;
 
 #ifdef DUMP_GROUP_BLENDS
 	fz_dump_blend(ctx, " to get ", state[0].dest);
@@ -2827,20 +2846,7 @@ fz_draw_close_device(fz_context *ctx, fz_device *devp)
 
 	/* pop and free the stacks */
 	if (dev->top > dev->resolve_spots)
-		fz_warn(ctx, "items left on stack in draw device: %d", dev->top);
-
-	while (dev->top > dev->resolve_spots)
-	{
-		fz_draw_state *state = &dev->stack[--dev->top];
-		if (state[1].mask != state[0].mask)
-			fz_drop_pixmap(ctx, state[1].mask);
-		if (state[1].dest != state[0].dest)
-			fz_drop_pixmap(ctx, state[1].dest);
-		if (state[1].shape != state[0].shape)
-			fz_drop_pixmap(ctx, state[1].shape);
-		if (state[1].group_alpha != state[0].group_alpha)
-			fz_drop_pixmap(ctx, state[1].group_alpha);
-	}
+		fz_throw(ctx, FZ_ERROR_GENERIC, "items left on stack in draw device: %d", dev->top);
 
 	if (dev->resolve_spots && dev->top)
 	{
@@ -2853,7 +2859,10 @@ fz_draw_close_device(fz_context *ctx, fz_device *devp)
 			assert(state[1].group_alpha == NULL);
 		}
 		fz_always(ctx)
+		{
 			fz_drop_pixmap(ctx, state[1].dest);
+			state[1].dest = NULL;
+		}
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
