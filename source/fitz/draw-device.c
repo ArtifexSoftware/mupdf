@@ -1410,138 +1410,157 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
+	fz_var(dest);
+	fz_var(shape);
+	fz_var(group_alpha);
+
 	dest = state->dest;
 	shape = state->shape;
 	group_alpha = state->group_alpha;
 
-	if (alpha < 1)
+	fz_try(ctx)
 	{
-		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
-		if (state->dest->alpha)
-			fz_clear_pixmap(ctx, dest);
-		else
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, bbox, dev->default_cs);
-		if (shape)
+		if (alpha < 1)
 		{
-			shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, shape);
-		}
-		if (group_alpha)
-		{
-			group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
-			fz_clear_pixmap(ctx, group_alpha);
-		}
-	}
-
-	if (shade->use_background)
-	{
-		unsigned char *s;
-		int x, y, n, i;
-		fz_color_params  local_cp;
-		fz_color_params *cp = NULL;
-
-		/* Disable OPM */
-		if (color_params)
-		{
-			local_cp = *color_params;
-			local_cp.opm = 0;
-			cp = &local_cp;
-		}
-
-		eop = resolve_color(ctx, &op, shade->background, colorspace, alpha, cp, colorbv, state->dest);
-
-		n = dest->n;
-		if (fz_overprint_required(eop))
-		{
-			for (y = scissor.y0; y < scissor.y1; y++)
+			dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, bbox, state->dest->seps, state->dest->alpha);
+			if (state->dest->alpha)
+				fz_clear_pixmap(ctx, dest);
+			else
+				fz_copy_pixmap_rect(ctx, dest, state[0].dest, bbox, dev->default_cs);
+			if (shape)
 			{
-				s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
-				for (x = scissor.x0; x < scissor.x1; x++)
+				shape = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+				fz_clear_pixmap(ctx, shape);
+			}
+			if (group_alpha)
+			{
+				group_alpha = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
+				fz_clear_pixmap(ctx, group_alpha);
+			}
+		}
+
+		if (shade->use_background)
+		{
+			unsigned char *s;
+			int x, y, n, i;
+			fz_color_params  local_cp;
+			fz_color_params *cp = NULL;
+
+			/* Disable OPM */
+			if (color_params)
+			{
+				local_cp = *color_params;
+				local_cp.opm = 0;
+				cp = &local_cp;
+			}
+
+			eop = resolve_color(ctx, &op, shade->background, colorspace, alpha, cp, colorbv, state->dest);
+
+			n = dest->n;
+			if (fz_overprint_required(eop))
+			{
+				for (y = scissor.y0; y < scissor.y1; y++)
 				{
-					for (i = 0; i < n; i++)
-						if (fz_overprint_component(eop, i))
+					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
+					for (x = scissor.x0; x < scissor.x1; x++)
+					{
+						for (i = 0; i < n; i++)
+							if (fz_overprint_component(eop, i))
+								*s++ = colorbv[i];
+					}
+				}
+			}
+			else
+			{
+				for (y = scissor.y0; y < scissor.y1; y++)
+				{
+					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
+					for (x = scissor.x0; x < scissor.x1; x++)
+					{
+						for (i = 0; i < n; i++)
 							*s++ = colorbv[i];
+					}
 				}
 			}
+			if (shape)
+			{
+				for (y = scissor.y0; y < scissor.y1; y++)
+				{
+					s = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (scissor.x0 - shape->x));
+					for (x = scissor.x0; x < scissor.x1; x++)
+					{
+						*s++ = 255;
+					}
+				}
+			}
+			if (group_alpha)
+			{
+				for (y = scissor.y0; y < scissor.y1; y++)
+				{
+					s = group_alpha->samples + (unsigned int)((y - group_alpha->y) * group_alpha->stride + (scissor.x0 - group_alpha->x));
+					for (x = scissor.x0; x < scissor.x1; x++)
+					{
+						*s++ = alpha_byte;
+					}
+				}
+			}
+		}
+
+		if (color_params->op)
+		{
+			eop = set_op_from_spaces(ctx, &op, dest, colorspace, 0);
 		}
 		else
-		{
-			for (y = scissor.y0; y < scissor.y1; y++)
-			{
-				s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
-				for (x = scissor.x0; x < scissor.x1; x++)
-				{
-					for (i = 0; i < n; i++)
-						*s++ = colorbv[i];
-				}
-			}
-		}
+			eop = NULL;
+
+		fz_paint_shade(ctx, shade, colorspace, ctm, dest, color_params, bbox, eop);
 		if (shape)
-		{
-			for (y = scissor.y0; y < scissor.y1; y++)
-			{
-				s = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (scissor.x0 - shape->x));
-				for (x = scissor.x0; x < scissor.x1; x++)
-				{
-					*s++ = 255;
-				}
-			}
-		}
+			fz_clear_pixmap_rect_with_value(ctx, shape, 255, bbox);
 		if (group_alpha)
-		{
-			for (y = scissor.y0; y < scissor.y1; y++)
-			{
-				s = group_alpha->samples + (unsigned int)((y - group_alpha->y) * group_alpha->stride + (scissor.x0 - group_alpha->x));
-				for (x = scissor.x0; x < scissor.x1; x++)
-				{
-					*s++ = alpha_byte;
-				}
-			}
-		}
-	}
-
-	if (color_params->op)
-	{
-		eop = set_op_from_spaces(ctx, &op, dest, colorspace, 0);
-	}
-	else
-		eop = NULL;
-
-	fz_paint_shade(ctx, shade, colorspace, ctm, dest, color_params, bbox, eop);
-	if (shape)
-		fz_clear_pixmap_rect_with_value(ctx, shape, 255, bbox);
-	if (group_alpha)
-		fz_clear_pixmap_rect_with_value(ctx, group_alpha, 255, bbox);
+			fz_clear_pixmap_rect_with_value(ctx, group_alpha, 255, bbox);
 
 #ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top, "");
-	fz_dump_blend(ctx, "Shade ", dest);
-	if (shape)
-		fz_dump_blend(ctx, "/S=", shape);
-	if (group_alpha)
-		fz_dump_blend(ctx, "/GA=", group_alpha);
-	printf("\n");
+		dump_spaces(dev->top, "");
+		fz_dump_blend(ctx, "Shade ", dest);
+		if (shape)
+			fz_dump_blend(ctx, "/S=", shape);
+		if (group_alpha)
+			fz_dump_blend(ctx, "/GA=", group_alpha);
+		printf("\n");
 #endif
 
-	if (alpha < 1)
-	{
-		/* FIXME: eop */
-		fz_paint_pixmap(state->dest, dest, alpha * 255);
-		fz_drop_pixmap(ctx, dest);
-		if (shape)
+		if (alpha < 1)
 		{
-			fz_paint_pixmap(state->shape, shape, 255);
-			fz_drop_pixmap(ctx, shape);
-		}
-		if (group_alpha)
-		{
-			fz_paint_pixmap(state->group_alpha, group_alpha, alpha * 255);
-			fz_drop_pixmap(ctx, group_alpha);
-		}
-	}
+			/* FIXME: eop */
+			fz_paint_pixmap(state->dest, dest, alpha * 255);
+			fz_drop_pixmap(ctx, dest);
+			dest = NULL;
 
-	if (state->blendmode & FZ_BLEND_KNOCKOUT)
-		fz_knockout_end(ctx, dev);
+			if (shape)
+			{
+				fz_paint_pixmap(state->shape, shape, 255);
+				fz_drop_pixmap(ctx, shape);
+				shape = NULL;
+			}
+
+			if (group_alpha)
+			{
+				fz_paint_pixmap(state->group_alpha, group_alpha, alpha * 255);
+				fz_drop_pixmap(ctx, group_alpha);
+				group_alpha = NULL;
+			}
+		}
+
+		if (state->blendmode & FZ_BLEND_KNOCKOUT)
+			fz_knockout_end(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		if (dest != state[0].dest) fz_drop_pixmap(ctx, dest);
+		if (shape != state[0].shape) fz_drop_pixmap(ctx, shape);
+		if (group_alpha != state[0].group_alpha) fz_drop_pixmap(ctx, group_alpha);
+		fz_rethrow(ctx);
+	}
 }
 
 static fz_pixmap *
