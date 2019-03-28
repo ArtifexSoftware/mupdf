@@ -1153,12 +1153,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		return;
 
 	fz_var(cs);
-	fz_var(save_default_cs);
 	fz_var(xobj_default_cs);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
 	oldtop = pr->gtop;
+
+	save_default_cs = pr->default_cs;
 
 	fz_try(ctx)
 	{
@@ -1217,7 +1218,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		if (!resources)
 			resources = page_resources;
 
-		save_default_cs = pr->default_cs;
 		xobj_default_cs = pdf_update_default_colorspaces(ctx, pr->default_cs, resources);
 		if (xobj_default_cs != save_default_cs)
 		{
