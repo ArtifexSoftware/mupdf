@@ -643,7 +643,7 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, const unsigned char *p, 
 			int n = sp[0];
 			int hi = (sp[1] >> 4) & 0xF;
 			int lo = sp[1] & 0xF;
-			if (dp + n / 2 > ep) {
+			if (dp + n / 2 + (x & 1) > ep) {
 				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
 				break;
 			}
