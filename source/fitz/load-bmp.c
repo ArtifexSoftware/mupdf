@@ -934,7 +934,11 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 	}
 	else
 	{
-		p = bmp_read_color_table(ctx, info, p, begin + info->offset);
+		const unsigned char *color_table_end = begin + info->offset;
+		if (end - begin < info->offset)
+			color_table_end = end;
+		p = bmp_read_color_table(ctx, info, p, color_table_end);
+
 		if (p - begin < info->offset)
 			p = begin + info->offset;
 		return bmp_read_bitmap(ctx, info, p, end);
