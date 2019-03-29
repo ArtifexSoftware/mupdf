@@ -1941,7 +1941,6 @@ static inline pdf_obj *from_PDFObject(JNIEnv *env, jobject jobj)
 	pdf_obj *obj;
 	if (!jobj) return NULL;
 	obj = CAST(pdf_obj *, (*env)->GetLongField(env, jobj, fid_PDFObject_pointer));
-	if (!obj) jni_throw_null(env, "cannot use already destroyed PDFObject");
 	return obj;
 }
 
@@ -7725,16 +7724,6 @@ FUN(PDFObject_finalize)(JNIEnv *env, jobject self)
 	if (!ctx || !obj) return;
 
 	pdf_drop_obj(ctx, obj);
-}
-
-JNIEXPORT jlong JNICALL
-FUN(PDFObject_newNull)(JNIEnv *env, jclass cls)
-{
-	fz_context *ctx = get_context(env);
-
-	if (!ctx) return 0;
-
-	return jlong_cast(PDF_NULL);
 }
 
 JNIEXPORT jint JNICALL

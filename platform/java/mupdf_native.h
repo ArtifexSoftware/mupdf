@@ -1907,14 +1907,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    newNull
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PDFObject_newNull
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    isIndirect
  * Signature: ()Z
  */

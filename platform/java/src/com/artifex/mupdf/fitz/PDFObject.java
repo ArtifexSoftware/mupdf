@@ -10,16 +10,9 @@ public class PDFObject
 
 	protected native void finalize();
 
-	public void destroy() {
-		finalize();
-		pointer = 0;
-	}
-
 	private PDFObject(long p) {
 		pointer = p;
 	}
-
-	private static native long newNull();
 
 	public native boolean isIndirect();
 	public native boolean isNull();
@@ -211,5 +204,5 @@ public class PDFObject
 		pushPDFObject(obj);
 	}
 
-	public static final PDFObject Null = new PDFObject(newNull());
+	public static final PDFObject Null = new PDFObject(0);
 }
