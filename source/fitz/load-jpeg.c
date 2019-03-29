@@ -314,16 +314,16 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 
 	row[0] = NULL;
 
+	cinfo.mem = NULL;
+	cinfo.global_state = 0;
+	cinfo.err = jpeg_std_error(&err);
+	err.error_exit = error_exit;
+
 	cinfo.client_data = NULL;
 	fz_jpg_mem_init((j_common_ptr)&cinfo, ctx);
 
 	fz_try(ctx)
 	{
-		cinfo.mem = NULL;
-		cinfo.global_state = 0;
-		cinfo.err = jpeg_std_error(&err);
-		err.error_exit = error_exit;
-
 		jpeg_create_decompress(&cinfo);
 
 		cinfo.src = &src;
@@ -429,16 +429,16 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 
 	*cspacep = NULL;
 
+	cinfo.mem = NULL;
+	cinfo.global_state = 0;
+	cinfo.err = jpeg_std_error(&err);
+	err.error_exit = error_exit;
+
+	cinfo.client_data = NULL;
+	fz_jpg_mem_init((j_common_ptr)&cinfo, ctx);
+
 	fz_try(ctx)
 	{
-		cinfo.mem = NULL;
-		cinfo.global_state = 0;
-		cinfo.err = jpeg_std_error(&err);
-		err.error_exit = error_exit;
-
-		cinfo.client_data = NULL;
-		fz_jpg_mem_init((j_common_ptr)&cinfo, ctx);
-
 		jpeg_create_decompress(&cinfo);
 
 		cinfo.src = &src;
