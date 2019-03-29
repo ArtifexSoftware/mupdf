@@ -175,7 +175,11 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 	{
 		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
 		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
-		pdf_font_desc *font = pdf_load_font(ctx, csi->doc, csi->rdb, font_ref);
+		pdf_font_desc *font;
+		if (pdf_is_dict(ctx, font_ref))
+			font = pdf_load_font(ctx, csi->doc, csi->rdb, font_ref);
+		else
+			font = pdf_load_hail_mary_font(ctx, csi->doc);
 		fz_try(ctx)
 			proc->op_Tf(ctx, proc, "ExtGState", font, pdf_to_real(ctx, font_size));
 		fz_always(ctx)
