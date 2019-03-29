@@ -305,6 +305,8 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 	int len;
 	zip_entry *ent;
 
+	fz_var(cbuf);
+
 	ent = lookup_zip_entry(ctx, zip, name);
 	if (!ent)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find named zip archive entry");
@@ -329,9 +331,10 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 	}
 	else if (method == 8)
 	{
-		cbuf = fz_malloc(ctx, ent->csize);
 		fz_try(ctx)
 		{
+			cbuf = fz_malloc(ctx, ent->csize);
+
 			fz_read(ctx, file, cbuf, ent->csize);
 
 			z.zalloc = zalloc_zip;
