@@ -22,11 +22,23 @@ struct fz_pool_node_s
 
 fz_pool *fz_new_pool(fz_context *ctx)
 {
-	fz_pool *pool = fz_malloc_struct(ctx, fz_pool);
-	fz_pool_node *node = fz_calloc(ctx, offsetof(fz_pool_node, mem) + POOL_SIZE, 1);
-	pool->head = pool->tail = node;
-	pool->pos = node->mem;
-	pool->end = node->mem + POOL_SIZE;
+	fz_pool *pool;
+	fz_pool_node *node = NULL;
+
+	pool = fz_malloc_struct(ctx, fz_pool);
+	fz_try(ctx)
+	{
+		node = fz_calloc(ctx, offsetof(fz_pool_node, mem) + POOL_SIZE, 1);
+		pool->head = pool->tail = node;
+		pool->pos = node->mem;
+		pool->end = node->mem + POOL_SIZE;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, pool);
+		fz_rethrow(ctx);
+	}
+
 	return pool;
 }
 
