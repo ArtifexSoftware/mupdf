@@ -216,7 +216,10 @@ xps_parse_metadata_imp(fz_context *ctx, xps_document *doc, fz_xml *item, xps_fix
 				char tgtbuf[1024];
 				xps_resolve_url(ctx, doc, tgtbuf, doc->base_uri, target, sizeof tgtbuf);
 				if (!strcmp(type, REL_START_PART) || !strcmp(type, REL_START_PART_OXPS))
+				{
+					fz_free(ctx, doc->start_part);
 					doc->start_part = fz_strdup(ctx, tgtbuf);
+				}
 				if ((!strcmp(type, REL_DOC_STRUCTURE) || !strcmp(type, REL_DOC_STRUCTURE_OXPS)) && fixdoc)
 					fixdoc->outline = fz_strdup(ctx, tgtbuf);
 				if (!fz_xml_att(item, "Id"))
