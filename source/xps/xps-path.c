@@ -737,17 +737,25 @@ xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, 
 	else
 		path = fz_new_path(ctx);
 
-	if (figures_tag)
-		xps_parse_path_figure(ctx, doc, path, figures_tag, stroking);
-
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+	fz_try(ctx)
 	{
-		if (fz_xml_is_tag(node, "PathFigure"))
-			xps_parse_path_figure(ctx, doc, path, node, stroking);
-	}
+		if (figures_tag)
+			xps_parse_path_figure(ctx, doc, path, figures_tag, stroking);
 
-	if (transform_att || transform_tag)
-		fz_transform_path(ctx, path, transform);
+		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+		{
+			if (fz_xml_is_tag(node, "PathFigure"))
+				xps_parse_path_figure(ctx, doc, path, node, stroking);
+		}
+
+		if (transform_att || transform_tag)
+			fz_transform_path(ctx, path, transform);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_path(ctx, path);
+		fz_rethrow(ctx);
+	}
 
 	return path;
 }
