@@ -722,10 +722,13 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	struct parser parser;
 	fz_xml_doc *xml = NULL;
 	fz_xml root, *node;
-	char *p, *error;
+	char *p = NULL;
+	char *error;
 	int dofree;
 	unsigned char *s;
 	size_t n;
+
+	fz_var(p);
 
 	/* ensure we are zero-terminated */
 	fz_terminate_buffer(ctx, buf);
@@ -737,10 +740,10 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	parser.preserve_white = preserve_white;
 	parser.depth = 0;
 
-	p = convert_to_utf8(ctx, s, n, &dofree);
-
 	fz_try(ctx)
 	{
+		p = convert_to_utf8(ctx, s, n, &dofree);
+
 		error = xml_parse_document_imp(ctx, &parser, p);
 		if (error)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "%s", error);
