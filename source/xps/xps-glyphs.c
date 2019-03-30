@@ -589,62 +589,68 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 	if (!font)
 		return; /* bail if we can't find the font */
 
-	/*
-	 * Set up graphics state.
-	 */
-
-	ctm = xps_parse_transform(ctx, doc, transform_att, transform_tag, ctm);
-
-	if (clip_att || clip_tag)
-		xps_clip(ctx, doc, ctm, dict, clip_att, clip_tag);
-
-	font_size = fz_atof(font_size_att);
-
-	text = xps_parse_glyphs_imp(ctx, doc, ctm, font, font_size,
-			fz_atof(origin_x_att), fz_atof(origin_y_att),
-			is_sideways, bidi_level, indices_att, unicode_att);
-
-	area = fz_bound_text(ctx, text, NULL, ctm);
-
-	xps_begin_opacity(ctx, doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-
-	/* If it's a solid color brush fill/stroke do a simple fill */
-
-	if (fz_xml_is_tag(fill_tag, "SolidColorBrush"))
+	fz_try(ctx)
 	{
-		fill_opacity_att = fz_xml_att(fill_tag, "Opacity");
-		fill_att = fz_xml_att(fill_tag, "Color");
-		fill_tag = NULL;
-	}
+		/*
+		 * Set up graphics state.
+		 */
 
-	if (fill_att)
+		ctm = xps_parse_transform(ctx, doc, transform_att, transform_tag, ctm);
+
+		if (clip_att || clip_tag)
+			xps_clip(ctx, doc, ctm, dict, clip_att, clip_tag);
+
+		font_size = fz_atof(font_size_att);
+
+		text = xps_parse_glyphs_imp(ctx, doc, ctm, font, font_size,
+				fz_atof(origin_x_att), fz_atof(origin_y_att),
+				is_sideways, bidi_level, indices_att, unicode_att);
+
+		area = fz_bound_text(ctx, text, NULL, ctm);
+
+		xps_begin_opacity(ctx, doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+
+		/* If it's a solid color brush fill/stroke do a simple fill */
+
+		if (fz_xml_is_tag(fill_tag, "SolidColorBrush"))
+		{
+			fill_opacity_att = fz_xml_att(fill_tag, "Opacity");
+			fill_att = fz_xml_att(fill_tag, "Color");
+			fill_tag = NULL;
+		}
+
+		if (fill_att)
+		{
+			float samples[FZ_MAX_COLORS];
+			fz_colorspace *colorspace;
+
+			xps_parse_color(ctx, doc, base_uri, fill_att, &colorspace, samples);
+			if (fill_opacity_att)
+				samples[0] *= fz_atof(fill_opacity_att);
+			xps_set_color(ctx, doc, colorspace, samples);
+
+			fz_fill_text(ctx, dev, text, ctm, doc->colorspace, doc->color, doc->alpha, NULL);
+		}
+
+		/* If it's a complex brush, use the charpath as a clip mask */
+
+		if (fill_tag)
+		{
+			fz_clip_text(ctx, dev, text, ctm, area);
+			xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
+			fz_pop_clip(ctx, dev);
+		}
+
+		xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+
+		if (clip_att || clip_tag)
+			fz_pop_clip(ctx, dev);
+	}
+	fz_always(ctx)
 	{
-		float samples[FZ_MAX_COLORS];
-		fz_colorspace *colorspace;
-
-		xps_parse_color(ctx, doc, base_uri, fill_att, &colorspace, samples);
-		if (fill_opacity_att)
-			samples[0] *= fz_atof(fill_opacity_att);
-		xps_set_color(ctx, doc, colorspace, samples);
-
-		fz_fill_text(ctx, dev, text, ctm, doc->colorspace, doc->color, doc->alpha, NULL);
+		fz_drop_text(ctx, text);
+		fz_drop_font(ctx, font);
 	}
-
-	/* If it's a complex brush, use the charpath as a clip mask */
-
-	if (fill_tag)
-	{
-		fz_clip_text(ctx, dev, text, ctm, area);
-		xps_parse_brush(ctx, doc, ctm, area, fill_uri, dict, fill_tag);
-		fz_pop_clip(ctx, dev);
-	}
-
-	xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-
-	fz_drop_text(ctx, text);
-
-	if (clip_att || clip_tag)
-		fz_pop_clip(ctx, dev);
-
-	fz_drop_font(ctx, font);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
