@@ -17,10 +17,18 @@ static fz_tree tree_sentinel = { "", NULL, &tree_sentinel, &tree_sentinel, 0 };
 static fz_tree *fz_tree_new_node(fz_context *ctx, const char *key, void *value)
 {
 	fz_tree *node = fz_malloc_struct(ctx, fz_tree);
-	node->key = fz_strdup(ctx, key);
-	node->value = value;
-	node->left = node->right = &tree_sentinel;
-	node->level = 1;
+	fz_try(ctx)
+	{
+		node->key = fz_strdup(ctx, key);
+		node->value = value;
+		node->left = node->right = &tree_sentinel;
+		node->level = 1;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, node);
+		fz_rethrow(ctx);
+	}
 	return node;
 }
 
