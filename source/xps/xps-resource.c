@@ -133,7 +133,15 @@ xps_parse_resource_dictionary(fz_context *ctx, xps_document *doc, char *base_uri
 	}
 
 	if (head)
-		head->base_uri = fz_strdup(ctx, base_uri);
+	{
+		fz_try(ctx)
+			head->base_uri = fz_strdup(ctx, base_uri);
+		fz_catch(ctx)
+		{
+			fz_free(ctx, entry);
+			fz_rethrow(ctx);
+		}
+	}
 
 	return head;
 }
