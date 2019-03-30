@@ -83,11 +83,22 @@ xps_add_fixed_page(fz_context *ctx, xps_document *doc, char *name, int width, in
 			return;
 
 	page = fz_malloc_struct(ctx, xps_fixpage);
-	page->name = fz_strdup(ctx, name);
-	page->number = doc->page_count++;
-	page->width = width;
-	page->height = height;
-	page->next = NULL;
+	page->name = NULL;
+
+	fz_try(ctx)
+	{
+		page->name = fz_strdup(ctx, name);
+		page->number = doc->page_count++;
+		page->width = width;
+		page->height = height;
+		page->next = NULL;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, page->name);
+		fz_free(ctx, page);
+		fz_rethrow(ctx);
+	}
 
 	if (!doc->first_page)
 	{
