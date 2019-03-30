@@ -117,9 +117,19 @@ xps_add_link_target(fz_context *ctx, xps_document *doc, char *name)
 {
 	xps_fixpage *page = doc->last_page;
 	xps_target *target = fz_malloc_struct(ctx, xps_target);
-	target->name = fz_strdup(ctx, name);
-	target->page = page->number;
-	target->next = doc->target;
+
+	fz_try(ctx)
+	{
+		target->name = fz_strdup(ctx, name);
+		target->page = page->number;
+		target->next = doc->target;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, target);
+		fz_rethrow(ctx);
+	}
+
 	doc->target = target;
 }
 
