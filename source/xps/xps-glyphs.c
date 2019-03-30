@@ -388,87 +388,95 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 
 	text = fz_new_text(ctx);
 
-	while ((us && un > 0) || (is && *is))
+	fz_try(ctx)
 	{
-		int char_code = FZ_REPLACEMENT_CHARACTER;
-		int code_count = 1;
-		int glyph_count = 1;
-
-		if (is && *is)
+		while ((us && un > 0) || (is && *is))
 		{
-			is = xps_parse_cluster_mapping(is, &code_count, &glyph_count);
-		}
-
-		if (code_count < 1)
-			code_count = 1;
-		if (glyph_count < 1)
-			glyph_count = 1;
-
-		/* TODO: add code chars with cluster mappings for text extraction */
-
-		while (code_count--)
-		{
-			if (us && un > 0)
-			{
-				int t = fz_chartorune(&char_code, us);
-				us += t; un -= t;
-			}
-		}
-
-		while (glyph_count--)
-		{
-			int glyph_index = -1;
-			float u_offset = 0;
-			float v_offset = 0;
-			float advance;
-			int dir;
-
-			if (is && *is)
-				is = xps_parse_glyph_index(is, &glyph_index);
-
-			if (glyph_index == -1)
-				glyph_index = xps_encode_font_char(ctx, font, char_code);
-
-			xps_measure_font_glyph(ctx, doc, font, glyph_index, &mtx);
-			if (is_sideways)
-				advance = mtx.vadv * 100;
-			else if (bidi_level & 1)
-				advance = -mtx.hadv * 100;
-			else
-				advance = mtx.hadv * 100;
-
-			if (fz_font_flags(font)->fake_bold)
-				advance *= 1.02f;
+			int char_code = FZ_REPLACEMENT_CHARACTER;
+			int code_count = 1;
+			int glyph_count = 1;
 
 			if (is && *is)
 			{
-				is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset, bidi_level);
-				if (*is == ';')
-					is ++;
+				is = xps_parse_cluster_mapping(is, &code_count, &glyph_count);
 			}
 
-			if (bidi_level & 1)
-				u_offset = -mtx.hadv * 100 - u_offset;
+			if (code_count < 1)
+				code_count = 1;
+			if (glyph_count < 1)
+				glyph_count = 1;
 
-			u_offset = u_offset * 0.01f * size;
-			v_offset = v_offset * 0.01f * size;
+			/* TODO: add code chars with cluster mappings for text extraction */
 
-			if (is_sideways)
+			while (code_count--)
 			{
-				tm.e = x + u_offset + (mtx.vorg * size);
-				tm.f = y - v_offset + (mtx.hadv * 0.5f * size);
+				if (us && un > 0)
+				{
+					int t = fz_chartorune(&char_code, us);
+					us += t; un -= t;
+				}
 			}
-			else
+
+			while (glyph_count--)
 			{
-				tm.e = x + u_offset;
-				tm.f = y - v_offset;
+				int glyph_index = -1;
+				float u_offset = 0;
+				float v_offset = 0;
+				float advance;
+				int dir;
+
+				if (is && *is)
+					is = xps_parse_glyph_index(is, &glyph_index);
+
+				if (glyph_index == -1)
+					glyph_index = xps_encode_font_char(ctx, font, char_code);
+
+				xps_measure_font_glyph(ctx, doc, font, glyph_index, &mtx);
+				if (is_sideways)
+					advance = mtx.vadv * 100;
+				else if (bidi_level & 1)
+					advance = -mtx.hadv * 100;
+				else
+					advance = mtx.hadv * 100;
+
+				if (fz_font_flags(font)->fake_bold)
+					advance *= 1.02f;
+
+				if (is && *is)
+				{
+					is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset, bidi_level);
+					if (*is == ';')
+						is ++;
+				}
+
+				if (bidi_level & 1)
+					u_offset = -mtx.hadv * 100 - u_offset;
+
+				u_offset = u_offset * 0.01f * size;
+				v_offset = v_offset * 0.01f * size;
+
+				if (is_sideways)
+				{
+					tm.e = x + u_offset + (mtx.vorg * size);
+					tm.f = y - v_offset + (mtx.hadv * 0.5f * size);
+				}
+				else
+				{
+					tm.e = x + u_offset;
+					tm.f = y - v_offset;
+				}
+
+				dir = bidi_level & 1 ? FZ_BIDI_RTL : FZ_BIDI_LTR;
+				fz_show_glyph(ctx, text, font, tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
+
+				x += advance * 0.01f * size;
 			}
-
-			dir = bidi_level & 1 ? FZ_BIDI_RTL : FZ_BIDI_LTR;
-			fz_show_glyph(ctx, text, font, tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
-
-			x += advance * 0.01f * size;
 		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_text(ctx, text);
+		fz_rethrow(ctx);
 	}
 
 	return text;
