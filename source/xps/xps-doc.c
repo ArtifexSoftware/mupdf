@@ -48,9 +48,17 @@ xps_add_fixed_document(fz_context *ctx, xps_document *doc, char *name)
 			return;
 
 	fixdoc = fz_malloc_struct(ctx, xps_fixdoc);
-	fixdoc->name = fz_strdup(ctx, name);
-	fixdoc->outline = NULL;
-	fixdoc->next = NULL;
+	fz_try(ctx)
+	{
+		fixdoc->name = fz_strdup(ctx, name);
+		fixdoc->outline = NULL;
+		fixdoc->next = NULL;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, fixdoc);
+		fz_rethrow(ctx);
+	}
 
 	if (!doc->first_fixdoc)
 	{
