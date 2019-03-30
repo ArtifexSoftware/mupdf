@@ -658,7 +658,7 @@ static const unsigned short *find_xml_encoding(char *s)
 	return table;
 }
 
-static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *dofree)
+static char *convert_to_utf8(fz_context *ctx, unsigned char *s, size_t n, int *dofree)
 {
 	const unsigned short *table;
 	const unsigned char *e = s + n;
@@ -667,7 +667,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 
 	if (s[0] == 0xFE && s[1] == 0xFF) {
 		s += 2;
-		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
+		dst = d = fz_malloc(ctx, n * FZ_UTFMAX);
 		while (s + 1 < e) {
 			c = s[0] << 8 | s[1];
 			d += fz_runetochar(d, c);
@@ -680,7 +680,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 
 	if (s[0] == 0xFF && s[1] == 0xFE) {
 		s += 2;
-		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
+		dst = d = fz_malloc(ctx, n * FZ_UTFMAX);
 		while (s + 1 < e) {
 			c = s[0] | s[1] << 8;
 			d += fz_runetochar(d, c);
@@ -693,7 +693,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 
 	table = find_xml_encoding((char*)s);
 	if (table) {
-		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
+		dst = d = fz_malloc(ctx, n * FZ_UTFMAX);
 		while (*s) {
 			c = table[*s++];
 			d += fz_runetochar(d, c);
