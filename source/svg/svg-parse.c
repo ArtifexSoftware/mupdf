@@ -165,6 +165,8 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matr
 				str ++;
 			if (svg_is_digit(*str))
 				str = svg_lex_number(&args[nargs++], str);
+			else
+				break;
 		}
 
 		if (*str != ')')
