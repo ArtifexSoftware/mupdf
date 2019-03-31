@@ -347,13 +347,21 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			fz_urldecode(path);
 			fz_cleanname(path);
 
-			*tailp = outline = fz_new_outline(ctx);
-			tailp = &(*tailp)->next;
-			outline->title = fz_strdup(ctx, text);
-			outline->uri = fz_strdup(ctx, path);
-			outline->page = -1;
-			outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
-			outline->is_open = 1;
+			fz_try(ctx)
+			{
+				*tailp = outline = fz_new_outline(ctx);
+				tailp = &(*tailp)->next;
+				outline->title = fz_strdup(ctx, text);
+				outline->uri = fz_strdup(ctx, path);
+				outline->page = -1;
+				outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
+				outline->is_open = 1;
+			}
+			fz_catch(ctx)
+			{
+				fz_drop_outline(ctx, head);
+				fz_rethrow(ctx);
+			}
 		}
 		node = fz_xml_find_next(node, "navPoint");
 	}
