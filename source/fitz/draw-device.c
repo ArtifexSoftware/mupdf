@@ -5,6 +5,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 
 #define STACK_SIZE 96
 
@@ -608,7 +609,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 	float expansion = fz_matrix_expansion(ctm);
-	float flatness = 0.3f / expansion;
+	float flatness;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -618,6 +619,9 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
+	if (expansion < FLT_EPSILON)
+		expansion = 1;
+	flatness = 0.3f / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
@@ -661,7 +665,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 	float expansion = fz_matrix_expansion(ctm);
-	float flatness = 0.3f / expansion;
+	float flatness;
 	float linewidth = stroke->linewidth;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	fz_irect bbox;
@@ -676,8 +680,11 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 
 	if (mlw > aa_level)
 		aa_level = mlw;
+	if (expansion < FLT_EPSILON)
+		expansion = 1;
 	if (linewidth * expansion < aa_level)
 		linewidth = aa_level / expansion;
+	flatness = 0.3f / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
@@ -739,7 +746,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(ctm);
-	float flatness = 0.3f / expansion;
+	float flatness;
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
@@ -747,6 +754,9 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
+	if (expansion < FLT_EPSILON)
+		expansion = 1;
+	flatness = 0.3f / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
@@ -807,7 +817,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(ctm);
-	float flatness = 0.3f / expansion;
+	float flatness;
 	float linewidth = stroke->linewidth;
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -820,8 +830,11 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 
 	if (mlw > aa_level)
 		aa_level = mlw;
+	if (expansion < FLT_EPSILON)
+		expansion = 1;
 	if (linewidth * expansion < aa_level)
 		linewidth = aa_level / expansion;
+	flatness = 0.3f / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
