@@ -562,6 +562,9 @@ float fz_atof(const char *s)
 {
 	float result;
 
+	if (s == NULL)
+		return 0;
+
 	errno = 0;
 	result = fz_strtof(s, NULL);
 	if ((errno == ERANGE && result == 0) || isnan(result))
