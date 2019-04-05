@@ -7347,7 +7347,6 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 	pdf_obj *obj = from_PDFObject(env, jobj);
 	fz_buffer *buf = NULL;
 	const char *sbuf = NULL;
-	unsigned char *data = NULL;
 	pdf_obj *ind = NULL;
 
 	if (!ctx || !pdf) return NULL;
@@ -7360,10 +7359,7 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 
 	fz_try(ctx)
 	{
-		size_t len = strlen(sbuf);
-		data = fz_malloc(ctx, len);
-		memcpy(data, sbuf, len);
-		buf = fz_new_buffer_from_data(ctx, data, len);
+		buf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)sbuf, strlen(sbuf));
 		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
 	}
 	fz_always(ctx)
@@ -7414,7 +7410,6 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 	pdf_obj *resources = from_PDFObject(env, jresources);
 	const char *scontents = NULL;
 	fz_buffer *contents = NULL;
-	unsigned char *data = NULL;
 	pdf_obj *ind = NULL;
 
 	if (!ctx || !pdf) return NULL;
@@ -7428,9 +7423,7 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 
 	fz_try(ctx)
 	{
-		size_t len = strlen(scontents);
-		data = fz_malloc(ctx, len);
-		contents = fz_new_buffer_from_data(ctx, data, len);
+		contents = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)scontents, strlen(scontents));
 		ind = pdf_add_page(ctx, pdf, mediabox, rotate, resources, contents);
 	}
 	fz_always(ctx)
@@ -8085,7 +8078,6 @@ FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
 	pdf_obj *obj = from_PDFObject(env, self);
 	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
 	const char *str = NULL;
-	unsigned char *data = NULL;
 	fz_buffer *buf = NULL;
 
 	if (!ctx || !obj) return;
@@ -8099,10 +8091,7 @@ FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
 
 	fz_try(ctx)
 	{
-		size_t len = strlen(str);
-		data = fz_malloc(ctx, len);
-		memcpy(data, str, len);
-		buf = fz_new_buffer_from_data(ctx, data, len);
+		buf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)str, strlen(str));
 		pdf_update_stream(ctx, pdf, obj, buf, 0);
 	}
 	fz_always(ctx)
@@ -8139,7 +8128,6 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 	pdf_obj *obj = from_PDFObject(env, self);
 	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
 	const char *str = NULL;
-	unsigned char *data = NULL;
 	fz_buffer *buf = NULL;
 
 	if (!ctx || !obj) return;
@@ -8153,10 +8141,7 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 
 	fz_try(ctx)
 	{
-		size_t len = strlen(str);
-		data = fz_malloc(ctx, len);
-		memcpy(data, str, len);
-		buf = fz_new_buffer_from_data(ctx, data, len);
+		buf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)str, strlen(str));
 		pdf_update_stream(ctx, pdf, obj, buf, 1);
 	}
 	fz_always(ctx)
