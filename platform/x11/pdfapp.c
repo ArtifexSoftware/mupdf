@@ -113,6 +113,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"N\t\t-- find previous search result\n"
 		"c\t\t-- toggle between color and grayscale\n"
 		"i\t\t-- toggle inverted color mode\n"
+		"C\t\t-- toggle tinted color mode\n"
 		"q\t\t-- quit\n"
 	;
 }
