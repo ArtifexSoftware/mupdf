@@ -49,6 +49,7 @@ int atexit(void (*)(void));
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #ifdef __ANDROID__
 #define MEMENTO_ANDROID
