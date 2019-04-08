@@ -63,16 +63,6 @@ static const unsigned char png_signature[8] =
 	137, 80, 78, 71, 13, 10, 26, 10
 };
 
-static void *zalloc_png(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_png(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
-
 static inline int paeth(int a, int b, int c)
 {
 	/* The definitions of ac and bc are correct, not a typo. */
@@ -457,8 +447,8 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 
 		info->samples = fz_malloc(ctx, info->size);
 
-		stm.zalloc = zalloc_png;
-		stm.zfree = zfree_png;
+		stm.zalloc = fz_zlib_alloc;
+		stm.zfree = fz_zlib_free;
 		stm.opaque = ctx;
 
 		stm.next_out = info->samples;

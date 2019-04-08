@@ -282,6 +282,9 @@ void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
 
 void *fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
 
+void *fz_zlib_alloc(void *ctx, unsigned int items, unsigned int size);
+void fz_zlib_free(void *ctx, void *ptr);
+
 struct fz_warn_context_s
 {
 	char message[256];

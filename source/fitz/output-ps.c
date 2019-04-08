@@ -13,16 +13,6 @@ typedef struct ps_band_writer_s
 	unsigned char *output;
 } ps_band_writer;
 
-static void *zalloc_ps(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_ps(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
-
 void
 fz_write_ps_file_header(fz_context *ctx, fz_output *out)
 {
@@ -80,8 +70,8 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	writer->super.h = h;
 	writer->super.n = n;
 
-	writer->stream.zalloc = zalloc_ps;
-	writer->stream.zfree = zfree_ps;
+	writer->stream.zalloc = fz_zlib_alloc;
+	writer->stream.zfree = fz_zlib_free;
 	writer->stream.opaque = ctx;
 
 	err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);

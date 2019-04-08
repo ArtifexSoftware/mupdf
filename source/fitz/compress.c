@@ -4,21 +4,6 @@
 
 #include <limits.h>
 
-static void *fz_z_alloc(void *opaque, unsigned int count, unsigned int size)
-{
-	fz_context *ctx = (fz_context *)opaque;
-	size_t c = count * size;
-
-	return fz_malloc_no_throw(ctx, c);
-}
-
-static void fz_z_free(void *opaque, void *addr)
-{
-	fz_context *ctx = (fz_context *)opaque;
-
-	fz_free(ctx, addr);
-}
-
 /*
 	Compress source_length bytes of data starting
 	at source, into a buffer of length *destLen, starting at dest.
@@ -34,8 +19,8 @@ void fz_deflate(fz_context *ctx, unsigned char *dest, size_t *destLen, const uns
 	left = *destLen;
 	*destLen = 0;
 
-	stream.zalloc = fz_z_alloc;
-	stream.zfree = fz_z_free;
+	stream.zalloc = fz_zlib_alloc;
+	stream.zfree = fz_zlib_free;
 	stream.opaque = ctx;
 
 	err = deflateInit(&stream, (int)level);

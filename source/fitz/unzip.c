@@ -37,16 +37,6 @@ struct fz_zip_archive_s
 	zip_entry *entries;
 };
 
-static void *zalloc_zip(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_zip(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
-
 static void drop_zip_archive(fz_context *ctx, fz_archive *arch)
 {
 	fz_zip_archive *zip = (fz_zip_archive *) arch;
@@ -346,8 +336,8 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 
 			fz_read(ctx, file, cbuf, ent->csize);
 
-			z.zalloc = zalloc_zip;
-			z.zfree = zfree_zip;
+			z.zalloc = fz_zlib_alloc;
+			z.zfree = fz_zlib_free;
 			z.opaque = ctx;
 			z.next_in = cbuf;
 			z.avail_in = ent->csize;
