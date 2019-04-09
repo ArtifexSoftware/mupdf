@@ -114,6 +114,7 @@ static void new_annot(int type)
 	case PDF_ANNOT_UNDERLINE:
 	case PDF_ANNOT_STRIKE_OUT:
 	case PDF_ANNOT_SQUIGGLY:
+	case PDF_ANNOT_REDACT:
 		is_draw_mode = 1;
 		break;
 	}
@@ -370,7 +371,7 @@ void do_annotate_panel(void)
 
 	ui_layout(T, X, NW, 2, 2);
 
-	if (ui_popup("CreateAnnotPopup", "Create...", 1, 14))
+	if (ui_popup("CreateAnnotPopup", "Create...", 1, 15))
 	{
 		if (ui_popup_item("Text")) new_annot(PDF_ANNOT_TEXT);
 		if (ui_popup_item("FreeText")) new_annot(PDF_ANNOT_FREE_TEXT);
@@ -386,6 +387,7 @@ void do_annotate_panel(void)
 		if (ui_popup_item("Underline")) new_annot(PDF_ANNOT_UNDERLINE);
 		if (ui_popup_item("StrikeOut")) new_annot(PDF_ANNOT_STRIKE_OUT);
 		if (ui_popup_item("Squiggly")) new_annot(PDF_ANNOT_SQUIGGLY);
+		if (ui_popup_item("Redact")) new_annot(PDF_ANNOT_REDACT);
 		ui_popup_end();
 	}
 
@@ -1094,6 +1096,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 			case PDF_ANNOT_UNDERLINE:
 			case PDF_ANNOT_STRIKE_OUT:
 			case PDF_ANNOT_SQUIGGLY:
+			case PDF_ANNOT_REDACT:
 				if (is_draw_mode)
 					do_edit_quad_points();
 				break;

@@ -604,6 +604,41 @@ pdf_write_squiggly_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 }
 
 static void
+pdf_write_redact_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect)
+{
+	fz_point quad[4];
+	pdf_obj *qp;
+	int i, n;
+
+	fz_append_printf(ctx, buf, "1 0 0 RG\n");
+
+	qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
+	n = pdf_array_len(ctx, qp);
+	if (n > 0)
+	{
+		*rect = fz_empty_rect;
+		for (i = 0; i < n; i += 8)
+		{
+			extract_quad(ctx, quad, qp, i);
+			fz_append_printf(ctx, buf, "%g %g m\n", quad[LL].x, quad[LL].y);
+			fz_append_printf(ctx, buf, "%g %g l\n", quad[LR].x, quad[LR].y);
+			fz_append_printf(ctx, buf, "%g %g l\n", quad[UR].x, quad[UR].y);
+			fz_append_printf(ctx, buf, "%g %g l\n", quad[UL].x, quad[UL].y);
+			fz_append_printf(ctx, buf, "s\n");
+			union_quad(rect, quad, 1);
+		}
+	}
+	else
+	{
+		fz_append_printf(ctx, buf, "%g %g m\n", rect->x0+1, rect->y0+1);
+		fz_append_printf(ctx, buf, "%g %g l\n", rect->x1-1, rect->y0+1);
+		fz_append_printf(ctx, buf, "%g %g l\n", rect->x1-1, rect->y1-1);
+		fz_append_printf(ctx, buf, "%g %g l\n", rect->x0+1, rect->y1-1);
+		fz_append_printf(ctx, buf, "s\n");
+	}
+}
+
+static void
 pdf_write_caret_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, fz_rect *bbox)
 {
 	float xc = (rect->x0 + rect->x1) / 2;
@@ -1487,6 +1522,11 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		break;
 	case PDF_ANNOT_SQUIGGLY:
 		pdf_write_squiggly_appearance(ctx, annot, buf, rect);
+		*matrix = fz_identity;
+		*bbox = *rect;
+		break;
+	case PDF_ANNOT_REDACT:
+		pdf_write_redact_appearance(ctx, annot, buf, rect);
 		*matrix = fz_identity;
 		*bbox = *rect;
 		break;

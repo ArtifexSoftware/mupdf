@@ -187,6 +187,7 @@ pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type)
 	case PDF_ANNOT_UNDERLINE: return "Underline";
 	case PDF_ANNOT_SQUIGGLY: return "Squiggly";
 	case PDF_ANNOT_STRIKE_OUT: return "StrikeOut";
+	case PDF_ANNOT_REDACT: return "Redact";
 	case PDF_ANNOT_STAMP: return "Stamp";
 	case PDF_ANNOT_CARET: return "Caret";
 	case PDF_ANNOT_INK: return "Ink";
@@ -219,6 +220,7 @@ pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 	if (!strcmp("Underline", subtype)) return PDF_ANNOT_UNDERLINE;
 	if (!strcmp("Squiggly", subtype)) return PDF_ANNOT_SQUIGGLY;
 	if (!strcmp("StrikeOut", subtype)) return PDF_ANNOT_STRIKE_OUT;
+	if (!strcmp("Redact", subtype)) return PDF_ANNOT_REDACT;
 	if (!strcmp("Stamp", subtype)) return PDF_ANNOT_STAMP;
 	if (!strcmp("Caret", subtype)) return PDF_ANNOT_CARET;
 	if (!strcmp("Ink", subtype)) return PDF_ANNOT_INK;
@@ -1151,6 +1153,7 @@ static pdf_obj *quad_point_subtypes[] = {
 	PDF_NAME(Squiggly),
 	PDF_NAME(StrikeOut),
 	PDF_NAME(Underline),
+	PDF_NAME(Redact),
 	NULL,
 };
 
@@ -1511,6 +1514,7 @@ static pdf_obj *markup_subtypes[] = {
 	PDF_NAME(Underline),
 	PDF_NAME(Squiggly),
 	PDF_NAME(StrikeOut),
+	PDF_NAME(Redact),
 	PDF_NAME(Stamp),
 	PDF_NAME(Caret),
 	PDF_NAME(Ink),
