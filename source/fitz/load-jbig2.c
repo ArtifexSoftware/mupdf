@@ -224,7 +224,7 @@ fz_load_jbig2(fz_context *ctx, const unsigned char *buf, size_t len)
 void
 fz_load_jbig2_info(fz_context *ctx, const unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
-	return fz_load_jbig2_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
+	fz_load_jbig2_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
 }
 
 #else /* HAVE_LURATECH */
@@ -414,7 +414,7 @@ fz_load_jbig2(fz_context *ctx, const unsigned char *buf, size_t len)
 void
 fz_load_jbig2_info(fz_context *ctx, const unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
-	return fz_load_jbig2_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
+	fz_load_jbig2_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
 }
 
 #endif /* HAVE_LURATECH */
