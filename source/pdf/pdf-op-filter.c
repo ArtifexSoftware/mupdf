@@ -439,8 +439,25 @@ filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
 	if (p->text_filter)
 	{
 		fz_matrix ctm = fz_concat(gstate->sent.ctm, gstate->pending.ctm);
+		fz_rect bbox;
 
-		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, trm, fz_transform_rect(p->tos.char_bbox, ctm));
+		if (fontdesc->wmode == 0)
+		{
+			bbox.x0 = 0;
+			bbox.y0 = fz_font_descender(ctx, fontdesc->font);
+			bbox.x1 = fz_advance_glyph(ctx, fontdesc->font, p->tos.gid, 0);
+			bbox.y1 = fz_font_ascender(ctx, fontdesc->font);
+		}
+		else
+		{
+			fz_rect font_bbox = fz_font_bbox(ctx, fontdesc->font);
+			bbox.x0 = font_bbox.x0;
+			bbox.x1 = font_bbox.x1;
+			bbox.y0 = 0;
+			bbox.y1 = fz_advance_glyph(ctx, fontdesc->font, p->tos.gid, 1);
+		}
+
+		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, trm, ctm, bbox);
 	}
 
 	pdf_tos_move_after_char(ctx, &p->tos);
