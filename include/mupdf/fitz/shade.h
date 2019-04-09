@@ -123,7 +123,7 @@ typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, con
 */
 typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
 
-void fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm,
+void fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_rect scissor,
 			fz_shade_prepare_fn *prepare,
 			fz_shade_process_fn *process,
 			void *process_arg);

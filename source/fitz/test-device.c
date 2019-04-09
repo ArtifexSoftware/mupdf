@@ -177,7 +177,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix 
 				arg.dev = dev;
 				arg.shade = shade;
 				arg.color_params = color_params;
-				fz_process_shade(ctx, shade, ctm, prepare_vertex, NULL, &arg);
+				fz_process_shade(ctx, shade, ctm, fz_device_current_scissor(ctx, dev_), prepare_vertex, NULL, &arg);
 			}
 		}
 	}

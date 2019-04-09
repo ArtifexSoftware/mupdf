@@ -117,7 +117,6 @@ fz_process_shade_type1(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	}
 }
 
-/* FIXME: Nasty */
 #define HUGENUM 32000 /* how far to extend linear/radial shadings */
 
 static fz_point
@@ -129,7 +128,7 @@ fz_point_on_circle(fz_point p, float r, float theta)
 }
 
 static void
-fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
+fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter, fz_rect scissor)
 {
 	fz_point p0, p1, dir;
 	fz_vertex v0, v1, v2, v3;
@@ -137,6 +136,7 @@ fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	float theta;
 	float zero = 0;
 	float one = 1;
+	float r;
 
 	p0.x = shade->u.l_or_r.coords[0][0];
 	p0.y = shade->u.l_or_r.coords[0][1];
@@ -149,10 +149,31 @@ fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	dir = fz_transform_vector(dir, ctm);
 	theta = atan2f(dir.y, dir.x);
 
-	v0.p = fz_point_on_circle(p0, HUGENUM, theta);
-	v1.p = fz_point_on_circle(p1, HUGENUM, theta);
-	v2.p = fz_point_on_circle(p0, -HUGENUM, theta);
-	v3.p = fz_point_on_circle(p1, -HUGENUM, theta);
+	if (fz_is_infinite_rect(scissor)) {
+		r = HUGENUM; /* Not ideal, but it'll do for now */
+	} else {
+		float x = p0.x - scissor.x0;
+		float y = p0.y - scissor.y0;
+		if (x < scissor.x1 - p0.x)
+			x = scissor.x1 - p0.x;
+		if (x < p0.x - scissor.x1)
+			x = p0.x - scissor.x1;
+		if (x < scissor.x1 - p1.x)
+			x = scissor.x1 - p1.x;
+		if (y < scissor.y1 - p0.y)
+			y = scissor.y1 - p0.y;
+		if (y < p0.y - scissor.y1)
+			y = p0.y - scissor.y1;
+		if (y < scissor.y1 - p1.y)
+			y = scissor.y1 - p1.y;
+		r = x+y;
+	}
+	v0.p = fz_point_on_circle(p0, r, theta);
+	v1.p = fz_point_on_circle(p1, r, theta);
+	v2.p.x = 2*p0.x - v0.p.x;
+	v2.p.y = 2*p0.y - v0.p.y;
+	v3.p.x = 2*p1.x - v1.p.x;
+	v3.p.y = 2*p1.y - v1.p.y;
 
 	fz_prepare_color(ctx, painter, &v0, &zero);
 	fz_prepare_color(ctx, painter, &v1, &one);
@@ -951,7 +972,7 @@ fz_process_shade_type7(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	to callback functions.
 */
 void
-fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm,
+fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_rect scissor,
 		fz_shade_prepare_fn *prepare, fz_shade_process_fn *process, void *process_arg)
 {
 	fz_mesh_processor painter;
@@ -965,7 +986,7 @@ fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm,
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_process_shade_type1(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_LINEAR)
-		fz_process_shade_type2(ctx, shade, ctm, &painter);
+		fz_process_shade_type2(ctx, shade, ctm, &painter, scissor);
 	else if (shade->type == FZ_RADIAL)
 		fz_process_shade_type3(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE4)
