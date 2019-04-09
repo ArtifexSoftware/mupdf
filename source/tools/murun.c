@@ -170,6 +170,11 @@ static void jsB_readline(js_State *J)
 	js_pushstring(J, line);
 }
 
+static void jsB_repr(js_State *J)
+{
+	js_repr(J, 1);
+}
+
 static void jsB_quit(js_State *J)
 {
 	exit(js_tonumber(J, 1));
@@ -4464,6 +4469,9 @@ int murun_main(int argc, char **argv)
 
 	js_newcfunction(J, jsB_readline, "readline", 0);
 	js_setglobal(J, "readline");
+
+	js_newcfunction(J, jsB_repr, "repr", 1);
+	js_setglobal(J, "repr");
 
 	js_newcfunction(J, jsB_quit, "quit", 1);
 	js_setglobal(J, "quit");
