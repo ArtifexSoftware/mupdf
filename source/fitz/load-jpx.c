@@ -335,6 +335,13 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			{
 				fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
 			}
+
+			if (state->cs && fz_colorspace_n(ctx, state->cs) != n)
+			{
+				fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile");
+				fz_drop_colorspace(ctx, state->cs);
+				state->cs = NULL;
+			}
 		}
 #endif
 
@@ -814,6 +821,13 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		fz_catch(ctx)
 		{
 			fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
+		}
+
+		if (state->cs && fz_colorspace_n(ctx, state->cs) != n)
+		{
+			fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile");
+			fz_drop_colorspace(ctx, state->cs);
+			state->cs = NULL;
 		}
 	}
 #endif

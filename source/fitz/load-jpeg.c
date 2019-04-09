@@ -121,7 +121,7 @@ enum {
 	MAX_ICC_PARTS = 256
 };
 
-static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr init_marker, fz_colorspace *colorspace)
+static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr init_marker, int output_components, fz_colorspace *colorspace)
 {
 #if FZ_ENABLE_ICC
 	const char idseq[] = { 'I', 'C', 'C', '_', 'P', 'R', 'O', 'F', 'I', 'L', 'E', '\0'};
@@ -179,8 +179,17 @@ static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr
 		if (buf)
 		{
 			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, colorspace), buf, colorspace);
-			fz_drop_colorspace(ctx, colorspace);
-			colorspace = icc;
+			if (fz_colorspace_n(ctx, icc) == output_components)
+			{
+				fz_drop_colorspace(ctx, colorspace);
+				colorspace = icc;
+			}
+			else
+			{
+				fz_warn(ctx, "invalid number of components in ICC profile in jpeg image, ignoring ICC profile");
+				fz_drop_colorspace(ctx, icc);
+				icc = NULL;
+			}
 		}
 	}
 	fz_always(ctx)
@@ -348,7 +357,7 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 			colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		else if (cinfo.output_components == 4)
 			colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
-		colorspace = extract_icc_profile(ctx, cinfo.marker_list, colorspace);
+		colorspace = extract_icc_profile(ctx, cinfo.marker_list, cinfo.output_components, colorspace);
 		if (!colorspace)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot determine colorspace");
 
@@ -465,7 +474,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 			*cspacep = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		else if (cinfo.num_components == 4)
 			*cspacep = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
-		*cspacep = extract_icc_profile(ctx, cinfo.marker_list, *cspacep);
+		*cspacep = extract_icc_profile(ctx, cinfo.marker_list, cinfo.num_components, *cspacep);
 		if (!*cspacep)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot determine colorspace");
 

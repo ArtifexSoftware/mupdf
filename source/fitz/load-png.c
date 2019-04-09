@@ -353,9 +353,18 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 		mstm = fz_open_memory(ctx, p + n + 2, size - n - 2);
 		zstm = fz_open_flated(ctx, mstm, 15);
 		cs = fz_new_icc_colorspace_from_stream(ctx, info->type, zstm);
-		/* drop old one in case we have multiple ICC profiles */
-		fz_drop_colorspace(ctx, info->cs);
-		info->cs = cs;
+		if ((fz_colorspace_type(ctx, cs) == FZ_COLORSPACE_GRAY && fz_colorspace_n(ctx, cs) == 1) ||
+			(fz_colorspace_type(ctx, cs) == FZ_COLORSPACE_RGB && fz_colorspace_n(ctx, cs) == 3))
+		{
+			/* drop old one in case we have multiple ICC profiles */
+			fz_drop_colorspace(ctx, info->cs);
+			info->cs = cs;
+		}
+		else
+		{
+			fz_warn(ctx, "invalid number of components in ICC profile in png image, ignoring ICC profile");
+			fz_drop_colorspace(ctx, cs);
+		}
 	}
 	fz_always(ctx)
 	{

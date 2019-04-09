@@ -376,7 +376,9 @@ gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const u
 
 		cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, bstm);
 		if (fz_colorspace_n(ctx, cs) != 3)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components in ICC profile");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components in ICC profile in gif image");
+		if (fz_colorspace_type(ctx, cs) != FZ_COLORSPACE_RGB)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported ICC profile type in gif image");
 
 		newpix = fz_convert_pixmap(ctx, info->pix, cs, NULL, NULL, NULL, 1);
 		fz_drop_pixmap(ctx, info->pix);
