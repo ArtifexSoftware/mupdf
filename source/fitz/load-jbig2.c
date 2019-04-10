@@ -277,7 +277,7 @@ static void *fz_jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size)
 	}
 	if (p == NULL)
 		return fz_malloc(ctx, size);
-	return fz_resize_array_no_throw(ctx, p, 1, size);
+	return fz_realloc_no_throw(ctx, p, size);
 }
 
 static fz_pixmap *

@@ -185,7 +185,7 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 
 			fz_seek(ctx, file, commentsize, 1);
 
-			zip->entries = fz_resize_array(ctx, zip->entries, zip->count + 1, sizeof *zip->entries);
+			zip->entries = fz_realloc_array(ctx, zip->entries, zip->count + 1, sizeof *zip->entries);
 
 			zip->entries[zip->count].offset = offset;
 			zip->entries[zip->count].csize = csize;

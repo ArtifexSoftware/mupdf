@@ -529,7 +529,7 @@ ptrdiff_t pdf_lexbuf_grow(fz_context *ctx, pdf_lexbuf *lb)
 	}
 	else
 	{
-		lb->scratch = fz_resize_array(ctx, lb->scratch, newsize, 1);
+		lb->scratch = fz_realloc(ctx, lb->scratch, newsize);
 	}
 	lb->size = newsize;
 	return lb->scratch - old;

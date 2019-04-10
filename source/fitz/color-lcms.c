@@ -46,7 +46,7 @@ fz_lcms_realloc(cmsContext id, void *ptr, unsigned int size)
 		fz_lcms_free(id, ptr);
 		return NULL;
 	}
-	return fz_resize_array_no_throw(ctx, ptr, size, 1);
+	return fz_realloc_no_throw(ctx, ptr, size);
 }
 
 static cmsPluginMemHandler fz_lcms_memhandler =

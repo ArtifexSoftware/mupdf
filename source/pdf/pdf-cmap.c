@@ -626,7 +626,7 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 	if (cmap->tlen == cmap->tcap)
 	{
 		int new_cap = cmap->tcap ? cmap->tcap * 2 : 256;
-		tree = cmap->tree = fz_resize_array(ctx, cmap->tree, new_cap, sizeof *cmap->tree);
+		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, sizeof *cmap->tree);
 		cmap->tcap = new_cap;
 	}
 	tree[cmap->tlen].low = low;
@@ -669,7 +669,7 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 	if (cmap->dlen + len + 1 > cmap->dcap)
 	{
 		int new_cap = cmap->dcap ? cmap->dcap * 2 : 256;
-		cmap->dict = fz_resize_array(ctx, cmap->dict, new_cap, sizeof *cmap->dict);
+		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, sizeof *cmap->dict);
 		cmap->dcap = new_cap;
 	}
 	out_pos = cmap->dlen;

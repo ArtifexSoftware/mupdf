@@ -160,7 +160,7 @@ void *fz_hb_realloc(void *ptr, size_t size)
 
 	assert(ctx != NULL);
 
-	return fz_resize_array_no_throw(ctx, ptr, 1, size);
+	return fz_realloc_no_throw(ctx, ptr, size);
 }
 
 void fz_hb_free(void *ptr)

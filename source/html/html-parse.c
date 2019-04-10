@@ -1108,7 +1108,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				while (newcap < buffer->len + len)
 					newcap = (newcap * 3) / 2;
 
-				buffer->data = fz_resize_array(ctx, buffer->data, newcap, sizeof(uint32_t));
+				buffer->data = fz_realloc_array(ctx, buffer->data, newcap, sizeof(uint32_t));
 				buffer->cap = newcap;
 			}
 

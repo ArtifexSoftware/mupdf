@@ -21,7 +21,7 @@ static void add_root(fz_context *ctx, pdf_obj *obj, pdf_obj ***roots, int *num_r
 		int new_max_roots = *max_roots * 2;
 		if (new_max_roots == 0)
 			new_max_roots = 4;
-		*roots = fz_resize_array(ctx, *roots, new_max_roots, sizeof(**roots));
+		*roots = fz_realloc_array(ctx, *roots, new_max_roots, sizeof(**roots));
 		*max_roots = new_max_roots;
 	}
 	(*roots)[(*num_roots)++] = pdf_keep_obj(ctx, obj);
@@ -257,7 +257,7 @@ orphan_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 		fz_try(ctx)
 		{
-			doc->orphans = fz_resize_array(ctx, doc->orphans, new_max, sizeof(*doc->orphans));
+			doc->orphans = fz_realloc_array(ctx, doc->orphans, new_max, sizeof(*doc->orphans));
 			doc->orphans_max = new_max;
 		}
 		fz_catch(ctx)
@@ -432,7 +432,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				if (listlen + 1 == listcap)
 				{
 					listcap = (listcap * 3) / 2;
-					list = fz_resize_array(ctx, list, listcap, sizeof(struct entry));
+					list = fz_realloc_array(ctx, list, listcap, sizeof(struct entry));
 				}
 
 				list[listlen].num = num;

@@ -154,7 +154,7 @@ static void grow_stack(fz_context *ctx, fz_draw_device *dev)
 	}
 	else
 	{
-		stack = fz_resize_array(ctx, dev->stack, max, sizeof(*stack));
+		stack = fz_realloc_array(ctx, dev->stack, max, sizeof(*stack));
 	}
 	dev->stack = stack;
 	dev->stack_cap = max;

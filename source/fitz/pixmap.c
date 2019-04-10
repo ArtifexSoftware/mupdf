@@ -1537,7 +1537,7 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 	tile->w = dst_w;
 	tile->h = dst_h;
 	tile->stride = dst_w * n;
-	tile->samples = fz_resize_array(ctx, tile->samples, dst_w * n, dst_h);
+	tile->samples = fz_realloc_array(ctx, tile->samples, dst_w * n, dst_h);
 }
 
 /*

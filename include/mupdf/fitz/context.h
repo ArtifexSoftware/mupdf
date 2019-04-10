@@ -247,40 +247,29 @@ void fz_set_use_document_css(fz_context *ctx, int use);
 	store being freed.
 */
 
-void *fz_malloc(fz_context *ctx, size_t size);
-
-void *fz_calloc(fz_context *ctx, size_t count, size_t size);
-
 /*
 	Allocate storage for a structure (with scavenging),
 	clear it, and (in Memento builds) tag the pointer as belonging to a
 	struct of this type.
-
-	CTX: The context.
-
-	STRUCT: The structure type.
-
-	Returns a pointer to allocated (and cleared) structure. Throws
-	exception on failure to allocate.
 */
 #define fz_malloc_struct(CTX, STRUCT) \
 	((STRUCT *)Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT))
 
-void *fz_malloc_array(fz_context *ctx, size_t count, size_t size);
-
-void *fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size);
-
-char *fz_strdup(fz_context *ctx, const char *s);
-
+void *fz_malloc(fz_context *ctx, size_t size);
+void *fz_calloc(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc(fz_context *ctx, void *p, size_t size);
 void fz_free(fz_context *ctx, void *p);
 
 void *fz_malloc_no_throw(fz_context *ctx, size_t size);
-
 void *fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc_no_throw(fz_context *ctx, void *p, size_t size);
 
+void *fz_malloc_array(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc_array(fz_context *ctx, void *p, size_t count, size_t size);
 void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
 
-void *fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
+char *fz_strdup(fz_context *ctx, const char *s);
 
 void *fz_zlib_alloc(void *ctx, unsigned int items, unsigned int size);
 void fz_zlib_free(void *ctx, void *ptr);

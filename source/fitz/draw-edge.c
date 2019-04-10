@@ -119,7 +119,7 @@ fz_insert_gel_raw(fz_context *ctx, fz_rasterizer *ras, int x0, int y0, int x1, i
 
 	if (gel->len + 1 == gel->cap) {
 		int new_cap = gel->cap * 2;
-		gel->edges = fz_resize_array(ctx, gel->edges, new_cap, sizeof(fz_edge));
+		gel->edges = fz_realloc_array(ctx, gel->edges, new_cap, sizeof(fz_edge));
 		gel->cap = new_cap;
 	}
 
@@ -382,7 +382,7 @@ insert_active(fz_context *ctx, fz_gel *gel, int y, int *e_)
 		do {
 			if (gel->alen + 1 == gel->acap) {
 				int newcap = gel->acap + 64;
-				fz_edge **newactive = fz_resize_array(ctx, gel->active, newcap, sizeof(fz_edge*));
+				fz_edge **newactive = fz_realloc_array(ctx, gel->active, newcap, sizeof(fz_edge*));
 				gel->active = newactive;
 				gel->acap = newcap;
 			}

@@ -356,7 +356,7 @@ static void *ft_realloc(FT_Memory memory, long cur_size, long new_size, void *bl
 	}
 	if (block == NULL)
 		return ft_alloc(memory, new_size);
-	return fz_resize_array_no_throw(ctx, block, 1, new_size);
+	return fz_realloc_no_throw(ctx, block, new_size);
 }
 
 void fz_new_font_context(fz_context *ctx)

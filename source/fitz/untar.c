@@ -95,7 +95,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		if (typeflag != '0' && typeflag != '\0')
 			continue;
 
-		tar->entries = fz_resize_array(ctx, tar->entries, tar->count + 1, sizeof *tar->entries);
+		tar->entries = fz_realloc_array(ctx, tar->entries, tar->count + 1, sizeof *tar->entries);
 
 		tar->entries[tar->count].name = fz_strdup(ctx, name);
 		tar->entries[tar->count].offset = offset;

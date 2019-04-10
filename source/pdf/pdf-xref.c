@@ -85,7 +85,7 @@ extend_xref_index(fz_context *ctx, pdf_document *doc, int newlen)
 {
 	int i;
 
-	doc->xref_index = fz_resize_array(ctx, doc->xref_index, newlen, sizeof(int));
+	doc->xref_index = fz_realloc_array(ctx, doc->xref_index, newlen, sizeof(int));
 	for (i = doc->max_xref_len; i < newlen; i++)
 	{
 		doc->xref_index[i] = 0;
@@ -107,7 +107,7 @@ static void pdf_resize_xref(fz_context *ctx, pdf_document *doc, int newlen)
 	assert(sub->next == NULL && sub->start == 0 && sub->len == xref->num_objects);
 	assert(newlen > xref->num_objects);
 
-	sub->table = fz_resize_array(ctx, sub->table, newlen, sizeof(pdf_xref_entry));
+	sub->table = fz_realloc_array(ctx, sub->table, newlen, sizeof(pdf_xref_entry));
 	for (i = xref->num_objects; i < newlen; i++)
 	{
 		sub->table[i].type = 0;
@@ -127,7 +127,7 @@ static void pdf_resize_xref(fz_context *ctx, pdf_document *doc, int newlen)
 static void pdf_populate_next_xref_level(fz_context *ctx, pdf_document *doc)
 {
 	pdf_xref *xref;
-	doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
+	doc->xref_sections = fz_realloc_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
 	doc->num_xref_sections++;
 
 	xref = &doc->xref_sections[doc->num_xref_sections - 1];
@@ -348,7 +348,7 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 		{
 			sub = fz_malloc_struct(ctx, pdf_xref_subsec);
 			trailer = xref->trailer ? pdf_copy_dict(ctx, xref->trailer) : NULL;
-			doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
+			doc->xref_sections = fz_realloc_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
 			xref = &doc->xref_sections[0];
 			pxref = &doc->xref_sections[1];
 			memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
@@ -1170,7 +1170,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexb
 			if (len == cap)
 			{
 				cap *= 2;
-				offsets = fz_resize_array(ctx, offsets, cap, sizeof(*offsets));
+				offsets = fz_realloc_array(ctx, offsets, cap, sizeof(*offsets));
 			}
 			offsets[len++] = ofs;
 

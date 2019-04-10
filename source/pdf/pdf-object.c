@@ -588,7 +588,7 @@ pdf_array_grow(fz_context *ctx, pdf_obj_array *obj)
 	int i;
 	int new_cap = (obj->cap * 3) / 2;
 
-	obj->items = fz_resize_array(ctx, obj->items, new_cap, sizeof(pdf_obj*));
+	obj->items = fz_realloc_array(ctx, obj->items, new_cap, sizeof(pdf_obj*));
 	obj->cap = new_cap;
 
 	for (i = obj->len ; i < obj->cap; i++)
@@ -919,7 +919,7 @@ pdf_dict_grow(fz_context *ctx, pdf_obj *obj)
 	int i;
 	int new_cap = (DICT(obj)->cap * 3) / 2;
 
-	DICT(obj)->items = fz_resize_array(ctx, DICT(obj)->items, new_cap, sizeof(struct keyval));
+	DICT(obj)->items = fz_realloc_array(ctx, DICT(obj)->items, new_cap, sizeof(struct keyval));
 	DICT(obj)->cap = new_cap;
 
 	for (i = DICT(obj)->len; i < DICT(obj)->cap; i++)
@@ -1823,7 +1823,7 @@ static inline void fmt_putc(fz_context *ctx, struct fmt *fmt, int c)
 		}
 		else
 		{
-			fmt->ptr = fz_resize_array(ctx, fmt->ptr, fmt->cap, 1);
+			fmt->ptr = fz_realloc(ctx, fmt->ptr, fmt->cap);
 		}
 	}
 

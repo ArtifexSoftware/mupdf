@@ -156,7 +156,7 @@ page_objects_list_ensure(fz_context *ctx, page_objects_list **pol, int newcap)
 	int oldcap = (*pol)->cap;
 	if (newcap <= oldcap)
 		return;
-	*pol = fz_resize_array(ctx, *pol, 1, sizeof(page_objects_list) + (newcap-1)*sizeof(page_objects *));
+	*pol = fz_realloc(ctx, *pol, sizeof(page_objects_list) + (newcap-1)*sizeof(page_objects *));
 	memset(&(*pol)->page[oldcap], 0, (newcap-oldcap)*sizeof(page_objects *));
 	(*pol)->cap = newcap;
 }
@@ -185,7 +185,7 @@ page_objects_insert(fz_context *ctx, page_objects **ppo, int i)
 	/* page_objects insertion: extend the page_objects by 1, and put us on the end */
 	if (po->len == po->cap)
 	{
-		po = fz_resize_array(ctx, po, 1, sizeof(page_objects) + (po->cap*2 - 1)*sizeof(int));
+		po = fz_realloc(ctx, po, sizeof(page_objects) + (po->cap*2 - 1)*sizeof(int));
 		po->cap *= 2;
 		*ppo = po;
 	}
@@ -637,11 +637,11 @@ expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
 
 	/* objects are numbered 0..num and maybe two additional objects for linearization */
 	num += 3;
-	opts->use_list = fz_resize_array(ctx, opts->use_list, num, sizeof(*opts->use_list));
-	opts->ofs_list = fz_resize_array(ctx, opts->ofs_list, num, sizeof(*opts->ofs_list));
-	opts->gen_list = fz_resize_array(ctx, opts->gen_list, num, sizeof(*opts->gen_list));
-	opts->renumber_map = fz_resize_array(ctx, opts->renumber_map, num, sizeof(*opts->renumber_map));
-	opts->rev_renumber_map = fz_resize_array(ctx, opts->rev_renumber_map, num, sizeof(*opts->rev_renumber_map));
+	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, sizeof(*opts->use_list));
+	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, sizeof(*opts->ofs_list));
+	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, sizeof(*opts->gen_list));
+	opts->renumber_map = fz_realloc_array(ctx, opts->renumber_map, num, sizeof(*opts->renumber_map));
+	opts->rev_renumber_map = fz_realloc_array(ctx, opts->rev_renumber_map, num, sizeof(*opts->rev_renumber_map));
 
 	for (i = opts->list_len; i < num; i++)
 	{

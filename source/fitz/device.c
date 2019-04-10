@@ -104,7 +104,7 @@ push_clip_stack(fz_context *ctx, fz_device *dev, fz_rect rect, int type)
 		int newmax = dev->container_cap * 2;
 		if (newmax == 0)
 			newmax = 4;
-		dev->container = fz_resize_array(ctx, dev->container, newmax, sizeof(*dev->container));
+		dev->container = fz_realloc_array(ctx, dev->container, newmax, sizeof(*dev->container));
 		dev->container_cap = newmax;
 	}
 	if (dev->container_len == 0)

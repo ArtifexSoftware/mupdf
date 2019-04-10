@@ -475,7 +475,7 @@ fz_append_display_node(
 
 		if (newsize < 256)
 			newsize = 256;
-		list->list = fz_resize_array(ctx, list->list, newsize, sizeof(fz_display_node));
+		list->list = fz_realloc_array(ctx, list->list, newsize, sizeof(fz_display_node));
 		list->max = newsize;
 		diff = (char *)(list->list) - (char *)old;
 		n = (writer->top < STACK_SIZE ? writer->top : STACK_SIZE);

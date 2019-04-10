@@ -1034,7 +1034,7 @@ tiff_next_ifd(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		if (tiff->ifd_offsets[i] == offset)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in IFDs detected");
 
-	tiff->ifd_offsets = fz_resize_array(ctx, tiff->ifd_offsets, tiff->ifds + 1, sizeof (unsigned));
+	tiff->ifd_offsets = fz_realloc_array(ctx, tiff->ifd_offsets, tiff->ifds + 1, sizeof (unsigned));
 	tiff->ifd_offsets[tiff->ifds] = offset;
 	tiff->ifds++;
 

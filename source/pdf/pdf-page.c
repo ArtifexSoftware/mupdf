@@ -113,7 +113,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 					memcpy(stack, &local_stack[0], stack_max * sizeof(*stack));
 				}
 				else
-					stack = fz_resize_array(ctx, stack, stack_max * 2, sizeof(*stack));
+					stack = fz_realloc_array(ctx, stack, stack_max * 2, sizeof(*stack));
 				stack_max *= 2;
 			}
 			stack[stack_len++] = node;

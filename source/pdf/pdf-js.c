@@ -752,12 +752,7 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js)
 
 static void *pdf_js_alloc(void *actx, void *ptr, int n)
 {
-	fz_context *ctx = actx;
-	if (n == 0) {
-		fz_free(ctx, ptr);
-		return NULL;
-	}
-	return fz_resize_array_no_throw(ctx, ptr, n, 1);
+	return fz_realloc_no_throw(actx, ptr, n);
 }
 
 static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)

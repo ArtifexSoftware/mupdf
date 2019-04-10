@@ -319,7 +319,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		}
 		if (fill != size)
 		{
-			glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph) + fill);
+			glyph = fz_realloc(ctx, glyph, sizeof(fz_glyph) + fill);
 			size = fill;
 		}
 		glyph->size = size;
@@ -329,7 +329,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		 * and reenter the try context, and this routine is speed
 		 * critical. */
 try_pixmap:
-		glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph));
+		glyph = fz_realloc(ctx, glyph, sizeof(fz_glyph));
 		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		pix = fz_new_pixmap_from_8bpp_data(ctx, x, y, w, h, orig_sp, span);
 		glyph->x = pix->x;
@@ -465,7 +465,7 @@ fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		}
 		if (fill != size)
 		{
-			glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph) + fill);
+			glyph = fz_realloc(ctx, glyph, sizeof(fz_glyph) + fill);
 			size = fill;
 		}
 		glyph->size = size;
@@ -475,7 +475,7 @@ fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		 * and reenter the try context, and this routine is speed
 		 * critical. */
 try_pixmap:
-		glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph));
+		glyph = fz_realloc(ctx, glyph, sizeof(fz_glyph));
 		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		pix = fz_new_pixmap_from_1bpp_data(ctx, x, y, w, h, orig_sp, span);
 		glyph->x = pix->x;

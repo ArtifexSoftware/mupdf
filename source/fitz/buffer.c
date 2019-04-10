@@ -158,7 +158,7 @@ fz_resize_buffer(fz_context *ctx, fz_buffer *buf, size_t size)
 {
 	if (buf->shared)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot resize a buffer with shared storage");
-	buf->data = fz_resize_array(ctx, buf->data, size, 1);
+	buf->data = fz_realloc(ctx, buf->data, size);
 	buf->cap = size;
 	if (buf->len > buf->cap)
 		buf->len = buf->cap;
@@ -281,7 +281,7 @@ fz_append_buffer(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
 {
 	if (buf->cap - buf->len < extra->len)
 	{
-		buf->data = fz_resize_array(ctx, buf->data, buf->len + extra->len, 1);
+		buf->data = fz_realloc(ctx, buf->data, buf->len + extra->len);
 		buf->cap = buf->len + extra->len;
 	}
 
