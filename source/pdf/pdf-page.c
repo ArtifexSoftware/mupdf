@@ -59,7 +59,7 @@ pdf_load_page_tree(fz_context *ctx, pdf_document *doc)
 	if (!doc->rev_page_map)
 	{
 		doc->rev_page_count = pdf_count_pages(ctx, doc);
-		doc->rev_page_map = fz_malloc_array(ctx, doc->rev_page_count, sizeof *doc->rev_page_map);
+		doc->rev_page_map = fz_malloc_array(ctx, doc->rev_page_count, pdf_rev_page_map);
 		pdf_load_page_tree_imp(ctx, doc, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages"), 0);
 		qsort(doc->rev_page_map, doc->rev_page_count, sizeof *doc->rev_page_map, cmp_rev_page_map);
 	}
@@ -109,11 +109,13 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 			{
 				if (stack == &local_stack[0])
 				{
-					stack = fz_malloc_array(ctx, stack_max * 2, sizeof(*stack));
+					stack = fz_malloc_array(ctx, stack_max * 2, pdf_obj*);
 					memcpy(stack, &local_stack[0], stack_max * sizeof(*stack));
 				}
 				else
-					stack = fz_realloc_array(ctx, stack, stack_max * 2, sizeof(*stack));
+				{
+					stack = fz_realloc_array(ctx, stack, stack_max * 2, pdf_obj*);
+				}
 				stack_max *= 2;
 			}
 			stack[stack_len++] = node;

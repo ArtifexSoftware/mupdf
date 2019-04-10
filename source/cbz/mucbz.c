@@ -102,7 +102,7 @@ cbz_create_page_list(fz_context *ctx, cbz_document *doc)
 	count = fz_count_archive_entries(ctx, arch);
 
 	doc->page_count = 0;
-	doc->page = fz_malloc_array(ctx, count, sizeof *doc->page);
+	doc->page = fz_malloc_array(ctx, count, const char *);
 
 	for (i = 0; i < count; i++)
 	{

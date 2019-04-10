@@ -133,38 +133,6 @@ fz_realloc_no_throw(fz_context *ctx, void *p, size_t size)
 	return do_scavenging_realloc(ctx, p, size);
 }
 
-void *
-fz_malloc_array(fz_context *ctx, size_t count, size_t size)
-{
-	if (count > SIZE_MAX / size)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "malloc array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-	return fz_malloc(ctx, count * size);
-}
-
-void *
-fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
-{
-	if (count > SIZE_MAX / size)
-		return NULL;
-	return fz_malloc_no_throw(ctx, count * size);
-}
-
-void *
-fz_realloc_array(fz_context *ctx, void *p, size_t count, size_t size)
-{
-	if (count > SIZE_MAX / size)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "realloc array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-	return fz_realloc(ctx, p, count * size);
-}
-
-void *
-fz_realloc_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
-{
-	if (count > SIZE_MAX / size)
-		return NULL;
-	return fz_realloc_no_throw(ctx, p, count * size);
-}
-
 void
 fz_free(fz_context *ctx, void *p)
 {

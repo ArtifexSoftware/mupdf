@@ -626,7 +626,7 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 	if (cmap->tlen == cmap->tcap)
 	{
 		int new_cap = cmap->tcap ? cmap->tcap * 2 : 256;
-		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, sizeof *cmap->tree);
+		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, cmap_splay);
 		cmap->tcap = new_cap;
 	}
 	tree[cmap->tlen].low = low;
@@ -669,7 +669,7 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 	if (cmap->dlen + len + 1 > cmap->dcap)
 	{
 		int new_cap = cmap->dcap ? cmap->dcap * 2 : 256;
-		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, sizeof *cmap->dict);
+		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, int);
 		cmap->dcap = new_cap;
 	}
 	out_pos = cmap->dlen;
@@ -775,11 +775,11 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 	counts[2] = 0;
 	walk_splay(cmap->tree, cmap->ttop, count_node_types, &counts);
 
-	cmap->ranges = fz_malloc_array(ctx, counts[0], sizeof(*cmap->ranges));
+	cmap->ranges = fz_malloc_array(ctx, counts[0], pdf_range);
 	cmap->rcap = counts[0];
-	cmap->xranges = fz_malloc_array(ctx, counts[1], sizeof(*cmap->xranges));
+	cmap->xranges = fz_malloc_array(ctx, counts[1], pdf_xrange);
 	cmap->xcap = counts[1];
-	cmap->mranges = fz_malloc_array(ctx, counts[2], sizeof(*cmap->mranges));
+	cmap->mranges = fz_malloc_array(ctx, counts[2], pdf_mrange);
 	cmap->mcap = counts[2];
 
 	walk_splay(cmap->tree, cmap->ttop, copy_node_types, cmap);

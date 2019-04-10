@@ -41,7 +41,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		if (new_max == 0)
 			new_max = 4;
-		doc->type3_fonts = fz_realloc_array(ctx, doc->type3_fonts, new_max, sizeof(*doc->type3_fonts));
+		doc->type3_fonts = fz_realloc_array(ctx, doc->type3_fonts, new_max, fz_font*);
 		doc->max_type3_fonts = new_max;
 	}
 

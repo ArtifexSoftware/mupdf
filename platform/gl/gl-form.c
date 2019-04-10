@@ -187,7 +187,7 @@ static void ch_dialog(void)
 	label = pdf_field_label(ctx, ch_widget->obj);
 	label_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
 	n = pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, NULL);
-	options = fz_malloc_array(ctx, n, sizeof(char*));
+	options = fz_malloc_array(ctx, n, const char *);
 	pdf_choice_widget_options(ctx, ch_widget->page->doc, ch_widget, 0, options);
 	value = pdf_field_value(ctx, ch_widget->obj);
 

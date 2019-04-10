@@ -677,7 +677,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		else
 			fz_warn(ctx, "freetype could not find any cmaps");
 
-		etable = fz_malloc_array(ctx, 256, sizeof(unsigned short));
+		etable = fz_malloc_array(ctx, 256, unsigned short);
 		fontdesc->size += 256 * sizeof(unsigned short);
 		for (i = 0; i < 256; i++)
 		{
@@ -1045,7 +1045,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 			len = fz_buffer_storage(ctx, buf, &data);
 			fontdesc->cid_to_gid_len = len / 2;
-			fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, sizeof(unsigned short));
+			fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, unsigned short);
 			fontdesc->size += fontdesc->cid_to_gid_len * sizeof(unsigned short);
 			for (z = 0; z < fontdesc->cid_to_gid_len; z++)
 				fontdesc->cid_to_gid[z] = (data[z * 2] << 8) + data[z * 2 + 1];
@@ -1305,9 +1305,8 @@ pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 	}
 
 	font->width_count = n + 1;
-	font->width_table = fz_malloc_array(ctx, font->width_count, sizeof(int));
-	memset(font->width_table, 0, font->width_count * sizeof(int));
-	fontdesc->size += font->width_count * sizeof(int);
+	font->width_table = fz_malloc_array(ctx, font->width_count, short);
+	fontdesc->size += font->width_count * sizeof(short);
 
 	font->width_default = fontdesc->dhmtx.w;
 	for (i = 0; i < font->width_count; i++)

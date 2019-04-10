@@ -888,7 +888,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case StripOffsets:
 		if (tiff->stripoffsets)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one strip offsets tag allowed");
-		tiff->stripoffsets = fz_malloc_array(ctx, count, sizeof(unsigned));
+		tiff->stripoffsets = fz_malloc_array(ctx, count, unsigned);
 		tiff_read_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		tiff->stripoffsetslen = count;
 		break;
@@ -896,7 +896,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case StripByteCounts:
 		if (tiff->stripbytecounts)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one strip byte counts tag allowed");
-		tiff->stripbytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
+		tiff->stripbytecounts = fz_malloc_array(ctx, count, unsigned);
 		tiff_read_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		tiff->stripbytecountslen = count;
 		break;
@@ -904,7 +904,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case ColorMap:
 		if (tiff->colormap)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one color map allowed");
-		tiff->colormap = fz_malloc_array(ctx, count, sizeof(unsigned));
+		tiff->colormap = fz_malloc_array(ctx, count, unsigned);
 		tiff_read_tag_value(tiff->colormap, tiff, type, value, count);
 		tiff->colormaplen = count;
 		break;
@@ -920,7 +920,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case TileOffsets:
 		if (tiff->tileoffsets)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one tile offsets tag allowed");
-		tiff->tileoffsets = fz_malloc_array(ctx, count, sizeof(unsigned));
+		tiff->tileoffsets = fz_malloc_array(ctx, count, unsigned);
 		tiff_read_tag_value(tiff->tileoffsets, tiff, type, value, count);
 		tiff->tileoffsetslen = count;
 		break;
@@ -928,7 +928,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case TileByteCounts:
 		if (tiff->tilebytecounts)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one tile byte counts tag allowed");
-		tiff->tilebytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
+		tiff->tilebytecounts = fz_malloc_array(ctx, count, unsigned);
 		tiff_read_tag_value(tiff->tilebytecounts, tiff, type, value, count);
 		tiff->tilebytecountslen = count;
 		break;
@@ -1007,7 +1007,7 @@ tiff_read_header(fz_context *ctx, struct tiff *tiff, const unsigned char *buf, s
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a TIFF file, wrong version marker");
 
 	/* get offset of IFD */
-	tiff->ifd_offsets = fz_malloc_array(ctx, 1, sizeof (unsigned));
+	tiff->ifd_offsets = fz_malloc_array(ctx, 1, unsigned);
 	tiff->ifd_offsets[0] = tiff_readlong(tiff);
 	tiff->ifds = 1;
 }
@@ -1034,7 +1034,7 @@ tiff_next_ifd(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		if (tiff->ifd_offsets[i] == offset)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in IFDs detected");
 
-	tiff->ifd_offsets = fz_realloc_array(ctx, tiff->ifd_offsets, tiff->ifds + 1, sizeof (unsigned));
+	tiff->ifd_offsets = fz_realloc_array(ctx, tiff->ifd_offsets, tiff->ifds + 1, unsigned);
 	tiff->ifd_offsets[tiff->ifds] = offset;
 	tiff->ifds++;
 
@@ -1280,7 +1280,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		if (!tiff->tilelength && !tiff->tilewidth && !tiff->stripbytecounts)
 		{
 			tiff->stripbytecountslen = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
-			tiff->stripbytecounts = fz_malloc_array(ctx, tiff->stripbytecountslen, sizeof(unsigned));
+			tiff->stripbytecounts = fz_malloc_array(ctx, tiff->stripbytecountslen, unsigned);
 			for (i = 0; i < tiff->stripbytecountslen; i++)
 				tiff->stripbytecounts[i] = tiff->rowsperstrip * tiff->stride;
 		}
@@ -1289,7 +1289,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			unsigned tilesdown = (tiff->imagelength + tiff->tilelength - 1) / tiff->tilelength;
 			unsigned tilesacross = (tiff->imagewidth + tiff->tilewidth - 1) / tiff->tilewidth;
 			tiff->tilebytecountslen = tilesacross * tilesdown;
-			tiff->tilebytecounts = fz_malloc_array(ctx, tiff->tilebytecountslen, sizeof(unsigned));
+			tiff->tilebytecounts = fz_malloc_array(ctx, tiff->tilebytecountslen, unsigned);
 			for (i = 0; i < tiff->tilebytecountslen; i++)
 				tiff->tilebytecounts[i] = tiff->tilelength * tiff->tilestride;
 		}
@@ -1322,7 +1322,9 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
 
-	tiff->samples = fz_malloc_array(ctx, tiff->imagelength, tiff->stride);
+	if (tiff->imagelength > UINT_MAX / tiff->stride)
+		fz_throw(ctx, FZ_ERROR_MEMORY, "image too large");
+	tiff->samples = fz_malloc(ctx, tiff->imagelength * tiff->stride);
 	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
 
 	if (tiff->tilelength && tiff->tilewidth && tiff->tileoffsets && tiff->tilebytecounts)

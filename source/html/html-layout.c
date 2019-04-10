@@ -313,7 +313,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		x += slop / 2;
 
 	/* We need a block to hold the node pointers while we reorder */
-	reorder = fz_malloc_array(ctx, n, sizeof(*reorder));
+	reorder = fz_malloc_array(ctx, n, fz_html_flow*);
 	min_level = start->bidi_level;
 	max_level = start->bidi_level;
 	for(i = 0, node = start; node != end; i++, node = node->next)

@@ -149,12 +149,12 @@ static void grow_stack(fz_context *ctx, fz_draw_device *dev)
 	fz_draw_state *stack;
 	if (dev->stack == &dev->init_stack[0])
 	{
-		stack = Memento_label(fz_malloc_array(ctx, max, sizeof *stack), "draw device stack");
+		stack = fz_malloc_array(ctx, max, fz_draw_state);
 		memcpy(stack, dev->stack, sizeof(*stack) * dev->stack_cap);
 	}
 	else
 	{
-		stack = fz_realloc_array(ctx, dev->stack, max, sizeof(*stack));
+		stack = fz_realloc_array(ctx, dev->stack, max, fz_draw_state);
 	}
 	dev->stack = stack;
 	dev->stack_cap = max;

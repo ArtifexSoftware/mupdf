@@ -109,7 +109,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
 		fz_try(ctx)
-			font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
+			font->bbox_table = fz_malloc_array(ctx, glyph_count, fz_rect);
 		fz_catch(ctx)
 		{
 			fz_free(ctx, font);
@@ -1914,7 +1914,7 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 			if (!font->advance_cache)
 			{
 				int i;
-				font->advance_cache = fz_malloc_array(ctx, font->glyph_count, sizeof(float));
+				font->advance_cache = fz_malloc_array(ctx, font->glyph_count, float);
 				for (i = 0; i < font->glyph_count; ++i)
 					font->advance_cache[i] = fz_advance_ft_glyph(ctx, font, i, 0);
 			}
@@ -1951,7 +1951,7 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 			if (!font->encoding_cache[pg])
 			{
 				int i;
-				font->encoding_cache[pg] = fz_malloc_array(ctx, 256, sizeof(uint16_t));
+				font->encoding_cache[pg] = fz_malloc_array(ctx, 256, uint16_t);
 				for (i = 0; i < 256; ++i)
 					font->encoding_cache[pg][i] = FT_Get_Char_Index(font->ft_face, (pg << 8) + i);
 			}

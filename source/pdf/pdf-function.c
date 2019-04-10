@@ -686,7 +686,7 @@ resize_code(fz_context *ctx, pdf_function *func, int newsize)
 	if (newsize >= func->u.p.cap)
 	{
 		int new_cap = func->u.p.cap + 64;
-		func->u.p.code = fz_realloc_array(ctx, func->u.p.code, new_cap, sizeof(psobj));
+		func->u.p.code = fz_realloc_array(ctx, func->u.p.code, new_cap, psobj);
 		func->u.p.cap = new_cap;
 	}
 }
@@ -977,7 +977,7 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	if (samplecount > MAX_SAMPLE_FUNCTION_SIZE)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "sample function too large");
 
-	func->u.sa.samples = fz_malloc_array(ctx, samplecount, sizeof(float));
+	func->u.sa.samples = fz_malloc_array(ctx, samplecount, float);
 	func->size += samplecount * sizeof(float);
 
 	stream = pdf_open_stream(ctx, dict);
@@ -1220,9 +1220,9 @@ load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive function");
 		k = pdf_array_len(ctx, obj);
 
-		func->u.st.funcs = fz_malloc_array(ctx, k, sizeof(pdf_function*));
-		func->u.st.bounds = fz_malloc_array(ctx, k - 1, sizeof(float));
-		func->u.st.encode = fz_malloc_array(ctx, k * 2, sizeof(float));
+		func->u.st.funcs = fz_malloc_array(ctx, k, pdf_function*);
+		func->u.st.bounds = fz_malloc_array(ctx, k - 1, float);
+		func->u.st.encode = fz_malloc_array(ctx, k * 2, float);
 		funcs = func->u.st.funcs;
 
 		for (i = 0; i < k; i++)

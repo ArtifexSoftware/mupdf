@@ -263,7 +263,7 @@ load_indexed(fz_context *ctx, pdf_obj *array)
 		high = pdf_to_int(ctx, highobj);
 		high = fz_clampi(high, 0, 255);
 		n = base->n * (high + 1);
-		lookup = fz_malloc_array(ctx, 1, n);
+		lookup = fz_malloc(ctx, n);
 
 		if (pdf_is_string(ctx, lookupobj) && pdf_to_str_len(ctx, lookupobj) >= n)
 		{

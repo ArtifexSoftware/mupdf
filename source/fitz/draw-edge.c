@@ -119,7 +119,7 @@ fz_insert_gel_raw(fz_context *ctx, fz_rasterizer *ras, int x0, int y0, int x1, i
 
 	if (gel->len + 1 == gel->cap) {
 		int new_cap = gel->cap * 2;
-		gel->edges = fz_realloc_array(ctx, gel->edges, new_cap, sizeof(fz_edge));
+		gel->edges = fz_realloc_array(ctx, gel->edges, new_cap, fz_edge);
 		gel->cap = new_cap;
 	}
 
@@ -382,7 +382,7 @@ insert_active(fz_context *ctx, fz_gel *gel, int y, int *e_)
 		do {
 			if (gel->alen + 1 == gel->acap) {
 				int newcap = gel->acap + 64;
-				fz_edge **newactive = fz_realloc_array(ctx, gel->active, newcap, sizeof(fz_edge*));
+				fz_edge **newactive = fz_realloc_array(ctx, gel->active, newcap, fz_edge*);
 				gel->active = newactive;
 				gel->acap = newcap;
 			}
@@ -579,8 +579,8 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 		fz_free(ctx, gel->deltas);
 		gel->alphas = NULL;
 		gel->deltas = NULL;
-		alphas = gel->alphas = fz_malloc_array(ctx, bcap, sizeof (unsigned char));
-		deltas = gel->deltas = fz_malloc_array(ctx, bcap, sizeof (int));
+		alphas = gel->alphas = fz_malloc_array(ctx, bcap, unsigned char);
+		deltas = gel->deltas = fz_malloc_array(ctx, bcap, int);
 	}
 	alphas = gel->alphas;
 	deltas = gel->deltas;
@@ -893,11 +893,11 @@ fz_new_gel(fz_context *ctx)
 		gel->edges = NULL;
 		gel->cap = 512;
 		gel->len = 0;
-		gel->edges = fz_malloc_array(ctx, gel->cap, sizeof(fz_edge));
+		gel->edges = fz_malloc_array(ctx, gel->cap, fz_edge);
 
 		gel->acap = 64;
 		gel->alen = 0;
-		gel->active = fz_malloc_array(ctx, gel->acap, sizeof(fz_edge*));
+		gel->active = fz_malloc_array(ctx, gel->acap, fz_edge*);
 	}
 	fz_catch(ctx)
 	{

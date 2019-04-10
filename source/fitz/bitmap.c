@@ -280,18 +280,28 @@ fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yres)
 {
 	fz_bitmap *bit;
 
-	bit = fz_malloc_struct(ctx, fz_bitmap);
-	bit->refs = 1;
-	bit->w = w;
-	bit->h = h;
-	bit->n = n;
-	bit->xres = xres;
-	bit->yres = yres;
-	/* Span is 32 bit aligned. We may want to make this 64 bit if we
-	 * use SSE2 etc. */
-	bit->stride = ((n * w + 31) & ~31) >> 3;
+	/* Stride is 32 bit aligned. We may want to make this 64 bit if we use SSE2 etc. */
+	int stride = ((n * w + 31) & ~31) >> 3;
+	if (h > SIZE_MAX / stride)
+		fz_throw(ctx, FZ_ERROR_MEMORY, "bitmap too large");
 
-	bit->samples = fz_malloc_array(ctx, h, bit->stride);
+	bit = fz_malloc_struct(ctx, fz_bitmap);
+	fz_try(ctx)
+	{
+		bit->refs = 1;
+		bit->w = w;
+		bit->h = h;
+		bit->n = n;
+		bit->xres = xres;
+		bit->yres = yres;
+		bit->stride = stride;
+		bit->samples = fz_malloc(ctx, h * bit->stride);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, bit);
+		fz_rethrow(ctx);
+	}
 
 	return bit;
 }

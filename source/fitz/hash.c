@@ -62,7 +62,7 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_has
 	table->drop_val = drop_val;
 	fz_try(ctx)
 	{
-		table->ents = fz_malloc_array(ctx, table->size, sizeof(fz_hash_entry));
+		table->ents = fz_malloc_array(ctx, table->size, fz_hash_entry);
 		memset(table->ents, 0, sizeof(fz_hash_entry) * table->size);
 	}
 	fz_catch(ctx)
@@ -152,7 +152,7 @@ fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 
 	if (table->lock == FZ_LOCK_ALLOC)
 		fz_unlock(ctx, table->lock);
-	newents = fz_malloc_array_no_throw(ctx, newsize, sizeof(fz_hash_entry));
+	newents = fz_malloc_no_throw(ctx, newsize * sizeof (fz_hash_entry));
 	if (table->lock == FZ_LOCK_ALLOC)
 		fz_lock(ctx, table->lock);
 	if (table->lock >= 0)

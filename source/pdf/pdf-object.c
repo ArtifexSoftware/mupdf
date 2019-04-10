@@ -569,7 +569,7 @@ pdf_new_array(fz_context *ctx, pdf_document *doc, int initialcap)
 
 	fz_try(ctx)
 	{
-		obj->items = Memento_label(fz_malloc_array(ctx, obj->cap, sizeof(pdf_obj*)), "pdf_obj(array items)");
+		obj->items = fz_malloc_array(ctx, obj->cap, pdf_obj*);
 	}
 	fz_catch(ctx)
 	{
@@ -588,7 +588,7 @@ pdf_array_grow(fz_context *ctx, pdf_obj_array *obj)
 	int i;
 	int new_cap = (obj->cap * 3) / 2;
 
-	obj->items = fz_realloc_array(ctx, obj->items, new_cap, sizeof(pdf_obj*));
+	obj->items = fz_realloc_array(ctx, obj->items, new_cap, pdf_obj*);
 	obj->cap = new_cap;
 
 	for (i = obj->len ; i < obj->cap; i++)
@@ -897,7 +897,7 @@ pdf_new_dict(fz_context *ctx, pdf_document *doc, int initialcap)
 
 	fz_try(ctx)
 	{
-		DICT(obj)->items = Memento_label(fz_malloc_array(ctx, DICT(obj)->cap, sizeof(struct keyval)), "pdf_obj(dict items)");
+		DICT(obj)->items = fz_malloc_array(ctx, DICT(obj)->cap, struct keyval);
 	}
 	fz_catch(ctx)
 	{
@@ -919,7 +919,7 @@ pdf_dict_grow(fz_context *ctx, pdf_obj *obj)
 	int i;
 	int new_cap = (DICT(obj)->cap * 3) / 2;
 
-	DICT(obj)->items = fz_realloc_array(ctx, DICT(obj)->items, new_cap, sizeof(struct keyval));
+	DICT(obj)->items = fz_realloc_array(ctx, DICT(obj)->items, new_cap, struct keyval);
 	DICT(obj)->cap = new_cap;
 
 	for (i = DICT(obj)->len; i < DICT(obj)->cap; i++)

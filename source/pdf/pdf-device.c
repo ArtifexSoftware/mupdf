@@ -301,7 +301,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 			int newmax = pdev->max_alphas * 2;
 			if (newmax == 0)
 				newmax = 4;
-			pdev->alphas = fz_realloc_array(ctx, pdev->alphas, newmax, sizeof(*pdev->alphas));
+			pdev->alphas = fz_realloc_array(ctx, pdev->alphas, newmax, alpha_entry);
 			pdev->max_alphas = newmax;
 		}
 		pdev->alphas[i].alpha = alpha;
@@ -355,7 +355,7 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 		int newmax = pdev->max_cid_fonts * 2;
 		if (newmax == 0)
 			newmax = 4;
-		pdev->cid_fonts = fz_realloc_array(ctx, pdev->cid_fonts, newmax, sizeof(*pdev->cid_fonts));
+		pdev->cid_fonts = fz_realloc_array(ctx, pdev->cid_fonts, newmax, fz_font*);
 		pdev->max_cid_fonts = newmax;
 	}
 	num = pdev->num_cid_fonts++;
@@ -390,8 +390,7 @@ pdf_dev_push_new_buf(fz_context *ctx, pdf_device *pdev, fz_buffer *buf, void (*o
 	if (pdev->num_gstates == pdev->max_gstates)
 	{
 		int newmax = pdev->max_gstates*2;
-
-		pdev->gstates = fz_realloc_array(ctx, pdev->gstates, newmax, sizeof(*pdev->gstates));
+		pdev->gstates = fz_realloc_array(ctx, pdev->gstates, newmax, gstate);
 		pdev->max_gstates = newmax;
 	}
 	memcpy(&pdev->gstates[pdev->num_gstates], &pdev->gstates[pdev->num_gstates-1], sizeof(*pdev->gstates));
@@ -553,7 +552,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect 
 			int newmax = pdev->max_groups * 2;
 			if (newmax == 0)
 				newmax = 4;
-			pdev->groups = fz_realloc_array(ctx, pdev->groups, newmax, sizeof(*pdev->groups));
+			pdev->groups = fz_realloc_array(ctx, pdev->groups, newmax, group_entry);
 			pdev->max_groups = newmax;
 		}
 		pdev->num_groups++;
@@ -803,7 +802,7 @@ pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_obj *im_res)
 		int newmax = pdev->max_imgs * 2;
 		if (newmax == 0)
 			newmax = 4;
-		pdev->image_indices = fz_realloc_array(ctx, pdev->image_indices, newmax, sizeof(*pdev->image_indices));
+		pdev->image_indices = fz_realloc_array(ctx, pdev->image_indices, newmax, int);
 		pdev->max_imgs = newmax;
 	}
 	num = pdev->num_imgs++;

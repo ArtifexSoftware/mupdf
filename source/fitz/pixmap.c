@@ -101,7 +101,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		{
 			if (pix->stride - 1 > INT_MAX / pix->n)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "overly wide image");
-			pix->samples = fz_malloc_array(ctx, pix->h, pix->stride);
+			pix->samples = fz_malloc(ctx, pix->h * pix->stride);
 		}
 		fz_catch(ctx)
 		{
@@ -1537,7 +1537,9 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 	tile->w = dst_w;
 	tile->h = dst_h;
 	tile->stride = dst_w * n;
-	tile->samples = fz_realloc_array(ctx, tile->samples, dst_w * n, dst_h);
+	if (dst_h > INT_MAX / (dst_w * n))
+		fz_throw(ctx, FZ_ERROR_MEMORY, "pixmap too large");
+	tile->samples = fz_realloc(ctx, tile->samples, dst_h * dst_w * n);
 }
 
 /*

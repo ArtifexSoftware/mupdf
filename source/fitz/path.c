@@ -217,10 +217,10 @@ fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
 			pack->coord_len = path->coord_len;
 			pack->cmd_cap = path->cmd_len;
 			pack->cmd_len = path->cmd_len;
-			pack->coords = fz_malloc_array(ctx, path->coord_len, sizeof(float));
+			pack->coords = fz_malloc_array(ctx, path->coord_len, float);
 			fz_try(ctx)
 			{
-				pack->cmds = fz_malloc_array(ctx, path->cmd_len, sizeof(uint8_t));
+				pack->cmds = fz_malloc_array(ctx, path->cmd_len, uint8_t);
 			}
 			fz_catch(ctx)
 			{
@@ -261,7 +261,7 @@ push_cmd(fz_context *ctx, fz_path *path, int cmd)
 	if (path->cmd_len + 1 >= path->cmd_cap)
 	{
 		int new_cmd_cap = fz_maxi(16, path->cmd_cap * 2);
-		path->cmds = fz_realloc_array(ctx, path->cmds, new_cmd_cap, sizeof(unsigned char));
+		path->cmds = fz_realloc_array(ctx, path->cmds, new_cmd_cap, unsigned char);
 		path->cmd_cap = new_cmd_cap;
 	}
 
@@ -274,7 +274,7 @@ push_coord(fz_context *ctx, fz_path *path, float x, float y)
 	if (path->coord_len + 2 >= path->coord_cap)
 	{
 		int new_coord_cap = fz_maxi(32, path->coord_cap * 2);
-		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, float);
 		path->coord_cap = new_coord_cap;
 	}
 
@@ -291,7 +291,7 @@ push_ord(fz_context *ctx, fz_path *path, float xy, int isx)
 	if (path->coord_len + 1 >= path->coord_cap)
 	{
 		int new_coord_cap = fz_maxi(32, path->coord_cap * 2);
-		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, float);
 		path->coord_cap = new_coord_cap;
 	}
 
@@ -1368,12 +1368,12 @@ fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 		}
 		if (path->cmd_len + extra_cmd < path->cmd_cap)
 		{
-			path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len + extra_cmd, sizeof(unsigned char));
+			path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len + extra_cmd, unsigned char);
 			path->cmd_cap = path->cmd_len + extra_cmd;
 		}
 		if (path->coord_len + extra_coord < path->coord_cap)
 		{
-			path->coords = fz_realloc_array(ctx, path->coords, path->coord_len + extra_coord, sizeof(float));
+			path->coords = fz_realloc_array(ctx, path->coords, path->coord_len + extra_coord, float);
 			path->coord_cap = path->coord_len + extra_coord;
 		}
 		memmove(path->cmds + extra_cmd, path->cmds, path->cmd_len * sizeof(unsigned char));
@@ -1523,12 +1523,12 @@ void fz_trim_path(fz_context *ctx, fz_path *path)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't trim a packed path");
 	if (path->cmd_cap > path->cmd_len)
 	{
-		path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len, sizeof(unsigned char));
+		path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len, unsigned char);
 		path->cmd_cap = path->cmd_len;
 	}
 	if (path->coord_cap > path->coord_len)
 	{
-		path->coords = fz_realloc_array(ctx, path->coords, path->coord_len, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, path->coord_len, float);
 		path->coord_cap = path->coord_len;
 	}
 }

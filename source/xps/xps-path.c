@@ -239,7 +239,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 
 	fz_try(ctx)
 	{
-		args = fz_malloc_array(ctx, strlen(geom) + 1, sizeof(char*));
+		args = fz_malloc_array(ctx, strlen(geom) + 1, char*);
 		pargs = args;
 
 		while (*s)

@@ -92,7 +92,7 @@ new_obj(fz_context *ctx, pclm_band_writer *writer)
 		int new_max = writer->xref_max * 2;
 		if (new_max < writer->obj_num + 8)
 			new_max = writer->obj_num + 8;
-		writer->xref = fz_realloc_array(ctx, writer->xref, new_max, sizeof(*writer->xref));
+		writer->xref = fz_realloc_array(ctx, writer->xref, new_max, int64_t);
 		writer->xref_max = new_max;
 	}
 
@@ -142,7 +142,7 @@ pclm_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 		int new_max = writer->page_max * 2;
 		if (new_max == 0)
 			new_max = writer->pages + 8;
-		writer->page_obj = fz_realloc_array(ctx, writer->page_obj, new_max, sizeof(*writer->page_obj));
+		writer->page_obj = fz_realloc_array(ctx, writer->page_obj, new_max, int);
 		writer->page_max = new_max;
 	}
 	writer->page_obj[writer->pages] = writer->obj_num;

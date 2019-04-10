@@ -369,8 +369,9 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			tile->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
 		stride = (w * image->n * image->bpc + 7) / 8;
-
-		samples = fz_malloc_array(ctx, h, stride);
+		if (h > SIZE_MAX / stride)
+			fz_throw(ctx, FZ_ERROR_MEMORY, "image too large");
+		samples = fz_malloc(ctx, h * stride);
 
 		if (subarea)
 		{

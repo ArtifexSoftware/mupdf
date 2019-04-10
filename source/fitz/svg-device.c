@@ -441,8 +441,8 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 			int newmax = sdev->max_fonts * 2;
 			if (newmax == 0)
 				newmax = 4;
-			sdev->fonts = fz_realloc_array(ctx, sdev->fonts, newmax, sizeof(*sdev->fonts));
-			memset(&sdev->fonts[font_idx], 0, (newmax - font_idx) * sizeof(sdev->fonts[0]));
+			sdev->fonts = fz_realloc_array(ctx, sdev->fonts, newmax, font);
+			memset(&sdev->fonts[font_idx], 0, (newmax - font_idx) * sizeof(font));
 			sdev->max_fonts = newmax;
 		}
 		sdev->fonts[font_idx].id = sdev->id++;
@@ -461,7 +461,7 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 		if (gid >= fnt->max_sentlist)
 		{
 			int j;
-			fnt->sentlist = fz_realloc_array(ctx, fnt->sentlist, gid+1, sizeof(fnt->sentlist[0]));
+			fnt->sentlist = fz_realloc_array(ctx, fnt->sentlist, gid+1, glyph);
 			for (j = fnt->max_sentlist; j <= gid; j++)
 			{
 				fnt->sentlist[j].x_off = FLT_MIN;
@@ -854,7 +854,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 			int new_max = sdev->max_images * 2;
 			if (new_max == 0)
 				new_max = 32;
-			sdev->images = fz_realloc_array(ctx, sdev->images, new_max, sizeof(image));
+			sdev->images = fz_realloc_array(ctx, sdev->images, new_max, image);
 			sdev->max_images = new_max;
 		}
 
@@ -1099,7 +1099,7 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, 
 	{
 		int n = (sdev->num_tiles == 0 ? 4 : sdev->num_tiles * 2);
 
-		sdev->tiles = fz_realloc_array(ctx, sdev->tiles, n, sizeof(tile));
+		sdev->tiles = fz_realloc_array(ctx, sdev->tiles, n, tile);
 		sdev->max_tiles = n;
 	}
 	num = sdev->num_tiles++;

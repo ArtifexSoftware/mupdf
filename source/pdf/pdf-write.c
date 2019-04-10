@@ -637,11 +637,11 @@ expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
 
 	/* objects are numbered 0..num and maybe two additional objects for linearization */
 	num += 3;
-	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, sizeof(*opts->use_list));
-	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, sizeof(*opts->ofs_list));
-	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, sizeof(*opts->gen_list));
-	opts->renumber_map = fz_realloc_array(ctx, opts->renumber_map, num, sizeof(*opts->renumber_map));
-	opts->rev_renumber_map = fz_realloc_array(ctx, opts->rev_renumber_map, num, sizeof(*opts->rev_renumber_map));
+	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, int);
+	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, int64_t);
+	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, int);
+	opts->renumber_map = fz_realloc_array(ctx, opts->renumber_map, num, int);
+	opts->rev_renumber_map = fz_realloc_array(ctx, opts->rev_renumber_map, num, int);
 
 	for (i = opts->list_len; i < num; i++)
 	{
@@ -898,7 +898,7 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		}
 
 		/* Create new table for the reordered, compacted xref */
-		newxref = fz_malloc_array(ctx, xref_len + 3, sizeof(pdf_xref_entry));
+		newxref = fz_malloc_array(ctx, xref_len + 3, pdf_xref_entry);
 		newxref[0] = *pdf_get_xref_entry(ctx, doc, 0);
 
 		/* Move used objects into the new compacted xref */

@@ -442,8 +442,8 @@ fz_process_shade_type5(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 
 	fz_try(ctx)
 	{
-		ref = fz_malloc_array(ctx, vprow, sizeof(fz_vertex));
-		buf = fz_malloc_array(ctx, vprow, sizeof(fz_vertex));
+		ref = fz_malloc_array(ctx, vprow, fz_vertex);
+		buf = fz_malloc_array(ctx, vprow, fz_vertex);
 		first = 1;
 
 		while (!fz_is_eof_bits(ctx, stream))

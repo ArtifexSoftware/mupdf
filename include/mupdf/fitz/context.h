@@ -248,12 +248,19 @@ void fz_set_use_document_css(fz_context *ctx, int use);
 */
 
 /*
-	Allocate storage for a structure (with scavenging),
-	clear it, and (in Memento builds) tag the pointer as belonging to a
-	struct of this type.
-*/
-#define fz_malloc_struct(CTX, STRUCT) \
-	((STRUCT *)Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT))
+ * Allocate memory for a structure, clear it, and tag the pointer for Memento.
+ */
+#define fz_malloc_struct(CTX, TYPE) \
+	((TYPE*)Memento_label(fz_calloc(CTX, 1, sizeof(TYPE)), #TYPE))
+
+/*
+ * Allocate uninitialized memory for an array of structures, and tag the
+ * pointer for Memento. Does NOT clear the memory!
+ */
+#define fz_malloc_array(CTX, COUNT, TYPE) \
+	((TYPE*)Memento_label(fz_malloc(CTX, (COUNT) * sizeof(TYPE)), #TYPE "[]"))
+#define fz_realloc_array(CTX, OLD, COUNT, TYPE) \
+	((TYPE*)Memento_label(fz_realloc(CTX, OLD, (COUNT) * sizeof(TYPE)), #TYPE "[]"))
 
 void *fz_malloc(fz_context *ctx, size_t size);
 void *fz_calloc(fz_context *ctx, size_t count, size_t size);
@@ -263,11 +270,6 @@ void fz_free(fz_context *ctx, void *p);
 void *fz_malloc_no_throw(fz_context *ctx, size_t size);
 void *fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size);
 void *fz_realloc_no_throw(fz_context *ctx, void *p, size_t size);
-
-void *fz_malloc_array(fz_context *ctx, size_t count, size_t size);
-void *fz_realloc_array(fz_context *ctx, void *p, size_t count, size_t size);
-void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
-void *fz_realloc_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
 
 char *fz_strdup(fz_context *ctx, const char *s);
 

@@ -15,7 +15,7 @@ struct fz_inflate_state_s
 
 void *fz_zlib_alloc(void *ctx, unsigned int items, unsigned int size)
 {
-	return fz_malloc_array_no_throw(ctx, items, size);
+	return fz_malloc_no_throw(ctx, items * size);
 }
 
 void fz_zlib_free(void *ctx, void *ptr)
