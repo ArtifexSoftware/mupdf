@@ -16,7 +16,7 @@ static void fz_trace_indent(fz_context *ctx, fz_output *out, int depth)
 static void
 fz_trace_matrix(fz_context *ctx, fz_output *out, fz_matrix ctm)
 {
-	fz_write_printf(ctx, out, " matrix=\"%g %g %g %g %g %g\"", ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
+	fz_write_printf(ctx, out, " transform=\"%g %g %g %g %g %g\"", ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
 }
 
 static void
@@ -317,7 +317,69 @@ fz_trace_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix
 	fz_trace_indent(ctx, out, dev->depth);
 	fz_write_printf(ctx, out, "<fill_shade alpha=\"%g\"", alpha);
 	fz_trace_matrix(ctx, out, ctm);
-	fz_write_printf(ctx, out, "/>\n");
+	fz_write_printf(ctx, out, " pattern_matrix=\"%g %g %g %g %g %g\"",
+		shade->matrix.a,
+		shade->matrix.b,
+		shade->matrix.c,
+		shade->matrix.d,
+		shade->matrix.e,
+		shade->matrix.f);
+	fz_write_printf(ctx, out, " colorspace=\"%s\"", fz_colorspace_name(ctx, shade->colorspace));
+	// TODO: use_background and background
+	// TODO: use_function and function
+	switch (shade->type)
+	{
+	case FZ_FUNCTION_BASED:
+		fz_write_printf(ctx, out, " type=\"function\"");
+		fz_write_printf(ctx, out, " function_matrix=\"%g %g %g %g %g %g\"",
+			shade->u.f.matrix.a,
+			shade->u.f.matrix.b,
+			shade->u.f.matrix.c,
+			shade->u.f.matrix.d,
+			shade->u.f.matrix.e,
+			shade->u.f.matrix.f);
+		fz_write_printf(ctx, out, " domain=\"%g %g %g %g\"",
+			shade->u.f.domain[0][0],
+			shade->u.f.domain[0][1],
+			shade->u.f.domain[1][0],
+			shade->u.f.domain[1][1]);
+		fz_write_printf(ctx, out, " samples=\"%d %d\"",
+			shade->u.f.xdivs,
+			shade->u.f.ydivs);
+		fz_write_printf(ctx, out, "/>\n");
+		break;
+	case FZ_LINEAR:
+		fz_write_printf(ctx, out, " type=\"linear\"");
+		fz_write_printf(ctx, out, " extend=\"%d %d\"",
+			shade->u.l_or_r.extend[0],
+			shade->u.l_or_r.extend[1]);
+		fz_write_printf(ctx, out, " start=\"%g %g\"",
+			shade->u.l_or_r.coords[0][0],
+			shade->u.l_or_r.coords[0][1]);
+		fz_write_printf(ctx, out, " end=\"%g %g\"",
+			shade->u.l_or_r.coords[1][0],
+			shade->u.l_or_r.coords[1][1]);
+		fz_write_printf(ctx, out, "/>\n");
+		break;
+	case FZ_RADIAL:
+		fz_write_printf(ctx, out, " type=\"radial\"");
+		fz_write_printf(ctx, out, " extend=\"%d %d\"",
+			shade->u.l_or_r.extend[0],
+			shade->u.l_or_r.extend[1]);
+		fz_write_printf(ctx, out, " inner=\"%g %g %g\"",
+			shade->u.l_or_r.coords[0][0],
+			shade->u.l_or_r.coords[0][1],
+			shade->u.l_or_r.coords[0][2]);
+		fz_write_printf(ctx, out, " outer=\"%g %g %g\"",
+			shade->u.l_or_r.coords[1][0],
+			shade->u.l_or_r.coords[1][1],
+			shade->u.l_or_r.coords[1][2]);
+		fz_write_printf(ctx, out, "/>\n");
+		break;
+	default:
+		fz_write_printf(ctx, out, " type=\"mesh\"/>\n");
+		break;
+	}
 }
 
 static void
