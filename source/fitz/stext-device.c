@@ -5,6 +5,58 @@
 #include <float.h>
 #include <string.h>
 
+/* Simple layout structure */
+
+fz_layout_block *fz_new_layout(fz_context *ctx)
+{
+	fz_pool *pool = fz_new_pool(ctx);
+	fz_layout_block *block;
+	fz_try(ctx)
+	{
+		block = fz_pool_alloc(ctx, pool, sizeof (fz_layout_block));
+		block->pool = pool;
+		block->head = NULL;
+		block->tailp = &block->head;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pool(ctx, pool);
+		fz_rethrow(ctx);
+	}
+	return block;
+}
+
+void fz_drop_layout(fz_context *ctx, fz_layout_block *block)
+{
+	if (block)
+		fz_drop_pool(ctx, block->pool);
+}
+
+void fz_add_layout_line(fz_context *ctx, fz_layout_block *block, float x, float y, float h, const char *p)
+{
+	fz_layout_line *line = fz_pool_alloc(ctx, block->pool, sizeof (fz_layout_line));
+	line->x = x;
+	line->y = y;
+	line->h = h;
+	line->p = p;
+	line->text = NULL;
+	line->next = NULL;
+	*block->tailp = line;
+	block->tailp = &line->next;
+	block->text_tailp = &line->text;
+}
+
+void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float w, const char *p)
+{
+	fz_layout_char *ch = fz_pool_alloc(ctx, block->pool, sizeof (fz_layout_char));
+	ch->x = x;
+	ch->w = w;
+	ch->p = p;
+	ch->next = NULL;
+	*block->text_tailp = ch;
+	block->text_tailp = &ch->next;
+}
+
 /* Extract text into blocks and lines. */
 
 #define LINE_DIST 0.9f
