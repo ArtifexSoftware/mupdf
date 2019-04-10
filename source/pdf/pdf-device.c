@@ -134,8 +134,7 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		memcmp(gs->stroke_state->dash_list, stroke_state->dash_list, sizeof(float)*stroke_state->dash_len))
 	{
 		int i;
-		if (stroke_state->dash_len == 0)
-			fz_append_byte(ctx, gs->buf, '[');
+		fz_append_byte(ctx, gs->buf, '[');
 		for (i = 0; i < stroke_state->dash_len; i++)
 		{
 			if (i > 0)
