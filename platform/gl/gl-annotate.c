@@ -26,7 +26,6 @@ static int pdf_filter(const char *fn)
 static void init_save_pdf_options(void)
 {
 	memset(&save_opts, 0, sizeof save_opts);
-	save_opts.do_garbage = 1;
 }
 
 static void save_pdf_options(void)
