@@ -182,14 +182,22 @@ fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 
 	paint_quad(ctx, painter, &v0, &v2, &v3, &v1);
 
+	if (shade->u.l_or_r.extend[0] || shade->u.l_or_r.extend[1]) {
+		float d = fabsf(p1.x - p0.x);
+		float e = fabsf(p1.y - p0.y);
+		if (d < e)
+			d = e;
+		if (d != 0)
+			r /= d;
+	}
 	if (shade->u.l_or_r.extend[0])
 	{
-		e0.p.x = v0.p.x - (p1.x - p0.x) * HUGENUM;
-		e0.p.y = v0.p.y - (p1.y - p0.y) * HUGENUM;
+		e0.p.x = v0.p.x - (p1.x - p0.x) * r;
+		e0.p.y = v0.p.y - (p1.y - p0.y) * r;
 		fz_prepare_color(ctx, painter, &e0, &zero);
 
-		e1.p.x = v2.p.x - (p1.x - p0.x) * HUGENUM;
-		e1.p.y = v2.p.y - (p1.y - p0.y) * HUGENUM;
+		e1.p.x = v2.p.x - (p1.x - p0.x) * r;
+		e1.p.y = v2.p.y - (p1.y - p0.y) * r;
 		fz_prepare_color(ctx, painter, &e1, &zero);
 
 		paint_quad(ctx, painter, &e0, &v0, &v2, &e1);
@@ -197,12 +205,12 @@ fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 
 	if (shade->u.l_or_r.extend[1])
 	{
-		e0.p.x = v1.p.x + (p1.x - p0.x) * HUGENUM;
-		e0.p.y = v1.p.y + (p1.y - p0.y) * HUGENUM;
+		e0.p.x = v1.p.x + (p1.x - p0.x) * r;
+		e0.p.y = v1.p.y + (p1.y - p0.y) * r;
 		fz_prepare_color(ctx, painter, &e0, &one);
 
-		e1.p.x = v3.p.x + (p1.x - p0.x) * HUGENUM;
-		e1.p.y = v3.p.y + (p1.y - p0.y) * HUGENUM;
+		e1.p.x = v3.p.x + (p1.x - p0.x) * r;
+		e1.p.y = v3.p.y + (p1.y - p0.y) * r;
 		fz_prepare_color(ctx, painter, &e1, &one);
 
 		paint_quad(ctx, painter, &e0, &v1, &v3, &e1);
