@@ -358,40 +358,30 @@ static const unsigned char *
 gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char *end)
 {
 #if FZ_ENABLE_ICC
-	fz_colorspace *cs = NULL;
-	fz_stream *bstm = NULL;
-	fz_pixmap *newpix;
-	fz_buffer *icc;
+	fz_colorspace *icc = NULL;
+	fz_buffer *buf = NULL;
 
-	icc = fz_new_buffer(ctx, 0);
-
-	fz_var(bstm);
-	fz_var(cs);
-
-	p = gif_read_subblocks(ctx, info, p, end, icc);
+	fz_var(buf);
+	fz_var(icc);
+	fz_var(p);
 
 	fz_try(ctx)
 	{
-		bstm = fz_open_buffer(ctx, icc);
-
-		cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, bstm);
-		if (fz_colorspace_n(ctx, cs) != 3)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components in ICC profile in gif image");
-		if (fz_colorspace_type(ctx, cs) != FZ_COLORSPACE_RGB)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported ICC profile type in gif image");
-
-		newpix = fz_convert_pixmap(ctx, info->pix, cs, NULL, NULL, NULL, 1);
-		fz_drop_pixmap(ctx, info->pix);
-		info->pix = newpix;
+		buf = fz_new_buffer(ctx, 0);
+		p = gif_read_subblocks(ctx, info, p, end, buf);
+		icc = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, buf, NULL);
+		if (fz_colorspace_type(ctx, icc) != fz_colorspace_type(ctx, info->pix->colorspace))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "embedded ICC profile does not match the image");
+		fz_drop_colorspace(ctx, info->pix->colorspace);
+		info->pix->colorspace = icc;
 	}
 	fz_always(ctx)
 	{
-		fz_drop_colorspace(ctx, cs);
-		fz_drop_stream(ctx, bstm);
-		fz_drop_buffer(ctx, icc);
+		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_colorspace(ctx, icc);
 		fz_warn(ctx, "cannot read embedded ICC profile");
 	}
 
