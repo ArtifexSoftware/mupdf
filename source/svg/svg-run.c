@@ -42,14 +42,14 @@ static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path
 {
 	float opacity = state->opacity * state->fill_opacity;
 	if (path)
-		fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_color, opacity, NULL);
+		fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_color, opacity, fz_default_color_params);
 }
 
 static void svg_stroke(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->stroke_opacity;
 	if (path)
-		fz_stroke_path(ctx, dev, path, &state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, NULL);
+		fz_stroke_path(ctx, dev, path, &state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, fz_default_color_params);
 }
 
 static void svg_draw_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
@@ -1209,7 +1209,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		fz_try(ctx)
 		{
 			img = fz_new_image_from_buffer(ctx, buf);
-			fz_fill_image(ctx, dev, img, local_state.transform, 1, NULL);
+			fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
 		}
 		fz_always(ctx)
 		{
@@ -1238,7 +1238,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		{
 			buf = fz_read_archive_entry(ctx, doc->zip, path);
 			img = fz_new_image_from_buffer(ctx, buf);
-			fz_fill_image(ctx, dev, img, local_state.transform, 1, NULL);
+			fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
 		}
 		fz_always(ctx)
 		{

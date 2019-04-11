@@ -31,7 +31,7 @@ extern "C" {
 
 /* Resources */
 #include "mupdf/fitz/store.h"
-#include "mupdf/fitz/colorspace.h"
+#include "mupdf/fitz/color.h"
 #include "mupdf/fitz/pixmap.h"
 #include "mupdf/fitz/glyph.h"
 #include "mupdf/fitz/bitmap.h"
@@ -41,7 +41,6 @@ extern "C" {
 #include "mupdf/fitz/path.h"
 #include "mupdf/fitz/text.h"
 #include "mupdf/fitz/separation.h"
-#include "mupdf/fitz/color-management.h"
 
 #include "mupdf/fitz/device.h"
 #include "mupdf/fitz/display-list.h"

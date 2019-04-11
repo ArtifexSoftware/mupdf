@@ -51,8 +51,8 @@ int fz_count_active_separations(fz_context *ctx, const fz_separations *seps);
 
 fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separations *seps);
 
-void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_params, fz_colorspace *dst_cs, const fz_separations *dst_sep, float *dst_color, fz_colorspace *src_cs, const float *src_color);
+void fz_convert_separation_colors(fz_context *ctx, fz_colorspace *src_cs, const float *src_color, fz_separations *dst_seps, fz_colorspace *dst_cs, float *dst_color, fz_color_params color_params);
 
-void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int i, const fz_color_params *color_params, fz_colorspace *dst_cs, fz_colorspace *prf, float *convert);
+void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int idx, fz_colorspace *dst_cs, float *dst_color, fz_colorspace *prf, fz_color_params color_params);
 
 #endif

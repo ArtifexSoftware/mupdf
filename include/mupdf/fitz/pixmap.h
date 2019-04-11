@@ -5,7 +5,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/store.h"
-#include "mupdf/fitz/colorspace.h"
 #include "mupdf/fitz/separation.h"
 
 /*
@@ -14,7 +13,6 @@
 	always alpha. The data is in premultiplied alpha when rendering, but
 	non-premultiplied for colorspace conversions and rescaling.
 */
-typedef struct fz_pixmap_s fz_pixmap;
 
 typedef struct fz_overprint_s fz_overprint;
 
@@ -60,7 +58,7 @@ void fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yre
 
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
-void fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colorspace, float *color, const fz_color_params *color_params);
+void fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colorspace, float *color, fz_color_params color_params);
 
 void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, fz_irect r);
 
@@ -74,7 +72,7 @@ void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, fz_irect rect);
 
 void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 
-fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_des, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params, int keep_alpha);
+fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_des, fz_colorspace *prf, fz_default_colorspaces *default_cs, fz_color_params color_params, int keep_alpha);
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
@@ -159,14 +157,6 @@ void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode);
 void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval);
 void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int depth, size_t stride, int scale);
 
-/*
-	Color convert a pixmap. The passing of default_cs is needed due to the base cs of the image possibly
-	needing to be treated as being in one of the page default color spaces.
-*/
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots);
-fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
-void fz_convert_pixmap_samples(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots);
-
 void fz_md5_pixmap(fz_context *ctx, fz_pixmap *pixmap, unsigned char digest[16]);
 
 fz_pixmap *fz_new_pixmap_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
@@ -178,8 +168,7 @@ int fz_valgrind_pixmap(const fz_pixmap *pix);
 #define fz_valgrind_pixmap(pix) do {} while (0)
 #endif
 
-fz_pixmap *fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *seps, const fz_color_params *color_params, fz_default_colorspaces *default_cs);
-
-fz_pixmap *fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, const fz_color_params *color_params, fz_colorspace *prf, fz_default_colorspaces *default_cs);
+fz_pixmap *fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *seps, fz_color_params color_params, fz_default_colorspaces *default_cs);
+fz_pixmap *fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst, fz_colorspace *prf, fz_color_params color_params, fz_default_colorspaces *default_cs);
 
 #endif

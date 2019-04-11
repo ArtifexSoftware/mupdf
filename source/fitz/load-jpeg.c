@@ -178,24 +178,15 @@ static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr
 
 		if (buf)
 		{
-			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, colorspace), buf, colorspace);
-			if (fz_colorspace_n(ctx, icc) == output_components)
-			{
-				fz_drop_colorspace(ctx, colorspace);
-				colorspace = icc;
-			}
-			else
-			{
-				fz_warn(ctx, "invalid number of components in ICC profile in jpeg image, ignoring ICC profile");
-				fz_drop_colorspace(ctx, icc);
-				icc = NULL;
-			}
+			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, colorspace), 0, NULL, buf);
+			fz_drop_colorspace(ctx, colorspace);
+			colorspace = icc;
 		}
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
-		fz_warn(ctx, "could not load ICC profile in JPEG image");
+		fz_warn(ctx, "ignoring embedded ICC profile in JPEG");
 
 	return colorspace;
 #else

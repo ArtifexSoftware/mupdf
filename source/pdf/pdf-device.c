@@ -212,7 +212,7 @@ pdf_dev_ctm(fz_context *ctx, pdf_device *pdev, fz_matrix ctm)
 }
 
 static void
-pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, const float *color, int stroke, const fz_color_params *color_params)
+pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, const float *color, int stroke, fz_color_params color_params)
 {
 	int diff = 0;
 	int i;
@@ -230,7 +230,7 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 	if (cspace == 0)
 	{
 		/* If it's an unknown colorspace, fallback to rgb */
-		fz_convert_color(ctx, color_params, NULL, fz_device_rgb(ctx), rgb, colorspace, color);
+		fz_convert_color(ctx, colorspace, color, fz_device_rgb(ctx), rgb, NULL, color_params);
 		color = rgb;
 		colorspace = fz_device_rgb(ctx);
 		cspace = 3;
@@ -629,7 +629,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect 
 
 static void
 pdf_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
@@ -644,7 +644,7 @@ pdf_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
@@ -692,7 +692,7 @@ pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 
 static void
 pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
-		fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+		fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
@@ -711,7 +711,7 @@ pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 
 static void
 pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
-		fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+		fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
@@ -810,7 +810,7 @@ pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_obj *im_res)
 }
 
 static void
-pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_obj *im_res;
@@ -844,7 +844,7 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix c
 }
 
 static void
-pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
@@ -854,7 +854,7 @@ pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 
 static void
 pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm,
-		fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+		fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_obj *im_res = NULL;
@@ -910,7 +910,7 @@ pdf_dev_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, fz_color_params color_params)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;

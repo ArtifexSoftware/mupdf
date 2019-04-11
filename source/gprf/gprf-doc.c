@@ -388,8 +388,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 				if (read_sep[i])
 				{
 					float cmyk[4];
-
-					(void)fz_separation_equivalent(ctx, image->separations, i - 3, NULL, fz_device_cmyk(ctx), NULL, cmyk);
+					fz_separation_equivalent(ctx, image->separations, i - 3, cmyk, fz_device_cmyk(ctx), NULL, NULL);
 					equiv[i][0] = cmyk[0] * 0xFF;
 					equiv[i][1] = cmyk[1] * 0xFF;
 					equiv[i][2] = cmyk[2] * 0xFF;

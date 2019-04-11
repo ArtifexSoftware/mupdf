@@ -110,7 +110,7 @@ xps_begin_opacity(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect are
 
 	if (opacity_mask_tag)
 	{
-		fz_begin_mask(ctx, dev, area, 0, NULL, NULL, NULL);
+		fz_begin_mask(ctx, dev, area, 0, NULL, NULL, fz_default_color_params);
 		xps_parse_brush(ctx, doc, ctm, area, base_uri, dict, opacity_mask_tag);
 		fz_end_mask(ctx, dev);
 	}

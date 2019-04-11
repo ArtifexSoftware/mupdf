@@ -185,7 +185,8 @@ prepare_mesh_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input
 		int n = fz_colorspace_n(ctx, dest->colorspace);
 		int a = dest->alpha;
 		int m = dest->n - a;
-		ptd->cc.convert(ctx, &ptd->cc, output, input);
+		if (ptd->cc.convert)
+			ptd->cc.convert(ctx, &ptd->cc, input, output);
 		for (i = 0; i < n; i++)
 			output[i] *= 255;
 		for (; i < m; i++)
@@ -230,7 +231,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 	op: NULL, or pointer to overprint bitmap.
 */
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, fz_irect bbox, const fz_overprint *eop)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_matrix ctm, fz_pixmap *dest, fz_color_params color_params, fz_irect bbox, const fz_overprint *eop)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -266,7 +267,9 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_init_cached_color_converter(ctx, &ptd.cc, NULL, temp->colorspace, colorspace, color_params);
+		if (temp->colorspace)
+			fz_init_cached_color_converter(ctx, &ptd.cc, colorspace, temp->colorspace, NULL, color_params);
+
 		fz_process_shade(ctx, shade, local_ctm, fz_rect_from_irect(bbox), prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)
@@ -328,17 +331,29 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 				int m = dest->n - dest->alpha;
 				int n = fz_colorspace_n(ctx, dest->colorspace);
 
-				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, colorspace, color_params);
-				for (i = 0; i < 256; i++)
+				if (dest->colorspace)
 				{
-					cc.convert(ctx, &cc, color, shade->function[i]);
-					for (k = 0; k < n; k++)
-						clut[i][k] = color[k] * 255;
-					for (; k < m; k++)
-						clut[i][k] = 0;
-					clut[i][k] = shade->function[i][cn] * 255;
+					fz_find_color_converter(ctx, &cc, colorspace, dest->colorspace, NULL, color_params);
+					for (i = 0; i < 256; i++)
+					{
+						cc.convert(ctx, &cc, shade->function[i], color);
+						for (k = 0; k < n; k++)
+							clut[i][k] = color[k] * 255;
+						for (; k < m; k++)
+							clut[i][k] = 0;
+						clut[i][k] = shade->function[i][cn] * 255;
+					}
+					fz_drop_color_converter(ctx, &cc);
 				}
-				fz_drop_color_converter(ctx, &cc);
+				else
+				{
+					for (i = 0; i < 256; i++)
+					{
+						for (k = 0; k < m; k++)
+							clut[i][k] = 0;
+						clut[i][k] = shade->function[i][cn] * 255;
+					}
+				}
 
 				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, dest->seps, 1);
 				d = conv->samples;

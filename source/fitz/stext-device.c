@@ -562,7 +562,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_m
 
 static void
 fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
@@ -577,7 +577,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 
 static void
 fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
@@ -635,7 +635,7 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_ma
 /* Images and shadings */
 
 static void
-fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 
@@ -648,13 +648,13 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ct
 
 static void
 fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ctm,
-		fz_colorspace *cspace, const float *color, float alpha, const fz_color_params *color_params)
+		fz_colorspace *cspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_stext_fill_image(ctx, dev, img, ctm, alpha, color_params);
 }
 
 static fz_image *
-fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm, const fz_color_params *color_params, fz_rect scissor)
+fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm, fz_color_params color_params, fz_rect scissor)
 {
 	fz_matrix ctm = *in_out_ctm;
 	fz_pixmap *pix;
@@ -691,7 +691,7 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 }
 
 static void
-fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_matrix local_ctm = ctm;
 	fz_rect scissor = fz_device_current_scissor(ctx, dev);

@@ -42,11 +42,11 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
 
 	if (dorgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
 	{
-		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, NULL /* FIXME */, 1);
+		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, fz_default_color_params /* FIXME */, 1);
 		pix = rgb;
 	}
 
-	if (pix->n - pix->alpha <= 3)
+	if (!pix->colorspace || pix->colorspace->type == FZ_COLORSPACE_GRAY || pix->colorspace->type == FZ_COLORSPACE_RGB)
 	{
 		fz_snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);

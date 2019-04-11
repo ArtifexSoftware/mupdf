@@ -361,29 +361,20 @@ gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const u
 	fz_colorspace *icc = NULL;
 	fz_buffer *buf = NULL;
 
-	fz_var(buf);
-	fz_var(icc);
 	fz_var(p);
 
+	buf = fz_new_buffer(ctx, 0);
 	fz_try(ctx)
 	{
-		buf = fz_new_buffer(ctx, 0);
 		p = gif_read_subblocks(ctx, info, p, end, buf);
-		icc = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, buf, NULL);
-		if (fz_colorspace_type(ctx, icc) != fz_colorspace_type(ctx, info->pix->colorspace))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "embedded ICC profile does not match the image");
+		icc = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, 0, NULL, buf);
 		fz_drop_colorspace(ctx, info->pix->colorspace);
 		info->pix->colorspace = icc;
 	}
 	fz_always(ctx)
-	{
 		fz_drop_buffer(ctx, buf);
-	}
 	fz_catch(ctx)
-	{
-		fz_drop_colorspace(ctx, icc);
-		fz_warn(ctx, "cannot read embedded ICC profile");
-	}
+		fz_warn(ctx, "ignoring embedded ICC profile in GIF");
 
 	return p;
 #else

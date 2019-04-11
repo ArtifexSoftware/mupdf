@@ -167,7 +167,6 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_style_context(ctx);
 	fz_drop_tuning_context(ctx);
 	fz_drop_colorspace_context(ctx);
-	fz_drop_cmm_context(ctx);
 	fz_drop_font_context(ctx);
 	fz_drop_output_context(ctx);
 
@@ -291,7 +290,6 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 		fz_new_output_context(ctx);
 		fz_new_store_context(ctx, max_store);
 		fz_new_glyph_cache_context(ctx);
-		fz_new_cmm_context(ctx);
 		fz_new_colorspace_context(ctx);
 		fz_new_font_context(ctx);
 		fz_new_document_handler_context(ctx);
@@ -345,27 +343,27 @@ fz_clone_context_internal(fz_context *ctx)
 	if (!new_ctx)
 		return NULL;
 
-	/* Inherit AA defaults from old context. */
+	/* Copy unshared contexts */
 	fz_copy_aa_context(new_ctx, ctx);
+	new_ctx->icc_enabled = ctx->icc_enabled;
+	memcpy(new_ctx->seed48, ctx->seed48, sizeof ctx->seed48);
 
 	/* Keep thread lock checking happy by copying pointers first and locking under new context */
+	new_ctx->user = ctx->user;
 	new_ctx->output = ctx->output;
 	new_ctx->output = fz_keep_output_context(new_ctx);
-	new_ctx->user = ctx->user;
 	new_ctx->store = ctx->store;
 	new_ctx->store = fz_keep_store_context(new_ctx);
 	new_ctx->glyph_cache = ctx->glyph_cache;
 	new_ctx->glyph_cache = fz_keep_glyph_cache(new_ctx);
 	new_ctx->colorspace = ctx->colorspace;
 	new_ctx->colorspace = fz_keep_colorspace_context(new_ctx);
-	fz_new_cmm_context(new_ctx);
 	new_ctx->font = ctx->font;
 	new_ctx->font = fz_keep_font_context(new_ctx);
 	new_ctx->style = ctx->style;
 	new_ctx->style = fz_keep_style_context(new_ctx);
 	new_ctx->tuning = ctx->tuning;
 	new_ctx->tuning = fz_keep_tuning_context(new_ctx);
-	memcpy(new_ctx->seed48, ctx->seed48, sizeof ctx->seed48);
 	new_ctx->handler = ctx->handler;
 	new_ctx->handler = fz_keep_document_handler_context(new_ctx);
 

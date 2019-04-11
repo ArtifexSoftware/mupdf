@@ -200,7 +200,7 @@ static unsigned int hex_from_color(int n, float color[4])
 		b = color[2] * 255;
 		return 0xff000000 | (r<<16) | (g<<8) | b;
 	case 4:
-		fz_convert_color(ctx, NULL, NULL, fz_device_rgb(ctx), rgb, fz_device_cmyk(ctx), color);
+		fz_convert_color(ctx, fz_device_cmyk(ctx), color, fz_device_rgb(ctx), rgb, NULL, fz_default_color_params);
 		r = rgb[0] * 255;
 		g = rgb[1] * 255;
 		b = rgb[2] * 255;

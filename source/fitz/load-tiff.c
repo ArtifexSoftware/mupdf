@@ -1105,35 +1105,6 @@ tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 	}
 }
 
-static int
-tiff_colorspace_type_from_photometric(int photometric)
-{
-	switch (photometric)
-	{
-	case 0: /* WhiteIsZero */
-	case 1: /* BlackIsZero */
-		return FZ_COLORSPACE_GRAY;
-	case 2: /* RGB */
-	case 3: /* RGBPal */
-		return FZ_COLORSPACE_RGB;
-	case 4: /* Transparency mask */
-		return FZ_COLORSPACE_NONE;
-	case 5: /* CMYK */
-		return FZ_COLORSPACE_CMYK;
-	case 6: /* YCbCr, it's probably a jpeg ... we let jpeg convert to rgb */
-		return FZ_COLORSPACE_RGB;
-	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
-	case 9: /* ICC Style L*a*b* encoding */
-		return FZ_COLORSPACE_LAB;
-	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
-		return FZ_COLORSPACE_GRAY;
-	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
-		return FZ_COLORSPACE_RGB;
-	default:
-		return FZ_COLORSPACE_NONE;
-	}
-}
-
 static void
 tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 {
@@ -1219,24 +1190,14 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		fz_try(ctx)
 		{
 			buff = fz_new_buffer_from_copied_data(ctx, tiff->profile, tiff->profilesize);
-			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, tiff->colorspace), buff, tiff->colorspace);
-			if (fz_colorspace_type(ctx, icc) == tiff_colorspace_type_from_photometric(tiff->photometric))
-			{
-				fz_drop_colorspace(ctx, tiff->colorspace);
-				tiff->colorspace = icc;
-			}
-			else
-			{
-				fz_warn(ctx, "ignoring ICC profile that does not match photometric");
-				fz_drop_colorspace(ctx, icc);
-			}
+			icc = fz_new_icc_colorspace(ctx, fz_colorspace_type(ctx, tiff->colorspace), 0, NULL, buff);
+			fz_drop_colorspace(ctx, tiff->colorspace);
+			tiff->colorspace = icc;
 		}
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);
 		fz_catch(ctx)
-		{
-			fz_warn(ctx, "ignoring broken ICC profile");
-		}
+			fz_warn(ctx, "ignoring embedded ICC profile");
 	}
 #endif
 

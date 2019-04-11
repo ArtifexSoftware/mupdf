@@ -339,6 +339,7 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 #if FZ_ENABLE_ICC
 	fz_stream *mstm = NULL, *zstm = NULL;
 	fz_colorspace *cs = NULL;
+	fz_buffer *buf = NULL;
 	size_t m = fz_mini(80, size);
 	size_t n = fz_strnlen((const char *)p, m);
 	if (n + 2 > m)
@@ -349,32 +350,25 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 
 	fz_var(mstm);
 	fz_var(zstm);
+	fz_var(buf);
 
 	fz_try(ctx)
 	{
 		mstm = fz_open_memory(ctx, p + n + 2, size - n - 2);
 		zstm = fz_open_flated(ctx, mstm, 15);
-		cs = fz_new_icc_colorspace_from_stream(ctx, info->type, zstm);
-		if ((fz_colorspace_type(ctx, cs) == FZ_COLORSPACE_GRAY && fz_colorspace_n(ctx, cs) == 1) ||
-			(fz_colorspace_type(ctx, cs) == FZ_COLORSPACE_RGB && fz_colorspace_n(ctx, cs) == 3))
-		{
-			/* drop old one in case we have multiple ICC profiles */
-			fz_drop_colorspace(ctx, info->cs);
-			info->cs = cs;
-		}
-		else
-		{
-			fz_warn(ctx, "invalid number of components in ICC profile in png image, ignoring ICC profile");
-			fz_drop_colorspace(ctx, cs);
-		}
+		buf = fz_read_all(ctx, zstm, 0);
+		cs = fz_new_icc_colorspace(ctx, info->type, 0, NULL, buf);
+		fz_drop_colorspace(ctx, info->cs);
+		info->cs = cs;
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(ctx, mstm);
+		fz_drop_buffer(ctx, buf);
 		fz_drop_stream(ctx, zstm);
+		fz_drop_stream(ctx, mstm);
 	}
 	fz_catch(ctx)
-		fz_warn(ctx, "cannot read embedded ICC profile");
+		fz_warn(ctx, "ignoring embedded ICC profile in PNG");
 #endif
 }
 

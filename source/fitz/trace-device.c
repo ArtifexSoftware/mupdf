@@ -136,7 +136,7 @@ fz_trace_path(fz_context *ctx, fz_trace_device *dev, const fz_path *path)
 
 static void
 fz_trace_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -156,7 +156,7 @@ fz_trace_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int ev
 
 static void
 fz_trace_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -223,7 +223,7 @@ fz_trace_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path,
 
 static void
 fz_trace_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -239,7 +239,7 @@ fz_trace_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_mat
 
 static void
 fz_trace_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -298,19 +298,21 @@ fz_trace_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_m
 }
 
 static void
-fz_trace_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_trace_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
 	fz_trace_indent(ctx, out, dev->depth);
 	fz_write_printf(ctx, out, "<fill_image alpha=\"%g\"", alpha);
+	if (image->colorspace)
+		fz_write_printf(ctx, out, " colorspace=\"%s\"", fz_colorspace_name(ctx, image->colorspace));
 	fz_trace_matrix(ctx, out, ctm);
 	fz_write_printf(ctx, out, " width=\"%d\" height=\"%d\"", image->w, image->h);
 	fz_write_printf(ctx, out, "/>\n");
 }
 
 static void
-fz_trace_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_trace_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -384,7 +386,7 @@ fz_trace_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix
 
 static void
 fz_trace_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
@@ -420,7 +422,7 @@ fz_trace_pop_clip(fz_context *ctx, fz_device *dev_)
 }
 
 static void
-fz_trace_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+fz_trace_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect bbox, int luminosity, fz_colorspace *colorspace, const float *color, fz_color_params color_params)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;

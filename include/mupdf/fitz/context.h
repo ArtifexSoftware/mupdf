@@ -11,8 +11,6 @@ typedef struct fz_error_stack_slot_s fz_error_stack_slot;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_colorspace_context_s fz_colorspace_context;
-typedef struct fz_cmm_engine_s fz_cmm_engine;
-typedef struct fz_cmm_instance_s fz_cmm_instance;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_style_context_s fz_style_context;
 typedef struct fz_locks_context_s fz_locks_context;
@@ -127,7 +125,6 @@ struct fz_context_s
 	fz_warn_context *warn;
 	fz_font_context *font;
 	fz_colorspace_context *colorspace;
-	fz_cmm_instance *cmm_instance;
 	fz_aa_context *aa;
 	fz_style_context *style;
 	fz_store *store;
@@ -135,6 +132,9 @@ struct fz_context_s
 	fz_tuning_context *tuning;
 	fz_document_handler_context *handler;
 	fz_output_context *output;
+#if FZ_ENABLE_ICC
+	int icc_enabled;
+#endif
 	uint16_t seed48[7];
 };
 
@@ -230,6 +230,9 @@ void fz_set_user_css(fz_context *ctx, const char *text);
 int fz_use_document_css(fz_context *ctx);
 
 void fz_set_use_document_css(fz_context *ctx, int use);
+
+void fz_enable_icc(fz_context *ctx);
+void fz_disable_icc(fz_context *ctx);
 
 /*
 	Memory Allocation and Scavenging:

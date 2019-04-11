@@ -302,14 +302,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 
 		if (defcs)
 		{
-			if (fz_colorspace_n(ctx, defcs) == nchans)
-			{
+			if (defcs->n == nchans)
 				state->cs = fz_keep_colorspace(ctx, defcs);
-			}
 			else
-			{
-				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", nchans, fz_colorspace_n(ctx, defcs), fz_colorspace_name(ctx, defcs));
-			}
+				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", nchans, defcs->n, defcs->name);
 		}
 
 #if FZ_ENABLE_ICC
@@ -317,8 +313,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		{
 			unsigned char *iccprofile = NULL;
 			unsigned long size = 0;
-			fz_stream *cstm = NULL;
-			fz_var(cstm);
+			fz_buffer *cbuf = NULL;
+			fz_var(cbuf);
 
 			err = JP2_Decompress_GetICC(doc, &iccprofile, &size);
 			if (err != cJP2_Error_OK)
@@ -326,19 +322,17 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 
 			fz_try(ctx)
 			{
-				cstm = fz_open_memory(ctx, iccprofile, size);
-				state->cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, cstm);
+				cbuf = fz_new_buffer_from_copied_data(ctx, iccprofile, size);
+				state->cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, cbuf, NULL);
 			}
 			fz_always(ctx)
-				fz_drop_stream(ctx, cstm);
+				fz_drop_buffer(ctx, cbuf);
 			fz_catch(ctx)
-			{
-				fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
-			}
+				fz_warn(ctx, "ignoring embedded ICC profile in JPX");
 
-			if (state->cs && fz_colorspace_n(ctx, state->cs) != n)
+			if (state->cs && state->cs->n != n)
 			{
-				fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile");
+				fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile in JPX");
 				fz_drop_colorspace(ctx, state->cs);
 				state->cs = NULL;
 			}
@@ -349,14 +343,20 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		{
 			switch (colors)
 			{
-			case 4: state->cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx)); break;
-			case 3: if (colorspace == cJP2_Colorspace_CIE_LABa)
+			case 4:
+				state->cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
+				break;
+			case 3:
+				if (colorspace == cJP2_Colorspace_CIE_LABa)
 					state->cs = fz_keep_colorspace(ctx, fz_device_lab(ctx));
 				else
 					state->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				break;
-			case 1: state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx)); break;
-			case 0: if (alphas == 1)
+			case 1:
+				state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+				break;
+			case 0:
+				if (alphas == 1)
 				{
 					/* alpha only images are rendered as grayscale */
 					state->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
@@ -365,7 +365,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 					break;
 				}
 				/* fallthrough */
-			default: fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %lu", nchans);
+			default:
+				fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %lu", nchans);
 			}
 		}
 	}
@@ -795,37 +796,31 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 
 	if (defcs)
 	{
-		if (fz_colorspace_n(ctx, defcs) == n)
-		{
+		if (defcs->n == n)
 			state->cs = fz_keep_colorspace(ctx, defcs);
-		}
 		else
-		{
 			fz_warn(ctx, "jpx file and dict colorspace do not match");
-		}
 	}
 
 #if FZ_ENABLE_ICC
 	if (!state->cs && jpx->icc_profile_buf)
 	{
-		fz_stream *cstm = NULL;
-		fz_var(cstm);
+		fz_buffer *cbuf = NULL;
+		fz_var(cbuf);
 
 		fz_try(ctx)
 		{
-			cstm = fz_open_memory(ctx, jpx->icc_profile_buf, jpx->icc_profile_len);
-			state->cs = fz_new_icc_colorspace_from_stream(ctx, FZ_COLORSPACE_NONE, cstm);
+			cbuf = fz_new_buffer_from_copied_data(ctx, jpx->icc_profile_buf, jpx->icc_profile_len);
+			state->cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, NULL, cbuf);
 		}
 		fz_always(ctx)
-			fz_drop_stream(ctx, cstm);
+			fz_drop_buffer(ctx, cbuf);
 		fz_catch(ctx)
-		{
-			fz_warn(ctx, "cannot load ICC profile: %s", fz_caught_message(ctx));
-		}
+			fz_warn(ctx, "ignoring embedded ICC profile in JPX");
 
-		if (state->cs && fz_colorspace_n(ctx, state->cs) != n)
+		if (state->cs && state->cs->n != n)
 		{
-			fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile");
+			fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile in JPX");
 			fz_drop_colorspace(ctx, state->cs);
 			state->cs = NULL;
 		}

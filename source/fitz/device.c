@@ -142,7 +142,7 @@ pop_push_clip_stack(fz_context *ctx, fz_device *dev, int pop_type, int push_type
 
 void
 fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	if (dev->fill_path)
 	{
@@ -158,7 +158,7 @@ fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd,
 
 void
 fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	if (dev->stroke_path)
 	{
@@ -212,7 +212,7 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 void
 fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	if (dev->fill_text)
 	{
@@ -228,7 +228,7 @@ fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm
 
 void
 fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	if (dev->stroke_text)
 	{
@@ -313,7 +313,7 @@ fz_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 void
-fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	if (dev->fill_shade)
 	{
@@ -328,7 +328,7 @@ fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, f
 }
 
 void
-fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	if (dev->fill_image)
 	{
@@ -344,7 +344,7 @@ fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, f
 
 void
 fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	if (dev->fill_image_mask)
 	{
@@ -378,7 +378,7 @@ fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix c
 }
 
 void
-fz_begin_mask(fz_context *ctx, fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, const float *bc, const fz_color_params *color_params)
+fz_begin_mask(fz_context *ctx, fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, const float *bc, fz_color_params color_params)
 {
 	push_clip_stack(ctx, dev, area, fz_device_container_stack_is_mask);
 

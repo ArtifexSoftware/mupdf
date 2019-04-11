@@ -5,7 +5,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/store.h"
-#include "mupdf/fitz/colorspace.h"
 
 /*
 	Glyphs represent a run length encoded set of pixels for a 2

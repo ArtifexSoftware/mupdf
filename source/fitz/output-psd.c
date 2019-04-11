@@ -74,15 +74,22 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	size_t len;
 	static const char psdsig[12] = { '8', 'B', 'P', 'S', 0, 1, 0, 0, 0, 0, 0, 0 };
 	static const char ressig[4] = { '8', 'B', 'I', 'M' };
-	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
 	unsigned char *data;
-	size_t size = fz_buffer_storage(ctx, buffer, &data);
+	size_t size;
 	fz_colorspace *cs_cmyk = cs;
-	if (fz_colorspace_n(ctx, cs) != 4)
+
+#if FZ_ENABLE_ICC
+	size = fz_buffer_storage(ctx, cs->u.icc.buffer, &data);
+#else
+	size = 0;
+	data = NULL;
+#endif
+
+	if (cs->n != 4)
 		cs_cmyk = fz_device_cmyk(ctx);
 
 	if (!fz_colorspace_is_subtractive(ctx, cs))
-		writer->num_additive = fz_colorspace_n(ctx, cs);
+		writer->num_additive = cs->n;
 
 	/* File Header Section */
 	fz_write_data(ctx, out, psdsig, 12);
@@ -171,7 +178,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 		fz_write_int32_be(ctx, out, 14 * s); /* Length */
 		for (i = 0; i < s; i++) {
 			float cmyk[4];
-			fz_separation_equivalent(ctx, seps, i, NULL, cs_cmyk, NULL, cmyk);
+			fz_separation_equivalent(ctx, seps, i, cs_cmyk, cmyk, NULL, fz_default_color_params);
 			fz_write_int16_be(ctx, out, 02); /* CMYK */
 			/* PhotoShop stores all component values as if they were additive. */
 			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[0]));/* Cyan */

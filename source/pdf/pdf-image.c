@@ -18,7 +18,7 @@ pdf_load_jpx_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict
 
 		if (tile->n != 1)
 		{
-			fz_pixmap *gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), NULL, NULL, fz_default_color_params(ctx), 0);
+			fz_pixmap *gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), NULL, NULL, fz_default_color_params, 0);
 			fz_drop_pixmap(ctx, tile);
 			tile = gray;
 		}
@@ -115,7 +115,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			for (i = 0; i < n * 2; i++)
 				decode[i] = pdf_array_get_real(ctx, obj, i);
 		}
-		else if (fz_colorspace_is_lab(ctx, colorspace) || fz_colorspace_is_lab_icc(ctx, colorspace))
+		else if (fz_colorspace_is_lab(ctx, colorspace))
 		{
 			decode[0] = 0;
 			decode[1] = 100;
@@ -485,9 +485,10 @@ raw_or_unknown_compression:
 					int basen;
 					pdf_obj *arr;
 
-					lookup = fz_indexed_colorspace_palette(ctx, cs, &high);
-					basecs = fz_colorspace_base(ctx, cs);
-					basen = fz_colorspace_n(ctx, basecs);
+					basecs = cs->u.indexed.base;
+					high = cs->u.indexed.high;
+					lookup = cs->u.indexed.lookup;
+					basen = basecs->n;
 
 					arr = pdf_dict_put_array(ctx, imobj, PDF_NAME(ColorSpace), 4);
 

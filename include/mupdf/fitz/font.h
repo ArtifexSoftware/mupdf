@@ -157,8 +157,6 @@ const unsigned char *fz_lookup_builtin_font(fz_context *ctx, const char *name, i
 
 const unsigned char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 
-const unsigned char *fz_lookup_icc(fz_context *ctx, enum fz_colorspace_type name, size_t *len);
-
 const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int ordering, int *len, int *index);
 const unsigned char *fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int *subfont);
 

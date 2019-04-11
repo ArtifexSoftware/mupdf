@@ -15,8 +15,6 @@ struct fz_buffer_s
 };
 
 void fz_new_colorspace_context(fz_context *ctx);
-void fz_new_cmm_context(fz_context *ctx);
-void fz_drop_cmm_context(fz_context *ctx);
 fz_colorspace_context *fz_keep_colorspace_context(fz_context *ctx);
 void fz_drop_colorspace_context(fz_context *ctx);
 

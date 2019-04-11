@@ -4,7 +4,6 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/store.h"
-#include "mupdf/fitz/colorspace.h"
 #include "mupdf/fitz/pixmap.h"
 
 #include "mupdf/fitz/buffer.h"
@@ -99,8 +98,8 @@ fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);
 void fz_drop_image_base(fz_context *ctx, fz_image *image);
 fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image *image, fz_irect *subarea, int indexed, int l2factor);
-unsigned char *fz_indexed_colorspace_palette(fz_context *ctx, fz_colorspace *cs, int *high);
-fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha);
+fz_pixmap *fz_convert_indexed_pixmap_to_base(fz_context *ctx, const fz_pixmap *src);
+fz_pixmap *fz_convert_separation_pixmap_to_base(fz_context *ctx, const fz_pixmap *src);
 size_t fz_image_size(fz_context *ctx, fz_image *im);
 
 /*

@@ -5,7 +5,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/store.h"
-#include "mupdf/fitz/colorspace.h"
 #include "mupdf/fitz/pixmap.h"
 #include "mupdf/fitz/compressed-buffer.h"
 
@@ -86,7 +85,7 @@ void fz_drop_shade_imp(fz_context *ctx, fz_storable *shade);
 
 fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 
-void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *override_cs, fz_matrix ctm, fz_pixmap *dest, const fz_color_params *color_params, fz_irect bbox, const fz_overprint *eop);
+void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *override_cs, fz_matrix ctm, fz_pixmap *dest, fz_color_params color_params, fz_irect bbox, const fz_overprint *eop);
 
 /*
  *	Handy routine for processing mesh based shades

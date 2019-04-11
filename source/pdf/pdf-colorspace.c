@@ -1,221 +1,122 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-#include "../fitz/colorspace-imp.h"
-
 #include <string.h>
 
 /* ICCBased */
 static fz_colorspace *
-load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
+load_icc_based(fz_context *ctx, pdf_obj *dict, int allow_alt)
 {
-	int n;
-	pdf_obj *obj;
-	fz_buffer *buffer = NULL;
+	int n = pdf_dict_get_int(ctx, dict, PDF_NAME(N));
+	fz_colorspace *alt = NULL;
 	fz_colorspace *cs = NULL;
-	fz_colorspace *cs_alt = NULL;
-	fz_colorspace_clamp_fn *alt_lab_clamping = NULL;
+	pdf_obj *obj;
 
-	fz_var(cs);
-	fz_var(cs_alt);
-	fz_var(buffer);
-
-	/*
-		alt => "If ICC unreadable/unsupported, then return the
-		alternate instead".
-
-		Regardless of whether alt is set or not, we DO read the
-		alternate space, because we need to know whether it's a
-		LAB space or not to affect our clamping. We just might
-		not return it.
-	*/
-	fz_try(ctx)
+	/* Look at Alternate to detect type (especially Lab). */
+	if (allow_alt)
 	{
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Alternate));
 		if (obj)
 		{
-			cs_alt = pdf_load_colorspace(ctx, obj);
-			if (fz_colorspace_is_lab_icc(ctx, cs_alt))
-				alt_lab_clamping = cs_alt->clamp;
+			fz_try(ctx)
+				alt = pdf_load_colorspace(ctx, obj);
+			fz_catch(ctx)
+				fz_warn(ctx, "ignoring broken ICC Alternate colorspace");
 		}
 	}
-	fz_catch(ctx)
-	{
-		fz_drop_colorspace(ctx, cs_alt);
-		cs_alt = NULL;
-	}
 
-	/* If we're not going to be allowed to return it, drop it! */
-	if (!alt)
+#if FZ_ENABLE_ICC
 	{
-		fz_drop_colorspace(ctx, cs_alt);
-		cs_alt = NULL;
-	}
-
-	n = pdf_dict_get_int(ctx, dict, PDF_NAME(N));
-
-	fz_try(ctx)
-	{
-		if (fz_get_cmm_engine(ctx))
+		fz_buffer *buf = NULL;
+		fz_var(buf);
+		fz_try(ctx)
 		{
-			enum fz_colorspace_type type;
-			if (n == 1) type = FZ_COLORSPACE_GRAY;
-			else if (n == 3) type = FZ_COLORSPACE_RGB;
-			else if (n == 4) type = FZ_COLORSPACE_CMYK;
-			else type = FZ_COLORSPACE_NONE;
-			buffer = pdf_load_stream(ctx, dict);
-			cs = fz_new_icc_colorspace(ctx, type, buffer, cs_alt);
+			buf = pdf_load_stream(ctx, dict);
+			cs = fz_new_icc_colorspace(ctx, alt ? alt->type : FZ_COLORSPACE_NONE, 0, NULL, buf);
+			if (cs->n != n)
+				fz_warn(ctx, "ICC colorspace N=%d does not match profile N=%d", n, cs->n);
 		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, buf);
+		fz_catch(ctx)
+			fz_warn(ctx, "ignoring broken ICC profile");
 	}
-	fz_always(ctx)
-		fz_drop_buffer(ctx, buffer);
-	fz_catch(ctx)
-	{
-		if (!alt) {
-			fz_drop_colorspace(ctx, cs_alt);
-			fz_rethrow(ctx);
-		}
-	}
+#endif
 
-	if (cs)
-	{
-		if (n != 1 && n != 3 && n != 4)
-		{
-			fz_drop_colorspace(ctx, cs_alt);
-			fz_drop_colorspace(ctx, cs);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Based must have 1, 3 or 4 components");
-		}
+	if (!cs)
+		cs = alt;
+	else
+		fz_drop_colorspace(ctx, alt);
 
-		/* Override the clamping if the alternate was LAB */
-		if (alt_lab_clamping)
-			cs->clamp = alt_lab_clamping;
-		fz_drop_colorspace(ctx, cs_alt);
-		return cs;
-	}
-
-	/* Failed to load the ICC profile - either because it was broken,
-	 * or because we aren't in an ICC workflow. If we aren't allowed
-	 * to return the alternate, then that's all she wrote. */
-	if (!alt)
+	if (!cs)
 	{
-		fz_drop_colorspace(ctx, cs_alt);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Unable to read ICC workflow");
-	}
-
-	/* If we have an alternate we are allowed to use, return that. */
-	if (cs_alt)
-	{
-		if (n != 1 && n != 3 && n != 4)
-		{
-			fz_drop_colorspace(ctx, cs_alt);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Based must have 1, 3 or 4 components");
-		}
-		return cs_alt;
-	}
-
-	switch (n)
-	{
-	case 1:
-		cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
-		break;
-	case 3:
-		cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-		break;
-	case 4:
-		cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
-		break;
-	default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
+		if (n == 1) cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+		else if (n == 3) cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		else if (n == 4) cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
+		else fz_throw(ctx, FZ_ERROR_SYNTAX, "invalid ICC colorspace");
 	}
 
 	return cs;
 }
 
-struct devicen
-{
-	fz_colorspace *base;
-	pdf_function *tint;
-};
-
 static void
-devicen_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
+devicen_eval(fz_context *ctx, void *tint, const float *sv, int sn, float *dv, int dn)
 {
-	struct devicen *devn = cs->data;
-	pdf_eval_function(ctx, devn->tint, color, cs->n, alt, devn->base->n);
+	pdf_eval_function(ctx, tint, sv, sn, dv, dn);
 }
 
 static void
-devicen_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
+devicen_drop(fz_context *ctx, void *tint)
 {
-	struct devicen *devn = cs->data;
-	float alt[FZ_MAX_COLORS];
-	pdf_eval_function(ctx, devn->tint, color, cs->n, alt, devn->base->n);
-	fz_convert_color(ctx, fz_default_color_params(ctx), NULL, fz_device_rgb(ctx), rgb, devn->base, alt);
-}
-
-static void
-free_devicen(fz_context *ctx, fz_colorspace *cs)
-{
-	struct devicen *devn = cs->data;
-	fz_drop_colorspace(ctx, devn->base);
-	pdf_drop_function(ctx, devn->tint);
-	fz_free(ctx, devn);
+	pdf_drop_function(ctx, tint);
 }
 
 static fz_colorspace *
-base_devicen(fz_colorspace *cs)
+load_devicen(fz_context *ctx, pdf_obj *array, int is_devn)
 {
-	struct devicen *devn = cs->data;
-
-	return devn->base;
-}
-
-static fz_colorspace *
-load_devicen(fz_context *ctx, pdf_obj *array)
-{
+	fz_colorspace *base = NULL;
 	fz_colorspace *cs = NULL;
-	struct devicen *devn = NULL;
 	pdf_obj *nameobj = pdf_array_get(ctx, array, 1);
 	pdf_obj *baseobj = pdf_array_get(ctx, array, 2);
 	pdf_obj *tintobj = pdf_array_get(ctx, array, 3);
-	fz_colorspace *base;
-	pdf_function *tint = NULL;
-	char *colorspace_name;
+	char name[100];
 	int i, n;
-
-	fz_var(tint);
-	fz_var(devn);
 
 	if (pdf_is_array(ctx, nameobj))
 	{
 		n = pdf_array_len(ctx, nameobj);
-		colorspace_name = "DeviceN";
+		if (n < 1)
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "too few components in DeviceN colorspace");
+		if (n > FZ_MAX_COLORS)
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "too many components in DeviceN colorspace");
 	}
 	else
 	{
 		n = 1;
-		colorspace_name = "Separation";
 	}
 
-	if (n < 1)
-		fz_throw(ctx, FZ_ERROR_SYNTAX, "insufficient components in colorspace");
-	if (n > FZ_MAX_COLORS)
-		fz_throw(ctx, FZ_ERROR_SYNTAX, "too many components in colorspace");
-
 	base = pdf_load_colorspace(ctx, baseobj);
-
 	fz_try(ctx)
 	{
-		tint = pdf_load_function(ctx, tintobj, n, base->n);
+		if (is_devn)
+		{
+			fz_snprintf(name, sizeof name, "DeviceN(%d,%s", n, base->name);
+			for (i = 0; i < n; i++) {
+				fz_strlcat(name, ",", sizeof name);
+				fz_strlcat(name, pdf_array_get_name(ctx, nameobj, i), sizeof name);
+			}
+			fz_strlcat(name, ")", sizeof name);
+		}
+		else
+		{
+			fz_snprintf(name, sizeof name, "Separation(%s,%s)", base->name, pdf_to_name(ctx, nameobj));
+		}
 
-		devn = fz_malloc_struct(ctx, struct devicen);
-		devn->base = fz_keep_colorspace(ctx, base);  /* We drop it during the devn free... */
-		devn->tint = tint;
-
-		cs = fz_new_colorspace(ctx, colorspace_name, FZ_COLORSPACE_SEPARATION, 0, n,
-			fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? devicen_to_alt : devicen_to_rgb, NULL, base_devicen, NULL, free_devicen, devn,
-			sizeof(struct devicen) + base->size + pdf_function_size(ctx, tint));
-
-		devn = NULL;
+		cs = fz_new_colorspace(ctx, FZ_COLORSPACE_SEPARATION, 0, n, name);
+		cs->u.separation.eval = devicen_eval;
+		cs->u.separation.drop = devicen_drop;
+		cs->u.separation.base = fz_keep_colorspace(ctx, base);
+		cs->u.separation.tint = pdf_load_function(ctx, tintobj, n, cs->u.separation.base->n);
 		if (pdf_is_array(ctx, nameobj))
 			for (i = 0; i < n; i++)
 				fz_colorspace_name_colorant(ctx, cs, i, pdf_to_name(ctx, pdf_array_get(ctx, nameobj, i)));
@@ -223,11 +124,12 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 			fz_colorspace_name_colorant(ctx, cs, 0, pdf_to_name(ctx, nameobj));
 	}
 	fz_always(ctx)
+	{
 		fz_drop_colorspace(ctx, base);
+	}
 	fz_catch(ctx)
 	{
-		pdf_drop_function(ctx, tint);
-		fz_free(ctx, devn);
+		fz_drop_colorspace(ctx, cs);
 		fz_rethrow(ctx);
 	}
 
@@ -237,7 +139,7 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 int
 pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return cs && cs->free_data == free_devicen;
+	return cs && cs->type == FZ_COLORSPACE_SEPARATION;
 }
 
 /* Indexed */
@@ -371,13 +273,10 @@ pdf_load_cal_gray(fz_context *ctx, pdf_obj *dict)
 		return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 
 	fz_try(ctx)
-	{
 		pdf_load_cal_common(ctx, dict, wp, bp, gamma);
-		gamma[2] = gamma[1] = gamma[0];
-	}
 	fz_catch(ctx)
 		return fz_keep_colorspace(ctx, fz_device_gray(ctx));
-	return fz_new_cal_colorspace(ctx, "CalGray", wp, bp, gamma, NULL);
+	return fz_new_cal_gray_colorspace(ctx, wp, bp, gamma[0]);
 }
 
 static fz_colorspace *
@@ -396,7 +295,6 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 	fz_try(ctx)
 	{
 		pdf_load_cal_common(ctx, dict, wp, bp, gamma);
-
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Matrix));
 		if (pdf_array_len(ctx, obj) == 9)
 		{
@@ -406,7 +304,7 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 		return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-	return fz_new_cal_colorspace(ctx, "CalRGB", wp, bp, gamma, matrix);
+	return fz_new_cal_rgb_colorspace(ctx, wp, bp, gamma, matrix);
 }
 
 /* Parse and create colorspace from PDF object */
@@ -457,19 +355,9 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME(DeviceCMYK)))
 				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME(CalGray)))
-			{
-				if (fz_get_cmm_engine(ctx))
-					return pdf_load_cal_gray(ctx, pdf_array_get(ctx, obj, 1));
-				else
-					return fz_keep_colorspace(ctx, fz_device_gray(ctx));
-			}
+				return pdf_load_cal_gray(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME(CalRGB)))
-			{
-				if (fz_get_cmm_engine(ctx))
-					return pdf_load_cal_rgb(ctx, pdf_array_get(ctx, obj, 1));
-				else
-					return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-			}
+				return pdf_load_cal_rgb(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME(CalCMYK)))
 				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME(Lab)))
@@ -490,10 +378,10 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 						cs = load_indexed(ctx, obj);
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME(Separation)))
-						cs = load_devicen(ctx, obj);
+						cs = load_devicen(ctx, obj, 0);
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME(DeviceN)))
-						cs = load_devicen(ctx, obj);
+						cs = load_devicen(ctx, obj, 1);
 					else if (pdf_name_eq(ctx, name, PDF_NAME(Pattern)))
 					{
 						pdf_obj *pobj;
@@ -548,10 +436,12 @@ pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 
 	cs = pdf_load_colorspace_imp(ctx, obj);
 
-	pdf_store_item(ctx, obj, cs, cs->size);
+	pdf_store_item(ctx, obj, cs, 1000);
 
 	return cs;
 }
+
+#if FZ_ENABLE_ICC
 
 static fz_colorspace *
 pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
@@ -580,20 +470,24 @@ pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 	fz_try(ctx)
 		cs = load_icc_based(ctx, dest_profile, 0);
 	fz_catch(ctx)
-	{
-		/* Swallow the error */
 		fz_warn(ctx, "Attempt to read Output Intent failed");
-	}
-
 	return cs;
 }
 
 fz_colorspace *
 pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
 {
-#if FZ_ENABLE_ICC
 	if (!doc->oi)
 		doc->oi = pdf_load_output_intent(ctx, doc);
-#endif
 	return doc->oi;
 }
+
+#else
+
+fz_colorspace *
+pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
+{
+	return NULL;
+}
+
+#endif

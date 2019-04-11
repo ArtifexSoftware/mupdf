@@ -243,6 +243,7 @@ static int showmd5 = 0;
 static pdf_document *pdfout = NULL;
 #endif
 
+static int no_icc = 0;
 static int ignore_errors = 0;
 static int uselist = 1;
 static int alphabits_text = 8;
@@ -272,12 +273,6 @@ static int files = 0;
 static int num_workers = 0;
 static worker_t *workers;
 static fz_band_writer *bander = NULL;
-
-#if FZ_ENABLE_ICC
-static fz_cmm_engine *icc_engine = &fz_cmm_engine_lcms;
-#else
-static fz_cmm_engine *icc_engine = NULL;
-#endif
 
 static const char *layer_config = NULL;
 
@@ -1525,7 +1520,7 @@ int mudraw_main(int argc, char **argv)
 		case 'D': uselist = 0; break;
 		case 'l': min_line_width = fz_atof(fz_optarg); break;
 		case 'i': ignore_errors = 1; break;
-		case 'N': icc_engine = NULL; break;
+		case 'N': no_icc = 1; break;
 
 		case 'T':
 #ifndef DISABLE_MUTHREADS
@@ -1593,12 +1588,19 @@ int mudraw_main(int argc, char **argv)
 	fz_try(ctx)
 	{
 		if (proof_filename)
-			proof_cs = fz_new_icc_colorspace_from_file(ctx, FZ_COLORSPACE_NONE, proof_filename);
+		{
+			fz_buffer *proof_buffer = fz_read_file(ctx, proof_filename);
+			proof_cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, NULL, proof_buffer);
+			fz_drop_buffer(ctx, proof_buffer);
+		}
 
 		fz_set_text_aa_level(ctx, alphabits_text);
 		fz_set_graphics_aa_level(ctx, alphabits_graphics);
 		fz_set_graphics_min_line_width(ctx, min_line_width);
-		fz_set_cmm_engine(ctx, icc_engine);
+		if (no_icc)
+			fz_disable_icc(ctx);
+		else
+			fz_enable_icc(ctx);
 
 #ifndef DISABLE_MUTHREADS
 		if (bgprint.active)
@@ -1757,7 +1759,11 @@ int mudraw_main(int argc, char **argv)
 				break;
 			case CS_ICC:
 				fz_try(ctx)
-					colorspace = fz_new_icc_colorspace_from_file(ctx, FZ_COLORSPACE_NONE, icc_filename);
+				{
+					fz_buffer *icc_buffer = fz_read_file(ctx, icc_filename);
+					colorspace = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, NULL, icc_buffer);
+					fz_drop_buffer(ctx, icc_buffer);
+				}
 				fz_catch(ctx)
 				{
 					fprintf(stderr, "Invalid ICC destination color space\n");

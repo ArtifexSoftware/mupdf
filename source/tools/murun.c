@@ -518,13 +518,13 @@ static struct color ffi_tocolor(js_State *J, int idx)
 	return c;
 }
 
-static fz_color_params *ffi_tocolorparams(js_State *J, int idx)
+static fz_color_params ffi_tocolorparams(js_State *J, int idx)
 {
 	/* TODO */
-	return NULL;
+	return fz_default_color_params;
 }
 
-static void ffi_pushcolorparams(js_State *J, const fz_color_params *color_params)
+static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 {
 	/* TODO */
 	js_pushnull(J);
@@ -763,7 +763,7 @@ typedef struct js_device_s
 
 static void
 js_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -802,7 +802,7 @@ js_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_
 static void
 js_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 	const fz_stroke_state *stroke, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -840,7 +840,7 @@ js_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, co
 
 static void
 js_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -859,7 +859,7 @@ js_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matrix
 
 static void
 js_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke,
-	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -928,7 +928,7 @@ js_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 }
 
 static void
-js_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+js_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -946,7 +946,7 @@ js_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ct
 }
 
 static void
-js_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+js_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -965,7 +965,7 @@ js_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ct
 
 static void
 js_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -1014,7 +1014,7 @@ js_dev_pop_clip(fz_context *ctx, fz_device *dev)
 
 static void
 js_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity,
-	fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, fz_color_params color_params)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -1204,7 +1204,7 @@ static void ffi_Device_fillPath(js_State *J)
 	int even_odd = js_toboolean(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	struct color c = ffi_tocolor(J, 4);
-	fz_color_params *color_params = ffi_tocolorparams(J, 7);
+	fz_color_params color_params = ffi_tocolorparams(J, 7);
 	fz_try(ctx)
 		fz_fill_path(ctx, dev, path, even_odd, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
@@ -1219,7 +1219,7 @@ static void ffi_Device_strokePath(js_State *J)
 	fz_stroke_state stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	struct color c = ffi_tocolor(J, 4);
-	fz_color_params *color_params = ffi_tocolorparams(J, 7);
+	fz_color_params color_params = ffi_tocolorparams(J, 7);
 	fz_try(ctx)
 		fz_stroke_path(ctx, dev, path, &stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
@@ -1259,7 +1259,7 @@ static void ffi_Device_fillText(js_State *J)
 	fz_text *text = js_touserdata(J, 1, "fz_text");
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	struct color c = ffi_tocolor(J, 3);
-	fz_color_params *color_params = ffi_tocolorparams(J, 6);
+	fz_color_params color_params = ffi_tocolorparams(J, 6);
 	fz_try(ctx)
 		fz_fill_text(ctx, dev, text, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
@@ -1274,7 +1274,7 @@ static void ffi_Device_strokeText(js_State *J)
 	fz_stroke_state stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	struct color c = ffi_tocolor(J, 4);
-	fz_color_params *color_params = ffi_tocolorparams(J, 7);
+	fz_color_params color_params = ffi_tocolorparams(J, 7);
 	fz_try(ctx)
 		fz_stroke_text(ctx, dev, text, &stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
@@ -1325,7 +1325,7 @@ static void ffi_Device_fillShade(js_State *J)
 	fz_shade *shade = js_touserdata(J, 1, "fz_shade");
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	float alpha = js_tonumber(J, 3);
-	fz_color_params *color_params = ffi_tocolorparams(J, 4);
+	fz_color_params color_params = ffi_tocolorparams(J, 4);
 	fz_try(ctx)
 		fz_fill_shade(ctx, dev, shade, ctm, alpha, color_params);
 	fz_catch(ctx)
@@ -1339,7 +1339,7 @@ static void ffi_Device_fillImage(js_State *J)
 	fz_image *image = js_touserdata(J, 1, "fz_image");
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	float alpha = js_tonumber(J, 3);
-	fz_color_params *color_params = ffi_tocolorparams(J, 4);
+	fz_color_params color_params = ffi_tocolorparams(J, 4);
 	fz_try(ctx)
 		fz_fill_image(ctx, dev, image, ctm, alpha, color_params);
 	fz_catch(ctx)
@@ -1353,7 +1353,7 @@ static void ffi_Device_fillImageMask(js_State *J)
 	fz_image *image = js_touserdata(J, 1, "fz_image");
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	struct color c = ffi_tocolor(J, 3);
-	fz_color_params *color_params = ffi_tocolorparams(J, 6);
+	fz_color_params color_params = ffi_tocolorparams(J, 6);
 	fz_try(ctx)
 		fz_fill_image_mask(ctx, dev, image, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
@@ -1389,7 +1389,7 @@ static void ffi_Device_beginMask(js_State *J)
 	fz_rect area = ffi_torect(J, 1);
 	int luminosity = js_toboolean(J, 2);
 	struct color c = ffi_tocolor(J, 3);
-	fz_color_params *color_params = ffi_tocolorparams(J, 6);
+	fz_color_params color_params = ffi_tocolorparams(J, 6);
 	fz_try(ctx)
 		fz_begin_mask(ctx, dev, area, luminosity, c.colorspace, c.color, color_params);
 	fz_catch(ctx)

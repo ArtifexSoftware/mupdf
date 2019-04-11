@@ -5,7 +5,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/font.h"
-#include "mupdf/fitz/colorspace.h"
 #include "mupdf/fitz/image.h"
 #include "mupdf/fitz/output.h"
 #include "mupdf/fitz/device.h"
