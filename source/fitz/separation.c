@@ -795,7 +795,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 									unsigned char v = sd[i];
 									if (v != 0)
 									{
-										unsigned char a = sd[sc];
+										unsigned char a = sd[ss];
 										for (k = 0; k < dc; k++)
 											dd[k] = fz_clampi(dd[k] + v * convert[k], 0, a);
 									}
@@ -837,7 +837,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 									unsigned char v = 0xff - sd[i];
 									if (v != 0)
 									{
-										unsigned char a = sd[sc];
+										unsigned char a = sd[ss];
 										for (k = 0; k < dc; k++)
 											dd[k] = fz_clampi(dd[k] + v * convert[k], 0, a);
 									}
@@ -884,7 +884,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 									unsigned char v = sd[i];
 									if (v != 0)
 									{
-										unsigned char a = sd[sc];
+										unsigned char a = sd[ss];
 										for (k = 0; k < dc; k++)
 											dd[k] = fz_clampi(dd[k] - v * convert[k], 0, a);
 									}
@@ -926,7 +926,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 									unsigned char v = 0xff - sd[i];
 									if (v != 0)
 									{
-										unsigned char a = sd[sc];
+										unsigned char a = sd[ss];
 										for (k = 0; k < dc; k++)
 											dd[k] = fz_clampi(dd[k] - v * convert[k], 0, a);
 									}
