@@ -1058,7 +1058,7 @@ eval_sample_func(fz_context *ctx, pdf_function *func, const float *in, float *ou
 		x = fz_clamp(x, 0, func->u.sa.size[i] - 1);
 		e0[i] = floorf(x);
 		e1[i] = ceilf(x);
-		efrac[i] = x - floorf(x);
+		efrac[i] = x - e0[i];
 	}
 
 	scale[0] = func->n;
