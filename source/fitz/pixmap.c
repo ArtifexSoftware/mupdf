@@ -652,12 +652,41 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 			s += pix->stride;
 		}
 	}
-	else
+	else if (pix->s == 0)
 	{
 		while (h--)
 		{
 			memset(s, 0xff, (unsigned int)stride);
 			s += pix->stride;
+		}
+	}
+	else
+	{
+		/* Horrible, slow case: additive with spots */
+		int w = stride/pix->n;
+		int spots = pix->s;
+		int colorants = pix->n - spots; /* We know there is no alpha */
+		while (h--)
+		{
+			int w2 = w;
+			while (w--)
+			{
+				int i = colorants;
+				do
+				{
+					*s++ = 0xff;
+					i--;
+				}
+				while (i != 0);
+
+				i = spots;
+				do
+				{
+					*s++ = 0;
+					i--;
+				}
+				while (i != 0);
+			}
 		}
 	}
 }
