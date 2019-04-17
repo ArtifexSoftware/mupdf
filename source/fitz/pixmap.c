@@ -669,7 +669,7 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 		while (h--)
 		{
 			int w2 = w;
-			while (w--)
+			while (w2--)
 			{
 				int i = colorants;
 				do
