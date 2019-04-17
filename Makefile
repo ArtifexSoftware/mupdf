@@ -315,8 +315,7 @@ install: libs apps
 	install -m 644 $(INSTALL_LIBS) $(DESTDIR)$(libdir)
 
 	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(TOOL_APPS) $(DESTDIR)$(bindir)
-	install -m 755 $(VIEW_APPS) $(DESTDIR)$(bindir)
+	install -m 755 $(TOOL_APPS) $(VIEW_APPS) $(DESTDIR)$(bindir)
 
 	install -d $(DESTDIR)$(mandir)/man1
 	install -m 644 docs/man/*.1 $(DESTDIR)$(mandir)/man1
