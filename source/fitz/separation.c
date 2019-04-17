@@ -404,8 +404,10 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 
 				if (name)
 				{
-					if (!strcmp(name, "None"))
+					if (!strcmp(name, "None")) {
+						mapped[i] = 0;
 						continue;
+					}
 					if (!strcmp(name, "All"))
 					{
 						int n1 = dn - da;
@@ -653,7 +655,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 							for (x = dw; x > 0; x--)
 							{
 								for (j = 0; j < n; j++)
-									colors[j] = sd[j] / 255.0f;
+									colors[j] = mapped[i] ? 0 : sd[j] / 255.0f;
 								cc.convert(ctx, &cc, convert, colors);
 
 								for (j = 0; j < dc; j++)
@@ -674,7 +676,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 								unsigned char a = sd[sc];
 								float inva = 1.0f/a;
 								for (j = 0; j < n; j++)
-									colors[j] = sd[j] * inva;
+									colors[j] = mapped[i] ? 0 : sd[j] * inva;
 								cc.convert(ctx, &cc, convert, colors);
 
 								for (j = 0; j < dc; j++)
