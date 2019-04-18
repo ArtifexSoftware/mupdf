@@ -432,7 +432,7 @@ fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list args)
 
 /*
 	Format and write data to an output stream.
-	See fz_vsnprintf for formatting details.
+	See fz_format_string for formatting details.
 */
 void
 fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)

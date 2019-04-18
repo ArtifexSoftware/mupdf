@@ -227,6 +227,21 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 	fmtputc(out, eq);
 }
 
+static void fmtname(struct fmtbuf *out, const char *s)
+{
+	int c;
+	fmtputc(out, '/');
+	while ((c = *s++) != 0) {
+		if (c <= 32 || c == '/' || c == '#') {
+			fmtputc(out, '#');
+			fmtputc(out, "0123456789ABCDEF"[(c>>4)&15]);
+			fmtputc(out, "0123456789ABCDEF"[(c)&15]);
+		} else {
+			fmtputc(out, c);
+		}
+	}
+}
+
 /*
 	Our customised 'printf'-like string formatter.
 	Takes %c, %d, %s, %u, %x, as usual.
@@ -236,6 +251,7 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 	%f and %e output as usual.
 	%C outputs a utf8 encoded int.
 	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
+	%n outputs a PDF name (with appropriate escaping).
 	%q and %( output escaped strings in C/PDF syntax.
 	%l{d,u,x} indicates that the values are int64_t.
 	%z{d,u,x} indicates that the value is a size_t.
@@ -461,6 +477,11 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 				str = va_arg(args, const char*);
 				if (!str) str = "";
 				fmtquote(&out, str, '(', ')');
+				break;
+			case 'n': /* pdf name */
+				str = va_arg(args, const char*);
+				if (!str) str = "";
+				fmtname(&out, str);
 				break;
 			}
 		}

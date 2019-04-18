@@ -62,7 +62,7 @@ pdf_out_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	if (!((pdf_output_processor*)proc)->extgstate)
-		fz_write_printf(ctx, out, "/%s ri\n", intent);
+		fz_write_printf(ctx, out, "%n ri\n", intent);
 }
 
 static void
@@ -98,7 +98,7 @@ pdf_out_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	((pdf_output_processor*)proc)->extgstate = 1;
-	fz_write_printf(ctx, out, "/%s gs\n", name);
+	fz_write_printf(ctx, out, "%n gs\n", name);
 }
 
 static void
@@ -321,7 +321,9 @@ pdf_out_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_desc
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	if (!((pdf_output_processor*)proc)->extgstate)
-		fz_write_printf(ctx, out, "/%s %g Tf\n", name, size);
+	{
+		fz_write_printf(ctx, out, "%n %g Tf\n", name, size);
+	}
 }
 
 static void
@@ -460,14 +462,14 @@ static void
 pdf_out_CS(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorspace *cs)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s CS\n", name);
+	fz_write_printf(ctx, out, "%n CS\n", name);
 }
 
 static void
 pdf_out_cs(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorspace *cs)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s cs\n", name);
+	fz_write_printf(ctx, out, "%n cs\n", name);
 }
 
 static void
@@ -477,7 +479,7 @@ pdf_out_SC_pattern(fz_context *ctx, pdf_processor *proc, const char *name, pdf_p
 	int i;
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, out, "%g ", color[i]);
-	fz_write_printf(ctx, out, "/%s SCN\n", name);
+	fz_write_printf(ctx, out, "%n SCN\n", name);
 }
 
 static void
@@ -487,21 +489,21 @@ pdf_out_sc_pattern(fz_context *ctx, pdf_processor *proc, const char *name, pdf_p
 	int i;
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, out, "%g ", color[i]);
-	fz_write_printf(ctx, out, "/%s scn\n", name);
+	fz_write_printf(ctx, out, "%n scn\n", name);
 }
 
 static void
 pdf_out_SC_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s SCN\n", name);
+	fz_write_printf(ctx, out, "%n SCN\n", name);
 }
 
 static void
 pdf_out_sc_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s scn\n", name);
+	fz_write_printf(ctx, out, "%n scn\n", name);
 }
 
 static void
@@ -601,7 +603,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colo
 	else if (img->colorspace == fz_device_cmyk(ctx))
 		fz_write_string(ctx, out, "/CS/CMYK\n");
 	else if (colorspace)
-		fz_write_printf(ctx, out, "/CS/%s\n", colorspace);
+		fz_write_printf(ctx, out, "/CS%n/n", colorspace);
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "BI operator can only show ImageMask, Gray, RGB, or CMYK images");
 	if (img->interpolate)
@@ -719,21 +721,21 @@ static void
 pdf_out_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s sh\n", name);
+	fz_write_printf(ctx, out, "%n sh\n", name);
 }
 
 static void
 pdf_out_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_image *image)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s Do\n", name);
+	fz_write_printf(ctx, out, "%n Do\n", name);
 }
 
 static void
 pdf_out_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *xobj, pdf_obj *page_resources)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s Do\n", name);
+	fz_write_printf(ctx, out, "%n Do\n", name);
 }
 
 /* marked content */
@@ -742,7 +744,7 @@ static void
 pdf_out_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s MP\n", tag);
+	fz_write_printf(ctx, out, "%n MP\n", tag);
 }
 
 static void
@@ -750,7 +752,7 @@ pdf_out_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, 
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	int ahx = ((pdf_output_processor*)proc)->ahxencode;
-	fz_write_printf(ctx, out, "/%s ", tag);
+	fz_write_printf(ctx, out, "%n ", tag);
 	pdf_print_obj(ctx, out, raw, 1, ahx);
 	fz_write_string(ctx, out, " DP\n");
 }
@@ -759,7 +761,7 @@ static void
 pdf_out_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "/%s BMC\n", tag);
+	fz_write_printf(ctx, out, "%n BMC\n", tag);
 }
 
 static void
@@ -767,7 +769,7 @@ pdf_out_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw,
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	int ahx = ((pdf_output_processor*)proc)->ahxencode;
-	fz_write_printf(ctx, out, "/%s ", tag);
+	fz_write_printf(ctx, out, "%n ", tag);
 	pdf_print_obj(ctx, out, raw, 1, ahx);
 	fz_write_string(ctx, out, " BDC\n");
 }
