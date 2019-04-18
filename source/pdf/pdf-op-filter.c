@@ -1303,7 +1303,7 @@ pdf_filter_SC_color(fz_context *ctx, pdf_processor *proc, int n, float *color)
 	gstate->pending.SC.shd = NULL;
 	gstate->pending.SC.n = n;
 	for (i = 0; i < n; ++i)
-		gstate->pending.SC.c[i] = fz_clamp(color[i], 0, 1);
+		gstate->pending.SC.c[i] = color[i];
 }
 
 static void
@@ -1317,7 +1317,7 @@ pdf_filter_sc_color(fz_context *ctx, pdf_processor *proc, int n, float *color)
 	gstate->pending.sc.shd = NULL;
 	gstate->pending.sc.n = n;
 	for (i = 0; i < n; ++i)
-		gstate->pending.sc.c[i] = fz_clamp(color[i], 0, 1);
+		gstate->pending.sc.c[i] = color[i];
 }
 
 static void
