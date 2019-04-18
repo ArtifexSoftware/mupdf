@@ -379,8 +379,9 @@ done_SC:
 		}
 		if (gstate->pending.text.scale != gstate->sent.text.scale)
 		{
+			/* The value of scale in the gstate is divided by 100 from what is written in the file */
 			if (p->chain->op_Tz)
-				p->chain->op_Tz(ctx, p->chain, gstate->pending.text.scale);
+				p->chain->op_Tz(ctx, p->chain, gstate->pending.text.scale*100);
 		}
 		if (gstate->pending.text.leading != gstate->sent.text.leading)
 		{
@@ -1069,6 +1070,8 @@ pdf_filter_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 static void
 pdf_filter_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
+	/* scale is as written in the file. It is 100 times smaller
+	 * in the gstate. */
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
 	p->gstate->pending.text.scale = scale / 100;

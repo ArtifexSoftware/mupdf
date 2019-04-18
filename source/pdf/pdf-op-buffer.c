@@ -304,8 +304,9 @@ pdf_out_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 static void
 pdf_out_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
+	/* scale is exactly as read from the file. */
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	fz_write_printf(ctx, out, "%g Tz\n", scale*100);
+	fz_write_printf(ctx, out, "%g Tz\n", scale);
 }
 
 static void

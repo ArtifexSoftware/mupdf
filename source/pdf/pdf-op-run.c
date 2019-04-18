@@ -1630,6 +1630,8 @@ static void pdf_run_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 
 static void pdf_run_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
+	/* scale is as written in the file. It is 100 times smaller in
+	 * the gstate. */
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	gstate->text.scale = scale / 100;
