@@ -878,6 +878,9 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case JPEGTables:
+		/* Check both value and value + count to allow for overflow */
+		if (value > tiff->ep - tiff->bp || value + count > tiff->ep - tiff->bp)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "TIFF JPEG tables out of range");
 		tiff->jpegtables = tiff->bp + value;
 		tiff->jpegtableslen = count;
 		break;
