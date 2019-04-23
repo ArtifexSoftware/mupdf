@@ -865,21 +865,53 @@ svg_lex_viewbox(const char *s, float *x, float *y, float *w, float *h)
 	if (svg_is_digit(*s)) s = svg_lex_number(h, s);
 }
 
+static int
+svg_parse_preserve_aspect_ratio(const char *att, int *x, int *y)
+{
+	*x = *y = 1;
+	if (strstr(att, "none")) return 0;
+	if (strstr(att, "xMin")) *x = 0;
+	if (strstr(att, "xMid")) *x = 1;
+	if (strstr(att, "xMax")) *x = 2;
+	if (strstr(att, "YMin")) *y = 0;
+	if (strstr(att, "YMid")) *y = 1;
+	if (strstr(att, "YMax")) *y = 2;
+	return 1;
+}
+
 /* svg, symbol, image, foreignObject plus marker, pattern, view can use viewBox to set the transform */
 void
 svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
 	char *viewbox_att = fz_xml_att(node, "viewBox");
+	char *preserve_att = fz_xml_att(node, "preserveAspectRatio");
 	if (viewbox_att)
 	{
-		/* scale and translate to fit [min-x min-y w h] to [0 0 viewport.w viewport.h] */
-		float min_x, min_y, box_w, box_h;
+		/* scale and translate to fit [minx miny minx+w miny+h] to [0 0 viewport.w viewport.h] */
+		float min_x, min_y, box_w, box_h, sx, sy;
+		int align_x=1, align_y=1, preserve=1;
+		float pad_x=0, pad_y=0;
+
 		svg_lex_viewbox(viewbox_att, &min_x, &min_y, &box_w, &box_h);
-		state->transform = fz_concat(state->transform, fz_translate(-min_x, -min_y));
-		state->transform = fz_concat(state->transform,
-			fz_scale(state->viewport_w / box_w, state->viewport_h / box_h));
+		sx = state->viewport_w / box_w;
+		sy = state->viewport_h / box_h;
+
+		if (preserve_att)
+			preserve = svg_parse_preserve_aspect_ratio(preserve_att, &align_x, &align_y);
+		if (preserve)
+		{
+			sx = sy = fz_min(sx, sy);
+			if (align_x == 1) pad_x = (box_w * sx - state->viewport_w) / 2;
+			if (align_x == 2) pad_x = (box_w * sx - state->viewport_w);
+			if (align_y == 1) pad_y = (box_h * sy - state->viewport_h) / 2;
+			if (align_y == 2) pad_y = (box_h * sy - state->viewport_h);
+			state->transform = fz_concat(fz_translate(-pad_x, -pad_y), state->transform);
+		}
+		state->transform = fz_concat(fz_scale(sx, sy), state->transform);
+		state->transform = fz_concat(fz_translate(-min_x, -min_y), state->transform);
 		state->viewbox_w = box_w;
 		state->viewbox_h = box_h;
+		state->viewbox_size = sqrtf(box_w*box_w + box_h*box_h) / sqrtf(2);
 	}
 }
 
