@@ -176,6 +176,14 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image, const 
 
 	mask = fz_get_pixmap_from_image(ctx, image->mask, &subarea, NULL, NULL, NULL);
 	s = mask->samples;
+	/* RJW: Urgh, bit of nastiness here. fz_pixmap_from_image will either return
+	 * an exact match for the subarea we asked for, or the full image, and the
+	 * normal way to know is that the matrix will be updated. That doesn't help
+	 * us here. */
+	if (image->mask->w == mask->w && image->mask->h == mask->h) {
+		subarea.x0 = 0;
+		subarea.y0 = 0;
+	}
 	if (isa)
 		s += (isa->x0 - subarea.x0) * mask->n + (isa->y0 - subarea.y0) * mask->stride;
 	sstride = mask->stride - tile->w * mask->n;
