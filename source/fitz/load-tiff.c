@@ -503,6 +503,8 @@ tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *ti
 	sy = 0;
 	sw = tiff->ycbcrsubsamp[0];
 	sh = tiff->ycbcrsubsamp[1];
+	if (sw > 4 || sh > 4 || !fz_is_pow2(sw) || !fz_is_pow2(sh))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal TIFF Subsample values %d %d", sw, sh);
 
 	for (k = 0; k < 3; k++)
 		for (y = 0; y < sh; y++)

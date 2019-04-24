@@ -373,4 +373,9 @@ static inline float my_atan2f(float o, float a)
 #define atan2f(x,y) my_atan2f((x),(y))
 #endif
 
+static inline fz_is_pow2(int a)
+{
+	return (a != 0) && (a & (a-1)) == 0;
+}
+
 #endif
