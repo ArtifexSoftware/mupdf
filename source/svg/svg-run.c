@@ -926,6 +926,8 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	char *font_size_att = fz_xml_att(node, "font-size");
 	// TODO: all font stuff
 
+	char *style_att = fz_xml_att(node, "style");
+
 	// TODO: clip, clip-path, clip-rule
 
 	char *opacity_att = fz_xml_att(node, "opacity");
@@ -946,6 +948,14 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 
 	// TODO: overflow
 	// TODO: mask
+
+	/* Dirty hack scans of CSS style */
+	if (style_att)
+	{
+		svg_parse_color_from_style(ctx, doc, style_att,
+			&state->fill_is_set, state->fill_color,
+			&state->stroke_is_set, state->stroke_color);
+	}
 
 	if (transform_att)
 	{

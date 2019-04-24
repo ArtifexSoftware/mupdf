@@ -17,6 +17,8 @@ float svg_parse_number(const char *str, float min, float max, float inherit);
 float svg_parse_length(const char *str, float percent, float font_size);
 float svg_parse_angle(const char *str);
 
+void svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
+	int *fill_is_set, float fill[3], int *stroke_is_set, float stroke[3]);
 void svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb);
 fz_matrix svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matrix transform);
 

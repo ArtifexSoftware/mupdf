@@ -175,10 +175,18 @@ static int unhex(int chr)
 	return strchr(hextable, (chr|32)) - hextable;
 }
 
+static int ishex(int chr)
+{
+	if (chr >= '0' && chr <= '9') return 1;
+	if (chr >= 'A' && chr <= 'F') return 1;
+	if (chr >= 'a' && chr <= 'f') return 1;
+	return 0;
+}
+
 void
 svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 {
-	int i, l, m, r, cmp;
+	int i, l, m, r, cmp, n;
 
 	rgb[0] = 0.0f;
 	rgb[1] = 0.0f;
@@ -190,7 +198,8 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 	{
 		str ++;
 
-		if (strlen(str) == 3)
+		n = strlen(str);
+		if (n == 3 || (n > 3 && !ishex(str[3])))
 		{
 			rgb[0] = (unhex(str[0]) * 16 + unhex(str[0])) / 255.0f;
 			rgb[1] = (unhex(str[1]) * 16 + unhex(str[1])) / 255.0f;
@@ -198,7 +207,7 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			return;
 		}
 
-		if (strlen(str) == 6)
+		if (n >= 6)
 		{
 			rgb[0] = (unhex(str[0]) * 16 + unhex(str[1])) / 255.0f;
 			rgb[1] = (unhex(str[2]) * 16 + unhex(str[3])) / 255.0f;
@@ -206,7 +215,7 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			return;
 		}
 
-		fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in color - wrong length of string after #");
+		return;
 	}
 
 	/* rgb(X,Y,Z) -- whitespace allowed around numbers */
@@ -251,13 +260,20 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 
 	else
 	{
+		char keyword[50], *p;
+		fz_strlcpy(keyword, str, sizeof keyword);
+		p = keyword;
+		while (*p && *p >= 'a' && *p <= 'z')
+			++p;
+		*p = 0;
+
 		l = 0;
 		r = sizeof(svg_predefined_colors) / sizeof(svg_predefined_colors[0]);
 
 		while (l <= r)
 		{
 			m = (l + r) / 2;
-			cmp = strcmp(svg_predefined_colors[m].name, str);
+			cmp = strcmp(svg_predefined_colors[m].name, keyword);
 			if (cmp > 0)
 				r = m - 1;
 			else if (cmp < 0)
@@ -271,6 +287,38 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			}
 		}
 	}
+}
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize color syntax: '%s'", str);
+void
+svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
+	int *fill_is_set, float fill[3],
+	int *stroke_is_set, float stroke[3])
+{
+	const char *p;
+
+	p = strstr(str, "fill:");
+	if (p)
+	{
+		p += 5;
+		while (*p && svg_is_whitespace(*p))
+			++p;
+		if (memcmp(p, "none", 4) != 0)
+		{
+			svg_parse_color(ctx, doc, p, fill);
+			*fill_is_set = 1;
+		}
+	}
+
+	p = strstr(str, "stroke:");
+	if (p)
+	{
+		p += 7;
+		while (*p && svg_is_whitespace(*p))
+			++p;
+		if (memcmp(p, "none", 4) != 0)
+		{
+			svg_parse_color(ctx, doc, p, stroke);
+			*stroke_is_set = 1;
+		}
+	}
 }
