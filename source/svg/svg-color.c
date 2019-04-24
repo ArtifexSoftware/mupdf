@@ -264,9 +264,9 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 				l = m + 1;
 			else
 			{
-				rgb[0] = svg_predefined_colors[m].red;
-				rgb[1] = svg_predefined_colors[m].green;
-				rgb[2] = svg_predefined_colors[m].blue;
+				rgb[0] = svg_predefined_colors[m].red / 255.0f;
+				rgb[1] = svg_predefined_colors[m].green / 255.0f;
+				rgb[2] = svg_predefined_colors[m].blue / 255.0f;
 				return;
 			}
 		}
