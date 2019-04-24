@@ -1101,7 +1101,7 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 	if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
 	if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
 
-	local_state.transform = fz_pre_translate(local_state.transform, x, y);
+	local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
 
 	if (xlink_href_att && xlink_href_att[0] == '#')
 	{
@@ -1147,8 +1147,8 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 	if (!href_att)
 		return;
 
-	local_state.transform = fz_pre_translate(local_state.transform, x, y);
-	local_state.transform = fz_pre_scale(local_state.transform, w, h);
+	local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
+	local_state.transform = fz_concat(fz_scale(w, h), local_state.transform);
 
 	if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
 		data = href_att + strlen(jpeg_uri);
