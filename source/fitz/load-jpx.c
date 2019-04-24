@@ -872,6 +872,9 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			int oy = comp->y0 * comp->dy - jpx->y0;
 			int ox = comp->x0 * comp->dx - jpx->x0;
 
+			if (comp->data == NULL)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "No data for JP2 image component %d", k);
+
 			for (y = 0; y < comp->h; y++)
 			{
 				for (x = 0; x < comp->w; x++)
