@@ -170,19 +170,24 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 fz_document *
 xps_open_document(fz_context *ctx, const char *filename)
 {
-	char buf[2048];
 	fz_stream *file;
 	char *p;
 	fz_document *doc = NULL;
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
-		fz_strlcpy(buf, filename, sizeof buf);
+		char *buf = fz_strdup(ctx, filename);
 		p = strstr(buf, "/_rels/.rels");
 		if (!p)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
-		return xps_open_document_with_directory(ctx, buf);
+		fz_try(ctx)
+			doc = xps_open_document_with_directory(ctx, buf);
+		fz_always(ctx)
+			fz_free(ctx, buf);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		return doc;
 	}
 
 	file = fz_open_file(ctx, filename);
