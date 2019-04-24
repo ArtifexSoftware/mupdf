@@ -1855,6 +1855,7 @@ int mudraw_main(int argc, char **argv)
 				out = fz_stdout(ctx);
 			}
 
+		filename = argv[fz_optind];
 		if (!output_file_per_page)
 			file_level_headers(ctx);
 
