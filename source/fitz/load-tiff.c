@@ -1140,7 +1140,10 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 	if (tiff->imagewidth <= 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
-
+	if (tiff->bitspersample > 16 || !fz_is_pow2(tiff->bitspersample))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "bits per sample illegal %d", tiff->bitspersample);
+	if (tiff->samplesperpixel == 0 || tiff->samplesperpixel >= FZ_MAX_COLORS)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "components per pixel out of range");
 	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
@@ -1234,8 +1237,6 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	}
 #endif
 
-	if (tiff->samplesperpixel == 0 || tiff->samplesperpixel >= FZ_MAX_COLORS)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "components per pixel out of range");
 	if (!tiff->colorspace && tiff->samplesperpixel < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too few components for transparency mask");
 	if (tiff->colorspace && tiff->colormap && tiff->samplesperpixel < 1)
@@ -1271,6 +1272,8 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	/* some creators don't write byte counts for uncompressed images */
 	if (tiff->compression == 1)
 	{
+		if (tiff->rowsperstrip == 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "rowsperstrip cannot be 0");
 		if (!tiff->tilelength && !tiff->tilewidth && !tiff->stripbytecounts)
 		{
 			tiff->stripbytecountslen = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
