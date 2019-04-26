@@ -1276,9 +1276,9 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 
 	reuse_images: Share image resources using <symbol> definitions.
 
-	id: Optional in-out ID parameter to keep generated IDs unique across SVG files.
+	id: ID parameter to keep generated IDs unique across SVG files.
 */
-fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images, int *id)
+fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images, int *id)
 {
 	svg_device *dev = fz_new_derived_device(ctx, svg_device);
 
@@ -1331,4 +1331,9 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	fz_write_printf(ctx, out, "<g enable-background=\"new\">\n");
 
 	return (fz_device*)dev;
+}
+
+fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images)
+{
+	return fz_new_svg_device_with_id(ctx, out, page_width, page_height, text_format, reuse_images, NULL);
 }

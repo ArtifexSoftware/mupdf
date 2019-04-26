@@ -681,7 +681,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				out = fz_new_output_with_path(ctx, buf, 0);
 			}
 
-			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1, NULL);
+			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)

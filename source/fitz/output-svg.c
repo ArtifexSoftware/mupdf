@@ -40,7 +40,7 @@ svg_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 
 	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
 	wri->out = fz_new_output_with_path(ctx, path, 0);
-	return fz_new_svg_device(ctx, wri->out, w, h, wri->text_format, wri->reuse_images, &wri->id);
+	return fz_new_svg_device_with_id(ctx, wri->out, w, h, wri->text_format, wri->reuse_images, &wri->id);
 }
 
 static void
