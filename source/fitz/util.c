@@ -78,7 +78,13 @@ fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
 	Render the page to a pixmap using the transform and colorspace.
 */
 fz_pixmap *
-fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
+fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha)
+{
+	return fz_new_pixmap_from_display_list_with_separations(ctx, list, ctm, cs, NULL, alpha);
+}
+
+fz_pixmap *
+fz_new_pixmap_from_display_list_with_separations(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -120,7 +126,13 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matri
 	Render the page contents without annotations.
 */
 fz_pixmap *
-fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
+fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha)
+{
+	return fz_new_pixmap_from_page_contents_with_separations(ctx, page, ctm, cs, NULL, alpha);
+}
+
+fz_pixmap *
+fz_new_pixmap_from_page_contents_with_separations(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -159,7 +171,13 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, fz_matrix ctm, 
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
+fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha)
+{
+	return fz_new_pixmap_from_page_with_separations(ctx, page, ctm, cs, NULL, alpha);
+}
+
+fz_pixmap *
+fz_new_pixmap_from_page_with_separations(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
 {
 	fz_rect rect;
 	fz_irect bbox;
@@ -199,14 +217,20 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colors
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
+fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha)
+{
+	return fz_new_pixmap_from_page_number_with_separations(ctx, doc, number, ctm, cs, NULL, alpha);
+}
+
+fz_pixmap *
+fz_new_pixmap_from_page_number_with_separations(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha)
 {
 	fz_page *page;
 	fz_pixmap *pix = NULL;
 
 	page = fz_load_page(ctx, doc, number);
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page(ctx, page, ctm, cs, seps, alpha);
+		pix = fz_new_pixmap_from_page_with_separations(ctx, page, ctm, cs, seps, alpha);
 	fz_always(ctx)
 		fz_drop_page(ctx, page);
 	fz_catch(ctx)

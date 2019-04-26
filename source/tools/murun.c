@@ -1854,9 +1854,9 @@ static void ffi_Page_toPixmap(js_State *J)
 
 	fz_try(ctx)
 		if (no_annots)
-			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, colorspace, NULL, alpha);
+			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, colorspace, alpha);
 		else
-			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, colorspace, NULL, alpha);
+			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, colorspace, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2615,7 +2615,7 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, colorspace, NULL, alpha);
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, colorspace, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 

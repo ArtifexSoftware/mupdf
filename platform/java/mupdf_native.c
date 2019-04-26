@@ -5537,9 +5537,9 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 	fz_try(ctx)
 	{
 		if (showExtra)
-			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, NULL, alpha);
+			pixmap = fz_new_pixmap_from_page(ctx, page, ctm, cs, alpha);
 		else
-			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, cs, NULL, alpha);
+			pixmap = fz_new_pixmap_from_page_contents(ctx, page, ctm, cs, alpha);
 	}
 	fz_catch(ctx)
 	{
@@ -6132,7 +6132,7 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 	if (!ctx || !list) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, cs, NULL, alpha);
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, ctm, cs, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
