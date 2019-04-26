@@ -2284,11 +2284,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-font.c"
+				RelativePath="..\..\source\pdf\pdf-font-add.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-font-add.c"
+				RelativePath="..\..\source\pdf\pdf-font.c"
 				>
 			</File>
 			<File
@@ -2436,15 +2436,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\include\mupdf\html.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\include\mupdf\memento.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\include\mupdf\pdf.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\mupdf\ucdn.h"
 				>
 			</File>
 			<File
@@ -2499,6 +2499,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\pdf\layer.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\pdf\name-table.h"
 					>
 				</File>
@@ -2532,6 +2536,14 @@
 				>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\annotation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\archive.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\band-writer.h"
 					>
 				</File>
 				<File
@@ -2616,6 +2628,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\hash.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\image-list.h"
 					>
 				</File>
 				<File
@@ -2736,6 +2752,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\version.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\write-pixmap.h"
 					>
 				</File>
 				<File
