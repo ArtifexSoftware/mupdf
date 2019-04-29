@@ -1219,6 +1219,35 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		fz_catch(ctx)
 			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
 	}
+	else if (doc->zip)
+	{
+		char path[2048];
+		fz_buffer *buf = NULL;
+		fz_image *img = NULL;
+
+		fz_var(buf);
+		fz_var(img);
+
+		fz_strlcpy(path, doc->base_uri, sizeof path);
+		fz_strlcat(path, "/", sizeof path);
+		fz_strlcat(path, href_att, sizeof path);
+		fz_urldecode(path);
+		fz_cleanname(path);
+
+		fz_try(ctx)
+		{
+			buf = fz_read_archive_entry(ctx, doc->zip, path);
+			img = fz_new_image_from_buffer(ctx, buf);
+			fz_fill_image(ctx, dev, img, local_state.transform, 1, NULL);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_buffer(ctx, buf);
+			fz_drop_image(ctx, img);
+		}
+		fz_catch(ctx)
+			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
+	}
 	else
 	{
 		fz_warn(ctx, "svg: ignoring external image '%s'", href_att);

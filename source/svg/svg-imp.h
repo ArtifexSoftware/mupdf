@@ -7,9 +7,12 @@ struct svg_document_s
 {
 	fz_document super;
 	fz_xml_doc *xml;
+	fz_xml *root;
 	fz_tree *idmap;
 	float width;
 	float height;
+	fz_archive *zip; /* for locating external resources */
+	char base_uri[2048];
 };
 
 const char *svg_lex_number(float *fp, const char *str);

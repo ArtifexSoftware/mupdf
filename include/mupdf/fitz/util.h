@@ -36,9 +36,10 @@ int fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_quad *
 int fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_quad *hit_bbox, int hit_max);
 int fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_quad *hit_bbox, int hit_max);
 
-fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h);
-
-fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf);
+fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, const char *base_uri, fz_archive *zip, float *w, float *h);
+fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf, const char *base_uri, fz_archive *zip);
+fz_display_list *fz_new_display_list_from_svg_xml(fz_context *ctx, fz_xml *xml, const char *base_uri, fz_archive *zip, float *w, float *h);
+fz_image *fz_new_image_from_svg_xml(fz_context *ctx, fz_xml *xml, const char *base_uri, fz_archive *zip);
 
 void fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image);
 void fz_write_pixmap_as_data_uri(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
