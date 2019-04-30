@@ -255,7 +255,7 @@ static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 	FT_UShort units_per_EM;
 
 	fterr = FT_Get_Advance(face, gid, mask, &adv);
-	if (fterr)
+	if (fterr && fterr != FT_Err_Invalid_Argument)
 		fz_warn(ctx, "FT_Get_Advance(%d): %s", gid, ft_error_string(fterr));
 
 	units_per_EM = face->units_per_EM;
