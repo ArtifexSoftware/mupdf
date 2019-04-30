@@ -249,17 +249,15 @@ static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	int mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
 	int gid = ft_cid_to_gid(fontdesc, cid);
-	FT_Fixed adv;
+	FT_Fixed adv = 0;
 	int fterr;
 	FT_Face face = fontdesc->font->ft_face;
 	FT_UShort units_per_EM;
 
 	fterr = FT_Get_Advance(face, gid, mask, &adv);
 	if (fterr)
-	{
-		fz_warn(ctx, "freetype advance glyph (gid %d): %s", gid, ft_error_string(fterr));
-		return 0;
-	}
+		fz_warn(ctx, "FT_Get_Advance(%d): %s", gid, ft_error_string(fterr));
+
 	units_per_EM = face->units_per_EM;
 	if (units_per_EM == 0)
 		units_per_EM = 2048;
