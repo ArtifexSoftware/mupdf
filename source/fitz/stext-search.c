@@ -296,7 +296,7 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	hits.len = 0;
 	hits.cap = max_quads;
 	hits.box = quads;
-	hits.hfuzz = 0.5f;
+	hits.hfuzz = 0.5f; /* merge large gaps */
 	hits.vfuzz = 0.1f;
 
 	cb.on_char = on_highlight_char;
@@ -442,7 +442,7 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, f
 	hits.len = 0;
 	hits.cap = max_quads;
 	hits.box = quads;
-	hits.hfuzz = 0.5f;
+	hits.hfuzz = 0.2f; /* merge kerns but not large gaps */
 	hits.vfuzz = 0.1f;
 
 	buffer = fz_new_buffer_from_stext_page(ctx, page);
