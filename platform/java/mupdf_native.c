@@ -357,7 +357,10 @@ static int check_enums()
 
 static void jni_throw(JNIEnv *env, int type, const char *mess)
 {
-	(*env)->ThrowNew(env, cls_RuntimeException, mess);
+	if (type == FZ_ERROR_TRYLATER)
+		(*env)->ThrowNew(env, cls_TryLaterException, mess);
+	else
+		(*env)->ThrowNew(env, cls_RuntimeException, mess);
 }
 
 static void jni_rethrow(JNIEnv *env, fz_context *ctx)

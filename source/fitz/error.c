@@ -217,7 +217,7 @@ FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list a
 	fz_vsnprintf(ctx->error.message, sizeof ctx->error.message, fmt, ap);
 	ctx->error.message[sizeof(ctx->error.message) - 1] = 0;
 
-	if (code != FZ_ERROR_ABORT)
+	if (code != FZ_ERROR_ABORT && code != FZ_ERROR_TRYLATER)
 	{
 		fz_flush_warnings(ctx);
 		fprintf(stderr, "error: %s\n", ctx->error.message);

@@ -1236,7 +1236,10 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		fz_add_css_font_faces(ctx, g.set, g.zip, g.base_uri, g.css); /* load @font-face fonts into font set */
 	}
 	fz_catch(ctx)
+	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "ignoring styles due to errors: %s", fz_caught_message(ctx));
+	}
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_CSS")))

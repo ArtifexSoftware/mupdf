@@ -113,6 +113,12 @@ else ifeq ($(OS),Linux)
 	SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
   endif
 
+  HAVE_SYS_CURL := $(shell pkg-config --exists libcurl && echo yes)
+  ifeq ($(HAVE_SYS_CURL),yes)
+	SYS_CURL_CFLAGS := $(shell pkg-config --cflags libcurl)
+	SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
+  endif
+
   HAVE_GLUT := yes
   ifeq ($(HAVE_GLUT),yes)
 	SYS_GLUT_CFLAGS :=

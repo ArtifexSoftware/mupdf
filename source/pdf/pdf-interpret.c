@@ -62,6 +62,23 @@ pdf_clear_stack(fz_context *ctx, pdf_csi *csi)
 	csi->top = 0;
 }
 
+static pdf_font_desc *
+pdf_try_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *font, fz_cookie *cookie)
+{
+	pdf_font_desc *desc = NULL;
+	fz_try(ctx)
+		desc = pdf_load_font(ctx, doc, rdb, font);
+	fz_catch(ctx)
+	{
+		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			if (cookie)
+				cookie->incomplete++;
+	}
+	if (desc == NULL)
+		desc = pdf_load_hail_mary_font(ctx, doc);
+	return desc;
+}
+
 static fz_image *
 parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm, char *csname, int cslen)
 {
@@ -177,7 +194,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
 		pdf_font_desc *font;
 		if (pdf_is_dict(ctx, font_ref))
-			font = pdf_load_font(ctx, csi->doc, csi->rdb, font_ref);
+			font = pdf_try_load_font(ctx, csi->doc, csi->rdb, font_ref, csi->cookie);
 		else
 			font = pdf_load_hail_mary_font(ctx, csi->doc);
 		fz_try(ctx)
@@ -634,7 +651,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			fontres = pdf_dict_get(ctx, csi->rdb, PDF_NAME(Font));
 			fontobj = pdf_dict_gets(ctx, fontres, csi->name);
 			if (pdf_is_dict(ctx, fontobj))
-				font = pdf_load_font(ctx, csi->doc, csi->rdb, fontobj);
+				font = pdf_try_load_font(ctx, csi->doc, csi->rdb, fontobj, csi->cookie);
 			else
 				font = pdf_load_hail_mary_font(ctx, csi->doc);
 			fz_try(ctx)
@@ -930,7 +947,12 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 			int caught = fz_caught(ctx);
 			if (cookie)
 			{
-				if (caught == FZ_ERROR_ABORT)
+				if (caught == FZ_ERROR_TRYLATER)
+				{
+					cookie->incomplete++;
+					tok = PDF_TOK_EOF;
+				}
+				else if (caught == FZ_ERROR_ABORT)
 				{
 					fz_rethrow(ctx);
 				}
@@ -954,7 +976,9 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 			}
 			else
 			{
-				if (caught == FZ_ERROR_ABORT)
+				if (caught == FZ_ERROR_TRYLATER)
+					tok = PDF_TOK_EOF;
+				else if (caught == FZ_ERROR_ABORT)
 					fz_rethrow(ctx);
 				else if (caught == FZ_ERROR_MINOR)
 					/* ignore minor errors */ ;

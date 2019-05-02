@@ -86,6 +86,9 @@ $(OUT)/generated/%.o : generated/%.c
 $(OUT)/platform/x11/%.o : platform/x11/%.c
 	$(CC_CMD) -Wall $(X11_CFLAGS)
 
+$(OUT)/platform/x11/curl/%.o : platform/x11/%.c
+	$(CC_CMD) -Wall $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
+
 $(OUT)/platform/gl/%.o : platform/gl/%.c
 	$(CC_CMD) -Wall $(THIRD_CFLAGS) $(GLUT_CFLAGS)
 
@@ -248,6 +251,22 @@ ifeq ($(HAVE_WIN32),yes)
   VIEW_APPS += $(MUVIEW_WIN32_EXE)
 endif
 
+ifeq ($(HAVE_X11),yes)
+ifeq ($(HAVE_CURL),yes)
+ifeq ($(HAVE_PTHREAD),yes)
+  MUVIEW_X11_CURL_EXE := $(OUT)/mupdf-x11-curl
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/pdfapp.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_main.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_image.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/curl_stream.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/prog_stream.o
+  $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
+	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS) $(CURL_LIBS) $(PTHREAD_LIBS)
+  VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
+endif
+endif
+endif
+
 # --- Generated dependencies ---
 
 -include $(MUPDF_OBJ:%.o=%.d)
@@ -262,6 +281,7 @@ endif
 -include $(MUVIEW_WIN32_OBJ:%.o=%.d)
 
 -include $(MURASTER_OBJ:%.o=%.d)
+-include $(MUVIEW_X11_CURL_OBJ:%.o=%.d)
 
 # --- Examples ---
 

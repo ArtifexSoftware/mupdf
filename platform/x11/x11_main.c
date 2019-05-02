@@ -198,6 +198,11 @@ static void winopen(void)
 	XWMHints *wmhints;
 	XClassHint *classhint;
 
+#ifdef HAVE_CURL
+	if (!XInitThreads())
+		fz_throw(gapp.ctx, FZ_ERROR_GENERIC, "cannot initialize X11 for multi-threading");
+#endif
+
 	xdpy = XOpenDisplay(NULL);
 	if (!xdpy)
 		fz_throw(gapp.ctx, FZ_ERROR_GENERIC, "cannot open display");
@@ -868,6 +873,7 @@ int main(int argc, char **argv)
 	struct timeval now;
 	struct timeval *timeout;
 	struct timeval tmo_advance_delay;
+	int kbps = 0;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -878,7 +884,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:X")) != -1)
+	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:")) != -1)
 	{
 		switch (c)
 		{
@@ -896,6 +902,7 @@ int main(int argc, char **argv)
 		case 'S': gapp.layout_em = fz_atof(fz_optarg); break;
 		case 'U': gapp.layout_css = fz_optarg; break;
 		case 'X': gapp.layout_use_doc_css = 0; break;
+		case 'b': kbps = fz_atoi(fz_optarg); break;
 		default: usage(argv[0]);
 		}
 	}
@@ -928,7 +935,10 @@ int main(int argc, char **argv)
 	tmo_at.tv_usec = 0;
 	timeout = NULL;
 
-	pdfapp_open(&gapp, filename, 0);
+	if (kbps)
+		pdfapp_open_progressive(&gapp, filename, 0, kbps);
+	else
+		pdfapp_open(&gapp, filename, 0);
 
 	FD_ZERO(&fds);
 

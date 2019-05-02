@@ -308,8 +308,10 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, int pa
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			link = NULL;
 		}
+
 		if (link)
 		{
 			if (!head)

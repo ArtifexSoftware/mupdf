@@ -728,7 +728,10 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		fz_try(ctx)
 			cs = pdf_load_colorspace(ctx, obj);
 		fz_catch(ctx)
+		{
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			return; /* ignore broken colorspace */
+		}
 		fz_try(ctx)
 		{
 			if (!*seps)
@@ -793,7 +796,10 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 			fz_try(ctx)
 				cs = pdf_load_colorspace(ctx, obj);
 			fz_catch(ctx)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				continue; /* ignore broken colorspace */
+			}
 			fz_try(ctx)
 			{
 				if (!*seps)
@@ -959,49 +965,44 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 	pdf_obj *cs_obj;
 
 	/* The spec says to ignore any colors we can't understand */
-	fz_try(ctx)
+
+	cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultGray));
+	if (cs_obj)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultGray));
-		if (cs_obj)
+		fz_try(ctx)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
 			fz_set_default_gray(ctx, default_cs, cs);
 			fz_drop_colorspace(ctx, cs);
 		}
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "Error while reading DefaultGray: %s", fz_caught_message(ctx));
+		fz_catch(ctx)
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 	}
 
-	fz_try(ctx)
+	cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultRGB));
+	if (cs_obj)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultRGB));
-		if (cs_obj)
+		fz_try(ctx)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
 			fz_set_default_rgb(ctx, default_cs, cs);
 			fz_drop_colorspace(ctx, cs);
 		}
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "Error while reading DefaultRGB: %s", fz_caught_message(ctx));
+		fz_catch(ctx)
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 	}
 
-	fz_try(ctx)
+	cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultCMYK));
+	if (cs_obj)
 	{
-		cs_obj = pdf_dict_get(ctx, obj, PDF_NAME(DefaultCMYK));
-		if (cs_obj)
+		fz_try(ctx)
 		{
 			fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
 			fz_set_default_cmyk(ctx, default_cs, cs);
 			fz_drop_colorspace(ctx, cs);
 		}
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "Error while reading DefaultCMYK: %s", fz_caught_message(ctx));
+		fz_catch(ctx)
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 	}
 }
 
@@ -1028,8 +1029,12 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_default_colorspaces(ctx, default_cs);
-		fz_rethrow(ctx);
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+		{
+			fz_drop_default_colorspaces(ctx, default_cs);
+			fz_rethrow(ctx);
+		}
+		page->super.incomplete = 1;
 	}
 
 	return default_cs;
@@ -1097,8 +1102,14 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_page(ctx, &page->super);
-		fz_rethrow(ctx);
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+		{
+			fz_drop_page(ctx, &page->super);
+			fz_rethrow(ctx);
+		}
+		page->super.incomplete = 1;
+		fz_drop_link(ctx, page->links);
+		page->links = NULL;
 	}
 
 	/* Scan for transparency and overprint */
@@ -1120,8 +1131,12 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_page(ctx, &page->super);
-		fz_rethrow(ctx);
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+		{
+			fz_drop_page(ctx, &page->super);
+			fz_rethrow(ctx);
+		}
+		page->super.incomplete = 1;
 	}
 
 	return page;

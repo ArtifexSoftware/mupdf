@@ -759,6 +759,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	}
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "cannot load font-face: %s", src);
 	}
 }

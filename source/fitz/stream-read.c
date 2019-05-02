@@ -134,6 +134,11 @@ fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated)
 	}
 	fz_catch(ctx)
 	{
+		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+		{
+			fz_drop_buffer(ctx, buf);
+			fz_rethrow(ctx);
+		}
 		if (truncated)
 		{
 			*truncated = 1;

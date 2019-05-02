@@ -227,6 +227,9 @@ typedef struct fz_cookie_s fz_cookie;
 	value of progress to that of progress_max.
 
 	errors: count of errors during current rendering.
+
+	incomplete: Initially should be set to 0. Will be set to non-zero
+	if a TRYLATER error is thrown during rendering.
 */
 struct fz_cookie_s
 {
@@ -234,6 +237,7 @@ struct fz_cookie_s
 	int progress;
 	int progress_max; /* -1 for unknown */
 	int errors;
+	int incomplete;
 };
 
 fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out);

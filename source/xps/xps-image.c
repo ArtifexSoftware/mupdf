@@ -101,7 +101,13 @@ xps_parse_image_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "cannot find image source");
+		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+		{
+			if (doc->cookie)
+				doc->cookie->incomplete = 1;
+		}
+		else
+			fz_warn(ctx, "cannot find image source");
 		return;
 	}
 

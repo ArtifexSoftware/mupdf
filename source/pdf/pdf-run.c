@@ -13,6 +13,9 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	fz_var(proc);
 	fz_var(default_cs);
 
+	if (cookie && page->super.incomplete)
+		cookie->incomplete = 1;
+
 	fz_try(ctx)
 	{
 		default_cs = pdf_load_default_colorspaces(ctx, doc, page);
@@ -62,6 +65,9 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	fz_var(colorspace);
 	fz_var(default_cs);
 
+	if (cookie && page->super.incomplete)
+		cookie->incomplete = 1;
+
 	fz_try(ctx)
 	{
 		default_cs = pdf_load_default_colorspaces(ctx, doc, page);
@@ -87,7 +93,10 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 					fz_try(ctx)
 						colorspace = pdf_load_colorspace(ctx, cs);
 					fz_catch(ctx)
+					{
+						fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 						fz_warn(ctx, "Ignoring Page blending colorspace.");
+					}
 					if (!fz_is_valid_blend_colorspace(ctx, colorspace))
 					{
 						fz_warn(ctx, "Ignoring invalid Page blending colorspace: %s.", colorspace->name);

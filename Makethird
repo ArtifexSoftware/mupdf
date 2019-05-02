@@ -11,10 +11,15 @@ ifeq ($(USE_SYSTEM_LIBS),yes)
   USE_SYSTEM_OPENJPEG := yes
   USE_SYSTEM_ZLIB := yes
   USE_SYSTEM_GLUT := yes
+  USE_SYSTEM_CURL := yes
 endif
 
 ifeq ($(OS),MACOS)
   USE_SYSTEM_GLUT := yes
+endif
+
+ifeq ($(OS),Linux)
+  USE_SYSTEM_CURL := yes
 endif
 
 # --- FREETYPE 2 ---
@@ -374,4 +379,12 @@ $(OUT)/thirdparty/freeglut/%.o: thirdparty/freeglut/%.c
 GLUT_CFLAGS := -Ithirdparty/freeglut/include
 GLUT_LIBS := -lGL -lX11 -lXrandr
 
+endif
+
+# --- cURL ---
+
+ifeq ($(USE_SYSTEM_CURL),yes)
+  HAVE_CURL := $(HAVE_SYS_CURL)
+  CURL_CFLAGS := $(SYS_CURL_CFLAGS)
+  CURL_LIBS := $(SYS_CURL_LIBS)
 endif

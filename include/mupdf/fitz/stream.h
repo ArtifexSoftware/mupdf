@@ -105,6 +105,7 @@ struct fz_stream_s
 	int refs;
 	int error;
 	int eof;
+	int progressive;
 	int64_t pos;
 	int avail;
 	int bits;
@@ -152,6 +153,7 @@ static inline size_t fz_available(fz_context *ctx, fz_stream *stm, size_t max)
 		c = stm->next(ctx, stm, max);
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
@@ -185,6 +187,7 @@ static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 		c = stm->next(ctx, stm, 1);
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
@@ -218,6 +221,7 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 	}
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;

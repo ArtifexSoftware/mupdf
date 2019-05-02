@@ -488,6 +488,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 				}
 				fz_catch(ctx)
 				{
+					fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 					fz_warn(ctx, "ignoring chapter %s", s);
 				}
 			}

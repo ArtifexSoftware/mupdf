@@ -466,10 +466,13 @@ fz_load_page(fz_context *ctx, fz_document *doc, int number)
 		page->number = number;
 
 		/* Insert new page at the head of the list of open pages. */
-		if ((page->next = doc->open) != NULL)
-			doc->open->prev = &page->next;
-		doc->open = page;
-		page->prev = &doc->open;
+		if (!page->incomplete)
+		{
+			if ((page->next = doc->open) != NULL)
+				doc->open->prev = &page->next;
+			doc->open = page;
+			page->prev = &doc->open;
+		}
 		return page;
 	}
 

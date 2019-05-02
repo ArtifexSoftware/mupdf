@@ -181,6 +181,7 @@ struct fz_page_s
 {
 	int refs;
 	int number; /* page number */
+	int incomplete; /* incomplete from progressive loading; don't cache! */
 	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
 	fz_page_run_page_fn *run_page_contents;

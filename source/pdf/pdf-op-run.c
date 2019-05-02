@@ -1219,7 +1219,15 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		if (!resources)
 			resources = page_resources;
 
-		xobj_default_cs = pdf_update_default_colorspaces(ctx, pr->default_cs, resources);
+		fz_try(ctx)
+			xobj_default_cs = pdf_update_default_colorspaces(ctx, pr->default_cs, resources);
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+				fz_rethrow(ctx);
+			if (pr->cookie)
+				pr->cookie->incomplete = 1;
+		}
 		if (xobj_default_cs != save_default_cs)
 		{
 			fz_set_default_colorspaces(ctx, pr->dev, xobj_default_cs);

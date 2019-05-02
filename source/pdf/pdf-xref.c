@@ -1301,6 +1301,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		pdf_drop_xref_sections(ctx, doc);
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "trying to repair broken xref");
 		repaired = 1;
 	}
@@ -1346,6 +1347,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 				}
 				fz_catch(ctx)
 				{
+					fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 					fz_warn(ctx, "ignoring broken object (%d 0 R)", i);
 					continue;
 				}
@@ -1392,7 +1394,8 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "Ignoring Broken Optional Content");
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_warn(ctx, "Ignoring broken Optional Content configuration");
 	}
 
 	fz_try(ctx)
@@ -1657,7 +1660,7 @@ object_updated:
 		}
 		fz_catch(ctx)
 		{
-			if (!try_repair)
+			if (!try_repair || fz_caught(ctx) == FZ_ERROR_TRYLATER)
 				fz_rethrow(ctx);
 		}
 
@@ -1683,6 +1686,7 @@ object_updated:
 			}
 			fz_catch(ctx)
 			{
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				if (rnum == num)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse object (%d 0 R)", num);
 				else
@@ -1742,6 +1746,7 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 			entry = pdf_cache_object(ctx, doc, num);
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			fz_warn(ctx, "cannot load object (%d 0 R) into cache", num);
 			return NULL;
 		}
@@ -1986,8 +1991,9 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
+		int caught = fz_caught(ctx);
 		fz_drop_document(ctx, &doc->super);
-		fz_rethrow(ctx);
+		fz_throw(ctx, caught, "Failed to open doc from stream");
 	}
 	return doc;
 }
