@@ -892,3 +892,9 @@ int fz_is_point_inside_irect(int x, int y, fz_irect r)
 {
 	return (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1);
 }
+
+int fz_is_point_inside_quad(fz_point p, fz_quad q)
+{
+	// TODO: non-rectilinear quads
+	return fz_is_point_inside_rect(p, fz_rect_from_quad(q));
+}

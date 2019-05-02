@@ -163,6 +163,7 @@ char *pdf_new_utf8_from_pdf_string_obj(fz_context *ctx, pdf_obj *src);
 char *pdf_new_utf8_from_pdf_stream_obj(fz_context *ctx, pdf_obj *src);
 char *pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src);
 
+fz_quad pdf_to_quad(fz_context *ctx, pdf_obj *array, int offset);
 fz_rect pdf_to_rect(fz_context *ctx, pdf_obj *array);
 fz_matrix pdf_to_matrix(fz_context *ctx, pdf_obj *array);
 

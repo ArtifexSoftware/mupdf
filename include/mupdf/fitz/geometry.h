@@ -354,6 +354,7 @@ struct fz_quad_s
 fz_rect fz_rect_from_quad(fz_quad q);
 fz_quad fz_transform_quad(fz_quad q, fz_matrix m);
 
+int fz_is_point_inside_quad(fz_point p, fz_quad q);
 int fz_is_point_inside_rect(fz_point p, fz_rect r);
 int fz_is_point_inside_irect(int x, int y, fz_irect r);
 
