@@ -252,6 +252,7 @@ void do_annotate_panel(void);
 void do_annotate_canvas(fz_irect canvas_area);
 void do_widget_panel(void);
 void do_widget_canvas(fz_irect canvas_area);
+void load_page(void);
 void render_page(void);
 void update_title(void);
 void reload(void);

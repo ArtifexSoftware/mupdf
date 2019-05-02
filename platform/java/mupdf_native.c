@@ -9024,6 +9024,22 @@ FUN(PDFPage_update)(JNIEnv *env, jobject self)
 	return changed;
 }
 
+JNIEXPORT jboolean JNICALL
+FUN(PDFPage_applyRedactions)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	jboolean redacted = JNI_FALSE;
+
+	if (!ctx || !page) return JNI_FALSE;
+
+	fz_try(ctx)
+		redacted = pdf_redact_page(ctx, page->doc, page, NULL);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return redacted;
+}
 /* PDFAnnotation interface */
 
 JNIEXPORT jint JNICALL

@@ -2370,6 +2370,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_deleteAnnotation
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    applyRedactions
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFPage_applyRedactions
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    update
  * Signature: ()Z
  */

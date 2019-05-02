@@ -12,6 +12,8 @@ public class PDFPage extends Page
 	public native PDFAnnotation createAnnotation(int subtype);
 	public native void deleteAnnotation(PDFAnnotation annot);
 
+	public native boolean applyRedactions();
+
 	public native boolean update();
 
 	private PDFWidget[] widgets;

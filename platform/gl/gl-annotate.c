@@ -367,6 +367,7 @@ void do_annotate_panel(void)
 	pdf_annot *annot;
 	int n;
 
+	int has_redact = 0;
 	int was_dirty = pdf->dirty;
 
 	ui_layout(T, X, NW, 2, 2);
@@ -404,6 +405,8 @@ void do_annotate_panel(void)
 		fz_snprintf(buf, sizeof buf, "%d: %s", num, pdf_string_from_annot_type(ctx, subtype));
 		if (ui_list_item(&annot_list, annot->obj, buf, selected_annot == annot))
 			selected_annot = annot;
+		if (subtype == PDF_ANNOT_REDACT)
+			has_redact = 1;
 	}
 	ui_list_end(&annot_list);
 
@@ -632,11 +635,23 @@ void do_annotate_panel(void)
 	}
 
 	ui_layout(B, X, NW, 2, 2);
+
 	if (ui_button("Save PDF..."))
 	{
 		init_save_pdf_options();
 		ui_init_save_file(filename, pdf_filter);
 		ui.dialog = save_pdf_dialog;
+	}
+
+	if (has_redact)
+	{
+		if (ui_button("Redact"))
+		{
+			selected_annot = NULL;
+			pdf_redact_page(ctx, pdf, page, NULL);
+			load_page();
+			render_page();
+		}
 	}
 
 	if (was_dirty != pdf->dirty)
