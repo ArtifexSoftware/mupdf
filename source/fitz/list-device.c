@@ -1551,8 +1551,6 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_m
 	fz_matrix trans_ctm;
 	int tile_skip_depth = 0;
 
-	fz_var(colorspace);
-
 	if (cookie)
 	{
 		cookie->progress_max = list->len;
