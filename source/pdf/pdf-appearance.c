@@ -1242,6 +1242,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 
 	w = rect->x1 - rect->x0;
 	h = rect->y1 - rect->y0;
+	r = r % 360;
 	if (r == 90 || r == 270)
 		t = h, h = w, w = t;
 	*matrix = fz_rotate(r);
@@ -1314,6 +1315,7 @@ pdf_layout_text_widget(fz_context *ctx, pdf_annot *annot)
 
 	w = rect.x1 - rect.x0;
 	h = rect.y1 - rect.y0;
+	r = r % 360;
 	if (r == 90 || r == 270)
 		t = h, h = w, w = t;
 
@@ -1688,6 +1690,7 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
 	w = rect.x1 - rect.x0;
 	h = rect.y1 - rect.y0;
+	r = r % 360;
 	if (r == 90 || r == 270)
 		t = h, h = w, w = t;
 	matrix = fz_rotate(r);
