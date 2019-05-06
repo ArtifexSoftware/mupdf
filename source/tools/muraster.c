@@ -1090,7 +1090,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			 * from file. */
 			fz_try(ctx)
 			{
-				test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, test_dev);
+				test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, NULL);
 				fz_run_page(ctx, page, test_dev, fz_identity, &cookie);
 				fz_close_device(ctx, test_dev);
 			}
