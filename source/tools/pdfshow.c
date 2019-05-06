@@ -48,7 +48,7 @@ static void showxref(void)
 {
 	int i;
 	int xref_len = pdf_xref_len(ctx, doc);
-	printf("xref\n0 %d\n", xref_len);
+	fz_write_printf(ctx, out, "xref\n0 %d\n", xref_len);
 	for (i = 0; i < xref_len; i++)
 	{
 		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
@@ -231,7 +231,7 @@ static void showoutline(void)
 {
 	fz_outline *outline = fz_load_outline(ctx, (fz_document*)doc);
 	fz_try(ctx)
-		fz_print_outline(ctx, fz_stdout(ctx), outline, 1);
+		fz_print_outline(ctx, out, outline, 1);
 	fz_always(ctx)
 		fz_drop_outline(ctx, outline);
 	fz_catch(ctx)
@@ -445,7 +445,7 @@ static void showpath(char *path, pdf_obj *obj)
 				}
 				else
 				{
-					printf("null\n");
+					fz_write_string(ctx, out, "null\n");
 				}
 			}
 			else if (isnumber(part) && pdf_is_array(ctx, obj))
@@ -454,7 +454,7 @@ static void showpath(char *path, pdf_obj *obj)
 				showpath(path, pdf_dict_gets(ctx, obj, part));
 		}
 		else
-			printf("null\n");
+			fz_write_string(ctx, out, "null\n");
 	}
 	else
 	{
@@ -463,7 +463,7 @@ static void showpath(char *path, pdf_obj *obj)
 		else
 		{
 			pdf_print_obj(ctx, out, obj, tight, 0);
-			printf("\n");
+			fz_write_string(ctx, out, "\n");
 		}
 	}
 }
@@ -494,10 +494,10 @@ static void showpathpage(char *path)
 			else if (isnumber(part))
 				showpath(path, pdf_lookup_page_obj(ctx, doc, atoi(part)-1));
 			else
-				printf("null\n");
+				fz_write_string(ctx, out, "null\n");
 		}
 		else
-			printf("null\n");
+			fz_write_string(ctx, out, "null\n");
 	}
 	else
 	{
@@ -530,7 +530,7 @@ static void showpathroot(char *path)
 			showpath(list, pdf_dict_gets(ctx, pdf_trailer(ctx, doc), part));
 	}
 	else
-		printf("null\n");
+		fz_write_string(ctx, out, "null\n");
 }
 
 static void show(char *sel)
