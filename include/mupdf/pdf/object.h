@@ -141,6 +141,7 @@ pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial);
 int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index);
 int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index);
 float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index);
+const char *pdf_array_get_name(fz_context *ctx, pdf_obj *array, int index);
 const char *pdf_array_get_string(fz_context *ctx, pdf_obj *array, int index, size_t *sizep);
 const char *pdf_array_get_text_string(fz_context *ctx, pdf_obj *array, int index);
 fz_rect pdf_array_get_rect(fz_context *ctx, pdf_obj *array, int index);

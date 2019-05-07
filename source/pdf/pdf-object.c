@@ -2400,6 +2400,11 @@ float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index)
 	return pdf_to_real(ctx, pdf_array_get(ctx, array, index));
 }
 
+const char *pdf_array_get_name(fz_context *ctx, pdf_obj *array, int index)
+{
+	return pdf_to_name(ctx, pdf_array_get(ctx, array, index));
+}
+
 const char *pdf_array_get_string(fz_context *ctx, pdf_obj *array, int index, size_t *sizep)
 {
 	return pdf_to_string(ctx, pdf_array_get(ctx, array, index), sizep);
