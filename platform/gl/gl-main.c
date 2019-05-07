@@ -166,6 +166,7 @@ static int annotate_w = 12; /* to be scaled by lineheight */
 
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
+static int oldicc = 1, currenticc = 1;
 static int oldseparations = 0, currentseparations = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
@@ -499,6 +500,11 @@ void load_page(void)
 	links = fz_load_links(ctx, fzpage);
 	page_text = fz_new_stext_page_from_page(ctx, fzpage, NULL);
 
+	if (currenticc)
+		fz_enable_icc(ctx);
+	else
+		fz_disable_icc(ctx);
+
 	if (currentseparations)
 	{
 		seps = fz_page_separations(ctx, &page->super);
@@ -547,7 +553,8 @@ void render_page(void)
 void render_page_if_changed(void)
 {
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
-		oldinvert != currentinvert || oldtint != currenttint || oldseparations != currentseparations)
+		oldinvert != currentinvert || oldtint != currenttint ||
+		oldicc != currenticc || oldseparations != currentseparations)
 	{
 		render_page();
 		oldpage = currentpage;
@@ -555,6 +562,7 @@ void render_page_if_changed(void)
 		oldrotate = currentrotate;
 		oldinvert = currentinvert;
 		oldtint = currenttint;
+		oldicc = currenticc;
 		oldseparations = currentseparations;
 	}
 }
@@ -1096,6 +1104,7 @@ static void do_app(void)
 		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
 		case 'e': currentseparations = !currentseparations; break;
+		case 'E': currenticc = !currenticc; break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
 		case 'W': auto_zoom_w(); break;
@@ -1211,7 +1220,7 @@ static void do_info(void)
 {
 	char buf[100];
 
-	ui_dialog_begin(500, 13 * ui.lineheight);
+	ui_dialog_begin(500, 14 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
@@ -1255,6 +1264,7 @@ static void do_info(void)
 		else
 			ui_label("Size: %d x %d", w, h);
 	}
+	ui_label("ICC rendering: %s.", currenticc ? "on" : "off");
 	ui_label("Spot rendering: %s.", currentseparations ? "on" : "off");
 
 	ui_dialog_end();
@@ -1511,7 +1521,7 @@ void do_main(void)
 	if (showoutline)
 		do_outline(outline);
 
-	if (oldpage != currentpage || oldseparations != currentseparations)
+	if (oldpage != currentpage || oldseparations != currentseparations || oldicc != currenticc)
 	{
 		load_page();
 		update_title();

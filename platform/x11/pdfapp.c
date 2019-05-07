@@ -114,6 +114,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"c\t\t-- toggle between color and grayscale\n"
 		"i\t\t-- toggle inverted color mode\n"
 		"C\t\t-- toggle tinted color mode\n"
+		"E\t\t-- enable/disable ICC color mode\n"
 		"e\t\t-- enable/disable spot color mode\n"
 		"q\t\t-- quit\n"
 	;
@@ -584,6 +585,11 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		pdfapp_warn(app, "Cannot load page");
 		return;
 	}
+
+	if (app->useicc)
+		fz_enable_icc(app->ctx);
+	else
+		fz_disable_icc(app->ctx);
 
 	if (app->useseparations)
 	{
@@ -1140,6 +1146,15 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	case 'i':
 		app->invert ^= 1;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+		break;
+
+	case 'E':
+		app->useicc ^= 1;
+		if (app->useicc)
+			pdfapp_warn(app, "Using icc");
+		else
+			pdfapp_warn(app, "Not using icc");
+		pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		break;
 
 	case 'e':
