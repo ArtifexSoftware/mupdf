@@ -333,6 +333,8 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 {
 	fz_colorspace *cs;
 	char name[100];
+	if (high < 0 || high > 255)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "invalid maximum value in indexed colorspace");
 	fz_snprintf(name, sizeof name, "Indexed(%d,%s)", high, base->name);
 	cs = fz_new_colorspace(ctx, FZ_COLORSPACE_INDEXED, 0, 1, name);
 	cs->u.indexed.base = fz_keep_colorspace(ctx, base);
