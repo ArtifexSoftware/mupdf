@@ -323,7 +323,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_try(ctx)
 			{
 				cbuf = fz_new_buffer_from_copied_data(ctx, iccprofile, size);
-				state->cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, cbuf, NULL);
+				state->cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, NULL, cbuf);
 			}
 			fz_always(ctx)
 				fz_drop_buffer(ctx, cbuf);
