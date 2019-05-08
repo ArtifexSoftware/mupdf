@@ -167,11 +167,14 @@ load_indexed(fz_context *ctx, pdf_obj *array)
 		n = base->n * (high + 1);
 		lookup = fz_malloc(ctx, n);
 
-		if (pdf_is_string(ctx, lookupobj) && pdf_to_str_len(ctx, lookupobj) >= n)
+		if (pdf_is_string(ctx, lookupobj))
 		{
+			int sn = fz_mini(n, pdf_to_str_len(ctx, lookupobj));
 			unsigned char *buf = (unsigned char *) pdf_to_str_buf(ctx, lookupobj);
-			for (i = 0; i < n; i++)
+			for (i = 0; i < sn; ++i)
 				lookup[i] = buf[i];
+			for (; i < n; ++i)
+				lookup[i] = 0;
 		}
 		else if (pdf_is_indirect(ctx, lookupobj))
 		{
