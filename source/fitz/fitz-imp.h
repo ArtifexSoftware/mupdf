@@ -37,9 +37,7 @@ int fz_default_image_scale(void *arg, int dst_w, int dst_h, int src_w, int src_h
 
 fz_context *fz_clone_context_internal(fz_context *ctx);
 
-void fz_new_aa_context(fz_context *ctx);
-void fz_drop_aa_context(fz_context *ctx);
-void fz_copy_aa_context(fz_context *dst, fz_context *src);
+void fz_init_aa_context(fz_context *ctx);
 
 void fz_new_glyph_cache_context(fz_context *ctx);
 fz_glyph_cache *fz_keep_glyph_cache(fz_context *ctx);

@@ -27,7 +27,7 @@ do_scavenging_malloc(fz_context *ctx, size_t size)
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	do {
-		p = ctx->alloc->malloc(ctx->alloc->user, size);
+		p = ctx->alloc.malloc(ctx->alloc.user, size);
 		if (p != NULL)
 		{
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -47,7 +47,7 @@ do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	do {
-		q = ctx->alloc->realloc(ctx->alloc->user, p, size);
+		q = ctx->alloc.realloc(ctx->alloc.user, p, size);
 		if (q != NULL)
 		{
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -139,7 +139,7 @@ fz_free(fz_context *ctx, void *p)
 	if (p)
 	{
 		fz_lock(ctx, FZ_LOCK_ALLOC);
-		ctx->alloc->free(ctx->alloc->user, p);
+		ctx->alloc.free(ctx->alloc.user, p);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 	}
 }

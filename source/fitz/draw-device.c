@@ -3224,7 +3224,7 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 fz_device *
 fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, fz_rect mediabox, fz_pixmap **pixmap)
 {
-	fz_aa_context aa = *ctx->aa;
+	fz_aa_context aa = ctx->aa;
 	float x_zoom = opts->x_resolution / 72.0f;
 	float y_zoom = opts->y_resolution / 72.0f;
 	float page_w = mediabox.x1 - mediabox.x0;

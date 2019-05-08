@@ -3,31 +3,14 @@
 
 #include <string.h>
 
-void fz_new_aa_context(fz_context *ctx)
+void fz_init_aa_context(fz_context *ctx)
 {
 #ifndef AA_BITS
-	ctx->aa = fz_malloc_struct(ctx, fz_aa_context);
-	ctx->aa->hscale = 17;
-	ctx->aa->vscale = 15;
-	ctx->aa->scale = 256;
-	ctx->aa->bits = 8;
-	ctx->aa->text_bits = 8;
-#endif
-}
-
-void fz_copy_aa_context(fz_context *dst, fz_context *src)
-{
-	if (dst && dst->aa && src && src->aa)
-		memcpy(dst->aa, src->aa, sizeof(*src->aa));
-}
-
-void fz_drop_aa_context(fz_context *ctx)
-{
-	if (!ctx)
-		return;
-#ifndef AA_BITS
-	fz_free(ctx, ctx->aa);
-	ctx->aa = NULL;
+	ctx->aa.hscale = 17;
+	ctx->aa.vscale = 15;
+	ctx->aa.scale = 256;
+	ctx->aa.bits = 8;
+	ctx->aa.text_bits = 8;
 #endif
 }
 
@@ -167,8 +150,8 @@ fz_set_rasterizer_graphics_aa_level(fz_context *ctx, fz_aa_context *aa, int leve
 void
 fz_set_aa_level(fz_context *ctx, int level)
 {
-	fz_set_rasterizer_graphics_aa_level(ctx, ctx->aa, level);
-	fz_set_rasterizer_text_aa_level(ctx, ctx->aa, level);
+	fz_set_rasterizer_graphics_aa_level(ctx, &ctx->aa, level);
+	fz_set_rasterizer_text_aa_level(ctx, &ctx->aa, level);
 }
 
 /*
@@ -181,7 +164,7 @@ fz_set_aa_level(fz_context *ctx, int level)
 void
 fz_set_text_aa_level(fz_context *ctx, int level)
 {
-	fz_set_rasterizer_text_aa_level(ctx, ctx->aa, level);
+	fz_set_rasterizer_text_aa_level(ctx, &ctx->aa, level);
 }
 
 /*
@@ -194,7 +177,7 @@ fz_set_text_aa_level(fz_context *ctx, int level)
 void
 fz_set_graphics_aa_level(fz_context *ctx, int level)
 {
-	fz_set_rasterizer_graphics_aa_level(ctx, ctx->aa, level);
+	fz_set_rasterizer_graphics_aa_level(ctx, &ctx->aa, level);
 }
 
 /*
@@ -206,10 +189,7 @@ fz_set_graphics_aa_level(fz_context *ctx, int level)
 void
 fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width)
 {
-	if (!ctx || !ctx->aa)
-		return;
-
-	ctx->aa->min_line_width = min_line_width;
+	ctx->aa.min_line_width = min_line_width;
 }
 
 /*
@@ -221,10 +201,7 @@ fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width)
 float
 fz_graphics_min_line_width(fz_context *ctx)
 {
-	if (!ctx || !ctx->aa)
-		return 0;
-
-	return ctx->aa->min_line_width;
+	return ctx->aa.min_line_width;
 }
 
 float
@@ -329,7 +306,7 @@ fz_rasterizer *fz_new_rasterizer(fz_context *ctx, const fz_aa_context *aa)
 	bits = AA_BITS;
 #else
 	if (aa == NULL)
-		aa = ctx->aa;
+		aa = &ctx->aa;
 	bits = aa->bits;
 #endif
 	if (bits == 10)
