@@ -289,7 +289,7 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 	}
 	if (cs->type == FZ_COLORSPACE_SEPARATION)
 	{
-		fz_drop_colorspace(ctx, cs->u.indexed.base);
+		fz_drop_colorspace(ctx, cs->u.separation.base);
 		cs->u.separation.drop(ctx, cs->u.separation.tint);
 		for (i = 0; i < FZ_MAX_COLORS; i++)
 			fz_free(ctx, cs->u.separation.colorant[i]);
