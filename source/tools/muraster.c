@@ -574,6 +574,16 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 	fz_pixmap *pix = NULL;
 	fz_bitmap *bit = NULL;
 	int errors_are_fatal = 0;
+	fz_irect ibounds = render->ibounds;
+	fz_rect tbounds = render->tbounds;
+	int total_height = ibounds.y1 - ibounds.y0;
+	int start_offset = min_band_height * render->bands_rendered;
+	int remaining_start = ibounds.y0 + start_offset;
+	int remaining_height = ibounds.y1 - remaining_start;
+	int band_height = min_band_height * render->band_height_multiple;
+	int bands = (remaining_height + band_height-1) / band_height;
+	fz_matrix ctm = render->ctm;
+	int band;
 
 	fz_var(pix);
 	fz_var(bit);
@@ -581,17 +591,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 
 	fz_try(ctx)
 	{
-		fz_irect ibounds = render->ibounds;
-		fz_rect tbounds = render->tbounds;
-		int total_height = ibounds.y1 - ibounds.y0;
-		int start_offset = min_band_height * render->bands_rendered;
-		int remaining_start = ibounds.y0 + start_offset;
-		int remaining_height = ibounds.y1 - remaining_start;
-		int band_height = min_band_height * render->band_height_multiple;
-		int bands = (remaining_height + band_height-1) / band_height;
-		fz_matrix ctm = render->ctm;
-		int band;
-
 		/* Set up ibounds and tbounds for a single band_height band.
 		 * We will adjust ctm as we go. */
 		ibounds.y1 = ibounds.y0 + band_height;
@@ -688,7 +687,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 		if (render->num_workers > 0)
 		{
 			int band;
-			for (band = 0; band < render->num_workers; band++)
+			for (band = 0; band < fz_mini(render->num_workers, bands); band++)
 			{
 				worker_t *w = &workers[band];
 				w->cookie.abort = 1;
