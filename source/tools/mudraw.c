@@ -42,7 +42,6 @@ enum {
 #if FZ_ENABLE_PDF
 	OUT_PDF,
 #endif
-	OUT_GPROOF
 };
 
 enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_ICC };
@@ -82,7 +81,6 @@ static const suffix_t suffix_table[] =
 	{ ".stext", OUT_STEXT, 0 },
 
 	{ ".trace", OUT_TRACE, 0 },
-	{ ".gproof", OUT_GPROOF, 0 },
 };
 
 typedef struct
@@ -136,7 +134,6 @@ static const format_cs_table_t format_cs_table[] =
 #if FZ_ENABLE_PDF
 	{ OUT_PDF, CS_RGB, { CS_RGB } },
 #endif
-	{ OUT_GPROOF, CS_RGB, { CS_RGB } },
 
 	{ OUT_TEXT, CS_RGB, { CS_RGB } },
 	{ OUT_HTML, CS_RGB, { CS_RGB } },
@@ -1833,13 +1830,7 @@ int mudraw_main(int argc, char **argv)
 		}
 		else
 #endif
-			if (output_format == OUT_GPROOF)
-			{
-				/* GPROOF files are saved direct. Do not open "output". */
-				if (!output)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "output filename required when saving GProof file");
-			}
-			else if (output_format == OUT_SVG)
+			if (output_format == OUT_SVG)
 			{
 				/* SVG files are always opened for each page. Do not open "output". */
 			}
@@ -1919,17 +1910,10 @@ int mudraw_main(int argc, char **argv)
 					if (layer_config)
 						apply_layer_config(ctx, doc, layer_config);
 
-					if (output_format == OUT_GPROOF)
-					{
-						fz_save_gproof(ctx, filename, doc, output, resolution, "", "");
-					}
-					else
-					{
-						if (fz_optind == argc || !fz_is_page_range(ctx, argv[fz_optind]))
-							drawrange(ctx, doc, "1-N");
-						if (fz_optind < argc && fz_is_page_range(ctx, argv[fz_optind]))
-							drawrange(ctx, doc, argv[fz_optind++]);
-					}
+					if (fz_optind == argc || !fz_is_page_range(ctx, argv[fz_optind]))
+						drawrange(ctx, doc, "1-N");
+					if (fz_optind < argc && fz_is_page_range(ctx, argv[fz_optind]))
+						drawrange(ctx, doc, argv[fz_optind++]);
 
 					bgprint_flush();
 				}
@@ -1969,16 +1953,11 @@ int mudraw_main(int argc, char **argv)
 		}
 		else
 #endif
-			if (output_format == OUT_GPROOF || output_format == OUT_SVG)
-			{
-				/* No output file to close */
-			}
-			else
-			{
-				fz_close_output(ctx, out);
-				fz_drop_output(ctx, out);
-				out = NULL;
-			}
+		{
+			fz_close_output(ctx, out);
+			fz_drop_output(ctx, out);
+			out = NULL;
+		}
 
 		if (showtime && timing.count > 0)
 		{

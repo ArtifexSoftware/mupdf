@@ -336,7 +336,4 @@ fz_separations *fz_page_separations(fz_context *ctx, fz_page *page);
 
 int fz_page_uses_overprint(fz_context *ctx, fz_page *page);
 
-void fz_save_gproof(fz_context *ctx, const char *doc_filename, fz_document *doc, const char *filename, int res,
-	const char *print_profile, const char *display_profile);
-
 #endif

@@ -7,7 +7,6 @@ extern fz_document_handler cbz_document_handler;
 extern fz_document_handler img_document_handler;
 extern fz_document_handler html_document_handler;
 extern fz_document_handler epub_document_handler;
-extern fz_document_handler gprf_document_handler;
 
 /*
 	Register handlers
@@ -37,7 +36,4 @@ void fz_register_document_handlers(fz_context *ctx)
 #if FZ_ENABLE_EPUB
 	fz_register_document_handler(ctx, &epub_document_handler);
 #endif /* FZ_ENABLE_EPUB */
-#if FZ_ENABLE_GPRF
-	fz_register_document_handler(ctx, &gprf_document_handler);
-#endif /* FZ_ENABLE_GPRF */
 }

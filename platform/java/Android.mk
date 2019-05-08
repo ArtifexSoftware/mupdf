@@ -22,24 +22,11 @@
 LOCAL_PATH := $(call my-dir)
 MUPDF_PATH := $(realpath $(LOCAL_PATH)/../..)
 
-# --- Include pre-built ghostscript library if building with gproof support ---
-
-ifdef FZ_ENABLE_GPRF
-include $(CLEAR_VARS)
-LOCAL_MODULE := gsso
-LOCAL_SRC_FILES := libgs.so
-include $(PREBUILT_SHARED_LIBRARY)
-endif
-
 # --- Build a local static library for core mupdf ---
 
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := mupdf_core
-
-ifdef FZ_ENABLE_GPRF
-LOCAL_CFLAGS += -DFZ_ENABLE_GPRF
-endif
 
 LOCAL_C_INCLUDES := \
 	$(MUPDF_PATH)/include \
@@ -70,7 +57,6 @@ LOCAL_SRC_FILES += \
 	$(wildcard $(MUPDF_PATH)/source/xps/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/svg/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/cbz/*.c) \
-	$(wildcard $(MUPDF_PATH)/source/gprf/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/html/*.c) \
 	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/urw/*.c) \
 	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/sil/*.c) \

@@ -201,14 +201,6 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_initNative
   (JNIEnv *, jclass);
 
-/*
- * Class:     com_artifex_mupdf_fitz_Context
- * Method:    gprfSupportedNative
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_gprfSupportedNative
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 #endif
@@ -561,14 +553,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_findBookmark
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_isUnencryptedPDF
   (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Document
- * Method:    proofNative
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Document_proofNative
-  (JNIEnv *, jobject, jstring, jstring, jstring, jint);
 
 #ifdef __cplusplus
 }

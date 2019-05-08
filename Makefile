@@ -117,7 +117,6 @@ MUPDF_SRC += $(sort $(wildcard source/xps/*.c))
 MUPDF_SRC += $(sort $(wildcard source/svg/*.c))
 MUPDF_SRC += $(sort $(wildcard source/html/*.c))
 MUPDF_SRC += $(sort $(wildcard source/cbz/*.c))
-MUPDF_SRC += $(sort $(wildcard source/gprf/*.c))
 
 MUPDF_OBJ := $(MUPDF_SRC:%.c=$(OUT)/%.o)
 

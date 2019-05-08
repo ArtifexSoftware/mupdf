@@ -21,7 +21,7 @@
 
 /*
 	Choose which document agents to include.
-	By default all but GPRF are enabled. To avoid building unwanted
+	By default all are enabled. To avoid building unwanted
 	ones, define FZ_ENABLE_... to 0.
 */
 /* #define FZ_ENABLE_PDF 1 */
@@ -31,7 +31,6 @@
 /* #define FZ_ENABLE_IMG 1 */
 /* #define FZ_ENABLE_HTML 1 */
 /* #define FZ_ENABLE_EPUB 1 */
-/* #define FZ_ENABLE_GPRF 1 */
 
 /*
 	Choose whether to enable ICC color profiles.
@@ -148,10 +147,6 @@
 #ifndef FZ_ENABLE_EPUB
 #define FZ_ENABLE_EPUB 1
 #endif /* FZ_ENABLE_EPUB */
-
-#ifndef FZ_ENABLE_GPRF
-#define FZ_ENABLE_GPRF 0
-#endif /* FZ_ENABLE_GPRF */
 
 #ifndef FZ_ENABLE_JPX
 #define FZ_ENABLE_JPX 1

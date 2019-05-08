@@ -671,7 +671,7 @@ fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, 
 /*
 	Get the separations details for a page.
 	This will be NULL, unless the format specifically supports
-	separations (such as gproof, or PDF files). May be NULL even
+	separations (such as PDF files). May be NULL even
 	so, if there are no separations on a page.
 
 	Returns a reference that must be dropped.

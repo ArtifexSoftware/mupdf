@@ -3694,10 +3694,11 @@ fz_paint_affine_color_near_spots(int da, int sa, int fa, int fb, int dn, int sn,
  * 'safe' in all cases, is to expand an image out to fill a box that entirely
  * covers all the pixels touched by the current image. This is our 'standard'
  * mechanism.
+ *
  * The alternative, used when we know images are tiled across a page, is to
  * round the edge of each image to the closest integer pixel boundary. This
  * would not be safe in the general case, but gives less distortion across
- * neighbouring images when tiling is used. We use this for .gproof files.
+ * neighbouring images when tiling is used.
  */
 fz_matrix
 fz_gridfit_matrix(int as_tiled, fz_matrix m)

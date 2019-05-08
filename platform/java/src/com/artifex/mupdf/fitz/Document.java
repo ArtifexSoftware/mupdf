@@ -12,7 +12,6 @@ public class Document
 	public static final String META_INFO_TITLE = "info:Title";
 
 	protected long pointer;
-	protected String path; /* for proofing */
 
 	protected native void finalize();
 
@@ -30,9 +29,7 @@ public class Document
 	protected native static Document openNativeWithStream(SeekableInputStream stream, String mimeType);
 
 	public static Document openDocument(String filename) {
-		Document doc = openNativeWithPath(filename);
-		doc.path = filename;
-		return doc;
+		return openNativeWithPath(filename);
 	}
 
 	public static Document openDocument(byte buffer[], String magic) {
@@ -62,12 +59,5 @@ public class Document
 
 	public boolean isPDF() {
 		return false;
-	}
-
-	public String getPath() { return path; }
-	protected native String proofNative (String currentPath, String printProfile, String displayProfile, int resolution);
-	public String makeProof (String currentPath, String printProfile, String displayProfile, int resolution) {
-		String proofFile = proofNative( currentPath,  printProfile,  displayProfile,  resolution);
-		return proofFile;
 	}
 }

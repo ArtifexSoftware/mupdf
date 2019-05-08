@@ -135,8 +135,6 @@ size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
 char *fz_asprintf(fz_context *ctx, const char *fmt, ...);
 
-char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
-
 void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
 
 fz_output *fz_new_asciihex_output(fz_context *ctx, fz_output *chain);

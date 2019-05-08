@@ -1239,16 +1239,6 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 	return 0;
 }
 
-JNIEXPORT jint JNICALL
-FUN(Context_gprfSupportedNative)(JNIEnv * env, jclass class)
-{
-#if FZ_ENABLE_GPRF
-	return JNI_TRUE;
-#else
-	return JNI_FALSE;
-#endif
-}
-
 /* Conversion functions: C to Java. These all throw fitz exceptions. */
 
 static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
@@ -4970,115 +4960,6 @@ FUN(PDFAnnotation_toDisplayList)(JNIEnv *env, jobject self)
 }
 
 /* Document interface */
-
-#if FZ_ENABLE_GPRF
-static char *make_tmp_gproof_path(const char *path)
-{
-	FILE *f;
-	int i;
-	char *buf = malloc(strlen(path) + 20 + 1);
-	if (!buf)
-		return NULL;
-
-	for (i = 0; i < 10000; i++)
-	{
-		sprintf(buf, "%s.%d.gproof", path, i);
-
-		LOGE("Trying for %s\n", buf);
-		f = fopen(buf, "r");
-		if (f != NULL)
-		{
-			fclose(f);
-			continue;
-		}
-
-		f = fopen(buf, "w");
-		if (f != NULL)
-		{
-			fclose(f);
-			break;
-		}
-	}
-	if (i == 10000)
-	{
-		LOGE("Failed to find temp gproof name");
-		free(buf);
-		return NULL;
-	}
-
-	LOGE("Rewritten to %s\n", buf);
-	return buf;
-}
-#endif
-
-JNIEXPORT jstring JNICALL
-FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstring jPrintProfile, jstring jDisplayProfile, jint inResolution)
-{
-#if FZ_ENABLE_GPRF
-	fz_context *ctx = get_context(env);
-	fz_document *doc = from_Document(env, self);
-	char *tmp;
-	jstring ret;
-	const char *currentPath = NULL;
-	const char *printProfile = NULL;
-	const char *displayProfile = NULL;
-
-	if (!ctx || !doc) return NULL;
-	if (!jCurrentPath) { jni_throw_arg(env, "currentPath must not be null"); return NULL; }
-	if (!jPrintProfile) { jni_throw_arg(env, "printProfile must not be null"); return NULL; }
-	if (!jDisplayProfile) { jni_throw_arg(env, "displayProfile must not be null"); return NULL; }
-
-	currentPath = (*env)->GetStringUTFChars(env, jCurrentPath, NULL);
-	if (!currentPath)
-		return NULL;
-
-	printProfile = (*env)->GetStringUTFChars(env, jPrintProfile, NULL);
-	if (!printProfile)
-	{
-		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
-		return NULL;
-	}
-
-	displayProfile = (*env)->GetStringUTFChars(env, jDisplayProfile, NULL);
-	if (!displayProfile)
-	{
-		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
-		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
-		return NULL;
-	}
-
-	tmp = make_tmp_gproof_path(currentPath);
-	if (!tmp)
-	{
-		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
-		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
-		(*env)->ReleaseStringUTFChars(env, jDisplayProfile, displayProfile);
-		return NULL;
-	}
-
-	fz_try(ctx)
-	{
-		LOGE("Creating %s\n", tmp);
-		fz_save_gproof(ctx, currentPath, doc, tmp, inResolution, printProfile, displayProfile);
-		ret = (*env)->NewStringUTF(env, tmp);
-	}
-	fz_always(ctx)
-	{
-		free(tmp);
-		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
-		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
-		(*env)->ReleaseStringUTFChars(env, jDisplayProfile, displayProfile);
-	}
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-	return ret;
-#else
-	return NULL;
-#endif
-}
 
 JNIEXPORT void JNICALL
 FUN(Document_finalize)(JNIEnv *env, jobject self)
