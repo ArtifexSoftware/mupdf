@@ -1003,7 +1003,7 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 	if (output_format == OUT_PGM || output_format == OUT_PPM)
 	{
 		render->bander = fz_new_pnm_band_writer(ctx, out);
-		render->n = OUT_PGM ? 1 : 3;
+		render->n = output_format == OUT_PGM ? 1 : 3;
 	}
 	else if (output_format == OUT_PAM)
 	{
