@@ -2563,11 +2563,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\fitz\color-management.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\fitz\colorspace.h"
+					RelativePath="..\..\include\mupdf\fitz\color.h"
 					>
 				</File>
 				<File
