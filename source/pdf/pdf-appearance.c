@@ -35,6 +35,30 @@ static int pdf_write_stroke_color_appearance(fz_context *ctx, pdf_annot *annot, 
 	return 1;
 }
 
+static int pdf_is_dark_fill_color(fz_context *ctx, pdf_annot *annot)
+{
+	float color[4], gray;
+	int n;
+	pdf_annot_color(ctx, annot, &n, color);
+	switch (n)
+	{
+	default:
+		gray = 1;
+		break;
+	case 1:
+		gray = color[0];
+		break;
+	case 3:
+		gray = color[0] * 0.3f + color[1] * 0.59f + color[2] * 0.11f;
+		break;
+	case 4:
+		gray = color[0] * 0.3f + color[1] * 0.59f + color[2] * 0.11f + color[3];
+		gray = 1 - fz_min(gray, 1);
+		break;
+	}
+	return gray < 0.25f;
+}
+
 static int pdf_write_fill_color_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
 {
 	float color[4];
@@ -666,7 +690,12 @@ pdf_write_icon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 		fz_append_string(ctx, buf, "1 g\n");
 
 	fz_append_string(ctx, buf, "1 w\n0.5 0.5 15 15 re\nb\n");
-	fz_append_string(ctx, buf, "0 g\n1 0 0 -1 4 12 cm\n");
+	fz_append_string(ctx, buf, "1 0 0 -1 4 12 cm\n");
+
+	if (pdf_is_dark_fill_color(ctx, annot))
+		fz_append_string(ctx, buf, "1 g\n");
+	else
+		fz_append_string(ctx, buf, "0 g\n");
 
 	name = pdf_annot_icon_name(ctx, annot);
 
