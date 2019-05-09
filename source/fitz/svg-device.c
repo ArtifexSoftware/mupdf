@@ -1,5 +1,4 @@
 #include "fitz-imp.h"
-#include "glyph-cache-imp.h"
 
 #include <string.h>
 #include <float.h>
