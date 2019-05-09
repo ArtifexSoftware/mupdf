@@ -154,6 +154,14 @@ fz_icc_profile *fz_new_icc_profile(fz_context *ctx, unsigned char *data, size_t 
 	return profile;
 }
 
+int fz_icc_profile_is_lab(fz_context *ctx, fz_icc_profile *profile)
+{
+	GLOINIT
+	if (profile == NULL)
+		return 0;
+	return (cmsGetColorSpace(GLO profile) == cmsSigLabData);
+}
+
 void fz_drop_icc_profile(fz_context *ctx, fz_icc_profile *profile)
 {
 	GLOINIT

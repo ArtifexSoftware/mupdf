@@ -209,6 +209,7 @@ fz_icc_profile *fz_new_icc_profile(fz_context *ctx, unsigned char *data, size_t 
 void fz_drop_icc_profile(fz_context *ctx, fz_icc_profile *profile);
 void fz_icc_profile_name(fz_context *ctx, fz_icc_profile *profile, char *name, size_t size);
 int fz_icc_profile_components(fz_context *ctx, fz_icc_profile *profile);
+int fz_icc_profile_is_lab(fz_context *ctx, fz_icc_profile *profile);
 fz_icc_link *fz_new_icc_link(fz_context *ctx,
 	fz_colorspace *src, int src_extras,
 	fz_colorspace *dst, int dst_extras,

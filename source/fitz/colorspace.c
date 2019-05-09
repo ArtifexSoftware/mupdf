@@ -368,10 +368,20 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, 
 		case FZ_COLORSPACE_NONE:
 			switch (n)
 			{
-			default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICC profile has unexpected number of channels: %d", n);
-			case 1: type = FZ_COLORSPACE_GRAY; break;
-			case 3: type = FZ_COLORSPACE_RGB; break;
-			case 4: type = FZ_COLORSPACE_CMYK; break;
+			default:
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "ICC profile has unexpected number of channels: %d", n);
+			case 1:
+				type = FZ_COLORSPACE_GRAY;
+				break;
+			case 3:
+				if (fz_icc_profile_is_lab(ctx, profile))
+					type = FZ_COLORSPACE_LAB;
+				else
+					type = FZ_COLORSPACE_RGB;
+				break;
+			case 4:
+				type = FZ_COLORSPACE_CMYK;
+				break;
 			}
 			break;
 		case FZ_COLORSPACE_GRAY:
@@ -380,9 +390,12 @@ fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, 
 			break;
 		case FZ_COLORSPACE_RGB:
 		case FZ_COLORSPACE_BGR:
+			if (n != 3 || fz_icc_profile_is_lab(ctx, profile))
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "ICC profile (N=%d) is not RGB", n);
+			break;
 		case FZ_COLORSPACE_LAB:
-			if (n != 3)
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "ICC profile (N=%d) is not RGB/Lab", n);
+			if (n != 3 || !fz_icc_profile_is_lab(ctx, profile))
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "ICC profile (N=%d) is not Lab", n);
 			break;
 		case FZ_COLORSPACE_CMYK:
 			if (n != 4)
