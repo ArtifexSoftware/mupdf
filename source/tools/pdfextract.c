@@ -11,12 +11,14 @@
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
 static int dorgb = 0;
+static int doicc = 1;
 
 static void usage(void)
 {
 	fprintf(stderr, "usage: mutool extract [options] file.pdf [object numbers]\n");
 	fprintf(stderr, "\t-p\tpassword\n");
 	fprintf(stderr, "\t-r\tconvert images to rgb\n");
+	fprintf(stderr, "\t-N\tdo not use ICC color conversions\n");
 	exit(1);
 }
 
@@ -240,12 +242,13 @@ int pdfextract_main(int argc, char **argv)
 	char *password = "";
 	int c, o;
 
-	while ((c = fz_getopt(argc, argv, "p:r")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:rN")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'r': dorgb++; break;
+		case 'N': doicc^=1; break;
 		default: usage(); break;
 		}
 	}
@@ -261,6 +264,11 @@ int pdfextract_main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+	if (doicc)
+		fz_enable_icc(ctx);
+	else
+		fz_disable_icc(ctx);
 
 	doc = pdf_open_document(ctx, infile);
 	if (pdf_needs_password(ctx, doc))
