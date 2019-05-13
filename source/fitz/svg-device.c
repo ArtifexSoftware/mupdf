@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <float.h>
+#include <math.h>
 
 typedef struct svg_device_s svg_device;
 
@@ -1108,6 +1109,17 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, 
 	t->view = view;
 	t->ctm = ctm;
 	t->pattern = sdev->id++;
+
+	xstep = fabsf(xstep);
+	ystep = fabsf(ystep);
+	if (xstep == 0 || ystep == 0) {
+		fz_warn(ctx, "Pattern cannot have x or ystep == 0.");
+		if (xstep == 0)
+			xstep = 1;
+		if (ystep == 0)
+			ystep = 1;
+	}
+
 	t->step.x = xstep;
 	t->step.y = ystep;
 
