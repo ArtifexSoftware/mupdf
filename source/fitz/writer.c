@@ -50,6 +50,32 @@ fz_option_eq(const char *a, const char *b)
 	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
 }
 
+int
+fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxlen)
+{
+	const char *e = val;
+	size_t len, len2;
+
+	if (val == NULL) {
+		if (maxlen)
+			*dest = 0;
+		return 0;
+	}
+
+	while (*e != ',' && *e != 0)
+		e++;
+
+	len = e-val;
+	len2 = len+1; /* Allow for terminator */
+	if (len > maxlen)
+		len = maxlen;
+	memcpy(dest, val, len);
+	if (len < maxlen)
+		memset(dest+len, 0, maxlen-len);
+
+	return len2 >= maxlen ? len2 - maxlen : 0;
+}
+
 /*
 	Internal function to allocate a
 	block for a derived document_writer structure, with the base
