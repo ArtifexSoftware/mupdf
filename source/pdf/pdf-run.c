@@ -317,6 +317,7 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_d
 	{
 		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
 		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
+		pdf_run_page_widgets_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
