@@ -69,6 +69,7 @@ struct pdf_run_processor_s
 {
 	pdf_processor super;
 	fz_device *dev;
+	fz_cookie *cookie;
 
 	fz_default_colorspaces *default_cs;
 
@@ -1230,7 +1231,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		oldbot = pr->gbot;
 		pr->gbot = pr->gtop;
 
-		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj, NULL);
+		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj, pr->cookie);
 
 		/* Undo any gstate mismatches due to the pdf_process_contents call */
 		if (oldbot != -1)
@@ -2003,7 +2004,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 	gstate: The initial graphics state.
 */
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs)
+pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -2135,6 +2136,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char
 	}
 
 	proc->dev = dev;
+	proc->cookie = cookie;
 
 	proc->default_cs = fz_keep_default_colorspaces(ctx, default_cs);
 

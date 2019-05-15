@@ -34,7 +34,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 
 		ctm = fz_concat(page_ctm, ctm);
 
-		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs);
+		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs, cookie);
 		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
 		pdf_close_processor(ctx, proc);
 	}
@@ -96,7 +96,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 			fz_begin_group(ctx, dev, mediabox, colorspace, 1, 0, 0, 1);
 		}
 
-		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs);
+		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs, cookie);
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 		pdf_close_processor(ctx, proc);
 
@@ -352,7 +352,7 @@ pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer 
 {
 	pdf_processor *proc;
 
-	proc = pdf_new_run_processor(ctx, dev, ctm, "View", gstate, default_cs);
+	proc = pdf_new_run_processor(ctx, dev, ctm, "View", gstate, default_cs, NULL);
 	fz_try(ctx)
 	{
 		pdf_process_glyph(ctx, proc, doc, resources, contents);
