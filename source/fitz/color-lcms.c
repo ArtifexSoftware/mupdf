@@ -2,15 +2,11 @@
 
 #if FZ_ENABLE_ICC
 
-#ifndef HAVE_LCMS2MT
-#define HAVE_LCMS2MT 0
-#endif
-
 #ifndef LCMS_USE_FLOAT
 #define LCMS_USE_FLOAT 0
 #endif
 
-#if HAVE_LCMS2MT
+#ifdef HAVE_LCMS2MT
 #define GLOINIT cmsContext glo = ctx->colorspace->icc_instance;
 #define GLO glo,
 #include "lcms2mt.h"
@@ -60,7 +56,7 @@ struct fz_icc_link_s
 	void *handle;
 };
 
-#if HAVE_LCMS2MT
+#ifdef HAVE_LCMS2MT
 
 static void fz_lcms_log_error(cmsContext id, cmsUInt32Number error_code, const char *error_text)
 {

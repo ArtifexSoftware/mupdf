@@ -211,7 +211,7 @@ else
 
 THIRD_SRC += $(sort $(wildcard thirdparty/lcms2/src/cms*.c))
 
-THIRD_CFLAGS += -Ithirdparty/lcms2/include -DHAVE_LCMS2MT=1
+THIRD_CFLAGS += -Ithirdparty/lcms2/include -DHAVE_LCMS2MT
 
 $(OUT)/thirdparty/lcms2/%.o: thirdparty/lcms2/%.c
 	$(CC_CMD) -Ithirdparty/lcms2/include
@@ -271,7 +271,7 @@ LURATECH_CFLAGS += -Ithirdparty/luratech/ldf_jb2/source/compress
 LURATECH_CFLAGS += -Ithirdparty/luratech/ldf_jb2/source/common
 LURATECH_CFLAGS += -Ithirdparty/luratech/lwf_jp2/library/source
 
-THIRD_CFLAGS += $(LURATECH_CFLAGS) -DHAVE_LURATECH=1
+THIRD_CFLAGS += $(LURATECH_CFLAGS) -DHAVE_LURATECH
 
 $(OUT)/thirdparty/luratech/%.o: thirdparty/luratech/%.c
 	$(CC_CMD) -DLINUX $(LURATECH_CFLAGS) -Wno-tautological-compare -Wno-absolute-value
