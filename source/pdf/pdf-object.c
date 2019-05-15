@@ -2206,8 +2206,10 @@ pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 {
 	pdf_obj *node2 = node;
 	pdf_obj *val = NULL;
+	pdf_obj *marked = NULL;
 
 	fz_var(node);
+	fz_var(marked);
 	fz_try(ctx)
 	{
 		do
@@ -2217,20 +2219,27 @@ pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 				break;
 			if (pdf_mark_obj(ctx, node))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in tree (parents)");
+			marked = node;
 			node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
 		}
 		while (node);
 	}
 	fz_always(ctx)
 	{
-		do
+		/* We assume that if we have marked an object, without an exception
+		 * being thrown, that we can always unmark the same object again
+		 * without an exception being thrown. */
+		if (marked)
 		{
-			pdf_unmark_obj(ctx, node2);
-			if (node2 == node)
-				break;
-			node2 = pdf_dict_get(ctx, node2, PDF_NAME(Parent));
+			do
+			{
+				pdf_unmark_obj(ctx, node2);
+				if (node2 == marked)
+					break;
+				node2 = pdf_dict_get(ctx, node2, PDF_NAME(Parent));
+			}
+			while (node2);
 		}
-		while (node2);
 	}
 	fz_catch(ctx)
 	{
