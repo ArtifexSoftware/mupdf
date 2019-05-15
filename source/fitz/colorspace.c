@@ -32,7 +32,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 
 	fz_new_icc_context(ctx);
 
-	ctx->icc_enabled = 0;
+	ctx->icc_enabled = 1;
 
 	fz_try(ctx)
 	{
