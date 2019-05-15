@@ -128,9 +128,11 @@ typedef struct fz_store_hash_s
 		struct
 		{
 			int id;
+			char has_shape;
+			char has_group_alpha;
 			float m[4];
 			void *ptr;
-		} im; /* 20 bytes */
+		} im; /* 24 or 28 bytes */
 		struct
 		{
 			unsigned char src_md5[16];

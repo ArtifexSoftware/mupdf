@@ -2417,6 +2417,8 @@ typedef struct
 	int refs;
 	float ctm[4];
 	int id;
+	char has_shape;
+	char has_group_alpha;
 	fz_colorspace *cs;
 } tile_key;
 
@@ -2434,6 +2436,8 @@ fz_make_hash_tile_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 	tile_key *key = key_;
 
 	hash->u.im.id = key->id;
+	hash->u.im.has_shape = key->has_shape;
+	hash->u.im.has_group_alpha = key->has_group_alpha;
 	hash->u.im.m[0] = key->ctm[0];
 	hash->u.im.m[1] = key->ctm[1];
 	hash->u.im.m[2] = key->ctm[2];
@@ -2466,6 +2470,8 @@ fz_cmp_tile_key(fz_context *ctx, void *k0_, void *k1_)
 	tile_key *k0 = k0_;
 	tile_key *k1 = k1_;
 	return k0->id == k1->id &&
+		k0->has_shape == k1->has_shape &&
+		k0->has_group_alpha == k1->has_group_alpha &&
 		k0->ctm[0] == k1->ctm[0] &&
 		k0->ctm[1] == k1->ctm[1] &&
 		k0->ctm[2] == k1->ctm[2] &&
@@ -2477,8 +2483,9 @@ static void
 fz_format_tile_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-	fz_snprintf(s, n, "(tile id=%x, ctm=%g %g %g %g, cs=%x)",
-			key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3], key->cs);
+	fz_snprintf(s, n, "(tile id=%x, ctm=%g %g %g %g, cs=%x, shape=%d, ga=%d)",
+			key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3], key->cs,
+			key->has_shape, key->has_group_alpha);
 }
 
 static const fz_store_type fz_tile_store_type =
@@ -2570,6 +2577,8 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, fz_rect area, fz_rect view,
 		tk.ctm[3] = ctm.d;
 		tk.id = id;
 		tk.cs = state[1].dest->colorspace;
+		tk.has_shape = (state[1].shape != NULL);
+		tk.has_group_alpha = (state[1].group_alpha != NULL);
 
 		tile = fz_find_item(ctx, fz_drop_tile_record_imp, &tk, &fz_tile_store_type);
 		if (tile)
@@ -2783,6 +2792,8 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 			key->ctm[2] = ctm.c;
 			key->ctm[3] = ctm.d;
 			key->cs = fz_keep_colorspace_store_key(ctx, state[1].dest->colorspace);
+			key->has_shape = (state[1].shape != NULL);
+			key->has_group_alpha = (state[1].group_alpha != NULL);
 			existing_tile = fz_store_item(ctx, key, tile, fz_tile_size(ctx, tile), &fz_tile_store_type);
 			if (existing_tile)
 			{
