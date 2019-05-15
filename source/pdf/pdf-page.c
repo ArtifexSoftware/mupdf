@@ -1049,7 +1049,13 @@ pdf_update_default_colorspaces(fz_context *ctx, fz_default_colorspaces *old_cs, 
 		return fz_keep_default_colorspaces(ctx, old_cs);
 
 	new_cs = fz_clone_default_colorspaces(ctx, old_cs);
-	pdf_load_default_colorspaces_imp(ctx, new_cs, obj);
+	fz_try(ctx)
+		pdf_load_default_colorspaces_imp(ctx, new_cs, obj);
+	fz_catch(ctx)
+	{
+		fz_drop_default_colorspaces(ctx, new_cs);
+		fz_rethrow(ctx);
+	}
 
 	return new_cs;
 }
