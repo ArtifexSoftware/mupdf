@@ -104,6 +104,16 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 		if (!pdf_is_indirect(ctx, obj) && pdf_is_int(ctx, obj))
 			stm_len = pdf_to_int(ctx, obj);
 
+		if (doc->file_reading_linearly && page)
+		{
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(Type));
+			if (!pdf_is_indirect(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME(Page)))
+			{
+				pdf_drop_obj(ctx, *page);
+				*page = pdf_keep_obj(ctx, dict);
+			}
+		}
+
 		pdf_drop_obj(ctx, dict);
 	}
 

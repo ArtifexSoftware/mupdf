@@ -8,6 +8,10 @@
 int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)
 {
+	/* FIXME: We should reset linear_page_count to 0 when editing starts
+	 * (or when linear loading ends) */
+	if (doc->linear_page_count != 0)
+		return doc->linear_page_count;
 	return pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
 }
 
@@ -1082,7 +1086,14 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	pdf_annot *annot;
 	pdf_obj *pageobj, *obj;
 
-	pageobj = pdf_lookup_page_obj(ctx, doc, number);
+	if (doc->file_reading_linearly)
+	{
+		pageobj = pdf_progressive_advance(ctx, doc, number);
+		if (pageobj == NULL)
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "page %d not available yet", number);
+	}
+	else
+		pageobj = pdf_lookup_page_obj(ctx, doc, number);
 
 	page = pdf_new_page(ctx, doc);
 	page->obj = pdf_keep_obj(ctx, pageobj);
