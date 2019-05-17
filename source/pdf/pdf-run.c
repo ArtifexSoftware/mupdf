@@ -87,7 +87,13 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 					fz_try(ctx)
 						colorspace = pdf_load_colorspace(ctx, cs);
 					fz_catch(ctx)
+						fz_warn(ctx, "Ignoring Page blending colorspace.");
+					if (!fz_is_valid_blend_colorspace(ctx, colorspace))
+					{
+						fz_warn(ctx, "Ignoring invalid Page blending colorspace: %s.", colorspace->name);
+						fz_drop_colorspace(ctx, colorspace);
 						colorspace = NULL;
+					}
 				}
 			}
 			else

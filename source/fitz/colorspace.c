@@ -252,6 +252,14 @@ int fz_colorspace_device_n_has_cmyk(fz_context *ctx, fz_colorspace *cs)
 	return cs && (cs->flags & FZ_COLORSPACE_HAS_CMYK);
 }
 
+int fz_is_valid_blend_colorspace(fz_context *ctx, fz_colorspace *cs)
+{
+	return cs == NULL ||
+		cs->type == FZ_COLORSPACE_GRAY ||
+		cs->type == FZ_COLORSPACE_RGB ||
+		cs->type == FZ_COLORSPACE_CMYK;
+}
+
 fz_colorspace *
 fz_keep_colorspace(fz_context *ctx, fz_colorspace *cs)
 {

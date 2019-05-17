@@ -125,6 +125,7 @@ int fz_colorspace_is_device(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_is_device_gray(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_is_device_cmyk(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs);
+int fz_is_valid_blend_colorspace(fz_context *ctx, fz_colorspace *cs);
 
 fz_colorspace *fz_device_gray(fz_context *ctx);
 fz_colorspace *fz_device_rgb(fz_context *ctx);

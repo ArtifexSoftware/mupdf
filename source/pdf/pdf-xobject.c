@@ -57,7 +57,13 @@ pdf_xobject_colorspace(fz_context *ctx, pdf_obj *xobj)
 			fz_try(ctx)
 				colorspace = pdf_load_colorspace(ctx, cs);
 			fz_catch(ctx)
-				fz_warn(ctx, "cannot load xobject colorspace");
+				fz_warn(ctx, "Ignoring XObject blending colorspace.");
+			if (!fz_is_valid_blend_colorspace(ctx, colorspace))
+			{
+				fz_warn(ctx, "Ignoring invalid XObject blending colorspace: %s.", colorspace->name);
+				fz_drop_colorspace(ctx, colorspace);
+				return NULL;
+			}
 			return colorspace;
 		}
 	}
