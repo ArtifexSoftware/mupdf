@@ -38,6 +38,7 @@ int fz_windows_1251_from_unicode(int u);
 int fz_windows_1252_from_unicode(int u);
 
 int fz_unicode_from_glyph_name(const char *name);
+int fz_unicode_from_glyph_name_strict(const char *name);
 const char **fz_duplicate_glyph_names_from_unicode(int ucs);
 
 /*
