@@ -1016,7 +1016,7 @@ layout_simple_string_with_quadding(fz_context *ctx, fz_layout_block *out,
 	float xorig, float y, const char *a, float maxw, int q)
 {
 	const char *b;
-	float px = 0, x = 0, w;
+	float x = 0, w;
 	int add_line_at_end = 0;
 
 	if (!*a)
@@ -1045,7 +1045,6 @@ layout_simple_string_with_quadding(fz_context *ctx, fz_layout_block *out,
 				add_line_at_end = 0;
 			}
 			a = b;
-			px = x;
 			y -= lineheight;
 		}
 	}
