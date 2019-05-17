@@ -996,26 +996,7 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, int a
 	if (font->flags.fake_italic)
 		trm = fz_pre_shear(trm, SHEAR, 0);
 
-	/*
-	Freetype mutilates complex glyphs if they are loaded
-	with FT_Set_Char_Size 1.0. it rounds the coordinates
-	before applying transformation. to get more precision in
-	freetype, we shift part of the scale in the matrix
-	into FT_Set_Char_Size instead
-	*/
-
-	m.xx = trm.a * 64; /* should be 65536 */
-	m.yx = trm.b * 64;
-	m.xy = trm.c * 64;
-	m.yy = trm.d * 64;
-	v.x = trm.e * 64;
-	v.y = trm.f * 64;
-
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	fterr = FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
-	if (fterr)
-		fz_warn(ctx, "FT_Set_Char_Size(%s,65536,72): %s", font->name, ft_error_string(fterr));
-	FT_Set_Transform(face, &m, &v);
 
 	if (aa == 0)
 	{
@@ -1033,7 +1014,8 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, int a
 			fz_warn(ctx, "FT_Set_Char_Size(%s,%d,72): %s", font->name, (int)(64*scale), ft_error_string(fterr));
 		FT_Set_Transform(face, &m, &v);
 		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_TARGET_MONO);
-		if (fterr) {
+		if (fterr)
+		{
 			fz_warn(ctx, "FT_Load_Glyph(%s,%d,FT_LOAD_TARGET_MONO): %s", font->name, gid, ft_error_string(fterr));
 			goto retry_unhinted;
 		}
@@ -1041,6 +1023,30 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, int a
 	else
 	{
 retry_unhinted:
+		/*
+		 * Freetype mutilates complex glyphs if they are loaded with
+		 * FT_Set_Char_Size 1.0. It rounds the coordinates before applying
+		 * transformation. To get more precision in freetype, we shift part of
+		 * the scale in the matrix into FT_Set_Char_Size instead.
+		 */
+
+		/* Check for overflow; FreeType matrices use 16.16 fixed-point numbers */
+		if (trm.a < -512 || trm.a > 512) return NULL;
+		if (trm.b < -512 || trm.b > 512) return NULL;
+		if (trm.c < -512 || trm.c > 512) return NULL;
+		if (trm.d < -512 || trm.d > 512) return NULL;
+
+		m.xx = trm.a * 64; /* should be 65536 */
+		m.yx = trm.b * 64;
+		m.xy = trm.c * 64;
+		m.yy = trm.d * 64;
+		v.x = trm.e * 64;
+		v.y = trm.f * 64;
+
+		fterr = FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
+		if (fterr)
+			fz_warn(ctx, "FT_Set_Char_Size(%s,65536,72): %s", font->name, ft_error_string(fterr));
+		FT_Set_Transform(face, &m, &v);
 		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 		if (fterr)
 		{
