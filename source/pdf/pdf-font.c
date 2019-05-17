@@ -806,9 +806,10 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 					if (estrings[i])
 					{
 						int mrcode = lookup_mre_code(estrings[i]);
+						glyph = 0;
 						if (mrcode > 0)
 							glyph = ft_char_index(face, mrcode);
-						else
+						if (glyph == 0)
 							glyph = ft_name_index(face, estrings[i]);
 						if (glyph > 0)
 							etable[i] = glyph;
