@@ -331,7 +331,9 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, colorspace, color_params);
 				for (i = 0; i < 256; i++)
 				{
-					cc.convert(ctx, &cc, color, shade->function[i]);
+					float clamped[FZ_MAX_COLORS];
+					fz_clamp_color(ctx, colorspace, shade->function[i], clamped);
+					cc.convert(ctx, &cc, color, clamped);
 					for (k = 0; k < n; k++)
 						clut[i][k] = color[k] * 255;
 					for (; k < m; k++)
