@@ -666,20 +666,26 @@ void fz_set_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs, fz
 void fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs)
 {
 	fz_drop_colorspace(ctx, default_cs->oi);
-	default_cs->oi = fz_keep_colorspace(ctx, cs);
+	default_cs->oi = NULL;
 
-	/* FIXME: Why do we set this along with the output intent?! */
-	switch (cs->n)
+	/* FIXME: Why do we set DefaultXXX along with the output intent?! */
+	switch (cs->type)
 	{
-	case 1:
+	default:
+		fz_warn(ctx, "Ignoring incompatible output intent: %s.", cs->name);
+		break;
+	case FZ_COLORSPACE_GRAY:
+		default_cs->oi = fz_keep_colorspace(ctx, cs);
 		if (default_cs->gray == fz_device_gray(ctx))
 			fz_set_default_gray(ctx, default_cs, cs);
 		break;
-	case 3:
+	case FZ_COLORSPACE_RGB:
+		default_cs->oi = fz_keep_colorspace(ctx, cs);
 		if (default_cs->rgb == fz_device_rgb(ctx))
 			fz_set_default_rgb(ctx, default_cs, cs);
 		break;
-	case 4:
+	case FZ_COLORSPACE_CMYK:
+		default_cs->oi = fz_keep_colorspace(ctx, cs);
 		if (default_cs->cmyk == fz_device_cmyk(ctx))
 			fz_set_default_cmyk(ctx, default_cs, cs);
 		break;
