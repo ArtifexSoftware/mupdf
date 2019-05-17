@@ -923,6 +923,11 @@ fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *
 	cc->link = NULL;
 #endif
 
+	if (ds->type == FZ_COLORSPACE_INDEXED)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert into Indexed colorspace.");
+	if (ds->type == FZ_COLORSPACE_SEPARATION)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert into Separation colorspace.");
+
 	if (ss->type == FZ_COLORSPACE_INDEXED)
 	{
 		cc->ss = ss->u.indexed.base;
