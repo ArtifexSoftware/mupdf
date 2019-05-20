@@ -111,7 +111,9 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		fz_drop_colorspace(ctx, ctx->colorspace->bgr);
 		fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 		fz_drop_colorspace(ctx, ctx->colorspace->lab);
+#if FZ_ENABLE_ICC
 		fz_drop_icc_context(ctx);
+#endif
 		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;
 	}

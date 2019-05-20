@@ -345,7 +345,9 @@ fz_clone_context_internal(fz_context *ctx)
 
 	/* Copy unshared contexts */
 	fz_copy_aa_context(new_ctx, ctx);
+#if FZ_ENABLE_ICC
 	new_ctx->icc_enabled = ctx->icc_enabled;
+#endif
 	memcpy(new_ctx->seed48, ctx->seed48, sizeof ctx->seed48);
 
 	/* Keep thread lock checking happy by copying pointers first and locking under new context */
