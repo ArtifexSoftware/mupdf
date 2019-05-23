@@ -534,5 +534,7 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 		}
 	}
 
+	doc->redacted = has_redactions;
+
 	return has_redactions;
 }

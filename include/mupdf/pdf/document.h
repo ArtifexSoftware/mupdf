@@ -223,6 +223,7 @@ struct pdf_document_s
 
 	int recalculate;
 	int dirty;
+	int redacted;
 
 	pdf_doc_event_cb *event_cb;
 	void *event_cb_data;
