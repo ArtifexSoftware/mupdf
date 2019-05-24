@@ -60,6 +60,9 @@ typedef struct pdf_filter_processor_s
 	pdf_processor *chain;
 	filter_gstate *gstate;
 	pdf_text_object_state tos;
+	int Tm_pending;
+	int BT_pending;
+	float Tm_adjust;
 	void *font_name;
 	pdf_text_filter_fn *text_filter;
 	pdf_after_text_object_fn *after_text;
@@ -189,7 +192,7 @@ static void filter_flush(fz_context *ctx, pdf_filter_processor *p, int flush)
 	if (flush & FLUSH_COLOR_F)
 	{
 		if (gstate->pending.cs.cs == fz_device_gray(ctx) && !gstate->pending.sc.pat && !gstate->pending.sc.shd && gstate->pending.sc.n == 1 &&
-			(gstate->sent.cs.cs != fz_device_gray(ctx) || gstate->sent.sc.pat || gstate->sent.sc.shd || gstate->sent.sc.n != 0 || gstate->pending.sc.c[0] != gstate->sent.sc.c[0]))
+			(gstate->sent.cs.cs != fz_device_gray(ctx) || gstate->sent.sc.pat || gstate->sent.sc.shd || gstate->sent.sc.n != 1 || gstate->pending.sc.c[0] != gstate->sent.sc.c[0]))
 		{
 			if (p->chain->op_g)
 				p->chain->op_g(ctx, p->chain, gstate->pending.sc.c[0]);
@@ -367,6 +370,12 @@ done_SC:
 
 	if (flush & FLUSH_TEXT)
 	{
+		if (p->BT_pending)
+		{
+			if (p->chain->op_BT)
+				p->chain->op_BT(ctx, p->chain);
+			p->BT_pending = 0;
+		}
 		if (gstate->pending.text.char_space != gstate->sent.text.char_space)
 		{
 			if (p->chain->op_Tc)
@@ -407,6 +416,12 @@ done_SC:
 		pdf_drop_font(ctx, gstate->sent.text.font);
 		gstate->sent.text = gstate->pending.text;
 		gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
+		if (p->Tm_pending != 0)
+		{
+			if (p->chain->op_Tm)
+				p->chain->op_Tm(ctx, p->chain, p->tos.tlm.a, p->tos.tlm.b, p->tos.tlm.c, p->tos.tlm.d, p->tos.tlm.e, p->tos.tlm.f);
+			p->Tm_pending = 0;
+		}
 	}
 }
 
@@ -484,7 +499,7 @@ filter_show_space(fz_context *ctx, pdf_filter_processor *p, float tadj)
  * we hit the end).
  */
 static void
-filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf, int len, int *pos, int *inc)
+filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf, int len, int *pos, int *inc, int *removed_space)
 {
 	filter_gstate *gstate = p->gstate;
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
@@ -494,6 +509,8 @@ filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char
 	int remove;
 
 	buf += *pos;
+
+	*removed_space = 0;
 
 	while (buf < end)
 	{
@@ -510,20 +527,43 @@ filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char
 		if (cpt == 32 && *inc == 1)
 			filter_show_space(ctx, p, gstate->pending.text.word_space);
 		if (remove)
+		{
+			*removed_space = (cpt == 32 && *inc == 1);
 			return;
+		}
 		*pos += *inc;
 	}
 }
 
 static void
-send_adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
+adjust_text(fz_context *ctx, pdf_filter_processor *p, float x, float y)
 {
-	pdf_obj *arr = pdf_new_array(ctx, p->doc, 1);
+	float skip_dist = p->tos.fontdesc->wmode == 1 ? -y : -x;
+	skip_dist = skip_dist / p->gstate->pending.text.size;
+	p->Tm_adjust += skip_dist;
+}
+
+static void
+adjust_for_removed_space(fz_context *ctx, pdf_filter_processor *p)
+{
+	filter_gstate *gstate = p->gstate;
+	float adj = gstate->pending.text.word_space;
+	adjust_text(ctx, p, adj * gstate->pending.text.scale, adj);
+}
+
+static void
+flush_adjustment(fz_context *ctx, pdf_filter_processor *p)
+{
+	pdf_obj *arr;
+
+	if (p->Tm_adjust == 0)
+		return;
+
+	filter_flush(ctx, p, FLUSH_ALL);
+	arr = pdf_new_array(ctx, p->doc, 1);
 	fz_try(ctx)
 	{
-		float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
-		skip_dist = skip_dist / p->gstate->pending.text.size;
-		pdf_array_push_real(ctx, arr, skip_dist * 1000);
+		pdf_array_push_real(ctx, arr, p->Tm_adjust * 1000);
 		if (p->chain->op_TJ)
 			p->chain->op_TJ(ctx, p->chain, arr);
 	}
@@ -531,6 +571,17 @@ send_adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
 		pdf_drop_obj(ctx, arr);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	p->Tm_adjust = 0;
+}
+
+static void
+push_adjustment_to_array(fz_context *ctx, pdf_filter_processor *p, pdf_obj *arr)
+{
+	if (p->Tm_adjust == 0)
+		return;
+	pdf_array_push_real(ctx, arr, p->Tm_adjust * 1000);
+	p->Tm_adjust = 0;
 }
 
 static void
@@ -538,8 +589,7 @@ filter_show_string(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf,
 {
 	filter_gstate *gstate = p->gstate;
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
-	int i, inc;
-	fz_point skip = { 0, 0 };
+	int i, inc, removed_space;
 
 	if (!fontdesc)
 		return;
@@ -548,35 +598,23 @@ filter_show_string(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf,
 	while (i < len)
 	{
 		int start = i;
-		filter_string_to_segment(ctx, p, buf, len, &i, &inc);
+		filter_string_to_segment(ctx, p, buf, len, &i, &inc, &removed_space);
 		if (start != i)
 		{
 			/* We have *some* chars to send at least */
-			if (skip.x != 0 || skip.y != 0)
-			{
-				send_adjustment(ctx, p, skip);
-				skip.x = skip.y = 0;
-			}
-			if (p->chain->op_Tj && start != i)
+			filter_flush(ctx, p, FLUSH_ALL);
+			flush_adjustment(ctx, p);
+			if (p->chain->op_Tj)
 				p->chain->op_Tj(ctx, p->chain, (char *)buf+start, i-start);
 		}
 		if (i != len)
 		{
-			skip.x += p->tos.char_tx;
-			skip.y += p->tos.char_ty;
+			adjust_text(ctx, p, p->tos.char_tx, p->tos.char_ty);
 			i += inc;
 		}
+		if (removed_space)
+			adjust_for_removed_space(ctx, p);
 	}
-	if (skip.x != 0 || skip.y != 0)
-		send_adjustment(ctx, p, skip);
-}
-
-static float
-adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
-{
-	float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
-	skip_dist = skip_dist / p->gstate->pending.text.size;
-	return skip_dist * 1000;
 }
 
 static void
@@ -585,7 +623,6 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 	filter_gstate *gstate = p->gstate;
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
 	int i, n;
-	fz_point skip;
 	pdf_obj *new_arr;
 	pdf_document *doc;
 
@@ -602,7 +639,6 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 
 	p->tos.fontdesc = fontdesc;
 	n = pdf_array_len(ctx, text);
-	skip.x = skip.y = 0;
 	doc = pdf_get_bound_document(ctx, text);
 	new_arr = pdf_new_array(ctx, doc, 4);
 	fz_try(ctx)
@@ -615,27 +651,26 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 				unsigned char *buf = (unsigned char *)pdf_to_str_buf(ctx, item);
 				int len = pdf_to_str_len(ctx, item);
 				int j = 0;
+				int removed_space;
 				while (j < len)
 				{
 					int inc;
 					int start = j;
-					filter_string_to_segment(ctx, p, buf, len, &j, &inc);
+					filter_string_to_segment(ctx, p, buf, len, &j, &inc, &removed_space);
 					if (start != j)
 					{
 						/* We have *some* chars to send at least */
-						if (skip.x != 0 || skip.y != 0)
-						{
-							pdf_array_push_real(ctx, new_arr, adjustment(ctx, p, skip));
-							skip.x = skip.y = 0;
-						}
+						filter_flush(ctx, p, FLUSH_ALL);
+						push_adjustment_to_array(ctx, p, new_arr);
 						pdf_array_push_string(ctx, new_arr, (char *)buf+start, j-start);
 					}
 					if (j != len)
 					{
-						skip.x += p->tos.char_tx;
-						skip.y += p->tos.char_ty;
+						adjust_text(ctx, p, p->tos.char_tx, p->tos.char_ty);
 						j += inc;
 					}
+					if (removed_space)
+						adjust_for_removed_space(ctx, p);
 				}
 			}
 			else
@@ -643,18 +678,16 @@ filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
 				float tadj = - pdf_to_real(ctx, item) * gstate->pending.text.size * 0.001f;
 				if (fontdesc->wmode == 0)
 				{
-					skip.x += tadj;
+					adjust_text(ctx, p, tadj, 0);
 					p->tos.tm = fz_pre_translate(p->tos.tm, tadj * p->gstate->pending.text.scale, 0);
 				}
 				else
 				{
-					skip.y += tadj;
+					adjust_text(ctx, p, 0, tadj);
 					p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 				}
 			}
 		}
-		if (skip.x != 0 || skip.y != 0)
-			pdf_array_push_real(ctx, new_arr, adjustment(ctx, p, skip));
 		if (p->chain->op_TJ && pdf_array_len(ctx, new_arr))
 			p->chain->op_TJ(ctx, p->chain, new_arr);
 	}
@@ -1034,17 +1067,21 @@ pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
 	filter_flush(ctx, p, 0);
 	p->tos.tm = fz_identity;
 	p->tos.tlm = fz_identity;
-	if (p->chain->op_BT)
-		p->chain->op_BT(ctx, p->chain);
+	p->BT_pending = 1;
 }
 
 static void
 pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, 0);
-	if (p->chain->op_ET)
-		p->chain->op_ET(ctx, p->chain);
+
+	if (!p->BT_pending)
+	{
+		filter_flush(ctx, p, 0);
+		if (p->chain->op_ET)
+			p->chain->op_ET(ctx, p->chain);
+	}
+	p->BT_pending = 0;
 	if (p->after_text)
 	{
 		fz_matrix ctm = fz_concat(p->gstate->sent.ctm, p->gstate->pending.ctm);
@@ -1128,21 +1165,19 @@ static void
 pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
+	p->Tm_adjust = 0;
 	pdf_tos_translate(&p->tos, tx, ty);
-	if (p->chain->op_Td)
-		p->chain->op_Td(ctx, p->chain, tx, ty);
+	p->Tm_pending = 1;
 }
 
 static void
 pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
-	p->gstate->pending.text.leading = -ty;
+	p->Tm_adjust = 0;
 	pdf_tos_translate(&p->tos, tx, ty);
-	if (p->chain->op_TD)
-		p->chain->op_TD(ctx, p->chain, tx, ty);
+	p->gstate->pending.text.leading = -ty;
+	p->Tm_pending = 1;
 }
 
 static void
@@ -1150,17 +1185,19 @@ pdf_filter_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	pdf_tos_set_matrix(&p->tos, a, b, c, d, e, f);
-	if (p->chain->op_Tm)
-		p->chain->op_Tm(ctx, p->chain, a, b, c, d, e, f);
+	p->Tm_pending = 1;
+	p->Tm_adjust = 0;
 }
 
 static void
 pdf_filter_Tstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	if (p->chain->op_Tstar)
+	/* If Tm_pending, then just adjusting the matrix (as
+	 * pdf_tos_newline has done) is enough. Otherwise we
+	 * need to actually call the operator. */
+	if (!p->Tm_pending && p->chain->op_Tstar)
 		p->chain->op_Tstar(ctx, p->chain);
 }
 
@@ -1170,7 +1207,6 @@ static void
 pdf_filter_TJ(fz_context *ctx, pdf_processor *proc, pdf_obj *array)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
 	filter_show_text(ctx, p, array);
 }
 
@@ -1178,17 +1214,19 @@ static void
 pdf_filter_Tj(fz_context *ctx, pdf_processor *proc, char *str, int len)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
 	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
 
 static void
 pdf_filter_squote(fz_context *ctx, pdf_processor *proc, char *str, int len)
 {
+	/* Note, we convert all T' operators to (maybe) a T* and a Tj */
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_ALL);
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	if (p->chain->op_Tstar)
+	/* If Tm_pending, then just adjusting the matrix (as
+	 * pdf_tos_newline has done) is enough. Otherwise we
+	 * need to do it manually. */
+	if (!p->Tm_pending && p->chain->op_Tstar)
 		p->chain->op_Tstar(ctx, p->chain);
 	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
@@ -1196,12 +1234,16 @@ pdf_filter_squote(fz_context *ctx, pdf_processor *proc, char *str, int len)
 static void
 pdf_filter_dquote(fz_context *ctx, pdf_processor *proc, float aw, float ac, char *str, int len)
 {
+	/* Note, we convert all T" operators to (maybe) a T*,
+	 * (maybe) Tc, (maybe) Tw and a Tj. */
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	p->gstate->pending.text.word_space = aw;
 	p->gstate->pending.text.char_space = ac;
-	filter_flush(ctx, p, FLUSH_ALL);
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	if (p->chain->op_Tstar)
+	/* If Tm_pending, then just adjusting the matrix (as
+	 * pdf_tos_newline has done) is enough. Otherwise we
+	 * need to do it manually. */
+	if (!p->Tm_pending && p->chain->op_Tstar)
 		p->chain->op_Tstar(ctx, p->chain);
 	filter_show_string(ctx, p, (unsigned char*)str, len);
 }
