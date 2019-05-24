@@ -53,6 +53,15 @@ struct filter_gstate_s
 	pdf_filter_gstate sent;
 };
 
+typedef struct tag_record_s
+{
+	int bdc;
+	char *tag;
+	pdf_obj *raw;
+	pdf_obj *cooked;
+	struct tag_record_s *prev;
+} tag_record;
+
 typedef struct pdf_filter_processor_s
 {
 	pdf_processor super;
@@ -64,6 +73,7 @@ typedef struct pdf_filter_processor_s
 	int BT_pending;
 	float Tm_adjust;
 	void *font_name;
+	tag_record *pending_tags;
 	pdf_text_filter_fn *text_filter;
 	pdf_after_text_object_fn *after_text;
 	void *opaque;
@@ -150,6 +160,28 @@ gstate_to_update(fz_context *ctx, pdf_filter_processor *p)
 	return p->gstate;
 }
 
+static void flush_tags(fz_context *ctx, pdf_filter_processor *p, tag_record **tags)
+{
+	tag_record *tag = *tags;
+
+	if (tag == NULL)
+		return;
+	if (tag->prev)
+		flush_tags(ctx, p, &tag->prev);
+	if (tag->bdc)
+	{
+		if (p->chain->op_BDC)
+			p->chain->op_BDC(ctx, p->chain, tag->tag, tag->raw, tag->cooked);
+		pdf_drop_obj(ctx, tag->raw);
+		pdf_drop_obj(ctx, tag->cooked);
+	}
+	else if (p->chain->op_BMC)
+		p->chain->op_BMC(ctx, p->chain, tag->tag);
+	fz_free(ctx, tag->tag);
+	fz_free(ctx, tag);
+	*tags = NULL;
+}
+
 static void filter_flush(fz_context *ctx, pdf_filter_processor *p, int flush)
 {
 	filter_gstate *gstate = gstate_to_update(ctx, p);
@@ -161,6 +193,9 @@ static void filter_flush(fz_context *ctx, pdf_filter_processor *p, int flush)
 		if (p->chain->op_q)
 			p->chain->op_q(ctx, p->chain);
 	}
+
+	if (flush)
+		flush_tags(ctx, p, &p->pending_tags);
 
 	if (flush & FLUSH_CTM)
 	{
@@ -1485,27 +1520,73 @@ static void
 pdf_filter_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, 0);
-	if (p->chain->op_BMC)
-		p->chain->op_BMC(ctx, p->chain, tag);
+	tag_record *bmc = fz_malloc_struct(ctx, tag_record);
+
+	fz_try(ctx)
+		bmc->tag = fz_strdup(ctx, tag);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, bmc);
+		fz_rethrow(ctx);
+	}
+	bmc->prev = p->pending_tags;
+	p->pending_tags = bmc;
 }
 
 static void
 pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, 0);
-	if (p->chain->op_BDC)
-		p->chain->op_BDC(ctx, p->chain, tag, raw, cooked);
+	tag_record *bdc = fz_malloc_struct(ctx, tag_record);
+
+	fz_try(ctx)
+	{
+		bdc->bdc = 1;
+		bdc->tag = fz_strdup(ctx, tag);
+		bdc->raw = pdf_keep_obj(ctx, raw);
+		bdc->cooked = pdf_keep_obj(ctx, raw);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, bdc->tag);
+		pdf_drop_obj(ctx, bdc->raw);
+		pdf_drop_obj(ctx, bdc->cooked);
+		fz_free(ctx, bdc);
+		fz_rethrow(ctx);
+	}
+	bdc->prev = p->pending_tags;
+	p->pending_tags = bdc;
+}
+
+static void
+pop_tag(fz_context *ctx, pdf_filter_processor *p)
+{
+	tag_record *tag = p->pending_tags;
+
+	if (tag == NULL)
+		return;
+	p->pending_tags = tag->prev;
+	fz_free(ctx, tag->tag);
+	if (tag->bdc)
+	{
+		pdf_drop_obj(ctx, tag->raw);
+		pdf_drop_obj(ctx, tag->cooked);
+	}
+	fz_free(ctx, tag);
 }
 
 static void
 pdf_filter_EMC(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, 0);
-	if (p->chain->op_EMC)
-		p->chain->op_EMC(ctx, p->chain);
+
+	if (p->pending_tags == NULL)
+	{
+		if (p->chain->op_EMC)
+			p->chain->op_EMC(ctx, p->chain);
+	}
+	else
+		pop_tag(ctx, p);
 }
 
 /* compatibility */
@@ -1551,6 +1632,8 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 		fz_free(ctx, gs);
 		gs = next;
 	}
+	while (p->pending_tags)
+		pop_tag(ctx, p);
 	pdf_drop_document(ctx, p->doc);
 	fz_free(ctx, p->font_name);
 }
