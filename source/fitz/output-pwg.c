@@ -461,7 +461,7 @@ static void
 warn_if_long(fz_context *ctx, const char *str, int ret)
 {
 	if (ret > 0)
-		fz_warn(ctx, "Option %s is too long, truncated");
+		fz_warn(ctx, "Option %s is too long, truncated.", str);
 }
 
 fz_pwg_options *
