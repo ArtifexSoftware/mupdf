@@ -1905,10 +1905,10 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 	{
 		if (doc->crypt)
 			return (int)fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
-					pdf_crypt_version(ctx, doc),
-					pdf_crypt_revision(ctx, doc),
-					pdf_crypt_length(ctx, doc),
-					pdf_crypt_method(ctx, doc));
+					pdf_crypt_version(ctx, doc->crypt),
+					pdf_crypt_revision(ctx, doc->crypt),
+					pdf_crypt_length(ctx, doc->crypt),
+					pdf_crypt_method(ctx, doc->crypt));
 		else
 			return (int)fz_strlcpy(buf, "None", size);
 	}

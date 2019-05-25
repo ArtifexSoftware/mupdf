@@ -5440,7 +5440,7 @@ FUN(Document_isUnencryptedPDF)(JNIEnv *env, jobject self)
 	if (!idoc)
 		return JNI_FALSE;
 
-	cryptVer = pdf_crypt_version(ctx, idoc);
+	cryptVer = pdf_crypt_version(ctx, idoc->crypt);
 	return (cryptVer == 0) ? JNI_TRUE : JNI_FALSE;
 }
 
