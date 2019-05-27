@@ -2101,6 +2101,7 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	font = fz_new_base14_font(ctx, "Symbol");
 	if (font)
 	{
+		fz_drop_font(ctx, font); /* it's cached in the font context, return a borrowed pointer */
 		gid = fz_encode_character(ctx, font, unicode);
 		if (gid > 0)
 			return *out_font = font, gid;
