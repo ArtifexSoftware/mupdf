@@ -75,7 +75,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(V));
 	if (pdf_is_int(ctx, obj))
 		crypt->v = pdf_to_int(ctx, obj);
-	if (crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
+	if (crypt->v != 0 && crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
 	{
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption version");
@@ -209,7 +209,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	if (crypt->v == 5)
 		crypt->length = 256;
 
-	if (crypt->v == 1 || crypt->v == 2)
+	if (crypt->v == 0 || crypt->v == 1 || crypt->v == 2)
 	{
 		crypt->stmf.method = PDF_CRYPT_RC4;
 		crypt->stmf.length = crypt->length;
@@ -1032,7 +1032,10 @@ pdf_compute_object_key(pdf_crypt *crypt, pdf_crypt_filter *cf, int num, int gen,
 	if (key_len > max_len)
 		key_len = max_len;
 
-	if (cf->method == PDF_CRYPT_AESV3)
+	/* Encryption method version 0 is undocumented, but a lucky
+	   guess revealed that all streams/strings in those PDFs are
+	   encrypted using the same 40 bit file enryption key using RC4. */
+	if (crypt->v == 0 || cf->method == PDF_CRYPT_AESV3)
 	{
 		memcpy(key, crypt->key, key_len);
 		return key_len;
