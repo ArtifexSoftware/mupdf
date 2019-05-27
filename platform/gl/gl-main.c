@@ -44,11 +44,6 @@ enum
 	/* Screen furniture: aggregate size of unusable space from title bars, task bars, window borders, etc */
 	SCREEN_FURNITURE_W = 20,
 	SCREEN_FURNITURE_H = 40,
-
-	/* Default EPUB/HTML layout dimensions */
-	DEFAULT_LAYOUT_W = 450,
-	DEFAULT_LAYOUT_H = 600,
-	DEFAULT_LAYOUT_EM = 12,
 };
 
 static void open_browser(const char *uri)
@@ -138,9 +133,9 @@ static const char *paper_size_name(int w, int h)
 
 static char *password = "";
 static char *anchor = NULL;
-static float layout_w = DEFAULT_LAYOUT_W;
-static float layout_h = DEFAULT_LAYOUT_H;
-static float layout_em = DEFAULT_LAYOUT_EM;
+static float layout_w = FZ_DEFAULT_LAYOUT_W;
+static float layout_h = FZ_DEFAULT_LAYOUT_H;
+static float layout_em = FZ_DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
 static int layout_use_doc_css = 1;
 static int enable_js = 1;

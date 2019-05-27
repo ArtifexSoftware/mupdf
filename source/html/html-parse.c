@@ -10,7 +10,7 @@ enum { T, R, B, L };
 #define DEFAULT_DIR FZ_BIDI_LTR
 
 static const char *html_default_css =
-"@page{margin:2em 1em}"
+"@page{margin:3em 2em}"
 "a{color:#06C;text-decoration:underline}"
 "address{display:block;font-style:italic}"
 "b{font-weight:bold}"
@@ -64,8 +64,8 @@ static const char *html_default_css =
 ;
 
 static const char *fb2_default_css =
-"@page{margin:2em 2em}"
-"FictionBook{display:block;margin:0;line-height:1.2em}"
+"@page{margin:3em 2em}"
+"FictionBook{display:block;margin:1em}"
 "stylesheet,binary{display:none}"
 "description>*{display:none}"
 "description>title-info{display:block}"

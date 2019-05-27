@@ -15,6 +15,49 @@ typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;
 typedef intptr_t fz_bookmark;
 
+enum
+{
+	/* 6in at 4:3 */
+	FZ_LAYOUT_KINDLE_W = 260,
+	FZ_LAYOUT_KINDLE_H = 346,
+	FZ_LAYOUT_KINDLE_EM = 9,
+
+	/* 4.25 x 6.87 in */
+	FZ_LAYOUT_US_POCKET_W = 306,
+	FZ_LAYOUT_US_POCKET_H = 495,
+	FZ_LAYOUT_US_POCKET_EM = 10,
+
+	/* 5.5 x 8.5 in */
+	FZ_LAYOUT_US_TRADE_W = 396,
+	FZ_LAYOUT_US_TRADE_H = 612,
+	FZ_LAYOUT_US_TRADE_EM = 11,
+
+	/* 110 x 178 mm */
+	FZ_LAYOUT_UK_A_FORMAT_W = 312,
+	FZ_LAYOUT_UK_A_FORMAT_H = 504,
+	FZ_LAYOUT_UK_A_FORMAT_EM = 10,
+
+	/* 129 x 198 mm */
+	FZ_LAYOUT_UK_B_FORMAT_W = 366,
+	FZ_LAYOUT_UK_B_FORMAT_H = 561,
+	FZ_LAYOUT_UK_B_FORMAT_EM = 10,
+
+	/* 135 x 216 mm */
+	FZ_LAYOUT_UK_C_FORMAT_W = 382,
+	FZ_LAYOUT_UK_C_FORMAT_H = 612,
+	FZ_LAYOUT_UK_C_FORMAT_EM = 11,
+
+	/* 148 x 210 mm */
+	FZ_LAYOUT_A5_W = 420,
+	FZ_LAYOUT_A5_H = 595,
+	FZ_LAYOUT_A5_EM = 11,
+
+	/* Default to A5 */
+	FZ_DEFAULT_LAYOUT_W = FZ_LAYOUT_A5_W,
+	FZ_DEFAULT_LAYOUT_H = FZ_LAYOUT_A5_H,
+	FZ_DEFAULT_LAYOUT_EM = FZ_LAYOUT_A5_EM,
+};
+
 typedef enum
 {
 	FZ_PERMISSION_PRINT = 'p',
