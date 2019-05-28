@@ -27,6 +27,7 @@ struct gstate_s
 	float alpha[2];
 	fz_stroke_state *stroke_state;
 	int font;
+	float font_size;
 	int text_rendering_mode;
 	int knockout;
 };
@@ -364,12 +365,13 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 }
 
 static void
-pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
+pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, fz_matrix trm)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
+	float font_size = fz_matrix_expansion(trm);
 
 	/* If the font is unchanged, nothing to do */
-	if (gs->font >= 0 && pdev->cid_fonts[gs->font] == font)
+	if (gs->font >= 0 && pdev->cid_fonts[gs->font] == font && gs->font_size == font_size)
 		return;
 
 	if (fz_font_t3_procs(ctx, font))
@@ -380,8 +382,9 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support font types found in this file");
 
 	gs->font = pdf_dev_add_font_res(ctx, pdev, font);
+	gs->font_size = font_size;
 
-	fz_append_printf(ctx, gs->buf, "/F%d 1 Tf\n", gs->font);
+	fz_append_printf(ctx, gs->buf, "/F%d %g Tf\n", gs->font, gs->font_size);
 }
 
 static void
@@ -430,7 +433,8 @@ static void
 pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
-	fz_matrix tm, inv_tm;
+	fz_matrix trm, tm, tlm, inv_trm, inv_tm;
+	fz_matrix inv_tfs;
 	fz_point d;
 	float adv;
 	int dx, dy;
@@ -439,11 +443,17 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 	if (span->len == 0)
 		return;
 
-	tm = span->trm;
-	tm.e = span->items[0].x;
-	tm.f = span->items[0].y;
+	inv_tfs = fz_scale(1 / gs->font_size, 1 / gs->font_size);
+
+	trm = span->trm;
+	trm.e = span->items[0].x;
+	trm.f = span->items[0].y;
+
+	tm = fz_concat(inv_tfs, trm);
+	tlm = tm;
 
 	inv_tm = fz_invert_matrix(tm);
+	inv_trm = fz_invert_matrix(trm);
 
 	fz_append_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
 
@@ -454,14 +464,14 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 			continue;
 
 		/* transform difference from expected pen position into font units. */
-		d.x = it->x - tm.e;
-		d.y = it->y - tm.f;
-		d = fz_transform_vector(d, inv_tm);
+		d.x = it->x - trm.e;
+		d.y = it->y - trm.f;
+		d = fz_transform_vector(d, inv_trm);
 		dx = (int)(d.x * 1000 + (d.x < 0 ? -0.5f : 0.5f));
 		dy = (int)(d.y * 1000 + (d.y < 0 ? -0.5f : 0.5f));
 
-		tm.e = it->x;
-		tm.f = it->y;
+		trm.e = it->x;
+		trm.f = it->y;
 
 		if (dx != 0 || dy != 0)
 		{
@@ -470,7 +480,15 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 			else if (span->wmode == 1 && dx == 0)
 				fz_append_printf(ctx, gs->buf, ">%d<", -dy);
 			else
-				fz_append_printf(ctx, gs->buf, ">]TJ\n%M Tm\n[<", &tm);
+			{
+				/* Calculate offset from start of the previous line */
+				tm = fz_concat(inv_tfs, trm);
+				d.x = tm.e - tlm.e;
+				d.y = tm.f - tlm.f;
+				d = fz_transform_vector(d, inv_tm);
+				fz_append_printf(ctx, gs->buf, ">]TJ\n%g %g Td\n[<", d.x, d.y);
+				tlm = tm;
+			}
 		}
 
 		if (fz_font_t3_procs(ctx, span->font))
@@ -480,9 +498,9 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 
 		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
 		if (span->wmode == 0)
-			tm = fz_pre_translate(tm, adv, 0);
+			trm = fz_pre_translate(trm, adv, 0);
 		else
-			tm = fz_pre_translate(tm, 0, adv);
+			trm = fz_pre_translate(trm, 0, adv);
 	}
 
 	fz_append_string(ctx, gs->buf, ">]TJ\n");
@@ -500,7 +518,7 @@ pdf_dev_trm(fz_context *ctx, pdf_device *pdev, int trm)
 }
 
 static void
-pdf_dev_begin_text(fz_context *ctx, pdf_device *pdev, fz_matrix tm, int trm)
+pdf_dev_begin_text(fz_context *ctx, pdf_device *pdev, int trm)
 {
 	pdf_dev_trm(ctx, pdev, trm);
 	if (!pdev->in_text)
@@ -697,14 +715,14 @@ pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
 
+	pdf_dev_ctm(ctx, pdev, ctm);
+	pdf_dev_alpha(ctx, pdev, alpha, 0);
+	pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
+
 	for (span = text->head; span; span = span->next)
 	{
-		fz_matrix trm = span->trm;
-		pdf_dev_begin_text(ctx, pdev, trm, 0);
-		pdf_dev_font(ctx, pdev, span->font);
-		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_alpha(ctx, pdev, alpha, 0);
-		pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
+		pdf_dev_begin_text(ctx, pdev, 0);
+		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
@@ -716,13 +734,14 @@ pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
 
+	pdf_dev_ctm(ctx, pdev, ctm);
+	pdf_dev_alpha(ctx, pdev, alpha, 1);
+	pdf_dev_color(ctx, pdev, colorspace, color, 1, color_params);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 1);
-		pdf_dev_font(ctx, pdev, span->font);
-		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_alpha(ctx, pdev, alpha, 1);
-		pdf_dev_color(ctx, pdev, colorspace, color, 1, color_params);
+		pdf_dev_begin_text(ctx, pdev, 1);
+		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
@@ -736,11 +755,12 @@ pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 	pdf_dev_end_text(ctx, pdev);
 	pdf_dev_push(ctx, pdev);
 
+	pdf_dev_ctm(ctx, pdev, ctm);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 7);
-		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_font(ctx, pdev, span->font);
+		pdf_dev_begin_text(ctx, pdev, 7);
+		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
@@ -754,11 +774,12 @@ pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	pdf_dev_end_text(ctx, pdev);
 	pdf_dev_push(ctx, pdev);
 
+	pdf_dev_ctm(ctx, pdev, ctm);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 7);
-		pdf_dev_font(ctx, pdev, span->font);
-		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_begin_text(ctx, pdev, 7);
+		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
@@ -768,11 +789,13 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_mat
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
+
+	pdf_dev_ctm(ctx, pdev, ctm);
+
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, span->trm, 0);
-		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_font(ctx, pdev, span->font);
+		pdf_dev_begin_text(ctx, pdev, 0);
+		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
