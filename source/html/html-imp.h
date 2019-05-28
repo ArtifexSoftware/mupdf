@@ -25,6 +25,7 @@ struct fz_html_font_face_s
 	char *family;
 	int is_bold;
 	int is_italic;
+	int is_small_caps;
 	fz_font *font;
 	char *src;
 	fz_html_font_face *next;
@@ -171,6 +172,7 @@ struct fz_css_style_s
 	unsigned int border_style_1 : 1;
 	unsigned int border_style_2 : 1;
 	unsigned int border_style_3 : 1;
+	unsigned int small_caps : 1;
 	fz_css_number line_height;
 	fz_css_color background_color;
 	fz_css_color border_color[4];
@@ -274,8 +276,8 @@ float fz_from_css_number_scale(fz_css_number number, float scale);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 void fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,
-	const char *family, int is_bold, int is_italic, const char *src, fz_font *font);
-fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic);
+	const char *family, int is_bold, int is_italic, int is_small_caps, const char *src, fz_font *font);
+fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic, int is_small_caps);
 void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
 void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css);

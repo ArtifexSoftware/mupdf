@@ -706,12 +706,13 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	fz_css_property *prop;
 	fz_font *font = NULL;
 	fz_buffer *buf = NULL;
-	int is_bold, is_italic;
+	int is_bold, is_italic, is_small_caps;
 	char path[2048];
 
 	const char *family = "serif";
 	const char *weight = "normal";
 	const char *style = "normal";
+	const char *variant = "normal";
 	const char *src = NULL;
 
 	for (prop = declaration; prop; prop = prop->next)
@@ -719,6 +720,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 		if (!strcmp(prop->name, "font-family")) family = prop->value->data;
 		if (!strcmp(prop->name, "font-weight")) weight = prop->value->data;
 		if (!strcmp(prop->name, "font-style")) style = prop->value->data;
+		if (!strcmp(prop->name, "font-variant")) variant = prop->value->data;
 		if (!strcmp(prop->name, "src")) src = prop->value->data;
 	}
 
@@ -727,6 +729,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 
 	is_bold = is_bold_from_font_weight(weight);
 	is_italic = is_italic_from_font_style(style);
+	is_small_caps = !strcmp(variant, "small-caps");
 
 	fz_strlcpy(path, base_uri, sizeof path);
 	fz_strlcat(path, "/", sizeof path);
@@ -737,7 +740,8 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	for (custom = set->custom; custom; custom = custom->next)
 		if (!strcmp(custom->src, path) && !strcmp(custom->family, family) &&
 				custom->is_bold == is_bold &&
-				custom->is_italic == is_italic)
+				custom->is_italic == is_italic &&
+				custom->is_small_caps == is_small_caps)
 			return; /* already loaded */
 
 	fz_var(buf);
@@ -750,7 +754,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 		else
 			buf = fz_read_file(ctx, src);
 		font = fz_new_font_from_buffer(ctx, NULL, buf, 0, 0);
-		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, path, font);
+		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, is_small_caps, path, font);
 	}
 	fz_always(ctx)
 	{
@@ -1307,21 +1311,23 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	{
 		const char *font_weight = string_from_property(match, "font-weight", "normal");
 		const char *font_style = string_from_property(match, "font-style", "normal");
+		const char *font_variant = string_from_property(match, "font-variant", "normal");
 		int is_bold = is_bold_from_font_weight(font_weight);
 		int is_italic = is_italic_from_font_style(font_style);
+		style->small_caps = !strcmp(font_variant, "small-caps");
 		value = value_from_property(match, "font-family");
 		while (value)
 		{
 			if (strcmp(value->data, ",") != 0)
 			{
-				style->font = fz_load_html_font(ctx, set, value->data, is_bold, is_italic);
+				style->font = fz_load_html_font(ctx, set, value->data, is_bold, is_italic, style->small_caps);
 				if (style->font)
 					break;
 			}
 			value = value->next;
 		}
 		if (!style->font)
-			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic);
+			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic, style->small_caps);
 	}
 }
 

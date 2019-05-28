@@ -40,6 +40,7 @@ typedef struct string_walker
 	fz_font *base_font;
 	int script;
 	int language;
+	int small_caps;
 	fz_font *font;
 	fz_font *next_font;
 	hb_glyph_position_t *glyph_pos;
@@ -93,7 +94,7 @@ static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i
 	return walker->glyph_info[i].codepoint;
 }
 
-static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, int language, const char *text)
+static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, int language, int small_caps, const char *text)
 {
 	walker->ctx = ctx;
 	walker->hb_buf = hb_buf;
@@ -106,6 +107,7 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 	walker->language = language;
 	walker->font = NULL;
 	walker->next_font = NULL;
+	walker->small_caps = small_caps;
 }
 
 static void
@@ -115,6 +117,10 @@ destroy_hb_shaper_data(fz_context *ctx, void *handle)
 	hb_font_destroy(handle);
 	fz_hb_unlock(ctx);
 }
+
+static const hb_feature_t small_caps_feature[1] = {
+	{ HB_TAG('s','m','c','p'), 1, 0, -1 }
+};
 
 static int walk_string(string_walker *walker)
 {
@@ -189,7 +195,10 @@ static int walk_string(string_walker *walker)
 			hb_buffer_guess_segment_properties(walker->hb_buf);
 			Memento_stopLeaking();
 
-			hb_shape(hb->shaper_handle, walker->hb_buf, NULL, 0);
+			if (walker->small_caps)
+				hb_shape(hb->shaper_handle, walker->hb_buf, small_caps_feature, nelem(small_caps_feature));
+			else
+				hb_shape(hb->shaper_handle, walker->hb_buf, NULL, 0);
 		}
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
@@ -248,7 +257,7 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_
 	node->h = fz_from_css_number_scale(node->box->style.line_height, em);
 
 	s = get_node_text(ctx, node);
-	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style.font, node->script, node->markup_lang, s);
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style.font, node->script, node->markup_lang, node->box->style.small_caps, s);
 	while (walk_string(&walker))
 	{
 		int x = 0;
@@ -924,7 +933,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			trm.f = y - page_top;
 
 			s = get_node_text(ctx, node);
-			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, s);
+			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, style->small_caps, s);
 			while (walk_string(&walker))
 			{
 				float node_scale = node->box->em / walker.scale;

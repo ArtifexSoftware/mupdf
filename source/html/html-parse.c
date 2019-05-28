@@ -1328,6 +1328,8 @@ fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 				printf(" bold");
 			if (fz_font_is_italic(ctx, sbox->style.font))
 				printf(" italic");
+			if (sbox->style.small_caps)
+				printf(" small-caps");
 			printf("\n");
 			indent(level);
 			printf("{\n");
