@@ -6,6 +6,7 @@
 
 #include "encodings.h"
 #include "glyphlist.h"
+#include "smallcaps.h"
 
 #define FROM_UNICODE(ENC) \
 	int l = 0; \
@@ -108,4 +109,22 @@ fz_duplicate_glyph_names_from_unicode(int ucs)
 			return agl_dup_names + agl_dup_offsets[(m << 1) + 1];
 	}
 	return empty_dup_list;
+}
+
+const char *
+fz_glyph_name_from_unicode_sc(int u)
+{
+	int l = 0;
+	int r = nelem(glyph_name_from_unicode_sc) / 2 - 1;
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		if (u < glyph_name_from_unicode_sc[m].u)
+			r = m - 1;
+		else if (u > glyph_name_from_unicode_sc[m].u)
+			l = m + 1;
+		else
+			return glyph_name_from_unicode_sc[m].n;
+	}
+	return NULL;
 }

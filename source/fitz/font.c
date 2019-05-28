@@ -1968,6 +1968,36 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 	return ucs;
 }
 
+/* Encode character, preferring small-caps variant if available. */
+int
+fz_encode_character_sc(fz_context *ctx, fz_font *font, int unicode)
+{
+	if (font->ft_face)
+	{
+		int cat = ucdn_get_general_category(unicode);
+		if (cat == UCDN_GENERAL_CATEGORY_LL || cat == UCDN_GENERAL_CATEGORY_LT)
+		{
+			int glyph;
+			const char *name;
+			char buf[20];
+
+			name = fz_glyph_name_from_unicode_sc(unicode);
+			if (name)
+			{
+				glyph = FT_Get_Name_Index(font->ft_face, (char*)name);
+				if (glyph > 0)
+					return glyph;
+			}
+
+			sprintf(buf, "uni%04X.sc", unicode);
+			glyph = FT_Get_Name_Index(font->ft_face, buf);
+			if (glyph > 0)
+				return glyph;
+		}
+	}
+	return fz_encode_character(ctx, font, unicode);
+}
+
 int
 fz_encode_character_by_glyph_name(fz_context *ctx, fz_font *font, const char *glyphname)
 {

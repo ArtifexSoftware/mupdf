@@ -39,7 +39,8 @@ int fz_windows_1252_from_unicode(int u);
 
 int fz_unicode_from_glyph_name(const char *name);
 int fz_unicode_from_glyph_name_strict(const char *name);
-const char **fz_duplicate_glyph_names_from_unicode(int ucs);
+const char **fz_duplicate_glyph_names_from_unicode(int unicode);
+const char *fz_glyph_name_from_unicode_sc(int unicode);
 
 /*
 	An abstract font handle.
@@ -201,6 +202,7 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph, int wmode);
 
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
+int fz_encode_character_sc(fz_context *ctx, fz_font *font, int unicode);
 int fz_encode_character_by_glyph_name(fz_context *ctx, fz_font *font, const char *glyphname);
 
 int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, int script, int language, fz_font **out_font);

@@ -218,8 +218,12 @@ static int walk_string(string_walker *walker)
 		unsigned int i;
 		for (i = 0; i < walker->glyph_count; ++i)
 		{
-			int unicode = quick_ligature(ctx, walker, i);
-			int glyph = fz_encode_character(ctx, walker->font, unicode);
+			int glyph, unicode;
+			unicode = quick_ligature(ctx, walker, i);
+			if (walker->small_caps)
+				glyph = fz_encode_character_sc(ctx, walker->font, unicode);
+			else
+				glyph = fz_encode_character(ctx, walker->font, unicode);
 			walker->glyph_info[i].codepoint = glyph;
 			walker->glyph_pos[i].x_offset = 0;
 			walker->glyph_pos[i].y_offset = 0;
