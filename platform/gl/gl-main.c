@@ -167,6 +167,7 @@ static int annotate_w = 12; /* to be scaled by lineheight */
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
 static int oldicc = 1, currenticc = 1;
+static int oldaa = 8, currentaa = 8;
 static int oldseparations = 0, currentseparations = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
@@ -535,6 +536,8 @@ void render_page(void)
 
 	transform_page();
 
+	fz_set_aa_level(ctx, currentaa);
+
 	pix = fz_new_pixmap_from_page_with_separations(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), seps, 0);
 	if (currenttint)
 	{
@@ -552,9 +555,14 @@ void render_page(void)
 
 void render_page_if_changed(void)
 {
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate ||
-		oldinvert != currentinvert || oldtint != currenttint ||
-		oldicc != currenticc || oldseparations != currentseparations)
+	if (oldpage != currentpage ||
+		oldzoom != currentzoom ||
+		oldrotate != currentrotate ||
+		oldinvert != currentinvert ||
+		oldtint != currenttint ||
+		oldicc != currenticc ||
+		oldseparations != currentseparations ||
+		oldaa != currentaa)
 	{
 		render_page();
 		oldpage = currentpage;
@@ -564,6 +572,7 @@ void render_page_if_changed(void)
 		oldtint = currenttint;
 		oldicc = currenticc;
 		oldseparations = currentseparations;
+		oldaa = currentaa;
 	}
 }
 
@@ -1129,6 +1138,13 @@ static void do_app(void)
 		case 'g': jump_to_page(number - 1); break;
 		case 'G': jump_to_page(fz_count_pages(ctx, doc) - 1); break;
 
+		case 'A':
+			if (number == 0)
+				currentaa = (currentaa == 8 ? 0 : 8);
+			else
+				currentaa = number;
+			break;
+
 		case 'm':
 			if (number == 0)
 				push_history();
@@ -1641,7 +1657,6 @@ int main_utf8(int argc, char **argv)
 int main(int argc, char **argv)
 #endif
 {
-	int aa_level = 8;
 	int c;
 
 #ifndef _WIN32
@@ -1667,7 +1682,7 @@ int main(int argc, char **argv)
 		case 'U': layout_css = fz_optarg; break;
 		case 'X': layout_use_doc_css = 0; break;
 		case 'J': enable_js = !enable_js; break;
-		case 'A': aa_level = fz_atoi(fz_optarg); break;
+		case 'A': currentaa = fz_atoi(fz_optarg); break;
 		case 'C': currenttint = 1; tint_white = strtol(fz_optarg, NULL, 16); break;
 		case 'B': currenttint = 1; tint_black = strtol(fz_optarg, NULL, 16); break;
 		}
@@ -1682,7 +1697,6 @@ int main(int argc, char **argv)
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_set_use_document_css(ctx, layout_use_doc_css);
-	fz_set_aa_level(ctx, aa_level);
 
 	if (fz_optind < argc)
 	{
