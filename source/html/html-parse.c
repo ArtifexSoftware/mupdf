@@ -1317,7 +1317,7 @@ fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 			}
 			sbox = flow->box;
 			indent(level);
-			printf("span em=%g font=%s", sbox->em, fz_font_name(ctx, sbox->style.font));
+			printf("span em=%g font='%s'", sbox->em, fz_font_name(ctx, sbox->style.font));
 			if (fz_font_is_serif(ctx, sbox->style.font))
 				printf(" serif");
 			else

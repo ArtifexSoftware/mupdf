@@ -749,7 +749,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 			buf = fz_read_archive_entry(ctx, zip, path);
 		else
 			buf = fz_read_file(ctx, src);
-		font = fz_new_font_from_buffer(ctx, src, buf, 0, 0);
+		font = fz_new_font_from_buffer(ctx, NULL, buf, 0, 0);
 		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, path, font);
 	}
 	fz_always(ctx)
