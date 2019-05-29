@@ -170,3 +170,73 @@ pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which)
 	}
 	return NULL;
 }
+
+pdf_obj *
+pdf_lookup_number(fz_context *ctx, pdf_obj *node, int needle)
+{
+	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
+	pdf_obj *nums = pdf_dict_get(ctx, node, PDF_NAME(Nums));
+
+	if (pdf_is_array(ctx, kids))
+	{
+		int l = 0;
+		int r = pdf_array_len(ctx, kids) - 1;
+
+		while (l <= r)
+		{
+			int m = (l + r) >> 1;
+			pdf_obj *kid = pdf_array_get(ctx, kids, m);
+			pdf_obj *limits = pdf_dict_get(ctx, kid, PDF_NAME(Limits));
+			int first = pdf_to_int(ctx, pdf_array_get(ctx, limits, 0));
+			int last = pdf_to_int(ctx, pdf_array_get(ctx, limits, 1));
+
+			if (needle < first)
+				r = m - 1;
+			else if (needle > last)
+				l = m + 1;
+			else
+			{
+				pdf_obj *obj;
+
+				if (pdf_mark_obj(ctx, node))
+					break;
+				fz_try(ctx)
+					obj = pdf_lookup_number(ctx, kid, needle);
+				fz_always(ctx)
+					pdf_unmark_obj(ctx, node);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
+				return obj;
+			}
+		}
+	}
+
+	if (pdf_is_array(ctx, nums))
+	{
+		pdf_obj *nums = pdf_dict_get(ctx, node, PDF_NAME(Nums));
+		int l = 0;
+		int r = (pdf_array_len(ctx, nums) / 2) - 1;
+
+		while (l <= r)
+		{
+			int m = (l + r) >> 1;
+			int key = pdf_to_int(ctx, pdf_array_get(ctx, nums, m * 2));
+			pdf_obj *val = pdf_array_get(ctx, nums, m * 2 + 1);
+
+			if (needle < key)
+				r = m - 1;
+			else if (needle > key)
+				l = m + 1;
+			else
+				return val;
+		}
+
+		/* Parallel the nametree lookup above by allowing for non-sorted lists. */
+		r = pdf_array_len(ctx, nums)/2;
+		for (l = 0; l < r; l++)
+			if (needle == pdf_to_int(ctx, pdf_array_get(ctx, nums, l * 2)))
+				return pdf_array_get(ctx, nums, l * 2 + 1);
+	}
+
+	return NULL;
+}
