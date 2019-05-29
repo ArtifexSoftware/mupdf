@@ -337,19 +337,19 @@
 				Name="sil"
 				>
 				<File
-					RelativePath="..\..\resources\fonts\sil\CharisSIL-B.cff"
+					RelativePath="..\..\resources\fonts\sil\CharisSIL.cff"
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\sil\CharisSIL-BI.cff"
+					RelativePath="..\..\resources\fonts\sil\CharisSIL-Bold.cff"
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\sil\CharisSIL-I.cff"
+					RelativePath="..\..\resources\fonts\sil\CharisSIL-BoldItalic.cff"
 					>
 				</File>
 				<File
-					RelativePath="..\..\resources\fonts\sil\CharisSIL-R.cff"
+					RelativePath="..\..\resources\fonts\sil\CharisSIL-Italic.cff"
 					>
 				</File>
 			</Filter>

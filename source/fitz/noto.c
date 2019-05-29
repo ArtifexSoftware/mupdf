@@ -157,10 +157,10 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 #endif
 #ifndef TOFU_SIL
 	if (!strcmp(name, "Charis SIL")) {
-		FAMILY(sil, CharisSIL_R_cff,
-				CharisSIL_I_cff,
-				CharisSIL_B_cff,
-				CharisSIL_BI_cff)
+		FAMILY(sil, CharisSIL_cff,
+				CharisSIL_Italic_cff,
+				CharisSIL_Bold_cff,
+				CharisSIL_BoldItalic_cff)
 	}
 #endif
 #ifndef TOFU_NOTO
