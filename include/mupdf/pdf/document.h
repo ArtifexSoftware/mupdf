@@ -347,6 +347,8 @@ struct pdf_write_options_s
 	char upwd_utf8[128]; /* User password. */
 };
 
+extern const pdf_write_options pdf_default_write_options;
+
 pdf_write_options *pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
 
 int pdf_has_unsaved_sigs(fz_context *ctx, pdf_document *doc);

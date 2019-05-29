@@ -2880,6 +2880,26 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	page_objects_list_destroy(ctx, opts->page_object_lists);
 }
 
+const pdf_write_options pdf_default_write_options = {
+	0, /* do_incremental */
+	0, /* do_pretty */
+	0, /* do_ascii */
+	0, /* do_compress */
+	0, /* do_compress_images */
+	0, /* do_compress_fonts */
+	0, /* do_decompress */
+	0, /* do_garbage */
+	0, /* do_linear */
+	0, /* do_clean */
+	0, /* do_sanitize */
+	0, /* do_decrypt */
+	0, /* do_appearance */
+	0, /* do_encrypt */
+	~0, /* permissions */
+	"", /* opwd_utf8[128] */
+	"", /* upwd_utf8[128] */
+};
+
 const char *fz_pdf_write_options_usage =
 	"PDF output options:\n"
 	"\tdecompress: decompress all streams (except compress-fonts/images)\n"
@@ -3341,7 +3361,7 @@ int pdf_has_unsaved_sigs(fz_context *ctx, pdf_document *doc)
 */
 void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_write_options *in_opts)
 {
-	pdf_write_options opts_defaults = { 0 };
+	pdf_write_options opts_defaults = pdf_default_write_options;
 	pdf_write_state opts = { 0 };
 
 	if (!doc)
@@ -3373,7 +3393,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_
 */
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *in_opts)
 {
-	pdf_write_options opts_defaults = { 0 };
+	pdf_write_options opts_defaults = pdf_default_write_options;
 	pdf_write_state opts = { 0 };
 
 	if (!doc)

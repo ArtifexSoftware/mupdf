@@ -25,7 +25,7 @@ static int pdf_filter(const char *fn)
 
 static void init_save_pdf_options(void)
 {
-	memset(&save_opts, 0, sizeof save_opts);
+	save_opts = pdf_default_write_options;
 	save_opts.do_compress = 1;
 	save_opts.do_compress_images = 1;
 	save_opts.do_compress_fonts = 1;

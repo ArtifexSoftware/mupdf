@@ -559,7 +559,7 @@ static int pdfapp_save(pdfapp_t *app)
 
 	if (wingetsavepath(app, buf, PATH_MAX))
 	{
-		pdf_write_options opts = { 0 };
+		pdf_write_options opts = pdf_default_write_options;
 
 		opts.do_incremental = pdf_can_be_saved_incrementally(app->ctx, idoc);
 
