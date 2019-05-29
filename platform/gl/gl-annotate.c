@@ -31,8 +31,22 @@ static void init_save_pdf_options(void)
 	save_opts.do_compress_fonts = 1;
 }
 
+static const char *cryptalgo_names[] = {
+	"None",
+	"RC4, 40 bit",
+	"RC4, 128 bit",
+	"AES, 128 bit",
+	"AES, 256 bit",
+};
+
 static void save_pdf_options(void)
 {
+	const char *cryptalgo = cryptalgo_names[save_opts.do_encrypt];
+	static int last_do_encrypt = PDF_ENCRYPT_NONE;
+	static struct input opwinput;
+	static struct input upwinput;
+	int choice;
+
 	ui_layout(T, X, NW, 2, 2);
 	ui_label("PDF write options:");
 	ui_layout(T, X, NW, 4, 2);
@@ -52,6 +66,7 @@ static void save_pdf_options(void)
 		save_opts.do_linear = 0;
 		save_opts.do_clean = 0;
 		save_opts.do_sanitize = 0;
+		save_opts.do_encrypt = 0;
 	}
 	else
 	{
@@ -62,6 +77,36 @@ static void save_pdf_options(void)
 		ui_checkbox("Sanitize syntax", &save_opts.do_sanitize);
 
 		ui_checkbox("Decrypt", &save_opts.do_decrypt);
+		if (save_opts.do_decrypt)
+		{
+			save_opts.do_encrypt = 0;
+		}
+		else
+		{
+			ui_spacer();
+			ui_label("Encryption:");
+			choice = ui_select("Encryption", cryptalgo, cryptalgo_names, nelem(cryptalgo_names));
+			if (choice != -1)
+				save_opts.do_encrypt = choice;
+		}
+	}
+
+	if ((last_do_encrypt && !save_opts.do_encrypt) ||
+			(!last_do_encrypt && save_opts.do_encrypt))
+	{
+		last_do_encrypt = save_opts.do_encrypt;
+		ui_input_init(&opwinput, "");
+		ui_input_init(&upwinput, "");
+	}
+	if (save_opts.do_encrypt)
+	{
+		ui_spacer();
+		ui_label("User password:");
+		if (ui_input(&upwinput, 32, 1) >= UI_INPUT_EDIT)
+			fz_strlcpy(save_opts.upwd_utf8, upwinput.text, nelem(save_opts.upwd_utf8));
+		ui_label("Owner password:");
+		if (ui_input(&opwinput, 32, 1) >= UI_INPUT_EDIT)
+			fz_strlcpy(save_opts.opwd_utf8, opwinput.text, nelem(save_opts.opwd_utf8));
 	}
 }
 
