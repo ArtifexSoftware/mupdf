@@ -26,6 +26,9 @@ static int pdf_filter(const char *fn)
 static void init_save_pdf_options(void)
 {
 	memset(&save_opts, 0, sizeof save_opts);
+	save_opts.do_compress = 1;
+	save_opts.do_compress_images = 1;
+	save_opts.do_compress_fonts = 1;
 }
 
 static void save_pdf_options(void)
@@ -33,18 +36,33 @@ static void save_pdf_options(void)
 	ui_layout(T, X, NW, 2, 2);
 	ui_label("PDF write options:");
 	ui_layout(T, X, NW, 4, 2);
+
 	ui_checkbox("Incremental", &save_opts.do_incremental);
+	ui_spacer();
 	ui_checkbox("Pretty-print", &save_opts.do_pretty);
 	ui_checkbox("Ascii", &save_opts.do_ascii);
+	ui_checkbox("Decompress", &save_opts.do_decompress);
 	ui_checkbox("Compress", &save_opts.do_compress);
 	ui_checkbox("Compress images", &save_opts.do_compress_images);
 	ui_checkbox("Compress fonts", &save_opts.do_compress_fonts);
-	ui_checkbox("Decompress", &save_opts.do_decompress);
-	ui_checkbox("Decrypt", &save_opts.do_decrypt);
-	ui_checkbox("Garbage collect", &save_opts.do_garbage);
-	ui_checkbox("Linearize", &save_opts.do_linear);
-	ui_checkbox("Clean syntax", &save_opts.do_clean);
-	ui_checkbox("Sanitize syntax", &save_opts.do_sanitize);
+	if (save_opts.do_incremental)
+	{
+		save_opts.do_decrypt = 0;
+		save_opts.do_garbage = 0;
+		save_opts.do_linear = 0;
+		save_opts.do_clean = 0;
+		save_opts.do_sanitize = 0;
+	}
+	else
+	{
+		ui_spacer();
+		ui_checkbox("Linearize", &save_opts.do_linear);
+		ui_checkbox("Garbage collect", &save_opts.do_garbage);
+		ui_checkbox("Clean syntax", &save_opts.do_clean);
+		ui_checkbox("Sanitize syntax", &save_opts.do_sanitize);
+
+		ui_checkbox("Decrypt", &save_opts.do_decrypt);
+	}
 }
 
 static void save_pdf_dialog(void)
