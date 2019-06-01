@@ -466,7 +466,7 @@ fz_append_display_node(
 		size += SIZE_IN_NODES(private_data_len);
 	}
 
-	if (list->len + size > list->max)
+	while (list->len + size > list->max)
 	{
 		int newsize = list->max * 2;
 		fz_display_node *old = list->list;
