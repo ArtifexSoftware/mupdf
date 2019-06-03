@@ -122,7 +122,7 @@ png_write_icc(fz_context *ctx, png_band_writer *writer, fz_colorspace *cs)
 		}
 		fz_catch(ctx)
 		{
-			/* Nothing */
+			fz_rethrow(ctx);
 		}
 	}
 #endif
