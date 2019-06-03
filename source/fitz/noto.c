@@ -258,6 +258,9 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_COMMON:
 	case UCDN_SCRIPT_INHERITED:
 	case UCDN_SCRIPT_UNKNOWN:
+#ifndef TOFU_NOTO
+		RETURN(noto,NotoSerif_Regular_otf);
+#endif
 		break;
 
 	case UCDN_SCRIPT_HANGUL:
@@ -284,7 +287,6 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_GREEK:
 	case UCDN_SCRIPT_CYRILLIC:
 		RETURN(noto,NotoSerif_Regular_otf);
-		break;
 
 	case UCDN_SCRIPT_ARABIC:
 		if (language == FZ_LANG_ur || language == FZ_LANG_urd)
