@@ -30,6 +30,11 @@ static int ft_font_file_kind(FT_Face face)
 	return 0;
 }
 
+static int is_ttc(fz_font *font)
+{
+	return !memcmp(font->buffer->data, "ttcf", 4);
+}
+
 static int is_truetype(FT_Face face)
 {
 	return ft_font_file_kind(face) == 2;
@@ -671,7 +676,9 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 int
 pdf_font_writing_supported(fz_font *font)
 {
-	if (font->ft_face == NULL)
+	if (font->ft_face == NULL || font->buffer == NULL || font->buffer->len < 4)
+		return 0;
+	if (is_ttc(font))
 		return 0;
 	if (is_truetype(font->ft_face))
 		return 1;
