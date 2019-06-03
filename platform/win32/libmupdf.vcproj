@@ -1703,10 +1703,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\font-imp.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\font.c"
 				>
 			</File>
