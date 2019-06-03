@@ -317,7 +317,7 @@ struct fz_font_context_s
 	fz_font *base14[14];
 	fz_font *cjk[4];
 	struct { fz_font *serif, *sans; } fallback[256];
-	fz_font *symbol1, *symbol2;
+	fz_font *symbol1, *symbol2, *math, *music;
 	fz_font *emoji;
 };
 
@@ -561,6 +561,32 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 	}
 
 	return *fontp;
+}
+
+static fz_font *fz_load_fallback_math_font(fz_context *ctx)
+{
+	const unsigned char *data;
+	int size;
+	if (!ctx->font->math)
+	{
+		data = fz_lookup_noto_math_font(ctx, &size);
+		if (data)
+			ctx->font->math = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+	}
+	return ctx->font->math;
+}
+
+static fz_font *fz_load_fallback_music_font(fz_context *ctx)
+{
+	const unsigned char *data;
+	int size;
+	if (!ctx->font->music)
+	{
+		data = fz_lookup_noto_music_font(ctx, &size);
+		if (data)
+			ctx->font->music = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+	}
+	return ctx->font->music;
 }
 
 static fz_font *fz_load_fallback_symbol1_font(fz_context *ctx)
@@ -2110,6 +2136,22 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 		}
 	}
 #endif
+
+	font = fz_load_fallback_math_font(ctx);
+	if (font)
+	{
+		gid = fz_encode_character(ctx, font, unicode);
+		if (gid > 0)
+			return *out_font = font, gid;
+	}
+
+	font = fz_load_fallback_music_font(ctx);
+	if (font)
+	{
+		gid = fz_encode_character(ctx, font, unicode);
+		if (gid > 0)
+			return *out_font = font, gid;
+	}
 
 	font = fz_load_fallback_symbol1_font(ctx);
 	if (font)

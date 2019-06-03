@@ -45,6 +45,11 @@
 #define TOFU_EMOJI
 #endif
 
+/* This historic script has an unusually large font (2MB), so we skip it by default. */
+#ifndef NOTO_TANGUT
+#define NOTO_TANGUT 0
+#endif
+
 #ifdef HAVE_OBJCOPY
 #define RETURN(FORGE,NAME) \
 	do { \
@@ -247,9 +252,6 @@ fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int
 const unsigned char *
 fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont)
 {
-	/* TODO: Noto(SansSyriacEstrangela); */
-	/* TODO: Noto(SansSyriacWestern); */
-
 	*subfont = 0;
 
 	switch (script)
@@ -290,21 +292,11 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 
 	case UCDN_SCRIPT_ARABIC:
 		if (language == FZ_LANG_ur || language == FZ_LANG_urd)
-			RETURN(noto,NotoNastaliqUrdu_Regular_ttf);
+			RETURN(noto,NotoNastaliqUrdu_Regular_otf);
 		RETURN(noto,NotoNaskhArabic_Regular_ttf);
 
-	case UCDN_SCRIPT_SYRIAC:
-		/* TODO: RETURN(noto,NotoSansSyriacEastern_Regular_ttf); */
-		/* TODO: RETURN(noto,NotoSansSyriacWestern_Regular_ttf); */
-		/* TODO: RETURN(noto,NotoSansSyriacEstrangela_Regular_ttf); */
-		RETURN(noto,NotoSansSyriacWestern_Regular_ttf);
-
-	case UCDN_SCRIPT_MEROITIC_CURSIVE:
-	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS:
-		RETURN(noto,NotoSansMeroitic_Regular_otf);
-
 	case UCDN_SCRIPT_ADLAM: RETURN(noto,NotoSansAdlam_Regular_otf);
-	case UCDN_SCRIPT_AHOM: RETURN(noto,NotoSansAhom_Regular_otf);
+	case UCDN_SCRIPT_AHOM: RETURN(noto,NotoSerifAhom_Regular_otf);
 	case UCDN_SCRIPT_ANATOLIAN_HIEROGLYPHS: RETURN(noto,NotoSansAnatolianHieroglyphs_Regular_otf);
 	case UCDN_SCRIPT_ARMENIAN: RETURN(noto,NotoSerifArmenian_Regular_otf);
 	case UCDN_SCRIPT_AVESTAN: RETURN(noto,NotoSansAvestan_Regular_otf);
@@ -312,14 +304,14 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_BAMUM: RETURN(noto,NotoSansBamum_Regular_otf);
 	case UCDN_SCRIPT_BASSA_VAH: RETURN(noto,NotoSansBassaVah_Regular_otf);
 	case UCDN_SCRIPT_BATAK: RETURN(noto,NotoSansBatak_Regular_otf);
-	case UCDN_SCRIPT_BENGALI: RETURN(noto,NotoSansBengali_Regular_otf);
+	case UCDN_SCRIPT_BENGALI: RETURN(noto,NotoSerifBengali_Regular_ttf);
 	case UCDN_SCRIPT_BHAIKSUKI: RETURN(noto,NotoSansBhaiksuki_Regular_otf);
 	case UCDN_SCRIPT_BRAHMI: RETURN(noto,NotoSansBrahmi_Regular_otf);
 	case UCDN_SCRIPT_BUGINESE: RETURN(noto,NotoSansBuginese_Regular_otf);
 	case UCDN_SCRIPT_BUHID: RETURN(noto,NotoSansBuhid_Regular_otf);
 	case UCDN_SCRIPT_CANADIAN_ABORIGINAL: RETURN(noto,NotoSansCanadianAboriginal_Regular_otf);
 	case UCDN_SCRIPT_CARIAN: RETURN(noto,NotoSansCarian_Regular_otf);
-	case UCDN_SCRIPT_CAUCASIAN_ALBANIAN: break;
+	case UCDN_SCRIPT_CAUCASIAN_ALBANIAN: RETURN(noto,NotoSansCaucasianAlbanian_Regular_otf);
 	case UCDN_SCRIPT_CHAKMA: RETURN(noto,NotoSansChakma_Regular_otf);
 	case UCDN_SCRIPT_CHAM: RETURN(noto,NotoSansCham_Regular_otf);
 	case UCDN_SCRIPT_CHEROKEE: RETURN(noto,NotoSansCherokee_Regular_otf);
@@ -327,15 +319,15 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_CUNEIFORM: RETURN(noto,NotoSansCuneiform_Regular_otf);
 	case UCDN_SCRIPT_CYPRIOT: RETURN(noto,NotoSansCypriot_Regular_otf);
 	case UCDN_SCRIPT_DESERET: RETURN(noto,NotoSansDeseret_Regular_otf);
-	case UCDN_SCRIPT_DEVANAGARI: RETURN(noto,NotoSansDevanagari_Regular_otf);
-	case UCDN_SCRIPT_DUPLOYAN: break;
+	case UCDN_SCRIPT_DEVANAGARI: RETURN(noto,NotoSerifDevanagari_Regular_ttf);
+	case UCDN_SCRIPT_DUPLOYAN: RETURN(noto,NotoSansDuployan_Regular_otf);
 	case UCDN_SCRIPT_EGYPTIAN_HIEROGLYPHS: RETURN(noto,NotoSansEgyptianHieroglyphs_Regular_otf);
 	case UCDN_SCRIPT_ELBASAN: RETURN(noto,NotoSansElbasan_Regular_otf);
 	case UCDN_SCRIPT_ETHIOPIC: RETURN(noto,NotoSerifEthiopic_Regular_otf);
 	case UCDN_SCRIPT_GEORGIAN: RETURN(noto,NotoSerifGeorgian_Regular_otf);
 	case UCDN_SCRIPT_GLAGOLITIC: RETURN(noto,NotoSansGlagolitic_Regular_otf);
 	case UCDN_SCRIPT_GOTHIC: RETURN(noto,NotoSansGothic_Regular_otf);
-	case UCDN_SCRIPT_GRANTHA: break;
+	case UCDN_SCRIPT_GRANTHA: RETURN(noto,NotoSansGrantha_Regular_otf);
 	case UCDN_SCRIPT_GUJARATI: RETURN(noto,NotoSerifGujarati_Regular_otf);
 	case UCDN_SCRIPT_GURMUKHI: RETURN(noto,NotoSerifGurmukhi_Regular_otf);
 	case UCDN_SCRIPT_HANUNOO: RETURN(noto,NotoSansHanunoo_Regular_otf);
@@ -344,14 +336,14 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_IMPERIAL_ARAMAIC: RETURN(noto,NotoSansImperialAramaic_Regular_otf);
 	case UCDN_SCRIPT_INSCRIPTIONAL_PAHLAVI: RETURN(noto,NotoSansInscriptionalPahlavi_Regular_otf);
 	case UCDN_SCRIPT_INSCRIPTIONAL_PARTHIAN: RETURN(noto,NotoSansInscriptionalParthian_Regular_otf);
-	case UCDN_SCRIPT_JAVANESE: RETURN(noto,NotoSansJavanese_Regular_ttf);
+	case UCDN_SCRIPT_JAVANESE: RETURN(noto,NotoSansJavanese_Regular_otf);
 	case UCDN_SCRIPT_KAITHI: RETURN(noto,NotoSansKaithi_Regular_otf);
 	case UCDN_SCRIPT_KANNADA: RETURN(noto,NotoSerifKannada_Regular_otf);
 	case UCDN_SCRIPT_KAYAH_LI: RETURN(noto,NotoSansKayahLi_Regular_otf);
 	case UCDN_SCRIPT_KHAROSHTHI: RETURN(noto,NotoSansKharoshthi_Regular_otf);
 	case UCDN_SCRIPT_KHMER: RETURN(noto,NotoSerifKhmer_Regular_otf);
-	case UCDN_SCRIPT_KHOJKI: break;
-	case UCDN_SCRIPT_KHUDAWADI: break;
+	case UCDN_SCRIPT_KHOJKI: RETURN(noto,NotoSansKhojki_Regular_otf);;
+	case UCDN_SCRIPT_KHUDAWADI: RETURN(noto,NotoSansKhudawadi_Regular_otf);
 	case UCDN_SCRIPT_LAO: RETURN(noto,NotoSerifLao_Regular_otf);
 	case UCDN_SCRIPT_LEPCHA: RETURN(noto,NotoSansLepcha_Regular_otf);
 	case UCDN_SCRIPT_LIMBU: RETURN(noto,NotoSansLimbu_Regular_otf);
@@ -360,17 +352,19 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_LISU: RETURN(noto,NotoSansLisu_Regular_otf);
 	case UCDN_SCRIPT_LYCIAN: RETURN(noto,NotoSansLycian_Regular_otf);
 	case UCDN_SCRIPT_LYDIAN: RETURN(noto,NotoSansLydian_Regular_otf);
-	case UCDN_SCRIPT_MAHAJANI: break;
-	case UCDN_SCRIPT_MALAYALAM: RETURN(noto,NotoSansMalayalam_Regular_otf);
+	case UCDN_SCRIPT_MAHAJANI: RETURN(noto,NotoSansMahajani_Regular_otf);
+	case UCDN_SCRIPT_MALAYALAM: RETURN(noto,NotoSerifMalayalam_Regular_ttf);
 	case UCDN_SCRIPT_MANDAIC: RETURN(noto,NotoSansMandaic_Regular_otf);
 	case UCDN_SCRIPT_MANICHAEAN: RETURN(noto,NotoSansManichaean_Regular_otf);
 	case UCDN_SCRIPT_MARCHEN: RETURN(noto,NotoSansMarchen_Regular_otf);
 	case UCDN_SCRIPT_MASARAM_GONDI: break;
 	case UCDN_SCRIPT_MEETEI_MAYEK: RETURN(noto,NotoSansMeeteiMayek_Regular_otf);
 	case UCDN_SCRIPT_MENDE_KIKAKUI: RETURN(noto,NotoSansMendeKikakui_Regular_otf);
+	case UCDN_SCRIPT_MEROITIC_CURSIVE: RETURN(noto,NotoSansMeroitic_Regular_otf);
+	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS: RETURN(noto,NotoSansMeroitic_Regular_otf);
 	case UCDN_SCRIPT_MIAO: RETURN(noto,NotoSansMiao_Regular_otf);
-	case UCDN_SCRIPT_MODI: break;
-	case UCDN_SCRIPT_MONGOLIAN: RETURN(noto,NotoSansMongolian_Regular_ttf);
+	case UCDN_SCRIPT_MODI: RETURN(noto,NotoSansModi_Regular_otf);
+	case UCDN_SCRIPT_MONGOLIAN: RETURN(noto,NotoSansMongolian_Regular_otf);
 	case UCDN_SCRIPT_MRO: RETURN(noto,NotoSansMro_Regular_otf);
 	case UCDN_SCRIPT_MULTANI: RETURN(noto,NotoSansMultani_Regular_otf);
 	case UCDN_SCRIPT_MYANMAR: RETURN(noto,NotoSerifMyanmar_Regular_otf);
@@ -380,7 +374,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_NKO: RETURN(noto,NotoSansNKo_Regular_otf);
 	case UCDN_SCRIPT_NUSHU: break;
 	case UCDN_SCRIPT_OGHAM: RETURN(noto,NotoSansOgham_Regular_otf);
-	case UCDN_SCRIPT_OLD_HUNGARIAN: break;
+	case UCDN_SCRIPT_OLD_HUNGARIAN: RETURN(noto,NotoSansOldHungarian_Regular_otf);
 	case UCDN_SCRIPT_OLD_ITALIC: RETURN(noto,NotoSansOldItalic_Regular_otf);
 	case UCDN_SCRIPT_OLD_NORTH_ARABIAN: RETURN(noto,NotoSansOldNorthArabian_Regular_otf);
 	case UCDN_SCRIPT_OLD_PERMIC: RETURN(noto,NotoSansOldPermic_Regular_otf);
@@ -396,37 +390,40 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 	case UCDN_SCRIPT_PAU_CIN_HAU: RETURN(noto,NotoSansPauCinHau_Regular_otf);
 	case UCDN_SCRIPT_PHAGS_PA: RETURN(noto,NotoSansPhagsPa_Regular_otf);
 	case UCDN_SCRIPT_PHOENICIAN: RETURN(noto,NotoSansPhoenician_Regular_otf);
-	case UCDN_SCRIPT_PSALTER_PAHLAVI: break;
+	case UCDN_SCRIPT_PSALTER_PAHLAVI: RETURN(noto,NotoSansPsalterPahlavi_Regular_otf);
 	case UCDN_SCRIPT_REJANG: RETURN(noto,NotoSansRejang_Regular_otf);
 	case UCDN_SCRIPT_RUNIC: RETURN(noto,NotoSansRunic_Regular_otf);
 	case UCDN_SCRIPT_SAMARITAN: RETURN(noto,NotoSansSamaritan_Regular_otf);
 	case UCDN_SCRIPT_SAURASHTRA: RETURN(noto,NotoSansSaurashtra_Regular_otf);
 	case UCDN_SCRIPT_SHARADA: RETURN(noto,NotoSansSharada_Regular_otf);
 	case UCDN_SCRIPT_SHAVIAN: RETURN(noto,NotoSansShavian_Regular_otf);
-	case UCDN_SCRIPT_SIDDHAM: break;
+	case UCDN_SCRIPT_SIDDHAM: RETURN(noto,NotoSansSiddham_Regular_otf);
 	case UCDN_SCRIPT_SIGNWRITING: break;
 	case UCDN_SCRIPT_SINHALA: RETURN(noto,NotoSerifSinhala_Regular_otf);
 	case UCDN_SCRIPT_SORA_SOMPENG: RETURN(noto,NotoSansSoraSompeng_Regular_otf);
 	case UCDN_SCRIPT_SOYOMBO: break;
 	case UCDN_SCRIPT_SUNDANESE: RETURN(noto,NotoSansSundanese_Regular_otf);
 	case UCDN_SCRIPT_SYLOTI_NAGRI: RETURN(noto,NotoSansSylotiNagri_Regular_otf);
+	case UCDN_SCRIPT_SYRIAC: RETURN(noto,NotoSansSyriac_Regular_otf);
 	case UCDN_SCRIPT_TAGALOG: RETURN(noto,NotoSansTagalog_Regular_otf);
 	case UCDN_SCRIPT_TAGBANWA: RETURN(noto,NotoSansTagbanwa_Regular_otf);
 	case UCDN_SCRIPT_TAI_LE: RETURN(noto,NotoSansTaiLe_Regular_otf);
 	case UCDN_SCRIPT_TAI_THAM: RETURN(noto,NotoSansTaiTham_Regular_ttf);
 	case UCDN_SCRIPT_TAI_VIET: RETURN(noto,NotoSansTaiViet_Regular_otf);
-	case UCDN_SCRIPT_TAKRI: break;
+	case UCDN_SCRIPT_TAKRI: RETURN(noto,NotoSansTakri_Regular_otf);
 	case UCDN_SCRIPT_TAMIL: RETURN(noto,NotoSerifTamil_Regular_otf);
-	case UCDN_SCRIPT_TANGUT: break;
+#if NOTO_TANGUT
+	case UCDN_SCRIPT_TANGUT: RETURN(noto,NotoSerifTangut_Regular_otf);
+#endif
 	case UCDN_SCRIPT_TELUGU: RETURN(noto,NotoSerifTelugu_Regular_ttf);
-	case UCDN_SCRIPT_THAANA: RETURN(noto,NotoSansThaana_Regular_ttf);
+	case UCDN_SCRIPT_THAANA: RETURN(noto,NotoSansThaana_Regular_otf);
 	case UCDN_SCRIPT_THAI: RETURN(noto,NotoSerifThai_Regular_otf);
-	case UCDN_SCRIPT_TIBETAN: RETURN(noto,NotoSansTibetan_Regular_ttf);
+	case UCDN_SCRIPT_TIBETAN: RETURN(noto,NotoSerifTibetan_Regular_otf);
 	case UCDN_SCRIPT_TIFINAGH: RETURN(noto,NotoSansTifinagh_Regular_otf);
-	case UCDN_SCRIPT_TIRHUTA: break;
+	case UCDN_SCRIPT_TIRHUTA: RETURN(noto,NotoSansTirhuta_Regular_otf);
 	case UCDN_SCRIPT_UGARITIC: RETURN(noto,NotoSansUgaritic_Regular_otf);
 	case UCDN_SCRIPT_VAI: RETURN(noto,NotoSansVai_Regular_otf);
-	case UCDN_SCRIPT_WARANG_CITI: break;
+	case UCDN_SCRIPT_WARANG_CITI: RETURN(noto,NotoSansWarangCiti_Regular_otf);
 	case UCDN_SCRIPT_YI: RETURN(noto,NotoSansYi_Regular_otf);
 	case UCDN_SCRIPT_ZANABAZAR_SQUARE: break;
 
@@ -437,15 +434,30 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *s
 }
 
 /*
-	Search the builtin noto fonts
-	for a symbol font. Whether a font is present or not will
-	depend on the configuration in which MuPDF is built.
-
-	len: Pointer to a place to receive the length of the discovered
-	font buffer.
-
-	Returns a pointer to the font file data, or NULL if not present.
+	Search the builtin noto fonts specific symbol fonts.
+	Whether a font is present or not will depend on the configuration in
+	which MuPDF is built.
 */
+const unsigned char *
+fz_lookup_noto_math_font(fz_context *ctx, int *size)
+{
+#ifndef TOFU_SYMBOL
+	RETURN(noto,NotoSansMath_Regular_otf);
+#else
+	return *size = 0, NULL;
+#endif
+}
+
+const unsigned char *
+fz_lookup_noto_music_font(fz_context *ctx, int *size)
+{
+#ifndef TOFU_SYMBOL
+	RETURN(noto,NotoMusic_Regular_otf);
+#else
+	return *size = 0, NULL;
+#endif
+}
+
 const unsigned char *
 fz_lookup_noto_symbol1_font(fz_context *ctx, int *size)
 {
@@ -466,16 +478,6 @@ fz_lookup_noto_symbol2_font(fz_context *ctx, int *size)
 #endif
 }
 
-/*
-	Search the builtin noto fonts
-	for an emoji font. Whether a font is present or not will
-	depend on the configuration in which MuPDF is built.
-
-	len: Pointer to a place to receive the length of the discovered
-	font buffer.
-
-	Returns a pointer to the font file data, or NULL if not present.
-*/
 const unsigned char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {

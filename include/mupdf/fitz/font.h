@@ -211,6 +211,8 @@ int fz_lookup_cjk_ordering_by_language(const char *name);
 
 const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont);
 
+const unsigned char *fz_lookup_noto_math_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_music_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_symbol1_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_symbol2_font(fz_context *ctx, int *len);
 
