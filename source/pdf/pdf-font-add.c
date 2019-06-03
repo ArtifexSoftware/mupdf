@@ -221,9 +221,11 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_fo
 		prev_size = fz_advance_glyph(ctx, font, 0, 0) * 1000;
 		first_code = prev_code;
 
-		while (prev_code < face->num_glyphs)
+		for (;;)
 		{
 			curr_code = prev_code + 1;
+			if (curr_code >= face->num_glyphs)
+				break;
 			curr_size = fz_advance_glyph(ctx, font, curr_code, 0) * 1000;
 
 			switch (state)
