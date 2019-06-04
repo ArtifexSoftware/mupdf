@@ -1847,7 +1847,15 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 	fterr = FT_Get_Advance(font->ft_face, gid, mask, &adv);
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 	if (fterr && fterr != FT_Err_Invalid_Argument)
+	{
 		fz_warn(ctx, "FT_Get_Advance(%s,%d): %s", font->name, gid, ft_error_string(fterr));
+		if (font->width_table)
+		{
+			if (gid < font->width_count)
+				return font->width_table[gid] / 1000.0f;
+			return font->width_default / 1000.0f;
+		}
+	}
 	return (float) adv / ((FT_Face)font->ft_face)->units_per_EM;
 }
 
