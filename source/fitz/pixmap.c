@@ -68,6 +68,8 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal stride for pixmap (n=%d w=%d, stride=%d)", n, w, stride);
 	if (samples == NULL && stride < n*w)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal -ve stride for pixmap without data");
+	if (n > FZ_MAX_COLORS)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal number of colorants");
 
 	pix = fz_malloc_struct(ctx, fz_pixmap);
 	FZ_INIT_STORABLE(pix, 1, fz_drop_pixmap_imp);
