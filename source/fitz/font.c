@@ -1597,6 +1597,12 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 			FZ_DEVFLAG_LINEJOIN_UNDEFINED |
 			FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
+
+	/* Avoid cycles in glyph content streams referring to the glyph itself.
+	 * Remember to restore the content stream below, regardless of exceptions
+	 * or a sucessful run of the glyph. */
+	font->t3procs[gid] = NULL;
+
 	fz_try(ctx)
 	{
 		font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, fz_identity, NULL, NULL);
@@ -1605,7 +1611,10 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 		d1_rect = dev->d1_rect;
 	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		font->t3procs[gid] = contents;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 	if (fz_display_list_is_empty(ctx, font->t3lists[gid]))
@@ -1777,8 +1786,20 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 		fz_warn(ctx, "type3 glyph doesn't specify masked or colored");
 	}
 
-	ctm = fz_concat(font->t3matrix, trm);
-	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, ctm, gstate, def_cs);
+	/* Avoid cycles in glyph content streams referring to the glyph itself.
+	 * Remember to restore the content stream below, regardless of exceptions
+	 * or a sucessful run of the glyph. */
+	font->t3procs[gid] = NULL;
+
+	fz_try(ctx)
+	{
+		ctm = fz_concat(font->t3matrix, trm);
+		font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, ctm, gstate, def_cs);
+	}
+	fz_always(ctx)
+		font->t3procs[gid] = contents;
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*
