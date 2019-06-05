@@ -51,7 +51,8 @@ fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_d
 	}
 	fz_catch(ctx)
 	{
-		drop(ctx, state);
+		if (drop)
+			drop(ctx, state);
 		fz_rethrow(ctx);
 	}
 
