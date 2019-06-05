@@ -1040,8 +1040,8 @@ int ui_tree_item(struct list *list, const void *id, const char *label, int selec
 
 		ui_draw_string(area.x0 + x_item, area.y0, label);
 		if (list->is_tree && is_branch)
-			ui_draw_string(area.x0 + x_handle, area.y0,
-				*is_open ? "\xE2\x96\xBC" : "\xE2\x96\xB6");
+			ui_draw_character(area.x0 + x_handle, area.y0,
+				*is_open ? 0x25BC : 0x25B6);
 	}
 
 	list->item_y += ui.lineheight;

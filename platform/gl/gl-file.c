@@ -480,9 +480,9 @@ int ui_save_file(char filename[PATH_MAX], void (*extra_panel)(void))
 			const char *name = fc.files[i].name;
 			char buf[PATH_MAX];
 			if (fc.files[i].is_dir)
-				fz_snprintf(buf, sizeof buf, "\xf0\x9f\x93\x81 %s", name);
+				fz_snprintf(buf, sizeof buf, "%C %s", ICON_FOLDER, name);
 			else
-				fz_snprintf(buf, sizeof buf, "\xf0\x9f\x93\x84 %s", name);
+				fz_snprintf(buf, sizeof buf, "%C %s", ICON_DOCUMENT, name);
 			if (ui_list_item(&fc.list_dir, &fc.files[i], buf, i==fc.selected))
 			{
 				fc.selected = i;

@@ -249,21 +249,21 @@ static float ui_draw_glyph(fz_font *font, float size, int gid, float x, float y)
 	return fz_advance_glyph(ctx, font, gid, 0) * size;
 }
 
-float ui_measure_character(int ucs)
+float ui_measure_character(int c)
 {
 	fz_font *font;
-	int gid = fz_encode_character_with_fallback(ctx, g_font, ucs, 0, 0, &font);
+	int gid = fz_encode_character_with_fallback(ctx, g_font, c, 0, 0, &font);
 	return fz_advance_glyph(ctx, font, gid, 0) * ui.fontsize;
 }
 
-float ui_draw_character(int ucs, float x, float y)
+static float ui_draw_character_imp(float x, float y, int c)
 {
 	fz_font *font;
-	int gid = fz_encode_character_with_fallback(ctx, g_font, ucs, 0, 0, &font);
+	int gid = fz_encode_character_with_fallback(ctx, g_font, c, 0, 0, &font);
 	return ui_draw_glyph(font, ui.fontsize, gid, x, y);
 }
 
-void ui_begin_text(void)
+static void ui_begin_text(void)
 {
 	glBindTexture(GL_TEXTURE_2D, g_cache_tex);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -272,24 +272,23 @@ void ui_begin_text(void)
 	glBegin(GL_QUADS);
 }
 
-void ui_end_text(void)
+static void ui_end_text(void)
 {
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);
 }
 
-float ui_draw_string(float x, float y, const char *str)
+void ui_draw_string(float x, float y, const char *str)
 {
-	int ucs;
+	int c;
 	ui_begin_text();
 	while (*str)
 	{
-		str += fz_chartorune(&ucs, str);
-		x += ui_draw_character(ucs, x, y + ui.baseline);
+		str += fz_chartorune(&c, str);
+		x += ui_draw_character_imp(x, y + ui.baseline, c);
 	}
 	ui_end_text();
-	return x;
 }
 
 void ui_draw_string_part(float x, float y, const char *s, const char *e)
@@ -299,19 +298,27 @@ void ui_draw_string_part(float x, float y, const char *s, const char *e)
 	while (s < e)
 	{
 		s += fz_chartorune(&c, s);
-		x += ui_draw_character(c, x, y + ui.baseline);
+		x += ui_draw_character_imp(x, y + ui.baseline, c);
 	}
+	ui_end_text();
+}
+
+void ui_draw_character(float x, float y, int c)
+{
+	float w;
+	ui_begin_text();
+	w = ui_draw_character_imp(x, y + ui.baseline, c);
 	ui_end_text();
 }
 
 float ui_measure_string(const char *str)
 {
-	int ucs;
+	int c;
 	float x = 0;
 	while (*str)
 	{
-		str += fz_chartorune(&ucs, str);
-		x += ui_measure_character(ucs);
+		str += fz_chartorune(&c, str);
+		x += ui_measure_character(c);
 	}
 	return x;
 }

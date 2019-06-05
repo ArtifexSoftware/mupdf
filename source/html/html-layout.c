@@ -1104,9 +1104,9 @@ static void format_list_number(fz_context *ctx, int type, int x, char *buf, int 
 	switch (type)
 	{
 	case LST_NONE: fz_strlcpy(buf, "", size); break;
-	case LST_DISC: fz_strlcpy(buf, "\342\227\217  ", size); break; /* U+25CF BLACK CIRCLE */
-	case LST_CIRCLE: fz_strlcpy(buf, "\342\227\213  ", size); break; /* U+25CB WHITE CIRCLE */
-	case LST_SQUARE: fz_strlcpy(buf, "\342\226\240  ", size); break; /* U+25A0 BLACK SQUARE */
+	case LST_DISC: fz_snprintf(buf, size, "%C  ", 0x2022); break; /* U+2022 BULLET */
+	case LST_CIRCLE: fz_snprintf(buf, size, "%C  ", 0x25CB); break; /* U+25CB WHITE CIRCLE */
+	case LST_SQUARE: fz_snprintf(buf, size, "%C  ", 0x25A0); break; /* U+25A0 BLACK SQUARE */
 	default:
 	case LST_DECIMAL: fz_snprintf(buf, size, "%d. ", x); break;
 	case LST_DECIMAL_ZERO: fz_snprintf(buf, size, "%02d. ", x); break;

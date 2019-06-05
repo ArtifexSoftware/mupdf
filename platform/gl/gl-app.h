@@ -111,13 +111,11 @@ const char *ui_get_clipboard(void);
 
 void ui_init_fonts(void);
 void ui_finish_fonts(void);
-float ui_measure_character(int ucs);
-void ui_begin_text(void);
-float ui_draw_character(int ucs, float x, float y);
-void ui_end_text(void);
 
-float ui_draw_string(float x, float y, const char *str);
+void ui_draw_string(float x, float y, const char *str);
 void ui_draw_string_part(float x, float y, const char *s, const char *e);
+void ui_draw_character(float x, float y, int c);
+float ui_measure_character(int ucs);
 float ui_measure_string(const char *str);
 float ui_measure_string_part(const char *s, const char *e);
 
