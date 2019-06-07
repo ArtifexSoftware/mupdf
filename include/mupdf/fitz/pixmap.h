@@ -64,6 +64,7 @@ void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value,
 
 void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
 
+void fz_invert_pixmap_luminance(fz_context *ctx, fz_pixmap *pix);
 void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white);

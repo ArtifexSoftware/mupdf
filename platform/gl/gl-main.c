@@ -536,14 +536,14 @@ void render_page(void)
 	fz_set_aa_level(ctx, currentaa);
 
 	pix = fz_new_pixmap_from_page_with_separations(ctx, fzpage, draw_page_ctm, fz_device_rgb(ctx), seps, 0);
+	if (currentinvert)
+	{
+		fz_invert_pixmap_luminance(ctx, pix);
+		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
+	}
 	if (currenttint)
 	{
 		fz_tint_pixmap(ctx, pix, tint_black, tint_white);
-	}
-	if (currentinvert)
-	{
-		fz_invert_pixmap(ctx, pix);
-		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
 	}
 
 	ui_texture_from_pixmap(&page_tex, pix);

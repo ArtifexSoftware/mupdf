@@ -1022,6 +1022,55 @@ fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int black, int white)
 	}
 }
 
+/* Invert luminance in RGB pixmap, but keep the colors as is. */
+static void invert_luminance_rgb(unsigned char *rgb)
+{
+	int r, g, b, y, u, v, c, d, e;
+
+	/* Convert to YUV */
+	r = rgb[0];
+	g = rgb[1];
+	b = rgb[2];
+	y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
+	u = ((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
+	v = ((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
+
+	/* Invert luminance */
+	y = 255 - y;
+
+	/* Convert to RGB */
+	c = y - 16;
+	d = u - 128;
+	e = v - 128;
+	r = (298 * c + 409 * e + 128) >> 8;
+	g = (298 * c - 100 * d - 208 * e + 128) >> 8;
+	b = (298 * c + 516 * d + 128) >> 8;
+
+	rgb[0] = r > 255 ? 255 : r < 0 ? 0 : r;
+	rgb[1] = g > 255 ? 255 : g < 0 ? 0 : g;
+	rgb[2] = b > 255 ? 255 : b < 0 ? 0 : b;
+}
+
+void
+fz_invert_pixmap_luminance(fz_context *ctx, fz_pixmap *pix)
+{
+	unsigned char *s = pix->samples;
+	int x, y, n = pix->n;
+
+	if (pix->colorspace->type != FZ_COLORSPACE_RGB)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can only invert luminance of RGB pixmaps");
+
+	for (y = 0; y < pix->h; y++)
+	{
+		for (x = 0; x < pix->w; x++)
+		{
+			invert_luminance_rgb(s);
+			s += n;
+		}
+		s += pix->stride - pix->w * n;
+	}
+}
+
 /*
 	Invert all the pixels in a pixmap. All components
 	of all pixels are inverted (except alpha, which is unchanged).
