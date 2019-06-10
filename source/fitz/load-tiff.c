@@ -269,7 +269,10 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 				*dst++ = tiff->colormap[c + 0] >> 8;
 				*dst++ = tiff->colormap[c + maxval] >> 8;
 				*dst++ = tiff->colormap[c + maxval * 2] >> 8;
-				*dst++ = a << (8 - tiff->bitspersample);
+				if (tiff->bitspersample <= 8)
+					*dst++ = a << (8 - tiff->bitspersample);
+				else
+					*dst++ = a >> (tiff->bitspersample - 8);
 			}
 			else
 			{
