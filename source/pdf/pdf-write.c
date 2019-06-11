@@ -14,6 +14,11 @@
 
 #define SIG_EXTRAS_SIZE (1024)
 
+#define SLASH_BYTE_RANGE ("/ByteRange")
+#define SLASH_CONTENTS ("/Contents")
+#define SLASH_FILTER ("/Filter")
+
+
 typedef struct pdf_write_state_s pdf_write_state;
 
 /*
@@ -2704,22 +2709,27 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
 					char *bstr, *cstr, *fstr;
+					int bytes_read;
 					int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL));
 					fz_seek(ctx, stm, opts->ofs_list[pnum], SEEK_SET);
-					(void)fz_read(ctx, stm, (unsigned char *)buf, buf_size);
-					buf[buf_size-1] = 0;
+					/* SIG_EXTRAS_SIZE is an arbitrary value and its addition above to buf_size
+					 * could cause an attempt to read off the end of the file. That's not an
+					 * error, but we need to keep track of how many bytes are read and search
+					 * for markers only in defined data */
+					bytes_read = fz_read(ctx, stm, (unsigned char *)buf, buf_size);
+					assert(bytes_read <= buf_size);
 
-					bstr = strstr(buf, "/ByteRange");
-					cstr = strstr(buf, "/Contents");
-					fstr = strstr(buf, "/Filter");
+					bstr = fz_memmem(buf, bytes_read, SLASH_BYTE_RANGE, sizeof(SLASH_BYTE_RANGE)-1);
+					cstr = fz_memmem(buf, bytes_read, SLASH_CONTENTS, sizeof(SLASH_CONTENTS)-1);
+					fstr = fz_memmem(buf, bytes_read, SLASH_FILTER, sizeof(SLASH_FILTER)-1);
 
-					if (bstr && cstr && fstr && bstr < cstr && cstr < fstr)
-					{
-						usig->byte_range_start = bstr - buf + 10 + opts->ofs_list[pnum];
-						usig->byte_range_end = cstr - buf + opts->ofs_list[pnum];
-						usig->contents_start = cstr - buf + 9 + opts->ofs_list[pnum];
-						usig->contents_end = fstr - buf + opts->ofs_list[pnum];
-					}
+					if (!(bstr && cstr && fstr && bstr < cstr && cstr < fstr))
+						fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to determine byte ranges while writing signature");
+
+					usig->byte_range_start = bstr - buf + sizeof(SLASH_BYTE_RANGE)-1 + opts->ofs_list[pnum];
+					usig->byte_range_end = cstr - buf + opts->ofs_list[pnum];
+					usig->contents_start = cstr - buf + sizeof(SLASH_CONTENTS)-1 + opts->ofs_list[pnum];
+					usig->contents_end = fstr - buf + opts->ofs_list[pnum];
 				}
 
 				fz_drop_stream(ctx, stm);
