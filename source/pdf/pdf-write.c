@@ -2960,7 +2960,7 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_decrypt = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "encrypt", &val))
 	{
-		opts->do_encrypt = PDF_ENCRYPT_NONE;
+		opts->do_encrypt = PDF_ENCRYPT_UNKNOWN;
 		if (fz_option_eq(val, "rc4-40") || fz_option_eq(val, "yes"))
 			opts->do_encrypt = PDF_ENCRYPT_RC4_40;
 		if (fz_option_eq(val, "rc4-128"))

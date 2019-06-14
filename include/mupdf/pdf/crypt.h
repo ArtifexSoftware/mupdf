@@ -8,6 +8,7 @@ enum
 	PDF_ENCRYPT_RC4_128,
 	PDF_ENCRYPT_AES_128,
 	PDF_ENCRYPT_AES_256,
+	PDF_ENCRYPT_UNKNOWN
 };
 
 pdf_crypt *pdf_new_crypt(fz_context *ctx, pdf_obj *enc, pdf_obj *id);
