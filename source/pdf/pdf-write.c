@@ -2916,6 +2916,11 @@ const char *fz_pdf_write_options_usage =
 	"\tcontinue-on-error: continue saving the document even if there is an error\n"
 	"\tor garbage=compact: ... and compact cross reference table\n"
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
+	"\tdecrypt: write unencrypted document\n"
+	"\tencrypt=rc4-40|rc4-128|aes-128|aes-256: write encrypted document\n"
+	"\tpermissions=NUMBER: document permissions to grant when encrypting\n"
+	"\tuser-password=PASSWORD: password required to read document\n"
+	"\towner-password=PASSWORD: password required to edit document\n"
 	"\n";
 
 /*
@@ -2970,9 +2975,9 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		if (fz_option_eq(val, "aes-256"))
 			opts->do_encrypt = PDF_ENCRYPT_AES_256;
 	}
-	if (fz_has_option(ctx, args, "ownerpassword", &val))
+	if (fz_has_option(ctx, args, "owner-password", &val))
 		fz_copy_option(ctx, val, opts->opwd_utf8, nelem(opts->opwd_utf8));
-	if (fz_has_option(ctx, args, "userpassword", &val))
+	if (fz_has_option(ctx, args, "user-password", &val))
 		fz_copy_option(ctx, val, opts->upwd_utf8, nelem(opts->upwd_utf8));
 	if (fz_has_option(ctx, args, "permissions", &val))
 		opts->permissions = fz_atoi(val);
