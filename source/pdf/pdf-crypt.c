@@ -1413,7 +1413,7 @@ pdf_new_encrypt(fz_context *ctx, const char *opwd_utf8, const char *upwd_utf8, p
 	case PDF_ENCRYPT_AES_256:
 		v = 5; r = 6; method = PDF_CRYPT_AESV3; length = 256; break;
 	default:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid encryption version");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid encryption method");
 	}
 
 	crypt->v = v;
