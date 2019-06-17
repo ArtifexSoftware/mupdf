@@ -23,6 +23,11 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 
 	fz_try(ctx)
 	{
+		pdf_obj *sp = pdf_dict_get(ctx, obj, PDF_NAME(StructParents));
+		int structparents = -1;
+		if (pdf_is_number(ctx, sp))
+			structparents = pdf_to_int(ctx, sp);
+
 		if (own_res)
 		{
 			pdf_obj *r = pdf_dict_get(ctx, obj, PDF_NAME(Resources));
@@ -33,7 +38,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		res = pdf_new_dict(ctx, doc, 1);
 
 		proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
-		proc_filter = pdf_new_filter_processor_with_text_filter(ctx, doc, proc_buffer, orig_res, res, text_filter, after_text, arg);
+		proc_filter = pdf_new_filter_processor_with_text_filter(ctx, doc, structparents, proc_buffer, orig_res, res, text_filter, after_text, arg);
 
 		pdf_process_contents(ctx, proc_filter, doc, orig_res, obj, cookie);
 		pdf_close_processor(ctx, proc_filter);
@@ -201,6 +206,10 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 
 	fz_try(ctx)
 	{
+		pdf_obj *sp = pdf_dict_get(ctx, page->obj, PDF_NAME(StructParents));
+		int structparents = -1;
+		if (pdf_is_number(ctx, sp))
+			structparents = pdf_to_int(ctx, sp);
 		contents = pdf_page_contents(ctx, page);
 		resources = pdf_page_resources(ctx, page);
 
@@ -208,7 +217,7 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 		if (sanitize)
 		{
 			res = pdf_new_dict(ctx, doc, 1);
-			proc_filter = pdf_new_filter_processor_with_text_filter(ctx, doc, proc_buffer, resources, res, text_filter, after_text, proc_arg);
+			proc_filter = pdf_new_filter_processor_with_text_filter(ctx, doc, structparents, proc_buffer, resources, res, text_filter, after_text, proc_arg);
 			pdf_process_contents(ctx, proc_filter, doc, resources, contents, cookie);
 			pdf_close_processor(ctx, proc_filter);
 		}

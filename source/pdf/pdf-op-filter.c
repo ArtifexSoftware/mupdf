@@ -53,12 +53,25 @@ struct filter_gstate_s
 	pdf_filter_gstate sent;
 };
 
+typedef struct editable_str_s
+{
+	char *utf8;
+	int edited;
+	int pos;
+} editable_str;
+
 typedef struct tag_record_s
 {
 	int bdc;
 	char *tag;
 	pdf_obj *raw;
 	pdf_obj *cooked;
+
+	int mcid_num;
+	pdf_obj *mcid_obj;
+	editable_str alt;
+	editable_str actualtext;
+
 	struct tag_record_s *prev;
 } tag_record;
 
@@ -66,6 +79,8 @@ typedef struct pdf_filter_processor_s
 {
 	pdf_processor super;
 	pdf_document *doc;
+	int structparents;
+	pdf_obj *structarray;
 	pdf_processor *chain;
 	filter_gstate *gstate;
 	pdf_text_object_state tos;
@@ -73,6 +88,7 @@ typedef struct pdf_filter_processor_s
 	int BT_pending;
 	float Tm_adjust;
 	void *font_name;
+	tag_record *current_tags;
 	tag_record *pending_tags;
 	pdf_text_filter_fn *text_filter;
 	pdf_after_text_object_fn *after_text;
@@ -172,13 +188,11 @@ static void flush_tags(fz_context *ctx, pdf_filter_processor *p, tag_record **ta
 	{
 		if (p->chain->op_BDC)
 			p->chain->op_BDC(ctx, p->chain, tag->tag, tag->raw, tag->cooked);
-		pdf_drop_obj(ctx, tag->raw);
-		pdf_drop_obj(ctx, tag->cooked);
 	}
 	else if (p->chain->op_BMC)
 		p->chain->op_BMC(ctx, p->chain, tag->tag);
-	fz_free(ctx, tag->tag);
-	fz_free(ctx, tag);
+	tag->prev = p->current_tags;
+	p->current_tags = tag;
 	*tags = NULL;
 }
 
@@ -461,7 +475,7 @@ done_SC:
 }
 
 static int
-filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
+filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid, int *unicode)
 {
 	filter_gstate *gstate = p->gstate;
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
@@ -485,6 +499,7 @@ filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
 		ucsbuf[0] = FZ_REPLACEMENT_CHARACTER;
 		ucslen = 1;
 	}
+	*unicode = ucsbuf[0];
 
 	if (p->text_filter)
 	{
@@ -527,6 +542,129 @@ filter_show_space(fz_context *ctx, pdf_filter_processor *p, float tadj)
 		p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 }
 
+static void
+walk_string(fz_context *ctx, int uni, int remove, editable_str *str)
+{
+	int rune;
+
+	if (str->utf8 == NULL)
+		return;
+
+	do
+	{
+		char *s = &str->utf8[str->pos];
+		size_t len;
+		int n = fz_chartorune(&rune, s);
+		if (rune == uni)
+		{
+			/* Match. Skip over that one. */
+			str->pos += n;
+		}
+		else if (uni == 32) {
+			/* We don't care if we're given whitespace
+			 * and it doesn't match the string. Don't
+			 * skip forward. Nothing to remove. */
+			break;
+		}
+		else if (rune == 32) {
+			/* The string has a whitespace, and we
+			 * don't match it; that's forgivable as
+			 * PDF often misses out spaces. Remove this
+			 * if we are removing stuff. */
+		}
+		else
+		{
+			/* Mismatch. No point in tracking through any more. */
+			str->pos = -1;
+			break;
+		}
+		if (remove)
+		{
+			len = strlen(s+n);
+			memmove(s, s+n, len+1);
+			str->edited = 1;
+		}
+	}
+	while (rune != uni);
+}
+
+/* For a given character we've processed (removed or not)
+ * consider it in the tag_record. Try and step over it in
+ * the Alt or ActualText strings, removing if possible.
+ * If we can't marry up the Alt/ActualText strings with
+ * what we're meeting, just take the easy route and delete
+ * the whole lot. */
+static void
+mcid_char_imp(fz_context *ctx, pdf_filter_processor *p, tag_record *tr, int uni, int remove)
+{
+	if (tr->mcid_obj == NULL)
+		/* No object, or already deleted */
+		return;
+
+	if (remove)
+	{
+		/* Remove the expanded abbreviation, if there is one. */
+		pdf_dict_del(ctx, tr->mcid_obj, PDF_NAME(E));
+		/* Remove the structure title, if there is one. */
+		pdf_dict_del(ctx, tr->mcid_obj, PDF_NAME(T));
+	}
+	/* Edit the Alt string */
+	walk_string(ctx, uni, remove, &tr->alt);
+	/* Edit the ActualText string */
+	walk_string(ctx, uni, remove, &tr->actualtext);
+	/* If we're removing a character, and either of the strings
+	 * haven't matched up to what we were expecting, then just
+	 * delete the whole string. */
+	if (remove)
+		remove = (tr->alt.pos == -1 || tr->actualtext.pos == -1);
+	else if (tr->alt.pos >= 0 || tr->actualtext.pos >= 0)
+	{
+		/* The strings are making sense so far */
+		remove = 0;
+	}
+	if (remove)
+	{
+		/* Anything else we have to err on the side of caution and
+		 * delete everything that might leak info. */
+		if (tr->actualtext.pos == -1)
+			pdf_dict_del(ctx, tr->mcid_obj, PDF_NAME(ActualText));
+		if (tr->alt.pos == -1)
+			pdf_dict_del(ctx, tr->mcid_obj, PDF_NAME(Alt));
+		pdf_drop_obj(ctx, tr->mcid_obj);
+		tr->mcid_obj = NULL;
+		fz_free(ctx, tr->alt.utf8);
+		tr->alt.utf8 = NULL;
+		fz_free(ctx, tr->actualtext.utf8);
+		tr->actualtext.utf8 = NULL;
+	}
+}
+
+/* For every character that is processed, consider that character in
+ * every pending/current MCID. */
+static void
+mcid_char(fz_context *ctx, pdf_filter_processor *p, int uni, int remove)
+{
+	tag_record *tr  = p->pending_tags;
+
+	for (tr = p->pending_tags; tr != NULL; tr = tr->prev)
+		mcid_char_imp(ctx, p, tr, uni, remove);
+	for (tr = p->current_tags; tr != NULL; tr = tr->prev)
+		mcid_char_imp(ctx, p, tr, uni, remove);
+}
+
+static void
+update_mcid(fz_context *ctx, pdf_filter_processor *p)
+{
+	tag_record *tag = p->current_tags;
+
+	if (tag == NULL)
+		return;
+	if (tag->alt.edited)
+		pdf_dict_put_text_string(ctx, tag->mcid_obj, PDF_NAME(Alt), tag->alt.utf8);
+	if (tag->actualtext.edited)
+		pdf_dict_put_text_string(ctx, tag->mcid_obj, PDF_NAME(Alt), tag->actualtext.utf8);
+}
+
 /* Process a string (from buf, of length len), from position *pos onwards.
  * Stop when we hit the end, or when we find a character to remove. The
  * caller will restart us again later. On exit, *pos = the point we got to,
@@ -549,18 +687,23 @@ filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char
 
 	while (buf < end)
 	{
+		int uni;
 		*inc = pdf_decode_cmap(fontdesc->encoding, buf, end, &cpt);
 		buf += *inc;
 
 		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
 		if (cid < 0)
 		{
+			uni = FZ_REPLACEMENT_CHARACTER;
 			fz_warn(ctx, "cannot encode character");
 		}
 		else
-			remove = filter_show_char(ctx, p, cid);
+			remove = filter_show_char(ctx, p, cid, &uni);
 		if (cpt == 32 && *inc == 1)
 			filter_show_space(ctx, p, gstate->pending.text.word_space);
+		/* For every character we process (whether we remove it
+		 * or not), we consider any MCIDs that are in effect. */
+		mcid_char(ctx, p, uni, remove);
 		if (remove)
 		{
 			*removed_space = (cpt == 32 && *inc == 1);
@@ -1519,6 +1662,9 @@ pdf_filter_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *ra
 static void
 pdf_filter_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
+	/* Create a tag, and push it onto pending_tags. If it gets
+	 * flushed to the stream, it'll be moved from there onto
+	 * current_tags. */
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	tag_record *bmc = fz_malloc_struct(ctx, tag_record);
 
@@ -1536,8 +1682,12 @@ pdf_filter_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 static void
 pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
+	/* Create a tag, and push it onto pending_tags. If it gets
+	 * flushed to the stream, it'll be moved from there onto
+	 * current_tags. */
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	tag_record *bdc = fz_malloc_struct(ctx, tag_record);
+	pdf_obj *mcid;
 
 	fz_try(ctx)
 	{
@@ -1556,22 +1706,35 @@ pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *r
 	}
 	bdc->prev = p->pending_tags;
 	p->pending_tags = bdc;
+
+	/* Look to see if this has an mcid object */
+	mcid = pdf_dict_get(ctx, cooked, PDF_NAME(MCID));
+	if (!pdf_is_number(ctx, mcid))
+		return;
+	bdc->mcid_num = pdf_to_int(ctx, mcid);
+	bdc->mcid_obj = pdf_keep_obj(ctx, pdf_array_get(ctx, p->structarray, bdc->mcid_num));
+	bdc->alt.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(Alt)));
+	bdc->actualtext.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(ActualText)));
 }
 
+/* Bin the topmost (most recent) tag from a tag list. */
 static void
-pop_tag(fz_context *ctx, pdf_filter_processor *p)
+pop_tag(fz_context *ctx, pdf_filter_processor *p, tag_record **tags)
 {
-	tag_record *tag = p->pending_tags;
+	tag_record *tag = *tags;
 
 	if (tag == NULL)
 		return;
-	p->pending_tags = tag->prev;
+	*tags = tag->prev;
 	fz_free(ctx, tag->tag);
 	if (tag->bdc)
 	{
 		pdf_drop_obj(ctx, tag->raw);
 		pdf_drop_obj(ctx, tag->cooked);
 	}
+	fz_free(ctx, tag->alt.utf8);
+	fz_free(ctx, tag->actualtext.utf8);
+	pdf_drop_obj(ctx, tag->mcid_obj);
 	fz_free(ctx, tag);
 }
 
@@ -1580,13 +1743,17 @@ pdf_filter_EMC(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 
-	if (p->pending_tags == NULL)
+	/* If we have any pending tags, pop one of those. If not,
+	 * pop one of the current ones, and pass the EMC on. */
+	if (p->pending_tags != NULL)
+		pop_tag(ctx, p, &p->pending_tags);
+	else
 	{
+		update_mcid(ctx, p);
+		pop_tag(ctx, p, &p->current_tags);
 		if (p->chain->op_EMC)
 			p->chain->op_EMC(ctx, p->chain);
 	}
-	else
-		pop_tag(ctx, p);
 }
 
 /* compatibility */
@@ -1633,7 +1800,10 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 		gs = next;
 	}
 	while (p->pending_tags)
-		pop_tag(ctx, p);
+		pop_tag(ctx, p, &p->pending_tags);
+	while (p->current_tags)
+		pop_tag(ctx, p, &p->current_tags);
+	pdf_drop_obj(ctx, p->structarray);
 	pdf_drop_document(ctx, p->doc);
 	fz_free(ctx, p->font_name);
 }
@@ -1676,7 +1846,7 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 pdf_processor *
 pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb)
 {
-	return pdf_new_filter_processor_with_text_filter(ctx, doc, chain, old_rdb, new_rdb, NULL, NULL, NULL);
+	return pdf_new_filter_processor_with_text_filter(ctx, doc, -1, chain, old_rdb, new_rdb, NULL, NULL, NULL);
 }
 
 /*
@@ -1698,7 +1868,7 @@ pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_processor *chai
 	text_filter function.
 */
 pdf_processor *
-pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after, void *text_filter_opaque)
+pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, int structparents, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after, void *text_filter_opaque)
 {
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -1824,6 +1994,9 @@ pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, pd
 	}
 
 	proc->doc = pdf_keep_document(ctx, doc);
+	proc->structparents = structparents;
+	if (structparents != -1)
+		proc->structarray = pdf_keep_obj(ctx, pdf_lookup_number(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/StructTreeRoot/ParentTree"), structparents));
 	proc->chain = chain;
 	proc->old_rdb = old_rdb;
 	proc->new_rdb = new_rdb;
