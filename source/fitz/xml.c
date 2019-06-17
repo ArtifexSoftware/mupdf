@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const struct { const char *ent; int ucs; } html_entities[] = {
+static const struct { const char *name; int c; } html_entities[] = {
 	{"nbsp",160}, {"iexcl",161}, {"cent",162}, {"pound",163},
 	{"curren",164}, {"yen",165}, {"brvbar",166}, {"sect",167},
 	{"uml",168}, {"copy",169}, {"ordf",170}, {"laquo",171},
@@ -316,9 +316,9 @@ static size_t xml_parse_entity(int *c, char *a)
 
 	/* We should only be doing this for XHTML, but it shouldn't be a problem. */
 	for (i = 0; i < nelem(html_entities); ++i) {
-		size_t n = strlen(html_entities[i].ent);
-		if (!memcmp(a+1, html_entities[i].ent, n) && a[1+n] == ';') {
-			*c = html_entities[i].ucs;
+		size_t n = strlen(html_entities[i].name);
+		if (!strncmp(a+1, html_entities[i].name, n) && a[n+1] == ';') {
+			*c = html_entities[i].c;
 			return n + 2;
 		}
 	}
@@ -508,9 +508,11 @@ parse_element:
 	return "syntax error in element";
 
 parse_comment:
+	if (p[0]=='D' && p[1]=='O' && p[2]=='C' && p[3]=='T' && p[4]=='Y' && p[5]=='P' && p[6]=='E')
+		goto parse_declaration;
+	if (p[0]=='E' && p[1]=='N' && p[2]=='T' && p[3]=='I' && p[4]=='T' && p[5]=='Y')
+		goto parse_declaration;
 	if (*p == '[') goto parse_cdata;
-	if (*p == 'D' && !memcmp(p, "DOCTYPE", 7)) goto parse_declaration;
-	if (*p == 'E' && !memcmp(p, "ENTITY", 6)) goto parse_declaration;
 	if (*p++ != '-') return "syntax error in comment (<! not followed by --)";
 	if (*p++ != '-') return "syntax error in comment (<!- not followed by -)";
 	while (*p) {

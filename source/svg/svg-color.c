@@ -302,7 +302,7 @@ svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
 		p += 5;
 		while (*p && svg_is_whitespace(*p))
 			++p;
-		if (memcmp(p, "none", 4) != 0)
+		if (strncmp(p, "none", 4) != 0)
 		{
 			svg_parse_color(ctx, doc, p, fill);
 			*fill_is_set = 1;
@@ -315,7 +315,7 @@ svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
 		p += 7;
 		while (*p && svg_is_whitespace(*p))
 			++p;
-		if (memcmp(p, "none", 4) != 0)
+		if (strncmp(p, "none", 4) != 0)
 		{
 			svg_parse_color(ctx, doc, p, stroke);
 			*stroke_is_set = 1;
