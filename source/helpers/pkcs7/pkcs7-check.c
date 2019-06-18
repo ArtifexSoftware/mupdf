@@ -66,8 +66,8 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, 
 			case PDF_SIGNATURE_ERROR_NO_CERTIFICATE:
 				fz_strlcpy(ebuf, "No certificate", ebufsize);
 				break;
-			case PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED:
-				fz_strlcpy(ebuf, "Document changed since signing", ebufsize);
+			case PDF_SIGNATURE_ERROR_DIGEST_FAILURE:
+				fz_strlcpy(ebuf, "Signature invalidated by change to document", ebufsize);
 				break;
 			case PDF_SIGNATURE_ERROR_SELF_SIGNED:
 				fz_strlcpy(ebuf, "Self-signed certificate", ebufsize);

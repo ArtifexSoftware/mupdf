@@ -302,7 +302,7 @@ static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 			switch (err)
 			{
 			case PKCS7_R_DIGEST_FAILURE:
-				res = PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED;
+				res = PDF_SIGNATURE_ERROR_DIGEST_FAILURE;
 				break;
 			default:
 				break;
