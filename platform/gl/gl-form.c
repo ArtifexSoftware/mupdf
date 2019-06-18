@@ -11,8 +11,9 @@
 #include "mupdf/helpers/pkcs7-openssl.h"
 
 static pdf_widget *sig_widget;
-static char sig_status[500];
-static int sig_result;
+static char sig_designated_name[500];
+static enum pdf_signature_error sig_cert_error;
+static enum pdf_signature_error sig_digest_error;
 
 static char cert_filename[PATH_MAX];
 static struct input cert_password;
@@ -88,7 +89,7 @@ static void cert_file_dialog(void)
 	}
 }
 
-static void sig_dialog(void)
+static void sig_sign_dialog(void)
 {
 	const char *label = pdf_field_label(ctx, sig_widget->obj);
 
@@ -99,10 +100,7 @@ static void sig_dialog(void)
 		ui_label("%s", label);
 		ui_spacer();
 
-		if (sig_result)
-			ui_label("Signature is valid.\n%s", sig_status);
-		else
-			ui_label("Could not verify signature:\n%s", sig_status);
+		ui_label("Would you like to sign this field?");
 
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
@@ -126,11 +124,64 @@ static void sig_dialog(void)
 	ui_dialog_end();
 }
 
+static void sig_verify_dialog(void)
+{
+	const char *label = pdf_field_label(ctx, sig_widget->obj);
+
+	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
+	{
+		ui_layout(T, X, NW, 2, 2);
+
+		ui_label("%s", label);
+		ui_spacer();
+
+		ui_label("Designated name: %s.", sig_designated_name);
+		ui_spacer();
+
+		if (sig_cert_error)
+			ui_label("Certificate error: %s", pdf_signature_error_description(sig_cert_error));
+		else
+			ui_label("Certificate is trusted.");
+
+		ui_spacer();
+
+		if (sig_digest_error)
+			ui_label("Digest error: %s", pdf_signature_error_description(sig_digest_error));
+		else
+			ui_label("The signature digest is valid.");
+
+		ui_layout(B, X, NW, 2, 2);
+		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
+		{
+			ui_layout(R, NONE, S, 0, 0);
+			if (ui_button("Close") || (!ui.focus && ui.key == KEY_ESCAPE))
+				ui.dialog = NULL;
+		}
+		ui_panel_end();
+	}
+	ui_dialog_end();
+}
+
 static void show_sig_dialog(pdf_widget *widget)
 {
-	sig_widget = widget;
-	sig_result = pdf_check_signature(ctx, pdf, widget->obj, sig_status, sizeof sig_status);
-	ui.dialog = sig_dialog;
+	fz_try(ctx)
+	{
+		sig_widget = widget;
+
+		if (pdf_is_signed(ctx, pdf, widget->obj))
+		{
+			sig_cert_error = pdf_check_certificate(ctx, pdf, widget->obj);
+			sig_digest_error = pdf_check_digest(ctx, pdf, widget->obj);
+			pdf_signature_designated_name(ctx, pdf, widget->obj, sig_designated_name, sizeof(sig_designated_name));
+			ui.dialog = sig_verify_dialog;
+		}
+		else
+		{
+			ui.dialog = sig_sign_dialog;
+		}
+	}
+	fz_catch(ctx)
+		ui_show_warning_dialog("%s", fz_caught_message(ctx));
 }
 
 static pdf_widget *tx_widget;

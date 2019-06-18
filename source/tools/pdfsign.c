@@ -23,17 +23,25 @@ static void usage(void)
 
 void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
-	char msg[256];
-	int res;
+	char name[500];
+	enum pdf_signature_error err;
+
 	printf("verifying signature %d\n", pdf_to_num(ctx, signature));
-	res = pdf_check_signature(ctx, doc, signature, msg, sizeof msg);
-	if (res)
-		printf("  result: Signature is valid.\n");
+
+	pdf_signature_designated_name(ctx, doc, signature, name, sizeof name);
+	printf("  Designated name: %s\n", name);
+
+	err = pdf_check_certificate(ctx, doc, signature);
+	if (err)
+		printf("  Certificate error: %s\n", pdf_signature_error_description(err));
 	else
-	{
-		printf("  result: Could not verify signature.\n");
-		printf("  reason: %s\n", msg);
-	}
+		printf("  Certificate is trusted.\n");
+
+	err = pdf_check_digest(ctx, doc, signature);
+	if (err)
+		printf("  Digest error: %s\n", pdf_signature_error_description(err));
+	else
+		printf("  The document digest is valid.\n");
 }
 
 void verify_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
@@ -106,7 +114,7 @@ int pdfsign_main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_drop_page(ctx, (fz_page*)page);
-		fprintf(stderr, "error verify signatures: %s\n", fz_caught_message(ctx));
+		fprintf(stderr, "error verifying signatures: %s\n", fz_caught_message(ctx));
 	}
 
 	fz_flush_warnings(ctx);
