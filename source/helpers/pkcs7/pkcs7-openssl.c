@@ -441,7 +441,7 @@ enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
 	BIO *bsig = NULL;
 	BIO *bcert = NULL;
 	STACK_OF(X509) *certs = NULL;
-	int res = 0;
+	int res = PDF_SIGNATURE_ERROR_UNKNOWN;
 
 	bsig = BIO_new_mem_buf(sig, sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
