@@ -111,11 +111,14 @@ static void sig_dialog(void)
 			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
 				ui.dialog = NULL;
 			ui_spacer();
-			if (ui_button("Sign"))
+			if (!pdf_field_flags(ctx, sig_widget->obj) & PDF_FIELD_IS_READ_ONLY)
 			{
-				fz_strlcpy(cert_filename, filename, sizeof cert_filename);
-				ui_init_open_file(".", cert_file_filter);
-				ui.dialog = cert_file_dialog;
+				if (ui_button("Sign"))
+				{
+					fz_strlcpy(cert_filename, filename, sizeof cert_filename);
+					ui_init_open_file(".", cert_file_filter);
+					ui.dialog = cert_file_dialog;
+				}
 			}
 		}
 		ui_panel_end();
@@ -296,29 +299,34 @@ void do_widget_canvas(fz_irect canvas_area)
 		{
 			pdf_annot_event_up(ctx, widget);
 
-			if (pdf_field_flags(ctx, widget->obj) & PDF_FIELD_IS_READ_ONLY)
-				continue;
-
-			switch (pdf_widget_type(ctx, widget))
+			if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE)
 			{
-			default:
-				break;
-			case PDF_WIDGET_TYPE_CHECKBOX:
-			case PDF_WIDGET_TYPE_RADIOBUTTON:
-				pdf_toggle_widget(ctx, widget);
-				break;
-			case PDF_WIDGET_TYPE_TEXT:
-				show_tx_dialog(widget);
-				break;
-			case PDF_WIDGET_TYPE_COMBOBOX:
-			case PDF_WIDGET_TYPE_LISTBOX:
-				ui.dialog = ch_dialog;
-				ch_widget = widget;
-				break;
-			case PDF_WIDGET_TYPE_SIGNATURE:
 				show_sig_dialog(widget);
-				break;
 			}
+			else
+			{
+				if (pdf_field_flags(ctx, widget->obj) & PDF_FIELD_IS_READ_ONLY)
+					continue;
+
+				switch (pdf_widget_type(ctx, widget))
+				{
+				default:
+					break;
+				case PDF_WIDGET_TYPE_CHECKBOX:
+				case PDF_WIDGET_TYPE_RADIOBUTTON:
+					pdf_toggle_widget(ctx, widget);
+					break;
+				case PDF_WIDGET_TYPE_TEXT:
+					show_tx_dialog(widget);
+					break;
+				case PDF_WIDGET_TYPE_COMBOBOX:
+				case PDF_WIDGET_TYPE_LISTBOX:
+					ui.dialog = ch_dialog;
+					ch_widget = widget;
+					break;
+				}
+			}
+
 		}
 	}
 
