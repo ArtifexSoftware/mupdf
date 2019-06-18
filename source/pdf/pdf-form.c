@@ -1133,6 +1133,49 @@ fz_stream *pdf_signature_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_obj 
 	return bytes;
 }
 
+int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+{
+	fz_range *byte_range = NULL;
+	int byte_range_len;
+	int changed = 0;
+
+	fz_var(byte_range);
+	fz_try(ctx)
+	{
+		byte_range_len = pdf_signature_byte_range(ctx, doc, signature, NULL);
+		if (byte_range_len)
+		{
+			fz_range *last_range;
+			int64_t end_of_range;
+
+			byte_range = fz_calloc(ctx, byte_range_len, sizeof(*byte_range));
+			pdf_signature_byte_range(ctx, doc, signature, byte_range);
+
+			last_range = &byte_range[byte_range_len -1];
+			end_of_range = last_range->offset + last_range->length;
+
+			/* We can see how long the document was when signed by inspecting the byte
+			 * ranges of the signature.  The document, when read in, may have already
+			 * had changes tagged on to it, past its extent when signed, or we may have
+			 * made changes since reading it, which will be held in a new incremental
+			 * xref section. */
+			if (doc->file_size > end_of_range || doc->num_incremental_sections > 0)
+				changed = 1;
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, byte_range);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return changed;
+}
+
+
 int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
 	pdf_obj *c = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(Contents), NULL);
