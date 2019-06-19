@@ -1906,14 +1906,6 @@ static void pdf_run_Do_form(fz_context *ctx, pdf_processor *proc, const char *na
 
 /* marked content */
 
-static void pdf_run_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
-{
-}
-
-static void pdf_run_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
-{
-}
-
 static void pdf_run_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
@@ -1944,6 +1936,18 @@ static void pdf_run_EMC(fz_context *ctx, pdf_processor *proc)
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
 	fz_end_layer(ctx, pr->dev);
+}
+
+static void pdf_run_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
+{
+	pdf_run_BMC(ctx, proc, tag);
+	pdf_run_EMC(ctx, proc);
+}
+
+static void pdf_run_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
+{
+	pdf_run_BDC(ctx, proc, tag, raw, cooked);
+	pdf_run_EMC(ctx, proc);
 }
 
 /* compatibility */
