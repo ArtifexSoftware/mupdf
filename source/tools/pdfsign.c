@@ -21,11 +21,11 @@ static void usage(void)
 	exit(1);
 }
 
-void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_obj *signature)
+void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	char msg[256];
 	int res;
-	printf("verifying signature on page %d\n", n+1);
+	printf("verifying signature %d\n", pdf_to_num(ctx, signature));
 	res = pdf_check_signature(ctx, doc, signature, msg, sizeof msg);
 	if (res)
 		printf("  result: Signature is valid.\n");
@@ -36,12 +36,30 @@ void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_obj *signat
 	}
 }
 
-void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
+void verify_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	pdf_widget *widget;
-	for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
-		if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE)
-			verify_signature(ctx, doc, n, widget->obj);
+	pdf_obj *ft, *kids;
+	int i, n;
+
+	ft = pdf_dict_get(ctx, field, PDF_NAME(FT));
+	if (ft == PDF_NAME(Sig))
+		verify_signature(ctx, doc, field);
+
+	kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
+	n = pdf_array_len(ctx, kids);
+	for (i = 0; i < n; ++i)
+		verify_field(ctx, doc, pdf_array_get(ctx, kids, i));
+}
+
+void verify_acro_form(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *trailer = pdf_trailer(ctx, doc);
+	pdf_obj *root = pdf_dict_get(ctx, trailer, PDF_NAME(Root));
+	pdf_obj *acroform = pdf_dict_get(ctx, root, PDF_NAME(AcroForm));
+	pdf_obj *fields = pdf_dict_get(ctx, acroform, PDF_NAME(Fields));
+	int i, n = pdf_array_len(ctx, fields);
+	for (i = 0; i < n; ++i)
+		verify_field(ctx, doc, pdf_array_get(ctx, fields, i));
 }
 
 int pdfsign_main(int argc, char **argv)
@@ -49,7 +67,7 @@ int pdfsign_main(int argc, char **argv)
 	fz_context *ctx;
 	pdf_document *doc;
 	char *password = "";
-	int i, n, c;
+	int c;
 	pdf_page *page = NULL;
 
 	while ((c = fz_getopt(argc, argv, "p:")) != -1)
@@ -81,15 +99,7 @@ int pdfsign_main(int argc, char **argv)
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", filename);
-
-		n = pdf_count_pages(ctx, doc);
-		for (i = 0; i < n; ++i)
-		{
-			page = pdf_load_page(ctx, doc, i);
-			verify_page(ctx, doc, i, page);
-			fz_drop_page(ctx, (fz_page*)page);
-			page = NULL;
-		}
+		verify_acro_form(ctx, doc);
 	}
 	fz_always(ctx)
 		pdf_drop_document(ctx, doc);
