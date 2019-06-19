@@ -24,9 +24,16 @@ static void usage(void)
 void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_widget *widget)
 {
 	char msg[256];
+	int res;
 	printf("verifying signature on page %d\n", n+1);
-	pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
-	printf("  result: '%s'\n", msg);
+	res = pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
+	if (res)
+		printf("  result: Signature is valid.\n");
+	else
+	{
+		printf("  result: Could not verify signature.\n");
+		printf("  reason: %s\n", msg);
+	}
 }
 
 void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
