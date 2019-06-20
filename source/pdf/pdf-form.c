@@ -1092,12 +1092,108 @@ int pdf_signature_byte_range(fz_context *ctx, pdf_document *doc, pdf_obj *signat
 	{
 		for (i = 0; i < n; i++)
 		{
-			byte_range[i].offset = pdf_array_get_int(ctx, br, 2*i);
-			byte_range[i].length = pdf_array_get_int(ctx, br, 2*i+1);
+			int offset = pdf_array_get_int(ctx, br, 2*i);
+			int length = pdf_array_get_int(ctx, br, 2*i+1);
+
+			if (offset < 0 || offset > doc->file_size)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "offset of signature byte range outside of file");
+			else if (length < 0)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "length of signature byte range negative");
+			else if (offset + length > doc->file_size)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "signature byte range extends past end of file");
+
+			byte_range[i].offset = offset;
+			byte_range[i].length = length;
 		}
 	}
 
 	return n;
+}
+
+static int is_white(int c)
+{
+	return c == '\x00' || c == '\x09' || c == '\x0a' || c == '\x0c' || c == '\x0d' || c == '\x20';
+}
+
+static int is_hex_or_white(int c)
+{
+	return (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c >= '0' && c <= '9') || is_white(c);
+}
+
+static void validate_certificate_data(fz_context *ctx, pdf_document *doc, fz_range *hole)
+{
+	fz_stream *stm;
+	int c;
+
+	stm = fz_open_range_filter(ctx, doc->file, hole, 1);
+	fz_try(ctx)
+	{
+		while (is_white((c = fz_read_byte(ctx, stm))))
+			;
+
+		if (c == '<')
+			c = fz_read_byte(ctx, stm);
+
+		while (is_hex_or_white((c = fz_read_byte(ctx, stm))))
+			;
+
+		if (c == '>')
+			c = fz_read_byte(ctx, stm);
+
+		while (is_white((c = fz_read_byte(ctx, stm))))
+			;
+
+		if (c != EOF)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "signature certificate data contains invalid character");
+		if (fz_tell(ctx, stm) != hole->length)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of signature certificate data");
+	}
+	fz_always(ctx)
+		fz_drop_stream(ctx, stm);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static int rangecmp(const void *a_, const void *b_)
+{
+	const fz_range *a = (const fz_range *) a_;
+	const fz_range *b = (const fz_range *) b_;
+	return (int) (a->offset - b->offset);
+}
+
+static void validate_byte_ranges(fz_context *ctx, pdf_document *doc, fz_range *unsorted, int nranges)
+{
+	int64_t offset = 0;
+	fz_range *sorted;
+	int i;
+
+	sorted = fz_calloc(ctx, nranges, sizeof(*sorted));
+	memcpy(sorted, unsorted, nranges * sizeof(*sorted));
+	qsort(sorted, nranges, sizeof(*sorted), rangecmp);
+
+	fz_try(ctx)
+	{
+		offset = 0;
+
+		for (i = 0; i < nranges; i++)
+		{
+			if (sorted[i].offset > offset)
+			{
+				fz_range hole;
+
+				hole.offset = offset;
+				hole.length = sorted[i].offset - offset;
+
+				validate_certificate_data(ctx, doc, &hole);
+			}
+
+			offset = fz_maxi64(offset, sorted[i].offset + sorted[i].length);
+		}
+	}
+	fz_always(ctx)
+		fz_free(ctx, sorted);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*
@@ -1119,6 +1215,7 @@ fz_stream *pdf_signature_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_obj 
 			pdf_signature_byte_range(ctx, doc, signature, byte_range);
 		}
 
+		validate_byte_ranges(ctx, doc, byte_range, byte_range_len);
 		bytes = fz_open_range_filter(ctx, doc->file, byte_range, byte_range_len);
 	}
 	fz_always(ctx)
