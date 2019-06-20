@@ -72,7 +72,6 @@ struct pdf_write_state_s
 	int do_garbage;
 	int do_linear;
 	int do_clean;
-	int do_decrypt;
 	int do_encrypt;
 
 	int list_len;
@@ -1716,7 +1715,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 
-		if (opts->do_decrypt)
+		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
 			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
@@ -1790,7 +1789,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 
-		if (opts->do_decrypt)
+		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
 			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
@@ -1921,7 +1920,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	fz_var(obj);
 	fz_var(buf);
 
-	if (opts->do_decrypt)
+	if (opts->do_encrypt == PDF_ENCRYPT_NONE)
 		unenc = 1;
 
 	fz_try(ctx)
@@ -2838,7 +2837,6 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	opts->do_garbage = in_opts->do_garbage;
 	opts->do_linear = in_opts->do_linear;
 	opts->do_clean = in_opts->do_clean;
-	opts->do_decrypt = in_opts->do_decrypt;
 	opts->do_encrypt = in_opts->do_encrypt;
 	opts->start = 0;
 	opts->main_xref_offset = INT_MIN;
@@ -2892,7 +2890,6 @@ const pdf_write_options pdf_default_write_options = {
 	0, /* do_linear */
 	0, /* do_clean */
 	0, /* do_sanitize */
-	0, /* do_decrypt */
 	0, /* do_appearance */
 	0, /* do_encrypt */
 	~0, /* permissions */
@@ -2962,10 +2959,14 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 	if (fz_has_option(ctx, args, "incremental", &val))
 		opts->do_incremental = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "decrypt", &val))
-		opts->do_decrypt = fz_option_eq(val, "yes");
+		opts->do_encrypt = fz_option_eq(val, "yes") ? PDF_ENCRYPT_NONE : PDF_ENCRYPT_KEEP;
 	if (fz_has_option(ctx, args, "encrypt", &val))
 	{
 		opts->do_encrypt = PDF_ENCRYPT_UNKNOWN;
+		if (fz_option_eq(val, "none") || fz_option_eq(val, "no"))
+			opts->do_encrypt = PDF_ENCRYPT_NONE;
+		if (fz_option_eq(val, "keep"))
+			opts->do_encrypt = PDF_ENCRYPT_KEEP;
 		if (fz_option_eq(val, "rc4-40") || fz_option_eq(val, "yes"))
 			opts->do_encrypt = PDF_ENCRYPT_RC4_40;
 		if (fz_option_eq(val, "rc4-128"))
@@ -3157,7 +3158,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		initialise_write_state(ctx, doc, in_opts, opts);
 
 		/* Remove encryption dictionary if saving without encryption. */
-		if (opts->do_decrypt)
+		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
 		{
 			pdf_dict_del(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
 		}
@@ -3381,8 +3382,8 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with garbage collection");
 	if (in_opts->do_incremental && in_opts->do_linear)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with linearisation");
-	if (in_opts->do_incremental && in_opts->do_decrypt)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with decryption");
+	if (in_opts->do_incremental && in_opts->do_encrypt != PDF_ENCRYPT_KEEP)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes when changing encryption");
 	if (pdf_has_unsaved_sigs(ctx, doc) && !out->as_stream)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't write pdf that has unsaved sigs to a fz_output unless it supports fz_stream_from_output!");
 
@@ -3415,10 +3416,8 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with garbage collection");
 	if (in_opts->do_incremental && in_opts->do_linear)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with linearisation");
-	if (in_opts->do_incremental && in_opts->do_decrypt)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with decryption");
-	if (in_opts->do_incremental && in_opts->do_encrypt)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with encryption");
+	if (in_opts->do_incremental && in_opts->do_encrypt != PDF_ENCRYPT_KEEP)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes when changing encryption");
 
 	if (in_opts->do_appearance > 0)
 	{

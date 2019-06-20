@@ -81,7 +81,7 @@ int pdfclean_main(int argc, char **argv)
 		case 's': opts.do_sanitize += 1; break;
 		case 'A': opts.do_appearance += 1; break;
 
-		case 'D': opts.do_decrypt += 1; break;
+		case 'D': opts.do_encrypt = PDF_ENCRYPT_NONE; break;
 		case 'E': opts.do_encrypt = encrypt_method_from_string(fz_optarg); break;
 		case 'P': opts.permissions = fz_atoi(fz_optarg); break;
 		case 'O': fz_strlcpy(opts.opwd_utf8, fz_optarg, sizeof opts.opwd_utf8); break;
