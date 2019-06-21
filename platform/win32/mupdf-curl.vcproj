@@ -192,7 +192,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CURL=1;CURL_STATICLIB=1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -490,7 +490,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_LIBCRYPTO;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_LIBCRYPTO;HAVE_CURL=1;CURL_STATICLIB=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -641,7 +641,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_LIBCRYPTO;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_LIBCRYPTO;HAVE_CURL=1;CURL_STATICLIB=1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -794,7 +794,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;MEMENTO=1;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;MEMENTO=1;HAVE_CURL=1;CURL_STATICLIB=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -943,7 +943,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CURL=1;CURL_STATICLIB=1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -1094,7 +1094,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_CURL=1;CURL_STATICLIB=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1241,7 +1241,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include,..\..\thirdparty\curl\include,..\..\thirdparty\curl\lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_LIBCRYPTO;MEMENTO=1;HAVE_CURL=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;FT2_BUILD_LIBRARY;OPJ_STATIC;HAVE_LIBCRYPTO;MEMENTO=1;HAVE_CURL=1;CURL_STATICLIB=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1375,15 +1375,15 @@
 			>
 		</File>
 		<File
-			RelativePath="..\x11\prog_stream.c"
-			>
-		</File>
-		<File
 			RelativePath="..\..\platform\x11\pdfapp.c"
 			>
 		</File>
 		<File
 			RelativePath="..\..\platform\x11\pdfapp.h"
+			>
+		</File>
+		<File
+			RelativePath="..\x11\prog_stream.c"
 			>
 		</File>
 		<File
