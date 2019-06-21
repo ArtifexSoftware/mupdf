@@ -21,12 +21,12 @@ static void usage(void)
 	exit(1);
 }
 
-void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_widget *widget)
+void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_obj *signature)
 {
 	char msg[256];
 	int res;
 	printf("verifying signature on page %d\n", n+1);
-	res = pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
+	res = pdf_check_signature(ctx, doc, signature, msg, sizeof msg);
 	if (res)
 		printf("  result: Signature is valid.\n");
 	else
@@ -41,7 +41,7 @@ void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
 	pdf_widget *widget;
 	for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 		if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE)
-			verify_signature(ctx, doc, n, widget);
+			verify_signature(ctx, doc, n, widget->obj);
 }
 
 int pdfsign_main(int argc, char **argv)

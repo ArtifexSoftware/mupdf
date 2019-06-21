@@ -26,14 +26,14 @@ static void pdf_format_designated_name(pdf_pkcs7_designated_name *name, char *bu
 			fz_strlcat(buf, part[i], buflen);
 }
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *ebuf, int ebufsize)
 {
 	fz_stream *bytes = NULL;
 	char *contents = NULL;
 	int contents_len;
 	int res = 0;
 
-	if (pdf_xref_obj_is_unsaved_signature(doc, ((pdf_annot *)widget)->obj))
+	if (pdf_xref_obj_is_unsaved_signature(doc, signature))
 	{
 		fz_strlcpy(ebuf, "Signed but document yet to be saved.", ebufsize);
 		if (ebufsize > 0)
@@ -45,12 +45,12 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	fz_var(res);
 	fz_try(ctx)
 	{
-		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
+		contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 		if (contents)
 		{
 			enum pdf_signature_error err;
 
-			bytes = pdf_signature_widget_hash_bytes(ctx, doc, widget);
+			bytes = pdf_signature_hash_bytes(ctx, doc, signature);
 			err = pkcs7_openssl_check_digest(ctx, bytes, contents, contents_len);
 			if (err == PDF_SIGNATURE_ERROR_OKAY)
 				err = pkcs7_openssl_check_certificate(contents, contents_len);
@@ -131,7 +131,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 #else
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *ebuf, int ebufsize)
 {
 	fz_strlcpy(ebuf, "No digital signing support in this build", ebufsize);
 	return 0;

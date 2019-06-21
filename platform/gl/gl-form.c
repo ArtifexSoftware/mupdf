@@ -129,7 +129,7 @@ static void sig_dialog(void)
 static void show_sig_dialog(pdf_widget *widget)
 {
 	sig_widget = widget;
-	sig_result = pdf_check_signature(ctx, pdf, widget, sig_status, sizeof sig_status);
+	sig_result = pdf_check_signature(ctx, pdf, widget->obj, sig_status, sizeof sig_status);
 	ui.dialog = sig_dialog;
 }
 

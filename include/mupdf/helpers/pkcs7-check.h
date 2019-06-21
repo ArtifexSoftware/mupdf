@@ -7,6 +7,6 @@
 	This is a helper function defined to provide compatibility with older
 	versions of mupdf
 */
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *ebuf, int ebufsize);
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *ebuf, int ebufsize);
 
 #endif

@@ -1083,10 +1083,9 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 	}
 }
 
-int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widget *widget, fz_range *byte_range)
+int pdf_signature_byte_range(fz_context *ctx, pdf_document *doc, pdf_obj *signature, fz_range *byte_range)
 {
-	pdf_annot *annot = (pdf_annot *)widget;
-	pdf_obj *br = pdf_dict_getl(ctx, annot->obj, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
+	pdf_obj *br = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 	int i, n = pdf_array_len(ctx, br)/2;
 
 	if (byte_range)
@@ -1104,7 +1103,7 @@ int pdf_signature_widget_byte_range(fz_context *ctx, pdf_document *doc, pdf_widg
 /*
 	retrieve an fz_stream to read the bytes hashed for the signature
 */
-fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_widget *widget)
+fz_stream *pdf_signature_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	fz_range *byte_range = NULL;
 	int byte_range_len;
@@ -1113,11 +1112,11 @@ fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, p
 	fz_var(byte_range);
 	fz_try(ctx)
 	{
-		byte_range_len = pdf_signature_widget_byte_range(ctx, doc, widget, NULL);
+		byte_range_len = pdf_signature_byte_range(ctx, doc, signature, NULL);
 		if (byte_range_len)
 		{
 			byte_range = fz_calloc(ctx, byte_range_len, sizeof(*byte_range));
-			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
+			pdf_signature_byte_range(ctx, doc, signature, byte_range);
 		}
 
 		bytes = fz_open_range_filter(ctx, doc->file, byte_range, byte_range_len);
@@ -1134,10 +1133,9 @@ fz_stream *pdf_signature_widget_hash_bytes(fz_context *ctx, pdf_document *doc, p
 	return bytes;
 }
 
-int pdf_signature_widget_contents(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char **contents)
+int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
-	pdf_annot *annot = (pdf_annot *)widget;
-	pdf_obj *c = pdf_dict_getl(ctx, annot->obj, PDF_NAME(V), PDF_NAME(Contents), NULL);
+	pdf_obj *c = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(Contents), NULL);
 	if (contents)
 		*contents = pdf_to_str_buf(ctx, c);
 	return pdf_to_str_len(ctx, c);
