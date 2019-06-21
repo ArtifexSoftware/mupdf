@@ -1821,18 +1821,30 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 	fz_rect rect;
 	if (font->bbox_table && gid < font->glyph_count)
 	{
-		if (fz_is_infinite_rect(font->bbox_table[gid]))
+		/* If the bbox is infinite or empty, distrust it */
+		if (fz_is_infinite_rect(font->bbox_table[gid]) || fz_is_empty_rect(font->bbox_table[gid]))
 		{
+			/* Get the real size from the glyph */
 			if (font->ft_face)
 				fz_bound_ft_glyph(ctx, font, gid);
 			else if (font->t3lists)
 				fz_bound_t3_glyph(ctx, font, gid);
 			else
-				font->bbox_table[gid] = fz_empty_rect;
+				/* If we can't get a real size, fall back to the font
+				 * bbox. */
+				font->bbox_table[gid] = font->bbox;
+			/* If the real size came back as empty, then store it as
+			 * a very small rectangle to avoid us calling this same
+			 * check every time. */
+			if (fz_is_empty_rect(font->bbox_table[gid]))
+			{
+				font->bbox_table[gid].x0 = 0;
+				font->bbox_table[gid].y0 = 0;
+				font->bbox_table[gid].x1 = 0.0000001;
+				font->bbox_table[gid].y1 = 0.0000001;
+			}
 		}
 		rect = font->bbox_table[gid];
-		if (fz_is_empty_rect(rect))
-			rect = font->bbox;
 	}
 	else
 	{
