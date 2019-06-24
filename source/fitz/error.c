@@ -71,7 +71,7 @@ void fz_flush_warnings(fz_context *ctx)
 	if (ctx->warn.count > 1)
 	{
 		char buf[50];
-		fz_snprintf(buf, sizeof buf, "... repeated %d times...\n", ctx->warn.count);
+		fz_snprintf(buf, sizeof buf, "... repeated %d times...", ctx->warn.count);
 		if (ctx->warn.print)
 			ctx->warn.print(ctx->warn.print_user, buf);
 	}
