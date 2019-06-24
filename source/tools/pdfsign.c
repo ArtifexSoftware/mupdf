@@ -38,14 +38,19 @@ void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 	else
 		printf("  Certificate is trusted.\n");
 
-	err = pdf_check_digest(ctx, doc, signature);
-	edits = pdf_signature_incremental_change_since_signing(ctx, doc, signature);
-	if (err)
-		printf("  Digest error: %s\n", pdf_signature_error_description(err));
-	else if (edits)
-		printf("  The signature is valid but there have been edits since signing.\n");
-	else
-		printf("  The document is unchanged since signing.\n");
+	fz_try(ctx)
+	{
+		err = pdf_check_digest(ctx, doc, signature);
+		edits = pdf_signature_incremental_change_since_signing(ctx, doc, signature);
+		if (err)
+			printf("  Digest error: %s\n", pdf_signature_error_description(err));
+		else if (edits)
+			printf("  The signature is valid but there have been edits since signing.\n");
+		else
+			printf("  The document is unchanged since signing.\n");
+	}
+	fz_catch(ctx)
+		printf("  Digest error: %s\n", fz_caught_message(ctx));
 }
 
 void verify_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
