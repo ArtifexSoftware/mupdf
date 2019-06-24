@@ -177,6 +177,8 @@ static int showhelp = 0;
 int showannotate = 0;
 int showform = 0;
 
+static const char *tooltip = NULL;
+
 struct mark
 {
 	int page;
@@ -732,6 +734,7 @@ static void do_links(fz_link *link)
 
 		if (ui_mouse_inside(&area))
 		{
+			tooltip = link->uri;
 			ui.hot = link;
 			if (!ui.active && ui.down)
 				ui.active = link;
@@ -1357,6 +1360,8 @@ static void do_canvas(void)
 	fz_irect area;
 	int page_x, page_y;
 
+	tooltip = NULL;
+
 	ui_layout(ALL, BOTH, NW, 0, 0);
 	ui_pack_push(area = ui_pack(0, 0));
 	glScissor(area.x0, ui.window_h-area.y1, area.x1-area.x0, area.y1-area.y0);
@@ -1480,6 +1485,15 @@ static void do_canvas(void)
 		}
 		if (ui.focus != &search_input)
 			showsearch = 0;
+		ui_panel_end();
+	}
+
+	if (tooltip)
+	{
+		ui_layout(B, X, N, 0, 0);
+		ui_panel_begin(0, ui.gridsize, 4, 4, 1);
+		ui_layout(L, NONE, W, 2, 0);
+		ui_label("%s", tooltip);
 		ui_panel_end();
 	}
 
