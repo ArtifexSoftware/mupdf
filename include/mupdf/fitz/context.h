@@ -12,7 +12,6 @@ typedef struct fz_tuning_context_s fz_tuning_context;
 typedef struct fz_store_s fz_store;
 typedef struct fz_glyph_cache_s fz_glyph_cache;
 typedef struct fz_document_handler_context_s fz_document_handler_context;
-typedef struct fz_output_context_s fz_output_context;
 typedef struct fz_context_s fz_context;
 
 typedef struct fz_alloc_context_s fz_alloc_context;
@@ -154,7 +153,6 @@ struct fz_context_s
 #endif
 
 	/* TODO: should these be unshared? */
-	fz_output_context *output;
 	fz_document_handler_context *handler;
 	fz_style_context *style;
 	fz_tuning_context *tuning;

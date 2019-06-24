@@ -167,7 +167,6 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_tuning_context(ctx);
 	fz_drop_colorspace_context(ctx);
 	fz_drop_font_context(ctx);
-	fz_drop_output_context(ctx);
 
 	fz_flush_warnings(ctx);
 
@@ -255,7 +254,6 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 	/* Now initialise sections that are shared */
 	fz_try(ctx)
 	{
-		fz_new_output_context(ctx);
 		fz_new_store_context(ctx, max_store);
 		fz_new_glyph_cache_context(ctx);
 		fz_new_colorspace_context(ctx);
@@ -309,7 +307,6 @@ fz_clone_context(fz_context *ctx)
 	fz_init_error_context(new_ctx);
 
 	/* Then keep lock checking happy by keeping shared contexts with new context */
-	fz_keep_output_context(new_ctx);
 	fz_keep_document_handler_context(new_ctx);
 	fz_keep_style_context(new_ctx);
 	fz_keep_tuning_context(new_ctx);
