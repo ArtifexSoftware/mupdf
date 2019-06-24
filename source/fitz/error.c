@@ -18,7 +18,39 @@
 #include <android/log.h>
 #endif
 
+void fz_default_error_callback(void *user, const char *message)
+{
+	fprintf(stderr, "error: %s\n", message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+	OutputDebugStringA("error: ");
+	OutputDebugStringA(message);
+	OutputDebugStringA("\n");
+#endif
+#ifdef USE_ANDROID_LOG
+	__android_log_print(ANDROID_LOG_ERROR, "libmupdf", "%s", message);
+#endif
+}
+
+void fz_default_warning_callback(void *user, const char *message)
+{
+	fprintf(stderr, "warning: %s\n", message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+	OutputDebugStringA("warning: ");
+	OutputDebugStringA(message);
+	OutputDebugStringA("\n");
+#endif
+#ifdef USE_ANDROID_LOG
+	__android_log_print(ANDROID_LOG_WARN, "libmupdf", "%s", message);
+#endif
+}
+
 /* Warning context */
+
+void fz_set_warning_callback(fz_context *ctx, void (*print)(void *user, const char *message), void *user)
+{
+	ctx->warn.print_user = user;
+	ctx->warn.print = print;
+}
 
 void fz_var_imp(void *var)
 {
@@ -38,7 +70,10 @@ void fz_flush_warnings(fz_context *ctx)
 {
 	if (ctx->warn.count > 1)
 	{
-		fprintf(stderr, "warning: ... repeated %d times ...\n", ctx->warn.count);
+		char buf[50];
+		fz_snprintf(buf, sizeof buf, "... repeated %d times...\n", ctx->warn.count);
+		if (ctx->warn.print)
+			ctx->warn.print(ctx->warn.print_user, buf);
 	}
 	ctx->warn.message[0] = 0;
 	ctx->warn.count = 0;
@@ -50,13 +85,6 @@ void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap)
 
 	fz_vsnprintf(buf, sizeof buf, fmt, ap);
 	buf[sizeof(buf) - 1] = 0;
-#ifdef USE_OUTPUT_DEBUG_STRING
-	OutputDebugStringA(buf);
-	OutputDebugStringA("\n");
-#endif
-#ifdef USE_ANDROID_LOG
-	__android_log_print(ANDROID_LOG_WARN, "libmupdf", "%s", buf);
-#endif
 
 	if (!strcmp(buf, ctx->warn.message))
 	{
@@ -65,7 +93,8 @@ void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap)
 	else
 	{
 		fz_flush_warnings(ctx);
-		fprintf(stderr, "warning: %s\n", buf);
+		if (ctx->warn.print)
+			ctx->warn.print(ctx->warn.print_user, buf);
 		fz_strlcpy(ctx->warn.message, buf, sizeof ctx->warn.message);
 		ctx->warn.count = 1;
 	}
@@ -80,6 +109,12 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 }
 
 /* Error context */
+
+void fz_set_error_callback(fz_context *ctx, void (*print)(void *user, const char *message), void *user)
+{
+	ctx->error.print_user = user;
+	ctx->error.print = print;
+}
 
 /* When we first setjmp, state is set to 0. Whenever we throw, we add 2 to
  * this state. Whenever we enter the always block, we add 1.
@@ -122,15 +157,9 @@ FZ_NORETURN static void throw(fz_context *ctx, int code)
 	}
 	else
 	{
-		fprintf(stderr, "uncaught error: %s\n", ctx->error.message);
-#ifdef USE_OUTPUT_DEBUG_STRING
-		OutputDebugStringA("uncaught error: ");
-		OutputDebugStringA(ctx->error.message);
-		OutputDebugStringA("\n");
-#endif
-#ifdef USE_ANDROID_LOG
-		__android_log_print(ANDROID_LOG_ERROR, "libmupdf", "(uncaught) %s", ctx->error.message);
-#endif
+		fz_flush_warnings(ctx);
+		if (ctx->error.print)
+			ctx->error.print(ctx->error.print_user, "aborting process from uncaught error!");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -146,15 +175,8 @@ fz_jmp_buf *fz_push_try(fz_context *ctx)
 		fz_strlcpy(ctx->error.message, "exception stack overflow!", sizeof ctx->error.message);
 
 		fz_flush_warnings(ctx);
-		fprintf(stderr, "error: %s\n", ctx->error.message);
-#ifdef USE_OUTPUT_DEBUG_STRING
-		OutputDebugStringA("error: ");
-		OutputDebugStringA(ctx->error.message);
-		OutputDebugStringA("\n");
-#endif
-#ifdef USE_ANDROID_LOG
-		__android_log_print(ANDROID_LOG_ERROR, "libmupdf", "%s", ctx->error.message);
-#endif
+		if (ctx->error.print)
+			ctx->error.print(ctx->error.print_user, ctx->error.message);
 
 		/* We need to arrive in the always/catch block as if throw had taken place. */
 		ctx->error.top++;
@@ -220,15 +242,8 @@ FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list a
 	if (code != FZ_ERROR_ABORT && code != FZ_ERROR_TRYLATER)
 	{
 		fz_flush_warnings(ctx);
-		fprintf(stderr, "error: %s\n", ctx->error.message);
-#ifdef USE_OUTPUT_DEBUG_STRING
-		OutputDebugStringA("error: ");
-		OutputDebugStringA(ctx->error.message);
-		OutputDebugStringA("\n");
-#endif
-#ifdef USE_ANDROID_LOG
-		__android_log_print(ANDROID_LOG_ERROR, "libmupdf", "%s", ctx->error.message);
-#endif
+		if (ctx->error.print)
+			ctx->error.print(ctx->error.print_user, ctx->error.message);
 	}
 
 	throw(ctx, code);

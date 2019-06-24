@@ -245,6 +245,9 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 	ctx->alloc = *alloc;
 	ctx->locks = *locks;
 
+	ctx->error.print = fz_default_error_callback;
+	ctx->warn.print = fz_default_warning_callback;
+
 	fz_init_error_context(ctx);
 	fz_init_aa_context(ctx);
 	fz_init_random_context(ctx);
