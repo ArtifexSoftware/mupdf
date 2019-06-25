@@ -62,6 +62,8 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 		pdf_format_designated_name(name, buf, buflen);
 		pkcs7_openssl_drop_designated_name(ctx, name);
 	}
+	else if (buflen > 0)
+		buf[0] = '\0';
 }
 
 int pdf_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
