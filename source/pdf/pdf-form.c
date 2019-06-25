@@ -1272,6 +1272,12 @@ int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document
 	return changed;
 }
 
+int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) != PDF_NAME(Sig))
+		return 0;
+	return pdf_dict_get_inheritable(ctx, field, PDF_NAME(V)) != NULL;
+}
 
 int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {

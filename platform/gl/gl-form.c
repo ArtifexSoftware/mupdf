@@ -171,7 +171,7 @@ static void show_sig_dialog(pdf_widget *widget)
 	{
 		sig_widget = widget;
 
-		if (pdf_is_signed(ctx, pdf, widget->obj))
+		if (pdf_signature_is_signed(ctx, pdf, widget->obj))
 		{
 			sig_cert_error = pdf_check_certificate(ctx, pdf, widget->obj);
 			sig_digest_error = pdf_check_digest(ctx, pdf, widget->obj);

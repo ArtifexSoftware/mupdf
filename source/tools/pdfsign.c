@@ -55,11 +55,10 @@ void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 
 void verify_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	pdf_obj *ft, *kids;
+	pdf_obj *kids;
 	int i, n;
 
-	ft = pdf_dict_get(ctx, field, PDF_NAME(FT));
-	if (ft == PDF_NAME(Sig))
+	if (pdf_signature_is_signed(ctx, doc, field))
 		verify_signature(ctx, doc, field);
 
 	kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));

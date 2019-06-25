@@ -66,11 +66,6 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 		buf[0] = '\0';
 }
 
-int pdf_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
-{
-	return pdf_signature_contents(ctx, doc, signature, NULL) != 0;
-}
-
 enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	enum pdf_signature_error err;
@@ -120,7 +115,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, 
 	fz_var(res);
 	fz_try(ctx)
 	{
-		if (pdf_is_signed(ctx, doc, signature))
+		if (pdf_signature_is_signed(ctx, doc, signature))
 		{
 			enum pdf_signature_error err;
 
@@ -172,13 +167,6 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
 }
-
-int pdf_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
-{
-	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
-	return 0;
-}
-
 
 enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
