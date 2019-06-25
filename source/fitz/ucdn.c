@@ -138,7 +138,7 @@ static BracketPair *search_bp(uint32_t code)
 
 	bp.from = code;
 	res = (BracketPair *) bsearch(&bp, bracket_pairs, BIDI_BRACKET_LEN,
-			sizeof(BracketPair), compare_bp);
+		sizeof(BracketPair), compare_bp);
 	return res;
 }
 
@@ -246,7 +246,7 @@ int ucdn_get_resolved_linebreak_class(uint32_t code)
 
 	case UCDN_LINEBREAK_CLASS_SA:
 		if (record->category == UCDN_GENERAL_CATEGORY_MC ||
-				record->category == UCDN_GENERAL_CATEGORY_MN)
+			record->category == UCDN_GENERAL_CATEGORY_MN)
 			return UCDN_LINEBREAK_CLASS_CM;
 		return UCDN_LINEBREAK_CLASS_AL;
 
@@ -271,7 +271,7 @@ uint32_t ucdn_mirror(uint32_t code)
 
 	mp.from = code;
 	res = (MirrorPair *) bsearch(&mp, mirror_pairs, BIDI_MIRROR_LEN,
-			sizeof(MirrorPair), compare_mp);
+		sizeof(MirrorPair), compare_mp);
 
 	if (res == NULL)
 		return code;

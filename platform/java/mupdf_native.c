@@ -922,16 +922,10 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 		return load_noto_try(ctx, "");
 	case UCDN_SCRIPT_ARABIC:
 		return load_noto_arabic(ctx);
-	case UCDN_SCRIPT_MEROITIC_CURSIVE:
-	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS:
-		return load_noto_try(ctx, "Meroitic");
-	case UCDN_SCRIPT_NKO:
-		return load_noto_try(ctx, "NKo");
-	case UCDN_SCRIPT_SYRIAC:
-		return load_noto_try(ctx, "SyriacWestern");
 
 	case UCDN_SCRIPT_ARMENIAN: return load_noto_try(ctx, "Armenian");
 	case UCDN_SCRIPT_HEBREW: return load_noto_try(ctx, "Hebrew");
+	case UCDN_SCRIPT_SYRIAC: return load_noto_try(ctx, "Syriac");
 	case UCDN_SCRIPT_THAANA: return load_noto_try(ctx, "Thaana");
 	case UCDN_SCRIPT_DEVANAGARI: return load_noto_try(ctx, "Devanagari");
 	case UCDN_SCRIPT_BENGALI: return load_noto_try(ctx, "Bengali");
@@ -982,6 +976,7 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 	case UCDN_SCRIPT_CUNEIFORM: return load_noto_try(ctx, "Cuneiform");
 	case UCDN_SCRIPT_PHOENICIAN: return load_noto_try(ctx, "Phoenician");
 	case UCDN_SCRIPT_PHAGS_PA: return load_noto_try(ctx, "PhagsPa");
+	case UCDN_SCRIPT_NKO: return load_noto_try(ctx, "NKo");
 	case UCDN_SCRIPT_SUNDANESE: return load_noto_try(ctx, "Sundanese");
 	case UCDN_SCRIPT_LEPCHA: return load_noto_try(ctx, "Lepcha");
 	case UCDN_SCRIPT_OL_CHIKI: return load_noto_try(ctx, "OlChiki");
@@ -1013,6 +1008,8 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 	case UCDN_SCRIPT_MANDAIC: return load_noto_try(ctx, "Mandaic");
 	case UCDN_SCRIPT_CHAKMA: return load_noto_try(ctx, "Chakma");
 	case UCDN_SCRIPT_MIAO: return load_noto_try(ctx, "Miao");
+	case UCDN_SCRIPT_MEROITIC_CURSIVE: return load_noto_try(ctx, "Meroitic");
+	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS: return load_noto_try(ctx, "Meroitic");
 	case UCDN_SCRIPT_SHARADA: return load_noto_try(ctx, "Sharada");
 	case UCDN_SCRIPT_SORA_SOMPENG: return load_noto_try(ctx, "SoraSompeng");
 	case UCDN_SCRIPT_TAKRI: return load_noto_try(ctx, "Takri");
@@ -1055,6 +1052,17 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 	case UCDN_SCRIPT_NUSHU: return load_noto_try(ctx, "Nushu");
 	case UCDN_SCRIPT_SOYOMBO: return load_noto_try(ctx, "Soyombo");
 	case UCDN_SCRIPT_ZANABAZAR_SQUARE: return load_noto_try(ctx, "ZanabazarSquare");
+	case UCDN_SCRIPT_DOGRA: return load_noto_try(ctx, "Dogra");
+	case UCDN_SCRIPT_GUNJALA_GONDI: return load_noto_try(ctx, "GunjalaGondi");
+	case UCDN_SCRIPT_HANIFI_ROHINGYA: return load_noto_try(ctx, "HanifiRohingya");
+	case UCDN_SCRIPT_MAKASAR: return load_noto_try(ctx, "Makasar");
+	case UCDN_SCRIPT_MEDEFAIDRIN: return load_noto_try(ctx, "Medefaidrin");
+	case UCDN_SCRIPT_OLD_SOGDIAN: return load_noto_try(ctx, "OldSogdian");
+	case UCDN_SCRIPT_SOGDIAN: return load_noto_try(ctx, "Sogdian");
+	case UCDN_SCRIPT_ELYMAIC: return load_noto_try(ctx, "Elymaic");
+	case UCDN_SCRIPT_NANDINAGARI: return load_noto_try(ctx, "Nandinagari");
+	case UCDN_SCRIPT_NYIAKENG_PUACHUE_HMONG: return load_noto_try(ctx, "NyiakengPuachueHmong");
+	case UCDN_SCRIPT_WANCHO: return load_noto_try(ctx, "Wancho");
 	}
 	return NULL;
 }
