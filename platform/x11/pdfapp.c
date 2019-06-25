@@ -10,6 +10,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <direct.h> /* for getcwd */
 #else
 #include <unistd.h> /* for getcwd */
 #endif
