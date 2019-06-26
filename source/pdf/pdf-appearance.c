@@ -1976,6 +1976,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 			if (pdf_name_eq(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT)), PDF_NAME(Btn)))
 			{
 				pdf_update_button_appearance(ctx, annot);
+				pdf_clean_obj(ctx, annot->obj);
 				return;
 			}
 		}
