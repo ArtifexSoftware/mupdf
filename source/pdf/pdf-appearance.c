@@ -1843,8 +1843,6 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 	fz_rect rect;
 	float w, h, size, name_w;
 
-	rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
-
 	fz_var(helv);
 	fz_var(zadb);
 	fz_var(res);
@@ -1852,49 +1850,60 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 	buf = fz_new_buffer(ctx, 1024);
 	fz_try(ctx)
 	{
-		helv = fz_new_base14_font(ctx, "Helvetica");
-		zadb = fz_new_base14_font(ctx, "ZapfDingbats");
-
-		res = pdf_new_dict(ctx, annot->page->doc, 1);
-		res_font = pdf_dict_put_dict(ctx, res, PDF_NAME(Font), 1);
-		pdf_dict_put_drop(ctx, res_font, PDF_NAME(Helv), pdf_add_simple_font(ctx, annot->page->doc, helv, 0));
-		pdf_dict_put_drop(ctx, res_font, PDF_NAME(ZaDb), pdf_add_simple_font(ctx, annot->page->doc, zadb, 0));
-
-		w = (rect.x1 - rect.x0) / 2;
-		h = (rect.y1 - rect.y0);
-
-		/* Use flower symbol from ZapfDingbats as sigil */
-		fz_append_printf(ctx, buf, "q 1 0.8 0.8 rg BT /ZaDb %g Tf %g %g Td (`) Tj ET Q\n",
-			h*1.1f,
-			rect.x0 + w - (h*0.4f),
-			rect.y0 + h*0.1f);
-
-		/* Name */
-		name_w = measure_simple_string(ctx, helv, name);
-		size = fz_min(fz_min((w - 4) / name_w, h), 24);
-		fz_append_string(ctx, buf, "BT\n");
-		fz_append_printf(ctx, buf, "/Helv %g Tf\n", size);
-		fz_append_printf(ctx, buf, "%g %g Td\n", rect.x0+2, rect.y1 - size*0.8f - (h-size)/2);
-		write_simple_string(ctx, buf, name, name + strlen(name));
-		fz_append_string(ctx, buf, " Tj\n");
-		fz_append_string(ctx, buf, "ET\n");
-
-		/* Information text */
-		size = fz_min(fz_min((w / 12), h / 6), 16);
-		fz_append_string(ctx, buf, "BT\n");
-		fz_append_printf(ctx, buf, "/Helv %g Tf\n", size);
-		fz_append_printf(ctx, buf, "%g TL\n", size);
-		fz_append_printf(ctx, buf, "%g %g Td\n", rect.x0+w+2, rect.y1);
-		fz_snprintf(tmp, sizeof tmp, "Digitally signed by %s", name);
-		write_simple_string_with_quadding(ctx, buf, helv, size, tmp, w-4, 0);
-		fz_snprintf(tmp, sizeof tmp, "DN: %s", dn);
-		write_simple_string_with_quadding(ctx, buf, helv, size, tmp, w-4, 0);
-		if (date)
+		if (name && dn)
 		{
-			fz_snprintf(tmp, sizeof tmp, "Date: %s", date);
+			helv = fz_new_base14_font(ctx, "Helvetica");
+			zadb = fz_new_base14_font(ctx, "ZapfDingbats");
+
+			res = pdf_new_dict(ctx, annot->page->doc, 1);
+			res_font = pdf_dict_put_dict(ctx, res, PDF_NAME(Font), 1);
+			pdf_dict_put_drop(ctx, res_font, PDF_NAME(Helv), pdf_add_simple_font(ctx, annot->page->doc, helv, 0));
+			pdf_dict_put_drop(ctx, res_font, PDF_NAME(ZaDb), pdf_add_simple_font(ctx, annot->page->doc, zadb, 0));
+
+			rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+			w = (rect.x1 - rect.x0) / 2;
+			h = (rect.y1 - rect.y0);
+
+			/* Use flower symbol from ZapfDingbats as sigil */
+			fz_append_printf(ctx, buf, "q 1 0.8 0.8 rg BT /ZaDb %g Tf %g %g Td (`) Tj ET Q\n",
+					h*1.1f,
+					rect.x0 + w - (h*0.4f),
+					rect.y0 + h*0.1f);
+
+			/* Name */
+			name_w = measure_simple_string(ctx, helv, name);
+			size = fz_min(fz_min((w - 4) / name_w, h), 24);
+			fz_append_string(ctx, buf, "BT\n");
+			fz_append_printf(ctx, buf, "/Helv %g Tf\n", size);
+			fz_append_printf(ctx, buf, "%g %g Td\n", rect.x0+2, rect.y1 - size*0.8f - (h-size)/2);
+			write_simple_string(ctx, buf, name, name + strlen(name));
+			fz_append_string(ctx, buf, " Tj\n");
+			fz_append_string(ctx, buf, "ET\n");
+
+			/* Information text */
+			size = fz_min(fz_min((w / 12), h / 6), 16);
+			fz_append_string(ctx, buf, "BT\n");
+			fz_append_printf(ctx, buf, "/Helv %g Tf\n", size);
+			fz_append_printf(ctx, buf, "%g TL\n", size);
+			fz_append_printf(ctx, buf, "%g %g Td\n", rect.x0+w+2, rect.y1);
+			fz_snprintf(tmp, sizeof tmp, "Digitally signed by %s", name);
 			write_simple_string_with_quadding(ctx, buf, helv, size, tmp, w-4, 0);
+			fz_snprintf(tmp, sizeof tmp, "DN: %s", dn);
+			write_simple_string_with_quadding(ctx, buf, helv, size, tmp, w-4, 0);
+			if (date)
+			{
+				fz_snprintf(tmp, sizeof tmp, "Date: %s", date);
+				write_simple_string_with_quadding(ctx, buf, helv, size, tmp, w-4, 0);
+			}
+			fz_append_string(ctx, buf, "ET\n");
 		}
-		fz_append_string(ctx, buf, "ET\n");
+		else
+		{
+			rect.x0 = rect.y0 = 0;
+			rect.x1 = rect.y1 = 100;
+			res = pdf_new_dict(ctx, annot->page->doc, 0);
+			fz_append_string(ctx, buf, "% DSBlank\n");
+		}
 
 		/* Update the AP/N stream */
 		ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));

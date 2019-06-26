@@ -114,3 +114,19 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		fz_rethrow(ctx);
 	}
 }
+
+void pdf_clear_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget)
+{
+	int flags;
+
+	flags = pdf_dict_get_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
+	flags &= ~PDF_ANNOT_IS_LOCKED;
+	if (flags)
+		pdf_dict_put_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F), flags);
+	else
+		pdf_dict_del(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
+
+	pdf_dict_del(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(V));
+
+	pdf_update_signature_appearance(ctx, widget, NULL, NULL, NULL);
+}
