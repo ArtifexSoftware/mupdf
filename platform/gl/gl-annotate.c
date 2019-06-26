@@ -414,6 +414,7 @@ static int should_edit_icolor(enum pdf_annot_type subtype)
 void do_annotate_panel(void)
 {
 	static struct list annot_list;
+	enum pdf_annot_type subtype;
 	pdf_annot *annot;
 	int n;
 
@@ -451,7 +452,7 @@ void do_annotate_panel(void)
 	{
 		char buf[256];
 		int num = pdf_to_num(ctx, annot->obj);
-		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
+		subtype = pdf_annot_type(ctx, annot);
 		fz_snprintf(buf, sizeof buf, "%d: %s", num, pdf_string_from_annot_type(ctx, subtype));
 		if (ui_list_item(&annot_list, annot->obj, buf, selected_annot == annot))
 			selected_annot = annot;
@@ -460,16 +461,12 @@ void do_annotate_panel(void)
 	}
 	ui_list_end(&annot_list);
 
-	if (selected_annot)
+	if (selected_annot && (subtype = pdf_annot_type(ctx, selected_annot)) != PDF_ANNOT_WIDGET)
 	{
-		enum pdf_annot_type subtype = pdf_annot_type(ctx, selected_annot);
 		fz_rect rect;
 		fz_irect irect;
 		int n, choice;
 		pdf_obj *obj;
-
-		if (subtype == PDF_ANNOT_WIDGET)
-			return;
 
 		if (ui_button("Delete"))
 		{
