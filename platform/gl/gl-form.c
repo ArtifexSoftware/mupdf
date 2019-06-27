@@ -43,6 +43,20 @@ static void do_sign(void)
 		render_page();
 }
 
+static void do_clear_signature(void)
+{
+	fz_try(ctx)
+	{
+		pdf_clear_signature(ctx, pdf, sig_widget->obj);
+		ui_show_warning_dialog("Signature cleared successfully.");
+	}
+	fz_catch(ctx)
+		ui_show_warning_dialog("%s", fz_caught_message(ctx));
+
+	if (pdf_update_page(ctx, sig_widget->page))
+		render_page();
+}
+
 static void cert_password_dialog(void)
 {
 	int is;
@@ -156,6 +170,12 @@ static void sig_verify_dialog(void)
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
 		{
+			ui_layout(L, NONE, S, 0, 0);
+			if (ui_button("Clear"))
+			{
+				ui.dialog = NULL;
+				do_clear_signature();
+			}
 			ui_layout(R, NONE, S, 0, 0);
 			if (ui_button("Close") || (!ui.focus && ui.key == KEY_ESCAPE))
 				ui.dialog = NULL;
