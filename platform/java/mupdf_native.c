@@ -1755,16 +1755,16 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, fieldFlags);
 		if (fieldType == PDF_WIDGET_TYPE_TEXT)
 		{
-			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget->page->doc, widget));
-			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget->page->doc, widget));
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget));
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget));
 		}
 		if (fieldType == PDF_WIDGET_TYPE_COMBOBOX || fieldType == PDF_WIDGET_TYPE_LISTBOX)
 		{
-			nopts = pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, NULL);
+			nopts = pdf_choice_widget_options(ctx, widget, 0, NULL);
 			if (nopts > 0)
 			{
 				opts = fz_malloc(ctx, nopts * sizeof(*opts));
-				pdf_choice_widget_options(ctx, widget->page->doc, widget, 0, opts);
+				pdf_choice_widget_options(ctx, widget, 0, opts);
 				jopts = to_StringArray_safe(ctx, env, opts, nopts);
 				if (jopts)
 					(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);

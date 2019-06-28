@@ -844,10 +844,9 @@ pdf_update_widget(fz_context *ctx, pdf_widget *widget)
 	get the maximum number of
 	characters permitted in a text widget
 */
-int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
+int pdf_text_widget_max_len(fz_context *ctx, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
-
 	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
 }
 
@@ -855,7 +854,7 @@ int pdf_text_widget_max_len(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
 	get the type of content
 	required by a text widget
 */
-int pdf_text_widget_format(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
+int pdf_text_widget_format(fz_context *ctx, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	int type = PDF_WIDGET_TX_FORMAT_NONE;
@@ -951,7 +950,7 @@ int pdf_set_choice_field_value(fz_context *ctx, pdf_widget *widget, const char *
 	is true, then the export values will be returned and not the list
 	values if there are export values present.
 */
-int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int exportval, const char *opts[])
+int pdf_choice_widget_options(fz_context *ctx, pdf_widget *tw, int exportval, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -978,7 +977,23 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 	return n;
 }
 
-int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
+int pdf_choice_field_option_count(fz_context *ctx, pdf_obj *field)
+{
+	pdf_obj *opt = pdf_dict_get_inheritable(ctx, field, PDF_NAME(Opt));
+	return pdf_array_len(ctx, opt);
+}
+
+const char *pdf_choice_field_option(fz_context *ctx, pdf_obj *field, int export, int i)
+{
+	pdf_obj *opt = pdf_dict_get_inheritable(ctx, field, PDF_NAME(Opt));
+	pdf_obj *ent = pdf_array_get(ctx, opt, i);
+	if (pdf_array_len(ctx, ent) == 2)
+		return pdf_array_get_text_string(ctx, ent, export ? 0 : 1);
+	else
+		return pdf_to_text_string(ctx, ent);
+}
+
+int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
@@ -1000,7 +1015,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 	with NULL as the array to find out how big the array need to
 	be. The filled in elements should not be freed by the caller.
 */
-int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, const char *opts[])
+int pdf_choice_widget_value(fz_context *ctx, pdf_widget *tw, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -1039,7 +1054,7 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, 
 	caller should pass the number of options selected and an
 	array of their names
 */
-void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, const char *opts[])
+void pdf_choice_widget_set_value(fz_context *ctx, pdf_widget *tw, int n, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr = NULL, *opt;
@@ -1053,7 +1068,7 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 	{
 		if (n != 1)
 		{
-			optarr = pdf_new_array(ctx, doc, n);
+			optarr = pdf_new_array(ctx, annot->page->doc, n);
 
 			for (i = 0; i < n; i++)
 			{
@@ -1073,8 +1088,8 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 		pdf_dict_del(ctx, annot->obj, PDF_NAME(I));
 
 		pdf_field_mark_dirty(ctx, annot->obj);
-		if (pdf_field_dirties_document(ctx, doc, annot->obj))
-			doc->dirty = 1;
+		if (pdf_field_dirties_document(ctx, annot->page->doc, annot->obj))
+			annot->page->doc->dirty = 1;
 	}
 	fz_catch(ctx)
 	{

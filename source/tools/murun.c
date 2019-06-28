@@ -285,6 +285,12 @@ static void ffi_gc_fz_document_writer(js_State *J, void *wri)
 
 #if FZ_ENABLE_PDF
 
+static void ffi_gc_pdf_widget(js_State *J, void *widget)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_drop_widget(ctx, widget);
+}
+
 static void ffi_gc_pdf_annot(js_State *J, void *annot)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3442,6 +3448,16 @@ static void ffi_PDFDocument_newDictionary(js_State *J)
 	ffi_pushobj(J, obj);
 }
 
+static void ffi_PDFDocument_enableJS(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_enable_js(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_newGraftMap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3884,6 +3900,32 @@ static void ffi_PDFObject_forEach(js_State *J)
 	}
 }
 
+static void ffi_PDFPage_getWidgets(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = js_touserdata(J, 0, "pdf_page");
+	pdf_widget *widget = NULL;
+	int i = 0;
+
+	fz_try(ctx)
+		widget = pdf_first_widget(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+
+	while (widget) {
+		js_getregistry(J, "pdf_widget");
+		js_newuserdata(J, "pdf_widget", pdf_keep_widget(ctx, widget), ffi_gc_pdf_widget);
+		js_setindex(J, -2, i++);
+
+		fz_try(ctx)
+			widget = pdf_next_widget(ctx, widget);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
 static void ffi_PDFPage_getAnnotations(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3891,14 +3933,15 @@ static void ffi_PDFPage_getAnnotations(js_State *J)
 	pdf_annot *annot = NULL;
 	int i = 0;
 
-	js_newarray(J);
-
 	fz_try(ctx)
 		annot = pdf_first_annot(ctx, page);
 	fz_catch(ctx)
 		rethrow(J);
 
+	js_newarray(J);
+
 	while (annot) {
+		js_getregistry(J, "pdf_annot");
 		js_newuserdata(J, "pdf_annot", pdf_keep_annot(ctx, annot), ffi_gc_pdf_annot);
 		js_setindex(J, -2, i++);
 
@@ -3924,6 +3967,7 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	}
 	fz_catch(ctx)
 		rethrow(J);
+	js_getregistry(J, "pdf_annot");
 	js_newuserdata(J, "pdf_annot", annot, ffi_gc_pdf_annot);
 }
 
@@ -4431,6 +4475,216 @@ static void ffi_PDFAnnotation_update(js_State *J)
 	js_pushboolean(J, changed);
 }
 
+
+static void ffi_PDFWidget_getFieldType(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int type;
+	fz_try(ctx)
+		type = pdf_field_type(ctx, widget->obj);
+	fz_catch(ctx)
+		rethrow(J);
+	switch (type)
+	{
+	default:
+	case PDF_WIDGET_TYPE_BUTTON: js_pushstring(J, "button"); break;
+	case PDF_WIDGET_TYPE_CHECKBOX: js_pushstring(J, "checkbox"); break;
+	case PDF_WIDGET_TYPE_COMBOBOX: js_pushstring(J, "combobox"); break;
+	case PDF_WIDGET_TYPE_LISTBOX: js_pushstring(J, "listbox"); break;
+	case PDF_WIDGET_TYPE_RADIOBUTTON: js_pushstring(J, "radiobutton"); break;
+	case PDF_WIDGET_TYPE_SIGNATURE: js_pushstring(J, "signature"); break;
+	case PDF_WIDGET_TYPE_TEXT: js_pushstring(J, "text"); break;
+	}
+}
+
+static void ffi_PDFWidget_getFieldFlags(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int flags;
+	fz_try(ctx)
+		flags = pdf_field_flags(ctx, widget->obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, flags);
+}
+
+static void ffi_PDFWidget_getRect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_rect rect;
+	fz_try(ctx)
+		rect = pdf_annot_rect(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushrect(J, rect);
+}
+
+static void ffi_PDFWidget_setRect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_rect rect = ffi_torect(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_rect(ctx, widget, rect);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_getValue(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	const char *value;
+	fz_try(ctx)
+		value = pdf_field_value(ctx, widget->obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, value);
+}
+
+static void ffi_PDFWidget_setTextValue(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	const char *value = js_tostring(J, 1);
+	fz_try(ctx)
+		pdf_set_text_field_value(ctx, widget, value);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_setChoiceValue(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	const char *value = js_tostring(J, 1);
+	fz_try(ctx)
+		pdf_set_choice_field_value(ctx, widget, value);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_toggle(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int changed = 0;
+	fz_try(ctx)
+		changed = pdf_toggle_widget(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, changed);
+}
+
+static void ffi_PDFWidget_getMaxLen(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int maxLen = 0;
+	fz_try(ctx)
+		maxLen = pdf_text_widget_max_len(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, maxLen);
+}
+
+static void ffi_PDFWidget_getOptions(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int export = js_toboolean(J, 1);
+	const char *opt;
+	int i, n;
+	fz_try(ctx)
+		n = pdf_choice_field_option_count(ctx, widget->obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		fz_try(ctx)
+			opt = pdf_choice_field_option(ctx, widget->obj, export, i);
+		fz_catch(ctx)
+			rethrow(J);
+		js_pushstring(J, opt);
+	}
+	js_endtry(J);
+}
+
+static void ffi_PDFWidget_update(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int changed = 0;
+	fz_try(ctx)
+		changed = pdf_update_widget(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, changed);
+}
+
+static void ffi_PDFWidget_eventEnter(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_enter(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_eventExit(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_exit(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_eventDown(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_down(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_eventUp(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_up(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_eventFocus(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_focus(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFWidget_eventBlur(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	fz_try(ctx)
+		pdf_annot_event_blur(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 #endif /* FZ_ENABLE_PDF */
 
 int murun_main(int argc, char **argv)
@@ -4739,12 +4993,15 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.newGraftMap", ffi_PDFDocument_newGraftMap, 0);
 		jsB_propfun(J, "PDFDocument.graftObject", ffi_PDFDocument_graftObject, 1);
+
+		jsB_propfun(J, "PDFDocument.enableJS", ffi_PDFDocument_enableJS, 0);
 	}
 	js_setregistry(J, "pdf_document");
 
 	js_getregistry(J, "fz_page");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFPage.getWidgets", ffi_PDFPage_getWidgets, 0);
 		jsB_propfun(J, "PDFPage.getAnnotations", ffi_PDFPage_getAnnotations, 0);
 		jsB_propfun(J, "PDFPage.createAnnotation", ffi_PDFPage_createAnnotation, 1);
 		jsB_propfun(J, "PDFPage.deleteAnnotation", ffi_PDFPage_deleteAnnotation, 1);
@@ -4759,6 +5016,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.run", ffi_PDFAnnotation_run, 2);
 		jsB_propfun(J, "PDFAnnotation.toPixmap", ffi_PDFAnnotation_toPixmap, 3);
 		jsB_propfun(J, "PDFAnnotation.toDisplayList", ffi_PDFAnnotation_toDisplayList, 0);
+
 		jsB_propfun(J, "PDFAnnotation.getType", ffi_PDFAnnotation_getType, 0);
 		jsB_propfun(J, "PDFAnnotation.getFlags", ffi_PDFAnnotation_getFlags, 0);
 		jsB_propfun(J, "PDFAnnotation.setFlags", ffi_PDFAnnotation_setFlags, 1);
@@ -4780,10 +5038,45 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.setModificationDate", ffi_PDFAnnotation_setModificationDate, 0);
+
 		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.update", ffi_PDFAnnotation_update, 0);
 	}
+	js_dup(J);
+	js_setglobal(J, "PDFAnnot");
 	js_setregistry(J, "pdf_annot");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
+		// jsB_propfun(J, "PDFWidget.bound", ffi_PDFWidget_bound, 0);
+		// jsB_propfun(J, "PDFWidget.run", ffi_PDFWidget_run, 2);
+		// jsB_propfun(J, "PDFWidget.toPixmap", ffi_PDFWidget_toPixmap, 3);
+		// jsB_propfun(J, "PDFWidget.toDisplayList", ffi_PDFWidget_toDisplayList, 0);
+
+		jsB_propfun(J, "PDFWidget.getFieldType", ffi_PDFWidget_getFieldType, 0);
+		jsB_propfun(J, "PDFWidget.getFieldFlags", ffi_PDFWidget_getFieldFlags, 0);
+		jsB_propfun(J, "PDFWidget.getRect", ffi_PDFWidget_getRect, 0);
+		jsB_propfun(J, "PDFWidget.setRect", ffi_PDFWidget_setRect, 1);
+		jsB_propfun(J, "PDFWidget.getValue", ffi_PDFWidget_getValue, 0);
+		jsB_propfun(J, "PDFWidget.setTextValue", ffi_PDFWidget_setTextValue, 1);
+		jsB_propfun(J, "PDFWidget.setChoiceValue", ffi_PDFWidget_setChoiceValue, 1);
+		jsB_propfun(J, "PDFWidget.toggle", ffi_PDFWidget_toggle, 0);
+		jsB_propfun(J, "PDFWidget.getMaxLen", ffi_PDFWidget_getMaxLen, 0);
+		jsB_propfun(J, "PDFWidget.getOptions", ffi_PDFWidget_getOptions, 1);
+
+		jsB_propfun(J, "PDFWidget.update", ffi_PDFWidget_update, 0);
+
+		jsB_propfun(J, "PDFWidget.eventEnter", ffi_PDFWidget_eventEnter, 0);
+		jsB_propfun(J, "PDFWidget.eventExit", ffi_PDFWidget_eventExit, 0);
+		jsB_propfun(J, "PDFWidget.eventDown", ffi_PDFWidget_eventDown, 0);
+		jsB_propfun(J, "PDFWidget.eventUp", ffi_PDFWidget_eventUp, 0);
+		jsB_propfun(J, "PDFWidget.eventFocus", ffi_PDFWidget_eventFocus, 0);
+		jsB_propfun(J, "PDFWidget.eventBlur", ffi_PDFWidget_eventBlur, 0);
+	}
+	js_dup(J);
+	js_setglobal(J, "PDFWidget");
+	js_setregistry(J, "pdf_widget");
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
