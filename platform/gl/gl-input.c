@@ -359,7 +359,7 @@ int ui_input(struct input *input, int width, int height)
 	ay = area.y0 + 1;
 	sy = input->scroll * ui.lineheight;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = input;
 		if (!ui.active || ui.active == input)

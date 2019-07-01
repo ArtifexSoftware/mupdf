@@ -711,7 +711,7 @@ static void do_edit_icon(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	static float w, h;
 	static int moving = 0;
 
-	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
+	if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active && ui.down)
@@ -772,7 +772,7 @@ static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	static int state = ER_NONE;
 
 	area = fz_expand_irect(area, 5);
-	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
+	if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active && ui.down)
@@ -827,7 +827,7 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	float lw;
 
 	area = fz_expand_irect(area, 5);
-	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
+	if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active && ui.down)
@@ -841,8 +841,8 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 			a_grab = fz_expand_irect(a_grab, 10);
 			b_grab = fz_expand_irect(b_grab, 10);
 			state = EL_NONE;
-			if (ui_mouse_inside(&a_grab)) state |= EL_A;
-			if (ui_mouse_inside(&b_grab)) state |= EL_B;
+			if (ui_mouse_inside(a_grab)) state |= EL_A;
+			if (ui_mouse_inside(b_grab)) state |= EL_B;
 			if (!state) state = EL_MOVE;
 		}
 	}
@@ -890,7 +890,7 @@ static void do_edit_polygon(fz_irect canvas_area, int close)
 	static int drawing = 0;
 	fz_point a, p;
 
-	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&view_page_area))
+	if (ui_mouse_inside(canvas_area) && ui_mouse_inside(view_page_area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active || ui.active == selected_annot)
@@ -950,7 +950,7 @@ static void do_edit_ink(fz_irect canvas_area)
 	static int n, last_x, last_y;
 	int i;
 
-	if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&view_page_area))
+	if (ui_mouse_inside(canvas_area) && ui_mouse_inside(view_page_area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active || ui.active == selected_annot)
@@ -1014,7 +1014,7 @@ static void do_edit_quad_points(void)
 	fz_quad hits[1000];
 	int i, n;
 
-	if (ui_mouse_inside(&view_page_area))
+	if (ui_mouse_inside(view_page_area))
 	{
 		ui.hot = selected_annot;
 		if (!ui.active || ui.active == selected_annot)
@@ -1089,7 +1089,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 		bounds = fz_transform_rect(bounds, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
 
-		if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
+		if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 		{
 			ui.hot = annot;
 			if (!ui.active && ui.down)
@@ -1187,7 +1187,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 		}
 	}
 
-	if (ui_mouse_inside(&canvas_area) && ui.down)
+	if (ui_mouse_inside(canvas_area) && ui.down)
 	{
 		if (!ui.active && ui.hot == nothing)
 			selected_annot = NULL;

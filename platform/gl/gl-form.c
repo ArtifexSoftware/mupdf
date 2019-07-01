@@ -314,7 +314,7 @@ void do_widget_canvas(fz_irect canvas_area)
 		bounds = fz_transform_rect(bounds, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
 
-		if (ui_mouse_inside(&canvas_area) && ui_mouse_inside(&area))
+		if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 		{
 			if (!widget->is_hot)
 				pdf_annot_event_enter(ctx, widget);

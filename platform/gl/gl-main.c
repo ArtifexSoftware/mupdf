@@ -732,7 +732,7 @@ static void do_links(fz_link *link)
 		bounds = fz_transform_rect(link->rect, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
 
-		if (ui_mouse_inside(&area))
+		if (ui_mouse_inside(area))
 		{
 			tooltip = link->uri;
 			ui.hot = link;
@@ -780,7 +780,7 @@ static void do_page_selection(void)
 	fz_quad hits[1000];
 	int i, n;
 
-	if (ui_mouse_inside(&view_page_area))
+	if (ui_mouse_inside(view_page_area))
 	{
 		ui.hot = &pt;
 		if (!ui.active && ui.right)
@@ -1372,7 +1372,7 @@ static void do_canvas(void)
 	canvas_w = area.x1 - area.x0;
 	canvas_h = area.y1 - area.y0;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = doc;
 		if (!ui.active && ui.middle)

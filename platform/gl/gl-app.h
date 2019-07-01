@@ -159,7 +159,7 @@ struct list
 void ui_begin(void);
 void ui_end(void);
 
-int ui_mouse_inside(fz_irect *area);
+int ui_mouse_inside(fz_irect area);
 
 void ui_layout(enum side side, enum fill fill, enum anchor anchor, int padx, int pady);
 fz_irect ui_pack_layout(int slave_w, int slave_h, enum side side, enum fill fill, enum anchor anchor, int padx, int pady);
