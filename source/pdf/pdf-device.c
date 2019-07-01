@@ -958,6 +958,8 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 	{
 		fz_snprintf(egsname, sizeof(egsname), "SM%d", pdev->num_smasks++);
 		egss = pdf_dict_get(ctx, pdev->resources, PDF_NAME(ExtGState));
+		if (!egss)
+			egss = pdf_dict_put_dict(ctx, pdev->resources, PDF_NAME(ExtGState), 10);
 		egs = pdf_dict_puts_dict(ctx, egss, egsname, 1);
 
 		pdf_dict_put(ctx, egs, PDF_NAME(Type), PDF_NAME(ExtGState));
