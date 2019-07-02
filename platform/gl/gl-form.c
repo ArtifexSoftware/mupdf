@@ -47,7 +47,7 @@ static void do_clear_signature(void)
 {
 	fz_try(ctx)
 	{
-		pdf_clear_signature(ctx, pdf, sig_widget->obj);
+		pdf_clear_signature(ctx, pdf, sig_widget);
 		ui_show_warning_dialog("Signature cleared successfully.");
 	}
 	fz_catch(ctx)
