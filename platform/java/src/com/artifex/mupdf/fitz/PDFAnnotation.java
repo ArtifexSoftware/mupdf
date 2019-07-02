@@ -115,12 +115,76 @@ public class PDFAnnotation
 		setLineEndingStyles(styles[0], styles[1]);
 	}
 
-	public native float[] getVertices();
-	public native void setVertices(float[] vertices);
-	public native float[][] getQuadPoints();
-	public native void setQuadPoints(float[][] quadPoints);
-	public native float[][] getInkList();
-	public native void setInkList(float[][] inkList);
+	public native int getQuadPointCount();
+	public native Quad getQuadPoint(int i);
+	public native void clearQuadPoints();
+	public native void addQuadPoint(Quad q);
+	public Quad[] getQuadPoints() {
+		int n = getQuadPointCount();
+		Quad[] list = new Quad[n];
+		for (int i = 0; i < n; ++i)
+			list[i] = getQuadPoint(i);
+		return list;
+	}
+	public void setQuadPoints(Quad[] quadPoints) {
+		clearQuadPoints();
+		for (Quad q : quadPoints)
+			addQuadPoint(q);
+	}
+
+	public native int getVertexCount();
+	public native Point getVertex(int i);
+	public native void clearVertices();
+	public native void addVertex(float x, float y);
+	public void addVertex(Point p) {
+		addVertex(p.x, p.y);
+	}
+	public Point[] getVertices() {
+		int n = getVertexCount();
+		Point[] list = new Point[n];
+		for (int i = 0; i < n; ++i)
+			list[i] = getVertex(i);
+		return list;
+	}
+	public void setVertices(Point[] vertices) {
+		clearVertices();
+		for (Point p : vertices)
+			addVertex(p);
+	}
+
+	public native int getInkListCount();
+	public native int getInkListStrokeCount(int i);
+	public native Point getInkListStrokeVertex(int i, int k);
+	public native void clearInkList();
+	public native void addInkListStroke();
+	public native void addInkListVertex(float x, float y);
+	public void addInkListVertex(Point p) {
+		addInkListVertex(p.x, p.y);
+	}
+	public void addInkList(Point[] stroke) {
+		addInkListStroke();
+		for (Point p : stroke)
+			addInkListVertex(p);
+	}
+	public void setInkList(Point[][] inkList) {
+		clearInkList();
+		for (Point[] stroke : inkList) {
+			addInkListStroke();
+			for (Point p : stroke)
+				addInkListVertex(p);
+		}
+	}
+	public Point[][] getInkList() {
+		int i, k, n, m = getInkListCount();
+		Point[][] list = new Point[m][];
+		for (i = 0; i < m; ++i) {
+			n = getInkListStrokeCount(i);
+			list[i] = new Point[n];
+			for (k = 0; k < n; ++k)
+				list[i][k] = getInkListStrokeVertex(i, k);
+		}
+		return list;
+	}
 
 	public native String getIcon();
 	public native void setIcon(String icon);

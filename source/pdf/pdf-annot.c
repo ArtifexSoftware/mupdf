@@ -1172,11 +1172,12 @@ pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 	return pdf_array_len(ctx, quad_points) / 8;
 }
 
-void
-pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
+fz_quad
+pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx)
 {
 	pdf_obj *quad_points;
 	fz_matrix page_ctm;
+	float v[8];
 	int i;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME(QuadPoints), quad_point_subtypes);
@@ -1192,35 +1193,38 @@ pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
 		v[i+0] = point.x;
 		v[i+1] = point.y;
 	}
+
+	return fz_make_quad(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 }
 
 void
-pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v)
+pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const fz_quad *q)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *quad_points;
-	fz_point point;
-	int i, k;
+	fz_quad quad;
+	int i;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME(QuadPoints), quad_point_subtypes);
-	if (n <= 0 || !v)
+	if (n <= 0 || !q)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid number of quadrilaterals");
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	inv_page_ctm = fz_invert_matrix(page_ctm);
 
-	quad_points = pdf_new_array(ctx, doc, n * 8);
+	quad_points = pdf_new_array(ctx, doc, n);
 	for (i = 0; i < n; ++i)
 	{
-		for (k = 0; k < 4; ++k)
-		{
-			point.x = v[i * 8 + k * 2 + 0];
-			point.y = v[i * 8 + k * 2 + 1];
-			point = fz_transform_point(point, inv_page_ctm);
-			pdf_array_push_real(ctx, quad_points, point.x);
-			pdf_array_push_real(ctx, quad_points, point.y);
-		}
+		quad = fz_transform_quad(q[i], inv_page_ctm);
+		pdf_array_push_real(ctx, quad_points, quad.ul.x);
+		pdf_array_push_real(ctx, quad_points, quad.ul.y);
+		pdf_array_push_real(ctx, quad_points, quad.ur.x);
+		pdf_array_push_real(ctx, quad_points, quad.ur.y);
+		pdf_array_push_real(ctx, quad_points, quad.ll.x);
+		pdf_array_push_real(ctx, quad_points, quad.ll.y);
+		pdf_array_push_real(ctx, quad_points, quad.lr.x);
+		pdf_array_push_real(ctx, quad_points, quad.lr.y);
 	}
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(QuadPoints), quad_points);
 	pdf_dirty_annot(ctx, annot);
@@ -1356,9 +1360,37 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 void
 pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot)
 {
-	check_allowed_subtypes(ctx, annot, PDF_NAME(InkList), ink_list_subtypes);
 	pdf_dict_del(ctx, annot->obj, PDF_NAME(InkList));
 	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_add_annot_ink_list_stroke(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *ink_list;
+
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
+	if (!pdf_is_array(ctx, ink_list))
+		ink_list = pdf_dict_put_array(ctx, annot->obj, PDF_NAME(InkList), 10);
+
+	pdf_array_push_array(ctx, ink_list, 16);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_add_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, fz_point p)
+{
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *ink_list, *stroke;
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	inv_page_ctm = fz_invert_matrix(page_ctm);
+
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
+	stroke = pdf_array_get(ctx, ink_list, pdf_array_len(ctx, ink_list)-1);
+
+	p = fz_transform_point(p, inv_page_ctm);
+	pdf_array_push_real(ctx, stroke, p.x);
+	pdf_array_push_real(ctx, stroke, p.y);
 }
 
 void

@@ -351,6 +351,21 @@ struct fz_quad_s
 	fz_point ul, ur, ll, lr;
 };
 
+static inline fz_quad fz_make_quad(
+	float ul_x, float ul_y,
+	float ur_x, float ur_y,
+	float ll_x, float ll_y,
+	float lr_x, float lr_y)
+{
+	fz_quad q = {
+		{ ul_x, ul_y },
+		{ ur_x, ur_y },
+		{ ll_x, ll_y },
+		{ lr_x, lr_y },
+	};
+	return q;
+}
+
 fz_rect fz_rect_from_quad(fz_quad q);
 fz_quad fz_transform_quad(fz_quad q, fz_matrix m);
 

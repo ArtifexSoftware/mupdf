@@ -2069,6 +2069,25 @@ static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
 	return rect;
 }
 
+static inline fz_quad from_Quad(JNIEnv *env, jobject jquad)
+{
+	fz_quad quad;
+
+	if (!jquad)
+		return fz_make_quad(0, 0, 0, 0, 0, 0, 0, 0);
+
+	quad.ul.x = (*env)->GetFloatField(env, jquad, fid_Quad_ul_x);
+	quad.ul.y = (*env)->GetFloatField(env, jquad, fid_Quad_ul_y);
+	quad.ur.x = (*env)->GetFloatField(env, jquad, fid_Quad_ur_x);
+	quad.ur.y = (*env)->GetFloatField(env, jquad, fid_Quad_ur_y);
+	quad.ll.x = (*env)->GetFloatField(env, jquad, fid_Quad_ll_x);
+	quad.ll.y = (*env)->GetFloatField(env, jquad, fid_Quad_ll_y);
+	quad.lr.x = (*env)->GetFloatField(env, jquad, fid_Quad_lr_x);
+	quad.lr.y = (*env)->GetFloatField(env, jquad, fid_Quad_lr_y);
+
+	return quad;
+}
+
 /* Conversion functions: Java to C. None of these throw java exceptions. */
 
 static inline fz_buffer *from_Buffer_safe(JNIEnv *env, jobject jobj)
@@ -9270,105 +9289,213 @@ FUN(PDFAnnotation_setInteriorColor)(JNIEnv *env, jobject self, jobject jcolor)
 		jni_rethrow(env, ctx);
 }
 
-JNIEXPORT jobject JNICALL
-FUN(PDFAnnotation_getQuadPoints)(JNIEnv *env, jobject self)
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getQuadPointCount)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int i, n;
-	float qp[8];
-	jobject jqps;
-	jfloatArray jqp;
-
-	if (!ctx || !annot) return NULL;
+	int n = 0;
 
 	fz_try(ctx)
 		n = pdf_annot_quad_point_count(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return NULL;
+		return 0;
 	}
 
-	jqps = (*env)->NewObjectArray(env, n, cls_FloatArray, NULL);
-	if (!jqps) return NULL;
-
-	for (i = 0; i < n; i++)
-	{
-		fz_try(ctx)
-			pdf_annot_quad_point(ctx, annot, i, qp);
-		fz_catch(ctx)
-		{
-			jni_rethrow(env, ctx);
-			return NULL;
-		}
-
-		jqp = (*env)->NewFloatArray(env, 8);
-		if (!jqp) return NULL;
-
-		(*env)->SetFloatArrayRegion(env, jqp, 0, 8, &qp[0]);
-		if ((*env)->ExceptionCheck(env)) return NULL;
-
-		(*env)->SetObjectArrayElement(env, jqps, i, jqp);
-		if ((*env)->ExceptionCheck(env)) return NULL;
-
-		(*env)->DeleteLocalRef(env, jqp);
-	}
-
-	return jqps;
+	return n;
 }
 
-JNIEXPORT void JNICALL
-FUN(PDFAnnotation_setQuadPoints)(JNIEnv *env, jobject self, jobject jqps)
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getQuadPoint)(JNIEnv *env, jobject self, jint i)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int i, n, m;
-	float *qp;
-	jfloatArray jqp;
-
-	if (!ctx || !annot) return;
-
-	n = (*env)->GetArrayLength(env, jqps);
+	fz_quad q;
 
 	fz_try(ctx)
-		qp = fz_malloc(ctx, n * 8 * sizeof *qp);
+		q = pdf_annot_quad_point(ctx, annot, i);
 	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	for (i = 0; i < n; i++)
 	{
-		jqp = (*env)->GetObjectArrayElement(env, jqps, i);
-		if ((*env)->ExceptionCheck(env))
-		{
-			fz_free(ctx, qp);
-			return;
-		}
-
-		if (!jqp)
-			continue;
-
-		m = (*env)->GetArrayLength(env, jqp);
-		if (m > 8)
-			m = 8;
-
-		(*env)->GetFloatArrayRegion(env, jqp, 0, m, &qp[i * 8]);
-		if ((*env)->ExceptionCheck(env))
-		{
-			fz_free(ctx, qp);
-			return;
-		}
-
-		if (m < 8)
-			memset(&qp[i * 8 + m], 0, (8 - m) * sizeof (float));
-
-		(*env)->DeleteLocalRef(env, jqp);
+		jni_rethrow(env, ctx);
+		return NULL;
 	}
 
+	return to_Quad_safe(ctx, env, q);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_clearQuadPoints)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
 	fz_try(ctx)
-		pdf_set_annot_quad_points(ctx, annot, n, qp);
-	fz_always(ctx)
-		fz_free(ctx, qp);
+		pdf_clear_annot_quad_points(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_addQuadPoint)(JNIEnv *env, jobject self, jobject qobj)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_quad q = from_Quad(env, qobj);
+
+	fz_try(ctx)
+		pdf_add_annot_quad_point(ctx, annot, q);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getVertexCount)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int n = 0;
+
+	fz_try(ctx)
+		n = pdf_annot_vertex_count(ctx, annot);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return n;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getVertex)(JNIEnv *env, jobject self, jint i)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point v;
+
+	fz_try(ctx)
+		v = pdf_annot_vertex(ctx, annot, i);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_Point_safe(ctx, env, v);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_clearVertices)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_clear_annot_vertices(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_addVertex)(JNIEnv *env, jobject self, float x, float y)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_add_annot_vertex(ctx, annot, fz_make_point(x, y));
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getInkListCount)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int n = 0;
+
+	fz_try(ctx)
+		n = pdf_annot_ink_list_count(ctx, annot);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return n;
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getInkListStrokeCount)(JNIEnv *env, jobject self, jint i)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int n = 0;
+
+	fz_try(ctx)
+		n = pdf_annot_ink_list_stroke_count(ctx, annot, i);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return n;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getInkListStrokeVertex)(JNIEnv *env, jobject self, jint i, jint k)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point v;
+
+	fz_try(ctx)
+		v = pdf_annot_ink_list_stroke_vertex(ctx, annot, i, k);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_Point_safe(ctx, env, v);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_clearInkList)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_clear_annot_ink_list(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_addInkListStroke)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_add_annot_ink_list_stroke(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_addInkListStrokeVertex)(JNIEnv *env, jobject self, float x, float y)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_add_annot_ink_list_stroke_vertex(ctx, annot, fz_make_point(x, y));
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -9487,141 +9614,6 @@ FUN(PDFAnnotation_update)(JNIEnv *env, jobject self)
 	return changed;
 }
 
-JNIEXPORT jobject JNICALL
-FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int i, k, n, m;
-	fz_point v;
-	jobject jinklist;
-	jfloatArray jpath;
-
-	if (!ctx || !annot) return NULL;
-
-	fz_try(ctx)
-		n = pdf_annot_ink_list_count(ctx, annot);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	jinklist = (*env)->NewObjectArray(env, n, cls_FloatArray, NULL);
-	if (!jinklist) return NULL;
-
-	for (i = 0; i < n; i++)
-	{
-		fz_try(ctx)
-			m = pdf_annot_ink_list_stroke_count(ctx, annot, i);
-		fz_catch(ctx)
-		{
-			jni_rethrow(env, ctx);
-			return NULL;
-		}
-
-		jpath = (*env)->NewFloatArray(env, m * 2);
-		if (!jpath) return NULL;
-
-		for (k = 0; k < m; k++)
-		{
-			fz_try(ctx)
-				v = pdf_annot_ink_list_stroke_vertex(ctx, annot, i, k);
-			fz_catch(ctx)
-			{
-				jni_rethrow(env, ctx);
-				return NULL;
-			}
-
-			(*env)->SetFloatArrayRegion(env, jpath, k * 2, 2, (float*)&v);
-			if ((*env)->ExceptionCheck(env)) return NULL;
-		}
-
-		(*env)->SetObjectArrayElement(env, jinklist, i, jpath);
-		if ((*env)->ExceptionCheck(env)) return NULL;
-
-		(*env)->DeleteLocalRef(env, jpath);
-	}
-
-	return jinklist;
-}
-
-JNIEXPORT void JNICALL
-FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
-{
-	fz_context *ctx = get_context(env);
-	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int i, k, n, m;
-	jfloatArray jpath;
-	fz_point *points = NULL;
-	int *counts = NULL;
-
-	if (!ctx || !annot) return;
-
-	n = (*env)->GetArrayLength(env, jinklist);
-
-	for (i = m = 0; i < n; i++)
-	{
-		jpath = (*env)->GetObjectArrayElement(env, jinklist, i);
-		if ((*env)->ExceptionCheck(env)) return;
-
-		if (!jpath)
-			continue;
-
-		m += (*env)->GetArrayLength(env, jpath) / 2;
-
-		(*env)->DeleteLocalRef(env, jpath);
-	}
-
-	fz_try(ctx)
-	{
-		counts = fz_malloc(ctx, n * sizeof(int));
-		points = fz_malloc(ctx, m * sizeof(fz_point));
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, counts);
-		fz_free(ctx, points);
-		jni_rethrow(env, ctx);
-	}
-
-	for (i = k = 0; i < n; k += counts[i++])
-	{
-		jpath = (*env)->GetObjectArrayElement(env, jinklist, i);
-		if ((*env)->ExceptionCheck(env))
-		{
-			fz_free(ctx, counts);
-			fz_free(ctx, points);
-			return;
-		}
-
-		if (!jpath)
-			continue;
-
-		counts[i] = (*env)->GetArrayLength(env, jpath);
-		(*env)->GetFloatArrayRegion(env, jpath, 0, counts[i], (float*)&points[k]);
-		if ((*env)->ExceptionCheck(env))
-		{
-			fz_free(ctx, counts);
-			fz_free(ctx, points);
-			return;
-		}
-		counts[i] /= 2;
-
-		(*env)->DeleteLocalRef(env, jpath);
-	}
-
-	fz_try(ctx)
-		pdf_set_annot_ink_list(ctx, annot, n, counts, points);
-	fz_always(ctx)
-	{
-		fz_free(ctx, counts);
-		fz_free(ctx, points);
-	}
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-}
-
 JNIEXPORT jboolean JNICALL
 FUN(PDFAnnotation_isOpen)(JNIEnv *env, jobject self)
 {
@@ -9649,77 +9641,6 @@ FUN(PDFAnnotation_setIsOpen)(JNIEnv *env, jobject self, jboolean open)
 
 	fz_try(ctx)
 		pdf_set_annot_is_open(ctx, annot, open);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-}
-
-JNIEXPORT jobject JNICALL
-FUN(PDFAnnotation_getVertices)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_annot *annot = from_PDFAnnotation(env, self);
-	int i, n;
-	fz_point v;
-	jobject jvertices;
-
-	if (!ctx || !annot) return NULL;
-
-	fz_try(ctx)
-		n = pdf_annot_vertex_count(ctx, annot);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	jvertices = (*env)->NewObjectArray(env, 2 * n, cls_FloatArray, NULL);
-	if (!jvertices) return NULL;
-
-	for (i = 0; i < n; i++)
-	{
-		fz_try(ctx)
-			v = pdf_annot_vertex(ctx, annot, i);
-		fz_catch(ctx)
-		{
-			jni_rethrow(env, ctx);
-			return NULL;
-		}
-
-		(*env)->SetFloatArrayRegion(env, jvertices, i * 2, 2, (float*)&v);
-		if ((*env)->ExceptionCheck(env)) return NULL;
-	}
-
-	return jvertices;
-}
-
-JNIEXPORT void JNICALL
-FUN(PDFAnnotation_setVertices)(JNIEnv *env, jobject self, jobject jvertices)
-{
-	fz_context *ctx = get_context(env);
-	pdf_annot *annot = from_PDFAnnotation(env, self);
-	float *vertices = NULL;
-	int n;
-
-	if (!ctx || !annot) return;
-
-	n = (*env)->GetArrayLength(env, jvertices);
-
-	fz_try(ctx)
-		vertices = fz_malloc(ctx, n * sizeof *vertices);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	(*env)->GetFloatArrayRegion(env, jvertices, 0, n, vertices);
-	if ((*env)->ExceptionCheck(env))
-	{
-		fz_free(ctx, vertices);
-		return;
-	}
-
-	fz_try(ctx)
-		pdf_set_annot_vertices(ctx, annot, n, (fz_point*)vertices);
-	fz_always(ctx)
-		fz_free(ctx, vertices);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }

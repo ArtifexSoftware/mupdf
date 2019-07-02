@@ -151,7 +151,7 @@ int pdf_annot_MK_BG_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
 int pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
 
 int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i, float qp[8]);
+fz_quad pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i);
 
 int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i);
@@ -165,12 +165,14 @@ void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float c
 void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q);
 
-void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v);
+void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const fz_quad *qv);
 void pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot);
 void pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_quad quad);
 
 void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v);
 void pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot);
+void pdf_add_annot_ink_list_stroke(fz_context *ctx, pdf_annot *annot);
+void pdf_add_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, fz_point p);
 void pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point stroke[]);
 
 void pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name);

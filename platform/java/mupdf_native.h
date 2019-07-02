@@ -1390,51 +1390,115 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineEndingSt
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    getVertices
- * Signature: ()[F
+ * Method:    getQuadPointCount
+ * Signature: ()I
  */
-JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getVertices
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadPointCount
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    setVertices
- * Signature: ([F)V
+ * Method:    getQuadPoint
+ * Signature: (I)Lcom/artifex/mupdf/fitz/Quad;
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setVertices
-  (JNIEnv *, jobject, jfloatArray);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadPoint
+  (JNIEnv *, jobject, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    getQuadPoints
- * Signature: ()[[F
+ * Method:    clearQuadPoints
+ * Signature: ()V
  */
-JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadPoints
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_clearQuadPoints
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    setQuadPoints
- * Signature: ([[F)V
+ * Method:    addQuadPoint
+ * Signature: (Lcom/artifex/mupdf/fitz/Quad;)V
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setQuadPoints
-  (JNIEnv *, jobject, jobjectArray);
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addQuadPoint
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    getInkList
- * Signature: ()[[F
+ * Method:    getVertexCount
+ * Signature: ()I
  */
-JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getInkList
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getVertexCount
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    setInkList
- * Signature: ([[F)V
+ * Method:    getVertex
+ * Signature: (I)Lcom/artifex/mupdf/fitz/Point;
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setInkList
-  (JNIEnv *, jobject, jobjectArray);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getVertex
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    clearVertices
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_clearVertices
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    addVertex
+ * Signature: (FF)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addVertex
+  (JNIEnv *, jobject, jfloat, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getInkListCount
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getInkListCount
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getInkListStrokeCount
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getInkListStrokeCount
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getInkListStrokeVertex
+ * Signature: (II)Lcom/artifex/mupdf/fitz/Point;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getInkListStrokeVertex
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    clearInkList
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_clearInkList
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    addInkListStroke
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addInkListStroke
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    addInkListVertex
+ * Signature: (FF)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addInkListVertex
+  (JNIEnv *, jobject, jfloat, jfloat);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
@@ -2598,6 +2662,46 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isEditing
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    isSigned
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isSigned
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    clearSignature
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_clearSignature
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    signWithPFX
+ * Signature: ([B[B)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_signWithPFX
+  (JNIEnv *, jobject, jbyteArray, jbyteArray);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    checkSignatureDigest
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_checkSignatureDigest
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    checkSignatureCertificate
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_checkSignatureCertificate
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

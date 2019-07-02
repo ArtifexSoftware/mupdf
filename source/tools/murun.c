@@ -424,6 +424,13 @@ static fz_point ffi_topoint(js_State *J, int idx)
 	return point;
 }
 
+static void ffi_pushpoint(js_State *J, fz_point point)
+{
+	js_newarray(J);
+	js_pushnumber(J, point.x); js_setindex(J, -2, 0);
+	js_pushnumber(J, point.y); js_setindex(J, -2, 1);
+}
+
 static fz_rect ffi_torect(js_State *J, int idx)
 {
 	fz_rect rect;
@@ -441,6 +448,20 @@ static void ffi_pushrect(js_State *J, fz_rect rect)
 	js_pushnumber(J, rect.y0); js_setindex(J, -2, 1);
 	js_pushnumber(J, rect.x1); js_setindex(J, -2, 2);
 	js_pushnumber(J, rect.y1); js_setindex(J, -2, 3);
+}
+
+static fz_quad ffi_toquad(js_State *J, int idx)
+{
+	fz_quad quad;
+	js_getindex(J, idx, 0); quad.ul.x = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 1); quad.ul.y = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 2); quad.ur.x = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 3); quad.ur.y = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 4); quad.ll.x = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 5); quad.ll.y = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 6); quad.lr.x = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 7); quad.lr.y = js_tonumber(J, -1); js_pop(J, 1);
+	return quad;
 }
 
 static void ffi_pushquad(js_State *J, fz_quad quad)
@@ -4250,8 +4271,8 @@ static void ffi_PDFAnnotation_getQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	float qp[8] = { 0 };
-	int i, k, n = 0;
+	fz_quad q;
+	int i, n = 0;
 
 	fz_try(ctx)
 		n = pdf_annot_quad_point_count(ctx, annot);
@@ -4261,14 +4282,10 @@ static void ffi_PDFAnnotation_getQuadPoints(js_State *J)
 	js_newarray(J);
 	for (i = 0; i < n; ++i) {
 		fz_try(ctx)
-			pdf_annot_quad_point(ctx, annot, i, qp);
+			q = pdf_annot_quad_point(ctx, annot, i);
 		fz_catch(ctx)
 			rethrow(J);
-		js_newarray(J);
-		for (k = 0; k < 8; ++k) {
-			js_pushnumber(J, qp[k]);
-			js_setindex(J, -2, k);
-		}
+		ffi_pushquad(J, q);
 		js_setindex(J, -2, i);
 	}
 }
@@ -4277,23 +4294,19 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	float *qp = NULL;
-	int k, i, n;
+	fz_quad *qp = NULL;
+	int i, n;
 
 	n = js_getlength(J, 1);
 
 	fz_try(ctx)
-		qp = fz_malloc(ctx, n * 8 * sizeof *qp);
+		qp = fz_malloc_array(ctx, n, fz_quad);
 	fz_catch(ctx)
 		rethrow(J);
 
 	for (i = 0; i < n; ++i) {
 		js_getindex(J, 1, i);
-		for (k = 0; k < 8; ++k) {
-			js_getindex(J, -1, k);
-			qp[i * 8 + k] = js_tonumber(J, -1);
-			js_pop(J, 1);
-		}
+		qp[i] = ffi_toquad(J, -1);
 		js_pop(J, 1);
 	}
 
@@ -4301,6 +4314,101 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 		pdf_set_annot_quad_points(ctx, annot, n, qp);
 	fz_always(ctx)
 		fz_free(ctx, qp);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_clearQuadPoints(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+
+	fz_try(ctx)
+		pdf_clear_annot_quad_points(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_addQuadPoint(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_quad q = ffi_toquad(J, 1);
+
+	fz_try(ctx)
+		pdf_add_annot_quad_point(ctx, annot, q);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getVertices(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_point p;
+	int i, n = 0;
+
+	fz_try(ctx)
+		n = pdf_annot_vertex_count(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		fz_try(ctx)
+			p = pdf_annot_vertex(ctx, annot, i);
+		fz_catch(ctx)
+			rethrow(J);
+		ffi_pushpoint(J, p);
+		js_setindex(J, -2, i);
+	}
+}
+
+static void ffi_PDFAnnotation_setVertices(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_point p;
+	int i, n;
+
+	n = js_getlength(J, 1);
+
+	fz_try(ctx)
+		pdf_clear_annot_vertices(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	for (i = 0; i < n; ++i) {
+		js_getindex(J, 1, i);
+		p = ffi_topoint(J, -1);
+		js_pop(J, 1);
+
+		fz_try(ctx)
+			pdf_add_annot_vertex(ctx, annot, p);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_PDFAnnotation_clearVertices(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+
+	fz_try(ctx)
+		pdf_clear_annot_vertices(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_addVertex(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_point p = ffi_topoint(J, 1);
+
+	fz_try(ctx)
+		pdf_add_annot_vertex(ctx, annot, p);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -4395,6 +4503,68 @@ static void ffi_PDFAnnotation_setInkList(js_State *J)
 		fz_free(ctx, counts);
 		fz_free(ctx, points);
 	}
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_clearInkList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_clear_annot_ink_list(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_addInkList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int i, n;
+	float x, y;
+
+	n = js_getlength(J, 1);
+
+	fz_try(ctx)
+		pdf_add_annot_ink_list_stroke(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	for (i = 0; i < n; i += 2) {
+		js_getindex(J, 1, i);
+		x = js_tonumber(J, -1);
+		js_pop(J, 1);
+
+		js_getindex(J, 1, i+1);
+		y = js_tonumber(J, -1);
+		js_pop(J, 1);
+
+		fz_try(ctx)
+			pdf_add_annot_ink_list_stroke_vertex(ctx, annot, fz_make_point(x, y));
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_PDFAnnotation_addInkListStroke(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_add_annot_ink_list_stroke(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_addInkListStrokeVertex(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float x = js_tonumber(J, 1);
+	float y = js_tonumber(J, 2);
+	fz_try(ctx)
+		pdf_add_annot_ink_list_stroke_vertex(ctx, annot, fz_make_point(x, y));
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -5030,14 +5200,27 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setColor", ffi_PDFAnnotation_setColor, 1);
 		jsB_propfun(J, "PDFAnnotation.getInteriorColor", ffi_PDFAnnotation_getInteriorColor, 0);
 		jsB_propfun(J, "PDFAnnotation.setInteriorColor", ffi_PDFAnnotation_setInteriorColor, 1);
-		jsB_propfun(J, "PDFAnnotation.getQuadPoints", ffi_PDFAnnotation_getQuadPoints, 0);
-		jsB_propfun(J, "PDFAnnotation.setQuadPoints", ffi_PDFAnnotation_setQuadPoints, 1);
-		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
-		jsB_propfun(J, "PDFAnnotation.setInkList", ffi_PDFAnnotation_setInkList, 1);
 		jsB_propfun(J, "PDFAnnotation.getAuthor", ffi_PDFAnnotation_getAuthor, 0);
 		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.setModificationDate", ffi_PDFAnnotation_setModificationDate, 0);
+
+		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
+		jsB_propfun(J, "PDFAnnotation.setInkList", ffi_PDFAnnotation_setInkList, 1);
+		jsB_propfun(J, "PDFAnnotation.clearInkList", ffi_PDFAnnotation_clearInkList, 0);
+		jsB_propfun(J, "PDFAnnotation.addInkList", ffi_PDFAnnotation_addInkList, 1);
+		jsB_propfun(J, "PDFAnnotation.addInkListStroke", ffi_PDFAnnotation_addInkListStroke, 0);
+		jsB_propfun(J, "PDFAnnotation.addInkListStrokeVertex", ffi_PDFAnnotation_addInkListStrokeVertex, 2);
+
+		jsB_propfun(J, "PDFAnnotation.getQuadPoints", ffi_PDFAnnotation_getQuadPoints, 0);
+		jsB_propfun(J, "PDFAnnotation.setQuadPoints", ffi_PDFAnnotation_setQuadPoints, 1);
+		jsB_propfun(J, "PDFAnnotation.clearQuadPoints", ffi_PDFAnnotation_clearQuadPoints, 0);
+		jsB_propfun(J, "PDFAnnotation.addQuadPoint", ffi_PDFAnnotation_addQuadPoint, 1);
+
+		jsB_propfun(J, "PDFAnnotation.getVertices", ffi_PDFAnnotation_getVertices, 0);
+		jsB_propfun(J, "PDFAnnotation.setVertices", ffi_PDFAnnotation_setVertices, 1);
+		jsB_propfun(J, "PDFAnnotation.clearVertices", ffi_PDFAnnotation_clearVertices, 0);
+		jsB_propfun(J, "PDFAnnotation.addVertex", ffi_PDFAnnotation_addVertex, 2);
 
 		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.update", ffi_PDFAnnotation_update, 0);
