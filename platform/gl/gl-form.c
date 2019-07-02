@@ -124,7 +124,7 @@ static void sig_sign_dialog(void)
 			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
 				ui.dialog = NULL;
 			ui_spacer();
-			if (!pdf_field_flags(ctx, sig_widget->obj) & PDF_FIELD_IS_READ_ONLY)
+			if (!(pdf_field_flags(ctx, sig_widget->obj) & PDF_FIELD_IS_READ_ONLY))
 			{
 				if (ui_button("Sign"))
 				{
