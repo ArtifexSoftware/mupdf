@@ -1,3 +1,30 @@
+List of changes since the last release
+
+	api: Major overhaul of color management architecture.
+	api: Improved functions to verify/sign PDF documents.
+	api: Number tree accessor function pdf_lookup_number.
+	api: Parse and handle more options for PWG output.
+	api: Removed obsolete gproof document type.
+	api: User callbacks for warning and error messages.
+
+	epub: Changed default page size to A5.
+	epub: Draw embedded SVG documents in EPUB/XHTML.
+	epub: New Noto fonts covering more unicode scripts.
+	epub: Support small-caps font-variant.
+	pdf: Add Redact annotation type and function to apply redactions.
+	pdf: Add/remove/change encryption and password when saving PDF files.
+	pdf: Improvements to text handling in PDF filter processor.
+	pdf: MP and DP operators now call begin/end_layer device methods.
+	pdf: New and improved progressive loading.
+	svg: Draw external images in SVG documents.
+
+	mutool show: Add 'form' selector to list PDF form fields.
+	mutool sign: Sign PDF documents from the command line.
+	mutool sign: Verify signatures in PDF documents from the command line.
+	viewer: Option to save a script of user actions for replay with mutool run.
+	viewer: Runtime toggle for ICC and spot rendering.
+	viewer: Tooltip when hovering over a link in mupdf-gl.
+
 List of changes in MuPDF 1.15.0
 
 General improvements:
