@@ -1558,10 +1558,8 @@ static inline int isbinary(int c)
 	return c < 32 || c > 127;
 }
 
-static int isbinarystream(fz_context *ctx, fz_buffer *buf)
+static int isbinarystream(fz_context *ctx, const unsigned char *data, size_t len)
 {
-	unsigned char *data;
-	size_t len = fz_buffer_storage(ctx, buf, &data);
 	size_t i;
 	for (i = 0; i < len; i++)
 		if (isbinary(data[i]))
@@ -1706,7 +1704,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 			}
 		}
 
-		if (opts->do_ascii && isbinarystream(ctx, buf))
+		if (opts->do_ascii && isbinarystream(ctx, data, len))
 		{
 			tmp_hex = hexbuf(ctx, data, len);
 			len = fz_buffer_storage(ctx, tmp_hex, &data);
@@ -1780,7 +1778,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			}
 		}
 
-		if (opts->do_ascii && isbinarystream(ctx, buf))
+		if (opts->do_ascii && isbinarystream(ctx, data, len))
 		{
 			tmp_hex = hexbuf(ctx, data, len);
 			len = fz_buffer_storage(ctx, tmp_hex, &data);
