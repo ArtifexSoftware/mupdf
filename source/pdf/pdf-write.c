@@ -1667,6 +1667,75 @@ static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 	return buf;
 }
 
+static int striphexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
+{
+	pdf_obj *f, *dp;
+	int is_hex = 0;
+
+	f = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
+	dp = pdf_dict_get(ctx, dict, PDF_NAME(DecodeParms));
+
+	if (pdf_is_array(ctx, f))
+	{
+		/* Remove ASCIIHexDecode from head of filter list */
+		if (pdf_array_get(ctx, f, 0) == PDF_NAME(ASCIIHexDecode))
+		{
+			is_hex = 1;
+			pdf_array_delete(ctx, f, 0);
+			if (pdf_is_array(ctx, dp))
+				pdf_array_delete(ctx, dp, 0);
+		}
+		/* Unpack array if only one filter remains */
+		if (pdf_array_len(ctx, f) == 1)
+		{
+			f = pdf_array_get(ctx, f, 0);
+			pdf_dict_put(ctx, dict, PDF_NAME(Filter), f);
+			if (dp)
+			{
+				dp = pdf_array_get(ctx, dp, 0);
+				pdf_dict_put(ctx, dict, PDF_NAME(DecodeParms), dp);
+			}
+		}
+		/* Remove array if no filters remain */
+		else if (pdf_array_len(ctx, f) == 0)
+		{
+			pdf_dict_del(ctx, dict, PDF_NAME(Filter));
+			pdf_dict_del(ctx, dict, PDF_NAME(DecodeParms));
+		}
+	}
+	else if (f == PDF_NAME(ASCIIHexDecode))
+	{
+		is_hex = 1;
+		pdf_dict_del(ctx, dict, PDF_NAME(Filter));
+		pdf_dict_del(ctx, dict, PDF_NAME(DecodeParms));
+	}
+
+	return is_hex;
+}
+
+static fz_buffer *unhexbuf(fz_context *ctx, const unsigned char *p, size_t n)
+{
+	fz_stream *mstm = NULL;
+	fz_stream *xstm = NULL;
+	fz_buffer *out = NULL;
+	fz_var(mstm);
+	fz_var(xstm);
+	fz_try(ctx)
+	{
+		mstm = fz_open_memory(ctx, p, n);
+		xstm = fz_open_ahxd(ctx, mstm);
+		out = fz_read_all(ctx, xstm, n/2);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, xstm);
+		fz_drop_stream(ctx, mstm);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return out;
+}
+
 static void write_data(fz_context *ctx, void *arg, const unsigned char *data, int len)
 {
 	fz_write_data(ctx, (fz_output *)arg, data, len);
@@ -1674,7 +1743,7 @@ static void write_data(fz_context *ctx, void *arg, const unsigned char *data, in
 
 static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
-	fz_buffer *tmp_flate = NULL, *tmp_hex = NULL, *buf = NULL;
+	fz_buffer *tmp_unhex = NULL, *tmp_flate = NULL, *tmp_hex = NULL, *buf = NULL;
 	pdf_obj *obj = NULL;
 	size_t len;
 	unsigned char *data;
@@ -1690,6 +1759,13 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		obj = pdf_copy_dict(ctx, obj_orig);
 
 		len = fz_buffer_storage(ctx, buf, &data);
+
+		if (do_deflate && striphexfilter(ctx, doc, obj))
+		{
+			tmp_unhex = unhexbuf(ctx, data, len);
+			len = fz_buffer_storage(ctx, tmp_unhex, &data);
+		}
+
 		if (do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME(Filter)))
 		{
 			size_t clen;
@@ -1729,10 +1805,10 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		}
 
 		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
-
 	}
 	fz_always(ctx)
 	{
+		fz_drop_buffer(ctx, tmp_unhex);
 		fz_drop_buffer(ctx, tmp_hex);
 		fz_drop_buffer(ctx, tmp_flate);
 		fz_drop_buffer(ctx, buf);
