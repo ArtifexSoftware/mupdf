@@ -39,6 +39,38 @@ changes that may be require to update between versions.
 Note, that we only list changes in existing APIs here, not additions
 to the API.
 
+<h2>Changes from v1.15</h2>
+
+<p>
+There has been a major overhaul of the color management architecture. Unless
+you're implementing custom devices or interpreters, this should only have a
+minor impact.
+
+<ul>
+<li>Argument order when passing color and colorspace to functions regularized:
+	sourceColorspace, sourceColorArray,
+	destinationColorspace, destinationColorArray,
+	proofColorspace,
+	colorParams.
+<li>Pass fz_color_params argument by value.
+<li>Changed fz_default_parameters from a function to a global constant.
+<li>Replaced fz_set_icc_engine with fz_enable_icc and fz_disable_icc to toggle color management at runtime.
+<li>Replaced pixmap color converter struct with a single fz_convert_pixmap function call.
+<li>Replaced fz_cal_colorspace struct with constructor to create an ICC-backed calibrated colorspace directly.
+<li><b>Passing NULL is not a shortcut for DeviceGray any more!</b>
+<li>Added public definitions for Indexed and Separation colorspaces.
+<li>Changed colorspace constructors.
+</ul>
+
+<p>
+The fz_set_stdout and fz_set_stderr functions have been removed.
+If you were using these to capture warning and error messages,
+use the new user callbacks for warning and error logging instead: fz_set_warning_callback and fz_set_error_callback.
+
+<p>
+The structured text html and xhtml output formats take an additional argument: the page number.
+This number is used to create an id attribute for each page to use as a hyperlink target.
+
 <h2>Changes from v1.14 to v1.15</h2>
 
 <dl>
