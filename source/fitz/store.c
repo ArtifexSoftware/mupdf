@@ -773,7 +773,7 @@ fz_debug_store_item(fz_context *ctx, void *state, void *key_, int keylen, void *
 	printf("hash[");
 	for (i=0; i < keylen; ++i)
 		printf("%02x", key[i]);
-	printf("][refs=%d][size=%d] key=%s val=%p\n", item->val->refs, (int)item->size, buf, item->val);
+	printf("][refs=%d][size=%d] key=%s val=%p\n", item->val->refs, (int)item->size, buf, (void *)item->val);
 }
 
 static void
@@ -797,7 +797,7 @@ fz_debug_store_locked(fz_context *ctx)
 		item->type->format_key(ctx, buf, sizeof buf, item->key);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		printf("store[*][refs=%d][size=%d] key=%s val=%p\n",
-				item->val->refs, (int)item->size, buf, item->val);
+				item->val->refs, (int)item->size, buf, (void *)item->val);
 		if (next)
 		{
 			(void)Memento_dropRef(next->val);
