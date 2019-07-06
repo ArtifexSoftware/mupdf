@@ -94,7 +94,7 @@ file_as_stream(fz_context *ctx, void *opaque)
 	FILE *file = opaque;
 	fflush(file);
 	return fz_open_file_ptr_no_close(ctx, file);
-};
+}
 
 /*
 	Create a new output object with the given
