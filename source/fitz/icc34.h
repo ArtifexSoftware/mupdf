@@ -302,7 +302,6 @@ typedef enum {
 	icSigUcrBgTag                       = 0x62666420L,  /* 'bfd ' */
 	icSigViewingCondDescTag             = 0x76756564L,  /* 'vued' */
 	icSigViewingConditionsTag           = 0x76696577L,  /* 'view' */
-	icMaxEnumTag                        = 0xFFFFFFFFL
 } icTagSignature;
 
 /* technology signature descriptions */
@@ -329,7 +328,6 @@ typedef enum {
 	icSigOffsetLithography              = 0x6F666673L,  /* 'offs' */
 	icSigSilkscreen                     = 0x73696C6BL,  /* 'silk' */
 	icSigFlexography                    = 0x666C6578L,  /* 'flex' */
-	icMaxEnumTechnology                 = 0xFFFFFFFFL
 } icTechnologySignature;
 
 /* type signatures */
@@ -359,7 +357,6 @@ typedef enum {
 	icSigXYZArrayType                   = 0x58595A20L,  /* 'XYZ ' */
 	icSigNamedColor2Type                = 0x6E636C32L,  /* 'ncl2' */
 	icSigCrdInfoType                    = 0x63726469L,  /* 'crdi' */
-	icMaxEnumType                       = 0xFFFFFFFFL
 } icTagTypeSignature;
 
 /*
@@ -393,7 +390,6 @@ typedef enum {
 	icSig13colorData                    = 0x44434C52L,  /* 'DCLR' */
 	icSig14colorData                    = 0x45434C52L,  /* 'ECLR' */
 	icSig15colorData                    = 0x46434C52L,  /* 'FCLR' */
-	icMaxEnumData                       = 0xFFFFFFFFL
 } icColorSpaceSignature;
 
 /* profileClass enumerations */
@@ -405,7 +401,6 @@ typedef enum {
 	icSigAbstractClass                  = 0x61627374L,  /* 'abst' */
 	icSigColorSpaceClass                = 0x73706163L,  /* 'spac' */
 	icSigNamedColorClass                = 0x6e6d636cL,  /* 'nmcl' */
-	icMaxEnumClass                      = 0xFFFFFFFFL
 } icProfileClassSignature;
 
 /* Platform Signatures */
@@ -415,7 +410,6 @@ typedef enum {
 	icSigSolaris                        = 0x53554E57L,  /* 'SUNW' */
 	icSigSGI                            = 0x53474920L,  /* 'SGI ' */
 	icSigTaligent                       = 0x54474E54L,  /* 'TGNT' */
-	icMaxEnumPlatform                   = 0xFFFFFFFFL
 } icPlatformSignature;
 
 /*------------------------------------------------------------------------*/
@@ -427,7 +421,6 @@ typedef enum {
 typedef enum {
 	icFlare0                            = 0x00000000L,  /* 0% flare */
 	icFlare100                          = 0x00000001L,  /* 100% flare */
-	icMaxFlare                          = 0xFFFFFFFFL
 } icMeasurementFlare;
 
 /* Measurement Geometry, used in the measurmentType tag */
@@ -435,7 +428,6 @@ typedef enum {
 	icGeometryUnknown                   = 0x00000000L,  /* Unknown */
 	icGeometry045or450                  = 0x00000001L,  /* 0/45, 45/0 */
 	icGeometry0dord0                    = 0x00000002L,  /* 0/d or d/0 */
-	icMaxGeometry                       = 0xFFFFFFFFL
 } icMeasurementGeometry;
 
 /* Rendering Intents, used in the profile header */
@@ -444,7 +436,6 @@ typedef enum {
 	icRelativeColorimetric              = 1,
 	icSaturation                        = 2,
 	icAbsoluteColorimetric              = 3,
-	icMaxEnumIntent                     = 0xFFFFFFFFL
 } icRenderingIntent;
 
 /* Different Spot Shapes currently defined, used for screeningType */
@@ -457,7 +448,6 @@ typedef enum {
 	icSpotShapeLine                     = 5,
 	icSpotShapeSquare                   = 6,
 	icSpotShapeCross                    = 7,
-	icMaxEnumSpot                       = 0xFFFFFFFFL
 } icSpotShape;
 
 /* Standard Observer, used in the measurmentType tag */
@@ -465,7 +455,6 @@ typedef enum {
 	icStdObsUnknown                     = 0x00000000L,  /* Unknown */
 	icStdObs1931TwoDegrees              = 0x00000001L,  /* 2 deg */
 	icStdObs1964TenDegrees              = 0x00000002L,  /* 10 deg */
-	icMaxStdObs                         = 0xFFFFFFFFL
 } icStandardObserver;
 
 /* Pre-defined illuminants, used in measurement and viewing conditions type */
@@ -479,7 +468,6 @@ typedef enum {
 	icIlluminantA                       = 0x00000006L,
 	icIlluminantEquiPowerE              = 0x00000007L,
 	icIlluminantF8                      = 0x00000008L,
-	icMaxEnumIluminant                  = 0xFFFFFFFFL
 } icIlluminant;
 
 /*------------------------------------------------------------------------*/
