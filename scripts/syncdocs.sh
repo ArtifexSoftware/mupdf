@@ -1,6 +1,13 @@
 INPUT=docs
 OUTPUT=../web/mupdf.com/docs
 
+for I in $(find $INPUT/examples -type f)
+do
+	B=$(echo $I | sed s,$INPUT/,,)
+	O=$OUTPUT/$B
+	cp $I $O
+done
+
 for I in $(find $INPUT -name '*.html')
 do
 	B=$(echo $I | sed s,$INPUT/,,)
