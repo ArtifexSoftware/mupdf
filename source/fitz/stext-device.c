@@ -59,10 +59,9 @@ void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float 
 
 /* Extract text into blocks and lines. */
 
-#define LINE_DIST 0.9f
+#define PARAGRAPH_DIST 1.5f
 #define SPACE_DIST 0.15f
 #define SPACE_MAX_DIST 0.8f
-#define PARAGRAPH_DIST 0.5f
 
 typedef struct fz_stext_device_s fz_stext_device;
 
@@ -415,7 +414,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		}
 
 		/* Enough for a new line, but not enough for a new paragraph */
-		else if (fabsf(base_offset) < size * 1.3f)
+		else if (fabsf(base_offset) <= size * PARAGRAPH_DIST)
 		{
 			/* Check indent to spot text-indent style paragraphs */
 			if (wmode == 0 && cur_line && dev->new_obj)

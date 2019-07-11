@@ -40,7 +40,7 @@ font_family_name(fz_context *ctx, fz_font *font, char *buf, int size, int is_mon
 }
 
 static void
-fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int color, int sup)
+fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup, int color)
 {
 	char family[80];
 
@@ -105,13 +105,13 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 		x = line->bbox.x0;
 		y = line->bbox.y0;
 
-		fz_write_printf(ctx, out, "<p style=\"position:absolute;margin:0;padding:0;top:%dpt;left:%dpt\">", y, x);
+		fz_write_printf(ctx, out, "<p style=\"position:absolute;white-space:pre;margin:0;padding:0;top:%dpt;left:%dpt\">", y, x);
 		font = NULL;
 
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
 			int ch_sup = detect_super_script(line, ch);
-			if (ch->font != font || ch->size != size || ch->color != color)
+			if (ch->font != font || ch->size != size || ch_sup != sup || ch->color != color)
 			{
 				if (font)
 					fz_print_style_end_html(ctx, out, font, size, sup);
@@ -119,7 +119,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 				size = ch->size;
 				color = ch->color;
 				sup = ch_sup;
-				fz_print_style_begin_html(ctx, out, font, size, color, sup);
+				fz_print_style_begin_html(ctx, out, font, size, sup, color);
 			}
 
 			switch (ch->c)
@@ -149,14 +149,14 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	Output a page to a file in HTML (visual) format.
 */
 void
-fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
+fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page, int id)
 {
 	fz_stext_block *block;
 
 	int w = page->mediabox.x1 - page->mediabox.x0;
 	int h = page->mediabox.y1 - page->mediabox.y0;
 
-	fz_write_printf(ctx, out, "<div style=\"position:relative;width:%dpt;height:%dpt;background-color:white\">\n", w, h);
+	fz_write_printf(ctx, out, "<div id=\"page%d\" style=\"position:relative;width:%dpt;height:%dpt;background-color:white\">\n", id, w, h);
 
 	for (block = page->first_block; block; block = block->next)
 	{
@@ -204,7 +204,7 @@ fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *b
 }
 
 static void
-fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
+fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, int sup)
 {
 	int is_mono = fz_font_is_monospaced(ctx, font);
 	int is_bold = fz_font_is_bold(ctx, font);
@@ -221,7 +221,7 @@ fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float
 }
 
 static void
-fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
+fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, int sup)
 {
 	int is_mono = fz_font_is_monospaced(ctx, font);
 	int is_bold = fz_font_is_bold(ctx, font);
@@ -237,32 +237,73 @@ fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float s
 		fz_write_string(ctx, out, "</sup>");
 }
 
+static float avg_font_size_of_line(fz_stext_char *ch)
+{
+	float size = 0;
+	int n = 0;
+	if (!ch)
+		return 0;
+	while (ch)
+	{
+		size += ch->size;
+		++n;
+		ch = ch->next;
+	}
+	return size / n;
+}
+
+static const char *tag_from_font_size(float size)
+{
+	if (size >= 20) return "h1";
+	if (size >= 15) return "h2";
+	if (size >= 12) return "h3";
+	return "p";
+}
+
 static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
 
 	fz_font *font = NULL;
-	float size = 0;
 	int sup = 0;
-
-	fz_write_string(ctx, out, "<p>");
+	int sp = 1;
+	const char *tag = NULL;
+	const char *new_tag;
 
 	for (line = block->u.t.first_line; line; line = line->next)
 	{
+		new_tag = tag_from_font_size(avg_font_size_of_line(line->first_char));
+		if (tag != new_tag)
+		{
+			if (tag)
+			{
+				if (font)
+					fz_print_style_end_xhtml(ctx, out, font, sup);
+				fz_write_printf(ctx, out, "</%s>", tag);
+			}
+			tag = new_tag;
+			fz_write_printf(ctx, out, "<%s>", tag);
+			if (font)
+				fz_print_style_begin_xhtml(ctx, out, font, sup);
+		}
+
+		if (!sp)
+			fz_write_byte(ctx, out, ' ');
+
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
 			int ch_sup = detect_super_script(line, ch);
-			if (ch->font != font || ch->size != size || ch_sup != sup)
+			if (ch->font != font || ch_sup != sup)
 			{
 				if (font)
-					fz_print_style_end_xhtml(ctx, out, font, size, sup);
+					fz_print_style_end_xhtml(ctx, out, font, sup);
 				font = ch->font;
-				size = ch->size;
 				sup = ch_sup;
-				fz_print_style_begin_xhtml(ctx, out, font, size, sup);
+				fz_print_style_begin_xhtml(ctx, out, font, sup);
 			}
 
+			sp = (ch->c == ' ');
 			switch (ch->c)
 			{
 			default:
@@ -281,19 +322,19 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 	}
 
 	if (font)
-		fz_print_style_end_xhtml(ctx, out, font, size, sup);
-	fz_write_string(ctx, out, "</p>\n");
+		fz_print_style_end_xhtml(ctx, out, font, sup);
+	fz_write_printf(ctx, out, "</%s>\n", tag);
 }
 
 /*
 	Output a page to a file in XHTML (semantic) format.
 */
 void
-fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page)
+fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page, int id)
 {
 	fz_stext_block *block;
 
-	fz_write_string(ctx, out, "<div>\n");
+	fz_write_printf(ctx, out, "<div id=\"page%d\">\n", id);
 
 	for (block = page->first_block; block; block = block->next)
 	{
@@ -316,8 +357,6 @@ fz_print_stext_header_as_xhtml(fz_context *ctx, fz_output *out)
 	fz_write_string(ctx, out, "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
 	fz_write_string(ctx, out, "<head>\n");
 	fz_write_string(ctx, out, "<style>\n");
-	fz_write_string(ctx, out, "body{background-color:gray}\n");
-	fz_write_string(ctx, out, "div{background-color:white;margin:1em;padding:1em}\n");
 	fz_write_string(ctx, out, "p{white-space:pre-wrap}\n");
 	fz_write_string(ctx, out, "</style>\n");
 	fz_write_string(ctx, out, "</head>\n");
@@ -337,13 +376,13 @@ fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out)
 	Output a page to a file in XML format.
 */
 void
-fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
+fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page, int id)
 {
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;
 
-	fz_write_printf(ctx, out, "<page width=\"%g\" height=\"%g\">\n",
+	fz_write_printf(ctx, out, "<page id=\"page%d\" width=\"%g\" height=\"%g\">\n", id,
 		page->mediabox.x1 - page->mediabox.x0,
 		page->mediabox.y1 - page->mediabox.y0);
 
@@ -465,6 +504,7 @@ struct fz_text_writer_s
 {
 	fz_document_writer super;
 	int format;
+	int number;
 	fz_stext_options opts;
 	fz_stext_page *page;
 	fz_output *out;
@@ -480,6 +520,8 @@ text_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 		fz_drop_stext_page(ctx, wri->page);
 		wri->page = NULL;
 	}
+
+	wri->number++;
 
 	wri->page = fz_new_stext_page(ctx, mediabox);
 	return fz_new_stext_device(ctx, wri->page, &wri->opts);
@@ -500,13 +542,13 @@ text_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 			fz_print_stext_page_as_text(ctx, wri->out, wri->page);
 			break;
 		case FZ_FORMAT_HTML:
-			fz_print_stext_page_as_html(ctx, wri->out, wri->page);
+			fz_print_stext_page_as_html(ctx, wri->out, wri->page, wri->number);
 			break;
 		case FZ_FORMAT_XHTML:
-			fz_print_stext_page_as_xhtml(ctx, wri->out, wri->page);
+			fz_print_stext_page_as_xhtml(ctx, wri->out, wri->page, wri->number);
 			break;
 		case FZ_FORMAT_STEXT:
-			fz_print_stext_page_as_xml(ctx, wri->out, wri->page);
+			fz_print_stext_page_as_xml(ctx, wri->out, wri->page, wri->number);
 			break;
 		}
 	}

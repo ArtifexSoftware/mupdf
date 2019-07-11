@@ -577,15 +577,15 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			dev = NULL;
 			if (output_format == OUT_STEXT)
 			{
-				fz_print_stext_page_as_xml(ctx, out, text);
+				fz_print_stext_page_as_xml(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_HTML)
 			{
-				fz_print_stext_page_as_html(ctx, out, text);
+				fz_print_stext_page_as_html(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_XHTML)
 			{
-				fz_print_stext_page_as_xhtml(ctx, out, text);
+				fz_print_stext_page_as_xhtml(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_TEXT)
 			{
