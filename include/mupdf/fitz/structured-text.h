@@ -134,6 +134,7 @@ struct fz_stext_line_s
 struct fz_stext_char_s
 {
 	int c;
+	int color; /* sRGB hex color */
 	fz_point origin;
 	fz_quad quad;
 	float size;

@@ -40,7 +40,7 @@ font_family_name(fz_context *ctx, fz_font *font, char *buf, int size, int is_mon
 }
 
 static void
-fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
+fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int color, int sup)
 {
 	char family[80];
 
@@ -55,7 +55,10 @@ fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float 
 	if (is_mono) fz_write_string(ctx, out, "<tt>");
 	if (is_bold) fz_write_string(ctx, out, "<b>");
 	if (is_italic) fz_write_string(ctx, out, "<i>");
-	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt;\">", family, size);
+	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt", family, size);
+	if (color != 0)
+		fz_write_printf(ctx, out, ";color:#%06x", color);
+	fz_write_printf(ctx, out, "\">");
 }
 
 static void
@@ -95,6 +98,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	fz_font *font = NULL;
 	float size = 0;
 	int sup = 0;
+	int color = 0;
 
 	for (line = block->u.t.first_line; line; line = line->next)
 	{
@@ -107,14 +111,15 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
 			int ch_sup = detect_super_script(line, ch);
-			if (ch->font != font || ch->size != size)
+			if (ch->font != font || ch->size != size || ch->color != color)
 			{
 				if (font)
 					fz_print_style_end_html(ctx, out, font, size, sup);
 				font = ch->font;
 				size = ch->size;
+				color = ch->color;
 				sup = ch_sup;
-				fz_print_style_begin_html(ctx, out, font, size, sup);
+				fz_print_style_begin_html(ctx, out, font, size, color, sup);
 			}
 
 			switch (ch->c)
@@ -371,12 +376,13 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 						name = font_full_name(ctx, font);
 						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", name, size);
 					}
-					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" c=\"",
+					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" color=\"#%06x\" c=\"",
 							ch->quad.ul.x, ch->quad.ul.y,
 							ch->quad.ur.x, ch->quad.ur.y,
 							ch->quad.ll.x, ch->quad.ll.y,
 							ch->quad.lr.x, ch->quad.lr.y,
-							ch->origin.x, ch->origin.y);
+							ch->origin.x, ch->origin.y,
+							ch->color);
 					switch (ch->c)
 					{
 					case '<': fz_write_string(ctx, out, "&lt;"); break;
