@@ -3081,20 +3081,18 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 }
 
 /*
-	Return true if the document can be saved
-	incrementally. (e.g. it has not been repaired, and it is not encrypted)
+	Return true if the document can be saved incrementally. Applying
+	redactions or having a repaired document make incremental saving
+	impossible.
 */
 int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->repair_attempted)
 		return 0;
-	if (doc->crypt != NULL)
-		return 0;
 	if (doc->redacted)
 		return 0;
 	if (doc->has_xref_streams && doc->has_old_style_xrefs)
 		return 0;
-
 	return 1;
 }
 
