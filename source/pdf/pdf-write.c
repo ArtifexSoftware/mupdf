@@ -1741,7 +1741,7 @@ static void write_data(fz_context *ctx, void *arg, const unsigned char *data, in
 	fz_write_data(ctx, (fz_output *)arg, data, len);
 }
 
-static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
+static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate, int unenc)
 {
 	fz_buffer *tmp_unhex = NULL, *tmp_flate = NULL, *tmp_hex = NULL, *buf = NULL;
 	pdf_obj *obj = NULL;
@@ -1789,7 +1789,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 
-		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
+		if (unenc)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
 			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
@@ -1820,7 +1820,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	}
 }
 
-static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
+static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate, int unenc)
 {
 	fz_buffer *buf = NULL, *tmp_flate = NULL, *tmp_hex = NULL;
 	pdf_obj *obj = NULL;
@@ -1863,7 +1863,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 
-		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
+		if (unenc)
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), len);
 			pdf_print_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii);
@@ -2033,9 +2033,9 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 					do_deflate = 0, do_expand = 0;
 
 				if (do_expand)
-					expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
+					expandstream(ctx, doc, opts, obj, num, gen, do_deflate, unenc);
 				else
-					copystream(ctx, doc, opts, obj, num, gen, do_deflate);
+					copystream(ctx, doc, opts, obj, num, gen, do_deflate, unenc);
 			}
 			else
 			{
@@ -2277,7 +2277,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
-		writeobject(ctx, doc, opts, num, 0, 0, 0);
+		writeobject(ctx, doc, opts, num, 0, 0, 1);
 		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
