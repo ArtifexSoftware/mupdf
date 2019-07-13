@@ -1281,10 +1281,28 @@ int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
-	pdf_obj *c = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(Contents), NULL);
-	if (contents)
-		*contents = pdf_to_str_buf(ctx, c);
-	return pdf_to_str_len(ctx, c);
+	int len = 0;
+	pdf_crypt *crypt = doc->crypt;
+
+	doc->crypt = NULL;
+
+	fz_try(ctx)
+	{
+		pdf_obj *c = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(Contents), NULL);
+		if (contents)
+			*contents = pdf_to_str_buf(ctx, c);
+		len = pdf_to_str_len(ctx, c);
+	}
+	fz_always(ctx)
+	{
+		doc->crypt = crypt;
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return len;
 }
 
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer)
