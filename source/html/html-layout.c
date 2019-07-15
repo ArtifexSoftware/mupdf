@@ -12,23 +12,6 @@
 
 enum { T, R, B, L };
 
-static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
-{
-	float xs = 1, ys = 1, s = 1;
-	/* NOTE: We ignore the image DPI here, since most images in EPUB files have bogus values. */
-	float image_w = node->content.image->w * 72 / 96;
-	float image_h = node->content.image->h * 72 / 96;
-	node->x = 0;
-	node->y = 0;
-	if (max_w > 0 && image_w > max_w)
-		xs = max_w / image_w;
-	if (max_h > 0 && image_h > max_h)
-		ys = max_h / image_h;
-	s = fz_min(xs, ys);
-	node->w = image_w * s;
-	node->h = image_h * s;
-}
-
 typedef struct string_walker
 {
 	fz_context *ctx;
@@ -503,9 +486,30 @@ static void layout_flow(fz_context *ctx, fz_html_box *box, fz_html_box *top, flo
 		node->breaks_line = 0; /* reset line breaks from previous layout */
 		if (node->type == FLOW_IMAGE)
 		{
-			float w = 0, h = 0;
-			find_accumulated_margins(ctx, box, &w, &h);
-			measure_image(ctx, node, top->w - w, page_h - h);
+			float margin_w = 0, margin_h = 0;
+			float max_w, max_h;
+			float xs = 1, ys = 1, s;
+
+			find_accumulated_margins(ctx, box, &margin_w, &margin_h);
+			max_w = top->w - margin_w;
+			max_h = page_h - margin_h;
+
+			/* NOTE: We ignore the image DPI here, since most images in EPUB files have bogus values. */
+			node->w = node->content.image->w * 72 / 96;
+			node->h = node->content.image->h * 72 / 96;
+
+			node->w = fz_from_css_number(node->box->style.width, top->em, top->w - margin_w, node->w);
+			node->h = fz_from_css_number(node->box->style.height, top->em, page_h - margin_h, node->h);
+
+			/* Shrink image to fit on one page if needed */
+			if (max_w > 0 && node->w > max_w)
+				xs = max_w / node->w;
+			if (max_h > 0 && node->h > max_h)
+				ys = max_h / node->h;
+			s = fz_min(xs, ys);
+			node->w = node->w * s;
+			node->h = node->h * s;
+
 		}
 		else
 		{

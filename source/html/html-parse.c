@@ -691,8 +691,21 @@ generate_boxes(fz_context *ctx,
 				const char *src = fz_xml_att(node, "src");
 				if (src)
 				{
+					int w, h;
+					const char *w_att = fz_xml_att(node, "width");
+					const char *h_att = fz_xml_att(node, "height");
 					box = new_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &box->style, &match);
+					if (w_att && (w = fz_atoi(w_att)) > 0)
+					{
+						box->style.width.value = w;
+						box->style.width.unit = strchr(w_att, '%') ? N_PERCENT : N_LENGTH;
+					}
+					if (h_att && (h = fz_atoi(h_att)) > 0)
+					{
+						box->style.height.value = h;
+						box->style.height.unit = strchr(h_att, '%') ? N_PERCENT : N_LENGTH;
+					}
 					insert_inline_box(ctx, box, top, markup_dir, g);
 					generate_image(ctx, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
 				}
