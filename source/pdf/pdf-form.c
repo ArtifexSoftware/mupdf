@@ -1279,12 +1279,27 @@ int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return pdf_dict_get_inheritable(ctx, field, PDF_NAME(V)) != NULL;
 }
 
+/* NOTE: contents is allocated and must be freed by the caller! */
 int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
-	pdf_obj *c = pdf_dict_getl(ctx, signature, PDF_NAME(V), PDF_NAME(Contents), NULL);
-	if (contents)
-		*contents = pdf_to_str_buf(ctx, c);
-	return pdf_to_str_len(ctx, c);
+	pdf_obj *v_ref = pdf_dict_get(ctx, signature, PDF_NAME(V));
+	pdf_obj *v_obj = pdf_load_unencrypted_object(ctx, doc, pdf_to_num(ctx, v_ref));
+	int len;
+	fz_try(ctx)
+	{
+		pdf_obj *c = pdf_dict_get(ctx, v_obj, PDF_NAME(Contents));
+		len = pdf_to_str_len(ctx, c);
+		if (contents)
+		{
+			*contents = fz_malloc(ctx, len);
+			memcpy(*contents, pdf_to_str_buf(ctx, c), len);
+		}
+	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, v_obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return len;
 }
 
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer)

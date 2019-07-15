@@ -55,15 +55,21 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 	char *contents = NULL;
 	int contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 	pdf_pkcs7_designated_name *name = NULL;
-
-	name = pkcs7_openssl_designated_name(ctx, contents, contents_len);
-	if (name)
+	fz_try(ctx)
 	{
-		pdf_format_designated_name(name, buf, buflen);
-		pkcs7_openssl_drop_designated_name(ctx, name);
+		name = pkcs7_openssl_designated_name(ctx, contents, contents_len);
+		if (name)
+		{
+			pdf_format_designated_name(name, buf, buflen);
+			pkcs7_openssl_drop_designated_name(ctx, name);
+		}
+		else if (buflen > 0)
+			buf[0] = '\0';
 	}
-	else if (buflen > 0)
-		buf[0] = '\0';
+	fz_always(ctx)
+		fz_free(ctx, contents);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
@@ -72,7 +78,6 @@ enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pd
 	fz_stream *bytes = NULL;
 	char *contents = NULL;
 	int contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
-
 	fz_var(err);
 	fz_var(bytes);
 	fz_try(ctx)
@@ -83,6 +88,7 @@ enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pd
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, bytes);
+		fz_free(ctx, contents);
 	}
 	fz_catch(ctx)
 	{
@@ -96,8 +102,14 @@ enum pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *do
 {
 	char *contents = NULL;
 	int contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
-
-	return pkcs7_openssl_check_certificate(contents, contents_len);
+	enum pdf_signature_error result;
+	fz_try(ctx)
+		result = pkcs7_openssl_check_certificate(contents, contents_len);
+	fz_always(ctx)
+		fz_free(ctx, contents);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return result;
 }
 
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *ebuf, int ebufsize)

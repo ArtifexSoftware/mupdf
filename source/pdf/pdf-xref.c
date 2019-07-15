@@ -1952,6 +1952,23 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 	return expected != 0;
 }
 
+pdf_obj *
+pdf_load_unencrypted_object(fz_context *ctx, pdf_document *doc, int num)
+{
+	pdf_xref_entry *x;
+
+	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "object out of range (%d 0 R); xref size %d", num, pdf_xref_len(ctx, doc));
+
+	x = pdf_get_xref_entry(ctx, doc, num);
+	if (x->type == 'n')
+	{
+		fz_seek(ctx, doc->file, x->ofs, SEEK_SET);
+		return pdf_parse_ind_obj(ctx, doc, doc->file, &doc->lexbuf.base, NULL, NULL, NULL, NULL);
+	}
+	return NULL;
+}
+
 pdf_xref_entry *
 pdf_cache_object(fz_context *ctx, pdf_document *doc, int num)
 {
