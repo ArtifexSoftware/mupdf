@@ -1748,6 +1748,5 @@ fz_convert_separation_pixmap_to_base(fz_context *ctx, const fz_pixmap *src)
 		fz_rethrow(ctx);
 	}
 
-fz_save_pixmap_as_pam(ctx, dst, "eval_sep.pam");
 	return dst;
 }
