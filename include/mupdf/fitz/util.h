@@ -44,4 +44,6 @@ fz_image *fz_new_image_from_svg_xml(fz_context *ctx, fz_xml *xml, const char *ba
 void fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image);
 void fz_write_pixmap_as_data_uri(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
 
+fz_document *fz_new_xhtml_document_from_document(fz_context *ctx, fz_document *old_doc);
+
 #endif

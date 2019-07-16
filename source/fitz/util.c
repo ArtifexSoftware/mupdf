@@ -508,3 +508,57 @@ fz_write_pixmap_as_data_uri(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
+
+/*
+ * Use text extraction to convert the input document into XHTML, then
+ * open the result as a new document that can be reflowed.
+ */
+fz_document *
+fz_new_xhtml_document_from_document(fz_context *ctx, fz_document *old_doc)
+{
+	fz_stext_options opts = { FZ_STEXT_PRESERVE_IMAGES };
+	fz_document *new_doc;
+	fz_buffer *buf = NULL;
+	fz_output *out = NULL;
+	fz_stream *stm = NULL;
+	fz_stext_page *text = NULL;
+	int i;
+
+	fz_var(buf);
+	fz_var(out);
+	fz_var(stm);
+	fz_var(text);
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 8192);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_print_stext_header_as_xhtml(ctx, out);
+
+		for (i = 0; i < fz_count_pages(ctx, old_doc); ++i)
+		{
+			text = fz_new_stext_page_from_page_number(ctx, old_doc, i, &opts);
+			fz_print_stext_page_as_xhtml(ctx, out, text, i+1);
+			fz_drop_stext_page(ctx, text);
+			text = NULL;
+		}
+
+		fz_print_stext_trailer_as_xhtml(ctx, out);
+		fz_close_output(ctx, out);
+		fz_terminate_buffer(ctx, buf);
+
+		stm = fz_open_buffer(ctx, buf);
+		new_doc = fz_open_document_with_stream(ctx, "application/html+xml", stm);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+		fz_drop_buffer(ctx, buf);
+		fz_drop_output(ctx, out);
+		fz_drop_stext_page(ctx, text);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return new_doc;
+}
