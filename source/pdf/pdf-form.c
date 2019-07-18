@@ -1333,6 +1333,7 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 		contents = pdf_new_string(ctx, buf, max_digest_size);
 		pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
 
+		pdf_dict_put(ctx, v, PDF_NAME(Type), PDF_NAME(Sig));
 		pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
 		pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
 
