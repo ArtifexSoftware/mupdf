@@ -198,7 +198,7 @@ pdf_lookup_page_loc(fz_context *ctx, pdf_document *doc, int needle, pdf_obj **pa
 
 	hit = pdf_lookup_page_loc_imp(ctx, doc, node, &skip, parentp, indexp);
 	if (!hit)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d in page tree", needle);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d in page tree", needle+1);
 	return hit;
 }
 
