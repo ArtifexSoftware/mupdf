@@ -1,4 +1,4 @@
-List of changes since the last release
+List of changes in MuPDF 1.16.0
 
 	api: Major overhaul of color management architecture.
 	api: Improved functions to verify/sign PDF documents.
