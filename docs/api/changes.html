@@ -39,6 +39,16 @@ changes that may be require to update between versions.
 Note, that we only list changes in existing APIs here, not additions
 to the API.
 
+<h2>Changes from v1.16</h2>
+
+<p>
+The accessors for reading and creating QuadPoints, InkList and Vertices data
+for Highlight, Underline, StrikeOut, Squiggle, Ink, Polygon, and PolyLine
+annotation types have been simplified. They now take and return fz_quad and
+fz_point structs instead of float arrays. We have also added functions to
+construct the datastructures one piece at a time, removing the need to allocate
+a temporary array to pass.
+
 <h2>Changes from v1.15</h2>
 
 <p>
@@ -65,11 +75,13 @@ minor impact.
 <p>
 The fz_set_stdout and fz_set_stderr functions have been removed.
 If you were using these to capture warning and error messages,
-use the new user callbacks for warning and error logging instead: fz_set_warning_callback and fz_set_error_callback.
+use the new user callbacks for warning and error logging instead:
+fz_set_warning_callback and fz_set_error_callback.
 
 <p>
-The structured text html and xhtml output formats take an additional argument: the page number.
-This number is used to create an id attribute for each page to use as a hyperlink target.
+The structured text html and xhtml output formats take an additional argument:
+the page number. This number is used to create an id attribute for each page to
+use as a hyperlink target.
 
 <h2>Changes from v1.14 to v1.15</h2>
 

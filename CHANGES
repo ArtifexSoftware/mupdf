@@ -1,3 +1,10 @@
+List of changes since the last release
+
+	api: Improved accessors for markup/ink/polygon annotation data.
+
+	mutool run: Edit Markup, Ink, and Polygon annotation data.
+	mutool run: Fill out form fields.
+
 List of changes in MuPDF 1.16.0
 
 	api: Major overhaul of color management architecture.
