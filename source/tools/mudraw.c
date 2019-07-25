@@ -1346,7 +1346,7 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 {
 #if FZ_ENABLE_PDF
 	pdf_document *pdoc = pdf_specifics(ctx, doc);
-	int config = -1;
+	int config;
 	int n, j;
 	pdf_layer_config info;
 
@@ -1377,36 +1377,36 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 		return;
 	}
 
+	/* Read the config number */
+	if (*lc < '0' || *lc > '9')
+	{
+		fprintf(stderr, "cannot find number expected for -y\n");
+		return;
+	}
+	config = fz_atoi(lc);
+	pdf_select_layer_config(ctx, pdoc, config);
+
 	while (*lc)
 	{
-		int i;
+		int item;
 
-		if (*lc < '0' || *lc > '9')
-		{
-			fprintf(stderr, "cannot find number expected for -y\n");
-			return;
-		}
-		i = fz_atoi(lc);
-		pdf_select_layer_config(ctx, pdoc, i);
-
-		if (config < 0)
-			config = i;
-
+		/* Skip over the last number we read (in the fz_atoi) */
 		while (*lc >= '0' && *lc <= '9')
 			lc++;
 		while (iswhite(*lc))
 			lc++;
-		if (*lc == ',')
-		{
+		if (*lc != ',')
+			break;
+		lc++;
+		while (iswhite(*lc))
 			lc++;
-			while (iswhite(*lc))
-				lc++;
-		}
-		else if (*lc)
+		if (*lc < '0' || *lc > '9')
 		{
-			fprintf(stderr, "cannot find comma expected for -y\n");
+			fprintf(stderr, "Expected a number for UI item to toggle\n");
 			return;
 		}
+		item = fz_atoi(lc);
+		pdf_toggle_layer_config_ui(ctx, pdoc, item);
 	}
 
 	/* Now list the final state of the config */
