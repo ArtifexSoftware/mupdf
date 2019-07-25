@@ -547,7 +547,7 @@ walk_string(fz_context *ctx, int uni, int remove, editable_str *str)
 {
 	int rune;
 
-	if (str->utf8 == NULL)
+	if (str->utf8 == NULL || str->pos == -1)
 		return;
 
 	do
@@ -608,10 +608,12 @@ mcid_char_imp(fz_context *ctx, pdf_filter_processor *p, tag_record *tr, int uni,
 		/* Remove the structure title, if there is one. */
 		pdf_dict_del(ctx, tr->mcid_obj, PDF_NAME(T));
 	}
+
 	/* Edit the Alt string */
 	walk_string(ctx, uni, remove, &tr->alt);
 	/* Edit the ActualText string */
 	walk_string(ctx, uni, remove, &tr->actualtext);
+
 	/* If we're removing a character, and either of the strings
 	 * haven't matched up to what we were expecting, then just
 	 * delete the whole string. */
@@ -622,6 +624,7 @@ mcid_char_imp(fz_context *ctx, pdf_filter_processor *p, tag_record *tr, int uni,
 		/* The strings are making sense so far */
 		remove = 0;
 	}
+
 	if (remove)
 	{
 		/* Anything else we have to err on the side of caution and
@@ -1688,6 +1691,7 @@ pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *r
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	tag_record *bdc = fz_malloc_struct(ctx, tag_record);
 	pdf_obj *mcid;
+	pdf_obj *str;
 
 	fz_try(ctx)
 	{
@@ -1713,8 +1717,12 @@ pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *r
 		return;
 	bdc->mcid_num = pdf_to_int(ctx, mcid);
 	bdc->mcid_obj = pdf_keep_obj(ctx, pdf_array_get(ctx, p->structarray, bdc->mcid_num));
-	bdc->alt.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(Alt)));
-	bdc->actualtext.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(ActualText)));
+	str = pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(Alt));
+	if (str)
+		bdc->alt.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, str);
+	str = pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(ActualText));
+	if (str)
+		bdc->actualtext.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, str);
 }
 
 /* Bin the topmost (most recent) tag from a tag list. */
