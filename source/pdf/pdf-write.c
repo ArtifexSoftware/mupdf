@@ -3126,25 +3126,19 @@ new_identity(fz_context *ctx, pdf_document *doc)
 	pdf_array_push_drop(ctx, id, pdf_new_string(ctx, (char *) rnd + 0, nelem(rnd) / 2));
 	pdf_array_push_drop(ctx, id, pdf_new_string(ctx, (char *) rnd + 16, nelem(rnd) / 2));
 
-	return pdf_array_get(ctx, id, 0);
+	return id;
 }
 
-static pdf_obj *
-change_identity(fz_context *ctx, pdf_document *doc)
+static void
+change_identity(fz_context *ctx, pdf_document *doc, pdf_obj *id)
 {
-	pdf_obj *identity = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID));
-	pdf_obj *str;
 	unsigned char rnd[16];
-
-	if (pdf_array_len(ctx, identity) >= 2)
+	if (pdf_array_len(ctx, id) >= 2)
 	{
-		/* Maybe recalculate this in future. For now, just change the second one. */
+		/* Update second half of ID array with new random data. */
 		fz_memrnd(ctx, rnd, 16);
-		str = pdf_new_string(ctx, (char *)rnd, 16);
-		pdf_array_put_drop(ctx, identity, 1, str);
+		pdf_array_put_drop(ctx, id, 1, pdf_new_string(ctx, (char *)rnd, 16));
 	}
-
-	return pdf_array_get(ctx, identity, 0);
 }
 
 static void
@@ -3216,6 +3210,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	int lastfree;
 	int num;
 	int xref_len;
+	pdf_obj *id, *id1;
 
 	if (in_opts->do_incremental)
 	{
@@ -3235,6 +3230,11 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	{
 		initialise_write_state(ctx, doc, in_opts, opts);
 
+		/* Update second half of ID array if it exists. */
+		id = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID));
+		if (id)
+			change_identity(ctx, doc, id);
+
 		/* Remove encryption dictionary if saving without encryption. */
 		if (opts->do_encrypt == PDF_ENCRYPT_NONE)
 		{
@@ -3250,15 +3250,10 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		/* Create encryption dictionary if saving with new encryption. */
 		else
 		{
-			pdf_obj *id;
-
-			id = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID));
 			if (!id)
 				id = new_identity(ctx, doc);
-			else
-				id = change_identity(ctx, doc);
-
-			opts->crypt = pdf_new_encrypt(ctx, opts->opwd_utf8, opts->upwd_utf8, id, opts->permissions, opts->do_encrypt);
+			id1 = pdf_array_get(ctx, id, 0);
+			opts->crypt = pdf_new_encrypt(ctx, opts->opwd_utf8, opts->upwd_utf8, id1, opts->permissions, opts->do_encrypt);
 			create_encryption_dictionary(ctx, doc, opts->crypt);
 		}
 
@@ -3267,8 +3262,6 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			pdf_ensure_solid_xref(ctx, doc, xref_len);
 			preloadobjstms(ctx, doc);
-			if (!opts->do_encrypt)
-				change_identity(ctx, doc);
 			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 			expand_lists(ctx, opts, xref_len);
 		}
