@@ -132,6 +132,30 @@ enum
 	USE_PAGE_SHIFT = 8
 };
 
+static void
+expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
+{
+	int i;
+
+	/* objects are numbered 0..num and maybe two additional objects for linearization */
+	num += 3;
+	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, int);
+	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, int64_t);
+	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, int);
+	opts->renumber_map = fz_realloc_array(ctx, opts->renumber_map, num, int);
+	opts->rev_renumber_map = fz_realloc_array(ctx, opts->rev_renumber_map, num, int);
+
+	for (i = opts->list_len; i < num; i++)
+	{
+		opts->use_list[i] = 0;
+		opts->ofs_list[i] = 0;
+		opts->gen_list[i] = 0;
+		opts->renumber_map[i] = i;
+		opts->rev_renumber_map[i] = i;
+	}
+	opts->list_len = num;
+}
+
 /*
  * page_objects and page_object_list handling functions
  */
@@ -205,6 +229,8 @@ static void
 page_objects_list_insert(fz_context *ctx, pdf_write_state *opts, int page, int object)
 {
 	page_objects_list_ensure(ctx, &opts->page_object_lists, page+1);
+	if (object >= opts->list_len)
+		expand_lists(ctx, opts, object);
 	if (opts->page_object_lists->len < page+1)
 		opts->page_object_lists->len = page+1;
 	page_objects_insert(ctx, &opts->page_object_lists->page[page], object);
@@ -214,6 +240,8 @@ static void
 page_objects_list_set_page_object(fz_context *ctx, pdf_write_state *opts, int page, int object)
 {
 	page_objects_list_ensure(ctx, &opts->page_object_lists, page+1);
+	if (object >= opts->list_len)
+		expand_lists(ctx, opts, object);
 	opts->page_object_lists->page[page]->page_object_number = object;
 }
 
@@ -637,30 +665,6 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
 	DEBUGGING_MARKING(depth--);
 
 	return 0;
-}
-
-static void
-expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
-{
-	int i;
-
-	/* objects are numbered 0..num and maybe two additional objects for linearization */
-	num += 3;
-	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, int);
-	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, int64_t);
-	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, int);
-	opts->renumber_map = fz_realloc_array(ctx, opts->renumber_map, num, int);
-	opts->rev_renumber_map = fz_realloc_array(ctx, opts->rev_renumber_map, num, int);
-
-	for (i = opts->list_len; i < num; i++)
-	{
-		opts->use_list[i] = 0;
-		opts->ofs_list[i] = 0;
-		opts->gen_list[i] = 0;
-		opts->renumber_map[i] = i;
-		opts->rev_renumber_map[i] = i;
-	}
-	opts->list_len = num;
 }
 
 /*
