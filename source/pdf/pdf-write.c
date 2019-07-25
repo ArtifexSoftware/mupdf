@@ -3241,8 +3241,14 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			pdf_dict_del(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
 		}
 
-		/* Add encryption dictionary if saving with encryption. */
-		if (opts->do_encrypt)
+		/* Keep encryption dictionary if saving with old encryption. */
+		else if (opts->do_encrypt == PDF_ENCRYPT_KEEP)
+		{
+			opts->crypt = doc->crypt;
+		}
+
+		/* Create encryption dictionary if saving with new encryption. */
+		else
 		{
 			pdf_obj *id;
 
@@ -3254,10 +3260,6 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 			opts->crypt = pdf_new_encrypt(ctx, opts->opwd_utf8, opts->upwd_utf8, id, opts->permissions, opts->do_encrypt);
 			create_encryption_dictionary(ctx, doc, opts->crypt);
-		}
-		else
-		{
-			opts->crypt = doc->crypt;
 		}
 
 		/* Make sure any objects hidden in compressed streams have been loaded */
