@@ -986,6 +986,8 @@ mark_all(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *val
 		if (pdf_is_indirect(ctx, val))
 		{
 			int num = pdf_to_num(ctx, val);
+			if (num >= opts->list_len)
+				expand_lists(ctx, opts, num);
 			if (opts->use_list[num] & USE_PAGE_MASK)
 				/* Already used */
 				opts->use_list[num] |= USE_SHARED;
