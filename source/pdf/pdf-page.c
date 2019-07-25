@@ -703,11 +703,21 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 }
 
 static void
-find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
+find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_obj *clearme)
 {
 	int i, n;
-	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
+	pdf_obj *nameobj;
 
+	/* Indexed and DeviceN may have cyclic references */
+	if (pdf_is_indirect(ctx, obj))
+	{
+		if (pdf_mark_obj(ctx, obj))
+			return; /* already been here */
+		/* remember to clear this colorspace dictionary at the end */
+		pdf_array_push(ctx, clearme, obj);
+	}
+
+	nameobj = pdf_array_get(ctx, obj, 0);
 	if (pdf_name_eq(ctx, nameobj, PDF_NAME(Separation)))
 	{
 		fz_colorspace *cs;
@@ -749,7 +759,7 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 	}
 	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(Indexed)))
 	{
-		find_seps(ctx, seps, pdf_array_get(ctx, obj, 1));
+		find_seps(ctx, seps, pdf_array_get(ctx, obj, 1), clearme);
 	}
 	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(DeviceN)))
 	{
@@ -758,12 +768,12 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		pdf_obj *cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME(Colorants));
 		n = pdf_dict_len(ctx, cols);
 		for (i = 0; i < n; i++)
-			find_seps(ctx, seps, pdf_dict_get_val(ctx, cols, i));
+			find_seps(ctx, seps, pdf_dict_get_val(ctx, cols, i), clearme);
 	}
 }
 
 static void
-find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
+find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_obj *clearme)
 {
 	int i, j, n, m;
 	pdf_obj *arr;
@@ -818,7 +828,7 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 	}
 }
 
-typedef void (res_finder_fn)(fz_context *ctx, fz_separations **seps, pdf_obj *obj);
+typedef void (res_finder_fn)(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_obj *clearme);
 
 static void
 scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_fn *fn, pdf_obj *clearme)
@@ -838,7 +848,7 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 	for (i = 0; i < n; i++)
 	{
 		obj = pdf_dict_get_val(ctx, dict, i);
-		fn(ctx, seps, obj);
+		fn(ctx, seps, obj, clearme);
 	}
 
 	dict = pdf_dict_get(ctx, res, PDF_NAME(Shading));
@@ -846,7 +856,7 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 	for (i = 0; i < n; i++)
 	{
 		obj = pdf_dict_get_val(ctx, dict, i);
-		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)));
+		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)), clearme);
 	}
 
 	dict = pdf_dict_get(ctx, res, PDF_NAME(XObject));
@@ -854,7 +864,7 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 	for (i = 0; i < n; i++)
 	{
 		obj = pdf_dict_get_val(ctx, dict, i);
-		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)));
+		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)), clearme);
 		/* Recurse on XObject forms. */
 		scan_page_seps(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Resources)), seps, fn, clearme);
 	}
