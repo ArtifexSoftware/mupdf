@@ -1670,6 +1670,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			return;
 		}
 	}
+	else
+	{
+		wincursor(app, ARROW);
+	}
 
 	if (state == 1 && !processed)
 	{
