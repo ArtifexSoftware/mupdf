@@ -7,7 +7,7 @@
 
 #include "curl_stream.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <sys/time.h>
