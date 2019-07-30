@@ -305,9 +305,8 @@ void ui_draw_string_part(float x, float y, const char *s, const char *e)
 
 void ui_draw_character(float x, float y, int c)
 {
-	float w;
 	ui_begin_text();
-	w = ui_draw_character_imp(x, y + ui.baseline, c);
+	ui_draw_character_imp(x, y + ui.baseline, c);
 	ui_end_text();
 }
 
