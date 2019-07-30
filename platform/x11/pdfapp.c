@@ -163,6 +163,9 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->colorspace = fz_device_rgb(ctx);
 #endif
 	app->tint_white = 0xFFFAF0;
+
+	app->useicc = 1;
+	app->useseparations = 0;
 }
 
 void pdfapp_setresolution(pdfapp_t *app, int res)
@@ -921,7 +924,10 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 				fz_close_device(app->ctx, idev);
 			}
 			if (app->invert)
-				fz_invert_pixmap(app->ctx, app->image);
+			{
+				fz_invert_pixmap_luminance(app->ctx, app->image);
+				fz_gamma_pixmap(app->ctx, app->image, 1 / 1.4f);
+			}
 			if (app->tint)
 				fz_tint_pixmap(app->ctx, app->image, 0, app->tint_white);
 		}
