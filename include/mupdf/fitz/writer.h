@@ -80,15 +80,24 @@ int fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxlen);
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
 fz_document_writer *fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_pdf_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
 fz_document_writer *fz_new_svg_writer(fz_context *ctx, const char *path, const char *options);
 
 fz_document_writer *fz_new_text_writer(fz_context *ctx, const char *format, const char *path, const char *options);
+fz_document_writer *fz_new_text_writer_with_output(fz_context *ctx, const char *format, fz_output *out, const char *options);
 
 fz_document_writer *fz_new_ps_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_ps_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
 fz_document_writer *fz_new_pcl_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_pcl_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
+fz_document_writer *fz_new_pclm_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_pclm_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
 fz_document_writer *fz_new_pwg_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_pwg_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
 
 fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_cbz_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
+
 fz_document_writer *fz_new_png_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pam_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pnm_pixmap_writer(fz_context *ctx, const char *path, const char *options);

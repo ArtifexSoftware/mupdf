@@ -3553,7 +3553,7 @@ struct pdf_writer_s
 	fz_document_writer super;
 	pdf_document *pdf;
 	pdf_write_options opts;
-	char *filename;
+	fz_output *out;
 
 	fz_rect mediabox;
 	pdf_obj *resources;
@@ -3599,7 +3599,8 @@ static void
 pdf_writer_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	pdf_writer *wri = (pdf_writer*)wri_;
-	pdf_save_document(ctx, wri->pdf, wri->filename, &wri->opts);
+	pdf_write_document(ctx, wri->pdf, wri->out, &wri->opts);
+	fz_close_output(ctx, wri->out);
 }
 
 static void
@@ -3609,27 +3610,41 @@ pdf_writer_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 	fz_drop_buffer(ctx, wri->contents);
 	pdf_drop_obj(ctx, wri->resources);
 	pdf_drop_document(ctx, wri->pdf);
-	fz_free(ctx, wri->filename);
+	fz_drop_output(ctx, wri->out);
 }
 
 fz_document_writer *
-fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
+fz_new_pdf_writer_with_output(fz_context *ctx, fz_output *out, const char *options)
 {
 	pdf_writer *wri = fz_new_derived_document_writer(ctx, pdf_writer, pdf_writer_begin_page, pdf_writer_end_page, pdf_writer_close_writer, pdf_writer_drop_writer);
 
 	fz_try(ctx)
 	{
 		pdf_parse_write_options(ctx, &wri->opts, options);
-		wri->filename = fz_strdup(ctx, path ? path : "out.pdf");
+		wri->out = out;
 		wri->pdf = pdf_create_document(ctx);
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_document(ctx, wri->pdf);
-		fz_free(ctx, wri->filename);
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
 	}
 
 	return (fz_document_writer*)wri;
+}
+
+fz_document_writer *
+fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
+{
+	fz_output *out = fz_new_output_with_path(ctx, path ? path : "out.pdf", 0);
+	fz_document_writer *wri = NULL;
+	fz_try(ctx)
+		wri = fz_new_pdf_writer_with_output(ctx, out, options);
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, out);
+		fz_rethrow(ctx);
+	}
+	return wri;
 }
