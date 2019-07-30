@@ -120,6 +120,16 @@ static void save_pdf_dialog(void)
 	}
 }
 
+void do_save_pdf_file(void)
+{
+	if (pdf)
+	{
+		init_save_pdf_options();
+		ui_init_save_file(filename, pdf_filter);
+		ui.dialog = save_pdf_dialog;
+	}
+}
+
 static int rects_differ(fz_rect a, fz_rect b, float threshold)
 {
 	if (fz_abs(a.x0 - b.x0) > threshold) return 1;
@@ -684,11 +694,7 @@ void do_annotate_panel(void)
 	ui_layout(B, X, NW, 2, 2);
 
 	if (ui_button("Save PDF..."))
-	{
-		init_save_pdf_options();
-		ui_init_save_file(filename, pdf_filter);
-		ui.dialog = save_pdf_dialog;
-	}
+		do_save_pdf_file();
 
 	if (has_redact)
 	{

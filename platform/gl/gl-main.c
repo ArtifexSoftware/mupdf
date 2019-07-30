@@ -660,6 +660,24 @@ static void pop_future(void)
 	push_history();
 }
 
+static void relayout(void)
+{
+	if (layout_em < 6) layout_em = 6;
+	if (layout_em > 36) layout_em = 36;
+	if (fz_is_document_reflowable(ctx, doc))
+	{
+		fz_bookmark mark = fz_make_bookmark(ctx, doc, currentpage);
+		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+		currentpage = fz_lookup_bookmark(ctx, doc, mark);
+		history_count = 0;
+		future_count = 0;
+
+		load_page();
+		render_page();
+		update_title();
+	}
+}
+
 static int count_outline(fz_outline *node, int end)
 {
 	int is_selected, n, p;
@@ -1107,6 +1125,10 @@ static void do_app(void)
 		case 'i': showinfo = !showinfo; break;
 		case 'r': reload(); break;
 		case 'q': glutLeaveMainLoop(); break;
+		case 'S': do_save_pdf_file(); break;
+
+		case '>': layout_em = number > 0 ? number : layout_em + 1; relayout(); break;
+		case '<': layout_em = number > 0 ? number : layout_em - 1; relayout(); break;
 
 		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
@@ -1131,8 +1153,6 @@ static void do_app(void)
 		case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
 		case ',': case KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
 		case '.': case KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
-		case '<': currentpage -= 10 * fz_maxi(number, 1); break;
-		case '>': currentpage += 10 * fz_maxi(number, 1); break;
 		case 'g': jump_to_page(number - 1); break;
 		case 'G': jump_to_page(fz_count_pages(ctx, doc) - 1); break;
 
@@ -1304,7 +1324,7 @@ static void do_help_line(char *label, char *text)
 
 static void do_help(void)
 {
-	ui_dialog_begin(500, 38 * ui.lineheight);
+	ui_dialog_begin(500, 41 * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	do_help_line("MuPDF", FZ_VERSION);
@@ -1316,11 +1336,17 @@ static void do_help(void)
 	do_help_line("L", "show/hide links");
 	do_help_line("F", "show/hide form fields");
 	do_help_line("r", "reload file");
+	do_help_line("S", "save PDF file");
 	do_help_line("q", "quit");
 	ui_spacer();
+	do_help_line("<", "decrease E-book font size");
+	do_help_line(">", "increase E-book font size");
 	do_help_line("I", "toggle inverted color mode");
 	do_help_line("C", "toggle tinted color mode");
-	do_help_line("e", "enable/disable spot color mode");
+	do_help_line("e", "toggle spot color emulation");
+	do_help_line("E", "toggle ICC color management");
+	do_help_line("A", "toggle anti-aliasing");
+	ui_spacer();
 	do_help_line("f", "fullscreen window");
 	do_help_line("w", "shrink wrap window");
 	do_help_line("W or H", "fit to width or height");
@@ -1335,8 +1361,6 @@ static void do_help(void)
 	do_help_line("Space", "smart move forward");
 	do_help_line(", or PgUp", "go backward");
 	do_help_line(". or PgDn", "go forward");
-	do_help_line("<", "go backward 10 pages");
-	do_help_line(">", "go forward 10 pages");
 	do_help_line("N g", "go to page N");
 	do_help_line("G", "go to last page");
 	ui_spacer();

@@ -101,8 +101,8 @@ char *pdfapp_version(pdfapp_t *app)
 char *pdfapp_usage(pdfapp_t *app)
 {
 	return
-		"L\t\t-- rotate left\n"
-		"R\t\t-- rotate right\n"
+		"[\t\t-- rotate left\n"
+		"]\t\t-- rotate right\n"
 		"h\t\t-- scroll left\n"
 		"j down\t\t-- scroll down\n"
 		"k up\t\t-- scroll up\n"
@@ -113,15 +113,13 @@ char *pdfapp_usage(pdfapp_t *app)
 		"H\t\t-- zoom to fit window height\n"
 		"Z\t\t-- zoom to fit page\n"
 		"z\t\t-- reset zoom\n"
-		"[\t\t-- decrease font size (EPUB only)\n"
-		"]\t\t-- increase font size (EPUB only)\n"
+		"<\t\t-- decrease font size (EPUB only)\n"
+		">\t\t-- increase font size (EPUB only)\n"
 		"w\t\t-- shrinkwrap\n"
 		"f\t\t-- fullscreen\n"
 		"r\t\t-- reload file\n"
 		". pgdn right spc\t-- next page\n"
 		", pgup left b bkspc\t-- previous page\n"
-		">\t\t-- next 10 pages\n"
-		"<\t\t-- back 10 pages\n"
 		"m\t\t-- mark page for snap back\n"
 		"t\t\t-- pop back to latest mark\n"
 		"1m\t\t-- mark page in register 1\n"
@@ -133,7 +131,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"n\t\t-- find next search result\n"
 		"N\t\t-- find previous search result\n"
 		"c\t\t-- toggle between color and grayscale\n"
-		"i\t\t-- toggle inverted color mode\n"
+		"I\t\t-- toggle inverted color mode\n"
 		"C\t\t-- toggle tinted color mode\n"
 		"E\t\t-- enable/disable ICC color mode\n"
 		"e\t\t-- enable/disable spot color mode\n"
@@ -166,6 +164,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 
 	app->useicc = 1;
 	app->useseparations = 0;
+	app->aalevel = 8;
 }
 
 void pdfapp_setresolution(pdfapp_t *app, int res)
@@ -716,6 +715,8 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	else
 		fz_disable_icc(app->ctx);
 
+	fz_set_aa_level(app->ctx, app->aalevel);
+
 	if (app->useseparations)
 	{
 		fz_try(app->ctx)
@@ -1222,25 +1223,25 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		winclose(app);
 		break;
 
-	case '[':
-		if (app->layout_em > 8)
+	case '<':
+		if (app->layout_em > 6)
 		{
-			float percent = (float)app->pageno / app->pagecount;
-			app->layout_em -= 2;
+			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, app->pageno);
+			app->layout_em -= 1;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = app->pagecount * percent + 0.1f;
+			app->pageno = fz_lookup_bookmark(app->ctx, app->doc, mark);
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;
-	case ']':
+	case '>':
 		if (app->layout_em < 36)
 		{
-			float percent = (float)app->pageno / app->pagecount;
-			app->layout_em += 2;
+			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, app->pageno);
+			app->layout_em += 1;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = app->pagecount * percent + 0.1f;
+			app->pageno = fz_lookup_bookmark(app->ctx, app->doc, mark);
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;
@@ -1250,7 +1251,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 */
 
 	case '+':
-	case '=':
 		app->resolution = zoom_in(app->resolution);
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
@@ -1269,18 +1269,31 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		pdfapp_autozoom(app);
 		break;
 	case 'z':
-		app->resolution = app->default_resolution;
+		if (app->numberlen > 0)
+			app->resolution = atoi(app->number);
+		else
+			app->resolution = app->default_resolution;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
-	case 'L':
-		app->rotate -= 90;
+	case '[':
+		if (app->numberlen > 0)
+			app->rotate -= atoi(app->number);
+		else
+			app->rotate -= 90;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
-	case 'R':
-		app->rotate += 90;
+	case ']':
+		if (app->numberlen > 0)
+			app->rotate += atoi(app->number);
+		else
+			app->rotate += 90;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
+
+	/*
+	 * Rendering and color management parameters.
+	 */
 
 	case 'C':
 		app->tint ^= 1;
@@ -1292,7 +1305,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
-	case 'i':
+	case 'I':
 		app->invert ^= 1;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
@@ -1315,16 +1328,13 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		break;
 
-#ifndef NDEBUG
-	case 'a':
-		app->rotate -= 15;
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+	case 'A':
+		if (app->numberlen > 0)
+			app->aalevel = atoi(app->number);
+		else
+			app->aalevel = (app->aalevel == 8 ? 0 : 8);
+		pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		break;
-	case 's':
-		app->rotate += 15;
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
-		break;
-#endif
 
 	/*
 	 * Pan view, but don't need to repaint image
@@ -1394,8 +1404,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 */
 
 	case 'g':
-	case '\n':
-	case '\r':
 		if (app->numberlen > 0)
 			pdfapp_gotopage(app, atoi(app->number));
 		else
@@ -1461,7 +1469,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			app->pageno++;
 		break;
 
-	case '\b':
 	case 'b':
 		panto = DONT_PAN;
 		if (app->numberlen > 0)
@@ -1486,15 +1493,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			else
 				app->pageno++;
 		}
-		break;
-
-	case '<':
-		panto = PAN_TO_TOP;
-		app->pageno -= 10;
-		break;
-	case '>':
-		panto = PAN_TO_TOP;
-		app->pageno += 10;
 		break;
 
 	/*

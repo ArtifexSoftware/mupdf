@@ -987,12 +987,11 @@ void handlekey(int c)
 	{
 		switch (c - 256)
 		{
-		case VK_F1: c = '?'; break;
 		case VK_ESCAPE: c = '\033'; break;
 		case VK_DOWN: c = 'j'; break;
 		case VK_UP: c = 'k'; break;
-		case VK_LEFT: c = 'b'; break;
-		case VK_RIGHT: c = ' '; break;
+		case VK_LEFT: c = 'h'; break;
+		case VK_RIGHT: c = 'l'; break;
 		case VK_PRIOR: c = ','; break;
 		case VK_NEXT: c = '.'; break;
 		}
@@ -1187,6 +1186,8 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case VK_F1:
+			winhelp(&gapp);
+			return 0;
 		case VK_LEFT:
 		case VK_UP:
 		case VK_PRIOR:

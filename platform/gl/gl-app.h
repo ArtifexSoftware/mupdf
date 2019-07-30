@@ -254,3 +254,4 @@ void load_page(void);
 void render_page(void);
 void update_title(void);
 void reload(void);
+void do_save_pdf_file(void);

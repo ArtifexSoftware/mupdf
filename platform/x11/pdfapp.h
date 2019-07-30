@@ -80,6 +80,7 @@ struct pdfapp_s
 	int tint, tint_white;
 	int useicc;
 	int useseparations;
+	int aalevel;
 
 	/* presentation mode */
 	int presentation_mode;

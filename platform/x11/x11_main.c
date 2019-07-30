@@ -989,11 +989,11 @@ int main(int argc, char **argv)
 
 					case XK_Left:
 					case XK_KP_Left:
-						len = 1; buf[0] = 'b';
+						len = 1; buf[0] = 'h';
 						break;
 					case XK_Right:
 					case XK_KP_Right:
-						len = 1; buf[0] = ' ';
+						len = 1; buf[0] = 'l';
 						break;
 
 					case XK_Page_Up:
