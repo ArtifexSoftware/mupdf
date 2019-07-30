@@ -1,4 +1,4 @@
-.TH MUPDF 1 "May 13, 2019"
+.TH MUPDF 1 "Jul 30, 2019"
 .\" Please adjust this date whenever revising the manpage.
 .\" no hyphenation
 .nh
@@ -100,14 +100,11 @@ Zoom in or out.
 .PP
 Page navigation:
 .TP
-.B . pgdn right space
+.B . pgdn space
 Go to the next page.
 .TP
-.B , pgup left b backspace
+.B , pgup b backspace
 Go to the previous page.
-.TP
-.B <, >
-Skip back/forth 10 pages at a time.
 .TP
 .B 123g
 Go to page 123.
@@ -140,7 +137,10 @@ Zoom page to exactly fit width/height of window.
 .B Z
 Zoom page to fit either to width or height of window.
 .TP
-.B L, R
+.B z
+Reset zoom level.
+.TP
+.B [, ]
 Rotate page left (counter-clockwise) or right (clockwise).
 .TP
 .B w
@@ -152,7 +152,7 @@ Toggles fullscreen mode.
 .PP
 Panning:
 .TP
-.B h, j, k, l
+.B h, left, j, k, l, right
 Pan page left, down, up, or right.
 
 .PP
@@ -167,7 +167,7 @@ Find the next/previous search result.
 .PP
 Miscellaneous:
 .TP
-.B [, ]
+.B <, >
 Increase/decrease EPUB/XHTML font size.
 .TP
 .B r
@@ -182,8 +182,14 @@ Toggle between color and grayscale rendering.
 .B C
 Toggle full-page color tinting.
 .TP
-.B i
+.B I
 Toggle between normal and inverted color rendering.
+.TP
+.B E
+Toggle ICC color mode.
+.TP
+.B e
+Toggle spot color mode.
 .TP
 .B S
 Save updated document file.
@@ -202,4 +208,4 @@ file to be reloaded automatically, for use in e.g.\& build scripts.
 .BR mutool (1).
 
 .SH AUTHOR
-MuPDF is Copyright 2006\(en2017 Artifex Software, Inc.
+MuPDF is Copyright 2006\(en2019 Artifex Software, Inc.
