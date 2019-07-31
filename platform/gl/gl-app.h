@@ -177,6 +177,7 @@ void ui_panel_end(void);
 void ui_spacer(void);
 void ui_splitter(int *x, int min, int max, enum side side);
 void ui_label(const char *fmt, ...);
+void ui_label_with_scrollbar(char *text, int width, int height, int *scroll);
 int ui_button(const char *label);
 int ui_checkbox(const char *label, int *value);
 int ui_slider(int *value, int min, int max, int width);
