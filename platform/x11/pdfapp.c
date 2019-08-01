@@ -634,29 +634,20 @@ static void pdfapp_viewctm(fz_matrix *mat, pdfapp_t *app)
 
 static void pdfapp_panview(pdfapp_t *app, int newx, int newy)
 {
-	int image_w = 0;
-	int image_h = 0;
-
-	if (app->image)
-	{
-		image_w = fz_pixmap_width(app->ctx, app->image);
-		image_h = fz_pixmap_height(app->ctx, app->image);
-	}
-
 	if (newx > 0)
 		newx = 0;
 	if (newy > 0)
 		newy = 0;
 
-	if (newx + image_w < app->winw)
-		newx = app->winw - image_w;
-	if (newy + image_h < app->winh)
-		newy = app->winh - image_h;
+	if (newx + app->imgw < app->winw)
+		newx = app->winw - app->imgw;
+	if (newy + app->imgh < app->winh)
+		newy = app->winh - app->imgh;
 
-	if (app->winw >= image_w)
-		newx = (app->winw - image_w) / 2;
-	if (app->winh >= image_h)
-		newy = (app->winh - image_h) / 2;
+	if (app->winw >= app->imgw)
+		newx = (app->winw - app->imgw) / 2;
+	if (app->winh >= app->imgh)
+		newy = (app->winh - app->imgh) / 2;
 
 	if (newx != app->panx || newy != app->pany)
 		winrepaint(app);
@@ -838,6 +829,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	{
 		app->old_image = app->image;
 		app->image = NULL;
+		app->imgw = 0;
+		app->imgh = 0;
 	}
 
 	/* Always reload page if it was flagged incomplete */
@@ -911,12 +904,18 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = app->colorspace;
 
 		app->image = NULL;
+		app->imgw = 0;
+		app->imgh = 0;
+
 		fz_var(app->image);
 		fz_var(idev);
 
 		fz_try(app->ctx)
 		{
 			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, app->seps, 1);
+			app->imgw = fz_pixmap_width(app->ctx, app->image);
+			app->imgh = fz_pixmap_height(app->ctx, app->image);
+
 			fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 			if (app->page_list || app->annotations_list)
 			{
@@ -942,11 +941,17 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	{
 		app->new_image = app->image;
 		app->image = NULL;
+		app->imgw = 0;
+		app->imgh = 0;
+
 		if (app->grayscale)
 			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
 		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, ibounds, app->seps, 1);
+		app->imgw = fz_pixmap_width(app->ctx, app->image);
+		app->imgh = fz_pixmap_height(app->ctx, app->image);
+
 		app->duration = 0;
 		fz_page_presentation(app->ctx, app->page, &app->transition, &app->duration);
 		if (app->duration == 0)
@@ -971,9 +976,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		}
 		else if (app->shrinkwrap)
 		{
-			int w = fz_pixmap_width(app->ctx, app->image);
-			int h = fz_pixmap_height(app->ctx, app->image);
-
+			int w = app->imgw;
+			int h = app->imgh;
 			if (app->winw == w)
 				app->panx = 0;
 			if (app->winh == h)
@@ -1124,7 +1128,7 @@ void pdfapp_onresize(pdfapp_t *app, int w, int h)
 
 void pdfapp_autozoom_vertical(pdfapp_t *app)
 {
-	app->resolution *= (float) app->winh / fz_pixmap_height(app->ctx, app->image);
+	app->resolution *= (float) app->winh / app->imgh;
 	if (app->resolution > MAXRES)
 		app->resolution = MAXRES;
 	else if (app->resolution < MINRES)
@@ -1134,7 +1138,7 @@ void pdfapp_autozoom_vertical(pdfapp_t *app)
 
 void pdfapp_autozoom_horizontal(pdfapp_t *app)
 {
-	app->resolution *= (float) app->winw / fz_pixmap_width(app->ctx, app->image);
+	app->resolution *= (float) app->winw / app->imgw;
 	if (app->resolution > MAXRES)
 		app->resolution = MAXRES;
 	else if (app->resolution < MINRES)
@@ -1144,7 +1148,7 @@ void pdfapp_autozoom_horizontal(pdfapp_t *app)
 
 void pdfapp_autozoom(pdfapp_t *app)
 {
-	float page_aspect = (float) fz_pixmap_width(app->ctx, app->image) / fz_pixmap_height(app->ctx, app->image);
+	float page_aspect = (float) app->imgw / app->imgh;
 	float win_aspect = (float) app->winw / app->winh;
 	if (page_aspect > win_aspect)
 		pdfapp_autozoom_horizontal(app);
@@ -1358,21 +1362,20 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'h':
-		app->panx += fz_pixmap_width(app->ctx, app->image) / 10;
+		app->panx += app->imgw / 10;
 		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	case 'j':
 		{
-			int h = fz_pixmap_height(app->ctx, app->image);
-			if (h <= app->winh || app->pany <= app->winh - h)
+			if (app->imgh <= app->winh || app->pany <= app->winh - app->imgh)
 			{
 				panto = PAN_TO_TOP;
 				app->pageno++;
 			}
 			else
 			{
-				app->pany -= h / 10;
+				app->pany -= app->imgh / 10;
 				pdfapp_showpage(app, 0, 0, 1, 0, 0);
 			}
 			break;
@@ -1380,22 +1383,21 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	case 'k':
 		{
-			int h = fz_pixmap_height(app->ctx, app->image);
-			if (h <= app->winh || app->pany == 0)
+			if (app->imgh <= app->winh || app->pany == 0)
 			{
 				panto = PAN_TO_BOTTOM;
 				app->pageno--;
 			}
 			else
 			{
-				app->pany += h / 10;
+				app->pany += app->imgh / 10;
 				pdfapp_showpage(app, 0, 0, 1, 0, 0);
 			}
 			break;
 		}
 
 	case 'l':
-		app->panx -= fz_pixmap_width(app->ctx, app->image) / 10;
+		app->panx -= app->imgw / 10;
 		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
@@ -1596,8 +1598,6 @@ static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 	{
 		/* scroll up/down, or left/right if
 		shift is pressed */
-		int w = fz_pixmap_width(app->ctx, app->image);
-		int h = fz_pixmap_height(app->ctx, app->image);
 		int xstep = 0;
 		int ystep = 0;
 		int pagestep = 0;
@@ -1605,7 +1605,7 @@ static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 		{
 			if (dir > 0 && app->panx >= 0)
 				pagestep = -1;
-			else if (dir < 0 && app->panx <= app->winw - w)
+			else if (dir < 0 && app->panx <= app->winw - app->imgw)
 				pagestep = 1;
 			else
 				xstep = 20 * dir;
@@ -1614,7 +1614,7 @@ static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 		{
 			if (dir > 0 && app->pany >= 0)
 				pagestep = -1;
-			else if (dir < 0 && app->pany <= app->winh - h)
+			else if (dir < 0 && app->pany <= app->winh - app->imgh)
 				pagestep = 1;
 			else
 				ystep = 20 * dir;
@@ -1884,6 +1884,8 @@ void pdfapp_postblit(pdfapp_t *app)
 		fz_drop_pixmap(app->ctx, app->image);
 		app->image = app->new_image;
 		app->new_image = NULL;
+		app->imgw = fz_pixmap_width(app->ctx, app->image);
+		app->imgh = fz_pixmap_height(app->ctx, app->image);
 		fz_drop_pixmap(app->ctx, app->old_image);
 		app->old_image = NULL;
 		if (app->duration != 0)
