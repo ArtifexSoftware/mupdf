@@ -1456,7 +1456,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	 */
 
 	case ',':
-		panto = PAN_TO_BOTTOM;
+		panto = DONT_PAN;
 		if (app->numberlen > 0)
 			app->pageno -= atoi(app->number);
 		else
@@ -1464,7 +1464,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case '.':
-		panto = PAN_TO_TOP;
+		panto = DONT_PAN;
 		if (app->numberlen > 0)
 			app->pageno += atoi(app->number);
 		else
