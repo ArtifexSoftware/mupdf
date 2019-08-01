@@ -1472,28 +1472,56 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'b':
-		panto = DONT_PAN;
-		if (app->numberlen > 0)
-			app->pageno -= atoi(app->number);
-		else
-			app->pageno--;
-		break;
-
-	case ' ':
-		panto = DONT_PAN;
-		if (modifiers & 1)
+		if (app->pany >= 0)
 		{
-			if (app->numberlen > 0)
-				app->pageno -= atoi(app->number);
+			if (app->panx >= 0)
+			{
+				if (app->pageno - 1 > 0)
+				{
+					app->panx = INT_MIN;
+					app->pany = INT_MIN;
+					app->pageno--;
+					panto = DONT_PAN;
+				}
+			}
 			else
-				app->pageno--;
+			{
+				app->pany = -app->imgh;
+				app->panx += app->winw * 9 / 10;
+				pdfapp_showpage(app, 0, 0, 1, 0, 0);
+			}
 		}
 		else
 		{
-			if (app->numberlen > 0)
-				app->pageno += atoi(app->number);
+			app->pany += app->winh * 9 / 10;
+			pdfapp_showpage(app, 0, 0, 1, 0, 0);
+		}
+		break;
+
+	case ' ':
+		if (app->imgh + app->pany <= app->winh)
+		{
+			if (app->imgw + app->panx <= app->winw)
+			{
+				if (app->pageno + 1 < app->pagecount)
+				{
+					app->panx = 0;
+					app->pany = 0;
+					app->pageno++;
+					panto = DONT_PAN;
+				}
+			}
 			else
-				app->pageno++;
+			{
+				app->pany = 0;
+				app->panx -= app->winw * 9 / 10;
+				pdfapp_showpage(app, 0, 0, 1, 0, 0);
+			}
+		}
+		else
+		{
+			app->pany -= app->winh * 9 / 10;
+			pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		}
 		break;
 
@@ -1569,7 +1597,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			app->pany = 0;
 			break;
 		case PAN_TO_BOTTOM:
-			app->pany = -2000;
+			app->pany = INT_MIN;
 			break;
 		case DONT_PAN:
 			break;
