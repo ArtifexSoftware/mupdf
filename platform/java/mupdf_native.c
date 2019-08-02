@@ -5875,7 +5875,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
 		fz_print_stext_header_as_html(ctx, out);
-		fz_print_stext_page_as_html(ctx, out, text);
+		fz_print_stext_page_as_html(ctx, out, text, page->number);
 		fz_print_stext_trailer_as_html(ctx, out);
 		fz_close_output(ctx, out);
 	}

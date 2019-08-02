@@ -62,7 +62,7 @@ char *drawPageAsHTML(fz_document *doc, int number)
 		out = fz_new_output_with_buffer(ctx, buf);
 		{
 			text = fz_new_stext_page_from_page(ctx, lastPage, NULL);
-			fz_print_stext_page_as_html(ctx, out, text);
+			fz_print_stext_page_as_html(ctx, out, text, number);
 			fz_drop_stext_page(ctx, text);
 		}
 		fz_write_byte(ctx, out, 0);
