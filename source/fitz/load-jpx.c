@@ -330,7 +330,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_catch(ctx)
 				fz_warn(ctx, "ignoring embedded ICC profile in JPX");
 
-			if (state->cs && state->cs->n != n)
+			if (state->cs && state->cs->n != nchans)
 			{
 				fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile in JPX");
 				fz_drop_colorspace(ctx, state->cs);
