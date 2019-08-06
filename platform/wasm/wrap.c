@@ -78,7 +78,6 @@ char *drawPageAsHTML(fz_document *doc, int number)
 EMSCRIPTEN_KEEPALIVE
 char *drawPageAsSVG(fz_document *doc, int number)
 {
-	static int id = 0;
 	static unsigned char *data = NULL;
 	fz_buffer *buf;
 	fz_output *out;
@@ -95,7 +94,7 @@ char *drawPageAsSVG(fz_document *doc, int number)
 		out = fz_new_output_with_buffer(ctx, buf);
 		{
 			bbox = fz_bound_page(ctx, lastPage);
-			dev = fz_new_svg_device(ctx, out, bbox.x1-bbox.x0, bbox.y1-bbox.y0, FZ_SVG_TEXT_AS_PATH, 0, &id);
+			dev = fz_new_svg_device(ctx, out, bbox.x1-bbox.x0, bbox.y1-bbox.y0, FZ_SVG_TEXT_AS_PATH, 0);
 			fz_run_page(ctx, lastPage, dev, fz_identity, NULL);
 			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
