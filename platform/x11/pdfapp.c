@@ -1503,7 +1503,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		{
 			if (app->imgw + app->panx <= app->winw)
 			{
-				if (app->pageno + 1 < app->pagecount)
+				if (app->pageno + 1 <= app->pagecount)
 				{
 					app->panx = 0;
 					app->pany = 0;
