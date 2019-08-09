@@ -49,7 +49,7 @@ else ifeq ($(build),native)
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),memento)
   CFLAGS += -pipe -g -DMEMENTO
-  LDFLAGS += -g -d -rdynamic
+  LDFLAGS += -g -rdynamic
   ifneq ($(HAVE_LIBDL),no)
     CFLAGS += -DHAVE_LIBDL
     LIBS += -ldl
