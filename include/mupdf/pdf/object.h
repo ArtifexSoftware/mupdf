@@ -6,6 +6,7 @@ typedef struct pdf_crypt_s pdf_crypt;
 
 /* Defined in PDF 1.7 according to Acrobat limit. */
 #define PDF_MAX_OBJECT_NUMBER 8388607
+#define PDF_MAX_GEN_NUMBER 65535
 
 /*
  * Dynamic objects.
