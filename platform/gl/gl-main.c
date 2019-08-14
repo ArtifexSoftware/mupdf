@@ -1121,9 +1121,11 @@ static void auto_zoom(void)
 
 static void smart_move_backward(void)
 {
-	if (scroll_y <= 0)
+	int slop_x = page_tex.w / 20;
+	int slop_y = page_tex.h / 20;
+	if (scroll_y <= slop_y)
 	{
-		if (scroll_x <= 0)
+		if (scroll_x <= slop_x)
 		{
 			if (currentpage - 1 >= 0)
 			{
@@ -1146,9 +1148,11 @@ static void smart_move_backward(void)
 
 static void smart_move_forward(void)
 {
-	if (scroll_y + canvas_h >= page_tex.h)
+	int slop_x = page_tex.w / 20;
+	int slop_y = page_tex.h / 20;
+	if (scroll_y + canvas_h >= page_tex.h - slop_y)
 	{
-		if (scroll_x + canvas_w >= page_tex.w)
+		if (scroll_x + canvas_w >= page_tex.w - slop_x)
 		{
 			if (currentpage + 1 < fz_count_pages(ctx, doc))
 			{

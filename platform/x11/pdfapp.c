@@ -1472,9 +1472,9 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'b':
-		if (app->pany >= 0)
+		if (app->pany >= -app->imgh/20)
 		{
-			if (app->panx >= 0)
+			if (app->panx >= -app->imgw/20)
 			{
 				if (app->pageno - 1 > 0)
 				{
@@ -1499,9 +1499,9 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case ' ':
-		if (app->imgh + app->pany <= app->winh)
+		if (app->imgh + app->pany <= app->winh + app->imgh/20)
 		{
-			if (app->imgw + app->panx <= app->winw)
+			if (app->imgw + app->panx <= app->winw + app->imgw/20)
 			{
 				if (app->pageno + 1 <= app->pagecount)
 				{
