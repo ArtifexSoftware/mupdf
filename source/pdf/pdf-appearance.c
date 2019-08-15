@@ -381,6 +381,8 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 
 	*rect = fz_empty_rect;
 
+	fz_append_printf(ctx, buf, "1 J\n1 j\n");
+
 	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
 	n = pdf_array_len(ctx, ink_list);
 	for (i = 0; i < n; ++i)
@@ -400,6 +402,9 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 				*rect = fz_include_point_in_rect(*rect, p);
 			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, k == 0 ? 'm' : 'l');
 		}
+
+		if (m == 1)
+			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, 'l');
 	}
 	fz_append_printf(ctx, buf, "S");
 	*rect = fz_expand_rect(*rect, lw);
