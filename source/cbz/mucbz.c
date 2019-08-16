@@ -257,6 +257,7 @@ static const char *cbz_extensions[] =
 
 static const char *cbz_mimetypes[] =
 {
+	"application/vnd.comicbook+zip",
 	"application/x-cbt",
 	"application/x-cbz",
 	"application/x-tar",
