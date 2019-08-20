@@ -291,17 +291,42 @@ pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src)
 static pdf_obj *
 pdf_new_text_string_utf16be(fz_context *ctx, const char *s)
 {
-	int c, i = 0, n = fz_utflen(s);
-	unsigned char *p = fz_malloc(ctx, n * 2 + 2);
+	const char *ss;
+	int c, i, n, a, b;
+	unsigned char *p;
 	pdf_obj *obj;
+
+	ss = s;
+	n = 0;
+	while (*ss)
+	{
+		ss += fz_chartorune(&c, ss);
+		n += (c >= 0x10000) ? 2 : 1;
+	}
+
+	p = fz_malloc(ctx, n * 2 + 2);
+	i = 0;
 	p[i++] = 254;
 	p[i++] = 255;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		p[i++] = (c>>8) & 0xff;
-		p[i++] = (c) & 0xff;
+		if (c >= 0x10000)
+		{
+			a = (((c - 0x10000) >> 10) & 0x3ff) + 0xD800;
+			p[i++] = (a>>8) & 0xff;
+			p[i++] = (a) & 0xff;
+			b = (((c - 0x10000)) & 0x3ff) + 0xDC00;
+			p[i++] = (b>>8) & 0xff;
+			p[i++] = (b) & 0xff;
+		}
+		else
+		{
+			p[i++] = (c>>8) & 0xff;
+			p[i++] = (c) & 0xff;
+		}
 	}
+
 	fz_try(ctx)
 		obj = pdf_new_string(ctx, (char*)p, i);
 	fz_always(ctx)
