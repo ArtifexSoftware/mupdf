@@ -4140,6 +4140,20 @@ FUN(Pixmap_invert)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
+FUN(Pixmap_invertLuminance)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+
+	if (!ctx || !pixmap) return;
+
+	fz_try(ctx)
+		fz_invert_pixmap_luminance(ctx, pixmap);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
 FUN(Pixmap_gamma)(JNIEnv *env, jobject self, jfloat gamma)
 {
 	fz_context *ctx = get_context(env);

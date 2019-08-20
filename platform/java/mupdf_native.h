@@ -3112,6 +3112,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_invert
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    invertLuminance
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_invertLuminance
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    gamma
  * Signature: (F)V
  */
