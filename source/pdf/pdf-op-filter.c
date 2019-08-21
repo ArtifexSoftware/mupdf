@@ -228,7 +228,7 @@ static void filter_flush(fz_context *ctx, pdf_filter_processor *p, int flush)
 					gstate->pending.ctm.e,
 					gstate->pending.ctm.f);
 
-			gstate->sent.ctm = fz_concat(current, gstate->pending.ctm);
+			gstate->sent.ctm = fz_concat(gstate->pending.ctm, current);
 			gstate->pending.ctm.a = 1;
 			gstate->pending.ctm.b = 0;
 			gstate->pending.ctm.c = 0;
@@ -503,7 +503,7 @@ filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid, int *unicode
 
 	if (p->text_filter)
 	{
-		fz_matrix ctm = fz_concat(gstate->sent.ctm, gstate->pending.ctm);
+		fz_matrix ctm = fz_concat(gstate->pending.ctm, gstate->sent.ctm);
 		fz_rect bbox;
 
 		if (fontdesc->wmode == 0)
@@ -1265,7 +1265,7 @@ pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 	p->BT_pending = 0;
 	if (p->after_text)
 	{
-		fz_matrix ctm = fz_concat(p->gstate->sent.ctm, p->gstate->pending.ctm);
+		fz_matrix ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
 		if (p->chain->op_q)
 			p->chain->op_q(ctx, p->chain);
 		p->after_text(ctx, p->opaque, p->doc, p->chain, ctm);
