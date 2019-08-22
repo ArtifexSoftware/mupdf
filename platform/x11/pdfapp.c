@@ -1472,56 +1472,72 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		break;
 
 	case 'b':
-		if (app->pany >= -app->imgh/20)
 		{
-			if (app->panx >= -app->imgw/20)
+			int number = 1;
+			if (app->numberlen > 0)
+				number = fz_maxi(atoi(app->number), number);
+			while (number--)
 			{
-				if (app->pageno - 1 > 0)
+				if (app->pany >= -app->imgh/20)
 				{
-					app->panx = INT_MIN;
-					app->pany = INT_MIN;
-					app->pageno--;
-					panto = DONT_PAN;
+					if (app->panx >= -app->imgw/20)
+					{
+						if (app->pageno - 1 > 0)
+						{
+							app->panx = INT_MIN;
+							app->pany = INT_MIN;
+							app->pageno--;
+							panto = DONT_PAN;
+						}
+					}
+					else
+					{
+						app->pany = -app->imgh;
+						app->panx += app->winw * 9 / 10;
+						pdfapp_showpage(app, 0, 0, 1, 0, 0);
+					}
+				}
+				else
+				{
+					app->pany += app->winh * 9 / 10;
+					pdfapp_showpage(app, 0, 0, 1, 0, 0);
 				}
 			}
-			else
-			{
-				app->pany = -app->imgh;
-				app->panx += app->winw * 9 / 10;
-				pdfapp_showpage(app, 0, 0, 1, 0, 0);
-			}
-		}
-		else
-		{
-			app->pany += app->winh * 9 / 10;
-			pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		}
 		break;
 
 	case ' ':
-		if (app->imgh + app->pany <= app->winh + app->imgh/20)
 		{
-			if (app->imgw + app->panx <= app->winw + app->imgw/20)
+			int number = 1;
+			if (app->numberlen > 0)
+				number = fz_maxi(atoi(app->number), number);
+			while (number--)
 			{
-				if (app->pageno + 1 <= app->pagecount)
+				if (app->imgh + app->pany <= app->winh + app->imgh/20)
 				{
-					app->panx = 0;
-					app->pany = 0;
-					app->pageno++;
-					panto = DONT_PAN;
+					if (app->imgw + app->panx <= app->winw + app->imgw/20)
+					{
+						if (app->pageno + 1 <= app->pagecount)
+						{
+							app->panx = 0;
+							app->pany = 0;
+							app->pageno++;
+							panto = DONT_PAN;
+						}
+					}
+					else
+					{
+						app->pany = 0;
+						app->panx -= app->winw * 9 / 10;
+						pdfapp_showpage(app, 0, 0, 1, 0, 0);
+					}
+				}
+				else
+				{
+					app->pany -= app->winh * 9 / 10;
+					pdfapp_showpage(app, 0, 0, 1, 0, 0);
 				}
 			}
-			else
-			{
-				app->pany = 0;
-				app->panx -= app->winw * 9 / 10;
-				pdfapp_showpage(app, 0, 0, 1, 0, 0);
-			}
-		}
-		else
-		{
-			app->pany -= app->winh * 9 / 10;
-			pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		}
 		break;
 
