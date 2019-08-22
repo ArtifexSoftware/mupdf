@@ -217,25 +217,6 @@ static void new_annot(int type)
 	render_page();
 }
 
-static void do_annotate_flags(void)
-{
-	char buf[4096];
-	int f = pdf_annot_flags(ctx, selected_annot);
-	fz_strlcpy(buf, "Flags:", sizeof buf);
-	if (f & PDF_ANNOT_IS_INVISIBLE) fz_strlcat(buf, " inv", sizeof buf);
-	if (f & PDF_ANNOT_IS_HIDDEN) fz_strlcat(buf, " hidden", sizeof buf);
-	if (f & PDF_ANNOT_IS_PRINT) fz_strlcat(buf, " print", sizeof buf);
-	if (f & PDF_ANNOT_IS_NO_ZOOM) fz_strlcat(buf, " nz", sizeof buf);
-	if (f & PDF_ANNOT_IS_NO_ROTATE) fz_strlcat(buf, " nr", sizeof buf);
-	if (f & PDF_ANNOT_IS_NO_VIEW) fz_strlcat(buf, " nv", sizeof buf);
-	if (f & PDF_ANNOT_IS_READ_ONLY) fz_strlcat(buf, " ro", sizeof buf);
-	if (f & PDF_ANNOT_IS_LOCKED) fz_strlcat(buf, " lock", sizeof buf);
-	if (f & PDF_ANNOT_IS_TOGGLE_NO_VIEW) fz_strlcat(buf, " tnv", sizeof buf);
-	if (f & PDF_ANNOT_IS_LOCKED_CONTENTS) fz_strlcat(buf, " lc", sizeof buf);
-	if (!f) fz_strlcat(buf, " none", sizeof buf);
-	ui_label("%s", buf);
-}
-
 static const char *color_names[] = {
 	"None",
 	"Aqua",
@@ -519,37 +500,19 @@ void do_annotate_panel(void)
 
 	if (selected_annot && (subtype = pdf_annot_type(ctx, selected_annot)) != PDF_ANNOT_WIDGET)
 	{
-		fz_rect rect;
-		fz_irect irect;
 		int n, choice;
 		pdf_obj *obj;
 
-		if (ui_button("Delete"))
-		{
-			trace_action("page.deleteAnnotation(annot);\n");
-			pdf_delete_annot(ctx, page, selected_annot);
-			selected_annot = NULL;
-			render_page();
-			return;
-		}
+		/* common annotation properties */
 
 		ui_spacer();
 
-		/* common annotation properties */
-
-		rect = pdf_annot_rect(ctx, selected_annot);
-		irect = fz_irect_from_rect(rect);
-		ui_label("Rect: %d %d %d %d", irect.x0, irect.y0, irect.x1, irect.y1);
-
-		do_annotate_flags();
 		do_annotate_author();
 		do_annotate_date();
 
 		obj = pdf_dict_get(ctx, selected_annot->obj, PDF_NAME(Popup));
 		if (obj)
 			ui_label("Popup: %d 0 R", pdf_to_num(ctx, obj));
-
-		ui_spacer();
 
 		do_annotate_contents();
 
@@ -690,18 +653,6 @@ void do_annotate_panel(void)
 			}
 		}
 
-		if (pdf_annot_has_open(ctx, selected_annot))
-		{
-			int is_open = pdf_annot_is_open(ctx, selected_annot);
-			int start_is_open = is_open;
-			ui_checkbox("Open", &is_open);
-			if (start_is_open != is_open)
-			{
-				trace_action("annot.setIsOpen(%s);\n", is_open ? "true" : "false");
-				pdf_set_annot_is_open(ctx, selected_annot, is_open);
-			}
-		}
-
 		ui_spacer();
 
 		if (pdf_annot_has_quad_points(ctx, selected_annot))
@@ -765,6 +716,17 @@ void do_annotate_panel(void)
 				if (ui_button("Edit"))
 					is_draw_mode = 1;
 			}
+		}
+
+		ui_spacer();
+
+		if (ui_button("Delete"))
+		{
+			trace_action("page.deleteAnnotation(annot);\n");
+			pdf_delete_annot(ctx, page, selected_annot);
+			selected_annot = NULL;
+			render_page();
+			return;
 		}
 
 		if (selected_annot && selected_annot->needs_new_ap)
