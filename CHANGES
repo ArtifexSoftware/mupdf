@@ -5,6 +5,12 @@ List of changes since the last release
 	mutool run: Edit Markup, Ink, and Polygon annotation data.
 	mutool run: Fill out form fields.
 
+List of changes in MuPDF 1.16.1
+
+	mupdf-x11: Changed key bindings to match mupdf-gl.
+	mupdf-x11: Invert by luminance for dark mode.
+	android: Fix compilation error.
+
 List of changes in MuPDF 1.16.0
 
 	api: Major overhaul of color management architecture.
