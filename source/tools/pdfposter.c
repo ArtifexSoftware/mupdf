@@ -63,8 +63,8 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	pdf_obj *oldroot, *root, *pages, *kids;
 	int num_pages = pdf_count_pages(ctx, doc);
 	int page, kidcount;
-	fz_rect mediabox;
-	fz_matrix page_ctm;
+	fz_rect mediabox, cropbox;
+	int rotate;
 
 	oldroot = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
 	pages = pdf_dict_get(ctx, oldroot, PDF_NAME(Pages));
@@ -83,16 +83,32 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	kidcount = 0;
 	for (page=0; page < num_pages; page++)
 	{
-		pdf_page *page_details = pdf_load_page(ctx, doc, page);
+		pdf_obj *page_obj = pdf_lookup_page_obj(ctx, doc, page);
 		int xf = x_factor, yf = y_factor;
 		float w, h;
 		int x, y;
 
-		pdf_page_transform(ctx, page_details, &mediabox, &page_ctm);
-		fz_drop_page(ctx, (fz_page *) page_details);
+		rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, page_obj, PDF_NAME(Rotate)));
+		mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, page_obj, PDF_NAME(MediaBox)));
+		cropbox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, page_obj, PDF_NAME(CropBox)));
+		if (fz_is_empty_rect(mediabox))
+			mediabox = fz_make_rect(0, 0, 612, 792);
+		if (!fz_is_empty_rect(cropbox))
+			mediabox = fz_intersect_rect(mediabox, cropbox);
 
 		w = mediabox.x1 - mediabox.x0;
 		h = mediabox.y1 - mediabox.y0;
+
+		if (rotate == 90 || rotate == 270)
+		{
+			xf = y_factor;
+			yf = x_factor;
+		}
+		else
+		{
+			xf = x_factor;
+			yf = y_factor;
+		}
 
 		if (xf == 0 && yf == 0)
 		{
