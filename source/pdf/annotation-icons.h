@@ -14,7 +14,7 @@ static const char *icon_comment =
 	"8 .02 7.96 -.01 7.91 -.01 c\n"
 	".1 -.01 l\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_key =
 	"5.5 0 m\n"
@@ -37,14 +37,14 @@ static const char *icon_key =
 	"5.45 3 5 2.55 5 2 c\n"
 	"5 1.45 5.45 1 6 1 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_note =
 	"0 0 8 1 re\n"
 	"0 2 8 1 re\n"
 	"0 4 8 1 re\n"
 	"0 6 8 1 re\n"
-	"f";
+	"f\n";
 
 static const char *icon_help =
 	"1 0 0 1 1 0 cm\n"
@@ -72,7 +72,7 @@ static const char *icon_help =
 	"2.97 7 l\n"
 	"1.97 7 l\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_graph =
 	"7.03 0 m\n"
@@ -85,8 +85,13 @@ static const char *icon_graph =
 	"8 1 l\n"
 	"7.03 0 l\n"
 	"h\n"
-	"0 7 m 0 8 l 8 8 l 8 7 l 0 7 l h\n"
-	"f";
+	"0 7 m\n"
+	"0 8 l\n"
+	"8 8 l\n"
+	"8 7 l\n"
+	"0 7 l\n"
+	"h\n"
+	"f\n";
 
 static const char *icon_push_pin =
 	"1.34 0 m\n"
@@ -109,7 +114,7 @@ static const char *icon_push_pin =
 	"6.16 .5 5.89 -.038 5.48 0 c\n"
 	"4.15 0 2.83 0 1.5 0 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_paperclip =
 	"5 0 m\n"
@@ -139,7 +144,7 @@ static const char *icon_paperclip =
 	"7.18 2.63 7.18 1.37 6.4 .6 c\n"
 	"6.01 .21 5.51 .01 4.99 .01 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_tag =
 	"0 0 m\n"
@@ -155,7 +160,7 @@ static const char *icon_tag =
 	"1.45 3 1 2.55 1 2 c\n"
 	"1 1.45 1.45 1 2 1 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_speaker =
 	"3.34 0 m\n"
@@ -188,7 +193,7 @@ static const char *icon_speaker =
 	"6 3.54 5.69 3.14 5.25 3.03 c\n"
 	"5.17 3.01 5.08 3 5 3 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_mic =
 	"1 0 0 1 1 0 cm\n"
@@ -222,7 +227,7 @@ static const char *icon_mic =
 	".99 2.61 1.05 2.32 .85 2.13 c\n"
 	".71 1.99 .52 1.98 .34 2 c\n"
 	"h\n"
-	"f";
+	"f\n";
 
 static const char *icon_star =
 	"4 0 m\n"
@@ -237,7 +242,7 @@ static const char *icon_star =
 	"5 3 l\n"
 	"4 0 l\n"
 	"h\n"
-	"f";
+	"f\n";
 
 /*
 These 8x8 icons have been converted from the MIT licensed
@@ -248,13 +253,13 @@ static const char *icon_insert =
 	"8 5 m\n"
 	"4 0 l\n"
 	"0 5 l\n"
-	"f";
+	"f\n";
 
 static const char *icon_new_paragraph =
 	"8 8 m\n"
 	"4 0 l\n"
 	"0 8 l\n"
-	"f";
+	"f\n";
 
 static const char *icon_paragraph =
 	"7 0 m\n"
@@ -270,4 +275,4 @@ static const char *icon_paragraph =
 	"6 8 l\n"
 	"6 1 l\n"
 	"7 1 l\n"
-	"f";
+	"f\n";

@@ -363,7 +363,7 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 			else
 				fz_append_printf(ctx, buf, "%g %g l\n", p.x, p.y);
 		}
-		fz_append_string(ctx, buf, close ? "s" : "S");
+		fz_append_string(ctx, buf, close ? "s\n" : "S\n");
 		*rect = fz_expand_rect(*rect, lw);
 	}
 }
@@ -406,7 +406,7 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 		if (m == 1)
 			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, 'l');
 	}
-	fz_append_printf(ctx, buf, "S");
+	fz_append_printf(ctx, buf, "S\n");
 	*rect = fz_expand_rect(*rect, lw);
 }
 
@@ -678,7 +678,7 @@ pdf_write_caret_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz
 	fz_append_string(ctx, buf, "0 0 m\n");
 	fz_append_string(ctx, buf, "10 0 10 7 10 14 c\n");
 	fz_append_string(ctx, buf, "10 7 10 0 20 0 c\n");
-	fz_append_string(ctx, buf, "f");
+	fz_append_string(ctx, buf, "f\n");
 
 	*rect = fz_make_rect(xc - 10, yc - 7, xc + 10, yc + 7);
 	*bbox = fz_make_rect(0, 0, 20, 14);
