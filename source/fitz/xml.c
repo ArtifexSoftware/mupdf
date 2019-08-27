@@ -346,7 +346,7 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 	char *ns;
 
 	/* skip namespace prefix */
-	for (ns = a; ns < b; ++ns)
+	for (ns = a; ns < b - 1; ++ns)
 		if (*ns == ':')
 			a = ns + 1;
 
