@@ -1602,7 +1602,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 
 	/* Avoid cycles in glyph content streams referring to the glyph itself.
 	 * Remember to restore the content stream below, regardless of exceptions
-	 * or a sucessful run of the glyph. */
+	 * or a successful run of the glyph. */
 	font->t3procs[gid] = NULL;
 
 	fz_try(ctx)
@@ -1790,7 +1790,7 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 
 	/* Avoid cycles in glyph content streams referring to the glyph itself.
 	 * Remember to restore the content stream below, regardless of exceptions
-	 * or a sucessful run of the glyph. */
+	 * or a successful run of the glyph. */
 	font->t3procs[gid] = NULL;
 
 	fz_try(ctx)

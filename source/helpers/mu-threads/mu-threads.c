@@ -148,13 +148,13 @@ void mu_unlock_mutex(mu_mutex *mutex)
 
 	Neither ios nor OSX supports unnamed semaphores.
 	Named semaphores are a pain to use, so we implement
-	our own sempahores using condition variables and
+	our own semaphores using condition variables and
 	mutexes.
 */
 
 #include <string.h>
 
-struct mu_sempahore
+struct mu_semaphore
 {
 	int count;
 	pthread_mutex_t mutex;

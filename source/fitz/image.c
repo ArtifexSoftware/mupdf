@@ -910,7 +910,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 	decode array is [0 1] (repeated n times, for n color components).
 
 	colorkey: NULL, or a pointer to a colorkey array. The default
-	colorkey array is [0 255] (repeatd n times, for n color
+	colorkey array is [0 255] (repeated n times, for n color
 	components).
 
 	mask: NULL, or another image to use as a mask for this one.
@@ -1036,7 +1036,7 @@ compressed_image_get_size(fz_context *ctx, fz_image *image)
 	decode array is [0 1] (repeated n times, for n color components).
 
 	colorkey: NULL, or a pointer to a colorkey array. The default
-	colorkey array is [0 255] (repeatd n times, for n color
+	colorkey array is [0 255] (repeated n times, for n color
 	components).
 
 	buffer: Buffer of compressed data and compression parameters.

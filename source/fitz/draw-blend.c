@@ -30,7 +30,7 @@ The formula shown above is a simplification of the following formula:
 
  Ar * Cr = [(1-As)*Ab*Cb] + [(1-Ab)*As*Cs] + [Ab*As*B(Cb, Cs)]
 
-At first glange this always appears to be a mistake to me, as it looks
+At first glance this always appears to be a mistake to me, as it looks
 like they have make a mistake in the division.
 
 However, if we consider the result alpha equation:

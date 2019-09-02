@@ -241,7 +241,7 @@ struct fz_page_s
 
 /*
 	Structure definition is public so other classes can
-	derive from it. Callers shoud not access the members
+	derive from it. Callers should not access the members
 	directly, though implementations will need initialize
 	functions directly.
 */

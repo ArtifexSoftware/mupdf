@@ -12,7 +12,7 @@ pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_l
 	return PDF_SIGNATURE_ERROR_UNKNOWN;
 }
 
-/* Check a singature's certificate is trusted */
+/* Check a signature's certificate is trusted */
 enum pdf_signature_error
 pkcs7_openssl_check_certificate(char *sig, int sig_len)
 {

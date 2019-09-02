@@ -55,7 +55,7 @@ enum
 
 int pdf_document_permissions(fz_context *ctx, pdf_document *doc);
 
-int pdf_signature_byte_range(fz_context *ctx, pdf_document *doc, pdf_obj *signtature, fz_range *byte_range);
+int pdf_signature_byte_range(fz_context *ctx, pdf_document *doc, pdf_obj *signature, fz_range *byte_range);
 
 fz_stream *pdf_signature_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_obj *signature);
 

@@ -538,7 +538,7 @@ resolve_color(fz_context *ctx,
 	}
 	colorbv[i] = alpha * 255;
 
-	/* op && !devn => overpinting in cmyk or devicegray. */
+	/* op && !devn => overprinting in cmyk or devicegray. */
 	if (op && !devn)
 	{
 		/* We are overprinting, so protect all spots. */
@@ -574,7 +574,7 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, fz_color_params
 		dcs = oi;
 	}
 
-	/* Not needed if dest has the seps, and we are not using a proof or the target is the same as the prooof and we don't have an oi or the target is the same as the oi */
+	/* Not needed if dest has the seps, and we are not using a proof or the target is the same as the proof and we don't have an oi or the target is the same as the oi */
 	if ((clone == dev->stack[0].dest->seps) && (dev->proof_cs == NULL || dev->proof_cs == dev->stack[0].dest->colorspace) && (oi == NULL || oi == dev->stack[0].dest->colorspace))
 	{
 		fz_drop_separations(ctx, clone);
