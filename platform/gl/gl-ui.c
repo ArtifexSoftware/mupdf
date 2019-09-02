@@ -327,7 +327,6 @@ static void on_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
@@ -335,7 +334,6 @@ static void on_passive_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
