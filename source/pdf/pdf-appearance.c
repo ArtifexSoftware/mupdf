@@ -119,6 +119,19 @@ static int pdf_write_MK_BC_appearance(fz_context *ctx, pdf_annot *annot, fz_buff
 	return 1;
 }
 
+static void maybe_stroke_and_fill(fz_context *ctx, fz_buffer *buf, int sc, int ic)
+{
+	if (sc)
+		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+	else
+		fz_append_string(ctx, buf, ic ? "f\n" : "n\n");
+}
+
+static void maybe_stroke(fz_context *ctx, fz_buffer *buf, int sc)
+{
+	fz_append_string(ctx, buf, sc ? "S\n" : "n\n");
+}
+
 static fz_point rotate_vector(float angle, float x, float y)
 {
 	float ca = cosf(angle);
@@ -156,13 +169,14 @@ static void include_cap(fz_rect *rect, float x, float y, float r)
 
 static void
 pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
-		float x, float y, float dx, float dy, float w, int ic, pdf_obj *cap)
+		float x, float y, float dx, float dy, float w,
+		int sc, int ic, pdf_obj *cap)
 {
 	if (cap == PDF_NAME(Square))
 	{
 		float r = fz_max(2.5f, w * 2.5f);
 		fz_append_printf(ctx, buf, "%g %g %g %g re\n", x-r, y-r, r*2, r*2);
-		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+		maybe_stroke_and_fill(ctx, buf, sc, ic);
 		include_cap(rect, x, y, r);
 	}
 	else if (cap == PDF_NAME(Circle))
@@ -174,7 +188,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", x+r, y-m, x+m, y-r, x, y-r);
 		fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", x-m, y-r, x-r, y-m, x-r, y);
 		fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", x-r, y+m, x-m, y+r, x, y+r);
-		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+		maybe_stroke_and_fill(ctx, buf, sc, ic);
 		include_cap(rect, x, y, r);
 	}
 	else if (cap == PDF_NAME(Diamond))
@@ -184,18 +198,18 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g l\n", x+r, y);
 		fz_append_printf(ctx, buf, "%g %g l\n", x, y-r);
 		fz_append_printf(ctx, buf, "%g %g l\n", x-r, y);
-		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+		maybe_stroke_and_fill(ctx, buf, sc, ic);
 		include_cap(rect, x, y, r);
 	}
 	else if (cap == PDF_NAME(OpenArrow))
 	{
 		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w);
-		fz_append_string(ctx, buf, "S\n");
+		maybe_stroke(ctx, buf, sc);
 	}
 	else if (cap == PDF_NAME(ClosedArrow))
 	{
 		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w);
-		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+		maybe_stroke_and_fill(ctx, buf, sc, ic);
 	}
 	/* PDF 1.5 */
 	else if (cap == PDF_NAME(Butt))
@@ -205,21 +219,21 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_point b = { x+dy*r, y-dx*r };
 		fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 		fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
-		fz_append_string(ctx, buf, "S\n");
+		maybe_stroke(ctx, buf, sc);
 		*rect = fz_include_point_in_rect(*rect, a);
 		*rect = fz_include_point_in_rect(*rect, b);
 	}
-	/* PDF 1.6 */
 	else if (cap == PDF_NAME(ROpenArrow))
 	{
 		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w);
-		fz_append_string(ctx, buf, "S\n");
+		maybe_stroke(ctx, buf, sc);
 	}
 	else if (cap == PDF_NAME(RClosedArrow))
 	{
 		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w);
-		fz_append_string(ctx, buf, ic ? "b\n" : "s\n");
+		maybe_stroke_and_fill(ctx, buf, sc, ic);
 	}
+	/* PDF 1.6 */
 	else if (cap == PDF_NAME(Slash))
 	{
 		float r = fz_max(5, w * 5);
@@ -231,7 +245,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		b = fz_make_point(x + v.x, y + v.y);
 		fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 		fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
-		fz_append_string(ctx, buf, "S\n");
+		maybe_stroke(ctx, buf, sc);
 		*rect = fz_include_point_in_rect(*rect, a);
 		*rect = fz_include_point_in_rect(*rect, b);
 	}
@@ -243,10 +257,11 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	pdf_obj *line, *le;
 	fz_point a, b;
 	float w;
+	int sc;
 	int ic;
 
 	w = pdf_write_border_appearance(ctx, annot, buf);
-	pdf_write_stroke_color_appearance(ctx, annot, buf);
+	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
 	line = pdf_dict_get(ctx, annot->obj, PDF_NAME(L));
@@ -255,7 +270,8 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	b.x = pdf_array_get_real(ctx, line, 2);
 	b.y = pdf_array_get_real(ctx, line, 3);
 
-	fz_append_printf(ctx, buf, "%g %g m\n%g %g l\nS\n", a.x, a.y, b.x, b.y);
+	fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", a.x, a.y, b.x, b.y);
+	maybe_stroke(ctx, buf, sc);
 
 	rect->x0 = fz_min(a.x, b.x);
 	rect->y0 = fz_min(a.y, b.y);
@@ -268,8 +284,8 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 		float dx = b.x - a.x;
 		float dy = b.y - a.y;
 		float l = sqrtf(dx*dx + dy*dy);
-		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, w, ic, pdf_array_get(ctx, le, 0));
-		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx/l, -dy/l, w, ic, pdf_array_get(ctx, le, 1));
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, w, sc, ic, pdf_array_get(ctx, le, 0));
+		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx/l, -dy/l, w, sc, ic, pdf_array_get(ctx, le, 1));
 	}
 	*rect = fz_expand_rect(*rect, fz_max(1, w));
 }
@@ -279,10 +295,11 @@ pdf_write_square_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 {
 	float x, y, w, h;
 	float lw;
+	int sc;
 	int ic;
 
 	lw = pdf_write_border_appearance(ctx, annot, buf);
-	pdf_write_stroke_color_appearance(ctx, annot, buf);
+	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
 	x = rect->x0 + lw;
@@ -291,11 +308,11 @@ pdf_write_square_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 	h = rect->y1 - y - lw;
 
 	fz_append_printf(ctx, buf, "%g %g %g %g re\n", x, y, w, h);
-	fz_append_string(ctx, buf, ic ? "b" : "s");
+	maybe_stroke_and_fill(ctx, buf, sc, ic);
 }
 
 static void
-draw_circle(fz_context *ctx, fz_buffer *buf, const char *op, float rx, float ry, float cx, float cy)
+draw_circle(fz_context *ctx, fz_buffer *buf, float rx, float ry, float cx, float cy)
 {
 	float mx = rx * CIRCLE_MAGIC;
 	float my = ry * CIRCLE_MAGIC;
@@ -304,30 +321,31 @@ draw_circle(fz_context *ctx, fz_buffer *buf, const char *op, float rx, float ry,
 	fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", cx+rx, cy-my, cx+mx, cy-ry, cx, cy-ry);
 	fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", cx-mx, cy-ry, cx-rx, cy-my, cx-rx, cy);
 	fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", cx-rx, cy+my, cx-mx, cy+ry, cx, cy+ry);
-	fz_append_string(ctx, buf, op);
 }
 
 static void
-draw_circle_in_box(fz_context *ctx, fz_buffer *buf, const char *op, float lw, float x0, float y0, float x1, float y1)
+draw_circle_in_box(fz_context *ctx, fz_buffer *buf, float lw, float x0, float y0, float x1, float y1)
 {
 	float rx = (x1 - x0) / 2 - lw;
 	float ry = (y1 - y0) / 2 - lw;
 	float cx = x0 + lw + rx;
 	float cy = y0 + lw + ry;
-	draw_circle(ctx, buf, op, rx, ry, cx, cy);
+	draw_circle(ctx, buf, rx, ry, cx, cy);
 }
 
 static void
 pdf_write_circle_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect)
 {
 	float lw;
+	int sc;
 	int ic;
 
 	lw = pdf_write_border_appearance(ctx, annot, buf);
-	pdf_write_stroke_color_appearance(ctx, annot, buf);
+	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
-	draw_circle_in_box(ctx, buf, ic ? "b\n" : "s\n", lw, rect->x0, rect->y0, rect->x1, rect->y1);
+	draw_circle_in_box(ctx, buf, lw, rect->x0, rect->y0, rect->x1, rect->y1);
+	maybe_stroke_and_fill(ctx, buf, sc, ic);
 }
 
 static void
@@ -337,9 +355,10 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 	fz_point p;
 	int i, n;
 	float lw;
+	int sc;
 
 	lw = pdf_write_border_appearance(ctx, annot, buf);
-	pdf_write_stroke_color_appearance(ctx, annot, buf);
+	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 
 	*rect = fz_empty_rect;
 
@@ -363,7 +382,9 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 			else
 				fz_append_printf(ctx, buf, "%g %g l\n", p.x, p.y);
 		}
-		fz_append_string(ctx, buf, close ? "s\n" : "S\n");
+		if (close)
+			fz_append_string(ctx, buf, "h\n");
+		maybe_stroke(ctx, buf, sc);
 		*rect = fz_expand_rect(*rect, lw);
 	}
 }
@@ -375,9 +396,10 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 	int i, n, k, m;
 	float lw;
 	fz_point p;
+	int sc;
 
 	lw = pdf_write_border_appearance(ctx, annot, buf);
-	pdf_write_stroke_color_appearance(ctx, annot, buf);
+	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 
 	*rect = fz_empty_rect;
 
@@ -406,7 +428,7 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 		if (m == 1)
 			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, 'l');
 	}
-	fz_append_printf(ctx, buf, "S\n");
+	maybe_stroke(ctx, buf, sc);
 	*rect = fz_expand_rect(*rect, lw);
 }
 
@@ -1659,14 +1681,21 @@ static pdf_obj *draw_radio_button(fz_context *ctx, pdf_annot *annot, fz_rect bbo
 	{
 		fz_append_string(ctx, buf, "q\n");
 		if (pdf_write_MK_BG_appearance(ctx, annot, buf))
-			draw_circle_in_box(ctx, buf, "f\n", 0, 0, 0, w, h);
+		{
+			draw_circle_in_box(ctx, buf, 0, 0, 0, w, h);
+			fz_append_string(ctx, buf, "f\n");
+		}
 		b = pdf_write_border_appearance(ctx, annot, buf);
 		if (b > 0 && pdf_write_MK_BC_appearance(ctx, annot, buf))
-			draw_circle_in_box(ctx, buf, "s\n", b, 0, 0, w, h);
+		{
+			draw_circle_in_box(ctx, buf, b, 0, 0, w, h);
+			fz_append_string(ctx, buf, "s\n");
+		}
 		if (yes)
 		{
 			fz_append_string(ctx, buf, "0 g\n");
-			draw_circle(ctx, buf, "f\n", (w-b*2)/4, (h-b*2)/4, w/2, h/2);
+			draw_circle(ctx, buf, (w-b*2)/4, (h-b*2)/4, w/2, h/2);
+			fz_append_string(ctx, buf, "f\n");
 		}
 		fz_append_string(ctx, buf, "Q\n");
 		ap = pdf_new_xobject(ctx, annot->page->doc, bbox, matrix, NULL, buf);
