@@ -443,7 +443,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 		if (source == outlineList) {
 			int i = outlineList.getSelectedIndex();
-			Outline node = (Outline)flatOutline.elementAt(i);
+			Outline node = flatOutline.elementAt(i);
 			if (node.page >= 0) {
 				if (node.page != pageNumber) {
 					pageNumber = node.page;
