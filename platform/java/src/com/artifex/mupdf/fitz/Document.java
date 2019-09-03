@@ -25,14 +25,14 @@ public class Document
 	}
 
 	protected native static Document openNativeWithPath(String filename);
-	protected native static Document openNativeWithBuffer(byte buffer[], String magic);
+	protected native static Document openNativeWithBuffer(byte[] buffer, String magic);
 	protected native static Document openNativeWithStream(SeekableInputStream stream, String mimeType);
 
 	public static Document openDocument(String filename) {
 		return openNativeWithPath(filename);
 	}
 
-	public static Document openDocument(byte buffer[], String magic) {
+	public static Document openDocument(byte[] buffer, String magic) {
 		return openNativeWithBuffer(buffer, magic);
 	}
 

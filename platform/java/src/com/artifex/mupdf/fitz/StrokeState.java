@@ -26,7 +26,7 @@ public class StrokeState
 	}
 
 	private native long newNative(int startCap, int dashCap, int endCap, int lineJoin, float lineWidth, float miterLimit,
-			float dashPhase, float dash[]);
+			float dashPhase, float[] dash);
 
 	// Private constructor for the C to use. Any objects created by the
 	// C are done for purposes of calling back to a java device, and
@@ -42,7 +42,7 @@ public class StrokeState
 	}
 
 	public StrokeState(int startCap, int dashCap, int endCap, int lineJoin, float lineWidth, float miterLimit,
-			float dashPhase, float dash[]) {
+			float dashPhase, float[] dash) {
 		pointer = newNative(startCap, dashCap, endCap, lineJoin, lineWidth, miterLimit, dashPhase, dash);
 	}
 

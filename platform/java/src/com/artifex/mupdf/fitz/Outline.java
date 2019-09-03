@@ -5,7 +5,7 @@ public class Outline
 	public String title;
 	public String uri;
 	public int page;
-	public Outline down[];
+	public Outline[] down;
 	public float x;
 	public float y;
 

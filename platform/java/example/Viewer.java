@@ -32,7 +32,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected TextField searchField;
 	protected Button searchPrevButton, searchNextButton;
 	protected int searchHitPage = -1;
-	protected Quad searchHits[];
+	protected Quad[] searchHits;
 
 	protected List outlineList;
 	protected Vector<Outline> flatOutline;
@@ -45,7 +45,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int layoutEm = 12;
 	protected float pixelScale;
 
-	protected static final int zoomList[] = {
+	protected static final int[] zoomList = {
 		18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288
 	};
 
