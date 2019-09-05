@@ -456,9 +456,10 @@ fz_load_page(fz_context *ctx, fz_document *doc, int number)
 
 	fz_ensure_layout(ctx, doc);
 
-	for (page = doc->open; page; page = page->next)
-		if (page->number == number)
-			return fz_keep_page(ctx, page);
+	if (doc)
+		for (page = doc->open; page; page = page->next)
+			if (page->number == number)
+				return fz_keep_page(ctx, page);
 
 	if (doc && doc->load_page)
 	{
