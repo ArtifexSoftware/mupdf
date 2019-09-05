@@ -524,7 +524,7 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 	int subfont;
 	int size;
 
-	if (script < 0 || script > nelem(ctx->font->fallback))
+	if (script < 0 || script >= nelem(ctx->font->fallback))
 		return NULL;
 
 	/* TODO: bold and italic */
