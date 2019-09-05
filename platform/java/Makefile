@@ -8,6 +8,8 @@ MUPDF_JAVA := libmupdf_java64.jnilib
 JAVA_CFLAGS := \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include/darwin
+JAVA_LDFLAGS :=
+
 else
 
 BITS := $(shell getconf LONG_BIT)
@@ -24,6 +26,8 @@ JAVA_LIBS := \
 	$(shell pkg-config --libs freetype2) \
 	$(shell pkg-config --libs libcrypto) \
 	-lz
+JAVA_LDFLAGS := \
+	-z noexecstack
 endif
 
 default: $(MUPDF_JAVA) libmupdf.jar
@@ -65,7 +69,7 @@ mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
 		$(JAVA_CFLAGS)
 
 $(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
-	$(CC) -shared -z noexecstack -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
+	$(CC) -shared $(JAVA_LDFLAGS) -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. $(JAVA) -classpath .:src example.Viewer
