@@ -339,8 +339,8 @@ pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp,
 			const char *y = strrchr(uri, ',');
 			if (x && y)
 			{
-				if (xp) *xp = x ? fz_atoi(x + 1) : 0;
-				if (yp) *yp = y ? fz_atoi(y + 1) : 0;
+				if (xp) *xp = fz_atoi(x + 1);
+				if (yp) *yp = fz_atoi(y + 1);
 			}
 		}
 		return page;
