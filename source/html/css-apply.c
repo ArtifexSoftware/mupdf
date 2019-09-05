@@ -776,15 +776,19 @@ fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, c
 
 	for (rule = css->rule; rule; rule = rule->next)
 	{
-		sel = rule->selector;
-		while (sel)
+		if (!rule->loaded)
 		{
-			if (sel->name && !strcmp(sel->name, "@font-face"))
+			rule->loaded = 1;
+			sel = rule->selector;
+			while (sel)
 			{
-				fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
-				break;
+				if (sel->name && !strcmp(sel->name, "@font-face"))
+				{
+					fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
+					break;
+				}
+				sel = sel->next;
 			}
-			sel = sel->next;
 		}
 	}
 }

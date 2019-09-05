@@ -59,6 +59,7 @@ struct fz_css_rule_s
 	fz_css_selector *selector;
 	fz_css_property *declaration;
 	fz_css_rule *next;
+	int loaded;
 };
 
 struct fz_css_selector_s
