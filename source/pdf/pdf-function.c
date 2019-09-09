@@ -1179,7 +1179,11 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 
 	/* Default output is zero, which is suitable for violated constraints */
 	if ((func->u.e.n != (int)func->u.e.n && x < 0) || (func->u.e.n < 0 && x == 0))
+	{
+		for (i = 0; i < func->n; i++)
+			out[i] = 0;
 		return;
+	}
 
 	tmp = powf(x, func->u.e.n);
 	for (i = 0; i < func->n; i++)
