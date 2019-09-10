@@ -182,8 +182,9 @@ showglobalinfo(fz_context *ctx, globals *glo)
 	pdf_obj *obj;
 	fz_output *out = glo->out;
 	pdf_document *doc = glo->doc;
+	int version = pdf_version(ctx, doc);
 
-	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", doc->version / 10, doc->version % 10);
+	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", version / 10, version % 10);
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
 	if (obj)

@@ -588,6 +588,25 @@ void pdf_forget_xref(fz_context *ctx, pdf_document *doc)
  * magic version tag and startxref
  */
 
+int
+pdf_version(fz_context *ctx, pdf_document *doc)
+{
+	int version = doc->version;
+	fz_try(ctx)
+	{
+		pdf_obj *obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Version), NULL);
+		const char *str = pdf_to_name(ctx, obj);
+		if (*str)
+			version = 10 * (fz_atof(str) + 0.05f);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_warn(ctx, "Ignoring broken Root/Version number.");
+	}
+	return version;
+}
+
 static void
 pdf_load_version(fz_context *ctx, pdf_document *doc)
 {
@@ -1473,20 +1492,6 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "Ignoring broken Optional Content configuration");
 	}
-
-	fz_try(ctx)
-	{
-		const char *version_str;
-		obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(Version), NULL);
-		version_str = pdf_to_name(ctx, obj);
-		if (*version_str)
-		{
-			int version = 10 * (fz_atof(version_str) + 0.05f);
-			if (version > doc->version)
-				doc->version = version;
-		}
-	}
-	fz_catch(ctx) { }
 }
 
 static void
@@ -2256,7 +2261,10 @@ int
 pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return (int)fz_snprintf(buf, size, "PDF %d.%d", doc->version/10, doc->version % 10);
+	{
+		int version = pdf_version(ctx, doc);
+		return (int)fz_snprintf(buf, size, "PDF %d.%d", version/10, version % 10);
+	}
 
 	if (!strcmp(key, "encryption"))
 	{

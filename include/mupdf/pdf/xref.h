@@ -75,6 +75,7 @@ fz_stream *pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int n
 fz_stream *pdf_open_compressed_stream(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 
+int pdf_version(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc);
 void pdf_set_populating_xref_trailer(fz_context *ctx, pdf_document *doc, pdf_obj *trailer);
 int pdf_xref_len(fz_context *ctx, pdf_document *doc);
