@@ -6,12 +6,12 @@ typedef struct xps_page_s xps_page;
 
 fz_document *xps_open_document(fz_context *ctx, const char *filename);
 fz_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
-int xps_count_pages(fz_context *ctx, fz_document *doc);
-fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int number);
+int xps_count_pages(fz_context *ctx, fz_document *doc, int chapter);
+fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int chapter, int number);
 fz_outline *xps_load_outline(fz_context *ctx, fz_document *doc);
 void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
 fz_link *xps_load_links(fz_context *ctx, fz_page *page);
-int xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
+fz_location xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
 
 int xps_strcasecmp(char *a, char *b);
 void xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size);

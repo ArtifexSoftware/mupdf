@@ -15,6 +15,18 @@ typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;
 typedef intptr_t fz_bookmark;
 
+typedef struct fz_location_s
+{
+	int chapter;
+	int page;
+} fz_location;
+
+static inline fz_location fz_make_location(int chapter, int page)
+{
+	fz_location loc = { chapter, page };
+	return loc;
+}
+
 enum
 {
 	/* 6in at 4:3 */
@@ -115,20 +127,27 @@ typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w,
 	resolve an internal link to a page number. See fz_resolve_link
 	for more information.
 */
-typedef int (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+typedef fz_location (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+
+/*
+	Type for a function to be called to
+	count the number of chapters in a document. See fz_count_chapters for
+	more information.
+*/
+typedef int (fz_document_count_chapters_fn)(fz_context *ctx, fz_document *doc);
 
 /*
 	Type for a function to be called to
 	count the number of pages in a document. See fz_count_pages for
 	more information.
 */
-typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
+typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc, int chapter);
 
 /*
 	Type for a function to load a given
 	page from a document. See fz_load_page for more information.
 */
-typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
+typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int chapter, int page);
 
 /*
 	Type for a function to query
@@ -143,16 +162,21 @@ typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, 
 typedef fz_colorspace* (fz_document_output_intent_fn)(fz_context *ctx, fz_document *doc);
 
 /*
+	Write document accelerator data
+*/
+typedef void (fz_document_output_accelerator_fn)(fz_context *ctx, fz_document *doc, fz_output *out);
+
+/*
 	Type for a function to make
 	a bookmark. See fz_make_bookmark for more information.
 */
-typedef fz_bookmark (fz_document_make_bookmark_fn)(fz_context *ctx, fz_document *doc, int page);
+typedef fz_bookmark (fz_document_make_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_location loc);
 
 /*
 	Type for a function to lookup
 	a bookmark. See fz_lookup_bookmark for more information.
 */
-typedef int (fz_document_lookup_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_bookmark mark);
+typedef fz_location (fz_document_lookup_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_bookmark mark);
 
 /*
 	Type for a function to release all the
@@ -223,7 +247,8 @@ typedef int (fz_page_uses_overprint_fn)(fz_context *ctx, fz_page *page);
 struct fz_page_s
 {
 	int refs;
-	int number; /* page number */
+	int chapter; /* chapter number */
+	int number; /* page number in chapter */
 	int incomplete; /* incomplete from progressive loading; don't cache! */
 	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
@@ -257,10 +282,12 @@ struct fz_document_s
 	fz_document_make_bookmark_fn *make_bookmark;
 	fz_document_lookup_bookmark_fn *lookup_bookmark;
 	fz_document_resolve_link_fn *resolve_link;
+	fz_document_count_chapters_fn *count_chapters;
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_output_intent_fn *get_output_intent;
+	fz_document_output_accelerator_fn *output_accelerator;
 	int did_layout;
 	int is_reflowable;
 	fz_page *open; /* linked list of currently open pages */
@@ -288,6 +315,32 @@ typedef fz_document *(fz_document_open_fn)(fz_context *ctx, const char *filename
 typedef fz_document *(fz_document_open_with_stream_fn)(fz_context *ctx, fz_stream *stream);
 
 /*
+	Function type to open a document from a
+	file, with accelerator data.
+
+	filename: file to open
+
+	accel: accelerator file
+
+	Pointer to opened document. Throws exception in case of error.
+*/
+typedef fz_document *(fz_document_open_accel_fn)(fz_context *ctx, const char *filename, const char *accel);
+
+/*
+	Function type to open a document from a file,
+	with accelerator data.
+
+	stream: fz_stream to read document data from. Must be
+	seekable for formats that require it.
+
+	accel: fz_stream to read accelerator data from. Must be
+	seekable for formats that require it.
+
+	Pointer to opened document. Throws exception in case of error.
+*/
+typedef fz_document *(fz_document_open_accel_with_stream_fn)(fz_context *ctx, fz_stream *stream, fz_stream *accel);
+
+/*
 	Recognize a document type from
 	a magic string.
 
@@ -307,6 +360,8 @@ struct fz_document_handler_s
 	fz_document_open_with_stream_fn *open_with_stream;
 	const char **extensions;
 	const char **mimetypes;
+	fz_document_open_accel_fn *open_accel;
+	fz_document_open_accel_with_stream_fn *open_accel_with_stream;
 };
 
 void fz_register_document_handler(fz_context *ctx, const fz_document_handler *handler);
@@ -317,7 +372,17 @@ const fz_document_handler *fz_recognize_document(fz_context *ctx, const char *ma
 
 fz_document *fz_open_document(fz_context *ctx, const char *filename);
 
+fz_document *fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *accel);
+
 fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
+
+fz_document *fz_open_accelerated_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream, fz_stream *accel);
+
+int fz_document_supports_accelerator(fz_context *ctx, fz_document *doc);
+
+void fz_save_accelerator(fz_context *ctx, fz_document *doc, const char *accel);
+
+void fz_output_accelerator(fz_context *ctx, fz_document *doc, fz_output *accel);
 
 void *fz_new_document_of_size(fz_context *ctx, int size);
 #define fz_new_derived_document(C,M) ((M*)Memento_label(fz_new_document_of_size(C, sizeof(M)), #M))
@@ -335,15 +400,25 @@ int fz_is_document_reflowable(fz_context *ctx, fz_document *doc);
 
 void fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em);
 
-fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, int page);
+fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, fz_location loc);
 
-int fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark);
+fz_location fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark);
 
 int fz_count_pages(fz_context *ctx, fz_document *doc);
 
-int fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+fz_location fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+fz_location fz_last_page(fz_context *ctx, fz_document *doc);
+fz_location fz_next_page(fz_context *ctx, fz_document *doc, fz_location loc);
+fz_location fz_previous_page(fz_context *ctx, fz_document *doc, fz_location loc);
+fz_location fz_clamp_location(fz_context *ctx, fz_document *doc, fz_location loc);
+fz_location fz_location_from_page_number(fz_context *ctx, fz_document *doc, int number);
+int fz_page_number_from_location(fz_context *ctx, fz_document *doc, fz_location loc);
 
 fz_page *fz_load_page(fz_context *ctx, fz_document *doc, int number);
+
+int fz_count_chapters(fz_context *ctx, fz_document *doc);
+int fz_count_chapter_pages(fz_context *ctx, fz_document *doc, int chapter);
+fz_page *fz_load_chapter_page(fz_context *ctx, fz_document *doc, int chapter, int page);
 
 fz_link *fz_load_links(fz_context *ctx, fz_page *page);
 

@@ -348,3 +348,10 @@ pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp,
 	fz_warn(ctx, "unknown link uri '%s'", uri);
 	return -1;
 }
+
+fz_location
+pdf_resolve_link_imp(fz_context *ctx, fz_document *doc_, const char *uri, float *xp, float *yp)
+{
+	pdf_document *doc = (pdf_document*)doc_;
+	return fz_make_location(0, pdf_resolve_link(ctx, doc, uri, xp, yp));
+}

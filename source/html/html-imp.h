@@ -205,8 +205,10 @@ enum
 
 struct fz_html_s
 {
+	fz_storable storable;
 	fz_pool *pool; /* pool allocator for this html tree */
 	float page_w, page_h;
+	float layout_w, layout_h, layout_em;
 	float page_margin[4];
 	fz_html_box *root;
 	char *title;
@@ -281,6 +283,7 @@ struct fz_html_flow_s
 	} content;
 };
 
+
 fz_css *fz_new_css(fz_context *ctx);
 void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source);
@@ -313,9 +316,14 @@ fz_outline *fz_load_html_outline(fz_context *ctx, fz_html *node);
 
 float fz_find_html_target(fz_context *ctx, fz_html *html, const char *id);
 fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri, void *doc);
+fz_html *fz_keep_html(fz_context *ctx, fz_html *html);
 void fz_drop_html(fz_context *ctx, fz_html *html);
 fz_bookmark fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page);
 int fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark);
 void fz_debug_html(fz_context *ctx, fz_html_box *box);
+
+fz_html *fz_store_html(fz_context *ctx, fz_html *html, void *doc, int chapter);
+fz_html *fz_find_html(fz_context *ctx, void *doc, int chapter);
+void fz_purge_stored_html(fz_context *ctx, void *doc);
 
 #endif

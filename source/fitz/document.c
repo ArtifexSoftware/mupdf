@@ -150,7 +150,7 @@ extern fz_document_handler pdf_document_handler;
 	magic: a string used to detect document type; either a file name or mime-type.
 */
 fz_document *
-fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+fz_open_accelerated_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream, fz_stream *accel)
 {
 	const fz_document_handler *handler;
 
@@ -164,8 +164,101 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 #else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file type: %s", magic);
 #endif
-
+	if (handler->open_accel_with_stream)
+		if (accel || handler->open_with_stream == NULL)
+			return handler->open_accel_with_stream(ctx, stream, accel);
+	if (accel)
+	{
+		/* We've had an accelerator passed to a format that doesn't
+		 * handle it. This should never happen, as how did the
+		 * accelerator get created? */
+		fz_drop_stream(ctx, accel);
+	}
 	return handler->open_with_stream(ctx, stream);
+}
+
+/*
+	Open a PDF, XPS or CBZ document.
+
+	Open a document using the specified stream object rather than
+	opening a file on disk.
+
+	magic: a string used to detect document type; either a file name or mime-type.
+*/
+fz_document *
+fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+{
+	return fz_open_accelerated_document_with_stream(ctx, magic, stream, NULL);
+}
+
+/*
+	Open a PDF, XPS or CBZ document.
+
+	Open a document file and read its basic structure so pages and
+	objects can be located. MuPDF will try to repair broken
+	documents (without actually changing the file contents).
+
+	The returned fz_document is used when calling most other
+	document related functions.
+
+	filename: a path to a file as it would be given to open(2).
+*/
+fz_document *
+fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *accel)
+{
+	const fz_document_handler *handler;
+	fz_stream *file;
+	fz_stream *afile = NULL;
+	fz_document *doc = NULL;
+
+	fz_var(afile);
+
+	if (filename == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+
+	handler = fz_recognize_document(ctx, filename);
+	if (!handler)
+#if FZ_ENABLE_PDF
+		handler = &pdf_document_handler;
+#else
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: %s", filename);
+#endif
+
+	if (accel) {
+		if (handler->open_accel)
+			return handler->open_accel(ctx, filename, accel);
+		if (handler->open_accel_with_stream == NULL)
+		{
+			/* We're not going to be able to use the accelerator - this
+			 * should never happen, as how can one have been created? */
+			accel = NULL;
+		}
+	}
+	if (!accel && handler->open)
+		return handler->open(ctx, filename);
+
+	file = fz_open_file(ctx, filename);
+
+	fz_try(ctx)
+	{
+		if (accel || handler->open_with_stream == NULL)
+		{
+			if (accel)
+				afile = fz_open_file(ctx, accel);
+			doc = handler->open_accel_with_stream(ctx, file, afile);
+		}
+		else
+			doc = handler->open_with_stream(ctx, file);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, afile);
+		fz_drop_stream(ctx, file);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return doc;
 }
 
 /*
@@ -183,34 +276,37 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 fz_document *
 fz_open_document(fz_context *ctx, const char *filename)
 {
-	const fz_document_handler *handler;
-	fz_stream *file;
-	fz_document *doc = NULL;
+	return fz_open_accelerated_document(ctx, filename, NULL);
+}
 
-	if (filename == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+void fz_save_accelerator(fz_context *ctx, fz_document *doc, const char *accel)
+{
+	if (doc == NULL)
+		return;
+	if (doc->output_accelerator == NULL)
+		return;
 
-	handler = fz_recognize_document(ctx, filename);
-	if (!handler)
-#if FZ_ENABLE_PDF
-		handler = &pdf_document_handler;
-#else
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: %s", filename);
-#endif
+	fz_output_accelerator(ctx, doc, fz_new_output_with_path(ctx, accel, 0));
+}
 
-	if (handler->open)
-		return handler->open(ctx, filename);
+void fz_output_accelerator(fz_context *ctx, fz_document *doc, fz_output *accel)
+{
+	if (doc == NULL || accel == NULL)
+		return;
+	if (doc->output_accelerator == NULL)
+	{
+		fz_drop_output(ctx, accel);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Document does not support writing an accelerator");
+	}
 
-	file = fz_open_file(ctx, filename);
+	doc->output_accelerator(ctx, doc, accel);
+}
 
-	fz_try(ctx)
-		doc = handler->open_with_stream(ctx, file);
-	fz_always(ctx)
-		fz_drop_stream(ctx, file);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
+int fz_document_supports_accelerator(fz_context *ctx, fz_document *doc)
+{
+	if (doc == NULL)
+		return 0;
+	return (doc->output_accelerator) != NULL;
 }
 
 void *
@@ -264,21 +360,21 @@ fz_is_document_reflowable(fz_context *ctx, fz_document *doc)
 	same location after the document has been laid out with different
 	parameters.
 */
-fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, int page)
+fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, fz_location loc)
 {
 	if (doc && doc->make_bookmark)
-		return doc->make_bookmark(ctx, doc, page);
-	return (fz_bookmark)page;
+		return doc->make_bookmark(ctx, doc, loc);
+	return (loc.chapter<<16) + loc.page;
 }
 
 /*
 	Find a bookmark and return its page number.
 */
-int fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark)
+fz_location fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark)
 {
 	if (doc && doc->lookup_bookmark)
 		return doc->lookup_bookmark(ctx, doc, mark);
-	return (int)mark;
+	return fz_make_location((mark>>16) & 0xffff, mark & 0xffff);
 }
 
 /*
@@ -348,9 +444,9 @@ fz_load_outline(fz_context *ctx, fz_document *doc)
 
 	xp, yp: Pointer to store coordinate of destination on the page.
 
-	Returns -1 if the URI cannot be resolved.
+	Returns (-1,-1) if the URI cannot be resolved.
 */
-int
+fz_location
 fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp)
 {
 	fz_ensure_layout(ctx, doc);
@@ -358,7 +454,7 @@ fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, f
 	if (yp) *yp = 0;
 	if (doc && doc->resolve_link)
 		return doc->resolve_link(ctx, doc, uri, xp, yp);
-	return -1;
+	return fz_make_location(-1, -1);
 }
 
 /*
@@ -378,6 +474,33 @@ fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em
 }
 
 /*
+	Return the number of chapters in the document.
+	At least 1.
+*/
+int
+fz_count_chapters(fz_context *ctx, fz_document *doc)
+{
+	fz_ensure_layout(ctx, doc);
+	if (doc && doc->count_chapters)
+		return doc->count_chapters(ctx, doc);
+	return 1;
+}
+
+/*
+	Return the number of pages in a chapter.
+	May return 0.
+*/
+int
+fz_count_chapter_pages(fz_context *ctx, fz_document *doc, int chapter)
+{
+	fz_ensure_layout(ctx, doc);
+	if (doc && doc->count_pages)
+		return doc->count_pages(ctx, doc, chapter);
+	return 0;
+}
+
+
+/*
 	Return the number of pages in document
 
 	May return 0 for documents with no pages.
@@ -385,10 +508,109 @@ fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em
 int
 fz_count_pages(fz_context *ctx, fz_document *doc)
 {
-	fz_ensure_layout(ctx, doc);
-	if (doc && doc->count_pages)
-		return doc->count_pages(ctx, doc);
-	return 0;
+	int i, c, n = 0;
+	c = fz_count_chapters(ctx, doc);
+	for (i = 0; i < c; ++i)
+		n += fz_count_chapter_pages(ctx, doc, i);
+	return n;
+}
+
+fz_page *
+fz_load_page(fz_context *ctx, fz_document *doc, int number)
+{
+	int i, n = fz_count_chapters(ctx, doc);
+	int start = 0;
+	for (i = 0; i < n; ++i)
+	{
+		int m = fz_count_chapter_pages(ctx, doc, i);
+		if (number < start + m)
+			return fz_load_chapter_page(ctx, doc, i, number - start);
+		start += m;
+	}
+	fz_throw(ctx, FZ_ERROR_GENERIC, "Page not found: %d", number+1);
+}
+
+fz_location fz_last_page(fz_context *ctx, fz_document *doc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np = fz_count_chapter_pages(ctx, doc, nc-1);
+	return fz_make_location(nc-1, np-1);
+}
+
+fz_location fz_next_page(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np = fz_count_chapter_pages(ctx, doc, loc.chapter);
+	if (loc.page + 1 == np)
+	{
+		if (loc.chapter + 1 < nc)
+		{
+			return fz_make_location(loc.chapter + 1, 0);
+		}
+	}
+	else
+	{
+		return fz_make_location(loc.chapter, loc.page + 1);
+	}
+	return loc;
+}
+
+fz_location fz_previous_page(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	if (loc.page == 0)
+	{
+		if (loc.chapter > 0)
+		{
+			int np = fz_count_chapter_pages(ctx, doc, loc.chapter - 1);
+			return fz_make_location(loc.chapter - 1, np - 1);
+		}
+	}
+	else
+	{
+		return fz_make_location(loc.chapter, loc.page - 1);
+	}
+	return loc;
+}
+
+fz_location fz_clamp_location(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np;
+	if (loc.chapter < 0) loc.chapter = 0;
+	if (loc.chapter >= nc) loc.chapter = nc - 1;
+	np = fz_count_chapter_pages(ctx, doc, loc.chapter);
+	if (loc.page < 0) loc.page = 0;
+	if (loc.page >= np) loc.page = np - 1;
+	return loc;
+}
+
+fz_location fz_location_from_page_number(fz_context *ctx, fz_document *doc, int number)
+{
+	int i, m = 0, n = fz_count_chapters(ctx, doc);
+	int start = 0;
+	if (number < 0)
+		number = 0;
+	for (i = 0; i < n; ++i)
+	{
+		m = fz_count_chapter_pages(ctx, doc, i);
+		if (number < start + m)
+			return fz_make_location(i, number - start);
+		start += m;
+	}
+	return fz_make_location(start, m-1);
+}
+
+int fz_page_number_from_location(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int i, n, start = 0;
+	n = fz_count_chapters(ctx, doc);
+	for (i = 0; i < n; ++i)
+	{
+		if (i == loc.chapter)
+			return start + loc.page;
+		start += fz_count_chapter_pages(ctx, doc, i);
+	}
+	return -1;
 }
 
 /*
@@ -447,10 +669,11 @@ fz_document_output_intent(fz_context *ctx, fz_document *doc)
 	page using fz_bound_page, or to render the page using
 	fz_run_page_*. Free the page by calling fz_drop_page.
 
-	number: page number, 0 is the first page of the document.
+	chapter: chapter number, 0 is the first chapter of the document.
+	number: page number, 0 is the first page of the chapter.
 */
 fz_page *
-fz_load_page(fz_context *ctx, fz_document *doc, int number)
+fz_load_chapter_page(fz_context *ctx, fz_document *doc, int chapter, int number)
 {
 	fz_page *page;
 
@@ -458,12 +681,13 @@ fz_load_page(fz_context *ctx, fz_document *doc, int number)
 
 	if (doc)
 		for (page = doc->open; page; page = page->next)
-			if (page->number == number)
+			if (page->chapter == chapter && page->number == number)
 				return fz_keep_page(ctx, page);
 
 	if (doc && doc->load_page)
 	{
-		page = doc->load_page(ctx, doc, number);
+		page = doc->load_page(ctx, doc, chapter, number);
+		page->chapter = chapter;
 		page->number = number;
 
 		/* Insert new page at the head of the list of open pages. */

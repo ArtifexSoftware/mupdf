@@ -421,12 +421,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		if (layoutEm != oldLayoutEm) {
-			long mark = doc.makeBookmark(pageNumber);
+			long mark = doc.makeBookmark(doc.locationFromPageNumber(pageNumber));
 			doc.layout(layoutWidth, layoutHeight, layoutEm);
 			updateOutline();
 			pageCount = doc.countPages();
 			pageLabel.setText("/ " + pageCount);
-			pageNumber = doc.findBookmark(mark);
+			pageNumber = doc.pageNumberFromLocation(doc.findBookmark(mark));
 		}
 
 		if (zoomLevel != oldZoomLevel || pageNumber != oldPageNumber || layoutEm != oldLayoutEm || searchHits != oldSearchHits)
@@ -444,9 +444,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (source == outlineList) {
 			int i = outlineList.getSelectedIndex();
 			Outline node = flatOutline.elementAt(i);
-			if (node.page >= 0) {
-				if (node.page != pageNumber) {
-					pageNumber = node.page;
+			int linkPage = doc.pageNumberFromLocation(doc.resolveLink(node));
+			if (linkPage >= 0) {
+				if (linkPage != pageNumber) {
+					pageNumber = linkPage;
 					updatePageCanvas();
 				}
 			}

@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "../fitz/fitz-imp.h"
 #include "mupdf/ucdn.h"
 #include "html-imp.h"
 
@@ -499,13 +499,23 @@ static void fz_drop_html_box(fz_context *ctx, fz_html_box *box)
 	}
 }
 
+static void fz_drop_html_imp(fz_context *ctx, fz_storable *stor)
+{
+	fz_html *html = (fz_html *)stor;
+	fz_drop_html_box(ctx, html->root);
+	fz_drop_pool(ctx, html->pool);
+}
+
 void fz_drop_html(fz_context *ctx, fz_html *html)
 {
-	if (html)
-	{
-		fz_drop_html_box(ctx, html->root);
-		fz_drop_pool(ctx, html->pool);
-	}
+	fz_defer_reap_start(ctx);
+	fz_drop_storable(ctx, &html->storable);
+	fz_defer_reap_end(ctx);
+}
+
+fz_html *fz_keep_html(fz_context *ctx, fz_html *html)
+{
+	return fz_keep_storable(ctx, &html->storable);
 }
 
 static fz_html_box *new_box(fz_context *ctx, fz_pool *pool, fz_bidi_direction markup_dir)
@@ -1332,8 +1342,12 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 		g.pool = fz_new_pool(ctx);
 		html = fz_pool_alloc(ctx, g.pool, sizeof *html);
+		FZ_INIT_STORABLE(html, 1, fz_drop_html_imp);
 		html->pool = g.pool;
 		html->root = new_box(ctx, g.pool, DEFAULT_DIR);
+		html->layout_w = 0;
+		html->layout_h = 0;
+		html->layout_em = 0;
 		fz_default_css_style(ctx, &style);
 
 		match.up = NULL;
@@ -1504,4 +1518,122 @@ void
 fz_debug_html(fz_context *ctx, fz_html_box *box)
 {
 	fz_debug_html_box(ctx, box, 0);
+}
+
+static size_t
+fz_html_size(fz_context *ctx, fz_html *html)
+{
+	return html ? fz_pool_size(ctx, html->pool) : 0;
+}
+
+/* Magic to make html storable. */
+typedef struct {
+	int refs;
+	void *doc;
+	int chapter_num;
+} fz_html_key;
+
+static int
+fz_make_hash_html_key(fz_context *ctx, fz_store_hash *hash, void *key_)
+{
+	fz_html_key *key = (fz_html_key *)key_;
+	hash->u.pi.ptr = key->doc;
+	hash->u.pi.i = key->chapter_num;
+	return 1;
+}
+
+static void *
+fz_keep_html_key(fz_context *ctx, void *key_)
+{
+	fz_html_key *key = (fz_html_key *)key_;
+	return fz_keep_imp(ctx, key, &key->refs);
+}
+
+static void
+fz_drop_html_key(fz_context *ctx, void *key_)
+{
+	fz_html_key *key = (fz_html_key *)key_;
+	if (fz_drop_imp(ctx, key, &key->refs))
+	{
+		fz_free(ctx, key);
+	}
+}
+
+static int
+fz_cmp_html_key(fz_context *ctx, void *k0_, void *k1_)
+{
+	fz_html_key *k0 = (fz_html_key *)k0_;
+	fz_html_key *k1 = (fz_html_key *)k1_;
+	return k0->doc == k1->doc && k0->chapter_num == k1->chapter_num;
+}
+
+static void
+fz_format_html_key(fz_context *ctx, char *s, int n, void *key_)
+{
+	fz_html_key *key = (fz_html_key *)key_;
+	fz_snprintf(s, n, "(html doc=%p, ch=%d)", key->doc, key->chapter_num);
+}
+
+static const fz_store_type fz_html_store_type =
+{
+	fz_make_hash_html_key,
+	fz_keep_html_key,
+	fz_drop_html_key,
+	fz_cmp_html_key,
+	fz_format_html_key,
+	NULL
+};
+
+fz_html *fz_store_html(fz_context *ctx, fz_html *html, void *doc, int chapter)
+{
+	fz_html_key *key = NULL;
+	fz_html *other_html;
+
+	/* Stick the parsed html in the store */
+	fz_var(key);
+
+	fz_try(ctx)
+	{
+		key = fz_malloc_struct(ctx, fz_html_key);
+		key->refs = 1;
+		key->doc = doc;
+		key->chapter_num = chapter;
+		other_html = fz_store_item(ctx, key, html, fz_html_size(ctx, html), &fz_html_store_type);
+		if (other_html)
+		{
+			fz_drop_html(ctx, html);
+			html = other_html;
+		}
+	}
+	fz_always(ctx)
+		fz_drop_html_key(ctx, key);
+	fz_catch(ctx)
+	{
+		/* Do nothing */
+	}
+
+	return html;
+}
+
+fz_html *fz_find_html(fz_context *ctx, void *doc, int chapter)
+{
+	fz_html_key key;
+
+	key.refs = 1;
+	key.doc = doc;
+	key.chapter_num = chapter;
+	return fz_find_item(ctx, &fz_drop_html_imp, &key, &fz_html_store_type);
+}
+
+static int
+html_filter_store(fz_context *ctx, void *doc, void *key_)
+{
+	fz_html_key *key = (fz_html_key *)key_;
+
+	return (doc == key->doc);
+}
+
+void fz_purge_stored_html(fz_context *ctx, void *doc)
+{
+	fz_filter_store(ctx, html_filter_store, doc, &fz_html_store_type);
 }

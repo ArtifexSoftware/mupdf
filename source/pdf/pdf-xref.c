@@ -2321,9 +2321,9 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn*)pdf_authenticate_password;
 	doc->super.has_permission = (fz_document_has_permission_fn*)pdf_has_permission;
 	doc->super.load_outline = (fz_document_load_outline_fn*)pdf_load_outline;
-	doc->super.resolve_link = (fz_document_resolve_link_fn*)pdf_resolve_link;
-	doc->super.count_pages = (fz_document_count_pages_fn*)pdf_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn*)pdf_load_page;
+	doc->super.resolve_link = pdf_resolve_link_imp;
+	doc->super.count_pages = pdf_count_pages_imp;
+	doc->super.load_page = pdf_load_page_imp;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
@@ -2738,7 +2738,7 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 */
 pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
 {
-	return (pdf_document *)((ptr && ptr->count_pages == (fz_document_count_pages_fn*)pdf_count_pages) ? ptr : NULL);
+	return (pdf_document *)((ptr && ptr->count_pages == pdf_count_pages_imp) ? ptr : NULL);
 }
 
 pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr)
@@ -2877,7 +2877,9 @@ fz_document_handler pdf_document_handler =
 	(fz_document_open_fn*)pdf_open_document,
 	(fz_document_open_with_stream_fn*)pdf_open_document_with_stream,
 	pdf_extensions,
-	pdf_mimetypes
+	pdf_mimetypes,
+	NULL,
+	NULL
 };
 
 void pdf_mark_xref(fz_context *ctx, pdf_document *doc)

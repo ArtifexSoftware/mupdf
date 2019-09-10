@@ -130,7 +130,7 @@ cbz_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-cbz_count_pages(fz_context *ctx, fz_document *doc_)
+cbz_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	cbz_document *doc = (cbz_document*)doc_;
 	return doc->page_count;
@@ -175,7 +175,7 @@ cbz_drop_page(fz_context *ctx, fz_page *page_)
 }
 
 static fz_page *
-cbz_load_page(fz_context *ctx, fz_document *doc_, int number)
+cbz_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	cbz_document *doc = (cbz_document*)doc_;
 	cbz_page *page = NULL;
@@ -271,5 +271,7 @@ fz_document_handler cbz_document_handler =
 	NULL,
 	cbz_open_document_with_stream,
 	cbz_extensions,
-	cbz_mimetypes
+	cbz_mimetypes,
+	NULL,
+	NULL
 };

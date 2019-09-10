@@ -69,6 +69,7 @@ static jclass cls_Image;
 static jclass cls_IndexOutOfBoundsException;
 static jclass cls_IntegerArray;
 static jclass cls_Link;
+static jclass cls_Location;
 static jclass cls_Matrix;
 static jclass cls_NativeDevice;
 static jclass cls_NullPointerException;
@@ -114,9 +115,6 @@ static jfieldID fid_DocumentWriter_pointer;
 static jfieldID fid_Document_pointer;
 static jfieldID fid_Font_pointer;
 static jfieldID fid_Image_pointer;
-static jfieldID fid_Link_bounds;
-static jfieldID fid_Link_page;
-static jfieldID fid_Link_uri;
 static jfieldID fid_Matrix_a;
 static jfieldID fid_Matrix_b;
 static jfieldID fid_Matrix_c;
@@ -195,6 +193,7 @@ static jmethodID mid_Document_init;
 static jmethodID mid_Font_init;
 static jmethodID mid_Image_init;
 static jmethodID mid_Link_init;
+static jmethodID mid_Location_init;
 static jmethodID mid_Matrix_init;
 static jmethodID mid_Object_toString;
 static jmethodID mid_Outline_init;
@@ -579,10 +578,10 @@ static int find_fids(JNIEnv *env)
 	mid_Image_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Link = get_class(&err, env, PKG"Link");
-	fid_Link_bounds = get_field(&err, env, "bounds", "L"PKG"Rect;");
-	fid_Link_page = get_field(&err, env, "page", "I");
-	fid_Link_uri = get_field(&err, env, "uri", "Ljava/lang/String;");
-	mid_Link_init = get_method(&err, env, "<init>", "(L"PKG"Rect;ILjava/lang/String;)V");
+	mid_Link_init = get_method(&err, env, "<init>", "(L"PKG"Rect;Ljava/lang/String;)V");
+
+	cls_Location = get_class(&err, env, PKG"Location");
+	mid_Location_init = get_method(&err, env, "<init>", "(IIFF)V");
 
 	cls_Matrix = get_class(&err, env, PKG"Matrix");
 	fid_Matrix_a = get_field(&err, env, "a", "F");
@@ -598,7 +597,7 @@ static int find_fids(JNIEnv *env)
 	fid_NativeDevice_nativeInfo = get_field(&err, env, "nativeInfo", "J");
 
 	cls_Outline = get_class(&err, env, PKG"Outline");
-	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;ILjava/lang/String;FF[L"PKG"Outline;)V");
+	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;[L"PKG"Outline;)V");
 
 	cls_Page = get_class(&err, env, PKG"Page");
 	fid_Page_pointer = get_field(&err, env, "pointer", "J");
@@ -806,6 +805,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_IntegerArray);
 	(*env)->DeleteGlobalRef(env, cls_IOException);
 	(*env)->DeleteGlobalRef(env, cls_Link);
+	(*env)->DeleteGlobalRef(env, cls_Location);
 	(*env)->DeleteGlobalRef(env, cls_Matrix);
 	(*env)->DeleteGlobalRef(env, cls_NativeDevice);
 	(*env)->DeleteGlobalRef(env, cls_NullPointerException);
@@ -1472,11 +1472,8 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 	while (outline)
 	{
 		jstring jtitle = NULL;
-		jint jpage = -1;
 		jstring juri = NULL;
 		jobject jdown = NULL;
-		float x = 0;
-		float y = 0;
 
 		if (outline->title)
 		{
@@ -1486,13 +1483,8 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 
 		if (outline->uri)
 		{
-			if (fz_is_external_link(ctx, outline->uri))
-			{
-				juri = (*env)->NewStringUTF(env, outline->uri);
-				if (!juri) return NULL;
-			}
-			else
-				jpage = fz_resolve_link(ctx, doc, outline->uri, &x, &y);
+			juri = (*env)->NewStringUTF(env, outline->uri);
+			if (!juri) return NULL;
 		}
 
 		if (outline->down)
@@ -1501,7 +1493,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 			if (!jdown) return NULL;
 		}
 
-		joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jtitle, jpage, juri, x, y, jdown);
+		joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jtitle, juri, jdown);
 		if (!joutline) return NULL;
 
 		if (jdown)
@@ -5252,7 +5244,7 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 }
 
 JNIEXPORT jint JNICALL
-FUN(Document_countPages)(JNIEnv *env, jobject self)
+FUN(Document_countChapters)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
@@ -5261,7 +5253,27 @@ FUN(Document_countPages)(JNIEnv *env, jobject self)
 	if (!ctx || !doc) return 0;
 
 	fz_try(ctx)
-		count = fz_count_pages(ctx, doc);
+		count = fz_count_chapters(ctx, doc);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return count;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Document_countPages)(JNIEnv *env, jobject self, jint chapter)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	int count = 0;
+
+	if (!ctx || !doc) return 0;
+
+	fz_try(ctx)
+		count = fz_count_chapter_pages(ctx, doc, chapter);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5306,7 +5318,7 @@ FUN(Document_layout)(JNIEnv *env, jobject self, jfloat w, jfloat h, jfloat em)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_loadPage)(JNIEnv *env, jobject self, jint number)
+FUN(Document_loadPage)(JNIEnv *env, jobject self, jint chapter, jint number)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
@@ -5315,7 +5327,7 @@ FUN(Document_loadPage)(JNIEnv *env, jobject self, jint number)
 	if (!ctx || !doc) return NULL;
 
 	fz_try(ctx)
-		page = fz_load_page(ctx, doc, number);
+		page = fz_load_chapter_page(ctx, doc, chapter, number);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5401,14 +5413,14 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Document_makeBookmark)(JNIEnv *env, jobject self, jint page)
+FUN(Document_makeBookmark)(JNIEnv *env, jobject self, jint chapter, jint page)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
 	fz_bookmark mark = 0;
 
 	fz_try(ctx)
-		mark = fz_make_bookmark(ctx, doc, page);
+		mark = fz_make_bookmark(ctx, doc, fz_make_location(chapter, page));
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5418,22 +5430,52 @@ FUN(Document_makeBookmark)(JNIEnv *env, jobject self, jint page)
 	return mark;
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT jobject JNICALL
 FUN(Document_findBookmark)(JNIEnv *env, jobject self, jlong mark)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
-	int page = -1;
+	fz_location loc = { -1, -1 };
 
 	fz_try(ctx)
-		page = fz_lookup_bookmark(ctx, doc, mark);
+		loc = fz_lookup_bookmark(ctx, doc, mark);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return -1;
+		return NULL;
 	}
 
-	return page;
+	return (*env)->NewObject(env, cls_Location, mid_Location_init, loc.chapter, loc.page, 0, 0);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Document_resolveLink)(JNIEnv *env, jobject self, jstring juri)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	fz_location loc = { -1, -1 };
+	float x = 0, y = 0;
+	const char *uri = "";
+
+	if (juri)
+	{
+		uri = (*env)->GetStringUTFChars(env, juri, NULL);
+		if (!uri)
+			return NULL;
+	}
+
+	fz_try(ctx)
+		loc = fz_resolve_link(ctx, doc, uri, &x, &y);
+	fz_always(ctx)
+		if (juri)
+			(*env)->ReleaseStringUTFChars(env, juri, uri);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return (*env)->NewObject(env, cls_Location, mid_Location_init, loc.chapter, loc.page, x, y);
 }
 
 /* Page interface */
@@ -5758,7 +5800,6 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jobject jbounds = NULL;
 		jobject jlink = NULL;
 		jobject juri = NULL;
-		int page = 0;
 
 		jbounds = to_Rect_safe(ctx, env, link->rect);
 		if (!jbounds) return NULL;
@@ -5768,10 +5809,8 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			juri = (*env)->NewStringUTF(env, link->uri);
 			if (!juri) return NULL;
 		}
-		else
-			page = fz_resolve_link(ctx, link->doc, link->uri, NULL, NULL);
 
-		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
+		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, juri);
 		(*env)->DeleteLocalRef(env, jbounds);
 		if (!jlink) return NULL;
 		if (juri)

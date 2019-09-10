@@ -35,7 +35,7 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 	fz_drop_outline(ctx, doc->outline);
 }
 
-static int
+static fz_location
 htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *xp, float *yp)
 {
 	html_document *doc = (html_document*)doc_;
@@ -47,15 +47,15 @@ htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *
 		{
 			int page = y / doc->html->page_h;
 			if (yp) *yp = y - page * doc->html->page_h;
-			return page;
+			return fz_make_location(0, page);
 		}
 	}
 
-	return -1;
+	return fz_make_location(-1, -1);
 }
 
 static int
-htdoc_count_pages(fz_context *ctx, fz_document *doc_)
+htdoc_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	html_document *doc = (html_document*)doc_;
 	if (doc->html->root->b > 0)
@@ -68,7 +68,7 @@ htdoc_update_outline(fz_context *ctx, fz_document *doc, fz_outline *node)
 {
 	while (node)
 	{
-		node->page = htdoc_resolve_link(ctx, doc, node->uri, &node->x, &node->y);
+		node->page = htdoc_resolve_link(ctx, doc, node->uri, &node->x, &node->y).page;
 		htdoc_update_outline(ctx, doc, node->down);
 		node = node->next;
 	}
@@ -119,21 +119,21 @@ htdoc_load_links(fz_context *ctx, fz_page *page_)
 }
 
 static fz_bookmark
-htdoc_make_bookmark(fz_context *ctx, fz_document *doc_, int page)
+htdoc_make_bookmark(fz_context *ctx, fz_document *doc_, fz_location loc)
 {
 	html_document *doc = (html_document*)doc_;
-	return fz_make_html_bookmark(ctx, doc->html, page);
+	return fz_make_html_bookmark(ctx, doc->html, loc.page);
 }
 
-static int
+static fz_location
 htdoc_lookup_bookmark(fz_context *ctx, fz_document *doc_, fz_bookmark mark)
 {
 	html_document *doc = (html_document*)doc_;
-	return fz_lookup_html_bookmark(ctx, doc->html, mark);
+	return fz_make_location(0, fz_lookup_html_bookmark(ctx, doc->html, mark));
 }
 
 static fz_page *
-htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
+htdoc_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	html_document *doc = (html_document*)doc_;
 	html_page *page = fz_new_derived_page(ctx, html_page);

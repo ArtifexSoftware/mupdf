@@ -30,7 +30,7 @@ img_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-img_count_pages(fz_context *ctx, fz_document *doc_)
+img_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	img_document *doc = (img_document*)doc_;
 	return doc->page_count;
@@ -74,7 +74,7 @@ img_drop_page(fz_context *ctx, fz_page *page_)
 }
 
 static fz_page *
-img_load_page(fz_context *ctx, fz_document *doc_, int number)
+img_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	img_document *doc = (img_document*)doc_;
 	fz_pixmap *pixmap = NULL;
@@ -247,5 +247,7 @@ fz_document_handler img_document_handler =
 	NULL,
 	img_open_document_with_stream,
 	img_extensions,
-	img_mimetypes
+	img_mimetypes,
+	NULL,
+	NULL
 };

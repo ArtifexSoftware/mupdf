@@ -369,6 +369,22 @@ fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char 
 	return count;
 }
 
+int
+fz_search_chapter_page_number(fz_context *ctx, fz_document *doc, int chapter, int number, const char *needle, fz_quad *hit_bbox, int hit_max)
+{
+	fz_page *page;
+	int count = 0;
+
+	page = fz_load_chapter_page(ctx, doc, chapter, number);
+	fz_try(ctx)
+		count = fz_search_page(ctx, page, needle, hit_bbox, hit_max);
+	fz_always(ctx)
+		fz_drop_page(ctx, page);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return count;
+}
+
 /*
 	Convert structured text into plain text.
 */

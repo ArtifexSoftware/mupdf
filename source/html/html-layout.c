@@ -809,6 +809,11 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	fz_var(hb_buf);
 	fz_var(unlocked);
 
+	/* If we're already laid out to the specifications we need,
+	 * nothing to do. */
+	if (html->layout_w == w && html->layout_h == h && html->layout_em == em)
+		return;
+
 	html->page_margin[T] = fz_from_css_number(html->root->style->margin[T], em, em, 0);
 	html->page_margin[B] = fz_from_css_number(html->root->style->margin[B], em, em, 0);
 	html->page_margin[L] = fz_from_css_number(html->root->style->margin[L], em, em, 0);
@@ -863,6 +868,12 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 
 	if (h == 0)
 		html->page_h = box->b;
+
+	/* Remember how we're laid out so we can avoid needless
+	 * relayouts in future. */
+	html->layout_w = w;
+	html->layout_h = h;
+	html->layout_em = em;
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_HTML")))

@@ -484,19 +484,35 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_authenticatePass
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
- * Method:    countPages
+ * Method:    countChapters
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_countPages
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_countChapters
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    countPages
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_countPages
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    loadPage
- * Signature: (I)Lcom/artifex/mupdf/fitz/Page;
+ * Signature: (II)Lcom/artifex/mupdf/fitz/Page;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_loadPage
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    resolveLink
+ * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Location;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_resolveLink
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
@@ -532,19 +548,19 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Document_layout
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
- * Method:    makeBookmark
- * Signature: (I)J
+ * Method:    findBookmark
+ * Signature: (J)Lcom/artifex/mupdf/fitz/Location;
  */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Document_makeBookmark
-  (JNIEnv *, jobject, jint);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_findBookmark
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
- * Method:    findBookmark
- * Signature: (J)I
+ * Method:    makeBookmark
+ * Signature: (II)J
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_findBookmark
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Document_makeBookmark
+  (JNIEnv *, jobject, jint, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
@@ -2662,46 +2678,6 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isEditing
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
   (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    isSigned
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isSigned
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    clearSignature
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_clearSignature
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    signWithPFX
- * Signature: ([B[B)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_signWithPFX
-  (JNIEnv *, jobject, jbyteArray, jbyteArray);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    checkSignatureDigest
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_checkSignatureDigest
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    checkSignatureCertificate
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_checkSignatureCertificate
-  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

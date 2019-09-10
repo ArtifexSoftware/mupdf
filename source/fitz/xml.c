@@ -472,7 +472,6 @@ static void xml_emit_close_tag(fz_context *ctx, struct parser *parser)
 
 static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char *b)
 {
-	static char *empty = "";
 	fz_xml *head;
 	char *s;
 	int c;
@@ -512,7 +511,6 @@ static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char 
 
 static void xml_emit_cdata(fz_context *ctx, struct parser *parser, char *a, char *b)
 {
-	static char *empty = "";
 	fz_xml *head;
 	char *s;
 

@@ -18,7 +18,7 @@ svg_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-svg_count_pages(fz_context *ctx, fz_document *doc_)
+svg_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	return 1;
 }
@@ -49,7 +49,7 @@ svg_drop_page(fz_context *ctx, fz_page *page_)
 }
 
 static fz_page *
-svg_load_page(fz_context *ctx, fz_document *doc_, int number)
+svg_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	svg_document *doc = (svg_document*)doc_;
 	svg_page *page;
@@ -262,5 +262,7 @@ fz_document_handler svg_document_handler =
 	NULL,
 	svg_open_document_with_stream,
 	svg_extensions,
-	svg_mimetypes
+	svg_mimetypes,
+	NULL,
+	NULL
 };

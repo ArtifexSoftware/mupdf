@@ -1230,22 +1230,22 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	case '<':
 		if (app->layout_em > 6)
 		{
-			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, app->pageno);
+			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, fz_location_from_page_number(app->ctx, app->doc, app->pageno));
 			app->layout_em -= 1;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = fz_lookup_bookmark(app->ctx, app->doc, mark);
+			app->pageno = fz_page_number_from_location(app->ctx, app->doc, fz_lookup_bookmark(app->ctx, app->doc, mark));
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;
 	case '>':
 		if (app->layout_em < 36)
 		{
-			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, app->pageno);
+			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, fz_location_from_page_number(app->ctx, app->doc, app->pageno));
 			app->layout_em += 1;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = fz_lookup_bookmark(app->ctx, app->doc, mark);
+			app->pageno = fz_page_number_from_location(app->ctx, app->doc, fz_lookup_bookmark(app->ctx, app->doc, mark));
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;
@@ -1714,7 +1714,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (fz_is_external_link(ctx, link->uri))
 				pdfapp_gotouri(app, link->uri);
 			else
-				pdfapp_gotopage(app, fz_resolve_link(ctx, app->doc, link->uri, NULL, NULL) + 1);
+			{
+				fz_location loc = fz_resolve_link(ctx, app->doc, link->uri, NULL, NULL);
+				pdfapp_gotopage(app, fz_page_number_from_location(ctx, app->doc, loc)+1);
+			}
 			return;
 		}
 	}
