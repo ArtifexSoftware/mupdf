@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Parse a CMap file and dump it as a C struct.
 
 import sys
@@ -36,16 +38,16 @@ def dumpcmap(filename):
 		elif len(v) <= 8:
 			map[lo] = v[:]
 		else:
-			print "/* warning: too long one-to-many mapping: %s */" % (v)
+			print("/* warning: too long one-to-many mapping: %s */" % (v))
 
 	def map_bfchar(lo, bf):
 		bf = bf[1:-1] # drop < >
-		v = [int(bf[i:i+4],16) for i in xrange(0, len(bf), 4)]
+		v = [int(bf[i:i+4],16) for i in range(0, len(bf), 4)]
 		add_bf(lo, v)
 
 	def map_bfrange(lo, hi, bf):
 		bf = bf[1:-1] # drop < >
-		v = [int(bf[i:i+4],16) for i in xrange(0, len(bf), 4)]
+		v = [int(bf[i:i+4],16) for i in range(0, len(bf), 4)]
 		while lo <= hi:
 			add_bf(lo, v)
 			lo = lo + 1
@@ -111,7 +113,7 @@ def dumpcmap(filename):
 			else:
 				ranges.append((out_lo, out_hi, out_v_lo))
 
-	keys = map.keys()
+	keys = list(map.keys())
 	keys.sort()
 	for code in keys:
 		v = map[code]
@@ -135,29 +137,29 @@ def dumpcmap(filename):
 
 	cname = cmapname.replace('-', '_')
 
-	print
-	print "/*", cmapname, "*/"
-	print
+	print()
+	print("/*", cmapname, "*/")
+	print()
 
 	if len(ranges) > 0:
-		print "static const pdf_range cmap_%s_ranges[] = {" % cname
+		print("static const pdf_range cmap_%s_ranges[] = {" % cname)
 		for r in ranges:
-			print "{%d,%d,%d}," % r
-		print "};"
-		print
+			print("{%d,%d,%d}," % r)
+		print("};")
+		print()
 	if len(xranges) > 0:
-		print "static const pdf_xrange cmap_%s_xranges[] = {" % cname
+		print("static const pdf_xrange cmap_%s_xranges[] = {" % cname)
 		for r in xranges:
-			print "{%d,%d,%d}," % r
-		print "};"
-		print
+			print("{%d,%d,%d}," % r)
+		print("};")
+		print()
 	if len(mranges) > 0:
-		print "static const pdf_mrange cmap_%s_mranges[] = {" % cname
+		print("static const pdf_mrange cmap_%s_mranges[] = {" % cname)
 		for r in mranges:
-			print "{%d,%d}," % r
-		print "};"
-		print
-		print "static const int cmap_%s_table[] = {" % cname
+			print("{%d,%d}," % r)
+		print("};")
+		print()
+		print("static const int cmap_%s_table[] = {" % cname)
 		n = mdata[0]
 		i = 0
 		for r in mdata:
@@ -169,47 +171,47 @@ def dumpcmap(filename):
 				i = 1
 				n = r
 		sys.stdout.write("\n")
-		print "};"
-		print
+		print("};")
+		print()
 
-	print "static pdf_cmap cmap_%s = {" % cname
-	print "\t{ -1, pdf_drop_cmap_imp },"
-	print "\t/* cmapname */ \"%s\"," % cmapname
-	print "\t/* usecmap */ \"%s\", NULL," % usecmap
-	print "\t/* wmode */ %d," % wmode
-	print "\t/* codespaces */ %d, {" % len(codespacerange)
+	print("static pdf_cmap cmap_%s = {" % cname)
+	print("\t{ -1, pdf_drop_cmap_imp },")
+	print("\t/* cmapname */ \"%s\"," % cmapname)
+	print("\t/* usecmap */ \"%s\", NULL," % usecmap)
+	print("\t/* wmode */ %d," % wmode)
+	print("\t/* codespaces */ %d, {" % len(codespacerange))
 	if len(codespacerange) > 0:
 		for codespace in codespacerange:
 			fmt = "\t\t{ %%d, 0x%%0%dx, 0x%%0%dx }," % (codespace[0]*2, codespace[0]*2)
-			print fmt % codespace
+			print(fmt % codespace)
 	else:
-			print "\t\t{ 0, 0, 0 },"
-	print "\t},"
+			print("\t\t{ 0, 0, 0 },")
+	print("\t},")
 
 	if len(ranges) > 0:
-		print "\t%d, %d, (pdf_range*)cmap_%s_ranges," % (len(ranges),len(ranges),cname)
+		print("\t%d, %d, (pdf_range*)cmap_%s_ranges," % (len(ranges),len(ranges),cname))
 	else:
-		print "\t0, 0, NULL, /* ranges */"
+		print("\t0, 0, NULL, /* ranges */")
 
 	if len(xranges) > 0:
-		print "\t%d, %d, (pdf_xrange*)cmap_%s_xranges," % (len(xranges),len(xranges),cname)
+		print("\t%d, %d, (pdf_xrange*)cmap_%s_xranges," % (len(xranges),len(xranges),cname))
 	else:
-		print "\t0, 0, NULL, /* xranges */"
+		print("\t0, 0, NULL, /* xranges */")
 
 	if len(mranges) > 0:
-		print "\t%d, %d, (pdf_mrange*)cmap_%s_mranges," % (len(mranges),len(mranges),cname)
+		print("\t%d, %d, (pdf_mrange*)cmap_%s_mranges," % (len(mranges),len(mranges),cname))
 	else:
-		print "\t0, 0, NULL, /* mranges */"
+		print("\t0, 0, NULL, /* mranges */")
 
 	if len(mdata) > 0:
-		print "\t%d, %d, (int*)cmap_%s_table," % (len(mdata),len(mdata),cname)
+		print("\t%d, %d, (int*)cmap_%s_table," % (len(mdata),len(mdata),cname))
 	else:
-		print "\t0, 0, NULL, /* table */"
+		print("\t0, 0, NULL, /* table */")
 
-	print "\t0, 0, 0, NULL /* splay tree */"
-	print "};"
+	print("\t0, 0, 0, NULL /* splay tree */")
+	print("};")
 
-print "/* This is an automatically generated file. Do not edit. */"
+print("/* This is an automatically generated file. Do not edit. */")
 
 for arg in sys.argv[1:]:
 	dumpcmap(arg)

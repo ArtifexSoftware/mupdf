@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Convert MES-2 (or WGL4) character set to list of glyphs for font subsetting.
 # Also add small-caps glyph names for small letters and ligatures.
 
@@ -50,7 +52,7 @@ def load_ligs():
 		table['f_f_l.sc'] = 0xFB04
 
 if len(sys.argv) < 2:
-	print >>sys.stderr, 'usage: python scripts/makesubset.py scripts/MES-2.TXT'
+	print('usage: python scripts/makesubset.py scripts/MES-2.TXT', file=sys.stderr)
 else:
 	for input in sys.argv[1:]:
 		if input == '-sc':
@@ -62,13 +64,13 @@ else:
 
 	if len(sys.argv) > 2 and sys.argv[2] == '-scdump':
 		smcp = []
-		for n in table.keys():
+		for n in list(table.keys()):
 			u = table[n]
 			if u > 0 and n.endswith('.sc') and not n.startswith('uni'):
 				smcp.append('{0x%04X, "%s"},' % (u,n))
 		smcp.sort()
-		print '\n\t'.join(smcp)
+		print('\n\t'.join(smcp))
 	else:
-		list = table.keys()
+		list = list(table.keys())
 		list.sort()
-		print ','.join(list)
+		print(','.join(list))

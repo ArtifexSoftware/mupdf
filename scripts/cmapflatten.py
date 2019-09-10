@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Parse a Uni* CMap file and flatten it.
 #
 # The Uni* CMap files only have 'cidchar' and 'cidrange' sections, never
@@ -62,47 +64,47 @@ def flattencmap(filename):
 
 	# Print flattened CMap file
 
-	print "%!PS-Adobe-3.0 Resource-CMap"
-	print "%%DocumentNeededResources: procset (CIDInit)"
-	print "%%IncludeResource: procset (CIDInit)"
-	print "%%%%BeginResource: CMap (%s)" % cmapname
-	print "%%%%Version: %s" % cmapversion
-	print "%%EndComments"
-	print "/CIDInit /ProcSet findresource begin"
-	print "12 dict begin"
-	print "begincmap"
-	if usecmap: print "/%s usecmap" % usecmap
-	print "/CIDSystemInfo 3 dict dup begin"
-	print "  /Registry %s def" % csi_registry
-	print "  /Ordering %s def" % csi_ordering
-	print "  /Supplement %s def" % csi_supplement
-	print "end def"
-	print "/CMapName /%s def" % cmapname
-	print "/CMapVersion %s def" % cmapversion
-	print "/CMapType 1 def"
-	print "/WMode %d def" % wmode
+	print("%!PS-Adobe-3.0 Resource-CMap")
+	print("%%DocumentNeededResources: procset (CIDInit)")
+	print("%%IncludeResource: procset (CIDInit)")
+	print("%%%%BeginResource: CMap (%s)" % cmapname)
+	print("%%%%Version: %s" % cmapversion)
+	print("%%EndComments")
+	print("/CIDInit /ProcSet findresource begin")
+	print("12 dict begin")
+	print("begincmap")
+	if usecmap: print("/%s usecmap" % usecmap)
+	print("/CIDSystemInfo 3 dict dup begin")
+	print("  /Registry %s def" % csi_registry)
+	print("  /Ordering %s def" % csi_ordering)
+	print("  /Supplement %s def" % csi_supplement)
+	print("end def")
+	print("/CMapName /%s def" % cmapname)
+	print("/CMapVersion %s def" % cmapversion)
+	print("/CMapType 1 def")
+	print("/WMode %d def" % wmode)
 
 	if len(codespacerange):
-		print "%d begincodespacerange" % len(codespacerange)
+		print("%d begincodespacerange" % len(codespacerange))
 		for r in codespacerange:
 			fmt = "<%%0%dx> <%%0%dx>" % (r[0]*2, r[0]*2)
-			print fmt % (r[1], r[2])
-		print "endcodespacerange"
+			print(fmt % (r[1], r[2]))
+		print("endcodespacerange")
 
-	keys = map.keys()
+	keys = list(map.keys())
 	keys.sort()
-	print "%d begincidchar" % len(keys)
+	print("%d begincidchar" % len(keys))
 	for code in keys:
 		v = map[code]
-		print "<%04x> %d" % (code, v)
-	print "endcidchar"
+		print("<%04x> %d" % (code, v))
+	print("endcidchar")
 
-	print "endcmap"
-	print "CMapName currentdict /CMap defineresource pop"
-	print "end"
-	print "end"
-	print "%%EndResource"
-	print "%%EOF"
+	print("endcmap")
+	print("CMapName currentdict /CMap defineresource pop")
+	print("end")
+	print("end")
+	print("%%EndResource")
+	print("%%EOF")
 
 for arg in sys.argv[1:]:
 	flattencmap(arg)

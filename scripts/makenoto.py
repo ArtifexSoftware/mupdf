@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys, glob, os
 
 scripts = []
@@ -40,13 +42,13 @@ fonts = glob.glob("resources/fonts/noto/*.?tf")
 lower = {}
 for f in fonts:
 	lower[f.lower()] = os.path.basename(f)
-unused = lower.keys()
+unused = list(lower.keys())
 unused.sort()
 
 def casefont(us, ss, n):
 	if n in lower:
 		nn = lower[n].replace('.','_').replace('-','_')
-		print "case %s: RETURN(noto_%s);" % (us,nn)
+		print("case %s: RETURN(noto_%s);" % (us,nn))
 		del lower[n]
 		return True
 	return False
@@ -64,13 +66,13 @@ for us in scripts:
 			found = True
 			break
 	if not found:
-		print "case %s: break;" % us
+		print("case %s: break;" % us)
 	for font in list:
 		if font.lower() in unused: unused.remove(font.lower())
 
 for f in unused:
-	print "// unmapped font:", lower[f]
+	print("// unmapped font:", lower[f])
 
 for f in lower:
 	if not f in unused:
-		print "// unused font file:", lower[f]
+		print("// unused font file:", lower[f])
