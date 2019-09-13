@@ -1755,9 +1755,10 @@ pdf_filter_EMC(fz_context *ctx, pdf_processor *proc)
 	 * pop one of the current ones, and pass the EMC on. */
 	if (p->pending_tags != NULL)
 		pop_tag(ctx, p, &p->pending_tags);
-	else
+	else if (p->current_tags)
 	{
 		update_mcid(ctx, p);
+		copy_resource(ctx, p, PDF_NAME(Properties), pdf_to_name(ctx, p->current_tags->raw));
 		pop_tag(ctx, p, &p->current_tags);
 		if (p->chain->op_EMC)
 			p->chain->op_EMC(ctx, p->chain);
