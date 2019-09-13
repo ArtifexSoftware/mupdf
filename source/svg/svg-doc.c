@@ -90,6 +90,8 @@ svg_open_document_with_xml(fz_context *ctx, fz_xml *xml, const char *base_uri, f
 	doc->super.load_page = svg_load_page;
 
 	doc->idmap = NULL;
+	if (base_uri)
+		fz_strlcpy(doc->base_uri, base_uri, sizeof doc->base_uri);
 	doc->xml = NULL;
 	doc->root = xml;
 	doc->zip = zip;
