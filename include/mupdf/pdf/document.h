@@ -219,7 +219,7 @@ struct pdf_document_s
 	pdf_xref *xref_sections;
 	pdf_xref *saved_xref_sections;
 	int *xref_index;
-	int freeze_updates;
+	int save_in_progress;
 	int has_xref_streams;
 	int has_old_style_xrefs;
 
