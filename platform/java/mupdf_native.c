@@ -7473,6 +7473,23 @@ FUN(PDFDocument_canBeSavedIncrementally)(JNIEnv *env, jobject self)
 	return pdf_can_be_saved_incrementally(ctx, pdf) ? JNI_TRUE : JNI_FALSE;
 }
 
+static fz_stream *
+call_SeekableOutputStream_as_stream(fz_context *ctx, void *opaque)
+{
+	SeekableStreamState *in_state = opaque;
+	SeekableStreamState *state;
+	fz_stream *stm;
+
+	state = fz_malloc(ctx, sizeof(SeekableStreamState));
+	state->stream = in_state->stream;
+	state->array = in_state->array;
+
+	stm = fz_new_stream(ctx, state, call_SeekableInputStream_next, fz_free);
+	stm->seek = call_SeekableInputStream_seek;
+
+	return stm;
+};
+
 JNIEXPORT void JNICALL
 FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream, jstring joptions)
 {
@@ -7522,9 +7539,10 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		state->stream = stream;
 		state->array = array;
 
-		out = fz_new_output(ctx, 8192, state, call_SeekableOutputStream_write, NULL, call_SeekableOutputStream_drop);
+		out = fz_new_output(ctx, sizeof state->buffer, state, call_SeekableOutputStream_write, NULL, call_SeekableOutputStream_drop);
 		out->seek = call_SeekableOutputStream_seek;
 		out->tell = call_SeekableOutputStream_tell;
+		out->as_stream = call_SeekableOutputStream_as_stream;
 
 		/* these are now owned by 'out' */
 		state = NULL;

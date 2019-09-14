@@ -1796,7 +1796,7 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    nativeSaveWithStream
- * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;)V
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputOutputStream;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_nativeSaveWithStream
   (JNIEnv *, jobject, jobject, jstring);
