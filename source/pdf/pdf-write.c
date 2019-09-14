@@ -3106,11 +3106,18 @@ int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
 static void
 prepare_for_save(fz_context *ctx, pdf_document *doc, pdf_write_options *in_opts)
 {
-	doc->freeze_updates = 1;
-
 	/* Rewrite (and possibly sanitize) the operator streams */
 	if (in_opts->do_clean || in_opts->do_sanitize)
 		clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii);
+
+	/* When saving a PDF with signatures the file will
+	first be written once, then the file will have its
+	digests and byte ranges calculated and and then the
+	signature dictionary containing them will be updated
+	both in memory and in the saved file. By setting this
+	flag we avoid a new xref section from being created when
+	the signature dictionary is updated. */
+	doc->save_in_progress = 1;
 
 	presize_unsaved_signature_byteranges(ctx, doc);
 }
@@ -3217,7 +3224,11 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	{
 		/* If no changes, nothing to write */
 		if (doc->num_incremental_sections == 0)
+		{
+			doc->save_in_progress = 0;
 			return;
+		}
+
 		if (opts->out)
 		{
 			fz_seek_output(ctx, opts->out, 0, SEEK_END);
@@ -3411,7 +3422,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		finalise_write_state(ctx, opts);
 		if (opts->crypt != doc->crypt)
 			pdf_drop_crypt(ctx, opts->crypt);
-		doc->freeze_updates = 0;
+		doc->save_in_progress = 0;
 	}
 	fz_catch(ctx)
 	{
@@ -3524,7 +3535,10 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	{
 		/* If no changes, nothing to write */
 		if (doc->num_incremental_sections == 0)
+		{
+			doc->save_in_progress = 0;
 			return;
+		}
 		opts.out = fz_new_output_with_path(ctx, filename, 1);
 	}
 	else

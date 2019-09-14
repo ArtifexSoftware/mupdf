@@ -331,7 +331,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	doc->repair_attempted = 1;
 
 	doc->dirty = 1;
-	doc->freeze_updates = 1; /* Can't support incremental update after repair */
 
 	pdf_forget_xref(ctx, doc);
 

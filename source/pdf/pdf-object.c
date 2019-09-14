@@ -681,10 +681,10 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 	}
 
 	/*
-		parent_num = 0 while an object is being parsed from the file.
+		parent_num == 0 while an object is being parsed from the file.
 		No further action is necessary.
 	*/
-	if (parent == 0 || doc->freeze_updates)
+	if (parent == 0 || doc->save_in_progress || doc->repair_attempted)
 		return;
 
 	/*
