@@ -107,6 +107,7 @@ public class PDFWidget extends PDFAnnotation
 	}
 	public native boolean setTextValue(String val);
 
+	public native boolean isSigned();
 	/* WIP in-line text editing support */
 	public native Quad[] textQuads();
 	public native void setEditing(boolean state);

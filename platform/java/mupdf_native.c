@@ -10141,6 +10141,29 @@ FUN(PDFWidget_isEditing)(JNIEnv *env, jobject self)
 	return state;
 }
 
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	pdf_document *doc = widget->page->doc;
+	jboolean state = JNI_FALSE;
+
+	if (!ctx || !widget)
+		return JNI_FALSE;
+
+	fz_try(ctx)
+	{
+		state = pdf_signature_is_signed(ctx, doc, widget->obj) != 0;
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+
+	return state;
+}
+
 JNIEXPORT jobject JNICALL
 FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 {

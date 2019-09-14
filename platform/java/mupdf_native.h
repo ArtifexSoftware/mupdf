@@ -2569,6 +2569,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    isSigned
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isSigned
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    textQuads
  * Signature: ()[Lcom/artifex/mupdf/fitz/Quad;
  */
