@@ -1789,6 +1789,15 @@ static void
 pdf_filter_END(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
+	filter_flush(ctx, p, FLUSH_TEXT);
+	if (p->chain->op_END)
+		p->chain->op_END(ctx, p->chain);
+}
+
+static void
+pdf_close_filter_processor(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	while (!filter_pop(ctx, p))
 	{
 		/* Nothing to do in the loop, all work done above */
@@ -1881,6 +1890,7 @@ pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, in
 {
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
+		proc->super.close_processor = pdf_close_filter_processor;
 		proc->super.drop_processor = pdf_drop_filter_processor;
 
 		/* general graphics state */
