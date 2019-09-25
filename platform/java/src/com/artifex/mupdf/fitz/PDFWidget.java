@@ -109,6 +109,7 @@ public class PDFWidget extends PDFAnnotation
 
 	public native boolean isSigned();
 	public native boolean sign(PKCS7Signer signer);
+	public native boolean verify(PKCS7Verifier verifier);
 	/* WIP in-line text editing support */
 	public native Quad[] textQuads();
 	public native void setEditing(boolean state);

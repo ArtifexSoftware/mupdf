@@ -105,6 +105,7 @@ static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 static jclass cls_PDFWidget;
 static jclass cls_PKCS7Signer;
+static jclass cls_PKCS7Verifier;
 static jclass cls_PKCS7DesignatedName;
 static jclass cls_Java_ByteBuffer;
 
@@ -173,6 +174,7 @@ static jfieldID fid_PKCS7DesignatedName_o;
 static jfieldID fid_PKCS7DesignatedName_ou;
 static jfieldID fid_PKCS7DesignatedName_email;
 static jfieldID fid_PKCS7Signer_pointer;
+static jfieldID fid_PKCS7Verifier_pointer;
 
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
@@ -250,6 +252,9 @@ static jmethodID mid_PKCS7Signer_name;
 static jmethodID mid_PKCS7Signer_begin;
 static jmethodID mid_PKCS7Signer_data;
 static jmethodID mid_PKCS7Signer_sign;
+static jmethodID mid_PKCS7Verifier_begin;
+static jmethodID mid_PKCS7Verifier_data;
+static jmethodID mid_PKCS7Verifier_verify;
 
 #ifdef _WIN32
 static DWORD context_key;
@@ -385,6 +390,11 @@ static void jni_rethrow(JNIEnv *env, fz_context *ctx)
 	jni_throw(env, fz_caught(ctx), fz_caught_message(ctx));
 }
 
+static void jni_throw_run(JNIEnv *env, const char *info)
+{
+	(*env)->ThrowNew(env, cls_RuntimeException, info);
+}
+
 static void jni_throw_oom(JNIEnv *env, const char *info)
 {
 	(*env)->ThrowNew(env, cls_OutOfMemoryError, info);
@@ -436,6 +446,15 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 	}
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown java error");
 }
+
+/* Define the internal signature verification context */
+typedef struct
+{
+	fz_context       *ctx;
+	JNIEnv           *env;
+	jobject           javaVerifier;
+	jobject           transfer_buffer;
+} verifier_internal;
 
 /* Load classes, field and method IDs. */
 
@@ -758,6 +777,12 @@ static int find_fids(JNIEnv *env)
 	mid_PKCS7Signer_data = get_method(&err, env, "data", "(Ljava/nio/ByteBuffer;I)V");
 	mid_PKCS7Signer_sign = get_method(&err, env, "sign", "()Ljava/nio/ByteBuffer;");
 
+	cls_PKCS7Verifier = get_class(&err, env, PKG"PKCS7Verifier");
+	fid_PKCS7Verifier_pointer = get_field(&err, env, "pointer", "J");
+	mid_PKCS7Verifier_begin = get_method(&err, env, "begin", "()V");
+	mid_PKCS7Verifier_data = get_method(&err, env, "data", "(Ljava/nio/ByteBuffer;I)V");
+	mid_PKCS7Verifier_verify = get_method(&err, env, "verify", "(Ljava/nio/ByteBuffer;II)V");
+
 	cls_PKCS7DesignatedName = get_class(&err, env, PKG"PKCS7DesignatedName");
 	fid_PKCS7DesignatedName_cn = get_field(&err, env, "cn", "Ljava/lang/String;");
 	fid_PKCS7DesignatedName_c = get_field(&err, env, "c", "Ljava/lang/String;");
@@ -880,6 +905,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_PDFWidget);
 	(*env)->DeleteGlobalRef(env, cls_Java_ByteBuffer);
 	(*env)->DeleteGlobalRef(env, cls_PKCS7Signer);
+	(*env)->DeleteGlobalRef(env, cls_PKCS7Verifier);
 	(*env)->DeleteGlobalRef(env, cls_PKCS7DesignatedName);
 }
 
@@ -2223,6 +2249,12 @@ static inline pdf_pkcs7_signer *from_PKCS7Signer_safe(JNIEnv *env, jobject jobj)
 {
 	if (!jobj) return NULL;
 	return CAST(pdf_pkcs7_signer *, (*env)->GetLongField(env, jobj, fid_PKCS7Signer_pointer));
+}
+
+static inline verifier_internal *from_PKCS7Verifier_safe(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(verifier_internal *, (*env)->GetLongField(env, jobj, fid_PKCS7Verifier_pointer));
 }
 
 static inline fz_pixmap *from_Pixmap_safe(JNIEnv *env, jobject jobj)
@@ -10346,8 +10378,9 @@ static jboolean c_bytebuffer_init(c_bytebuffer *buffer, JNIEnv *env, fz_context 
 	{
 		/* we couldn't get a direct buffer; try the array storage instead */
 		buffer->has_array = (*env)->CallBooleanMethod(env, transfer_buffer, mid_Java_ByteBuffer_hasArray);
-		if ((*env)->ExceptionCheck(env))
-			fz_throw_java(ctx, env);
+		if ((*env)->ExceptionCheck(env)) {
+			return result;
+		}
 
 		if (buffer->has_array) {
 			buffer->array_obj = (*env)->CallObjectMethod(env, transfer_buffer, mid_Java_ByteBuffer_array);
@@ -10835,4 +10868,238 @@ FUN(PKCS7Signer_finalize)(JNIEnv *env, jobject self)
 
 	signer_drop(signer);
 	(*env)->SetLongField(env, self, fid_PKCS7Signer_pointer, (long)NULL);
+}
+
+/****/
+
+static jint getSignature(JNIEnv *env, jobject self, unsigned char **signature, jobject *jsignature) {
+	fz_context 		 *ctx = get_context(env);
+	pdf_widget       *widget = from_PDFWidget_safe(env, self);
+	pdf_document     *pdf = widget->page->doc;
+	unsigned char    *contents = NULL;
+	jobject 		  jcontents = NULL;
+	int               contents_len = 0;
+
+	// check if the widget has a signature first
+	if (!pdf_signature_is_signed(ctx, pdf, widget->obj))
+	{
+		jni_throw_arg(env, "Unsigned signature can not be verified");
+		return -1;
+	}
+
+	// get the widget signature
+	fz_try(ctx)
+	{
+		contents_len = pdf_signature_contents(ctx, pdf, widget->obj, (char**)&contents);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return -1;
+	}
+
+	jcontents = uchars_to_byte_buffer(env, contents, contents_len);
+	if (jcontents == NULL) {
+		fz_free(ctx, contents);
+		return -1;
+	}
+
+	*jsignature = jcontents;
+	*signature = contents;
+	return contents_len;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_verify)(JNIEnv *env, jobject self, jobject verifier)
+{
+	fz_context 		 *ctx = get_context(env);
+	pdf_widget       *widget = from_PDFWidget_safe(env, self);
+	pdf_document     *pdf = widget->page->doc;
+	verifier_internal  *iverifier = from_PKCS7Verifier_safe(env, verifier);
+	fz_stream        *bytes = NULL;
+	jint              updateSinceSigning = 0;
+	jobject           jsignature = NULL;
+	unsigned char *signature = NULL;
+	jint              siglength = 0;
+	c_bytebuffer      c_buffer;
+	jobject jverifier;
+
+	if (!ctx || !widget || !pdf)
+		return JNI_FALSE;
+	if (!iverifier)
+	{
+		jni_throw_arg(env, "verifier must not be null");
+		return JNI_FALSE;
+	}
+
+	siglength = getSignature(env, self, &signature, &jsignature);
+	if (siglength < 0)
+	{
+		/* Exception already thrown inside getSignature(). */
+		return JNI_FALSE;
+	}
+
+	jverifier = iverifier->javaVerifier;
+
+	fz_try(ctx)
+	{
+		bytes = pdf_signature_hash_bytes(ctx, pdf, widget->obj);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, signature);
+		jni_rethrow(env, ctx);
+		return JNI_FALSE;
+	}
+
+	if (!c_bytebuffer_init(&c_buffer, env, ctx, iverifier->transfer_buffer))
+	{
+		fz_drop_stream(ctx, bytes);
+		fz_free(ctx, signature);
+		jni_throw_run(env, "failed to obtain buffer for verification");
+		return JNI_FALSE;
+	}
+
+	/* begin the verification process */
+	(*env)->CallVoidMethod(env, jverifier, mid_PKCS7Verifier_begin);
+	if ((*env)->ExceptionCheck(env))
+	{
+		c_bytebuffer_final(&c_buffer);
+		fz_drop_stream(ctx, bytes);
+		fz_free(ctx, signature);
+		return JNI_FALSE;
+	}
+
+	for (;;)
+	{
+		size_t n = 0;
+
+		fz_var(n);
+		fz_try(ctx)
+		{
+			jbyte *src = c_bytebuffer_get_bytes(&c_buffer);
+			if (src == NULL)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "could not obtain transferbuffer");
+
+			n = fz_read(ctx, bytes, (unsigned char *) src,
+						c_buffer.src_len);
+		}
+		fz_catch(ctx)
+		{
+			c_bytebuffer_release_bytes(&c_buffer);
+			c_bytebuffer_final(&c_buffer);
+			fz_drop_stream(ctx, bytes);
+			fz_free(ctx, signature);
+			jni_rethrow(env, ctx);
+			return JNI_FALSE;
+		}
+
+		/* release the ByteBuffers's bytes and update if required */
+		c_bytebuffer_release_bytes(&c_buffer);
+
+		if (n > 0)
+		{
+			/* pass the direct byte buffer to the verifier's 'data' method */
+			(*env)->CallVoidMethod(env, jverifier, mid_PKCS7Verifier_data,
+								   iverifier->transfer_buffer, n);
+			if ((*env)->ExceptionCheck(env))
+			{
+				c_bytebuffer_final(&c_buffer);
+				fz_drop_stream(ctx, bytes);
+				fz_free(ctx, signature);
+				return JNI_FALSE;
+			}
+		}
+		else
+			break;
+	}
+
+	c_bytebuffer_final(&c_buffer);
+	fz_drop_stream(ctx, bytes);
+
+	fz_try(ctx)
+		updateSinceSigning =
+			pdf_signature_incremental_change_since_signing(ctx, pdf, widget->obj) != 0;
+	fz_catch(ctx)
+	{
+		fz_free(ctx, signature);
+		return JNI_FALSE;
+	}
+
+	(*env)->CallVoidMethod(env, jverifier, mid_PKCS7Verifier_verify, jsignature, siglength, updateSinceSigning);
+	if ((*env)->ExceptionCheck(env))
+	{
+		fz_free(ctx, signature);
+		return JNI_FALSE;
+	}
+
+	fz_free(ctx, signature);
+
+	return JNI_TRUE;
+}
+
+verifier_internal *verifier_create( JNIEnv *env,
+									fz_context  *ctx,
+									jobject  javaVerifier,
+									jobject  transfer_buffer)
+{
+	verifier_internal *verifier = fz_calloc(ctx, 1, sizeof(*verifier));
+
+	if (verifier == NULL)
+		return NULL;
+
+	verifier->env                       = env;
+	verifier->ctx                       = ctx;
+	verifier->javaVerifier              = (*env)->NewGlobalRef(env, javaVerifier);
+	verifier->transfer_buffer           = (*env)->NewGlobalRef(env, transfer_buffer);
+
+	if (verifier->javaVerifier == NULL || verifier->transfer_buffer == NULL)
+	{
+		if (verifier->javaVerifier != NULL)
+			(*env)->DeleteGlobalRef(env, verifier->javaVerifier);
+		if (verifier->transfer_buffer != NULL)
+			(*env)->DeleteGlobalRef(env, verifier->transfer_buffer);
+		fz_free(ctx, verifier);
+		return NULL;
+	}
+
+	return verifier;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PKCS7Verifier_create)(JNIEnv *env, jobject self, jobject buffer)
+{
+	fz_context *ctx = get_context(env);
+	verifier_internal *verifier = NULL;
+
+	if (!ctx)
+		return JNI_FALSE;
+	if (!buffer)
+	{
+		jni_throw_arg(env, "transferbuffer must not be null");
+		return JNI_FALSE;
+	}
+
+	verifier = verifier_create(env, ctx, self, buffer);
+	(*env)->SetLongField(env, self, fid_PKCS7Verifier_pointer, (long) verifier);
+
+	return verifier != NULL;
+}
+
+JNIEXPORT void JNICALL
+FUN(PKCS7Verifier_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	verifier_internal *iverifier = from_PKCS7Verifier_safe(env, self);
+
+	if (!ctx || !iverifier)
+		return;
+
+	if (iverifier->transfer_buffer != NULL)
+		(*env)->DeleteGlobalRef(env, iverifier->transfer_buffer);
+	if (iverifier->javaVerifier != NULL)
+		(*env)->DeleteGlobalRef(env, iverifier->javaVerifier);
+	free(iverifier);
+
+	(*env)->SetLongField(env, self, fid_PKCS7Verifier_pointer, (long) NULL);
 }

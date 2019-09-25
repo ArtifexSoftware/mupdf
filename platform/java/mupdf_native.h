@@ -2609,6 +2609,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_sign
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    verify
+ * Signature: (com/artifex/mupdf/fitz/PKCS7Verifier;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_verify
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    setChoiceValue
  * Signature: (Ljava/lang/String;)Z
  */

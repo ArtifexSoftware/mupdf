@@ -1284,21 +1284,33 @@ int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signatur
 {
 	pdf_obj *v_ref = pdf_dict_get(ctx, signature, PDF_NAME(V));
 	pdf_obj *v_obj = pdf_load_unencrypted_object(ctx, doc, pdf_to_num(ctx, v_ref));
+	char *copy = NULL;
 	int len;
+
+	fz_var(copy);
 	fz_try(ctx)
 	{
 		pdf_obj *c = pdf_dict_get(ctx, v_obj, PDF_NAME(Contents));
+		char *s = pdf_to_str_buf(ctx, c);
 		len = pdf_to_str_len(ctx, c);
+
 		if (contents)
 		{
-			*contents = fz_malloc(ctx, len);
-			memcpy(*contents, pdf_to_str_buf(ctx, c), len);
+			copy = fz_malloc(ctx, len);
+			memcpy(copy, s, len);
 		}
 	}
 	fz_always(ctx)
 		pdf_drop_obj(ctx, v_obj);
 	fz_catch(ctx)
+	{
+		fz_free(ctx, copy);
 		fz_rethrow(ctx);
+	}
+
+	if (contents)
+		*contents = copy;
+
 	return len;
 }
 
@@ -1307,7 +1319,6 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	pdf_obj *v = NULL;
 	pdf_obj *indv;
 	int vnum;
-	pdf_obj *contents;
 	int max_digest_size;
 	char *buf = NULL;
 
