@@ -1534,10 +1534,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addInkListStrok
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    addInkListVertex
+ * Method:    addInkListStrokeVertex
  * Signature: (FF)V
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addInkListVertex
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_addInkListStrokeVertex
   (JNIEnv *, jobject, jfloat, jfloat);
 
 /*

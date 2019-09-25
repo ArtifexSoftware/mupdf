@@ -157,21 +157,21 @@ public class PDFAnnotation
 	public native Point getInkListStrokeVertex(int i, int k);
 	public native void clearInkList();
 	public native void addInkListStroke();
-	public native void addInkListVertex(float x, float y);
-	public void addInkListVertex(Point p) {
-		addInkListVertex(p.x, p.y);
+	public native void addInkListStrokeVertex(float x, float y);
+	public void addInkListStrokeVertex(Point p) {
+		addInkListStrokeVertex(p.x, p.y);
 	}
 	public void addInkList(Point[] stroke) {
 		addInkListStroke();
 		for (Point p : stroke)
-			addInkListVertex(p);
+			addInkListStrokeVertex(p);
 	}
 	public void setInkList(Point[][] inkList) {
 		clearInkList();
 		for (Point[] stroke : inkList) {
 			addInkListStroke();
 			for (Point p : stroke)
-				addInkListVertex(p);
+				addInkListStrokeVertex(p);
 		}
 	}
 	public Point[][] getInkList() {
