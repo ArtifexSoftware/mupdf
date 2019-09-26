@@ -118,8 +118,13 @@ void fz_write_string(fz_context *ctx, fz_output *out, const char *s);
 
 void fz_write_int32_be(fz_context *ctx, fz_output *out, int x);
 void fz_write_int32_le(fz_context *ctx, fz_output *out, int x);
+void fz_write_uint32_be(fz_context *ctx, fz_output *out, unsigned int x);
+void fz_write_uint32_le(fz_context *ctx, fz_output *out, unsigned int x);
 void fz_write_int16_be(fz_context *ctx, fz_output *out, int x);
 void fz_write_int16_le(fz_context *ctx, fz_output *out, int x);
+void fz_write_uint16_be(fz_context *ctx, fz_output *out, unsigned int x);
+void fz_write_uint16_le(fz_context *ctx, fz_output *out, unsigned int x);
+void fz_write_char(fz_context *ctx, fz_output *out, char x);
 void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
