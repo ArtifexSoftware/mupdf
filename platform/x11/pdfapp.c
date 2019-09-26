@@ -7,6 +7,11 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
+
+#ifdef _MSC_VER
+#define stat _stat
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -24,6 +29,87 @@
 #ifndef MAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
+
+time_t
+stat_mtime(const char *path)
+{
+	struct stat info;
+
+	if (stat(path, &info) < 0)
+		return 0;
+
+	return info.st_mtime;
+}
+
+#ifdef _WIN32
+static const char *
+realpath(const char *path, char buf[PATH_MAX])
+{
+	wchar_t wpath[PATH_MAX];
+	wchar_t wbuf[PATH_MAX];
+	int i;
+	MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, PATH_MAX);
+	GetFullPathNameW(wpath, PATH_MAX, wbuf, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, PATH_MAX, NULL, NULL);
+	for (i=0; buf[i]; ++i)
+		if (buf[i] == '\\')
+			buf[i] = '/';
+	return buf;
+}
+
+#endif
+
+static int convert_to_accel_path(fz_context *ctx, char outname[], char *absname, size_t len)
+{
+	char *tmpdir;
+	char *s;
+
+	tmpdir = getenv("TEMP");
+	if (!tmpdir)
+		tmpdir = getenv("TMP");
+	if (!tmpdir)
+		tmpdir = "/var/tmp";
+	if (!fz_is_directory(ctx, tmpdir))
+		tmpdir = "/tmp";
+
+	if (absname[0] == '/' || absname[0] == '\\')
+		++absname;
+
+	s = absname;
+	while (*s) {
+		if (*s == '/' || *s == '\\' || *s == ':')
+			*s = '%';
+		++s;
+	}
+
+	if (fz_snprintf(outname, len, "%s/%s.accel", tmpdir, absname) >= len)
+		return 0;
+	return 1;
+}
+
+static int get_accelerator_filename(fz_context *ctx, char outname[], size_t len, const char *filename)
+{
+	char absname[PATH_MAX];
+	if (!realpath(filename, absname))
+		return 0;
+	if (!convert_to_accel_path(ctx, outname, absname, len))
+		return 0;
+	return 1;
+}
+
+static void save_accelerator(fz_context *ctx, fz_document *doc, const char *filename)
+{
+	char absname[PATH_MAX];
+
+	if (!doc)
+		return;
+	if (!fz_document_supports_accelerator(ctx, doc))
+		return;
+	if (!get_accelerator_filename(ctx, absname, sizeof(absname), filename))
+		return;
+
+	fz_save_accelerator(ctx, doc, absname);
+}
 
 enum panning
 {
@@ -368,7 +454,33 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 		else
 #endif
 		{
-			app->doc = fz_open_document(ctx, filename);
+			char accelpath[PATH_MAX];
+			char *accel = NULL;
+			time_t atime;
+			time_t dtime;
+
+			/* If there was an accelerator to load, what would it be called? */
+			if (get_accelerator_filename(ctx, accelpath, sizeof(accelpath), filename))
+			{
+				/* Check whether that file exists, and isn't older than
+				 * the document. */
+				atime = stat_mtime(accelpath);
+				dtime = stat_mtime(filename);
+				if (atime == 0)
+				{
+					/* No accelerator */
+				}
+				else if (atime > dtime)
+					accel = accelpath;
+				else
+				{
+					/* Accelerator data is out of date */
+					unlink(accelpath);
+					accel = NULL; /* In case we have jumped up from below */
+				}
+			}
+
+			app->doc = fz_open_accelerated_document(ctx, filename, accel);
 		}
 	}
 	fz_catch(ctx)
@@ -1224,6 +1336,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	switch (c)
 	{
 	case 'q':
+		save_accelerator(app->ctx, app->doc, app->docpath);
 		winclose(app);
 		break;
 

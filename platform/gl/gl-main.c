@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#ifdef _MSC_VER
+#define stat _stat
+#endif
 #ifndef _WIN32
 #include <signal.h>
 #endif
@@ -29,6 +33,17 @@ void glutLeaveMainLoop(void)
 	exit(0);
 }
 #endif
+
+time_t
+stat_mtime(const char *path)
+{
+	struct stat info;
+
+	if (stat(path, &info) < 0)
+		return 0;
+
+	return info.st_mtime;
+}
 
 fz_context *ctx = NULL;
 pdf_document *pdf = NULL;
@@ -420,6 +435,58 @@ static void save_history(void)
 		fz_warn(ctx, "Can't write history file.");
 
 	js_freestate(J);
+}
+
+static int convert_to_accel_path(char outname[], char *absname, size_t len)
+{
+	char *tmpdir;
+	char *s;
+
+	tmpdir = getenv("TEMP");
+	if (!tmpdir)
+		tmpdir = getenv("TMP");
+	if (!tmpdir)
+		tmpdir = "/var/tmp";
+	if (!fz_is_directory(ctx, tmpdir))
+		tmpdir = "/tmp";
+
+	if (absname[0] == '/' || absname[0] == '\\')
+		++absname;
+
+	s = absname;
+	while (*s) {
+		if (*s == '/' || *s == '\\' || *s == ':')
+			*s = '%';
+		++s;
+	}
+
+	if (fz_snprintf(outname, len, "%s/%s.accel", tmpdir, absname) >= len)
+		return 0;
+	return 1;
+}
+
+static int get_accelerator_filename(char outname[], size_t len)
+{
+	char absname[PATH_MAX];
+	if (!realpath(filename, absname))
+		return 0;
+	if (!convert_to_accel_path(outname, absname, len))
+		return 0;
+	return 1;
+}
+
+static void save_accelerator(void)
+{
+	char absname[PATH_MAX];
+
+	if (!doc)
+		return;
+	if (!fz_document_supports_accelerator(ctx, doc))
+		return;
+	if (!get_accelerator_filename(absname, sizeof(absname)))
+		return;
+
+	fz_save_accelerator(ctx, doc, absname);
 }
 
 static int search_active = 0;
@@ -1105,10 +1172,36 @@ static void password_dialog(void)
 
 static void load_document(void)
 {
+	char accelpath[PATH_MAX];
+	char *accel = NULL;
+	time_t atime;
+	time_t dtime;
+
 	fz_drop_outline(ctx, outline);
 	fz_drop_document(ctx, doc);
 
-	doc = fz_open_document(ctx, filename);
+	/* If there was an accelerator to load, what would it be called? */
+	if (get_accelerator_filename(accelpath, sizeof(accelpath)))
+	{
+		/* Check whether that file exists, and isn't older than
+		 * the document. */
+		atime = stat_mtime(accelpath);
+		dtime = stat_mtime(filename);
+		if (atime == 0)
+		{
+			/* No accelerator */
+		}
+		else if (atime > dtime)
+			accel = accelpath;
+		else
+		{
+			/* Accelerator data is out of date */
+			unlink(accelpath);
+			accel = NULL; /* In case we have jumped up from below */
+		}
+	}
+
+	doc = fz_open_accelerated_document(ctx, filename, accel);
 	if (fz_needs_password(ctx, doc))
 	{
 		if (!fz_authenticate_password(ctx, doc, password))
@@ -1152,6 +1245,7 @@ static void load_document(void)
 void reload(void)
 {
 	save_history();
+	save_accelerator();
 	load_document();
 	if (doc)
 	{
@@ -1775,6 +1869,7 @@ static void do_open_document_dialog(void)
 static void cleanup(void)
 {
 	save_history();
+	save_accelerator();
 
 	ui_finish();
 
