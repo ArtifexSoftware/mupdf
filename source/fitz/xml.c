@@ -77,9 +77,9 @@ struct parser
 
 struct attribute
 {
-	char name[40];
 	char *value;
 	struct attribute *next;
+	char name[1];
 };
 
 struct fz_xml_doc_s
@@ -90,10 +90,10 @@ struct fz_xml_doc_s
 
 struct fz_xml_s
 {
-	char name[40];
 	char *text;
 	struct attribute *atts;
-	fz_xml *up, *down, *tail, *prev, *next;
+	fz_xml *up, *down, *prev, *next;
+	char name[1];
 };
 
 static void xml_indent(int n)
@@ -344,15 +344,15 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 {
 	fz_xml *head, *tail;
 	char *ns;
+	size_t size;
 
 	/* skip namespace prefix */
 	for (ns = a; ns < b - 1; ++ns)
 		if (*ns == ':')
 			a = ns + 1;
 
-	head = fz_pool_alloc(ctx, parser->pool, sizeof *head);
-	if (b - a > sizeof(head->name) - 1)
-		b = a + sizeof(head->name) - 1;
+	size = offsetof(fz_xml, name) + b-a+1;
+	head = fz_pool_alloc(ctx, parser->pool, size);
 	memcpy(head->name, a, b - a);
 	head->name[b - a] = 0;
 
@@ -363,15 +363,18 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 	head->prev = NULL;
 	head->next = NULL;
 
+	/* During construction, we use head->next to mean "the
+	 * tail of the children. When we close the tag, we
+	 * rewrite it to be NULL. */
 	if (!parser->head->down) {
 		parser->head->down = head;
-		parser->head->tail = head;
+		parser->head->next = head;
 	}
 	else {
-		tail = parser->head->tail;
+		tail = parser->head->next;
 		tail->next = head;
 		head->prev = tail;
-		parser->head->tail = head;
+		parser->head->next = head;
 	}
 
 	parser->head = head;
@@ -382,10 +385,10 @@ static void xml_emit_att_name(fz_context *ctx, struct parser *parser, char *a, c
 {
 	fz_xml *head = parser->head;
 	struct attribute *att;
+	size_t size;
 
-	att = fz_pool_alloc(ctx, parser->pool, sizeof *att);
-	if (b - a > sizeof(att->name) - 1)
-		b = a + sizeof(att->name) - 1;
+	size = offsetof(struct attribute, name) + b-a+1;
+	att = fz_pool_alloc(ctx, parser->pool, size);
 	memcpy(att->name, a, b - a);
 	att->name[b - a] = 0;
 	att->value = NULL;
@@ -417,6 +420,7 @@ static void xml_emit_att_value(fz_context *ctx, struct parser *parser, char *a, 
 static void xml_emit_close_tag(fz_context *ctx, struct parser *parser)
 {
 	parser->depth--;
+	parser->head->next = NULL;
 	if (parser->head->up)
 		parser->head = parser->head->up;
 }
