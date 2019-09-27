@@ -79,7 +79,7 @@ fz_image *fz_new_image_of_size(fz_context *ctx,
 		float *decode,
 		int *colorkey,
 		fz_image *mask,
-		int size,
+		size_t size,
 		fz_image_get_pixmap_fn *get_pixmap,
 		fz_image_get_size_fn *get_size,
 		fz_drop_image_fn *drop);

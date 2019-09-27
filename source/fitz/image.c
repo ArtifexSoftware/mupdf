@@ -369,7 +369,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			tile->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
 		stride = (w * image->n * image->bpc + 7) / 8;
-		if (h > SIZE_MAX / stride)
+		if ((size_t)h > (size_t)(SIZE_MAX / stride))
 			fz_throw(ctx, FZ_ERROR_MEMORY, "image too large");
 		samples = fz_malloc(ctx, h * stride);
 
@@ -935,7 +935,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 fz_image *
 fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		int xres, int yres, int interpolate, int imagemask, float *decode,
-		int *colorkey, fz_image *mask, int size,
+		int *colorkey, fz_image *mask, size_t size,
 		fz_image_get_pixmap_fn *get_pixmap,
 		fz_image_get_size_fn *get_size,
 		fz_drop_image_fn *drop)
