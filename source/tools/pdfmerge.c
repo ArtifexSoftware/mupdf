@@ -61,7 +61,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 
 		pdf_dict_put(ctx, page_dict, PDF_NAME(Type), PDF_NAME(Page));
 
-		for (i = 0; i < nelem(copy_list); i++)
+		for (i = 0; i < (int)nelem(copy_list); i++)
 		{
 			obj = pdf_dict_get(ctx, page_ref, copy_list[i]);
 			if (obj != NULL)

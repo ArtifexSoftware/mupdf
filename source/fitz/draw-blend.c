@@ -107,7 +107,7 @@ static const char *fz_blendmode_names[] =
 int fz_lookup_blendmode(const char *name)
 {
 	int i;
-	for (i = 0; i < nelem(fz_blendmode_names); i++)
+	for (i = 0; i < (int)nelem(fz_blendmode_names); i++)
 		if (!strcmp(name, fz_blendmode_names[i]))
 			return i;
 	return FZ_BLEND_NORMAL;
@@ -115,7 +115,7 @@ int fz_lookup_blendmode(const char *name)
 
 char *fz_blendmode_name(int blendmode)
 {
-	if (blendmode >= 0 && blendmode < nelem(fz_blendmode_names))
+	if (blendmode >= 0 && blendmode < (int)nelem(fz_blendmode_names))
 		return (char*)fz_blendmode_names[blendmode];
 	return "Normal";
 }

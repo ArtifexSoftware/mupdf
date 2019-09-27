@@ -235,7 +235,7 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			if (svg_is_digit(*str))
 			{
 				numberlen = 0;
-				while (svg_is_digit(*str) && numberlen < sizeof(numberbuf) - 1)
+				while (svg_is_digit(*str) && numberlen < (int)sizeof(numberbuf) - 1)
 					numberbuf[numberlen++] = *str++;
 				numberbuf[numberlen] = 0;
 

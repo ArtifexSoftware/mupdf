@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 			end++;
 		if ((end-4 >= start) && (end[-4] == '.') && (end[-3] == 'e') && (end[-2] == 'x') && (end[-1] == 'e'))
 			end = end-4;
-		for (i = 0; i < nelem(tools); i++)
+		for (i = 0; i < (int)nelem(tools); i++)
 		{
 			strcpy(buf, "mupdf");
 			strcat(buf, tools[i].name);
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 	if (argc > 1)
 	{
-		for (i = 0; i < nelem(tools); i++)
+		for (i = 0; i < (int)nelem(tools); i++)
 			if (!strcmp(tools[i].name, argv[1]))
 				return tools[i].func(argc - 1, argv + 1);
 		if (!strcmp(argv[1], "-v"))
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "usage: mutool <command> [options]\n");
 
-	for (i = 0; i < nelem(tools); i++)
+	for (i = 0; i < (int)nelem(tools); i++)
 		fprintf(stderr, "\t%s\t-- %s\n", tools[i].name, tools[i].desc);
 
 	return 1;

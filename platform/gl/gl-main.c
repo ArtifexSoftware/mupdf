@@ -93,7 +93,7 @@ static const int zoom_list[] = {
 static int zoom_in(int oldres)
 {
 	int i;
-	for (i = 0; i < nelem(zoom_list) - 1; ++i)
+	for (i = 0; i < (int)nelem(zoom_list) - 1; ++i)
 		if (zoom_list[i] <= oldres && zoom_list[i+1] > oldres)
 			return zoom_list[i+1];
 	return zoom_list[i];
@@ -102,7 +102,7 @@ static int zoom_in(int oldres)
 static int zoom_out(int oldres)
 {
 	int i;
-	for (i = 0; i < nelem(zoom_list) - 1; ++i)
+	for (i = 0; i < (int)nelem(zoom_list) - 1; ++i)
 		if (zoom_list[i] < oldres && zoom_list[i+1] >= oldres)
 			return zoom_list[i];
 	return zoom_list[0];
@@ -357,7 +357,7 @@ static void save_history(void)
 		js_setproperty(J, -2, "future");
 
 		js_newarray(J);
-		for (i = 0; i < nelem(marks); ++i)
+		for (i = 0; i < (int)nelem(marks); ++i)
 		{
 			js_pushnumber(J, marks[i].page+1);
 			js_setindex(J, -2, i);
@@ -666,7 +666,7 @@ static void push_history(void)
 {
 	if (history_count > 0 && history[history_count-1].page == currentpage)
 		return;
-	if (history_count + 1 >= nelem(history))
+	if (history_count + 1 >= (int)nelem(history))
 	{
 		memmove(history, history + 1, sizeof *history * (nelem(history) - 1));
 		history[history_count] = save_mark();
@@ -679,7 +679,7 @@ static void push_history(void)
 
 static void push_future(void)
 {
-	if (future_count + 1 >= nelem(future))
+	if (future_count + 1 >= (int)nelem(future))
 	{
 		memmove(future, future + 1, sizeof *future * (nelem(future) - 1));
 		future[future_count] = save_mark();
@@ -1243,7 +1243,7 @@ static void do_app(void)
 		case 'm':
 			if (number == 0)
 				push_history();
-			else if (number > 0 && number < nelem(marks))
+			else if (number > 0 && number < (int)nelem(marks))
 				marks[number] = save_mark();
 			break;
 		case 't':
@@ -1252,7 +1252,7 @@ static void do_app(void)
 				if (history_count > 0)
 					pop_history();
 			}
-			else if (number > 0 && number < nelem(marks))
+			else if (number > 0 && number < (int)nelem(marks))
 			{
 				struct mark mark = marks[number];
 				restore_mark(mark);

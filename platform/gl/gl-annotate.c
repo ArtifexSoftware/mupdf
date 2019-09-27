@@ -272,7 +272,7 @@ static const char *name_from_hex(unsigned int hex)
 {
 	static char buf[10];
 	int i;
-	for (i = 0; i < nelem(color_names); ++i)
+	for (i = 0; i < (int)nelem(color_names); ++i)
 		if (color_values[i] == hex)
 			return color_names[i];
 	fz_snprintf(buf, sizeof buf, "#%06x", hex & 0xffffff);
@@ -973,7 +973,7 @@ static void do_edit_ink(fz_irect canvas_area)
 
 	if (ui.active == selected_annot && drawing)
 	{
-		if (n < nelem(p) && (ui.x != last_x || ui.y != last_y))
+		if (n < (int)nelem(p) && (ui.x != last_x || ui.y != last_y))
 		{
 			p[n].x = fz_clamp(ui.x, view_page_area.x0, view_page_area.x1);
 			p[n].y = fz_clamp(ui.y, view_page_area.y0, view_page_area.y1);

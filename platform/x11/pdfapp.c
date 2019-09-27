@@ -60,7 +60,7 @@ static const int zoomlist[] = {
 static int zoom_in(int oldres)
 {
 	int i;
-	for (i = 0; i < nelem(zoomlist) - 1; ++i)
+	for (i = 0; i < (int)nelem(zoomlist) - 1; ++i)
 		if (zoomlist[i] <= oldres && zoomlist[i+1] > oldres)
 			return zoomlist[i+1];
 	return zoomlist[i];
@@ -69,7 +69,7 @@ static int zoom_in(int oldres)
 static int zoom_out(int oldres)
 {
 	int i;
-	for (i = 0; i < nelem(zoomlist) - 1; ++i)
+	for (i = 0; i < (int)nelem(zoomlist) - 1; ++i)
 		if (zoomlist[i] < oldres && zoomlist[i+1] >= oldres)
 			return zoomlist[i];
 	return zoomlist[0];
@@ -1420,7 +1420,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		if (app->numberlen > 0)
 		{
 			int idx = atoi(app->number);
-			if (idx >= 0 && idx < nelem(app->marks))
+			if (idx >= 0 && idx < (int)nelem(app->marks))
 				app->marks[idx] = app->pageno;
 		}
 		else
@@ -1439,7 +1439,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		{
 			int idx = atoi(app->number);
 
-			if (idx >= 0 && idx < nelem(app->marks))
+			if (idx >= 0 && idx < (int)nelem(app->marks))
 				if (app->marks[idx] > 0)
 					app->pageno = app->marks[idx];
 		}

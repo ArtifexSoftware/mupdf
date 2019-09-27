@@ -138,7 +138,7 @@ static int strcmp_ignore_space(const char *a, const char *b)
 const char *pdf_clean_font_name(const char *fontname)
 {
 	int i, k;
-	for (i = 0; i < nelem(base_font_names); i++)
+	for (i = 0; i < (int)nelem(base_font_names); i++)
 		for (k = 0; base_font_names[i][k]; k++)
 			if (!strcmp_ignore_space(base_font_names[i][k], fontname))
 				return base_font_names[i][0];
@@ -287,7 +287,7 @@ static const struct { int code; const char *name; } mre_diff_table[] =
 static int lookup_mre_code(const char *name)
 {
 	int i;
-	for (i = 0; i < nelem(mre_diff_table); ++i)
+	for (i = 0; i < (int)nelem(mre_diff_table); ++i)
 		if (!strcmp(name, mre_diff_table[i].name))
 			return mre_diff_table[i].code;
 	for (i = 0; i < 256; i++)
@@ -737,7 +737,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 						item = pdf_array_get(ctx, diff, i);
 						if (pdf_is_int(ctx, item))
 							k = pdf_to_int(ctx, item);
-						if (pdf_is_name(ctx, item) && k >= 0 && k < nelem(estrings))
+						if (pdf_is_name(ctx, item) && k >= 0 && k < (int)nelem(estrings))
 							estrings[k++] = pdf_to_name(ctx, item);
 					}
 				}

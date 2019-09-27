@@ -1230,7 +1230,7 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 		while (n > 0)
 		{
 			int len = n;
-			if (len > sizeof(buffer))
+			if (len > (int)sizeof(buffer))
 				len = sizeof(buffer);
 			fz_arc4_encrypt(&arc4, buffer, s, len);
 			write_data(ctx, arg, buffer, len);

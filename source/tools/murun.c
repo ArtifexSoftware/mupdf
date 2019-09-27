@@ -654,7 +654,7 @@ static fz_stroke_state ffi_tostroke(js_State *J, int idx)
 	}
 	if (js_hasproperty(J, idx, "dashes")) {
 		int i, n = js_getlength(J, -1);
-		if (n > nelem(stroke.dash_list))
+		if (n > (int)nelem(stroke.dash_list))
 			n = nelem(stroke.dash_list);
 		stroke.dash_len = n;
 		for (i = 0; i < n; ++i) {

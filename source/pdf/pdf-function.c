@@ -150,7 +150,7 @@ ps_init_stack(ps_stack *st)
 
 static inline int ps_overflow(ps_stack *st, int n)
 {
-	return n < 0 || st->sp + n >= nelem(st->stack);
+	return n < 0 || st->sp + n >= (int)nelem(st->stack);
 }
 
 static inline int ps_underflow(ps_stack *st, int n)
@@ -359,7 +359,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 			case PS_OP_BITSHIFT:
 				i2 = ps_pop_int(st);
 				i1 = ps_pop_int(st);
-				if (i2 > 0 && i2 < 8 * sizeof (i2))
+				if (i2 > 0 && i2 < 8 * (int)sizeof (i2))
 					ps_push_int(st, i1 << i2);
 				else if (i2 < 0 && i2 > -8 * (int)sizeof (i2))
 					ps_push_int(st, (int)((unsigned int)i1 >> -i2));

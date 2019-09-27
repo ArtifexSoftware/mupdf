@@ -593,7 +593,7 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 		}
 	}
 
-	if (match->count + 1 >= nelem(match->prop))
+	if (match->count + 1 >= (int)nelem(match->prop))
 	{
 		// fz_warn(ctx, "too many css properties");
 		return;

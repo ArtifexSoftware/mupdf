@@ -893,7 +893,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					break;
 
 				case PDF_TOK_INT:
-					if (csi->top < nelem(csi->stack)) {
+					if (csi->top < (int)nelem(csi->stack)) {
 						csi->stack[csi->top] = buf->i;
 						csi->top ++;
 					}
@@ -902,7 +902,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					break;
 
 				case PDF_TOK_REAL:
-					if (csi->top < nelem(csi->stack)) {
+					if (csi->top < (int)nelem(csi->stack)) {
 						csi->stack[csi->top] = buf->f;
 						csi->top ++;
 					}

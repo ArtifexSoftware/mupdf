@@ -605,7 +605,7 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 	h = h * 300 / xres;
 
 	/* Look for an exact match */
-	for (size = 0; size < num_elems(papersizes); size++)
+	for (size = 0; size < (int)num_elems(papersizes); size++)
 	{
 		if (papersizes[size].code > eCustomPaperSize && (pcl->features & PCL_HAS_RICOH_PAPER_SIZES) == 0)
 			continue;
@@ -632,7 +632,7 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 			/* Send the next larger one (minimise waste) */
 			int i;
 			int best_waste = INT_MAX;
-			for (i = 0; i < num_elems(papersizes); i++)
+			for (i = 0; i < (int)num_elems(papersizes); i++)
 			{
 				int waste;
 				if (papersizes[i].code > eCustomPaperSize && (pcl->features & PCL_HAS_RICOH_PAPER_SIZES) == 0)
@@ -658,7 +658,7 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 
 	/* Now, size = The best size we have (or num_elems(papersizes)) if it's too big */
 
-	if (size < num_elems(papersizes))
+	if (size < (int)num_elems(papersizes))
 		pcl->paper_size = papersizes[size].code;
 	else
 		pcl->paper_size = eCustomPaperSize; /* Custom */

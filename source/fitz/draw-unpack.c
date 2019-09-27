@@ -237,7 +237,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 			}
 		}
 	}
-	else if (depth > 0 && depth <= 8 * sizeof(int))
+	else if (depth > 0 && depth <= 8 * (int)sizeof(int))
 	{
 		fz_stream *stm;
 		int x, k;

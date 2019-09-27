@@ -257,7 +257,7 @@ fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt,
 
 	if (z < 1)
 		z = 1;
-	while (i < z && i < sizeof num)
+	while (i < z && i < (int)sizeof num)
 		num[i++] = '0';
 	n = s - fmt;
 	if (n + i + strlen(p) >= size)

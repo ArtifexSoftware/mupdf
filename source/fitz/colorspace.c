@@ -156,7 +156,7 @@ static const char *fz_intent_names[] =
 int fz_lookup_rendering_intent(const char *name)
 {
 	int i;
-	for (i = 0; i < nelem(fz_intent_names); i++)
+	for (i = 0; i < (int)nelem(fz_intent_names); i++)
 		if (!strcmp(name, fz_intent_names[i]))
 			return i;
 	return FZ_RI_RELATIVE_COLORIMETRIC;
@@ -164,7 +164,7 @@ int fz_lookup_rendering_intent(const char *name)
 
 const char *fz_rendering_intent_name(int ri)
 {
-	if (ri >= 0 && ri < nelem(fz_intent_names))
+	if (ri >= 0 && ri < (int)nelem(fz_intent_names))
 		return fz_intent_names[ri];
 	return "RelativeColorimetric";
 }

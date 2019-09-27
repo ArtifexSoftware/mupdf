@@ -95,7 +95,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 					item = pdf_array_get(ctx, diff, i);
 					if (pdf_is_int(ctx, item))
 						k = pdf_to_int(ctx, item);
-					if (pdf_is_name(ctx, item) && k >= 0 && k < nelem(estrings))
+					if (pdf_is_name(ctx, item) && k >= 0 && k < (int)nelem(estrings))
 						estrings[k++] = pdf_to_name(ctx, item);
 				}
 			}

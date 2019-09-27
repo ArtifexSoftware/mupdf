@@ -1582,7 +1582,7 @@ int main(int argc, char **argv)
 	{
 		int i;
 
-		for (i = 0; i < nelem(suffix_table); i++)
+		for (i = 0; i < (int)nelem(suffix_table); i++)
 		{
 			if (!strcmp(format, suffix_table[i].suffix+1))
 			{
@@ -1591,7 +1591,7 @@ int main(int argc, char **argv)
 				break;
 			}
 		}
-		if (i == nelem(suffix_table))
+		if (i == (int)nelem(suffix_table))
 		{
 			fprintf(stderr, "Unknown output format '%s'\n", format);
 			exit(1);
@@ -1602,7 +1602,7 @@ int main(int argc, char **argv)
 		char *suffix = output;
 		int i;
 
-		for (i = 0; i < nelem(suffix_table); i++)
+		for (i = 0; i < (int)nelem(suffix_table); i++)
 		{
 			char *s = strstr(suffix, suffix_table[i].suffix);
 
