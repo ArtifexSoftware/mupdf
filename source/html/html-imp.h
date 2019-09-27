@@ -213,7 +213,11 @@ struct fz_html_box_s
 	float margin[4];
 	float border[4];
 	float em;
-	fz_html_box *up, *down, *last, *next;
+	/* During construction, 'next' plays double duty; as well
+	 * as its normal meaning of 'next sibling', the last sibling
+	 * has next meaning "the last of my children". We correct
+	 * this as a post-processing pass after construction. */
+	fz_html_box *up, *down, *next;
 	fz_html_flow *flow_head, **flow_tail;
 	char *id, *href;
 	fz_css_style style;

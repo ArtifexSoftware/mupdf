@@ -477,7 +477,6 @@ static void init_box(fz_context *ctx, fz_html_box *box, fz_bidi_direction markup
 	box->w = box->b = 0;
 
 	box->up = NULL;
-	box->last = NULL;
 	box->down = NULL;
 	box->next = NULL;
 
@@ -523,14 +522,17 @@ static void insert_box(fz_context *ctx, fz_html_box *box, int type, fz_html_box 
 
 	if (top)
 	{
-		if (!top->last)
+		/* Here 'next' really means 'last of my children'. This will
+		 * be fixed up in a pass at the end of parsing. */
+		if (!top->next)
 		{
-			top->down = top->last = box;
+			top->down = top->next = box;
 		}
 		else
 		{
-			top->last->next = box;
-			top->last = box;
+			top->next->next = box;
+			/* Here next actually means next */
+			top->next = box;
 		}
 	}
 }
@@ -625,14 +627,15 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 		while (top->type != BOX_BLOCK && top->type != BOX_TABLE_CELL)
 			top = top->up;
 
-		if (top->last && top->last->type == BOX_FLOW)
+		/* Here 'next' actually means 'last of my children' */
+		if (top->next && top->next->type == BOX_FLOW)
 		{
-			insert_box(ctx, box, BOX_INLINE, top->last);
+			insert_box(ctx, box, BOX_INLINE, top->next);
 		}
 		else
 		{
 			fz_html_box *flow = new_box(ctx, g->pool, markup_dir);
-			flow->is_first_flow = !top->last;
+			flow->is_first_flow = !top->next;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
 			g->at_bol = 1;
@@ -1201,6 +1204,25 @@ detect_directionality(fz_context *ctx, fz_pool *pool, fz_html_box *box)
 		fz_rethrow(ctx);
 }
 
+/* Here we look for places where box->next actually means
+ * 'the last of my children', and correct it by setting
+ * next == NULL. We can spot these because box->next->up == box. */
+static void
+fix_nexts(fz_html_box *box)
+{
+	while (box)
+	{
+		if (box->down)
+			fix_nexts(box->down);
+		if (box->next && box->next->up == box)
+		{
+			box->next = NULL;
+			break;
+		}
+		box = box->next;
+	}
+}
+
 fz_html *
 fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
@@ -1288,6 +1310,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		// TODO: transfer page margins out of this hacky box
 
 		generate_boxes(ctx, root, html->root, &match, 0, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
+		fix_nexts(html->root);
 
 		detect_directionality(ctx, g.pool, html->root);
 
