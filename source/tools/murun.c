@@ -141,7 +141,7 @@ static void jsB_read(js_State *J)
 	}
 
 	t = fread(s, 1, n, f);
-	if (t != n) {
+	if (t != (size_t) n) {
 		fz_free(ctx, s);
 		fclose(f);
 		js_error(J, "cannot read data from file: '%s'", filename);

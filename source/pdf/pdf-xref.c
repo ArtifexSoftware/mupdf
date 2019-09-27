@@ -904,7 +904,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 		{
 			pdf_xref_entry *entry = &table[i];
 			n = fz_read(ctx, file, (unsigned char *) buf->scratch + carried, 20-carried);
-			if (n != 20-carried)
+			if (n != (size_t)(20-carried))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected EOF in xref table");
 			n += carried;
 			buf->scratch[n] = '\0';

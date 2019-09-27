@@ -1160,7 +1160,7 @@ static void validate_certificate_data(fz_context *ctx, pdf_document *doc, fz_ran
 
 		if (c != EOF)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "signature certificate data contains invalid character");
-		if (fz_tell(ctx, stm) != hole->length)
+		if ((size_t)fz_tell(ctx, stm) != hole->length)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of signature certificate data");
 	}
 	fz_always(ctx)

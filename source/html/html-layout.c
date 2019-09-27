@@ -950,7 +950,8 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			{
 				float node_scale = node->box->em / walker.scale;
 				unsigned int i;
-				int c, k, n;
+				uint32_t k;
+				int c, n;
 
 				/* Flatten advance and offset into offset array. */
 				int x_advance = 0;
