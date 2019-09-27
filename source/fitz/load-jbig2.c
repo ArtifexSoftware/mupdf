@@ -10,8 +10,8 @@ struct info
 	fz_context *ctx;
 	unsigned long width, height;
 	unsigned long xres, yres;
-	unsigned long  stride;
-	unsigned long  pages;
+	unsigned long stride;
+	unsigned long pages;
 	fz_colorspace *cspace;
 	JB2_Handle_Document doc;
 
@@ -130,7 +130,7 @@ jbig2_read_image(fz_context *ctx, struct info *jbig2, const unsigned char *buf, 
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get number of pages: %d", (int) err);
 		if (subimage != -1)
 		{
-			if (subimage < 0 || subimage >= state->pages)
+			if (subimage < 0 || (unsigned long) subimage >= state->pages)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "page number out of bounds %d vs %ld", subimage, state->pages);
 			err = JB2_Document_Set_Page(state->doc, subimage);
 			if (err != cJB2_Error_OK)
