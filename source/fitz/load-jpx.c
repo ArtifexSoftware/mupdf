@@ -115,9 +115,8 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	fz_jpxd *state = (fz_jpxd *) param;
 	JP2_Property_Value hstep, vstep;
 	unsigned char *row;
-	int w, h, n, entries, expand;
+	int w, h, n, k, entries, expand;
 	JP2_Property_Value x, y, i, bps, sign;
-	JP2_Property_Value k;
 	unsigned long **palette;
 
 	w = state->pix->w;
@@ -302,7 +301,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 
 		if (defcs)
 		{
-			if (defcs->n == nchans)
+			if ((JP2_Property_Value)defcs->n == nchans)
 				state->cs = fz_keep_colorspace(ctx, defcs);
 			else
 				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", nchans, defcs->n, defcs->name);
@@ -330,7 +329,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_catch(ctx)
 				fz_warn(ctx, "ignoring embedded ICC profile in JPX");
 
-			if (state->cs && state->cs->n != nchans)
+			if (state->cs && (JP2_Property_Value)state->cs->n != nchans)
 			{
 				fz_warn(ctx, "invalid number of components in ICC profile, ignoring ICC profile in JPX");
 				fz_drop_colorspace(ctx, state->cs);
@@ -704,8 +703,9 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	opj_image_t *jpx;
 	opj_stream_t *stream;
 	OPJ_CODEC_FORMAT format;
-	int a, n, w, h;
-	int x, y, k;
+	int a, n, k;
+	OPJ_UINT32 w, h;
+	OPJ_UINT32 x, y;
 	stream_block sb;
 	OPJ_UINT32 i;
 
@@ -875,8 +875,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 				for (x = 0; x < comp->w; x++)
 				{
 					OPJ_INT32 v;
-					int dx;
-					int dy;
+					OPJ_UINT32 dx, dy;
 
 					v = comp->data[y * comp->w + x];
 
@@ -891,8 +890,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 					{
 						for (dx = 0; dx < comp->dx; dx++)
 						{
-							int xx = ox + x * comp->dx + dx;
-							int yy = oy + y * comp->dy + dy;
+							OPJ_UINT32 xx = ox + x * comp->dx + dx;
+							OPJ_UINT32 yy = oy + y * comp->dy + dy;
 
 							if (xx < w && yy < h)
 								samples[yy * stride + xx * comps + k] = v;
