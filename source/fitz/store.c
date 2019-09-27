@@ -892,7 +892,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 		return 0;
 
 #ifdef DEBUG_SCAVENGING
-	printf("Scavenging: store=" FZ_FMT_zu " size=" FZ_FMT_zu " phase=%d\n", store->size, size, *phase);
+	fz_write_printf(ctx, fz_stdout(ctx), "Scavenging: store=%zu size=%zu phase=%d\n", store->size, size, *phase);
 	fz_debug_store_locked(ctx);
 	Memento_stats();
 #endif
@@ -920,7 +920,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 		if (scavenge(ctx, tofree))
 		{
 #ifdef DEBUG_SCAVENGING
-			printf("scavenged: store=" FZ_FMT_zu "\n", store->size);
+			fz_write_printf(ctx, fz_stdout(ctx), "scavenged: store=%zu\n", store->size);
 			fz_debug_store(ctx);
 			Memento_stats();
 #endif
@@ -961,7 +961,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 		return 0;
 
 #ifdef DEBUG_SCAVENGING
-	printf("fz_shrink_store: " FZ_FMT_zu "\n", store->size/(1024*1024));
+	fz_write_printf(ctx, fz_stdout(ctx), "fz_shrink_store: %zu\n", store->size/(1024*1024));
 #endif
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 
@@ -972,7 +972,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 	success = (store->size <= new_size) ? 1 : 0;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 #ifdef DEBUG_SCAVENGING
-	printf("fz_shrink_store after: " FZ_FMT_zu "\n", store->size/(1024*1024));
+	fz_write_printf(ctx, fz_stdout(ctx), "fz_shrink_store after: %zu\n", store->size/(1024*1024));
 #endif
 
 	return success;

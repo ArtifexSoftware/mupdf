@@ -53,6 +53,25 @@ fz_output *fz_stdout(fz_context *ctx)
 }
 
 static void
+stderr_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
+{
+	file_write(ctx, stderr, buffer, count);
+}
+
+static fz_output fz_stderr_global = {
+	NULL,
+	stderr_write,
+	NULL,
+	NULL,
+	NULL,
+};
+
+fz_output *fz_stderr(fz_context *ctx)
+{
+	return &fz_stderr_global;
+}
+
+static void
 file_seek(fz_context *ctx, void *opaque, int64_t off, int whence)
 {
 	FILE *file = opaque;
