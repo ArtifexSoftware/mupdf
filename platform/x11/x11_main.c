@@ -318,7 +318,7 @@ void wincopyfile(char *source, char *target)
 {
 	FILE *in, *out;
 	char buf[32 << 10];
-	int n;
+	size_t n;
 
 	in = fopen(source, "rb");
 	if (!in)

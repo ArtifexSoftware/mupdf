@@ -82,11 +82,10 @@ unlock(prog_state *state)
 }
 #endif
 
-static int next_prog(fz_context *ctx, fz_stream *stm, size_t in_len)
+static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	prog_state *ps = (prog_state *)stm->state;
-	int64_t len = in_len;
-	int64_t n;
+	size_t n;
 
 	if (len > sizeof(ps->buffer))
 		len = sizeof(ps->buffer);
@@ -95,15 +94,12 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t in_len)
 	lock(ps);
 	if (ps->available < ps->length)
 	{
-		if (stm->pos + len > ps->available)
+		if (stm->pos > ps->available || ps->available - stm->pos <= 0)
 		{
-			len = ps->available - stm->pos;
-			if (len <= 0)
-			{
-				unlock(ps);
-				fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data yet");
-			}
+			unlock(ps);
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data yet");
 		}
+		len = ps->available - stm->pos;
 	}
 	unlock(ps);
 
