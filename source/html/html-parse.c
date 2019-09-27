@@ -514,6 +514,13 @@ static fz_html_box *new_box(fz_context *ctx, fz_pool *pool, fz_bidi_direction ma
 	return box;
 }
 
+static fz_html_box *new_short_box(fz_context *ctx, fz_pool *pool, fz_bidi_direction markup_dir)
+{
+	fz_html_box *box = fz_pool_alloc(ctx, pool, offsetof(fz_html_box, padding));
+	init_box(ctx, box, markup_dir);
+	return box;
+}
+
 static void insert_box(fz_context *ctx, fz_html_box *box, int type, fz_html_box *top)
 {
 	box->type = type;
@@ -634,7 +641,7 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 		}
 		else
 		{
-			fz_html_box *flow = new_box(ctx, g->pool, markup_dir);
+			fz_html_box *flow = new_short_box(ctx, g->pool, markup_dir);
 			flow->is_first_flow = !top->next;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
@@ -682,7 +689,7 @@ generate_boxes(fz_context *ctx,
 				}
 				else
 				{
-					box = new_box(ctx, g->pool, markup_dir);
+					box = new_short_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &box->style, &match);
 					top = insert_break_box(ctx, box, top);
 				}
@@ -697,7 +704,7 @@ generate_boxes(fz_context *ctx,
 					int w, h;
 					const char *w_att = fz_xml_att(node, "width");
 					const char *h_att = fz_xml_att(node, "height");
-					box = new_box(ctx, g->pool, markup_dir);
+					box = new_short_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &box->style, &match);
 					if (w_att && (w = fz_atoi(w_att)) > 0)
 					{
@@ -716,7 +723,7 @@ generate_boxes(fz_context *ctx,
 
 			else if (tag[0]=='s' && tag[1]=='v' && tag[2]=='g' && tag[3]==0)
 			{
-				box = new_box(ctx, g->pool, markup_dir);
+				box = new_short_box(ctx, g->pool, markup_dir);
 				fz_apply_css_style(ctx, g->set, &box->style, &match);
 				insert_inline_box(ctx, box, top, markup_dir, g);
 				generate_image(ctx, box, load_svg_image(ctx, g->zip, g->base_uri, node), g);
@@ -736,14 +743,14 @@ generate_boxes(fz_context *ctx,
 						box = new_box(ctx, g->pool, markup_dir);
 						fz_apply_css_style(ctx, g->set, &box->style, &match);
 						top = insert_block_box(ctx, box, top);
-						imgbox = new_box(ctx, g->pool, markup_dir);
+						imgbox = new_short_box(ctx, g->pool, markup_dir);
 						fz_apply_css_style(ctx, g->set, &imgbox->style, &match);
 						insert_inline_box(ctx, imgbox, box, markup_dir, g);
 						generate_image(ctx, imgbox, fz_keep_image(ctx, img), g);
 					}
 					else if (display == DIS_INLINE)
 					{
-						box = new_box(ctx, g->pool, markup_dir);
+						box = new_short_box(ctx, g->pool, markup_dir);
 						fz_apply_css_style(ctx, g->set, &box->style, &match);
 						insert_inline_box(ctx, box, top, markup_dir, g);
 						generate_image(ctx, box, fz_keep_image(ctx, img), g);
@@ -774,7 +781,10 @@ generate_boxes(fz_context *ctx,
 				if (lang)
 					child_lang = fz_text_language_from_string(lang);
 
-				box = new_box(ctx, g->pool, child_dir);
+				if (display == DIS_INLINE)
+					box = new_short_box(ctx, g->pool, child_dir);
+				else
+					box = new_box(ctx, g->pool, child_dir);
 				fz_apply_css_style(ctx, g->set, &box->style, &match);
 
 				id = fz_xml_att(node, "id");
@@ -872,7 +882,7 @@ generate_boxes(fz_context *ctx,
 				if (top->type != BOX_INLINE)
 				{
 					/* Create anonymous inline box, with the same style as the top block box. */
-					box = new_box(ctx, g->pool, markup_dir);
+					box = new_short_box(ctx, g->pool, markup_dir);
 					insert_inline_box(ctx, box, top, markup_dir, g);
 					box->style = top->style;
 					/* Make sure not to recursively multiply font sizes. */
