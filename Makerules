@@ -17,6 +17,8 @@ else
   LDREMOVEUNREACH := -Wl,--gc-sections
 endif
 
+CFLAGS += -Wsign-compare
+
 SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
 

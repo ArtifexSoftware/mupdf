@@ -279,7 +279,7 @@ LURATECH_CFLAGS += -Ithirdparty/luratech/lwf_jp2/library/source
 THIRD_CFLAGS += $(LURATECH_CFLAGS) -DHAVE_LURATECH
 
 $(OUT)/thirdparty/luratech/%.o: thirdparty/luratech/%.c
-	$(CC_CMD) -DLINUX $(LURATECH_CFLAGS) -Wno-tautological-compare -Wno-absolute-value
+	$(CC_CMD) -DLINUX $(LURATECH_CFLAGS) -Wno-tautological-compare -Wno-absolute-value -Wno-sign-compare
 
 else # HAVE_LURATECH
 
@@ -308,7 +308,7 @@ THIRD_SRC += thirdparty/jbig2dec/jbig2_text.c
 THIRD_CFLAGS += -Ithirdparty/jbig2dec
 
 $(OUT)/thirdparty/jbig2dec/%.o: thirdparty/jbig2dec/%.c
-	$(CC_CMD) -DHAVE_STDINT_H -DJBIG_EXTERNAL_MEMENTO_H=\"mupdf/memento.h\"
+	$(CC_CMD) -DHAVE_STDINT_H -DJBIG_EXTERNAL_MEMENTO_H=\"mupdf/memento.h\" -Wno-sign-compare
 
 endif
 
@@ -368,6 +368,7 @@ GLUT_OBJ := $(GLUT_SRC:%.c=$(OUT)/%.o)
 LOCAL_GLUT_CFLAGS += -Ithirdparty/freeglut/include
 LOCAL_GLUT_CFLAGS += -Ithirdparty/freeglut/src
 LOCAL_GLUT_CFLAGS += -DHAVE_UNISTD_H -DHAVE_STDINT_H -DHAVE_X11_EXTENSIONS_XRANDR_H
+LOCAL_GLUT_CFLAGS += -Wno-sign-compare
 
 GLUT_LIB := $(OUT)/libfreeglut.a
 
