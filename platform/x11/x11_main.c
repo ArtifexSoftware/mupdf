@@ -1042,7 +1042,7 @@ int main(int argc, char **argv)
 			case ClientMessage:
 				if (xevt.xclient.message_type == WM_RELOAD_PAGE)
 					pdfapp_reloadpage(&gapp);
-				else if (xevt.xclient.format == 32 && xevt.xclient.data.l[0] == WM_DELETE_WINDOW)
+				else if (xevt.xclient.format == 32 && ((Atom) xevt.xclient.data.l[0]) == WM_DELETE_WINDOW)
 					closing = 1;
 				break;
 			}
