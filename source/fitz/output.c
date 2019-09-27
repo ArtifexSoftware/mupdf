@@ -403,7 +403,7 @@ fz_write_data(fz_context *ctx, fz_output *out, const void *data_, size_t size)
 
 	if (out->bp)
 	{
-		if (size >= out->ep - out->bp) /* too large for buffer */
+		if (size >= (size_t) (out->ep - out->bp)) /* too large for buffer */
 		{
 			if (out->wp > out->bp)
 			{
