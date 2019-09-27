@@ -281,7 +281,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 	else
 	{
 		/* Hard case, find the in-order predecessor of current */
-		int amputee = current;
+		unsigned int amputee = current;
 		replacement = tree[current].left;
 		while (tree[replacement].right != EMPTY) {
 			amputee = replacement;
@@ -324,29 +324,29 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 
 	/* current is now unlinked. We need to remove it from our array. */
 	cmap->tlen--;
-	if (current != cmap->tlen)
+	if (current != (unsigned int) cmap->tlen)
 	{
-		if (replacement == cmap->tlen)
+		if (replacement == (unsigned int) cmap->tlen)
 			replacement = current;
 		tree[current] = tree[cmap->tlen];
 		parent = tree[current].parent;
 		if (parent == EMPTY)
 			cmap->ttop = current;
-		else if (tree[parent].left == cmap->tlen)
+		else if (tree[parent].left == (unsigned int) cmap->tlen)
 			tree[parent].left = current;
 		else
 		{
-			assert(tree[parent].right == cmap->tlen);
+			assert(tree[parent].right == (unsigned int) cmap->tlen);
 			tree[parent].right = current;
 		}
 		if (tree[current].left != EMPTY)
 		{
-			assert(tree[tree[current].left].parent == cmap->tlen);
+			assert(tree[tree[current].left].parent == (unsigned int) cmap->tlen);
 			tree[tree[current].left].parent = current;
 		}
 		if (tree[current].right != EMPTY)
 		{
-			assert(tree[tree[current].right].parent == cmap->tlen);
+			assert(tree[tree[current].right].parent == (unsigned int) cmap->tlen);
 			tree[tree[current].right].parent = current;
 		}
 	}
@@ -541,9 +541,9 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					if (tree[current].low > tree[current].high)
 					{
 						/* update lt/gt references that will be moved/stale after deleting current */
-						if (gt == cmap->tlen - 1)
+						if (gt == (unsigned int) cmap->tlen - 1)
 							gt = current;
-						if (lt == cmap->tlen - 1)
+						if (lt == (unsigned int) cmap->tlen - 1)
 							lt = current;
 						/* delete_node() moves the element at cmap->tlen-1 into current */
 						move = delete_node(cmap, current);
