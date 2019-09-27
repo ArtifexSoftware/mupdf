@@ -157,7 +157,9 @@ static int walk_string(string_walker *walker)
 		if (walker->language)
 		{
 			fz_string_from_text_language(lang, walker->language);
+			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 			hb_buffer_set_language(walker->hb_buf, hb_language_from_string(lang, (int)strlen(lang)));
+			Memento_stopLeaking(); /* HarfBuzz leaks harmlessly */
 		}
 		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
 
@@ -827,7 +829,9 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 
 	fz_try(ctx)
 	{
+		Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 		hb_buf = hb_buffer_create();
+		Memento_stopLeaking(); /* HarfBuzz leaks harmlessly */
 		unlocked = 1;
 		fz_hb_unlock(ctx);
 
