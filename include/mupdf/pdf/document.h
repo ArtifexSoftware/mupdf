@@ -19,9 +19,9 @@ enum
 
 struct pdf_lexbuf_s
 {
-	int size;
-	int base_size;
-	int len;
+	size_t size;
+	size_t base_size;
+	size_t len;
 	int64_t i;
 	float f;
 	char *scratch;
