@@ -120,8 +120,8 @@ struct fz_display_list_s
 	fz_storable storable;
 	fz_display_node *list;
 	fz_rect mediabox;
-	int max;
-	int len;
+	size_t max;
+	size_t len;
 };
 
 struct fz_list_device_s
@@ -453,7 +453,7 @@ fz_append_display_node(
 	}
 	if (path && (writer->path == NULL || path != writer->path))
 	{
-		int max = SIZE_IN_NODES(MAX_NODE_SIZE) - size - SIZE_IN_NODES(private_data_len);
+		size_t max = SIZE_IN_NODES(MAX_NODE_SIZE) - size - SIZE_IN_NODES(private_data_len);
 		path_size = SIZE_IN_NODES(fz_pack_path(ctx, NULL, max, path));
 		node.path = 1;
 		path_off = size;
@@ -462,7 +462,7 @@ fz_append_display_node(
 	}
 	if (private_data != NULL)
 	{
-		int max = SIZE_IN_NODES(MAX_NODE_SIZE) - size;
+		size_t max = SIZE_IN_NODES(MAX_NODE_SIZE) - size;
 		if (SIZE_IN_NODES(private_data_len) > max)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Private data too large to pack into display list node");
 		private_off = size;
@@ -471,7 +471,7 @@ fz_append_display_node(
 
 	while (list->len + size > list->max)
 	{
-		int newsize = list->max * 2;
+		size_t newsize = list->max * 2;
 		fz_display_node *old = list->list;
 		ptrdiff_t diff;
 		int i, n;

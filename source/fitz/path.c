@@ -187,10 +187,10 @@ int fz_packed_path_size(const fz_path *path)
 	forget about the details.
 */
 int
-fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
+fz_pack_path(fz_context *ctx, uint8_t *pack_, size_t max, const fz_path *path)
 {
 	uint8_t *ptr;
-	int size;
+	size_t size;
 
 	if (path->packed)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't repack a packed path");
