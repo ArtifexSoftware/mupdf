@@ -218,11 +218,17 @@ struct fz_html_box_s
 	fz_html_flow *flow_head, **flow_tail;
 	char *id, *href;
 	fz_css_style style;
-	/* Only BOX_BLOCK and BOX_TABLE actually use the following */
+	/* Only BOX_{BLOCK,TABLE,TABLE_ROW,TABLE_CELL} actually use the following */
 	float padding[4];
 	float margin[4];
 	float border[4];
 };
+
+static inline int
+fz_html_box_has_boxes(fz_html_box *box)
+{
+	return (box->type == BOX_BLOCK || box->type == BOX_TABLE || box->type == BOX_TABLE_ROW || box->type == BOX_TABLE_CELL);
+}
 
 enum
 {

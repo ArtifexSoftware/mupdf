@@ -7,6 +7,7 @@
 #include <ft2build.h>
 
 #include <math.h>
+#include <assert.h>
 
 #undef DEBUG_HARFBUZZ
 
@@ -419,11 +420,13 @@ static void find_accumulated_margins(fz_context *ctx, fz_html_box *box, float *w
 {
 	while (box)
 	{
-		/* TODO: take into account collapsed margins */
-		*h += box->margin[T] + box->padding[T] + box->border[T];
-		*h += box->margin[B] + box->padding[B] + box->border[B];
-		*w += box->margin[L] + box->padding[L] + box->border[L];
-		*w += box->margin[R] + box->padding[R] + box->border[R];
+		if (fz_html_box_has_boxes(box)) {
+			/* TODO: take into account collapsed margins */
+			*h += box->margin[T] + box->padding[T] + box->border[T];
+			*h += box->margin[B] + box->padding[B] + box->border[B];
+			*w += box->margin[L] + box->padding[L] + box->border[L];
+			*w += box->margin[R] + box->padding[R] + box->border[R];
+		}
 		box = box->up;
 	}
 }
@@ -687,6 +690,7 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 	float *border = box->border;
 	float *padding = box->padding;
 
+	assert(fz_html_box_has_boxes(box));
 	em = box->em = fz_from_css_number(style->font_size, em, em, em);
 
 	margin[0] = fz_from_css_number(style->margin[0], em, top_w, 0);
@@ -730,6 +734,7 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 	{
 		if (child->type == BOX_BLOCK)
 		{
+			assert(fz_html_box_has_boxes(child));
 			vertical = layout_block(ctx, child, em, box->x, &box->b, box->w, page_h, vertical, hb_buf);
 			if (first)
 			{
@@ -743,6 +748,7 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 		}
 		else if (child->type == BOX_TABLE)
 		{
+			assert(fz_html_box_has_boxes(child));
 			layout_table(ctx, child, box, page_h, hb_buf);
 			first = 0;
 			box->b = child->b + child->padding[B] + child->border[B] + child->margin[B];
@@ -1219,6 +1225,7 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 	float *border = box->border;
 	float *padding = box->padding;
 
+	assert(fz_html_box_has_boxes(box));
 	x0 = box->x - padding[L];
 	y0 = box->y - padding[T];
 	x1 = box->x + box->w + padding[R];
