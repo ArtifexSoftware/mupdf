@@ -42,6 +42,12 @@ static void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signat
 
 	printf("verifying signature %d\n", pdf_to_num(ctx, signature));
 
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+	{
+		printf("  Signature is not signed\n");
+		return;
+	}
+
 	pdf_signature_designated_name(ctx, doc, signature, name, sizeof name);
 	printf("  Designated name: %s\n", name);
 
