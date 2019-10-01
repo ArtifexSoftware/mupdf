@@ -175,6 +175,9 @@ struct fz_css_style_s
 	unsigned int border_style_2 : 1;
 	unsigned int border_style_3 : 1;
 	unsigned int small_caps : 1;
+	/* Ensure the extra bits in the bitfield are copied
+	 * on structure copies. */
+	unsigned int blank : 6;
 	fz_css_number line_height;
 	fz_css_color background_color;
 	fz_css_color border_color[4];
@@ -271,11 +274,11 @@ struct fz_html_flow_s
 
 	float x, y, w, h;
 	fz_html_box *box; /* for style and em */
+	fz_html_flow *next;
 	union {
-		char *text;
+		char text[1];
 		fz_image *image;
 	} content;
-	fz_html_flow *next;
 };
 
 fz_css *fz_new_css(fz_context *ctx);

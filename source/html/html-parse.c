@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 enum { T, R, B, L };
 
@@ -142,9 +143,10 @@ static void fz_drop_html_flow(fz_context *ctx, fz_html_flow *flow)
 	}
 }
 
-static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, int type)
+static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, int type, int extras)
 {
-	fz_html_flow *flow = fz_pool_alloc(ctx, pool, sizeof *flow);
+	size_t size = (type == FLOW_IMAGE ? sizeof(fz_html_flow) : offsetof(fz_html_flow, content) + extras);
+	fz_html_flow *flow = fz_pool_alloc(ctx, pool, size);
 	flow->type = type;
 	flow->expand = 0;
 	flow->bidi_level = 0;
@@ -158,29 +160,28 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html_box *top, 
 
 static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_SPACE);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_SPACE, 0);
 	flow->expand = 1;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	(void)add_flow(ctx, pool, top, inline_box, FLOW_BREAK);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_BREAK, 0);
 }
 
 static void add_flow_sbreak(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	(void)add_flow(ctx, pool, top, inline_box, FLOW_SBREAK);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_SBREAK, 0);
 }
 
 static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	(void)add_flow(ctx, pool, top, inline_box, FLOW_SHYPHEN);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_SHYPHEN, 0);
 }
 
 static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, const char *a, const char *b, int lang)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_WORD);
-	flow->content.text = fz_pool_alloc(ctx, pool, b - a + 1);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_WORD, b - a + 1);
 	memcpy(flow->content.text, a, b - a);
 	flow->content.text[b - a] = 0;
 	flow->markup_lang = lang;
@@ -188,13 +189,13 @@ static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_h
 
 static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, fz_image *img)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_IMAGE);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_IMAGE, 0);
 	flow->content.image = fz_keep_image(ctx, img);
 }
 
 static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	(void)add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR, 0);
 }
 
 static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
@@ -203,13 +204,10 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	char *text;
 	size_t len;
 
+	assert(flow->type == FLOW_WORD);
+
 	if (offset == 0)
 		return flow;
-	new_flow = fz_pool_alloc(ctx, pool, sizeof *flow);
-	*new_flow = *flow;
-	new_flow->next = flow->next;
-	flow->next = new_flow;
-
 	text = flow->content.text;
 	while (*text && offset)
 	{
@@ -218,7 +216,10 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 		offset--;
 	}
 	len = strlen(text);
-	new_flow->content.text = fz_pool_alloc(ctx, pool, len+1);
+	new_flow = fz_pool_alloc(ctx, pool, offsetof(fz_html_flow, content) + len+1);
+	memcpy(new_flow, flow, offsetof(fz_html_flow, content));
+	new_flow->next = flow->next;
+	flow->next = new_flow;
 	strcpy(new_flow->content.text, text);
 	*text = 0;
 	return new_flow;

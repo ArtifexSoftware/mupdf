@@ -908,8 +908,6 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			const char *s;
 			float x, y;
 
-			if (node->type == FLOW_WORD && node->content.text == NULL)
-				continue;
 			if (node->type == FLOW_SPACE && node->breaks_line)
 				continue;
 			if (node->type == FLOW_SHYPHEN && !node->breaks_line)
