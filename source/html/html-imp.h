@@ -6,6 +6,7 @@ typedef struct fz_html_font_set_s fz_html_font_set;
 typedef struct fz_html_s fz_html;
 typedef struct fz_html_box_s fz_html_box;
 typedef struct fz_html_flow_s fz_html_flow;
+typedef struct fz_css_style_splay_s fz_css_style_splay;
 
 typedef struct fz_css_s fz_css;
 typedef struct fz_css_rule_s fz_css_rule;
@@ -181,6 +182,13 @@ struct fz_css_style_s
 	fz_font *font;
 };
 
+struct fz_css_style_splay_s {
+	fz_css_style style;
+	fz_css_style_splay *lt;
+	fz_css_style_splay *gt;
+	fz_css_style_splay *up;
+};
+
 enum
 {
 	BOX_BLOCK,	/* block-level: contains block, break, flow, and table boxes */
@@ -217,7 +225,7 @@ struct fz_html_box_s
 	fz_html_box *up, *down, *next;
 	fz_html_flow *flow_head, **flow_tail;
 	char *id, *href;
-	fz_css_style style;
+	const fz_css_style *style;
 	/* Only BOX_{BLOCK,TABLE,TABLE_ROW,TABLE_CELL} actually use the following */
 	float padding[4];
 	float margin[4];
@@ -282,6 +290,7 @@ void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
+const fz_css_style *fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz_css_style_splay **tree, fz_pool *pool);
 
 float fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value);
 float fz_from_css_number_scale(fz_css_number number, float scale);

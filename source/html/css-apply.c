@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 static const char *inherit_list[] = {
 	"color",
@@ -1335,6 +1336,192 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	}
 }
 
+#ifdef DEBUG_CSS_SPLAY
+static void
+do_verify_splay(const fz_css_style_splay *x)
+{
+	printf("%x<", x);
+	if (x->lt)
+	{
+		assert(memcmp(&x->lt->style, &x->style, sizeof(x->style)) < 0);
+		assert(x->lt->up == x);
+		do_verify_splay(x->lt);
+	}
+	printf(",");
+	if (x->gt)
+	{
+		assert(memcmp(&x->gt->style, &x->style, sizeof(x->style)) > 0);
+		assert(x->gt->up == x);
+		do_verify_splay(x->gt);
+	}
+	printf(">\n");
+}
+
+static void
+verify_splay(const fz_css_style_splay *x)
+{
+	if (x == NULL)
+		return;
+	assert(x->up == NULL);
+	do_verify_splay(x);
+	printf("-----\n");
+}
+#endif
+
+/* Lookup style in the splay tree, returning a pointer to the found instance
+ * if there is one, creating and inserting (and moving to root) one if there
+ * is not. */
+const fz_css_style *
+fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz_css_style_splay **tree, fz_pool *pool)
+{
+	fz_css_style_splay **current = tree;
+	fz_css_style_splay *x;
+	fz_css_style_splay *y = NULL;
+
+	/* Search for a match in the tree, if there is one, or for
+	 * the insertion point, if there is not. */
+	while (*current != NULL)
+	{
+		int cmp = memcmp(style, &(*current)->style, sizeof(*style));
+		if (cmp == 0)
+		{
+			/* We have a match - break out and do move to root. */
+			break;
+		}
+		y = (*current);
+		if (cmp < 0)
+			current = &y->lt;
+		else
+			current = &y->gt;
+	}
+	/* Create one if needed */
+	if (*current == NULL)
+	{
+		x = *current = fz_pool_alloc(ctx, pool, sizeof(*y));
+		x->style = *style;
+		x->up = y;
+		x->lt = NULL;
+		x->gt = NULL;
+	}
+	else
+		x = *current;
+	/* Now move to root */
+	/*
+	The splaying steps used:
+
+	Case 1:	|a)       z              x             b)     z                   x
+		|     y       D  =>  A       y            A       y           y       D
+		|   x   C                  B   z                B   x  =>  z     C
+		|  A B                        C D                  C D    A B
+
+	Case 2:	|a)       z              x             b)     z                   x
+		|     y       D  =>   y     z             A       y    =>     z       y
+		|   A   x            A B   C D                  x   D        A B     C D
+		|      B C                                     B C
+
+	Case 3:	|a)       y              x             b)     y                   x
+		|      x     C   =>   A     y              A     x      =>     y     C
+		|     A B                  B C                  B C           A B
+	*/
+#ifdef DEBUG_CSS_SPLAY
+	printf("BEFORE\n");
+	verify_splay(*tree);
+#endif
+	while ((y = x->up) != NULL ) /* While we're not at the root */
+	{
+		fz_css_style_splay *z = y->up;
+		y->up = x;
+		if (z == NULL)
+		{
+			if (y->lt == x)	/* Case 3a */
+			{
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				x->gt = y;
+			}
+			else /* Case 3b */
+			{
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				x->lt = y;
+			}
+			x->up = NULL;
+			break;
+		}
+		x->up = z->up;
+		if (z->up)
+		{
+			if (z->up->lt == z)
+				z->up->lt = x;
+			else
+				z->up->gt = x;
+		}
+		if (z->lt == y)
+		{
+			if (y->lt == x) /* Case 1a */
+			{
+				z->lt = y->gt;
+				if (z->lt)
+					z->lt->up = z;
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				y->gt = z;
+				z->up = y;
+				x->gt = y;
+			}
+			else /* Case 2a */
+			{
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				z->lt = x->gt;
+				if (z->lt)
+					z->lt->up = z;
+				x->lt = y;
+				x->gt = z;
+				z->up = x;
+			}
+		}
+		else
+		{
+			if (y->gt == x) /* Case 1b */
+			{
+				z->gt = y->lt;
+				if (z->gt)
+					z->gt->up = z;
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				y->lt = z;
+				z->up = y;
+				x->lt = y;
+			}
+			else /* Case 2b */
+			{
+				z->gt = x->lt;
+				if (z->gt)
+					z->gt->up = z;
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				x->gt = y;
+				x->lt = z;
+				z->up = x;
+			}
+		}
+	}
+
+	*tree = x;
+#ifdef DEBUG_CSS_SPLAY
+	printf("AFTER\n");
+	verify_splay(x);
+#endif
+
+	return &x->style;
+}
 /*
  * Pretty printing
  */
