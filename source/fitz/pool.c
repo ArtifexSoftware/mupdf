@@ -10,6 +10,7 @@ typedef struct fz_pool_node_s fz_pool_node;
 
 struct fz_pool_s
 {
+	size_t size;
 	fz_pool_node *head, *tail;
 	char *pos, *end;
 };
@@ -50,6 +51,7 @@ static void *fz_pool_alloc_oversize(fz_context *ctx, fz_pool *pool, size_t size)
 	node = Memento_label(fz_calloc(ctx, offsetof(fz_pool_node, mem) + size, 1), "fz_pool_oversize");
 	node->next = pool->head;
 	pool->head = node;
+	pool->size += offsetof(fz_pool_node, mem) + size;
 
 	return node->mem;
 }
@@ -70,6 +72,7 @@ void *fz_pool_alloc(fz_context *ctx, fz_pool *pool, size_t size)
 		pool->tail = pool->tail->next = node;
 		pool->pos = node->mem;
 		pool->end = node->mem + POOL_SIZE;
+		pool->size += offsetof(fz_pool_node, mem) + POOL_SIZE;
 	}
 	ptr = pool->pos;
 	pool->pos += size;
@@ -82,6 +85,11 @@ char *fz_pool_strdup(fz_context *ctx, fz_pool *pool, const char *s)
 	char *p = fz_pool_alloc(ctx, pool, n);
 	memcpy(p, s, n);
 	return p;
+}
+
+size_t fz_pool_size(fz_context *ctx, fz_pool *pool)
+{
+	return pool ? pool->size : 0;
 }
 
 void fz_drop_pool(fz_context *ctx, fz_pool *pool)
