@@ -1203,6 +1203,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 		data.flow = flow;
 		data.buffer = buffer;
 		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &bidi_dir, fragment_cb, &data, 0 /* Flags */);
+		flow = end;
 	}
 	return bidi_dir;
 }
