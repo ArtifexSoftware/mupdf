@@ -258,15 +258,15 @@ static void ch_dialog(void)
 {
 	const char *label;
 	const char *value;
-	const char **options;
+	char **options;
 	int n, choice;
 	int label_h;
 
 	label = pdf_field_label(ctx, ch_widget->obj);
 	label_h = ui_break_lines((char*)label, NULL, 20, 394, NULL);
 	n = pdf_choice_widget_options(ctx, ch_widget, 0, NULL);
-	options = fz_malloc_array(ctx, n, const char *);
-	pdf_choice_widget_options(ctx, ch_widget, 0, options);
+	options = fz_malloc_array(ctx, n, char *);
+	pdf_choice_widget_options(ctx, ch_widget, 0, (const char **)options);
 	value = pdf_field_value(ctx, ch_widget->obj);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*(label_h-1));
@@ -274,7 +274,7 @@ static void ch_dialog(void)
 		ui_layout(T, X, NW, 2, 2);
 
 		ui_label("%s", label);
-		choice = ui_select("Widget/Ch", value, options, n);
+		choice = ui_select("Widget/Ch", value, (const char **)options, n);
 		if (choice >= 0)
 			pdf_set_choice_field_value(ctx, ch_widget, options[choice]);
 
