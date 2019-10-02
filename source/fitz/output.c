@@ -519,6 +519,21 @@ fz_write_uint16_le(fz_context *ctx, fz_output *out, unsigned int x)
 	fz_write_int16_le(ctx, out, (int)x);
 }
 
+void
+fz_write_float_le(fz_context *ctx, fz_output *out, float f)
+{
+	union {float f; int32_t i;} u;
+	u.f = f;
+	fz_write_int32_le(ctx, out, u.i);
+}
+
+void
+fz_write_float_be(fz_context *ctx, fz_output *out, float f)
+{
+	union {float f; int32_t i;} u;
+	u.f = f;
+	fz_write_int32_be(ctx, out, u.i);
+}
 
 /*
 	Write a UTF-8 encoded unicode character.

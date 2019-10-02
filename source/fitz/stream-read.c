@@ -374,6 +374,25 @@ int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm) { return (int16_t)fz_r
 int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm) { return (int32_t)fz_read_uint32_le(ctx, stm); }
 int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm) { return (int64_t)fz_read_uint64_le(ctx, stm); }
 
+float
+fz_read_float_le(fz_context *ctx, fz_stream *stm)
+{
+	union {float f;int32_t i;} u;
+
+	u.i = fz_read_int32_le(ctx, stm);
+	return u.f;
+}
+
+float
+fz_read_float(fz_context *ctx, fz_stream *stm)
+{
+	union {float f;int32_t i;} u;
+
+	u.i = fz_read_int32(ctx, stm);
+	return u.f;
+}
+
+
 /*
 	Read a null terminated string from the stream into
 	a buffer of a given length. The buffer will be null terminated.

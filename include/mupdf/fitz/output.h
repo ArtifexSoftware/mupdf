@@ -126,6 +126,8 @@ void fz_write_uint16_be(fz_context *ctx, fz_output *out, unsigned int x);
 void fz_write_uint16_le(fz_context *ctx, fz_output *out, unsigned int x);
 void fz_write_char(fz_context *ctx, fz_output *out, char x);
 void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
+void fz_write_float_be(fz_context *ctx, fz_output *out, float f);
+void fz_write_float_le(fz_context *ctx, fz_output *out, float f);
 
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 

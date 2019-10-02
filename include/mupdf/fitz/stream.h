@@ -60,6 +60,9 @@ int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm);
 int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm);
 int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 
+float fz_read_float_le(fz_context *ctx, fz_stream *stm);
+float fz_read_float(fz_context *ctx, fz_stream *stm);
+
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
 
 /*
