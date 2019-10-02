@@ -1842,8 +1842,8 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 			{
 				font->bbox_table[gid].x0 = 0;
 				font->bbox_table[gid].y0 = 0;
-				font->bbox_table[gid].x1 = 0.0000001;
-				font->bbox_table[gid].y1 = 0.0000001;
+				font->bbox_table[gid].x1 = 0.0000001f;
+				font->bbox_table[gid].y1 = 0.0000001f;
 			}
 		}
 		rect = font->bbox_table[gid];
