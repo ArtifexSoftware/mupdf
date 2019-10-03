@@ -327,7 +327,7 @@ fz_new_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, int 
 		cs->type = type;
 		cs->flags = flags;
 		cs->n = n;
-		cs->name = fz_strdup(ctx, name ? name : "UNKNOWN");
+		cs->name = Memento_label(fz_strdup(ctx, name ? name : "UNKNOWN"), "cs_name");
 	}
 	fz_catch(ctx)
 	{
@@ -819,7 +819,7 @@ fz_find_icc_link(fz_context *ctx,
 	link = fz_find_item(ctx, fz_drop_icc_link_imp, &key, &fz_link_store_type);
 	if (!link)
 	{
-		new_key = fz_malloc(ctx, sizeof (fz_link_key));
+		new_key = fz_malloc_struct(ctx, fz_link_key);
 		memcpy(new_key, &key, sizeof (fz_link_key));
 		fz_try(ctx)
 		{
@@ -1010,7 +1010,7 @@ static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, co
 
 	cc->base.convert(ctx, &cc->base, ss, ds);
 
-	val = fz_malloc(ctx, n);
+	val = fz_malloc_array(ctx, cc->base.ds->n, float);
 	memcpy(val, ds, n);
 	fz_try(ctx)
 		fz_hash_insert(ctx, cc->hash, ss, val);

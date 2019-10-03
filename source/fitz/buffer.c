@@ -14,7 +14,7 @@ fz_new_buffer(fz_context *ctx, size_t size)
 	b->refs = 1;
 	fz_try(ctx)
 	{
-		b->data = fz_malloc(ctx, size);
+		b->data = Memento_label(fz_malloc(ctx, size), "fz_buffer_data");
 	}
 	fz_catch(ctx)
 	{

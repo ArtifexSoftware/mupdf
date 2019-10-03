@@ -232,7 +232,7 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 	if (!locks)
 		locks = &fz_locks_default;
 
-	ctx = alloc->malloc(alloc->user, sizeof(fz_context));
+	ctx = Memento_label(alloc->malloc(alloc->user, sizeof(fz_context)), "fz_context");
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot create context (phase 1)\n");

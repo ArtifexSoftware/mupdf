@@ -67,13 +67,13 @@ static void fz_lcms_log_error(cmsContext id, cmsUInt32Number error_code, const c
 static void *fz_lcms_malloc(cmsContext id, unsigned int size)
 {
 	fz_context *ctx = cmsGetContextUserData(id);
-	return fz_malloc_no_throw(ctx, size);
+	return Memento_label(fz_malloc_no_throw(ctx, size), "lcms");
 }
 
 static void *fz_lcms_realloc(cmsContext id, void *ptr, unsigned int size)
 {
 	fz_context *ctx = cmsGetContextUserData(id);
-	return fz_realloc_no_throw(ctx, ptr, size);
+	return Memento_label(fz_realloc_no_throw(ctx, ptr, size), "lcms");
 }
 
 static void fz_lcms_free(cmsContext id, void *ptr)

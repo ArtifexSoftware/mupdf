@@ -357,13 +357,13 @@ add_html_outline(fz_context *ctx, struct outline_parser *x, fz_html_box *box)
 	node = fz_new_outline(ctx);
 	fz_try(ctx)
 	{
-		node->title = fz_strdup(ctx, cat_html_text(ctx, x, box));
+		node->title = Memento_label(fz_strdup(ctx, cat_html_text(ctx, x, box)), "outline_title");
 		if (!box->id)
 		{
 			fz_snprintf(buf, sizeof buf, "'%d", x->id++);
-			box->id = fz_pool_strdup(ctx, x->html->pool, buf);
+			box->id = Memento_label(fz_pool_strdup(ctx, x->html->pool, buf), "box_id");
 		}
-		node->uri = fz_asprintf(ctx, "#%s", box->id);
+		node->uri = Memento_label(fz_asprintf(ctx, "#%s", box->id), "outline_uri");
 		node->is_open = 1;
 	}
 	fz_catch(ctx)

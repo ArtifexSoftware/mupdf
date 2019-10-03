@@ -450,7 +450,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 	 * All that the above program will see is that we failed to store
 	 * the item. */
 
-	item = fz_malloc_no_throw(ctx, sizeof (fz_item));
+	item = Memento_label(fz_malloc_no_throw(ctx, sizeof (fz_item)), "fz_item");
 	if (!item)
 		return NULL;
 	memset(item, 0, sizeof (fz_item));

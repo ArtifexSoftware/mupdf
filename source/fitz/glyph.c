@@ -222,7 +222,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 
 		size = h * w;
 		fill = h * sizeof(int);
-		glyph = fz_malloc(ctx, sizeof(fz_glyph) + size);
+		glyph = Memento_label(fz_malloc(ctx, sizeof(fz_glyph) + size), "fz_glyph(8)");
 		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		glyph->x = x;
 		glyph->y = y;
@@ -329,7 +329,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		 * and reenter the try context, and this routine is speed
 		 * critical. */
 try_pixmap:
-		glyph = fz_realloc(ctx, glyph, sizeof(fz_glyph));
+		glyph = Memento_label(fz_realloc(ctx, glyph, sizeof(fz_glyph)), "fz_glyph(8r)");
 		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		pix = fz_new_pixmap_from_8bpp_data(ctx, x, y, w, h, orig_sp, span);
 		glyph->x = pix->x;
@@ -384,7 +384,7 @@ fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 
 		size = h * w;
 		fill = h * sizeof(int);
-		glyph = fz_malloc(ctx, sizeof(fz_glyph) + size);
+		glyph = Memento_label(fz_malloc(ctx, sizeof(fz_glyph) + size), "fz_glyph(1)");
 		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		glyph->x = x;
 		glyph->y = y;

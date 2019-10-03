@@ -147,7 +147,7 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 			if (namesize < 0 || metasize < 0 || commentsize < 0)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid size in zip entry");
 
-			name = fz_malloc(ctx, namesize + 1);
+			name = Memento_label(fz_malloc(ctx, namesize + 1), "zip_name");
 
 			n = fz_read(ctx, file, (unsigned char*)name, namesize);
 			if (n < (size_t)namesize)
@@ -188,7 +188,7 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 
 			fz_seek(ctx, file, commentsize, 1);
 
-			zip->entries = fz_realloc_array(ctx, zip->entries, zip->count + 1, zip_entry);
+			zip->entries = Memento_label(fz_realloc_array(ctx, zip->entries, zip->count + 1, zip_entry), "zip_entries");
 
 			zip->entries[zip->count].offset = offset;
 			zip->entries[zip->count].csize = csize;

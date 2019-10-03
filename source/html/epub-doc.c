@@ -309,7 +309,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
-		ch->path = fz_strdup(ctx, path);
+		ch->path = Memento_label(fz_strdup(ctx, path), "chapter_path");
 		ch->html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
 	}
 	fz_always(ctx)
@@ -351,8 +351,8 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			{
 				*tailp = outline = fz_new_outline(ctx);
 				tailp = &(*tailp)->next;
-				outline->title = fz_strdup(ctx, text);
-				outline->uri = fz_strdup(ctx, path);
+				outline->title = Memento_label(fz_strdup(ctx, text), "outline_title");
+				outline->uri = Memento_label(fz_strdup(ctx, path), "outline_uri");
 				outline->page = -1;
 				outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
 				outline->is_open = 1;
@@ -462,8 +462,8 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		metadata = fz_xml_find_down(package, "metadata");
 		if (metadata)
 		{
-			doc->dc_title = find_metadata(ctx, metadata, "title");
-			doc->dc_creator = find_metadata(ctx, metadata, "creator");
+			doc->dc_title = Memento_label(find_metadata(ctx, metadata, "title"), "epub_title");
+			doc->dc_creator = Memento_label(find_metadata(ctx, metadata, "creator"), "epub_creator");
 		}
 
 		manifest = fz_xml_find_down(package, "manifest");

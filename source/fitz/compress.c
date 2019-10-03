@@ -63,7 +63,7 @@ void fz_deflate(fz_context *ctx, unsigned char *dest, size_t *destLen, const uns
 unsigned char *fz_new_deflated_data(fz_context *ctx, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_deflate_level level)
 {
 	size_t bound = fz_deflate_bound(ctx, source_length);
-	unsigned char *cdata = fz_malloc(ctx, bound);
+	unsigned char *cdata = Memento_label(fz_malloc(ctx, bound), "deflated_data");
 	*compressed_length = 0;
 
 	fz_try(ctx)

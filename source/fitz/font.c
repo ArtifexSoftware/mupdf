@@ -335,7 +335,7 @@ struct ft_error
 static void *ft_alloc(FT_Memory memory, long size)
 {
 	fz_context *ctx = (fz_context *) memory->user;
-	return fz_malloc_no_throw(ctx, size);
+	return Memento_label(fz_malloc_no_throw(ctx, size), "ft_alloc");
 }
 
 static void ft_free(FT_Memory memory, void *block)
@@ -992,6 +992,7 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 static fz_glyph *
 glyph_from_ft_bitmap(fz_context *ctx, int left, int top, FT_Bitmap *bitmap)
 {
+	(void)Memento_label(bitmap->buffer, "ft_bitmap");
 	if (bitmap->pixel_mode == FT_PIXEL_MODE_MONO)
 		return fz_new_glyph_from_1bpp_data(ctx, left, top - bitmap->rows, bitmap->width, bitmap->rows, bitmap->buffer + (bitmap->rows-1)*bitmap->pitch, -bitmap->pitch);
 	else
@@ -1001,6 +1002,7 @@ glyph_from_ft_bitmap(fz_context *ctx, int left, int top, FT_Bitmap *bitmap)
 static fz_pixmap *
 pixmap_from_ft_bitmap(fz_context *ctx, int left, int top, FT_Bitmap *bitmap)
 {
+	(void)Memento_label(bitmap->buffer, "ft_bitmap");
 	if (bitmap->pixel_mode == FT_PIXEL_MODE_MONO)
 		return fz_new_pixmap_from_1bpp_data(ctx, left, top - bitmap->rows, bitmap->width, bitmap->rows, bitmap->buffer + (bitmap->rows-1)*bitmap->pitch, -bitmap->pitch);
 	else
