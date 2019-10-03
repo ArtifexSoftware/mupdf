@@ -2680,8 +2680,8 @@ int Memento_checkAllMemory(void)
         Memento_breakpoint();
         return 1;
     }
-    return 0;
 #endif
+    return 0;
 }
 
 int Memento_setParanoia(int i)
