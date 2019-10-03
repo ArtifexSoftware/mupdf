@@ -81,24 +81,6 @@ fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 	return fz_keep_imp(ctx, s, &s->refs);
 }
 
-void
-fz_drop_storable(fz_context *ctx, const fz_storable *sc)
-{
-	/* Explicitly drop const to allow us to use const
-	 * sanely throughout the code. */
-	fz_storable *s = (fz_storable *)sc;
-
-	/*
-		If we are dropping the last reference to an object, then
-		it cannot possibly be in the store (as the store always
-		keeps a ref to everything in it, and doesn't drop via
-		this method. So we can simply drop the storable object
-		itself without any operations on the fz_store.
-	 */
-	if (fz_drop_imp(ctx, s, &s->refs))
-		s->drop(ctx, s);
-}
-
 void *fz_keep_key_storable(fz_context *ctx, const fz_key_storable *sc)
 {
 	return fz_keep_storable(ctx, &sc->storable);
@@ -847,6 +829,47 @@ scavenge(fz_context *ctx, size_t tofree)
 	}
 	/* Success is managing to evict any blocks */
 	return count != 0;
+}
+
+void
+fz_drop_storable(fz_context *ctx, const fz_storable *sc)
+{
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_storable *s = (fz_storable *)sc;
+	int num;
+
+	if (s == NULL)
+		return;
+
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	/* Drop the ref, and leave num as being the number of
+	 * refs left (-1 meaning, "statically allocated"). */
+	if (s->refs > 0)
+	{
+		(void)Memento_dropIntRef(s);
+		num = --s->refs;
+	}
+	else
+		num = -1;
+
+	/* If we have just 1 ref left, it's possible that
+	 * this ref is held by the store. If the store is
+	 * oversized, we ought to throw any such references
+	 * away to try to bring the store down to a "legal"
+	 * size. Run a scavenge to check for this case. */
+	if (num == 1 && ctx->store->size > ctx->store->max)
+		scavenge(ctx, ctx->store->size - ctx->store->max);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+
+	/* If we have no references to an object left, then
+	 * it cannot possibly be in the store (as the store always
+	 * keeps a ref to everything in it, and doesn't drop via
+	 * this method). So we can simply drop the storable object
+	 * itself without any operations on the fz_store.
+	 */
+	if (num == 0)
+		s->drop(ctx, s);
 }
 
 /*
