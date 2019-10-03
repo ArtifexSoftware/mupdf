@@ -169,22 +169,20 @@ static int walk_string(string_walker *walker)
 		if (!quickshape)
 		{
 			fz_shaper_data_t *hb = fz_font_shaper_data(ctx, walker->font);
+			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 			if (hb->shaper_handle == NULL)
 			{
-				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 				hb->destroy = destroy_hb_shaper_data;
 				hb->shaper_handle = hb_ft_font_create(face, NULL);
-				Memento_stopLeaking();
 			}
 
-			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 			hb_buffer_guess_segment_properties(walker->hb_buf);
-			Memento_stopLeaking();
 
 			if (walker->small_caps)
 				hb_shape(hb->shaper_handle, walker->hb_buf, small_caps_feature, nelem(small_caps_feature));
 			else
 				hb_shape(hb->shaper_handle, walker->hb_buf, NULL, 0);
+			Memento_stopLeaking();
 		}
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
