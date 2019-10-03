@@ -16,6 +16,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	fz_var(stm);
 	fz_var(in);
 	fz_var(brange);
+	fz_var(digest);
 
 	if (hexdigest_length < 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad parameters to pdf_write_digest");
