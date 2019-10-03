@@ -104,6 +104,7 @@ static jclass cls_TextLine;
 static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 static jclass cls_PDFWidget;
+static jclass cls_Java_ByteBuffer;
 
 static jfieldID fid_Buffer_pointer;
 static jfieldID fid_ColorSpace_pointer;
@@ -233,6 +234,10 @@ static jmethodID mid_TextLine_init;
 static jmethodID mid_TextWalker_showGlyph;
 static jmethodID mid_Text_init;
 static jmethodID mid_PDFWidget_init;
+static jmethodID mid_Java_ByteBuffer_hasArray;
+static jmethodID mid_Java_ByteBuffer_array;
+static jmethodID mid_Java_ByteBuffer_put;
+static jmethodID mid_Java_ByteBuffer_allocate;
 
 #ifdef _WIN32
 static DWORD context_key;
@@ -728,6 +733,12 @@ static int find_fids(JNIEnv *env)
 	fid_PDFWidget_options = get_field(&err, env, "options", "[Ljava/lang/String;");
 	mid_PDFWidget_init = get_method(&err, env, "<init>", "(J)V");
 
+	cls_Java_ByteBuffer = get_class(&err, env, "java/nio/ByteBuffer");
+	mid_Java_ByteBuffer_hasArray = get_method(&err, env, "hasArray", "()Z");
+	mid_Java_ByteBuffer_array = get_method(&err, env, "array", "()[B");
+	mid_Java_ByteBuffer_allocate = get_static_method(&err, env, "allocate", "(I)Ljava/nio/ByteBuffer;");
+	mid_Java_ByteBuffer_put = get_method(&err, env, "put", "([B)Ljava/nio/ByteBuffer;");
+
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
 	/* Standard Java classes */
@@ -841,6 +852,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_TextWalker);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 	(*env)->DeleteGlobalRef(env, cls_PDFWidget);
+	(*env)->DeleteGlobalRef(env, cls_Java_ByteBuffer);
 }
 
 #ifdef HAVE_ANDROID
@@ -10258,4 +10270,137 @@ FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 
 	fz_drop_stext_page(ctx, stext);
 	return array;
+}
+
+/* Wrapper structure managing direct/indirect ByteBuffer implementation
+ * and access to the ByteBuffer object's buffer content
+ */
+typedef struct _c_bytebuffer
+{
+	JNIEnv     *env;
+	fz_context *ctx;               /* mupdf context */
+	jobject    transfer_buffer;   /* source java.nio.ByteBuffer object */
+
+	jboolean is_direct;         /* is the source buffer direct? */
+	jboolean has_array;         /* is the source buffer backed by a ByteArray? */
+	jobject  array_obj;         /* ByteArray's backing array object */
+	jbyte   *src;               /* pointer to byte buffer */
+	size_t   src_len;           /* length of src buffer */
+} c_bytebuffer;
+
+static jboolean c_bytebuffer_init(c_bytebuffer *buffer, JNIEnv *env, fz_context *ctx, jobject transfer_buffer)
+{
+	jboolean result = JNI_FALSE;
+
+	if (buffer == NULL || env == NULL || transfer_buffer == NULL)
+		return result;
+
+	buffer->env = env;
+	buffer->ctx = ctx;
+	buffer->transfer_buffer = transfer_buffer;
+
+	/* check if the ByteBuffer is a direct buffer */
+	buffer->src = (*env)->GetDirectBufferAddress(env, transfer_buffer);
+	buffer->is_direct = (buffer->src != NULL);
+
+	if (buffer->is_direct)
+	{
+		buffer->src_len = (*env)->GetDirectBufferCapacity(env, transfer_buffer);
+		result = JNI_TRUE;
+	}
+	else
+	{
+		/* we couldn't get a direct buffer; try the array storage instead */
+		buffer->has_array = (*env)->CallBooleanMethod(env, transfer_buffer, mid_Java_ByteBuffer_hasArray);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+
+		if (buffer->has_array) {
+			buffer->array_obj = (*env)->CallObjectMethod(env, transfer_buffer, mid_Java_ByteBuffer_array);
+			if ((*env)->ExceptionCheck(env))
+				return result;
+		}
+
+		if (buffer->array_obj != NULL)
+		{
+			buffer->src = NULL; /* we'll populate and return it in c_bytebuffer_get_bytes on demand */
+			buffer->src_len = (*env)->GetArrayLength(env, buffer->array_obj);
+			result = JNI_TRUE;
+		}
+		else
+		{
+			buffer->has_array = JNI_FALSE;
+			buffer->array_obj = NULL;
+			buffer->src_len = 0;
+		}
+	}
+
+	return result;
+}
+
+static jbyte* c_bytebuffer_get_bytes(c_bytebuffer *buffer)
+{
+	if (buffer == NULL)
+		return NULL;
+
+	if (!buffer->is_direct)
+		buffer->src = (*buffer->env)->GetByteArrayElements(buffer->env, buffer->array_obj, 0);
+	return buffer->src;
+}
+
+static void c_bytebuffer_release_bytes(c_bytebuffer *buffer)
+{
+	if (buffer == NULL)
+		return;
+
+	if (!buffer->is_direct)
+		(*buffer->env)->ReleaseByteArrayElements(buffer->env, buffer->array_obj, buffer->src, 0);
+}
+
+static void c_bytebuffer_final(c_bytebuffer *buffer)
+{
+	if (buffer == NULL)
+		return;
+
+	buffer->env = NULL;
+	buffer->ctx = NULL;
+	buffer->transfer_buffer = NULL;
+
+	/* check if the ByteBuffer is a direct buffer */
+	buffer->src = NULL;
+	buffer->src_len = 0;
+	buffer->is_direct = JNI_FALSE;
+	buffer->has_array = JNI_FALSE;
+}
+
+static jobject uchars_to_byte_buffer(JNIEnv *env, unsigned char *cbuffer, int len)
+{
+	jobject jbuf;
+	jobject jarr;
+
+	jbuf = (*env)->NewDirectByteBuffer(env, cbuffer, len);
+	if (jbuf == NULL && (*env)->ExceptionCheck(env))
+		return NULL;
+	if (jbuf != NULL)
+		return jbuf;
+
+	/* Direct buffers sadly not possible. */
+
+	jarr = (*env)->NewByteArray(env, len);
+	if (!jarr)
+		return NULL;
+
+	(*env)->SetByteArrayRegion(env, jarr, 0, len, (const jbyte *)cbuffer);
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+
+	jbuf = (*env)->CallStaticObjectMethod(env, cls_Java_ByteBuffer, mid_Java_ByteBuffer_allocate, len);
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+
+	(*env)->CallStaticObjectMethod(env, jbuf, mid_Java_ByteBuffer_put, jarr);
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+
+	return jbuf;
 }
