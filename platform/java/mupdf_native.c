@@ -39,6 +39,10 @@
 
 #define CAST(type, var) (type)pointer_cast(var)
 
+/* Set default size of digest buffer */
+#define MAX_DIGEST_DEFAULT	(5 * 1024)
+
+
 static inline void *pointer_cast(jlong l)
 {
 	return (void *)(intptr_t)l;
@@ -248,6 +252,7 @@ static jmethodID mid_Java_ByteBuffer_hasArray;
 static jmethodID mid_Java_ByteBuffer_array;
 static jmethodID mid_Java_ByteBuffer_put;
 static jmethodID mid_Java_ByteBuffer_allocate;
+static jmethodID mid_PKCS7Signer_maxDigest;
 static jmethodID mid_PKCS7Signer_name;
 static jmethodID mid_PKCS7Signer_begin;
 static jmethodID mid_PKCS7Signer_data;
@@ -776,6 +781,7 @@ static int find_fids(JNIEnv *env)
 	mid_PKCS7Signer_begin = get_method(&err, env, "begin", "()V");
 	mid_PKCS7Signer_data = get_method(&err, env, "data", "(Ljava/nio/ByteBuffer;I)V");
 	mid_PKCS7Signer_sign = get_method(&err, env, "sign", "()Ljava/nio/ByteBuffer;");
+	mid_PKCS7Signer_maxDigest = get_method(&err, env, "maxDigest", "()I");
 
 	cls_PKCS7Verifier = get_class(&err, env, PKG"PKCS7Verifier");
 	fid_PKCS7Verifier_pointer = get_field(&err, env, "pointer", "J");
@@ -10668,7 +10674,30 @@ static void signer_drop_designated_name(pdf_pkcs7_signer          *signer,
 
 static int signer_max_digest_size(pdf_pkcs7_signer *signer)
 {
-	return 5 * 1024;
+	signer_internal *isigner = (signer_internal *)signer;
+	fz_context      *ctx     = isigner->ctx;
+	int max_digest = 0;
+	int detach = 0;
+
+	JNIEnv *env = jni_attach_thread(isigner->ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in signer_max_digest_size");
+
+	/* get the size in bytes we should allow for the digest buffer */
+	max_digest = (*env)->CallIntMethod(env, isigner->java_signer, mid_PKCS7Signer_maxDigest);
+	if ((*env)->ExceptionCheck(env))
+	{
+		jni_detach_thread(detach);
+		fz_throw_java(isigner->ctx, env);
+	}
+
+	jni_detach_thread(detach);
+
+	/* ensure we have a vaguely sensible value */
+	if (max_digest <= 0)
+		max_digest = MAX_DIGEST_DEFAULT;
+
+	return max_digest;
 }
 
 static int signer_create_digest(pdf_pkcs7_signer  *signer,

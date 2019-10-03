@@ -58,6 +58,11 @@ public abstract class PKCS7Signer
 	// and PKCS7 signing algorithms to sign the aggregated content and return a digest.
 	public abstract ByteBuffer sign();
 
+	// Returns a value equal to at least the number of bytes required to store the signing digest.
+	// This should be based on the chosen signing certificate (and any associated auxiliary
+	// certificates required)
+	public abstract int maxDigest();
+
 	// PRIVATE implementation detail
 
 	/* private transfer buffer for data aggregation */
