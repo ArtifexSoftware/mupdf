@@ -1307,7 +1307,6 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	pdf_obj *v = NULL;
 	pdf_obj *indv;
 	int vnum;
-	pdf_obj *byte_range;
 	pdf_obj *contents;
 	int max_digest_size;
 	char *buf = NULL;
@@ -1327,12 +1326,8 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 
 		buf = fz_calloc(ctx, max_digest_size, 1);
 
-		byte_range = pdf_new_array(ctx, doc, 4);
-		pdf_dict_put_drop(ctx, v, PDF_NAME(ByteRange), byte_range);
-
-		contents = pdf_new_string(ctx, buf, max_digest_size);
-		pdf_dict_put_drop(ctx, v, PDF_NAME(Contents), contents);
-
+		pdf_dict_put_array(ctx, v, PDF_NAME(ByteRange), 4);
+		pdf_dict_put_string(ctx, v, PDF_NAME(Contents), buf, max_digest_size);
 		pdf_dict_put(ctx, v, PDF_NAME(Type), PDF_NAME(Sig));
 		pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
 		pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
