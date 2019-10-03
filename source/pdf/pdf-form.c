@@ -1339,9 +1339,13 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 
 		pdf_dict_put_array(ctx, v, PDF_NAME(ByteRange), 4);
 		pdf_dict_put_string(ctx, v, PDF_NAME(Contents), buf, max_digest_size);
-		pdf_dict_put(ctx, v, PDF_NAME(Type), PDF_NAME(Sig));
+		/* Ensure that the /Filter entry is the first entry in the
+		   dictionary after the digest contents since we look for
+		   this tag when completing signatures in pdf-write.c in order
+		   to generate the correct byte range. */
 		pdf_dict_put(ctx, v, PDF_NAME(Filter), PDF_NAME(Adobe_PPKLite));
 		pdf_dict_put(ctx, v, PDF_NAME(SubFilter), PDF_NAME(adbe_pkcs7_detached));
+		pdf_dict_put(ctx, v, PDF_NAME(Type), PDF_NAME(Sig));
 
 		/* Record details within the document structure so that contents
 		* and byte_range can be updated with their correct values at
