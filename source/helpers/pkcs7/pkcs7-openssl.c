@@ -125,17 +125,31 @@ typedef struct
 static int stream_read(BIO *b, char *buf, int size)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
-	return fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
+	size_t read = 0;
+
+	fz_try(data->ctx)
+		read = fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
+	fz_catch(data->ctx)
+		return -1;
+
+	return read;
 }
 
 static long stream_ctrl(BIO *b, int cmd, long arg1, void *arg2)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
+	long ret;
 	switch (cmd)
 	{
 	case BIO_C_FILE_SEEK:
-		fz_seek(data->ctx, data->stm, arg1, SEEK_SET);
-		return 0;
+		fz_try(data->ctx)
+		{
+			fz_seek(data->ctx, data->stm, arg1, SEEK_SET);
+			ret = fz_tell(data->ctx, data->stm);
+		}
+		fz_catch(data->ctx)
+			return -1;
+		return ret;
 	default:
 		return 1;
 	}
@@ -591,8 +605,13 @@ static void drop_signer(pdf_pkcs7_signer *signer)
 
 static pdf_pkcs7_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
 {
-	pdf_pkcs7_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
+	pdf_pkcs7_designated_name_openssl *dn;
 	char *p;
+
+	fz_try(ctx)
+		dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
+	fz_catch(ctx)
+		return NULL;
 
 	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
 	p = strstr(dn->buf, "/CN=");
