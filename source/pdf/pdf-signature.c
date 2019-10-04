@@ -201,10 +201,10 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 		if (!fz_is_empty_rect(rect))
 		{
 			dn = signer->designated_name(signer);
-			fzbuf = fz_new_buffer(ctx, 256);
-			if (!dn->cn)
+			if (!dn || !dn->cn)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name");
 
+			fzbuf = fz_new_buffer(ctx, 256);
 			fz_append_printf(ctx, fzbuf, "cn=%s", dn->cn);
 
 			if (dn->o)
