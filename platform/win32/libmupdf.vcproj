@@ -1739,6 +1739,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\html-tags.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\image.c"
 				>
 			</File>

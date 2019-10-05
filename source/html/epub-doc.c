@@ -636,7 +636,7 @@ epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 	{
 		fz_dirname(base_uri, path, sizeof base_uri);
 		buf = fz_read_archive_entry(ctx, zip, path);
-		ncx = fz_parse_xml(ctx, buf, 0);
+		ncx = fz_parse_xml(ctx, buf, 0, 0);
 		doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(fz_xml_root(ncx), "navMap"), base_uri);
 	}
 	fz_always(ctx)
@@ -687,7 +687,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		/* parse META-INF/container.xml to find OPF */
 
 		buf = fz_read_archive_entry(ctx, zip, "META-INF/container.xml");
-		container_xml = fz_parse_xml(ctx, buf, 0);
+		container_xml = fz_parse_xml(ctx, buf, 0, 0);
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 
@@ -703,7 +703,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		/* parse OPF to find NCX and spine */
 
 		buf = fz_read_archive_entry(ctx, zip, full_path);
-		content_opf = fz_parse_xml(ctx, buf, 0);
+		content_opf = fz_parse_xml(ctx, buf, 0, 0);
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 

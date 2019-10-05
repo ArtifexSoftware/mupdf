@@ -11,7 +11,7 @@
 typedef struct fz_xml_doc_s fz_xml_doc;
 typedef struct fz_xml_s fz_xml;
 
-fz_xml_doc *fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white);
+fz_xml_doc *fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white, int for_html);
 
 void fz_drop_xml(fz_context *ctx, fz_xml_doc *xml);
 
