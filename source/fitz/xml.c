@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* #define FZ_XML_SEQ */
+
 static const struct { const char *name; int c; } html_entities[] = {
 	{"nbsp",160}, {"iexcl",161}, {"cent",162}, {"pound",163},
 	{"curren",164}, {"yen",165}, {"brvbar",166}, {"sect",167},
@@ -73,6 +75,9 @@ struct parser
 	fz_xml *head;
 	int preserve_white;
 	int depth;
+#ifdef FZ_XML_SEQ
+	int seq;
+#endif
 };
 
 struct attribute
@@ -93,6 +98,9 @@ struct fz_xml_s
 	char *text;
 	struct attribute *atts;
 	fz_xml *up, *down, *prev, *next;
+#ifdef FZ_XML_SEQ
+	int seq;
+#endif
 	char name[1];
 };
 
@@ -135,6 +143,10 @@ void fz_debug_xml(fz_xml *item, int level)
 			case '\t': putchar('\\'); putchar('t'); break;
 			}
 		}
+		putchar('"');
+#ifdef FZ_XML_SEQ
+		printf(" <%d>", item->seq);
+#endif
 		putchar('\n');
 	}
 	else
@@ -143,7 +155,11 @@ void fz_debug_xml(fz_xml *item, int level)
 		struct attribute *att;
 
 		xml_indent(level);
+#ifdef FZ_XML_SEQ
+		printf("(%s <%d>\n", item->name, item->seq);
+#else
 		printf("(%s\n", item->name);
+#endif
 		for (att = item->atts; att; att = att->next)
 		{
 			xml_indent(level);
@@ -152,7 +168,11 @@ void fz_debug_xml(fz_xml *item, int level)
 		for (child = item->down; child; child = child->next)
 			fz_debug_xml(child, level + 1);
 		xml_indent(level);
+#ifdef FZ_XML_SEQ
+		printf(")%s <%d>\n", item->name, item->seq);
+#else
 		printf(")%s\n", item->name);
+#endif
 	}
 }
 
@@ -362,6 +382,9 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 	head->down = NULL;
 	head->prev = NULL;
 	head->next = NULL;
+#ifdef FZ_XML_SEQ
+	head->seq = parser->seq++;
+#endif
 
 	/* During construction, we use head->next to mean "the
 	 * tail of the children. When we close the tag, we
@@ -746,6 +769,9 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	parser.head = &root;
 	parser.preserve_white = preserve_white;
 	parser.depth = 0;
+#ifdef FZ_XML_SEQ
+	parser.seq = 0;
+#endif
 
 	fz_try(ctx)
 	{
