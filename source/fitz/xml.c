@@ -515,7 +515,7 @@ parse_text:
 	while (*p && *p != '<') ++p;
 	if (*p == '<') {
 		/* skip trailing newline before closing tag */
-		if (p[1] == '/' && p - 1 >= mark && p[-1] == '\n')
+		if (p[1] == '/' && mark < p - 1 && p[-1] == '\n')
 			xml_emit_text(ctx, parser, mark, p - 1);
 		else if (mark < p)
 			xml_emit_text(ctx, parser, mark, p);
