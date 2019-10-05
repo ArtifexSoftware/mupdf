@@ -755,6 +755,9 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 		if (error)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "%s", error);
 
+		for (node = parser.head; node; node = node->up)
+			node->next = NULL;
+
 		for (node = root.down; node; node = node->next)
 			node->up = NULL;
 
