@@ -683,7 +683,7 @@ static int find_fids(JNIEnv *env)
 	fid_Shade_pointer = get_field(&err, env, "pointer", "J");
 	mid_Shade_init = get_method(&err, env, "<init>", "(J)V");
 
-	cls_String = get_class(&err, env,  "java/lang/String");
+	cls_String = get_class(&err, env, "java/lang/String");
 
 	cls_StrokeState = get_class(&err, env, PKG"StrokeState");
 	fid_StrokeState_pointer = get_field(&err, env, "pointer", "J");
@@ -773,11 +773,11 @@ static JNIEnv *jni_attach_thread(fz_context *ctx, int *detach)
 	int state;
 
 	*detach = 0;
-	state = (*jvm)->GetEnv(jvm, (void*)&env, MY_JNI_VERSION);
+	state = (*jvm)->GetEnv(jvm, (void *)&env, MY_JNI_VERSION);
 	if (state == JNI_EDETACHED)
 	{
 		*detach = 1;
-		state = (*jvm)->AttachCurrentThread(jvm, (void*)&env, NULL);
+		state = (*jvm)->AttachCurrentThread(jvm, (void *)&env, NULL);
 	}
 
 	if (state != JNI_OK)
@@ -2801,7 +2801,7 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	return (fz_device*)dev;
+	return (fz_device *)dev;
 }
 
 JNIEXPORT jlong JNICALL
