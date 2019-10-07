@@ -858,8 +858,9 @@ fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 	 * oversized, we ought to throw any such references
 	 * away to try to bring the store down to a "legal"
 	 * size. Run a scavenge to check for this case. */
-	if (num == 1 && ctx->store->size > ctx->store->max)
-		scavenge(ctx, ctx->store->size - ctx->store->max);
+	if (ctx->store->max != FZ_STORE_UNLIMITED)
+		if (num == 1 && ctx->store->size > ctx->store->max)
+			scavenge(ctx, ctx->store->size - ctx->store->max);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 
 	/* If we have no references to an object left, then
