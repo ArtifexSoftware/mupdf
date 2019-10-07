@@ -1725,7 +1725,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ctx = fz_new_context(NULL, NULL, 0);
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	fz_register_document_handlers(ctx);
 	if (layout_css)
 	{
