@@ -129,7 +129,7 @@ public class Document
 				return new Location(i, number - start);
 			start += np;
 		}
-		return new Location(start, np - 1);
+		return new Location(i - 1, np - 1);
 	}
 
 	public int pageNumberFromLocation(Location loc) {

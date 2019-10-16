@@ -597,7 +597,7 @@ fz_location fz_location_from_page_number(fz_context *ctx, fz_document *doc, int 
 			return fz_make_location(i, number - start);
 		start += m;
 	}
-	return fz_make_location(start, m-1);
+	return fz_make_location(i-1, m-1);
 }
 
 int fz_page_number_from_location(fz_context *ctx, fz_document *doc, fz_location loc)
