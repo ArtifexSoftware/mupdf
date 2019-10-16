@@ -541,10 +541,7 @@ parse_text:
 	mark = p;
 	while (*p && *p != '<') ++p;
 	if (*p == '<') {
-		/* skip trailing newline before closing tag */
-		if (p[1] == '/' && mark < p - 1 && p[-1] == '\n')
-			xml_emit_text(ctx, parser, mark, p - 1);
-		else if (mark < p)
+		if (mark < p)
 			xml_emit_text(ctx, parser, mark, p);
 		++p;
 		goto parse_element;
@@ -623,7 +620,6 @@ parse_element_name:
 	xml_emit_open_tag(ctx, parser, mark, p, 0);
 	if (*p == '>') {
 		++p;
-		if (*p == '\n') ++p; /* must skip linebreak immediately after an opening tag */
 		goto parse_text;
 	}
 	if (p[0] == '/' && p[1] == '>') {
@@ -641,7 +637,6 @@ parse_attributes:
 		goto parse_attribute_name;
 	if (*p == '>') {
 		++p;
-		if (*p == '\n') ++p; /* must skip linebreak immediately after an opening tag */
 		goto parse_text;
 	}
 	if (p[0] == '/' && p[1] == '>') {
