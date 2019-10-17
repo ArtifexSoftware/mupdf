@@ -5017,76 +5017,137 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jstring jmimetype)
+FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobject jdocument, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
-	fz_stream *stm = NULL;
-	jobject stream = NULL;
-	jbyteArray array = NULL;
-	SeekableStreamState *state = NULL;
-	const char *mimetype = NULL;
+	fz_stream *docstream = NULL;
+	fz_stream *accstream = NULL;
+	jobject jdoc = NULL;
+	jobject jacc = NULL;
+	jbyteArray docarray = NULL;
+	jbyteArray accarray = NULL;
+	SeekableStreamState *docstate = NULL;
+	SeekableStreamState *accstate = NULL;
+	const char *magic = NULL;
 
-	fz_var(state);
-	fz_var(stm);
-	fz_var(stream);
-	fz_var(array);
+	fz_var(jdoc);
+	fz_var(jacc);
+	fz_var(docarray);
+	fz_var(accarray);
+	fz_var(docstream);
+	fz_var(accstream);
 
-	if (jmimetype)
+	if (!ctx) return NULL;
+	if (jmagic)
 	{
-		mimetype = (*env)->GetStringUTFChars(env, jmimetype, NULL);
-		if (!mimetype)
+		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+		if (!magic)
+		{
+			jni_throw_run(env, "cannot get characters in magic string");
 			return NULL;
+		}
+	}
+	if (jdocument)
+	{
+		jdoc = (*env)->NewGlobalRef(env, jdocument);
+		if (!jdoc)
+		{
+			if (magic)
+				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			jni_throw_run(env, "cannot get reference to document stream");
+			return NULL;
+		}
+	}
+	if (jaccelerator)
+	{
+		jacc = (*env)->NewGlobalRef(env, jaccelerator);
+		if (!jacc)
+		{
+			(*env)->DeleteGlobalRef(env, jdoc);
+			if (magic)
+				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			jni_throw_run(env, "cannot get reference to accelerator stream");
+			return NULL;
+		}
 	}
 
-	stream = (*env)->NewGlobalRef(env, jstream);
-	if (!stream)
+	docarray = (*env)->NewByteArray(env, sizeof docstate->buffer);
+	if (docarray)
+		docarray = (*env)->NewGlobalRef(env, docarray);
+	if (!docarray)
 	{
-		if (mimetype)
-			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
+		(*env)->DeleteGlobalRef(env, jacc);
+		(*env)->DeleteGlobalRef(env, jdoc);
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		jni_throw_run(env, "cannot create internal buffer for document stream");
 		return NULL;
 	}
 
-	array = (*env)->NewByteArray(env, sizeof state->buffer);
-	if (array)
-		array = (*env)->NewGlobalRef(env, array);
-	if (!array)
+	accarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
+	if (accarray)
+		accarray = (*env)->NewGlobalRef(env, accarray);
+	if (!accarray)
 	{
-		if (mimetype)
-			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
-		(*env)->DeleteGlobalRef(env, stream);
+		(*env)->DeleteGlobalRef(env, docarray);
+		(*env)->DeleteGlobalRef(env, jacc);
+		(*env)->DeleteGlobalRef(env, jdoc);
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		jni_throw_run(env, "cannot create internal buffer for accelerator stream");
 		return NULL;
 	}
 
 	fz_try(ctx)
 	{
-		state = fz_malloc(ctx, sizeof(SeekableStreamState));
-		state->stream = stream;
-		state->array = array;
+		if (jdoc)
+		{
+			/* No exceptions can occur from here to stream owning docstate, so we must not free docstate. */
+			docstate = fz_malloc(ctx, sizeof(SeekableStreamState));
+			docstate->stream = jdoc;
+			docstate->array = docarray;
 
-		/* create a stream and open the doc using it */
-		stm = fz_new_stream(ctx, state, SeekableInputStream_next, SeekableInputStream_drop);
-		stm->state = state;
-		stm->seek = SeekableInputStream_seek;
+			/* Ownership transferred to docstate. */
+			jdoc = NULL;
+			docarray = NULL;
 
-		/* these are now owned by 'stm' */
-		state = NULL;
-		stream = NULL;
-		array = NULL;
+			/* Stream takes ownership of docstate. */
+			docstream = fz_new_stream(ctx, docstate, SeekableInputStream_next, SeekableInputStream_drop);
+			docstream->seek = SeekableInputStream_seek;
+		}
 
-		doc = fz_open_document_with_stream(ctx, mimetype, stm);
+		if (jacc)
+		{
+			/* No exceptions can occur from here to stream owning accstate, so we must not free accstate. */
+			accstate = fz_malloc(ctx, sizeof(SeekableStreamState));
+			accstate->stream = jacc;
+			accstate->array = accarray;
+
+			/* Ownership transferred to accstate. */
+			jacc = NULL;
+			accarray = NULL;
+
+			/* Stream takes ownership of accstate. */
+			accstream = fz_new_stream(ctx, accstate, SeekableInputStream_next, SeekableInputStream_drop);
+			accstream->seek = SeekableInputStream_seek;
+		}
+
+		doc = fz_open_accelerated_document_with_stream(ctx, magic, docstream, accstream);
 	}
 	fz_always(ctx)
 	{
-		if (mimetype)
-			(*env)->ReleaseStringUTFChars(env, jmimetype, mimetype);
-		fz_drop_stream(ctx, stm);
+		fz_drop_stream(ctx, accstream);
+		fz_drop_stream(ctx, docstream);
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 	}
 	fz_catch(ctx)
 	{
-		if (stream) (*env)->DeleteGlobalRef(env, stream);
-		if (array) (*env)->DeleteGlobalRef(env, array);
-		fz_free(ctx, state);
+		(*env)->DeleteGlobalRef(env, accarray);
+		(*env)->DeleteGlobalRef(env, docarray);
+		(*env)->DeleteGlobalRef(env, jacc);
+		(*env)->DeleteGlobalRef(env, jdoc);
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
@@ -5095,24 +5156,42 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jst
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
+FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jstring jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *filename = NULL;
+	const char *accelerator = NULL;
 
-	if (!ctx) return 0;
+	if (!ctx) return NULL;
 	if (jfilename)
 	{
 		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
-		if (!filename) return 0;
+		if (!filename)
+		{
+			jni_throw_run(env, "cannot get characters in filename string");
+			return NULL;
+		}
+	}
+	if (jaccelerator)
+	{
+		accelerator = (*env)->GetStringUTFChars(env, jaccelerator, NULL);
+		if (!accelerator)
+		{
+			jni_throw_run(env, "cannot get characters in accelerator filename string");
+			return NULL;
+		}
 	}
 
 	fz_try(ctx)
-		doc = fz_open_document(ctx, filename);
+		doc = fz_open_accelerated_document(ctx, filename, accelerator);
 	fz_always(ctx)
+	{
+		if (accelerator)
+			(*env)->ReleaseStringUTFChars(env, jaccelerator, accelerator);
 		if (filename)
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5122,45 +5201,183 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 	return to_Document_safe_own(ctx, env, doc);
 }
 
+
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jobject jbuffer, jstring jmagic)
+FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfilename, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
-	const char *magic = NULL;
-	fz_stream *stream = NULL;
-	int n;
-	jbyte *buffer = NULL;
-	fz_buffer *buf = NULL;
+	const char *filename = NULL;
+	fz_stream *docstream = NULL;
+	fz_stream *accstream = NULL;
+	jobject jacc = NULL;
+	jbyteArray accarray = NULL;
+	SeekableStreamState *accstate = NULL;
+
+	fz_var(jacc);
+	fz_var(accarray);
+	fz_var(accstream);
+	fz_var(docstream);
 
 	if (!ctx) return NULL;
-	if (!jmagic) { jni_throw_arg(env, "magic must not be null"); return NULL; }
+	if (jfilename)
+	{
+		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+		if (!filename)
+		{
+			jni_throw_run(env, "cannot get characters in filename string");
+			return NULL;
+		}
+	}
+	if (jaccelerator)
+	{
+		jacc = (*env)->NewGlobalRef(env, jaccelerator);
+		if (!jacc)
+		{
+			if (jfilename)
+				(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+			jni_throw_run(env, "cannot get reference to accelerator stream");
+			return NULL;
+		}
+	}
 
-	magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
-	if (!magic) return NULL;
-
-	n = (*env)->GetArrayLength(env, jbuffer);
-
-	buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
-	if (!buffer) {
-		if (magic)
-			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
-		jni_throw_io(env, "cannot get bytes to read");
+	accarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
+	if (accarray)
+		accarray = (*env)->NewGlobalRef(env, accarray);
+	if (!accarray)
+	{
+		(*env)->DeleteGlobalRef(env, jacc);
+		if (jfilename)
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		jni_throw_run(env, "cannot get create internal buffer for accelerator stream");
 		return NULL;
 	}
 
 	fz_try(ctx)
 	{
-		buf = fz_new_buffer(ctx, n);
-		fz_append_data(ctx, buf, buffer, n);
-		stream = fz_open_buffer(ctx, buf);
-		doc = fz_open_document_with_stream(ctx, magic, stream);
+		if (filename)
+			docstream = fz_open_file(ctx, filename);
+
+		if (jacc)
+		{
+			/* No exceptions can occur from here to stream owning accstate, so we must not free accstate. */
+			accstate = fz_malloc(ctx, sizeof(SeekableStreamState));
+			accstate->stream = jacc;
+			accstate->array = accarray;
+
+			/* Ownership transferred to accstate. */
+			jacc = NULL;
+			accarray = NULL;
+
+			/* Stream takes ownership of accstate. */
+			accstream = fz_new_stream(ctx, accstate, SeekableInputStream_next, SeekableInputStream_drop);
+			accstream->seek = SeekableInputStream_seek;
+		}
+
+		doc = fz_open_accelerated_document_with_stream(ctx, filename, docstream, accstream);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(ctx, stream);
-		fz_drop_buffer(ctx, buf);
-		(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+		fz_drop_stream(ctx, accstream);
+		fz_drop_stream(ctx, docstream);
+		if (filename)
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	}
+	fz_catch(ctx)
+	{
+		(*env)->DeleteGlobalRef(env, accarray);
+		(*env)->DeleteGlobalRef(env, jacc);
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return to_Document_safe_own(ctx, env, doc);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobject jbuffer, jobject jaccelerator)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = NULL;
+	const char *magic = NULL;
+	fz_stream *docstream = NULL;
+	fz_stream *accstream = NULL;
+	fz_buffer *docbuf = NULL;
+	fz_buffer *accbuf = NULL;
+	jbyte *buffer = NULL;
+	jbyte *accelerator = NULL;
+	int n, m;
+
+	fz_var(docbuf);
+	fz_var(accbuf);
+	fz_var(docstream);
+	fz_var(accstream);
+
+	if (!ctx) return NULL;
+	if (jmagic)
+	{
+		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+		if (!magic)
+		{
+			jni_throw_run(env, "cannot get characters in magic string");
+			return NULL;
+		}
+	}
+	if (jbuffer)
+	{
+		n = (*env)->GetArrayLength(env, jbuffer);
+
+		buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+		if (!buffer) {
+			if (magic)
+				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			jni_throw_run(env, "cannot get document bytes to read");
+			return NULL;
+		}
+	}
+	if (jaccelerator)
+	{
+		m = (*env)->GetArrayLength(env, jaccelerator);
+
+		accelerator = (*env)->GetByteArrayElements(env, jaccelerator, NULL);
+		if (!accelerator) {
+			if (buffer)
+				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+			if (magic)
+				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			jni_throw_run(env, "cannot get accelerator bytes to read");
+			return NULL;
+		}
+	}
+
+	fz_try(ctx)
+	{
+		if (buffer)
+		{
+			docbuf = fz_new_buffer(ctx, n);
+			fz_append_data(ctx, docbuf, buffer, n);
+			docstream = fz_open_buffer(ctx, docbuf);
+		}
+
+		if (accelerator)
+		{
+			accbuf = fz_new_buffer(ctx, m);
+			fz_append_data(ctx, accbuf, accelerator, m);
+			accstream = fz_open_buffer(ctx, accbuf);
+		}
+
+		doc = fz_open_accelerated_document_with_stream(ctx, magic, docstream, accstream);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, accstream);
+		fz_drop_buffer(ctx, accbuf);
+		fz_drop_stream(ctx, docstream);
+		fz_drop_buffer(ctx, docbuf);
+		if (accelerator)
+			(*env)->ReleaseByteArrayElements(env, jaccelerator, accelerator, 0);
+		if (buffer)
+			(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
 		if (magic)
 			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 	}
