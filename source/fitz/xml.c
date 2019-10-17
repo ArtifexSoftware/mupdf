@@ -533,6 +533,24 @@ static void xml_emit_cdata(fz_context *ctx, struct parser *parser, const char *a
 	xml_emit_close_tag(ctx, parser);
 }
 
+static int close_tag(fz_context *ctx, struct parser *parser, const char *mark, const char *p)
+{
+	const char *ns, *tag;
+
+	/* skip namespace prefix */
+	for (ns = mark; ns < p - 1; ++ns)
+		if (*ns == ':')
+			mark = ns + 1;
+
+	tag = fz_xml_tag(parser->head);
+	if (tag && strncmp(tag, mark, p-mark) == 0 && tag[p-mark] == 0)
+	{
+		xml_emit_close_tag(ctx, parser);
+		return 0;
+	}
+	return 1;
+}
+
 static char *xml_parse_document_imp(fz_context *ctx, struct parser *parser, const char *p)
 {
 	const char *mark;
@@ -607,11 +625,13 @@ parse_processing_instruction:
 
 parse_closing_element:
 	while (iswhite(*p)) ++p;
+	mark = p;
 	while (isname(*p)) ++p;
+	if (close_tag(ctx, parser, mark, p))
+		return "opening and closing tag mismatch";
 	while (iswhite(*p)) ++p;
 	if (*p != '>')
 		return "syntax error in closing element";
-	xml_emit_close_tag(ctx, parser);
 	++p;
 	goto parse_text;
 
