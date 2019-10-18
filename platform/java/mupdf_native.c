@@ -2230,7 +2230,7 @@ typedef struct
 }
 SeekableStreamState;
 
-static int call_SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
+static int SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	SeekableStreamState *state = stm->state;
 	JNIEnv *env;
@@ -2239,7 +2239,7 @@ static int call_SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableInputStream_next");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_next");
 
 	n = (*env)->CallIntMethod(env, state->stream, mid_SeekableInputStream_read, state->array);
 	if ((*env)->ExceptionCheck(env)) {
@@ -2272,7 +2272,7 @@ static int call_SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t
 	return ch;
 }
 
-static void call_SeekableOutputStream_write(fz_context *ctx, void *streamState_, const void *buffer_, size_t count)
+static void SeekableOutputStream_write(fz_context *ctx, void *streamState_, const void *buffer_, size_t count)
 {
 	SeekableStreamState *state = streamState_;
 	const jbyte *buffer = buffer_;
@@ -2281,7 +2281,7 @@ static void call_SeekableOutputStream_write(fz_context *ctx, void *streamState_,
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_write");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_write");
 
 	while (count > 0)
 	{
@@ -2301,7 +2301,7 @@ static void call_SeekableOutputStream_write(fz_context *ctx, void *streamState_,
 	jni_detach_thread(detach);
 }
 
-static int64_t call_SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
+static int64_t SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
 	JNIEnv *env;
@@ -2310,7 +2310,7 @@ static int64_t call_SeekableOutputStream_tell(fz_context *ctx, void *streamState
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_tell");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_tell");
 
 	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_position);
 	if ((*env)->ExceptionCheck(env)) {
@@ -2323,7 +2323,7 @@ static int64_t call_SeekableOutputStream_tell(fz_context *ctx, void *streamState
 	return pos;
 }
 
-static void call_SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
+static void SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
 	SeekableStreamState *state = stm->state;
 	JNIEnv *env;
@@ -2332,7 +2332,7 @@ static void call_SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableInputStream_seek");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_seek");
 
 	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
 	if ((*env)->ExceptionCheck(env)) {
@@ -2346,7 +2346,7 @@ static void call_SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64
 	jni_detach_thread(detach);
 }
 
-static void call_SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64_t offset, int whence)
+static void SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64_t offset, int whence)
 {
 	SeekableStreamState *state = streamState_;
 	JNIEnv *env;
@@ -2354,7 +2354,7 @@ static void call_SeekableOutputStream_seek(fz_context *ctx, void *streamState_, 
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in call_SeekableOutputStream_seek");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_seek");
 
 	(void) (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
 	if ((*env)->ExceptionCheck(env)) {
@@ -2365,7 +2365,7 @@ static void call_SeekableOutputStream_seek(fz_context *ctx, void *streamState_, 
 	jni_detach_thread(detach);
 }
 
-static void call_SeekableInputStream_drop(fz_context *ctx, void *streamState_)
+static void SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
 	JNIEnv *env;
@@ -2373,7 +2373,7 @@ static void call_SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL) {
-		fz_warn(ctx, "cannot attach to JVM in call_SeekableInputStream_drop; leaking input stream");
+		fz_warn(ctx, "cannot attach to JVM in SeekableInputStream_drop; leaking input stream");
 		return;
 	}
 
@@ -2385,7 +2385,7 @@ static void call_SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 	jni_detach_thread(detach);
 }
 
-static void call_SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
+static void SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
 	JNIEnv *env;
@@ -2393,7 +2393,7 @@ static void call_SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL) {
-		fz_warn(ctx, "cannot attach to JVM in call_SeekableOutputStream_drop; leaking output stream");
+		fz_warn(ctx, "cannot attach to JVM in SeekableOutputStream_drop; leaking output stream");
 		return;
 	}
 
@@ -5060,9 +5060,9 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jst
 		state->array = array;
 
 		/* create a stream and open the doc using it */
-		stm = fz_new_stream(ctx, state, call_SeekableInputStream_next, call_SeekableInputStream_drop);
+		stm = fz_new_stream(ctx, state, SeekableInputStream_next, SeekableInputStream_drop);
 		stm->state = state;
-		stm->seek = call_SeekableInputStream_seek;
+		stm->seek = SeekableInputStream_seek;
 
 		/* these are now owned by 'stm' */
 		state = NULL;
@@ -7591,9 +7591,9 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		state->stream = stream;
 		state->array = array;
 
-		out = fz_new_output(ctx, 8192, state, call_SeekableOutputStream_write, NULL, call_SeekableOutputStream_drop);
-		out->seek = call_SeekableOutputStream_seek;
-		out->tell = call_SeekableOutputStream_tell;
+		out = fz_new_output(ctx, sizeof state->buffer, state, SeekableOutputStream_write, NULL, SeekableOutputStream_drop);
+		out->seek = SeekableOutputStream_seek;
+		out->tell = SeekableOutputStream_tell;
 
 		/* these are now owned by 'out' */
 		state = NULL;
