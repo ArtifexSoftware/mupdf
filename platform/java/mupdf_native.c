@@ -7852,7 +7852,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	SeekableStreamState *state = NULL;
 	jobject stream = NULL;
 	jbyteArray array = NULL;
-	fz_output *out;
+	fz_output *out = NULL;
 	const char *options = NULL;
 	pdf_write_options pwo;
 
@@ -7889,18 +7889,25 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 
 	fz_try(ctx)
 	{
-		state = fz_malloc(ctx, sizeof(SeekableStreamState));
-		state->stream = stream;
-		state->array = array;
+		if (jstream)
+		{
+			/* No exceptions can occur from here to stream owning state, so we must not free state. */
+			state = fz_malloc(ctx, sizeof(SeekableStreamState));
+			state->stream = stream;
+			state->array = array;
 
-		out = fz_new_output(ctx, sizeof state->buffer, state, SeekableOutputStream_write, NULL, SeekableOutputStream_drop);
-		out->seek = SeekableOutputStream_seek;
-		out->tell = SeekableOutputStream_tell;
+			/* Ownership transferred to state. */
+			stream = NULL;
+			array = NULL;
 
-		/* these are now owned by 'out' */
-		state = NULL;
-		stream = NULL;
-		array = NULL;
+			/* Stream takes ownership of state. */
+			out = fz_new_output(ctx, sizeof state->buffer, state, SeekableOutputStream_write, NULL, SeekableOutputStream_drop);
+			out->seek = SeekableOutputStream_seek;
+			out->tell = SeekableOutputStream_tell;
+
+			/* these are now owned by 'out' */
+			state = NULL;
+		}
 
 		pdf_parse_write_options(ctx, &pwo, options);
 		pdf_write_document(ctx, pdf, out, &pwo);
@@ -7908,15 +7915,14 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	}
 	fz_always(ctx)
 	{
+		fz_drop_output(ctx, out);
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
-		fz_drop_output(ctx, out);
 	}
 	fz_catch(ctx)
 	{
-		if (stream) (*env)->DeleteGlobalRef(env, stream);
-		if (array) (*env)->DeleteGlobalRef(env, array);
-		fz_free(ctx, state);
+		(*env)->DeleteGlobalRef(env, array);
+		(*env)->DeleteGlobalRef(env, stream);
 		jni_rethrow(env, ctx);
 	}
 }
