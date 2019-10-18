@@ -5415,6 +5415,86 @@ FUN(Document_recognize)(JNIEnv *env, jclass self, jstring jmagic)
 	return recognized;
 }
 
+JNIEXPORT void JNICALL
+FUN(Document_saveAccelerator)(JNIEnv *env, jobject self, jstring jfilename)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	const char *filename = "null";
+
+	if (!ctx || !doc) return;
+	if (!jfilename) { jni_throw_arg(env, "filename must not be null"); return; }
+
+	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (!filename) return;
+
+	fz_try(ctx)
+		fz_save_accelerator(ctx, doc, filename);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Document_outputAccelerator)(JNIEnv *env, jobject self, jobject jstream)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	SeekableStreamState *state = NULL;
+	jobject stream = NULL;
+	jbyteArray array = NULL;
+	fz_output *out;
+
+	fz_var(state);
+	fz_var(out);
+	fz_var(stream);
+	fz_var(array);
+
+	stream = (*env)->NewGlobalRef(env, jstream);
+	if (!stream)
+		return;
+
+	array = (*env)->NewByteArray(env, sizeof state->buffer);
+	if (array)
+		array = (*env)->NewGlobalRef(env, array);
+	if (!array)
+	{
+		(*env)->DeleteGlobalRef(env, stream);
+		return;
+	}
+
+	fz_try(ctx)
+	{
+		state = fz_malloc(ctx, sizeof(SeekableStreamState));
+		state->stream = stream;
+		state->array = array;
+
+		out = fz_new_output(ctx, 8192, state, SeekableOutputStream_write, NULL, SeekableOutputStream_drop);
+		out->seek = SeekableOutputStream_seek;
+		out->tell = SeekableOutputStream_tell;
+
+		/* these are now owned by 'out' */
+		state = NULL;
+		stream = NULL;
+		array = NULL;
+
+		fz_output_accelerator(ctx, doc, out);
+		fz_close_output(ctx, out);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+	{
+		(*env)->DeleteGlobalRef(env, stream);
+		(*env)->DeleteGlobalRef(env, array);
+		fz_free(ctx, state);
+		jni_rethrow(env, ctx);
+	}
+}
+
 JNIEXPORT jboolean JNICALL
 FUN(Document_needsPassword)(JNIEnv *env, jobject self)
 {

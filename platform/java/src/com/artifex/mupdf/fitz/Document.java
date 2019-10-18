@@ -59,9 +59,11 @@ public class Document
 
 	public static native boolean recognize(String magic);
 
+	public native void saveAccelerator(String filename);
+	public native void outputAccelerator(SeekableOutputStream stream);
+
 	public native boolean needsPassword();
 	public native boolean authenticatePassword(String password);
-
 
 	public native int countChapters();
 	public native int countPages(int chapter);
