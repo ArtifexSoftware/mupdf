@@ -3455,7 +3455,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_
 	pdf_write_options opts_defaults = pdf_default_write_options;
 	pdf_write_state opts = { 0 };
 
-	if (!doc)
+	if (!doc || !out)
 		return;
 
 	if (!in_opts)
