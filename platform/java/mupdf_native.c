@@ -367,6 +367,11 @@ static void jni_rethrow(JNIEnv *env, fz_context *ctx)
 	jni_throw(env, fz_caught(ctx), fz_caught_message(ctx));
 }
 
+static void jni_throw_run(JNIEnv *env, const char *info)
+{
+	(*env)->ThrowNew(env, cls_RuntimeException, info);
+}
+
 static void jni_throw_oom(JNIEnv *env, const char *info)
 {
 	(*env)->ThrowNew(env, cls_OutOfMemoryError, info);
