@@ -5804,11 +5804,8 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jbounds = to_Rect_safe(ctx, env, link->rect);
 		if (!jbounds) return NULL;
 
-		if (fz_is_external_link(ctx, link->uri))
-		{
-			juri = (*env)->NewStringUTF(env, link->uri);
-			if (!juri) return NULL;
-		}
+		juri = (*env)->NewStringUTF(env, link->uri);
+		if (!juri) return NULL;
 
 		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, juri);
 		(*env)->DeleteLocalRef(env, jbounds);
