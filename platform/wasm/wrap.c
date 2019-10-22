@@ -186,7 +186,8 @@ char *pageLinks(fz_document *doc, int number, float dpi)
 					fz_append_printf(ctx, buf, " href=\"%s\">\n", link->uri);
 				else
 				{
-					int linkNumber = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
+					fz_location linkLoc = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
+					int linkNumber = fz_page_number_from_location(ctx, doc, linkLoc);
 					fz_append_printf(ctx, buf, " href=\"#page%d\">\n", linkNumber+1);
 				}
 			}

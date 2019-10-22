@@ -393,4 +393,4 @@ android: generate
 		APP_PLATFORM=android-16 \
 		APP_OPTIM=$(build)
 
-.PHONY: all clean nuke install third libs apps generate tags
+.PHONY: all clean nuke install third libs apps generate tags wasm

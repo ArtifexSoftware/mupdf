@@ -160,6 +160,7 @@ ifeq "$(OS)" "wasm"
   OUT := build/wasm/$(build)
   CC = emcc
   CXX = em++
+  AR = emar
   HAVE_GLUT=no
   HAVE_X11=no
   HAVE_OBJCOPY=no
