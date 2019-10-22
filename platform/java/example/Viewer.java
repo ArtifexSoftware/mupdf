@@ -462,6 +462,23 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	public void windowOpened(WindowEvent event) { }
 	public void windowClosed(WindowEvent event) { }
 
+	protected static String getAcceleratorPath(String documentPath) {
+		String acceleratorPath = documentPath.substring(1);
+		acceleratorPath = acceleratorPath.replace(File.separatorChar, '%');
+		acceleratorPath = acceleratorPath.replace('\\', '%');
+		acceleratorPath = acceleratorPath.replace(':', '%');
+
+		String tmpdir = System.getProperty("java.io.tmpdir");
+		return new StringBuffer(tmpdir).append(File.separatorChar).append(acceleratorPath).append(".accel").toString();
+	}
+
+	protected static boolean acceleratorValid(File documentFile, File acceleratorFile) {
+		long documentModified = documentFile.lastModified();
+		long acceleratorModified = acceleratorFile.lastModified();
+
+		return acceleratorModified != 0 && acceleratorModified > documentModified;
+	}
+
 	public static void main(String[] args) {
 		File selectedFile;
 
@@ -483,7 +500,15 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		try {
-			Document doc = Document.openDocument(selectedFile.getAbsolutePath());
+			String documentPath = selectedFile.getAbsolutePath();
+			String acceleratorPath = getAcceleratorPath(documentPath);
+
+			Document doc;
+			if (acceleratorValid(selectedFile, new File(acceleratorPath)))
+				doc = Document.openDocument(documentPath, acceleratorPath);
+			else
+				doc = Document.openDocument(documentPath);
+
 			if (doc.needsPassword()) {
 				String pwd;
 				do {
@@ -492,6 +517,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 						System.exit(1);
 				} while (!doc.authenticatePassword(pwd));
 			}
+
+			doc.countPages();
+			doc.saveAccelerator(acceleratorPath);
+
 			Viewer app = new Viewer(doc);
 			app.setVisible(true);
 			return;
