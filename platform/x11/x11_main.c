@@ -65,8 +65,8 @@ extern void ximage_blit(Drawable d, GC gc, int dstx, int dsty,
 	unsigned char *srcdata,
 	int srcx, int srcy, int srcw, int srch, int srcstride);
 
-void windrawstringxor(pdfapp_t *app, int x, int y, char *s);
-void cleanup(pdfapp_t *app);
+static void windrawstringxor(pdfapp_t *app, int x, int y, char *s);
+static void cleanup(pdfapp_t *app);
 
 static Display *xdpy;
 static Atom XA_CLIPBOARD;
@@ -350,7 +350,7 @@ void wincopyfile(pdfapp_t *app, char *source, char *target)
 	fclose(in);
 }
 
-void cleanup(pdfapp_t *app)
+static void cleanup(pdfapp_t *app)
 {
 	fz_context *ctx = app->ctx;
 
@@ -617,7 +617,7 @@ void winadvancetimer(pdfapp_t *app, float duration)
 	advance_scheduled = 1;
 }
 
-void windrawstringxor(pdfapp_t *app, int x, int y, char *s)
+static void windrawstringxor(pdfapp_t *app, int x, int y, char *s)
 {
 	int prevfunction;
 	XGCValues xgcv;
@@ -643,7 +643,7 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 	XDrawString(xdpy, xwin, xgc, x, y, s, strlen(s));
 }
 
-void docopy(pdfapp_t *app, Atom copy_target)
+static void docopy(pdfapp_t *app, Atom copy_target)
 {
 	unsigned short copyucs2[16 * 1024];
 	char *latin1 = copylatin1;
@@ -678,7 +678,7 @@ void windocopy(pdfapp_t *app)
 	docopy(app, XA_PRIMARY);
 }
 
-void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time time)
+static void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time time)
 {
 	XEvent nevt;
 
