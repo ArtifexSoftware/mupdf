@@ -488,19 +488,19 @@ struct tensor_patch_s
 };
 
 static void
-triangulate_patch(fz_context *ctx, fz_mesh_processor *painter, tensor_patch p)
+triangulate_patch(fz_context *ctx, fz_mesh_processor *painter, tensor_patch *p)
 {
 	fz_vertex v0, v1, v2, v3;
 
-	v0.p = p.pole[0][0];
-	v1.p = p.pole[0][3];
-	v2.p = p.pole[3][3];
-	v3.p = p.pole[3][0];
+	v0.p = p->pole[0][0];
+	v1.p = p->pole[0][3];
+	v2.p = p->pole[3][3];
+	v3.p = p->pole[3][0];
 
-	fz_prepare_color(ctx, painter, &v0, p.color[0]);
-	fz_prepare_color(ctx, painter, &v1, p.color[1]);
-	fz_prepare_color(ctx, painter, &v2, p.color[2]);
-	fz_prepare_color(ctx, painter, &v3, p.color[3]);
+	fz_prepare_color(ctx, painter, &v0, p->color[0]);
+	fz_prepare_color(ctx, painter, &v1, p->color[1]);
+	fz_prepare_color(ctx, painter, &v2, p->color[2]);
+	fz_prepare_color(ctx, painter, &v3, p->color[3]);
 
 	paint_quad(ctx, painter, &v0, &v1, &v2, &v3);
 }
@@ -584,8 +584,8 @@ draw_stripe(fz_context *ctx, fz_mesh_processor *painter, tensor_patch *p, int de
 	if (depth == 0)
 	{
 		/* if no more subdividing, draw two new patches... */
-		triangulate_patch(ctx, painter, s1);
-		triangulate_patch(ctx, painter, s0);
+		triangulate_patch(ctx, painter, &s1);
+		triangulate_patch(ctx, painter, &s0);
 	}
 	else
 	{
