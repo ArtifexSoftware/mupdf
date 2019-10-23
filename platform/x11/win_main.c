@@ -57,7 +57,7 @@ static char filename[PATH_MAX];
 #define SET_KEY(parent, name, value) \
 	RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), (DWORD)strlen(value) + 1)
 
-void install_app(char *argv0)
+static void install_app(char *argv0)
 {
 	char buf[512];
 	HKEY software, classes, mupdf, dotpdf, dotxps, dotepub, dotfb2;
@@ -197,7 +197,7 @@ int winquery(pdfapp_t *app, const char *query)
 	}
 }
 
-int winfilename(wchar_t *buf, int len)
+static int winfilename(wchar_t *buf, int len)
 {
 	OPENFILENAME ofn;
 	buf[0] = 0;
@@ -338,7 +338,7 @@ static const char **cd_opts;
 static const char **cd_vals;
 static int pd_okay = 0;
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -365,7 +365,7 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -402,7 +402,7 @@ dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogchoiceproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND listbox;
@@ -503,7 +503,7 @@ int winchoiceinput(pdfapp_t *app, int nopts, const char *opts[], int *nvals, con
 	return pd_okay;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
@@ -577,14 +577,14 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-void info()
+static void info()
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGINFO", hwndframe, dloginfoproc);
 	if (code <= 0)
 		winerror(&gapp, "cannot create info dialog");
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -611,7 +611,7 @@ void winhelp(pdfapp_t*app)
  * Main window
  */
 
-void winopen()
+static void winopen()
 {
 	WNDCLASS wc;
 	HMENU menu;
@@ -777,7 +777,7 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 	TextOutA(hdc, x, y - 12, s, (int)strlen(s));
 }
 
-void winblitsearch()
+static void winblitsearch()
 {
 	if (gapp.issearching)
 	{
@@ -788,7 +788,7 @@ void winblitsearch()
 	}
 }
 
-void winblit()
+static void winblit()
 {
 	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
 	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
@@ -965,7 +965,7 @@ static void killtimer(pdfapp_t *app)
 	timer_pending = 0;
 }
 
-void handlekey(int c)
+static void handlekey(int c)
 {
 	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
 	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
@@ -1001,7 +1001,7 @@ void handlekey(int c)
 	winrepaint(&gapp);
 }
 
-void handlemouse(int x, int y, int btn, int state)
+static void handlemouse(int x, int y, int btn, int state)
 {
 	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
 	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
@@ -1023,7 +1023,7 @@ void handlemouse(int x, int y, int btn, int state)
 	pdfapp_onmouse(&gapp, x, y, btn, modifier, state);
 }
 
-LRESULT CALLBACK
+static LRESULT CALLBACK
 frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -1081,7 +1081,7 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-LRESULT CALLBACK
+static LRESULT CALLBACK
 viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static int oldx = 0;
