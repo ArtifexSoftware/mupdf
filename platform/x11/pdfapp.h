@@ -180,4 +180,7 @@ void pdfapp_inverthit(pdfapp_t *app);
 
 void pdfapp_postblit(pdfapp_t *app);
 
+void pdfapp_warn(pdfapp_t *app, const char *fmt, ...);
+void pdfapp_error(pdfapp_t *app, char *msg);
+
 #endif

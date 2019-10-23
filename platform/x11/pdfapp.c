@@ -161,7 +161,7 @@ static int zoom_out(int oldres)
 	return zoomlist[0];
 }
 
-static void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
+void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 {
 	char buf[1024];
 	va_list ap;
@@ -172,7 +172,7 @@ static void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 	winwarn(app, buf);
 }
 
-static void pdfapp_error(pdfapp_t *app, char *msg)
+void pdfapp_error(pdfapp_t *app, char *msg)
 {
 	winerror(app, msg);
 }
