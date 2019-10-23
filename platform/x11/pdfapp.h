@@ -36,7 +36,6 @@ extern int winchoiceinput(pdfapp_t*, int nopts, const char *opts[], int *nvals, 
 extern void winopenuri(pdfapp_t*, char *s);
 extern void wincursor(pdfapp_t*, int curs);
 extern void windocopy(pdfapp_t*);
-extern void windrawrect(pdfapp_t*, int x0, int y0, int x1, int y1);
 extern void windrawstring(pdfapp_t*, int x, int y, char *s);
 extern void winclose(pdfapp_t*);
 extern void winhelp(pdfapp_t*);

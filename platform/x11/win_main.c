@@ -760,7 +760,7 @@ void wintitle(pdfapp_t *app, char *title)
 	SetWindowTextW(hwndframe, wide);
 }
 
-void windrawrect(pdfapp_t *app, int x0, int y0, int x1, int y1)
+static void windrawrect(pdfapp_t *app, int x0, int y0, int x1, int y1)
 {
 	RECT r;
 	r.left = x0;
