@@ -311,7 +311,8 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 
 void winreplacefile(pdfapp_t *app, char *source, char *target)
 {
-	rename(source, target);
+	if (rename(source, target) == -1)
+		pdfapp_warn(app, "unable to rename file");
 }
 
 void wincopyfile(pdfapp_t *app, char *source, char *target)
