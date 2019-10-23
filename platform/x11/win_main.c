@@ -264,7 +264,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 		int code = WideCharToMultiByte(CP_UTF8, 0, twbuf, -1, buf, MIN(PATH_MAX, len), NULL, NULL);
 		if (code == 0)
 		{
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(app, "cannot convert filename to utf-8");
 			return 0;
 		}
 
@@ -471,7 +471,7 @@ char *winpassword(pdfapp_t *app, char *filename)
 	sprintf(pd_filename, "The file \"%s\" is encrypted.", s);
 	code = DialogBoxW(NULL, L"IDD_DLOGPASS", hwndframe, dlogpassproc);
 	if (code <= 0)
-		winerror(app, "cannot create password dialog");
+		pdfapp_error(app, "cannot create password dialog");
 	if (pd_okay)
 		return pd_password;
 	return NULL;
@@ -484,7 +484,7 @@ char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 	fz_strlcpy(td_textinput, inittext ? inittext : "", sizeof td_textinput);
 	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextproc);
 	if (code <= 0)
-		winerror(app, "cannot create text input dialog");
+		pdfapp_error(app, "cannot create text input dialog");
 	if (pd_okay)
 		return td_textinput;
 	return NULL;
@@ -499,7 +499,7 @@ int winchoiceinput(pdfapp_t *app, int nopts, const char *opts[], int *nvals, con
 	cd_vals = vals;
 	code = DialogBoxW(NULL, L"IDD_DLOGLIST", hwndframe, dlogchoiceproc);
 	if (code <= 0)
-		winerror(app, "cannot create text input dialog");
+		pdfapp_error(app, "cannot create text input dialog");
 	return pd_okay;
 }
 
@@ -581,7 +581,7 @@ static void info()
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGINFO", hwndframe, dloginfoproc);
 	if (code <= 0)
-		winerror(&gapp, "cannot create info dialog");
+		pdfapp_error(&gapp, "cannot create info dialog");
 }
 
 static INT_PTR CALLBACK
@@ -604,7 +604,7 @@ void winhelp(pdfapp_t*app)
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGABOUT", hwndframe, dlogaboutproc);
 	if (code <= 0)
-		winerror(&gapp, "cannot create help dialog");
+		pdfapp_error(&gapp, "cannot create help dialog");
 }
 
 /*
@@ -632,7 +632,7 @@ static void winopen()
 	wc.lpszClassName = L"FrameWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		winerror(&gapp, "cannot register frame window class");
+		pdfapp_error(&gapp, "cannot register frame window class");
 
 	/* Create and register window view class */
 	memset(&wc, 0, sizeof(wc));
@@ -648,7 +648,7 @@ static void winopen()
 	wc.lpszClassName = L"ViewWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		winerror(&gapp, "cannot register view window class");
+		pdfapp_error(&gapp, "cannot register view window class");
 
 	/* Get screen size */
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0);
@@ -689,7 +689,7 @@ static void winopen()
 	0, // program instance handle
 	0); // creation parameters
 	if (!hwndframe)
-		winerror(&gapp, "cannot create frame");
+		pdfapp_error(&gapp, "cannot create frame");
 
 	hwndview = CreateWindowW(L"ViewWindow", // window class name
 	NULL,
@@ -698,7 +698,7 @@ static void winopen()
 	CW_USEDEFAULT, CW_USEDEFAULT,
 	hwndframe, 0, 0, 0);
 	if (!hwndview)
-		winerror(&gapp, "cannot create view");
+		pdfapp_error(&gapp, "cannot create view");
 
 	hdc = NULL;
 
@@ -1326,7 +1326,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 			exit(0);
 		code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 		if (code == 0)
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(&gapp, "cannot convert filename to utf-8");
 	}
 
 	if (fz_optind < argc)
