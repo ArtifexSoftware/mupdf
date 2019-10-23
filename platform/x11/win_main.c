@@ -213,7 +213,7 @@ int winfilename(wchar_t *buf, int len)
 	return GetOpenFileNameW(&ofn);
 }
 
-int wingetcertpath(char *buf, int len)
+int wingetcertpath(pdfapp_t *app, char *buf, int len)
 {
 	wchar_t twbuf[PATH_MAX] = {0};
 	OPENFILENAME ofn;
@@ -232,7 +232,7 @@ int wingetcertpath(char *buf, int len)
 		int code = WideCharToMultiByte(CP_UTF8, 0, twbuf, -1, buf, MIN(PATH_MAX, len), NULL, NULL);
 		if (code == 0)
 		{
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(app, "cannot convert filename to utf-8");
 			return 0;
 		}
 
@@ -278,7 +278,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 	}
 }
 
-void winreplacefile(char *source, char *target)
+void winreplacefile(pdfapp_t *app, char *source, char *target)
 {
 	wchar_t wsource[PATH_MAX];
 	wchar_t wtarget[PATH_MAX];
@@ -286,14 +286,14 @@ void winreplacefile(char *source, char *target)
 	int sz = MultiByteToWideChar(CP_UTF8, 0, source, -1, wsource, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
 	sz = MultiByteToWideChar(CP_UTF8, 0, target, -1, wtarget, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
@@ -305,7 +305,7 @@ void winreplacefile(char *source, char *target)
 #endif
 }
 
-void wincopyfile(char *source, char *target)
+void wincopyfile(pdfapp_t *app, char *source, char *target)
 {
 	wchar_t wsource[PATH_MAX];
 	wchar_t wtarget[PATH_MAX];
@@ -313,14 +313,14 @@ void wincopyfile(char *source, char *target)
 	int sz = MultiByteToWideChar(CP_UTF8, 0, source, -1, wsource, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
 	sz = MultiByteToWideChar(CP_UTF8, 0, target, -1, wtarget, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 

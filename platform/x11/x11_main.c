@@ -309,12 +309,12 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 	return 0;
 }
 
-void winreplacefile(char *source, char *target)
+void winreplacefile(pdfapp_t *app, char *source, char *target)
 {
 	rename(source, target);
 }
 
-void wincopyfile(char *source, char *target)
+void wincopyfile(pdfapp_t *app, char *source, char *target)
 {
 	FILE *in, *out;
 	char buf[32 << 10];
@@ -323,13 +323,13 @@ void wincopyfile(char *source, char *target)
 	in = fopen(source, "rb");
 	if (!in)
 	{
-		winerror(&gapp, "cannot open source file for copying");
+		pdfapp_error(app, "cannot open source file for copying");
 		return;
 	}
 	out = fopen(target, "wb");
 	if (!out)
 	{
-		winerror(&gapp, "cannot open target file for copying");
+		pdfapp_error(app, "cannot open target file for copying");
 		fclose(in);
 		return;
 	}
@@ -341,7 +341,7 @@ void wincopyfile(char *source, char *target)
 		if (n < sizeof buf)
 		{
 			if (ferror(in))
-				winerror(&gapp, "cannot read data from source file");
+				pdfapp_error(app, "cannot read data from source file");
 			break;
 		}
 	}
@@ -783,7 +783,7 @@ int winquery(pdfapp_t *app, const char *query)
 	return QUERY_NO;
 }
 
-int wingetcertpath(char *buf, int len)
+int wingetcertpath(pdfapp_t *app, char *buf, int len)
 {
 	return 0;
 }

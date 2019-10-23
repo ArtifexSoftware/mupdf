@@ -42,13 +42,13 @@ extern void winhelp(pdfapp_t*);
 extern void winfullscreen(pdfapp_t*, int state);
 extern int winsavequery(pdfapp_t*);
 extern int winquery(pdfapp_t*, const char*);
-extern int wingetcertpath(char *buf, int len);
+extern int wingetcertpath(pdfapp_t *, char *buf, int len);
 extern int wingetsavepath(pdfapp_t*, char *buf, int len);
 extern void winalert(pdfapp_t *, pdf_alert_event *alert);
 extern void winprint(pdfapp_t *);
 extern void winadvancetimer(pdfapp_t *, float duration);
-extern void winreplacefile(char *source, char *target);
-extern void wincopyfile(char *source, char *target);
+extern void winreplacefile(pdfapp_t *, char *source, char *target);
+extern void wincopyfile(pdfapp_t *, char *source, char *target);
 extern void winreloadpage(pdfapp_t *);
 
 struct pdfapp_s
