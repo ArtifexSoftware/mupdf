@@ -850,7 +850,15 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 
 		if (box->down)
 		{
-			layout_block(ctx, box->down, box->em, box->x, &box->b, box->w, html->page_h, 0, hb_buf);
+			switch (box->down->type)
+			{
+			case BOX_BLOCK:
+				layout_block(ctx, box->down, box->em, box->x, &box->b, box->w, html->page_h, 0, hb_buf);
+				break;
+			case BOX_FLOW:
+				layout_flow(ctx, box->down, box, html->page_h, hb_buf);
+				break;
+			}
 			box->b = box->down->b;
 		}
 	}
@@ -1225,6 +1233,24 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		fz_rethrow(ctx);
 }
 
+static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf);
+
+static void draw_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf)
+{
+	switch (box->type)
+	{
+	case BOX_TABLE:
+	case BOX_TABLE_ROW:
+	case BOX_TABLE_CELL:
+	case BOX_BLOCK:
+		draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf);
+		break;
+	case BOX_FLOW:
+		draw_flow_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf);
+		break;
+	}
+}
+
 static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf)
 {
 	float x0, y0, x1, y1;
@@ -1259,16 +1285,7 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 	}
 
 	for (box = box->down; box; box = box->next)
-	{
-		switch (box->type)
-		{
-		case BOX_TABLE:
-		case BOX_TABLE_ROW:
-		case BOX_TABLE_CELL:
-		case BOX_BLOCK: draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
-		case BOX_FLOW: draw_flow_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
-		}
-	}
+		draw_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf);
 }
 
 void
@@ -1298,7 +1315,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int 
 		unlocked = 1;
 
 		for (box = html->root->down; box; box = box->next)
-			draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf);
+			draw_box(ctx, html->root, page_top, page_bot, dev, ctm, hb_buf);
 	}
 	fz_always(ctx)
 	{
