@@ -73,6 +73,7 @@ enum {
 	BI_RLE8 = 1,
 	BI_RLE4 = 2,
 	BI_BITFIELDS = 3,
+	BI_HUFFMAN1D = 3,
 	BI_JPEG = 4,
 	BI_RLE24 = 4,
 	BI_PNG = 5,
@@ -120,7 +121,7 @@ struct info
 #define is_win_bmp(info) ((info)->version == 12 || (info)->version == 40 || (info)->version == 52 || (info)->version == 56 || (info)->version == 108 || (info)->version == 124)
 
 #define is_valid_win_compression(info) (is_win_bmp(info) && ((info)->compression == BI_NONE || (info)->compression == BI_RLE8 || (info)->compression == BI_RLE4 || (info)->compression == BI_BITFIELDS || (info)->compression == BI_JPEG || (info)->compression == BI_PNG || (info)->compression == BI_ALPHABITS || (info)->compression == BI_RLE24))
-#define is_valid_os2_compression(info) (is_os2_bmp(info) && ((info)->compression == BI_NONE || (info)->compression == BI_RLE8 || (info)->compression == BI_RLE4 || (info)->compression == BI_RLE24))
+#define is_valid_os2_compression(info) (is_os2_bmp(info) && ((info)->compression == BI_NONE || (info)->compression == BI_RLE8 || (info)->compression == BI_RLE4 || (info)->compression == BI_HUFFMAN1D || (info)->compression == BI_RLE24))
 #define is_valid_compression(info) (is_valid_win_compression(info) || is_valid_os2_compression(info))
 
 #define is_valid_rgb_bitcount(info) ((info)->compression == BI_NONE && ((info)->bitcount == 1 || (info)->bitcount == 2 || (info)->bitcount == 4 || (info)->bitcount == 8 || (info)->bitcount == 16 || (info)->bitcount == 24 || (info)->bitcount == 32))
@@ -131,7 +132,8 @@ struct info
 #define is_valid_png_bitcount(info) (is_win_bmp(info) && (info)->compression == BI_PNG && (info)->bitcount == 0)
 #define is_valid_alphabits_bitcount(info) (is_win_bmp(info) && (info)->compression == BI_ALPHABITS && ((info)->bitcount == 16 || (info)->bitcount == 32))
 #define is_valid_rle24_bitcount(info) (is_os2_bmp(info) && (info)->compression == BI_RLE24 && (info)->bitcount == 24)
-#define is_valid_bitcount(info) (is_valid_rgb_bitcount(info) || is_valid_rle8_bitcount(info) || is_valid_rle4_bitcount(info) || is_valid_bitfields_bitcount(info) || is_valid_jpeg_bitcount(info) || is_valid_png_bitcount(info) || is_valid_alphabits_bitcount(info) || is_valid_rle24_bitcount(info))
+#define is_valid_huffman1d_bitcount(info) (is_os2_bmp(info) && (info)->compression == BI_HUFFMAN1D && (info)->bitcount == 1)
+#define is_valid_bitcount(info) (is_valid_rgb_bitcount(info) || is_valid_rle8_bitcount(info) || is_valid_rle4_bitcount(info) || is_valid_bitfields_bitcount(info) || is_valid_jpeg_bitcount(info) || is_valid_png_bitcount(info) || is_valid_alphabits_bitcount(info) || is_valid_rle24_bitcount(info) || is_valid_huffman1d_bitcount(info))
 
 #define has_palette(info) ((info)->bitcount == 1 || (info)->bitcount == 2 || (info)->bitcount == 4 || (info)->bitcount == 8)
 #define has_color_masks(info) (((info)->bitcount == 16 || (info)->bitcount == 32) && (info)->version == 40 && ((info)->compression == BI_BITFIELDS || (info)->compression == BI_ALPHABITS))
@@ -156,6 +158,47 @@ bmp_read_file_header(fz_context *ctx, struct info *info, const unsigned char *be
 	info->bitmapoffset = read32(p + 10);
 
 	return p + 14;
+}
+
+static unsigned char *
+bmp_decompress_huffman1d(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char **end)
+{
+	fz_stream *encstm, *decstm;
+	fz_buffer *buf;
+	unsigned char *decoded;
+	size_t size;
+
+	encstm = fz_open_memory(ctx, p, *end - p);
+
+	fz_var(decstm);
+	fz_var(buf);
+
+	fz_try(ctx)
+	{
+		decstm = fz_open_faxd(ctx, encstm,
+			0, /* 1 dimensional encoding */
+			0, /* end of line not required */
+			0, /* encoded byte align */
+			info->width, info->height,
+			0, /* end of block expected */
+			1 /* black is 1 */
+		);
+		buf = fz_read_all(ctx, decstm, 1024);
+		size = fz_buffer_storage(ctx, buf, &decoded);
+
+		size = fz_buffer_extract(ctx, buf, &decoded);
+		*end = decoded + size;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_stream(ctx, decstm);
+		fz_drop_stream(ctx, encstm);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return decoded;
 }
 
 static unsigned char *
@@ -525,6 +568,8 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 		ssp = p;
 	else if (is_os2_bmp(info) && info->compression == BI_RLE24)
 		ssp = decompressed = bmp_decompress_rle24(ctx, info, p, &end);
+	else if (is_os2_bmp(info) && info->compression == BI_HUFFMAN1D)
+		ssp = decompressed = bmp_decompress_huffman1d(ctx, info, p, &end);
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unhandled compression (%u)  in bmp image", info->compression);
 
