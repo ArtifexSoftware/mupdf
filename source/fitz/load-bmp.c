@@ -113,6 +113,7 @@ struct info
 
 #define DPM_TO_DPI(dpm) ((dpm) * 25.4f / 1000.0f)
 
+#define is_bitmap_array(p) ((p)[0] == 'B' && (p)[1] == 'A')
 #define is_bitmap(p) ((p)[0] == 'B' && (p)[1] == 'M')
 
 #define is_os2_bmp(info) ((info)->version == 12 || (info)->version == 16 || (info)->version == 64)
@@ -1158,4 +1159,91 @@ fz_load_bmp_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 		fz_drop_colorspace(ctx, info.cs);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+}
+
+fz_pixmap *
+fz_load_bmp_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage)
+{
+	const unsigned char *begin = buf;
+	const unsigned char *end = buf + len;
+	const unsigned char *p = begin;
+	struct info info;
+	int nextoffset = 0;
+	fz_pixmap *image;
+	int origidx = subimage;
+
+	do
+	{
+		p = begin + nextoffset;
+
+		if (is_bitmap_array(p))
+		{
+			/* read16(p+0) == type */
+			/* read32(p+2) == size of this header in bytes */
+			nextoffset = read32(p + 6);
+			/* read16(p+10) == suitable pelx dimensions */
+			/* read16(p+12) == suitable pely dimensions */
+			p += 14;
+		}
+		else if (nextoffset > 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected bitmap array magic (%02x%02x) in bmp image", p[0], p[1]);
+
+		if (end - begin < nextoffset)
+		{
+			fz_warn(ctx, "treating invalid next subimage offset as end of file");
+			nextoffset = 0;
+		}
+
+		subimage--;
+
+	} while (subimage >= 0 && nextoffset > 0);
+
+	if (subimage != -1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "subimage index (%d) out of range in bmp image", origidx);
+
+	fz_try(ctx)
+		image = bmp_read_image(ctx, &info, begin, end, p, 0);
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, info.cs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return image;
+}
+
+int
+fz_load_bmp_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len)
+{
+	const unsigned char *begin = buf;
+	const unsigned char *end = buf + len;
+	int nextoffset = 0;
+	int count = 0;
+
+	do
+	{
+		const unsigned char *p = begin + nextoffset;
+
+		if (is_bitmap_array(p))
+		{
+			/* read16(p+0) == type */
+			/* read32(p+2) == size of this header in bytes */
+			nextoffset = read32(p + 6);
+			/* read16(p+10) == suitable pelx dimensions */
+			/* read16(p+12) == suitable pely dimensions */
+			p += 14;
+		}
+		else if (nextoffset > 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected bitmap array magic (%02x%02x) in bmp image", p[0], p[1]);
+
+		if (end - begin < nextoffset)
+		{
+			fz_warn(ctx, "treating invalid next subimage offset as end of file");
+			nextoffset = 0;
+		}
+
+		count++;
+
+	} while (nextoffset > 0);
+
+	return count;
 }
