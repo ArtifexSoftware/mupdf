@@ -43,7 +43,7 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_widget *tw, const char *opts[])
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_widget *tw, int n, const char *opts[]);
 
 int pdf_choice_field_option_count(fz_context *ctx, pdf_obj *field);
-const char *pdf_choice_field_option(fz_context *ctx, pdf_obj *field, int export, int i);
+const char *pdf_choice_field_option(fz_context *ctx, pdf_obj *field, int exportval, int i);
 
 /* Field flags */
 enum
