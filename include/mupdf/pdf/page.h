@@ -49,6 +49,7 @@ typedef struct pdf_redact_options_s pdf_redact_options;
 struct pdf_redact_options_s
 {
 	int no_black_boxes;
+	int keep_images;
 };
 
 int pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_options *opts);
