@@ -527,6 +527,70 @@ pdf_redact_image_filter(fz_context *ctx, void *opaque, fz_matrix ctm, const char
 	return 0;
 }
 
+static int
+pdf_redact_page_link(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_rect area)
+{
+	pdf_annot *annot;
+	pdf_obj *qp;
+	fz_quad q;
+	fz_rect r;
+	int i, n;
+
+	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+	{
+		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
+		{
+			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
+			n = pdf_array_len(ctx, qp);
+			if (n > 0)
+			{
+				for (i = 0; i < n; i += 8)
+				{
+					q = pdf_to_quad(ctx, qp, i);
+					r = fz_rect_from_quad(q);
+					r = fz_intersect_rect(r, area);
+					if (!fz_is_empty_rect(r))
+						return 1;
+				}
+			}
+			else
+			{
+				r = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+				r = fz_intersect_rect(r, area);
+				if (!fz_is_empty_rect(r))
+					return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static void
+pdf_redact_page_links(fz_context *ctx, pdf_document *doc, pdf_page *page)
+{
+	pdf_obj *annots;
+	pdf_obj *link;
+	fz_rect area;
+	int k;
+
+	annots = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
+	k = 0;
+	while (k < pdf_array_len(ctx, annots))
+	{
+		link = pdf_array_get(ctx, annots, k);
+		if (pdf_dict_get(ctx, link, PDF_NAME(Subtype)) == PDF_NAME(Link))
+		{
+			area = pdf_dict_get_rect(ctx, link, PDF_NAME(Rect));
+			if (pdf_redact_page_link(ctx, doc, page, area))
+			{
+				pdf_array_delete(ctx, annots, k);
+				continue;
+			}
+		}
+		++k;
+	}
+}
+
 int
 pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_options *opts)
 {
@@ -559,8 +623,11 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 			has_redactions = 1;
 
-	if (has_redactions)
-		pdf_filter_page_contents(ctx, doc, page, &filter);
+	if (!has_redactions)
+		return 0;
+
+	pdf_filter_page_contents(ctx, doc, page, &filter);
+	pdf_redact_page_links(ctx, doc, page);
 
 	annot = pdf_first_annot(ctx, page);
 	while (annot)
@@ -576,7 +643,7 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 		}
 	}
 
-	doc->redacted = has_redactions;
+	doc->redacted = 1;
 
-	return has_redactions;
+	return 1;
 }
