@@ -229,9 +229,6 @@ bmp_decompress_rle24(fz_context *ctx, struct info *info, const unsigned char *p,
 		}
 	}
 
-	if (dp < ep)
-		fz_warn(ctx, "premature end of bitmap data in bmp image");
-
 	info->compression = BI_NONE;
 	info->bitcount = 24;
 	*end = ep;
@@ -311,9 +308,6 @@ bmp_decompress_rle8(fz_context *ctx, struct info *info, const unsigned char *p, 
 			x += n;
 		}
 	}
-
-	if (dp < ep)
-		fz_warn(ctx, "premature end of bitmap data in bmp image");
 
 	info->compression = BI_NONE;
 	info->bitcount = 8;
