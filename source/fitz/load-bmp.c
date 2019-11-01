@@ -155,10 +155,11 @@ bmp_decompress_rle24(fz_context *ctx, struct info *info, const unsigned char *p,
 {
 	const unsigned char *sp;
 	unsigned char *dp, *ep, *decompressed;
-	int width = info->width;
-	int height = info->height;
-	int stride;
-	int x, i;
+	uint32_t width = info->width;
+	uint32_t height = info->height;
+	uint32_t stride;
+	uint32_t x, y;
+	int i;
 
 	stride = (width*3 + 3) / 4 * 4;
 
@@ -166,66 +167,97 @@ bmp_decompress_rle24(fz_context *ctx, struct info *info, const unsigned char *p,
 	dp = decompressed = fz_calloc(ctx, height, stride);
 	ep = dp + height * stride;
 	x = 0;
+	y = 0;
 
 	while (sp + 2 <= *end)
 	{
 		if (sp[0] == 0 && sp[1] == 0)
 		{ /* end of line */
-			if (x*3 < stride)
-				dp += stride - x*3;
 			sp += 2;
 			x = 0;
+			y++;
 		}
 		else if (sp[0] == 0 && sp[1] == 1)
 		{ /* end of bitmap */
-			dp = ep;
+			sp += 2;
 			break;
 		}
 		else if (sp[0] == 0 && sp[1] == 2)
 		{ /* delta */
-			int deltax, deltay;
-			if (sp + 4 > *end)
-				break;
-			deltax = sp[2];
-			deltay = sp[3];
-			dp += deltax*3 + deltay * stride;
-			sp += 4;
-			x += deltax;
+			sp += 2;
+			x += sp < *end ? *sp++ : 0;
+			y += sp < *end ? *sp++ : 0;
 		}
 		else if (sp[0] == 0 && sp[1] >= 3)
 		{ /* absolute */
-			int n = sp[1] * 3;
-			int nn = (n + 1) / 2 * 2;
-			if (sp + 2 + nn > *end)
-				break;
-			if (dp + n > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
-			}
+			int dn, sn, pad;
+			dn = sp[1];
+			sn = (dn * 3 + 1) / 2 * 2;
+			pad = sn & 1;
 			sp += 2;
-			for (i = 0; i < n; i++)
-				dp[i] = sp[i];
-			dp += n;
-			sp += (n + 1) / 2 * 2;
-			x += n;
+			if (sn > *end - sp)
+			{
+				fz_warn(ctx, "premature end of pixel data in absolute code in bmp image");
+				sn = ((*end - sp) / 3) * 3;
+				pad = (*end - sp) % 3;
+				dn = sn / 3;
+			}
+			else if (sn + pad > *end - sp)
+			{
+				fz_warn(ctx, "premature end of padding in absolute code in bmp image");
+				pad = 0;
+			}
+			for (i = 0; i < dn; i++)
+			{
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					dp = decompressed + actualy * stride + actualx * 3;
+					*dp++ = sp[i * 3 + 0];
+					*dp++ = sp[i * 3 + 1];
+					*dp++ = sp[i * 3 + 2];
+				}
+				x++;
+			}
+			sp += sn + pad;
 		}
 		else
 		{ /* encoded */
-			int n = sp[0] * 3;
-			if (sp + 1 + 3 > *end)
-				break;
-			if (dp + n > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
+			int dn, sn;
+			dn = sp[0];
+			sn = 3;
+			sp++;
+			if (sn > *end - sp)
+			{
+				fz_warn(ctx, "premature end of pixel data in encoded code in bmp image");
+				sn = 0;
+				dn = 0;
 			}
-			for (i = 0; i < n / 3; i++) {
-				dp[i * 3 + 0] = sp[1];
-				dp[i * 3 + 1] = sp[2];
-				dp[i * 3 + 2] = sp[3];
+			for (i = 0; i < dn; i++)
+			{
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					dp = decompressed + actualy * stride + actualx * 3;
+					*dp++ = sp[0];
+					*dp++ = sp[1];
+					*dp++ = sp[2];
+				}
+				x++;
 			}
-			dp += n;
-			sp += 1 + 3;
-			x += n;
+			sp += sn;
 		}
 	}
 
@@ -240,10 +272,11 @@ bmp_decompress_rle8(fz_context *ctx, struct info *info, const unsigned char *p, 
 {
 	const unsigned char *sp;
 	unsigned char *dp, *ep, *decompressed;
-	int width = info->width;
-	int height = info->height;
-	int stride;
-	int x, i;
+	uint32_t width = info->width;
+	uint32_t height = info->height;
+	uint32_t stride;
+	uint32_t x, y;
+	int i;
 
 	stride = (width + 3) / 4 * 4;
 
@@ -251,61 +284,87 @@ bmp_decompress_rle8(fz_context *ctx, struct info *info, const unsigned char *p, 
 	dp = decompressed = fz_calloc(ctx, height, stride);
 	ep = dp + height * stride;
 	x = 0;
+	y = 0;
 
 	while (sp + 2 <= *end)
 	{
 		if (sp[0] == 0 && sp[1] == 0)
 		{ /* end of line */
-			if (x < stride)
-				dp += stride - x;
 			sp += 2;
 			x = 0;
+			y++;
 		}
 		else if (sp[0] == 0 && sp[1] == 1)
 		{ /* end of bitmap */
-			dp = ep;
+			sp += 2;
 			break;
 		}
 		else if (sp[0] == 0 && sp[1] == 2)
 		{ /* delta */
-			int deltax, deltay;
-			if (sp + 4 > *end)
-				break;
-			deltax = sp[2];
-			deltay = sp[3];
-			dp += deltax + deltay * stride;
-			sp += 4;
-			x += deltax;
+			sp +=2;
+			x += sp < *end ? *sp++ : 0;
+			y += sp < *end ? *sp++ : 0;
 		}
 		else if (sp[0] == 0 && sp[1] >= 3)
 		{ /* absolute */
-			int n = sp[1];
-			int nn = (n + 1) / 2 * 2;
-			if (sp + 2 + nn > *end)
-				break;
-			if (dp + n > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
-			}
+			int dn, sn, pad;
+			dn = sp[1];
+			sn = dn;
+			pad = sn & 1;
 			sp += 2;
-			for (i = 0; i < n; i++)
-				dp[i] = sp[i];
-			dp += n;
-			sp += (n + 1) / 2 * 2;
-			x += n;
+			if (sn > *end - sp)
+			{
+				fz_warn(ctx, "premature end of pixel data in absolute code in bmp image");
+				sn = *end - sp;
+				pad = 0;
+				dn = sn;
+			}
+			else if (sn + pad > *end - sp)
+			{
+				fz_warn(ctx, "premature end of padding in absolute code in bmp image");
+				pad = 0;
+			}
+			for (i = 0; i < dn; i++)
+			{
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					dp = decompressed + actualy * stride + actualx;
+					*dp++ = sp[i];
+				}
+				x++;
+			}
+			sp += sn + pad;
 		}
 		else
 		{ /* encoded */
-			int n = sp[0];
-			if (dp + n > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
+			int dn, sn;
+			dn = sp[0];
+			sn = 1;
+			sp++;
+			for (i = 0; i < dn; i++)
+			{
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					dp = decompressed + actualy * stride + actualx;
+					*dp++ = sp[0];
+				}
+				x++;
 			}
-			for (i = 0; i < n; i++)
-				dp[i] = sp[1];
-			dp += n;
-			sp += 2;
-			x += n;
+			sp += sn;
 		}
 	}
 
@@ -320,10 +379,11 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, const unsigned char *p, 
 {
 	const unsigned char *sp;
 	unsigned char *dp, *ep, *decompressed;
-	int width = info->width;
-	int height = info->height;
-	int stride;
-	int i, x;
+	uint32_t width = info->width;
+	uint32_t height = info->height;
+	uint32_t stride;
+	uint32_t x, y;
+	int i;
 
 	stride = ((width + 1) / 2 + 3) / 4 * 4;
 
@@ -331,73 +391,95 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, const unsigned char *p, 
 	dp = decompressed = fz_calloc(ctx, height, stride);
 	ep = dp + height * stride;
 	x = 0;
+	y = 0;
 
 	while (sp + 2 <= *end)
 	{
 		if (sp[0] == 0 && sp[1] == 0)
 		{ /* end of line */
-			int xx = x / 2;
-			if (xx < stride)
-				dp += stride - xx;
 			sp += 2;
 			x = 0;
+			y++;
 		}
 		else if (sp[0] == 0 && sp[1] == 1)
 		{ /* end of bitmap */
-			dp = ep;
+			sp += 2;
 			break;
 		}
 		else if (sp[0] == 0 && sp[1] == 2)
 		{ /* delta */
-			int deltax, deltay, startlow;
-			if (sp + 4 > *end)
-				break;
-			deltax = sp[2];
-			deltay = sp[3];
-			startlow = x & 1;
-			dp += (deltax + startlow) / 2 + deltay * stride;
-			sp += 4;
-			x += deltax;
+			sp += 2;
+			x += sp < *end ? *sp++ : 0;
+			y += sp < *end ? *sp++ : 0;
 		}
 		else if (sp[0] == 0 && sp[1] >= 3)
 		{ /* absolute */
-			int n = sp[1];
-			int nn = ((n + 1) / 2 + 1) / 2 * 2;
-			if (sp + 2 + nn > *end)
-				break;
-			if (dp + n / 2 > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
-			}
+			int dn, sn, pad;
+			dn = sp[1];
+			sn = (dn + 1) / 2;
+			pad = sn & 1;
 			sp += 2;
-			for (i = 0; i < n; i++, x++)
+			if (sn > *end - sp)
 			{
-				int val = i & 1 ? (sp[i/2]) & 0xF : (sp[i/2] >> 4) & 0xF;
-				if (x & 1)
-					*dp++ |= val;
-				else
-					*dp |= val << 4;
+				fz_warn(ctx, "premature end of pixel data in absolute code in bmp image");
+				sn = *end - sp;
+				pad = 0;
+				dn = sn * 2;
 			}
-			sp += nn;
+			else if (sn + pad > *end - sp)
+			{
+				fz_warn(ctx, "premature end of padding in absolute code in bmp image");
+				pad = 0;
+			}
+			for (i = 0; i < dn; i++)
+			{
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					int val = i & 1 ? (sp[i >> 1]) & 0xF : (sp[i >> 1] >> 4) & 0xF;
+					dp = decompressed + actualy * stride + actualx / 2;
+					if (x & 1)
+						*dp++ |= val;
+					else
+						*dp |= val << 4;
+				}
+				x++;
+			}
+			sp += sn + pad;
 		}
 		else
 		{ /* encoded */
-			int n = sp[0];
-			int hi = (sp[1] >> 4) & 0xF;
-			int lo = sp[1] & 0xF;
-			if (dp + n / 2 + (x & 1) > ep) {
-				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
-				break;
-			}
-			for (i = 0; i < n; i++, x++)
+			int dn, sn;
+			dn = sp[0];
+			sn = 1;
+			sp++;
+			for (i = 0; i < dn; i++)
 			{
-				int val = i & 1 ? lo : hi;
-				if (x & 1)
-					*dp++ |= val;
-				else
-					*dp |= val << 4;
+				uint32_t actualx = x;
+				uint32_t actualy = y;
+				if (actualx >= width || actualy >= height)
+				{
+					actualx = x % width;
+					actualy = y + x / width;
+				}
+				if (actualx < width && actualy < height)
+				{
+					int val = i & 1 ? (sp[0] & 0xf) : (sp[0] >> 4) & 0xf;
+					dp = decompressed + actualy * stride + actualx / 2;
+					if (x & 1)
+						*dp++ |= val;
+					else
+						*dp |= val << 4;
+				}
+				x++;
 			}
-			sp += 2;
+			sp += sn;
 		}
 	}
 
