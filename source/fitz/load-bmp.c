@@ -92,6 +92,12 @@ struct info
 	uint32_t colors;
 	uint32_t rmask, gmask, bmask, amask;
 	uint8_t palette[256 * 3];
+	uint32_t colorspacetype;
+	uint32_t endpoints[3 * 3];
+	uint32_t gamma[3];
+	uint32_t intent;
+	uint32_t profileoffset;
+	uint32_t profilesize;
 
 	int topdown;
 	unsigned int rshift, gshift, bshift, ashift;
@@ -128,6 +134,7 @@ struct info
 
 #define has_palette(info) ((info)->bitcount == 1 || (info)->bitcount == 2 || (info)->bitcount == 4 || (info)->bitcount == 8)
 #define has_color_masks(info) (((info)->bitcount == 16 || (info)->bitcount == 32) && (info)->version == 40 && ((info)->compression == BI_BITFIELDS || (info)->compression == BI_ALPHABITS))
+#define has_color_profile(info) ((info)->version == 108 || (info)->version == 124)
 
 #define palette_entry_size(info) ((info)->version == 12 ? 3 : 4)
 
@@ -694,6 +701,62 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 	return pix;
 }
 
+static fz_colorspace *
+bmp_read_color_profile(fz_context *ctx, struct info *info, const unsigned char *begin, const unsigned char *end)
+{
+	if (info->colorspacetype == 0)
+	{
+		float matrix[9] = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
+		float wp[3] = { 0.95047, 1.0, 1.08883 }; /* D65 white point */
+		float bp[3] = { 0, 0, 0 };
+		float gamma[3] = { 1, 1, 1 };
+		int i;
+
+		for (i = 0; i < 3; i++)
+			gamma[i] = (float) info->gamma[i] / (float) (1 << 16);
+
+		for (i = 0; i < 9; i++)
+			matrix[i] = (float) info->endpoints[i] / (float) (1 << 30);
+
+		return fz_new_cal_rgb_colorspace(ctx, wp, bp, gamma, matrix);
+	}
+	else if (info->colorspacetype == 0x4c494e4b)
+	{
+		fz_warn(ctx, "ignoring linked color profile in bmp image");
+		return NULL;
+	}
+	else if (info->colorspacetype == 0x57696e20)
+	{
+		fz_warn(ctx, "ignoring windows color profile in bmp image");
+		return NULL;
+	}
+	else if (info->colorspacetype == 0x4d424544)
+	{
+		fz_buffer *profile;
+		fz_colorspace *cs;
+
+		if (end - begin < info->profileoffset + info->profilesize)
+		{
+			fz_warn(ctx, "ignoring truncated color profile in bmp image");
+			return NULL;
+		}
+
+		profile = fz_new_buffer_from_copied_data(ctx, begin + info->profileoffset, info->profilesize);
+
+		fz_try(ctx)
+			cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, 0, "BMPRGB", profile);
+		fz_always(ctx)
+			fz_drop_buffer(ctx, profile);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+
+		return cs;
+	}
+
+	fz_warn(ctx, "ignoring color profile with unknown type in bmp image");
+	return NULL;
+}
+
 static void
 compute_mask_info(unsigned int mask, unsigned int *shift, unsigned int *bits)
 {
@@ -908,6 +971,35 @@ bmp_read_info_header(fz_context *ctx, struct info *info, const unsigned char *be
 		/* read32(p+56) == color encoding */
 		/* read32(p+60) == identifier */
 	}
+	/* Windows v4 header */
+	if (size >= 108)
+	{
+		info->colorspacetype = read32(p + 56);
+
+		info->endpoints[0] = read32(p + 60);
+		info->endpoints[1] = read32(p + 64);
+		info->endpoints[2] = read32(p + 68);
+
+		info->endpoints[3] = read32(p + 72);
+		info->endpoints[4] = read32(p + 76);
+		info->endpoints[5] = read32(p + 80);
+
+		info->endpoints[6] = read32(p + 84);
+		info->endpoints[7] = read32(p + 88);
+		info->endpoints[8] = read32(p + 92);
+
+		info->gamma[0] = read32(p + 96);
+		info->gamma[1] = read32(p + 100);
+		info->gamma[2] = read32(p + 104);
+	}
+	/* Windows v5 header */
+	if (size >= 124)
+	{
+		info->intent = read32(p + 108);
+		info->profileoffset = read32(p + 112);
+		info->profilesize = read32(p + 116);
+		/* read32(p+120) == reserved */
+	}
 
 	return p + size;
 }
@@ -916,9 +1008,12 @@ bmp_read_info_header(fz_context *ctx, struct info *info, const unsigned char *be
 static fz_pixmap *
 bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, const unsigned char *end, const unsigned char *p, int only_metadata)
 {
-	memset(info, 0x00, sizeof (*info));
+	const unsigned char *profilebegin;
 
-	p = bmp_read_file_header(ctx, info, begin, end, p);
+	memset(info, 0x00, sizeof (*info));
+	info->colorspacetype = 0xffffffff;
+
+	p = profilebegin = bmp_read_file_header(ctx, info, begin, end, p);
 
 	p = bmp_read_info_header(ctx, info, begin, end, p);
 
@@ -949,6 +1044,32 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 		}
 	}
 
+	/* GIMP incorrectly writes BMP v5 headers that omit color masks
+	but include colorspace information. This means they look like
+	BMP v4 headers and that we interpret the colorspace information
+	partially as color mask data, partially as colorspace information.
+	Let's work around this... */
+	if (info->version == 108 &&
+			info->rmask == 0x73524742 && /* colorspacetype */
+			info->gmask == 0x00000000 && /* endpoints[0] */
+			info->bmask == 0x00000000 && /* endpoints[1] */
+			info->amask == 0x00000000 && /* endpoints[2] */
+			info->colorspacetype == 0x00000000 && /* endpoints[3] */
+			info->endpoints[0] == 0x00000000 && /* endpoints[4] */
+			info->endpoints[1] == 0x00000000 && /* endpoints[5] */
+			info->endpoints[2] == 0x00000000 && /* endpoints[6] */
+			info->endpoints[3] == 0x00000000 && /* endpoints[7] */
+			info->endpoints[4] == 0x00000000 && /* endpoints[8] */
+			info->endpoints[5] == 0x00000000 && /* gamma[0] */
+			info->endpoints[6] == 0x00000000 && /* gamma[1] */
+			info->endpoints[7] == 0x00000000 && /* gamma[2] */
+			info->endpoints[8] == 0x00000002) /* intent */
+	{
+		info->rmask = 0;
+		info->colorspacetype = 0x73524742;
+		info->intent = 0x00000002;
+	}
+
 	/* get number of bits per component and component shift */
 	compute_mask_info(info->rmask, &info->rshift, &info->rbits);
 	compute_mask_info(info->gmask, &info->gshift, &info->gbits);
@@ -970,8 +1091,11 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 	if (info->abits < 0 || info->abits > info->bitcount)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %u bit alpha mask in bmp image", info->abits);
 
-	/* Default to color profile RGB */
-	info->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+	/* Read color profile or default to RGB */
+	if (has_color_profile(info))
+		info->cs = bmp_read_color_profile(ctx, info, profilebegin, end);
+	if (!info->cs)
+		info->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 
 	if (only_metadata)
 		return NULL;
