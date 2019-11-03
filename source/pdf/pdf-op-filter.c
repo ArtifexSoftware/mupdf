@@ -2074,25 +2074,10 @@ pdf_new_filter_processor(
 		proc->gstate = fz_malloc_struct(ctx, filter_gstate);
 		proc->gstate->pending.ctm = fz_identity;
 		proc->gstate->sent.ctm = fz_identity;
-
-		proc->gstate->pending.stroke = proc->gstate->pending.stroke; /* ? */
-		proc->gstate->sent.stroke = proc->gstate->pending.stroke;
-		proc->gstate->pending.text.char_space = 0;
-		proc->gstate->pending.text.word_space = 0;
 		proc->gstate->pending.text.scale = 1;
-		proc->gstate->pending.text.leading = 0;
-		proc->gstate->pending.text.font = NULL;
 		proc->gstate->pending.text.size = -1;
-		proc->gstate->pending.text.render = 0;
-		proc->gstate->pending.text.rise = 0;
-		proc->gstate->sent.text.char_space = 0;
-		proc->gstate->sent.text.word_space = 0;
 		proc->gstate->sent.text.scale = 1;
-		proc->gstate->sent.text.leading = 0;
-		proc->gstate->sent.text.font = NULL;
 		proc->gstate->sent.text.size = -1;
-		proc->gstate->sent.text.render = 0;
-		proc->gstate->sent.text.rise = 0;
 	}
 	fz_catch(ctx)
 	{
