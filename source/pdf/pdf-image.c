@@ -427,7 +427,7 @@ unknown_compression:
 
 			if (fz_is_pixmap_monochrome(ctx, pixmap))
 			{
-				int stride  = (image->w + 7) / 8;
+				int stride = (image->w + 7) / 8;
 				int h = pixmap->h;
 				int w = pixmap->w;
 				unsigned char *s = pixmap->samples;
