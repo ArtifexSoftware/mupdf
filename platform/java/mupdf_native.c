@@ -623,7 +623,7 @@ static int find_fids(JNIEnv *env)
 	fid_Link_bounds = get_field(&err, env, "bounds", "L"PKG"Rect;");
 	fid_Link_page = get_field(&err, env, "page", "I");
 	fid_Link_uri = get_field(&err, env, "uri", "Ljava/lang/String;");
-	mid_Link_init = get_method(&err, env, "<init>", "(L"PKG"Rect;ILjava/lang/String;)V");
+	mid_Link_init = get_method(&err, env, "<init>", "(L"PKG"Rect;ILjava/lang/String;FF)V");
 
 	cls_Matrix = get_class(&err, env, PKG"Matrix");
 	fid_Matrix_a = get_field(&err, env, "a", "F");
@@ -5814,15 +5814,20 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jbounds = to_Rect_safe(ctx, env, link->rect);
 		if (!jbounds) return NULL;
 
+		float x = 0;
+		float y = 0;
 		if (fz_is_external_link(ctx, link->uri))
 		{
 			juri = (*env)->NewStringUTF(env, link->uri);
 			if (!juri) return NULL;
 		}
 		else
-			page = fz_resolve_link(ctx, link->doc, link->uri, NULL, NULL);
+			//  resolve the link and get the page coordinates
+			page = fz_resolve_link(ctx, link->doc, link->uri, &x, &y);
 
-		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
+		//  put the page coordinates in the link
+		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri, x, y);
+
 		(*env)->DeleteLocalRef(env, jbounds);
 		if (!jlink) return NULL;
 		if (juri)
