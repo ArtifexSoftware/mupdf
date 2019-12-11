@@ -222,6 +222,7 @@ struct pdf_document_s
 	int save_in_progress;
 	int has_xref_streams;
 	int has_old_style_xrefs;
+	int has_linearization_object;
 
 	int rev_page_count;
 	pdf_rev_page_map *rev_page_map;

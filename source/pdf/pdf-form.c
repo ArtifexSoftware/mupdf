@@ -1289,15 +1289,19 @@ int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document
 
 int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
+	pdf_obj *v;
+
 	if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) != PDF_NAME(Sig))
 		return 0;
-	return pdf_dict_get_inheritable(ctx, field, PDF_NAME(V)) != NULL;
+	/* Signatures can only be signed if the value is a /Sig field. */
+	v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
+	return pdf_name_eq(ctx, pdf_dict_get(ctx, v, PDF_NAME(Type)), PDF_NAME(Sig));
 }
 
 /* NOTE: contents is allocated and must be freed by the caller! */
 size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
-	pdf_obj *v_ref = pdf_dict_get(ctx, signature, PDF_NAME(V));
+	pdf_obj *v_ref = pdf_dict_get_inheritable(ctx, signature, PDF_NAME(V));
 	pdf_obj *v_obj = pdf_load_unencrypted_object(ctx, doc, pdf_to_num(ctx, v_ref));
 	char *copy = NULL;
 	size_t len;
