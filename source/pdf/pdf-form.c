@@ -693,7 +693,7 @@ static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare)
 	}
 	else
 	{
-		res = fz_malloc(ctx, spare+1);
+		res = Memento_label(fz_malloc(ctx, spare+1), "form_field_name");
 		res[0] = 0;
 	}
 
@@ -1313,7 +1313,7 @@ int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signatur
 
 		if (contents)
 		{
-			copy = fz_malloc(ctx, len);
+			copy = Memento_label(fz_malloc(ctx, len), "sig_contents");
 			memcpy(copy, s, len);
 		}
 	}
