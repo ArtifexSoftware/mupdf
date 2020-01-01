@@ -13,6 +13,24 @@
 #include <pthread.h>
 #endif
 
+#ifdef _WIN32
+#if _MSC_VER >= 1910
+/* Horrible hack to make this work with VS2017 and higher. */
+static FILE _iob[3];
+static int got_iob = 0;
+FILE * __cdecl __iob_func(void)
+{
+	if (!got_iob) {
+		_iob[0] = *stdin;
+		_iob[1] = *stdout;
+		_iob[2] = *stderr;
+		got_iob = 1;
+	}
+	return _iob;
+}
+#endif
+#endif
+
 #undef DEBUG_BLOCK_FETCHING
 
 #ifdef DEBUG_BLOCK_FETCHING
