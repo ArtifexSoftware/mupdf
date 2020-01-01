@@ -163,7 +163,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 			len2 = strlen(name);
 			if (len2 > 255)
 				len2 = 255;
-			fz_write_byte(ctx, out, len2);
+			fz_write_byte(ctx, out, (unsigned char)len2);
 			fz_write_data(ctx, out, name, len2);
 		}
 		if (len & 1)
@@ -348,7 +348,7 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 			fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
 		}
 	}
-	fz_seek_output(ctx, out, w * (band_height - h * n), SEEK_CUR);
+	fz_seek_output(ctx, out, w * (band_height - h * (int64_t)n), SEEK_CUR);
 }
 
 static void
