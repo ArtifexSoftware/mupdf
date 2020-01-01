@@ -132,7 +132,9 @@ static __inline int signbit(double x)
 #define isinf(x) (!_finite(x))
 #endif
 
+#if _MSC_VER <= 1920 /* MSVC 2019 */
 #define hypotf _hypotf
+#endif
 #define atoll _atoi64
 
 #endif
