@@ -246,9 +246,6 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\pingpong.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\curl\lib\pipeline.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\thirdparty\curl\lib\pop3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -306,12 +303,6 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\splay.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\curl\lib\ssh-libssh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\curl\lib\ssh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\thirdparty\curl\lib\strcase.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -359,9 +350,6 @@
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\curl\lib\x509asn1.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\curl\lib\vtls\cyassl.c">
-      <Filter>Source Files\vtls</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\gskit.c">
       <Filter>Source Files\vtls</Filter>
@@ -434,6 +422,12 @@
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\curl\lib\vauth\vauth.c">
       <Filter>Source Files\vauth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\curl\lib\curl_get_line.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\curl\lib\vtls\wolfssl.c">
+      <Filter>Source Files\vtls</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -686,9 +680,6 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\pingpong.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\curl\lib\pipeline.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\thirdparty\curl\lib\pop3.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -746,9 +737,6 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\splay.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\curl\lib\ssh.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\thirdparty\curl\lib\strcase.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -796,9 +784,6 @@
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\curl\lib\x509asn1.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\curl\lib\vtls\cyassl.h">
-      <Filter>Source Files\vtls</Filter>
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\gskit.h">
       <Filter>Source Files\vtls</Filter>
@@ -869,9 +854,21 @@
     <ClInclude Include="..\..\thirdparty\curl\include\curl\urlapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\thirdparty\curl\lib\config-plan9.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\curl\lib\curl_get_line.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\curl\lib\quic.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\curl\lib\vtls\wolfssl.h">
+      <Filter>Source Files\vtls</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\thirdparty\curl\lib\Makefile.inc">
+    <None Include="..\..\thirdparty\curl\lib\firefox-db2pem.sh">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

@@ -204,6 +204,7 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_endian.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_fnmatch.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_gethostname.c" />
+    <ClCompile Include="..\..\thirdparty\curl\lib\curl_get_line.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_gssapi.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_memrchr.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\curl_multibyte.c" />
@@ -265,7 +266,6 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\openldap.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\parsedate.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\pingpong.c" />
-    <ClCompile Include="..\..\thirdparty\curl\lib\pipeline.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\pop3.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\progress.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\psl.c" />
@@ -285,8 +285,6 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\socks_sspi.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\speedcheck.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\splay.c" />
-    <ClCompile Include="..\..\thirdparty\curl\lib\ssh-libssh.c" />
-    <ClCompile Include="..\..\thirdparty\curl\lib\ssh.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\strcase.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\strdup.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\strerror.c" />
@@ -312,7 +310,6 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\vauth\spnego_sspi.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vauth\vauth.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\version.c" />
-    <ClCompile Include="..\..\thirdparty\curl\lib\vtls\cyassl.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\gskit.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\gtls.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\mbedtls.c" />
@@ -325,6 +322,7 @@
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\schannel_verify.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\sectransp.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\vtls\vtls.c" />
+    <ClCompile Include="..\..\thirdparty\curl\lib\vtls\wolfssl.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\warnless.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\wildcard.c" />
     <ClCompile Include="..\..\thirdparty\curl\lib\x509asn1.c" />
@@ -347,6 +345,7 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\config-dos.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\config-mac.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\config-os400.h" />
+    <ClInclude Include="..\..\thirdparty\curl\lib\config-plan9.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\config-riscos.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\config-symbian.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\config-tpf.h" />
@@ -365,6 +364,7 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_endian.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_fnmatch.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_gethostname.h" />
+    <ClInclude Include="..\..\thirdparty\curl\lib\curl_get_line.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_gssapi.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_hmac.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\curl_ldap.h" />
@@ -422,10 +422,10 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\nonblock.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\parsedate.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\pingpong.h" />
-    <ClInclude Include="..\..\thirdparty\curl\lib\pipeline.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\pop3.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\progress.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\psl.h" />
+    <ClInclude Include="..\..\thirdparty\curl\lib\quic.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\rand.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\rtsp.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\select.h" />
@@ -442,7 +442,6 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\socks.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\speedcheck.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\splay.h" />
-    <ClInclude Include="..\..\thirdparty\curl\lib\ssh.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\strcase.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\strdup.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\strerror.h" />
@@ -459,7 +458,6 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\vauth\digest.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vauth\ntlm.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vauth\vauth.h" />
-    <ClInclude Include="..\..\thirdparty\curl\lib\vtls\cyassl.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\gskit.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\gtls.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\mbedtls.h" />
@@ -471,12 +469,13 @@
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\schannel.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\sectransp.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\vtls\vtls.h" />
+    <ClInclude Include="..\..\thirdparty\curl\lib\vtls\wolfssl.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\warnless.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\wildcard.h" />
     <ClInclude Include="..\..\thirdparty\curl\lib\x509asn1.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\thirdparty\curl\lib\Makefile.inc" />
+    <None Include="..\..\thirdparty\curl\lib\firefox-db2pem.sh" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\thirdparty\curl\lib\libcurl.rc" />
