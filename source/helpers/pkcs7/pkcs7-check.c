@@ -8,7 +8,7 @@ char *pdf_signature_error_description(pdf_signature_error err)
 	switch (err)
 	{
 	case PDF_SIGNATURE_ERROR_OKAY:
-		return "";
+		return "OK";
 	case PDF_SIGNATURE_ERROR_NO_SIGNATURES:
 		return "No signatures.";
 	case PDF_SIGNATURE_ERROR_NO_CERTIFICATE:
