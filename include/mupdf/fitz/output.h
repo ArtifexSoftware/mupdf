@@ -131,7 +131,7 @@ void fz_write_float_le(fz_context *ctx, fz_output *out, float f);
 
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 
-void fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline);
+void fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, size_t size, int newline);
 void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, int newline);
 
 void fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args);

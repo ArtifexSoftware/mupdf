@@ -148,10 +148,10 @@ typedef pdf_pkcs7_designated_name *(pdf_pkcs7_designated_name_fn)(pdf_pkcs7_sign
 typedef void (pdf_pkcs7_drop_designated_name_fn)(pdf_pkcs7_signer *signer, pdf_pkcs7_designated_name *name);
 
 /* Predict the size of the digest. The actual digest returned by create_digest will be no greater in size */
-typedef int (pdf_pkcs7_max_digest_size_fn)(pdf_pkcs7_signer *signer);
+typedef size_t (pdf_pkcs7_max_digest_size_fn)(pdf_pkcs7_signer *signer);
 
 /* Create a signature based on ranges of bytes drawn from a stream */
-typedef int (pdf_pkcs7_create_digest_fn)(pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, int *digest_len);
+typedef int (pdf_pkcs7_create_digest_fn)(pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, size_t *digest_len);
 
 struct pdf_pkcs7_signer_s
 {
@@ -169,10 +169,10 @@ typedef struct pdf_unsaved_sig_s pdf_unsaved_sig;
 struct pdf_unsaved_sig_s
 {
 	pdf_obj *field;
-	int byte_range_start;
-	int byte_range_end;
-	int contents_start;
-	int contents_end;
+	size_t byte_range_start;
+	size_t byte_range_end;
+	size_t contents_start;
+	size_t contents_end;
 	pdf_pkcs7_signer *signer;
 	pdf_unsaved_sig *next;
 };

@@ -1107,7 +1107,7 @@ int pdf_signature_byte_range(fz_context *ctx, pdf_document *doc, pdf_obj *signat
 	{
 		for (i = 0; i < n; i++)
 		{
-			int offset = pdf_array_get_int(ctx, br, 2*i);
+			int64_t offset = pdf_array_get_int(ctx, br, 2*i);
 			int length = pdf_array_get_int(ctx, br, 2*i+1);
 
 			if (offset < 0 || offset > doc->file_size)
@@ -1295,12 +1295,12 @@ int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 }
 
 /* NOTE: contents is allocated and must be freed by the caller! */
-int pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
+size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
 	pdf_obj *v_ref = pdf_dict_get(ctx, signature, PDF_NAME(V));
 	pdf_obj *v_obj = pdf_load_unencrypted_object(ctx, doc, pdf_to_num(ctx, v_ref));
 	char *copy = NULL;
-	int len;
+	size_t len;
 
 	fz_var(copy);
 	fz_try(ctx)
@@ -1335,7 +1335,7 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	pdf_obj *v = NULL;
 	pdf_obj *indv;
 	int vnum;
-	int max_digest_size;
+	size_t max_digest_size;
 	char *buf = NULL;
 	char date_string[40];
 

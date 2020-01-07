@@ -546,10 +546,10 @@ fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 }
 
 void
-fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline)
+fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, size_t size, int newline)
 {
 	static const char set[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	int i;
+	size_t i;
 	for (i = 0; i + 3 <= size; i += 3)
 	{
 		int c = data[i];

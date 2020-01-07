@@ -12,6 +12,9 @@
 #include <signal.h>
 #endif
 
+#include "mupdf/helpers/pkcs7-check.h"
+#include "mupdf/helpers/pkcs7-openssl.h"
+
 #include "mujs.h"
 
 #ifndef PATH_MAX
@@ -280,13 +283,13 @@ static fz_location try_location(js_State *J)
 static void push_location(js_State *J, fz_location loc)
 {
 	if (loc.chapter == 0)
-		js_pushnumber(J, loc.page+1);
+		js_pushnumber(J, (double)loc.page+1);
 	else
 	{
 		js_newarray(J);
-		js_pushnumber(J, loc.chapter+1);
+		js_pushnumber(J, (double)loc.chapter+1);
 		js_setindex(J, -2, 0);
-		js_pushnumber(J, loc.page+1);
+		js_pushnumber(J, (double)loc.page+1);
 		js_setindex(J, -2, 1);
 	}
 }
@@ -1024,7 +1027,7 @@ static void do_links(fz_link *link)
 static void do_page_selection(void)
 {
 	static fz_point pt = { 0, 0 };
-	fz_quad hits[1000];
+	static fz_quad hits[1000];
 	int i, n;
 
 	if (ui_mouse_inside(view_page_area))

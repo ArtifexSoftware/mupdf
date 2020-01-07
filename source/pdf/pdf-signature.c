@@ -5,14 +5,14 @@
 #include <string.h>
 #include <time.h>
 
-void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int hexdigest_offset, int hexdigest_length, pdf_pkcs7_signer *signer)
+void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, size_t hexdigest_offset, size_t hexdigest_length, pdf_pkcs7_signer *signer)
 {
 	fz_stream *stm = NULL;
 	fz_stream *in = NULL;
 	fz_range *brange = NULL;
 	int brange_len = pdf_array_len(ctx, byte_range)/2;
 	unsigned char *digest = NULL;
-	int digest_len;
+	size_t digest_len;
 
 	fz_var(stm);
 	fz_var(in);
@@ -25,6 +25,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 	fz_try(ctx)
 	{
 		int i, res;
+		size_t z;
 
 		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
 		for (i = 0; i < brange_len; i++)
@@ -47,10 +48,10 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, int 
 		fz_drop_stream(ctx, stm);
 		stm = NULL;
 
-		fz_seek_output(ctx, out, hexdigest_offset+1, SEEK_SET);
+		fz_seek_output(ctx, out, (int64_t)hexdigest_offset+1, SEEK_SET);
 
-		for (i = 0; i < digest_len; i++)
-			fz_write_printf(ctx, out, "%02x", digest[i]);
+		for (z = 0; z < digest_len; z++)
+			fz_write_printf(ctx, out, "%02x", digest[z]);
 	}
 	fz_always(ctx)
 	{
@@ -82,7 +83,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 		struct tm *tm = gmtime(&now);
 #endif
 		char now_str[40];
-		int len = 0;
+		size_t len = 0;
 
 		rect = pdf_dict_get_rect(ctx, wobj, PDF_NAME(Rect));
 

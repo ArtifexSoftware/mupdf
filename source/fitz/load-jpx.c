@@ -587,7 +587,7 @@ void opj_free(void *ptr)
 static void * opj_aligned_malloc_n(size_t alignment, size_t size)
 {
 	uint8_t *ptr;
-	int off;
+	size_t off;
 
 	if (size == 0)
 		return NULL;
@@ -597,7 +597,7 @@ static void * opj_aligned_malloc_n(size_t alignment, size_t size)
 	if (ptr == NULL)
 		return NULL;
 	off = alignment-(((int)(intptr_t)ptr) & (alignment - 1));
-	ptr[off-1] = off;
+	ptr[off-1] = (uint8_t)off;
 	return ptr + off;
 }
 
@@ -634,7 +634,7 @@ static void fz_opj_error_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
 	char buf[200];
-	int n;
+	size_t n;
 	fz_strlcpy(buf, msg, sizeof buf);
 	n = strlen(buf);
 	if (buf[n-1] == '\n')
@@ -646,7 +646,7 @@ static void fz_opj_warning_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
 	char buf[200];
-	int n;
+	size_t n;
 	fz_strlcpy(buf, msg, sizeof buf);
 	n = strlen(buf);
 	if (buf[n-1] == '\n')

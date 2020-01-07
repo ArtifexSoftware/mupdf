@@ -756,7 +756,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		if (len > (int64_t)((INT64_MAX - t) / n))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref has too many entries");
 
-		fz_seek(ctx, doc->file, t + n * len, SEEK_SET);
+		fz_seek(ctx, doc->file, t + n * (int64_t)len, SEEK_SET);
 	}
 
 	fz_try(ctx)

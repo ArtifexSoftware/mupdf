@@ -1742,7 +1742,7 @@ static fz_buffer *unhexbuf(fz_context *ctx, const unsigned char *p, size_t n)
 	return out;
 }
 
-static void write_data(fz_context *ctx, void *arg, const unsigned char *data, int len)
+static void write_data(fz_context *ctx, void *arg, const unsigned char *data, size_t len)
 {
 	fz_write_data(ctx, (fz_output *)arg, data, len);
 }
@@ -1804,7 +1804,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		}
 		else
 		{
-			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, opts->crypt, num, gen, (int)len));
+			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, opts->crypt, num, gen, len));
 			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, opts->crypt, num, gen);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			pdf_encrypt_data(ctx, opts->crypt, num, gen, write_data, opts->out, data, len);
@@ -2752,12 +2752,8 @@ static void presize_unsaved_signature_byteranges(fz_context *ctx, pdf_document *
 
 static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	pdf_unsaved_sig *usig;
 	char *buf = NULL, *ptr;
-	int buf_size;
 	int s;
-	int i;
-	int last_end;
 	fz_stream *stm = NULL;
 	fz_var(stm);
 	fz_var(buf);
@@ -2770,14 +2766,17 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 			if (xref->unsaved_sigs)
 			{
+				pdf_unsaved_sig *usig;
 				pdf_obj *byte_range;
-				buf_size = 0;
+				size_t buf_size = 0;
+				size_t i;
+				size_t last_end;
 
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
-					int size = usig->signer->max_digest_size(usig->signer);
+					size_t size = usig->signer->max_digest_size(usig->signer);
 
-					buf_size = fz_maxi(buf_size, size);
+					buf_size = fz_maxz(buf_size, size);
 				}
 
 				buf_size = buf_size * 2 + SIG_EXTRAS_SIZE;
@@ -2789,7 +2788,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
 					char *bstr, *cstr, *fstr;
-					int bytes_read;
+					size_t bytes_read;
 					int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL));
 					fz_seek(ctx, stm, opts->ofs_list[pnum], SEEK_SET);
 					/* SIG_EXTRAS_SIZE is an arbitrary value and its addition above to buf_size
