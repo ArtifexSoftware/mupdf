@@ -12,8 +12,8 @@
 
 static pdf_widget *sig_widget;
 static char sig_designated_name[500];
-static enum pdf_signature_error sig_cert_error;
-static enum pdf_signature_error sig_digest_error;
+static pdf_signature_error sig_cert_error;
+static pdf_signature_error sig_digest_error;
 static int sig_subsequent_edits;
 
 static char cert_filename[PATH_MAX];

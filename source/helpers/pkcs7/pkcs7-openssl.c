@@ -6,14 +6,14 @@
 
 #ifndef HAVE_LIBCRYPTO
 
-enum pdf_signature_error
+pdf_signature_error
 pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	return PDF_SIGNATURE_ERROR_UNKNOWN;
 }
 
 /* Check a signature's certificate is trusted */
-enum pdf_signature_error
+pdf_signature_error
 pkcs7_openssl_check_certificate(char *sig, int sig_len)
 {
 	return PDF_SIGNATURE_ERROR_UNKNOWN;
@@ -125,7 +125,7 @@ typedef struct
 static int stream_read(BIO *b, char *buf, int size)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
-	return fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
+	return (int)fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
 }
 
 static long stream_ctrl(BIO *b, int cmd, long arg1, void *arg2)
@@ -254,7 +254,7 @@ static X509 *pk7_signer(STACK_OF(X509) *certs, PKCS7_SIGNER_INFO *si)
 	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
 }
 
-static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
+static pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 {
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
@@ -318,7 +318,7 @@ exit:
 	return res;
 }
 
-static enum pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
+static pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 {
 	int res = PDF_SIGNATURE_ERROR_OKAY;
 	int i;
@@ -408,7 +408,7 @@ exit:
 	return res;
 }
 
-enum pdf_signature_error pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
+pdf_signature_error pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
@@ -434,7 +434,7 @@ exit:
 	return res;
 }
 
-enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
+pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;

@@ -3,7 +3,7 @@
 
 #include "mupdf/helpers/pkcs7-check.h"
 
-char *pdf_signature_error_description(enum pdf_signature_error err)
+char *pdf_signature_error_description(pdf_signature_error err)
 {
 	switch (err)
 	{
@@ -41,7 +41,7 @@ static void pdf_format_designated_name(pdf_pkcs7_designated_name *name, char *bu
 		", emailAddress=", name->email,
 		", C=", name->c};
 
-		if (buflen)
+	if (buflen)
 		buf[0] = 0;
 
 	n = sizeof(part)/sizeof(*part);
@@ -72,9 +72,9 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 		fz_rethrow(ctx);
 }
 
-enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
-	enum pdf_signature_error err;
+	pdf_signature_error err;
 	fz_stream *bytes = NULL;
 	char *contents = NULL;
 	int contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
@@ -98,11 +98,11 @@ enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pd
 	return err;
 }
 
-enum pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	char *contents = NULL;
 	int contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
-	enum pdf_signature_error result;
+	pdf_signature_error result;
 	fz_try(ctx)
 		result = pkcs7_openssl_check_certificate(contents, contents_len);
 	fz_always(ctx)
@@ -129,7 +129,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, 
 	{
 		if (pdf_signature_is_signed(ctx, doc, signature))
 		{
-			enum pdf_signature_error err;
+			pdf_signature_error err;
 
 			err = pdf_check_digest(ctx, doc, signature);
 			if (err == PDF_SIGNATURE_ERROR_OKAY)
@@ -173,6 +173,11 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, 
 	return res;
 }
 
+int pdf_supports_signatures(fz_context *ctx)
+{
+	return 1;
+}
+
 #else
 
 void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *buf, int buflen)
@@ -180,13 +185,13 @@ void pdf_signature_designated_name(fz_context *ctx, pdf_document *doc, pdf_obj *
 	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
 }
 
-enum pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
 	return 0;
 }
 
-enum pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
 	return 0;
@@ -196,6 +201,11 @@ enum pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_document *do
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char *ebuf, int ebufsize)
 {
 	fz_strlcpy(ebuf, "No digital signing support in this build", ebufsize);
+	return 0;
+}
+
+int pdf_supports_signatures(fz_context *ctx)
+{
 	return 0;
 }
 

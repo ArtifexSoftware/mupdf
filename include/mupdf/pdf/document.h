@@ -110,7 +110,7 @@ void pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc);
 
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc);
 
-enum pdf_signature_error
+typedef enum
 {
 	PDF_SIGNATURE_ERROR_OKAY,
 	PDF_SIGNATURE_ERROR_NO_SIGNATURES,
@@ -120,7 +120,7 @@ enum pdf_signature_error
 	PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN,
 	PDF_SIGNATURE_ERROR_NOT_TRUSTED,
 	PDF_SIGNATURE_ERROR_UNKNOWN
-};
+} pdf_signature_error;
 
 typedef struct pdf_pkcs7_designated_name_s
 {
