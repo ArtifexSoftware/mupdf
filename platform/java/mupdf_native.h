@@ -201,6 +201,14 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_initNative
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    emptyStore
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_emptyStore
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
