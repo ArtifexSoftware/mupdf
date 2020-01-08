@@ -1322,6 +1322,16 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 	return 0;
 }
 
+JNIEXPORT void JNICALL
+FUN(Context_emptyStore)(JNIEnv *env, jclass cls)
+{
+	fz_context *ctx = base_context;
+	if (!ctx)
+		return;
+
+	fz_empty_store(ctx);
+}
+
 /* Conversion functions: C to Java. These all throw fitz exceptions. */
 
 static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
