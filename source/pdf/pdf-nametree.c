@@ -240,3 +240,51 @@ pdf_lookup_number(fz_context *ctx, pdf_obj *node, int needle)
 
 	return NULL;
 }
+
+static void
+pdf_walk_tree_kid(fz_context *ctx, pdf_obj *obj, pdf_obj *kid_name, void (*fn)(fz_context *, pdf_obj *, void *), void *arg)
+{
+	if (obj == NULL)
+		return;
+
+	if (pdf_mark_obj(ctx, obj))
+		return;
+
+	fz_try(ctx)
+	{
+		fn(ctx, obj, arg);
+		pdf_walk_tree(ctx, pdf_dict_get(ctx, obj, kid_name), kid_name, fn, arg);
+	}
+	fz_always(ctx)
+		pdf_unmark_obj(ctx, obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+pdf_walk_tree(fz_context *ctx, pdf_obj *obj, pdf_obj *kid_name, void (*fn)(fz_context *, pdf_obj *, void *), void *arg)
+{
+	if (obj == NULL)
+		return;
+
+	if (pdf_mark_obj(ctx, obj))
+		return;
+
+	fz_try(ctx)
+	{
+		if (pdf_is_array(ctx, obj))
+		{
+			int i, n = pdf_array_len(ctx, obj);
+			for (i = 0; i < n; i++)
+				pdf_walk_tree_kid(ctx, pdf_array_get(ctx, obj, i), kid_name, fn, arg);
+		}
+		else
+		{
+			pdf_walk_tree_kid(ctx, obj, kid_name, fn, arg);
+		}
+	}
+	fz_always(ctx)
+		pdf_unmark_obj(ctx, obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
