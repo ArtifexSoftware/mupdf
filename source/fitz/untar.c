@@ -90,7 +90,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		blocks = (size + 511) / 512;
 		fz_seek(ctx, file, blocks * 512, 1);
 
-		if (typeflag != '0' && typeflag != '\0')
+		if (typeflag != '0' && typeflag != '7' && typeflag != '\0')
 			continue;
 
 		tar->entries = fz_realloc_array(ctx, tar->entries, tar->count + 1, tar_entry);
