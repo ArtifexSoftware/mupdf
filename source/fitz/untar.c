@@ -96,9 +96,6 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		memcpy(name, record + 0, nelem(name) - 1);
 		name[nelem(name) - 1] = '\0';
 
-		if (strlen(name) == 3)
-			break;
-
 		memcpy(octsize, record + 124, nelem(octsize) - 1);
 		octsize[nelem(octsize) - 1] = '\0';
 
