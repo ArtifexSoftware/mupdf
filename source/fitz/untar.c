@@ -53,8 +53,8 @@ static void drop_tar_archive(fz_context *ctx, fz_archive *arch)
 static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 {
 	fz_stream *file = tar->super.file;
-	char name[100];
-	char octsize[12];
+	char name[101];
+	char octsize[13];
 	char typeflag;
 	int64_t offset, blocks, size;
 	size_t n;
@@ -66,8 +66,8 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 	while (1)
 	{
 		offset = fz_tell(ctx, file);
-		n = fz_read(ctx, file, (unsigned char *) name, nelem(name));
-		if (n < nelem(name))
+		n = fz_read(ctx, file, (unsigned char *) name, nelem(name) - 1);
+		if (n < nelem(name) - 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in tar entry name");
 		name[nelem(name) - 1] = '\0';
 
@@ -75,8 +75,8 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 			break;
 
 		fz_seek(ctx, file, 24, 1);
-		n = fz_read(ctx, file, (unsigned char *) octsize, nelem(octsize));
-		if (n < nelem(octsize))
+		n = fz_read(ctx, file, (unsigned char *) octsize, nelem(octsize) - 1);
+		if (n < nelem(octsize) - 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in tar entry size");
 		octsize[nelem(octsize) - 1] = '\0';
 		size = otoi(octsize);
