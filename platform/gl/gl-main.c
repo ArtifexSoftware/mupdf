@@ -1558,6 +1558,30 @@ process_sigs(fz_context *ctx, pdf_obj *field, void *arg)
 	sigs->sig[sigs->len++] = field;
 }
 
+static char *short_signature_error_desc(pdf_signature_error err)
+{
+	switch (err)
+	{
+	case PDF_SIGNATURE_ERROR_OKAY:
+		return "OK";
+	case PDF_SIGNATURE_ERROR_NO_SIGNATURES:
+		return "No signatures";
+	case PDF_SIGNATURE_ERROR_NO_CERTIFICATE:
+		return "No certificate";
+	case PDF_SIGNATURE_ERROR_DIGEST_FAILURE:
+		return "Invalid";
+	case PDF_SIGNATURE_ERROR_SELF_SIGNED:
+		return "Self-signed";
+	case PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN:
+		return "Self-signed in chain";
+	case PDF_SIGNATURE_ERROR_NOT_TRUSTED:
+		return "Untrusted";
+	default:
+	case PDF_SIGNATURE_ERROR_UNKNOWN:
+		return "Unknown error";
+	}
+}
+
 static void do_info(void)
 {
 	char buf[100];
@@ -1620,22 +1644,27 @@ static void do_info(void)
 			for (i = 0; i < list.len; i++)
 			{
 				pdf_obj *field = list.sig[i];
-				if (pdf_signature_is_signed(ctx, pdf, field))
+				fz_try(ctx)
 				{
-					if (pdf_supports_signatures(ctx))
+					if (pdf_signature_is_signed(ctx, pdf, field))
 					{
-						pdf_signature_error sig_cert_error = pdf_check_certificate(ctx, pdf, field);
-						pdf_signature_error sig_digest_error = pdf_check_digest(ctx, pdf, field);
-						ui_label("Signature %d is signed (CERT: %s, DIGEST: %s%s)", i+1,
-							pdf_signature_error_description(sig_cert_error),
-							pdf_signature_error_description(sig_digest_error),
-							pdf_signature_incremental_change_since_signing(ctx, pdf, field) ? ", Doc changed since signing": "");
+						if (pdf_supports_signatures(ctx))
+						{
+							pdf_signature_error sig_cert_error = pdf_check_certificate(ctx, pdf, field);
+							pdf_signature_error sig_digest_error = pdf_check_digest(ctx, pdf, field);
+							ui_label("Signature %d: CERT: %s, DIGEST: %s%s", i+1,
+								short_signature_error_desc(sig_cert_error),
+								short_signature_error_desc(sig_digest_error),
+									pdf_signature_incremental_change_since_signing(ctx, pdf, field) ? ", Changed since": "");
+						}
+						else
+							ui_label("Signature %d: Signed (cannot test validity)", i+1);
 					}
 					else
-						ui_label("Signature %d is signed (cannot test validity)", i+1);
+						ui_label("Signature %d: Unsigned", i+1);
 				}
-				else
-					ui_label("Signature %d is unsigned", i+1);
+				fz_catch(ctx)
+					ui_label("Signature %d: Error", i+1);
 			}
 			fz_free(ctx, list.sig);
 

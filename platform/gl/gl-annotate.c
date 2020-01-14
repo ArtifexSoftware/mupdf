@@ -31,6 +31,7 @@ static void init_save_pdf_options(void)
 	save_opts.do_compress = 1;
 	save_opts.do_compress_images = 1;
 	save_opts.do_compress_fonts = 1;
+	save_opts.do_incremental = 1;
 }
 
 static const char *cryptalgo_names[] = {
@@ -52,6 +53,17 @@ static void save_pdf_options(void)
 	ui_layout(T, X, NW, 4, 2);
 
 	ui_checkbox("Incremental", &save_opts.do_incremental);
+	fz_try(ctx)
+	{
+		if (pdf_count_signatures(ctx, pdf))
+		{
+			ui_label("WARNING: Saving non-incrementally will break existing signatures");
+		}
+	}
+	fz_catch(ctx)
+	{
+		/* Ignore the error. */
+	}
 	ui_spacer();
 	ui_checkbox("Pretty-print", &save_opts.do_pretty);
 	ui_checkbox("Ascii", &save_opts.do_ascii);
@@ -94,6 +106,27 @@ static void save_pdf_options(void)
 	}
 }
 
+static void copy_file(const char *dst, const char *src)
+{
+	static char buffer[4096];
+	FILE *in, *out;
+
+	in = fopen(src, "rb");
+	if (in == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open old file for reading");
+	out = fopen(dst, "wb");
+	if (out == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open new file for writing");
+
+	while (!feof(in))
+	{
+		size_t n = fread(buffer, 1, sizeof(buffer), in);
+		fwrite(buffer, 1, n, out);
+	}
+	fclose(in);
+	fclose(out);
+}
+
 static void save_pdf_dialog(void)
 {
 	ui_input_init(&opwinput, "");
@@ -108,6 +141,12 @@ static void save_pdf_dialog(void)
 				save_opts.do_garbage = 2;
 			fz_try(ctx)
 			{
+				if (save_opts.do_incremental && strcmp(save_filename, filename))
+				{
+					/* Need to copy contents of old file into new one
+					 * in order to be able to save incrementally. */
+					copy_file(save_filename, filename);
+				}
 				pdf_save_document(ctx, pdf, save_filename, &save_opts);
 				fz_strlcpy(filename, save_filename, PATH_MAX);
 				update_title();
