@@ -1056,7 +1056,7 @@ static void do_edit_quad_points(void)
 {
 	static fz_point pt = { 0, 0 };
 	static int marking = 0;
-	fz_quad hits[1000];
+	static fz_quad hits[1000];
 	int i, n;
 
 	if (ui_mouse_inside(view_page_area))
