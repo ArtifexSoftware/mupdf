@@ -110,4 +110,6 @@ pdf_locked_fields *pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, in
 pdf_locked_fields *pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig);
 int pdf_validate_change_history(fz_context *ctx, pdf_document *doc);
 
+int pdf_find_version_for_obj(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+
 #endif

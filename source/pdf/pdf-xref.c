@@ -3882,3 +3882,40 @@ pdf_validate_change_history(fz_context *ctx, pdf_document *doc)
 	}
 	return 0;
 }
+
+/* Return the version that obj appears in, or -1 for not found. */
+int pdf_find_version_for_obj(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	pdf_xref *xref = NULL;
+	pdf_xref_subsec *sub;
+	int i, j;
+
+	if (obj == NULL)
+		return -1;
+
+	i = pdf_to_num(ctx, obj);
+	if (i <= 0)
+		return -1;
+
+	/* Find the first xref section where the entry is defined. */
+	for (j = 0; j < doc->num_xref_sections; j++)
+	{
+		xref = &doc->xref_sections[j];
+
+		if (i < xref->num_objects)
+		{
+			for (sub = xref->subsec; sub != NULL; sub = sub->next)
+			{
+				pdf_xref_entry *entry;
+
+				if (i < sub->start || i >= sub->start + sub->len)
+					continue;
+
+				entry = &sub->table[i - sub->start];
+				if (entry->obj == obj)
+					return j;
+			}
+		}
+	}
+	return -1;
+}
