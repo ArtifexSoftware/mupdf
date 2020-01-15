@@ -1645,13 +1645,13 @@ void pdf_field_event_calculate(fz_context *ctx, pdf_document *doc, pdf_obj *fiel
 }
 
 static void
-count_sigs(fz_context *ctx, pdf_obj *field, void *arg, pdf_obj *vals)
+count_sigs(fz_context *ctx, pdf_obj *field, void *arg, pdf_obj **ft)
 {
 	int *n = (int *)arg;
 
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Type)), PDF_NAME(Annot)) ||
 		!pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Subtype)), PDF_NAME(Widget)) ||
-		!pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(FT)), PDF_NAME(Sig)))
+		!pdf_name_eq(ctx, *ft, PDF_NAME(Sig)))
 		return;
 
 	(*n)++;
@@ -1662,7 +1662,7 @@ static pdf_obj *ft_name[2] = { PDF_NAME(FT), NULL };
 int pdf_count_signatures(fz_context *ctx, pdf_document *doc)
 {
 	int n = 0;
-	pdf_obj *ft;
+	pdf_obj *ft = NULL;
 	pdf_obj *form_fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
 	pdf_walk_tree(ctx, form_fields, PDF_NAME(Kids), count_sigs, NULL, &n, ft_name, &ft);
 	return n;

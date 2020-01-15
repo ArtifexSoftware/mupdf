@@ -3609,7 +3609,7 @@ find_locked_fields_value(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *v)
 }
 
 static void
-find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *fields, pdf_obj *inherit_v)
+find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *fields, pdf_obj *inherit_v, pdf_obj *inherit_ft)
 {
 	int i, n;
 
@@ -3621,19 +3621,21 @@ find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *field
 
 	fz_try(ctx)
 	{
-		pdf_obj *kids;
-		pdf_obj *v;
+		pdf_obj *kids, *v, *ft;
 
 		pdf_mark_obj(ctx, field);
 
 		v = pdf_dict_get(ctx, field, PDF_NAME(V));
 		if (v == NULL)
 			v = inherit_v;
+		ft = pdf_dict_get(ctx, field, PDF_NAME(V));
+		if (ft == NULL)
+			ft = inherit_ft;
 
 		/* We are looking for Widget annotations of type Sig that are
 		 * signed (i.e. have a 'V' field). */
 		if (pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Subtype)), PDF_NAME(Widget)) &&
-			pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(FT)), PDF_NAME(Sig)) &&
+			pdf_name_eq(ctx, ft, PDF_NAME(Sig)) &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, v, PDF_NAME(Type)), PDF_NAME(SigRef)))
 		{
 			/* Signed Sig Widgets (i.e. ones with a 'V' field) need
@@ -3651,7 +3653,7 @@ find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *field
 		{
 			n = pdf_array_len(ctx, kids);
 			for (i = 0; i < n; i++)
-				find_locked_fields_aux(ctx, pdf_array_get(ctx, kids, i), fields, v);
+				find_locked_fields_aux(ctx, pdf_array_get(ctx, kids, i), fields, v, ft);
 		}
 	}
 	fz_always(ctx)
@@ -3678,7 +3680,7 @@ pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, int version)
 			break;
 
 		for (i = 0; i < len; i++)
-			find_locked_fields_aux(ctx, pdf_array_get(ctx, fobj, i), fields, NULL);
+			find_locked_fields_aux(ctx, pdf_array_get(ctx, fobj, i), fields, NULL, NULL);
 
 		/* Add in any DocMDP referenced directly from the Perms dict. */
 		find_locked_fields_value(ctx, fields, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Perms/DocMDP"));
@@ -3705,7 +3707,7 @@ pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 	{
 		/* Ensure it really is a sig */
 		if (!pdf_name_eq(ctx, pdf_dict_get(ctx, sig, PDF_NAME(Subtype)), PDF_NAME(Widget)) ||
-			!pdf_name_eq(ctx, pdf_dict_get(ctx, sig, PDF_NAME(FT)), PDF_NAME(Sig)))
+			!pdf_name_eq(ctx, pdf_dict_get_inheritable(ctx, sig, PDF_NAME(FT)), PDF_NAME(Sig)))
 			break;
 
 		merge_lock_specification(ctx, fields, pdf_dict_get(ctx, sig, PDF_NAME(Lock)));

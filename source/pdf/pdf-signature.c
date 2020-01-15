@@ -66,6 +66,95 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, size
 	}
 }
 
+typedef struct fieldname_prefix_s
+{
+	struct fieldname_prefix_s *prev;
+	char name[1];
+} fieldname_prefix;
+
+typedef struct
+{
+	pdf_locked_fields *locked;
+	fieldname_prefix *prefix;
+} sig_locking_data;
+
+static void
+check_field_locking(fz_context *ctx, pdf_obj *obj, void *data_, pdf_obj **ff)
+{
+	fieldname_prefix *prefix = NULL;
+	sig_locking_data *data = (sig_locking_data *)data_;
+
+	fz_var(prefix);
+
+	fz_try(ctx)
+	{
+		const char *name;
+		size_t n;
+
+		name = pdf_to_text_string(ctx, pdf_dict_get(ctx, obj, PDF_NAME(T)));
+		n = strlen(name)+1;
+		if (data->prefix->name[0])
+			n += 1 + strlen(data->prefix->name);
+		prefix = fz_calloc(ctx, 1, sizeof(*prefix)+n);
+		prefix->prev = data->prefix;
+		if (data->prefix->name[0])
+		{
+			strcpy(prefix->name, data->prefix->name);
+			strcat(prefix->name, ".");
+		}
+		else
+			prefix->name[0] = 0;
+		strcat(prefix->name, name);
+		data->prefix = prefix;
+
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Type)), PDF_NAME(Annot)) &&
+			pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
+		{
+			int flags = pdf_to_int(ctx, *ff);
+
+			if (((flags & PDF_FIELD_IS_READ_ONLY) == 0) && /* Field is not currently locked */
+				pdf_is_field_locked(ctx, data->locked, data->prefix->name)) /* Field should be locked */
+				pdf_dict_put_drop(ctx, obj, PDF_NAME(Ff), pdf_new_int(ctx, flags | PDF_FIELD_IS_READ_ONLY));
+		}
+	}
+	fz_catch(ctx)
+	{
+		if (prefix)
+		{
+			data->prefix = prefix->prev;
+			fz_free(ctx, prefix);
+		}
+		fz_rethrow(ctx);
+	}
+}
+
+static void
+pop_field_locking(fz_context *ctx, pdf_obj *obj, void *data_)
+{
+	fieldname_prefix *prefix;
+	sig_locking_data *data = (sig_locking_data *)data_;
+
+	prefix = data->prefix;
+	data->prefix = data->prefix->prev;
+	fz_free(ctx, prefix);
+}
+
+static void enact_sig_locking(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
+{
+	pdf_locked_fields *locked = pdf_find_locked_fields_for_sig(ctx, doc, sig);
+	pdf_obj *fields;
+	static pdf_obj *ff_names[2] = { PDF_NAME(Ff), NULL };
+	pdf_obj *ff = NULL;
+	static fieldname_prefix null_prefix = { NULL, "" };
+	sig_locking_data data = { locked, &null_prefix };
+
+	if (locked == NULL)
+		return;
+
+	fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
+	pdf_walk_tree(ctx, fields, PDF_NAME(Kids), check_field_locking, pop_field_locking, &data, &ff_names[0], &ff);
+}
+
 void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, pdf_pkcs7_signer *signer)
 {
 	pdf_pkcs7_designated_name *dn = NULL;
@@ -84,6 +173,10 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 #endif
 		char now_str[40];
 		size_t len = 0;
+
+		/* Ensure that all fields that will be locked by this signature
+		 * are marked as ReadOnly. */
+		enact_sig_locking(ctx, doc, wobj);
 
 		rect = pdf_dict_get_rect(ctx, wobj, PDF_NAME(Rect));
 
