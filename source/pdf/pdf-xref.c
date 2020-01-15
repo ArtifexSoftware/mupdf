@@ -3031,7 +3031,7 @@ typedef struct
 } pdf_changes;
 
 static void
-check_unchanged_between(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_xref *xref, pdf_obj *nobj, pdf_obj *oobj)
+check_unchanged_between(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *nobj, pdf_obj *oobj)
 {
 	int marked = 0;
 
@@ -3113,7 +3113,7 @@ change_found:
 				pdf_obj *nval = pdf_dict_get(ctx, nobj, key);
 				pdf_obj *oval = pdf_dict_get(ctx, oobj, key);
 
-				check_unchanged_between(ctx, doc, changes, xref, nval, oval);
+				check_unchanged_between(ctx, doc, changes, nval, oval);
 			}
 		}
 		else if (pdf_is_array(ctx, nobj))
@@ -3128,7 +3128,7 @@ change_found:
 				pdf_obj *nval = pdf_array_get(ctx, nobj, i);
 				pdf_obj *oval = pdf_array_get(ctx, oobj, i);
 
-				check_unchanged_between(ctx, doc, changes, xref, nval, oval);
+				check_unchanged_between(ctx, doc, changes, nval, oval);
 			}
 		}
 		else if (pdf_objcmp(ctx, nobj, oobj))
@@ -3288,7 +3288,7 @@ all_changes_accepted(fz_context *ctx, pdf_changes *changes, pdf_obj *obj)
 }
 
 static int
-check_field_value(fz_context *ctx, pdf_changes *changes, pdf_xref *xref, pdf_obj *nval, pdf_obj *parent, pdf_locked_fields *locked, const char *name)
+check_field_value(fz_context *ctx, pdf_changes *changes, pdf_obj *nval, pdf_obj *parent, pdf_locked_fields *locked, const char *name)
 {
 	if (pdf_is_field_locked(ctx, locked, name))
 		return 0; /* Illegal change */
@@ -3303,7 +3303,7 @@ check_field_value(fz_context *ctx, pdf_changes *changes, pdf_xref *xref, pdf_obj
 }
 
 static void
-check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_xref *xref, pdf_obj *obj, pdf_locked_fields *locked, const char *name_prefix, pdf_obj *new_v, pdf_obj *old_v)
+check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *obj, pdf_locked_fields *locked, const char *name_prefix, pdf_obj *new_v, pdf_obj *old_v)
 {
 	pdf_obj *old_obj, *new_obj, *n_v, *o_v;
 	int o_xref_base;
@@ -3370,7 +3370,7 @@ check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_xref *
 		if (pdf_name_eq(ctx, pdf_dict_get(ctx, new_obj, PDF_NAME(Type)), PDF_NAME(Annot)) &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, new_obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
 		{
-			if (check_field_value(ctx, changes, xref, n_v, new_obj, locked, field_name))
+			if (check_field_value(ctx, changes, n_v, new_obj, locked, field_name))
 				changes->obj_changes[obj_num] |= FIELD_CHANGE_VALID;
 			else
 				changes->obj_changes[obj_num] |= FIELD_CHANGE_INVALID;
@@ -3413,7 +3413,7 @@ change_found:
 					/* For now at least, we'll count any change in number as a difference. */
 					if (pdf_to_num(ctx, nkid) != pdf_to_num(ctx, okid))
 						goto change_found;
-					check_field(ctx, doc, changes, xref, nkid, locked, field_name, n_v, o_v);
+					check_field(ctx, doc, changes, nkid, locked, field_name, n_v, o_v);
 				}
 			}
 			else if (pdf_name_eq(ctx, key, PDF_NAME(V)))
@@ -3428,7 +3428,7 @@ change_found:
 			}
 			/* All other fields can't change */
 			else
-				check_unchanged_between(ctx, doc, changes, xref, nval, oval);
+				check_unchanged_between(ctx, doc, changes, nval, oval);
 		}
 
 		/* Now check all the fields in the old object to
@@ -3718,7 +3718,6 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 	{
 		pdf_obj *acroform, *new_acroform, *old_acroform;
 		int len, acroform_num;
-		pdf_xref *xref;
 
 		/* First off, make us a list of which objects are allowed
 		 * to change by the signatures present in the version before
@@ -3770,14 +3769,13 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 			{
 				int j;
 
-				xref = &doc->xref_sections[version];
 				len = pdf_array_len(ctx, nval);
 				for (j = 0; j < len; j++)
 				{
 					pdf_obj *field = pdf_array_get(ctx, nval, j);
 					if (!pdf_is_indirect(ctx, field))
 						all_indirects = 0;
-					check_field(ctx, doc, changes, xref, field, locked, "", NULL, NULL);
+					check_field(ctx, doc, changes, field, locked, "", NULL, NULL);
 				}
 			}
 			else if (pdf_name_eq(ctx, key, PDF_NAME(SigFlags)))
