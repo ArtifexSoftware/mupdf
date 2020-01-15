@@ -3609,7 +3609,7 @@ find_locked_fields_value(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *v)
 }
 
 static void
-find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *fields)
+find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *fields, pdf_obj *inherit_v)
 {
 	int i, n;
 
@@ -3621,15 +3621,19 @@ find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *field
 
 	fz_try(ctx)
 	{
-		pdf_obj *v, *kids;
+		pdf_obj *kids;
+		pdf_obj *v;
 
 		pdf_mark_obj(ctx, field);
+
+		v = pdf_dict_get(ctx, field, PDF_NAME(V));
+		if (v == NULL)
+			v = inherit_v;
 
 		/* We are looking for Widget annotations of type Sig that are
 		 * signed (i.e. have a 'V' field). */
 		if (pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Subtype)), PDF_NAME(Widget)) &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(FT)), PDF_NAME(Sig)) &&
-			(v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V))) != NULL &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, v, PDF_NAME(Type)), PDF_NAME(SigRef)))
 		{
 			/* Signed Sig Widgets (i.e. ones with a 'V' field) need
@@ -3647,7 +3651,7 @@ find_locked_fields_aux(fz_context *ctx, pdf_obj *field, pdf_locked_fields *field
 		{
 			n = pdf_array_len(ctx, kids);
 			for (i = 0; i < n; i++)
-				find_locked_fields_aux(ctx, pdf_array_get(ctx, kids, i), fields);
+				find_locked_fields_aux(ctx, pdf_array_get(ctx, kids, i), fields, v);
 		}
 	}
 	fz_always(ctx)
@@ -3660,6 +3664,7 @@ pdf_locked_fields *
 pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, int version)
 {
 	pdf_locked_fields *fields = fz_malloc_struct(ctx, pdf_locked_fields);
+	int o_xref_base = doc->xref_base;
 	doc->xref_base = version;
 
 	fz_var(fields);
@@ -3673,11 +3678,13 @@ pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, int version)
 			break;
 
 		for (i = 0; i < len; i++)
-			find_locked_fields_aux(ctx, pdf_array_get(ctx, fobj, i), fields);
+			find_locked_fields_aux(ctx, pdf_array_get(ctx, fobj, i), fields, NULL);
 
 		/* Add in any DocMDP referenced directly from the Perms dict. */
 		find_locked_fields_value(ctx, fields, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Perms/DocMDP"));
 	}
+	fz_always(ctx)
+		doc->xref_base = o_xref_base;
 	fz_catch(ctx)
 	{
 		pdf_drop_locked_fields(ctx, fields);
