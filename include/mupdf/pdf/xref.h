@@ -107,6 +107,7 @@ typedef struct pdf_locked_fields_s pdf_locked_fields;
 int pdf_is_field_locked(fz_context *ctx, pdf_locked_fields *locked, const char *name);
 void pdf_drop_locked_fields(fz_context *ctx, pdf_locked_fields *locked);
 pdf_locked_fields *pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, int version);
+pdf_locked_fields *pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig);
 int pdf_validate_change_history(fz_context *ctx, pdf_document *doc);
 
 #endif

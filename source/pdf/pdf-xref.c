@@ -3694,6 +3694,31 @@ pdf_find_locked_fields(fz_context *ctx, pdf_document *doc, int version)
 	return fields;
 }
 
+pdf_locked_fields *
+pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
+{
+	pdf_locked_fields *fields = fz_malloc_struct(ctx, pdf_locked_fields);
+
+	fz_var(fields);
+
+	fz_try(ctx)
+	{
+		/* Ensure it really is a sig */
+		if (!pdf_name_eq(ctx, pdf_dict_get(ctx, sig, PDF_NAME(Subtype)), PDF_NAME(Widget)) ||
+			!pdf_name_eq(ctx, pdf_dict_get(ctx, sig, PDF_NAME(FT)), PDF_NAME(Sig)))
+			break;
+
+		merge_lock_specification(ctx, fields, pdf_dict_get(ctx, sig, PDF_NAME(Lock)));
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_locked_fields(ctx, fields);
+		fz_rethrow(ctx);
+	}
+
+	return fields;
+}
+
 int
 pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 {
