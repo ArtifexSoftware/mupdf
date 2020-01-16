@@ -3217,6 +3217,62 @@ create_encryption_dictionary(fz_context *ctx, pdf_document *doc, pdf_crypt *cryp
 }
 
 static void
+ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *out)
+{
+	fz_stream *verify;
+	unsigned char buf0[256];
+	unsigned char buf1[256];
+	size_t n0, n1;
+	int64_t off = 0;
+	int same;
+
+	if (!in)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't copy contents for incremental write");
+
+	verify = fz_stream_from_output(ctx, out);
+	if (!verify)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't incrementally write pdf to this type of output");
+
+	fz_var(verify);
+
+	fz_try(ctx)
+	{
+		do
+		{
+			fz_seek(ctx, in, off, SEEK_SET);
+			n0 = fz_read(ctx, in, buf0, sizeof(buf0));
+			fz_seek(ctx, verify, off, SEEK_SET);
+			n1 = fz_read(ctx, verify, buf1, sizeof(buf1));
+			same = (n0 == n1 && !memcmp(buf0, buf1, n0));
+			off += n0;
+		}
+		while (same && n0 > 0);
+
+		if (same)
+			break;
+
+		fz_drop_stream(ctx, verify);
+		verify = NULL;
+
+		/* Copy old contents into new file */
+		fz_seek(ctx, in, 0, SEEK_SET);
+		fz_seek_output(ctx, out, 0, SEEK_SET);
+		do
+		{
+			n0 = fz_read(ctx, in, buf0, sizeof(buf0));
+			if (n0)
+				fz_write_data(ctx, out, buf0, n0);
+		}
+		while (n0);
+		fz_truncate_output(ctx, out);
+	}
+	fz_always(ctx)
+		fz_drop_stream(ctx, verify);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void
 do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_write_options *in_opts)
 {
 	int lastfree;
@@ -3233,11 +3289,10 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			return;
 		}
 
-		if (opts->out)
-		{
-			fz_seek_output(ctx, opts->out, 0, SEEK_END);
-			fz_write_string(ctx, opts->out, "\n");
-		}
+		ensure_initial_incremental_contents(ctx, doc->file, opts->out);
+
+		fz_seek_output(ctx, opts->out, 0, SEEK_END);
+		fz_write_string(ctx, opts->out, "\n");
 	}
 
 	xref_len = pdf_xref_len(ctx, doc);

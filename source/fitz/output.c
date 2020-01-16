@@ -205,6 +205,8 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
 	file = fz_fopen_utf8(filename, append ? "rb+" : "wb+");
+	if (file == NULL && append)
+		file = fz_fopen_utf8(filename, "wb+");
 #else
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
@@ -214,6 +216,8 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
 	file = fopen(filename, append ? "rb+" : "wb+");
+	if (file == NULL && append)
+		file = fopen(filename, "wb+");
 #endif
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
