@@ -14,7 +14,7 @@ static pdf_widget *sig_widget;
 static char sig_designated_name[500];
 static pdf_signature_error sig_cert_error;
 static pdf_signature_error sig_digest_error;
-static int sig_subsequent_edits;
+static int sig_valid_until;
 
 static char cert_filename[PATH_MAX];
 static struct input cert_password;
@@ -168,10 +168,10 @@ static void sig_verify_dialog(void)
 
 		if (sig_digest_error)
 			ui_label("Digest error: %s", pdf_signature_error_description(sig_digest_error));
-		else if (sig_subsequent_edits)
-			ui_label("The signature is valid but there have been edits since signing.");
+		else if (sig_valid_until == 0)
+			ui_label("The fields signed by this signature are unchanged.");
 		else
-			ui_label("The document is unchanged since signing.");
+			ui_label("This signature was invalided %d updates ago by the signed fields being changed.", sig_valid_until);
 
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
@@ -201,7 +201,7 @@ static void show_sig_dialog(pdf_widget *widget)
 		{
 			sig_cert_error = pdf_check_certificate(ctx, pdf, widget->obj);
 			sig_digest_error = pdf_check_digest(ctx, pdf, widget->obj);
-			sig_subsequent_edits = pdf_signature_incremental_change_since_signing(ctx, pdf, widget->obj);
+			sig_valid_until = pdf_validate_signature(ctx, pdf, widget);
 			pdf_signature_designated_name(ctx, pdf, widget->obj, sig_designated_name, sizeof(sig_designated_name));
 			ui.dialog = sig_verify_dialog;
 		}
