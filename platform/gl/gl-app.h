@@ -256,3 +256,5 @@ void render_page(void);
 void update_title(void);
 void reload(void);
 void do_save_pdf_file(void);
+void do_save_signed_pdf_file(void);
+int do_sign(void);

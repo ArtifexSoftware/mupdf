@@ -19,9 +19,10 @@ static int sig_subsequent_edits;
 static char cert_filename[PATH_MAX];
 static struct input cert_password;
 
-static void do_sign(void)
+int do_sign(void)
 {
 	pdf_pkcs7_signer *signer = NULL;
+	int ok = 1;
 
 	fz_var(signer);
 
@@ -37,10 +38,15 @@ static void do_sign(void)
 			signer->drop(signer);
 	}
 	fz_catch(ctx)
+	{
 		ui_show_warning_dialog("%s", fz_caught_message(ctx));
+		ok = 0;
+	}
 
 	if (pdf_update_page(ctx, sig_widget->page))
 		render_page();
+
+	return ok;
 }
 
 static void do_clear_signature(void)
@@ -76,7 +82,7 @@ static void cert_password_dialog(void)
 			if (ui_button("Okay") || is == UI_INPUT_ACCEPT)
 			{
 				ui.dialog = NULL;
-				do_sign();
+				do_save_signed_pdf_file();
 			}
 		}
 		ui_panel_end();

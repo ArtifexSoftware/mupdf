@@ -106,7 +106,7 @@ static void save_pdf_options(void)
 	}
 }
 
-static void save_pdf_dialog(void)
+static void do_save_pdf_dialog(int for_signing)
 {
 	ui_input_init(&opwinput, "");
 	ui_input_init(&upwinput, "");
@@ -114,6 +114,8 @@ static void save_pdf_dialog(void)
 	if (ui_save_file(save_filename, save_pdf_options))
 	{
 		ui.dialog = NULL;
+		if (for_signing && !do_sign())
+			return;
 		if (save_filename[0] != 0)
 		{
 			if (save_opts.do_garbage)
@@ -122,7 +124,7 @@ static void save_pdf_dialog(void)
 			{
 				pdf_save_document(ctx, pdf, save_filename, &save_opts);
 				fz_strlcpy(filename, save_filename, PATH_MAX);
-				update_title();
+				reload();
 			}
 			fz_catch(ctx)
 			{
@@ -130,6 +132,23 @@ static void save_pdf_dialog(void)
 			}
 		}
 	}
+}
+
+static void save_pdf_dialog(void)
+{
+	do_save_pdf_dialog(0);
+}
+
+static void save_signed_pdf_dialog(void)
+{
+	do_save_pdf_dialog(1);
+}
+
+void do_save_signed_pdf_file(void)
+{
+	init_save_pdf_options();
+	ui_init_save_file(filename, pdf_filter);
+	ui.dialog = save_signed_pdf_dialog;
 }
 
 void do_save_pdf_file(void)
