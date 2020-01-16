@@ -3721,19 +3721,15 @@ pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 	return fields;
 }
 
-int
-pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
+static int
+validate_locked_fields(fz_context *ctx, pdf_document *doc, int version, pdf_locked_fields *locked)
 {
 	int n = pdf_count_incremental_updates(ctx, doc);
 	int o_xref_base = doc->xref_base;
 	pdf_changes *changes;
 	int num_objs;
 	int i;
-	pdf_locked_fields *locked = NULL;
 	int all_indirects = 1;
-
-	if (version < 0 || version >= n)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "There aren't that many changes to find in this document!");
 
 	num_objs = doc->max_xref_len;
 	changes = Memento_label(fz_calloc(ctx, 1, sizeof(*changes) + sizeof(int)*(num_objs-1)), "pdf_changes");
@@ -3745,14 +3741,6 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 	{
 		pdf_obj *acroform, *new_acroform, *old_acroform;
 		int len, acroform_num;
-
-		/* First off, make us a list of which objects are allowed
-		 * to change by the signatures present in the version before
-		 * the one we are looking at. We need to look at the version
-		 * before, because we might (legally) introduce a signature in
-		 * this version that says "don't allow anything to change from
-		 * here on". */
-		locked = pdf_find_locked_fields(ctx, doc, version+1);
 
 		doc->xref_base = version;
 
@@ -3861,6 +3849,26 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 	return (i == num_objs) && all_indirects;
 }
 
+int
+pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
+{
+	int n = pdf_count_incremental_updates(ctx, doc);
+	pdf_locked_fields *locked = NULL;
+
+	if (version < 0 || version >= n)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "There aren't that many changes to find in this document!");
+
+	/* First off, make us a list of which objects are allowed
+	 * to change by the signatures present in the version before
+	 * the one we are looking at. We need to look at the version
+	 * before, because we might (legally) introduce a signature in
+	 * this version that says "don't allow anything to change from
+	 * here on". */
+	locked = pdf_find_locked_fields(ctx, doc, version+1);
+
+	return validate_locked_fields(ctx, doc, version, locked);
+}
+
 /* Checks the entire history of the document, and returns the number of
  * the last version that checked out OK.
  * i.e. 0 = "the entire history checks out OK".
@@ -3918,4 +3926,19 @@ int pdf_find_version_for_obj(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		}
 	}
 	return -1;
+}
+
+int pdf_validate_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget)
+{
+	int version = pdf_find_version_for_obj(ctx, doc, widget->obj);
+	int i;
+	pdf_locked_fields *locked = pdf_find_locked_fields_for_sig(ctx, doc, widget->obj);
+
+	for (i = version-1; i >= 0; i--)
+	{
+		if (!validate_locked_fields(ctx, doc, i, locked))
+			return i+1;
+	}
+
+	return 0;
 }
