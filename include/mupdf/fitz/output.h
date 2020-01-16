@@ -70,6 +70,14 @@ typedef void (fz_output_drop_fn)(fz_context *ctx, void *state);
 */
 typedef fz_stream *(fz_stream_from_output_fn)(fz_context *ctx, void *state);
 
+/*
+	A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	when fz_truncate_output is called to truncate the file
+	at that point.
+*/
+typedef void (fz_truncate_fn)(fz_context *ctx, void *state);
+
 struct fz_output_s
 {
 	void *state;
@@ -79,6 +87,7 @@ struct fz_output_s
 	fz_output_close_fn *close;
 	fz_output_drop_fn *drop;
 	fz_stream_from_output_fn *as_stream;
+	fz_truncate_fn *truncate;
 	char *bp, *wp, *ep;
 };
 
@@ -111,6 +120,8 @@ void fz_close_output(fz_context *, fz_output *);
 void fz_drop_output(fz_context *, fz_output *);
 
 fz_stream *fz_stream_from_output(fz_context *, fz_output *);
+
+void fz_truncate_output(fz_context *, fz_output *);
 
 void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size);
 

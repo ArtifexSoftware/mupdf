@@ -10,6 +10,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 static void
 file_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
@@ -115,6 +120,18 @@ file_as_stream(fz_context *ctx, void *opaque)
 	return fz_open_file_ptr_no_close(ctx, file);
 }
 
+static void file_truncate(fz_context *ctx, void *opaque)
+{
+	FILE *file = opaque;
+	fflush(file);
+
+#ifdef _WIN32
+	_chsize_s(fileno(file), ftell(file));
+#else
+	ftruncate(fileno(file), ftell(file));
+#endif
+}
+
 /*
 	Create a new output object with the given
 	internal state and function pointers.
@@ -206,6 +223,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	out->seek = file_seek;
 	out->tell = file_tell;
 	out->as_stream = file_as_stream;
+	out->truncate = file_truncate;
 
 	return out;
 }
@@ -329,6 +347,15 @@ fz_stream_from_output(fz_context *ctx, fz_output *out)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot derive input stream from output stream");
 	fz_flush_output(ctx, out);
 	return out->as_stream(ctx, out->state);
+}
+
+void
+fz_truncate_output(fz_context *ctx, fz_output *out)
+{
+	if (out->truncate == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot truncate this output stream");
+	fz_flush_output(ctx, out);
+	out->truncate(ctx, out->state);
 }
 
 static void
