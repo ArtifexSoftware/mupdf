@@ -1337,6 +1337,10 @@ size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signa
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer, int64_t stime)
 {
 	pdf_obj *v = NULL;
+	pdf_obj *o = NULL;
+	pdf_obj *r = NULL;
+	pdf_obj *t = NULL;
+	pdf_obj *a = NULL;
 	pdf_obj *indv;
 	int vnum;
 	size_t max_digest_size;
@@ -1350,6 +1354,10 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	max_digest_size = signer->max_digest_size(signer);
 
 	fz_var(v);
+	fz_var(o);
+	fz_var(r);
+	fz_var(t);
+	fz_var(a);
 	fz_var(buf);
 	fz_try(ctx)
 	{
@@ -1370,6 +1378,22 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 		pdf_format_date(ctx, date_string, sizeof date_string, stime);
 		pdf_dict_put_text_string(ctx, v, PDF_NAME(M), date_string);
 
+		o = pdf_new_array(ctx, doc, 1);
+		pdf_dict_put(ctx, v, PDF_NAME(Reference), o);
+		r = pdf_new_dict(ctx, doc, 4);
+		pdf_array_put(ctx, o, 0, r);
+		pdf_dict_put(ctx, r, PDF_NAME(Data), pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)));
+		pdf_dict_put(ctx, r, PDF_NAME(TransformMethod), PDF_NAME(FieldMDP));
+		pdf_dict_put(ctx, r, PDF_NAME(Type), PDF_NAME(SigRef));
+		t = pdf_new_dict(ctx, doc, 5);
+		pdf_dict_put(ctx, r, PDF_NAME(TransformParams), t);
+		pdf_dict_put(ctx, t, PDF_NAME(Action), pdf_dict_getp(ctx, field, "Lock/Action"));
+		a = pdf_dict_getp(ctx, field, "Lock/Fields");
+		if (a)
+			pdf_dict_put_drop(ctx, t, PDF_NAME(Fields), pdf_copy_array(ctx, a));
+		pdf_dict_put(ctx, t, PDF_NAME(Type), PDF_NAME(TransformParams));
+		pdf_dict_put(ctx, t, PDF_NAME(V), PDF_NAME(1_2));
+
 		/* Record details within the document structure so that contents
 		* and byte_range can be updated with their correct values at
 		* saving time */
@@ -1378,6 +1402,9 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, v);
+		pdf_drop_obj(ctx, o);
+		pdf_drop_obj(ctx, r);
+		pdf_drop_obj(ctx, t);
 		fz_free(ctx, buf);
 	}
 	fz_catch(ctx)

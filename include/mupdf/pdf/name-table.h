@@ -1,4 +1,5 @@
 /* Alphabetically sorted list of all PDF names to be available as constants */
+PDF_MAKE_NAME("1.2", 1_2)
 PDF_MAKE_NAME("3D", 3D)
 PDF_MAKE_NAME("A", A)
 PDF_MAKE_NAME("A85", A85)
