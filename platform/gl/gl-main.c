@@ -1968,7 +1968,7 @@ static int document_filter(const char *filename)
 
 static void do_open_document_dialog(void)
 {
-	if (ui_open_file(filename))
+	if (ui_open_file(filename, "Select a document to open:"))
 	{
 		ui.dialog = NULL;
 		if (filename[0] == 0)

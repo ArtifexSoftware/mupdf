@@ -111,7 +111,7 @@ static void do_save_pdf_dialog(int for_signing)
 	ui_input_init(&opwinput, "");
 	ui_input_init(&upwinput, "");
 
-	if (ui_save_file(save_filename, save_pdf_options))
+	if (ui_save_file(save_filename, save_pdf_options, for_signing ? "Select where to save the signed document:" : "Select where to save the document:"))
 	{
 		ui.dialog = NULL;
 		if (save_filename[0] != 0)

@@ -97,7 +97,7 @@ static int cert_file_filter(const char *fn)
 
 static void cert_file_dialog(void)
 {
-	if (ui_open_file(cert_filename))
+	if (ui_open_file(cert_filename, "Select a certificate file to sign with:"))
 	{
 		if (cert_filename[0] != 0)
 		{
