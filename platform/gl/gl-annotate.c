@@ -114,10 +114,10 @@ static void do_save_pdf_dialog(int for_signing)
 	if (ui_save_file(save_filename, save_pdf_options))
 	{
 		ui.dialog = NULL;
-		if (for_signing && !do_sign())
-			return;
 		if (save_filename[0] != 0)
 		{
+			if (for_signing && !do_sign())
+				return;
 			if (save_opts.do_garbage)
 				save_opts.do_garbage = 2;
 			fz_try(ctx)
