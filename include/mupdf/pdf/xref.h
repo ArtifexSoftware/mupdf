@@ -99,7 +99,8 @@ int pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t 
 
 pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum);
 
-int pdf_count_incremental_updates(fz_context *ctx, pdf_document *doc);
+int pdf_count_versions(fz_context *ctx, pdf_document *doc);
+int pdf_count_unsaved_versions(fz_context *ctx, pdf_document *doc);
 int pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version);
 int pdf_doc_was_linearized(fz_context *ctx, pdf_document *doc);
 

@@ -1630,7 +1630,7 @@ static void do_info(void)
 		ui_label("Encryption: %s", buf);
 	if (pdoc)
 	{
-		int updates = pdf_count_incremental_updates(ctx, pdoc);
+		int updates = pdf_count_versions(ctx, pdoc);
 
 		if (fz_lookup_metadata(ctx, doc, "info:Creator", buf, sizeof buf) > 0)
 			ui_label("PDF Creator: %s", buf);
