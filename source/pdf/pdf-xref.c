@@ -4216,3 +4216,36 @@ int pdf_validate_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widge
 
 	return i+1-unsaved_versions;
 }
+
+int pdf_was_pure_xfa(fz_context *ctx, pdf_document *doc)
+{
+	int num_unsaved_versions = pdf_count_unsaved_versions(ctx, doc);
+	int num_versions = pdf_count_versions(ctx, doc);
+	int v;
+	int o_xref_base = doc->xref_base;
+	int pure_xfa = 0;
+
+	fz_var(pure_xfa);
+
+	fz_try(ctx)
+	{
+		for(v = num_versions + num_unsaved_versions; !pure_xfa && v >= num_unsaved_versions; v--)
+		{
+			pdf_obj *o;
+			doc->xref_base = v;
+			o = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm");
+			/* If we find a version that had an empty Root/AcroForm/Fields, but had a
+			 * Root/AcroForm/XFA entry, then we deduce that this was at one time a
+			 * pure XFA form. */
+			if (pdf_array_len(ctx, pdf_dict_get(ctx, o, PDF_NAME(Fields))) == 0 &&
+				pdf_dict_get(ctx, o, PDF_NAME(XFA)) != NULL)
+				pure_xfa = 1;
+		}
+	}
+	fz_always(ctx)
+		doc->xref_base = o_xref_base;
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return pure_xfa;
+}

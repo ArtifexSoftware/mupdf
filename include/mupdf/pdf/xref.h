@@ -113,5 +113,6 @@ int pdf_validate_change_history(fz_context *ctx, pdf_document *doc);
 
 int pdf_find_version_for_obj(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 int pdf_validate_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget);
+int pdf_was_pure_xfa(fz_context *ctx, pdf_document *doc);
 
 #endif
