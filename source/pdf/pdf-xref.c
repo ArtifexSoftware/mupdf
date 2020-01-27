@@ -3333,6 +3333,7 @@ check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *o
 		int i, len;
 		const char *name;
 		size_t n;
+		pdf_obj *t;
 
 		pdf_mark_obj(ctx, obj);
 
@@ -3340,19 +3341,24 @@ check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *o
 		doc->xref_base = o_xref_base+1;
 		old_obj = pdf_resolve_indirect_chain(ctx, obj);
 
-		name = pdf_to_text_string(ctx, pdf_dict_get(ctx, old_obj, PDF_NAME(T)));
-		n = strlen(name)+1;
-		if (*name_prefix)
-			n += 1 + strlen(name_prefix);
-		field_name = fz_malloc(ctx, n);
-		if (*name_prefix)
+		t = pdf_dict_get(ctx, old_obj, PDF_NAME(T));
+		if (t != NULL)
 		{
-			strcpy(field_name, name_prefix);
-			strcat(field_name, ".");
+			name = pdf_to_text_string(ctx, pdf_dict_get(ctx, old_obj, PDF_NAME(T)));
+			n = strlen(name)+1;
+			if (*name_prefix)
+				n += 1 + strlen(name_prefix);
+			field_name = fz_malloc(ctx, n);
+			if (*name_prefix)
+			{
+				strcpy(field_name, name_prefix);
+				strcat(field_name, ".");
+			}
+			else
+				*field_name = 0;
+			strcat(field_name, name);
+			name_prefix = field_name;
 		}
-		else
-			*field_name = 0;
-		strcat(field_name, name);
 
 		doc->xref_base = o_xref_base;
 
@@ -3370,7 +3376,7 @@ check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *o
 		if (pdf_name_eq(ctx, pdf_dict_get(ctx, new_obj, PDF_NAME(Type)), PDF_NAME(Annot)) &&
 			pdf_name_eq(ctx, pdf_dict_get(ctx, new_obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
 		{
-			if (check_field_value(ctx, changes, n_v, new_obj, locked, field_name))
+			if (check_field_value(ctx, changes, n_v, new_obj, locked, name_prefix))
 				changes->obj_changes[obj_num] |= FIELD_CHANGE_VALID;
 			else
 				changes->obj_changes[obj_num] |= FIELD_CHANGE_INVALID;
@@ -3413,7 +3419,7 @@ change_found:
 					/* For now at least, we'll count any change in number as a difference. */
 					if (pdf_to_num(ctx, nkid) != pdf_to_num(ctx, okid))
 						goto change_found;
-					check_field(ctx, doc, changes, nkid, locked, field_name, n_v, o_v);
+					check_field(ctx, doc, changes, nkid, locked, name_prefix, n_v, o_v);
 				}
 			}
 			else if (pdf_name_eq(ctx, key, PDF_NAME(V)))
