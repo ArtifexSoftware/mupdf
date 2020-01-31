@@ -173,8 +173,12 @@ static void sig_verify_dialog(void)
 			ui_label("Digest error: %s", pdf_signature_error_description(sig_digest_error));
 		else if (sig_valid_until == 0)
 			ui_label("The fields signed by this signature are unchanged.");
+		else if (sig_valid_until == 1)
+			ui_label("This signature was invalidated in the last update by the signed fields being changed.");
+		else if (sig_valid_until == 2)
+			ui_label("This signature was invalidated in the penultimate update by the signed fields being changed.");
 		else
-			ui_label("This signature was invalided %d updates ago by the signed fields being changed.", sig_valid_until);
+			ui_label("This signature was invalidated %d updates ago by the signed fields being changed.", sig_valid_until);
 
 		ui_layout(B, X, NW, 2, 2);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);

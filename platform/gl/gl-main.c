@@ -1650,15 +1650,20 @@ static void do_info(void)
 		else
 			fz_strlcat(buf, "none", sizeof buf);
 		ui_label("Permissions: %s", buf);
-		ui_label("PDF %sdocument with %d updates",
+		ui_label("PDF %sdocument with %d update%s",
 			pdf_doc_was_linearized(ctx, pdoc) ? "linearized " : "",
-			updates);
+			updates, updates > 1 ? "s" : "");
 		if (updates > 0)
 		{
-			if (pdf_validate_change_history(ctx, pdoc) == 0)
-				ui_label("Change history seems valid");
+			int n = pdf_validate_change_history(ctx, pdoc);
+			if (n == 0)
+				ui_label("Change history seems valid.");
+			else if (n == 1)
+				ui_label("Invalid changes made to the document in the last update.");
+			else if (n == 2)
+				ui_label("Invalid changes made to the document in the penultimate update.");
 			else
-				ui_label("Change history invalid");
+				ui_label("Invalid changes made to the document %d updates ago.", n);
 		}
 
 		if (list.len)
