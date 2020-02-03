@@ -152,6 +152,7 @@ float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 int pdf_annot_quadding(fz_context *ctx, pdf_annot *annot);
+fz_text_language pdf_annot_language(fz_context *ctx, pdf_annot *annot);
 
 void pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
@@ -172,6 +173,7 @@ void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity);
 void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
 void pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q);
+void pdf_set_annot_language(fz_context *ctx, pdf_annot *annot, fz_text_language lang);
 
 void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const fz_quad *qv);
 void pdf_clear_annot_quad_points(fz_context *ctx, pdf_annot *annot);

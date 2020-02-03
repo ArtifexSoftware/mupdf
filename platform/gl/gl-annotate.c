@@ -386,7 +386,8 @@ static const char *line_ending_styles[] = {
 	"None", "Square", "Circle", "Diamond", "OpenArrow", "ClosedArrow", "Butt",
 	"ROpenArrow", "RClosedArrow", "Slash" };
 static const char *quadding_names[] = { "Left", "Center", "Right" };
-static const char *font_names[] = { "Cour", "Helv", "TiRo", "Symb", "ZaDb", };
+static const char *font_names[] = { "Cour", "Helv", "TiRo" };
+static const char *lang_names[] = { "", "ja", "ko", "zh-Hans", "zh-Hant" };
 
 static int should_edit_border(enum pdf_annot_type subtype)
 {
@@ -521,11 +522,15 @@ void do_annotate_panel(void)
 
 		if (subtype == PDF_ANNOT_FREE_TEXT)
 		{
-			int font_choice, color_choice, size_changed;
-			int q = pdf_annot_quadding(ctx, selected_annot);
+			int lang_choice, font_choice, color_choice, size_changed;
+			int q;
+			const char *text_lang;
 			const char *text_font;
+			char lang_buf[8];
 			static float text_size_f, text_color[3];
 			static int text_size;
+
+			q = pdf_annot_quadding(ctx, selected_annot);
 			ui_label("Text Alignment:");
 			choice = ui_select("Q", quadding_names[q], quadding_names, nelem(quadding_names));
 			if (choice != -1)
@@ -534,9 +539,18 @@ void do_annotate_panel(void)
 				pdf_set_annot_quadding(ctx, selected_annot, choice);
 			}
 
+			text_lang = fz_string_from_text_language(lang_buf, pdf_annot_language(ctx, selected_annot));
+			ui_label("Text Language:");
+			lang_choice = ui_select("DA/Lang", text_lang, lang_names, nelem(lang_names));
+			if (lang_choice != -1)
+			{
+				text_lang = lang_names[lang_choice];
+				trace_action("annot.setLanguage(%q);\n", text_lang);
+				pdf_set_annot_language(ctx, selected_annot, fz_text_language_from_string(text_lang));
+			}
+
 			pdf_annot_default_appearance(ctx, selected_annot, &text_font, &text_size_f, text_color);
 			text_size = text_size_f;
-
 			ui_label("Text Font:");
 			font_choice = ui_select("DA/Font", text_font, font_names, nelem(font_names));
 			ui_label("Text Size: %d", text_size);
