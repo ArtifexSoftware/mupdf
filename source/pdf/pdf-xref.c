@@ -3980,7 +3980,7 @@ validate_locked_fields(fz_context *ctx, pdf_document *doc, int version, pdf_lock
 		acroform_num = pdf_to_num(ctx, acroform);
 		new_acroform = pdf_resolve_indirect_chain(ctx, acroform);
 		doc->xref_base = version+1;
-		old_acroform = pdf_resolve_indirect_chain(ctx, acroform);
+		old_acroform = pdf_resolve_indirect_chain(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm"));
 		doc->xref_base = version;
 		n = pdf_dict_len(ctx, new_acroform);
 		for (i = 0; i < n; i++)
