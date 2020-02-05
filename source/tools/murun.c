@@ -3479,6 +3479,54 @@ static void ffi_PDFDocument_enableJS(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_countVersions(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_count_versions(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, val);
+}
+
+static void ffi_PDFDocument_countUnsavedVersions(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_count_unsaved_versions(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, val);
+}
+
+static void ffi_PDFDocument_validateChangeHistory(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_validate_change_history(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, val);
+}
+
+static void ffi_PDFDocument_wasPureXFA(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_validate_change_history(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, val);
+}
+
 static void ffi_PDFDocument_newGraftMap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4855,6 +4903,30 @@ static void ffi_PDFWidget_eventBlur(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFWidget_validateSignature(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_validate_signature(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, val);
+}
+
+static void ffi_PDFWidget_isSigned(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_widget_is_signed(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, val);
+}
+
 #endif /* FZ_ENABLE_PDF */
 
 int murun_main(int argc, char **argv)
@@ -5165,6 +5237,10 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.graftObject", ffi_PDFDocument_graftObject, 1);
 
 		jsB_propfun(J, "PDFDocument.enableJS", ffi_PDFDocument_enableJS, 0);
+		jsB_propfun(J, "PDFDocument.countVersions", ffi_PDFDocument_countVersions, 0);
+		jsB_propfun(J, "PDFDocument.countUnsavedVersions", ffi_PDFDocument_countUnsavedVersions, 0);
+		jsB_propfun(J, "PDFDocument.validateChangeHistory", ffi_PDFDocument_validateChangeHistory, 0);
+		jsB_propfun(J, "PDFDocument.wasPureXFA", ffi_PDFDocument_wasPureXFA, 0);
 	}
 	js_setregistry(J, "pdf_document");
 
@@ -5256,6 +5332,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFWidget.eventUp", ffi_PDFWidget_eventUp, 0);
 		jsB_propfun(J, "PDFWidget.eventFocus", ffi_PDFWidget_eventFocus, 0);
 		jsB_propfun(J, "PDFWidget.eventBlur", ffi_PDFWidget_eventBlur, 0);
+		jsB_propfun(J, "PDFWidget.validateSignature", ffi_PDFWidget_validateSignature, 0);
+		jsB_propfun(J, "PDFWidget.isSigned", ffi_PDFWidget_isSigned, 0);
 	}
 	js_dup(J);
 	js_setglobal(J, "PDFWidget");
