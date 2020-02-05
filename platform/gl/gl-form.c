@@ -208,7 +208,7 @@ static void show_sig_dialog(pdf_widget *widget)
 		{
 			sig_cert_error = pdf_check_certificate(ctx, pdf, widget->obj);
 			sig_digest_error = pdf_check_digest(ctx, pdf, widget->obj);
-			sig_valid_until = pdf_validate_signature(ctx, pdf, widget);
+			sig_valid_until = pdf_validate_signature(ctx, widget);
 			pdf_signature_designated_name(ctx, pdf, widget->obj, sig_designated_name, sizeof(sig_designated_name));
 			ui.dialog = sig_verify_dialog;
 		}
