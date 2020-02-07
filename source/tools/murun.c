@@ -2,6 +2,8 @@
 
 #if FZ_ENABLE_PDF
 #include "mupdf/pdf.h"
+#include "mupdf/helpers/pkcs7-check.h"
+#include "mupdf/helpers/pkcs7-openssl.h"
 #endif
 
 #if FZ_ENABLE_JS
@@ -211,6 +213,13 @@ static void ffi_gc_fz_document(js_State *J, void *doc)
 	fz_drop_document(ctx, doc);
 }
 
+static void ffi_gc_pdf_pkcs7_signer(js_State *J, void *signer_)
+{
+	pdf_pkcs7_signer *signer = (pdf_pkcs7_signer *)signer_;
+	if (signer)
+		signer->drop(signer);
+}
+
 static void ffi_gc_fz_page(js_State *J, void *page)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -333,6 +342,12 @@ static void ffi_pushdocument(js_State *J, fz_document *document)
 		js_getregistry(J, "fz_document");
 		js_newuserdata(J, "fz_document", document, ffi_gc_fz_document);
 	}
+}
+
+static void ffi_pushsigner(js_State *J, pdf_pkcs7_signer *signer)
+{
+	js_getregistry(J, "pdf_pkcs7_signer");
+	js_newuserdata(J, "pdf_pkcs7_signer", signer, ffi_gc_pdf_pkcs7_signer);
 }
 
 static fz_page *ffi_topage(js_State *J, int idx)
@@ -4927,6 +4942,30 @@ static void ffi_PDFWidget_isSigned(js_State *J)
 	js_pushboolean(J, val);
 }
 
+static void ffi_PDFWidget_sign(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	pdf_pkcs7_signer *signer = js_touserdata(J, 1, "pdf_pkcs7_signer");
+	fz_try(ctx)
+		pdf_sign_signature(ctx, widget, signer);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_new_PDFPKCS7Signer(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_pkcs7_signer *signer = NULL;
+	const char *filename = js_tostring(J, 1);
+	const char *password = js_tostring(J, 2);
+	fz_try(ctx)
+		signer = pkcs7_openssl_read_pfx(ctx, filename, password);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushsigner(J, signer);
+}
+
 #endif /* FZ_ENABLE_PDF */
 
 int murun_main(int argc, char **argv)
@@ -5334,10 +5373,19 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFWidget.eventBlur", ffi_PDFWidget_eventBlur, 0);
 		jsB_propfun(J, "PDFWidget.validateSignature", ffi_PDFWidget_validateSignature, 0);
 		jsB_propfun(J, "PDFWidget.isSigned", ffi_PDFWidget_isSigned, 0);
+		jsB_propfun(J, "PDFWidget.sign", ffi_PDFWidget_sign, 1);
 	}
 	js_dup(J);
 	js_setglobal(J, "PDFWidget");
 	js_setregistry(J, "pdf_widget");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
+	}
+	js_dup(J);
+	js_setglobal(J, "PDFPKCS7Signer");
+	js_setregistry(J, "pdf_pkcs7_signer");
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
@@ -5398,6 +5446,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
+		jsB_propcon(J, "pdf_pkcs7_signer", "PDFPKCS7Signer", ffi_new_PDFPKCS7Signer, 2);
 
 		jsB_propfun(J, "readFile", ffi_readFile, 1);
 
