@@ -122,8 +122,9 @@ static void do_save_pdf_dialog(int for_signing)
 				save_opts.do_garbage = 2;
 			fz_try(ctx)
 			{
-				/* TODO: save opts to string */
-				trace_action("doc.save(%q);\n", save_filename);
+				static char opts_string[4096];
+				pdf_format_write_options(ctx, opts_string, sizeof(opts_string), &save_opts);
+				trace_action("doc.save(%q,%q);\n", save_filename, opts_string);
 				pdf_save_document(ctx, pdf, save_filename, &save_opts);
 				fz_strlcpy(filename, save_filename, PATH_MAX);
 				reload();
