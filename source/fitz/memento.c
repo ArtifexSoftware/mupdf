@@ -50,6 +50,7 @@ int atexit(void (*)(void));
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #ifdef __ANDROID__
 #define MEMENTO_ANDROID
@@ -456,6 +457,7 @@ extern void backtrace_symbols_fd(void **, size_t, int);
 extern char **backtrace_symbols(void **, size_t);
 
 #define MEMENTO_BACKTRACE_MAX 256
+static void (*print_stack_value)(void *address);
 
 /* Libbacktrace gubbins - relies on us having libdl to load the .so */
 #ifdef HAVE_LIBDL
@@ -493,7 +495,6 @@ static backtrace_create_state_type backtrace_create_state;
 static backtrace_pcinfo_type backtrace_pcinfo;
 static struct backtrace_state *my_backtrace_state;
 static void *libbt;
-static void (*print_stack_value)(void *address);
 static char backtrace_exe[4096];
 static void *current_addr;
 
