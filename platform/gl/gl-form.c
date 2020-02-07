@@ -30,7 +30,7 @@ int do_sign(void)
 	{
 		trace_action("widget.sign(%q, %q);\n", cert_filename, cert_password.text);
 		signer = pkcs7_openssl_read_pfx(ctx, cert_filename, cert_password.text);
-		pdf_sign_signature(ctx, pdf, sig_widget, signer);
+		pdf_sign_signature(ctx, sig_widget, signer);
 		ui_show_warning_dialog("Signed document successfully.");
 	}
 	fz_always(ctx)
@@ -56,7 +56,7 @@ static void do_clear_signature(void)
 {
 	fz_try(ctx)
 	{
-		pdf_clear_signature(ctx, pdf, sig_widget);
+		pdf_clear_signature(ctx, sig_widget);
 		ui_show_warning_dialog("Signature cleared successfully.");
 	}
 	fz_catch(ctx)
