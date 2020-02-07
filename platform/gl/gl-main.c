@@ -702,6 +702,35 @@ void load_page(void)
 	if (pdf)
 		page = (pdf_page*)fzpage;
 
+	if (trace_file)
+	{
+		pdf_widget *w;
+		int i, s;
+
+		for (i = 0, s = 0, w = pdf_first_widget(ctx, page); w != NULL; i++, w = pdf_next_widget(ctx, w))
+			if (pdf_widget_type(ctx, w) == PDF_WIDGET_TYPE_SIGNATURE)
+			{
+				s++;
+				int signd = pdf_widget_is_signed(ctx, w);
+				trace_action("widget = page.getWidgets()[%d];\n", i);
+				if (signd)
+				{
+					int valid = pdf_validate_signature(ctx, w);
+					trace_action("if (!widget.isSigned()) { print(\"Expected signature %d (chapter %d, page %d) to be signed!\\n\"); }\n",
+						s, currentpage.chapter, currentpage.page);
+					trace_action(
+						"tmp = page.getWidgets()[%d].validateSignature();\n"
+						"if (tmp != %d) { print(\"Signature %d (chapter %d, page %d) was invalidated \" + tmp + \" updates ago - expected %d\\n\"); }\n",
+						i, valid, s, currentpage.chapter, currentpage.page, valid);
+				}
+				else
+				{
+					trace_action("if (widget.isSigned()) { print(\"Expected signature %d (chapter %d, page %d) to be unsigned!\\n\"); }\n",
+						s, currentpage.chapter, currentpage.page);
+				}
+			}
+	}
+
 	links = fz_load_links(ctx, fzpage);
 	page_text = fz_new_stext_page_from_page(ctx, fzpage, NULL);
 
@@ -1252,6 +1281,24 @@ static void load_document(void)
 		{
 			trace_action("doc.enableJS();\n");
 			pdf_enable_js(ctx, pdf);
+		}
+		if (trace_file)
+		{
+			int vsns = pdf_count_versions(ctx, pdf);
+			trace_action(
+				"tmp = doc.countVersions();\n"
+				"if (%d != tmp) {\n"
+				"  print(\"Mismatch in number of versions of document. I expected %d and got \" + tmp + \"\\n\");\n"
+				"}\n", vsns, vsns);
+			if (vsns > 1)
+			{
+				int valid = pdf_validate_change_history(ctx, pdf);
+				trace_action(
+					"tmp = doc.validateChangeHistory();\n"
+					"if (tmp != %d) {\n"
+					"  print(\"Mismatch in change history validation. I expected %d and got \" + tmp + \"\\n\");\n"
+					"}\n", valid, valid);
+			}
 		}
 		if (anchor)
 			jump_to_page(pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL));
@@ -2093,7 +2140,7 @@ int main(int argc, char **argv)
 			trace_file = fz_stdout(ctx);
 		else
 			trace_file = fz_new_output_with_path(ctx, trace_file_name, 0);
-		trace_action("var doc, page, annot, widget;\n");
+		trace_action("var doc, page, annot, widget, tmp;\n");
 	}
 
 	if (layout_css)

@@ -28,7 +28,7 @@ int do_sign(void)
 
 	fz_try(ctx)
 	{
-		trace_action("widget.sign(%q, %q);\n", cert_filename, cert_password.text);
+		trace_action("widget.sign(new PDFPKCS7Signer(%q, %q));\n", cert_filename, cert_password.text);
 		signer = pkcs7_openssl_read_pfx(ctx, cert_filename, cert_password.text);
 		pdf_sign_signature(ctx, sig_widget, signer);
 		ui_show_warning_dialog("Signed document successfully.");
