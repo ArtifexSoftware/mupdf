@@ -1779,38 +1779,80 @@ fz_convert_separation_pixmap_to_base(fz_context *ctx, const fz_pixmap *src)
 		sn = ss->n;
 		bn = base->n;
 
-		if (src->alpha)
+		if (base->type == FZ_COLORSPACE_LAB)
 		{
-			for (y = 0; y < src->h; y++)
+			if (src->alpha)
 			{
-				for (x = 0; x < src->w; x++)
+				for (y = 0; y < src->h; y++)
 				{
-					for (k = 0; k < sn; ++k)
-						src_v[k] = *s++ / 255.0f;
-					a = *s++;
-					ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
-					for (k = 0; k < bn; ++k)
-						*d++ = base_v[k] * 255.0f;
-					*d++ = a;
+					for (x = 0; x < src->w; x++)
+					{
+						for (k = 0; k < sn; ++k)
+							src_v[k] = *s++ / 255.0f;
+						a = *s++;
+						ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
+						*d++ = (base_v[0] / 100) * 255.0f;
+						*d++ = base_v[1] + 128;
+						*d++ = base_v[2] + 128;
+						*d++ = a;
+					}
+					s += s_line_inc;
+					d += d_line_inc;
 				}
-				s += s_line_inc;
-				d += d_line_inc;
+			}
+			else
+			{
+				for (y = 0; y < src->h; y++)
+				{
+					for (x = 0; x < src->w; x++)
+					{
+						for (k = 0; k < sn; ++k)
+							src_v[k] = *s++ / 255.0f;
+						ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
+						*d++ = (base_v[0] / 100) * 255.0f;
+						*d++ = base_v[1] + 128;
+						*d++ = base_v[2] + 128;
+					}
+					s += s_line_inc;
+					d += d_line_inc;
+				}
 			}
 		}
 		else
 		{
-			for (y = 0; y < src->h; y++)
+			if (src->alpha)
 			{
-				for (x = 0; x < src->w; x++)
+				for (y = 0; y < src->h; y++)
 				{
-					for (k = 0; k < sn; ++k)
-						src_v[k] = *s++ / 255.0f;
-					ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
-					for (k = 0; k < bn; ++k)
-						*d++ = base_v[k] * 255.0f;
+					for (x = 0; x < src->w; x++)
+					{
+						for (k = 0; k < sn; ++k)
+							src_v[k] = *s++ / 255.0f;
+						a = *s++;
+						ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
+						for (k = 0; k < bn; ++k)
+							*d++ = base_v[k] * 255.0f;
+						*d++ = a;
+					}
+					s += s_line_inc;
+					d += d_line_inc;
 				}
-				s += s_line_inc;
-				d += d_line_inc;
+			}
+			else
+			{
+				for (y = 0; y < src->h; y++)
+				{
+					for (x = 0; x < src->w; x++)
+					{
+						for (k = 0; k < sn; ++k)
+							src_v[k] = *s++ / 255.0f;
+						ss->u.separation.eval(ctx, ss->u.separation.tint, src_v, sn, base_v, bn);
+						for (k = 0; k < bn; ++k)
+							*d++ = base_v[k] * 255.0f;
+					}
+					s += s_line_inc;
+					d += d_line_inc;
+				}
 			}
 		}
 
