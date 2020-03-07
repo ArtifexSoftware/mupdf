@@ -522,7 +522,7 @@ void do_annotate_panel(void)
 
 	ui_layout(T, X, NW, 2, 2);
 
-	if (ui_popup("CreateAnnotPopup", "Create...", 1, 15))
+	if (ui_popup("CreateAnnotPopup", "Create...", 1, 16))
 	{
 		if (ui_popup_item("Text")) new_annot(PDF_ANNOT_TEXT);
 		if (ui_popup_item("FreeText")) new_annot(PDF_ANNOT_FREE_TEXT);
