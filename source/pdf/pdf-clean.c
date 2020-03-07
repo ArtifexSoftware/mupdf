@@ -449,13 +449,21 @@ pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, f
 	pdf_page *page = opaque;
 	pdf_annot *annot;
 	pdf_obj *qp;
-	fz_point p;
 	fz_rect r;
 	fz_quad q;
 	int i, n;
+	float w, h;
 
 	trm = fz_concat(trm, ctm);
-	p = fz_make_point(trm.e, trm.f);
+	bbox = fz_transform_rect(bbox, trm);
+
+	/* Shrink character bbox a bit */
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	bbox.x0 += w / 10;
+	bbox.x1 -= w / 10;
+	bbox.y0 += h / 10;
+	bbox.y1 -= h / 10;
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
@@ -468,14 +476,15 @@ pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, f
 				for (i = 0; i < n; i += 8)
 				{
 					q = pdf_to_quad(ctx, qp, i);
-					if (fz_is_point_inside_quad(p, q))
+					r = fz_rect_from_quad(q);
+					if (!fz_is_empty_rect(fz_intersect_rect(bbox, r)))
 						return 1;
 				}
 			}
 			else
 			{
 				r = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
-				if (fz_is_point_inside_rect(p, r))
+				if (!fz_is_empty_rect(fz_intersect_rect(bbox, r)))
 					return 1;
 			}
 		}
