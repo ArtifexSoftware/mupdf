@@ -3798,9 +3798,11 @@ find_locked_fields_value(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *v)
 	for (i = 0; i < n; i++)
 	{
 		pdf_obj *sr = pdf_array_get(ctx, ref, i);
-		pdf_obj *tm, *tp;
+		pdf_obj *tm, *tp, *type;
 
-		if (!pdf_name_eq(ctx, pdf_dict_get(ctx, sr, PDF_NAME(Type)), PDF_NAME(SigRef)))
+		/* Type is optional, but if it exists, it'd better be SigRef. */
+		type = pdf_dict_get(ctx, sr, PDF_NAME(Type));
+		if (type != NULL && !pdf_name_eq(ctx, type, PDF_NAME(SigRef)))
 			continue;
 		tm = pdf_dict_get(ctx, sr, PDF_NAME(TransformMethod));
 		tp = pdf_dict_get(ctx, sr, PDF_NAME(TransformParams));
