@@ -4180,6 +4180,14 @@ int pdf_find_version_for_obj(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	return v;
 }
 
+/* Returns the number of updates ago when a signature became invalid,
+ * not counting any unsaved changes.
+ * Thus:
+ *  -1 => Has changed in the current unsaved changes.
+ *   0 => still valid.
+ *   1 => became invalid on the last save
+ *   n => became invalid n saves ago
+ */
 int pdf_validate_signature(fz_context *ctx, pdf_widget *widget)
 {
 	pdf_document *doc = widget->page->doc;
