@@ -28,10 +28,14 @@ static int pdf_filter(const char *fn)
 static void init_save_pdf_options(void)
 {
 	save_opts = pdf_default_write_options;
+	save_opts = pdf_default_write_options;
+	if (pdf->redacted)
+		save_opts.do_garbage = 1;
+	else
+		save_opts.do_incremental = 1;
 	save_opts.do_compress = 1;
 	save_opts.do_compress_images = 1;
 	save_opts.do_compress_fonts = 1;
-	save_opts.do_incremental = 1;
 }
 
 static const char *cryptalgo_names[] = {
@@ -52,7 +56,8 @@ static void save_pdf_options(void)
 	ui_label("PDF write options:");
 	ui_layout(T, X, NW, 4, 2);
 
-	ui_checkbox("Incremental", &save_opts.do_incremental);
+	if (pdf_can_be_saved_incrementally(ctx, pdf))
+		ui_checkbox("Incremental", &save_opts.do_incremental);
 	fz_try(ctx)
 	{
 		if (pdf_count_signatures(ctx, pdf))
