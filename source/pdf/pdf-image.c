@@ -333,10 +333,12 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 		if (cbuffer)
 		{
 			fz_compression_params *cp = &cbuffer->params;
-			switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
+			switch (cp->type)
 			{
 			default:
-				goto raw_or_unknown_compression;
+				goto unknown_compression;
+			case FZ_IMAGE_RAW:
+				break;
 			case FZ_IMAGE_JPEG:
 				if (cp->u.jpeg.color_transform != -1)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(ColorTransform), cp->u.jpeg.color_transform);
@@ -399,6 +401,10 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 			if (!pdf_dict_len(ctx, dp))
 				pdf_dict_del(ctx, imobj, PDF_NAME(DecodeParms));
 
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), image->bpc);
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(Width), image->w);
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(Height), image->h);
+
 			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
 
 			if (image->use_decode)
@@ -414,13 +420,17 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 			int h;
 			unsigned char *d, *s;
 
-raw_or_unknown_compression:
+unknown_compression:
 			/* Currently, set to maintain resolution; should we consider
 			 * subsampling here according to desired output res? */
 			pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 			n = pixmap->n - pixmap->alpha - pixmap->s; /* number of colorants */
 			if (n == 0)
 				n = 1; /* treat pixmaps with only alpha or spots as grayscale */
+
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), 8);
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(Width), pixmap->w);
+			pdf_dict_put_int(ctx, imobj, PDF_NAME(Height), pixmap->h);
 
 			size = image->w * n;
 			h = image->h;
@@ -461,9 +471,6 @@ raw_or_unknown_compression:
 			}
 		}
 
-		pdf_dict_put_int(ctx, imobj, PDF_NAME(Width), pixmap ? pixmap->w : image->w);
-		pdf_dict_put_int(ctx, imobj, PDF_NAME(Height), pixmap ? pixmap->h : image->h);
-
 		if (image->imagemask)
 		{
 			pdf_dict_put_bool(ctx, imobj, PDF_NAME(ImageMask), 1);
@@ -471,8 +478,6 @@ raw_or_unknown_compression:
 		else
 		{
 			fz_colorspace *cs;
-
-			pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), image->bpc);
 
 			cs = pixmap ? pixmap->colorspace : image->colorspace;
 			switch (fz_colorspace_type(ctx, cs))
