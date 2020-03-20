@@ -1284,6 +1284,33 @@ fz_new_pixmap_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsign
 	return pixmap;
 }
 
+/* Check if the pixmap is a 1-channel image containing samples with only values 0 and 255 */
+int
+fz_is_pixmap_monochrome(fz_context *ctx, fz_pixmap *pixmap)
+{
+	int n = pixmap->n + pixmap->s + pixmap->alpha;
+	int w = pixmap->w;
+	int h = pixmap->h;
+	unsigned char *s = pixmap->samples;
+	int x;
+
+	if (n != 1)
+		return 0;
+
+	while (h--)
+	{
+		for (x = 0; x < w; ++x)
+		{
+			unsigned char v = s[x];
+			if (v != 0 && v != 255)
+				return 0;
+		}
+		s += pixmap->stride;
+	}
+
+	return 1;
+}
+
 #ifdef ARCH_ARM
 static void
 fz_subsample_pixmap_ARM(unsigned char *ptr, int w, int h, int f, int factor,

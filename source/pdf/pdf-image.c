@@ -378,7 +378,6 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 				if (cp->u.flate.bpc)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(BitsPerComponent), cp->u.flate.bpc);
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
-				pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), image->bpc);
 				break;
 			case FZ_IMAGE_LZW:
 				if (cp->u.lzw.columns)
@@ -416,57 +415,77 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 		}
 		else
 		{
-			unsigned int size;
-			int h;
-			unsigned char *d, *s;
-
 unknown_compression:
-			/* Currently, set to maintain resolution; should we consider
-			 * subsampling here according to desired output res? */
+
 			pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 			n = pixmap->n - pixmap->alpha - pixmap->s; /* number of colorants */
 			if (n == 0)
 				n = 1; /* treat pixmaps with only alpha or spots as grayscale */
 
-			pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), 8);
 			pdf_dict_put_int(ctx, imobj, PDF_NAME(Width), pixmap->w);
 			pdf_dict_put_int(ctx, imobj, PDF_NAME(Height), pixmap->h);
 
-			size = image->w * n;
-			h = image->h;
-			s = pixmap->samples;
-			d = Memento_label(fz_malloc(ctx, size * h), "pdf_image_samples");
-			buffer = fz_new_buffer_from_data(ctx, d, size * h);
-
-			if (n == pixmap->n)
+			if (fz_is_pixmap_monochrome(ctx, pixmap))
 			{
-				/* If we use all channels, we can copy the data as is. */
+				int stride  = (image->w + 7) / 8;
+				int h = pixmap->h;
+				int w = pixmap->w;
+				unsigned char *s = pixmap->samples;
+				unsigned char *d = fz_calloc(ctx, h, stride);
+				buffer = fz_new_buffer_from_data(ctx, d, h * stride);
+
+				pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), 1);
+
 				while (h--)
 				{
-					memcpy(d, s, size);
-					d += size;
+					int x;
+					for (x = 0; x < w; ++x)
+						if (s[x] > 0)
+							d[x>>3] |= 1 << (7 - (x & 7));
 					s += pixmap->stride;
+					d += stride;
 				}
 			}
 			else
 			{
-				/* Need to remove the alpha and spot planes. */
-				/* TODO: extract alpha plane to a soft mask. */
-				/* TODO: convert spots to colors. */
+				unsigned int size = pixmap->w * n;
+				int h = pixmap->h;
+				unsigned char *s = pixmap->samples;
+				unsigned char *d = Memento_label(fz_malloc(ctx, size * h), "pdf_image_samples");
+				buffer = fz_new_buffer_from_data(ctx, d, size * h);
 
-				int line_skip = pixmap->stride - pixmap->w * pixmap->n;
-				int skip = pixmap->n - n;
-				while (h--)
+				pdf_dict_put_int(ctx, imobj, PDF_NAME(BitsPerComponent), 8);
+
+				if (n == pixmap->n)
 				{
-					int w = pixmap->w;
-					while (w--)
+					/* If we use all channels, we can copy the data as is. */
+					while (h--)
 					{
-						int k;
-						for (k = 0; k < n; ++k)
-							*d++ = *s++;
-						s += skip;
+						memcpy(d, s, size);
+						d += size;
+						s += pixmap->stride;
 					}
-					s += line_skip;
+				}
+				else
+				{
+					/* Need to remove the alpha and spot planes. */
+					/* TODO: extract alpha plane to a soft mask. */
+					/* TODO: convert spots to colors. */
+
+					int line_skip = pixmap->stride - pixmap->w * pixmap->n;
+					int skip = pixmap->n - n;
+					while (h--)
+					{
+						int w = pixmap->w;
+						while (w--)
+						{
+							int k;
+							for (k = 0; k < n; ++k)
+								*d++ = *s++;
+							s += skip;
+						}
+						s += line_skip;
+					}
 				}
 			}
 		}
