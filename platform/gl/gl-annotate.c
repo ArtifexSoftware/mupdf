@@ -11,6 +11,7 @@
 #endif
 
 static int is_draw_mode = 0;
+static int new_contents = 0;
 
 static char save_filename[PATH_MAX];
 static pdf_write_options save_opts;
@@ -427,11 +428,12 @@ static void do_annotate_contents(void)
 	static struct input input;
 	const char *contents;
 
-	if (selected_annot != last_annot)
+	if (selected_annot != last_annot || new_contents)
 	{
 		last_annot = selected_annot;
 		contents = pdf_annot_contents(ctx, selected_annot);
 		ui_input_init(&input, contents);
+		new_contents = 0;
 	}
 
 	ui_label("Contents:");
@@ -1188,6 +1190,7 @@ static void do_edit_quad_points(void)
 	static fz_point pt = { 0, 0 };
 	static int marking = 0;
 	static fz_quad hits[1000];
+	char *text;
 	int i, n;
 
 	if (ui_mouse_inside(view_page_area))
@@ -1211,6 +1214,11 @@ static void do_edit_quad_points(void)
 
 		page_a = fz_transform_point(page_a, view_page_inv_ctm);
 		page_b = fz_transform_point(page_b, view_page_inv_ctm);
+
+		if (ui.mod == GLUT_ACTIVE_CTRL)
+			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_WORDS);
+		else if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_LINES);
 
 		n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
 
@@ -1250,6 +1258,12 @@ static void do_edit_quad_points(void)
 						hits[i].lr.x, hits[i].lr.y);
 					pdf_add_annot_quad_point(ctx, selected_annot, hits[i]);
 				}
+
+				text = fz_copy_selection(ctx, page_text, page_a, page_b, 0);
+				trace_action("annot.setContents(%q);\n", text);
+				pdf_set_annot_contents(ctx, selected_annot, text);
+				new_contents = 1;
+				fz_free(ctx, text);
 			}
 			marking = 0;
 		}
