@@ -851,11 +851,15 @@ void do_annotate_panel(void)
 
 	if (has_redact)
 	{
+		static pdf_redact_options redact_opts;
+		ui_spacer();
+		ui_checkbox("Don't black out", &redact_opts.no_black_boxes);
+		ui_checkbox("Don't redact images", &redact_opts.keep_images);
 		if (ui_button("Redact"))
 		{
 			selected_annot = NULL;
 			trace_action("page.redact();\n");
-			pdf_redact_page(ctx, pdf, page, NULL);
+			pdf_redact_page(ctx, pdf, page, &redact_opts);
 			load_page();
 			render_page();
 		}
