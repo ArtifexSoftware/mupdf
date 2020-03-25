@@ -862,6 +862,7 @@ void do_annotate_panel(void)
 				redact_opts.no_black_boxes ? "true" : "false",
 				redact_opts.keep_images ? "true" : "false");
 			pdf_redact_page(ctx, pdf, page, &redact_opts);
+			trace_page_update();
 			load_page();
 			render_page();
 		}

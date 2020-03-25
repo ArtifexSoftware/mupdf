@@ -627,6 +627,13 @@ void trace_action(const char *fmt, ...)
 	}
 }
 
+void trace_page_update(void)
+{
+	static int trace_idx = 1;
+	trace_action("page.update();\n");
+	trace_action("page.toPixmap(Identity, DeviceRGB).saveAsPNG(\"trace-%03d.png\");\n", trace_idx++);
+}
+
 void update_title(void)
 {
 	char buf[256];
