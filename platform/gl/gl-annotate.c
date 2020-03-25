@@ -858,7 +858,9 @@ void do_annotate_panel(void)
 		if (ui_button("Redact"))
 		{
 			selected_annot = NULL;
-			trace_action("page.redact();\n");
+			trace_action("page.applyRedactions(%s, %s);\n",
+				redact_opts.no_black_boxes ? "true" : "false",
+				redact_opts.keep_images ? "true" : "false");
 			pdf_redact_page(ctx, pdf, page, &redact_opts);
 			load_page();
 			render_page();
