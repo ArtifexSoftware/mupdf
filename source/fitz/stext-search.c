@@ -345,14 +345,20 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, 
 	unsigned char *s;
 
 	buffer = fz_new_buffer(ctx, 1024);
+	fz_try(ctx)
+	{
+		cb.on_char = on_copy_char;
+		cb.on_line = crlf ? on_copy_line_crlf : on_copy_line_lf;
+		cb.arg = buffer;
 
-	cb.on_char = on_copy_char;
-	cb.on_line = crlf ? on_copy_line_crlf : on_copy_line_lf;
-	cb.arg = buffer;
-
-	fz_enumerate_selection(ctx, page, a, b, &cb);
-
-	fz_terminate_buffer(ctx, buffer);
+		fz_enumerate_selection(ctx, page, a, b, &cb);
+		fz_terminate_buffer(ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
+		fz_rethrow(ctx);
+	}
 	fz_buffer_extract(ctx, buffer, &s); /* take over the data */
 	fz_drop_buffer(ctx, buffer);
 	return (char*)s;
