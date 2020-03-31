@@ -1190,6 +1190,7 @@ static void do_edit_quad_points(void)
 	static fz_point pt = { 0, 0 };
 	static int marking = 0;
 	static fz_quad hits[1000];
+	fz_rect rect;
 	char *text;
 	int i, n;
 
@@ -1220,7 +1221,20 @@ static void do_edit_quad_points(void)
 		else if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_LINES);
 
-		n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
+		if (ui.mod == GLUT_ACTIVE_SHIFT)
+		{
+			rect = fz_make_rect(
+					fz_min(page_a.x, page_b.x),
+					fz_min(page_a.y, page_b.y),
+					fz_max(page_a.x, page_b.x),
+					fz_max(page_a.y, page_b.y));
+			n = 1;
+			hits[0] = fz_quad_from_rect(rect);
+		}
+		else
+		{
+			n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
+		}
 
 		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */
 		glEnable(GL_BLEND);
@@ -1259,7 +1273,11 @@ static void do_edit_quad_points(void)
 					pdf_add_annot_quad_point(ctx, selected_annot, hits[i]);
 				}
 
-				text = fz_copy_selection(ctx, page_text, page_a, page_b, 0);
+				if (ui.mod == GLUT_ACTIVE_SHIFT)
+					text = fz_copy_rectangle(ctx, page_text, rect, 0);
+				else
+					text = fz_copy_selection(ctx, page_text, page_a, page_b, 0);
+
 				trace_action("annot.setContents(%q);\n", text);
 				pdf_set_annot_contents(ctx, selected_annot, text);
 				new_contents = 1;
