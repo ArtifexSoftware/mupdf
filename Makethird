@@ -3,9 +3,9 @@
 ifeq ($(USE_SYSTEM_LIBS),yes)
   USE_SYSTEM_FREETYPE := yes
   USE_SYSTEM_HARFBUZZ := yes
-  USE_SYSTEM_JBIG2DEC := yes
+  USE_SYSTEM_JBIG2DEC := no
   USE_SYSTEM_JPEGXR := no # not available
-  USE_SYSTEM_LCMS2 := no # lcms2mt is strongly preferred
+  USE_SYSTEM_LCMS2 := yes # lcms2mt is strongly preferred
   USE_SYSTEM_LIBJPEG := yes
   USE_SYSTEM_MUJS := no # not available
   USE_SYSTEM_OPENJPEG := yes
