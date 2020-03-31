@@ -187,6 +187,10 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 		size_t len = 0;
 		pdf_obj *form;
 		int sf;
+#ifdef CLUSTER
+		memset(&now, 0, sizeof(now));
+		memset(tm, 0, sizeof(*tm));
+#endif
 
 		/* Ensure that all fields that will be locked by this signature
 		 * are marked as ReadOnly. */
