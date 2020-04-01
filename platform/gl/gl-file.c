@@ -226,7 +226,7 @@ static void load_dir(const char *path)
 	}
 	else
 	{
-		while ((dp = readdir(dir)) && fc.count < (int)nelem(fc.files))
+		while ((dp = readdir(dir)) && fc.count < fc.max)
 		{
 			/* skip hidden files */
 			if (dp->d_name[0] == '.' && strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))
