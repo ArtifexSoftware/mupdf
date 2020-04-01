@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <gumbo.h>
+
 /* #define FZ_XML_SEQ */
 
 static const struct { const char *name; int c; } html_entities[] = {
@@ -817,7 +819,7 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 
 		error = xml_parse_document_imp(ctx, &parser, p);
 		if (error)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "%s", error);
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "%s", error);
 
 		for (node = parser.head; node; node = node->up)
 			node->next = NULL;
@@ -831,6 +833,161 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	}
 	fz_always(ctx)
 	{
+		if (dofree)
+			fz_free(ctx, p);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pool(ctx, parser.pool);
+		fz_rethrow(ctx);
+	}
+
+	return xml;
+}
+
+/*
+	Parse the contents of buffer into a tree of XML nodes, using the HTML5 syntax.
+
+	Gumbo doesn't check for malloc errors. Use our pool allocator and let it longjmp
+	out of Gumbo on allocation errors. At the end (success or fail) we release the
+	pool used for Gumbo's parse tree all at once.
+*/
+
+struct mem_gumbo {
+	fz_context *ctx;
+	fz_pool *pool;
+};
+
+static void *alloc_gumbo(void *ctx, size_t size)
+{
+	struct mem_gumbo *mem = ctx;
+	return fz_pool_alloc(mem->ctx, mem->pool, size);
+}
+
+static void dealloc_gumbo(void *ctx, void *ptr)
+{
+	/* nothing */
+}
+
+static void xml_from_gumbo(fz_context *ctx, struct parser *parser, GumboNode *node)
+{
+	unsigned int i;
+	const char *tag, *end, *sentinel;
+
+	switch (node->type)
+	{
+	case GUMBO_NODE_ELEMENT:
+		if (node->v.element.tag != GUMBO_TAG_UNKNOWN)
+		{
+			tag = gumbo_normalized_tagname(node->v.element.tag);
+			end = tag + strlen(tag);
+		}
+		else
+		{
+			tag = node->v.element.original_tag.data;
+			sentinel = tag + node->v.element.original_tag.length;
+			if (tag[0] == '<')
+				++tag;
+			for (end = tag; end < sentinel; ++end)
+				if (end[0] == '>' || end[0] == '/' || iswhite(end[0]))
+					break;
+		}
+		xml_emit_open_tag(ctx, parser, tag, end, 0);
+		for (i = 0; i < node->v.element.attributes.length; ++i)
+		{
+			GumboAttribute *att = node->v.element.attributes.data[i];
+			xml_emit_att_name(ctx, parser, att->name, att->name+strlen(att->name));
+			xml_emit_att_value(ctx, parser, att->value, att->value+strlen(att->value));
+		}
+		for (i = 0; i < node->v.element.children.length; ++i)
+		{
+			GumboNode *child = node->v.element.children.data[i];
+			xml_from_gumbo(ctx, parser, child);
+		}
+		xml_emit_close_tag(ctx, parser);
+		break;
+
+	case GUMBO_NODE_TEXT:
+	case GUMBO_NODE_CDATA:
+	case GUMBO_NODE_WHITESPACE:
+		xml_emit_text(ctx, parser, node->v.text.text, node->v.text.text+strlen(node->v.text.text));
+		break;
+
+	case GUMBO_NODE_DOCUMENT:
+	case GUMBO_NODE_COMMENT:
+	case GUMBO_NODE_TEMPLATE:
+		break;
+	}
+}
+
+fz_xml_doc *
+fz_parse_xml_from_html5(fz_context *ctx, fz_buffer *buf)
+{
+	struct parser parser;
+	fz_xml_doc *xml = NULL;
+	fz_xml root, *node;
+	char *p = NULL;
+	int dofree = 0;
+	unsigned char *s;
+	size_t n;
+	GumboOutput *soup = NULL;
+	GumboOptions opts;
+	struct mem_gumbo mem;
+
+	fz_var(mem.pool);
+	fz_var(soup);
+	fz_var(dofree);
+	fz_var(p);
+
+	/* ensure we are zero-terminated */
+	fz_terminate_buffer(ctx, buf);
+	n = fz_buffer_storage(ctx, buf, &s);
+
+	mem.ctx = ctx;
+	mem.pool = NULL;
+
+	memset(&root, 0, sizeof(root));
+	parser.pool = fz_new_pool(ctx);
+	parser.head = &root;
+	parser.preserve_white = 1;
+	parser.depth = 0;
+#ifdef FZ_XML_SEQ
+	parser.seq = 0;
+#endif
+
+	fz_try(ctx)
+	{
+		p = convert_to_utf8(ctx, s, n, &dofree);
+
+		mem.pool = fz_new_pool(ctx);
+		memset(&opts, 0, sizeof opts);
+		opts.allocator = alloc_gumbo;
+		opts.deallocator = dealloc_gumbo;
+		opts.userdata = &mem;
+		opts.tab_stop = 8;
+		opts.stop_on_first_error = 0;
+		opts.max_errors = -1;
+		opts.fragment_context = GUMBO_TAG_LAST;
+		opts.fragment_namespace = GUMBO_NAMESPACE_HTML;
+
+		soup = gumbo_parse_with_options(&opts, (const char *)p, strlen(p));
+
+		xml_from_gumbo(ctx, &parser, soup->root);
+
+		for (node = parser.head; node; node = node->up)
+			node->next = NULL;
+		for (node = root.down; node; node = node->next)
+			node->up = NULL;
+
+		xml = fz_pool_alloc(ctx, parser.pool, sizeof *xml);
+		xml->pool = parser.pool;
+		xml->root = root.down;
+	}
+	fz_always(ctx)
+	{
+		if (soup)
+			gumbo_destroy_output(&opts, soup);
+		fz_drop_pool(ctx, mem.pool);
 		if (dofree)
 			fz_free(ctx, p);
 	}
