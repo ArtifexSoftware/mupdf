@@ -319,7 +319,7 @@ void fz_detach_xml(fz_context *ctx, fz_xml_doc *xml, fz_xml *node)
 	xml->root = node;
 }
 
-static size_t xml_parse_entity(int *c, char *a)
+static size_t xml_parse_entity(int *c, const char *a)
 {
 	char *b;
 	size_t i;
@@ -379,10 +379,10 @@ static inline int iswhite(int c)
 	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
 
-static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, char *b, int is_text)
+static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, const char *a, const char *b, int is_text)
 {
 	fz_xml *head, *tail;
-	char *ns;
+	const char *ns;
 	size_t size;
 
 	if (is_text)
@@ -433,7 +433,7 @@ static void xml_emit_open_tag(fz_context *ctx, struct parser *parser, char *a, c
 	parser->depth++;
 }
 
-static void xml_emit_att_name(fz_context *ctx, struct parser *parser, char *a, char *b)
+static void xml_emit_att_name(fz_context *ctx, struct parser *parser, const char *a, const char *b)
 {
 	fz_xml *head = parser->head;
 	struct attribute *att;
@@ -448,7 +448,7 @@ static void xml_emit_att_name(fz_context *ctx, struct parser *parser, char *a, c
 	head->u.d.atts = att;
 }
 
-static void xml_emit_att_value(fz_context *ctx, struct parser *parser, char *a, char *b)
+static void xml_emit_att_value(fz_context *ctx, struct parser *parser, const char *a, const char *b)
 {
 	fz_xml *head = parser->head;
 	struct attribute *att = head->u.d.atts;
@@ -477,9 +477,10 @@ static void xml_emit_close_tag(fz_context *ctx, struct parser *parser)
 		parser->head = parser->head->up;
 }
 
-static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char *b)
+static void xml_emit_text(fz_context *ctx, struct parser *parser, const char *a, const char *b)
 {
 	fz_xml *head;
+	const char *p;
 	char *s;
 	int c;
 
@@ -490,10 +491,10 @@ static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char 
 	/* Skip all-whitespace text nodes */
 	if (!parser->preserve_white)
 	{
-		for (s = a; s < b; s++)
-			if (!iswhite(*s))
+		for (p = a; p < b; p++)
+			if (!iswhite(*p))
 				break;
-		if (s == b)
+		if (p == b)
 			return;
 	}
 
@@ -516,7 +517,7 @@ static void xml_emit_text(fz_context *ctx, struct parser *parser, char *a, char 
 	xml_emit_close_tag(ctx, parser);
 }
 
-static void xml_emit_cdata(fz_context *ctx, struct parser *parser, char *a, char *b)
+static void xml_emit_cdata(fz_context *ctx, struct parser *parser, const char *a, const char *b)
 {
 	fz_xml *head;
 	char *s;
@@ -532,9 +533,9 @@ static void xml_emit_cdata(fz_context *ctx, struct parser *parser, char *a, char
 	xml_emit_close_tag(ctx, parser);
 }
 
-static char *xml_parse_document_imp(fz_context *ctx, struct parser *parser, char *p)
+static char *xml_parse_document_imp(fz_context *ctx, struct parser *parser, const char *p)
 {
-	char *mark;
+	const char *mark;
 	int quote;
 
 parse_text:
