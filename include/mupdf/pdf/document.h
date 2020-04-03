@@ -70,6 +70,9 @@ fz_outline *pdf_load_outline(fz_context *ctx, pdf_document *doc);
 
 int pdf_count_layer_configs(fz_context *ctx, pdf_document *doc);
 
+void pdf_invalidate_xfa(fz_context *ctx, pdf_document *doc);
+
+
 typedef struct
 {
 	const char *name;
@@ -197,6 +200,16 @@ typedef struct
 	int64_t offset; /* Offset of first object */
 } pdf_hint_shared;
 
+typedef struct {
+	char *key;
+	fz_xml_doc *value;
+} pdf_xfa_entry;
+
+typedef struct {
+	int count;
+	pdf_xfa_entry *entries;
+} pdf_xfa;
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -291,6 +304,8 @@ struct pdf_document_s
 	int orphans_max;
 	int orphans_count;
 	pdf_obj **orphans;
+
+	pdf_xfa xfa;
 };
 
 pdf_document *pdf_create_document(fz_context *ctx);

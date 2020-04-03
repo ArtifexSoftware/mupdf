@@ -1390,6 +1390,226 @@ size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signa
 	return len;
 }
 
+static fz_xml_doc *
+pdf_parse_xml(fz_context *ctx, pdf_obj *obj)
+{
+	fz_buffer *buf = pdf_load_stream(ctx, obj);
+	fz_xml_doc *xml = NULL;
+
+	fz_try(ctx)
+		xml = fz_parse_xml(ctx, buf, 0, 0);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return xml;
+}
+
+static int load_xfa(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *xfa;
+	int i, len;
+
+	if (doc->xfa.count)
+		return 1; /* Already loaded, and present. */
+
+	xfa = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/XFA");
+	if (!pdf_is_array(ctx, xfa))
+		return 0; /* No XFA */
+
+	len = (pdf_array_len(ctx, xfa)+1)>>1;
+	doc->xfa.entries = fz_calloc(ctx, len, sizeof(pdf_xfa_entry));
+	doc->xfa.count = len;
+
+	for(i = 0; i < len; i++)
+	{
+		doc->xfa.entries[i].key = fz_strdup(ctx, pdf_to_text_string(ctx, pdf_array_get(ctx, xfa, i*2)));
+		doc->xfa.entries[i].value = pdf_parse_xml(ctx, pdf_array_get(ctx, xfa, i*2+1));
+	}
+
+	return len > 0;
+}
+
+static fz_xml *
+get_xfa_root(fz_context *ctx, pdf_document *doc, const char *str)
+{
+	int i;
+
+	if (load_xfa(ctx, doc) == 0)
+		return NULL;
+
+	for (i = 0; i < doc->xfa.count; i++)
+		if (strcmp(doc->xfa.entries[i].key, str) == 0)
+			return fz_xml_root(doc->xfa.entries[i].value);
+
+	return NULL;
+}
+
+static int
+find_name_component(char **np, char **sp, char **ep)
+{
+	char *n = *np;
+	char *s, *e;
+	int idx = 0;
+
+	if (*n == '.')
+		n++;
+
+	/* Find the next name we are looking for. */
+	s = e = n;
+	while (*e && *e != '[' && *e != '.')
+		e++;
+
+	/* So the next name is s..e */
+	n = e;
+	if (*n == '[')
+	{
+		n++;
+		while (*n >= '0' && *n <= '9')
+			idx = idx*10 + *n++ - '0';
+		while (*n && *n != ']')
+			n++;
+		if (*n == ']')
+			n++;
+	}
+	*np = n;
+	*sp = s;
+	*ep = e;
+
+	return idx;
+}
+
+static pdf_obj *
+annot_from_name(fz_context *ctx, pdf_document *doc, const char *str)
+{
+	pdf_obj *fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
+
+	if (strncmp(str, "xfa[0].", 7) == 0)
+		str += 7;
+	if (strncmp(str, "template[0].", 12) == 0)
+		str += 12;
+
+	return pdf_lookup_field(ctx, fields, str);
+}
+
+static pdf_obj *
+get_locked_fields_from_xfa(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	char *name = pdf_field_name(ctx, field);
+	char *n = name;
+	const char *use;
+	fz_xml *root, *node;
+
+	if (name == NULL)
+		return NULL;
+
+	root = get_xfa_root(ctx, doc, "template");
+	node = fz_xml_find(root, "template");
+
+	do
+	{
+		char c, *s, *e;
+		int idx = 0;
+		char *key;
+
+		idx = find_name_component(&n, &s, &e);
+		/* We want the idx'th occurrence of s..e */
+
+		/* Hacky */
+		c = *e;
+		*e = 0;
+		key = *n ? "subform" : "field";
+		node = fz_xml_find_down_match(node, key, "name", s);
+		while (node && idx > 0)
+		{
+			node = fz_xml_find_next_match(node, key, "name", s);
+			idx--;
+		}
+		*e = c;
+	}
+	while (node && *n == '.');
+
+	fz_free(ctx, name);
+	if (node == NULL)
+		return NULL;
+
+	node = fz_xml_find_down(node, "ui");
+	node = fz_xml_find_down(node, "signature");
+	node = fz_xml_find_down(node, "manifest");
+
+	use = fz_xml_att(node, "use");
+	if (*use == '#')
+		use++;
+
+	/* Now look for a variables entry in a subform that defines this. */
+	while (node)
+	{
+		fz_xml *variables, *manifest, *ref;
+		pdf_obj *arr;
+
+		/* Find the enclosing subform */
+		do {
+			node = fz_xml_up(node);
+		} while (node && strcmp(fz_xml_tag(node), "subform"));
+
+		/* Look for a variables within that. */
+		variables = fz_xml_find_down(node, "variables");
+		if (variables == NULL)
+			continue;
+
+		manifest = fz_xml_find_down_match(variables, "manifest", "id", use);
+		if (manifest == NULL)
+			continue;
+
+		arr = pdf_new_array(ctx, doc, 16);
+		fz_try(ctx)
+		{
+			ref = fz_xml_find_down(manifest, "ref");
+			while (ref)
+			{
+				const char *s = fz_xml_text(fz_xml_down(ref));
+				pdf_array_push(ctx, arr, annot_from_name(ctx, doc, s));
+				ref = fz_xml_find_next(ref, "ref");
+			}
+		}
+		fz_catch(ctx)
+		{
+			pdf_drop_obj(ctx, arr);
+			fz_rethrow(ctx);
+		}
+		return arr;
+	}
+
+	return NULL;
+}
+
+static void
+lock_field(fz_context *ctx, pdf_obj *f)
+{
+	int ff = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, f, PDF_NAME(Ff)));
+
+	if ((ff & PDF_FIELD_IS_READ_ONLY) ||
+		!pdf_name_eq(ctx, pdf_dict_get(ctx, f, PDF_NAME(Type)), PDF_NAME(Annot)) ||
+		!pdf_name_eq(ctx, pdf_dict_get(ctx, f, PDF_NAME(Subtype)), PDF_NAME(Widget)))
+		return;
+
+	pdf_dict_put(ctx, f, PDF_NAME(Ff), pdf_new_int(ctx, ff | PDF_FIELD_IS_READ_ONLY));
+}
+
+static void
+lock_xfa_locked_fields(fz_context *ctx, pdf_obj *a)
+{
+	int i;
+	int len = pdf_array_len(ctx, a);
+
+	for (i = 0; i < len; i++)
+	{
+		lock_field(ctx, pdf_array_get(ctx, a, i));
+	}
+}
+
+
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer, int64_t stime)
 {
 	pdf_obj *v = NULL;
@@ -1455,10 +1675,16 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 		}
 		else
 		{
-			/* Lock action wasn't specified so encode an Include. Encode an empty array
+			/* Lock action wasn't specified so we need to encode an Include.
+			 * Before we just use an empty array, check in the XFA for locking
+			 * details. */
+			a = get_locked_fields_from_xfa(ctx, doc, field);
+			if (a)
+				lock_xfa_locked_fields(ctx, a);
+
+			/* If we don't get a result from the XFA, just encode an empty array
 			 * (leave a == NULL), even if Lock/Fields exists because we don't really
-			 * know what to do with the information if the action isn't defined.
-			 * Possibly there is info in an XFA form that we aren't able to read. */
+			 * know what to do with the information if the action isn't defined. */
 			l = PDF_NAME(Include);
 		}
 
