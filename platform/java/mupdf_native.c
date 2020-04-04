@@ -2896,12 +2896,12 @@ fz_java_device_drop(fz_context *ctx, fz_device *dev)
 	(*env)->DeleteGlobalRef(env, jdev->self);
 }
 
-static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
+static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jclass cls)
 {
 	fz_java_device *dev = NULL;
 	jobject jself;
 
-	jself = (*env)->NewGlobalRef(env, self);
+	jself = (*env)->NewGlobalRef(env, cls);
 	if (!jself) return NULL;
 
 	fz_try(ctx)
@@ -2952,7 +2952,7 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Device_newNative)(JNIEnv *env, jclass self)
+FUN(Device_newNative)(JNIEnv *env, jclass cls)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = NULL;
@@ -2960,7 +2960,7 @@ FUN(Device_newNative)(JNIEnv *env, jclass self)
 	if (!ctx) return 0;
 
 	fz_try(ctx)
-		dev = fz_new_java_device(ctx, env, self);
+		dev = fz_new_java_device(ctx, env, cls);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -3640,7 +3640,7 @@ FUN(NativeDevice_endTile)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject jpixmap)
+FUN(DrawDevice_newNative)(JNIEnv *env, jclass cls, jobject jpixmap)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, jpixmap);
@@ -3661,7 +3661,7 @@ FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject jpixmap)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(DisplayListDevice_newNative)(JNIEnv *env, jclass self, jobject jlist)
+FUN(DisplayListDevice_newNative)(JNIEnv *env, jclass cls, jobject jlist)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, jlist);
@@ -5538,7 +5538,7 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 }
 
 JNIEXPORT jboolean JNICALL
-FUN(Document_recognize)(JNIEnv *env, jclass self, jstring jmagic)
+FUN(Document_recognize)(JNIEnv *env, jclass cls, jstring jmagic)
 {
 	fz_context *ctx = get_context(env);
 	const char *magic = NULL;
@@ -5786,7 +5786,7 @@ FUN(Document_loadPage)(JNIEnv *env, jobject self, jint chapter, jint number)
 	return to_Page_safe_own(ctx, env, page);
 }
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jstring JNICALL
 FUN(Document_getMetaData)(JNIEnv *env, jobject self, jstring jkey)
 {
 	fz_context *ctx = get_context(env);
@@ -10522,7 +10522,6 @@ FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	const char *text = NULL;
-	jstring jval;
 
 	if (!ctx || !widget)
 		return NULL;
@@ -10536,8 +10535,7 @@ FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 	}
 
-	jval = (*env)->NewStringUTF(env, text);
-	return jval;
+	return (*env)->NewStringUTF(env, text);
 }
 
 JNIEXPORT jboolean JNICALL
