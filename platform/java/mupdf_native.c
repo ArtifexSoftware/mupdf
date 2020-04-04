@@ -61,6 +61,7 @@ static jclass cls_Device;
 static jclass cls_DisplayList;
 static jclass cls_Document;
 static jclass cls_DocumentWriter;
+static jclass cls_FitzInputStream;
 static jclass cls_FloatArray;
 static jclass cls_Font;
 static jclass cls_IOException;
@@ -104,6 +105,7 @@ static jclass cls_TextChar;
 static jclass cls_TextLine;
 static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
+static jclass cls_UnsupportedOperationException;
 static jclass cls_PDFWidget;
 
 static jfieldID fid_Buffer_pointer;
@@ -113,6 +115,9 @@ static jfieldID fid_Device_pointer;
 static jfieldID fid_DisplayList_pointer;
 static jfieldID fid_DocumentWriter_pointer;
 static jfieldID fid_Document_pointer;
+static jfieldID fid_FitzInputStream_pointer;
+static jfieldID fid_FitzInputStream_markpos;
+static jfieldID fid_FitzInputStream_closed;
 static jfieldID fid_Font_pointer;
 static jfieldID fid_Image_pointer;
 static jfieldID fid_Matrix_a;
@@ -189,6 +194,7 @@ static jmethodID mid_Device_popClip;
 static jmethodID mid_Device_strokePath;
 static jmethodID mid_Device_strokeText;
 static jmethodID mid_DisplayList_init;
+static jmethodID mid_FitzInputStream_init;
 static jmethodID mid_Document_init;
 static jmethodID mid_Font_init;
 static jmethodID mid_Image_init;
@@ -397,6 +403,11 @@ static void jni_throw_null(JNIEnv *env, const char *info)
 	(*env)->ThrowNew(env, cls_NullPointerException, info);
 }
 
+static void jni_throw_uoe(JNIEnv *env, const char *info)
+{
+	(*env)->ThrowNew(env, cls_UnsupportedOperationException, info);
+}
+
 /* Convert a java exception and throw into fitz. */
 
 static void fz_throw_java(fz_context *ctx, JNIEnv *env)
@@ -574,6 +585,12 @@ static int find_fids(JNIEnv *env)
 	cls_DocumentWriter = get_class(&err, env, PKG"DocumentWriter");
 	fid_DocumentWriter_pointer = get_field(&err, env, "pointer", "J");
 
+	cls_FitzInputStream = get_class(&err, env, PKG"FitzInputStream");
+	fid_FitzInputStream_pointer = get_field(&err, env, "pointer", "J");
+	fid_FitzInputStream_markpos = get_field(&err, env, "markpos", "J");
+	fid_FitzInputStream_closed = get_field(&err, env, "closed", "Z");
+	mid_FitzInputStream_init = get_method(&err, env, "<init>", "(J)V");
+
 	cls_Font = get_class(&err, env, PKG"Font");
 	fid_Font_pointer = get_field(&err, env, "pointer", "J");
 	mid_Font_init = get_method(&err, env, "<init>", "(J)V");
@@ -747,6 +764,7 @@ static int find_fids(JNIEnv *env)
 	cls_IOException = get_class(&err, env, "java/io/IOException");
 	cls_NullPointerException = get_class(&err, env, "java/lang/NullPointerException");
 	cls_RuntimeException = get_class(&err, env, "java/lang/RuntimeException");
+	cls_UnsupportedOperationException = get_class(&err, env, "java/lang/UnsupportedOperationException");
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
 
@@ -802,6 +820,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_DisplayList);
 	(*env)->DeleteGlobalRef(env, cls_Document);
 	(*env)->DeleteGlobalRef(env, cls_DocumentWriter);
+	(*env)->DeleteGlobalRef(env, cls_FitzInputStream);
 	(*env)->DeleteGlobalRef(env, cls_FloatArray);
 	(*env)->DeleteGlobalRef(env, cls_Font);
 	(*env)->DeleteGlobalRef(env, cls_IllegalArgumentException);
@@ -845,6 +864,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_TextLine);
 	(*env)->DeleteGlobalRef(env, cls_TextWalker);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
+	(*env)->DeleteGlobalRef(env, cls_UnsupportedOperationException);
 	(*env)->DeleteGlobalRef(env, cls_PDFWidget);
 }
 
@@ -1281,6 +1301,22 @@ static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace 
 		fz_throw_java(ctx, env);
 
 	return jcs;
+}
+
+static inline jobject to_FitzInputStream(fz_context *ctx, JNIEnv *env, fz_stream *stm)
+{
+	jobject jstm;
+
+	if (!ctx || !stm) return NULL;
+
+	fz_keep_stream(ctx, stm);
+	jstm = (*env)->NewObject(env, cls_FitzInputStream, mid_FitzInputStream_init, jlong_cast(stm));
+	if (!jstm)
+		fz_drop_stream(ctx, stm);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+
+	return jstm;
 }
 
 static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
@@ -2203,6 +2239,12 @@ static inline pdf_widget *from_PDFWidget_safe(JNIEnv *env, jobject jobj)
 {
 	if (!jobj) return NULL;
 	return CAST(pdf_widget *, (*env)->GetLongField(env, jobj, fid_PDFWidget_pointer));
+}
+
+static inline fz_stream *from_FitzInputStream_safe(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(fz_stream *, (*env)->GetLongField(env, jobj, fid_FitzInputStream_pointer));
 }
 
 static inline fz_pixmap *from_Pixmap_safe(JNIEnv *env, jobject jobj)
@@ -10649,4 +10691,177 @@ FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
 	}
 
 	return val;
+}
+JNIEXPORT jboolean JNICALL
+FUN(FitzInputStream_markSupported)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jboolean closed = JNI_TRUE;
+
+	if (!ctx || !stm) return JNI_FALSE;
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return JNI_FALSE; }
+
+	return stm->seek != NULL;
+}
+
+JNIEXPORT void JNICALL
+FUN(FitzInputStream_mark)(JNIEnv *env, jobject self, jint readlimit)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jlong markpos = 0;
+	jboolean closed = JNI_TRUE;
+
+	if (!ctx || !stm) return;
+	if (stm->seek == NULL) { jni_throw_uoe(env, "mark not supported"); return; }
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return; }
+
+	fz_try(ctx)
+		markpos = fz_tell(ctx, stm);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return;
+	}
+
+	(*env)->SetLongField(env, self, fid_FitzInputStream_markpos, markpos);
+}
+
+JNIEXPORT void JNICALL
+FUN(FitzInputStream_reset)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jboolean closed = JNI_TRUE;
+	jlong markpos = -1;
+
+	if (!ctx || !stm) return;
+
+	if (stm->seek == NULL)
+	{
+		jni_throw_uoe(env, "reset not supported");
+		return;
+	}
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return; }
+
+	markpos = (*env)->GetLongField(env, self, fid_FitzInputStream_markpos);
+	if (markpos < 0)
+		jni_throw_io(env, "mark not set");
+
+	fz_try(ctx)
+		fz_seek(ctx, stm, markpos, SEEK_SET);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jint JNICALL
+FUN(FitzInputStream_available)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jint available = 0;
+	jboolean closed = JNI_TRUE;
+
+	if (!ctx || !stm) return -1;
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return -1; }
+
+	fz_try(ctx)
+		available = fz_available(ctx, stm, 1);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return available;
+}
+
+JNIEXPORT jint JNICALL
+FUN(FitzInputStream_readByte)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jboolean closed = JNI_TRUE;
+	jbyte b = 0;
+
+	if (!ctx || !stm) return -1;
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return -1; }
+
+	fz_try(ctx)
+		b = fz_read_byte(ctx, stm);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return -1;
+	}
+
+	return b;
+}
+
+JNIEXPORT jint JNICALL
+FUN(FitzInputStream_readArray)(JNIEnv *env, jobject self, jobject jarr, jint off, jint len)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jboolean closed = JNI_TRUE;
+	jbyte *arr = NULL;
+	jint n = 0;
+
+	if (!ctx || !stm) return -1;
+	if (!jarr) { jni_throw_arg(env, "buffer must not be null"); return -1; }
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return -1; }
+
+	arr = (*env)->GetByteArrayElements(env, jarr, NULL);
+	if (!arr)
+	{
+		jni_throw_arg(env, "can not get buffer to read into");
+		return -1;
+	}
+
+	fz_try(ctx)
+		n = fz_read(ctx, stm, (unsigned char *) arr + off, len);
+	fz_always(ctx)
+		(*env)->ReleaseByteArrayElements(env, jarr, arr, 0);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return -1;
+	}
+
+	return n;
+}
+
+JNIEXPORT void JNICALL
+FUN(FitzInputStream_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+
+	if (!ctx || !stm) return;
+
+	fz_drop_stream(ctx, stm);
+}
+
+JNIEXPORT void JNICALL
+FUN(FitzInputStream_close)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stream *stm = from_FitzInputStream_safe(env, self);
+	jboolean closed = JNI_TRUE;
+
+	if (!ctx || !stm) return;
+
+	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
+	if (closed) { jni_throw_uoe(env, "stream closed"); return; }
+
+	(*env)->SetBooleanField(env, self, fid_FitzInputStream_closed, JNI_TRUE);
 }
