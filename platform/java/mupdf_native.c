@@ -427,7 +427,7 @@ static void jni_throw_uoe(JNIEnv *env, const char *info)
 
 /* Convert a java exception and throw into fitz. */
 
-static void fz_throw_java(fz_context *ctx, JNIEnv *env)
+static void fz_throw_java_and_detach_thread(fz_context *ctx, JNIEnv *env, jboolean detach)
 {
 	jthrowable ex = (*env)->ExceptionOccurred(env);
 	if (ex)
@@ -445,12 +445,39 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 				char buf[256];
 				fz_strlcpy(buf, p, sizeof buf);
 				(*env)->ReleaseStringUTFChars(env, msg, p);
+				if (detach)
+					(*jvm)->DetachCurrentThread(jvm);
 				fz_throw(ctx, FZ_ERROR_GENERIC, "%s", buf);
 			}
 		}
 	}
+	if (detach)
+		(*jvm)->DetachCurrentThread(jvm);
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown java error");
 }
+
+#define fz_throw_java(ctx, env) fz_throw_java_and_detach_thread((ctx), (env), JNI_FALSE)
+
+#define fz_throw_and_detach_thread(ctx, detach, code, ...) \
+	do \
+	{ \
+		if (detach) \
+			(*jvm)->DetachCurrentThread(jvm); \
+		fz_throw((ctx), (code), __VA_ARGS__); \
+	} while (0)
+
+#define fz_rethrow_and_detach_thread(ctx, detach) \
+	do \
+	{ \
+		if (detach) \
+			(*jvm)->DetachCurrentThread(jvm); \
+		fz_rethrow(ctx); \
+	} while (0)
+
+typedef struct {
+	pdf_pkcs7_verifier base;
+	jobject jverifier;
+} java_pkcs7_verifier;
 
 /* Load classes, field and method IDs. */
 
@@ -465,7 +492,7 @@ static jclass get_class(int *failed, JNIEnv *env, const char *name)
 
 	current_class_name = name;
 	local = (*env)->FindClass(env, name);
-	if (!local)
+	if (!local || (*env)->ExceptionCheck(env))
 	{
 		LOGI("Failed to find class %s", name);
 		*failed = 1;
@@ -492,7 +519,7 @@ static jfieldID get_field(int *failed, JNIEnv *env, const char *field, const cha
 	if (*failed || !current_class) return NULL;
 
 	fid = (*env)->GetFieldID(env, current_class, field, sig);
-	if (fid == 0)
+	if (fid == 0 || (*env)->ExceptionCheck(env))
 	{
 		LOGI("Failed to get field for %s %s %s", current_class_name, field, sig);
 		*failed = 1;
@@ -508,7 +535,7 @@ static jfieldID get_static_field(int *failed, JNIEnv *env, const char *field, co
 	if (*failed || !current_class) return NULL;
 
 	fid = (*env)->GetStaticFieldID(env, current_class, field, sig);
-	if (fid == 0)
+	if (fid == 0 || (*env)->ExceptionCheck(env))
 	{
 		LOGI("Failed to get static field for %s %s %s", current_class_name, field, sig);
 		*failed = 1;
@@ -524,7 +551,7 @@ static jmethodID get_method(int *failed, JNIEnv *env, const char *method, const 
 	if (*failed || !current_class) return NULL;
 
 	mid = (*env)->GetMethodID(env, current_class, method, sig);
-	if (mid == 0)
+	if (mid == 0 || (*env)->ExceptionCheck(env))
 	{
 		LOGI("Failed to get method for %s %s %s", current_class_name, method, sig);
 		*failed = 1;
@@ -540,7 +567,7 @@ static jmethodID get_static_method(int *failed, JNIEnv *env, const char *method,
 	if (*failed || !current_class) return NULL;
 
 	mid = (*env)->GetStaticMethodID(env, current_class, method, sig);
-	if (mid == 0)
+	if (mid == 0 || (*env)->ExceptionCheck(env))
 	{
 		LOGI("Failed to get static method for %s %s %s", current_class_name, method, sig);
 		*failed = 1;
@@ -821,16 +848,16 @@ static int find_fids(JNIEnv *env)
 /* When making callbacks from C to java, we may be called on threads
  * other than the foreground. As such, we have no JNIEnv. This function
  * handles getting us the required environment */
-static JNIEnv *jni_attach_thread(fz_context *ctx, int *detach)
+static JNIEnv *jni_attach_thread(fz_context *ctx, jboolean *detach)
 {
 	JNIEnv *env = NULL;
 	int state;
 
-	*detach = 0;
+	*detach = JNI_FALSE;
 	state = (*jvm)->GetEnv(jvm, (void *)&env, MY_JNI_VERSION);
 	if (state == JNI_EDETACHED)
 	{
-		*detach = 1;
+		*detach = JNI_TRUE;
 		state = (*jvm)->AttachCurrentThread(jvm, (void *)&env, NULL);
 	}
 
@@ -840,7 +867,7 @@ static JNIEnv *jni_attach_thread(fz_context *ctx, int *detach)
 	return env;
 }
 
-static void jni_detach_thread(int detach)
+static void jni_detach_thread(jboolean detach)
 {
 	if (!detach)
 		return;
@@ -1578,7 +1605,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 	}
 
 	jarr = (*env)->NewObjectArray(env, count, cls_Outline, NULL);
-	if (!jarr) return NULL;
+	if (!jarr || (*env)->ExceptionCheck(env)) return NULL;
 
 	while (outline)
 	{
@@ -1589,13 +1616,13 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 		if (outline->title)
 		{
 			jtitle = (*env)->NewStringUTF(env, outline->title);
-			if (!jtitle) return NULL;
+			if (!jtitle || (*env)->ExceptionCheck(env)) return NULL;
 		}
 
 		if (outline->uri)
 		{
 			juri = (*env)->NewStringUTF(env, outline->uri);
-			if (!juri) return NULL;
+			if (!juri || (*env)->ExceptionCheck(env)) return NULL;
 		}
 
 		if (outline->down)
@@ -1681,7 +1708,7 @@ static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, cons
 	if (!ctx || !quads) return NULL;
 
 	arr = (*env)->NewObjectArray(env, n, cls_Quad, NULL);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	for (i = 0; i < n; i++)
 	{
@@ -1712,14 +1739,14 @@ static inline jobjectArray to_StringArray_safe(fz_context *ctx, JNIEnv *env, con
 	if (!ctx || !strings) return NULL;
 
 	arr = (*env)->NewObjectArray(env, n, cls_String, NULL);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	for (i = 0; i < n; i++)
 	{
-		jobject jstring;
+		jstring jstring;
 
 		jstring = (*env)->NewStringUTF(env, strings[i]);
-		if (!jstring) return NULL;
+		if (!jstring || (*env)->ExceptionCheck(env)) return NULL;
 
 		(*env)->SetObjectArrayElement(env, arr, i, jstring);
 		if ((*env)->ExceptionCheck(env)) return NULL;
@@ -1869,8 +1896,6 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 				opts = Memento_label(fz_malloc(ctx, nopts * sizeof(*opts)), "to_PDFWidget");
 				pdf_choice_widget_options(ctx, widget, 0, opts);
 				jopts = to_StringArray_safe(ctx, env, opts, nopts);
-				if (jopts)
-					(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
 			}
 		}
 	}
@@ -1883,6 +1908,10 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
+
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+	(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
 
 	return jwidget;
 }
@@ -2362,8 +2391,8 @@ SeekableStreamState;
 static int SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	SeekableStreamState *state = stm->state;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 	int n, ch;
 
 	env = jni_attach_thread(ctx, &detach);
@@ -2371,14 +2400,14 @@ static int SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_next");
 
 	n = (*env)->CallIntMethod(env, state->stream, mid_SeekableInputStream_read, state->array);
-	if ((*env)->ExceptionCheck(env)) {
-		jni_detach_thread(detach);
-		fz_throw_java(ctx, env);
-	}
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
 
 	if (n > 0)
 	{
 		(*env)->GetByteArrayRegion(env, state->array, 0, n, state->buffer);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java_and_detach_thread(ctx, env, detach);
 
 		/* update stm->pos so fz_tell knows the current position */
 		stm->rp = (unsigned char *)state->buffer;
@@ -2392,10 +2421,7 @@ static int SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
 		ch = EOF;
 	}
 	else
-	{
-		jni_detach_thread(detach);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no bytes read");
-	}
+		fz_throw_and_detach_thread(ctx, detach, FZ_ERROR_GENERIC, "no bytes read");
 
 	jni_detach_thread(detach);
 	return ch;
@@ -2405,8 +2431,8 @@ static void SeekableOutputStream_write(fz_context *ctx, void *streamState_, cons
 {
 	SeekableStreamState *state = streamState_;
 	const jbyte *buffer = buffer_;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
@@ -2417,14 +2443,15 @@ static void SeekableOutputStream_write(fz_context *ctx, void *streamState_, cons
 		size_t n = fz_minz(count, sizeof(state->buffer));
 
 		(*env)->SetByteArrayRegion(env, state->array, 0, n, buffer);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java_and_detach_thread(ctx, env, detach);
+
 		buffer += n;
 		count -= n;
 
 		(*env)->CallVoidMethod(env, state->stream, mid_SeekableOutputStream_write, state->array, 0, n);
-		if ((*env)->ExceptionCheck(env)) {
-			jni_detach_thread(detach);
-			fz_throw_java(ctx, env);
-		}
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java_and_detach_thread(ctx, env, detach);
 	}
 
 	jni_detach_thread(detach);
@@ -2433,19 +2460,17 @@ static void SeekableOutputStream_write(fz_context *ctx, void *streamState_, cons
 static int64_t SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
-	JNIEnv *env;
-	int detach;
+	jboolean detach = JNI_FALSE;
 	int64_t pos = 0;
+	JNIEnv *env;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_tell");
 
 	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_position);
-	if ((*env)->ExceptionCheck(env)) {
-		jni_detach_thread(detach);
-		fz_throw_java(ctx, env);
-	}
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
 
 	jni_detach_thread(detach);
 
@@ -2455,8 +2480,8 @@ static int64_t SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
 static void SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
 	SeekableStreamState *state = stm->state;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 	int64_t pos;
 
 	env = jni_attach_thread(ctx, &detach);
@@ -2464,10 +2489,8 @@ static void SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t of
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_seek");
 
 	pos = (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
-	if ((*env)->ExceptionCheck(env)) {
-		jni_detach_thread(detach);
-		fz_throw_java(ctx, env);
-	}
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
 
 	stm->pos = pos;
 	stm->rp = stm->wp = (unsigned char *)state->buffer;
@@ -2478,18 +2501,16 @@ static void SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t of
 static void SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64_t offset, int whence)
 {
 	SeekableStreamState *state = streamState_;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_seek");
 
 	(void) (*env)->CallLongMethod(env, state->stream, mid_SeekableStream_seek, offset, whence);
-	if ((*env)->ExceptionCheck(env)) {
-		jni_detach_thread(detach);
-		fz_throw_java(ctx, env);
-	}
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
 
 	jni_detach_thread(detach);
 }
@@ -2497,8 +2518,8 @@ static void SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64
 static void SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL) {
@@ -2517,8 +2538,8 @@ static void SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 static void SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
 {
 	SeekableStreamState *state = streamState_;
+	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
-	int detach;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL) {
@@ -2769,6 +2790,8 @@ fz_java_device_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 	jstring jname;
 
 	jname = (*env)->NewStringUTF(env, name);
+	if (!jname || (*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginLayer, jname);
 	if ((*env)->ExceptionCheck(env))
@@ -4178,7 +4201,7 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 	if (!ctx | !pixmap) return NULL;
 
 	arr = (*env)->NewByteArray(env, size);
-	if (!arr) return NULL;
+	if (!arr) { jni_throw_run(env, "can not create byte array"); return NULL; }
 
 	(*env)->SetByteArrayRegion(env, arr, 0, size, (const jbyte *)pixmap->samples);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -4224,7 +4247,7 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 	}
 
 	arr = (*env)->NewIntArray(env, size);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	(*env)->SetIntArrayRegion(env, arr, 0, size, (const jint *)pixmap->samples);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -4711,7 +4734,7 @@ FUN(StrokeState_getDashes)(JNIEnv *env, jobject self)
 		return NULL; /* there are no dashes, so return NULL instead of empty array */
 
 	arr = (*env)->NewFloatArray(env, stroke->dash_len);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	(*env)->SetFloatArrayRegion(env, arr, 0, stroke->dash_len, &stroke->dash_list[0]);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -5820,20 +5843,25 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 	fz_var(outline);
 
 	fz_try(ctx)
+	{
 		outline = fz_load_outline(ctx, doc);
+		if (outline)
+		{
+			joutline = to_Outline_safe(ctx, env, doc, outline);
+			if (!joutline && !(*env)->ExceptionCheck(env))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "loadOutline failed");
+		}
+	}
+	fz_always(ctx)
+		fz_drop_outline(ctx, outline);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	if (outline)
-	{
-		joutline = to_Outline_safe(ctx, env, doc, outline);
-		if (!joutline)
-			jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed");
-		fz_drop_outline(ctx, outline);
-	}
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
 
 	return joutline;
 }
@@ -6098,7 +6126,7 @@ FUN(PDFPage_getAnnotations)(JNIEnv *env, jobject self)
 
 	/* now run through actually creating the annotation objects */
 	jannots = (*env)->NewObjectArray(env, annot_count, cls_PDFAnnotation, NULL);
-	if (!jannots) return NULL;
+	if (!jannots || (*env)->ExceptionCheck(env)) return NULL;
 
 	annot = annots;
 	for (i = 0; annot && i < annot_count; i++)
@@ -6149,8 +6177,7 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 		return NULL;
 
 	jwidgets = (*env)->NewObjectArray(env, count, cls_PDFWidget, NULL);
-	if (!jwidgets)
-		return NULL;
+	if (!jwidgets || (*env)->ExceptionCheck(env)) return NULL;
 
 	fz_try(ctx)
 	{
@@ -6373,28 +6400,30 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		fz_print_stext_page_as_html(ctx, out, text, page->number);
 		fz_print_stext_trailer_as_html(ctx, out);
 		fz_close_output(ctx, out);
+
+		len = fz_buffer_storage(ctx, buf, &data);
+		arr = (*env)->NewByteArray(env, (jsize)len);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		if (!arr)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create byte array");
+
+		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_output(ctx, out);
+		fz_drop_buffer(ctx, buf);
 		fz_drop_device(ctx, dev);
 		fz_drop_stext_page(ctx, text);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_buffer(ctx, buf);
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
-
-	len = fz_buffer_storage(ctx, buf, &data);
-	arr = (*env)->NewByteArray(env, (jsize)len);
-	if (arr)
-	{
-		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
-	}
-	fz_drop_buffer(ctx, buf);
-	if ((*env)->ExceptionCheck(env)) return NULL;
 
 	return arr;
 }
@@ -7138,7 +7167,7 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 	fz_stext_page *text = from_StructuredText(env, self);
 	fz_point pt1 = from_Point(env, jpt1);
 	fz_point pt2 = from_Point(env, jpt2);
-	jobject jstring = NULL;
+	jstring jstring = NULL;
 	char *s = NULL;
 
 	if (!ctx || !text) return NULL;
@@ -7146,15 +7175,17 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 	fz_var(s);
 
 	fz_try(ctx)
+	{
 		s = fz_copy_selection(ctx, text, pt1, pt2, 0);
+		jstring = (*env)->NewStringUTF(env, s);
+	}
+	fz_always(ctx)
+		fz_free(ctx, s);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
-
-	jstring = (*env)->NewStringUTF(env, s);
-	fz_free(ctx, s);
 
 	return jstring;
 }
@@ -8018,13 +8049,29 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	}
 
 	array = (*env)->NewByteArray(env, sizeof state->buffer);
-	if (array)
-		array = (*env)->NewGlobalRef(env, array);
+	if ((*env)->ExceptionCheck(env))
+	{
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		(*env)->DeleteGlobalRef(env, stream);
+		return;
+	}
 	if (!array)
 	{
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
+		jni_throw_run(env, "can not create byte array");
+		return;
+	}
+
+	array = (*env)->NewGlobalRef(env, array);
+	if (!array)
+	{
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		(*env)->DeleteGlobalRef(env, stream);
+		jni_throw_run(env, "can not create global reference");
 		return;
 	}
 
@@ -8373,21 +8420,23 @@ FUN(PDFObject_readStream)(JNIEnv *env, jobject self)
 	if (!ctx || !obj) return NULL;
 
 	fz_var(buf);
-
 	fz_try(ctx)
 	{
-		size_t len;
 		unsigned char *data;
+		size_t len;
 
 		buf = pdf_load_stream(ctx, obj);
 		len = fz_buffer_storage(ctx, buf, &data);
+
 		arr = (*env)->NewByteArray(env, (jsize)len);
-		if (arr)
-		{
-			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
-			if ((*env)->ExceptionCheck(env))
-				arr = NULL;
-		}
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		if (!arr)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "can not create byte array");
+
+		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) data);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -8411,7 +8460,6 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 	if (!ctx || !obj) return NULL;
 
 	fz_var(buf);
-
 	fz_try(ctx)
 	{
 		unsigned char *data;
@@ -8419,13 +8467,16 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 
 		buf = pdf_load_raw_stream(ctx, obj);
 		len = fz_buffer_storage(ctx, buf, &data);
+
 		arr = (*env)->NewByteArray(env, (jsize)len);
-		if (arr)
-		{
-			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
-			if ((*env)->ExceptionCheck(env))
-				arr = NULL;
-		}
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		if (!arr)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "can not create byte array");
+
+		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -8610,21 +8661,23 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return NULL;
+	if (!jname) { jni_throw_arg(env, "name must not be null"); return NULL; }
 
-	if (jname)
-		name = (*env)->GetStringUTFChars(env, jname, NULL);
-
-	if (name)
+	name = (*env)->GetStringUTFChars(env, jname, NULL);
+	if (!name)
 	{
-		fz_try(ctx)
-			val = pdf_dict_gets(ctx, dict, name);
-		fz_always(ctx)
-			(*env)->ReleaseStringUTFChars(env, jname, name);
-		fz_catch(ctx)
-		{
-			jni_rethrow(env, ctx);
-			return NULL;
-		}
+		jni_throw_run(env, "can not get name to lookup");
+		return NULL;
+	}
+
+	fz_try(ctx)
+		val = pdf_dict_gets(ctx, dict, name);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jname, name);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
 	}
 
 	return to_PDFObject_safe(ctx, env, self, val);
@@ -9165,7 +9218,13 @@ FUN(PDFObject_asByteString)(JNIEnv *env, jobject self)
 	}
 
 	jbs = (*env)->NewByteArray(env, len);
-	if (!jbs) return NULL;
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+	if (!jbs)
+	{
+		jni_throw_run(env, "can not create byte array");
+		return NULL;
+	}
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) return NULL;
 
@@ -9717,7 +9776,7 @@ FUN(PDFAnnotation_getColor)(JNIEnv *env, jobject self)
 	}
 
 	arr = (*env)->NewFloatArray(env, n);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	(*env)->SetFloatArrayRegion(env, arr, 0, n, &color[0]);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -9763,7 +9822,7 @@ FUN(PDFAnnotation_getInteriorColor)(JNIEnv *env, jobject self)
 	}
 
 	arr = (*env)->NewFloatArray(env, n);
-	if (!arr) return NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return NULL;
 
 	(*env)->SetFloatArrayRegion(env, arr, 0, n, &color[0]);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -10202,7 +10261,10 @@ FUN(PDFAnnotation_getLineEndingStyles)(JNIEnv *env, jobject self)
 
 	line_endings[0] = s;
 	line_endings[1] = e;
+
 	jline_endings = (*env)->NewIntArray(env, 2);
+	if (!jline_endings || (*env)->ExceptionCheck(env)) return NULL;
+
 	(*env)->SetIntArrayRegion(env, jline_endings, 0, 2, &line_endings[0]);
 	if ((*env)->ExceptionCheck(env)) return NULL;
 
@@ -10225,9 +10287,9 @@ FUN(PDFAnnotation_setLineEndingStyles)(JNIEnv *env, jobject self, jint start_sty
 
 static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
 {
-	JNIEnv *env;
-	int detach;
 	jobject jlistener = (jobject)data;
+	jboolean detach = JNI_FALSE;
+	JNIEnv *env;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
@@ -10238,30 +10300,22 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 	case PDF_DOCUMENT_EVENT_ALERT:
 		{
 			pdf_alert_event *alert;
-			jstring jstring;
+			jstring jstring = NULL;
 
 			alert = pdf_access_alert_event(ctx, event);
 
 			jstring = (*env)->NewStringUTF(env, alert->message);
-			if (!jstring)
-			{
-				jni_detach_thread(detach);
-				fz_throw_java(ctx, env);
-				return;
-			}
+			if (!jstring || (*env)->ExceptionCheck(env))
+				fz_throw_java_and_detach_thread(ctx, env, detach);
 
 			(*env)->CallVoidMethod(env, jlistener, mid_PDFDocument_JsEventListener_onAlert, jstring);
 			if ((*env)->ExceptionCheck(env))
-			{
-				jni_detach_thread(detach);
-				fz_throw_java(ctx, env);
-			}
+				fz_throw_java_and_detach_thread(ctx, env, detach);
 		}
 		break;
 
 	default:
-		jni_detach_thread(detach);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "event not yet implemented");
+		fz_throw_and_detach_thread(ctx, detach, FZ_ERROR_GENERIC, "event not yet implemented");
 		break;
 	}
 
@@ -10682,7 +10736,8 @@ FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 	}
 
 	array = (*env)->NewObjectArray(env, nchars, cls_Quad, NULL);
-	if (!array) {
+	if (!array || (*env)->ExceptionCheck(env))
+	{
 		fz_drop_stext_page(ctx, stext);
 		return NULL;
 	}
