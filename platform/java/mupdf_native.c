@@ -107,6 +107,10 @@ static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 static jclass cls_UnsupportedOperationException;
 static jclass cls_PDFWidget;
+static jclass cls_PKCS7Signer;
+static jclass cls_PKCS7Verifier;
+static jclass cls_PKCS7DesignatedName;
+static jclass cls_UnsupportedOperationException;
 
 static jfieldID fid_Buffer_pointer;
 static jfieldID fid_ColorSpace_pointer;
@@ -167,6 +171,13 @@ static jfieldID fid_PDFWidget_maxLen;
 static jfieldID fid_PDFWidget_options;
 static jfieldID fid_PDFWidget_pointer;
 static jfieldID fid_PDFWidget_textFormat;
+static jfieldID fid_PKCS7DesignatedName_cn;
+static jfieldID fid_PKCS7DesignatedName_c;
+static jfieldID fid_PKCS7DesignatedName_o;
+static jfieldID fid_PKCS7DesignatedName_ou;
+static jfieldID fid_PKCS7DesignatedName_email;
+static jfieldID fid_PKCS7Signer_pointer;
+static jfieldID fid_PKCS7Verifier_pointer;
 
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
@@ -238,6 +249,12 @@ static jmethodID mid_TextLine_init;
 static jmethodID mid_TextWalker_showGlyph;
 static jmethodID mid_Text_init;
 static jmethodID mid_PDFWidget_init;
+static jmethodID mid_PKCS7Signer_maxDigest;
+static jmethodID mid_PKCS7Signer_name;
+static jmethodID mid_PKCS7Signer_sign;
+static jmethodID mid_PKCS7Verifier_checkCertificate;
+static jmethodID mid_PKCS7Verifier_checkDigest;
+static jmethodID mid_PKCS7DesignatedName_init;
 
 #ifdef _WIN32
 static DWORD context_key;
@@ -749,6 +766,25 @@ static int find_fids(JNIEnv *env)
 	fid_PDFWidget_options = get_field(&err, env, "options", "[Ljava/lang/String;");
 	mid_PDFWidget_init = get_method(&err, env, "<init>", "(J)V");
 
+	cls_PKCS7Signer = get_class(&err, env, PKG"PKCS7Signer");
+	fid_PKCS7Signer_pointer = get_field(&err, env, "pointer", "J");
+	mid_PKCS7Signer_name = get_method(&err, env, "name", "()L"PKG"PKCS7DesignatedName;");
+	mid_PKCS7Signer_sign = get_method(&err, env, "sign", "(L"PKG"FitzInputStream;)[B");
+	mid_PKCS7Signer_maxDigest = get_method(&err, env, "maxDigest", "()I");
+
+	cls_PKCS7Verifier = get_class(&err, env, PKG"PKCS7Verifier");
+	fid_PKCS7Verifier_pointer = get_field(&err, env, "pointer", "J");
+	mid_PKCS7Verifier_checkCertificate = get_method(&err, env, "checkCertificate", "([B)I");
+	mid_PKCS7Verifier_checkDigest = get_method(&err, env, "checkDigest", "(L"PKG"FitzInputStream;[B)I");
+
+	cls_PKCS7DesignatedName = get_class(&err, env, PKG"PKCS7DesignatedName");
+	fid_PKCS7DesignatedName_cn = get_field(&err, env, "cn", "Ljava/lang/String;");
+	fid_PKCS7DesignatedName_c = get_field(&err, env, "c", "Ljava/lang/String;");
+	fid_PKCS7DesignatedName_o = get_field(&err, env, "o", "Ljava/lang/String;");
+	fid_PKCS7DesignatedName_ou = get_field(&err, env, "ou", "Ljava/lang/String;");
+	fid_PKCS7DesignatedName_email = get_field(&err, env, "email", "Ljava/lang/String;");
+	mid_PKCS7DesignatedName_init = get_method(&err, env, "<init>", "()V");
+
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
 	/* Standard Java classes */
@@ -866,6 +902,9 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 	(*env)->DeleteGlobalRef(env, cls_UnsupportedOperationException);
 	(*env)->DeleteGlobalRef(env, cls_PDFWidget);
+	(*env)->DeleteGlobalRef(env, cls_PKCS7Signer);
+	(*env)->DeleteGlobalRef(env, cls_PKCS7Verifier);
+	(*env)->DeleteGlobalRef(env, cls_PKCS7DesignatedName);
 }
 
 #ifdef HAVE_ANDROID
@@ -1425,21 +1464,42 @@ static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 	return jtext;
 }
 
-static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *color, jint n)
+static inline jbyteArray to_jbyteArray(fz_context *ctx, JNIEnv *env, const unsigned char *arr, jint n)
 {
-	jfloatArray arr;
+	jbyteArray jarr;
 
 	if (!ctx) return NULL;
 
-	arr = (*env)->NewFloatArray(env, n);
-	if (!arr)
+	jarr = (*env)->NewByteArray(env, n);
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
+	if (!jarr)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can not allocate byte array");
 
-	(*env)->SetFloatArrayRegion(env, arr, 0, n, color);
+	(*env)->SetByteArrayRegion(env, jarr, 0, n, (jbyte *) arr);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
-	return arr;
+	return jarr;
+}
+
+static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *arr, jint n)
+{
+	jfloatArray jarr;
+
+	if (!ctx) return NULL;
+
+	jarr = (*env)->NewFloatArray(env, n);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+	if (!jarr)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can not allocate float array");
+
+	(*env)->SetFloatArrayRegion(env, jarr, 0, n, arr);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+
+	return jarr;
 }
 
 /* Conversion functions: C to Java. None of these throw fitz exceptions. */
@@ -2239,6 +2299,18 @@ static inline pdf_widget *from_PDFWidget_safe(JNIEnv *env, jobject jobj)
 {
 	if (!jobj) return NULL;
 	return CAST(pdf_widget *, (*env)->GetLongField(env, jobj, fid_PDFWidget_pointer));
+}
+
+static inline pdf_pkcs7_signer *from_PKCS7Signer_safe(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(pdf_pkcs7_signer *, (*env)->GetLongField(env, jobj, fid_PKCS7Signer_pointer));
+}
+
+static inline java_pkcs7_verifier *from_PKCS7Verifier_safe(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(java_pkcs7_verifier *, (*env)->GetLongField(env, jobj, fid_PKCS7Verifier_pointer));
 }
 
 static inline fz_stream *from_FitzInputStream_safe(JNIEnv *env, jobject jobj)
@@ -10692,6 +10764,549 @@ FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
 
 	return val;
 }
+
+/* java interface to native form signing support */
+typedef struct
+{
+	pdf_pkcs7_signer base; // Mupdf callbacks
+	int refs;
+	jobject java_signer;
+} java_pkcs7_signer;
+
+static pdf_pkcs7_signer *signer_keep(fz_context *ctx, pdf_pkcs7_signer *signer_)
+{
+	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
+
+	if (!signer)
+		return NULL;
+
+	return fz_keep_imp(ctx, signer, &signer->refs);
+}
+
+static void signer_drop(fz_context *ctx, pdf_pkcs7_signer *signer_)
+{
+	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
+
+	if (!signer)
+		return;
+
+	if (fz_drop_imp(ctx, signer, &signer->refs))
+	{
+		jboolean detach = JNI_FALSE;
+		JNIEnv *env = NULL;
+
+		env = jni_attach_thread(ctx, &detach);
+		if (env == NULL)
+		{
+			fz_warn(ctx, "cannot attach to JVM in signer_drop");
+			fz_free(ctx, signer);
+			jni_detach_thread(detach);
+			return;
+		}
+
+		(*env)->DeleteGlobalRef(env, signer->java_signer);
+		fz_free(ctx, signer);
+
+		jni_detach_thread(detach);
+	}
+}
+
+static char *string_field_to_utfchars(fz_context *ctx, JNIEnv *env, jobject obj, jfieldID fid)
+{
+	const char *str = NULL;
+	char *val = NULL;
+	jobject jstr;
+
+	jstr = (*env)->GetObjectField(env, obj, fid);
+	if (!jstr)
+		return NULL;
+
+	str = (*env)->GetStringUTFChars(env, jstr, NULL);
+	if (!str)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot not get UTF string");
+
+	fz_try(ctx)
+		val = fz_strdup(ctx, str);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jstr, str);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return val;
+}
+
+static pdf_pkcs7_designated_name *signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer_)
+{
+	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
+	pdf_pkcs7_designated_name *name = NULL;
+	jboolean detach = JNI_FALSE;
+	jobject desname = NULL;
+	JNIEnv *env = NULL;
+
+	if (signer == NULL)
+		return NULL;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in pdf_pkcs7_designated_name");
+
+	desname = (*env)->CallObjectMethod(env, signer->java_signer, mid_PKCS7Signer_name);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
+	if (desname == NULL)
+		fz_throw_and_detach_thread(ctx, detach, FZ_ERROR_GENERIC, "cannot retrieve designated name");
+
+	fz_var(name);
+	fz_try(ctx)
+	{
+		name = fz_calloc(ctx, 1, sizeof(*name));
+		name->cn = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_cn);
+		name->o = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_o);
+		name->ou = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_ou);
+		name->email = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_email);
+		name->c = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_c);
+	}
+	fz_catch(ctx)
+	{
+		if (name) fz_free(ctx, name->c);
+		if (name) fz_free(ctx, name->email);
+		if (name) fz_free(ctx, name->ou);
+		if (name) fz_free(ctx, name->o);
+		if (name) fz_free(ctx, name->cn);
+		fz_free(ctx, name);
+		fz_rethrow_and_detach_thread(ctx, detach);
+	}
+
+	jni_detach_thread(detach);
+
+	return name;
+}
+
+static size_t signer_max_digest_size(fz_context *ctx, pdf_pkcs7_signer *signer_)
+{
+	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
+	jboolean detach = JNI_FALSE;
+	size_t max_digest = 0;
+	int len;
+
+	JNIEnv *env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in signer_max_digest_size");
+
+	/* get the size in bytes we should allow for the digest buffer */
+	len = (*env)->CallIntMethod(env, signer->java_signer, mid_PKCS7Signer_maxDigest);
+	if (len < 0)
+		len = 0;
+	max_digest = (size_t)len;
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
+
+	jni_detach_thread(detach);
+
+	return max_digest;
+}
+
+static int signer_create_digest(fz_context *ctx, pdf_pkcs7_signer *signer_, fz_stream *stm, unsigned char *digest, size_t digest_len)
+{
+	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
+	jobject jsigner = signer->java_signer;
+	jboolean detach = JNI_FALSE;
+	jobject jdigest;
+	jobject jstm;
+	int result = 1;
+
+	JNIEnv *env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in signer_create_digest");
+
+	jstm = to_FitzInputStream(ctx, env, stm);
+
+	jdigest = (*env)->CallObjectMethod(env, jsigner, mid_PKCS7Signer_sign, jstm);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
+	if (!jdigest)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "did not receive digest from signer");
+
+	if (digest != NULL)
+	{
+		jbyte *src = NULL;
+		int srclen = 0;
+
+		src = (*env)->GetByteArrayElements(env, jdigest, 0);
+		if (src == NULL)
+			fz_throw_and_detach_thread(ctx, detach, FZ_ERROR_GENERIC, "cannot get digest");
+
+		srclen = (*env)->GetArrayLength(env, jdigest);
+
+		if ((size_t)srclen > digest_len)
+		{
+			(*env)->ReleaseByteArrayElements(env, jdigest, src, JNI_ABORT);
+			fz_throw_and_detach_thread(ctx, detach, FZ_ERROR_GENERIC, "digest destination shorter than digest");
+		}
+
+		memcpy(digest, src, srclen);
+		result = srclen;
+
+		(*env)->ReleaseByteArrayElements(env, jdigest, src, JNI_ABORT);
+	}
+
+	jni_detach_thread(detach);
+
+	return result;
+}
+
+pdf_pkcs7_signer *pdf_pkcs7_java_signer_create(JNIEnv *env, fz_context *ctx, jobject java_signer)
+{
+	java_pkcs7_signer *signer = fz_calloc(ctx, 1, sizeof(*signer));
+
+	if (signer == NULL)
+		return NULL;
+
+	signer->base.keep = signer_keep;
+	signer->base.drop = signer_drop;
+	signer->base.get_signing_name = signer_designated_name;
+	signer->base.max_digest_size = signer_max_digest_size;
+	signer->base.create_digest = signer_create_digest;
+	signer->refs = 1;
+
+	signer->java_signer = (*env)->NewGlobalRef(env, java_signer);
+	if (signer->java_signer == NULL)
+	{
+		fz_free(ctx, signer);
+		return NULL;
+	}
+
+	return &signer->base;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_sign)(JNIEnv *env, jobject self, jobject signer)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	pdf_document *pdf = widget->page->doc;
+	pdf_pkcs7_signer *pkcs7signer = from_PKCS7Signer_safe(env, signer);
+
+	if (!ctx || !widget || !pdf)
+		return JNI_FALSE;
+
+	fz_try(ctx)
+	{
+		pdf_sign_signature(ctx, widget, pkcs7signer);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return JNI_FALSE;
+	}
+
+	return JNI_TRUE;
+}
+
+JNIEXPORT jlong JNICALL
+FUN(PKCS7Signer_newNative)(JNIEnv *env, jclass cls, jobject jsigner)
+{
+	fz_context *ctx = get_context(env);
+	pdf_pkcs7_signer *signer = NULL;
+
+	if (!ctx) return 0;
+	if (!jsigner) { jni_throw_arg(env, "signer must not be null"); return 0; }
+
+	jsigner = (*env)->NewGlobalRef(env, jsigner);
+	if (!jsigner)
+	{
+		jni_throw_arg(env, "unable to get reference to signer");
+		return 0;
+	}
+
+	fz_try(ctx)
+		signer = pdf_pkcs7_java_signer_create(env, ctx, jsigner);
+	fz_catch(ctx)
+	{
+		(*env)->DeleteGlobalRef(env, jsigner);
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return jlong_cast(signer);
+}
+
+
+JNIEXPORT void JNICALL
+FUN(PKCS7Signer_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_pkcs7_signer *signer = from_PKCS7Signer_safe(env, self);
+
+	if (!ctx || !signer)
+		return;
+
+	signer_drop(ctx, signer);
+	(*env)->SetLongField(env, self, fid_PKCS7Signer_pointer, (jlong)NULL);
+}
+
+static void java_pkcs7_drop_verifier(fz_context *ctx, pdf_pkcs7_verifier *verifier_)
+{
+	java_pkcs7_verifier *verifier = (java_pkcs7_verifier *) verifier_;
+	jboolean detach = JNI_FALSE;
+	JNIEnv *env = NULL;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (!env)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
+
+	(*env)->DeleteGlobalRef(env, verifier->jverifier);
+	fz_free(ctx, verifier);
+
+	jni_detach_thread(detach);
+}
+
+static pdf_signature_error java_pkcs7_check_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, unsigned char *signature, size_t len)
+{
+	java_pkcs7_verifier *pkcs7_verifier = (java_pkcs7_verifier *) verifier;
+	jobject jverifier = pkcs7_verifier->jverifier;
+	jint result = PDF_SIGNATURE_ERROR_UNKNOWN;
+	jboolean detach = JNI_FALSE;
+	JNIEnv *env = NULL;
+	jobject jsignature = NULL;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
+
+	fz_try(ctx)
+		jsignature = to_jbyteArray(ctx, env, signature, (int)len);
+	fz_catch(ctx)
+		fz_rethrow_and_detach_thread(ctx, detach);
+
+	result = (*env)->CallIntMethod(env, jverifier, mid_PKCS7Verifier_checkCertificate, jsignature);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
+
+	jni_detach_thread(detach);
+
+	return result;
+}
+
+static pdf_signature_error java_pkcs7_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifier, fz_stream *stm, unsigned char *signature, size_t len)
+{
+	java_pkcs7_verifier *pkcs7_verifier = (java_pkcs7_verifier *) verifier;
+	jobject jverifier = pkcs7_verifier->jverifier;
+	jint result = PDF_SIGNATURE_ERROR_UNKNOWN;
+	jboolean detach = JNI_FALSE;
+	jobject jsignature = NULL;
+	jobject jstm = NULL;
+	JNIEnv *env = NULL;
+
+	env = jni_attach_thread(ctx, &detach);
+	if (env == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
+
+	fz_try(ctx)
+	{
+		jsignature = to_jbyteArray(ctx, env, signature, (int)len);
+		jstm = to_FitzInputStream(ctx, env, stm);
+	}
+	fz_catch(ctx)
+		fz_rethrow_and_detach_thread(ctx, detach);
+
+	result = (*env)->CallIntMethod(env, jverifier, mid_PKCS7Verifier_checkDigest, jstm, jsignature);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java_and_detach_thread(ctx, env, detach);
+
+	jni_detach_thread(detach);
+
+	return result;
+}
+
+static pdf_pkcs7_verifier *java_pkcs7_new_verifier(fz_context *ctx, jobject jverifier)
+{
+	java_pkcs7_verifier *verifier = fz_malloc_struct(ctx, java_pkcs7_verifier);
+	verifier->base.drop = java_pkcs7_drop_verifier;
+	verifier->base.check_digest = java_pkcs7_check_digest;
+	verifier->base.check_certificate = java_pkcs7_check_certificate;
+	verifier->jverifier = jverifier;
+	return &verifier->base;
+}
+
+JNIEXPORT jlong JNICALL
+FUN(PKCS7Verifier_newNative)(JNIEnv *env, jobject self, jobject jverifier)
+{
+	fz_context *ctx = get_context(env);
+	pdf_pkcs7_verifier *verifier = NULL;
+
+	if (!ctx) return 0;
+	if (!jverifier) { jni_throw_arg(env, "verifier must not be null"); return 0; }
+
+	jverifier = (*env)->NewGlobalRef(env, jverifier);
+	if (!jverifier)
+	{
+		jni_throw_arg(env, "unable to get reference to verifier");
+		return 0;
+	}
+
+	fz_try(ctx)
+		verifier = java_pkcs7_new_verifier(ctx, jverifier);
+	fz_catch(ctx)
+	{
+		(*env)->DeleteGlobalRef(env, jverifier);
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return jlong_cast(verifier);
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFWidget_checkCertificate)(JNIEnv *env, jobject self, jobject jverifier)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	pdf_document *pdf = widget->page->doc;
+	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
+	pdf_signature_error ret = PDF_SIGNATURE_ERROR_UNKNOWN;
+
+	if (!ctx || !widget || !pdf) return PDF_SIGNATURE_ERROR_UNKNOWN;
+	if (!verifier) { jni_throw_arg(env, "verifier must not be null"); return PDF_SIGNATURE_ERROR_UNKNOWN; }
+
+	fz_try(ctx)
+		ret = pdf_check_certificate(ctx, &verifier->base, pdf, widget->obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return PDF_SIGNATURE_ERROR_UNKNOWN;
+	}
+
+	return ret;
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFWidget_checkDigest)(JNIEnv *env, jobject self, jobject jverifier)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	pdf_document *pdf = widget->page->doc;
+	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
+	pdf_signature_error ret = PDF_SIGNATURE_ERROR_UNKNOWN;
+
+	if (!ctx || !widget || !pdf) return PDF_SIGNATURE_ERROR_UNKNOWN;
+	if (!verifier) { jni_throw_arg(env, "verifier must not be null"); return PDF_SIGNATURE_ERROR_UNKNOWN; }
+
+	fz_try(ctx)
+		ret = pdf_check_digest(ctx, &verifier->base, pdf, widget->obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return PDF_SIGNATURE_ERROR_UNKNOWN;
+	}
+
+	return ret;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_incrementalChangeAfterSigning)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	pdf_document *pdf = widget->page->doc;
+	jboolean change = JNI_FALSE;
+
+	if (!ctx || !widget || !pdf) return JNI_FALSE;
+
+	fz_try(ctx)
+		change = pdf_signature_incremental_change_since_signing(ctx, pdf, widget->obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return JNI_FALSE;
+	}
+
+	return change;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFWidget_getDesignatedName)(JNIEnv *env, jobject self, jobject jverifier)
+{
+	fz_context *ctx = get_context(env);
+	pdf_widget *widget = from_PDFWidget_safe(env, self);
+	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
+	pdf_document *pdf = widget->page->doc;
+	jobject jcn, jo, jou, jemail, jc;
+	pdf_pkcs7_designated_name *name;
+	jobject jname;
+
+	if (!ctx || !widget || !pdf) return NULL;
+	if (!verifier) { jni_throw_arg(env, "verifier must not be null"); return NULL; }
+
+	jname = (*env)->NewObject(env, cls_PKCS7DesignatedName, mid_PKCS7DesignatedName_init);
+	if ((*env)->ExceptionCheck(env))
+		return NULL;
+	if (!jname)
+	{
+		jni_throw_run(env, "can not create designated name object");
+		return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		name = pdf_signature_get_signatory(ctx, &verifier->base, pdf, widget->obj);
+
+		jcn = (*env)->NewStringUTF(env, name->cn);
+		if (!jcn)
+			jni_throw_run(env, "cannot create common name string");
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		jo = (*env)->NewStringUTF(env, name->o);
+		if (!jo)
+			jni_throw_run(env, "cannot create organization string");
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		jou = (*env)->NewStringUTF(env, name->ou);
+		if (!jou)
+			jni_throw_run(env, "cannot create organizational unit string");
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		jemail = (*env)->NewStringUTF(env, name->email);
+		if (!jemail)
+			jni_throw_run(env, "cannot create email string");
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+		jc = (*env)->NewStringUTF(env, name->c);
+		if (!jc)
+			jni_throw_run(env, "cannot create country string");
+		if ((*env)->ExceptionCheck(env))
+			fz_throw_java(ctx, env);
+	}
+	fz_always(ctx)
+		pdf_signature_drop_designated_name(ctx, name);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_cn, jcn);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_o, jo);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_ou, jou);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_email, jemail);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_c, jc);
+
+	return jname;
+}
+
+JNIEXPORT void JNICALL
+FUN(PKCS7Verifier_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, self);
+
+	if (!ctx || !verifier)
+		return;
+
+	pdf_drop_verifier(ctx, &verifier->base);
+	(*env)->SetLongField(env, self, fid_PKCS7Verifier_pointer, (jlong) NULL);
+}
+
 JNIEXPORT jboolean JNICALL
 FUN(FitzInputStream_markSupported)(JNIEnv *env, jobject self)
 {
