@@ -113,60 +113,8 @@ void pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc);
 
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc);
 
-typedef enum
-{
-	PDF_SIGNATURE_ERROR_OKAY,
-	PDF_SIGNATURE_ERROR_NO_SIGNATURES,
-	PDF_SIGNATURE_ERROR_NO_CERTIFICATE,
-	PDF_SIGNATURE_ERROR_DIGEST_FAILURE,
-	PDF_SIGNATURE_ERROR_SELF_SIGNED,
-	PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN,
-	PDF_SIGNATURE_ERROR_NOT_TRUSTED,
-	PDF_SIGNATURE_ERROR_UNKNOWN
-} pdf_signature_error;
-
-typedef struct pdf_pkcs7_designated_name_s
-{
-	char *cn;
-	char *o;
-	char *ou;
-	char *email;
-	char *c;
-}
-pdf_pkcs7_designated_name;
-
-/* Object that can perform the cryptographic operation necessary for document signing */
-typedef struct pdf_pkcs7_signer_s pdf_pkcs7_signer;
-
-/* Increment the reference count for a signer object */
-typedef pdf_pkcs7_signer *(pdf_pkcs7_keep_fn)(pdf_pkcs7_signer *signer);
-
-/* Drop a reference for a signer object */
-typedef void (pdf_pkcs7_drop_fn)(pdf_pkcs7_signer *signer);
-
-/* Obtain the designated name information from a signer object */
-typedef pdf_pkcs7_designated_name *(pdf_pkcs7_designated_name_fn)(pdf_pkcs7_signer *signer);
-
-/* Free the resources associated with previously obtained designated name information */
-typedef void (pdf_pkcs7_drop_designated_name_fn)(pdf_pkcs7_signer *signer, pdf_pkcs7_designated_name *name);
-
-/* Predict the size of the digest. The actual digest returned by create_digest will be no greater in size */
-typedef size_t (pdf_pkcs7_max_digest_size_fn)(pdf_pkcs7_signer *signer);
-
-/* Create a signature based on ranges of bytes drawn from a stream */
-typedef int (pdf_pkcs7_create_digest_fn)(pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, size_t *digest_len);
-
-struct pdf_pkcs7_signer_s
-{
-	pdf_pkcs7_keep_fn *keep;
-	pdf_pkcs7_drop_fn *drop;
-	pdf_pkcs7_designated_name_fn *designated_name;
-	pdf_pkcs7_drop_designated_name_fn *drop_designated_name;
-	pdf_pkcs7_max_digest_size_fn *max_digest_size;
-	pdf_pkcs7_create_digest_fn *create_digest;
-};
-
 /* Unsaved signature fields */
+typedef struct pdf_pkcs7_signer_s pdf_pkcs7_signer;
 typedef struct pdf_unsaved_sig_s pdf_unsaved_sig;
 
 struct pdf_unsaved_sig_s

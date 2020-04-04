@@ -1629,7 +1629,7 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	indv = pdf_new_indirect(ctx, doc, vnum, 0);
 	pdf_dict_put_drop(ctx, field, PDF_NAME(V), indv);
 
-	max_digest_size = signer->max_digest_size(signer);
+	max_digest_size = signer->max_digest_size(ctx, signer);
 
 	fz_var(v);
 	fz_var(o);
