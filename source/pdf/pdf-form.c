@@ -119,42 +119,77 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	pdf_field_mark_dirty(ctx, obj);
 }
 
-static pdf_obj *find_field(fz_context *ctx, pdf_obj *dict, const char *name, int len)
+static pdf_obj *
+lookup_field_sub(fz_context *ctx, pdf_obj *dict, const char *str)
 {
-	int i, n = pdf_array_len(ctx, dict);
-	for (i = 0; i < n; i++)
+	pdf_obj *kids;
+	pdf_obj *name;
+
+	name = pdf_dict_get(ctx, dict, PDF_NAME(T));
+
+	/* If we have a name, check it matches. If it matches, consume that
+	 * portion of str. If not, exit. */
+	if (name)
 	{
-		pdf_obj *field = pdf_array_get(ctx, dict, i);
-		const char *part = pdf_dict_get_text_string(ctx, field, PDF_NAME(T));
-		if (strlen(part) == (size_t)len && !memcmp(part, name, len))
-			return field;
+		const char *match = pdf_to_text_string(ctx, name);
+		const char *e = str;
+		size_t len;
+		while (*e && *e != '.')
+			e++;
+		len = e-str;
+		if (strncmp(str, match, len) != 0 || (match[len] != 0 && match[len] != '.'))
+			/* name doesn't match. */
+			return NULL;
+		str = e;
+		if (*str == '.')
+			str++;
 	}
+
+	/* If there is a kids array, walk those looking for the appropriate one. */
+	kids = pdf_dict_get(ctx, dict, PDF_NAME(Kids));
+	if (kids)
+		return pdf_lookup_field(ctx, kids, str);
+
+	/* No Kids, so we're a terminal node. We accept it as the match if we've
+	 * exhausted the match string. */
+	if (*str == 0)
+		return dict;
+
 	return NULL;
 }
 
-pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, const char *name)
+pdf_obj *
+pdf_lookup_field(fz_context *ctx, pdf_obj *arr, const char *str)
 {
-	const char *dot;
-	const char *namep;
-	pdf_obj *dict = NULL;
-	int len;
+	int len = pdf_array_len(ctx, arr);
+	int i;
+	pdf_obj *found = NULL;
+	pdf_obj *k = NULL;
 
-	/* Process the fully qualified field name which has
-	* the partial names delimited by '.'. Pretend there
-	* was a preceding '.' to simplify the loop */
-	dot = name - 1;
+	fz_var(k);
 
-	while (dot && form)
+	fz_try(ctx)
 	{
-		namep = dot + 1;
-		dot = strchr(namep, '.');
-		len = dot ? dot - namep : (int)strlen(namep);
-		dict = find_field(ctx, form, namep, len);
-		if (dot)
-			form = pdf_dict_get(ctx, dict, PDF_NAME(Kids));
-	}
+		for (i = 0; found == NULL && i < len; i++)
+		{
+			k = pdf_array_get(ctx, arr, i);
 
-	return dict;
+			if (!pdf_mark_obj(ctx, k))
+			{
+				found = lookup_field_sub(ctx, k, str);
+				pdf_unmark_obj(ctx, k);
+				k = NULL;
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_unmark_obj(ctx, k);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return found;
 }
 
 static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
