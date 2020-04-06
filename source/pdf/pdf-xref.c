@@ -3919,11 +3919,31 @@ pdf_find_locked_fields_for_sig(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 
 	fz_try(ctx)
 	{
+		pdf_obj *ref;
+		int i, len;
+
 		/* Ensure it really is a sig */
 		if (!pdf_name_eq(ctx, pdf_dict_get(ctx, sig, PDF_NAME(Subtype)), PDF_NAME(Widget)) ||
 			!pdf_name_eq(ctx, pdf_dict_get_inheritable(ctx, sig, PDF_NAME(FT)), PDF_NAME(Sig)))
 			break;
 
+		/* Check the locking details given in the V (i.e. what the signature value
+		 * claims to lock). */
+		ref = pdf_dict_getp(ctx, sig, "V/Reference");
+		len = pdf_array_len(ctx, ref);
+		for (i = 0; i < len; i++)
+		{
+			pdf_obj *tp = pdf_dict_get(ctx, pdf_array_get(ctx, ref, i), PDF_NAME(TransformParams));
+			merge_lock_specification(ctx, fields, tp);
+		}
+
+		/* Also, check the locking details given in the Signature definition. This may
+		 * not strictly be necessary as it's supposed to be "what the form author told
+		 * the signature that it should lock". A well-formed signature should lock
+		 * at least that much (possibly with extra fields locked from the XFA). If the
+		 * signature doesn't lock as much as it was told to, we should be suspicious
+		 * of the signing application. It is not clear that this test is actually
+		 * necessary, or in keeping with what Acrobat does. */
 		merge_lock_specification(ctx, fields, pdf_dict_get(ctx, sig, PDF_NAME(Lock)));
 	}
 	fz_catch(ctx)
