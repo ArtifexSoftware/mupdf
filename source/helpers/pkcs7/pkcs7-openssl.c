@@ -735,11 +735,7 @@ static size_t max_digest_size(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	/* Perform a test digest generation to find the required size. Size
 	 * is assumed independent of data being hashed */
-	size_t digest_len = 0;
-
-	signer_create_digest(ctx, signer, NULL, NULL, digest_len);
-
-	return digest_len;
+	return signer_create_digest(ctx, signer, NULL, NULL, 0);
 }
 
 pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
