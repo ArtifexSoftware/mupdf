@@ -1339,12 +1339,15 @@ int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document
 int pdf_signature_is_signed(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
 	pdf_obj *v;
+	pdf_obj* vtype;
 
 	if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) != PDF_NAME(Sig))
 		return 0;
-	/* Signatures can only be signed if the value is a /Sig field. */
+	/* Signatures can only be signed if the value is a dictionary,
+	 * and if the value has a Type, it should be Sig. */
 	v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
-	return pdf_name_eq(ctx, pdf_dict_get(ctx, v, PDF_NAME(Type)), PDF_NAME(Sig));
+	vtype = pdf_dict_get(ctx, v, PDF_NAME(Type));
+	return pdf_is_dict(ctx, v) && (vtype ? pdf_name_eq(ctx, vtype, PDF_NAME(Sig)) : 1);
 }
 
 int pdf_widget_is_signed(fz_context *ctx, pdf_widget *widget)
