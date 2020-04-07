@@ -587,9 +587,6 @@
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
       <Filter>fitz</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\fitz\fitz-imp.h">
-      <Filter>fitz</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\fitz\glyph-cache-imp.h">
       <Filter>fitz</Filter>
     </ClInclude>

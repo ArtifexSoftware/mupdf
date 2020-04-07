@@ -1,6 +1,5 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "../../fitz/fitz-imp.h" /* for fz_keep/drop_imp */
 
 #include "mupdf/helpers/pkcs7-openssl.h"
 

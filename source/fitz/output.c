@@ -4,7 +4,6 @@
 #endif
 
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <errno.h>
 #include <stdarg.h>

@@ -1069,7 +1069,6 @@
     <ClInclude Include="..\..\include\mupdf\xps.h" />
     <ClInclude Include="..\..\source\fitz\colorspace-imp.h" />
     <ClInclude Include="..\..\source\fitz\draw-imp.h" />
-    <ClInclude Include="..\..\source\fitz\fitz-imp.h" />
     <ClInclude Include="..\..\source\fitz\glyph-cache-imp.h" />
     <ClInclude Include="..\..\source\fitz\html-tags.h" />
     <ClInclude Include="..\..\source\fitz\jmemcust.h" />
