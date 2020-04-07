@@ -10187,21 +10187,28 @@ FUN(PDFDocument_isJsSupported)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(PDFDocument_setJsEventListener)(JNIEnv *env, jobject self, jobject listener)
+FUN(PDFDocument_setJsEventListener)(JNIEnv *env, jobject self, jobject jlistener)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	void *data = NULL;
 
-	if (!ctx || !pdf)
+	if (!ctx || !pdf) return;
+	if (!jlistener) { jni_throw_arg(env, "listener must not be null"); return; }
+
+	jlistener = (*env)->NewGlobalRef(env, jlistener);
+	if (!jlistener)
+	{
+		jni_throw_arg(env, "unable to get reference to listener");
 		return;
+	}
 
 	fz_try(ctx)
 	{
 		data = pdf_get_doc_event_callback_data(ctx, pdf);
 		if (data)
 			(*env)->DeleteGlobalRef(env, data);
-		pdf_set_doc_event_callback(ctx, pdf, event_cb, (*env)->NewGlobalRef(env, listener));
+		pdf_set_doc_event_callback(ctx, pdf, event_cb, jlistener);
 	}
 	fz_catch(ctx)
 	{
