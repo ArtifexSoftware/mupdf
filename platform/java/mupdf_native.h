@@ -1945,6 +1945,38 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_setJsEventListene
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_calculate
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    countVersions
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countVersions
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    countUnsavedVersions
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countUnsavedVersions
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    validateChangeHistory
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_validateChangeHistory
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    wasPureXFA
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_wasPureXFA
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2702,6 +2734,22 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isEditing
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    validateSignature
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_validateSignature
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    isSigned
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isSigned
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
