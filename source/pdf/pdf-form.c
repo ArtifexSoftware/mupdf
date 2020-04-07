@@ -711,34 +711,48 @@ int pdf_field_display(fz_context *ctx, pdf_obj *field)
 static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare)
 {
 	char *res = NULL;
-	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
-	const char *lname = pdf_dict_get_text_string(ctx, field, PDF_NAME(T));
-	int llen = (int)strlen(lname);
+	pdf_obj *parent;
+	const char *lname;
+	int llen;
 
-	/*
-	 * If we found a name at this point in the field hierarchy
-	 * then we'll need extra space for it and a dot
-	 */
-	if (llen)
-		spare += llen+1;
-
-	if (parent)
+	fz_try(ctx)
 	{
-		res = get_field_name(ctx, parent, spare);
-	}
-	else
-	{
-		res = Memento_label(fz_malloc(ctx, spare+1), "form_field_name");
-		res[0] = 0;
-	}
+		if (pdf_mark_obj(ctx, field))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Cycle in field parents");
 
-	if (llen)
-	{
-		if (res[0])
-			strcat(res, ".");
+		parent = pdf_dict_get(ctx, field, PDF_NAME(Parent));
+		lname = pdf_dict_get_text_string(ctx, field, PDF_NAME(T));
+		llen = (int)strlen(lname);
 
-		strcat(res, lname);
+		/*
+		 * If we found a name at this point in the field hierarchy
+		 * then we'll need extra space for it and a dot
+		 */
+		if (llen)
+			spare += llen+1;
+
+		if (parent)
+		{
+			res = get_field_name(ctx, parent, spare);
+		}
+		else
+		{
+			res = Memento_label(fz_malloc(ctx, spare+1), "form_field_name");
+			res[0] = 0;
+		}
+
+		if (llen)
+		{
+			if (res[0])
+				strcat(res, ".");
+
+			strcat(res, lname);
+		}
 	}
+	fz_always(ctx)
+		pdf_unmark_obj(ctx, field);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return res;
 }
