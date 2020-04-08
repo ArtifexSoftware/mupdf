@@ -748,23 +748,25 @@ fz_debug_store_item(fz_context *ctx, void *state, void *key_, int keylen, void *
 	fz_item *item = item_;
 	int i;
 	char buf[256];
+	fz_output *out = (fz_output *)state;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	item->type->format_key(ctx, buf, sizeof buf, item->key);
 	fz_lock(ctx, FZ_LOCK_ALLOC);
-	printf("hash[");
+	fz_write_printf(ctx, out, "hash[");
 	for (i=0; i < keylen; ++i)
-		printf("%02x", key[i]);
-	printf("][refs=%d][size=%d] key=%s val=%p\n", item->val->refs, (int)item->size, buf, (void *)item->val);
+		fz_write_printf(ctx, out,"%02x", key[i]);
+	fz_write_printf(ctx, out, "][refs=%d][size=%d] key=%s val=%p\n", item->val->refs, (int)item->size, buf, (void *)item->val);
 }
 
 static void
-fz_debug_store_locked(fz_context *ctx)
+fz_debug_store_locked(fz_context *ctx, fz_output *out)
 {
 	fz_item *item, *next;
 	char buf[256];
 	fz_store *store = ctx->store;
+	size_t list_total = 0;
 
-	printf("-- resource store contents --\n");
+	fz_write_printf(ctx, out, "-- resource store contents --\n");
 
 	for (item = store->head; item; item = next)
 	{
@@ -777,8 +779,9 @@ fz_debug_store_locked(fz_context *ctx)
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 		item->type->format_key(ctx, buf, sizeof buf, item->key);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
-		printf("store[*][refs=%d][size=%d] key=%s val=%p\n",
+		fz_write_printf(ctx, out, "store[*][refs=%d][size=%d] key=%s val=%p\n",
 				item->val->refs, (int)item->size, buf, (void *)item->val);
+		list_total += item->size;
 		if (next)
 		{
 			(void)Memento_dropRef(next->val);
@@ -786,16 +789,18 @@ fz_debug_store_locked(fz_context *ctx)
 		}
 	}
 
-	printf("-- resource store hash contents --\n");
-	fz_hash_for_each(ctx, store->hash, NULL, fz_debug_store_item);
-	printf("-- end --\n");
+	fz_write_printf(ctx, out, "-- resource store hash contents --\n");
+	fz_hash_for_each(ctx, store->hash, out, fz_debug_store_item);
+	fz_write_printf(ctx, out, "-- end --\n");
+
+	fz_write_printf(ctx, out, "max=%zu, size=%zu, actual size=%zu\n", store->max, store->size, list_total);
 }
 
 void
-fz_debug_store(fz_context *ctx)
+fz_debug_store(fz_context *ctx, fz_output *out)
 {
 	fz_lock(ctx, FZ_LOCK_ALLOC);
-	fz_debug_store_locked(ctx);
+	fz_debug_store_locked(ctx, out);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 

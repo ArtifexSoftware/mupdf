@@ -2125,7 +2125,7 @@ static void cleanup(void)
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
-		fz_debug_store(ctx);
+		fz_debug_store(ctx, fz_stdout(ctx));
 #endif
 
 	fz_drop_output(ctx, trace_file);
