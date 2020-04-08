@@ -587,9 +587,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\source\fitz\colorspace-imp.h">
-      <Filter>fitz</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
       <Filter>fitz</Filter>
     </ClInclude>
