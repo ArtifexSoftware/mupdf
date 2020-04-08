@@ -986,7 +986,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\mupdf\fitz.h" />
-    <ClInclude Include="..\..\include\mupdf\fitz\annotation.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\archive.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\band-writer.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\bidi.h" />
