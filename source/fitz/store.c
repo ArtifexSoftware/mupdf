@@ -38,6 +38,7 @@ struct fz_store_s
 
 	int defer_reap_count;
 	int needs_reaping;
+	int scavenging;
 };
 
 /*
@@ -813,6 +814,22 @@ scavenge(fz_context *ctx, size_t tofree)
 	size_t count = 0;
 	fz_item *item, *prev;
 
+/*
+There is a better algorithm to be had here. Currently, we might throw away
+loads of small objects, then find a single large object that was large
+enough to get us down enough all in one go.
+
+A better algorithm would run through until we've found enough objects
+to evict to make up the total, and evict the largest one. Then repeat to
+free however much memory we still need. This is nastily n^2, but can maybe
+be improved.
+*/
+
+	if (store->scavenging)
+		return 0;
+
+	store->scavenging = 1;
+
 	/* Free the items */
 	for (item = store->tail; item; item = prev)
 	{
@@ -831,6 +848,7 @@ scavenge(fz_context *ctx, size_t tofree)
 			prev = store->tail;
 		}
 	}
+	store->scavenging = 0;
 	/* Success is managing to evict any blocks */
 	return count != 0;
 }
