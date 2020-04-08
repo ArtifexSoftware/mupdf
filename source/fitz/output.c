@@ -300,7 +300,7 @@ fz_drop_output(fz_context *ctx, fz_output *out)
 		if (out->drop)
 			out->drop(ctx, out->state);
 		fz_free(ctx, out->bp);
-		if (out != &fz_stdout_global)
+		if (out != &fz_stdout_global && out != &fz_stderr_global)
 			fz_free(ctx, out);
 	}
 }
