@@ -805,52 +805,74 @@ fz_debug_store(fz_context *ctx, fz_output *out)
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
-/* This is now an n^2 algorithm - not ideal, but it'll only be bad if we are
- * actually managing to scavenge lots of blocks back. */
+/*
+	Consider if we have blocks of the following sizes in the store, from oldest
+	to newest:
+
+	A 32
+	B 64
+	C 128
+	D 256
+
+	Further suppose we need to free 97 bytes. Naively freeing blocks until we have
+	freed enough would mean we'd free A, B and C, when we could have freed just C.
+
+	We are forced into an n^2 algorithm by the need to drop the lock as part of the
+	eviction, so we might as well embrace it and go for a solution that properly
+	drops just C.
+
+	The algorithm used is to scan the list of blocks from oldest to newest, counting
+	how many bytes we can free in the blocks we pass. We stop this scan when we have
+	found enough blocks. We then free the largest block. This releases the lock
+	momentarily, which means we have to start the scan process all over again, so
+	we repeat. This guarantees we only evict a minimum of blocks, but does mean we
+	scan more blocks than we'd ideally like.
+ */
 static int
 scavenge(fz_context *ctx, size_t tofree)
 {
 	fz_store *store = ctx->store;
-	size_t count = 0;
-	fz_item *item, *prev;
-
-/*
-There is a better algorithm to be had here. Currently, we might throw away
-loads of small objects, then find a single large object that was large
-enough to get us down enough all in one go.
-
-A better algorithm would run through until we've found enough objects
-to evict to make up the total, and evict the largest one. Then repeat to
-free however much memory we still need. This is nastily n^2, but can maybe
-be improved.
-*/
+	size_t freed = 0;
+	fz_item *item;
 
 	if (store->scavenging)
 		return 0;
 
 	store->scavenging = 1;
 
-	/* Free the items */
-	for (item = store->tail; item; item = prev)
+	do
 	{
-		prev = item->prev;
-		if (item->val->refs == 1)
+		/* Count through a suffix of objects in the store until
+		 * we find enough to give us what we need to evict. */
+		size_t suffix_size = 0;
+		fz_item *largest = NULL;
+
+		for (item = store->tail; item; item = item->prev)
 		{
-			/* Free this item */
-			count += item->size;
-			evict(ctx, item); /* Drops then retakes lock */
-
-			if (count >= tofree)
-				break;
-
-			/* Have to restart search again, as prev may no longer
-			 * be valid due to release of lock in evict. */
-			prev = store->tail;
+			if (item->val->refs == 1)
+			{
+				/* This one is evictable */
+				suffix_size += item->size;
+				if (largest == NULL || item->size > largest->size)
+					largest = item;
+				if (suffix_size >= tofree - freed)
+					break;
+			}
 		}
+
+		/* If there are no evictable blocks, we can't find anything to free. */
+		if (largest == NULL)
+			break;
+
+		/* Free largest. */
+		freed += largest->size;
+		evict(ctx, largest); /* Drops then retakes lock */
 	}
+	while (freed < tofree);
+
 	store->scavenging = 0;
 	/* Success is managing to evict any blocks */
-	return count != 0;
+	return freed != 0;
 }
 
 void
