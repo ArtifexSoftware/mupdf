@@ -870,6 +870,7 @@
     <ClCompile Include="..\..\source\fitz\load-png.c" />
     <ClCompile Include="..\..\source\fitz\load-pnm.c" />
     <ClCompile Include="..\..\source\fitz\load-tiff.c" />
+    <ClCompile Include="..\..\source\fitz\log.c" />
     <ClCompile Include="..\..\source\fitz\memento.c" />
     <ClCompile Include="..\..\source\fitz\memory.c" />
     <ClCompile Include="..\..\source\fitz\noto.c" />
@@ -1011,6 +1012,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\image-list.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\image.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\log.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\outline.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\output-pcl.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\output-pclm.h" />

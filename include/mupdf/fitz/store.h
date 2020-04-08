@@ -4,6 +4,7 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/output.h"
+#include "mupdf/fitz/log.h"
 
 /*
 	Resource store
@@ -187,5 +188,19 @@ void fz_debug_store(fz_context *ctx, fz_output *out);
 void fz_defer_reap_start(fz_context *ctx);
 
 void fz_defer_reap_end(fz_context *ctx);
+
+#ifdef ENABLE_STORE_LOGGING
+
+void fz_log_dump_store(fz_context *ctx, const char *fmt, ...);
+
+#define FZ_LOG_STORE(CTX, ...) fz_log_module(CTX, "STORE", __VA_ARGS__)
+#define FZ_LOG_DUMP_STORE(...) fz_log_dump_store(__VA_ARGS__)
+
+#else
+
+#define FZ_LOG_STORE(...) do {} while (0)
+#define FZ_LOG_DUMP_STORE(...) do {} while (0)
+
+#endif
 
 #endif

@@ -820,6 +820,8 @@ void render_page(void)
 
 	ui_texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
+
+	FZ_LOG_DUMP_STORE(ctx, "Store state after page render:\n");
 }
 
 void render_page_if_changed(void)

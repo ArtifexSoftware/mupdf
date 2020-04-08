@@ -582,6 +582,9 @@
     <ClCompile Include="..\..\source\fitz\encode-fax.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\log.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\colorspace-imp.h">
@@ -852,6 +855,9 @@
       <Filter>!include\fitz</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\fitz\xml.h">
+      <Filter>!include\fitz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\log.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
   </ItemGroup>
