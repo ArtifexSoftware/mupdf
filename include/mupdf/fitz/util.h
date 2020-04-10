@@ -52,9 +52,24 @@ int fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const c
 int fz_search_chapter_page_number(fz_context *ctx, fz_document *doc, int chapter, int page, const char *needle, fz_quad *hit_bbox, int hit_max);
 int fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_quad *hit_bbox, int hit_max);
 
+/*
+	Parse an SVG document into a display-list.
+*/
 fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, const char *base_uri, fz_archive *zip, float *w, float *h);
+
+/*
+	Create a scalable image from an SVG document.
+*/
 fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf, const char *base_uri, fz_archive *zip);
+
+/*
+	Parse an SVG document into a display-list.
+*/
 fz_display_list *fz_new_display_list_from_svg_xml(fz_context *ctx, fz_xml *xml, const char *base_uri, fz_archive *zip, float *w, float *h);
+
+/*
+	Create a scalable image from an SVG document.
+*/
 fz_image *fz_new_image_from_svg_xml(fz_context *ctx, fz_xml *xml, const char *base_uri, fz_archive *zip);
 
 /*
