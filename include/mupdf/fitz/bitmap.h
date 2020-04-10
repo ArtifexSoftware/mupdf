@@ -12,7 +12,20 @@
 */
 typedef struct fz_bitmap_s fz_bitmap;
 
+/*
+	Take an additional reference to the bitmap. The same pointer
+	is returned.
+
+	Never throws exceptions.
+*/
 fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
+
+/*
+	Drop a reference to the bitmap. When the reference count reaches
+	zero, the bitmap will be destroyed.
+
+	Never throws exceptions.
+*/
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
@@ -85,6 +98,11 @@ fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yre
 */
 void fz_bitmap_details(fz_bitmap *bitmap, int *w, int *h, int *n, int *stride);
 
+/*
+	Set the entire bitmap to 0.
+
+	Never throws exceptions.
+*/
 void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
@@ -99,7 +117,20 @@ void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 */
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 
+/*
+	Take an additional reference to the halftone. The same pointer
+	is returned.
+
+	Never throws exceptions.
+*/
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
+
+/*
+	Drop a reference to the halftone. When the reference count
+	reaches zero, the halftone is destroyed.
+
+	Never throws exceptions.
+*/
 void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);
 
 /* Implementation details: subject to change. */

@@ -1,4 +1,6 @@
 #include "mupdf/fitz.h"
+
+#include "color-imp.h"
 #include "draw-imp.h"
 
 #include <assert.h>

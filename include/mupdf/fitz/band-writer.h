@@ -44,6 +44,12 @@ void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int 
 */
 void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples);
 
+/*
+	Drop the reference to the band writer, causing it to be
+	destroyed.
+
+	Never throws an exception.
+*/
 void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer);
 
 /* Implementation details: subject to change. */

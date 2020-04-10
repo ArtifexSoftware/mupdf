@@ -22,6 +22,8 @@
 
 #include "mupdf/fitz/system.h"
 
+/* Implementation details: subject to change. */
+
 typedef enum fz_bidi_direction_e
 {
 	FZ_BIDI_LTR = 0,

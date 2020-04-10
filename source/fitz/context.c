@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "context-imp.h"
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>

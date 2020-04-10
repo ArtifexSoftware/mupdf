@@ -1,4 +1,6 @@
-#include <mupdf/fitz.h>
+#include "mupdf/fitz.h"
+
+#include "color-imp.h"
 
 typedef struct fz_test_device_s
 {

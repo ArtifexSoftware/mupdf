@@ -74,7 +74,21 @@ fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 */
 void fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_rect scissor, fz_cookie *cookie);
 
+/*
+	Increment the reference count for a display list. Returns the
+	same pointer.
+
+	Never throws exceptions.
+*/
 fz_display_list *fz_keep_display_list(fz_context *ctx, fz_display_list *list);
+
+/*
+	Decrement the reference count for a display list. When the
+	reference count reaches zero, all the references in the display
+	list itself are dropped, and the display list is freed.
+
+	Never throws exceptions.
+*/
 void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 
 /*

@@ -2326,6 +2326,14 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 	return -1;
 }
 
+
+static fz_location
+pdf_resolve_link_imp(fz_context *ctx, fz_document *doc_, const char *uri, float *xp, float *yp)
+{
+	pdf_document *doc = (pdf_document*)doc_;
+	return fz_make_location(0, pdf_resolve_link(ctx, doc, uri, xp, yp));
+}
+
 /*
 	Initializers for the fz_document interface.
 

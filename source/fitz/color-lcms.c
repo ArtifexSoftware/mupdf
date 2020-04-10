@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "color-imp.h"
+
 #if FZ_ENABLE_ICC
 
 #ifndef LCMS_USE_FLOAT
