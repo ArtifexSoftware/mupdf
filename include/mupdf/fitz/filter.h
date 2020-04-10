@@ -16,18 +16,20 @@ typedef struct
 } fz_range;
 
 /*
-	The null filter reads a specified amount of data from the substream.
+	The null filter reads a specified amount of data from the
+	substream.
 */
 fz_stream *fz_open_null_filter(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
 
 /*
-	The range filter copies data from specified ranges of the chained stream.
+	The range filter copies data from specified ranges of the
+	chained stream.
 */
 fz_stream *fz_open_range_filter(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nranges);
 
 /*
-	The endstream filter reads a PDF substream, and starts to look for an 'endstream' token
-	after the specified length.
+	The endstream filter reads a PDF substream, and starts to look
+	for an 'endstream' token after the specified length.
 */
 fz_stream *fz_open_endstream_filter(fz_context *ctx, fz_stream *chain, int len, int64_t offset);
 
@@ -35,7 +37,13 @@ fz_stream *fz_open_endstream_filter(fz_context *ctx, fz_stream *chain, int len, 
 	Concat filter concatenates several streams into one.
 */
 fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);
-void fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain); /* Ownership of chain is passed in */
+
+/*
+	Add a chained stream to the end of the concatenate filter.
+
+	Ownership of chain is passed in.
+*/
+void fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain);
 
 /*
 	arc4 filter performs RC4 decoding of data read from the chained
@@ -86,31 +94,35 @@ fz_stream *fz_open_dctd(fz_context *ctx, fz_stream *chain, int color_transform, 
 	faxd filter performs FAX decoding of data read from
 	the chained filter.
 
-	k - see fax specification (fax default is 0).
+	k: see fax specification (fax default is 0).
 
-	end_of_line - whether we expect end of line markers (fax default is 0).
+	end_of_line: whether we expect end of line markers (fax default
+	is 0).
 
-	encoded_byte_align - whether we align to bytes after each line (fax default is 0).
+	encoded_byte_align: whether we align to bytes after each line
+	(fax default is 0).
 
-	columns - how many columns in the image (fax default is 1728).
+	columns: how many columns in the image (fax default is 1728).
 
-	rows - 0 for unspecified or the number of rows of data to expect.
+	rows: 0 for unspecified or the number of rows of data to expect.
 
-	end_of_block - whether we expect end of block markers (fax default is 1).
+	end_of_block: whether we expect end of block markers (fax
+	default is 1).
 
-	black_is_1 - determines the polarity of the image (fax default is 0).
+	black_is_1: determines the polarity of the image (fax default is
+	0).
 */
 fz_stream *fz_open_faxd(fz_context *ctx, fz_stream *chain,
 	int k, int end_of_line, int encoded_byte_align,
 	int columns, int rows, int end_of_block, int black_is_1);
 
 /*
-	flated filter performs LZ77 decoding (inflating) of data read from
-	the chained filter.
+	flated filter performs LZ77 decoding (inflating) of data read
+	from the chained filter.
 
-	window_bits: How large a decompression window to use. Typically 15.
-	A negative number, -n, means to use n bits, but to expect raw
-	data with no header.
+	window_bits: How large a decompression window to use. Typically
+	15. A negative number, -n, means to use n bits, but to expect
+	raw data with no header.
 */
 fz_stream *fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits);
 
@@ -118,16 +130,17 @@ fz_stream *fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits);
 	lzwd filter performs LZW decoding of data read from the chained
 	filter.
 
-	early_change: (Default 1) specifies whether to change codes 1 bit
-	early.
+	early_change: (Default 1) specifies whether to change codes 1
+	bit early.
 
-	min_bits: (Default 9) specifies the minimum number of bits to use.
+	min_bits: (Default 9) specifies the minimum number of bits to
+	use.
 
-	reverse_bits: (Default 0) allows for compatibility with gif and old
-	style tiffs (1).
+	reverse_bits: (Default 0) allows for compatibility with gif and
+	old style tiffs (1).
 
-	old_tiff: (Default 0) allows for different handling of the clear code,
-	as found in old style tiffs.
+	old_tiff: (Default 0) allows for different handling of the clear
+	code, as found in old style tiffs.
 */
 fz_stream *fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, int reverse_bits, int old_tiff);
 

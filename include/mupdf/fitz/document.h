@@ -131,8 +131,8 @@ typedef fz_location (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *
 
 /*
 	Type for a function to be called to
-	count the number of chapters in a document. See fz_count_chapters for
-	more information.
+	count the number of chapters in a document. See
+	fz_count_chapters for more information.
 */
 typedef int (fz_document_count_chapters_fn)(fz_context *ctx, fz_document *doc);
 
@@ -294,8 +294,7 @@ struct fz_document_s
 };
 
 /*
-	Function type to open a document from a
-	file.
+	Function type to open a document from a file.
 
 	filename: file to open
 
@@ -415,7 +414,8 @@ fz_document *fz_open_accelerated_document(fz_context *ctx, const char *filename,
 	Open a document using the specified stream object rather than
 	opening a file on disk.
 
-	magic: a string used to detect document type; either a file name or mime-type.
+	magic: a string used to detect document type; either a file name
+	or mime-type.
 */
 fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
 
@@ -423,7 +423,8 @@ fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz
 	Open a document using the specified stream object rather than
 	opening a file on disk.
 
-	magic: a string used to detect document type; either a file name or mime-type.
+	magic: a string used to detect document type; either a file name
+	or mime-type.
 */
 fz_document *fz_open_accelerated_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream, fz_stream *accel);
 
@@ -486,9 +487,9 @@ int fz_is_document_reflowable(fz_context *ctx, fz_document *doc);
 void fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em);
 
 /*
-	Create a bookmark for the given page, which can be used to find the
-	same location after the document has been laid out with different
-	parameters.
+	Create a bookmark for the given page, which can be used to find
+	the same location after the document has been laid out with
+	different parameters.
 */
 fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, fz_location loc);
 
@@ -627,11 +628,12 @@ void fz_drop_page(fz_context *ctx, fz_page *page);
 
 	transition: A pointer to a transition struct to fill out.
 
-	duration: A pointer to a place to set the page duration in seconds.
-	Will be set to 0 if no transition is specified for the page.
+	duration: A pointer to a place to set the page duration in
+	seconds. Will be set to 0 if no transition is specified for the
+	page.
 
-	Returns: a pointer to the transition structure, or NULL if there is no
-	transition specified for the page.
+	Returns: a pointer to the transition structure, or NULL if there
+	is no transition specified for the page.
 */
 fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
@@ -661,12 +663,14 @@ int fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p);
 		'info:CreationDate'
 		'info:ModDate'
 
-	buf: The buffer to hold the results (a nul-terminated UTF-8 string).
+	buf: The buffer to hold the results (a nul-terminated UTF-8
+	string).
 
 	size: Size of 'buf'.
 
-	Returns the size of the output string (may be larger than 'size' if
-	the output was truncated), or -1 if the key is not recognized or found.
+	Returns the size of the output string (may be larger than 'size'
+	if the output was truncated), or -1 if the key is not recognized
+	or found.
 */
 int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
 
@@ -677,7 +681,8 @@ int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char 
 #define FZ_META_INFO_TITLE "info:Title"
 
 /*
-	Find the output intent colorspace if the document has defined one.
+	Find the output intent colorspace if the document has defined
+	one.
 */
 fz_colorspace *fz_document_output_intent(fz_context *ctx, fz_document *doc);
 

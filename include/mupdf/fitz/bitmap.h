@@ -6,9 +6,9 @@
 #include "mupdf/fitz/pixmap.h"
 
 /*
-	Bitmaps have 1 bit per component. Only used for creating halftoned
-	versions of contone buffers, and saving out. Samples are stored msb
-	first, akin to pbms.
+	Bitmaps have 1 bit per component. Only used for creating
+	halftoned versions of contone buffers, and saving out. Samples
+	are stored msb first, akin to pbms.
 */
 typedef struct fz_bitmap_s fz_bitmap;
 
@@ -17,18 +17,18 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
 	A halftone is a set of threshold tiles, one per component. Each
-	threshold tile is a pixmap, possibly of varying sizes and phases.
-	Currently, we only provide one 'default' halftone tile for operating
-	on 1 component plus alpha pixmaps (where the alpha is ignored). This
-	is signified by a fz_halftone pointer to NULL.
+	threshold tile is a pixmap, possibly of varying sizes and
+	phases. Currently, we only provide one 'default' halftone tile
+	for operating on 1 component plus alpha pixmaps (where the alpha
+	is ignored). This is signified by a fz_halftone pointer to NULL.
 */
 typedef struct fz_halftone_s fz_halftone;
 
 /*
 	Make a bitmap from a pixmap and a halftone.
 
-	pix: The pixmap to generate from. Currently must be a single color
-	component with no alpha.
+	pix: The pixmap to generate from. Currently must be a single
+	color component with no alpha.
 
 	ht: The halftone to use. NULL implies the default halftone.
 
@@ -42,8 +42,8 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 	halftone, allowing for the position of the pixmap within an
 	overall banded rendering.
 
-	pix: The pixmap to generate from. Currently must be a single color
-	component with no alpha.
+	pix: The pixmap to generate from. Currently must be a single
+	color component with no alpha.
 
 	ht: The halftone to use. NULL implies the default halftone.
 
@@ -78,7 +78,8 @@ fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yre
 
 	h: Pointer to storage to retrieve height (or NULL).
 
-	n: Pointer to storage to retrieve number of color components (or NULL).
+	n: Pointer to storage to retrieve number of color components (or
+	NULL).
 
 	stride: Pointer to storage to retrieve bitmap stride (or NULL).
 */
@@ -101,7 +102,7 @@ fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);
 
-/* Implementation details - Subject to change. */
+/* Implementation details: subject to change. */
 
 struct fz_bitmap_s
 {

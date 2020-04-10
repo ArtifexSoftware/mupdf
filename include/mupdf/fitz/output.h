@@ -8,8 +8,8 @@
 #include "mupdf/fitz/stream.h"
 
 /*
-	Generic output streams - generalise between outputting to a file,
-	a buffer, etc.
+	Generic output streams - generalise between outputting to a
+	file, a buffer, etc.
 */
 typedef struct fz_output_s fz_output;
 
@@ -58,8 +58,8 @@ typedef void (fz_output_close_fn)(fz_context *ctx, void *state);
 /*
 	A function type for use when implementing
 	fz_outputs. The supplied function of this type is called
-	when the output stream is dropped, to release the stream specific
-	state information.
+	when the output stream is dropped, to release the stream
+	specific state information.
 */
 typedef void (fz_output_drop_fn)(fz_context *ctx, void *state);
 
@@ -175,10 +175,10 @@ void fz_drop_output(fz_context *, fz_output *);
 /*
 	obtain the fz_output in the form of a fz_stream
 
-	This allows data to be read back from some forms of fz_output object.
-	When finished reading, the fz_stream should be released by calling
-	fz_drop_stream. Until the fz_stream is dropped, no further operations
-	should be performed on the fz_output object.
+	This allows data to be read back from some forms of fz_output
+	object. When finished reading, the fz_stream should be released
+	by calling fz_drop_stream. Until the fz_stream is dropped, no
+	further operations should be performed on the fz_output object.
 */
 fz_stream *fz_stream_from_output(fz_context *, fz_output *);
 
@@ -221,12 +221,15 @@ void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, in
 /*
 	Our customised 'printf'-like string formatter.
 	Takes %c, %d, %s, %u, %x, as usual.
-	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03u, %04x, etc).
-	%g output in "as short as possible hopefully lossless non-exponent" form,
-	see fz_ftoa for specifics.
+	Modifiers are not supported except for zero-padding ints (e.g.
+	%02d, %03u, %04x, etc).
+	%g output in "as short as possible hopefully lossless
+	non-exponent" form, see fz_ftoa for specifics.
 	%f and %e output as usual.
 	%C outputs a utf8 encoded int.
-	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
+	%M outputs a fz_matrix*.
+	%R outputs a fz_rect*.
+	%P outputs a fz_point*.
 	%n outputs a PDF name (with appropriate escaping).
 	%q and %( output escaped strings in C/PDF syntax.
 	%l{d,u,x} indicates that the values are int64_t.
@@ -234,7 +237,8 @@ void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, in
 
 	user: An opaque pointer that is passed to the emit function.
 
-	emit: A function pointer called to emit output bytes as the string is being formatted.
+	emit: A function pointer called to emit output bytes as the
+	string is being formatted.
 */
 void fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args);
 
@@ -255,15 +259,15 @@ void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
 /*
 	Compression and other filtering outputs.
 
-	These outputs write encoded data to another output. Create a filter
-	output with the destination, write to the filter, then close and drop
-	it when you're done. These can also be chained together, for example to
-	write ASCII Hex encoded, Deflate compressed, and RC4 encrypted data to
-	a buffer output.
+	These outputs write encoded data to another output. Create a
+	filter output with the destination, write to the filter, then
+	close and drop it when you're done. These can also be chained
+	together, for example to write ASCII Hex encoded, Deflate
+	compressed, and RC4 encrypted data to a buffer output.
 
-	Output streams don't use reference counting, so make sure to close all
-	of the filters in the reverse order of creation so that data is flushed
-	properly.
+	Output streams don't use reference counting, so make sure to
+	close all of the filters in the reverse order of creation so
+	that data is flushed properly.
 */
 
 fz_output *fz_new_asciihex_output(fz_context *ctx, fz_output *chain);

@@ -38,12 +38,12 @@ unsigned char *fz_new_deflated_data(fz_context *ctx, size_t *compressed_length, 
 
 /*
 	Compress the contents of a fz_buffer into a
-	new block malloced for that purpose. *compressed_length is updated
-	on exit to contain the size used. Ownership of the block is
-	returned from this function, and the caller is therefore responsible
-	for freeing it. The block may be considerably larger than is
-	actually required. The caller is free to fz_realloc it down if it
-	wants to.
+	new block malloced for that purpose. *compressed_length is
+	updated on exit to contain the size used. Ownership of the block
+	is returned from this function, and the caller is therefore
+	responsible for freeing it. The block may be considerably larger
+	than is actually required. The caller is free to fz_realloc it
+	down if it wants to.
 */
 unsigned char *fz_new_deflated_data_from_buffer(fz_context *ctx, size_t *compressed_length, fz_buffer *buffer, fz_deflate_level level);
 
@@ -56,8 +56,8 @@ fz_buffer *fz_compress_ccitt_fax_g3(fz_context *ctx, const unsigned char *data, 
 
 /*
 	Compress bitmap data as CCITT Group 4 2D fax image.
-	Creates a stream assuming the default PDF parameters, except K=-1
-	and the number of columns.
+	Creates a stream assuming the default PDF parameters, except
+	K=-1 and the number of columns.
 */
 fz_buffer *fz_compress_ccitt_fax_g4(fz_context *ctx, const unsigned char *data, int columns, int rows);
 

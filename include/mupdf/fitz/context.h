@@ -62,8 +62,8 @@ struct fz_aa_context_s
 };
 
 /*
-	Exception macro definitions. Just treat these as a black box - pay no
-	attention to the man behind the curtain.
+	Exception macro definitions. Just treat these as a black box -
+	pay no attention to the man behind the curtain.
 */
 
 void fz_var_imp(void *);
@@ -306,8 +306,8 @@ fz_unlock(fz_context *ctx, int lock)
 /*
 	Given the width and height of an image,
 	the subsample factor, and the subarea of the image actually
-	required, the caller can decide whether to decode the whole image
-	or just a subarea.
+	required, the caller can decide whether to decode the whole
+	image or just a subarea.
 
 	arg: The caller supplied opaque argument.
 
@@ -317,7 +317,8 @@ fz_unlock(fz_context *ctx, int lock)
 	decoded to (w>>l2factor, h>>l2factor)).
 
 	subarea: The actual subarea required for the current operation.
-	The tuning function is allowed to increase this in size if required.
+	The tuning function is allowed to increase this in size if
+	required.
 */
 typedef void (fz_tune_image_decode_fn)(void *arg, int w, int h, int l2factor, fz_irect *subarea);
 
@@ -328,12 +329,13 @@ typedef void (fz_tune_image_decode_fn)(void *arg, int w, int h, int l2factor, fz
 
 	arg: The caller supplied opaque argument.
 
-	dst_w, dst_h: The actual width/height required on the target device.
+	dst_w, dst_h: The actual width/height required on the target
+	device.
 
 	src_w, src_h: The source width/height of the image.
 
-	Return 0 not to use the Mitchell scaler, 1 to use the Mitchell scaler. All
-	other values reserved.
+	Return 0 not to use the Mitchell scaler, 1 to use the Mitchell
+	scaler. All other values reserved.
 */
 typedef int (fz_tune_image_scale_fn)(void *arg, int dst_w, int dst_h, int src_w, int src_h);
 
@@ -367,8 +369,8 @@ int fz_aa_level(fz_context *ctx);
 	Set the number of bits of antialiasing we should
 	use (for both text and graphics).
 
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
+	bits: The number of bits of antialiasing to use (values are
+	clamped to within the 0 to 8 range).
 */
 void fz_set_aa_level(fz_context *ctx, int bits);
 
@@ -382,8 +384,8 @@ int fz_text_aa_level(fz_context *ctx);
 	Set the number of bits of antialiasing we
 	should use for text.
 
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
+	bits: The number of bits of antialiasing to use (values are
+	clamped to within the 0 to 8 range).
 */
 void fz_set_text_aa_level(fz_context *ctx, int bits);
 
@@ -397,8 +399,8 @@ int fz_graphics_aa_level(fz_context *ctx);
 	Set the number of bits of antialiasing we
 	should use for graphics.
 
-	bits: The number of bits of antialiasing to use (values are clamped
-	to within the 0 to 8 range).
+	bits: The number of bits of antialiasing to use (values are
+	clamped to within the 0 to 8 range).
 */
 void fz_set_graphics_aa_level(fz_context *ctx, int bits);
 
@@ -446,19 +448,22 @@ void fz_disable_icc(fz_context *ctx);
 
 	All calls to MuPDF's allocator functions pass through to the
 	underlying allocators passed in when the initial context is
-	created, after locks are taken (using the supplied locking function)
-	to ensure that only one thread at a time calls through.
+	created, after locks are taken (using the supplied locking
+	function) to ensure that only one thread at a time calls
+	through.
 
-	If the underlying allocator fails, MuPDF attempts to make room for
-	the allocation by evicting elements from the store, then retrying.
+	If the underlying allocator fails, MuPDF attempts to make room
+	for the allocation by evicting elements from the store, then
+	retrying.
 
-	Any call to allocate may then result in several calls to the underlying
-	allocator, and result in elements that are only referred to by the
-	store being freed.
+	Any call to allocate may then result in several calls to the
+	underlying allocator, and result in elements that are only
+	referred to by the store being freed.
 */
 
 /*
- * Allocate memory for a structure, clear it, and tag the pointer for Memento.
+ * Allocate memory for a structure, clear it, and tag the pointer for
+ * Memento.
  */
 #define fz_malloc_struct(CTX, TYPE) \
 	((TYPE*)Memento_label(fz_calloc(CTX, 1, sizeof(TYPE)), #TYPE))

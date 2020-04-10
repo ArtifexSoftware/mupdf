@@ -9,12 +9,12 @@
 	Generic hash-table with fixed-length keys.
 
 	The keys and values are NOT reference counted by the hash table.
-	Callers are responsible for taking care the reference counts are correct.
-	Inserting a duplicate entry will NOT overwrite the old value, and will
-	return the old value.
+	Callers are responsible for taking care the reference counts are
+	correct. Inserting a duplicate entry will NOT overwrite the old
+	value, and will return the old value.
 
-	The drop_val callback function is only used to release values when the hash table
-	is destroyed.
+	The drop_val callback function is only used to release values
+	when the hash table is destroyed.
 */
 
 typedef struct fz_hash_table_s fz_hash_table;

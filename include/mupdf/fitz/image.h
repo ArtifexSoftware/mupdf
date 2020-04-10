@@ -12,9 +12,9 @@
 
 /*
 	Images are storable objects from which we can obtain fz_pixmaps.
-	These may be implemented as simple wrappers around a pixmap, or as
-	more complex things that decode at different subsample settings on
-	demand.
+	These may be implemented as simple wrappers around a pixmap, or
+	as more complex things that decode at different subsample
+	settings on demand.
 */
 typedef struct fz_image_s fz_image;
 typedef struct fz_compressed_image_s fz_compressed_image;
@@ -27,13 +27,14 @@ typedef struct fz_pixmap_image_s fz_pixmap_image;
 
 	color_params: The color parameters (or NULL for defaults).
 
-	subarea: The subarea of the image that we actually care about (or NULL
-	to indicate the whole image).
+	subarea: The subarea of the image that we actually care about
+	(or NULL to indicate the whole image).
 
-	trans: Optional, unless subarea is given. If given, then on entry this is
-	the transform that will be applied to the complete image. It should be
-	updated on exit to the transform to apply to the given subarea of the
-	image. This is used to calculate the desired width/height for subsampling.
+	trans: Optional, unless subarea is given. If given, then on
+	entry this is the transform that will be applied to the complete
+	image. It should be updated on exit to the transform to apply to
+	the given subarea of the image. This is used to calculate the
+	desired width/height for subsampling.
 
 	w: If non-NULL, a pointer to an int to be updated on exit to the
 	width (in pixels) that the scaled output will cover.
@@ -171,7 +172,8 @@ fz_image *fz_new_image_of_size(fz_context *ctx,
 	interpolate: 1 if interpolation should be used when decoding
 	this image, 0 otherwise.
 
-	imagemask: 1 if this is an imagemask (i.e. transparency bitmap mask), 0 otherwise.
+	imagemask: 1 if this is an imagemask (i.e. transparency bitmap
+	mask), 0 otherwise.
 
 	decode: NULL, or a pointer to to a decode array. The default
 	decode array is [0 1] (repeated n times, for n color components).

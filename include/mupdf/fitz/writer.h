@@ -53,9 +53,14 @@ typedef void (fz_document_writer_drop_writer_fn)(fz_context *ctx, fz_document_wr
 int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val);
 int fz_option_eq(const char *a, const char *b);
 
-/* Copy an option (val) into a destination buffer (dest), of maxlen bytes.
- * Returns the number of bytes (including terminator) that did not fit. If
- * val is maxlen or greater bytes in size, it will be left unterminated. */
+/*
+	Copy an option (val) into a destination buffer (dest), of maxlen
+	bytes.
+
+	Returns the number of bytes (including terminator) that did not
+	fit. If val is maxlen or greater bytes in size, it will be left
+	unterminated.
+*/
 size_t fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxlen);
 
 /*
@@ -64,8 +69,8 @@ size_t fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxle
 
 	path: The document name to write (or NULL for default)
 
-	format: Which format to write (currently cbz, html, pdf, pam, pbm,
-	pgm, pkm, png, ppm, pnm, svg, text, xhtml)
+	format: Which format to write (currently cbz, html, pdf, pam,
+	pbm, pgm, pkm, png, ppm, pnm, svg, text, xhtml)
 
 	options: NULL, or pointer to comma separated string to control
 	file generation.
@@ -73,8 +78,8 @@ size_t fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxle
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
 /*
-	Like fz_new_document_writer but takes a fz_output for writing the result.
-	Only works for multi-page formats.
+	Like fz_new_document_writer but takes a fz_output for writing
+	the result. Only works for multi-page formats.
 */
 fz_document_writer *
 fz_new_document_writer_with_output(fz_context *ctx, fz_output *out, const char *format, const char *options);
@@ -113,10 +118,8 @@ fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, 
 
 	mediabox: page size rectangle in points.
 
-	Returns a fz_device to write page contents to. This is
-	owned by the fz_document_writer and should not be passed to
-	fz_drop_device(). [Copies created with fz_keep_device() are owned by
-	the caller and should be passed to fz_drop_device() in the usual way.]
+	Returns a borrowed fz_device to write page contents to. This
+	should be kept if required, and only dropped if it was kept.
 */
 fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox);
 
@@ -155,7 +158,7 @@ extern const char *fz_pcl_write_options_usage;
 extern const char *fz_pclm_write_options_usage;
 extern const char *fz_pwg_write_options_usage;
 
-/* Implementation Details - Subject to change. */
+/* Implementation details: subject to change. */
 
 /*
 	Structure is public to allow other structures to

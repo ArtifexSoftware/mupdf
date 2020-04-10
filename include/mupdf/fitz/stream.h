@@ -26,12 +26,12 @@ fz_stream *fz_open_file_ptr_no_close(fz_context *ctx, FILE *file);
 /*
 	Open the named file and wrap it in a stream.
 
-	filename: Path to a file. On non-Windows machines the filename should
-	be exactly as it would be passed to fopen(2). On Windows machines, the
-	path should be UTF-8 encoded so that non-ASCII characters can be
-	represented. Other platforms do the encoding as standard anyway (and
-	in most cases, particularly for MacOS and Linux, the encoding they
-	use is UTF-8 anyway).
+	filename: Path to a file. On non-Windows machines the filename
+	should be exactly as it would be passed to fopen(2). On Windows
+	machines, the path should be UTF-8 encoded so that non-ASCII
+	characters can be represented. Other platforms do the encoding
+	as standard anyway (and in most cases, particularly for MacOS
+	and Linux, the encoding they use is UTF-8 anyway).
 */
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
 
@@ -50,8 +50,8 @@ fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
 /*
 	Open a block of memory as a stream.
 
-	data: Pointer to start of data block. Ownership of the data block is
-	NOT passed in.
+	data: Pointer to start of data block. Ownership of the data
+	block is NOT passed in.
 
 	len: Number of bytes in data block.
 
@@ -63,8 +63,8 @@ fz_stream *fz_open_memory(fz_context *ctx, const unsigned char *data, size_t len
 /*
 	Open a buffer as a stream.
 
-	buf: The buffer to open. Ownership of the buffer is NOT passed in
-	(this function takes its own reference).
+	buf: The buffer to open. Ownership of the buffer is NOT passed
+	in (this function takes its own reference).
 
 	Returns pointer to newly created stream. May throw exceptions on
 	failure to allocate.
@@ -176,8 +176,8 @@ float fz_read_float(fz_context *ctx, fz_stream *stm);
 /*
 	Read a null terminated string from the stream into
 	a buffer of a given length. The buffer will be null terminated.
-	Throws on failure (including the failure to fit the entire string
-	including the terminator into the buffer).
+	Throws on failure (including the failure to fit the entire
+	string including the terminator into the buffer).
 */
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
 
@@ -269,10 +269,11 @@ fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *tr
 
 /*
 	Read a line from stream into the buffer until either a
-	terminating newline or EOF, which it replaces with a null byte ('\0').
+	terminating newline or EOF, which it replaces with a null byte
+	('\0').
 
-	Returns buf on success, and NULL when end of file occurs while no characters
-	have been read.
+	Returns buf on success, and NULL when end of file occurs while
+	no characters have been read.
 */
 char *fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, size_t max);
 

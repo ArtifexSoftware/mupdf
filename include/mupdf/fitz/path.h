@@ -368,8 +368,8 @@ fz_stroke_state *fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *share
 /*
 	Given a reference to a (possibly) shared stroke_state structure,
 	return a reference to a stroke_state structure (with room for a
-	given amount of dash data) that is guaranteed to be unshared (i.e.
-	one that can safely be modified).
+	given amount of dash data) that is guaranteed to be unshared
+	(i.e. one that can safely be modified).
 
 	shared: The reference to a (possibly) shared structure
 	to unshare. Ownership of this reference is passed in

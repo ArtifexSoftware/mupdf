@@ -209,9 +209,12 @@ fz_rect fz_font_bbox(fz_context *ctx, fz_font *font);
 	Type for user supplied system font loading hook.
 
 	name: The name of the font to load.
+
 	bold: 1 if a bold font desired, 0 otherwise.
+
 	italic: 1 if an italic font desired, 0 otherwise.
-	needs_exact_metrics: 1 if an exact metric match is required for the font requested.
+	needs_exact_metrics: 1 if an exact metric match is required for
+	the font requested.
 
 	Returns a new font handle, or NULL if no font found (or on error).
 */
@@ -221,7 +224,10 @@ typedef fz_font *(fz_load_system_font_fn)(fz_context *ctx, const char *name, int
 	Type for user supplied cjk font loading hook.
 
 	name: The name of the font to load.
-	ordering: The ordering for which to load the font (e.g. FZ_ADOBE_KOREA)
+
+	ordering: The ordering for which to load the font (e.g.
+	FZ_ADOBE_KOREA)
+
 	serif: 1 if a serif font is desired, 0 otherwise.
 
 	Returns a new font handle, or NULL if no font found (or on error).
@@ -232,8 +238,11 @@ typedef fz_font *(fz_load_system_cjk_font_fn)(fz_context *ctx, const char *name,
 	Type for user supplied fallback font loading hook.
 
 	name: The name of the font to load.
+
 	script: UCDN script enum.
+
 	language: FZ_LANG enum.
+
 	serif, bold, italic: boolean style flags.
 
 	Returns a new font handle, or NULL if no font found (or on error).
@@ -241,8 +250,8 @@ typedef fz_font *(fz_load_system_cjk_font_fn)(fz_context *ctx, const char *name,
 typedef fz_font *(fz_load_system_fallback_font_fn)(fz_context *ctx, int script, int language, int serif, int bold, int italic);
 
 /*
-	Install functions to allow
-	MuPDF to request fonts from the system.
+	Install functions to allow MuPDF to request fonts from the
+	system.
 
 	Only one set of hooks can be in use at a time.
 */
@@ -252,8 +261,7 @@ void fz_install_load_system_font_funcs(fz_context *ctx,
 	fz_load_system_fallback_font_fn *f_fallback);
 
 /*
-	Attempt to load a given font from the
-	system.
+	Attempt to load a given font from the system.
 
 	name: The name of the desired font.
 
@@ -323,9 +331,11 @@ const unsigned char *fz_lookup_base14_font(fz_context *ctx, const char *name, in
 
 	ordering: The desired ordering of the font (e.g. FZ_ADOBE_KOREA).
 
-	size: Pointer to a place to receive the length of the discovered font buffer.
+	size: Pointer to a place to receive the length of the discovered
+	font buffer.
 
-	subfont: Pointer to a place to store the subfont index of the discovered font.
+	subfont: Pointer to a place to store the subfont index of the
+	discovered font.
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
@@ -356,8 +366,8 @@ const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, 
 
 /*
 	Search the builtin noto fonts specific symbol fonts.
-	Whether a font is present or not will depend on the configuration in
-	which MuPDF is built.
+	Whether a font is present or not will depend on the
+	configuration in which MuPDF is built.
 */
 const unsigned char *fz_lookup_noto_math_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_music_font(fz_context *ctx, int *len);
@@ -490,7 +500,8 @@ void fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, fl
 
 	r: Pointer to a fz_rect to use for storage.
 
-	Returns r, after filling it in with the bounds of the given glyph.
+	Returns r, after filling it in with the bounds of the given
+	glyph.
 */
 fz_rect fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm);
 
@@ -611,7 +622,7 @@ float fz_font_descender(fz_context *ctx, fz_font *font);
 
 void fz_font_digest(fz_context *ctx, fz_font *font, unsigned char digest[16]);
 
-/* Implementation Details - Subject to change. */
+/* Implementation details: subject to change. */
 
 void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 

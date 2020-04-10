@@ -10,9 +10,9 @@
 #include "mupdf/fitz/text.h"
 
 /*
-	The different format handlers (pdf, xps etc) interpret pages to a
-	device. These devices can then process the stream of calls they
-	receive in various ways:
+	The different format handlers (pdf, xps etc) interpret pages to
+	a device. These devices can then process the stream of calls
+	they receive in various ways:
 		The trace device outputs debugging information for the calls.
 		The draw device will render them.
 		The list device stores them in a list to play back later.
@@ -36,9 +36,10 @@ enum
 	FZ_DEVFLAG_LINEJOIN_UNDEFINED = 256,
 	FZ_DEVFLAG_MITERLIMIT_UNDEFINED = 512,
 	FZ_DEVFLAG_LINEWIDTH_UNDEFINED = 1024,
-	/* Arguably we should have a bit for the dash pattern itself being
-	 * undefined, but that causes problems; do we assume that it should
-	 * always be set to non-dashing at the start of every glyph? */
+	/* Arguably we should have a bit for the dash pattern itself
+	 * being undefined, but that causes problems; do we assume that
+	 * it should always be set to non-dashing at the start of every
+	 * glyph? */
 	FZ_DEVFLAG_BBOX_DEFINED = 2048,
 	FZ_DEVFLAG_GRIDFIT_AS_TILED = 4096,
 };
@@ -241,8 +242,8 @@ typedef struct fz_cookie_s fz_cookie;
 
 	errors: count of errors during current rendering.
 
-	incomplete: Initially should be set to 0. Will be set to non-zero
-	if a TRYLATER error is thrown during rendering.
+	incomplete: Initially should be set to 0. Will be set to
+	non-zero if a TRYLATER error is thrown during rendering.
 */
 struct fz_cookie_s
 {
@@ -315,7 +316,8 @@ enum
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
 
-	transform: Transform from user space in points to device space in pixels.
+	transform: Transform from user space in points to device space
+	in pixels.
 */
 fz_device *fz_new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *dest);
 
@@ -328,7 +330,8 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *d
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
 
-	transform: Transform from user space in points to device space in pixels.
+	transform: Transform from user space in points to device space
+	in pixels.
 
 	clip: Bounding box to restrict any marking operations of the
 	draw device.
@@ -344,7 +347,8 @@ fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_matrix transform, fz
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
 
-	transform: Transform from user space in points to device space in pixels.
+	transform: Transform from user space in points to device space
+	in pixels.
 
 	proof_cs: Intermediate color space to map though when mapping to
 	color space defined by pixmap.
@@ -360,19 +364,22 @@ fz_device *fz_new_draw_device_with_proof(fz_context *ctx, fz_matrix transform, f
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
 
-	transform: Transform from user space in points to device space in pixels.
+	transform: Transform from user space in points to device space
+	in pixels.
 
 	clip: Bounding box to restrict any marking operations of the
 	draw device.
 
-	proof_cs: Color space to render to prior to mapping to color space defined by pixmap.
+	proof_cs: Color space to render to prior to mapping to color
+	space defined by pixmap.
 */
 fz_device *fz_new_draw_device_with_bbox_proof(fz_context *ctx, fz_matrix transform, fz_pixmap *dest, const fz_irect *clip, fz_colorspace *cs);
 
 fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_matrix transform, fz_pixmap *dest);
 
 /*
-	struct fz_draw_options: Options for creating a pixmap and draw device.
+	struct fz_draw_options: Options for creating a pixmap and draw
+	device.
 */
 typedef struct fz_draw_options_s fz_draw_options;
 
@@ -399,8 +406,11 @@ fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *options
 /*
 	Create a new pixmap and draw device, using the specified options.
 
-	options: Options to configure the draw device, and choose the resolution and colorspace.
+	options: Options to configure the draw device, and choose the
+	resolution and colorspace.
+
 	mediabox: The bounds of the page in points.
+
 	pixmap: An out parameter containing the newly created pixmap.
 */
 fz_device *fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *options, fz_rect mediabox, fz_pixmap **pixmap);

@@ -46,7 +46,7 @@ void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band
 
 void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer);
 
-/* Implementation details - Subject to change */
+/* Implementation details: subject to change. */
 
 typedef void (fz_write_header_fn)(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs);
 typedef void (fz_write_band_fn)(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples);

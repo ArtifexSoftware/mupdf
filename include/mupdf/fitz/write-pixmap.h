@@ -157,8 +157,8 @@ typedef struct fz_pwg_options_s fz_pwg_options;
 
 struct fz_pwg_options_s
 {
-	/* These are not interpreted as CStrings by the writing code, but
-	 * are rather copied directly out. */
+	/* These are not interpreted as CStrings by the writing code,
+	 * but are rather copied directly out. */
 	char media_class[64];
 	char media_color[64];
 	char media_type[64];

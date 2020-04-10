@@ -197,7 +197,8 @@ fz_archive *fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
 	fz_zip_writer offers methods for creating and writing zip files.
-	It can be seen as the reverse of the fz_archive zip implementation.
+	It can be seen as the reverse of the fz_archive zip
+	implementation.
 */
 
 typedef struct fz_zip_writer_s fz_zip_writer;
@@ -217,8 +218,8 @@ fz_zip_writer *fz_new_zip_writer_with_output(fz_context *ctx, fz_output *out);
 
 
 /*
-	Given a buffer of data, (optionally) compress it, and add it to the
-	zip file with the given name.
+	Given a buffer of data, (optionally) compress it, and add it to
+	the zip file with the given name.
 */
 void fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buffer *buf, int compress);
 

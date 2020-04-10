@@ -177,7 +177,7 @@ void fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_rect s
 			void *process_arg);
 
 
-/* Implementation Details - Subject to change. */
+/* Implementation details: subject to change. */
 
 /*
 	Internal function to destroy a

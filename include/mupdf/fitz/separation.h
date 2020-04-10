@@ -45,7 +45,8 @@ void fz_drop_separations(fz_context *ctx, fz_separations *sep);
 void fz_add_separation(fz_context *ctx, fz_separations *sep, const char *name, fz_colorspace *cs, int cs_channel);
 
 /*
-	Add a separation with equivalents (null terminated name, colorspace)
+	Add a separation with equivalents (null terminated name,
+	colorspace)
 
 	(old, deprecated)
 */

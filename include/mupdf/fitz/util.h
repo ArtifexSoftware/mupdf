@@ -44,8 +44,8 @@ fz_buffer *fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *lis
 
 /*
 	Search for the 'needle' text on the page.
-	Record the hits in the hit_bbox array and return the number of hits.
-	Will stop looking once it has filled hit_max rectangles.
+	Record the hits in the hit_bbox array and return the number of
+	hits. Will stop looking once it has filled hit_max rectangles.
 */
 int fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_quad *hit_bbox, int hit_max);
 int fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_quad *hit_bbox, int hit_max);
@@ -79,8 +79,8 @@ void fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image
 void fz_write_pixmap_as_data_uri(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
 
 /*
-	Use text extraction to convert the input document into XHTML, then
-	open the result as a new document that can be reflowed.
+	Use text extraction to convert the input document into XHTML,
+	then open the result as a new document that can be reflowed.
 */
 fz_document *fz_new_xhtml_document_from_document(fz_context *ctx, fz_document *old_doc);
 

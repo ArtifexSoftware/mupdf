@@ -3,7 +3,8 @@
 
 #include "mupdf/fitz/system.h"
 
-/* The Unicode character used to incoming character whose value is unknown or unrepresentable. */
+/* The Unicode character used to incoming character whose value is
+ * unknown or unrepresentable. */
 #define FZ_REPLACEMENT_CHARACTER 0xFFFD
 
 /*
@@ -18,17 +19,20 @@ size_t fz_strnlen(const char *s, size_t maxlen);
 
 /*
 	Given a pointer to a C string (or a pointer to NULL) break
-	it at the first occurrence of a delimiter char (from a given set).
+	it at the first occurrence of a delimiter char (from a given
+	set).
 
-	stringp: Pointer to a C string pointer (or NULL). Updated on exit to
-	point to the first char of the string after the delimiter that was
-	found. The string pointed to by stringp will be corrupted by this
-	call (as the found delimiter will be overwritten by 0).
+	stringp: Pointer to a C string pointer (or NULL). Updated on
+	exit to point to the first char of the string after the
+	delimiter that was found. The string pointed to by stringp will
+	be corrupted by this call (as the found delimiter will be
+	overwritten by 0).
 
 	delim: A C string of acceptable delimiter characters.
 
-	Returns a pointer to a C string containing the chars of stringp up
-	to the first delimiter char (or the end of the string), or NULL.
+	Returns a pointer to a C string containing the chars of stringp
+	up to the first delimiter char (or the end of the string), or
+	NULL.
 */
 char *fz_strsep(char **stringp, const char *delim);
 
@@ -56,8 +60,8 @@ size_t fz_strlcpy(char *dst, const char *src, size_t n);
 
 	n: Size (in bytes) of buffer that dst is in.
 
-	Returns the real length that a concatenated dst + src would have been
-	(not including terminator).
+	Returns the real length that a concatenated dst + src would have
+	been (not including terminator).
 */
 size_t fz_strlcat(char *dst, const char *src, size_t n);
 
@@ -79,18 +83,19 @@ char *fz_urldecode(char *url);
 /*
 	create output file name using a template.
 
-	If the path contains %[0-9]*d, the first such pattern will be replaced
-	with the page number. If the template does not contain such a pattern, the page
-	number will be inserted before the filename extension. If the template does not have
-	a filename extension, the page number will be added to the end.
+	If the path contains %[0-9]*d, the first such pattern will be
+	replaced with the page number. If the template does not contain
+	such a pattern, the page number will be inserted before the
+	filename extension. If the template does not have a filename
+	extension, the page number will be added to the end.
 */
 void fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page);
 
 /*
 	rewrite path to the shortest string that names the same path.
 
-	Eliminates multiple and trailing slashes, interprets "." and "..".
-	Overwrites the string in place.
+	Eliminates multiple and trailing slashes, interprets "." and
+	"..". Overwrites the string in place.
 */
 char *fz_cleanname(char *name);
 
@@ -101,7 +106,8 @@ int fz_strcasecmp(const char *a, const char *b);
 int fz_strncasecmp(const char *a, const char *b, size_t n);
 
 /*
-	FZ_UTFMAX: Maximum number of bytes in a decoded rune (maximum length returned by fz_chartorune).
+	FZ_UTFMAX: Maximum number of bytes in a decoded rune (maximum
+	length returned by fz_chartorune).
 */
 enum { FZ_UTFMAX = 4 };
 
@@ -132,7 +138,8 @@ int fz_runetochar(char *str, int rune);
 
 	rune: The rune to encode.
 
-	Returns the number of bytes required to represent this run in UTF8.
+	Returns the number of bytes required to represent this run in
+	UTF8.
 */
 int fz_runelen(int rune);
 

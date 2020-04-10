@@ -59,8 +59,8 @@ int64_t fz_atoi64(const char *s);
 
 /*
 	Some standard math functions, done as static inlines for speed.
-	People with compilers that do not adequately implement inlines may
-	like to reimplement these using macros.
+	People with compilers that do not adequately implement inline
+	may like to reimplement these using macros.
 */
 static inline float fz_abs(float f)
 {
@@ -529,10 +529,10 @@ fz_irect fz_irect_from_rect(fz_rect rect);
 	downwards and to the right.
 
 	This differs from fz_irect_from_rect, in that fz_irect_from_rect
-	slavishly follows the numbers (i.e any slight over/under calculations
-	can cause whole extra pixels to be added). fz_round_rect
-	allows for a small amount of rounding error when calculating
-	the bbox.
+	slavishly follows the numbers (i.e any slight over/under
+	calculations can cause whole extra pixels to be added).
+	fz_round_rect allows for a small amount of rounding error when
+	calculating the bbox.
 */
 fz_irect fz_round_rect(fz_rect rect);
 

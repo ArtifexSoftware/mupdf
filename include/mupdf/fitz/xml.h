@@ -16,8 +16,8 @@ typedef struct fz_xml_s fz_xml;
 
 	preserve_white: whether to keep or delete all-whitespace nodes.
 
-	for_html: enable special html tweaks (auto closing of tags, workarounds
-	for less-than-perfect nesting etc).
+	for_html: enable special html tweaks (auto closing of tags,
+	workarounds for less-than-perfect nesting etc).
 */
 fz_xml_doc *fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white, int for_html);
 

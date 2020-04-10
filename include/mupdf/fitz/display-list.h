@@ -30,7 +30,8 @@ typedef struct fz_display_list_s fz_display_list;
 	A display list contains drawing commands (text, images, etc.).
 	Use fz_new_list_device for populating the list.
 
-	mediabox: Bounds of the page (in points) represented by the display list.
+	mediabox: Bounds of the page (in points) represented by the
+	display list.
 */
 fz_display_list *fz_new_display_list(fz_context *ctx, fz_rect mediabox);
 
