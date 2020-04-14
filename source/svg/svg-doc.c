@@ -1,13 +1,11 @@
 #include "mupdf/fitz.h"
 #include "svg-imp.h"
 
-typedef struct svg_page_s svg_page;
-
-struct svg_page_s
+typedef struct
 {
 	fz_page super;
 	svg_document *doc;
-};
+} svg_page;
 
 static void
 svg_drop_document(fz_context *ctx, fz_document *doc_)

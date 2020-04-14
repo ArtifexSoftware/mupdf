@@ -5,28 +5,25 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/geometry.h"
 
-typedef struct fz_font_context_s fz_font_context;
-typedef struct fz_colorspace_context_s fz_colorspace_context;
-typedef struct fz_style_context_s fz_style_context;
-typedef struct fz_tuning_context_s fz_tuning_context;
-typedef struct fz_store_s fz_store;
-typedef struct fz_glyph_cache_s fz_glyph_cache;
-typedef struct fz_document_handler_context_s fz_document_handler_context;
-typedef struct fz_context_s fz_context;
-typedef struct fz_alloc_context_s fz_alloc_context;
-typedef struct fz_error_context_s fz_error_context;
-typedef struct fz_warn_context_s fz_warn_context;
+typedef struct fz_font_context fz_font_context;
+typedef struct fz_colorspace_context fz_colorspace_context;
+typedef struct fz_style_context fz_style_context;
+typedef struct fz_tuning_context fz_tuning_context;
+typedef struct fz_store fz_store;
+typedef struct fz_glyph_cache fz_glyph_cache;
+typedef struct fz_document_handler_context fz_document_handler_context;
+typedef struct fz_context fz_context;
 
 /*
 	Allocator structure; holds callbacks and private data pointer.
 */
-struct fz_alloc_context_s
+typedef struct
 {
 	void *user;
 	void *(*malloc)(void *, size_t);
 	void *(*realloc)(void *, void *, size_t);
 	void (*free)(void *, void *);
-};
+} fz_alloc_context;
 
 /*
 	Exception macro definitions. Just treat these as a black box -
@@ -91,13 +88,12 @@ void fz_flush_warnings(fz_context *ctx);
 	enabled by defining FITZ_DEBUG_LOCKING.
 */
 
-typedef struct fz_locks_context_s fz_locks_context;
-struct fz_locks_context_s
+typedef struct
 {
 	void *user;
 	void (*lock)(void *user, int lock);
 	void (*unlock)(void *user, int lock);
-};
+} fz_locks_context;
 
 enum {
 	FZ_LOCK_ALLOC = 0,
@@ -517,14 +513,13 @@ int fz_do_try(fz_context *ctx);
 int fz_do_always(fz_context *ctx);
 int fz_do_catch(fz_context *ctx);
 
-typedef struct fz_error_stack_slot_s fz_error_stack_slot;
-struct fz_error_stack_slot_s
+typedef struct
 {
 	int state, code;
 	fz_jmp_buf buffer;
-};
+} fz_error_stack_slot;
 
-struct fz_error_context_s
+typedef struct
 {
 	fz_error_stack_slot *top;
 	fz_error_stack_slot stack[256];
@@ -532,18 +527,17 @@ struct fz_error_context_s
 	void *print_user;
 	void (*print)(void *user, const char *message);
 	char message[256];
-};
+} fz_error_context;
 
-struct fz_warn_context_s
+typedef struct
 {
 	void *print_user;
 	void (*print)(void *user, const char *message);
 	int count;
 	char message[256];
-};
+} fz_warn_context;
 
-typedef struct fz_aa_context_s fz_aa_context;
-struct fz_aa_context_s
+typedef struct
 {
 	int hscale;
 	int vscale;
@@ -551,9 +545,9 @@ struct fz_aa_context_s
 	int bits;
 	int text_bits;
 	float min_line_width;
-};
+} fz_aa_context;
 
-struct fz_context_s
+struct fz_context
 {
 	void *user;
 	fz_alloc_context alloc;

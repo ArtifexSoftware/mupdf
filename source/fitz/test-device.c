@@ -2,7 +2,7 @@
 
 #include "color-imp.h"
 
-typedef struct fz_test_device_s
+typedef struct
 {
 	fz_device super;
 	int *is_color;

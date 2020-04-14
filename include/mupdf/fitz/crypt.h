@@ -5,7 +5,16 @@
 
 /* md5 digests */
 
-typedef struct fz_md5_s fz_md5;
+/*
+	Structure definition is public to enable stack
+	based allocation. Do not access the members directly.
+*/
+typedef struct
+{
+	unsigned int state[4];
+	unsigned int count[2];
+	unsigned char buffer[64];
+} fz_md5;
 
 /*
 	MD5 initialization. Begins an MD5 operation, writing a new
@@ -34,7 +43,19 @@ void fz_md5_final(fz_md5 *state, unsigned char digest[16]);
 
 /* sha-256 digests */
 
-typedef struct fz_sha256_s fz_sha256;
+/*
+	Structure definition is public to enable stack
+	based allocation. Do not access the members directly.
+*/
+typedef struct
+{
+	unsigned int state[8];
+	unsigned int count[2];
+	union {
+		unsigned char u8[64];
+		unsigned int u32[16];
+	} buffer;
+} fz_sha256;
 
 /*
 	SHA256 initialization. Begins an SHA256 operation, initialising
@@ -63,7 +84,19 @@ void fz_sha256_final(fz_sha256 *state, unsigned char digest[32]);
 
 /* sha-512 digests */
 
-typedef struct fz_sha512_s fz_sha512;
+/*
+	Structure definition is public to enable stack
+	based allocation. Do not access the members directly.
+*/
+typedef struct
+{
+	uint64_t state[8];
+	unsigned int count[2];
+	union {
+		unsigned char u8[128];
+		uint64_t u64[16];
+	} buffer;
+} fz_sha512;
 
 /*
 	SHA512 initialization. Begins an SHA512 operation, initialising
@@ -92,7 +125,7 @@ void fz_sha512_final(fz_sha512 *state, unsigned char digest[64]);
 
 /* sha-384 digests */
 
-typedef struct fz_sha512_s fz_sha384;
+typedef fz_sha512 fz_sha384;
 
 /*
 	SHA384 initialization. Begins an SHA384 operation, initialising
@@ -121,7 +154,16 @@ void fz_sha384_final(fz_sha384 *state, unsigned char digest[64]);
 
 /* arc4 crypto */
 
-typedef struct fz_arc4_s fz_arc4;
+/*
+	Structure definition is public to enable stack
+	based allocation. Do not access the members directly.
+*/
+typedef struct
+{
+	unsigned x;
+	unsigned y;
+	unsigned char state[256];
+} fz_arc4;
 
 /*
 	RC4 initialization. Begins an RC4 operation, writing a new
@@ -148,7 +190,16 @@ void fz_arc4_final(fz_arc4 *state);
 
 /* AES block cipher implementation from XYSSL */
 
-typedef struct fz_aes_s fz_aes;
+/*
+	Structure definitions are public to enable stack
+	based allocation. Do not access the members directly.
+*/
+typedef struct
+{
+	int nr; /* number of rounds */
+	unsigned long *rk; /* AES round keys */
+	unsigned long buf[68]; /* unaligned data */
+} fz_aes;
 
 #define FZ_AES_DECRYPT 0
 #define FZ_AES_ENCRYPT 1
@@ -185,54 +236,5 @@ void fz_aes_crypt_cbc(fz_aes *ctx, int mode, size_t length,
 	unsigned char iv[16],
 	const unsigned char *input,
 	unsigned char *output );
-
-/* Implementation details: subject to change. */
-
-/*
-	Structure definitions are public to enable stack
-	based allocation. Do not access the members directly.
-*/
-struct fz_md5_s
-{
-	unsigned int state[4];
-	unsigned int count[2];
-	unsigned char buffer[64];
-};
-
-struct fz_sha256_s
-{
-	unsigned int state[8];
-	unsigned int count[2];
-	union {
-		unsigned char u8[64];
-		unsigned int u32[16];
-	} buffer;
-};
-
-struct fz_sha512_s
-{
-	uint64_t state[8];
-	unsigned int count[2];
-	union {
-		unsigned char u8[128];
-		uint64_t u64[16];
-	} buffer;
-};
-
-struct fz_arc4_s
-{
-	unsigned x;
-	unsigned y;
-	unsigned char state[256];
-};
-
-struct fz_aes_s
-{
-	int nr; /* number of rounds */
-	unsigned long *rk; /* AES round keys */
-	unsigned long buf[68]; /* unaligned data */
-};
-
-
 
 #endif

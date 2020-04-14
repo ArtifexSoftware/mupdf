@@ -8,11 +8,60 @@
 #include "mupdf/fitz/filter.h"
 
 /*
+	Compression parameters used for buffers of compressed data;
+	typically for the source data for images.
+*/
+typedef struct
+{
+	int type;
+	union {
+		struct {
+			int color_transform; /* Use -1 for unset */
+		} jpeg;
+		struct {
+			int smask_in_data;
+		} jpx;
+		struct {
+			fz_jbig2_globals *globals;
+		} jbig2;
+		struct {
+			int columns;
+			int rows;
+			int k;
+			int end_of_line;
+			int encoded_byte_align;
+			int end_of_block;
+			int black_is_1;
+			int damaged_rows_before_error;
+		} fax;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+		}
+		flate;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+			int early_change;
+		} lzw;
+	} u;
+} fz_compression_params;
+
+/*
 	Buffers of compressed data; typically for the source data
 	for images.
 */
-typedef struct fz_compression_params_s fz_compression_params;
-typedef struct fz_compressed_buffer_s fz_compressed_buffer;
+typedef struct
+{
+	fz_compression_params params;
+	fz_buffer *buffer;
+} fz_compressed_buffer;
 
 /*
 	Return the storage size used for a buffer and its data.
@@ -74,54 +123,6 @@ enum
 	FZ_IMAGE_PNG,
 	FZ_IMAGE_PNM,
 	FZ_IMAGE_TIFF,
-};
-
-struct fz_compression_params_s
-{
-	int type;
-	union {
-		struct {
-			int color_transform; /* Use -1 for unset */
-		} jpeg;
-		struct {
-			int smask_in_data;
-		} jpx;
-		struct {
-			fz_jbig2_globals *globals;
-		} jbig2;
-		struct {
-			int columns;
-			int rows;
-			int k;
-			int end_of_line;
-			int encoded_byte_align;
-			int end_of_block;
-			int black_is_1;
-			int damaged_rows_before_error;
-		} fax;
-		struct
-		{
-			int columns;
-			int colors;
-			int predictor;
-			int bpc;
-		}
-		flate;
-		struct
-		{
-			int columns;
-			int colors;
-			int predictor;
-			int bpc;
-			int early_change;
-		} lzw;
-	} u;
-};
-
-struct fz_compressed_buffer_s
-{
-	fz_compression_params params;
-	fz_buffer *buffer;
 };
 
 /*

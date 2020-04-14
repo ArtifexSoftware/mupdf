@@ -8,7 +8,7 @@
 /*
 	fz_band_writer
 */
-typedef struct fz_band_writer_s fz_band_writer;
+typedef struct fz_band_writer fz_band_writer;
 
 /*
 	Cause a band writer to write the header for
@@ -59,7 +59,7 @@ typedef void (fz_write_band_fn)(fz_context *ctx, fz_band_writer *writer, int str
 typedef void (fz_write_trailer_fn)(fz_context *ctx, fz_band_writer *writer);
 typedef void (fz_drop_band_writer_fn)(fz_context *ctx, fz_band_writer *writer);
 
-struct fz_band_writer_s
+struct fz_band_writer
 {
 	fz_drop_band_writer_fn *drop;
 	fz_write_header_fn *header;

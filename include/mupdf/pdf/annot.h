@@ -582,7 +582,7 @@ pdf_obj *pdf_add_embedded_file(fz_context *ctx, pdf_document *doc, const char *f
 
 /* Implementation details: Subject to change */
 
-struct pdf_annot_s
+struct pdf_annot
 {
 	int refs;
 

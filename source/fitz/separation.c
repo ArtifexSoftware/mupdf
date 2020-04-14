@@ -10,7 +10,7 @@ enum
 	FZ_SEPARATION_DISABLED_RENDER = 3
 };
 
-struct fz_separations_s
+struct fz_separations
 {
 	int refs;
 	int num_separations;

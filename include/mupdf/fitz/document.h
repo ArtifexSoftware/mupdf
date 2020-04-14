@@ -10,9 +10,9 @@
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/separation.h"
 
-typedef struct fz_document_s fz_document;
-typedef struct fz_document_handler_s fz_document_handler;
-typedef struct fz_page_s fz_page;
+typedef struct fz_document fz_document;
+typedef struct fz_document_handler fz_document_handler;
+typedef struct fz_page fz_page;
 typedef intptr_t fz_bookmark;
 
 /*
@@ -22,7 +22,7 @@ typedef intptr_t fz_bookmark;
 	broken into many chapters) this can make navigation much faster
 	as only the required chapter needs to be decoded at a time.
 */
-typedef struct fz_location_s
+typedef struct
 {
 	int chapter;
 	int page;
@@ -743,7 +743,7 @@ int fz_page_uses_overprint(fz_context *ctx, fz_page *page);
 	Structure definition is public so other classes can
 	derive from it. Do not access the members directly.
 */
-struct fz_page_s
+struct fz_page
 {
 	int refs;
 	int chapter; /* chapter number */
@@ -769,7 +769,7 @@ struct fz_page_s
 	directly, though implementations will need initialize
 	functions directly.
 */
-struct fz_document_s
+struct fz_document
 {
 	int refs;
 	fz_document_drop_fn *drop_document;
@@ -792,7 +792,7 @@ struct fz_document_s
 	fz_page *open; /* linked list of currently open pages */
 };
 
-struct fz_document_handler_s
+struct fz_document_handler
 {
 	fz_document_recognize_fn *recognize;
 	fz_document_open_fn *open;

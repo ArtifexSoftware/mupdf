@@ -22,7 +22,7 @@
 	list (once or many times) by calling fz_run_display_list. When
 	the list is no longer needed drop it with fz_drop_display_list.
 */
-typedef struct fz_display_list_s fz_display_list;
+typedef struct fz_display_list fz_display_list;
 
 /*
 	Create an empty display list.

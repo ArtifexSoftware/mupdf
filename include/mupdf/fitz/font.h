@@ -7,7 +7,7 @@
 #include "mupdf/fitz/buffer.h"
 
 /* forward declaration for circular dependency */
-struct fz_device_s;
+struct fz_device;
 
 /* Various font encoding tables and lookup functions */
 
@@ -42,7 +42,7 @@ const char *fz_glyph_name_from_unicode_sc(int unicode);
 /*
 	An abstract font handle.
 */
-typedef struct fz_font_s fz_font;
+typedef struct fz_font fz_font;
 
 /*
 	Fonts come in two variants:
@@ -511,7 +511,7 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid);
 
 	dev: The device to render onto.
 */
-void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, struct fz_device_s *dev);
+void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, struct fz_device *dev);
 
 /*
 	Return the advance for a given glyph.
@@ -657,7 +657,7 @@ void fz_hb_lock(fz_context *ctx);
 */
 void fz_hb_unlock(fz_context *ctx);
 
-struct fz_font_s
+struct fz_font
 {
 	int refs;
 	char name[32];
@@ -671,11 +671,11 @@ struct fz_font_s
 	fz_matrix t3matrix;
 	void *t3resources;
 	fz_buffer **t3procs; /* has 256 entries if used */
-	struct fz_display_list_s **t3lists; /* has 256 entries if used */
+	struct fz_display_list **t3lists; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	unsigned short *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
-	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device_s *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs);
+	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs);
 	void (*t3freeres)(fz_context *ctx, void *doc, void *resources);
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */

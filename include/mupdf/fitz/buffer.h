@@ -10,8 +10,19 @@
 
 	Buffers have a capacity (the number of bytes storage immediately
 	available) and a current size.
+
+	The contents of the structure are considered implementation
+	details and are subject to change. Users should use the accessor
+	functions in preference.
 */
-typedef struct fz_buffer_s fz_buffer;
+typedef struct
+{
+	int refs;
+	unsigned char *data;
+	size_t cap, len;
+	int unused_bits;
+	int shared;
+} fz_buffer;
 
 /*
 	Take an additional reference to the buffer. The same pointer
@@ -187,16 +198,5 @@ void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16])
 	Returns length of stream.
 */
 size_t fz_buffer_extract(fz_context *ctx, fz_buffer *buf, unsigned char **data);
-
-/* Implementation details: subject to change. */
-
-struct fz_buffer_s
-{
-	int refs;
-	unsigned char *data;
-	size_t cap, len;
-	int unused_bits;
-	int shared;
-};
 
 #endif

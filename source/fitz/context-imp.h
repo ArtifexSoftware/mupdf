@@ -26,7 +26,7 @@ void fz_new_font_context(fz_context *ctx);
 fz_font_context *fz_keep_font_context(fz_context *ctx);
 void fz_drop_font_context(fz_context *ctx);
 
-struct fz_tuning_context_s
+struct fz_tuning_context
 {
 	int refs;
 	fz_tune_image_decode_fn *image_decode;

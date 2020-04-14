@@ -7,7 +7,7 @@
 #include "mupdf/fitz/store.h"
 #include "mupdf/fitz/stream.h"
 
-typedef struct fz_jbig2_globals_s fz_jbig2_globals;
+typedef struct fz_jbig2_globals fz_jbig2_globals;
 
 typedef struct
 {

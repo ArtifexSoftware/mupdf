@@ -9,8 +9,18 @@
 	Bitmaps have 1 bit per component. Only used for creating
 	halftoned versions of contone buffers, and saving out. Samples
 	are stored msb first, akin to pbms.
+
+	The internals of this struct are considered implementation
+	details and subject to change. Where possible, accessor
+	functions should be used in preference.
 */
-typedef struct fz_bitmap_s fz_bitmap;
+typedef struct
+{
+	int refs;
+	int w, h, stride, n;
+	int xres, yres;
+	unsigned char *samples;
+} fz_bitmap;
 
 /*
 	Take an additional reference to the bitmap. The same pointer
@@ -35,7 +45,7 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 	for operating on 1 component plus alpha pixmaps (where the alpha
 	is ignored). This is signified by a fz_halftone pointer to NULL.
 */
-typedef struct fz_halftone_s fz_halftone;
+typedef struct fz_halftone fz_halftone;
 
 /*
 	Make a bitmap from a pixmap and a halftone.
@@ -132,15 +142,5 @@ fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 	Never throws exceptions.
 */
 void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);
-
-/* Implementation details: subject to change. */
-
-struct fz_bitmap_s
-{
-	int refs;
-	int w, h, stride, n;
-	int xres, yres;
-	unsigned char *samples;
-};
 
 #endif

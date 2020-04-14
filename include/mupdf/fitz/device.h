@@ -20,7 +20,7 @@
 		The bbox device calculates the bounding box for the page.
 	Other devices can (and will) be written in the future.
 */
-typedef struct fz_device_s fz_device;
+typedef struct fz_device fz_device;
 
 enum
 {
@@ -97,13 +97,12 @@ const char *fz_blendmode_name(int blendmode);
 	Devices can keep track of containers (clips/masks/groups/tiles)
 	as they go to save callers having to do it.
 */
-typedef struct fz_device_container_stack_s fz_device_container_stack;
-struct fz_device_container_stack_s
+typedef struct
 {
 	fz_rect scissor;
 	int type;
 	int user;
-};
+} fz_device_container_stack;
 
 enum
 {
@@ -113,7 +112,7 @@ enum
 	fz_device_container_stack_is_tile,
 };
 
-struct fz_device_s
+struct fz_device
 {
 	int refs;
 	int hints;
@@ -252,8 +251,6 @@ enum
 	Cookie support - simple communication channel between app/library.
 */
 
-typedef struct fz_cookie_s fz_cookie;
-
 /*
 	Provide two-way communication between application and library.
 	Intended for multi-threaded applications where one thread is
@@ -293,14 +290,14 @@ typedef struct fz_cookie_s fz_cookie;
 	incomplete: Initially should be set to 0. Will be set to
 	non-zero if a TRYLATER error is thrown during rendering.
 */
-struct fz_cookie_s
+typedef struct
 {
 	int abort;
 	int progress;
 	size_t progress_max; /* (size_t)-1 for unknown */
 	int errors;
 	int incomplete;
-};
+} fz_cookie;
 
 /*
 	Create a device to print a debug trace of all device calls.
@@ -429,9 +426,7 @@ fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_matrix transform, fz_pix
 	struct fz_draw_options: Options for creating a pixmap and draw
 	device.
 */
-typedef struct fz_draw_options_s fz_draw_options;
-
-struct fz_draw_options_s
+typedef struct
 {
 	int rotate;
 	int x_resolution;
@@ -442,7 +437,7 @@ struct fz_draw_options_s
 	int alpha;
 	int graphics;
 	int text;
-};
+} fz_draw_options;
 
 extern const char *fz_draw_options_usage;
 

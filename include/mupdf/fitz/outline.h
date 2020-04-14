@@ -28,19 +28,17 @@
 	down: The outline items immediate children in the hierarchy.
 	May be NULL if no children exist.
 */
-typedef struct fz_outline_s fz_outline;
-
-struct fz_outline_s
+typedef struct fz_outline
 {
 	int refs;
 	char *title;
 	char *uri;
 	int page;
 	float x, y;
-	fz_outline *next;
-	fz_outline *down;
+	struct fz_outline *next;
+	struct fz_outline *down;
 	int is_open;
-};
+} fz_outline;
 
 fz_outline *fz_new_outline(fz_context *ctx);
 fz_outline *fz_keep_outline(fz_context *ctx, fz_outline *outline);

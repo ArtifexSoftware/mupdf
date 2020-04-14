@@ -3,7 +3,7 @@
 
 #include "mupdf/fitz.h"
 
-typedef struct fz_color_converter_s fz_color_converter;
+typedef struct fz_color_converter fz_color_converter;
 
 /* Color management engine */
 
@@ -18,7 +18,7 @@ fz_buffer *fz_new_icc_data_from_cal(fz_context *ctx, float wp[3], float bp[3], f
 	Opaque type for a link (transform) generated between ICC
 	profiles.
 */
-typedef struct fz_icc_link_s fz_icc_link;
+typedef struct fz_icc_link fz_icc_link;
 
 void fz_new_icc_context(fz_context *ctx);
 void fz_drop_icc_context(fz_context *ctx);
@@ -50,7 +50,7 @@ void fz_icc_transform_pixmap(fz_context *ctx, fz_icc_link *link, fz_pixmap *src,
 
 typedef void (fz_color_convert_fn)(fz_context *ctx, fz_color_converter *cc, const float *src, float *dst);
 
-struct fz_color_converter_s
+struct fz_color_converter
 {
 	fz_color_convert_fn *convert;
 	fz_color_convert_fn *convert_via;
@@ -63,7 +63,7 @@ struct fz_color_converter_s
 #endif
 };
 
-struct fz_colorspace_context_s
+struct fz_colorspace_context
 {
 	int ctx_refs;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;

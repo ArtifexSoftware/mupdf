@@ -284,7 +284,7 @@ float fz_font_descender(fz_context *ctx, fz_font *font)
  * Freetype hooks
  */
 
-struct fz_font_context_s
+struct fz_font_context
 {
 	int ctx_refs;
 	FT_Library ftlib;

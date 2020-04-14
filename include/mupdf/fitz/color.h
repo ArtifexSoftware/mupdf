@@ -5,10 +5,17 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/store.h"
 
+#if FZ_ENABLE_ICC
+/*
+	Opaque type for an ICC Profile.
+*/
+typedef struct fz_icc_profile fz_icc_profile;
+#endif
+
 /*
 	Describes a given colorspace.
 */
-typedef struct fz_colorspace_s fz_colorspace;
+typedef struct fz_colorspace fz_colorspace;
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of
@@ -18,7 +25,7 @@ typedef struct fz_colorspace_s fz_colorspace;
 	premultiplied alpha when rendering, but non-premultiplied for
 	colorspace conversions and rescaling.
 */
-typedef struct fz_pixmap_s fz_pixmap;
+typedef struct fz_pixmap fz_pixmap;
 
 /* Color handling parameters: rendering intent, overprint, etc. */
 
@@ -31,14 +38,13 @@ enum
 	FZ_RI_ABSOLUTE_COLORIMETRIC,
 };
 
-typedef struct fz_color_params_s fz_color_params;
-struct fz_color_params_s
+typedef struct
 {
 	uint8_t ri;	/* rendering intent */
 	uint8_t bp;	/* black point compensation */
 	uint8_t op;	/* overprinting */
 	uint8_t opm;	/* overprint mode */
-};
+}  fz_color_params;
 
 extern const fz_color_params fz_default_color_params;
 
@@ -277,15 +283,14 @@ void fz_convert_color(fz_context *ctx, fz_colorspace *ss, const float *sv, fz_co
 /*
 	Structure to hold default colorspaces.
 */
-typedef struct fz_default_colorspaces_s fz_default_colorspaces;
-struct fz_default_colorspaces_s
+typedef struct
 {
 	int refs;
 	fz_colorspace *gray;
 	fz_colorspace *rgb;
 	fz_colorspace *cmyk;
 	fz_colorspace *oi;
-};
+}  fz_default_colorspaces;
 
 /*
 	Create a new default colorspace structure with values inherited
@@ -356,14 +361,7 @@ void fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *defau
 
 /* Implementation details: subject to change. */
 
-#if FZ_ENABLE_ICC
-/*
-	Opaque type for an ICC Profile.
-*/
-typedef struct fz_icc_profile_s fz_icc_profile;
-#endif
-
-struct fz_colorspace_s
+struct fz_colorspace
 {
 	fz_key_storable key_storable;
 	enum fz_colorspace_type type;
