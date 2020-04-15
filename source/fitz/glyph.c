@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "glyph-imp.h"
+
 #include <string.h>
 
 #define RLE_THRESHOLD 256

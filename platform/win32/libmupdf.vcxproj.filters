@@ -821,5 +821,8 @@
     <ClInclude Include="..\..\source\fitz\z-imp.h">
       <Filter>fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\fitz\glyph-imp.h">
+      <Filter>fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
