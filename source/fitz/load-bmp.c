@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "image-imp.h"
+
 #include <string.h>
 #include <limits.h>
 
