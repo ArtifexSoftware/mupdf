@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 
 #include "glyph-imp.h"
+#include "pixmap-imp.h"
 
 #include <string.h>
 

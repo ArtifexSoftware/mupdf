@@ -2,6 +2,7 @@
 
 #include "context-imp.h"
 #include "image-imp.h"
+#include "pixmap-imp.h"
 
 #include <string.h>
 #include <math.h>

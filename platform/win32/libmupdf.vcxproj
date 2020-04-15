@@ -1063,6 +1063,7 @@
     <ClInclude Include="..\..\source\fitz\image-imp.h" />
     <ClInclude Include="..\..\source\fitz\jmemcust.h" />
     <ClInclude Include="..\..\source\fitz\paint-glyph.h" />
+    <ClInclude Include="..\..\source\fitz\pixmap-imp.h" />
     <ClInclude Include="..\..\source\fitz\unicodedata_db.h" />
     <ClInclude Include="..\..\source\fitz\z-imp.h" />
   </ItemGroup>
