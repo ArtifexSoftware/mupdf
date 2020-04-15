@@ -1008,7 +1008,6 @@
     <ClInclude Include="..\..\include\mupdf\fitz\glyph-cache.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\glyph.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\hash.h" />
-    <ClInclude Include="..\..\include\mupdf\fitz\image-list.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\image.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\log.h" />
