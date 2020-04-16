@@ -720,7 +720,6 @@ generate_boxes(fz_context *ctx,
 					int w, h;
 					const char *w_att = fz_xml_att(node, "width");
 					const char *h_att = fz_xml_att(node, "height");
-					box = new_short_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &style, &match);
 					if (w_att && (w = fz_atoi(w_att)) > 0)
 					{
@@ -732,9 +731,28 @@ generate_boxes(fz_context *ctx,
 						style.height.value = h;
 						style.height.unit = strchr(h_att, '%') ? N_PERCENT : N_LENGTH;
 					}
-					box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
-					insert_inline_box(ctx, box, top, markup_dir, g);
-					generate_image(ctx, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
+
+					if (display == DIS_BLOCK)
+					{
+						fz_css_style boxstyle;
+						fz_html_box *imgbox;
+						box = new_box(ctx, g->pool, markup_dir);
+						fz_default_css_style(ctx, &boxstyle);
+						fz_apply_css_style(ctx, g->set, &boxstyle, &match);
+						box->style = fz_css_enlist(ctx, &boxstyle, &g->styles, g->pool);
+						top = insert_block_box(ctx, box, top);
+						imgbox = new_short_box(ctx, g->pool, markup_dir);
+						imgbox->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
+						insert_inline_box(ctx, imgbox, box, markup_dir, g);
+						generate_image(ctx, imgbox, load_html_image(ctx, g->zip, g->base_uri, src), g);
+					}
+					else if (display == DIS_INLINE)
+					{
+						box = new_short_box(ctx, g->pool, markup_dir);
+						box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
+						insert_inline_box(ctx, box, top, markup_dir, g);
+						generate_image(ctx, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
+					}
 				}
 			}
 
