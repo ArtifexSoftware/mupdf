@@ -297,6 +297,10 @@ static struct {
 	int minpage, maxpage;
 	char *minfilename;
 	char *maxfilename;
+	int layout;
+	int minlayout, maxlayout;
+	char *minlayoutfilename;
+	char *maxlayoutfilename;
 } timing;
 
 static void usage(void)
@@ -1866,6 +1870,11 @@ int mudraw_main(int argc, char **argv)
 		timing.maxpage = 0;
 		timing.minfilename = "";
 		timing.maxfilename = "";
+		timing.layout = 0;
+		timing.minlayout = 1 << 30;
+		timing.maxlayout = 0;
+		timing.minlayoutfilename = "";
+		timing.maxlayoutfilename = "";
 		if (showtime && bgprint.active)
 			timing.total = gettime();
 
@@ -1875,6 +1884,8 @@ int mudraw_main(int argc, char **argv)
 
 			while (fz_optind < argc)
 			{
+				int layouttime;
+
 				fz_try(ctx)
 				{
 					filename = argv[fz_optind++];
@@ -1905,7 +1916,22 @@ int mudraw_main(int argc, char **argv)
 						}
 					}
 
+					layouttime = gettime();
 					fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+					(void) fz_count_pages(ctx, doc);
+					layouttime = gettime() - layouttime;
+
+					timing.layout += layouttime;
+					if (layouttime < timing.minlayout)
+					{
+						timing.minlayout = layouttime;
+						timing.minlayoutfilename = filename;
+					}
+					if (layouttime > timing.maxlayout)
+					{
+						timing.maxlayout = layouttime;
+						timing.maxlayoutfilename = filename;
+					}
 
 					if (layer_config)
 						apply_layer_config(ctx, doc, layer_config);
@@ -1966,8 +1992,8 @@ int mudraw_main(int argc, char **argv)
 
 			if (files == 1)
 			{
-				fprintf(stderr, "total %dms / %d pages for an average of %dms\n",
-						timing.total, timing.count, timing.total / timing.count);
+				fprintf(stderr, "total %dms (%dms layout) / %d pages for an average of %dms\n",
+						timing.total, timing.layout, timing.count, timing.total / timing.count);
 				if (bgprint.active)
 				{
 					fprintf(stderr, "fastest page %d: %dms (interpretation) %dms (rendering) %dms(total)\n",
@@ -1983,8 +2009,10 @@ int mudraw_main(int argc, char **argv)
 			}
 			else
 			{
-				fprintf(stderr, "total %dms / %d pages for an average of %dms in %d files\n",
-						timing.total, timing.count, timing.total / timing.count, files);
+				fprintf(stderr, "total %dms (%dms layout) / %d pages for an average of %dms in %d files\n",
+						timing.total, timing.layout, timing.count, timing.total / timing.count, files);
+				fprintf(stderr, "fastest layout: %dms (%s)\n", timing.minlayout, timing.minlayoutfilename);
+				fprintf(stderr, "slowest layout: %dms (%s)\n", timing.maxlayout, timing.maxlayoutfilename);
 				fprintf(stderr, "fastest page %d: %dms (%s)\n", timing.minpage, timing.min, timing.minfilename);
 				fprintf(stderr, "slowest page %d: %dms (%s)\n", timing.maxpage, timing.max, timing.maxfilename);
 			}
