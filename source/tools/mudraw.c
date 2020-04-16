@@ -13,14 +13,26 @@
 #endif
 
 #include <string.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #ifdef _MSC_VER
 struct timeval;
 struct timezone;
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 #else
 #include <sys/time.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#include <direct.h> /* for getcwd */
+#else
+#include <unistd.h> /* for getcwd */
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
 #endif
 
 /* Allow for windows stdout being made binary */
@@ -140,6 +152,17 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_XHTML, CS_RGB, { CS_RGB } },
 	{ OUT_STEXT, CS_RGB, { CS_RGB } },
 };
+
+time_t
+stat_mtime(const char *path)
+{
+	struct stat info;
+
+	if (stat(path, &info) < 0)
+		return 0;
+
+	return info.st_mtime;
+}
 
 /*
 	In the presence of pthreads or Windows threads, we can offer
@@ -265,6 +288,7 @@ static int spots = SPOTS_OVERPRINT_SIM;
 static int spots = SPOTS_NONE;
 #endif
 static int alpha;
+static int useaccel = 1;
 static char *filename;
 static int files = 0;
 static int num_workers = 0;
@@ -340,6 +364,7 @@ static void usage(void)
 		"\t-S -\tfont size for EPUB layout\n"
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\t-X\tdisable document styles for EPUB layout\n"
+		"\t-a\tdisable usage of accelerator file\n"
 		"\n"
 		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha, filename of ICC profile)\n"
 		"\t-e -\tproof icc profile (filename of ICC profile)\n"
@@ -1446,6 +1471,58 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 #endif
 }
 
+static int convert_to_accel_path(fz_context *ctx, char outname[], char *absname, size_t len)
+{
+	char *tmpdir;
+	char *s;
+
+	tmpdir = getenv("TEMP");
+	if (!tmpdir)
+		tmpdir = getenv("TMP");
+	if (!tmpdir)
+		tmpdir = "/var/tmp";
+	if (!fz_is_directory(ctx, tmpdir))
+		tmpdir = "/tmp";
+
+	if (absname[0] == '/' || absname[0] == '\\')
+		++absname;
+
+	s = absname;
+	while (*s) {
+		if (*s == '/' || *s == '\\' || *s == ':')
+			*s = '%';
+		++s;
+	}
+
+	if (fz_snprintf(outname, len, "%s/%s.accel", tmpdir, absname) >= len)
+		return 0;
+	return 1;
+}
+
+static int get_accelerator_filename(fz_context *ctx, char outname[], size_t len, const char *filename)
+{
+	char absname[PATH_MAX];
+	if (!fz_realpath(filename, absname))
+		return 0;
+	if (!convert_to_accel_path(ctx, outname, absname, len))
+		return 0;
+	return 1;
+}
+
+static void save_accelerator(fz_context *ctx, fz_document *doc, const char *filename)
+{
+	char absname[PATH_MAX];
+
+	if (!doc)
+		return;
+	if (!fz_document_supports_accelerator(ctx, doc))
+		return;
+	if (!get_accelerator_filename(ctx, absname, sizeof(absname), filename))
+		return;
+
+	fz_save_accelerator(ctx, doc, absname);
+}
+
 #ifdef MUDRAW_STANDALONE
 int main(int argc, char **argv)
 #else
@@ -1462,7 +1539,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
+	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:a")) != -1)
 	{
 		switch (c)
 		{
@@ -1539,6 +1616,7 @@ int mudraw_main(int argc, char **argv)
 			break;
 #endif
 		case 'y': layer_config = fz_optarg; break;
+		case 'a': useaccel = 0; break;
 
 		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
 		}
@@ -1884,6 +1962,10 @@ int mudraw_main(int argc, char **argv)
 
 			while (fz_optind < argc)
 			{
+				char accelpath[PATH_MAX];
+				char *accel = NULL;
+				time_t atime;
+				time_t dtime;
 				int layouttime;
 
 				fz_try(ctx)
@@ -1891,7 +1973,31 @@ int mudraw_main(int argc, char **argv)
 					filename = argv[fz_optind++];
 					files++;
 
-					doc = fz_open_document(ctx, filename);
+					if (!useaccel)
+						accel = NULL;
+					/* If there was an accelerator to load, what would it be called? */
+					else if (get_accelerator_filename(ctx, accelpath, sizeof(accelpath), filename))
+					{
+						/* Check whether that file exists, and isn't older than
+						 * the document. */
+						atime = stat_mtime(accelpath);
+						dtime = stat_mtime(filename);
+						if (atime == 0)
+						{
+							/* No accelerator */
+						}
+						else if (atime > dtime)
+							accel = accelpath;
+						else
+						{
+							/* Accelerator data is out of date */
+							unlink(accelpath);
+							accel = NULL; /* In case we have jumped up from below */
+						}
+
+					}
+
+					doc = fz_open_accelerated_document(ctx, filename, accel);
 
 					if (fz_needs_password(ctx, doc))
 					{
@@ -1942,6 +2048,9 @@ int mudraw_main(int argc, char **argv)
 						drawrange(ctx, doc, argv[fz_optind++]);
 
 					bgprint_flush();
+
+					if (useaccel)
+						save_accelerator(ctx, doc, filename);
 				}
 				fz_always(ctx)
 				{
