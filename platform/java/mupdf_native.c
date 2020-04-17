@@ -6278,7 +6278,11 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 
 	/* now run through actually creating the link objects */
 	jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
-	if (!jlinks) return NULL;
+	if (!jlinks)
+	{
+		fz_drop_link(ctx, links);
+		return NULL;
+	}
 
 	link = links;
 	for (i = 0; link && i < link_count; i++)
@@ -6288,19 +6292,34 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jobject juri = NULL;
 
 		jbounds = to_Rect_safe(ctx, env, link->rect);
-		if (!jbounds) return NULL;
+		if (!jbounds || (*env)->ExceptionCheck(env))
+		{
+			fz_drop_link(ctx, links);
+			return NULL;
+		}
 
 		juri = (*env)->NewStringUTF(env, link->uri);
-		if (!juri) return NULL;
+		if (!juri || (*env)->ExceptionCheck(env))
+		{
+			fz_drop_link(ctx, links);
+			return NULL;
+		}
 
 		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, juri);
+		if (!jlink || (*env)->ExceptionCheck(env))
+		{
+			fz_drop_link(ctx, links);
+			return NULL;
+		}
+		(*env)->DeleteLocalRef(env, juri);
 		(*env)->DeleteLocalRef(env, jbounds);
-		if (!jlink) return NULL;
-		if (juri)
-			(*env)->DeleteLocalRef(env, juri);
 
 		(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
-		if ((*env)->ExceptionCheck(env)) return NULL;
+		if ((*env)->ExceptionCheck(env))
+		{
+			fz_drop_link(ctx, links);
+			return NULL;
+		}
 
 		(*env)->DeleteLocalRef(env, jlink);
 		link = link->next;
