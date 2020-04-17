@@ -737,7 +737,6 @@ generate_boxes(fz_context *ctx,
 						fz_css_style boxstyle;
 						fz_html_box *imgbox;
 						box = new_box(ctx, g->pool, markup_dir);
-						fz_default_css_style(ctx, &boxstyle);
 						fz_apply_css_style(ctx, g->set, &boxstyle, &match);
 						box->style = fz_css_enlist(ctx, &boxstyle, &g->styles, g->pool);
 						top = insert_block_box(ctx, box, top);
@@ -777,7 +776,6 @@ generate_boxes(fz_context *ctx,
 					{
 						fz_html_box *imgbox;
 						box = new_box(ctx, g->pool, markup_dir);
-						fz_default_css_style(ctx, &style);
 						fz_apply_css_style(ctx, g->set, &style, &match);
 						box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 						top = insert_block_box(ctx, box, top);
@@ -825,7 +823,6 @@ generate_boxes(fz_context *ctx,
 					box = new_short_box(ctx, g->pool, child_dir);
 				else
 					box = new_box(ctx, g->pool, child_dir);
-				fz_default_css_style(ctx, &style);
 				fz_apply_css_style(ctx, g->set, &style, &match);
 				box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 
@@ -1369,7 +1366,6 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		html->layout_w = 0;
 		html->layout_h = 0;
 		html->layout_em = 0;
-		fz_default_css_style(ctx, &style);
 
 		match.up = NULL;
 		match.count = 0;
