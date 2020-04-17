@@ -693,6 +693,8 @@ generate_boxes(fz_context *ctx,
 
 			display = fz_get_css_match_display(&match);
 
+			fz_apply_css_style(ctx, g->set, &style, &match);
+
 			if (tag[0]=='b' && tag[1]=='r' && tag[2]==0)
 			{
 				if (top->type == BOX_INLINE)
@@ -705,7 +707,6 @@ generate_boxes(fz_context *ctx,
 				else
 				{
 					box = new_short_box(ctx, g->pool, markup_dir);
-					fz_apply_css_style(ctx, g->set, &style, &match);
 					box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 					top = insert_break_box(ctx, box, top);
 				}
@@ -720,7 +721,6 @@ generate_boxes(fz_context *ctx,
 					int w, h;
 					const char *w_att = fz_xml_att(node, "width");
 					const char *h_att = fz_xml_att(node, "height");
-					fz_apply_css_style(ctx, g->set, &style, &match);
 					if (w_att && (w = fz_atoi(w_att)) > 0)
 					{
 						style.width.value = w;
@@ -734,11 +734,9 @@ generate_boxes(fz_context *ctx,
 
 					if (display == DIS_BLOCK)
 					{
-						fz_css_style boxstyle;
 						fz_html_box *imgbox;
 						box = new_box(ctx, g->pool, markup_dir);
-						fz_apply_css_style(ctx, g->set, &boxstyle, &match);
-						box->style = fz_css_enlist(ctx, &boxstyle, &g->styles, g->pool);
+						box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 						top = insert_block_box(ctx, box, top);
 						imgbox = new_short_box(ctx, g->pool, markup_dir);
 						imgbox->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
@@ -758,7 +756,6 @@ generate_boxes(fz_context *ctx,
 			else if (tag[0]=='s' && tag[1]=='v' && tag[2]=='g' && tag[3]==0)
 			{
 				box = new_short_box(ctx, g->pool, markup_dir);
-				fz_apply_css_style(ctx, g->set, &style, &match);
 				box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 				insert_inline_box(ctx, box, top, markup_dir, g);
 				generate_image(ctx, box, load_svg_image(ctx, g->zip, g->base_uri, node), g);
@@ -776,11 +773,9 @@ generate_boxes(fz_context *ctx,
 					{
 						fz_html_box *imgbox;
 						box = new_box(ctx, g->pool, markup_dir);
-						fz_apply_css_style(ctx, g->set, &style, &match);
 						box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 						top = insert_block_box(ctx, box, top);
 						imgbox = new_short_box(ctx, g->pool, markup_dir);
-						fz_apply_css_style(ctx, g->set, &style, &match);
 						imgbox->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 						insert_inline_box(ctx, imgbox, box, markup_dir, g);
 						generate_image(ctx, imgbox, fz_keep_image(ctx, img), g);
@@ -788,7 +783,6 @@ generate_boxes(fz_context *ctx,
 					else if (display == DIS_INLINE)
 					{
 						box = new_short_box(ctx, g->pool, markup_dir);
-						fz_apply_css_style(ctx, g->set, &style, &match);
 						box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 						insert_inline_box(ctx, box, top, markup_dir, g);
 						generate_image(ctx, box, fz_keep_image(ctx, img), g);
@@ -823,7 +817,6 @@ generate_boxes(fz_context *ctx,
 					box = new_short_box(ctx, g->pool, child_dir);
 				else
 					box = new_box(ctx, g->pool, child_dir);
-				fz_apply_css_style(ctx, g->set, &style, &match);
 				box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
 
 				id = fz_xml_att(node, "id");
