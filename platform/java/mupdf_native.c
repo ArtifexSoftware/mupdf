@@ -1702,7 +1702,7 @@ static inline jobject to_Quad_safe(fz_context *ctx, JNIEnv *env, fz_quad quad)
 		quad.lr.x, quad.lr.y);
 }
 
-static inline jobjectArray to_jQuadArray_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quads, jint n)
+static inline jobjectArray to_QuadArray_safe(fz_context *ctx, JNIEnv *env, const fz_quad *quads, jint n)
 {
 	jobjectArray arr;
 	int i;
@@ -6336,7 +6336,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jQuadArray_safe(ctx, env, hits, n);
+	return to_QuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -6653,7 +6653,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jQuadArray_safe(ctx, env, hits, n);
+	return to_QuadArray_safe(ctx, env, hits, n);
 }
 
 /* Buffer interface */
@@ -7140,7 +7140,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	return to_jQuadArray_safe(ctx, env, hits, n);
+	return to_QuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -7163,7 +7163,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jpt1, jobject j
 		return NULL;
 	}
 
-	return to_jQuadArray_safe(ctx, env, hits, n);
+	return to_QuadArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
