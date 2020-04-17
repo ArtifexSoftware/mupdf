@@ -1898,6 +1898,8 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 				opts = Memento_label(fz_malloc(ctx, nopts * sizeof(*opts)), "to_PDFWidget");
 				pdf_choice_widget_options(ctx, widget, 0, opts);
 				jopts = to_StringArray_safe(ctx, env, opts, nopts);
+				if (!jopts || (*env)->ExceptionCheck(env))
+					fz_throw_java(ctx, env);
 			}
 		}
 	}
@@ -1911,8 +1913,6 @@ static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *wid
 		return NULL;
 	}
 
-	if ((*env)->ExceptionCheck(env))
-		return NULL;
 	(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
 
 	return jwidget;
