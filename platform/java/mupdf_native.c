@@ -6315,7 +6315,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 
 	/* now run through actually creating the link objects */
 	jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
-	if (!jlinks)
+	if (!jlinks || (*env)->ExceptionCheck(env))
 	{
 		fz_drop_link(ctx, links);
 		return NULL;
