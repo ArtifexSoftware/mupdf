@@ -8059,7 +8059,7 @@ SeekableOutputStream_as_stream(fz_context *ctx, void *opaque)
 	SeekableStreamState *state;
 	fz_stream *stm;
 
-	state = fz_malloc(ctx, sizeof(SeekableStreamState));
+	state = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_state");
 	state->stream = in_state->stream;
 	state->array = in_state->array;
 
@@ -8133,7 +8133,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		if (jstream)
 		{
 			/* No exceptions can occur from here to stream owning state, so we must not free state. */
-			state = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreramState_state");
+			state = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_state");
 			state->stream = stream;
 			state->array = array;
 
@@ -11044,7 +11044,7 @@ static char *string_field_to_utfchars(fz_context *ctx, JNIEnv *env, jobject obj,
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot not get UTF string");
 
 	fz_try(ctx)
-		val = fz_strdup(ctx, str);
+		val = Memento_label(fz_strdup(ctx, str), "string field");
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jstr, str);
 	fz_catch(ctx)
@@ -11077,7 +11077,7 @@ static pdf_pkcs7_designated_name *signer_designated_name(fz_context *ctx, pdf_pk
 	fz_var(name);
 	fz_try(ctx)
 	{
-		name = fz_calloc(ctx, 1, sizeof(*name));
+		name = Memento_label(fz_calloc(ctx, 1, sizeof(*name)), "designated name");
 		name->cn = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_cn);
 		name->o = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_o);
 		name->ou = string_field_to_utfchars(ctx, env, desname, fid_PKCS7DesignatedName_ou);
@@ -11175,7 +11175,7 @@ static int signer_create_digest(fz_context *ctx, pdf_pkcs7_signer *signer_, fz_s
 
 pdf_pkcs7_signer *pdf_pkcs7_java_signer_create(JNIEnv *env, fz_context *ctx, jobject java_signer)
 {
-	java_pkcs7_signer *signer = fz_calloc(ctx, 1, sizeof(*signer));
+	java_pkcs7_signer *signer = Memento_label(fz_calloc(ctx, 1, sizeof(*signer)), "java_pkcs7_signer");
 
 	if (signer == NULL)
 		return NULL;
