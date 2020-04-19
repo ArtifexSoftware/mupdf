@@ -1540,7 +1540,7 @@ static inline jbyteArray to_jbyteArray(fz_context *ctx, JNIEnv *env, const unsig
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 	if (!jarr)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "can not allocate byte array");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot allocate byte array");
 
 	(*env)->SetByteArrayRegion(env, jarr, 0, n, (jbyte *) arr);
 	if ((*env)->ExceptionCheck(env))
@@ -1559,7 +1559,7 @@ static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const flo
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 	if (!jarr)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "can not allocate float array");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot allocate float array");
 
 	(*env)->SetFloatArrayRegion(env, jarr, 0, n, arr);
 	if ((*env)->ExceptionCheck(env))
@@ -4268,7 +4268,7 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 	if (!ctx | !pixmap) return NULL;
 
 	arr = (*env)->NewByteArray(env, size);
-	if (!arr) { jni_throw_run(env, "can not create byte array"); return NULL; }
+	if (!arr) { jni_throw_run(env, "cannot create byte array"); return NULL; }
 
 	(*env)->SetByteArrayRegion(env, arr, 0, size, (const jbyte *)pixmap->samples);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -8151,7 +8151,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
-		jni_throw_run(env, "can not create byte array");
+		jni_throw_run(env, "cannot create byte array");
 		return;
 	}
 
@@ -8161,7 +8161,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
-		jni_throw_run(env, "can not create global reference");
+		jni_throw_run(env, "cannot create global reference");
 		return;
 	}
 
@@ -8562,7 +8562,7 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 		if ((*env)->ExceptionCheck(env))
 			fz_throw_java(ctx, env);
 		if (!arr)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "can not create byte array");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create byte array");
 
 		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
 		if ((*env)->ExceptionCheck(env))
@@ -8756,7 +8756,7 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	name = (*env)->GetStringUTFChars(env, jname, NULL);
 	if (!name)
 	{
-		jni_throw_run(env, "can not get name to lookup");
+		jni_throw_run(env, "cannot get name to lookup");
 		return NULL;
 	}
 
@@ -9379,7 +9379,7 @@ FUN(PDFObject_asByteString)(JNIEnv *env, jobject self)
 		return NULL;
 	if (!jbs)
 	{
-		jni_throw_run(env, "can not create byte array");
+		jni_throw_run(env, "cannot create byte array");
 		return NULL;
 	}
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
@@ -11498,7 +11498,7 @@ FUN(PDFWidget_getDesignatedName)(JNIEnv *env, jobject self, jobject jverifier)
 		return NULL;
 	if (!jname)
 	{
-		jni_throw_run(env, "can not create designated name object");
+		jni_throw_run(env, "cannot create designated name object");
 		return NULL;
 	}
 
@@ -11693,7 +11693,7 @@ FUN(FitzInputStream_readArray)(JNIEnv *env, jobject self, jobject jarr, jint off
 	arr = (*env)->GetByteArrayElements(env, jarr, NULL);
 	if (!arr)
 	{
-		jni_throw_arg(env, "can not get buffer to read into");
+		jni_throw_arg(env, "cannot get buffer to read into");
 		return -1;
 	}
 
