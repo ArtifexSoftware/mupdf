@@ -831,6 +831,12 @@ static int find_fids(JNIEnv *env)
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
 
+	if (err)
+	{
+		LOGE("one or more class, member or field IDs could not be found");
+		return -1;
+	}
+
 	/* Get and store the main JVM pointer. We need this in order to get
 	 * JNIEnv pointers on callback threads. This is specifically
 	 * guaranteed to be safe to store in a static var. */
@@ -838,11 +844,11 @@ static int find_fids(JNIEnv *env)
 	getvmErr = (*env)->GetJavaVM(env, &jvm);
 	if (getvmErr < 0)
 	{
-		LOGE("mupdf_native.c find_fids() GetJavaVM failed with %d", getvmErr);
-		err = 1;
+		LOGE("cannot get JVM interface (error %d)", getvmErr);
+		return -1;
 	}
 
-	return err;
+	return 0;
 }
 
 /* When making callbacks from C to java, we may be called on threads
@@ -1237,6 +1243,7 @@ static void drop_tls_context(void *arg)
 
 static int init_base_context(JNIEnv *env)
 {
+	int ret;
 	int i;
 
 #ifdef _WIN32
@@ -1247,9 +1254,17 @@ static int init_base_context(JNIEnv *env)
 	 * need to. */
 	context_key = TlsAlloc();
 	if (context_key == TLS_OUT_OF_INDEXES)
+	{
+		LOGE("cannot get thread local storage for storing base context");
 		return -1;
+	}
 #else
-	pthread_key_create(&context_key, drop_tls_context);
+	ret = pthread_key_create(&context_key, drop_tls_context);
+	if (ret < 0)
+	{
+		LOGE("cannot get thread local storage for storing base context");
+		return -1;
+	}
 #endif
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
@@ -1261,9 +1276,20 @@ static int init_base_context(JNIEnv *env)
 
 	base_context = fz_new_context(NULL, &locks, FZ_STORE_DEFAULT);
 	if (!base_context)
+	{
+		LOGE("cannot create base context");
+		fin_base_context(env);
 		return -1;
+	}
 
-	fz_register_document_handlers(base_context);
+	fz_try(base_context)
+		fz_register_document_handlers(base_context);
+	fz_catch(base_context)
+	{
+		LOGE("cannot register document handlers (%s)", fz_caught_message(base_context));
+		fin_base_context(env);
+		return -1;
+	}
 
 #ifdef HAVE_ANDROID
 	fz_install_load_system_font_funcs(base_context,
@@ -1302,9 +1328,14 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
 	JNIEnv *env;
+	jint ret;
 
-	if ((*vm)->GetEnv(vm, (void **)&env, MY_JNI_VERSION) != JNI_OK)
+	ret = (*vm)->GetEnv(vm, (void **)&env, MY_JNI_VERSION);
+	if (ret != JNI_OK)
+	{
+		LOGE("cannot get JNI interface during load (error %d)", ret);
 		return -1;
+	}
 
 	return MY_JNI_VERSION;
 }
@@ -1312,9 +1343,15 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 {
 	JNIEnv *env;
+	jint ret;
 
-	if ((*vm)->GetEnv(vm, (void **)&env, MY_JNI_VERSION) != JNI_OK)
-		return; /* If this fails, we're really in trouble! */
+	ret = (*vm)->GetEnv(vm, (void **)&env, MY_JNI_VERSION);
+	if (ret != JNI_OK)
+	{
+		/* If this fails, we're really in trouble! */
+		LOGE("cannot get JNI interface during unload (error %d)", ret);
+		return;
+	}
 
 	fz_drop_context(base_context);
 	base_context = NULL;
@@ -1334,7 +1371,7 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 	if (init_base_context(env) < 0)
 		return -1;
 
-	if (find_fids(env) != 0)
+	if (find_fids(env) < 0)
 	{
 		fin_base_context(env);
 		return -1;
