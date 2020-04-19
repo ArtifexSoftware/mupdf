@@ -1,3 +1,13 @@
+/*
+NOTE!
+	The JNI specification states that New<PrimitiveType>Array() do not
+	throw java exceptions, but many JVMs (e.g. Android's) treat them the
+	same way as NewObjectArray which may throw e.g. OutOfMemoryError.
+	So after calling these functions it is as important to call
+	ExceptionCheck() to check for exceptions as for functions that
+	are marked as throwing exceptions according to the JNI specification.
+*/
+
 #include <jni.h>
 #ifdef _WIN32
 #include <windows.h>
