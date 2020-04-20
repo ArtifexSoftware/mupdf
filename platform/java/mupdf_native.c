@@ -49,7 +49,7 @@ static inline jlong jlong_cast(const void *p)
 	return (jlong)(intptr_t)p;
 }
 
-/* Our vm */
+/* Our VM */
 static JavaVM *jvm = NULL;
 
 /* All the cached classes/mids/fids we need. */
@@ -999,7 +999,8 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 	case UCDN_SCRIPT_KATAKANA: return load_noto_cjk(ctx, JP);
 	case UCDN_SCRIPT_BOPOMOFO: return load_noto_cjk(ctx, TC);
 	case UCDN_SCRIPT_HAN:
-		switch (language) {
+		switch (language)
+		{
 		case FZ_LANG_ja: return load_noto_cjk(ctx, JP);
 		case FZ_LANG_ko: return load_noto_cjk(ctx, KR);
 		case FZ_LANG_zh_Hans: return load_noto_cjk(ctx, SC);
@@ -1160,7 +1161,8 @@ fz_font *load_droid_fallback_font(fz_context *ctx, int script, int language, int
 
 fz_font *load_droid_cjk_font(fz_context *ctx, const char *name, int ros, int serif)
 {
-	switch (ros) {
+	switch (ros)
+	{
 	case FZ_ADOBE_CNS: return load_noto_cjk(ctx, TC);
 	case FZ_ADOBE_GB: return load_noto_cjk(ctx, SC);
 	case FZ_ADOBE_JAPAN: return load_noto_cjk(ctx, JP);
@@ -2522,7 +2524,8 @@ static void SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 	JNIEnv *env;
 
 	env = jni_attach_thread(ctx, &detach);
-	if (env == NULL) {
+	if (env == NULL)
+	{
 		fz_warn(ctx, "cannot attach to JVM in SeekableInputStream_drop; leaking input stream");
 		return;
 	}
@@ -2542,7 +2545,8 @@ static void SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
 	JNIEnv *env;
 
 	env = jni_attach_thread(ctx, &detach);
-	if (env == NULL) {
+	if (env == NULL)
+	{
 		fz_warn(ctx, "cannot attach to JVM in SeekableOutputStream_drop; leaking output stream");
 		return;
 	}
@@ -3788,7 +3792,8 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	assert(info);
 	assert(info->object);
 
-	while (1) {
+	while (1)
+	{
 		ret = AndroidBitmap_lockPixels(env, info->object, (void **)&pixels);
 		if (ret == ANDROID_BITMAP_RESULT_SUCCESS)
 			break;
@@ -3880,7 +3885,8 @@ FUN(AndroidImage_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap,
 		int phase = 0;
 		size_t size = info.width * info.height * 4;
 		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height, NULL, 1);
-		while (1) {
+		while (1)
+		{
 			ret = AndroidBitmap_lockPixels(env, jbitmap, (void **)&pixels);
 			if (ret == ANDROID_BITMAP_RESULT_SUCCESS)
 				break;
@@ -4893,7 +4899,8 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 				(*env)->DeleteLocalRef(env, jfont);
 			font = span->font;
 			jfont = to_Font_safe(ctx, env, font);
-			if (!jfont) return;
+			if (!jfont)
+				return;
 		}
 
 		for (i = 0; i < span->len; ++i)
@@ -5499,7 +5506,8 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		n = (*env)->GetArrayLength(env, jbuffer);
 
 		buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
-		if (!buffer) {
+		if (!buffer)
+		{
 			if (magic)
 				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			jni_throw_run(env, "cannot get document bytes to read");
@@ -5511,7 +5519,8 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		m = (*env)->GetArrayLength(env, jaccelerator);
 
 		accelerator = (*env)->GetByteArrayElements(env, jaccelerator, NULL);
-		if (!accelerator) {
+		if (!accelerator)
+		{
 			if (buffer)
 				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
 			if (magic)
@@ -7498,7 +7507,8 @@ FUN(PDFDocument_newByteString)(JNIEnv *env, jobject self, jobject jbs)
 	}
 
 	(*env)->GetByteArrayRegion(env, jbs, 0, bslen, bs);
-	if ((*env)->ExceptionCheck(env)) {
+	if ((*env)->ExceptionCheck(env))
+	{
 		fz_free(ctx, bs);
 		return NULL;
 	}
@@ -10884,13 +10894,15 @@ FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 				for (fz_stext_char *ch = line->first_char; ch; ch = ch->next)
 				{
 					jquad = to_Quad_safe(ctx, env, ch->quad);
-					if (!jquad) {
+					if (!jquad)
+					{
 						fz_drop_stext_page(ctx, stext);
 						return NULL;
 					}
 
 					(*env)->SetObjectArrayElement(env, array, i, jquad);
-					if ((*env)->ExceptionCheck(env)) {
+					if ((*env)->ExceptionCheck(env))
+					{
 						fz_drop_stext_page(ctx, stext);
 						return NULL;
 					}
