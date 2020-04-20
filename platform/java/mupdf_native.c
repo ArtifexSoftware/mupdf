@@ -8306,7 +8306,7 @@ FUN(PDFObject_isNull)(JNIEnv *env, jobject self)
 	pdf_obj *obj = from_PDFObject(env, self);
 	int b = 0;
 
-	if (!ctx || !obj) return JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_null(ctx, obj);
