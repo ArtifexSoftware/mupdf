@@ -201,7 +201,7 @@ $(THIRD_LIB) : $(THIRD_OBJ)
 $(THREAD_LIB) : $(THREAD_OBJ)
 	$(LINK_CMD) -shared -Wl,-soname -Wl,libmupdf-threads.so -Wl,--no-undefined -lpthread
 $(PKCS7_LIB) : $(PKCS7_OBJ)
-	$(LINK_CMD) -shared -Wl,-soname -Wl,libmupfs-pkcs7.so
+	$(LINK_CMD) -shared -Wl,-soname -Wl,libmupdf-pkcs7.so
  
 
 INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB) $(PKCS7_LIB)
