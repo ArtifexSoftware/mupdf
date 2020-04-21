@@ -158,6 +158,9 @@ static int layout_use_doc_css = 1;
 static int enable_js = 1;
 static int tint_white = 0xFFFFF0;
 static int tint_black = 0x303030;
+static int use_custom_bg = 0;
+static float bg_rgb[3];
+
 
 static fz_document *doc = NULL;
 static fz_page *fzpage = NULL;
@@ -2053,12 +2056,26 @@ void do_main(void)
 		do_info();
 }
 
+void hex_code_to_rgb(int hex_color, float *rgb) {
+	int r = (hex_color >> 16) & 0xFF;
+	int g = (hex_color >> 8) & 0xFF;
+	int b = (hex_color)&0xFF;
+	rgb[0] = (float)r / 255;
+	rgb[1] = (float)g / 255;
+	rgb[2] = (float)b / 255;
+}
+
 void run_main_loop(void)
 {
-	if (currentinvert)
-		glClearColor(0, 0, 0, 1);
-	else
-		glClearColor(0.3f, 0.3f, 0.3f, 1);
+	if (!use_custom_bg) {
+		if (currentinvert)
+			glClearColor(0, 0, 0, 1);
+		else
+			glClearColor(0.3f, 0.3f, 0.3f, 1);
+	} else {
+		glClearColor(bg_rgb[0], bg_rgb[1], bg_rgb[2], 1);
+	}
+
 	ui_begin();
 	fz_try(ctx)
 	{
@@ -2088,6 +2105,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-A -\tset anti-aliasing level (0-8,9,10)\n");
 	fprintf(stderr, "\t-B -\tset black tint color (default: 303030)\n");
 	fprintf(stderr, "\t-C -\tset white tint color (default: FFFFF0)\n");
+	fprintf(stderr, "\t-G -\tset background color (default: 4C4C4C)\n");
 	exit(1);
 }
 
@@ -2167,7 +2185,7 @@ int main(int argc, char **argv)
 	screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
 	screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:T:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:G:T:")) != -1)
 	{
 		switch (c)
 		{
@@ -2184,6 +2202,7 @@ int main(int argc, char **argv)
 		case 'A': currentaa = fz_atoi(fz_optarg); break;
 		case 'C': currenttint = 1; tint_white = strtol(fz_optarg, NULL, 16); break;
 		case 'B': currenttint = 1; tint_black = strtol(fz_optarg, NULL, 16); break;
+		case 'G': use_custom_bg = 1; hex_code_to_rgb(strtol(fz_optarg, NULL, 16), bg_rgb); break;
 		case 'T': trace_file_name = fz_optarg; break;
 		}
 	}
