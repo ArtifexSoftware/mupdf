@@ -1,4 +1,4 @@
-List of changes since the last release
+List of changes in MuPDF 1.17.0
 
 	api: Improved accessors for markup/ink/polygon annotation data.
 	api: Chapter based API for faster EPUB loading.
