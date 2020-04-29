@@ -94,11 +94,12 @@ Args:
 
     -d
     --dir-so <directory>
-        Location of shared library files, e.g. build/debug-shared or
-        build/release-shared.
+        Set directory containing shared libraries.
 
-        Default is <mupdf>/build/shared-release/. Typical alternative is
-        <mupdf>/build/shared-debug/.
+        Supported values for <directory>:
+            <mupdf>/build/shared-release/ [default]
+            <mupdf>/build/shared-debug/
+            <mupdf>/build/shared-memento/
 
         We use different C++ compile flags depending on release or debug builds
         (specifically definition of NDEBUG is important because it must match
@@ -130,15 +131,11 @@ Args:
     --ref
         Copy generated C++ files to mupdfwrap_ref/ directory for use by --diff.
 
-    --so-dir <directory>
-        Set directory containing shared libraries.
+    --run-py <arg> <arg> ...
+        Runs command with LD_LIBRARY_PATH and PYTHONPATH set up for use with
+        mupdf.py.
 
-        Default is <mupdf>/build/release-shared/. Typical alternative is
-        <mupdf>/build/debug-shared/.
-
-        We use different C++ compile flags depending on release or debug builds
-        (specifically definition of NDEBUG is important because it must match
-        what was used when libmupdf.so was built).
+        Exits with same code as the command.
 
     --swig <swig>
         Sets the swig command to use.
@@ -296,32 +293,65 @@ except ModuleNotFoundError:
 
 class ClangInfo:
     '''
-    Searches for libclang.so and registers with
-    clang.cindex.Config.set_library_file().
+    Sets things up so we can import and use clang.
 
-    This appears to be necessary even when clang is installed as a standard
-    package.
+    Members:
+        .libclang_so
+        .resource_dir
+        .include_path
+        .clang_version
     '''
     def __init__( self):
-        self._find_so()
-        self.resource_dir = jlib.system( 'clang -print-resource-dir', out='return').strip()
-        self.include_path = os.path.join( self.resource_dir, 'include')
+        '''
+        We look for different versions of clang until one works.
 
-    def _find_so( self):
+        Searches for libclang.so and registers with
+        clang.cindex.Config.set_library_file(). This appears to be necessary
+        even when clang is installed as a standard package.
+        '''
         for version in 7, 6,:
-            clang_search_dirs = jlib.system( 'clang -print-search-dirs', out='return')
-            clang_search_dirs = clang_search_dirs.strip().split(':')
-            for i in clang_search_dirs:
-                p = os.path.join( i, f'libclang-{version}.*so*')
-                p = os.path.abspath( p)
-                libclang_so = glob.glob( p)
-                if libclang_so:
-                    self.libclang_so = libclang_so[0]
-                    #log( 'Using {self.libclang_so=}')
-                    clang.cindex.Config.set_library_file( self.libclang_so)
-                    return
+            ok = self._try_init_clang( version)
+            if ok:
+                break
+        else:
+            raise Exception( 'cannot find libclang.so')
 
-        raise Exception( 'cannot find libclang.so')
+    def _try_init_clang( self, version):
+        for p in os.environ.get( 'PATH').split( ':'):
+            clang_bins = glob.glob( os.path.join( p, f'clang-{version}*'))
+            if not clang_bins:
+                continue
+            clang_bins.sort()
+            for clang_bin in clang_bins:
+                e, clang_search_dirs = jlib.system(
+                        f'{clang_bin} -print-search-dirs',
+                        #verbose=log,
+                        out='return',
+                        raise_errors=False,
+                        )
+                if e:
+                    log( '[could not find {clang_bin}: {e=}]')
+                    return
+                clang_search_dirs = clang_search_dirs.strip().split(':')
+                for i in clang_search_dirs:
+                    p = os.path.join( i, f'libclang-{version}.*so*')
+                    p = os.path.abspath( p)
+                    libclang_so = glob.glob( p)
+                    if not libclang_so:
+                        continue
+
+                    # We have found libclang.so.
+                    self.libclang_so = libclang_so[0]
+                    log1( 'Using {self.libclang_so=}')
+                    clang.cindex.Config.set_library_file( self.libclang_so)
+                    self.resource_dir = jlib.system(
+                            f'{clang_bin} -print-resource-dir',
+                            out='return',
+                            ).strip()
+                    self.include_path = os.path.join( self.resource_dir, 'include')
+                    self.clang_version = version
+                    return True
+
 
 g_clang_info = ClangInfo()
 
@@ -667,6 +697,22 @@ class ClassExtras:
         return self.items.get( name, ClassExtra())
     def get_or_none( self, name):
         return self.items.get( name)
+
+
+# These functions are known to return a pointer to a fz_* struct that must not
+# be dropped.
+#
+# This matters if we wrap in a class method, because this will return class
+# wrapper for the struct, whose destructor will call fz_drop_*(). In this case,
+# we need to call fz_keep_*() before returning the class wrapper.
+#
+functions_that_return_non_kept = [
+        'fz_default_cmyk',
+        'fz_default_rgb',
+        'fz_default_cmyk',
+        'fz_default_output_intent',
+        'fz_document_output_intent',
+        ]
 
 
 classextras = ClassExtras(
@@ -2047,7 +2093,7 @@ def make_fncall( tu, cursor, return_type, fncall, out):
     out.write( f'    const char*    trace = getenv("MUPDF_trace");\n')
     out.write( f'    if (trace) {{\n')
 
-    out.write( f'        fprintf(::stderr, "%s:%i:%s() calling {cursor.mangled_name}():')
+    out.write( f'        fprintf(::stderr, "%s:%i:%s(): calling {cursor.mangled_name}():')
 
     items = []
     for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=True):
@@ -2455,13 +2501,21 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
 
             base_typename = get_base_typename( arg.type)
             if not alt and base_typename.startswith( 'fz_'):
-                #log( '{arg.spelling=} {arg.type.kind} {arg.type.get_canonical().kind=}')
                 if arg.type.get_canonical().kind==clang.cindex.TypeKind.ENUM:
-                    exclude_reasons.append(
-                            (
-                            MethodExcludeReason_ENUM,
-                            f'arg i={i} is enum: {arg.type.get_canonical().spelling}',
-                            ))
+                    # We don't (yet) wrap fz_* enums, but for now at least we
+                    # still wrap functions that take fz_* enum parameters -
+                    # callers will have to use the fz_* type.
+                    #
+                    # For example this is required by mutool_draw.py because
+                    # mudraw.c calls fz_set_separation_behavior().
+                    #
+                    log( 'not excluding {fnname=} with enum fz_ param : {arg.spelling=} {arg.type.kind} {arg.type.get_canonical().kind=}')
+                    if 0:
+                        exclude_reasons.append(
+                                (
+                                MethodExcludeReason_ENUM,
+                                f'arg i={i} is enum: {arg.type.get_canonical().spelling}',
+                                ))
                 else:
                     exclude_reasons.append(
                             (
@@ -2481,6 +2535,10 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
 
         if exclude_reasons:
             find_wrappable_function_with_arg0_type_excluded_cache[ fnname] = exclude_reasons
+            if 0:
+                log( 'excluding {fnname=} because:')
+                for i in exclude_reasons:
+                    log( '    {i}')
         else:
             if i > 0:
                 # <fnname> is ok to wrap.
@@ -3126,6 +3184,11 @@ def class_write_method_body(
                 )
     out_cpp.write( f');\n')
 
+    if fnname in functions_that_return_non_kept:
+        return_type_base = clip( return_cursor.spelling, 'fz_')
+        keep_fn = f'fz_keep_{return_type_base}'
+        out_cpp.write( f'    {rename.function_call(keep_fn)}(temp);\n')
+
     if construct_from_temp == 'address_of_value':
         out_cpp.write( f'    return {return_type}(&temp);\n')
     elif construct_from_temp == 'pointer':
@@ -3494,6 +3557,7 @@ def class_raw_constructor(
 
 
 def class_accessors(
+        tu,
         register_fn_use,
         classname,
         struct,
@@ -3510,6 +3574,10 @@ def class_accessors(
             log( 'creating accessor for non-pod class {classname=} wrapping {structname}')
     for cursor in struct.type.get_canonical().get_fields():
         #jlib.log( 'accessors: {cursor.spelling=} {cursor.type.spelling=}')
+
+        # We set this to fz_keep_<type>() function to call, if we return a
+        # wrapper class constructed from raw pointer to underlying fz_* struct.
+        keep_function = None
 
         # Set <decl> to be prototype with %s where the name is, e.g. 'int
         # %s()'; later on we use python's % operator to replace the '%s'
@@ -3530,6 +3598,15 @@ def class_accessors(
                     #
                     classname2 = rename.class_( pointee_type)
                     decl = f'{classname2} %s()'
+
+                    # If there's a fz_keep_() function, we must call it on the
+                    # internal data before returning the wrapping class.
+                    keep_function = f'fz_keep_{pointee_type[3:]}'
+                    if find_function( tu, keep_function, method=False):
+                        log( 'using {keep_function=}')
+                    else:
+                        log( 'cannot find {keep_function=}')
+                        keep_function = None
         else:
             if 0 and extras.pod:
                 # Return reference so caller can modify. Unfortunately SWIG
@@ -3561,6 +3638,8 @@ def class_accessors(
         out_h.write( f'    {decl % cursor.spelling};\n')
         out_cpp.write( '%s\n' % (decl % ( f'{classname}::{cursor.spelling}')))
         out_cpp.write( '{\n')
+        if keep_function:
+            out_cpp.write( f'    {rename.function_call(keep_function)}(m_internal->{cursor.spelling});\n')
         if extras.pod:
             out_cpp.write( f'    return m_internal.{cursor.spelling};\n')
         else:
@@ -3837,6 +3916,7 @@ def class_wrapper( tu, register_fn_use, struct, structname, classname, out_h, ou
         out_h.write( f'    /* == Accessors to members of {structname} m_internal. */\n')
         out_h.write( '\n')
         class_accessors(
+                tu,
                 register_fn_use,
                 classname,
                 struct,
@@ -3939,7 +4019,7 @@ def tabify( filename, text):
     return ret
 
 
-def cpp_source( dir_mupdf, namespace, base, doit=True):
+def cpp_source( dir_mupdf, namespace, base, header_git, doit=True):
     '''
     Generates all .h and .cpp files.
 
@@ -4069,19 +4149,24 @@ def cpp_source( dir_mupdf, namespace, base, doit=True):
 
     # Make text of header comment for all generated file.
     #
-    git_id = jlib.get_git_id( dir_mupdf).split('\n', 1)
-    #date = time.strftime( '%F %T')
-    #date = time.strftime( '%F %H')
     header_text = textwrap.dedent(
             f'''
             /*
             This file was auto-generated by mupdfwrap.py.
-
-            mupdf checkout:
-                {git_id[0]}
-            */
-
             ''')
+
+    if header_git:
+        git_id = jlib.get_git_id( dir_mupdf, allow_none=True)
+        if git_id:
+            git_id = git_id.split('\n', 1)
+            header_text += textwrap.dedent(
+                    f'''
+                    mupdf checkout:
+                        {git_id[0]}'
+                    ''')
+
+    header_text += '*/\n'
+    header_text += '\n'
     header_text = header_text[1:]   # Strip leading \n.
     for _, _, file in out_cpps.get() + out_hs.get():
         file.write( header_text)
@@ -4681,7 +4766,7 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
     include1    = f'{build_dirs.dir_mupdf}/include/'
     include2    = f'{build_dirs.dir_cpp}include'
     swig_cpp    = f'{build_dirs.dir_python}mupdfcpp_swig.cpp'
-    swig_py     = f'{build_dirs.dir_python}mupdf.py'
+    swig_py     = f'{build_dirs.dir_so}mupdf.py'
 
     os.makedirs( build_dirs.dir_python, exist_ok=True)
     jlib.update_file( text, swig_i)
@@ -4693,7 +4778,7 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
             f'{" -doxygen" if swig_major >= 4 else ""}'
             f' -{language}'
              ' -module mupdf'
-            f' -outdir {build_dirs.dir_python}'
+            f' -outdir {build_dirs.dir_so}'
             f' -o {swig_cpp}'
              ' -includeall'
             f' -I{include1}'
@@ -4730,14 +4815,12 @@ def test_mupdfcpp_swig():
         # Test operations using functions:
         #
         log( 'Testing functions.')
-        for zlib_pdf in (
-                os.path.expanduser( '~/mupdf/thirdparty/zlib/zlib.3.pdf'),
-                os.path.expanduser( '~/artifex/mupdf/thirdparty/zlib/zlib.3.pdf'),
-                ):
-            if os.path.isfile( zlib_pdf):
-                break
-        else:
-            raise Exception( 'cannot find zlib.3.pdf')
+
+        # Find mupdf:thirdparty/zlib/zlib.3.pdf, assuming we are in
+        # mupdf:platform/python.
+        zlib_pdf = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
+
+        assert os.path.isfile( zlib_pdf), f'file does not exist: {zlib_pdf}'
         log( f'    Opening {zlib_pdf}')
         document = mupdf.open_document( zlib_pdf)
         log( f'    {mupdf.needs_password( document)}')
@@ -4891,8 +4974,9 @@ class BuildDirs:
     def __init__( self):
 
         # Assume we are in mupdf/scripts/.
-        assert __file__.endswith( '/scripts/mupdfwrap.py')
-        dir_mupdf = os.path.abspath( f'{__file__}/../../')
+        file_ = os.path.abspath( __file__)
+        assert file_.endswith( '/scripts/mupdfwrap.py'), '__file__=%s file_=%s' % (__file__, file_)
+        dir_mupdf = os.path.abspath( f'{file_}/../../')
         if not dir_mupdf.endswith( '/'):
             dir_mupdf += '/'
 
@@ -4924,8 +5008,8 @@ class BuildDirs:
             self.cpp_flags = '-g'
         elif dir_so == f'{self.dir_mupdf}build/shared-release/':
             self.cpp_flags = '-O2 -DNDEBUG'
-        elif dir_so == f'{self.dir_mupdf}build/shared/':
-            self.cpp_flags = '-g'
+        elif dir_so == f'{self.dir_mupdf}build/shared-memento/':
+            self.cpp_flags = '-g -DMEMENTO'
         else:
             self.cpp_flags = None
             log( 'Warning: unrecognised {dir_so=}, so cannot determine cpp_flags')
@@ -4960,6 +5044,7 @@ def main():
                 cpp_files   = []
                 container_classnames = None
                 force_rebuild = False
+                header_git = False
 
                 while 1:
                     actions = args.next()
@@ -4985,35 +5070,19 @@ def main():
                             # Build libmupdf.so.
                             log( '{build_dirs.dir_mupdf=}')
 
-                            if build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared/':
-
-                                jlib.system(
-                                        f'cd {build_dirs.dir_mupdf} && make'
-                                            ' build=debug'
-                                            ' verbose=yes'
-                                            ' OUT=build/shared'
-                                            ' XCFLAGS="-fPIC -shared"'
-                                            ' XLDFLAGS="-fPIC -shared -lfreetype"'
-                                            ' USE_SYSTEM_FREETYPE=yes'
-                                            ' USE_SYSTEM_ZLIB=yes'
-                                            ' libs_so'
-                                            ,
-                                        prefix=jlib.log_text(),
-                                        )
-
+                            command = f'cd {build_dirs.dir_mupdf} && make HAVE_GLUT=no shared=yes verbose=yes'
+                            #command += ' USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes'
+                            if 0: pass
+                            elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-debug/':
+                                command += ' build=debug'
+                            elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-release/':
+                                command += ' build=release'
+                            elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-memento/':
+                                command += ' build=memento'
                             else:
+                                raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')
 
-                                command = f'cd {build_dirs.dir_mupdf} && make HAVE_GLUT=no shared=yes verbose=yes'
-                                #command += ' USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes'
-                                if 0: pass
-                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-debug/':
-                                    command += ' debug'
-                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-release/':
-                                    command += ' release'
-                                else:
-                                    raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')
-
-                                jlib.system( command, prefix=jlib.log_text())
+                            jlib.system( command, prefix=jlib.log_text())
 
 
                         elif action == '0':
@@ -5023,6 +5092,7 @@ def main():
                                     build_dirs.dir_mupdf,
                                     namespace,
                                     build_dirs.dir_cpp,
+                                    header_git,
                                     )
 
                             h_files += hs
@@ -5143,7 +5213,7 @@ def main():
 
                             # Python expects _mupdf.so to be in same directory as mupdf.py.
                             #
-                            out_so              = f'{build_dirs.dir_python}_mupdf.so'
+                            out_so              = f'{build_dirs.dir_so}_mupdf.so'
 
                             # We use jlib.link_l_flags() to add -L options
                             # to search parent directories of each .so that
@@ -5180,13 +5250,16 @@ def main():
 
             elif arg == '--diff':
                 for path in jlib.get_filenames( build_dirs.ref_dir):
+                    #log( '{path=}')
                     assert path.startswith( build_dirs.ref_dir)
                     if not path.endswith( '.h') and not path.endswith( '.cpp'):
                         continue
                     tail = path[ len( build_dirs.ref_dir):]
                     path2 = build_dirs.dir_cpp + tail
+                    command = f'diff -u {path} {path2}'
+                    log( 'running: {command}')
                     jlib.system(
-                            f'diff -u {path} {path2}',
+                            command,
                             raise_errors=False,
                             out=lambda text: log( text, nv=False),
                             )
@@ -5258,7 +5331,7 @@ def main():
 
                     elif lang == 'python':
                         ld_library_path = os.path.abspath( f'{build_dirs.dir_so}')
-                        pythonpath = build_dirs.dir_python
+                        pythonpath = build_dirs.dir_so
                         jlib.system( f'cd platform/python; LD_LIBRARY_PATH={ld_library_path} PYTHONPATH={pythonpath} pydoc3 -w ./mupdf.py')
                         assert os.path.isfile( 'platform/python/mupdf.html')
 
@@ -5296,6 +5369,28 @@ def main():
             elif arg == '--dir-so' or arg == '-d':
                 d = args.next()
                 build_dirs.set_dir_so( d)
+
+            elif arg == '--run-py':
+                command = ''
+                while 1:
+                    try:
+                        command += ' ' + args.next()
+                    except StopIteration:
+                        break
+
+                ld_library_path = os.path.abspath( f'{build_dirs.dir_so}')
+                pythonpath = build_dirs.dir_so
+
+                envs = f'LD_LIBRARY_PATH={ld_library_path} PYTHONPATH={pythonpath}'
+                command = f'{envs} {command}'
+                log( 'running: {command}')
+                e = jlib.system(
+                        command,
+                        out = -1,
+                        raise_errors=False,
+                        verbose=False,
+                        )
+                sys.exit(e)
 
             elif arg == '--swig':
                 swig = args.next()
@@ -5362,7 +5457,7 @@ def main():
                 # We need to set LD_LIBRARY_PATH and PYTHONPATH so that our
                 # test .py programme can load mupdf.py and _mupdf.so.
                 ld_library_path = os.path.abspath( f'{build_dirs.dir_so}')
-                pythonpath = build_dirs.dir_python
+                pythonpath = build_dirs.dir_so
 
                 envs = f'LD_LIBRARY_PATH={ld_library_path} PYTHONPATH={pythonpath}'
 
