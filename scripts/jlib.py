@@ -774,6 +774,7 @@ def system_raw(
         out:
             Where output is sent.
             If None, output is lost.
+            If -1, output is sent to stdout and stderr.
             Otherwise if an integer, we do: os.write( out, text)
             Otherwise if callable, we do: out( text)
             Otherwise we assume <out> is python stream or similar, and do: out.write(text)
@@ -795,11 +796,20 @@ def system_raw(
         subprocess's <returncode>, i.e. -N means killed by signal N, otherwise
         the exit value (e.g. 12 if command terminated with exit(12)).
     '''
+    if out == -1:
+        stdin = 0
+        stdout = 1
+        stderr = 2
+    else:
+        stdin = None
+        stdout = subprocess.PIPE
+        stderr = subprocess.STDOUT
     child = subprocess.Popen(
             command,
             shell=shell,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr,
             close_fds=True,
             #encoding=encoding - only python-3.6+.
             )
@@ -810,8 +820,9 @@ def system_raw(
 
     out = make_out_callable( out)
 
-    for line in child_out:
-        out.write( line)
+    if stdout == subprocess.PIPE:
+        for line in child_out:
+            out.write( line)
     #decode( lambda : os.read( child_out.fileno(), 100), outfn, encoding)
 
     return child.wait()
@@ -857,13 +868,11 @@ def system(
         command:
             The command to run.
         verbose:
-            If true, we output information on the command we are about to run.
+            If true, we include information about the command that was run, and
+            its result.
 
-            If 'out' we write this information to <out>, otherwise we write to
-            <verbose> itself, which is assumed to be a fd, Python stream or
-            callable.
-
-            If None and <out> is not 'return', we default to 'out'.
+            If callable or something with a .write() method, information is
+            sent to <verbose> itself. Otherwise it is sent to <out>.
         raise_errors:
             If true, we raise an exception if the command fails, otherwise we
             return the failing error code or zero.
@@ -874,6 +883,8 @@ def system(
             If <out> is 'return', we buffer the output and return (e,
             <output>). Note that if raise_errors is true, we only return if <e>
             is zero.
+
+            If -1, output is sent to stdout and stderr.
         prefix:
             If not None, should be prefix string or callable used to prefix
             all output. [This is for convenience to avoid the need to do
@@ -914,23 +925,22 @@ def system(
             encoding = 'utf-8'
             errors = 'replace'
 
-    if verbose is None and out != 'return':
-        verbose = 'out'
-
     out_original = out
     if out is None:
         out = sys.stdout
     elif out == 'return':
         # Store the output ourselves so we can return it.
         out = io.StringIO()
-        if verbose is None:
-            verbose = False
 
     if prefix:
         out = StreamPrefix( out, prefix)
 
-    if verbose == 'out':
-        verbose = make_out_callable( out)
+    if verbose:
+        if callable( verbose) or getattr( verbose, 'write', None):
+            verbose = make_out_callable( verbose)
+        else:
+            verbose = out
+
     if verbose:
         print( 'running: %s' % command, file=verbose)
 
@@ -993,23 +1003,38 @@ def get_gitfiles( directory, submodules=False):
     ret = text.split( '\n')
     return ret
 
-def get_git_id( directory):
+def get_git_id_raw( directory):
+    if not os.path.isdir( '%s/.git' % directory):
+        return
+    text = system(
+            f'cd {directory} && (PAGER= git show --pretty=oneline|head -n 1 && git diff)',
+            out='return',
+            )
+    return text
+
+def get_git_id( directory, allow_none=False):
     '''
     Returns text where first line is '<git-sha> <commit summary>' and remaining
-    lines contain output from 'git diff'.
+    lines contain output from 'git diff' in <directory>.
+
+    directory:
+        Root of git checkout.
+    allow_none:
+        If true, we return None if <directory> is not a git checkout and
+        jtest-git-id file does not exist.
     '''
-    if os.path.isdir( '%s/.git' % directory):
-        text = subprocess.check_output(
-                'cd %s' % directory
-                    + ' && ('
-                    + ' PAGER= git show --pretty=oneline|head -n 1'
-                    + ' && git diff'
-                    + ' ) > jtest-git-id'
-                    ,
-                shell=True,
-                )
-    with open( '%s/jtest-git-id' % directory) as f:
-        text = f.read()
+    filename = f'{directory}/jtest-git-id'
+    text = get_git_id_raw( directory)
+    if text:
+        with open( filename, 'w') as f:
+            f.write( text)
+    elif os.path.isfile( filename):
+        with open( filename) as f:
+            text = f.read()
+    else:
+        if not allow_none:
+            raise Exception( f'Not in git checkout, and no file {filename}.')
+        text = None
     return text
 
 class Args:
