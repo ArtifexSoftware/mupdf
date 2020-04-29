@@ -13,8 +13,6 @@ import os
 import sys
 import textwrap
 
-import jlib
-
 import mupdf
 
 
@@ -219,7 +217,6 @@ def trace( argv):
 
     argv_i = 0
     while 1:
-        jlib.log( '{argv_i=} {argv[ argv_i]=}')
         arg = argv[ argv_i]
         if arg == '-p':
             password = next( opt)
@@ -243,7 +240,6 @@ def trace( argv):
             break
         argv_i += 1
 
-    #jlib.log( '{argv_i=} {len( argv)=}')
     if argv_i == len( argv):
         trace_usage()
 
@@ -281,7 +277,6 @@ def main2( argv):
         sys.exit(1)
 
     fn( argv[2:])
-    jlib.log( 'finished')
 
 
 def main():
@@ -308,9 +303,8 @@ def main():
                 # This breaks - looks like <colorspace> gets dropped and *m_internal is freed?
                 main2( [None] + command.split())
             else:
-                jlib.log( 'running with test command: {command}')
                 command = f'{argv[0]} {command}'
-                jlib.log( f'running: {command}')
+                print( 'running test command: %s' % command)
                 e = os.system( f'{command}')
                 assert not e, f'command failed: {command}'
     else:
@@ -318,8 +312,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception:
-        print( jlib.exception_info())
-        sys.exit( 1)
+    main()

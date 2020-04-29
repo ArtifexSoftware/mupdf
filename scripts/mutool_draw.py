@@ -1,13 +1,19 @@
 import collections
 import getopt
+import os
 import re
 import sys
 import time
 
-import jlib
-log = jlib.log
-
 import mupdf
+
+
+# Force stderr to be line-buffered - i.e. python will flush to the underlying
+# stderr stream every newline. This ensures that our output interleaves with
+# the output of mupdf C code, making it easier to compare our output with that
+# of mutool.
+#
+sys.stderr = os.fdopen( os.dup( sys.stderr.fileno()), 'w', 1)
 
 
 OUT_NONE    = 0
@@ -60,7 +66,7 @@ SPOTS_FULL          = 2
 class suffix_t:
     def __init__( self, suffix, format_, spots):
         self.suffix = suffix
-        self.format_ = format_
+        self.format = format_
         self.spots = spots
 
 suffix_table = [
@@ -112,7 +118,7 @@ cs_name_table = dict(
 
 class format_cs_table_t:
     def __init__( self, format_, default_cs, permitted_cs):
-        self.format_ = format_
+        self.format = format_
         self.default_cs = default_cs
         self.permitted_cs = permitted_cs
 
@@ -139,6 +145,11 @@ format_cs_table = [
         format_cs_table_t( OUT_STEXT, CS_RGB, [ CS_RGB ] ),
         ]
 
+def stat_mtime(path):
+    try:
+        return os.path.getmtime(path)
+    except Exception:
+        return 0
 
 
 class worker_t:
@@ -201,6 +212,7 @@ colorspace = mupdf.Colorspace()
 oi = None
 spots = SPOTS_OVERPRINT_SIM
 alpha = 0
+useaccel = 1
 filename = None
 files = 0
 num_workers = 0
@@ -232,10 +244,16 @@ class timing:
     maxpage = 0
     minfilename = None
     maxfilename = None
+    layout = 0
+    minlayout = 0
+    maxlayout = 0
+    minlayoutfilename = None
+    maxlayoutfilename = None
+
 
 
 def usage():
-    print( f'''
+    sys.stderr.write( f'''
             mudraw version {mupdf.FZ_VERSION} "
             Usage: mudraw [options] file [pages]
             \t-p -\tpassword
@@ -266,6 +284,7 @@ def usage():
             \t-S -\tfont size for EPUB layout
             \t-U -\tfile name of user stylesheet for EPUB layout
             \t-X\tdisable document styles for EPUB layout
+            \t-a\tdisable usage of accelerator file
 
             \t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha, filename of ICC profile)
             \t-e -\tproof icc profile (filename of ICC profile)
@@ -536,7 +555,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
             pix = workers[0].pix
         else:
             pix = mupdf.Pixmap( colorspace, band_ibounds, seps, alpha)
-            pix.set_pixmap_resolution( resolution, resolution)
+            pix.set_pixmap_resolution( int(resolution), int(resolution))
 
         # Output any page level headers (for banded formats)
         if output:
@@ -599,9 +618,9 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         # FIXME
         if showmd5:
             digest = pix.md5_pixmap()
-            sys.stdout.write( ' ')
+            sys.stderr.write( ' ')
             for i in range(16):
-                sys.stdout.write( '%02x', digest[i])
+                sys.stderr.write( '%02x', digest[i])
 
     if output_file_per_page:
         file_level_trailers()
@@ -617,13 +636,13 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
                 timing.minpage = pagenum
                 timing.minfilename = filename
             if diff + interptime > timing.max:
-                timing.max = diff + interptime;
-                timing.maxinterp = interptime;
-                timing.maxpage = pagenum;
-                timing.maxfilename = filename;
+                timing.max = diff + interptime
+                timing.maxinterp = interptime
+                timing.maxpage = pagenum
+                timing.maxfilename = filename
             timing.count += 1
 
-            printf( " %dms (interpretation) %dms (rendering) %dms (total)" % (interptime, diff, diff + interptime))
+            sys.stderr.write( " %dms (interpretation) %dms (rendering) %dms (total)" % (interptime, diff, diff + interptime))
         else:
             if diff < timing.min:
                 timing.min = diff
@@ -637,10 +656,10 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
             timing.total += diff
             timing.count += 1
 
-            print( " %dms" % diff)
+            sys.stderr.write( " %dms" % diff)
 
     if not quiet or showfeatures or showtime or showmd5:
-        print( "\n")
+        sys.stderr.write( "\n")
 
     if lowmemory:
         mupdf.empty_store();
@@ -664,8 +683,10 @@ def bgprint_flush():
 
 def drawpage( doc, pagenum):
     global out
-
+    global filename
+    list_ = None
     cookie = mupdf.Cookie()
+    seps = None
     features = ""
 
     start = gettime() if showtime else 0
@@ -681,12 +702,12 @@ def drawpage( doc, pagenum):
                     seps.set_separation_behavior( i, mupdf.FZ_SEPARATION_SPOT)
             else:
                 for i in range(n):
-                    seps.fz_set_separation_behavior( i, mupdf.FZ_SEPARATION_COMPOSITE)
+                    seps.set_separation_behavior( i, mupdf.FZ_SEPARATION_COMPOSITE)
         elif page.page_uses_overprint():
             # This page uses overprint, so we need an empty
             # sep object to force the overprint simulation on.
             seps = mupdf.Separations(0)
-        elif oi and oi.colorspace_n() != colorspace.fz_colorspace_n():
+        elif oi and oi.colorspace_n() != colorspace.colorspace_n():
             # We have an output intent, and it's incompatible
             # with the colorspace our device needs. Force the
             # overprint simulation on, because this ensures that
@@ -732,7 +753,7 @@ def drawpage( doc, pagenum):
         bgprint_flush()
         if bgprint.active:
             if not quiet or showfeatures or showtime or showmd5:
-                printf( "page %s %d%s" % (filename, pagenum, features))
+                sys.stderr.write( "page %s %d%s" % (filename, pagenum, features))
 
         bgprint.started = 1;
         bgprint.page = page;
@@ -743,7 +764,7 @@ def drawpage( doc, pagenum):
         bgprint.interptime = start;
     else:
         if not quiet or showfeatures or showtime or showmd5:
-            print( "page %s %d%s" % (filename, pagenum, features))
+            sys.stderr.write( "page %s %d%s" % (filename, pagenum, features))
         dodrawpage( page, list_, pagenum, cookie, start, 0, filename, 0, seps)
 
 
@@ -800,11 +821,42 @@ def apply_layer_config( doc, lc):
 
 
 
+def convert_to_accel_path(absname):
+    tmpdir = os.getenv('TEMP')
+    if  not tmpdir:
+        tmpdir = os.getenv('TMP')
+    if not tmpdir:
+        tmpdir = '/var/tmp'
+    if not os.path.isdir(tmpdir):
+        tmpdir = '/tmp'
+
+    if absname.startswith( '/') or absname.startswith( '\\'):
+        absname = absname[1:]
+
+    absname = absname.replace( '/', '%')
+    absname = absname.replace( '\\', '%')
+    absname = absname.replace( ':', '%')
+
+    return '%s/%s.accel' % (tmpdir, absname)
+
+def get_accelerator_filename( filename):
+    absname = os.path.realpath( filename)
+    return convert_to_accel_path( absname)
+
+def save_accelerator(doc, filename):
+    if not doc.document_supports_accelerator():
+        return
+    absname = get_accelerator_filename( filename)
+    doc.save_accelerator( absname)
+
+
 def draw( argv):
     global alphabits_graphics
     global alphabits_text
     global band_height
     global colorspace
+    global errored
+    global filename
     global files
     global fir
     global format_
@@ -839,6 +891,7 @@ def draw( argv):
     global showmemory
     global showtime
     global spots
+    global useaccel
     global uselist
     global width
 
@@ -846,7 +899,7 @@ def draw( argv):
 
     quiet = 0
 
-    items, argv = getopt.getopt( argv, 'qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:')
+    items, argv = getopt.getopt( argv, 'qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:a')
     for option, value in items:
         if 0:   pass
         elif option == '-q':    quiet = 1
@@ -855,7 +908,7 @@ def draw( argv):
         elif option == '-F':    format_ = value
         elif option == '-R':    rotation = float( value)
         elif option == '-r':
-            resolution = float( output)
+            resolution = float( value)
             res_specified = 1
         elif option == '-w':    width = float( value)
         elif option == '-h':    height = float( value)
@@ -873,7 +926,7 @@ def draw( argv):
         elif option == '-O':
             spots = float( value)
             if not mupdf.FZ_ENABLE_SPOT_RENDERING:
-                jlib.log( 'Spot rendering/Overprint/Overprint simulation not enabled in this build')
+                sys.stderr.write( 'Spot rendering/Overprint/Overprint simulation not enabled in this build\n')
                 spots = SPOTS_NONE
         elif option == '-s':
             if 't' in value: showtime += 1
@@ -897,23 +950,24 @@ def draw( argv):
         elif option == '-L': lowmemory = 1
         elif option == '-P': bgprint.active = 1
         elif option == '-y': layer_config = value
+        elif option == '-a': useaccel = 0
 
-        elif option == '-v': print( f'mudraw version {mupdf.FZ_VERSION}')
+        elif option == '-v': sys.stderr.write( f'mudraw version {mupdf.FZ_VERSION}\n')
 
     if not argv:
         usage()
 
     if num_workers > 0:
         if uselist == 0:
-            printf('cannot use multiple threads without using display list')
+            sys.stderr.write('cannot use multiple threads without using display list\n')
             sys.exit(1)
 
         if band_height == 0:
-            printf('Using multiple threads without banding is pointless')
+            sys.stderr.write('Using multiple threads without banding is pointless\n')
 
     if bgprint.active:
         if uselist == 0:
-            printf('cannot bgprint without using display list')
+            sys.stderr.write('cannot bgprint without using display list\n')
             sys.exit(1)
 
     if proof_filename:
@@ -936,22 +990,20 @@ def draw( argv):
 
     # Determine output type
     if band_height < 0:
-        print( 'Bandheight must be > 0')
+        sys.stderr.write( 'Bandheight must be > 0\n')
         sys.exit(1)
 
     output_format = OUT_PNG
     if format_:
-        jlib.log( '{format=}')
         for i in range(len(suffix_table)):
             if format_ == suffix_table[i].suffix[1:]:
                 output_format = suffix_table[i].format
                 if spots == SPOTS_FULL and suffix_table[i].spots == 0:
-                    print( f'Output format {suffix_table[i].suffix[1:]} does not support spot rendering.')
-                    print( 'Doing overprint simulation instead.')
+                    sys.stderr.write( f'Output format {suffix_table[i].suffix[1:]} does not support spot rendering.\nDoing overprint simulation instead.\n')
                     spots = SPOTS_OVERPRINT_SIM
                 break
         else:
-            print( f'Unknown output format {format}')
+            sys.stderr.write( f'Unknown output format {format}\n')
             sys.exit(1)
     elif output:
         suffix = output
@@ -962,10 +1014,9 @@ def draw( argv):
             s = suffix.find( suffix_table[i].suffix)
             if s != -1:
                 suffix = suffix_table[i].suffix[s+1:]
-                output_format = suffix_table[i].format_
+                output_format = suffix_table[i].format
                 if spots == SPOTS_FULL and suffix_table[i].spots == 0:
-                    print( 'Output format {suffix_table[i].suffix[1:]} does not support spot rendering')
-                    print( 'Doing overprint simulation instead.')
+                    sys.stderr.write( 'Output format {suffix_table[i].suffix[1:]} does not support spot rendering\nDoing overprint simulation instead.\n')
                     spots = SPOTS_OVERPRINT_SIM
                 i = 0
             else:
@@ -973,21 +1024,21 @@ def draw( argv):
 
     if band_height:
         if output_format not in ( OUT_PAM, OUT_PGM, OUT_PPM, OUT_PNM, OUT_PNG, OUT_PBM, OUT_PKM, OUT_PCL, OUT_PCLM, OUT_PS, OUT_PSD):
-            print( 'Banded operation only possible with PxM, PCL, PCLM, PS, PSD, and PNG outputs')
+            sys.stderr.write( 'Banded operation only possible with PxM, PCL, PCLM, PS, PSD, and PNG outputs\n')
             sys.exit(1)
         if showmd5:
-            print( 'Banded operation not compatible with MD5')
+            sys.stderr.write( 'Banded operation not compatible with MD5\n')
             sys.exit(1)
 
     for i in range(len(format_cs_table)):
-        if format_cs_table[i].format_ == output_format:
+        if format_cs_table[i].format == output_format:
             if out_cs == CS_UNSET:
                 out_cs = format_cs_table[i].default_cs
             for j in range( len(format_cs_table[i].permitted_cs)):
                 if format_cs_table[i].permitted_cs[j] == out_cs:
                     break
             else:
-                print( 'Unsupported colorspace for this format')
+                sys.stderr.write( 'Unsupported colorspace for this format\n')
                 sys.exit(1)
 
     alpha = 1
@@ -1001,11 +1052,18 @@ def draw( argv):
         colorspace = mupdf.Colorspace( mupdf.Colorspace.Fixed_CMYK)
         alpha = (out_cs == CS_CMYK_ALPHA)
     elif out_cs == CS_ICC:
-        icc_buffer = mupdf.Buffer( icc_filename)
-        colorspace = Colorspace( mupdf.FZ_COLORSPACE_NONE, 0, None, icc_buffer)
+        try:
+            icc_buffer = mupdf.Buffer( icc_filename)
+            colorspace = Colorspace( mupdf.FZ_COLORSPACE_NONE, 0, None, icc_buffer)
+        except Exception as e:
+            sys.stderr.write( 'Invalid ICC destination color space\n')
+            sys.exit(1)
+        if colorspace.m_internal is None:
+            sys.stderr.write( 'Invalid ICC destination color space\n')
+            sys.exit(1)
         alpha = 0
     else:
-        print( 'Unknown colorspace!')
+        sys.stderr.write( 'Unknown colorspace!\n')
         sys.exit(1)
 
     if out_cs != CS_ICC:
@@ -1028,7 +1086,7 @@ def draw( argv):
                                 okay = 1
 
         if not okay:
-            print( 'ICC profile uses a colorspace that cannot be used for this format')
+            sys.stderr.write( 'ICC profile uses a colorspace that cannot be used for this format\n')
             sys.exit(1)
 
     if output_format == OUT_SVG:
@@ -1061,45 +1119,112 @@ def draw( argv):
     timing.maxpage = 0
     timing.minfilename = ""
     timing.maxfilename = ""
+    timing.layout = 0
+    timing.minlayout = 1 << 30
+    timing.maxlayout = 0
+    timing.minlayoutfilename = ""
+    timing.maxlayoutfilename = ""
+
     if showtime and bgprint.active:
         timing.total = gettime()
 
     fz_optind = 0
-    while fz_optind < len( argv):
+    try:
+        while fz_optind < len( argv):
 
-        filename = argv[fz_optind]
-        fz_optind += 1
+            try:
+                accel = None
 
-        files += 1
+                filename = argv[fz_optind]
+                fz_optind += 1
 
-        doc = mupdf.Document( filename)
+                files += 1
 
-        if doc.needs_password():
-            if not doc.authenticate_password( password):
-                raise Exception( f'cannot authenticate password: {filename}')
+                if not useaccel:
+                    accel = None
+                # If there was an accelerator to load, what would it be called?
+                else:
+                    accelpath = get_accelerator_filename( filename)
+                    # Check whether that file exists, and isn't older than
+                    # the document.
+                    atime = stat_mtime( accelpath)
+                    dtime = stat_mtime( filename);
+                    if atime == 0:
+                        # No accelerator
+                        pass
+                    elif atime > dtime:
+                        accel = accelpath
+                    else:
+                        # Accelerator data is out of date
+                        os.unlink( accelpath)
+                        accel = None # In case we have jumped up from below
 
-        # Once document is open check for output intent colorspace
-        oi = doc.document_output_intent()
-        if oi:  # todo: fz_document_output_intent() can return NULL, and we don't handle this.
-            # See if we had explicitly set a profile to render
-            if out_cs != CS_ICC:
-                # In this case, we want to render to the output intent
-                # color space if the number of channels is the same
-                if oi.colorspace_n() == colorspace.colorspace_n():
-                    colorspace = oi
+                # Unfortunately if accel=None, SWIG doesn't seem to think of it
+                # as a char*, so we end up in fz_open_document_with_stream().
+                #
+                # If we try to avoid this by setting accel='', SWIG correctly
+                # calls Document(const char *filename, const char *accel) =>
+                # fz_open_accelerated_document(), but the latter function tests
+                # for NULL not "" so fails.
+                #
+                # So we choose the constructor explicitly rather than leaving
+                # it up to SWIG.
+                #
+                if accel:
+                    doc = mupdf.Document(filename, accel)
+                else:
+                    doc = mupdf.Document(filename)
 
-        doc.layout_document( layout_w, layout_h, layout_em)
+                if doc.needs_password():
+                    if not doc.authenticate_password( password):
+                        raise Exception( f'cannot authenticate password: {filename}')
 
-        if layer_config:
-            apply_layer_config( doc, layer_config)
+                # Once document is open check for output intent colorspace
+                oi = doc.document_output_intent()
+                if oi.m_internal:
+                    # See if we had explicitly set a profile to render
+                    if out_cs != CS_ICC:
+                        # In this case, we want to render to the output intent
+                        # color space if the number of channels is the same
+                        if oi.colorspace_n() == colorspace.colorspace_n():
+                            colorspace = oi
 
-        if fz_optind == len(argv) or not mupdf.is_page_range( argv[fz_optind]):
-            drawrange( doc, "1-N")
-        if fz_optind < len( argv) and mupdf.is_page_range( argv[fz_optind]):
-            drawrange( doc, argv[fz_optind])
-            fz_optind += 1
+                layouttime = time.time()
+                doc.layout_document( layout_w, layout_h, layout_em)
+                doc.count_pages()
+                layouttime = time.time() - layouttime
 
+                timing.layout += layouttime
+                if layouttime < timing.minlayout:
+                    timing.minlayout = layouttime
+                    timing.minlayoutfilename = filename
+                if layouttime > timing.maxlayout:
+                    timing.maxlayout = layouttime
+                    timing.maxlayoutfilename = filename
+
+                if layer_config:
+                    apply_layer_config( doc, layer_config)
+
+                if fz_optind == len(argv) or not mupdf.is_page_range( argv[fz_optind]):
+                    drawrange( doc, "1-N")
+                if fz_optind < len( argv) and mupdf.is_page_range( argv[fz_optind]):
+                    drawrange( doc, argv[fz_optind])
+                    fz_optind += 1
+
+                bgprint_flush()
+
+                if useaccel:
+                    save_accelerator( doc, filename)
+            except Exception as e:
+                if not ignore_errors:
+                    raise
+                bgprint_flush()
+                sys.stderr.write( f'ignoring error in {filename}\n');
+
+    except Exception as e:
         bgprint_flush()
+        sys.stderr.write( f'error: cannot draw \'{filename}\' because: {e}\n')
+        errored = 1;
 
     if not output_file_per_page:
         file_level_trailers()
@@ -1113,19 +1238,21 @@ def draw( argv):
             timing.total = gettime() - timing.total
 
         if files == 1:
-            print( f'total {timing.total}ms / {timing.count} pages for an average of {timing.total / timing.count}ms')
+            sys.stderr.write( f'total {timing.total:.0f}ms ({timing.layout:.0f}ms layout) / {timing.count} pages for an average of {timing.total / timing.count:.0f}ms\n')
             if bgprint.active:
-                printf( f'fastest page {timing.minpage}: {timing.mininterp}ms (interpretation) {timing.min - timing.mininterp}ms (rendering) {timing.min}ms(total)')
-                print( f'slowest page {timing.maxpage}: {timing.maxinterp}ms (interpretation) {timing.max - timing.maxinterp}ms (rendering) {timing.max}ms(total)')
+                sys.stderr.write( f'fastest page {timing.minpage}: {timing.mininterp:.0f}ms (interpretation) {timing.min - timing.mininterp:.0f}ms (rendering) {timing.min:.0f}ms(total)\n')
+                sys.stderr.write( f'slowest page {timing.maxpage}: {timing.maxinterp:.0f}ms (interpretation) {timing.max - timing.maxinterp:.0f}ms (rendering) {timing.max:.0f}ms(total)\n')
             else:
-                print( f'fastest page {timing.minpage}: {timing.min}ms')
-                print( f'slowest page {timing.maxpage}: {timing.max}ms')
+                sys.stderr.write( f'fastest page {timing.minpage}: {timing.min:.0f}ms\n')
+                sys.stderr.write( f'slowest page {timing.maxpage}: {timing.max:.0f}ms\n')
         else:
-            print( f'total {timing.total}ms / {timing.count} pages for an average of {timing.total / timing.count}ms in {files} files')
-            print( f'fastest page {timing.minpage}: {timing.min}ms ({timing.minfilename})')
-            print( f'slowest page {timing.maxpage}: {timing.max}ms ({timing.maxfilename})')
+            sys.stderr.write( f'total {timing.total:.0f}ms ({timing.layout:.0f}ms layout) / {timing.count} pages for an average of {timing.total / timing.count:.0f}ms in {files} files\n')
+            sys.stderr.write( f'fastest layout: {timing.minlayout:.0f}ms ({timing.minlayoutfilename})\n');
+            sys.stderr.write( f'slowest layout: {timing.maxlayout:.0f}ms ({timing.maxlayoutfilename})\n');
+            sys.stderr.write( f'fastest page {timing.minpage}: {timing.min:.0f}ms ({timing.minfilename})\n')
+            sys.stderr.write( f'slowest page {timing.maxpage}: {timing.max:.0f}ms ({timing.maxfilename})\n')
 
     if showmemory:
-        print( f'Memory use total={info.total} peak={info.peak} current={info.current}')
+        sys.stderr.write( f'Memory use total={info.total} peak={info.peak} current={info.current}\n')
 
     return errored != 0
