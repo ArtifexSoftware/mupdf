@@ -9566,16 +9566,17 @@ FUN(PDFPage_update)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jboolean JNICALL
-FUN(PDFPage_applyRedactions)(JNIEnv *env, jobject self)
+FUN(PDFPage_applyRedactions)(JNIEnv *env, jobject self, jboolean blackBoxes, jint imageMethod)
 {
 	fz_context *ctx = get_context(env);
 	pdf_page *page = from_PDFPage(env, self);
 	jboolean redacted = JNI_FALSE;
+	pdf_redact_options opts = { blackBoxes, imageMethod };
 
 	if (!ctx || !page) return JNI_FALSE;
 
 	fz_try(ctx)
-		redacted = pdf_redact_page(ctx, page->doc, page, NULL);
+		redacted = pdf_redact_page(ctx, page->doc, page, &opts);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
