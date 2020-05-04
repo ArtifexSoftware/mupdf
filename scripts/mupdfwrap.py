@@ -68,6 +68,8 @@ Args:
                     mupdf/platform/python/mupdfcpp_swig.cpp
                     mupdf/platform/python/mupdf.py
 
+                Note that this requires action=0 to have been run previously.
+
             3:
                 Compile and links the mupdfcpp_swig.cpp file created by
                 action=2. Requires libmupdf.so to be available, e.g. built by
@@ -95,8 +97,12 @@ Args:
         Location of shared library files, e.g. build/debug-shared or
         build/release-shared.
 
-        We use different compile/link flags depending on debug or release
-        build.
+        Default is <mupdf>/build/shared-release/. Typical alternative is
+        <mupdf>/build/shared-debug/.
+
+        We use different C++ compile flags depending on release or debug builds
+        (specifically definition of NDEBUG is important because it must match
+        what was used when libmupdf.so was built).
 
     --doc <languages>
         Generates documentation for the different APIs.
@@ -160,7 +166,7 @@ Examples:
     ./scripts/mupdfwrap.py -b all -t
         Build all (release build) and test.
 
-    ./scripts/mupdfwrap.py -d build/debug-shared -b all -t
+    ./scripts/mupdfwrap.py -d build/shared-debug -b all -t
         Build all (debug build) and test.
 
     ./scripts/mupdfwrap.py -b 0 --compare-fz_usage platform/gl
@@ -4901,7 +4907,7 @@ class BuildDirs:
             self.ref_dir += '/'
 
         # Default to release build.
-        self.set_dir_so( f'{self.dir_mupdf}build/release-shared/')
+        self.set_dir_so( f'{self.dir_mupdf}build/shared-release/')
 
     def set_dir_so( self, dir_so):
         dir_so = os.path.abspath( dir_so)
@@ -4914,9 +4920,9 @@ class BuildDirs:
         # whether NDEBUG is defined.
         #
         if 0: pass
-        elif dir_so == f'{self.dir_mupdf}build/debug-shared/':
+        elif dir_so == f'{self.dir_mupdf}build/shared-debug/':
             self.cpp_flags = '-g'
-        elif dir_so == f'{self.dir_mupdf}build/release-shared/':
+        elif dir_so == f'{self.dir_mupdf}build/shared-release/':
             self.cpp_flags = '-O2 -DNDEBUG'
         elif dir_so == f'{self.dir_mupdf}build/shared/':
             self.cpp_flags = '-g'
@@ -5000,9 +5006,9 @@ def main():
                                 command = f'cd {build_dirs.dir_mupdf} && make HAVE_GLUT=no shared=yes verbose=yes'
                                 #command += ' USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes'
                                 if 0: pass
-                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/debug-shared/':
+                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-debug/':
                                     command += ' debug'
-                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/release-shared/':
+                                elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-release/':
                                     command += ' release'
                                 else:
                                     raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')

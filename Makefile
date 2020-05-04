@@ -8,7 +8,7 @@ endif
 
 ifndef OUT
   ifeq ($(shared),yes)
-    OUT := build/$(build)-shared
+    OUT := build/shared-$(build)
   else
     OUT := build/$(build)
   endif
@@ -406,10 +406,14 @@ debug:
 sanitize:
 	$(MAKE) build=sanitize
 
-shared:
-	$(MAKE) build=release shared=yes
-debug-shared:
-	$(MAKE) build=debug shared=yes
+shared: shared-$(build)
+
+shared-release:
+	$(MAKE) HAVE_GLUT=no shared=yes build=release
+shared-debug:
+	$(MAKE) HAVE_GLUT=no shared=yes build=debug
+shared-clean:
+	rm -rf build/shared-*
 
 android: generate
 	ndk-build -j8 \
@@ -418,4 +422,29 @@ android: generate
 		APP_PLATFORM=android-16 \
 		APP_OPTIM=$(build)
 
+c++: c++-$(build)
+
+c++-release: shared-release
+	./scripts/mupdfwrap.py -d build/shared-release -b 01
+
+c++-debug: shared-debug
+	./scripts/mupdfwrap.py -d build/shared-debug -b 01
+
+c++-clean:
+	rm -rf platform/c++
+
+python: python-$(build)
+
+python-release: c++-release
+	./scripts/mupdfwrap.py -d build/shared-release -b 023
+
+python-debug: c++-debug
+	./scripts/mupdfwrap.py -d build/shared-debug -b 023
+
+python-clean:
+	rm -rf platform/python
+
 .PHONY: all clean nuke install third libs apps generate tags wasm
+.PHONY: shared shared-debug shared-clean
+.PHONY: c++ c++-release c++-debug c++-clean
+.PHONY: python python-debug python-clean
