@@ -131,7 +131,6 @@ def convert( argv):
 
     mupdf.set_use_document_css(layout_use_doc_css)
 
-    print( f'output={output!r} format_={format_!r} options={options!r}')
     if format_:
         out = mupdf.DocumentWriter( output, format_, options)
     else:
@@ -156,6 +155,7 @@ def convert( argv):
         convert_runrange( doc, count, range_, out)
         i += 1
 
+    out.close_document_writer()
 
 
 
@@ -305,6 +305,7 @@ def main():
             else:
                 command = f'{argv[0]} {command}'
                 print( 'running test command: %s' % command)
+                sys.stdout.flush()
                 e = os.system( f'{command}')
                 assert not e, f'command failed: {command}'
     else:
