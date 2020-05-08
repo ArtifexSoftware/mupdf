@@ -1595,6 +1595,16 @@ pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 }
 
 /*
+	Get annotation's creation date in seconds since the epoch.
+*/
+int64_t
+pdf_annot_creation_date(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *date = pdf_dict_get(ctx, annot->obj, PDF_NAME(CreationDate));
+	return date ? pdf_parse_date(ctx, pdf_to_str_buf(ctx, date)) : 0;
+}
+
+/*
 	Set annotation's modification date in seconds since the epoch.
 */
 void
@@ -1606,6 +1616,21 @@ pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 
 	pdf_format_date(ctx, s, sizeof s, secs);
 	pdf_dict_put_string(ctx, annot->obj, PDF_NAME(M), s, strlen(s));
+	pdf_dirty_annot(ctx, annot);
+}
+
+/*
+	Set annotation's creation date in seconds since the epoch.
+*/
+void
+pdf_set_annot_creation_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
+{
+	char s[40];
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME(CreationDate), markup_subtypes);
+
+	pdf_format_date(ctx, s, sizeof s, secs);
+	pdf_dict_put_string(ctx, annot->obj, PDF_NAME(CreationDate), s, strlen(s));
 	pdf_dirty_annot(ctx, annot);
 }
 
