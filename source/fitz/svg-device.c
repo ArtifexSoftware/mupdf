@@ -494,6 +494,11 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 				shift.e = -rect.x0;
 				shift.f = -rect.y0;
 				fz_run_t3_glyph(ctx, span->font, gid, shift, dev);
+				/* fz_run_t3_glyph can call back into this function with a text span that
+				 * has a new font. This causes the device's font list to be reallocated
+				 * and fnt to point to freed memory. Therefore, the fnt pointer must be
+				 * updated to avoid use-after-frees. */
+				fnt = &sdev->fonts[font_idx];
 			}
 			fz_write_printf(ctx, out, "</symbol>\n");
 			out = end_def(ctx, sdev);
