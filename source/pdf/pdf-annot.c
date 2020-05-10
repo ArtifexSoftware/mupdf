@@ -900,7 +900,7 @@ static int pdf_annot_color_rgb(fz_context *ctx, pdf_obj *arr, float rgb[3])
 	return 1;
 }
 
-static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
+static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float *color, pdf_obj **allowed)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *arr;
@@ -979,7 +979,7 @@ pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3])
 }
 
 void
-pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
+pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float *color)
 {
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME(C), n, color, NULL);
 }
@@ -1007,7 +1007,7 @@ pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[
 }
 
 void
-pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
+pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float *color)
 {
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME(IC), n, color, interior_color_subtypes);
 }

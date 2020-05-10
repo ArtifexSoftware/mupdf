@@ -391,7 +391,7 @@ void pdf_set_annot_opacity(fz_context *ctx, pdf_annot *annot, float opacity);
 	n components, each between 0 and 1.
 	n = 1 (grey), 3 (rgb) or 4 (cmyk).
 */
-void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
+void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float *color);
 
 /*
 	Set the annotation interior color.
@@ -399,7 +399,7 @@ void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float c
 	n components, each between 0 and 1.
 	n = 1 (grey), 3 (rgb) or 4 (cmyk).
 */
-void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
+void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float *color);
 
 /*
 	Set the quadding (justification) to use for the annotation.
