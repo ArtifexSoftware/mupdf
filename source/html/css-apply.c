@@ -243,15 +243,15 @@ match_att_has_condition(fz_xml *node, const char *att, const char *needle)
 	const char *ss;
 	size_t n;
 	if (haystack) {
-		/* Try matching whole property first. */
-		if (!strcmp(haystack, needle))
-			return 1;
-
-		/* Look for matching words. */
-		n = strlen(needle);
 		ss = strstr(haystack, needle);
-		if (ss && (ss[n] == ' ' || ss[n] == 0) && (ss == haystack || ss[-1] == ' '))
-			return 1;
+		if (ss)
+		{
+			n = strlen(needle);
+
+			/* Look for exact matches or matching words. */
+			if ((ss[n] == ' ' || ss[n] == 0) && (ss == haystack || ss[-1] == ' '))
+				return 1;
+		}
 	}
 	return 0;
 }
