@@ -288,11 +288,13 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 		if (sel->combine == ' ')
 		{
 			fz_xml *parent = fz_xml_up(node);
+			if (!parent || !match_selector(sel->right, node))
+				return 0;
+
 			while (parent)
 			{
 				if (match_selector(sel->left, parent))
-					if (match_selector(sel->right, node))
-						return 1;
+					return 1;
 				parent = fz_xml_up(parent);
 			}
 			return 0;
