@@ -829,11 +829,11 @@ classextras = ClassExtras(
                         f'''
                         {{
                             if (0) {{}}
-                            else if ( fixed = Fixed_GRAY)   m_internal = {rename.function_call( 'fz_device_gray')}();
-                            else if ( fixed = Fixed_RGB)    m_internal = {rename.function_call( 'fz_device_rgb' )}();
-                            else if ( fixed = Fixed_BGR)    m_internal = {rename.function_call( 'fz_device_bgr' )}();
-                            else if ( fixed = Fixed_CMYK)   m_internal = {rename.function_call( 'fz_device_cmyk')}();
-                            else if ( fixed = Fixed_LAB)    m_internal = {rename.function_call( 'fz_device_lab' )}();
+                            else if ( fixed == Fixed_GRAY)  m_internal = {rename.function_call( 'fz_device_gray')}();
+                            else if ( fixed == Fixed_RGB)   m_internal = {rename.function_call( 'fz_device_rgb' )}();
+                            else if ( fixed == Fixed_BGR)   m_internal = {rename.function_call( 'fz_device_bgr' )}();
+                            else if ( fixed == Fixed_CMYK)  m_internal = {rename.function_call( 'fz_device_cmyk')}();
+                            else if ( fixed == Fixed_LAB)   m_internal = {rename.function_call( 'fz_device_lab' )}();
                             else {{
                                 std::string message = "Unrecognised fixed colorspace id";
                                 throw ErrorGeneric(message.c_str());
