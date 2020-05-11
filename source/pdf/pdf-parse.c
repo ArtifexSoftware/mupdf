@@ -72,7 +72,7 @@ pdf_to_date(fz_context *ctx, pdf_obj *time)
 	time_t utc;
 
 	if (!s)
-		return 0;
+		return -1;
 
 	memset(&tm, 0, sizeof tm);
 	tm.tm_mday = 1;
@@ -87,10 +87,16 @@ pdf_to_date(fz_context *ctx, pdf_obj *time)
 	if (!isdigit(s[0]) || !isdigit(s[1]) || !isdigit(s[2]) || !isdigit(s[3]))
 	{
 		fz_warn(ctx, "invalid date format (missing year)");
-		return 0;
+		return -1;
 	}
 	tm.tm_year = (s[0]-'0')*1000 + (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0') - 1900;
 	s += 4;
+
+	if (tm.tm_year < 70)
+	{
+		fz_warn(ctx, "invalid date (year out of range)");
+		return -1;
+	}
 
 	if (isdigit(s[0]) && isdigit(s[1]))
 	{
@@ -118,6 +124,12 @@ pdf_to_date(fz_context *ctx, pdf_obj *time)
 		}
 	}
 
+	if (tm.tm_sec > 60 || tm.tm_min > 59 || tm.tm_hour > 23 || tm.tm_mday > 31 || tm.tm_mon > 11)
+	{
+		fz_warn(ctx, "invalid date (a field is out of range)");
+		return -1;
+	}
+
 	if (s[0] == 'Z')
 	{
 		s += 1;
@@ -136,6 +148,18 @@ pdf_to_date(fz_context *ctx, pdf_obj *time)
 		}
 	}
 
+	/* PDF is based on ISO/IEC 8824 which limits time zones from -15 to +16. */
+	if (tz_sign < 0 && (tz_hour > 15 || (tz_hour == 15 && tz_min > 0)))
+	{
+		fz_warn(ctx, "invalid date format (time zone out of range)");
+		return -1;
+	}
+	if (tz_sign > 0 && (tz_hour > 16 || (tz_hour == 16 && tz_min > 0)))
+	{
+		fz_warn(ctx, "invalid date format (time zone out of range)");
+		return -1;
+	}
+
 	if (s[0] != 0)
 		fz_warn(ctx, "invalid date format (garbage at end)");
 
@@ -143,7 +167,7 @@ pdf_to_date(fz_context *ctx, pdf_obj *time)
 	if (utc == (time_t)-1)
 	{
 		fz_warn(ctx, "date overflow error");
-		return 0;
+		return -1;
 	}
 
 	tz_adj = tz_sign * (tz_hour * 3600 + tz_min * 60);
