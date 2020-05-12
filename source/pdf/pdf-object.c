@@ -864,15 +864,8 @@ pdf_obj *pdf_new_date(fz_context *ctx, pdf_document *doc, int64_t time)
 	struct tm *tm = gmtime(&secs);
 #endif
 
-	if (!tm)
-	{
-		fz_strlcpy(s, "D:19700101000000Z", nelem(s));
-	}
-	else
-	{
-		if (!strftime(s, nelem(s), "D:%Y%m%d%H%M%SZ", tm))
-			s[0] = '\0';
-	}
+	if (time < 0 || !tm || !strftime(s, nelem(s), "D:%Y%m%d%H%M%SZ", tm))
+		return NULL;
 
 	return pdf_new_string(ctx, s, strlen(s));
 }
