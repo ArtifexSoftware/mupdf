@@ -99,6 +99,8 @@ public class PDFObject
 	private native void putDictionaryPDFObjectFloat(PDFObject name, float f);
 	private native void putDictionaryPDFObjectString(PDFObject name, String str);
 	private native void putDictionaryPDFObjectPDFObject(PDFObject name, PDFObject obj);
+	private native void putDictionaryPDFObjectRect(PDFObject name, Rect r);
+	private native void putDictionaryPDFObjectMatrix(PDFObject name, Matrix m);
 
 	public void put(int index, boolean b) {
 		putArrayBoolean(index, b);
@@ -158,6 +160,14 @@ public class PDFObject
 
 	public void put(PDFObject name, PDFObject obj) {
 		putDictionaryPDFObjectPDFObject(name, obj);
+	}
+
+	public void put(PDFObject name, Rect r) {
+		putDictionaryPDFObjectRect(name, r);
+	}
+
+	public void put(PDFObject name, Matrix m) {
+		putDictionaryPDFObjectMatrix(name, m);
 	}
 
 	private native void deleteArray(int index);

@@ -9063,6 +9063,38 @@ FUN(PDFObject_putDictionaryPDFObjectPDFObject)(JNIEnv *env, jobject self, jobjec
 }
 
 JNIEXPORT void JNICALL
+FUN(PDFObject_putDictionaryPDFObjectRect)(JNIEnv *env, jobject self, jobject jname, jobject jrect)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *dict = from_PDFObject(env, self);
+	pdf_obj *name = from_PDFObject(env, jname);
+	fz_rect rect  = from_Rect(env, jrect);
+
+	if (!ctx || !dict) return;
+
+	fz_try(ctx)
+		pdf_dict_put_rect(ctx, dict, name, rect);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFObject_putDictionaryPDFObjectMatrix)(JNIEnv *env, jobject self, jobject jname, jobject jmatrix)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *dict = from_PDFObject(env, self);
+	pdf_obj *name = from_PDFObject(env, jname);
+	fz_matrix matrix = from_Matrix(env, jmatrix);
+
+	if (!ctx || !dict) return;
+
+	fz_try(ctx)
+		pdf_dict_put_matrix(ctx, dict, name, matrix);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
 FUN(PDFObject_deleteArray)(JNIEnv *env, jobject self, jint index)
 {
 	fz_context *ctx = get_context(env);
