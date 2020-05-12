@@ -163,8 +163,8 @@ class worker_t:
         self.ctm = None
         self.tbounds = None
         self.pix = None
-        self.bit = NOne
-        self.cookie = None
+        self.bit = None
+        self.cookie = mupdf.Cookie()
 
 
 output = None
@@ -399,7 +399,7 @@ def drawband( page, list_, ctm, tbounds, cookie, band_start, pix):
         pix.gamma_pixmap( gamma_value)
 
     if ((output_format == OUT_PCL or output_format == OUT_PWG) and out_cs == CS_MONO) or (output_format == OUT_PBM) or (output_format == OUT_PKM):
-        bit = mupdf.Bitmap( pix, None, band_start)
+        bit = mupdf.Bitmap( pix, mupdf.Halftone(), band_start)
     return bit
 
 
@@ -409,6 +409,7 @@ def drawband( page, list_, ctm, tbounds, cookie, band_start, pix):
 
 def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, seps):
 
+    global errored
     global output_file_per_page
     global out
     global output_pagenum
@@ -618,7 +619,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
                 pix = w.pix
                 bit = w.bit
                 w.bit = None
-                cookie.increment_errors()
+                cookie.increment_errors(w.cookie.errors())
 
             else:
                 bit = drawband( page, list_, ctm, tbounds, cookie, band * band_height, pix)
@@ -626,7 +627,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
             if output:
                 if bander:
                     if bit:
-                        bander.write_band( bit.stride, drawheight, bit.samples)
+                        bander.write_band( bit.stride(), drawheight, bit.samples())
                     else:
                         bander.write_band( pix.stride(), drawheight, pix.samples())
                 bit = None
