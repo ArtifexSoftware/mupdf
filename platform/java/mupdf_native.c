@@ -9711,6 +9711,41 @@ FUN(PDFAnnotation_setModificationDate)(JNIEnv *env, jobject self, jlong time)
 	}
 }
 
+JNIEXPORT jlong JNICALL
+FUN(PDFAnnotation_getCreationDateNative)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jlong t;
+
+	if (!ctx || !annot) return -1;
+
+	fz_try(ctx)
+		t = pdf_annot_creation_date(ctx, annot);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return -1;
+	}
+
+	return t * 1000;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setCreationDate)(JNIEnv *env, jobject self, jlong time)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	fz_try(ctx)
+		pdf_set_annot_creation_date(ctx, annot, time / 1000);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return;
+	}
+}
+
 JNIEXPORT jobject JNICALL
 FUN(PDFAnnotation_getRect)(JNIEnv *env, jobject self)
 {
