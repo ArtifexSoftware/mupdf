@@ -9095,6 +9095,21 @@ FUN(PDFObject_putDictionaryPDFObjectMatrix)(JNIEnv *env, jobject self, jobject j
 }
 
 JNIEXPORT void JNICALL
+FUN(PDFObject_putDictionaryPDFObjectDate)(JNIEnv *env, jobject self, jobject jname, jlong secs)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *dict = from_PDFObject(env, self);
+	pdf_obj *name = from_PDFObject(env, jname);
+
+	if (!ctx || !dict) return;
+
+	fz_try(ctx)
+		pdf_dict_put_date(ctx, dict, name, secs);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
 FUN(PDFObject_deleteArray)(JNIEnv *env, jobject self, jint index)
 {
 	fz_context *ctx = get_context(env);

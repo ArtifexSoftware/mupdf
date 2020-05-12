@@ -2504,6 +2504,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_putDictionaryPDFObj
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    putDictionaryPDFObjectDate
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;J)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_putDictionaryPDFObjectDate
+  (JNIEnv *, jobject, jobject, jlong);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    deleteArray
  * Signature: (I)V
  */

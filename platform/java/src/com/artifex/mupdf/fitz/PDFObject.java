@@ -1,5 +1,7 @@
 package com.artifex.mupdf.fitz;
 
+import java.util.Date;
+
 public class PDFObject
 {
 	static {
@@ -101,6 +103,7 @@ public class PDFObject
 	private native void putDictionaryPDFObjectPDFObject(PDFObject name, PDFObject obj);
 	private native void putDictionaryPDFObjectRect(PDFObject name, Rect r);
 	private native void putDictionaryPDFObjectMatrix(PDFObject name, Matrix m);
+	private native void putDictionaryPDFObjectDate(PDFObject name, long secs);
 
 	public void put(int index, boolean b) {
 		putArrayBoolean(index, b);
@@ -168,6 +171,10 @@ public class PDFObject
 
 	public void put(PDFObject name, Matrix m) {
 		putDictionaryPDFObjectMatrix(name, m);
+	}
+
+	public void put(PDFObject name, Date time) {
+		putDictionaryPDFObjectDate(name, time.getTime());
 	}
 
 	private native void deleteArray(int index);
