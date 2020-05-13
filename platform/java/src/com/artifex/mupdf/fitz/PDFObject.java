@@ -1,8 +1,10 @@
 package com.artifex.mupdf.fitz;
 
 import java.util.Date;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public class PDFObject
+public class PDFObject implements Iterable<PDFObject>
 {
 	static {
 		Context.init();
@@ -227,4 +229,39 @@ public class PDFObject
 	}
 
 	public static final PDFObject Null = new PDFObject(0);
+
+	public Iterator<PDFObject> iterator() {
+		return new PDFObjectIterator(this);
+	}
+
+	protected class PDFObjectIterator implements Iterator<PDFObject> {
+		private PDFObject object;
+		private boolean isarray;
+		private int position;
+
+		public PDFObjectIterator(PDFObject object) {
+			this.object = object;
+			isarray = object != null ? object.isArray() : false;
+			position = -1;
+		}
+
+		public boolean hasNext() {
+			return object != null && (position + 1) < object.size();
+		}
+
+		public PDFObject next() {
+			if (object == null || position >= object.size())
+				throw new NoSuchElementException("Object has no more elements");
+
+			position++;
+			if (isarray)
+				return object.get(position);
+			else
+				return object.getDictionaryKey(position);
+		}
+
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	}
 }
