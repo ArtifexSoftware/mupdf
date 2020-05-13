@@ -75,6 +75,7 @@ public class PDFObject
 
 	private native PDFObject getArray(int index);
 	private native PDFObject getDictionary(String name);
+	private native PDFObject getDictionaryKey(int index);
 
 	public PDFObject get(int index) {
 		return getArray(index);
@@ -82,6 +83,10 @@ public class PDFObject
 
 	public PDFObject get(String name) {
 		return getDictionary(name);
+	}
+
+	public PDFObject get(PDFObject name) {
+		return getDictionary(name != null ? name.asName() : null);
 	}
 
 	private native void putArrayBoolean(int index, boolean b);
