@@ -264,3 +264,33 @@ svg_parse_number_from_style(fz_context *ctx, svg_document *doc, const char *styl
 	}
 	return number;
 }
+
+int
+svg_parse_enum_from_style(fz_context *ctx, svg_document *doc, const char *style, const char *att,
+	int ecount, const char *etable[], int value)
+{
+	char buf[100], *end, *p;
+	int i, n;
+	if (style)
+	{
+		p = strstr(style, att);
+		if (p)
+		{
+			n = strlen(att);
+			if (p[n] == ':')
+			{
+				p += n + 1;
+				while (*p && svg_is_whitespace(*p))
+					++p;
+				fz_strlcpy(buf, p, sizeof buf);
+				end = strchr(buf, ';');
+				if (end)
+					*end = 0;
+				for (i = 0; i < ecount; ++i)
+					if (!strcmp(etable[i], buf))
+						return i;
+			}
+		}
+	}
+	return value;
+}

@@ -913,6 +913,9 @@ svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *s
 	}
 }
 
+static const char *linecap_table[] = { "butt", "round", "square" };
+static const char *linejoin_table[] = { "miter", "round", "bevel" };
+
 /* parse transform and presentation attributes */
 static void
 svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
@@ -1033,7 +1036,8 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	}
 	else
 	{
-		stroke->start_cap = FZ_LINECAP_BUTT;
+		stroke->start_cap = svg_parse_enum_from_style(ctx, doc, style_att, "stroke-linecap",
+			nelem(linecap_table), linecap_table, FZ_LINECAP_BUTT);
 	}
 
 	stroke->dash_cap = stroke->start_cap;
@@ -1050,7 +1054,8 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	}
 	else
 	{
-		stroke->linejoin = FZ_LINEJOIN_MITER;
+		stroke->linejoin = svg_parse_enum_from_style(ctx, doc, style_att, "stroke-linejoin",
+			nelem(linejoin_table), linejoin_table, FZ_LINEJOIN_MITER);
 	}
 
 	if (stroke_miterlimit_att)
