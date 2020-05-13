@@ -284,9 +284,6 @@ static void on_highlight_line(fz_context *ctx, void *arg, fz_stext_line *line)
 {
 }
 
-/*
-	Return a list of quads to highlight lines inside the selection points.
-*/
 int
 fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_quad *quads, int max_quads)
 {
@@ -296,7 +293,7 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	hits.len = 0;
 	hits.cap = max_quads;
 	hits.box = quads;
-	hits.hfuzz = 0.5f;
+	hits.hfuzz = 0.5f; /* merge large gaps */
 	hits.vfuzz = 0.1f;
 
 	cb.on_char = on_highlight_char;
@@ -332,11 +329,6 @@ static void on_copy_line_lf(fz_context *ctx, void *arg, fz_stext_line *line)
 	fz_append_byte(ctx, buffer, '\n');
 }
 
-/*
-	Return a newly allocated UTF-8 string with the text for a given selection.
-
-	crlf: If true, write "\r\n" style line endings (otherwise "\n" only).
-*/
 char *
 fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, int crlf)
 {
@@ -345,14 +337,72 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, 
 	unsigned char *s;
 
 	buffer = fz_new_buffer(ctx, 1024);
+	fz_try(ctx)
+	{
+		cb.on_char = on_copy_char;
+		cb.on_line = crlf ? on_copy_line_crlf : on_copy_line_lf;
+		cb.arg = buffer;
 
-	cb.on_char = on_copy_char;
-	cb.on_line = crlf ? on_copy_line_crlf : on_copy_line_lf;
-	cb.arg = buffer;
+		fz_enumerate_selection(ctx, page, a, b, &cb);
+		fz_terminate_buffer(ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
+		fz_rethrow(ctx);
+	}
+	fz_buffer_extract(ctx, buffer, &s); /* take over the data */
+	fz_drop_buffer(ctx, buffer);
+	return (char*)s;
+}
 
-	fz_enumerate_selection(ctx, page, a, b, &cb);
+char *
+fz_copy_rectangle(fz_context *ctx, fz_stext_page *page, fz_rect area, int crlf)
+{
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+	fz_buffer *buffer;
+	unsigned char *s;
 
-	fz_terminate_buffer(ctx, buffer);
+	int need_new_line = 0;
+
+	buffer = fz_new_buffer(ctx, 1024);
+	fz_try(ctx)
+	{
+		for (block = page->first_block; block; block = block->next)
+		{
+			if (block->type != FZ_STEXT_BLOCK_TEXT)
+				continue;
+			for (line = block->u.t.first_line; line; line = line->next)
+			{
+				int line_had_text = 0;
+				for (ch = line->first_char; ch; ch = ch->next)
+				{
+					fz_rect r = fz_rect_from_quad(ch->quad);
+					if (!fz_is_empty_rect(fz_intersect_rect(r, area)))
+					{
+						line_had_text = 1;
+						if (need_new_line)
+						{
+							fz_append_string(ctx, buffer, crlf ? "\r\n" : "\n");
+							need_new_line = 0;
+						}
+						fz_append_rune(ctx, buffer, ch->c < 32 ? FZ_REPLACEMENT_CHARACTER : ch->c);
+					}
+				}
+				if (line_had_text)
+					need_new_line = 1;
+			}
+		}
+		fz_terminate_buffer(ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
+		fz_rethrow(ctx);
+	}
+
 	fz_buffer_extract(ctx, buffer, &s); /* take over the data */
 	fz_drop_buffer(ctx, buffer);
 	return (char*)s;
@@ -418,13 +468,6 @@ static const char *find_string(const char *s, const char *needle, const char **e
 	return *endp = NULL, NULL;
 }
 
-/*
-	Search for occurrence of 'needle' in text page.
-
-	Return the number of hits and store hit quads in the passed in array.
-
-	NOTE: This is an experimental interface and subject to change without notice.
-*/
 int
 fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, fz_quad *quads, int max_quads)
 {
@@ -442,7 +485,7 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, f
 	hits.len = 0;
 	hits.cap = max_quads;
 	hits.box = quads;
-	hits.hfuzz = 0.5f;
+	hits.hfuzz = 0.2f; /* merge kerns but not large gaps */
 	hits.vfuzz = 0.1f;
 
 	buffer = fz_new_buffer_from_stext_page(ctx, page);

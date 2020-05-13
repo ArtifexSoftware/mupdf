@@ -61,7 +61,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 
 		pdf_dict_put(ctx, page_dict, PDF_NAME(Type), PDF_NAME(Page));
 
-		for (i = 0; i < nelem(copy_list); i++)
+		for (i = 0; i < (int)nelem(copy_list); i++)
 		{
 			obj = pdf_dict_get(ctx, page_ref, copy_list[i]);
 			if (obj != NULL)
@@ -117,7 +117,7 @@ static void merge_range(const char *range)
 
 int pdfmerge_main(int argc, char **argv)
 {
-	pdf_write_options opts = { 0 };
+	pdf_write_options opts = pdf_default_write_options;
 	char *output = "out.pdf";
 	char *flags = "";
 	char *input;

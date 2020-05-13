@@ -8,6 +8,8 @@ MUPDF_JAVA := libmupdf_java64.jnilib
 JAVA_CFLAGS := \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include/darwin
+JAVA_LDFLAGS :=
+
 else
 
 BITS := $(shell getconf LONG_BIT)
@@ -24,6 +26,8 @@ JAVA_LIBS := \
 	$(shell pkg-config --libs freetype2) \
 	$(shell pkg-config --libs libcrypto) \
 	-lz
+JAVA_LDFLAGS := \
+	-z noexecstack
 endif
 
 default: $(MUPDF_JAVA) libmupdf.jar
@@ -31,7 +35,7 @@ default: $(MUPDF_JAVA) libmupdf.jar
 MUPDF_CORE := ../../build/java/libmupdf.a ../../build/java/libmupdf-third.a
 ifeq "$(OS)" "Linux"
 $(MUPDF_CORE) : .FORCE
-	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC FREETYPE_DIR=/foo ZLIB_DIR=/foo libs
+	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes libs
 else
 $(MUPDF_CORE) : .FORCE
 	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC libs
@@ -65,7 +69,7 @@ mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
 		$(JAVA_CFLAGS)
 
 $(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
-	$(CC) -shared -z noexecstack -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
+	$(CC) -shared $(JAVA_LDFLAGS) -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. $(JAVA) -classpath .:src example.Viewer
@@ -77,6 +81,7 @@ clean:
 	rm -f src/com/artifex/mupdf/fitz/*.class
 	rm -f example/*.class
 	rm -f mupdf_native.o
+	rm -f libmupdf.jar
 	rm -f $(MUPDF_JAVA)
 	rm -f ../../build/java/*.h
 

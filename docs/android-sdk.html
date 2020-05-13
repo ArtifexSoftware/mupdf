@@ -3,6 +3,15 @@
 <head>
 <title>MuPDF Android SDK</title>
 <link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body>
+
+<header>
+<h1>MuPDF Android SDK</h1>
+</header>
+
+<article>
+
 <style>
 body {counter-reset: h2}
 h2 {counter-reset: h3}
@@ -15,14 +24,6 @@ h4:before {counter-increment: h4; content: counter(h2) "." counter(h3) "." count
 h5:before {counter-increment: h5; content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) ". "}
 h6:before {counter-increment: h6; content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) "." counter(h6) ". "}
 </style>
-</head>
-<body>
-
-<header>
-<h1>MuPDF Android SDK</h1>
-</header>
-
-<article>
 
 <p>
 This document outlines the steps necessary to use the MuPDF Android SDK in various ways.
@@ -80,7 +81,7 @@ Commercial license
 
 <p>
 If your software is not open source, Artifex Software can sell you a license to use MuPDF in closed source software.
-Go and fill out the <a href="http://artifex.com/contact-us/">product inquiry form</a>
+Go and fill out the <a href="https://www.artifex.com/contact-us/">product inquiry form</a>
 for commercial licensing terms and pricing.
 
 <h2 id="setup-build">
@@ -127,7 +128,7 @@ In your app's build.gradle, add the bolded line to the dependencies section:
 
 <pre>
 dependencies {
-	<b>compile 'com.artifex.mupdf:viewer:1.12.+'</b>
+	<b>api 'com.artifex.mupdf:viewer:1.15.+'</b>
 	...
 }
 </pre>
@@ -244,8 +245,8 @@ copy rather than the official mupdf viewer package. In your app build.gradle:
 
 <pre>
 dependencies {
-	<strike>compile 'com.artifex.mupdf:viewer:1.12.+'</strike>
-	<b>compile project(':mupdf-lib')</b>
+	<strike>api 'com.artifex.mupdf:viewer:1.15.+'</strike>
+	<b>api project(':mupdf-lib')</b>
 	...
 }
 </pre>
@@ -310,7 +311,7 @@ Good luck!
 
 <footer>
 <a href="http://www.artifex.com/"><img src="artifex-logo.png" align="right"></a>
-Copyright &copy; 2006-2018 Artifex Software Inc.
+Copyright &copy; 2006-2019 Artifex Software Inc.
 </footer>
 
 </body>

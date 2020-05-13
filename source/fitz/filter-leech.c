@@ -1,16 +1,14 @@
-#include "fitz-imp.h"
+#include "mupdf/fitz.h"
 
 #include <zlib.h>
 
 #include <string.h>
 
-typedef struct fz_leech_s fz_leech;
-
-struct fz_leech_s
+typedef struct
 {
 	fz_stream *chain;
 	fz_buffer *buffer;
-};
+} fz_leech;
 
 static int
 next_leech(fz_context *ctx, fz_stream *stm, size_t max)
@@ -46,18 +44,6 @@ close_leech(fz_context *ctx, void *state_)
 	fz_free(ctx, state);
 }
 
-/*
-	Attach a filter to a stream that will store any
-	characters read from the stream into the supplied buffer.
-
-	chain: The underlying stream to leech from.
-
-	buf: The buffer into which the read data should be appended.
-	The buffer will be resized as required.
-
-	Returns pointer to newly created stream. May throw exceptions on
-	failure to allocate.
-*/
 fz_stream *
 fz_open_leecher(fz_context *ctx, fz_stream *chain, fz_buffer *buffer)
 {

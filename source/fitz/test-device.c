@@ -1,6 +1,8 @@
-#include <mupdf/fitz.h>
+#include "mupdf/fitz.h"
 
-typedef struct fz_test_device_s
+#include "color-imp.h"
+
+typedef struct
 {
 	fz_device super;
 	int *is_color;
@@ -29,7 +31,7 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 }
 
 static void
-fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
+fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, const float *color, fz_color_params color_params)
 {
 	if (!*t->is_color && colorspace && fz_colorspace_type(ctx, colorspace) != FZ_COLORSPACE_GRAY)
 	{
@@ -46,7 +48,7 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 		else
 		{
 			float rgb[3];
-			fz_convert_color(ctx, color_params, NULL, fz_device_rgb(ctx), rgb, colorspace, color);
+			fz_convert_color(ctx, colorspace, color, fz_device_rgb(ctx), rgb, NULL, color_params);
 			if (is_rgb_color(t->threshold, rgb[0], rgb[1], rgb[2]))
 			{
 				*t->is_color = 2;
@@ -62,64 +64,48 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 
 static void
 fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (dev->resolved == 0 && alpha != 0.0f)
-	{
-		if (color_params == NULL)
-			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
-	}
 	if (dev->passthrough)
 		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, color, alpha, color_params);
 }
 
 static void
 fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke,
-	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (dev->resolved == 0 && alpha != 0.0f)
-	{
-		if (color_params == NULL)
-			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
-	}
 	if (dev->passthrough)
 		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, color, alpha, color_params);
 }
 
 static void
 fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (dev->resolved == 0 && alpha != 0.0f)
-	{
-		if (color_params == NULL)
-			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
-	}
 	if (dev->passthrough)
 		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, color, alpha, color_params);
 }
 
 static void
 fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke,
-	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (dev->resolved == 0 && alpha != 0.0f)
-	{
-		if (color_params == NULL)
-			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
-	}
 	if (dev->passthrough)
 		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, color, alpha, color_params);
 }
@@ -128,7 +114,7 @@ struct shadearg
 {
 	fz_test_device *dev;
 	fz_shade *shade;
-	const fz_color_params *color_params;
+	fz_color_params color_params;
 };
 
 static void
@@ -142,12 +128,9 @@ prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 }
 
 static void
-fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
-
-	if (color_params == NULL)
-		color_params = fz_default_color_params(ctx);
 
 	if (dev->resolved == 0)
 	{
@@ -177,7 +160,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix 
 				arg.dev = dev;
 				arg.shade = shade;
 				arg.color_params = color_params;
-				fz_process_shade(ctx, shade, ctm, prepare_vertex, NULL, &arg);
+				fz_process_shade(ctx, shade, ctm, fz_device_current_scissor(ctx, dev_), prepare_vertex, NULL, &arg);
 			}
 		}
 	}
@@ -185,7 +168,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix 
 		fz_fill_shade(ctx, dev->passthrough, shade, ctm, alpha, color_params);
 }
 
-static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *dev, fz_image *image, fz_stream *stream, const fz_color_params *color_params)
+static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *dev, fz_image *image, fz_stream *stream, fz_color_params color_params)
 {
 	unsigned int count = (unsigned int)image->w * (unsigned int)image->h;
 	unsigned int i;
@@ -213,7 +196,7 @@ static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *
 		fz_color_converter cc;
 		unsigned int n = (unsigned int)image->n;
 
-		fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), image->colorspace, color_params);
+		fz_init_cached_color_converter(ctx, &cc, image->colorspace, fz_device_rgb(ctx), NULL, color_params);
 
 		fz_try(ctx)
 		{
@@ -246,7 +229,7 @@ static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *
 }
 
 static void
-fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, const fz_color_params *color_params)
+fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, fz_color_params color_params)
 {
 	unsigned int count, i, k, h, sa, ss;
 	unsigned char *s;
@@ -282,7 +265,7 @@ fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, c
 		fz_color_converter cc;
 		unsigned int n = (unsigned int)pix->n-1;
 
-		fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), pix->colorspace, color_params);
+		fz_init_cached_color_converter(ctx, &cc, pix->colorspace, fz_device_rgb(ctx), NULL, color_params);
 
 		fz_try(ctx)
 		{
@@ -321,7 +304,7 @@ fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, c
 
 
 static void
-fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, const fz_color_params *color_params)
+fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -375,12 +358,9 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix 
 
 static void
 fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
+	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
-
-	if (color_params == NULL)
-		color_params = fz_default_color_params(ctx);
 
 	if (dev->resolved == 0)
 	{
@@ -455,7 +435,7 @@ fz_test_pop_clip(fz_context *ctx, fz_device *dev_)
 }
 
 static void
-fz_test_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect rect, int luminosity, fz_colorspace *cs, const float *bc, const fz_color_params *color_params)
+fz_test_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect rect, int luminosity, fz_colorspace *cs, const float *bc, fz_color_params color_params)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -510,32 +490,6 @@ fz_test_end_tile(fz_context *ctx, fz_device *dev_)
 		fz_end_tile(ctx, dev->passthrough);
 }
 
-/*
-	Create a device to test for features.
-
-	Currently only tests for the presence of non-grayscale colors.
-
-	is_color: Possible values returned:
-		0: Definitely greyscale
-		1: Probably color (all colors were grey, but there
-		were images or shadings in a non grey colorspace).
-		2: Definitely color
-
-	threshold: The difference from grayscale that will be tolerated.
-	Typical values to use are either 0 (be exact) and 0.02 (allow an
-	imperceptible amount of slop).
-
-	options: A set of bitfield options, from the FZ_TEST_OPT set.
-
-	passthrough: A device to pass all calls through to, or NULL.
-	If set, then the test device can both test and pass through to
-	an underlying device (like, say, the display list device). This
-	means that a display list can be created and at the end we'll
-	know if it's colored or not.
-
-	In the absence of a passthrough device, the device will throw
-	an exception to stop page interpretation when color is found.
-*/
 fz_device *
 fz_new_test_device(fz_context *ctx, int *is_color, float threshold, int options, fz_device *passthrough)
 {

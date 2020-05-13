@@ -102,11 +102,11 @@ public class PDFDocument extends Document
 	public native boolean hasUnsavedChanges();
 	public native boolean canBeSavedIncrementally();
 
-	public native int save(String filename, String options);
+	public native void save(String filename, String options);
 
-	protected native int nativeSaveWithStream(SeekableOutputStream stream, String options);
-	public int save(SeekableOutputStream stream, String options) {
-		return nativeSaveWithStream(stream, options);
+	protected native void nativeSaveWithStream(SeekableInputOutputStream stream, String options);
+	public void save(SeekableInputOutputStream stream, String options) {
+		nativeSaveWithStream(stream, options);
 	}
 
 	public interface JsEventListener {
@@ -116,4 +116,18 @@ public class PDFDocument extends Document
 	public native void disableJs();
 	public native boolean isJsSupported();
 	public native void setJsEventListener(JsEventListener listener);
+	public native void calculate(); /* Recalculate form fields. Not needed if using page.update(). */
+
+	public boolean hasAcroForm() {
+		return this.getTrailer().get("Root").get("AcroForm").get("Fields").size() > 0;
+	}
+
+	public boolean hasXFAForm() {
+		return !this.getTrailer().get("Root").get("AcroForm").get("XFA").isNull();
+	}
+
+	public native int countVersions();
+	public native int countUnsavedVersions();
+	public native int validateChangeHistory();
+	public native boolean wasPureXFA();
 }

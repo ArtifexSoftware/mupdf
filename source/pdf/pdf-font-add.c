@@ -1,9 +1,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-#include "../fitz/font-imp.h"
-#include "../fitz/fitz-imp.h"
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #ifdef FT_FONT_FORMATS_H
@@ -29,6 +26,11 @@ static int ft_font_file_kind(FT_Face face)
 	if (!strcmp(kind, "CFF")) return 3;
 	if (!strcmp(kind, "CID Type 1")) return 1;
 	return 0;
+}
+
+static int is_ttc(fz_font *font)
+{
+	return !memcmp(font->buffer->data, "ttcf", 4);
 }
 
 static int is_truetype(FT_Face face)
@@ -222,9 +224,11 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_fo
 		prev_size = fz_advance_glyph(ctx, font, 0, 0) * 1000;
 		first_code = prev_code;
 
-		while (prev_code < face->num_glyphs)
+		for (;;)
 		{
 			curr_code = prev_code + 1;
+			if (curr_code >= face->num_glyphs)
+				break;
 			curr_size = fz_advance_glyph(ctx, font, curr_code, 0) * 1000;
 
 			switch (state)
@@ -528,10 +532,6 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 		fz_rethrow(ctx);
 }
 
-/* Creates CID font with Identity-H CMap and a ToUnicode CMap that is created by
- * using the TTF cmap table "backwards" to go from the GID to a Unicode value.
- * We can possibly get width information that may have been embedded in
- * the PDF /W array (or W2 if vertical text) */
 pdf_obj *
 pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
@@ -670,7 +670,9 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 int
 pdf_font_writing_supported(fz_font *font)
 {
-	if (font->ft_face == NULL)
+	if (font->ft_face == NULL || font->buffer == NULL || font->buffer->len < 4)
+		return 0;
+	if (is_ttc(font))
 		return 0;
 	if (is_truetype(font->ft_face))
 		return 1;
@@ -679,7 +681,6 @@ pdf_font_writing_supported(fz_font *font)
 	return 0;
 }
 
-/* Add a non-embedded UTF16-encoded CID-font for the CJK scripts: CNS1, GB1, Japan1, or Korea1 */
 pdf_obj *
 pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *fzfont, int script, int wmode, int serif)
 {

@@ -1,5 +1,4 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <limits.h>
 #include <string.h>
@@ -12,6 +11,13 @@
 #undef FITZ_DEBUG_LOCKING_TIMES
 #endif
 
+/*
+ * The malloc family of functions will always try scavenging when they run out of memory.
+ * They will only fail when scavenging cannot free up memory from caches in the fz_context.
+ * All the functions will throw an exception when no memory can be allocated,
+ * except the _no_throw family which instead silently returns NULL.
+ */
+
 static void *
 do_scavenging_malloc(fz_context *ctx, size_t size)
 {
@@ -20,7 +26,7 @@ do_scavenging_malloc(fz_context *ctx, size_t size)
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	do {
-		p = ctx->alloc->malloc(ctx->alloc->user, size);
+		p = ctx->alloc.malloc(ctx->alloc.user, size);
 		if (p != NULL)
 		{
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -40,7 +46,7 @@ do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	do {
-		q = ctx->alloc->realloc(ctx->alloc->user, p, size);
+		q = ctx->alloc.realloc(ctx->alloc.user, p, size);
 		if (q != NULL)
 		{
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -52,232 +58,78 @@ do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 	return NULL;
 }
 
-/*
-	Allocate a block of memory (with scavenging)
-
-	size: The number of bytes to allocate.
-
-	Returns a pointer to the allocated block. May return NULL if size is
-	0. Throws exception on failure to allocate.
-*/
 void *
 fz_malloc(fz_context *ctx, size_t size)
 {
 	void *p;
-
 	if (size == 0)
 		return NULL;
-
 	p = do_scavenging_malloc(ctx, size);
 	if (!p)
 		fz_throw(ctx, FZ_ERROR_MEMORY, "malloc of %zu bytes failed", size);
 	return p;
 }
 
-/*
-	Allocate a block of memory (with scavenging)
-
-	size: The number of bytes to allocate.
-
-	Returns a pointer to the allocated block. May return NULL if size is
-	0. Returns NULL on failure to allocate.
-*/
 void *
 fz_malloc_no_throw(fz_context *ctx, size_t size)
 {
 	if (size == 0)
 		return NULL;
-
 	return do_scavenging_malloc(ctx, size);
 }
 
-/*
-	Allocate a block of (non zeroed) memory (with
-	scavenging). Equivalent to fz_calloc without the memory clearing.
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Throws exception on failure to allocate.
-*/
-void *
-fz_malloc_array(fz_context *ctx, size_t count, size_t size)
-{
-	void *p;
-
-	if (count == 0 || size == 0)
-		return 0;
-
-	if (count > SIZE_MAX / size)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "malloc of array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-
-	p = do_scavenging_malloc(ctx, count * size);
-	if (!p)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "malloc of array (%zu x %zu bytes) failed", count, size);
-	return p;
-}
-
-/*
-	Allocate a block of (non zeroed) memory
-	(with scavenging). Equivalent to fz_calloc_no_throw without the
-	memory clearing.
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to allocate.
-*/
-void *
-fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
-{
-	if (count == 0 || size == 0)
-		return 0;
-
-	if (count > SIZE_MAX / size)
-	{
-		char buf[100];
-		fz_snprintf(buf, sizeof buf, "error: malloc of array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-		fprintf(stderr, "%s\n", buf);
-		return NULL;
-	}
-
-	return do_scavenging_malloc(ctx, count * size);
-}
-
-/*
-	Allocate a zeroed block of memory (with scavenging)
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Throws exception on failure to allocate.
-*/
 void *
 fz_calloc(fz_context *ctx, size_t count, size_t size)
 {
 	void *p;
-
 	if (count == 0 || size == 0)
-		return 0;
-
+		return NULL;
 	if (count > SIZE_MAX / size)
-	{
 		fz_throw(ctx, FZ_ERROR_MEMORY, "calloc (%zu x %zu bytes) failed (size_t overflow)", count, size);
-	}
-
 	p = do_scavenging_malloc(ctx, count * size);
 	if (!p)
-	{
 		fz_throw(ctx, FZ_ERROR_MEMORY, "calloc (%zu x %zu bytes) failed", count, size);
-	}
 	memset(p, 0, count*size);
 	return p;
 }
 
-/*
-	Allocate a zeroed block of memory (with scavenging)
-
-	count: The number of objects to allocate space for.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the allocated block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to allocate.
-*/
 void *
 fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size)
 {
 	void *p;
-
 	if (count == 0 || size == 0)
-		return 0;
-
-	if (count > SIZE_MAX / size)
-	{
-		char buf[100];
-		fz_snprintf(buf, sizeof buf, "error: calloc of array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-		fprintf(stderr, "%s\n", buf);
 		return NULL;
-	}
-
+	if (count > SIZE_MAX / size)
+		return NULL;
 	p = do_scavenging_malloc(ctx, count * size);
 	if (p)
-	{
-		memset(p, 0, count*size);
-	}
+		memset(p, 0, count * size);
 	return p;
 }
 
-/*
-	Resize a block of memory (with scavenging).
-
-	p: The existing block to resize
-
-	count: The number of objects to resize to.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the resized block. May return NULL if size
-	and/or count are 0. Throws exception on failure to resize (original
-	block is left unchanged).
-*/
 void *
-fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size)
+fz_realloc(fz_context *ctx, void *p, size_t size)
 {
-	void *np;
-
-	if (count == 0 || size == 0)
+	if (size == 0)
 	{
 		fz_free(ctx, p);
-		return 0;
-	}
-
-	if (count > SIZE_MAX / size)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "resize array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-
-	np = do_scavenging_realloc(ctx, p, count * size);
-	if (!np)
-		fz_throw(ctx, FZ_ERROR_MEMORY, "resize array (%zu x %zu bytes) failed", count, size);
-	return np;
-}
-
-/*
-	Resize a block of memory (with scavenging).
-
-	p: The existing block to resize
-
-	count: The number of objects to resize to.
-
-	size: The size (in bytes) of each object.
-
-	Returns a pointer to the resized block. May return NULL if size
-	and/or count are 0. Returns NULL on failure to resize (original
-	block is left unchanged).
-*/
-void *
-fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
-{
-	if (count == 0 || size == 0)
-	{
-		fz_free(ctx, p);
-		return 0;
-	}
-
-	if (count > SIZE_MAX / size)
-	{
-		char buf[100];
-		fz_snprintf(buf, sizeof buf, "error: resize array (%zu x %zu bytes) failed (size_t overflow)", count, size);
-		fprintf(stderr, "%s\n", buf);
 		return NULL;
 	}
+	p = do_scavenging_realloc(ctx, p, size);
+	if (!p)
+		fz_throw(ctx, FZ_ERROR_MEMORY, "realloc (%zu bytes) failed", size);
+	return p;
+}
 
-	return do_scavenging_realloc(ctx, p, count * size);
+void *
+fz_realloc_no_throw(fz_context *ctx, void *p, size_t size)
+{
+	if (size == 0)
+	{
+		fz_free(ctx, p);
+		return NULL;
+	}
+	return do_scavenging_realloc(ctx, p, size);
 }
 
 void
@@ -286,19 +138,11 @@ fz_free(fz_context *ctx, void *p)
 	if (p)
 	{
 		fz_lock(ctx, FZ_LOCK_ALLOC);
-		ctx->alloc->free(ctx->alloc->user, p);
+		ctx->alloc.free(ctx->alloc.user, p);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 	}
 }
 
-/*
-	Duplicate a C string (with scavenging)
-
-	s: The string to duplicate.
-
-	Returns a pointer to a duplicated string. Throws exception on failure
-	to allocate.
-*/
 char *
 fz_strdup(fz_context *ctx, const char *s)
 {
@@ -360,7 +204,9 @@ enum
 
 fz_context *fz_lock_debug_contexts[FZ_LOCK_DEBUG_CONTEXT_MAX];
 int fz_locks_debug[FZ_LOCK_DEBUG_CONTEXT_MAX][FZ_LOCK_MAX];
+
 #ifdef FITZ_DEBUG_LOCKING_TIMES
+
 int fz_debug_locking_inited = 0;
 int fz_lock_program_start;
 int fz_lock_time[FZ_LOCK_DEBUG_CONTEXT_MAX][FZ_LOCK_MAX] = { { 0 } };

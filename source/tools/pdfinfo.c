@@ -70,7 +70,7 @@ struct info
 	} u;
 };
 
-typedef struct globals_s
+typedef struct
 {
 	pdf_document *doc;
 	fz_context *ctx;
@@ -182,8 +182,9 @@ showglobalinfo(fz_context *ctx, globals *glo)
 	pdf_obj *obj;
 	fz_output *out = glo->out;
 	pdf_document *doc = glo->doc;
+	int version = pdf_version(ctx, doc);
 
-	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", doc->version / 10, doc->version % 10);
+	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", version / 10, version % 10);
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
 	if (obj)
@@ -232,11 +233,12 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 	if (j < glo->dims)
 		return;
 
-	glo->dim = fz_resize_array(ctx, glo->dim, glo->dims+1, sizeof(struct info));
+	glo->dim = fz_realloc_array(ctx, glo->dim, glo->dims+1, struct info);
 	glo->dims++;
 
 	glo->dim[glo->dims - 1].page = page;
 	glo->dim[glo->dims - 1].pageref = pageref;
+	glo->dim[glo->dims - 1].u.dim.bbox = NULL;
 	glo->dim[glo->dims - 1].u.dim.bbox = fz_malloc(ctx, sizeof(fz_rect));
 	memcpy(glo->dim[glo->dims - 1].u.dim.bbox, &bbox, sizeof (fz_rect));
 
@@ -280,7 +282,7 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 		if (k < glo->fonts)
 			continue;
 
-		glo->font = fz_resize_array(ctx, glo->font, glo->fonts+1, sizeof(struct info));
+		glo->font = fz_realloc_array(ctx, glo->font, glo->fonts+1, struct info);
 		glo->fonts++;
 
 		glo->font[glo->fonts - 1].page = page;
@@ -349,7 +351,7 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 		if (k < glo->images)
 			continue;
 
-		glo->image = fz_resize_array(ctx, glo->image, glo->images+1, sizeof(struct info));
+		glo->image = fz_realloc_array(ctx, glo->image, glo->images+1, struct info);
 		glo->images++;
 
 		glo->image[glo->images - 1].page = page;
@@ -406,7 +408,7 @@ gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 		if (k < glo->forms)
 			continue;
 
-		glo->form = fz_resize_array(ctx, glo->form, glo->forms+1, sizeof(struct info));
+		glo->form = fz_realloc_array(ctx, glo->form, glo->forms+1, struct info);
 		glo->forms++;
 
 		glo->form[glo->forms - 1].page = page;
@@ -450,7 +452,7 @@ gatherpsobjs(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 		if (k < glo->psobjs)
 			continue;
 
-		glo->psobj = fz_resize_array(ctx, glo->psobj, glo->psobjs+1, sizeof(struct info));
+		glo->psobj = fz_realloc_array(ctx, glo->psobj, glo->psobjs+1, struct info);
 		glo->psobjs++;
 
 		glo->psobj[glo->psobjs - 1].page = page;
@@ -492,7 +494,7 @@ gathershadings(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 		if (k < glo->shadings)
 			continue;
 
-		glo->shading = fz_resize_array(ctx, glo->shading, glo->shadings+1, sizeof(struct info));
+		glo->shading = fz_realloc_array(ctx, glo->shading, glo->shadings+1, struct info);
 		glo->shadings++;
 
 		glo->shading[glo->shadings - 1].page = page;
@@ -559,7 +561,7 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 		if (k < glo->patterns)
 			continue;
 
-		glo->pattern = fz_resize_array(ctx, glo->pattern, glo->patterns+1, sizeof(struct info));
+		glo->pattern = fz_realloc_array(ctx, glo->pattern, glo->patterns+1, struct info);
 		glo->patterns++;
 
 		glo->pattern[glo->patterns - 1].page = page;

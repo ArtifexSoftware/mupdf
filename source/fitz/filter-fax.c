@@ -21,13 +21,11 @@
 <raph> peter came up with this, and it makes sense
 */
 
-typedef struct cfd_node_s cfd_node;
-
-struct cfd_node_s
+typedef struct
 {
 	short val;
 	short nbits;
-};
+} cfd_node;
 
 enum
 {
@@ -294,8 +292,6 @@ static inline void setbits(unsigned char *line, int x0, int x1)
 	}
 }
 
-typedef struct fz_faxd_s fz_faxd;
-
 enum
 {
 	STATE_INIT,		/* initial state, optionally waiting for EOL */
@@ -306,7 +302,7 @@ enum
 	STATE_DONE		/* all done */
 };
 
-struct fz_faxd_s
+typedef struct
 {
 	fz_stream *chain;
 
@@ -332,7 +328,7 @@ struct fz_faxd_s
 	unsigned char *rp, *wp;
 
 	unsigned char buffer[4096];
-};
+} fz_faxd;
 
 static inline void eat_bits(fz_faxd *fax, int nbits)
 {
@@ -367,8 +363,8 @@ get_code(fz_context *ctx, fz_faxd *fax, const cfd_node *table, int initialbits)
 
 	if (nbits > initialbits)
 	{
-		int mask = (1 << (32 - initialbits)) - 1;
-		tidx = val + ((word & mask) >> (32 - nbits));
+		int wordmask = (1 << (32 - initialbits)) - 1;
+		tidx = val + ((word & wordmask) >> (32 - nbits));
 		val = table[tidx].val;
 		nbits = initialbits + table[tidx].nbits;
 	}
@@ -769,7 +765,6 @@ close_faxd(fz_context *ctx, void *state_)
 	fz_free(ctx, fax);
 }
 
-/* Default: columns = 1728, end_of_block = 1, the rest = 0 */
 fz_stream *
 fz_open_faxd(fz_context *ctx, fz_stream *chain,
 	int k, int end_of_line, int encoded_byte_align,
@@ -805,8 +800,8 @@ fz_open_faxd(fz_context *ctx, fz_stream *chain,
 		fax->dim = fax->k < 0 ? 2 : 1;
 		fax->eolc = 0;
 
-		fax->ref = fz_malloc(ctx, fax->stride);
-		fax->dst = fz_malloc(ctx, fax->stride);
+		fax->ref = Memento_label(fz_malloc(ctx, fax->stride), "fax_ref");
+		fax->dst = Memento_label(fz_malloc(ctx, fax->stride), "fax_dst");
 		fax->rp = fax->dst;
 		fax->wp = fax->dst + fax->stride;
 

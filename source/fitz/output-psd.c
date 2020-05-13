@@ -60,7 +60,7 @@ typedef struct psd_band_writer_s
 } psd_band_writer;
 
 static void
-psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+psd_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	psd_band_writer *writer = (psd_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
@@ -74,15 +74,22 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	size_t len;
 	static const char psdsig[12] = { '8', 'B', 'P', 'S', 0, 1, 0, 0, 0, 0, 0, 0 };
 	static const char ressig[4] = { '8', 'B', 'I', 'M' };
-	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
 	unsigned char *data;
-	size_t size = fz_buffer_storage(ctx, buffer, &data);
-	const fz_colorspace *cs_cmyk = cs;
-	if (fz_colorspace_n(ctx, cs) != 4)
+	size_t size;
+	fz_colorspace *cs_cmyk = cs;
+
+#if FZ_ENABLE_ICC
+	size = fz_buffer_storage(ctx, cs->u.icc.buffer, &data);
+#else
+	size = 0;
+	data = NULL;
+#endif
+
+	if (cs->n != 4)
 		cs_cmyk = fz_device_cmyk(ctx);
 
 	if (!fz_colorspace_is_subtractive(ctx, cs))
-		writer->num_additive = fz_colorspace_n(ctx, cs);
+		writer->num_additive = cs->n;
 
 	/* File Header Section */
 	fz_write_data(ctx, out, psdsig, 12);
@@ -156,7 +163,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 			len2 = strlen(name);
 			if (len2 > 255)
 				len2 = 255;
-			fz_write_byte(ctx, out, len2);
+			fz_write_byte(ctx, out, (unsigned char)len2);
 			fz_write_data(ctx, out, name, len2);
 		}
 		if (len & 1)
@@ -171,7 +178,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 		fz_write_int32_be(ctx, out, 14 * s); /* Length */
 		for (i = 0; i < s; i++) {
 			float cmyk[4];
-			fz_separation_equivalent(ctx, seps, i, NULL, cs_cmyk, NULL, cmyk);
+			fz_separation_equivalent(ctx, seps, i, cs_cmyk, cmyk, NULL, fz_default_color_params);
 			fz_write_int16_be(ctx, out, 02); /* CMYK */
 			/* PhotoShop stores all component values as if they were additive. */
 			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[0]));/* Cyan */
@@ -191,7 +198,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 		fz_write_data(ctx, out, ressig, 4);
 		fz_write_int16_be(ctx, out, 0x40f); /* ICC Profile */
 		fz_write_data(ctx, out, "\x07Profile", 8); /* Profile name (must be even!) */
-		fz_write_int32_be(ctx, out, size);
+		fz_write_int32_be(ctx, out, (int)size);
 		fz_write_data(ctx, out, data, size); /* Actual data */
 		if (size & 1)
 			fz_write_byte(ctx, out, 0); /* Pad to even */
@@ -278,8 +285,8 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 				sp += line_skip;
 				ap += line_skip;
 			}
-			sp -= stride * band_height - 1;
-			ap -= stride * band_height;
+			sp -= stride * (ptrdiff_t)band_height - 1;
+			ap -= stride * (ptrdiff_t)band_height;
 			if (b != buffer)
 			{
 				if (k >= num_additive)
@@ -330,7 +337,7 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 				}
 				sp += line_skip;
 			}
-			sp -= stride * band_height - 1;
+			sp -= stride * (ptrdiff_t)band_height - 1;
 			if (b != buffer)
 			{
 				if (k >= num_additive)
@@ -341,7 +348,7 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 			fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
 		}
 	}
-	fz_seek_output(ctx, out, w * (band_height - h * n), SEEK_CUR);
+	fz_seek_output(ctx, out, w * (band_height - h * (int64_t)n), SEEK_CUR);
 }
 
 static void

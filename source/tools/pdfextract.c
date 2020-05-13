@@ -11,12 +11,14 @@
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
 static int dorgb = 0;
+static int doicc = 1;
 
 static void usage(void)
 {
 	fprintf(stderr, "usage: mutool extract [options] file.pdf [object numbers]\n");
 	fprintf(stderr, "\t-p\tpassword\n");
 	fprintf(stderr, "\t-r\tconvert images to rgb\n");
+	fprintf(stderr, "\t-N\tdo not use ICC color conversions\n");
 	exit(1);
 }
 
@@ -42,11 +44,11 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
 
 	if (dorgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
 	{
-		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, NULL /* FIXME */, 1);
+		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, fz_default_color_params /* FIXME */, 1);
 		pix = rgb;
 	}
 
-	if (pix->n - pix->alpha <= 3)
+	if (!pix->colorspace || pix->colorspace->type == FZ_COLORSPACE_GRAY || pix->colorspace->type == FZ_COLORSPACE_RGB)
 	{
 		fz_snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);
@@ -227,6 +229,8 @@ static void extractobject(int num)
 			saveimage(ref);
 		if (isfontdesc(ref))
 			savefont(ref);
+
+		fz_empty_store(ctx);
 	}
 	fz_always(ctx)
 		pdf_drop_obj(ctx, ref);
@@ -240,12 +244,13 @@ int pdfextract_main(int argc, char **argv)
 	char *password = "";
 	int c, o;
 
-	while ((c = fz_getopt(argc, argv, "p:r")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:rN")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'r': dorgb++; break;
+		case 'N': doicc^=1; break;
 		default: usage(); break;
 		}
 	}
@@ -261,6 +266,11 @@ int pdfextract_main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+	if (doicc)
+		fz_enable_icc(ctx);
+	else
+		fz_disable_icc(ctx);
 
 	doc = pdf_open_document(ctx, infile);
 	if (pdf_needs_password(ctx, doc))

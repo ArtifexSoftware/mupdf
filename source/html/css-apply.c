@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 static const char *inherit_list[] = {
 	"color",
@@ -593,7 +594,7 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 		}
 	}
 
-	if (match->count + 1 >= nelem(match->prop))
+	if (match->count + 1 >= (int)nelem(match->prop))
 	{
 		// fz_warn(ctx, "too many css properties");
 		return;
@@ -706,12 +707,13 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	fz_css_property *prop;
 	fz_font *font = NULL;
 	fz_buffer *buf = NULL;
-	int is_bold, is_italic;
+	int is_bold, is_italic, is_small_caps;
 	char path[2048];
 
 	const char *family = "serif";
 	const char *weight = "normal";
 	const char *style = "normal";
+	const char *variant = "normal";
 	const char *src = NULL;
 
 	for (prop = declaration; prop; prop = prop->next)
@@ -719,6 +721,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 		if (!strcmp(prop->name, "font-family")) family = prop->value->data;
 		if (!strcmp(prop->name, "font-weight")) weight = prop->value->data;
 		if (!strcmp(prop->name, "font-style")) style = prop->value->data;
+		if (!strcmp(prop->name, "font-variant")) variant = prop->value->data;
 		if (!strcmp(prop->name, "src")) src = prop->value->data;
 	}
 
@@ -727,6 +730,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 
 	is_bold = is_bold_from_font_weight(weight);
 	is_italic = is_italic_from_font_style(style);
+	is_small_caps = !strcmp(variant, "small-caps");
 
 	fz_strlcpy(path, base_uri, sizeof path);
 	fz_strlcat(path, "/", sizeof path);
@@ -737,7 +741,8 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	for (custom = set->custom; custom; custom = custom->next)
 		if (!strcmp(custom->src, path) && !strcmp(custom->family, family) &&
 				custom->is_bold == is_bold &&
-				custom->is_italic == is_italic)
+				custom->is_italic == is_italic &&
+				custom->is_small_caps == is_small_caps)
 			return; /* already loaded */
 
 	fz_var(buf);
@@ -749,8 +754,8 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 			buf = fz_read_archive_entry(ctx, zip, path);
 		else
 			buf = fz_read_file(ctx, src);
-		font = fz_new_font_from_buffer(ctx, src, buf, 0, 0);
-		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, path, font);
+		font = fz_new_font_from_buffer(ctx, NULL, buf, 0, 0);
+		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, is_small_caps, path, font);
 	}
 	fz_always(ctx)
 	{
@@ -759,6 +764,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 	}
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "cannot load font-face: %s", src);
 	}
 }
@@ -771,15 +777,19 @@ fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, c
 
 	for (rule = css->rule; rule; rule = rule->next)
 	{
-		sel = rule->selector;
-		while (sel)
+		if (!rule->loaded)
 		{
-			if (sel->name && !strcmp(sel->name, "@font-face"))
+			rule->loaded = 1;
+			sel = rule->selector;
+			while (sel)
 			{
-				fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
-				break;
+				if (sel->name && !strcmp(sel->name, "@font-face"))
+				{
+					fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
+					break;
+				}
+				sel = sel->next;
 			}
-			sel = sel->next;
 		}
 	}
 }
@@ -1024,7 +1034,7 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 
 	if (value->type == CSS_HASH)
 	{
-		int r, g, b;
+		int r, g, b, a;
 		size_t n;
 hex_color:
 		n = strlen(value->data);
@@ -1033,18 +1043,35 @@ hex_color:
 			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
 			g = tohex(value->data[1]) * 16 + tohex(value->data[1]);
 			b = tohex(value->data[2]) * 16 + tohex(value->data[2]);
+			a = 255;
+		}
+		else if (n == 4)
+		{
+			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
+			g = tohex(value->data[1]) * 16 + tohex(value->data[1]);
+			b = tohex(value->data[2]) * 16 + tohex(value->data[2]);
+			a = tohex(value->data[3]) * 16 + tohex(value->data[3]);
 		}
 		else if (n == 6)
 		{
 			r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
 			g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
 			b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
+			a = 255;
+		}
+		else if (n == 8)
+		{
+			r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
+			g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
+			b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
+			a = tohex(value->data[6]) * 16 + tohex(value->data[7]);
 		}
 		else
 		{
 			r = g = b = 0;
+			a = 255;
 		}
-		return make_color(r, g, b, 255);
+		return make_color(r, g, b, a);
 	}
 
 	if (value->type == '(' && !strcmp(value->data, "rgb"))
@@ -1058,6 +1085,21 @@ hex_color:
 		g = fz_from_css_number(number_from_value(vg, 0, N_NUMBER), 255, 255, 0);
 		b = fz_from_css_number(number_from_value(vb, 0, N_NUMBER), 255, 255, 0);
 		return make_color(r, g, b, 255);
+	}
+
+	if (value->type == '(' && !strcmp(value->data, "rgba"))
+	{
+		fz_css_value *vr, *vg, *vb, *va;
+		int r, g, b, a;
+		vr = value->args;
+		vg = vr && vr->next ? vr->next->next : NULL; /* skip the ',' nodes */
+		vb = vg && vg->next ? vg->next->next : NULL; /* skip the ',' nodes */
+		va = vb && vb->next ? vb->next->next : NULL; /* skip the ',' nodes */
+		r = fz_from_css_number(number_from_value(vr, 0, N_NUMBER), 255, 255, 0);
+		g = fz_from_css_number(number_from_value(vg, 0, N_NUMBER), 255, 255, 0);
+		b = fz_from_css_number(number_from_value(vb, 0, N_NUMBER), 255, 255, 0);
+		a = fz_from_css_number(number_from_value(va, 0, N_NUMBER), 255, 255, 255);
+		return make_color(r, g, b, a);
 	}
 
 	if (value->type == CSS_KEYWORD)
@@ -1306,24 +1348,209 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	{
 		const char *font_weight = string_from_property(match, "font-weight", "normal");
 		const char *font_style = string_from_property(match, "font-style", "normal");
+		const char *font_variant = string_from_property(match, "font-variant", "normal");
 		int is_bold = is_bold_from_font_weight(font_weight);
 		int is_italic = is_italic_from_font_style(font_style);
+		style->small_caps = !strcmp(font_variant, "small-caps");
 		value = value_from_property(match, "font-family");
 		while (value)
 		{
 			if (strcmp(value->data, ",") != 0)
 			{
-				style->font = fz_load_html_font(ctx, set, value->data, is_bold, is_italic);
+				style->font = fz_load_html_font(ctx, set, value->data, is_bold, is_italic, style->small_caps);
 				if (style->font)
 					break;
 			}
 			value = value->next;
 		}
 		if (!style->font)
-			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic);
+			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic, style->small_caps);
 	}
 }
 
+#ifdef DEBUG_CSS_SPLAY
+static void
+do_verify_splay(const fz_css_style_splay *x)
+{
+	printf("%x<", x);
+	if (x->lt)
+	{
+		assert(memcmp(&x->lt->style, &x->style, sizeof(x->style)) < 0);
+		assert(x->lt->up == x);
+		do_verify_splay(x->lt);
+	}
+	printf(",");
+	if (x->gt)
+	{
+		assert(memcmp(&x->gt->style, &x->style, sizeof(x->style)) > 0);
+		assert(x->gt->up == x);
+		do_verify_splay(x->gt);
+	}
+	printf(">\n");
+}
+
+static void
+verify_splay(const fz_css_style_splay *x)
+{
+	if (x == NULL)
+		return;
+	assert(x->up == NULL);
+	do_verify_splay(x);
+	printf("-----\n");
+}
+#endif
+
+const fz_css_style *
+fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz_css_style_splay **tree, fz_pool *pool)
+{
+	fz_css_style_splay **current = tree;
+	fz_css_style_splay *x;
+	fz_css_style_splay *y = NULL;
+
+	/* Search for a match in the tree, if there is one, or for
+	 * the insertion point, if there is not. */
+	while (*current != NULL)
+	{
+		int cmp = memcmp(style, &(*current)->style, sizeof(*style));
+		if (cmp == 0)
+		{
+			/* We have a match - break out and do move to root. */
+			break;
+		}
+		y = (*current);
+		if (cmp < 0)
+			current = &y->lt;
+		else
+			current = &y->gt;
+	}
+	/* Create one if needed */
+	if (*current == NULL)
+	{
+		x = *current = fz_pool_alloc(ctx, pool, sizeof(*y));
+		x->style = *style;
+		x->up = y;
+		x->lt = NULL;
+		x->gt = NULL;
+	}
+	else
+		x = *current;
+	/* Now move to root */
+	/*
+	The splaying steps used:
+
+	Case 1:	|a)       z              x             b)     z                   x
+		|     y       D  =>  A       y            A       y           y       D
+		|   x   C                  B   z                B   x  =>  z     C
+		|  A B                        C D                  C D    A B
+
+	Case 2:	|a)       z              x             b)     z                   x
+		|     y       D  =>   y     z             A       y    =>     z       y
+		|   A   x            A B   C D                  x   D        A B     C D
+		|      B C                                     B C
+
+	Case 3:	|a)       y              x             b)     y                   x
+		|      x     C   =>   A     y              A     x      =>     y     C
+		|     A B                  B C                  B C           A B
+	*/
+#ifdef DEBUG_CSS_SPLAY
+	printf("BEFORE\n");
+	verify_splay(*tree);
+#endif
+	while ((y = x->up) != NULL ) /* While we're not at the root */
+	{
+		fz_css_style_splay *z = y->up;
+		y->up = x;
+		if (z == NULL)
+		{
+			if (y->lt == x)	/* Case 3a */
+			{
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				x->gt = y;
+			}
+			else /* Case 3b */
+			{
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				x->lt = y;
+			}
+			x->up = NULL;
+			break;
+		}
+		x->up = z->up;
+		if (z->up)
+		{
+			if (z->up->lt == z)
+				z->up->lt = x;
+			else
+				z->up->gt = x;
+		}
+		if (z->lt == y)
+		{
+			if (y->lt == x) /* Case 1a */
+			{
+				z->lt = y->gt;
+				if (z->lt)
+					z->lt->up = z;
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				y->gt = z;
+				z->up = y;
+				x->gt = y;
+			}
+			else /* Case 2a */
+			{
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				z->lt = x->gt;
+				if (z->lt)
+					z->lt->up = z;
+				x->lt = y;
+				x->gt = z;
+				z->up = x;
+			}
+		}
+		else
+		{
+			if (y->gt == x) /* Case 1b */
+			{
+				z->gt = y->lt;
+				if (z->gt)
+					z->gt->up = z;
+				y->gt = x->lt;
+				if (y->gt)
+					y->gt->up = y;
+				y->lt = z;
+				z->up = y;
+				x->lt = y;
+			}
+			else /* Case 2b */
+			{
+				z->gt = x->lt;
+				if (z->gt)
+					z->gt->up = z;
+				y->lt = x->gt;
+				if (y->lt)
+					y->lt->up = y;
+				x->gt = y;
+				x->lt = z;
+				z->up = x;
+			}
+		}
+	}
+
+	*tree = x;
+#ifdef DEBUG_CSS_SPLAY
+	printf("AFTER\n");
+	verify_splay(x);
+#endif
+
+	return &x->style;
+}
 /*
  * Pretty printing
  */

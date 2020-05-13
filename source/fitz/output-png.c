@@ -1,18 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include "z-imp.h"
+
 #include <string.h>
-
-#include <zlib.h>
-
-static void *zalloc_outpng(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_outpng(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
 
 static inline void big32(unsigned char *buf, unsigned int v)
 {
@@ -22,15 +12,19 @@ static inline void big32(unsigned char *buf, unsigned int v)
 	buf[3] = (v) & 0xff;
 }
 
-static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *data, int size)
+static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *data, size_t size)
 {
 	unsigned int sum;
-	fz_write_int32_be(ctx, out, size);
+
+	if ((uint32_t)size != size)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "PNG chunk too large");
+
+	fz_write_int32_be(ctx, out, (int)size);
 	fz_write_data(ctx, out, tag, 4);
 	fz_write_data(ctx, out, data, size);
 	sum = crc32(0, NULL, 0);
 	sum = crc32(sum, (unsigned char*)tag, 4);
-	sum = crc32(sum, data, size);
+	sum = crc32(sum, data, (unsigned int)size);
 	fz_write_int32_be(ctx, out, sum);
 }
 
@@ -96,43 +90,50 @@ typedef struct png_band_writer_s
 } png_band_writer;
 
 static void
-png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
+png_write_icc(fz_context *ctx, png_band_writer *writer, fz_colorspace *cs)
 {
-	fz_output *out = writer->super.out;
-	size_t size, csize;
-	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
-	unsigned char *pos, *cdata, *chunk = NULL;
-
-	/* Deflate the profile */
-	cdata = fz_new_deflated_data_from_buffer(ctx, &csize, buffer, FZ_DEFLATE_DEFAULT);
-
-	if (!cdata)
-		return;
-
-	size = csize + strlen("MuPDF Profile") + 2;
-
-	fz_try(ctx)
+#if FZ_ENABLE_ICC
+	if (cs && !(cs->flags & FZ_COLORSPACE_IS_DEVICE) && (cs->flags & FZ_COLORSPACE_IS_ICC) && cs->u.icc.buffer)
 	{
-		chunk = fz_calloc(ctx, size, 1);
-		pos = chunk;
-		memcpy(chunk, "MuPDF Profile", strlen("MuPDF Profile"));
-		pos += strlen("MuPDF Profile") + 2;
-		memcpy(pos, cdata, csize);
-		putchunk(ctx, out, "iCCP", chunk, size);
+		fz_output *out = writer->super.out;
+		size_t size, csize;
+		fz_buffer *buffer = cs->u.icc.buffer;
+		unsigned char *pos, *cdata, *chunk = NULL;
+		const char *name;
+
+		/* Deflate the profile */
+		cdata = fz_new_deflated_data_from_buffer(ctx, &csize, buffer, FZ_DEFLATE_DEFAULT);
+
+		if (!cdata)
+			return;
+
+		name = cs->name;
+		size = csize + strlen(name) + 2;
+
+		fz_try(ctx)
+		{
+			chunk = fz_calloc(ctx, size, 1);
+			pos = chunk;
+			memcpy(chunk, name, strlen(name));
+			pos += strlen(name) + 2;
+			memcpy(pos, cdata, csize);
+			putchunk(ctx, out, "iCCP", chunk, size);
+		}
+		fz_always(ctx)
+		{
+			fz_free(ctx, cdata);
+			fz_free(ctx, chunk);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
 	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, cdata);
-		fz_free(ctx, chunk);
-	}
-	fz_catch(ctx)
-	{
-		/* Nothing */
-	}
+#endif
 }
 
 static void
-png_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+png_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
@@ -195,18 +196,18 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 
 	if (writer->udata == NULL)
 	{
-		writer->usize = (w * n + 1) * band_height;
+		writer->usize = ((uLong)w * n + 1) * band_height;
 		/* Sadly the bound returned by compressBound is just for a
 		 * single usize chunk; if you compress a sequence of them
 		 * the buffering can result in you suddenly getting a block
 		 * larger than compressBound outputted in one go, even if you
 		 * take all the data out each time. */
 		writer->csize = compressBound(writer->usize);
-		writer->udata = fz_malloc(ctx, writer->usize);
-		writer->cdata = fz_malloc(ctx, writer->csize);
+		writer->udata = Memento_label(fz_malloc(ctx, writer->usize), "png_write_udata");
+		writer->cdata = Memento_label(fz_malloc(ctx, writer->csize), "png_write_cdata");
 		writer->stream.opaque = ctx;
-		writer->stream.zalloc = zalloc_outpng;
-		writer->stream.zfree = zfree_outpng;
+		writer->stream.zalloc = fz_zlib_alloc;
+		writer->stream.zfree = fz_zlib_free;
 		err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
 		if (err != Z_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
@@ -339,7 +340,7 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
  * drop pix early in the case where we have to convert, potentially saving
  * us having to have 2 copies of the pixmap and a buffer open at once. */
 static fz_buffer *
-png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params, int drop)
+png_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int drop)
 {
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
@@ -355,9 +356,6 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_pa
 			fz_drop_pixmap(ctx, pix);
 		return NULL;
 	}
-
-	if (color_params == NULL)
-		color_params = fz_default_color_params(ctx);
 
 	fz_try(ctx)
 	{
@@ -387,14 +385,14 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_pa
 }
 
 fz_buffer *
-fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *color_params)
+fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, fz_color_params color_params)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 	return png_from_pixmap(ctx, pix, color_params, 1);
 }
 
 fz_buffer *
-fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params)
+fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params)
 {
 	return png_from_pixmap(ctx, pix, color_params, 0);
 }

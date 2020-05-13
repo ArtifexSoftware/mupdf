@@ -94,91 +94,91 @@ MuPDF has made various extensions to its mechanisms for handling
 progressive loading.
 
 <ul>
-  <li> Progressive streams
+	<li> Progressive streams
 
-    <p>
-    At its lowest level MuPDF reads file data from a fz_stream,
-    using the fz_open_document_with_stream call. (fz_open_document
-    is implemented by calling this). We have extended the fz_stream
-    slightly, giving the system a way to ask for meta information
-    (or perform meta operations) on a stream.
+		<p>
+		At its lowest level MuPDF reads file data from a fz_stream,
+		using the fz_open_document_with_stream call. (fz_open_document
+		is implemented by calling this). We have extended the fz_stream
+		slightly, giving the system a way to ask for meta information
+		(or perform meta operations) on a stream.
 
-    <p>
-    Using this mechanism MuPDF can query:
+		<p>
+		Using this mechanism MuPDF can query:
 
-    <ul>
-      <li> whether a stream is progressive or not (i.e. whether the
-        entire stream is accessible immediately)
-      <li> what the length of a stream should ultimately be (which an
-        http fetcher should know from the Content-Length header),
-    </ul>
+		<ul>
+			<li> whether a stream is progressive or not (i.e. whether the
+				entire stream is accessible immediately)
+			<li> what the length of a stream should ultimately be (which an
+				http fetcher should know from the Content-Length header),
+		</ul>
 
-    <p>
-    With this information MuPDF can decide whether to use its normal
-    object reading code, or whether to make use of a linearized
-    object. Knowing the length enables us to check with the length
-    value given in the linearized object - if these differ, the
-    assumption is that an incremental save has taken place, thus the
-    file is no longer linearized.
+		<p>
+		With this information MuPDF can decide whether to use its normal
+		object reading code, or whether to make use of a linearized
+		object. Knowing the length enables us to check with the length
+		value given in the linearized object - if these differ, the
+		assumption is that an incremental save has taken place, thus the
+		file is no longer linearized.
 
-    <p>
-    When data is pulled from a progressive stream, if we attempt to
-    read data that is not currently available, the stream should
-    throw a FZ_ERROR_TRYLATER error. This particular error code
-    will be interpreted by the caller as an indication that it
-    should retry the parsing of the current objects at a later time.
+		<p>
+		When data is pulled from a progressive stream, if we attempt to
+		read data that is not currently available, the stream should
+		throw a FZ_ERROR_TRYLATER error. This particular error code
+		will be interpreted by the caller as an indication that it
+		should retry the parsing of the current objects at a later time.
 
-    <p>
-    When a MuPDF call is made on a progressive stream, such as
-    fz_open_document_with_stream, or fz_load_page, the caller should
-    be prepared to handle a FZ_ERROR_TRYLATER error as meaning that
-    more data is required before it can continue. No indication is
-    directly given as to exactly how much more data is required, but
-    as the caller will be implementing the progressive fz_stream
-    that it has passed into MuPDF to start with, it can reasonably
-    be expected to figure out an estimate for itself.
+		<p>
+		When a MuPDF call is made on a progressive stream, such as
+		fz_open_document_with_stream, or fz_load_page, the caller should
+		be prepared to handle a FZ_ERROR_TRYLATER error as meaning that
+		more data is required before it can continue. No indication is
+		directly given as to exactly how much more data is required, but
+		as the caller will be implementing the progressive fz_stream
+		that it has passed into MuPDF to start with, it can reasonably
+		be expected to figure out an estimate for itself.
 
-  <li> Cookie
+	<li> Cookie
 
-    <p>
-    Once a page has been loaded, if its contents are to be 'run'
-    as normal (using e.g. fz_run_page) any error (such as failing
-    to read a font, or an image, or even a content stream belonging
-    to the page) will result in a rendering that aborts with an
-    FZ_ERROR_TRYLATER error. The caller can catch this and display
-    a placeholder instead.
+		<p>
+		Once a page has been loaded, if its contents are to be 'run'
+		as normal (using e.g. fz_run_page) any error (such as failing
+		to read a font, or an image, or even a content stream belonging
+		to the page) will result in a rendering that aborts with an
+		FZ_ERROR_TRYLATER error. The caller can catch this and display
+		a placeholder instead.
 
-    <p>
-    If each pages data was entirely self-contained and sent in
-    sequence this would perhaps be acceptable, with each page
-    appearing one after the other. Unfortunately, the linearization
-    procedure as laid down by Adobe does NOT do this: objects shared
-    between multiple pages (other than the first) are not sent with
-    the pages themselves, but rather AFTER all the pages have been
-    sent.
+		<p>
+		If each pages data was entirely self-contained and sent in
+		sequence this would perhaps be acceptable, with each page
+		appearing one after the other. Unfortunately, the linearization
+		procedure as laid down by Adobe does NOT do this: objects shared
+		between multiple pages (other than the first) are not sent with
+		the pages themselves, but rather AFTER all the pages have been
+		sent.
 
-    <p>
-    This means that a document that has a title page, then contents
-    that share a font used on pages 2 onwards, will not be able to
-    correctly display page 2 until after the font has arrived in
-    the file, which will not be until all the page data has been
-    sent.
+		<p>
+		This means that a document that has a title page, then contents
+		that share a font used on pages 2 onwards, will not be able to
+		correctly display page 2 until after the font has arrived in
+		the file, which will not be until all the page data has been
+		sent.
 
-    <p>
-    To mitigate against this, MuPDF provides a way whereby callers
-    can indicate that they are prepared to accept an 'incomplete'
-    rendering of the file (perhaps with missing images, or with
-    substitute fonts).
+		<p>
+		To mitigate against this, MuPDF provides a way whereby callers
+		can indicate that they are prepared to accept an 'incomplete'
+		rendering of the file (perhaps with missing images, or with
+		substitute fonts).
 
-    <p>
-    Callers prepared to tolerate such renderings should set the
-    'incomplete_ok' flag in the cookie, then call fz_run_page etc
-    as normal. If a FZ_ERROR_TRYLATER error is thrown at any point
-    during the page rendering, the error will be swallowed, the
-    'incomplete' field in the cookie will become non-zero and
-    rendering will continue. When control returns to the caller
-    the caller can check the value of the 'incomplete' field and
-    know that the rendering it received is not authoritative.
+		<p>
+		Callers prepared to tolerate such renderings should set the
+		'incomplete_ok' flag in the cookie, then call fz_run_page etc
+		as normal. If a FZ_ERROR_TRYLATER error is thrown at any point
+		during the page rendering, the error will be swallowed, the
+		'incomplete' field in the cookie will become non-zero and
+		rendering will continue. When control returns to the caller
+		the caller can check the value of the 'incomplete' field and
+		know that the rendering it received is not authoritative.
 
 </ul>
 

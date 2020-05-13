@@ -1,5 +1,4 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <string.h>
 #include <assert.h>
@@ -16,7 +15,7 @@
 // a trailing move. Trailing moves can always be stripped when path
 // construction completes.
 
-typedef enum fz_path_command_e
+typedef enum
 {
 	FZ_MOVETO = 'M',
 	FZ_LINETO = 'L',
@@ -39,7 +38,7 @@ typedef enum fz_path_command_e
 	FZ_QUADTOCLOSE = 'q',
 } fz_path_item_kind;
 
-struct fz_path_s
+struct fz_path
 {
 	int8_t refs;
 	uint8_t packed;
@@ -51,7 +50,7 @@ struct fz_path_s
 	fz_point begin;
 };
 
-typedef struct fz_packed_path_s
+typedef struct
 {
 	int8_t refs;
 	uint8_t packed;
@@ -121,10 +120,6 @@ fz_drop_path(fz_context *ctx, const fz_path *pathc)
 	}
 }
 
-/*
-	Return the number of
-	bytes required to pack a path.
-*/
 int fz_packed_path_size(const fz_path *path)
 {
 	switch (path->packed)
@@ -146,51 +141,11 @@ int fz_packed_path_size(const fz_path *path)
 	}
 }
 
-/*
-	Pack a path into the given block.
-	To minimise the size of paths, this function allows them to be
-	packed into a buffer with other information. Paths can be used
-	interchangeably regardless of how they are packed.
-
-	pack: Pointer to a block of data to pack the path into. Should
-	be aligned by the caller to the same alignment as required for
-	a fz_path pointer.
-
-	max: The number of bytes available in the block.
-	If max < sizeof(fz_path) then an exception will
-	be thrown. If max >= the value returned by
-	fz_packed_path_size, then this call will never
-	fail, except in low memory situations with large
-	paths.
-
-	path: The path to pack.
-
-	Returns the number of bytes within the block used. Callers can
-	access the packed path data by casting the value of pack on
-	entry to be a fz_path *.
-
-	Throws exceptions on failure to allocate, or if
-	max < sizeof(fz_path).
-
-	Implementation details: Paths can be 'unpacked', 'flat', or
-	'open'. Standard paths, as created are 'unpacked'. Paths that
-	will pack into less than max bytes will be packed as 'flat',
-	unless they are too large (where large indicates that they
-	exceed some private implementation defined limits, currently
-	including having more than 256 coordinates or commands).
-
-	Large paths are 'open' packed as a header into the given block,
-	plus pointers to other data blocks.
-
-	Users should not have to care about whether paths are 'open'
-	or 'flat' packed. Simply pack a path (if required), and then
-	forget about the details.
-*/
-int
-fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
+size_t
+fz_pack_path(fz_context *ctx, uint8_t *pack_, size_t max, const fz_path *path)
 {
 	uint8_t *ptr;
-	int size;
+	size_t size;
 
 	if (path->packed)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't repack a packed path");
@@ -217,10 +172,10 @@ fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
 			pack->coord_len = path->coord_len;
 			pack->cmd_cap = path->cmd_len;
 			pack->cmd_len = path->cmd_len;
-			pack->coords = fz_malloc_array(ctx, path->coord_len, sizeof(float));
+			pack->coords = Memento_label(fz_malloc_array(ctx, path->coord_len, float), "path_packed_coords");
 			fz_try(ctx)
 			{
-				pack->cmds = fz_malloc_array(ctx, path->cmd_len, sizeof(uint8_t));
+				pack->cmds = Memento_label(fz_malloc_array(ctx, path->cmd_len, uint8_t), "path_packed_cmds");
 			}
 			fz_catch(ctx)
 			{
@@ -261,7 +216,7 @@ push_cmd(fz_context *ctx, fz_path *path, int cmd)
 	if (path->cmd_len + 1 >= path->cmd_cap)
 	{
 		int new_cmd_cap = fz_maxi(16, path->cmd_cap * 2);
-		path->cmds = fz_resize_array(ctx, path->cmds, new_cmd_cap, sizeof(unsigned char));
+		path->cmds = fz_realloc_array(ctx, path->cmds, new_cmd_cap, unsigned char);
 		path->cmd_cap = new_cmd_cap;
 	}
 
@@ -274,7 +229,7 @@ push_coord(fz_context *ctx, fz_path *path, float x, float y)
 	if (path->coord_len + 2 >= path->coord_cap)
 	{
 		int new_coord_cap = fz_maxi(32, path->coord_cap * 2);
-		path->coords = fz_resize_array(ctx, path->coords, new_coord_cap, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, float);
 		path->coord_cap = new_coord_cap;
 	}
 
@@ -291,7 +246,7 @@ push_ord(fz_context *ctx, fz_path *path, float xy, int isx)
 	if (path->coord_len + 1 >= path->coord_cap)
 	{
 		int new_coord_cap = fz_maxi(32, path->coord_cap * 2);
-		path->coords = fz_resize_array(ctx, path->coords, new_coord_cap, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, new_coord_cap, float);
 		path->coord_cap = new_coord_cap;
 	}
 
@@ -303,28 +258,12 @@ push_ord(fz_context *ctx, fz_path *path, float xy, int isx)
 		path->current.y = xy;
 }
 
-/*
-	Return the current point that a path has
-	reached or (0,0) if empty.
-
-	path: path to return the current point of.
-*/
 fz_point
 fz_currentpoint(fz_context *ctx, fz_path *path)
 {
 	return path->current;
 }
 
-/*
-	Append a 'moveto' command to a path.
-	This 'opens' a path.
-
-	path: The path to modify.
-
-	x, y: The coordinate to move to.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_moveto(fz_context *ctx, fz_path *path, float x, float y)
 {
@@ -348,15 +287,6 @@ fz_moveto(fz_context *ctx, fz_path *path, float x, float y)
 	path->begin = path->current;
 }
 
-/*
-	Append a 'lineto' command to an open path.
-
-	path: The path to modify.
-
-	x, y: The coordinate to line to.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_lineto(fz_context *ctx, fz_path *path, float x, float y)
 {
@@ -404,22 +334,6 @@ fz_lineto(fz_context *ctx, fz_path *path, float x, float y)
 	}
 }
 
-/*
-	Append a 'curveto' command to an open path. (For a
-	cubic bezier).
-
-	path: The path to modify.
-
-	x0, y0: The coordinates of the first control point for the
-	curve.
-
-	x1, y1: The coordinates of the second control point for the
-	curve.
-
-	x2, y2: The end coordinates for the curve.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_curveto(fz_context *ctx, fz_path *path,
 	float x1, float y1,
@@ -478,18 +392,6 @@ fz_curveto(fz_context *ctx, fz_path *path,
 	push_coord(ctx, path, x3, y3);
 }
 
-/*
-	Append a 'quadto' command to an open path. (For a
-	quadratic bezier).
-
-	path: The path to modify.
-
-	x0, y0: The control coordinates for the quadratic curve.
-
-	x1, y1: The end coordinates for the quadratic curve.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_quadto(fz_context *ctx, fz_path *path,
 	float x1, float y1,
@@ -524,20 +426,6 @@ fz_quadto(fz_context *ctx, fz_path *path,
 	push_coord(ctx, path, x2, y2);
 }
 
-/*
-	Append a 'curvetov' command to an open path. (For a
-	cubic bezier with the first control coordinate equal to
-	the start point).
-
-	path: The path to modify.
-
-	x1, y1: The coordinates of the second control point for the
-	curve.
-
-	x2, y2: The end coordinates for the curve.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float y3)
 {
@@ -575,21 +463,6 @@ fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float 
 	push_coord(ctx, path, x3, y3);
 }
 
-/*
-	Append a 'curvetoy' command to an open path. (For a
-	cubic bezier with the second control coordinate equal to
-	the end point).
-
-	path: The path to modify.
-
-	x0, y0: The coordinates of the first control point for the
-	curve.
-
-	x2, y2: The end coordinates for the curve (and the second
-	control coordinate).
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_curvetoy(fz_context *ctx, fz_path *path, float x1, float y1, float x3, float y3)
 {
@@ -622,14 +495,6 @@ fz_curvetoy(fz_context *ctx, fz_path *path, float x1, float y1, float x3, float 
 	push_coord(ctx, path, x3, y3);
 }
 
-/*
-	Close the current subpath.
-
-	path: The path to modify.
-
-	Throws exceptions on failure to allocate, and illegal
-	path closes (i.e. closing a non open path).
-*/
 void
 fz_closepath(fz_context *ctx, fz_path *path)
 {
@@ -698,24 +563,6 @@ fz_closepath(fz_context *ctx, fz_path *path)
 	path->current = path->begin;
 }
 
-/*
-	Append a 'rectto' command to an open path.
-
-	The rectangle is equivalent to:
-		moveto x0 y0
-		lineto x1 y0
-		lineto x1 y1
-		lineto x0 y1
-		closepath
-
-	path: The path to modify.
-
-	x0, y0: First corner of the rectangle.
-
-	x1, y1: Second corner of the rectangle.
-
-	Throws exceptions on failure to allocate.
-*/
 void
 fz_rectto(fz_context *ctx, fz_path *path, float x1, float y1, float x2, float y2)
 {
@@ -744,24 +591,6 @@ static inline void bound_expand(fz_rect *r, fz_point p)
 	if (p.y > r->y1) r->y1 = p.y;
 }
 
-/*
-	Walk the segments of a path, calling the
-	appropriate callback function from a given set for each
-	segment of the path.
-
-	path: The path to walk.
-
-	walker: The set of callback functions to use. The first
-	4 callback pointers in the set must be non-NULL. The
-	subsequent ones can either be supplied, or can be left
-	as NULL, in which case the top 4 functions will be
-	called as appropriate to simulate them.
-
-	arg: An opaque argument passed in to each callback.
-
-	Exceptions will only be thrown if the underlying callback
-	functions throw them.
-*/
 void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *proc, void *arg)
 {
 	int i, k, cmd_len;
@@ -1076,22 +905,6 @@ static const fz_path_walker bound_path_walker =
 	NULL
 };
 
-/*
-	Return a bounding rectangle for a path.
-
-	path: The path to bound.
-
-	stroke: If NULL, the bounding rectangle given is for
-	the filled path. If non-NULL the bounding rectangle
-	given is for the path stroked with the given attributes.
-
-	ctm: The matrix to apply to the path during stroking.
-
-	r: Pointer to a fz_rect which will be used to hold
-	the result.
-
-	Returns r, updated to contain the bounding rectangle.
-*/
 fz_rect
 fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm)
 {
@@ -1134,17 +947,6 @@ fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *str
 	return r;
 }
 
-/*
-	Transform a path by a given
-	matrix.
-
-	path: The path to modify (must not be a packed path).
-
-	transform: The transform to apply.
-
-	Throws exceptions if the path is packed, or on failure
-	to allocate.
-*/
 void
 fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 {
@@ -1368,12 +1170,12 @@ fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 		}
 		if (path->cmd_len + extra_cmd < path->cmd_cap)
 		{
-			path->cmds = fz_resize_array(ctx, path->cmds, path->cmd_len + extra_cmd, sizeof(unsigned char));
+			path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len + extra_cmd, unsigned char);
 			path->cmd_cap = path->cmd_len + extra_cmd;
 		}
 		if (path->coord_len + extra_coord < path->coord_cap)
 		{
-			path->coords = fz_resize_array(ctx, path->coords, path->coord_len + extra_coord, sizeof(float));
+			path->coords = fz_realloc_array(ctx, path->coords, path->coord_len + extra_coord, float);
 			path->coord_cap = path->coord_len + extra_coord;
 		}
 		memmove(path->cmds + extra_cmd, path->cmds, path->cmd_len * sizeof(unsigned char));
@@ -1507,28 +1309,18 @@ fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 	}
 }
 
-/*
-	Minimise the internal storage
-	used by a path.
-
-	As paths are constructed, the internal buffers
-	grow. To avoid repeated reallocations they
-	grow with some spare space. Once a path has
-	been fully constructed, this call allows the
-	excess space to be trimmed.
-*/
 void fz_trim_path(fz_context *ctx, fz_path *path)
 {
 	if (path->packed)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't trim a packed path");
 	if (path->cmd_cap > path->cmd_len)
 	{
-		path->cmds = fz_resize_array(ctx, path->cmds, path->cmd_len, sizeof(unsigned char));
+		path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len, unsigned char);
 		path->cmd_cap = path->cmd_len;
 	}
 	if (path->coord_cap > path->coord_len)
 	{
-		path->coords = fz_resize_array(ctx, path->coords, path->coord_len, sizeof(float));
+		path->coords = fz_realloc_array(ctx, path->coords, path->coord_len, float);
 		path->coord_cap = path->coord_len;
 	}
 }
@@ -1541,14 +1333,6 @@ const fz_stroke_state fz_default_stroke_state = {
 	0, 0, { 0 }
 };
 
-/*
-	Take an additional reference to
-	a stroke state structure.
-
-	No modifications should be carried out on a stroke
-	state to which more than one reference is held, as
-	this can cause race conditions.
-*/
 fz_stroke_state *
 fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 {
@@ -1564,11 +1348,6 @@ fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 	return fz_keep_imp(ctx, stroke, &stroke->refs);
 }
 
-/*
-	Drop a reference to a stroke
-	state structure, destroying the structure if it is
-	the last reference.
-*/
 void
 fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 {
@@ -1578,15 +1357,6 @@ fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 		fz_free(ctx, stroke);
 }
 
-/*
-	Create a new (empty)
-	stroke state structure, with room for dash data of the
-	given length, and return a reference to it.
-
-	len: The number of dash elements to allow room for.
-
-	Throws exception on failure to allocate.
-*/
 fz_stroke_state *
 fz_new_stroke_state_with_dash_len(fz_context *ctx, int len)
 {
@@ -1611,27 +1381,12 @@ fz_new_stroke_state_with_dash_len(fz_context *ctx, int len)
 	return state;
 }
 
-/*
-	Create a new (empty) stroke state
-	structure (with no dash data) and return a reference to it.
-
-	Throws exception on failure to allocate.
-*/
 fz_stroke_state *
 fz_new_stroke_state(fz_context *ctx)
 {
 	return fz_new_stroke_state_with_dash_len(ctx, 0);
 }
 
-/*
-	Create an identical stroke_state
-	structure and return a reference to it.
-
-	stroke: The stroke state reference to clone.
-
-	Exceptions may be thrown in the event of a failure to
-	allocate.
-*/
 fz_stroke_state *
 fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {
@@ -1643,21 +1398,6 @@ fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 	return clone;
 }
 
-/*
-	Given a reference to a
-	(possibly) shared stroke_state structure, return a reference
-	to a stroke_state structure (with room for a given amount of
-	dash data) that is guaranteed to be unshared (i.e. one that
-	can safely be modified).
-
-	shared: The reference to a (possibly) shared structure
-	to unshare. Ownership of this reference is passed in
-	to this function, even in the case of exceptions being
-	thrown.
-
-	Exceptions may be thrown in the event of failure to
-	allocate if required.
-*/
 fz_stroke_state *
 fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len)
 {
@@ -1688,21 +1428,6 @@ fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, 
 	return unshared;
 }
 
-/*
-	Given a reference to a
-	(possibly) shared stroke_state structure, return
-	a reference to an equivalent stroke_state structure
-	that is guaranteed to be unshared (i.e. one that can
-	safely be modified).
-
-	shared: The reference to a (possibly) shared structure
-	to unshare. Ownership of this reference is passed in
-	to this function, even in the case of exceptions being
-	thrown.
-
-	Exceptions may be thrown in the event of failure to
-	allocate if required.
-*/
 fz_stroke_state *
 fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *shared)
 {
@@ -1722,18 +1447,6 @@ clone_block(fz_context *ctx, void *block, size_t len)
 	return target;
 }
 
-/*
-	Clone the data for a path.
-
-	This is used in preference to fz_keep_path when a whole
-	new copy of a path is required, rather than just a shared
-	pointer. This probably indicates that the path is about to
-	be modified.
-
-	path: path to clone.
-
-	Throws exceptions on failure to allocate.
-*/
 fz_path *
 fz_clone_path(fz_context *ctx, fz_path *path)
 {
@@ -1755,10 +1468,10 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 		case FZ_PATH_PACKED_OPEN:
 			new_path->cmd_len = path->cmd_len;
 			new_path->cmd_cap = path->cmd_cap;
-			new_path->cmds = clone_block(ctx, path->cmds, path->cmd_cap);
+			new_path->cmds = Memento_label(clone_block(ctx, path->cmds, path->cmd_cap), "path_cmds");
 			new_path->coord_len = path->coord_len;
 			new_path->coord_cap = path->coord_cap;
-			new_path->coords = clone_block(ctx, path->coords, sizeof(float)*path->coord_cap);
+			new_path->coords = Memento_label(clone_block(ctx, path->coords, sizeof(float)*path->coord_cap), "path_coords");
 			new_path->current = path->current;
 			new_path->begin = path->begin;
 			break;
@@ -1774,9 +1487,9 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 				new_path->coord_len = ppath->coord_len;
 				new_path->coord_cap = ppath->coord_len;
 				data = (uint8_t *)&ppath[1];
-				new_path->coords = clone_block(ctx, data, sizeof(float)*path->coord_cap);
+				new_path->coords = Memento_label(clone_block(ctx, data, sizeof(float)*path->coord_cap), "path_coords");
 				data += sizeof(float) * path->coord_cap;
-				new_path->cmds = clone_block(ctx, data, path->cmd_cap);
+				new_path->cmds = Memento_label(clone_block(ctx, data, path->cmd_cap), "path_cmds");
 				xy = new_path->coords;
 				for (i = 0; i < new_path->cmd_len; i++)
 				{

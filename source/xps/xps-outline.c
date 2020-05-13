@@ -35,9 +35,9 @@ xps_parse_document_outline(fz_context *ctx, xps_document *doc, fz_xml *root)
 				continue;
 
 			entry = fz_new_outline(ctx);
-			entry->title = fz_strdup(ctx, description);
-			entry->uri = fz_strdup(ctx, target);
-			entry->page = xps_lookup_link_target(ctx, (fz_document*)doc, target, NULL, NULL);
+			entry->title = Memento_label(fz_strdup(ctx, description), "outline_title");
+			entry->uri = Memento_label(fz_strdup(ctx, target), "outline_uri");
+			entry->page = xps_lookup_link_target(ctx, (fz_document*)doc, target, NULL, NULL).page;
 			entry->down = NULL;
 			entry->next = NULL;
 
@@ -91,7 +91,7 @@ xps_load_document_structure(fz_context *ctx, xps_document *doc, xps_fixdoc *fixd
 	part = xps_read_part(ctx, doc, fixdoc->outline);
 	fz_try(ctx)
 	{
-		xml = fz_parse_xml(ctx, part->data, 0);
+		xml = fz_parse_xml(ctx, part->data, 0, 0);
 		outline = xps_parse_document_structure(ctx, doc, fz_xml_root(xml));
 	}
 	fz_always(ctx)
@@ -124,6 +124,7 @@ xps_load_outline(fz_context *ctx, fz_document *doc_)
 			}
 			fz_catch(ctx)
 			{
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				outline = NULL;
 			}
 			if (!outline)

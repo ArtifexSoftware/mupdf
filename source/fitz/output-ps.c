@@ -1,6 +1,6 @@
 #include "mupdf/fitz.h"
 
-#include <zlib.h>
+#include "z-imp.h"
 
 typedef struct ps_band_writer_s
 {
@@ -12,16 +12,6 @@ typedef struct ps_band_writer_s
 	int output_size;
 	unsigned char *output;
 } ps_band_writer;
-
-static void *zalloc_ps(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_ps(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
 
 void
 fz_write_ps_file_header(fz_context *ctx, fz_output *out)
@@ -53,7 +43,7 @@ fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 }
 
 static void
-ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+ps_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	ps_band_writer *writer = (ps_band_writer *)writer_;
 	fz_output *out = writer->super.out;
@@ -80,8 +70,8 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *c
 	writer->super.h = h;
 	writer->super.n = n;
 
-	writer->stream.zalloc = zalloc_ps;
-	writer->stream.zfree = zfree_ps;
+	writer->stream.zalloc = fz_zlib_alloc;
+	writer->stream.zfree = fz_zlib_free;
 	writer->stream.opaque = ctx;
 
 	err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
@@ -229,7 +219,7 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	{
 		fz_free(ctx, writer->input);
 		writer->input = NULL;
-		writer->input = fz_malloc(ctx, required_input);
+		writer->input = Memento_label(fz_malloc(ctx, required_input), "pswriter_input");
 		writer->input_size = required_input;
 	}
 
@@ -237,7 +227,7 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	{
 		fz_free(ctx, writer->output);
 		writer->output = NULL;
-		writer->output = fz_malloc(ctx, required_output);
+		writer->output = Memento_label(fz_malloc(ctx, required_output), "pswriter_output");
 		writer->output_size = required_output;
 	}
 
@@ -278,16 +268,14 @@ fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out)
 
 /* High-level document writer interface */
 
-typedef struct fz_ps_writer_s fz_ps_writer;
-
-struct fz_ps_writer_s
+typedef struct
 {
 	fz_document_writer super;
 	fz_draw_options draw;
 	fz_pixmap *pixmap;
 	fz_output *out;
 	int count;
-};
+} fz_ps_writer;
 
 static fz_device *
 ps_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
@@ -305,25 +293,21 @@ ps_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_band_writer *bw;
 
 	fz_try(ctx)
-		fz_close_device(ctx, dev);
-	fz_always(ctx)
-		fz_drop_device(ctx, dev);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	bw = fz_new_ps_band_writer(ctx, wri->out);
-	fz_try(ctx)
 	{
+		fz_close_device(ctx, dev);
+		bw = fz_new_ps_band_writer(ctx, wri->out);
 		fz_write_header(ctx, bw, pix->w, pix->h, pix->n, pix->alpha, pix->xres, pix->yres, 0, pix->colorspace, pix->seps);
 		fz_write_band(ctx, bw, pix->stride, pix->h, pix->samples);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
 		fz_drop_band_writer(ctx, bw);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void
@@ -343,22 +327,36 @@ ps_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 }
 
 fz_document_writer *
-fz_new_ps_writer(fz_context *ctx, const char *path, const char *options)
+fz_new_ps_writer_with_output(fz_context *ctx, fz_output *out, const char *options)
 {
 	fz_ps_writer *wri = fz_new_derived_document_writer(ctx, fz_ps_writer, ps_begin_page, ps_end_page, ps_close_writer, ps_drop_writer);
 
 	fz_try(ctx)
 	{
 		fz_parse_draw_options(ctx, &wri->draw, options);
-		wri->out = fz_new_output_with_path(ctx, path ? path : "out.ps", 0);
+		wri->out = out;
 		fz_write_ps_file_header(ctx, wri->out);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_output(ctx, wri->out);
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
 	}
 
 	return (fz_document_writer*)wri;
+}
+
+fz_document_writer *
+fz_new_ps_writer(fz_context *ctx, const char *path, const char *options)
+{
+	fz_output *out = fz_new_output_with_path(ctx, path ? path : "out.ps", 0);
+	fz_document_writer *wri = NULL;
+	fz_try(ctx)
+		wri = fz_new_ps_writer_with_output(ctx, out, options);
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, out);
+		fz_rethrow(ctx);
+	}
+	return wri;
 }

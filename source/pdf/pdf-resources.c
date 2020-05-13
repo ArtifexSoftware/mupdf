@@ -51,7 +51,10 @@ pdf_preload_image_resources(fz_context *ctx, pdf_document *doc)
 
 				/* Don't allow overwrites. */
 				if (!fz_hash_find(ctx, doc->resources.images, digest))
-					fz_hash_insert(ctx, doc->resources.images, digest, pdf_keep_obj(ctx, obj));
+				{
+					fz_hash_insert(ctx, doc->resources.images, digest, obj);
+					obj = NULL;
+				}
 			}
 			pdf_drop_obj(ctx, obj);
 			obj = NULL;

@@ -57,7 +57,7 @@ static char filename[PATH_MAX];
 #define SET_KEY(parent, name, value) \
 	RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), (DWORD)strlen(value) + 1)
 
-void install_app(char *argv0)
+static void install_app(char *argv0)
 {
 	char buf[512];
 	HKEY software, classes, mupdf, dotpdf, dotxps, dotepub, dotfb2;
@@ -197,7 +197,7 @@ int winquery(pdfapp_t *app, const char *query)
 	}
 }
 
-int winfilename(wchar_t *buf, int len)
+static int winfilename(wchar_t *buf, int len)
 {
 	OPENFILENAME ofn;
 	buf[0] = 0;
@@ -213,7 +213,7 @@ int winfilename(wchar_t *buf, int len)
 	return GetOpenFileNameW(&ofn);
 }
 
-int wingetcertpath(char *buf, int len)
+int wingetcertpath(pdfapp_t *app, char *buf, int len)
 {
 	wchar_t twbuf[PATH_MAX] = {0};
 	OPENFILENAME ofn;
@@ -232,7 +232,7 @@ int wingetcertpath(char *buf, int len)
 		int code = WideCharToMultiByte(CP_UTF8, 0, twbuf, -1, buf, MIN(PATH_MAX, len), NULL, NULL);
 		if (code == 0)
 		{
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(app, "cannot convert filename to utf-8");
 			return 0;
 		}
 
@@ -264,7 +264,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 		int code = WideCharToMultiByte(CP_UTF8, 0, twbuf, -1, buf, MIN(PATH_MAX, len), NULL, NULL);
 		if (code == 0)
 		{
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(app, "cannot convert filename to utf-8");
 			return 0;
 		}
 
@@ -278,7 +278,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 	}
 }
 
-void winreplacefile(char *source, char *target)
+void winreplacefile(pdfapp_t *app, char *source, char *target)
 {
 	wchar_t wsource[PATH_MAX];
 	wchar_t wtarget[PATH_MAX];
@@ -286,14 +286,14 @@ void winreplacefile(char *source, char *target)
 	int sz = MultiByteToWideChar(CP_UTF8, 0, source, -1, wsource, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
 	sz = MultiByteToWideChar(CP_UTF8, 0, target, -1, wtarget, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
@@ -305,7 +305,7 @@ void winreplacefile(char *source, char *target)
 #endif
 }
 
-void wincopyfile(char *source, char *target)
+void wincopyfile(pdfapp_t *app, char *source, char *target)
 {
 	wchar_t wsource[PATH_MAX];
 	wchar_t wtarget[PATH_MAX];
@@ -313,14 +313,14 @@ void wincopyfile(char *source, char *target)
 	int sz = MultiByteToWideChar(CP_UTF8, 0, source, -1, wsource, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
 	sz = MultiByteToWideChar(CP_UTF8, 0, target, -1, wtarget, PATH_MAX);
 	if (sz == 0)
 	{
-		winerror(&gapp, "cannot convert filename to Unicode");
+		pdfapp_error(app, "cannot convert filename to Unicode");
 		return;
 	}
 
@@ -338,7 +338,7 @@ static const char **cd_opts;
 static const char **cd_vals;
 static int pd_okay = 0;
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -365,7 +365,7 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -395,14 +395,14 @@ dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetTextColor((HDC)wParam, RGB(255,0,0));
 			SetBkMode((HDC)wParam, TRANSPARENT);
 
-			return (INT)GetStockObject(NULL_BRUSH);
+			return (INT_PTR)GetStockObject(NULL_BRUSH);
 		}
 		break;
 	}
 	return FALSE;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogchoiceproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND listbox;
@@ -471,7 +471,7 @@ char *winpassword(pdfapp_t *app, char *filename)
 	sprintf(pd_filename, "The file \"%s\" is encrypted.", s);
 	code = DialogBoxW(NULL, L"IDD_DLOGPASS", hwndframe, dlogpassproc);
 	if (code <= 0)
-		winerror(app, "cannot create password dialog");
+		pdfapp_error(app, "cannot create password dialog");
 	if (pd_okay)
 		return pd_password;
 	return NULL;
@@ -484,7 +484,7 @@ char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 	fz_strlcpy(td_textinput, inittext ? inittext : "", sizeof td_textinput);
 	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextproc);
 	if (code <= 0)
-		winerror(app, "cannot create text input dialog");
+		pdfapp_error(app, "cannot create text input dialog");
 	if (pd_okay)
 		return td_textinput;
 	return NULL;
@@ -499,11 +499,11 @@ int winchoiceinput(pdfapp_t *app, int nopts, const char *opts[], int *nvals, con
 	cd_vals = vals;
 	code = DialogBoxW(NULL, L"IDD_DLOGLIST", hwndframe, dlogchoiceproc);
 	if (code <= 0)
-		winerror(app, "cannot create text input dialog");
+		pdfapp_error(app, "cannot create text input dialog");
 	return pd_okay;
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
@@ -577,14 +577,14 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-void info()
+static void info()
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGINFO", hwndframe, dloginfoproc);
 	if (code <= 0)
-		winerror(&gapp, "cannot create info dialog");
+		pdfapp_error(&gapp, "cannot create info dialog");
 }
 
-INT_PTR CALLBACK
+static INT_PTR CALLBACK
 dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -604,14 +604,14 @@ void winhelp(pdfapp_t*app)
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGABOUT", hwndframe, dlogaboutproc);
 	if (code <= 0)
-		winerror(&gapp, "cannot create help dialog");
+		pdfapp_error(&gapp, "cannot create help dialog");
 }
 
 /*
  * Main window
  */
 
-void winopen()
+static void winopen()
 {
 	WNDCLASS wc;
 	HMENU menu;
@@ -632,7 +632,7 @@ void winopen()
 	wc.lpszClassName = L"FrameWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		winerror(&gapp, "cannot register frame window class");
+		pdfapp_error(&gapp, "cannot register frame window class");
 
 	/* Create and register window view class */
 	memset(&wc, 0, sizeof(wc));
@@ -648,7 +648,7 @@ void winopen()
 	wc.lpszClassName = L"ViewWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		winerror(&gapp, "cannot register view window class");
+		pdfapp_error(&gapp, "cannot register view window class");
 
 	/* Get screen size */
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0);
@@ -689,7 +689,7 @@ void winopen()
 	0, // program instance handle
 	0); // creation parameters
 	if (!hwndframe)
-		winerror(&gapp, "cannot create frame");
+		pdfapp_error(&gapp, "cannot create frame");
 
 	hwndview = CreateWindowW(L"ViewWindow", // window class name
 	NULL,
@@ -698,7 +698,7 @@ void winopen()
 	CW_USEDEFAULT, CW_USEDEFAULT,
 	hwndframe, 0, 0, 0);
 	if (!hwndview)
-		winerror(&gapp, "cannot create view");
+		pdfapp_error(&gapp, "cannot create view");
 
 	hdc = NULL;
 
@@ -760,7 +760,7 @@ void wintitle(pdfapp_t *app, char *title)
 	SetWindowTextW(hwndframe, wide);
 }
 
-void windrawrect(pdfapp_t *app, int x0, int y0, int x1, int y1)
+static void windrawrect(pdfapp_t *app, int x0, int y0, int x1, int y1)
 {
 	RECT r;
 	r.left = x0;
@@ -777,7 +777,7 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 	TextOutA(hdc, x, y - 12, s, (int)strlen(s));
 }
 
-void winblitsearch()
+static void winblitsearch()
 {
 	if (gapp.issearching)
 	{
@@ -788,7 +788,7 @@ void winblitsearch()
 	}
 }
 
-void winblit()
+static void winblit()
 {
 	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
 	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
@@ -817,7 +817,7 @@ void winblit()
 
 		if (image_n == 2)
 		{
-			int i = image_w * image_h;
+			size_t i = image_w * (size_t)image_h;
 			unsigned char *color = malloc(i*4);
 			unsigned char *s = samples;
 			unsigned char *d = color;
@@ -965,7 +965,7 @@ static void killtimer(pdfapp_t *app)
 	timer_pending = 0;
 }
 
-void handlekey(int c)
+static void handlekey(int c)
 {
 	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
 	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
@@ -987,12 +987,11 @@ void handlekey(int c)
 	{
 		switch (c - 256)
 		{
-		case VK_F1: c = '?'; break;
 		case VK_ESCAPE: c = '\033'; break;
 		case VK_DOWN: c = 'j'; break;
 		case VK_UP: c = 'k'; break;
-		case VK_LEFT: c = 'b'; break;
-		case VK_RIGHT: c = ' '; break;
+		case VK_LEFT: c = 'h'; break;
+		case VK_RIGHT: c = 'l'; break;
 		case VK_PRIOR: c = ','; break;
 		case VK_NEXT: c = '.'; break;
 		}
@@ -1002,7 +1001,7 @@ void handlekey(int c)
 	winrepaint(&gapp);
 }
 
-void handlemouse(int x, int y, int btn, int state)
+static void handlemouse(int x, int y, int btn, int state)
 {
 	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
 	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
@@ -1024,7 +1023,7 @@ void handlemouse(int x, int y, int btn, int state)
 	pdfapp_onmouse(&gapp, x, y, btn, modifier, state);
 }
 
-LRESULT CALLBACK
+static LRESULT CALLBACK
 frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -1082,7 +1081,7 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-LRESULT CALLBACK
+static LRESULT CALLBACK
 viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static int oldx = 0;
@@ -1187,6 +1186,8 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case VK_F1:
+			winhelp(&gapp);
+			return 0;
 		case VK_LEFT:
 		case VK_UP:
 		case VK_PRIOR:
@@ -1245,17 +1246,19 @@ get_system_dpi(void)
 
 static void usage(const char *argv0)
 {
-	fprintf(stderr, "usage: %s [options] file.pdf [page]\n", argv0);
-	fprintf(stderr, "\t-p -\tpassword\n");
-	fprintf(stderr, "\t-r -\tresolution\n");
-	fprintf(stderr, "\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
-	fprintf(stderr, "\t-C -\tRRGGBB (tint color in hexadecimal syntax)\n");
-	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
-	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
-	fprintf(stderr, "\t-I -\tinvert colors\n");
-	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
-	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
-	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
+	const char *msg =
+		"usage: mupdf [options] file.pdf [page]\n"
+		"\t-p -\tpassword\n"
+		"\t-r -\tresolution\n"
+		"\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n"
+		"\t-C -\tRRGGBB (tint color in hexadecimal syntax)\n"
+		"\t-W -\tpage width for EPUB layout\n"
+		"\t-H -\tpage height for EPUB layout\n"
+		"\t-I -\tinvert colors\n"
+		"\t-S -\tfont size for EPUB layout\n"
+		"\t-U -\tuser style sheet for EPUB layout\n"
+		"\t-X\tdisable document styles for EPUB layout\n";
+	MessageBoxA(NULL, msg, "MuPDF: Usage", MB_OK);
 	exit(1);
 }
 
@@ -1269,14 +1272,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	MSG msg;
 	int code;
 	fz_context *ctx;
-	int bps = 0;
+	int kbps = 0;
 	int displayRes = get_system_dpi();
 	int c;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
 	{
-		fprintf(stderr, "cannot initialise context\n");
+		MessageBoxA(NULL, "Cannot initialize MuPDF context.", "MuPDF: Error", MB_OK);
 		exit(1);
 	}
 	pdfapp_init(ctx, &gapp);
@@ -1299,7 +1302,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		case 'W': gapp.layout_w = fz_atoi(fz_optarg); break;
 		case 'H': gapp.layout_h = fz_atoi(fz_optarg); break;
 		case 'S': gapp.layout_em = fz_atoi(fz_optarg); break;
-		case 'b': bps = (fz_optarg && *fz_optarg) ? fz_atoi(fz_optarg) : 4096; break;
+		case 'b': kbps = fz_atoi(fz_optarg); break;
 		case 'U': gapp.layout_css = fz_optarg; break;
 		case 'X': gapp.layout_use_doc_css = 0; break;
 		default: usage(argv[0]);
@@ -1323,14 +1326,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 			exit(0);
 		code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 		if (code == 0)
-			winerror(&gapp, "cannot convert filename to utf-8");
+			pdfapp_error(&gapp, "cannot convert filename to utf-8");
 	}
 
 	if (fz_optind < argc)
 		gapp.pageno = atoi(argv[fz_optind++]);
 
-	if (bps)
-		pdfapp_open_progressive(&gapp, filename, 0, bps);
+	if (kbps)
+		pdfapp_open_progressive(&gapp, filename, 0, kbps);
 	else
 		pdfapp_open(&gapp, filename, 0);
 

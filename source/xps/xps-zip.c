@@ -34,60 +34,70 @@ xps_drop_part(fz_context *ctx, xps_document *doc, xps_part *part)
 	fz_free(ctx, part);
 }
 
-/*
- * Read and interleave split parts from a ZIP file.
- */
 xps_part *
 xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 {
 	fz_archive *zip = doc->zip;
-	fz_buffer *buf, *tmp;
+	fz_buffer *buf = NULL;
+	fz_buffer *tmp = NULL;
 	char path[2048];
 	int count;
 	char *name;
 	int seen_last;
 
+	fz_var(buf);
+	fz_var(tmp);
+
 	name = partname;
 	if (name[0] == '/')
 		name ++;
 
-	/* All in one piece */
-	if (fz_has_archive_entry(ctx, zip, name))
+	fz_try(ctx)
 	{
-		buf = fz_read_archive_entry(ctx, zip, name);
-	}
-
-	/* Assemble all the pieces */
-	else
-	{
-		buf = fz_new_buffer(ctx, 512);
-		seen_last = 0;
-		for (count = 0; !seen_last; ++count)
+		/* All in one piece */
+		if (fz_has_archive_entry(ctx, zip, name))
 		{
-			fz_snprintf(path, sizeof path, "%s/[%d].piece", name, count);
-			if (fz_has_archive_entry(ctx, zip, path))
+			buf = fz_read_archive_entry(ctx, zip, name);
+		}
+
+		/* Assemble all the pieces */
+		else
+		{
+			buf = fz_new_buffer(ctx, 512);
+			seen_last = 0;
+			for (count = 0; !seen_last; ++count)
 			{
-				tmp = fz_read_archive_entry(ctx, zip, path);
-				fz_append_buffer(ctx, buf, tmp);
-				fz_drop_buffer(ctx, tmp);
-			}
-			else
-			{
-				fz_snprintf(path, sizeof path, "%s/[%d].last.piece", name, count);
+				fz_snprintf(path, sizeof path, "%s/[%d].piece", name, count);
 				if (fz_has_archive_entry(ctx, zip, path))
 				{
 					tmp = fz_read_archive_entry(ctx, zip, path);
 					fz_append_buffer(ctx, buf, tmp);
 					fz_drop_buffer(ctx, tmp);
-					seen_last = 1;
+					tmp = NULL;
 				}
 				else
 				{
-					fz_drop_buffer(ctx, buf);
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find all pieces for part '%s'", partname);
+					fz_snprintf(path, sizeof path, "%s/[%d].last.piece", name, count);
+					if (fz_has_archive_entry(ctx, zip, path))
+					{
+						tmp = fz_read_archive_entry(ctx, zip, path);
+						fz_append_buffer(ctx, buf, tmp);
+						fz_drop_buffer(ctx, tmp);
+						tmp = NULL;
+						seen_last = 1;
+					}
+					else
+						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find all pieces for part '%s'", partname);
 				}
 			}
 		}
+
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, tmp);
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
 	}
 
 	return xps_new_part(ctx, doc, partname, buf);
@@ -157,19 +167,24 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 fz_document *
 xps_open_document(fz_context *ctx, const char *filename)
 {
-	char buf[2048];
 	fz_stream *file;
 	char *p;
 	fz_document *doc = NULL;
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
-		fz_strlcpy(buf, filename, sizeof buf);
+		char *buf = fz_strdup(ctx, filename);
 		p = strstr(buf, "/_rels/.rels");
 		if (!p)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
-		return xps_open_document_with_directory(ctx, buf);
+		fz_try(ctx)
+			doc = xps_open_document_with_directory(ctx, buf);
+		fz_always(ctx)
+			fz_free(ctx, buf);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		return doc;
 	}
 
 	file = fz_open_file(ctx, filename);

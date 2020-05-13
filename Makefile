@@ -7,7 +7,11 @@ ifndef build
 endif
 
 ifndef OUT
-  OUT := build/$(build)
+  ifeq ($(shared),yes)
+    OUT := build/shared-$(build)
+  else
+    OUT := build/$(build)
+  endif
 endif
 
 default: all
@@ -58,7 +62,7 @@ ifdef RANLIB
   RANLIB_CMD = $(QUIET_RANLIB) $(RANLIB) $@
 endif
 LINK_CMD = $(QUIET_LINK) $(MKTGTDIR) ; $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-TAGS_CMD = $(QUIET_TAGS) ctags $^
+TAGS_CMD = $(QUIET_TAGS) ctags -R --c-kinds=+p
 WINDRES_CMD = $(QUIET_WINDRES) $(MKTGTDIR) ; $(WINDRES) $< $@
 OBJCOPY_CMD = $(QUIET_OBJCOPY) $(MKTGTDIR) ; $(LD) -r -b binary -o $@ $<
 
@@ -71,17 +75,20 @@ $(OUT)/%.a :
 $(OUT)/%.exe: %.c
 	$(LINK_CMD)
 
+$(OUT)/%.$(SO):
+	$(LINK_CMD) $(LIB_LDFLAGS) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
+
 $(OUT)/source/helpers/mu-threads/%.o : source/helpers/mu-threads/%.c
-	$(CC_CMD) $(THREADING_CFLAGS)
+	$(CC_CMD) $(LIB_CFLAGS) $(THREADING_CFLAGS)
 
 $(OUT)/source/helpers/pkcs7/%.o : source/helpers/pkcs7/%.c
-	$(CC_CMD) $(LIBCRYPTO_CFLAGS)
+	$(CC_CMD) $(LIB_CFLAGS) $(LIBCRYPTO_CFLAGS)
 
 $(OUT)/source/tools/%.o : source/tools/%.c
 	$(CC_CMD) -Wall $(THIRD_CFLAGS) $(THREADING_CFLAGS)
 
 $(OUT)/generated/%.o : generated/%.c
-	$(CC_CMD) -O0
+	$(CC_CMD) $(LIB_CFLAGS) -O0
 
 $(OUT)/platform/x11/%.o : platform/x11/%.c
 	$(CC_CMD) -Wall $(X11_CFLAGS)
@@ -94,11 +101,11 @@ $(OUT)/platform/gl/%.o : platform/gl/%.c
 
 ifeq ($(HAVE_OBJCOPY),yes)
   $(OUT)/source/fitz/noto.o : source/fitz/noto.c
-	$(CC_CMD) -Wall -Wdeclaration-after-statement -DHAVE_OBJCOPY $(THIRD_CFLAGS)
+	$(CC_CMD) -Wall -Wdeclaration-after-statement -DHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
 endif
 
 $(OUT)/source/%.o : source/%.c
-	$(CC_CMD) -Wall -Wdeclaration-after-statement $(THIRD_CFLAGS)
+	$(CC_CMD) -Wall -Wdeclaration-after-statement $(LIB_CFLAGS) $(THIRD_CFLAGS)
 
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) -Wall
@@ -120,7 +127,6 @@ MUPDF_SRC += $(sort $(wildcard source/xps/*.c))
 MUPDF_SRC += $(sort $(wildcard source/svg/*.c))
 MUPDF_SRC += $(sort $(wildcard source/html/*.c))
 MUPDF_SRC += $(sort $(wildcard source/cbz/*.c))
-MUPDF_SRC += $(sort $(wildcard source/gprf/*.c))
 
 MUPDF_OBJ := $(MUPDF_SRC:%.c=$(OUT)/%.o)
 
@@ -177,7 +183,7 @@ CMAP_GEN := $(notdir $(sort $(wildcard resources/cmaps/*)))
 CMAP_GEN := $(CMAP_GEN:%=source/pdf/cmaps/%.h)
 
 source/pdf/cmaps/%.h: resources/cmaps/% scripts/cmapdump.py
-	$(QUIET_GEN) python scripts/cmapdump.py > $@ $<
+	$(QUIET_GEN) python3 scripts/cmapdump.py > $@ $<
 
 generate: $(CMAP_GEN)
 
@@ -190,10 +196,21 @@ generate: source/pdf/js/util.js.h
 
 # --- Library ---
 
+ifeq ($(shared),yes)
+MUPDF_LIB = $(OUT)/libmupdf.$(SO)
+
+$(MUPDF_LIB) : $(MUPDF_OBJ) $(THIRD_OBJ) $(THREAD_OBJ) $(PKCS7_OBJ)
+else
 MUPDF_LIB = $(OUT)/libmupdf.a
 THIRD_LIB = $(OUT)/libmupdf-third.a
 THREAD_LIB = $(OUT)/libmupdf-threads.a
 PKCS7_LIB = $(OUT)/libmupdf-pkcs7.a
+
+$(MUPDF_LIB) : $(MUPDF_OBJ)
+$(THIRD_LIB) : $(THIRD_OBJ)
+$(THREAD_LIB) : $(THREAD_OBJ)
+$(PKCS7_LIB) : $(PKCS7_OBJ)
+endif
 
 $(MUPDF_LIB) : $(MUPDF_OBJ)
 $(THIRD_LIB) : $(THIRD_OBJ)
@@ -215,7 +232,13 @@ MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 MUTOOL_EXE := $(OUT)/mutool
 $(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREAD_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
-INSTALL_APPS += $(MUTOOL_EXE)
+TOOL_APPS += $(MUTOOL_EXE)
+
+MURASTER_OBJ := $(OUT)/source/tools/muraster.o
+MURASTER_EXE := $(OUT)/muraster
+$(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREAD_LIB)
+	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
+TOOL_APPS += $(MURASTER_EXE)
 
 ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
@@ -223,7 +246,7 @@ ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl
   $(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(GLUT_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(WIN32_LDFLAGS) $(GLUT_LIBS)
-  INSTALL_APPS += $(MUVIEW_GLUT_EXE)
+  VIEW_APPS += $(MUVIEW_GLUT_EXE)
 endif
 
 ifeq ($(HAVE_X11),yes)
@@ -233,7 +256,7 @@ ifeq ($(HAVE_X11),yes)
   MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_image.o
   $(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS)
-  INSTALL_APPS += $(MUVIEW_X11_EXE)
+  VIEW_APPS += $(MUVIEW_X11_EXE)
 endif
 
 ifeq ($(HAVE_WIN32),yes)
@@ -243,39 +266,22 @@ ifeq ($(HAVE_WIN32),yes)
   MUVIEW_WIN32_OBJ += $(OUT)/platform/x11/win_res.o
   $(MUVIEW_WIN32_EXE) : $(MUVIEW_WIN32_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(WIN32_LDFLAGS) $(WIN32_LIBS) $(LIBCRYPTO_LIBS)
-  INSTALL_APPS += $(MUVIEW_WIN32_EXE)
+  VIEW_APPS += $(MUVIEW_WIN32_EXE)
 endif
-
-# --- Extra tools and viewers ---
-
-MURASTER_OBJ := $(OUT)/source/tools/muraster.o
-MURASTER_EXE := $(OUT)/muraster
-$(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS)
-EXTRA_APPS += $(MURASTER_EXE)
-
-MJSGEN_OBJ := $(OUT)/source/tools/mjsgen.o
-MJSGEN_EXE := $(OUT)/mjsgen
-$(MJSGEN_EXE) : $(MJSGEN_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
-	$(LINK_CMD) $(THIRD_LIBS)
-EXTRA_APPS += $(MJSGEN_EXE)
-
-MUJSTEST_OBJ := $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
-MUJSTEST_EXE := $(OUT)/mujstest
-$(MUJSTEST_EXE) : $(MUJSTEST_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
-EXTRA_APPS += $(MUJSTEST_EXE)
 
 ifeq ($(HAVE_X11),yes)
 ifeq ($(HAVE_CURL),yes)
+ifeq ($(HAVE_PTHREAD),yes)
   MUVIEW_X11_CURL_EXE := $(OUT)/mupdf-x11-curl
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/pdfapp.o
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_main.o
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_image.o
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/curl_stream.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/prog_stream.o
   $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(CURL_LIBS) $(LIBCRYPTO_LIBS)
-  EXTRA_APPS += $(MUVIEW_X11_CURL_EXE)
+	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS) $(CURL_LIBS) $(PTHREAD_LIBS)
+  VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
+endif
 endif
 endif
 
@@ -286,7 +292,6 @@ endif
 -include $(THREAD_OBJ:%.o=%.d)
 -include $(THIRD_OBJ:%.o=%.d)
 -include $(GLUT_OBJ:%.o=%.d)
--include $(CURL_OBJ:%.o=%.d)
 
 -include $(MUTOOL_OBJ:%.o=%.d)
 -include $(MUVIEW_GLUT_OBJ:%.o=%.d)
@@ -297,6 +302,8 @@ endif
 -include $(MUVIEW_X11_CURL_OBJ:%.o=%.d)
 
 # --- Examples ---
+
+examples: $(OUT)/example $(OUT)/multi-threaded
 
 $(OUT)/example: docs/examples/example.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
@@ -330,42 +337,44 @@ mandir ?= $(prefix)/share/man
 docdir ?= $(prefix)/share/doc/mupdf
 
 third: $(THIRD_LIB)
-extra-libs: $(CURL_LIB) $(GLUT_LIB)
+extra-libs: $(GLUT_LIB)
 libs: $(INSTALL_LIBS)
-apps: $(INSTALL_APPS)
-extra-apps: $(EXTRA_APPS)
-extra: extra-libs extra-apps
+tools: $(TOOL_APPS)
+apps: $(TOOL_APPS) $(VIEW_APPS)
 
 install: libs apps
 	install -d $(DESTDIR)$(incdir)/mupdf
 	install -d $(DESTDIR)$(incdir)/mupdf/fitz
 	install -d $(DESTDIR)$(incdir)/mupdf/pdf
-	install include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
-	install include/mupdf/fitz/*.h $(DESTDIR)$(incdir)/mupdf/fitz
-	install include/mupdf/pdf/*.h $(DESTDIR)$(incdir)/mupdf/pdf
+	install -m 644 include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
+	install -m 644 include/mupdf/fitz/*.h $(DESTDIR)$(incdir)/mupdf/fitz
+	install -m 644 include/mupdf/pdf/*.h $(DESTDIR)$(incdir)/mupdf/pdf
 
 	install -d $(DESTDIR)$(libdir)
-	install $(INSTALL_LIBS) $(DESTDIR)$(libdir)
+	install -m 644 $(INSTALL_LIBS) $(DESTDIR)$(libdir)
 
 	install -d $(DESTDIR)$(bindir)
-	install $(INSTALL_APPS) $(DESTDIR)$(bindir)
+	install -m 755 $(TOOL_APPS) $(VIEW_APPS) $(DESTDIR)$(bindir)
 
 	install -d $(DESTDIR)$(mandir)/man1
-	install docs/man/*.1 $(DESTDIR)$(mandir)/man1
+	install -m 644 docs/man/*.1 $(DESTDIR)$(mandir)/man1
 
 	install -d $(DESTDIR)$(docdir)
 	install -d $(DESTDIR)$(docdir)/examples
-	install README COPYING CHANGES $(DESTDIR)$(docdir)
-	install docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
-	install docs/examples/* $(DESTDIR)$(docdir)/examples
+	install -m 644 README COPYING CHANGES $(DESTDIR)$(docdir)
+	install -m 644 docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
+	install -m 644 docs/examples/* $(DESTDIR)$(docdir)/examples
 
 tarball:
 	bash scripts/archive.sh
 
 # --- Clean and Default ---
 
-WATCH_SRCS := $(shell find include source platform -type f -name '*.[ch]')
+WATCH_SRCS = $(shell find include source platform -type f -name '*.[ch]')
 watch:
+	@ inotifywait -q -e modify $(WATCH_SRCS)
+
+watch-recompile:
 	@ while ! inotifywait -q -e modify $(WATCH_SRCS) ; do time -p $(MAKE) ; done
 
 java:
@@ -374,7 +383,7 @@ java:
 wasm:
 	$(MAKE) -C platform/wasm
 
-tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh' -or -name '*.java')
+tags:
 	$(TAGS_CMD)
 
 cscope.files: $(shell find include source platform -name '*.[ch]')
@@ -397,6 +406,15 @@ debug:
 sanitize:
 	$(MAKE) build=sanitize
 
+shared: shared-$(build)
+
+shared-release:
+	$(MAKE) HAVE_GLUT=no shared=yes build=release
+shared-debug:
+	$(MAKE) HAVE_GLUT=no shared=yes build=debug
+shared-clean:
+	rm -rf build/shared-*
+
 android: generate
 	ndk-build -j8 \
 		APP_BUILD_SCRIPT=platform/java/Android.mk \
@@ -404,4 +422,29 @@ android: generate
 		APP_PLATFORM=android-16 \
 		APP_OPTIM=$(build)
 
-.PHONY: all clean nuke install third libs apps generate
+c++: c++-$(build)
+
+c++-release: shared-release
+	./scripts/mupdfwrap.py -d build/shared-release -b 01
+
+c++-debug: shared-debug
+	./scripts/mupdfwrap.py -d build/shared-debug -b 01
+
+c++-clean:
+	rm -rf platform/c++
+
+python: python-$(build)
+
+python-release: c++-release
+	./scripts/mupdfwrap.py -d build/shared-release -b 023
+
+python-debug: c++-debug
+	./scripts/mupdfwrap.py -d build/shared-debug -b 023
+
+python-clean:
+	rm -rf platform/python
+
+.PHONY: all clean nuke install third libs apps generate tags wasm
+.PHONY: shared shared-debug shared-clean
+.PHONY: c++ c++-release c++-debug c++-clean
+.PHONY: python python-debug python-clean

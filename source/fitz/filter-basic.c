@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-/* The null filter reads a specified amount of data from the substream. */
+/* null filter */
 
 struct null_filter
 {
@@ -58,7 +58,7 @@ fz_open_null_filter(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
 	return fz_new_stream(ctx, state, next_null, close_null);
 }
 
-/* The range filter copies data from specified ranges of the chained stream */
+/* range filter */
 
 struct range_filter
 {
@@ -150,10 +150,7 @@ fz_open_range_filter(fz_context *ctx, fz_stream *chain, fz_range *ranges, int nr
 	return fz_new_stream(ctx, state, next_range, close_range);
 }
 
-/*
- * The endstream filter reads a PDF substream, and starts to look for an 'endstream' token
- * after the specified length.
- */
+/* endstream filter */
 
 #define END_CHECK_SIZE 32
 
@@ -290,7 +287,7 @@ fz_open_endstream_filter(fz_context *ctx, fz_stream *chain, int len, int64_t off
 	return fz_new_stream(ctx, state, next_endstream, close_endstream);
 }
 
-/* Concat filter concatenates several streams into one */
+/* concat filter */
 
 struct concat_filter
 {
@@ -332,8 +329,7 @@ next_concat(fz_context *ctx, fz_stream *stm, size_t max)
 			fz_drop_stream(ctx, state->chain[state->current-1]);
 			if (state->pad)
 			{
-				stm->rp = (&state->ws_buf)+1;
-				stm->wp = stm->rp + 1;
+				stm->wp = stm->rp = (&state->ws_buf)+1;
 				stm->pos++;
 				return 32;
 			}
@@ -389,14 +385,12 @@ fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain)
 
 /* ASCII Hex Decode */
 
-typedef struct fz_ahxd_s fz_ahxd;
-
-struct fz_ahxd_s
+typedef struct
 {
 	fz_stream *chain;
 	int eod;
 	unsigned char buffer[256];
-};
+} fz_ahxd;
 
 static inline int iswhite(int a)
 {
@@ -500,14 +494,12 @@ fz_open_ahxd(fz_context *ctx, fz_stream *chain)
 
 /* ASCII 85 Decode */
 
-typedef struct fz_a85d_s fz_a85d;
-
-struct fz_a85d_s
+typedef struct
 {
 	fz_stream *chain;
 	unsigned char buffer[256];
 	int eod;
-};
+} fz_a85d;
 
 static int
 next_a85d(fz_context *ctx, fz_stream *stm, size_t max)
@@ -631,14 +623,12 @@ fz_open_a85d(fz_context *ctx, fz_stream *chain)
 
 /* Run Length Decode */
 
-typedef struct fz_rld_s fz_rld;
-
-struct fz_rld_s
+typedef struct
 {
 	fz_stream *chain;
 	int run, n, c;
 	unsigned char buffer[256];
-};
+} fz_rld;
 
 static int
 next_rld(fz_context *ctx, fz_stream *stm, size_t max)
@@ -731,14 +721,12 @@ fz_open_rld(fz_context *ctx, fz_stream *chain)
 
 /* RC4 Filter */
 
-typedef struct fz_arc4c_s fz_arc4c;
-
-struct fz_arc4c_s
+typedef struct
 {
 	fz_stream *chain;
 	fz_arc4 arc4;
 	unsigned char buffer[256];
-};
+} fz_arc4c;
 
 static int
 next_arc4(fz_context *ctx, fz_stream *stm, size_t max)
@@ -779,9 +767,7 @@ fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned key
 
 /* AES Filter */
 
-typedef struct fz_aesd_s fz_aesd;
-
-struct fz_aesd_s
+typedef struct
 {
 	fz_stream *chain;
 	fz_aes aes;
@@ -790,7 +776,7 @@ struct fz_aesd_s
 	unsigned char bp[16];
 	unsigned char *rp, *wp;
 	unsigned char buffer[256];
-};
+} fz_aesd;
 
 static int
 next_aesd(fz_context *ctx, fz_stream *stm, size_t max)

@@ -6,12 +6,12 @@ typedef struct xps_page_s xps_page;
 
 fz_document *xps_open_document(fz_context *ctx, const char *filename);
 fz_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
-int xps_count_pages(fz_context *ctx, fz_document *doc);
-fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int number);
+int xps_count_pages(fz_context *ctx, fz_document *doc, int chapter);
+fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int chapter, int number);
 fz_outline *xps_load_outline(fz_context *ctx, fz_document *doc);
 void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
 fz_link *xps_load_links(fz_context *ctx, fz_page *page);
-int xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
+fz_location xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
 
 int xps_strcasecmp(char *a, char *b);
 void xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size);
@@ -26,6 +26,10 @@ struct xps_part_s
 };
 
 int xps_has_part(fz_context *ctx, xps_document *doc, char *partname);
+
+/*
+	Read and interleave split parts from a ZIP file.
+*/
 xps_part *xps_read_part(fz_context *ctx, xps_document *doc, char *partname);
 void xps_drop_part(fz_context *ctx, xps_document *doc, xps_part *part);
 
@@ -116,6 +120,11 @@ void xps_print_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resou
 
 void xps_parse_fixed_page(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_page *page);
 void xps_parse_canvas(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *node);
+
+/*
+	Parse an XPS <Path> element, and call relevant
+	functions for drawing and/or clipping the child elements.
+*/
 void xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, fz_xml *node);
 void xps_parse_glyphs(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, fz_xml *node);
 void xps_parse_solid_color_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, fz_xml *node);
@@ -127,10 +136,11 @@ void xps_parse_radial_gradient_brush(fz_context *ctx, xps_document *doc, fz_matr
 void xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *root, void(*func)(fz_context *ctx, xps_document*, fz_matrix, fz_rect, char*, xps_resource*, fz_xml*, void*), void *user);
 
 fz_font *xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_uri, char *style_att);
-fz_text *xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, fz_matrix ctm,
-	fz_font *font, float size, float originx, float originy,
-	int is_sideways, int bidi_level,
-	char *indices, char *unicode);
+
+/*
+	Parse an abbreviated geometry string, and call
+	moveto/lineto/curveto functions to build up a path.
+ */
 fz_path *xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, int *fill_rule);
 fz_path *xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, fz_xml *root, int stroking, int *fill_rule);
 fz_matrix xps_parse_transform(fz_context *ctx, xps_document *doc, char *att, fz_xml *tag, fz_matrix ctm);
@@ -147,6 +157,8 @@ void xps_clip(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_resource *d
 fz_xml *xps_lookup_alternate_content(fz_context *ctx, xps_document *doc, fz_xml *node);
 
 typedef struct xps_entry_s xps_entry;
+
+/* Implementation details: Subject to change. */
 
 struct xps_entry_s
 {
@@ -189,5 +201,14 @@ struct xps_document_s
 	fz_device *dev;
 	fz_cookie *cookie;
 };
+
+/*
+	Parse unicode and indices strings and encode glyphs.
+	Calculate metrics for positioning.
+*/
+fz_text *xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, fz_matrix ctm,
+	fz_font *font, float size, float originx, float originy,
+	int is_sideways, int bidi_level,
+	char *indices, char *unicode);
 
 #endif

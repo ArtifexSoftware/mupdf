@@ -820,7 +820,7 @@ fz_stroke_closepath(fz_context *ctx, sctx *s)
 		 * As such, the following line should draw a linejoin between the closing segment of this
 		 * subpath (seg[0]->seg[1]) == (seg[0]->beg[0]) and the first segment of this subpath
 		 * (beg[0]->beg[1]).
-		 * In cases where the line was already at an x,y infinitessimally close to s->beg[0],
+		 * In cases where the line was already at an x,y infinitesimally close to s->beg[0],
 		 * fz_stroke_lineto may exit without doing any processing. This leaves seg[0]->seg[1]
 		 * pointing at the penultimate line segment. Thus this draws a linejoin between that
 		 * penultimate segment and the end segment. This is what we want. */

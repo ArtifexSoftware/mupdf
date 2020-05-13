@@ -4,7 +4,7 @@
  * Write pixmap to PNM file (without alpha channel)
  */
 static void
-pnm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
+pnm_write_header(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -133,7 +133,7 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
  */
 
 static void
-pam_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
+pam_write_header(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -284,7 +284,7 @@ pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	else
 		for (y = 0; y < end; y++)
 		{
-			fz_write_data(ctx, out, sp, w * n);
+			fz_write_data(ctx, out, sp, (size_t)w * n);
 			sp += stride;
 		}
 }

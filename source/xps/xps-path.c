@@ -213,17 +213,11 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
 	fz_lineto(ctx, path, point_x, point_y);
 }
 
-/*
- * Parse an abbreviated geometry string, and call
- * ghostscript moveto/lineto/curveto functions to
- * build up a path.
- */
-
 fz_path *
 xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, int *fill_rule)
 {
 	fz_path *path;
-	char **args;
+	char **args = NULL;
 	char **pargs;
 	char *s = geom;
 	fz_point pt;
@@ -233,227 +227,238 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 	float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
 	int reset_smooth;
 
+	fz_var(args);
+
 	path = fz_new_path(ctx);
 
-	args = fz_malloc_array(ctx, strlen(geom) + 1, sizeof(char*));
-	pargs = args;
-
-	while (*s)
+	fz_try(ctx)
 	{
-		if ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z'))
+		args = fz_malloc_array(ctx, strlen(geom) + 1, char*);
+		pargs = args;
+
+		while (*s)
 		{
-			*pargs++ = s++;
+			if ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z'))
+			{
+				*pargs++ = s++;
+			}
+			else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
+			{
+				*pargs++ = s;
+				while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
+					s ++;
+			}
+			else
+			{
+				s++;
+			}
 		}
-		else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
-		{
-			*pargs++ = s;
-			while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
-				s ++;
-		}
-		else
-		{
-			s++;
-		}
-	}
 
-	*pargs = s;
+		*pargs = s;
 
-	n = pargs - args;
-	i = 0;
+		n = pargs - args;
+		i = 0;
 
-	old = 0;
-
-	reset_smooth = 1;
-	smooth_x = 0;
-	smooth_y = 0;
-
-	while (i < n)
-	{
-		cmd = args[i][0];
-		if (cmd == '+' || cmd == '.' || cmd == '-' || (cmd >= '0' && cmd <= '9'))
-			cmd = old; /* it's a number, repeat old command */
-		else
-			i ++;
-
-		if (reset_smooth)
-		{
-			smooth_x = 0;
-			smooth_y = 0;
-		}
+		old = 0;
 
 		reset_smooth = 1;
+		smooth_x = 0;
+		smooth_y = 0;
 
-		switch (cmd)
+		while (i < n)
 		{
-		case 'F':
-			if (i >= n) break;
-			*fill_rule = atoi(args[i]);
-			i ++;
-			break;
+			cmd = args[i][0];
+			if (cmd == '+' || cmd == '.' || cmd == '-' || (cmd >= '0' && cmd <= '9'))
+				cmd = old; /* it's a number, repeat old command */
+			else
+				i ++;
 
-		case 'M':
-			if (i + 1 >= n) break;
-			fz_moveto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
-			i += 2;
-			break;
-		case 'm':
-			if (i + 1 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_moveto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
-			i += 2;
-			break;
+			if (reset_smooth)
+			{
+				smooth_x = 0;
+				smooth_y = 0;
+			}
 
-		case 'L':
-			if (i + 1 >= n) break;
-			fz_lineto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
-			i += 2;
-			break;
-		case 'l':
-			if (i + 1 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
-			i += 2;
-			break;
+			reset_smooth = 1;
 
-		case 'H':
-			if (i >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_lineto(ctx, path, fz_atof(args[i]), pt.y);
-			i += 1;
-			break;
-		case 'h':
-			if (i >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y);
-			i += 1;
-			break;
+			switch (cmd)
+			{
+			case 'F':
+				if (i >= n) break;
+				*fill_rule = atoi(args[i]);
+				i ++;
+				break;
 
-		case 'V':
-			if (i >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_lineto(ctx, path, pt.x, fz_atof(args[i]));
-			i += 1;
-			break;
-		case 'v':
-			if (i >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			fz_lineto(ctx, path, pt.x, pt.y + fz_atof(args[i]));
-			i += 1;
-			break;
+			case 'M':
+				if (i + 1 >= n) break;
+				fz_moveto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
+				i += 2;
+				break;
+			case 'm':
+				if (i + 1 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_moveto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
+				i += 2;
+				break;
 
-		case 'C':
-			if (i + 5 >= n) break;
-			x1 = fz_atof(args[i+0]);
-			y1 = fz_atof(args[i+1]);
-			x2 = fz_atof(args[i+2]);
-			y2 = fz_atof(args[i+3]);
-			x3 = fz_atof(args[i+4]);
-			y3 = fz_atof(args[i+5]);
-			fz_curveto(ctx, path, x1, y1, x2, y2, x3, y3);
-			i += 6;
-			reset_smooth = 0;
-			smooth_x = x3 - x2;
-			smooth_y = y3 - y2;
-			break;
+			case 'L':
+				if (i + 1 >= n) break;
+				fz_lineto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
+				i += 2;
+				break;
+			case 'l':
+				if (i + 1 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
+				i += 2;
+				break;
 
-		case 'c':
-			if (i + 5 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			x1 = fz_atof(args[i+0]) + pt.x;
-			y1 = fz_atof(args[i+1]) + pt.y;
-			x2 = fz_atof(args[i+2]) + pt.x;
-			y2 = fz_atof(args[i+3]) + pt.y;
-			x3 = fz_atof(args[i+4]) + pt.x;
-			y3 = fz_atof(args[i+5]) + pt.y;
-			fz_curveto(ctx, path, x1, y1, x2, y2, x3, y3);
-			i += 6;
-			reset_smooth = 0;
-			smooth_x = x3 - x2;
-			smooth_y = y3 - y2;
-			break;
+			case 'H':
+				if (i >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_lineto(ctx, path, fz_atof(args[i]), pt.y);
+				i += 1;
+				break;
+			case 'h':
+				if (i >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y);
+				i += 1;
+				break;
 
-		case 'S':
-			if (i + 3 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			x1 = fz_atof(args[i+0]);
-			y1 = fz_atof(args[i+1]);
-			x2 = fz_atof(args[i+2]);
-			y2 = fz_atof(args[i+3]);
-			fz_curveto(ctx, path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
-			i += 4;
-			reset_smooth = 0;
-			smooth_x = x2 - x1;
-			smooth_y = y2 - y1;
-			break;
+			case 'V':
+				if (i >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_lineto(ctx, path, pt.x, fz_atof(args[i]));
+				i += 1;
+				break;
+			case 'v':
+				if (i >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				fz_lineto(ctx, path, pt.x, pt.y + fz_atof(args[i]));
+				i += 1;
+				break;
 
-		case 's':
-			if (i + 3 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			x1 = fz_atof(args[i+0]) + pt.x;
-			y1 = fz_atof(args[i+1]) + pt.y;
-			x2 = fz_atof(args[i+2]) + pt.x;
-			y2 = fz_atof(args[i+3]) + pt.y;
-			fz_curveto(ctx, path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
-			i += 4;
-			reset_smooth = 0;
-			smooth_x = x2 - x1;
-			smooth_y = y2 - y1;
-			break;
+			case 'C':
+				if (i + 5 >= n) break;
+				x1 = fz_atof(args[i+0]);
+				y1 = fz_atof(args[i+1]);
+				x2 = fz_atof(args[i+2]);
+				y2 = fz_atof(args[i+3]);
+				x3 = fz_atof(args[i+4]);
+				y3 = fz_atof(args[i+5]);
+				fz_curveto(ctx, path, x1, y1, x2, y2, x3, y3);
+				i += 6;
+				reset_smooth = 0;
+				smooth_x = x3 - x2;
+				smooth_y = y3 - y2;
+				break;
 
-		case 'Q':
-			if (i + 3 >= n) break;
-			x1 = fz_atof(args[i+0]);
-			y1 = fz_atof(args[i+1]);
-			x2 = fz_atof(args[i+2]);
-			y2 = fz_atof(args[i+3]);
-			fz_quadto(ctx, path, x1, y1, x2, y2);
-			i += 4;
-			break;
-		case 'q':
-			if (i + 3 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			x1 = fz_atof(args[i+0]) + pt.x;
-			y1 = fz_atof(args[i+1]) + pt.y;
-			x2 = fz_atof(args[i+2]) + pt.x;
-			y2 = fz_atof(args[i+3]) + pt.y;
-			fz_quadto(ctx, path, x1, y1, x2, y2);
-			i += 4;
-			break;
+			case 'c':
+				if (i + 5 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				x1 = fz_atof(args[i+0]) + pt.x;
+				y1 = fz_atof(args[i+1]) + pt.y;
+				x2 = fz_atof(args[i+2]) + pt.x;
+				y2 = fz_atof(args[i+3]) + pt.y;
+				x3 = fz_atof(args[i+4]) + pt.x;
+				y3 = fz_atof(args[i+5]) + pt.y;
+				fz_curveto(ctx, path, x1, y1, x2, y2, x3, y3);
+				i += 6;
+				reset_smooth = 0;
+				smooth_x = x3 - x2;
+				smooth_y = y3 - y2;
+				break;
 
-		case 'A':
-			if (i + 6 >= n) break;
-			xps_draw_arc(ctx, doc, path,
-				fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
-				atoi(args[i+3]), atoi(args[i+4]),
-				fz_atof(args[i+5]), fz_atof(args[i+6]));
-			i += 7;
-			break;
-		case 'a':
-			if (i + 6 >= n) break;
-			pt = fz_currentpoint(ctx, path);
-			xps_draw_arc(ctx, doc, path,
-				fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
-				atoi(args[i+3]), atoi(args[i+4]),
-				fz_atof(args[i+5]) + pt.x, fz_atof(args[i+6]) + pt.y);
-			i += 7;
-			break;
+			case 'S':
+				if (i + 3 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				x1 = fz_atof(args[i+0]);
+				y1 = fz_atof(args[i+1]);
+				x2 = fz_atof(args[i+2]);
+				y2 = fz_atof(args[i+3]);
+				fz_curveto(ctx, path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+				i += 4;
+				reset_smooth = 0;
+				smooth_x = x2 - x1;
+				smooth_y = y2 - y1;
+				break;
 
-		case 'Z':
-		case 'z':
-			fz_closepath(ctx, path);
-			break;
+			case 's':
+				if (i + 3 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				x1 = fz_atof(args[i+0]) + pt.x;
+				y1 = fz_atof(args[i+1]) + pt.y;
+				x2 = fz_atof(args[i+2]) + pt.x;
+				y2 = fz_atof(args[i+3]) + pt.y;
+				fz_curveto(ctx, path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+				i += 4;
+				reset_smooth = 0;
+				smooth_x = x2 - x1;
+				smooth_y = y2 - y1;
+				break;
 
-		default:
-			fz_warn(ctx, "ignoring invalid command '%c'", cmd);
-			if (old == cmd) /* avoid infinite loop */
-				i++;
-			break;
+			case 'Q':
+				if (i + 3 >= n) break;
+				x1 = fz_atof(args[i+0]);
+				y1 = fz_atof(args[i+1]);
+				x2 = fz_atof(args[i+2]);
+				y2 = fz_atof(args[i+3]);
+				fz_quadto(ctx, path, x1, y1, x2, y2);
+				i += 4;
+				break;
+			case 'q':
+				if (i + 3 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				x1 = fz_atof(args[i+0]) + pt.x;
+				y1 = fz_atof(args[i+1]) + pt.y;
+				x2 = fz_atof(args[i+2]) + pt.x;
+				y2 = fz_atof(args[i+3]) + pt.y;
+				fz_quadto(ctx, path, x1, y1, x2, y2);
+				i += 4;
+				break;
+
+			case 'A':
+				if (i + 6 >= n) break;
+				xps_draw_arc(ctx, doc, path,
+					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
+					atoi(args[i+3]), atoi(args[i+4]),
+					fz_atof(args[i+5]), fz_atof(args[i+6]));
+				i += 7;
+				break;
+			case 'a':
+				if (i + 6 >= n) break;
+				pt = fz_currentpoint(ctx, path);
+				xps_draw_arc(ctx, doc, path,
+					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
+					atoi(args[i+3]), atoi(args[i+4]),
+					fz_atof(args[i+5]) + pt.x, fz_atof(args[i+6]) + pt.y);
+				i += 7;
+				break;
+
+			case 'Z':
+			case 'z':
+				fz_closepath(ctx, path);
+				break;
+
+			default:
+				fz_warn(ctx, "ignoring invalid command '%c'", cmd);
+				if (old == cmd) /* avoid infinite loop */
+					i++;
+				break;
+			}
+
+			old = cmd;
 		}
-
-		old = cmd;
+	}
+	fz_always(ctx)
+		fz_free(ctx, args);
+	fz_catch(ctx)
+	{
+		fz_drop_path(ctx, path);
+		fz_rethrow(ctx);
 	}
 
-	fz_free(ctx, args);
 	return path;
 }
 
@@ -726,17 +731,25 @@ xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, 
 	else
 		path = fz_new_path(ctx);
 
-	if (figures_tag)
-		xps_parse_path_figure(ctx, doc, path, figures_tag, stroking);
-
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+	fz_try(ctx)
 	{
-		if (fz_xml_is_tag(node, "PathFigure"))
-			xps_parse_path_figure(ctx, doc, path, node, stroking);
-	}
+		if (figures_tag)
+			xps_parse_path_figure(ctx, doc, path, figures_tag, stroking);
 
-	if (transform_att || transform_tag)
-		fz_transform_path(ctx, path, transform);
+		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+		{
+			if (fz_xml_is_tag(node, "PathFigure"))
+				xps_parse_path_figure(ctx, doc, path, node, stroking);
+		}
+
+		if (transform_att || transform_tag)
+			fz_transform_path(ctx, path, transform);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_path(ctx, path);
+		fz_rethrow(ctx);
+	}
 
 	return path;
 }
@@ -770,11 +783,6 @@ xps_clip(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_resource *dict, 
 	fz_clip_path(ctx, dev, path, fill_rule == 0, ctm, fz_infinite_rect);
 	fz_drop_path(ctx, path);
 }
-
-/*
- * Parse an XPS <Path> element, and call relevant ghostscript
- * functions for drawing and/or clipping the child elements.
- */
 
 void
 xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, fz_xml *root)
@@ -1002,7 +1010,7 @@ xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri
 				samples[0] *= fz_atof(fill_opacity_att);
 			xps_set_color(ctx, doc, colorspace, samples);
 			fz_fill_path(ctx, dev, path, fill_rule == 0, ctm,
-				doc->colorspace, doc->color, doc->alpha, NULL);
+				doc->colorspace, doc->color, doc->alpha, fz_default_color_params);
 		}
 
 		if (fill_tag)
@@ -1019,7 +1027,7 @@ xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri
 				samples[0] *= fz_atof(stroke_opacity_att);
 			xps_set_color(ctx, doc, colorspace, samples);
 			fz_stroke_path(ctx, dev, stroke_path, stroke, ctm,
-				doc->colorspace, doc->color, doc->alpha, NULL);
+				doc->colorspace, doc->color, doc->alpha, fz_default_color_params);
 		}
 
 		if (stroke_tag)

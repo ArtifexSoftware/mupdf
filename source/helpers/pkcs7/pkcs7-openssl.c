@@ -1,37 +1,18 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "../../fitz/fitz-imp.h" /* for fz_keep/drop_imp */
 
 #include "mupdf/helpers/pkcs7-openssl.h"
 
 #ifndef HAVE_LIBCRYPTO
 
-enum pdf_signature_error
-pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
-{
-	return PDF_SIGNATURE_ERROR_UNKNOWN;
-}
-
-/* Check a singature's certificate is trusted */
-enum pdf_signature_error
-pkcs7_openssl_check_certificate(char *sig, int sig_len)
-{
-	return PDF_SIGNATURE_ERROR_UNKNOWN;
-}
-
-pdf_pkcs7_designated_name *
-pkcs7_openssl_designated_name(fz_context *ctx, char *sig, int sig_len)
-{
-	return NULL;
-}
-
-void
-pkcs7_openssl_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
-{
-}
-
 pdf_pkcs7_signer *
 pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
+{
+	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
+}
+
+pdf_pkcs7_verifier *
+pkcs7_openssl_new_verifier(fz_context *ctx)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "No OpenSSL support.");
 }
@@ -116,6 +97,22 @@ static const char AdobeCA_p7c[] = {
 #warning detect version of openssl at compile time
 #endif
 
+#ifdef LIBRESSL_VERSION_NUMBER
+
+static inline const STACK_OF(PKCS12_SAFEBAG) *
+PKCS12_SAFEBAG_get0_safes(const PKCS12_SAFEBAG *bag)
+{
+	return (OBJ_obj2nid(bag->type) == NID_safeContentsBag) ? bag->value.safes : NULL;
+}
+
+static inline const PKCS8_PRIV_KEY_INFO *
+PKCS12_SAFEBAG_get0_p8inf(const PKCS12_SAFEBAG *bag)
+{
+	return (OBJ_obj2nid(bag->type) == NID_keyBag) ? bag->value.keybag : NULL;
+}
+
+#endif
+
 typedef struct
 {
 	fz_context *ctx;
@@ -125,17 +122,31 @@ typedef struct
 static int stream_read(BIO *b, char *buf, int size)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
-	return fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
+	size_t read = 0;
+
+	fz_try(data->ctx)
+		read = fz_read(data->ctx, data->stm, (unsigned char *) buf, size);
+	fz_catch(data->ctx)
+		return -1;
+
+	return (int)read;
 }
 
 static long stream_ctrl(BIO *b, int cmd, long arg1, void *arg2)
 {
 	BIO_stream_data *data = (BIO_stream_data *)BIO_get_data(b);
+	long ret;
 	switch (cmd)
 	{
 	case BIO_C_FILE_SEEK:
-		fz_seek(data->ctx, data->stm, arg1, SEEK_SET);
-		return 0;
+		fz_try(data->ctx)
+		{
+			fz_seek(data->ctx, data->stm, arg1, SEEK_SET);
+			ret = fz_tell(data->ctx, data->stm);
+		}
+		fz_catch(data->ctx)
+			return -1;
+		return ret;
 	default:
 		return 1;
 	}
@@ -254,7 +265,7 @@ static X509 *pk7_signer(STACK_OF(X509) *certs, PKCS7_SIGNER_INFO *si)
 	return X509_find_by_issuer_and_serial(certs, ias->issuer, ias->serial);
 }
 
-static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
+static pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 {
 	BIO *p7bio=NULL;
 	char readbuf[1024*4];
@@ -302,7 +313,7 @@ static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 			switch (err)
 			{
 			case PKCS7_R_DIGEST_FAILURE:
-				res = PDF_SIGNATURE_ERROR_DOCUMENT_CHANGED;
+				res = PDF_SIGNATURE_ERROR_DIGEST_FAILURE;
 				break;
 			default:
 				break;
@@ -312,12 +323,13 @@ static enum pdf_signature_error pk7_verify_sig(PKCS7 *p7, BIO *detached)
 	}
 
 exit:
+	BIO_free(p7bio);
 	ERR_free_strings();
 
 	return res;
 }
 
-static enum pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
+static pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p7)
 {
 	int res = PDF_SIGNATURE_ERROR_OKAY;
 	int i;
@@ -401,20 +413,24 @@ static enum pdf_signature_error pk7_verify_cert(X509_STORE *cert_store, PKCS7 *p
 	}
 
 exit:
-	X509_STORE_CTX_cleanup(ctx);
+	X509_STORE_CTX_free(ctx);
 	ERR_free_strings();
 
 	return res;
 }
 
-enum pdf_signature_error pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *stm, char *sig, int sig_len)
+static pdf_signature_error
+check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifier, fz_stream *stm, unsigned char *sig, size_t sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	BIO *bsig = NULL;
 	BIO *bdata = NULL;
 	int res = PDF_SIGNATURE_ERROR_UNKNOWN;
 
-	bsig = BIO_new_mem_buf(sig, sig_len);
+	if (sig_len > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature length too large");
+
+	bsig = BIO_new_mem_buf(sig, (int)sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
 	if (pk7sig == NULL)
 		goto exit;
@@ -426,14 +442,15 @@ enum pdf_signature_error pkcs7_openssl_check_digest(fz_context *ctx, fz_stream *
 	res = pk7_verify_sig(pk7sig, bdata);
 
 exit:
-	BIO_free(bsig);
 	BIO_free(bdata);
 	PKCS7_free(pk7sig);
+	BIO_free(bsig);
 
 	return res;
 }
 
-enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
+static pdf_signature_error
+check_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, unsigned char *sig, size_t sig_len)
 {
 	PKCS7 *pk7sig = NULL;
 	PKCS7 *pk7cert = NULL;
@@ -441,9 +458,12 @@ enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
 	BIO *bsig = NULL;
 	BIO *bcert = NULL;
 	STACK_OF(X509) *certs = NULL;
-	int res = 0;
+	int res = PDF_SIGNATURE_ERROR_UNKNOWN;
 
-	bsig = BIO_new_mem_buf(sig, sig_len);
+	if (sig_len > INT_MAX)
+		return res;
+
+	bsig = BIO_new_mem_buf(sig, (int)sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
 	if (pk7sig == NULL)
 		goto exit;
@@ -475,40 +495,33 @@ enum pdf_signature_error pkcs7_openssl_check_certificate(char *sig, int sig_len)
 	res = pk7_verify_cert(st, pk7sig);
 
 exit:
-	BIO_free(bsig);
+	X509_STORE_free(st);
+	PKCS7_free(pk7cert);
 	BIO_free(bcert);
 	PKCS7_free(pk7sig);
-	PKCS7_free(pk7cert);
-	X509_STORE_free(st);
+	BIO_free(bsig);
 
 	return res;
 }
 
-typedef struct pdf_pkcs7_designated_name_openssl_s
+typedef struct
 {
 	pdf_pkcs7_designated_name base;
 	char buf[8192];
 } pdf_pkcs7_designated_name_openssl;
 
-void pkcs7_openssl_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
-{
-	fz_free(ctx, dn);
-}
-
 typedef struct
 {
 	pdf_pkcs7_signer base;
-	fz_context *ctx;
 	int refs;
 	X509 *x509;
 	EVP_PKEY *pkey;
 } openssl_signer;
 
-static void signer_drop_designated_name(pdf_pkcs7_signer *signer, pdf_pkcs7_designated_name *dn)
+typedef struct
 {
-	openssl_signer *osigner = (openssl_signer *)signer;
-	fz_free(osigner->ctx, dn);
-}
+	pdf_pkcs7_verifier base;
+} openssl_verifier;
 
 static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, const STACK_OF(PKCS12_SAFEBAG) *bags, const char *pw);
 
@@ -571,57 +584,80 @@ static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, const STACK_OF(PKCS12_
 		add_from_bag(pX509, pPkey, sk_PKCS12_SAFEBAG_value(bags, i), pw);
 }
 
-static pdf_pkcs7_signer *keep_signer(pdf_pkcs7_signer *signer)
+static pdf_pkcs7_signer *keep_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	openssl_signer *osigner = (openssl_signer *)signer;
-	return fz_keep_imp(osigner->ctx, osigner, &osigner->refs);
+	return fz_keep_imp(ctx, osigner, &osigner->refs);
 }
 
-static void drop_signer(pdf_pkcs7_signer *signer)
+static void drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	openssl_signer *osigner = (openssl_signer *)signer;
-	if (fz_drop_imp(osigner->ctx, osigner, &osigner->refs))
+	if (fz_drop_imp(ctx, osigner, &osigner->refs))
 	{
 		X509_free(osigner->x509);
 		EVP_PKEY_free(osigner->pkey);
-		fz_free(osigner->ctx, osigner);
+		fz_free(ctx, osigner);
 	}
+}
+
+static char *x509_get_name_entry_string(fz_context *ctx, X509_NAME *name, int nid)
+{
+	int idx = X509_NAME_get_index_by_NID(name, nid, -1);
+	X509_NAME_ENTRY *entry = X509_NAME_get_entry(name, idx);
+	ASN1_STRING *data = X509_NAME_ENTRY_get_data(entry);
+	return data ? fz_strdup(ctx, (const char *)ASN1_STRING_get0_data(data)) : NULL;
 }
 
 static pdf_pkcs7_designated_name *x509_designated_name(fz_context *ctx, X509 *x509)
 {
-	pdf_pkcs7_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name_openssl);
-	char *p;
+	pdf_pkcs7_designated_name *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name);
 
-	X509_NAME_oneline(X509_get_subject_name(x509), dn->buf, sizeof(dn->buf));
-	p = strstr(dn->buf, "/CN=");
-	if (p) dn->base.cn = p+4;
-	p = strstr(dn->buf, "/O=");
-	if (p) dn->base.o = p+3;
-	p = strstr(dn->buf, "/OU=");
-	if (p) dn->base.ou = p+4;
-	p = strstr(dn->buf, "/emailAddress=");
-	if (p) dn->base.email = p+14;
-	p = strstr(dn->buf, "/C=");
-	if (p) dn->base.c = p+3;
-
-	for (p = dn->buf; *p; p++)
-		if (*p == '/')
-			*p = 0;
+	fz_try(ctx)
+	{
+		X509_NAME *subj = X509_get_subject_name(x509);
+		dn->cn = x509_get_name_entry_string(ctx, subj, NID_commonName);
+		dn->o = x509_get_name_entry_string(ctx, subj, NID_organizationName);
+		dn->ou = x509_get_name_entry_string(ctx, subj, NID_organizationalUnitName);
+		dn->email = x509_get_name_entry_string(ctx, subj, NID_pkcs9_emailAddress);
+		dn->c = x509_get_name_entry_string(ctx, subj, NID_countryName);
+	}
+	fz_catch(ctx)
+	{
+		pdf_signature_drop_designated_name(ctx, dn);
+		fz_rethrow(ctx);
+	}
 
 	return (pdf_pkcs7_designated_name *)dn;
 }
 
-static pdf_pkcs7_designated_name *signer_designated_name(pdf_pkcs7_signer *signer)
+static pdf_pkcs7_designated_name *signer_designated_name(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	openssl_signer *osigner = (openssl_signer *)signer;
-	return x509_designated_name(osigner->ctx, osigner->x509);
+	X509 *x509 = osigner->x509;
+	pdf_pkcs7_designated_name *dn = fz_malloc_struct(ctx, pdf_pkcs7_designated_name);
+
+	fz_try(ctx)
+	{
+		X509_NAME *subj = X509_get_subject_name(x509);
+		dn->cn = x509_get_name_entry_string(ctx, subj, NID_commonName);
+		dn->o = x509_get_name_entry_string(ctx, subj, NID_organizationName);
+		dn->ou = x509_get_name_entry_string(ctx, subj, NID_organizationalUnitName);
+		dn->email = x509_get_name_entry_string(ctx, subj, NID_pkcs9_emailAddress);
+		dn->c = x509_get_name_entry_string(ctx, subj, NID_countryName);
+	}
+	fz_catch(ctx)
+	{
+		pdf_signature_drop_designated_name(ctx, dn);
+		fz_rethrow(ctx);
+	}
+
+	return dn;
 }
 
-static int signer_create_digest(pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, int *digest_len)
+static int signer_create_digest(fz_context *ctx, pdf_pkcs7_signer *signer, fz_stream *in, unsigned char *digest, size_t digest_len)
 {
 	openssl_signer *osigner = (openssl_signer *)signer;
-	fz_context *ctx = osigner->ctx;
 	int res = 0;
 	BIO *bdata = NULL;
 	BIO *bp7in = NULL;
@@ -630,7 +666,7 @@ static int signer_create_digest(pdf_pkcs7_signer *signer, fz_stream *in, unsigne
 	PKCS7_SIGNER_INFO *si;
 
 	unsigned char *p7_ptr;
-	int p7_len;
+	size_t p7_len;
 
 	if (in != NULL)
 	{
@@ -677,33 +713,29 @@ static int signer_create_digest(pdf_pkcs7_signer *signer, fz_stream *in, unsigne
 	if (bp7 == NULL || !i2d_PKCS7_bio(bp7, p7))
 		goto exit;
 
-	p7_len = BIO_get_mem_data(bp7, &p7_ptr);
-	if (digest && p7_len > *digest_len)
+	p7_len = (size_t)BIO_get_mem_data(bp7, &p7_ptr);
+	if (digest && p7_len > digest_len)
 		goto exit;
 
 	if (digest)
 		memcpy(digest, p7_ptr, p7_len);
 
-	*digest_len = p7_len;
-	res = 1;
+	res = p7_len;
 
 exit:
+	BIO_free(bp7);
+	BIO_free(bp7in);
 	PKCS7_free(p7);
 	BIO_free(bdata);
-	BIO_free(bp7in);
-	BIO_free(bp7);
+
 	return res;
 }
 
-static int max_digest_size(pdf_pkcs7_signer *signer)
+static size_t max_digest_size(fz_context *ctx, pdf_pkcs7_signer *signer)
 {
 	/* Perform a test digest generation to find the required size. Size
 	 * is assumed independent of data being hashed */
-	int digest_len = 0;
-
-	signer_create_digest(signer, NULL, NULL, &digest_len);
-
-	return digest_len;
+	return signer_create_digest(ctx, signer, NULL, NULL, 0);
 }
 
 pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
@@ -722,11 +754,9 @@ pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, con
 		signer = fz_malloc_struct(ctx, openssl_signer);
 		signer->base.keep = keep_signer;
 		signer->base.drop = drop_signer;
-		signer->base.designated_name = signer_designated_name;
-		signer->base.drop_designated_name = signer_drop_designated_name;
+		signer->base.get_signing_name = signer_designated_name;
 		signer->base.max_digest_size = max_digest_size;
 		signer->base.create_digest = signer_create_digest;
-		signer->ctx = ctx;
 		signer->refs = 1;
 
 		OpenSSL_add_all_algorithms();
@@ -787,19 +817,19 @@ pdf_pkcs7_signer *pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, con
 	}
 	fz_always(ctx)
 	{
-		BIO_free(pfxbio);
 		PKCS12_free(p12);
+		BIO_free(pfxbio);
 	}
 	fz_catch(ctx)
 	{
-		drop_signer(&signer->base);
+		drop_signer(ctx, &signer->base);
 		fz_rethrow(ctx);
 	}
 
 	return &signer->base;
 }
 
-pdf_pkcs7_designated_name *pkcs7_openssl_designated_name(fz_context *ctx, char *sig, int sig_len)
+pdf_pkcs7_designated_name *get_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, unsigned char *sig, size_t sig_len)
 {
 	pdf_pkcs7_designated_name *name = NULL;
 	PKCS7 *pk7sig = NULL;
@@ -807,7 +837,10 @@ pdf_pkcs7_designated_name *pkcs7_openssl_designated_name(fz_context *ctx, char *
 	STACK_OF(PKCS7_SIGNER_INFO) *sk = NULL;
 	X509 *x509 = NULL;
 
-	bsig = BIO_new_mem_buf(sig, sig_len);
+	if (sig_len > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature length too large");
+
+	bsig = BIO_new_mem_buf(sig, (int)sig_len);
 	pk7sig = d2i_PKCS7_bio(bsig, NULL);
 	if (pk7sig == NULL)
 		goto exit;
@@ -818,13 +851,40 @@ pdf_pkcs7_designated_name *pkcs7_openssl_designated_name(fz_context *ctx, char *
 
 	x509 = pk7_signer(pk7_certs(pk7sig), sk_PKCS7_SIGNER_INFO_value(sk, 0));
 
-	name = x509_designated_name(ctx, x509);
+	fz_try(ctx)
+		name = x509_designated_name(ctx, x509);
+	fz_catch(ctx)
+	{
+		PKCS7_free(pk7sig);
+		BIO_free(bsig);
+		fz_rethrow(ctx);
+	}
 
 exit:
-	BIO_free(bsig);
 	PKCS7_free(pk7sig);
+	BIO_free(bsig);
 
 	return name;
+}
+
+static void
+drop_openssl_verifier(fz_context *ctx, pdf_pkcs7_verifier *verifier)
+{
+	fz_free(ctx, verifier);
+}
+
+pdf_pkcs7_verifier *
+pkcs7_openssl_new_verifier(fz_context *ctx)
+{
+	openssl_verifier *verifier = NULL;
+
+	verifier = fz_malloc_struct(ctx, openssl_verifier);
+	verifier->base.drop = drop_openssl_verifier;
+	verifier->base.check_digest = check_digest;
+	verifier->base.check_certificate = check_certificate;
+	verifier->base.get_signatory = get_signatory;
+
+	return &verifier->base;
 }
 
 #endif

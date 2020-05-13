@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Parse a CMap file and dump it back out.
 
 import sys
@@ -41,16 +43,16 @@ def cleancmap(filename):
 		elif len(v) <= 8:
 			map[lo] = v[:]
 		else:
-			print "/* warning: too long one-to-many mapping: %s */" % (v)
+			print("/* warning: too long one-to-many mapping: %s */" % (v))
 
 	def map_bfchar(lo, bf):
 		bf = bf[1:-1] # drop < >
-		v = [int(bf[i:i+4],16) for i in xrange(0, len(bf), 4)]
+		v = [int(bf[i:i+4],16) for i in range(0, len(bf), 4)]
 		add_bf(lo, v)
 
 	def map_bfrange(lo, hi, bf):
 		bf = bf[1:-1] # drop < >
-		v = [int(bf[i:i+4],16) for i in xrange(0, len(bf), 4)]
+		v = [int(bf[i:i+4],16) for i in range(0, len(bf), 4)]
 		while lo <= hi:
 			add_bf(lo, v)
 			lo = lo + 1
@@ -116,7 +118,7 @@ def cleancmap(filename):
 			else:
 				ranges.append((out_lo, out_hi, out_v_lo))
 
-	keys = map.keys()
+	keys = list(map.keys())
 	keys.sort()
 	for code in keys:
 		v = map[code]
@@ -136,69 +138,69 @@ def cleancmap(filename):
 
 	# Print CMap file
 
-	print "%!PS-Adobe-3.0 Resource-CMap"
-	print "%%DocumentNeededResources: procset (CIDInit)"
-	print "%%IncludeResource: procset (CIDInit)"
-	print "%%%%BeginResource: CMap (%s)" % cmapname
-	print "%%%%Version: %s" % cmapversion
-	print "%%EndComments"
-	print "/CIDInit /ProcSet findresource begin"
-	print "12 dict begin"
-	print "begincmap"
-	if usecmap: print "/%s usecmap" % usecmap
-	print "/CIDSystemInfo 3 dict dup begin"
-	print "  /Registry %s def" % csi_registry
-	print "  /Ordering %s def" % csi_ordering
-	print "  /Supplement %s def" % csi_supplement
-	print "end def"
-	print "/CMapName /%s def" % cmapname
-	print "/CMapVersion %s def" % cmapversion
-	print "/CMapType 1 def"
-	print "/WMode %d def" % wmode
+	print("%!PS-Adobe-3.0 Resource-CMap")
+	print("%%DocumentNeededResources: procset (CIDInit)")
+	print("%%IncludeResource: procset (CIDInit)")
+	print("%%%%BeginResource: CMap (%s)" % cmapname)
+	print("%%%%Version: %s" % cmapversion)
+	print("%%EndComments")
+	print("/CIDInit /ProcSet findresource begin")
+	print("12 dict begin")
+	print("begincmap")
+	if usecmap: print("/%s usecmap" % usecmap)
+	print("/CIDSystemInfo 3 dict dup begin")
+	print("  /Registry %s def" % csi_registry)
+	print("  /Ordering %s def" % csi_ordering)
+	print("  /Supplement %s def" % csi_supplement)
+	print("end def")
+	print("/CMapName /%s def" % cmapname)
+	print("/CMapVersion %s def" % cmapversion)
+	print("/CMapType 1 def")
+	print("/WMode %d def" % wmode)
 
 	if len(codespacerange):
-		print "%d begincodespacerange" % len(codespacerange)
+		print("%d begincodespacerange" % len(codespacerange))
 		for r in codespacerange:
 			fmt = "<%%0%dx> <%%0%dx>" % (r[0]*2, r[0]*2)
-			print fmt % (r[1], r[2])
-		print "endcodespacerange"
+			print(fmt % (r[1], r[2]))
+		print("endcodespacerange")
 
 	if len(singles) > 0:
 		if isbf:
-			print "%d beginbfchar" % len(singles)
+			print("%d beginbfchar" % len(singles))
 			for s in singles:
-				print "<%04x> <%04x>" % s
-			print "endbfchar"
+				print("<%04x> <%04x>" % s)
+			print("endbfchar")
 		else:
-			print "%d begincidchar" % len(singles)
+			print("%d begincidchar" % len(singles))
 			for s in singles:
-				print "<%04x> %d" % s
-			print "endcidchar"
+				print("<%04x> %d" % s)
+			print("endcidchar")
 
 	if len(ranges) > 0:
 		if isbf:
-			print "%d beginbfrange" % len(ranges)
+			print("%d beginbfrange" % len(ranges))
 			for r in ranges:
-				print "<%04x> <%04x> <%04x>" % r
-			print "endbfrange"
+				print("<%04x> <%04x> <%04x>" % r)
+			print("endbfrange")
 		else:
-			print "%d begincidrange" % len(ranges)
+			print("%d begincidrange" % len(ranges))
 			for r in ranges:
-				print "<%04x> <%04x> %d" % r
-			print "endcidrange"
+				print("<%04x> <%04x> %d" % r)
+			print("endcidrange")
 
 	if len(mranges) > 0:
-		print "%d beginbfchar" % len(mranges)
+		print("%d beginbfchar" % len(mranges))
 		for cid, v in mranges:
-			print "<%04x> <%s>" % (cid, "".join(["%04x" % ch for ch in v]))
-		print "endbfchar"
+			print("<%04x> <%s>" % (cid, "".join(["%04x" % ch for ch in v])))
+		print("endbfchar")
 
-	print "endcmap"
-	print "CMapName currentdict /CMap defineresource pop"
-	print "end"
-	print "end"
-	print "%%EndResource"
-	print "%%EOF"
+	print("endcmap")
+	print("CMapName currentdict /CMap defineresource pop")
+	print("end")
+	print("end")
+	print("%%EndResource")
+	print("%%EOF")
 
 for arg in sys.argv[1:]:
 	cleancmap(arg)

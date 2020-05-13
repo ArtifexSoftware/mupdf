@@ -13,12 +13,28 @@ endif
 
 ifeq ($(OS),MACOS)
   LDREMOVEUNREACH := -Wl,-dead_strip
+  SO := dylib
 else
   LDREMOVEUNREACH := -Wl,--gc-sections
+  SO := so
 endif
+
+CFLAGS += -Wsign-compare
 
 SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
+
+ifeq ($(shared),yes)
+  LIB_CFLAGS = -fPIC
+  ifeq ($(OS),MACOS)
+    LIB_LDFLAGS = -dynamiclib
+  else
+    LIB_LDFLAGS = -shared
+  endif
+else
+  LIB_CFLAGS =
+  LIB_LDFLAGS =
+endif
 
 ifeq ($(build),debug)
   CFLAGS += -pipe -g
@@ -49,7 +65,7 @@ else ifeq ($(build),native)
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),memento)
   CFLAGS += -pipe -g -DMEMENTO
-  LDFLAGS += -g -d -rdynamic
+  LDFLAGS += -g -rdynamic
   ifneq ($(HAVE_LIBDL),no)
     CFLAGS += -DHAVE_LIBDL
     LIBS += -ldl
@@ -66,11 +82,15 @@ SYS_FREETYPE_LIBS := -lfreetype2
 SYS_HARFBUZZ_LIBS := -lharfbuzz
 SYS_JBIG2DEC_LIBS := -ljbig2dec
 SYS_JPEGXR_LIBS := -ljpegxr
-SYS_LCMS2_LIBS := -llcms2-art
+SYS_LCMS2_LIBS := -llcms2
 SYS_LIBJPEG_LIBS := -ljpeg
 SYS_MUJS_LIBS := -lmujs
 SYS_OPENJPEG_LIBS := -lopenjp2
 SYS_ZLIB_LIBS := -lz
+
+ifneq "$(CLUSTER)" ""
+  CFLAGS += -DCLUSTER
+endif
 
 ifeq ($(OS),MINGW)
   WINDRES := windres
@@ -113,8 +133,8 @@ else ifeq ($(OS),Linux)
 	SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
   endif
 
-  HAVE_CURL := $(shell pkg-config --exists libcurl && echo yes)
-  ifeq ($(HAVE_CURL),yes)
+  HAVE_SYS_CURL := $(shell pkg-config --exists libcurl && echo yes)
+  ifeq ($(HAVE_SYS_CURL),yes)
 	SYS_CURL_CFLAGS := $(shell pkg-config --cflags libcurl)
 	SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
   endif
@@ -158,6 +178,7 @@ ifeq "$(OS)" "wasm"
   OUT := build/wasm/$(build)
   CC = emcc
   CXX = em++
+  AR = emar
   HAVE_GLUT=no
   HAVE_X11=no
   HAVE_OBJCOPY=no

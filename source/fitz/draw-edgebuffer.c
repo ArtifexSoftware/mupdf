@@ -216,7 +216,7 @@ static void fz_postindex_edgebuffer(fz_context *ctx, fz_rasterizer *r)
 
 	if (eb->table_cap < total)
 	{
-		eb->table = fz_resize_array(ctx, eb->table, total, sizeof(int));
+		eb->table = fz_realloc_array(ctx, eb->table, total, int);
 		eb->table_cap = total;
 	}
 
@@ -236,7 +236,7 @@ static int fz_reset_edgebuffer(fz_context *ctx, fz_rasterizer *r)
 
 	if (eb->index_cap < height)
 	{
-		eb->index = fz_resize_array(ctx, eb->index, height, sizeof(int));
+		eb->index = fz_realloc_array(ctx, eb->index, height, int);
 		eb->index_cap = height;
 	}
 	memset(eb->index, 0, sizeof(int) * height);

@@ -4,23 +4,20 @@
 
 #define DPI 72.0f
 
-typedef struct img_document_s img_document;
-typedef struct img_page_s img_page;
-
-struct img_page_s
+typedef struct
 {
 	fz_page super;
 	fz_image *image;
-};
+} img_page;
 
-struct img_document_s
+typedef struct
 {
 	fz_document super;
 	fz_buffer *buffer;
 	const char *format;
 	int page_count;
 	fz_pixmap *(*load_subimage)(fz_context *ctx, const unsigned char *p, size_t total, int subimage);
-};
+} img_document;
 
 static void
 img_drop_document(fz_context *ctx, fz_document *doc_)
@@ -30,7 +27,7 @@ img_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-img_count_pages(fz_context *ctx, fz_document *doc_)
+img_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	img_document *doc = (img_document*)doc_;
 	return doc->page_count;
@@ -63,7 +60,7 @@ img_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, fz_matrix ctm, fz_
 	w = image->w * DPI / xres;
 	h = image->h * DPI / yres;
 	ctm = fz_pre_scale(ctm, w, h);
-	fz_fill_image(ctx, dev, image, ctm, 1, NULL);
+	fz_fill_image(ctx, dev, image, ctm, 1, fz_default_color_params);
 }
 
 static void
@@ -74,7 +71,7 @@ img_drop_page(fz_context *ctx, fz_page *page_)
 }
 
 static fz_page *
-img_load_page(fz_context *ctx, fz_document *doc_, int number)
+img_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	img_document *doc = (img_document*)doc_;
 	fz_pixmap *pixmap = NULL;
@@ -168,6 +165,18 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *file)
 			doc->load_subimage = fz_load_pnm_subimage;
 			doc->format = "PNM";
 		}
+		else if (fmt == FZ_IMAGE_JBIG2)
+		{
+			doc->page_count = fz_load_jbig2_subimage_count(ctx, data, len);
+			doc->load_subimage = fz_load_jbig2_subimage;
+			doc->format = "JBIG2";
+		}
+		else if (fmt == FZ_IMAGE_BMP)
+		{
+			doc->page_count = fz_load_bmp_subimage_count(ctx, data, len);
+			doc->load_subimage = fz_load_bmp_subimage;
+			doc->format = "BMP";
+		}
 		else
 		{
 			doc->page_count = 1;
@@ -189,6 +198,8 @@ static const char *img_extensions[] =
 	"gif",
 	"hdp",
 	"j2k",
+	"jb2",
+	"jbig2",
 	"jfif",
 	"jfif-tbnl",
 	"jp2",
@@ -222,6 +233,8 @@ static const char *img_mimetypes[] =
 	"image/png",
 	"image/tiff",
 	"image/vnd.ms-photo",
+	"image/x-jb2",
+	"image/x-jbig2",
 	"image/x-portable-anymap",
 	"image/x-portable-arbitrarymap",
 	"image/x-portable-bitmap",
@@ -237,5 +250,7 @@ fz_document_handler img_document_handler =
 	NULL,
 	img_open_document_with_stream,
 	img_extensions,
-	img_mimetypes
+	img_mimetypes,
+	NULL,
+	NULL
 };

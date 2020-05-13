@@ -3,9 +3,6 @@
 
 #include <string.h>
 
-/*
- * Check if an object is a stream or not.
- */
 int
 pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 {
@@ -14,7 +11,13 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
 		return 0;
 
-	entry = pdf_cache_object(ctx, doc, num);
+	fz_try(ctx)
+		entry = pdf_cache_object(ctx, doc, num);
+	fz_catch(ctx)
+	{
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		return 0;
+	}
 
 	return entry->stm_ofs != 0 || entry->stm_buf;
 }
@@ -339,7 +342,11 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj
 		else if (pdf_array_len(ctx, filters) > 0)
 			fstm = build_filter_chain(ctx, rstm, doc, filters, params, orig_num, orig_gen, imparams);
 		else
+		{
+			if (imparams)
+				imparams->type = FZ_IMAGE_RAW;
 			fstm = fz_keep_stream(ctx, rstm);
+		}
 	}
 	fz_always(ctx)
 		fz_drop_stream(ctx, rstm);
@@ -349,10 +356,6 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj
 	return fstm;
 }
 
-/*
- * Construct a filter to decode a stream, without
- * constraining to stream length, and without decryption.
- */
 fz_stream *
 pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *file_stm, fz_compression_params *imparams)
 {
@@ -390,7 +393,6 @@ pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 		leech = fz_open_leecher(ctx, istm, bc->buffer);
 		decomp = fz_open_image_decomp_stream(ctx, leech, &bc->params, &dummy_l2factor);
 		pixmap = fz_decomp_image_from_stream(ctx, decomp, image, NULL, indexed, 0);
-		fz_set_compressed_image_tile(ctx, image, pixmap);
 		fz_set_compressed_image_buffer(ctx, image, bc);
 	}
 	fz_always(ctx)
@@ -407,9 +409,6 @@ pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 	}
 }
 
-/*
- * Open a stream for reading the raw (compressed but decrypted) data.
- */
 fz_stream *
 pdf_open_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
@@ -441,11 +440,6 @@ pdf_open_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	return pdf_open_filter(ctx, doc, doc->file, x->obj, num, x->stm_ofs, params);
 }
 
-/*
- * Open a stream for reading uncompressed data.
- * Put the opened file in doc->stream.
- * Using doc->file while a stream is open is a Bad idea.
- */
 fz_stream *
 pdf_open_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
@@ -460,9 +454,6 @@ pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj
 	return pdf_open_filter(ctx, doc, doc->file, dict, num, stm_ofs, NULL);
 }
 
-/*
- * Load raw (compressed but decrypted) contents of a stream into buf.
- */
 fz_buffer *
 pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
@@ -481,9 +472,12 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 
 	dict = pdf_load_object(ctx, doc, num);
 
-	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
-
-	pdf_drop_obj(ctx, dict);
+	fz_try(ctx)
+		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+	fz_always(ctx)
+		pdf_drop_obj(ctx, dict);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	stm = pdf_open_raw_stream_number(ctx, doc, num);
 
@@ -585,15 +579,23 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	}
 
 	dict = pdf_load_object(ctx, doc, num);
-
-	len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
-	len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
-	n = pdf_array_len(ctx, obj);
-	for (i = 0; i < n; i++)
-		len = pdf_guess_filter_length(len, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
-
-	pdf_drop_obj(ctx, dict);
+	fz_try(ctx)
+	{
+		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+		obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
+		len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
+		n = pdf_array_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			len = pdf_guess_filter_length(len, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, dict);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 
 	stm = pdf_open_image_stream(ctx, doc, num, params);
 
@@ -616,19 +618,10 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	return buf;
 }
 
-/*
- * Load uncompressed contents of a stream into buf.
- */
 fz_buffer *
 pdf_load_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	return pdf_load_image_stream(ctx, doc, num, NULL, NULL);
-}
-
-fz_buffer *
-pdf_load_stream_truncated(fz_context *ctx, pdf_document *doc, int num, int *truncated)
-{
-	return pdf_load_image_stream(ctx, doc, num, NULL, truncated);
 }
 
 fz_compressed_buffer *
@@ -688,7 +681,8 @@ pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	if (pdf_is_stream(ctx, obj))
 		return pdf_open_image_stream(ctx, doc, num, NULL);
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "pdf object stream missing (%d 0 R)", num);
+	fz_warn(ctx, "content stream is not a stream (%d 0 R)", num);
+	return fz_open_memory(ctx, (unsigned char *)"", 0);
 }
 
 fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_obj *ref)

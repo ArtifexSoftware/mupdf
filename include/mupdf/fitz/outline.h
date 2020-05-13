@@ -8,7 +8,7 @@
 
 /* Outline */
 
-/*
+/**
 	fz_outline is a tree of the outline of a document (also known
 	as table of contents).
 
@@ -28,22 +28,41 @@
 	down: The outline items immediate children in the hierarchy.
 	May be NULL if no children exist.
 */
-typedef struct fz_outline_s fz_outline;
-
-struct fz_outline_s
+typedef struct fz_outline
 {
 	int refs;
 	char *title;
 	char *uri;
 	int page;
 	float x, y;
-	fz_outline *next;
-	fz_outline *down;
+	struct fz_outline *next;
+	struct fz_outline *down;
 	int is_open;
-};
+} fz_outline;
 
+/**
+	Create a new outline entry with zeroed fields for the caller
+	to fill in.
+*/
 fz_outline *fz_new_outline(fz_context *ctx);
+
+/**
+	Increment the reference count. Returns the same pointer.
+
+	Never throws exceptions.
+*/
 fz_outline *fz_keep_outline(fz_context *ctx, fz_outline *outline);
+
+/**
+	Decrements the reference count. When the reference point
+	reaches zero, the outline is freed.
+
+	When freed, it will drop linked	outline entries (next and down)
+	too, thus a whole outline structure can be dropped by dropping
+	the top entry.
+
+	Never throws exceptions.
+*/
 void fz_drop_outline(fz_context *ctx, fz_outline *outline);
 
 #endif

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Find and extract common CMap subsets.
 # Taken flattened CMaps as input, using only the 'cidchar' sections.
 # The outputs are truncated; so use 'cmapflatten.py' to clean them up.
@@ -38,14 +40,14 @@ def print_cmap(filename, prologue, cmap):
 	out = open(filename, "w")
 	for line in prologue:
 		if not line.endswith("usecmap"):
-			print >>out, line
+			print(line, file=out)
 		if line == 'begincmap':
-			print >>out, "/"+common_name, "usecmap"
-	print >>out, len(cmap), "begincidchar"
+			print("/"+common_name, "usecmap", file=out)
+	print(len(cmap), "begincidchar", file=out)
 	for line in sorted(cmap):
-		print >>out, line
+		print(line, file=out)
 	for line in epilogue:
-		print >>out, line
+		print(line, file=out)
 
 # Print common subset
 print_cmap(sys.argv[1], ["/CMapName /%s" % common_name], common)

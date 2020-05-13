@@ -4,7 +4,7 @@
 
 /* AA-tree */
 
-struct fz_tree_s
+struct fz_tree
 {
 	char *key;
 	void *value;
@@ -17,10 +17,18 @@ static fz_tree tree_sentinel = { "", NULL, &tree_sentinel, &tree_sentinel, 0 };
 static fz_tree *fz_tree_new_node(fz_context *ctx, const char *key, void *value)
 {
 	fz_tree *node = fz_malloc_struct(ctx, fz_tree);
-	node->key = fz_strdup(ctx, key);
-	node->value = value;
-	node->left = node->right = &tree_sentinel;
-	node->level = 1;
+	fz_try(ctx)
+	{
+		node->key = fz_strdup(ctx, key);
+		node->value = value;
+		node->left = node->right = &tree_sentinel;
+		node->level = 1;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, node);
+		fz_rethrow(ctx);
+	}
 	return node;
 }
 
@@ -72,11 +80,6 @@ static fz_tree *fz_tree_split(fz_tree *node)
 	return node;
 }
 
-/*
-	Insert a new key/value pair and rebalance the tree.
-	Return the new root of the tree after inserting and rebalancing.
-	May be called with a NULL root to create a new tree.
-*/
 fz_tree *fz_tree_insert(fz_context *ctx, fz_tree *node, const char *key, void *value)
 {
 	if (node && node != &tree_sentinel)

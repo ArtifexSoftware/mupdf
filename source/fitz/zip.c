@@ -1,5 +1,4 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <string.h>
 
@@ -13,7 +12,7 @@
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
 #define ZIP_END_OF_CENTRAL_DIRECTORY_SIG 0x06054b50
 
-struct fz_zip_writer_s
+struct fz_zip_writer
 {
 	fz_output *output;
 	fz_buffer *central;
@@ -102,19 +101,33 @@ fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 }
 
 fz_zip_writer *
-fz_new_zip_writer(fz_context *ctx, const char *filename)
+fz_new_zip_writer_with_output(fz_context *ctx, fz_output *out)
 {
 	fz_zip_writer *zip = fz_malloc_struct(ctx, fz_zip_writer);
 	fz_try(ctx)
 	{
-		zip->output = fz_new_output_with_path(ctx, filename, 0);
+		zip->output = out;
 		zip->central = fz_new_buffer(ctx, 0);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_output(ctx, zip->output);
 		fz_drop_buffer(ctx, zip->central);
 		fz_free(ctx, zip);
+		fz_rethrow(ctx);
+	}
+	return zip;
+}
+
+fz_zip_writer *
+fz_new_zip_writer(fz_context *ctx, const char *filename)
+{
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
+	fz_zip_writer *zip = NULL;
+	fz_try(ctx)
+		zip = fz_new_zip_writer_with_output(ctx, out);
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, out);
 		fz_rethrow(ctx);
 	}
 	return zip;

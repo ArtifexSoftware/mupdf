@@ -1,27 +1,25 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <string.h>
 #include <assert.h>
 
 /*
-Simple hashtable with open addressing linear probe.
-Unlike text book examples, removing entries works
-correctly in this implementation, so it won't start
-exhibiting bad behaviour if entries are inserted
-and removed frequently.
+	Simple hashtable with open addressing linear probe.
+	Unlike text book examples, removing entries works
+	correctly in this implementation, so it won't start
+	exhibiting bad behaviour if entries are inserted
+	and removed frequently.
 */
 
 enum { MAX_KEY_LEN = 48 };
-typedef struct fz_hash_entry_s fz_hash_entry;
 
-struct fz_hash_entry_s
+typedef struct
 {
 	unsigned char key[MAX_KEY_LEN];
 	void *val;
-};
+} fz_hash_entry;
 
-struct fz_hash_table_s
+struct fz_hash_table
 {
 	int keylen;
 	int size;
@@ -62,7 +60,7 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_has
 	table->drop_val = drop_val;
 	fz_try(ctx)
 	{
-		table->ents = fz_malloc_array(ctx, table->size, sizeof(fz_hash_entry));
+		table->ents = Memento_label(fz_malloc_array(ctx, table->size, fz_hash_entry), "hash_entries");
 		memset(table->ents, 0, sizeof(fz_hash_entry) * table->size);
 	}
 	fz_catch(ctx)
@@ -152,7 +150,7 @@ fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 
 	if (table->lock == FZ_LOCK_ALLOC)
 		fz_unlock(ctx, table->lock);
-	newents = fz_malloc_array_no_throw(ctx, newsize, sizeof(fz_hash_entry));
+	newents = fz_malloc_no_throw(ctx, newsize * sizeof (fz_hash_entry));
 	if (table->lock == FZ_LOCK_ALLOC)
 		fz_lock(ctx, table->lock);
 	if (table->lock >= 0)

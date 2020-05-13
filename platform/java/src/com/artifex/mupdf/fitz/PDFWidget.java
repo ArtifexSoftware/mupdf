@@ -11,23 +11,22 @@ public class PDFWidget extends PDFAnnotation
 	}
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/widget.h */
-	public static final int TYPE_NOT_WIDGET = -1;
-	public static final int TYPE_PUSHBUTTON = 0;
-	public static final int TYPE_CHECKBOX = 1;
-	public static final int TYPE_RADIOBUTTON = 2;
-	public static final int TYPE_TEXT = 3;
+	public static final int TYPE_UNKNOWN = 0;
+	public static final int TYPE_BUTTON = 1;
+	public static final int TYPE_CHECKBOX = 2;
+	public static final int TYPE_COMBOBOX = 3;
 	public static final int TYPE_LISTBOX = 4;
-	public static final int TYPE_COMBOBOX = 5;
+	public static final int TYPE_RADIOBUTTON = 5;
 	public static final int TYPE_SIGNATURE = 6;
+	public static final int TYPE_TEXT = 7;
 
-	public static final int CONTENT_UNRESTRAINED = 0;
-	public static final int CONTENT_NUMBER = 1;
-	public static final int CONTENT_SPECIAL = 2;
-	public static final int CONTENT_DATE = 3;
-	public static final int CONTENT_TIME = 4;
+	public static final int TX_FORMAT_NONE = 0;
+	public static final int TX_FORMAT_NUMBER = 1;
+	public static final int TX_FORMAT_SPECIAL = 2;
+	public static final int TX_FORMAT_DATE = 3;
+	public static final int TX_FORMAT_TIME = 4;
 
 	/* Field flags */
-
 	public static final int PDF_FIELD_IS_READ_ONLY = 1;
 	public static final int PDF_FIELD_IS_REQUIRED = 1 << 1;
 	public static final int PDF_FIELD_IS_NO_EXPORT = 1 << 2;
@@ -48,24 +47,122 @@ public class PDFWidget extends PDFAnnotation
 	public static final int PDF_CH_FIELD_IS_SORT = 1 << 19;
 	public static final int PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21;
 
-	public native boolean setTextValue(String val);
-	public native boolean setValue(String val);
-	public native String getValue();
-	public native Quad[] textQuads();
-	public native void setEditingState(boolean state);
-	public native boolean getEditingState();
-	public native boolean toggle();
-
 	// These don't change after creation, so are cached in java fields.
-	private int kind;
+	private int fieldType;
 	private int fieldFlags;
-	private int contentType; /* text field content type */
+	private int textFormat; /* text field formatting type */
 	private int maxLen; /* text field max length */
 	private String[] options; /* choice field option list */
 
-	public int getKind() { return kind; }
-	public int getFieldFlags() { return fieldFlags; }
-	public int getMaxLen() { return maxLen; }
-	public int getContentType() { return contentType; }
-	public String[] getOptions() { return options; }
+	/* All fields */
+
+	public int getFieldType() {
+		return fieldType;
+	}
+	public int getFieldFlags() {
+		return fieldFlags;
+	}
+	public boolean isReadOnly() {
+		return (getFieldFlags() & PDF_FIELD_IS_READ_ONLY) != 0;
+	}
+	public native String getValue();
+	public native boolean setValue(String val);
+
+	/* Button fields */
+
+	public boolean isButton() {
+		int ft = getFieldType();
+		return ft == TYPE_BUTTON || ft == TYPE_CHECKBOX || ft == TYPE_RADIOBUTTON;
+	}
+	public boolean isPushButton() {
+		return getFieldType() == TYPE_BUTTON;
+	}
+	public boolean isCheckbox() {
+		return getFieldType() == TYPE_CHECKBOX;
+	}
+	public boolean isRadioButton() {
+		return getFieldType() == TYPE_RADIOBUTTON;
+	}
+	public native boolean toggle();
+
+	/* Text fields */
+
+	public boolean isText() {
+		return getFieldType() == TYPE_TEXT;
+	}
+	public boolean isMultiline() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_MULTILINE) != 0;
+	}
+	public boolean isPassword() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_PASSWORD) != 0;
+	}
+	public boolean isComb() {
+		return (getFieldFlags() & PDF_TX_FIELD_IS_COMB) != 0;
+	}
+	public int getMaxLen() {
+		return maxLen;
+	}
+	public int getTextFormat() {
+		return textFormat;
+	}
+	public native boolean setTextValue(String val);
+
+	/* WIP in-line text editing support */
+	public native Quad[] textQuads();
+	public native void setEditing(boolean state);
+	public native boolean isEditing();
+
+	private String originalValue;
+	public void startEditing() {
+		setEditing(true);
+		originalValue = getValue();
+	}
+	public void cancelEditing() {
+		setValue(originalValue);
+		setEditing(false);
+	}
+	public boolean commitEditing(String newValue) {
+		setValue(originalValue);
+		setEditing(false);
+		if (setTextValue(newValue)) {
+			return true;
+		} else {
+			setEditing(true);
+			return false;
+		}
+	}
+
+	/* Choice fields */
+
+	public boolean isChoice() {
+		int ft = getFieldType();
+		return ft == TYPE_COMBOBOX || ft == TYPE_LISTBOX;
+	}
+	public boolean isComboBox() {
+		return getFieldType() == TYPE_COMBOBOX;
+	}
+	public boolean isListBox() {
+		return getFieldType() == TYPE_LISTBOX;
+	}
+	public String[] getOptions() {
+		return options;
+	}
+	public native boolean setChoiceValue(String val);
+
+	/* Signature fields */
+	public native boolean sign(PKCS7Signer signer);
+	public native int checkCertificate(PKCS7Verifier verifier);
+	public native int checkDigest(PKCS7Verifier verifier);
+	public native boolean incrementalChangeAfterSigning();
+	public boolean verify(PKCS7Verifier verifier) {
+		if (checkDigest(verifier) != PKCS7Verifier.PKCS7VerifierOK)
+			return false;
+		if (checkCertificate(verifier) != PKCS7Verifier.PKCS7VerifierOK)
+			return false;
+		return !incrementalChangeAfterSigning();
+	}
+	public native PKCS7DesignatedName getDesignatedName(PKCS7Verifier verifier);
+
+	public native int validateSignature();
+	public native boolean isSigned();
 }

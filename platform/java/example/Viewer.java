@@ -32,7 +32,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected TextField searchField;
 	protected Button searchPrevButton, searchNextButton;
 	protected int searchHitPage = -1;
-	protected Quad searchHits[];
+	protected Quad[] searchHits;
 
 	protected List outlineList;
 	protected Vector<Outline> flatOutline;
@@ -45,7 +45,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int layoutEm = 12;
 	protected float pixelScale;
 
-	protected static final int zoomList[] = {
+	protected static final int[] zoomList = {
 		18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288
 	};
 
@@ -87,6 +87,38 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		box.pack();
 		box.setVisible(true);
 		box.dispose();
+	}
+
+	protected static String passwordDialog(Frame owner) {
+		final Dialog box = new Dialog(owner, "Password", true);
+		final TextField textField = new TextField(20);
+		textField.setEchoChar('*');
+		Panel buttonPane = new Panel(new FlowLayout());
+		Button cancelButton = new Button("Cancel");
+		Button okayButton = new Button("Okay");
+		cancelButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				textField.setText("");
+				box.setVisible(false);
+			}
+		});
+		okayButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				box.setVisible(false);
+			}
+		});
+		box.add(new Label("Password:"), BorderLayout.NORTH);
+		box.add(textField, BorderLayout.CENTER);
+		buttonPane.add(cancelButton);
+		buttonPane.add(okayButton);
+		box.add(buttonPane, BorderLayout.SOUTH);
+		box.pack();
+		box.setVisible(true);
+		box.dispose();
+		String pwd = textField.getText();
+		if (pwd.length() == 0)
+			return null;
+		return pwd;
 	}
 
 	protected class ImageCanvas extends Canvas
@@ -389,12 +421,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		if (layoutEm != oldLayoutEm) {
-			long mark = doc.makeBookmark(pageNumber);
+			long mark = doc.makeBookmark(doc.locationFromPageNumber(pageNumber));
 			doc.layout(layoutWidth, layoutHeight, layoutEm);
 			updateOutline();
 			pageCount = doc.countPages();
 			pageLabel.setText("/ " + pageCount);
-			pageNumber = doc.findBookmark(mark);
+			pageNumber = doc.pageNumberFromLocation(doc.findBookmark(mark));
 		}
 
 		if (zoomLevel != oldZoomLevel || pageNumber != oldPageNumber || layoutEm != oldLayoutEm || searchHits != oldSearchHits)
@@ -411,10 +443,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 		if (source == outlineList) {
 			int i = outlineList.getSelectedIndex();
-			Outline node = (Outline)flatOutline.elementAt(i);
-			if (node.page >= 0) {
-				if (node.page != pageNumber) {
-					pageNumber = node.page;
+			Outline node = flatOutline.elementAt(i);
+			int linkPage = doc.pageNumberFromLocation(doc.resolveLink(node));
+			if (linkPage >= 0) {
+				if (linkPage != pageNumber) {
+					pageNumber = linkPage;
 					updatePageCanvas();
 				}
 			}
@@ -428,6 +461,23 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	public void windowDeiconified(WindowEvent event) { }
 	public void windowOpened(WindowEvent event) { }
 	public void windowClosed(WindowEvent event) { }
+
+	protected static String getAcceleratorPath(String documentPath) {
+		String acceleratorPath = documentPath.substring(1);
+		acceleratorPath = acceleratorPath.replace(File.separatorChar, '%');
+		acceleratorPath = acceleratorPath.replace('\\', '%');
+		acceleratorPath = acceleratorPath.replace(':', '%');
+
+		String tmpdir = System.getProperty("java.io.tmpdir");
+		return new StringBuffer(tmpdir).append(File.separatorChar).append(acceleratorPath).append(".accel").toString();
+	}
+
+	protected static boolean acceleratorValid(File documentFile, File acceleratorFile) {
+		long documentModified = documentFile.lastModified();
+		long acceleratorModified = acceleratorFile.lastModified();
+
+		return acceleratorModified != 0 && acceleratorModified > documentModified;
+	}
 
 	public static void main(String[] args) {
 		File selectedFile;
@@ -450,7 +500,27 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		try {
-			Document doc = Document.openDocument(selectedFile.getAbsolutePath());
+			String documentPath = selectedFile.getAbsolutePath();
+			String acceleratorPath = getAcceleratorPath(documentPath);
+
+			Document doc;
+			if (acceleratorValid(selectedFile, new File(acceleratorPath)))
+				doc = Document.openDocument(documentPath, acceleratorPath);
+			else
+				doc = Document.openDocument(documentPath);
+
+			if (doc.needsPassword()) {
+				String pwd;
+				do {
+					pwd = passwordDialog(null);
+					if (pwd == null)
+						System.exit(1);
+				} while (!doc.authenticatePassword(pwd));
+			}
+
+			doc.countPages();
+			doc.saveAccelerator(acceleratorPath);
+
 			Viewer app = new Viewer(doc);
 			app.setVisible(true);
 			return;

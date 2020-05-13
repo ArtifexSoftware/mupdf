@@ -1,4 +1,4 @@
-#include "fitz-imp.h"
+#include "mupdf/fitz.h"
 
 /* This code needs to be kept out of stm_buffer.c to avoid it being
  * pulled into cmapdump.c */
@@ -120,7 +120,9 @@ fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buffer)
 size_t
 fz_compressed_buffer_size(fz_compressed_buffer *buffer)
 {
-	if (buffer && buffer->buffer)
-		return (size_t)buffer->buffer->cap;
-	return 0;
+	if (!buffer)
+		return 0;
+	if (buffer->buffer)
+		return (size_t)buffer->buffer->cap + sizeof(*buffer);
+	return sizeof(*buffer);
 }

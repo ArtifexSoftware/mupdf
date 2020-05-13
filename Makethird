@@ -5,7 +5,7 @@ ifeq ($(USE_SYSTEM_LIBS),yes)
   USE_SYSTEM_HARFBUZZ := yes
   USE_SYSTEM_JBIG2DEC := yes
   USE_SYSTEM_JPEGXR := no # not available
-  USE_SYSTEM_LCMS2 := no # need lcms2-art fork
+  USE_SYSTEM_LCMS2 := no # lcms2mt is strongly preferred
   USE_SYSTEM_LIBJPEG := yes
   USE_SYSTEM_MUJS := no # not available
   USE_SYSTEM_OPENJPEG := yes
@@ -16,6 +16,10 @@ endif
 
 ifeq ($(OS),MACOS)
   USE_SYSTEM_GLUT := yes
+endif
+
+ifeq ($(OS),Linux)
+  USE_SYSTEM_CURL := yes
 endif
 
 # --- FREETYPE 2 ---
@@ -53,7 +57,7 @@ THIRD_SRC += thirdparty/freetype/src/type1/type1.c
 THIRD_CFLAGS += $(FREETYPE_CFLAGS)
 
 $(OUT)/thirdparty/freetype/%.o: thirdparty/freetype/%.c
-	$(CC_CMD) $(FREETYPE_CFLAGS) \
+	$(CC_CMD) $(FREETYPE_CFLAGS) $(LIB_CFLAGS) \
 		-DFT_CONFIG_MODULES_H=\"slimftmodules.h\" \
 		-DFT_CONFIG_OPTIONS_H=\"slimftoptions.h\" \
 		-DFT2_BUILD_LIBRARY
@@ -68,50 +72,63 @@ ifeq ($(USE_SYSTEM_HARFBUZZ),yes)
 else
 
 THIRD_SRC += thirdparty/harfbuzz/src/hb-aat-layout.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-aat-map.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-blob.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-buffer-serialize.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-buffer.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-buffer-serialize.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-common.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-face.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-fallback-shape.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-font.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ft.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-map.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-number.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-cff1-table.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-cff2-table.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-color.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-face.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-font.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-layout.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-map.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-math.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-meta.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-metrics.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-name.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-arabic.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-default.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-hangul.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-hebrew.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-indic.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-khmer.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-thai.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-tibetan.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-use-table.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-use.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-use-table.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-fallback.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape-normalize.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-shape.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-tag.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-ot-var.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-set.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-shape-plan.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-shape.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-shape-plan.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-shaper.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-static.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-ucdn.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset-cff1.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset-cff2.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset-cff-common.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset-input.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-subset-plan.cc
+THIRD_SRC += thirdparty/harfbuzz/src/hb-ucd.cc
 THIRD_SRC += thirdparty/harfbuzz/src/hb-unicode.cc
-THIRD_SRC += thirdparty/harfbuzz/src/hb-warning.cc
 
 THIRD_CFLAGS += -Ithirdparty/harfbuzz/src
 
 $(OUT)/thirdparty/harfbuzz/%.o: thirdparty/harfbuzz/%.cc
-	$(CXX_CMD) $(FREETYPE_CFLAGS) -Iinclude/mupdf \
+	$(CXX_CMD) $(FREETYPE_CFLAGS) $(LIB_CFLAGS) -Iinclude/mupdf \
 		-DHAVE_FALLBACK=1 \
 		-DHAVE_OT \
 		-DHAVE_ROUND \
@@ -121,9 +138,12 @@ $(OUT)/thirdparty/harfbuzz/%.o: thirdparty/harfbuzz/%.cc
 		-Dhb_calloc_impl=fz_hb_calloc \
 		-Dhb_free_impl=fz_hb_free \
 		-Dhb_realloc_impl=fz_hb_realloc \
+		-DHAVE_FREETYPE \
 		-fno-exceptions \
 		-fno-rtti \
-		-fvisibility-inlines-hidden
+		-fno-threadsafe-statics\
+		-fvisibility-inlines-hidden\
+		-std=gnu++11
 
 endif
 
@@ -153,7 +173,7 @@ THIRD_CFLAGS += -Ithirdparty/jpegxr/Software
 THIRD_CFLAGS += -DHAVE_JPEGXR
 
 $(OUT)/thirdparty/jpegxr/%.o: thirdparty/jpegxr/%.c
-	$(CC_CMD) -Ithirdparty/jpegxr -Ithirdparty/jpegxr/Software -Wno-tautological-compare
+	$(CC_CMD) $(LIB_CFLAGS) -Ithirdparty/jpegxr -Ithirdparty/jpegxr/Software -Wno-tautological-compare
 
 endif
 endif
@@ -199,7 +219,7 @@ THIRD_SRC += thirdparty/libjpeg/jutils.c
 THIRD_CFLAGS += -Iscripts/libjpeg -Ithirdparty/libjpeg
 
 $(OUT)/thirdparty/libjpeg/%.o: thirdparty/libjpeg/%.c
-	$(CC_CMD) -Iscripts/libjpeg
+	$(CC_CMD) $(LIB_CFLAGS) -Iscripts/libjpeg
 
 endif
 
@@ -207,15 +227,15 @@ endif
 
 ifeq ($(USE_SYSTEM_LCMS2),yes)
   THIRD_CFLAGS += $(SYS_LCMS2_CFLAGS)
-  THIRD_LIBS += $(SYS_LCMS2_CFLAGS)
+  THIRD_LIBS += $(SYS_LCMS2_LIBS)
 else
 
 THIRD_SRC += $(sort $(wildcard thirdparty/lcms2/src/cms*.c))
 
-THIRD_CFLAGS += -Ithirdparty/lcms2/include
+THIRD_CFLAGS += -Ithirdparty/lcms2/include -DHAVE_LCMS2MT
 
 $(OUT)/thirdparty/lcms2/%.o: thirdparty/lcms2/%.c
-	$(CC_CMD) -Ithirdparty/lcms2/include
+	$(CC_CMD) $(LIB_CFLAGS) -Ithirdparty/lcms2/include
 
 endif
 
@@ -230,7 +250,7 @@ THIRD_SRC += thirdparty/mujs/one.c
 THIRD_CFLAGS += -Ithirdparty/mujs
 
 $(OUT)/thirdparty/mujs/%.o: thirdparty/mujs/%.c
-	$(CC_CMD)
+	$(CC_CMD) $(LIB_CFLAGS)
 
 endif
 
@@ -255,7 +275,7 @@ THIRD_SRC += thirdparty/zlib/zutil.c
 THIRD_CFLAGS += -Ithirdparty/zlib
 
 $(OUT)/thirdparty/zlib/%.o: thirdparty/zlib/%.c
-	$(CC_CMD) -DHAVE_UNISTD_H -DHAVE_STDARG_H
+	$(CC_CMD) $(LIB_CFLAGS) -DHAVE_UNISTD_H -DHAVE_STDARG_H
 
 endif
 
@@ -272,10 +292,10 @@ LURATECH_CFLAGS += -Ithirdparty/luratech/ldf_jb2/source/compress
 LURATECH_CFLAGS += -Ithirdparty/luratech/ldf_jb2/source/common
 LURATECH_CFLAGS += -Ithirdparty/luratech/lwf_jp2/library/source
 
-THIRD_CFLAGS += $(LURATECH_CFLAGS) -DHAVE_LURATECH=1
+THIRD_CFLAGS += $(LURATECH_CFLAGS) -DHAVE_LURATECH
 
 $(OUT)/thirdparty/luratech/%.o: thirdparty/luratech/%.c
-	$(CC_CMD) -DLINUX $(LURATECH_CFLAGS) -Wno-tautological-compare -Wno-absolute-value
+	$(CC_CMD) $(LIB_CFLAGS) -DLINUX $(LURATECH_CFLAGS) -Wno-tautological-compare -Wno-absolute-value -Wno-sign-compare
 
 else # HAVE_LURATECH
 
@@ -293,6 +313,7 @@ THIRD_SRC += thirdparty/jbig2dec/jbig2_arith_int.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_generic.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_halftone.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_huffman.c
+THIRD_SRC += thirdparty/jbig2dec/jbig2_hufftab.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_image.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_mmr.c
 THIRD_SRC += thirdparty/jbig2dec/jbig2_page.c
@@ -304,7 +325,7 @@ THIRD_SRC += thirdparty/jbig2dec/jbig2_text.c
 THIRD_CFLAGS += -Ithirdparty/jbig2dec
 
 $(OUT)/thirdparty/jbig2dec/%.o: thirdparty/jbig2dec/%.c
-	$(CC_CMD) -DHAVE_STDINT_H -DJBIG_EXTERNAL_MEMENTO_H=\"mupdf/memento.h\"
+	$(CC_CMD) $(LIB_CFLAGS) -DHAVE_STDINT_H -DJBIG_EXTERNAL_MEMENTO_H=\"mupdf/memento.h\" -Wno-sign-compare
 
 endif
 
@@ -343,7 +364,7 @@ THIRD_SRC += thirdparty/openjpeg/src/lib/openjp2/thread.c
 THIRD_CFLAGS += $(OPENJPEG_CFLAGS)
 
 $(OUT)/thirdparty/openjpeg/%.o: thirdparty/openjpeg/%.c
-	$(CC_CMD) $(OPENJPEG_CFLAGS)
+	$(CC_CMD) $(LIB_CFLAGS) $(OPENJPEG_CFLAGS)
 
 endif
 
@@ -364,13 +385,14 @@ GLUT_OBJ := $(GLUT_SRC:%.c=$(OUT)/%.o)
 LOCAL_GLUT_CFLAGS += -Ithirdparty/freeglut/include
 LOCAL_GLUT_CFLAGS += -Ithirdparty/freeglut/src
 LOCAL_GLUT_CFLAGS += -DHAVE_UNISTD_H -DHAVE_STDINT_H -DHAVE_X11_EXTENSIONS_XRANDR_H
+LOCAL_GLUT_CFLAGS += -Wno-sign-compare
 
 GLUT_LIB := $(OUT)/libfreeglut.a
 
 $(GLUT_LIB): $(GLUT_OBJ)
 
 $(OUT)/thirdparty/freeglut/%.o: thirdparty/freeglut/%.c
-	$(CC_CMD) $(LOCAL_GLUT_CFLAGS)
+	$(CC_CMD) $(LIB_CFLAGS) $(LOCAL_GLUT_CFLAGS)
 
 GLUT_CFLAGS := -Ithirdparty/freeglut/include
 GLUT_LIBS := -lGL -lX11 -lXrandr
@@ -380,31 +402,7 @@ endif
 # --- cURL ---
 
 ifeq ($(USE_SYSTEM_CURL),yes)
+  HAVE_CURL := $(HAVE_SYS_CURL)
   CURL_CFLAGS := $(SYS_CURL_CFLAGS)
   CURL_LIBS := $(SYS_CURL_LIBS)
-else
-
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/*.c))
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/vauth/*.c))
-CURL_SRC += $(sort $(wildcard thirdparty/curl/lib/vtls/*.c))
-
-CURL_OBJ := $(CURL_SRC:%.c=$(OUT)/%.o)
-
-LOCAL_CURL_CFLAGS += -DHAVE_CONFIG_H
-LOCAL_CURL_CFLAGS += -DBUILDING_LIBCURL
-LOCAL_CURL_CFLAGS += -DCURL_STATICLIB
-LOCAL_CURL_CFLAGS += -DCURL_DISABLE_LDAP
-LOCAL_CURL_CFLAGS += -Ithirdparty/curl/include
-LOCAL_CURL_CFLAGS += -Ithirdparty/curl/lib
-
-CURL_LIB := $(OUT)/libcurl.a
-
-$(CURL_LIB): $(CURL_OBJ)
-
-$(OUT)/thirdparty/curl/%.o: thirdparty/curl/%.c
-	$(CC_CMD) $(LOCAL_CURL_CFLAGS)
-
-CURL_CFLAGS := -Ithirdparty/curl/include
-CURL_LIBS := -lpthread
-
 endif

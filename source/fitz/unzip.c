@@ -1,9 +1,9 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <string.h>
+#include <limits.h>
 
-#include <zlib.h>
+#include "z-imp.h"
 
 #if !defined (INT32_MAX)
 #define INT32_MAX 2147483647L
@@ -20,32 +20,19 @@
 
 #define ZIP_ENCRYPTED_FLAG 0x1
 
-typedef struct zip_entry_s zip_entry;
-typedef struct fz_zip_archive_s fz_zip_archive;
-
-struct zip_entry_s
+typedef struct
 {
 	char *name;
 	uint64_t offset, csize, usize;
-};
+} zip_entry;
 
-struct fz_zip_archive_s
+typedef struct
 {
 	fz_archive super;
 
-	uint64_t count;
+	int count;
 	zip_entry *entries;
-};
-
-static void *zalloc_zip(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_zip(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
+} fz_zip_archive;
 
 static void drop_zip_archive(fz_context *ctx, fz_archive *arch)
 {
@@ -64,8 +51,10 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 	int namesize, metasize, commentsize;
 	uint64_t count, offset;
 	uint64_t csize, usize;
-	char *name;
+	char *name = NULL;
 	size_t n;
+
+	fz_var(name);
 
 	zip->count = 0;
 
@@ -124,80 +113,89 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int64_t start
 
 	fz_seek(ctx, file, offset, 0);
 
-	for (i = 0; i < count; i++)
+	fz_try(ctx)
 	{
-		sig = fz_read_uint32_le(ctx, file);
-		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip central directory signature (0x%x)", sig);
-
-		(void) fz_read_uint16_le(ctx, file); /* version made by */
-		(void) fz_read_uint16_le(ctx, file); /* version to extract */
-		(void) fz_read_uint16_le(ctx, file); /* general */
-		(void) fz_read_uint16_le(ctx, file); /* method */
-		(void) fz_read_uint16_le(ctx, file); /* last mod file time */
-		(void) fz_read_uint16_le(ctx, file); /* last mod file date */
-		(void) fz_read_uint32_le(ctx, file); /* crc-32 */
-		csize = fz_read_uint32_le(ctx, file);
-		usize = fz_read_uint32_le(ctx, file);
-		namesize = fz_read_uint16_le(ctx, file);
-		metasize = fz_read_uint16_le(ctx, file);
-		commentsize = fz_read_uint16_le(ctx, file);
-		(void) fz_read_uint16_le(ctx, file); /* disk number start */
-		(void) fz_read_uint16_le(ctx, file); /* int file atts */
-		(void) fz_read_uint32_le(ctx, file); /* ext file atts */
-		offset = fz_read_uint32_le(ctx, file);
-
-		if (namesize < 0 || metasize < 0 || commentsize < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid size in zip entry");
-
-		name = fz_malloc(ctx, namesize + 1);
-		n = fz_read(ctx, file, (unsigned char*)name, namesize);
-		if (n < (size_t)namesize)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in zip entry name");
-		name[namesize] = '\0';
-
-		while (metasize > 0)
+		if (count > INT_MAX)
+			count = INT_MAX;
+		for (i = 0; i < (int)count; i++)
 		{
-			int type = fz_read_uint16_le(ctx, file);
-			int size = fz_read_uint16_le(ctx, file);
+			sig = fz_read_uint32_le(ctx, file);
+			if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip central directory signature (0x%x)", sig);
 
-			if (type == ZIP64_EXTRA_FIELD_SIG)
+			(void) fz_read_uint16_le(ctx, file); /* version made by */
+			(void) fz_read_uint16_le(ctx, file); /* version to extract */
+			(void) fz_read_uint16_le(ctx, file); /* general */
+			(void) fz_read_uint16_le(ctx, file); /* method */
+			(void) fz_read_uint16_le(ctx, file); /* last mod file time */
+			(void) fz_read_uint16_le(ctx, file); /* last mod file date */
+			(void) fz_read_uint32_le(ctx, file); /* crc-32 */
+			csize = fz_read_uint32_le(ctx, file);
+			usize = fz_read_uint32_le(ctx, file);
+			namesize = fz_read_uint16_le(ctx, file);
+			metasize = fz_read_uint16_le(ctx, file);
+			commentsize = fz_read_uint16_le(ctx, file);
+			(void) fz_read_uint16_le(ctx, file); /* disk number start */
+			(void) fz_read_uint16_le(ctx, file); /* int file atts */
+			(void) fz_read_uint32_le(ctx, file); /* ext file atts */
+			offset = fz_read_uint32_le(ctx, file);
+
+			name = Memento_label(fz_malloc(ctx, namesize + 1), "zip_name");
+
+			n = fz_read(ctx, file, (unsigned char*)name, namesize);
+			if (n < (size_t)namesize)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in zip entry name");
+			name[namesize] = '\0';
+
+			while (metasize > 0)
 			{
-				int sizeleft = size;
-				if (usize == 0xFFFFFFFF && sizeleft >= 8)
+				int type = fz_read_uint16_le(ctx, file);
+				int size = fz_read_uint16_le(ctx, file);
+
+				if (type == ZIP64_EXTRA_FIELD_SIG)
 				{
-					usize = fz_read_uint64_le(ctx, file);
-					sizeleft -= 8;
+					int sizeleft = size;
+					if (usize == 0xFFFFFFFF && sizeleft >= 8)
+					{
+						usize = fz_read_uint64_le(ctx, file);
+						sizeleft -= 8;
+					}
+					if (csize == 0xFFFFFFFF && sizeleft >= 8)
+					{
+						csize = fz_read_uint64_le(ctx, file);
+						sizeleft -= 8;
+					}
+					if (offset == 0xFFFFFFFF && sizeleft >= 8)
+					{
+						offset = fz_read_uint64_le(ctx, file);
+						sizeleft -= 8;
+					}
+					fz_seek(ctx, file, sizeleft - size, 1);
 				}
-				if (csize == 0xFFFFFFFF && sizeleft >= 8)
-				{
-					csize = fz_read_uint64_le(ctx, file);
-					sizeleft -= 8;
-				}
-				if (offset == 0xFFFFFFFF && sizeleft >= 8)
-				{
-					offset = fz_read_uint64_le(ctx, file);
-					sizeleft -= 8;
-				}
-				fz_seek(ctx, file, sizeleft - size, 1);
+				fz_seek(ctx, file, size, 1);
+				metasize -= 4 + size;
 			}
-			fz_seek(ctx, file, size, 1);
-			metasize -= 4 + size;
+
+			if (usize > INT32_MAX || csize > INT32_MAX)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "zip archive entry larger than 2 GB");
+
+			fz_seek(ctx, file, commentsize, 1);
+
+			zip->entries = Memento_label(fz_realloc_array(ctx, zip->entries, zip->count + 1, zip_entry), "zip_entries");
+
+			zip->entries[zip->count].offset = offset;
+			zip->entries[zip->count].csize = csize;
+			zip->entries[zip->count].usize = usize;
+			zip->entries[zip->count].name = name;
+			name = NULL;
+
+			zip->count++;
 		}
-		if (usize > INT32_MAX || csize > INT32_MAX)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "zip archive entry larger than 2 GB");
-
-		fz_seek(ctx, file, commentsize, 1);
-
-		zip->entries = fz_resize_array(ctx, zip->entries, zip->count + 1, sizeof *zip->entries);
-
-		zip->entries[zip->count].name = name;
-		zip->entries[zip->count].offset = offset;
-		zip->entries[zip->count].csize = csize;
-		zip->entries[zip->count].usize = usize;
-
-		zip->count++;
 	}
+	fz_always(ctx)
+		fz_free(ctx, name);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static int read_zip_entry_header(fz_context *ctx, fz_zip_archive *zip, zip_entry *ent)
@@ -265,6 +263,8 @@ static void ensure_zip_entries(fz_context *ctx, fz_zip_archive *zip)
 static zip_entry *lookup_zip_entry(fz_context *ctx, fz_zip_archive *zip, const char *name)
 {
 	int i;
+	if (name[0] == '/')
+		++name;
 	for (i = 0; i < zip->count; i++)
 		if (!fz_strcasecmp(name, zip->entries[i].name))
 			return &zip->entries[i];
@@ -299,8 +299,10 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 	int method;
 	z_stream z;
 	int code;
-	int len;
+	uint64_t len;
 	zip_entry *ent;
+
+	fz_var(cbuf);
 
 	ent = lookup_zip_entry(ctx, zip, name);
 	if (!ent)
@@ -326,13 +328,14 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 	}
 	else if (method == 8)
 	{
-		cbuf = fz_malloc(ctx, ent->csize);
 		fz_try(ctx)
 		{
+			cbuf = fz_malloc(ctx, ent->csize);
+
 			fz_read(ctx, file, cbuf, ent->csize);
 
-			z.zalloc = zalloc_zip;
-			z.zfree = zfree_zip;
+			z.zalloc = fz_zlib_alloc;
+			z.zfree = fz_zlib_free;
 			z.opaque = ctx;
 			z.next_in = cbuf;
 			z.avail_in = ent->csize;
@@ -398,11 +401,6 @@ static int count_zip_entries(fz_context *ctx, fz_archive *arch)
 	return zip->count;
 }
 
-/*
-	Detect if stream object is a zip archive.
-
-	Assumes that the stream object is seekable.
-*/
 int
 fz_is_zip_archive(fz_context *ctx, fz_stream *file)
 {
@@ -420,16 +418,6 @@ fz_is_zip_archive(fz_context *ctx, fz_stream *file)
 	return 1;
 }
 
-/*
-	Open a zip archive stream.
-
-	Open an archive using a seekable stream object rather than
-	opening a file or directory on disk.
-
-	An exception is throw if the stream is not a zip archive as
-	indicated by the presence of a zip signature.
-
-*/
 fz_archive *
 fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
@@ -460,15 +448,6 @@ fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file)
 	return &zip->super;
 }
 
-/*
-	Open a zip archive file.
-
-	An exception is throw if the file is not a zip archive as
-	indicated by the presence of a zip signature.
-
-	filename: a path to a zip archive file as it would be given to
-	open(2).
-*/
 fz_archive *
 fz_open_zip_archive(fz_context *ctx, const char *filename)
 {

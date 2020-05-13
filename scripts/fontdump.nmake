@@ -112,61 +112,46 @@ generated\resources\fonts\noto\NotoNaskhArabic-Regular.ttf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoNaskhArabic-Regular.ttf generated\resources\fonts\noto\NotoNaskhArabic-Regular.ttf.obj _binary_NotoNaskhArabic_Regular_ttf
 generated\resources\fonts\noto\NotoNaskhArabic-Regular.ttf.x64.obj: resources\fonts\noto\NotoNaskhArabic-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoNaskhArabic-Regular.ttf generated\resources\fonts\noto\NotoNaskhArabic-Regular.ttf.x64.obj _binary_NotoNaskhArabic_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.obj generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.obj: resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.obj _binary_NotoNastaliqUrdu_Regular_ttf
-generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.x64.obj: resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.ttf.x64.obj _binary_NotoNastaliqUrdu_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.obj generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.obj: resources\fonts\noto\NotoSansJavanese-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansJavanese-Regular.ttf generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.obj _binary_NotoSansJavanese_Regular_ttf
-generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansJavanese-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansJavanese-Regular.ttf generated\resources\fonts\noto\NotoSansJavanese-Regular.ttf.x64.obj _binary_NotoSansJavanese_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.obj generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.obj: resources\fonts\noto\NotoSansMongolian-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansMongolian-Regular.ttf generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.obj _binary_NotoSansMongolian_Regular_ttf
-generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansMongolian-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansMongolian-Regular.ttf generated\resources\fonts\noto\NotoSansMongolian-Regular.ttf.x64.obj _binary_NotoSansMongolian_Regular_ttf 64bit
 generate: generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.obj generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.x64.obj
 generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.obj: resources\fonts\noto\NotoSansOriya-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansOriya-Regular.ttf generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.obj _binary_NotoSansOriya_Regular_ttf
 generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansOriya-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansOriya-Regular.ttf generated\resources\fonts\noto\NotoSansOriya-Regular.ttf.x64.obj _binary_NotoSansOriya_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.obj generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.obj: resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.obj _binary_NotoSansSyriacEastern_Regular_ttf
-generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacEastern-Regular.ttf.x64.obj _binary_NotoSansSyriacEastern_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.obj generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.obj: resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.obj _binary_NotoSansSyriacEstrangela_Regular_ttf
-generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacEstrangela-Regular.ttf.x64.obj _binary_NotoSansSyriacEstrangela_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.obj generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.obj: resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.obj _binary_NotoSansSyriacWestern_Regular_ttf
-generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf generated\resources\fonts\noto\NotoSansSyriacWestern-Regular.ttf.x64.obj _binary_NotoSansSyriacWestern_Regular_ttf 64bit
 generate: generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.obj generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.x64.obj
 generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.obj: resources\fonts\noto\NotoSansTaiTham-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTaiTham-Regular.ttf generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.obj _binary_NotoSansTaiTham_Regular_ttf
 generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansTaiTham-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTaiTham-Regular.ttf generated\resources\fonts\noto\NotoSansTaiTham-Regular.ttf.x64.obj _binary_NotoSansTaiTham_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.obj generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.obj: resources\fonts\noto\NotoSansThaana-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansThaana-Regular.ttf generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.obj _binary_NotoSansThaana_Regular_ttf
-generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansThaana-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansThaana-Regular.ttf generated\resources\fonts\noto\NotoSansThaana-Regular.ttf.x64.obj _binary_NotoSansThaana_Regular_ttf 64bit
-generate: generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.obj generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.x64.obj
-generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.obj: resources\fonts\noto\NotoSansTibetan-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansTibetan-Regular.ttf generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.obj _binary_NotoSansTibetan_Regular_ttf
-generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.x64.obj: resources\fonts\noto\NotoSansTibetan-Regular.ttf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansTibetan-Regular.ttf generated\resources\fonts\noto\NotoSansTibetan-Regular.ttf.x64.obj _binary_NotoSansTibetan_Regular_ttf 64bit
+generate: generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.obj generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.x64.obj
+generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.obj: resources\fonts\noto\NotoSerifBengali-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifBengali-Regular.ttf generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.obj _binary_NotoSerifBengali_Regular_ttf
+generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.x64.obj: resources\fonts\noto\NotoSerifBengali-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifBengali-Regular.ttf generated\resources\fonts\noto\NotoSerifBengali-Regular.ttf.x64.obj _binary_NotoSerifBengali_Regular_ttf 64bit
+generate: generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.obj generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.x64.obj
+generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.obj: resources\fonts\noto\NotoSerifDevanagari-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifDevanagari-Regular.ttf generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.obj _binary_NotoSerifDevanagari_Regular_ttf
+generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.x64.obj: resources\fonts\noto\NotoSerifDevanagari-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifDevanagari-Regular.ttf generated\resources\fonts\noto\NotoSerifDevanagari-Regular.ttf.x64.obj _binary_NotoSerifDevanagari_Regular_ttf 64bit
+generate: generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.obj generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.x64.obj
+generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.obj: resources\fonts\noto\NotoSerifMalayalam-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifMalayalam-Regular.ttf generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.obj _binary_NotoSerifMalayalam_Regular_ttf
+generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.x64.obj: resources\fonts\noto\NotoSerifMalayalam-Regular.ttf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifMalayalam-Regular.ttf generated\resources\fonts\noto\NotoSerifMalayalam-Regular.ttf.x64.obj _binary_NotoSerifMalayalam_Regular_ttf 64bit
 generate: generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.obj generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.x64.obj
 generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.obj: resources\fonts\noto\NotoSerifTelugu-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifTelugu-Regular.ttf generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.obj _binary_NotoSerifTelugu_Regular_ttf
 generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.x64.obj: resources\fonts\noto\NotoSerifTelugu-Regular.ttf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifTelugu-Regular.ttf generated\resources\fonts\noto\NotoSerifTelugu-Regular.ttf.x64.obj _binary_NotoSerifTelugu_Regular_ttf 64bit
+generate: generated\resources\fonts\noto\NotoMusic-Regular.otf.obj generated\resources\fonts\noto\NotoMusic-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoMusic-Regular.otf.obj: resources\fonts\noto\NotoMusic-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoMusic-Regular.otf generated\resources\fonts\noto\NotoMusic-Regular.otf.obj _binary_NotoMusic_Regular_otf
+generated\resources\fonts\noto\NotoMusic-Regular.otf.x64.obj: resources\fonts\noto\NotoMusic-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoMusic-Regular.otf generated\resources\fonts\noto\NotoMusic-Regular.otf.x64.obj _binary_NotoMusic_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.obj generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.obj: resources\fonts\noto\NotoNastaliqUrdu-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoNastaliqUrdu-Regular.otf generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.obj _binary_NotoNastaliqUrdu_Regular_otf
+generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.x64.obj: resources\fonts\noto\NotoNastaliqUrdu-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoNastaliqUrdu-Regular.otf generated\resources\fonts\noto\NotoNastaliqUrdu-Regular.otf.x64.obj _binary_NotoNastaliqUrdu_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSans-Regular.otf.obj generated\resources\fonts\noto\NotoSans-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSans-Regular.otf.obj: resources\fonts\noto\NotoSans-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSans-Regular.otf generated\resources\fonts\noto\NotoSans-Regular.otf.obj _binary_NotoSans_Regular_otf
@@ -177,11 +162,6 @@ generated\resources\fonts\noto\NotoSansAdlam-Regular.otf.obj: resources\fonts\no
 	bin2coff.exe resources\fonts\noto\NotoSansAdlam-Regular.otf generated\resources\fonts\noto\NotoSansAdlam-Regular.otf.obj _binary_NotoSansAdlam_Regular_otf
 generated\resources\fonts\noto\NotoSansAdlam-Regular.otf.x64.obj: resources\fonts\noto\NotoSansAdlam-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansAdlam-Regular.otf generated\resources\fonts\noto\NotoSansAdlam-Regular.otf.x64.obj _binary_NotoSansAdlam_Regular_otf 64bit
-generate: generated\resources\fonts\noto\NotoSansAhom-Regular.otf.obj generated\resources\fonts\noto\NotoSansAhom-Regular.otf.x64.obj
-generated\resources\fonts\noto\NotoSansAhom-Regular.otf.obj: resources\fonts\noto\NotoSansAhom-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansAhom-Regular.otf generated\resources\fonts\noto\NotoSansAhom-Regular.otf.obj _binary_NotoSansAhom_Regular_otf
-generated\resources\fonts\noto\NotoSansAhom-Regular.otf.x64.obj: resources\fonts\noto\NotoSansAhom-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansAhom-Regular.otf generated\resources\fonts\noto\NotoSansAhom-Regular.otf.x64.obj _binary_NotoSansAhom_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf.obj generated\resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf.obj: resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf generated\resources\fonts\noto\NotoSansAnatolianHieroglyphs-Regular.otf.obj _binary_NotoSansAnatolianHieroglyphs_Regular_otf
@@ -212,11 +192,6 @@ generated\resources\fonts\noto\NotoSansBatak-Regular.otf.obj: resources\fonts\no
 	bin2coff.exe resources\fonts\noto\NotoSansBatak-Regular.otf generated\resources\fonts\noto\NotoSansBatak-Regular.otf.obj _binary_NotoSansBatak_Regular_otf
 generated\resources\fonts\noto\NotoSansBatak-Regular.otf.x64.obj: resources\fonts\noto\NotoSansBatak-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansBatak-Regular.otf generated\resources\fonts\noto\NotoSansBatak-Regular.otf.x64.obj _binary_NotoSansBatak_Regular_otf 64bit
-generate: generated\resources\fonts\noto\NotoSansBengali-Regular.otf.obj generated\resources\fonts\noto\NotoSansBengali-Regular.otf.x64.obj
-generated\resources\fonts\noto\NotoSansBengali-Regular.otf.obj: resources\fonts\noto\NotoSansBengali-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansBengali-Regular.otf generated\resources\fonts\noto\NotoSansBengali-Regular.otf.obj _binary_NotoSansBengali_Regular_otf
-generated\resources\fonts\noto\NotoSansBengali-Regular.otf.x64.obj: resources\fonts\noto\NotoSansBengali-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansBengali-Regular.otf generated\resources\fonts\noto\NotoSansBengali-Regular.otf.x64.obj _binary_NotoSansBengali_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansBhaiksuki-Regular.otf.obj generated\resources\fonts\noto\NotoSansBhaiksuki-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansBhaiksuki-Regular.otf.obj: resources\fonts\noto\NotoSansBhaiksuki-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansBhaiksuki-Regular.otf generated\resources\fonts\noto\NotoSansBhaiksuki-Regular.otf.obj _binary_NotoSansBhaiksuki_Regular_otf
@@ -247,6 +222,11 @@ generated\resources\fonts\noto\NotoSansCarian-Regular.otf.obj: resources\fonts\n
 	bin2coff.exe resources\fonts\noto\NotoSansCarian-Regular.otf generated\resources\fonts\noto\NotoSansCarian-Regular.otf.obj _binary_NotoSansCarian_Regular_otf
 generated\resources\fonts\noto\NotoSansCarian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansCarian-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansCarian-Regular.otf generated\resources\fonts\noto\NotoSansCarian-Regular.otf.x64.obj _binary_NotoSansCarian_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.obj generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.obj: resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.obj _binary_NotoSansCaucasianAlbanian_Regular_otf
+generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf generated\resources\fonts\noto\NotoSansCaucasianAlbanian-Regular.otf.x64.obj _binary_NotoSansCaucasianAlbanian_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansChakma-Regular.otf.obj generated\resources\fonts\noto\NotoSansChakma-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansChakma-Regular.otf.obj: resources\fonts\noto\NotoSansChakma-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansChakma-Regular.otf generated\resources\fonts\noto\NotoSansChakma-Regular.otf.obj _binary_NotoSansChakma_Regular_otf
@@ -282,11 +262,11 @@ generated\resources\fonts\noto\NotoSansDeseret-Regular.otf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoSansDeseret-Regular.otf generated\resources\fonts\noto\NotoSansDeseret-Regular.otf.obj _binary_NotoSansDeseret_Regular_otf
 generated\resources\fonts\noto\NotoSansDeseret-Regular.otf.x64.obj: resources\fonts\noto\NotoSansDeseret-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansDeseret-Regular.otf generated\resources\fonts\noto\NotoSansDeseret-Regular.otf.x64.obj _binary_NotoSansDeseret_Regular_otf 64bit
-generate: generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.obj generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.x64.obj
-generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.obj: resources\fonts\noto\NotoSansDevanagari-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansDevanagari-Regular.otf generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.obj _binary_NotoSansDevanagari_Regular_otf
-generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.x64.obj: resources\fonts\noto\NotoSansDevanagari-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansDevanagari-Regular.otf generated\resources\fonts\noto\NotoSansDevanagari-Regular.otf.x64.obj _binary_NotoSansDevanagari_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.obj generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.obj: resources\fonts\noto\NotoSansDuployan-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansDuployan-Regular.otf generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.obj _binary_NotoSansDuployan_Regular_otf
+generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.x64.obj: resources\fonts\noto\NotoSansDuployan-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansDuployan-Regular.otf generated\resources\fonts\noto\NotoSansDuployan-Regular.otf.x64.obj _binary_NotoSansDuployan_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf.obj generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf.obj: resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf generated\resources\fonts\noto\NotoSansEgyptianHieroglyphs-Regular.otf.obj _binary_NotoSansEgyptianHieroglyphs_Regular_otf
@@ -307,6 +287,11 @@ generated\resources\fonts\noto\NotoSansGothic-Regular.otf.obj: resources\fonts\n
 	bin2coff.exe resources\fonts\noto\NotoSansGothic-Regular.otf generated\resources\fonts\noto\NotoSansGothic-Regular.otf.obj _binary_NotoSansGothic_Regular_otf
 generated\resources\fonts\noto\NotoSansGothic-Regular.otf.x64.obj: resources\fonts\noto\NotoSansGothic-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansGothic-Regular.otf generated\resources\fonts\noto\NotoSansGothic-Regular.otf.x64.obj _binary_NotoSansGothic_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.obj generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.obj: resources\fonts\noto\NotoSansGrantha-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansGrantha-Regular.otf generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.obj _binary_NotoSansGrantha_Regular_otf
+generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.x64.obj: resources\fonts\noto\NotoSansGrantha-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansGrantha-Regular.otf generated\resources\fonts\noto\NotoSansGrantha-Regular.otf.x64.obj _binary_NotoSansGrantha_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansHanunoo-Regular.otf.obj generated\resources\fonts\noto\NotoSansHanunoo-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansHanunoo-Regular.otf.obj: resources\fonts\noto\NotoSansHanunoo-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansHanunoo-Regular.otf generated\resources\fonts\noto\NotoSansHanunoo-Regular.otf.obj _binary_NotoSansHanunoo_Regular_otf
@@ -332,6 +317,11 @@ generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf.obj: re
 	bin2coff.exe resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf.obj _binary_NotoSansInscriptionalParthian_Regular_otf
 generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf generated\resources\fonts\noto\NotoSansInscriptionalParthian-Regular.otf.x64.obj _binary_NotoSansInscriptionalParthian_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.obj generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.obj: resources\fonts\noto\NotoSansJavanese-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansJavanese-Regular.otf generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.obj _binary_NotoSansJavanese_Regular_otf
+generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.x64.obj: resources\fonts\noto\NotoSansJavanese-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansJavanese-Regular.otf generated\resources\fonts\noto\NotoSansJavanese-Regular.otf.x64.obj _binary_NotoSansJavanese_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansKaithi-Regular.otf.obj generated\resources\fonts\noto\NotoSansKaithi-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansKaithi-Regular.otf.obj: resources\fonts\noto\NotoSansKaithi-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansKaithi-Regular.otf generated\resources\fonts\noto\NotoSansKaithi-Regular.otf.obj _binary_NotoSansKaithi_Regular_otf
@@ -347,6 +337,16 @@ generated\resources\fonts\noto\NotoSansKharoshthi-Regular.otf.obj: resources\fon
 	bin2coff.exe resources\fonts\noto\NotoSansKharoshthi-Regular.otf generated\resources\fonts\noto\NotoSansKharoshthi-Regular.otf.obj _binary_NotoSansKharoshthi_Regular_otf
 generated\resources\fonts\noto\NotoSansKharoshthi-Regular.otf.x64.obj: resources\fonts\noto\NotoSansKharoshthi-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansKharoshthi-Regular.otf generated\resources\fonts\noto\NotoSansKharoshthi-Regular.otf.x64.obj _binary_NotoSansKharoshthi_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.obj generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.obj: resources\fonts\noto\NotoSansKhojki-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansKhojki-Regular.otf generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.obj _binary_NotoSansKhojki_Regular_otf
+generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.x64.obj: resources\fonts\noto\NotoSansKhojki-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansKhojki-Regular.otf generated\resources\fonts\noto\NotoSansKhojki-Regular.otf.x64.obj _binary_NotoSansKhojki_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.obj generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.obj: resources\fonts\noto\NotoSansKhudawadi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansKhudawadi-Regular.otf generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.obj _binary_NotoSansKhudawadi_Regular_otf
+generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.x64.obj: resources\fonts\noto\NotoSansKhudawadi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansKhudawadi-Regular.otf generated\resources\fonts\noto\NotoSansKhudawadi-Regular.otf.x64.obj _binary_NotoSansKhudawadi_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansLepcha-Regular.otf.obj generated\resources\fonts\noto\NotoSansLepcha-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansLepcha-Regular.otf.obj: resources\fonts\noto\NotoSansLepcha-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansLepcha-Regular.otf generated\resources\fonts\noto\NotoSansLepcha-Regular.otf.obj _binary_NotoSansLepcha_Regular_otf
@@ -382,11 +382,11 @@ generated\resources\fonts\noto\NotoSansLydian-Regular.otf.obj: resources\fonts\n
 	bin2coff.exe resources\fonts\noto\NotoSansLydian-Regular.otf generated\resources\fonts\noto\NotoSansLydian-Regular.otf.obj _binary_NotoSansLydian_Regular_otf
 generated\resources\fonts\noto\NotoSansLydian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansLydian-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansLydian-Regular.otf generated\resources\fonts\noto\NotoSansLydian-Regular.otf.x64.obj _binary_NotoSansLydian_Regular_otf 64bit
-generate: generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.obj generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.x64.obj
-generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.obj: resources\fonts\noto\NotoSansMalayalam-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansMalayalam-Regular.otf generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.obj _binary_NotoSansMalayalam_Regular_otf
-generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMalayalam-Regular.otf generated\resources\fonts\noto bin2coff.exe
-	bin2coff.exe resources\fonts\noto\NotoSansMalayalam-Regular.otf generated\resources\fonts\noto\NotoSansMalayalam-Regular.otf.x64.obj _binary_NotoSansMalayalam_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.obj generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.obj: resources\fonts\noto\NotoSansMahajani-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMahajani-Regular.otf generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.obj _binary_NotoSansMahajani_Regular_otf
+generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMahajani-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMahajani-Regular.otf generated\resources\fonts\noto\NotoSansMahajani-Regular.otf.x64.obj _binary_NotoSansMahajani_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansMandaic-Regular.otf.obj generated\resources\fonts\noto\NotoSansMandaic-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansMandaic-Regular.otf.obj: resources\fonts\noto\NotoSansMandaic-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansMandaic-Regular.otf generated\resources\fonts\noto\NotoSansMandaic-Regular.otf.obj _binary_NotoSansMandaic_Regular_otf
@@ -402,6 +402,11 @@ generated\resources\fonts\noto\NotoSansMarchen-Regular.otf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoSansMarchen-Regular.otf generated\resources\fonts\noto\NotoSansMarchen-Regular.otf.obj _binary_NotoSansMarchen_Regular_otf
 generated\resources\fonts\noto\NotoSansMarchen-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMarchen-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansMarchen-Regular.otf generated\resources\fonts\noto\NotoSansMarchen-Regular.otf.x64.obj _binary_NotoSansMarchen_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansMath-Regular.otf.obj generated\resources\fonts\noto\NotoSansMath-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansMath-Regular.otf.obj: resources\fonts\noto\NotoSansMath-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMath-Regular.otf generated\resources\fonts\noto\NotoSansMath-Regular.otf.obj _binary_NotoSansMath_Regular_otf
+generated\resources\fonts\noto\NotoSansMath-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMath-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMath-Regular.otf generated\resources\fonts\noto\NotoSansMath-Regular.otf.x64.obj _binary_NotoSansMath_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf.obj generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf.obj: resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf generated\resources\fonts\noto\NotoSansMeeteiMayek-Regular.otf.obj _binary_NotoSansMeeteiMayek_Regular_otf
@@ -422,6 +427,16 @@ generated\resources\fonts\noto\NotoSansMiao-Regular.otf.obj: resources\fonts\not
 	bin2coff.exe resources\fonts\noto\NotoSansMiao-Regular.otf generated\resources\fonts\noto\NotoSansMiao-Regular.otf.obj _binary_NotoSansMiao_Regular_otf
 generated\resources\fonts\noto\NotoSansMiao-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMiao-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansMiao-Regular.otf generated\resources\fonts\noto\NotoSansMiao-Regular.otf.x64.obj _binary_NotoSansMiao_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansModi-Regular.otf.obj generated\resources\fonts\noto\NotoSansModi-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansModi-Regular.otf.obj: resources\fonts\noto\NotoSansModi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansModi-Regular.otf generated\resources\fonts\noto\NotoSansModi-Regular.otf.obj _binary_NotoSansModi_Regular_otf
+generated\resources\fonts\noto\NotoSansModi-Regular.otf.x64.obj: resources\fonts\noto\NotoSansModi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansModi-Regular.otf generated\resources\fonts\noto\NotoSansModi-Regular.otf.x64.obj _binary_NotoSansModi_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.obj generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.obj: resources\fonts\noto\NotoSansMongolian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMongolian-Regular.otf generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.obj _binary_NotoSansMongolian_Regular_otf
+generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansMongolian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansMongolian-Regular.otf generated\resources\fonts\noto\NotoSansMongolian-Regular.otf.x64.obj _binary_NotoSansMongolian_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansMro-Regular.otf.obj generated\resources\fonts\noto\NotoSansMro-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansMro-Regular.otf.obj: resources\fonts\noto\NotoSansMro-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansMro-Regular.otf generated\resources\fonts\noto\NotoSansMro-Regular.otf.obj _binary_NotoSansMro_Regular_otf
@@ -462,6 +477,11 @@ generated\resources\fonts\noto\NotoSansOlChiki-Regular.otf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoSansOlChiki-Regular.otf generated\resources\fonts\noto\NotoSansOlChiki-Regular.otf.obj _binary_NotoSansOlChiki_Regular_otf
 generated\resources\fonts\noto\NotoSansOlChiki-Regular.otf.x64.obj: resources\fonts\noto\NotoSansOlChiki-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansOlChiki-Regular.otf generated\resources\fonts\noto\NotoSansOlChiki-Regular.otf.x64.obj _binary_NotoSansOlChiki_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.obj generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.obj: resources\fonts\noto\NotoSansOldHungarian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansOldHungarian-Regular.otf generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.obj _binary_NotoSansOldHungarian_Regular_otf
+generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansOldHungarian-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansOldHungarian-Regular.otf generated\resources\fonts\noto\NotoSansOldHungarian-Regular.otf.x64.obj _binary_NotoSansOldHungarian_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansOldItalic-Regular.otf.obj generated\resources\fonts\noto\NotoSansOldItalic-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansOldItalic-Regular.otf.obj: resources\fonts\noto\NotoSansOldItalic-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansOldItalic-Regular.otf generated\resources\fonts\noto\NotoSansOldItalic-Regular.otf.obj _binary_NotoSansOldItalic_Regular_otf
@@ -527,6 +547,11 @@ generated\resources\fonts\noto\NotoSansPhoenician-Regular.otf.obj: resources\fon
 	bin2coff.exe resources\fonts\noto\NotoSansPhoenician-Regular.otf generated\resources\fonts\noto\NotoSansPhoenician-Regular.otf.obj _binary_NotoSansPhoenician_Regular_otf
 generated\resources\fonts\noto\NotoSansPhoenician-Regular.otf.x64.obj: resources\fonts\noto\NotoSansPhoenician-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansPhoenician-Regular.otf generated\resources\fonts\noto\NotoSansPhoenician-Regular.otf.x64.obj _binary_NotoSansPhoenician_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.obj generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.obj: resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.obj _binary_NotoSansPsalterPahlavi_Regular_otf
+generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.x64.obj: resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf generated\resources\fonts\noto\NotoSansPsalterPahlavi-Regular.otf.x64.obj _binary_NotoSansPsalterPahlavi_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansRejang-Regular.otf.obj generated\resources\fonts\noto\NotoSansRejang-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansRejang-Regular.otf.obj: resources\fonts\noto\NotoSansRejang-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansRejang-Regular.otf generated\resources\fonts\noto\NotoSansRejang-Regular.otf.obj _binary_NotoSansRejang_Regular_otf
@@ -557,6 +582,11 @@ generated\resources\fonts\noto\NotoSansShavian-Regular.otf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoSansShavian-Regular.otf generated\resources\fonts\noto\NotoSansShavian-Regular.otf.obj _binary_NotoSansShavian_Regular_otf
 generated\resources\fonts\noto\NotoSansShavian-Regular.otf.x64.obj: resources\fonts\noto\NotoSansShavian-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansShavian-Regular.otf generated\resources\fonts\noto\NotoSansShavian-Regular.otf.x64.obj _binary_NotoSansShavian_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.obj generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.obj: resources\fonts\noto\NotoSansSiddham-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansSiddham-Regular.otf generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.obj _binary_NotoSansSiddham_Regular_otf
+generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.x64.obj: resources\fonts\noto\NotoSansSiddham-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansSiddham-Regular.otf generated\resources\fonts\noto\NotoSansSiddham-Regular.otf.x64.obj _binary_NotoSansSiddham_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansSoraSompeng-Regular.otf.obj generated\resources\fonts\noto\NotoSansSoraSompeng-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansSoraSompeng-Regular.otf.obj: resources\fonts\noto\NotoSansSoraSompeng-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansSoraSompeng-Regular.otf generated\resources\fonts\noto\NotoSansSoraSompeng-Regular.otf.obj _binary_NotoSansSoraSompeng_Regular_otf
@@ -582,6 +612,11 @@ generated\resources\fonts\noto\NotoSansSymbols2-Regular.otf.obj: resources\fonts
 	bin2coff.exe resources\fonts\noto\NotoSansSymbols2-Regular.otf generated\resources\fonts\noto\NotoSansSymbols2-Regular.otf.obj _binary_NotoSansSymbols2_Regular_otf
 generated\resources\fonts\noto\NotoSansSymbols2-Regular.otf.x64.obj: resources\fonts\noto\NotoSansSymbols2-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansSymbols2-Regular.otf generated\resources\fonts\noto\NotoSansSymbols2-Regular.otf.x64.obj _binary_NotoSansSymbols2_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.obj generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.obj: resources\fonts\noto\NotoSansSyriac-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansSyriac-Regular.otf generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.obj _binary_NotoSansSyriac_Regular_otf
+generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.x64.obj: resources\fonts\noto\NotoSansSyriac-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansSyriac-Regular.otf generated\resources\fonts\noto\NotoSansSyriac-Regular.otf.x64.obj _binary_NotoSansSyriac_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansTagalog-Regular.otf.obj generated\resources\fonts\noto\NotoSansTagalog-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansTagalog-Regular.otf.obj: resources\fonts\noto\NotoSansTagalog-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTagalog-Regular.otf generated\resources\fonts\noto\NotoSansTagalog-Regular.otf.obj _binary_NotoSansTagalog_Regular_otf
@@ -602,11 +637,26 @@ generated\resources\fonts\noto\NotoSansTaiViet-Regular.otf.obj: resources\fonts\
 	bin2coff.exe resources\fonts\noto\NotoSansTaiViet-Regular.otf generated\resources\fonts\noto\NotoSansTaiViet-Regular.otf.obj _binary_NotoSansTaiViet_Regular_otf
 generated\resources\fonts\noto\NotoSansTaiViet-Regular.otf.x64.obj: resources\fonts\noto\NotoSansTaiViet-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTaiViet-Regular.otf generated\resources\fonts\noto\NotoSansTaiViet-Regular.otf.x64.obj _binary_NotoSansTaiViet_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansTakri-Regular.otf.obj generated\resources\fonts\noto\NotoSansTakri-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansTakri-Regular.otf.obj: resources\fonts\noto\NotoSansTakri-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansTakri-Regular.otf generated\resources\fonts\noto\NotoSansTakri-Regular.otf.obj _binary_NotoSansTakri_Regular_otf
+generated\resources\fonts\noto\NotoSansTakri-Regular.otf.x64.obj: resources\fonts\noto\NotoSansTakri-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansTakri-Regular.otf generated\resources\fonts\noto\NotoSansTakri-Regular.otf.x64.obj _binary_NotoSansTakri_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansThaana-Regular.otf.obj generated\resources\fonts\noto\NotoSansThaana-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansThaana-Regular.otf.obj: resources\fonts\noto\NotoSansThaana-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansThaana-Regular.otf generated\resources\fonts\noto\NotoSansThaana-Regular.otf.obj _binary_NotoSansThaana_Regular_otf
+generated\resources\fonts\noto\NotoSansThaana-Regular.otf.x64.obj: resources\fonts\noto\NotoSansThaana-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansThaana-Regular.otf generated\resources\fonts\noto\NotoSansThaana-Regular.otf.x64.obj _binary_NotoSansThaana_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.obj generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.obj: resources\fonts\noto\NotoSansTifinagh-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTifinagh-Regular.otf generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.obj _binary_NotoSansTifinagh_Regular_otf
 generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.x64.obj: resources\fonts\noto\NotoSansTifinagh-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansTifinagh-Regular.otf generated\resources\fonts\noto\NotoSansTifinagh-Regular.otf.x64.obj _binary_NotoSansTifinagh_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.obj generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.obj: resources\fonts\noto\NotoSansTirhuta-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansTirhuta-Regular.otf generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.obj _binary_NotoSansTirhuta_Regular_otf
+generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.x64.obj: resources\fonts\noto\NotoSansTirhuta-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansTirhuta-Regular.otf generated\resources\fonts\noto\NotoSansTirhuta-Regular.otf.x64.obj _binary_NotoSansTirhuta_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansUgaritic-Regular.otf.obj generated\resources\fonts\noto\NotoSansUgaritic-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansUgaritic-Regular.otf.obj: resources\fonts\noto\NotoSansUgaritic-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansUgaritic-Regular.otf generated\resources\fonts\noto\NotoSansUgaritic-Regular.otf.obj _binary_NotoSansUgaritic_Regular_otf
@@ -617,6 +667,11 @@ generated\resources\fonts\noto\NotoSansVai-Regular.otf.obj: resources\fonts\noto
 	bin2coff.exe resources\fonts\noto\NotoSansVai-Regular.otf generated\resources\fonts\noto\NotoSansVai-Regular.otf.obj _binary_NotoSansVai_Regular_otf
 generated\resources\fonts\noto\NotoSansVai-Regular.otf.x64.obj: resources\fonts\noto\NotoSansVai-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansVai-Regular.otf generated\resources\fonts\noto\NotoSansVai-Regular.otf.x64.obj _binary_NotoSansVai_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.obj generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.obj: resources\fonts\noto\NotoSansWarangCiti-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansWarangCiti-Regular.otf generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.obj _binary_NotoSansWarangCiti_Regular_otf
+generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.x64.obj: resources\fonts\noto\NotoSansWarangCiti-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSansWarangCiti-Regular.otf generated\resources\fonts\noto\NotoSansWarangCiti-Regular.otf.x64.obj _binary_NotoSansWarangCiti_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSansYi-Regular.otf.obj generated\resources\fonts\noto\NotoSansYi-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSansYi-Regular.otf.obj: resources\fonts\noto\NotoSansYi-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSansYi-Regular.otf generated\resources\fonts\noto\NotoSansYi-Regular.otf.obj _binary_NotoSansYi_Regular_otf
@@ -627,6 +682,11 @@ generated\resources\fonts\noto\NotoSerif-Regular.otf.obj: resources\fonts\noto\N
 	bin2coff.exe resources\fonts\noto\NotoSerif-Regular.otf generated\resources\fonts\noto\NotoSerif-Regular.otf.obj _binary_NotoSerif_Regular_otf
 generated\resources\fonts\noto\NotoSerif-Regular.otf.x64.obj: resources\fonts\noto\NotoSerif-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerif-Regular.otf generated\resources\fonts\noto\NotoSerif-Regular.otf.x64.obj _binary_NotoSerif_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.obj generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.obj: resources\fonts\noto\NotoSerifAhom-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifAhom-Regular.otf generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.obj _binary_NotoSerifAhom_Regular_otf
+generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.x64.obj: resources\fonts\noto\NotoSerifAhom-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifAhom-Regular.otf generated\resources\fonts\noto\NotoSerifAhom-Regular.otf.x64.obj _binary_NotoSerifAhom_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSerifArmenian-Regular.otf.obj generated\resources\fonts\noto\NotoSerifArmenian-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSerifArmenian-Regular.otf.obj: resources\fonts\noto\NotoSerifArmenian-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifArmenian-Regular.otf generated\resources\fonts\noto\NotoSerifArmenian-Regular.otf.obj _binary_NotoSerifArmenian_Regular_otf
@@ -692,28 +752,38 @@ generated\resources\fonts\noto\NotoSerifTamil-Regular.otf.obj: resources\fonts\n
 	bin2coff.exe resources\fonts\noto\NotoSerifTamil-Regular.otf generated\resources\fonts\noto\NotoSerifTamil-Regular.otf.obj _binary_NotoSerifTamil_Regular_otf
 generated\resources\fonts\noto\NotoSerifTamil-Regular.otf.x64.obj: resources\fonts\noto\NotoSerifTamil-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifTamil-Regular.otf generated\resources\fonts\noto\NotoSerifTamil-Regular.otf.x64.obj _binary_NotoSerifTamil_Regular_otf 64bit
+generate: generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.obj generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.obj: resources\fonts\noto\NotoSerifTangut-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifTangut-Regular.otf generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.obj _binary_NotoSerifTangut_Regular_otf
+generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.x64.obj: resources\fonts\noto\NotoSerifTangut-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifTangut-Regular.otf generated\resources\fonts\noto\NotoSerifTangut-Regular.otf.x64.obj _binary_NotoSerifTangut_Regular_otf 64bit
 generate: generated\resources\fonts\noto\NotoSerifThai-Regular.otf.obj generated\resources\fonts\noto\NotoSerifThai-Regular.otf.x64.obj
 generated\resources\fonts\noto\NotoSerifThai-Regular.otf.obj: resources\fonts\noto\NotoSerifThai-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifThai-Regular.otf generated\resources\fonts\noto\NotoSerifThai-Regular.otf.obj _binary_NotoSerifThai_Regular_otf
 generated\resources\fonts\noto\NotoSerifThai-Regular.otf.x64.obj: resources\fonts\noto\NotoSerifThai-Regular.otf generated\resources\fonts\noto bin2coff.exe
 	bin2coff.exe resources\fonts\noto\NotoSerifThai-Regular.otf generated\resources\fonts\noto\NotoSerifThai-Regular.otf.x64.obj _binary_NotoSerifThai_Regular_otf 64bit
-generate: generated\resources\fonts\sil\CharisSIL-B.cff.obj generated\resources\fonts\sil\CharisSIL-B.cff.x64.obj
-generated\resources\fonts\sil\CharisSIL-B.cff.obj: resources\fonts\sil\CharisSIL-B.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-B.cff generated\resources\fonts\sil\CharisSIL-B.cff.obj _binary_CharisSIL_B_cff
-generated\resources\fonts\sil\CharisSIL-B.cff.x64.obj: resources\fonts\sil\CharisSIL-B.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-B.cff generated\resources\fonts\sil\CharisSIL-B.cff.x64.obj _binary_CharisSIL_B_cff 64bit
-generate: generated\resources\fonts\sil\CharisSIL-BI.cff.obj generated\resources\fonts\sil\CharisSIL-BI.cff.x64.obj
-generated\resources\fonts\sil\CharisSIL-BI.cff.obj: resources\fonts\sil\CharisSIL-BI.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-BI.cff generated\resources\fonts\sil\CharisSIL-BI.cff.obj _binary_CharisSIL_BI_cff
-generated\resources\fonts\sil\CharisSIL-BI.cff.x64.obj: resources\fonts\sil\CharisSIL-BI.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-BI.cff generated\resources\fonts\sil\CharisSIL-BI.cff.x64.obj _binary_CharisSIL_BI_cff 64bit
-generate: generated\resources\fonts\sil\CharisSIL-I.cff.obj generated\resources\fonts\sil\CharisSIL-I.cff.x64.obj
-generated\resources\fonts\sil\CharisSIL-I.cff.obj: resources\fonts\sil\CharisSIL-I.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-I.cff generated\resources\fonts\sil\CharisSIL-I.cff.obj _binary_CharisSIL_I_cff
-generated\resources\fonts\sil\CharisSIL-I.cff.x64.obj: resources\fonts\sil\CharisSIL-I.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-I.cff generated\resources\fonts\sil\CharisSIL-I.cff.x64.obj _binary_CharisSIL_I_cff 64bit
-generate: generated\resources\fonts\sil\CharisSIL-R.cff.obj generated\resources\fonts\sil\CharisSIL-R.cff.x64.obj
-generated\resources\fonts\sil\CharisSIL-R.cff.obj: resources\fonts\sil\CharisSIL-R.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-R.cff generated\resources\fonts\sil\CharisSIL-R.cff.obj _binary_CharisSIL_R_cff
-generated\resources\fonts\sil\CharisSIL-R.cff.x64.obj: resources\fonts\sil\CharisSIL-R.cff generated\resources\fonts\sil bin2coff.exe
-	bin2coff.exe resources\fonts\sil\CharisSIL-R.cff generated\resources\fonts\sil\CharisSIL-R.cff.x64.obj _binary_CharisSIL_R_cff 64bit
+generate: generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.obj generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.x64.obj
+generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.obj: resources\fonts\noto\NotoSerifTibetan-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifTibetan-Regular.otf generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.obj _binary_NotoSerifTibetan_Regular_otf
+generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.x64.obj: resources\fonts\noto\NotoSerifTibetan-Regular.otf generated\resources\fonts\noto bin2coff.exe
+	bin2coff.exe resources\fonts\noto\NotoSerifTibetan-Regular.otf generated\resources\fonts\noto\NotoSerifTibetan-Regular.otf.x64.obj _binary_NotoSerifTibetan_Regular_otf 64bit
+generate: generated\resources\fonts\sil\CharisSIL-Bold.cff.obj generated\resources\fonts\sil\CharisSIL-Bold.cff.x64.obj
+generated\resources\fonts\sil\CharisSIL-Bold.cff.obj: resources\fonts\sil\CharisSIL-Bold.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-Bold.cff generated\resources\fonts\sil\CharisSIL-Bold.cff.obj _binary_CharisSIL_Bold_cff
+generated\resources\fonts\sil\CharisSIL-Bold.cff.x64.obj: resources\fonts\sil\CharisSIL-Bold.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-Bold.cff generated\resources\fonts\sil\CharisSIL-Bold.cff.x64.obj _binary_CharisSIL_Bold_cff 64bit
+generate: generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.obj generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.x64.obj
+generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.obj: resources\fonts\sil\CharisSIL-BoldItalic.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-BoldItalic.cff generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.obj _binary_CharisSIL_BoldItalic_cff
+generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.x64.obj: resources\fonts\sil\CharisSIL-BoldItalic.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-BoldItalic.cff generated\resources\fonts\sil\CharisSIL-BoldItalic.cff.x64.obj _binary_CharisSIL_BoldItalic_cff 64bit
+generate: generated\resources\fonts\sil\CharisSIL-Italic.cff.obj generated\resources\fonts\sil\CharisSIL-Italic.cff.x64.obj
+generated\resources\fonts\sil\CharisSIL-Italic.cff.obj: resources\fonts\sil\CharisSIL-Italic.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-Italic.cff generated\resources\fonts\sil\CharisSIL-Italic.cff.obj _binary_CharisSIL_Italic_cff
+generated\resources\fonts\sil\CharisSIL-Italic.cff.x64.obj: resources\fonts\sil\CharisSIL-Italic.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL-Italic.cff generated\resources\fonts\sil\CharisSIL-Italic.cff.x64.obj _binary_CharisSIL_Italic_cff 64bit
+generate: generated\resources\fonts\sil\CharisSIL.cff.obj generated\resources\fonts\sil\CharisSIL.cff.x64.obj
+generated\resources\fonts\sil\CharisSIL.cff.obj: resources\fonts\sil\CharisSIL.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL.cff generated\resources\fonts\sil\CharisSIL.cff.obj _binary_CharisSIL_cff
+generated\resources\fonts\sil\CharisSIL.cff.x64.obj: resources\fonts\sil\CharisSIL.cff generated\resources\fonts\sil bin2coff.exe
+	bin2coff.exe resources\fonts\sil\CharisSIL.cff generated\resources\fonts\sil\CharisSIL.cff.x64.obj _binary_CharisSIL_cff 64bit

@@ -2,13 +2,37 @@ package com.artifex.mupdf.fitz;
 
 import java.util.Date;
 
-public class PDFAnnotation extends Annotation
+public class PDFAnnotation
 {
 	static {
 		Context.init();
 	}
 
-	protected PDFAnnotation(long p) { super(p); }
+	private long pointer;
+
+	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
+	}
+
+	protected PDFAnnotation(long p) {
+		pointer = p;
+	}
+
+	public boolean equals(PDFAnnotation other) {
+		return (this.pointer == other.pointer);
+	}
+
+	public boolean equals(long other) {
+		return (this.pointer == other);
+	}
+
+	public native void run(Device dev, Matrix ctm, Cookie cookie);
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native Rect getBounds();
+	public native DisplayList toDisplayList();
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/annot.h */
 	public static final int TYPE_TEXT = 0;
@@ -23,19 +47,20 @@ public class PDFAnnotation extends Annotation
 	public static final int TYPE_UNDERLINE = 9;
 	public static final int TYPE_SQUIGGLY = 10;
 	public static final int TYPE_STRIKE_OUT = 11;
-	public static final int TYPE_STAMP = 12;
-	public static final int TYPE_CARET = 13;
-	public static final int TYPE_INK = 14;
-	public static final int TYPE_POPUP = 15;
-	public static final int TYPE_FILE_ATTACHMENT = 16;
-	public static final int TYPE_SOUND = 17;
-	public static final int TYPE_MOVIE = 18;
-	public static final int TYPE_WIDGET = 19;
-	public static final int TYPE_SCREEN = 20;
-	public static final int TYPE_PRINTER_MARK = 21;
-	public static final int TYPE_TRAP_NET = 22;
-	public static final int TYPE_WATERMARK = 23;
-	public static final int TYPE_3D = 24;
+	public static final int TYPE_REDACT = 12;
+	public static final int TYPE_STAMP = 13;
+	public static final int TYPE_CARET = 14;
+	public static final int TYPE_INK = 15;
+	public static final int TYPE_POPUP = 16;
+	public static final int TYPE_FILE_ATTACHMENT = 17;
+	public static final int TYPE_SOUND = 18;
+	public static final int TYPE_MOVIE = 19;
+	public static final int TYPE_WIDGET = 20;
+	public static final int TYPE_SCREEN = 21;
+	public static final int TYPE_PRINTER_MARK = 22;
+	public static final int TYPE_TRAP_NET = 23;
+	public static final int TYPE_WATERMARK = 24;
+	public static final int TYPE_3D = 25;
 	public static final int TYPE_UNKNOWN = -1;
 
 	public static final int LINE_ENDING_NONE = 0;
@@ -90,19 +115,88 @@ public class PDFAnnotation extends Annotation
 		setLineEndingStyles(styles[0], styles[1]);
 	}
 
-	public native float[] getVertices();
-	public native void setVertices(float[] vertices);
-	public native float[][] getQuadPoints();
-	public native void setQuadPoints(float[][] quadPoints);
-	public native float[][] getInkList();
-	public native void setInkList(float[][] inkList);
+	public native int getQuadPointCount();
+	public native Quad getQuadPoint(int i);
+	public native void clearQuadPoints();
+	public native void addQuadPoint(Quad q);
+	public Quad[] getQuadPoints() {
+		int n = getQuadPointCount();
+		Quad[] list = new Quad[n];
+		for (int i = 0; i < n; ++i)
+			list[i] = getQuadPoint(i);
+		return list;
+	}
+	public void setQuadPoints(Quad[] quadPoints) {
+		clearQuadPoints();
+		for (Quad q : quadPoints)
+			addQuadPoint(q);
+	}
+
+	public native int getVertexCount();
+	public native Point getVertex(int i);
+	public native void clearVertices();
+	public native void addVertex(float x, float y);
+	public void addVertex(Point p) {
+		addVertex(p.x, p.y);
+	}
+	public Point[] getVertices() {
+		int n = getVertexCount();
+		Point[] list = new Point[n];
+		for (int i = 0; i < n; ++i)
+			list[i] = getVertex(i);
+		return list;
+	}
+	public void setVertices(Point[] vertices) {
+		clearVertices();
+		for (Point p : vertices)
+			addVertex(p);
+	}
+
+	public native int getInkListCount();
+	public native int getInkListStrokeCount(int i);
+	public native Point getInkListStrokeVertex(int i, int k);
+	public native void clearInkList();
+	public native void addInkListStroke();
+	public native void addInkListStrokeVertex(float x, float y);
+	public void addInkListStrokeVertex(Point p) {
+		addInkListStrokeVertex(p.x, p.y);
+	}
+	public void addInkList(Point[] stroke) {
+		addInkListStroke();
+		for (Point p : stroke)
+			addInkListStrokeVertex(p);
+	}
+	public void setInkList(Point[][] inkList) {
+		clearInkList();
+		for (Point[] stroke : inkList) {
+			addInkListStroke();
+			for (Point p : stroke)
+				addInkListStrokeVertex(p);
+		}
+	}
+	public Point[][] getInkList() {
+		int i, k, n, m = getInkListCount();
+		Point[][] list = new Point[m][];
+		for (i = 0; i < m; ++i) {
+			n = getInkListStrokeCount(i);
+			list[i] = new Point[n];
+			for (k = 0; k < n; ++k)
+				list[i][k] = getInkListStrokeVertex(i, k);
+		}
+		return list;
+	}
 
 	public native String getIcon();
 	public native void setIcon(String icon);
 	public native boolean isOpen();
 	public native void setIsOpen(boolean open);
 
-	public native void updateAppearance();
+	public native void eventEnter();
+	public native void eventExit();
+	public native void eventDown();
+	public native void eventUp();
+	public native void eventFocus();
+	public native void eventBlur();
 
 	public native boolean update();
 }

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Convert unicode mapping table to C arrays mapping glyph names and unicode values.
 #
 # ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MISC/KOI8-U.TXT
@@ -45,20 +47,20 @@ def load_table(fn):
 	return table
 
 def dump_table(name, table):
-	print "unsigned short fz_unicode_from_%s[256] = {" % name
+	print("unsigned short fz_unicode_from_%s[256] = {" % name)
 	for u in table:
-		print '\t%d,' % u
-	print "};"
-	print
+		print('\t%d,' % u)
+	print("};")
+	print()
 
-	print "const char *fz_glyph_name_from_%s[%d] = {" % (name, len(table))
+	print("const char *fz_glyph_name_from_%s[%d] = {" % (name, len(table)))
 	for u in table:
 		if u in glyphs:
-			print '\t"%s",' % glyphs[u]
+			print('\t"%s",' % glyphs[u])
 		else:
-			print '\t_notdef,'
-	print "};"
-	print
+			print('\t_notdef,')
+	print("};")
+	print()
 
 	rev = []
 	i = 0
@@ -69,11 +71,11 @@ def dump_table(name, table):
 		i = i + 1
 	rev.sort()
 
-	print "static const struct { unsigned short u, c; } %s_from_unicode[] = {" % name
+	print("static const struct { unsigned short u, c; } %s_from_unicode[] = {" % name)
 	for s in rev:
-		print "\t" + s
-	print "};"
-	print
+		print("\t" + s)
+	print("};")
+	print()
 
 dump_table("iso8859_1", load_table("scripts/8859-1.TXT"))
 dump_table("iso8859_7", load_table("scripts/8859-7.TXT"))

@@ -17,7 +17,6 @@ public class Context
 	}
 
 	private static native int initNative();
-	public static native int gprfSupportedNative();
 
 	public static void init() {
 		if (!inited) {
@@ -39,4 +38,7 @@ public class Context
 	// FIXME: We should support the store size being changed dynamically.
 	// This requires changes within the MuPDF core.
 	//public native static void setStoreSize(long newSize);
+
+	//  empty the store
+	public native static void emptyStore();
 }

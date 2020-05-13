@@ -22,24 +22,11 @@
 LOCAL_PATH := $(call my-dir)
 MUPDF_PATH := $(realpath $(LOCAL_PATH)/../..)
 
-# --- Include pre-built ghostscript library if building with gproof support ---
-
-ifdef FZ_ENABLE_GPRF
-include $(CLEAR_VARS)
-LOCAL_MODULE := gsso
-LOCAL_SRC_FILES := libgs.so
-include $(PREBUILT_SHARED_LIBRARY)
-endif
-
 # --- Build a local static library for core mupdf ---
 
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := mupdf_core
-
-ifdef FZ_ENABLE_GPRF
-LOCAL_CFLAGS += -DFZ_ENABLE_GPRF
-endif
 
 LOCAL_C_INCLUDES := \
 	$(MUPDF_PATH)/include \
@@ -60,6 +47,7 @@ LOCAL_CFLAGS := \
 	-DTOFU_NOTO -DTOFU_CJK \
 	-DAA_BITS=8 \
 	-DOPJ_STATIC -DOPJ_HAVE_INTTYPES_H -DOPJ_HAVE_STDINT_H \
+	-DHAVE_LCMS2MT \
 
 LOCAL_CFLAGS += \
 	$(MUPDF_EXTRA_CFLAGS)
@@ -70,8 +58,8 @@ LOCAL_SRC_FILES += \
 	$(wildcard $(MUPDF_PATH)/source/xps/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/svg/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/cbz/*.c) \
-	$(wildcard $(MUPDF_PATH)/source/gprf/*.c) \
 	$(wildcard $(MUPDF_PATH)/source/html/*.c) \
+	$(wildcard $(MUPDF_PATH)/source/helpers/pkcs7/*.c) \
 	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/urw/*.c) \
 	$(wildcard $(MUPDF_PATH)/generated/resources/fonts/sil/*.c) \
 
@@ -105,6 +93,7 @@ LOCAL_CFLAGS := \
 	'-DFT_CONFIG_MODULES_H="slimftmodules.h"' \
 	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"' \
 	-DHAVE_STDINT_H \
+	-DHAVE_FREETYPE \
 	-DOPJ_STATIC -DOPJ_HAVE_INTTYPES_H -DOPJ_HAVE_STDINT_H \
 
 LOCAL_CFLAGS += \
@@ -147,6 +136,7 @@ LOCAL_SRC_FILES += \
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-aat-layout.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-aat-map.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-blob.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-buffer-serialize.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-buffer.cc \
@@ -155,12 +145,20 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-fallback-shape.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-font.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ft.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-map.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-number.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-cff1-table.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-cff2-table.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-color.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-face.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-font.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-layout.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-map.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-math.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-meta.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-metrics.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-name.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-arabic.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-default.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-hangul.cc \
@@ -170,12 +168,11 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-khmer.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-myanmar.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-thai.cc \
-	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-tibetan.cc \
-	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-use-table.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-use.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-use-table.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-fallback.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape-normalize.cc \
-	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-shape.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-tag.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ot-var.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-set.cc \
@@ -183,9 +180,14 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-shape.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-shaper.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-static.cc \
-	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ucdn.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset-cff1.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset-cff2.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset-cff-common.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset-input.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-subset-plan.cc \
+	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-ucd.cc \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-unicode.cc \
-	$(MUPDF_PATH)/thirdparty/harfbuzz/src/hb-warning.cc \
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2.c \
@@ -195,6 +197,7 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_generic.c \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_halftone.c \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_huffman.c \
+	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_hufftab.c \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_image.c \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_mmr.c \
 	$(MUPDF_PATH)/thirdparty/jbig2dec/jbig2_page.c \
@@ -322,9 +325,9 @@ LOCAL_SRC_FILES := \
 LOCAL_STATIC_LIBRARIES := mupdf_core mupdf_thirdparty
 
 LOCAL_LDLIBS := -ljnigraphics -llog -lm
-LOCAL_LDLIBS += $(MUDPF_EXTRA_LDLIBS)
+LOCAL_LDLIBS += $(MUPDF_EXTRA_LDLIBS)
 
 LOCAL_LDFLAGS := -Wl,--gc-sections
-LOCAL_LDFLAGS += $(MUDPF_EXTRA_LDFLAGS)
+LOCAL_LDFLAGS += $(MUPDF_EXTRA_LDFLAGS)
 
 include $(BUILD_SHARED_LIBRARY)

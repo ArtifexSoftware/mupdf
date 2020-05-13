@@ -11,6 +11,11 @@ Make*			makefile
 *.[chm]			tabs
 *.java			tabs
 *.xml			tabs
+*.props			spaces
+*.targets		spaces
+*.vcxproj		spaces
+*.vcxproj.filters	spaces
+bin2coff.xml		spaces
 
 # Documentation files:
 *.txt			spaces

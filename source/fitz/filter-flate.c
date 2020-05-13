@@ -4,23 +4,21 @@
 
 #include <string.h>
 
-typedef struct fz_inflate_state_s fz_inflate_state;
-
-struct fz_inflate_state_s
+typedef struct
 {
 	fz_stream *chain;
 	z_stream z;
 	unsigned char buffer[4096];
-};
+} fz_inflate_state;
 
-static void *zalloc_flate(void *opaque, unsigned int items, unsigned int size)
+void *fz_zlib_alloc(void *ctx, unsigned int items, unsigned int size)
 {
-	return fz_malloc_array_no_throw(opaque, items, size);
+	return Memento_label(fz_malloc_no_throw(ctx, (size_t)items * size), "zlib_alloc");
 }
 
-static void zfree_flate(void *opaque, void *ptr)
+void fz_zlib_free(void *ctx, void *ptr)
 {
-	fz_free(opaque, ptr);
+	fz_free(ctx, ptr);
 }
 
 static int
@@ -106,8 +104,8 @@ fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits)
 	int code;
 
 	state = fz_malloc_struct(ctx, fz_inflate_state);
-	state->z.zalloc = zalloc_flate;
-	state->z.zfree = zfree_flate;
+	state->z.zalloc = fz_zlib_alloc;
+	state->z.zfree = fz_zlib_free;
 	state->z.opaque = ctx;
 	state->z.next_in = NULL;
 	state->z.avail_in = 0;

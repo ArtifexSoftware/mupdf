@@ -1,5 +1,4 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <string.h>
 
@@ -12,7 +11,7 @@ enum
 #define DEFH (600)
 #define DEFEM (12)
 
-struct fz_document_handler_context_s
+struct fz_document_handler_context
 {
 	int refs;
 	int count;
@@ -44,12 +43,6 @@ void fz_drop_document_handler_context(fz_context *ctx)
 	}
 }
 
-/*
-	Register a handler
-	for a document type.
-
-	handler: The handler to register.
-*/
 void fz_register_document_handler(fz_context *ctx, const fz_document_handler *handler)
 {
 	fz_document_handler_context *dc;
@@ -72,13 +65,6 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 	dc->handler[dc->count++] = handler;
 }
 
-/*
-	Given a magic find a document
-	handler that can handle a document of this type.
-
-	magic: Can be a filename extension (including initial period) or
-	a mimetype.
-*/
 const fz_document_handler *
 fz_recognize_document(fz_context *ctx, const char *magic)
 {
@@ -141,16 +127,8 @@ fz_recognize_document(fz_context *ctx, const char *magic)
 extern fz_document_handler pdf_document_handler;
 #endif
 
-/*
-	Open a PDF, XPS or CBZ document.
-
-	Open a document using the specified stream object rather than
-	opening a file on disk.
-
-	magic: a string used to detect document type; either a file name or mime-type.
-*/
 fz_document *
-fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+fz_open_accelerated_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream, fz_stream *accel)
 {
 	const fz_document_handler *handler;
 
@@ -164,28 +142,34 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 #else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file type: %s", magic);
 #endif
-
+	if (handler->open_accel_with_stream)
+		if (accel || handler->open_with_stream == NULL)
+			return handler->open_accel_with_stream(ctx, stream, accel);
+	if (accel)
+	{
+		/* We've had an accelerator passed to a format that doesn't
+		 * handle it. This should never happen, as how did the
+		 * accelerator get created? */
+		fz_drop_stream(ctx, accel);
+	}
 	return handler->open_with_stream(ctx, stream);
 }
 
-/*
-	Open a PDF, XPS or CBZ document.
-
-	Open a document file and read its basic structure so pages and
-	objects can be located. MuPDF will try to repair broken
-	documents (without actually changing the file contents).
-
-	The returned fz_document is used when calling most other
-	document related functions.
-
-	filename: a path to a file as it would be given to open(2).
-*/
 fz_document *
-fz_open_document(fz_context *ctx, const char *filename)
+fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+{
+	return fz_open_accelerated_document_with_stream(ctx, magic, stream, NULL);
+}
+
+fz_document *
+fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *accel)
 {
 	const fz_document_handler *handler;
 	fz_stream *file;
+	fz_stream *afile = NULL;
 	fz_document *doc = NULL;
+
+	fz_var(afile);
 
 	if (filename == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
@@ -198,19 +182,77 @@ fz_open_document(fz_context *ctx, const char *filename)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: %s", filename);
 #endif
 
-	if (handler->open)
+	if (accel) {
+		if (handler->open_accel)
+			return handler->open_accel(ctx, filename, accel);
+		if (handler->open_accel_with_stream == NULL)
+		{
+			/* We're not going to be able to use the accelerator - this
+			 * should never happen, as how can one have been created? */
+			accel = NULL;
+		}
+	}
+	if (!accel && handler->open)
 		return handler->open(ctx, filename);
 
 	file = fz_open_file(ctx, filename);
 
 	fz_try(ctx)
-		doc = handler->open_with_stream(ctx, file);
+	{
+		if (accel || handler->open_with_stream == NULL)
+		{
+			if (accel)
+				afile = fz_open_file(ctx, accel);
+			doc = handler->open_accel_with_stream(ctx, file, afile);
+		}
+		else
+			doc = handler->open_with_stream(ctx, file);
+	}
 	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, afile);
 		fz_drop_stream(ctx, file);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
 	return doc;
+}
+
+fz_document *
+fz_open_document(fz_context *ctx, const char *filename)
+{
+	return fz_open_accelerated_document(ctx, filename, NULL);
+}
+
+void fz_save_accelerator(fz_context *ctx, fz_document *doc, const char *accel)
+{
+	if (doc == NULL)
+		return;
+	if (doc->output_accelerator == NULL)
+		return;
+
+	fz_output_accelerator(ctx, doc, fz_new_output_with_path(ctx, accel, 0));
+}
+
+void fz_output_accelerator(fz_context *ctx, fz_document *doc, fz_output *accel)
+{
+	if (doc == NULL || accel == NULL)
+		return;
+	if (doc->output_accelerator == NULL)
+	{
+		fz_drop_output(ctx, accel);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Document does not support writing an accelerator");
+	}
+
+	doc->output_accelerator(ctx, doc, accel);
+}
+
+int fz_document_supports_accelerator(fz_context *ctx, fz_document *doc)
+{
+	if (doc == NULL)
+		return 0;
+	return (doc->output_accelerator) != NULL;
 }
 
 void *
@@ -248,43 +290,26 @@ fz_ensure_layout(fz_context *ctx, fz_document *doc)
 	}
 }
 
-/*
-	Is the document reflowable.
-
-	Returns 1 to indicate reflowable documents, otherwise 0.
-*/
 int
 fz_is_document_reflowable(fz_context *ctx, fz_document *doc)
 {
 	return doc ? doc->is_reflowable : 0;
 }
 
-/*
-	Create a bookmark for the given page, which can be used to find the
-	same location after the document has been laid out with different
-	parameters.
-*/
-fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, int page)
+fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, fz_location loc)
 {
 	if (doc && doc->make_bookmark)
-		return doc->make_bookmark(ctx, doc, page);
-	return (fz_bookmark)page;
+		return doc->make_bookmark(ctx, doc, loc);
+	return (loc.chapter<<16) + loc.page;
 }
 
-/*
-	Find a bookmark and return its page number.
-*/
-int fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark)
+fz_location fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark)
 {
 	if (doc && doc->lookup_bookmark)
 		return doc->lookup_bookmark(ctx, doc, mark);
-	return (int)mark;
+	return fz_make_location((mark>>16) & 0xffff, mark & 0xffff);
 }
 
-/*
-	Check if a document is encrypted with a
-	non-blank password.
-*/
 int
 fz_needs_password(fz_context *ctx, fz_document *doc)
 {
@@ -293,23 +318,6 @@ fz_needs_password(fz_context *ctx, fz_document *doc)
 	return 0;
 }
 
-/*
-	Test if the given password can
-	decrypt the document.
-
-	password: The password string to be checked. Some document
-	specifications do not specify any particular text encoding, so
-	neither do we.
-
-	Returns 0 for failure to authenticate, non-zero for success.
-
-	For PDF documents, further information can be given by examining
-	the bits in the return code.
-
-		Bit 0 => No password required
-		Bit 1 => User password authenticated
-		Bit 2 => Owner password authenticated
-*/
 int
 fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *password)
 {
@@ -318,9 +326,6 @@ fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *password
 	return 1;
 }
 
-/*
-	Check permission flags on document.
-*/
 int
 fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p)
 {
@@ -329,11 +334,6 @@ fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p)
 	return 1;
 }
 
-/*
-	Load the hierarchical document outline.
-
-	Should be freed by fz_drop_outline.
-*/
 fz_outline *
 fz_load_outline(fz_context *ctx, fz_document *doc)
 {
@@ -343,14 +343,7 @@ fz_load_outline(fz_context *ctx, fz_document *doc)
 	return NULL;
 }
 
-/*
-	Resolve an internal link to a page number.
-
-	xp, yp: Pointer to store coordinate of destination on the page.
-
-	Returns -1 if the URI cannot be resolved.
-*/
-int
+fz_location
 fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp)
 {
 	fz_ensure_layout(ctx, doc);
@@ -358,15 +351,9 @@ fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, f
 	if (yp) *yp = 0;
 	if (doc && doc->resolve_link)
 		return doc->resolve_link(ctx, doc, uri, xp, yp);
-	return -1;
+	return fz_make_location(-1, -1);
 }
 
-/*
-	Layout reflowable document types.
-
-	w, h: Page size in points.
-	em: Default font size in points.
-*/
 void
 fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em)
 {
@@ -377,48 +364,132 @@ fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em
 	}
 }
 
-/*
-	Return the number of pages in document
-
-	May return 0 for documents with no pages.
-*/
 int
-fz_count_pages(fz_context *ctx, fz_document *doc)
+fz_count_chapters(fz_context *ctx, fz_document *doc)
+{
+	fz_ensure_layout(ctx, doc);
+	if (doc && doc->count_chapters)
+		return doc->count_chapters(ctx, doc);
+	return 1;
+}
+
+int
+fz_count_chapter_pages(fz_context *ctx, fz_document *doc, int chapter)
 {
 	fz_ensure_layout(ctx, doc);
 	if (doc && doc->count_pages)
-		return doc->count_pages(ctx, doc);
+		return doc->count_pages(ctx, doc, chapter);
 	return 0;
 }
 
-/*
-	Retrieve document meta data strings.
+int
+fz_count_pages(fz_context *ctx, fz_document *doc)
+{
+	int i, c, n = 0;
+	c = fz_count_chapters(ctx, doc);
+	for (i = 0; i < c; ++i)
+		n += fz_count_chapter_pages(ctx, doc, i);
+	return n;
+}
 
-	doc: The document to query.
+fz_page *
+fz_load_page(fz_context *ctx, fz_document *doc, int number)
+{
+	int i, n = fz_count_chapters(ctx, doc);
+	int start = 0;
+	for (i = 0; i < n; ++i)
+	{
+		int m = fz_count_chapter_pages(ctx, doc, i);
+		if (number < start + m)
+			return fz_load_chapter_page(ctx, doc, i, number - start);
+		start += m;
+	}
+	fz_throw(ctx, FZ_ERROR_GENERIC, "Page not found: %d", number+1);
+}
 
-	key: Which meta data key to retrieve...
+fz_location fz_last_page(fz_context *ctx, fz_document *doc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np = fz_count_chapter_pages(ctx, doc, nc-1);
+	return fz_make_location(nc-1, np-1);
+}
 
-	Basic information:
-		'format'	-- Document format and version.
-		'encryption'	-- Description of the encryption used.
+fz_location fz_next_page(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np = fz_count_chapter_pages(ctx, doc, loc.chapter);
+	if (loc.page + 1 == np)
+	{
+		if (loc.chapter + 1 < nc)
+		{
+			return fz_make_location(loc.chapter + 1, 0);
+		}
+	}
+	else
+	{
+		return fz_make_location(loc.chapter, loc.page + 1);
+	}
+	return loc;
+}
 
-	From the document information dictionary:
-		'info:Title'
-		'info:Author'
-		'info:Subject'
-		'info:Keywords'
-		'info:Creator'
-		'info:Producer'
-		'info:CreationDate'
-		'info:ModDate'
+fz_location fz_previous_page(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	if (loc.page == 0)
+	{
+		if (loc.chapter > 0)
+		{
+			int np = fz_count_chapter_pages(ctx, doc, loc.chapter - 1);
+			return fz_make_location(loc.chapter - 1, np - 1);
+		}
+	}
+	else
+	{
+		return fz_make_location(loc.chapter, loc.page - 1);
+	}
+	return loc;
+}
 
-	buf: The buffer to hold the results (a nul-terminated UTF-8 string).
+fz_location fz_clamp_location(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int nc = fz_count_chapters(ctx, doc);
+	int np;
+	if (loc.chapter < 0) loc.chapter = 0;
+	if (loc.chapter >= nc) loc.chapter = nc - 1;
+	np = fz_count_chapter_pages(ctx, doc, loc.chapter);
+	if (loc.page < 0) loc.page = 0;
+	if (loc.page >= np) loc.page = np - 1;
+	return loc;
+}
 
-	size: Size of 'buf'.
+fz_location fz_location_from_page_number(fz_context *ctx, fz_document *doc, int number)
+{
+	int i, m = 0, n = fz_count_chapters(ctx, doc);
+	int start = 0;
+	if (number < 0)
+		number = 0;
+	for (i = 0; i < n; ++i)
+	{
+		m = fz_count_chapter_pages(ctx, doc, i);
+		if (number < start + m)
+			return fz_make_location(i, number - start);
+		start += m;
+	}
+	return fz_make_location(i-1, m-1);
+}
 
-	Returns the size of the output string (may be larger than 'size' if
-	the output was truncated), or -1 if the key is not recognized or found.
-*/
+int fz_page_number_from_location(fz_context *ctx, fz_document *doc, fz_location loc)
+{
+	int i, n, start = 0;
+	n = fz_count_chapters(ctx, doc);
+	for (i = 0; i < n; ++i)
+	{
+		if (i == loc.chapter)
+			return start + loc.page;
+		start += fz_count_chapter_pages(ctx, doc, i);
+	}
+	return -1;
+}
+
 int
 fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size)
 {
@@ -429,9 +500,6 @@ fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf
 	return -1;
 }
 
-/*
-	Find the output intent colorspace if the document has defined one.
-*/
 fz_colorspace *
 fz_document_output_intent(fz_context *ctx, fz_document *doc)
 {
@@ -440,52 +508,38 @@ fz_document_output_intent(fz_context *ctx, fz_document *doc)
 	return NULL;
 }
 
-/*
-	Load a page.
-
-	After fz_load_page is it possible to retrieve the size of the
-	page using fz_bound_page, or to render the page using
-	fz_run_page_*. Free the page by calling fz_drop_page.
-
-	number: page number, 0 is the first page of the document.
-*/
 fz_page *
-fz_load_page(fz_context *ctx, fz_document *doc, int number)
+fz_load_chapter_page(fz_context *ctx, fz_document *doc, int chapter, int number)
 {
 	fz_page *page;
 
 	fz_ensure_layout(ctx, doc);
 
-	for (page = doc->open; page; page = page->next)
-		if (page->number == number)
-			return fz_keep_page(ctx, page);
+	if (doc)
+		for (page = doc->open; page; page = page->next)
+			if (page->chapter == chapter && page->number == number)
+				return fz_keep_page(ctx, page);
 
 	if (doc && doc->load_page)
 	{
-		page = doc->load_page(ctx, doc, number);
+		page = doc->load_page(ctx, doc, chapter, number);
+		page->chapter = chapter;
 		page->number = number;
 
 		/* Insert new page at the head of the list of open pages. */
-		if ((page->next = doc->open) != NULL)
-			doc->open->prev = &page->next;
-		doc->open = page;
-		page->prev = &doc->open;
+		if (!page->incomplete)
+		{
+			if ((page->next = doc->open) != NULL)
+				doc->open->prev = &page->next;
+			doc->open = page;
+			page->prev = &doc->open;
+		}
 		return page;
 	}
 
 	return NULL;
 }
 
-/*
-	Load the list of links for a page.
-
-	Returns a linked list of all the links on the page, each with
-	its clickable region and link destination. Each link is
-	reference counted so drop and free the list of links by
-	calling fz_drop_link on the pointer return from fz_load_links.
-
-	page: Page obtained from fz_load_page.
-*/
 fz_link *
 fz_load_links(fz_context *ctx, fz_page *page)
 {
@@ -494,9 +548,6 @@ fz_load_links(fz_context *ctx, fz_page *page)
 	return NULL;
 }
 
-/*
-	Determine the size of a page at 72 dpi.
-*/
 fz_rect
 fz_bound_page(fz_context *ctx, fz_page *page)
 {
@@ -505,54 +556,10 @@ fz_bound_page(fz_context *ctx, fz_page *page)
 	return fz_empty_rect;
 }
 
-fz_annot *
-fz_first_annot(fz_context *ctx, fz_page *page)
-{
-	if (page && page->first_annot)
-		return page->first_annot(ctx, page);
-	return NULL;
-}
-
-fz_annot *
-fz_next_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (annot && annot->next_annot)
-		return annot->next_annot(ctx, annot);
-	return NULL;
-}
-
-fz_rect
-fz_bound_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (annot && annot->bound_annot)
-		return annot->bound_annot(ctx, annot);
-	return fz_empty_rect;
-}
-
-/*
-	Run a page through a device. Just the main
-	page content, without the annotations, if any.
-
-	page: Page obtained from fz_load_page.
-
-	dev: Device obtained from fz_new_*_device.
-
-	transform: Transform to apply to page. May include for example
-	scaling and rotation, see fz_scale, fz_rotate and fz_concat.
-	Set to fz_identity if no transformation is desired.
-
-	cookie: Communication mechanism between caller and library
-	rendering the page. Intended for multi-threaded applications,
-	while single-threaded applications set cookie to NULL. The
-	caller may abort an ongoing rendering of a page. Cookie also
-	communicates progress information back to the caller. The
-	fields inside cookie are continually updated while the page is
-	rendering.
-*/
 void
 fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	if (page && page->run_page_contents && page)
+	if (page && page->run_page_contents)
 	{
 		fz_try(ctx)
 		{
@@ -560,121 +567,55 @@ fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix t
 		}
 		fz_catch(ctx)
 		{
+			dev->close_device = NULL; /* aborted run, don't warn about unclosed device */
 			if (fz_caught(ctx) != FZ_ERROR_ABORT)
 				fz_rethrow(ctx);
 		}
 	}
 }
 
-/*
-	Run an annotation through a device.
-
-	page: Page obtained from fz_load_page.
-
-	annot: an annotation.
-
-	dev: Device obtained from fz_new_*_device.
-
-	transform: Transform to apply to page. May include for example
-	scaling and rotation, see fz_scale, fz_rotate and fz_concat.
-	Set to fz_identity if no transformation is desired.
-
-	cookie: Communication mechanism between caller and library
-	rendering the page. Intended for multi-threaded applications,
-	while single-threaded applications set cookie to NULL. The
-	caller may abort an ongoing rendering of a page. Cookie also
-	communicates progress information back to the caller. The
-	fields inside cookie are continually updated while the page is
-	rendering.
-*/
 void
-fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+fz_run_page_annots(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	if (annot && annot->run_annot)
+	if (page && page->run_page_annots)
 	{
 		fz_try(ctx)
 		{
-			annot->run_annot(ctx, annot, dev, transform, cookie);
+			page->run_page_annots(ctx, page, dev, transform, cookie);
 		}
 		fz_catch(ctx)
 		{
+			dev->close_device = NULL; /* aborted run, don't warn about unclosed device */
 			if (fz_caught(ctx) != FZ_ERROR_ABORT)
 				fz_rethrow(ctx);
 		}
 	}
 }
 
-/*
-	Run a page through a device.
+void
+fz_run_page_widgets(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+{
+	if (page && page->run_page_widgets)
+	{
+		fz_try(ctx)
+		{
+			page->run_page_widgets(ctx, page, dev, transform, cookie);
+		}
+		fz_catch(ctx)
+		{
+			dev->close_device = NULL; /* aborted run, don't warn about unclosed device */
+			if (fz_caught(ctx) != FZ_ERROR_ABORT)
+				fz_rethrow(ctx);
+		}
+	}
+}
 
-	page: Page obtained from fz_load_page.
-
-	dev: Device obtained from fz_new_*_device.
-
-	transform: Transform to apply to page. May include for example
-	scaling and rotation, see fz_scale, fz_rotate and fz_concat.
-	Set to fz_identity if no transformation is desired.
-
-	cookie: Communication mechanism between caller and library
-	rendering the page. Intended for multi-threaded applications,
-	while single-threaded applications set cookie to NULL. The
-	caller may abort an ongoing rendering of a page. Cookie also
-	communicates progress information back to the caller. The
-	fields inside cookie are continually updated while the page is
-	rendering.
-*/
 void
 fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
-	fz_annot *annot;
-
 	fz_run_page_contents(ctx, page, dev, transform, cookie);
-
-	if (cookie && cookie->progress_max != -1)
-	{
-		int count = 1;
-		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
-			count++;
-		cookie->progress_max += count;
-	}
-
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
-	{
-		/* Check the cookie for aborting */
-		if (cookie)
-		{
-			if (cookie->abort)
-				break;
-			cookie->progress++;
-		}
-
-		fz_run_annot(ctx, annot, dev, transform, cookie);
-	}
-}
-
-fz_annot *
-fz_new_annot_of_size(fz_context *ctx, int size)
-{
-	fz_annot *annot = Memento_label(fz_calloc(ctx, 1, size), "fz_annot");
-	annot->refs = 1;
-	return annot;
-}
-
-fz_annot *
-fz_keep_annot(fz_context *ctx, fz_annot *annot)
-{
-	return fz_keep_imp(ctx, annot, &annot->refs);
-}
-
-void
-fz_drop_annot(fz_context *ctx, fz_annot *annot)
-{
-	if (fz_drop_imp(ctx, annot, &annot->refs))
-	{
-		if (annot->drop_annot)
-			annot->drop_annot(ctx, annot);
-		fz_free(ctx, annot);
-	}
+	fz_run_page_annots(ctx, page, dev, transform, cookie);
+	fz_run_page_widgets(ctx, page, dev, transform, cookie);
 }
 
 fz_page *
@@ -709,17 +650,6 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 	}
 }
 
-/*
-	Get the presentation details for a given page.
-
-	transition: A pointer to a transition struct to fill out.
-
-	duration: A pointer to a place to set the page duration in seconds.
-	Will be set to 0 if no transition is specified for the page.
-
-	Returns: a pointer to the transition structure, or NULL if there is no
-	transition specified for the page.
-*/
 fz_transition *
 fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration)
 {
@@ -733,14 +663,6 @@ fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, 
 	return NULL;
 }
 
-/*
-	Get the separations details for a page.
-	This will be NULL, unless the format specifically supports
-	separations (such as gproof, or PDF files). May be NULL even
-	so, if there are no separations on a page.
-
-	Returns a reference that must be dropped.
-*/
 fz_separations *
 fz_page_separations(fz_context *ctx, fz_page *page)
 {

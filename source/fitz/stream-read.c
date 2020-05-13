@@ -1,20 +1,9 @@
-#include "fitz-imp.h"
+#include "mupdf/fitz.h"
 
 #include <string.h>
 
 #define MIN_BOMB (100 << 20)
 
-/*
-	Read from a stream into a given data block.
-
-	stm: The stream to read from.
-
-	data: The data block to read into.
-
-	len: The length of the data block (in bytes).
-
-	Returns the number of bytes read. May throw exceptions.
-*/
 size_t
 fz_read(fz_context *ctx, fz_stream *stm, unsigned char *buf, size_t len)
 {
@@ -42,15 +31,6 @@ fz_read(fz_context *ctx, fz_stream *stm, unsigned char *buf, size_t len)
 
 static unsigned char skip_buf[4096];
 
-/*
-	Read from a stream discarding data.
-
-	stm: The stream to read from.
-
-	len: The number of bytes to read.
-
-	Returns the number of bytes read. May throw exceptions.
-*/
 size_t fz_skip(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	size_t count, l, total = 0;
@@ -69,35 +49,12 @@ size_t fz_skip(fz_context *ctx, fz_stream *stm, size_t len)
 	return total;
 }
 
-/*
-	Read all of a stream into a buffer.
-
-	stm: The stream to read from
-
-	initial: Suggested initial size for the buffer.
-
-	Returns a buffer created from reading from the stream. May throw
-	exceptions on failure to allocate.
-*/
 fz_buffer *
 fz_read_all(fz_context *ctx, fz_stream *stm, size_t initial)
 {
 	return fz_read_best(ctx, stm, initial, NULL);
 }
 
-/*
-	Attempt to read a stream into a buffer. If truncated
-	is NULL behaves as fz_read_all, sets a truncated flag in case of
-	error.
-
-	stm: The stream to read from.
-
-	initial: Suggested initial size for the buffer.
-
-	truncated: Flag to store success/failure indication in.
-
-	Returns a buffer created from reading from the stream.
-*/
 fz_buffer *
 fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated)
 {
@@ -153,13 +110,6 @@ fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated)
 	return buf;
 }
 
-/*
-	Read a line from stream into the buffer until either a
-	terminating newline or EOF, which it replaces with a null byte ('\0').
-
-	Returns buf on success, and NULL when end of file occurs while no characters
-	have been read.
-*/
 char *
 fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, size_t n)
 {
@@ -186,24 +136,12 @@ fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, size_t n)
 	return (s == mem && c == EOF) ? NULL : mem;
 }
 
-/*
-	return the current reading position within a stream
-*/
 int64_t
 fz_tell(fz_context *ctx, fz_stream *stm)
 {
 	return stm->pos - (stm->wp - stm->rp);
 }
 
-/*
-	Seek within a stream.
-
-	stm: The stream to seek within.
-
-	offset: The offset to seek to.
-
-	whence: From where the offset is measured (see fseek).
-*/
 void
 fz_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
@@ -238,33 +176,6 @@ fz_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 		fz_warn(ctx, "cannot seek");
 }
 
-/*
-	Perform a meta call on a stream (typically to
-	request meta information about a stream).
-
-	stm: The stream to query.
-
-	key: The meta request identifier.
-
-	size: Meta request specific parameter - typically the size of
-	the data block pointed to by ptr.
-
-	ptr: Meta request specific parameter - typically a pointer to
-	a block of data to be filled in.
-
-	Returns -1 if this stream does not support this meta operation,
-	or a meta operation specific return value.
-*/
-int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr)
-{
-	if (!stm || !stm->meta)
-		return -1;
-	return stm->meta(ctx, stm, key, size, ptr);
-}
-
-/*
-	Read all the contents of a file into a buffer.
-*/
 fz_buffer *
 fz_read_file(fz_context *ctx, const char *filename)
 {
@@ -290,110 +201,96 @@ fz_read_file(fz_context *ctx, const char *filename)
 	return buf;
 }
 
-/*
-	fz_read_[u]int(16|24|32|64)(_le)?
-
-	Read a 16/32/64 bit signed/unsigned integer from stream,
-	in big or little-endian byte orders.
-
-	Throws an exception if EOF is encountered.
-*/
 uint16_t fz_read_uint16(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t x = (a<<8) | (b);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int16");
-	return x;
+	return ((uint16_t)a<<8) | ((uint16_t)b);
 }
 
 uint32_t fz_read_uint24(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t c = fz_read_byte(ctx, stm);
-	uint32_t x = (a<<16) | (b<<8) | (c);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int24");
-	return x;
+	return ((uint32_t)a<<16) | ((uint32_t)b<<8) | ((uint32_t)c);
 }
 
 uint32_t fz_read_uint32(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t c = fz_read_byte(ctx, stm);
-	uint32_t d = fz_read_byte(ctx, stm);
-	uint32_t x = (a<<24) | (b<<16) | (c<<8) | (d);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
+	int d = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF || d == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int32");
-	return x;
+	return ((uint32_t)a<<24) | ((uint32_t)b<<16) | ((uint32_t)c<<8) | ((uint32_t)d);
 }
 
 uint64_t fz_read_uint64(fz_context *ctx, fz_stream *stm)
 {
-	uint64_t a = fz_read_byte(ctx, stm);
-	uint64_t b = fz_read_byte(ctx, stm);
-	uint64_t c = fz_read_byte(ctx, stm);
-	uint64_t d = fz_read_byte(ctx, stm);
-	uint64_t e = fz_read_byte(ctx, stm);
-	uint64_t f = fz_read_byte(ctx, stm);
-	uint64_t g = fz_read_byte(ctx, stm);
-	uint64_t h = fz_read_byte(ctx, stm);
-	uint64_t x = (a<<56) | (b<<48) | (c<<40) | (d<<32) | (e<<24) | (f<<16) | (g<<8) | (h);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
+	int d = fz_read_byte(ctx, stm);
+	int e = fz_read_byte(ctx, stm);
+	int f = fz_read_byte(ctx, stm);
+	int g = fz_read_byte(ctx, stm);
+	int h = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF || d == EOF || e == EOF || f == EOF || g == EOF || h == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int64");
-	return x;
+	return ((uint64_t)a<<56) | ((uint64_t)b<<48) | ((uint64_t)c<<40) | ((uint64_t)d<<32)
+		| ((uint64_t)e<<24) | ((uint64_t)f<<16) | ((uint64_t)g<<8) | ((uint64_t)h);
 }
 
 uint16_t fz_read_uint16_le(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t x = (a) | (b<<8);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int16");
-	return x;
+	return ((uint16_t)a) | ((uint16_t)b<<8);
 }
 
 uint32_t fz_read_uint24_le(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t c = fz_read_byte(ctx, stm);
-	uint32_t x = (a) | (b<<8) | (c<<16);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int24");
-	return x;
+	return ((uint32_t)a) | ((uint32_t)b<<8) | ((uint32_t)c<<16);
 }
 
 uint32_t fz_read_uint32_le(fz_context *ctx, fz_stream *stm)
 {
-	uint32_t a = fz_read_byte(ctx, stm);
-	uint32_t b = fz_read_byte(ctx, stm);
-	uint32_t c = fz_read_byte(ctx, stm);
-	uint32_t d = fz_read_byte(ctx, stm);
-	uint32_t x = (a) | (b<<8) | (c<<16) | (d<<24);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
+	int d = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF || d == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int32");
-	return x;
+	return ((uint32_t)a) | ((uint32_t)b<<8) | ((uint32_t)c<<16) | ((uint32_t)d<<24);
 }
 
 uint64_t fz_read_uint64_le(fz_context *ctx, fz_stream *stm)
 {
-	uint64_t a = fz_read_byte(ctx, stm);
-	uint64_t b = fz_read_byte(ctx, stm);
-	uint64_t c = fz_read_byte(ctx, stm);
-	uint64_t d = fz_read_byte(ctx, stm);
-	uint64_t e = fz_read_byte(ctx, stm);
-	uint64_t f = fz_read_byte(ctx, stm);
-	uint64_t g = fz_read_byte(ctx, stm);
-	uint64_t h = fz_read_byte(ctx, stm);
-	uint64_t x = (a) | (b<<8) | (c<<16) | (d<<24) | (e<<32) | (f<<40) | (g<<48) | (h<<56);
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+	int c = fz_read_byte(ctx, stm);
+	int d = fz_read_byte(ctx, stm);
+	int e = fz_read_byte(ctx, stm);
+	int f = fz_read_byte(ctx, stm);
+	int g = fz_read_byte(ctx, stm);
+	int h = fz_read_byte(ctx, stm);
 	if (a == EOF || b == EOF || c == EOF || d == EOF || e == EOF || f == EOF || g == EOF || h == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int64");
-	return x;
+	return ((uint64_t)a) | ((uint64_t)b<<8) | ((uint64_t)c<<16) | ((uint64_t)d<<24)
+		| ((uint64_t)e<<32) | ((uint64_t)f<<40) | ((uint64_t)g<<48) | ((uint64_t)h<<56);
 }
 
 int16_t fz_read_int16(fz_context *ctx, fz_stream *stm) { return (int16_t)fz_read_uint16(ctx, stm); }
@@ -404,12 +301,24 @@ int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm) { return (int16_t)fz_r
 int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm) { return (int32_t)fz_read_uint32_le(ctx, stm); }
 int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm) { return (int64_t)fz_read_uint64_le(ctx, stm); }
 
-/*
-	Read a null terminated string from the stream into
-	a buffer of a given length. The buffer will be null terminated.
-	Throws on failure (including the failure to fit the entire string
-	including the terminator into the buffer).
-*/
+float
+fz_read_float_le(fz_context *ctx, fz_stream *stm)
+{
+	union {float f;int32_t i;} u;
+
+	u.i = fz_read_int32_le(ctx, stm);
+	return u.f;
+}
+
+float
+fz_read_float(fz_context *ctx, fz_stream *stm)
+{
+	union {float f;int32_t i;} u;
+
+	u.i = fz_read_int32(ctx, stm);
+	return u.f;
+}
+
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len)
 {
 	int c;

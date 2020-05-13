@@ -8,16 +8,14 @@
 #define PATH_MAX 4096
 #endif
 
-typedef struct fz_cbz_writer_s fz_cbz_writer;
-
-struct fz_cbz_writer_s
+typedef struct
 {
 	fz_document_writer super;
 	fz_draw_options options;
 	fz_pixmap *pixmap;
 	int count;
 	fz_zip_writer *zip;
-};
+} fz_cbz_writer;
 
 static fz_device *
 cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
@@ -30,30 +28,28 @@ static void
 cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
-	fz_buffer *buffer;
+	fz_buffer *buffer = NULL;
 	char name[40];
 
+	fz_var(buffer);
+
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
-	fz_always(ctx)
-		fz_drop_device(ctx, dev);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	wri->count += 1;
-
-	fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
-
-	buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap, NULL);
-	fz_try(ctx)
+		wri->count += 1;
+		fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
+		buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap, fz_default_color_params);
 		fz_write_zip_entry(ctx, wri->zip, name, buffer, 0);
+	}
 	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
 		fz_drop_buffer(ctx, buffer);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void
@@ -72,29 +68,40 @@ cbz_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 }
 
 fz_document_writer *
-fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
+fz_new_cbz_writer_with_output(fz_context *ctx, fz_output *out, const char *options)
 {
 	fz_cbz_writer *wri = fz_new_derived_document_writer(ctx, fz_cbz_writer, cbz_begin_page, cbz_end_page, cbz_close_writer, cbz_drop_writer);
-
 	fz_try(ctx)
 	{
 		fz_parse_draw_options(ctx, &wri->options, options);
-		wri->zip = fz_new_zip_writer(ctx, path ? path : "out.cbz");
+		wri->zip = fz_new_zip_writer_with_output(ctx, out);
 	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
 	}
-
 	return (fz_document_writer*)wri;
+}
+
+fz_document_writer *
+fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
+{
+	fz_output *out = fz_new_output_with_path(ctx, path ? path : "out.cbz", 0);
+	fz_document_writer *wri = NULL;
+	fz_try(ctx)
+		wri = fz_new_cbz_writer_with_output(ctx, out, options);
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, out);
+		fz_rethrow(ctx);
+	}
+	return wri;
 }
 
 /* generic image file output writer */
 
-typedef struct fz_pixmap_writer_s fz_pixmap_writer;
-
-struct fz_pixmap_writer_s
+typedef struct
 {
 	fz_document_writer super;
 	fz_draw_options options;
@@ -102,7 +109,7 @@ struct fz_pixmap_writer_s
 	void (*save)(fz_context *ctx, fz_pixmap *pix, const char *filename);
 	int count;
 	char *path;
-};
+} fz_pixmap_writer;
 
 static fz_device *
 pixmap_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
@@ -118,18 +125,20 @@ pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	char path[PATH_MAX];
 
 	fz_try(ctx)
+	{
 		fz_close_device(ctx, dev);
+		wri->count += 1;
+		fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
+		wri->save(ctx, wri->pixmap, path);
+	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_pixmap(ctx, wri->pixmap);
+		wri->pixmap = NULL;
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	wri->count += 1;
-
-	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
-	wri->save(ctx, wri->pixmap, path);
-	fz_drop_pixmap(ctx, wri->pixmap);
-	wri->pixmap = NULL;
 }
 
 static void

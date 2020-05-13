@@ -14,8 +14,6 @@ enum
 	MAX_M = FZ_MAX_COLORS
 };
 
-typedef struct psobj_s psobj;
-
 enum
 {
 	SAMPLE = 0,
@@ -24,7 +22,20 @@ enum
 	POSTSCRIPT = 4
 };
 
-struct pdf_function_s
+typedef struct
+{
+	int type;
+	union
+	{
+		int b;				/* boolean (stack only) */
+		int i;				/* integer (stack and code) */
+		float f;			/* real (stack and code) */
+		int op;				/* operator (code only) */
+		int block;			/* if/ifelse block pointer (code only) */
+	} u;
+} psobj;
+
+struct pdf_function
 {
 	fz_storable storable;
 	size_t size;
@@ -120,26 +131,11 @@ static char *ps_op_names[] =
 	"roll", "round", "sin", "sqrt", "sub", "true", "truncate", "xor"
 };
 
-struct psobj_s
-{
-	int type;
-	union
-	{
-		int b;				/* boolean (stack only) */
-		int i;				/* integer (stack and code) */
-		float f;			/* real (stack and code) */
-		int op;				/* operator (code only) */
-		int block;			/* if/ifelse block pointer (code only) */
-	} u;
-};
-
-typedef struct ps_stack_s ps_stack;
-
-struct ps_stack_s
+typedef struct
 {
 	psobj stack[100];
 	int sp;
-};
+} ps_stack;
 
 static void
 ps_init_stack(ps_stack *st)
@@ -150,7 +146,7 @@ ps_init_stack(ps_stack *st)
 
 static inline int ps_overflow(ps_stack *st, int n)
 {
-	return n < 0 || st->sp + n >= nelem(st->stack);
+	return n < 0 || st->sp + n >= (int)nelem(st->stack);
 }
 
 static inline int ps_underflow(ps_stack *st, int n)
@@ -359,7 +355,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 			case PS_OP_BITSHIFT:
 				i2 = ps_pop_int(st);
 				i1 = ps_pop_int(st);
-				if (i2 > 0 && i2 < 8 * sizeof (i2))
+				if (i2 > 0 && i2 < 8 * (int)sizeof (i2))
 					ps_push_int(st, i1 << i2);
 				else if (i2 < 0 && i2 > -8 * (int)sizeof (i2))
 					ps_push_int(st, (int)((unsigned int)i1 >> -i2));
@@ -686,7 +682,7 @@ resize_code(fz_context *ctx, pdf_function *func, int newsize)
 	if (newsize >= func->u.p.cap)
 	{
 		int new_cap = func->u.p.cap + 64;
-		func->u.p.code = fz_resize_array(ctx, func->u.p.code, new_cap, sizeof(psobj));
+		func->u.p.code = fz_realloc_array(ctx, func->u.p.code, new_cap, psobj);
 		func->u.p.cap = new_cap;
 	}
 }
@@ -839,12 +835,10 @@ load_postscript_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	int codeptr;
 	pdf_lexbuf buf;
 	pdf_token tok;
-	int locked = 0;
 
 	pdf_lexbuf_init(ctx, &buf, PDF_LEXBUF_SMALL);
 
 	fz_var(stream);
-	fz_var(locked);
 
 	fz_try(ctx)
 	{
@@ -914,8 +908,6 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	int bps;
 	int i;
 
-	fz_var(stream);
-
 	func->u.sa.samples = NULL;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Size));
@@ -981,7 +973,7 @@ load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	if (samplecount > MAX_SAMPLE_FUNCTION_SIZE)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "sample function too large");
 
-	func->u.sa.samples = fz_malloc_array(ctx, samplecount, sizeof(float));
+	func->u.sa.samples = Memento_label(fz_malloc_array(ctx, samplecount, float), "function_samples");
 	func->size += samplecount * sizeof(float);
 
 	stream = pdf_open_stream(ctx, dict);
@@ -1062,7 +1054,7 @@ eval_sample_func(fz_context *ctx, pdf_function *func, const float *in, float *ou
 		x = fz_clamp(x, 0, func->u.sa.size[i] - 1);
 		e0[i] = floorf(x);
 		e1[i] = ceilf(x);
-		efrac[i] = x - floorf(x);
+		efrac[i] = x - e0[i];
 	}
 
 	scale[0] = func->n;
@@ -1183,7 +1175,11 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 
 	/* Default output is zero, which is suitable for violated constraints */
 	if ((func->u.e.n != (int)func->u.e.n && x < 0) || (func->u.e.n < 0 && x == 0))
+	{
+		for (i = 0; i < func->n; i++)
+			out[i] = 0;
 		return;
+	}
 
 	tmp = powf(x, func->u.e.n);
 	for (i = 0; i < func->n; i++)
@@ -1224,9 +1220,9 @@ load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive function");
 		k = pdf_array_len(ctx, obj);
 
-		func->u.st.funcs = fz_malloc_array(ctx, k, sizeof(pdf_function*));
-		func->u.st.bounds = fz_malloc_array(ctx, k - 1, sizeof(float));
-		func->u.st.encode = fz_malloc_array(ctx, k * 2, sizeof(float));
+		func->u.st.funcs = Memento_label(fz_malloc_array(ctx, k, pdf_function*), "stitch_fns");
+		func->u.st.bounds = Memento_label(fz_malloc_array(ctx, k - 1, float), "stitch_bounds");
+		func->u.st.encode = Memento_label(fz_malloc_array(ctx, k * 2, float), "stitch_encode");
 		funcs = func->u.st.funcs;
 
 		for (i = 0; i < k; i++)
@@ -1334,7 +1330,7 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 
 	in = lerp(in, low, high, func->u.st.encode[i * 2 + 0], func->u.st.encode[i * 2 + 1]);
 
-	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->u.st.funcs[i]->n);
+	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->n);
 }
 
 /*
@@ -1389,9 +1385,9 @@ pdf_eval_function(fz_context *ctx, pdf_function *func, const float *in, int inle
 
 	if (inlen < func->m)
 	{
-		for (i = 0; i < func->m; ++i)
+		for (i = 0; i < inlen; ++i)
 			fakein[i] = in[i];
-		for (; i < inlen; ++i)
+		for (; i < func->m; ++i)
 			fakein[i] = 0;
 		in = fakein;
 	}

@@ -5,9 +5,7 @@
 
 /* TODO: check if this works with 16bpp images */
 
-typedef struct fz_predict_s fz_predict;
-
-struct fz_predict_s
+typedef struct
 {
 	fz_stream *chain;
 
@@ -24,7 +22,7 @@ struct fz_predict_s
 	unsigned char *rp, *wp;
 
 	unsigned char buffer[4096];
-};
+} fz_predict;
 
 static inline int getcomponent(unsigned char *line, int x, int bpc)
 {
@@ -222,7 +220,6 @@ close_predict(fz_context *ctx, void *state_)
 	fz_free(ctx, state);
 }
 
-/* Default values: predictor = 1, columns = 1, colors = 1, bpc = 8 */
 fz_stream *
 fz_open_predict(fz_context *ctx, fz_stream *chain, int predictor, int columns, int colors, int bpc)
 {
@@ -264,9 +261,9 @@ fz_open_predict(fz_context *ctx, fz_stream *chain, int predictor, int columns, i
 		state->stride = (state->bpc * state->colors * state->columns + 7) / 8;
 		state->bpp = (state->bpc * state->colors + 7) / 8;
 
-		state->in = fz_malloc(ctx, state->stride + 1);
-		state->out = fz_malloc(ctx, state->stride);
-		state->ref = fz_malloc(ctx, state->stride);
+		state->in = Memento_label(fz_malloc(ctx, state->stride + 1), "predict_in");
+		state->out = Memento_label(fz_malloc(ctx, state->stride), "predict_out");
+		state->ref = Memento_label(fz_malloc(ctx, state->stride), "predict_ref");
 		state->rp = state->out;
 		state->wp = state->out;
 

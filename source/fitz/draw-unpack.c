@@ -69,11 +69,102 @@ init_get1_tables(void)
 	once = 1;
 }
 
+static void
+fz_unpack_mono_line_unscaled(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_1[*sp++], 8);
+		dp += 8;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_1[VGMASK(*sp, w - x)], w - x);
+}
+
+static void
+fz_unpack_mono_line_scaled(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_255[*sp++], 8);
+		dp += 8;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_255[VGMASK(*sp, w - x)], w - x);
+}
+
+static void
+fz_unpack_mono_line_unscaled_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_1p[*sp++], 16);
+		dp += 16;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_1p[VGMASK(*sp, w - x)], (w - x) << 1);
+}
+
+static void
+fz_unpack_mono_line_scaled_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int w3 = w >> 3;
+	int x;
+
+	for (x = 0; x < w3; x++)
+	{
+		memcpy(dp, get1_tab_255p[*sp++], 16);
+		dp += 16;
+	}
+	x = x << 3;
+	if (x < w)
+		memcpy(dp, get1_tab_255p[VGMASK(*sp, w - x)], (w - x) << 1);
+}
+
+static void
+fz_unpack_line(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int len = w * n;
+	while (len--)
+		*dp++ = *sp++;
+}
+
+static void
+fz_unpack_line_with_padding(unsigned char *dp, unsigned char *sp, int w, int n)
+{
+	int x, k;
+
+	for (x = 0; x < w; x++)
+	{
+		for (k = 0; k < n; k++)
+			*dp++ = *sp++;
+		*dp++ = 255;
+	}
+}
+
+typedef void (*fz_unpack_line_fn)(unsigned char *dp, unsigned char *sp, int w, int n);
+
 void
 fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int depth, size_t stride, int scale)
 {
-	int pad, x, y, k, skip;
+	unsigned char *sp = src;
+	unsigned char *dp = dst->samples;
+	fz_unpack_line_fn unpack_line = NULL;
+	int pad, y, skip;
 	int w = dst->w;
+	int h = dst->h;
 
 	pad = 0;
 	skip = 0;
@@ -98,109 +189,92 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 		}
 	}
 
-	for (y = 0; y < dst->h; y++)
+	if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
+		unpack_line = fz_unpack_mono_line_unscaled;
+	else if (n == 1 && depth == 1 && scale == 255 && !pad && !skip)
+		unpack_line = fz_unpack_mono_line_scaled;
+	else if (n == 1 && depth == 1 && scale == 1 && pad && !skip)
+		unpack_line = fz_unpack_mono_line_unscaled_with_padding;
+	else if (n == 1 && depth == 1 && scale == 255 && pad && !skip)
+		unpack_line = fz_unpack_mono_line_scaled_with_padding;
+	else if (depth == 8 && !pad && !skip)
+		unpack_line = fz_unpack_line;
+	else if (depth == 8 && pad && !skip)
+		unpack_line = fz_unpack_line_with_padding;
+
+	if (unpack_line)
 	{
-		unsigned char *sp = src + (y * stride);
-		unsigned char *dp = dst->samples + (y * dst->stride);
-
-		/* Specialized loops */
-
-		if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
+		for (y = 0; y < h; y++, sp += stride, dp += dst->stride)
+			unpack_line(dp, sp, w, n);
+	}
+	else if (depth == 1 || depth == 2 || depth == 4 || depth == 8 || depth  == 16 || depth == 24 || depth == 32)
+	{
+		for (y = 0; y < h; y++, sp += stride, dp += dst->stride)
 		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_1[*sp++], 8);
-				dp += 8;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_1[VGMASK(*sp, w - x)], w - x);
-		}
-
-		else if (n == 1 && depth == 1 && scale == 255 && !pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_255[*sp++], 8);
-				dp += 8;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_255[VGMASK(*sp, w - x)], w - x);
-		}
-
-		else if (n == 1 && depth == 1 && scale == 1 && pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_1p[*sp++], 16);
-				dp += 16;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_1p[VGMASK(*sp, w - x)], (w - x) << 1);
-		}
-
-		else if (n == 1 && depth == 1 && scale == 255 && pad && !skip)
-		{
-			int w3 = w >> 3;
-			for (x = 0; x < w3; x++)
-			{
-				memcpy(dp, get1_tab_255p[*sp++], 16);
-				dp += 16;
-			}
-			x = x << 3;
-			if (x < w)
-				memcpy(dp, get1_tab_255p[VGMASK(*sp, w - x)], (w - x) << 1);
-		}
-
-		else if (depth == 8 && !pad && !skip)
-		{
-			int len = w * n;
-			while (len--)
-				*dp++ = *sp++;
-		}
-
-		else if (depth == 8 && pad && !skip)
-		{
-			for (x = 0; x < w; x++)
-			{
-				for (k = 0; k < n; k++)
-					*dp++ = *sp++;
-				*dp++ = 255;
-			}
-		}
-
-		else
-		{
+			unsigned char *p = dp;
 			int b = 0;
+			int x, k;
+
 			for (x = 0; x < w; x++)
 			{
 				for (k = 0; k < n; k++)
 				{
 					switch (depth)
 					{
-					case 1: *dp++ = get1(sp, b) * scale; break;
-					case 2: *dp++ = get2(sp, b) * scale; break;
-					case 4: *dp++ = get4(sp, b) * scale; break;
-					case 8: *dp++ = get8(sp, b); break;
-					case 16: *dp++ = get16(sp, b); break;
-					case 24: *dp++ = get24(sp, b); break;
-					case 32: *dp++ = get32(sp, b); break;
-					default:
-						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
+					case 1: *p++ = get1(sp, b) * scale; break;
+					case 2: *p++ = get2(sp, b) * scale; break;
+					case 4: *p++ = get4(sp, b) * scale; break;
+					case 8: *p++ = get8(sp, b); break;
+					case 16: *p++ = get16(sp, b); break;
+					case 24: *p++ = get24(sp, b); break;
+					case 32: *p++ = get32(sp, b); break;
 					}
 					b++;
 				}
 				b += skip;
 				if (pad)
-					*dp++ = 255;
+					*p++ = 255;
 			}
 		}
 	}
+	else if (depth > 0 && depth <= 8 * (int)sizeof(int))
+	{
+		fz_stream *stm;
+		int x, k;
+		size_t skipbits = 8 * stride - (size_t)w * n * depth;
+
+		if (skipbits > 32)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Inappropriate stride!");
+
+		stm = fz_open_memory(ctx, sp, h * stride);
+		fz_try(ctx)
+		{
+			for (y = 0; y < h; y++)
+			{
+				for (x = 0; x < w; x++)
+				{
+					for (k = 0; k < n; k++)
+					{
+						if (depth <= 8)
+							*dp++ = fz_read_bits(ctx, stm, depth) << (8 - depth);
+						else
+							*dp++ = fz_read_bits(ctx, stm, depth) >> (depth - 8);
+					}
+					if (pad)
+						*dp++ = 255;
+				}
+
+				dp += dst->stride - (size_t)w * (n + (pad > 0));
+				(void) fz_read_bits(ctx, stm, (int)skipbits);
+			}
+		}
+		fz_always(ctx)
+			fz_drop_stream(ctx, stm);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
+	else
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot unpack tile with %d bits per component", depth);
 }
 
 /* Apply decode array */

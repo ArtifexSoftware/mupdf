@@ -50,12 +50,32 @@ fz_option_eq(const char *a, const char *b)
 	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
 }
 
-/*
-	Internal function to allocate a
-	block for a derived document_writer structure, with the base
-	structure's function pointers populated correctly, and the extra
-	space zero initialised.
-*/
+size_t
+fz_copy_option(fz_context *ctx, const char *val, char *dest, size_t maxlen)
+{
+	const char *e = val;
+	size_t len, len2;
+
+	if (val == NULL) {
+		if (maxlen)
+			*dest = 0;
+		return 0;
+	}
+
+	while (*e != ',' && *e != 0)
+		e++;
+
+	len = e-val;
+	len2 = len+1; /* Allow for terminator */
+	if (len > maxlen)
+		len = maxlen;
+	memcpy(dest, val, len);
+	if (len < maxlen)
+		memset(dest+len, 0, maxlen-len);
+
+	return len2 >= maxlen ? len2 - maxlen : 0;
+}
+
 fz_document_writer *fz_new_document_writer_of_size(fz_context *ctx, size_t size, fz_document_writer_begin_page_fn *begin_page,
 	fz_document_writer_end_page_fn *end_page, fz_document_writer_close_writer_fn *close, fz_document_writer_drop_writer_fn *drop)
 {
@@ -104,18 +124,6 @@ fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, 
 	return fz_new_pixmap_writer(ctx, path, options, "out-%04d.pkm", 4, fz_save_pixmap_as_pkm);
 }
 
-/*
-	Create a new fz_document_writer, for a
-	file of the given type.
-
-	path: The document name to write (or NULL for default)
-
-	format: Which format to write (currently cbz, html, pdf, pam, pbm,
-	pgm, pkm, png, ppm, pnm, svg, text, xhtml)
-
-	options: NULL, or pointer to comma separated string to control
-	file generation.
-*/
 fz_document_writer *
 fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options)
 {
@@ -172,13 +180,37 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown output document format: %s", format);
 }
 
-/*
-	Called to end the process of writing
-	pages to a document.
+fz_document_writer *
+fz_new_document_writer_with_output(fz_context *ctx, fz_output *out, const char *format, const char *options)
+{
+	if (!fz_strcasecmp(format, "cbz"))
+		return fz_new_cbz_writer_with_output(ctx, out, options);
+#if FZ_ENABLE_PDF
+	if (!fz_strcasecmp(format, "pdf"))
+		return fz_new_pdf_writer_with_output(ctx, out, options);
+#endif
 
-	This writes any file level trailers required. After this
-	completes successfully the file is up to date and complete.
-*/
+	if (!fz_strcasecmp(format, "pcl"))
+		return fz_new_pcl_writer_with_output(ctx, out, options);
+	if (!fz_strcasecmp(format, "pclm"))
+		return fz_new_pclm_writer_with_output(ctx, out, options);
+	if (!fz_strcasecmp(format, "ps"))
+		return fz_new_ps_writer_with_output(ctx, out, options);
+	if (!fz_strcasecmp(format, "pwg"))
+		return fz_new_pwg_writer_with_output(ctx, out, options);
+
+	if (!fz_strcasecmp(format, "txt") || !fz_strcasecmp(format, "text"))
+		return fz_new_text_writer_with_output(ctx, "text", out, options);
+	if (!fz_strcasecmp(format, "html"))
+		return fz_new_text_writer_with_output(ctx, format, out, options);
+	if (!fz_strcasecmp(format, "xhtml"))
+		return fz_new_text_writer_with_output(ctx, format, out, options);
+	if (!fz_strcasecmp(format, "stext"))
+		return fz_new_text_writer_with_output(ctx, format, out, options);
+
+	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown output document format: %s", format);
+}
+
 void
 fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
@@ -187,14 +219,6 @@ fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
 	wri->close_writer = NULL;
 }
 
-/*
-	Called to discard a fz_document_writer.
-	This may be called at any time during the process to release all
-	the resources owned by the writer.
-
-	Calling drop without having previously called close may leave
-	the file in an inconsistent state.
-*/
 void
 fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
@@ -210,27 +234,17 @@ fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 	fz_free(ctx, wri);
 }
 
-/*
-	Called to start the process of writing a page to
-	a document.
-
-	mediabox: page size rectangle in points.
-
-	Returns a fz_device to write page contents to.
-*/
 fz_device *
 fz_begin_page(fz_context *ctx, fz_document_writer *wri, fz_rect mediabox)
 {
 	if (!wri)
 		return NULL;
+	if (wri->dev)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "called begin page without ending the previous page");
 	wri->dev = wri->begin_page(ctx, wri, mediabox);
 	return wri->dev;
 }
 
-/*
-	Called to end the process of writing a page to a
-	document.
-*/
 void
 fz_end_page(fz_context *ctx, fz_document_writer *wri)
 {

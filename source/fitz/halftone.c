@@ -1,9 +1,8 @@
 #include "mupdf/fitz.h"
-#include "fitz-imp.h"
 
 #include <assert.h>
 
-struct fz_halftone_s
+struct fz_halftone
 {
 	int refs;
 	int n;
@@ -16,7 +15,7 @@ fz_new_halftone(fz_context *ctx, int comps)
 	fz_halftone *ht;
 	int i;
 
-	ht = fz_malloc(ctx, sizeof(fz_halftone) + (comps-1)*sizeof(fz_pixmap *));
+	ht = Memento_label(fz_malloc(ctx, sizeof(fz_halftone) + (comps-1)*sizeof(fz_pixmap *)), "fz_halftone");
 	ht->refs = 1;
 	ht->n = comps;
 	for (i = 0; i < comps; i++)
@@ -68,16 +67,6 @@ static unsigned char mono_ht[] =
 	0xF2, 0x72, 0xD2, 0x52, 0xFA, 0x7A, 0xDA, 0x5A, 0xF0, 0x70, 0xD0, 0x50, 0xF8, 0x78, 0xD8, 0x58
 };
 
-/*
-	Create a 'default' halftone structure
-	for the given number of components.
-
-	num_comps: The number of components to use.
-
-	Returns a simple default halftone. The default halftone uses
-	the same halftone tile for each plane, which may not be ideal
-	for all purposes.
-*/
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 {
 	fz_halftone *ht = fz_new_halftone(ctx, num_comps);
@@ -162,7 +151,7 @@ static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int 
 }
 
 /* Inner mono thresholding code */
-typedef void (threshold_fn)(const unsigned char *ht_line, const unsigned char *pixmap, unsigned char *out, int w, int ht_len);
+typedef void (threshold_fn)(const unsigned char * FZ_RESTRICT ht_line, const unsigned char * FZ_RESTRICT pixmap, unsigned char * FZ_RESTRICT out, int w, int ht_len);
 
 #ifdef ARCH_ARM
 static void
@@ -508,17 +497,6 @@ static void do_threshold_4(const unsigned char * FZ_RESTRICT ht_line, const unsi
 }
 #endif
 
-/*
-	Make a bitmap from a pixmap and a halftone.
-
-	pix: The pixmap to generate from. Currently must be a single color
-	component with no alpha.
-
-	ht: The halftone to use. NULL implies the default halftone.
-
-	Returns the resultant bitmap. Throws exceptions in the case of
-	failure to allocate.
-*/
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
 	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0);
@@ -540,22 +518,6 @@ static int gcd(int u, int v)
 	while (1);
 }
 
-/*
-	Make a bitmap from a pixmap and a
-	halftone, allowing for the position of the pixmap within an
-	overall banded rendering.
-
-	pix: The pixmap to generate from. Currently must be a single color
-	component with no alpha.
-
-	ht: The halftone to use. NULL implies the default halftone.
-
-	band_start: Vertical offset within the overall banded rendering
-	(in pixels)
-
-	Returns the resultant bitmap. Throws exceptions in the case of
-	failure to allocate.
-*/
 fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start)
 {
 	fz_bitmap *out = NULL;
@@ -565,14 +527,13 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	fz_halftone *ht_ = NULL;
 	threshold_fn *thresh;
 
+	fz_var(ht_line);
+
 	if (!pix)
 		return NULL;
 
 	if (pix->alpha != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap may not have alpha channel to convert to bitmap");
-
-	fz_var(ht_line);
-	fz_var(out);
 
 	n = pix->n;
 

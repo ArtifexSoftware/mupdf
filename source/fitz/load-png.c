@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 
-#include <zlib.h>
+#include "pixmap-imp.h"
+#include "z-imp.h"
 
 #include <limits.h>
 #include <string.h>
@@ -62,16 +63,6 @@ static const unsigned char png_signature[8] =
 {
 	137, 80, 78, 71, 13, 10, 26, 10
 };
-
-static void *zalloc_png(void *opaque, unsigned int items, unsigned int size)
-{
-	return fz_malloc_array_no_throw(opaque, items, size);
-}
-
-static void zfree_png(void *opaque, void *address)
-{
-	fz_free(opaque, address);
-}
 
 static inline int paeth(int a, int b, int c)
 {
@@ -188,11 +179,13 @@ png_deinterlace(fz_context *ctx, struct info *info, unsigned int *passw, unsigne
 {
 	unsigned int n = info->n;
 	unsigned int depth = info->depth;
-	unsigned int stride = (info->width * n * depth + 7) / 8;
+	size_t stride = ((size_t)info->width * n * depth + 7) / 8;
 	unsigned char *output;
 	unsigned int p, x, y, k;
 
-	output = fz_malloc_array(ctx, info->height, stride);
+	if (info->height > UINT_MAX / stride)
+		fz_throw(ctx, FZ_ERROR_MEMORY, "image too large");
+	output = Memento_label(fz_malloc(ctx, info->height * stride), "png_deinterlace");
 
 	for (p = 0; p < 7; p++)
 	{
@@ -347,6 +340,7 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 #if FZ_ENABLE_ICC
 	fz_stream *mstm = NULL, *zstm = NULL;
 	fz_colorspace *cs = NULL;
+	fz_buffer *buf = NULL;
 	size_t m = fz_mini(80, size);
 	size_t n = fz_strnlen((const char *)p, m);
 	if (n + 2 > m)
@@ -357,23 +351,25 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 
 	fz_var(mstm);
 	fz_var(zstm);
+	fz_var(buf);
 
 	fz_try(ctx)
 	{
 		mstm = fz_open_memory(ctx, p + n + 2, size - n - 2);
 		zstm = fz_open_flated(ctx, mstm, 15);
-		cs = fz_new_icc_colorspace_from_stream(ctx, info->type, zstm);
-		/* drop old one in case we have multiple ICC profiles */
+		buf = fz_read_all(ctx, zstm, 0);
+		cs = fz_new_icc_colorspace(ctx, info->type, 0, NULL, buf);
 		fz_drop_colorspace(ctx, info->cs);
 		info->cs = cs;
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(ctx, mstm);
+		fz_drop_buffer(ctx, buf);
 		fz_drop_stream(ctx, zstm);
+		fz_drop_stream(ctx, mstm);
 	}
 	fz_catch(ctx)
-		fz_warn(ctx, "cannot read embedded ICC profile");
+		fz_warn(ctx, "ignoring embedded ICC profile in PNG");
 #endif
 }
 
@@ -431,7 +427,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 	/* Read IHDR chunk (must come first) */
 
 	size = getuint(p);
-	if (total < 12 || size > total - 12)
+	if (size > total - 12)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in png image");
 
 	if (!memcmp(p + 4, "IHDR", 4))
@@ -455,10 +451,10 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 			info->size = passofs[7];
 		}
 
-		info->samples = fz_malloc(ctx, info->size);
+		info->samples = Memento_label(fz_malloc(ctx, info->size), "png_samples");
 
-		stm.zalloc = zalloc_png;
-		stm.zfree = zfree_png;
+		stm.zalloc = fz_zlib_alloc;
+		stm.zfree = fz_zlib_free;
 		stm.opaque = ctx;
 
 		stm.next_out = info->samples;
@@ -466,10 +462,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 
 		code = inflateInit(&stm);
 		if (code != Z_OK)
-		{
-			fz_free(ctx, info->samples);
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
-		}
 	}
 
 	fz_try(ctx)

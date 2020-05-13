@@ -11,7 +11,9 @@ intermediate results rather than ints.
 */
 
 #include "mupdf/fitz.h"
+
 #include "draw-imp.h"
+#include "pixmap-imp.h"
 
 #include <math.h>
 #include <string.h>
@@ -58,13 +60,11 @@ dst[j] = SUM(filter(dist[j,i] * F) * F * src[i])
 
 */
 
-typedef struct fz_scale_filter_s fz_scale_filter;
-
-struct fz_scale_filter_s
+typedef struct fz_scale_filter
 {
 	int width;
-	float (*fn)(fz_scale_filter *, float);
-};
+	float (*fn)(struct fz_scale_filter *, float);
+} fz_scale_filter;
 
 /* Image scale filters */
 
@@ -176,11 +176,9 @@ leave enough space) and then reordering afterwards.
 
 */
 
-typedef struct fz_weights_s fz_weights;
-
 /* This structure is accessed from ARM code - bear this in mind before
  * altering it! */
-struct fz_weights_s
+typedef struct
 {
 	int flip;	/* true if outputting reversed */
 	int count;	/* number of output pixels we have records for in this table */
@@ -189,9 +187,9 @@ struct fz_weights_s
 	int new_line;	/* True if no weights for the current output pixel */
 	int patch_l;	/* How many output pixels we skip over */
 	int index[1];
-};
+} fz_weights;
 
-struct fz_scale_cache_s
+struct fz_scale_cache
 {
 	int src_w;
 	float x;
@@ -233,7 +231,7 @@ new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, in
 	 * plus (2+max_len)*sizeof(int) for the weights
 	 * plus room for an extra set of weights for reordering.
 	 */
-	weights = fz_malloc(ctx, sizeof(*weights)+(max_len+3)*(patch_w+1)*sizeof(int));
+	weights = fz_malloc(ctx, sizeof(*weights)+(size_t)(max_len+3)*(patch_w+1)*sizeof(int));
 	if (!weights)
 		return NULL;
 	weights->count = -1;
@@ -1703,13 +1701,13 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 			contrib_cols = NULL;
 		else
 #endif /* SINGLE_PIXEL_SPECIALS */
-			contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, patch.x0, patch.x1, src->n, flip_x, cache_x);
+			contrib_cols = Memento_label(make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, patch.x0, patch.x1, src->n, flip_x, cache_x), "contrib_cols");
 #ifdef SINGLE_PIXEL_SPECIALS
 		if (src->h == 1)
 			contrib_rows = NULL;
 		else
 #endif /* SINGLE_PIXEL_SPECIALS */
-			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y, cache_y);
+			contrib_rows = Memento_label(make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y, cache_y), "contrib_rows");
 
 		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->seps, src->alpha || forcealpha);
 	}
@@ -1760,7 +1758,7 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 			goto cleanup;
 		fz_try(ctx)
 		{
-			temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(unsigned char));
+			temp = fz_calloc(ctx, (size_t)temp_span*temp_rows, sizeof(unsigned char));
 		}
 		fz_catch(ctx)
 		{

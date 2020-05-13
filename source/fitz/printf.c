@@ -109,16 +109,14 @@ static void fmtuint32(struct fmtbuf *out, unsigned int a, int s, int z, int w, i
 		buf[i++] = fz_hex_digits[a % base];
 		a /= base;
 	}
-	if (z == '0')
-		while (i < w - !!s)
-			buf[i++] = z;
-	if (s)
+	if (s) {
+		if (z == '0')
+			while (i < w - 1)
+				buf[i++] = z;
 		buf[i++] = s;
+	}
 	while (i < w)
 		buf[i++] = z;
-	if (z == ' ')
-		while (i < w)
-			buf[i++] = z;
 	while (i > 0)
 		fmtputc(out, buf[--i]);
 }
@@ -135,19 +133,14 @@ static void fmtuint64(struct fmtbuf *out, uint64_t a, int s, int z, int w, int b
 		buf[i++] = fz_hex_digits[a % base];
 		a /= base;
 	}
-	if (z == '0')
-		while (i < w - !!s)
-			buf[i++] = z;
-	if (s)
-	{
+	if (s) {
+		if (z == '0')
+			while (i < w - 1)
+				buf[i++] = z;
 		buf[i++] = s;
-		w += 1;
 	}
 	while (i < w)
 		buf[i++] = z;
-	if (z == ' ')
-		while (i < w)
-			buf[i++] = z;
 	while (i > 0)
 		fmtputc(out, buf[--i]);
 }
@@ -196,11 +189,57 @@ static void fmtint64(struct fmtbuf *out, int64_t value, int s, int z, int w, int
 	fmtuint64(out, a, s, z, w, base);
 }
 
-static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
+static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq, int verbatim)
+{
+	int i, n, c;
+	fmtputc(out, sq);
+	while (*s != 0) {
+		n = fz_chartorune(&c, s);
+		switch (c) {
+		default:
+			if (c < 32) {
+				fmtputc(out, '\\');
+				fmtputc(out, 'x');
+				fmtputc(out, "0123456789ABCDEF"[(c>>4)&15]);
+				fmtputc(out, "0123456789ABCDEF"[(c)&15]);
+			} else if (c > 127) {
+				if (verbatim)
+				{
+					for (i = 0; i < n; ++i)
+						fmtputc(out, s[i]);
+				}
+				else
+				{
+					fmtputc(out, '\\');
+					fmtputc(out, 'u');
+					fmtputc(out, "0123456789ABCDEF"[(c>>12)&15]);
+					fmtputc(out, "0123456789ABCDEF"[(c>>8)&15]);
+					fmtputc(out, "0123456789ABCDEF"[(c>>4)&15]);
+					fmtputc(out, "0123456789ABCDEF"[(c)&15]);
+				}
+			} else {
+				if (c == sq || c == eq)
+					fmtputc(out, '\\');
+				fmtputc(out, c);
+			}
+			break;
+		case '\\': fmtputc(out, '\\'); fmtputc(out, '\\'); break;
+		case '\b': fmtputc(out, '\\'); fmtputc(out, 'b'); break;
+		case '\f': fmtputc(out, '\\'); fmtputc(out, 'f'); break;
+		case '\n': fmtputc(out, '\\'); fmtputc(out, 'n'); break;
+		case '\r': fmtputc(out, '\\'); fmtputc(out, 'r'); break;
+		case '\t': fmtputc(out, '\\'); fmtputc(out, 't'); break;
+		}
+		s += n;
+	}
+	fmtputc(out, eq);
+}
+
+static void fmtquote_pdf(struct fmtbuf *out, const char *s, int sq, int eq)
 {
 	int c;
 	fmtputc(out, sq);
-	while ((c = *s++) != 0) {
+	while ((c = (unsigned char)*s++) != 0) {
 		switch (c) {
 		default:
 			if (c < 32 || c > 127) {
@@ -234,22 +273,21 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 	fmtputc(out, eq);
 }
 
-/*
-	Our customised 'printf'-like string formatter.
-	Takes %c, %d, %s, %u, %x, as usual.
-	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03u, %04x, etc).
-	%g output in "as short as possible hopefully lossless non-exponent" form,
-	see fz_ftoa for specifics.
-	%f and %e output as usual.
-	%C outputs a utf8 encoded int.
-	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
-	%q and %( output escaped strings in C/PDF syntax.
-	%l{d,u,x} indicates that the values are int64_t.
-	%z{d,u,x} indicates that the value is a size_t.
+static void fmtname(struct fmtbuf *out, const char *s)
+{
+	int c;
+	fmtputc(out, '/');
+	while ((c = *s++) != 0) {
+		if (c <= 32 || c == '/' || c == '#') {
+			fmtputc(out, '#');
+			fmtputc(out, "0123456789ABCDEF"[(c>>4)&15]);
+			fmtputc(out, "0123456789ABCDEF"[(c)&15]);
+		} else {
+			fmtputc(out, c);
+		}
+	}
+}
 
-	user: An opaque pointer that is passed to the emit function.
-	emit: A function pointer called to emit output bytes as the string is being formatted.
-*/
 void
 fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args)
 {
@@ -269,26 +307,24 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 		if (c == '%')
 		{
 			s = 0;
-			z = 0;
+			z = ' ';
 
 			/* flags */
 			while ((c = *fmt++) != 0)
 			{
-				/* sign */
+				/* plus sign */
 				if (c == '+')
 					s = 1;
-				/* space padding */
+				/* space sign */
 				else if (c == ' ')
-					z = ' ';
-				/* leading zero */
+					s = ' ';
+				/* zero padding */
 				else if (c == '0')
-					z = z != ' ' ? '0' : z;
+					z = '0';
 				/* TODO: '-' to left justify */
 				else
 					break;
 			}
-			if (!z)
-				z = ' ';
 			if (c == 0)
 				break;
 
@@ -413,7 +449,7 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 
 			case 'p':
 				bits = 8 * sizeof(void *);
-				w = 2 * sizeof(void *);
+				z = '0';
 				fmtputc(&out, '0');
 				fmtputc(&out, 'x');
 				/* fallthrough */
@@ -461,15 +497,25 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 				while ((c = *str++) != 0)
 					fmtputc(&out, c);
 				break;
+			case 'Q': /* quoted string (with verbatim unicode) */
+				str = va_arg(args, const char*);
+				if (!str) str = "";
+				fmtquote(&out, str, '"', '"', 1);
+				break;
 			case 'q': /* quoted string */
 				str = va_arg(args, const char*);
 				if (!str) str = "";
-				fmtquote(&out, str, '"', '"');
+				fmtquote(&out, str, '"', '"', 0);
 				break;
 			case '(': /* pdf string */
 				str = va_arg(args, const char*);
 				if (!str) str = "";
-				fmtquote(&out, str, '(', ')');
+				fmtquote_pdf(&out, str, '(', ')');
+				break;
+			case 'n': /* pdf name */
+				str = va_arg(args, const char*);
+				if (!str) str = "";
+				fmtname(&out, str);
 				break;
 			}
 		}
@@ -494,9 +540,6 @@ static void snprintf_emit(fz_context *ctx, void *out_, int c)
 	++(out->n);
 }
 
-/*
-	A vsnprintf work-alike, using our custom formatter.
-*/
 size_t
 fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 {
@@ -513,9 +556,6 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 	return out.n;
 }
 
-/*
-	The non va_list equivalent of fz_vsnprintf.
-*/
 size_t
 fz_snprintf(char *buffer, size_t space, const char *fmt, ...)
 {
@@ -538,13 +578,13 @@ fz_snprintf(char *buffer, size_t space, const char *fmt, ...)
 char *
 fz_asprintf(fz_context *ctx, const char *fmt, ...)
 {
-	int len;
+	size_t len;
 	char *mem;
 	va_list ap;
 	va_start(ap, fmt);
 	len = fz_vsnprintf(NULL, 0, fmt, ap);
 	va_end(ap);
-	mem = fz_malloc(ctx, len+1);
+	mem = Memento_label(fz_malloc(ctx, len+1), "asprintf");
 	va_start(ap, fmt);
 	fz_vsnprintf(mem, len+1, fmt, ap);
 	va_end(ap);

@@ -6,6 +6,14 @@
 #include <float.h>
 #include <stdlib.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
+#ifdef _WIN32
+#include <windows.h> /* for MultiByteToWideChar etc. */
+#endif
+
 static inline int
 fz_tolower(int c)
 {
@@ -14,19 +22,15 @@ fz_tolower(int c)
 	return c;
 }
 
-/*
-	Return strlen(s), if that is less than maxlen, or maxlen if
-	there is no null byte ('\0') among the first maxlen bytes.
-*/
 size_t
 fz_strnlen(const char *s, size_t n)
 {
 	const char *p = memchr(s, 0, n);
-	return p ? p - s : n;
+	return p ? (size_t) (p - s) : n;
 }
 
 int
-fz_strncasecmp(const char *a, const char *b, int n)
+fz_strncasecmp(const char *a, const char *b, size_t n)
 {
 	if (!n--)
 		return 0;
@@ -35,9 +39,6 @@ fz_strncasecmp(const char *a, const char *b, int n)
 	return fz_tolower(*a) - fz_tolower(*b);
 }
 
-/*
-	Case insensitive (ASCII only) string comparison.
-*/
 int
 fz_strcasecmp(const char *a, const char *b)
 {
@@ -50,20 +51,6 @@ fz_strcasecmp(const char *a, const char *b)
 	return fz_tolower(*a) - fz_tolower(*b);
 }
 
-/*
-	Given a pointer to a C string (or a pointer to NULL) break
-	it at the first occurrence of a delimiter char (from a given set).
-
-	stringp: Pointer to a C string pointer (or NULL). Updated on exit to
-	point to the first char of the string after the delimiter that was
-	found. The string pointed to by stringp will be corrupted by this
-	call (as the found delimiter will be overwritten by 0).
-
-	delim: A C string of acceptable delimiter characters.
-
-	Returns a pointer to a C string containing the chars of stringp up
-	to the first delimiter char (or the end of the string), or NULL.
-*/
 char *
 fz_strsep(char **stringp, const char *delim)
 {
@@ -74,19 +61,6 @@ fz_strsep(char **stringp, const char *delim)
 	return ret;
 }
 
-/*
-	Copy at most n-1 chars of a string into a destination
-	buffer with null termination, returning the real length of the
-	initial string (excluding terminator).
-
-	dst: Destination buffer, at least n bytes long.
-
-	src: C string (non-NULL).
-
-	n: Size of dst buffer in bytes.
-
-	Returns the length (excluding terminator) of src.
-*/
 size_t
 fz_strlcpy(char *dst, const char *src, size_t siz)
 {
@@ -113,18 +87,6 @@ fz_strlcpy(char *dst, const char *src, size_t siz)
 	return(s - src - 1);	/* count does not include NUL */
 }
 
-/*
-	Concatenate 2 strings, with a maximum length.
-
-	dst: pointer to first string in a buffer of n bytes.
-
-	src: pointer to string to concatenate.
-
-	n: Size (in bytes) of buffer that dst is in.
-
-	Returns the real length that a concatenated dst + src would have been
-	(not including terminator).
-*/
 size_t
 fz_strlcat(char *dst, const char *src, size_t siz)
 {
@@ -153,9 +115,6 @@ fz_strlcat(char *dst, const char *src, size_t siz)
 	return dlen + (s - src);	/* count does not include NUL */
 }
 
-/*
-	extract the directory component from a path.
-*/
 void
 fz_dirname(char *dir, const char *path, size_t n)
 {
@@ -176,6 +135,34 @@ fz_dirname(char *dir, const char *path, size_t n)
 	dir[i+1] = 0;
 }
 
+#ifdef _WIN32
+
+char *fz_realpath(const char *path, char buf[PATH_MAX])
+{
+	wchar_t wpath[PATH_MAX];
+	wchar_t wbuf[PATH_MAX];
+	int i;
+	if (!MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, PATH_MAX))
+		return NULL;
+	if (!GetFullPathNameW(wpath, PATH_MAX, wbuf, NULL))
+		return NULL;
+	if (!WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, PATH_MAX, NULL, NULL))
+		return NULL;
+	for (i=0; buf[i]; ++i)
+		if (buf[i] == '\\')
+			buf[i] = '/';
+	return buf;
+}
+
+#else
+
+char *fz_realpath(const char *path, char buf[PATH_MAX])
+{
+	return realpath(path, buf);
+}
+
+#endif
+
 static inline int ishex(int a)
 {
 	return (a >= 'A' && a <= 'F') ||
@@ -191,9 +178,6 @@ static inline int tohex(int c)
 	return 0;
 }
 
-/*
-	decode url escapes.
-*/
 char *
 fz_urldecode(char *url)
 {
@@ -217,13 +201,6 @@ fz_urldecode(char *url)
 	return url;
 }
 
-/*
-	create output file name using a template.
-		If the path contains %[0-9]*d, the first such pattern will be replaced
-		with the page number. If the template does not contain such a pattern, the page
-		number will be inserted before the filename extension. If the template does not have
-		a filename extension, the page number will be added to the end.
-*/
 void
 fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page)
 {
@@ -256,7 +233,7 @@ fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt,
 
 	if (z < 1)
 		z = 1;
-	while (i < z && i < sizeof num)
+	while (i < z && i < (int)sizeof num)
 		num[i++] = '0';
 	n = s - fmt;
 	if (n + i + strlen(p) >= size)
@@ -269,12 +246,6 @@ fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt,
 
 #define SEP(x) ((x)=='/' || (x) == 0)
 
-/*
-	rewrite path to the shortest string that names the same path.
-
-	Eliminates multiple and trailing slashes, interprets "." and "..".
-	Overwrites the string in place.
-*/
 char *
 fz_cleanname(char *name)
 {
@@ -365,15 +336,6 @@ enum
 	Bad = Runeerror,
 };
 
-/*
-	UTF8 decode a single rune from a sequence of chars.
-
-	rune: Pointer to an int to assign the decoded 'rune' to.
-
-	str: Pointer to a UTF8 encoded string.
-
-	Returns the number of bytes consumed.
-*/
 int
 fz_chartorune(int *rune, const char *str)
 {
@@ -449,15 +411,6 @@ bad:
 	return 1;
 }
 
-/*
-	UTF8 encode a rune to a sequence of chars.
-
-	str: Pointer to a place to put the UTF8 encoded character.
-
-	rune: Pointer to a 'rune'.
-
-	Returns the number of bytes the rune took to output.
-*/
 int
 fz_runetochar(char *str, int rune)
 {
@@ -514,13 +467,6 @@ fz_runetochar(char *str, int rune)
 	return 4;
 }
 
-/*
-	Count how many chars are required to represent a rune.
-
-	rune: The rune to encode.
-
-	Returns the number of bytes required to represent this run in UTF8.
-*/
 int
 fz_runelen(int c)
 {
@@ -528,14 +474,6 @@ fz_runelen(int c)
 	return fz_runetochar(str, c);
 }
 
-/*
-	Count how many runes the UTF-8 encoded string
-	consists of.
-
-	s: The UTF-8 encoded, NUL-terminated text string.
-
-	Returns the number of runes in the string.
-*/
 int
 fz_utflen(const char *s)
 {
@@ -554,12 +492,12 @@ fz_utflen(const char *s)
 	return 0;
 }
 
-/*
-	Range checking atof
-*/
 float fz_atof(const char *s)
 {
 	float result;
+
+	if (s == NULL)
+		return 0;
 
 	errno = 0;
 	result = fz_strtof(s, NULL);
@@ -570,9 +508,6 @@ float fz_atof(const char *s)
 	return result;
 }
 
-/*
-	atoi that copes with NULL
-*/
 int fz_atoi(const char *s)
 {
 	if (s == NULL)
@@ -587,10 +522,6 @@ int64_t fz_atoi64(const char *s)
 	return atoll(s);
 }
 
-/*
-	Check and parse string into page ranges:
-		( ','? ([0-9]+|'N') ( '-' ([0-9]+|N) )? )+
-*/
 int fz_is_page_range(fz_context *ctx, const char *s)
 {
 	/* TODO: check the actual syntax... */
@@ -731,7 +662,7 @@ static char *twoway_memmem(const unsigned char *h, const unsigned char *z, const
 	/* Search loop */
 	for (;;) {
 		/* If remainder of haystack is shorter than needle, done */
-		if (z-h < l) return 0;
+		if ((size_t)(z-h) < l) return 0;
 
 		/* Check last byte first; advance by shift on mismatch */
 		if (BITOP(byteset, h[l-1], &)) {
@@ -763,9 +694,6 @@ static char *twoway_memmem(const unsigned char *h, const unsigned char *z, const
 	}
 }
 
-/*
-	Find the start of the first occurrence of the substring needle in haystack.
-*/
 void *fz_memmem(const void *h0, size_t k, const void *n0, size_t l)
 {
 	const unsigned char *h = h0, *n = n0;

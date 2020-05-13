@@ -13,7 +13,7 @@
 #define ICON_PIN 0x1f4cc
 
 #ifndef PATH_MAX
-#define PATH_MAX 2048
+#define PATH_MAX 4096
 #endif
 
 struct entry
@@ -30,7 +30,8 @@ static struct
 	struct list list_dir;
 	char curdir[PATH_MAX];
 	int count;
-	struct entry files[512];
+	int max;
+	struct entry *files;
 	int selected;
 } fc;
 
@@ -51,24 +52,21 @@ static int cmp_entry(const void *av, const void *bv)
 	return strcmp(a->name, b->name);
 }
 
+static void
+ensure_one_more_file(void)
+{
+	if (fc.count == fc.max)
+	{
+		int new_max = fc.max == 0 ? 512 : fc.max*2;
+		fc.files = fz_realloc_array(ctx, fc.files, new_max, struct entry);
+		fc.max = new_max;
+	}
+}
+
 #ifdef _WIN32
 
 #include <strsafe.h>
 #include <shlobj.h>
-
-const char *realpath(const char *path, char buf[PATH_MAX])
-{
-	wchar_t wpath[PATH_MAX];
-	wchar_t wbuf[PATH_MAX];
-	int i;
-	MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, PATH_MAX);
-	GetFullPathNameW(wpath, PATH_MAX, wbuf, NULL);
-	WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, PATH_MAX, NULL, NULL);
-	for (i=0; buf[i]; ++i)
-		if (buf[i] == '\\')
-			buf[i] = '/';
-	return buf;
-}
 
 static void load_dir(const char *path)
 {
@@ -78,7 +76,7 @@ static void load_dir(const char *path)
 	char buf[PATH_MAX];
 	int i;
 
-	realpath(path, fc.curdir);
+	fz_realpath(path, fc.curdir);
 	if (!fz_is_directory(ctx, path))
 		return;
 
@@ -100,6 +98,7 @@ static void load_dir(const char *path)
 			WideCharToMultiByte(CP_UTF8, 0, ffd.cFileName, -1, buf, PATH_MAX, NULL, NULL);
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
 				continue;
+			ensure_one_more_file();
 			fc.files[fc.count].is_dir = ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 			if (fc.files[fc.count].is_dir || !fc.filter || fc.filter(buf))
 			{
@@ -194,7 +193,7 @@ static void load_dir(const char *path)
 	DIR *dir;
 	struct dirent *dp;
 
-	realpath(path, fc.curdir);
+	fz_realpath(path, fc.curdir);
 	if (!fz_is_directory(ctx, fc.curdir))
 		return;
 
@@ -202,21 +201,24 @@ static void load_dir(const char *path)
 
 	fc.selected = -1;
 	fc.count = 0;
+
 	dir = opendir(fc.curdir);
 	if (!dir)
 	{
+		ensure_one_more_file();
 		fc.files[fc.count].is_dir = 1;
 		fz_strlcpy(fc.files[fc.count].name, "..", FILENAME_MAX);
 		++fc.count;
 	}
 	else
 	{
-		while ((dp = readdir(dir)) && fc.count < nelem(fc.files))
+		while ((dp = readdir(dir)))
 		{
 			/* skip hidden files */
 			if (dp->d_name[0] == '.' && strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))
 				continue;
 			fz_snprintf(buf, sizeof buf, "%s/%s", fc.curdir, dp->d_name);
+			ensure_one_more_file();
 			fc.files[fc.count].is_dir = fz_is_directory(ctx, buf);
 			if (fc.files[fc.count].is_dir || !fc.filter || fc.filter(buf))
 			{
@@ -282,7 +284,7 @@ static void list_drives(void)
 
 	ui_list_begin(&drive_list, nelem(common_dirs), 0, nelem(common_dirs) * ui.lineheight + 4);
 
-	for (i = 0; i < nelem(common_dirs); ++i)
+	for (i = 0; i < (int)nelem(common_dirs); ++i)
 		if (has_dir(home, user, i, dir, vis))
 			if (ui_list_item(&drive_list, common_dirs[i].name, vis, 0))
 				load_dir(dir);
@@ -298,7 +300,7 @@ void ui_init_open_file(const char *dir, int (*filter)(const char *fn))
 	load_dir(dir);
 }
 
-int ui_open_file(char filename[PATH_MAX])
+int ui_open_file(char filename[PATH_MAX], const char *label)
 {
 	static int last_click_time = 0;
 	static int last_click_sel = -1;
@@ -306,6 +308,11 @@ int ui_open_file(char filename[PATH_MAX])
 
 	ui_panel_begin(0, 0, 4, 4, 1);
 	{
+		if (label)
+		{
+			ui_layout(T, X, NW, 4, 2);
+			ui_label(label);
+		}
 		ui_layout(L, Y, NW, 0, 0);
 		ui_panel_begin(150, 0, 0, 0, 0);
 		{
@@ -424,12 +431,17 @@ static void bump_file_version(int dir)
 	}
 }
 
-int ui_save_file(char filename[PATH_MAX], void (*extra_panel)(void))
+int ui_save_file(char filename[PATH_MAX], void (*extra_panel)(void), const char *label)
 {
 	int i, rv = 0;
 
 	ui_panel_begin(0, 0, 4, 4, 1);
 	{
+		if (label)
+		{
+			ui_layout(T, X, NW, 4, 2);
+			ui_label(label);
+		}
 		ui_layout(L, Y, NW, 0, 0);
 		ui_panel_begin(150, 0, 0, 0, 0);
 		{
@@ -480,9 +492,9 @@ int ui_save_file(char filename[PATH_MAX], void (*extra_panel)(void))
 			const char *name = fc.files[i].name;
 			char buf[PATH_MAX];
 			if (fc.files[i].is_dir)
-				fz_snprintf(buf, sizeof buf, "\xf0\x9f\x93\x81 %s", name);
+				fz_snprintf(buf, sizeof buf, "%C %s", ICON_FOLDER, name);
 			else
-				fz_snprintf(buf, sizeof buf, "\xf0\x9f\x93\x84 %s", name);
+				fz_snprintf(buf, sizeof buf, "%C %s", ICON_DOCUMENT, name);
 			if (ui_list_item(&fc.list_dir, &fc.files[i], buf, i==fc.selected))
 			{
 				fc.selected = i;

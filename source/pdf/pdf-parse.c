@@ -23,6 +23,21 @@ pdf_to_rect(fz_context *ctx, pdf_obj *array)
 	}
 }
 
+fz_quad
+pdf_to_quad(fz_context *ctx, pdf_obj *array, int offset)
+{
+	fz_quad q;
+	q.ul.x = pdf_array_get_real(ctx, array, offset+0);
+	q.ul.y = pdf_array_get_real(ctx, array, offset+1);
+	q.ur.x = pdf_array_get_real(ctx, array, offset+2);
+	q.ur.y = pdf_array_get_real(ctx, array, offset+3);
+	q.ll.x = pdf_array_get_real(ctx, array, offset+4);
+	q.ll.y = pdf_array_get_real(ctx, array, offset+5);
+	q.lr.x = pdf_array_get_real(ctx, array, offset+6);
+	q.lr.y = pdf_array_get_real(ctx, array, offset+7);
+	return q;
+}
+
 fz_matrix
 pdf_to_matrix(fz_context *ctx, pdf_obj *array)
 {
@@ -112,7 +127,21 @@ skip_language_code_utf8(const unsigned char *s, size_t n, size_t i)
 	return 0;
 }
 
-/* Convert Unicode/PdfDocEncoding string into utf-8 */
+static int
+is_valid_utf8(const unsigned char *s, const unsigned char *end)
+{
+	for (; s < end; ++s)
+	{
+		int skip = *s < 0x80 ? 0 : *s < 0xC0 ? -1 : *s < 0xE0 ? 1 : *s < 0xF0 ? 2 : *s < 0xF5 ? 3 : -1;
+		if (skip == -1)
+			return 0;
+		while (skip-- > 0)
+			if (++s >= end || (*s & 0xC0) != 0x80)
+				return 0;
+	}
+	return 1;
+}
+
 char *
 pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen)
 {
@@ -138,7 +167,7 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 			}
 		}
 
-		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+		dstptr = dst = Memento_label(fz_malloc(ctx, dstlen + 1), "utf8_from_utf16be");
 
 		i = 2;
 		while (i + 2 <= srclen)
@@ -170,7 +199,7 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 			}
 		}
 
-		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+		dstptr = dst = Memento_label(fz_malloc(ctx, dstlen + 1), "utf8_from_utf16le");
 
 		i = 2;
 		while (i + 2 <= srclen)
@@ -202,7 +231,7 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 			}
 		}
 
-		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+		dstptr = dst = Memento_label(fz_malloc(ctx, dstlen + 1), "utf8_from_utf8");
 
 		i = 3;
 		while (i < srclen)
@@ -215,13 +244,21 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 		}
 	}
 
+	/* Detect UTF-8 strings that aren't marked with a BOM */
+	else if (is_valid_utf8(srcptr, srcptr + srclen))
+	{
+		dst = Memento_label(fz_malloc(ctx, srclen + 1), "utf8_from_guess");
+		memcpy(dst, srcptr, srclen);
+		dstptr = dst + srclen;
+	}
+
 	/* PDFDocEncoding */
 	else
 	{
 		for (i = 0; i < srclen; i++)
 			dstlen += fz_runelen(fz_unicode_from_pdf_doc_encoding[srcptr[i]]);
 
-		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+		dstptr = dst = Memento_label(fz_malloc(ctx, dstlen + 1), "utf8_from_pdfdocenc");
 
 		for (i = 0; i < srclen; i++)
 		{
@@ -234,7 +271,6 @@ pdf_new_utf8_from_pdf_string(fz_context *ctx, const char *ssrcptr, size_t srclen
 	return dst;
 }
 
-/* Convert text string object to UTF-8 */
 char *
 pdf_new_utf8_from_pdf_string_obj(fz_context *ctx, pdf_obj *src)
 {
@@ -244,7 +280,6 @@ pdf_new_utf8_from_pdf_string_obj(fz_context *ctx, pdf_obj *src)
 	return pdf_new_utf8_from_pdf_string(ctx, srcptr, srclen);
 }
 
-/* Load text stream and convert to UTF-8 */
 char *
 pdf_new_utf8_from_pdf_stream_obj(fz_context *ctx, pdf_obj *src)
 {
@@ -264,7 +299,6 @@ pdf_new_utf8_from_pdf_stream_obj(fz_context *ctx, pdf_obj *src)
 	return dst;
 }
 
-/* Load text stream or text string and convert to UTF-8 */
 char *
 pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src)
 {
@@ -276,17 +310,42 @@ pdf_load_stream_or_string_as_utf8(fz_context *ctx, pdf_obj *src)
 static pdf_obj *
 pdf_new_text_string_utf16be(fz_context *ctx, const char *s)
 {
-	int c, i = 0, n = fz_utflen(s);
-	unsigned char *p = fz_malloc(ctx, n * 2 + 2);
+	const char *ss;
+	int c, i, n, a, b;
+	unsigned char *p;
 	pdf_obj *obj;
+
+	ss = s;
+	n = 0;
+	while (*ss)
+	{
+		ss += fz_chartorune(&c, ss);
+		n += (c >= 0x10000) ? 2 : 1;
+	}
+
+	p = fz_malloc(ctx, n * 2 + 2);
+	i = 0;
 	p[i++] = 254;
 	p[i++] = 255;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		p[i++] = (c>>8) & 0xff;
-		p[i++] = (c) & 0xff;
+		if (c >= 0x10000)
+		{
+			a = (((c - 0x10000) >> 10) & 0x3ff) + 0xD800;
+			p[i++] = (a>>8) & 0xff;
+			p[i++] = (a) & 0xff;
+			b = (((c - 0x10000)) & 0x3ff) + 0xDC00;
+			p[i++] = (b>>8) & 0xff;
+			p[i++] = (b) & 0xff;
+		}
+		else
+		{
+			p[i++] = (c>>8) & 0xff;
+			p[i++] = (c) & 0xff;
+		}
 	}
+
 	fz_try(ctx)
 		obj = pdf_new_string(ctx, (char*)p, i);
 	fz_always(ctx)
@@ -296,10 +355,6 @@ pdf_new_text_string_utf16be(fz_context *ctx, const char *s)
 	return obj;
 }
 
-/*
- * Create a PDF 'text string' by encoding input string as either ASCII or UTF-16BE.
- * In theory, we could also use PDFDocEncoding.
- */
 pdf_obj *
 pdf_new_text_string(fz_context *ctx, const char *s)
 {

@@ -1,4 +1,4 @@
-.TH MUPDF 1 "January 12, 2016"
+.TH MUPDF 1 "Jul 30, 2019"
 .\" Please adjust this date whenever revising the manpage.
 .\" no hyphenation
 .nh
@@ -26,7 +26,6 @@ and various image formats such as
 .B GIF,
 and
 .B TIFF.
-.PP
 
 .SH OPTIONS
 A description of each of the supported options is included below.
@@ -42,11 +41,12 @@ The default value is 72.
 .TP
 .B \-A bits
 Changes the anti-aliasing quality, specified as a number of bits between 0
-(off) and 8 (best). The default value is 8.
+(off) and 8 (best).
+The default value is 8.
 .TP
 .B \-C RRGGBB
-Sets the full-page tint using hexadecimal color syntax. The default value
-is FFFAF0.
+Sets the full-page tint using hexadecimal color syntax.
+The default value is FFFAF0.
 .TP
 .B \-W width
 Page width in points for EPUB layout.
@@ -64,18 +64,20 @@ User style sheet for EPUB layout.
 
 .TP
 .B Left mouse button click
-A left click on a hyper link follows the link. In presentation mode
-advances to the next page.
+A left click on a hyper link follows the link.
+In presentation mode advances to the next page.
 .TP
 .B Right mouse button click
 In presentation mode goes back to the previous page.
 .TP
 .B Left mouse button drag
-Pan the page. Panning beyond the bottom or top
+Pan the page.
+Panning beyond the bottom or top
 edge will go to the next or previous page.
 .TP
 .B Right mouse button drag
-Select text in an area. On X11, the selected text
+Select text in an area.
+On X11, the selected text
 can be pasted in another application with a middle click.
 Press
 .B Ctrl+C
@@ -84,8 +86,8 @@ On Windows, the selected text will automatically be copied
 to the clipboard.
 .TP
 .B Scroll wheel
-Pan page up or down. Does not change page
-when reaching the bottom or top edge.
+Pan page up or down.
+Does not change page when reaching the bottom or top edge.
 .TP
 .B Shift + Scroll wheel
 Pan page left or right.
@@ -98,14 +100,11 @@ Zoom in or out.
 .PP
 Page navigation:
 .TP
-.B . pgdn right space
+.B . pgdn space
 Go to the next page.
 .TP
-.B , pgup left b backspace
+.B , pgup b backspace
 Go to the previous page.
-.TP
-.B <, >
-Skip back/forth 10 pages at a time.
 .TP
 .B 123g
 Go to page 123.
@@ -114,21 +113,22 @@ Go to page 123.
 Go to the first or last page.
 .TP
 .B m
-Mark current page for snap back. Up to 256 pages can be marked.
+Mark current page for snap back.
+Up to 256 pages can be marked.
 .TP
 .B t
 Pop back to the latest mark.
 .TP
-.B [0-9]m
+.B [0\(en9]m
 Save the current page number in the numbered register.
 .TP
-.B [0-9]t
+.B [0\(en9]t
 Go to the page saved in the numbered register.
 
 .PP
 Zooming and rotating:
 .TP
-.B \+, \-
+.B +, \-
 Zoom in or out.
 .TP
 .B W, H
@@ -137,7 +137,10 @@ Zoom page to exactly fit width/height of window.
 .B Z
 Zoom page to fit either to width or height of window.
 .TP
-.B L, R
+.B z
+Reset zoom level.
+.TP
+.B [, ]
 Rotate page left (counter-clockwise) or right (clockwise).
 .TP
 .B w
@@ -149,7 +152,7 @@ Toggles fullscreen mode.
 .PP
 Panning:
 .TP
-.B h, j, k, l
+.B h, left, j, k, l, right
 Pan page left, down, up, or right.
 
 .PP
@@ -164,7 +167,7 @@ Find the next/previous search result.
 .PP
 Miscellaneous:
 .TP
-.B [, ]
+.B <, >
 Increase/decrease EPUB/XHTML font size.
 .TP
 .B r
@@ -179,8 +182,14 @@ Toggle between color and grayscale rendering.
 .B C
 Toggle full-page color tinting.
 .TP
-.B i
+.B I
 Toggle between normal and inverted color rendering.
+.TP
+.B E
+Toggle ICC color mode.
+.TP
+.B e
+Toggle spot color mode.
 .TP
 .B S
 Save updated document file.
@@ -193,10 +202,10 @@ Quit.
 .TP
 .B SIGHUP
 Sending a \fBSIGHUP\fR signal to the mupdf process will also cause the viewed
-file to be reloaded automatically, for use in e.g. build scripts.
+file to be reloaded automatically, for use in e.g.\& build scripts.
 
 .SH SEE ALSO
 .BR mutool (1).
 
 .SH AUTHOR
-MuPDF is Copyright 2006-2017 Artifex Software, Inc.
+MuPDF is Copyright 2006\(en2019 Artifex Software, Inc.

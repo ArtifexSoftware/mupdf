@@ -8,14 +8,16 @@ public class PDFPage extends Page
 
 	private PDFPage(long p) { super(p); }
 
+	public native PDFAnnotation[] getAnnotations();
 	public native PDFAnnotation createAnnotation(int subtype);
-	public native void deleteAnnotation(Annotation annot);
+	public native void deleteAnnotation(PDFAnnotation annot);
+
+	public native boolean applyRedactions();
 
 	public native boolean update();
 
 	private PDFWidget[] widgets;
 	private native PDFWidget[] getWidgetsNative();
-	private native long selectWidgetAtNative(int pageX, int pageY);
 
 	public PDFWidget[] getWidgets() {
 		if (widgets == null)
@@ -23,11 +25,18 @@ public class PDFPage extends Page
 		return widgets;
 	}
 
-	public PDFWidget selectWidgetAt(int pageX, int pageY) {
-		long focus = selectWidgetAtNative(pageX, pageY);
-		for (PDFWidget widget : getWidgets())
-			if (widget.equals(focus))
+	public PDFWidget activateWidgetAt(float pageX, float pageY) {
+		for (PDFWidget widget : getWidgets()) {
+			if (widget.getBounds().contains(pageX, pageY)) {
+				widget.eventEnter();
+				widget.eventDown();
+				widget.eventFocus();
+				widget.eventUp();
+				widget.eventExit();
+				widget.eventBlur();
 				return widget;
+			}
+		}
 		return null;
 	}
 }

@@ -151,7 +151,7 @@ static int isnmchar(int c)
 
 static void css_push_char(struct lexbuf *buf, int c)
 {
-	if (buf->string_len + 1 >= nelem(buf->string))
+	if (buf->string_len + 1 >= (int)nelem(buf->string))
 		fz_css_error(buf, "token too long");
 	buf->string[buf->string_len++] = c;
 }

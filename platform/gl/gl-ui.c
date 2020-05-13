@@ -327,7 +327,6 @@ static void on_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
@@ -335,7 +334,6 @@ static void on_passive_motion(int x, int y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui.mod = glutGetModifiers();
 	ui_invalidate();
 }
 
@@ -370,6 +368,17 @@ static void on_warning(const char *fmt, va_list ap)
 	fprintf(stderr, "\n");
 }
 
+static void on_timer(int timer_id)
+{
+	if (reloadrequested)
+	{
+		reload();
+		ui_invalidate();
+		reloadrequested = 0;
+	}
+	glutTimerFunc(500, on_timer, 0);
+}
+
 void ui_init(int w, int h, const char *title)
 {
 	float ui_scale;
@@ -384,6 +393,7 @@ void ui_init(int w, int h, const char *title)
 	glutInitWindowSize(w, h);
 	glutCreateWindow(title);
 
+	glutTimerFunc(500, on_timer, 0);
 	glutReshapeFunc(on_reshape);
 	glutDisplayFunc(on_display);
 #if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
@@ -515,9 +525,9 @@ void ui_end(void)
 
 /* Widgets */
 
-int ui_mouse_inside(fz_irect *area)
+int ui_mouse_inside(fz_irect area)
 {
-	if (ui.x >= area->x0 && ui.x < area->x1 && ui.y >= area->y0 && ui.y < area->y1)
+	if (ui.x >= area.x0 && ui.x < area.x1 && ui.y >= area.y0 && ui.y < area.y1)
 		return 1;
 	return 0;
 }
@@ -738,7 +748,7 @@ int ui_button(const char *label)
 	int text_x = area.x0 + ((area.x1 - area.x0) - width) / 2;
 	int pressed;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = label;
 		if (!ui.active && ui.down)
@@ -763,7 +773,7 @@ int ui_checkbox(const char *label, int *value)
 	glColorHex(UI_COLOR_TEXT_FG);
 	ui_draw_string(mark.x1 + 4, area.y0, label);
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = label;
 		if (!ui.active && ui.down)
@@ -802,7 +812,7 @@ int ui_slider(int *value, int min, int max, int width)
 	fz_irect thumb;
 	int x;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = value;
 		if (!ui.active && ui.down)
@@ -837,7 +847,7 @@ void ui_splitter(int *x, int min, int max, enum side side)
 	static int start_x = 0;
 	fz_irect area = ui_pack(4, 0);
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = x;
 		if (!ui.active && ui.down)
@@ -946,7 +956,7 @@ void ui_tree_begin(struct list *list, int count, int req_w, int req_h, int is_tr
 	if (max_scroll_y > 0)
 		area.x1 -= 16;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = list;
 		if (!ui.active && ui.middle)
@@ -999,7 +1009,7 @@ int ui_tree_item(struct list *list, const void *id, const char *label, int selec
 	/* only process visible items */
 	if (area.y1 >= list->area.y0 && area.y0 <= list->area.y1)
 	{
-		if (ui_mouse_inside(&list->area) && ui_mouse_inside(&area))
+		if (ui_mouse_inside(list->area) && ui_mouse_inside(area))
 		{
 			if (list->is_tree && ui.x < area.x0 + x_item)
 			{
@@ -1028,8 +1038,8 @@ int ui_tree_item(struct list *list, const void *id, const char *label, int selec
 
 		ui_draw_string(area.x0 + x_item, area.y0, label);
 		if (list->is_tree && is_branch)
-			ui_draw_string(area.x0 + x_handle, area.y0,
-				*is_open ? "\xE2\x96\xBC" : "\xE2\x96\xB6");
+			ui_draw_character(area.x0 + x_handle, area.y0,
+				*is_open ? 0x25BC : 0x25B6);
 	}
 
 	list->item_y += ui.lineheight;
@@ -1058,6 +1068,30 @@ void ui_list_end(struct list *list)
 	ui_tree_end(list);
 }
 
+void ui_label_with_scrollbar(char *text, int width, int height, int *scroll)
+{
+	struct line lines[500];
+	fz_irect area;
+	int n;
+
+	area = ui_pack(width, height);
+	n = ui_break_lines(text, lines, nelem(lines), area.x1-area.x0 - 16, NULL);
+	if (n > (area.y1-area.y0) / ui.lineheight)
+	{
+		if (ui_mouse_inside(area))
+			*scroll -= ui.scroll_y * ui.lineheight * 3;
+		ui_scrollbar(area.x1-16, area.y0, area.x1, area.y1, scroll, area.y1-area.y0, n * ui.lineheight);
+	}
+	else
+		*scroll = 0;
+
+	glScissor(area.x0, ui.window_h-area.y1, area.x1-area.x0-16, area.y1-area.y0);
+	glEnable(GL_SCISSOR_TEST);
+	glColorHex(UI_COLOR_TEXT_FG);
+	ui_draw_lines(area.x0, area.y0 - *scroll, lines, n);
+	glDisable(GL_SCISSOR_TEST);
+}
+
 int ui_popup(const void *id, const char *label, int is_button, int count)
 {
 	int width = ui_measure_string(label);
@@ -1065,7 +1099,7 @@ int ui_popup(const void *id, const char *label, int is_button, int count)
 	fz_irect menu_area;
 	int pressed;
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = id;
 		if (!ui.active && ui.down)
@@ -1137,7 +1171,7 @@ int ui_popup_item(const char *title)
 {
 	fz_irect area = ui_pack(0, ui.lineheight);
 
-	if (ui_mouse_inside(&area))
+	if (ui_mouse_inside(area))
 	{
 		ui.hot = title;
 		glColorHex(UI_COLOR_TEXT_SEL_BG);

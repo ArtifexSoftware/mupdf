@@ -18,27 +18,23 @@ enum
 
 void pdf_load_encoding(const char **estrings, const char *encoding);
 
-typedef struct pdf_font_desc_s pdf_font_desc;
-typedef struct pdf_hmtx_s pdf_hmtx;
-typedef struct pdf_vmtx_s pdf_vmtx;
-
-struct pdf_hmtx_s
+typedef struct
 {
 	unsigned short lo;
 	unsigned short hi;
 	int w;	/* type3 fonts can be big! */
-};
+} pdf_hmtx;
 
-struct pdf_vmtx_s
+typedef struct
 {
 	unsigned short lo;
 	unsigned short hi;
 	short x;
 	short y;
 	short w;
-};
+} pdf_vmtx;
 
-struct pdf_font_desc_s
+typedef struct
 {
 	fz_storable storable;
 	size_t size;
@@ -77,7 +73,7 @@ struct pdf_font_desc_s
 	pdf_vmtx *vmtx;
 
 	int is_embedded;
-};
+} pdf_font_desc;
 
 void pdf_set_font_wmode(fz_context *ctx, pdf_font_desc *font, int wmode);
 void pdf_set_default_hmtx(fz_context *ctx, pdf_font_desc *font, int w);
@@ -110,7 +106,21 @@ void pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc);
 void pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs);
 
 pdf_obj *pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encoding);
+
+/*
+	Creates CID font with Identity-H CMap and a ToUnicode CMap that
+	is created by using the TTF cmap table "backwards" to go from
+	the GID to a Unicode value.
+
+	We can possibly get width information that may have been embedded
+	in the PDF /W array (or W2 if vertical text)
+*/
 pdf_obj *pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font);
+
+/*
+	Add a non-embedded UTF16-encoded CID-font for the CJK scripts:
+	CNS1, GB1, Japan1, or Korea1
+*/
 pdf_obj *pdf_add_cjk_font(fz_context *ctx, pdf_document *doc, fz_font *font, int script, int wmode, int serif);
 
 int pdf_font_writing_supported(fz_font *font);

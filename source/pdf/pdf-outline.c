@@ -24,12 +24,12 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 			obj = pdf_dict_get(ctx, dict, PDF_NAME(Title));
 			if (obj)
-				node->title = fz_strdup(ctx, pdf_to_text_string(ctx, obj));
+				node->title = Memento_label(fz_strdup(ctx, pdf_to_text_string(ctx, obj)), "outline_title");
 
 			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(Dest))) != NULL)
-				node->uri = pdf_parse_link_dest(ctx, doc, obj);
+				node->uri = Memento_label(pdf_parse_link_dest(ctx, doc, obj), "outline_uri");
 			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(A))) != NULL)
-				node->uri = pdf_parse_link_action(ctx, doc, obj, -1);
+				node->uri = Memento_label(pdf_parse_link_action(ctx, doc, obj, -1), "outline_uri");
 			else
 				node->uri = NULL;
 

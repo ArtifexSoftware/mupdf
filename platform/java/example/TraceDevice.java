@@ -4,7 +4,7 @@ import com.artifex.mupdf.fitz.*;
 
 public class TraceDevice extends Device implements PathWalker, TextWalker
 {
-	public String traceColor(ColorSpace cs, float color[], float alpha) {
+	public String traceColor(ColorSpace cs, float[] color, float alpha) {
 		String s = cs + " [";
 		int i;
 		for (i = 0; i < color.length; ++i) {
@@ -51,12 +51,12 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 	public void close() {
 	}
 
-	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp) {
+	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float[] color, float alpha, int cp) {
 		System.out.println("fillPath " + evenOdd + " " + ctm + " " + traceColor(cs, color, alpha));
 		tracePath(path);
 	}
 
-	public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp) {
+	public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float[] color, float alpha, int cp) {
 		System.out.println("strokePath " + traceStroke(stroke) + " " + ctm + " " + traceColor(cs, color, alpha));
 		tracePath(path);
 	}
@@ -71,12 +71,12 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		tracePath(path);
 	}
 
-	public void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp) {
+	public void fillText(Text text, Matrix ctm, ColorSpace cs, float[] color, float alpha, int cp) {
 		System.out.println("fillText " + ctm + " " + traceColor(cs, color, alpha));
 		traceText(text);
 	}
 
-	public void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp) {
+	public void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float[] color, float alpha, int cp) {
 		System.out.println("strokeText " + ctm + " " + traceStroke(stroke) + " " + traceColor(cs, color, alpha));
 		traceText(text);
 	}
@@ -104,7 +104,7 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		System.out.println("fillImage " + ctm + " " + alpha);
 	}
 
-	public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha, int cp) {
+	public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float[] color, float alpha, int cp) {
 		System.out.println("fillImageMask " + ctm + " " + traceColor(cs, color, alpha));
 	}
 
@@ -116,7 +116,7 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		System.out.println("popClip");
 	}
 
-	public void beginMask(Rect rect, boolean luminosity, ColorSpace cs, float bc[], int cp) {
+	public void beginMask(Rect rect, boolean luminosity, ColorSpace cs, float[] bc, int cp) {
 		System.out.println("beginMask r=" + rect +
 				" l=" + luminosity +
 				" " + traceColor(cs, bc, 1));

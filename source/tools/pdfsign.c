@@ -4,38 +4,207 @@
 
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "mupdf/helpers/pkcs7-check.h"
+#include "mupdf/helpers/pkcs7-openssl.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-static char *filename = NULL;
+static char *infile = NULL;
+static char *outfile = NULL;
+static char *certificatefile = NULL;
+static char *certificatepassword = "";
+static int verify = 0;
+static int clear = 0;
+static int sign = 0;
+static int list = 1;
 
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: mutool sign input.pdf\n"
+		"usage: mutool sign [options] input.pdf [signature object numbers]\n"
 		"\t-p -\tpassword\n"
+		"\t-v \tverify signature\n"
+		"\t-c \tclear signatures\n"
+		"\t-s -\tsign signatures using certificate file\n"
+		"\t-P -\tcertificate password\n"
+		"\t-o -\toutput file name\n"
 		   );
 	exit(1);
 }
 
-void verify_signature(fz_context *ctx, pdf_document *doc, int n, pdf_widget *widget)
+static void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
-	char msg[256];
-	printf("verifying signature on page %d\n", n+1);
-	pdf_check_signature(ctx, doc, widget, msg, sizeof msg);
-	printf("  result: '%s'\n", msg);
+	char *name;
+	pdf_signature_error err;
+	pdf_pkcs7_verifier *verifier;
+	int edits;
+	pdf_pkcs7_designated_name *dn = NULL;
+
+	printf("verifying signature %d\n", pdf_to_num(ctx, signature));
+
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+	{
+		printf("  Signature is not signed\n");
+		return;
+	}
+
+	verifier = pkcs7_openssl_new_verifier(ctx);
+	fz_var(dn);
+	fz_try(ctx)
+	{
+		dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
+		name = pdf_signature_format_designated_name(ctx, dn);
+
+		printf("  Designated name: %s\n", name);
+		fz_free(ctx, name);
+
+		err = pdf_check_certificate(ctx, verifier, doc, signature);
+		if (err)
+			printf("  Certificate error: %s\n", pdf_signature_error_description(err));
+		else
+			printf("  Certificate is trusted.\n");
+
+		err = pdf_check_digest(ctx, verifier, doc, signature);
+		edits = pdf_signature_incremental_change_since_signing(ctx, doc, signature);
+		if (err)
+			printf("  Digest error: %s\n", pdf_signature_error_description(err));
+		else if (edits)
+			printf("  The signature is valid but there have been edits since signing.\n");
+		else
+			printf("  The document is unchanged since signing.\n");
+	}
+	fz_always(ctx)
+	{
+		pdf_signature_drop_designated_name(ctx, dn);
+		pdf_drop_verifier(ctx, verifier);
+	}
+	fz_catch(ctx)
+		printf("  Verification error: %s\n", fz_caught_message(ctx));
 }
 
-void verify_page(fz_context *ctx, pdf_document *doc, int n, pdf_page *page)
+static void clear_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
-	pdf_annot *annot;
-	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
-		if (pdf_annot_type(ctx, annot) == PDF_ANNOT_WIDGET)
-			if (pdf_widget_type(ctx, annot) == PDF_WIDGET_TYPE_SIGNATURE)
-				verify_signature(ctx, doc, n, annot);
+	pdf_page *page = NULL;
+	pdf_widget *widget;
+	pdf_obj *parent;
+	int pageno;
+
+	fz_var(page);
+
+	printf("clearing signature %d\n", pdf_to_num(ctx, signature));
+
+	fz_try(ctx)
+	{
+		parent = pdf_dict_get(ctx, signature, PDF_NAME(P));
+		pageno = pdf_lookup_page_number(ctx, doc, parent);
+		page = pdf_load_page(ctx, doc, pageno);
+		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
+			if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE && !pdf_objcmp_resolve(ctx, widget->obj, signature))
+				pdf_clear_signature(ctx, widget);
+	}
+	fz_always(ctx)
+		fz_drop_page(ctx, (fz_page*)page);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void sign_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+{
+	pdf_pkcs7_signer *signer = NULL;
+	pdf_page *page = NULL;
+	pdf_widget *widget;
+	pdf_obj *parent;
+	int pageno;
+
+	fz_var(page);
+	fz_var(signer);
+
+	printf("signing signature %d\n", pdf_to_num(ctx, signature));
+
+	fz_try(ctx)
+	{
+		signer = pkcs7_openssl_read_pfx(ctx, certificatefile, certificatepassword);
+
+		parent = pdf_dict_get(ctx, signature, PDF_NAME(P));
+		pageno = pdf_lookup_page_number(ctx, doc, parent);
+		page = pdf_load_page(ctx, doc, pageno);
+		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
+			if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE && !pdf_objcmp_resolve(ctx, widget->obj, signature))
+				pdf_sign_signature(ctx, widget, signer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_page(ctx, (fz_page*)page);
+		pdf_drop_signer(ctx, signer);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+}
+
+static void list_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
+{
+	pdf_pkcs7_designated_name *dn;
+	pdf_pkcs7_verifier *verifier;
+	char *s;
+
+	verifier = pkcs7_openssl_new_verifier(ctx);
+
+	dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
+	s = pdf_signature_format_designated_name(ctx, dn);
+	pdf_signature_drop_designated_name(ctx, dn);
+
+	pdf_drop_verifier(ctx, verifier);
+
+	printf("%5d: signature name: %s\n", pdf_to_num(ctx, signature), s);
+	fz_free(ctx, s);
+}
+
+static void process_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_warn(ctx, "%d is not a signature, skipping", pdf_to_num(ctx, field));
+	else
+	{
+		if (list)
+			list_signature(ctx, doc, field);
+		if (verify)
+			verify_signature(ctx, doc, field);
+		if (clear)
+			clear_signature(ctx, doc, field);
+		if (sign)
+			sign_signature(ctx, doc, field);
+	}
+}
+
+static void process_field_hierarchy(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
+	if (kids)
+	{
+		int i, n;
+		n = pdf_array_len(ctx, kids);
+		for (i = 0; i < n; ++i)
+		{
+			pdf_obj *kid = pdf_array_get(ctx, kids, i);
+			if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) == PDF_NAME(Sig))
+				process_field_hierarchy(ctx, doc, kid);
+		}
+	}
+	else if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) == PDF_NAME(Sig))
+		process_field(ctx, doc, field);
+}
+
+static void process_acro_form(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *trailer = pdf_trailer(ctx, doc);
+	pdf_obj *root = pdf_dict_get(ctx, trailer, PDF_NAME(Root));
+	pdf_obj *acroform = pdf_dict_get(ctx, root, PDF_NAME(AcroForm));
+	pdf_obj *fields = pdf_dict_get(ctx, acroform, PDF_NAME(Fields));
+	int i, n = pdf_array_len(ctx, fields);
+	for (i = 0; i < n; ++i)
+		process_field_hierarchy(ctx, doc, pdf_array_get(ctx, fields, i));
 }
 
 int pdfsign_main(int argc, char **argv)
@@ -43,14 +212,19 @@ int pdfsign_main(int argc, char **argv)
 	fz_context *ctx;
 	pdf_document *doc;
 	char *password = "";
-	int i, n, c;
+	int c;
 	pdf_page *page = NULL;
 
-	while ((c = fz_getopt(argc, argv, "p:")) != -1)
+	while ((c = fz_getopt(argc, argv, "co:p:s:vP:")) != -1)
 	{
 		switch (c)
 		{
+		case 'c': list = 0; clear = 1; break;
+		case 'o': outfile = fz_optarg; break;
 		case 'p': password = fz_optarg; break;
+		case 'P': certificatepassword = fz_optarg; break;
+		case 's': list = 0; sign = 1; certificatefile = fz_optarg; break;
+		case 'v': list = 0; verify = 1; break;
 		default: usage(); break;
 		}
 	}
@@ -58,7 +232,13 @@ int pdfsign_main(int argc, char **argv)
 	if (argc - fz_optind < 1)
 		usage();
 
-	filename = argv[fz_optind++];
+	infile = argv[fz_optind++];
+
+	if (!clear && !sign && !verify && argc - fz_optind > 0)
+	{
+		list = 0;
+		verify = 1;
+	}
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 	if (!ctx)
@@ -69,20 +249,31 @@ int pdfsign_main(int argc, char **argv)
 
 	fz_var(page);
 
-	doc = pdf_open_document(ctx, filename);
+	doc = pdf_open_document(ctx, infile);
 	fz_try(ctx)
 	{
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
-				fz_warn(ctx, "cannot authenticate password: %s", filename);
+				fz_warn(ctx, "cannot authenticate password: %s", infile);
 
-		n = pdf_count_pages(ctx, doc);
-		for (i = 0; i < n; ++i)
+		if (argc - fz_optind <= 0 || list)
+			process_acro_form(ctx, doc);
+		else
 		{
-			page = pdf_load_page(ctx, doc, i);
-			verify_page(ctx, doc, i, page);
-			fz_drop_page(ctx, (fz_page*)page);
-			page = NULL;
+			while (argc - fz_optind)
+			{
+				pdf_obj *field = pdf_new_indirect(ctx, doc, fz_atoi(argv[fz_optind]), 0);
+				process_field(ctx, doc, field);
+				pdf_drop_obj(ctx, field);
+				fz_optind++;
+			}
+		}
+
+		if (clear || sign)
+		{
+			if (!outfile)
+				outfile = "out.pdf";
+			pdf_save_document(ctx, doc, outfile, NULL);
 		}
 	}
 	fz_always(ctx)
@@ -90,7 +281,7 @@ int pdfsign_main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_drop_page(ctx, (fz_page*)page);
-		fprintf(stderr, "error verify signatures: %s\n", fz_caught_message(ctx));
+		fprintf(stderr, "error processing signatures: %s\n", fz_caught_message(ctx));
 	}
 
 	fz_flush_warnings(ctx);

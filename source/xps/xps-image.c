@@ -22,7 +22,7 @@ xps_paint_image_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect
 	xs = image->w * 96 / image->xres;
 	ys = image->h * 96 / image->yres;
 	ctm = fz_pre_scale(ctm, xs, ys);
-	fz_fill_image(ctx, doc->dev, image, ctm, doc->opacity[doc->opacity_top], fz_default_color_params(ctx));
+	fz_fill_image(ctx, doc->dev, image, ctm, doc->opacity[doc->opacity_top], fz_default_color_params);
 }
 
 static void
@@ -101,7 +101,13 @@ xps_parse_image_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rect
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "cannot find image source");
+		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+		{
+			if (doc->cookie)
+				doc->cookie->incomplete = 1;
+		}
+		else
+			fz_warn(ctx, "cannot find image source");
 		return;
 	}
 

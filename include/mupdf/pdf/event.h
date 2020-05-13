@@ -1,43 +1,6 @@
 #ifndef MUPDF_PDF_EVENT_H
 #define MUPDF_PDF_EVENT_H
 
-enum
-{
-	HOTSPOT_POINTER_DOWN = 0x1,
-	HOTSPOT_POINTER_OVER = 0x2
-};
-
-/* Types of UI event */
-enum
-{
-	PDF_EVENT_TYPE_POINTER,
-};
-
-/* Types of pointer event */
-enum
-{
-	PDF_POINTER_DOWN,
-	PDF_POINTER_UP,
-};
-
-/*
-	UI events that can be passed to an interactive document.
-*/
-typedef struct pdf_ui_event_s
-{
-	int etype;
-	union
-	{
-		struct
-		{
-			int ptype;
-			fz_point pt;
-		} pointer;
-	} event;
-} pdf_ui_event;
-
-void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
-
 /*
 	Document events: the objects via which MuPDF informs the calling app
 	of occurrences emanating from the document, possibly from user interaction
@@ -45,9 +8,7 @@ void pdf_init_ui_pointer_event(pdf_ui_event *event, int type, float x, float y);
 	callback.
 */
 
-int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_event *ui_event);
-
-struct pdf_doc_event_s
+struct pdf_doc_event
 {
 	int type;
 };
@@ -60,7 +21,6 @@ enum
 	PDF_DOCUMENT_EVENT_MAIL_DOC,
 	PDF_DOCUMENT_EVENT_SUBMIT,
 	PDF_DOCUMENT_EVENT_EXEC_MENU_ITEM,
-	PDF_DOCUMENT_EVENT_EXEC_DIALOG
 };
 
 /*
@@ -124,8 +84,18 @@ enum
 	PDF_ALERT_BUTTON_YES
 };
 
+/*
+	access the details of an alert event
+	The returned pointer and all the data referred to by the
+	structure are owned by mupdf and need not be freed by the
+	caller.
+*/
 pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *event);
 
+/*
+	access the details of am execMenuItem
+	event, which consists of just the name of the menu item
+*/
 const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
@@ -138,6 +108,11 @@ typedef struct
 	int new_frame;
 } pdf_launch_url_event;
 
+/*
+	access the details of a launch-url
+	event. The returned pointer and all data referred to by the structure
+	are owned by mupdf and need not be freed by the caller.
+*/
 pdf_launch_url_event *pdf_access_launch_url_event(fz_context *ctx, pdf_doc_event *event);
 
 /*
@@ -160,10 +135,7 @@ pdf_mail_doc_event *pdf_access_mail_doc_event(fz_context *ctx, pdf_doc_event *ev
 void pdf_event_issue_alert(fz_context *ctx, pdf_document *doc, pdf_alert_event *event);
 void pdf_event_issue_print(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, const char *item);
-void pdf_event_issue_exec_dialog(fz_context *ctx, pdf_document *doc);
 void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, const char *url, int new_frame);
 void pdf_event_issue_mail_doc(fz_context *ctx, pdf_document *doc, pdf_mail_doc_event *event);
-
-void pdf_execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *a, const char *name);
 
 #endif

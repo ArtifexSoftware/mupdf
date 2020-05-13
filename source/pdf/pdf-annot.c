@@ -8,15 +8,23 @@
 #define timegm _mkgmtime
 #endif
 
-#define TEXT_ANNOT_SIZE (25.0f)
-
 #define isdigit(c) (c >= '0' && c <= '9')
 
-static void
-pdf_drop_annot_imp(fz_context *ctx, pdf_annot *annot)
+pdf_annot *
+pdf_keep_annot(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_drop_obj(ctx, annot->ap);
-	pdf_drop_obj(ctx, annot->obj);
+	return fz_keep_imp(ctx, annot, &annot->refs);
+}
+
+void
+pdf_drop_annot(fz_context *ctx, pdf_annot *annot)
+{
+	if (fz_drop_imp(ctx, annot, &annot->refs))
+	{
+		pdf_drop_obj(ctx, annot->ap);
+		pdf_drop_obj(ctx, annot->obj);
+		fz_free(ctx, annot);
+	}
 }
 
 void
@@ -25,12 +33,11 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 	while (annot)
 	{
 		pdf_annot *next = annot->next;
-		fz_drop_annot(ctx, &annot->super);
+		pdf_drop_annot(ctx, annot);
 		annot = next;
 	}
 }
 
-/* Create transform to fit appearance stream to annotation Rect */
 fz_matrix
 pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 {
@@ -51,8 +58,8 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 		h = 0;
 	else
 		h = (rect.y1 - rect.y0) / (bbox.y1 - bbox.y0);
-	x = rect.x0 - bbox.x0;
-	y = rect.y0 - bbox.y0;
+	x = rect.x0 - (bbox.x0 * w);
+	y = rect.y0 - (bbox.y0 * h);
 
 	return fz_pre_scale(fz_translate(x, y), w, h);
 }
@@ -60,17 +67,13 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 /*
 	Internal function for creating a new pdf annotation.
 */
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
+static pdf_annot *
+pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 {
 	pdf_annot *annot;
 
-	annot = fz_new_derived_annot(ctx, pdf_annot);
-
-	annot->super.drop_annot = (fz_annot_drop_fn*)pdf_drop_annot_imp;
-	annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
-	annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
-	annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
-
+	annot = fz_malloc_struct(ctx, pdf_annot);
+	annot->refs = 1;
 	annot->page = page; /* only borrowed, as the page owns the annot */
 	annot->obj = pdf_keep_obj(ctx, obj);
 
@@ -80,7 +83,6 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, pdf_obj *obj)
 void
 pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 {
-	pdf_document *doc = page->doc;
 	pdf_annot *annot;
 	pdf_obj *subtype;
 	int i, n;
@@ -89,7 +91,7 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 	for (i = 0; i < n; ++i)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, annots, i);
-		if (obj)
+		if (pdf_is_dict(ctx, obj))
 		{
 			subtype = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(Link)))
@@ -106,11 +108,16 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 			fz_catch(ctx)
 				fz_warn(ctx, "could not update appearance for annotation");
 
-			if (doc->focus_obj == obj)
-				doc->focus = annot;
-
-			*page->annot_tailp = annot;
-			page->annot_tailp = &annot->next;
+			if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
+			{
+				*page->widget_tailp = annot;
+				page->widget_tailp = &annot->next;
+			}
+			else
+			{
+				*page->annot_tailp = annot;
+				page->annot_tailp = &annot->next;
+			}
 		}
 	}
 }
@@ -118,18 +125,15 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 pdf_annot *
 pdf_first_annot(fz_context *ctx, pdf_page *page)
 {
-	return page ? page->annots : NULL;
+	return page->annots;
 }
 
 pdf_annot *
 pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 {
-	return annot ? annot->next : NULL;
+	return annot->next;
 }
 
-/*
-	Return the rectangle for an annotation on a page.
-*/
 fz_rect
 pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 {
@@ -178,6 +182,7 @@ pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type)
 	case PDF_ANNOT_UNDERLINE: return "Underline";
 	case PDF_ANNOT_SQUIGGLY: return "Squiggly";
 	case PDF_ANNOT_STRIKE_OUT: return "StrikeOut";
+	case PDF_ANNOT_REDACT: return "Redact";
 	case PDF_ANNOT_STAMP: return "Stamp";
 	case PDF_ANNOT_CARET: return "Caret";
 	case PDF_ANNOT_INK: return "Ink";
@@ -210,6 +215,7 @@ pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 	if (!strcmp("Underline", subtype)) return PDF_ANNOT_UNDERLINE;
 	if (!strcmp("Squiggly", subtype)) return PDF_ANNOT_SQUIGGLY;
 	if (!strcmp("StrikeOut", subtype)) return PDF_ANNOT_STRIKE_OUT;
+	if (!strcmp("Redact", subtype)) return PDF_ANNOT_REDACT;
 	if (!strcmp("Stamp", subtype)) return PDF_ANNOT_STAMP;
 	if (!strcmp("Caret", subtype)) return PDF_ANNOT_CARET;
 	if (!strcmp("Ink", subtype)) return PDF_ANNOT_INK;
@@ -245,11 +251,6 @@ static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *p
 		fz_throw(ctx, FZ_ERROR_GENERIC, "%s annotations have no %s property", pdf_to_name(ctx, subtype), pdf_to_name(ctx, property));
 }
 
-/*
-	create a new annotation of the specified type on the
-	specified page. The returned pdf_annot structure is owned by the page
-	and does not need to be freed.
-*/
 pdf_annot *
 pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 {
@@ -421,7 +422,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	pdf_dict_put(ctx, annot->obj, PDF_NAME(P), page->obj);
 	pdf_dict_put_int(ctx, annot->obj, PDF_NAME(F), flags);
 
-	return annot;
+	return pdf_keep_annot(ctx, annot);
 }
 
 void
@@ -452,13 +453,6 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	if (*annotptr == NULL)
 		page->annot_tailp = annotptr;
 
-	/* If the removed annotation has the focus, blur it. */
-	if (doc->focus == annot)
-	{
-		doc->focus = NULL;
-		doc->focus_obj = NULL;
-	}
-
 	/* Remove the annot from the "Annots" array. */
 	annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
 	i = pdf_array_find(ctx, annot_arr, annot->obj);
@@ -469,12 +463,12 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	 * removing it here may break files if multiple pages use the same annot. */
 
 	/* And free it. */
-	fz_drop_annot(ctx, &annot->super);
+	pdf_drop_annot(ctx, annot);
 
 	doc->dirty = 1;
 }
 
-int
+enum pdf_annot_type
 pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *obj = annot->obj;
@@ -740,9 +734,13 @@ pdf_set_annot_line_end_style(fz_context *ctx, pdf_annot *annot, enum pdf_line_en
 float
 pdf_annot_border(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *bs, *bs_w;
+	pdf_obj *bs, *bs_w, *border;
 	bs = pdf_dict_get(ctx, annot->obj, PDF_NAME(BS));
 	bs_w = pdf_dict_get(ctx, bs, PDF_NAME(W));
+	if (pdf_is_number(ctx, bs_w))
+		return pdf_to_real(ctx, bs_w);
+	border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
+	bs_w = pdf_array_get(ctx, border, 2);
 	if (pdf_is_number(ctx, bs_w))
 		return pdf_to_real(ctx, bs_w);
 	return 1;
@@ -759,6 +757,46 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 	pdf_dict_del(ctx, annot->obj, PDF_NAME(Border)); /* deprecated */
 	pdf_dict_del(ctx, annot->obj, PDF_NAME(BE)); /* not supported */
 
+	pdf_dirty_annot(ctx, annot);
+}
+
+fz_text_language
+pdf_document_language(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *trailer = pdf_trailer(ctx, doc);
+	pdf_obj *root = pdf_dict_get(ctx, trailer, PDF_NAME(Root));
+	pdf_obj *lang = pdf_dict_get(ctx, root, PDF_NAME(Lang));
+	return fz_text_language_from_string(pdf_to_text_string(ctx, lang));
+}
+
+void pdf_set_document_language(fz_context *ctx, pdf_document *doc, fz_text_language lang)
+{
+	pdf_obj *trailer = pdf_trailer(ctx, doc);
+	pdf_obj *root = pdf_dict_get(ctx, trailer, PDF_NAME(Root));
+	char buf[8];
+	if (lang == FZ_LANG_UNSET)
+		pdf_dict_del(ctx, root, PDF_NAME(Lang));
+	else
+		pdf_dict_put_text_string(ctx, root, PDF_NAME(Lang), fz_string_from_text_language(buf, lang));
+}
+
+fz_text_language
+pdf_annot_language(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *lang = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(Lang));
+	if (lang)
+		return fz_text_language_from_string(pdf_to_str_buf(ctx, lang));
+	return pdf_document_language(ctx, annot->page->doc);
+}
+
+void
+pdf_set_annot_language(fz_context *ctx, pdf_annot *annot, fz_text_language lang)
+{
+	char buf[8];
+	if (lang == FZ_LANG_UNSET)
+		pdf_dict_del(ctx, annot->obj, PDF_NAME(Lang));
+	else
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(Lang), fz_string_from_text_language(buf, lang));
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -834,7 +872,35 @@ static void pdf_annot_color_imp(fz_context *ctx, pdf_obj *arr, int *n, float col
 	}
 }
 
-static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
+static int pdf_annot_color_rgb(fz_context *ctx, pdf_obj *arr, float rgb[3])
+{
+	float color[4];
+	int n;
+	pdf_annot_color_imp(ctx, arr, &n, color);
+	if (n == 0)
+	{
+		return 0;
+	}
+	else if (n == 1)
+	{
+		rgb[0] = rgb[1] = rgb[2] = color[0];
+	}
+	else if (n == 3)
+	{
+		rgb[0] = color[0];
+		rgb[1] = color[1];
+		rgb[2] = color[2];
+	}
+	else if (n == 4)
+	{
+		rgb[0] = 1 - fz_min(1, color[0] + color[3]);
+		rgb[1] = 1 - fz_min(1, color[1] + color[3]);
+		rgb[2] = 1 - fz_min(1, color[2] + color[3]);
+	}
+	return 1;
+}
+
+static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float *color, pdf_obj **allowed)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *arr;
@@ -891,6 +957,13 @@ pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 	pdf_annot_color_imp(ctx, mk_bg, n, color);
 }
 
+int
+pdf_annot_MK_BG_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3])
+{
+	pdf_obj *mk_bg = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BG));
+	return pdf_annot_color_rgb(ctx, mk_bg, rgb);
+}
+
 void
 pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
@@ -898,8 +971,15 @@ pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 	pdf_annot_color_imp(ctx, mk_bc, n, color);
 }
 
+int
+pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3])
+{
+	pdf_obj *mk_bc = pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(BC));
+	return pdf_annot_color_rgb(ctx, mk_bc, rgb);
+}
+
 void
-pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
+pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float *color)
 {
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME(C), n, color, NULL);
 }
@@ -927,7 +1007,7 @@ pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[
 }
 
 void
-pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
+pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float *color)
 {
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME(IC), n, color, interior_color_subtypes);
 }
@@ -1107,6 +1187,7 @@ static pdf_obj *quad_point_subtypes[] = {
 	PDF_NAME(Squiggly),
 	PDF_NAME(StrikeOut),
 	PDF_NAME(Underline),
+	PDF_NAME(Redact),
 	NULL,
 };
 
@@ -1125,11 +1206,12 @@ pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 	return pdf_array_len(ctx, quad_points) / 8;
 }
 
-void
-pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
+fz_quad
+pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx)
 {
 	pdf_obj *quad_points;
 	fz_matrix page_ctm;
+	float v[8];
 	int i;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME(QuadPoints), quad_point_subtypes);
@@ -1145,35 +1227,38 @@ pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
 		v[i+0] = point.x;
 		v[i+1] = point.y;
 	}
+
+	return fz_make_quad(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 }
 
 void
-pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v)
+pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const fz_quad *q)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *quad_points;
-	fz_point point;
-	int i, k;
+	fz_quad quad;
+	int i;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME(QuadPoints), quad_point_subtypes);
-	if (n <= 0 || !v)
+	if (n <= 0 || !q)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid number of quadrilaterals");
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	inv_page_ctm = fz_invert_matrix(page_ctm);
 
-	quad_points = pdf_new_array(ctx, doc, n * 8);
+	quad_points = pdf_new_array(ctx, doc, n);
 	for (i = 0; i < n; ++i)
 	{
-		for (k = 0; k < 4; ++k)
-		{
-			point.x = v[i * 8 + k * 2 + 0];
-			point.y = v[i * 8 + k * 2 + 1];
-			point = fz_transform_point(point, inv_page_ctm);
-			pdf_array_push_real(ctx, quad_points, point.x);
-			pdf_array_push_real(ctx, quad_points, point.y);
-		}
+		quad = fz_transform_quad(q[i], inv_page_ctm);
+		pdf_array_push_real(ctx, quad_points, quad.ul.x);
+		pdf_array_push_real(ctx, quad_points, quad.ul.y);
+		pdf_array_push_real(ctx, quad_points, quad.ur.x);
+		pdf_array_push_real(ctx, quad_points, quad.ur.y);
+		pdf_array_push_real(ctx, quad_points, quad.ll.x);
+		pdf_array_push_real(ctx, quad_points, quad.ll.y);
+		pdf_array_push_real(ctx, quad_points, quad.lr.x);
+		pdf_array_push_real(ctx, quad_points, quad.lr.y);
 	}
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(QuadPoints), quad_points);
 	pdf_dirty_annot(ctx, annot);
@@ -1274,6 +1359,7 @@ pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k
 	return fz_transform_point(point, page_ctm);
 }
 
+/* FIXME: try/catch required for memory exhaustion */
 void
 pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v)
 {
@@ -1309,15 +1395,44 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 void
 pdf_clear_annot_ink_list(fz_context *ctx, pdf_annot *annot)
 {
-	check_allowed_subtypes(ctx, annot, PDF_NAME(InkList), ink_list_subtypes);
 	pdf_dict_del(ctx, annot->obj, PDF_NAME(InkList));
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_add_annot_ink_list_stroke(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *ink_list;
+
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
+	if (!pdf_is_array(ctx, ink_list))
+		ink_list = pdf_dict_put_array(ctx, annot->obj, PDF_NAME(InkList), 10);
+
+	pdf_array_push_array(ctx, ink_list, 16);
+
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_add_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, fz_point p)
+{
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *ink_list, *stroke;
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	inv_page_ctm = fz_invert_matrix(page_ctm);
+
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
+	stroke = pdf_array_get(ctx, ink_list, pdf_array_len(ctx, ink_list)-1);
+
+	p = fz_transform_point(p, inv_page_ctm);
+	pdf_array_push_real(ctx, stroke, p.x);
+	pdf_array_push_real(ctx, stroke, p.y);
+
 	pdf_dirty_annot(ctx, annot);
 }
 
 void
 pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 {
-	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *ink_list, *stroke;
 	int i;
@@ -1329,70 +1444,37 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 
 	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
 	if (!pdf_is_array(ctx, ink_list))
-	{
-		ink_list = pdf_new_array(ctx, doc, 10);
-		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(InkList), ink_list);
-	}
+		ink_list = pdf_dict_put_array(ctx, annot->obj, PDF_NAME(InkList), 10);
 
-	stroke = pdf_new_array(ctx, doc, n * 2);
-	fz_try(ctx)
+	stroke = pdf_array_push_array(ctx, ink_list, n * 2);
+	for (i = 0; i < n; ++i)
 	{
-		for (i = 0; i < n; ++i)
-		{
-			fz_point tp = fz_transform_point(p[i], inv_page_ctm);
-			pdf_array_push_real(ctx, stroke, tp.x);
-			pdf_array_push_real(ctx, stroke, tp.y);
-		}
+		fz_point tp = fz_transform_point(p[i], inv_page_ctm);
+		pdf_array_push_real(ctx, stroke, tp.x);
+		pdf_array_push_real(ctx, stroke, tp.y);
 	}
-	fz_catch(ctx)
-	{
-		pdf_drop_obj(ctx, stroke);
-		fz_rethrow(ctx);
-	}
-
-	pdf_array_push_drop(ctx, ink_list, stroke);
 
 	pdf_dirty_annot(ctx, annot);
 }
 
-/*
-	set the position on page for a text (sticky note) annotation.
-*/
 void
-pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
+pdf_format_date(fz_context *ctx, char *s, int n, int64_t isecs)
 {
-	fz_matrix page_ctm, inv_page_ctm;
-	fz_rect rect;
-	int flags;
-
-	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-	inv_page_ctm = fz_invert_matrix(page_ctm);
-
-	rect.x0 = pt.x;
-	rect.x1 = pt.x + TEXT_ANNOT_SIZE;
-	rect.y0 = pt.y;
-	rect.y1 = pt.y + TEXT_ANNOT_SIZE;
-	rect = fz_transform_rect(rect, inv_page_ctm);
-
-	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
-
-	flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
-	flags |= (PDF_ANNOT_IS_NO_ZOOM|PDF_ANNOT_IS_NO_ROTATE);
-	pdf_dict_put_int(ctx, annot->obj, PDF_NAME(F), flags);
-}
-
-static void
-pdf_format_date(fz_context *ctx, char *s, int n, time_t secs)
-{
+	time_t secs = isecs;
 #ifdef _POSIX_SOURCE
 	struct tm tmbuf, *tm = gmtime_r(&secs, &tmbuf);
 #else
 	struct tm *tm = gmtime(&secs);
 #endif
 	if (!tm)
+	{
 		fz_strlcpy(s, "D:19700101000000Z", n);
+	}
 	else
-		strftime(s, n, "D:%Y%m%d%H%M%SZ", tm);
+	{
+		if (!strftime(s, n, "D:%Y%m%d%H%M%SZ", tm) && n > 0)
+			s[0] = '\0';
+	}
 }
 
 static int64_t
@@ -1493,6 +1575,7 @@ static pdf_obj *markup_subtypes[] = {
 	PDF_NAME(Underline),
 	PDF_NAME(Squiggly),
 	PDF_NAME(StrikeOut),
+	PDF_NAME(Redact),
 	PDF_NAME(Stamp),
 	PDF_NAME(Caret),
 	PDF_NAME(Ink),
@@ -1512,6 +1595,16 @@ pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 }
 
 /*
+	Get annotation's creation date in seconds since the epoch.
+*/
+int64_t
+pdf_annot_creation_date(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *date = pdf_dict_get(ctx, annot->obj, PDF_NAME(CreationDate));
+	return date ? pdf_parse_date(ctx, pdf_to_str_buf(ctx, date)) : 0;
+}
+
+/*
 	Set annotation's modification date in seconds since the epoch.
 */
 void
@@ -1523,6 +1616,21 @@ pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 
 	pdf_format_date(ctx, s, sizeof s, secs);
 	pdf_dict_put_string(ctx, annot->obj, PDF_NAME(M), s, strlen(s));
+	pdf_dirty_annot(ctx, annot);
+}
+
+/*
+	Set annotation's creation date in seconds since the epoch.
+*/
+void
+pdf_set_annot_creation_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
+{
+	char s[40];
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME(CreationDate), markup_subtypes);
+
+	pdf_format_date(ctx, s, sizeof s, secs);
+	pdf_dict_put_string(ctx, annot->obj, PDF_NAME(CreationDate), s, strlen(s));
 	pdf_dirty_annot(ctx, annot);
 }
 

@@ -12,15 +12,13 @@ enum
 	PDF_CRYPT_UNKNOWN,
 };
 
-typedef struct pdf_crypt_filter_s pdf_crypt_filter;
-
-struct pdf_crypt_filter_s
+typedef struct
 {
 	int method;
 	int length;
-};
+} pdf_crypt_filter;
 
-struct pdf_crypt_s
+struct pdf_crypt
 {
 	pdf_obj *id;
 
@@ -35,6 +33,7 @@ struct pdf_crypt_s
 	unsigned char u[48];
 	unsigned char oe[32];
 	unsigned char ue[32];
+	unsigned char perms[16];
 	int p;
 	int encrypt_metadata;
 
@@ -42,11 +41,6 @@ struct pdf_crypt_s
 };
 
 static void pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, pdf_obj *name);
-
-/*
- * Create crypt object for decrypting strings and streams
- * given the Encryption and ID objects.
- */
 
 pdf_crypt *
 pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
@@ -74,7 +68,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(V));
 	if (pdf_is_int(ctx, obj))
 		crypt->v = pdf_to_int(ctx, obj);
-	if (crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
+	if (crypt->v != 0 && crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
 	{
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption version");
@@ -127,7 +121,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		memcpy(crypt->u, pdf_to_str_buf(ctx, obj), 48);
 	else if (pdf_is_string(ctx, obj) && pdf_to_str_len(ctx, obj) < 32)
 	{
-		fz_warn(ctx, "encryption password key too short (%d)", pdf_to_str_len(ctx, obj));
+		fz_warn(ctx, "encryption password key too short (%zu)", pdf_to_str_len(ctx, obj));
 		memcpy(crypt->u, pdf_to_str_buf(ctx, obj), pdf_to_str_len(ctx, obj));
 	}
 	else
@@ -208,7 +202,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	if (crypt->v == 5)
 		crypt->length = 256;
 
-	if (crypt->v == 1 || crypt->v == 2)
+	if (crypt->v == 0 || crypt->v == 1 || crypt->v == 2)
 	{
 		crypt->stmf.method = PDF_CRYPT_RC4;
 		crypt->stmf.length = crypt->length;
@@ -470,7 +464,7 @@ pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *
  */
 
 static void
-pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, size_t pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
+pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, size_t pwlen, unsigned char salt[8], unsigned char *ownerkey, unsigned char hash[32])
 {
 	unsigned char data[(128 + 64 + 48) * 64];
 	unsigned char block[64];
@@ -754,17 +748,6 @@ static void pdf_saslprep_from_utf8(char *password, const char *utf8, int n)
 	fz_strlcpy(password, utf8, n);
 }
 
-/*
-	Attempt to authenticate a
-	password.
-
-	Returns 0 for failure, non-zero for success.
-
-	In the non-zero case:
-		bit 0 set => no password required
-		bit 1 set => user password authenticated
-		bit 2 set => owner password authenticated
-*/
 int
 pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pwd_utf8)
 {
@@ -839,35 +822,104 @@ pdf_document_permissions(fz_context *ctx, pdf_document *doc)
 	return (int)0xFFFFFFFC;
 }
 
-unsigned char *
-pdf_crypt_key(fz_context *ctx, pdf_document *doc)
+/*
+ * Compute the owner password (PDF 1.7 algorithm 3.3)
+ */
+
+static void
+pdf_compute_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *opassword, size_t opwlen, unsigned char *upassword, size_t upwlen, unsigned char *output)
 {
-	if (doc->crypt)
-		return doc->crypt->key;
+	unsigned char obuf[32];
+	unsigned char ubuf[32];
+	unsigned char digest[32];
+	int i, n;
+	fz_md5 md5;
+	fz_arc4 arc4;
+
+	n = fz_clampi(crypt->length / 8, 0, 16);
+
+	/* Step 1 - copy and pad owner password string */
+	if (opwlen > 32)
+		opwlen = 32;
+	memcpy(obuf, opassword, opwlen);
+	memcpy(obuf + opwlen, padding, 32 - opwlen);
+
+	/* Step 2 - init md5 and pass value of step 1 */
+	fz_md5_init(&md5);
+	fz_md5_update(&md5, obuf, 32);
+	fz_md5_final(&md5, obuf);
+
+	/* Step 3 (revision 3 or greater) - do some voodoo 50 times */
+	if (crypt->r >= 3)
+	{
+		for (i = 0; i < 50; i++)
+		{
+			fz_md5_init(&md5);
+			fz_md5_update(&md5, obuf, n);
+			fz_md5_final(&md5, obuf);
+		}
+	}
+
+	/* Step 4 - encrypt owner password md5 hash */
+	fz_arc4_init(&arc4, obuf, n);
+
+	/* Step 5 - copy and pad user password string */
+	if (upwlen > 32)
+		upwlen = 32;
+	memcpy(ubuf, upassword, upwlen);
+	memcpy(ubuf + upwlen, padding, 32 - upwlen);
+
+	/* Step 6 - encrypt user password md5 hash */
+	fz_arc4_encrypt(&arc4, digest, ubuf, 32);
+
+	/* Step 7 - */
+	if (crypt->r >= 3)
+	{
+		unsigned char xor[32];
+		int x;
+
+		for (x = 1; x <= 19; x++)
+		{
+			for (i = 0; i < n; i++)
+				xor[i] = obuf[i] ^ x;
+			fz_arc4_init(&arc4, xor, n);
+			fz_arc4_encrypt(&arc4, digest, digest, 32);
+		}
+	}
+
+	/* Step 8 - the owner password is the first 16 bytes of the result */
+	memcpy(output, digest, 32);
+}
+
+unsigned char *
+pdf_crypt_key(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->key;
 	return NULL;
 }
 
 int
-pdf_crypt_version(fz_context *ctx, pdf_document *doc)
+pdf_crypt_version(fz_context *ctx, pdf_crypt *crypt)
 {
-	if (doc->crypt)
-		return doc->crypt->v;
+	if (crypt)
+		return crypt->v;
 	return 0;
 }
 
-int pdf_crypt_revision(fz_context *ctx, pdf_document *doc)
+int pdf_crypt_revision(fz_context *ctx, pdf_crypt *crypt)
 {
-	if (doc->crypt)
-		return doc->crypt->r;
+	if (crypt)
+		return crypt->r;
 	return 0;
 }
 
 char *
-pdf_crypt_method(fz_context *ctx, pdf_document *doc)
+pdf_crypt_method(fz_context *ctx, pdf_crypt *crypt)
 {
-	if (doc->crypt)
+	if (crypt)
 	{
-		switch (doc->crypt->strf.method)
+		switch (crypt->strf.method)
 		{
 		case PDF_CRYPT_NONE: return "None";
 		case PDF_CRYPT_RC4: return "RC4";
@@ -880,10 +932,66 @@ pdf_crypt_method(fz_context *ctx, pdf_document *doc)
 }
 
 int
-pdf_crypt_length(fz_context *ctx, pdf_document *doc)
+pdf_crypt_length(fz_context *ctx, pdf_crypt *crypt)
 {
-	if (doc->crypt)
-		return doc->crypt->length;
+	if (crypt)
+		return crypt->length;
+	return 0;
+}
+
+int
+pdf_crypt_permissions(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->p;
+	return 0;
+}
+
+int
+pdf_crypt_encrypt_metadata(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->encrypt_metadata;
+	return 0;
+}
+
+unsigned char *
+pdf_crypt_owner_password(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->o;
+	return NULL;
+}
+
+unsigned char *
+pdf_crypt_user_password(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->u;
+	return NULL;
+}
+
+unsigned char *
+pdf_crypt_owner_encryption(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->oe;
+	return NULL;
+}
+
+unsigned char *
+pdf_crypt_user_encryption(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->ue;
+	return NULL;
+}
+
+unsigned char *
+pdf_crypt_permissions_encryption(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt->perms;
 	return 0;
 }
 
@@ -906,7 +1014,10 @@ pdf_compute_object_key(pdf_crypt *crypt, pdf_crypt_filter *cf, int num, int gen,
 	if (key_len > max_len)
 		key_len = max_len;
 
-	if (cf->method == PDF_CRYPT_AESV3)
+	/* Encryption method version 0 is undocumented, but a lucky
+	   guess revealed that all streams/strings in those PDFs are
+	   encrypted using the same 40 bit file enryption key using RC4. */
+	if (crypt->v == 0 || cf->method == PDF_CRYPT_AESV3)
 	{
 		memcpy(key, crypt->key, key_len);
 		return key_len;
@@ -943,15 +1054,15 @@ static void
 pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, unsigned char *key, int keylen)
 {
 	unsigned char *s;
-	int i, n;
+	int i;
 
 	if (pdf_is_indirect(ctx, obj))
 		return;
 
 	if (pdf_is_string(ctx, obj))
 	{
+		size_t n = pdf_to_str_len(ctx, obj);
 		s = (unsigned char *)pdf_to_str_buf(ctx, obj);
-		n = pdf_to_str_len(ctx, obj);
 
 		if (crypt->strf.method == PDF_CRYPT_RC4)
 		{
@@ -987,7 +1098,7 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, unsigned char
 
 	else if (pdf_is_array(ctx, obj))
 	{
-		n = pdf_array_len(ctx, obj);
+		int n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
 		{
 			pdf_crypt_obj_imp(ctx, crypt, pdf_array_get(ctx, obj, i), key, keylen);
@@ -996,7 +1107,7 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, unsigned char
 
 	else if (pdf_is_dict(ctx, obj))
 	{
-		n = pdf_dict_len(ctx, obj);
+		int n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 		{
 			pdf_crypt_obj_imp(ctx, crypt, pdf_dict_get_val(ctx, obj, i), key, keylen);
@@ -1080,7 +1191,7 @@ pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt)
 	fz_write_printf(ctx, out, "}\n");
 }
 
-void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void (*write_data)(fz_context *ctx, void *, const unsigned char *, int), void *arg, const unsigned char *s, int n)
+void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void (*write_data)(fz_context *ctx, void *, const unsigned char *, size_t), void *arg, const unsigned char *s, size_t n)
 {
 	unsigned char buffer[256];
 	unsigned char key[32];
@@ -1100,8 +1211,8 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 		fz_arc4_init(&arc4, key, keylen);
 		while (n > 0)
 		{
-			int len = n;
-			if (len > sizeof(buffer))
+			size_t len = n;
+			if (len > (int)sizeof(buffer))
 				len = sizeof(buffer);
 			fz_arc4_encrypt(&arc4, buffer, s, len);
 			write_data(ctx, arg, buffer, len);
@@ -1113,6 +1224,7 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 
 	if (crypt->strf.method == PDF_CRYPT_AESV2 || crypt->strf.method == PDF_CRYPT_AESV3)
 	{
+		size_t len = 0;
 		fz_aes aes;
 		unsigned char iv[16];
 
@@ -1128,18 +1240,18 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 
 		while (n > 0)
 		{
-			int len = n;
+			len = n;
 			if (len > 16)
 				len = 16;
 			memcpy(buffer, s, len);
 			if (len != 16)
-				memset(&buffer[len], 16-len, 16-len);
+				memset(&buffer[len], 16-(int)len, 16-len);
 			fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buffer, buffer+16);
 			write_data(ctx, arg, buffer+16, 16);
-			s += 16;
-			n -= 16;
+			s += len;
+			n -= len;
 		}
-		if (n == 0) {
+		if (len == 16) {
 			memset(buffer, 16, 16);
 			fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buffer, buffer+16);
 			write_data(ctx, arg, buffer+16, 16);
@@ -1151,7 +1263,7 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 	write_data(ctx, arg, s, n);
 }
 
-int pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, int len)
+size_t pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, size_t len)
 {
 	if (crypt == NULL)
 		return len;
@@ -1165,4 +1277,171 @@ int pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, int l
 	}
 
 	return len;
+}
+
+/* PDF 2.0 algorithm 8 */
+static void
+pdf_compute_user_password_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, unsigned char *outputpw, unsigned char *outputencryption)
+{
+	unsigned char validationsalt[8];
+	unsigned char keysalt[8];
+	unsigned char hash[32];
+	unsigned char iv[16];
+	fz_aes aes;
+
+	/* Step a) - Generate random salts. */
+	fz_memrnd(ctx, validationsalt, nelem(validationsalt));
+	fz_memrnd(ctx, keysalt, nelem(keysalt));
+
+	/* Step a) - Compute 32 byte hash given password and validation salt. */
+	pdf_compute_hardened_hash_r6(ctx, password, pwlen, validationsalt, NULL, outputpw);
+	memcpy(outputpw + 32, validationsalt, nelem(validationsalt));
+	memcpy(outputpw + 40, keysalt, nelem(keysalt));
+
+	/* Step b) - Compute 32 byte hash given password and user salt. */
+	pdf_compute_hardened_hash_r6(ctx, password, pwlen, keysalt, NULL, hash);
+
+	/* Step b) - Use hash as AES-key when encrypting the file encryption key. */
+	memset(iv, 0, sizeof(iv));
+	if (fz_aes_setkey_enc(&aes, hash, 256))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 32, iv, crypt->key, outputencryption);
+}
+
+/* PDF 2.0 algorithm 9 */
+static void
+pdf_compute_owner_password_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, unsigned char *outputpw, unsigned char *outputencryption)
+{
+	unsigned char validationsalt[8];
+	unsigned char keysalt[8];
+	unsigned char hash[32];
+	unsigned char iv[16];
+	fz_aes aes;
+
+	/* Step a) - Generate random salts. */
+	fz_memrnd(ctx, validationsalt, nelem(validationsalt));
+	fz_memrnd(ctx, keysalt, nelem(keysalt));
+
+	/* Step a) - Compute 32 byte hash given owner password, validation salt and user password. */
+	pdf_compute_hardened_hash_r6(ctx, password, pwlen, validationsalt, crypt->u, outputpw);
+	memcpy(outputpw + 32, validationsalt, nelem(validationsalt));
+	memcpy(outputpw + 40, keysalt, nelem(keysalt));
+
+	/* Step b) - Compute 32 byte hash given owner password, user salt and user password. */
+	pdf_compute_hardened_hash_r6(ctx, password, pwlen, keysalt, crypt->u, hash);
+
+	/* Step b) - Use hash as AES-key when encrypting the file encryption key. */
+	memset(iv, 0, sizeof(iv));
+	if (fz_aes_setkey_enc(&aes, hash, 256))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 32, iv, crypt->key, outputencryption);
+}
+
+/* PDF 2.0 algorithm 10 */
+static void
+pdf_compute_permissions_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *output)
+{
+	unsigned char buf[16];
+	unsigned char iv[16];
+	fz_aes aes;
+
+	/* Steps a) and b) - Extend permissions field and put into lower order bytes. */
+	memcpy(buf, (unsigned char *) &crypt->p, 4);
+	memset(&buf[4], 0xff, 4);
+
+	/* Step c) - Encode EncryptMetadata as T/F. */
+	buf[8] = crypt->encrypt_metadata ? 'T' : 'F';
+
+	/* Step d) - Encode ASCII characters "adb". */
+	buf[9] = 'a';
+	buf[10] = 'd';
+	buf[11] = 'b';
+
+	/* Step e) - Encode 4 random bytes. */
+	fz_memrnd(ctx, &buf[12], 4);
+
+	/* Step f) - Use file encryption key as AES-key when encrypting buffer. */
+	memset(iv, 0, sizeof(iv));
+	if (fz_aes_setkey_enc(&aes, crypt->key, 256))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buf, output);
+}
+
+pdf_crypt *
+pdf_new_encrypt(fz_context *ctx, const char *opwd_utf8, const char *upwd_utf8, pdf_obj *id, int permissions, int algorithm)
+{
+	pdf_crypt *crypt;
+	int v, r, method, length;
+	unsigned char opwd[2048];
+	unsigned char upwd[2048];
+	size_t opwdlen, upwdlen;
+
+	crypt = fz_malloc_struct(ctx, pdf_crypt);
+
+	/* Extract file identifier string */
+
+	if (pdf_is_string(ctx, id))
+		crypt->id = pdf_keep_obj(ctx, id);
+	else
+		fz_warn(ctx, "missing file identifier, may not be able to do decryption");
+
+	switch (algorithm)
+	{
+	case PDF_ENCRYPT_RC4_40:
+		v = 1; r = 2; method = PDF_CRYPT_RC4; length = 40; break;
+	case PDF_ENCRYPT_RC4_128:
+		v = 2; r = 3; method = PDF_CRYPT_RC4; length = 128; break;
+	case PDF_ENCRYPT_AES_128:
+		v = 4; r = 4; method = PDF_CRYPT_AESV2; length = 128; break;
+	case PDF_ENCRYPT_AES_256:
+		v = 5; r = 6; method = PDF_CRYPT_AESV3; length = 256; break;
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid encryption method");
+	}
+
+	crypt->v = v;
+	crypt->r = r;
+	crypt->length = length;
+	crypt->cf = NULL;
+	crypt->stmf.method = method;
+	crypt->stmf.length = length;
+	crypt->strf.method = method;
+	crypt->strf.length = length;
+	crypt->encrypt_metadata = 1;
+	crypt->p = (permissions & 0xf3c) | 0xfffff0c0;
+	memset(crypt->o, 0, sizeof (crypt->o));
+	memset(crypt->u, 0, sizeof (crypt->u));
+	memset(crypt->oe, 0, sizeof (crypt->oe));
+	memset(crypt->ue, 0, sizeof (crypt->ue));
+
+	if (crypt->r <= 4)
+	{
+		pdf_docenc_from_utf8((char *) opwd, opwd_utf8, sizeof opwd);
+		pdf_docenc_from_utf8((char *) upwd, upwd_utf8, sizeof upwd);
+	}
+	else
+	{
+		pdf_saslprep_from_utf8((char *) opwd, opwd_utf8, sizeof opwd);
+		pdf_saslprep_from_utf8((char *) upwd, upwd_utf8, sizeof upwd);
+	}
+
+	opwdlen = strlen((char *) opwd);
+	upwdlen = strlen((char *) upwd);
+
+	if (crypt->r <= 4)
+	{
+		pdf_compute_owner_password(ctx, crypt, opwd, opwdlen, upwd, upwdlen, crypt->o);
+		pdf_compute_user_password(ctx, crypt, upwd, upwdlen, crypt->u);
+	}
+	else if (crypt->r == 6)
+	{
+		/* 7.6.4.4.1 states that the file encryption key are 256 random bits. */
+		fz_memrnd(ctx, crypt->key, nelem(crypt->key));
+
+		pdf_compute_user_password_r6(ctx, crypt, upwd, upwdlen, crypt->u, crypt->ue);
+		pdf_compute_owner_password_r6(ctx, crypt, opwd, opwdlen, crypt->o, crypt->oe);
+		pdf_compute_permissions_r6(ctx, crypt, crypt->perms);
+	}
+
+	return crypt;
 }

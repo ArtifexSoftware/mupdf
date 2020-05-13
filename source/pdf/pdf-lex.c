@@ -237,7 +237,7 @@ static void
 lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 {
 	char *s = lb->scratch;
-	char *e = s + fz_mini(127, lb->size);
+	char *e = s + fz_minz(127, lb->size);
 	int c;
 
 	while (1)
@@ -247,7 +247,7 @@ lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 			if (e - lb->scratch < 127)
 			{
 				s += pdf_lexbuf_grow(ctx, lb);
-				e = lb->scratch + fz_mini(127, lb->size);
+				e = lb->scratch + fz_minz(127, lb->size);
 			}
 			else
 			{
@@ -521,15 +521,15 @@ void pdf_lexbuf_fin(fz_context *ctx, pdf_lexbuf *lb)
 ptrdiff_t pdf_lexbuf_grow(fz_context *ctx, pdf_lexbuf *lb)
 {
 	char *old = lb->scratch;
-	int newsize = lb->size * 2;
+	size_t newsize = lb->size * 2;
 	if (lb->size == lb->base_size)
 	{
-		lb->scratch = fz_malloc(ctx, newsize);
+		lb->scratch = Memento_label(fz_malloc(ctx, newsize), "pdf_lexbuf");
 		memcpy(lb->scratch, lb->buffer, lb->size);
 	}
 	else
 	{
-		lb->scratch = fz_resize_array(ctx, lb->scratch, newsize, 1);
+		lb->scratch = fz_realloc(ctx, lb->scratch, newsize);
 	}
 	lb->size = newsize;
 	return lb->scratch - old;
@@ -645,9 +645,6 @@ pdf_lex_no_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
 	}
 }
 
-/*
-	print a lexed token to a buffer, growing if necessary
-*/
 void pdf_append_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *buf)
 {
 	switch (tok)

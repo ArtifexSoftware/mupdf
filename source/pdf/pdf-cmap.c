@@ -74,13 +74,8 @@ pdf_set_cmap_wmode(fz_context *ctx, pdf_cmap *cmap, int wmode)
 	cmap->wmode = wmode;
 }
 
-/*
- * Add a codespacerange section.
- * These ranges are used by pdf_decode_cmap to decode
- * multi-byte encoded strings.
- */
 void
-pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, int n)
+pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, size_t n)
 {
 	if (cmap->codespace_len + 1 == nelem(cmap->codespace))
 	{
@@ -88,13 +83,19 @@ pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned in
 		return;
 	}
 
-	cmap->codespace[cmap->codespace_len].n = n;
+	if ((uint32_t)n != n)
+	{
+		fz_warn(ctx, "assert: code space range too large");
+		return;
+	}
+
+	cmap->codespace[cmap->codespace_len].n = (int)n;
 	cmap->codespace[cmap->codespace_len].low = low;
 	cmap->codespace[cmap->codespace_len].high = high;
 	cmap->codespace_len ++;
 }
 
-struct cmap_splay_s {
+struct cmap_splay {
 	unsigned int low;
 	unsigned int high;
 	unsigned int out;
@@ -281,7 +282,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 	else
 	{
 		/* Hard case, find the in-order predecessor of current */
-		int amputee = current;
+		unsigned int amputee = current;
 		replacement = tree[current].left;
 		while (tree[replacement].right != EMPTY) {
 			amputee = replacement;
@@ -324,29 +325,29 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 
 	/* current is now unlinked. We need to remove it from our array. */
 	cmap->tlen--;
-	if (current != cmap->tlen)
+	if (current != (unsigned int) cmap->tlen)
 	{
-		if (replacement == cmap->tlen)
+		if (replacement == (unsigned int) cmap->tlen)
 			replacement = current;
 		tree[current] = tree[cmap->tlen];
 		parent = tree[current].parent;
 		if (parent == EMPTY)
 			cmap->ttop = current;
-		else if (tree[parent].left == cmap->tlen)
+		else if (tree[parent].left == (unsigned int) cmap->tlen)
 			tree[parent].left = current;
 		else
 		{
-			assert(tree[parent].right == cmap->tlen);
+			assert(tree[parent].right == (unsigned int) cmap->tlen);
 			tree[parent].right = current;
 		}
 		if (tree[current].left != EMPTY)
 		{
-			assert(tree[tree[current].left].parent == cmap->tlen);
+			assert(tree[tree[current].left].parent == (unsigned int) cmap->tlen);
 			tree[tree[current].left].parent = current;
 		}
 		if (tree[current].right != EMPTY)
 		{
-			assert(tree[tree[current].right].parent == cmap->tlen);
+			assert(tree[tree[current].right].parent == (unsigned int) cmap->tlen);
 			tree[tree[current].right].parent = current;
 		}
 	}
@@ -541,9 +542,9 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					if (tree[current].low > tree[current].high)
 					{
 						/* update lt/gt references that will be moved/stale after deleting current */
-						if (gt == cmap->tlen - 1)
+						if (gt == (unsigned int) cmap->tlen - 1)
 							gt = current;
-						if (lt == cmap->tlen - 1)
+						if (lt == (unsigned int) cmap->tlen - 1)
 							lt = current;
 						/* delete_node() moves the element at cmap->tlen-1 into current */
 						move = delete_node(cmap, current);
@@ -626,7 +627,7 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 	if (cmap->tlen == cmap->tcap)
 	{
 		int new_cap = cmap->tcap ? cmap->tcap * 2 : 256;
-		tree = cmap->tree = fz_resize_array(ctx, cmap->tree, new_cap, sizeof *cmap->tree);
+		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, cmap_splay);
 		cmap->tcap = new_cap;
 	}
 	tree[cmap->tlen].low = low;
@@ -669,7 +670,7 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 	if (cmap->dlen + len + 1 > cmap->dcap)
 	{
 		int new_cap = cmap->dcap ? cmap->dcap * 2 : 256;
-		cmap->dict = fz_resize_array(ctx, cmap->dict, new_cap, sizeof *cmap->dict);
+		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, int);
 		cmap->dcap = new_cap;
 	}
 	out_pos = cmap->dlen;
@@ -680,20 +681,14 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 	add_range(ctx, cmap, low, low, out_pos, 1, 1);
 }
 
-/*
- * Add a range of contiguous one-to-one mappings (ie 1..5 maps to 21..25)
- */
 void
 pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, int out)
 {
 	add_range(ctx, cmap, low, high, out, 1, 0);
 }
 
-/*
- * Add a single one-to-many mapping.
- */
 void
-pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *values, int len)
+pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *values, size_t len)
 {
 	if (len == 1)
 	{
@@ -718,7 +713,7 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *valu
 		return;
 	}
 
-	add_mrange(ctx, cmap, low, values, len);
+	add_mrange(ctx, cmap, low, values, (int)len);
 }
 
 static void
@@ -775,11 +770,11 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 	counts[2] = 0;
 	walk_splay(cmap->tree, cmap->ttop, count_node_types, &counts);
 
-	cmap->ranges = fz_malloc_array(ctx, counts[0], sizeof(*cmap->ranges));
+	cmap->ranges = Memento_label(fz_malloc_array(ctx, counts[0], pdf_range), "cmap_range");
 	cmap->rcap = counts[0];
-	cmap->xranges = fz_malloc_array(ctx, counts[1], sizeof(*cmap->xranges));
+	cmap->xranges = Memento_label(fz_malloc_array(ctx, counts[1], pdf_xrange), "cmap_xrange");
 	cmap->xcap = counts[1];
-	cmap->mranges = fz_malloc_array(ctx, counts[2], sizeof(*cmap->mranges));
+	cmap->mranges = Memento_label(fz_malloc_array(ctx, counts[2], pdf_mrange), "cmap_mrange");
 	cmap->mcap = counts[2];
 
 	walk_splay(cmap->tree, cmap->ttop, copy_node_types, cmap);
@@ -788,9 +783,6 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 	cmap->tree = NULL;
 }
 
-/*
- * Lookup the mapping of a codepoint.
- */
 int
 pdf_lookup_cmap(pdf_cmap *cmap, unsigned int cpt)
 {
@@ -896,10 +888,6 @@ pdf_lookup_cmap_full(pdf_cmap *cmap, unsigned int cpt, int *out)
 	return 0;
 }
 
-/*
- * Use the codespace ranges to extract a codepoint from a
- * multi-byte encoded string.
- */
 int
 pdf_decode_cmap(pdf_cmap *cmap, unsigned char *buf, unsigned char *end, unsigned int *cpt)
 {
@@ -929,4 +917,20 @@ pdf_decode_cmap(pdf_cmap *cmap, unsigned char *buf, unsigned char *end, unsigned
 
 	*cpt = 0;
 	return 1;
+}
+
+size_t
+pdf_cmap_size(fz_context *ctx, pdf_cmap *cmap)
+{
+	if (cmap == NULL)
+		return 0;
+	if (cmap->storable.refs < 0)
+		return 0;
+
+	return pdf_cmap_size(ctx, cmap->usecmap) +
+		cmap->rcap * sizeof *cmap->ranges +
+		cmap->xcap * sizeof *cmap->xranges +
+		cmap->mcap * sizeof *cmap->mranges +
+		cmap->tcap * sizeof *cmap->tree +
+		sizeof(*cmap);
 }

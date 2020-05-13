@@ -30,6 +30,9 @@ typedef struct fz_gel_s
 	fz_edge *edges;
 	int acap, alen;
 	fz_edge **active;
+	int bcap;
+	unsigned char *alphas;
+	int *deltas;
 } fz_gel;
 
 static int
@@ -51,6 +54,8 @@ fz_drop_gel(fz_context *ctx, fz_rasterizer *rast)
 		return;
 	fz_free(ctx, gel->active);
 	fz_free(ctx, gel->edges);
+	fz_free(ctx, gel->alphas);
+	fz_free(ctx, gel->deltas);
 	fz_free(ctx, gel);
 }
 
@@ -114,7 +119,7 @@ fz_insert_gel_raw(fz_context *ctx, fz_rasterizer *ras, int x0, int y0, int x1, i
 
 	if (gel->len + 1 == gel->cap) {
 		int new_cap = gel->cap * 2;
-		gel->edges = fz_resize_array(ctx, gel->edges, new_cap, sizeof(fz_edge));
+		gel->edges = fz_realloc_array(ctx, gel->edges, new_cap, fz_edge);
 		gel->cap = new_cap;
 	}
 
@@ -377,7 +382,7 @@ insert_active(fz_context *ctx, fz_gel *gel, int y, int *e_)
 		do {
 			if (gel->alen + 1 == gel->acap) {
 				int newcap = gel->acap + 64;
-				fz_edge **newactive = fz_resize_array(ctx, gel->active, newcap, sizeof(fz_edge*));
+				fz_edge **newactive = fz_realloc_array(ctx, gel->active, newcap, fz_edge*);
 				gel->active = newactive;
 				gel->acap = newcap;
 			}
@@ -546,6 +551,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	int y, e;
 	int yd, yc;
 	int height, h0, rh;
+	int bcap;
 	const int hscale = fz_rasterizer_aa_hscale(&gel->super);
 	const int vscale = fz_rasterizer_aa_vscale(&gel->super);
 	const int scale = fz_rasterizer_aa_scale(&gel->super);
@@ -565,14 +571,20 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	assert(clip->x0 >= xmin);
 	assert(clip->x1 <= xmax);
 
-	alphas = fz_malloc_no_throw(ctx, xmax - xmin + 1);
-	deltas = fz_malloc_no_throw(ctx, (xmax - xmin + 2) * sizeof(int));
-	if (alphas == NULL || deltas == NULL)
+	bcap = xmax - xmin + 2; /* big enough for both alphas and deltas */
+	if (bcap > gel->bcap)
 	{
-		fz_free(ctx, alphas);
-		fz_free(ctx, deltas);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "scan conversion failed (malloc failure)");
+		gel->bcap = bcap;
+		fz_free(ctx, gel->alphas);
+		fz_free(ctx, gel->deltas);
+		gel->alphas = NULL;
+		gel->deltas = NULL;
+		alphas = gel->alphas = Memento_label(fz_malloc_array(ctx, bcap, unsigned char), "gel_alphas");
+		deltas = gel->deltas = Memento_label(fz_malloc_array(ctx, bcap, int), "gel_deltas");
 	}
+	alphas = gel->alphas;
+	deltas = gel->deltas;
+
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
 	gel->alen = 0;
 
@@ -716,8 +728,7 @@ advance:
 		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 	}
 clip_ended:
-	fz_free(ctx, deltas);
-	fz_free(ctx, alphas);
+	;
 }
 
 /*
@@ -882,11 +893,11 @@ fz_new_gel(fz_context *ctx)
 		gel->edges = NULL;
 		gel->cap = 512;
 		gel->len = 0;
-		gel->edges = fz_malloc_array(ctx, gel->cap, sizeof(fz_edge));
+		gel->edges = Memento_label(fz_malloc_array(ctx, gel->cap, fz_edge), "gel_edges");
 
 		gel->acap = 64;
 		gel->alen = 0;
-		gel->active = fz_malloc_array(ctx, gel->acap, sizeof(fz_edge*));
+		gel->active = Memento_label(fz_malloc_array(ctx, gel->acap, fz_edge*), "gel_active");
 	}
 	fz_catch(ctx)
 	{
