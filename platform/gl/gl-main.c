@@ -756,20 +756,14 @@ void load_page(void)
 				s++;
 				int signd = pdf_widget_is_signed(ctx, w);
 				trace_action("widget = page.getWidgets()[%d];\n", i);
+				trace_action("print('Signature %d on page %d is signed:', widget.isSigned(), 'expected:', %d);\n",
+					s, fz_page_number_from_location(ctx, doc, currentpage), signd);
 				if (signd)
 				{
 					int valid = pdf_validate_signature(ctx, w);
-					trace_action("if (!widget.isSigned()) { print(\"Expected signature %d (chapter %d, page %d) to be signed!\\n\"); }\n",
-						s, currentpage.chapter, currentpage.page);
-					trace_action(
-						"tmp = page.getWidgets()[%d].validateSignature();\n"
-						"if (tmp != %d) { print(\"Signature %d (chapter %d, page %d) was invalidated \" + tmp + \" updates ago - expected %d\\n\"); }\n",
-						i, valid, s, currentpage.chapter, currentpage.page, valid);
-				}
-				else
-				{
-					trace_action("if (widget.isSigned()) { print(\"Expected signature %d (chapter %d, page %d) to be unsigned!\\n\"); }\n",
-						s, currentpage.chapter, currentpage.page);
+					trace_action("tmp = page.getWidgets()[%d].validateSignature();\n", i);
+					trace_action("print('Signature %d on page %d validation:', tmp, 'expected:', %d);\n",
+						s, fz_page_number_from_location(ctx, doc, currentpage), valid);
 				}
 			}
 	}
@@ -1358,11 +1352,8 @@ static void load_document(void)
 			if (vsns > 1)
 			{
 				int valid = pdf_validate_change_history(ctx, pdf);
-				trace_action(
-					"tmp = doc.validateChangeHistory();\n"
-					"if (tmp != %d) {\n"
-					"  print(\"Mismatch in change history validation. I expected %d and got \" + tmp + \"\\n\");\n"
-					"}\n", valid, valid);
+				trace_action("tmp = doc.validateChangeHistory();\n");
+				trace_action("print('History validation:', tmp, 'expected:', %d);\n", valid);
 			}
 		}
 		if (anchor)
