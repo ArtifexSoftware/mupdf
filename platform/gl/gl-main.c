@@ -2007,6 +2007,8 @@ void do_main(void)
 				search_page.chapter, search_page.page,
 				search_needle,
 				search_hit_quads, nelem(search_hit_quads));
+			trace_action("hits = doc.loadPage(%d).search(%q);\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
+			trace_action("print('Search page %d:', repr(%q), hits.length, repr(hits));\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
 			if (search_hit_count)
 			{
 				float search_hit_x = search_hit_quads[0].ul.x;
@@ -2208,7 +2210,7 @@ int main(int argc, char **argv)
 			trace_file = fz_stdout(ctx);
 		else
 			trace_file = fz_new_output_with_path(ctx, trace_file_name, 0);
-		trace_action("var doc, page, annot, widget, tmp;\n");
+		trace_action("var doc, page, annot, widget, hits, tmp;\n");
 	}
 
 	if (layout_css)
