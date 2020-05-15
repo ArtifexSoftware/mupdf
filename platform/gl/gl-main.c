@@ -652,6 +652,10 @@ void trace_action(const char *fmt, ...)
 		fz_write_vprintf(ctx, trace_file, fmt, args);
 		fz_flush_output(ctx, trace_file);
 		va_end(args);
+		va_start(args, fmt);
+		fz_write_vprintf(ctx, fz_stdout(ctx), fmt, args);
+		fz_flush_output(ctx, fz_stdout(ctx));
+		va_end(args);
 	}
 }
 
