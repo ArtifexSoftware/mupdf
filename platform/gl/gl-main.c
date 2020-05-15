@@ -661,8 +661,12 @@ void trace_action(const char *fmt, ...)
 
 void trace_page_update(void)
 {
-	static int trace_idx = 1;
 	trace_action("page.update();\n");
+}
+
+void trace_save_snapshot(void)
+{
+	static int trace_idx = 1;
 	trace_action("page.toPixmap(Identity, DeviceRGB).saveAsPNG(\"trace-%03d.png\");\n", trace_idx++);
 }
 
@@ -1506,6 +1510,9 @@ static void do_app(void)
 
 	if (ui.down || ui.middle || ui.right || ui.key)
 		showinfo = 0;
+
+	if (trace_file && ui.key == KEY_CTL_P)
+		trace_save_snapshot();
 
 	if (!ui.focus && ui.key && ui.plain)
 	{
