@@ -194,6 +194,13 @@ source/pdf/js/%.js.h: source/pdf/js/%.js scripts/jsdump.sed
 
 generate: source/pdf/js/util.js.h
 
+# --- Generated perfect hash source files ---
+
+source/html/css-properties.h: source/html/css-properties.gperf
+	$(QUIET_GEN) gperf > $@ $<
+
+generate: source/html/css-properties.h
+
 # --- Library ---
 
 ifeq ($(shared),yes)

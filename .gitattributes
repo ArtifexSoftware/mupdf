@@ -23,6 +23,9 @@ bin2coff.xml		spaces
 # Legacy source files:
 memento.*		spaces
 
+# Generated source files:
+source/html/css-properties.h	spaces
+
 # iOS project files:
 *.xib			spaces
 *.xcscheme		spaces
