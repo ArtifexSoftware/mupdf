@@ -64,7 +64,7 @@ mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
 	cat $(sort $(wildcard ../../build/java/*.h)) > mupdf_native.h
 
-mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
+mupdf_native.o : mupdf_native.c mupdf_native.h $(wildcard jni/*.c) $(MUPDF_CORE)
 	$(CC) -g -o $@ -c $< -fPIC -Wall -Wextra -Wno-unused-parameter -I ../../include \
 		$(JAVA_CFLAGS)
 
