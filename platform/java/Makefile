@@ -42,19 +42,19 @@ $(MUPDF_CORE) : .FORCE
 endif
 
 LIBRARY_JAVA_SOURCES := $(sort $(wildcard src/com/artifex/mupdf/fitz/*.java))
-LIBRARY_JAVA_OBJECTS := $(LIBRARY_JAVA_SOURCES:%.java=%.class)
+LIBRARY_JAVA_OBJECTS := $(subst src/,../../build/java/,$(LIBRARY_JAVA_SOURCES:%.java=%.class))
 LIBRARY_JAVA_CLASSES := $(subst src/com/artifex/mupdf/fitz/,com.artifex.mupdf.fitz.,$(LIBRARY_JAVA_SOURCES:%.java=%))
 
 JAVAC_FLAGS := $(JAVAC_XFLAGS) -source 1.7 -target 1.7
 
 $(LIBRARY_JAVA_OBJECTS) : $(LIBRARY_JAVA_SOURCES)
-	$(JAVAC) $(JAVAC_FLAGS) -h ../../build/java/ $^
+	$(JAVAC) $(JAVAC_FLAGS) -h ../../build/java/ -d ../../build/java/ $^
 
 EXAMPLE_JAVA_SOURCES := $(sort $(wildcard example/*.java))
 EXAMPLE_JAVA_OBJECTS := $(EXAMPLE_JAVA_SOURCES:%.java=%.class)
 
 $(EXAMPLE_JAVA_OBJECTS) : $(EXAMPLE_JAVA_SOURCES)
-	$(JAVAC) $(JAVAC_FLAGS) -classpath .:src $^
+	$(JAVAC) $(JAVAC_FLAGS) -classpath ../../build/java $^
 
 libmupdf.jar : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
@@ -72,13 +72,13 @@ $(MUPDF_JAVA) : ../../build/java/mupdf_native.o $(MUPDF_CORE)
 	$(CC) -shared $(JAVA_LDFLAGS) -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java $(JAVA) -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java $(JAVA) -classpath ../../build/java/ example.Viewer
 
 gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java gdb --args $(JAVA) -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java gdb --args $(JAVA) -classpath ../../build/java/ example.Viewer
 
 clean:
-	rm -f src/com/artifex/mupdf/fitz/*.class
+	rm -f $(LIBRARY_JAVA_OBJECTS) $(subst .class,\$$*.class,$(LIBRARY_JAVA_OBJECTS))
 	rm -f example/*.class
 	rm -f ../../build/java/mupdf_native.o
 	rm -f libmupdf.jar
