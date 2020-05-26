@@ -3816,6 +3816,8 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	fz_context *ctx = get_context(env);
 	size_t size = info->width * info->height * 4;
 
+	if (!ctx) return jni_throw_run(env, "no context in DrawDevice call"), 1;
+
 	assert(info);
 	assert(info->object);
 
@@ -4096,7 +4098,7 @@ FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject jcs, jint x, jint y, ji
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	fz_pixmap *pixmap = NULL;
 
-	if (!ctx) return 0;
+	if (!ctx || !cs) return 0;
 
 	fz_try(ctx)
 	{
@@ -4145,7 +4147,7 @@ FUN(Pixmap_saveAsPNG)(JNIEnv *env, jobject self, jstring jfilename)
 	fz_pixmap *pixmap = from_Pixmap(env, self);
 	const char *filename = "null";
 
-	if (!ctx) return;
+	if (!ctx || !pixmap) return;
 	if (!jfilename) return jni_throw_arg(env, "filename must not be null");
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
@@ -4236,7 +4238,7 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 	if (!ctx | !pixmap) return NULL;
 
 	arr = (*env)->NewByteArray(env, size);
-	if (!arr) return jni_throw_run(env, "cannot create byte array"), NULL;
+	if (!arr || (*env)->ExceptionCheck(env)) return jni_throw_run(env, "cannot create byte array"), NULL;
 
 	(*env)->SetByteArrayRegion(env, arr, 0, size, (const jbyte *)pixmap->samples);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -7970,7 +7972,7 @@ FUN(PDFObject_isNull)(JNIEnv *env, jobject self)
 	pdf_obj *obj = from_PDFObject(env, self);
 	int b = 0;
 
-	if (!ctx) return JNI_FALSE;
+	if (!ctx || !obj) return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_null(ctx, obj);
@@ -9170,8 +9172,7 @@ FUN(PDFGraftMap_graftObject)(JNIEnv *env, jobject self, jobject jobj)
 	pdf_obj *obj = from_PDFObject(env, jobj);
 	pdf_graft_map *map = from_PDFGraftMap(env, self);
 
-	if (!ctx) return NULL;
-	if (!map) return jni_throw_arg(env, "map must not be null"), NULL;
+	if (!ctx || !map) return NULL;
 
 	fz_try(ctx)
 		obj = pdf_graft_mapped_object(ctx, map, obj);
