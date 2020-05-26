@@ -877,16 +877,14 @@ static JNIEnv *jni_attach_thread(fz_context *ctx, jboolean *detach)
 		state = (*jvm)->AttachCurrentThread(jvm, (void *)&env, NULL);
 	}
 
-	if (state != JNI_OK)
-		return NULL;
+	if (state != JNI_OK) return NULL;
 
 	return env;
 }
 
 static void jni_detach_thread(jboolean detach)
 {
-	if (!detach)
-		return;
+	if (!detach) return;
 	(*jvm)->DetachCurrentThread(jvm);
 }
 
@@ -1394,8 +1392,7 @@ JNIEXPORT void JNICALL
 FUN(Context_emptyStore)(JNIEnv *env, jclass cls)
 {
 	fz_context *ctx = get_context(env);
-	if (!ctx)
-		return;
+	if (!ctx) return;
 
 	fz_empty_store(ctx);
 }
@@ -1582,9 +1579,7 @@ static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const flo
 
 static inline jint to_ColorParams_safe(fz_context *ctx, JNIEnv *env, fz_color_params cp)
 {
-	if (!ctx)
-		return 0;
-
+	if (!ctx) return 0;
 	return (((int) (!!cp.bp)<<5) | ((int) (!!cp.op)<<6) | ((int) (!!cp.opm)<<7) | (cp.ri & 31));
 }
 
@@ -5178,16 +5173,14 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 	if (jmagic)
 	{
 		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
-		if (!magic)
-			return jni_throw_run(env, "cannot get characters in magic string"), NULL;
+		if (!magic) return jni_throw_run(env, "cannot get characters in magic string"), NULL;
 	}
 	if (jdocument)
 	{
 		jdoc = (*env)->NewGlobalRef(env, jdocument);
 		if (!jdoc)
 		{
-			if (magic)
-				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			return jni_throw_run(env, "cannot get reference to document stream"), NULL;
 		}
 	}
@@ -5197,8 +5190,7 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		if (!jacc)
 		{
 			(*env)->DeleteGlobalRef(env, jdoc);
-			if (magic)
-				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			return jni_throw_run(env, "cannot get reference to accelerator stream"), NULL;
 		}
 	}
@@ -5210,8 +5202,7 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 	{
 		(*env)->DeleteGlobalRef(env, jacc);
 		(*env)->DeleteGlobalRef(env, jdoc);
-		if (magic)
-			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 		return jni_throw_run(env, "cannot create internal buffer for document stream"), NULL;
 	}
 
@@ -5223,8 +5214,7 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		(*env)->DeleteGlobalRef(env, docarray);
 		(*env)->DeleteGlobalRef(env, jacc);
 		(*env)->DeleteGlobalRef(env, jdoc);
-		if (magic)
-			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 		return jni_throw_run(env, "cannot create internal buffer for accelerator stream"), NULL;
 	}
 
@@ -5295,14 +5285,12 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jst
 	if (jfilename)
 	{
 		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
-		if (!filename)
-			return jni_throw_run(env, "cannot get characters in filename string"), NULL;
+		if (!filename) return jni_throw_run(env, "cannot get characters in filename string"), NULL;
 	}
 	if (jaccelerator)
 	{
 		accelerator = (*env)->GetStringUTFChars(env, jaccelerator, NULL);
-		if (!accelerator)
-			return jni_throw_run(env, "cannot get characters in accelerator filename string"), NULL;
+		if (!accelerator) return jni_throw_run(env, "cannot get characters in accelerator filename string"), NULL;
 	}
 
 	fz_try(ctx)
@@ -5342,16 +5330,14 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 	if (jfilename)
 	{
 		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
-		if (!filename)
-			return jni_throw_run(env, "cannot get characters in filename string"), NULL;
+		if (!filename) return jni_throw_run(env, "cannot get characters in filename string"), NULL;
 	}
 	if (jaccelerator)
 	{
 		jacc = (*env)->NewGlobalRef(env, jaccelerator);
 		if (!jacc)
 		{
-			if (jfilename)
-				(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+			if (jfilename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
 			return jni_throw_run(env, "cannot get reference to accelerator stream"), NULL;
 		}
 	}
@@ -5362,8 +5348,7 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 	if (!accarray)
 	{
 		(*env)->DeleteGlobalRef(env, jacc);
-		if (jfilename)
-			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		if (jfilename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
 		return jni_throw_run(env, "cannot get create internal buffer for accelerator stream"), NULL;
 	}
 
@@ -5394,8 +5379,7 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 	{
 		fz_drop_stream(ctx, accstream);
 		fz_drop_stream(ctx, docstream);
-		if (filename)
-			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		if (filename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	}
 	fz_catch(ctx)
 	{
@@ -5440,8 +5424,7 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
 		if (!buffer)
 		{
-			if (magic)
-				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			return jni_throw_run(env, "cannot get document bytes to read"), NULL;
 		}
 	}
@@ -5452,10 +5435,8 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		accelerator = (*env)->GetByteArrayElements(env, jaccelerator, NULL);
 		if (!accelerator)
 		{
-			if (buffer)
-				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
-			if (magic)
-				(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			if (buffer) (*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			return jni_throw_run(env, "cannot get accelerator bytes to read"), NULL;
 		}
 	}
@@ -5484,12 +5465,9 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		fz_drop_buffer(ctx, accbuf);
 		fz_drop_stream(ctx, docstream);
 		fz_drop_buffer(ctx, docbuf);
-		if (accelerator)
-			(*env)->ReleaseByteArrayElements(env, jaccelerator, accelerator, 0);
-		if (buffer)
-			(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
-		if (magic)
-			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		if (accelerator) (*env)->ReleaseByteArrayElements(env, jaccelerator, accelerator, 0);
+		if (buffer) (*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 	}
 	fz_catch(ctx)
 	{
@@ -5516,8 +5494,7 @@ FUN(Document_recognize)(JNIEnv *env, jclass cls, jstring jmagic)
 	fz_try(ctx)
 		recognized = fz_recognize_document(ctx, magic) != NULL;
 	fz_always(ctx)
-		if (magic)
-			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 	fz_catch(ctx)
 		return jni_rethrow(env, ctx), JNI_FALSE;
 
@@ -5640,8 +5617,7 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 	fz_try(ctx)
 		okay = fz_authenticate_password(ctx, doc, password);
 	fz_always(ctx)
-		if (password)
-			(*env)->ReleaseStringUTFChars(env, jpassword, password);
+		if (password) (*env)->ReleaseStringUTFChars(env, jpassword, password);
 	fz_catch(ctx)
 		return jni_rethrow(env, ctx), JNI_FALSE;
 
@@ -6077,18 +6053,13 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 	jobjectArray jwidgets = NULL;
 	int count = 0;
 
-	if (!ctx || !page)
-		return NULL;
+	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-	{
 		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 			count++;
-	}
 	fz_catch(ctx)
-	{
 		count = 0;
-	}
 
 	if (count == 0)
 		return NULL;
@@ -6710,12 +6681,9 @@ FUN(Buffer_writeBytesFrom)(JNIEnv *env, jobject self, jobject jbs, jint joff, ji
 	if (!jbs) return jni_throw_arg(env, "buffer must not be null");
 
 	bslen = (*env)->GetArrayLength(env, jbs);
-	if (joff < 0)
-		return jni_throw_oob(env, "offset is negative");
-	if (jlen < 0)
-		return jni_throw_oob(env, "length is negative");
-	if (off + len >= bslen)
-		return jni_throw_oob(env, "offset + length is outside of buffer");
+	if (joff < 0) return jni_throw_oob(env, "offset is negative");
+	if (jlen < 0) return jni_throw_oob(env, "length is negative");
+	if (off + len >= bslen) return jni_throw_oob(env, "offset + length is outside of buffer");
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) return jni_throw_io(env, "cannot get bytes to write");
@@ -7835,30 +7803,26 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	if (joptions)
 	{
 		options = (*env)->GetStringUTFChars(env, joptions, NULL);
-		if (!options)
-			return;
+		if (!options) return;
 	}
 
 	stream = (*env)->NewGlobalRef(env, jstream);
 	if (!stream)
 	{
-		if (options)
-			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options) (*env)->ReleaseStringUTFChars(env, joptions, options);
 		return;
 	}
 
 	array = (*env)->NewByteArray(env, sizeof state->buffer);
 	if ((*env)->ExceptionCheck(env))
 	{
-		if (options)
-			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options) (*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
 		return;
 	}
 	if (!array)
 	{
-		if (options)
-			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options) (*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
 		return jni_throw_run(env, "cannot create byte array");
 	}
@@ -7866,8 +7830,7 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	array = (*env)->NewGlobalRef(env, array);
 	if (!array)
 	{
-		if (options)
-			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options) (*env)->ReleaseStringUTFChars(env, joptions, options);
 		(*env)->DeleteGlobalRef(env, stream);
 		return jni_throw_run(env, "cannot create global reference");
 	}
@@ -8413,8 +8376,7 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	if (!jname) return jni_throw_arg(env, "name must not be null"), NULL;
 
 	name = (*env)->GetStringUTFChars(env, jname, NULL);
-	if (!name)
-		return jni_throw_run(env, "cannot get name to lookup"), NULL;
+	if (!name) return jni_throw_run(env, "cannot get name to lookup"), NULL;
 
 	fz_try(ctx)
 		val = pdf_dict_gets(ctx, dict, name);
@@ -9007,10 +8969,8 @@ FUN(PDFObject_asByteString)(JNIEnv *env, jobject self)
 		return jni_rethrow(env, ctx), NULL;
 
 	jbs = (*env)->NewByteArray(env, len);
-	if ((*env)->ExceptionCheck(env))
-		return NULL;
-	if (!jbs)
-		return jni_throw_run(env, "cannot create byte array"), NULL;
+	if ((*env)->ExceptionCheck(env)) return NULL;
+	if (!jbs) return jni_throw_run(env, "cannot create byte array"), NULL;
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) return NULL;
 
@@ -10085,8 +10045,7 @@ FUN(PDFDocument_enableJs)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 
-	if (!ctx || !pdf)
-		return;
+	if (!ctx || !pdf) return;
 
 	fz_try(ctx)
 		pdf_enable_js(ctx, pdf);
@@ -10100,8 +10059,7 @@ FUN(PDFDocument_disableJs)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 
-	if (!ctx || !pdf)
-		return;
+	if (!ctx || !pdf) return;
 
 	fz_try(ctx)
 		pdf_disable_js(ctx, pdf);
@@ -10116,8 +10074,7 @@ FUN(PDFDocument_isJsSupported)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	jboolean supported = JNI_FALSE;
 
-	if (!ctx || !pdf)
-		return JNI_FALSE;
+	if (!ctx || !pdf) return JNI_FALSE;
 
 	fz_try(ctx)
 		supported = pdf_js_supported(ctx, pdf);
@@ -10138,8 +10095,7 @@ FUN(PDFDocument_setJsEventListener)(JNIEnv *env, jobject self, jobject jlistener
 	if (!jlistener) return jni_throw_arg(env, "listener must not be null");
 
 	jlistener = (*env)->NewGlobalRef(env, jlistener);
-	if (!jlistener)
-		return jni_throw_arg(env, "unable to get reference to listener");
+	if (!jlistener) return jni_throw_arg(env, "unable to get reference to listener");
 
 	fz_try(ctx)
 	{
@@ -10158,8 +10114,7 @@ FUN(PDFDocument_calculate)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 
-	if (!ctx || !pdf)
-		return;
+	if (!ctx || !pdf) return;
 
 	fz_try(ctx)
 		if (pdf->recalculate)
@@ -10175,8 +10130,7 @@ FUN(PDFDocument_countVersions)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	int val = 0;
 
-	if (!ctx || !pdf)
-		return 0;
+	if (!ctx || !pdf) return 0;
 
 	fz_try(ctx)
 		val = pdf_count_versions(ctx, pdf);
@@ -10193,8 +10147,7 @@ FUN(PDFDocument_countUnsavedVersions)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	int val = 0;
 
-	if (!ctx || !pdf)
-		return 0;
+	if (!ctx || !pdf) return 0;
 
 	fz_try(ctx)
 		val = pdf_count_unsaved_versions(ctx, pdf);
@@ -10211,8 +10164,7 @@ FUN(PDFDocument_validateChangeHistory)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	int val = 0;
 
-	if (!ctx || !pdf)
-		return 0;
+	if (!ctx || !pdf) return 0;
 
 	fz_try(ctx)
 		val = pdf_validate_change_history(ctx, pdf);
@@ -10229,8 +10181,7 @@ FUN(PDFDocument_wasPureXFA)(JNIEnv *env, jobject self)
 	pdf_document *pdf = from_PDFDocument_safe(env, self);
 	jboolean val = JNI_FALSE;
 
-	if (!ctx || !pdf)
-		return JNI_FALSE;
+	if (!ctx || !pdf) return JNI_FALSE;
 
 	fz_try(ctx)
 		val = pdf_was_pure_xfa(ctx, pdf);
@@ -10246,8 +10197,7 @@ FUN(PDFWidget_finalize)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 
-	if (!ctx || !widget)
-		return;
+	if (!ctx || !widget) return;
 
 	pdf_drop_annot(ctx, widget);
 }
@@ -10259,8 +10209,7 @@ FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	const char *text = NULL;
 
-	if (!ctx || !widget)
-		return NULL;
+	if (!ctx || !widget) return NULL;
 
 	fz_try(ctx)
 		text = pdf_field_value(ctx, widget->obj);
@@ -10278,8 +10227,7 @@ FUN(PDFWidget_setTextValue)(JNIEnv *env, jobject self, jstring jval)
 	const char *val;
 	jboolean accepted = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return JNI_FALSE;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	val = (*env)->GetStringUTFChars(env, jval, NULL);
 
@@ -10302,8 +10250,7 @@ FUN(PDFWidget_setChoiceValue)(JNIEnv *env, jobject self, jstring jval)
 	const char *val;
 	jboolean accepted = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return JNI_FALSE;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	val = (*env)->GetStringUTFChars(env, jval, NULL);
 
@@ -10326,8 +10273,7 @@ FUN(PDFWidget_setValue)(JNIEnv *env, jobject self, jstring jval)
 	const char *val;
 	jboolean accepted = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return JNI_FALSE;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	val = (*env)->GetStringUTFChars(env, jval, NULL);
 
@@ -10349,8 +10295,7 @@ FUN(PDFWidget_toggle)(JNIEnv *env, jobject self)
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	jboolean accepted = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return JNI_FALSE;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	fz_var(accepted);
 	fz_try(ctx)
@@ -10367,8 +10312,7 @@ FUN(PDFWidget_setEditing)(JNIEnv *env, jobject self, jboolean val)
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 
-	if (!ctx || !widget)
-		return;
+	if (!ctx || !widget) return;
 
 	fz_try(ctx)
 		pdf_set_widget_editing_state(ctx, widget, val);
@@ -10383,8 +10327,7 @@ FUN(PDFWidget_isEditing)(JNIEnv *env, jobject self)
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	jboolean state = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return JNI_FALSE;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	fz_var(state);
 	fz_try(ctx)
@@ -10405,8 +10348,7 @@ FUN(PDFWidget_textQuads)(JNIEnv *env, jobject self)
 	int i, nchars;
 	fz_stext_page *stext = NULL;
 
-	if (!ctx || !widget)
-		return NULL;
+	if (!ctx || !widget) return NULL;
 
 	fz_try(ctx)
 	{
@@ -10480,8 +10422,7 @@ FUN(PDFWidget_validateSignature)(JNIEnv *env, jobject self)
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	int val = 0;
 
-	if (!ctx || !widget)
-		return 0;
+	if (!ctx || !widget) return 0;
 
 	fz_try(ctx)
 		val = pdf_validate_signature(ctx, widget);
@@ -10498,8 +10439,7 @@ FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	jboolean val = JNI_FALSE;
 
-	if (!ctx || !widget)
-		return 0;
+	if (!ctx || !widget) return 0;
 
 	fz_try(ctx)
 		val = !!pdf_widget_is_signed(ctx, widget);
@@ -10521,8 +10461,7 @@ static pdf_pkcs7_signer *signer_keep(fz_context *ctx, pdf_pkcs7_signer *signer_)
 {
 	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
 
-	if (!signer)
-		return NULL;
+	if (!signer) return NULL;
 
 	return fz_keep_imp(ctx, signer, &signer->refs);
 }
@@ -10531,8 +10470,7 @@ static void signer_drop(fz_context *ctx, pdf_pkcs7_signer *signer_)
 {
 	java_pkcs7_signer *signer = (java_pkcs7_signer *)signer_;
 
-	if (!signer)
-		return;
+	if (!signer) return;
 
 	if (fz_drop_imp(ctx, signer, &signer->refs))
 	{
@@ -10562,8 +10500,7 @@ static char *string_field_to_utfchars(fz_context *ctx, JNIEnv *env, jobject obj,
 	jobject jstr;
 
 	jstr = (*env)->GetObjectField(env, obj, fid);
-	if (!jstr)
-		return NULL;
+	if (!jstr) return NULL;
 
 	str = (*env)->GetStringUTFChars(env, jstr, NULL);
 	if (!str)
@@ -10587,8 +10524,7 @@ static pdf_pkcs7_designated_name *signer_designated_name(fz_context *ctx, pdf_pk
 	jobject desname = NULL;
 	JNIEnv *env = NULL;
 
-	if (signer == NULL)
-		return NULL;
+	if (signer == NULL) return NULL;
 
 	env = jni_attach_thread(ctx, &detach);
 	if (env == NULL)
@@ -10703,8 +10639,7 @@ pdf_pkcs7_signer *pdf_pkcs7_java_signer_create(JNIEnv *env, fz_context *ctx, job
 {
 	java_pkcs7_signer *signer = Memento_label(fz_calloc(ctx, 1, sizeof(*signer)), "java_pkcs7_signer");
 
-	if (signer == NULL)
-		return NULL;
+	if (signer == NULL) return NULL;
 
 	signer->base.keep = signer_keep;
 	signer->base.drop = signer_drop;
@@ -10731,8 +10666,7 @@ FUN(PDFWidget_sign)(JNIEnv *env, jobject self, jobject signer)
 	pdf_document *pdf = widget->page->doc;
 	pdf_pkcs7_signer *pkcs7signer = from_PKCS7Signer_safe(env, signer);
 
-	if (!ctx || !widget || !pdf)
-		return JNI_FALSE;
+	if (!ctx || !widget || !pdf) return JNI_FALSE;
 
 	fz_try(ctx)
 		pdf_sign_signature(ctx, widget, pkcs7signer);
@@ -10752,8 +10686,7 @@ FUN(PKCS7Signer_newNative)(JNIEnv *env, jclass cls, jobject jsigner)
 	if (!jsigner) return jni_throw_arg(env, "signer must not be null"), 0;
 
 	jsigner = (*env)->NewGlobalRef(env, jsigner);
-	if (!jsigner)
-		return jni_throw_arg(env, "unable to get reference to signer"), 0;
+	if (!jsigner) return jni_throw_arg(env, "unable to get reference to signer"), 0;
 
 	fz_try(ctx)
 		signer = pdf_pkcs7_java_signer_create(env, ctx, jsigner);
@@ -10773,8 +10706,7 @@ FUN(PKCS7Signer_finalize)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_pkcs7_signer *signer = from_PKCS7Signer_safe(env, self);
 
-	if (!ctx || !signer)
-		return;
+	if (!ctx || !signer) return;
 
 	signer_drop(ctx, signer);
 	(*env)->SetLongField(env, self, fid_PKCS7Signer_pointer, (jlong)NULL);
@@ -10874,8 +10806,7 @@ FUN(PKCS7Verifier_newNative)(JNIEnv *env, jobject self, jobject jverifier)
 	if (!jverifier) return jni_throw_arg(env, "verifier must not be null"), 0;
 
 	jverifier = (*env)->NewGlobalRef(env, jverifier);
-	if (!jverifier)
-		return jni_throw_arg(env, "unable to get reference to verifier"), 0;
+	if (!jverifier) return jni_throw_arg(env, "unable to get reference to verifier"), 0;
 
 	fz_try(ctx)
 		verifier = java_pkcs7_new_verifier(ctx, jverifier);
@@ -10961,10 +10892,8 @@ FUN(PDFWidget_getDesignatedName)(JNIEnv *env, jobject self, jobject jverifier)
 	if (!verifier) return jni_throw_arg(env, "verifier must not be null"), NULL;
 
 	jname = (*env)->NewObject(env, cls_PKCS7DesignatedName, mid_PKCS7DesignatedName_init);
-	if ((*env)->ExceptionCheck(env))
-		return NULL;
-	if (!jname)
-		return jni_throw_run(env, "cannot create designated name object"), NULL;
+	if ((*env)->ExceptionCheck(env)) return NULL;
+	if (!jname) return jni_throw_run(env, "cannot create designated name object"), NULL;
 
 	fz_try(ctx)
 	{
@@ -11016,8 +10945,7 @@ FUN(PKCS7Verifier_finalize)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, self);
 
-	if (!ctx || !verifier)
-		return;
+	if (!ctx || !verifier) return;
 
 	pdf_drop_verifier(ctx, &verifier->base);
 	(*env)->SetLongField(env, self, fid_PKCS7Verifier_pointer, (jlong) NULL);
@@ -11070,14 +10998,12 @@ FUN(FitzInputStream_reset)(JNIEnv *env, jobject self)
 
 	if (!ctx || !stm) return;
 
-	if (stm->seek == NULL)
-		return jni_throw_uoe(env, "reset not supported");
+	if (stm->seek == NULL) return jni_throw_uoe(env, "reset not supported");
 	closed = (*env)->GetBooleanField(env, self, fid_FitzInputStream_closed);
 	if (closed) return jni_throw_uoe(env, "stream closed");
 
 	markpos = (*env)->GetLongField(env, self, fid_FitzInputStream_markpos);
-	if (markpos < 0)
-		return jni_throw_io(env, "mark not set");
+	if (markpos < 0) return jni_throw_io(env, "mark not set");
 
 	fz_try(ctx)
 		fz_seek(ctx, stm, markpos, SEEK_SET);
@@ -11143,8 +11069,7 @@ FUN(FitzInputStream_readArray)(JNIEnv *env, jobject self, jobject jarr, jint off
 	if (closed) return jni_throw_uoe(env, "stream closed"), -1;
 
 	arr = (*env)->GetByteArrayElements(env, jarr, NULL);
-	if (!arr)
-		return jni_throw_arg(env, "cannot get buffer to read into"), -1;
+	if (!arr) return jni_throw_arg(env, "cannot get buffer to read into"), -1;
 
 	fz_try(ctx)
 		n = fz_read(ctx, stm, (unsigned char *) arr + off, len);
