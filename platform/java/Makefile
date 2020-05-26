@@ -4,7 +4,7 @@ JAVA := java
 JAVAC := javac
 
 ifeq "$(OS)" "Darwin"
-MUPDF_JAVA := libmupdf_java64.jnilib
+MUPDF_JAVA := ../../build/java/libmupdf_java64.jnilib
 JAVA_CFLAGS := \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include \
 	-I /Library/Java/JavaVirtualMachines/jdk1.8.0_66.jdk/Contents/Home/include/darwin
@@ -16,7 +16,7 @@ BITS := $(shell getconf LONG_BIT)
 
 JAVA_HOME ?= /usr/lib/jvm/default-java
 
-MUPDF_JAVA := libmupdf_java$(BITS).so
+MUPDF_JAVA := ../../build/java/libmupdf_java$(BITS).so
 JAVA_CFLAGS := \
 	-I $(JAVA_HOME)/include \
 	-I $(JAVA_HOME)/include/linux \
@@ -64,23 +64,23 @@ mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
 	cat $(sort $(wildcard ../../build/java/*.h)) > mupdf_native.h
 
-mupdf_native.o : mupdf_native.c mupdf_native.h $(wildcard jni/*.c) $(MUPDF_CORE)
+../../build/java/mupdf_native.o : mupdf_native.c mupdf_native.h $(wildcard jni/*.c) $(MUPDF_CORE)
 	$(CC) -g -o $@ -c $< -fPIC -Wall -Wextra -Wno-unused-parameter -I ../../include \
 		$(JAVA_CFLAGS)
 
-$(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
+$(MUPDF_JAVA) : ../../build/java/mupdf_native.o $(MUPDF_CORE)
 	$(CC) -shared $(JAVA_LDFLAGS) -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. $(JAVA) -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java $(JAVA) -classpath .:src example.Viewer
 
 gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. gdb --args $(JAVA) -classpath .:src example.Viewer
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java gdb --args $(JAVA) -classpath .:src example.Viewer
 
 clean:
 	rm -f src/com/artifex/mupdf/fitz/*.class
 	rm -f example/*.class
-	rm -f mupdf_native.o
+	rm -f ../../build/java/mupdf_native.o
 	rm -f libmupdf.jar
 	rm -f $(MUPDF_JAVA)
 	rm -f ../../build/java/*.h
