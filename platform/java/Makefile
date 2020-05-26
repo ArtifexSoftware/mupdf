@@ -53,10 +53,10 @@ $(LIBRARY_JAVA_OBJECTS) : $(LIBRARY_JAVA_SOURCES)
 	$(JAVAC) $(JAVAC_FLAGS) -h ../../build/java/ -d ../../build/java/ $^
 
 EXAMPLE_JAVA_SOURCES := $(sort $(wildcard example/*.java))
-EXAMPLE_JAVA_OBJECTS := $(EXAMPLE_JAVA_SOURCES:%.java=%.class)
+EXAMPLE_JAVA_OBJECTS := $(subst example/,../../build/java/example/,$(EXAMPLE_JAVA_SOURCES:%.java=%.class))
 
-$(EXAMPLE_JAVA_OBJECTS) : $(EXAMPLE_JAVA_SOURCES)
-	$(JAVAC) $(JAVAC_FLAGS) -classpath ../../build/java $^
+$(EXAMPLE_JAVA_OBJECTS): $(EXAMPLE_JAVA_SOURCES)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath ../../build/java -d ../../build/java/ $^
 
 $(MUPDF_JAR) : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
@@ -81,7 +81,7 @@ gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
 
 clean:
 	rm -f $(LIBRARY_JAVA_OBJECTS) $(subst .class,\$$*.class,$(LIBRARY_JAVA_OBJECTS))
-	rm -f example/*.class
+	rm -f $(EXAMPLE_JAVA_OBJECTS) $(subst .class,\$$*.class,$(EXAMPLE_JAVA_OBJECTS))
 	rm -f ../../build/java/mupdf_native.o
 	rm -f $(MUPDF_JAR)
 	rm -f $(MUPDF_JAVA)
