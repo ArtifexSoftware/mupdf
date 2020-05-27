@@ -135,6 +135,7 @@ static fz_context *get_context(JNIEnv *env)
 
 #ifdef _WIN32
 	TlsSetValue(context_key, ctx);
+	if (ctx == NULL && GetLastError() != ERROR_SUCCESS) return jni_throw_run(env, "cannot get context"), NULL;
 #else
 	pthread_setspecific(context_key, ctx);
 #endif
