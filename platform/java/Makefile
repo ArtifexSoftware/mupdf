@@ -73,11 +73,11 @@ mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 $(MUPDF_JAVA) : ../../build/java/mupdf_native.o $(MUPDF_CORE)
 	$(CC) -shared $(JAVA_LDFLAGS) -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
-run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
+run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java $(JAVA) -classpath ../../build/java/ example.Viewer
 
-gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java gdb --args $(JAVA) -classpath ../../build/java/ example.Viewer
+gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../../build/java gdb --args $(JAVA) -classpath ../../build/java example.Viewer
 
 clean:
 	rm -f $(LIBRARY_JAVA_OBJECTS) $(subst .class,\$$*.class,$(LIBRARY_JAVA_OBJECTS))
