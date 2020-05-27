@@ -30,7 +30,7 @@ static pdf_signature_error java_pkcs7_check_certificate(fz_context *ctx, pdf_pkc
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
 
 	fz_try(ctx)
-		jsignature = to_jbyteArray(ctx, env, signature, (int)len);
+		jsignature = to_byteArray(ctx, env, signature, (int)len);
 	fz_catch(ctx)
 		fz_rethrow_and_detach_thread(ctx, detach);
 
@@ -59,7 +59,7 @@ static pdf_signature_error java_pkcs7_check_digest(fz_context *ctx, pdf_pkcs7_ve
 
 	fz_try(ctx)
 	{
-		jsignature = to_jbyteArray(ctx, env, signature, (int)len);
+		jsignature = to_byteArray(ctx, env, signature, (int)len);
 		jstm = to_FitzInputStream(ctx, env, stm);
 	}
 	fz_catch(ctx)

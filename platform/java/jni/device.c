@@ -36,7 +36,7 @@ fz_java_device_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, i
 	jobject jpath = to_Path(ctx, env, path);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
 	jobject jctm = to_Matrix(ctx, env, ctm);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_floatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillPath, jpath, (jboolean)even_odd, jctm, jcs, jcolor, alpha, jcp);
@@ -53,7 +53,7 @@ fz_java_device_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 	jobject jstate = to_StrokeState(ctx, env, state);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
 	jobject jctm = to_Matrix(ctx, env, ctm);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_floatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_strokePath, jpath, jstate, jctm, jcs, jcolor, alpha, jcp);
@@ -96,7 +96,7 @@ fz_java_device_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, f
 	jobject jtext = to_Text(ctx, env, text);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_floatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillText, jtext, jctm, jcs, jcolor, alpha, jcp);
@@ -113,7 +113,7 @@ fz_java_device_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text,
 	jobject jstate = to_StrokeState(ctx, env, state);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_floatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_strokeText, jtext, jstate, jctm, jcs, jcolor, alpha, jcp);
@@ -195,7 +195,7 @@ fz_java_device_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, f
 	jobject jimg = to_Image(ctx, env, img);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_floatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillImageMask, jimg, jctm, jcs, jcolor, alpha, jcp);
@@ -261,7 +261,7 @@ fz_java_device_begin_mask(fz_context *ctx, fz_device *dev, fz_rect rect, int lum
 	JNIEnv *env = jdev->env;
 	jobject jrect = to_Rect(ctx, env, rect);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jbc = to_jfloatArray(ctx, env, bc, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
+	jfloatArray jbc = to_floatArray(ctx, env, bc, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 	int jcp = to_ColorParams_safe(ctx, env, cs_params);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginMask, jrect, (jint)luminosity, jcs, jbc, jcp);

@@ -138,7 +138,7 @@ static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 	return jtext;
 }
 
-static inline jbyteArray to_jbyteArray(fz_context *ctx, JNIEnv *env, const unsigned char *arr, jint n)
+static inline jbyteArray to_byteArray(fz_context *ctx, JNIEnv *env, const unsigned char *arr, jint n)
 {
 	jbyteArray jarr;
 
@@ -157,7 +157,7 @@ static inline jbyteArray to_jbyteArray(fz_context *ctx, JNIEnv *env, const unsig
 	return jarr;
 }
 
-static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *arr, jint n)
+static inline jfloatArray to_floatArray(fz_context *ctx, JNIEnv *env, const float *arr, jint n)
 {
 	jfloatArray jarr;
 
