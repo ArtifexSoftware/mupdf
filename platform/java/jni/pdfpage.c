@@ -75,7 +75,7 @@ FUN(PDFPage_getAnnotations)(JNIEnv *env, jobject self)
 	pdf_annot *annot = NULL;
 	pdf_annot *annots = NULL;
 	jobject jannots = NULL;
-	int annot_count;
+	int count;
 	int i;
 
 	if (!ctx || !page) return NULL;
@@ -86,22 +86,22 @@ FUN(PDFPage_getAnnotations)(JNIEnv *env, jobject self)
 		annots = pdf_first_annot(ctx, page);
 
 		annot = annots;
-		for (annot_count = 0; annot; annot_count++)
+		for (count = 0; annot; count++)
 			annot = pdf_next_annot(ctx, annot);
 	}
 	fz_catch(ctx)
 		return jni_rethrow(env, ctx), NULL;
 
 	/* no annotations, return NULL instead of empty array */
-	if (annot_count == 0)
+	if (count == 0)
 		return NULL;
 
 	/* now run through actually creating the annotation objects */
-	jannots = (*env)->NewObjectArray(env, annot_count, cls_PDFAnnotation, NULL);
-	if (!jannots || (*env)->ExceptionCheck(env)) return NULL;
+	jannots = (*env)->NewObjectArray(env, count, cls_PDFAnnotation, NULL);
+	if (!jannots || (*env)->ExceptionCheck(env)) return jni_throw_null(env, "cannot wrap page annotations in object array"), NULL;
 
 	annot = annots;
-	for (i = 0; annot && i < annot_count; i++)
+	for (i = 0; annot && i < count; i++)
 	{
 		jobject jannot = to_PDFAnnotation_safe(ctx, env, annot);
 		if (!jannot) return NULL;
@@ -125,46 +125,55 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_page *page = from_PDFPage(env, self);
-	pdf_widget *widget;
+	pdf_widget *widget = NULL;
+	pdf_widget *widgets = NULL;
 	jobjectArray jwidgets = NULL;
-	int count = 0;
+	int count;
+	int i;
 
 	if (!ctx || !page) return NULL;
 
-	fz_try(ctx)
-		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
-			count++;
-	fz_catch(ctx)
-		count = 0;
-
-	if (count == 0)
-		return NULL;
-
-	jwidgets = (*env)->NewObjectArray(env, count, cls_PDFWidget, NULL);
-	if (!jwidgets || (*env)->ExceptionCheck(env)) return NULL;
-
+	/* count the widgets */
 	fz_try(ctx)
 	{
-		int i = 0;
+		widgets = pdf_first_widget(ctx, page);
 
-		for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
-		{
-			jobject jwidget;
-
-			jwidget = to_PDFWidget(ctx, env, widget);
-			if (!jwidget)
-				fz_throw_java(ctx, env);
-
-			(*env)->SetObjectArrayElement(env, jwidgets, i, jwidget);
-			if ((*env)->ExceptionCheck(env))
-				fz_throw_java(ctx, env);
-
-			(*env)->DeleteLocalRef(env, jwidget);
-			i++;
-		}
+		widget = widgets;
+		for (count = 0; widget; count++)
+			widget = pdf_next_widget(ctx, widget);
 	}
 	fz_catch(ctx)
 		return jni_rethrow(env, ctx), NULL;
+
+	/* no widgegts, return NULL instead of empty array */
+	if (count == 0)
+		return NULL;
+
+	/* now run through actually creating the widget objects */
+	jwidgets = (*env)->NewObjectArray(env, count, cls_PDFWidget, NULL);
+	if (!jwidgets || (*env)->ExceptionCheck(env)) return jni_throw_null(env, "cannot wrap page widgets in object array"), NULL;
+
+	widget = widgets;
+	for (i = 0; widget && i < count; i++)
+	{
+		jobject jwidget = NULL;
+
+		if (widget)
+		{
+			jwidget = to_PDFWidget_safe(ctx, env, widget);
+			if (!jwidget) return NULL;
+		}
+
+		(*env)->SetObjectArrayElement(env, jwidgets, i, jwidget);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+
+		(*env)->DeleteLocalRef(env, jwidget);
+
+		fz_try(ctx)
+			widget = pdf_next_widget(ctx, widget);
+		fz_catch(ctx)
+			return jni_rethrow(env, ctx), NULL;
+	}
 
 	return jwidgets;
 }

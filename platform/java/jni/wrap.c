@@ -402,6 +402,61 @@ static inline jobjectArray to_StringArray_safe(fz_context *ctx, JNIEnv *env, con
 	return arr;
 }
 
+static inline jobject to_PDFWidget_safe(fz_context *ctx, JNIEnv *env, pdf_widget *widget)
+{
+	jobject jwidget;
+	int nopts;
+	const char **opts = NULL;
+	jobjectArray jopts = NULL;
+
+	fz_var(opts);
+
+	pdf_keep_annot(ctx, widget);
+	jwidget = (*env)->NewObject(env, cls_PDFWidget, mid_PDFWidget_init, jlong_cast(widget));
+	if (!jwidget || (*env)->ExceptionCheck(env))
+	{
+		pdf_drop_annot(ctx, widget);
+		return jni_throw_null(env, "cannot wrap PDF widget in java object"), NULL;
+	}
+
+	fz_try(ctx)
+	{
+		int fieldType = pdf_widget_type(ctx, widget);
+		int fieldFlags = pdf_field_flags(ctx, widget->obj);
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldType, fieldType);
+		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, fieldFlags);
+		if (fieldType == PDF_WIDGET_TYPE_TEXT)
+		{
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget));
+			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget));
+		}
+		if (fieldType == PDF_WIDGET_TYPE_COMBOBOX || fieldType == PDF_WIDGET_TYPE_LISTBOX)
+		{
+			nopts = pdf_choice_widget_options(ctx, widget, 0, NULL);
+			if (nopts > 0)
+			{
+				opts = Memento_label(fz_malloc(ctx, nopts * sizeof(*opts)), "to_PDFWidget");
+				pdf_choice_widget_options(ctx, widget, 0, opts);
+				jopts = to_StringArray_safe(ctx, env, opts, nopts);
+				if (!jopts || (*env)->ExceptionCheck(env))
+					fz_throw_java(ctx, env);
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, opts);
+	}
+	fz_catch(ctx)
+	{
+		return jni_rethrow(env, ctx), NULL;
+	}
+
+	(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
+
+	return jwidget;
+}
+
 /* Conversion functions: C to Java. Take ownership of fitz object. None of these throw fitz exceptions. */
 
 static inline jobject to_Document_safe_own(fz_context *ctx, JNIEnv *env, fz_document *doc)
@@ -503,61 +558,6 @@ static inline jobject to_PDFObject_safe_own(fz_context *ctx, JNIEnv *env, jobjec
 		pdf_drop_obj(ctx, obj);
 
 	return jobj;
-}
-
-static inline jobject to_PDFWidget(fz_context *ctx, JNIEnv *env, pdf_widget *widget)
-{
-	jobject jwidget;
-	int nopts;
-	const char **opts = NULL;
-	jobjectArray jopts = NULL;
-
-	fz_var(opts);
-
-	pdf_keep_annot(ctx, widget);
-	jwidget = (*env)->NewObject(env, cls_PDFWidget, mid_PDFWidget_init, jlong_cast(widget));
-	if (!jwidget)
-	{
-		pdf_drop_annot(ctx, widget);
-		return NULL;
-	}
-
-	fz_try(ctx)
-	{
-		int fieldType = pdf_widget_type(ctx, widget);
-		int fieldFlags = pdf_field_flags(ctx, widget->obj);
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldType, fieldType);
-		(*env)->SetIntField(env, jwidget, fid_PDFWidget_fieldFlags, fieldFlags);
-		if (fieldType == PDF_WIDGET_TYPE_TEXT)
-		{
-			(*env)->SetIntField(env, jwidget, fid_PDFWidget_maxLen, pdf_text_widget_max_len(ctx, widget));
-			(*env)->SetIntField(env, jwidget, fid_PDFWidget_textFormat, pdf_text_widget_format(ctx, widget));
-		}
-		if (fieldType == PDF_WIDGET_TYPE_COMBOBOX || fieldType == PDF_WIDGET_TYPE_LISTBOX)
-		{
-			nopts = pdf_choice_widget_options(ctx, widget, 0, NULL);
-			if (nopts > 0)
-			{
-				opts = Memento_label(fz_malloc(ctx, nopts * sizeof(*opts)), "to_PDFWidget");
-				pdf_choice_widget_options(ctx, widget, 0, opts);
-				jopts = to_StringArray_safe(ctx, env, opts, nopts);
-				if (!jopts || (*env)->ExceptionCheck(env))
-					fz_throw_java(ctx, env);
-			}
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, opts);
-	}
-	fz_catch(ctx)
-	{
-		return jni_rethrow(env, ctx), NULL;
-	}
-
-	(*env)->SetObjectField(env, jwidget, fid_PDFWidget_options, jopts);
-
-	return jwidget;
 }
 
 static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap *pixmap)
