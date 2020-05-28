@@ -1,16 +1,5 @@
 /* PDFWidget interface */
 
-JNIEXPORT void JNICALL
-FUN(PDFWidget_finalize)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_widget *widget = from_PDFWidget_safe(env, self);
-
-	if (!ctx || !widget) return;
-
-	pdf_drop_annot(ctx, widget);
-}
-
 JNIEXPORT jstring JNICALL
 FUN(PDFWidget_getValue)(JNIEnv *env, jobject self)
 {

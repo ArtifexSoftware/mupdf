@@ -12,7 +12,6 @@ public class Pixmap
 
 	public void destroy() {
 		finalize();
-		pointer = 0;
 	}
 
 	private native long newNative(ColorSpace cs, int x, int y, int w, int h, boolean alpha);

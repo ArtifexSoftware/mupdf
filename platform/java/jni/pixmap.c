@@ -5,9 +5,8 @@ FUN(Pixmap_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap_safe(env, self);
-
 	if (!ctx || !pixmap) return;
-
+	(*env)->SetLongField(env, self, fid_Pixmap_pointer, 0);
 	fz_drop_pixmap(ctx, pixmap);
 }
 

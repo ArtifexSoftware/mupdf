@@ -5,9 +5,8 @@ FUN(PDFGraftMap_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_graft_map *map = from_PDFGraftMap_safe(env, self);
-
 	if (!ctx || !map) return;
-
+	(*env)->SetLongField(env, self, fid_PDFGraftMap_pointer, 0);
 	pdf_drop_graft_map(ctx, map);
 }
 

@@ -5,9 +5,8 @@ FUN(Buffer_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_buffer *buf = from_Buffer_safe(env, self);
-
 	if (!ctx || !buf) return;
-
+	(*env)->SetLongField(env, self, fid_Buffer_pointer, 0);
 	fz_drop_buffer(ctx, buf);
 }
 

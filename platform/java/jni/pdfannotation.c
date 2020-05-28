@@ -5,9 +5,8 @@ FUN(PDFAnnotation_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation_safe(env, self);
-
 	if (!ctx || !annot) return;
-
+	(*env)->SetLongField(env, self, fid_PDFAnnotation_pointer, 0);
 	pdf_drop_annot(ctx, annot);
 }
 
