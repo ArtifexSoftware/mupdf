@@ -30,7 +30,9 @@ JAVA_LDFLAGS := \
 	-z noexecstack
 endif
 
-default: $(MUPDF_JAVA) libmupdf.jar
+MUPDF_JAR := ../../build/java/libmupdf.jar
+
+default: $(MUPDF_JAVA) $(MUPDF_JAR)
 
 MUPDF_CORE := ../../build/java/libmupdf.a ../../build/java/libmupdf-third.a
 ifeq "$(OS)" "Linux"
@@ -56,7 +58,7 @@ EXAMPLE_JAVA_OBJECTS := $(EXAMPLE_JAVA_SOURCES:%.java=%.class)
 $(EXAMPLE_JAVA_OBJECTS) : $(EXAMPLE_JAVA_SOURCES)
 	$(JAVAC) $(JAVAC_FLAGS) -classpath ../../build/java $^
 
-libmupdf.jar : $(LIBRARY_JAVA_OBJECTS)
+$(MUPDF_JAR) : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
 	jar cf $@ $^
 
@@ -81,7 +83,7 @@ clean:
 	rm -f $(LIBRARY_JAVA_OBJECTS) $(subst .class,\$$*.class,$(LIBRARY_JAVA_OBJECTS))
 	rm -f example/*.class
 	rm -f ../../build/java/mupdf_native.o
-	rm -f libmupdf.jar
+	rm -f $(MUPDF_JAR)
 	rm -f $(MUPDF_JAVA)
 	rm -f ../../build/java/*.h
 
