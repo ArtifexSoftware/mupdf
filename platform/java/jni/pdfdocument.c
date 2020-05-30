@@ -430,6 +430,7 @@ FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jobj)
 
 	if (!ctx || !dst) return NULL;
 	if (!dst) return jni_throw_arg(env, "dst must not be null"), NULL;
+	if (!obj) return jni_throw_arg(env, "object must not be null"), NULL;
 
 	fz_try(ctx)
 		obj = pdf_graft_object(ctx, dst, obj);
@@ -712,6 +713,9 @@ FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream
 	fz_var(out);
 	fz_var(stream);
 	fz_var(array);
+
+	if (!ctx || !pdf) return;
+	if (!stream) return jni_throw_arg(env, "stream must not be null");
 
 	if (joptions)
 	{
