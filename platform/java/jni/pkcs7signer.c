@@ -239,5 +239,5 @@ FUN(PKCS7Signer_finalize)(JNIEnv *env, jobject self)
 	pdf_pkcs7_signer *signer = from_PKCS7Signer_safe(env, self);
 	if (!ctx || !signer) return;
 	(*env)->SetLongField(env, self, fid_PKCS7Signer_pointer, 0);
-	signer_drop(ctx, signer);
+	pdf_drop_signer(ctx, signer);
 }
