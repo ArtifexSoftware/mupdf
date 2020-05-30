@@ -123,6 +123,7 @@ static fz_context *get_context(JNIEnv *env)
 	fz_context *ctx = (fz_context *)
 #ifdef _WIN32
 		TlsGetValue(context_key);
+	if (ctx == NULL && GetLastError() != ERROR_SUCCESS) return jni_throw_run(env, "cannot get context"), NULL;
 #else
 		pthread_getspecific(context_key);
 #endif
@@ -134,10 +135,9 @@ static fz_context *get_context(JNIEnv *env)
 	if (!ctx) return jni_throw_oom(env, "failed to clone fz_context"), NULL;
 
 #ifdef _WIN32
-	TlsSetValue(context_key, ctx);
-	if (ctx == NULL && GetLastError() != ERROR_SUCCESS) return jni_throw_run(env, "cannot get context"), NULL;
+	if (TlsSetValue(context_key, ctx) == 0) return jni_throw_run(env, "cannot store context"), NULL;
 #else
-	pthread_setspecific(context_key, ctx);
+	if (pthread_setspecific(context_key, ctx) != 0) return jni_throw_run(env, "cannot store context"), NULL;
 #endif
 	return ctx;
 }
