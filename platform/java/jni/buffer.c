@@ -17,6 +17,7 @@ FUN(Buffer_newNativeBuffer)(JNIEnv *env, jobject self, jint n)
 	fz_buffer *buf = NULL;
 
 	if (!ctx) return 0;
+	if (n < 0) return jni_throw_arg(env, "n cannot be negative"), 0;
 
 	fz_try(ctx)
 		buf = fz_new_buffer(ctx, n);
