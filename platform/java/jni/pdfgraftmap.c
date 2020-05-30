@@ -18,6 +18,7 @@ FUN(PDFGraftMap_graftObject)(JNIEnv *env, jobject self, jobject jobj)
 	pdf_graft_map *map = from_PDFGraftMap(env, self);
 
 	if (!ctx || !map) return NULL;
+	if (!obj) return jni_throw_arg(env, "object must not be null"), NULL;
 
 	fz_try(ctx)
 		obj = pdf_graft_mapped_object(ctx, map, obj);
