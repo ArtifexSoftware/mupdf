@@ -373,6 +373,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case '?': doPreSearch(-1); break;
 		case 'N': doSearch(-1); break;
 		case 'n': doSearch(1); break;
+		case '\u001b': clearSearch(); break;
 		}
 
 		if (c >= '0' && c <= '9')
@@ -436,6 +437,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void doSearch(int direction) {
 		searchDirection = direction;
 		doSearch();
+	}
+
+	protected void clearSearch() {
+		if (doc == null)
+			return;
+
+		searchField.setText("");
+		searchField.validate();
 	}
 
 	protected void doSearch() {
