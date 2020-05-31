@@ -13,6 +13,7 @@ import java.util.Vector;
 
 public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, TextListener
 {
+	protected String documentPath;
 	protected Document doc;
 
 	protected ScrollPane pageScroll;
@@ -25,6 +26,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected Label pageLabel;
 	protected Button zoomInButton, zoomOutButton;
 	protected Choice zoomChoice;
+	protected Panel reflowPanel;
 	protected Button fontIncButton, fontDecButton;
 	protected Label fontSizeLabel;
 
@@ -130,6 +132,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		public Dimension getPreferredSize() {
+			if (image == null)
+				return new Dimension(600, 700);
+
 			return new Dimension(image.getWidth(), image.getHeight());
 		}
 
@@ -155,13 +160,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		public void update(Graphics g) { paint(g); }
 	}
 
-	public Viewer(Document doc_) {
-		this.doc = doc_;
+	public Viewer(String documentPath) {
+		this.documentPath = documentPath;
 
 		pixelScale = getRetinaScale();
-		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
-		doc.layout(layoutWidth, layoutHeight, layoutEm);
-		pageCount = doc.countPages();
+		setTitle("MuPDF: ");
+		pageCount = 0;
 
 		Panel rightPanel = new Panel(new BorderLayout());
 		{
@@ -215,22 +219,20 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				c.gridy += 1;
 				toolpane.add(toolbar, c);
 
-				if (doc.isReflowable()) {
-					toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
-					{
-						fontDecButton = new Button("Font-");
-						fontDecButton.addActionListener(this);
-						fontIncButton = new Button("Font+");
-						fontIncButton.addActionListener(this);
-						fontSizeLabel = new Label(String.valueOf(layoutEm));
+				reflowPanel = new Panel(new FlowLayout(FlowLayout.LEFT));
+				{
+					fontDecButton = new Button("Font-");
+					fontDecButton.addActionListener(this);
+					fontIncButton = new Button("Font+");
+					fontIncButton.addActionListener(this);
+					fontSizeLabel = new Label(String.valueOf(layoutEm));
 
-						toolbar.add(fontDecButton);
-						toolbar.add(fontSizeLabel);
-						toolbar.add(fontIncButton);
-					}
-					c.gridy += 1;
-					toolpane.add(toolbar, c);
+					reflowPanel.add(fontDecButton);
+					reflowPanel.add(fontSizeLabel);
+					reflowPanel.add(fontIncButton);
 				}
+				c.gridy += 1;
+				toolpane.add(reflowPanel, c);
 
 				toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
 				{
@@ -272,6 +274,37 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		addWindowListener(this);
 
+		pack();
+
+		reload();
+	}
+
+	public void reload() {
+		pageCanvas.requestFocusInWindow();
+
+		String acceleratorPath = getAcceleratorPath(documentPath);
+		if (acceleratorValid(documentPath, acceleratorPath))
+			doc = Document.openDocument(documentPath, acceleratorPath);
+		else
+			doc = Document.openDocument(documentPath);
+
+		if (doc.needsPassword()) {
+			String pwd;
+			do {
+				pwd = passwordDialog(null);
+				if (pwd == null)
+					dispose();
+			} while (!doc.authenticatePassword(pwd));
+		}
+
+		doc.layout(layoutWidth, layoutHeight, layoutEm);
+		pageCount = doc.countPages();
+		doc.saveAccelerator(acceleratorPath);
+
+		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
+		pageLabel.setText("/ " + pageCount);
+		reflowPanel.setVisible(doc.isReflowable());
+
 		updateOutline();
 		updatePageCanvas();
 
@@ -291,11 +324,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void updateOutline() {
-		Outline[] outline;
+		Outline[] outline = null;
 		try {
-			outline = doc.loadOutline();
+			if (doc != null)
+				outline = doc.loadOutline();
 		} catch (Exception ex) {
-			outline = null;
 		}
 		outlineList.removeAll();
 		if (outline != null) {
@@ -311,8 +344,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		pageField.setText(String.valueOf(pageNumber + 1));
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
-		BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM);
-		pageCanvas.setImage(image);
+		if (doc != null) {
+			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM);
+			pageCanvas.setImage(image);
+		}
 
 		Dimension size = pageHolder.getPreferredSize();
 		size.width += 40;
@@ -462,24 +497,22 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	public void windowClosed(WindowEvent event) { }
 
 	protected static String getAcceleratorPath(String documentPath) {
-		String acceleratorPath = documentPath.substring(1);
-		acceleratorPath = acceleratorPath.replace(File.separatorChar, '%');
-		acceleratorPath = acceleratorPath.replace('\\', '%');
-		acceleratorPath = acceleratorPath.replace(':', '%');
-
+		String acceleratorName = documentPath.substring(1);
+		acceleratorName = acceleratorName.replace(File.separatorChar, '%');
+		acceleratorName = acceleratorName.replace('\\', '%');
+		acceleratorName = acceleratorName.replace(':', '%');
 		String tmpdir = System.getProperty("java.io.tmpdir");
-		return new StringBuffer(tmpdir).append(File.separatorChar).append(acceleratorPath).append(".accel").toString();
+		return new StringBuffer(tmpdir).append(File.separatorChar).append(acceleratorName).append(".accel").toString();
 	}
 
-	protected static boolean acceleratorValid(File documentFile, File acceleratorFile) {
-		long documentModified = documentFile.lastModified();
-		long acceleratorModified = acceleratorFile.lastModified();
-
+	protected static boolean acceleratorValid(String documentPath, String acceleratorPath) {
+		long documentModified = new File(documentPath).lastModified();
+		long acceleratorModified = new File(acceleratorPath).lastModified();
 		return acceleratorModified != 0 && acceleratorModified > documentModified;
 	}
 
 	public static void main(String[] args) {
-		File selectedFile;
+		String selectedPath;
 
 		if (args.length <= 0) {
 			FileDialog fileDialog = new FileDialog((Frame)null, "MuPDF Open File", FileDialog.LOAD);
@@ -492,39 +525,17 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			fileDialog.setVisible(true);
 			if (fileDialog.getFile() == null)
 				System.exit(0);
-			selectedFile = new File(fileDialog.getDirectory(), fileDialog.getFile());
+			selectedPath = new StringBuffer(fileDialog.getDirectory()).append(File.separatorChar).append(fileDialog.getFile()).toString();
 			fileDialog.dispose();
 		} else {
-			selectedFile = new File(args[0]);
+			selectedPath = args[0];
 		}
 
 		try {
-			String documentPath = selectedFile.getAbsolutePath();
-			String acceleratorPath = getAcceleratorPath(documentPath);
-
-			Document doc;
-			if (acceleratorValid(selectedFile, new File(acceleratorPath)))
-				doc = Document.openDocument(documentPath, acceleratorPath);
-			else
-				doc = Document.openDocument(documentPath);
-
-			if (doc.needsPassword()) {
-				String pwd;
-				do {
-					pwd = passwordDialog(null);
-					if (pwd == null)
-						System.exit(1);
-				} while (!doc.authenticatePassword(pwd));
-			}
-
-			doc.countPages();
-			doc.saveAccelerator(acceleratorPath);
-
-			Viewer app = new Viewer(doc);
+			Viewer app = new Viewer(selectedPath);
 			app.setVisible(true);
-			return;
 		} catch (Exception e) {
-			messageBox(null, "MuPDF Error", "Cannot open \"" + selectedFile + "\": " + e.getMessage() + ".");
+			messageBox(null, "MuPDF Error", "Cannot open \"" + selectedPath + "\": " + e.getMessage() + ".");
 			System.exit(1);
 		}
 	}
