@@ -48,6 +48,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected float pixelScale;
 	protected boolean currentInvert = false;
 	protected boolean currentICC = true;
+	protected int currentAA = 8;
 
 	protected int number = 0;
 
@@ -63,7 +64,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		return image;
 	}
 
-	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc) {
+	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc, int aa) {
 		Rect bbox = page.getBounds().transform(ctm);
 		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox, true);
 		pixmap.clear(255);
@@ -72,6 +73,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			Context.enableICC();
 		else
 			Context.disableICC();
+		Context.setAntiAliasLevel(aa);
 
 		DrawDevice dev = new DrawDevice(pixmap);
 		page.run(dev, ctm, null);
@@ -358,6 +360,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		case 'I': doInvert(); break;
 		case 'E': doICC(); break;
+		case 'A': doAA(); break;
 
 		case '+': doZoom(1); break;
 		case '-': doZoom(-1); break;
@@ -423,7 +426,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
 		if (doc != null) {
-			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC);
+			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA);
 			pageCanvas.setImage(image);
 		}
 
@@ -508,6 +511,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	protected void doICC() {
 		currentICC = !currentICC;
+		updatePageCanvas();
+	}
+
+	protected void doAA() {
+		currentAA = number != 0 ? number : (currentAA == 8 ? 0 : 8);
 		updatePageCanvas();
 	}
 

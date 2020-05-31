@@ -191,3 +191,12 @@ FUN(Context_disableICC)(JNIEnv *env, jclass cls)
 
 	fz_disable_icc(ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(Context_setAntiAliasLevel)(JNIEnv *env, jclass cls, jint level)
+{
+	fz_context *ctx = get_context(env);
+	if (!ctx) return;
+
+	fz_set_aa_level(ctx, level);
+}

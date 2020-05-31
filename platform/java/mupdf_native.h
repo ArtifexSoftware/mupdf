@@ -225,6 +225,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_enableICC
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_disableICC
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    setAntiAliasLevel
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_setAntiAliasLevel
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

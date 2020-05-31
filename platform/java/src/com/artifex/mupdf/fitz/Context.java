@@ -44,4 +44,5 @@ public class Context
 
 	public native static void enableICC();
 	public native static void disableICC();
+	public native static void setAntiAliasLevel(int level);
 }
