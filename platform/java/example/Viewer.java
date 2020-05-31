@@ -49,6 +49,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected boolean currentInvert = false;
 	protected boolean currentICC = true;
 	protected int currentAA = 8;
+	protected boolean isFullscreen;
 
 	protected int number = 0;
 
@@ -355,6 +356,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'r': reload(); break;
 		case 'q': dispose(); break;
 
+		case 'f': doFullscreen(); break;
+
 		case '>': doRelayout(number > 0 ? number : layoutEm + 1); break;
 		case '<': doRelayout(number > 0 ? number : layoutEm - 1); break;
 
@@ -517,6 +520,15 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void doAA() {
 		currentAA = number != 0 ? number : (currentAA == 8 ? 0 : 8);
 		updatePageCanvas();
+	}
+
+	protected void doFullscreen() {
+		isFullscreen = !isFullscreen;
+
+		if (isFullscreen)
+			setExtendedState(Frame.MAXIMIZED_BOTH);
+		else
+			setExtendedState(Frame.NORMAL);
 	}
 
 	protected boolean doJumpToPage(int page) {
