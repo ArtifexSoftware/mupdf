@@ -50,6 +50,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected boolean currentICC = true;
 	protected int currentAA = 8;
 	protected boolean isFullscreen;
+	protected boolean currentTint = false;
+	protected int tintBlack = 0x303030;
+	protected int tintWhite = 0xFFFFF0;
 
 	protected int number = 0;
 
@@ -65,7 +68,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		return image;
 	}
 
-	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc, int aa) {
+	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc, int aa, boolean tint, int tintBlack, int tintWhite) {
 		Rect bbox = page.getBounds().transform(ctm);
 		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox, true);
 		pixmap.clear(255);
@@ -84,6 +87,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (invert) {
 			pixmap.invertLuminance();
 			pixmap.gamma(1 / 1.4f);
+		}
+
+		if (tint) {
+			pixmap.tint(tintBlack, tintWhite);
 		}
 
 		BufferedImage image = imageFromPixmap(pixmap);
@@ -364,6 +371,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'I': doInvert(); break;
 		case 'E': doICC(); break;
 		case 'A': doAA(); break;
+		case 'C': doTint(); break;
 
 		case '+': doZoom(1); break;
 		case '-': doZoom(-1); break;
@@ -429,7 +437,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
 		if (doc != null) {
-			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA);
+			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite);
 			pageCanvas.setImage(image);
 		}
 
@@ -519,6 +527,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	protected void doAA() {
 		currentAA = number != 0 ? number : (currentAA == 8 ? 0 : 8);
+		updatePageCanvas();
+	}
+
+	protected void doTint() {
+		currentTint = !currentTint;
 		updatePageCanvas();
 	}
 

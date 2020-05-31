@@ -259,3 +259,17 @@ FUN(Pixmap_gamma)(JNIEnv *env, jobject self, jfloat gamma)
 	fz_catch(ctx)
 		return jni_rethrow(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(Pixmap_tint)(JNIEnv *env, jobject self, jint black, jint white)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+
+	if (!ctx || !pixmap) return;
+
+	fz_try(ctx)
+		fz_tint_pixmap(ctx, pixmap, black, white);
+	fz_catch(ctx)
+		return jni_rethrow(env, ctx);
+}
