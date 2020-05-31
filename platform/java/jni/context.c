@@ -173,3 +173,21 @@ FUN(Context_emptyStore)(JNIEnv *env, jclass cls)
 
 	fz_empty_store(ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(Context_enableICC)(JNIEnv *env, jclass cls)
+{
+	fz_context *ctx = get_context(env);
+	if (!ctx) return;
+
+	fz_enable_icc(ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Context_disableICC)(JNIEnv *env, jclass cls)
+{
+	fz_context *ctx = get_context(env);
+	if (!ctx) return;
+
+	fz_disable_icc(ctx);
+}

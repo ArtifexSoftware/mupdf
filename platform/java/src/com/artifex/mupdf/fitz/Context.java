@@ -41,4 +41,7 @@ public class Context
 
 	//  empty the store
 	public native static void emptyStore();
+
+	public native static void enableICC();
+	public native static void disableICC();
 }

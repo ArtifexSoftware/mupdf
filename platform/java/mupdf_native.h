@@ -209,6 +209,22 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_initNative
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_emptyStore
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    enableICC
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_enableICC
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    disableICC
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_disableICC
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
