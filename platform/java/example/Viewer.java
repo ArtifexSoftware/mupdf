@@ -53,6 +53,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected boolean currentTint = false;
 	protected int tintBlack = 0x303030;
 	protected int tintWhite = 0xFFFFF0;
+	protected int currentRotate = 0;
 
 	protected int number = 0;
 
@@ -68,8 +69,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		return image;
 	}
 
-	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc, int aa, boolean tint, int tintBlack, int tintWhite) {
-		Rect bbox = page.getBounds().transform(ctm);
+	protected static BufferedImage imageFromPage(Page page, Matrix ctm, boolean invert, boolean icc, int aa, boolean tint, int tintBlack, int tintWhite, int rotate) {
+		Matrix trm = new Matrix(ctm).rotate(rotate);
+		Rect bbox = page.getBounds().transform(trm);
 		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox, true);
 		pixmap.clear(255);
 
@@ -80,7 +82,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		Context.setAntiAliasLevel(aa);
 
 		DrawDevice dev = new DrawDevice(pixmap);
-		page.run(dev, ctm, null);
+		page.run(dev, trm, null);
 		dev.close();
 		dev.destroy();
 
@@ -373,6 +375,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'A': doAA(); break;
 		case 'C': doTint(); break;
 
+		case '[': doRotate(-90); break;
+		case ']': doRotate(+90); break;
+
 		case '+': doZoom(1); break;
 		case '-': doZoom(-1); break;
 
@@ -437,7 +442,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
 		if (doc != null) {
-			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite);
+			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite, currentRotate);
 			pageCanvas.setImage(image);
 		}
 
@@ -542,6 +547,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			setExtendedState(Frame.MAXIMIZED_BOTH);
 		else
 			setExtendedState(Frame.NORMAL);
+	}
+
+	protected void doRotate(int rotate) {
+		currentRotate += rotate;
+		updatePageCanvas();
 	}
 
 	protected boolean doJumpToPage(int page) {
