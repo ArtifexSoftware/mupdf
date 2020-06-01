@@ -57,6 +57,20 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	protected int number = 0;
 
+	protected class Mark {
+		int pageNumber;
+
+		protected Mark(int pageNumber) {
+			this.pageNumber = pageNumber;
+		}
+	}
+
+	protected int historyCount = 0;
+	protected Mark[] history = new Mark[256];
+	protected int futureCount = 0;
+	protected Mark[] future = new Mark[256];
+	protected Mark[] marks = new Mark[10];
+
 	protected static final int[] zoomList = {
 		18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288
 	};
@@ -367,6 +381,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		case 'f': doFullscreen(); break;
 
+		case 'm': doMark(number); break;
+		case 't': doHistoryBack(number); break;
+		case 'T': doHistoryForward(number); break;
+
 		case '>': doRelayout(number > 0 ? number : layoutEm + 1); break;
 		case '<': doRelayout(number > 0 ? number : layoutEm - 1); break;
 
@@ -518,11 +536,23 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		currentInvert = !currentInvert;
 		updatePageCanvas();
 	}
+
 	protected boolean doFlipPage(int direction, int pages) {
 		if (pages < 1)
 			pages = 1;
 
-		return doJumpToPage(pageNumber + direction * pages);
+		int page = pageNumber + direction * pages;
+		if (page < 0)
+			page = 0;
+		if (page >= pageCount)
+			page = pageCount - 1;
+
+		if (page == pageNumber)
+			return false;
+
+		pageNumber = page;
+		updatePageCanvas();
+		return true;
 	}
 
 	protected void doICC() {
@@ -554,17 +584,104 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		updatePageCanvas();
 	}
 
+	protected void doMark(int number) {
+		if (number == 0)
+			pushHistory();
+		else if (number > 0 && number < marks.length)
+			marks[number] = saveMark();
+	}
+
+	protected void doHistoryBack(int number) {
+		if (number == 0) {
+			if (historyCount > 0)
+				popHistory();
+		} else if (number > 0 && number < marks.length) {
+			int mark = marks[number].pageNumber;
+			restoreMark(marks[number]);
+			doJumpToPage(mark);
+		}
+	}
+
+	protected void doHistoryForward(int number) {
+		if (number == 0) {
+			if (futureCount > 0) {
+				popFuture();
+			}
+		}
+	}
+
+	protected Mark saveMark() {
+		return new Mark(pageNumber);
+	}
+
+	protected void restoreMark(Mark mark) {
+		pageNumber = mark.pageNumber;
+		updatePageCanvas();
+	}
+
+	protected void pushHistory() {
+		int here = pageNumber;
+
+		if (historyCount > 0 && pageNumber == history[historyCount - 1].pageNumber)
+		{
+			return;
+		}
+
+		if (historyCount + 1 >= history.length) {
+			for (int i = 0; i < history.length - 1; i++)
+				history[i] = history[i + 1];
+			history[historyCount] = saveMark();
+		} else {
+			history[historyCount++] = saveMark();
+		}
+	}
+
+	protected void pushFuture() {
+		if (futureCount + 1 >= future.length) {
+			for (int i = 0; i < future.length - 1; i++)
+				future[i] = future[i + 1];
+			future[futureCount] = saveMark();
+		} else {
+			future[futureCount++] = saveMark();
+		}
+	}
+
+	protected void clearFuture() {
+		futureCount = 0;
+	}
+
+	protected void popHistory() {
+		int here = pageNumber;
+		pushFuture();
+		while (historyCount > 0 && pageNumber == here)
+			restoreMark(history[--historyCount]);
+	}
+
+	protected void popFuture() {
+		int here = pageNumber;
+		pushHistory();
+		while (futureCount > 0 && pageNumber == here)
+			restoreMark(future[--futureCount]);
+	}
+
 	protected boolean doJumpToPage(int page) {
+		clearFuture();
+		pushHistory();
+
 		if (page < 0)
 			page = 0;
 		if (page >= pageCount)
 			page = pageCount - 1;
 
-		if (page == pageNumber)
+		if (page == pageNumber) {
+			pushHistory();
 			return false;
+		}
 
 		pageNumber = page;
 		updatePageCanvas();
+
+		pushHistory();
 		return true;
 	}
 
