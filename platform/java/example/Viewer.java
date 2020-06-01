@@ -877,6 +877,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 					updatePageCanvas();
 				}
 			}
+			pageCanvas.requestFocusInWindow();
 		}
 	}
 
