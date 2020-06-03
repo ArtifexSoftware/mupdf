@@ -214,7 +214,10 @@ static char *get_history_filename(void)
 	static int once = 0;
 	if (!once)
 	{
-		char *home = getenv("HOME");
+		char *home;
+		home = getenv("XDG_CACHE_HOME");
+		if (!home)
+			home = getenv("HOME");
 		if (!home)
 			home = getenv("USERPROFILE");
 		if (!home)
