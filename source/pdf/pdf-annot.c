@@ -311,6 +311,54 @@ pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	return annot;
 }
 
+static pdf_obj *
+pdf_add_popup_annot(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *annots, *popup;
+
+	popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	if (popup)
+		return popup;
+
+	annots = pdf_dict_get(ctx, annot->page->obj, PDF_NAME(Annots));
+	if (!annots)
+		return NULL;
+
+	popup = pdf_add_new_dict(ctx, annot->page->doc, 4);
+	pdf_array_push_drop(ctx, annots, popup);
+
+	pdf_dict_put(ctx, popup, PDF_NAME(Type), PDF_NAME(Annot));
+	pdf_dict_put(ctx, popup, PDF_NAME(Subtype), PDF_NAME(Popup));
+	pdf_dict_put(ctx, popup, PDF_NAME(Parent), annot->obj);
+	pdf_dict_put_rect(ctx, popup, PDF_NAME(Rect), fz_make_rect(0,0,0,0));
+
+	pdf_dict_put(ctx, annot->obj, PDF_NAME(Popup), popup);
+
+	return popup;
+}
+
+void pdf_set_annot_popup(fz_context *ctx, pdf_annot *annot, fz_rect rect)
+{
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *popup;
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	inv_page_ctm = fz_invert_matrix(page_ctm);
+	rect = fz_transform_rect(rect, inv_page_ctm);
+	popup = pdf_add_popup_annot(ctx, annot);
+	pdf_dict_put_rect(ctx, popup, PDF_NAME(Rect), rect);
+}
+
+fz_rect pdf_annot_popup(fz_context *ctx, pdf_annot *annot)
+{
+	fz_matrix page_ctm;
+	fz_rect rect;
+	pdf_obj *popup;
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	rect = pdf_dict_get_rect(ctx, popup, PDF_NAME(Rect));
+	return fz_transform_rect(rect, page_ctm);
+}
+
 pdf_annot *
 pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 {
@@ -338,6 +386,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 			flags = PDF_ANNOT_IS_PRINT | PDF_ANNOT_IS_NO_ZOOM | PDF_ANNOT_IS_NO_ROTATE;
 			pdf_set_annot_rect(ctx, annot, icon_rect);
 			pdf_set_annot_color(ctx, annot, 3, yellow);
+			pdf_set_annot_popup(ctx, annot, fz_make_rect(32, 12, 32+200, 12+100));
 		}
 		break;
 
