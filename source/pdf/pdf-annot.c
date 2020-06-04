@@ -472,7 +472,7 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_annot **annotptr;
-	pdf_obj *annot_arr;
+	pdf_obj *annot_arr, *popup;
 	int i;
 
 	if (annot == NULL)
@@ -500,6 +500,15 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	i = pdf_array_find(ctx, annot_arr, annot->obj);
 	if (i >= 0)
 		pdf_array_delete(ctx, annot_arr, i);
+
+	/* Remove the associated Popup annotation from the Annots array */
+	popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	if (popup)
+	{
+		i = pdf_array_find(ctx, annot_arr, popup);
+		if (i >= 0)
+			pdf_array_delete(ctx, annot_arr, i);
+	}
 
 	/* The garbage collection pass when saving will remove the annot object,
 	 * removing it here may break files if multiple pages use the same annot. */
