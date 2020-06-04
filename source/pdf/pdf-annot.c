@@ -577,31 +577,41 @@ pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 	pdf_dirty_annot(ctx, annot);
 }
 
-static pdf_obj *open_subtypes[] = {
-	PDF_NAME(Popup),
-	PDF_NAME(Text),
-	NULL,
-};
-
 int
 pdf_annot_has_open(fz_context *ctx, pdf_annot *annot)
 {
-	return is_allowed_subtype(ctx, annot, PDF_NAME(Open), open_subtypes);
+	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype));
+	pdf_obj *popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	return (subtype == PDF_NAME(Text) || popup);
 }
 
 int
 pdf_annot_is_open(fz_context *ctx, pdf_annot *annot)
 {
-	check_allowed_subtypes(ctx, annot, PDF_NAME(Open), open_subtypes);
-	return pdf_dict_get_bool(ctx, annot->obj, PDF_NAME(Open));
+	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype));
+	pdf_obj *popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	if (popup)
+		return pdf_dict_get_bool(ctx, popup, PDF_NAME(Open));
+	else if (subtype == PDF_NAME(Text))
+		return pdf_dict_get_bool(ctx, annot->obj, PDF_NAME(Open));
+	return 0;
 }
 
 void
 pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open)
 {
-	check_allowed_subtypes(ctx, annot, PDF_NAME(Open), open_subtypes);
-	pdf_dict_put_bool(ctx, annot->obj, PDF_NAME(Open), is_open);
-	pdf_dirty_annot(ctx, annot);
+	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype));
+	pdf_obj *popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
+	if (popup)
+	{
+		pdf_dict_put_bool(ctx, popup, PDF_NAME(Open), is_open);
+		pdf_dirty_annot(ctx, annot);
+	}
+	else if (subtype == PDF_NAME(Text))
+	{
+		pdf_dict_put_bool(ctx, annot->obj, PDF_NAME(Open), is_open);
+		pdf_dirty_annot(ctx, annot);
+	}
 }
 
 static pdf_obj *icon_name_subtypes[] = {
