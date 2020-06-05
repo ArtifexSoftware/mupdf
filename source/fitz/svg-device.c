@@ -465,7 +465,7 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 		if (fnt->sentlist[gid].x_off == FLT_MIN)
 		{
 			/* Need to send this one */
-			fz_rect rect;
+			fz_rect rect = fz_empty_rect;
 			fz_path *path;
 			out = start_def(ctx, sdev);
 			fz_write_printf(ctx, out, "<symbol id=\"font_%x_%x\">\n", fnt->id, gid);
