@@ -1361,18 +1361,20 @@ trace_realloc(void *arg, void *p_, size_t size)
 static void worker_thread(void *arg)
 {
 	worker_t *me = (worker_t *)arg;
+	int band;
 
 	do
 	{
 		DEBUG_THREADS(("Worker %d waiting\n", me->num));
 		mu_wait_semaphore(&me->start);
-		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
-		if (me->band >= 0)
+		band = me->band;
+		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, band));
+		if (band >= 0)
 			drawband(me->ctx, NULL, me->list, me->ctm, me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
-		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
+		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, band));
 		mu_trigger_semaphore(&me->stop);
 	}
-	while (me->band >= 0);
+	while (band >= 0);
 }
 
 static void bgprint_worker(void *arg)
