@@ -221,6 +221,7 @@ typedef struct worker_t {
 	fz_context *ctx;
 	int num;
 	int band; /* -1 to shutdown, or band to render */
+	int error;
 	fz_display_list *list;
 	fz_matrix ctm;
 	fz_rect tbounds;
@@ -309,6 +310,7 @@ static struct {
 	mu_semaphore stop;
 #endif
 	int pagenum;
+	int error;
 	char *filename;
 	fz_display_list *list;
 	fz_page *page;
@@ -535,20 +537,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	if (output_file_per_page)
 		file_level_headers(ctx);
 
-	fz_try(ctx)
-	{
-		if (list)
-			mediabox = fz_bound_display_list(ctx, list);
-		else
-			mediabox = fz_bound_page(ctx, page);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_display_list(ctx, list);
-		fz_drop_separations(ctx, seps);
-		fz_drop_page(ctx, page);
-		fz_rethrow(ctx);
-	}
+	if (list)
+		mediabox = fz_bound_display_list(ctx, list);
+	else
+		mediabox = fz_bound_page(ctx, page);
 
 	if (output_format == OUT_TRACE)
 	{
@@ -572,9 +564,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
@@ -600,9 +589,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
@@ -659,9 +645,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
@@ -700,9 +683,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
@@ -749,9 +729,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
@@ -851,6 +828,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				for (band = 0; band < fz_mini(num_workers, bands); band++)
 				{
 					workers[band].band = band;
+					workers[band].error = 0;
 					workers[band].ctm = ctm;
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
@@ -917,17 +895,20 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
 					mu_wait_semaphore(&w->stop);
 #endif
+					cookie->errors += w->cookie.errors;
 					pix = w->pix;
 					bit = w->bit;
 					w->bit = NULL;
-					cookie->errors += w->cookie.errors;
+
+					if (w->error)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "worker %d failed to render band %d", w->num, band);
 				}
 				else
 					drawband(ctx, page, list, ctm, tbounds, cookie, band * band_height, pix, &bit);
 
 				if (output)
 				{
-					if (bander)
+					if (bander && (pix || bit))
 						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, drawheight, bit ? bit->samples : pix->samples);
 					fz_drop_bitmap(ctx, bit);
 					bit = NULL;
@@ -949,7 +930,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 
 			/* FIXME */
-			if (showmd5)
+			if (showmd5 && pix)
 			{
 				unsigned char digest[16];
 				int i;
@@ -984,21 +965,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_catch(ctx)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
 
-	fz_drop_display_list(ctx, list);
-
 	if (output_file_per_page)
 		file_level_trailers(ctx);
-
-	fz_drop_separations(ctx, seps);
-
-	fz_drop_page(ctx, page);
 
 	if (showtime)
 	{
@@ -1204,31 +1176,53 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (bgprint.active)
 	{
 		bgprint_flush();
-		if (bgprint.active)
+		if (bgprint.error)
+		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
+			fz_drop_page(ctx, page);
+
+			/* it failed, do not continue trying */
+			bgprint.active = 0;
+		}
+		else if (bgprint.active)
 		{
 			if (!quiet || showfeatures || showtime || showmd5)
 				fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-		}
 
-		bgprint.started = 1;
-		bgprint.page = page;
-		bgprint.list = list;
-		bgprint.seps = seps;
-		bgprint.filename = filename;
-		bgprint.pagenum = pagenum;
-		bgprint.interptime = start;
+			bgprint.started = 1;
+			bgprint.page = page;
+			bgprint.list = list;
+			bgprint.seps = seps;
+			bgprint.filename = filename;
+			bgprint.pagenum = pagenum;
+			bgprint.interptime = start;
+			bgprint.error = 0;
 #ifndef DISABLE_MUTHREADS
-		mu_trigger_semaphore(&bgprint.start);
+			mu_trigger_semaphore(&bgprint.start);
 #else
-		fz_drop_display_list(ctx, list);
-		fz_drop_page(ctx, page);
+			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
+			fz_drop_page(ctx, page);
 #endif
+		}
 	}
 	else
 	{
 		if (!quiet || showfeatures || showtime || showmd5)
 			fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
+		fz_try(ctx)
+			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
+		fz_always(ctx)
+		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
+			fz_drop_page(ctx, page);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
 	}
 }
 
@@ -1382,17 +1376,28 @@ static void worker_thread(void *arg)
 	int band;
 
 	do
-{
+	{
 		DEBUG_THREADS(("Worker %d waiting\n", me->num));
 		mu_wait_semaphore(&me->start);
 		band = me->band;
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, band));
 		if (band >= 0)
-			drawband(me->ctx, NULL, me->list, me->ctm, me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
-		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, band));
+		{
+			fz_try(me->ctx)
+			{
+				drawband(me->ctx, NULL, me->list, me->ctm, me->tbounds, &me->cookie, band * band_height, me->pix, &me->bit);
+				DEBUG_THREADS(("Worker %d completed band %d\n", me->num, band));
+			}
+			fz_catch(me->ctx)
+			{
+				DEBUG_THREADS(("Worker %d failed on band %d\n", me->num, band));
+				me->error = 1;
+			}
+		}
 		mu_trigger_semaphore(&me->stop);
 	}
 	while (band >= 0);
+	DEBUG_THREADS(("Worker %d shutting down\n", me->num));
 }
 
 static void bgprint_worker(void *arg)
@@ -1412,12 +1417,28 @@ static void bgprint_worker(void *arg)
 		{
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
-			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps);
+			fz_try(bgprint.ctx)
+			{
+				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps);
+				DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
+			}
+			fz_always(bgprint.ctx)
+			{
+				fz_drop_display_list(bgprint.ctx, bgprint.list);
+				fz_drop_separations(bgprint.ctx, bgprint.seps);
+				fz_drop_page(bgprint.ctx, bgprint.page);
+			}
+			fz_catch(bgprint.ctx)
+			{
+				DEBUG_THREADS(("BGPrint failed on page %d\n", pagenum));
+				bgprint.error = 1;
+			}
+
 		}
-		DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 		mu_trigger_semaphore(&bgprint.stop);
 	}
 	while (pagenum >= 0);
+	DEBUG_THREADS(("BGPrint shutting down\n"));
 }
 #endif
 
@@ -2114,6 +2135,8 @@ int mudraw_main(int argc, char **argv)
 						drawrange(ctx, doc, argv[fz_optind++]);
 
 					bgprint_flush();
+					if (bgprint.error)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "failed to parse page");
 
 					if (useaccel)
 						save_accelerator(ctx, doc, filename);
