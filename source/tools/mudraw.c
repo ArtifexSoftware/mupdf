@@ -222,6 +222,7 @@ typedef struct worker_t {
 	int num;
 	int band; /* -1 to shutdown, or band to render */
 	int error;
+	int running; /* set to 1 by main thread when it thinks the worker is running, 0 when it thinks it is not running */
 	fz_display_list *list;
 	fz_matrix ctm;
 	fz_rect tbounds;
@@ -835,6 +836,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].list = list;
 					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, band_ibounds, seps, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
+					workers[band].running = 1;
 #ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 					mu_trigger_semaphore(&workers[band].start);
@@ -895,6 +897,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
 					mu_wait_semaphore(&w->stop);
 #endif
+					w->running = 0;
 					cookie->errors += w->cookie.errors;
 					pix = w->pix;
 					bit = w->bit;
@@ -921,6 +924,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					w->ctm = ctm;
 					w->tbounds = tbounds;
 					memset(&w->cookie, 0, sizeof(fz_cookie));
+					w->running = 1;
 #ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Triggering worker %d for band %d\n", w->num, w->band));
 					mu_trigger_semaphore(&w->start);
@@ -956,9 +960,20 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			bit = NULL;
 			if (num_workers > 0)
 			{
-				int band;
-				for (band = 0; band < num_workers; band++)
-					fz_drop_pixmap(ctx, workers[band].pix);
+				int i;
+				DEBUG_THREADS(("Stopping workers and removing their pixmaps\n"));
+				for (i = 0; i < num_workers; i++)
+				{
+					if (workers[i].running)
+					{
+						DEBUG_THREADS(("Waiting on worker %d to finish processing\n", i));
+						mu_wait_semaphore(&workers[i].stop);
+						workers[i].running = 0;
+					}
+					else
+						DEBUG_THREADS(("Worker %d not processing anything\n", i));
+					fz_drop_pixmap(ctx, workers[i].pix);
+				}
 			}
 			else
 				fz_drop_pixmap(ctx, pix);
@@ -2220,6 +2235,7 @@ int mudraw_main(int argc, char **argv)
 		if (num_workers > 0)
 		{
 			int i;
+			DEBUG_THREADS(("Asking workers to shutdown, then destroy their resources\n"));
 			for (i = 0; i < num_workers; i++)
 			{
 				workers[i].band = -1;
