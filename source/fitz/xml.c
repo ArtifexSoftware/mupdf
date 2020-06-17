@@ -232,17 +232,16 @@ void fz_debug_xml(fz_xml *item, int level)
 		int c;
 		xml_indent(level);
 		putchar('"');
-		while ((c = *s++)) {
+		while (*s) {
+			s += fz_chartorune(&c, s);
 			switch (c) {
 			default:
-				if (c < 32 || c > 127) {
-					putchar('\\');
-					putchar('x');
-					putchar("0123456789ABCDEF"[(c>>4) & 15]);
-					putchar("0123456789ABCDEF"[(c) & 15]);
-				} else {
+				if (c > 0xFFFF)
+					printf("\\u{%X}", c);
+				else if (c < 32 || c > 127)
+					printf("\\u%04X", c);
+				else
 					putchar(c);
-				}
 				break;
 			case '\\': putchar('\\'); putchar('\\'); break;
 			case '\b': putchar('\\'); putchar('b'); break;
