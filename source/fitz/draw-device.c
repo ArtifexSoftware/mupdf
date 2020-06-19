@@ -2492,6 +2492,7 @@ fz_format_tile_key(fz_context *ctx, char *s, size_t n, void *key_)
 
 static const fz_store_type fz_tile_store_type =
 {
+	"struct tile_record",
 	fz_make_hash_tile_key,
 	fz_keep_tile_key,
 	fz_drop_tile_key,

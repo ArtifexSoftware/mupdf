@@ -1585,6 +1585,7 @@ fz_format_html_key(fz_context *ctx, char *s, size_t n, void *key_)
 
 static const fz_store_type fz_html_store_type =
 {
+	"fz_html",
 	fz_make_hash_html_key,
 	fz_keep_html_key,
 	fz_drop_html_key,
