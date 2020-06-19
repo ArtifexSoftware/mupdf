@@ -332,6 +332,14 @@ char *fz_xml_att(fz_xml *item, const char *name)
 	return NULL;
 }
 
+char *fz_xml_att_alt(fz_xml *item, const char *one, const char *two)
+{
+	char *val = fz_xml_att(item, one);
+	if (!val)
+		val = fz_xml_att(item, two);
+	return val;
+}
+
 fz_xml *fz_xml_find(fz_xml *item, const char *tag)
 {
 	while (item)
