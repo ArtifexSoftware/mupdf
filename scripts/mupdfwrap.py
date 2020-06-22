@@ -1427,7 +1427,7 @@ classextras = ClassExtras(
                             else if (fixed == Fixed_UNIT)       *this->internal() = {rename.function_raw('fz_unit_rect')};
                             else if (fixed == Fixed_EMPTY)      *this->internal() = {rename.function_raw('fz_empty_rect')};
                             else if (fixed == Fixed_INFINITE)   *this->internal() = {rename.function_raw('fz_infinite_rect')};
-                            throw ErrorAbort( "Unrecognised From value");
+                            else throw ErrorAbort( "Unrecognised From value");
                         }}
                         '''),
                         ],
@@ -1508,6 +1508,12 @@ classextras = ClassExtras(
 
         fz_stext_options = ClassExtra(
                 constructors_extra = [
+                    ExtraConstructor( '()',
+                        '''
+                        : flags( 0)
+                        {
+                        }
+                        '''),
                     ExtraConstructor( '(int flags)',
                         '''
                         : flags( flags)
@@ -5332,7 +5338,7 @@ def main():
                             else:
                                 raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')
 
-                            jlib.system( command, prefix=jlib.log_text(), out=sys.stderr, verbose=1)
+                            jlib.system( command, prefix=jlib.log_text(), verbose=1)
 
                         elif action == '0':
                             # Generate C++ code that wraps the fz_* API.
