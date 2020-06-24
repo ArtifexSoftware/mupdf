@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MuPDF
+Comment=Lightweight PDF, XPS, and E-book viewer
+Exec=file_chooser %f
+Icon=mupdf
+Terminal=false
+Type=Application
+MimeType=application/pdf;application/x-pdf;application/x-cbz;application/oxps;application/vnd.ms-xpsdocument;image/jpeg;image/pjpeg;image/png;image/tiff;image/x-tiff
+Categories=Viewer;Graphics;
