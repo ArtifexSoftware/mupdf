@@ -367,6 +367,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	protected void searchFieldKeyTyped(KeyEvent e) {
 		if (e.getExtendedKeyCodeForChar(e.getKeyChar()) == java.awt.event.KeyEvent.VK_ESCAPE) {
+			searchHits = null;
+			updatePageCanvas();
 			pageCanvas.requestFocusInWindow();
 		}
 	}
