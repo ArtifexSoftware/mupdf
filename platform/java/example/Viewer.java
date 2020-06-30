@@ -56,6 +56,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int tintWhite = 0xFFFFF0;
 	protected int currentRotate = 0;
 	protected boolean currentOutline = false;
+	protected boolean currentLinks = false;
+	protected Link[] links = null;
 
 	protected int number = 0;
 
@@ -191,6 +193,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				g2d.setColor(new Color(1, 0, 0, 0.4f));
 				for (int i = 0; i < searchHits.length; ++i) {
 					Rect hit = new Rect(searchHits[i]).transform(pageCTM);
+					g2d.fillRect((int)hit.x0, (int)hit.y0, (int)(hit.x1-hit.x0), (int)(hit.y1-hit.y0));
+				}
+			}
+
+			if (links != null) {
+				g2d.setColor(new Color(0, 0, 1, 0.1f));
+				for (int i = 0; i < links.length; ++i) {
+					Rect hit = new Rect(links[i].bounds).transform(pageCTM);
 					g2d.fillRect((int)hit.x0, (int)hit.y0, (int)(hit.x1-hit.x0), (int)(hit.y1-hit.y0));
 				}
 			}
@@ -404,6 +414,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'A': toggleAA(); break;
 		case 'C': toggleTint(); break;
 		case 'o': toggleOutline(); break;
+		case 'L': toggleLinks(); break;
 
 		case '[': doRotate(-90); break;
 		case ']': doRotate(+90); break;
@@ -495,7 +506,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
 		if (doc != null) {
-			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite, currentRotate);
+			Page page = doc.loadPage(pageNumber);
+
+			if (currentLinks)
+				links = page.getLinks();
+			else
+				links = null;
+
+			BufferedImage image = imageFromPage(page, pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite, currentRotate);
 			pageCanvas.setImage(image);
 
 			selectOutlineItem(pageNumber);
@@ -615,6 +633,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		outlinePanel.setVisible(currentOutline);
 		pack();
 		validate();
+	}
+
+	protected void toggleLinks() {
+		currentLinks = !currentLinks;
+		updatePageCanvas();
 	}
 
 	protected void doFullscreen() {
