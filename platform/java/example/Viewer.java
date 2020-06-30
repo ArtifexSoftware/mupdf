@@ -397,10 +397,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case '>': doRelayout(number > 0 ? number : layoutEm + 1); break;
 		case '<': doRelayout(number > 0 ? number : layoutEm - 1); break;
 
-		case 'I': doInvert(); break;
-		case 'E': doICC(); break;
-		case 'A': doAA(); break;
-		case 'C': doTint(); break;
+		case 'I': toggleInvert(); break;
+		case 'E': toggleICC(); break;
+		case 'A': toggleAA(); break;
+		case 'C': toggleTint(); break;
 
 		case '[': doRotate(-90); break;
 		case ']': doRotate(+90); break;
@@ -541,7 +541,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		updatePageCanvas();
 	}
 
-	protected void doInvert() {
+	protected void toggleInvert() {
 		currentInvert = !currentInvert;
 		updatePageCanvas();
 	}
@@ -564,17 +564,17 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		return true;
 	}
 
-	protected void doICC() {
+	protected void toggleICC() {
 		currentICC = !currentICC;
 		updatePageCanvas();
 	}
 
-	protected void doAA() {
+	protected void toggleAA() {
 		currentAA = number != 0 ? number : (currentAA == 8 ? 0 : 8);
 		updatePageCanvas();
 	}
 
-	protected void doTint() {
+	protected void toggleTint() {
 		currentTint = !currentTint;
 		updatePageCanvas();
 	}
