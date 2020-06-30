@@ -438,6 +438,28 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			number = 0;
 	}
 
+	protected void selectOutlineItem(int pagenum) {
+		int best = -1;
+
+		if (flatOutline != null) {
+			for (int i = 0; i < flatOutline.size(); ++i) {
+				Outline node = flatOutline.elementAt(i);
+				int linkPage = doc.pageNumberFromLocation(doc.resolveLink(node));
+				 if (linkPage >= 0 && linkPage <= pagenum)
+					 best = i;
+			}
+		}
+
+		if (best >= 0) {
+			outlineList.select(best);
+			outlineList.makeVisible(best);
+		} else {
+			int selected = outlineList.getSelectedIndex();
+			if (selected >= 0)
+				outlineList.deselect(selected);
+		}
+	}
+
 	protected void addOutline(Outline[] outline, String indent) {
 		for (int i = 0; i < outline.length; ++i) {
 			Outline node = outline[i];
@@ -475,6 +497,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (doc != null) {
 			BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite, currentRotate);
 			pageCanvas.setImage(image);
+
+			selectOutlineItem(pageNumber);
 		}
 
 		Dimension size = pageHolder.getPreferredSize();
