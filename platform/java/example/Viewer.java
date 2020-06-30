@@ -55,6 +55,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int tintBlack = 0x303030;
 	protected int tintWhite = 0xFFFFF0;
 	protected int currentRotate = 0;
+	protected boolean currentOutline = false;
 
 	protected int number = 0;
 
@@ -218,6 +219,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		this.add(outlinePanel, BorderLayout.WEST);
 		outlinePanel.setMinimumSize(new Dimension(300, 300));
 		outlinePanel.setPreferredSize(new Dimension(300, 300));
+		outlinePanel.setVisible(false);
 
 		Panel rightPanel = new Panel(new BorderLayout());
 		{
@@ -401,6 +403,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'E': toggleICC(); break;
 		case 'A': toggleAA(); break;
 		case 'C': toggleTint(); break;
+		case 'o': toggleOutline(); break;
 
 		case '[': doRotate(-90); break;
 		case ']': doRotate(+90); break;
@@ -458,10 +461,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (outline != null) {
 			flatOutline = new Vector<Outline>();
 			addOutline(outline, "");
-			outlineList.setVisible(true);
+			currentOutline = true;
 		} else  {
-			outlineList.setVisible(false);
+			currentOutline = false;
 		}
+		outlinePanel.setVisible(currentOutline);
 	}
 
 	protected void updatePageCanvas() {
@@ -577,6 +581,16 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void toggleTint() {
 		currentTint = !currentTint;
 		updatePageCanvas();
+	}
+
+	protected void toggleOutline() {
+		if (outlineList.getItemCount() <= 0)
+			return;
+
+		currentOutline = !currentOutline;
+		outlinePanel.setVisible(currentOutline);
+		pack();
+		validate();
 	}
 
 	protected void doFullscreen() {
