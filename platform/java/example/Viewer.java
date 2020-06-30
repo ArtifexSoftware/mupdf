@@ -36,6 +36,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int searchHitPage = -1;
 	protected Quad[] searchHits;
 
+	protected Panel outlinePanel;
 	protected List outlineList;
 	protected Vector<Outline> flatOutline;
 
@@ -208,6 +209,16 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		setTitle("MuPDF: ");
 		pageCount = 0;
 
+		outlinePanel = new Panel(new BorderLayout());
+		{
+			outlineList = new List();
+			outlineList.addItemListener(this);
+			outlinePanel.add(outlineList, BorderLayout.CENTER);
+		}
+		this.add(outlinePanel, BorderLayout.WEST);
+		outlinePanel.setMinimumSize(new Dimension(300, 300));
+		outlinePanel.setPreferredSize(new Dimension(300, 300));
+
 		Panel rightPanel = new Panel(new BorderLayout());
 		{
 			Panel toolpane = new Panel(new GridBagLayout());
@@ -294,10 +305,6 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				toolpane.add(toolbar, c);
 			}
 			rightPanel.add(toolpane, BorderLayout.NORTH);
-
-			outlineList = new List();
-			outlineList.addItemListener(this);
-			rightPanel.add(outlineList, BorderLayout.CENTER);
 		}
 		this.add(rightPanel, BorderLayout.EAST);
 
