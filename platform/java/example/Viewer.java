@@ -58,6 +58,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected boolean currentOutline = false;
 	protected boolean currentLinks = false;
 	protected Link[] links = null;
+	protected Rect pageBounds;
 
 	protected int number = 0;
 
@@ -415,6 +416,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'C': toggleTint(); break;
 		case 'o': toggleOutline(); break;
 		case 'L': toggleLinks(); break;
+		case 'i': showInfo(); break;
 
 		case '[': doRotate(-90); break;
 		case ']': doRotate(+90); break;
@@ -508,10 +510,13 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (doc != null) {
 			Page page = doc.loadPage(pageNumber);
 
+			pageBounds = page.getBounds();
+
 			if (currentLinks)
 				links = page.getLinks();
 			else
 				links = null;
+
 
 			BufferedImage image = imageFromPage(page, pageCTM, currentInvert, currentICC, currentAA, currentTint, tintBlack, tintWhite, currentRotate);
 			pageCanvas.setImage(image);
@@ -638,6 +643,192 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void toggleLinks() {
 		currentLinks = !currentLinks;
 		updatePageCanvas();
+	}
+
+	protected static String paperSizeName(int w, int h)
+	{
+		/* ISO A */
+		if (w == 2384 && h == 3370) return "A0";
+		if (w == 1684 && h == 2384) return "A1";
+		if (w == 1191 && h == 1684) return "A2";
+		if (w == 842 && h == 1191) return "A3";
+		if (w == 595 && h == 842) return "A4";
+		if (w == 420 && h == 595) return "A5";
+		if (w == 297 && h == 420) return "A6";
+
+		/* US */
+		if (w == 612 && h == 792) return "Letter";
+		if (w == 612 && h == 1008) return "Legal";
+		if (w == 792 && h == 1224) return "Ledger";
+		if (w == 1224 && h == 792) return "Tabloid";
+
+		return null;
+	}
+
+	protected void showInfo() {
+		StringBuffer buffer;
+
+		final Dialog box = new Dialog(this, "Document info", true);
+		box.addWindowListener(new WindowListener() {
+			public void windowActivated(WindowEvent event) { }
+			public void windowDeactivated(WindowEvent event) { }
+			public void windowIconified(WindowEvent event) { }
+			public void windowDeiconified(WindowEvent event) { }
+			public void windowOpened(WindowEvent event) { }
+			public void windowClosed(WindowEvent event) { }
+			public void windowClosing(WindowEvent event) {
+				box.setVisible(false);
+				pageCanvas.requestFocusInWindow();
+			}
+		});
+
+		Panel infoPanel = new Panel();
+		int rows = 0;
+
+		String title = doc.getMetaData(Document.META_INFO_TITLE);
+		if (title != null) rows++;
+
+		String author = doc.getMetaData(Document.META_INFO_AUTHOR);
+		if (author != null) rows++;
+
+		String format = doc.getMetaData(Document.META_FORMAT);
+		if (format != null) rows++;
+
+		String encryption = doc.getMetaData(Document.META_ENCRYPTION);
+		if (encryption != null) rows++;
+
+		buffer = new StringBuffer();
+		if (doc.hasPermission(Document.PERMISSION_PRINT))
+			buffer.append("print, ");
+		if (doc.hasPermission(Document.PERMISSION_COPY))
+			buffer.append("copy, ");
+		if (doc.hasPermission(Document.PERMISSION_EDIT))
+			buffer.append("edit, ");
+		if (doc.hasPermission(Document.PERMISSION_ANNOTATE))
+			buffer.append("annotate, ");
+		if (buffer.length() > 2)
+			buffer.delete(buffer.length() - 2, buffer.length());
+		String permissions = buffer.length() > 0 ? buffer.toString() : null;
+		if (permissions != null) rows++;
+
+		buffer = new StringBuffer();
+		if (doc.isPDF()) {
+			PDFDocument pdf = (PDFDocument) doc;
+			int updates = pdf.countVersions();
+			boolean linear = pdf.wasLinearized();
+
+			buffer.append("PDF ");
+			if (linear)
+				buffer.append("linearized ");
+			buffer.append("document with ");
+			buffer.append(updates);
+			if (updates == 1)
+				buffer.append(" update");
+			else
+				buffer.append(" updates");
+		}
+		String versions = buffer.length() > 0 ? buffer.toString() : null;
+		if (versions != null) rows++;
+
+		buffer = new StringBuffer();
+		if (doc.isPDF()) {
+			PDFDocument pdf = (PDFDocument) doc;
+			int updates = pdf.countVersions();
+
+			if (updates > 1) {
+				int n = pdf.validateChangeHistory();
+				if (n == 0)
+					buffer.append("Change history seems valid.");
+				else if (n == 1)
+					buffer.append("Invalid changes made to the document in the last update.");
+				else if (n == 2)
+					buffer.append("Invalid changes made to the document in the penultimate update.");
+				else {
+					buffer.append("Invalid changes made to the document ");
+					buffer.append(n);
+					buffer.append(" updates ago.");
+				}
+			}
+		}
+		String validation = buffer.length() > 0 ? buffer.toString() : null;
+		if (validation != null) rows++;
+
+		buffer = new StringBuffer();
+		int w = (int)(pageBounds.x1 - pageBounds.x0 + 0.5f);
+		int h = (int)(pageBounds.y1 - pageBounds.y0 + 0.5f);
+		buffer.append(w);
+		buffer.append(" x ");
+		buffer.append(h);
+		String name = paperSizeName(w, h);
+		if (name == null)
+			name = paperSizeName(h, w);
+		if (name != null)
+			buffer.append("(" + name + ")");
+		String paperSize = buffer.length() > 0 ? buffer.toString() : null;
+		if (paperSize != null) rows++;
+
+		buffer = new StringBuffer();
+		buffer.append(pageNumber + 1);
+		buffer.append(" / ");
+		buffer.append(pageCount);
+		String page = buffer.length() > 0 ? buffer.toString() : null;
+		if (page != null) rows++;
+
+		String icc = currentICC ? "on" : "off";
+		rows++;
+
+		infoPanel.setLayout(new GridLayout(rows, 1));
+
+		if (title != null) infoPanel.add(new Label("Title: " + title));
+		if (author != null) infoPanel.add(new Label("Author: " + author));
+		if (format != null) infoPanel.add(new Label("Format: " + format));
+		if (encryption != null) infoPanel.add(new Label("Encryption: " + encryption));
+		if (permissions != null) infoPanel.add(new Label("Permissions: " + permissions));
+		if (versions != null) infoPanel.add(new Label(versions));
+		if (validation != null) infoPanel.add(new Label(validation));
+		infoPanel.add(new Label("Size: " + paperSize));
+		infoPanel.add(new Label("Page: " + page));
+		infoPanel.add(new Label("ICC rendering: " + icc));
+
+		Button button = new Button("OK");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				box.setVisible(false);
+			}
+		});
+		button.addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) { }
+			public void keyReleased(KeyEvent e) { }
+			public void keyTyped(KeyEvent e) {
+				if (e.getKeyChar() == '\u001b' || e.getKeyChar() == '\r' || e.getKeyChar() == '\n')
+					box.setVisible(false);
+			}
+		});
+
+		Panel buttonPane = new Panel(new FlowLayout());
+		buttonPane.add(button);
+
+		box.add(infoPanel, BorderLayout.CENTER);
+		box.add(buttonPane, BorderLayout.SOUTH);
+
+		button.requestFocusInWindow();
+
+		box.setResizable(false);
+		box.pack();
+
+		java.awt.Point winLoc = this.getLocation();
+		Dimension winDim = this.getSize();
+		int winCenterX = winLoc.x + winDim.width / 2;
+		int winCenterY = winLoc.y + winDim.height / 2;
+
+		Dimension diagDim = box.getSize();
+		int x = winCenterX - diagDim.width / 2;
+		int y = winCenterY - diagDim.height / 2;
+
+		box.setLocation(x, y);
+
+		box.setVisible(true);
+		box.dispose();
 	}
 
 	protected void doFullscreen() {
