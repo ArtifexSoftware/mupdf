@@ -2140,6 +2140,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_validateChangeHis
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_wasPureXFA
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    wasLinearized
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_wasLinearized
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
