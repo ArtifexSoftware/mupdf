@@ -180,6 +180,13 @@ public class Document
 		return makeBookmark(loc.chapter, loc.page);
 	}
 
+	public static final int PERMISSION_PRINT = (int) 'p';
+	public static final int PERMISSION_COPY = (int) 'c';
+	public static final int PERMISSION_EDIT = (int) 'e';
+	public static final int PERMISSION_ANNOTATE = (int) 'n';
+
+	public native boolean hasPermission(int permission);
+
 	public native boolean isUnencryptedPDF();
 
 	public boolean isPDF() {

@@ -881,3 +881,18 @@ FUN(Document_resolveLink)(JNIEnv *env, jobject self, jstring juri)
 
 	return (*env)->NewObject(env, cls_Location, mid_Location_init, loc.chapter, loc.page, x, y);
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(Document_hasPermission)(JNIEnv *env, jobject self, jint permission)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	jboolean result = JNI_FALSE;
+
+	fz_try(ctx)
+		result = fz_has_permission(ctx, doc, permission);
+	fz_catch(ctx)
+		return jni_rethrow(env, ctx), JNI_FALSE;
+
+	return result;
+}
