@@ -41,7 +41,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected Vector<Outline> flatOutline;
 
 	protected int pageCount;
-	protected int pageNumber = 0;
+	protected Location currentPage = null;
+
 	protected int zoomLevel = 5;
 	protected int layoutWidth = 450;
 	protected int layoutHeight = 600;
@@ -63,10 +64,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected int number = 0;
 
 	protected class Mark {
-		int pageNumber;
+		Location loc;
 
-		protected Mark(int pageNumber) {
-			this.pageNumber = pageNumber;
+		protected Mark(Location loc) {
+			this.loc = loc;
 		}
 	}
 
@@ -190,7 +191,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			g2d.scale(imageScale, imageScale);
 			g2d.drawImage(image, 0, 0, null);
 
-			if (searchHitPage == pageNumber && searchHits != null && searchHits.length > 0) {
+
+			if (searchHitPage == doc.pageNumberFromLocation(currentPage) && searchHits != null && searchHits.length > 0) {
 				g2d.setColor(new Color(1, 0, 0, 0.4f));
 				for (int i = 0; i < searchHits.length; ++i) {
 					Rect hit = new Rect(searchHits[i]).transform(pageCTM);
@@ -360,6 +362,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		doc.layout(layoutWidth, layoutHeight, layoutEm);
+		currentPage = doc.locationFromPageNumber(0);
 		pageCount = doc.countPages();
 		doc.saveAccelerator(acceleratorPath);
 
@@ -501,6 +504,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void updatePageCanvas() {
+		int pageNumber = doc.pageNumberFromLocation(currentPage);
 		pageField.setText(String.valueOf(pageNumber + 1));
 
 		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
@@ -560,9 +564,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		int searchPage;
 		if (searchHitPage == -1)
-			searchPage = pageNumber;
+			searchPage = doc.pageNumberFromLocation(currentPage);
 		else
-			searchPage = pageNumber + searchDirection;
+			searchPage = doc.pageNumberFromLocation(currentPage) + searchDirection;
 		searchHitPage = -1;
 		String needle = searchField.getText();
 		while (searchPage >= 0 && searchPage < pageCount) {
@@ -571,7 +575,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			page.destroy();
 			if (searchHits != null && searchHits.length > 0) {
 				searchHitPage = searchPage;
-				pageNumber = searchPage;
+				currentPage = doc.locationFromPageNumber(searchPage);
+
 				updatePageCanvas();
 				break;
 			}
@@ -602,16 +607,18 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (pages < 1)
 			pages = 1;
 
-		int page = pageNumber + direction * pages;
-		if (page < 0)
-			page = 0;
-		if (page >= pageCount)
-			page = pageCount - 1;
+		Location loc = currentPage;
+		for (int i = 0; i < pages; i++) {
+			if (direction > 0)
+				loc = doc.nextPage(loc);
+			else
+				loc = doc.previousPage(loc);
+		}
 
-		if (page == pageNumber)
+		if (currentPage.equals(loc))
 			return false;
 
-		pageNumber = page;
+		currentPage = loc;
 		updatePageCanvas();
 		return true;
 	}
@@ -769,7 +776,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (paperSize != null) rows++;
 
 		buffer = new StringBuffer();
-		buffer.append(pageNumber + 1);
+		buffer.append(doc.pageNumberFromLocation(currentPage) + 1);
 		buffer.append(" / ");
 		buffer.append(pageCount);
 		String page = buffer.length() > 0 ? buffer.toString() : null;
@@ -858,9 +865,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			if (historyCount > 0)
 				popHistory();
 		} else if (number > 0 && number < marks.length) {
-			int mark = marks[number].pageNumber;
+			int page = doc.pageNumberFromLocation(marks[number].loc);
 			restoreMark(marks[number]);
-			doJumpToPage(mark);
+			doJumpToPage(page);
 		}
 	}
 
@@ -873,18 +880,16 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected Mark saveMark() {
-		return new Mark(pageNumber);
+		return new Mark(currentPage);
 	}
 
 	protected void restoreMark(Mark mark) {
-		pageNumber = mark.pageNumber;
+		currentPage = mark.loc;
 		updatePageCanvas();
 	}
 
 	protected void pushHistory() {
-		int here = pageNumber;
-
-		if (historyCount > 0 && pageNumber == history[historyCount - 1].pageNumber)
+		if (historyCount > 0 && currentPage.equals(history[historyCount - 1].loc))
 		{
 			return;
 		}
@@ -913,17 +918,30 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void popHistory() {
-		int here = pageNumber;
+		Location here = currentPage;
 		pushFuture();
-		while (historyCount > 0 && pageNumber == here)
+		while (historyCount > 0 && currentPage.equals(here))
 			restoreMark(history[--historyCount]);
 	}
 
 	protected void popFuture() {
-		int here = pageNumber;
+		Location here = currentPage;
 		pushHistory();
-		while (futureCount > 0 && pageNumber == here)
+		while (futureCount > 0 && currentPage.equals(here))
 			restoreMark(future[--futureCount]);
+	}
+
+	protected void doJumpToLocation(Location loc) {
+		clearFuture();
+		pushHistory();
+
+		currentPage = loc;
+
+		int page = doc.pageNumberFromLocation(currentPage);
+		pageField.setText(String.valueOf(page));
+		updatePageCanvas();
+
+		pushHistory();
 	}
 
 	protected boolean doJumpToPage(int page) {
@@ -935,12 +953,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (page >= pageCount)
 			page = pageCount - 1;
 
-		if (page == pageNumber) {
+		if (doc.pageNumberFromLocation(currentPage) == page) {
 			pushHistory();
 			return false;
 		}
 
-		pageNumber = page;
+		currentPage = doc.locationFromPageNumber(page);
+
+		pageField.setText(String.valueOf(page));
 		updatePageCanvas();
 		pageCanvas.requestFocusInWindow();
 
@@ -1039,12 +1059,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		fontSizeLabel.setText(String.valueOf(em));
 
 		layoutEm = em;
-		long mark = doc.makeBookmark(doc.locationFromPageNumber(pageNumber));
+		long mark = doc.makeBookmark(currentPage);
 		doc.layout(layoutWidth, layoutHeight, layoutEm);
 		updateOutline();
 		pageCount = doc.countPages();
 		pageLabel.setText("/ " + pageCount);
-		pageNumber = doc.pageNumberFromLocation(doc.findBookmark(mark));
+		currentPage = doc.findBookmark(mark);
 		updatePageCanvas();
 	}
 
@@ -1057,37 +1077,20 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
-		int oldPageNumber = pageNumber;
 		int oldLayoutEm = layoutEm;
 		int oldZoomLevel = zoomLevel;
 		Quad[] oldSearchHits = searchHits;
 
 		if (source == firstButton)
-			pageNumber = 0;
-
+			doJumpToPage(0);
 		if (source == lastButton)
-			pageNumber = pageCount - 1;
-
-		if (source == prevButton) {
-			pageNumber = pageNumber - 1;
-			if (pageNumber < 0)
-				pageNumber = 0;
-		}
-
-		if (source == nextButton) {
-			pageNumber = pageNumber + 1;
-			if (pageNumber >= pageCount)
-				pageNumber = pageCount - 1;
-		}
-
-		if (source == pageField) {
-			pageNumber = Integer.parseInt(pageField.getText()) - 1;
-			if (pageNumber < 0)
-				pageNumber = 0;
-			if (pageNumber >= pageCount)
-				pageNumber = pageCount - 1;
-			pageField.setText(String.valueOf(pageNumber));
-		}
+			doJumpToLocation(doc.lastPage());
+		if (source == prevButton)
+			doJumpToLocation(doc.previousPage(currentPage));
+		if (source == nextButton)
+			doJumpToLocation(doc.nextPage(currentPage));
+		if (source == pageField)
+			doJumpToPage(Integer.parseInt(pageField.getText()) - 1);
 
 		if (source == searchField)
 			doSearch();
@@ -1106,7 +1109,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (source == zoomInButton)
 			doZoom(1);
 
-		if (pageNumber != oldPageNumber || searchHits != oldSearchHits)
+		if (searchHits != oldSearchHits)
 			updatePageCanvas();
 	}
 
@@ -1121,13 +1124,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (source == outlineList) {
 			int i = outlineList.getSelectedIndex();
 			Outline node = flatOutline.elementAt(i);
-			int linkPage = doc.pageNumberFromLocation(doc.resolveLink(node));
-			if (linkPage >= 0) {
-				if (linkPage != pageNumber) {
-					pageNumber = linkPage;
-					updatePageCanvas();
-				}
-			}
+			Location loc = doc.resolveLink(node);
+			doJumpToLocation(loc);
 			pageCanvas.requestFocusInWindow();
 		}
 	}

@@ -153,6 +153,8 @@ public class Document
 	public int pageNumberFromLocation(Location loc) {
 		int nc = countChapters();
 		int start = 0;
+		if (loc == null)
+			return -1;
 		for (int i = 0; i < nc; ++i) {
 			if (i == loc.chapter)
 				return start + loc.page;
