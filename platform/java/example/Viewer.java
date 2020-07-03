@@ -939,6 +939,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		pageNumber = page;
 		updatePageCanvas();
+		pageCanvas.requestFocusInWindow();
 
 		pushHistory();
 		return true;
