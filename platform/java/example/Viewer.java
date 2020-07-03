@@ -386,11 +386,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void searchFieldKeyTyped(KeyEvent e) {
-		if (e.getExtendedKeyCodeForChar(e.getKeyChar()) == java.awt.event.KeyEvent.VK_ESCAPE) {
-			searchHits = null;
-			updatePageCanvas();
-			pageCanvas.requestFocusInWindow();
-		}
+		if (e.getExtendedKeyCodeForChar(e.getKeyChar()) == java.awt.event.KeyEvent.VK_ESCAPE)
+			clearSearch();
 	}
 
 	protected void canvasKeyTyped(KeyEvent e) {
@@ -535,6 +532,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void doPreSearch(int direction) {
 		searchDirection = direction;
 		searchField.setText("");
+		searchField.validate();
 		searchField.requestFocusInWindow();
 	}
 
@@ -547,8 +545,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (doc == null)
 			return;
 
+		searchHits = null;
 		searchField.setText("");
 		searchField.validate();
+		updatePageCanvas();
+		pageCanvas.requestFocusInWindow();
 	}
 
 	protected void doSearch() {
