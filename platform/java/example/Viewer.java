@@ -32,7 +32,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 	protected TextField searchField;
 	protected Button searchPrevButton, searchNextButton;
-	protected int searchDirection = 0;
+	protected int searchDirection = 1;
 	protected int searchHitPage = -1;
 	protected Quad[] searchHits;
 
@@ -556,8 +556,6 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			return;
 
 		int searchPage;
-		if (searchDirection == 0)
-			searchDirection = 1;
 		if (searchHitPage == -1)
 			searchPage = pageNumber;
 		else
