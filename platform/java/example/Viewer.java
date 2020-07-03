@@ -556,6 +556,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (doc == null)
 			return;
 
+		pageCanvas.requestFocusInWindow();
+
 		int searchPage;
 		if (searchHitPage == -1)
 			searchPage = pageNumber;
@@ -1088,26 +1090,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		if (source == searchField)
-		{
-			pageCanvas.requestFocusInWindow();
 			doSearch();
-		}
 		if (source == searchNextButton)
-		{
-			pageCanvas.requestFocusInWindow();
-			searchDirection = 1;
-			doSearch();
-		}
+			doSearch(1);
 		if (source == searchPrevButton)
-		{
-			pageCanvas.requestFocusInWindow();
-			searchDirection = -1;
-			doSearch();
-		}
+			doSearch(-1);
 
 		if (source == fontIncButton && doc != null && doc.isReflowable())
 			doRelayout(layoutEm + 1);
-
 		if (source == fontDecButton && doc != null && doc.isReflowable())
 			doRelayout(layoutEm - 1);
 
