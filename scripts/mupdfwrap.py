@@ -335,7 +335,7 @@ class ClangInfo:
                     for leaf in f'libclang-{version}.*so*', f'libclang.so.{version}.*':
                         p = os.path.join( i, leaf)
                         p = os.path.abspath( p)
-                        log( '{p=}')
+                        #log( '{p=}')
                         libclang_so = glob.glob( p)
                         if not libclang_so:
                             continue
@@ -5771,3 +5771,4 @@ if __name__ == '__main__':
         main()
     except Exception:
         print( jlib.exception_info())
+        sys.exit(1)
