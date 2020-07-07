@@ -572,6 +572,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_loadPage
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    search
+ * Signature: (IILjava/lang/String;)[Lcom/artifex/mupdf/fitz/Quad;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Document_search
+  (JNIEnv *, jobject, jint, jint, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    resolveLink
  * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Location;
  */

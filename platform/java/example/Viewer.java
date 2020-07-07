@@ -421,13 +421,13 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case '[': rotate(-90); break;
 		case ']': rotate(+90); break;
 
-		case '+': zoom(1); break;
+		case '+': zoom(+1); break;
 		case '-': zoom(-1); break;
 
 		case 'k': pan(0, -10); break;
-		case 'j': pan(0, 10); break;
+		case 'j': pan(0, +10); break;
 		case 'h': pan(-10, 0); break;
-		case 'l': pan(10, 0); break;
+		case 'l': pan(+10, 0); break;
 
 		case 'b': smartMove(-1, number); break;
 		case ' ': smartMove(+1, number); break;
@@ -438,10 +438,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'g': jumpToPage(number - 1); break;
 		case 'G': jumpToPage(pageCount - 1); break;
 
-		case '/': editSearchNeedle(1); break;
+		case '/': editSearchNeedle(+1); break;
 		case '?': editSearchNeedle(-1); break;
 		case 'N': search(-1); break;
-		case 'n': search(1); break;
+		case 'n': search(+1); break;
 		case '\u001b': clearSearch(); break;
 		}
 
