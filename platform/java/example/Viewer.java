@@ -401,14 +401,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'r': reload(); break;
 		case 'q': dispose(); break;
 
-		case 'f': doFullscreen(); break;
+		case 'f': toggleFullscreen(); break;
 
-		case 'm': doMark(number); break;
-		case 't': doHistoryBack(number); break;
-		case 'T': doHistoryForward(number); break;
+		case 'm': mark(number); break;
+		case 't': jumpHistoryBack(number); break;
+		case 'T': jumpHistoryForward(number); break;
 
-		case '>': doRelayout(number > 0 ? number : layoutEm + 1); break;
-		case '<': doRelayout(number > 0 ? number : layoutEm - 1); break;
+		case '>': relayout(number > 0 ? number : layoutEm + 1); break;
+		case '<': relayout(number > 0 ? number : layoutEm - 1); break;
 
 		case 'I': toggleInvert(); break;
 		case 'E': toggleICC(); break;
@@ -418,30 +418,30 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case 'L': toggleLinks(); break;
 		case 'i': showInfo(); break;
 
-		case '[': doRotate(-90); break;
-		case ']': doRotate(+90); break;
+		case '[': rotate(-90); break;
+		case ']': rotate(+90); break;
 
-		case '+': doZoom(1); break;
-		case '-': doZoom(-1); break;
+		case '+': zoom(1); break;
+		case '-': zoom(-1); break;
 
-		case 'k': doPan(0, -10); break;
-		case 'j': doPan(0, 10); break;
-		case 'h': doPan(-10, 0); break;
-		case 'l': doPan(10, 0); break;
+		case 'k': pan(0, -10); break;
+		case 'j': pan(0, 10); break;
+		case 'h': pan(-10, 0); break;
+		case 'l': pan(10, 0); break;
 
-		case 'b': doSmartMove(-1, number); break;
-		case ' ': doSmartMove(+1, number); break;
+		case 'b': smartMove(-1, number); break;
+		case ' ': smartMove(+1, number); break;
 
-		case ',': doFlipPage(-1, number); break;
-		case '.': doFlipPage(+1, number); break;
+		case ',': flipPage(-1, number); break;
+		case '.': flipPage(+1, number); break;
 
-		case 'g': doJumpToPage(number - 1); break;
-		case 'G': doJumpToPage(pageCount - 1); break;
+		case 'g': jumpToPage(number - 1); break;
+		case 'G': jumpToPage(pageCount - 1); break;
 
-		case '/': doPreSearch(1); break;
-		case '?': doPreSearch(-1); break;
-		case 'N': doSearch(-1); break;
-		case 'n': doSearch(1); break;
+		case '/': editSearchNeedle(1); break;
+		case '?': editSearchNeedle(-1); break;
+		case 'N': search(-1); break;
+		case 'n': search(1); break;
 		case '\u001b': clearSearch(); break;
 		}
 
@@ -533,16 +533,16 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		validate();
 	}
 
-	protected void doPreSearch(int direction) {
+	protected void editSearchNeedle(int direction) {
 		searchDirection = direction;
 		searchField.setText("");
 		searchField.validate();
 		searchField.requestFocusInWindow();
 	}
 
-	protected void doSearch(int direction) {
+	protected void search(int direction) {
 		searchDirection = direction;
-		doSearch();
+		search();
 	}
 
 	protected void clearSearch() {
@@ -556,7 +556,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		pageCanvas.requestFocusInWindow();
 	}
 
-	protected void doSearch() {
+	protected void search() {
 		if (doc == null)
 			return;
 
@@ -584,7 +584,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
-	protected void doZoom(int i) {
+	protected void zoom(int i) {
 		int newZoomLevel = zoomLevel + i;
 		if (newZoomLevel < 0)
 			newZoomLevel = 0;
@@ -603,7 +603,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		updatePageCanvas();
 	}
 
-	protected boolean doFlipPage(int direction, int pages) {
+	protected boolean flipPage(int direction, int pages) {
 		if (pages < 1)
 			pages = 1;
 
@@ -839,7 +839,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		box.dispose();
 	}
 
-	protected void doFullscreen() {
+	protected void toggleFullscreen() {
 		isFullscreen = !isFullscreen;
 
 		if (isFullscreen)
@@ -848,30 +848,30 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			setExtendedState(Frame.NORMAL);
 	}
 
-	protected void doRotate(int rotate) {
+	protected void rotate(int rotate) {
 		currentRotate += rotate;
 		updatePageCanvas();
 	}
 
-	protected void doMark(int number) {
+	protected void mark(int number) {
 		if (number == 0)
 			pushHistory();
 		else if (number > 0 && number < marks.length)
 			marks[number] = saveMark();
 	}
 
-	protected void doHistoryBack(int number) {
+	protected void jumpHistoryBack(int number) {
 		if (number == 0) {
 			if (historyCount > 0)
 				popHistory();
 		} else if (number > 0 && number < marks.length) {
 			int page = doc.pageNumberFromLocation(marks[number].loc);
 			restoreMark(marks[number]);
-			doJumpToPage(page);
+			jumpToPage(page);
 		}
 	}
 
-	protected void doHistoryForward(int number) {
+	protected void jumpHistoryForward(int number) {
 		if (number == 0) {
 			if (futureCount > 0) {
 				popFuture();
@@ -931,7 +931,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			restoreMark(future[--futureCount]);
 	}
 
-	protected void doJumpToLocation(Location loc) {
+	protected void jumpToLocation(Location loc) {
 		clearFuture();
 		pushHistory();
 
@@ -944,7 +944,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		pushHistory();
 	}
 
-	protected boolean doJumpToPage(int page) {
+	protected boolean jumpToPage(int page) {
 		clearFuture();
 		pushHistory();
 
@@ -968,7 +968,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		return true;
 	}
 
-	protected void doPan(int panx, int pany) {
+	protected void pan(int panx, int pany) {
 		Adjustable hadj = pageScroll.getHAdjustable();
 		Adjustable vadj = pageScroll.getVAdjustable();
 		int h = hadj.getValue();
@@ -994,7 +994,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			vadj.setValue(newv);
 	}
 
-	protected void doSmartMove(int direction, int moves) {
+	protected void smartMove(int direction, int moves) {
 		if (moves < 1)
 			moves = 1;
 
@@ -1020,7 +1020,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 					if (value > hadj.getMaximum())
 						value = hadj.getMaximum();
 					hadj.setValue(value);
-				} else if (doFlipPage(+1, 1)) {
+				} else if (flipPage(+1, 1)) {
 					vadj.setValue(vadj.getMinimum());
 					hadj.setValue(hadj.getMinimum());
 				}
@@ -1039,7 +1039,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 					if (value < hadj.getMinimum())
 						value = hadj.getMinimum();
 					hadj.setValue(value);
-				} else if (doFlipPage(-1, 1)) {
+				} else if (flipPage(-1, 1)) {
 					vadj.setValue(vadj.getMaximum());
 					hadj.setValue(hadj.getMaximum());
 				}
@@ -1047,7 +1047,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
-	protected void doRelayout(int em) {
+	protected void relayout(int em) {
 		if (em < 6)
 			em = 6;
 		if (em > 36)
@@ -1082,32 +1082,32 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		Quad[] oldSearchHits = searchHits;
 
 		if (source == firstButton)
-			doJumpToPage(0);
+			jumpToPage(0);
 		if (source == lastButton)
-			doJumpToLocation(doc.lastPage());
+			jumpToLocation(doc.lastPage());
 		if (source == prevButton)
-			doJumpToLocation(doc.previousPage(currentPage));
+			jumpToLocation(doc.previousPage(currentPage));
 		if (source == nextButton)
-			doJumpToLocation(doc.nextPage(currentPage));
+			jumpToLocation(doc.nextPage(currentPage));
 		if (source == pageField)
-			doJumpToPage(Integer.parseInt(pageField.getText()) - 1);
+			jumpToPage(Integer.parseInt(pageField.getText()) - 1);
 
 		if (source == searchField)
-			doSearch();
+			search(+1);
 		if (source == searchNextButton)
-			doSearch(1);
+			search(+1);
 		if (source == searchPrevButton)
-			doSearch(-1);
+			search(-1);
 
 		if (source == fontIncButton && doc != null && doc.isReflowable())
-			doRelayout(layoutEm + 1);
+			relayout(layoutEm + 1);
 		if (source == fontDecButton && doc != null && doc.isReflowable())
-			doRelayout(layoutEm - 1);
+			relayout(layoutEm - 1);
 
 		if (source == zoomOutButton)
-			doZoom(-1);
+			zoom(-1);
 		if (source == zoomInButton)
-			doZoom(1);
+			zoom(+1);
 
 		if (searchHits != oldSearchHits)
 			updatePageCanvas();
@@ -1125,7 +1125,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			int i = outlineList.getSelectedIndex();
 			Outline node = flatOutline.elementAt(i);
 			Location loc = doc.resolveLink(node);
-			doJumpToLocation(loc);
+			jumpToLocation(loc);
 			pageCanvas.requestFocusInWindow();
 		}
 	}
