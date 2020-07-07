@@ -19,6 +19,13 @@ public final class Location
 		this.y = y;
 	}
 
+	public Location(Location location, float x, float y) {
+		this.chapter = location.chapter;
+		this.page = location.page;
+		this.x = x;
+		this.y = y;
+	}
+
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Location))
 			return false;
