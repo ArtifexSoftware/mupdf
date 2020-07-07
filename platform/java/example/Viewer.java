@@ -11,7 +11,7 @@ import java.io.FilenameFilter;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
-public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener, TextListener
+public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener
 {
 	protected String documentPath;
 	protected Document doc;
@@ -33,14 +33,18 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected TextField searchField;
 	protected Button searchPrevButton, searchNextButton;
 	protected int searchDirection = 1;
-	protected int searchHitPage = -1;
-	protected Quad[] searchHits;
+	protected Location searchPage = null;
+	protected Location searchHitPage = null;
+	protected Quad[] searchHits = new Quad[0];
+	protected EventQueue eq = null;
+	protected SearchTask searchTask = null;
 
 	protected Panel outlinePanel;
 	protected List outlineList;
 	protected Vector<Outline> flatOutline;
 
 	protected int pageCount;
+	protected int chapterCount;
 	protected Location currentPage = null;
 
 	protected int zoomLevel = 5;
@@ -191,8 +195,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			g2d.scale(imageScale, imageScale);
 			g2d.drawImage(image, 0, 0, null);
 
-
-			if (searchHitPage == doc.pageNumberFromLocation(currentPage) && searchHits != null && searchHits.length > 0) {
+			if (currentPage.equals(searchHitPage) && searchHits != null) {
 				g2d.setColor(new Color(1, 0, 0, 0.4f));
 				for (int i = 0; i < searchHits.length; ++i) {
 					Rect hit = new Rect(searchHits[i]).transform(pageCTM);
@@ -222,6 +225,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		pixelScale = getRetinaScale();
 		setTitle("MuPDF: ");
 		pageCount = 0;
+		chapterCount = 0;
 
 		outlinePanel = new Panel(new BorderLayout());
 		{
@@ -305,7 +309,6 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				{
 					searchField = new TextField(20);
 					searchField.addActionListener(this);
-					searchField.addTextListener(this);
 					searchPrevButton = new Button("<");
 					searchPrevButton.addActionListener(this);
 					searchNextButton = new Button(">");
@@ -338,12 +341,22 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		addWindowListener(this);
 
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		eq = toolkit.getSystemEventQueue();
+
 		pack();
 
 		reload();
 	}
 
+	public void dispose() {
+		cancelSearch();
+		super.dispose();
+	}
+
 	public void reload() {
+		clearSearch();
+
 		pageCanvas.requestFocusInWindow();
 
 		String acceleratorPath = getAcceleratorPath(documentPath);
@@ -364,6 +377,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		doc.layout(layoutWidth, layoutHeight, layoutEm);
 		currentPage = doc.locationFromPageNumber(0);
 		pageCount = doc.countPages();
+		chapterCount = doc.countChapters();
 		doc.saveAccelerator(acceleratorPath);
 
 		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
@@ -440,8 +454,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		case '/': editSearchNeedle(+1); break;
 		case '?': editSearchNeedle(-1); break;
-		case 'N': search(-1); break;
-		case 'n': search(+1); break;
+		case 'N': search(searchField.getText(), -1); break;
+		case 'n': search(searchField.getText(), +1); break;
 		case '\u001b': clearSearch(); break;
 		}
 
@@ -534,53 +548,147 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void editSearchNeedle(int direction) {
+		clearSearch();
 		searchDirection = direction;
-		searchField.setText("");
-		searchField.validate();
 		searchField.requestFocusInWindow();
 	}
 
-	protected void search(int direction) {
-		searchDirection = direction;
-		search();
+	protected void cancelSearch() {
+		if (searchTask != null) {
+			searchTask.cancel();
+			searchTask = null;
+		}
 	}
 
 	protected void clearSearch() {
-		if (doc == null)
-			return;
-
-		searchHits = null;
+		cancelSearch();
 		searchField.setText("");
-		searchField.validate();
-		updatePageCanvas();
 		pageCanvas.requestFocusInWindow();
+		validate();
 	}
 
-	protected void search() {
-		if (doc == null)
+	protected void search(String needle, int direction) {
+		boolean done = false;
+
+		if (doc == null || needle == null || needle.length() <= 0)
+		{
+			pageCanvas.requestFocusInWindow();
+			validate();
 			return;
+		}
+
+		if (searchTask != null) {
+			searchTask.cancel();
+			searchTask = null;
+		}
+
+		if (currentPage.equals(searchHitPage)) {
+			Location finalPage = searchDirection > 0 ? doc.lastPage() : doc.locationFromPageNumber(0);
+			searchPage = searchDirection > 0 ? doc.nextPage(currentPage) : doc.previousPage(currentPage);
+			if (searchPage.equals(finalPage))
+				done = true;
+		} else {
+			searchPage = currentPage;
+		}
 
 		pageCanvas.requestFocusInWindow();
+		validate();
 
-		int searchPage;
-		if (searchHitPage == -1)
-			searchPage = doc.pageNumberFromLocation(currentPage);
+		searchHits = null;
+		searchHitPage = null;
+
+		if (chapterCount > 1)
+			searchField.setText("Searching " + (searchPage.chapter + 1) + "/" + chapterCount + "-" + searchPage.page + "/" + pageCount);
 		else
-			searchPage = doc.pageNumberFromLocation(currentPage) + searchDirection;
-		searchHitPage = -1;
-		String needle = searchField.getText();
-		while (searchPage >= 0 && searchPage < pageCount) {
-			Page page = doc.loadPage(searchPage);
-			searchHits = page.search(needle);
-			page.destroy();
-			if (searchHits != null && searchHits.length > 0) {
-				searchHitPage = searchPage;
-				currentPage = doc.locationFromPageNumber(searchPage);
+			searchField.setText("Searching " + searchPage.page + "/" + pageCount);
+		searchField.setEditable(false);
+		searchField.setEnabled(false);
+		searchPrevButton.setEnabled(false);
+		searchNextButton.setEnabled(false);
 
-				updatePageCanvas();
-				break;
+		searchTask = new SearchTask(needle, direction);
+		eq.invokeLater(searchTask);
+	}
+
+	protected class SearchTask implements Runnable {
+		protected boolean cancel;
+		protected String needle;
+		protected int direction;
+		protected Location finalPage;
+
+		protected SearchTask(String needle, int direction) {
+			this.needle = needle;
+			this.direction = direction;
+			this.finalPage = searchDirection > 0 ? doc.lastPage() : doc.locationFromPageNumber(0);
+			this.cancel = false;
+		}
+
+		private synchronized void requestCancellation() {
+			cancel = true;
+		}
+
+		protected void cancel() {
+			requestCancellation();
+			while (!isCancelled()) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+				}
 			}
-			searchPage += searchDirection;
+		}
+
+		protected synchronized boolean isCancelled() {
+			return cancel;
+		}
+
+		protected synchronized void cancelled() {
+			notify();
+		}
+
+		public void run() {
+			long executionUntil = System.currentTimeMillis() + 100;
+			boolean done = false;
+
+			while (!done && !isCancelled() && System.currentTimeMillis() < executionUntil) {
+				searchHits = doc.search(searchPage.chapter, searchPage.page, needle);
+				if (searchHits != null && searchHits.length > 0) {
+					searchHitPage = new Location(searchPage, searchHits[0].ul_x, searchHits[0].ul_y);
+					jumpToLocation(searchHitPage);
+					done = true;
+				}
+				else if (finalPage.equals(searchPage))
+					done = true;
+				else if (searchDirection > 0)
+					searchPage = doc.nextPage(searchPage);
+				else
+					searchPage = doc.previousPage(searchPage);
+			}
+
+			if (isCancelled()) {
+				searchField.setText(needle);
+				searchField.setEditable(true);
+				searchField.setEnabled(true);
+				searchHits = null;
+				searchHitPage = null;
+				searchPrevButton.setEnabled(true);
+				searchNextButton.setEnabled(true);
+				cancelled();
+			} else if (done) {
+				searchField.setText(needle);
+				searchField.setEditable(true);
+				searchField.setEnabled(true);
+				updatePageCanvas();
+				pageCanvas.requestFocusInWindow();
+				searchPrevButton.setEnabled(true);
+				searchNextButton.setEnabled(true);
+			} else {
+				if (chapterCount > 1)
+					searchField.setText("Searching " + (searchPage.chapter + 1) + "/" + chapterCount + "-" + searchPage.page + "/" + pageCount);
+				else
+					searchField.setText("Searching " + searchPage.page + "/" + pageCount);
+
+				eq.invokeLater(this);
+			}
 		}
 	}
 
@@ -604,6 +712,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected boolean flipPage(int direction, int pages) {
+		cancelSearch();
+
 		if (pages < 1)
 			pages = 1;
 
@@ -945,6 +1055,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected boolean jumpToPage(int page) {
+		cancelSearch();
+
 		clearFuture();
 		pushHistory();
 
@@ -995,6 +1107,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	protected void smartMove(int direction, int moves) {
+		cancelSearch();
+
 		if (moves < 1)
 			moves = 1;
 
@@ -1068,18 +1182,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		updatePageCanvas();
 	}
 
-	public void textValueChanged(TextEvent event) {
-		Object source = event.getSource();
-		if (source == searchField) {
-			searchHitPage = -1;
-		}
-	}
-
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
 		int oldLayoutEm = layoutEm;
 		int oldZoomLevel = zoomLevel;
-		Quad[] oldSearchHits = searchHits;
 
 		if (source == firstButton)
 			jumpToPage(0);
@@ -1093,11 +1199,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			jumpToPage(Integer.parseInt(pageField.getText()) - 1);
 
 		if (source == searchField)
-			search(+1);
+			search(searchField.getText(), +1);
 		if (source == searchNextButton)
-			search(+1);
+			search(searchField.getText(), +1);
 		if (source == searchPrevButton)
-			search(-1);
+			search(searchField.getText(), -1);
 
 		if (source == fontIncButton && doc != null && doc.isReflowable())
 			relayout(layoutEm + 1);
@@ -1108,9 +1214,6 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			zoom(-1);
 		if (source == zoomInButton)
 			zoom(+1);
-
-		if (searchHits != oldSearchHits)
-			updatePageCanvas();
 	}
 
 	public void itemStateChanged(ItemEvent event) {
