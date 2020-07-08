@@ -404,6 +404,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			case KeyEvent.VK_RIGHT: pan(+10, 0); break;
 			case KeyEvent.VK_UP: pan(0, -10); break;
 			case KeyEvent.VK_DOWN: pan(0, +10); break;
+
+			case KeyEvent.VK_PAGE_UP: flipPage(-1, number); break;
+			case KeyEvent.VK_PAGE_DOWN: flipPage(+1, number); break;
 			}
 		}
 	}
@@ -850,10 +853,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			"",
 			"b - smart move backward",
 			"space - smart move forward",
-			//"comma or page up - go backward",
-			"comma - go backward",
-			//"period or page down - go forward",
-			"period - go forward",
+			"comma or page up - go backward",
+			"period or page down - go forward",
 			"g - go to first page",
 			"G - go to last page",
 			"[number] g - go to page number",
