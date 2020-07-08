@@ -399,6 +399,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			switch(c)
 			{
 			case KeyEvent.VK_F1: showHelp(); break;
+
+			case KeyEvent.VK_LEFT: pan(-10, 0); break;
+			case KeyEvent.VK_RIGHT: pan(+10, 0); break;
+			case KeyEvent.VK_UP: pan(0, -10); break;
+			case KeyEvent.VK_DOWN: pan(0, +10); break;
 			}
 		}
 	}
@@ -840,7 +845,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			"minus - zoom out",
 			"[ - rotate counter-clockwise",
 			"] - rotate clockwise",
-			//"arrow keys - scroll in small increments",
+			"arrow keys - scroll in small increments",
 			"h, j, k, l - scroll in small increments",
 			"",
 			"b - smart move backward",
