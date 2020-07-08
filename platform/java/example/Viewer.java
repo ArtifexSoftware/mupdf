@@ -393,6 +393,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	public void keyReleased(KeyEvent e) {
+		if (e.getSource() == pageCanvas) {
+			int c = e.getKeyCode();
+
+			switch(c)
+			{
+			case KeyEvent.VK_F1: showHelp(); break;
+			}
+		}
 	}
 
 	public void keyTyped(KeyEvent e) {
@@ -781,6 +789,129 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		if (w == 1224 && h == 792) return "Tabloid";
 
 		return null;
+	}
+
+	protected void showHelp() {
+		final Dialog box = new Dialog(this, "Help", true);
+		box.addWindowListener(new WindowListener() {
+			public void windowActivated(WindowEvent event) { }
+			public void windowDeactivated(WindowEvent event) { }
+			public void windowIconified(WindowEvent event) { }
+			public void windowDeiconified(WindowEvent event) { }
+			public void windowOpened(WindowEvent event) { }
+			public void windowClosed(WindowEvent event) { }
+			public void windowClosing(WindowEvent event) {
+				box.setVisible(false);
+				pageCanvas.requestFocusInWindow();
+			}
+		});
+
+		String help[] = {
+			//"The middle mouse button (scroll wheel button) pans the document view.",
+			//"The right mouse button selects a region and copies the marked text to the clipboard.",
+			//"",
+			//"",
+			"F1 - show this message",
+			"i - show document information",
+			"o - show document outline",
+			//"a - show annotation editor",
+			"L - highlight links",
+			//"F - highlight form fields",
+			"r - reload file",
+			//"S - save file (only for PDF)",
+			"q - quit",
+			"",
+			"< - decrease E-book font size",
+			"> - increase E-book font size",
+			"A - toggle anti-aliasing",
+			"I - toggle inverted color mode",
+			"C - toggle tinted color mode",
+			"E - toggle ICC color management",
+			//"e - toggle spot color emulation",
+			"",
+			"f - fullscreen window",
+			//"w - shrink wrap window",
+			//"W - fit to width",
+			//"H - fit to height",
+			//"Z - fit to page",
+			//"z - reset zoom",
+			//"[number] z - set zoom resolution in DPI",
+			"plus - zoom in",
+			"minus - zoom out",
+			"[ - rotate counter-clockwise",
+			"] - rotate clockwise",
+			//"arrow keys - scroll in small increments",
+			"h, j, k, l - scroll in small increments",
+			"",
+			"b - smart move backward",
+			"space - smart move forward",
+			//"comma or page up - go backward",
+			"comma - go backward",
+			//"period or page down - go forward",
+			"period - go forward",
+			"g - go to first page",
+			"G - go to last page",
+			"[number] g - go to page number",
+			"",
+			"m - save current location in history",
+			"t - go backward in history",
+			"T - go forward in history",
+			"[number] m - save current location in numbered bookmark",
+			"[number] t - go to numbered bookmark",
+			"",
+			"/ - search for text forward",
+			"? - search for text backward",
+			"n - repeat search",
+			"N - repeat search in reverse direction",
+		};
+
+		Panel helpPanel = new Panel(new GridLayout(help.length, 1));
+
+		for (int i = 0; i < help.length; i++)
+			helpPanel.add(new Label(help[i]));
+
+		Button button = new Button("OK");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				box.setVisible(false);
+			}
+		});
+		button.addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) { }
+			public void keyReleased(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_F1)
+					box.setVisible(false);
+			}
+			public void keyTyped(KeyEvent e) {
+				if (e.getKeyChar() == '\u001b' || e.getKeyChar() == '\r' || e.getKeyChar() == '\n')
+					box.setVisible(false);
+			}
+		});
+
+		Panel buttonPane = new Panel(new FlowLayout());
+		buttonPane.add(button);
+
+		box.add(helpPanel, BorderLayout.CENTER);
+		box.add(buttonPane, BorderLayout.SOUTH);
+
+		box.setResizable(false);
+		box.pack();
+
+		java.awt.Point winLoc = this.getLocation();
+		Dimension winDim = this.getSize();
+		int winCenterX = winLoc.x + winDim.width / 2;
+		int winCenterY = winLoc.y + winDim.height / 2;
+
+		Dimension diagDim = box.getSize();
+		int x = winCenterX - diagDim.width / 2;
+		int y = winCenterY - diagDim.height / 2;
+
+		box.setLocation(x, y);
+
+		button.requestFocusInWindow();
+		box.setVisible(true);
+
+		box.dispose();
 	}
 
 	protected void showInfo() {
