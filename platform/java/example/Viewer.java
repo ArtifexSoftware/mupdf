@@ -11,7 +11,7 @@ import java.io.FilenameFilter;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
-public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener
+public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener, MouseWheelListener
 {
 	protected String documentPath;
 	protected Document doc;
@@ -335,6 +335,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				pageHolder.add(pageCanvas);
 			}
 			pageCanvas.addKeyListener(this);
+			pageCanvas.addMouseWheelListener(this);
 			pageScroll.add(pageHolder);
 		}
 		this.add(pageScroll, BorderLayout.CENTER);
@@ -479,6 +480,27 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			number = number * 10 + c - '0';
 		else
 			number = 0;
+	}
+
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		int mod = e.getModifiers();
+		int rot = e.getWheelRotation();
+		if (mod == MouseWheelEvent.CTRL_MASK) {
+			if (rot < 0)
+				zoom(+1);
+			else
+				zoom(-1);
+		} else if (mod == MouseWheelEvent.SHIFT_MASK) {
+			if (rot < 0)
+				pan(pageCanvas != null ? pageCanvas.getHeight() / -10 : -10, 0);
+			else
+				pan(pageCanvas != null ? pageCanvas.getHeight() / +10 : +10, 0);
+		} else if (mod == 0) {
+			if (rot < 0)
+				pan(0, pageCanvas != null ? pageCanvas.getHeight() / -10 : -10);
+			else
+				pan(0, pageCanvas != null ? pageCanvas.getHeight() / +10 : +10);
+		}
 	}
 
 	protected void selectOutlineItem(int pagenum) {
@@ -815,7 +837,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		});
 
 		String help[] = {
-			//"The middle mouse button (scroll wheel button) pans the document view.",
+			"The middle mouse button (scroll wheel button) pans the document view.",
 			//"The right mouse button selects a region and copies the marked text to the clipboard.",
 			//"",
 			//"",
