@@ -454,10 +454,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case '+': zoom(+1); break;
 		case '-': zoom(-1); break;
 
-		case 'k': pan(0, -10); break;
-		case 'j': pan(0, +10); break;
-		case 'h': pan(-10, 0); break;
-		case 'l': pan(+10, 0); break;
+		case 'k': pan(0, pageCanvas != null ? pageCanvas.getHeight() / -10 : -10); break;
+		case 'j': pan(0, pageCanvas != null ? pageCanvas.getWidth() / +10 : +10); break;
+		case 'h': pan(pageCanvas != null ? pageCanvas.getHeight() / -10 : -10, 0); break;
+		case 'l': pan(pageCanvas != null ? pageCanvas.getWidth() / +10 : +10, 0); break;
 
 		case 'b': smartMove(-1, number); break;
 		case ' ': smartMove(+1, number); break;
