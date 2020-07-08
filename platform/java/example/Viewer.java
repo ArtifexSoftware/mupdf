@@ -452,8 +452,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		case '[': rotate(-90); break;
 		case ']': rotate(+90); break;
 
-		case '+': zoom(+1); break;
-		case '-': zoom(-1); break;
+		case '+': zoom(false, +1); break;
+		case '-': zoom(false, -1); break;
+		case 'z': zoom(true, number); break;
 
 		case 'k': pan(0, pageCanvas != null ? pageCanvas.getHeight() / -10 : -10); break;
 		case 'j': pan(0, pageCanvas != null ? pageCanvas.getWidth() / +10 : +10); break;
@@ -487,9 +488,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		int rot = e.getWheelRotation();
 		if (mod == MouseWheelEvent.CTRL_MASK) {
 			if (rot < 0)
-				zoom(+1);
+				zoom(false, +1);
 			else
-				zoom(-1);
+				zoom(false, -1);
 		} else if (mod == MouseWheelEvent.SHIFT_MASK) {
 			if (rot < 0)
 				pan(pageCanvas != null ? pageCanvas.getHeight() / -10 : -10, 0);
@@ -730,8 +731,21 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
-	protected void zoom(int i) {
-		int newZoomLevel = zoomLevel + i;
+	protected void zoom(boolean absolute, int number) {
+		int newZoomLevel;
+
+		if (absolute) {
+			if (number == 0)
+				newZoomLevel = 5;
+			else
+				newZoomLevel = number - 1;
+		} else {
+			if (number == 0)
+				newZoomLevel = 5;
+			else
+				newZoomLevel = zoomLevel + number;
+		}
+
 		if (newZoomLevel < 0)
 			newZoomLevel = 0;
 		if (newZoomLevel >= zoomList.length)
@@ -739,6 +753,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		if (newZoomLevel == zoomLevel)
 			return;
+
 		zoomLevel = newZoomLevel;
 		zoomChoice.select(newZoomLevel);
 		updatePageCanvas();
@@ -864,8 +879,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			//"W - fit to width",
 			//"H - fit to height",
 			//"Z - fit to page",
-			//"z - reset zoom",
-			//"[number] z - set zoom resolution in DPI",
+			"z - reset zoom",
+			"[number] z - set zoom resolution in DPI",
 			"plus - zoom in",
 			"minus - zoom out",
 			"[ - rotate counter-clockwise",
@@ -1370,9 +1385,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			relayout(layoutEm - 1);
 
 		if (source == zoomOutButton)
-			zoom(-1);
+			zoom(false, -1);
 		if (source == zoomInButton)
-			zoom(+1);
+			zoom(false, +1);
 	}
 
 	public void itemStateChanged(ItemEvent event) {
