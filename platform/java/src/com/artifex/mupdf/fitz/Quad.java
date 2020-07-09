@@ -118,4 +118,13 @@ public class Quad
 			+ lr_x + " " + lr_y
 			+ "]";
 	}
+
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Quad))
+			return false;
+		Quad other = (Quad) obj;
+		return ul_x == other.ul_x && ul_y == other.ul_y && ur_x == other.ur_x &&
+			ur_y == other.ur_y && ll_x == other.ll_x && ll_y == other.ll_y &&
+			lr_x == other.lr_x && lr_y == other.lr_y;
+	}
 }
