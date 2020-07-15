@@ -111,7 +111,7 @@ THIRD_SRC += thirdparty/gumbo-parser/src/vector.c
 THIRD_CFLAGS += -Ithirdparty/gumbo-parser/src
 
 $(OUT)/thirdparty/gumbo-parser/%.o: thirdparty/gumbo-parser/%.c
-	$(CC_CMD) -Wno-sign-compare
+	$(CC_CMD) $(LIB_CFLAGS) -Wno-sign-compare
 
 endif
 
