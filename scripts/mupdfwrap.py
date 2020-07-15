@@ -5343,7 +5343,7 @@ def main():
                                 #
                                 make = 'CXX=clang++ gmake'
 
-                            command = f'cd {build_dirs.dir_mupdf} && {make} HAVE_GLUT=no shared=yes verbose=yes'
+                            command = f'cd {build_dirs.dir_mupdf} && {make} HAVE_GLUT=no HAVE_PTHREAD=yes shared=yes verbose=yes'
                             #command += ' USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes'
                             if 0: pass
                             elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-debug/':
