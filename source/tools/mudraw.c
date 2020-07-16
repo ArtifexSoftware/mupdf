@@ -50,7 +50,7 @@ enum {
 	OUT_PNG, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
 	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT, OUT_PCLM,
-	OUT_TRACE, OUT_BBOX, OUT_SVG,
+	OUT_TRACE, OUT_BBOX, OUT_SVG, OUT_PDFOCR,
 #if FZ_ENABLE_PDF
 	OUT_PDF,
 #endif
@@ -69,6 +69,9 @@ typedef struct
 
 static const suffix_t suffix_table[] =
 {
+	/* All the 'double extension' ones must go first. */
+	{ ".ocr.pdf", OUT_PDFOCR, 0 },
+
 	{ ".png", OUT_PNG, 0 },
 	{ ".pgm", OUT_PGM, 0 },
 	{ ".ppm", OUT_PPM, 0 },
@@ -145,6 +148,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
 	{ OUT_BBOX, CS_RGB, { CS_RGB } },
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
+	{ OUT_PDFOCR, CS_RGB, { CS_RGB, CS_GRAY } },
 #if FZ_ENABLE_PDF
 	{ OUT_PDF, CS_RGB, { CS_RGB } },
 #endif
@@ -301,6 +305,9 @@ static fz_band_writer *bander = NULL;
 
 static const char *layer_config = NULL;
 
+static const char ocr_language_default[] = "eng";
+static const char *ocr_language = ocr_language_default;
+
 static struct {
 	int active;
 	int started;
@@ -344,6 +351,7 @@ static void usage(void)
 		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
 		"\t\tvector: svg, pdf, trace\n"
 		"\t\ttext: txt, html, stext\n"
+		"\t\tbitmap-wrapped-as-pdf: pclm, pdfocr\n"
 		"\n"
 		"\t-q\tbe quiet (don't print progress messages)\n"
 		"\t-s -\tshow extra information:\n"
@@ -357,7 +365,7 @@ static void usage(void)
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
-		"\t-B -\tmaximum band_height (pXm, pcl, pclm, ps, psd and png output only)\n"
+		"\t-B -\tmaximum band_height (pXm, pcl, pclm, pdfocr, ps, psd and png output only)\n"
 #ifndef DISABLE_MUTHREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
 #else
@@ -397,6 +405,11 @@ static void usage(void)
 		"\t\t 0 = No spot rendering (default)\n"
 		"\t\t 1 = Overprint simulation (Disabled in this build)\n"
 		"\t\t 2 = Full spot rendering (Disabled in this build)\n"
+#endif
+#ifndef OCR_DISABLED
+		"\t-t -\tSpecify language/script for OCR (default: eng)\n"
+#else
+		"\t-t -\tSpecify language/script for OCR (default: eng) (disabled)\n"
 #endif
 		"\n"
 		"\t-y l\tList the layer configs to stderr\n"
@@ -465,6 +478,15 @@ file_level_headers(fz_context *ctx)
 		fz_parse_pclm_options(ctx, &opts, "compression=flate");
 		bander = fz_new_pclm_band_writer(ctx, out, &opts);
 	}
+
+	if (output_format == OUT_PDFOCR)
+	{
+		char options[300];
+		fz_pdfocr_options opts = { 0 };
+		fz_snprintf(options, sizeof(options), "compression=flate,ocr-language=%s", ocr_language);
+		fz_parse_pdfocr_options(ctx, &opts, options);
+		bander = fz_new_pdfocr_band_writer(ctx, out, &opts);
+	}
 }
 
 static void
@@ -481,7 +503,7 @@ file_level_trailers(fz_context *ctx)
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
 
-	if (output_format == OUT_PCLM)
+	if (output_format == OUT_PCLM || output_format == OUT_PDFOCR)
 		fz_drop_band_writer(ctx, bander);
 }
 
@@ -947,7 +969,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_always(ctx)
 		{
-			if (output_format != OUT_PCLM)
+			if (output_format != OUT_PCLM && output_format != OUT_PDFOCR)
 			{
 				fz_drop_band_writer(ctx, bander);
 				/* bander must be set to NULL to avoid use-after-frees. A use-after-free
@@ -1658,7 +1680,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:am:")) != -1)
+	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:t:U:XLvPl:y:NO:am:")) != -1)
 	{
 		switch (c)
 		{
@@ -1724,6 +1746,13 @@ int mudraw_main(int argc, char **argv)
 			num_workers = atoi(fz_optarg); break;
 #else
 			fprintf(stderr, "Threads not enabled in this build\n");
+			break;
+#endif
+		case 't':
+#ifndef OCR_DISABLED
+			ocr_language = fz_optarg; break;
+#else
+			fprintf(stderr, "OCR functionality not enabled in this build\n");
 			break;
 #endif
 		case 'm':
@@ -1898,7 +1927,7 @@ int mudraw_main(int argc, char **argv)
 
 				if (s != NULL)
 				{
-					suffix = s+1;
+					suffix = s+strlen(suffix_table[i].suffix);
 					output_format = suffix_table[i].format;
 					if (spots == SPOTS_FULL && suffix_table[i].spots == 0)
 					{
@@ -1912,9 +1941,9 @@ int mudraw_main(int argc, char **argv)
 
 		if (band_height)
 		{
-			if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD)
+			if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD && output_format != OUT_PDFOCR)
 			{
-				fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PS, PSD, and PNG outputs\n");
+				fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PDFOCR, PS, PSD, and PNG outputs\n");
 				exit(1);
 			}
 			if (showmd5)
