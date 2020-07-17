@@ -1087,6 +1087,7 @@
     <ClCompile Include="..\..\source\fitz\memento.c" />
     <ClCompile Include="..\..\source\fitz\memory.c" />
     <ClCompile Include="..\..\source\fitz\noto.c" />
+    <ClCompile Include="..\..\source\fitz\ocr-device.c" />
     <ClCompile Include="..\..\source\fitz\outline.c" />
     <ClCompile Include="..\..\source\fitz\output-cbz.c" />
     <ClCompile Include="..\..\source\fitz\output-pcl.c" />

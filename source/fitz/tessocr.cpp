@@ -272,6 +272,23 @@ void ocr_recognise(fz_context *ctx,
 		fz_throw(ctx, FZ_ERROR_GENERIC, "OCR recognise failed");
 	}
 
+	if (!isbigendian())
+	{
+		/* Frizzle the image */
+		int x, y;
+		uint32_t *d = (uint32_t *)pix->samples;
+		for (y = pix->h; y > 0; y--)
+			for (x = pix->w>>2; x > 0; x--)
+			{
+				uint32_t v = *d;
+				((uint8_t *)d)[0] = v>>24;
+				((uint8_t *)d)[1] = v>>16;
+				((uint8_t *)d)[2] = v>>8;
+				((uint8_t *)d)[3] = v;
+				d++;
+			}
+	}
+
 	tesseract::ResultIterator *res_it = api->GetIterator();
 
 	fz_try(ctx)
