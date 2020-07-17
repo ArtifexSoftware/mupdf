@@ -1541,6 +1541,7 @@ void Memento_stats(void)
 static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
+    const char* hide_multiple_reallocs = getenv("MEMENTO_HIDE_MULTIPLE_REALLOCS");
 
     fprintf(stderr, FMTP":(size="FMTZ",num=%d)",
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
@@ -1548,12 +1549,17 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
         fprintf(stderr, " (%s)", b->label);
     fprintf(stderr, "\nEvents:\n");
 
-    details = b->details;
-    while (details)
+    for (details = b->details; details; details = details->next)
     {
+        if (hide_multiple_reallocs
+                && details->type == Memento_EventType_realloc
+                && details->next
+                && details->next->type == Memento_EventType_realloc
+                ) {
+            continue;
+        }
         fprintf(stderr, "  Event %d (%s)\n", details->sequence, eventType[(int)details->type]);
         Memento_showStacktrace(details->stack, details->count);
-        details = details->next;
     }
     return 0;
 }
