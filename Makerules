@@ -68,7 +68,11 @@ else ifeq ($(build),memento)
   LDFLAGS += -g -rdynamic
   ifneq ($(HAVE_LIBDL),no)
     CFLAGS += -DHAVE_LIBDL
-    LIBS += -ldl
+    ifeq ($(OS),OpenBSD)
+      LIBS += -L /usr/local/lib -l execinfo
+    else
+      LIBS += -ldl
+    endif
   endif
 else ifeq ($(build),gperf)
   CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -DGPERF
