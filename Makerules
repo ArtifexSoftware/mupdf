@@ -81,6 +81,11 @@ else
   $(error unknown build setting: '$(build)')
 endif
 
+$(warning OS=$(OS))
+ifeq ($(OS),OpenBSD)
+  LDFLAGS += -pthread
+endif
+
 # Default system libraries
 SYS_FREETYPE_LIBS := -lfreetype2
 SYS_HARFBUZZ_LIBS := -lharfbuzz
