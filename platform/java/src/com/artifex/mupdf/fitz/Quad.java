@@ -85,6 +85,31 @@ public class Quad
 		return this;
 	}
 
+	protected boolean triangleContainsPoint(float x, float y, float ax, float ay, float bx, float by, float cx, float cy) {
+		float s, t, area;
+		s = ay * cx - ax * cy + (cy - ay) * x + (ax - cx) * y;
+		t = ax * by - ay * bx + (ay - by) * x + (bx - ax) * y;
+
+		if ((s < 0) != (t < 0))
+			return false;
+
+		area = -by * cx + ay * (cx - bx) + ax * (by - cy) + bx * cy;
+
+		return area < 0 ?
+			(s <= 0 && s + t >= area) :
+			(s >= 0 && s + t <= area);
+	}
+
+	public boolean contains(float x, float y) {
+		return triangleContainsPoint(x, y, ul_x, ul_y, ur_x, ur_y, lr_x, lr_y) ||
+			triangleContainsPoint(x, y, ul_x, ul_y, lr_x, lr_y, ll_x, ll_y);
+
+	}
+
+	public boolean contains(Point p) {
+		return contains(p.x, p.y);
+	}
+
 	public String toString() {
 		return "["
 			+ ul_x + " " + ul_y + " "
