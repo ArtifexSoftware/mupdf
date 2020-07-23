@@ -40,6 +40,17 @@ public class Quad
 		this.lr_y = lr_y;
 	}
 
+	public Quad(Rect r) {
+		this.ul_x = r.x0;
+		this.ul_y = r.y0;
+		this.ur_x = r.x1;
+		this.ur_y = r.y0;
+		this.ll_x = r.x0;
+		this.ll_y = r.y1;
+		this.lr_x = r.x1;
+		this.lr_y = r.y1;
+	}
+
 	public Rect toRect() {
 		float x0 = Math.min(Math.min(ul_x, ur_x), Math.min(ll_x, lr_x));
 		float y0 = Math.min(Math.min(ul_y, ur_y), Math.min(ll_y, lr_y));
