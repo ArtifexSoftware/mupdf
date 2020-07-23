@@ -435,7 +435,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         dev.close_device()
         dev = None
 
-    if state.output_format == OUT_XMLTEXT:
+    elif state.output_format == OUT_XMLTEXT:
         state.out.write_string( "<page mediabox=\"%g %g %g %g\">\n" % (
                 mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1))
         dev = mupdf.Device.new_raw_device( state.out)
