@@ -1781,7 +1781,9 @@ static int squeeze(void)
     for (i = 0; i < OPEN_MAX; i++) {
         if (stashed_map[i] == 0) {
             int j = dup(i);
-            stashed_map[j] = i+1;
+            if (j >= 0) {
+                stashed_map[j] = i+1;
+            }
         }
     }
 
@@ -1791,6 +1793,13 @@ static int squeeze(void)
     if (pid == 0) {
         /* Child */
         signal(SIGSEGV, Memento_signal);
+        /* Close the dup-licated fds to avoid them getting corrupted by faulty
+        code. */
+        for (i = 0; i < OPEN_MAX; i++) {
+            if (stashed_map[i] != 0) {
+                close(stashed_map[i]-1);
+            }
+        }
         /* In the child, we always fail the next allocation. */
         if (memento.patternBit == 0) {
             memento.patternBit = 1;
