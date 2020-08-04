@@ -125,6 +125,38 @@ static void saveimage(pdf_obj *ref)
 		else
 		{
 			pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
+			
+			// if original image has mask, need to blend 2 images to 1 image
+			if (image->mask)
+			{
+				int x=0, y=0;
+				fz_pixmap* pImageMask = fz_get_pixmap_from_image(ctx,image->mask, NULL, NULL, 0, 0);         
+				//Create new image with alpha for store image mask
+				fz_pixmap* pBlendImage = fz_new_pixmap(ctx, pix->colorspace, pix->w, pix->h, pix->seps, 1);
+				unsigned char* pOriginalImage = fz_pixmap_samples(ctx, pix);
+				unsigned char* pMask = fz_pixmap_samples(ctx, pImageMask);
+				unsigned char* pBlend = fz_pixmap_samples(ctx, pBlendImage);
+				int areapos = 0;
+				//Note: if original image is not alpha, n=3; if original image is alpha, n=4
+				int nStoreBitForOri = pix->n; 
+
+				for (y=0; y < pix->h; y++)
+				{
+				    for (x=0; x < pix->w; x++)
+				    {
+					areapos = y * pix->w + x;
+					pBlend[areapos * 4 + 0] = pOriginalImage[areapos * nStoreBitForOri + 0];
+					pBlend[areapos * 4 + 1] = pOriginalImage[areapos * nStoreBitForOri + 1];
+					pBlend[areapos * 4 + 2] = pOriginalImage[areapos * nStoreBitForOri + 2];
+					pBlend[areapos * 4 + 3] = pMask[areapos + 0];
+				    }
+				}
+
+				fz_drop_pixmap(ctx, pImageMask);
+				fz_drop_pixmap(ctx, pix);
+				pix = pBlendImage;        
+			}
+			
 			writepixmap(ctx, pix, buf, dorgb);
 		}
 	}
