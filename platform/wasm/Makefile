@@ -28,7 +28,6 @@ $(MUPDF_JS) $(MUPDF_WASM) : $(MUPDF_CORE) wrap.c wrap.js
 		-s ABORTING_MALLOC=0 \
 		-s TOTAL_MEMORY=134217728 \
 		-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
-		-s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE='[$$Browser,"memcpy","memset","malloc","free"]' \
 		-I ../../include \
 		--pre-js wrap.js \
 		wrap.c \
