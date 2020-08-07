@@ -179,26 +179,37 @@ char *pageLinks(fz_document *doc, int number, float dpi)
 
 	buf = fz_new_buffer(ctx, 0);
 	{
+		fz_append_string(ctx, buf, "[");
 		links = fz_load_links(ctx, lastPage);
 		{
 			for (link = links; link; link = link->next)
 			{
 				fz_irect bbox = fz_round_rect(fz_transform_rect(link->rect, fz_scale(dpi/72, dpi/72)));
-				fz_append_printf(ctx, buf, "<area shape=\"rect\" coords=\"%d,%d,%d,%d\"",
-					bbox.x0, bbox.y0, bbox.x1, bbox.y1);
+				fz_append_string(ctx, buf, "{");
+				fz_append_printf(ctx, buf, "%q:%d,", "x", bbox.x0);
+				fz_append_printf(ctx, buf, "%q:%d,", "y", bbox.y0);
+				fz_append_printf(ctx, buf, "%q:%d,", "w", bbox.x1 - bbox.x0);
+				fz_append_printf(ctx, buf, "%q:%d,", "h", bbox.y1 - bbox.y0);
 				if (fz_is_external_link(ctx, link->uri))
-					fz_append_printf(ctx, buf, " href=\"%s\">\n", link->uri);
+				{
+					fz_append_printf(ctx, buf, "%q:%q", "href", link->uri);
+				}
 				else
 				{
-					fz_location linkLoc = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
-					int linkNumber = fz_page_number_from_location(ctx, doc, linkLoc);
-					fz_append_printf(ctx, buf, " href=\"#page%d\">\n", linkNumber+1);
+					fz_location link_loc = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
+					int link_page = fz_page_number_from_location(ctx, doc, link_loc);
+					fz_append_printf(ctx, buf, "%q:\"#page%d\"", "href", link_page+1);
 				}
+				fz_append_string(ctx, buf, "}");
+				if (link->next)
+					fz_append_string(ctx, buf, ",");
 			}
 		}
-		fz_append_byte(ctx, buf, 0);
+		fz_append_string(ctx, buf, "]");
 		fz_drop_link(ctx, links);
 	}
+
+	fz_terminate_buffer(ctx, buf);
 	fz_buffer_extract(ctx, buf, &data);
 	fz_drop_buffer(ctx, buf);
 

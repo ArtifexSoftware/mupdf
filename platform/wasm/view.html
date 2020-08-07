@@ -5,19 +5,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <style>
+
 #outline, #outline ul { margin:0; padding-left:1.2em; }
 #outline a { text-decoration:none; color: black; }
 #outline a:hover { text-decoration:underline; }
 
-#pages img {
-	display:block;
-}
-
-#pages div {
+div.page {
 	display:block;
 	background-color:white;
 	margin:16px auto;
 	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	position:relative;
+}
+
+div.page img {
+	display:block;
+	position:absolute;
+	user-select:none;
+}
+
+div.links {
+	position:absolute;
+}
+
+div.links a {
+	display:block;
+	position:absolute;
+}
+
+div.links a:hover {
+	border: 1px dotted blue;
 }
 
 /* GRID */
@@ -144,8 +161,6 @@ html, body, div { margin: 0; padding: 0; }
 let doc, pageCount;
 let dirty = [];
 let pageDIV = [];
-let pageIMG = [];
-let pageMAP = [];
 let pageW = [];
 let pageH = [];
 let zoom = 96;
@@ -207,8 +222,6 @@ async function initDocument(data, magic) {
 		doc = 0;
 		pageCount = 0;
 		pageDIV = [];
-		pageIMG = [];
-		pageMAP = [];
 		dirty = [];
 		emptyNode(document.getElementById("pages"));
 		emptyNode(document.getElementById("outline"));
@@ -233,6 +246,7 @@ async function initDocument(data, magic) {
 	pagesDiv.scrollTo(0, 0);
 	for (let i = 1; i <= pageCount; ++i) {
 		let div = pageDIV[i] = document.createElement("div");
+		div.classList.add("page");
 		div.id = "page" + i;
 		div.style.width = defaultW + 'px';
 		div.style.height = defaultH + 'px';
@@ -302,8 +316,6 @@ async function setZoom(newZoom) {
 		pageDIV[i].style.width = defaultW + 'px';
 		pageDIV[i].style.height = defaultH + 'px';
 		emptyNode(pageDIV[i]);
-		pageIMG[i] = null;
-		pageMAP[i] = null;
 	}
 	if (current)
 		pageDIV[current].scrollIntoView();
@@ -316,22 +328,37 @@ function updateView() {
 		if (dirty[i] && isVisible(pageDIV[i], 1000)) {
 			console.log("mupdf: drawing page", i);
 			let pageNumber = i;
-			dirty[i] = false;
-			let div = pageDIV[i];
+			dirty[pageNumber] = false;
+			let div = pageDIV[pageNumber];
 			emptyNode(div);
-			let img = pageIMG[i] = new Image();
-			img.useMap = "#map" + i;
+
+			let img = new Image();
 			img.draggable = false;
+			// user-select:none disables image.draggable, and we want
+			// to keep pointer-events for the link image-map
+			img.ondragstart = function () { return false; }
 			img.onload = function () {
 				pageDIV[pageNumber].style.width = 'min-content';
 				pageDIV[pageNumber].style.height = 'auto';
 			}
 			div.appendChild(img);
-			let map = pageMAP[i] = document.createElement("map");
-			map.name = "map" + i;
+
+			let map = document.createElement("div");
+			map.classList.add("links");
 			div.appendChild(map);
-			mupdf.drawPageAsPNG(doc, i, zoom).then(data => pageIMG[pageNumber].src = data);
-			mupdf.pageLinks(doc, i, zoom).then(data => pageMAP[pageNumber].innerHTML = data);
+			mupdf.drawPageAsPNG(doc, i, zoom).then(data => img.src = data);
+
+			mupdf.pageLinks(doc, pageNumber, zoom).then(data => {
+				for (let link of data) {
+					let a = document.createElement("a");
+					a.href = link.href;
+					a.style.left = link.x + 'px';
+					a.style.top = link.y + 'px';
+					a.style.width = link.w + 'px';
+					a.style.height = link.h + 'px';
+					map.appendChild(a);
+				}
+			});
 		}
 	};
 }
