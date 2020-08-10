@@ -14,8 +14,10 @@ Module.onRuntimeInitialized = function () {
 	mupdf.countPages = Module.cwrap('countPages', 'number', ['number']);
 	mupdf.pageWidth = Module.cwrap('pageWidth', 'number', ['number', 'number', 'number']);
 	mupdf.pageHeight = Module.cwrap('pageHeight', 'number', ['number', 'number', 'number']);
-	mupdf.drawPageAsPNG = Module.cwrap('drawPageAsPNG', 'string', ['number', 'number', 'number']);
 	mupdf.pageLinksJSON = Module.cwrap('pageLinks', 'string', ['number', 'number', 'number']);
+	mupdf.doDrawPageAsPNG = Module.cwrap('doDrawPageAsPNG', 'null', ['number', 'number', 'number']);
+	mupdf.getLastDrawData = Module.cwrap('getLastDrawData', 'number', []);
+	mupdf.getLastDrawSize = Module.cwrap('getLastDrawSize', 'number', []);
 	mupdf.pageTextJSON = Module.cwrap('pageText', 'string', ['number', 'number', 'number']);
 	mupdf.loadOutline = Module.cwrap('loadOutline', 'number', ['number']);
 	mupdf.freeOutline = Module.cwrap('freeOutline', null, ['number']);
@@ -33,6 +35,13 @@ mupdf.openDocument = function (data, magic) {
 	let src = new Uint8Array(data);
 	Module.HEAPU8.set(src, ptr);
 	return mupdf.openDocumentFromBuffer(magic, ptr, n);
+}
+
+mupdf.drawPageAsPNG = function (doc, page, dpi) {
+	mupdf.doDrawPageAsPNG(doc, page, dpi);
+	let n = mupdf.getLastDrawSize();
+	let p = mupdf.getLastDrawData();
+	return Module.HEAPU8.buffer.slice(p, p+n);
 }
 
 mupdf.documentOutline = function (doc) {

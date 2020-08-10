@@ -384,8 +384,9 @@ function updateView() {
 			// to keep pointer-events for the link image-map
 			img.ondragstart = function () { return false; }
 			img.onload = function () {
-				pageDIV[pageNumber].style.width = 'min-content';
-				pageDIV[pageNumber].style.height = 'auto';
+				URL.revokeObjectURL(this.src);
+				div.style.width = this.width + 'px';
+				div.style.height = this.height + 'px';
 			}
 			div.appendChild(img);
 
@@ -396,8 +397,10 @@ function updateView() {
 			let map = document.createElement("div");
 			map.classList.add("links");
 			div.appendChild(map);
-			mupdf.drawPageAsPNG(doc, i, zoom).then(data => img.src = data);
 
+			mupdf.drawPageAsPNG(doc, pageNumber, zoom).then(data => {
+				img.src = URL.createObjectURL(new Blob([data], {type:"image/png"}));
+			});
 			mupdf.pageLinks(doc, pageNumber, zoom).then(data => {
 				for (let link of data) {
 					let a = document.createElement("a");

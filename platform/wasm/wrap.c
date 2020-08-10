@@ -116,36 +116,36 @@ char *drawPageAsSVG(fz_document *doc, int number)
 	return (char*)data;
 }
 
+
+static fz_buffer *lastDrawBuffer = NULL;
+
 EMSCRIPTEN_KEEPALIVE
-char *drawPageAsPNG(fz_document *doc, int number, float dpi)
+void doDrawPageAsPNG(fz_document *doc, int number, float dpi)
 {
-	static unsigned char *data = NULL;
 	float zoom = dpi / 72;
 	fz_pixmap *pix;
-	fz_buffer *buf;
-	fz_output *out;
 
-	fz_free(ctx, data);
-	data = NULL;
+	if (lastDrawBuffer)
+		fz_drop_buffer(ctx, lastDrawBuffer);
+	lastDrawBuffer = NULL;
 
 	loadPage(doc, number);
 
-	buf = fz_new_buffer(ctx, 0);
-	{
-		out = fz_new_output_with_buffer(ctx, buf);
-		{
-			pix = fz_new_pixmap_from_page(ctx, lastPage, fz_scale(zoom, zoom), fz_device_rgb(ctx), 0);
-			fz_write_pixmap_as_data_uri(ctx, out, pix);
-			fz_drop_pixmap(ctx, pix);
-		}
-		fz_write_byte(ctx, out, 0);
-		fz_close_output(ctx, out);
-		fz_drop_output(ctx, out);
-	}
-	fz_buffer_extract(ctx, buf, &data);
-	fz_drop_buffer(ctx, buf);
+	pix = fz_new_pixmap_from_page(ctx, lastPage, fz_scale(zoom, zoom), fz_device_rgb(ctx), 0);
+	lastDrawBuffer = fz_new_buffer_from_pixmap_as_png(ctx, pix, fz_default_color_params);
+	fz_drop_pixmap(ctx, pix);
+}
 
-	return (char*)data;
+EMSCRIPTEN_KEEPALIVE
+unsigned char *getLastDrawData(void)
+{
+	return lastDrawBuffer ? lastDrawBuffer->data : 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int getLastDrawSize(void)
+{
+	return lastDrawBuffer ? lastDrawBuffer->len : 0;
 }
 
 static fz_irect pageBounds(fz_document *doc, int number, float dpi)
