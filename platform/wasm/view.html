@@ -10,6 +10,13 @@
 #outline a { text-decoration:none; color: black; }
 #outline a:hover { text-decoration:underline; }
 
+div.error {
+	text-align: center;
+	color: pink;
+	background-color: gray;
+	font-size: 24px;
+}
+
 div.page {
 	display:block;
 	background-color:white;
@@ -163,7 +170,7 @@ html, body, div { margin: 0; padding: 0; }
 <div id="grid-outline"><ul id="outline"></ul></div>
 <div id="pages">
 	<center style="color:silver">
-	<h1>MuPDF / WebAssembly</h1>
+	<h1>Loading WASM, please wait...</h1>
 	</center>
 </div>
 </div>
@@ -216,38 +223,65 @@ function emptyNode(node) {
 		node.removeChild(node.firstChild);
 }
 
+function logError(where, error) {
+	console.log("mupdf." + where + ": " + error.name + ": " + error.message);
+}
+
+function showDocumentError(where, error) {
+	logError(where, error);
+	let div = document.createElement("div");
+	div.classList.add("error");
+	div.textContent = error.name + ": " + error.message;
+	emptyNode(document.getElementById("pages"));
+	document.getElementById("pages").appendChild(div);
+}
+
+function showPageError(where, div, error) {
+	logError(where, error);
+	emptyNode(div);
+	div.classList.add("error");
+	div.textContent = error.name + ": " + error.message;
+}
+
 async function openURL(url) {
-	let response = await fetch(url);
-	let data = await response.arrayBuffer();
-	initDocument(data, url);
+	try {
+		let response = await fetch(url);
+		if (!response.ok)
+			throw new Error("Could not fetch document.");
+		await initDocument(response, url);
+	} catch (error) {
+		showDocumentError("initDocument", error);
+	}
 }
 
 async function openFile(fileList) {
 	let file = fileList[0];
 	if (file instanceof File) {
-		let data = await file.arrayBuffer();
-		initDocument(data, file.name);
+		initDocument(file, file.name)
+			.catch(error => showDocumentError("initDocument", error));
 	}
 }
 
-async function initDocument(data, magic) {
+async function initDocument(blob, magic) {
 	if (doc) {
 		mupdf.freeDocument(doc);
 		doc = 0;
 		pageCount = 0;
 		pageDIV = [];
 		dirty = [];
-		emptyNode(document.getElementById("pages"));
-		emptyNode(document.getElementById("outline"));
 	}
 
+	emptyNode(document.getElementById("pages"));
+	emptyNode(document.getElementById("outline"));
+
+	let data = await blob.arrayBuffer();
 	doc = await mupdf.openDocument(data, magic);
 	pageCount = await mupdf.countPages(doc);
 	let title = await mupdf.documentTitle(doc);
 
-	console.log("Loaded PDF with", pageCount, "pages:", title);
+	console.log("mupdf: Loaded", JSON.stringify(magic), "with", pageCount, "pages.");
 
-	if (title !== "Untitled")
+	if (title)
 		document.title = title;
 	else
 		document.title = magic;
@@ -398,23 +432,25 @@ function updateView() {
 			map.classList.add("links");
 			div.appendChild(map);
 
-			mupdf.drawPageAsPNG(doc, pageNumber, zoom).then(data => {
-				img.src = URL.createObjectURL(new Blob([data], {type:"image/png"}));
-			});
-			mupdf.pageLinks(doc, pageNumber, zoom).then(data => {
-				for (let link of data) {
-					let a = document.createElement("a");
-					a.href = link.href;
-					a.style.left = link.x + 'px';
-					a.style.top = link.y + 'px';
-					a.style.width = link.w + 'px';
-					a.style.height = link.h + 'px';
-					map.appendChild(a);
-				}
-			});
-			mupdf.pageText(doc, pageNumber, zoom).then(data => {
-				parseStructuredText(txt, data);
-			});
+			mupdf.drawPageAsPNG(doc, pageNumber, zoom)
+				.then(data => img.src = URL.createObjectURL(new Blob([data], {type:"image/png"})))
+				.catch(error => showPageError("drawPageAsPNG", div, error));
+			mupdf.pageLinks(doc, pageNumber, zoom)
+				.then(data => {
+					for (let link of data) {
+						let a = document.createElement("a");
+						a.href = link.href;
+						a.style.left = link.x + 'px';
+						a.style.top = link.y + 'px';
+						a.style.width = link.w + 'px';
+						a.style.height = link.h + 'px';
+						map.appendChild(a);
+					}
+				})
+				.catch(error => logError("pageLinks", error));
+			mupdf.pageText(doc, pageNumber, zoom)
+				.then(data => parseStructuredText(txt, data))
+				.catch(error => logError("pageText", error));
 		}
 	};
 }
@@ -470,6 +506,10 @@ window.addEventListener("keydown", function (event) {
 		}
 	}
 });
+
+window.onerror = function (message, source, line, col, error) {
+	alert(message);
+}
 
 function main() {
 	emptyNode(document.getElementById("pages"));

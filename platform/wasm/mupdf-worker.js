@@ -105,7 +105,6 @@ onmessage = function (event) {
 		else
 			postMessage(["RESULT", id, result]);
 	} catch (error) {
-		console.log(error);
 		postMessage(["ERROR", id, {name: error.name, message: error.message}]);
 	}
 }
