@@ -296,8 +296,16 @@ pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 			pdf_drop_annots below actually frees a list. Put the new annot
 			at the end of the list, so that it will be drawn last.
 		*/
-		*page->annot_tailp = annot;
-		page->annot_tailp = &annot->next;
+		if (type == PDF_ANNOT_WIDGET)
+		{
+			*page->widget_tailp = annot;
+			page->widget_tailp = &annot->next;
+		}
+		else
+		{
+			*page->annot_tailp = annot;
+			page->annot_tailp = &annot->next;
+		}
 
 		doc->dirty = 1;
 	}
