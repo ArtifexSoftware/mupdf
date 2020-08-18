@@ -3007,7 +3007,7 @@ def class_add_iterator( struct, structname, classname, extras):
 
     extras.class_bottom += f'\n    typedef {classname}Iterator iterator;\n'
 
-    extras.class_pre += f'struct {classname}Iterator;\n'
+    extras.class_pre += f'\nstruct {classname}Iterator;\n'
 
     extras.class_post += f'''
             struct {classname}Iterator
