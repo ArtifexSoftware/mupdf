@@ -701,7 +701,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         mupdf.empty_store()
 
     if state.showmemory:
-        mupdf.dump_glyph_cache_stats(mupdf.stderr())
+        mupdf.dump_glyph_cache_stats(mupdf.stderr_())
 
     mupdf.flush_warnings()
 
