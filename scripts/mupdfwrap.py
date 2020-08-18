@@ -208,8 +208,11 @@ C++ wrapping:
 
                 We look for all fz_*() functions that take the wrapped struct
                 as a first arg (ignoring any fz_context* arg), and wrap these
-                into class methods. If there are duplicate prototypes, we
-                comment-out all but the first.
+                into auto-generated class methods. If there are duplicate
+                prototypes, we comment-out all but the first.
+
+                Auto-generated methods are omitted if a custom method is
+                defined with the same name.
 
             Other:
 
