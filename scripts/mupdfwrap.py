@@ -5083,7 +5083,7 @@ def test_mupdfcpp_swig():
     #
     log( f'Testing classes')
     for filename in (
-            os.path.expanduser( '~/pdf_reference17.pdf'),
+            os.path.expanduser( '~/artifex/pdf_reference17.pdf'),
             os.path.expanduser( '~/artifex/testfiles/pdf_reference17.pdf'),
             ):
         if os.path.isfile( filename):
