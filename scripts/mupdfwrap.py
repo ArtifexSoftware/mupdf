@@ -1547,6 +1547,17 @@ classextras = ClassExtras(
                         ''',
                         comment = f'/* Wrapper for fz_copy_selection(). */',
                         ),
+                    ExtraMethod( 'std::string', 'copy_rectangle(Rect& area, int crlf)',
+                        f'''
+                        {{
+                            char* text = {rename.function_call('fz_copy_rectangle')}(m_internal, *(fz_rect*) &area.x0, crlf);
+                            std::string ret(text);
+                            {rename.function_call('fz_free')}(text);
+                            return ret;
+                        }}
+                        ''',
+                        comment = f'/* Wrapper for fz_copy_rectangle(). */',
+                        ),
                     ],
                 iterator_next = ('first_block', 'last_block'),
                 copyable=False,
@@ -3944,7 +3955,9 @@ def class_wrapper( tu, register_fn_use, struct, structname, classname, out_h, ou
                 out_cpp,
                 )
 
-    # Auto-add all methods that take <structname> as first param.
+    # Auto-add all methods that take <structname> as first param, but
+    # skip methods that are already wrapped in extras.method_wrappers or
+    # extras.methods_extra etc.
     #
     for fnname in find_wrappable_function_with_arg0_type( tu, structname):
         if fnname in extras.method_wrappers:
