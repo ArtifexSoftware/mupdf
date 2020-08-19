@@ -22,19 +22,18 @@ const char *fz_pdfocr_write_options_usage =
 
 static const char funky_font[] =
 "3 0 obj\n<</BaseFont/GlyphLessFont/DescendantFonts[4 0 R]"
-"/Encoding/Identity-H/Subtype/Type0/ToUnicode 6 0 R/Type /Font"
+"/Encoding/Identity-H/Subtype/Type0/ToUnicode 6 0 R/Type/Font"
 ">>\nendobj\n";
 
 static const char funky_font2[] =
-"4 0 obj\n<</BaseFont/GlyphLessFont"
-"/CIDToGIDMap 5 0 R\n/CIDSystemInfo<<\n"
-"/Ordering (Identity)/Registry (Adobe)/Supplement 0>>"
-"/FontDescriptor 7 0 R/Subtype /CIDFontType2/Type/Font"
-"/DW 500>>\nendobj\n";
+"4 0 obj\n"
+"<</BaseFont/GlyphLessFont/CIDToGIDMap 5 0 R"
+"/CIDSystemInfo<</Ordering (Identity)/Registry (Adobe)/Supplement 0>>"
+"/FontDescriptor 7 0 R/Subtype/CIDFontType2/Type/Font/DW 500>>"
+"\nendobj\n";
 
 static const char funky_font3[] =
-"5 0 obj\n<</Length 210/Filter/FlateDecode"
-">>stream\n"
+"5 0 obj\n<</Length 210/Filter/FlateDecode>>\nstream\n"
 "\x78\x9c\xec\xc2\x01\x09\x00\x00\x00\x02\xa0\xfa\x7f\xba\x21\x89"
 "\xa6\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -49,7 +48,7 @@ static const char funky_font3[] =
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xeb\x00\xff"
 "\x00\x10"
-"endstream\nendobj\n";
+"\nendstream\nendobj\n";
 
 static const char funky_font4[] =
 "6 0 obj\n<</Length 353>>\nstream\n"
@@ -62,7 +61,7 @@ static const char funky_font4[] =
 "  /Ordering (UCS)\n"
 "  /Supplement 0\n"
 ">> def\n"
-"/CMapName /Adobe-Identify-UCS def\n"
+"/CMapName /Adobe-Identity-UCS def\n"
 "/CMapType 2 def\n"
 "1 begincodespacerange\n"
 "<0000> <FFFF>\n"
@@ -121,7 +120,7 @@ static const char funky_font6[] =
 "\x56\x65\x72\x73\x69\x6f\x6e\x20\x31\x2e\x30\x00\x00\x01\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-"endstream\nendobj\n";
+"\nendstream\nendobj\n";
 
 #endif
 
@@ -300,10 +299,10 @@ pdfocr_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	writer->pages++;
 
 	/* Send the Page Object */
-	fz_write_printf(ctx, out, "%d 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/Resources <<\n/XObject <<\n", new_obj(ctx, writer));
+	fz_write_printf(ctx, out, "%d 0 obj\n<</Type/Page/Parent 2 0 R/Resources<</XObject<<", new_obj(ctx, writer));
 	for (i = 0; i < strips; i++)
-		fz_write_printf(ctx, out, "/Image%d %d 0 R\n", i, writer->obj_num + i);
-	fz_write_printf(ctx, out, ">>\n/Font<</Ft0 3 0 R>>\n>>\n/MediaBox[ 0 0 %g %g ]\n/Contents [ %d 0 R ]\n>>\nendobj\n",
+		fz_write_printf(ctx, out, "/I%d %d 0 R", i, writer->obj_num + i);
+	fz_write_printf(ctx, out, ">>/Font<</F0 3 0 R>>>>/MediaBox[0 0 %g %g]/Contents %d 0 R>>\nendobj\n",
 		w * 72.0f / xres, h * 72.0f / yres, writer->obj_num + strips);
 }
 
@@ -324,9 +323,9 @@ flush_strip(fz_context *ctx, pdfocr_band_writer *writer, int fill)
 		len = destLen;
 		data = writer->compbuf;
 	}
-	fz_write_printf(ctx, out, "%d 0 obj\n<<\n/Width %d\n/ColorSpace /Device%s\n/Height %d\n%s/Subtype /Image\n",
-		new_obj(ctx, writer), w, n == 1 ? "Gray" : "RGB", fill, writer->options.compress ? "/Filter /FlateDecode\n" : "");
-	fz_write_printf(ctx, out, "/Length %zd\n/Type /XObject\n/BitsPerComponent 8\n>>\nstream\n", len);
+	fz_write_printf(ctx, out, "%d 0 obj\n<</Width %d/ColorSpace/Device%s/Height %d%s/Subtype/Image",
+		new_obj(ctx, writer), w, n == 1 ? "Gray" : "RGB", fill, writer->options.compress ? "/Filter/FlateDecode" : "");
+	fz_write_printf(ctx, out, "/Length %zd/Type/XObject/BitsPerComponent 8>>\nstream\n", len);
 	fz_write_data(ctx, out, data, len);
 	fz_write_string(ctx, out, "\nendstream\nendobj\n");
 }
@@ -401,6 +400,7 @@ typedef struct
 	float word_bbox[4];
 	float cur_size;
 	float cur_scale;
+	float tx, ty;
 } char_callback_data_t;
 
 static void
@@ -410,28 +410,33 @@ flush_word(fz_context *ctx,
 	float size = cb->word_bbox[3] - cb->word_bbox[1];
 	float scale;
 	int i, len = cb->word_len;
+	float x, y;
 
 	if (cb->word_len == 0 || size == 0)
 		return;
 
 	if (size != cb->cur_size)
 	{
-		fz_append_printf(ctx, cb->buf, "/Ft0 %f Tf", size);
+		fz_append_printf(ctx, cb->buf, "/F0 %g Tf\n", size);
 		cb->cur_size = size;
 	}
 	scale = (cb->word_bbox[2] - cb->word_bbox[0]) / size / len * 200;
 	if (scale != cb->cur_scale)
 	{
-		fz_append_printf(ctx, cb->buf, " %.3f Tz", scale);
+		fz_append_printf(ctx, cb->buf, "%d Tz\n", (int)scale);
 		cb->cur_scale = scale;
 	}
-	fz_append_printf(ctx, cb->buf, " 1 0 0 1 %.3f %.3f Tm[<",
-			cb->word_bbox[0], cb->word_bbox[1]);
+
+	x = cb->word_bbox[0];
+	y = cb->word_bbox[1];
+	fz_append_printf(ctx, cb->buf, "%g %g Td\n", x-cb->tx, y-cb->ty);
+	cb->tx = x;
+	cb->ty = y;
+
+	fz_append_printf(ctx, cb->buf, "<");
 	for (i = 0; i < len; i++)
-	{
 		fz_append_printf(ctx, cb->buf, "%04x", cb->word_chars[i]);
-	}
-	fz_append_printf(ctx, cb->buf, ">]TJ\n");
+	fz_append_printf(ctx, cb->buf, ">Tj\n");
 
 	cb->word_len = 0;
 }
@@ -511,18 +516,18 @@ pdfocr_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 				this_sh += at;
 				at = 0;
 			}
-			fz_append_printf(ctx, buf, "/P <</MCID 0>> BDC q\n%d 0 0 %d 0 %d cm\n/Image%d Do Q\n",
+			fz_append_printf(ctx, buf, "/P <</MCID 0>> BDC\nq\n%d 0 0 %d 0 %d cm\n/I%d Do\nQ\n",
 				w, this_sh, at, i);
 		}
 
-		fz_append_printf(ctx, buf, "Q\nBT 3 Tr\n");
+		fz_append_printf(ctx, buf, "Q\nBT\n3 Tr\n");
 
 		ocr_recognise(ctx, writer->tessapi, writer->ocrbitmap, char_callback, &cb);
 		flush_word(ctx, &cb);
 		fz_append_printf(ctx, buf, "ET\n");
 
 		len = fz_buffer_storage(ctx, buf, &data);
-		fz_write_printf(ctx, out, "%d 0 obj\n<<\n/Length %zd\n>>\nstream\n", new_obj(ctx, writer), len);
+		fz_write_printf(ctx, out, "%d 0 obj\n<</Length %zd>>\nstream\n", new_obj(ctx, writer), len);
 		fz_write_data(ctx, out, data, len);
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
@@ -553,22 +558,26 @@ pdfocr_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 
 		/* Catalog */
 		writer->xref[1] = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n");
+		fz_write_printf(ctx, out, "1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n");
 
 		/* Page table */
 		writer->xref[2] = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "2 0 obj\n<<\n/Count %d\n/Kids [ ", writer->pages);
+		fz_write_printf(ctx, out, "2 0 obj\n<</Count %d/Kids[", writer->pages);
 
 		for (i = 0; i < writer->pages; i++)
-			fz_write_printf(ctx, out, "%d 0 R ", writer->page_obj[i]);
-		fz_write_string(ctx, out, "]\n/Type /Pages\n>>\nendobj\n");
+		{
+			if (i > 0)
+				fz_write_byte(ctx, out, ' ');
+			fz_write_printf(ctx, out, "%d 0 R", writer->page_obj[i]);
+		}
+		fz_write_string(ctx, out, "]/Type/Pages>>\nendobj\n");
 
 		/* Xref */
 		t_pos = fz_tell_output(ctx, out);
 		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->obj_num);
 		for (i = 1; i < writer->obj_num; i++)
 			fz_write_printf(ctx, out, "%010zd 00000 n \n", writer->xref[i]);
-		fz_write_printf(ctx, out, "trailer\n<<\n/Size %d\n/Root 1 0 R\n>>\nstartxref\n%ld\n%%%%EOF\n", writer->obj_num, t_pos);
+		fz_write_printf(ctx, out, "trailer\n<</Size %d/Root 1 0 R>>\nstartxref\n%ld\n%%%%EOF\n", writer->obj_num, t_pos);
 	}
 
 	fz_free(ctx, writer->stripbuf);
