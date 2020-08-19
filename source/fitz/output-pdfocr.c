@@ -447,9 +447,9 @@ char_callback(fz_context *ctx, void *arg, int unicode,
 	float bbox[4];
 
 	bbox[0] = word_bbox[0] * 72.0f / cb->writer->ocrbitmap->xres;
-	bbox[1] = (writer->ocrbitmap->h - 1 - word_bbox[1]) * 72.0f / cb->writer->ocrbitmap->yres;
+	bbox[3] = (writer->ocrbitmap->h - 1 - word_bbox[1]) * 72.0f / cb->writer->ocrbitmap->yres;
 	bbox[2] = word_bbox[2] * 72.0f / cb->writer->ocrbitmap->yres;
-	bbox[3] = (writer->ocrbitmap->h - 1 - word_bbox[3]) * 72.0f / cb->writer->ocrbitmap->yres;
+	bbox[1] = (writer->ocrbitmap->h - 1 - word_bbox[3]) * 72.0f / cb->writer->ocrbitmap->yres;
 
 	if (bbox[0] != cb->word_bbox[0] ||
 		bbox[1] != cb->word_bbox[1] ||
@@ -517,8 +517,7 @@ pdfocr_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 
 		fz_append_printf(ctx, buf, "Q\nBT 3 Tr\n");
 
-		ocr_recognise(ctx, writer->tessapi, writer->ocrbitmap,
-				char_callback, &cb);
+		ocr_recognise(ctx, writer->tessapi, writer->ocrbitmap, char_callback, &cb);
 		flush_word(ctx, &cb);
 		fz_append_printf(ctx, buf, "ET\n");
 
