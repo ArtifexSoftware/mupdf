@@ -50,8 +50,8 @@ enum {
 	OUT_PNG, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
 	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT, OUT_PCLM,
-	OUT_TRACE, OUT_BBOX, OUT_SVG, OUT_PDFOCR,
-	OUT_OTEXT, OUT_OHTML, OUT_OXHTML, OUT_OSTEXT, OUT_OTRACE,
+	OUT_TRACE, OUT_BBOX, OUT_SVG, OUT_OCR_PDF,
+	OUT_OCR_TEXT, OUT_OCR_HTML, OUT_OCR_XHTML, OUT_OCR_STEXT, OUT_OCR_TRACE,
 #if FZ_ENABLE_PDF
 	OUT_PDF,
 #endif
@@ -71,13 +71,13 @@ typedef struct
 static const suffix_t suffix_table[] =
 {
 	/* All the 'double extension' ones must go first. */
-	{ ".ocr.txt", OUT_OTEXT, 0 },
-	{ ".ocr.text", OUT_OTEXT, 0 },
-	{ ".ocr.html", OUT_OHTML, 0 },
-	{ ".ocr.xhtml", OUT_OXHTML, 0 },
-	{ ".ocr.stext", OUT_OSTEXT, 0 },
-	{ ".ocr.pdf", OUT_PDFOCR, 0 },
-	{ ".ocr.trace", OUT_OTRACE, 0 },
+	{ ".ocr.txt", OUT_OCR_TEXT, 0 },
+	{ ".ocr.text", OUT_OCR_TEXT, 0 },
+	{ ".ocr.html", OUT_OCR_HTML, 0 },
+	{ ".ocr.xhtml", OUT_OCR_XHTML, 0 },
+	{ ".ocr.stext", OUT_OCR_STEXT, 0 },
+	{ ".ocr.pdf", OUT_OCR_PDF, 0 },
+	{ ".ocr.trace", OUT_OCR_TRACE, 0 },
 
 	{ ".png", OUT_PNG, 0 },
 	{ ".pgm", OUT_PGM, 0 },
@@ -155,7 +155,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
 	{ OUT_BBOX, CS_RGB, { CS_RGB } },
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
-	{ OUT_PDFOCR, CS_RGB, { CS_RGB, CS_GRAY } },
+	{ OUT_OCR_PDF, CS_RGB, { CS_RGB, CS_GRAY } },
 #if FZ_ENABLE_PDF
 	{ OUT_PDF, CS_RGB, { CS_RGB } },
 #endif
@@ -164,11 +164,11 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_HTML, CS_RGB, { CS_RGB } },
 	{ OUT_XHTML, CS_RGB, { CS_RGB } },
 	{ OUT_STEXT, CS_RGB, { CS_RGB } },
-	{ OUT_OTEXT, CS_GRAY, { CS_GRAY } },
-	{ OUT_OHTML, CS_GRAY, { CS_GRAY } },
-	{ OUT_OXHTML, CS_GRAY, { CS_GRAY } },
-	{ OUT_OSTEXT, CS_GRAY, { CS_GRAY } },
-	{ OUT_OTRACE, CS_GRAY, { CS_GRAY } },
+	{ OUT_OCR_TEXT, CS_GRAY, { CS_GRAY } },
+	{ OUT_OCR_HTML, CS_GRAY, { CS_GRAY } },
+	{ OUT_OCR_XHTML, CS_GRAY, { CS_GRAY } },
+	{ OUT_OCR_STEXT, CS_GRAY, { CS_GRAY } },
+	{ OUT_OCR_TRACE, CS_GRAY, { CS_GRAY } },
 };
 
 time_t
@@ -361,14 +361,14 @@ static void usage(void)
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
 		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
-		"\t\tvector: svg, pdf, trace, otrace\n"
+		"\t\tvector: svg, pdf, trace, ocr.trace\n"
 		"\t\ttext: txt, html, xhtml, stext\n"
 #ifndef OCR_DISABLED
-		"\t\tocr'd text: otxt, ohtml, oxhtml, ostext\n"
+		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext\n"
 #else
-		"\t\tocr'd text: otxt, ohtml, oxhtml, ostext (disabled)\n"
+		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext (disabled)\n"
 #endif
-		"\t\tbitmap-wrapped-as-pdf: pclm, pdfocr\n"
+		"\t\tbitmap-wrapped-as-pdf: pclm, ocr.pdf\n"
 		"\n"
 		"\t-q\tbe quiet (don't print progress messages)\n"
 		"\t-s -\tshow extra information:\n"
@@ -382,7 +382,7 @@ static void usage(void)
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
-		"\t-B -\tmaximum band_height (pXm, pcl, pclm, pdfocr, ps, psd and png output only)\n"
+		"\t-B -\tmaximum band_height (pXm, pcl, pclm, ocr.pdf, ps, psd and png output only)\n"
 #ifndef DISABLE_MUTHREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
 #else
@@ -472,15 +472,15 @@ static int has_percent_d(char *s)
 static void
 file_level_headers(fz_context *ctx)
 {
-	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_BBOX || output_format == OUT_OSTEXT)
+	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_BBOX || output_format == OUT_OCR_STEXT)
 		fz_write_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
 
-	if (output_format == OUT_HTML || output_format == OUT_OHTML)
+	if (output_format == OUT_HTML || output_format == OUT_OCR_HTML)
 		fz_print_stext_header_as_html(ctx, out);
-	if (output_format == OUT_XHTML || output_format == OUT_OXHTML)
+	if (output_format == OUT_XHTML || output_format == OUT_OCR_XHTML)
 		fz_print_stext_header_as_xhtml(ctx, out);
 
-	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_BBOX || output_format == OUT_OSTEXT)
+	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_BBOX || output_format == OUT_OCR_STEXT)
 		fz_write_printf(ctx, out, "<document name=\"%s\">\n", filename);
 
 	if (output_format == OUT_PS)
@@ -496,7 +496,7 @@ file_level_headers(fz_context *ctx)
 		bander = fz_new_pclm_band_writer(ctx, out, &opts);
 	}
 
-	if (output_format == OUT_PDFOCR)
+	if (output_format == OUT_OCR_PDF)
 	{
 		char options[300];
 		fz_pdfocr_options opts = { 0 };
@@ -509,18 +509,18 @@ file_level_headers(fz_context *ctx)
 static void
 file_level_trailers(fz_context *ctx)
 {
-	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_OTRACE || output_format == OUT_BBOX || output_format == OUT_OSTEXT)
+	if (output_format == OUT_STEXT || output_format == OUT_TRACE || output_format == OUT_OCR_TRACE || output_format == OUT_BBOX || output_format == OUT_OCR_STEXT)
 		fz_write_printf(ctx, out, "</document>\n");
 
-	if (output_format == OUT_HTML || output_format == OUT_OHTML)
+	if (output_format == OUT_HTML || output_format == OUT_OCR_HTML)
 		fz_print_stext_trailer_as_html(ctx, out);
-	if (output_format == OUT_XHTML || output_format == OUT_OHTML)
+	if (output_format == OUT_XHTML || output_format == OUT_OCR_HTML)
 		fz_print_stext_trailer_as_xhtml(ctx, out);
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
 
-	if (output_format == OUT_PCLM || output_format == OUT_PDFOCR)
+	if (output_format == OUT_PCLM || output_format == OUT_OCR_PDF)
 		fz_drop_band_writer(ctx, bander);
 }
 
@@ -582,7 +582,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	else
 		mediabox = fz_bound_page(ctx, page);
 
-	if (output_format == OUT_TRACE || output_format == OUT_OTRACE)
+	if (output_format == OUT_TRACE || output_format == OUT_OCR_TRACE)
 	{
 		float zoom;
 		fz_matrix ctm;
@@ -598,7 +598,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_write_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
 					mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1);
 			dev = fz_new_trace_device(ctx, out);
-			if (output_format == OUT_OTRACE)
+			if (output_format == OUT_OCR_TRACE)
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
@@ -655,7 +655,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	}
 
 	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT ||
-		output_format == OUT_OTEXT || output_format == OUT_OHTML || output_format == OUT_OXHTML || output_format == OUT_OSTEXT)
+		output_format == OUT_OCR_TEXT || output_format == OUT_OCR_HTML || output_format == OUT_OCR_XHTML || output_format == OUT_OCR_STEXT)
 	{
 		fz_stext_page *text = NULL;
 		float zoom;
@@ -674,17 +674,17 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			stext_options.flags = (output_format == OUT_HTML ||
 						output_format == OUT_XHTML ||
-						output_format == OUT_OHTML ||
-						output_format == OUT_OXHTML
+						output_format == OUT_OCR_HTML ||
+						output_format == OUT_OCR_XHTML
 						) ? FZ_STEXT_PRESERVE_IMAGES : 0;
 			text = fz_new_stext_page(ctx, mediabox);
 			dev = fz_new_stext_device(ctx, text, &stext_options);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-			if (output_format == OUT_OTEXT ||
-				output_format == OUT_OSTEXT ||
-				output_format == OUT_OHTML ||
-				output_format == OUT_OXHTML)
+			if (output_format == OUT_OCR_TEXT ||
+				output_format == OUT_OCR_STEXT ||
+				output_format == OUT_OCR_HTML ||
+				output_format == OUT_OCR_XHTML)
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
@@ -700,19 +700,19 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_close_device(ctx, pre_ocr_dev);
 			fz_drop_device(ctx, pre_ocr_dev);
 			pre_ocr_dev = NULL;
-			if (output_format == OUT_STEXT || output_format == OUT_OSTEXT)
+			if (output_format == OUT_STEXT || output_format == OUT_OCR_STEXT)
 			{
 				fz_print_stext_page_as_xml(ctx, out, text, pagenum);
 			}
-			else if (output_format == OUT_HTML || output_format == OUT_OHTML)
+			else if (output_format == OUT_HTML || output_format == OUT_OCR_HTML)
 			{
 				fz_print_stext_page_as_html(ctx, out, text, pagenum);
 			}
-			else if (output_format == OUT_XHTML || output_format == OUT_OXHTML)
+			else if (output_format == OUT_XHTML || output_format == OUT_OCR_XHTML)
 			{
 				fz_print_stext_page_as_xhtml(ctx, out, text, pagenum);
 			}
-			else if (output_format == OUT_TEXT || output_format == OUT_OTEXT)
+			else if (output_format == OUT_TEXT || output_format == OUT_OCR_TEXT)
 			{
 				fz_print_stext_page_as_text(ctx, out, text);
 				fz_write_printf(ctx, out, "\f\n");
@@ -1027,7 +1027,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_always(ctx)
 		{
-			if (output_format != OUT_PCLM && output_format != OUT_PDFOCR)
+			if (output_format != OUT_PCLM && output_format != OUT_OCR_PDF)
 			{
 				fz_drop_band_writer(ctx, bander);
 				/* bander must be set to NULL to avoid use-after-frees. A use-after-free
@@ -2010,7 +2010,7 @@ int mudraw_main(int argc, char **argv)
 				output_format != OUT_PCLM &&
 				output_format != OUT_PS &&
 				output_format != OUT_PSD &&
-				output_format != OUT_PDFOCR)
+				output_format != OUT_OCR_PDF)
 			{
 				fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PDFOCR, PS, PSD, and PNG outputs\n");
 				exit(1);
@@ -2161,12 +2161,12 @@ int mudraw_main(int argc, char **argv)
 					output_format != OUT_HTML &&
 					output_format != OUT_XHTML &&
 					output_format != OUT_TRACE &&
-					output_format != OUT_OTRACE &&
+					output_format != OUT_OCR_TRACE &&
 					output_format != OUT_BBOX &&
-					output_format != OUT_OTEXT &&
-					output_format != OUT_OSTEXT &&
-					output_format != OUT_OHTML &&
-					output_format != OUT_OXHTML)
+					output_format != OUT_OCR_TEXT &&
+					output_format != OUT_OCR_STEXT &&
+					output_format != OUT_OCR_HTML &&
+					output_format != OUT_OCR_XHTML)
 					setmode(fileno(stdout), O_BINARY);
 #endif
 				out = fz_stdout(ctx);
