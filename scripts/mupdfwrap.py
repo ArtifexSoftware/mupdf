@@ -253,6 +253,7 @@ import inspect
 import io
 import os
 import re
+import shutil
 import sys
 import textwrap
 import time
@@ -5010,11 +5011,26 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
             ''').strip().replace( '\n', ' \\\n')
             )
 
+    swig_cpp_old = None
+    if os.path.isfile(swig_cpp):
+        swig_cpp_old = swig_cpp + '-0'
+        shutil.copy2(swig_cpp, swig_cpp_old)
+
     jlib.build(
             (swig_i, include1, include2),
             (swig_cpp, swig_py),
             command,
             )
+
+    if swig_cpp_old:
+        def read_all(path):
+            with open(path) as f:
+                return f.read()
+        swig_cpp_old_text = read_all(swig_cpp_old)
+        swig_cpp_text = read_all(swig_cpp)
+        if swig_cpp_text == swig_cpp_old_text:
+            jlib.log('Preserving old file mtime etc because unchanged: {swig_cpp=}')
+            os.rename(swig_cpp_old, swig_cpp)
 
 
 def build_swig_java( container_classnames):
