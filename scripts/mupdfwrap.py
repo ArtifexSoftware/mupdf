@@ -5387,7 +5387,7 @@ def main():
                             else:
                                 raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')
 
-                            jlib.system( command, prefix=jlib.log_text(), verbose=1)
+                            jlib.system( command, prefix=jlib.log_text(), out=sys.stderr, verbose=1)
 
                         elif action == '0':
                             # Generate C++ code that wraps the fz_* API.
