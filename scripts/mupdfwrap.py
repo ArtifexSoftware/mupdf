@@ -105,6 +105,10 @@ Args:
         (specifically definition of NDEBUG is important because it must match
         what was used when libmupdf.so was built).
 
+        Examples:
+            -d build/shared-debug
+            -d build/shared-release
+
     --doc <languages>
         Generates documentation for the different APIs.
 
@@ -2817,9 +2821,46 @@ def make_function_wrappers(
         except Clang6FnArgsBug as e:
             #log( jlib.exception_info())
             log( 'Unable to wrap function {cursor.spelling} becase: {e}')
-        else:
-            out_functions_h.write( temp_out_h.getvalue())
-            out_functions_cpp.write( temp_out_cpp.getvalue())
+            continue
+
+        out_functions_h.write( temp_out_h.getvalue())
+        out_functions_cpp.write( temp_out_cpp.getvalue())
+        if fnname == 'fz_lookup_metadata':
+            # Output convenience wrapper for fz_lookup_metadata() that is
+            # easily SWIG-able - it returns a std::string by value, and uses an
+            # out-param for the integer error/length value.
+            out_functions_h.write(
+                    textwrap.dedent(
+                    f'''
+                    /* Extra wrapper for fz_lookup_metadata() that returns a std::string and sets
+                    *o_out to length of string plus one. If <key> is not found, returns empty
+                    string with *o_out=-1. <o_out> can be NULL if caller is not interested in
+                    error information. */
+                    std::string lookup_metadata(fz_document *doc, const char *key, int* o_out=NULL);
+
+                    '''))
+            out_functions_cpp.write(
+                    textwrap.dedent(
+                    f'''
+                    std::string lookup_metadata(fz_document *doc, const char *key, int* o_out)
+                    {{
+                        int e = lookup_metadata(doc, key, NULL /*buf*/, 0 /*size*/);
+                        if (e < 0) {{
+                            // Not found.
+                            if (o_out)  *o_out = e;
+                            return "";
+                        }}
+                        assert(e != 0);
+                        char* buf = (char*) malloc(e);
+                        assert(buf);    // mupdf::malloc() throws on error.
+                        int e2 = lookup_metadata(doc, key, buf, e);
+                        assert(e2 = e);
+                        std::string ret = buf;
+                        free(buf);
+                        if (o_out)  *o_out = e;
+                        return ret;
+                    }}
+                    '''))
 
 
 find_struct_cache = None
@@ -4287,6 +4328,8 @@ def cpp_source( dir_mupdf, namespace, base, header_git, doit=True):
             #include "mupdf/fitz.h"
             #include "mupdf/pdf.h"
 
+            #include <string>
+
             #ifdef SWIG
                 #define mupdf_OUTPARAM(name)  OUTPUT
             #else
@@ -4330,6 +4373,7 @@ def cpp_source( dir_mupdf, namespace, base, header_git, doit=True):
             #include "mupdf/functions.h"
             #include "mupdf/internal.h"
 
+            #include <assert.h>
 
             '''))
 
@@ -4782,6 +4826,23 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
             %pointer_functions(int, pint);
             %pointer_functions(fz_font, pfont);
 
+            %pythoncode %{{
+            # Override default Document.lookup_metadata() method so we can
+            # return the string value directly.
+            Document_lookup_metadata_0 = Document.lookup_metadata
+            def Document_lookup_metadata(self, key):
+                """
+                Returns string or None if not found.
+                """
+                e = new_pint()
+                ret = lookup_metadata(self.m_internal, key, e)
+                e = pint_value(e)
+                if e < 0:
+                    return None
+                return ret
+            Document.lookup_metadata = Document_lookup_metadata
+            %}}
+
             ''')
 
     # Make some additions to the generated Python module.
@@ -5019,6 +5080,22 @@ def test_mupdfcpp_swig():
     log( f'{document.needs_password()}')
     log( f'{document.count_pages()}')
 
+    for k in (
+            'format',
+            'encryption',
+            'info:Author',
+            'info:Title',
+            'info:Creator',
+            'info:Producer',
+            'qwerty',
+            ):
+        v = document.lookup_metadata(k)
+        log(f'document.lookup_metadata() k={k} returned v={v!r}')
+        if k == 'qwerty':
+            assert v is None
+        else:
+            assert isinstance(v, str)
+
     zoom = 10
     scale = mupdf.Matrix.scale( zoom/100., zoom/100.)
     page_number = 0
@@ -5217,6 +5294,7 @@ def main():
                 container_classnames = None
                 force_rebuild = False
                 header_git = False
+                jlib.log('{build_dirs.dir_so=}')
 
                 while 1:
                     actions = args.next()
@@ -5254,8 +5332,7 @@ def main():
                             else:
                                 raise Exception( f'Unrecognised dir_so={build_dirs.dir_so}')
 
-                            jlib.system( command, prefix=jlib.log_text())
-
+                            jlib.system( command, prefix=jlib.log_text(), out=sys.stderr, verbose=1)
 
                         elif action == '0':
                             # Generate C++ code that wraps the fz_* API.
@@ -5509,7 +5586,9 @@ def main():
                         ld_library_path = os.path.abspath( f'{build_dirs.dir_so}')
                         pythonpath = build_dirs.dir_so
                         jlib.system( f'cd {build_dirs.dir_so}; LD_LIBRARY_PATH={ld_library_path} PYTHONPATH={pythonpath} pydoc3 -w ./mupdf.py')
-                        assert os.path.isfile( f'{build_dirs.dir_so}mupdf.html')
+                        path = f'{build_dirs.dir_so}mupdf.html'
+                        assert os.path.isfile( path)
+                        log( 'have created: {path}')
 
                     else:
                         raise Exception( f'unrecognised language param: {lang}')
@@ -5648,16 +5727,18 @@ def main():
 
                     jlib.system(
                             f'cd {build_dirs.dir_mupdf}platform/python/; {envs} ./mupdf_test.py',
-                            out = outfn
+                            out = outfn,
+                            verbose=1,
                             )
 
                 # Run mutool.py.
                 #
                 mutool_py = os.path.abspath( __file__ + '/../mutool.py')
-                log( 'running {mutool_py=}')
+                command = f'{envs} {mutool_py}'
+                log( 'running: {command}')
                 jlib.system(
-                        f'{envs} {mutool_py}',
-                        out = lambda text: log( text),
+                        f'{command}',
+                        out = lambda text: log( text, nv=0),
                         )
 
             elif arg == '--test-swig':
