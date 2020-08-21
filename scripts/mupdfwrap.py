@@ -5681,7 +5681,6 @@ def main():
                 log( 'running: {command}')
                 e = jlib.system(
                         command,
-                        out = -1,
                         raise_errors=False,
                         verbose=False,
                         )
