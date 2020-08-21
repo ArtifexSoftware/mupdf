@@ -9,7 +9,14 @@
 #endif
 #endif
 
-#ifndef OCR_DISABLED
+#ifdef OCR_DISABLED
+
+/* In non-OCR builds, we need to define this otherwise SWIG Python gets SEGV
+when it attempts to import mupdf.py and _mupdf.py. */
+const char *fz_pdfocr_write_options_usage = "";
+
+#else
+
 #include "tessocr.h"
 
 const char *fz_pdfocr_write_options_usage =
