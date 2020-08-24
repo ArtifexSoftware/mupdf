@@ -183,12 +183,14 @@ pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type)
 	case PDF_ANNOT_FILE_ATTACHMENT: return "FileAttachment";
 	case PDF_ANNOT_SOUND: return "Sound";
 	case PDF_ANNOT_MOVIE: return "Movie";
+	case PDF_ANNOT_RICH_MEDIA: return "RichMedia";
 	case PDF_ANNOT_WIDGET: return "Widget";
 	case PDF_ANNOT_SCREEN: return "Screen";
 	case PDF_ANNOT_PRINTER_MARK: return "PrinterMark";
 	case PDF_ANNOT_TRAP_NET: return "TrapNet";
 	case PDF_ANNOT_WATERMARK: return "Watermark";
 	case PDF_ANNOT_3D: return "3D";
+	case PDF_ANNOT_PROJECTION: return "Projection";
 	default: return "UNKNOWN";
 	}
 }
@@ -216,12 +218,14 @@ pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 	if (!strcmp("FileAttachment", subtype)) return PDF_ANNOT_FILE_ATTACHMENT;
 	if (!strcmp("Sound", subtype)) return PDF_ANNOT_SOUND;
 	if (!strcmp("Movie", subtype)) return PDF_ANNOT_MOVIE;
+	if (!strcmp("RichMedia", subtype)) return PDF_ANNOT_RICH_MEDIA;
 	if (!strcmp("Widget", subtype)) return PDF_ANNOT_WIDGET;
 	if (!strcmp("Screen", subtype)) return PDF_ANNOT_SCREEN;
 	if (!strcmp("PrinterMark", subtype)) return PDF_ANNOT_PRINTER_MARK;
 	if (!strcmp("TrapNet", subtype)) return PDF_ANNOT_TRAP_NET;
 	if (!strcmp("Watermark", subtype)) return PDF_ANNOT_WATERMARK;
 	if (!strcmp("3D", subtype)) return PDF_ANNOT_3D;
+	if (!strcmp("Projection", subtype)) return PDF_ANNOT_PROJECTION;
 	return PDF_ANNOT_UNKNOWN;
 }
 
