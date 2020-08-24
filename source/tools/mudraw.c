@@ -1072,8 +1072,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				{
 					if (workers[i].running)
 					{
+#ifndef DISABLE_MUTHREADS
 						DEBUG_THREADS(("Waiting on worker %d to finish processing\n", i));
 						mu_wait_semaphore(&workers[i].stop);
+#endif
 						workers[i].running = 0;
 					}
 					else
