@@ -307,7 +307,7 @@ class ClangInfo:
         clang.cindex.Config.set_library_file(). This appears to be necessary
         even when clang is installed as a standard package.
         '''
-        for version in 7, 6,:
+        for version in 8, 7, 6,:
             ok = self._try_init_clang( version)
             if ok:
                 break
@@ -331,24 +331,26 @@ class ClangInfo:
                     log( '[could not find {clang_bin}: {e=}]')
                     return
                 clang_search_dirs = clang_search_dirs.strip().split(':')
-                for i in clang_search_dirs:
-                    p = os.path.join( i, f'libclang-{version}.*so*')
-                    p = os.path.abspath( p)
-                    libclang_so = glob.glob( p)
-                    if not libclang_so:
-                        continue
+                for i in ['/usr/lib', '/usr/local/lib'] + clang_search_dirs:
+                    for leaf in f'libclang-{version}.*so*', f'libclang.so.{version}.*':
+                        p = os.path.join( i, leaf)
+                        p = os.path.abspath( p)
+                        log( '{p=}')
+                        libclang_so = glob.glob( p)
+                        if not libclang_so:
+                            continue
 
-                    # We have found libclang.so.
-                    self.libclang_so = libclang_so[0]
-                    log1( 'Using {self.libclang_so=}')
-                    clang.cindex.Config.set_library_file( self.libclang_so)
-                    self.resource_dir = jlib.system(
-                            f'{clang_bin} -print-resource-dir',
-                            out='return',
-                            ).strip()
-                    self.include_path = os.path.join( self.resource_dir, 'include')
-                    self.clang_version = version
-                    return True
+                        # We have found libclang.so.
+                        self.libclang_so = libclang_so[0]
+                        log1( 'Using {self.libclang_so=}')
+                        clang.cindex.Config.set_library_file( self.libclang_so)
+                        self.resource_dir = jlib.system(
+                                f'{clang_bin} -print-resource-dir',
+                                out='return',
+                                ).strip()
+                        self.include_path = os.path.join( self.resource_dir, 'include')
+                        self.clang_version = version
+                        return True
 
 
 g_clang_info = ClangInfo()
@@ -418,7 +420,11 @@ class Rename:
         '''
         if name.startswith( 'pdf_'):
             return 'p' + name
-        return f'{clip( name, "fz_")}'
+        ret = f'{clip( name, "fz_")}'
+        if ret in ('stdin', 'stdout', 'stderr'):
+            log( 'appending underscore to {ret=}')
+            ret += '_'
+        return ret
     def function_call( self, name):
         '''
         Name used by class methods when calling wrapper function - we call our
@@ -443,7 +449,11 @@ class Rename:
             if fnname.startswith( prefix):
                 return f'run{fnname[len(prefix):]}'
         if structname.startswith( 'fz_'):
-            return clip( fnname, "fz_")
+            ret = clip( fnname, "fz_")
+            if ret in ('stdin', 'stdout', 'stderr'):
+                log( 'appending underscore to {ret=}')
+                ret += '_'
+            return ret
         if structname.startswith( 'pdf_'):
             return clip( fnname, "pdf_")
         assert 0, f'unrecognised structname={structname}'
@@ -2146,7 +2156,7 @@ def make_fncall( tu, cursor, return_type, fncall, out):
     out.write( f'    const char*    trace = getenv("MUPDF_trace");\n')
     out.write( f'    if (trace) {{\n')
 
-    out.write( f'        fprintf(::stderr, "%s:%i:%s(): calling {cursor.mangled_name}():')
+    out.write( f'        fprintf(stderr, "%s:%i:%s(): calling {cursor.mangled_name}():')
 
     items = []
     for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=True):
@@ -5325,8 +5335,15 @@ def main():
                         elif action == 'm':
                             # Build libmupdf.so.
                             log( '{build_dirs.dir_mupdf=}')
+                            make = 'make'
+                            if os.uname()[0] == 'OpenBSD':
+                                # Need to run gmake, not make. Also for some
+                                # reason gmake on OpenBSD sets CC to clang, but
+                                # CXX to g++, so need to force CXX=clang++ too.
+                                #
+                                make = 'CXX=clang++ gmake'
 
-                            command = f'cd {build_dirs.dir_mupdf} && make HAVE_GLUT=no shared=yes verbose=yes'
+                            command = f'cd {build_dirs.dir_mupdf} && {make} HAVE_GLUT=no shared=yes verbose=yes'
                             #command += ' USE_SYSTEM_FREETYPE=yes USE_SYSTEM_ZLIB=yes'
                             if 0: pass
                             elif build_dirs.dir_so == f'{build_dirs.dir_mupdf}build/shared-debug/':
@@ -5403,7 +5420,7 @@ def main():
                             include2 = f'{build_dirs.dir_mupdf}platform/c++/include'
                             command = ( textwrap.dedent(
                                     f'''
-                                    g++
+                                    c++
                                         -o {out_so}
                                         {build_dirs.cpp_flags}
                                         -fPIC
@@ -5435,9 +5452,6 @@ def main():
                         elif action == '3':
                             # Compile and link to create _mupdfcpp_swig.so.
                             #
-                            # We use python3-config to find libpython.so and
-                            # python-dev include path etc.
-                            #
                             # We use g++ debug/release flags as implied by
                             # --dir-so, but all builds output the same file
                             # mupdf:platform/python/_mupdf.so. We could instead
@@ -5449,15 +5463,11 @@ def main():
                             # like _mupdf.so does not require a matching
                             # libmupdfcpp.so and libmupdf.sp.]
                             #
-                            python_configdir = jlib.system( 'python3-config --configdir', out='return')
-                            libpython_so = os.path.join(
-                                    python_configdir.strip(),
-                                    f'libpython{sys.version_info[0]}.{sys.version_info[1]}.so',
-                                    )
-                            assert os.path.isfile( libpython_so), f'cannot find libpython_so={libpython_so}'
 
-                            python_includes = jlib.system( 'python3-config --includes', out='return')
-                            python_includes = python_includes.strip()
+                            # Use pkg-config to find compile/link flags for building with python.
+                            python_includes = jlib.system( 'pkg-config --cflags python3', out='return')
+                            python_link     = jlib.system( 'pkg-config --libs python3', out='return')
+                            libpython_so    = None
 
                             # These are the input files to our g++ command:
                             #
@@ -5481,7 +5491,7 @@ def main():
                             #
                             command = ( textwrap.dedent(
                                     f'''
-                                    g++
+                                    c++
                                         -o {out_so}
                                         {build_dirs.cpp_flags}
                                         -fPIC
@@ -5491,6 +5501,7 @@ def main():
                                         {python_includes}
                                         {mupdfcpp_swig_cpp}
                                         {jlib.link_l_flags( [mupdf_so, mupdfcpp_so, libpython_so])}
+                                        {python_link}
                                     ''').strip().replace( '\n', ' \\\n').strip()
                                     )
                             jlib.build(
