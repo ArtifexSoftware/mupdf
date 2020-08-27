@@ -1089,7 +1089,16 @@ classextras = ClassExtras(
 
         fz_link = ClassExtra(
                 iterator_next = ('', ''),
-                constructor_raw = True,
+                constructor_raw = False,
+                constructors_extra = [
+                    ExtraConstructor( '(fz_link* link)',
+                        f'''
+                        : m_internal( {rename.function_call("fz_keep_link")}(link))
+                        {{
+                        }}
+                        ''',
+                        )
+                ],
                 ),
 
         fz_location = ClassExtra(
@@ -2991,11 +3000,6 @@ def class_add_iterator( struct, structname, classname, extras):
         # The container is also the first item in the linked list.
         it_internal_type = structname
         it_type = classname
-
-    # Iterator needs raw constructor so it can set its internal m_item as
-    # it iterates.
-    #
-    extras.constructor_raw = True
 
     # We add to extras.methods_extra().
     #
