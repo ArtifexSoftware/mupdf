@@ -201,16 +201,18 @@ def test(path):
 
 if __name__ == '__main__':
 
+    paths = sys.argv[1:]
+    if not paths:
+        paths = [
+                f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 API.pdf',
+                f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 Plugin API.pdf',
+                f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 tutorial.pdf',
+                f'{g_mupdf_root}/thirdparty/lcms2/plugins/fast_float/doc/LittleCMS fast float extensions 1.0.pdf',
+                f'{g_mupdf_root}/thirdparty/zlib/zlib.3.pdf',
+                ]
     # Run test() on all the .pdf files in the mupdf repository.
     #
-    for path in (
-            f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 API.pdf',
-            f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 Plugin API.pdf',
-            f'{g_mupdf_root}/thirdparty/lcms2/doc/LittleCMS2.10 tutorial.pdf',
-            f'{g_mupdf_root}/thirdparty/lcms2/plugins/fast_float/doc/LittleCMS fast float extensions 1.0.pdf',
-            f'{g_mupdf_root}/thirdparty/zlib/zlib.3.pdf',
-            f'{g_mupdf_root}/zlib.clean.pdf',
-            ):
+    for path in paths:
 
         log_prefix_set(f'{os.path.relpath(path, g_mupdf_root)}: ')
         try:
