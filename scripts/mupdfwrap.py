@@ -5584,12 +5584,20 @@ def main():
                 # Run mutool.py.
                 #
                 mutool_py = os.path.abspath( __file__ + '/../mutool.py')
-                command = f'{envs} {mutool_py}'
-                log( 'running: {command}')
-                jlib.system(
-                        f'{command}',
-                        out = lambda text: log( text, nv=0),
-                        )
+                zlib_pdf = f'{build_dirs.dir_mupdf}thirdparty/zlib/zlib.3.pdf'
+                for args2 in (
+                        f'trace {zlib_pdf}',
+                        f'convert -o zlib.3.pdf-%d.png {zlib_pdf}',
+                        f'draw -o zlib.3.pdf-%d.png -s tmf -v -y l -w 150 -R 30 -h 200 {zlib_pdf}',
+                        f'draw -o zlib.png -R 10 {zlib_pdf}',
+                        f'clean -gggg -l {zlib_pdf} zlib.clean.pdf',
+                        ):
+                    command = f'{envs} {mutool_py} {args2}'
+                    log( 'running: {command}')
+                    jlib.system(
+                            f'{command}',
+                            out = lambda text: log( text, nv=0),
+                            )
 
                 log( 'Tests ran ok.')
 
