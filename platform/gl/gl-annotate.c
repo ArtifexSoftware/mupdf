@@ -751,6 +751,62 @@ static int should_edit_icolor(enum pdf_annot_type subtype)
 	}
 }
 
+struct {
+	int n;
+	int i;
+	pdf_redact_options opts;
+} rap_state;
+
+static int
+step_redact_all_pages(int cancel)
+{
+	pdf_page *pg;
+
+	/* Called with i=0 for init. i=1...n for pages 1 to n inclusive.
+	 * i=n+1 for finalisation. */
+
+	if (cancel)
+		return -1;
+
+	if (rap_state.i == 0)
+	{
+		rap_state.i = 1;
+		rap_state.n = pdf_count_pages(ctx, pdf);
+		return rap_state.n;
+	}
+	else if (rap_state.i > rap_state.n)
+	{
+		trace_action("page = opage;\n");
+		trace_page_update();
+		load_page();
+		render_page();
+		return -1;
+	}
+
+	trace_action("page = doc.loadPage(%d);\n", rap_state.i-1);
+	trace_action("page.applyRedactions(%s, %d);\n",
+		rap_state.opts.black_boxes ? "true" : "false",
+		rap_state.opts.image_method);
+	pg = pdf_load_page(ctx, pdf, rap_state.i-1);
+	fz_try(ctx)
+		pdf_redact_page(ctx, pdf, pg, &rap_state.opts);
+	fz_always(ctx)
+		fz_drop_page(ctx, (fz_page *)pg);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ++rap_state.i;
+}
+
+static void redact_all_pages(pdf_redact_options *opts)
+{
+	trace_action("opage = page;\n");
+	memset(&rap_state, 0, sizeof(rap_state));
+	rap_state.opts = *opts;
+	ui_start_slow_operation("Redacting all Pages", "Page",
+				step_redact_all_pages);
+}
+
 void do_annotate_panel(void)
 {
 	static struct list annot_list;
@@ -1095,7 +1151,12 @@ void do_annotate_panel(void)
 		if (im_choice != -1)
 			redact_opts.image_method = im_choice;
 		ui_checkbox("Draw black boxes", &redact_opts.black_boxes);
-		if (ui_button("Redact"))
+		if (ui_button("Redact All Pages"))
+		{
+			selected_annot = NULL;
+			redact_all_pages(&redact_opts);
+		}
+		if (ui_button("Redact Page"))
 		{
 			selected_annot = NULL;
 			trace_action("page.applyRedactions(%s, %d);\n",
