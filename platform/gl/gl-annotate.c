@@ -167,6 +167,7 @@ struct {
 	char *operation_text;
 	char *progress_text;
 	int (*step)(int cancel);
+	int display;
 } ui_slow_operation_state;
 
 static int run_slow_operation_step(int cancel)
@@ -187,7 +188,7 @@ static int run_slow_operation_step(int cancel)
 	fz_catch(ctx)
 	{
 		ui_slow_operation_state.i = -1;
-		ui_show_error_dialog("%s failed: %s",
+		ui_show_warning_dialog("%s failed: %s",
 			ui_slow_operation_state.operation_text,
 			fz_caught_message(ctx));
 
@@ -209,20 +210,21 @@ static void slow_operation_dialog(void)
 	int start_time;
 	int errored = 0;
 
-	/* First time: run a single step to get the max progress. */
-	if (ui_slow_operation_state.i == 0)
-		run_slow_operation_step(0);
-
 	ui_dialog_begin(400, 100);
 	ui_layout(T, X, NW, 2, 2);
 
 	ui_label("%s", ui_slow_operation_state.operation_text);
 	ui_spacer();
 
-	ui_label("%s: %d/%d",
-		ui_slow_operation_state.progress_text,
-		ui_slow_operation_state.i,
-		ui_slow_operation_state.n);
+	if (ui_slow_operation_state.i == 0)
+		ui_label("Initializing");
+	else if (ui_slow_operation_state.i > ui_slow_operation_state.n)
+		ui_label("Finalizing");
+	else
+		ui_label("%s: %d/%d",
+			ui_slow_operation_state.progress_text,
+			ui_slow_operation_state.i,
+			ui_slow_operation_state.n);
 
 	ui_spacer();
 	if (ui_button("Cancel"))
@@ -232,12 +234,19 @@ static void slow_operation_dialog(void)
 		return;
 	}
 
-	/* Run steps for 200ms or until we're done. */
-	start_time = glutGet(GLUT_ELAPSED_TIME);
-	while (!errored && ui_slow_operation_state.i > 0 &&
-		glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+	/* Only run the operations every other time. This ensures we
+	 * actually see the update for page i before page i is
+	 * processed. */
+	ui_slow_operation_state.display = !ui_slow_operation_state.display;
+	if (ui_slow_operation_state.display == 0)
 	{
-		errored = run_slow_operation_step(0);
+		/* Run steps for 200ms or until we're done. */
+		start_time = glutGet(GLUT_ELAPSED_TIME);
+		while (!errored && ui_slow_operation_state.i >= 0 &&
+			glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+		{
+			errored = run_slow_operation_step(0);
+		}
 	}
 
 	if (!errored && ui_slow_operation_state.i == -1)
