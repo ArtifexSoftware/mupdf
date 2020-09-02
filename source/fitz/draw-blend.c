@@ -1114,6 +1114,9 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap * FZ_RES
 	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
 	da = dst->alpha;
 
+	if (n == 1)
+		sa = da = 0;
+
 #ifdef PARANOID_PREMULTIPLY
 	if (sa)
 		verify_premultiply(ctx, src);
