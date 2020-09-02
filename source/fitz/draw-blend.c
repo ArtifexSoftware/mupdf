@@ -447,10 +447,10 @@ fz_blend_nonseparable_gray(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTR
 				case FZ_BLEND_HUE:
 				case FZ_BLEND_SATURATION:
 				case FZ_BLEND_COLOR:
-					bp[0] = fz_mul255(bp[n], bg);
+					bp[0] = bal ? fz_mul255(bp[n], bg) : bg;
 					break;
 				case FZ_BLEND_LUMINOSITY:
-					bp[0] = fz_mul255(bp[n], sg);
+					bp[0] = bal ? fz_mul255(bp[n], sg) : sg;
 					break;
 				}
 
@@ -551,10 +551,10 @@ fz_blend_nonseparable(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTRICT s
 					case FZ_BLEND_HUE:
 					case FZ_BLEND_SATURATION:
 					case FZ_BLEND_COLOR:
-						bp[3] = fz_mul255(bp[n], bk);
+						bp[3] = bal ? fz_mul255(bp[n], bk) : bk;
 						break;
 					case FZ_BLEND_LUMINOSITY:
-						bp[3] = fz_mul255(bp[n], sk);
+						bp[3] = bal ? fz_mul255(bp[n], sk) : sk;
 						break;
 					}
 				}
