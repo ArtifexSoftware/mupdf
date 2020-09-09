@@ -48,6 +48,11 @@ ifeq ($(HAVE_TESSERACT),yes)
 endif
 endif
 
+ifneq ($(wildcard thirdparty/extract/src/*),)
+  HAVE_EXTRACT := yes
+  CFLAGS += -DHAVE_EXTRACT
+endif
+
 # --- FREETYPE 2 ---
 
 ifeq ($(USE_SYSTEM_FREETYPE),yes)
@@ -890,4 +895,38 @@ $(OUT)/thirdparty/tesseract/src/cutil/%.o: thirdparty/tesseract/src/cutil/%.cpp
 	$(TESSERACT_CXX_CMD)
 
 endif
+endif
+
+
+# --- EXTRACT ---
+
+ifeq ($(HAVE_EXTRACT),yes)
+
+THIRD_SRC += thirdparty/extract/src/alloc.c
+THIRD_SRC += thirdparty/extract/src/astring.c
+THIRD_SRC += thirdparty/extract/src/buffer.c
+THIRD_SRC += thirdparty/extract/src/docx.c
+THIRD_SRC += thirdparty/extract/src/docx_template.c
+THIRD_SRC += thirdparty/extract/src/extract.c
+THIRD_SRC += thirdparty/extract/src/outf.c
+THIRD_SRC += thirdparty/extract/src/xml.c
+THIRD_SRC += thirdparty/extract/src/zip.c
+
+THIRD_CFLAGS += -Ithirdparty/extract/include
+
+# We make all compilations depend on generated files, to ensure that all
+# generated files are up to date before use.
+#
+$(OUT)/thirdparty/extract/src/%.o: thirdparty/extract/src/%.c
+	$(CC_CMD) -W -Wall -Werror
+
+# Have a separate rule to regenerate the checked-in generated files, and add to
+# top-level 'generate' target.
+#
+thirdparty/extract/src/docx_template_git: .EXTRACT_ALWAYS
+	./thirdparty/extract/src/docx_template_build.py -i thirdparty/extract/src/template.docx -o thirdparty/extract/src/docx_template
+.EXTRACT_ALWAYS:
+
+generate: thirdparty/extract/src/docx_template_git
+
 endif
