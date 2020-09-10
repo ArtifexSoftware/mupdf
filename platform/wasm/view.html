@@ -6,146 +6,130 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <style>
 
-#outline, #outline ul { margin:0; padding-left:1.2em; }
-#outline a { text-decoration:none; color: black; }
-#outline a:hover { text-decoration:underline; }
-
-div.error {
-	text-align: center;
-	color: pink;
-	background-color: gray;
-	font-size: 24px;
+:root {
+	--menubar-height: 22pt;
+	--sidebar-width: 250px;
 }
 
-div.page {
-	display:block;
-	background-color:white;
-	margin:16px auto;
-	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-	position:relative;
-}
+html, body { margin: 0; padding: 0; }
 
-div.page img {
-	display:block;
-	position:absolute;
-	user-select:none;
-}
-
-div.text {
-	position:absolute;
-}
-
-div.text span {
-	display:block;
-	position:absolute;
-	white-space:pre;
-	line-height:1;
-	color:transparent;
-	font-family: sans-serif;
-	font-stretch: condensed;
-}
-
-div.links {
-	position:absolute;
-}
-
-div.links a {
-	display:block;
-	position:absolute;
-}
-
-div.links a:hover {
-	border: 1px dotted blue;
-}
-
-/* GRID */
-
-html, body, div { margin: 0; padding: 0; }
-
-#grid-window {
-	display: grid;
-	grid-template-columns: min-content auto;
-	grid-template-rows: min-content auto;
-	gap: 0px;
-	width: 100vw;
-	height: 100vh;
-	background-color: gray;
-}
-
-#grid-menubar {
-	grid-column: 1 / 3;
-	grid-row: 1;
-	font-size: 12pt;
-	background-color: #555;
-	color: white;
-	user-select: none;
-}
-
-#grid-outline {
-	grid-column: 1;
-	grid-row: 2;
-	width: 0px;
-	background-color: white;
-	overflow: auto;
-}
-
-#pages {
-	grid-column: 2;
-	grid-row: 2;
-	overflow: auto;
-	background-color: gray;
-}
+html { background-color: gray; }
 
 /* MENUS */
 
-.menu {
-	float: left;
+#grid-menubar { font-family: "Segoe UI", "Arial", "sans-serif"; }
+
+#grid-menubar {
+	position: fixed;
+	z-index: 3;
+	top: 0;
+	left: 0;
+	font-size: 12pt;
+	line-height: 1;
+	height: var(--menubar-height);
+	width: 100%;
+	background-color: lightsteelblue;
+	user-select: none;
+	box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.1);
 }
 
-.menu-button {
-	padding: 4pt 6pt;
-}
+.menu { float: left; }
+
+.menu-button { padding: 5pt 10pt; }
 
 .menu-popup {
 	display: none;
 	position: absolute;
-	background-color: #eee;
-	color: black;
+	background-color: white;
 	min-width: 20ex;
 	white-space: nowrap;
 	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-	z-index: 2;
+	z-index: 3;
 }
 
-.menu-popup hr {
-	margin: 0;
-	border-bottom: 0;
-	border-top: 1px solid gray;
-}
+.menu-popup hr { margin: 0; border-bottom: 0; border-top: 1px solid gray; }
+.menu-popup div { padding: 5pt 10pt; }
+.menu-popup div:hover { background-color: steelblue; color: white; }
 
-.menu-popup div {
-	padding: 4pt 8pt;
-}
-
-.menu-popup div:hover { background-color: teal; color: white; }
 .menu:hover .menu-popup { display: block; }
-.menu:hover .menu-button { background-color: #888; color: white; }
+.menu:hover .menu-button { background-color: steelblue; color: white; }
+
+/* SIDEBAR */
+
+#grid-sidebar { font-family: "Times New Roman", "serif"; }
+
+#grid-sidebar {
+	display: none;
+	position: fixed;
+	z-index: 1;
+	top: var(--menubar-height);
+	left: 0;
+	width: var(--sidebar-width);
+	height: calc(100% - var(--menubar-height));
+	background-color: white;
+	overflow: auto;
+}
+
+#outline { margin:0; padding:1ex; padding-left:2ex; list-style-type: none; font-size: 10pt; }
+#outline ul { margin:0; padding:0; padding-left:3ex; list-style-type: none; }
+#outline a { text-decoration:none; color: black; }
+#outline a:hover { text-decoration:underline; }
+
+/* PAGES */
+
+#grid-pages { padding-top: var(--menubar-height); }
+#grid-pages.sidebarVisible { padding-left: var(--sidebar-width); }
+#grid-pages.sidebarHidden { padding-left: 0; }
+
+#pages { margin: 0 auto; }
+
+a.anchor {
+	display:block;
+	position:relative;
+	top:-22pt;
+	visibility:hidden;
+}
+
+div.page {
+	position:relative;
+	background-color:white;
+	margin:16px auto;
+	box-shadow: 0px 4px 16px 0px rgba(0,0,0,0.2);
+}
+
+div.page img {
+	position:absolute;
+	user-select:none;
+}
+
+div.links { position:absolute; }
+div.links a { position:absolute; }
+div.links a:hover { outline: 1px dotted blue; }
+
+div.text { position:absolute; }
+div.text span {
+	position:absolute;
+	white-space:pre;
+	line-height:1;
+	color:transparent;
+}
+
+div.error {
+	padding: 1em;
+	color: hotpink;
+	font-size: 20pt;
+}
 
 </style>
 </head>
+
 <body>
-<input type="file" id="open-file-input" style="display:none"
-	accept=".pdf,.xps,application/pdf"
-	onchange="openFile(event.target.files)">
-<div id="grid-window">
+
 <div id="grid-menubar">
 	<div class="menu">
 		<div class="menu-button">File</div>
 		<div class="menu-popup">
 			<div onclick="document.getElementById('open-file-input').click()">Open File...</div>
-			<div onclick="selectURL()">Open URL...</div>
-			<hr>
-			<div onclick="saveFile()">Save File...</div>
 		</div>
 	</div>
 	<div class="menu">
@@ -154,27 +138,33 @@ html, body, div { margin: 0; padding: 0; }
 			<div onclick="toggleFullscreen()">Fullscreen</div>
 			<div onclick="toggleOutline()">Outline</div>
 			<hr>
-			<div onclick="setZoom(48)">48 dpi</div>
-			<div onclick="setZoom(60)">60 dpi</div>
-			<div onclick="setZoom(72)">72 dpi</div>
-			<div onclick="setZoom(84)">84 dpi</div>
-			<div onclick="setZoom(96)">96 dpi (100%)</div>
-			<div onclick="setZoom(108)">108 dpi</div>
-			<div onclick="setZoom(120)">120 dpi</div>
-			<div onclick="setZoom(144)">144 dpi</div>
-			<div onclick="setZoom(168)">168 dpi</div>
-			<div onclick="setZoom(192)">192 dpi</div>
+			<div onclick="setZoom(50)">50%</div>
+			<div onclick="setZoom(75)">75% (72 dpi)</div>
+			<div onclick="setZoom(100)">100% (96 dpi)</div>
+			<div onclick="setZoom(125)">125%</div>
+			<div onclick="setZoom(150)">150%</div>
+			<div onclick="setZoom(200)">200%</div>
 		</div>
 	</div>
 </div>
-<div id="grid-outline"><ul id="outline"></ul></div>
-<div id="pages">
-	<center style="color:silver">
-	<h1>Loading WASM, please wait...</h1>
-	</center>
+
+<div id="grid-sidebar"><ul id="outline"></ul></div>
+
+<div id="grid-pages" class="sidebarHidden">
+	<div id="pages">
+		<center style="color:silver;padding-top:3em;">
+		<h1>Loading WASM, please wait...</h1>
+		</center>
+	</div>
 </div>
 </div>
+
+<input type="file" id="open-file-input" style="display:none"
+	accept=".pdf,.xps,application/pdf"
+	onchange="openFile(event.target.files[0])">
+
 </body>
+
 <script src="mupdf-async.js"></script>
 <script>
 "use strict";
@@ -182,31 +172,32 @@ html, body, div { margin: 0; padding: 0; }
 let doc, pageCount;
 let dirty = [];
 let pageDIV = [];
-let pageW = [];
-let pageH = [];
-let zoom = 96;
+let zoom = 100;
+let dpi = 96;
 
 function toggleFullscreen() {
 	if (document.fullscreen)
 		document.exitFullscreen();
 	else
-		document.getElementById("pages").requestFullscreen();
+		document.documentElement.requestFullscreen();
 }
 
 function showOutline() {
-	document.getElementById("grid-outline").style.width = "250px";
+	document.getElementById("grid-sidebar").style.display = "block";
+	document.getElementById("grid-pages").classList.replace("sidebarHidden", "sidebarVisible");
 }
 
 function hideOutline() {
-	document.getElementById("grid-outline").style.width = "0px";
+	document.getElementById("grid-sidebar").style.display = "none";
+	document.getElementById("grid-pages").classList.replace("sidebarVisible", "sidebarHidden");
 }
 
 function toggleOutline() {
-	let node = document.getElementById("grid-outline");
-	if (node.style.width === "0px" || node.style.width === "")
-		node.style.width = "250px";
+	let node = document.getElementById("grid-sidebar");
+	if (node.style.display === "none" || node.style.display === "")
+		showOutline();
 	else
-		node.style.width = "0px";
+		hideOutline();
 }
 
 function isVisible(element, slop) {
@@ -236,11 +227,13 @@ function showDocumentError(where, error) {
 	document.getElementById("pages").appendChild(div);
 }
 
-function showPageError(where, div, error) {
+function showPageError(where, page, error) {
 	logError(where, error);
-	emptyNode(div);
+	let div = document.createElement("div");
 	div.classList.add("error");
 	div.textContent = error.name + ": " + error.message;
+	emptyNode(page);
+	page.appendChild(div);
 }
 
 async function openURL(url) {
@@ -254,8 +247,7 @@ async function openURL(url) {
 	}
 }
 
-async function openFile(fileList) {
-	let file = fileList[0];
+function openFile(file) {
 	if (file instanceof File) {
 		initDocument(file, file.name)
 			.catch(error => showDocumentError("initDocument", error));
@@ -287,18 +279,23 @@ async function initDocument(blob, magic) {
 		document.title = magic;
 
 	// Use second page as default page size (the cover page is often differently sized)
-	let defaultW = await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, zoom);
-	let defaultH = await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, zoom);
+	let defaultW = await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, dpi);
+	let defaultH = await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, dpi);
 
 	let pagesDiv = document.getElementById("pages");
 	pagesDiv.scrollTo(0, 0);
 	for (let i = 1; i <= pageCount; ++i) {
+		let a = document.createElement("a");
+		a.classList.add("anchor");
+		a.id = "page" + i;
+		pagesDiv.appendChild(a);
+
 		let div = pageDIV[i] = document.createElement("div");
 		div.classList.add("page");
-		div.id = "page" + i;
 		div.style.width = defaultW + 'px';
 		div.style.height = defaultH + 'px';
 		pagesDiv.appendChild(div);
+
 		dirty[i] = true;
 	}
 
@@ -330,7 +327,7 @@ function buildOutline(listNode, outline) {
 	}
 }
 
-let zoomLevels = [ 48, 60, 72, 84, 96, 108, 120, 144, 168, 192 ];
+let zoomLevels = [ 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200 ];
 
 function zoomIn() {
 	let curr = zoomLevels.indexOf(zoom);
@@ -350,8 +347,9 @@ async function setZoom(newZoom) {
 	if (zoom === newZoom)
 		return;
 	zoom = newZoom;
-	let defaultW = await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, zoom);
-	let defaultH = await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, zoom);
+	dpi = (zoom * 96 / 100) | 0;
+	let defaultW = await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, dpi);
+	let defaultH = await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, dpi);
 	let current = 0;
 	for (let i = 1; i <= pageCount; ++i) {
 		if (isVisible(pageDIV[i], -100)) {
@@ -404,7 +402,11 @@ function parseStructuredText(output, data) {
 
 function updateView() {
 	let i, n = dirty.length;
+	let current = 0;
 	for (i = 1; i <= n; ++i) {
+		if (!current && isVisible(pageDIV[i], -100))
+			current = i;
+
 		if (dirty[i] && isVisible(pageDIV[i], 1000)) {
 			console.log("mupdf: drawing page", i);
 			let pageNumber = i;
@@ -432,10 +434,10 @@ function updateView() {
 			map.classList.add("links");
 			div.appendChild(map);
 
-			mupdf.drawPageAsPNG(doc, pageNumber, zoom)
+			mupdf.drawPageAsPNG(doc, pageNumber, dpi)
 				.then(data => img.src = URL.createObjectURL(new Blob([data], {type:"image/png"})))
 				.catch(error => showPageError("drawPageAsPNG", div, error));
-			mupdf.pageLinks(doc, pageNumber, zoom)
+			mupdf.pageLinks(doc, pageNumber, dpi)
 				.then(data => {
 					for (let link of data) {
 						let a = document.createElement("a");
@@ -448,16 +450,16 @@ function updateView() {
 					}
 				})
 				.catch(error => logError("pageLinks", error));
-			mupdf.pageText(doc, pageNumber, zoom)
+			mupdf.pageText(doc, pageNumber, dpi)
 				.then(data => parseStructuredText(txt, data))
 				.catch(error => logError("pageText", error));
 		}
-	};
+	}
 }
 
 /* Wait 50ms until scrolling has stopped before sending off page draw requests */
 let scrollTimer = null;
-document.getElementById("pages").addEventListener("scroll", function (event) {
+document.addEventListener("scroll", function (event) {
 	if (scrollTimer !== null)
 		clearTimeout(scrollTimer);
 	scrollTimer = setTimeout(function () {
@@ -501,7 +503,7 @@ window.addEventListener("keydown", function (event) {
 		// '0'
 		case 48:
 		case 96:
-			setZoom(96);
+			setZoom(100);
 			break;
 		}
 	}
