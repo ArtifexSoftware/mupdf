@@ -11,9 +11,13 @@ void initContext(void)
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_document *openDocument(const char *filename)
+fz_document *openDocumentFromBuffer(char *magic, unsigned char *data, size_t len)
 {
-	return fz_open_document(ctx, filename);
+	/* Take ownership of data: */
+	fz_buffer *buf = fz_new_buffer_from_data(ctx, data, len);
+	fz_stream *stream = fz_open_buffer(ctx, buf);
+	fz_document *document = fz_open_document_with_stream(ctx, magic, stream);
+	return document;
 }
 
 EMSCRIPTEN_KEEPALIVE

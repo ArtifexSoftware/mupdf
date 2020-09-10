@@ -35,8 +35,9 @@ $(MUPDF_JS) $(MUPDF_WASM) : $(MUPDF_CORE) wrap.c wrap.js
 		../../build/wasm/release/libmupdf-third.a
 
 run: $(SAMPLE_PDF) $(MUPDF_JS) $(MUDPF_WASM)
-	(sleep 3; xdg-open http://127.0.0.1:8000/view-page.html) &
 	python3 -m http.server 8000
+	sleep 3
+	xdg-open http://127.0.0.1:8000/view.html?file=$(SAMPLE_PDF) &
 
 clean:
 	rm -f $(MUPDF_JS) $(MUPDF_WASM)
