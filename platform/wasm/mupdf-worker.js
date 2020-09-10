@@ -16,8 +16,7 @@ Module.onRuntimeInitialized = function () {
 	mupdf.pageHeight = Module.cwrap('pageHeight', 'number', ['number', 'number', 'number']);
 	mupdf.drawPageAsPNG = Module.cwrap('drawPageAsPNG', 'string', ['number', 'number', 'number']);
 	mupdf.pageLinksJSON = Module.cwrap('pageLinks', 'string', ['number', 'number', 'number']);
-	mupdf.drawPageAsHTML = Module.cwrap('drawPageAsHTML', 'string', ['number', 'number']);
-	mupdf.drawPageAsSVG = Module.cwrap('drawPageAsSVG', 'string', ['number', 'number']);
+	mupdf.pageTextJSON = Module.cwrap('pageText', 'string', ['number', 'number', 'number']);
 	mupdf.loadOutline = Module.cwrap('loadOutline', 'number', ['number']);
 	mupdf.freeOutline = Module.cwrap('freeOutline', null, ['number']);
 	mupdf.outlineTitle = Module.cwrap('outlineTitle', 'string', ['number']);
@@ -78,6 +77,10 @@ mupdf.pageSizes = function (doc, dpi) {
 
 mupdf.pageLinks = function (doc, page, dpi) {
 	return JSON.parse(mupdf.pageLinksJSON(doc, page, dpi));
+}
+
+mupdf.pageText = function (doc, page, dpi) {
+	return JSON.parse(mupdf.pageTextJSON(doc, page, dpi));
 }
 
 onmessage = function (event) {

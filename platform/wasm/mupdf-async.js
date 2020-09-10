@@ -40,8 +40,8 @@ function initMuPDF() {
 		pageWidth: wrap("pageWidth"),
 		pageHeight: wrap("pageHeight"),
 		pageLinks: wrap("pageLinks"),
+		pageText: wrap("pageText"),
 		drawPageAsPNG: wrap("drawPageAsPNG"),
-		drawPageAsHTML: wrap("drawPageAsHTML"),
 		terminate: function () { worker.terminate(); }
 	}
 }
