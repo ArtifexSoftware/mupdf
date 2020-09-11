@@ -37,3 +37,6 @@
 [submodule "thirdparty/leptonica"]
 	path = thirdparty/leptonica
 	url = ../thirdparty-leptonica.git
+[submodule "thirdparty/extract"]
+	path = thirdparty/extract
+	url = ../extract.git
