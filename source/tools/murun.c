@@ -1648,7 +1648,7 @@ static void push_byte_string(js_State *J, unsigned char *str, size_t len)
 		for (i = 0; i < len; ++i)
 		{
 			js_pushnumber(J, str[i]);
-			js_setindex(J, -2, i);
+			js_setindex(J, -2, (int)i);
 		}
 	}
 }
