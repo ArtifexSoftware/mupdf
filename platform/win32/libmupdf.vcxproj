@@ -1105,6 +1105,7 @@
     <ClCompile Include="..\..\source\fitz\pool.c" />
     <ClCompile Include="..\..\source\fitz\printf.c" />
     <ClCompile Include="..\..\source\fitz\random.c" />
+    <ClCompile Include="..\..\source\fitz\warp.c" />
     <ClCompile Include="..\..\source\fitz\xmltext-device.c" />
     <ClCompile Include="..\..\source\fitz\separation.c" />
     <ClCompile Include="..\..\source\fitz\shade.c" />
