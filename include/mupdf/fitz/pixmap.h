@@ -327,7 +327,7 @@ void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 	keep_alpha: If 0 any alpha component is removed, otherwise
 	alpha is kept if present in the pixmap.
 */
-fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_des, fz_colorspace *prf, fz_default_colorspaces *default_cs, fz_color_params color_params, int keep_alpha);
+fz_pixmap *fz_convert_pixmap(fz_context *ctx, const fz_pixmap *pix, fz_colorspace *cs_des, fz_colorspace *prf, fz_default_colorspaces *default_cs, fz_color_params color_params, int keep_alpha);
 
 /**
 	Check if the pixmap is a 1-channel image containing samples with
