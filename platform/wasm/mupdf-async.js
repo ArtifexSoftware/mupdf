@@ -1,6 +1,8 @@
 "use strict";
 
-function initMuPDF() {
+let mupdf = {};
+
+(function () {
 	let worker = new Worker("mupdf-worker.js");
 
 	worker.onmessage = function (event) {
@@ -14,7 +16,7 @@ function initMuPDF() {
 				worker.promises[id].reject(result);
 			delete worker.promises[id];
 		}
-		main();
+		mupdf.oninit();
 	}
 
 	function wrap(func) {
@@ -30,21 +32,17 @@ function initMuPDF() {
 		}
 	}
 
-	return {
-		openDocument: wrap("openDocument"),
-		freeDocument: wrap("freeDocument"),
-		documentTitle: wrap("documentTitle"),
-		documentOutline: wrap("documentOutline"),
-		countPages: wrap("countPages"),
-		pageSizes: wrap("pageSizes"),
-		pageWidth: wrap("pageWidth"),
-		pageHeight: wrap("pageHeight"),
-		pageLinks: wrap("pageLinks"),
-		pageText: wrap("pageText"),
-		search: wrap("search"),
-		drawPageAsPNG: wrap("drawPageAsPNG"),
-		terminate: function () { worker.terminate(); }
-	}
-}
-
-let mupdf = initMuPDF();
+	mupdf.openDocument = wrap("openDocument");
+	mupdf.freeDocument = wrap("freeDocument");
+	mupdf.documentTitle = wrap("documentTitle");
+	mupdf.documentOutline = wrap("documentOutline");
+	mupdf.countPages = wrap("countPages");
+	mupdf.pageSizes = wrap("pageSizes");
+	mupdf.pageWidth = wrap("pageWidth");
+	mupdf.pageHeight = wrap("pageHeight");
+	mupdf.pageLinks = wrap("pageLinks");
+	mupdf.pageText = wrap("pageText");
+	mupdf.search = wrap("search");
+	mupdf.drawPageAsPNG = wrap("drawPageAsPNG");
+	mupdf.terminate = function () { worker.terminate(); }
+})();

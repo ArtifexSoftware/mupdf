@@ -670,7 +670,7 @@ window.onerror = function (message, source, line, col, error) {
 	alert(message);
 }
 
-function main() {
+mupdf.oninit = function () {
 	emptyNode(document.getElementById("pages"));
 	let params = new URLSearchParams(window.location.search);
 	if (params.has("file"))
