@@ -369,6 +369,7 @@ function showPageError(where, page, error) {
 }
 
 async function openURL(url) {
+	freeDocument();
 	try {
 		let response = await fetch(url);
 		if (!response.ok)
@@ -380,13 +381,14 @@ async function openURL(url) {
 }
 
 function openFile(file) {
+	freeDocument();
 	if (file instanceof File) {
 		initDocument(file, file.name)
 			.catch(error => showDocumentError("initDocument", error));
 	}
 }
 
-async function initDocument(blob, magic) {
+function freeDocument() {
 	if (doc) {
 		mupdf.freeDocument(doc);
 		doc = 0;
@@ -395,10 +397,11 @@ async function initDocument(blob, magic) {
 		dirty = [];
 		searchDirty = [];
 	}
-
 	emptyNode(document.getElementById("pages"));
 	emptyNode(document.getElementById("outline"));
+}
 
+async function initDocument(blob, magic) {
 	let data = await blob.arrayBuffer();
 	doc = await mupdf.openDocument(data, magic);
 	pageCount = await mupdf.countPages(doc);
