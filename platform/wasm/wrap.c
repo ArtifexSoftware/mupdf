@@ -323,6 +323,55 @@ char *pageLinks(fz_document *doc, int number, float dpi)
 }
 
 EMSCRIPTEN_KEEPALIVE
+char *search(fz_document *doc, int number, float dpi, const char *needle)
+{
+	static unsigned char *data = NULL;
+	fz_buffer *buf = NULL;
+	fz_quad hits[500];
+	int i, n;
+
+	fz_var(buf);
+
+	fz_free(ctx, data);
+	data = NULL;
+
+	fz_try(ctx)
+	{
+		loadPage(doc, number);
+
+		n = fz_search_page(ctx, lastPage, needle, hits, nelem(hits));
+
+		buf = fz_new_buffer(ctx, 0);
+
+		fz_append_string(ctx, buf, "[");
+		for (i = 0; i < n; ++i)
+		{
+			fz_rect rect = fz_rect_from_quad(hits[i]);
+			fz_irect bbox = fz_round_rect(fz_transform_rect(rect, fz_scale(dpi/72, dpi/72)));
+			if (i > 0) fz_append_string(ctx, buf, ",");
+			fz_append_printf(ctx, buf, "{%q:%d,", "x", bbox.x0);
+			fz_append_printf(ctx, buf, "%q:%d,", "y", bbox.y0);
+			fz_append_printf(ctx, buf, "%q:%d,", "w", bbox.x1 - bbox.x0);
+			fz_append_printf(ctx, buf, "%q:%d}", "h", bbox.y1 - bbox.y0);
+		}
+		fz_append_string(ctx, buf, "]");
+		fz_terminate_buffer(ctx, buf);
+
+		fz_buffer_extract(ctx, buf, &data);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+	}
+	fz_catch(ctx)
+	{
+		rethrow(ctx);
+	}
+
+	return (char*)data;
+}
+
+EMSCRIPTEN_KEEPALIVE
 char *documentTitle(fz_document *doc)
 {
 	static char buf[100], *result = NULL;

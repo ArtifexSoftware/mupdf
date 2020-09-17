@@ -41,6 +41,7 @@ function initMuPDF() {
 		pageHeight: wrap("pageHeight"),
 		pageLinks: wrap("pageLinks"),
 		pageText: wrap("pageText"),
+		search: wrap("search"),
 		drawPageAsPNG: wrap("drawPageAsPNG"),
 		terminate: function () { worker.terminate(); }
 	}

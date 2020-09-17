@@ -19,6 +19,7 @@ Module.onRuntimeInitialized = function () {
 	mupdf.getLastDrawData = Module.cwrap('getLastDrawData', 'number', []);
 	mupdf.getLastDrawSize = Module.cwrap('getLastDrawSize', 'number', []);
 	mupdf.pageTextJSON = Module.cwrap('pageText', 'string', ['number', 'number', 'number']);
+	mupdf.searchJSON = Module.cwrap('search', 'string', ['number', 'number', 'number', 'string']);
 	mupdf.loadOutline = Module.cwrap('loadOutline', 'number', ['number']);
 	mupdf.freeOutline = Module.cwrap('freeOutline', null, ['number']);
 	mupdf.outlineTitle = Module.cwrap('outlineTitle', 'string', ['number']);
@@ -90,6 +91,10 @@ mupdf.pageLinks = function (doc, page, dpi) {
 
 mupdf.pageText = function (doc, page, dpi) {
 	return JSON.parse(mupdf.pageTextJSON(doc, page, dpi));
+}
+
+mupdf.search = function (doc, page, dpi, needle) {
+	return JSON.parse(mupdf.searchJSON(doc, page, dpi, needle));
 }
 
 onmessage = function (event) {

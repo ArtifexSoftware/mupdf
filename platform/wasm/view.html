@@ -15,6 +15,11 @@ html, body { margin: 0; padding: 0; }
 
 html { background-color: gray; }
 
+input, button { border:none; background-image:none; background-color:transparent; box-shadow:none; margin:0; padding:0; }
+input { border:2px solid #777; background-color: white; height: 2em; padding-left:1ex; }
+button { border:2px solid #555; background-color: wheat; min-width: 2em; height: 2em; padding: 0 1ex; }
+button:hover { background-color: orange; }
+
 /* MENUS */
 
 #grid-menubar { font-family: "Segoe UI", "Arial", "sans-serif"; }
@@ -75,6 +80,26 @@ html { background-color: gray; }
 #outline a { text-decoration:none; color: black; }
 #outline a:hover { text-decoration:underline; }
 
+/* DIALOGS */
+
+div.dialog {
+	position:fixed;
+	top:22pt;
+	left:0;
+	right:0;
+	margin-left: auto;
+	NO-margin-right: auto;
+	width:max-content;
+	background-color:thistle;
+	padding:1em;
+	z-index:2;
+	box-shadow: 0px 4px 16px 0px rgba(0,0,0,0.2);
+}
+
+#searchStatus {
+	padding-top: 1ex;
+}
+
 /* PAGES */
 
 #grid-pages { padding-top: var(--menubar-height); }
@@ -114,6 +139,9 @@ div.text span {
 	color:transparent;
 }
 
+div.searchHitList { position:absolute; }
+div.searchHit { position:absolute; pointer-events:none; outline: 1px solid hotpink; background-color: lightpink; mix-blend-mode: multiply; }
+
 div.error {
 	padding: 1em;
 	color: hotpink;
@@ -130,6 +158,12 @@ div.error {
 		<div class="menu-button">File</div>
 		<div class="menu-popup">
 			<div onclick="document.getElementById('open-file-input').click()">Open File...</div>
+		</div>
+	</div>
+	<div class="menu">
+		<div class="menu-button">Edit</div>
+		<div class="menu-popup">
+			<div onclick="showSearch()">Search...</div>
 		</div>
 	</div>
 	<div class="menu">
@@ -157,6 +191,13 @@ div.error {
 		</center>
 	</div>
 </div>
+
+<div id="searchDialog" class="dialog" style="display:none">
+<input id="searchText" type="text" size="40" oninput="updateSearch()" placeholder="Search...">
+<button onclick="runSearch(-1)">&#x25b2;</button>
+<button onclick="runSearch(1)">&#x25bc;</button>
+<button onclick="hideSearch()">&#x1f5d9;</button>
+<div id="searchStatus">-</div>
 </div>
 
 <input type="file" id="open-file-input" style="display:none"
@@ -170,10 +211,15 @@ div.error {
 "use strict";
 
 let doc, pageCount;
+let currentPage = 0;
 let dirty = [];
 let pageDIV = [];
+let pageHIT = [];
 let zoom = 100;
 let dpi = 96;
+
+let searchNeedle = null;
+let searchDirty = [];
 
 function toggleFullscreen() {
 	if (document.fullscreen)
@@ -198,6 +244,92 @@ function toggleOutline() {
 		showOutline();
 	else
 		hideOutline();
+}
+
+function clearSearch() {
+	for (let i = 0; i < pageCount; ++i) {
+		if (pageHIT[i])
+			emptyNode(pageHIT[i]);
+		searchDirty[i] = false;
+	}
+}
+
+function updateSearch() {
+	let searchStatus = document.getElementById("searchStatus");
+	searchStatus.textContent = "";
+	let newNeedle = document.getElementById("searchText").value;
+	if (searchNeedle !== newNeedle) {
+		searchNeedle = newNeedle;
+		clearSearch();
+		if (searchNeedle && searchNeedle.length > 0)
+			for (let i = 1; i <= pageCount; ++i)
+				searchDirty[i] = true;
+		if (searchNeedle && searchNeedle.length > 0)
+			updateView();
+	}
+}
+
+function showSearch() {
+	let node = document.getElementById("searchDialog");
+	if (node.style.display != "block") {
+		node.style.display = "block";
+		updateSearch();
+	}
+	document.getElementById("searchText").focus();
+	document.getElementById("searchText").select();
+}
+
+function hideSearch() {
+	let node = document.getElementById("searchDialog");
+	node.style.display = "none";
+	searchNeedle = null;
+	clearSearch();
+}
+
+function runSearchBG(page, dir) {
+	let searchStatus = document.getElementById("searchStatus");
+	if (searchNeedle && searchNeedle.length > 0) {
+		page = page + dir;
+		if (page < 1 || page > pageCount) {
+			console.log("No more search hits.");
+			searchStatus.textContent = "No more search hits.";
+		} else {
+			console.log("Searching page", page);
+			searchStatus.textContent = "Searching page " + page + ".";
+			mupdf.search(doc, page, dpi, searchNeedle)
+				.then(hits => {
+					if (hits.length > 0) {
+						pageDIV[page].scrollIntoView();
+					} else
+						runSearchBG(page, dir);
+				});
+		}
+	} else {
+		searchStatus.textContent = "";
+	}
+}
+
+function runSearch(direction) {
+	updateSearch();
+	runSearchBG(currentPage, direction);
+}
+
+function pageSearch(pageNumber) {
+	console.log("SEARCH", pageNumber, JSON.stringify(searchNeedle));
+	searchDirty[pageNumber] = false;
+	mupdf.search(doc, pageNumber, dpi, searchNeedle)
+		.then(hits =>  {
+			emptyNode(pageHIT[pageNumber]);
+			for (let bbox of hits) {
+				let div = document.createElement("div");
+				div.classList.add("searchHit");
+				div.style.left = bbox.x + 'px';
+				div.style.top = bbox.y + 'px';
+				div.style.width = bbox.w + 'px';
+				div.style.height = bbox.h + 'px';
+				pageHIT[pageNumber].appendChild(div);
+			}
+		});
 }
 
 function isVisible(element, slop) {
@@ -261,6 +393,7 @@ async function initDocument(blob, magic) {
 		pageCount = 0;
 		pageDIV = [];
 		dirty = [];
+		searchDirty = [];
 	}
 
 	emptyNode(document.getElementById("pages"));
@@ -359,9 +492,11 @@ async function setZoom(newZoom) {
 	}
 	for (let i = 1; i <= pageCount; ++i) {
 		dirty[i] = true;
+		searchDirty[i] = true;
 		pageDIV[i].style.width = defaultW + 'px';
 		pageDIV[i].style.height = defaultH + 'px';
 		emptyNode(pageDIV[i]);
+		pageHIT[i] = null;
 	}
 	if (current)
 		pageDIV[current].scrollIntoView();
@@ -434,9 +569,14 @@ function updateView() {
 			map.classList.add("links");
 			div.appendChild(map);
 
+			let hit = pageHIT[i] = document.createElement("div");
+			hit.classList.add("searchHitList");
+			div.appendChild(hit);
+
 			mupdf.drawPageAsPNG(doc, pageNumber, dpi)
 				.then(data => img.src = URL.createObjectURL(new Blob([data], {type:"image/png"})))
 				.catch(error => showPageError("drawPageAsPNG", div, error));
+
 			mupdf.pageLinks(doc, pageNumber, dpi)
 				.then(data => {
 					for (let link of data) {
@@ -450,11 +590,19 @@ function updateView() {
 					}
 				})
 				.catch(error => logError("pageLinks", error));
+
 			mupdf.pageText(doc, pageNumber, dpi)
 				.then(data => parseStructuredText(txt, data))
 				.catch(error => logError("pageText", error));
 		}
+
+		if (searchNeedle && searchNeedle.length > 0) {
+			if (searchDirty[i] && isVisible(pageDIV[i], 0))
+				pageSearch(i);
+		}
 	}
+	if (current)
+		currentPage = current;
 }
 
 /* Wait 50ms until scrolling has stopped before sending off page draw requests */
@@ -504,6 +652,15 @@ window.addEventListener("keydown", function (event) {
 		case 48:
 		case 96:
 			setZoom(100);
+			break;
+		case 70: // 'F':
+			event.preventDefault();
+			showSearch();
+			break;
+		case 71: // 'G':
+			event.preventDefault();
+			showSearch();
+			runSearch(event.shiftKey ? -1 : 1);
 			break;
 		}
 	}
