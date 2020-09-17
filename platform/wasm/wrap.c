@@ -3,7 +3,7 @@
 
 static fz_context *ctx;
 
-void rethrow(fz_context *ctx)
+void wasm_rethrow(fz_context *ctx)
 {
 	EM_ASM({ throw new Error(UTF8ToString($0)); }, fz_caught_message(ctx));
 }
@@ -45,7 +45,7 @@ fz_document *openDocumentFromBuffer(char *magic, unsigned char *data, size_t len
 	fz_catch(ctx)
 	{
 		fz_free(ctx, data);
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	}
 	return document;
 }
@@ -63,7 +63,7 @@ int countPages(fz_document *doc)
 	fz_try(ctx)
 		n = fz_count_pages(ctx, doc);
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	return n;
 }
 
@@ -127,7 +127,7 @@ char *pageText(fz_document *doc, int number, float dpi)
 	}
 	fz_catch(ctx)
 	{
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	}
 
 	return (char*)data;
@@ -156,7 +156,7 @@ void doDrawPageAsPNG(fz_document *doc, int number, float dpi)
 	fz_always(ctx)
 		fz_drop_pixmap(ctx, pix);
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -180,7 +180,7 @@ static fz_irect pageBounds(fz_document *doc, int number, float dpi)
 		bbox = fz_round_rect(fz_transform_rect(fz_bound_page(ctx, lastPage), fz_scale(dpi/72, dpi/72)));
 	}
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	return bbox;
 }
 
@@ -194,7 +194,7 @@ int pageWidth(fz_document *doc, int number, float dpi)
 		bbox = pageBounds(doc, number, dpi);
 	}
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	return bbox.x1 - bbox.x0;
 }
 
@@ -208,7 +208,7 @@ int pageHeight(fz_document *doc, int number, float dpi)
 		bbox = pageBounds(doc, number, dpi);
 	}
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	return bbox.y1 - bbox.y0;
 }
 
@@ -269,7 +269,7 @@ char *pageLinks(fz_document *doc, int number, float dpi)
 	}
 	fz_catch(ctx)
 	{
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	}
 
 	return (char*)data;
@@ -318,7 +318,7 @@ char *search(fz_document *doc, int number, float dpi, const char *needle)
 	}
 	fz_catch(ctx)
 	{
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	}
 
 	return (char*)data;
@@ -334,7 +334,7 @@ char *documentTitle(fz_document *doc)
 			result = buf;
 	}
 	fz_catch(ctx)
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	return result;
 }
 
@@ -350,7 +350,7 @@ fz_outline *loadOutline(fz_document *doc)
 	fz_catch(ctx)
 	{
 		fz_drop_outline(ctx, outline);
-		rethrow(ctx);
+		wasm_rethrow(ctx);
 	}
 	return outline;
 }
