@@ -133,53 +133,6 @@ char *pageText(fz_document *doc, int number, float dpi)
 	return (char*)data;
 }
 
-EMSCRIPTEN_KEEPALIVE
-char *drawPageAsSVG(fz_document *doc, int number)
-{
-	static unsigned char *data = NULL;
-	fz_buffer *buf = NULL;
-	fz_output *out = NULL;
-	fz_device *dev = NULL;
-	fz_rect bbox;
-
-	fz_var(buf);
-	fz_var(out);
-	fz_var(dev);
-
-	fz_free(ctx, data);
-	data = NULL;
-
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-		bbox = fz_bound_page(ctx, lastPage);
-
-		buf = fz_new_buffer(ctx, 0);
-		out = fz_new_output_with_buffer(ctx, buf);
-		dev = fz_new_svg_device(ctx, out, bbox.x1-bbox.x0, bbox.y1-bbox.y0, FZ_SVG_TEXT_AS_PATH, 0);
-
-		fz_run_page(ctx, lastPage, dev, fz_identity, NULL);
-
-		fz_close_device(ctx, dev);
-		fz_close_output(ctx, out);
-		fz_terminate_buffer(ctx, buf);
-
-		fz_buffer_extract(ctx, buf, &data);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_device(ctx, dev);
-		fz_drop_output(ctx, out);
-		fz_drop_buffer(ctx, buf);
-	}
-	fz_catch(ctx)
-	{
-		rethrow(ctx);
-	}
-
-	return (char*)data;
-}
-
 static fz_buffer *lastDrawBuffer = NULL;
 
 EMSCRIPTEN_KEEPALIVE
