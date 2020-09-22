@@ -83,6 +83,9 @@ clean:
 	rm -f $(LIBRARY_JAVA_OBJECTS) $(subst .class,\$$*.class,$(LIBRARY_JAVA_OBJECTS))
 	rm -f $(EXAMPLE_JAVA_OBJECTS) $(subst .class,\$$*.class,$(EXAMPLE_JAVA_OBJECTS))
 	rm -f ../../build/java/mupdf_native.o
+	rm -fr ../../build/java/resources
+	rm -fr ../../build/java/source
+	rm -fr ../../build/java/thirdparty
 	rm -f $(MUPDF_JAR)
 	rm -f $(MUPDF_JAVA)
 	rm -f ../../build/java/*.h
