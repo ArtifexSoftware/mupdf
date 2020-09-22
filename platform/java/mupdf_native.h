@@ -1978,6 +1978,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_graftObject
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    graftPage
+ * Signature: (ILcom/artifex/mupdf/fitz/PDFDocument;I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_graftPage
+  (JNIEnv *, jobject, jint, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    addStreamBuffer
  * Signature: (Lcom/artifex/mupdf/fitz/Buffer;Ljava/lang/Object;Z)Lcom/artifex/mupdf/fitz/PDFObject;
  */
@@ -2196,6 +2204,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFGraftMap_finalize
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFGraftMap_graftObject
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFGraftMap
+ * Method:    graftPage
+ * Signature: (ILcom/artifex/mupdf/fitz/PDFDocument;I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFGraftMap_graftPage
+  (JNIEnv *, jobject, jint, jobject, jint);
 
 #ifdef __cplusplus
 }

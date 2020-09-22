@@ -1001,3 +1001,19 @@ FUN(PDFDocument_wasLinearized)(JNIEnv *env, jobject self)
 
 	return val;
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFDocument_graftPage)(JNIEnv *env, jobject self, jint pageTo, jobject jobj, jint pageFrom)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *src = from_PDFDocument(env, jobj);
+	pdf_document *dst = from_PDFDocument(env, self);
+
+	if (!ctx || !dst) return;
+	if (!src) jni_throw_arg_void(env, "Source Document must not be null");
+
+	fz_try(ctx)
+		pdf_graft_page(ctx, dst, pageTo, src, pageFrom);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
