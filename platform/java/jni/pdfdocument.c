@@ -695,7 +695,7 @@ SeekableOutputStream_as_stream(fz_context *ctx, void *opaque)
 	stm->seek = SeekableInputStream_seek;
 
 	return stm;
-};
+}
 
 JNIEXPORT void JNICALL
 FUN(PDFDocument_nativeSaveWithStream)(JNIEnv *env, jobject self, jobject jstream, jstring joptions)
