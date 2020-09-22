@@ -167,7 +167,7 @@ fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const f
 	return subpix;
 }
 
-fz_pixmap *fz_clone_pixmap(fz_context *ctx, fz_pixmap *old)
+fz_pixmap *fz_clone_pixmap(fz_context *ctx, const fz_pixmap *old)
 {
 	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, old->colorspace, fz_make_irect(old->x, old->y, old->w, old->h), old->seps, old->alpha);
 	memcpy(pix->samples, old->samples, pix->stride * pix->h);
@@ -197,7 +197,7 @@ fz_pixmap_bbox_no_ctx(const fz_pixmap *pix)
 }
 
 fz_colorspace *
-fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_colorspace(fz_context *ctx, const fz_pixmap *pix)
 {
 	if (!pix)
 		return NULL;
@@ -205,61 +205,61 @@ fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
 }
 
 int
-fz_pixmap_x(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_x(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->x;
 }
 
 int
-fz_pixmap_y(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_y(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->y;
 }
 
 int
-fz_pixmap_width(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_width(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->w;
 }
 
 int
-fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_height(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->h;
 }
 
 int
-fz_pixmap_components(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_components(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->n;
 }
 
 int
-fz_pixmap_colorants(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_colorants(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->n - pix->alpha - pix->s;
 }
 
 int
-fz_pixmap_spots(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_spots(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->s;
 }
 
 int
-fz_pixmap_alpha(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_alpha(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->alpha;
 }
 
 int
-fz_pixmap_stride(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_stride(fz_context *ctx, const fz_pixmap *pix)
 {
 	return pix->stride;
 }
 
 unsigned char *
-fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix)
+fz_pixmap_samples(fz_context *ctx, const fz_pixmap *pix)
 {
 	if (!pix)
 		return NULL;
