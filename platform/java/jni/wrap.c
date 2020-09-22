@@ -406,7 +406,7 @@ static inline jobject to_PDFWidget_safe(fz_context *ctx, JNIEnv *env, pdf_widget
 {
 	jobject jwidget;
 	int nopts;
-	const char **opts = NULL;
+	char **opts = NULL;
 	jobjectArray jopts = NULL;
 
 	fz_var(opts);
@@ -436,8 +436,8 @@ static inline jobject to_PDFWidget_safe(fz_context *ctx, JNIEnv *env, pdf_widget
 			if (nopts > 0)
 			{
 				opts = Memento_label(fz_malloc(ctx, nopts * sizeof(*opts)), "to_PDFWidget");
-				pdf_choice_widget_options(ctx, widget, 0, opts);
-				jopts = to_StringArray_safe(ctx, env, opts, nopts);
+				pdf_choice_widget_options(ctx, widget, 0, (const char **)opts);
+				jopts = to_StringArray_safe(ctx, env, (const char **)opts, nopts);
 				if (!jopts || (*env)->ExceptionCheck(env))
 					fz_throw_java(ctx, env);
 			}

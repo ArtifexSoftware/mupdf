@@ -60,7 +60,6 @@ static void drop_tls_context(void *arg)
 
 static int init_base_context(JNIEnv *env)
 {
-	int ret;
 	int i;
 
 #ifdef _WIN32
@@ -76,7 +75,7 @@ static int init_base_context(JNIEnv *env)
 		return -1;
 	}
 #else
-	ret = pthread_key_create(&context_key, drop_tls_context);
+	int ret = pthread_key_create(&context_key, drop_tls_context);
 	if (ret < 0)
 	{
 		LOGE("cannot get thread local storage for storing base context");
