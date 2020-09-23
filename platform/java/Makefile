@@ -58,9 +58,10 @@ EXAMPLE_JAVA_OBJECTS := $(subst example/,../../build/java/example/,$(EXAMPLE_JAV
 $(EXAMPLE_JAVA_OBJECTS): $(EXAMPLE_JAVA_SOURCES)
 	$(JAVAC) $(JAVAC_FLAGS) -classpath ../../build/java -d ../../build/java/ $^
 
+REPATHED_LIBRARY_JAVA_OBJECTS := $(subst src/,,$(LIBRARY_JAVA_SOURCES:%.java=%.class))
 $(MUPDF_JAR) : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
-	jar cf $@ $^
+	cd ../../build/java/ && jar cf $@ $(REPATHED_LIBRARY_JAVA_OBJECTS)
 
 mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
