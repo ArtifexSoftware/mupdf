@@ -110,7 +110,7 @@ static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
 
 	info->pixmap->samples = NULL;
 	if (AndroidBitmap_unlockPixels(env, info->object) != ANDROID_BITMAP_RESULT_SUCCESS)
-		jni_throw_run(env, "bitmap unlock failed in DrawDevice call");
+		jni_throw_run_void(env, "bitmap unlock failed in DrawDevice call");
 }
 
 JNIEXPORT void JNICALL
@@ -144,7 +144,7 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 	int ret;
 
 	if (!ctx) return 0;
-	if (!jbitmap) jni_throw(env, "bitmap must not be null");
+	if (!jbitmap) jni_throw_arg(env, "bitmap must not be null");
 
 	if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
 		jni_throw_run(env, "new DrawDevice failed to get bitmap info");
