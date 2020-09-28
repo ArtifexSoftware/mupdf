@@ -1962,10 +1962,6 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 		return;
 	}
 
-#ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top-1, "Clip (image mask) begin\n");
-#endif
-
 	bbox = fz_irect_from_rect(fz_transform_rect(fz_unit_rect, local_ctm));
 	bbox = fz_intersect_irect(bbox, state->scissor);
 	if (!fz_is_infinite_rect(scissor))
@@ -1973,6 +1969,19 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 		fz_rect tscissor = fz_transform_rect(scissor, dev->transform);
 		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(tscissor));
 	}
+	if (!fz_is_valid_irect(bbox))
+	{
+#ifdef DUMP_GROUP_BLENDS
+		dump_spaces(dev->top-1, "Clip (image mask) (invalid) begin\n");
+#endif
+		state[1].scissor = fz_empty_irect;
+		state[1].mask = NULL;
+		return;
+	}
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->top-1, "Clip (image mask) begin\n");
+#endif
 
 	fz_try(ctx)
 	{
