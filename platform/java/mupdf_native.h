@@ -3034,6 +3034,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_validateSignature
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    clearSignature
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_clearSignature
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    isSigned
  * Signature: ()Z
  */
