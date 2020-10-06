@@ -531,6 +531,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 	fz_stream *read_stream = stm;
 	fz_stream *sstream = NULL;
 	fz_stream *l2stream = NULL;
+	fz_stream *unpstream = NULL;
 
 	if (matte)
 	{
@@ -570,9 +571,11 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 
 		if (subarea)
 			read_stream = sstream = subarea_stream(ctx, stm, image, subarea, l2factor);
-		if (l2extra && *l2extra && !image->imagemask && image->bpc == 8 && !indexed)
+		if (image->bpc != 8 || image->use_colorkey)
+			read_stream = unpstream = fz_unpack_stream(ctx, read_stream, image->bpc, w, h, image->n, indexed, image->use_colorkey, 0);
+		if (l2extra && *l2extra && !indexed)
 		{
-			read_stream = l2stream = subsample_stream(ctx, read_stream, w, h, image->n, *l2extra);
+			read_stream = l2stream = subsample_stream(ctx, read_stream, w, h, image->n + image->use_colorkey, *l2extra);
 			w = (w + (1<<*l2extra) - 1)>>*l2extra;
 			h = (h + (1<<*l2extra) - 1)>>*l2extra;
 			*l2extra = 0;
@@ -584,10 +587,8 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		else
 			tile->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
-		stride = (w * image->n * image->bpc + 7) / 8;
-		if ((size_t)h > (size_t)(SIZE_MAX / stride))
-			fz_throw(ctx, FZ_ERROR_MEMORY, "image too large");
-		samples = Memento_label(fz_malloc(ctx, h * stride), "pixmap_samples");
+		samples = tile->samples;
+		stride = tile->stride;
 
 		len = fz_read(ctx, read_stream, samples, h * stride);
 
@@ -607,11 +608,6 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			for (i = 0; i < len; i++)
 				p[i] = ~p[i];
 		}
-
-		fz_unpack_tile(ctx, tile, samples, image->n, image->bpc, stride, indexed);
-
-		fz_free(ctx, samples);
-		samples = NULL;
 
 		/* color keyed transparency */
 		if (image->use_colorkey && !image->mask)
@@ -637,6 +633,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, sstream);
+		fz_drop_stream(ctx, unpstream);
 		fz_drop_stream(ctx, l2stream);
 	}
 	fz_catch(ctx)
