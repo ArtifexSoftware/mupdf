@@ -1525,19 +1525,10 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 void
 pdf_invalidate_xfa(fz_context *ctx, pdf_document *doc)
 {
-	int i;
-
 	if (doc == NULL)
 		return;
-
-	for (i = 0; i < doc->xfa.count; i++)
-	{
-		fz_free(ctx, doc->xfa.entries[i].key);
-		fz_drop_xml(ctx, doc->xfa.entries[i].value);
-	}
-	doc->xfa.count = 0;
-	fz_free(ctx, doc->xfa.entries);
-	doc->xfa.entries = 0;
+	fz_drop_xml(ctx, doc->xfa);
+	doc->xfa = NULL;
 }
 
 static void
