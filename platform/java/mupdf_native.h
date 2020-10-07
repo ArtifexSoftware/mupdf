@@ -2074,6 +2074,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_hasUnsavedCha
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    wasRepaired
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_wasRepaired
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    canBeSavedIncrementally
  * Signature: ()Z
  */
