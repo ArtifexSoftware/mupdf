@@ -159,8 +159,15 @@ static void enact_sig_locking(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 	if (locked == NULL)
 		return;
 
-	fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
-	pdf_walk_tree(ctx, fields, PDF_NAME(Kids), check_field_locking, pop_field_locking, &data, &ff_names[0], &ff);
+	fz_try(ctx)
+	{
+		fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
+		pdf_walk_tree(ctx, fields, PDF_NAME(Kids), check_field_locking, pop_field_locking, &data, &ff_names[0], &ff);
+	}
+	fz_always(ctx)
+		pdf_drop_locked_fields(ctx, locked);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *signer)
