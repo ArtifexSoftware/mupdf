@@ -147,18 +147,30 @@ static void list_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signatur
 {
 	pdf_pkcs7_designated_name *dn;
 	pdf_pkcs7_verifier *verifier;
-	char *s;
+
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+	{
+		printf("%5d: signature is not signed\n", pdf_to_num(ctx, signature));
+		return;
+	}
 
 	verifier = pkcs7_openssl_new_verifier(ctx);
 
 	dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
-	s = pdf_signature_format_designated_name(ctx, dn);
-	pdf_signature_drop_designated_name(ctx, dn);
+	if (dn)
+	{
+		char *s = pdf_signature_format_designated_name(ctx, dn);
+		printf("%5d: signature name: %s\n", pdf_to_num(ctx, signature), s);
+		fz_free(ctx, s);
+		pdf_signature_drop_designated_name(ctx, dn);
+	}
+	else
+	{
+		printf("%5d: no signature name\n", pdf_to_num(ctx, signature));
+	}
 
 	pdf_drop_verifier(ctx, verifier);
 
-	printf("%5d: signature name: %s\n", pdf_to_num(ctx, signature), s);
-	fz_free(ctx, s);
 }
 
 static void process_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
@@ -188,8 +200,7 @@ static void process_field_hierarchy(fz_context *ctx, pdf_document *doc, pdf_obj 
 		for (i = 0; i < n; ++i)
 		{
 			pdf_obj *kid = pdf_array_get(ctx, kids, i);
-			if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) == PDF_NAME(Sig))
-				process_field_hierarchy(ctx, doc, kid);
+			process_field_hierarchy(ctx, doc, kid);
 		}
 	}
 	else if (pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT)) == PDF_NAME(Sig))
