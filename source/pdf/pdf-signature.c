@@ -351,17 +351,19 @@ char *pdf_signature_format_designated_name(fz_context *ctx, pdf_pkcs7_designated
 pdf_pkcs7_designated_name *pdf_signature_get_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
 {
 	char *contents = NULL;
-	size_t contents_len = 0;
+	size_t contents_len;
 	pdf_pkcs7_designated_name *dn;
 
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
+	if (contents_len == 0)
+		return NULL;
 
 	fz_try(ctx)
-	dn = verifier->get_signatory(ctx, verifier, (unsigned char *)contents, contents_len);
+		dn = verifier->get_signatory(ctx, verifier, (unsigned char *)contents, contents_len);
 	fz_always(ctx)
-	fz_free(ctx, contents);
+		fz_free(ctx, contents);
 	fz_catch(ctx)
-	fz_rethrow(ctx);
+		fz_rethrow(ctx);
 
 	return dn;
 }
@@ -438,17 +440,21 @@ int pdf_check_signature(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_docum
 			case PDF_SIGNATURE_ERROR_NOT_TRUSTED:
 			{
 				pdf_pkcs7_designated_name *dn;
-				char *s;
-
-				fz_strlcat(ebuf, " (", ebufsize);
 
 				dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
-				s = pdf_signature_format_designated_name(ctx, dn);
-				pdf_signature_drop_designated_name(ctx, dn);
+				if (dn)
+				{
+					char *s = pdf_signature_format_designated_name(ctx, dn);
+					pdf_signature_drop_designated_name(ctx, dn);
+					fz_strlcat(ebuf, " (", ebufsize);
+					fz_strlcat(ebuf, s, ebufsize);
+					fz_free(ctx, s);
+				}
+				else
+				{
+					fz_strlcat(ebuf, "()", ebufsize);
+				}
 
-				fz_strlcat(ebuf, s, ebufsize);
-				fz_free(ctx, s);
-				fz_strlcat(ebuf, ")", ebufsize);
 				break;
 			}
 			default:
