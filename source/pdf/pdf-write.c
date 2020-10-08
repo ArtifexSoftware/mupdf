@@ -2252,6 +2252,8 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 	fz_try(ctx)
 	{
 		num = pdf_create_object(ctx, doc);
+		expand_lists(ctx, opts, num);
+
 		dict = pdf_new_dict(ctx, doc, 6);
 		pdf_update_object(ctx, doc, num, dict);
 
