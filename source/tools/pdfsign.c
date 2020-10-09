@@ -54,10 +54,16 @@ static void verify_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signat
 	fz_try(ctx)
 	{
 		dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
-		name = pdf_signature_format_designated_name(ctx, dn);
-
-		printf("  Designated name: %s\n", name);
-		fz_free(ctx, name);
+		if (dn)
+		{
+			name = pdf_signature_format_designated_name(ctx, dn);
+			printf("\tDesignated name: %s\n", name);
+			fz_free(ctx, name);
+		}
+		else
+		{
+			printf("\tSignature information missing.\n");
+		}
 
 		err = pdf_check_certificate(ctx, verifier, doc, signature);
 		if (err)
