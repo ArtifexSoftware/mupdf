@@ -282,9 +282,11 @@ int pdfsign_main(int argc, char **argv)
 
 		if (clear || sign)
 		{
+			pdf_write_options opts = pdf_default_write_options;
+			opts.do_incremental = 1;
 			if (!outfile)
 				outfile = "out.pdf";
-			pdf_save_document(ctx, doc, outfile, NULL);
+			pdf_save_document(ctx, doc, outfile, &opts);
 		}
 	}
 	fz_always(ctx)
