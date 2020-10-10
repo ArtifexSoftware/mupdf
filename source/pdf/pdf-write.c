@@ -2766,7 +2766,7 @@ static void dump_object_details(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 	for (i = 0; i < pdf_xref_len(ctx, doc); i++)
 	{
-		fprintf(stderr, "%d@%d: use=%d\n", i, opts->ofs_list[i], opts->use_list[i]);
+		fprintf(stderr, "%d@%ld: use=%d\n", i, opts->ofs_list[i], opts->use_list[i]);
 	}
 }
 #endif
