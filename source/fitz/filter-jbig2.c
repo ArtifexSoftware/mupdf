@@ -179,9 +179,10 @@ fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals_)
 }
 
 fz_stream *
-fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
+fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals, int embedded)
 {
 	fz_jbig2d *state = NULL;
+	Jbig2Options options;
 
 	fz_var(state);
 
@@ -192,7 +193,11 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
 	state->alloc.alloc.free = fz_jbig2_free;
 	state->alloc.alloc.realloc = fz_jbig2_realloc;
 
-	state->ctx = jbig2_ctx_new((Jbig2Allocator *) &state->alloc, JBIG2_OPTIONS_EMBEDDED, globals ? globals->gctx : NULL, error_callback, ctx);
+	options = 0;
+	if (embedded)
+		options |= JBIG2_OPTIONS_EMBEDDED;
+
+	state->ctx = jbig2_ctx_new((Jbig2Allocator *) &state->alloc, options, globals ? globals->gctx : NULL, error_callback, ctx);
 	if (state->ctx == NULL)
 	{
 		fz_drop_jbig2_globals(ctx, state->gctx);
