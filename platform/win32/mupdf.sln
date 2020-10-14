@@ -132,7 +132,6 @@ Global
 		{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}.ReleaseOpenSSL|x64.ActiveCfg = ReleaseOpenSSL|x64
 		{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}.ReleaseOpenSSL|x64.Build.0 = ReleaseOpenSSL|x64
 		{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}.ReleaseTesseract|Win32.ActiveCfg = Release|Win32
-		{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}.ReleaseTesseract|Win32.Build.0 = Release|Win32
 		{E74F29F0-FA43-4ADC-B92C-6AFA08E4A417}.ReleaseTesseract|x64.ActiveCfg = Release|x64
 		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}.Debug|Win32.Build.0 = Debug|Win32
@@ -489,7 +488,9 @@ Global
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoOpenSSL|x64.ActiveCfg = Memento|x64
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoOpenSSL|x64.Build.0 = Memento|x64
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoTesseract|Win32.ActiveCfg = Memento|Win32
+		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoTesseract|Win32.Build.0 = Memento|Win32
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoTesseract|x64.ActiveCfg = Memento|x64
+		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.MementoTesseract|x64.Build.0 = Memento|x64
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.Release|Win32.ActiveCfg = Release|Win32
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.Release|Win32.Build.0 = Release|Win32
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.Release|x64.ActiveCfg = Release|x64
@@ -507,7 +508,9 @@ Global
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseOpenSSL|x64.ActiveCfg = Release|x64
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseOpenSSL|x64.Build.0 = Release|x64
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseTesseract|Win32.ActiveCfg = Release|Win32
+		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseTesseract|Win32.Build.0 = Release|Win32
 		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseTesseract|x64.ActiveCfg = Release|x64
+		{A1B75D29-9F5C-4A0F-B368-322A10477D0C}.ReleaseTesseract|x64.Build.0 = Release|x64
 		{CE3A76A8-A28F-4991-8FB9-C9453D922037}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CE3A76A8-A28F-4991-8FB9-C9453D922037}.Debug|Win32.Build.0 = Debug|Win32
 		{CE3A76A8-A28F-4991-8FB9-C9453D922037}.Debug|x64.ActiveCfg = Debug|x64
@@ -760,7 +763,9 @@ Global
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugOpenSSL|x64.ActiveCfg = DebugCommercial|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugOpenSSL|x64.Build.0 = DebugCommercial|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugTesseract|Win32.ActiveCfg = Release|Win32
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugTesseract|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugTesseract|x64.ActiveCfg = Release|x64
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.DebugTesseract|x64.Build.0 = Release|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|Win32.ActiveCfg = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Memento|x64.ActiveCfg = Release|x64
@@ -774,7 +779,9 @@ Global
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoOpenSSL|x64.ActiveCfg = Release|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoOpenSSL|x64.Build.0 = Release|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoTesseract|Win32.ActiveCfg = Release|Win32
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoTesseract|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoTesseract|x64.ActiveCfg = Release|x64
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.MementoTesseract|x64.Build.0 = Release|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Release|Win32.ActiveCfg = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Release|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.Release|x64.ActiveCfg = Release|x64
@@ -796,7 +803,9 @@ Global
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseOpenSSL|x64.ActiveCfg = ReleaseCommercial|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseOpenSSL|x64.Build.0 = ReleaseCommercial|x64
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseTesseract|Win32.ActiveCfg = Release|Win32
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseTesseract|Win32.Build.0 = Release|Win32
 		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseTesseract|x64.ActiveCfg = Release|x64
+		{B0091365-C9BA-4F40-AE2B-EF93702871B2}.ReleaseTesseract|x64.Build.0 = Release|x64
 		{DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B}.Debug|Win32.Build.0 = Debug|Win32
 		{DE21FA8A-FC8A-47E0-87E4-DCE8808BFC9B}.Debug|x64.ActiveCfg = Debug|x64
@@ -920,7 +929,6 @@ Global
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.DebugOpenSSL|x64.Build.0 = Debug|x64
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.DebugTesseract|Win32.ActiveCfg = Debug|Win32
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.DebugTesseract|x64.ActiveCfg = Debug|x64
-		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.DebugTesseract|x64.Build.0 = Debug|x64
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.Memento|Win32.ActiveCfg = Memento|Win32
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.Memento|Win32.Build.0 = Memento|Win32
 		{FB51171B-B10E-4EAC-8FFA-19226A1828A3}.Memento|x64.ActiveCfg = Memento|x64
@@ -1107,6 +1115,7 @@ Global
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.MementoTesseract|Win32.ActiveCfg = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.MementoTesseract|Win32.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.MementoTesseract|x64.ActiveCfg = Release|Win32
+		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.MementoTesseract|x64.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.Release|Win32.ActiveCfg = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.Release|Win32.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.Release|x64.ActiveCfg = Release|Win32
@@ -1127,6 +1136,7 @@ Global
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|Win32.ActiveCfg = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|Win32.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|x64.ActiveCfg = Release|Win32
+		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|x64.Build.0 = Release|Win32
 		{AC0BDA38-89B9-4703-A77D-8049AC3A0D04}.Debug|Win32.ActiveCfg = Disabled|Win32
 		{AC0BDA38-89B9-4703-A77D-8049AC3A0D04}.Debug|x64.ActiveCfg = Disabled|x64
 		{AC0BDA38-89B9-4703-A77D-8049AC3A0D04}.DebugCommercial|Win32.ActiveCfg = Disabled|Win32
