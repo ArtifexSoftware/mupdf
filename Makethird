@@ -728,7 +728,6 @@ THIRD_SRC += thirdparty/tesseract/src/ccutil/clst.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/elst.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/elst2.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/errcode.cpp
-THIRD_SRC += thirdparty/tesseract/src/ccutil/globaloc.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/mainblk.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/params.cpp
 THIRD_SRC += thirdparty/tesseract/src/ccutil/scanutils.cpp
