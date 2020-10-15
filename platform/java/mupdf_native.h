@@ -3574,6 +3574,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_tint
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_Rect_FZ_MIN_INF_RECT
+#define com_artifex_mupdf_fitz_Rect_FZ_MIN_INF_RECT -2147483648L
+#undef com_artifex_mupdf_fitz_Rect_FZ_MAX_INF_RECT
+#define com_artifex_mupdf_fitz_Rect_FZ_MAX_INF_RECT 2147483647L
 /*
  * Class:     com_artifex_mupdf_fitz_Rect
  * Method:    adjustForStroke
