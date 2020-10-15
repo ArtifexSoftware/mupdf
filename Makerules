@@ -147,14 +147,14 @@ else ifeq ($(OS),Linux)
 	SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
   endif
 
-  HAVE_LEPTONICA := $(shell pkg-config --exists 'lept >= 1.7.4' && echo yes)
-  ifeq ($(HAVE_LEPTONICA),yes)
+  HAVE_SYS_LEPTONICA := $(shell pkg-config --exists 'lept >= 1.7.4' && echo yes)
+  ifeq ($(HAVE_SYS_LEPTONICA),yes)
 	SYS_LEPTONICA_CFLAGS := $(shell pkg-config --cflags lept)
 	SYS_LEPTONICA_LIBS := $(shell pkg-config --libs lept)
   endif
 
-  HAVE_TESSERACT := $(shell pkg-config --exists 'tesseract-ocr >= 4.0.0' && echo yes)
-  ifeq ($(HAVE_TESSERACT),yes)
+  HAVE_SYS_TESSERACT := $(shell pkg-config --exists 'tesseract >= 4.0.0' && echo yes)
+  ifeq ($(HAVE_SYS_TESSERACT),yes)
 	SYS_TESSERACT_CFLAGS := $(shell pkg-config --cflags tesseract)
 	SYS_TESSERACT_LIBS := $(shell pkg-config --libs tesseract)
   endif

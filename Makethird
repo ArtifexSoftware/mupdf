@@ -25,19 +25,24 @@ ifeq ($(OS),Linux)
   USE_SYSTEM_CURL := yes
 endif
 
-ifneq ($(USE_SYSTEM_LEPTONICA),yes)
-ifeq ($(wildcard thirdparty/leptonica/src/*),)
-  HAVE_LEPTONICA := no
+ifeq ($(USE_SYSTEM_LEPTONICA),yes)
+  HAVE_LEPTONICA := $(HAVE_SYS_LEPTONICA)
 else
-  HAVE_LEPTONICA := yes
+  ifeq ($(wildcard thirdparty/leptonica/src/*),)
+    HAVE_LEPTONICA := no
+  else
+    HAVE_LEPTONICA := yes
+  endif
 endif
-endif
-ifneq ($(USE_SYSTEM_TESSERACT),yes)
-ifeq ($(wildcard thirdparty/tesseract/src/*),)
-  HAVE_TESSERACT := no
+
+ifeq ($(USE_SYSTEM_TESSERACT),yes)
+  HAVE_TESSERACT := $(HAVE_SYS_TESSERACT)
 else
-  HAVE_TESSERACT := yes
-endif
+  ifeq ($(wildcard thirdparty/tesseract/src/*),)
+    HAVE_TESSERACT := no
+  else
+    HAVE_TESSERACT := yes
+  endif
 endif
 
 ifeq ($(HAVE_LEPTONICA),yes)
@@ -809,24 +814,24 @@ THIRD_SRC += thirdparty/tesseract/src/wordrec/wordrec.cpp
 
 THIRD_CFLAGS += -Ithirdparty/tesseract/include -Iscripts/tesseract
 
-ifeq ($HAVE_AVX,yes)
+ifeq ($(HAVE_AVX),yes)
 TESSERACT_AVX_FLAGS = -mavx -DHAVE_AVX -D__AVX__
 THIRD_SRC += thirdparty/tesseract/src/arch/dotproductavx.cpp
 endif
-ifeq ($HAVE_AVX2,yes)
+ifeq ($(HAVE_AVX2),yes)
 TESSERACT_AVX2_FLAGS = -mavx2 -DHAVE_AVX2 -D__AVX2__
 THIRD_SRC += thirdparty/tesseract/src/arch/intsimdmatrixavx2.cpp
 endif
-ifeq ($HAVE_FMA,yes)
+ifeq ($(HAVE_FMA),yes)
 TESSERACT_FMA_FLAGS = -mfma -DHAVE_FMA -D__FMA__
 THIRD_SRC += thirdparty/tesseract/src/arch/dotproductfma.cpp
 endif
-ifeq ($HAVE_SSE4_1,yes)
+ifeq ($(HAVE_SSE4_1),yes)
 TESSERACT_SSE_FLAGS = -msse4.1 -DHAVE_SSE4_1 -D__SSE4_1__
 THIRD_SRC += thirdparty/tesseract/src/arch/dotproductsse.cpp
 THIRD_SRC += thirdparty/tesseract/src/arch/intsimdmatrixsse.cpp
 endif
-ifeq ($HAVE_NEON,yes)
+ifeq ($(HAVE_NEON),yes)
 TESSERACT_NEON_FLAGS = -mneon -DHAVE_NEON
 THIRD_SRC += thirdparty/tesseract/src/arch/intsimdmatrixneon.cpp
 endif
