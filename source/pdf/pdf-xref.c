@@ -161,7 +161,13 @@ void pdf_set_populating_xref_trailer(fz_context *ctx, pdf_document *doc, pdf_obj
 
 int pdf_xref_len(fz_context *ctx, pdf_document *doc)
 {
-	return doc->max_xref_len;
+	int i = doc->xref_base;
+	int xref_len = 0;
+
+	while (i < doc->num_xref_sections)
+		xref_len = fz_maxi(xref_len, doc->xref_sections[i++].num_objects);
+
+	return xref_len;
 }
 
 /* Ensure that the given xref has a single subsection

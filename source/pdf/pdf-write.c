@@ -3431,6 +3431,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			for (i = 0; i < doc->num_incremental_sections; i++)
 			{
 				doc->xref_base = doc->num_incremental_sections - i - 1;
+				xref_len = pdf_xref_len(ctx, doc);
 
 				writeobjects(ctx, doc, opts, 0);
 
