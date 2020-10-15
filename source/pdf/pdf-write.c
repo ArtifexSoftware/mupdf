@@ -137,6 +137,9 @@ expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
 
 	/* objects are numbered 0..num and maybe two additional objects for linearization */
 	num += 3;
+	if (num <= opts->list_len)
+		return;
+
 	opts->use_list = fz_realloc_array(ctx, opts->use_list, num, int);
 	opts->ofs_list = fz_realloc_array(ctx, opts->ofs_list, num, int64_t);
 	opts->gen_list = fz_realloc_array(ctx, opts->gen_list, num, int);
