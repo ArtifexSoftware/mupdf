@@ -2820,6 +2820,7 @@ static void presize_unsaved_signature_byteranges(fz_context *ctx, pdf_document *
 
 static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
+	pdf_obj *byte_range = NULL;
 	char *buf = NULL, *ptr;
 	int s;
 	fz_stream *stm = NULL;
@@ -2835,7 +2836,6 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 			if (xref->unsaved_sigs)
 			{
 				pdf_unsaved_sig *usig;
-				pdf_obj *byte_range;
 				size_t buf_size = 0;
 				size_t i;
 				size_t last_end;
@@ -2893,10 +2893,8 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				fz_drop_stream(ctx, stm);
 				stm = NULL;
 
-				/* Recreate ByteRange with correct values. Initially store the
-				* recreated object in the first of the unsaved signatures */
+				/* Recreate ByteRange with correct values. */
 				byte_range = pdf_new_array(ctx, doc, 4);
-				pdf_dict_putl_drop(ctx, xref->unsaved_sigs->field, byte_range, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 
 				last_end = 0;
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
@@ -2913,7 +2911,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				pdf_array_push_int(ctx, byte_range, xref->end_ofs - last_end);
 
 				/* Copy the new ByteRange to the other unsaved signatures */
-				for (usig = xref->unsaved_sigs->next; usig; usig = usig->next)
+				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 					if (usig->signer)
 						pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 
@@ -2950,10 +2948,17 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 				xref->unsaved_sigs_end = NULL;
 
+				pdf_drop_obj(ctx, byte_range);
+				byte_range = NULL;
+
 				fz_free(ctx, buf);
 				buf = NULL;
 			}
 		}
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, byte_range);
 	}
 	fz_catch(ctx)
 	{
