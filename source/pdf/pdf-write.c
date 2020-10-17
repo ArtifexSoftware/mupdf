@@ -2791,15 +2791,22 @@ static void presize_unsaved_signature_byteranges(fz_context *ctx, pdf_document *
 			int n = 0;
 
 			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
-				n++;
+				if (usig->signer)
+					n++;
 
 			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 			{
+				int i;
+				pdf_obj *byte_range;
+
+				/* Don't alter unsigned sigs */
+				if (!usig->signer)
+					continue;
+
 				/* There will be segments of bytes at the beginning, at
 				* the end and between each consecutive pair of signatures,
 				* hence n + 1 */
-				int i;
-				pdf_obj *byte_range = pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
+				byte_range = pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 
 				for (i = 0; i < n+1; i++)
 				{
@@ -2835,8 +2842,13 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
-					size_t size = usig->signer->max_digest_size(ctx, usig->signer);
+					size_t size;
 
+					/* Don't digest unsigned sigs */
+					if (!usig->signer)
+						continue;
+
+					size = usig->signer->max_digest_size(ctx, usig->signer);
 					buf_size = fz_maxz(buf_size, size);
 				}
 
@@ -2850,7 +2862,13 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				{
 					char *bstr, *cstr, *fstr;
 					size_t bytes_read;
-					int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL));
+					int pnum;
+
+					/* Don't change unsigned sigs */
+					if (!usig->signer)
+						continue;
+
+					pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME(V), PDF_NAME(ByteRange), NULL));
 					fz_seek(ctx, stm, opts->ofs_list[pnum], SEEK_SET);
 					/* SIG_EXTRAS_SIZE is an arbitrary value and its addition above to buf_size
 					 * could cause an attempt to read off the end of the file. That's not an
@@ -2883,6 +2901,10 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				last_end = 0;
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
+					/* Don't change unsigned sigs */
+					if (!usig->signer)
+						continue;
+
 					pdf_array_push_int(ctx, byte_range, last_end);
 					pdf_array_push_int(ctx, byte_range, usig->contents_start - last_end);
 					last_end = usig->contents_end;
@@ -2892,7 +2914,8 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 				/* Copy the new ByteRange to the other unsaved signatures */
 				for (usig = xref->unsaved_sigs->next; usig; usig = usig->next)
-					pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME(V), PDF_NAME(ByteRange), NULL);
+					if (usig->signer)
+						pdf_dict_putl_drop(ctx, usig->field, pdf_copy_array(ctx, byte_range), PDF_NAME(V), PDF_NAME(ByteRange), NULL);
 
 				/* Write the byte range into buf, padding with spaces*/
 				ptr = pdf_sprint_obj(ctx, buf, buf_size, &i, byte_range, 1, 0);
@@ -2903,13 +2926,18 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				/* Write the byte range to the file */
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 				{
+					/* Don't alter unsigned sigs */
+					if (!usig->signer)
+						continue;
+
 					fz_seek_output(ctx, opts->out, usig->byte_range_start, SEEK_SET);
 					fz_write_data(ctx, opts->out, buf, usig->byte_range_end - usig->byte_range_start);
 				}
 
 				/* Write the digests into the file */
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
-					pdf_write_digest(ctx, opts->out, byte_range, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
+					if (usig->signer)
+						pdf_write_digest(ctx, opts->out, byte_range, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
 
 				/* delete the unsaved_sigs records */
 				while ((usig = xref->unsaved_sigs) != NULL)

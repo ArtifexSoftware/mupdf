@@ -413,6 +413,24 @@ int pdf_xref_is_incremental(fz_context *ctx, pdf_document *doc, int num)
 	return num < xref->num_objects && sub->table[num].type;
 }
 
+void pdf_xref_clear_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+{
+	int num = pdf_to_num(ctx, field);
+	int idx = doc->xref_index[num];
+	pdf_xref *xref = &doc->xref_sections[idx];
+	pdf_unsaved_sig *usig = xref->unsaved_sigs;
+
+	while (usig)
+	{
+		if (usig->field == field)
+		{
+			pdf_drop_signer(ctx, usig->signer);
+			usig->signer = NULL;
+		}
+		usig = usig->next;
+	}
+}
+
 void pdf_xref_store_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_pkcs7_signer *signer)
 {
 	pdf_xref *xref = &doc->xref_sections[0];
