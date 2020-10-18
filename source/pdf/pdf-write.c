@@ -2935,7 +2935,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 				/* Write the digests into the file */
 				for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 					if (usig->signer)
-						pdf_write_digest(ctx, opts->out, byte_range, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
+						pdf_write_digest(ctx, opts->out, byte_range, usig->field, usig->contents_start, usig->contents_end - usig->contents_start, usig->signer);
 
 				/* delete the unsaved_sigs records */
 				while ((usig = xref->unsaved_sigs) != NULL)
