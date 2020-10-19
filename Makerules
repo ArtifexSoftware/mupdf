@@ -6,6 +6,30 @@ OS := $(OS:MSYS%=MINGW)
 OS := $(OS:Windows_NT=MINGW)
 OS := $(OS:Darwin=MACOS)
 
+# Feature configuration options
+
+ifeq ($(tesseract),yes)
+  USE_TESSERACT := yes
+  build_suffix += -tesseract
+endif
+
+ifeq ($(extract),yes)
+  USE_EXTRACT := yes
+  build_suffix += -extract
+endif
+
+ifeq ($(tofu),yes)
+  build_suffix += -tofu
+  XCFLAGS += -DTOFU
+endif
+
+ifeq ($(tofu_cjk),yes)
+  build_suffix += -tofu_cjk
+  XCFLAGS += -DTOFU_CJK
+endif
+
+# System specific features
+
 ifeq ($(findstring -fembed-bitcode,$(XCFLAGS)),)
   # clang does not support these in combination with -fembed-bitcode
   CFLAGS += -ffunction-sections -fdata-sections
@@ -25,6 +49,7 @@ SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
 
 ifeq ($(shared),yes)
+  build_prefix += shared-
   LIB_CFLAGS = -fPIC
   ifeq ($(OS),MACOS)
     LIB_LDFLAGS = -dynamiclib
@@ -201,7 +226,7 @@ endif
 # On Windows, run 'nmake -f scripts\fontdump.nmake' in a Visual Studio command prompt.
 
 ifeq "$(OS)" "wasm"
-  OUT := build/wasm/$(build)
+  build_prefix += wasm/
   CC = emcc
   CXX = em++
   AR = emar
@@ -212,7 +237,7 @@ ifeq "$(OS)" "wasm"
 endif
 
 ifeq "$(OS)" "mingw32-cross"
-  OUT := build/$(OS)/$(build)
+  build_prefix += $(OS)/
   CC = i686-w64-mingw32-gcc
   CXX = i686-w64-mingw32-g++
   LD = i686-w64-mingw32-gcc
@@ -222,7 +247,7 @@ ifeq "$(OS)" "mingw32-cross"
 endif
 
 ifeq "$(OS)" "mingw64-cross"
-  OUT := build/$(OS)/$(build)
+  build_prefix += $(OS)/
   CC = x86_64-w64-mingw32-gcc
   CXX = x86_64-w64-mingw32-g++
   LD = x86_64-w64-mingw32-gcc

@@ -6,20 +6,17 @@ ifndef build
   build := release
 endif
 
-ifndef OUT
-  ifeq ($(shared),yes)
-    OUT := build/shared-$(build)
-  else
-    OUT := build/$(build)
-  endif
-endif
-
 default: all
 
-# --- Configuration ---
-
 include Makerules
+
+ifndef OUT
+  OUT := build/$(build_prefix)$(build)$(build_suffix)
+endif
+
 include Makethird
+
+# --- Configuration ---
 
 # Do not specify CFLAGS or LIBS on the make invocation line - specify
 # XCFLAGS or XLIBS instead. Make ignores any lines in the makefile that
