@@ -291,9 +291,10 @@ static void fz_xmltext_fill_image(fz_context *ctx, fz_device *dev_, fz_image *im
 				/* Write out raw data. */
 				unsigned char *data;
 				size_t	datasize = fz_buffer_storage(ctx, compressed->buffer, &data);
+				size_t i;
 				s_write_attribute_size(ctx, dev->out, "datasize", datasize);
 				s_xml_starttag_end(ctx, dev->out);
-				for (size_t i=0; i<datasize; ++i)
+				for (i=0; i<datasize; ++i)
 				{
 					if (i % 32 == 0) fz_write_printf(ctx, dev->out, "\n   ");
 					if (i % 4 == 0) fz_write_printf(ctx, dev->out, " ");
