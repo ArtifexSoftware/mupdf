@@ -413,21 +413,43 @@ int pdf_xref_is_incremental(fz_context *ctx, pdf_document *doc, int num)
 	return num < xref->num_objects && sub->table[num].type;
 }
 
-void pdf_xref_clear_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+/* Used when clearing signatures. Removes the signature
+from the list of unsaved signed signatures. */
+void pdf_xref_remove_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
 	int num = pdf_to_num(ctx, field);
 	int idx = doc->xref_index[num];
 	pdf_xref *xref = &doc->xref_sections[idx];
+	pdf_unsaved_sig **usigptr = &xref->unsaved_sigs;
 	pdf_unsaved_sig *usig = xref->unsaved_sigs;
 
 	while (usig)
 	{
+		pdf_unsaved_sig **nextptr = &usig->next;
+		pdf_unsaved_sig *next = usig->next;
+
 		if (usig->field == field)
 		{
+			if (xref->unsaved_sigs_end == &usig->next)
+			{
+				if (usig->next)
+					xref->unsaved_sigs_end = &usig->next->next;
+				else
+					xref->unsaved_sigs_end = NULL;
+			}
+			if (usigptr)
+				*usigptr = usig->next;
+
+			usig->next = NULL;
+			pdf_drop_obj(ctx, usig->field);
 			pdf_drop_signer(ctx, usig->signer);
-			usig->signer = NULL;
+			fz_free(ctx, usig);
+
+			break;
 		}
-		usig = usig->next;
+
+		usig = next;
+		usigptr = nextptr;
 	}
 }
 

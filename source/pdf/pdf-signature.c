@@ -275,7 +275,7 @@ void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 {
 	int flags;
 
-	pdf_xref_clear_unsaved_signature(ctx, ((pdf_annot *) widget)->page->doc,  ((pdf_annot *) widget)->obj);
+	pdf_xref_remove_unsaved_signature(ctx, ((pdf_annot *) widget)->page->doc,  ((pdf_annot *) widget)->obj);
 
 	pdf_dirty_annot(ctx, widget);
 
