@@ -497,10 +497,9 @@ fz_rect
 fz_transform_rect(fz_rect r, fz_matrix m)
 {
 	fz_point s, t, u, v;
+	int invalid;
 
 	if (fz_is_infinite_rect(r))
-		return r;
-	if (!fz_is_valid_rect(r))
 		return r;
 
 	if (fabsf(m.b) < FLT_EPSILON && fabsf(m.c) < FLT_EPSILON)
@@ -521,9 +520,32 @@ fz_transform_rect(fz_rect r, fz_matrix m)
 		t = fz_transform_point_xy(r.x1, r.y1, m);
 		r.x0 = s.x; r.y0 = s.y;
 		r.x1 = t.x; r.y1 = t.y;
+		/* If r was invalid coming in, it'll still be invalid now. */
+		return r;
+	}
+	else if (fabsf(m.a) < FLT_EPSILON && fabsf(m.d) < FLT_EPSILON)
+	{
+		if (m.b < 0)
+		{
+			float f = r.x0;
+			r.x0 = r.x1;
+			r.x1 = f;
+		}
+		if (m.c < 0)
+		{
+			float f = r.y0;
+			r.y0 = r.y1;
+			r.y1 = f;
+		}
+		s = fz_transform_point_xy(r.x0, r.y0, m);
+		t = fz_transform_point_xy(r.x1, r.y1, m);
+		r.x0 = s.x; r.y0 = s.y;
+		r.x1 = t.x; r.y1 = t.y;
+		/* If r was invalid coming in, it'll still be invalid now. */
 		return r;
 	}
 
+	invalid = (r.x0 > r.x1) || (r.y0 > r.y1);
 	s.x = r.x0; s.y = r.y0;
 	t.x = r.x0; t.y = r.y1;
 	u.x = r.x1; u.y = r.y1;
@@ -536,6 +558,15 @@ fz_transform_rect(fz_rect r, fz_matrix m)
 	r.y0 = MIN4(s.y, t.y, u.y, v.y);
 	r.x1 = MAX4(s.x, t.x, u.x, v.x);
 	r.y1 = MAX4(s.y, t.y, u.y, v.y);
+
+	/* If we were called with an invalid rectangle, return an
+	 * invalid rectangle after transformation. */
+	if (invalid)
+	{
+		float t;
+		t = r.x0; r.x0 = r.x1; r.x1 = t;
+		t = r.y0; r.y0 = r.y1; r.y1 = t;
+	}
 	return r;
 }
 

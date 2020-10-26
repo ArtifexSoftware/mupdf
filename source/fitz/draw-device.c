@@ -1579,6 +1579,9 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, const fz_pixmap *image
 {
 	fz_pixmap *scaled;
 
+	if (fz_is_empty_irect(*clip))
+		return NULL;
+
 	if (ctm->a != 0 && ctm->b == 0 && ctm->c == 0 && ctm->d != 0)
 	{
 		/* Unrotated or X-flip or Y-flip or XY-flip */
@@ -1702,7 +1705,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, fz_matrix 
 
 	clip = fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest), state->scissor);
 
-	if (image->w == 0 || image->h == 0)
+	if (image->w == 0 || image->h == 0 || fz_is_empty_irect(clip))
 		return;
 
 	if (color_params.op == 0)
