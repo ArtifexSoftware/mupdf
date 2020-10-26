@@ -24,13 +24,10 @@ public class PDFPage extends Page
 
 	public native boolean update();
 
-	private PDFWidget[] widgets;
 	private native PDFWidget[] getWidgetsNative();
 
 	public PDFWidget[] getWidgets() {
-		if (widgets == null)
-			widgets = getWidgetsNative();
-		return widgets;
+		return getWidgetsNative();
 	}
 
 	public PDFWidget activateWidgetAt(float pageX, float pageY) {
@@ -47,4 +44,6 @@ public class PDFPage extends Page
 		}
 		return null;
 	}
+
+	public native PDFWidget createSignature();
 }

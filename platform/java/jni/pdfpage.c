@@ -177,3 +177,113 @@ FUN(PDFPage_getWidgetsNative)(JNIEnv *env, jobject self)
 
 	return jwidgets;
 }
+
+static void get_fields_arrive_fn(fz_context *ctx, pdf_obj *obj, void *arg, pdf_obj **dummy)
+{
+	pdf_obj *fields = arg;
+	if (pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Type)), PDF_NAME(Annot))
+		&& pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
+	{
+		pdf_array_push(ctx, fields, obj);
+	}
+}
+
+static pdf_obj *get_fields(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *field_tree = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
+	pdf_obj *fields = pdf_new_array(ctx, doc, 20);
+	fz_try(ctx)
+	{
+		pdf_walk_tree(ctx, field_tree, PDF_NAME(Kids), get_fields_arrive_fn, NULL, fields, NULL, NULL);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, fields);
+		fz_rethrow(ctx);
+	}
+	return fields;
+}
+
+static pdf_obj *get_field_names(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *fields = get_fields(ctx, doc);
+	int n = pdf_array_len(ctx, fields);
+	pdf_obj *field_names = NULL;
+	char *name = NULL;
+	fz_var(field_names);
+	fz_var(name);
+	fz_try(ctx)
+	{
+		int i;
+		field_names = pdf_new_array(ctx, doc, n);
+		for (i = 0; i < n; i++)
+		{
+			name = pdf_field_name(ctx, pdf_array_get(ctx, fields, i));
+			pdf_array_push_drop(ctx, field_names, pdf_new_name(ctx, name));
+			fz_free(ctx, name);
+			name = NULL;
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, fields);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, name);
+		pdf_drop_obj(ctx, field_names);
+		fz_rethrow(ctx);
+	}
+	return field_names;
+}
+
+static void make_unused_field_name(fz_context *ctx, pdf_document *doc, const char *fmt, char *buffer)
+{
+	pdf_obj *field_names = get_field_names(ctx, doc);
+	fz_try(ctx)
+	{
+		int x = 0;
+		for (;;)
+		{
+			int i, n = pdf_array_len(ctx, field_names);
+			sprintf(buffer, fmt, x);
+			for (i = 0; i < n; i++)
+			{
+				if (strcmp(buffer, pdf_to_name(ctx, pdf_array_get(ctx, field_names, i))) == 0)
+					break;
+			}
+			if (i == n)
+				break;
+			++x;
+		}
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, field_names);
+		fz_rethrow(ctx);
+	}
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFPage_createSignature)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	pdf_widget *widget = NULL;
+	char name[80];
+
+	if (!ctx || !page)
+		return NULL;
+
+	fz_try(ctx)
+	{
+		make_unused_field_name(ctx, page->doc, "Signature%d", name);
+		widget = pdf_create_signature_widget(ctx, page, name);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+	}
+
+	return to_PDFWidget_safe_own(ctx, env, widget);
+}
