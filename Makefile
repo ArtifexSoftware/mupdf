@@ -388,10 +388,10 @@ watch-recompile:
 	@ while ! inotifywait -q -e modify $(WATCH_SRCS) ; do time -p $(MAKE) ; done
 
 java:
-	$(MAKE) -C platform/java
+	$(MAKE) -C platform/java build=$(build)
 
 java-clean:
-	$(MAKE) -C platform/java clean
+	$(MAKE) -C platform/java build=$(build) clean
 
 wasm:
 	$(MAKE) -C platform/wasm
