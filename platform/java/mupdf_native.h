@@ -2759,16 +2759,16 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFPage_update
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
- * Method:    getWidgetsNative
+ * Method:    getWidgets
  * Signature: ()[Lcom/artifex/mupdf/fitz/PDFWidget;
  */
-JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getWidgetsNative
+JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getWidgets
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    createSignature
- * Signature: ()[Lcom/artifex/mupdf/fitz/PDFWidget;
+ * Signature: ()Lcom/artifex/mupdf/fitz/PDFWidget;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_createSignature
   (JNIEnv *, jobject);

@@ -24,11 +24,7 @@ public class PDFPage extends Page
 
 	public native boolean update();
 
-	private native PDFWidget[] getWidgetsNative();
-
-	public PDFWidget[] getWidgets() {
-		return getWidgetsNative();
-	}
+	public native PDFWidget[] getWidgets();
 
 	public PDFWidget activateWidgetAt(float pageX, float pageY) {
 		for (PDFWidget widget : getWidgets()) {
