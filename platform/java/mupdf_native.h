@@ -711,6 +711,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_endPage
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_close
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_DocumentWriter
+ * Method:    addOCRListener
+ * Signature: (Lcom/artifex/mupdf/fitz/DocumentWriter/OCRListener;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_addOCRListener
+  (JNIEnv *, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif
