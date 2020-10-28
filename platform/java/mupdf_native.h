@@ -3577,7 +3577,7 @@ extern "C" {
 #undef com_artifex_mupdf_fitz_Rect_FZ_MIN_INF_RECT
 #define com_artifex_mupdf_fitz_Rect_FZ_MIN_INF_RECT -2147483648L
 #undef com_artifex_mupdf_fitz_Rect_FZ_MAX_INF_RECT
-#define com_artifex_mupdf_fitz_Rect_FZ_MAX_INF_RECT 2147483647L
+#define com_artifex_mupdf_fitz_Rect_FZ_MAX_INF_RECT 2147483520L
 /*
  * Class:     com_artifex_mupdf_fitz_Rect
  * Method:    adjustForStroke
