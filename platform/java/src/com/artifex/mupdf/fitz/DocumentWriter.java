@@ -24,6 +24,8 @@ public class DocumentWriter
 	public native void endPage();
 	public native void close();
 
+	private long ocrlistener;
+
 	public interface OCRListener
 	{
 		boolean progress(int percent);
