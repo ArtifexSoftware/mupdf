@@ -156,7 +156,7 @@ FUN(DocumentWriter_addOCRListener)(JNIEnv *env, jobject self, jobject jlistener)
 	/* Take a ref and store it for the callback to use */
 	ref = (*env)->NewGlobalRef(env, jlistener);
 	if (!ref)
-		return;
+		jni_throw_run_void(env, "cannot take reference to listener");
 	(*env)->SetLongField(env, self, fid_DocumentWriter_ocrlistener, jlong_cast(ref));
 
 	fz_try(ctx)
