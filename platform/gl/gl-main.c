@@ -654,12 +654,45 @@ static void quit_dialog(void)
 	ui_dialog_end();
 }
 
-void quit(void)
+static void quit(void)
 {
 	if (pdf && pdf_has_unsaved_changes(ctx, pdf))
 		ui.dialog = quit_dialog;
 	else
 		glutLeaveMainLoop();
+}
+
+static void reload_dialog(void)
+{
+	ui_dialog_begin(500, (ui.gridsize+4)*3);
+	ui_layout(T, NONE, NW, 2, 2);
+	ui_label("%C The document has unsaved changes. Are you sure you want to reload?", 0x26a0); /* WARNING SIGN */
+	ui_layout(B, X, S, 2, 2);
+	ui_panel_begin(0, ui.gridsize, 0, 0, 0);
+	{
+		ui_layout(R, NONE, S, 0, 0);
+		if (ui_button("Save"))
+			do_save_pdf_file();
+		ui_spacer();
+		if (ui_button("Reload") || ui.key == 'q')
+		{
+			ui.dialog = NULL;
+			reload_document();
+		}
+		ui_layout(L, NONE, S, 0, 0);
+		if (ui_button("Cancel") || ui.key == KEY_ESCAPE)
+			ui.dialog = NULL;
+	}
+	ui_panel_end();
+	ui_dialog_end();
+}
+
+void reload(void)
+{
+	if (pdf && pdf_has_unsaved_changes(ctx, pdf))
+		ui.dialog = reload_dialog;
+	else
+		reload_document();
 }
 
 void trace_action(const char *fmt, ...)
@@ -1292,7 +1325,7 @@ static void password_dialog(void)
 			{
 				password = input_password.text;
 				ui.dialog = NULL;
-				reload();
+				reload_document();
 				shrinkwrap();
 			}
 		}
@@ -1393,7 +1426,7 @@ static void load_document(void)
 	oldpage = currentpage = fz_clamp_location(ctx, doc, currentpage);
 }
 
-void reload(void)
+void reload_document(void)
 {
 	save_history();
 	save_accelerator();
