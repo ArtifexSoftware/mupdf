@@ -808,14 +808,17 @@ void load_page(void)
 				s++;
 				int signd = pdf_widget_is_signed(ctx, w);
 				trace_action("widget = page.getWidgets()[%d];\n", i);
-				trace_action("print('Signature %d on page %d is signed:', widget.isSigned(), 'expected:', %d);\n",
+				trace_action("tmp = widget.isSigned();\n");
+				trace_action("print('Signature %d on page %d is signed:', tmp, 'expected:', %d);\n",
 					s, fz_page_number_from_location(ctx, doc, currentpage), signd);
+				trace_action("if (tmp != %d) errored=1;\n", signd);
 				if (signd)
 				{
 					int valid = pdf_validate_signature(ctx, w);
 					trace_action("tmp = page.getWidgets()[%d].validateSignature();\n", i);
 					trace_action("print('Signature %d on page %d validation:', tmp, 'expected:', %d);\n",
 						s, fz_page_number_from_location(ctx, doc, currentpage), valid);
+					trace_action("if (tmp != %d) errored=1;\n", valid);
 				}
 			}
 	}
@@ -1405,12 +1408,14 @@ static void load_document(void)
 				"tmp = doc.countVersions();\n"
 				"if (%d != tmp) {\n"
 				"  print(\"Mismatch in number of versions of document. I expected %d and got \" + tmp + \"\\n\");\n"
+				"  errored=1;\n"
 				"}\n", vsns, vsns);
 			if (vsns > 1)
 			{
 				int valid = pdf_validate_change_history(ctx, pdf);
 				trace_action("tmp = doc.validateChangeHistory();\n");
 				trace_action("print('History validation:', tmp, 'expected:', %d);\n", valid);
+				trace_action("if (tmp != %d) errored=1;\n", valid);
 			}
 		}
 		if (anchor)
@@ -2197,6 +2202,7 @@ static void cleanup(void)
 		fz_debug_store(ctx, fz_stdout(ctx));
 #endif
 
+	trace_action("quit(errored);\n");
 	fz_drop_output(ctx, trace_file);
 	fz_drop_stext_page(ctx, page_text);
 	fz_drop_separations(ctx, seps);
@@ -2265,7 +2271,7 @@ int main(int argc, char **argv)
 			trace_file = fz_stdout(ctx);
 		else
 			trace_file = fz_new_output_with_path(ctx, trace_file_name, 0);
-		trace_action("var doc, page, annot, widget, hits, tmp;\n");
+		trace_action("var doc, page, annot, widget, hits, tmp, errored = 0;\n");
 	}
 
 	if (layout_css)
