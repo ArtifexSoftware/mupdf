@@ -460,6 +460,10 @@ enum
 fz_pixmap *
 fz_warp_pixmap(fz_context *ctx, fz_pixmap *src, const fz_point points[4], int width, int height);
 
+/* As for fz_warp_pixmap, where width/height are automatically 'guessed'. */
+fz_pixmap *
+fz_autowarp_pixmap(fz_context *ctx, fz_pixmap *src, const fz_point points[4]);
+
 /*
 	Convert between different separation results.
 */

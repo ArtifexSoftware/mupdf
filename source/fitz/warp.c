@@ -23,6 +23,7 @@
 #include "mupdf/fitz.h"
 
 #include <string.h>
+#include <math.h>
 
 #undef SLOW_INTERPOLATION
 #undef SLOW_WARPING
@@ -396,4 +397,28 @@ fz_warp_pixmap(fz_context *ctx, fz_pixmap *src, const fz_point points[4], int wi
 	}
 
 	return dst;
+}
+
+static float
+dist(fz_point a, fz_point b)
+{
+	float x = a.x-b.x;
+	float y = a.y-b.y;
+
+	return sqrtf(x*x+y*y);
+}
+
+/* Again, affine warping, but this time where the destination width/height
+ * are chosen automatically. */
+fz_pixmap *
+fz_autowarp_pixmap(fz_context *ctx, fz_pixmap *src, const fz_point points[4])
+{
+	float w0 = dist(points[1], points[0]);
+	float w1 = dist(points[2], points[3]);
+	float h0 = dist(points[3], points[0]);
+	float h1 = dist(points[2], points[1]);
+	int w = (w0+w1+0.5)/2;
+	int h = (h0+h1+0.5)/2;
+
+	return fz_warp_pixmap(ctx, src, points, w, h);
 }

@@ -4464,6 +4464,33 @@ static void ffi_Pixmap_asPNG(js_State *J)
 	ffi_pushbuffer(J, buf);
 }
 
+static void ffi_Pixmap_autowarp(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	/* 1 = array of 8 floats for points */
+	fz_pixmap *dest = NULL;
+	fz_point points[4];
+	int i;
+
+	if (!js_isarray(J, 1) || js_getlength(J, 1) != 8)
+		js_throw(J);
+
+	for (i = 0; i < 8; i++)
+	{
+		float *f = i&1 ? &points[i>>1].y : &points[i>>1].x;
+		js_getindex(J, 1, i);
+		*f = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+
+	fz_try(ctx)
+		dest = fz_autowarp_pixmap(ctx, pixmap, points);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushpixmap(J, dest);
+}
 static void ffi_Pixmap_saveAsPNG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10568,6 +10595,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.skewDetect", ffi_Pixmap_skewDetect, 0);
 		jsB_propfun(J, "Pixmap.deskew", ffi_Pixmap_deskew, 2);
 		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
+		jsB_propfun(J, "Pixmap.autowarp", ffi_Pixmap_autowarp, 1);
 
 		// Pixmap.getPixels() - Buffer
 		// Pixmap.scale()
