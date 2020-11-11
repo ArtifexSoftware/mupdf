@@ -60,6 +60,7 @@ static void do_clear_signature(void)
 {
 	fz_try(ctx)
 	{
+		trace_action("widget.clearSignature();\n");
 		pdf_clear_signature(ctx, sig_widget);
 		ui_show_warning_dialog("Signature cleared successfully.");
 	}
