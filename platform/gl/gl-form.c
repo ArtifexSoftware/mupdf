@@ -156,12 +156,16 @@ static void sig_sign_dialog(void)
 static void sig_verify_dialog(void)
 {
 	const char *label = pdf_field_label(ctx, sig_widget->obj);
+	int locked = pdf_signature_is_locked(ctx, sig_widget);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
 	{
 		ui_layout(T, X, NW, 2, 2);
 
 		ui_label("%s", label);
+		ui_spacer();
+
+		ui_label("Signature field is %slocked.", locked ? "" : "un");
 		ui_spacer();
 
 		ui_label("Designated name: %s.", sig_designated_name);
@@ -189,10 +193,13 @@ static void sig_verify_dialog(void)
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
 		{
 			ui_layout(L, NONE, S, 0, 0);
-			if (ui_button("Clear"))
+			if (!locked)
 			{
-				ui.dialog = NULL;
-				do_clear_signature();
+				if (ui_button("Clear"))
+				{
+					ui.dialog = NULL;
+					do_clear_signature();
+				}
 			}
 			ui_layout(R, NONE, S, 0, 0);
 			if (ui_button("Close") || (!ui.focus && ui.key == KEY_ESCAPE))

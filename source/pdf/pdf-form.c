@@ -1357,6 +1357,13 @@ int pdf_widget_is_signed(fz_context *ctx, pdf_widget *widget)
 	return pdf_signature_is_signed(ctx, widget->page->doc, widget->obj);
 }
 
+int pdf_widget_is_locked(fz_context *ctx, pdf_widget *widget)
+{
+	if (widget == NULL)
+		return 0;
+	return pdf_signature_is_locked(ctx, widget);
+}
+
 size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)
 {
 	pdf_obj *v_ref = pdf_dict_get_inheritable(ctx, signature, PDF_NAME(V));
