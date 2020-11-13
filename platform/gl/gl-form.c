@@ -156,7 +156,7 @@ static void sig_sign_dialog(void)
 static void sig_verify_dialog(void)
 {
 	const char *label = pdf_field_label(ctx, sig_widget->obj);
-	int locked = pdf_signature_is_locked(ctx, sig_widget);
+	int readonly = pdf_widget_is_readonly(ctx, sig_widget);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
 	{
@@ -165,8 +165,11 @@ static void sig_verify_dialog(void)
 		ui_label("%s", label);
 		ui_spacer();
 
-		ui_label("Signature field is %slocked.", locked ? "" : "un");
-		ui_spacer();
+		if (readonly)
+		{
+			ui_label("Signature field is read-only.");
+			ui_spacer();
+		}
 
 		ui_label("Designated name: %s.", sig_designated_name);
 		ui_spacer();
@@ -193,7 +196,7 @@ static void sig_verify_dialog(void)
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
 		{
 			ui_layout(L, NONE, S, 0, 0);
-			if (!locked)
+			if (!readonly)
 			{
 				if (ui_button("Clear"))
 				{

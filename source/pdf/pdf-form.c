@@ -1357,11 +1357,14 @@ int pdf_widget_is_signed(fz_context *ctx, pdf_widget *widget)
 	return pdf_signature_is_signed(ctx, widget->page->doc, widget->obj);
 }
 
-int pdf_widget_is_locked(fz_context *ctx, pdf_widget *widget)
+int pdf_widget_is_readonly(fz_context *ctx, pdf_widget *widget)
 {
+	int flags, fflags;
 	if (widget == NULL)
 		return 0;
-	return pdf_signature_is_locked(ctx, widget);
+	fflags = pdf_field_flags(ctx, ((pdf_annot *) widget)->obj);
+	flags = pdf_dict_get_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
+	return (fflags & PDF_FIELD_IS_READ_ONLY) || (flags & PDF_ANNOT_IS_READ_ONLY);
 }
 
 size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents)

@@ -166,5 +166,4 @@ public class PDFWidget extends PDFAnnotation
 	public native int validateSignature();
 	public native void clearSignature();
 	public native boolean isSigned();
-	public native boolean isLocked();
 }

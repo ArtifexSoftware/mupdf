@@ -186,20 +186,13 @@ static void enact_sig_locking(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 		fz_rethrow(ctx);
 }
 
-int pdf_signature_is_locked(fz_context *ctx, pdf_widget *widget)
-{
-	int fflags = pdf_field_flags(ctx, ((pdf_annot *) widget)->obj);
-	int flags = pdf_dict_get_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
-	return (fflags & PDF_FIELD_IS_READ_ONLY) || (flags & PDF_ANNOT_IS_READ_ONLY);
-}
-
 void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *signer)
 {
 	pdf_pkcs7_designated_name *dn = NULL;
 	fz_buffer *fzbuf = NULL;
 	pdf_document *doc = widget->page->doc;
 
-	if (pdf_signature_is_locked(ctx, widget))
+	if (pdf_widget_is_readonly(ctx, widget))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature is read only, it cannot be signed.");
 
 	fz_var(dn);
@@ -285,7 +278,7 @@ void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 {
 	int flags;
 
-	if (pdf_signature_is_locked(ctx, widget))
+	if (pdf_widget_is_readonly(ctx, widget))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature read only, it cannot be cleared.");
 
 	pdf_xref_remove_unsaved_signature(ctx, ((pdf_annot *) widget)->page->doc,  ((pdf_annot *) widget)->obj);

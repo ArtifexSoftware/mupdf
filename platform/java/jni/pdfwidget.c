@@ -267,23 +267,6 @@ FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
 	return val;
 }
 
-JNIEXPORT jboolean JNICALL
-FUN(PDFWidget_isLocked)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_widget *widget = from_PDFWidget_safe(env, self);
-	jboolean val = JNI_FALSE;
-
-	if (!ctx || !widget) return 0;
-
-	fz_try(ctx)
-		val = !!pdf_widget_is_locked(ctx, widget);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return val;
-}
-
 JNIEXPORT jint JNICALL
 FUN(PDFWidget_checkCertificate)(JNIEnv *env, jobject self, jobject jverifier)
 {

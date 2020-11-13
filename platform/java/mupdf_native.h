@@ -3080,14 +3080,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_clearSignature
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isSigned
   (JNIEnv *, jobject);
 
-/*
- * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    isLocked
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_isLocked
-  (JNIEnv *, jobject);
-
 #ifdef __cplusplus
 }
 #endif
