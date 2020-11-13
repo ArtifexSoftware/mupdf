@@ -799,26 +799,68 @@ void load_page(void)
 
 	if (trace_file)
 	{
+		pdf_document *pdf = pdf_specifics(ctx, doc);
 		pdf_widget *w;
 		int i, s;
 
 		for (i = 0, s = 0, w = pdf_first_widget(ctx, page); w != NULL; i++, w = pdf_next_widget(ctx, w))
 			if (pdf_widget_type(ctx, w) == PDF_WIDGET_TYPE_SIGNATURE)
 			{
+				int is_signed;
+
 				s++;
-				int signd = pdf_widget_is_signed(ctx, w);
 				trace_action("widget = page.getWidgets()[%d];\n", i);
+				trace_action("widgetstr = \"Signature %d on page %d\";\n",
+					s, fz_page_number_from_location(ctx, doc, currentpage));
+
+				is_signed = pdf_widget_is_signed(ctx, w);
 				trace_action("tmp = widget.isSigned();\n");
-				trace_action("print('Signature %d on page %d is signed:', tmp, 'expected:', %d);\n",
-					s, fz_page_number_from_location(ctx, doc, currentpage), signd);
-				trace_action("if (tmp != %d) errored=1;\n", signd);
-				if (signd)
+				trace_action("print(widgetstr, 'is signed:', tmp|0, 'expected:', %d);\n", is_signed);
+				trace_action("if (tmp != %d) errored=1;\n", is_signed);
+
+				if (is_signed)
 				{
-					int valid = pdf_validate_signature(ctx, w);
-					trace_action("tmp = page.getWidgets()[%d].validateSignature();\n", i);
-					trace_action("print('Signature %d on page %d validation:', tmp, 'expected:', %d);\n",
-						s, fz_page_number_from_location(ctx, doc, currentpage), valid);
-					trace_action("if (tmp != %d) errored=1;\n", valid);
+					int valid_until, is_readonly;
+					char *cert_error, *digest_error;
+					pdf_pkcs7_designated_name *dn;
+					pdf_pkcs7_verifier *verifier;
+					char *signatory = NULL;
+					char buf[500];
+
+					valid_until = pdf_validate_signature(ctx, w);
+					is_readonly = pdf_widget_is_readonly(ctx, w);
+					verifier = pkcs7_openssl_new_verifier(ctx);
+					cert_error = pdf_signature_error_description(pdf_check_certificate(ctx, verifier, pdf, w->obj));
+					digest_error = pdf_signature_error_description(pdf_check_digest(ctx, verifier, pdf, w->obj));
+					dn = pdf_signature_get_signatory(ctx, verifier, pdf, w->obj);
+					if (dn)
+					{
+						char *s = pdf_signature_format_designated_name(ctx, dn);
+						fz_strlcpy(buf, s, sizeof buf);
+						fz_free(ctx, s);
+					}
+					else
+					{
+						fz_strlcpy(buf, "Signature information missing.", sizeof buf);
+					}
+					signatory = &buf[0];
+					pdf_drop_verifier(ctx, verifier);
+
+					trace_action("tmp = widget.validateSignature();\n");
+					trace_action("print(widgetstr, 'valid until:', tmp, 'expected:', %d);\n", valid_until);
+					trace_action("if (tmp != %d) errored=1;\n", valid_until);
+					trace_action("tmp = widget.isReadOnly();\n");
+					trace_action("print(widgetstr, 'is read-only:', tmp|0, 'expected:', %d);\n", is_readonly);
+					trace_action("if (tmp != %d) errored=1;\n", is_readonly);
+					trace_action("tmp = widget.checkCertificate();\n");
+					trace_action("print(widgetstr, 'certificate error:', tmp, 'expected:', '%s');\n", cert_error);
+					trace_action("if (tmp != '%s') errored=1;\n", cert_error);
+					trace_action("tmp = widget.checkDigest();\n");
+					trace_action("print(widgetstr, 'digest error:', tmp, 'expected:', '%s');\n", digest_error);
+					trace_action("if (tmp != '%s') errored=1;\n", digest_error);
+					trace_action("tmp = widget.getSignatory();\n");
+					trace_action("print(widgetstr, 'signatory:', tmp, 'expected:', '%s');\n", signatory);
+					trace_action("if (tmp != '%s') errored=1;\n", signatory);
 				}
 			}
 	}
@@ -2271,7 +2313,7 @@ int main(int argc, char **argv)
 			trace_file = fz_stdout(ctx);
 		else
 			trace_file = fz_new_output_with_path(ctx, trace_file_name, 0);
-		trace_action("var doc, page, annot, widget, hits, tmp, errored = 0;\n");
+		trace_action("var doc, page, annot, widget, widgetstr, hits, tmp, errored = 0;\n");
 	}
 
 	if (layout_css)
