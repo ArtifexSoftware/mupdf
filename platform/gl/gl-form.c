@@ -20,6 +20,7 @@ static char *sig_designated_name = NULL;
 static pdf_signature_error sig_cert_error;
 static pdf_signature_error sig_digest_error;
 static int sig_valid_until;
+static int sig_readonly;
 
 static char cert_filename[PATH_MAX];
 static struct input cert_password;
@@ -156,7 +157,6 @@ static void sig_sign_dialog(void)
 static void sig_verify_dialog(void)
 {
 	const char *label = pdf_field_label(ctx, sig_widget->obj);
-	int readonly = pdf_widget_is_readonly(ctx, sig_widget);
 
 	ui_dialog_begin(400, (ui.gridsize+4)*3 + ui.lineheight*10);
 	{
@@ -165,7 +165,7 @@ static void sig_verify_dialog(void)
 		ui_label("%s", label);
 		ui_spacer();
 
-		if (readonly)
+		if (sig_readonly)
 		{
 			ui_label("Signature field is read-only.");
 			ui_spacer();
@@ -196,7 +196,7 @@ static void sig_verify_dialog(void)
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
 		{
 			ui_layout(L, NONE, S, 0, 0);
-			if (!readonly)
+			if (!sig_readonly)
 			{
 				if (ui_button("Clear"))
 				{
@@ -223,6 +223,8 @@ static void show_sig_dialog(pdf_widget *widget)
 		{
 			pdf_pkcs7_verifier *verifier;
 			pdf_pkcs7_designated_name *dn;
+
+			sig_readonly = pdf_widget_is_readonly(ctx, widget);
 
 			sig_valid_until = pdf_validate_signature(ctx, widget);
 
