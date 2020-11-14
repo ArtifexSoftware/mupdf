@@ -233,9 +233,12 @@ static void show_sig_dialog(pdf_widget *widget)
 			sig_cert_error = pdf_check_certificate(ctx, verifier, pdf, widget->obj);
 			sig_digest_error = pdf_check_digest(ctx, verifier, pdf, widget->obj);
 
-			dn = pdf_signature_get_signatory(ctx, verifier, pdf, widget->obj);
 			fz_free(ctx, sig_designated_name);
-			sig_designated_name = pdf_signature_format_designated_name(ctx, dn);
+			dn = pdf_signature_get_signatory(ctx, verifier, pdf, widget->obj);
+			if (dn)
+				sig_designated_name = pdf_signature_format_designated_name(ctx, dn);
+			else
+				sig_designated_name = fz_strdup(ctx, "Signature information missing.");
 			pdf_signature_drop_designated_name(ctx, dn);
 
 			pdf_drop_verifier(ctx, verifier);

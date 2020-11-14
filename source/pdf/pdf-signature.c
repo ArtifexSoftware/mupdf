@@ -355,14 +355,23 @@ void pdf_signature_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_na
 char *pdf_signature_format_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *name)
 {
 	const char *parts[] = {
-		"CN=", name->cn,
-		", O=", name->o,
-		", OU=", name->ou,
-		", emailAddress=", name->email,
-		", C=", name->c};
+		"CN=", "",
+		", O=", "",
+		", OU=", "",
+		", emailAddress=", "",
+		", C=", ""};
 	size_t len = 1;
 	char *s;
 	int i;
+
+	if (name == NULL)
+		return NULL;
+
+	parts[1] = name->cn;
+	parts[3] = name->o;
+	parts[5] = name->ou;
+	parts[7] = name->email;
+	parts[9] = name->c;
 
 	for (i = 0; i < (int)nelem(parts); i++)
 		if (parts[i])
