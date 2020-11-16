@@ -2399,20 +2399,24 @@ int Memento_vasprintf(char **ret, const char *format, va_list ap)
 {
     int n;
     va_list ap2;
+    va_copy(ap2, ap);
 
     if (!memento.inited)
         Memento_init();
 
-    va_copy(ap2, ap);
     n = vsnprintf(NULL, 0, format, ap);
-    if (n < 0)
+    if (n < 0) {
+        va_end(ap2);
         return n;
+    }
 
     MEMENTO_LOCK();
     *ret = do_malloc(n+1, Memento_EventType_vasprintf);
     MEMENTO_UNLOCK();
-    if (*ret == NULL)
+    if (*ret == NULL) {
+        va_end(ap2);
         return -1;
+    }
 
     n = vsnprintf(*ret, n + 1, format, ap2);
     va_end(ap2);
@@ -3500,15 +3504,19 @@ int Memento_vasprintf(char **ret, const char *format, va_list ap)
 {
     int n;
     va_list ap2;
-
     va_copy(ap2, ap);
+
     n = vsnprintf(NULL, 0, format, ap);
-    if (n < 0)
+    if (n < 0) {
+        va_end(ap2);
         return n;
+    }
 
     *ret = MEMENTO_UNDERLYING_MALLOC(n+1);
-    if (*ret == NULL)
+    if (*ret == NULL) {
+        va_end(ap2);
         return -1;
+    }
 
     n = vsnprintf(*ret, n + 1, format, ap2);
     va_end(ap2);
