@@ -39,7 +39,11 @@
 #include "memory_.h"
 int atexit(void (*)(void));
 #else
+#ifdef MEMENTO_MUPDF_HACKS
 #include "mupdf/memento.h"
+#else
+#include "memento.h"
+#endif
 #include <stdio.h>
 #endif
 #ifndef _MSC_VER
