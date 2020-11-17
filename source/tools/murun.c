@@ -4525,7 +4525,7 @@ static void ffi_PDFDocument_validateChangeHistory(js_State *J)
 		val = pdf_validate_change_history(ctx, pdf);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushboolean(J, val);
+	js_pushnumber(J, val);
 }
 
 static void ffi_PDFDocument_wasPureXFA(js_State *J)
