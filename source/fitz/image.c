@@ -399,7 +399,7 @@ subarea_stream(fz_context *ctx, fz_stream *stm, fz_image *image, const fz_irect 
 	size_t b_skip = b_margin * stream_stride;
 	int h = (subarea->y1 - subarea->y0 + f - 1) >> l2factor;
 	int w = (subarea->x1 - subarea->x0 + f - 1) >> l2factor;
-	size_t stride = (w * image->n * image->bpc + 7) / 8;
+	size_t stride = (w * (size_t)image->n * image->bpc + 7) / 8;
 
 	state = fz_malloc_struct(ctx, subarea_state);
 	state->src = stm;
