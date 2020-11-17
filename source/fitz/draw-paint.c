@@ -2171,9 +2171,9 @@ fz_paint_pixmap_with_bbox(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_REST
 		return;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x) * (size_t)src->n;
 	sa = src->alpha;
-	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x) * (size_t)dst->n;
 	da = dst->alpha;
 
 	n -= sa;
@@ -2218,9 +2218,9 @@ fz_paint_pixmap(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_RESTRICT src, 
 		return;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x) * (size_t)src->n;
 	sa = src->alpha;
-	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x) * (size_t)dst->n;
 	da = dst->alpha;
 
 	n -= sa;
@@ -2291,8 +2291,8 @@ fz_paint_pixmap_alpha(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_RESTRICT
 		return;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
-	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x) * (size_t)src->n;
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x) * (size_t)dst->n;
 
 	if (alpha == 255)
 	{
@@ -2339,9 +2339,9 @@ fz_paint_pixmap_with_overprint(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ
 		return;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x) * (size_t)src->n;
 	sa = src->alpha;
-	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x) * (size_t)dst->n;
 	da = dst->alpha;
 
 	n -= sa;
@@ -2382,10 +2382,10 @@ fz_paint_pixmap_with_mask(fz_pixmap * FZ_RESTRICT dst, const fz_pixmap * FZ_REST
 		return;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x) * (size_t)src->n;
 	sa = src->alpha;
-	mp = msk->samples + (unsigned int)((y - msk->y) * msk->stride + (x - msk->x) * msk->n);
-	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	mp = msk->samples + (y - msk->y) * (size_t)msk->stride + (x - msk->x) * (size_t)msk->n;
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x) * (size_t)dst->n;
 	da = dst->alpha;
 
 	/* sa == da, or something has gone very wrong! */

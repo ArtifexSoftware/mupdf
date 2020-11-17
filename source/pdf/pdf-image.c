@@ -664,7 +664,7 @@ unknown_compression:
 					/* TODO: extract alpha plane to a soft mask. */
 					/* TODO: convert spots to colors. */
 
-					int line_skip = pixmap->stride - pixmap->w * pixmap->n;
+					size_t line_skip = pixmap->stride - pixmap->w * (size_t)pixmap->n;
 					int skip = pixmap->n - n;
 					while (h--)
 					{
