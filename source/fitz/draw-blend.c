@@ -435,8 +435,8 @@ fz_blend_nonseparable_gray(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTR
 				int saba = fz_mul255(sa, ba);
 
 				/* ugh, division to get non-premul components */
-				int invsa = sa ? 255 * 256 / sa : 0;
-				int invba = ba ? 255 * 256 / ba : 0;
+				int invsa = 255 * 256 / sa;
+				int invba = 255 * 256 / ba;
 				int k;
 				int sg = (sp[0] * invsa) >> 8;
 				int bg = (bp[0] * invba) >> 8;
@@ -493,7 +493,7 @@ fz_blend_nonseparable(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTRICT s
 				int saba = fz_mul255(sa, ba);
 
 				/* ugh, division to get non-premul components */
-				int invsa = sa ? 255 * 256 / sa : 0;
+				int invsa = 255 * 256 / sa;
 				int invba = 255 * 256 / ba;
 
 				int sr = (sp[0] * invsa) >> 8;

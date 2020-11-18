@@ -1533,6 +1533,7 @@ template_span_3_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 			}
 			else
 			{
+				/* sa != 0 as t != 0 */
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
 				dp++;
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
@@ -1541,11 +1542,10 @@ template_span_3_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 				dp++;
 				if (da)
 				{
-					*dp = (sa ? *sp + FZ_COMBINE(*dp, t) : 255);
+					*dp = *sp + FZ_COMBINE(*dp, t);
 					dp++;
 				}
-				if (sa)
-					sp++;
+				sp++;
 			}
 		}
 	}
@@ -1577,6 +1577,7 @@ template_span_4_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 			}
 			else
 			{
+				/* sa != 0 as t != 0 */
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
 				dp++;
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
@@ -1587,11 +1588,10 @@ template_span_4_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 				dp++;
 				if (da)
 				{
-					*dp = (sa ? *sp + FZ_COMBINE(*dp, t) : 255);
+					*dp = *sp + FZ_COMBINE(*dp, t);
 					dp++;
 				}
-				if (sa)
-					sp++;
+				sp++;
 			}
 		}
 	}
@@ -1624,6 +1624,7 @@ template_span_N_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 			}
 			else
 			{
+				/* sa != 0, as t != 0 */
 				int k;
 				for (k = 0; k < n1; k++)
 				{
@@ -1633,11 +1634,10 @@ template_span_N_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 				}
 				if (da)
 				{
-					*dp = (sa ? *sp + FZ_COMBINE(*dp, t) : 255);
+					*dp = *sp + FZ_COMBINE(*dp, t);
 					dp++;
 				}
-				if (sa)
-					sp++;
+				sp++;
 			}
 		}
 	}
@@ -1675,6 +1675,7 @@ template_span_N_general_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRI
 			else
 			{
 				int k;
+				/* sa can never be 0 here, as t != 0. */
 				for (k = 0; k < n1; k++)
 				{
 					if (fz_overprint_component(eop, k))
@@ -1684,11 +1685,10 @@ template_span_N_general_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRI
 				}
 				if (da)
 				{
-					*dp = (sa ? *sp + FZ_COMBINE(*dp, t) : 255);
+					*dp = *sp + FZ_COMBINE(*dp, t);
 					dp++;
 				}
-				if (sa)
-					sp++;
+				sp++;
 			}
 		}
 	}
