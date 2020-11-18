@@ -799,7 +799,7 @@ update_ctm_for_subarea(fz_matrix *ctm, const fz_irect *subarea, int w, int h)
 {
 	fz_matrix m;
 
-	if (subarea->x0 == 0 && subarea->y0 == 0 && subarea->x1 == w && subarea->y1 == h)
+	if (ctm == NULL || (subarea->x0 == 0 && subarea->y0 == 0 && subarea->x1 == w && subarea->y1 == h))
 		return;
 
 	m.a = (float) (subarea->x1 - subarea->x0) / w;
@@ -946,8 +946,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	tile = image->get_pixmap(ctx, image, &key.rect, w, h, &l2factor_remaining);
 
 	/* Update the ctm to allow for subareas. */
-	if (ctm)
-		update_ctm_for_subarea(ctm, &key.rect, image->w, image->h);
+	update_ctm_for_subarea(ctm, &key.rect, image->w, image->h);
 
 	/* l2factor_remaining is updated to the amount of subscaling left to do */
 	assert(l2factor_remaining >= 0 && l2factor_remaining <= 6);
