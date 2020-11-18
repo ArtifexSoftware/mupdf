@@ -246,7 +246,7 @@ template_solid_color_N_256(byte * FZ_RESTRICT dp, int n, int w, const byte * FZ_
 {
 	int k;
 	int n1 = n - da;
-	if (n == 3 && da == 0 && w >= 8)
+	if (n == 3 && da == 0 && w >= 7)
 	{
 		union {uint32_t w[3]; byte b[12];} u;
 
