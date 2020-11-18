@@ -1494,7 +1494,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 			doc->crypt = pdf_new_crypt(ctx, encrypt, id);
 
 		/* Allow lazy clients to read encrypted files with a blank password */
-		pdf_authenticate_password(ctx, doc, "");
+		(void)pdf_authenticate_password(ctx, doc, "");
 
 		if (repaired)
 		{
