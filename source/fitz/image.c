@@ -393,8 +393,8 @@ subarea_stream(fz_context *ctx, fz_stream *stm, fz_image *image, const fz_irect 
 	int t_margin = subarea->y0 >> l2factor;
 	int r_margin = (image->w + f - 1 - subarea->x1) >> l2factor;
 	int b_margin = (image->h + f - 1 - subarea->y1) >> l2factor;
-	size_t l_skip = (l_margin * image->n * image->bpc)/8;
-	size_t r_skip = (r_margin * image->n * image->bpc + 7)/8;
+	size_t l_skip = (l_margin * (size_t)image->n * image->bpc)/8;
+	size_t r_skip = (r_margin * (size_t)image->n * image->bpc + 7)/8;
 	size_t t_skip = t_margin * stream_stride;
 	size_t b_skip = b_margin * stream_stride;
 	int h = (subarea->y1 - subarea->y0 + f - 1) >> l2factor;
