@@ -35,16 +35,14 @@ def test(path):
     global g_test_n
     g_test_n += 1
 
-    if 1:
-        # Test operations using functions:
-        #
-        log('Testing functions.')
-
-        log(f'    Opening: %s' % path)
-        document = mupdf.open_document(path)
-        log(f'    mupdf.needs_password(document)={mupdf.needs_password(document)}')
-        log(f'    mupdf.count_pages(document)={mupdf.count_pages(document)}')
-        log(f'    mupdf.document_output_intent(document)={mupdf.document_output_intent(document)}')
+    # Test operations using functions:
+    #
+    log('Testing functions.')
+    log(f'    Opening: %s' % path)
+    document = mupdf.open_document(path)
+    log(f'    mupdf.needs_password(document)={mupdf.needs_password(document)}')
+    log(f'    mupdf.count_pages(document)={mupdf.count_pages(document)}')
+    log(f'    mupdf.document_output_intent(document)={mupdf.document_output_intent(document)}')
 
     # Test operations using classes:
     #
