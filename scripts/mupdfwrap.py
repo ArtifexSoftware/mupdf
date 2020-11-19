@@ -310,7 +310,7 @@ class ClangInfo:
         clang.cindex.Config.set_library_file(). This appears to be necessary
         even when clang is installed as a standard package.
         '''
-        for version in 8, 7, 6,:
+        for version in 10, 9, 8, 7, 6,:
             ok = self._try_init_clang( version)
             if ok:
                 break
@@ -318,6 +318,22 @@ class ClangInfo:
             raise Exception( 'cannot find libclang.so')
 
     def _try_init_clang( self, version):
+        if os.uname()[0] == 'OpenBSD':
+            clang_bin = glob.glob( f'/usr/local/bin/clang-{version}')
+            if not clang_bin:
+                return
+            clang_bin = clang_bin[0]
+            self.clang_version = version
+            libclang_so = glob.glob( f'/usr/local/lib/libclang.so*')
+            assert len(libclang_so) == 1
+            self.libclang_so = libclang_so[0]
+            self.resource_dir = jlib.system(
+                    f'{clang_bin} -print-resource-dir',
+                    out='return',
+                    ).strip()
+            self.include_path = os.path.join( self.resource_dir, 'include')
+            return True
+
         for p in os.environ.get( 'PATH').split( ':'):
             clang_bins = glob.glob( os.path.join( p, f'clang-{version}*'))
             if not clang_bins:
@@ -333,6 +349,10 @@ class ClangInfo:
                 if e:
                     log( '[could not find {clang_bin}: {e=}]')
                     return
+                if version == 10:
+                    m = re.search( '\nlibraries: =(.+)\n', clang_search_dirs)
+                    assert m
+                    clang_search_dirs = m.group(1)
                 clang_search_dirs = clang_search_dirs.strip().split(':')
                 for i in ['/usr/lib', '/usr/local/lib'] + clang_search_dirs:
                     for leaf in f'libclang-{version}.*so*', f'libclang.so.{version}.*':
