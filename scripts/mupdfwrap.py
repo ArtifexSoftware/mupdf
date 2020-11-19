@@ -4778,6 +4778,9 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
             %ignore {rename.function('fz_format_string')};
             %ignore {rename.function('fz_open_file_w')};
 
+            // SWIG can't handle this because it uses a valist.
+            %ignore {rename.function('Memento_vasprintf')};
+
             // Might prefer to #include mupdf/exceptions.h and make the
             // %exception block below handle all the different exception types,
             // but swig-3 cannot parse 'throw()' in mupdf/exceptions.h.
