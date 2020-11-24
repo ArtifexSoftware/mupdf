@@ -377,6 +377,8 @@ struct pdf_document
 	pdf_obj **orphans;
 
 	fz_xml_doc *xfa;
+
+	pdf_journal *journal;
 };
 
 pdf_document *pdf_create_document(fz_context *ctx);

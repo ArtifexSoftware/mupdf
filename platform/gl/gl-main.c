@@ -1451,6 +1451,7 @@ static void load_document(void)
 			trace_action("doc.enableJS();\n");
 			pdf_enable_js(ctx, pdf);
 		}
+		pdf_enable_journal(ctx, pdf);
 		if (trace_file)
 		{
 			int vsns = pdf_count_versions(ctx, pdf);
