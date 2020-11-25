@@ -583,15 +583,16 @@ walk_string(fz_context *ctx, int uni, int remove, editable_str *str)
 		if (rune == uni)
 		{
 			/* Match. Skip over that one. */
-			str->pos += n;
 		}
-		else if (uni == 32) {
+		else if (uni == 32)
+		{
 			/* We don't care if we're given whitespace
 			 * and it doesn't match the string. Don't
 			 * skip forward. Nothing to remove. */
 			break;
 		}
-		else if (rune == 32) {
+		else if (rune == 32)
+		{
 			/* The string has a whitespace, and we
 			 * don't match it; that's forgivable as
 			 * PDF often misses out spaces. Remove this
@@ -608,6 +609,10 @@ walk_string(fz_context *ctx, int uni, int remove, editable_str *str)
 			len = strlen(s+n);
 			memmove(s, s+n, len+1);
 			str->edited = 1;
+		}
+		else
+		{
+			str->pos += n;
 		}
 	}
 	while (rune != uni);
@@ -636,6 +641,7 @@ mcid_char_imp(fz_context *ctx, pdf_filter_processor *p, tag_record *tr, int uni,
 
 	/* Edit the Alt string */
 	walk_string(ctx, uni, remove, &tr->alt);
+
 	/* Edit the ActualText string */
 	walk_string(ctx, uni, remove, &tr->actualtext);
 
@@ -727,8 +733,10 @@ filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char
 		}
 		else
 			remove = filter_show_char(ctx, p, cid, &uni);
+
 		if (cpt == 32 && *inc == 1)
 			filter_show_space(ctx, p, gstate->pending.text.word_space);
+
 		/* For every character we process (whether we remove it
 		 * or not), we consider any MCIDs that are in effect. */
 		mcid_char(ctx, p, uni, remove);
