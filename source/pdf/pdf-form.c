@@ -1528,32 +1528,38 @@ get_locked_fields_from_xfa(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	if (name == NULL)
 		return NULL;
 
-	node = get_xfa_resource(ctx, doc, "template");
-
-	do
+	fz_try(ctx)
 	{
-		char c, *s, *e;
-		int idx = 0;
-		char *key;
+		node = get_xfa_resource(ctx, doc, "template");
 
-		idx = find_name_component(&n, &s, &e);
-		/* We want the idx'th occurrence of s..e */
-
-		/* Hacky */
-		c = *e;
-		*e = 0;
-		key = *n ? "subform" : "field";
-		node = fz_xml_find_down_match(node, key, "name", s);
-		while (node && idx > 0)
+		do
 		{
-			node = fz_xml_find_next_match(node, key, "name", s);
-			idx--;
-		}
-		*e = c;
-	}
-	while (node && *n == '.');
+			char c, *s, *e;
+			int idx = 0;
+			char *key;
 
-	fz_free(ctx, name);
+			idx = find_name_component(&n, &s, &e);
+			/* We want the idx'th occurrence of s..e */
+
+			/* Hacky */
+			c = *e;
+			*e = 0;
+			key = *n ? "subform" : "field";
+			node = fz_xml_find_down_match(node, key, "name", s);
+			while (node && idx > 0)
+			{
+				node = fz_xml_find_next_match(node, key, "name", s);
+				idx--;
+			}
+			*e = c;
+		}
+		while (node && *n == '.');
+	}
+	fz_always(ctx)
+		fz_free(ctx, name);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 	if (node == NULL)
 		return NULL;
 
