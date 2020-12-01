@@ -371,8 +371,6 @@ fz_irect_from_rect(fz_rect r)
 	fz_irect b;
 	if (fz_is_infinite_rect(r))
 		return fz_infinite_irect;
-	if (fz_is_empty_rect(r))
-		return fz_empty_irect;
 	if (!fz_is_valid_rect(r))
 		return fz_invalid_irect;
 
