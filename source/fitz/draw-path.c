@@ -263,11 +263,11 @@ static const fz_path_walker flatten_proc =
 };
 
 int
-fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, fz_matrix ctm, float flatness, const fz_irect *scissor, fz_irect *bbox)
+fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, fz_matrix ctm, float flatness, fz_irect scissor, fz_irect *bbox)
 {
 	flatten_arg arg;
 
-	if (fz_reset_rasterizer(ctx, rast, *scissor))
+	if (fz_reset_rasterizer(ctx, rast, scissor))
 	{
 		arg.rast = rast;
 		arg.ctm = ctm;
@@ -298,7 +298,7 @@ fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, 
 		return 0;
 
 	*bbox = fz_bound_rasterizer(ctx, rast);
-	return fz_is_empty_irect(fz_intersect_irect(*bbox, *scissor));
+	return fz_is_empty_irect(fz_intersect_irect(*bbox, scissor));
 }
 
 enum {
@@ -1416,7 +1416,7 @@ static const fz_path_walker dash_proc =
 };
 
 static int
-do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth, const fz_irect *scissor, fz_irect *bbox)
+do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth, fz_irect *bbox)
 {
 	struct sctx s;
 	const fz_path_walker *proc = &stroke_proc;
@@ -1481,15 +1481,14 @@ do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, con
 }
 
 int
-fz_flatten_stroke_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth, const fz_irect *scissor, fz_irect *bbox)
+fz_flatten_stroke_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth, fz_irect scissor, fz_irect *bbox)
 {
-	if (fz_reset_rasterizer(ctx, rast, *scissor))
+	if (fz_reset_rasterizer(ctx, rast, scissor))
 	{
-		if (do_flatten_stroke(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox))
-			return 1;
+		if (do_flatten_stroke(ctx, rast, path, stroke, ctm, flatness, linewidth, bbox))
+			return 1; /* empty path, exit early */
 		fz_postindex_rasterizer(ctx, rast);
-		bbox = NULL;
 	}
 
-	return do_flatten_stroke(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox);
+	return do_flatten_stroke(ctx, rast, path, stroke, ctm, flatness, linewidth, bbox);
 }
