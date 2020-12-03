@@ -19,9 +19,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 	unsigned char *digest = NULL;
 	size_t digest_len;
 	pdf_obj *v = pdf_dict_get(ctx, field, PDF_NAME(V));
-	pdf_obj *c = pdf_dict_get(ctx, v, PDF_NAME(Contents));
 	size_t len;
-	const char *s = pdf_to_string(ctx, c, &len);
 	char *cstr = NULL;
 
 	fz_var(stm);
@@ -33,9 +31,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 	if (hexdigest_length < 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad parameters to pdf_write_digest");
 
-	digest_len = (hexdigest_length - 2) / 2;
-	if (len < digest_len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature contents array smaller than digest");
+	len = (hexdigest_length - 2) / 2;
 
 	fz_try(ctx)
 	{
@@ -52,8 +48,12 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 		stm = fz_stream_from_output(ctx, out);
 		in = fz_open_range_filter(ctx, stm, brange, brange_len);
 
-		digest = fz_malloc(ctx, digest_len);
-		digest_len = signer->create_digest(ctx, signer, in, digest, digest_len);
+		digest = fz_malloc(ctx, len);
+		digest_len = signer->create_digest(ctx, signer, in, digest, len);
+		if (digest_len == 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "signer provided no signature digest");
+		if (digest_len > len)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "signature digest larger than space for digest");
 
 		fz_drop_stream(ctx, in);
 		in = NULL;
@@ -61,13 +61,14 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 		stm = NULL;
 
 		fz_seek_output(ctx, out, (int64_t)hexdigest_offset+1, SEEK_SET);
-
 		cstr = fz_malloc(ctx, len);
 
-		for (z = 0; z < digest_len; z++)
-			fz_write_printf(ctx, out, "%02x", digest[z]);
-		memcpy(cstr, digest, digest_len);
-		memcpy(cstr + digest_len, s + digest_len, len - digest_len);
+		for (z = 0; z < len; z++)
+		{
+			int val = z < digest_len ? digest[z] : 0;
+			fz_write_printf(ctx, out, "%02x", val);
+			cstr[z] = val;
+		}
 
 		pdf_dict_put_string(ctx, v, PDF_NAME(Contents), cstr, len);
 	}
