@@ -2177,7 +2177,7 @@ void pdf_print_encrypted_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int 
 	char *ptr;
 	size_t n;
 
-	ptr = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, &n, obj, tight, ascii,crypt, num, gen);
+	ptr = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, &n, obj, tight, ascii, crypt, num, gen);
 	fz_try(ctx)
 		fz_write_data(ctx, out, ptr, n);
 	fz_always(ctx)
