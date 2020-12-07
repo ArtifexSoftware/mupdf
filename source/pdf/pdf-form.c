@@ -494,6 +494,7 @@ int pdf_toggle_widget(fz_context *ctx, pdf_widget *widget)
 	case PDF_WIDGET_TYPE_CHECKBOX:
 	case PDF_WIDGET_TYPE_RADIOBUTTON:
 		toggle_check_box(ctx, widget->page->doc, widget->obj);
+		widget->has_new_ap = 1;
 		return 1;
 	}
 	return 0;
