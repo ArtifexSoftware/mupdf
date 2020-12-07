@@ -394,7 +394,7 @@ def drawband( page, list_, ctm, tbounds, cookie, band_start, pix):
     else:
         page.run( dev, ctm, cookie)
     dev.close_device()
-    dev = None  # [py/unused-local-variable]
+    dev = None  # lgtm [py/unused-local-variable]
 
     if state.invert:
         pix.invert_pixmap()
@@ -432,7 +432,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
             page.run( dev, fz_identity, cookie)
         state.out.write_string( "</page>\n")
         dev.close_device()
-        dev = None  # [py/unused-local-variable]
+        dev = None  # lgtm [py/unused-local-variable]
 
     elif state.output_format == OUT_XMLTEXT:
         state.out.write_string( "<page mediabox=\"%g %g %g %g\">\n" % (
@@ -444,7 +444,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
             page.run( dev, fz_identity, cookie)
         state.out.write_string( "</page>\n")
         dev.close_device()
-        dev = None  # [py/unused-local-variable]
+        dev = None  # lgtm [py/unused-local-variable]
 
     elif state.output_format == OUT_BBOX:
         bbox = mupdf.Rect( mupdf.Rect.Fixed_EMPTY)
@@ -483,7 +483,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         else:
             page.run( dev, ctm, cookie)
         dev.close_device()
-        dev = None  # [py/unused-local-variable]
+        dev = None  # lgtm [py/unused-local-variable]
         if state.output_format == OUT_STEXT:
             state.out.print_stext_page_as_xml( text, pagenum)
         elif state.output_format == OUT_HTML:
