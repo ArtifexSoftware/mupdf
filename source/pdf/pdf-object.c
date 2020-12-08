@@ -2230,29 +2230,16 @@ void pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight, int
 	pdf_print_encrypted_obj(ctx, out, obj, tight, ascii, NULL, 0, 0);
 }
 
-static void pdf_debug_encrypted_obj(fz_context *ctx, pdf_obj *obj, int tight, pdf_crypt *crypt, int num, int gen)
-{
-	char buf[1024];
-	char *ptr;
-	size_t n;
-	int ascii = 1;
-
-	ptr = pdf_sprint_encrypted_obj(ctx, buf, sizeof buf, &n, obj, tight, ascii, crypt, num, gen);
-	fwrite(ptr, 1, n, stdout);
-	if (ptr != buf)
-		fz_free(ctx, ptr);
-}
-
 void pdf_debug_obj(fz_context *ctx, pdf_obj *obj)
 {
-	pdf_debug_encrypted_obj(ctx, pdf_resolve_indirect(ctx, obj), 0, NULL, 0, 0);
-	putchar('\n');
+	pdf_print_obj(ctx, fz_stddbg(ctx), pdf_resolve_indirect(ctx, obj), 0, 0);
 }
 
 void pdf_debug_ref(fz_context *ctx, pdf_obj *obj)
 {
-	pdf_debug_encrypted_obj(ctx, obj, 0, NULL, 0, 0);
-	putchar('\n');
+	fz_output *out = fz_stddbg(ctx);
+	pdf_print_obj(ctx, out, obj, 0, 0);
+	fz_write_byte(ctx, out, '\n');
 }
 
 int pdf_obj_refs(fz_context *ctx, pdf_obj *obj)

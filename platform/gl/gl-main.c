@@ -2313,6 +2313,13 @@ int main(int argc, char **argv)
 	}
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
+
+#ifdef _WIN32
+	/* stderr goes nowhere. Get us a debug stream we have a chance
+	 * of seeing. */
+	fz_set_stddbg(ctx, fz_stdods(ctx));
+#endif
+
 	fz_register_document_handlers(ctx);
 
 	if (trace_file_name)
