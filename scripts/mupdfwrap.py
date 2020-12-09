@@ -4885,15 +4885,16 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
 
             import re
 
-            # Wrap parse_page_range() to fix SWIG bug where a NULL return value
-            # is not included in the returned list. This occurs with SWIG-3.0;
-            # maybe fixed in SWIG-4?
+            # Wrap parse_page_range() to fix SWIG bug where a NULL return
+            # value seems to mess up the returned list - we end up with ret
+            # containing two elements rather than three, e.g. [0, 2]. This
+            # occurs with SWIG-3.0; maybe fixed in SWIG-4?
             #
             w_parse_page_range = parse_page_range
             def parse_page_range(s, n):
                 ret = w_parse_page_range(s, n)
                 if len(ret) == 2:
-                    return None, ret[0], ret[1]
+                    return None, 0, 0
                 else:
                     return ret[0], ret[1], ret[2]
 
