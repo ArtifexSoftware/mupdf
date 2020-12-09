@@ -1624,6 +1624,25 @@ void Memento_listBlockInfo(void)
 #endif
 }
 
+#ifdef MEMENTO_DETAILS
+static int
+showBlockInfo(Memento_BlkHeader *b, void *arg)
+{
+    if (arg < MEMBLK_TOBLK(b) || (void *)MEMBLK_POSTPTR(b) <= arg)
+        return 0;
+    return showInfo(b, NULL);
+}
+#endif
+
+void Memento_blockInfo(void *p)
+{
+#ifdef MEMENTO_DETAILS
+    MEMENTO_LOCK();
+    Memento_appBlocks(&memento.used, showBlockInfo, p);
+    MEMENTO_UNLOCK();
+#endif
+}
+
 static int Memento_nonLeakBlocksLeaked(void)
 {
     Memento_BlkHeader *blk = memento.used.head;
@@ -3568,6 +3587,10 @@ void (Memento_info)(void *addr)
 }
 
 void (Memento_listBlockInfo)(void)
+{
+}
+
+void (Memento_blockInfo)(void *ptr)
 {
 }
 

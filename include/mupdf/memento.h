@@ -244,6 +244,7 @@ int Memento_vasprintf(char **ret, const char *format, va_list ap);
 
 void Memento_info(void *addr);
 void Memento_listBlockInfo(void);
+void Memento_blockInfo(void *blk);
 void *Memento_takeByteRef(void *blk);
 void *Memento_dropByteRef(void *blk);
 void *Memento_takeShortRef(void *blk);
@@ -315,6 +316,7 @@ void Memento_bt(void);
 #define Memento_label(A,B)                 (A)
 #define Memento_info(A)                    do {} while (0)
 #define Memento_listBlockInfo()            do {} while (0)
+#define Memento_blockInfo()                do {} while (0)
 #define Memento_takeByteRef(A)             (A)
 #define Memento_dropByteRef(A)             (A)
 #define Memento_takeShortRef(A)            (A)
