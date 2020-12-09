@@ -1227,6 +1227,11 @@ def update_needed( infiles, outfiles):
         text = f'{in_tmax_name} is newer than {out_tmin_name}'
         return text
 
+def ensure_parent_dir( path):
+    parent = os.path.dirname( path)
+    if parent:
+        os.makedirs( parent, exist_ok=True)
+
 def build(
         infiles,
         outfiles,
@@ -1318,6 +1323,7 @@ def build(
     # fails but still creates target(s), then next time we will know target(s)
     # are not up to date.
     #
+    ensure_parent_dir( command_filename)
     with open( command_filename, 'w') as f:
         pass
 
