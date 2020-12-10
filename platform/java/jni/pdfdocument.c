@@ -836,6 +836,68 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 }
 
 JNIEXPORT void JNICALL
+FUN(PDFDocument_redactSaveSecure)(JNIEnv *env, jobject self, jstring jfilename, jstring joptions)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	const char *filename = NULL;
+	const char *options = NULL;
+	fz_document_writer *writer = NULL;
+	fz_page *page = NULL;
+	fz_device *dev;
+	int n;
+	int i;
+
+	if (!ctx || !pdf) return;
+	if (!jfilename) jni_throw_arg_void(env, "filename must not be null");
+
+	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (!filename) return;
+
+	if (joptions)
+	{
+		options = (*env)->GetStringUTFChars(env, joptions, NULL);
+		if (!options)
+		{
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+			return;
+		}
+	}
+
+	fz_var(writer);
+	fz_var(page);
+	fz_try(ctx)
+	{
+		writer = fz_new_pdfocr_writer(ctx, filename, options);
+
+		n = fz_count_pages(ctx, (fz_document *)pdf);
+		for (i = 0; i < n; i++)
+		{
+			page = fz_load_page(ctx, (fz_document *)pdf, i);
+			dev = fz_begin_page(ctx, writer, fz_bound_page(ctx, page));
+			fz_run_page(ctx, page, dev, fz_identity, NULL);
+			fz_drop_page(ctx, page);
+			page = NULL;
+			fz_end_page(ctx, writer);
+		}
+
+		fz_close_document_writer(ctx, writer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_document_writer(ctx, writer);
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_page(ctx, page);
+		jni_rethrow_void(env, ctx);
+	}
+}
+
+JNIEXPORT void JNICALL
 FUN(PDFDocument_enableJs)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);

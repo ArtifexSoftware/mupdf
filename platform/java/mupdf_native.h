@@ -2114,6 +2114,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    redactSaveSecure
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_redactSaveSecure
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    nativeSaveWithStream
  * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputOutputStream;Ljava/lang/String;)V
  */
