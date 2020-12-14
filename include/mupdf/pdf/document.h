@@ -552,6 +552,7 @@ typedef struct
 	int do_sanitize; /* Sanitize content streams. */
 	int do_appearance; /* (Re)create appearance streams. */
 	int do_encrypt; /* Encryption method to use: keep, none, rc4-40, etc. */
+	int dont_regenerate_id; /* Don't regenerate ID if set (used for clean) */
 	int permissions; /* Document encryption permissions. */
 	char opwd_utf8[128]; /* Owner password. */
 	char upwd_utf8[128]; /* User password. */
