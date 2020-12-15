@@ -1148,6 +1148,25 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 	if (doc->journal && doc->journal->nesting == 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't alter an object other than in an operation");
 
+	if (doc->local_xref)
+	{
+		/* We have a local_xref. If it's in force, then we're
+		 * ready for alteration already. */
+		if (doc->local_xref_nesting > 0)
+		{
+			pdf_xref_ensure_local_object(ctx, doc, parent);
+			return;
+		}
+		else
+		{
+			/* The local xref isn't in force, and we're about
+			 * to edit the document. This invalidates it, so
+			 * throw it away. */
+			pdf_drop_local_xref(ctx, doc->local_xref);
+			doc->local_xref = NULL;
+		}
+	}
+
 	/*
 		Otherwise we need to ensure that the containing hierarchy of objects
 		has been moved to the incremental xref section.
@@ -2070,6 +2089,7 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 			fz_rethrow(ctx);
 		}
 
+		DICT(dict)->parent_num = DICT(obj)->parent_num;
 		return dict;
 	}
 	else if (obj->kind == PDF_ARRAY)
@@ -2091,6 +2111,7 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 			fz_rethrow(ctx);
 		}
 
+		ARRAY(arr)->parent_num = ARRAY(obj)->parent_num;
 		return arr;
 	}
 	else
