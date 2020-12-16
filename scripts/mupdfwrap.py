@@ -321,6 +321,7 @@ class ClangInfo:
         if os.uname()[0] == 'OpenBSD':
             clang_bin = glob.glob( f'/usr/local/bin/clang-{version}')
             if not clang_bin:
+                log('Cannot find {clang_bin=}')
                 return
             clang_bin = clang_bin[0]
             self.clang_version = version
@@ -332,6 +333,9 @@ class ClangInfo:
                     out='return',
                     ).strip()
             self.include_path = os.path.join( self.resource_dir, 'include')
+            logx('{self.libclang_so=} {self.resource_dir=} {self.include_path=}')
+            if os.environ.get('VIRTUAL_ENV'):
+                clang.cindex.Config.set_library_file( self.libclang_so)
             return True
 
         for p in os.environ.get( 'PATH').split( ':'):
