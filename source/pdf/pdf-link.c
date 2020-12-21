@@ -404,11 +404,10 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, fz
 	char *uri;
 	fz_link *link = NULL;
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(Subtype));
-	if (!pdf_name_eq(ctx, obj, PDF_NAME(Link)))
-		return NULL;
+//	obj = pdf_dict_get(ctx, dict, PDF_NAME(Subtype));
+//      if (!pdf_name_eq(ctx, obj, PDF_NAME(Link)))
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(Rect));
+        obj = pdf_dict_get(ctx, dict, PDF_NAME(Rect));
 	if (!obj)
 		return NULL;
 
@@ -424,7 +423,14 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, fz
 		/* fall back to additional action button's down/up action */
 		if (!action)
 			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME(AA)), PDF_NAME(U), PDF_NAME(D));
+
 		uri = pdf_parse_link_action(ctx, doc, action, pagenum);
+                if (!uri)
+                {
+                    pdf_obj *dobj = pdf_resolve_indirect(ctx, action);
+                    pdf_obj *  js  = pdf_dict_get(ctx, dobj, PDF_NAME(JS));
+                    uri = pdf_load_stream_or_string_as_utf8(ctx, js);
+                }
 	}
 
 	if (!uri)
