@@ -23,7 +23,7 @@ ifndef OUT
   OUT := build/java/$(build)
 endif
 
-ifeq ($(OS),"Darwin")
+ifeq ($(OS),Darwin)
 MUPDF_JAVA := ../../$(OUT)/libmupdf_java64.jnilib
 JAVA_VM := $(shell /usr/libexec/java_home)
 JAVA_CFLAGS := \
