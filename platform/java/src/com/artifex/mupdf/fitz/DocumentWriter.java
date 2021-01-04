@@ -14,7 +14,7 @@ public class DocumentWriter
 		finalize();
 	}
 
-	private native long newNativeDocumentWriter(String filename, String format, String options);
+	private native static long newNativeDocumentWriter(String filename, String format, String options);
 
 	public DocumentWriter(String filename, String format, String options) {
 		pointer = newNativeDocumentWriter(filename, format, options);

@@ -18,15 +18,15 @@ FUN(DocumentWriter_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(DocumentWriter_newNativeDocumentWriter)(JNIEnv *env, jobject self, jstring jfilename, jstring jformat, jstring joptions)
+FUN(DocumentWriter_newNativeDocumentWriter)(JNIEnv *env, jclass cls, jstring jfilename, jstring jformat, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
-	fz_document_writer *wri = from_DocumentWriter(env, self);
+	fz_document_writer *wri = NULL;
 	const char *filename = NULL;
 	const char *format = NULL;
 	const char *options = NULL;
 
-	if (!ctx || !wri) return 0;
+	if (!ctx) return 0;
 	if (!jfilename) jni_throw_arg(env, "filename must not be null");
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
@@ -84,7 +84,7 @@ FUN(DocumentWriter_beginPage)(JNIEnv *env, jobject self, jobject jmediabox)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Device_safe_own(ctx, env, device);
+	return to_NativeDevice_safe_own(ctx, env, fz_keep_device(ctx, device));
 }
 
 JNIEXPORT void JNICALL

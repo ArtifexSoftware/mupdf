@@ -685,7 +685,7 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_finalize
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_newNativeDocumentWriter
-  (JNIEnv *, jobject, jstring, jstring, jstring);
+  (JNIEnv *, jclass, jstring, jstring, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_DocumentWriter
