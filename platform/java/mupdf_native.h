@@ -689,6 +689,14 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_newNativeDocu
 
 /*
  * Class:     com_artifex_mupdf_fitz_DocumentWriter
+ * Method:    newNativeDocumentWriterWithSeekableOutputStream
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableOutputStream;Ljava/lang/String;Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_newNativeDocumentWriterWithSeekableOutputStream
+  (JNIEnv *, jclass, jobject, jstring, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_DocumentWriter
  * Method:    beginPage
  * Signature: (Lcom/artifex/mupdf/fitz/Rect;)Lcom/artifex/mupdf/fitz/Device;
  */
