@@ -369,6 +369,7 @@ void do_widget_canvas(fz_irect canvas_area)
 
 	for (idx = 0, widget = pdf_first_widget(ctx, page); widget; ++idx, widget = pdf_next_widget(ctx, widget))
 	{
+		int old = (widget->is_active && widget->is_hot);
 		bounds = pdf_bound_widget(ctx, widget);
 		bounds = fz_transform_rect(bounds, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
@@ -414,6 +415,8 @@ void do_widget_canvas(fz_irect canvas_area)
 
 		/* Set is_hot and is_active to select current appearance */
 		widget->is_active = (ui.active == widget && ui.down);
+		if (old != (widget->is_active && widget->is_hot))
+			widget->has_new_ap = 1;
 
 		if (showform)
 		{
