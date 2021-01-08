@@ -914,6 +914,24 @@ int pdf_undoredo_state(fz_context *ctx, pdf_document *doc, int *steps)
 	return c;
 }
 
+int pdf_can_undo(fz_context *ctx, pdf_document *doc)
+{
+	int steps, step;
+
+	step = pdf_undoredo_state(ctx, doc, &steps);
+
+	return step > 0;
+}
+
+int pdf_can_redo(fz_context *ctx, pdf_document *doc)
+{
+	int steps, step;
+
+	step = pdf_undoredo_state(ctx, doc, &steps);
+
+	return step != steps;
+}
+
 /* Call this to find the title of the operation within the undo state. */
 const char *pdf_undoredo_step(fz_context *ctx, pdf_document *doc, int step)
 {

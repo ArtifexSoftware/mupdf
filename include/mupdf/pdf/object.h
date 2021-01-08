@@ -267,6 +267,11 @@ int pdf_undoredo_state(fz_context *ctx, pdf_document *doc, int *steps);
 /* Call this to find the title of the operation within the undo state. */
 const char *pdf_undoredo_step(fz_context *ctx, pdf_document *doc, int step);
 
+/* Helper functions to identify if we are in a state to be able to undo
+ * or redo. */
+int pdf_can_undo(fz_context *ctx, pdf_document *doc);
+int pdf_can_redo(fz_context *ctx, pdf_document *doc);
+
 /* Move backwards in the undo history. Throws an error if we are at the
  * start. Any edits to the document at this point will discard all
  * subsequent history. */
