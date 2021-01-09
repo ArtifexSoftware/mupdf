@@ -3361,7 +3361,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	int lastfree;
 	int num;
 	int xref_len;
-	pdf_obj *id, *id1;
+	pdf_obj *id1, *id = NULL;
 
 	if (in_opts->do_incremental)
 	{
