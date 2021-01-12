@@ -385,7 +385,6 @@ subarea_drop(fz_context *ctx, void *state)
 static fz_stream *
 subarea_stream(fz_context *ctx, fz_stream *stm, fz_image *image, const fz_irect *subarea, int l2factor)
 {
-	fz_stream *sstm = NULL;
 	subarea_state *state;
 	int f = 1<<l2factor;
 	int stream_w = (image->w + f - 1)>>l2factor;
@@ -412,16 +411,7 @@ subarea_stream(fz_context *ctx, fz_stream *stm, fz_image *image, const fz_irect 
 	state->stride = stride;
 	state->nread = stride;
 
-	fz_var(sstm);
-
-	fz_try(ctx)
-		sstm = fz_new_stream(ctx, state, subarea_next, subarea_drop);
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
-	return sstm;
+	return fz_new_stream(ctx, state, subarea_next, subarea_drop);
 }
 
 typedef struct
@@ -492,7 +482,6 @@ subsample_next(fz_context *ctx, fz_stream *stm, size_t len)
 static fz_stream *
 subsample_stream(fz_context *ctx, fz_stream *src, int w, int h, int n, int l2extra)
 {
-	fz_stream *stm;
 	l2sub_state *state = fz_malloc(ctx, sizeof(l2sub_state) + w*(size_t)(n<<l2extra));
 
 	state->src = src;
@@ -503,15 +492,7 @@ subsample_stream(fz_context *ctx, fz_stream *src, int w, int h, int n, int l2ext
 	state->r = 0;
 	state->l2 = l2extra;
 
-	fz_try(ctx)
-		stm = fz_new_stream(ctx, state, subsample_next, subsample_drop);
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
-
-	return stm;
+	return fz_new_stream(ctx, state, subsample_next, subsample_drop);
 }
 
 /* l2factor is the amount of subsampling that the decoder is going to be
