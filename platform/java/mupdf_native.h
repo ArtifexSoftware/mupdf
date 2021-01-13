@@ -3026,11 +3026,11 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    sign
- * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Signer;)Z
+ * Method:    signNative
+ * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Signer;Lcom/artifex/mupdf/fitz/Image;)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_sign
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_signNative
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
