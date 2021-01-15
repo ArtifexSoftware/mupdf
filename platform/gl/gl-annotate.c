@@ -140,7 +140,7 @@ static void save_pdf_options(void)
 	{
 		ui_spacer();
 		ui_checkbox("Linearize", &save_opts.do_linear);
-		ui_checkbox("Garbage collect", &save_opts.do_garbage);
+		ui_checkbox_aux("Garbage collect", &save_opts.do_garbage, pdf->redacted);
 		ui_checkbox("Clean syntax", &save_opts.do_clean);
 		ui_checkbox("Sanitize syntax", &save_opts.do_sanitize);
 
