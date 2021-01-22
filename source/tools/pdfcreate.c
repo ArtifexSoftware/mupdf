@@ -143,75 +143,87 @@ static void create_page(char *input)
 
 	char line[4096];
 	char *s, *p;
-	fz_stream *stm;
+	fz_stream *stm = NULL;
 
-	fz_buffer *contents;
+	fz_buffer *contents = NULL;
 	pdf_obj *resources;
-	pdf_obj *page;
+	pdf_obj *page = NULL;
 
 	resources = pdf_new_dict(ctx, doc, 2);
-	contents = fz_new_buffer(ctx, 1024);
 
-	stm = fz_open_file(ctx, input);
-	while (fz_read_line(ctx, stm, line, sizeof line))
+	fz_var(stm);
+	fz_var(page);
+	fz_var(contents);
+
+	fz_try(ctx)
 	{
-		if (line[0] == '%' && line[1] == '%')
+		contents = fz_new_buffer(ctx, 1024);
+
+		stm = fz_open_file(ctx, input);
+		while (fz_read_line(ctx, stm, line, sizeof line))
 		{
-			p = line;
-			s = fz_strsep(&p, " ");
-			if (!strcmp(s, "%%MediaBox"))
+			if (line[0] == '%' && line[1] == '%')
 			{
-				mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
-				mediabox.y0 = fz_atoi(fz_strsep(&p, " "));
-				mediabox.x1 = fz_atoi(fz_strsep(&p, " "));
-				mediabox.y1 = fz_atoi(fz_strsep(&p, " "));
+				p = line;
+				s = fz_strsep(&p, " ");
+				if (!strcmp(s, "%%MediaBox"))
+				{
+					mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
+					mediabox.y0 = fz_atoi(fz_strsep(&p, " "));
+					mediabox.x1 = fz_atoi(fz_strsep(&p, " "));
+					mediabox.y1 = fz_atoi(fz_strsep(&p, " "));
+				}
+				else if (!strcmp(s, "%%Rotate"))
+				{
+					rotate = fz_atoi(fz_strsep(&p, " "));
+				}
+				else if (!strcmp(s, "%%Font"))
+				{
+					char *name = fz_strsep(&p, " ");
+					char *path = fz_strsep(&p, " ");
+					char *enc = fz_strsep(&p, " ");
+					if (!name || !path)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "Font directive missing arguments");
+					add_font_res(resources, name, path, enc);
+				}
+				else if (!strcmp(s, "%%CJKFont"))
+				{
+					char *name = fz_strsep(&p, " ");
+					char *lang = fz_strsep(&p, " ");
+					char *wmode = fz_strsep(&p, " ");
+					char *style = fz_strsep(&p, " ");
+					if (!name || !lang)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "CJKFont directive missing arguments");
+					add_cjkfont_res(resources, name, lang, wmode, style);
+				}
+				else if (!strcmp(s, "%%Image"))
+				{
+					char *name = fz_strsep(&p, " ");
+					char *path = fz_strsep(&p, " ");
+					if (!name || !path)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "Image directive missing arguments");
+					add_image_res(resources, name, path);
+				}
 			}
-			else if (!strcmp(s, "%%Rotate"))
+			else
 			{
-				rotate = fz_atoi(fz_strsep(&p, " "));
-			}
-			else if (!strcmp(s, "%%Font"))
-			{
-				char *name = fz_strsep(&p, " ");
-				char *path = fz_strsep(&p, " ");
-				char *enc = fz_strsep(&p, " ");
-				if (!name || !path)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "Font directive missing arguments");
-				add_font_res(resources, name, path, enc);
-			}
-			else if (!strcmp(s, "%%CJKFont"))
-			{
-				char *name = fz_strsep(&p, " ");
-				char *lang = fz_strsep(&p, " ");
-				char *wmode = fz_strsep(&p, " ");
-				char *style = fz_strsep(&p, " ");
-				if (!name || !lang)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "CJKFont directive missing arguments");
-				add_cjkfont_res(resources, name, lang, wmode, style);
-			}
-			else if (!strcmp(s, "%%Image"))
-			{
-				char *name = fz_strsep(&p, " ");
-				char *path = fz_strsep(&p, " ");
-				if (!name || !path)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "Image directive missing arguments");
-				add_image_res(resources, name, path);
+				fz_append_string(ctx, contents, line);
+				fz_append_byte(ctx, contents, '\n');
 			}
 		}
-		else
-		{
-			fz_append_string(ctx, contents, line);
-			fz_append_byte(ctx, contents, '\n');
-		}
+
+		page = pdf_add_page(ctx, doc, mediabox, rotate, resources, contents);
+		pdf_insert_page(ctx, doc, -1, page);
 	}
-	fz_drop_stream(ctx, stm);
-
-	page = pdf_add_page(ctx, doc, mediabox, rotate, resources, contents);
-	pdf_insert_page(ctx, doc, -1, page);
-	pdf_drop_obj(ctx, page);
-
-	fz_drop_buffer(ctx, contents);
-	pdf_drop_obj(ctx, resources);
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+		pdf_drop_obj(ctx, page);
+		fz_drop_buffer(ctx, contents);
+		pdf_drop_obj(ctx, resources);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 int pdfcreate_main(int argc, char **argv)
@@ -220,6 +232,7 @@ int pdfcreate_main(int argc, char **argv)
 	char *output = "out.pdf";
 	char *flags = "compress";
 	int i, c;
+	int error = 0;
 
 	while ((c = fz_getopt(argc, argv, "o:O:")) != -1)
 	{
@@ -243,16 +256,23 @@ int pdfcreate_main(int argc, char **argv)
 
 	pdf_parse_write_options(ctx, &opts, flags);
 
-	doc = pdf_create_document(ctx);
+	fz_var(doc);
 
-	for (i = fz_optind; i < argc; ++i)
-		create_page(argv[i]);
+	fz_try(ctx)
+	{
+		doc = pdf_create_document(ctx);
 
-	pdf_save_document(ctx, doc, output, &opts);
+		for (i = fz_optind; i < argc; ++i)
+			create_page(argv[i]);
 
-	pdf_drop_document(ctx, doc);
+		pdf_save_document(ctx, doc, output, &opts);
+	}
+	fz_always(ctx)
+		pdf_drop_document(ctx, doc);
+	fz_catch(ctx)
+		error = 1;
 
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);
-	return 0;
+	return error;
 }
