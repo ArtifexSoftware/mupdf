@@ -1190,6 +1190,8 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	{
 		ofs = fz_tell(ctx, doc->file);
 		trailer = pdf_parse_ind_obj(ctx, doc, doc->file, buf, &num, &gen, &stm_ofs, NULL);
+		if (num == 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Trailer object number cannot be 0\n");
 	}
 	fz_catch(ctx)
 	{
