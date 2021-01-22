@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void usage(void)
+static int usage(void)
 {
 	fprintf(stderr,
 		"usage: mutool create [-o output.pdf] [-O options] page.txt [page2.txt ...]\n"
@@ -26,7 +26,7 @@ static void usage(void)
 		"\t%%%%Image Name Filename\n\n"
 		);
 	fputs(fz_pdf_write_options_usage, stderr);
-	exit(1);
+	return 1;
 }
 
 static fz_context *ctx = NULL;
@@ -240,12 +240,12 @@ int pdfcreate_main(int argc, char **argv)
 		{
 		case 'o': output = fz_optarg; break;
 		case 'O': flags = fz_optarg; break;
-		default: usage(); break;
+		default: return usage();
 		}
 	}
 
 	if (fz_optind == argc)
-		usage();
+		return usage();
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 	if (!ctx)
