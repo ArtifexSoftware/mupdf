@@ -1472,16 +1472,16 @@ parse_location(const char *anchor, fz_location *loc)
 	s = anchor;
 	while (*s >= '0' && *s <= '9')
 		s++;
-	loc->chapter = fz_atoi(anchor);
+	loc->chapter = fz_atoi(anchor)-1;
 	if (*s != ':')
 		return 0;
 	p = ++s;
 	while (*s >= '0' && *s <= '9')
 		s++;
 	if (s == p)
-		loc->page = 1;
+		loc->page = 0;
 	else
-		loc->page = atoi(p);
+		loc->page = fz_atoi(p)-1;
 
 	return 1;
 }
