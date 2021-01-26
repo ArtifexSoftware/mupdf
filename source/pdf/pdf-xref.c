@@ -662,6 +662,8 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 			break;
 	}
 	/* sub == NULL implies we did not find it */
+	if (sub == NULL)
+		return; /* No object to find */
 
 	/* Copy the object to the local section */
 	doc->xref_index[num] = 0;
