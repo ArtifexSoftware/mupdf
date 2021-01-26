@@ -301,7 +301,7 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 	if (i < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Negative object number requested");
 
-	if (i <= doc->max_xref_len)
+	if (i < doc->max_xref_len)
 		j = doc->xref_index[i];
 	else
 		j = 0;
