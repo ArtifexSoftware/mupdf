@@ -231,6 +231,12 @@ C++ wrapping:
         We use SWIG on this C++ API to give a python interface onto the
         mupdf::*() functions and classes.
 
+        Extra items:
+
+            metadata_keys: This contains the keys that are suitable for passing to
+            fz_lookup_metadata() and its wrappers, mupdf::fz_lookup_metadata()
+            and mupdf::Document::lookup_metadata().
+
 Tools:
 
     Clang:
@@ -966,6 +972,29 @@ classextras = ClassExtras(
                     ],
                 method_wrappers_static = [
                     'fz_new_xhtml_document_from_document',
+                    ],
+                methods_extra = [
+                    # This duplicates our creation of extra lookup_metadata()
+                    # function in make_function_wrappers(). Maybe we could
+                    # parse the generated functions.h instead of fitz.h so that
+                    # we pick up extra C++ wrappers automatically, but this
+                    # would be a fairly major change.
+                    #
+                    ExtraMethod(
+                            'std::string',
+                            'lookup_metadata(const char* key, int* o_out=NULL)',
+                            f'''
+                            {{
+                                return {rename.function_call("lookup_metadata")}(m_internal, key, o_out);
+                            }}
+                            ''',
+                           textwrap.dedent('''
+                            /* Wrapper for fz_lookup_metadata() that returns a std::string and sets
+                            *o_out to length of string plus one. If <key> is not found, returns empty
+                            string with *o_out=-1. <o_out> can be NULL if caller is not interested in
+                            error information. */
+                            ''')
+                            ),
                     ],
                 ),
 
@@ -3607,13 +3636,18 @@ def class_custom_method( register_fn_use, classname, extramethod, out_h, out_cpp
 
     out_h.write( f'\n')
     if extramethod.comment:
-        out_h.write( f'    {extramethod.comment}\n')
+        for line in extramethod.comment.strip().split('\n'):
+            out_h.write( f'    {line}\n')
     else:
         out_h.write( f'    /* {comment} */\n')
     out_h.write( f'    {return_space}{name_args};\n')
 
     out_cpp.write( f'/* {comment} */\n')
-    out_cpp.write( f'{return_space}{classname}::{name_args}')
+    # Remove any default arg values from <name_args>.
+    name_args_no_defaults = re.sub('= *[^(][^),]*', '', name_args)
+    if name_args_no_defaults != name_args:
+        log('have changed {name_args=} to {name_args_no_defaults=}')
+    out_cpp.write( f'{return_space}{classname}::{name_args_no_defaults}')
     out_cpp.write( textwrap.dedent(extramethod.body))
     out_cpp.write( f'\n')
 
@@ -3978,6 +4012,10 @@ def class_wrapper( tu, register_fn_use, struct, structname, classname, out_h, ou
     for fnname in find_wrappable_function_with_arg0_type( tu, structname):
         if fnname in extras.method_wrappers:
             #log( 'auto-detected fn already in {structname} method_wrappers: {fnname}')
+            # Omit this function, because there is an extra method with the
+            # same name. (We could probably include both as they will generally
+            # have different args so overloading will destinguish them, but
+            # extra methods are usually defined to be used in preference.)
             pass
         elif fnname.startswith( 'fz_new_draw_device'):
             # fz_new_draw_device*() functions take first arg fz_matrix, but
@@ -4374,6 +4412,7 @@ def cpp_source( dir_mupdf, namespace, base, header_git, doit=True):
             #include "mupdf/pdf.h"
 
             #include <string>
+            #include <vector>
 
             #ifdef SWIG
                 #define mupdf_OUTPARAM(name)  OUTPUT
@@ -4442,6 +4481,36 @@ def cpp_source( dir_mupdf, namespace, base, header_git, doit=True):
         if file == out_cpps.internal:
             continue
         make_namespace_open( namespace, file)
+
+    # Write declataion and definition for metadata_keys.
+    #
+    out_hs.functions.write(
+            textwrap.dedent(
+            '''
+            /*
+            The keys that are defined for fz_lookup_metadata().
+            */
+            extern const std::vector<std::string> metadata_keys;
+
+            '''))
+    out_cpps.functions.write(
+            textwrap.dedent(
+            '''
+            const std::vector<std::string> metadata_keys = {
+                    "format",
+                    "encryption",
+                    "info:Title",
+                    "info:Author",
+                    "info:Subject",
+                    "info:Keywords",
+                    "info:Creator",
+                    "info:Producer",
+                    "info:CreationDate",
+                    "info:ModDate",
+            };
+
+
+            '''))
 
     # Write source code for exceptions and wrapper functions.
     #
@@ -4808,6 +4877,7 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
             namespace std
             {{
                 %template(vectori) vector<int>;
+                %template(vectors) vector<std::string>;
             }};
 
             // Make sure that operator++() gets converted to __next__().
