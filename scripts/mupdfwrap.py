@@ -1231,43 +1231,47 @@ classextras = ClassExtras(
                         OutlineIterator& operator++();
                         bool operator==(const OutlineIterator& rhs);
                         bool operator!=(const OutlineIterator& rhs);
-                        Outline& operator*();
-                        Outline* operator->();
+                        OutlineIterator& operator*();
+                        OutlineIterator* operator->();
+                        Outline m_outline;
+                        int m_depth;
                         private:
-                        Outline m_item;
                         std::vector<fz_outline*> m_up;
                     };
                     ''',
                 extra_cpp =
                     '''
                     OutlineIterator::OutlineIterator(const Outline& item)
-                    : m_item(item)
+                    : m_outline(item), m_depth(0)
                     {
                     }
                     OutlineIterator::OutlineIterator()
-                    : m_item(NULL)
+                    : m_outline(NULL)
                     {
                     }
                     OutlineIterator& OutlineIterator::operator++()
                     {
-                        if (m_item.m_internal->down) {
-                            m_up.push_back(m_item.m_internal);
-                            m_item = Outline(m_item.m_internal->down);
+                        if (m_outline.m_internal->down) {
+                            m_up.push_back(m_outline.m_internal);
+                            m_outline = Outline(m_outline.m_internal->down);
+                            m_depth += 1;
                         }
-                        else if (m_item.m_internal->next) {
-                            m_item = Outline(m_item.m_internal->next);
+                        else if (m_outline.m_internal->next) {
+                            m_outline = Outline(m_outline.m_internal->next);
                         }
                         else {
                             /* Go up and across in the tree. */
                             for(;;) {
                                 if (m_up.empty()) {
-                                    m_item = Outline(NULL);
+                                    m_outline = Outline(NULL);
+                                    assert(m_depth == 0);
                                     break;
                                 }
                                 fz_outline* p = m_up.back();
                                 m_up.pop_back();
+                                m_depth -= 1;
                                 if (p->next) {
-                                    m_item = Outline(p->next);
+                                    m_outline = Outline(p->next);
                                     break;
                                 }
                             }
@@ -1276,20 +1280,20 @@ classextras = ClassExtras(
                     }
                     bool OutlineIterator::operator==(const OutlineIterator& rhs)
                     {
-                        bool ret = m_item.m_internal == rhs.m_item.m_internal;
+                        bool ret = m_outline.m_internal == rhs.m_outline.m_internal;
                         return ret;
                     }
                     bool OutlineIterator::operator!=(const OutlineIterator& rhs)
                     {
-                        return m_item.m_internal != rhs.m_item.m_internal;
+                        return m_outline.m_internal != rhs.m_outline.m_internal;
                     }
-                    Outline& OutlineIterator::operator*()
+                    OutlineIterator& OutlineIterator::operator*()
                     {
-                        return m_item;
+                        return *this;
                     }
-                    Outline* OutlineIterator::operator->()
+                    OutlineIterator* OutlineIterator::operator->()
                     {
-                        return &m_item;
+                        return this;
                     }
 
                     void test(Outline& item)
