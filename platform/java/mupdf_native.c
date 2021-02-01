@@ -25,6 +25,7 @@ NOTE!
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limit.h>
 
 #ifdef HAVE_ANDROID
 #include <android/log.h>

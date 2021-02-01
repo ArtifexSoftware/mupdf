@@ -927,10 +927,11 @@ FUN(Document_enableJournal)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return;
 
-	pdf_document_enable_journal(ctx, doc);
+	pdf_enable_journal(ctx, idoc);
 }
 
 JNIEXPORT jint JNICALL
@@ -938,11 +939,12 @@ FUN(Document_undoRedoPosition)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	int steps;
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return 0;
 
-	return pdf_undoredo_state(ctx, doc, &steps);
+	return pdf_undoredo_state(ctx, idoc, &steps);
 }
 
 JNIEXPORT jint JNICALL
@@ -950,11 +952,12 @@ FUN(Document_undoRedoSteps)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	int steps;
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return 0;
 
-	(void)pdf_undoredo_state(ctx, doc, &steps);
+	(void)pdf_undoredo_state(ctx, idoc, &steps);
 
 	return steps;
 }
@@ -964,11 +967,12 @@ FUN(Document_undoRedoStep)(JNIEnv *env, jobject self, jint n)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
-	char *step;
+	pdf_document *idoc = pdf_specifics(ctx, doc);
+	const char *step;
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return NULL;
 
-	step = pdf_undoredo_step(ctx, doc, n);
+	step = pdf_undoredo_step(ctx, idoc, n);
 
 	return (*env)->NewStringUTF(env, step);
 }
@@ -978,10 +982,11 @@ FUN(Document_canUndo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return JNI_FALSE;
 
-	return pdf_can_undo(ctx, doc);
+	return pdf_can_undo(ctx, idoc);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -989,10 +994,11 @@ FUN(Document_canRedo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return JNI_FALSE;
 
-	return pdf_can_redo(ctx, doc);
+	return pdf_can_redo(ctx, idoc);
 }
 
 JNIEXPORT void JNICALL
@@ -1000,11 +1006,12 @@ FUN(Document_undo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return;
 
 	fz_try(ctx)
-		pdf_undo(ctx, doc);
+		pdf_undo(ctx, idoc);
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
@@ -1014,11 +1021,12 @@ FUN(Document_redo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 
-	if (!ctx || !doc) return;
+	if (!ctx || !doc || !idoc) return;
 
 	fz_try(ctx)
-		pdf_redo(ctx, doc);
+		pdf_redo(ctx, idoc);
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }

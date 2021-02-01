@@ -201,7 +201,7 @@ public class Document
 
 	public native int undoRedoPosition();
 	public native int undoRedoSteps();
-	public native String undoRedoStep(int);
+	public native String undoRedoStep(int step);
 
 	public native boolean canUndo();
 	public native boolean canRedo();
