@@ -1822,11 +1822,7 @@ def is_double_pointer( type_):
 
 
 def write_call_arg(
-        cursor,
-        name,
-        separator,
-        alt,
-        out_param,
+        arg,
         classname,
         have_used_this,
         out_cpp,
@@ -1845,14 +1841,8 @@ def write_call_arg(
 
     (cursor, name, separator, alt) should be as if from get_args().
 
-    cursor:
-        Clang cursor for the argument in the raw fz_ function.
-    name:
-        Name of available variable.
-    separator:
-        .
-    alt:
-        Cursor for wrapped class or None.
+    arg:
+        Arg from get_args().
     classname:
         Name of wrapping class available as 'this'.
     have_used_this:
@@ -1864,16 +1854,19 @@ def write_call_arg(
 
     Returns True if we have used 'this->...', else return <have_used_this>.
     '''
-    assert isinstance( cursor, clang.cindex.Cursor)
-    out_cpp.write( separator)
-    if not alt:
+    assert isinstance( arg, Arg)
+    assert isinstance( arg.cursor, clang.cindex.Cursor)
+    if not arg.alt:
         # Arg is a normal type; no conversion necessary.
-        out_cpp.write( name)
+        if python:
+            out_cpp.write( arg.name_python)
+        else:
+            out_cpp.write( arg.name)
         return have_used_this
 
     if verbose:
-        log( '{cursor.spelling=} {name=} {alt.spelling=} {classname=}')
-    type_ = cursor.type.get_canonical()
+        log( '{cursor.spelling=} {arg.name=} {arg.alt.spelling=} {classname=}')
+    type_ = arg.cursor.type.get_canonical()
     ptr = '*'
     if type_.kind == clang.cindex.TypeKind.POINTER:
         type_ = type_.get_pointee().get_canonical()
@@ -1884,37 +1877,34 @@ def write_call_arg(
         log( 'param is fz: {type_.spelling=} {extras2.pod=}')
     if python:
         if extras.pod == 'inline':
-            out_cpp.write( f'{name}.internal()')
+            out_cpp.write( f'{arg.name_python}.internal()')
         elif extras.pod:
-            out_cpp.write( f'{name}.m_internal')
+            out_cpp.write( f'{arg.name_python}.m_internal')
         else:
-            out_cpp.write( f'{name}')
+            out_cpp.write( f'{arg.name_python}')
 
     elif extras.pod == 'inline':
         # We use the address of the first class member, casting it to a pointer
         # to the wrapped type. Not sure this is guaranteed safe, but should
         # work in practise.
-        if python:
-            out_cpp.write( '{name_}.internal()')
-        else:
-            name_ = f'{name}.'
-            if not have_used_this and rename.class_(alt.type.spelling) == classname:
-                have_used_this = True
-                name_ = 'this->'
-            field0 = get_field0(type_).spelling
-            out_cpp.write( f'{ptr}({cursor.type.spelling}{ptr}) &{name_}{field0}')
+        name_ = f'{arg.name}.'
+        if not have_used_this and rename.class_(arg.alt.type.spelling) == classname:
+            have_used_this = True
+            name_ = 'this->'
+        field0 = get_field0(type_).spelling
+        out_cpp.write( f'{ptr}({arg.cursor.type.spelling}{ptr}) &{name_}{field0}')
     else:
         if verbose:
-            log( '{cursor=} {name=} {classname=} {extras2.pod=}')
-        if extras.pod and cursor.type.get_canonical().kind == clang.cindex.TypeKind.POINTER:
+            log( '{arg.cursor=} {arg.name=} {classname=} {extras2.pod=}')
+        if extras.pod and arg.cursor.type.get_canonical().kind == clang.cindex.TypeKind.POINTER:
             out_cpp.write( '&')
-        elif out_param:
+        elif arg.out_param:
             out_cpp.write( '&')
-        if not have_used_this and rename.class_(alt.type.spelling) == classname:
+        if not have_used_this and rename.class_(arg.alt.type.spelling) == classname:
             have_used_this = True
             out_cpp.write( 'this->')
         else:
-            out_cpp.write( f'{name}.')
+            out_cpp.write( f'{arg.name}.')
         out_cpp.write( 'm_internal')
 
     return have_used_this
@@ -2109,12 +2099,39 @@ def show_ast( filename):
             )
     dump_ast( tu.cursor)
 
+class Arg:
+    '''
+        .cursor:
+            Cursor for the argument.
+        .name:
+            Arg name, or an invented name if none was present.
+        .separator:
+            '' for first returned argument, ', ' for the rest.
+        .alt:
+            Cursor for underlying fz_ struct type if <arg> is a pointer to or
+            ref/value of a fz_ struct type that we wrap. Else None.
+        .out_param:
+            True if this looks like an out-parameter, e.g. alt is set and
+            double pointer, or arg is pointer other than to char.
+        .name_python:
+            Same as .name or .name+'_' if .name is a Python keyword.
+    '''
+    def __init__(self, cursor, name, separator, alt, out_param):
+        self.cursor = cursor
+        self.name = name
+        self.separator = separator
+        self.alt = alt
+        self.out_param = out_param
+        if name in ('in', 'is'):
+            self.name_python = f'{name}_'
+        else:
+            self.name_python = name
 
 get_args_cache = dict()
 
-def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python=False):
+def get_args( tu, cursor, include_fz_context=False, verbose=False):
     '''
-    Yields information about each arg of the function at <cursor>.
+    Yields Arg instance for each arg of the function at <cursor>.
 
     Args:
         tu:
@@ -2125,24 +2142,6 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python
             If false, we skip args that are 'struct fz_context*'
         verbose:
             .
-        escape_python:
-            If true, we rename to avoid python keywords such as 'in'.
-
-    Yields (arg, name, separator, alt, double_ptr) for each argument of
-    function at <cursor>:
-
-        arg:
-            Cursor for the argument.
-        name:
-            Arg name, or an invented name if none was present.
-        separator:
-            '' for first returned argument, ', ' for the rest.
-        alt:
-            Cursor for underlying fz_ struct type if <arg> is a pointer to or
-            ref/value of a fz_ struct type that we wrap. Else None.
-        out_param:
-            True if this looks like an out-parameter, e.g. alt is set and
-            double pointer, or arg is pointer other than to char.
     '''
     # We are called a few times for each function, and the calculations we do
     # are slow, so we cache the returned items. E.g. this reduces total time of
@@ -2155,19 +2154,19 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python
         ret = []
         i = 0
         separator = ''
-        for arg in cursor.get_arguments():
-            assert arg.kind == clang.cindex.CursorKind.PARM_DECL
-            if not include_fz_context and is_pointer_to( arg.type, 'fz_context'):
+        for arg_cursor in cursor.get_arguments():
+            assert arg_cursor.kind == clang.cindex.CursorKind.PARM_DECL
+            if not include_fz_context and is_pointer_to( arg_cursor.type, 'fz_context'):
                 # Omit this arg because our generated mupdf_*() wrapping functions
                 # use internalContextGet() to get a context.
                 continue
-            name = arg.mangled_name or f'arg_{i}'
+            name = arg_cursor.mangled_name or f'arg_{i}'
             if 0 and name == 'stmofsp':
                 verbose = True
             alt = None
             out_param = False
             # Set <alt> to wrapping class if possible.
-            base_type = get_base_type( arg.type)
+            base_type = get_base_type( arg_cursor.type)
             base_type_cursor = base_type.get_declaration()
             base_typename = get_base_typename( base_type)
             extras = classextras.get( base_typename)
@@ -2187,13 +2186,13 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python
                         ):
                     alt = base_type_cursor
             if verbose:
-                log( '{arg.type.spelling=} {base_type.spelling=} {arg.type.kind=}')
+                log( '{arg_cursor.type.spelling=} {base_type.spelling=} {arg_cursor.type.kind=}')
             if alt:
-                if is_double_pointer( arg.type):
+                if is_double_pointer( arg_cursor.type):
                     out_param = True
-            elif get_base_typename( arg.type) in ('char', 'unsigned char', 'signed char', 'void', 'FILE'):
-                if is_double_pointer( arg.type):
-                    #log( 'setting outparam: {cursor.spelling=} {arg.type=}')
+            elif get_base_typename( arg_cursor.type) in ('char', 'unsigned char', 'signed char', 'void', 'FILE'):
+                if is_double_pointer( arg_cursor.type):
+                    #log( 'setting outparam: {cursor.spelling=} {arg_cursor.type=}')
                     if cursor.spelling == 'pdf_clean_file':
                         # Don't mark char** argv as out-param, which will also
                         # allow us to tell swig to convert python lists into
@@ -2203,16 +2202,16 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python
                         out_param = True
             elif base_typename.startswith( ('fz_', 'pdf_')):
                 # Pointer to fz_ struct is not usually an out-param.
-                if verbose: log( 'not out-param because arg is: {arg.displayname=} {base_type.spelling=} {extras}')
-            elif arg.type.kind == clang.cindex.TypeKind.POINTER:
+                if verbose: log( 'not out-param because arg is: {arg_cursor.displayname=} {base_type.spelling=} {extras}')
+            elif arg_cursor.type.kind == clang.cindex.TypeKind.POINTER:
                 if verbose:
                     log( 'clang.cindex.TypeKind.POINTER')
-                if arg.type.get_pointee().get_canonical().kind == clang.cindex.TypeKind.FUNCTIONPROTO:
+                if arg_cursor.type.get_pointee().get_canonical().kind == clang.cindex.TypeKind.FUNCTIONPROTO:
                     # Don't mark function-pointer args as out-params.
                     if verbose:
                         log( 'clang.cindex.TypeKind.FUNCTIONPROTO')
                     pass
-                elif arg.type.get_pointee().is_const_qualified():
+                elif arg_cursor.type.get_pointee().is_const_qualified():
                     if verbose:
                         log( 'is_const_qualified()')
                     pass
@@ -2221,28 +2220,24 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False, escape_python
                         log( 'setting out_param = True')
                     out_param = True
             if verbose:
-                log( '*** returning {(arg.displayname, name, separator, alt, out_param)}')
-            #yield arg, name, separator, alt, out_param
-            ret.append( (arg, name, separator, alt, out_param))
+                log( '*** returning {(arg_cursor.displayname, name, separator, alt, out_param)}')
+            ret.append( Arg(arg_cursor, name, separator, alt, out_param))
             i += 1
             separator = ', '
 
         get_args_cache[ key] = ret
 
-    for arg, name, separator, alt, out_param in ret:
-        if escape_python:
-            if name in ('in', 'is'):
-                name += '_'
-        yield arg, name, separator, alt, out_param
+    for arg in ret:
+        yield arg
 
 
 def fn_has_struct_args( tu, cursor):
     '''
     Returns true if fn at <cursor> takes any fz_* struct args.
     '''
-    for arg, name, separator, alt, out_param in get_args( tu, cursor):
-        if alt:
-            if alt.spelling in omit_class_names0:
+    for arg in get_args( tu, cursor):
+        if arg.alt:
+            if arg.alt.spelling in omit_class_names0:
                 pass
                 #log( '*** omitting {alt.spelling=}')
             else:
@@ -2250,14 +2245,14 @@ def fn_has_struct_args( tu, cursor):
 
 def get_first_arg( tu, cursor):
     '''
-    Returns (arginfo, n), where <arginfo> is tuple from get_args() for
-    first argument (or None if no arguments), and <n> is number of arguments.
+    Returns (arg, n), where <arg> is from get_args() for first argument (or
+    None if no arguments), and <n> is number of arguments.
     '''
     n = 0
     ret = None
-    for arginfo in get_args( tu, cursor):
+    for arg in get_args( tu, cursor):
         if n == 0:
-            ret = arginfo
+            ret = arg
         n += 1
     return ret, n
 
@@ -2326,22 +2321,22 @@ def make_fncall( tu, cursor, return_type, fncall, out):
     out.write( f'        fprintf(stderr, "%s:%i:%s(): calling {cursor.mangled_name}():')
 
     items = []
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=True):
-        if is_pointer_to( arg.type, 'fz_context'):
+    for arg in get_args( tu, cursor, include_fz_context=True):
+        if is_pointer_to( arg.cursor.type, 'fz_context'):
             text = 'auto_ctx=%p'
             value = 'auto_ctx'
-        elif is_pointer_to( arg.type, 'char'):
-            text = f'{name}=%s'
-            value = f'{name}'
-        elif arg.type.kind == clang.cindex.TypeKind.POINTER:
-            text = f'{name}=%p'
-            value = f'{name}'
-        elif alt:
-            text = f'&{name}=%p'
-            value = f'&{name}'
+        elif is_pointer_to( arg.cursor.type, 'char'):
+            text = f'{arg.name}=%s'
+            value = f'{arg.name}'
+        elif arg.cursor.type.kind == clang.cindex.TypeKind.POINTER:
+            text = f'{arg.name}=%p'
+            value = f'{arg.name}'
+        elif arg.alt:
+            text = f'&{arg.name}=%p'
+            value = f'&{arg.name}'
         else:
-            text = f'(long){name}=%li'
-            value = f'(long){name}'
+            text = f'(long){arg.name}=%li'
+            value = f'(long){arg.name}'
         items.append( (text, value))
 
     for text, value in items:
@@ -2387,15 +2382,15 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     out_swig_c.write(f'/* Helper for out-params of {cursor.mangled_name}(). */\n')
     out_swig_c.write(f'typedef struct\n')
     out_swig_c.write( '{\n')
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=False):
-        if not out_param:
+    for arg in get_args( tu, cursor):
+        if not arg.out_param:
             continue
-        decl = declaration_text( arg.type, name, verbose=verbose)
+        decl = declaration_text( arg.cursor.type, arg.name, verbose=verbose)
         if verbose:
             log( '{decl=}')
-        assert arg.type.kind == clang.cindex.TypeKind.POINTER
-        pointee = arg.type.get_pointee() #.get_canonical()
-        out_swig_c.write(f'    {declaration_text( pointee, name)};\n')
+        assert arg.cursor.type.kind == clang.cindex.TypeKind.POINTER
+        pointee = arg.cursor.type.get_pointee() #.get_canonical()
+        out_swig_c.write(f'    {declaration_text( pointee, arg.name)};\n')
     out_swig_c.write(f'}} {main_name}_outparams;\n')
     out_swig_c.write('\n')
 
@@ -2404,11 +2399,11 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     # decl.
     name_args = f'{main_name}_outparams_fn('
     sep = ''
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=False):
-        if out_param:
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
             continue
         name_args += sep
-        name_args += declaration_text( arg.type, name, verbose=verbose)
+        name_args += declaration_text( arg.cursor.type, arg.name, verbose=verbose)
         sep = ', '
     name_args += f'{sep}{main_name}_outparams* outparams'
     name_args += ')'
@@ -2418,20 +2413,20 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     # body.
     out_swig_c.write('{\n')
     # Set all pointer fields to NULL.
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=False):
-        if not out_param:
+    for arg in get_args( tu, cursor):
+        if not arg.out_param:
             continue
-        if arg.type.get_pointee().kind == clang.cindex.TypeKind.POINTER:
-            out_swig_c.write(f'    outparams->{name} = NULL;\n')
+        if arg.cursor.type.get_pointee().kind == clang.cindex.TypeKind.POINTER:
+            out_swig_c.write(f'    outparams->{arg.name} = NULL;\n')
     # Make call.
     out_swig_c.write(f'    return {rename.function_call(cursor.mangled_name)}(')
     sep = ''
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=False):
+    for arg in get_args( tu, cursor):
         out_swig_c.write(sep)
-        if out_param:
-            out_swig_c.write(f'&outparams->{name}')
+        if arg.out_param:
+            out_swig_c.write(f'&outparams->{arg.name}')
         else:
-            out_swig_c.write(f'{name}')
+            out_swig_c.write(f'{arg.name}')
         sep = ', '
     out_swig_c.write(');\n')
     out_swig_c.write('}\n')
@@ -2441,15 +2436,10 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     out_swig_python.write('')
     out_swig_python.write(f'def {main_name}(')
     sep = ''
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
             continue
-        out_swig_python.write(f'{sep}{name}')
+        out_swig_python.write(f'{sep}{arg.name_python}')
         sep = ', '
     out_swig_python.write('):\n')
     out_swig_python.write(f'    """\n')
@@ -2461,29 +2451,19 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     if not return_void:
         out_swig_python.write( f'{cursor.result_type.spelling}')
         sep = ', '
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
-            out_swig_python.write(f'{sep}{declaration_text(arg.type.get_pointee(), name)}')
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
+            out_swig_python.write(f'{sep}{declaration_text(arg.cursor.type.get_pointee(), arg.name_python)}')
             sep = ', '
     out_swig_python.write(f'\n')
     out_swig_python.write(f'    """\n')
     out_swig_python.write(f'    outparams = {main_name}_outparams()\n')
     out_swig_python.write(f'    ret = {main_name}_outparams_fn(')
     sep = ''
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
             continue
-        out_swig_python.write(f'{sep}{name}')
+        out_swig_python.write(f'{sep}{arg.name_python}')
         sep = ', '
     out_swig_python.write(f'{sep}outparams)\n')
     out_swig_python.write(f'    return ')
@@ -2491,14 +2471,9 @@ def make_python_outparam_helpers( tu, cursor, fnname, out_h, out_cpp, out_swig_c
     if not return_void:
         out_swig_python.write(f'ret')
         sep = ', '
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
-            out_swig_python.write(f'{sep}outparams.{name}')
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
+            out_swig_python.write(f'{sep}outparams.{arg.name_python}')
             sep = ', '
     out_swig_python.write('\n')
     out_swig_python.write('\n')
@@ -2515,17 +2490,12 @@ def make_python_class_method_outparam_override(
         ):
     main_name = rename.function(cursor.mangled_name)
     out.write( f'def {classname}_{main_name}_outparams_fn( self')
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
             continue
-        if is_pointer_to( arg.type, structname):
+        if is_pointer_to( arg.cursor.type, structname):
             continue
-        out.write(f', {name}')
+        out.write(f', {arg.name_python}')
     out.write('):\n')
     out.write( '    """\n')
     out.write(f'    Helper for out-params of {structname}::{main_name}() [{cursor.mangled_name}()].\n')
@@ -2537,29 +2507,20 @@ def make_python_class_method_outparam_override(
     if cursor.result_type.spelling != 'void':
         out.write( 'ret')
         sep = ', '
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if not out_param:
+    for arg in get_args( tu, cursor):
+        if not arg.out_param:
             continue
-        out.write( f'{sep}{name}')
+        out.write( f'{sep}{arg.name_python}')
         sep = ', '
     # = foo::bar(self.m_internal, p, q, r, ...)
     out.write( f' = {main_name}( self.m_internal')
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if out_param:
+    for arg in get_args( tu, cursor):
+        if arg.out_param:
             continue
-        if is_pointer_to( arg.type, structname):
+        if is_pointer_to( arg.cursor.type, structname):
             continue
-        write_call_arg(arg, name, separator, alt, out_param, classname, False, out, python=True)
+        out.write( ', ')
+        write_call_arg(arg, classname, False, out, python=True)
     out.write( ')\n')
 
     # return ret, a, b
@@ -2571,18 +2532,13 @@ def make_python_class_method_outparam_override(
         else:
             out.write( f'ret')
         sep = ', '
-    for arg, name, separator, alt, out_param in get_args(
-            tu,
-            cursor,
-            include_fz_context=False,
-            escape_python=True,
-            ):
-        if not out_param:
+    for arg in get_args( tu, cursor):
+        if not arg.out_param:
             continue
-        if alt:
-            out.write( f'{sep}{rename.class_(alt.type.spelling)}({name})')
+        if arg.alt:
+            out.write( f'{sep}{rename.class_(arg.alt.type.spelling)}({arg.name_python})')
         else:
-            out.write(f'{sep}{name}')
+            out.write(f'{sep}{arg.name_python}')
         sep = ', '
     out.write('\n')
     out.write('\n')
@@ -2645,20 +2601,20 @@ def make_function_wrapper( tu, cursor, fnname, out_h, out_cpp, out_swig_c, out_s
     name_args_cpp = f'{fnname}('
     comma = ''
     num_out_params = 0
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=True):
+    for arg in get_args( tu, cursor, include_fz_context=True):
         if verbose:
-            log( '{arg=} {name=} {separator=} {alt=} {out_param=}')
-        if is_pointer_to(arg.type, 'fz_context'):
+            log( '{arg.cursor=} {arg.name=} {arg.separator=} {arg.alt=} {arg.out_param=}')
+        if is_pointer_to(arg.cursor.type, 'fz_context'):
             continue
-        name2 = name
-        if out_param:
+        name2 = arg.name
+        if arg.out_param:
             num_out_params += 1
-            name2 = f'mupdf_OUTPARAM({name})'
-        decl = declaration_text( arg.type, name2, verbose=verbose)
+            name2 = f'mupdf_OUTPARAM({arg.name})'
+        decl = declaration_text( arg.cursor.type, name2, verbose=verbose)
         if verbose:
             log( '{decl=}')
         name_args_h += f'{comma}{decl}'
-        decl = declaration_text( arg.type, name)
+        decl = declaration_text( arg.cursor.type, arg.name)
         name_args_cpp += f'{comma}{decl}'
         comma = ', '
 
@@ -2679,11 +2635,11 @@ def make_function_wrapper( tu, cursor, fnname, out_h, out_cpp, out_swig_c, out_s
     return_type = cursor.result_type.spelling
     fncall = ''
     fncall += f'{rename.function_raw(cursor.mangled_name)}('
-    for arg, name, separator, alt, out_param in get_args( tu, cursor, include_fz_context=True):
-        if is_pointer_to(arg.type, 'fz_context'):
-            fncall += f'{separator}auto_ctx'
+    for arg in get_args( tu, cursor, include_fz_context=True):
+        if is_pointer_to( arg.cursor.type, 'fz_context'):
+            fncall += f'{arg.separator}auto_ctx'
         else:
-            fncall += f'{separator}{name}'
+            fncall += f'{arg.separator}{arg.name}'
     fncall += ')'
     make_fncall( tu, cursor, return_type, fncall, out_cpp)
     out_cpp.write( '}\n')
@@ -2975,11 +2931,11 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
         #
         i = 0
         arg0_cursor = None
-        for arg, name, separator, alt, out_param in get_args( tu, cursor):
+        for arg in get_args( tu, cursor):
 
-            base_typename = get_base_typename( arg.type)
-            if not alt and base_typename.startswith( ('fz_', 'pdf_')):
-                if arg.type.get_canonical().kind==clang.cindex.TypeKind.ENUM:
+            base_typename = get_base_typename( arg.cursor.type)
+            if not arg.alt and base_typename.startswith( ('fz_', 'pdf_')):
+                if arg.cursor.type.get_canonical().kind==clang.cindex.TypeKind.ENUM:
                     # We don't (yet) wrap fz_* enums, but for now at least we
                     # still wrap functions that take fz_* enum parameters -
                     # callers will have to use the fz_* type.
@@ -2987,16 +2943,16 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
                     # For example this is required by mutool_draw.py because
                     # mudraw.c calls fz_set_separation_behavior().
                     #
-                    log( 'not excluding {fnname=} with enum fz_ param : {arg.spelling=} {arg.type.kind} {arg.type.get_canonical().kind=}')
+                    log( 'not excluding {fnname=} with enum fz_ param : {arg.cursor.spelling=} {arg.cursor.type.kind} {arg.cursor.type.get_canonical().kind=}')
                 else:
                     exclude_reasons.append(
                             (
                             MethodExcludeReason_NO_WRAPPER_CLASS,
-                            f'no wrapper class for arg i={i}: {arg.type.get_canonical().spelling} {arg.type.get_canonical().kind}',
+                            f'no wrapper class for arg i={i}: {arg.cursor.type.get_canonical().spelling} {arg.cursor.type.get_canonical().kind}',
                             ))
             if i == 0:
-                if alt:
-                    arg0_cursor = alt
+                if arg.alt:
+                    arg0_cursor = arg.alt
                 else:
                     exclude_reasons.append(
                             (
@@ -3557,10 +3513,10 @@ def class_find_destructor_fns( tu, structname, base_name):
         arg_struct = False
         arg_context = False
         args_num = 0
-        for arg, name, separator, alt, out_param in get_args( tu, cursor):
-            if not arg_struct and is_pointer_to( arg.type, structname):
+        for arg in get_args( tu, cursor):
+            if not arg_struct and is_pointer_to( arg.cursor.type, structname):
                 arg_struct = True
-            elif not arg_context and is_pointer_to( arg.type, 'fz_context'):
+            elif not arg_context and is_pointer_to( arg.cursor.type, 'fz_context'):
                 arg_context = True
             args_num += 1
         if arg_struct:
@@ -3610,10 +3566,10 @@ def class_copy_constructor(
                     ), (
                     f'result_type not void* or pointer to {name}: {cursor.result_type.spelling}'
                     )
-        (arg, name, separator, alt, out_param), n = get_first_arg( tu, cursor)
+        arg, n = get_first_arg( tu, cursor)
         assert n == 1, f'should take exactly one arg: {cursor.spelling}()'
-        assert is_pointer_to( arg.type, structname), (
-                f'arg0 is not pointer to {structname}: {cursor.spelling}(): {arg.spelling} {name}')
+        assert is_pointer_to( arg.cursor.type, structname), (
+                f'arg0 is not pointer to {structname}: {cursor.spelling}(): {arg.cursor.spelling} {arg.name}')
 
     for fnname, cursor, duplicate_type in constructor_fns:
         fnname2 = rename.function_call(fnname)
@@ -3700,20 +3656,19 @@ def class_write_method_body(
         out_cpp.write( f'    return mupdf::{fnname2}(')
 
     have_used_this = False
-    for cursor_arg, name, separator, alt, out_param in get_args( tu, fn_cursor):
+    sep = ''
+    for arg in get_args( tu, fn_cursor):
         arg_classname = classname
         if static or constructor:
             arg_classname = None
+        out_cpp.write( sep)
         have_used_this = write_call_arg(
-                cursor_arg,
-                name,
-                separator,
-                alt,
-                out_param,
+                arg,
                 arg_classname,
                 have_used_this,
                 out_cpp,
                 )
+        sep = ', '
     out_cpp.write( f');\n')
 
     if fnname in functions_that_return_non_kept:
@@ -3802,14 +3757,14 @@ def class_write_method(
     num_out_params = 0
     comma = ''
     debug = structname == 'pdf_document' and fnname == 'pdf_page_write'
-    for arg, name, separator, alt, out_param in get_args( tu, fn_cursor):
+    for arg in get_args( tu, fn_cursor):
         if debug:
-            log( '*** {structname=} {arg=} {name=} {alt=} {out_param=}')
+            log( '*** {structname=} {arg=}')
         decl_h += comma
         decl_cpp += comma
-        if out_param:
+        if arg.out_param:
             num_out_params += 1
-        if alt:
+        if arg.alt:
             # This parameter is something like 'fz_foo* arg',
             # which we convert to 'mupdf_foo_s& arg' so that the caller can
             # use C++ class mupdf_foo_s.
@@ -3817,35 +3772,35 @@ def class_write_method(
             if (1
                     and not static
                     and not constructor
-                    and rename.class_(clip( alt.type.spelling, 'struct ')) == classname
+                    and rename.class_(clip( arg.alt.type.spelling, 'struct ')) == classname
                     and not have_used_this
                     ):
-                assert not out_param
+                assert not arg.out_param
                 # Omit this arg from the method's prototype - we'll use <this>
                 # when calling the underlying fz_ function.
                 have_used_this = True
                 continue
 
             const = ''
-            if not out_param:
-                extras2 = classextras.get( alt.type.spelling)
+            if not arg.out_param:
+                extras2 = classextras.get( arg.alt.type.spelling)
                 if not extras2:
                     log('cannot find {alt.spelling=} {arg.type.spelling=} {name=}')
-            if not out_param and not classextras.get( alt.type.spelling).pod:
+            if not arg.out_param and not classextras.get( arg.alt.type.spelling).pod:
                 const = 'const '
-            decl_h +=   f'{const}{rename.class_(alt.type.spelling)}& '
-            if out_param:
-                decl_h += f'mupdf_OUTPARAM({name})'
+            decl_h +=   f'{const}{rename.class_(arg.alt.type.spelling)}& '
+            if arg.out_param:
+                decl_h += f'mupdf_OUTPARAM({arg.name})'
             else:
-                decl_h += f'{name}'
-            decl_cpp += f'{const}{rename.class_(alt.type.spelling)}& {name}'
+                decl_h += f'{arg.name}'
+            decl_cpp += f'{const}{rename.class_(arg.alt.type.spelling)}& {arg.name}'
         else:
-            if out_param:
-                decl_h += declaration_text( arg.type, f'mupdf_OUTPARAM({name})')
+            if arg.out_param:
+                decl_h += declaration_text( arg.cursor.type, f'mupdf_OUTPARAM({arg.name})')
             else:
                 logx( '{arg.spelling=}')
-                decl_h += declaration_text( arg.type, name)
-            decl_cpp += declaration_text( arg.type, name)
+                decl_h += declaration_text( arg.cursor.type, arg.name)
+            decl_cpp += declaration_text( arg.cursor.type, arg.name)
         comma = ', '
 
     decl_h += ')'
@@ -5167,8 +5122,8 @@ def compare_fz_usage(
             if uses_struct( cursor.result_type):
                 uses_structs = True
             else:
-                for arg, arg_name, separator, alt, out_param in get_args( tu, cursor):
-                    if uses_struct( arg.type):
+                for arg in get_args( tu, cursor):
+                    if uses_struct( arg.cursor.type):
                         uses_structs = True
                         break
             if uses_structs:
