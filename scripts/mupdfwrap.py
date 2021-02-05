@@ -2321,8 +2321,7 @@ def make_fncall( tu, cursor, return_type, fncall, out):
     out.write(      f'    fz_context* auto_ctx = {icg}();\n')
     out.write(      f'    fz_var(auto_ctx);\n')
 
-    out.write( f'    const char*    trace = getenv("MUPDF_trace");\n')
-    out.write( f'    if (trace) {{\n')
+    out.write( f'    if (s_trace) {{\n')
 
     out.write( f'        fprintf(stderr, "%s:%i:%s(): calling {cursor.mangled_name}():')
 
@@ -4903,6 +4902,7 @@ def cpp_source( dir_mupdf, namespace, base, header_git, out_swig_c, out_swig_pyt
                     "info:ModDate",
             };
 
+            static bool s_trace = getenv("MUPDF_trace") ? true : false;
 
             '''))
 
