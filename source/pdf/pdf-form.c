@@ -103,6 +103,7 @@ static void pdf_field_mark_dirty(fz_context *ctx, pdf_obj *field)
 
 static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const char *text)
 {
+	const char *old_text;
 	pdf_obj *grp;
 
 	if (!text)
@@ -113,6 +114,11 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	grp = find_head_of_field_group(ctx, obj);
 	if (grp)
 		obj = grp;
+
+	/* Only update if we change the actual value. */
+	old_text = pdf_dict_get_text_string(ctx, obj, PDF_NAME(V));
+	if (old_text && !strcmp(old_text, text))
+		return;
 
 	pdf_dict_put_text_string(ctx, obj, PDF_NAME(V), text);
 
