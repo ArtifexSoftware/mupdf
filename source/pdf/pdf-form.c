@@ -1822,14 +1822,23 @@ static void pdf_execute_js_action(fz_context *ctx, pdf_document *doc, pdf_obj *t
 	if (js)
 	{
 		char *code = pdf_load_stream_or_string_as_utf8(ctx, js);
+		int in_op = 0;
+
+		fz_var(in_op);
 		fz_try(ctx)
 		{
 			char buf[100];
 			fz_snprintf(buf, sizeof buf, "%d/%s", pdf_to_num(ctx, target), path);
+			pdf_begin_operation(ctx, doc, "Javascript Event");
+			in_op = 1;
 			pdf_js_execute(doc->js, buf, code);
 		}
 		fz_always(ctx)
+		{
+			if (in_op)
+				pdf_end_operation(ctx, doc);
 			fz_free(ctx, code);
+		}
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
