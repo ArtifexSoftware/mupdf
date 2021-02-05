@@ -1939,12 +1939,12 @@ void pdf_page_event_close(fz_context *ctx, pdf_page *page)
 static void
 annot_execute_action(fz_context *ctx, pdf_annot *annot, const char *act)
 {
-	pdf_annot_push_local_xref(ctx, annot);
+	begin_annot_op(ctx, annot, "JavaScript action");
 
 	fz_try(ctx)
 		pdf_execute_action(ctx, annot->page->doc, annot->obj, act);
 	fz_always(ctx)
-		pdf_annot_pop_local_xref(ctx, annot);
+		end_annot_op(ctx, annot);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
@@ -1968,7 +1968,7 @@ void pdf_annot_event_up(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *action;
 
-	pdf_annot_push_local_xref(ctx, annot);
+	begin_annot_op(ctx, annot, "JavaScript action");
 
 	fz_try(ctx)
 	{
@@ -1979,7 +1979,7 @@ void pdf_annot_event_up(fz_context *ctx, pdf_annot *annot)
 			pdf_execute_action(ctx, annot->page->doc, annot->obj, "AA/U");
 	}
 	fz_always(ctx)
-		pdf_annot_pop_local_xref(ctx, annot);
+		end_annot_op(ctx, annot);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
