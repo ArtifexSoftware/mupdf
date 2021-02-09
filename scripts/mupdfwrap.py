@@ -2627,11 +2627,9 @@ def make_function_wrapper( tu, cursor, fnname, out_h, out_cpp, out_swig_c, out_s
             log( '{arg.cursor=} {arg.name=} {arg.separator=} {arg.alt=} {arg.out_param=}')
         if is_pointer_to(arg.cursor.type, 'fz_context'):
             continue
-        name2 = arg.name
         if arg.out_param:
             num_out_params += 1
-            name2 = f'mupdf_OUTPARAM({arg.name})'
-        decl = declaration_text( arg.cursor.type, name2, verbose=verbose)
+        decl = declaration_text( arg.cursor.type, arg.name, verbose=verbose)
         if verbose:
             log( '{decl=}')
         name_args_h += f'{comma}{decl}'
@@ -3810,17 +3808,11 @@ def class_write_method(
             if not arg.out_param and not classextras.get( arg.alt.type.spelling).pod:
                 const = 'const '
             decl_h +=   f'{const}{rename.class_(arg.alt.type.spelling)}& '
-            if arg.out_param:
-                decl_h += f'mupdf_OUTPARAM({arg.name})'
-            else:
-                decl_h += f'{arg.name}'
+            decl_h += f'{arg.name}'
             decl_cpp += f'{const}{rename.class_(arg.alt.type.spelling)}& {arg.name}'
         else:
-            if arg.out_param:
-                decl_h += declaration_text( arg.cursor.type, f'mupdf_OUTPARAM({arg.name})')
-            else:
-                logx( '{arg.spelling=}')
-                decl_h += declaration_text( arg.cursor.type, arg.name)
+            logx( '{arg.spelling=}')
+            decl_h += declaration_text( arg.cursor.type, arg.name)
             decl_cpp += declaration_text( arg.cursor.type, arg.name)
         comma = ', '
 
@@ -4783,12 +4775,6 @@ def cpp_source( dir_mupdf, namespace, base, header_git, out_swig_c, out_swig_pyt
             #include <string>
             #include <vector>
 
-            #ifdef SWIG
-                #define mupdf_OUTPARAM(name)  OUTPUT
-            #else
-                #define mupdf_OUTPARAM(name)  name
-            #endif
-
 
             '''))
 
@@ -4800,12 +4786,6 @@ def cpp_source( dir_mupdf, namespace, base, header_git, out_swig_c, out_swig_pyt
 
             #include <string>
             #include <vector>
-
-            #ifdef SWIG
-                #define mupdf_OUTPARAM(name)  OUTPUT
-            #else
-                #define mupdf_OUTPARAM(name)  name
-            #endif
 
 
             '''))
@@ -5240,8 +5220,6 @@ def build_swig( build_dirs, container_classnames, swig_c, swig_python, language=
             // Not implemented in mupdf.so: fz_colorspace_name_process_colorants
             %ignore fz_colorspace_name_process_colorants;
 
-            %ignore fz_set_stderr;
-            %ignore fz_set_stdout;
             %ignore fz_open_file_w;
 
             %ignore {rename.function('fz_append_vprintf')};
@@ -5251,10 +5229,6 @@ def build_swig( build_dirs, container_classnames, swig_c, swig_python, language=
             %ignore {rename.function('fz_vthrow')};
             %ignore {rename.function('fz_vwarn')};
             %ignore {rename.function('fz_write_vprintf')};
-            %ignore {rename.function('fz_set_stderr')};
-            %ignore {rename.function('fz_set_stdout')};
-            %ignore {rename.function('fz_open_file_w')};
-
             %ignore {rename.function('fz_vsnprintf')};
             %ignore {rename.function('fz_vthrow')};
             %ignore {rename.function('fz_vwarn')};
