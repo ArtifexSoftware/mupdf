@@ -172,7 +172,7 @@ def convert_runpage( doc, number, out):
     page = mupdf.Page( doc, number - 1)
     mediabox = page.bound_page()
     dev = out.begin_page(mediabox)
-    page.run( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
+    page.run_page( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
     out.end_page()
 
 def convert_runrange( doc, count, range_, out):
@@ -284,7 +284,7 @@ def trace_runpage( use_display_list, doc, number):
         list_ = mupdf.DisplayList( page)
         list_.run_display_list( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Rect(mupdf.fz_infinite_rect), mupdf.Cookie())
     else:
-        page.run( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
+        page.run_page( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
     output.close_output()
     print( '</page>')
 

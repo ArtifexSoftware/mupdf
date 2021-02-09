@@ -48,6 +48,15 @@ def test(path):
     global g_test_n
     g_test_n += 1
 
+    # See notes in mupdfwrap.py:build_swig() about buffer_extract() and
+    # buffer_storage().
+    #
+    assert getattr(mupdf.Buffer, 'buffer_storage_raw')
+    assert getattr(mupdf.Buffer, 'buffer_storage', None) is None
+
+    assert getattr(mupdf.Buffer, 'buffer_extract_raw')
+    assert getattr(mupdf.Buffer, 'buffer_extract')
+
     # Test operations using functions:
     #
     log('Testing functions.')
@@ -180,7 +189,7 @@ def test(path):
         matrix = mupdf.Matrix()
         page = mupdf.Page(document, 0)
         cookie = mupdf.Cookie()
-        page.run(device_stext, matrix, cookie)
+        page.run_page(device_stext, matrix, cookie)
         log(f'    stext_page is:')
         for block in stext_page:
             log(f'        block:')
@@ -207,7 +216,7 @@ def test(path):
     mediabox = page.bound_page()
     out = mupdf.DocumentWriter(filename, 'png', '')
     dev = out.begin_page(mediabox)
-    page.run(dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
+    page.run_page(dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Cookie())
     out.end_page()
 
     # Check out-params are converted into python return value.

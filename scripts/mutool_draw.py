@@ -401,7 +401,7 @@ def drawband( page, list_, ctm, tbounds, cookie, band_start, pix):
     if list_:
         list_.run_display_list( dev, ctm, tbounds, cookie)
     else:
-        page.run( dev, ctm, cookie)
+        page.run_page( dev, ctm, cookie)
     dev.close_device()
     dev = None  # lgtm [py/unused-local-variable]
 
@@ -438,7 +438,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         if list_:
             list_.run_display_list( dev, mupdf.Matrix(), mupdf.Rect(mupdf.fz_infinite_rect), cookie)
         else:
-            page.run( dev, fz_identity, cookie)
+            page.run_page( dev, fz_identity, cookie)
         state.out.write_string( "</page>\n")
         dev.close_device()
         dev = None  # lgtm [py/unused-local-variable]
@@ -450,7 +450,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         if list_:
             list_.run_display_list( dev, mupdf.Matrix(), mupdf.Rect(mupdf.fz_infinite_rect), cookie)
         else:
-            page.run( dev, fz_identity, cookie)
+            page.run_page( dev, fz_identity, cookie)
         state.out.write_string( "</page>\n")
         dev.close_device()
         dev = None  # lgtm [py/unused-local-variable]
@@ -463,7 +463,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         if list_:
             list_.run_display_list( dev, fz_identity, mupdf.Rect(mupdf.fz_infinite_rect), cookie)
         else:
-            page.run( dev, fz_identity, cookie)
+            page.run_page( dev, fz_identity, cookie)
         dev.close_device()
         state.out.write_string( "<page bbox=\"%s %s %s %s\" mediabox=\"%s %s %s %s\" />\n",
                 bbox.x0,
@@ -490,7 +490,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         if list_:
             list_.run_display_list( dev, ctm, mupdf.Rect(mupdf.fz_infinite_rect), cookie)
         else:
-            page.run( dev, ctm, cookie)
+            page.run_page( dev, ctm, cookie)
         dev.close_device()
         dev = None  # lgtm [py/unused-local-variable]
         if state.output_format == OUT_STEXT:
@@ -521,7 +521,7 @@ def dodrawpage( page, list_, pagenum, cookie, start, interptime, filename, bg, s
         if list_:
             list_.run_display_list( dev, ctm, tbounds, cookie)
         else:
-            page.run( dev, ctm, cookie)
+            page.run_page( dev, ctm, cookie)
         dev.close_device()
         state.out.close_output()
     else:
@@ -760,7 +760,7 @@ def drawpage( doc, pagenum):
         dev = mupdf.Device( list_)
         if state.lowmemory:
             dev.enable_device_hints( FZ_NO_CACHE)
-        page.run( dev, mupdf.Matrix(), cookie)
+        page.run_page( dev, mupdf.Matrix(), cookie)
         dev.close_device()
 
         if bgprint.active and state.showtime:
@@ -779,7 +779,7 @@ def drawpage( doc, pagenum):
         if list_:
             list_.run_display_list( dev, mupdf.Matrix(mupdf.fz_identity), mupdf.Rect(mupdf.fz_infinite_rect), mupdf.Cookie())
         else:
-            page.run( dev, fz_identity, cookie)
+            page.run_page( dev, fz_identity, cookie)
         dev.close_device()
         features = " color" if iscolor else " grayscale"
 

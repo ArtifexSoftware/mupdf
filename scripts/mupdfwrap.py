@@ -267,6 +267,31 @@ Python wrapping:
         If a function returns void and has exactly one out-param, the Python
         wrapper will return the out-param directly, not as part of a tuple.
 
+    Access to buffer data:
+
+        Wrappers for fz_buffer_extract():
+
+            mupdf.Buffer.buffer_extract() returns a Python bytes instance.
+
+            An extra method mupdf.Buffer.buffer_extract_raw() is provided
+            which returns (size, data) from the underlying fz_buffer_extract()
+            function. One use for this is to pass back into C/C++ with a call
+            to mupdf.Stream(data, size).
+
+        Wrappers for fz_buffer_storage():
+
+            mupdf.Buffer.buffer_storage() is not provided to Python because the
+            semantics are not useful - creating a Python bytes object always
+            takes a copy of the underlying data.
+
+            An extra method mupdf.Buffer.buffer_extract_raw() is provided
+            which returns (size, data) from the underlying fz_buffer_extract()
+            function.
+
+    Functions taking a va_list arg:
+
+        We do not provide Python wrappers for functions such as fz_vsnprintf().
+
 
 Tools:
 
@@ -508,10 +533,6 @@ class Rename:
     def internal( self, name):
         return f'internal_{name}'
     def method( self, structname, fnname):
-        if 1 and structname == 'fz_page':   # fixme: why?
-            prefix = 'fz_run_page'
-            if fnname.startswith( prefix):
-                return f'run{fnname[len(prefix):]}'
         if structname.startswith( 'fz_'):
             ret = clip( fnname, "fz_")
             if ret in ('stdin', 'stdout', 'stderr'):
@@ -5187,6 +5208,22 @@ def build_swig( build_dirs, container_classnames, swig_c, swig_python, language=
             #include "mupdf/functions.h"
 
             #include "mupdf/classes.h"
+
+            /* Support for extracting buffer data into a Python bytes. */
+
+            PyObject* buffer_extract_bytes(fz_buffer* buffer)
+            {{
+                unsigned char* c = NULL;
+                /* We mimic the affects of fz_buffer_extract(), which leaves
+                the buffer with zero capacity. */
+                size_t len = mupdf::buffer_storage(buffer, &c);
+                PyObject* ret = PyBytes_FromStringAndSize((const char*) c, (Py_ssize_t) len);
+                if (ret) {{
+                    mupdf::clear_buffer(buffer);
+                    mupdf::trim_buffer(buffer);
+                }}
+                return ret;
+            }}
             '''
 
     common += swig_c
@@ -5393,6 +5430,43 @@ def build_swig( build_dirs, container_classnames, swig_c, swig_python, language=
                     return self.pos.__ref__()
                 def next( self):    # for python3.
                     return self.__next__()
+
+            # The auto-generated Python class methd Buffer.buffer_extract()
+            # returns (size, data).
+            #
+            # But these raw values aren't particularly useful to Python code so
+            # we change the method to return a Python bytes instance instead,
+            # using the special C function buffer_storage_bytes() defined
+            # above.
+            #
+            # We make the original method available as
+            # Buffer.buffer_extract_raw(); this can be used to create a
+            # mupdf.Stream by passing the raw values back to C++ with:
+            #
+            #   data, size = buffer_.buffer_extract_raw()
+            #   stream = mupdf.Stream(data, size))
+            #
+            # We don't provide a similar wrapper for Buffer.buffer_storage()
+            # because we can't create a Python bytes object that
+            # points into the buffer'a storage. We still provide
+            # Buffer.buffer_storage_raw() just in case there is a need for
+            # Python code that can pass the raw (data, size) back in to C.
+            #
+
+            Buffer.buffer_extract_raw = Buffer.buffer_extract
+
+            def Buffer_buffer_extract(self):
+                """
+                Returns buffer data as a Python bytes instance, leaving the
+                buffer empty. Note that this will make a copy of the underlying
+                data.
+                """
+                return buffer_extract_bytes(self.m_internal)
+
+            Buffer.buffer_extract = Buffer_buffer_extract
+
+            Buffer.buffer_storage_raw = Buffer.buffer_storage
+            delattr(Buffer, 'buffer_storage')
 
             ''')
 
