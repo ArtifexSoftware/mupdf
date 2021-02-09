@@ -1001,6 +1001,9 @@ classextras = ClassExtras(
                     'fz_open_accelerated_document',
                     'fz_open_document',
                     ],
+                method_wrappers = [
+                    'fz_load_outline',
+                ],
                 method_wrappers_static = [
                     'fz_new_xhtml_document_from_document',
                     ],
@@ -1213,18 +1216,8 @@ classextras = ClassExtras(
         fz_outline = ClassExtra(
                 # We add various methods to give depth-first iteration of outlines.
                 #
-                constructor_raw = False,
                 constructor_prefixes = [
                     'fz_load_outline',
-                    ],
-                constructors_extra = [
-                    ExtraConstructor( '(struct fz_outline* internal)',
-                    f'''
-                    : m_internal( {rename.function_call("fz_keep_outline")}(internal))
-                    {{
-                    }}
-                    '''
-                    ),
                     ],
                 methods_extra = [
                     ExtraMethod( 'OutlineIterator', 'begin()',
@@ -1264,71 +1257,82 @@ classextras = ClassExtras(
                     };
                     ''',
                 extra_cpp =
-                    '''
+                    f'''
                     OutlineIterator::OutlineIterator(const Outline& item)
                     : m_outline(item), m_depth(0)
-                    {
-                    }
+                    {{
+                    }}
                     OutlineIterator::OutlineIterator()
                     : m_outline(NULL)
-                    {
-                    }
+                    {{
+                    }}
                     OutlineIterator& OutlineIterator::operator++()
-                    {
-                        if (m_outline.m_internal->down) {
+                    {{
+                        if (m_outline.m_internal->down)
+                        {{
                             m_up.push_back(m_outline.m_internal);
+                            {rename.function_call("fz_keep_outline")}(m_outline.m_internal->down);
                             m_outline = Outline(m_outline.m_internal->down);
                             m_depth += 1;
-                        }
-                        else if (m_outline.m_internal->next) {
+                        }}
+                        else if (m_outline.m_internal->next)
+                        {{
+                            {rename.function_call("fz_keep_outline")}(m_outline.m_internal->next);
                             m_outline = Outline(m_outline.m_internal->next);
-                        }
-                        else {
+                        }}
+                        else
+                        {{
                             /* Go up and across in the tree. */
-                            for(;;) {
-                                if (m_up.empty()) {
+                            for(;;)
+                            {{
+                                if (m_up.empty())
+                                {{
                                     m_outline = Outline(NULL);
                                     assert(m_depth == 0);
                                     break;
-                                }
+                                }}
                                 fz_outline* p = m_up.back();
                                 m_up.pop_back();
                                 m_depth -= 1;
-                                if (p->next) {
+                                if (p->next)
+                                {{
+                                    {rename.function_call("fz_keep_outline")}(p->next);
                                     m_outline = Outline(p->next);
                                     break;
-                                }
-                            }
-                        }
+                                }}
+                            }}
+                        }}
                         return *this;
-                    }
+                    }}
                     bool OutlineIterator::operator==(const OutlineIterator& rhs)
-                    {
+                    {{
                         bool ret = m_outline.m_internal == rhs.m_outline.m_internal;
                         return ret;
-                    }
+                    }}
                     bool OutlineIterator::operator!=(const OutlineIterator& rhs)
-                    {
+                    {{
                         return m_outline.m_internal != rhs.m_outline.m_internal;
-                    }
+                    }}
                     OutlineIterator& OutlineIterator::operator*()
-                    {
+                    {{
                         return *this;
-                    }
+                    }}
                     OutlineIterator* OutlineIterator::operator->()
-                    {
+                    {{
                         return this;
-                    }
+                    }}
 
                     void test(Outline& item)
-                    {
-                        for( OutlineIterator it = item.begin(); it != item.end(); ++it) {
+                    {{
+                        for( OutlineIterator it = item.begin(); it != item.end(); ++it)
+                        {{
                             (void) *it;
-                        }
-                        for (auto i: item) {
+                        }}
+                        for (auto i: item)
+                        {{
                             (void) i;
-                        }
-                    }
+                        }}
+                    }}
 
                     ''',
                 accessors=True,
@@ -3004,7 +3008,7 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
 
         if exclude_reasons:
             find_wrappable_function_with_arg0_type_excluded_cache[ fnname] = exclude_reasons
-            if 0:   # lgtm [py/unreachable-statement]
+            if fnname == 'fz_load_outline':   # lgtm [py/unreachable-statement]
                 log( 'excluding {fnname=} because:')
                 for i in exclude_reasons:
                     log( '    {i}')
