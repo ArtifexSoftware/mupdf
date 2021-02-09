@@ -5078,37 +5078,33 @@ def build_swig( build_dirs, container_classnames, language='python', swig='swig'
         swig_cpp_old = swig_cpp + '-0'
         shutil.copy2(swig_cpp, swig_cpp_old)
 
-    # We will be modifying the generated mupdf.py, so need to always remove old
-    # one.
-    jlib.remove(swig_py)
-
-    jlib.build(
+    rebuilt = jlib.build(
             (swig_i, include1, include2),
             (swig_cpp, swig_py),
             command,
             )
 
-    mupdf_py_prefix = ''
-    if os.uname()[0] == 'OpenBSD':
-        mupdf_py_prefix = textwrap.dedent(
-                f'''
-                # Explicitly load required .so's using absolute paths, so that we
-                # work without needing LD_LIBRARY_PATH to be defined.
-                #
-                import ctypes
-                import os
-                import importlib
-                for leaf in ('libmupdf.so', 'libmupdfcpp.so', '_mupdf.so'):
-                    path = os.path.abspath(f'{{__file__}}/../{{leaf}}')
-                    print(f'path={{path}}')
-                    print(f'exists={{os.path.exists(path)}}')
-                    ctypes.cdll.LoadLibrary( path)
-                    print(f'have loaded {{path}}')
-                ''')
-    with open( swig_py) as f:
-        mupdf_py_content = mupdf_py_prefix + f.read()
-    with open( swig_py, 'w') as f:
-        f.write( mupdf_py_content)
+    if rebuilt:
+        if os.uname()[0] == 'OpenBSD':
+            mupdf_py_prefix = textwrap.dedent(
+                    f'''
+                    # Explicitly load required .so's using absolute paths, so that we
+                    # work without needing LD_LIBRARY_PATH to be defined.
+                    #
+                    import ctypes
+                    import os
+                    import importlib
+                    for leaf in ('libmupdf.so', 'libmupdfcpp.so', '_mupdf.so'):
+                        path = os.path.abspath(f'{{__file__}}/../{{leaf}}')
+                        #print(f'path={{path}}')
+                        #print(f'exists={{os.path.exists(path)}}')
+                        ctypes.cdll.LoadLibrary( path)
+                        #print(f'have loaded {{path}}')
+                    ''')
+            with open( swig_py) as f:
+                mupdf_py_content = mupdf_py_prefix + f.read()
+            with open( swig_py, 'w') as f:
+                f.write( mupdf_py_content)
 
     if swig_cpp_old:
         def read_all(path):
