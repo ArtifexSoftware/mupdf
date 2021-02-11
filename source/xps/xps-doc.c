@@ -453,7 +453,6 @@ xps_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 			fz_try(ctx)
 			{
 				page = fz_new_derived_page(ctx, xps_page, doc_);
-				page->doc = doc; /* typecast alias to page->super.doc */
 				page->super.load_links = xps_load_links;
 				page->super.bound_page = xps_bound_page;
 				page->super.run_page_contents = xps_run_page;
