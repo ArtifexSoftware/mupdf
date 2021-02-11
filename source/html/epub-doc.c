@@ -344,7 +344,6 @@ static void
 epub_drop_page(fz_context *ctx, fz_page *page_)
 {
 	epub_page *page = (epub_page *)page_;
-	fz_drop_document(ctx, &page->doc->super);
 	fz_drop_html(ctx, page->html);
 }
 
@@ -497,12 +496,12 @@ epub_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 	{
 		if (i == chapter)
 		{
-			epub_page *page = fz_new_derived_page(ctx, epub_page);
+			epub_page *page = fz_new_derived_page(ctx, epub_page, doc_);
+			page->doc = (epub_document *) doc_;
 			page->super.bound_page = epub_bound_page;
 			page->super.run_page_contents = epub_run_page;
 			page->super.load_links = epub_load_links;
 			page->super.drop_page = epub_drop_page;
-			page->doc = (epub_document *)fz_keep_document(ctx, doc_);
 			page->ch = ch;
 			page->number = number;
 			page->html = epub_get_laid_out_html(ctx, doc, ch);
