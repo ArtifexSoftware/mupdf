@@ -33,6 +33,7 @@ guide
 DerivedData
 
 platform/java/local.properties
+platform/java/mupdf_native.h
 platform/win32/*.user
 platform/win32/*.ncb
 platform/win32/*.suo
