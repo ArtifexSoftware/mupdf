@@ -394,11 +394,11 @@ static int usage(void)
 		"\t-F -\toutput format (default inferred from output file name)\n"
 		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
 		"\t\tvector: svg, pdf, trace, ocr.trace\n"
-		"\t\ttext: txt, html, xhtml, stext\n"
+		"\t\ttext: txt, html, xhtml, stext, stext.json\n"
 #ifndef OCR_DISABLED
-		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext\n"
+		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext, ocr.stext.json\n"
 #else
-		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext (disabled)\n"
+		"\t\tocr'd text: ocr.txt, ocr.html, ocr.xhtml, ocr.stext, ocr.stext.json (disabled)\n"
 #endif
 		"\t\tbitmap-wrapped-as-pdf: pclm, ocr.pdf\n"
 		"\n"
