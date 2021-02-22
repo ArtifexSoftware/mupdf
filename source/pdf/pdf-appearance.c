@@ -2270,6 +2270,50 @@ void pdf_update_signature_appearance(fz_context *ctx, pdf_annot *annot, const ch
 }
 
 void
+pdf_update_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, fz_rect rect, fz_display_list *disp_list)
+{
+	pdf_obj *ap, *new_ap_n;
+	pdf_document *doc = annot->page->doc;
+	fz_device *dev = NULL;
+	pdf_obj *res = NULL;
+	fz_buffer *contents = NULL;
+
+	fz_var(dev);
+	fz_var(res);
+	fz_var(contents);
+	fz_try(ctx)
+	{
+		res = pdf_new_dict(ctx, doc, 1);
+		contents = fz_new_buffer(ctx, 0);
+		dev = pdf_new_pdf_device(ctx, doc, fz_identity, rect, res, contents);
+		fz_run_display_list(ctx, disp_list, dev, fz_identity, fz_infinite_rect, NULL);
+		fz_close_device(ctx, dev);
+		fz_drop_device(ctx, dev);
+		dev = NULL;
+
+		/* Update the AP/N stream */
+		ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));
+		if (!ap)
+			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 1);
+		new_ap_n = pdf_new_xobject(ctx, doc, rect, fz_identity, res, contents);
+		annot->needs_new_ap = 0;
+		annot->has_new_ap = 1;
+		pdf_dict_put_drop(ctx, ap, PDF_NAME(N), new_ap_n);
+
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+		pdf_drop_obj(ctx, res);
+		fz_drop_buffer(ctx, contents);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void
 pdf_annot_push_local_xref(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_document *doc = annot->page->doc;
