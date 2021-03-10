@@ -975,6 +975,12 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	return tile;
 }
 
+fz_pixmap *
+fz_get_unscaled_pixmap_from_image(fz_context *ctx, fz_image *image)
+{
+	return fz_get_pixmap_from_image(ctx, image, NULL /*subarea*/, NULL /*ctm*/, NULL /*dw*/, NULL /*dh*/);
+}
+
 static size_t
 pixmap_image_get_size(fz_context *ctx, fz_image *image)
 {
