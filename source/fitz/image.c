@@ -621,7 +621,6 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, tile);
-		fz_free(ctx, samples);
 		fz_rethrow(ctx);
 	}
 
