@@ -260,7 +260,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 				dn_str = fz_string_from_buffer(ctx, fzbuf);
 
 				if (tm)
-					len = strftime(now_str, sizeof now_str, "%Y.%m.%d %H:%M:%SZ", tm);
+					len = strftime(now_str, sizeof now_str, "%Y.%m.%d %H:%M:%S", tm);
 
 				pdf_update_signature_appearance(ctx, (pdf_annot *)widget, dn->cn, dn_str, len?now_str:NULL);
 			}
