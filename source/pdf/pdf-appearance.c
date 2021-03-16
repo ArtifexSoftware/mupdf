@@ -2371,9 +2371,9 @@ pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name 
 	fz_try(ctx)
 	{
 #ifdef _POSIX_SOURCE
-		struct tm tmbuf, *tm = gmtime_r(&date, &tmbuf);
+		struct tm tmbuf, *tm = localtime_r(&date, &tmbuf);
 #else
-		struct tm *tm = gmtime(&date);
+		struct tm *tm = localtime(&date);
 #endif
 		char now_str[40];
 		size_t len = 0;
@@ -2417,7 +2417,7 @@ pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name 
 
 		if (tm)
 		{
-			len = strftime(now_str, sizeof now_str, "%Y.%m.%d %H:%M:%SZ", tm);
+			len = strftime(now_str, sizeof now_str, "%FT%T%z", tm);
 			if (len)
 			{
 				fz_append_string(ctx, fzbuf, "\n");
@@ -2428,7 +2428,8 @@ pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name 
 		}
 
 		fz_terminate_buffer(ctx, fzbuf);
-		(void)fz_buffer_extract(ctx, fzbuf, &full_str);
+
+		(void)fz_buffer_extract(ctx, fzbuf, (unsigned char **)&full_str);
 	}
 	fz_always(ctx)
 	{
