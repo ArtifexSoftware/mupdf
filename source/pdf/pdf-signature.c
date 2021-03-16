@@ -314,33 +314,41 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 {
 	int flags;
-	fz_display_list *dlist;
-	fz_rect rect;
+	fz_display_list *dlist = NULL;
 
-	if (pdf_widget_is_readonly(ctx, widget))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature read only, it cannot be cleared.");
-
-	pdf_xref_remove_unsaved_signature(ctx, ((pdf_annot *) widget)->page->doc,  ((pdf_annot *) widget)->obj);
-
-	pdf_dirty_annot(ctx, widget);
-
-	flags = pdf_dict_get_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
-	flags &= ~PDF_ANNOT_IS_LOCKED;
-	if (flags)
-		pdf_dict_put_int(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F), flags);
-	else
-		pdf_dict_del(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(F));
-
-	pdf_dict_del(ctx, ((pdf_annot *) widget)->obj, PDF_NAME(V));
-
-	dlist = fz_new_display_list(ctx, pdf_bound_annot(ctx, (pdf_annot *)widget));
-	rect = pdf_bound_widget(ctx, widget);
+	fz_var(dlist);
 	fz_try(ctx)
+	{
+		fz_text_language lang = pdf_annot_language(ctx, (pdf_annot *)widget);
+		fz_rect rect = pdf_bound_widget(ctx, widget);
+
+		if (pdf_widget_is_readonly(ctx, widget))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Signature read only, it cannot be cleared.");
+
+		pdf_xref_remove_unsaved_signature(ctx, ((pdf_annot *)widget)->page->doc, ((pdf_annot *)widget)->obj);
+
+		pdf_dirty_annot(ctx, widget);
+
+		flags = pdf_dict_get_int(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(F));
+		flags &= ~PDF_ANNOT_IS_LOCKED;
+		if (flags)
+			pdf_dict_put_int(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(F), flags);
+		else
+			pdf_dict_del(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(F));
+
+		pdf_dict_del(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(V));
+
+		dlist = pdf_signature_appearance_unsigned(ctx, rect, lang);
 		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, rect, dlist);
+	}
 	fz_always(ctx)
+	{
 		fz_drop_display_list(ctx, dlist);
+	}
 	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
+	}
 }
 
 void pdf_drop_signer(fz_context *ctx, pdf_pkcs7_signer *signer)

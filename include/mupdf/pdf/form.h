@@ -230,6 +230,7 @@ void pdf_signature_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_na
 char *pdf_signature_format_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *name);
 char *pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name *dn, const char *reason, const char *location, time_t date, int include_labels);
 fz_display_list *pdf_signature_appearance(fz_context *ctx, fz_rect rect, fz_text_language lang, fz_image *img, const char *left_text, const char *right_text, int include_logo);
+fz_display_list *pdf_signature_appearance_unsigned(fz_context *ctx, fz_rect rect, fz_text_language lang);
 
 pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature);
 pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature);

@@ -2359,6 +2359,65 @@ pdf_signature_appearance(fz_context *ctx, fz_rect rect, fz_text_language lang, f
 	return dlist;
 }
 
+fz_display_list *
+pdf_signature_appearance_unsigned(fz_context *ctx, fz_rect rect, fz_text_language lang)
+{
+	fz_display_list *dlist = NULL;
+	fz_device *dev = NULL;
+	fz_text *text = NULL;
+	fz_colorspace *cs = NULL;
+	fz_path *path = NULL;
+	fz_font *font = NULL;
+
+	fz_var(path);
+	fz_var(dlist);
+	fz_var(dev);
+	fz_var(text);
+	fz_var(font);
+	fz_try(ctx)
+	{
+		float text_color[] = { 1.0f, 1.0f, 1.0f };
+		float arrow_color[] = { 0.95f, 0.33f, 0.18f };
+
+		rect.y0 = rect.y1 - (rect.y1 - rect.y0) / 6;
+		rect.x1 = rect.x0 + (rect.y1 - rect.y0) * 4;
+		font = fz_new_base14_font(ctx, "Helvetica");
+
+		dlist = fz_new_display_list(ctx, rect);
+		dev = fz_new_list_device(ctx, dlist);
+
+		path = fz_new_path(ctx);
+		/* Draw a rectangle with a protusion to the right [xxxxx> */
+		fz_moveto(ctx, path, rect.x0, rect.y0);
+		fz_lineto(ctx, path, rect.x1, rect.y0);
+		fz_lineto(ctx, path, rect.x1 + (rect.y1 - rect.y0) / 2.0, (rect.y0 + rect.y1) / 2.0);
+		fz_lineto(ctx, path, rect.x1, rect.y1);
+		fz_lineto(ctx, path, rect.x0, rect.y1);
+		fz_closepath(ctx, path);
+		cs = fz_device_rgb(ctx);
+		fz_fill_path(ctx, dev, path, 0, fz_identity, cs, arrow_color, 1.0f, fz_default_color_params);
+
+		text = pdf_layout_fit_text(ctx, font, lang, "SIGN", rect);
+		fz_fill_text(ctx, dev, text, fz_identity, cs, text_color, 1.0f, fz_default_color_params);
+		fz_drop_text(ctx, text);
+		text = NULL;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+		fz_drop_path(ctx, path);
+		fz_drop_text(ctx, text);
+		fz_drop_font(ctx, font);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_display_list(ctx, dlist);
+		fz_rethrow(ctx);
+	}
+
+	return dlist;
+}
+
 char *
 pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name *dn, const char *reason, const char *location, time_t date, int include_labels)
 {
@@ -2428,7 +2487,6 @@ pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name 
 		}
 
 		fz_terminate_buffer(ctx, fzbuf);
-
 		(void)fz_buffer_extract(ctx, fzbuf, (unsigned char **)&full_str);
 	}
 	fz_always(ctx)
@@ -2568,11 +2626,15 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 
 		ft = pdf_dict_get(ctx, annot->obj, PDF_NAME(FT));
 
-		/* We cannot synthesise an appearance for a Sig, so
+		/* We cannot synthesise an appearance for a signed Sig, so
 		 * don't even try. Attempting to, will move the object
 		 * into the new incremental section, which will
-		 * invalidate the signature. */
-		local_synthesis = (!ap_n && !pdf_name_eq(ctx, ft, PDF_NAME(Sig)));
+		 * invalidate the signature.
+		 *
+		 * For an unsigned Sig, use local synthesis even if there
+		 * is an existing appearance stream, because often they
+		 * are blank and we want the "sign" arrow to be visible. */
+		local_synthesis = ((!ap_n || pdf_name_eq(ctx, ft, PDF_NAME(Sig))) && !pdf_signature_is_signed(ctx, annot->page->doc, annot->obj));
 
 		if (annot->needs_new_ap)
 		{
@@ -2634,6 +2696,25 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 					pdf_update_button_appearance(ctx, annot);
 					pdf_clean_obj(ctx, annot->obj);
 					break;
+				}
+			}
+
+			/* Special case for unsigned signature widget, which are most easily created via a display list */
+			if (pdf_name_eq(ctx, ft, PDF_NAME(Sig)) && !pdf_signature_is_signed(ctx, annot->page->doc, annot->obj))
+			{
+				fz_rect rect = pdf_bound_annot(ctx, annot);
+				fz_display_list *dlist = pdf_signature_appearance_unsigned(ctx, rect, pdf_annot_language(ctx, annot));
+				fz_try(ctx)
+				{
+					pdf_update_appearance_from_display_list(ctx, annot, rect, dlist);
+				}
+				fz_always(ctx)
+				{
+					fz_drop_display_list(ctx, dlist);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
 				}
 			}
 
