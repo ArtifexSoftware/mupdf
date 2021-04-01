@@ -457,7 +457,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 
 	*cspacep = NULL;
 	if (orientation)
-		*orientation = NULL;
+		*orientation = 0;
 
 	cinfo.mem = NULL;
 	cinfo.global_state = 0;
