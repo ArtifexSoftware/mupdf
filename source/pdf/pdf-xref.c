@@ -1735,6 +1735,8 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 
 	pdf_drop_journal(ctx, doc->journal);
 
+	pdf_drop_resource_tables(ctx, doc);
+
 	pdf_drop_local_xref(ctx, doc->local_xref);
 
 	pdf_drop_xref_sections(ctx, doc);
@@ -1776,8 +1778,6 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	pdf_empty_store(ctx, doc);
 
 	pdf_lexbuf_fin(ctx, &doc->lexbuf.base);
-
-	pdf_drop_resource_tables(ctx, doc);
 
 	fz_drop_colorspace(ctx, doc->oi);
 

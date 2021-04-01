@@ -2582,6 +2582,7 @@ void pdf_annot_pop_and_discard_local_xref(fz_context *ctx, pdf_annot *annot)
 
 	--doc->local_xref_nesting;
 	assert(doc->local_xref_nesting == 0);
+	pdf_purge_local_font_resources(ctx, doc);
 	pdf_drop_local_xref(ctx, doc->local_xref);
 	doc->local_xref = NULL;
 }
