@@ -2358,6 +2358,29 @@ pdf_count_objects(fz_context *ctx, pdf_document *doc)
 	return pdf_xref_len(ctx, doc);
 }
 
+int
+pdf_is_local_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	pdf_xref *xref = doc->local_xref;
+	pdf_xref_subsec *sub;
+	int num;
+
+	if (!pdf_is_indirect(ctx, obj))
+		return 0;
+
+	if (xref == NULL || doc->local_xref_nesting == 0)
+		return 0; /* no local xref present */
+
+	num = pdf_to_num(ctx, obj);
+
+	/* Local xrefs only ever have 1 section, and it should be solid. */
+	sub = xref->subsec;
+	if (num >= sub->start && num < sub->start + sub->len)
+		return sub->table[num - sub->start].type != 'f';
+
+	return 0;
+}
+
 static int
 pdf_create_local_object(fz_context *ctx, pdf_document *doc)
 {
