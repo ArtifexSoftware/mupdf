@@ -436,7 +436,7 @@ static void bump_file_version(int dir)
 static int ui_save_file_confirm(char *filename)
 {
 	int rv = 0;
-	ui_dialog_begin(500, (ui.gridsize+4)*3);
+	ui_dialog_begin(500, (ui.gridsize+4)*3 + ui.lineheight*5);
 	ui_layout(T, NONE, NW, 2, 2);
 	ui_label("%C File %s already exists!", 0x26a0, filename); /* WARNING SIGN */
 	ui_label("Do you want to replace it?");
