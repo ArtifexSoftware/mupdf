@@ -379,10 +379,32 @@ static void on_timer(int timer_id)
 	glutTimerFunc(500, on_timer, 0);
 }
 
+void ui_init_dpi()
+{
+	ui.scale = 1;
+	{
+		int wmm = glutGet(GLUT_SCREEN_WIDTH_MM);
+		int wpx = glutGet(GLUT_SCREEN_WIDTH);
+		int hmm = glutGet(GLUT_SCREEN_HEIGHT_MM);
+		int hpx = glutGet(GLUT_SCREEN_HEIGHT);
+		if (wmm > 0 && hmm > 0)
+		{
+			float ppi = ((wpx * 254) / wmm + (hpx * 254) / hmm) / 20;
+			if (ppi >= 288) ui.scale = 3;
+			else if (ppi >= 192) ui.scale = 2;
+			else if (ppi >= 144) ui.scale = 1.5f;
+		}
+	}
+
+	ui.fontsize = DEFAULT_UI_FONTSIZE * ui.scale;
+	ui.baseline = DEFAULT_UI_BASELINE * ui.scale;
+	ui.lineheight = DEFAULT_UI_LINEHEIGHT * ui.scale;
+	ui.gridsize = DEFAULT_UI_GRIDSIZE * ui.scale;
+	ui.padsize = 2 * ui.scale;
+}
+
 void ui_init(int w, int h, const char *title)
 {
-	float ui_scale;
-
 #ifdef FREEGLUT
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 #endif
@@ -414,26 +436,6 @@ void ui_init(int w, int h, const char *title)
 		fz_warn(ctx, "OpenGL implementation does not support non-power of two texture sizes");
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-
-	ui_scale = 1;
-	{
-		int wmm = glutGet(GLUT_SCREEN_WIDTH_MM);
-		int wpx = glutGet(GLUT_SCREEN_WIDTH);
-		int hmm = glutGet(GLUT_SCREEN_HEIGHT_MM);
-		int hpx = glutGet(GLUT_SCREEN_HEIGHT);
-		if (wmm > 0 && hmm > 0)
-		{
-			float ppi = ((wpx * 254) / wmm + (hpx * 254) / hmm) / 20;
-			if (ppi >= 144) ui_scale = 1.5f;
-			if (ppi >= 192) ui_scale = 2.0f;
-			if (ppi >= 288) ui_scale = 3.0f;
-		}
-	}
-
-	ui.fontsize = DEFAULT_UI_FONTSIZE * ui_scale;
-	ui.baseline = DEFAULT_UI_BASELINE * ui_scale;
-	ui.lineheight = DEFAULT_UI_LINEHEIGHT * ui_scale;
-	ui.gridsize = DEFAULT_UI_GRIDSIZE * ui_scale;
 
 	ui_init_fonts();
 
