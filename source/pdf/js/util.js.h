@@ -1,3 +1,4 @@
+// This is an automatically generated file. Do not edit.
 "Error.prototype.toString = function() {\n"
 "if (this.stackTrace) return this.name + ': ' + this.message + this.stackTrace;\n"
 "return this.name + ': ' + this.message;\n"

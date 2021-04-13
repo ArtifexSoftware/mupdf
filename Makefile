@@ -196,7 +196,10 @@ generate: $(FONT_GEN)
 # --- Generated ICC profiles ---
 
 source/fitz/icc/%.icc.h: resources/icc/%.icc
-	$(QUIET_GEN) xxd -i $< | sed 's/unsigned/static const unsigned/' > $@
+	$(QUIET_GEN) xxd -i $< | \
+		sed 's/unsigned/static const unsigned/' | \
+		sed '1i// This is an automatically generated file. Do not edit.' \
+		> $@
 
 generate: source/fitz/icc/gray.icc.h
 generate: source/fitz/icc/rgb.icc.h
