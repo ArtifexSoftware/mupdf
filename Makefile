@@ -453,7 +453,11 @@ all: libs apps
 clean:
 	rm -rf $(OUT)
 nuke:
-	rm -rf build/* generated
+	rm -rf build/*
+	rm -rf generated/resources/fonts/droid
+	rm -rf generated/resources/fonts/han
+	rm -rf generated/resources/fonts/noto
+	rm -rf generated/resources/fonts/sil
 
 release:
 	$(MAKE) build=release
