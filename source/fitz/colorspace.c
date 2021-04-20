@@ -1025,23 +1025,30 @@ typedef struct fz_cached_color_converter
 static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, const float *ss, float *ds)
 {
 	fz_cached_color_converter *cc = cc_->opaque;
-	float *val = fz_hash_find(ctx, cc->hash, ss);
-	int n = cc->base.ds->n * sizeof(float);
-
-	if (val)
+	if (cc->hash)
 	{
-		memcpy(ds, val, n);
-		return;
+		float *val = fz_hash_find(ctx, cc->hash, ss);
+		int n = cc->base.ds->n * sizeof(float);
+
+		if (val)
+		{
+			memcpy(ds, val, n);
+			return;
+		}
+
+		cc->base.convert(ctx, &cc->base, ss, ds);
+
+		val = Memento_label(fz_malloc_array(ctx, cc->base.ds->n, float), "cached_color_convert");
+		memcpy(val, ds, n);
+		fz_try(ctx)
+			fz_hash_insert(ctx, cc->hash, ss, val);
+		fz_catch(ctx)
+			fz_free(ctx, val);
 	}
-
-	cc->base.convert(ctx, &cc->base, ss, ds);
-
-	val = Memento_label(fz_malloc_array(ctx, cc->base.ds->n, float), "cached_color_convert");
-	memcpy(val, ds, n);
-	fz_try(ctx)
-		fz_hash_insert(ctx, cc->hash, ss, val);
-	fz_catch(ctx)
-		fz_free(ctx, val);
+	else
+	{
+		cc->base.convert(ctx, &cc->base, ss, ds);
+	}
 }
 
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ss, fz_colorspace *ds, fz_colorspace *is, fz_color_params params)
@@ -1060,7 +1067,10 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	fz_try(ctx)
 	{
 		fz_find_color_converter(ctx, &cached->base, ss, ds, is, params);
-		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
+		if (n * sizeof(float) <= FZ_HASH_TABLE_KEY_LENGTH)
+			cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
+		else
+			fz_warn(ctx, "colorspace has too many components to be cached");
 	}
 	fz_catch(ctx)
 	{
