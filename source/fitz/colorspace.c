@@ -319,6 +319,11 @@ fz_new_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, int 
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_KEY_STORABLE(cs, 1, fz_drop_colorspace_imp);
 
+	if (n > FZ_MAX_COLORS)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components (%d > %d)", n, FZ_MAX_COLORS);
+	if (n < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too few color components (%d < 1)", n);
+
 	fz_try(ctx)
 	{
 		cs->type = type;
