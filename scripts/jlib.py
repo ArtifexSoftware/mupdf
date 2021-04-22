@@ -196,10 +196,16 @@ g_log_prefix_scopes = LogPrefixScopes()
 
 # List of items that form prefix for all output from log().
 #
-g_log_prefixes = []
+g_log_prefixes = [
+        LogPrefixTime( time_=False, elapsed=True),
+        g_log_prefix_scopes,
+        LogPrefixFileLine(),
+        ]
 
 
-def log_text( text=None, caller=1, nv=True):
+_log_text_line_start = True
+
+def log_text( text=None, caller=1, nv=True, raw=False):
     '''
     Returns log text, prepending all lines with text from g_log_prefixes.
 
@@ -215,6 +221,7 @@ def log_text( text=None, caller=1, nv=True):
     '''
     if isinstance( caller, int):
         caller += 1
+    # Construct line prefix.
     prefix = ''
     for p in g_log_prefixes:
         if callable( p):
@@ -227,18 +234,34 @@ def log_text( text=None, caller=1, nv=True):
     if text is None:
         return prefix
 
+    # Expand {...} using our enhanced f-string support.
     if nv:
         text = expand_nv( text, caller)
 
-    if text.endswith( '\n'):
-        text = text[:-1]
-    lines = text.split( '\n')
-
-    text = ''
-    for line in lines:
-        text += prefix + line + '\n'
-    return text
-
+    # Prefix each line. If <raw> is false, we terminate the last line with a
+    # newline. Otherwise we use _log_text_line_start to remember whether we are
+    # at the beginning of a line.
+    #
+    global _log_text_line_start
+    text2 = ''
+    pos = 0
+    while 1:
+        if pos == len(text):
+            break
+        if not raw or _log_text_line_start:
+            text2 += prefix
+        nl = text.find('\n', pos)
+        if nl == -1:
+            text2 += text[pos:]
+            if not raw:
+                text2 += '\n'
+            pos = len(text)
+        else:
+            text2 += text[pos:nl+1]
+            pos = nl+1
+        if raw:
+            _log_text_line_start = (nl >= 0)
+    return text2
 
 
 s_log_levels_cache = dict()
@@ -290,7 +313,7 @@ def log_levels_add( delta, filename_prefix, function_prefix):
     s_log_levels_items.sort( reverse=True)
 
 
-def log( text, level=0, caller=1, nv=True, out=None):
+def log( text, level=0, caller=1, nv=True, out=None, raw=False):
     '''
     Writes log text, with special handling of {<expression>} items in <text>
     similar to python3's f-strings.
@@ -305,6 +328,10 @@ def log( text, level=0, caller=1, nv=True, out=None):
         If true, we expand {...} in <text> using expand_nv().
     out:
         Where to send output. If None we use sys.stdout.
+    raw:
+        If true we don't ensure output text is terminated with a newline. E.g.
+        use by jlib.system() when sending us raw output which is not
+        line-based.
 
     <expression> is evaluated in our caller's context (<n> stack frames up)
     using eval(), and expanded to <expression> or <expression>=<value>.
@@ -329,10 +356,19 @@ def log( text, level=0, caller=1, nv=True, out=None):
         caller += 1
     level += log_levels_find( caller)
     if level <= 0:
-        text = log_text( text, caller, nv=nv)
+        text = log_text( text, caller, nv=nv, raw=raw)
         out.write( text)
         out.flush()
 
+def log_raw( text, level=0, caller=1, nv=False, out=None):
+    '''
+    Like log() but defaults to nv=False so any {...} are not evaluated as
+    expressions.
+
+    Useful for things like:
+        jlib.system(..., out=jlib.log_raw)
+    '''
+    log( text, level=0, caller=caller+1, nv=nv, out=out)
 
 def log0( text, caller=1, nv=True, out=None):
     '''
@@ -433,101 +469,108 @@ def force_line_buffering():
 def exception_info( exception=None, limit=None, out=None, prefix='', oneline=False):
     '''
     General replacement for traceback.* functions that print/return information
-    about exceptions. This function provides a simple way of getting the
-    functionality provided by these traceback functions:
+    about exceptions and backtraces. This function provides a simple way of
+    getting the functionality provided by these traceback functions:
 
         traceback.format_exc()
         traceback.format_exception()
         traceback.print_exc()
         traceback.print_exception()
 
+    Args:
+        exception:
+            None, or a (type, value, traceback) tuple, e.g. from
+            sys.exc_info(). If None, we call sys.exc_info() and use its return
+            value. If there is no live exception we show information about the
+            current backtrace.
+        limit:
+            None or maximum number of stackframes to output.
+        out:
+            None or callable taking single <text> parameter or object with a
+            'write' member that takes a single <text> parameter.
+        prefix:
+            Used to prefix all lines of text.
+        oneline:
+            If true, we only show one line of information.
+
     Returns:
-        A string containing description of specified exception and backtrace.
+        A string containing description of specified exception (if any) and
+        backtrace. Also sends this description to <out> if specified.
 
     Inclusion of outer frames:
-        We improve upon traceback.* in that we also include stack frames above
-        the point at which an exception was caught - frames from the top-level
-        <module> or thread creation fn to the try..catch block, which makes
-        backtraces much more useful.
+        We improve upon traceback.* in that we also include outermost stack
+        frames above the point at which an exception was caught - frames from
+        the top-level <module> or thread creation fn to the try..catch block,
+        which makes backtraces much more useful.
 
         Google 'sys.exc_info backtrace incomplete' for more details.
 
-        We deliberately leave a slightly curious pair of items in the backtrace
-        - the point in the try: block that ended up raising an exception, and
-        the point in the associated except: block from which we were called.
-
-        For clarity, we insert an empty frame in-between these two items, so
-        that one can easily distinguish the two parts of the backtrace.
+        We separate the two parts of the backtrace using a line '^except
+        raise:'; the idea here is that '^except' is pointing upwards to the
+        frame that caught the exception, while 'raise:' is referring downwards
+        to the frames that eventually raised the exception.
 
         So the backtrace looks like this:
 
             root (e.g. <module> or /usr/lib/python2.7/threading.py:778:__bootstrap():
             ...
             file:line in the except: block where the exception was caught.
-            ::(): marker
+            ^except raise:
             file:line in the try: block.
             ...
             file:line where the exception was raised.
 
-        The items after the ::(): marker are the usual items that traceback.*
-        shows for an exception.
+        The items below the '^except raise:' marker are the usual items that
+        traceback.* shows for an exception.
 
     Also the backtraces that are generated are more concise than those provided
     by traceback.* - just one line per frame instead of two - and filenames are
-    output relative to the current directory if applicatble. And one can easily
+    output relative to the current directory if applicable. And one can easily
     prefix all lines with a specified string, e.g. to indent the text.
-
-    Returns a string containing backtrace and exception information, and sends
-    returned string to <out> if specified.
-
-    exception:
-        None, or a (type, value, traceback) tuple, e.g. from sys.exc_info(). If
-        None, we call sys.exc_info() and use its return value.
-    limit:
-        None or maximum number of stackframes to output.
-    out:
-        None or callable taking single <text> parameter or object with a
-        'write' member that takes a single <text> parameter.
-    prefix:
-        Used to prefix all lines of text.
     '''
     if exception is None:
         exception = sys.exc_info()
     etype, value, tb = exception
-
-    if sys.version_info[0] == 2:
-        out2 = io.BytesIO()
-    else:
-        out2 = io.StringIO()
+    out2 = io.StringIO()
     try:
-
         frames = []
 
-        # Get frames above point at which exception was caught - frames
-        # starting at top-level <module> or thread creation fn, and ending
-        # at the point in the catch: block from which we were called.
-        #
-        # These frames are not included explicitly in sys.exc_info()[2] and are
-        # also omitted by traceback.* functions, which makes for incomplete
-        # backtraces that miss much useful information.
-        #
-        for f in reversed(inspect.getouterframes(tb.tb_frame)):
-            ff = f[1], f[2], f[3], f[4][0].strip()
-            frames.append(ff)
+        if tb:
+            # There is a live exception.
+            #
+            # Get frames above point at which exception was caught - frames
+            # starting at top-level <module> or thread creation fn, and ending
+            # at the point in the catch: block from which we were called.
+            #
+            # These frames are not included explicitly in sys.exc_info()[2] and are
+            # also omitted by traceback.* functions, which makes for incomplete
+            # backtraces that miss much useful information.
+            #
+            for f in reversed(inspect.getouterframes(tb.tb_frame)):
+                ff = f[1], f[2], f[3], f[4][0].strip()
+                frames.append(ff)
+        else:
+            # No exception; use current backtrace.
+            for f in inspect.stack():
+                ff = f[1], f[2], f[3], f[4][0].strip()
+                frames.append(ff)
 
-        # It's useful to see boundary between upper and lower frames.
-        frames.append( None)
-
-        # Append frames from point in the try: block that caused the exception
-        # to be raised, to the point at which the exception was thrown.
+        # If there is a live exception, append frames from point in the try:
+        # block that caused the exception to be raised, to the point at which
+        # the exception was thrown.
         #
         # [One can get similar information using traceback.extract_tb(tb):
         #   for f in traceback.extract_tb(tb):
         #       frames.append(f)
         # ]
-        for f in inspect.getinnerframes(tb):
-            ff = f[1], f[2], f[3], f[4][0].strip()
-            frames.append(ff)
+        if tb:
+            # Insert a marker to separate the two parts of the backtrace, used
+            # for our special '^except raise:' line.
+            frames.append( None)
+
+            for f in inspect.getinnerframes(tb):
+                ff = f[1], f[2], f[3], f[4][0].strip()
+                frames.append(ff)
 
         cwd = os.getcwd() + os.sep
         if oneline:
@@ -567,7 +610,13 @@ def exception_info( exception=None, limit=None, out=None, prefix='', oneline=Fal
                 out2.write( '%sException:\n' % prefix)
                 lines = traceback.format_exception_only( etype, value)
                 for line in lines:
-                    out2.write( '%s    %s' % ( prefix, line))
+                    # It seems that the lines returned from
+                    # traceback.format_exception_only() can sometimes contain
+                    # \n characters, so we do an additional loop to ensure that
+                    # these are indented consistently.
+                    #
+                    for line2 in line.split('\n'):
+                        out2.write( '%s    %s\n' % ( prefix, line2))
 
         text = out2.getvalue()
 
@@ -785,120 +834,19 @@ def make_out_callable( out):
     return ret
 
 
-def system_raw(
-        command,
-        out=None,
-        shell=True,
-        encoding='latin_1',
-        errors='strict',
-        buffer_len=-1,
-        executable=None,
-        ):
-    '''
-    Runs command, writing output to <out> which can be an int fd, a python
-    stream or a Stream object.
-
-    Args:
-        command:
-            The command to run.
-        out:
-            Where output is sent.
-            If None, child process inherits this process's stdout and stderr.
-            If subprocess.DEVNULL, child process's output is lost.
-            Otherwise we repeatedly read child process's output via a pipe and
-            write to <out>:
-                If <out> is an integer, we do: os.write( out, text)
-                Otherwise if <out> is callable, we do: out( text)
-                Otherwise we assume <out> is python stream or similar, and do:
-                out.write(text)
-        shell:
-            Whether to run command inside a shell (see subprocess.Popen).
-        encoding:
-            Sepecify the encoding used to translate the command's output
-            to characters.
-
-            Note that if <encoding> is None and we are being run by python3,
-            <out> will be passed bytes, not a string.
-
-            Note that latin_1 will never raise a UnicodeDecodeError.
-        errors:
-            How to handle encoding errors; see docs for codecs module for
-            details.
-        buffer_len:
-            The number of bytes we attempt to read at a time. If -1 we read
-            output one line at a time.
-
-    Returns:
-        subprocess's <returncode>, i.e. -N means killed by signal N, otherwise
-        the exit value (e.g. 12 if command terminated with exit(12)).
-    '''
-    stdin = None
-    if out in (None, subprocess.DEVNULL):
-        stdout = out
-        stderr = out
-    else:
-        stdout = subprocess.PIPE
-        stderr = subprocess.STDOUT
-    child = subprocess.Popen(
-            command,
-            shell=shell,
-            stdin=stdin,
-            stdout=stdout,
-            stderr=stderr,
-            close_fds=True,
-            executable=executable,
-            #encoding=encoding - only python-3.6+.
-            )
-
-    child_out = child.stdout
-    if encoding:
-        child_out = codecs.getreader( encoding)( child_out, errors)
-
-    if stdout == subprocess.PIPE:
-        out = make_out_callable( out)
-        if buffer_len == -1:
-            for line in child_out:
-                out.write( line)
-        else:
-            while 1:
-                text = child_out.read( buffer_len)
-                if not text:
-                    break
-                out.write( text)
-    #decode( lambda : os.read( child_out.fileno(), 100), outfn, encoding)
-
-    return child.wait()
-
-if __name__ == '__main__':
-
-    if os.getenv( 'jtest_py_system_raw_test') == '1':
-        out = io.StringIO()
-        system_raw(
-                'jtest_py_system_raw_test=2 python jlib.py',
-                sys.stdout,
-                encoding='utf-8',
-                #'latin_1',
-                errors='replace',
-                )
-        print( repr( out.getvalue()))
-
-    elif os.getenv( 'jtest_py_system_raw_test') == '2':
-        for i in range(256):
-            sys.stdout.write( chr(i))
-
-
 def system(
         command,
         verbose=None,
         raise_errors=True,
         out=sys.stdout,
         prefix=None,
-        rusage=False,
         shell=True,
-        encoding=None,
+        encoding='utf8',
         errors='replace',
-        buffer_len=-1,
         executable=None,
+        caller=1,
+        bufsize=-1,
+        env_extra=None,
         ):
     '''
     Runs a command like os.system() or subprocess.*, but with more flexibility.
@@ -912,11 +860,8 @@ def system(
         command:
             The command to run.
         verbose:
-            If true, we include information about the command that was run, and
-            its result.
-
-            If callable or something with a .write() method, information is
-            sent to <verbose> itself. Otherwise it is sent to <out>.
+            If true, we write information about the command that was run, and
+            its result, to jlib.log().
         raise_errors:
             If true, we raise an exception if the command fails, otherwise we
             return the failing error code or zero.
@@ -928,6 +873,8 @@ def system(
             write to <out>:
                 If <out> is 'return' we store the output and include it in our
                 return value or exception.
+                Otherwise if <out> is 'log' we write to jlib.log() using our
+                caller's stack frame.
                 Otherwise if <out> is an integer, we do: os.write( out, text)
                 Otherwise if <out> is callable, we do: out( text)
                 Otherwise we assume <out> is python stream or similar, and do:
@@ -936,120 +883,213 @@ def system(
             If not None, should be prefix string or callable used to prefix
             all output. [This is for convenience to avoid the need to do
             out=StreamPrefix(...).]
-        rusage:
-            If true, we run via /usr/bin/time and return rusage string
-            containing information on execution. <raise_errors> and
-            out='return' are ignored.
         shell:
             Passed to underlying subprocess.Popen() call.
         encoding:
-            Sepecify the encoding used to translate the command's output
-            to characters. Defaults to utf-8.
+            Sepecify the encoding used to translate the command's output to
+            characters. If None we send bytes to <out>.
         errors:
             How to handle encoding errors; see docs for codecs module
             for details. Defaults to 'replace' so we never raise a
             UnicodeDecodeError.
-        buffer_len:
-            The number of bytes we attempt to read at a time. If -1 we read
-            output one line at a time.
+        executable=None:
+            .
+        caller:
+            The number of frames to look up stack when call jlib.log() (used
+            for out='log' and verbose).
+        bufsize:
+            As subprocess.Popen()'s bufsize arg, sets buffer size when creating
+            stdout, stderr and stdin pipes. Use 0 for unbuffered, e.g. to see
+            login/password prompts that don't end with a newline. Default -1
+            means io.DEFAULT_BUFFER_SIZE. +1 Line-buffered does not work because
+            we read raw bytes and decode ourselves into string.
+        env_extra:
+            If not None, a dict with extra items that are added to the
+            environment passed to the child process.
 
     Returns:
-        If <rusage> is true, we return the rusage text.
-
-        Else if raise_errors is true:
-            If the command failed, we raise an exception.
-            Else if <out> is 'return' we return the text output from the command.
+        If raise_errors is true:
+            If the command failed, we raise an exception; if <out> is 'return'
+            the exception text includes the output.
+            If <out> is 'return' we return the text output from the command.
             Else we return None
 
         Else if <out> is 'return', we return (e, text) where <e> is the
         command's exit code and <text> is the output from the command.
 
         Else we return <e>, the command's exit code.
+
+    >>> print(system('echo hello a', prefix='foo:', out='return'))
+    foo:hello a
+    foo:
+
+    >>> system('echo hello b', prefix='foo:', out='return', raise_errors=False)
+    (0, 'foo:hello b\\nfoo:')
+
+    >>> system('echo hello c && false', prefix='foo:', out='return')
+    Traceback (most recent call last):
+    Exception: Command failed: echo hello c && false
+    Output was:
+    foo:hello c
+    foo:
+    <BLANKLINE>
     '''
-    if encoding is None:
-        if sys.version_info[0] == 2:
-            # python-2 doesn't seem to implement 'replace' properly.
-            encoding = None
-            errors = None
-        else:
-            encoding = 'utf-8'
-            errors = 'replace'
-
     out_original = out
-    if out == 'return':
+    if out == 'log':
+        out_frame_record = inspect.stack()[caller]
+        out = lambda text: log( text, caller=out_frame_record, nv=False, raw=True)
+    elif out == 'return':
         # Store the output ourselves so we can return it.
-        out = io.StringIO()
-
-    out_raw = out in (None, subprocess.DEVNULL)
+        out_return = io.StringIO()
+        out = out_return
 
     if verbose:
-        if callable( verbose) or getattr( verbose, 'write', None):
-            pass
-        elif out_raw:
-            raise Exception( 'No out stream available for verbose')
-        else:
-            verbose = out
-        verbose = make_out_callable( verbose)
-        verbose.write('running: %s\n' % command)
+        log(f'running: {command}', nv=0, caller=caller+1)
 
+    out_raw = out in (None, subprocess.DEVNULL)
     if prefix:
         if out_raw:
             raise Exception( 'No out stream available for prefix')
         out = StreamPrefix( make_out_callable( out), prefix)
 
-    if rusage:
-        command2 = ''
-        command2 += '/usr/bin/time -o ubt-out -f "D=%D E=%D F=%F I=%I K=%K M=%M O=%O P=%P R=%r S=%S U=%U W=%W X=%X Z=%Z c=%c e=%e k=%k p=%p r=%r s=%s t=%t w=%w x=%x C=%C"'
-        command2 += ' '
-        command2 += command
-        e = system_raw(
-                command2,
-                out,
-                shell,
-                encoding,
-                errors,
-                buffer_len=buffer_len,
-                executable=executable,
-                )
-        if e:
-            raise Exception('/usr/bin/time failed')
-        with open('ubt-out') as f:
-            rusage_text = f.read()
-        #print 'have read rusage output: %r' % rusage_text
-        if rusage_text.startswith( 'Command '):
-            # Annoyingly, /usr/bin/time appears to write 'Command
-            # exited with ...' or 'Command terminated by ...' to the
-            # output file before the rusage info if command doesn't
-            # exit 0.
-            nl = rusage_text.find('\n')
-            rusage_text = rusage_text[ nl+1:]
-        return rusage_text
+    if out_raw:
+        stdout = out
+        stderr = out
     else:
-        e = system_raw(
-                command,
-                out,
-                shell,
-                encoding,
-                errors,
-                buffer_len=buffer_len,
-                executable=executable,
-                )
+        stdout = subprocess.PIPE
+        stderr = subprocess.STDOUT
 
-        if verbose:
-            verbose.write('[returned e=%s]\n' % e)
+    env = None
+    if env_extra:
+        env = os.environ.copy()
+        env.update(env_extra)
 
-        if raise_errors:
-            if e:
-                raise Exception( 'command failed: %s' % command)
-            elif out_original == 'return':
-                return out.getvalue()
+    child = subprocess.Popen(
+            command,
+            shell=shell,
+            stdin=None,
+            stdout=stdout,
+            stderr=stderr,
+            close_fds=True,
+            executable=executable,
+            bufsize=bufsize,
+            env=env
+            )
+
+    child_out = child.stdout
+
+    if stdout == subprocess.PIPE:
+        out2 = make_out_callable( out)
+        decoder = None
+        if encoding:
+            # subprocess's universal_newlines and codec.streamreader seem to
+            # always use buffering even with bufsize=0, so they don't reliably
+            # display prompts or other text that doesn't end with a newline.
+            #
+            # So we create our own incremental decode, which seems to work
+            # better.
+            #
+            decoder = codecs.getincrementaldecoder(encoding)(errors)
+        while 1:
+            # os.read() seems to be better for us than child.stdout.read()
+            # because it returns a short read if data is not available. Where
+            # as child.stdout.read() appears to be more willing to wait for
+            # data until the requested number of bytes have been received.
+            #
+            # Also, os.read() does the right thing if the sender has made
+            # multipe calls to write() - it returns all available data, not
+            # just from the first unread write() call.
+            #
+            bytes_ = os.read( child.stdout.fileno(), 10000)
+            if decoder:
+                final = not bytes_
+                text = decoder.decode(bytes_, final)
+                out2.write(text)
             else:
-                return
+                out2.write(bytes_)
+            if not bytes_:
+                break
 
-        if out_original == 'return':
-            return e, out.getvalue()
+    e = child.wait()
+
+    if out_original == 'log':
+        if not _log_text_line_start:
+            # Terminate last incomplete line.
+            sys.stdout.write('\n')
+    if verbose:
+        log(f'[returned e={e}]', nv=0, caller=caller+1)
+
+    if out_original == 'return':
+        output_return = out_return.getvalue()
+
+    if raise_errors:
+        if e:
+            if out_original == 'return':
+                if not output_return.endswith('\n'):
+                    output_return += '\n'
+                raise Exception(
+                        f'Command failed: {command}\n'
+                        f'Output was:\n'
+                        f'{output_return}'
+                        )
+            else:
+                raise Exception( 'command failed: %s' % command)
+        elif out_original == 'return':
+            return output_return
         else:
-            return e
+            return
+
+    if out_original == 'return':
+        return e, output_return
+    else:
+        return e
+
+
+def system_rusage(
+        command,
+        verbose=None,
+        raise_errors=True,
+        out=sys.stdout,
+        prefix=None,
+        rusage=False,
+        shell=True,
+        encoding='utf8',
+        errors='replace',
+        executable=None,
+        caller=1,
+        bufsize=-1,
+        env_extra=None,
+        ):
+    '''
+    Old code that gets timing info; probably doesn't work.
+    '''
+    command2 = ''
+    command2 += '/usr/bin/time -o ubt-out -f "D=%D E=%D F=%F I=%I K=%K M=%M O=%O P=%P R=%r S=%S U=%U W=%W X=%X Z=%Z c=%c e=%e k=%k p=%p r=%r s=%s t=%t w=%w x=%x C=%C"'
+    command2 += ' '
+    command2 += command
+
+    e = system(
+            command2,
+            out,
+            shell,
+            encoding,
+            errors,
+            executable=executable,
+            )
+    if e:
+        raise Exception('/usr/bin/time failed')
+    with open('ubt-out') as f:
+        rusage_text = f.read()
+    #print 'have read rusage output: %r' % rusage_text
+    if rusage_text.startswith( 'Command '):
+        # Annoyingly, /usr/bin/time appears to write 'Command
+        # exited with ...' or 'Command terminated by ...' to the
+        # output file before the rusage info if command doesn't
+        # exit 0.
+        nl = rusage_text.find('\n')
+        rusage_text = rusage_text[ nl+1:]
+    return rusage_text
+
 
 def get_gitfiles( directory, submodules=False):
     '''
@@ -1068,7 +1108,7 @@ def get_gitfiles( directory, submodules=False):
         if submodules:
             command += ' --recurse-submodules'
         command += ' > jtest-git-files'
-        system( command, verbose=sys.stdout)
+        system( command, verbose=True)
 
     with open( '%s/jtest-git-files' % directory, 'r') as f:
         text = f.read()
@@ -1144,7 +1184,7 @@ def update_file( text, filename):
         filename_temp = f'{filename}-jlib-temp'
         with open( filename_temp, 'w') as f:
             f.write( text)
-        os.rename( filename_temp, filename)
+        rename( filename_temp, filename)
 
 
 def mtime( filename, default=0):
@@ -1197,6 +1237,27 @@ def ensure_empty_dir( path):
     os.makedirs( path, exist_ok=True)
     remove_dir_contents( path)
 
+def rename(src, dest):
+    '''
+    Renames <src> to <dest>. If we get an error, we try to remove <dest>
+    expicitly and then retry; this is to make things work on Windows.
+    '''
+    try:
+        os.rename(src, dest)
+    except Exception:
+        os.remove(dest)
+        os.rename(src, dest)
+
+def copy(src, dest, verbose=False):
+    '''
+    Wrapper for shutil.copy() that also ensures parent of <dest> exists and
+    optionally calls jlib.log() with diagnostic.
+    '''
+    if verbose:
+        log('Copying {src} to {dest}')
+    os.makedirs( os.path.dirname(dest), exist_ok=True)
+    shutil.copy2( src, dest)
+
 # Things for figuring out whether files need updating, using mtimes.
 #
 def newest( names):
@@ -1208,6 +1269,8 @@ def newest( names):
     ret_t = 0
     ret_name = None
     for filename in get_filenames( names):
+        if filename.endswith('.pyc'):
+            continue
         t = mtime( filename)
         if t > ret_t:
             ret_t = t
@@ -1276,8 +1339,9 @@ def build(
     force_rebuild:
         If true, we always re-run the command.
     out:
-        A callable, passed to jlib.system(). If None, we use jlib.log() with
-        our caller's stack record.
+        A callable, passed to jlib.system(). If None, we use jlib.log()
+        with our caller's stack record (by passing (out='log', caller=2) to
+        jlib.system()).
     all_reasons:
         If true we check all ways for a build being needed, even if we already
         know a build is needed; this only affects the diagnostic that we
@@ -1301,12 +1365,10 @@ def build(
     if isinstance( outfiles, str):
         outfiles = (outfiles,)
 
-    if not out:
-        out_frame_record = inspect.stack()[1]
-        out = lambda text: log( text, caller=out_frame_record, nv=False)
+    if out is None:
+        out = 'log'
 
     command_filename = f'{outfiles[0]}.cmd'
-
     reasons = []
 
     if not reasons or all_reasons:
@@ -1328,14 +1390,13 @@ def build(
             reasons.append( reason)
 
     if not reasons:
-        out( 'Already up to date: ' + ' '.join(outfiles))
+        log( 'Already up to date: ' + ' '.join(outfiles), caller=2, nv=0)
         return
 
-    if out:
-        out( 'Rebuilding because %s: %s' % (
-                ', and '.join( reasons),
-                ' '.join(outfiles),
-                ))
+    log( f'Rebuilding because {", and ".join(reasons)}: {" ".join(outfiles)}',
+            caller=2,
+            nv=0,
+            )
 
     # Empty <command_filename) while we run the command so that if command
     # fails but still creates target(s), then next time we will know target(s)
@@ -1345,7 +1406,7 @@ def build(
     with open( command_filename, 'w') as f:
         pass
 
-    system( command, out=out, verbose=verbose, executable=executable)
+    system( command, out=out, verbose=verbose, executable=executable, caller=2)
 
     with open( command_filename, 'w') as f:
         f.write( command)
@@ -1373,8 +1434,8 @@ def link_l_flags( sos, ld_origin=None):
             continue
         dir_ = os.path.dirname( so)
         name = os.path.basename( so)
-        assert name.startswith( 'lib')
-        assert name.endswith ( '.so')
+        assert name.startswith( 'lib'), f'name={name}'
+        assert name.endswith ( '.so'), f'name={name}'
         name = name[3:-3]
         dirs.add( dir_)
         names.append( name)
