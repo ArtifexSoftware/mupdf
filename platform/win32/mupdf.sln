@@ -957,6 +957,7 @@ Global
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleasePython|Win32.ActiveCfg = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleasePython|Win32.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleasePython|x64.ActiveCfg = Release|Win32
+		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleasePython|x64.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|Win32.ActiveCfg = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|Win32.Build.0 = Release|Win32
 		{BFE316B3-BD90-433A-A20D-C73975F1CAA7}.ReleaseTesseract|x64.ActiveCfg = Release|Win32
