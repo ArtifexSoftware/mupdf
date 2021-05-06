@@ -1790,6 +1790,8 @@ static void do_edit_quad_points(void)
 		{
 			if (n > 0)
 			{
+				pdf_begin_operation(ctx, pdf, "Edit quad points");
+
 				trace_action("annot.clearQuadPoints();\n");
 				pdf_clear_annot_quad_points(ctx, selected_annot);
 				for (i = 0; i < n; ++i)
@@ -1811,6 +1813,8 @@ static void do_edit_quad_points(void)
 				pdf_set_annot_contents(ctx, selected_annot, text);
 				new_contents = 1;
 				fz_free(ctx, text);
+
+				pdf_end_operation(ctx, pdf);
 			}
 			marking = 0;
 		}
