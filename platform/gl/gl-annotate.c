@@ -1165,7 +1165,7 @@ void do_annotate_panel(void)
 		{
 			trace_action("page.deleteAnnotation(annot);\n");
 			pdf_delete_annot(ctx, page, selected_annot);
-			page_contents_changed = 1;
+			page_annots_changed = 1;
 			selected_annot = NULL;
 			return;
 		}
@@ -1364,7 +1364,7 @@ void do_redact_panel(void)
 		{
 			trace_action("page.deleteAnnotation(annot);\n");
 			pdf_delete_annot(ctx, page, selected_annot);
-			page_contents_changed = 1;
+			page_annots_changed = 1;
 			selected_annot = NULL;
 			return;
 		}
