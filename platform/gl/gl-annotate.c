@@ -502,13 +502,20 @@ static const char *getuser(void)
 
 static void new_annot(int type)
 {
+	char msg[100];
+
 	trace_action("annot = page.createAnnotation(%q);\n", pdf_string_from_annot_type(ctx, type));
+
+	fz_snprintf(msg, sizeof msg, "Create %s Annotation", pdf_string_from_annot_type(ctx, type));
+	pdf_begin_operation(ctx, pdf, msg);
 
 	selected_annot = pdf_create_annot(ctx, page, type);
 
 	pdf_set_annot_modification_date(ctx, selected_annot, time(NULL));
 	if (pdf_annot_has_author(ctx, selected_annot))
 		pdf_set_annot_author(ctx, selected_annot, getuser());
+
+	pdf_end_operation(ctx, pdf);
 
 	switch (type)
 	{
