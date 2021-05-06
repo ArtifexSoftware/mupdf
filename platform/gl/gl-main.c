@@ -1211,9 +1211,16 @@ static void do_undo(void)
 	ui_layout(L, BOTH, NW, 0, 0);
 	ui_panel_begin(outline_w, 0, ui.padsize*2, ui.padsize*2, 1);
 	ui_layout(T, X, NW, ui.padsize, ui.padsize);
-	ui_label("Undo history");
-	i = count < 30 ? 30 : count;
-	ui_list_begin(&list, i, 0, ui.lineheight * i + 4);
+	ui_label("Undo history:");
+
+	ui_layout(B, X, NW, ui.padsize, ui.padsize);
+	if (ui_button_aux("Redo", pos == count))
+		desired = pos+1;
+	if (ui_button_aux("Undo", pos == 0))
+		desired = pos-1;
+
+	ui_layout(ALL, BOTH, NW, ui.padsize, ui.padsize);
+	ui_list_begin(&list, count+1, 0, ui.lineheight * 4 + 4);
 
 	for (i = 0; i < count+1; i++)
 	{
@@ -1230,12 +1237,6 @@ static void do_undo(void)
 	}
 
 	ui_list_end(&list);
-
-	if (ui_button_aux("Undo", pos == 0))
-		desired = pos-1;
-
-	if (ui_button_aux("Redo", pos == count))
-		desired = pos+1;
 
 	if (desired != -1 && desired != pos)
 	{
