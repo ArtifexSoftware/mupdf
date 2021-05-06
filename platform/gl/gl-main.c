@@ -1585,9 +1585,17 @@ static void load_document(void)
 		if (anchor)
 		{
 			if (parse_location(anchor, &location))
+			{
 				jump_to_location(location);
+			}
 			else
-				jump_to_page(pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL));
+			{
+				int anchor_page = pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
+				if (anchor_page < 0)
+					fz_warn(ctx, "cannot find page: %s", anchor);
+				else
+					jump_to_page(anchor_page);
+			}
 		}
 	}
 	else
@@ -1597,7 +1605,14 @@ static void load_document(void)
 			if (parse_location(anchor, &location))
 				jump_to_location(location);
 			else
-				jump_to_page(fz_atoi(anchor) - 1);
+			{
+				int anchor_page = fz_atoi(anchor);
+				pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
+				if (anchor_page == 0)
+					fz_warn(ctx, "cannot find page: %s", anchor);
+				else
+					jump_to_page(anchor_page - 1);
+			}
 		}
 	}
 	anchor = NULL;
@@ -2488,6 +2503,8 @@ int main(int argc, char **argv)
 		fz_strlcpy(filename, argv[fz_optind++], sizeof filename);
 		if (fz_optind < argc)
 			anchor = argv[fz_optind++];
+		if (fz_optind < argc)
+			usage(argv[0]);
 
 		fz_try(ctx)
 		{
