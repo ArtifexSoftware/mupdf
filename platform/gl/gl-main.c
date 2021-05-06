@@ -1193,7 +1193,6 @@ static void do_outline(fz_outline *node)
 	ui_tree_begin(&list, count_outline(node, 65535), outline_w, 0, 1);
 	do_outline_imp(&list, 65535, node, 0);
 	ui_tree_end(&list);
-	ui_splitter(&outline_w, 6*ui.gridsize, 20*ui.gridsize, R);
 }
 
 static void do_undo(void)
@@ -1440,7 +1439,11 @@ static void toggle_fullscreen(void)
 
 static void shrinkwrap(void)
 {
-	int w = page_tex.w + (showoutline || showundo ? outline_w + 4 : 0) + (showannotate ? annotate_w : 0);
+	int w = page_tex.w;
+	if (showoutline || showundo)
+		w += outline_w + 4;
+	if (showannotate)
+		w += annotate_w;
 	int h = page_tex.h;
 	if (screen_w > 0 && w > screen_w)
 		w = screen_w;
@@ -2318,6 +2321,8 @@ void do_main(void)
 		do_outline(outline);
 	else if (showundo)
 		do_undo();
+	if (showoutline || showundo)
+		ui_splitter(&outline_w, 6*ui.gridsize, 20*ui.gridsize, R);
 
 	if (!eqloc(oldpage, currentpage) || oldseparations != currentseparations || oldicc != currenticc)
 	{
