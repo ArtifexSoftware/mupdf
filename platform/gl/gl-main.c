@@ -2297,6 +2297,12 @@ void do_main(void)
 			glutPostRedisplay();
 	}
 
+	int was_dirty = 0;
+	if (pdf)
+	{
+		was_dirty = pdf->dirty;
+	}
+
 	do_app();
 
 	if (showoutline)
@@ -2325,6 +2331,12 @@ void do_main(void)
 
 	if (showinfo)
 		do_info();
+
+	if (pdf)
+	{
+		if (was_dirty != pdf->dirty)
+			update_title();
+	}
 }
 
 void run_main_loop(void)

@@ -866,8 +866,6 @@ void do_annotate_panel(void)
 	int idx;
 	int n;
 
-	int was_dirty = pdf->dirty;
-
 	ui_layout(T, X, NW, ui.padsize, ui.padsize);
 
 	if (ui_popup("CreateAnnotPopup", "Create...", 1, 16))
@@ -1189,9 +1187,6 @@ void do_annotate_panel(void)
 
 	if (ui_button("Save PDF..."))
 		do_save_pdf_file();
-
-	if (was_dirty != pdf->dirty)
-		update_title();
 }
 
 static void new_redaction(pdf_page *page, fz_quad q)
@@ -1266,7 +1261,6 @@ void do_redact_panel(void)
 	int i;
 
 	int num_redact = 0;
-	int was_dirty = pdf->dirty;
 	static pdf_redact_options redact_opts = { 1, PDF_REDACT_IMAGE_PIXELS };
 	int search_valid;
 
@@ -1404,9 +1398,6 @@ void do_redact_panel(void)
 
 	if (ui_button("Save PDF..."))
 		do_save_pdf_file();
-
-	if (was_dirty != pdf->dirty)
-		update_title();
 }
 
 static void do_edit_icon(fz_irect canvas_area, fz_irect area, fz_rect *rect)
@@ -1831,8 +1822,6 @@ void do_annotate_canvas(fz_irect canvas_area)
 	const void *nothing = ui.hot;
 	int idx;
 
-	int was_dirty = pdf->dirty;
-
 	for (idx=0, annot = pdf_first_annot(ctx, page); annot; ++idx, annot = pdf_next_annot(ctx, annot))
 	{
 		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
@@ -1949,7 +1938,4 @@ void do_annotate_canvas(fz_irect canvas_area)
 
 	if (ui.right)
 		is_draw_mode = 0;
-
-	if (was_dirty != pdf->dirty)
-		update_title();
 }
