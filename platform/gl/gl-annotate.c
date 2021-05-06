@@ -665,12 +665,17 @@ static void do_annotate_date(void)
 
 static void do_annotate_contents(void)
 {
+	static int is_same_edit_operation = 1;
 	static pdf_annot *last_annot = NULL;
 	static struct input input;
 	const char *contents;
 
+	if (ui.focus != &input)
+		is_same_edit_operation = 0;
+
 	if (selected_annot != last_annot || new_contents)
 	{
+		is_same_edit_operation = 0;
 		last_annot = selected_annot;
 		contents = pdf_annot_contents(ctx, selected_annot);
 		ui_input_init(&input, contents);
@@ -681,7 +686,17 @@ static void do_annotate_contents(void)
 	if (ui_input(&input, 0, 5) >= UI_INPUT_EDIT)
 	{
 		trace_action("annot.setContents(%q);\n", input.text);
-		pdf_set_annot_contents(ctx, selected_annot, input.text);
+		if (is_same_edit_operation)
+		{
+			pdf_begin_implicit_operation(ctx, pdf);
+			pdf_set_annot_contents(ctx, selected_annot, input.text);
+			pdf_end_operation(ctx, pdf);
+		}
+		else
+		{
+			pdf_set_annot_contents(ctx, selected_annot, input.text);
+			is_same_edit_operation = 1;
+		}
 	}
 }
 
