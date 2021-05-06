@@ -200,7 +200,7 @@ static int oldseparations = 1, currentseparations = 1;
 static fz_location oldpage = {0,0}, currentpage = {0,0};
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
-static int page_contents_changed = 0;
+int page_contents_changed = 0;
 
 static fz_output *trace_file = NULL;
 static int isfullscreen = 0;
@@ -924,6 +924,8 @@ void load_page(void)
 	area = fz_irect_from_rect(draw_page_bounds);
 	page_tex.w = area.x1 - area.x0;
 	page_tex.h = area.y1 - area.y0;
+
+	page_contents_changed = 1;
 }
 
 void render_page(void)
@@ -953,6 +955,14 @@ void render_page(void)
 
 void render_page_if_changed(void)
 {
+	if (pdf)
+	{
+		if (pdf_update_page(ctx, page))
+		{
+			trace_page_update();
+			page_contents_changed = 1;
+		}
+	}
 	if (oldpage.chapter != currentpage.chapter ||
 		oldpage.page != currentpage.page ||
 		oldzoom != currentzoom ||
@@ -1117,7 +1127,6 @@ static void relayout(void)
 		future_count = 0;
 
 		load_page();
-		render_page();
 		update_title();
 	}
 }
@@ -1628,7 +1637,6 @@ void reload_document(void)
 	if (doc)
 	{
 		load_page();
-		render_page();
 		update_title();
 	}
 }
@@ -2396,7 +2404,6 @@ static void do_open_document_dialog(void)
 			if (doc)
 			{
 				load_page();
-				render_page();
 				shrinkwrap();
 				update_title();
 			}
@@ -2523,7 +2530,8 @@ int main(int argc, char **argv)
 			page_tex.w = 600;
 			page_tex.h = 700;
 			load_document();
-			if (doc) load_page();
+			if (doc)
+				load_page();
 		}
 		fz_always(ctx)
 		{
@@ -2561,10 +2569,7 @@ int main(int argc, char **argv)
 		fz_try(ctx)
 		{
 			if (doc)
-			{
-				render_page();
 				update_title();
-			}
 		}
 		fz_catch(ctx)
 		{

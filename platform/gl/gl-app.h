@@ -261,6 +261,7 @@ extern int reloadrequested;
 extern char *search_needle;
 extern int search_hit_count;
 extern fz_quad search_hit_quads[];
+extern int page_contents_changed;
 
 int search_has_results(void);
 enum {

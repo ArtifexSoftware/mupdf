@@ -510,8 +510,6 @@ static void new_annot(int type)
 	if (pdf_annot_has_author(ctx, selected_annot))
 		pdf_set_annot_author(ctx, selected_annot, getuser());
 
-	pdf_update_appearance(ctx, selected_annot);
-
 	switch (type)
 	{
 	case PDF_ANNOT_REDACT:
@@ -528,8 +526,6 @@ static void new_annot(int type)
 		is_draw_mode = 1;
 		break;
 	}
-
-	render_page();
 }
 
 static const char *color_names[] = {
@@ -791,7 +787,6 @@ step_redact_all_pages(int cancel)
 		trace_page_update();
 		pdf_has_redactions = 0;
 		load_page();
-		render_page();
 		return -1;
 	}
 
@@ -1170,16 +1165,9 @@ void do_annotate_panel(void)
 		{
 			trace_action("page.deleteAnnotation(annot);\n");
 			pdf_delete_annot(ctx, page, selected_annot);
+			page_contents_changed = 1;
 			selected_annot = NULL;
-			render_page();
 			return;
-		}
-
-		if (selected_annot && selected_annot->needs_new_ap)
-		{
-			trace_action("annot.updateAppearance();\n");
-			pdf_update_appearance(ctx, selected_annot);
-			render_page();
 		}
 	}
 
@@ -1198,7 +1186,6 @@ static void new_redaction(pdf_page *page, fz_quad q)
 		pdf_set_annot_author(ctx, annot, getuser());
 	pdf_add_annot_quad_point(ctx, annot, q);
 	pdf_set_annot_contents(ctx, annot, search_needle);
-	pdf_update_appearance(ctx, annot);
 
 	trace_action("annot = page.createAnnotation(%q);\n", "Redact");
 	trace_action("annot.addQuadPoint(%g, %g, %g, %g, %g, %g, %g, %g);\n",
@@ -1226,7 +1213,6 @@ static int mark_search_step(int cancel)
 	{
 		trace_action("page = tmp;\n");
 		load_page();
-		render_page();
 		return -1;
 	}
 
@@ -1287,14 +1273,12 @@ void do_redact_panel(void)
 			new_redaction(page, search_hit_quads[i]);
 		search_hit_count = 0;
 		selected_annot = NULL;
-		render_page();
 	}
 	if (ui_button_aux("Mark search in document", search_needle == NULL))
 	{
 		mark_all_search_results();
 		search_hit_count = 0;
 		selected_annot = NULL;
-		render_page();
 	}
 
 	ui_spacer();
@@ -1316,7 +1300,6 @@ void do_redact_panel(void)
 		pdf_redact_page(ctx, pdf, page, &redact_opts);
 		trace_page_update();
 		load_page();
-		render_page();
 	}
 
 	if (ui_button_aux("Redact Document", !pdf_has_redactions))
@@ -1381,16 +1364,9 @@ void do_redact_panel(void)
 		{
 			trace_action("page.deleteAnnotation(annot);\n");
 			pdf_delete_annot(ctx, page, selected_annot);
+			page_contents_changed = 1;
 			selected_annot = NULL;
-			render_page();
 			return;
-		}
-
-		if (selected_annot && selected_annot->needs_new_ap)
-		{
-			trace_action("annot.updateAppearance();\n");
-			pdf_update_appearance(ctx, selected_annot);
-			render_page();
 		}
 	}
 
@@ -1920,13 +1896,6 @@ void do_annotate_canvas(fz_irect canvas_area)
 			glEnd();
 			glDisable(GL_BLEND);
 			glDisable(GL_LINE_STIPPLE);
-
-			if (annot->needs_new_ap)
-			{
-				trace_action("annot.updateAppearance();\n");
-				pdf_update_appearance(ctx, annot);
-				render_page();
-			}
 		}
 	}
 
