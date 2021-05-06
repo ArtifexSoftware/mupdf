@@ -1206,7 +1206,11 @@ void do_annotate_panel(void)
 
 static void new_redaction(pdf_page *page, fz_quad q)
 {
-	pdf_annot *annot = pdf_create_annot(ctx, page, PDF_ANNOT_REDACT);
+	pdf_annot *annot;
+
+	pdf_begin_operation(ctx, pdf, "Create Redaction");
+
+	annot = pdf_create_annot(ctx, page, PDF_ANNOT_REDACT);
 
 	pdf_set_annot_modification_date(ctx, annot, time(NULL));
 	if (pdf_annot_has_author(ctx, annot))
@@ -1224,6 +1228,8 @@ static void new_redaction(pdf_page *page, fz_quad q)
 
 	pdf_has_redactions_doc = pdf;
 	pdf_has_redactions = 1;
+
+	pdf_end_operation(ctx, pdf);
 }
 
 static struct { int i, n; } rds_state;
