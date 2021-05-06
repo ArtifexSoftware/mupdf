@@ -447,6 +447,7 @@ static void open_attachment_dialog(void)
 		ui.dialog = NULL;
 		if (attach_filename[0] != 0)
 		{
+			pdf_begin_operation(ctx, pdf, "Embed file attachment");
 			fz_try(ctx)
 			{
 				fz_buffer *contents;
@@ -466,6 +467,10 @@ static void open_attachment_dialog(void)
 				pdf_dict_put_drop(ctx, selected_annot->obj, PDF_NAME(FS), fs);
 				fz_drop_buffer(ctx, contents);
 				trace_action("// add attachment!\n");
+			}
+			fz_always(ctx)
+			{
+				pdf_end_operation(ctx, pdf);
 			}
 			fz_catch(ctx)
 			{
