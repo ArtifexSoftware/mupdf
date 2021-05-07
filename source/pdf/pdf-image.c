@@ -688,17 +688,38 @@ unknown_compression:
 
 					line_skip = pixmap->stride - pixmap->w * (size_t)pixmap->n;
 					skip = pixmap->n - n;
-					while (h--)
+					if (pixmap->alpha)
 					{
-						int w = pixmap->w;
-						while (w--)
+						int n1 = pixmap->n-1;
+						while (h--)
 						{
-							int k;
-							for (k = 0; k < n; ++k)
-								*d++ = *s++;
-							s += skip;
+							int w = pixmap->w;
+							while (w--)
+							{
+								int a = s[n1];
+								int inva = a ? 255 * 256 / a : 0;
+								int k;
+								for (k = 0; k < n; k++)
+									*d++ = (*s++ * inva) >> 8;
+								s += skip;
+							}
+							s += line_skip;
 						}
-						s += line_skip;
+					}
+					else
+					{
+						while (h--)
+						{
+							int w = pixmap->w;
+							while (w--)
+							{
+								int k;
+								for (k = 0; k < n; ++k)
+									*d++ = *s++;
+								s += skip;
+							}
+							s += line_skip;
+						}
 					}
 				}
 			}
