@@ -433,4 +433,9 @@ fz_pixmap *fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *
  */
 fz_pixmap *fz_new_pixmap_from_alpha_channel(fz_context *ctx, fz_pixmap *src);
 
+/*
+ * Combine a pixmap without an alpha channel with a soft mask.
+ */
+fz_pixmap *fz_new_pixmap_from_color_and_mask(fz_context *ctx, fz_pixmap *color, fz_pixmap *mask);
+
 #endif
