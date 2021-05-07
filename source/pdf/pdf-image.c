@@ -665,9 +665,17 @@ unknown_compression:
 				}
 				else
 				{
-					/* Need to remove the alpha and spot planes. */
-					/* TODO: extract alpha plane to a soft mask. */
+					/* Need to extract the alpha into a SMask and remove spot planes. */
 					/* TODO: convert spots to colors. */
+
+					if (pixmap->alpha && !image->mask)
+					{
+						fz_pixmap *smask_pixmap = fz_new_pixmap_from_alpha_channel(ctx, pixmap);
+						fz_image *smask_image = fz_new_image_from_pixmap(ctx, smask_pixmap, NULL);
+						pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, smask_image));
+						fz_drop_image(ctx, smask_image);
+						fz_drop_pixmap(ctx, smask_pixmap);
+					}
 
 					size_t line_skip = pixmap->stride - pixmap->w * (size_t)pixmap->n;
 					int skip = pixmap->n - n;

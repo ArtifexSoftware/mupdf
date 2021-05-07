@@ -1072,6 +1072,39 @@ fz_new_pixmap_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsign
 	return pixmap;
 }
 
+fz_pixmap *
+fz_new_pixmap_from_alpha_channel(fz_context *ctx, fz_pixmap *src)
+{
+	fz_pixmap *dst;
+	int w, h, n, x;
+	unsigned char *sp, *dp;
+
+	if (!src->alpha)
+		return NULL;
+
+	dst = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, src), NULL, 1);
+	w = src->w;
+	h = src->h;
+	n = src->n;
+	sp = src->samples + n - 1;
+	dp = dst->samples;
+
+	while (h--)
+	{
+		unsigned char *s = sp;
+		unsigned char *d = dp;
+		for (x = 0; x < w; ++x)
+		{
+			*d++ = *s;
+			s += n;
+		}
+		sp += src->stride;
+		dp += dst->stride;
+	}
+
+	return dst;
+}
+
 int
 fz_is_pixmap_monochrome(fz_context *ctx, fz_pixmap *pixmap)
 {
