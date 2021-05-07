@@ -501,6 +501,8 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 	pdf_obj *dp;
 	fz_buffer *buffer = NULL;
 	fz_compressed_buffer *cbuffer;
+	fz_pixmap *smask_pixmap = NULL;
+	fz_image *smask_image = NULL;
 	int i, n;
 
 	/* If we can maintain compression, do so */
@@ -509,6 +511,8 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 	fz_var(pixmap);
 	fz_var(buffer);
 	fz_var(imobj);
+	fz_var(smask_pixmap);
+	fz_var(smask_image);
 
 	imobj = pdf_add_new_dict(ctx, doc, 3);
 	fz_try(ctx)
@@ -665,20 +669,25 @@ unknown_compression:
 				}
 				else
 				{
+					size_t line_skip;
+					int skip;
+
 					/* Need to extract the alpha into a SMask and remove spot planes. */
 					/* TODO: convert spots to colors. */
 
 					if (pixmap->alpha && !image->mask)
 					{
-						fz_pixmap *smask_pixmap = fz_new_pixmap_from_alpha_channel(ctx, pixmap);
-						fz_image *smask_image = fz_new_image_from_pixmap(ctx, smask_pixmap, NULL);
+						smask_pixmap = fz_new_pixmap_from_alpha_channel(ctx, pixmap);
+						smask_image = fz_new_image_from_pixmap(ctx, smask_pixmap, NULL);
 						pdf_dict_put_drop(ctx, imobj, PDF_NAME(SMask), pdf_add_image(ctx, doc, smask_image));
 						fz_drop_image(ctx, smask_image);
+						smask_image = NULL;
 						fz_drop_pixmap(ctx, smask_pixmap);
+						smask_pixmap = NULL;
 					}
 
-					size_t line_skip = pixmap->stride - pixmap->w * (size_t)pixmap->n;
-					int skip = pixmap->n - n;
+					line_skip = pixmap->stride - pixmap->w * (size_t)pixmap->n;
+					skip = pixmap->n - n;
 					while (h--)
 					{
 						int w = pixmap->w;
@@ -772,6 +781,8 @@ unknown_compression:
 	}
 	fz_always(ctx)
 	{
+		fz_drop_image(ctx, smask_image);
+		fz_drop_pixmap(ctx, smask_pixmap);
 		fz_drop_pixmap(ctx, pixmap);
 		fz_drop_buffer(ctx, buffer);
 	}
