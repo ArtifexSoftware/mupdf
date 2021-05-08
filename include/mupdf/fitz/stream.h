@@ -403,8 +403,10 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 
 	stm: The stream to operate upon.
 */
+
 static inline void fz_unread_byte(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
+    ctx = ctx;
 	stm->rp--;
 }
 
@@ -525,6 +527,7 @@ static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 */
 static inline void fz_sync_bits(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
+    ctx = ctx;
 	stm->avail = 0;
 }
 

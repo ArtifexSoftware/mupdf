@@ -27,7 +27,9 @@
 
 	down: The outline items immediate children in the hierarchy.
 	May be NULL if no children exist.
+	js: javascript action associated with this entry if applicable
 */
+
 typedef struct fz_outline
 {
 	int refs;
@@ -38,6 +40,7 @@ typedef struct fz_outline
 	struct fz_outline *next;
 	struct fz_outline *down;
 	int is_open;
+	char* js;
 } fz_outline;
 
 /**
