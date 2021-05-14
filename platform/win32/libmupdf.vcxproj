@@ -1059,7 +1059,6 @@
     <ClInclude Include="..\..\include\mupdf\pdf\layer.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\name-table.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\object.h" />
-    <ClInclude Include="..\..\include\mupdf\pdf\output-pdf.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\page.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\parse.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\resource.h" />

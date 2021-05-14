@@ -472,6 +472,17 @@ void pdf_graft_mapped_page(fz_context *ctx, pdf_graft_map *map, int page_to, pdf
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, fz_rect mediabox, pdf_obj **presources, fz_buffer **pcontents);
 
 /*
+	Create a pdf device. Rendering to the device creates
+	new pdf content. WARNING: this device is work in progress. It doesn't
+	currently support all rendering cases.
+
+	Note that contents must be a stream (dictionary) to be updated (or
+	a reference to a stream). Callers should take care to ensure that it
+	is not an array, and that is it not shared with other objects/pages.
+*/
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topctm, pdf_obj *resources, fz_buffer *contents);
+
+/*
 	Create a pdf_obj within a document that
 	represents a page, from a previously created resources
 	dictionary and page content stream. This should then be

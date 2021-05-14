@@ -200,7 +200,6 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 	fz_try(ctx)
 	{
 		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
-		fz_rect rect;
 		pdf_obj *form;
 		int sf;
 
@@ -210,9 +209,7 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 		 * are marked as ReadOnly. */
 		enact_sig_locking(ctx, doc, wobj);
 
-		rect = pdf_dict_get_rect(ctx, wobj, PDF_NAME(Rect));
-
-		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, rect, disp_list);
+		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, disp_list);
 
 		/* Update the SigFlags for the document if required */
 		form = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm");
@@ -270,7 +267,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 		 * are marked as ReadOnly. */
 		enact_sig_locking(ctx, doc, wobj);
 
-		rect = pdf_dict_get_rect(ctx, wobj, PDF_NAME(Rect));
+		rect = pdf_annot_rect(ctx, annot);
 		lang = pdf_annot_language(ctx, annot);
 
 		/* Create an appearance stream only if the signature is intended to be visible */
@@ -280,8 +277,11 @@ void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *s
 			if (!dn || !dn->cn)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name.");
 			info = pdf_signature_info(ctx, dn->cn, dn, NULL, NULL, now, 1);
-			dlist = pdf_signature_appearance(ctx, rect, lang, image, dn->cn, info, 1);
-			pdf_update_appearance_from_display_list(ctx, annot, rect, dlist);
+			if (image)
+				dlist = pdf_signature_appearance(ctx, rect, lang, image, NULL, info, 1);
+			else
+				dlist = pdf_signature_appearance(ctx, rect, lang, NULL, dn->cn, info, 1);
+			pdf_update_appearance_from_display_list(ctx, annot, dlist);
 		}
 
 		/* Update the SigFlags for the document if required */
@@ -320,7 +320,7 @@ void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 	fz_try(ctx)
 	{
 		fz_text_language lang = pdf_annot_language(ctx, (pdf_annot *)widget);
-		fz_rect rect = pdf_bound_widget(ctx, widget);
+		fz_rect rect = pdf_annot_rect(ctx, widget);
 
 		pdf_begin_operation(ctx, widget->page->doc, "Clear Signature");
 		if (pdf_widget_is_readonly(ctx, widget))
@@ -340,7 +340,7 @@ void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 		pdf_dict_del(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(V));
 
 		dlist = pdf_signature_appearance_unsigned(ctx, rect, lang);
-		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, rect, dlist);
+		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, dlist);
 	}
 	fz_always(ctx)
 	{

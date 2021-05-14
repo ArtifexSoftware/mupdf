@@ -1476,7 +1476,7 @@ lpr(fz_context *ctx, pdf_document *doc, pdf_obj *node, int depth, int page)
 	return page;
 }
 
-void
+static void
 pdf_localise_page_resources(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->resources_localised)
@@ -3949,7 +3949,7 @@ static fz_device *
 pdf_writer_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	pdf_writer *wri = (pdf_writer*)wri_;
-	wri->mediabox = mediabox;
+	wri->mediabox = mediabox; // TODO: handle non-zero x0,y0
 	return pdf_page_write(ctx, wri->pdf, wri->mediabox, &wri->resources, &wri->contents);
 }
 

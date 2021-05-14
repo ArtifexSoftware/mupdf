@@ -74,8 +74,9 @@ int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document
 size_t pdf_signature_contents(fz_context *ctx, pdf_document *doc, pdf_obj *signature, char **contents);
 
 /*
-	Sign a signature field, while assigning it a default appearance, consisting of a central logo,
-	the signer's name on the left and the full designated-name information on the left
+	Sign a signature field, while assigning it a default appearance, consisting of either an image
+	or the signer's name on the left and the full designated-name information on the right.
+	If the image is NULL, use the signer's name instead of an image.
 */
 void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *signer, fz_image *image);
 
