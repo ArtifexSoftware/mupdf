@@ -952,6 +952,7 @@ static void render_page(void)
 		dev = fz_new_draw_device(ctx, draw_page_ctm, page_contents);
 		fz_run_page_contents(ctx, fzpage, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
+		fz_drop_device(ctx, dev);
 	}
 
 	pix = fz_clone_pixmap_area_with_different_seps(ctx, page_contents, NULL, fz_device_rgb(ctx), NULL, fz_default_color_params, NULL);
@@ -960,6 +961,7 @@ static void render_page(void)
 		fz_run_page_annots(ctx, fzpage, dev, fz_identity, NULL);
 		fz_run_page_widgets(ctx, fzpage, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
+		fz_drop_device(ctx, dev);
 	}
 
 	if (currentinvert)
