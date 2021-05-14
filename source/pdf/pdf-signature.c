@@ -209,7 +209,8 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 		 * are marked as ReadOnly. */
 		enact_sig_locking(ctx, doc, wobj);
 
-		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, disp_list);
+		if (disp_list)
+			pdf_update_appearance_from_display_list(ctx, widget, disp_list);
 
 		/* Update the SigFlags for the document if required */
 		form = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm");
@@ -235,80 +236,149 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 	}
 }
 
-void pdf_sign_signature(fz_context *ctx, pdf_widget *widget, pdf_pkcs7_signer *signer, fz_image *image)
+static pdf_pkcs7_designated_name placeholder_dn = {
+	"Your Common Name Here",
+	"Organization",
+	"Organizational Unit",
+	"Email",
+	"Country"
+};
+
+static char *
+pdf_format_signature_info(fz_context *ctx, pdf_pkcs7_signer *signer, int flags, const char *reason, const char *location, int64_t now, char **name)
 {
-	char *info = NULL;
 	pdf_pkcs7_designated_name *dn = NULL;
-	pdf_annot *annot = (pdf_annot *)widget;
-	fz_text_language lang;
-	pdf_document *doc = widget->page->doc;
-	fz_display_list *dlist = NULL;
-
-	if (pdf_widget_is_readonly(ctx, widget))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Signature is read only, it cannot be signed.");
-
-	fz_var(info);
+	char *info;
 	fz_var(dn);
-	fz_var(dlist);
-
-	pdf_begin_operation(ctx, doc, "Sign signature");
-
 	fz_try(ctx)
 	{
-		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
-		fz_rect rect;
-		pdf_obj *form;
-		int sf;
-		int64_t now = (int64_t)time(NULL);
-
-		pdf_dirty_annot(ctx, widget);
-
-		/* Ensure that all fields that will be locked by this signature
-		 * are marked as ReadOnly. */
-		enact_sig_locking(ctx, doc, wobj);
-
-		rect = pdf_annot_rect(ctx, annot);
-		lang = pdf_annot_language(ctx, annot);
-
-		/* Create an appearance stream only if the signature is intended to be visible */
-		if (!fz_is_empty_rect(rect))
-		{
+		if (signer)
 			dn = signer->get_signing_name(ctx, signer);
-			if (!dn || !dn->cn)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name.");
-			info = pdf_signature_info(ctx, dn->cn, dn, NULL, NULL, now, 1);
-			if (image)
-				dlist = pdf_signature_appearance(ctx, rect, lang, image, NULL, info, 1);
-			else
-				dlist = pdf_signature_appearance(ctx, rect, lang, NULL, dn->cn, info, 1);
-			pdf_update_appearance_from_display_list(ctx, annot, dlist);
-		}
-
-		/* Update the SigFlags for the document if required */
-		form = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm");
-		if (!form)
-		{
-			pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
-			form = pdf_dict_put_dict(ctx, root, PDF_NAME(AcroForm), 1);
-		}
-
-		sf = pdf_to_int(ctx, pdf_dict_get(ctx, form, PDF_NAME(SigFlags)));
-		if ((sf & (PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY)) != (PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY))
-			pdf_dict_put_drop(ctx, form, PDF_NAME(SigFlags), pdf_new_int(ctx, sf | PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY));
-
-		pdf_signature_set_value(ctx, doc, wobj, signer, now);
+		if (!dn)
+			dn = &placeholder_dn;
+		*name = fz_strdup(ctx, dn->cn ? dn->cn : "Your Common Name Here");
+		info = pdf_signature_info(ctx,
+			(flags & PDF_SIGNATURE_SHOW_TEXT_NAME) ? *name : NULL,
+			(flags & PDF_SIGNATURE_SHOW_DN) ? dn : NULL,
+			reason,
+			location,
+			(flags & PDF_SIGNATURE_SHOW_DATE) ? now : -1,
+			(flags & PDF_SIGNATURE_SHOW_LABELS) ? 1 : 0);
 	}
 	fz_always(ctx)
 	{
-		pdf_end_operation(ctx, doc);
+		if (dn != &placeholder_dn)
+			pdf_signature_drop_designated_name(ctx, dn);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return info;
+}
+
+
+void pdf_sign_signature(fz_context *ctx, pdf_widget *widget,
+	pdf_pkcs7_signer *signer,
+	int flags,
+	fz_image *graphic,
+	const char *reason,
+	const char *location)
+{
+	int logo = flags & PDF_SIGNATURE_SHOW_LOGO;
+	fz_rect rect = pdf_annot_rect(ctx, widget);
+	fz_text_language lang = pdf_annot_language(ctx, widget);
+	int64_t now = time(NULL);
+	char *name = NULL;
+	char *info = NULL;
+	fz_display_list *dlist = NULL;
+
+	fz_var(dlist);
+	fz_var(info);
+	fz_var(name);
+
+	/* Create an appearance stream only if the signature is intended to be visible */
+	fz_try(ctx)
+	{
+		if (!fz_is_empty_rect(rect))
+		{
+			info = pdf_format_signature_info(ctx, signer, flags, reason, location, now, &name);
+			if (graphic)
+				dlist = pdf_signature_appearance_signed(ctx, rect, lang, graphic, NULL, info, logo);
+			else if (flags & PDF_SIGNATURE_SHOW_GRAPHIC_NAME)
+				dlist = pdf_signature_appearance_signed(ctx, rect, lang, NULL, name, info, logo);
+			else
+				dlist = pdf_signature_appearance_signed(ctx, rect, lang, NULL, NULL, info, logo);
+		}
+		pdf_sign_signature_with_appearance(ctx, widget, signer, now, dlist);
+	}
+	fz_always(ctx)
+	{
 		fz_free(ctx, info);
-		pdf_signature_drop_designated_name(ctx, dn);
+		fz_free(ctx, name);
 		fz_drop_display_list(ctx, dlist);
 	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
+}
+
+fz_display_list *pdf_preview_signature_as_display_list(fz_context *ctx,
+	float w, float h, fz_text_language lang,
+	pdf_pkcs7_signer *signer,
+	int flags,
+	fz_image *graphic,
+	const char *reason,
+	const char *location)
+{
+	int logo = flags & PDF_SIGNATURE_SHOW_LOGO;
+	fz_rect rect = fz_make_rect(0, 0, w, h);
+	int64_t now = time(NULL);
+	char *name = NULL;
+	char *info = NULL;
+	fz_display_list *dlist = NULL;
+
+	fz_var(dlist);
+	fz_var(info);
+	fz_var(name);
+
+	fz_try(ctx)
+	{
+		info = pdf_format_signature_info(ctx, signer, flags, reason, location, now, &name);
+		if (graphic)
+			dlist = pdf_signature_appearance_signed(ctx, rect, lang, graphic, NULL, info, logo);
+		else if (flags & PDF_SIGNATURE_SHOW_GRAPHIC_NAME)
+			dlist = pdf_signature_appearance_signed(ctx, rect, lang, NULL, name, info, logo);
+		else
+			dlist = pdf_signature_appearance_signed(ctx, rect, lang, NULL, NULL, info, logo);
 	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, info);
+		fz_free(ctx, name);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return dlist;
+}
+
+fz_pixmap *pdf_preview_signature_as_pixmap(fz_context *ctx,
+	int w, int h, fz_text_language lang,
+	pdf_pkcs7_signer *signer,
+	int flags,
+	fz_image *graphic,
+	const char *reason,
+	const char *location)
+{
+	fz_pixmap *pix;
+	fz_display_list *dlist = pdf_preview_signature_as_display_list(ctx,
+		w, h, lang,
+		signer, flags, graphic, reason, location);
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_display_list(ctx, dlist, fz_identity, fz_device_rgb(ctx), 0);
+	fz_always(ctx)
+		fz_drop_display_list(ctx, dlist);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return pix;
 }
 
 void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
