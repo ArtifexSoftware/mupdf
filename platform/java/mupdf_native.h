@@ -3104,6 +3104,20 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_SORT 524288L
 #undef com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT
 #define com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT 2097152L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LABELS
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LABELS 1L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DN
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DN 2L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DATE
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DATE 4L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_TEXT_NAME
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_TEXT_NAME 8L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_GRAPHIC_NAME
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_GRAPHIC_NAME 16L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LOGO
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LOGO 32L
+#undef com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_DEFAULT_APPEARANCE
+#define com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_DEFAULT_APPEARANCE 63L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    getValue
@@ -3170,11 +3184,19 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setChoiceValue
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    previewSignatureNative
+ * Signature: (IIILcom/artifex/mupdf/fitz/PKCS7Signer;ILcom/artifex/mupdf/fitz/Image;Ljava/lang/String;Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_previewSignatureNative
+  (JNIEnv *, jclass, jint, jint, jint, jobject, jint, jobject, jstring, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    signNative
- * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Signer;Lcom/artifex/mupdf/fitz/Image;)Z
+ * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Signer;ILcom/artifex/mupdf/fitz/Image;Ljava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_signNative
-  (JNIEnv *, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jint, jobject, jstring, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget

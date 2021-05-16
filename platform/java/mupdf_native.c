@@ -421,6 +421,14 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_SORT == PDF_CH_FIELD_IS_SORT;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT == PDF_CH_FIELD_IS_MULTI_SELECT;
 
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LABELS == PDF_SIGNATURE_SHOW_LABELS;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DN == PDF_SIGNATURE_SHOW_DN;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DATE == PDF_SIGNATURE_SHOW_DATE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_TEXT_NAME == PDF_SIGNATURE_SHOW_TEXT_NAME;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_GRAPHIC_NAME == PDF_SIGNATURE_SHOW_GRAPHIC_NAME;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LOGO == PDF_SIGNATURE_SHOW_LOGO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_DEFAULT_APPEARANCE == PDF_SIGNATURE_DEFAULT_APPEARANCE;
+
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_NONE == PDF_REDACT_IMAGE_NONE;
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_REMOVE == PDF_REDACT_IMAGE_REMOVE;
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_PIXELS == PDF_REDACT_IMAGE_PIXELS;
