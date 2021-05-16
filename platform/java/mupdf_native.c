@@ -395,6 +395,23 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_DATE == PDF_WIDGET_TX_FORMAT_DATE;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_TIME == PDF_WIDGET_TX_FORMAT_TIME;
 
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_READ_ONLY == PDF_FIELD_IS_READ_ONLY;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_REQUIRED == PDF_FIELD_IS_REQUIRED;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_NO_EXPORT == PDF_FIELD_IS_NO_EXPORT;
+
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_MULTILINE == PDF_TX_FIELD_IS_MULTILINE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_PASSWORD == PDF_TX_FIELD_IS_PASSWORD;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_COMB == PDF_TX_FIELD_IS_COMB;
+
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF == PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_RADIO == PDF_BTN_FIELD_IS_RADIO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_PUSHBUTTON == PDF_BTN_FIELD_IS_PUSHBUTTON;
+
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_COMBO == PDF_CH_FIELD_IS_COMBO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_EDIT == PDF_CH_FIELD_IS_EDIT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_SORT == PDF_CH_FIELD_IS_SORT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT == PDF_CH_FIELD_IS_MULTI_SELECT;
+
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_NONE == PDF_REDACT_IMAGE_NONE;
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_REMOVE == PDF_REDACT_IMAGE_REMOVE;
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_PIXELS == PDF_REDACT_IMAGE_PIXELS;
