@@ -16,7 +16,7 @@ static void trace_field_value(pdf_annot *annot, const char *set_value)
 }
 
 static pdf_widget *sig_widget;
-static char *sig_designated_name = NULL;
+static char *sig_distinguished_name = NULL;
 static pdf_signature_error sig_cert_error;
 static pdf_signature_error sig_digest_error;
 static int sig_valid_until;
@@ -178,7 +178,7 @@ static void sig_verify_dialog(void)
 			ui_spacer();
 		}
 
-		ui_label("Designated name: %s.", sig_designated_name);
+		ui_label("Distinguished name: %s.", sig_distinguished_name);
 		ui_spacer();
 
 		if (sig_cert_error)
@@ -229,7 +229,7 @@ static void show_sig_dialog(pdf_widget *widget)
 		if (pdf_signature_is_signed(ctx, pdf, widget->obj))
 		{
 			pdf_pkcs7_verifier *verifier;
-			pdf_pkcs7_designated_name *dn;
+			pdf_pkcs7_distinguished_name *dn;
 
 			sig_readonly = pdf_widget_is_readonly(ctx, widget);
 
@@ -240,13 +240,13 @@ static void show_sig_dialog(pdf_widget *widget)
 			sig_cert_error = pdf_check_certificate(ctx, verifier, pdf, widget->obj);
 			sig_digest_error = pdf_check_digest(ctx, verifier, pdf, widget->obj);
 
-			fz_free(ctx, sig_designated_name);
+			fz_free(ctx, sig_distinguished_name);
 			dn = pdf_signature_get_signatory(ctx, verifier, pdf, widget->obj);
 			if (dn)
-				sig_designated_name = pdf_signature_format_designated_name(ctx, dn);
+				sig_distinguished_name = pdf_signature_format_distinguished_name(ctx, dn);
 			else
-				sig_designated_name = fz_strdup(ctx, "Signature information missing.");
-			pdf_signature_drop_designated_name(ctx, dn);
+				sig_distinguished_name = fz_strdup(ctx, "Signature information missing.");
+			pdf_signature_drop_distinguished_name(ctx, dn);
 
 			pdf_drop_verifier(ctx, verifier);
 

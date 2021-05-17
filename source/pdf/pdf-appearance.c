@@ -2463,7 +2463,7 @@ pdf_signature_appearance_unsigned(fz_context *ctx, fz_rect rect, fz_text_languag
 }
 
 char *
-pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name *dn, const char *reason, const char *location, int64_t date, int include_labels)
+pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_distinguished_name *dn, const char *reason, const char *location, int64_t date, int include_labels)
 {
 	fz_buffer *fzbuf = NULL;
 	char *dn_str = NULL;
@@ -2499,7 +2499,7 @@ pdf_signature_info(fz_context *ctx, const char *name, pdf_pkcs7_designated_name 
 			fz_append_string(ctx, fzbuf, "\n");
 			if (include_labels)
 				fz_append_string(ctx, fzbuf, "DN: ");
-			dn_str = pdf_signature_format_designated_name(ctx, dn);
+			dn_str = pdf_signature_format_distinguished_name(ctx, dn);
 			fz_append_string(ctx, fzbuf, dn_str);
 		}
 

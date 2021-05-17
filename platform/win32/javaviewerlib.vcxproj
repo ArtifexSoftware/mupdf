@@ -204,7 +204,7 @@
     <None Include="..\java\src\com\artifex\mupdf\fitz\PDFPage.java" />
     <None Include="..\java\src\com\artifex\mupdf\fitz\PDFWidget.java" />
     <None Include="..\java\src\com\artifex\mupdf\fitz\Pixmap.java" />
-    <None Include="..\java\src\com\artifex\mupdf\fitz\PKCS7DesignatedName.java" />
+    <None Include="..\java\src\com\artifex\mupdf\fitz\PKCS7DistinguishedName.java" />
     <None Include="..\java\src\com\artifex\mupdf\fitz\PKCS7Signer.java" />
     <None Include="..\java\src\com\artifex\mupdf\fitz\PKCS7Verifier.java" />
     <None Include="..\java\src\com\artifex\mupdf\fitz\Point.java" />

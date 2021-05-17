@@ -236,7 +236,7 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 	}
 }
 
-static pdf_pkcs7_designated_name placeholder_dn = {
+static pdf_pkcs7_distinguished_name placeholder_dn = {
 	"Your Common Name Here",
 	"Organization",
 	"Organizational Unit",
@@ -247,7 +247,7 @@ static pdf_pkcs7_designated_name placeholder_dn = {
 static char *
 pdf_format_signature_info(fz_context *ctx, pdf_pkcs7_signer *signer, int flags, const char *reason, const char *location, int64_t now, char **name)
 {
-	pdf_pkcs7_designated_name *dn = NULL;
+	pdf_pkcs7_distinguished_name *dn = NULL;
 	char *info;
 	fz_var(dn);
 	fz_try(ctx)
@@ -268,7 +268,7 @@ pdf_format_signature_info(fz_context *ctx, pdf_pkcs7_signer *signer, int flags, 
 	fz_always(ctx)
 	{
 		if (dn != &placeholder_dn)
-			pdf_signature_drop_designated_name(ctx, dn);
+			pdf_signature_drop_distinguished_name(ctx, dn);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -459,7 +459,7 @@ char *pdf_signature_error_description(pdf_signature_error err)
 	}
 }
 
-void pdf_signature_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *dn)
+void pdf_signature_drop_distinguished_name(fz_context *ctx, pdf_pkcs7_distinguished_name *dn)
 {
 	if (dn)
 	{
@@ -472,7 +472,7 @@ void pdf_signature_drop_designated_name(fz_context *ctx, pdf_pkcs7_designated_na
 	}
 }
 
-char *pdf_signature_format_designated_name(fz_context *ctx, pdf_pkcs7_designated_name *name)
+char *pdf_signature_format_distinguished_name(fz_context *ctx, pdf_pkcs7_distinguished_name *name)
 {
 	const char *parts[] = {
 		"cn=", "",
@@ -507,11 +507,11 @@ char *pdf_signature_format_designated_name(fz_context *ctx, pdf_pkcs7_designated
 	return s;
 }
 
-pdf_pkcs7_designated_name *pdf_signature_get_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
+pdf_pkcs7_distinguished_name *pdf_signature_get_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
 {
 	char *contents = NULL;
 	size_t contents_len;
-	pdf_pkcs7_designated_name *dn;
+	pdf_pkcs7_distinguished_name *dn;
 
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 	if (contents_len == 0)
@@ -598,13 +598,13 @@ int pdf_check_signature(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_docum
 			case PDF_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN:
 			case PDF_SIGNATURE_ERROR_NOT_TRUSTED:
 			{
-				pdf_pkcs7_designated_name *dn;
+				pdf_pkcs7_distinguished_name *dn;
 
 				dn = pdf_signature_get_signatory(ctx, verifier, doc, signature);
 				if (dn)
 				{
-					char *s = pdf_signature_format_designated_name(ctx, dn);
-					pdf_signature_drop_designated_name(ctx, dn);
+					char *s = pdf_signature_format_distinguished_name(ctx, dn);
+					pdf_signature_drop_distinguished_name(ctx, dn);
 					fz_strlcat(ebuf, " (", ebufsize);
 					fz_strlcat(ebuf, s, ebufsize);
 					fz_free(ctx, s);

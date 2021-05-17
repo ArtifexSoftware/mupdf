@@ -3224,10 +3224,10 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_incrementalChan
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    getDesignatedName
- * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Verifier;)Lcom/artifex/mupdf/fitz/PKCS7DesignatedName;
+ * Method:    getDistinguishedName
+ * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Verifier;)Lcom/artifex/mupdf/fitz/PKCS7DistinguishedName;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getDesignatedName
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getDistinguishedName
   (JNIEnv *, jobject, jobject);
 
 /*

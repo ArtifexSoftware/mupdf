@@ -6137,7 +6137,7 @@ static void ffi_PDFWidget_getSignatory(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
 	pdf_pkcs7_verifier *verifier = NULL;
-	pdf_pkcs7_designated_name *dn = NULL;
+	pdf_pkcs7_distinguished_name *dn = NULL;
 	char buf[500];
 	fz_var(verifier);
 	fz_var(dn);
@@ -6147,7 +6147,7 @@ static void ffi_PDFWidget_getSignatory(js_State *J)
 		dn = pdf_signature_get_signatory(ctx, verifier, widget->page->doc, widget->obj);
 		if (dn)
 		{
-			char *s = pdf_signature_format_designated_name(ctx, dn);
+			char *s = pdf_signature_format_distinguished_name(ctx, dn);
 			fz_strlcpy(buf, s, sizeof buf);
 			fz_free(ctx, s);
 		}
@@ -6158,7 +6158,7 @@ static void ffi_PDFWidget_getSignatory(js_State *J)
 	}
 	fz_always(ctx)
 	{
-		pdf_signature_drop_designated_name(ctx, dn);
+		pdf_signature_drop_distinguished_name(ctx, dn);
 		pdf_drop_verifier(ctx, verifier);
 	}
 	fz_catch(ctx)

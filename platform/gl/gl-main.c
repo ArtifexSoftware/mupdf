@@ -853,7 +853,7 @@ void load_page(void)
 				{
 					int valid_until, is_readonly;
 					char *cert_error, *digest_error;
-					pdf_pkcs7_designated_name *dn;
+					pdf_pkcs7_distinguished_name *dn;
 					pdf_pkcs7_verifier *verifier;
 					char *signatory = NULL;
 					char buf[500];
@@ -866,7 +866,7 @@ void load_page(void)
 					dn = pdf_signature_get_signatory(ctx, verifier, pdf, w->obj);
 					if (dn)
 					{
-						char *s = pdf_signature_format_designated_name(ctx, dn);
+						char *s = pdf_signature_format_distinguished_name(ctx, dn);
 						fz_strlcpy(buf, s, sizeof buf);
 						fz_free(ctx, s);
 					}

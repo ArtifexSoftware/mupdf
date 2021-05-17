@@ -326,22 +326,22 @@ FUN(PDFWidget_incrementalChangeAfterSigning)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFWidget_getDesignatedName)(JNIEnv *env, jobject self, jobject jverifier)
+FUN(PDFWidget_getDistinguishedName)(JNIEnv *env, jobject self, jobject jverifier)
 {
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
 	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
 	pdf_document *pdf = widget->page->doc;
 	jobject jcn, jo, jou, jemail, jc;
-	pdf_pkcs7_designated_name *name;
+	pdf_pkcs7_distinguished_name *name;
 	jobject jname;
 
 	if (!ctx || !widget || !pdf) return NULL;
 	if (!verifier) jni_throw_arg(env, "verifier must not be null");
 
-	jname = (*env)->NewObject(env, cls_PKCS7DesignatedName, mid_PKCS7DesignatedName_init);
+	jname = (*env)->NewObject(env, cls_PKCS7DistinguishedName, mid_PKCS7DistinguishedName_init);
 	if ((*env)->ExceptionCheck(env)) return NULL;
-	if (!jname) jni_throw_run(env, "cannot create designated name object");
+	if (!jname) jni_throw_run(env, "cannot create distinguished name object");
 
 	fz_try(ctx)
 	{
@@ -374,15 +374,15 @@ FUN(PDFWidget_getDesignatedName)(JNIEnv *env, jobject self, jobject jverifier)
 			fz_throw_java(ctx, env);
 	}
 	fz_always(ctx)
-		pdf_signature_drop_designated_name(ctx, name);
+		pdf_signature_drop_distinguished_name(ctx, name);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_cn, jcn);
-	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_o, jo);
-	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_ou, jou);
-	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_email, jemail);
-	(*env)->SetObjectField(env, jname, fid_PKCS7DesignatedName_c, jc);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DistinguishedName_cn, jcn);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DistinguishedName_o, jo);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DistinguishedName_ou, jou);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DistinguishedName_email, jemail);
+	(*env)->SetObjectField(env, jname, fid_PKCS7DistinguishedName_c, jc);
 
 	return jname;
 }

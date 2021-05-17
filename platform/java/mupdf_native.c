@@ -122,7 +122,7 @@ static jclass cls_UnsupportedOperationException;
 static jclass cls_PDFWidget;
 static jclass cls_PKCS7Signer;
 static jclass cls_PKCS7Verifier;
-static jclass cls_PKCS7DesignatedName;
+static jclass cls_PKCS7DistinguishedName;
 static jclass cls_UnsupportedOperationException;
 
 static jfieldID fid_Buffer_pointer;
@@ -189,11 +189,11 @@ static jfieldID fid_PDFWidget_maxLen;
 static jfieldID fid_PDFWidget_options;
 static jfieldID fid_PDFWidget_pointer;
 static jfieldID fid_PDFWidget_textFormat;
-static jfieldID fid_PKCS7DesignatedName_cn;
-static jfieldID fid_PKCS7DesignatedName_c;
-static jfieldID fid_PKCS7DesignatedName_o;
-static jfieldID fid_PKCS7DesignatedName_ou;
-static jfieldID fid_PKCS7DesignatedName_email;
+static jfieldID fid_PKCS7DistinguishedName_cn;
+static jfieldID fid_PKCS7DistinguishedName_c;
+static jfieldID fid_PKCS7DistinguishedName_o;
+static jfieldID fid_PKCS7DistinguishedName_ou;
+static jfieldID fid_PKCS7DistinguishedName_email;
 static jfieldID fid_PKCS7Signer_pointer;
 static jfieldID fid_PKCS7Verifier_pointer;
 
@@ -275,7 +275,7 @@ static jmethodID mid_PKCS7Signer_name;
 static jmethodID mid_PKCS7Signer_sign;
 static jmethodID mid_PKCS7Verifier_checkCertificate;
 static jmethodID mid_PKCS7Verifier_checkDigest;
-static jmethodID mid_PKCS7DesignatedName_init;
+static jmethodID mid_PKCS7DistinguishedName_init;
 
 #ifdef _WIN32
 static DWORD context_key;
@@ -895,7 +895,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_PKCS7Signer = get_class(&err, env, PKG"PKCS7Signer");
 	fid_PKCS7Signer_pointer = get_field(&err, env, "pointer", "J");
-	mid_PKCS7Signer_name = get_method(&err, env, "name", "()L"PKG"PKCS7DesignatedName;");
+	mid_PKCS7Signer_name = get_method(&err, env, "name", "()L"PKG"PKCS7DistinguishedName;");
 	mid_PKCS7Signer_sign = get_method(&err, env, "sign", "(L"PKG"FitzInputStream;)[B");
 	mid_PKCS7Signer_maxDigest = get_method(&err, env, "maxDigest", "()I");
 
@@ -904,13 +904,13 @@ static int find_fids(JNIEnv *env)
 	mid_PKCS7Verifier_checkCertificate = get_method(&err, env, "checkCertificate", "([B)I");
 	mid_PKCS7Verifier_checkDigest = get_method(&err, env, "checkDigest", "(L"PKG"FitzInputStream;[B)I");
 
-	cls_PKCS7DesignatedName = get_class(&err, env, PKG"PKCS7DesignatedName");
-	fid_PKCS7DesignatedName_cn = get_field(&err, env, "cn", "Ljava/lang/String;");
-	fid_PKCS7DesignatedName_c = get_field(&err, env, "c", "Ljava/lang/String;");
-	fid_PKCS7DesignatedName_o = get_field(&err, env, "o", "Ljava/lang/String;");
-	fid_PKCS7DesignatedName_ou = get_field(&err, env, "ou", "Ljava/lang/String;");
-	fid_PKCS7DesignatedName_email = get_field(&err, env, "email", "Ljava/lang/String;");
-	mid_PKCS7DesignatedName_init = get_method(&err, env, "<init>", "()V");
+	cls_PKCS7DistinguishedName = get_class(&err, env, PKG"PKCS7DistinguishedName");
+	fid_PKCS7DistinguishedName_cn = get_field(&err, env, "cn", "Ljava/lang/String;");
+	fid_PKCS7DistinguishedName_c = get_field(&err, env, "c", "Ljava/lang/String;");
+	fid_PKCS7DistinguishedName_o = get_field(&err, env, "o", "Ljava/lang/String;");
+	fid_PKCS7DistinguishedName_ou = get_field(&err, env, "ou", "Ljava/lang/String;");
+	fid_PKCS7DistinguishedName_email = get_field(&err, env, "email", "Ljava/lang/String;");
+	mid_PKCS7DistinguishedName_init = get_method(&err, env, "<init>", "()V");
 
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
@@ -1036,7 +1036,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_PDFWidget);
 	(*env)->DeleteGlobalRef(env, cls_PKCS7Signer);
 	(*env)->DeleteGlobalRef(env, cls_PKCS7Verifier);
-	(*env)->DeleteGlobalRef(env, cls_PKCS7DesignatedName);
+	(*env)->DeleteGlobalRef(env, cls_PKCS7DistinguishedName);
 }
 
 
