@@ -315,14 +315,15 @@ Windows builds:
 
         The MuPDF DLL itself is built with FZ_DLL predefined.
 
-    There is no separate C library, instead the C and C++ API are both in
-    mupdfcpp.dll, which is built by running devenv on platform/win32/mupdf.sln.
+    DLLs:
 
-    The Python SWIG internals are in _mupdf.pyd which, despite the name, is a
-    standard Windows DLL. Unlike mupdfcpp.dll it needs to be built slightly
-    differently depending on which installed Python it will be using, so it is
-    currently built by running Windows compiler (cl.exe) and linker (link.exe)
-    directly.
+        There is no separate C library, instead the C and C++ API are
+        both in mupdfcpp.dll, which is built by running devenv on
+        platform/win32/mupdf.sln.
+
+        The Python SWIG library is called _mupdf.pyd which,
+        despite the name, is a standard Windows DLL, built from
+        platform/python/mupdfcpp_swig.cpp.
 
     DLL export of functions and data:
 
@@ -344,6 +345,23 @@ Windows builds:
         C functions with FZ_FUNCTION, but this is required for C++ functions
         otherwise we get unresolved symbols when building MuPDF client code.
 
+    Building the DLLs:
+
+        We build Windows binaries by running devenv.com directly. As of
+        2021-05-17 the location of devenv.com is hard-coded in this Python
+        script.
+
+        Building _mupdf.pyd is tricky because it needs to be built with a
+        specific Pyhthon.h and linked with a specific python.lib. This is
+        done by setting environmental variables MUPDF_PYTHON_INCLUDE_PATH and
+        MUPDF_PYTHON_LIBRARY_PATH when running devenv.com, which are referenced
+        by platform/win32/mupdfpyswig.vcxproj. Thus one cannot easily build
+        _mupdf.pyd directly from the Visual Studio GUI.
+
+        [There is some older code that builds _mupdf.pyd by running the Windows
+        compiler and linker cl.exe and link.exe directly, which avoids the
+        complications of going via devenv, at the expense of needing to know
+        where cl.exe and link.exe are.]
 
 Usage:
 
@@ -452,6 +470,13 @@ Usage:
             Examples:
                 -d build/shared-debug
                 -d build/shared-release
+
+            On Windows one can specify the CPU and Python version; we then
+            use 'py -0f' to find the matching installed Python along with its
+            Python.h and python.lib. For example:
+
+                -d build/shared-release-x32-py3.8
+                -d build/shared-release-x64-py3.9
 
         --doc <languages>
             Generates documentation for the different APIs.
@@ -6351,6 +6376,7 @@ def find_python( cpu, version=None):
             assert os.path.exists( path2)
             path = path2
 
+        jlib.log('{cpu=} {version=}: returning {path=} {version=} {root=} {cpu=}')
         return path, version, root, cpu
 
     raise Exception( f'Failed to find python matching cpu={cpu}. Run "py -0p" to see available pythons')
@@ -6576,8 +6602,8 @@ def main():
                                 jlib.system(command, verbose=1, out='log')
 
                                 jlib.copy(
-                                        f'platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfcpp.dll',
-                                        f'{build_dirs.dir_so}/mupdfcpp.dll',
+                                        f'platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
+                                        f'{build_dirs.dir_so}/',
                                         verbose=1,
                                         )
 
@@ -6638,6 +6664,53 @@ def main():
                             jlib.log( 'Compiling/linking generated Python module source code to create _mupdf.so ...')
 
                             if g_windows:
+                                python_path, python_version, python_root, cpu = find_python(
+                                        build_dirs.cpu,
+                                        build_dirs.python_version,
+                                        )
+                                log( 'best python for {build_dirs.cpu=}: {python_path=} {python_version=}')
+
+                                py_root = python_root.replace('\\', '/')
+                                env_extra = {
+                                        'MUPDF_PYTHON_INCLUDE_PATH': f'{py_root}/include',
+                                        'MUPDF_PYTHON_LIBRARY_PATH': f'{py_root}/libs',
+                                        }
+                                jlib.log('{env_extra=}')
+
+                                # The swig-generated .cpp file must exist at
+                                # this point.
+                                #
+                                cpp_path = 'platform/python/mupdfcpp_swig.cpp'
+                                assert os.path.exists(cpp_path), f'SWIG-generated file does not exist: {cpp_path}'
+
+                                # We need to update mtime of the .cpp file to
+                                # force recompile and link, because we run
+                                # devenv with different environmental variables
+                                # depending on the Python for which we are
+                                # building.
+                                #
+                                # [Using /Rebuild or /Clean appears to clean
+                                # the entire solution even if we specify
+                                # /Project.]
+                                #
+                                os.utime(cpp_path)
+
+                                jlib.log('Building mupdfpyswig project')
+                                command = (
+                                        f'"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com"'
+                                        f' platform/win32/mupdfpyswig.sln'
+                                        f' /Build "ReleasePython|{build_dirs.cpu.windows_config}"'
+                                        f' /Project mupdfpyswig'
+                                        )
+                                jlib.system(command, verbose=1, out='log', env_extra=env_extra)
+
+                                jlib.copy(
+                                        f'platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfpyswig.dll',
+                                        f'{build_dirs.dir_so}/_mupdf.pyd',
+                                        verbose=1,
+                                        )
+
+                            elif g_windows:
                                 # We run Windows compiler and linker manually;
                                 # could probably add a project to mupdf.sln
                                 # instead and build it with devenv.exe, but
@@ -6945,6 +7018,7 @@ def main():
             elif arg == '--dir-so' or arg == '-d':
                 d = args.next()
                 build_dirs.set_dir_so( d)
+                log('Have set {build_dirs=}')
 
             elif arg == '--py-package-multi':
                 # Investigating different combinations of pip, pyproject.toml,
@@ -7062,17 +7136,6 @@ def main():
                 #
                 swig = swig_local
 
-                if 0:
-                    # Build mupdfcpp.dll.
-                    command = (
-                            f'C:/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Community/Common7/IDE/devenv.com'
-                            f' platform/win32/mupdf.sln'
-                            f' /Build DebugPython'
-                            f' /Project mupdfcpp'
-                            )
-                    log(f'Building mupdfcpp.dll')
-                    jlib.system(command, verbose=1, out='log')
-
             elif arg == '--sync':
                 sync_docs = False
                 destination = args.next()
@@ -7125,28 +7188,41 @@ def main():
 
                 # We need to set LD_LIBRARY_PATH and PYTHONPATH so that our
                 # test .py programme can load mupdf.py and _mupdf.so.
+                env_extra = {}
+                command_prefix = ''
+                log('{build_dirs=}')
                 if g_windows:
                     # On Windows, it seems that 'py' runs the default
                     # python. Also, Windows appears to be able to find
-                    # _mupdf.pyd in same directory as mupdf.py.#
+                    # _mupdf.pyd in same directory as mupdf.py.
                     #
                     python_path, python_version, python_root, cpu = find_python( build_dirs.cpu, build_dirs.python_version)
                     python_path = python_path.replace('\\', '/')    # Allows use on Cygwin.
-                    command_prefix = f'PYTHONPATH={os.path.relpath(build_dirs.dir_so)} "{python_path}"'
+                    env_extra = {
+                            'PYTHONPATH': os.path.relpath(build_dirs.dir_so),
+                            }
+                    command_prefix = f'"{python_path}"'
                 elif g_openbsd:
                     # We have special support to not require LD_LIBRARY_PATH.
-                    command_prefix = f'PYTHONPATH={os.path.relpath(build_dirs.dir_so)}'
+                    #command_prefix = f'PYTHONPATH={os.path.relpath(build_dirs.dir_so)}'
+                    env_extra = {
+                            'PYTHONPATH': os.path.relpath(build_dirs.dir_so)
+                            }
                 else:
                     # On Linux it looks like we need to specify
                     # LD_LIBRARY_PATH. fixme: revisit this because these days
                     # jlib.y uses rpath when constructing link commands.
                     #
-                    command_prefix = f'LD_LIBRARY_PATH={os.path.abspath(build_dirs.dir_so)} PYTHONPATH={os.path.relpath(build_dirs.dir_so)}'
+                    env_extra = {
+                            'LD_LIBRARY_PATH': os.path.abspath(build_dirs.dir_so),
+                            'PYTHONPATH': os.path.relpath(build_dirs.dir_so),
+                            }
+                    #command_prefix = f'LD_LIBRARY_PATH={os.path.abspath(build_dirs.dir_so)} PYTHONPATH={os.path.relpath(build_dirs.dir_so)}'
 
                 log( 'running mupdf_test.py...')
                 command = f'{command_prefix} ./scripts/mupdfwrap_test.py'
                 with open( f'{build_dirs.dir_mupdf}/platform/python/mupdf_test.py.out.txt', 'w') as f:
-                    jlib.system( command, out='log', verbose=1)
+                    jlib.system( command, env_extra=env_extra, out='log', verbose=1)
 
                 # Run mutool.py.
                 #
@@ -7161,10 +7237,7 @@ def main():
                         ):
                     command = f'{command_prefix} {mutool_py} {args2}'
                     log( 'running: {command}')
-                    jlib.system(
-                            f'{command}',
-                            out='log',
-                            )
+                    jlib.system( f'{command}', env_extra=env_extra, out='log', verbose=1)
 
                 log( 'Tests ran ok.')
 
