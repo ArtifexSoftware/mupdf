@@ -882,3 +882,14 @@ FUN(PDFAnnotation_getObject)(JNIEnv *env, jobject self)
 
 	return to_PDFObject_safe(ctx, env, annot->obj);
 }
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getLanguage)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return FZ_LANG_UNSET;
+
+	return pdf_annot_language(ctx, annot);
+}
