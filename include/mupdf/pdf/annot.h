@@ -235,9 +235,8 @@ fz_link *pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const ch
 	create a new annotation of the specified type on the
 	specified page. Populate it with sensible defaults per the type.
 
-	The page takes a reference, and an additional reference is
-	returned to the caller, hence the caller should drop the
-	reference once it is done.
+	The returned pdf_annot structure is owned by the page and does
+	not need to be freed.
 */
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 

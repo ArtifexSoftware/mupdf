@@ -5114,7 +5114,7 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	js_getregistry(J, "pdf_annot");
-	js_newuserdata(J, "pdf_annot", annot, ffi_gc_pdf_annot);
+	js_newuserdata(J, "pdf_annot", pdf_keep_annot(ctx, annot), ffi_gc_pdf_annot);
 }
 
 static void ffi_PDFPage_deleteAnnotation(js_State *J)
