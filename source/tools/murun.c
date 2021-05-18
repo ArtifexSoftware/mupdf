@@ -5827,6 +5827,29 @@ static void ffi_PDFAnnotation_setLineEndingStyles(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getIcon(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *name;
+	fz_try(ctx)
+		name = pdf_annot_icon_name(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, name);
+}
+
+static void ffi_PDFAnnotation_setIcon(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *name = js_tostring(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_icon_name(ctx, annot, name);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_updateAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6668,6 +6691,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setModificationDate", ffi_PDFAnnotation_setModificationDate, 1);
 		jsB_propfun(J, "PDFAnnotation.getLineEndingStyles", ffi_PDFAnnotation_getLineEndingStyles, 0);
 		jsB_propfun(J, "PDFAnnotation.setLineEndingStyles", ffi_PDFAnnotation_setLineEndingStyles, 2);
+		jsB_propfun(J, "PDFAnnotation.getIcon", ffi_PDFAnnotation_getIcon, 0);
+		jsB_propfun(J, "PDFAnnotation.setIcon", ffi_PDFAnnotation_setIcon, 1);
 
 		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
 		jsB_propfun(J, "PDFAnnotation.setInkList", ffi_PDFAnnotation_setInkList, 1);
