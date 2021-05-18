@@ -3336,7 +3336,7 @@ create_encryption_dictionary(fz_context *ctx, pdf_document *doc, pdf_crypt *cryp
 }
 
 static void
-ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *out)
+ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *out, int64_t len)
 {
 	fz_stream *verify;
 	unsigned char buf0[256];
@@ -3358,31 +3358,43 @@ ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *o
 	{
 		do
 		{
+			int64_t read = sizeof(buf0);
+			if (off + read > len)
+				read = len - off;
 			fz_seek(ctx, in, off, SEEK_SET);
-			n0 = fz_read(ctx, in, buf0, sizeof(buf0));
+			n0 = fz_read(ctx, in, buf0, read);
 			fz_seek(ctx, verify, off, SEEK_SET);
-			n1 = fz_read(ctx, verify, buf1, sizeof(buf1));
+			n1 = fz_read(ctx, verify, buf1, read);
 			same = (n0 == n1 && !memcmp(buf0, buf1, n0));
-			off += n0;
+			off += (int64_t)n0;
 		}
-		while (same && n0 > 0);
-
-		if (same)
-			break;
+		while (same && n0 > 0 && off < len);
 
 		fz_drop_stream(ctx, verify);
 		verify = NULL;
 
+		if (same)
+		{
+			fz_seek_output(ctx, out, len, SEEK_SET);
+			fz_truncate_output(ctx, out);
+			break;
+		}
+
 		/* Copy old contents into new file */
 		fz_seek(ctx, in, 0, SEEK_SET);
 		fz_seek_output(ctx, out, 0, SEEK_SET);
+		off = 0;
 		do
 		{
-			n0 = fz_read(ctx, in, buf0, sizeof(buf0));
+			int64_t read = sizeof(buf0);
+			if (off + read > len)
+				read = len - off;
+			n0 = fz_read(ctx, in, buf0, read);
 			if (n0)
 				fz_write_data(ctx, out, buf0, n0);
+			off += n0;
 		}
-		while (n0);
+		while (n0 > 0 && off < len);
 		fz_truncate_output(ctx, out);
 	}
 	fz_always(ctx)
@@ -3401,7 +3413,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 	if (in_opts->do_incremental)
 	{
-		ensure_initial_incremental_contents(ctx, doc->file, opts->out);
+		ensure_initial_incremental_contents(ctx, doc->file, opts->out, doc->file_size);
 
 		/* If no changes, nothing more to write */
 		if (doc->num_incremental_sections == 0)
