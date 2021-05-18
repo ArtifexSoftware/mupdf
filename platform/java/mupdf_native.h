@@ -1549,6 +1549,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setInteriorColo
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getOpacity
+ * Signature: ()F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getOpacity
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setOpacity
+ * Signature: (F)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setOpacity
+  (JNIEnv *, jobject, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getAuthor
  * Signature: ()Ljava/lang/String;
  */

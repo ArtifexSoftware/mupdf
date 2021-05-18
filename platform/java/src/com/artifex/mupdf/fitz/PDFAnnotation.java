@@ -99,6 +99,8 @@ public class PDFAnnotation
 	public native void setColor(float[] color);
 	public native float[] getInteriorColor();
 	public native void setInteriorColor(float[] color);
+	public native float getOpacity();
+	public native void setOpacity(float opacity);
 	public native String getAuthor();
 	public native void setAuthor(String author);
 	protected native long getCreationDateNative();

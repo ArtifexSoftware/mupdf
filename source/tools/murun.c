@@ -5423,6 +5423,29 @@ static void ffi_PDFAnnotation_setInteriorColor(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getOpacity(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float opacity;
+	fz_try(ctx)
+		opacity = pdf_annot_opacity(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, opacity);
+}
+
+static void ffi_PDFAnnotation_setOpacity(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float opacity = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_opacity(ctx, annot, opacity);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6563,6 +6586,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setColor", ffi_PDFAnnotation_setColor, 1);
 		jsB_propfun(J, "PDFAnnotation.getInteriorColor", ffi_PDFAnnotation_getInteriorColor, 0);
 		jsB_propfun(J, "PDFAnnotation.setInteriorColor", ffi_PDFAnnotation_setInteriorColor, 1);
+		jsB_propfun(J, "PDFAnnotation.getOpacity", ffi_PDFAnnotation_getOpacity, 0);
+		jsB_propfun(J, "PDFAnnotation.setOpacity", ffi_PDFAnnotation_setOpacity, 1);
 		jsB_propfun(J, "PDFAnnotation.getAuthor", ffi_PDFAnnotation_getAuthor, 0);
 		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
