@@ -5924,6 +5924,40 @@ static void ffi_PDFAnnotation_setLanguage(js_State *J)
 		rethrow(J);
 }
 
+/* Returns an array of two point denoting the end points of the
+line annotation. Each point is a two element array consisting
+of the point's x and y coordinates. */
+static void ffi_PDFAnnotation_getLine(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_point a, b;
+	fz_try(ctx)
+		pdf_annot_line(ctx, annot, &a, &b);
+	fz_catch(ctx)
+		rethrow(J);
+	js_newarray(J);
+	ffi_pushpoint(J, a);
+	js_setindex(J, -2, 0);
+	ffi_pushpoint(J, b);
+	js_setindex(J, -2, 1);
+}
+
+/* Takes two point arguments denoting the end points of the
+line annotation. Each point is a two element array consisting
+of the point's x and y coordinates. */
+static void ffi_PDFAnnotation_setLine(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_point a = ffi_topoint(J, 1);
+	fz_point b = ffi_topoint(J, 2);
+	fz_try(ctx)
+		pdf_set_annot_line(ctx, annot, a, b);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6817,6 +6851,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setQuadding", ffi_PDFAnnotation_setQuadding, 1);
 		jsB_propfun(J, "PDFAnnotation.getLanguage", ffi_PDFAnnotation_getLanguage, 0);
 		jsB_propfun(J, "PDFAnnotation.setLanguage", ffi_PDFAnnotation_setLanguage, 1);
+		jsB_propfun(J, "PDFAnnotation.getLine", ffi_PDFAnnotation_getLine, 0);
+		jsB_propfun(J, "PDFAnnotation.setLine", ffi_PDFAnnotation_setLine, 2);
 		jsB_propfun(J, "PDFAnnotation.getDefaultAppearance", ffi_PDFAnnotation_getDefaultAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 

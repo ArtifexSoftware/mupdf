@@ -1595,7 +1595,7 @@ static void do_edit_line(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 			{
 				a = fz_transform_point(a, view_page_inv_ctm);
 				b = fz_transform_point(b, view_page_inv_ctm);
-				trace_action("annot.setLine(%g, %g, %g, %g);\n", a.x, a.y, b.x, b.y);
+				trace_action("annot.setLine([%g, %g], [%g, %g]);\n", a.x, a.y, b.x, b.y);
 				pdf_set_annot_line(ctx, selected_annot, a, b);
 			}
 		}
