@@ -5850,6 +5850,50 @@ static void ffi_PDFAnnotation_setIcon(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *font = NULL;
+	float size = 0.0f;
+	float color[3] = { 0.0f };
+	size_t i;
+	fz_try(ctx)
+		pdf_annot_default_appearance(ctx, annot, &font, &size, color);
+	fz_catch(ctx)
+		rethrow(J);
+	js_newobject(J);
+	js_pushstring(J, font);
+	js_setproperty(J, -2, "font");
+	js_pushnumber(J, size);
+	js_setproperty(J, -2, "size");
+	js_newarray(J);
+	for (i = 0; i < nelem(color); ++i) {
+		js_pushnumber(J, color[i]);
+		js_setindex(J, -2, i);
+	}
+	js_setproperty(J, -2, "color");
+}
+
+static void ffi_PDFAnnotation_setDefaultAppearance(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *font = js_tostring(J, 1);
+	float size = js_tonumber(J, 2);
+	int i, n = js_getlength(J, 3);
+	float color[3];
+	for (i = 0; i < n && i < 3; ++i) {
+		js_getindex(J, 3, i);
+		color[i] = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+	fz_try(ctx)
+		pdf_set_annot_default_appearance(ctx, annot, font, size, color);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_updateAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6693,6 +6737,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setLineEndingStyles", ffi_PDFAnnotation_setLineEndingStyles, 2);
 		jsB_propfun(J, "PDFAnnotation.getIcon", ffi_PDFAnnotation_getIcon, 0);
 		jsB_propfun(J, "PDFAnnotation.setIcon", ffi_PDFAnnotation_setIcon, 1);
+		jsB_propfun(J, "PDFAnnotation.getDefaultAppearance", ffi_PDFAnnotation_getDefaultAppearance, 0);
+		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 
 		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
 		jsB_propfun(J, "PDFAnnotation.setInkList", ffi_PDFAnnotation_setInkList, 1);
