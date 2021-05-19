@@ -5850,6 +5850,29 @@ static void ffi_PDFAnnotation_setIcon(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getQuadding(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int quadding;
+	fz_try(ctx)
+		quadding = pdf_annot_quadding(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, quadding);
+}
+
+static void ffi_PDFAnnotation_setQuadding(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int quadding = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_quadding(ctx, annot, quadding);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6737,6 +6760,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setLineEndingStyles", ffi_PDFAnnotation_setLineEndingStyles, 2);
 		jsB_propfun(J, "PDFAnnotation.getIcon", ffi_PDFAnnotation_getIcon, 0);
 		jsB_propfun(J, "PDFAnnotation.setIcon", ffi_PDFAnnotation_setIcon, 1);
+		jsB_propfun(J, "PDFAnnotation.getQuadding", ffi_PDFAnnotation_getQuadding, 0);
+		jsB_propfun(J, "PDFAnnotation.setQuadding", ffi_PDFAnnotation_setQuadding, 1);
 		jsB_propfun(J, "PDFAnnotation.getDefaultAppearance", ffi_PDFAnnotation_getDefaultAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 
