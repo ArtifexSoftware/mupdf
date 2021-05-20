@@ -5964,7 +5964,7 @@ static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	const char *font = NULL;
 	float size = 0.0f;
-	float color[3] = { 0.0f };
+	float color[4] = { 0.0f };
 	int n = 0;
 	fz_try(ctx)
 		pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);
@@ -5989,7 +5989,7 @@ static void ffi_PDFAnnotation_setDefaultAppearance(js_State *J)
 	const char *font = js_tostring(J, 1);
 	float size = js_tonumber(J, 2);
 	int i, n = js_getlength(J, 3);
-	float color[3] = { 0.0f };
+	float color[4] = { 0.0f };
 	for (i = 0; i < n && i < (int) nelem(color); ++i) {
 		js_getindex(J, 3, i);
 		color[i] = js_tonumber(J, -1);

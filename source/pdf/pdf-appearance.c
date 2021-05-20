@@ -1480,7 +1480,7 @@ static const char *full_font_name(const char **name)
 static void
 write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res,
 	fz_text_language lang, const char *text,
-	const char *fontname, float size, int n, float color[3], int q,
+	const char *fontname, float size, int n, float color[4], int q,
 	float w, float h, float padding, float baseline, float lineheight,
 	int multiline, int comb, int adjust_baseline)
 {
@@ -1521,7 +1521,9 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		}
 
 		fz_append_string(ctx, buf, "BT\n");
-		if (n == 3)
+		if (n == 4)
+			fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]);
+		else if (n == 3)
 			fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		else if (n == 1)
 			fz_append_printf(ctx, buf, "%g g\n", color[0]);
@@ -1634,7 +1636,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	const char *font;
-	float size, color[3];
+	float size, color[4];
 	const char *text;
 	float w, h, t, b;
 	int q, r, n;
@@ -1663,7 +1665,9 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	b = pdf_write_border_appearance(ctx, annot, buf);
 	if (b > 0)
 	{
-		if (n == 3)
+		if (n == 4)
+			fz_append_printf(ctx, buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]);
+		else if (n == 3)
 			fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]);
 		else if (n == 1)
 			fz_append_printf(ctx, buf, "%g G\n", color[0]);
@@ -1683,7 +1687,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 {
 	fz_text_language lang;
 	const char *font;
-	float size, color[3];
+	float size, color[4];
 	float w, h, t, b;
 	int has_bc = 0;
 	int q, r, n;
@@ -1753,7 +1757,7 @@ pdf_layout_text_widget(fz_context *ctx, pdf_annot *annot)
 	const char *font;
 	const char *text;
 	fz_rect rect;
-	float size, color[3];
+	float size, color[4];
 	float w, h, t, b, x, y;
 	int q, r, n;
 	int ff;
@@ -1998,7 +2002,7 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 }
 
 static pdf_obj *draw_push_button(fz_context *ctx, pdf_annot *annot, fz_rect bbox, fz_matrix matrix, float w, float h,
-	const char *caption, const char *font, float size, int n, float color[3],
+	const char *caption, const char *font, float size, int n, float color[4],
 	int down)
 {
 	pdf_obj *ap, *res = NULL;
@@ -2170,7 +2174,7 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			pdf_obj *ap, *MK, *CA, *AC;
 			const char *font;
 			const char *label;
-			float size, color[3];
+			float size, color[4];
 			int n;
 
 			pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);

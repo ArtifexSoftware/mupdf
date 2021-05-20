@@ -883,7 +883,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 {
 	char buf[100];
 	const char *font;
-	float size, color[3], black;
+	float size, color[4];
 	const char *da = pdf_to_str_buf(ctx, pdf_dict_get_inheritable(ctx, field, PDF_NAME(DA)));
 	int n;
 
@@ -892,7 +892,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 	switch (pdf_array_len(ctx, col))
 	{
 	default:
-		color[0] = color[1] = color[2] = 0;
+		color[0] = color[1] = color[2] = color[3] = 0;
 		break;
 	case 1:
 		color[0] = pdf_array_get_real(ctx, col, 0);
@@ -903,10 +903,10 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 		color[2] = pdf_array_get_real(ctx, col, 2);
 		break;
 	case 4:
-		black = pdf_array_get_real(ctx, col, 3);
-		color[0] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 0) + black);
-		color[1] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 1) + black);
-		color[2] = 1 - fz_min(1, pdf_array_get_real(ctx, col, 2) + black);
+		color[0] = pdf_array_get_real(ctx, col, 0);
+		color[1] = pdf_array_get_real(ctx, col, 1);
+		color[2] = pdf_array_get_real(ctx, col, 2);
+		color[3] = pdf_array_get_real(ctx, col, 3);
 		break;
 	}
 

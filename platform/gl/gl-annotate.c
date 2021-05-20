@@ -1012,12 +1012,15 @@ void do_annotate_panel(void)
 					if (text_color[0] == text_color[1] && text_color[1] == text_color[2])
 						n = 1;
 				}
-				if (n == 3)
-					trace_action("annot.setDefaultAppearance(%q, %d, [%g, %g, %g]);\n",
-						text_font, text_size, text_color[0], text_color[1], text_color[2]);
-				else if (n == 1)
+				if (n == 1)
 					trace_action("annot.setDefaultAppearance(%q, %d, [%g]);\n",
 						text_font, text_size, text_color[0]);
+				else if (n == 3)
+					trace_action("annot.setDefaultAppearance(%q, %d, [%g, %g, %g]);\n",
+						text_font, text_size, text_color[0], text_color[1], text_color[2]);
+				else if (n == 4)
+					trace_action("annot.setDefaultAppearance(%q, %d, [%g, %g, %g, %g]);\n",
+						text_font, text_size, text_color[0], text_color[1], text_color[2], text_color[3]);
 				pdf_set_annot_default_appearance(ctx, selected_annot, text_font, text_size, n, text_color);
 			}
 			ui_spacer();
