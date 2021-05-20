@@ -1229,7 +1229,7 @@ static void new_redaction(pdf_page *page, fz_quad q)
 	pdf_set_annot_contents(ctx, annot, search_needle);
 
 	trace_action("annot = page.createAnnotation(%q);\n", "Redact");
-	trace_action("annot.addQuadPoint(%g, %g, %g, %g, %g, %g, %g, %g);\n",
+	trace_action("annot.addQuadPoint([%g, %g, %g, %g, %g, %g, %g, %g]);\n",
 		q.ul.x, q.ul.y,
 		q.ur.x, q.ur.y,
 		q.ll.x, q.ll.y,
@@ -1812,7 +1812,7 @@ static void do_edit_quad_points(void)
 				pdf_clear_annot_quad_points(ctx, selected_annot);
 				for (i = 0; i < n; ++i)
 				{
-					trace_action("annot.addQuadPoint(%g, %g, %g, %g, %g, %g, %g, %g);\n",
+					trace_action("annot.addQuadPoint([%g, %g, %g, %g, %g, %g, %g, %g]);\n",
 						hits[i].ul.x, hits[i].ul.y,
 						hits[i].ur.x, hits[i].ur.y,
 						hits[i].ll.x, hits[i].ll.y,
