@@ -1581,9 +1581,41 @@ static void load_document(void)
 	trace_action("doc = new Document(%q);\n", filename);
 
 	doc = fz_open_accelerated_document(ctx, filename, accel);
+	pdf = pdf_specifics(ctx, doc);
+
+	if (pdf && trace_file)
+	{
+		int needspass = pdf_needs_password(ctx, pdf);
+		trace_action(
+				"tmp = doc.needsPassword();\n"
+				"if (errored == 0 && tmp != %s) {\n"
+				"  print(\"Expected a PDF%s requiring a password, but this document \" + tmp ? \"\" : \"does not\" + \" require a password\\n\");\n"
+				"  errored=%d;\n"
+				"}\n",
+				needspass ? "true" : "false",
+				needspass ? "" : " not",
+				trace_next_error());
+	}
+
 	if (fz_needs_password(ctx, doc))
 	{
-		if (!fz_authenticate_password(ctx, doc, password))
+		int result = fz_authenticate_password(ctx, doc, password);
+
+		if (pdf && trace_file)
+		{
+			trace_action(
+					"tmp = doc.authenticatePassword(%q);\n"
+					"if (errored == 0 && tmp != %s) {\n"
+					"  print(\"Expected opening PDF with password to %s.\\n\");\n"
+					"  errored=%d;\n"
+					"}\n",
+					password,
+					result ? "true" : "false",
+					result ? "succeed" : "fail",
+					trace_next_error());
+		}
+
+		if (!result)
 		{
 			fz_drop_document(ctx, doc);
 			doc = NULL;
@@ -1603,7 +1635,6 @@ static void load_document(void)
 
 	load_history();
 
-	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 	{
 		if (enable_js)
