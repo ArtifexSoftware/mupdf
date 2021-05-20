@@ -990,27 +990,35 @@ void do_annotate_panel(void)
 				pdf_set_annot_language(ctx, selected_annot, fz_text_language_from_string(text_lang));
 			}
 
-			pdf_annot_default_appearance(ctx, selected_annot, &text_font, &text_size_f, text_color);
+			pdf_annot_default_appearance(ctx, selected_annot, &text_font, &text_size_f, &n, text_color);
 			text_size = text_size_f;
 			ui_label("Text Font:");
 			font_choice = ui_select("DA/Font", text_font, font_names, nelem(font_names));
 			ui_label("Text Size: %d", text_size);
 			size_changed = ui_slider(&text_size, 8, 36, 256);
 			ui_label("Text Color:");
-			color_choice = ui_select("DA/Color", name_from_hex(hex_from_color(3, text_color)), color_names+1, nelem(color_names)-1);
+			color_choice = ui_select("DA/Color", name_from_hex(hex_from_color(n, text_color)), color_names+1, nelem(color_names)-1);
 			if (font_choice != -1 || color_choice != -1 || size_changed)
 			{
 				if (font_choice != -1)
 					text_font = font_names[font_choice];
 				if (color_choice != -1)
 				{
+					n = 3;
 					text_color[0] = ((color_values[color_choice+1]>>16) & 0xff) / 255.0f;
 					text_color[1] = ((color_values[color_choice+1]>>8) & 0xff) / 255.0f;
 					text_color[2] = ((color_values[color_choice+1]) & 0xff) / 255.0f;
+
+					if (text_color[0] == text_color[1] && text_color[1] == text_color[2])
+						n = 1;
 				}
-				trace_action("annot.setDefaultAppearance(%q, %d, [%g, %g, %g]);\n",
-					text_font, text_size, text_color[0], text_color[1], text_color[2]);
-				pdf_set_annot_default_appearance(ctx, selected_annot, text_font, text_size, text_color);
+				if (n == 3)
+					trace_action("annot.setDefaultAppearance(%q, %d, [%g, %g, %g]);\n",
+						text_font, text_size, text_color[0], text_color[1], text_color[2]);
+				else if (n == 1)
+					trace_action("annot.setDefaultAppearance(%q, %d, [%g]);\n",
+						text_font, text_size, text_color[0]);
+				pdf_set_annot_default_appearance(ctx, selected_annot, text_font, text_size, n, text_color);
 			}
 			ui_spacer();
 		}

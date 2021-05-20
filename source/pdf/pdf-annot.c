@@ -627,7 +627,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 
 				pdf_set_annot_rect(ctx, annot, text_rect);
 				pdf_set_annot_border(ctx, annot, 0);
-				pdf_set_annot_default_appearance(ctx, annot, "Helv", 12, black);
+				pdf_set_annot_default_appearance(ctx, annot, "Helv", 12, nelem(black), black);
 			}
 			break;
 
@@ -2491,7 +2491,7 @@ pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
 }
 
 void
-pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, float color[3])
+pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, int *n, float color[3])
 {
 	char buf[100], *p = buf, *tok, *end;
 	float stack[3] = { 0, 0, 0 };
@@ -2499,6 +2499,7 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 
 	*font = "Helv";
 	*size = 12;
+	*n = 1;
 	color[0] = color[1] = color[2] = 0;
 
 	fz_strlcpy(buf, da, sizeof buf);
@@ -2521,11 +2522,13 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 		}
 		else if (!strcmp(tok, "g"))
 		{
-			color[0] = color[1] = color[2] = stack[0];
+			*n = 1;
+			color[0] = stack[0];
 			top = 0;
 		}
 		else if (!strcmp(tok, "rg"))
 		{
+			*n = 3;
 			color[0] = stack[0];
 			color[1] = stack[1];
 			color[2] = stack[2];
@@ -2545,16 +2548,18 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 }
 
 void
-pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, const float color[3])
+pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, int n, const float color[3])
 {
-	if (color[0] > 0 || color[1] > 0 || color[2] > 0)
+	if (n == 3 && (color[0] > 0 || color[1] > 0 || color[2] > 0))
 		fz_snprintf(buf, nbuf, "/%s %g Tf %g %g %g rg", font, size, color[0], color[1], color[2]);
+	else if (n == 1 && (color[0] > 0 || color[1] > 0 || color[2] > 0))
+		fz_snprintf(buf, nbuf, "/%s %g Tf %g g", font, size, color[0]);
 	else
 		fz_snprintf(buf, nbuf, "/%s %g Tf", font, size);
 }
 
 void
-pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3])
+pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, int *n, float color[3])
 {
 	pdf_obj *da = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(DA));
 	if (!da)
@@ -2562,11 +2567,11 @@ pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **fon
 		pdf_obj *trailer = pdf_trailer(ctx, annot->page->doc);
 		da = pdf_dict_getl(ctx, trailer, PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(DA), NULL);
 	}
-	pdf_parse_default_appearance(ctx, pdf_to_str_buf(ctx, da), font, size, color);
+	pdf_parse_default_appearance(ctx, pdf_to_str_buf(ctx, da), font, size, n, color);
 }
 
 void
-pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, const float color[3])
+pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, int n, const float color[3])
 {
 	char buf[100];
 
@@ -2574,7 +2579,7 @@ pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *
 
 	fz_try(ctx)
 	{
-		pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, color);
+		pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, n, color);
 
 		pdf_dict_put_string(ctx, annot->obj, PDF_NAME(DA), buf, strlen(buf));
 

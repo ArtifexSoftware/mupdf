@@ -885,8 +885,9 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 	const char *font;
 	float size, color[3], black;
 	const char *da = pdf_to_str_buf(ctx, pdf_dict_get_inheritable(ctx, field, PDF_NAME(DA)));
+	int n;
 
-	pdf_parse_default_appearance(ctx, da, &font, &size, color);
+	pdf_parse_default_appearance(ctx, da, &font, &size, &n, color);
 
 	switch (pdf_array_len(ctx, col))
 	{
@@ -894,7 +895,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 		color[0] = color[1] = color[2] = 0;
 		break;
 	case 1:
-		color[0] = color[1] = color[2] = pdf_array_get_real(ctx, col, 0);
+		color[0] = pdf_array_get_real(ctx, col, 0);
 		break;
 	case 3:
 		color[0] = pdf_array_get_real(ctx, col, 0);
@@ -909,7 +910,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 		break;
 	}
 
-	pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, color);
+	pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, n, color);
 	pdf_dict_put_string(ctx, field, PDF_NAME(DA), buf, strlen(buf));
 	pdf_field_mark_dirty(ctx, field);
 }
