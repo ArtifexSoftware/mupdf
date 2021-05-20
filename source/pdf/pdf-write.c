@@ -3227,7 +3227,7 @@ int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
 }
 
 static void
-prepare_for_save(fz_context *ctx, pdf_document *doc, pdf_write_options *in_opts)
+prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in_opts)
 {
 	/* Rewrite (and possibly sanitize) the operator streams */
 	if (in_opts->do_clean || in_opts->do_sanitize)
@@ -3404,7 +3404,7 @@ ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *o
 }
 
 static void
-do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_write_options *in_opts)
+do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, const pdf_write_options *in_opts)
 {
 	int lastfree;
 	int num;
@@ -3641,7 +3641,7 @@ int pdf_has_unsaved_sigs(fz_context *ctx, pdf_document *doc)
 	return 0;
 }
 
-void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_write_options *in_opts)
+void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, const pdf_write_options *in_opts)
 {
 	pdf_write_options opts_defaults = pdf_default_write_options;
 	pdf_write_state opts = { 0 };
@@ -3670,7 +3670,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_
 	do_pdf_save_document(ctx, doc, &opts, in_opts);
 }
 
-void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *in_opts)
+void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, const pdf_write_options *in_opts)
 {
 	pdf_write_options opts_defaults = pdf_default_write_options;
 	pdf_write_state opts = { 0 };
