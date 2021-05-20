@@ -118,7 +118,7 @@ enum
 	PDF_CH_FIELD_IS_SORT = 1 << 19,
 	PDF_CH_FIELD_IS_MULTI_SELECT = 1 << 21,
 	PDF_CH_FIELD_IS_DO_NOT_SPELL_CHECK = 1 << 22,
-	PDF_CH_FIELD_IS_COMMIT_ON_SEL_CHANGE = 1 << 26,
+	PDF_CH_FIELD_IS_COMMIT_ON_SEL_CHANGE = 1 << 25,
 };
 
 void pdf_calculate_form(fz_context *ctx, pdf_document *doc);
