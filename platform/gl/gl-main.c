@@ -1537,6 +1537,27 @@ parse_location(const char *anchor, fz_location *loc)
 	return 1;
 }
 
+static void
+reload_or_start_journalling(fz_context *ctx, pdf_document *pdf)
+{
+	char journal[PATH_MAX];
+
+	fz_strlcpy(journal, filename, sizeof(journal));
+	fz_strlcat(journal, ".journal", sizeof(journal));
+
+	fz_try(ctx)
+	{
+		/* Probe with fz_file_exists to avoid 'can't find' errors. */
+		if (fz_file_exists(ctx, journal))
+			pdf_load_journal(ctx, pdf, journal);
+	}
+	fz_catch(ctx)
+	{
+		/* Ignore any failures here. */
+	}
+	pdf_enable_journal(ctx, pdf);
+}
+
 static void load_document(void)
 {
 	char accelpath[PATH_MAX];
@@ -1629,7 +1650,9 @@ static void load_document(void)
 			trace_action("doc.enableJS();\n");
 			pdf_enable_js(ctx, pdf);
 		}
-		pdf_enable_journal(ctx, pdf);
+
+		reload_or_start_journalling(ctx, pdf);
+
 		if (trace_file)
 		{
 			int vsns = pdf_count_versions(ctx, pdf);

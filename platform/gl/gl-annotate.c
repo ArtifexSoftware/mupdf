@@ -383,7 +383,11 @@ static void do_save_pdf_dialog(int for_signing)
 				pdf_format_write_options(ctx, opts_string, sizeof(opts_string), &save_opts);
 				trace_action("doc.save(%q,%q);\n", save_filename, opts_string);
 				if (do_snapshot)
+				{
 					pdf_save_snapshot(ctx, pdf, save_filename);
+					fz_strlcat(save_filename, ".journal", PATH_MAX);
+					pdf_save_journal(ctx, pdf, save_filename);
+				}
 				else
 				{
 					pdf_save_document(ctx, pdf, save_filename, &save_opts);
