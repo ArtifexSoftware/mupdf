@@ -608,7 +608,7 @@ static const char *string_from_line_ending(enum pdf_line_ending style)
 	case PDF_ANNOT_LE_CLOSED_ARROW: return "ClosedArrow";
 	case PDF_ANNOT_LE_BUTT: return "Butt";
 	case PDF_ANNOT_LE_R_OPEN_ARROW: return "ROpenArrow";
-	case PDF_ANNOT_LE_R_CLOSED_ARROW: return "RCloseArrow";
+	case PDF_ANNOT_LE_R_CLOSED_ARROW: return "RClosedArrow";
 	case PDF_ANNOT_LE_SLASH: return "Slash";
 	}
 }
