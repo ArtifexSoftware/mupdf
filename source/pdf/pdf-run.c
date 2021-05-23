@@ -68,7 +68,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 }
 
 static void
-pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	fz_matrix page_ctm;
 	pdf_obj *resources;
@@ -160,7 +160,7 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_m
 
 	fz_try(ctx)
 	{
-		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
+		pdf_run_page_contents_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
@@ -198,7 +198,7 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix 
 }
 
 static void
-pdf_run_page_widgets_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_widgets_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_widget *widget;
 
@@ -225,7 +225,7 @@ pdf_run_page_widgets_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *pa
 }
 
 static void
-pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_annots_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_annot *annot;
 
@@ -262,7 +262,7 @@ void pdf_run_page_annots(fz_context *ctx, pdf_page *page, fz_device *dev, fz_mat
 
 	fz_try(ctx)
 	{
-		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
+		pdf_run_page_annots_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
@@ -286,7 +286,7 @@ void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_ma
 
 	fz_try(ctx)
 	{
-		pdf_run_page_widgets_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
+		pdf_run_page_widgets_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
@@ -309,9 +309,9 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matr
 		pdf_mark_xref(ctx, doc);
 	fz_try(ctx)
 	{
-		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
-		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
-		pdf_run_page_widgets_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
+		pdf_run_page_contents_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
+		pdf_run_page_annots_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
+		pdf_run_page_widgets_with_usage_imp(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
