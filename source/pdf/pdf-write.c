@@ -3260,7 +3260,15 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in
 {
 	/* Rewrite (and possibly sanitize) the operator streams */
 	if (in_opts->do_clean || in_opts->do_sanitize)
-		clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii);
+	{
+		pdf_begin_operation(ctx, doc, "Clean content streams");
+		fz_try(ctx)
+			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii);
+		fz_always(ctx)
+			pdf_end_operation(ctx, doc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
 
 	/* When saving a PDF with signatures the file will
 	first be written once, then the file will have its
