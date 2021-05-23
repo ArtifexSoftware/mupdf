@@ -149,7 +149,7 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 	}
 }
 
-void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
 	int nocache;
@@ -171,6 +171,11 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_m
 	{
 		fz_rethrow(ctx);
 	}
+}
+
+void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+{
+	pdf_run_page_contents_with_usage(ctx, page, dev, ctm, "View", cookie);
 }
 
 void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
@@ -251,7 +256,7 @@ pdf_run_page_annots_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_page 
 	}
 }
 
-void pdf_run_page_annots(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+void pdf_run_page_annots_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
 	int nocache;
@@ -275,7 +280,12 @@ void pdf_run_page_annots(fz_context *ctx, pdf_page *page, fz_device *dev, fz_mat
 	}
 }
 
-void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+void pdf_run_page_annots(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+{
+	pdf_run_page_annots_with_usage(ctx, page, dev, ctm, "View", cookie);
+}
+
+void pdf_run_page_widgets_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
 	int nocache;
@@ -297,6 +307,11 @@ void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_ma
 	{
 		fz_rethrow(ctx);
 	}
+}
+
+void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
+{
+	pdf_run_page_widgets_with_usage(ctx, page, dev, ctm, "View", cookie);
 }
 
 void
