@@ -300,8 +300,9 @@ void pdf_run_page_widgets(fz_context *ctx, pdf_page *page, fz_device *dev, fz_ma
 }
 
 void
-pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
+pdf_run_page_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
+	pdf_document *doc = page->doc;
 	int nocache = !!(dev->hints & FZ_NO_CACHE);
 
 	if (nocache)
@@ -326,8 +327,7 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_d
 void
 pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
-	pdf_document *doc = page->doc;
-	pdf_run_page_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
+	pdf_run_page_with_usage(ctx, page, dev, ctm, "View", cookie);
 }
 
 void

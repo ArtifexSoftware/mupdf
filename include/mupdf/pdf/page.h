@@ -94,7 +94,7 @@ void pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm
 	cookie: A pointer to an optional fz_cookie structure that can be used
 	to track progress, collect errors etc.
 */
-void pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie);
+void pdf_run_page_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie);
 
 /*
 	Interpret a loaded page and render it on a device.
