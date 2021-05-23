@@ -7014,6 +7014,10 @@ int murun_main(int argc, char **argv)
 	js_dostring(J, "var Identity = Object.freeze([1,0,0,1,0,0]);");
 	js_dostring(J, "function Scale(sx,sy) { return [sx,0,0,sy,0,0]; }");
 	js_dostring(J, "function Translate(tx,ty) { return [1,0,0,1,tx,ty]; }");
+	js_dostring(J, "function Rotate(theta) { return ["
+			"Math.cos(theta * Math.PI / 180), Math.sin(theta * Math.PI / 180),"
+			"-Math.sin(theta * Math.PI / 180), Math.cos(theta * Math.PI / 180),"
+			"0, 0]; }");
 	js_dostring(J, "function Concat(a,b) { return ["
 			"a[0] * b[0] + a[1] * b[2],"
 			"a[0] * b[1] + a[1] * b[3],"
