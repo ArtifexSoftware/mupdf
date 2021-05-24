@@ -5766,6 +5766,34 @@ static void ffi_PDFAnnotation_setAuthor(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getCreationDate(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	double time;
+
+	fz_try(ctx)
+		time = pdf_annot_creation_date(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getglobal(J, "Date");
+	js_pushnumber(J, time * 1000);
+	js_construct(J, 1);
+}
+
+static void ffi_PDFAnnotation_setCreationDate(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	double time = js_tonumber(J, 1);
+
+	fz_try(ctx)
+		pdf_set_annot_creation_date(ctx, annot, time / 1000);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getModificationDate(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6777,6 +6805,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setOpacity", ffi_PDFAnnotation_setOpacity, 1);
 		jsB_propfun(J, "PDFAnnotation.getAuthor", ffi_PDFAnnotation_getAuthor, 0);
 		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
+		jsB_propfun(J, "PDFAnnotation.getCreationDate", ffi_PDFAnnotation_getCreationDate, 0);
+		jsB_propfun(J, "PDFAnnotation.setCreationDate", ffi_PDFAnnotation_setCreationDate, 1);
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.setModificationDate", ffi_PDFAnnotation_setModificationDate, 1);
 		jsB_propfun(J, "PDFAnnotation.getLineEndingStyles", ffi_PDFAnnotation_getLineEndingStyles, 0);
