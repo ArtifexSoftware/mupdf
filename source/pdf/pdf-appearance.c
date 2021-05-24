@@ -2652,11 +2652,17 @@ static pdf_obj *pdf_current_appearance_stream(fz_context *ctx, pdf_annot *annot,
 	pdf_obj *as = pdf_dict_get(ctx, annot->obj, PDF_NAME(AS));
 	pdf_obj *ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));
 	pdf_obj *ap_n = pdf_dict_get(ctx, ap, PDF_NAME(N));
-	if (annot->is_hot && annot->is_active && subtype == PDF_NAME(Widget))
+	if (annot->is_hot && annot->is_active)
 	{
 		pdf_obj *ap_d = pdf_dict_get(ctx, ap, PDF_NAME(D));
 		if (ap_d)
 			ap_n = ap_d;
+	}
+	else if (annot->is_hot)
+	{
+		pdf_obj *ap_r = pdf_dict_get(ctx, ap, PDF_NAME(R));
+		if (ap_r)
+			ap_n = ap_r;
 	}
 	if (!pdf_is_stream(ctx, ap_n))
 		ap_n = pdf_dict_get(ctx, ap_n, as);

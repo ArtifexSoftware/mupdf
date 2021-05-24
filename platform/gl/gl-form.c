@@ -628,7 +628,7 @@ void do_widget_canvas(fz_irect canvas_area)
 				trace_action("page.getWidgets()[%d].eventExit();\n", idx);
 				pdf_annot_event_exit(ctx, widget);
 			}
-			widget->is_hot = 0;
+			pdf_annot_set_hot(ctx, widget, 0);
 		}
 
 		/* Set is_hot and is_active to select current appearance */
