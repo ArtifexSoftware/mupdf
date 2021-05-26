@@ -2192,7 +2192,7 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 2);
 			pdf_dict_put(ctx, ap, PDF_NAME(N), ap_n);
 			pdf_dict_put(ctx, ap, PDF_NAME(D), ap_d);
-			annot->has_new_ap = 1;
+			pdf_set_annot_has_changed(ctx, annot);
 		}
 		fz_always(ctx)
 		{
@@ -2244,7 +2244,7 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			ap_n = pdf_dict_put_dict(ctx, ap, PDF_NAME(N), 2);
 			pdf_dict_put(ctx, ap_n, PDF_NAME(Off), ap_off);
 			pdf_dict_put(ctx, ap_n, as_yes, ap_yes);
-			annot->has_new_ap = 1;
+			pdf_set_annot_has_changed(ctx, annot);
 		}
 		fz_always(ctx)
 		{
@@ -2590,8 +2590,7 @@ pdf_update_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, fz_di
 		if (!ap)
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 1);
 		new_ap_n = pdf_new_xobject(ctx, doc, bbox, fz_identity, res, contents);
-		annot->needs_new_ap = 0;
-		annot->has_new_ap = 1;
+		pdf_set_annot_resynthesised(ctx, annot);
 		pdf_dict_put_drop(ctx, ap, PDF_NAME(N), new_ap_n);
 
 	}
@@ -2685,6 +2684,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 
 	fz_try(ctx)
 	{
+		int needs_resynth;
 		int local_synthesis = 0;
 
 		/* Never update Popup and Link annotations */
@@ -2706,7 +2706,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 
 		/* Check if the field is dirtied by JS events */
 		if (pdf_obj_is_dirty(ctx, annot->obj))
-			annot->needs_new_ap = 1;
+			pdf_annot_request_resynthesis(ctx, annot);
 
 		/* Find the current appearance stream, if one exists. */
 		ap_n = pdf_current_appearance_stream(ctx, annot, subtype);
@@ -2726,10 +2726,11 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 		}
 
 		/* We need to put this appearance stream back into the document. */
-		if (annot->needs_new_ap)
+		needs_resynth = pdf_annot_needs_resynthesis(ctx, annot);
+		if (needs_resynth)
 			local_synthesis = 0;
 
-		if (local_synthesis || annot->needs_new_ap)
+		if (local_synthesis || needs_resynth)
 		{
 			fz_display_list *dlist;
 			fz_rect rect, bbox;
@@ -2766,7 +2767,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 				pop_local_xref = 0;
 			}
 
-			annot->needs_new_ap = 0;
+			pdf_set_annot_resynthesised(ctx, annot);
 
 			/* Special case for Btn widgets that need multiple appearance streams. */
 			if (subtype == PDF_NAME(Widget) && ft == PDF_NAME(Btn))
@@ -2816,8 +2817,6 @@ void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 					new_ap_n = pdf_keep_obj(ctx, ap_n);
 					pdf_update_xobject(ctx, annot->page->doc, ap_n, bbox, matrix, res, buf);
 				}
-
-				annot->has_new_ap = 1;
 			}
 			fz_always(ctx)
 			{

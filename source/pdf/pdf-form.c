@@ -506,7 +506,7 @@ static void toggle_check_box(fz_context *ctx, pdf_annot *annot)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	annot->has_new_ap = 1;
+	pdf_set_annot_has_changed(ctx, annot);
 }
 
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc)
