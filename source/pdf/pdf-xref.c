@@ -1,5 +1,5 @@
 #include "mupdf/fitz.h"
-#include "mupdf/pdf.h"
+#include "pdf-annot-imp.h"
 
 #include <assert.h>
 #include <limits.h>

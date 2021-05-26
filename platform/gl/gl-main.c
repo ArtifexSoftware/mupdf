@@ -852,9 +852,9 @@ void load_page(void)
 					valid_until = pdf_validate_signature(ctx, w);
 					is_readonly = pdf_widget_is_readonly(ctx, w);
 					verifier = pkcs7_openssl_new_verifier(ctx);
-					cert_error = pdf_signature_error_description(pdf_check_certificate(ctx, verifier, pdf, w->obj));
-					digest_error = pdf_signature_error_description(pdf_check_digest(ctx, verifier, pdf, w->obj));
-					dn = pdf_signature_get_signatory(ctx, verifier, pdf, w->obj);
+					cert_error = pdf_signature_error_description(pdf_check_widget_certificate(ctx, verifier, w));
+					digest_error = pdf_signature_error_description(pdf_check_widget_digest(ctx, verifier, w));
+					dn = pdf_signature_get_widget_signatory(ctx, verifier, w);
 					if (dn)
 					{
 						char *s = pdf_signature_format_distinguished_name(ctx, dn);

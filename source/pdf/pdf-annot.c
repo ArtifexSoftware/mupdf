@@ -1,5 +1,5 @@
 #include "mupdf/fitz.h"
-#include "mupdf/pdf.h"
+#include "pdf-annot-imp.h"
 
 #include <string.h>
 
@@ -213,13 +213,18 @@ pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 pdf_annot *
 pdf_first_annot(fz_context *ctx, pdf_page *page)
 {
-	return page->annots;
+	return page ? page->annots : NULL;
 }
 
 pdf_annot *
 pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 {
-	return annot->next;
+	return annot ? annot->next : NULL;
+}
+
+pdf_obj *pdf_annot_obj(fz_context *ctx, pdf_annot *annot)
+{
+	return annot ? annot->obj : NULL;
 }
 
 fz_rect

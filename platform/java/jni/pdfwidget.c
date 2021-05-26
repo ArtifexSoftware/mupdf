@@ -292,15 +292,14 @@ FUN(PDFWidget_checkDigest)(JNIEnv *env, jobject self, jobject jverifier)
 {
 	fz_context *ctx = get_context(env);
 	pdf_widget *widget = from_PDFWidget_safe(env, self);
-	pdf_document *pdf = widget->page->doc;
 	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
 	pdf_signature_error ret = PDF_SIGNATURE_ERROR_UNKNOWN;
 
-	if (!ctx || !widget || !pdf) return PDF_SIGNATURE_ERROR_UNKNOWN;
+	if (!ctx || !widget) return PDF_SIGNATURE_ERROR_UNKNOWN;
 	if (!verifier) jni_throw_arg(env, "verifier must not be null");
 
 	fz_try(ctx)
-		ret = pdf_check_digest(ctx, &verifier->base, pdf, widget->obj);
+		ret = pdf_check_widget_digest(ctx, &verifier->base, widget);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -345,7 +344,7 @@ FUN(PDFWidget_getDistinguishedName)(JNIEnv *env, jobject self, jobject jverifier
 
 	fz_try(ctx)
 	{
-		name = pdf_signature_get_signatory(ctx, &verifier->base, pdf, widget->obj);
+		name = pdf_signature_get_widget_signatory(ctx, &verifier->base, widget);
 
 		jcn = (*env)->NewStringUTF(env, name->cn);
 		if (!jcn)
