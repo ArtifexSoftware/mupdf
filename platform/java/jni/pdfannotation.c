@@ -913,3 +913,34 @@ FUN(PDFAnnotation_setLanguage)(JNIEnv *env, jobject self, jint lang)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getQuadding)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int quadding;
+
+	if (!ctx || !annot) return 0;
+
+	fz_try(ctx)
+		quadding = pdf_annot_quadding(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return quadding;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setQuadding)(JNIEnv *env, jobject self, jint quadding)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_quadding(ctx, annot, quadding);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

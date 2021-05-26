@@ -1866,6 +1866,23 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLanguage
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLanguage
   (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getQuadding
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadding
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setQuadding
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setQuadding
+  (JNIEnv *, jobject, jint);
+
 #ifdef __cplusplus
 }
 #endif
