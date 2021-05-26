@@ -6063,6 +6063,29 @@ static void ffi_PDFAnnotation_process(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getHot(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int hot;
+	fz_try(ctx)
+		hot = pdf_annot_hot(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, hot);
+}
+
+static void ffi_PDFAnnotation_setHot(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int hot = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_annot_set_hot(ctx, annot, hot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFWidget_getFieldType(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6899,6 +6922,9 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.update", ffi_PDFAnnotation_update, 0);
+
+		jsB_propfun(J, "PDFAnnotation.getHot", ffi_PDFAnnotation_getHot, 0);
+		jsB_propfun(J, "PDFAnnotation.setHot", ffi_PDFAnnotation_setHot, 1);
 
 		jsB_propfun(J, "PDFAnnotation.process", ffi_PDFAnnotation_process, 1);
 	}
