@@ -224,4 +224,5 @@ public class PDFAnnotation
 	public native PDFObject getObject();
 
 	public native int getLanguage();
+	public native void setLanguage(int lang);
 }

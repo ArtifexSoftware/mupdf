@@ -888,8 +888,28 @@ FUN(PDFAnnotation_getLanguage)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int lang;
 
 	if (!ctx || !annot) return FZ_LANG_UNSET;
 
-	return pdf_annot_language(ctx, annot);
+	fz_try(ctx)
+		lang = pdf_annot_language(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return lang;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setLanguage)(JNIEnv *env, jobject self, jint lang)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_language(ctx, annot, lang);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
 }

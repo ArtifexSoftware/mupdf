@@ -1859,6 +1859,13 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getObject
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLanguage
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLanguage
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLanguage
+  (JNIEnv *, jobject, jint);
 #ifdef __cplusplus
 }
 #endif
