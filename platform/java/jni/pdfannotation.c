@@ -1011,3 +1011,68 @@ FUN(PDFAnnotation_updateAppearance)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getDefaultAppearance)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jobject jda = NULL;
+	jobject jfont = NULL;
+	jobject jcolor = NULL;
+	const char *font = NULL;
+	float color[4] = { 0 };
+	float size = 0;
+	int n = 0;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jfont = (*env)->NewStringUTF(env, font);
+	if (!jfont || (*env)->ExceptionCheck(env)) return NULL;
+
+	jcolor = (*env)->NewFloatArray(env, n);
+	if (!jcolor || (*env)->ExceptionCheck(env)) return NULL;
+	(*env)->SetFloatArrayRegion(env, jcolor, 0, n, color);
+	if ((*env)->ExceptionCheck(env)) return NULL;
+
+	jda = (*env)->NewObject(env, cls_DefaultAppearance, mid_DefaultAppearance_init);
+	if (!jda) return NULL;
+
+	(*env)->SetObjectField(env, jda, fid_DefaultAppearance_font, jfont);
+	(*env)->SetFloatField(env, jda, fid_DefaultAppearance_size, size);
+	(*env)->SetObjectField(env, jda, fid_DefaultAppearance_color, jcolor);
+
+	return jda;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setDefaultAppearance)(JNIEnv *env, jobject self, jstring jfont, jfloat size, jobject jcolor)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *font = NULL;
+	float color[4] = { 0 };
+	int n = 0;
+
+	if (!ctx || !annot) return;
+	if (!jfont) jni_throw_arg_void(env, "font must not be null");
+
+	font = (*env)->GetStringUTFChars(env, jfont, NULL);
+	if (!font) jni_throw_oom_void(env, "can not get characters in font name string");
+
+	if (!from_jfloatArray(env, color, nelem(color), jcolor)) return;
+	if (jcolor)
+		n = (*env)->GetArrayLength(env, jcolor);
+
+	fz_try(ctx)
+		pdf_set_annot_default_appearance(ctx, annot, font, size, n, color);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfont, font);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

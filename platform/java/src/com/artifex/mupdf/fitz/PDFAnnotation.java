@@ -232,4 +232,7 @@ public class PDFAnnotation
 
 	public native Point[] getLine();
 	public native void setLine(Point a, Point b);
+
+	public native DefaultAppearance getDefaultAppearance();
+	public native void setDefaultAppearance(String font, float size, float[] color);
 }

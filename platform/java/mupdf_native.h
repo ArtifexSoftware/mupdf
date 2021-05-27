@@ -1907,6 +1907,22 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLine
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLine
   (JNIEnv *, jobject, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getDefaultAppearance
+ * Signature: ()Lcom/artifex/mupdf/fitz/DefaultAppearance;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getDefaultAppearance
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setDefaultAppearance
+ * Signature: (Ljava/lang/String;F[F)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setDefaultAppearance
+  (JNIEnv *, jobject, jstring, jfloat, jfloatArray);
+
 #ifdef __cplusplus
 }
 #endif
