@@ -251,6 +251,12 @@ Tools required to build:
         wrappers for these fz_*() functions are ommited from the generated C++
         code.
 
+        On unix it seems that clang-python packages such as Debian's
+        python-clang and OpenBSD's py3-llvm require us to explicitly specify
+        the location of libclang. Alternatively on Linux one can use our --venv
+        option to run in a venv that has done 'pip install libclang', which
+        makes clang available directly as a Python module.
+
     SWIG:
 
         We work with swig-3 and swig-4. If swig-4 is used, we propogate
@@ -541,6 +547,21 @@ Usage:
                     * Imports mupdf and checks basic functionality.
                 * Deactivates the Python environment.
 
+        --venv <venv> ...
+            Runs mupdfwrap.py in a venv containing clang installed with 'pip
+            install libclang', passing remaining args. This seems to be the
+            only way to use clang from python on Windows.
+
+            E.g.:
+                --venv --swig-windows-auto -b all -t
+
+        --windows-cmd ...
+            Runs mupdfwrap.py via cmd.exe, passing remaining args. Useful to
+            get from cygwin to native Windows.
+
+            E.g.:
+                --windows-cmd --windows-venv pylocal --swig-windows-auto -b all
+
     Examples:
 
         ./scripts/mupdfwrap.py -b all -t
@@ -555,6 +576,9 @@ Usage:
 
         python3 -m cProfile -s cumulative ./scripts/mupdfwrap.py -b 0
             Profile generation of C++ source code.
+
+        ./scripts/mupdfwrap.py --venv pylocal --swig-windows-auto -b all -t
+            Build and test on Windows.
 
 
 '''
@@ -597,30 +621,27 @@ assert sys.version_info[0] == 3 and sys.version_info[1] >= 6, (
 try:
     try:
         import clang.cindex
-
     except ModuleNotFoundError as e:
-
-        #print(f'"import clang.cindex" failed: {e}')
-        #print(f'sys.executable={sys.executable}')
 
         # On devuan, clang-python isn't on python3's path, but python2's
         # clang-python works fine with python3, so we deviously get the path by
         # running some python 2.
         #
-        clang_path = jlib.system( 'python2 -c "import clang; print clang.__path__[0]"', out='return')
+        e, clang_path = jlib.system( 'python2 -c "import clang; print clang.__path__[0]"', out='return', raise_errors=0)
 
-        #log( 'Retrying import of clang using info from python2 {clang_path=}')
-
-        sys.path.append( os.path.dirname( clang_path))
-        import clang.cindex
+        if e == 0:
+            log( 'Retrying import of clang using info from python2 {clang_path=}')
+            sys.path.append( os.path.dirname( clang_path))
+            import clang.cindex
+        else:
+            raise
 
 except Exception as e:
-    print(''
-            + f'{__file__}: Warning, failed to import clang.cindex: {e}\n'
-            + f'    We need Clang Python to build MuPDF python.\n'
-            + f'    For example install with:\n'
-            + f'        OpenBSD: pkg_add py3-llvm\n'
-            + f'        Linux:debian/devuan: apt install python-clang\n'
+    log('Warning: failed to import clang.cindex: {e=}\n'
+            f'We need Clang Python to build MuPDF python.\n'
+            f'Install with "pip install libclang" or use the --venv option, or:\n'
+            f'    OpenBSD: pkg_add py3-llvm\n'
+            f'    Linux:debian/devuan: apt install python-clang\n'
             )
     clang = None
 
@@ -643,6 +664,10 @@ class ClangInfo:
         clang.cindex.Config.set_library_file(). This appears to be necessary
         even when clang is installed as a standard package.
         '''
+        if g_windows:
+            # We require 'pip install libclang' which avoids the need to look
+            # for libclang.
+            return
         for version in 10, 9, 8, 7, 6,:
             ok = self._try_init_clang( version)
             if ok:
@@ -5128,13 +5153,13 @@ def cpp_source( dir_mupdf, namespace, base, header_git, out_swig_c, out_swig_pyt
         with open( temp_h, 'w') as f:
             f.write( '#include "mupdf/fitz.h"\n')
             f.write( '#include "mupdf/pdf.h"\n')
-        tu = index.parse(
-                    temp_h,
-                    args=(
-                            '-I', f'{dir_mupdf}/include',
-                            '-I', clang_info().include_path,
-                            ),
-                    )
+        args = []
+        args.append(['-I', f'{dir_mupdf}/include'])
+        if g_windows:
+            args = ('-I', f'{dir_mupdf}/include')
+        else:
+            args = ('-I', f'{dir_mupdf}/include', '-I', clang_info().include_path)
+        tu = index.parse( temp_h, args=args)
     finally:
         if os.path.isfile( temp_h):
             os.remove( temp_h)
@@ -6232,6 +6257,16 @@ def cpu_name():
     #log(f'sys.maxsize={hex(sys.maxsize)}')
     return f'x{32 if sys.maxsize == 2**31 else 64}'
 
+def abspath(path):
+    '''
+    Like os.path.absath() but converts backslashes to forward slashes; this
+    simplifies things on Windows - allows us to use '/' as directory separator
+    when constructing paths, which is simpler than using os.sep everywhere.
+    '''
+    ret = os.path.abspath(path)
+    ret = ret.replace('\\', '/')
+    return ret
+
 class BuildDirs:
     '''
     Locations of various generated files.
@@ -6239,17 +6274,17 @@ class BuildDirs:
     def __init__( self):
 
         # Assume we are in mupdf/scripts/.
-        file_ = os.path.abspath( __file__)
-        assert file_.endswith( f'{os.sep}scripts{os.sep}mupdfwrap.py'), \
+        file_ = abspath( __file__)
+        assert file_.endswith( f'/scripts/mupdfwrap.py'), \
                 'Unexpected __file__=%s file_=%s' % (__file__, file_)
-        dir_mupdf = os.path.abspath( f'{file_}/../../')
+        dir_mupdf = abspath( f'{file_}/../../')
         assert not dir_mupdf.endswith( '/')
 
         # Directories used with --build.
         self.dir_mupdf = dir_mupdf
 
         # Directory used with --ref.
-        self.ref_dir = os.path.abspath( f'{self.dir_mupdf}/mupdfwrap_ref')
+        self.ref_dir = abspath( f'{self.dir_mupdf}/mupdfwrap_ref')
         assert not self.ref_dir.endswith( '/')
 
         if g_windows:
@@ -6263,7 +6298,7 @@ class BuildDirs:
         '''
         Sets self.dir_so and also updates self.cpp_flags etc.
         '''
-        dir_so = os.path.abspath( dir_so)
+        dir_so = abspath( dir_so)
         self.dir_so = dir_so
 
         if 0: pass  # lgtm [py/unreachable-statement]
@@ -6555,6 +6590,7 @@ def main():
                                     f'{build_dirs.dir_mupdf}/platform/c++/include/', '.h',
                                     ):
                                 for path in jlib.get_filenames( dir_):
+                                    path = path.replace('\\', '/')
                                     _, ext = os.path.splitext( path)
                                     if ext not in ('.h', '.cpp'):
                                         continue
@@ -7262,6 +7298,37 @@ def main():
 
             elif arg == '--test-swig':
                 test_swig()
+
+            elif arg == '--venv':
+                venv = args.next()
+                args_tail = ''
+                while 1:
+                    try:
+                        args_tail += ' ' + args.next()
+                    except StopIteration:
+                        break
+                commands = (
+                        f'"{sys.executable}" -m venv {venv}',
+                        f'{venv}\\Scripts\\activate.bat',
+                        # Upgrading pip seems to fail on some Windows systems,
+                        # even when retrying after first failure.
+                        #f'(pip install --upgrade pip || pip install --upgrade pip)',
+                        f'pip install libclang',
+                        f'python {sys.argv[0]} {args_tail}',
+                        f'deactivate',
+                        )
+                command = '&&'.join(commands)
+                jlib.system(command, out='log', verbose=1)
+
+            elif arg == '--windows-cmd':
+                args_tail = ''
+                while 1:
+                    try:
+                        args_tail += f' {args.next()}'
+                    except StopIteration:
+                        break
+                command = f'cmd.exe /c "py {sys.argv[0]} {args_tail}"'
+                jlib.system(command, out='log', verbose=1)
 
             else:
                 raise Exception( f'unrecognised arg: {arg}')
