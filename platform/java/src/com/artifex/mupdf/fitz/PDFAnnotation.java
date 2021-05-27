@@ -219,6 +219,7 @@ public class PDFAnnotation
 	public native void eventFocus();
 	public native void eventBlur();
 
+	public native void updateAppearance();
 	public native boolean update();
 
 	public native PDFObject getObject();

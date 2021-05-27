@@ -997,3 +997,17 @@ FUN(PDFAnnotation_setLine)(JNIEnv *env, jobject self, jobject ja, jobject jb)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_updateAppearance)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_update_appearance(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
