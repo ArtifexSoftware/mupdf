@@ -944,3 +944,56 @@ FUN(PDFAnnotation_setQuadding)(JNIEnv *env, jobject self, jint quadding)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getLine)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point points[2] = { 0 };
+	jobject jline = NULL;
+	jobject jpoint = NULL;
+	size_t i = 0;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		pdf_annot_line(ctx, annot, &points[0], &points[1]);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jline = (*env)->NewObjectArray(env, nelem(points), cls_Point, NULL);
+	if (!jline || (*env)->ExceptionCheck(env)) return NULL;
+
+	for (i = 0; i < nelem(points); i++)
+	{
+		jpoint = (*env)->NewObject(env, cls_Point, mid_Point_init, points[i].x, points[i].y);
+		if (!jpoint || (*env)->ExceptionCheck(env)) return NULL;
+		(*env)->SetObjectArrayElement(env, jline, i, jpoint);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+		(*env)->DeleteLocalRef(env, jpoint);
+	}
+
+	return jline;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setLine)(JNIEnv *env, jobject self, jobject ja, jobject jb)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point a, b;
+
+	if (!ctx || !annot) return;
+	if (!ja || !jb) jni_throw_arg_void(env, "line points must not be null");
+
+	a.x = (*env)->GetFloatField(env, ja, fid_Point_x);
+	a.y = (*env)->GetFloatField(env, ja, fid_Point_y);
+	b.x = (*env)->GetFloatField(env, jb, fid_Point_x);
+	b.y = (*env)->GetFloatField(env, jb, fid_Point_y);
+
+	fz_try(ctx)
+		pdf_set_annot_line(ctx, annot, a, b);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

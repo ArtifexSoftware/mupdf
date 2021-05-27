@@ -228,4 +228,7 @@ public class PDFAnnotation
 
 	public native int getQuadding();
 	public native void setQuadding(int quadding);
+
+	public native Point[] getLine();
+	public native void setLine(Point a, Point b);
 }
