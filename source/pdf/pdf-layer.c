@@ -680,8 +680,6 @@ pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *
 			else
 			{
 				on = pdf_is_ocg_hidden(ctx, doc, rdb, usage, obj);
-				if ((combine & 1) == 0)
-					on = !on;
 			}
 		}
 		fz_always(ctx)
