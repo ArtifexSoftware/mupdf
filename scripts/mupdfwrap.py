@@ -4625,10 +4625,6 @@ def struct_to_string_fns(
     Writes functions for text representation of struct/wrapper-class members.
     '''
     out_h.write( f'\n')
-    out_h.write( f'/* Writes {structname}\'s members, labelled and inside (...), to a stream. */\n')
-    out_h.write( f'FZ_FUNCTION std::ostream& operator<< (std::ostream& out, const {structname}& rhs);\n')
-
-    out_h.write( f'\n')
     out_h.write( f'/* Returns string containing a {structname}\'s members, labelled and inside (...), using operator<<. */\n')
     out_h.write( f'FZ_FUNCTION std::string to_string_{structname}(const {structname}& s);\n')
 
@@ -4636,6 +4632,39 @@ def struct_to_string_fns(
     out_h.write( f'/* Returns string containing a {structname}\'s members, labelled and inside (...), using operator<<.\n')
     out_h.write( f'(Convenience overload). */\n')
     out_h.write( f'FZ_FUNCTION std::string to_string(const {structname}& s);\n')
+
+    out_cpp.write( f'\n')
+    out_cpp.write( f'FZ_FUNCTION std::string to_string_{structname}(const {structname}& s)\n')
+    out_cpp.write( f'{{\n')
+    out_cpp.write( f'    std::ostringstream buffer;\n')
+    out_cpp.write( f'    buffer << s;\n')
+    out_cpp.write( f'    return buffer.str();\n')
+    out_cpp.write( f'}}\n')
+
+    out_cpp.write( f'\n')
+    out_cpp.write( f'FZ_FUNCTION std::string to_string(const {structname}& s)\n')
+    out_cpp.write( f'{{\n')
+    out_cpp.write( f'    return to_string_{structname}(s);\n')
+    out_cpp.write( f'}}\n')
+
+
+def struct_to_string_streaming_fns(
+        tu,
+        namespace,
+        struct,
+        structname,
+        extras,
+        out_h,
+        out_cpp,
+        ):
+    '''
+    Writes operator<< functions for streaming text representation of C struct
+    members. Should be called at top-level (i.e. not inside 'namespace mupdf
+    {...}') in out_h and out_cpp.
+    '''
+    out_h.write( f'\n')
+    out_h.write( f'/* Writes {structname}\'s members, labelled and inside (...), to a stream. */\n')
+    out_h.write( f'FZ_FUNCTION std::ostream& operator<< (std::ostream& out, const {structname}& rhs);\n')
 
     out_cpp.write( f'\n')
     out_cpp.write( f'FZ_FUNCTION std::ostream& operator<< (std::ostream& out, const {structname}& rhs)\n')
@@ -4654,21 +4683,6 @@ def struct_to_string_fns(
     out_cpp.write( f'            << ")"\n');
     out_cpp.write( f'            ;\n')
     out_cpp.write( f'    return out;\n')
-    out_cpp.write( f'}}\n')
-    out_cpp.write( f'\n')
-
-    out_cpp.write( f'\n')
-    out_cpp.write( f'FZ_FUNCTION std::string to_string_{structname}(const {structname}& s)\n')
-    out_cpp.write( f'{{\n')
-    out_cpp.write( f'    std::ostringstream buffer;\n')
-    out_cpp.write( f'    buffer << s;\n')
-    out_cpp.write( f'    return buffer.str();\n')
-    out_cpp.write( f'}}\n')
-
-    out_cpp.write( f'\n')
-    out_cpp.write( f'FZ_FUNCTION std::string to_string(const {structname}& s)\n')
-    out_cpp.write( f'{{\n')
-    out_cpp.write( f'    return to_string_{structname}(s);\n')
     out_cpp.write( f'}}\n')
 
 
@@ -5531,6 +5545,20 @@ def cpp_source( dir_mupdf, namespace, base, header_git, out_swig_c, out_swig_pyt
             continue
         make_namespace_close( namespace, file)
 
+    # Write operator<< functions - these need to be outside the namespace.
+    #
+    for classname, struct, structname in classes:
+        extras = classextras.get( structname)
+        if extras.pod:
+            struct_to_string_streaming_fns(
+                    tu,
+                    namespace,
+                    struct,
+                    structname,
+                    extras,
+                    out_hs.functions,
+                    out_cpps.functions,
+                    )
 
     # Terminate multiple-inclusion guards in headers:
     #
