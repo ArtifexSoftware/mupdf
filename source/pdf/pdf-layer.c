@@ -517,6 +517,60 @@ ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, const char *name)
 	return 0;
 }
 
+
+int pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg);
+/*
+Compute the state of a /VE entry (visibility expression).
+Recursive function: parameter ve may be an array or a dict.
+*/
+static int
+calc_ve_status(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve)
+{
+    if (pdf_is_dict(ctx, ve)) { // an OCG: return its state
+        return !pdf_is_ocg_hidden(ctx, doc, rdb, usage, ve);
+    }
+    int i, on, ve_len = pdf_array_len(ctx, ve);
+    pdf_obj *obj;
+    if (ve_len < 2) { // VE must have len of at least 2
+        return 0;
+    }
+    char *code = pdf_to_name(ctx, pdf_array_get(ctx, ve, 0));
+    if (strcomp(code, "Not") == 0) {
+        if (ve_len != 2) { // a Not must have len 2
+            return 0;
+        }
+        obj = pdf_array_get(ctx, ve, 1);
+        if (pdf_is_dict(ctx, obj)) {
+            return !pdf_is_ocg_hidden(ctx, doc, rdb, usage, obj);
+        }
+        if (!pdf_is_array(ctx, obj)) {
+            return 0;
+        }
+        return calc_ve_status(ctx, doc, rdb, usage, obj);
+    }
+    else if (strcomp(code, "And") == 0) {
+        for (i = 1; i < ve_len; i++) {
+            obj = pdf_array_get(ctx, ve, i);
+            on = calc_ve_status(ctx, doc, rdb, usage, obj);
+            if (!on) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (strcomp(code, "Or") == 0) {
+        for (i = 1; i < ve_len; i++) {
+            obj = pdf_array_get(ctx, ve, i);
+            on = calc_ve_status(ctx, doc, rdb, usage, obj);
+            if (on) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+    return 0;
+}
+
 int
 pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg)
 {
@@ -634,8 +688,7 @@ pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
 		if (pdf_is_array(ctx, obj)) {
-			/* FIXME: Calculate visibility from array */
-			return 0;
+			return calc_ve_status(ctx, doc, rdb, usage, ve);
 		}
 		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
