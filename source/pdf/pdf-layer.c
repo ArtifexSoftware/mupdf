@@ -534,8 +534,8 @@ calc_ve_status(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usa
     if (ve_len < 2) { // VE must have len of at least 2
         return 0;
     }
-    char *code = pdf_to_name(ctx, pdf_array_get(ctx, ve, 0));
-    if (strcomp(code, "Not") == 0) {
+    const char *code = pdf_to_name(ctx, pdf_array_get(ctx, ve, 0));
+    if (strcmp(code, "Not") == 0) {
         if (ve_len != 2) { // a Not must have len 2
             return 0;
         }
@@ -548,7 +548,7 @@ calc_ve_status(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usa
         }
         return calc_ve_status(ctx, doc, rdb, usage, obj);
     }
-    else if (strcomp(code, "And") == 0) {
+    else if (strcmp(code, "And") == 0) {
         for (i = 1; i < ve_len; i++) {
             obj = pdf_array_get(ctx, ve, i);
             on = calc_ve_status(ctx, doc, rdb, usage, obj);
@@ -558,7 +558,7 @@ calc_ve_status(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usa
         }
         return 1;
     }
-    else if (strcomp(code, "Or") == 0) {
+    else if (strcmp(code, "Or") == 0) {
         for (i = 1; i < ve_len; i++) {
             obj = pdf_array_get(ctx, ve, i);
             on = calc_ve_status(ctx, doc, rdb, usage, obj);
@@ -688,7 +688,7 @@ pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
 		if (pdf_is_array(ctx, obj)) {
-			return calc_ve_status(ctx, doc, rdb, usage, ve);
+			return calc_ve_status(ctx, doc, rdb, usage, obj);
 		}
 		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
