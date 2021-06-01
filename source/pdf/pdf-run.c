@@ -54,7 +54,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		ctm = fz_concat(page_ctm, ctm);
 
 		proc = pdf_new_run_processor(ctx, dev, ctm, usage, NULL, default_cs, cookie);
-		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
+		pdf_process_annot(ctx, proc, annot, cookie);
 		pdf_close_processor(ctx, proc);
 	}
 	fz_always(ctx)
