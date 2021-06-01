@@ -522,53 +522,58 @@ int pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 /*
 Compute the state of a /VE entry (visibility expression).
 Recursive function: parameter ve may be an array or a dict.
+Return true for ON, false for OFF.
 */
 static int
-calc_ve_status(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve)
+calc_ve_state(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve)
 {
-    if (pdf_is_dict(ctx, ve)) { // an OCG: return its state
-        return !pdf_is_ocg_hidden(ctx, doc, rdb, usage, ve);
-    }
-    int i, on, ve_len = pdf_array_len(ctx, ve);
-    pdf_obj *obj;
-    if (ve_len < 2) { // VE must have len of at least 2
-        return 0;
-    }
-    const char *code = pdf_to_name(ctx, pdf_array_get(ctx, ve, 0));
-    if (strcmp(code, "Not") == 0) {
-        if (ve_len != 2) { // a Not must have len 2
-            return 0;
-        }
-        obj = pdf_array_get(ctx, ve, 1);
-        if (pdf_is_dict(ctx, obj)) {
-            return !pdf_is_ocg_hidden(ctx, doc, rdb, usage, obj);
-        }
-        if (!pdf_is_array(ctx, obj)) {
-            return 0;
-        }
-        return calc_ve_status(ctx, doc, rdb, usage, obj);
-    }
-    else if (strcmp(code, "And") == 0) {
-        for (i = 1; i < ve_len; i++) {
-            obj = pdf_array_get(ctx, ve, i);
-            on = calc_ve_status(ctx, doc, rdb, usage, obj);
-            if (!on) {
-                return 0;
-            }
-        }
-        return 1;
-    }
-    else if (strcmp(code, "Or") == 0) {
-        for (i = 1; i < ve_len; i++) {
-            obj = pdf_array_get(ctx, ve, i);
-            on = calc_ve_status(ctx, doc, rdb, usage, obj);
-            if (on) {
-                return 1;
-            }
-        }
-        return 0;
-    }
-    return 0;
+	int i, ve_len = pdf_array_len(ctx, ve);
+	pdf_obj *obj;
+
+	if (pdf_is_dict(ctx, ve))
+	{ // an OCG: return its state
+		return !pdf_is_hidden_ocg(ctx, doc, rdb, usage, ve);
+	}
+
+	if (ve_len < 2)
+	{ // VE must have len of at least 2, else be visible
+		return 1;
+	}
+	const char *code = pdf_to_name(ctx, pdf_array_get(ctx, ve, 0));
+	if (strcmp(code, "Not") == 0)
+	{
+		if (ve_len != 2)
+		{ // Not must have len 2, else be visible
+			return 1;
+		}
+		obj = pdf_array_get(ctx, ve, 1);
+		return !calc_ve_state(ctx, doc, rdb, usage, obj);
+	}
+	else if (strcmp(code, "And") == 0)
+	{
+		for (i = 1; i < ve_len; i++)
+		{
+			obj = pdf_array_get(ctx, ve, i);
+			if (!calc_ve_state(ctx, doc, rdb, usage, obj))
+			{
+				return 0;
+			}
+		}
+		return 1;
+	}
+	else if (strcmp(code, "Or") == 0)
+	{
+		for (i = 1; i < ve_len; i++)
+		{
+			obj = pdf_array_get(ctx, ve, i);
+			if (calc_ve_state(ctx, doc, rdb, usage, obj))
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}
+	return 1; // unknown keyword, be visible
 }
 
 int
@@ -688,7 +693,7 @@ pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
 		if (pdf_is_array(ctx, obj)) {
-			return calc_ve_status(ctx, doc, rdb, usage, obj);
+			return !calc_ve_state(ctx, doc, rdb, usage, obj);
 		}
 		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
@@ -732,7 +737,7 @@ pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *
 			}
 			else
 			{
-				on = pdf_is_ocg_hidden(ctx, doc, rdb, usage, obj);
+				on = !pdf_is_ocg_hidden(ctx, doc, rdb, usage, obj);
 			}
 		}
 		fz_always(ctx)
