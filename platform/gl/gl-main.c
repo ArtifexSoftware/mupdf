@@ -1966,19 +1966,18 @@ static void do_app(void)
 			}
 			search_hit_page = fz_make_location(-1, -1);
 			break;
-
 		default:
-			if (ui.key >= '0' && ui.key <= '9')
-			{
-				number = number * 10 + ui.key - '0';
-			}
-			else
+			if (ui.key < '0' || ui.key > '9')
 			{
 				number = 0;
-				return; // unknown key event
+				return; /* unrecognized key, pass it through */
 			}
-			break;
 		}
+
+		if (ui.key >= '0' && ui.key <= '9')
+			number = number * 10 + ui.key - '0';
+		else
+			number = 0;
 
 		currentpage = fz_clamp_location(ctx, doc, currentpage);
 		while (currentrotate < 0) currentrotate += 360;
