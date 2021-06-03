@@ -151,6 +151,15 @@ pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 pdf_obj *pdf_annot_obj(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Returns a borrowed reference to the page to which
+	an annotation belongs.
+
+	The caller should fz_keep this if it intends to hold the
+	pointer. Unless it fz_keeps it, it must not fz_drop it.
+*/
+pdf_page *pdf_annot_page(fz_context *ctx, pdf_annot *annot);
+
+/*
 	Return the rectangle for an annotation on a page.
 */
 fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
@@ -639,8 +648,8 @@ int pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
 pdf_obj *pdf_annot_ap(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_active(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_set_active(fz_context *ctx, pdf_annot *annot, int active);
+void pdf_set_annot_active(fz_context *ctx, pdf_annot *annot, int active);
 int pdf_annot_hot(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_set_hot(fz_context *ctx, pdf_annot *annot, int hot);
+void pdf_set_annot_hot(fz_context *ctx, pdf_annot *annot, int hot);
 
 #endif

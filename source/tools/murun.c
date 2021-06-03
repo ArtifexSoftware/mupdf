@@ -6081,7 +6081,7 @@ static void ffi_PDFAnnotation_setHot(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	int hot = js_tonumber(J, 1);
 	fz_try(ctx)
-		pdf_annot_set_hot(ctx, annot, hot);
+		pdf_set_annot_hot(ctx, annot, hot);
 	fz_catch(ctx)
 		rethrow(J);
 }

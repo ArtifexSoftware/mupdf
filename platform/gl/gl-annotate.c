@@ -1870,7 +1870,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 
 		if (ui_mouse_inside(canvas_area) && ui_mouse_inside(area))
 		{
-			pdf_annot_set_hot(ctx, annot, 1);
+			pdf_set_annot_hot(ctx, annot, 1);
 
 			ui.hot = annot;
 			if (!ui.active && ui.down)
@@ -1887,7 +1887,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 		}
 		else
 		{
-			pdf_annot_set_hot(ctx, annot, 0);
+			pdf_set_annot_hot(ctx, annot, 0);
 		}
 
 		if (annot == selected_annot)

@@ -599,7 +599,7 @@ void do_widget_canvas(fz_irect canvas_area)
 				trace_action("page.getWidgets()[%d].eventEnter();\n", idx);
 				pdf_annot_event_enter(ctx, widget);
 			}
-			pdf_annot_set_hot(ctx, widget, 1);
+			pdf_set_annot_hot(ctx, widget, 1);
 
 			ui.hot = widget;
 			if (!ui.active && ui.down)
@@ -628,11 +628,11 @@ void do_widget_canvas(fz_irect canvas_area)
 				trace_action("page.getWidgets()[%d].eventExit();\n", idx);
 				pdf_annot_event_exit(ctx, widget);
 			}
-			pdf_annot_set_hot(ctx, widget, 0);
+			pdf_set_annot_hot(ctx, widget, 0);
 		}
 
 		/* Set is_hot and is_active to select current appearance */
-		pdf_annot_set_active(ctx, widget, (ui.active == widget && ui.down));
+		pdf_set_annot_active(ctx, widget, (ui.active == widget && ui.down));
 
 		if (showform)
 		{
