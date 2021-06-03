@@ -1220,10 +1220,10 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Bad journal format");
 		obj = pdf_parse_dict(ctx, doc, stm, &doc->lexbuf.base);
 
-		nis = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME(NumSections)));
+		nis = pdf_dict_get_int(ctx, obj, PDF_NAME(NumSections));
 		pdf_fingerprint_file(ctx, doc, digest, nis);
 
-		file_size = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME(FileSize)));
+		file_size = pdf_dict_get_int(ctx, obj, PDF_NAME(FileSize));
 
 		fingerprint_obj = pdf_dict_get(ctx, obj, PDF_NAME(Fingerprint));
 		if (pdf_to_str_len(ctx, fingerprint_obj) != 16)
@@ -1231,7 +1231,7 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 
 		digests_match = (memcmp(pdf_to_str_buf(ctx, fingerprint_obj), digest, 16) == 0);
 
-		pos = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME(HistoryPos)));
+		pos = pdf_dict_get_int(ctx, obj, PDF_NAME(HistoryPos));
 	}
 	fz_always(ctx)
 	{
