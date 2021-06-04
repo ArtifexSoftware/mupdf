@@ -829,5 +829,4 @@ struct fz_document_handler
 	fz_document_open_accel_with_stream_fn *open_accel_with_stream;
 };
 
-
 #endif
