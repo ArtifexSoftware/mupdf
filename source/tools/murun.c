@@ -5269,6 +5269,16 @@ static void ffi_PDFAnnotation_toPixmap(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_PDFAnnotation_getObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	pdf_obj *obj;
+
+	obj = pdf_annot_obj(ctx, annot);
+	ffi_pushobj(J, pdf_keep_obj(ctx, obj));
+}
+
 static void ffi_PDFAnnotation_getType(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6891,6 +6901,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.run", ffi_PDFAnnotation_run, 2);
 		jsB_propfun(J, "PDFAnnotation.toPixmap", ffi_PDFAnnotation_toPixmap, 3);
 		jsB_propfun(J, "PDFAnnotation.toDisplayList", ffi_PDFAnnotation_toDisplayList, 0);
+		jsB_propfun(J, "PDFAnnotation.getObject", ffi_PDFAnnotation_getObject, 0);
 
 		jsB_propfun(J, "PDFAnnotation.getType", ffi_PDFAnnotation_getType, 0);
 		jsB_propfun(J, "PDFAnnotation.getFlags", ffi_PDFAnnotation_getFlags, 0);
