@@ -2622,7 +2622,7 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 }
 
 void
-pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, int n, const float color[4])
+pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, int n, const float *color)
 {
 	if (n == 4)
 		fz_snprintf(buf, nbuf, "/%s %g Tf %g %g %g %g k", font, size, color[0], color[1], color[2], color[3]);
@@ -2647,7 +2647,7 @@ pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **fon
 }
 
 void
-pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, int n, const float color[4])
+pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, int n, const float *color)
 {
 	char buf[100];
 
