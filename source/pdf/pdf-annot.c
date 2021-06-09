@@ -974,7 +974,8 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 	fz_always(ctx)
 		pdf_end_operation(ctx, annot->page->doc);
 	fz_catch(ctx)
-		fz_rethrow(ctx);}
+		fz_rethrow(ctx);
+}
 
 const char *
 pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
@@ -2564,7 +2565,7 @@ pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font,
 
 	*font = "Helv";
 	*size = 12;
-	*n = 1;
+	*n = 0;
 	color[0] = color[1] = color[2] = color[3] = 0;
 
 	fz_strlcpy(buf, da, sizeof buf);

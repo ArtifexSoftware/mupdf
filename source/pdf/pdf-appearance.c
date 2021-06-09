@@ -1527,6 +1527,8 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 			fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 		else if (n == 1)
 			fz_append_printf(ctx, buf, "%g g\n", color[0]);
+		else if (n == 0)
+			fz_append_printf(ctx, buf, "0 g\n");
 		if (multiline)
 		{
 			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline+lineheight);
@@ -1671,6 +1673,8 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 			fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]);
 		else if (n == 1)
 			fz_append_printf(ctx, buf, "%g G\n", color[0]);
+		else if (n == 0)
+			fz_append_printf(ctx, buf, "0 G\n");
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b/2, b/2, w-b, h-b);
 	}
 
