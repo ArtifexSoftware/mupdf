@@ -462,7 +462,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
 					{
-						*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+						*dp++ = map_color(ctx, (p[1] << 8) | p[0], pnm->maxval, 255);
 						p += 2;
 					}
 		}
@@ -699,7 +699,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 					for (x = 0; x < w; x++)
 						for (k = 0; k < n; k++)
 						{
-							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+							*dp++ = map_color(ctx, (p[1] << 8) | p[0], pnm->maxval, 255);
 							p += 2;
 						}
 			}
