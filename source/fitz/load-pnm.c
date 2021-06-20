@@ -78,7 +78,33 @@ static inline int bitdepth_from_maxval(int maxval)
 }
 
 static const unsigned char *
-pnm_read_white(fz_context *ctx, const unsigned char *p, const unsigned char *e, int single_line)
+pnm_read_eol(fz_context *ctx, const unsigned char *p, const unsigned char *e)
+{
+	if (e - p < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse newline in pnm image");
+
+	if (*p == '\n')
+		p++;
+
+	return p;
+}
+
+static const unsigned char *
+pnm_read_whites(fz_context *ctx, const unsigned char *p, const unsigned char *e, int required)
+{
+	if (required && e - p < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse whitespaces in pnm image");
+
+	if (required && !iswhite(*p))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected whitespaces in pnm image");
+	while (p < e && iswhite(*p))
+		p++;
+
+	return p;
+}
+
+static const unsigned char *
+pnm_read_whites_and_eols(fz_context *ctx, const unsigned char *p, const unsigned char *e, int single_line)
 {
 	if (e - p < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse whitespace in pnm image");
@@ -234,20 +260,20 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 	fz_pixmap *img = NULL;
 
 	p = pnm_read_number(ctx, p, e, &pnm->width);
-	p = pnm_read_white(ctx, p, e, 0);
+	p = pnm_read_whites_and_eols(ctx, p, e, 0);
 
 	if (bitmap)
 	{
 		p = pnm_read_number(ctx, p, e, &pnm->height);
-		p = pnm_read_white(ctx, p, e, 1);
+		p = pnm_read_whites_and_eols(ctx, p, e, 1);
 		pnm->maxval = 1;
 	}
 	else
 	{
 		p = pnm_read_number(ctx, p, e, &pnm->height);
-		p = pnm_read_white(ctx, p, e, 0);
+		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 		p = pnm_read_number(ctx, p, e, &pnm->maxval);
-		p = pnm_read_white(ctx, p, e, 0);
+		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 	}
 
 	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
@@ -277,7 +303,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 				for (x = -1; x < w; x++)
 				{
 					p = pnm_read_number(ctx, p, e, NULL);
-					p = pnm_read_white(ctx, p, e, 0);
+					p = pnm_read_whites_and_eols(ctx, p, e, 0);
 				}
 		}
 		else
@@ -287,7 +313,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 					for (k = 0; k < n; k++)
 					{
 						p = pnm_read_number(ctx, p, e, NULL);
-						p = pnm_read_white(ctx, p, e, 0);
+						p = pnm_read_whites_and_eols(ctx, p, e, 0);
 					}
 		}
 	}
@@ -312,7 +338,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 				{
 					int v = 0;
 					p = pnm_read_number(ctx, p, e, &v);
-					p = pnm_read_white(ctx, p, e, 0);
+					p = pnm_read_whites_and_eols(ctx, p, e, 0);
 					*dp++ = v ? 0x00 : 0xff;
 				}
 			}
@@ -325,7 +351,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 					{
 						int v = 0;
 						p = pnm_read_number(ctx, p, e, &v);
-						p = pnm_read_white(ctx, p, e, 0);
+						p = pnm_read_whites_and_eols(ctx, p, e, 0);
 						v = fz_clampi(v, 0, pnm->maxval);
 						*dp++ = map_color(ctx, v, pnm->maxval, 255);
 					}
@@ -345,23 +371,23 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 
 	pnm->width = 0;
 	p = pnm_read_number(ctx, p, e, &pnm->width);
-	p = pnm_read_white(ctx, p, e, 0);
+	p = pnm_read_whites_and_eols(ctx, p, e, 0);
 
 	if (bitmap)
 	{
 		pnm->height = 0;
 		p = pnm_read_number(ctx, p, e, &pnm->height);
-		p = pnm_read_white(ctx, p, e, 1);
+		p = pnm_read_whites_and_eols(ctx, p, e, 1);
 		pnm->maxval = 1;
 	}
 	else
 	{
 		pnm->height = 0;
 		p = pnm_read_number(ctx, p, e, &pnm->height);
-		p = pnm_read_white(ctx, p, e, 0);
+		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 		pnm->maxval = 0;
 		p = pnm_read_number(ctx, p, e, &pnm->maxval);
-		p = pnm_read_white(ctx, p, e, 1);
+		p = pnm_read_whites_and_eols(ctx, p, e, 1);
 	}
 
 	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
@@ -462,20 +488,25 @@ pam_binary_read_header(fz_context *ctx, struct info *pnm, const unsigned char *p
 	while (p < e && token != TOKEN_ENDHDR)
 	{
 		p = pnm_read_token(ctx, p, e, &token);
-		p = pnm_read_white(ctx, p, e, 0);
-		switch (token)
-		{
-		case TOKEN_WIDTH: p = pnm_read_number(ctx, p, e, &pnm->width); break;
-		case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
-		case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
-		case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
-		case TOKEN_TUPLTYPE: p = pnm_read_tupletype(ctx, p, e, &pnm->tupletype); break;
-		case TOKEN_ENDHDR: break;
-		default: fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
-		}
 
 		if (token != TOKEN_ENDHDR)
-			p = pnm_read_white(ctx, p, e, 0);
+		{
+			p = pnm_read_whites_and_eols(ctx, p, e, 0);
+			switch (token)
+			{
+			case TOKEN_WIDTH: p = pnm_read_number(ctx, p, e, &pnm->width); break;
+			case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
+			case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
+			case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
+			case TOKEN_TUPLTYPE: p = pnm_read_tupletype(ctx, p, e, &pnm->tupletype); break;
+			}
+			p = pnm_read_whites_and_eols(ctx, p, e, 0);
+		}
+		else
+		{
+			p = pnm_read_whites(ctx, p, e, 0);
+			p = pnm_read_eol(ctx, p, e);
+		}
 	}
 
 	return p;
@@ -701,7 +732,7 @@ pnm_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, size_t
 		int subonlymeta = onlymeta || (subimage > 0);
 
 		p = pnm_read_signature(ctx, p, e, signature);
-		p = pnm_read_white(ctx, p, e, 0);
+		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 
 		if (!strcmp(signature, "P1"))
 		{
