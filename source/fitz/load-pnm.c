@@ -300,7 +300,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 		if (bitmap)
 		{
 			for (y = 0; y < h; y++)
-				for (x = -1; x < w; x++)
+				for (x = 0; x < w; x++)
 				{
 					p = pnm_read_number(ctx, p, e, NULL);
 					p = pnm_read_whites_and_eols(ctx, p, e, 0);
