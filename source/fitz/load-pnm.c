@@ -186,6 +186,21 @@ pnm_read_comments(fz_context *ctx, const unsigned char *p, const unsigned char *
 }
 
 static const unsigned char *
+pnm_read_digit(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *number)
+{
+	if (e - p < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse digit in pnm image");
+	if (*p < '0' || *p > '1')
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected digit in pnm image");
+
+	if (number)
+		*number = *p - '0';
+	p++;
+
+	return p;
+}
+
+static const unsigned char *
 pnm_read_number(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *number)
 {
 	if (e - p < 1)
@@ -336,7 +351,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 				for (x = 0; x < w; x++)
 				{
 					p = pnm_read_whites_and_eols(ctx, p, e, 0);
-					p = pnm_read_number(ctx, p, e, NULL);
+					p = pnm_read_digit(ctx, p, e, NULL);
 					p = pnm_read_whites_and_eols(ctx, p, e, 0);
 				}
 		}
@@ -373,7 +388,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 				{
 					int v = 0;
 					p = pnm_read_whites_and_eols(ctx, p, e, 0);
-					p = pnm_read_number(ctx, p, e, &v);
+					p = pnm_read_digit(ctx, p, e, &v);
 					p = pnm_read_whites_and_eols(ctx, p, e, 0);
 					*dp++ = v ? 0x00 : 0xff;
 				}
