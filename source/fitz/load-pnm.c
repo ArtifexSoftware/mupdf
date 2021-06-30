@@ -801,6 +801,7 @@ pnm_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, size_t
 	{
 		int subonlymeta = onlymeta || (subimage > 0);
 
+		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 		p = pnm_read_signature(ctx, p, e, signature);
 		p = pnm_read_whites_and_eols(ctx, p, e, 1);
 
