@@ -392,7 +392,7 @@ libs: $(LIBS_TO_INSTALL_IN_BIN) $(LIBS_TO_INSTALL_IN_LIB)
 tools: $(TOOL_APPS)
 apps: $(TOOL_APPS) $(VIEW_APPS)
 
-install: libs apps
+install_libs:
 	install -d $(DESTDIR)$(incdir)/mupdf
 	install -d $(DESTDIR)$(incdir)/mupdf/fitz
 	install -d $(DESTDIR)$(incdir)/mupdf/pdf
@@ -405,6 +405,7 @@ ifneq ($(LIBS_TO_INSTALL_IN_LIB),)
 	install -m 644 $(LIBS_TO_INSTALL_IN_LIB) $(DESTDIR)$(libdir)
 endif
 
+install: libs apps install_libs
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(LIBS_TO_INSTALL_IN_BIN) $(TOOL_APPS) $(VIEW_APPS) $(DESTDIR)$(bindir)
 
