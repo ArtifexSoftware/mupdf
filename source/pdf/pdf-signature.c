@@ -1,5 +1,5 @@
 #include "mupdf/fitz.h"
-#include "mupdf/pdf.h"
+#include "pdf-annot-imp.h"
 
 #include <string.h>
 #include <time.h>
@@ -210,7 +210,7 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_widget *widget, pdf_pkcs
 		enact_sig_locking(ctx, doc, wobj);
 
 		if (disp_list)
-			pdf_update_appearance_from_display_list(ctx, widget, disp_list);
+			pdf_set_annot_appearance_from_display_list(ctx, widget, "N", NULL, fz_identity, disp_list);
 
 		/* Update the SigFlags for the document if required */
 		form = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm");
@@ -410,7 +410,7 @@ void pdf_clear_signature(fz_context *ctx, pdf_widget *widget)
 		pdf_dict_del(ctx, ((pdf_annot *)widget)->obj, PDF_NAME(V));
 
 		dlist = pdf_signature_appearance_unsigned(ctx, rect, lang);
-		pdf_update_appearance_from_display_list(ctx, (pdf_annot *)widget, dlist);
+		pdf_set_annot_appearance_from_display_list(ctx, widget, "N", NULL, fz_identity, dlist);
 	}
 	fz_always(ctx)
 	{
@@ -507,6 +507,11 @@ char *pdf_signature_format_distinguished_name(fz_context *ctx, pdf_pkcs7_disting
 	return s;
 }
 
+pdf_pkcs7_distinguished_name *pdf_signature_get_widget_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_widget *widget)
+{
+	return pdf_signature_get_signatory(ctx, verifier, widget->page->doc, widget->obj);
+}
+
 pdf_pkcs7_distinguished_name *pdf_signature_get_signatory(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
 {
 	char *contents = NULL;
@@ -525,6 +530,11 @@ pdf_pkcs7_distinguished_name *pdf_signature_get_signatory(fz_context *ctx, pdf_p
 		fz_rethrow(ctx);
 
 	return dn;
+}
+
+pdf_signature_error pdf_check_widget_digest(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_widget *widget)
+{
+	return pdf_check_digest(ctx, verifier, widget->page->doc, widget->obj);
 }
 
 pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
@@ -550,6 +560,11 @@ pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifi
 	}
 
 	return result;
+}
+
+pdf_signature_error pdf_check_widget_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_widget *w)
+{
+	return pdf_check_certificate(ctx, verifier, w->page->doc, w->obj);
 }
 
 pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)

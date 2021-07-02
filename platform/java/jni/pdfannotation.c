@@ -657,7 +657,7 @@ FUN(PDFAnnotation_eventEnter)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		pdf_annot_event_enter(ctx, annot);
-		annot->is_hot = 1;
+		pdf_set_annot_hot(ctx, annot, 1);
 	}
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
@@ -674,7 +674,7 @@ FUN(PDFAnnotation_eventExit)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		pdf_annot_event_exit(ctx, annot);
-		annot->is_hot = 0;
+		pdf_set_annot_hot(ctx, annot, 0);
 	}
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
@@ -691,7 +691,7 @@ FUN(PDFAnnotation_eventDown)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		pdf_annot_event_down(ctx, annot);
-		pdf_annot_set_active(ctx, annot, 1);
+		pdf_set_annot_active(ctx, annot, 1);
 	}
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
@@ -709,7 +709,7 @@ FUN(PDFAnnotation_eventUp)(JNIEnv *env, jobject self)
 	{
 		if (pdf_annot_hot(ctx, annot) && pdf_annot_active(ctx, annot))
 			pdf_annot_event_up(ctx, annot);
-		pdf_annot_set_active(ctx, annot, 0);
+		pdf_set_annot_active(ctx, annot, 0);
 	}
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
@@ -880,7 +880,7 @@ FUN(PDFAnnotation_getObject)(JNIEnv *env, jobject self)
 
 	if (!ctx || !annot) return NULL;
 
-	return to_PDFObject_safe(ctx, env, annot->obj);
+	return to_PDFObject_safe(ctx, env, pdf_annot_obj(ctx, annot));
 }
 
 JNIEXPORT jint JNICALL
@@ -888,8 +888,275 @@ FUN(PDFAnnotation_getLanguage)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int lang;
 
 	if (!ctx || !annot) return FZ_LANG_UNSET;
 
-	return pdf_annot_language(ctx, annot);
+	fz_try(ctx)
+		lang = pdf_annot_language(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return lang;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setLanguage)(JNIEnv *env, jobject self, jint lang)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_language(ctx, annot, lang);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFAnnotation_getQuadding)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	int quadding;
+
+	if (!ctx || !annot) return 0;
+
+	fz_try(ctx)
+		quadding = pdf_annot_quadding(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return quadding;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setQuadding)(JNIEnv *env, jobject self, jint quadding)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_quadding(ctx, annot, quadding);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getLine)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point points[2] = { 0 };
+	jobject jline = NULL;
+	jobject jpoint = NULL;
+	size_t i = 0;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		pdf_annot_line(ctx, annot, &points[0], &points[1]);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jline = (*env)->NewObjectArray(env, nelem(points), cls_Point, NULL);
+	if (!jline || (*env)->ExceptionCheck(env)) return NULL;
+
+	for (i = 0; i < nelem(points); i++)
+	{
+		jpoint = (*env)->NewObject(env, cls_Point, mid_Point_init, points[i].x, points[i].y);
+		if (!jpoint || (*env)->ExceptionCheck(env)) return NULL;
+		(*env)->SetObjectArrayElement(env, jline, i, jpoint);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+		(*env)->DeleteLocalRef(env, jpoint);
+	}
+
+	return jline;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setLine)(JNIEnv *env, jobject self, jobject ja, jobject jb)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_point a, b;
+
+	if (!ctx || !annot) return;
+	if (!ja || !jb) jni_throw_arg_void(env, "line points must not be null");
+
+	a.x = (*env)->GetFloatField(env, ja, fid_Point_x);
+	a.y = (*env)->GetFloatField(env, ja, fid_Point_y);
+	b.x = (*env)->GetFloatField(env, jb, fid_Point_x);
+	b.y = (*env)->GetFloatField(env, jb, fid_Point_y);
+
+	fz_try(ctx)
+		pdf_set_annot_line(ctx, annot, a, b);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_updateAppearance)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_update_appearance(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getDefaultAppearance)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jobject jda = NULL;
+	jobject jfont = NULL;
+	jobject jcolor = NULL;
+	const char *font = NULL;
+	float color[4] = { 0 };
+	float size = 0;
+	int n = 0;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jfont = (*env)->NewStringUTF(env, font);
+	if (!jfont || (*env)->ExceptionCheck(env)) return NULL;
+
+	jcolor = (*env)->NewFloatArray(env, n);
+	if (!jcolor || (*env)->ExceptionCheck(env)) return NULL;
+	(*env)->SetFloatArrayRegion(env, jcolor, 0, n, color);
+	if ((*env)->ExceptionCheck(env)) return NULL;
+
+	jda = (*env)->NewObject(env, cls_DefaultAppearance, mid_DefaultAppearance_init);
+	if (!jda) return NULL;
+
+	(*env)->SetObjectField(env, jda, fid_DefaultAppearance_font, jfont);
+	(*env)->SetFloatField(env, jda, fid_DefaultAppearance_size, size);
+	(*env)->SetObjectField(env, jda, fid_DefaultAppearance_color, jcolor);
+
+	return jda;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setDefaultAppearance)(JNIEnv *env, jobject self, jstring jfont, jfloat size, jobject jcolor)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *font = NULL;
+	float color[4] = { 0 };
+	int n = 0;
+
+	if (!ctx || !annot) return;
+	if (!jfont) jni_throw_arg_void(env, "font must not be null");
+
+	font = (*env)->GetStringUTFChars(env, jfont, NULL);
+	if (!font) jni_throw_oom_void(env, "can not get characters in font name string");
+
+	if (!from_jfloatArray(env, color, nelem(color), jcolor)) return;
+	if (jcolor)
+		n = (*env)->GetArrayLength(env, jcolor);
+
+	fz_try(ctx)
+		pdf_set_annot_default_appearance(ctx, annot, font, size, n, color);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfont, font);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setNativeAppearance)(JNIEnv *env, jobject self, jstring jappearance, jstring jstate, jobject jctm, jobject jbbox, jobject jres, jobject jcontents)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	pdf_obj *res = from_PDFObject(env, jres);
+	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_rect bbox = from_Rect(env, jbbox);
+	fz_buffer *contents = from_Buffer(env, jcontents);
+	const char *appearance = NULL;
+	const char *state = NULL;
+
+	if (!ctx || !annot) return;
+
+	if (jappearance)
+	{
+		appearance = (*env)->GetStringUTFChars(env, jappearance, NULL);
+		if (!appearance)
+			jni_throw_oom_void(env, "can not get characters in appearance string");
+	}
+	if (jstate)
+	{
+		state = (*env)->GetStringUTFChars(env, jstate, NULL);
+		if (!state)
+		{
+			(*env)->ReleaseStringUTFChars(env, jappearance, appearance);
+			jni_throw_oom_void(env, "can not get characters in state string");
+		}
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_appearance(ctx, annot, appearance, state, ctm, bbox, res, contents);
+	fz_always(ctx)
+	{
+		if (jstate)
+			(*env)->ReleaseStringUTFChars(env, jstate, state);
+		if (jappearance)
+			(*env)->ReleaseStringUTFChars(env, jappearance, appearance);
+	}
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setNativeAppearanceDisplayList)(JNIEnv *env, jobject self, jstring jappearance, jstring jstate, jobject jctm, jobject jlist)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_display_list *list = from_DisplayList(env, jlist);
+	const char *appearance = NULL;
+	const char *state = NULL;
+
+	if (!ctx || !annot) return;
+
+	if (jappearance)
+	{
+		appearance = (*env)->GetStringUTFChars(env, jappearance, NULL);
+		if (!appearance)
+			jni_throw_oom_void(env, "can not get characters in appearance string");
+	}
+	if (jstate)
+	{
+		state = (*env)->GetStringUTFChars(env, jstate, NULL);
+		if (!state)
+		{
+			(*env)->ReleaseStringUTFChars(env, jappearance, appearance);
+			jni_throw_oom_void(env, "can not get characters in state string");
+		}
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_appearance_from_display_list(ctx, annot, appearance, state, ctm, list);
+	fz_always(ctx)
+	{
+		if (jstate)
+			(*env)->ReleaseStringUTFChars(env, jstate, state);
+		if (jappearance)
+			(*env)->ReleaseStringUTFChars(env, jappearance, appearance);
+	}
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
 }

@@ -142,6 +142,24 @@ pdf_annot *pdf_first_annot(fz_context *ctx, pdf_page *page);
 pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Returns a borrowed reference to the object underlying
+	an annotation.
+
+	The caller should fz_keep this if it intends to hold the
+	pointer. Unless it fz_keeps it, it must not fz_drop it.
+*/
+pdf_obj *pdf_annot_obj(fz_context *ctx, pdf_annot *annot);
+
+/*
+	Returns a borrowed reference to the page to which
+	an annotation belongs.
+
+	The caller should fz_keep this if it intends to hold the
+	pointer. Unless it fz_keeps it, it must not fz_drop it.
+*/
+pdf_page *pdf_annot_page(fz_context *ctx, pdf_annot *annot);
+
+/*
 	Return the rectangle for an annotation on a page.
 */
 fz_rect pdf_bound_annot(fz_context *ctx, pdf_annot *annot);
@@ -235,9 +253,8 @@ fz_link *pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const ch
 	create a new annotation of the specified type on the
 	specified page. Populate it with sensible defaults per the type.
 
-	The page takes a reference, and an additional reference is
-	returned to the caller, hence the caller should drop the
-	reference once it is done.
+	The returned pdf_annot structure is owned by the page and does
+	not need to be freed.
 */
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
@@ -517,11 +534,14 @@ void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t 
 int64_t pdf_annot_creation_date(fz_context *ctx, pdf_annot *annot);
 void pdf_set_annot_creation_date(fz_context *ctx, pdf_annot *annot, int64_t time);
 
-void pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, float color[3]);
-void pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, const float color[3]);
-void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, float color[3]);
-void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, const float color[3]);
+void pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, int *n, float color[4]);
+void pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, int n, const float *color);
+void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, int *n, float color[4]);
+void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, int n, const float *color);
 
+void pdf_annot_request_resynthesis(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_needs_resynthesis(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_resynthesised(fz_context *ctx, pdf_annot *annot);
 void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_field_flags(fz_context *ctx, pdf_annot *annot);
@@ -535,7 +555,6 @@ int pdf_set_annot_field_value(fz_context *ctx, pdf_document *doc, pdf_widget *wi
 */
 fz_text *pdf_layout_fit_text(fz_context *ctx, fz_font *font, fz_text_language lang, const char *str, fz_rect bounds);
 void pdf_update_appearance(fz_context *ctx, pdf_annot *annot);
-void pdf_update_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, fz_display_list *disp_list);
 
 /*
 	Start/Stop using the annotation-local xref. This allows us to
@@ -615,32 +634,10 @@ int pdf_is_embedded_file(fz_context *ctx, pdf_obj *fs);
 fz_buffer *pdf_load_embedded_file(fz_context *ctx, pdf_obj *fs);
 pdf_obj *pdf_add_embedded_file(fz_context *ctx, pdf_document *doc, const char *filename, const char *mimetype, fz_buffer *contents);
 
-/* Implementation details: Subject to change */
-
-struct pdf_annot
-{
-	int refs;
-
-	pdf_page *page;
-	pdf_obj *obj;
-
-	int is_hot;
-	int is_active;
-
-	int needs_new_ap;
-	int has_new_ap;
-	int ignore_trigger_events;
-
-	pdf_annot *next;
-};
-
 char *pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 char *pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int pagenum);
 pdf_obj *pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, int pagenum, fz_matrix page_ctm);
-void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
-void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
-void pdf_drop_widgets(fz_context *ctx, pdf_widget *widget_list);
 
 void pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
@@ -650,8 +647,11 @@ int pdf_annot_MK_BC_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);
 pdf_obj *pdf_annot_ap(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_active(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_set_active(fz_context *ctx, pdf_annot *annot, int active);
+void pdf_set_annot_active(fz_context *ctx, pdf_annot *annot, int active);
 int pdf_annot_hot(fz_context *ctx, pdf_annot *annot);
-void pdf_annot_set_hot(fz_context *ctx, pdf_annot *annot, int hot);
+void pdf_set_annot_hot(fz_context *ctx, pdf_annot *annot, int hot);
+
+void pdf_set_annot_appearance(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_rect bbox, pdf_obj *res, fz_buffer *contents);
+void pdf_set_annot_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_display_list *list);
 
 #endif
