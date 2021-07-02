@@ -39,7 +39,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		if (new_max == 0)
 			new_max = 4;
-		doc->type3_fonts = fz_realloc_array(ctx, doc->type3_fonts, new_max, fz_font*);
+		doc->type3_fonts = fz_realloc_array(ctx, doc->type3_fonts, new_max, fz_font *);
 		doc->max_type3_fonts = new_max;
 	}
 
@@ -59,7 +59,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		font = fz_new_type3_font(ctx, buf, matrix);
 		fontdesc->font = font;
-		fontdesc->size += sizeof(fz_font) + 256 * (sizeof(fz_buffer*) + sizeof(float));
+		fontdesc->size += sizeof(fz_font) + 256 * (sizeof(fz_buffer *) + sizeof(float));
 
 		fz_set_font_bbox(ctx, font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
@@ -96,7 +96,18 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 					if (pdf_is_int(ctx, item))
 						k = pdf_to_int(ctx, item);
 					if (pdf_is_name(ctx, item) && k >= 0 && k < (int)nelem(estrings))
-						estrings[k++] = pdf_to_name(ctx, item);
+					{
+						char *glyph_name = pdf_to_name(ctx, item);
+						int unc = fz_atoi(glyph_name);
+						if (unc && unc < 256)
+						{
+							estrings[k++] = fz_glyph_name_from_adobe_standard[unc];
+						}
+						else
+						{
+							estrings[k++] = glyph_name;
+						}
+					}
 				}
 			}
 		}
