@@ -82,12 +82,25 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 			pdf_obj *base, *diff, *item;
 
 			base = pdf_dict_get(ctx, encoding, PDF_NAME(BaseEncoding));
-			if (pdf_is_name(ctx, base))
-				pdf_load_encoding(estrings, pdf_to_name(ctx, base));
+            char *basename = "StandardEncoding";
+			if (pdf_is_name(ctx, base)) {
+                basename = pdf_to_name(ctx, base);
+				pdf_load_encoding(estrings, basename);
+            }
 
-			diff = pdf_dict_get(ctx, encoding, PDF_NAME(Differences));
+			/* Differences may be given as unicodes - not glyph names */
+            diff = pdf_dict_get(ctx, encoding, PDF_NAME(Differences));
 			if (pdf_is_array(ctx, diff))
 			{
+                const char * const *bstrings = fz_glyph_name_from_adobe_standard;
+                if (base) {
+                    if (!strcmp(basename, "MacRomanEncoding"))
+                        bstrings = fz_glyph_name_from_mac_roman;
+                    if (!strcmp(basename, "MacExpertEncoding"))
+                        bstrings = fz_glyph_name_from_mac_expert;
+                    if (!strcmp(basename, "WinAnsiEncoding"))
+                        bstrings = fz_glyph_name_from_win_ansi;
+                }
 				n = pdf_array_len(ctx, diff);
 				k = 0;
 				for (i = 0; i < n; i++)
@@ -95,8 +108,14 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 					item = pdf_array_get(ctx, diff, i);
 					if (pdf_is_int(ctx, item))
 						k = pdf_to_int(ctx, item);
-					if (pdf_is_name(ctx, item) && k >= 0 && k < (int)nelem(estrings))
-						estrings[k++] = pdf_to_name(ctx, item);
+					if (pdf_is_name(ctx, item) && k >= 0 && k < (int)nelem(estrings)) {
+                        const char *glyph_name = pdf_to_name(ctx, item);
+                        int unc = fz_atoi(glyph_name);
+                        if (unc && unc < 256)
+                            estrings[k++] = bstrings[unc];
+                        else
+    						estrings[k++] = glyph_name;
+                    }
 				}
 			}
 		}
