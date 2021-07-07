@@ -235,6 +235,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_setAntiAliasLevel
 
 /*
  * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    setUserCSS
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_setUserCSS
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    useDocumentCSS
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Context_useDocumentCSS
+  (JNIEnv *, jclass, jboolean);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
  * Method:    getVersion
  * Signature: ()Lcom/artifex/mupdf/fitz/Context/Version;
  */
