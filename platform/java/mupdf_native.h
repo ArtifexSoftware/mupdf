@@ -524,6 +524,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_recognize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    supportsAccelerator
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_supportsAccelerator
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    saveAccelerator
  * Signature: (Ljava/lang/String;)V
  */
