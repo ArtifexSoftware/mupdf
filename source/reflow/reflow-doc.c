@@ -138,6 +138,7 @@ reflow_load_page(fz_context *ctx, reflow_document *doc, int chapter, int pagenum
 	fz_var(buf);
 	fz_var(out);
 	fz_var(text);
+	fz_var(stm);
 
 	fz_try(ctx)
 	{
@@ -164,6 +165,7 @@ reflow_load_page(fz_context *ctx, reflow_document *doc, int chapter, int pagenum
 		fz_drop_stext_page(ctx, text);
 		fz_drop_output(ctx, out);
 		fz_drop_stream(ctx, stm);
+		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
