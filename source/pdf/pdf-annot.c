@@ -2730,14 +2730,14 @@ pdf_set_annot_appearance(fz_context *ctx, pdf_annot *annot, const char *appearan
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 1);
 
 		if (!state)
-			pdf_dict_put(ctx, ap, pdf_new_name(ctx, appearance), form);
+			pdf_dict_puts(ctx, ap, appearance, form);
 		else
 		{
 			if (strcmp(appearance, "N") && strcmp(appearance, "R") && strcmp(appearance, "D"))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown annotation appearance");
 
 			app = pdf_dict_put_dict(ctx, ap, pdf_new_name(ctx, appearance), 2);
-			pdf_dict_put(ctx, app, pdf_new_name(ctx, state), form);
+			pdf_dict_puts(ctx, app, state, form);
 		}
 	}
 	fz_always(ctx)
