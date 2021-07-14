@@ -1098,7 +1098,7 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 			fz_rect page_mediabox;
 			fz_matrix page_ctm;
 			pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
-			page->links = pdf_load_link_annots(ctx, doc, obj, number, page_ctm);
+                        page->links = pdf_load_link_annots(ctx, doc, obj, number, page_ctm);
 			pdf_load_annots(ctx, page, obj);
 		}
 	}

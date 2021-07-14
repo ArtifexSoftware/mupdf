@@ -219,8 +219,17 @@ print_outline(fz_outline *outline, int level)
 			fz_write_byte(ctx, out, '|');
 
 		for (i = 0; i < level; i++)
-			fz_write_byte(ctx, out, '\t');
-		fz_write_printf(ctx, out, "%Q\t%s\n", outline->title, outline->uri);
+			fz_write_printf(ctx, out, "    ");
+		fz_write_printf(ctx, out, "%Q  %s", outline->title, outline->uri);
+		if (outline->js)
+		{
+			fz_write_printf(ctx, out, "  js: %s\n", outline->js);
+		}
+		else
+		{
+			fz_write_printf(ctx, out, "\n");
+		}
+
 		if (outline->down)
 			print_outline(outline->down, level + 1);
 		outline = outline->next;

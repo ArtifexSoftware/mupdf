@@ -25,11 +25,19 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 			obj = pdf_dict_get(ctx, dict, PDF_NAME(Title));
 			if (obj)
 				node->title = Memento_label(fz_strdup(ctx, pdf_to_text_string(ctx, obj)), "outline_title");
+			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(Next))) != NULL)
+			{
+				obj = pdf_resolve_indirect(ctx, obj);
+				if((obj = pdf_dict_get(ctx, obj, PDF_NAME(Title))) != NULL)
+					node->uri = Memento_label(fz_strdup(ctx, pdf_to_text_string(ctx, obj)), "outline_title");
+			}
 
 			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(Dest))) != NULL)
 				node->uri = Memento_label(pdf_parse_link_dest(ctx, doc, obj), "outline_uri");
 			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME(A))) != NULL)
+			{
 				node->uri = Memento_label(pdf_parse_link_action(ctx, doc, obj, -1), "outline_uri");
+			}
 			else
 				node->uri = NULL;
 
@@ -38,6 +46,11 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 			else
 				node->page = -1;
 
+			if ((obj = pdf_dict_get(ctx, obj, PDF_NAME(Next))) != NULL) // insert javascript code if present
+			{
+				pdf_obj* js = pdf_dict_get(ctx, obj, PDF_NAME(JS));
+				node->js = pdf_load_stream_or_string_as_utf8(ctx, js);
+			}
 			obj = pdf_dict_get(ctx, dict, PDF_NAME(First));
 			if (obj)
 			{
