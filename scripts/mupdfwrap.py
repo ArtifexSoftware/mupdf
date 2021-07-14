@@ -1420,7 +1420,20 @@ classextras = ClassExtras(
                             dev = {rename.function_call('fz_keep_device')}(dev);
                             return Device(dev);
                         }}
+                        ''',
+                        textwrap.dedent(f'''
+                        /*
+                        Custom wrapper for fz_begin_page().
+
+                        Called to start the process of writing a page to
+                        a document.
+
+                        mediabox: page size rectangle in points.
+
+                        Returns a {rename.class_('fz_device')} to write page contents to.
+                        */
                         '''),
+                        ),
                         ],
                 constructors_extra = [
                     ExtraConstructor(
