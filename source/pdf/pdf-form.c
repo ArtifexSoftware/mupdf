@@ -373,6 +373,40 @@ void pdf_reset_form(fz_context *ctx, pdf_document *doc, pdf_obj *fields, int exc
 		fz_rethrow(ctx);
 }
 
+typedef struct
+{
+	pdf_obj *pageobj;
+	pdf_obj *chk;
+} lookup_state;
+
+static void *find_widget_on_page(fz_context *ctx, fz_page *page_, void *state_)
+{
+	lookup_state *state = (lookup_state *) state_;
+	pdf_page *page = (pdf_page *) page_;
+	pdf_widget *widget;
+
+	if (state->pageobj && pdf_objcmp_resolve(ctx, state->pageobj, page->obj))
+		return NULL;
+
+	for (widget = pdf_first_widget(ctx, page); widget != NULL; widget = pdf_next_widget(ctx, widget))
+	{
+		if (!pdf_objcmp_resolve(ctx, state->chk, widget->obj))
+			return widget;
+	}
+
+	return NULL;
+}
+
+static pdf_widget *find_widget(fz_context *ctx, pdf_document *doc, pdf_obj *chk)
+{
+	lookup_state state;
+
+	state.pageobj = pdf_dict_get(ctx, chk, PDF_NAME(P));
+	state.chk = chk;
+
+	return fz_process_opened_pages(ctx, (fz_document *) doc, find_widget_on_page, &state);
+}
+
 static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj *name)
 {
 	pdf_obj *n = pdf_dict_getp(ctx, chk, "AP/N");
@@ -385,7 +419,11 @@ static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj 
 	else
 		val = PDF_NAME(Off);
 
+	if (pdf_name_eq(ctx, pdf_dict_get(ctx, chk, PDF_NAME(AS)), val))
+		return;
+
 	pdf_dict_put(ctx, chk, PDF_NAME(AS), val);
+	pdf_set_annot_has_changed(ctx, find_widget(ctx, doc, chk));
 }
 
 /* Set the values of all fields in a group defined by a node
