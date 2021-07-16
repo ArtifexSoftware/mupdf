@@ -2362,7 +2362,7 @@ pdf_is_local_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	/* Local xrefs only ever have 1 section, and it should be solid. */
 	sub = xref->subsec;
 	if (num >= sub->start && num < sub->start + sub->len)
-		return sub->table[num - sub->start].type != 'f';
+		return sub->table[num - sub->start].type != 0;
 
 	return 0;
 }
