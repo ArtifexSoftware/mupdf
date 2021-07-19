@@ -1947,6 +1947,8 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 	fz_draw_state *state = push_stack(ctx, dev, "clip image mask");
 	fz_colorspace *model = state->dest->colorspace;
 	fz_irect clip;
+	fz_irect src_area;
+	fz_matrix inverse;
 
 	fz_var(pixmap);
 
@@ -1964,6 +1966,41 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 		state[1].scissor = fz_empty_irect;
 		state[1].mask = NULL;
 		return;
+	}
+
+	/* ctm maps the image (expressed as the unit square) onto the
+	 * destination device. Reverse that to get a mapping from
+	 * the destination device to the source pixels. */
+	if (fz_try_invert_matrix(&inverse, local_ctm))
+	{
+		/* Not invertible. Could just bail? Use the whole image
+		 * for now. */
+		src_area.x0 = 0;
+		src_area.x1 = image->w;
+		src_area.y0 = 0;
+		src_area.y1 = image->h;
+	}
+	else
+	{
+		float exp;
+		fz_rect rect;
+		fz_irect sane;
+		/* We want to scale from image coords, not from unit square */
+		inverse = fz_post_scale(inverse, image->w, image->h);
+		/* Are we scaling up or down? exp < 1 means scaling down. */
+		exp = fz_matrix_max_expansion(inverse);
+		rect = fz_rect_from_irect(clip);
+		rect = fz_transform_rect(rect, inverse);
+		/* Allow for support requirements for scalers. */
+		rect = fz_expand_rect(rect, fz_max(exp, 1) * 4);
+		src_area = fz_irect_from_rect(rect);
+		sane.x0 = 0;
+		sane.y0 = 0;
+		sane.x1 = image->w;
+		sane.y1 = image->h;
+		src_area = fz_intersect_irect(src_area, sane);
+		if (fz_is_empty_irect(src_area))
+			return;
 	}
 
 	bbox = fz_irect_from_rect(fz_transform_rect(fz_unit_rect, local_ctm));
@@ -1989,7 +2026,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 
 	fz_try(ctx)
 	{
-		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
+		pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
 
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
