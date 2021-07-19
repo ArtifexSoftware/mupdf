@@ -758,7 +758,7 @@ void update_title(void)
 	else
 		title = filename;
 
-	if (pdf && pdf->dirty)
+	if (pdf && pdf_has_unsaved_changes(ctx, pdf))
 		extra = "*";
 
 	n = strlen(title);
@@ -2441,7 +2441,7 @@ void do_main(void)
 	int was_dirty = 0;
 	if (pdf)
 	{
-		was_dirty = pdf->dirty;
+		was_dirty = pdf_has_unsaved_changes(ctx, pdf);
 	}
 
 	do_app();
@@ -2477,7 +2477,7 @@ void do_main(void)
 
 	if (pdf)
 	{
-		if (was_dirty != pdf->dirty)
+		if (was_dirty != pdf_has_unsaved_changes(ctx, pdf))
 			update_title();
 	}
 }
