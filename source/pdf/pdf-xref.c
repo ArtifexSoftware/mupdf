@@ -2450,6 +2450,8 @@ void
 pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 {
 	pdf_xref_entry *x;
+	pdf_xref *xref;
+	int j;
 
 	if (doc->local_xref && doc->local_xref_nesting > 0)
 	{
@@ -2475,6 +2477,47 @@ pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 	x->stm_ofs = 0;
 	x->stm_buf = NULL;
 	x->obj = NULL;
+
+	/* Currently we've left a 'free' object in the incremental
+	 * section. This is enough to cause us to think that the
+	 * document has changes. Check back in the non-incremental
+	 * sections to see if the last instance of the object there
+	 * was free (or if this object never appeared). If so, we
+	 * can mark this object as non-existent in the incremental
+	 * xref. This is important so we can 'undo' back to emptiness
+	 * after we save/when we reload a snapshot. */
+	for (j = 1; j < doc->num_xref_sections; j++)
+	{
+		xref = &doc->xref_sections[j];
+
+		if (num < xref->num_objects)
+		{
+			pdf_xref_subsec *sub;
+			for (sub = xref->subsec; sub != NULL; sub = sub->next)
+			{
+				pdf_xref_entry *entry;
+
+				if (num < sub->start || num >= sub->start + sub->len)
+					continue;
+
+				entry = &sub->table[num - sub->start];
+				if (entry->type)
+				{
+					if (entry->type == 'f')
+					{
+						/* It was free already! */
+						x->type = 0;
+						x->gen = 0;
+					}
+					/* It was a real object. */
+					return;
+				}
+			}
+		}
+	}
+	/* It never appeared before. */
+	x->type = 0;
+	x->gen = 0;
 }
 
 static void
