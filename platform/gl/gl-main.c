@@ -1886,8 +1886,16 @@ static void clear_search(void)
 
 static void do_app(void)
 {
-	if (ui.key == KEY_F4 && ui.mod == GLUT_ACTIVE_ALT)
-		quit();
+	if (ui.mod == GLUT_ACTIVE_ALT)
+	{
+		if (ui.key == KEY_F4)
+			quit();
+
+		if (ui.key == KEY_LEFT)
+			ui.key = 't', ui.mod = 0, ui.plain = 1;
+		if (ui.key == KEY_RIGHT)
+			ui.key = 'T', ui.mod = 0, ui.plain = 1;
+	}
 
 	if (ui.down || ui.middle || ui.right || ui.key)
 		showinfo = 0;
