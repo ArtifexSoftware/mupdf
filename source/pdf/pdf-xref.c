@@ -1257,6 +1257,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc)
 		pdf_drop_obj(ctx, entry->obj);
 		entry->obj = pdf_keep_obj(ctx, trailer);
 		entry->type = 'n';
+		pdf_set_obj_parent(ctx, trailer, num);
 	}
 	fz_always(ctx)
 	{

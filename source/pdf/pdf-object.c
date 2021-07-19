@@ -1297,6 +1297,14 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 
 	doc->file_size = file_size;
 	doc->num_incremental_sections = nis;
+
+	if (nis > 0)
+	{
+		/* Ditch the trailer object out of the xref. Keep the direct
+		 * trailer reference. */
+		pdf_delete_object(ctx, doc, pdf_obj_parent_num(ctx, doc->xref_sections[0].trailer));
+		pdf_set_obj_parent(ctx, doc->xref_sections[0].trailer, 0);
+	}
 }
 
 static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj *val)
