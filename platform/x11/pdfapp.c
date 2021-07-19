@@ -1504,13 +1504,6 @@ key_rewritten:
 		}
 
 	case 'l':
-		if (modifiers & 8)
-		{
-			/* Alt pressed. Treat this as 'm'. (i.e. ALT-Right) */
-			modifiers &= ~8;
-			c = 'm';
-			goto key_rewritten;
-		}
 		app->panx -= app->imgw / 10;
 		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
