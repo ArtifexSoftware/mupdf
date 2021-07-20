@@ -71,14 +71,6 @@ int pdf_field_type(fz_context *ctx, pdf_obj *obj)
 		return PDF_WIDGET_TYPE_BUTTON;
 }
 
-static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_obj *field)
-{
-	int ff = pdf_field_flags(ctx, field);
-	if (ff & PDF_FIELD_IS_NO_EXPORT) return 0;
-	if (ff & PDF_FIELD_IS_READ_ONLY) return 0;
-	return 1;
-}
-
 /* Find the point in a field hierarchy where all descendants
  * share the same name */
 static pdf_obj *find_head_of_field_group(fz_context *ctx, pdf_obj *obj)
