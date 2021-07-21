@@ -4599,3 +4599,62 @@ void pdf_drop_local_xref(fz_context *ctx, pdf_xref *xref)
 
 	fz_free(ctx, xref);
 }
+
+void
+pdf_debug_doc_changes(fz_context *ctx, pdf_document *doc)
+{
+	int i, j;
+
+	if (doc->num_incremental_sections == 0)
+		fz_write_printf(ctx, fz_stddbg(ctx), "No incremental xrefs");
+	else
+	{
+		for (i = 0; i < doc->num_incremental_sections; i++)
+		{
+			pdf_xref *xref = &doc->xref_sections[i];
+			pdf_xref_subsec *sub;
+
+			fz_write_printf(ctx, fz_stddbg(ctx), "Incremental xref:\n");
+			for (sub = xref->subsec; sub != NULL; sub = sub->next)
+			{
+				fz_write_printf(ctx, fz_stddbg(ctx), "  Objects %d->%d\n", sub->start, sub->start + sub->len - 1);
+				for (j = 0; j < sub->len; j++)
+				{
+					pdf_xref_entry *e = &sub->table[j];
+					if (e->type == 0)
+						continue;
+					fz_write_printf(ctx, fz_stddbg(ctx), "%d %d obj (%c)\n", j + sub->start, e->gen, e->type);
+					pdf_debug_obj(ctx, e->obj);
+					fz_write_printf(ctx, fz_stddbg(ctx), "\nendobj\n");
+				}
+			}
+		}
+	}
+
+	if (doc->local_xref == NULL)
+		fz_write_printf(ctx, fz_stddbg(ctx), "No local xref");
+	else
+	{
+		for (i = 0; i < doc->num_incremental_sections; i++)
+		{
+			pdf_xref *xref = doc->local_xref;
+			pdf_xref_subsec *sub;
+
+			fz_write_printf(ctx, fz_stddbg(ctx), "Local xref (%sin force):\n", doc->local_xref_nesting == 0 ? "not " : "");
+			for (sub = xref->subsec; sub != NULL; sub = sub->next)
+			{
+				fz_write_printf(ctx, fz_stddbg(ctx), "  Objects %d->%d\n", sub->start, sub->start + sub->len - 1);
+				for (j = 0; j < sub->len; j++)
+				{
+					pdf_xref_entry *e = &sub->table[j];
+					if (e->type == 0)
+						continue;
+					fz_write_printf(ctx, fz_stddbg(ctx), "%d %d obj (%c)\n", j + sub->start, e->gen, e->type);
+					pdf_debug_obj(ctx, e->obj);
+					fz_write_printf(ctx, fz_stddbg(ctx), "\nendobj\n");
+				}
+			}
+		}
+	}
+
+}
