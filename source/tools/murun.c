@@ -6087,16 +6087,6 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 		js_throw(J);
 }
 
-static void ffi_PDFAnnotation_updateAppearance(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	fz_try(ctx)
-		pdf_update_appearance(ctx, annot);
-	fz_catch(ctx)
-		rethrow(J);
-}
-
 static void ffi_PDFAnnotation_update(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7007,7 +6997,6 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.clearVertices", ffi_PDFAnnotation_clearVertices, 0);
 		jsB_propfun(J, "PDFAnnotation.addVertex", ffi_PDFAnnotation_addVertex, 2);
 
-		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.update", ffi_PDFAnnotation_update, 0);
 
 		jsB_propfun(J, "PDFAnnotation.getHot", ffi_PDFAnnotation_getHot, 0);
