@@ -6574,6 +6574,32 @@ static void ffi_PDFWidget_previewSignature(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_PDFWidget_getEditingState(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int state = 0;
+
+	fz_try(ctx)
+		state = pdf_get_widget_editing_state(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, state);
+}
+
+static void ffi_PDFWidget_setEditingState(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	int state = js_toboolean(J, 1);
+
+	fz_try(ctx)
+		pdf_set_widget_editing_state(ctx, widget, state);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFWidget_clearSignature(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7048,6 +7074,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFWidget.clearSignature", ffi_PDFWidget_clearSignature, 0);
 		jsB_propfun(J, "PDFWidget.sign", ffi_PDFWidget_sign, 5);
 		jsB_propfun(J, "PDFWidget.previewSignature", ffi_PDFWidget_previewSignature, 5);
+		jsB_propfun(J, "PDFWidget.getEditingState", ffi_PDFWidget_getEditingState, 0);
+		jsB_propfun(J, "PDFWidget.setEditingState", ffi_PDFWidget_setEditingState, 1);
 	}
 	js_dup(J);
 	js_setglobal(J, "PDFWidget");
