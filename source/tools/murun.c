@@ -6224,7 +6224,7 @@ static void ffi_PDFWidget_getValue(js_State *J)
 	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
 	const char *value;
 	fz_try(ctx)
-		value = pdf_field_value(ctx, pdf_annot_obj(ctx, widget));
+		value = pdf_annot_field_value(ctx, widget);
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushstring(J, value);
