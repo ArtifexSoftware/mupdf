@@ -2354,7 +2354,7 @@ pdf_is_local_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	if (!pdf_is_indirect(ctx, obj))
 		return 0;
 
-	if (xref == NULL || doc->local_xref_nesting == 0)
+	if (xref == NULL)
 		return 0; /* no local xref present */
 
 	num = pdf_to_num(ctx, obj);
