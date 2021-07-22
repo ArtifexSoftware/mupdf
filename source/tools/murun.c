@@ -6611,6 +6611,20 @@ static void ffi_PDFWidget_clearSignature(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFWidget_getLabel(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_widget *widget = js_touserdata(J, 0, "pdf_widget");
+	const char *label = NULL;
+
+	fz_try(ctx)
+		label = pdf_annot_field_label(ctx, widget);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, label);
+}
+
 static void ffi_new_PDFPKCS7Signer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7076,6 +7090,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFWidget.previewSignature", ffi_PDFWidget_previewSignature, 5);
 		jsB_propfun(J, "PDFWidget.getEditingState", ffi_PDFWidget_getEditingState, 0);
 		jsB_propfun(J, "PDFWidget.setEditingState", ffi_PDFWidget_setEditingState, 1);
+		jsB_propfun(J, "PDFWidget.getLabel", ffi_PDFWidget_getLabel, 0);
 	}
 	js_dup(J);
 	js_setglobal(J, "PDFWidget");
