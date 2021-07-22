@@ -913,6 +913,9 @@ int pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt)
 				js_getproperty(js->imp, -1, "change");
 				evt->newChange = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
 				js_pop(js->imp, 1);
+				js_getproperty(js->imp, -1, "value");
+				evt->newValue = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				js_pop(js->imp, 1);
 				js_getproperty(js->imp, -1, "selStart");
 				evt->selStart = js_tryinteger(js->imp, -1, 0);
 				js_pop(js->imp, 1);

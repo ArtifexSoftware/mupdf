@@ -316,6 +316,7 @@ typedef struct
 	int selStart, selEnd;
 	int willCommit;
 	char *newChange;
+	char *newValue;
 } pdf_keystroke_event;
 
 int pdf_field_event_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_keystroke_event *evt);
