@@ -2150,7 +2150,7 @@ void pdf_field_event_calculate(fz_context *ctx, pdf_document *doc, pdf_obj *fiel
 				pdf_execute_js_action(ctx, doc, field, "AA/C/JS", action);
 				if (pdf_js_event_result(js))
 				{
-					char *new_value = pdf_js_event_value(js);
+					new_value = pdf_js_event_value(js);
 					if (strcmp(old_value, new_value))
 						pdf_set_field_value(ctx, doc, field, new_value, 0);
 				}
