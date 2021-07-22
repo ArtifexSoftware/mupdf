@@ -2105,7 +2105,7 @@ char *pdf_field_event_format(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	pdf_js *js = doc->js;
 	if (js)
 	{
-		pdf_obj *action = pdf_dict_getp_inheritable(ctx, field, "AA/K/JS");
+		pdf_obj *action = pdf_dict_getp_inheritable(ctx, field, "AA/F/JS");
 		if (action)
 		{
 			const char *value = pdf_field_value(ctx, field);
