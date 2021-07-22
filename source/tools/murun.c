@@ -4542,6 +4542,77 @@ static void ffi_PDFDocument_wasPureXFA(js_State *J)
 	js_pushboolean(J, val);
 }
 
+struct event_cb_data
+{
+	js_State *J;
+	const char *listener;
+};
+
+static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
+{
+	js_State *J = ((struct event_cb_data *) data)->J;
+	const char *listener = ((struct event_cb_data *) data)->listener;
+
+	switch (event->type)
+	{
+	case PDF_DOCUMENT_EVENT_ALERT:
+		{
+			pdf_alert_event *alert = pdf_access_alert_event(ctx, event);
+
+			if (js_try(J))
+				rethrow_as_fz(J);
+
+			js_getregistry(J, listener);
+			if (js_hasproperty(J, -1, "onAlert"))
+			{
+				js_pushnull(J);
+				js_pushstring(J, alert->message);
+				js_pcall(J, 1);
+				js_pop(J, 1);
+			}
+			js_endtry(J);
+		}
+		break;
+
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "event not yet implemented");
+		break;
+	}
+}
+
+static void ffi_PDFDocument_setEventListener(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	struct event_cb_data *data = NULL;
+
+	fz_try(ctx)
+	{
+		data = pdf_get_doc_event_callback_data(ctx, pdf);
+		if (!data)
+			data = fz_calloc(ctx, 1, sizeof (struct event_cb_data));
+		pdf_set_doc_event_callback(ctx, pdf, NULL, NULL);
+	}
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J)) {
+		fz_free(ctx, data);
+		js_throw(J);
+	}
+	if (data->listener)
+		js_unref(J, data->listener);
+	js_copy(J, 1);
+	data->listener = js_ref(J);
+	data->J = J;
+	js_endtry(J);
+
+	fz_try(ctx)
+		pdf_set_doc_event_callback(ctx, pdf, event_cb, data);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_hasUnsavedChanges(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6955,6 +7026,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.countUnsavedVersions", ffi_PDFDocument_countUnsavedVersions, 0);
 		jsB_propfun(J, "PDFDocument.validateChangeHistory", ffi_PDFDocument_validateChangeHistory, 0);
 		jsB_propfun(J, "PDFDocument.wasPureXFA", ffi_PDFDocument_wasPureXFA, 0);
+		jsB_propfun(J, "PDFDocument.setEventListener", ffi_PDFDocument_setEventListener, 1);
 
 		jsB_propfun(J, "PDFDocument.hasUnsavedChanges", ffi_PDFDocument_hasUnsavedChanges, 0);
 		jsB_propfun(J, "PDFDocument.wasRepaired", ffi_PDFDocument_wasRepaired, 0);
