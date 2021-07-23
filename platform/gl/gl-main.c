@@ -1571,13 +1571,13 @@ static void alert_box(const char *fmt, const char *str)
 }
 
 
-static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
+static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *evt, void *data)
 {
-	switch (event->type)
+	switch (evt->type)
 	{
 	case PDF_DOCUMENT_EVENT_ALERT:
 		{
-			pdf_alert_event *alert = pdf_access_alert_event(ctx, event);
+			pdf_alert_event *alert = pdf_access_alert_event(ctx, evt);
 			alert_box("%s", alert->message);
 		}
 		break;
