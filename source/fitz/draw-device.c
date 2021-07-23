@@ -1955,7 +1955,14 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 
 	src_area = find_src_area_required(local_ctm, image, clip);
 	if (fz_is_empty_irect(src_area))
+	{
+#ifdef DUMP_GROUP_BLENDS
+		dump_spaces(dev->top-1, "Clip (image mask) (empty source area) begin\n");
+#endif
+		state[1].scissor = fz_empty_irect;
+		state[1].mask = NULL;
 		return;
+	}
 
 	bbox = fz_irect_from_rect(fz_transform_rect(fz_unit_rect, local_ctm));
 	bbox = fz_intersect_irect(bbox, state->scissor);
