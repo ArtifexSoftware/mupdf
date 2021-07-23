@@ -1561,6 +1561,33 @@ reload_or_start_journalling(fz_context *ctx, pdf_document *pdf)
 	pdf_enable_journal(ctx, pdf);
 }
 
+static void alert_box(const char *fmt, const char *str)
+{
+#ifdef _WIN32
+	MessageBoxA(NULL, str, "MuPDF Alert", MB_ICONERROR);
+#else
+	fprintf(stderr, "MuPDF Alert: %s\n", str);
+#endif
+}
+
+
+static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
+{
+	switch (event->type)
+	{
+	case PDF_DOCUMENT_EVENT_ALERT:
+		{
+			pdf_alert_event *alert = pdf_access_alert_event(ctx, event);
+			alert_box("%s", alert->message);
+		}
+		break;
+
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "event not yet implemented");
+		break;
+	}
+}
+
 static void load_document(void)
 {
 	char accelpath[PATH_MAX];
@@ -1708,6 +1735,9 @@ static void load_document(void)
 	anchor = NULL;
 
 	oldpage = currentpage = fz_clamp_location(ctx, doc, currentpage);
+
+	if (pdf)
+		pdf_set_doc_event_callback(ctx, pdf, event_cb, NULL);
 }
 
 static void reflow_document(void)
