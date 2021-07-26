@@ -498,6 +498,7 @@ static void tx_dialog(void)
 	{
 		ui_layout(T, X, NW, ui.padsize, ui.padsize);
 		ui_label("%s", label);
+		tx_input.widget = tx_widget;
 		is = ui_input(&tx_input, 200, tx_h);
 
 		ui_layout(B, X, NW, ui.padsize, ui.padsize);
