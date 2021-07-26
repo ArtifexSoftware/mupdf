@@ -638,13 +638,17 @@ enum pdf_widget_type pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 
 static int set_validated_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text, int ignore_trigger_events)
 {
+	char *newtext = NULL;
+
 	if (!ignore_trigger_events)
 	{
-		if (!pdf_field_event_validate(ctx, doc, field, text))
+		if (!pdf_field_event_validate(ctx, doc, field, text, &newtext))
 			return 0;
 	}
 
-	update_field_value(ctx, doc, field, text);
+	update_field_value(ctx, doc, field, newtext ? newtext : text);
+
+	fz_free(ctx, newtext);
 
 	return 1;
 }
@@ -2197,9 +2201,11 @@ char *pdf_field_event_format(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return NULL;
 }
 
-int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *value)
+int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *value, char **newvalue)
 {
 	pdf_js *js = doc->js;
+
+	*newvalue = NULL;
 	if (js)
 	{
 		pdf_obj *action = pdf_dict_getp_inheritable(ctx, field, "AA/V/JS");
@@ -2207,7 +2213,7 @@ int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 		{
 			pdf_js_event_init(js, field, value, 1);
 			pdf_execute_js_action(ctx, doc, field, "AA/V/JS", action);
-			return pdf_js_event_result(js);
+			return pdf_js_event_result_validate(js, newvalue);
 		}
 	}
 	return 1;

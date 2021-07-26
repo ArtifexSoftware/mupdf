@@ -880,6 +880,27 @@ int pdf_js_event_result(pdf_js *js)
 	return rc;
 }
 
+int pdf_js_event_result_validate(pdf_js *js, char **newtext)
+{
+	int rc = 1;
+	*newtext = NULL;
+	if (js)
+	{
+		js_getglobal(js->imp, "event");
+		js_getproperty(js->imp, -1, "rc");
+		rc = js_tryboolean(js->imp, -1, 1);
+		js_pop(js->imp, 1);
+		if (rc)
+		{
+			js_getproperty(js->imp, -1, "value");
+			*newtext = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+			js_pop(js->imp, 1);
+		}
+		js_pop(js->imp, 1);
+	}
+	return rc;
+}
+
 void pdf_js_event_init_keystroke(pdf_js *js, pdf_obj *target, pdf_keystroke_event *evt)
 {
 	if (js)
@@ -1006,5 +1027,6 @@ int pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt) { return
 int pdf_js_event_result(pdf_js *js) { return 1; }
 char *pdf_js_event_value(pdf_js *js) { return ""; }
 void pdf_js_execute(pdf_js *js, const char *name, const char *source) { }
+int pdf_js_event_result_validate(pdf_js *js, char **newvalue) { *newvalue=NULL; return 1; }
 
 #endif /* FZ_ENABLE_JS */

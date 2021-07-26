@@ -321,7 +321,7 @@ typedef struct
 } pdf_keystroke_event;
 
 int pdf_field_event_keystroke(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_keystroke_event *evt);
-int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *value);
+int pdf_field_event_validate(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *value, char **newvalue);
 void pdf_field_event_calculate(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 char *pdf_field_event_format(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 
