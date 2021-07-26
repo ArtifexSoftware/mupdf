@@ -32,8 +32,12 @@ int pdf_update_widget(fz_context *ctx, pdf_widget *widget);
 
 /*
 	create a new signature widget on the specified page, with the
-	specified name. The returned pdf_widget structure is owned by
-	the page and does not need to be freed
+	specified name.
+
+	The returns pdf_widget reference must be dropped by the caller.
+	This is a change from releases up to an including 1.18, where
+	the returned reference was owned by the page and did not need
+	to be freed by the caller.
 */
 pdf_widget *pdf_create_signature_widget(fz_context *ctx, pdf_page *page, char *name);
 

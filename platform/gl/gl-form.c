@@ -616,7 +616,8 @@ void do_widget_canvas(fz_irect canvas_area)
 						pdf_annot_event_blur(ctx, selected_annot);
 					}
 					trace_action("widget = page.getWidgets()[%d];\n", idx);
-					selected_annot = widget;
+					pdf_drop_annot(ctx, selected_annot);
+					selected_annot = pdf_keep_annot(ctx, widget);
 					trace_action("widget.eventFocus();\n");
 					pdf_annot_event_focus(ctx, widget);
 				}

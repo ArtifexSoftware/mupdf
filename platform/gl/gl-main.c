@@ -798,6 +798,7 @@ static void clear_selected_annot(void)
 	/* clear all editor selections */
 	if (selected_annot && pdf_annot_type(ctx, selected_annot) == PDF_ANNOT_WIDGET)
 		pdf_annot_event_blur(ctx, selected_annot);
+	pdf_drop_annot(ctx, selected_annot);
 	selected_annot = NULL;
 }
 
@@ -1939,7 +1940,7 @@ static void do_app(void)
 	{
 		switch (ui.key)
 		{
-		case KEY_ESCAPE: clear_search(); selected_annot = NULL; break;
+		case KEY_ESCAPE: clear_search(); pdf_drop_annot(ctx, selected_annot); selected_annot = NULL; break;
 		case KEY_F1: ui.dialog = help_dialog; break;
 		case 'a': toggle_annotate(ANNOTATE_MODE_NORMAL); break;
 		case 'R': toggle_annotate(ANNOTATE_MODE_REDACT); break;
