@@ -568,6 +568,13 @@ function AFSpecial_KeystrokeEx(fmt) {
 	var i = 0;
 	var m;
 	var length = fmt ? fmt.length : 0;
+
+	// We always accept reverting to an empty string.
+	if (!val || val == "") {
+		event.rc = true;
+		return;
+	}
+
 	while (i < length) {
 		// In the !willCommit case, we'll exit nicely if we run out of value.
 		if (!event.willCommit && (!val || val.length == 0))
