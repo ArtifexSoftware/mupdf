@@ -1134,7 +1134,7 @@ int pdf_set_text_field_value(fz_context *ctx, pdf_widget *widget, const char *up
 		}
 		else
 		{
-			rc = pdf_set_annot_field_value(ctx, doc, widget, new_value, 1);
+			rc = pdf_set_annot_field_value(ctx, doc, widget, update, 1);
 		}
 	}
 	fz_always(ctx)
