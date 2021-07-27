@@ -4702,6 +4702,37 @@ static void ffi_PDFDocument_enableJournal(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_beginOperation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	const char *operation = js_tostring(J, 1);
+	fz_try(ctx)
+		pdf_begin_operation(ctx, pdf, operation);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_beginImplicitOperation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_begin_implicit_operation(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_endOperation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_end_operation(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_canUndo(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7123,6 +7154,9 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.enableJournal", ffi_PDFDocument_enableJournal, 0);
 		jsB_propfun(J, "PDFDocument.getJournal", ffi_PDFDocument_getJournal, 0);
+		jsB_propfun(J, "PDFDocument.beginOperation", ffi_PDFDocument_beginOperation, 1);
+		jsB_propfun(J, "PDFDocument.beginImplicitOperation", ffi_PDFDocument_beginImplicitOperation, 0);
+		jsB_propfun(J, "PDFDocument.endOperation", ffi_PDFDocument_endOperation, 0);
 		jsB_propfun(J, "PDFDocument.canUndo", ffi_PDFDocument_canUndo, 0);
 		jsB_propfun(J, "PDFDocument.canRedo", ffi_PDFDocument_canRedo, 0);
 		jsB_propfun(J, "PDFDocument.undo", ffi_PDFDocument_undo, 0);
