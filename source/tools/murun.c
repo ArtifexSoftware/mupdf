@@ -317,13 +317,6 @@ static void ffi_gc_pdf_annot(js_State *J, void *annot)
 static void ffi_gc_pdf_document(js_State *J, void *doc)
 {
 	fz_context *ctx = js_getcontext(J);
-	struct event_cb_data *data = pdf_get_doc_event_callback_data(ctx, doc);
-	if (data)
-	{
-		if (data->listener)
-			js_unref(J, data->listener);
-		fz_free(ctx, data);
-	}
 	pdf_drop_document(ctx, doc);
 }
 
@@ -4555,6 +4548,16 @@ static void ffi_PDFDocument_wasPureXFA(js_State *J)
 	js_pushboolean(J, val);
 }
 
+static void free_event_cb_data(fz_context *ctx, void *data)
+{
+	js_State *J = ((struct event_cb_data *) data)->J;
+	const char *listener = ((struct event_cb_data *) data)->listener;
+
+	if (listener)
+		js_unref(J, listener);
+	fz_free(ctx, data);
+}
+
 static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *evt, void *data)
 {
 	js_State *J = ((struct event_cb_data *) data)->J;
@@ -4594,28 +4597,23 @@ static void ffi_PDFDocument_setJSEventListener(js_State *J)
 	struct event_cb_data *data = NULL;
 
 	fz_try(ctx)
-	{
-		data = pdf_get_doc_event_callback_data(ctx, pdf);
-		if (!data)
-			data = fz_calloc(ctx, 1, sizeof (struct event_cb_data));
-		pdf_set_doc_event_callback(ctx, pdf, NULL, NULL);
-	}
+		data = fz_calloc(ctx, 1, sizeof (struct event_cb_data));
 	fz_catch(ctx)
 		rethrow(J);
 
 	if (js_try(J)) {
+		if (data->listener)
+			js_unref(J, data->listener);
 		fz_free(ctx, data);
 		js_throw(J);
 	}
-	if (data->listener)
-		js_unref(J, data->listener);
 	js_copy(J, 1);
 	data->listener = js_ref(J);
 	data->J = J;
 	js_endtry(J);
 
 	fz_try(ctx)
-		pdf_set_doc_event_callback(ctx, pdf, event_cb, data);
+		pdf_set_doc_event_callback(ctx, pdf, event_cb, free_event_cb_data, data);
 	fz_catch(ctx)
 		rethrow(J);
 }

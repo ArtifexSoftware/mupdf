@@ -1719,6 +1719,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 		/* Swallow error, but continue dropping */
 	}
 
+	pdf_set_doc_event_callback(ctx, doc, NULL, NULL, NULL);
 	pdf_drop_js(ctx, doc->js);
 
 	pdf_drop_journal(ctx, doc->journal);

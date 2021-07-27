@@ -1739,7 +1739,7 @@ static void load_document(void)
 	oldpage = currentpage = fz_clamp_location(ctx, doc, currentpage);
 
 	if (pdf)
-		pdf_set_doc_event_callback(ctx, pdf, event_cb, NULL);
+		pdf_set_doc_event_callback(ctx, pdf, event_cb, NULL, NULL);
 }
 
 static void reflow_document(void)
