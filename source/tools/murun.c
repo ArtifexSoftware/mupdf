@@ -4687,6 +4687,90 @@ static void ffi_PDFDocument_graftPage(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_enableJournal(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_enable_journal(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_canUndo(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int can;
+	fz_try(ctx)
+		can = pdf_can_undo(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, can);
+}
+
+static void ffi_PDFDocument_canRedo(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int can;
+	fz_try(ctx)
+		can = pdf_can_redo(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, can);
+}
+
+static void ffi_PDFDocument_getJournal(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	const char *name;
+	int i, position, count;
+
+	js_newobject(J);
+
+	fz_try(ctx)
+		position = pdf_undoredo_state(ctx, pdf, &count);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, position);
+	js_setproperty(J, -2, "position");
+
+	js_newarray(J);
+	for (i = 0; i < count; ++i)
+	{
+		fz_try(ctx)
+			name = pdf_undoredo_step(ctx, pdf, i);
+		fz_catch(ctx)
+			rethrow(J);
+		js_pushstring(J, name);
+		js_setindex(J, -2, i);
+	}
+	js_setproperty(J, -2, "steps");
+}
+
+static void ffi_PDFDocument_undo(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_undo(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_redo(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_redo(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFGraftMap_graftObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7031,6 +7115,13 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.hasUnsavedChanges", ffi_PDFDocument_hasUnsavedChanges, 0);
 		jsB_propfun(J, "PDFDocument.wasRepaired", ffi_PDFDocument_wasRepaired, 0);
 		jsB_propfun(J, "PDFDocument.canBeSavedIncrementally", ffi_PDFDocument_canBeSavedIncrementally, 0);
+
+		jsB_propfun(J, "PDFDocument.enableJournal", ffi_PDFDocument_enableJournal, 0);
+		jsB_propfun(J, "PDFDocument.getJournal", ffi_PDFDocument_getJournal, 0);
+		jsB_propfun(J, "PDFDocument.canUndo", ffi_PDFDocument_canUndo, 0);
+		jsB_propfun(J, "PDFDocument.canRedo", ffi_PDFDocument_canRedo, 0);
+		jsB_propfun(J, "PDFDocument.undo", ffi_PDFDocument_undo, 0);
+		jsB_propfun(J, "PDFDocument.redo", ffi_PDFDocument_redo, 0);
 	}
 	js_setregistry(J, "pdf_document");
 

@@ -1269,11 +1269,13 @@ static void do_undo(void)
 		page_contents_changed = 1;
 		while (pos > desired)
 		{
+			trace_action("doc.undo();\n");
 			pdf_undo(ctx, pdf);
 			pos--;
 		}
 		while (pos < desired)
 		{
+			trace_action("doc.redo();\n");
 			pdf_redo(ctx, pdf);
 			pos++;
 		}
@@ -1557,6 +1559,7 @@ reload_or_start_journalling(fz_context *ctx, pdf_document *pdf)
 	{
 		/* Ignore any failures here. */
 	}
+	trace_action("doc.enableJournal();\n");
 	pdf_enable_journal(ctx, pdf);
 }
 
