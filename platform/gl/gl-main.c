@@ -51,7 +51,6 @@ stat_mtime(const char *path)
 fz_context *ctx = NULL;
 pdf_document *pdf = NULL;
 pdf_page *page = NULL;
-pdf_annot *selected_annot = NULL;
 fz_stext_page *page_text = NULL;
 fz_matrix draw_page_ctm, view_page_ctm, view_page_inv_ctm;
 fz_rect page_bounds, draw_page_bounds, view_page_bounds;
@@ -796,10 +795,9 @@ void transform_page(void)
 static void clear_selected_annot(void)
 {
 	/* clear all editor selections */
-	if (selected_annot && pdf_annot_type(ctx, selected_annot) == PDF_ANNOT_WIDGET)
-		pdf_annot_event_blur(ctx, selected_annot);
-	pdf_drop_annot(ctx, selected_annot);
-	selected_annot = NULL;
+	if (ui.selected_annot && pdf_annot_type(ctx, ui.selected_annot) == PDF_ANNOT_WIDGET)
+		pdf_annot_event_blur(ctx, ui.selected_annot);
+	ui_select_annot(NULL);
 }
 
 void load_page(void)
@@ -1940,7 +1938,7 @@ static void do_app(void)
 	{
 		switch (ui.key)
 		{
-		case KEY_ESCAPE: clear_search(); pdf_drop_annot(ctx, selected_annot); selected_annot = NULL; break;
+		case KEY_ESCAPE: clear_search(); ui_select_annot(NULL); break;
 		case KEY_F1: ui.dialog = help_dialog; break;
 		case 'a': toggle_annotate(ANNOTATE_MODE_NORMAL); break;
 		case 'R': toggle_annotate(ANNOTATE_MODE_REDACT); break;

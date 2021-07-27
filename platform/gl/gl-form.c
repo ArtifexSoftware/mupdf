@@ -608,16 +608,15 @@ void do_widget_canvas(fz_irect canvas_area)
 				ui.active = widget;
 				trace_action("page.getWidgets()[%d].eventDown();\n", idx);
 				pdf_annot_event_down(ctx, widget);
-				if (selected_annot != widget)
+				if (ui.selected_annot != widget)
 				{
-					if (selected_annot && pdf_annot_type(ctx, selected_annot) == PDF_ANNOT_WIDGET)
+					if (ui.selected_annot && pdf_annot_type(ctx, ui.selected_annot) == PDF_ANNOT_WIDGET)
 					{
 						trace_action("widget.eventBlur();\n", idx);
-						pdf_annot_event_blur(ctx, selected_annot);
+						pdf_annot_event_blur(ctx, ui.selected_annot);
 					}
 					trace_action("widget = page.getWidgets()[%d];\n", idx);
-					pdf_drop_annot(ctx, selected_annot);
-					selected_annot = pdf_keep_annot(ctx, widget);
+					ui_select_annot(pdf_keep_annot(ctx, widget));
 					trace_action("widget.eventFocus();\n");
 					pdf_annot_event_focus(ctx, widget);
 				}
