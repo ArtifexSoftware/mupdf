@@ -4580,7 +4580,7 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *evt, voi
 	}
 }
 
-static void ffi_PDFDocument_setEventListener(js_State *J)
+static void ffi_PDFDocument_setJSEventListener(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
@@ -7026,7 +7026,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.countUnsavedVersions", ffi_PDFDocument_countUnsavedVersions, 0);
 		jsB_propfun(J, "PDFDocument.validateChangeHistory", ffi_PDFDocument_validateChangeHistory, 0);
 		jsB_propfun(J, "PDFDocument.wasPureXFA", ffi_PDFDocument_wasPureXFA, 0);
-		jsB_propfun(J, "PDFDocument.setEventListener", ffi_PDFDocument_setEventListener, 1);
+		jsB_propfun(J, "PDFDocument.setJSEventListener", ffi_PDFDocument_setJSEventListener, 1);
 
 		jsB_propfun(J, "PDFDocument.hasUnsavedChanges", ffi_PDFDocument_hasUnsavedChanges, 0);
 		jsB_propfun(J, "PDFDocument.wasRepaired", ffi_PDFDocument_wasRepaired, 0);
