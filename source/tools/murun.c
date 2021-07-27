@@ -195,6 +195,12 @@ static const char *stacktrace_js =
 	"};\n"
 ;
 
+struct event_cb_data
+{
+	js_State *J;
+	const char *listener;
+};
+
 /* destructors */
 
 static void ffi_gc_fz_buffer(js_State *J, void *buf)
@@ -311,6 +317,13 @@ static void ffi_gc_pdf_annot(js_State *J, void *annot)
 static void ffi_gc_pdf_document(js_State *J, void *doc)
 {
 	fz_context *ctx = js_getcontext(J);
+	struct event_cb_data *data = pdf_get_doc_event_callback_data(ctx, doc);
+	if (data)
+	{
+		if (data->listener)
+			js_unref(J, data->listener);
+		fz_free(ctx, data);
+	}
 	pdf_drop_document(ctx, doc);
 }
 
@@ -4541,12 +4554,6 @@ static void ffi_PDFDocument_wasPureXFA(js_State *J)
 		rethrow(J);
 	js_pushboolean(J, val);
 }
-
-struct event_cb_data
-{
-	js_State *J;
-	const char *listener;
-};
 
 static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *evt, void *data)
 {
