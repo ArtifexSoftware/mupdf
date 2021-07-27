@@ -339,7 +339,7 @@ static void ffi_pushdocument(js_State *J, fz_document *document)
 	pdf_document *pdocument = pdf_document_from_fz_document(ctx, document);
 	if (pdocument) {
 		js_getregistry(J, "pdf_document");
-		js_newuserdata(J, "pdf_document", document, ffi_gc_fz_document);
+		js_newuserdata(J, "pdf_document", document, ffi_gc_pdf_document);
 	} else {
 		js_getregistry(J, "fz_document");
 		js_newuserdata(J, "fz_document", document, ffi_gc_fz_document);
