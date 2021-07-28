@@ -2591,6 +2591,8 @@ static void cleanup(void)
 
 	ui_finish();
 
+	fz_drop_pixmap(ctx, page_contents);
+	page_contents = NULL;
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
 		fz_debug_store(ctx, fz_stdout(ctx));
