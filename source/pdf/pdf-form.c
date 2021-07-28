@@ -585,16 +585,6 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 		for (widget = page->widgets; widget; widget = widget->next)
 			if (pdf_update_annot(ctx, widget))
 				changed = 1;
-		if (changed)
-		{
-			for (annot = page->annots; annot; annot = annot->next)
-				pdf_update_annot(ctx, annot);
-			for (widget = page->widgets; widget; widget = widget->next)
-				pdf_update_annot(ctx, widget);
-			/* These pdf_update_annots may return true (but only if they
-			 * did the first time, and a third run through will never
-			 * get any changes. */
-		}
 	}
 	fz_always(ctx)
 	{

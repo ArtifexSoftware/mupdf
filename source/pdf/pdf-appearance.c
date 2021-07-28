@@ -2781,12 +2781,54 @@ static void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 		fz_rethrow(ctx);
 }
 
+static void *
+update_appearances(fz_context *ctx, fz_page *page_, void *state)
+{
+	pdf_page *page = (pdf_page *)page_;
+	pdf_annot *annot;
+
+	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+		pdf_update_appearance(ctx, annot);
+	for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+		pdf_update_appearance(ctx, annot);
+
+	return NULL;
+}
+
+static void
+update_all_appearances(fz_context *ctx, pdf_page *page)
+{
+	pdf_document *doc = page->doc;
+
+	/* Update all the annotations on all the pages open in the document.
+	 * At least one annotation should be resynthesised because we'll
+	 * only reach here if resynth_required was set. Any such resynthesis
+	 * that changes the document will throw away any local_xref. */
+	fz_process_opened_pages(ctx, &doc->super, update_appearances, NULL);
+	/* If the page isn't linked in yet (as is the case whilst loading
+	 * the annots for a page), process that too. */
+	if (page->super.prev == NULL && page->super.next == NULL)
+		update_appearances(ctx, &page->super, NULL);
+
+	/* Run it a second time, so that any annotations whose synthesised
+	 * appearances live in the local_xref (such as unsigned sigs) can
+	 * be regenerated too. Running this for annots which are up to date
+	 * should be fast. */
+	fz_process_opened_pages(ctx, &doc->super, update_appearances, NULL);
+	/* And cope with a non-linked in page again. */
+	if (page->super.prev == NULL && page->super.next == NULL)
+		update_appearances(ctx, &page->super, NULL);
+
+	doc->resynth_required = 0;
+}
+
 int
 pdf_update_annot(fz_context *ctx, pdf_annot *annot)
 {
 	int changed;
 
-	pdf_update_appearance(ctx, annot);
+	if (annot->page->doc->resynth_required)
+		update_all_appearances(ctx, annot->page);
 
 	changed = annot->has_new_ap;
 	annot->has_new_ap = 0;

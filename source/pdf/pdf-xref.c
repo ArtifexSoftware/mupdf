@@ -4609,6 +4609,7 @@ void pdf_drop_local_xref_and_resources(fz_context *ctx, pdf_document *doc)
 	pdf_purge_locals_from_store(ctx, doc);
 	pdf_drop_local_xref(ctx, doc->local_xref);
 	doc->local_xref = NULL;
+	doc->resynth_required = 1;
 }
 
 void

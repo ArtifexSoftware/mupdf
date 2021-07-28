@@ -372,6 +372,7 @@ struct pdf_document
 
 	int recalculate;
 	int redacted;
+	int resynth_required;
 
 	pdf_doc_event_cb *event_cb;
 	pdf_free_doc_event_data_cb *free_event_data_cb;
