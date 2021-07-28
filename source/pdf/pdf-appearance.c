@@ -2198,7 +2198,6 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			ap = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(AP), 2);
 			pdf_dict_put(ctx, ap, PDF_NAME(N), ap_n);
 			pdf_dict_put(ctx, ap, PDF_NAME(D), ap_d);
-			pdf_set_annot_has_changed(ctx, annot);
 		}
 		fz_always(ctx)
 		{
@@ -2250,7 +2249,6 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			ap_n = pdf_dict_put_dict(ctx, ap, PDF_NAME(N), 2);
 			pdf_dict_put(ctx, ap_n, PDF_NAME(Off), ap_off);
 			pdf_dict_put(ctx, ap_n, as_yes, ap_yes);
-			pdf_set_annot_has_changed(ctx, annot);
 		}
 		fz_always(ctx)
 		{
@@ -2263,6 +2261,7 @@ static void pdf_update_button_appearance(fz_context *ctx, pdf_annot *annot)
 			fz_rethrow(ctx);
 		}
 	}
+	pdf_set_annot_resynthesised(ctx, annot);
 }
 
 static void draw_logo(fz_context *ctx, fz_path *path)
@@ -2716,8 +2715,6 @@ static void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 				ap_n = pdf_annot_ap(ctx, annot);
 				pop_local_xref = 0;
 			}
-
-			pdf_set_annot_resynthesised(ctx, annot);
 
 			if (subtype == PDF_NAME(Widget) && ft == PDF_NAME(Btn))
 			{
