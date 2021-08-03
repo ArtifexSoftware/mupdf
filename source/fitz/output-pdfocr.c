@@ -3,12 +3,6 @@
 #include <string.h>
 #include <limits.h>
 
-#if !defined(HAVE_LEPTONICA) || !defined(HAVE_TESSERACT)
-#ifndef OCR_DISABLED
-#define OCR_DISABLED
-#endif
-#endif
-
 #ifdef OCR_DISABLED
 
 /* In non-OCR builds, we need to define this otherwise SWIG Python gets SEGV
