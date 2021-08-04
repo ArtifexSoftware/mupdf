@@ -865,6 +865,7 @@ void load_page(void)
 						char *s = pdf_signature_format_distinguished_name(ctx, dn);
 						fz_strlcpy(buf, s, sizeof buf);
 						fz_free(ctx, s);
+						pdf_signature_drop_distinguished_name(ctx, dn);
 					}
 					else
 					{
