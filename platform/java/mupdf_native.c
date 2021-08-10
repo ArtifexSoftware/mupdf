@@ -122,6 +122,9 @@ static jclass cls_TextBlock;
 static jclass cls_TextChar;
 static jclass cls_TextLine;
 static jclass cls_TextWalker;
+static jclass cls_TextWidgetCharLayout;
+static jclass cls_TextWidgetLayout;
+static jclass cls_TextWidgetLineLayout;
 static jclass cls_TryLaterException;
 static jclass cls_UnsupportedOperationException;
 
@@ -198,6 +201,19 @@ static jfieldID fid_TextChar_c;
 static jfieldID fid_TextChar_quad;
 static jfieldID fid_TextLine_bbox;
 static jfieldID fid_TextLine_chars;
+static jfieldID fid_TextWidgetCharLayout_advance;
+static jfieldID fid_TextWidgetCharLayout_index;
+static jfieldID fid_TextWidgetCharLayout_rect;
+static jfieldID fid_TextWidgetCharLayout_x;
+static jfieldID fid_TextWidgetLayout_invMatrix;
+static jfieldID fid_TextWidgetLayout_lines;
+static jfieldID fid_TextWidgetLayout_matrix;
+static jfieldID fid_TextWidgetLineLayout_chars;
+static jfieldID fid_TextWidgetLineLayout_fontSize;
+static jfieldID fid_TextWidgetLineLayout_index;
+static jfieldID fid_TextWidgetLineLayout_rect;
+static jfieldID fid_TextWidgetLineLayout_x;
+static jfieldID fid_TextWidgetLineLayout_y;
 static jfieldID fid_Text_pointer;
 
 static jmethodID mid_ColorSpace_fromPointer;
@@ -280,6 +296,9 @@ static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
 static jmethodID mid_TextLine_init;
 static jmethodID mid_TextWalker_showGlyph;
+static jmethodID mid_TextWidgetCharLayout_init;
+static jmethodID mid_TextWidgetLayout_init;
+static jmethodID mid_TextWidgetLineLayout_init;
 static jmethodID mid_Text_init;
 
 #ifdef _WIN32
@@ -924,6 +943,28 @@ static int find_fids(JNIEnv *env)
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
 	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;IIZ)V");
 
+	cls_TextWidgetLayout = get_class(&err, env, PKG"PDFWidget$TextWidgetLayout");
+	fid_TextWidgetLayout_matrix = get_field(&err, env, "matrix", "L"PKG"Matrix;");
+	fid_TextWidgetLayout_invMatrix = get_field(&err, env, "invMatrix", "L"PKG"Matrix;");
+	fid_TextWidgetLayout_lines = get_field(&err, env, "lines", "[L"PKG"PDFWidget$TextWidgetLineLayout;");
+	mid_TextWidgetLayout_init = get_method(&err, env, "<init>", "(L"PKG"PDFWidget;)V");
+
+	cls_TextWidgetLineLayout = get_class(&err, env, PKG"PDFWidget$TextWidgetLineLayout");
+	fid_TextWidgetLineLayout_x = get_field(&err, env, "x", "F");
+	fid_TextWidgetLineLayout_y = get_field(&err, env, "y", "F");
+	fid_TextWidgetLineLayout_fontSize = get_field(&err, env, "fontSize", "F");
+	fid_TextWidgetLineLayout_index = get_field(&err, env, "index", "I");
+	fid_TextWidgetLineLayout_rect = get_field(&err, env, "rect", "L"PKG"Rect;");
+	fid_TextWidgetLineLayout_chars = get_field(&err, env, "chars", "[L"PKG"PDFWidget$TextWidgetCharLayout;");
+	mid_TextWidgetLineLayout_init = get_method(&err, env, "<init>", "(L"PKG"PDFWidget;)V");
+
+	cls_TextWidgetCharLayout = get_class(&err, env, PKG"PDFWidget$TextWidgetCharLayout");
+	fid_TextWidgetCharLayout_x = get_field(&err, env, "x", "F");
+	fid_TextWidgetCharLayout_advance = get_field(&err, env, "advance", "F");
+	fid_TextWidgetCharLayout_index = get_field(&err, env, "index", "I");
+	fid_TextWidgetCharLayout_rect = get_field(&err, env, "rect", "L"PKG"Rect;");
+	mid_TextWidgetCharLayout_init = get_method(&err, env, "<init>", "(L"PKG"PDFWidget;)V");
+
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
 	/* Standard Java classes */
@@ -1048,6 +1089,9 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_TextChar);
 	(*env)->DeleteGlobalRef(env, cls_TextLine);
 	(*env)->DeleteGlobalRef(env, cls_TextWalker);
+	(*env)->DeleteGlobalRef(env, cls_TextWidgetCharLayout);
+	(*env)->DeleteGlobalRef(env, cls_TextWidgetLayout);
+	(*env)->DeleteGlobalRef(env, cls_TextWidgetLineLayout);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 	(*env)->DeleteGlobalRef(env, cls_UnsupportedOperationException);
 }
