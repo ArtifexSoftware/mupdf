@@ -108,18 +108,22 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 
 		if (xo || yo)
 		{
-			int x, y, h;
+			int x, y, w, h;
 			fz_rect mediabox;
 			fz_matrix pagectm;
 
 			/* Link coords use a coordinate space that does not seem to respect Rotate or UserUnit. */
-			/* All we need to do is figure out the page height to flip the coordinate space. */
+			/* All we need to do is figure out the page size to flip the coordinate space and
+			 * clamp the coordinates to stay on the page. */
 			pdf_page_obj_transform(ctx, pageobj, &mediabox, &pagectm);
 			mediabox = fz_transform_rect(mediabox, pagectm);
+			w = mediabox.x1 - mediabox.x0;
 			h = mediabox.y1 - mediabox.y0;
 
 			x = xo ? pdf_to_int(ctx, xo) : 0;
 			y = yo ? h - pdf_to_int(ctx, yo) : 0;
+			x = fz_clamp(x, 0, w);
+			y = fz_clamp(y, 0, h);
 			return fz_asprintf(ctx, "#%d,%d,%d", page + 1, x, y);
 		}
 	}
