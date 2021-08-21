@@ -81,8 +81,6 @@ FUN(DocumentWriter_newNativeDocumentWriterWithSeekableOutputStream)(JNIEnv *env,
 	jbyteArray array = NULL;
 	fz_output *out;
 
-	printf("DocumentWriter.newNativeDocumentWriterWithOutput()\n"); fflush(0);
-
 	if (!ctx) return 0;
 	if (!jstream) jni_throw_arg(env, "output stream must not be null");
 
