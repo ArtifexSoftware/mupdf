@@ -792,7 +792,7 @@ static int find_fids(JNIEnv *env)
 	fid_DocumentWriter_ocrlistener = get_field(&err, env, "ocrlistener", "J");
 
 	cls_DocumentWriter_OCRListener = get_class(&err, env, PKG"DocumentWriter$OCRListener");
-	mid_DocumentWriter_OCRListener_progress = get_method(&err, env, "progress", "(I)Z");
+	mid_DocumentWriter_OCRListener_progress = get_method(&err, env, "progress", "(II)Z");
 
 	cls_FitzInputStream = get_class(&err, env, PKG"FitzInputStream");
 	fid_FitzInputStream_pointer = get_field(&err, env, "pointer", "J");
