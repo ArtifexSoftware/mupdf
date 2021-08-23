@@ -37,7 +37,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
-public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener, MouseWheelListener
+public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, KeyListener, MouseWheelListener, Context.Log
 {
 	protected String documentPath;
 	protected Document doc;
@@ -243,6 +243,50 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		public Dimension getMinimumSize() { return getPreferredSize(); }
 		public Dimension getMaximumSize() { return getPreferredSize(); }
 		public void update(Graphics g) { paint(g); }
+	}
+
+	public class LogDialog extends Dialog implements ActionListener, KeyListener{
+		Label info = new Label("", Label.CENTER);
+		Button okay = new Button("Okay");
+
+		public LogDialog(Frame parent, String title, String message) {
+			super(parent, title, true);
+
+			setLayout(new GridLayout(2, 1));
+			info.setText(message);
+			add(info);
+
+			okay.addActionListener(this);
+			okay.addKeyListener(this);
+			add(okay);
+
+			pack();
+			setResizable(false);
+			okay.requestFocusInWindow();
+			setLocationRelativeTo(parent);
+			setVisible(true);
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			if (e.getSource() == okay)
+				dispose();
+		}
+
+		public void keyPressed(KeyEvent e) { }
+		public void keyReleased(KeyEvent e) { }
+
+		public void keyTyped(KeyEvent e) {
+			if (e.getKeyChar() == '\u001b')
+				dispose();
+		}
+	}
+
+	public void error(String message) {
+		LogDialog ld = new LogDialog(this, "Error!", "Error: " + message);
+	}
+
+	public void warning(String message) {
+		LogDialog ld = new LogDialog(this, "Warning!", "Warning: " + message);
 	}
 
 	public Viewer(String documentPath) {
@@ -1506,10 +1550,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 						wri.close();
 					}
 				} catch (IOException e) {
-					System.out.println(e.getMessage());
+					error(e.getMessage());
 				} catch (RuntimeException e) {
 					if (!meter.cancelled)
-						System.out.println(e.getMessage());
+						error(e.getMessage());
 				} finally {
 					meter.dispose();
 					if (wri != null) wri.destroy();
