@@ -17,7 +17,7 @@ static int SeekableInputStream_next(fz_context *ctx, fz_stream *stm, size_t max)
 	JNIEnv *env;
 	int n, ch;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_next");
 
@@ -56,7 +56,7 @@ static void SeekableInputStream_seek(fz_context *ctx, fz_stream *stm, int64_t of
 	JNIEnv *env;
 	int64_t pos;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableInputStream_seek");
 
@@ -76,7 +76,7 @@ static void SeekableInputStream_drop(fz_context *ctx, void *streamState_)
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 	{
 		fz_warn(ctx, "cannot attach to JVM in SeekableInputStream_drop; leaking input stream");
@@ -98,7 +98,7 @@ static void SeekableOutputStream_write(fz_context *ctx, void *streamState_, cons
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_write");
 
@@ -128,7 +128,7 @@ static int64_t SeekableOutputStream_tell(fz_context *ctx, void *streamState_)
 	int64_t pos = 0;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_tell");
 
@@ -147,7 +147,7 @@ static void SeekableOutputStream_truncate(fz_context *ctx, void *streamState_)
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_truncate");
 
@@ -164,7 +164,7 @@ static void SeekableOutputStream_seek(fz_context *ctx, void *streamState_, int64
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in SeekableOutputStream_seek");
 
@@ -181,7 +181,7 @@ static void SeekableOutputStream_drop(fz_context *ctx, void *streamState_)
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 	{
 		fz_warn(ctx, "cannot attach to JVM in SeekableOutputStream_drop; leaking output stream");

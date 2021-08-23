@@ -27,7 +27,7 @@ static void signer_drop(fz_context *ctx, pdf_pkcs7_signer *signer_)
 		jboolean detach = JNI_FALSE;
 		JNIEnv *env = NULL;
 
-		env = jni_attach_thread(ctx, &detach);
+		env = jni_attach_thread(&detach);
 		if (env == NULL)
 		{
 			fz_warn(ctx, "cannot attach to JVM in signer_drop");
@@ -76,7 +76,7 @@ static pdf_pkcs7_distinguished_name *signer_distinguished_name(fz_context *ctx, 
 
 	if (signer == NULL) return NULL;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in pdf_pkcs7_distinguished_name");
 
@@ -119,7 +119,7 @@ static size_t signer_max_digest_size(fz_context *ctx, pdf_pkcs7_signer *signer_)
 	size_t max_digest = 0;
 	int len;
 
-	JNIEnv *env = jni_attach_thread(ctx, &detach);
+	JNIEnv *env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in signer_max_digest_size");
 
@@ -145,7 +145,7 @@ static int signer_create_digest(fz_context *ctx, pdf_pkcs7_signer *signer_, fz_s
 	jobject jstm;
 	int result = 1;
 
-	JNIEnv *env = jni_attach_thread(ctx, &detach);
+	JNIEnv *env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in signer_create_digest");
 

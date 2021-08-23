@@ -1007,7 +1007,7 @@ static int find_fids(JNIEnv *env)
 /* When making callbacks from C to java, we may be called on threads
  * other than the foreground. As such, we have no JNIEnv. This function
  * handles getting us the required environment */
-static JNIEnv *jni_attach_thread(fz_context *ctx, jboolean *detach)
+static JNIEnv *jni_attach_thread(jboolean *detach)
 {
 	JNIEnv *env = NULL;
 	int state;

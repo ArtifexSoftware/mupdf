@@ -6,7 +6,7 @@ static void free_event_cb_data(fz_context *ctx, void *data)
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_warn(ctx, "cannot attach to JVM in free_event_cb_data");
 	else
@@ -22,7 +22,7 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in event_cb");
 

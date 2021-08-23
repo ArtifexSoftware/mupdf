@@ -6,7 +6,7 @@ static void java_pkcs7_drop_verifier(fz_context *ctx, pdf_pkcs7_verifier *verifi
 	jboolean detach = JNI_FALSE;
 	JNIEnv *env = NULL;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (!env)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
 
@@ -25,7 +25,7 @@ static pdf_signature_error java_pkcs7_check_certificate(fz_context *ctx, pdf_pkc
 	JNIEnv *env = NULL;
 	jobject jsignature = NULL;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
 
@@ -53,7 +53,7 @@ static pdf_signature_error java_pkcs7_check_digest(fz_context *ctx, pdf_pkcs7_ve
 	jobject jstm = NULL;
 	JNIEnv *env = NULL;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in java_pkcs7_check_digest");
 

@@ -208,7 +208,7 @@ jni_ocr_progress(fz_context *ctx, void *arg, int percent)
 	JNIEnv *env = NULL;
 	jboolean detach = JNI_FALSE;
 
-	env = jni_attach_thread(ctx, &detach);
+	env = jni_attach_thread(&detach);
 	if (env == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot attach to JVM in jni_ocr_progress");
 
