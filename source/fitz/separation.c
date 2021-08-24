@@ -172,6 +172,37 @@ int fz_count_active_separations(fz_context *ctx, const fz_separations *sep)
 	return c;
 }
 
+int fz_compare_separations(fz_context *ctx, const fz_separations *sep1, const fz_separations *sep2)
+{
+	int i, n1, n2;
+
+	if (sep1 == sep2)
+		return 0; /* Match */
+	if (sep1 == NULL || sep2 == NULL)
+		return 1; /* No match */
+	n1 = sep1->num_separations;
+	n2 = sep2->num_separations;
+	if (n1 != n2)
+		return 1; /* No match */
+	if (sep1->controllable != sep2->controllable)
+		return 1; /* No match */
+	for (i = 0; i < n1; i++)
+	{
+		if (sep_state(sep1, i) != sep_state(sep2, i))
+			return 1; /* No match */
+		if (sep1->name[i] == NULL && sep2->name[i] == NULL)
+		{}
+		else if (sep1->name[i] == NULL || sep2->name[i] == NULL || strcmp(sep1->name[i], sep2->name[i]))
+			return 1; /* No match */
+		if (sep1->cs[i] != sep2->cs[i] ||
+			sep1->cs_pos[i] != sep2->cs_pos[i] ||
+			sep1->rgba[i] != sep2->rgba[i] ||
+			sep1->cmyk[i] != sep2->cmyk[i])
+			return 1; /* No match */
+	}
+	return 0;
+}
+
 fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separations *sep)
 {
 	int i, j, n, c;
@@ -683,6 +714,35 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 	else
 	{
 		signed char map[FZ_MAX_COLORS];
+
+		/* We have a special case here. Converting from CMYK + Spots
+		 * to RGB with less spots, involves folding (at least some of)
+		 * the spots down via their equivalent colors. Merging a spot's
+		 * equivalent colour (generally expressed in CMYK) with an RGB
+		 * one works badly, (presumably because RGB colors have
+		 * different linearity to CMYK ones). For best results we want
+		 * to merge the spots into the CMYK color, and then convert
+		 * that into RGB.  We handle that case here. */
+		if (fz_colorspace_is_subtractive(ctx, src->colorspace) &&
+			!fz_colorspace_is_subtractive(ctx, dst->colorspace) &&
+			src->seps > 0 &&
+			fz_compare_separations(ctx, dst->seps, src->seps))
+		{
+			/* Converting from CMYK + Spots -> RGB with a change in spots. */
+			fz_pixmap *temp = fz_new_pixmap(ctx, src->colorspace, src->w, src->h, dst->seps, dst->alpha);
+
+			fz_try(ctx)
+			{
+				temp = fz_copy_pixmap_area_converting_seps(ctx, src, temp, prf, color_params, default_cs);
+				dst =  fz_copy_pixmap_area_converting_seps(ctx, temp, dst, NULL, color_params, default_cs);
+			}
+			fz_always(ctx)
+				fz_drop_pixmap(ctx, temp);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
+
+			return dst;
+		}
 
 		/* Use a standard pixmap converter to convert the process + alpha. */
 		fz_convert_pixmap_samples(ctx, src, dst, proof_cs, default_cs, fz_default_color_params, 0);
