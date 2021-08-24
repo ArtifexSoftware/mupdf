@@ -294,9 +294,9 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 	sstride -= sn * dw;
 
 	/* Process colorants (and alpha) first */
-	if (dst->colorspace == src->colorspace && proof_cs == NULL)
+	if (dst->colorspace == src->colorspace && proof_cs == NULL && dst->s == 0 && src->s == 0)
 	{
-		/* Simple copy */
+		/* Simple copy - no spots to worry about. */
 		unsigned char *dd = ddata;
 		const unsigned char *sd = sdata;
 		for (y = dh; y > 0; y--)
