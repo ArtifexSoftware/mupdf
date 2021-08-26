@@ -580,6 +580,7 @@ file_level_trailers(fz_context *ctx)
 
 	if (output_format == OUT_PCLM || output_format == OUT_OCR_PDF)
 	{
+		fz_close_band_writer(ctx, bander);
 		fz_drop_band_writer(ctx, bander);
 		bander = NULL;
 	}
@@ -1110,6 +1111,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				}
 				ctm.f -= drawheight;
 			}
+
+			if (output_format != OUT_PCLM && output_format != OUT_OCR_PDF)
+				fz_close_band_writer(ctx, bander);
 
 			/* FIXME */
 			if (showmd5 && pix)
