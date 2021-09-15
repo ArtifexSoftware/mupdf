@@ -175,7 +175,7 @@ fz_parse_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, const char *ar
 	}
 	if (fz_has_option(ctx, args, "ocr-language", &val))
 	{
-		fz_strlcpy(opts->language, val, sizeof(opts->language));
+		fz_copy_option(ctx, val, opts->language, nelem(opts->language));
 	}
 
 	return opts;
