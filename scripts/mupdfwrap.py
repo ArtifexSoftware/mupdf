@@ -7501,39 +7501,42 @@ def main():
                 swig = args.next()
 
             elif arg == '--swig-windows-auto':
-                import stat
-                import urllib.request
-                import zipfile
-                name = 'swigwin-4.0.2'
+                if g_windows:
+                    import stat
+                    import urllib.request
+                    import zipfile
+                    name = 'swigwin-4.0.2'
 
-                # Download swig .zip file if not already present.
-                #
-                if not os.path.exists(f'{name}.zip'):
-                    url = f'http://prdownloads.sourceforge.net/swig/{name}.zip'
-                    log(f'Downloading Windows SWIG from: {url}')
-                    with urllib.request.urlopen(url) as response:
-                        with open(f'{name}.zip-', 'wb') as f:
-                            shutil.copyfileobj(response, f)
-                    os.rename(f'{name}.zip-', f'{name}.zip')
+                    # Download swig .zip file if not already present.
+                    #
+                    if not os.path.exists(f'{name}.zip'):
+                        url = f'http://prdownloads.sourceforge.net/swig/{name}.zip'
+                        log(f'Downloading Windows SWIG from: {url}')
+                        with urllib.request.urlopen(url) as response:
+                            with open(f'{name}.zip-', 'wb') as f:
+                                shutil.copyfileobj(response, f)
+                        os.rename(f'{name}.zip-', f'{name}.zip')
 
-                # Extract swig from .zip file if not already extracted.
-                #
-                swig_local = f'{name}/swig.exe'
-                if not os.path.exists(swig_local):
-                    # Extract
-                    z = zipfile.ZipFile(f'{name}.zip')
-                    jlib.ensure_empty_dir(f'{name}-0')
-                    z.extractall(f'{name}-0')
-                    os.rename(f'{name}-0/{name}', name)
-                    os.rmdir(f'{name}-0')
+                    # Extract swig from .zip file if not already extracted.
+                    #
+                    swig_local = f'{name}/swig.exe'
+                    if not os.path.exists(swig_local):
+                        # Extract
+                        z = zipfile.ZipFile(f'{name}.zip')
+                        jlib.ensure_empty_dir(f'{name}-0')
+                        z.extractall(f'{name}-0')
+                        os.rename(f'{name}-0/{name}', name)
+                        os.rmdir(f'{name}-0')
 
-                    # Need to make swig.exe executable.
-                    swig_local_stat = os.stat(swig_local)
-                    os.chmod(swig_local, swig_local_stat.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                        # Need to make swig.exe executable.
+                        swig_local_stat = os.stat(swig_local)
+                        os.chmod(swig_local, swig_local_stat.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
-                # Set our <swig> to be the local windows swig.exe.
-                #
-                swig = swig_local
+                    # Set our <swig> to be the local windows swig.exe.
+                    #
+                    swig = swig_local
+                else:
+                    log('Ignoring {arg} because not running on Windows')
 
             elif arg == '--sync':
                 sync_docs = False
