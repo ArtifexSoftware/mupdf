@@ -171,7 +171,7 @@ static void dev_fill_image(fz_context *ctx, fz_device *dev_, fz_image *img, fz_m
 	{
 		if (compressed)
 		{
-			if (0) {}
+			if (0) { /* For alignment */ }
 			else if (compressed->params.type == FZ_IMAGE_RAW) type = "raw";
 			else if (compressed->params.type == FZ_IMAGE_FAX) type = "fax";
 			else if (compressed->params.type == FZ_IMAGE_FLATE) type = "flate";
