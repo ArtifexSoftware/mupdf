@@ -929,7 +929,7 @@ class ExtraMethod:
     Defines a prototype and implementation of a custom method in a generated
     class.
     '''
-    def __init__( self, return_, name_args, body, comment=None, overload=None):
+    def __init__( self, return_, name_args, body, comment, overload=None):
         '''
         return_:
             Return type as a string.
@@ -957,7 +957,7 @@ class ExtraConstructor:
     Defines a prototype and implementation of a custom method in a generated
     class.
     '''
-    def __init__( self, name_args, body, comment=None):
+    def __init__( self, name_args, body, comment):
         '''
         name_args:
             A string of the form: (<args>)
@@ -1308,6 +1308,7 @@ classextras = ClassExtras(
                             {rename.function_call('fz_keep_colorspace')}(m_internal);
                         }}
                         ''',
+                        comment = '/* Construct using one of: fz_device_gray(), fz_device_rgb(), fz_device_bgr(), fz_device_cmyk(), fz_device_lab(). */',
                         ),
                         ExtraConstructor(
                         '()',
@@ -1349,15 +1350,18 @@ classextras = ClassExtras(
                     ],
                 constructor_raw = False,
                 methods_extra = [
-                    ExtraMethod( 'void',    'set_abort()',                  '{ m_internal.abort = 1; }\n'),
-
-                    # do we need these? - already provided by accessors.
-                    ExtraMethod( 'int',     'get_progress()',               '{ return m_internal.progress; }\n'),
-                    ExtraMethod( 'size_t',  'get_progress_max()',           '{ return m_internal.progress_max; }\n'),
-                    ExtraMethod( 'int',     'get_errors()',                 '{ return m_internal.errors; }\n'),
-                    ExtraMethod( 'int',     'get_incomplete()',             '{ return m_internal.incomplete; }\n'),
-
-                    ExtraMethod( 'void',    'increment_errors(int delta)',  '{ m_internal.errors += delta; }\n'),
+                    ExtraMethod(
+                            'void',
+                            'set_abort()',
+                            '{ m_internal.abort = 1; }\n',
+                            '/* Sets m_internal.abort to 1. */',
+                            ),
+                    ExtraMethod(
+                            'void',
+                            'increment_errors(int delta)',
+                            '{ m_internal.errors += delta; }\n',
+                            '/* Increments m_internal.errors by <delta>. */',
+                            ),
                 ],
                 pod = True,
                 # I think other code asyncronously writes to our fields, so we
@@ -1795,15 +1799,21 @@ classextras = ClassExtras(
                         return OutlineIterator(*this);
                     }
                     ''',
+                    '/* Beginning of depth-first iteration using down() and next(). */',
                     ),
                     ExtraMethod( 'OutlineIterator', 'end()',
                     '''
                     {
                         return OutlineIterator();
                     }
-                    '''),
+                    ''',
+                    '/* End of depth-first iteration using down() and next(). */',
+                    ),
                     ],
-                class_bottom = 'typedef OutlineIterator iterator;\n',
+                class_bottom = '''
+                        /* Depth-first iteration using down() and next(). */
+                        typedef OutlineIterator iterator;
+                        ''',
                 class_pre =
                     '''
                     struct OutlineIterator;
@@ -1930,7 +1940,8 @@ classextras = ClassExtras(
                                 throw ErrorAbort("Unrecognised Fixed value");
                             }}
                         }}
-                        '''
+                        ''',
+                        '/* Uses fz_stdout() or fz_stderr(). */',
                         # Note that it's ok to call fz_drop_output() on fz_stdout and fz_stderr.
                         ),
                     ExtraConstructor(
@@ -2014,7 +2025,8 @@ classextras = ClassExtras(
                         {{
                             {rename.function_call('fz_parse_pclm_options')}(m_internal, args);
                         }}
-                        '''
+                        ''',
+                        '/* Construct using fz_parse_pclm_options(). */',
                         )
                     ],
                 ),
@@ -2049,7 +2061,9 @@ classextras = ClassExtras(
                         : x(x), y(y)
                         {
                         }
-                        '''),
+                        ''',
+                        comment = '/* Construct using specified values. */',
+                        ),
                         ],
                 methods_extra = [
                     ExtraMethod(
@@ -2062,7 +2076,9 @@ classextras = ClassExtras(
                             y = old_x * m.b + y * m.d + m.f;
                             return *this;
                         }
-                        '''),
+                        ''',
+                        comment = '/* Post-multiply *this by <m> and return *this. */',
+                        ),
                 ],
                 pod='inline',
                 constructor_raw = True,
@@ -2113,7 +2129,9 @@ classextras = ClassExtras(
                         y1(y1)
                         {
                         }
-                        '''),
+                        ''',
+                        comment = '/* Construct from specified values. */',
+                        ),
                     ExtraConstructor(
                         f'(const {rename.class_("fz_rect")}& rhs)',
                         '''
@@ -2124,7 +2142,9 @@ classextras = ClassExtras(
                         y1(rhs.y1)
                         {
                         }
-                        '''),
+                        ''',
+                        comment = '/* Copy constructor using plain copy. */',
+                        ),
                     ExtraConstructor( '(Fixed fixed)',
                         f'''
                         {{
@@ -2134,7 +2154,9 @@ classextras = ClassExtras(
                             else if (fixed == Fixed_INFINITE)   *this->internal() = {rename.function_raw('fz_infinite_rect')};
                             else throw ErrorAbort( "Unrecognised From value");
                         }}
-                        '''),
+                        ''',
+                        comment = '/* Construct from fz_unit_rect, fz_empty_rect or fz_infinite_rect. */',
+                        ),
                         ],
                 methods_extra = [
                     ExtraMethod(
@@ -2144,7 +2166,9 @@ classextras = ClassExtras(
                         {{
                             *(fz_rect*) &this->x0 = {rename.function_raw('fz_transform_rect')}(*(fz_rect*) &this->x0, *(fz_matrix*) &m.a);
                         }}
-                        '''),
+                        ''',
+                        comment = '/* Transforms *this using fz_transform_rect() with <m>. */',
+                        ),
                     ExtraMethod( 'bool', 'contains(double x, double y)',
                         '''
                         {
@@ -2158,25 +2182,33 @@ classextras = ClassExtras(
                                     && y < y1
                                     ;
                         }
-                        '''),
+                        ''',
+                        comment = '/* Convenience method using fz_contains_rect(). */',
+                        ),
                     ExtraMethod( 'bool', f'contains({rename.class_("fz_rect")}& rhs)',
                         f'''
                         {{
                             return {rename.function_raw('fz_contains_rect')}(*(fz_rect*) &x0, *(fz_rect*) &rhs.x0);
                         }}
-                        '''),
+                        ''',
+                        comment = '/* Uses fz_contains_rect(*this, rhs). */',
+                        ),
                     ExtraMethod( 'bool', 'is_empty()',
                         f'''
                         {{
                             return {rename.function_raw('fz_is_empty_rect')}(*(fz_rect*) &x0);
                         }}
-                        '''),
+                        ''',
+                        comment = '/* Uses fz_is_empty_rect(). */',
+                        ),
                     ExtraMethod( 'void', f'union_({rename.class_("fz_rect")}& rhs)',
                         f'''
                         {{
                             *(fz_rect*) &x0 = {rename.function_raw('fz_union_rect')}(*(fz_rect*) &x0, *(fz_rect*) &rhs.x0);
                         }}
-                        '''),
+                        ''',
+                        comment = '/* Updates *this using fz_union_rect(). */',
+                        ),
                     ],
                 pod='inline',
                 constructor_raw = True,
@@ -2284,13 +2316,17 @@ classextras = ClassExtras(
                         : flags( 0)
                         {
                         }
-                        '''),
+                        ''',
+                        comment = '/* Construct with .flags set to 0. */',
+                        ),
                     ExtraConstructor( '(int flags)',
                         '''
                         : flags( flags)
                         {
                         }
-                        '''),
+                        ''',
+                        comment = '/* Construct with .flags set to <flags>. */',
+                        ),
                     ],
                 pod='inline',
                 ),
@@ -2340,7 +2376,8 @@ classextras = ClassExtras(
                     : m_internal({rename.function_call('fz_open_file')}(filename.c_str()))
                     {{
                     }}
-                    '''
+                    ''',
+                    comment = '/* Construct using fz_open_file(). */',
                     )
                     ],
                 ),
@@ -2376,6 +2413,7 @@ classextras = ClassExtras(
                             *this = rhs;
                         }}
                         ''',
+                        comment = '/* Copy constructor using plain memcpy(). */'
                         ),
                     ],
                     methods_extra = [
@@ -2388,6 +2426,7 @@ classextras = ClassExtras(
                                 return *this;
                             }}
                             ''',
+                            comment = '/* Assignment using plain memcpy(). */',
                             ),
                     ],
                 pod = 'inline',
