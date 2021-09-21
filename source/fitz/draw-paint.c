@@ -892,66 +892,6 @@ template_span_with_color_N_general_alpha(byte * FZ_RESTRICT dp, const byte * FZ_
 }
 
 static fz_forceinline void
-template_span_with_color_N_general_op(byte * FZ_RESTRICT dp, const byte * FZ_RESTRICT mp, int n, int w, const byte * FZ_RESTRICT color, int da, const fz_overprint * FZ_RESTRICT eop)
-{
-	int k;
-	int n1 = n - da;
-	int sa = FZ_EXPAND(color[n1]);
-	if (sa == 0)
-		return;
-	if (sa == 256)
-	{
-		do
-		{
-			int ma = *mp++;
-			ma = FZ_EXPAND(ma);
-			if (ma == 256)
-			{
-				if (n1 > 0)
-					if (fz_overprint_component(eop, 0))
-						dp[0] = color[0];
-				if (n1 > 1)
-					if (fz_overprint_component(eop, 1))
-						dp[1] = color[1];
-				if (n1 > 2)
-					if (fz_overprint_component(eop, 2))
-						dp[2] = color[2];
-				for (k = 3; k < n1; k++)
-					if (fz_overprint_component(eop, k))
-						dp[k] = color[k];
-				if (da)
-					dp[n1] = 255;
-			}
-			else if (ma != 0)
-			{
-				for (k = 0; k < n1; k++)
-					if (fz_overprint_component(eop, k))
-						dp[k] = FZ_BLEND(color[k], dp[k], ma);
-				if (da)
-					dp[n1] = FZ_BLEND(255, dp[k], ma);
-			}
-			dp += n;
-		}
-		while (--w);
-	}
-	else
-	{
-		do
-		{
-			int ma = *mp++;
-			ma = FZ_COMBINE(FZ_EXPAND(ma), sa);
-			for (k = 0; k < n1; k++)
-				if (fz_overprint_component(eop, k))
-					dp[k] = FZ_BLEND(color[k], dp[k], ma);
-			if (da)
-				dp[k] = FZ_BLEND(255, dp[k], ma);
-			dp += n;
-		}
-		while (--w);
-	}
-}
-
-static fz_forceinline void
 template_span_with_color_N_general_op_solid(byte * FZ_RESTRICT dp, const byte * FZ_RESTRICT mp, int n, int w, const byte * FZ_RESTRICT color, int da, const fz_overprint * FZ_RESTRICT eop)
 {
 	int k;
