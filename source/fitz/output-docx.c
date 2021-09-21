@@ -580,15 +580,15 @@ static fz_document_writer *fz_new_docx_writer_internal(fz_context *ctx, fz_outpu
 			if (fz_has_option(ctx, options, "tables-csv-format", &v))
 			{
 				size_t len = strlen(v) + 1; /* Might include trailing options. */
-				char* format = fz_malloc(ctx, len);
-				fz_copy_option(ctx, v, format, len);
-				fprintf(stderr, "tables-csv-format: %s\n", format);
-				if (extract_tables_csv_format(writer->extract, format))
+				char* formatbuf = fz_malloc(ctx, len);
+				fz_copy_option(ctx, v, formatbuf, len);
+				fprintf(stderr, "tables-csv-format: %s\n", formatbuf);
+				if (extract_tables_csv_format(writer->extract, formatbuf))
 				{
-					fz_free(ctx, format);
+					fz_free(ctx, formatbuf);
 					fz_throw(ctx, FZ_ERROR_GENERIC, "extract_tables_csv_format() failed.");
 				}
-				fz_free(ctx, format);
+				fz_free(ctx, formatbuf);
 			}
 		}
 		writer->ctx = NULL;
