@@ -149,6 +149,12 @@ typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, f
 typedef fz_outline *(fz_document_load_outline_fn)(fz_context *ctx, fz_document *doc);
 
 /**
+	Type for a function to be called to obtain an outline iterator
+	for a document. See fz_document_outline_iterator for more information.
+*/
+typedef fz_outline_iterator *(fz_document_outline_iterator_fn)(fz_context *ctx, fz_document *doc);
+
+/**
 	Type for a function to be called to lay
 	out a document. See fz_layout_document for more information.
 */
@@ -489,6 +495,13 @@ int fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *pass
 	Should be freed by fz_drop_outline.
 */
 fz_outline *fz_load_outline(fz_context *ctx, fz_document *doc);
+
+/**
+	Get an iterator for the document outline.
+
+	Should be freed by fz_drop_outline_iterator.
+*/
+fz_outline_iterator *fz_new_outline_iterator(fz_context *ctx, fz_document *doc);
 
 /**
 	Is the document reflowable.
@@ -858,6 +871,7 @@ struct fz_document
 	fz_document_authenticate_password_fn *authenticate_password;
 	fz_document_has_permission_fn *has_permission;
 	fz_document_load_outline_fn *load_outline;
+	fz_document_outline_iterator_fn *outline_iterator;
 	fz_document_layout_fn *layout;
 	fz_document_make_bookmark_fn *make_bookmark;
 	fz_document_lookup_bookmark_fn *lookup_bookmark;
