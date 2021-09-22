@@ -2886,11 +2886,9 @@ def get_args( tu, cursor, include_fz_context=False, verbose=False):
                     # Don't mark function-pointer args as out-params.
                     if verbose:
                         log( 'clang.cindex.TypeKind.FUNCTIONPROTO')
-                    pass
                 elif arg_cursor.type.get_pointee().is_const_qualified():
                     if verbose:
                         log( 'is_const_qualified()')
-                    pass
                 else:
                     if verbose:
                         log( 'setting out_param = True')
