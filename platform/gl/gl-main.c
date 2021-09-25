@@ -2207,7 +2207,7 @@ static void do_info(void)
 		pdf_walk_tree(ctx, form_fields, PDF_NAME(Kids), process_sigs, NULL, &list, &ft_list[0], &ft);
 	}
 
-	ui_dialog_begin(ui.gridsize*20, (14+list.len) * ui.lineheight);
+	ui_dialog_begin(ui.gridsize*20, (15+list.len) * ui.lineheight);
 	ui_layout(T, X, W, 0, 0);
 
 	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
