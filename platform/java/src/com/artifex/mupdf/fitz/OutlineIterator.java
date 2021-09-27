@@ -43,33 +43,27 @@ public class OutlineIterator
 
 	public int insert(OutlineItem item)
 	{
-		return insert(item.title, item.uri, item.is_open, item.page, item.x, item.y);
+		return insert(item.title, item.uri, item.is_open);
 	}
-	public native int insert(String title, String uri, boolean is_open, int page, float x, float y);
+	public native int insert(String title, String uri, boolean is_open);
 	public void update(OutlineItem item)
 	{
-		update(item.title, item.uri, item.is_open, item.page, item.x, item.y);
+		update(item.title, item.uri, item.is_open);
 	}
-	public native void update(String title, String uri, boolean is_open, int page, float x, float y);
+	public native void update(String title, String uri, boolean is_open);
 	public native OutlineItem item();
 	public native int delete();
 
-	static class OutlineItem {
+	public static class OutlineItem {
 		public String title;
 		public String uri;
 		public boolean is_open;
-		public int page;
-		public float x;
-		public float y;
 
-		public OutlineItem(String title, String uri, boolean is_open, int page, float x, float y)
+		public OutlineItem(String title, String uri, boolean is_open)
 		{
 			this.title = title;
 			this.uri = uri;
 			this.is_open = is_open;
-			this.page = page;
-			this.x = x;
-			this.y = y;
 		}
 	}
 }

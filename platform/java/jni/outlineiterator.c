@@ -118,7 +118,7 @@ FUN(OutlineIterator_delete)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(OutlineIterator_update)(JNIEnv *env, jobject self, jstring jtitle, jstring juri, jboolean is_open, int page, float x, float y)
+FUN(OutlineIterator_update)(JNIEnv *env, jobject self, jstring jtitle, jstring juri, jboolean is_open)
 {
 	fz_context *ctx = get_context(env);
 	fz_outline_iterator *iterator = from_OutlineIterator(env, self);
@@ -127,9 +127,6 @@ FUN(OutlineIterator_update)(JNIEnv *env, jobject self, jstring jtitle, jstring j
 	if (!ctx || !iterator) return;
 
 	item.is_open = is_open;
-	item.page = page;
-	item.x = x;
-	item.y = y;
 
 	fz_try(ctx)
 	{
@@ -154,7 +151,7 @@ FUN(OutlineIterator_update)(JNIEnv *env, jobject self, jstring jtitle, jstring j
 }
 
 JNIEXPORT int JNICALL
-FUN(OutlineIterator_insert)(JNIEnv *env, jobject self, jstring jtitle, jstring juri, jboolean is_open, int page, float x, float y)
+FUN(OutlineIterator_insert)(JNIEnv *env, jobject self, jstring jtitle, jstring juri, jboolean is_open)
 {
 	fz_context *ctx = get_context(env);
 	fz_outline_iterator *iterator = from_OutlineIterator(env, self);
@@ -164,9 +161,6 @@ FUN(OutlineIterator_insert)(JNIEnv *env, jobject self, jstring jtitle, jstring j
 	if (!ctx || !iterator) return -1;
 
 	item.is_open = is_open;
-	item.page = page;
-	item.x = x;
-	item.y = y;
 
 	fz_try(ctx)
 	{
@@ -223,5 +217,5 @@ FUN(OutlineIterator_item)(JNIEnv *env, jobject self)
 		if (!juri || (*env)->ExceptionCheck(env))
 			return NULL;
 	}
-	return  (*env)->NewObject(env, cls_OutlineItem, mid_OutlineItem_init, jtitle, juri, item->is_open, item->page, item->x, item->y);
+	return  (*env)->NewObject(env, cls_OutlineItem, mid_OutlineItem_init, jtitle, juri, item->is_open);
 }

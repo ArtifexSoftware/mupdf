@@ -1187,15 +1187,20 @@ static void relayout(void)
 
 static int count_outline(fz_outline *node, int end)
 {
-	int is_selected, n, p;
+	int is_selected, n, p, np;
 	int count = 0;
-	while (node)
+
+	if (!node)
+		return 0;
+	np = fz_page_number_from_location(ctx, doc, node->page);
+
+	do
 	{
-		p = node->page;
+		p = np;
 		count += 1;
 		n = end;
-		if (node->next && node->next->page >= 0)
-			n = node->next->page;
+		if (node->next && (np = fz_page_number_from_location(ctx, doc, node->next->page)) >= 0)
+			n = fz_page_number_from_location(ctx, doc, node->next->page);
 		is_selected = 0;
 		if (fz_count_chapters(ctx, doc) == 1)
 			is_selected = (p>=0) && (currentpage.page == p || (currentpage.page > p && currentpage.page < n));
@@ -1203,19 +1208,26 @@ static int count_outline(fz_outline *node, int end)
 			count += count_outline(node->down, end);
 		node = node->next;
 	}
+	while (node);
+
 	return count;
 }
 
 static void do_outline_imp(struct list *list, int end, fz_outline *node, int depth)
 {
-	int is_selected, was_open, n;
+	int is_selected, was_open, n, np;
 
-	while (node)
+	if (!node)
+		return;
+
+	np = fz_page_number_from_location(ctx, doc, node->page);
+
+	do
 	{
-		int p = node->page;
+		int p = np;
 		n = end;
-		if (node->next && node->next->page >= 0)
-			n = node->next->page;
+		if (node->next && (np = fz_page_number_from_location(ctx, doc, node->next->page)) >= 0)
+			n = np;
 
 		was_open = node->is_open;
 		is_selected = 0;
@@ -1238,6 +1250,7 @@ static void do_outline_imp(struct list *list, int end, fz_outline *node, int dep
 			do_outline_imp(list, n, node->down, depth + 1);
 		node = node->next;
 	}
+	while (node);
 }
 
 static void do_outline(fz_outline *node)

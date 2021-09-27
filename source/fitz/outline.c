@@ -83,6 +83,7 @@ void fz_drop_outline_iterator(fz_context *ctx, fz_outline_iterator *iter)
 	if (iter == NULL)
 		return;
 	iter->drop(ctx, iter);
+	fz_drop_document(ctx, iter->doc);
 	fz_free(ctx, iter);
 }
 
@@ -105,11 +106,9 @@ load_outline_sub(fz_context *ctx, fz_outline_iterator *iter, fz_outline **tail, 
 		node->refs = 1;
 		node->title = *t;
 		node->uri = *u;
-		node->page = item->page;
-		node->x = item->x;
-		node->y = item->y;
 		*t = NULL;
 		*u = NULL;
+		node->page = fz_resolve_link(ctx, iter->doc, node->uri, &node->x, &node->y);
 		*tail = node;
 		tail = &node->next;
 		onode = node;
@@ -149,9 +148,11 @@ fz_load_outline_from_iterator(fz_context *ctx, fz_outline_iterator *iter)
 	return head;
 }
 
-fz_outline_iterator *fz_new_outline_iterator_of_size(fz_context *ctx, size_t size)
+fz_outline_iterator *fz_new_outline_iterator_of_size(fz_context *ctx, size_t size, fz_document *doc)
 {
 	fz_outline_iterator *iter = fz_calloc(ctx, size, 1);
+
+	iter->doc = fz_keep_document(ctx, doc);
 
 	return iter;
 }
@@ -275,11 +276,8 @@ iter_std_item(fz_context *ctx, fz_outline_iterator *iter_)
 		return NULL;
 
 	iter->item.is_open = iter->current->is_open;
-	iter->item.page = iter->current->page;
 	iter->item.title = iter->current->title;
 	iter->item.uri = iter->current->uri;
-	iter->item.x = iter->current->x;
-	iter->item.y = iter->current->y;
 
 	return &iter->item;
 }

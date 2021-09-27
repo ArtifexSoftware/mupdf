@@ -915,6 +915,7 @@ FUN(Document_outlineIterator)(JNIEnv *env, jobject self)
 			jiterator = to_OutlineIterator_safe(ctx, env, iterator);
 			if (!jiterator || (*env)->ExceptionCheck(env))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "outlineIterator failed");
+			iterator = NULL;
 		}
 	}
 	fz_always(ctx)

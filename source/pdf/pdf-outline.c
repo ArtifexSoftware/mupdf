@@ -66,7 +66,6 @@ enum {
 
 typedef struct pdf_outline_iterator {
 	fz_outline_iterator super;
-	pdf_document *doc;
 	fz_outline_item item;
 	pdf_obj *current;
 	int modifier;
@@ -191,22 +190,18 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 	if (item->uri)
 	{
 		pdf_document *doc = pdf_get_bound_document(ctx, obj);
-		int page, x, y;
 
-		if (sscanf(item->uri, "#%d,%d,%d", &page, &x, &y) == 3)
+		if (fz_is_external_link(ctx, item->uri))
 		{
-		}
-		else if (sscanf(item->uri, "#%d", &page) == 1)
-		{
-			x = -1;
-			y = -1;
+			pdf_obj *a = pdf_dict_put_dict(ctx, obj, PDF_NAME(A), 4);
+			pdf_dict_put(ctx, a, PDF_NAME(Type), PDF_NAME(Action));
+			pdf_dict_put(ctx, a, PDF_NAME(S), PDF_NAME(URI));
+			pdf_dict_put_text_string(ctx, a, PDF_NAME(URI), item->uri);
 		}
 		else
 		{
-			page = -1;
-		}
-		if (page >= 0 && page < pdf_count_pages(ctx, doc))
-		{
+			float x = -1, y = -1;
+			int page = pdf_resolve_link(ctx, doc, item->uri, &x, &y);
 			pdf_obj *arr = pdf_dict_put_array(ctx, obj, PDF_NAME(Dest), 4);
 			pdf_array_push(ctx, arr, pdf_lookup_page_obj(ctx, doc, page));
 			if (x == -1 && y == -1)
@@ -219,13 +214,6 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 				pdf_array_push_int(ctx, arr, 0);
 			}
 		}
-		else
-		{
-			pdf_obj *a = pdf_dict_put_dict(ctx, obj, PDF_NAME(A), 4);
-			pdf_dict_put(ctx, a, PDF_NAME(Type), PDF_NAME(Action));
-			pdf_dict_put(ctx, a, PDF_NAME(S), PDF_NAME(URI));
-			pdf_dict_put_text_string(ctx, a, PDF_NAME(URI), item->uri);
-		}
 	}
 }
 
@@ -233,7 +221,7 @@ static int
 pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outline_item *item)
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
-	pdf_document *doc = iter->doc;
+	pdf_document *doc = (pdf_document *)iter->super.doc;
 	pdf_obj *obj;
 	pdf_obj *prev;
 	pdf_obj *parent;
@@ -376,7 +364,7 @@ pdf_outline_iterator_item(fz_context *ctx, fz_outline_iterator *iter_)
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *obj;
-	pdf_document *doc = iter->doc;
+	pdf_document *doc = (pdf_document *)iter->super.doc;
 
 	if (iter->modifier != MOD_NONE || iter->current == NULL)
 		return NULL;
@@ -391,19 +379,13 @@ pdf_outline_iterator_item(fz_context *ctx, fz_outline_iterator *iter_)
 		iter->item.title = Memento_label(fz_strdup(ctx, pdf_to_text_string(ctx, obj)), "outline_title");
 	obj = pdf_dict_get(ctx, iter->current, PDF_NAME(Dest));
 	if (obj)
-		iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_dest(ctx, iter->doc, obj)), "outline_uri");
+		iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_dest(ctx, doc, obj)), "outline_uri");
 	else
 	{
 		obj = pdf_dict_get(ctx, iter->current, PDF_NAME(A));
 		if (obj)
-			iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_action(ctx, iter->doc, obj, -1)), "outline_uri");
+			iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_action(ctx, doc, obj, -1)), "outline_uri");
 	}
-	iter->item.x = -1;
-	iter->item.y = -1;
-	if (iter->item.uri && !fz_is_external_link(ctx, iter->item.uri))
-		iter->item.page = pdf_resolve_link(ctx, iter->doc, iter->item.uri, &iter->item.x, &iter->item.y);
-	else
-		iter->item.page = -1;
 
 	obj = pdf_dict_get(ctx, iter->current, PDF_NAME(Count));
 
@@ -422,7 +404,6 @@ pdf_outline_iterator_drop(fz_context *ctx, fz_outline_iterator *iter_)
 
 	fz_free(ctx, iter->item.title);
 	fz_free(ctx, iter->item.uri);
-	pdf_drop_document(ctx, iter->doc);
 }
 
 fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc)
@@ -463,7 +444,7 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 		fz_rethrow(ctx);
 	}
 
-	iter = fz_new_derived_outline_iter(ctx, pdf_outline_iterator);
+	iter = fz_new_derived_outline_iter(ctx, pdf_outline_iterator, &doc->super);
 	iter->super.del = pdf_outline_iterator_del;
 	iter->super.next = pdf_outline_iterator_next;
 	iter->super.prev = pdf_outline_iterator_prev;
@@ -475,7 +456,6 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 	iter->super.item = pdf_outline_iterator_item;
 	iter->current = first;
 	iter->modifier = MOD_NONE;
-	iter->doc = pdf_keep_document(ctx, doc);
 
 	return &iter->super;
 }

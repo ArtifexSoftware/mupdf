@@ -24,6 +24,7 @@
 #define MUPDF_FITZ_OUTLINE_H
 
 #include "mupdf/fitz/system.h"
+#include "mupdf/fitz/types.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/link.h"
 #include "mupdf/fitz/output.h"
@@ -33,8 +34,6 @@
 typedef struct {
 	char *title;
 	char *uri;
-	int page;
-	float x, y;
 	int is_open;
 } fz_outline_item;
 
@@ -114,7 +113,7 @@ typedef struct fz_outline
 	int refs;
 	char *title;
 	char *uri;
-	int page;
+	fz_location page;
 	float x, y;
 	struct fz_outline *next;
 	struct fz_outline *down;
@@ -204,10 +203,10 @@ typedef void (fz_outline_iterator_update_fn)(fz_context *ctx, fz_outline_iterato
 */
 typedef void (fz_outline_iterator_drop_fn)(fz_context *ctx, fz_outline_iterator *iter);
 
-#define fz_new_derived_outline_iter(CTX, TYPE)\
-	((TYPE *)Memento_label(fz_new_outline_iterator_of_size(ctx,sizeof(TYPE)),#TYPE))
+#define fz_new_derived_outline_iter(CTX, TYPE, DOC)\
+	((TYPE *)Memento_label(fz_new_outline_iterator_of_size(ctx,sizeof(TYPE),DOC),#TYPE))
 
-fz_outline_iterator *fz_new_outline_iterator_of_size(fz_context *ctx, size_t size);
+fz_outline_iterator *fz_new_outline_iterator_of_size(fz_context *ctx, size_t size, fz_document *doc);
 
 fz_outline_iterator *fz_outline_iterator_from_outline(fz_context *ctx, fz_outline *outline);
 
@@ -224,6 +223,8 @@ struct fz_outline_iterator {
 	fz_outline_iterator_insert_fn *insert;
 	fz_outline_iterator_update_fn *update;
 	fz_outline_iterator_delete_fn *del;
+	/* Common state */
+	fz_document *doc;
 };
 
 #endif

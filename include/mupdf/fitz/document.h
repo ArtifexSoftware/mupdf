@@ -24,6 +24,7 @@
 #define MUPDF_FITZ_DOCUMENT_H
 
 #include "mupdf/fitz/system.h"
+#include "mupdf/fitz/types.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/device.h"
@@ -32,23 +33,9 @@
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/separation.h"
 
-typedef struct fz_document fz_document;
 typedef struct fz_document_handler fz_document_handler;
 typedef struct fz_page fz_page;
 typedef intptr_t fz_bookmark;
-
-/**
-	Locations within the document are referred to in terms of
-	chapter and page, rather than just a page number. For some
-	documents (such as epub documents with large numbers of pages
-	broken into many chapters) this can make navigation much faster
-	as only the required chapter needs to be decoded at a time.
-*/
-typedef struct
-{
-	int chapter;
-	int page;
-} fz_location;
 
 /**
 	Simple constructor for fz_locations.

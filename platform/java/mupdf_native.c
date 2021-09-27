@@ -837,7 +837,7 @@ static int find_fids(JNIEnv *env)
 	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;[L"PKG"Outline;)V");
 
 	cls_OutlineItem = get_class(&err, env, PKG"OutlineIterator$OutlineItem");
-	mid_OutlineItem_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;ZIFF)V");
+	mid_OutlineItem_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;Z)V");
 
 	cls_OutlineIterator = get_class(&err, env, PKG"OutlineIterator");
 	fid_OutlineIterator_pointer = get_field(&err, env, "pointer", "J");
