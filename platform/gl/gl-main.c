@@ -2082,9 +2082,10 @@ static void do_app(void)
 			search_active = !!search_needle;
 			if (eqloc(search_hit_page, currentpage))
 			{
-				search_page = fz_next_page(ctx, doc, currentpage);
 				if (is_last_page(search_page))
 					search_active = 0;
+				else
+					search_page = fz_next_page(ctx, doc, currentpage);
 			}
 			else
 			{
