@@ -23,6 +23,16 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include <string.h>
+
+/*
+	The URI encoding format broadly follows that described in
+	"Parameters for Opening PDF files" from the Adobe Acrobat SDK,
+	version 8.1, which can, at the time of writing, be found here:
+
+	https://web.archive.org/web/20170921000830/http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
+*/
+
 static void
 pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *mark_list, pdf_obj *parent)
 {
@@ -153,6 +163,140 @@ pdf_outline_iterator_down(fz_context *ctx, fz_outline_iterator *iter_)
 	return 0;
 }
 
+static int
+int_from_fragment(const char *uri, const char *needle, int val_nomatch, int val)
+{
+	const char *n = needle;
+	if (*uri == '#')
+		uri++;
+	while (*uri)
+	{
+		if (*uri == *n)
+		{
+			/* Match, move on one char.*/
+			uri++;
+			n++;
+			/* If the match hasn't ended yet, loop and keep going. */
+			if (*n != 0)
+				continue;
+			if (*uri == '&' || *uri == 0)
+				return val;
+			if (*uri == '=')
+			{
+				const char *u = ++uri;
+				int v = 0;
+				while (*u >= '0' && *u <= '9')
+				{
+					v = (v*10)+ (*u++)-'0';
+				}
+				if (u == uri)
+					return val;
+				return v;
+			}
+		}
+		/* Skip to next one. */
+		while (*uri && *uri != '&')
+			uri++;
+		if (*uri)
+			uri++;
+		n = needle;
+	}
+	return val_nomatch;
+}
+
+typedef struct
+{
+	pdf_obj *name;
+	char string[16];
+	int len;
+} namestring;
+
+#define PDF_OUTLINE_TYPE(A) { PDF_NAME(A), # A, sizeof(#A)-1 }
+static const namestring fit_types[] =
+{
+	PDF_OUTLINE_TYPE(Fit),
+	PDF_OUTLINE_TYPE(FitB),
+	PDF_OUTLINE_TYPE(FitBH),
+	PDF_OUTLINE_TYPE(FitBV),
+	PDF_OUTLINE_TYPE(FitH),
+	PDF_OUTLINE_TYPE(FitR),
+	PDF_OUTLINE_TYPE(FitV),
+	{ NULL, "" }
+};
+#undef PDF_OUTLINE_TYPE
+
+static pdf_obj *
+type_match(const char **uri, const namestring *types)
+{
+	if (*uri == NULL)
+		return NULL;
+
+	while (types->name)
+	{
+		if (strncmp(*uri, types->string, types->len) == 0)
+		{
+			char c = (*uri)[types->len];
+			if (c == ',' || c == '&')
+			{
+				++(*uri);
+				return types->name;
+			}
+			if (c == 0)
+				return types->name;
+		}
+		types++;
+	}
+	return NULL;
+}
+
+static const char *
+val_from_fragment(const char *uri, const char *needle)
+{
+	const char *n = needle;
+	if (*uri == '#')
+		uri++;
+	while (*uri)
+	{
+		if (*uri == *n)
+		{
+			/* Match, move on one char.*/
+			uri++;
+			n++;
+			/* If the match hasn't ended yet, loop and keep going. */
+			if (*n != 0)
+				continue;
+			if (*uri == '&' || *uri == 0)
+				return NULL;
+			if (*uri == '=')
+				return ++uri;
+		}
+		/* Skip to next one. */
+		while (*uri && *uri != '&')
+			uri++;
+		if (*uri)
+			uri++;
+		n = needle;
+	}
+	return NULL;
+}
+
+static float
+my_read_float(const char **str)
+{
+	float f;
+	char *end;
+
+	if (**str == 0)
+		return 0;
+
+	f = fz_strtof(*str, &end);
+	*str = end;
+	if (**str == ',')
+		(*str)++;
+
+	return f;
+}
+
 static void
 do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_new_node)
 {
@@ -189,8 +333,6 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 	pdf_dict_del(ctx, obj, PDF_NAME(Dest));
 	if (item->uri)
 	{
-		pdf_document *doc = pdf_get_bound_document(ctx, obj);
-
 		if (fz_is_external_link(ctx, item->uri))
 		{
 			pdf_obj *a = pdf_dict_put_dict(ctx, obj, PDF_NAME(A), 4);
@@ -200,19 +342,52 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 		}
 		else
 		{
-			float x = -1, y = -1;
-			int page = pdf_resolve_link(ctx, doc, item->uri, &x, &y);
-			pdf_obj *arr = pdf_dict_put_array(ctx, obj, PDF_NAME(Dest), 4);
-			pdf_array_push(ctx, arr, pdf_lookup_page_obj(ctx, doc, page));
-			if (x == -1 && y == -1)
-				pdf_array_push(ctx, arr, PDF_NAME(Fit));
-			else
+			pdf_document *doc = pdf_get_bound_document(ctx, obj);
+			int page = int_from_fragment(item->uri, "page", 0, 0) - 1;
+			const char *val = val_from_fragment(item->uri, "view");
+			pdf_obj *type = type_match(&val, fit_types);
+			pdf_obj *arr = pdf_dict_put_array(ctx, obj, PDF_NAME(Dest), 5);
+
+			if (type == NULL)
 			{
-				pdf_array_push(ctx, arr, PDF_NAME(XYZ));
-				pdf_array_push_int(ctx, arr, x);
-				pdf_array_push_int(ctx, arr, y);
-				pdf_array_push_int(ctx, arr, 0);
+				val = val_from_fragment(item->uri, "viewrect");
+				if (val)
+					type = PDF_NAME(FitR);
 			}
+			if (type == NULL)
+			{
+				val = val_from_fragment(item->uri, "zoom");
+				if (val)
+					type = PDF_NAME(XYZ);
+			}
+
+			pdf_array_push(ctx, arr, pdf_lookup_page_obj(ctx, doc, page));
+			if (type)
+			{
+				float a1, a2, a3, a4;
+				a1 = my_read_float(&val);
+				a2 = my_read_float(&val);
+				a3 = my_read_float(&val);
+				a4 = my_read_float(&val);
+				pdf_array_push(ctx, arr, type);
+				if (type == PDF_NAME(XYZ))
+				{
+					pdf_array_push_real(ctx, arr, a1);
+					pdf_array_push_real(ctx, arr, a2);
+					pdf_array_push_real(ctx, arr, a3);
+				}
+				else if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH) || type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
+					pdf_array_push_real(ctx, arr, a1);
+				else if (type == PDF_NAME(FitR))
+				{
+					pdf_array_push_real(ctx, arr, a1);
+					pdf_array_push_real(ctx, arr, a2);
+					pdf_array_push_real(ctx, arr, a3);
+					pdf_array_push_real(ctx, arr, a4);
+				}
+			}
+			else
+				pdf_array_push(ctx, arr, PDF_NAME(Fit));
 		}
 	}
 }
@@ -379,12 +554,12 @@ pdf_outline_iterator_item(fz_context *ctx, fz_outline_iterator *iter_)
 		iter->item.title = Memento_label(fz_strdup(ctx, pdf_to_text_string(ctx, obj)), "outline_title");
 	obj = pdf_dict_get(ctx, iter->current, PDF_NAME(Dest));
 	if (obj)
-		iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_dest(ctx, doc, obj)), "outline_uri");
+		iter->item.uri = Memento_label(pdf_parse_link_dest(ctx, doc, obj), "outline_uri");
 	else
 	{
 		obj = pdf_dict_get(ctx, iter->current, PDF_NAME(A));
 		if (obj)
-			iter->item.uri = Memento_label(fz_strdup(ctx, pdf_parse_link_action(ctx, doc, obj, -1)), "outline_uri");
+			iter->item.uri = Memento_label(pdf_parse_link_action(ctx, doc, obj, -1), "outline_uri");
 	}
 
 	obj = pdf_dict_get(ctx, iter->current, PDF_NAME(Count));
@@ -458,4 +633,61 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 	iter->modifier = MOD_NONE;
 
 	return &iter->super;
+}
+
+int
+pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp, float *yp)
+{
+	if (uri && uri[0] == '#')
+	{
+		int page = int_from_fragment(uri, "page", 0, 0) - 1;
+		const char *val = val_from_fragment(uri, "view");
+		pdf_obj *type = type_match(&val, fit_types);
+
+		if (type == NULL)
+		{
+			val = val_from_fragment(uri, "viewrect");
+			if (val)
+				type = PDF_NAME(FitR);
+		}
+		if (type == NULL)
+		{
+			val = val_from_fragment(uri, "zoom");
+			if (val)
+				type = PDF_NAME(XYZ);
+		}
+
+		/* Nasty: Map full details down to just x or y. */
+		if (xp)
+			*xp = -1;
+		if (yp)
+			*yp = -1;
+		if (type)
+		{
+			fz_rect mediabox;
+			fz_matrix pagectm;
+			float w, h, a1, a2;
+			/* Only a1 and a2 are currently used. In future we may want to read
+			 * a3 and a4 too. */
+			a1 = my_read_float(&val);
+			a2 = my_read_float(&val);
+			/* Link coords use a coordinate space that does not seem to respect Rotate or UserUnit. */
+			/* All we need to do is figure out the page size to flip the coordinate space and
+			 * clamp the coordinates to stay on the page. */
+			pdf_page_obj_transform(ctx, pdf_lookup_page_obj(ctx, doc, page), &mediabox, &pagectm);
+			mediabox = fz_transform_rect(mediabox, pagectm);
+			w = mediabox.x1 - mediabox.x0;
+			h = mediabox.y1 - mediabox.y0;
+
+			if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH))
+				*yp = fz_clamp(h-a1, 0, h);
+			if (type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
+				*xp = a1;
+			if (type == PDF_NAME(FitR) || type == PDF_NAME(XYZ))
+				*xp = a1, *yp = fz_clamp(h-a2, 0, h);
+		}
+		return page;
+	}
+	fz_warn(ctx, "unknown link uri '%s'", uri);
+	return -1;
 }
