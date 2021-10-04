@@ -120,6 +120,7 @@ typedef struct
 	pdf_obj *linear_t;
 	pdf_obj *hints_s;
 	pdf_obj *hints_length;
+	int hint_object_num;
 	int page_count;
 	page_objects_list *page_object_lists;
 	int crypt_object_number;
@@ -1295,6 +1296,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		hint_ref = pdf_add_object(ctx, doc, hint_obj);
 		hint_num = pdf_to_num(ctx, hint_ref);
 
+		opts->hint_object_num = hint_num;
 		opts->use_list[hint_num] = USE_HINTS;
 		opts->renumber_map[hint_num] = hint_num;
 		opts->rev_renumber_map[hint_num] = hint_num;
@@ -2158,7 +2160,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 				if (is_jpx_stream(ctx, obj))
 					do_deflate = 0, do_expand = 0;
 
-				if (do_expand)
+				if (do_expand && num != opts->hint_object_num)
 					expandstream(ctx, doc, opts, obj, num, gen, do_deflate, unenc);
 				else
 					copystream(ctx, doc, opts, obj, num, gen, do_deflate, unenc);
