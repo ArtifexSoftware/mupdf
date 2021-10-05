@@ -414,6 +414,8 @@ static void do_save_pdf_dialog(int for_signing)
 				{
 					pdf_save_document(ctx, pdf, save_filename, &save_opts);
 					fz_strlcpy(filename, save_filename, PATH_MAX);
+					fz_strlcat(save_filename, ".journal", PATH_MAX);
+					unlink(save_filename);
 					reload_document();
 				}
 			}
