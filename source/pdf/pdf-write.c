@@ -1374,9 +1374,9 @@ lpr_inherit_res_contents(fz_context *ctx, pdf_obj *res, pdf_obj *dict, pdf_obj *
 			pdf_obj *key = pdf_dict_get_key(ctx, o, i);
 			pdf_obj *val = pdf_dict_get_val(ctx, o, i);
 
-			if (pdf_dict_get(ctx, res, key))
+			if (pdf_dict_get(ctx, r, key))
 				continue;
-			pdf_dict_put(ctx, res, key, val);
+			pdf_dict_put(ctx, r, key, val);
 		}
 	}
 }
