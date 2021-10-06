@@ -1,20 +1,5 @@
-If you want to build with Tesseract functionality, you will
-need both the tesseract and leptonica repositories checked out
-here.
-
-Tesseract can be fetched by:
-
-  git clone https://git.ghostscript.com/thirdparty-tesseract.git tesseract
-  cd tesseract
-  git checkout artifex
-  cd ..
-
-Leptonica can be fetched by:
-
-  git clone https://git.ghostscript.com/thirdparty-leptonica.git leptonica
-  cd leptonica
-  git checkout artifex
-  cd ..
+If you want to build with Tesseract functionality, you need to run make
+with a "tesseract=yes" argument.
 
 You will also need a suitable set of traineddata for the languages you
 wish to run. Only the LSTM engine (the latest and most accurate engine)
