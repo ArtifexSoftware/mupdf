@@ -38,7 +38,6 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #ifdef _MSC_VER
 struct timeval;
 struct timezone;
@@ -224,17 +223,6 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_OCR_STEXT_JSON, CS_GRAY, { CS_GRAY } },
 	{ OUT_OCR_TRACE, CS_GRAY, { CS_GRAY } },
 };
-
-time_t
-stat_mtime(const char *path)
-{
-	struct stat info;
-
-	if (stat(path, &info) < 0)
-		return 0;
-
-	return info.st_mtime;
-}
 
 /*
 	In the presence of pthreads or Windows threads, we can offer
@@ -2347,8 +2335,8 @@ int mudraw_main(int argc, char **argv)
 					{
 						/* Check whether that file exists, and isn't older than
 						 * the document. */
-						atime = stat_mtime(accelpath);
-						dtime = stat_mtime(filename);
+						atime = fz_stat_mtime(accelpath);
+						dtime = fz_stat_mtime(filename);
 						if (atime == 0)
 						{
 							/* No accelerator */

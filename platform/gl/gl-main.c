@@ -26,11 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #include <time.h>
-#ifdef _MSC_VER
-#define stat _stat
-#endif
 #ifndef _WIN32
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -59,17 +55,6 @@ void glutLeaveMainLoop(void)
 	exit(0);
 }
 #endif
-
-time_t
-stat_mtime(const char *path)
-{
-	struct stat info;
-
-	if (stat(path, &info) < 0)
-		return 0;
-
-	return info.st_mtime;
-}
 
 fz_context *ctx = NULL;
 pdf_document *pdf = NULL;
@@ -1651,8 +1636,8 @@ static void load_document(void)
 	{
 		/* Check whether that file exists, and isn't older than
 		 * the document. */
-		atime = stat_mtime(accelpath);
-		dtime = stat_mtime(filename);
+		atime = fz_stat_mtime(accelpath);
+		dtime = fz_stat_mtime(filename);
 		if (atime == 0)
 		{
 			/* No accelerator */
