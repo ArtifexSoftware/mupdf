@@ -682,9 +682,9 @@ pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp,
 			if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH))
 				*yp = fz_clamp(h-a1, 0, h);
 			if (type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
-				*xp = a1;
+				*xp = fz_clamp(a1, 0, w);
 			if (type == PDF_NAME(FitR) || type == PDF_NAME(XYZ))
-				*xp = a1, *yp = fz_clamp(h-a2, 0, h);
+				*xp = fz_clamp(a1, 0, w), *yp = fz_clamp(h-a2, 0, h);
 		}
 		return page;
 	}
