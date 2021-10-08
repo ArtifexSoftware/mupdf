@@ -456,7 +456,11 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 				else
 				{
 					/* Accelerator data is out of date */
-					unlink(accelpath);
+#ifdef _WIN32
+					fz_remove_utf8(accelpath);
+#else
+					remove(accelpath);
+#endif
 					accel = NULL; /* In case we have jumped up from below */
 				}
 			}
