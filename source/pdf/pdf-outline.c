@@ -87,7 +87,7 @@ pdf_outline_iterator_next(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *next;
 
-	if (iter->modifier != MOD_NONE)
+	if (iter->modifier != MOD_NONE || iter->current == NULL)
 		return -1;
 	next = pdf_dict_get(ctx, iter->current, PDF_NAME(Next));
 	if (next == NULL)
@@ -107,7 +107,7 @@ pdf_outline_iterator_prev(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *prev;
 
-	if (iter->modifier == MOD_BELOW)
+	if (iter->modifier == MOD_BELOW || iter->current == NULL)
 		return -1;
 	if (iter->modifier == MOD_AFTER)
 	{
@@ -129,7 +129,7 @@ pdf_outline_iterator_up(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *up;
 
-	if (iter->modifier == MOD_BELOW)
+	if (iter->modifier == MOD_BELOW || iter->current == NULL)
 	{
 		iter->modifier = MOD_NONE;
 		return 0;
@@ -149,7 +149,7 @@ pdf_outline_iterator_down(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *down;
 
-	if (iter->modifier != MOD_NONE)
+	if (iter->modifier != MOD_NONE || iter->current == NULL)
 		return -1;
 	down = pdf_dict_get(ctx, iter->current, PDF_NAME(First));
 	if (down == NULL)
