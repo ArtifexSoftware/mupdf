@@ -34,15 +34,14 @@
 */
 
 static void
-pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *mark_list, pdf_obj *parent)
+pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_list *mark_list, pdf_obj *parent)
 {
 	pdf_obj *obj, *prev = NULL;
 
 	while (dict && pdf_is_dict(ctx, dict))
 	{
-		if (pdf_mark_obj(ctx, dict))
+		if (pdf_mark_list_push(ctx, mark_list, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Cycle detected in outlines");
-		pdf_array_push(ctx, mark_list, dict);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Prev));
 		if (pdf_objcmp(ctx, prev, obj))
@@ -585,13 +584,13 @@ pdf_outline_iterator_drop(fz_context *ctx, fz_outline_iterator *iter_)
 
 fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc)
 {
-	pdf_obj *root, *obj, *first, *mark_list;
+	pdf_obj *root, *obj, *first;
+	pdf_mark_list mark_list;
 	pdf_outline_iterator *iter = NULL;
-	int i;
 
 	/* Walk the outlines to spot problems that might bite us later
 	 * (in particular, for cycles). */
-	mark_list = pdf_new_array(ctx, doc, 100);
+	pdf_mark_list_init(ctx, &mark_list);
 	fz_try(ctx)
 	{
 		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
@@ -602,7 +601,7 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 			/* cache page tree for fast link destination lookups */
 			pdf_load_page_tree(ctx, doc);
 			fz_try(ctx)
-				pdf_test_outline(ctx, doc, first, mark_list, obj);
+				pdf_test_outline(ctx, doc, first, &mark_list, obj);
 			fz_always(ctx)
 				pdf_drop_page_tree(ctx, doc);
 			fz_catch(ctx)
@@ -610,16 +609,9 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 		}
 	}
 	fz_always(ctx)
-	{
-		int len = pdf_array_len(ctx, mark_list);
-		for (i = 0; i < len; ++i)
-			pdf_unmark_obj(ctx, pdf_array_get(ctx, mark_list, i));
-		pdf_drop_obj(ctx, mark_list);
-	}
+		pdf_mark_list_free(ctx, &mark_list);
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	iter = fz_new_derived_outline_iter(ctx, pdf_outline_iterator, &doc->super);
 	iter->super.del = pdf_outline_iterator_del;
