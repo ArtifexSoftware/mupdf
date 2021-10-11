@@ -129,7 +129,9 @@ pdf_outline_iterator_up(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *up;
 
-	if (iter->modifier == MOD_BELOW || iter->current == NULL)
+	if (iter->current == NULL)
+		return -1;
+	if (iter->modifier == MOD_BELOW)
 	{
 		iter->modifier = MOD_NONE;
 		return 0;
