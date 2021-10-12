@@ -706,7 +706,7 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
 
 static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	int num, other, max_num;
+	int num, other;
 	int xref_len = pdf_xref_len(ctx, doc);
 
 	expand_lists(ctx, opts, xref_len);
@@ -787,7 +787,6 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 			/* Keep the lowest numbered object */
 			newnum = fz_mini(num, other);
-			max_num = fz_maxi(num, other);
 			opts->renumber_map[num] = newnum;
 			opts->renumber_map[other] = newnum;
 			opts->rev_renumber_map[newnum] = num; /* Either will do */
