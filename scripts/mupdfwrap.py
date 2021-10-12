@@ -4542,7 +4542,7 @@ def class_add_iterator( struct, structname, classname, extras):
             ExtraMethod( f'{classname}Iterator', 'begin()',
                     f'''
                     {{
-                        return {classname}Iterator(m_internal{'->'+it_begin if it_begin else ''});
+                        return {classname}Iterator({'m_internal->'+it_begin if it_begin else '*this'});
                     }}
                     ''',
                     f'/* Used for iteration over linked list of {it_type} items starting at {it_internal_type}::{it_begin}. */',
