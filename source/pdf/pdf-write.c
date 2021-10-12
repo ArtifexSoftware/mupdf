@@ -588,12 +588,14 @@ objects_dump(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj, int *duff)
 {
 	int num = pdf_to_num(ctx, obj);
+	int xref_len = pdf_xref_len(ctx, doc);
 
-	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+	if (num <= 0 || num >= xref_len)
 	{
 		*duff = 1;
 		return NULL;
 	}
+	expand_lists(ctx, opts, xref_len);
 	*duff = 0;
 	if (opts->use_list[num])
 		return NULL;
@@ -608,7 +610,9 @@ static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			pdf_obj *len = pdf_dict_get(ctx, obj, PDF_NAME(Length));
 			if (pdf_is_indirect(ctx, len))
 			{
-				opts->use_list[pdf_to_num(ctx, len)] = 0;
+				int num2 = pdf_to_num(ctx, len);
+				expand_lists(ctx, opts, num2+1);
+				opts->use_list[num2] = 0;
 				len = pdf_resolve_indirect(ctx, len);
 				pdf_dict_put(ctx, obj, PDF_NAME(Length), len);
 			}
@@ -705,6 +709,7 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 	int num, other, max_num;
 	int xref_len = pdf_xref_len(ctx, doc);
 
+	expand_lists(ctx, opts, xref_len);
 	for (num = 1; num < xref_len; num++)
 	{
 		/* Only compare an object to objects preceding it */
@@ -713,7 +718,7 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			pdf_obj *a, *b;
 			int newnum, streama = 0, streamb = 0, differ = 0;
 
-			if (num == other || !opts->use_list[num] || !opts->use_list[other])
+			if (num == other || num >= opts->list_len || !opts->use_list[num] || !opts->use_list[other])
 				continue;
 
 			/* TODO: resolve indirect references to see if we can omit them */
@@ -783,8 +788,6 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			/* Keep the lowest numbered object */
 			newnum = fz_mini(num, other);
 			max_num = fz_maxi(num, other);
-			if (max_num >= opts->list_len)
-				expand_lists(ctx, opts, max_num);
 			opts->renumber_map[num] = newnum;
 			opts->renumber_map[other] = newnum;
 			opts->rev_renumber_map[newnum] = num; /* Either will do */
@@ -3521,23 +3524,20 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			pdf_ensure_solid_xref(ctx, doc, xref_len);
 			preloadobjstms(ctx, doc);
-			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
-			expand_lists(ctx, opts, xref_len);
 		}
 
 		if (opts->do_preserve_metadata)
 			opts->metadata = pdf_keep_obj(ctx, pdf_metadata(ctx, doc));
 
+		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
+		expand_lists(ctx, opts, xref_len);
+
 		/* Sweep & mark objects from the trailer */
 		if (opts->do_garbage >= 1 || opts->do_linear)
 			(void)markobj(ctx, doc, opts, pdf_trailer(ctx, doc));
 		else
-		{
-			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
-			expand_lists(ctx, opts, xref_len);
 			for (num = 0; num < xref_len; num++)
 				opts->use_list[num] = 1;
-		}
 
 		/* Coalesce and renumber duplicate objects */
 		if (opts->do_garbage >= 3)
@@ -3559,12 +3559,13 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		if (opts->do_garbage >= 2 || opts->do_linear)
 			renumberobjs(ctx, doc, opts);
 
+		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
+		expand_lists(ctx, opts, xref_len);
+
 		/* Truncate the xref after compacting and renumbering */
 		if ((opts->do_garbage >= 2 || opts->do_linear) &&
 			!opts->do_incremental)
 		{
-			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
-			expand_lists(ctx, opts, xref_len);
 			while (xref_len > 0 && !opts->use_list[xref_len-1])
 				xref_len--;
 		}
