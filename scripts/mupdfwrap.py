@@ -51,6 +51,11 @@ C++ wrapping:
             to_string_<structname>() functions that return this text
             representation as a std::string.
 
+        Diagnostics:
+
+            If environmental variable MUPDF_trace is "1", we output diagnostics
+            each time we call a MuPDF function, showing the args.
+
     Classes:
 
         For each fz_* and pdf_* struct, we provide a wrapper class with
@@ -84,6 +89,20 @@ C++ wrapping:
             do not call fz_keep_*() - it is expected that any supplied fz_*
             pointer is already owned. Most of the time user code will not need
             to use these low-level constructors directly.
+
+            Debugging reference counting:
+
+                If environmental variable MUPDF_check_refs is "1", we do
+                runtime checks of the generated code's handling of structs that
+                have a reference count (i.e. they have a 'int refs;' member).
+
+                If the number of wrapper class instances for a particular MuPDF
+                struct instance is more than the .ref value for that struct
+                instance, we call abort().
+
+                We also output reference-counting diagnostics each time a
+                wrapper class constructor, member function or destructor is
+                called.
 
         POD wrappers:
 
@@ -1458,6 +1477,10 @@ classextras = ClassExtras(
                         '''
                         : m_internal( NULL)
                         {
+                            if (s_check_refs)
+                            {
+                                s_Device_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);
+                            }
                         }
                         ''',
                         comment = '/* Sets m_internal = NULL. */',
@@ -2549,6 +2572,28 @@ def is_double_pointer( type_):
         type_ = type_.get_pointee().get_canonical()
         if type_.kind == clang.cindex.TypeKind.POINTER:
             return True
+
+has_refs_cache = dict()
+def has_refs( type_):
+    '''
+    Returns true if <type_> has an 'int refs;' member.
+    '''
+    type_ = type_.get_canonical()
+    key = type_.spelling
+    ret = has_refs_cache.get( key, None)
+    if ret is None:
+        ret = False
+        for cursor in type_.get_fields():
+            name = cursor.spelling
+            type2 = cursor.type.get_canonical()
+            if name == 'refs' and type2.spelling == 'int':
+                #jlib.log( '{type_.spelling=} returning true')
+                ret = True
+                break
+        else:
+            jlib.log( '{type_.spelling=} returning False')
+        has_refs_cache[ key] = ret
+    return ret
 
 
 def write_call_arg(
@@ -4538,11 +4583,19 @@ def class_add_iterator( struct, structname, classname, extras):
 
     # We add to extras.methods_extra().
     #
+    check_refs = 1 if has_refs(struct.type) else 0
     extras.methods_extra.append(
             ExtraMethod( f'{classname}Iterator', 'begin()',
                     f'''
                     {{
-                        return {classname}Iterator({'m_internal->'+it_begin if it_begin else '*this'});
+                        auto ret = {classname}Iterator({'m_internal->'+it_begin if it_begin else '*this'});
+                        #if {check_refs}
+                        if (s_check_refs)
+                        {{
+                            s_{classname}_refs_check.check( this, __FILE__, __LINE__, __FUNCTION__);
+                        }}
+                        #endif
+                        return ret;
                     }}
                     ''',
                     f'/* Used for iteration over linked list of {it_type} items starting at {it_internal_type}::{it_begin}. */',
@@ -4552,7 +4605,14 @@ def class_add_iterator( struct, structname, classname, extras):
             ExtraMethod( f'{classname}Iterator', 'end()',
                     f'''
                     {{
-                        return {classname}Iterator(NULL);
+                        auto ret = {classname}Iterator(NULL);
+                        #if {check_refs}
+                        if (s_check_refs)
+                        {{
+                            s_{classname}_refs_check.check( this, __FILE__, __LINE__, __FUNCTION__);
+                        }}
+                        #endif
+                        return ret;
                     }}
                     ''',
                     f'/* Used for iteration over linked list of {it_type} items starting at {it_internal_type}::{it_begin}. */',
@@ -4750,6 +4810,7 @@ def class_copy_constructor(
         tu,
         functions,
         structname,
+        struct,
         base_name,
         classname,
         constructor_fns,
@@ -4810,6 +4871,11 @@ def class_copy_constructor(
         out_cpp.write( f'FZ_FUNCTION {classname}::{classname}(const {classname}& rhs)\n')
         out_cpp.write( f': m_internal({cast}{rename.function_call(keep_name)}(rhs.m_internal))\n')
         out_cpp.write( '{\n')
+        if has_refs( struct.type):
+            out_cpp.write( '    if (s_check_refs)\n')
+            out_cpp.write( '    {\n')
+            out_cpp.write(f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+            out_cpp.write( '    }\n')
         out_cpp.write( '}\n')
         out_cpp.write( '\n')
 
@@ -4824,7 +4890,17 @@ def class_copy_constructor(
     out_cpp.write(  '{\n')
     out_cpp.write( f'    {rename.function_call(drop_name)}(this->m_internal);\n')
     out_cpp.write( f'    {rename.function_call(keep_name)}(rhs.m_internal);\n')
+    if has_refs( struct.type):
+        out_cpp.write( '    if (s_check_refs)\n')
+        out_cpp.write( '    {\n')
+        out_cpp.write(f'        s_{classname}_refs_check.remove( this, __FILE__, __LINE__, __FUNCTION__);\n')
+        out_cpp.write( '    }\n')
     out_cpp.write( f'    this->m_internal = {cast}rhs.m_internal;\n')
+    if has_refs( struct.type):
+        out_cpp.write( '    if (s_check_refs)\n')
+        out_cpp.write( '    {\n')
+        out_cpp.write(f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+        out_cpp.write( '    }\n')
     out_cpp.write( f'    return *this;\n')
     out_cpp.write(  '}\n')
     out_cpp.write(  '\n')
@@ -4843,14 +4919,16 @@ def class_write_method_body(
         fn_cursor,
         construct_from_temp,
         fnname2,
-        return_cursor,
-        return_type,
+        return_cursor,  # Cursor for struct.
+        return_type,    # Name of wrapper class.
         ):
     '''
     Writes method body to <out_cpp> that calls a generated C++ wrapper
     function.
     '''
     out_cpp.write( f'{{\n')
+
+    return_void = (fn_cursor.result_type.spelling == 'void')
 
     # Write function call.
     if constructor:
@@ -4873,8 +4951,10 @@ def class_write_method_body(
         out_cpp.write( f'    {return_cursor.spelling} temp = mupdf::{fnname2}(')
     elif construct_from_temp == 'pointer':
         out_cpp.write( f'    {return_cursor.spelling}* temp = mupdf::{fnname2}(')
+    elif return_void:
+        out_cpp.write( f'    mupdf::{fnname2}(')
     else:
-        out_cpp.write( f'    return mupdf::{fnname2}(')
+        out_cpp.write( f'    auto ret = mupdf::{fnname2}(')
 
     have_used_this = False
     sep = ''
@@ -4902,9 +4982,22 @@ def class_write_method_body(
         out_cpp.write( f'    {rename.function_call(keep_fn)}(temp);\n')
 
     if construct_from_temp == 'address_of_value':
-        out_cpp.write( f'    return {return_type}(&temp);\n')
+        out_cpp.write( f'    auto ret = {return_type}(&temp);\n')
     elif construct_from_temp == 'pointer':
-        out_cpp.write( f'    return {return_type}(temp);\n')
+        out_cpp.write( f'    auto ret = {return_type}(temp);\n')
+
+    if not static:
+        if has_refs(struct.type):
+            out_cpp.write( f'    if (s_check_refs)\n')
+            out_cpp.write( f'    {{\n')
+            if constructor:
+                out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+            else:
+                out_cpp.write( f'        s_{classname}_refs_check.check( this, __FILE__, __LINE__, __FUNCTION__);\n')
+            out_cpp.write( f'    }}\n')
+
+    if not return_void and not constructor:
+        out_cpp.write( f'    return ret;\n')
 
     out_cpp.write( f'}}\n')
     out_cpp.write( f'\n')
@@ -5280,12 +5373,18 @@ def class_raw_constructor(
                     out_cpp.write( f'    memcpy(this->{c.spelling}, internal->{c.spelling}, sizeof(this->{c.spelling}));\n')
                 else:
                     out_cpp.write( f'    this->{c.spelling} = internal->{c.spelling};\n')
+        if has_refs(struct.type):
+            out_cpp.write( f'    if (s_check_refs)\n')
+            out_cpp.write( f'    {{\n')
+            out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+            out_cpp.write( f'    }}\n')
         out_cpp.write( '}\n')
         out_cpp.write( '\n')
 
     if extras.pod == 'inline':
         # Write second constructor that takes underlying struct by value.
         #
+        assert not has_refs(struct.type)
         constructor_decl = f'{classname}(const {structname} internal)'
         out_h.write( '\n')
         out_h.write( f'    {comment}\n')
@@ -5314,7 +5413,13 @@ def class_raw_constructor(
                 out_cpp.write( f'FZ_FUNCTION {const_space}{structname}* {classname}::internal(){space_const}\n')
                 out_cpp.write( '{\n')
                 field0 = get_field0(struct.type).spelling
-                out_cpp.write( f'    return ({const_space}{structname}*) &this->{field0};\n')
+                out_cpp.write( f'    auto ret = ({const_space}{structname}*) &this->{field0};\n')
+                if has_refs(struct.type):
+                    out_cpp.write( f'    if (s_check_refs)\n')
+                    out_cpp.write( f'    {{\n')
+                    out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+                    out_cpp.write( f'    }}\n')
+                out_cpp.write( '    return ret;\n')
                 out_cpp.write( '}\n')
                 out_cpp.write( '\n')
 
@@ -5437,6 +5542,7 @@ def class_destructor(
         register_fn_use,
         classname,
         extras,
+        struct,
         destructor_fns,
         out_h,
         out_cpp,
@@ -5462,6 +5568,11 @@ def class_destructor(
         out_cpp.write( f'FZ_FUNCTION {classname}::~{classname}()\n')
         out_cpp.write(  '{\n')
         out_cpp.write( f'    {rename.function_call(fnname)}(m_internal);\n')
+        if has_refs( struct.type):
+            out_cpp.write( f'    if (s_check_refs)\n')
+            out_cpp.write(  '    {\n')
+            out_cpp.write( f'        s_{classname}_refs_check.remove( this, __FILE__, __LINE__, __FUNCTION__);\n')
+            out_cpp.write(  '    }\n')
         out_cpp.write(  '}\n')
         out_cpp.write( '\n')
     else:
@@ -5669,6 +5780,9 @@ def class_wrapper(
     out_cpp.write( '\n')
     out_cpp.write( f'/* Implementation of methods for {classname} (wrapper for {structname}). */\n')
     out_cpp.write( '\n')
+    if has_refs(struct.type):
+        out_cpp.write( f'static RefsCheck<{structname}, {classname}> s_{classname}_refs_check;\n')
+        out_cpp.write( '\n')
 
     # Trailing text in header, e.g. typedef for iterator.
     #
@@ -5734,6 +5848,7 @@ def class_wrapper(
                 tu,
                 register_fn_use,
                 structname,
+                struct,
                 base_name,
                 classname,
                 constructor_fns,
@@ -5880,6 +5995,7 @@ def class_wrapper(
                 register_fn_use,
                 classname,
                 extras,
+                struct,
                 destructor_fns,
                 out_h,
                 out_cpp,
@@ -6230,6 +6346,8 @@ def cpp_source(
             #include <assert.h>
             #include <sstream>
 
+            #include <string.h>
+
             '''))
 
     out_cpps.classes.write(
@@ -6241,7 +6359,12 @@ def cpp_source(
 
             #include "mupdf/fitz/geometry.h"
 
+            #include <map>
+            #include <mutex>
             #include <sstream>
+            #include <string.h>
+            #include <thread>
+
             #include <string.h>
 
             '''))
@@ -6251,6 +6374,110 @@ def cpp_source(
         if file == out_cpps.internal:
             continue
         make_namespace_open( namespace, file)
+
+    # Write reference counting check code to out_cpps.classes.
+    out_cpps.classes.write(
+            textwrap.dedent(
+            '''
+            /* Support for checking that reference counts of underlying
+            MuPDF structs are not smaller than the number of wrapper class
+            instances. Enable at runtime by setting environmental variable
+            MUPDF_check_refs to "1". */
+
+            static const char*  s_check_refs_s = getenv("MUPDF_check_refs");
+            static bool         s_check_refs = (s_check_refs_s && !strcmp(s_check_refs_s, "1")) ? true : false;
+
+            /* For each MupDF struct that has an 'int refs' member, we create
+            a static instance of this class template with T set to our wrapper
+            class, for example:
+
+                static RefsCheck<fz_document, Document> s_Document_refs_check;
+
+            Then if s_check_refs is true, each constructor function calls
+            .add(), the destructor calls .remove() and other class functions
+            call .check(). This ensures that we check reference counting after
+            each class operation.
+            */
+            template<typename Struct, typename ClassWrapper>
+            struct RefsCheck
+            {
+                std::mutex              m_mutex;
+                std::map<Struct*, int>  m_this_to_num;
+
+                void change( const ClassWrapper* this_, const char* file, int line, const char* fn, int delta)
+                {
+                    assert( s_check_refs);
+                    if (!this_->m_internal) return;
+                    std::lock_guard< std::mutex> lock( m_mutex);
+                    /* Our lock doesn't make our access to
+                    this_->m_internal->refs thead-safe - other threads
+                    could be modifying it via fz_keep_<Struct>() or
+                    fz_drop_<Struct>(). But hopefully our read will be atomic
+                    in practise anyway? */
+                    int refs = this_->m_internal->refs;
+                    int& n = m_this_to_num[ this_->m_internal];
+                    int n_prev = n;
+                    assert( n >= 0);
+                    n += delta;
+                    std::cerr << file << ":" << line << ":" << fn << "():"
+                            // << " " << typeid(ClassWrapper).name() << ":"
+                            << " this_=" << this_
+                            << " this_->m_internal=" << this_->m_internal
+                            << " refs=" << refs
+                            << " n: " << n_prev << " => " << n
+                            << "\\n";
+                    if ( n < 0)
+                    {
+                        std::cerr << file << ":" << line << ":" << fn << "():"
+                                // << " " << typeid(ClassWrapper).name() << ":"
+                                << " this_=" << this_
+                                << " this_->m_internal=" << this_->m_internal
+                                << " bad n: " << n_prev << " => " << n
+                                << "\\n";
+                        abort();
+                    }
+                    if ( n && refs < n)
+                    {
+                        std::cerr << file << ":" << line << ":" << fn << "():"
+                            // << " " << typeid(ClassWrapper).name() << ":"
+                                << " this_=" << this_
+                                << " this_->m_internal=" << this_->m_internal
+                                << " refs=" << refs
+                                << " n: " << n_prev << " => " << n
+                                << " refs mismatch (refs<n):"
+                                << "\\n";
+                        abort();
+                    }
+                    if (n && abs( refs - n) > 1000)
+                    {
+                        /* This traps case where n > 0 but underlying struct is
+                        freed and .ref is set to bogus value by fz_free() or
+                        similar. */
+                        std::cerr << file << ":" << line << ":" << fn << "(): " << ": " << typeid(ClassWrapper).name()
+                                << " bad change to refs."
+                                << " this_=" << this_
+                                << " refs=" << refs
+                                << " n: " << n_prev << " => " << n
+                                << "\\n";
+                        abort();
+                    }
+                    if (n == 0) m_this_to_num.erase( this_->m_internal);
+                }
+                void add( const ClassWrapper* this_, const char* file, int line, const char* fn)
+                {
+                    change( this_, file, line, fn, +1);
+                }
+                void remove( const ClassWrapper* this_, const char* file, int line, const char* fn)
+                {
+                    change( this_, file, line, fn, -1);
+                }
+                void check( const ClassWrapper* this_, const char* file, int line, const char* fn)
+                {
+                    change( this_, file, line, fn, 0);
+                }
+            };
+
+            '''))
 
     # Write declataion and definition for metadata_keys global.
     #
@@ -6279,7 +6506,8 @@ def cpp_source(
                     "info:ModDate",
             };
 
-            static bool s_trace = getenv("MUPDF_trace") ? true : false;
+            static const char* s_trace_s = getenv("MUPDF_trace");
+            static bool s_trace = (s_trace_s && !strcmp(s_trace_s, "1")) ? true : false;
 
             '''))
 
@@ -8114,7 +8342,7 @@ def main():
 
                 jlib.system( f'rsync -aiRz {" ".join( files)} {destination}', verbose=1, out='log')
 
-            elif arg == '--test-python' or arg == '-t':
+            elif arg in ('--test-python', '-t', '--test-python-gui'):
 
                 # We need to set LD_LIBRARY_PATH and PYTHONPATH so that our
                 # test .py programme can load mupdf.py and _mupdf.so.
@@ -8149,33 +8377,38 @@ def main():
                             }
                     #command_prefix = f'LD_LIBRARY_PATH={os.path.abspath(build_dirs.dir_so)} PYTHONPATH={os.path.relpath(build_dirs.dir_so)}'
 
-                log( 'running mupdf_test.py...')
-                command = f'MUPDF_trace=1 {command_prefix} ./scripts/mupdfwrap_test.py'
-                with open( f'{build_dirs.dir_mupdf}/platform/python/mupdf_test.py.out.txt', 'w') as f:
+                if arg == '--test-python-gui':
+                    command = f'MUPDF_trace=0 MUPDF_check_refs=1 {command_prefix} ./scripts/mupdfwrap_gui.py'
                     jlib.system( command, env_extra=env_extra, out='log', verbose=1)
-                    # Repeat with pdf_reference17.pdf if it exists.
-                    path = '../pdf_reference17.pdf'
-                    if os.path.exists(path):
-                        jlib.log('Running mupdfwrap_test.py on {path}')
-                        command += f' {path}'
+
+                else:
+                    log( 'running mupdf_test.py...')
+                    command = f'MUPDF_trace=0 MUPDF_check_refs=1 {command_prefix} ./scripts/mupdfwrap_test.py'
+                    with open( f'{build_dirs.dir_mupdf}/platform/python/mupdf_test.py.out.txt', 'w') as f:
                         jlib.system( command, env_extra=env_extra, out='log', verbose=1)
+                        # Repeat with pdf_reference17.pdf if it exists.
+                        path = '../pdf_reference17.pdf'
+                        if os.path.exists(path):
+                            jlib.log('Running mupdfwrap_test.py on {path}')
+                            command += f' {path}'
+                            jlib.system( command, env_extra=env_extra, out='log', verbose=1)
 
-                # Run mutool.py.
-                #
-                mutool_py = os.path.relpath( f'{__file__}/../mutool.py')
-                zlib_pdf = os.path.relpath(f'{build_dirs.dir_mupdf}/thirdparty/zlib/zlib.3.pdf')
-                for args2 in (
-                        f'trace {zlib_pdf}',
-                        f'convert -o zlib.3.pdf-%d.png {zlib_pdf}',
-                        f'draw -o zlib.3.pdf-%d.png -s tmf -v -y l -w 150 -R 30 -h 200 {zlib_pdf}',
-                        f'draw -o zlib.png -R 10 {zlib_pdf}',
-                        f'clean -gggg -l {zlib_pdf} zlib.clean.pdf',
-                        ):
-                    command = f'{command_prefix} {mutool_py} {args2}'
-                    log( 'running: {command}')
-                    jlib.system( f'{command}', env_extra=env_extra, out='log', verbose=1)
+                    # Run mutool.py.
+                    #
+                    mutool_py = os.path.relpath( f'{__file__}/../mutool.py')
+                    zlib_pdf = os.path.relpath(f'{build_dirs.dir_mupdf}/thirdparty/zlib/zlib.3.pdf')
+                    for args2 in (
+                            f'trace {zlib_pdf}',
+                            f'convert -o zlib.3.pdf-%d.png {zlib_pdf}',
+                            f'draw -o zlib.3.pdf-%d.png -s tmf -v -y l -w 150 -R 30 -h 200 {zlib_pdf}',
+                            f'draw -o zlib.png -R 10 {zlib_pdf}',
+                            f'clean -gggg -l {zlib_pdf} zlib.clean.pdf',
+                            ):
+                        command = f'{command_prefix} {mutool_py} {args2}'
+                        log( 'running: {command}')
+                        jlib.system( f'{command}', env_extra=env_extra, out='log', verbose=1)
 
-                log( 'Tests ran ok.')
+                    log( 'Tests ran ok.')
 
             elif arg == '--test-csharp':
                 # On linux requires:
