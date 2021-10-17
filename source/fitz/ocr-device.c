@@ -1081,7 +1081,7 @@ fz_ocr_close_device(fz_context *ctx, fz_device *dev)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	fz_save_pixmap_as_png(ctx, ocr->pixmap, "ass.png");
+	// fz_save_pixmap_as_png(ctx, ocr->pixmap, "ass.png");
 
 	/* If we're not using a list, we're done! */
 	if (ocr->list_dev == ocr->target)
