@@ -4792,7 +4792,7 @@ pdf_metadata(fz_context *ctx, pdf_document *doc)
 				break;
 			doc->xref_base++;
 		}
-		while (doc->xref_base <= doc->num_xref_sections);
+		while (doc->xref_base < doc->num_xref_sections);
 	}
 	fz_always(ctx)
 		doc->xref_base = initial;
