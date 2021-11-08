@@ -61,11 +61,8 @@ pdf_drop_xref_subsec(fz_context *ctx, pdf_xref *xref)
 		for (e = 0; e < sub->len; e++)
 		{
 			pdf_xref_entry *entry = &sub->table[e];
-			if (entry->obj)
-			{
-				pdf_drop_obj(ctx, entry->obj);
-				fz_drop_buffer(ctx, entry->stm_buf);
-			}
+			pdf_drop_obj(ctx, entry->obj);
+			fz_drop_buffer(ctx, entry->stm_buf);
 		}
 		fz_free(ctx, sub->table);
 		fz_free(ctx, sub);
