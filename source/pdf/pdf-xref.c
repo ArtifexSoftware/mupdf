@@ -2722,33 +2722,43 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 void
 pdf_set_metadata(fz_context *ctx, pdf_document *doc, const char *key, const char *value)
 {
-	pdf_obj *info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
-	if (!strcmp(key, FZ_META_INFO_TITLE))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Title), value);
-	else if (!strcmp(key, FZ_META_INFO_AUTHOR))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Author), value);
-	else if (!strcmp(key, FZ_META_INFO_SUBJECT))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Subject), value);
-	else if (!strcmp(key, FZ_META_INFO_KEYWORDS))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Keywords), value);
-	else if (!strcmp(key, FZ_META_INFO_CREATOR))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Creator), value);
-	else if (!strcmp(key, FZ_META_INFO_PRODUCER))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Producer), value);
-	else if (!strcmp(key, FZ_META_INFO_CREATIONDATE))
-	{
-		int64_t time = pdf_parse_date(ctx, value);
-		if (time >= 0)
-			pdf_dict_put_date(ctx, info, PDF_NAME(CreationDate), time);
-	}
-	else if (!strcmp(key, FZ_META_INFO_MODIFICATIONDATE))
-	{
-		int64_t time = pdf_parse_date(ctx, value);
-		if (time >= 0)
-			pdf_dict_put_date(ctx, info, PDF_NAME(ModDate), time);
-	}
-}
 
+	pdf_obj *info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
+
+	pdf_begin_operation(ctx, doc, "Set Metadata");
+
+	fz_try(ctx)
+	{
+		if (!strcmp(key, FZ_META_INFO_TITLE))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Title), value);
+		else if (!strcmp(key, FZ_META_INFO_AUTHOR))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Author), value);
+		else if (!strcmp(key, FZ_META_INFO_SUBJECT))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Subject), value);
+		else if (!strcmp(key, FZ_META_INFO_KEYWORDS))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Keywords), value);
+		else if (!strcmp(key, FZ_META_INFO_CREATOR))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Creator), value);
+		else if (!strcmp(key, FZ_META_INFO_PRODUCER))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Producer), value);
+		else if (!strcmp(key, FZ_META_INFO_CREATIONDATE))
+		{
+			int64_t time = pdf_parse_date(ctx, value);
+			if (time >= 0)
+				pdf_dict_put_date(ctx, info, PDF_NAME(CreationDate), time);
+		}
+		else if (!strcmp(key, FZ_META_INFO_MODIFICATIONDATE))
+		{
+			int64_t time = pdf_parse_date(ctx, value);
+			if (time >= 0)
+				pdf_dict_put_date(ctx, info, PDF_NAME(ModDate), time);
+		}
+	}
+	fz_always(ctx)
+		pdf_end_operation(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
 
 static fz_location
 pdf_resolve_link_imp(fz_context *ctx, fz_document *doc_, const char *uri, float *xp, float *yp)
