@@ -550,13 +550,9 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 		pdf_dict_put(ctx, bs, PDF_NAME(Type), PDF_NAME(Border));
 		pdf_dict_put_int(ctx, bs, PDF_NAME(W), 0);
 		pdf_dict_put(ctx, annot_obj, PDF_NAME(BS), bs);
-		if (uri)
-		{
-			a = pdf_new_dict(ctx, doc, 2);
-			pdf_dict_put(ctx, a, PDF_NAME(S), PDF_NAME(URI));
-			pdf_dict_put_text_string(ctx, a, PDF_NAME(URI), uri);
-			pdf_dict_put(ctx, annot_obj, PDF_NAME(A), a);
-		}
+
+		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME(A),
+			pdf_new_action_from_link(ctx, doc, uri));
 
 		/*
 			Both annotation object and annotation structure are now created.
@@ -579,7 +575,6 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, a);
 		pdf_drop_obj(ctx, bs);
 		pdf_drop_obj(ctx, annot_obj);
 		pdf_drop_obj(ctx, ind_obj);
