@@ -2873,6 +2873,36 @@ static void ffi_Page_getLinks(js_State *J)
 	fz_drop_link(ctx, links);
 }
 
+static void ffi_Page_createLink(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = ffi_topage(J, 0);
+	fz_link *link = NULL;
+	fz_rect rect = js_iscoercible(J, 1) ? ffi_torect(J, 1) : fz_empty_rect;
+	const char *uri = js_iscoercible(J, 2) ? js_tostring(J, 2) : "";
+
+	fz_try(ctx)
+		link = fz_create_link(ctx, page, rect, uri);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J)) {
+		fz_drop_link(ctx, link);
+		js_throw(J);
+	}
+
+	js_newobject(J);
+
+	ffi_pushrect(J, link->rect);
+	js_setproperty(J, -2, "bounds");
+
+	js_pushstring(J, link->uri);
+	js_setproperty(J, -2, "uri");
+
+	js_endtry(J);
+	fz_drop_link(ctx, link);
+}
+
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
 {
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
@@ -7188,6 +7218,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 1);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
+		jsB_propfun(J, "Page.createLink", ffi_Page_createLink, 2);
 	}
 	js_setregistry(J, "fz_page");
 
