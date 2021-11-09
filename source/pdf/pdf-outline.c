@@ -342,62 +342,14 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 	pdf_dict_del(ctx, obj, PDF_NAME(Dest));
 	if (item->uri)
 	{
+		pdf_document *doc = pdf_get_bound_document(ctx, obj);
+
 		if (fz_is_external_link(ctx, item->uri))
-		{
-			pdf_obj *a = pdf_dict_put_dict(ctx, obj, PDF_NAME(A), 4);
-			pdf_dict_put(ctx, a, PDF_NAME(Type), PDF_NAME(Action));
-			pdf_dict_put(ctx, a, PDF_NAME(S), PDF_NAME(URI));
-			pdf_dict_put_text_string(ctx, a, PDF_NAME(URI), item->uri);
-		}
+			pdf_dict_put_drop(ctx, obj, PDF_NAME(A),
+				pdf_new_action_from_link(ctx, doc, item->uri));
 		else
-		{
-			pdf_document *doc = pdf_get_bound_document(ctx, obj);
-			int page = int_from_fragment(item->uri, "page", 0, 0) - 1;
-			const char *val = val_from_fragment(item->uri, "view");
-			pdf_obj *type = type_match(&val, fit_types);
-			pdf_obj *arr = pdf_dict_put_array(ctx, obj, PDF_NAME(Dest), 5);
-
-			if (type == NULL)
-			{
-				val = val_from_fragment(item->uri, "viewrect");
-				if (val)
-					type = PDF_NAME(FitR);
-			}
-			if (type == NULL)
-			{
-				val = val_from_fragment(item->uri, "zoom");
-				if (val)
-					type = PDF_NAME(XYZ);
-			}
-
-			pdf_array_push(ctx, arr, pdf_lookup_page_obj(ctx, doc, page));
-			if (type)
-			{
-				float a1, a2, a3, a4;
-				a1 = my_read_float(&val);
-				a2 = my_read_float(&val);
-				a3 = my_read_float(&val);
-				a4 = my_read_float(&val);
-				pdf_array_push(ctx, arr, type);
-				if (type == PDF_NAME(XYZ))
-				{
-					pdf_array_push_real(ctx, arr, a1);
-					pdf_array_push_real(ctx, arr, a2);
-					pdf_array_push_real(ctx, arr, a3);
-				}
-				else if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH) || type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
-					pdf_array_push_real(ctx, arr, a1);
-				else if (type == PDF_NAME(FitR))
-				{
-					pdf_array_push_real(ctx, arr, a1);
-					pdf_array_push_real(ctx, arr, a2);
-					pdf_array_push_real(ctx, arr, a3);
-					pdf_array_push_real(ctx, arr, a4);
-				}
-			}
-			else
-				pdf_array_push(ctx, arr, PDF_NAME(Fit));
-		}
+			pdf_dict_put_drop(ctx, obj, PDF_NAME(Dest),
+				pdf_new_destination_from_link(ctx, doc, item->uri));
 	}
 }
 
@@ -705,4 +657,96 @@ pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp,
 	}
 	fz_warn(ctx, "unknown link uri '%s'", uri);
 	return -1;
+}
+
+pdf_obj *
+pdf_new_destination_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
+{
+	pdf_obj *dest = pdf_new_array(ctx, doc, 5);
+	const char *val;
+	pdf_obj *type;
+	int page;
+
+	fz_try(ctx)
+	{
+		page = int_from_fragment(uri, "page", 0, 0) - 1;
+		val = val_from_fragment(uri, "view");
+		type = type_match(&val, fit_types);
+
+		if (type == NULL)
+		{
+			val = val_from_fragment(uri, "viewrect");
+			if (val)
+				type = PDF_NAME(FitR);
+		}
+		if (type == NULL)
+		{
+			val = val_from_fragment(uri, "zoom");
+			if (val)
+				type = PDF_NAME(XYZ);
+		}
+
+		pdf_array_push(ctx, dest, pdf_lookup_page_obj(ctx, doc, page));
+		if (type)
+		{
+			float a1, a2, a3, a4;
+			a1 = my_read_float(&val);
+			a2 = my_read_float(&val);
+			a3 = my_read_float(&val);
+			a4 = my_read_float(&val);
+			pdf_array_push(ctx, dest, type);
+			if (type == PDF_NAME(XYZ))
+			{
+				pdf_array_push_real(ctx, dest, a1);
+				pdf_array_push_real(ctx, dest, a2);
+				pdf_array_push_real(ctx, dest, a3);
+			}
+			else if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH) || type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
+				pdf_array_push_real(ctx, dest, a1);
+			else if (type == PDF_NAME(FitR))
+			{
+				pdf_array_push_real(ctx, dest, a1);
+				pdf_array_push_real(ctx, dest, a2);
+				pdf_array_push_real(ctx, dest, a3);
+				pdf_array_push_real(ctx, dest, a4);
+			}
+		}
+		else
+			pdf_array_push(ctx, dest, PDF_NAME(Fit));
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, dest);
+		fz_rethrow(ctx);
+	}
+
+	return dest;
+}
+
+pdf_obj *
+pdf_new_action_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
+{
+	pdf_obj *action = pdf_new_dict(ctx, doc, 2);
+
+	fz_try(ctx)
+	{
+		if (fz_is_external_link(ctx, uri))
+		{
+			pdf_dict_put(ctx, action, PDF_NAME(S), PDF_NAME(URI));
+			pdf_dict_put_text_string(ctx, action, PDF_NAME(URI), uri);
+		}
+		else
+		{
+			pdf_dict_put(ctx, action, PDF_NAME(S), PDF_NAME(GoTo));
+			pdf_dict_put_drop(ctx, action, PDF_NAME(D),
+				pdf_new_destination_from_link(ctx, doc, uri));
+		}
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, action);
+		fz_rethrow(ctx);
+	}
+
+	return action;
 }
