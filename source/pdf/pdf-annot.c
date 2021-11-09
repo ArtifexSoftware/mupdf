@@ -524,14 +524,16 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 	fz_var(bs);
 	fz_var(a);
 
-	pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
-	page_ctm = fz_invert_matrix(page_ctm);
-	bbox = fz_transform_rect(bbox, page_ctm);
+	pdf_begin_operation(ctx, page->doc, "Create Link");
 
 	fz_try(ctx)
 	{
 		int ind_obj_num;
 		pdf_obj *annot_arr;
+
+		pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
+		page_ctm = fz_invert_matrix(page_ctm);
+		bbox = fz_transform_rect(bbox, page_ctm);
 
 		annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
 		if (annot_arr == NULL)
@@ -581,6 +583,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 		pdf_drop_obj(ctx, bs);
 		pdf_drop_obj(ctx, annot_obj);
 		pdf_drop_obj(ctx, ind_obj);
+		pdf_end_operation(ctx, page->doc);
 	}
 	fz_catch(ctx)
 	{
