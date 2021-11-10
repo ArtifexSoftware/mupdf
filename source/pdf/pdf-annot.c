@@ -518,6 +518,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 	fz_link **linkp;
 	fz_rect page_mediabox;
 	fz_matrix page_ctm;
+	fz_rect rect;
 
 	fz_var(link);
 	fz_var(ind_obj);
@@ -533,7 +534,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 
 		pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
 		page_ctm = fz_invert_matrix(page_ctm);
-		bbox = fz_transform_rect(bbox, page_ctm);
+		rect = fz_transform_rect(bbox, page_ctm);
 
 		annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
 		if (annot_arr == NULL)
@@ -544,7 +545,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 
 		pdf_dict_put(ctx, annot_obj, PDF_NAME(Type), PDF_NAME(Annot));
 		pdf_dict_put(ctx, annot_obj, PDF_NAME(Subtype), PDF_NAME(Link));
-		pdf_dict_put_rect(ctx, annot_obj, PDF_NAME(Rect), bbox);
+		pdf_dict_put_rect(ctx, annot_obj, PDF_NAME(Rect), rect);
 		bs = pdf_new_dict(ctx, doc, 4);
 		pdf_dict_put(ctx, bs, PDF_NAME(S), PDF_NAME(S));
 		pdf_dict_put(ctx, bs, PDF_NAME(Type), PDF_NAME(Border));
