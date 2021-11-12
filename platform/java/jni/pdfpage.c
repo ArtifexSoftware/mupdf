@@ -223,3 +223,21 @@ FUN(PDFPage_createSignature)(JNIEnv *env, jobject self)
 
 	return to_PDFWidget_safe_own(ctx, env, widget);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFPage_getTransform)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	fz_matrix ctm;
+
+	if (!ctx || !page)
+		return NULL;
+
+	fz_try(ctx)
+		pdf_page_transform(ctx, page, NULL, &ctm);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Matrix_safe(ctx, env, ctm);
+}

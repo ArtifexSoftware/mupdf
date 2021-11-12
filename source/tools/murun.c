@@ -5501,6 +5501,20 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_PDFPage_getTransform(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = pdf_page_from_fz_page(ctx, ffi_topage(J, 0));
+	fz_matrix ctm;
+
+	fz_try(ctx)
+		pdf_page_transform(ctx, page, NULL, &ctm);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushmatrix(J, ctm);
+}
+
 static void ffi_PDFAnnotation_bound(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7476,6 +7490,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.applyRedactions", ffi_PDFPage_applyRedactions, 2);
 		jsB_propfun(J, "PDFPage.process", ffi_PDFPage_process, 1);
 		jsB_propfun(J, "PDFPage.toPixmap", ffi_PDFPage_toPixmap, 5);
+		jsB_propfun(J, "PDFPage.getTransform", ffi_PDFPage_getTransform, 0);
 	}
 	js_setregistry(J, "pdf_page");
 
