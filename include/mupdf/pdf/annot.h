@@ -266,6 +266,17 @@ pdf_obj *pdf_new_destination_from_link(fz_context *ctx, pdf_document *doc, const
 pdf_obj *pdf_new_action_from_link(fz_context *ctx, pdf_document *doc, const char *uri);
 
 /*
+	Create a link URI string according to the Adobe specification
+	"Parameters for Opening PDF files" from the Adobe Acrobat SDK,
+	version 8.1, which can, at the time of writing, be found here:
+
+	https://web.archive.org/web/20170921000830/http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
+
+	The resulting string must be freed by the caller.
+*/
+char *pdf_new_link_uri(fz_context *ctx, int pageno, pdf_destination_type type, ...);
+
+/*
 	Create transform to fit appearance stream to annotation Rect
 */
 fz_matrix pdf_annot_transform(fz_context *ctx, pdf_annot *annot);
