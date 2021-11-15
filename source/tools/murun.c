@@ -666,6 +666,19 @@ static enum pdf_line_ending line_ending_from_string(const char *str)
 	return PDF_ANNOT_LE_NONE;
 }
 
+static pdf_destination_type destination_type_from_string(const char *str)
+{
+	if (!strcmp(str, "XYZ")) return PDF_DESTINATION_XYZ;
+	if (!strcmp(str, "Fit")) return PDF_DESTINATION_FIT;
+	if (!strcmp(str, "FitH")) return PDF_DESTINATION_FIT_H;
+	if (!strcmp(str, "FitV")) return PDF_DESTINATION_FIT_V;
+	if (!strcmp(str, "FitR")) return PDF_DESTINATION_FIT_R;
+	if (!strcmp(str, "FitB")) return PDF_DESTINATION_FIT_B;
+	if (!strcmp(str, "FitBH")) return PDF_DESTINATION_FIT_BH;
+	if (!strcmp(str, "FitBV")) return PDF_DESTINATION_FIT_BV;
+	return PDF_DESTINATION_FIT;
+}
+
 static void ffi_pushstroke(js_State *J, const fz_stroke_state *stroke)
 {
 	js_newobject(J);
@@ -5515,6 +5528,54 @@ static void ffi_PDFPage_getTransform(js_State *J)
 	ffi_pushmatrix(J, ctm);
 }
 
+static void ffi_PDFPage_createLink(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = pdf_page_from_fz_page(ctx, ffi_topage(J, 0));
+	fz_rect rect = ffi_torect(J, 1);
+	int pageno = js_tonumber(J, 2);
+	pdf_destination_type type = destination_type_from_string(js_tostring(J, 3));
+	double arg1 = js_tonumber(J, 4);
+	double arg2 = js_tonumber(J, 5);
+	double arg3 = js_tonumber(J, 6);
+	double arg4 = js_tonumber(J, 7);
+	char *uri = NULL;
+	fz_link *link = NULL;
+
+	fz_try(ctx)
+	{
+		pageno = fz_clampi(pageno, 0, pdf_count_pages(ctx, page->doc) - 1);
+		uri = pdf_new_link_uri(ctx, pageno, type, arg1, arg2, arg3, arg4);
+		link = fz_create_link(ctx, &page->super, rect, uri);
+	}
+	fz_always(ctx)
+		fz_free(ctx, uri);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (!link)
+	{
+		js_pushnull(J);
+		return;
+	}
+
+	if (js_try(J)) {
+		fz_drop_link(ctx, link);
+		js_throw(J);
+	}
+
+	js_newobject(J);
+
+	ffi_pushrect(J, link->rect);
+	js_setproperty(J, -2, "bounds");
+
+	js_pushstring(J, link->uri);
+	js_setproperty(J, -2, "uri");
+
+	js_endtry(J);
+	fz_drop_link(ctx, link);
+}
+
 static void ffi_PDFAnnotation_bound(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7491,6 +7552,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.process", ffi_PDFPage_process, 1);
 		jsB_propfun(J, "PDFPage.toPixmap", ffi_PDFPage_toPixmap, 5);
 		jsB_propfun(J, "PDFPage.getTransform", ffi_PDFPage_getTransform, 0);
+		jsB_propfun(J, "PDFPage.createLink", ffi_PDFPage_createLink, 7);
 	}
 	js_setregistry(J, "pdf_page");
 

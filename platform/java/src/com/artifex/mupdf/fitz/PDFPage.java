@@ -66,4 +66,7 @@ public class PDFPage extends Page
 	public native PDFWidget createSignature();
 
 	public native Matrix getTransform();
+
+	/* type is one of PDFDocument.DESTINATION_* */
+	public native Link createLink(Rect bbox, int pageno, int type, float ... args);
 }

@@ -2133,6 +2133,22 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_EDIT 101L
 #undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ANNOTATE
 #define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ANNOTATE 110L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_XYZ
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_XYZ 0L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT 1L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_H
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_H 2L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_V
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_V 3L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_R
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_R 4L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_B
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_B 5L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BH
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BH 6L
+#undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BV
+#define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BV 7L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    newNative
@@ -3193,6 +3209,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_createSignature
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getTransform
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    createLink
+ * Signature: (Lcom/artifex/mupdf/fitz/Rect;II[F)Lcom/artifex/mupdf/fitz/Link;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_createLink
+  (JNIEnv *, jobject, jobject, jint, jint, jfloatArray);
 
 #ifdef __cplusplus
 }

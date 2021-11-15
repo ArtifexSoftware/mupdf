@@ -24,6 +24,16 @@ package com.artifex.mupdf.fitz;
 
 public class PDFDocument extends Document
 {
+	/* Destinations, keep in sync with PDF_DESTINATION_* */
+	public static final int DESTINATION_XYZ = 0;
+	public static final int DESTINATION_FIT = 1;
+	public static final int DESTINATION_FIT_H = 2;
+	public static final int DESTINATION_FIT_V = 3;
+	public static final int DESTINATION_FIT_R = 4;
+	public static final int DESTINATION_FIT_B = 5;
+	public static final int DESTINATION_FIT_BH = 6;
+	public static final int DESTINATION_FIT_BV = 7;
+
 	static {
 		Context.init();
 	}
