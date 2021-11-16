@@ -1512,22 +1512,6 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFAnnotation_IS_TOGGLE_NO_VIEW 256L
 #undef com_artifex_mupdf_fitz_PDFAnnotation_IS_LOCKED_CONTENTS
 #define com_artifex_mupdf_fitz_PDFAnnotation_IS_LOCKED_CONTENTS 512L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_UNSET
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_UNSET 0L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ur
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ur 507L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_urd
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_urd 3423L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ko
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ko 416L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ja
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_ja 37L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh 242L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh_Hans
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh_Hans 14093L
-#undef com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh_Hant
-#define com_artifex_mupdf_fitz_PDFAnnotation_LANGUAGE_zh_Hant 14822L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    finalize
@@ -2149,6 +2133,22 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BH 6L
 #undef com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BV
 #define com_artifex_mupdf_fitz_PDFDocument_DESTINATION_FIT_BV 7L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_UNSET
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_UNSET 0L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ur
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ur 507L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_urd
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_urd 3423L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ko
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ko 416L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ja
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ja 37L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh 242L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh_Hans
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh_Hans 14093L
+#undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh_Hant
+#define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_zh_Hant 14822L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    newNative
@@ -2612,6 +2612,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_beginImplicitOper
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_endOperation
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    getLanguage
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getLanguage
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    setLanguage
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_setLanguage
+  (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus
 }
@@ -3329,22 +3345,6 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFWidget_IS_TOGGLE_NO_VIEW 256L
 #undef com_artifex_mupdf_fitz_PDFWidget_IS_LOCKED_CONTENTS
 #define com_artifex_mupdf_fitz_PDFWidget_IS_LOCKED_CONTENTS 512L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_UNSET
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_UNSET 0L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ur
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ur 507L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_urd
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_urd 3423L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ko
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ko 416L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ja
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_ja 37L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh 242L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh_Hans
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh_Hans 14093L
-#undef com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh_Hant
-#define com_artifex_mupdf_fitz_PDFWidget_LANGUAGE_zh_Hant 14822L
 #undef com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN
 #define com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN 0L
 #undef com_artifex_mupdf_fitz_PDFWidget_TYPE_BUTTON
