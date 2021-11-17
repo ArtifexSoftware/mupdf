@@ -141,7 +141,7 @@ static void clear_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signatu
 			for (widget = pdf_first_widget(ctx, page); widget; widget = pdf_next_widget(ctx, widget))
 				if (pdf_widget_type(ctx, widget) == PDF_WIDGET_TYPE_SIGNATURE && !pdf_objcmp_resolve(ctx, pdf_annot_obj(ctx, widget), signature))
 					pdf_clear_signature(ctx, widget);
-			fz_drop_page(ctx, page);
+			fz_drop_page(ctx, (fz_page *) page);
 			page = NULL;
 		}
 	}
@@ -189,7 +189,7 @@ static void sign_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signatur
 						NULL,
 						NULL,
 						NULL);
-			fz_drop_page(ctx, page);
+			fz_drop_page(ctx, (fz_page *) page);
 			page = NULL;
 		}
 	}
