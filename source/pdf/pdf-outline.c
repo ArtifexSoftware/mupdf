@@ -180,140 +180,6 @@ pdf_outline_iterator_down(fz_context *ctx, fz_outline_iterator *iter_)
 	return 0;
 }
 
-static int
-int_from_fragment(const char *uri, const char *needle, int val_nomatch, int val)
-{
-	const char *n = needle;
-	if (*uri == '#')
-		uri++;
-	while (*uri)
-	{
-		if (*uri == *n)
-		{
-			/* Match, move on one char.*/
-			uri++;
-			n++;
-			/* If the match hasn't ended yet, loop and keep going. */
-			if (*n != 0)
-				continue;
-			if (*uri == '&' || *uri == 0)
-				return val;
-			if (*uri == '=')
-			{
-				const char *u = ++uri;
-				int v = 0;
-				while (*u >= '0' && *u <= '9')
-				{
-					v = (v*10)+ (*u++)-'0';
-				}
-				if (u == uri)
-					return val;
-				return v;
-			}
-		}
-		/* Skip to next one. */
-		while (*uri && *uri != '&')
-			uri++;
-		if (*uri)
-			uri++;
-		n = needle;
-	}
-	return val_nomatch;
-}
-
-typedef struct
-{
-	pdf_obj *name;
-	char string[16];
-	int len;
-} namestring;
-
-#define PDF_OUTLINE_TYPE(A) { PDF_NAME(A), # A, sizeof(#A)-1 }
-static const namestring fit_types[] =
-{
-	PDF_OUTLINE_TYPE(Fit),
-	PDF_OUTLINE_TYPE(FitB),
-	PDF_OUTLINE_TYPE(FitBH),
-	PDF_OUTLINE_TYPE(FitBV),
-	PDF_OUTLINE_TYPE(FitH),
-	PDF_OUTLINE_TYPE(FitR),
-	PDF_OUTLINE_TYPE(FitV),
-	{ NULL, "" }
-};
-#undef PDF_OUTLINE_TYPE
-
-static pdf_obj *
-type_match(const char **uri, const namestring *types)
-{
-	if (*uri == NULL)
-		return NULL;
-
-	while (types->name)
-	{
-		if (strncmp(*uri, types->string, types->len) == 0)
-		{
-			char c = (*uri)[types->len];
-			if (c == ',' || c == '&')
-			{
-				(*uri) += types->len + 1;
-				return types->name;
-			}
-			if (c == 0)
-				return types->name;
-		}
-		types++;
-	}
-	return NULL;
-}
-
-static const char *
-val_from_fragment(const char *uri, const char *needle)
-{
-	const char *n = needle;
-	if (*uri == '#')
-		uri++;
-	while (*uri)
-	{
-		if (*uri == *n)
-		{
-			/* Match, move on one char.*/
-			uri++;
-			n++;
-			/* If the match hasn't ended yet, loop and keep going. */
-			if (*n != 0)
-				continue;
-			if (*uri == '&' || *uri == 0)
-				return NULL;
-			if (*uri == '=')
-				return ++uri;
-		}
-		/* Skip to next one. */
-		while (*uri && *uri != '&')
-			uri++;
-		if (*uri)
-			uri++;
-		n = needle;
-	}
-	return NULL;
-}
-
-static float
-my_read_float(const char **str)
-{
-	float f;
-	char *end;
-
-	if (**str == 0)
-		return 0;
-
-	f = fz_strtof(*str, &end);
-	*str = end;
-	if (**str == ',')
-		(*str)++;
-
-	return f;
-}
-
 static void
 do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_new_node)
 {
@@ -639,120 +505,106 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 	return &iter->super;
 }
 
+fz_link_dest
+pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri)
+{
+	fz_link_dest dest;
+	pdf_obj *page_obj;
+	fz_matrix page_ctm;
+	fz_rect mediabox;
+
+	dest = pdf_parse_link_uri(ctx, uri);
+	if (dest.loc.page < 0)
+		return fz_make_link_dest_none();
+
+	page_obj = pdf_lookup_page_obj(ctx, doc, dest.loc.page);
+	pdf_page_obj_transform(ctx, page_obj, &mediabox, &page_ctm);
+	mediabox = fz_transform_rect(mediabox, page_ctm);
+
+	/* clamp coordinates to remain on page */
+	dest.x = fz_clamp(dest.x, 0, mediabox.x1 - mediabox.x0);
+	dest.y = fz_clamp(dest.y, 0, mediabox.y1 - mediabox.y0);
+	dest.w = fz_clamp(dest.w, 0, mediabox.x1 - dest.x);
+	dest.h = fz_clamp(dest.h, 0, mediabox.y1 - dest.y);
+
+	return dest;
+}
+
 int
 pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp, float *yp)
 {
-	if (uri && uri[0] == '#')
-	{
-		int page = int_from_fragment(uri, "page", 0, 0) - 1;
-		const char *val = val_from_fragment(uri, "view");
-		pdf_obj *type = type_match(&val, fit_types);
-
-		if (type == NULL)
-		{
-			val = val_from_fragment(uri, "viewrect");
-			if (val)
-				type = PDF_NAME(FitR);
-		}
-		if (type == NULL)
-		{
-			val = val_from_fragment(uri, "zoom");
-			if (val)
-				type = PDF_NAME(XYZ);
-		}
-
-		/* Nasty: Map full details down to just x or y. */
-		if (xp)
-			*xp = -1;
-		if (yp)
-			*yp = -1;
-		if (type)
-		{
-			fz_rect mediabox;
-			fz_matrix pagectm;
-			float w, h, a1, a2;
-			/* Only a1 and a2 are currently used. In future we may want to read
-			 * a3 and a4 too. */
-			a1 = my_read_float(&val);
-			a2 = my_read_float(&val);
-			/* Link coords use a coordinate space that does not seem to respect Rotate or UserUnit. */
-			/* All we need to do is figure out the page size to flip the coordinate space and
-			 * clamp the coordinates to stay on the page. */
-			pdf_page_obj_transform(ctx, pdf_lookup_page_obj(ctx, doc, page), &mediabox, &pagectm);
-			mediabox = fz_transform_rect(mediabox, pagectm);
-			w = mediabox.x1 - mediabox.x0;
-			h = mediabox.y1 - mediabox.y0;
-
-			if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH))
-				if (yp) *yp = fz_clamp(h-a1, 0, h);
-			if (type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
-				if (xp) *xp = fz_clamp(a1, 0, w);
-			if (type == PDF_NAME(FitR) || type == PDF_NAME(XYZ))
-			{
-				if (xp) *xp = fz_clamp(a1, 0, w);
-				if (yp) *yp = fz_clamp(h-a2, 0, h);
-			}
-		}
-		return page;
-	}
-	fz_warn(ctx, "unknown link uri '%s'", uri);
-	return -1;
+	fz_link_dest dest = pdf_resolve_link_dest(ctx, doc, uri);
+	if (xp) *xp = dest.x;
+	if (yp) *yp = dest.y;
+	return dest.loc.page;
 }
 
 pdf_obj *
 pdf_new_destination_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
 {
-	pdf_obj *dest = pdf_new_array(ctx, doc, 5);
-	const char *val;
-	pdf_obj *type;
-	int page;
+	pdf_obj *dest = pdf_new_array(ctx, doc, 6);
+	fz_matrix ctm, invctm;
+	pdf_obj *pageobj;
+	fz_link_dest val;
+	fz_point p;
+	fz_rect r;
 
 	fz_try(ctx)
 	{
-		page = int_from_fragment(uri, "page", 0, 0) - 1;
-		val = val_from_fragment(uri, "view");
-		type = type_match(&val, fit_types);
+		val = pdf_parse_link_uri(ctx, uri);
 
-		if (type == NULL)
-		{
-			val = val_from_fragment(uri, "viewrect");
-			if (val)
-				type = PDF_NAME(FitR);
-		}
-		if (type == NULL)
-		{
-			val = val_from_fragment(uri, "zoom");
-			if (val)
-				type = PDF_NAME(XYZ);
-		}
+		pageobj = pdf_lookup_page_obj(ctx, doc, val.loc.page);
+		pdf_array_push(ctx, dest, pageobj);
 
-		pdf_array_push(ctx, dest, pdf_lookup_page_obj(ctx, doc, page));
-		if (type)
+		pdf_page_obj_transform(ctx, pageobj, NULL, &ctm);
+		invctm = fz_invert_matrix(ctm);
+
+		switch (val.type)
 		{
-			float a1, a2, a3, a4;
-			a1 = my_read_float(&val);
-			a2 = my_read_float(&val);
-			a3 = my_read_float(&val);
-			a4 = my_read_float(&val);
-			pdf_array_push(ctx, dest, type);
-			if (type == PDF_NAME(XYZ))
-			{
-				pdf_array_push_real(ctx, dest, a1);
-				pdf_array_push_real(ctx, dest, a2);
-				pdf_array_push_real(ctx, dest, a3);
-			}
-			else if (type == PDF_NAME(FitH) || type == PDF_NAME(FitBH) || type == PDF_NAME(FitV) || type == PDF_NAME(FitBV))
-				pdf_array_push_real(ctx, dest, a1);
-			else if (type == PDF_NAME(FitR))
-			{
-				pdf_array_push_real(ctx, dest, a1);
-				pdf_array_push_real(ctx, dest, a2);
-				pdf_array_push_real(ctx, dest, a3);
-				pdf_array_push_real(ctx, dest, a4);
-			}
-		}
-		else
+		default:
+		case FZ_LINK_DEST_FIT:
 			pdf_array_push(ctx, dest, PDF_NAME(Fit));
+			break;
+		case FZ_LINK_DEST_FIT_H:
+			p = fz_transform_point_xy(0, val.y, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(FitH));
+			pdf_array_push_real(ctx, dest, p.y);
+			break;
+		case FZ_LINK_DEST_FIT_BH:
+			p = fz_transform_point_xy(0, val.y, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(FitBH));
+			pdf_array_push_real(ctx, dest, p.y);
+			break;
+		case FZ_LINK_DEST_FIT_V:
+			p = fz_transform_point_xy(val.x, 0, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(FitV));
+			pdf_array_push_real(ctx, dest, p.x);
+			break;
+		case FZ_LINK_DEST_FIT_BV:
+			p = fz_transform_point_xy(val.x, 0, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(FitBV));
+			pdf_array_push_real(ctx, dest, p.x);
+			break;
+		case FZ_LINK_DEST_XYZ:
+			p = fz_transform_point_xy(val.x, val.y, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(XYZ));
+			pdf_array_push_real(ctx, dest, p.x);
+			pdf_array_push_real(ctx, dest, p.y);
+			pdf_array_push_real(ctx, dest, val.zoom / 100);
+			break;
+		case FZ_LINK_DEST_FIT_R:
+			r.x0 = val.x;
+			r.y0 = val.y;
+			r.x1 = val.x + val.w;
+			r.y1 = val.y + val.h;
+			fz_transform_rect(r, invctm);
+			pdf_array_push(ctx, dest, PDF_NAME(FitR));
+			pdf_array_push_real(ctx, dest, r.x0);
+			pdf_array_push_real(ctx, dest, r.y0);
+			pdf_array_push_real(ctx, dest, r.x1);
+			pdf_array_push_real(ctx, dest, r.y1);
+			break;
+		}
 	}
 	fz_catch(ctx)
 	{

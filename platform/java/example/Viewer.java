@@ -765,7 +765,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			while (!done && !isCancelled() && System.currentTimeMillis() < executionUntil) {
 				searchHits = doc.search(searchPage.chapter, searchPage.page, needle);
 				if (searchHits != null && searchHits.length > 0) {
-					searchHitPage = new Location(searchPage, searchHits[0][0].ul_x, searchHits[0][0].ul_y);
+					searchHitPage = searchPage;
 					jumpToLocation(searchHitPage);
 					done = true;
 				}

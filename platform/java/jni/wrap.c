@@ -1008,6 +1008,24 @@ static inline fz_quad from_Quad(JNIEnv *env, jobject jquad)
 	return quad;
 }
 
+static fz_link_dest from_LinkDestination(JNIEnv *env, jobject jdest)
+{
+	fz_link_dest dest;
+
+	if (!jdest)
+		return fz_make_link_dest_none();
+
+	dest.loc.chapter = (*env)->GetIntField(env, jdest, fid_LinkDestination_chapter);
+	dest.loc.page = (*env)->GetIntField(env, jdest, fid_LinkDestination_page);
+	dest.type = (*env)->GetIntField(env, jdest, fid_LinkDestination_type);
+	dest.x = (*env)->GetFloatField(env, jdest, fid_LinkDestination_x);
+	dest.y = (*env)->GetFloatField(env, jdest, fid_LinkDestination_y);
+	dest.w = (*env)->GetFloatField(env, jdest, fid_LinkDestination_width);
+	dest.h = (*env)->GetFloatField(env, jdest, fid_LinkDestination_height);
+	dest.zoom = (*env)->GetFloatField(env, jdest, fid_LinkDestination_zoom);
+
+	return dest;
+}
 
 /* Conversion functions: Java to C. None of these throw java exceptions. */
 

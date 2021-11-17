@@ -201,6 +201,17 @@ public class Document
 		return resolveLink(link.uri);
 	}
 
+	public native LinkDestination resolveLinkDestination(String uri);
+	public LinkDestination resolveLinkDestination(OutlineIterator.OutlineItem item) {
+		return resolveLinkDestination(item.uri);
+	}
+	public LinkDestination resolveLinkDestination(Outline link) {
+		return resolveLinkDestination(link.uri);
+	}
+	public LinkDestination resolveLinkDestination(Link link) {
+		return resolveLinkDestination(link.uri);
+	}
+
 	public native Outline[] loadOutline();
 	public native OutlineIterator outlineIterator();
 	public native String getMetaData(String key);
@@ -222,6 +233,8 @@ public class Document
 	public native boolean hasPermission(int permission);
 
 	public native boolean isUnencryptedPDF();
+
+	public native String formatLinkURI(LinkDestination dest);
 
 	public boolean isPDF() {
 		return false;

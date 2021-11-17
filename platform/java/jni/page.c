@@ -436,3 +436,15 @@ FUN(Page_createLink)(JNIEnv *env, jobject self, jobject jrect, jstring juri)
 
 	return to_Link_safe_own(ctx, env, link);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(Page_getDocument)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_document *doc = page ? page->doc : NULL;
+
+	if (!ctx || !page || !doc) return NULL;
+
+	return to_Document_safe_own(ctx, env, fz_keep_document(ctx, doc));
+}
