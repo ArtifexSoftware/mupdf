@@ -87,6 +87,7 @@ static JavaVM *jvm = NULL;
 
 /* All the cached classes/mids/fids we need. */
 
+static jclass cls_ArrayOfQuad;
 static jclass cls_Buffer;
 static jclass cls_ColorSpace;
 static jclass cls_Context;
@@ -938,6 +939,8 @@ static int find_fids(JNIEnv *env)
 	fid_Quad_lr_y = get_field(&err, env, "lr_y", "F");
 	mid_Quad_init = get_method(&err, env, "<init>", "(FFFFFFFF)V");
 
+	cls_ArrayOfQuad = get_class(&err, env, "[L"PKG"Quad;");
+
 	cls_Rect = get_class(&err, env, PKG"Rect");
 	fid_Rect_x0 = get_field(&err, env, "x0", "F");
 	fid_Rect_x1 = get_field(&err, env, "x1", "F");
@@ -1090,6 +1093,7 @@ static void jni_detach_thread(jboolean detach)
 
 static void lose_fids(JNIEnv *env)
 {
+	(*env)->DeleteGlobalRef(env, cls_ArrayOfQuad);
 	(*env)->DeleteGlobalRef(env, cls_Buffer);
 	(*env)->DeleteGlobalRef(env, cls_ColorSpace);
 	(*env)->DeleteGlobalRef(env, cls_Context);

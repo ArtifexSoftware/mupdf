@@ -1186,7 +1186,7 @@ static void pdfapp_search_in_direction(pdfapp_t *app, enum panning *panto, int d
 			pdfapp_showpage(app, 1, 0, 0, 0, 1);
 		}
 
-		app->hit_count = fz_search_stext_page(app->ctx, app->page_text, app->search, app->hit_bbox, nelem(app->hit_bbox));
+		app->hit_count = fz_search_stext_page(app->ctx, app->page_text, app->search, NULL, app->hit_bbox, nelem(app->hit_bbox));
 		if (app->hit_count > 0)
 		{
 			*panto = dir == 1 ? PAN_TO_TOP : PAN_TO_BOTTOM;

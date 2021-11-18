@@ -1006,7 +1006,8 @@ FUN(Document_search)(JNIEnv *env, jobject self, jint chapter, jint page, jstring
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
-	fz_quad hits[256];
+	fz_quad hits[500];
+	int marks[500];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -1017,11 +1018,11 @@ FUN(Document_search)(JNIEnv *env, jobject self, jint chapter, jint page, jstring
 	if (!needle) return 0;
 
 	fz_try(ctx)
-		n = fz_search_chapter_page_number(ctx, doc, chapter, page, needle, hits, nelem(hits));
+		n = fz_search_chapter_page_number(ctx, doc, chapter, page, needle, marks, hits, nelem(hits));
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jneedle, needle);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_QuadArray_safe(ctx, env, hits, n);
+	return to_SearchHits_safe(ctx, env, marks, hits, n);
 }

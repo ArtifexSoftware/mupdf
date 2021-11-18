@@ -2836,24 +2836,41 @@ static void ffi_Page_toStructuredText(js_State *J)
 	js_newuserdata(J, "fz_stext_page", text, ffi_gc_fz_stext_page);
 }
 
+static void ffi_pushsearch(js_State *J, int *marks, fz_quad *hits, int n)
+{
+	int a = 0;
+	js_newarray(J);
+	if (n > 0) {
+		int i, k = 0;
+		js_newarray(J);
+		for (i = 0; i < n; ++i) {
+			if (i > 0 && marks[i]) {
+				js_setindex(J, -2, a++);
+				js_newarray(J);
+				k = 0;
+			}
+			ffi_pushquad(J, hits[i]);
+			js_setindex(J, -2, k++);
+		}
+		js_setindex(J, -2, a);
+	}
+}
+
 static void ffi_Page_search(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	const char *needle = js_tostring(J, 1);
-	fz_quad hits[256];
-	int i, n = 0;
+	fz_quad hits[500];
+	int marks[500];
+	int n = 0;
 
 	fz_try(ctx)
-		n = fz_search_page(ctx, page, needle, hits, nelem(hits));
+		n = fz_search_page(ctx, page, needle, marks, hits, nelem(hits));
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_newarray(J);
-	for (i = 0; i < n; ++i) {
-		ffi_pushquad(J, hits[i]);
-		js_setindex(J, -2, i);
-	}
+	ffi_pushsearch(J, marks, hits, n);
 }
 
 static void ffi_Page_getLinks(js_State *J)
@@ -3692,19 +3709,16 @@ static void ffi_DisplayList_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *needle = js_tostring(J, 1);
-	fz_quad hits[256];
-	int i, n = 0;
+	fz_quad hits[500];
+	int marks[500];
+	int n = 0;
 
 	fz_try(ctx)
-		n = fz_search_display_list(ctx, list, needle, hits, nelem(hits));
+		n = fz_search_display_list(ctx, list, needle, marks, hits, nelem(hits));
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_newarray(J);
-	for (i = 0; i < n; ++i) {
-		ffi_pushquad(J, hits[i]);
-		js_setindex(J, -2, i);
-	}
+	ffi_pushsearch(J, marks, hits, n);
 }
 
 static void ffi_StructuredText_walk(js_State *J)
@@ -3789,19 +3803,16 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	const char *needle = js_tostring(J, 1);
-	fz_quad hits[256];
-	int i, n = 0;
+	fz_quad hits[500];
+	int marks[500];
+	int n = 0;
 
 	fz_try(ctx)
-		n = fz_search_stext_page(ctx, text, needle, hits, nelem(hits));
+		n = fz_search_stext_page(ctx, text, needle, marks, hits, nelem(hits));
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_newarray(J);
-	for (i = 0; i < n; ++i) {
-		ffi_pushquad(J, hits[i]);
-		js_setindex(J, -2, i);
-	}
+	ffi_pushsearch(J, marks, hits, n);
 }
 
 static void ffi_StructuredText_highlight(js_State *J)
