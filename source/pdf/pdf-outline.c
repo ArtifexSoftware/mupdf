@@ -366,14 +366,19 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_document *doc = (pdf_document *)iter->super.doc;
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	pdf_obj *prev;
 	pdf_obj *parent;
 	int result;
 
-	obj = pdf_add_new_dict(ctx, doc, 4);
+	fz_var(obj);
+
+	pdf_begin_operation(ctx, doc, "Insert outline item");
+
 	fz_try(ctx)
 	{
+		obj = pdf_add_new_dict(ctx, doc, 4);
+
 		if (iter->modifier == MOD_BELOW)
 			parent = iter->current;
 		else if (iter->modifier == MOD_NONE && iter->current == NULL)
@@ -428,7 +433,10 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 		}
 	}
 	fz_always(ctx)
+	{
 		pdf_drop_obj(ctx, obj);
+		pdf_end_operation(ctx, doc);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
@@ -439,17 +447,26 @@ static void
 pdf_outline_iterator_update(fz_context *ctx, fz_outline_iterator *iter_, fz_outline_item *item)
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
+	pdf_document *doc = (pdf_document *)iter->super.doc;
 
 	if (iter->modifier != MOD_NONE || iter->current == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't update a non-existent outline item!");
 
-	do_outline_update(ctx, iter->current, item, 0);
+	pdf_begin_operation(ctx, doc, "Update outline item");
+
+	fz_try(ctx)
+		do_outline_update(ctx, iter->current, item, 0);
+	fz_always(ctx)
+		pdf_end_operation(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static int
 pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
+	pdf_document *doc = (pdf_document *)iter->super.doc;
 	pdf_obj *next, *prev, *parent;
 	int count;
 
@@ -461,44 +478,53 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 	parent = pdf_dict_get(ctx, iter->current, PDF_NAME(Parent));
 	count = pdf_dict_get_int(ctx, iter->current, PDF_NAME(Count));
 
-	if (count > 0)
+	pdf_begin_operation(ctx, doc, "Delete outline item");
+
+	fz_try(ctx)
 	{
-		pdf_obj *up = parent;
-		while (up)
+		if (count > 0)
 		{
-			int c = pdf_dict_get_int(ctx, up, PDF_NAME(Count));
-			pdf_dict_put_int(ctx, up, PDF_NAME(Count), (c > 0 ? c - count : c + count));
-			up = pdf_dict_get(ctx, up, PDF_NAME(Parent));
+			pdf_obj *up = parent;
+			while (up)
+			{
+				int c = pdf_dict_get_int(ctx, up, PDF_NAME(Count));
+				pdf_dict_put_int(ctx, up, PDF_NAME(Count), (c > 0 ? c - count : c + count));
+				up = pdf_dict_get(ctx, up, PDF_NAME(Parent));
+			}
+		}
+
+		if (prev)
+		{
+			if (next)
+				pdf_dict_put(ctx, prev, PDF_NAME(Next), next);
+			else
+				pdf_dict_del(ctx, prev, PDF_NAME(Next));
+		}
+		if (next)
+		{
+			if (prev)
+				pdf_dict_put(ctx, next, PDF_NAME(Prev), prev);
+			else
+				pdf_dict_del(ctx, next, PDF_NAME(Prev));
+			iter->current = next;
+		}
+		else if (prev)
+		{
+			iter->current = prev;
+			pdf_dict_put(ctx, parent, PDF_NAME(Last), prev);
+		}
+		else
+		{
+			iter->current = parent;
+			iter->modifier = MOD_BELOW;
+			pdf_dict_del(ctx, parent, PDF_NAME(First));
+			pdf_dict_del(ctx, parent, PDF_NAME(Last));
 		}
 	}
-
-	if (prev)
-	{
-		if (next)
-			pdf_dict_put(ctx, prev, PDF_NAME(Next), next);
-		else
-			pdf_dict_del(ctx, prev, PDF_NAME(Next));
-	}
-	if (next)
-	{
-		if (prev)
-			pdf_dict_put(ctx, next, PDF_NAME(Prev), prev);
-		else
-			pdf_dict_del(ctx, next, PDF_NAME(Prev));
-		iter->current = next;
-	}
-	else if (prev)
-	{
-		iter->current = prev;
-		pdf_dict_put(ctx, parent, PDF_NAME(Last), prev);
-	}
-	else
-	{
-		iter->current = parent;
-		iter->modifier = MOD_BELOW;
-		pdf_dict_del(ctx, parent, PDF_NAME(First));
-		pdf_dict_del(ctx, parent, PDF_NAME(Last));
-	}
+	fz_always(ctx)
+		pdf_end_operation(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return 0;
 }
