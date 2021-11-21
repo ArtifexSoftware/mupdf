@@ -61,11 +61,8 @@ pdf_drop_xref_subsec(fz_context *ctx, pdf_xref *xref)
 		for (e = 0; e < sub->len; e++)
 		{
 			pdf_xref_entry *entry = &sub->table[e];
-			if (entry->obj)
-			{
-				pdf_drop_obj(ctx, entry->obj);
-				fz_drop_buffer(ctx, entry->stm_buf);
-			}
+			pdf_drop_obj(ctx, entry->obj);
+			fz_drop_buffer(ctx, entry->stm_buf);
 		}
 		fz_free(ctx, sub->table);
 		fz_free(ctx, sub);
@@ -1853,11 +1850,13 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	pdf_xref_entry *ret_entry = NULL;
 	int xref_len;
 	int found;
+	fz_stream *sub = NULL;
 
 	fz_var(numbuf);
 	fz_var(ofsbuf);
 	fz_var(objstm);
 	fz_var(stm);
+	fz_var(sub);
 
 	fz_try(ctx)
 	{
@@ -1915,10 +1914,20 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 		for (i = 0; i < found; i++)
 		{
 			pdf_xref_entry *entry;
+			uint64_t length;
+			int64_t offset;
 
-			fz_seek(ctx, stm, first + ofsbuf[i], SEEK_SET);
+			offset = first + ofsbuf[i];
+			if (i+1 < found)
+				length = ofsbuf[i+1] - ofsbuf[i];
+			else
+				length = UINT64_MAX;
 
-			obj = pdf_parse_stm_obj(ctx, doc, stm, buf);
+			sub = fz_open_null_filter(ctx, stm, length, offset);
+
+			obj = pdf_parse_stm_obj(ctx, doc, sub, buf);
+			fz_drop_stream(ctx, sub);
+			sub = NULL;
 
 			entry = pdf_get_xref_entry(ctx, doc, numbuf[i]);
 
@@ -1956,6 +1965,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, stm);
+		fz_drop_stream(ctx, sub);
 		fz_free(ctx, ofsbuf);
 		fz_free(ctx, numbuf);
 		pdf_unmark_obj(ctx, objstm);
@@ -2712,33 +2722,47 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 void
 pdf_set_metadata(fz_context *ctx, pdf_document *doc, const char *key, const char *value)
 {
-	pdf_obj *info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
-	if (!strcmp(key, FZ_META_INFO_TITLE))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Title), value);
-	else if (!strcmp(key, FZ_META_INFO_AUTHOR))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Author), value);
-	else if (!strcmp(key, FZ_META_INFO_SUBJECT))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Subject), value);
-	else if (!strcmp(key, FZ_META_INFO_KEYWORDS))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Keywords), value);
-	else if (!strcmp(key, FZ_META_INFO_CREATOR))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Creator), value);
-	else if (!strcmp(key, FZ_META_INFO_PRODUCER))
-		pdf_dict_put_text_string(ctx, info, PDF_NAME(Producer), value);
-	else if (!strcmp(key, FZ_META_INFO_CREATIONDATE))
-	{
-		int64_t time = pdf_parse_date(ctx, value);
-		if (time >= 0)
-			pdf_dict_put_date(ctx, info, PDF_NAME(CreationDate), time);
-	}
-	else if (!strcmp(key, FZ_META_INFO_MODIFICATIONDATE))
-	{
-		int64_t time = pdf_parse_date(ctx, value);
-		if (time >= 0)
-			pdf_dict_put_date(ctx, info, PDF_NAME(ModDate), time);
-	}
-}
 
+	pdf_obj *info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info));
+
+	pdf_begin_operation(ctx, doc, "Set Metadata");
+
+	fz_try(ctx)
+	{
+		if (!strcmp(key, FZ_META_INFO_TITLE))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Title), value);
+		else if (!strcmp(key, FZ_META_INFO_AUTHOR))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Author), value);
+		else if (!strcmp(key, FZ_META_INFO_SUBJECT))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Subject), value);
+		else if (!strcmp(key, FZ_META_INFO_KEYWORDS))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Keywords), value);
+		else if (!strcmp(key, FZ_META_INFO_CREATOR))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Creator), value);
+		else if (!strcmp(key, FZ_META_INFO_PRODUCER))
+			pdf_dict_put_text_string(ctx, info, PDF_NAME(Producer), value);
+		else if (!strcmp(key, FZ_META_INFO_CREATIONDATE))
+		{
+			int64_t time = pdf_parse_date(ctx, value);
+			if (time >= 0)
+				pdf_dict_put_date(ctx, info, PDF_NAME(CreationDate), time);
+		}
+		else if (!strcmp(key, FZ_META_INFO_MODIFICATIONDATE))
+		{
+			int64_t time = pdf_parse_date(ctx, value);
+			if (time >= 0)
+				pdf_dict_put_date(ctx, info, PDF_NAME(ModDate), time);
+		}
+
+		if (!strncmp(key, FZ_META_INFO, strlen(FZ_META_INFO)))
+			key += strlen(FZ_META_INFO);
+		pdf_dict_put_text_string(ctx, info, pdf_new_name(ctx, key), value);
+	}
+	fz_always(ctx)
+		pdf_end_operation(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
 
 static fz_location
 pdf_resolve_link_imp(fz_context *ctx, fz_document *doc_, const char *uri, float *xp, float *yp)
@@ -4768,7 +4792,7 @@ pdf_metadata(fz_context *ctx, pdf_document *doc)
 				break;
 			doc->xref_base++;
 		}
-		while (doc->xref_base <= doc->num_xref_sections);
+		while (doc->xref_base < doc->num_xref_sections);
 	}
 	fz_always(ctx)
 		doc->xref_base = initial;
