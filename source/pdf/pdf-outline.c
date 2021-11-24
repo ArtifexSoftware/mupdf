@@ -319,7 +319,7 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 {
 	int count;
 	int open_delta = 0;
-	pdf_obj *parent, *up;
+	pdf_obj *parent;
 
 	/* If the open/closed state changes, update. */
 	count = pdf_dict_get_int(ctx, obj, PDF_NAME(Count));
@@ -331,14 +331,14 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 	else if (is_new_node && item->is_open)
 		open_delta = 1;
 
-	up = obj;
-	while ((parent = pdf_dict_get(ctx, up, PDF_NAME(Parent))) != NULL)
+	parent = pdf_dict_get(ctx, obj, PDF_NAME(Parent));
+	while (parent)
 	{
-		pdf_obj *cobj = pdf_dict_get(ctx, up, PDF_NAME(Count));
+		pdf_obj *cobj = pdf_dict_get(ctx, parent, PDF_NAME(Count));
 		count = pdf_to_int(ctx, cobj);
 		if (open_delta || cobj == NULL)
-			pdf_dict_put_int(ctx, up, PDF_NAME(Count), count > 0 ? count + open_delta : count - open_delta);
-		up = parent;
+			pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count > 0 ? count + open_delta : count - open_delta);
+		parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 	}
 
 	if (item->title)
