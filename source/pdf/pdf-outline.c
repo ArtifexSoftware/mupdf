@@ -328,7 +328,7 @@ do_outline_update(fz_context *ctx, pdf_obj *obj, fz_outline_item *item, int is_n
 		pdf_dict_put_int(ctx, obj, PDF_NAME(Count), -count);
 		open_delta = -count;
 	}
-	else if (is_new_node && item->is_open)
+	else if (is_new_node)
 		open_delta = 1;
 
 	parent = pdf_dict_get(ctx, obj, PDF_NAME(Parent));
