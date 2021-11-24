@@ -336,9 +336,10 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_document *doc = (pdf_document *)iter->super.doc;
 	pdf_obj *next, *prev, *parent;
+	int result = 0;
 	int count;
 
-	if (iter->modifier != MOD_NONE)
+	if (iter->modifier != MOD_NONE || iter->current == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't delete a non-existent outline item!");
 
 	prev = pdf_dict_get(ctx, iter->current, PDF_NAME(Prev));
@@ -385,12 +386,18 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 			iter->current = prev;
 			pdf_dict_put(ctx, parent, PDF_NAME(Last), prev);
 		}
-		else
+		else if (parent)
 		{
 			iter->current = parent;
 			iter->modifier = MOD_BELOW;
 			pdf_dict_del(ctx, parent, PDF_NAME(First));
 			pdf_dict_del(ctx, parent, PDF_NAME(Last));
+			result = 1;
+		}
+		else
+		{
+			iter->current = NULL;
+			result = 1;
 		}
 	}
 	fz_always(ctx)
@@ -398,7 +405,7 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return 0;
+	return result;
 }
 
 static fz_outline_item *
