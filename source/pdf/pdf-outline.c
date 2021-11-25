@@ -477,20 +477,24 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 	next = pdf_dict_get(ctx, iter->current, PDF_NAME(Next));
 	parent = pdf_dict_get(ctx, iter->current, PDF_NAME(Parent));
 	count = pdf_dict_get_int(ctx, iter->current, PDF_NAME(Count));
+	/* How many nodes visible from above are being removed? */
+	if (count > 0)
+		count++; /* Open children, plus this node. */
+	else
+		count = 1; /* Just this node */
 
 	pdf_begin_operation(ctx, doc, "Delete outline item");
 
 	fz_try(ctx)
 	{
-		if (count > 0)
+		pdf_obj *up = parent;
+		while (up)
 		{
-			pdf_obj *up = parent;
-			while (up)
-			{
-				int c = pdf_dict_get_int(ctx, up, PDF_NAME(Count));
-				pdf_dict_put_int(ctx, up, PDF_NAME(Count), (c > 0 ? c - count : c + count));
-				up = pdf_dict_get(ctx, up, PDF_NAME(Parent));
-			}
+			int c = pdf_dict_get_int(ctx, up, PDF_NAME(Count));
+			pdf_dict_put_int(ctx, up, PDF_NAME(Count), (c > 0 ? c - count : c + count));
+			if (c < 0)
+				break;
+			up = pdf_dict_get(ctx, up, PDF_NAME(Parent));
 		}
 
 		if (prev)
