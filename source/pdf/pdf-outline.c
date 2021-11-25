@@ -135,6 +135,7 @@ pdf_outline_iterator_up(fz_context *ctx, fz_outline_iterator *iter_)
 {
 	pdf_outline_iterator *iter = (pdf_outline_iterator *)iter_;
 	pdf_obj *up;
+	pdf_obj *grandparent;
 
 	if (iter->current == NULL)
 		return -1;
@@ -143,8 +144,15 @@ pdf_outline_iterator_up(fz_context *ctx, fz_outline_iterator *iter_)
 		iter->modifier = MOD_NONE;
 		return 0;
 	}
+	/* The topmost level still has a parent pointer, just one
+	 * that points to the outlines object. We never want to
+	 * allow us to move 'up' onto the outlines object. */
 	up = pdf_dict_get(ctx, iter->current, PDF_NAME(Parent));
 	if (up == NULL)
+		/* This should never happen! */
+		return -1;
+	grandparent = pdf_dict_get(ctx, up, PDF_NAME(Parent));
+	if (grandparent == NULL)
 		return -1;
 
 	iter->modifier = MOD_NONE;
