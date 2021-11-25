@@ -1325,6 +1325,8 @@ static void do_links(fz_link *link)
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
+	tooltip = NULL;
+
 	while (link)
 	{
 		bounds = link->rect;
@@ -1333,7 +1335,8 @@ static void do_links(fz_link *link)
 
 		if (ui_mouse_inside(area))
 		{
-			tooltip = link->uri;
+			if (!tooltip)
+				tooltip = link->uri;
 			ui.hot = link;
 			if (!ui.active && ui.down)
 				ui.active = link;
