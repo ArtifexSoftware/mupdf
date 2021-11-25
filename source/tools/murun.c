@@ -6096,6 +6096,9 @@ static void ffi_PDFAnnotation_getInkList(js_State *J)
 	}
 }
 
+#define MAX_INK_STROKE 256
+#define MAX_INK_POINT 16384
+
 /* Takes an argument on the same format as getInkList returns. */
 static void ffi_PDFAnnotation_setInkList(js_State *J)
 {
@@ -6103,16 +6106,23 @@ static void ffi_PDFAnnotation_setInkList(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	fz_point *points = NULL;
 	int *counts = NULL;
-	int n, nv, k, i, v;
+	int n, m, nv, k, i, v;
 
 	fz_var(counts);
 	fz_var(points);
 
 	n = js_getlength(J, 1);
+	if (n > MAX_INK_STROKE)
+		js_rangeerror(J, "too many strokes in ink annotation");
 	nv = 0;
 	for (i = 0; i < n; ++i) {
 		js_getindex(J, 1, i);
-		nv += js_getlength(J, -1);
+		m = js_getlength(J, -1);
+		if (m > MAX_INK_POINT)
+			js_rangeerror(J, "too many points in ink annotation stroke");
+		nv += m;
+		if (nv > MAX_INK_POINT)
+			js_rangeerror(J, "too many points in ink annotation");
 		js_pop(J, 1);
 	}
 
