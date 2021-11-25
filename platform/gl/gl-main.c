@@ -100,6 +100,12 @@ static void open_browser(const char *uri)
 		}
 	}
 
+	if (strncmp(uri, "file://", 7) && strncmp(uri, "http://", 7) && strncmp(uri, "https://", 8))
+	{
+		fz_warn(ctx, "refusing to open unknown link (%s)", uri);
+		return;
+	}
+
 #ifdef _WIN32
 	ShellExecuteA(NULL, "open", uri, 0, 0, SW_SHOWNORMAL);
 #else
