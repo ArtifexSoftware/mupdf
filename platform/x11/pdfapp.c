@@ -1108,7 +1108,7 @@ static void pdfapp_gotouri(pdfapp_t *app, char *uri)
 		}
 	}
 
-	if (strncmp(uri, "file://", 7) && strncmp(uri, "http://", 7) && strncmp(uri, "https://", 8))
+	if (strncmp(uri, "file://", 7) && strncmp(uri, "http://", 7) && strncmp(uri, "https://", 8) && strncmp(uri, "mailto:", 7))
 	{
 		fz_warn(app->ctx, "refusing to open unknown link (%s)", uri);
 		return;
