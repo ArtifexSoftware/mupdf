@@ -451,7 +451,7 @@ java-clean:
 	$(MAKE) -C platform/java build=$(build) clean
 
 wasm:
-	$(MAKE) -C platform/wasm
+	$(MAKE) -C platform/wasm HOSTCC=$(CC)
 
 extract-test:
 	$(MAKE) debug

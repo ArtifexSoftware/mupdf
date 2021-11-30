@@ -45,7 +45,7 @@ Module.onRuntimeInitialized = function () {
 	mupdf.loadOutline = Module.cwrap('loadOutline', 'number', ['number']);
 	mupdf.freeOutline = Module.cwrap('freeOutline', null, ['number']);
 	mupdf.outlineTitle = Module.cwrap('outlineTitle', 'string', ['number']);
-	mupdf.outlinePage = Module.cwrap('outlinePage', 'number', 'number', ['number']);
+	mupdf.outlinePage = Module.cwrap('outlinePage', 'number', ['number', 'number']);
 	mupdf.outlineDown = Module.cwrap('outlineDown', 'number', ['number']);
 	mupdf.outlineNext = Module.cwrap('outlineNext', 'number', ['number']);
 	postMessage("READY");
