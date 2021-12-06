@@ -396,13 +396,13 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 		}
 		else if (kbps > 0)
 		{
-			fz_stream *stream = fz_open_file_progressive(ctx, filename, kbps, pdfapp_more_data, app);
+			app->stream = fz_open_file_progressive(ctx, filename, kbps, pdfapp_more_data, app);
 			while (1)
 			{
 				fz_try(ctx)
 				{
-					fz_seek(ctx, stream, 0, SEEK_SET);
-					app->doc = fz_open_document_with_stream(ctx, filename, stream);
+					fz_seek(ctx, app->stream, 0, SEEK_SET);
+					app->doc = fz_open_document_with_stream(ctx, filename, app->stream);
 				}
 				fz_catch(ctx)
 				{
