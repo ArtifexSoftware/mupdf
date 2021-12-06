@@ -1011,7 +1011,7 @@ FUN(Document_search)(JNIEnv *env, jobject self, jint chapter, jint page, jstring
 	int n = 0;
 
 	if (!ctx) return NULL;
-	if (!jneedle) jni_throw_arg(env, "needle must not be null");
+	if (!jneedle) return NULL;
 
 	needle = (*env)->GetStringUTFChars(env, jneedle, NULL);
 	if (!needle) return 0;
