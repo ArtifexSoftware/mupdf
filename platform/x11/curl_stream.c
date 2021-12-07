@@ -158,7 +158,7 @@ static size_t on_curl_header(void *ptr, size_t size, size_t nmemb, void *state_)
 	{
 		char *s = ptr;
 		state->content_length = fz_atoi(s + 15);
-		DEBUG_MESSAGE(("header arrived with Content-Length: %d\n", state->content_length));
+		DEBUG_MESSAGE(("header arrived with Content-Length: %zu\n", state->content_length));
 	}
 	unlock(state);
 
@@ -201,7 +201,7 @@ static size_t on_curl_data(void *ptr, size_t size, size_t nmemb, void *state_)
 				return 0;
 			}
 			memset(state->map, 0, (state->map_length+7)>>3);
-			DEBUG_MESSAGE(("have range header content_length=%d!\n", state->content_length));
+			DEBUG_MESSAGE(("have range header content_length=%zu!\n", state->content_length));
 		}
 		else
 		{
@@ -326,7 +326,7 @@ static void fetch_chunk(struct curlstate *state)
 			if (block == map_length)
 			{
 				/* We've got it all! */
-				DEBUG_MESSAGE(("we got it all block=%d map_length=%d!\n", block, map_length));
+				DEBUG_MESSAGE(("we got it all block=%zu map_length=%zu!\n", block, map_length));
 				state->complete = 1;
 				state->kill_thread = 1;
 				unlock(state);
@@ -342,7 +342,7 @@ static void fetch_chunk(struct curlstate *state)
 		return;
 	}
 
-	DEBUG_MESSAGE(("block requested was %d, fetching %d\n", state->next_fill_start>>BLOCK_SHIFT, block));
+	DEBUG_MESSAGE(("block requested was %zu, fetching %zu\n", state->next_fill_start>>BLOCK_SHIFT, block));
 
 	/* Set up fetch of that block */
 	start = block<<BLOCK_SHIFT;
