@@ -618,6 +618,9 @@ fz_stream *fz_open_url(fz_context *ctx, const char *url, int kbps, void (*more_d
 	curl_easy_setopt(state->easy, CURLOPT_WRITEDATA, state);
 	curl_easy_setopt(state->easy, CURLOPT_FAILONERROR, 1L);
 	curl_easy_setopt(state->easy, CURLOPT_ERRORBUFFER, &state->error_buffer);
+#ifdef DEBUG_BLOCK_FETCHING
+	curl_easy_setopt(state->easy, CURLOPT_VERBOSE, 1L);
+#endif
 
 	/* Get only the HEAD first. */
 	state->head = 1;
