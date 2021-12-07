@@ -5332,10 +5332,25 @@ static void ffi_PDFGraftMap_graftPage(js_State *J)
 
 static void ffi_PDFObject_get(js_State *J)
 {
+	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	const char *key = js_tostring(J, 1);
-	if (!ffi_pdf_obj_has(J, obj, key))
-		js_pushundefined(J);
+
+	if (js_isuserdata(J, 1, "pdf_obj")) {
+		pdf_obj *key = js_touserdata(J, 1, "pdf_obj");
+		pdf_obj *val = NULL;
+		fz_try(ctx)
+			val = pdf_dict_get(ctx, obj, key);
+		fz_catch(ctx)
+			rethrow(J);
+		if (val)
+			ffi_pushobj(J, pdf_keep_obj(ctx, val));
+		else
+			js_pushnull(J);
+	} else {
+		const char *key = js_tostring(J, 1);
+		if (!ffi_pdf_obj_has(J, obj, key))
+			js_pushundefined(J);
+	}
 }
 
 static void ffi_PDFObject_put(js_State *J)
