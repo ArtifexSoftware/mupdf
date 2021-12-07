@@ -73,6 +73,7 @@ typedef struct curlstate
 
 	/* START: The following entries are protected by the lock */
 	CURLcode curl_error;
+	char error_buffer[CURL_ERROR_SIZE];
 	int data_arrived;
 	int complete;
 	int kill_thread;
@@ -384,9 +385,12 @@ static int cs_next(fz_context *ctx, fz_stream *stream, size_t len)
 	if (state->curl_error)
 	{
 		CURLcode err = state->curl_error;
+		char errstr[CURL_ERROR_SIZE];
+		memcpy(errstr, state->error_buffer, CURL_ERROR_SIZE);
+		memset(state->error_buffer, 0, CURL_ERROR_SIZE);
 		state->curl_error = 0;
 		unlock(state);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fetch data: %s", curl_easy_strerror(err));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fetch data: %s: %s", curl_easy_strerror(err), errstr);
 	}
 
 	if ((size_t) read_point > state->content_length)
@@ -613,6 +617,7 @@ fz_stream *fz_open_url(fz_context *ctx, const char *url, int kbps, void (*more_d
 	curl_easy_setopt(state->easy, CURLOPT_WRITEFUNCTION, on_curl_data);
 	curl_easy_setopt(state->easy, CURLOPT_WRITEDATA, state);
 	curl_easy_setopt(state->easy, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(state->easy, CURLOPT_ERRORBUFFER, &state->error_buffer);
 
 	/* Get only the HEAD first. */
 	state->head = 1;
