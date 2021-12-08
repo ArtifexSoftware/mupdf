@@ -3631,6 +3631,34 @@ static void ffi_Font_getName(js_State *J)
 	js_pushstring(J, fz_font_name(ctx, font));
 }
 
+static void ffi_Font_isMono(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_font *font = js_touserdata(J, 0, "fz_font");
+	js_pushboolean(J, fz_font_is_monospaced(ctx, font));
+}
+
+static void ffi_Font_isSerif(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_font *font = js_touserdata(J, 0, "fz_font");
+	js_pushboolean(J, fz_font_is_serif(ctx, font));
+}
+
+static void ffi_Font_isBold(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_font *font = js_touserdata(J, 0, "fz_font");
+	js_pushboolean(J, fz_font_is_bold(ctx, font));
+}
+
+static void ffi_Font_isItalic(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_font *font = js_touserdata(J, 0, "fz_font");
+	js_pushboolean(J, fz_font_is_italic(ctx, font));
+}
+
 static void ffi_Font_encodeCharacter(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4128,7 +4156,8 @@ static void ffi_StructuredText_walk(js_State *J)
 						ffi_pushfont(J, ch->font);
 						js_pushnumber(J, ch->size);
 						ffi_pushquad(J, ch->quad);
-						js_call(J, 5);
+						js_pushnumber(J, ch->color);
+						js_call(J, 6);
 						js_pop(J, 1);
 					}
 				}
@@ -7766,6 +7795,10 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Font.getName", ffi_Font_getName, 0);
 		jsB_propfun(J, "Font.encodeCharacter", ffi_Font_encodeCharacter, 1);
 		jsB_propfun(J, "Font.advanceGlyph", ffi_Font_advanceGlyph, 2);
+		jsB_propfun(J, "Font.isMono", ffi_Font_isMono, 0);
+		jsB_propfun(J, "Font.isSerif", ffi_Font_isSerif, 0);
+		jsB_propfun(J, "Font.isBold", ffi_Font_isBold, 0);
+		jsB_propfun(J, "Font.isItalic", ffi_Font_isItalic, 0);
 	}
 	js_setregistry(J, "fz_font");
 
