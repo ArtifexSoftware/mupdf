@@ -2151,12 +2151,12 @@ classextras = ClassExtras(
                 methods_extra = [
                     ExtraMethod(
                         f'std::vector<{rename.class_("fz_quad")}>',
-                        f'search_page(const char* needle, int max)',
+                        f'search_page(const char* needle, int *hit_mark, int max)',
                         f'''
                         {{
                             std::vector<{rename.class_("fz_quad")}> ret(max);
                             fz_quad* hit_bbox = ret[0].internal();
-                            int n = {rename.function_call('fz_search_page')}(m_internal, needle, hit_bbox, (int) ret.size());
+                            int n = {rename.function_call('fz_search_page')}(m_internal, needle, hit_mark, hit_bbox, (int) ret.size());
                             ret.resize(n);
                             return ret;
                         }}
@@ -2542,11 +2542,11 @@ classextras = ClassExtras(
                         ),
                     ExtraMethod(
                         f'std::vector<{rename.class_("fz_quad")}>',
-                        f'search_stext_page(const char* needle, int max_quads)',
+                        f'search_stext_page(const char* needle, int *hit_mark, int max_quads)',
                         f'''
                         {{
                             std::vector<{rename.class_("fz_quad")}> ret(max_quads);
-                            int n = {rename.function_call('fz_search_stext_page')}(m_internal, needle, ret[0].internal(), max_quads);
+                            int n = {rename.function_call('fz_search_stext_page')}(m_internal, needle, hit_mark, ret[0].internal(), max_quads);
                             ret.resize(n);
                             return ret;
                         }}
@@ -3059,9 +3059,11 @@ def write_call_arg(
         out_cpp.write( f'{ptr}({arg.cursor.type.spelling}{ptr}) &{name_}{field0}')
     else:
         if verbose:
-            log( '{arg.cursor=} {arg.name=} {classname=} {extras2.pod=}')
+            log( '{=arg arg.cursor.type.get_canonical().kind classname extras}')
         if extras.pod and arg.cursor.type.get_canonical().kind == clang.cindex.TypeKind.POINTER:
             out_cpp.write( '&')
+        elif not extras.pod and arg.cursor.type.get_canonical().kind != clang.cindex.TypeKind.POINTER:
+            out_cpp.write( '*')
         elif arg.out_param:
             out_cpp.write( '&')
         if not have_used_this and rename.class_(arg.alt.type.spelling) == classname:
@@ -5694,6 +5696,7 @@ def class_write_method_body(
                 arg_classname,
                 have_used_this,
                 out_cpp,
+                g_show_details(fnname),
                 )
         sep = ', '
     out_cpp.write( f');\n')
@@ -6029,7 +6032,7 @@ def class_write_method(
                 )
 
 
-def class_custom_method( register_fn_use, classname, extramethod, out_h, out_cpp):
+def class_custom_method( tu, register_fn_use, struct_cursor, classname, extramethod, out_h, out_cpp):
     '''
     Writes custom method as specified by <extramethod>.
     '''
@@ -6071,7 +6074,21 @@ def class_custom_method( register_fn_use, classname, extramethod, out_h, out_cpp
     if name_args_no_defaults != name_args:
         log('have changed {name_args=} to {name_args_no_defaults=}', 1)
     out_cpp.write( f'FZ_FUNCTION {return_space}{classname}::{name_args_no_defaults}')
-    out_cpp.write( textwrap.dedent(extramethod.body))
+
+    body = textwrap.dedent(extramethod.body)
+    if is_constructor and has_refs( tu, struct_cursor.type):
+        # Insert ref checking code into end of custom constructor body.
+        end = body.rfind('}')
+        assert end >= 0
+        out_cpp.write( body[:end])
+        out_cpp.write( f'    if (s_check_refs)\n')
+        out_cpp.write( f'    {{\n')
+        out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
+        out_cpp.write( f'    }}\n')
+        out_cpp.write( body[end:])
+    else:
+        out_cpp.write( body)
+
     out_cpp.write( f'\n')
 
     if 1:   # lgtm [py/constant-conditional-expression]
@@ -6634,7 +6651,9 @@ def class_wrapper(
     #
     for extra_constructor in extras.constructors_extra:
         class_custom_method(
+                tu,
                 register_fn_use,
+                struct_cursor,
                 classname,
                 extra_constructor,
                 out_h,
@@ -6736,7 +6755,9 @@ def class_wrapper(
     custom_destructor = False
     for extramethod in extras.methods_extra:
         is_constructor, is_destructor, is_begin_end = class_custom_method(
+                tu,
                 register_fn_use,
+                struct_cursor,
                 classname,
                 extramethod,
                 out_h,
@@ -6808,7 +6829,9 @@ def class_wrapper(
     # an integer, for use by python etc.
     if not extras.pod:
         class_custom_method(
+                tu,
                 register_fn_use,
+                struct_cursor,
                 classname,
                 ExtraMethod(
                     'long long',
