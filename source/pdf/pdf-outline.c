@@ -294,6 +294,8 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 				pdf_dict_put(ctx, prev, PDF_NAME(Next), obj);
 				pdf_dict_put(ctx, obj, PDF_NAME(Prev), prev);
 			}
+			else
+				pdf_dict_put(ctx, parent, PDF_NAME(First), obj);
 			pdf_dict_put(ctx, iter->current, PDF_NAME(Prev), obj);
 			pdf_dict_put(ctx, obj, PDF_NAME(Next), iter->current);
 			result = 0;
