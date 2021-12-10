@@ -38,7 +38,6 @@ import platform
 import re
 import subprocess
 import sys
-import sys
 import time
 
 
@@ -229,6 +228,7 @@ def sdist():
             'platform/c++/c_globals.pickle',
             'platform/c++/container_classnames.pickle',
             'platform/c++/implementation/classes.cpp',
+            'platform/c++/implementation/classes2.cpp',
             'platform/c++/implementation/exceptions.cpp',
             'platform/c++/implementation/functions.cpp',
             'platform/c++/implementation/internal.cpp',
@@ -432,7 +432,7 @@ mupdf_package = pipcl.Package(
                 ],
         author = 'Artifex Software, Inc.',
         author_email = 'support@artifex.com',
-        url_docs = 'https://twiki.ghostscript.com/do/view/Main/MuPDFWrap/',
+        url_docs = 'https://mupdf.com/r/C-and-Python-APIs',
         url_home = 'https://mupdf.com/',
         url_source = 'https://git.ghostscript.com/?p=mupdf.git',
         url_tracker = 'https://bugs.ghostscript.com/',
