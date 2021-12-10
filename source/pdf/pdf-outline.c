@@ -380,7 +380,10 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 			if (prev)
 				pdf_dict_put(ctx, next, PDF_NAME(Prev), prev);
 			else
+			{
+				pdf_dict_put(ctx, parent, PDF_NAME(First), next);
 				pdf_dict_del(ctx, next, PDF_NAME(Prev));
+			}
 			iter->current = next;
 		}
 		else if (prev)
