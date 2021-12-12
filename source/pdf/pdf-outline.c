@@ -237,9 +237,11 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 	pdf_obj *obj = NULL;
 	pdf_obj *prev;
 	pdf_obj *parent;
-	int result;
+	pdf_obj *outlines = NULL;
+	int result = 0;
 
 	fz_var(obj);
+	fz_var(outlines);
 
 	pdf_begin_operation(ctx, doc, "Insert outline item");
 
@@ -251,8 +253,7 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 			parent = iter->current;
 		else if (iter->modifier == MOD_NONE && iter->current == NULL)
 		{
-			pdf_obj *outlines, *root;
-			root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+			pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
 			outlines = pdf_dict_get(ctx, root, PDF_NAME(Outlines));
 			if (outlines == NULL)
 			{
@@ -306,6 +307,7 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, obj);
+		pdf_drop_obj(ctx, outlines);
 		pdf_end_operation(ctx, doc);
 	}
 	fz_catch(ctx)
