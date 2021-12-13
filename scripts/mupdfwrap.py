@@ -2637,22 +2637,6 @@ classextras = ClassExtras(
                     ],
                 ),
 
-        #pdf_annot = ClassExtra(
-        #        #constructor_raw = False,
-        #        methods_extra = [
-        #            ExtraMethod(
-        #                'long long',
-        #                'm_internal_value()',
-        #                f'''
-        #                {{
-        #                    return (uintptr_t) m_internal;
-        #                }}
-        #                ''',
-        #                comment = '/* Provided to allow Python to see numerical value of m_internal. */'
-        #                ),
-        #            ],
-        #        ),
-
         pdf_lexbuf = ClassExtra(
                 constructors_extra = [
                     ExtraConstructor( '(int size)',
@@ -2676,6 +2660,39 @@ classextras = ClassExtras(
                         }}
                         ''',
                         comment = '/* Destructor that calls pdf_lexbuf_fin(). */',
+                        ),
+                    ],
+                ),
+
+        pdf_layer_config = ClassExtra(
+                pod = 'inline',
+                constructors_extra = [
+                    ExtraConstructor( '()',
+                        f'''
+                        {{
+                            this->name = nullptr;
+                            this->creator = nullptr;
+                        }}
+                        ''',
+                        comment = '/* Default constructor sets .name and .creator to null. */',
+                        ),
+                    ],
+                ),
+
+        pdf_layer_config_ui = ClassExtra(
+                pod = 'inline',
+                constructors_extra = [
+                    ExtraConstructor( '()',
+                        f'''
+                        {{
+                            this->text = nullptr;
+                            this->depth = 0;
+                            this->type = PDF_LAYER_UI_LABEL;
+                            this->selected = 0;
+                            this->locked = 0;
+                        }}
+                        ''',
+                        comment = '/* Default constructor sets all .text to null and other fields to zero. */',
                         ),
                     ],
                 ),
@@ -4310,7 +4327,7 @@ def make_function_wrapper_class_aware(
     assert fnname.startswith( ('fz_', 'pdf_'))
 
     if fnname.endswith('_drop'):
-        jlib.log('Ignoring because ends with "_drop": {fnname}')
+        #jlib.log('Ignoring because ends with "_drop": {fnname}')
         return
 
     # Construct prototype fnname(args).
@@ -7425,7 +7442,7 @@ def cpp_source(
 
             '''))
 
-    # Write declataion and definition for metadata_keys global.
+    # Write declaration and definition for metadata_keys global.
     #
     out_hs.functions.write(
             textwrap.dedent(
@@ -7788,6 +7805,26 @@ def compare_fz_usage(
     log( '{n_missing}')
 
 
+def translate_ucdn_macros():
+    '''
+    Returns string containing UCDN_* macros represented as enums.
+    '''
+    out = io.StringIO()
+    with open('include/mupdf/ucdn.h') as f:
+        text = f.read()
+    out.write( '\n')
+    out.write( '\n')
+    out.write( 'enum\n')
+    out.write( '{\n')
+    n = 0
+    for m in re.finditer('\n#define (UCDN_[A-Z0-9_]+) +([^\n]+)', text):
+        out.write(f'    {m.group(1)} = {m.group(2)},\n')
+        n += 1
+    out.write( '};\n')
+    out.write( '\n')
+    assert n
+    return out.getvalue()
+
 
 def build_swig(
         build_dirs,
@@ -7926,9 +7963,33 @@ def build_swig(
                 buffer.resize(n);
                 return buffer;
             }}
+
+            /* SWIG-friendly alternatives to fz_make_bookmark() and
+            fz_lookup_bookmark(), using long long instead of fz_bookmark
+            because SWIG appears to treat fz_bookmark as an int despite it
+            being a typedef for intptr_t, so ends up slicing. */
+            long long unsigned make_bookmark2(fz_document* doc, fz_location loc)
+            {{
+                fz_bookmark bm = mupdf::make_bookmark(doc, loc);
+                return (long long unsigned) bm;
+            }}
+            long long unsigned mfz_make_bookmark2(fz_document* doc, fz_location loc)
+            {{
+                return make_bookmark2(doc, loc);
+            }}
+
+            fz_location lookup_bookmark2(fz_document *doc, long long unsigned mark)
+            {{
+                return mupdf::lookup_bookmark(doc, (fz_bookmark) mark);
+            }}
+            fz_location mfz_lookup_bookmark2(fz_document *doc, long long unsigned mark)
+            {{
+                return lookup_bookmark2(doc, mark);
+            }}
             '''
 
     common += generated.swig_cpp
+    common += translate_ucdn_macros()
 
     text = ''
 
