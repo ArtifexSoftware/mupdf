@@ -62,6 +62,8 @@ pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_lis
 		}
 		else if (parent_diff)
 		{
+			if (*fixed == 0)
+				pdf_begin_operation(ctx, doc, "Repair outline nodes");
 			*fixed = 1;
 		}
 		if (parent_diff)
@@ -507,7 +509,11 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 				}
 			}
 			fz_always(ctx)
+			{
+				if (fixed)
+					pdf_end_operation(ctx, doc);
 				pdf_drop_page_tree(ctx, doc);
+			}
 			fz_catch(ctx)
 				fz_rethrow(ctx);
 		}
