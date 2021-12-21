@@ -33,39 +33,50 @@
 	https://web.archive.org/web/20170921000830/http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
 */
 
-static int
-pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_list *mark_list, pdf_obj *parent, int fixed)
+static void
+pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_list *mark_list, pdf_obj *parent, int *fixed)
 {
-	pdf_obj *obj, *prev = NULL;
+	int parent_diff, prev_diff;
+	pdf_obj *first, *next, *prev;
+	pdf_obj *expected_parent = parent;
+	pdf_obj *expected_prev = NULL;
 
 	while (dict && pdf_is_dict(ctx, dict))
 	{
 		if (pdf_mark_list_push(ctx, mark_list, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Cycle detected in outlines");
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Prev));
-		if (pdf_objcmp(ctx, prev, obj))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Bad or missing pointer in outline tree");
-		prev = dict;
+		parent = pdf_dict_get(ctx, dict, PDF_NAME(Parent));
+		prev = pdf_dict_get(ctx, dict, PDF_NAME(Prev));
+		next = pdf_dict_get(ctx, dict, PDF_NAME(Next));
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Parent));
-		if (pdf_objcmp(ctx, parent, obj))
+		parent_diff = pdf_objcmp(ctx, parent, expected_parent);
+		prev_diff = pdf_objcmp(ctx, prev, expected_prev);
+
+		if (fixed == NULL)
 		{
-			if (fixed > 1)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Bad or missing parent pointer in outline tree");
-			fz_warn(ctx, "Bad or missing parent pointer in outline tree");
-			pdf_dict_put(ctx, dict, PDF_NAME(Parent), parent);
-			fixed = 1;
+			if (parent_diff)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Outline parent pointer still bad or missing despite repair");
+			if (prev_diff)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Outline prev pointer still bad or missing despite repair");
+		}
+		else if (parent_diff)
+		{
+			*fixed = 1;
+		}
+		if (parent_diff)
+		{
+			fz_warn(ctx, "Bad or missing parent pointer in outline tree, repairing");
+			pdf_dict_put(ctx, dict, PDF_NAME(Parent), expected_parent);
 		}
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(First));
-		if (obj)
-			fixed = pdf_test_outline(ctx, doc, obj, mark_list, dict, fixed);
+		first = pdf_dict_get(ctx, dict, PDF_NAME(First));
+		if (first)
+			pdf_test_outline(ctx, doc, first, mark_list, dict, fixed);
 
-		dict = pdf_dict_get(ctx, dict, PDF_NAME(Next));
+		expected_prev = dict;
+		dict = next;
 	}
-
-	return fixed;
 }
 
 fz_outline *
@@ -468,6 +479,7 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 	pdf_obj *root, *obj, *first;
 	pdf_mark_list mark_list;
 	pdf_outline_iterator *iter = NULL;
+	int fixed = 0;
 
 	/* Walk the outlines to spot problems that might bite us later
 	 * (in particular, for cycles). */
@@ -483,14 +495,15 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 			pdf_load_page_tree(ctx, doc);
 			fz_try(ctx)
 			{
-				/* Pass through the outlines once, fixing them if we can.*/
-				int fixed = pdf_test_outline(ctx, doc, first, &mark_list, obj, 0);
-				/* If a fix was performed, pass through again, this time throwing
-				 * if it's still not correct. */
+				/* Pass through the outlines once, fixing inconsistencies */
+				pdf_test_outline(ctx, doc, first, &mark_list, obj, &fixed);
+
 				if (fixed)
 				{
+					/* If a fix was performed, pass through again,
+					this time throwing if it's still not correct. */
 					pdf_mark_list_free(ctx, &mark_list);
-					pdf_test_outline(ctx, doc, first, &mark_list, obj, 2);
+					pdf_test_outline(ctx, doc, first, &mark_list, obj, NULL);
 				}
 			}
 			fz_always(ctx)
