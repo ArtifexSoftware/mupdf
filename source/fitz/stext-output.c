@@ -104,8 +104,125 @@ fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	int y = block->bbox.y0;
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
+	fz_matrix ctm = block->u.i.transform;
+	const char *flip = "";
 
-	fz_write_printf(ctx, out, "<img style=\"position:absolute;top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"", y, x, w, h);
+#define USE_CSS_MATRIX_TRANSFORMS
+#ifdef USE_CSS_MATRIX_TRANSFORMS
+	char fliptext[128];
+	/* Matrix maths notes.
+	 * When we get here ctm maps the unit square to the position in device
+	 * space occupied by the image.
+	 *
+	 * That is to say that mapping the 4 corners of the unit square through
+	 * the transform, give us the 4 target corners. We extend the corners
+	 * by adding an extra '1' into them to allow transforms to work. Thus
+	 * (x,y) maps through ctm = (a b c d e f) as:
+	 *
+	 * (x y 1) (a b 0) = (X Y 1)
+	 *         (c d 0)
+	 *         (e f 1)
+	 *
+	 * To simplify reading of matrix maths, we use the trick where we
+	 * 'drop' the first matrix down the page. Thus the corners c0=(0,0),
+	 * c1=(1,0), c2=(1,1), c3=(0,1) map to C0, C1, C2, C3 respectively:
+	 *
+	 *         (    a     b 0)
+	 *         (    c     d 0)
+	 *         (    e     f 1)
+	 * (0 0 1) (    e     f 1)
+	 * (0 1 1) (  c+e   d+f 1)
+	 * (1 1 1) (a+c+e b+d+f 1)
+	 * (1 0 1) (  a+e   b+f 1)
+	 *
+	 * where C0 = (e,f), C1=(c+e, d+f) C2=(a+c+e, b+d+f), C3=(a+e, b+f)
+	 *
+	 * Unfortunately, the CSS matrix transform, does not map the unit square.
+	 * Rather it does something moderately mad. As far as I can work out, the
+	 * top left corner of a (0,0) -> (w, h) box is transformed using the .e
+	 * and .f entries of the matrix. Then the image from within that square
+	 * is transformed using the centre of that square as the origin.
+	 *
+	 * So, an image placed at (0,0) in destination space with 1:1 transform
+	 * will result in an image a (0,0) as you'd expect. But an image at (0,0)
+	 * with a scale of 2, will result in 25% of the image off the left of the
+	 * screen, and 25% off the top.
+	 *
+	 * Accordingly, we have to adjust the ctm in several steps.
+	 */
+	/* Move to moving the centre of the image. */
+	ctm.e += (ctm.a+ctm.c)/2;
+	ctm.f += (ctm.b+ctm.d)/2;
+	/* Move from transforming the unit square to w/h */
+	ctm.a /= block->u.i.image->w;
+	ctm.b /= block->u.i.image->w;
+	ctm.c /= block->u.i.image->h;
+	ctm.d /= block->u.i.image->h;
+	/* Move from points to pixels */
+	ctm.a *= 96.0f/72;
+	ctm.b *= 96.0f/72;
+	ctm.c *= 96.0f/72;
+	ctm.d *= 96.0f/72;
+	ctm.e *= 96.0f/72;
+	ctm.f *= 96.0f/72;
+	/* Move to moving the top left of the untransformed image box, cos HTML is bonkers. */
+	ctm.e -= block->u.i.image->w/2;
+	ctm.f -= block->u.i.image->h/2;
+
+	sprintf(fliptext, "transform: matrix(%g,%g,%g,%g,%g,%g);",
+		ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
+	flip = fliptext;
+	fz_write_printf(ctx, out, "<img style=\"position:absolute;%s\" src=\"", flip, y, x, w, h);
+#else
+	/* Alternative version of the code that uses scaleX/Y and rotate
+	 * instead, but only copes with axis aligned cases. */
+	int t;
+
+	if (ctm.b == 0 && ctm.c == 0)
+	{
+		if (ctm.a < 0 && ctm.d < 0)
+			flip = "transform: scaleX(-1) scaleY(-1);";
+		else if (ctm.a < 0)
+		{
+			flip = "transform: scaleX(-1);";
+		}
+		else if (ctm.d < 0)
+		{
+			flip = "transform: scaleY(-1);";
+		}
+	} else if (ctm.a == 0 && ctm.d == 0) {
+		if (ctm.b < 0 && ctm.c < 0)
+		{
+			flip = "transform: scaleY(-1) rotate(90deg);";
+			x += (w-h)/2;
+			y -= (w-h)/2;
+			t = w; w = h; h = t;
+		}
+		else if (ctm.b < 0)
+		{
+			flip = "transform: scaleX(-1) scaleY(-1) rotate(90deg);";
+			x += (w-h)/2;
+			y -= (w-h)/2;
+			t = w; w = h; h = t;
+		}
+		else if (ctm.c < 0)
+		{
+			flip = "transform: scaleX(-1) scaleY(-1) rotate(270deg);";
+			x += (w-h)/2;
+			y -= (w-h)/2;
+			t = w; w = h; h = t;
+		}
+		else
+		{
+			flip = "transform: scaleY(-1) rotate(270deg);";
+			x += (w-h)/2;
+			y -= (w-h)/2;
+			t = w; w = h; h = t;
+		}
+	}
+
+	fz_write_printf(ctx, out, "<img style=\"position:absolute;%stop:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"", flip, y, x, w, h);
+#endif
 	fz_write_image_as_data_uri(ctx, out, block->u.i.image);
 	fz_write_string(ctx, out, "\">\n");
 }
