@@ -36,10 +36,12 @@
 static void
 pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_list *mark_list, pdf_obj *parent, int *fixed)
 {
-	int parent_diff, prev_diff;
-	pdf_obj *first, *next, *prev;
+	int parent_diff, prev_diff, last_diff;
+	pdf_obj *first, *last, *next, *prev;
 	pdf_obj *expected_parent = parent;
 	pdf_obj *expected_prev = NULL;
+
+	last = pdf_dict_get(ctx, expected_parent, PDF_NAME(Last));
 
 	while (dict && pdf_is_dict(ctx, dict))
 	{
@@ -52,6 +54,7 @@ pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_lis
 
 		parent_diff = pdf_objcmp(ctx, parent, expected_parent);
 		prev_diff = pdf_objcmp(ctx, prev, expected_prev);
+		last_diff = next == NULL && pdf_objcmp(ctx, last, dict);
 
 		if (fixed == NULL)
 		{
@@ -59,8 +62,10 @@ pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_lis
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Outline parent pointer still bad or missing despite repair");
 			if (prev_diff)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Outline prev pointer still bad or missing despite repair");
+			if (last_diff)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Outline last pointer still bad or missing despite repair");
 		}
-		else if (parent_diff)
+		else if (parent_diff || last_diff)
 		{
 			if (*fixed == 0)
 				pdf_begin_operation(ctx, doc, "Repair outline nodes");
@@ -70,6 +75,11 @@ pdf_test_outline(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_mark_lis
 		{
 			fz_warn(ctx, "Bad or missing parent pointer in outline tree, repairing");
 			pdf_dict_put(ctx, dict, PDF_NAME(Parent), expected_parent);
+		}
+		if (last_diff)
+		{
+			fz_warn(ctx, "Bad or missing last pointer in outline tree, repairing");
+			pdf_dict_put(ctx, expected_parent, PDF_NAME(Last), dict);
 		}
 
 		first = pdf_dict_get(ctx, dict, PDF_NAME(First));
