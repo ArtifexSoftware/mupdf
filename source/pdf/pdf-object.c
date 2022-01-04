@@ -1395,7 +1395,7 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 		parent_num == 0 while an object is being parsed from the file.
 		No further action is necessary.
 	*/
-	if (parent == 0 || doc->save_in_progress || doc->repair_attempted)
+	if (parent == 0 || doc->save_in_progress || doc->repair_in_progress)
 		return;
 
 	if (doc->journal && doc->journal->nesting == 0)
