@@ -721,6 +721,8 @@ function AFSpecial_Keystroke(index) {
 
 function AFSpecial_Format(index) {
 	var res;
+	if (!event.value)
+		return;
 	switch (index) {
 	case 0:
 		res = util.printx('99999', event.value);

@@ -722,6 +722,8 @@
 "\n"
 "function AFSpecial_Format(index) {\n"
 "var res;\n"
+"if (!event.value)\n"
+"return;\n"
 "switch (index) {\n"
 "case 0:\n"
 "res = util.printx('99999', event.value);\n"
