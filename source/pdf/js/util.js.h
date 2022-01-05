@@ -691,7 +691,7 @@
 "event.selStart = 0;\n"
 "event.selEnd = event.value.length;\n"
 "}\n"
-"} else if (event.willCommit)\n"
+"} else\n"
 "app.alert('The value entered ('+event.value+') does not match the format of the field [ '+event.target.name+' ] should be '+fmt);\n"
 "}\n"
 "\n"
