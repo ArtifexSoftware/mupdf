@@ -1335,6 +1335,10 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 	}
 
 	doc->file_size = file_size;
+	/* We're about to make the last xref an incremental one. All incremental
+	 * ones MUST be solid, but the snapshot might not have saved it as such,
+	 * so solidify it now. */
+	pdf_ensure_solid_xref(ctx, doc, pdf_xref_len(ctx, doc));
 	doc->num_incremental_sections = nis;
 
 	if (nis > 0)
