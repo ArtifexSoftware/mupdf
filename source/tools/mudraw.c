@@ -652,16 +652,18 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		float zoom;
 		fz_matrix ctm;
 		fz_device *pre_ocr_dev = NULL;
+		fz_rect tmediabox;
 
 		zoom = resolution / 72;
 		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
+		tmediabox = fz_transform_rect(mediabox, ctm);
 
 		fz_var(pre_ocr_dev);
 
 		fz_try(ctx)
 		{
 			fz_write_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
-					mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1);
+					tmediabox.x0, tmediabox.y0, tmediabox.x1, tmediabox.y1);
 			dev = fz_new_trace_device(ctx, out);
 			if (output_format == OUT_OCR_TRACE)
 			{
@@ -698,13 +700,21 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	{
 		fz_try(ctx)
 		{
+			float zoom;
+			fz_matrix ctm;
+			fz_rect tmediabox;
+
+			zoom = resolution / 72;
+			ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
+			tmediabox = fz_transform_rect(mediabox, ctm);
+
 			fz_write_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
-					mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1);
+					tmediabox.x0, tmediabox.y0, tmediabox.x1, tmediabox.y1);
 			dev = fz_new_xmltext_device(ctx, out);
 			if (list)
-				fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, cookie);
+				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, fz_identity, cookie);
+				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_write_printf(ctx, out, "</page>\n");
 			fz_close_device(ctx, dev);
 		}
@@ -723,15 +733,23 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_try(ctx)
 		{
 			fz_rect bbox = fz_empty_rect;
+			float zoom;
+			fz_matrix ctm;
+			fz_rect tmediabox;
+
+			zoom = resolution / 72;
+			ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
+			tmediabox = fz_transform_rect(mediabox, ctm);
+
 			dev = fz_new_bbox_device(ctx, &bbox);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, cookie);
+				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, fz_identity, cookie);
+				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_close_device(ctx, dev);
-			fz_write_printf(ctx, out, "<page bbox=\"%R\" mediabox=\"%R\" />\n", &bbox, &mediabox);
+			fz_write_printf(ctx, out, "<page bbox=\"%R\" mediabox=\"%R\" />\n", &bbox, &tmediabox);
 		}
 		fz_always(ctx)
 		{
@@ -750,6 +768,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		float zoom;
 		fz_matrix ctm;
 		fz_device *pre_ocr_dev = NULL;
+		fz_rect tmediabox;
 
 		zoom = resolution / 72;
 		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
@@ -769,7 +788,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			stext_options.flags |= FZ_STEXT_MEDIABOX_CLIP;
 			if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 				stext_options.flags |= FZ_STEXT_PRESERVE_SPANS;
-			text = fz_new_stext_page(ctx, mediabox);
+			tmediabox = fz_transform_rect(mediabox, ctm);
+			text = fz_new_stext_page(ctx, tmediabox);
 			dev = fz_new_stext_device(ctx, text, &stext_options);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -843,6 +863,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
+			/* We are ignoring ctm here. Understandable in a way, as resolution makes no sense
+			 * when writing PDFs. Rotation is taken care of by the pdf_add_page call. */
 			pdf_obj *page_obj;
 
 			dev = pdf_page_write(ctx, pdfout, mediabox, &resources, &contents);
