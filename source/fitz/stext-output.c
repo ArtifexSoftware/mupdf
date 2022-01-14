@@ -100,16 +100,10 @@ fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_font *font, float si
 static void
 fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_stext_block *block)
 {
-	int x = block->bbox.x0;
-	int y = block->bbox.y0;
-	int w = block->bbox.x1 - block->bbox.x0;
-	int h = block->bbox.y1 - block->bbox.y0;
 	fz_matrix ctm = block->u.i.transform;
-	const char *flip = "";
 
 #define USE_CSS_MATRIX_TRANSFORMS
 #ifdef USE_CSS_MATRIX_TRANSFORMS
-	char fliptext[128];
 	/* Matrix maths notes.
 	 * When we get here ctm maps the unit square to the position in device
 	 * space occupied by the image.
@@ -169,14 +163,19 @@ fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	ctm.e -= block->u.i.image->w/2;
 	ctm.f -= block->u.i.image->h/2;
 
-	sprintf(fliptext, "transform: matrix(%g,%g,%g,%g,%g,%g);",
+	fz_write_printf(ctx, out, "<img style=\"position:absolute;transform:matrix(%g,%g,%g,%g,%g,%g)\" src=\"",
 		ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
-	flip = fliptext;
-	fz_write_printf(ctx, out, "<img style=\"position:absolute;%s\" src=\"", flip, y, x, w, h);
 #else
 	/* Alternative version of the code that uses scaleX/Y and rotate
 	 * instead, but only copes with axis aligned cases. */
 	int t;
+
+	int x = block->bbox.x0;
+	int y = block->bbox.y0;
+	int w = block->bbox.x1 - block->bbox.x0;
+	int h = block->bbox.y1 - block->bbox.y0;
+
+	const char *flip = "";
 
 	if (ctm.b == 0 && ctm.c == 0)
 	{
