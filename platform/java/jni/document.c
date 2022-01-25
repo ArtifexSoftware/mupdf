@@ -1154,3 +1154,45 @@ FUN(Document_getSignatureInformationByRect)(JNIEnv *env, jobject self, int pageN
     (*env)->ReleaseByteArrayElements(env,jalg,(jbyte*)alg,0);
     return res;
 }
+
+JNIEXPORT jobjectArray JNICALL
+FUN(Document_getWidgetAreas)(JNIEnv * env, jobject self, int pageNumber)
+{
+    jclass rectFClass;
+    jmethodID ctor;
+    jobjectArray arr;
+    jobject rectF;
+    pdf_annot *annot;
+    int count;
+    fz_context *ctx = get_context(env);
+    fz_document *doc = from_Document(env, self);
+    pdf_document *idoc = pdf_specifics(ctx, doc);
+
+    rectFClass = (*env)->FindClass(env, "android/graphics/RectF");
+    if (rectFClass == NULL) return NULL;
+    ctor = (*env)->GetMethodID(env, rectFClass, "<init>", "(FFFF)V");
+    if (ctor == NULL) return NULL;
+
+    pdf_page *page = pdf_load_page(ctx, doc, pageNumber);
+    count = 0;
+    for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+        count ++;
+
+    arr = (*env)->NewObjectArray(env, count, rectFClass, NULL);
+    if (arr == NULL) return NULL;
+
+    count = 0;
+    for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+    {
+        fz_rect rect = pdf_to_rect(ctx, pdf_dict_get(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect)));
+        rectF = (*env)->NewObject(env, rectFClass, ctor,
+                                  (float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1);
+        if (rectF == NULL) return NULL;
+        (*env)->SetObjectArrayElement(env, arr, count, rectF);
+        (*env)->DeleteLocalRef(env, rectF);
+
+        count ++;
+    }
+
+    return arr;
+}
