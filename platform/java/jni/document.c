@@ -1082,3 +1082,46 @@ FUN(Document_formatLinkURI)(JNIEnv *env, jobject self, jobject jdest)
 
 	return juri;
 }
+
+JNIEXPORT jint JNICALL
+FUN(Document_getAllSignature)(JNIEnv *env, jobject self, jintArray jsignNum, jbyteArray jsigners, jbyteArray jissuers, jbyteArray jstarttimes, jbyteArray jendtimes, jbyteArray jserials, jbyteArray jalgs, jintArray jpageNo, jintArray jvalids, jfloatArray jrect)
+{
+    fz_context *ctx = get_context(env);
+    fz_document *doc = from_Document(env, self);
+    pdf_document *idoc = pdf_specifics(ctx, doc);
+    int res = 0;
+    int *signNum;
+    unsigned char *signers;
+    unsigned char *issuers;
+    unsigned char *startTimes;
+    unsigned char *endTimes;
+    unsigned char *serials;
+    unsigned char *algs;
+    int *pageNo;
+    int *valids;
+    float *rect;
+    signNum = (unsigned int *) (*env)->GetIntArrayElements(env, jsignNum, 0);
+    signers = (unsigned char *) (*env)->GetByteArrayElements(env, jsigners, 0);
+    issuers = (unsigned char *) (*env)->GetByteArrayElements(env, jissuers, 0);
+    startTimes = (unsigned char *) (*env)->GetByteArrayElements(env, jstarttimes, 0);
+    endTimes = (unsigned char *) (*env)->GetByteArrayElements(env, jendtimes, 0);
+    serials = (unsigned char *) (*env)->GetByteArrayElements(env, jserials, 0);
+    algs = (unsigned char *) (*env)->GetByteArrayElements(env, jalgs, 0);
+    rect = (float *) (*env)->GetFloatArrayElements(env, jrect, 0);
+    pageNo = (unsigned int *) (*env)->GetIntArrayElements(env, jpageNo, 0);
+    valids = (unsigned int *) (*env)->GetIntArrayElements(env, jvalids, 0);
+    if (signNum == NULL || signers == NULL || rect == NULL)
+        return res;
+    res = pdf_get_all_signature_ex(ctx, idoc, signNum, signers, issuers, startTimes, endTimes, serials, algs, pageNo, valids, rect);
+    (*env)->ReleaseByteArrayElements(env, jsigners, (jbyte *) signers, 0);
+    (*env)->ReleaseByteArrayElements(env, jissuers, (jbyte *) issuers, 0);
+    (*env)->ReleaseByteArrayElements(env, jstarttimes, (jbyte *) startTimes, 0);
+    (*env)->ReleaseByteArrayElements(env, jendtimes, (jbyte *) endTimes, 0);
+    (*env)->ReleaseByteArrayElements(env, jserials, (jbyte *) serials, 0);
+    (*env)->ReleaseByteArrayElements(env, jalgs, (jbyte *) algs, 0);
+    (*env)->ReleaseIntArrayElements(env, jsignNum, (jint * ) signNum, 0);
+    (*env)->ReleaseIntArrayElements(env, jpageNo, (jint * ) pageNo, 0);
+    (*env)->ReleaseIntArrayElements(env, jvalids, (jint * ) valids, 0);
+    (*env)->ReleaseFloatArrayElements(env, jrect, (jfloat *) rect, 0);
+    return res;
+}

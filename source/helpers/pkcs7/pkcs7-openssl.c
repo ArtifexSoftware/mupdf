@@ -20,11 +20,17 @@
 // Artifex Software, Inc., 1305 Grant Avenue - Suite 200, Novato,
 // CA 94945, U.S.A., +1(415)492-9861, for further information.
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define  LOG_TAG  "test"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOGD(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#endif
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-
 #include "mupdf/helpers/pkcs7-openssl.h"
-
+#include "internal_openssl_cert.h"
 #ifndef HAVE_LIBCRYPTO
 
 pdf_pkcs7_signer *
@@ -114,6 +120,7 @@ static const char AdobeCA_p7c[] = {
 #include "openssl/pkcs7.h"
 #include "openssl/pkcs12.h"
 #include "openssl/opensslv.h"
+#include "openssl/ts.h"
 
 #ifndef OPENSSL_VERSION_NUMBER
 #warning detect version of openssl at compile time
@@ -909,4 +916,269 @@ pkcs7_openssl_new_verifier(fz_context *ctx)
 	return &verifier->base;
 }
 
+int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, char *signers, char *issuers, char *startTimes, char *endTimes, char *serials, char *algs, int *pageNo, int *valids, float *rect) {
+    pdf_annot *annot;
+    fz_rect tmpRect = fz_empty_rect;
+    int i;
+    int res = 0;
+    int len = 0;
+    *signNum = 0;
+    char tmpSigner[128];
+    char tmpIssuer[128];
+    int ilen = 0;
+    char tmpStartTime[128];
+    int stlen = 0;
+    char tmpEndTime[128];
+    int etlen = 0;
+    char tmpSerial[128];
+    int slen = 0;
+    char tmpAlg[128];
+    int alen = 0;
+    char signTime[128];
+    int hasTs;
+    char tsTime[128];
+    int valid;
+    fz_try(ctx)
+    {
+        int pageCount = fz_count_pages(ctx, doc);
+        for (i = 0; i < pageCount; ++i) {
+            pdf_page *page = pdf_load_page(ctx, doc, i);
+            for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot)) {
+                if (PDF_WIDGET_TYPE_SIGNATURE == pdf_widget_type(ctx, annot)) {
+                    if (pdf_annot_obj(ctx, annot) == NULL) {
+                        continue;
+                    }
+                    memset(tmpSigner, 0, 128);
+                    memset(tmpIssuer, 0, 128);
+                    memset(tmpStartTime, 0, 128);
+                    memset(tmpEndTime, 0, 128);
+                    memset(tmpSerial, 0, 128);
+                    memset(tmpAlg, 0, 128);
+                    res = pdf_get_signature_information_ex(ctx, doc, annot, tmpSigner, signTime, &hasTs, tsTime, &valid, tmpIssuer, tmpStartTime, tmpEndTime, tmpSerial, tmpAlg);
+                    strcpy(signers + len, tmpSigner);
+                    len += strlen(tmpSigner);
+                    strcpy(signers + len, ":");
+                    len += 1;
+
+//                    strcpy(issuers + ilen, tmpIssuer);
+//                    ilen += strlen(tmpIssuer);
+//                    strcpy(issuers + ilen, ":");
+//                    ilen += 1;
+//
+//                    strcpy(startTimes + stlen, tmpStartTime);
+//                    stlen += strlen(tmpStartTime);
+//                    strcpy(startTimes + stlen, ":");
+//                    stlen += 1;
+//
+//                    strcpy(endTimes + etlen, tmpEndTime);
+//                    etlen += strlen(tmpEndTime);
+//                    strcpy(endTimes + etlen, ":");
+//                    etlen += 1;
+//
+//                    strcpy(serials + slen, tmpSerial);
+//                    slen += strlen(tmpSerial);
+//                    strcpy(serials + slen, ":");
+//                    slen += 1;
+//
+//                    strcpy(algs + alen, tmpAlg);
+//                    alen += strlen(tmpAlg);
+//                    strcpy(algs + alen, ":");
+//                    alen += 1;
+
+                    fz_rect tmpRect = pdf_to_rect(ctx, pdf_dict_get(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect)));
+                    rect[(*signNum) * 4] = tmpRect.x0;
+                    rect[(*signNum) * 4 + 1] = tmpRect.y0;
+                    rect[(*signNum) * 4 + 2] = tmpRect.x1;
+                    rect[(*signNum) * 4 + 3] = tmpRect.y1;
+                    pageNo[*signNum] = i;
+                    (*signNum)++;
+                }
+            }
+        }
+        pdf_drop_page_tree(ctx, doc);
+        res = 1;
+    }
+    fz_catch(ctx)
+    {
+        res = 0;
+    }
+    return res;
+}
+
+
+static int get_sig_info(char *sig, int sig_len, char *signer, int *hasTs, char *tsTime, char *issuer, char *startTime, char *endTime, char *serial, char *alg) {
+    PKCS7 *pk7sig = NULL;
+    PKCS7 *pk7ts = NULL;
+    BIO *bsig = NULL;
+    STACK_OF(PKCS7_SIGNER_INFO) * sk;
+    PKCS7_SIGNER_INFO *si;
+    STACK_OF(X509) * cert = NULL;
+    PKCS7_ISSUER_AND_SERIAL *ias;
+    X509 *x509 = NULL;
+    ASN1_TYPE *timestamp;
+    TS_TST_INFO *tst_info = NULL;
+    const unsigned char *p;
+    int i;
+    int res = 1;
+    unsigned char tmp[sig_len];
+    unsigned int tmpLen;
+    unsigned long len;
+
+    *hasTs = 0;
+
+    signer[0] = '\0';
+    tsTime[0] = '\0';
+
+//    if (0 == INTERNAL_IsSM2Pkcs7Type(sig, sig_len)) {
+//        // tmp = (unsigned char *)malloc(sig_len);
+//        if (NULL == tmp) {
+//            res = 0;
+//            goto exit;
+//        }
+//
+//        //replace by P7 OID
+//        if (0 != INTERNAL_ReplaceSM2Pkcs7SignedOID(0, sig, sig_len, tmp, &tmpLen)) {
+//            res = 0;
+//            goto exit;
+//        }
+//
+//        //convert P7
+//        p = tmp;
+//        pk7sig = d2i_PKCS7(NULL, &p, tmpLen);
+//    } else {
+        bsig = BIO_new_mem_buf(sig, sig_len);
+        pk7sig = d2i_PKCS7_bio(bsig, NULL);
+//    }
+
+    if (pk7sig == NULL) {
+        res = 0;
+        goto exit;
+    }
+
+    if (PKCS7_type_is_signed(pk7sig)) {
+        cert = pk7sig->d.sign->cert;
+    } else if (PKCS7_type_is_signedAndEnveloped(pk7sig)) {
+        cert = pk7sig->d.signed_and_enveloped->cert;
+    } else {
+        PKCS7err(PKCS7_F_PKCS7_DATAVERIFY, PKCS7_R_WRONG_PKCS7_TYPE);
+        goto exit;
+    }
+
+    sk = PKCS7_get_signer_info(pk7sig);
+    if (sk == NULL) {
+        /* there are no signatures on this data */
+        res = 0;
+        goto exit;
+    }
+
+    for (i = 0; i < sk_PKCS7_SIGNER_INFO_num(sk); i++) {
+        si = sk_PKCS7_SIGNER_INFO_value(sk, i);
+
+        //get sign cert
+        ias = si->issuer_and_serial;
+        x509 = X509_find_by_issuer_and_serial(cert, ias->issuer, ias->serial);
+
+        if (x509) {
+            if (0 != Internal_Do_GetCertDN(x509, INTERNAL_GET_CERT_SUBJECT_CN, (unsigned char *)signer, &len))
+                goto exit;
+
+            //get issuer
+            if (0 != Internal_Do_GetCertDN(x509, INTERNAL_GET_CERT_ISSUER_CN, issuer, &len))
+                goto exit;
+
+            //get valid time
+            if (0 != Internal_Do_GetCertValidTime(x509, startTime, &len, endTime, &len))
+                goto exit;
+
+            //get serial
+            if (0 != Internal_Do_GetCertSerial(x509, serial, &len))
+                goto exit;
+
+            //get algorithm
+            if (0 != Internal_Do_GetCertSignatureAlgo(x509, alg, &len))
+                goto exit;
+        }
+
+        //get timestamp
+        timestamp = PKCS7_get_attribute(si, NID_id_smime_aa_timeStampToken);
+        if (timestamp) {
+            p = timestamp->value.sequence->data;
+            pk7ts = d2i_PKCS7(NULL, &p, timestamp->value.sequence->length);
+            if (NULL == pk7ts) {
+                res = 0;
+                goto exit;
+            }
+
+            tst_info = PKCS7_to_TS_TST_INFO(pk7ts);
+            if (tst_info) {
+                /*if(0 != parseASNTime(tst_info->time,tsTime,&len))
+                {
+                    memcpy(tsTime, tst_info->time->data, tst_info->time->length);
+                    tsTime[tst_info->time->length] = '\0';
+                }*/
+                memcpy(tsTime, TS_TST_INFO_get_time(tst_info)->data, TS_TST_INFO_get_time(tst_info)->length);
+                tsTime[TS_TST_INFO_get_time(tst_info)->length] = '\0';
+                *hasTs = 1;
+            }
+        }
+    }
+
+    exit:
+    BIO_free(bsig);
+    PKCS7_free(pk7sig);
+    TS_TST_INFO_free(tst_info);
+    // if(tmp)
+    // {
+    // 	free(tmp);
+    // 	tmp = NULL;
+    // }
+
+    return res;
+}
+
+
+int pdf_get_signature_information_ex(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *signer, char *signTime, int *hasTs, char *tsTime, int *valid, char *issuer, char *startTime, char *endTime, char *serial, char *alg) {
+    if (annot == NULL || doc == NULL || ctx == NULL) {
+        return 0;
+    }
+    char *tmp = NULL;
+    int tmpLen;
+    pdf_obj *obj = NULL;
+    char *contents = NULL;
+    int contents_len;
+    int res = 0;
+    fz_try(ctx)
+    {
+        if (pdf_signature_is_signed(ctx, doc, pdf_annot_obj(ctx, annot))) {
+            contents_len = pdf_signature_contents(ctx, doc, pdf_annot_obj(ctx, annot), &contents);
+            if (contents) {
+                res = get_sig_info(contents, contents_len, signer, hasTs, tsTime, issuer, startTime, endTime, serial, alg);
+                pdf_pkcs7_verifier *verifier = NULL;
+                verifier = pkcs7_openssl_new_verifier(ctx);
+                pdf_signature_error ret = PDF_SIGNATURE_ERROR_UNKNOWN;
+                pdf_signature_error sig_cert_error = PDF_SIGNATURE_ERROR_UNKNOWN;
+                ret = pdf_check_widget_digest(ctx, verifier, annot);
+                sig_cert_error = pdf_check_widget_certificate(ctx, verifier, annot);
+                *hasTs = ret | sig_cert_error;
+            } else {
+                res = 0;
+            }
+            //get signtime
+            obj = pdf_dict_getl(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(V), PDF_NAME(M), NULL);
+            if (obj) {
+                tmp = pdf_to_str_buf(ctx, obj);
+                tmpLen = pdf_to_str_len(ctx, obj);
+                memcpy(signTime, tmp, tmpLen);
+                signTime[tmpLen] = '\0';
+            }
+        }
+    }
+    fz_always(ctx)
+		fz_free(ctx, contents);
+    fz_catch(ctx)
+    {
+        res = 0;
+    }
+    return res;
+}
 #endif
