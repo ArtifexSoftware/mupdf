@@ -99,4 +99,10 @@ void pdf_encrypt_data(fz_context *ctx, pdf_crypt *crypt, int num, int gen, void 
 
 size_t pdf_encrypted_len(fz_context *ctx, pdf_crypt *crypt, int num, int gen, size_t len);
 
+// add by donal
+int pdf_get_signature_information_ex(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *signer, char *signTime, int *hasTs, char *tsTime, int *valid, char *issuer, char *startTime, char *endTime, char *serial, char *alg);
+
+int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, char *signers, int *pageNo, int *valids, float *rect);
+
+int pdf_get_signature_information_with_rect_ex(fz_context *ctx, pdf_document *doc, int pageNo, float *rect, char *signer, char *signTime,int *hasTs, char *tsTime, int *valid, char *issuer, char *startTime, char *endTime, char *serial, char *alg);
 #endif
