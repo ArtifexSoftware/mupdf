@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/curl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/extract" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/freeglut" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/freetype" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/freetype/subprojects/dlg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/gumbo-parser" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/harfbuzz" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/jbig2dec" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/lcms2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/leptonica" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/libjpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/mujs" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/openjpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/tesseract" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/tesseract/abseil" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/tesseract/googletest" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/tesseract/test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/thirdparty/zlib" vcs="Git" />
+  </component>
+</project>

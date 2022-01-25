@@ -1084,7 +1084,7 @@ FUN(Document_formatLinkURI)(JNIEnv *env, jobject self, jobject jdest)
 }
 
 JNIEXPORT jint JNICALL
-FUN(Document_getAllSignature)(JNIEnv *env, jobject self, jintArray jsignNum, jbyteArray jsigners, jbyteArray jissuers, jbyteArray jstarttimes, jbyteArray jendtimes, jbyteArray jserials, jbyteArray jalgs, jintArray jpageNo, jintArray jvalids, jfloatArray jrect)
+FUN(Document_getAllSignature)(JNIEnv *env, jobject self, jintArray jsignNum, jbyteArray jsigners, jintArray jpageNo, jintArray jvalids, jfloatArray jrect)
 {
     fz_context *ctx = get_context(env);
     fz_document *doc = from_Document(env, self);
@@ -1092,36 +1092,65 @@ FUN(Document_getAllSignature)(JNIEnv *env, jobject self, jintArray jsignNum, jby
     int res = 0;
     int *signNum;
     unsigned char *signers;
-    unsigned char *issuers;
-    unsigned char *startTimes;
-    unsigned char *endTimes;
-    unsigned char *serials;
-    unsigned char *algs;
     int *pageNo;
     int *valids;
     float *rect;
     signNum = (unsigned int *) (*env)->GetIntArrayElements(env, jsignNum, 0);
     signers = (unsigned char *) (*env)->GetByteArrayElements(env, jsigners, 0);
-    issuers = (unsigned char *) (*env)->GetByteArrayElements(env, jissuers, 0);
-    startTimes = (unsigned char *) (*env)->GetByteArrayElements(env, jstarttimes, 0);
-    endTimes = (unsigned char *) (*env)->GetByteArrayElements(env, jendtimes, 0);
-    serials = (unsigned char *) (*env)->GetByteArrayElements(env, jserials, 0);
-    algs = (unsigned char *) (*env)->GetByteArrayElements(env, jalgs, 0);
     rect = (float *) (*env)->GetFloatArrayElements(env, jrect, 0);
     pageNo = (unsigned int *) (*env)->GetIntArrayElements(env, jpageNo, 0);
     valids = (unsigned int *) (*env)->GetIntArrayElements(env, jvalids, 0);
     if (signNum == NULL || signers == NULL || rect == NULL)
         return res;
-    res = pdf_get_all_signature_ex(ctx, idoc, signNum, signers, issuers, startTimes, endTimes, serials, algs, pageNo, valids, rect);
+    res = pdf_get_all_signature_ex(ctx, idoc, signNum, signers, pageNo, valids, rect);
     (*env)->ReleaseByteArrayElements(env, jsigners, (jbyte *) signers, 0);
-    (*env)->ReleaseByteArrayElements(env, jissuers, (jbyte *) issuers, 0);
-    (*env)->ReleaseByteArrayElements(env, jstarttimes, (jbyte *) startTimes, 0);
-    (*env)->ReleaseByteArrayElements(env, jendtimes, (jbyte *) endTimes, 0);
-    (*env)->ReleaseByteArrayElements(env, jserials, (jbyte *) serials, 0);
-    (*env)->ReleaseByteArrayElements(env, jalgs, (jbyte *) algs, 0);
     (*env)->ReleaseIntArrayElements(env, jsignNum, (jint * ) signNum, 0);
     (*env)->ReleaseIntArrayElements(env, jpageNo, (jint * ) pageNo, 0);
     (*env)->ReleaseIntArrayElements(env, jvalids, (jint * ) valids, 0);
     (*env)->ReleaseFloatArrayElements(env, jrect, (jfloat *) rect, 0);
+    return res;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Document_getSignatureInformationByRect)(JNIEnv *env, jobject self, int pageNo, jfloatArray rect, jbyteArray jsigner, jbyteArray jsignTime, jintArray jhasTs, jbyteArray jtsTime, jintArray jvalid, jbyteArray jissuer, jbyteArray jstartTime, jbyteArray jendTime, jbyteArray jserial, jbyteArray jalg)
+{
+    fz_context *ctx = get_context(env);
+    fz_document *doc = from_Document(env, self);
+    pdf_document *idoc = pdf_specifics(ctx, doc);
+    int res = 0;
+    unsigned char *signer;
+    unsigned char * signTime;
+    int *hasTs;
+    unsigned char * tsTime;
+    int *valid;
+    unsigned char *issuer;
+    unsigned char *startTime;
+    unsigned char *endTime;
+    unsigned char *serial;
+    unsigned char *alg;
+    signer = (unsigned char*)(*env)->GetByteArrayElements(env,jsigner, 0);
+    signTime = (unsigned char*)(*env)->GetByteArrayElements(env,jsignTime, 0);
+    hasTs = (unsigned int*)(*env)->GetIntArrayElements(env,jhasTs, 0);
+    tsTime = (unsigned char*)(*env)->GetByteArrayElements(env,jtsTime, 0);
+    valid = (unsigned int*)(*env)->GetIntArrayElements(env,jvalid, 0);
+    issuer = (unsigned char*)(*env)->GetByteArrayElements(env,jissuer, 0);
+    startTime = (unsigned char*)(*env)->GetByteArrayElements(env,jstartTime, 0);
+    endTime = (unsigned char*)(*env)->GetByteArrayElements(env,jendTime, 0);
+    serial = (unsigned char*)(*env)->GetByteArrayElements(env,jserial, 0);
+    alg = (unsigned char*)(*env)->GetByteArrayElements(env,jalg, 0);
+    float* frame = (float*)(*env)->GetFloatArrayElements(env,rect,0);
+
+    res = pdf_get_signature_information_with_rect_ex(ctx, idoc, pageNo, frame, signer, signTime, hasTs, tsTime, valid, issuer, startTime, endTime, serial, alg);
+
+    (*env)->ReleaseByteArrayElements(env,jsigner,(jbyte*)signer,0);
+    (*env)->ReleaseByteArrayElements(env,jsignTime,(jbyte*)signTime,0);
+    (*env)->ReleaseByteArrayElements(env,jtsTime,(jbyte*)tsTime,0);
+    (*env)->ReleaseIntArrayElements(env, jhasTs, (jint *)hasTs, 0);
+    (*env)->ReleaseIntArrayElements(env, jvalid, (jint *)valid, 0);
+    (*env)->ReleaseByteArrayElements(env,jissuer,(jbyte*)issuer,0);
+    (*env)->ReleaseByteArrayElements(env,jstartTime,(jbyte*)startTime,0);
+    (*env)->ReleaseByteArrayElements(env,jendTime,(jbyte*)endTime,0);
+    (*env)->ReleaseByteArrayElements(env,jserial,(jbyte*)serial,0);
+    (*env)->ReleaseByteArrayElements(env,jalg,(jbyte*)alg,0);
     return res;
 }

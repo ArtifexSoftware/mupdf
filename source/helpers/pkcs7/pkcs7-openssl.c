@@ -916,7 +916,7 @@ pkcs7_openssl_new_verifier(fz_context *ctx)
 	return &verifier->base;
 }
 
-int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, char *signers, char *issuers, char *startTimes, char *endTimes, char *serials, char *algs, int *pageNo, int *valids, float *rect) {
+int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, char *signers, int *pageNo, int *valids, float *rect) {
     pdf_annot *annot;
     fz_rect tmpRect = fz_empty_rect;
     int i;
@@ -959,32 +959,6 @@ int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, c
                     len += strlen(tmpSigner);
                     strcpy(signers + len, ":");
                     len += 1;
-
-//                    strcpy(issuers + ilen, tmpIssuer);
-//                    ilen += strlen(tmpIssuer);
-//                    strcpy(issuers + ilen, ":");
-//                    ilen += 1;
-//
-//                    strcpy(startTimes + stlen, tmpStartTime);
-//                    stlen += strlen(tmpStartTime);
-//                    strcpy(startTimes + stlen, ":");
-//                    stlen += 1;
-//
-//                    strcpy(endTimes + etlen, tmpEndTime);
-//                    etlen += strlen(tmpEndTime);
-//                    strcpy(endTimes + etlen, ":");
-//                    etlen += 1;
-//
-//                    strcpy(serials + slen, tmpSerial);
-//                    slen += strlen(tmpSerial);
-//                    strcpy(serials + slen, ":");
-//                    slen += 1;
-//
-//                    strcpy(algs + alen, tmpAlg);
-//                    alen += strlen(tmpAlg);
-//                    strcpy(algs + alen, ":");
-//                    alen += 1;
-
                     fz_rect tmpRect = pdf_to_rect(ctx, pdf_dict_get(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect)));
                     rect[(*signNum) * 4] = tmpRect.x0;
                     rect[(*signNum) * 4 + 1] = tmpRect.y0;
@@ -1175,6 +1149,32 @@ int pdf_get_signature_information_ex(fz_context *ctx, pdf_document *doc, pdf_ann
     }
     fz_always(ctx)
 		fz_free(ctx, contents);
+    fz_catch(ctx)
+    {
+        res = 0;
+    }
+    return res;
+}
+
+int pdf_get_signature_information_with_rect_ex(fz_context *ctx, pdf_document *doc, int pageNo, float *rect, char *signer, char *signTime, int *hasTs, char *tsTime, int *valid, char *issuer, char *startTime, char *endTime, char *serial, char *alg) {
+    pdf_annot *annot;
+    fz_rect tmpRect = fz_empty_rect;
+    int i;
+    int res = 0;
+    fz_try(ctx)
+    {
+        pdf_page *page = pdf_load_page(ctx, doc, pageNo);
+        for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot)) {
+            if (PDF_WIDGET_TYPE_SIGNATURE == pdf_widget_type(ctx, annot)) {
+                fz_rect tmpRect = pdf_to_rect(ctx, pdf_dict_get(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect)));
+                if ((tmpRect.x0 == rect[0]) && (tmpRect.y0 == rect[1]) && (tmpRect.x1 == rect[2]) && (tmpRect.y1 == rect[3])) {
+                    res = pdf_get_signature_information_ex(ctx, doc, annot, signer, signTime, hasTs, tsTime, valid, issuer, startTime, endTime, serial, alg);
+                    break;
+                }
+            }
+        }
+        pdf_drop_page_tree(ctx, doc);
+    }
     fz_catch(ctx)
     {
         res = 0;

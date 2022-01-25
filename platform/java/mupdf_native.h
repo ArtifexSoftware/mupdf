@@ -691,7 +691,10 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Document_formatLinkURI
   (JNIEnv *, jobject, jobject);
 
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_getAllSignature
-        (JNIEnv *, jobject, jintArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray, jintArray, jintArray, jfloatArray);
+        (JNIEnv *, jobject, jintArray, jbyteArray, jintArray, jintArray, jfloatArray);
+
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_getSignatureInformationByRect
+        (JNIEnv *, jobject, int, jfloatArray, jbyteArray, jbyteArray, jintArray, jbyteArray, jintArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray);
 
 #ifdef __cplusplus
 }
