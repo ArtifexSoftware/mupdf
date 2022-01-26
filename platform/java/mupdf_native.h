@@ -697,7 +697,7 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_getSignatureInformat
         (JNIEnv *, jobject, int, jfloatArray, jbyteArray, jbyteArray, jintArray, jbyteArray, jintArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray, jbyteArray);
 
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Document_getWidgetAreas
-        (JNIEnv *, jobject, int);
+        (JNIEnv *, jobject, int, jfloatArray);
 
 #ifdef __cplusplus
 }

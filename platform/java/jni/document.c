@@ -1156,8 +1156,10 @@ FUN(Document_getSignatureInformationByRect)(JNIEnv *env, jobject self, int pageN
 }
 
 JNIEXPORT jobjectArray JNICALL
-FUN(Document_getWidgetAreas)(JNIEnv * env, jobject self, int pageNumber)
+FUN(Document_getWidgetAreas)(JNIEnv * env, jobject self, int pageNumber, jfloatArray jrect)
 {
+    float *rect;
+    rect = (float *) (*env)->GetFloatArrayElements(env, jrect, 0);
     jclass rectFClass;
     jmethodID ctor;
     jobjectArray arr;
@@ -1184,16 +1186,20 @@ FUN(Document_getWidgetAreas)(JNIEnv * env, jobject self, int pageNumber)
     count = 0;
     for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
     {
-        fz_rect rect = pdf_bound_widget(ctx, annot);
-        LOGE("rect:%f, %f, %f, %f", (float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1);
+        fz_rect bound_rect = pdf_bound_widget(ctx, annot);
+        fz_rect real_rect = pdf_to_rect(ctx, pdf_dict_get(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect)));
+        rect[count * 4] = real_rect.x0;
+        rect[count * 4 + 1] = real_rect.y0;
+        rect[count * 4 + 2] = real_rect.x1;
+        rect[count * 4 + 3] = real_rect.y1;
         rectF = (*env)->NewObject(env, rectFClass, ctor,
-                                  (float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1);
+                                  (float)bound_rect.x0, (float)bound_rect.y0, (float)bound_rect.x1, (float)bound_rect.y1);
         if (rectF == NULL) return NULL;
         (*env)->SetObjectArrayElement(env, arr, count, rectF);
         (*env)->DeleteLocalRef(env, rectF);
 
         count ++;
     }
-
+    (*env)->ReleaseFloatArrayElements(env, jrect, (jfloat *) rect, 0);
     return arr;
 }
