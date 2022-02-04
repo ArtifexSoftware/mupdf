@@ -503,14 +503,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		int mod = e.getModifiers();
+		int mod = e.getModifiersEx();
 		int rot = e.getWheelRotation();
-		if (mod == MouseWheelEvent.CTRL_MASK) {
+		if ((mod & MouseWheelEvent.CTRL_DOWN_MASK) != 0) {
 			if (rot < 0)
 				zoomIn();
 			else
 				zoomOut();
-		} else if (mod == MouseWheelEvent.SHIFT_MASK) {
+		} else if ((mod & MouseWheelEvent.SHIFT_DOWN_MASK) != 0) {
 			if (rot < 0)
 				pan(pageCanvas != null ? pageCanvas.getHeight() / -10 : -10, 0);
 			else
