@@ -1255,28 +1255,29 @@ class ClassExtra:
             the underlying class instead of a pointer to it.
 
         virtual_fnptrs:
-            If true, should be (self, alloc):
+            If true, should be (self, alloc) or (self, alloc, free):
 
                 self:
                     A callable taking single arg that is the name of a pointer
-                    to an instance of the MuPDF struct; should return code
+                    to an instance of the MuPDF struct; should return C++ code
                     that converts the specified name into a pointer to the
                     corresponding virtual_fnptrs wrapper class.
                 alloc:
-                    Code for embedding in constructor that sets m_internal.
+                    Code for embedding in the virtual_fnptrs wrapper class's
+                    constructor that creates a new instances of the MuPDF
+                    struct and virtual_fnptrs wrapper class, and sets
+                    m_internal to point to the MuPDF struct. It should also
+                    ensure that <self> can convert m_internal to the instance
+                    of the virtual_fnptrs wrapper class.
+                free:
+                    Optional code for freeing the virtual_fnptrs wrapper class.
 
-            We generate a second wrapper class derived from the main
-            wrapper class which has an empty virtual method for each function
-            pointer in the underlying struct.
-
-            A default constructor is provided which calls
-            fz_new_device_of_size() and sets things up so that each function
-            pointer calls its corresponding virtual method.
-
-            We enable SWIG's 'Director' support for the second wrapper class,
-            so if a second wrapper class instance is constructed in Python/C#,
-            then calling its function pointers in C/C++ will end up running
-            Python/C# code.
+            We generate a virtual_fnptrs wrapper class, derived from the main
+            wrapper class, where the main wrapper class's function pointers end
+            up calling the virtual_fnptrs wrapper class's virtual methods. We
+            then use SWIG's 'Director' support to allow these virtual methods
+            to be overridden in Python/C#. Thus one can make MuPDF function
+            pointers call Python/C# code.
         '''
         if accessors is None and pod is True:
             accessors = True
@@ -7212,7 +7213,10 @@ def class_wrapper(
     elif extras.pod:
         out_h.write( f'    {struct_cursor.spelling}  m_internal; /** Wrapped data is held by value. */\n')
     else:
-        out_h.write( f'    {struct_name}* m_internal; /** Pointer to wrapped data. */\n')
+        # Putting this double-asterix comment on same line as m_internal breaks
+        # swig-4.02 with "Error: Syntax error in input(3).".
+        out_h.write( f'    /** Pointer to wrapped data. */\n')
+        out_h.write( f'    {struct_name}* m_internal;\n')
 
     # Make operator<< (std::ostream&, ...) for POD classes.
     #
@@ -8364,6 +8368,46 @@ def build_swig(
             {{
                 mupdf::convert_color(ss, sv, ds, &dv->dv0, is, params);
             }}
+
+            /* SWIG-friendly support for fz_set_warning_callback() and
+            fz_set_error_callback(). */
+
+            struct SetWarningCallback
+            {{
+                SetWarningCallback( void* user=NULL)
+                {{
+                    this->user = user;
+                    mupdf::set_warning_callback( s_print, this);
+                }}
+                virtual void print( const char* message)
+                {{
+                }}
+                static void s_print( void* self0, const char* message)
+                {{
+                    SetWarningCallback* self = (SetWarningCallback*) self0;
+                    return self->print( message);
+                }}
+                void* user;
+            }};
+
+            struct SetErrorCallback
+            {{
+                SetErrorCallback( void* user=NULL)
+                {{
+                    this->user = user;
+                    mupdf::set_error_callback( s_print, this);
+                }}
+                virtual void print( const char* message)
+                {{
+                }}
+                static void s_print( void* self0, const char* message)
+                {{
+                    SetErrorCallback* self = (SetErrorCallback*) self0;
+                    return self->print( message);
+                }}
+                void* user;
+            }};
+
             '''
 
     common += generated.swig_cpp
@@ -8373,6 +8417,9 @@ def build_swig(
     text += '%module(directors="1") mupdf\n'
     for i in generated.virtual_fnptrs:
         text += f'%feature("director") {i};\n'
+
+    text += f'%feature("director") SetWarningCallback;\n'
+    text += f'%feature("director") SetErrorCallback;\n'
 
     text += textwrap.dedent(
             '''
@@ -8785,6 +8832,29 @@ def build_swig(
                     return mfz_fill_text2(dev, text, ctm, colorspace, *color, alpha, color_params)
 
                 Device.fill_text = mfz_fill_text
+
+                # Override set_warning_callback() and set_error_callback().
+                #
+                set_warning_callback_s = None
+                set_error_callback_s = None
+
+                def set_warning_callback2( printfn):
+                    class Callback( SetWarningCallback):
+                        def print( self, message):
+                            printfn( message)
+                    global set_warning_callback_s
+                    set_warning_callback_s = Callback()
+
+                # Override set_error_callback().
+                def set_error_callback2( printfn):
+                    class Callback( SetErrorCallback):
+                        def print( self, message):
+                            printfn( message)
+                    global set_error_callback_s
+                    set_error_callback_s = Callback()
+
+                set_warning_callback = set_warning_callback2
+                set_error_callback = set_error_callback2
 
                 ''')
 
