@@ -517,3 +517,88 @@ int ui_input(struct input *input, int width, int height)
 
 	return state;
 }
+
+void ui_readline_init(struct readline *readline, const char *text)
+{
+	int i;
+
+	memset(readline->buffer, 0, sizeof readline->buffer);
+	for (i = 0; i < UI_READLINE_SIZE; i++)
+		readline->history[i] = &(readline->buffer[i][0]);
+
+	readline->used = 0;
+	readline->current = -1;
+
+	ui_input_init(&readline->input, text ? text : "");
+}
+
+const char *ui_readline(struct readline *readline, int width)
+{
+	int state;
+
+	/* Override key up/down to navigate history. */
+	switch (ui.key)
+	{
+	case KEY_UP:
+		ui.key = 0;
+
+		if (readline->current == -1) /* no history entries */
+			break;
+		if (readline->current == 0) /* no older entries */
+			break;
+
+		readline->current--;
+		ui_input_init(&readline->input, readline->history[readline->current]);
+		readline->input.p = readline->input.q = readline->input.end;
+		break;
+	case KEY_DOWN:
+		ui.key = 0;
+
+		if (readline->current == -1) /* no history entries */
+			break;
+		if (readline->current == readline->used) /* no newer entries */
+			break;
+		if (readline->current == readline->used - 1) /* at insertion point */
+		{
+			readline->current++;
+			ui_input_init(&readline->input, "");
+			readline->input.p = readline->input.q = readline->input.end;
+			break;
+		}
+
+		readline->current++;
+		ui_input_init(&readline->input, readline->history[readline->current]);
+		readline->input.p = readline->input.q = readline->input.end;
+		break;
+	}
+
+	state = ui_input(&readline->input, width, 1);
+
+	/* Remember line in history. */
+	if (state == UI_INPUT_ACCEPT)
+	{
+		char *accepted;
+
+		if (readline->used == UI_READLINE_SIZE)
+		{
+			char *tmp = readline->history[0];
+			memmove(readline->history, readline->history + 1, (UI_READLINE_SIZE - 1) * sizeof(char *));
+			readline->history[UI_READLINE_SIZE - 1] = tmp;
+
+			fz_strlcpy(readline->history[UI_READLINE_SIZE - 1], readline->input.text, UI_INPUT_SIZE);
+			accepted = readline->history[UI_READLINE_SIZE - 1];
+			readline->current = UI_READLINE_SIZE;
+		}
+		else
+		{
+			fz_strlcpy(readline->history[readline->used], readline->input.text, UI_INPUT_SIZE);
+			accepted = readline->history[readline->used];
+			readline->used++;
+			readline->current = readline->used;
+		}
+
+		return accepted;
+	}
+
+	return NULL;
+}

@@ -171,12 +171,25 @@ enum
 	UI_INPUT_ACCEPT = 2,
 };
 
+#define UI_INPUT_SIZE (16*1024)
+
 struct input
 {
-	char text[16*1024];
+	char text[UI_INPUT_SIZE];
 	char *end, *p, *q;
 	int scroll;
 	pdf_annot *widget;
+};
+
+#define UI_READLINE_SIZE 20
+
+struct readline
+{
+	struct input input;
+	char buffer[UI_READLINE_SIZE][UI_INPUT_SIZE];
+	char *history[UI_READLINE_SIZE];
+	int used;
+	int current;
 };
 
 struct list
@@ -222,6 +235,9 @@ int ui_select_aux(const void *id, const char *current, const char *options[], in
 void ui_input_init(struct input *input, const char *text);
 int ui_input(struct input *input, int width, int height);
 void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max, int *sticky);
+
+void ui_readline_init(struct readline *readline, const char *text);
+const char *ui_readline(struct readline *readline, int width);
 
 void ui_tree_begin(struct list *list, int count, int req_w, int req_h, int is_tree);
 int ui_tree_item(struct list *list, const void *id, const char *label, int selected, int depth, int is_branch, int *is_open);
