@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2007,7 +2007,7 @@ static void pdf_execute_js_action(fz_context *ctx, pdf_document *doc, pdf_obj *t
 			fz_snprintf(buf, sizeof buf, "%d/%s", pdf_to_num(ctx, target), path);
 			pdf_begin_operation(ctx, doc, "Javascript Event");
 			in_op = 1;
-			pdf_js_execute(doc->js, buf, code);
+			pdf_js_execute(doc->js, buf, code, NULL);
 		}
 		fz_always(ctx)
 		{

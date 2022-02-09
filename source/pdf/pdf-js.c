@@ -1021,7 +1021,7 @@ static void pdf_js_load_document_level(pdf_js *js)
 				fz_snprintf(buf, sizeof buf, "%d", pdf_to_num(ctx, code));
 			else
 				fz_snprintf(buf, sizeof buf, "Root/Names/JavaScript/Names/%d/JS", (i+1)*2);
-			pdf_js_execute(js, buf, codebuf);
+			pdf_js_execute(js, buf, codebuf, NULL);
 			fz_free(ctx, codebuf);
 		}
 	}
@@ -1154,33 +1154,40 @@ char *pdf_js_event_value(pdf_js *js)
 	return value;
 }
 
-void pdf_js_execute(pdf_js *js, const char *name, const char *source)
+void pdf_js_execute(pdf_js *js, const char *name, const char *source, char **result)
 {
 	fz_context *ctx;
+	js_State *J;
 
 	if (!js)
 		return;
 
 	ctx = js->ctx;
-	pdf_begin_implicit_operation(js->ctx, js->doc);
+	J = js->imp;
+
+	pdf_begin_implicit_operation(ctx, js->doc);
 	fz_try(ctx)
 	{
-		if (js_ploadstring(js->imp, name, source))
-		{
-			fz_warn(ctx, "%s", js_trystring(js->imp, -1, "Error"));
-			break;
-		}
-		js_pushundefined(js->imp);
-		if (js_pcall(js->imp, 0))
-		{
-			fz_warn(ctx, "%s", js_trystring(js->imp, -1, "Error"));
-			break;
+		if (js_ploadstring(J, name, source)) {
+			if (result)
+				*result = fz_strdup(ctx, js_trystring(J, -1, "Error"));
+			js_pop(J, 1);
+		} else {
+			js_pushundefined(J);
+			if (js_pcall(J, 0)) {
+				if (result)
+					*result = fz_strdup(ctx, js_trystring(J, -1, "Error"));
+				js_pop(J, 1);
+			} else {
+				if (result)
+					*result = fz_strdup(ctx, js_tryrepr(J, -1, "can't convert to string"));
+				js_pop(J, 1);
+			}
 		}
 	}
 	fz_always(ctx)
 	{
-		js_pop(js->imp, 1);
-		pdf_end_operation(js->ctx, js->doc);
+		pdf_end_operation(ctx, js->doc);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -1217,7 +1224,7 @@ void pdf_js_event_init_keystroke(pdf_js *js, pdf_obj *target, pdf_keystroke_even
 int pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt) { return 1; }
 int pdf_js_event_result(pdf_js *js) { return 1; }
 char *pdf_js_event_value(pdf_js *js) { return ""; }
-void pdf_js_execute(pdf_js *js, const char *name, const char *source) { }
+void pdf_js_execute(pdf_js *js, const char *name, const char *source, char **result) { }
 int pdf_js_event_result_validate(pdf_js *js, char **newvalue) { *newvalue=NULL; return 1; }
 
 #endif /* FZ_ENABLE_JS */
