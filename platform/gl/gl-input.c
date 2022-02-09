@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -426,7 +426,7 @@ int ui_input(struct input *input, int width, int height)
 	n = ui_break_lines(input->text, lines, height > 1 ? nelem(lines) : 1, area.x1-area.x0-2, NULL);
 
 	if (height > 1)
-		ui_scrollbar(area.x1, area.y0, area.x1+ui.lineheight, area.y1, &input->scroll, 1, fz_maxi(0, n-height)+1);
+		ui_scrollbar(area.x1, area.y0, area.x1+ui.lineheight, area.y1, &input->scroll, 1, fz_maxi(0, n-height)+1, NULL);
 	else
 		input->scroll = 0;
 

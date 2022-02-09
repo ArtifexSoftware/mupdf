@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -208,7 +208,7 @@ void ui_panel_end(void);
 void ui_spacer(void);
 void ui_splitter(int *x, int min, int max, enum side side);
 void ui_label(const char *fmt, ...);
-void ui_label_with_scrollbar(char *text, int width, int height, int *scroll);
+void ui_label_with_scrollbar(char *text, int width, int height, int *scroll, int *sticky);
 
 int ui_button(const char *label);
 /* flags: bit 0 -> disabled. all other bits 0 for now. */
@@ -221,7 +221,7 @@ int ui_select_aux(const void *id, const char *current, const char *options[], in
 
 void ui_input_init(struct input *input, const char *text);
 int ui_input(struct input *input, int width, int height);
-void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max);
+void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max, int *sticky);
 
 void ui_tree_begin(struct list *list, int count, int req_w, int req_h, int is_tree);
 int ui_tree_item(struct list *list, const void *id, const char *label, int selected, int depth, int is_branch, int *is_open);

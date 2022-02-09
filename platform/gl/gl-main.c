@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -620,7 +620,7 @@ static void help_dialog(void)
 		ui.dialog = NULL;
 	ui_spacer();
 	ui_layout(ALL, BOTH, CENTER, ui.padsize, ui.padsize);
-	ui_label_with_scrollbar(help_dialog_text, 0, 0, &scroll);
+	ui_label_with_scrollbar(help_dialog_text, 0, 0, &scroll, NULL);
 	ui_dialog_end();
 }
 
@@ -639,7 +639,7 @@ static void info_dialog(void)
 	ui_layout(ALL, BOTH, CENTER, ui.padsize, ui.padsize);
 
 	info_text = format_info_text();
-	ui_label_with_scrollbar((char*)fz_string_from_buffer(ctx, info_text), 0, 0, &scroll);
+	ui_label_with_scrollbar((char*)fz_string_from_buffer(ctx, info_text), 0, 0, &scroll, NULL);
 	fz_drop_buffer(ctx, info_text);
 
 	ui_dialog_end();

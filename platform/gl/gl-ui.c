@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -934,7 +934,7 @@ void ui_splitter(int *x, int min, int max, enum side side)
 	}
 }
 
-void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max)
+void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max, int *sticky)
 {
 	static float start_top = 0; /* we can only drag in one scrollbar at a time, so static is safe */
 	float top;
@@ -953,6 +953,14 @@ void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int
 		return;
 	}
 
+	if (sticky)
+	{
+		if (*sticky <= -1)
+			*value = 0;
+		else if (*sticky >= 1)
+			*value = max;
+	}
+
 	top = (float) *value * avail_h / max;
 
 	if (ui.down && !ui.active)
@@ -961,12 +969,12 @@ void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int
 		{
 			if (ui.y < y0 + top)
 			{
-				ui.active = "pgdn";
+				ui.active = "pgup";
 				*value -= page_size;
 			}
 			else if (ui.y >= y0 + top + thumb_h)
 			{
-				ui.active = "pgup";
+				ui.active = "pgdn";
 				*value += page_size;
 			}
 			else
@@ -987,6 +995,18 @@ void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int
 		*value = 0;
 	else if (*value > max)
 		*value = max;
+
+	if (sticky)
+	{
+		if (*sticky == 0 && *value == 0)
+			*sticky = -1;
+		else if (*sticky == 0 && *value == max)
+			*sticky = 1;
+		else if (*sticky <= -1 && *value != 0)
+			*sticky = 0;
+		else if (*sticky >= 1 && *value != max)
+			*sticky = 0;
+	}
 
 	top = (float) *value * avail_h / max;
 
@@ -1045,7 +1065,7 @@ void ui_tree_begin(struct list *list, int count, int req_w, int req_h, int is_tr
 	if (max_scroll_y > 0)
 	{
 		ui_scrollbar(area.x1, area.y0, area.x1+16, area.y1,
-				&list->scroll_y, area.y1-area.y0, count * ui.lineheight);
+				&list->scroll_y, area.y1-area.y0, count * ui.lineheight, NULL);
 	}
 
 	list->is_tree = is_tree;
@@ -1129,7 +1149,7 @@ void ui_list_end(struct list *list)
 	ui_tree_end(list);
 }
 
-void ui_label_with_scrollbar(char *text, int width, int height, int *scroll)
+void ui_label_with_scrollbar(char *text, int width, int height, int *scroll, int *sticky)
 {
 	struct line lines[500];
 	fz_irect area;
@@ -1140,8 +1160,13 @@ void ui_label_with_scrollbar(char *text, int width, int height, int *scroll)
 	if (n > (area.y1-area.y0) / ui.lineheight)
 	{
 		if (ui_mouse_inside(area))
+		{
 			*scroll -= ui.scroll_y * ui.lineheight * 3;
-		ui_scrollbar(area.x1-16, area.y0, area.x1, area.y1, scroll, area.y1-area.y0, n * ui.lineheight);
+			if (ui.scroll_y)
+				*sticky = 0;
+		}
+		ui_scrollbar(area.x1-16, area.y0, area.x1, area.y1,
+				scroll, area.y1-area.y0, n * ui.lineheight, sticky);
 	}
 	else
 		*scroll = 0;
