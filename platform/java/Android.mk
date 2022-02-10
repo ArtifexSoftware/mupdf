@@ -49,6 +49,7 @@ LOCAL_CFLAGS += -DTOFU_NOTO
 LOCAL_CFLAGS += -DTOFU_CJK
 LOCAL_CFLAGS += -DTOFU_SIL
 LOCAL_CFLAGS += -DAA_BITS=8
+LOCAL_CFLAGS += -DHAVE_LIBCRYPTO
 
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(FREETYPE_CFLAGS)))
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(GUMBO_CFLAGS)))
@@ -199,6 +200,18 @@ LOCAL_CFLAGS += $(filter-out -I%,$(EXTRACT_CFLAGS) $(EXTRACT_BUILD_CFLAGS))
 LOCAL_CFLAGS += $(MUPDF_EXTRA_CFLAGS)
 include $(BUILD_STATIC_LIBRARY)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := ssl
+LOCAL_SRC_FILES := pre-compiled-armv64/libssl.a
+$(warning $(LOCAL_SRC_FILES))
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := crypto
+LOCAL_SRC_FILES := pre-compiled-armv64/libcrypto.a
+$(warning $(LOCAL_SRC_FILES))
+include $(PREBUILT_STATIC_LIBRARY)
+
 # --- Build the final JNI shared library ---
 
 include $(CLEAR_VARS)
@@ -227,6 +240,8 @@ LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_lcms2
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_libjpeg
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_mujs
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_openjpeg
+LOCAL_STATIC_LIBRARIES += ssl
+LOCAL_STATIC_LIBRARIES += crypto
 
 ifdef USE_TESSERACT
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_leptonica
