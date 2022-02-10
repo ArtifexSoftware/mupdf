@@ -36,6 +36,8 @@ struct pdf_js
 	pdf_document *doc;
 	pdf_obj *form;
 	js_State *imp;
+	pdf_js_console *console;
+	void *console_user;
 };
 
 FZ_NORETURN static void rethrow(pdf_js *js)
@@ -577,14 +579,43 @@ static void doc_calculateNow(js_State *J)
 static void console_println(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
-	int i, top = js_gettop(J);
-	for (i = 1; i < top; ++i) {
-		const char *s = js_tostring(J, i);
-		if (i > 1) fz_write_byte(js->ctx, fz_stddbg(js->ctx), ' ');
-		fz_write_string(js->ctx, fz_stddbg(js->ctx), s);
+	if (js->console && js->console->write)
+	{
+		int i, top = js_gettop(J);
+		js->console->write(js->console_user, "\n");
+		for (i = 1; i < top; ++i) {
+			const char *s = js_tostring(J, i);
+			if (i > 1)
+				js->console->write(js->console_user, " ");
+			js->console->write(js->console_user, s);
+		}
 	}
 	fz_write_byte(js->ctx, fz_stddbg(js->ctx), '\n');
 	js_pushboolean(J, 1);
+}
+
+static void console_clear(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	if (js->console && js->console->clear)
+		js->console->clear(js->console_user);
+	js_pushundefined(J);
+}
+
+static void console_show(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	if (js->console && js->console->show)
+		js->console->show(js->console_user);
+	js_pushundefined(J);
+}
+
+static void console_hide(js_State *J)
+{
+	pdf_js *js = js_getcontext(J);
+	if (js->console && js->console->hide)
+		js->console->hide(js->console_user);
+	js_pushundefined(J);
 }
 
 static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int sign, int pad, unsigned int w, int base, int value)
@@ -896,6 +927,9 @@ static void declare_dom(pdf_js *js)
 	js_newobject(J);
 	{
 		addmethod(J, "console.println", console_println, 1);
+		addmethod(J, "console.clear", console_clear, 0);
+		addmethod(J, "console.show", console_show, 0);
+		addmethod(J, "console.hide", console_hide, 0);
 	}
 	js_defglobal(J, "console", JS_READONLY | JS_DONTCONF | JS_DONTENUM);
 
@@ -948,6 +982,8 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js)
 {
 	if (js)
 	{
+		if (js->console && js->console->drop)
+			js->console->drop(js->console, js->console_user);
 		js_freestate(js->imp);
 		fz_free(ctx, js);
 	}
@@ -957,6 +993,26 @@ static void *pdf_js_alloc(void *actx, void *ptr, int n)
 {
 	return fz_realloc_no_throw(actx, ptr, n);
 }
+
+static void default_js_console_clear(void *user)
+{
+	fz_context *ctx = user;
+	fz_write_string(ctx, fz_stddbg(ctx), "--- clear console ---\n");
+}
+
+static void default_js_console_write(void *user, const char *message)
+{
+	fz_context *ctx = user;
+	fz_write_string(ctx, fz_stddbg(ctx), message);
+}
+
+static pdf_js_console default_js_console = {
+	NULL,
+	NULL,
+	NULL,
+	default_js_console_clear,
+	default_js_console_write,
+};
 
 static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
 {
@@ -981,6 +1037,9 @@ static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
 
 		/* Also set our pdf_js context, so we can retrieve it in callbacks. */
 		js_setcontext(js->imp, js);
+
+		js->console = &default_js_console;
+		js->console_user = js->ctx;
 
 		declare_dom(js);
 		preload_helpers(js);
@@ -1191,6 +1250,23 @@ void pdf_js_execute(pdf_js *js, const char *name, const char *source, char **res
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+}
+
+pdf_js_console *pdf_js_get_console(fz_context *ctx, pdf_document *doc)
+{
+	return doc->js ? doc->js->console : NULL;
+}
+
+void pdf_js_set_console(fz_context *ctx, pdf_document *doc, pdf_js_console *console, void *user)
+{
+	if (doc->js)
+	{
+		if (doc->js->console && doc->js->console->drop)
+			doc->js->console->drop(doc->js->console, doc->js->console_user);
+
+		doc->js->console = console;
+		doc->js->console_user = user;
+	}
 }
 
 void pdf_enable_js(fz_context *ctx, pdf_document *doc)
