@@ -4715,3 +4715,16 @@ pdf_debug_doc_changes(fz_context *ctx, pdf_document *doc)
 	}
 
 }
+
+int pdf_obj_is_incremental(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_document *doc = pdf_get_bound_document(ctx, obj);
+	int v;
+
+	if (doc == NULL || doc->num_incremental_sections == 0)
+		return 0;
+
+	v = pdf_find_incremental_update_num_for_obj(ctx, doc, obj);
+
+	return (v == 0);
+}
