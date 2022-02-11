@@ -584,7 +584,7 @@ static void console_println(js_State *J)
 		fz_write_string(js->ctx, fz_stddbg(js->ctx), s);
 	}
 	fz_write_byte(js->ctx, fz_stddbg(js->ctx), '\n');
-	js_pushundefined(J);
+	js_pushboolean(J, 1);
 }
 
 static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int sign, int pad, unsigned int w, int base, int value)
