@@ -206,6 +206,8 @@ static int canvas_y = 0, canvas_h = 100;
 static int outline_w = 14; /* to be scaled by lineheight */
 static int annotate_w = 12; /* to be scaled by lineheight */
 
+static int outline_start_x = 0;
+
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
 static int oldicc = 1, currenticc = 1;
@@ -2576,7 +2578,7 @@ void do_main(void)
 	else if (showundo)
 		do_undo();
 	if (showoutline || showundo)
-		ui_splitter(&outline_w, 6*ui.gridsize, 20*ui.gridsize, R);
+		ui_splitter(&outline_start_x, &outline_w, 6*ui.gridsize, 20*ui.gridsize, R);
 
 	if (!eqloc(oldpage, currentpage) || oldseparations != currentseparations || oldicc != currenticc)
 	{

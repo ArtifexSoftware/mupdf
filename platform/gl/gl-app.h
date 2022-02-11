@@ -219,7 +219,7 @@ void ui_panel_begin(int w, int h, int padx, int pady, int opaque);
 void ui_panel_end(void);
 
 void ui_spacer(void);
-void ui_splitter(int *x, int min, int max, enum side side);
+void ui_splitter(int *start, int *x, int min, int max, enum side side);
 void ui_label(const char *fmt, ...);
 void ui_label_with_scrollbar(char *text, int width, int height, int *scroll, int *sticky);
 
