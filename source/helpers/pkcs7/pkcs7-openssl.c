@@ -31,6 +31,7 @@
 #include "mupdf/pdf.h"
 #include "mupdf/helpers/pkcs7-openssl.h"
 #include "internal_openssl_cert.h"
+#include "internal_asn1.h"
 #ifndef HAVE_LIBCRYPTO
 
 pdf_pkcs7_signer *
@@ -1003,26 +1004,26 @@ static int get_sig_info(char *sig, int sig_len, char *signer, int *hasTs, char *
     signer[0] = '\0';
     tsTime[0] = '\0';
 
-//    if (0 == INTERNAL_IsSM2Pkcs7Type(sig, sig_len)) {
-//        // tmp = (unsigned char *)malloc(sig_len);
-//        if (NULL == tmp) {
-//            res = 0;
-//            goto exit;
-//        }
-//
-//        //replace by P7 OID
-//        if (0 != INTERNAL_ReplaceSM2Pkcs7SignedOID(0, sig, sig_len, tmp, &tmpLen)) {
-//            res = 0;
-//            goto exit;
-//        }
-//
-//        //convert P7
-//        p = tmp;
-//        pk7sig = d2i_PKCS7(NULL, &p, tmpLen);
-//    } else {
+    if (0 == Internal_IsSM2Pkcs7Type(sig, sig_len)) {
+        // tmp = (unsigned char *)malloc(sig_len);
+        if (NULL == tmp) {
+            res = 0;
+            goto exit;
+        }
+
+        //replace by P7 OID
+        if (0 != Internal_ReplaceSM2Pkcs7SignedOID(0, sig, sig_len, tmp, &tmpLen)) {
+            res = 0;
+            goto exit;
+        }
+
+        //convert P7
+        p = tmp;
+        pk7sig = d2i_PKCS7(NULL, &p, tmpLen);
+    } else {
         bsig = BIO_new_mem_buf(sig, sig_len);
         pk7sig = d2i_PKCS7_bio(bsig, NULL);
-//    }
+    }
 
     if (pk7sig == NULL) {
         res = 0;
@@ -1133,7 +1134,7 @@ int pdf_get_signature_information_ex(fz_context *ctx, pdf_document *doc, pdf_ann
                 pdf_signature_error sig_cert_error = PDF_SIGNATURE_ERROR_UNKNOWN;
                 ret = pdf_check_widget_digest(ctx, verifier, annot);
                 sig_cert_error = pdf_check_widget_certificate(ctx, verifier, annot);
-                *hasTs = ret | sig_cert_error;
+                *valid = ret | sig_cert_error;
             } else {
                 res = 0;
             }
