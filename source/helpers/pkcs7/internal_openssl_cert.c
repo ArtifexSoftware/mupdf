@@ -3,6 +3,60 @@
 //
 
 #include "internal_openssl_cert.h"
+#ifdef __ANDROID__
+#include <android/log.h>
+#define  LOG_TAG  "test"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOGD(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#include <locale.h>
+#endif
+
+//change GB2312 to Unicode
+int UnicodeToGb2312(char **szOut, const wchar_t *szIn)
+{
+    int i=0;
+#if defined(_WIN32)
+
+    i = WideCharToMultiByte(936, 0, szIn, -1, NULL, 0, NULL, NULL);
+	(*szOut) = (char*)malloc((i+1)*sizeof(char));
+	WideCharToMultiByte(936, 0, szIn, -1, *szOut, i, NULL, NULL);
+#elif defined(_LINUX) && !defined(_OSX) || defined(__ANDROID__)
+    if(NULL==setlocale(LC_ALL,"en_US.UTF8"))
+	{
+		if(NULL==setlocale(LC_ALL,"en_US.UTF-8"))
+		{
+			// return -1;
+		}
+	}
+	i = wcstombs(NULL, szIn, -1);
+	(*szOut) = (char*)malloc((i+1)*sizeof(char));
+	wcstombs(*szOut, szIn, (i+1));
+#elif defined(_LINUX) && defined(_OSX)
+    if(NULL==setlocale(LC_ALL,"zh_CN.UTF-8"))
+    {
+        return -1;
+    }
+    i = wcstombs(NULL, szIn, -1);
+    (*szOut) = (char*)malloc((i+1)*sizeof(char));
+    wcstombs(*szOut, szIn, (i+1));
+#elif defined(_IOS)
+    if(NULL==setlocale(LC_CTYPE,"en_US.UTF8"))
+	{
+		if(NULL==setlocale(LC_CTYPE,"en_US.UTF-8"))
+		{
+			return -1;
+		}
+	}
+	i = wcstombs(NULL, szIn, -1);
+	(*szOut) = (char*)malloc((i+1)*sizeof(char));
+	wcstombs(*szOut, szIn, (i+1));
+#else
+    return -1;
+#endif
+
+    return 0;
+}
 
 //parse ASN_STRING
 int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
@@ -15,13 +69,10 @@ int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
     ASN1_STRING *pAsnStr = NULL;
     int i, j;
     int rv = 0;
-    // LOGE("%d ",asn1String->type);
     switch (asn1String->type)
     {
         case V_ASN1_BMPSTRING:
-            // LOGE("V_ASN1_BMPSTRING");
             len = ASN1_STRING_length(asn1String);
-            // LOGE("V_ASN1_BMPSTRING len :%d", len);
             p = ASN1_STRING_data(asn1String);
 
             tmp_data = (unsigned char *)malloc(2*len+1024);
@@ -30,7 +81,6 @@ int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
                 return -1;
             }
             memset(tmp_data,0,2*len+1024);
-            // LOGE("tmp_data ");
 #if defined(_WIN32)
             //BMPString(BigEnd) to UnicodeString(LittleEnd)
 		for (j=0; j<len; j+=2)
@@ -39,8 +89,7 @@ int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
 			tmp_data[j+1] = ((unsigned char*)p)[j];
 		}
 
-#elif defined(_LINUX)
-            // LOGE("_LINUX ");
+#elif defined(__ANDROID__) || defined(_LINUX)
 		for (i=0,j=0; i<len; i+=2,j+=4)
 		{
 			tmp_data[j] = ((unsigned char*)p)[i+1];
@@ -52,7 +101,6 @@ int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
 		tmp_data[j+1] = 0;
 		tmp_data[j+2] = 0;
 		tmp_data[j+3] = 0;
-         // LOGE("tmp_data end ");
 #elif defined(_IOS)
             for (i=0,j=0; i<len; i+=2,j+=4)
             {
@@ -77,7 +125,6 @@ int parseAsnString(ASN1_STRING *asn1String,char *buf,unsigned long *bufLen)
 
             memcpy(buf,tmpStr,strlen(tmpStr));
             *bufLen = strlen(tmpStr);
-            // LOGE("bufLen len:%d", *bufLen);
             free(tmp_data);
             free(tmpStr);
             break;
@@ -166,6 +213,7 @@ int Internal_Do_GetCertDN(
         asn1String = X509_NAME_ENTRY_get_data(ne);
         if (0 == strcmp(oid, oidName)) {
             int tmpRe = parseAsnString(asn1String, buf, &bufLen);
+            LOGE("buf: %s", buf);
             if (tmpRe != 0) {
                 continue;
             }
@@ -176,10 +224,12 @@ int Internal_Do_GetCertDN(
             memcpy(info + len, buf, bufLen);
             len += bufLen;
             num++;
+            LOGE("info: %s", info);
         }
     }
 
     if (0 == num) {
+        LOGE("0 == num");
         return -1;
     }
 

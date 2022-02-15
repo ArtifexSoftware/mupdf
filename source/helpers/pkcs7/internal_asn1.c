@@ -309,7 +309,6 @@ int Internal_IsSM2Pkcs7Type(
     OBJ_obj2txt(buf,128,p7->type,1);
 
     PKCS7_free(p7);
-
     if(strncmp(buf,s_saf_sm2SignedOidStr,strlen(s_saf_sm2SignedOidStr)) != 0)
         return -1;
     else

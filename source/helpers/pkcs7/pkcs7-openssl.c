@@ -966,6 +966,7 @@ int pdf_get_all_signature_ex(fz_context *ctx, pdf_document *doc, int *signNum, c
                     rect[(*signNum) * 4 + 2] = tmpRect.x1;
                     rect[(*signNum) * 4 + 3] = tmpRect.y1;
                     pageNo[*signNum] = i;
+                    valids[*signNum] = valid;
                     (*signNum)++;
                 }
             }
@@ -1005,6 +1006,7 @@ static int get_sig_info(char *sig, int sig_len, char *signer, int *hasTs, char *
     tsTime[0] = '\0';
 
     if (0 == Internal_IsSM2Pkcs7Type(sig, sig_len)) {
+        LOGE("sm2 sign");
         // tmp = (unsigned char *)malloc(sig_len);
         if (NULL == tmp) {
             res = 0;
@@ -1013,6 +1015,7 @@ static int get_sig_info(char *sig, int sig_len, char *signer, int *hasTs, char *
 
         //replace by P7 OID
         if (0 != Internal_ReplaceSM2Pkcs7SignedOID(0, sig, sig_len, tmp, &tmpLen)) {
+            LOGE("Internal_ReplaceSM2Pkcs7SignedOID fail");
             res = 0;
             goto exit;
         }
@@ -1052,7 +1055,7 @@ static int get_sig_info(char *sig, int sig_len, char *signer, int *hasTs, char *
         //get sign cert
         ias = si->issuer_and_serial;
         x509 = X509_find_by_issuer_and_serial(cert, ias->issuer, ias->serial);
-
+ LOGE("x509 == NULL :%d", x509 == NULL);
         if (x509) {
             if (0 != Internal_Do_GetCertDN(x509, INTERNAL_GET_CERT_SUBJECT_CN, (unsigned char *)signer, &len))
                 goto exit;
@@ -1133,8 +1136,9 @@ int pdf_get_signature_information_ex(fz_context *ctx, pdf_document *doc, pdf_ann
                 pdf_signature_error ret = PDF_SIGNATURE_ERROR_UNKNOWN;
                 pdf_signature_error sig_cert_error = PDF_SIGNATURE_ERROR_UNKNOWN;
                 ret = pdf_check_widget_digest(ctx, verifier, annot);
-                sig_cert_error = pdf_check_widget_certificate(ctx, verifier, annot);
-                *valid = ret | sig_cert_error;
+//                sig_cert_error = pdf_check_widget_certificate(ctx, verifier, annot);
+//                LOGE("sig_cert_error:%d", sig_cert_error);
+                *valid = ret ;
             } else {
                 res = 0;
             }
