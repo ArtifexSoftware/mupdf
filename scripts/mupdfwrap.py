@@ -1334,7 +1334,8 @@ class ClassExtras:
         self.items = dict()
         for name, value in namevalues.items():
             self.items[ name] = value
-    def get( self, name):
+
+    def get( self, tu, name):
         '''
         Searches for <name>; if found, returns ClassExtra instance, else empty
         ClassExtra instance.
@@ -1342,7 +1343,24 @@ class ClassExtras:
         name = clip( name, 'struct ')
         if not name.startswith( ('fz_', 'pdf_')):
             return
-        return self.items.setdefault( name, ClassExtra())
+
+        ret = self.items.setdefault( name, ClassExtra())
+
+        if name in g_enums[ tu]:
+            #jlib.log( '*** name is an enum: {name=}')
+            return None
+
+        if ' ' not in name and not ret.pod and ret.copyable and ret.copyable != 'default':
+            # Check whether there is a _keep() fn.
+            keep_name = f'fz_keep_{name[3:]}' if name.startswith( 'fz_') else f'pdf_keep_{name[4:]}'
+            keep_cursor = find_function( tu, keep_name, method=True)
+            if not keep_cursor:
+                if ret.copyable:
+                    if 0:
+                        jlib.log( '*** Changing .copyable to False for {=name keep_name}')
+                ret.copyable = False
+        return ret
+
     def get_or_none( self, name):
         return self.items.get( name)
 
@@ -2974,14 +2992,14 @@ classextras = ClassExtras(
                 )
         )
 
-def get_fz_extras( fzname):
+def get_fz_extras( tu, fzname):
     '''
     Finds ClassExtra for <fzname>, coping if <fzname> starts with 'const ' or
     'struct '. Returns None if not found.
     '''
     fzname = clip( fzname, 'const ')
     fzname = clip( fzname, 'struct ')
-    ce = classextras.get( fzname)
+    ce = classextras.get( tu, fzname)
     return ce
 
 def get_field0( type_):
@@ -3144,6 +3162,7 @@ def has_refs( tu, type_):
 
 
 def write_call_arg(
+        tu,
         arg,
         classname,
         have_used_this,
@@ -3185,13 +3204,15 @@ def write_call_arg(
         return have_used_this
 
     if verbose:
-        log( '{cursor.spelling=} {arg.name=} {arg.alt.spelling=} {classname=}')
+        log( '{=arg.name arg.alt.spelling classname}')
     type_ = arg.cursor.type.get_canonical()
     ptr = '*'
+    #log( '{=arg.name arg.alt.spelling classname type_.spelling}')
     if type_.kind == clang.cindex.TypeKind.POINTER:
         type_ = type_.get_pointee().get_canonical()
         ptr = ''
-    extras = get_fz_extras( type_.spelling)
+    #log( '{=arg.name arg.alt.spelling classname type_.spelling}')
+    extras = get_fz_extras( tu, type_.spelling)
     assert extras, f'No extras for type_.spelling={type_.spelling}'
     if verbose:
         log( 'param is fz: {type_.spelling=} {extras2.pod=}')
@@ -3440,7 +3461,7 @@ class Arg:
     def __str__(self):
         return f'Arg(name={self.name} alt={"true" if self.alt else "false"} out_param={self.out_param})'
 
-def get_extras(type_):
+def get_extras(tu, type_):
     '''
     Returns (cursor, typename, extras):
         cursor: for base type.
@@ -3450,7 +3471,7 @@ def get_extras(type_):
     base_type = get_base_type( type_)
     base_type_cursor = base_type.get_declaration()
     base_typename = get_base_typename( base_type)
-    extras = classextras.get( base_typename)
+    extras = classextras.get( tu, base_typename)
     return base_type_cursor, base_typename, extras
 
 get_args_cache = dict()
@@ -3496,7 +3517,7 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
                 verbose = True
             alt = None
             out_param = False
-            base_type_cursor, base_typename, extras = get_extras(arg_cursor.type)
+            base_type_cursor, base_typename, extras = get_extras( tu, arg_cursor.type)
             if verbose:
                 log( 'Looking at arg. {extras=}')
             if extras:
@@ -3666,7 +3687,7 @@ def make_fncall( tu, cursor, return_type, fncall, out):
             # If not a pod, there will not be an operator<<, so just show
             # the address of this arg.
             #
-            extras = get_fz_extras(arg.alt.type.spelling)
+            extras = get_fz_extras( tu, arg.alt.type.spelling)
             assert extras.pod != 'none' \
                     'Cannot pass wrapper for {type_.spelling} as arg because pod is "none" so we cannot recover struct.'
             if extras.pod:
@@ -3896,7 +3917,7 @@ def make_outparam_helper_csharp(
             # Returned param, if any.
             if not return_void:
                 return_alt = None
-                base_type_cursor, base_typename, extras = get_extras( cursor.result_type)
+                base_type_cursor, base_typename, extras = get_extras( tu, cursor.result_type)
                 if extras:
                     if extras.opaque:
                         # E.g. we don't have access to defintion of fz_separation,
@@ -3975,7 +3996,7 @@ def make_outparam_helper_csharp(
                     continue
                 write(f'{sep}{arg.name_csharp}')
                 if arg.alt:
-                    extras = get_fz_extras(arg.alt.type.spelling)
+                    extras = get_fz_extras( tu, arg.alt.type.spelling)
                     assert extras.pod != 'none' \
                             'Cannot pass wrapper for {type_.spelling} as arg because pod is "none" so we cannot recover struct.'
                     write('.internal_()' if extras.pod else '.m_internal')
@@ -4208,7 +4229,7 @@ def make_python_class_method_outparam_override(
         if is_pointer_to( arg.cursor.type, structname):
             continue
         out.write( ', ')
-        write_call_arg(arg, classname, False, out, python=True)
+        write_call_arg( tu, arg, classname, False, out, python=True)
     out.write( ')\n')
 
     # return ret, a, b.
@@ -4435,12 +4456,7 @@ def make_function_wrapper_class_aware(
 
         tu
             .
-        register_fn_use
-            Callback to keep track of what fz_*() fns have been used.
-        struct_name
-            E.g. fz_rect.
-        classname
-            E.g. Rect.
+        fn_cursor
         fnname
             Name of fz_*() fn to wrap, e.g. fz_concat.
         fnname_wrapper
@@ -4448,34 +4464,21 @@ def make_function_wrapper_class_aware(
         out_h
         out_cpp
             Where to write generated code.
-        static
-            If true, we generate a static method.
-
-            Otherwise we generate a normal class method, where first arg that
-            is type <struct_name> is omitted from the generated method's
-            prototype; in the implementation we use <this>.
-        constructor
-            If true, we write a constructor.
-        extras
-            None or ClassExtras instance.
-            Only used if <constructor> is true.
-        struct_cursor
-            None or cursor for the struct definition.
-            Only used if <constructor> is true.
-        duplicate_type:
-            If true, we have already generated a method with the same args, so
-            this generated method will be commented-out.
-        generated:
+        generated
             If not None and there are one or more out-params, we write
             python code to generated.swig_python that overrides the default
             SWIG-generated method to call our *_outparams_fn() alternative.
-        debug
-            Show extra diagnostics.
     '''
     assert fnname.startswith( ('fz_', 'pdf_'))
 
     if fnname.endswith('_drop'):
         #jlib.log('Ignoring because ends with "_drop": {fnname}')
+        return
+
+    #jlib.log( '{=fn_cursor.result_type.spelling fn_cursor.result_type.get_canonical().spelling}')
+    return_type_extras = classextras.get( tu, fn_cursor.result_type.get_canonical().spelling)
+    if return_type_extras and not return_type_extras.copyable:
+        jlib.log( 'Not generating {fnname_wrapper} because return type is not copyable: {fn_cursor.result_type.spelling}')
         return
 
     # Construct prototype fnname(args).
@@ -4484,10 +4487,11 @@ def make_function_wrapper_class_aware(
     decl_cpp = f'{fnname_wrapper}('
     num_out_params = 0
     comma = ''
-    debug = (fnname == 'pdf_page_write')
+    #jlib.log( '{=fnname_wrapper}')
+    debug = (fnname_wrapper == 'mfz_make_link_dest_none')
     for arg in get_args( tu, fn_cursor):
         if debug:
-            log( 'Looking at {struct_name=} {fnname=} {arg=}', 1)
+            log( 'Looking at {struct_name=} {fnname=} {fnname_wrapper} {arg=}', 1)
         decl_h += comma
         decl_cpp += comma
         if arg.out_param:
@@ -4498,7 +4502,7 @@ def make_function_wrapper_class_aware(
             # use C++ class mupdf_foo_s.
             #
             const = ''
-            extras = classextras.get( arg.alt.type.spelling)
+            extras = classextras.get( tu, arg.alt.type.spelling)
             if not arg.out_param:
                 if not extras:
                     log('cannot find {alt.spelling=} {arg.type.spelling=} {name=}')
@@ -4551,7 +4555,7 @@ def make_function_wrapper_class_aware(
         t = fn_cursor.result_type.get_pointee().get_canonical()
         return_cursor = find_struct( tu, t.spelling, require_definition=False)
         if return_cursor:
-            return_extras = classextras.get( return_cursor.spelling)
+            return_extras = classextras.get( tu, return_cursor.spelling)
             if return_extras:
                 # Change return type to be instance of class wrapper.
                 return_type = rename.class_(return_cursor.spelling)
@@ -4589,7 +4593,7 @@ def make_function_wrapper_class_aware(
                 # For now, we return this type directly with no wrapping.
                 pass
             else:
-                return_extras = classextras.get( return_cursor.type.spelling)
+                return_extras = classextras.get( tu, return_cursor.type.spelling)
                 return_type = rename.class_(return_cursor.type.spelling)
                 fn_h = f'{return_type} {decl_h}'
                 fn_cpp = f'{return_type} {decl_cpp}'
@@ -4671,6 +4675,7 @@ def make_function_wrapper_class_aware(
     for arg in get_args( tu, fn_cursor):
         out_cpp.write( sep)
         have_used_this = write_call_arg(
+                tu,
                 arg,
                 None,#arg_classname,
                 have_used_this=True,    # A hack to force write_call_arg() to not attempt to use 'this'.
@@ -4867,16 +4872,18 @@ def functions_cache_populate( tu):
         return
     fns = dict()
     global_data = dict()
-    enums = list()
+    enums = dict()
 
     for cursor in tu.cursor.get_children():
         if cursor.kind==clang.cindex.CursorKind.ENUM_DECL:
             #jlib.log('ENUM_DECL: {cursor.spelling=}')
+            enum_values = list()
             for cursor2 in cursor.get_children():
                 #jlib.log('    {cursor2.spelling=}')
                 name = cursor2.spelling
                 #if name.startswith('PDF_ENUM_NAME_'):
-                enums.append(name)
+                enum_values.append(name)
+            enums[ cursor.type.get_canonical().spelling] = enum_values
         if (cursor.linkage == clang.cindex.LinkageKind.EXTERNAL
                 or cursor.is_definition()  # Picks up static inline functions.
                 ):
@@ -4993,7 +5000,7 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
             result_type = result_type.get_pointee().get_canonical()
         result_type = clip( result_type.spelling, 'struct ')
         if result_type.startswith( ('fz_', 'pdf_')):
-            result_type_extras = get_fz_extras( result_type)
+            result_type_extras = get_fz_extras( tu, result_type)
             if not result_type_extras:
                 exclude_reasons.append(
                         (
@@ -5691,9 +5698,9 @@ def class_copy_constructor(
     for name in keep_name, drop_name:
         cursor = find_function( tu, name, method=True)
         if not cursor:
-            classextra = classextras.get( struct_name)
+            classextra = classextras.get( tu, struct_name)
             if classextra.copyable:
-                if g_show_details( struct_name):
+                if 1 or g_show_details( struct_name):
                     jlib.log( 'changing to non-copyable because no function {name}(): {struct_name}')
                 classextra.copyable = False
             return
@@ -5858,6 +5865,7 @@ def class_write_method_body(
             arg_classname = None
         out_cpp.write( sep)
         have_used_this = write_call_arg(
+                tu,
                 arg,
                 arg_classname,
                 have_used_this,
@@ -6040,10 +6048,10 @@ def class_write_method(
 
             const = ''
             if not arg.out_param:
-                extras2 = classextras.get( arg.alt.type.spelling)
+                extras2 = classextras.get( tu, arg.alt.type.spelling)
                 if not extras2:
                     log('cannot find {alt.spelling=} {arg.type.spelling=} {name=}')
-            if not arg.out_param and not classextras.get( arg.alt.type.spelling).pod:
+            if not arg.out_param and not classextras.get( tu, arg.alt.type.spelling).pod:
                 const = 'const '
             decl_h +=   f'{const}{rename.class_(arg.alt.type.spelling)}& '
             decl_h += f'{arg.name}'
@@ -6101,7 +6109,7 @@ def class_write_method(
             t = fn_cursor.result_type.get_pointee().get_canonical()
             return_cursor = find_struct( tu, t.spelling, require_definition=False)
             if return_cursor:
-                return_extras = classextras.get( return_cursor.spelling)
+                return_extras = classextras.get( tu, return_cursor.spelling)
                 if return_extras:
                     # Change return type to be instance of class wrapper.
                     return_type = rename.class_(return_cursor.spelling)
@@ -6135,7 +6143,7 @@ def class_write_method(
                     # For now, we return this type directly with no wrapping.
                     pass
                 else:
-                    return_extras = classextras.get( return_cursor.type.spelling)
+                    return_extras = classextras.get( tu, return_cursor.type.spelling)
                     return_type = rename.class_(return_cursor.type.spelling)
                     fn_h = f'{return_type} {decl_h}'
                     fn_cpp = f'{return_type} {classname}::{decl_cpp}'
@@ -6409,7 +6417,7 @@ def class_accessors(
                 logx( 'ignoring {cursor.spelling=} because pointer to FUNCTIONPROTO')
                 continue
             elif pointee_type.startswith( ('fz_', 'pdf_')):
-                extras2 = get_fz_extras( pointee_type)
+                extras2 = get_fz_extras( tu, pointee_type)
                 if extras2:
                     # Make this accessor return an instance of the wrapping
                     # class by value.
@@ -6923,7 +6931,10 @@ def class_wrapper(
     # Class definition beginning.
     #
     out_h.write( '\n')
-    out_h.write( f'/** Wrapper class for struct {struct_name}. */\n')
+    if extras.copyable:
+        out_h.write( f'/** Wrapper class for struct {struct_name}. */\n')
+    else:
+        out_h.write( f'/** Wrapper class for struct {struct_name}. Not copyable or assignable. */\n')
     if struct_cursor.raw_comment:
         out_h.write( f'{struct_cursor.raw_comment}')
         if not struct_cursor.raw_comment.endswith( '\n'):
@@ -7029,7 +7040,7 @@ def class_wrapper(
                 out_h,
                 out_cpp,
                 )
-    else:
+    elif extras.copyable:
         out_h.write( '\n')
         out_h.write( '    /** We use default copy constructor and operator=. */\n')
 
@@ -7052,6 +7063,8 @@ def class_wrapper(
             # aren't really appropriate for the fz_matrix wrapper class.
             #
             pass
+        elif isinstance( fnname, list):
+            assert 0
         else:
             for extramethod in extras.methods_extra:
                 if extramethod.name_args.startswith( f'{clip(fnname, "fz_", "_s")}('):
@@ -7889,7 +7902,7 @@ def cpp_source(
             continue
 
         if not cursor.is_definition():
-            extras = classextras.get( cursor.spelling)
+            extras = classextras.get( tu, cursor.spelling)
             if extras and extras.opaque:
                 pass
                 #log( 'Creating wrapper for opaque struct: {cursor.spelling=}')
@@ -7931,7 +7944,7 @@ def cpp_source(
     #
     for classname, struct_cursor, struct_name in classes:
         #log( 'creating wrapper {classname} for {cursor.spelling}')
-        extras = classextras.get( struct_name)
+        extras = classextras.get( tu, struct_name)
         if extras.pod:
             struct_to_string_fns(
                     tu,
@@ -7972,7 +7985,7 @@ def cpp_source(
     # Write operator<< functions - these need to be outside the namespace.
     #
     for classname, struct_cursor, struct_name in classes:
-        extras = classextras.get( struct_name)
+        extras = classextras.get( tu, struct_name)
         if extras.pod:
             struct_to_string_streaming_fns(
                     tu,
@@ -8984,10 +8997,11 @@ def build_swig(
             with open( swig_py) as f:
                 mupdf_py_content = f.read()
             jlib.log('{len(generated.c_enums)=}')
-            for enum in generated.c_enums:
-                if enum.startswith( 'PDF_ENUM_NAME_'):
-                    #mupdf_py_content += f'print("{enum}=%s" % {enum})\n'
-                    mupdf_py_content += f'{enum} = PdfObj( obj_enum_to_obj( {enum}))\n'
+            for enum_type, enum_names in generated.c_enums.items():
+                for enum_name in enum_names:
+                    if enum_name.startswith( 'PDF_ENUM_NAME_'):
+                        #mupdf_py_content += f'print("{enum_name}=%s" % {enum})\n'
+                        mupdf_py_content += f'{enum_name} = PdfObj( obj_enum_to_obj( {enum_name}))\n'
             with open( swig_py, 'w') as f:
                 f.write( mupdf_py_content)
 
