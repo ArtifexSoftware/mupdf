@@ -80,6 +80,7 @@ static void app_alert(js_State *J)
 	evt.button_group_type = js_tointeger(J, 3);
 	evt.title = js_isdefined(J, 4) ? js_tostring(J, 4) : "PDF Alert";
 	evt.button_pressed = 0; /* WIP WIP WIP IS THIS CORRECT? */
+	evt.check_box_message = NULL;
 
 	fz_try(js->ctx)
 		pdf_event_issue_alert(js->ctx, js->doc, &evt);

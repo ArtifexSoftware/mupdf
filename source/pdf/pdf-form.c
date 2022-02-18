@@ -1098,7 +1098,7 @@ merge_changes(fz_context *ctx, const char *value, int start, int end, const char
 {
 	int changelen = change ? (int)strlen(change) : 0;
 	int valuelen = value ? (int)strlen(value) : 0;
-	int prelen = (start >= 0 ? start : 0);
+	int prelen = (start >= 0 ? (start < valuelen ? start : valuelen) : 0);
 	int postlen = (end >= 0 && end <= valuelen ? valuelen - end : 0);
 	int newlen =  prelen + changelen + postlen + 1;
 	char *merged = fz_malloc(ctx, newlen);
