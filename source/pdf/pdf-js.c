@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -79,8 +79,25 @@ static void app_alert(js_State *J)
 	evt.icon_type = js_tointeger(J, 2);
 	evt.button_group_type = js_tointeger(J, 3);
 	evt.title = js_isdefined(J, 4) ? js_tostring(J, 4) : "PDF Alert";
-	evt.button_pressed = 0; /* WIP WIP WIP IS THIS CORRECT? */
 	evt.check_box_message = NULL;
+
+	/* These are the default buttons automagically "pressed"
+	when the dialog box window is closed in Acrobat. */
+	switch (evt.button_group_type)
+	{
+	case PDF_ALERT_BUTTON_GROUP_OK:
+		evt.button_pressed = PDF_ALERT_BUTTON_OK;
+		break;
+	case PDF_ALERT_BUTTON_GROUP_OK_CANCEL:
+		evt.button_pressed = PDF_ALERT_BUTTON_CANCEL;
+		break;
+	case PDF_ALERT_BUTTON_GROUP_YES_NO:
+		evt.button_pressed = PDF_ALERT_BUTTON_YES;
+		break;
+	case PDF_ALERT_BUTTON_GROUP_YES_NO_CANCEL:
+		evt.button_pressed = PDF_ALERT_BUTTON_CANCEL;
+		break;
+	}
 
 	fz_try(js->ctx)
 		pdf_event_issue_alert(js->ctx, js->doc, &evt);
