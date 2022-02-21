@@ -201,11 +201,29 @@ static void ui_do_cut(struct input *input)
 	}
 }
 
-static void ui_do_paste(struct input *input)
+static void ui_do_paste(struct input *input, int multiline)
 {
 	const char *buf = ui_get_clipboard();
-	if (buf)
+	char *p, *oneline = NULL;
+
+	if (!buf)
+		return;
+
+	if (multiline)
+	{
 		ui_input_paste(input, buf);
+		return;
+	}
+
+	p = oneline = strdup(buf);
+	while (*p)
+	{
+		if (*p == '\n' || *p == '\r')
+			*p = ' ';
+		p++;
+	}
+	ui_input_paste(input, oneline);
+	free(oneline);
 }
 
 static int ui_input_key(struct input *input, int multiline)
@@ -367,13 +385,13 @@ static int ui_input_key(struct input *input, int multiline)
 		ui_do_cut(input);
 		break;
 	case KEY_CTL_V:
-		ui_do_paste(input);
+		ui_do_paste(input, multiline);
 		break;
 	case KEY_INSERT:
 		if (ui.mod == GLUT_ACTIVE_CTRL)
 			ui_do_copy(input);
 		if (ui.mod == GLUT_ACTIVE_SHIFT)
-			ui_do_paste(input);
+			ui_do_paste(input, multiline);
 		break;
 	default:
 		if (ui.key >= 32 && ui.plain)
