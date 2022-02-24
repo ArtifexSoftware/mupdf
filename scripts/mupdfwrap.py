@@ -557,6 +557,9 @@ Usage:
                 -d <details>
                     If specified, we show extra diagnostics when wrapping
                     functions whose name contains <details>.
+                --devenv <path>
+                    Set path of devenv.com script on Windows. If not specified,
+                    as default is used.
                 -f
                     Force rebuilds.
                 --regress
@@ -782,12 +785,17 @@ import os
 import pickle
 import platform
 import re
-import resource
 import shutil
 import sys
 import textwrap
 import time
 import traceback
+
+try:
+    import resource
+except ModuleNotFoundError:
+    # Not available on Windows.
+    resource = None
 
 import jlib
 
@@ -3266,6 +3274,7 @@ omit_fns = [
         'fz_assert_lock_not_held',  # Is a macro if NDEBUG defined.
         'fz_lock_debug_lock',       # Is a macro if NDEBUG defined.
         'fz_lock_debug_unlock',     # Is a macro if NDEBUG defined.
+        'fz_argv_from_wargv',       # Only defined on Windows. Breaks our out-param wrapper code.
         ]
 
 omit_methods = [
@@ -3903,7 +3912,7 @@ def make_outparam_helper_csharp(
                     text = declaration_text(type_, '').strip()
                     if text == 'int16_t':           text = 'short'
                     elif text == 'int64_t':         text = 'long'
-                    elif text == 'size_t':          text = 'uint'
+                    elif text == 'size_t':          text = 'ulong'
                     elif text == 'unsigned int':    text = 'uint'
                     write(f'{text}')
 
@@ -4356,8 +4365,9 @@ def make_function_wrapper(
     '''
     assert cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL
 
-    verbose = fnname_wrapper == 'pdf_add_annot_ink_list'
-
+    verbose = g_show_details( fnname)
+    if verbose:
+        jlib.log( 'Wrapping {fnname}')
     num_out_params = 0
     for arg in get_args( tu, cursor, include_fz_context=True):
         if is_pointer_to(arg.cursor.type, 'fz_context'):
@@ -4889,7 +4899,8 @@ def functions_cache_populate( tu):
                 ):
             if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
                 fnname = cursor.mangled_name
-                #if fnname.startswith( ('fz_', 'pdf_')) and fnname not in omit_fns:
+                if g_show_details( fnname):
+                    jlib.log( 'Looking at {fnname=}')
                 if fnname not in omit_fns:
                     fns[ fnname] = cursor
             else:
@@ -5278,6 +5289,8 @@ def make_function_wrappers(
     # Sort by function-name to make output easier to read.
     functions.sort()
     for fnname, cursor in functions:
+        if g_show_details( fnname):
+            jlib.log( 'Looking at {fnname}')
         fnname_wrapper = rename.function( fnname)
         # clang-6 appears not to be able to handle fn args that are themselves
         # function pointers, so for now we allow make_function_wrapper() to
@@ -6694,6 +6707,12 @@ def class_wrapper_virtual_fnptrs(
     if not extras.virtual_fnptrs:
         return
 
+    if g_windows:
+        for out in out_h, out_cpp:
+            out.write( '\n')
+            out.write( f'/* SWIG Directors support not currently available on Windows. */\n')
+            out.write( f'#if 0\n')
+
     generated.virtual_fnptrs.append( f'{classname}2')
     if len(extras.virtual_fnptrs) == 2:
         self_, alloc = extras.virtual_fnptrs
@@ -6864,6 +6883,12 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write( '}\n')
 
     out_h.write(  '};\n')
+
+    if g_windows:
+        for out in out_h, out_cpp:
+            out.write( '\n')
+            out.write( f'/* SWIG Directors support not currently available on Windows. */\n')
+            out.write( f'#endif\n')
 
 
 def class_wrapper(
@@ -7722,13 +7747,13 @@ def cpp_source(
                     if (!this_->m_internal) return;
                     if (allow_int_this)
                     {
-                        std::cerr << __FILE__ << ":" << __LINE__
+                        if (0) std::cerr << __FILE__ << ":" << __LINE__
                                 << " " << file << ":" << line << ":" << fn << ":"
                                 << " this_->m_internal=" << this_->m_internal
                                 << "\\n";
                         if ((intptr_t) this_->m_internal < 4096)
                         {
-                            std::cerr << __FILE__ << ":" << __LINE__
+                            if (0) std::cerr << __FILE__ << ":" << __LINE__
                                     << " " << file << ":" << line << ":" << fn << ":"
                                     << " Ignoring this_->m_internal=" << this_->m_internal
                                     << "\\n";
@@ -8203,7 +8228,7 @@ def build_swig(
         check_regress=False,
         ):
     '''
-    Builds python/C# wrappers for all mupdf_* functions and classes.
+    Builds python or C# wrappers for all mupdf_* functions and classes.
 
     build_dirs
         A BuildDirs instance.
@@ -8236,6 +8261,18 @@ def build_swig(
             #include "mupdf/classes.h"
             #include "mupdf/classes2.h"
             '''
+    if language == 'csharp':
+        common += f'''
+                /* This is required otherwise compiling the resulting C++ code
+                fails with:
+                    error: use of undeclared identifier 'SWIG_fail'
+
+                But no idea whether it is the 'correct' thing to do; seems odd
+                that SWIG doesn't define SWIG_fail itself.
+                */
+                #define SWIG_fail throw std::runtime_error( e.what());
+                '''
+
     if language == 'python':
         common += f'''
                 /* Support for extracting buffer data into a Python bytes. */
@@ -8428,24 +8465,29 @@ def build_swig(
     common += translate_ucdn_macros()
 
     text = ''
-    text += '%module(directors="1") mupdf\n'
-    for i in generated.virtual_fnptrs:
-        text += f'%feature("director") {i};\n'
 
-    text += f'%feature("director") SetWarningCallback;\n'
-    text += f'%feature("director") SetErrorCallback;\n'
+    if g_windows:
+        # 2022-02-24: Director classes break Windows builds at the moment.
+        pass
+    else:
+        text += '%module(directors="1") mupdf\n'
+        for i in generated.virtual_fnptrs:
+            text += f'%feature("director") {i};\n'
 
-    text += textwrap.dedent(
-            '''
-            %feature("director:except")
-            {
-              if ($error != NULL)
-              {
-                throw Swig::DirectorMethodException();
-              }
-            }
-            '''
-            )
+        text += f'%feature("director") SetWarningCallback;\n'
+        text += f'%feature("director") SetErrorCallback;\n'
+
+        text += textwrap.dedent(
+                '''
+                %feature("director:except")
+                {
+                  if ($error != NULL)
+                  {
+                    throw Swig::DirectorMethodException();
+                  }
+                }
+                '''
+                )
     for fnname in generated.c_functions:
         if fnname in ('pdf_annot_type', 'pdf_widget_type'):
             # These are also enums which we don't want to ignore. SWIGing the
@@ -8553,22 +8595,30 @@ def build_swig(
 
 
             %array_functions(unsigned char, bytes);
+            ''')
 
-            %exception {{
-              try {{
-                $action
-              }}
-              catch (Swig::DirectorException &e) {{
-                SWIG_fail;
-              }}
-              catch(std::exception& e) {{
-                SWIG_exception(SWIG_RuntimeError, e.what());
-              }}
-              catch(...) {{
-                SWIG_exception(SWIG_RuntimeError, "Unknown exception");
-              }}
-            }}
+    if g_windows:
+        # Directors not currently supported.
+        pass
+    else:
+        text += textwrap.dedent(f'''
+                %exception {{
+                  try {{
+                    $action
+                  }}
+                  catch (Swig::DirectorException &e) {{
+                    SWIG_fail;
+                  }}
+                  catch(std::exception& e) {{
+                    SWIG_exception(SWIG_RuntimeError, e.what());
+                  }}
+                  catch(...) {{
+                    SWIG_exception(SWIG_RuntimeError, "Unknown exception");
+                  }}
+                }}
+                ''')
 
+    text += textwrap.dedent(f'''
             // Ensure SWIG handles OUTPUT params.
             //
             %include "cpointer.i"
@@ -9355,6 +9405,8 @@ def build( build_dirs, swig, args):
     header_git = False
     swig_python = None
     g_show_details = lambda name: False
+    devenv = f'C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com'
+
     jlib.log('{build_dirs.dir_so=}')
 
     while 1:
@@ -9369,6 +9421,10 @@ def build( build_dirs, swig, args):
                 return d in name
             #g_show_details = lambda name: d in name
             g_show_details = fn
+        elif actions == '--devenv':
+            devenv = args.next()
+            if not g_windows:
+                jlib.log( 'Warning: --devenv was specified, but we are not on Windows so this will have no effect.')
         elif actions == '--python':
             build_python = True
             build_csharp = False
@@ -9521,7 +9577,7 @@ def build( build_dirs, swig, args):
                     #
                     log(f'Building mupdfcpp.dll by running devenv ...')
                     command = (
-                            f'"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com"'
+                            f'"{devenv}"'
                             f' platform/win32/mupdf.sln'
                             f' /Build "ReleasePython|{build_dirs.cpu.windows_config}"'
                             f' /Project mupdfcpp'
@@ -9646,7 +9702,7 @@ def build( build_dirs, swig, args):
 
                         jlib.log('Building mupdfpyswig project')
                         command = (
-                                f'"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com"'
+                                f'"{devenv}"'
                                 f' platform/win32/mupdfpyswig.sln'
                                 f' /Build "ReleasePython|{build_dirs.cpu.windows_config}"'
                                 f' /Project mupdfpyswig'
@@ -9668,7 +9724,7 @@ def build( build_dirs, swig, args):
 
                         jlib.log('Building mupdfcsharp project')
                         command = (
-                                f'"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com"'
+                                f'"{devenv}"'
                                 f' platform/win32/mupdfcsharpswig.sln'
                                 f' /Build "ReleaseCsharp|{build_dirs.cpu.windows_config}"'
                                 f' /Project mupdfcsharpswig'
@@ -9832,7 +9888,7 @@ def csharp_settings(build_dirs):
     #   pkg_add mono
     # but we get runtime error when exiting:
     #   mono:build/shared-release/libmupdfcpp.so: undefined symbol '_ZdlPv'
-    # which moght be because of mixing gcc and clang?
+    # which might be because of mixing gcc and clang?
     #
     if g_windows:
         csc = '"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe"'
@@ -10197,9 +10253,11 @@ def main():
             elif arg in ('--test-python', '-t', '--test-python-gui'):
 
                 env_extra, command_prefix = python_settings(build_dirs)
-
+                join = '&' if g_windows else ''
                 if arg == '--test-python-gui':
-                    command = f'MUPDF_trace=0 MUPDF_check_refs=1 {command_prefix} ./scripts/mupdfwrap_gui.py'
+                    env_extra[ 'MUPDF_trace'] = '0'
+                    env_extra[ 'MUPDF_check_refs'] = '1'
+                    command = f'{command_prefix} ./scripts/mupdfwrap_gui.py'
                     jlib.system( command, env_extra=env_extra, out='log', verbose=1)
 
                 else:
@@ -10339,11 +10397,12 @@ def main():
                         f'{csc} -unsafe {references}  -out:{{OUT}} {{IN}}'
                         )
                 if g_windows:
-                    # Don't know how to mimin Unix's LD_LIBRARY_PATH, so for
+                    # Don't know how to mimic Unix's LD_LIBRARY_PATH, so for
                     # now we cd into the directory containing our generated
                     # libraries.
                     jlib.copy(f'thirdparty/zlib/zlib.3.pdf', f'{build_dirs.dir_so}/zlib.3.pdf')
-                    #jlib.system(f'cd {build_dirs.dir_so} && {mono} ../../{out}', verbose=1)
+                    # Note that this doesn't work remotely.
+                    jlib.system(f'cd {build_dirs.dir_so} && {mono} ../../{out}', verbose=1)
                 else:
                     jlib.copy(f'thirdparty/zlib/zlib.3.pdf', f'zlib.3.pdf')
                     jlib.system(f'LD_LIBRARY_PATH={build_dirs.dir_so} {mono} ./{out}', verbose=1)
