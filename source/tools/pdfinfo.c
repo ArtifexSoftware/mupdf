@@ -238,7 +238,7 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 	bbox = pdf_to_rect(ctx, obj);
 
 	obj = pdf_dict_get(ctx, pageref, PDF_NAME(UserUnit));
-	if (pdf_is_real(ctx, obj))
+	if (pdf_is_number(ctx, obj))
 	{
 		float unit = pdf_to_real(ctx, obj);
 		bbox.x0 *= unit;

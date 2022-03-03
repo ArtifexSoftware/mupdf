@@ -654,7 +654,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 		page_mediabox = &pagebox;
 
 	obj = pdf_dict_get(ctx, pageobj, PDF_NAME(UserUnit));
-	if (pdf_is_real(ctx, obj))
+	if (pdf_is_number(ctx, obj))
 		userunit = pdf_to_real(ctx, obj);
 
 	mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox)));
