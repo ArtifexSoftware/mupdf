@@ -91,6 +91,12 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 		return fz_strdup(ctx, ld);
 	}
 
+	if (pdf_array_len(ctx, dest) < 1)
+	{
+		fz_warn(ctx, "invalid link destination");
+		return NULL;
+	}
+
 	pageobj = pdf_array_get(ctx, dest, 0);
 	if (pdf_is_int(ctx, pageobj))
 	{

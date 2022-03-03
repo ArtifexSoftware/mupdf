@@ -267,7 +267,10 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	pdf_obj *parent, *parent2;
 
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME(Type)), PDF_NAME(Page)))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid page object");
+	{
+		fz_warn(ctx, "invalid page object");
+		return -1;
+	}
 
 	parent2 = parent = pdf_dict_get(ctx, node, PDF_NAME(Parent));
 	fz_var(parent);
