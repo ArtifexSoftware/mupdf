@@ -3,6 +3,11 @@
 '''
 Support for generating C++ and python wrappers for the mupdf API.
 
+Overview:
+
+    We generate C++, Python and C# wrappers.
+
+
 C++ wrapping:
 
     Namespaces:
@@ -51,10 +56,19 @@ C++ wrapping:
             to_string_<structname>() functions that return this text
             representation as a std::string.
 
-        Diagnostics:
+        Environmental variabes control runtime diagnostics in generated code:
 
-            If environmental variable MUPDF_trace is "1", we output diagnostics
-            each time we call a MuPDF function, showing the args.
+            MUPDF_trace
+                If "1", generated code outputs a diagnostic each time it calls
+                a MuPDF function, showing the args.
+
+            MUPDF_trace_director
+                If "1", generated code outputs a diagnostic when doing special
+                handling of MuPDF structs containing function pointers.
+
+            MUPDF_check_refs
+                If "1", generated code checks MuPDF struct reference counts at
+                runtime. See below for details.
 
     Classes:
 
@@ -98,7 +112,7 @@ C++ wrapping:
 
                 If the number of wrapper class instances for a particular MuPDF
                 struct instance is more than the .ref value for that struct
-                instance, we call abort().
+                instance, we generate a diagnostic and call abort().
 
                 We also output reference-counting diagnostics each time a
                 wrapper class constructor, member function or destructor is
@@ -106,9 +120,11 @@ C++ wrapping:
 
         POD wrappers:
 
-            For simple POD structs such as fz_rect where reference counting is
-            not used, the wrapper class's m_internal can be an instance of the
-            underlying struct instead of a pointer.
+            For simple POD structs such as fz_rect where reference counting
+            is not used, the wrapper class's m_internal can be an instance of
+            the underlying struct instead of a pointer. Some wrappers for POD
+            structs take this one step further and embed the struct members
+            directly in the wrapper class.
 
         Text representation of wrapper classes:
 
@@ -135,7 +151,7 @@ C++ wrapping:
 
             Constructors:
 
-                We look for all fz_*() functions called fz_new*() that
+                We look for all fz_*() functions called fz_new_*() that
                 return a pointer to the wrapped class, and wrap these into
                 constructors. If any of these constructors have duplicate
                 prototypes, we cannot provide them as constructors so instead
@@ -155,18 +171,21 @@ C++ wrapping:
 
             Other:
 
-                There are various subleties with wrapping classes that are not
-                copyable etc.
+                There are various subleties with wrapping classes for MuPDF
+                structs that are not copyable etc.
 
-        mupdf::* functions methods generally have the same args as the fz_*
-        functions that they wrap except that they don't take any fz_context*
-        parameter. If the fz_* functions takes a fz_context*, one appropriate
-        for the current thread is generated automatically at runtime, using
-        platform/c++/implementation/internal.cpp:internal_context_get().
+        Internal fz_context's:
+
+            mupdf::* functions methods generally have the same args as
+            the fz_* functions that they wrap except that they don't
+            take any fz_context* parameter. When required, per-thread
+            fz_context's are generated automatically at runtime, using
+            platform/c++/implementation/internal.cpp:internal_context_get().
 
         Extra items:
 
-            metadata_keys: This contains the keys that are suitable for passing to
+            metadata_keys: This is a global const vector of strings
+            contains the keys that are suitable for passing to
             fz_lookup_metadata() and its wrappers, mupdf::fz_lookup_metadata()
             and mupdf::Document::lookup_metadata().
 
@@ -198,28 +217,25 @@ C++ wrapping:
                 containing just the out-params and a function taking just the
                 non-out-param args, plus a pointer to the class. This function
                 fills in the members of this class instead of returning
-                individual out-params. We can then then generate extra Python
-                or C# code that uses these special functions to get the
-                out-params in a class object and return them as a tuple in both
-                Python and C#.
+                individual out-params. We then generate extra Python or C# code
+                that uses these special functions to get the out-params in a
+                class instance and return them as a tuple in both Python and
+                C#.
 
             Binary out-param data:
 
                 Some MuPDF functions return binary data, typically with an
                 'unsigned char**' out-param. It is not possible to generically
                 handle these in Python or C# because the size of the returned
-                buffer is specified elsewhere (in a different out-param or in
-                the return value). So we generate custom Python and C# code to
-                give a convenient interface, e.g. copying the returned data
-                into a Python bytes object or a C# byte array.
-
-
-
+                buffer is specified elsewhere (for example in a different
+                out-param or in the return value). So we generate custom Python
+                and C# code to give a convenient interface, e.g. copying the
+                returned data into a Python bytes object or a C# byte array.
 
 
 Python wrapping:
 
-    We provide a Python module called 'mupdf' which directly wraps the C++ API,
+    We generate a Python module called 'mupdf' which directly wraps the C++ API,
     using identical names for functions, classes and methods.
 
     Out-parameters:
@@ -246,7 +262,7 @@ Python wrapping:
                 and returns: (buffer, truncated), where <buffer> is a SWIG
                 proxy for a fz_buffer instance and <truncated> is an integer.
 
-            pdf_parse_ind_obj:
+            pdf_parse_ind_obj():
 
                 The MuPDF C function is:
 
@@ -265,9 +281,9 @@ Python wrapping:
             Where MuPDF functions are wrapped as C++ class methods, the python class methods
             return out-parameters in a similar way.
 
-    Access to buffer data:
+    Raw access to buffer data:
 
-        Generic data access
+        Generic data access:
 
             mupdf.python_bytes_data(b: bytes):
                 Returns SWIG proxy for an unsigned char*' that points to <b>'s
@@ -9378,11 +9394,14 @@ def find_python( cpu, version=None):
     raise Exception( f'Failed to find python matching cpu={cpu}. Run "py -0p" to see available pythons')
 
 
+g_have_done_build_0 = False
+
 def build( build_dirs, swig, args):
     '''
     Handles -b ...
     '''
     global g_show_details
+    global g_have_done_build_0
     cpp_files   = [
             f'{build_dirs.dir_mupdf}/platform/c++/implementation/classes.cpp',
             f'{build_dirs.dir_mupdf}/platform/c++/implementation/classes2.cpp',
@@ -9502,71 +9521,78 @@ def build( build_dirs, swig, args):
 
             elif action == '0':
                 # Generate C++ code that wraps the fz_* API.
-                jlib.log( 'Generating C++ source code ...')
-                if not clang:
-                    raise Exception('Cannot do "-b 0" because failed to import clang.')
-                namespace = 'mupdf'
-                generated = Generated()
+                if g_have_done_build_0:
+                    # This -b 0 stage modifies global data, for example adding
+                    # begin() and end() methods to extras[], so must not be run
+                    # more than once.
+                    jlib.log( 'Skipping second -b 0')
+                else:
+                    jlib.log( 'Generating C++ source code ...')
+                    if not clang:
+                        raise Exception('Cannot do "-b 0" because failed to import clang.')
+                    namespace = 'mupdf'
+                    generated = Generated()
 
-                tu = cpp_source(
-                        build_dirs.dir_mupdf,
-                        namespace,
-                        f'{build_dirs.dir_mupdf}/platform/c++',
-                        header_git,
-                        generated,
-                        check_regress,
-                        )
+                    tu = cpp_source(
+                            build_dirs.dir_mupdf,
+                            namespace,
+                            f'{build_dirs.dir_mupdf}/platform/c++',
+                            header_git,
+                            generated,
+                            check_regress,
+                            )
 
-                generated.save(f'{build_dirs.dir_mupdf}/platform/c++')
+                    generated.save(f'{build_dirs.dir_mupdf}/platform/c++')
 
-                def check_lists_equal(name, expected, actual):
-                    expected.sort()
-                    actual.sort()
-                    if expected != actual:
-                        text = f'Generated {name} filenames differ from expected:\n'
-                        text += f'    expected {len(expected)}:\n'
-                        for i in expected:
-                            text += f'        {i}\n'
-                        text += f'    generated {len(actual)}:\n'
-                        for i in actual:
-                            text += f'        {i}\n'
-                        raise Exception(text)
-                check_lists_equal('C++ source', cpp_files, generated.cpp_files)
-                check_lists_equal('C++ headers', h_files, generated.h_files)
+                    def check_lists_equal(name, expected, actual):
+                        expected.sort()
+                        actual.sort()
+                        if expected != actual:
+                            text = f'Generated {name} filenames differ from expected:\n'
+                            text += f'    expected {len(expected)}:\n'
+                            for i in expected:
+                                text += f'        {i}\n'
+                            text += f'    generated {len(actual)}:\n'
+                            for i in actual:
+                                text += f'        {i}\n'
+                            raise Exception(text)
+                    check_lists_equal('C++ source', cpp_files, generated.cpp_files)
+                    check_lists_equal('C++ headers', h_files, generated.h_files)
 
-                for dir_ in (
-                        f'{build_dirs.dir_mupdf}/platform/c++/implementation/',
-                        f'{build_dirs.dir_mupdf}/platform/c++/include/', '.h',
-                        ):
-                    for path in jlib.get_filenames( dir_):
-                        path = path.replace('\\', '/')
-                        _, ext = os.path.splitext( path)
-                        if ext not in ('.h', '.cpp'):
-                            continue
-                        if path in h_files + cpp_files:
-                            continue
-                        log( 'Removing unknown C++ file: {path}')
-                        os.remove( path)
+                    for dir_ in (
+                            f'{build_dirs.dir_mupdf}/platform/c++/implementation/',
+                            f'{build_dirs.dir_mupdf}/platform/c++/include/', '.h',
+                            ):
+                        for path in jlib.get_filenames( dir_):
+                            path = path.replace('\\', '/')
+                            _, ext = os.path.splitext( path)
+                            if ext not in ('.h', '.cpp'):
+                                continue
+                            if path in h_files + cpp_files:
+                                continue
+                            log( 'Removing unknown C++ file: {path}')
+                            os.remove( path)
 
-                jlib.log( 'Wrapper classes that are containers: {generated.container_classnames=}')
+                    jlib.log( 'Wrapper classes that are containers: {generated.container_classnames=}')
 
-                # Output info about fz_*() functions that we don't make use
-                # of in class methods.
-                #
-                # This is superceded by automatically finding fuctions to wrap.
-                #
-                if 0:   # lgtm [py/unreachable-statement]
-                    log( 'functions that take struct args and are not used exactly once in methods:')
-                    num = 0
-                    for name in sorted( fn_usage.keys()):
-                        n, cursor = fn_usage[ name]
-                        if n == 1:
-                            continue
-                        if not fn_has_struct_args( tu, cursor):
-                            continue
-                        log( '    {n} {cursor.displayname} -> {cursor.result_type.spelling}')
-                        num += 1
-                    log( 'number of functions that we should maybe add wrappers for: {num}')
+                    # Output info about fz_*() functions that we don't make use
+                    # of in class methods.
+                    #
+                    # This is superceded by automatically finding fuctions to wrap.
+                    #
+                    if 0:   # lgtm [py/unreachable-statement]
+                        log( 'functions that take struct args and are not used exactly once in methods:')
+                        num = 0
+                        for name in sorted( fn_usage.keys()):
+                            n, cursor = fn_usage[ name]
+                            if n == 1:
+                                continue
+                            if not fn_has_struct_args( tu, cursor):
+                                continue
+                            log( '    {n} {cursor.displayname} -> {cursor.result_type.spelling}')
+                            num += 1
+                        log( 'number of functions that we should maybe add wrappers for: {num}')
+                    g_have_done_build_0 = True
 
             elif action == '1':
                 # Compile and link generated C++ code to create libmupdfcpp.so.
@@ -9929,7 +9955,7 @@ def main():
                 print( __doc__)
 
             elif arg == '--build' or arg == '-b':
-                assert not have_seen_build_arg, 'Cannot run --build/-b more than once'
+                #assert not have_seen_build_arg, 'Cannot run --build/-b more than once'
                 have_seen_build_arg = True
                 build( build_dirs, swig, args)
 
@@ -10377,7 +10403,15 @@ def main():
                     if g_windows:
                         jlib.system(f'cd {build_dirs.dir_so} && {mono} ../../{out}', verbose=1)
                     else:
-                        jlib.system(f'LD_LIBRARY_PATH={build_dirs.dir_so} {mono} ./{out}', verbose=1)
+                        command = f'LD_LIBRARY_PATH={build_dirs.dir_so} {mono} ./{out}'
+                        if g_openbsd:
+                            e = jlib.system( command, verbose=1, raise_errors=False)
+                            if e == 137:
+                                jlib.log( 'Ignoring {e=} on OpenBSD because this occurs in normal operation.')
+                            elif e:
+                                raise Exception( f'command failed: {command}')
+                        else:
+                            jlib.system(f'LD_LIBRARY_PATH={build_dirs.dir_so} {mono} ./{out}', verbose=1)
 
             elif arg == '--test-csharp-gui':
                 csc, mono, mupdf_cs = csharp_settings(build_dirs)
