@@ -4222,10 +4222,16 @@ def make_python_class_method_outparam_override(
     to make it call the underlying MuPDF function's Python wrapper, which will
     return out-params in a tuple.
 
-    This is necessary because the C++ API supports wrapper class out-params
-    by taking references to a dummy wrapper class instance, whose m_internal
-    is then changed to point to the out-param struct (with suitable calls to
-    keep/drop to manage the destruction of the dummy instance).
+    This is necessary because C++ doesn't support out-params so the C++ API
+    supports wrapper class out-params by taking references to a dummy wrapper
+    class instances, whose m_internal is then changed to point to the out-param
+    struct (with suitable calls to keep/drop to manage the destruction of the
+    dummy instance).
+
+    In Python, we could create dummy wrapper class instances (e.g. passing
+    nullptr to constructor) and return them, but instead we make our own call
+    to the underlying MuPDF function and wrap the out-params into wrapper
+    classes.
     '''
     # Underlying fn.
     main_name = rename.function(cursor.mangled_name)
@@ -5601,135 +5607,155 @@ def function_wrapper_class_aware_body(
     out_cpp.write( f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): calling mupdf::{rename.function(fnname)}()\\n";\n')
     out_cpp.write( f'    }}\n')
 
-    def get_keep_drop(arg):
-        name = clip( arg.alt.type.spelling, 'struct ')
-        if name.startswith('fz_'):
-            prefix = 'fz'
-            name = name[3:]
-        elif name.startswith('pdf_'):
-            prefix = 'pdf'
-            name = name[4:]
-        else:
-            assert 0
-        return rename.function(f'{prefix}_keep_{name}'), rename.function(f'{prefix}_drop_{name}')
+    if class_constructor or not struct_name:
+        # This code can generate a class method, but we choose to not use this,
+        # instead method body simply calls the class-aware function (see below).
+        def get_keep_drop(arg):
+            name = clip( arg.alt.type.spelling, 'struct ')
+            if name.startswith('fz_'):
+                prefix = 'fz'
+                name = name[3:]
+            elif name.startswith('pdf_'):
+                prefix = 'pdf'
+                name = name[4:]
+            else:
+                assert 0
+            return rename.function(f'{prefix}_keep_{name}'), rename.function(f'{prefix}_drop_{name}')
 
-    # Handle wrapper-class out-params - need to drop .m_internal and set to
-    # null.
-    #
-    # fixme: maybe instead simply call <arg.name>'s destructor directly?
-    #
-    for arg in get_args( tu, fn_cursor):
-        if arg.alt and arg.out_param:
-            if has_refs(tu, arg.alt.type):
-                keep_fn, drop_fn = get_keep_drop(arg)
-                out_cpp.write( f'    /* Out-param {arg.name}.m_internal will be overwritten. */\n')
-                out_cpp.write( f'    {drop_fn}({arg.name}.m_internal);\n')
-                out_cpp.write( f'    {arg.name}.m_internal = nullptr;\n')
+        # Handle wrapper-class out-params - need to drop .m_internal and set to
+        # null.
+        #
+        # fixme: maybe instead simply call <arg.name>'s destructor directly?
+        #
+        for arg in get_args( tu, fn_cursor):
+            if arg.alt and arg.out_param:
+                if has_refs(tu, arg.alt.type):
+                    keep_fn, drop_fn = get_keep_drop(arg)
+                    out_cpp.write( f'    /* Out-param {arg.name}.m_internal will be overwritten. */\n')
+                    out_cpp.write( f'    {drop_fn}({arg.name}.m_internal);\n')
+                    out_cpp.write( f'    {arg.name}.m_internal = nullptr;\n')
 
-    # Write function call.
-    if class_constructor:
-        if extras.pod:
-            if extras.pod == 'inline':
-                out_cpp.write( f'    *({struct_name}*) &this->{get_field0(struct_cursor.type).spelling} = ')
+        # Write function call.
+        if class_constructor:
+            if extras.pod:
+                if extras.pod == 'inline':
+                    out_cpp.write( f'    *({struct_name}*) &this->{get_field0(struct_cursor.type).spelling} = ')
+                else:
+                    out_cpp.write( f'    this->m_internal = ')
+                if fn_cursor.result_type.kind == clang.cindex.TypeKind.POINTER:
+                    out_cpp.write( f'*')
             else:
                 out_cpp.write( f'    this->m_internal = ')
-            if fn_cursor.result_type.kind == clang.cindex.TypeKind.POINTER:
-                out_cpp.write( f'*')
-        else:
-            out_cpp.write( f'    this->m_internal = ')
-            if fn_cursor.result_type.kind == clang.cindex.TypeKind.POINTER:
-                pass
-            else:
-                assert 0, 'cannot handle underlying fn returning by value when not pod.'
-        out_cpp.write( f'{rename.function_call(fnname)}(')
-
-    elif wrap_return == 'value':
-        out_cpp.write( f'    {return_cursor.spelling} temp = mupdf::{rename.function(fnname)}(')
-    elif wrap_return == 'pointer':
-        out_cpp.write( f'    {return_cursor.spelling}* temp = mupdf::{rename.function(fnname)}(')
-    elif return_void:
-        out_cpp.write( f'    mupdf::{rename.function(fnname)}(')
-    else:
-        out_cpp.write( f'    auto ret = mupdf::{rename.function(fnname)}(')
-
-    have_used_this = False
-    sep = ''
-    for arg in get_args( tu, fn_cursor):
-        arg_classname = class_name
-        if class_static or class_constructor:
-            arg_classname = None
-        out_cpp.write( sep)
-        have_used_this = write_call_arg(
-                tu,
-                arg,
-                arg_classname,
-                have_used_this,
-                out_cpp,
-                g_show_details(fnname),
-                )
-        sep = ', '
-    out_cpp.write( f');\n')
-
-    if g_show_details(fnname):
-        jlib.log('{=wrap_return}')
-    refcounted_return = False
-    if wrap_return == 'pointer' and has_refs( tu, return_cursor.type):
-        refcounted_return = True
-        refcounted_return_struct_cursor = return_cursor
-    elif class_constructor and has_refs( tu, struct_cursor.type):
-        refcounted_return = True
-        refcounted_return_struct_cursor = struct_cursor
-    if refcounted_return:
-        # This MuPDF function returns pointer to a struct which uses reference
-        # counting. If the function returns a borrowed reference, we need
-        # to increment its reference count before passing it to our wrapper
-        # class's constructor.
-        #
-        #jlib.log('Function returns pointer to {return_cursor=}')
-        return_struct_name = clip( refcounted_return_struct_cursor.spelling, 'struct ')
-        if return_struct_name.startswith('fz_'):
-            prefix = 'fz_'
-        elif return_struct_name.startswith('pdf_'):
-            prefix = 'pdf_'
-        else:
-            prefix = None
-        if g_show_details(fnname):
-            jlib.log('{=prefix}')
-        if prefix:
-            for i in ('new', 'create', 'find', 'load', 'open', 'keep', 'read'):
-                if fnname.startswith(f'fz_{i}_') or fnname.startswith(f'pdf_{i}_'):
-                    if g_show_details(fnname):
-                        jlib.log('Assuming that {fnname=} returns a kept reference.')
-                    break
-            else:
-                if g_show_details(fnname):
-                    jlib.log('{=classname fnname constructor} Assuming that {fnname=} returns a borrowed reference.')
-                # This function returns a borrowed reference.
-                suffix = return_struct_name[ len(prefix):]
-                keep_fn = f'{prefix}keep_{suffix}'
-                #jlib.log('Function assumed to return borrowed reference: {fnname=} => {return_struct_name=} {keep_fn=}')
-                if class_constructor:
-                    out_cpp.write( f'    {rename.function_call(keep_fn)}(this->m_internal);\n')
+                if fn_cursor.result_type.kind == clang.cindex.TypeKind.POINTER:
+                    pass
                 else:
-                    out_cpp.write( f'    {rename.function_call(keep_fn)}(temp);\n')
+                    assert 0, 'cannot handle underlying fn returning by value when not pod.'
+            out_cpp.write( f'{rename.function_call(fnname)}(')
+        elif wrap_return == 'value':
+            out_cpp.write( f'    {return_cursor.spelling} temp = mupdf::{rename.function(fnname)}(')
+        elif wrap_return == 'pointer':
+            out_cpp.write( f'    {return_cursor.spelling}* temp = mupdf::{rename.function(fnname)}(')
+        elif return_void:
+            out_cpp.write( f'    mupdf::{rename.function(fnname)}(')
+        else:
+            out_cpp.write( f'    auto ret = mupdf::{rename.function(fnname)}(')
 
-    if wrap_return == 'value':
-        out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(&temp);\n')
-    elif wrap_return == 'pointer':
-        out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(temp);\n')
+        have_used_this = False
+        sep = ''
+        for arg in get_args( tu, fn_cursor):
+            arg_classname = class_name
+            if class_static or class_constructor:
+                arg_classname = None
+            out_cpp.write( sep)
+            have_used_this = write_call_arg(
+                    tu,
+                    arg,
+                    arg_classname,
+                    have_used_this,
+                    out_cpp,
+                    g_show_details(fnname),
+                    )
+            sep = ', '
+        out_cpp.write( f');\n')
 
-    # Handle wrapper-class out-params - need to keep arg.m_internal and set to
-    # null.
-    for arg in get_args( tu, fn_cursor):
-        if arg.alt and arg.out_param:
-            if has_refs(tu, arg.alt.type):
-                # Assume out-param is a borrowed reference.
-                #
-                # fixme: maybe we should assume it returns a valid reference.
-                # i.e. this call to keep_*() is not correct?
-                keep_fn, drop_fn = get_keep_drop(arg)
-                out_cpp.write( f'    /* We assume that out-param {arg.name}.m_internal is a borrowed reference. */\n')
-                out_cpp.write( f'    {keep_fn}({arg.name}.m_internal);\n')
+        if g_show_details(fnname):
+            jlib.log('{=wrap_return}')
+        refcounted_return = False
+        if wrap_return == 'pointer' and has_refs( tu, return_cursor.type):
+            refcounted_return = True
+            refcounted_return_struct_cursor = return_cursor
+        elif class_constructor and has_refs( tu, struct_cursor.type):
+            refcounted_return = True
+            refcounted_return_struct_cursor = struct_cursor
+        if refcounted_return:
+            # This MuPDF function returns pointer to a struct which uses reference
+            # counting. If the function returns a borrowed reference, we need
+            # to increment its reference count before passing it to our wrapper
+            # class's constructor.
+            #
+            #jlib.log('Function returns pointer to {return_cursor=}')
+            return_struct_name = clip( refcounted_return_struct_cursor.spelling, 'struct ')
+            if return_struct_name.startswith('fz_'):
+                prefix = 'fz_'
+            elif return_struct_name.startswith('pdf_'):
+                prefix = 'pdf_'
+            else:
+                prefix = None
+            if g_show_details(fnname):
+                jlib.log('{=prefix}')
+            if prefix:
+                for i in ('new', 'create', 'find', 'load', 'open', 'keep', 'read'):
+                    if fnname.startswith(f'fz_{i}_') or fnname.startswith(f'pdf_{i}_'):
+                        if g_show_details(fnname):
+                            jlib.log('Assuming that {fnname=} returns a kept reference.')
+                        break
+                else:
+                    if g_show_details(fnname):
+                        jlib.log('{=classname fnname constructor} Assuming that {fnname=} returns a borrowed reference.')
+                    # This function returns a borrowed reference.
+                    suffix = return_struct_name[ len(prefix):]
+                    keep_fn = f'{prefix}keep_{suffix}'
+                    #jlib.log('Function assumed to return borrowed reference: {fnname=} => {return_struct_name=} {keep_fn=}')
+                    if class_constructor:
+                        out_cpp.write( f'    {rename.function_call(keep_fn)}(this->m_internal);\n')
+                    else:
+                        out_cpp.write( f'    {rename.function_call(keep_fn)}(temp);\n')
+
+        if wrap_return == 'value':
+            out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(&temp);\n')
+        elif wrap_return == 'pointer':
+            out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(temp);\n')
+
+        # Handle wrapper-class out-params - need to keep arg.m_internal and set to
+        # null.
+        for arg in get_args( tu, fn_cursor):
+            if arg.alt and arg.out_param:
+                if has_refs(tu, arg.alt.type):
+                    # Assume out-param is a borrowed reference.
+                    #
+                    # fixme: maybe we should assume it returns a valid reference.
+                    # i.e. this call to keep_*() is not correct?
+                    keep_fn, drop_fn = get_keep_drop(arg)
+                    out_cpp.write( f'    /* We assume that out-param {arg.name}.m_internal is a borrowed reference. */\n')
+                    out_cpp.write( f'    {keep_fn}({arg.name}.m_internal);\n')
+    else:
+        # Class method simply calls the class-aware function, which will have
+        # been generated elsewhere.
+        out_cpp.write( '    ')
+        if not return_void:
+            out_cpp.write( 'auto ret = ')
+
+        out_cpp.write( f'mupdf::{rename.function_class_aware(fnname)}(')
+        sep = ''
+        for i, arg in enumerate( get_args( tu, fn_cursor)):
+            out_cpp.write( sep)
+            if i==0 and not class_static:
+                out_cpp.write( '*this')
+            else:
+                out_cpp.write( f'{arg.name}')
+            sep = ', '
+
+        out_cpp.write( ');\n')
 
     if struct_name and not class_static:
         if has_refs( tu, struct_cursor.type):
@@ -7544,6 +7570,7 @@ def cpp_source(
             textwrap.dedent(
             '''
             #include "mupdf/classes.h"
+            #include "mupdf/classes2.h"
             #include "mupdf/exceptions.h"
             #include "mupdf/internal.h"
 
@@ -8092,12 +8119,12 @@ def compare_fz_usage(
     log( '{n_missing}')
 
 
-def translate_ucdn_macros():
+def translate_ucdn_macros( build_dirs):
     '''
     Returns string containing UCDN_* macros represented as enums.
     '''
     out = io.StringIO()
-    with open('include/mupdf/ucdn.h') as f:
+    with open( f'{build_dirs.dir_mupdf}/include/mupdf/ucdn.h') as f:
         text = f.read()
     out.write( '\n')
     out.write( '\n')
@@ -8355,7 +8382,7 @@ def build_swig(
             '''
 
     common += generated.swig_cpp
-    common += translate_ucdn_macros()
+    common += translate_ucdn_macros( build_dirs)
 
     text = ''
 
@@ -10165,7 +10192,7 @@ def main():
 
                 else:
                     log( 'running scripts/mupdfwrap_test.py ...')
-                    command = f'MUPDF_trace=0 MUPDF_check_refs=1 {command_prefix} ./scripts/mupdfwrap_test.py'
+                    command = f'MUPDF_trace=0 MUPDF_check_refs=1 {command_prefix} {build_dirs.dir_mupdf}/scripts/mupdfwrap_test.py'
                     with open( f'{build_dirs.dir_mupdf}/platform/python/mupdf_test.py.out.txt', 'w') as f:
                         jlib.system( command, env_extra=env_extra, out='log', verbose=1)
                         # Repeat with pdf_reference17.pdf if it exists.
