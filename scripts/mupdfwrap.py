@@ -4218,24 +4218,44 @@ def make_python_class_method_outparam_override(
         return_type,
         ):
     '''
-    Writes Python code to <out> that monkey-patches a class method to make it
-    call the underlying MuPDF function's Python wrapper, which will return
-    out-params in a tuple.
+    Writes Python code to <out> that monkey-patches Python function or method
+    to make it call the underlying MuPDF function's Python wrapper, which will
+    return out-params in a tuple.
+
+    This is necessary because the C++ API supports wrapper class out-params
+    by taking references to a dummy wrapper class instance, whose m_internal
+    is then changed to point to the out-param struct (with suitable calls to
+    keep/drop to manage the destruction of the dummy instance).
     '''
+    # Underlying fn.
     main_name = rename.function(cursor.mangled_name)
+
+    if structname:
+        name_new = f'{classname}_{main_name}_outparams_fn'
+    else:
+        name_new = f'{main_name}_outparams_fn'
 
     # Define an internal Python function that will become the class method.
     #
-    out.write( f'def {classname}_{main_name}_outparams_fn( self')
+    out.write( f'def {name_new}(')
+    if structname:
+        out.write( ' self')
+        comma = ', '
+    else:
+        comma = ''
     for arg in get_args( tu, cursor):
         if arg.out_param:
             continue
         if is_pointer_to( arg.cursor.type, structname):
             continue
-        out.write(f', {arg.name_python}')
+        out.write(f'{comma}{arg.name_python}')
+        comma = ', '
     out.write('):\n')
     out.write( '    """\n')
-    out.write(f'    Helper for out-params of {structname}::{main_name}() [{cursor.mangled_name}()].\n')
+    if structname:
+        out.write(f'    Helper for out-params of {structname}::{main_name}() [{cursor.mangled_name}()].\n')
+    else:
+        out.write(f'    Helper for out-params of {main_name}() [{cursor.mangled_name}()].\n')
     out.write( '    """\n')
 
     # ret, a, b, ... = foo::bar(self.m_internal, p, q, r, ...)
@@ -4249,14 +4269,16 @@ def make_python_class_method_outparam_override(
             continue
         out.write( f'{sep}{arg.name_python}')
         sep = ', '
-    out.write( f' = {main_name}( self.m_internal')
+    out.write( f' = {main_name}(')
+    if structname:
+        out.write( f' self.m_internal')
     for arg in get_args( tu, cursor):
         if arg.out_param:
             continue
         if is_pointer_to( arg.cursor.type, structname):
             continue
         out.write( ', ')
-        write_call_arg( tu, arg, classname, False, out, python=True)
+        write_call_arg( tu, arg, classname, have_used_this=False, out_cpp=out, python=True)
     out.write( ')\n')
 
     # return ret, a, b.
@@ -4283,7 +4305,10 @@ def make_python_class_method_outparam_override(
     out.write('\n')
 
     # foo.bar = foo_bar_outparams_fn
-    out.write(f'{classname}.{rename.method(structname, cursor.mangled_name)} = {classname}_{main_name}_outparams_fn\n')
+    if structname:
+        out.write(f'{classname}.{rename.method(structname, cursor.mangled_name)} = {name_new}\n')
+    else:
+        out.write(f'{rename.function_class_aware( cursor.mangled_name)} = {name_new}\n')
     out.write('\n')
     out.write('\n')
 
@@ -6049,16 +6074,16 @@ def function_wrapper_class_aware(
         if duplicate_type:
             out_cpp.write( f'*/\n')
 
-        if generated and num_out_params:
-            make_python_class_method_outparam_override(
-                    tu,
-                    fn_cursor,
-                    fnname,
-                    generated.swig_python,
-                    struct_name,
-                    class_name,
-                    return_type,
-                    )
+    if struct_name and generated and num_out_params:
+        make_python_class_method_outparam_override(
+                tu,
+                fn_cursor,
+                fnname,
+                generated.swig_python,
+                struct_name,
+                class_name,
+                return_type,
+                )
 
 
 def class_custom_method(
