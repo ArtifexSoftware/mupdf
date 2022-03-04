@@ -5808,15 +5808,15 @@ def function_wrapper_class_aware(
         out_cpp
             Where to write generated code.
         struct_name
-            If None, we generate class-aware wrapping function. Otherwise name
+            If false, we generate class-aware wrapping function. Otherwise name
             of struct such as 'fz_rect' and we create a method in the struct's
             wrapper class.
         class_name
-            Ignored if struct_name is None.
+            Ignored if struct_name is false.
 
             Name of wrapper class, e.g. 'Rect'.
         class_static
-            Ignored if struct_name is None,
+            Ignored if struct_name is false.
 
             If true, we generate a static method.
 
@@ -9710,10 +9710,10 @@ def build( build_dirs, swig, args):
                     mupdfcpp_so     = f'{build_dirs.dir_so}/libmupdfcpp.so'
 
                     if build_python:
-                        cpp_path = 'platform/python/mupdfcpp_swig.cpp'
+                        cpp_path = f'{build_dirs.dir_mupdf}/platform/python/mupdfcpp_swig.cpp'
                         out_so = f'{build_dirs.dir_so}/_mupdf.so'
                     elif build_csharp:
-                        cpp_path = 'platform/csharp/mupdfcpp_swig.cpp'
+                        cpp_path = f'{build_dirs.dir_mupdf}/platform/csharp/mupdfcpp_swig.cpp'
                         out_so = f'{build_dirs.dir_so}/mupdfcsharp.so'
 
                     # We use jlib.link_l_flags() to add -L options
