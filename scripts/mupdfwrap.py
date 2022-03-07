@@ -6641,7 +6641,7 @@ def class_wrapper_virtual_fnptrs(
     # Class definition beginning.
     #
     out_h.write( '\n')
-    out_h.write( f'/** Wrapper class for struct {struct_name} with virtual fns for each fnptr. */\n')
+    out_h.write( f'/** Wrapper class for struct {struct_name} with virtual fns for each fnptr; this is for use as a SWIG Director class. */\n')
     out_h.write( f'struct {classname}2 : {classname}\n')
     out_h.write(  '{\n')
 
@@ -6705,53 +6705,28 @@ def class_wrapper_virtual_fnptrs(
         out_h.write(text)
         out_cpp.write(text)
 
-    # Define use_virtual_<name>( bool use) method for each fnptr.
-    #
-    out_h.write(f'\n')
-    out_h.write(f'    /** Use these to set the function pointers within m_internal\n')
-    out_h.write(f'    to point to our static callbacks, which then call our virtual\n')
-    out_h.write(f'    methods. */\n')
-    for cursor, fnptr_type in get_fnptrs():
-        out_h.write(f'    void use_virtual_{cursor.spelling}( bool use=true);\n')
-        out_cpp.write(f'void {classname}2::use_virtual_{cursor.spelling}( bool use)\n')
-        out_cpp.write( '{\n')
-        if extras.pod == 'inline':
-            # Fnptr (in {classname}2) and virtual function (in {classname})
-            # have same name, so we need qualify the fnptr with {classname} to
-            # ensure we distinguish between the two.
-            out_cpp.write(f'    {classname}::{cursor.spelling} = (use) ? s_{cursor.spelling} : nullptr;\n')
-        elif extras.pod:
-            out_cpp.write(f'    m_internal.{cursor.spelling} = (use) ? s_{cursor.spelling} : nullptr;\n')
-        else:
-            out_cpp.write(f'    m_internal->{cursor.spelling} = (use) ? s_{cursor.spelling} : nullptr;\n')
-        out_cpp.write( '}\n')
-
     # Define static callback for each fnptr.
     #
-    out_h.write(f'\n')
-    out_h.write(f'    /** Internal callbacks, each calls the corresponding virtual method. */\n')
     for cursor, fnptr_type in get_fnptrs():
 
         # Write static callback.
         #
-        out_h.write(f'    static {fnptr_type.get_result().spelling} s_{cursor.spelling}')
         out_cpp.write(f'/* Static callback, calls self->{cursor.spelling}(). */\n')
-        out_cpp.write(f'{fnptr_type.get_result().spelling} {classname}2::s_{cursor.spelling}')
-        write('(')
+        out_cpp.write(f'static {fnptr_type.get_result().spelling} {classname}2_s_{cursor.spelling}')
+        out_cpp.write('(')
         sep = ''
         for i, arg_type in enumerate( fnptr_type.argument_types()):
             name = f'arg_{i}'
-            write(sep)
-            write( declaration_text( arg_type, name))
+            out_cpp.write(sep)
+            out_cpp.write( declaration_text( arg_type, name))
             sep = ', '
-        write(')')
-        out_h.write(';\n')
+        out_cpp.write(')')
         out_cpp.write('\n')
         out_cpp.write('{\n')
         out_cpp.write(f'    {classname}2* self = {self_("arg_1")};\n')
         out_cpp.write(f'    if (s_trace_director)\n')
         out_cpp.write( '    {\n')
-        out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2::s_{cursor.spelling}(): arg_1=" << arg_1 << " self=" << self << "\\n";\n')
+        out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2_s_{cursor.spelling}(): arg_1=" << arg_1 << " self=" << self << "\\n";\n')
         out_cpp.write( '    }\n')
         out_cpp.write( '    try\n')
         out_cpp.write( '    {\n')
@@ -6774,12 +6749,32 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write( '    }\n')
         out_cpp.write('}\n')
 
+    # Define use_virtual_<name>( bool use) method for each fnptr.
+    #
+    out_h.write(f'\n')
+    out_h.write(f'    /** These methods set the function pointers in *m_internal\n')
+    out_h.write(f'    to point to internal callbacks that call our virtual methods. */\n')
+    for cursor, fnptr_type in get_fnptrs():
+        out_h.write(f'    void use_virtual_{cursor.spelling}( bool use=true);\n')
+        out_cpp.write(f'void {classname}2::use_virtual_{cursor.spelling}( bool use)\n')
+        out_cpp.write( '{\n')
+        if extras.pod == 'inline':
+            # Fnptr (in {classname}2) and virtual function (in {classname})
+            # have same name, so we need qualify the fnptr with {classname} to
+            # ensure we distinguish between the two.
+            out_cpp.write(f'    {classname}::{cursor.spelling} = (use) ? {classname}2_s_{cursor.spelling} : nullptr;\n')
+        elif extras.pod:
+            out_cpp.write(f'    m_internal.{cursor.spelling} = (use) ? {classname}2_s_{cursor.spelling} : nullptr;\n')
+        else:
+            out_cpp.write(f'    m_internal->{cursor.spelling} = (use) ? {classname}2_s_{cursor.spelling} : nullptr;\n')
+        out_cpp.write( '}\n')
+
+    # Write virtual fn default implementations.
+    #
     out_h.write(f'\n')
     out_h.write(f'    /** Default virtual method implementations; these all throw an exception. */\n')
     for cursor, fnptr_type in get_fnptrs():
 
-        # Write virtual fn default implementation.
-        #
         out_h.write(f'    virtual {fnptr_type.get_result().spelling} {cursor.spelling}(')
         out_cpp.write(f'/* Default implementation of virtual method. */\n')
         out_cpp.write(f'{fnptr_type.get_result().spelling} {classname}2::{cursor.spelling}(')
