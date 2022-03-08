@@ -4337,7 +4337,7 @@ def make_wrapper_comment(
         if arg.out_param:
             num_out_params += 1
 
-    write( f'Wrapper for {cursor.mangled_name}().')
+    write( f'Wrapper for `{cursor.mangled_name}()`.')
     if num_out_params:
         tuple_size = num_out_params
         if cursor.result_type.spelling != 'void':
@@ -4345,15 +4345,15 @@ def make_wrapper_comment(
         write( f'\n')
         write( f'\n')
         write( f'This {"method" if is_method else "function"} has out-params. Python/C# wrappers look like:\n')
-        write( f'    {fnname_wrapper}(')
+        write( f'    `{fnname_wrapper}(')
         sep = ''
         for arg in get_args( tu, cursor, include_fz_context=False, skip_first_alt=is_method):
             if arg.alt or not arg.out_param:
                 write( f'{sep}{declaration_text( arg.cursor.type, arg.name)}')
                 sep = ', '
-        write(') => ')
+        write(')` => ')
         if tuple_size > 1:
-            write( '(')
+            write( '`(')
         sep = ''
         if cursor.result_type.spelling != 'void':
             write( f'{cursor.result_type.spelling}')
@@ -4363,7 +4363,7 @@ def make_wrapper_comment(
                 write( f'{sep}{declaration_text( arg.cursor.type.get_pointee(), arg.name)}')
                 sep = ', '
         if tuple_size > 1:
-            write( ')')
+            write( ')`')
         write( f'\n')
     else:
         write( ' ')
@@ -4522,7 +4522,7 @@ def make_internal_functions( namespace, out_h, out_cpp):
     out_h.write(
             textwrap.dedent(
             f'''
-            /** Internal use only. Returns fz_context* for use by current thread. */
+            /** Internal use only. Returns `fz_context*` for use by current thread. */
             fz_context* {rename.internal('context_get')}();
 
 
@@ -4947,7 +4947,7 @@ def make_function_wrappers(
 
     out_exceptions_h.write( textwrap.dedent(
             f'''
-            /** Base class for {rename.class_( '')} exceptions */
+            /** Base class for `{rename.class_( '')}` exceptions */
             struct {base_name} : std::exception
             {{
                 int         m_code;
@@ -4979,7 +4979,7 @@ def make_function_wrappers(
     for enum, typename, padding in errors():
         out_exceptions_h.write( textwrap.dedent(
                 f'''
-                /** For {enum}. */
+                /** For `{enum}`. */
                 struct {typename} : {base_name}
                 {{
                     {typename}(const char* message);
@@ -5004,7 +5004,7 @@ def make_function_wrappers(
     te = rename.internal( 'throw_exception')
     out_exceptions_h.write( textwrap.dedent(
             f'''
-            /** Throw exception appropriate for error in <ctx>. */
+            /** Throw exception appropriate for error in `ctx`. */
             void {te}(fz_context* ctx);
 
             '''))
@@ -5097,7 +5097,7 @@ def make_function_wrappers(
             out_functions_h.write(
                     textwrap.dedent(
                     f'''
-                    /** Extra wrapper for {fnname}() that returns a std::string and sets
+                    /** Extra wrapper for `{fnname}()` that returns a std::string and sets
                     *o_out to length of string plus one. If <key> is not found, returns empty
                     string with *o_out=-1. <o_out> can be NULL if caller is not interested in
                     error information. */
@@ -5494,7 +5494,7 @@ def class_copy_constructor(
             break
     else:
         functions( keep_name)
-        comment = f'Copy constructor using {keep_name}().'
+        comment = f'Copy constructor using `{keep_name}()`.'
         out_h.write( '\n')
         out_h.write( f'    /** {comment} */\n')
         out_h.write( f'    FZ_FUNCTION {classname}(const {classname}& rhs);\n')
@@ -5525,7 +5525,7 @@ def class_copy_constructor(
 
     # Make operator=().
     #
-    comment = f'operator= using {keep_name}() and {drop_name}().'
+    comment = f'operator= using `{keep_name}()` and `{drop_name}()`.'
     out_h.write( f'    /** {comment} */\n')
     out_h.write( f'    FZ_FUNCTION {classname}& operator=(const {classname}& rhs);\n')
 
@@ -5935,7 +5935,7 @@ def function_wrapper_class_aware(
     decl_cpp += ')'
 
     if class_constructor:
-        comment = f'Constructor using {fnname}().'
+        comment = f'Constructor using `{fnname}()`.'
     else:
         comment = make_wrapper_comment(
                 tu,
@@ -6228,7 +6228,7 @@ def class_raw_constructor(
     does not call fz_keep_*(); the class's destructor will call fz_drop_*().
     '''
     #jlib.log( 'Creating raw constructor {classname=} {struct_name=} {extras.pod=} {extras.constructor_raw=} {fnname=}')
-    comment = f'/** Constructor using raw copy of pre-existing {struct_name}. */'
+    comment = f'/** Constructor using raw copy of pre-existing `{struct_name}`. */'
     if extras.pod:
         constructor_decl = f'{classname}(const {struct_name}* internal)'
     else:
@@ -6645,7 +6645,7 @@ def class_wrapper_virtual_fnptrs(
     out_h.write( f'struct {classname}2 : {classname}\n')
     out_h.write(  '{\n')
 
-    out_cpp.write( f'/* Implementation of methods for {classname}2, virtual_fnptrs wrapper for {struct_name}). */\n')
+    out_cpp.write( f'/* Implementation of methods for `{classname}2`, virtual_fnptrs wrapper for `{struct_name}`). */\n')
     out_cpp.write( '\n')
 
     def get_fnptrs():
@@ -6868,9 +6868,9 @@ def class_wrapper(
     #
     out_h.write( '\n')
     if extras.copyable:
-        out_h.write( f'/** Wrapper class for struct {struct_name}. */\n')
+        out_h.write( f'/** Wrapper class for struct `{struct_name}`. */\n')
     else:
-        out_h.write( f'/** Wrapper class for struct {struct_name}. Not copyable or assignable. */\n')
+        out_h.write( f'/** Wrapper class for struct `{struct_name}`. Not copyable or assignable. */\n')
     if struct_cursor.raw_comment:
         out_h.write( f'{struct_cursor.raw_comment}')
         if not struct_cursor.raw_comment.endswith( '\n'):
