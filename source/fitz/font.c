@@ -42,7 +42,6 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_TRUETYPE_TAGS_H
 
-#define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_CACHE 4096
 
 #ifndef FT_SFNT_OS2
@@ -98,7 +97,6 @@ static fz_font *
 fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_count)
 {
 	fz_font *font;
-	int i;
 
 	font = fz_malloc_struct(ctx, fz_font);
 	font->refs = 1;
@@ -130,22 +128,8 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->glyph_count = glyph_count;
 
-	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
-	{
-		fz_try(ctx)
-			font->bbox_table = Memento_label(fz_malloc_array(ctx, glyph_count, fz_rect), "font_bbox_table");
-		fz_catch(ctx)
-		{
-			fz_free(ctx, font);
-			fz_rethrow(ctx);
-		}
-		for (i = 0; i < glyph_count; i++)
-			font->bbox_table[i] = fz_infinite_rect;
-	}
-	else
-	{
-		font->bbox_table = NULL;
-	}
+	font->bbox_table = NULL;
+	font->use_glyph_bbox = use_glyph_bbox;
 
 	font->width_count = 0;
 	font->width_table = NULL;
@@ -239,7 +223,13 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 		fz_free(ctx, font->encoding_cache[i]);
 
 	fz_drop_buffer(ctx, font->buffer);
-	fz_free(ctx, font->bbox_table);
+	if (font->bbox_table)
+	{
+		int n = (font->glyph_count+255)/256;
+		for (i = 0; i < n; i++)
+			fz_free(ctx, font->bbox_table[i]);
+		fz_free(ctx, font->bbox_table);
+	}
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
 	if (font->shaper_data.destroy && font->shaper_data.shaper_handle)
@@ -1201,6 +1191,30 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix tr
 }
 
 static fz_rect *
+get_gid_bbox(fz_context *ctx, fz_font *font, int gid)
+{
+	int i;
+
+	if (gid < 0 || gid >= font->glyph_count || !font->use_glyph_bbox)
+		return NULL;
+
+	if (font->bbox_table == NULL) {
+		i = (font->glyph_count + 255)/256;
+		font->bbox_table = Memento_label(fz_malloc_array(ctx, i, fz_rect *), "bbox_table(top)");
+		memset(font->bbox_table, 0, sizeof(fz_rect *) * i);
+	}
+
+	if (font->bbox_table[gid>>8] == NULL) {
+		font->bbox_table[gid>>8] = Memento_label(fz_malloc_array(ctx, 256, fz_rect), "bbox_table");
+		for (i = 0; i < 256; i++) {
+			font->bbox_table[gid>>8][i] = fz_infinite_rect;
+		}
+	}
+
+	return &font->bbox_table[gid>>8][gid & 255];
+}
+
+static fz_rect *
 fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	FT_Face face = font->ft_face;
@@ -1208,7 +1222,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	FT_BBox cbox;
 	FT_Matrix m;
 	FT_Vector v;
-	fz_rect *bounds = &font->bbox_table[gid];
+	fz_rect *bounds = get_gid_bbox(ctx, font, gid);
 
 	// TODO: refactor loading into fz_load_ft_glyph
 	// TODO: cache results
@@ -1425,15 +1439,16 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	fz_display_list *list;
 	fz_device *dev;
+	fz_rect *r = get_gid_bbox(ctx, font, gid);
 
 	list = font->t3lists[gid];
 	if (!list)
 	{
-		font->bbox_table[gid] = fz_empty_rect;
+		*r = fz_empty_rect;
 		return;
 	}
 
-	dev = fz_new_bbox_device(ctx, &font->bbox_table[gid]);
+	dev = fz_new_bbox_device(ctx, r);
 	fz_try(ctx)
 	{
 		fz_run_display_list(ctx, list, dev, font->t3matrix, fz_infinite_rect, NULL);
@@ -1450,7 +1465,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 
 	/* Update font bbox with glyph's computed bbox if the font bbox is invalid */
 	if (font->flags.invalid_bbox)
-		font->bbox = fz_union_rect(font->bbox, font->bbox_table[gid]);
+		font->bbox = fz_union_rect(font->bbox, *r);
 }
 
 void
@@ -1500,18 +1515,18 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 		fz_rethrow(ctx);
 	if (fz_display_list_is_empty(ctx, font->t3lists[gid]))
 	{
+		fz_rect *r = get_gid_bbox(ctx, font, gid);
 		/* If empty, no need for a huge bbox, especially as the logic
 		 * in the 'else if' can make it huge. */
-		font->bbox_table[gid].x0 = font->flags.invalid_bbox ? 0 : font->bbox.x0;
-		font->bbox_table[gid].y0 = font->flags.invalid_bbox ? 0 : font->bbox.y0;
-		font->bbox_table[gid].x1 = font->bbox_table[gid].x0 + .00001f;
-		font->bbox_table[gid].y1 = font->bbox_table[gid].y0 + .00001f;
+		r->x0 = font->flags.invalid_bbox ? 0 : font->bbox.x0;
+		r->y0 = font->flags.invalid_bbox ? 0 : font->bbox.y0;
+		r->x1 = r->x0 + .00001f;
+		r->y1 = r->y0 + .00001f;
 	}
 	else if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
 	{
-		assert(font->bbox_table != NULL);
-		assert(font->glyph_count > gid);
-		font->bbox_table[gid] = fz_transform_rect(d1_rect, font->t3matrix);
+		fz_rect *r = get_gid_bbox(ctx, font, gid);
+		*r = fz_transform_rect(d1_rect, font->t3matrix);
 
 		if (font->flags.invalid_bbox || !fz_contains_rect(font->bbox, d1_rect))
 		{
@@ -1672,10 +1687,11 @@ fz_rect
 fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 {
 	fz_rect rect;
-	if (font->bbox_table && gid < font->glyph_count && gid >= 0)
+	fz_rect *r = get_gid_bbox(ctx, font, gid);
+	if (r)
 	{
 		/* If the bbox is infinite or empty, distrust it */
-		if (fz_is_infinite_rect(font->bbox_table[gid]) || fz_is_empty_rect(font->bbox_table[gid]))
+		if (fz_is_infinite_rect(*r) || fz_is_empty_rect(*r))
 		{
 			/* Get the real size from the glyph */
 			if (font->ft_face)
@@ -1685,19 +1701,19 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 			else
 				/* If we can't get a real size, fall back to the font
 				 * bbox. */
-				font->bbox_table[gid] = font->bbox;
+				*r = font->bbox;
 			/* If the real size came back as empty, then store it as
 			 * a very small rectangle to avoid us calling this same
 			 * check every time. */
-			if (fz_is_empty_rect(font->bbox_table[gid]))
+			if (fz_is_empty_rect(*r))
 			{
-				font->bbox_table[gid].x0 = 0;
-				font->bbox_table[gid].y0 = 0;
-				font->bbox_table[gid].x1 = 0.0000001f;
-				font->bbox_table[gid].y1 = 0.0000001f;
+				r->x0 = 0;
+				r->y0 = 0;
+				r->x1 = 0.0000001f;
+				r->y1 = 0.0000001f;
 			}
 		}
-		rect = font->bbox_table[gid];
+		rect = *r;
 	}
 	else
 	{
