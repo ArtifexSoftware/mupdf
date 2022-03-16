@@ -715,7 +715,7 @@ struct fz_font
 	short *width_table; /* in 1000 units */
 
 	/* cached glyph metrics */
-	float *advance_cache;
+	float **advance_cache;
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];

@@ -42,8 +42,6 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_TRUETYPE_TAGS_H
 
-#define MAX_ADVANCE_CACHE 4096
-
 #ifndef FT_SFNT_OS2
 #define FT_SFNT_OS2 ft_sfnt_os2
 #endif
@@ -231,7 +229,13 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 		fz_free(ctx, font->bbox_table);
 	}
 	fz_free(ctx, font->width_table);
-	fz_free(ctx, font->advance_cache);
+	if (font->advance_cache)
+	{
+		int n = (font->glyph_count+255)/256;
+		for (i = 0; i < n; i++)
+			fz_free(ctx, font->advance_cache[i]);
+		fz_free(ctx, font->advance_cache);
+	}
 	if (font->shaper_data.destroy && font->shaper_data.shaper_handle)
 	{
 		font->shaper_data.destroy(ctx, font->shaper_data.shaper_handle);
@@ -1819,24 +1823,41 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 	{
 		if (wmode)
 			return fz_advance_ft_glyph(ctx, font, gid, 1);
-		if (gid >= 0 && gid < font->glyph_count && gid < MAX_ADVANCE_CACHE)
+		if (gid >= 0 && gid < font->glyph_count)
 		{
 			float f;
+			int block = gid>>8;
 			fz_lock(ctx, FZ_LOCK_FREETYPE);
 			if (!font->advance_cache)
 			{
-				int i;
+				int n = (font->glyph_count+255)/256;
 				fz_try(ctx)
-					font->advance_cache = Memento_label(fz_malloc_array(ctx, font->glyph_count, float), "font_advance_cache");
+					font->advance_cache = Memento_label(fz_malloc_array(ctx, n, float *), "font_advance_cache");
 				fz_catch(ctx)
 				{
 					fz_unlock(ctx, FZ_LOCK_FREETYPE);
 					fz_rethrow(ctx);
 				}
-				for (i = 0; i < font->glyph_count; ++i)
-					font->advance_cache[i] = fz_advance_ft_glyph_aux(ctx, font, i, 0, 1);
+				memset(font->advance_cache, 0, n * sizeof(float *));
 			}
-			f = font->advance_cache[gid];
+			if (!font->advance_cache[block])
+			{
+				int i, n;
+				fz_try(ctx)
+					font->advance_cache[block] = Memento_label(fz_malloc_array(ctx, 256, float), "font_advance_cache");
+				fz_catch(ctx)
+				{
+					fz_unlock(ctx, FZ_LOCK_FREETYPE);
+					fz_rethrow(ctx);
+				}
+				n = (block<<8)+256;
+				if (n > font->glyph_count)
+					n = font->glyph_count;
+				n -= (block<<8);
+				for (i = 0; i < n; ++i)
+					font->advance_cache[block][i] = fz_advance_ft_glyph_aux(ctx, font, (block<<8)+i, 0, 1);
+			}
+			f = font->advance_cache[block][gid & 255];
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 			return f;
 		}
