@@ -12,9 +12,7 @@ from . import parse
 from . import state
 from . import util
 
-# Need to do this after import state, because state.py searches for clang.
-#
-import clang
+clang = state.clang
 
 
 def get_extras(tu, type_):

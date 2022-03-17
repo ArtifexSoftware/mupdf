@@ -300,12 +300,12 @@ class Generated:
             initialise empty state.state_.
         '''
         if dirpath:
-            self.h_files                = from_pickle( f'{dirpath}/h_files.pickle')
-            self.cpp_files              = from_pickle( f'{dirpath}/cpp_files.pickle')
+            self.c_enums                = from_pickle( f'{dirpath}/c_enums.pickle')
             self.c_functions            = from_pickle( f'{dirpath}/c_functions.pickle')
             self.c_globals              = from_pickle( f'{dirpath}/c_globals.pickle')
-            self.c_enums                = from_pickle( f'{dirpath}/c_enums.pickle')
             self.container_classnames   = from_pickle( f'{dirpath}/container_classnames.pickle')
+            self.cpp_files              = from_pickle( f'{dirpath}/cpp_files.pickle')
+            self.h_files                = from_pickle( f'{dirpath}/h_files.pickle')
             self.swig_cpp               = from_pickle( f'{dirpath}/swig_cpp.pickle')
             self.swig_csharp            = from_pickle( f'{dirpath}/swig_csharp.pickle')
             self.swig_python            = from_pickle( f'{dirpath}/swig_python.pickle')
@@ -2562,18 +2562,14 @@ def class_wrapper_virtual_fnptrs(
         out_h,
         out_cpp,
         out_h_end,
-        out_cpp2,
-        out_h2,
         generated,
         ):
     if not extras.virtual_fnptrs:
         return
 
-    if state.state_.windows:
-        for out in out_h, out_cpp:
-            out.write( '\n')
-            out.write( f'/* SWIG Directors support not currently available on Windows. */\n')
-            out.write( f'#if 0\n')
+    for out in out_h, out_cpp:
+        out.write( '\n')
+        out.write( '#ifndef _WIN32 /* SWIG Directors support not currently available on Windows. */\n')
 
     generated.virtual_fnptrs.append( f'{classname}2')
     if len(extras.virtual_fnptrs) == 2:
@@ -2741,11 +2737,9 @@ def class_wrapper_virtual_fnptrs(
 
     out_h.write(  '};\n')
 
-    if state.state_.windows:
-        for out in out_h, out_cpp:
-            out.write( '\n')
-            out.write( f'/* SWIG Directors support not currently available on Windows. */\n')
-            out.write( f'#endif\n')
+    for out in out_h, out_cpp:
+        out.write( '\n')
+        out.write( f'#endif /* SWIG Directors support not currently available on Windows. */\n')
 
 
 def class_wrapper(
@@ -3168,8 +3162,6 @@ def class_wrapper(
             out_h,
             out_cpp,
             out_h_end,
-            out_cpp2,
-            out_h2,
             generated,
             )
 

@@ -458,6 +458,7 @@ Generated files:
             include/ [C++ header files]
                 mupdf/
                     classes.h
+                    classes2.h
                     exceptions.h
                     functions.h
                     internal.h
@@ -609,6 +610,7 @@ Usage:
                                 functions.cpp
                             include/
                                 classes.h
+                                classes2.h
                                 exceptions.h
                                 functions.h
 
@@ -822,8 +824,7 @@ from . import state
 from . import swig
 from . import util
 
-# Need to be done after import state, because state.py searches for clang.
-import clang
+clang = state.clang
 
 
 # We use f-strings, so need python-3.6+.

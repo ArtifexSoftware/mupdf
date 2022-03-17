@@ -830,10 +830,14 @@ def build_swig(
     disable_swig_warnings = '-w' + ','.join( disable_swig_warnings)
 
     if language == 'python':
+        # Need -D_WIN32 on Windows because as of 2022-03-17, C++ code for
+        # SWIG Directors support doesn't work on Windows so is inside #ifndef
+        # _WIN32...#endif.
         command = (
                 textwrap.dedent(
                 f'''
                 "{swig_command}"
+                    {"-D_WIN32" if state_.windows else ""}
                     -Wall
                     -c++
                     {"-doxygen" if swig_major >= 4 else ""}
@@ -929,6 +933,7 @@ def build_swig(
                 textwrap.dedent(
                 f'''
                 "{swig_command}"
+                    {"-D_WIN32" if state_.windows else ""}
                     -Wall
                     -c++
                     -csharp
