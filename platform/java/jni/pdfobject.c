@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -60,23 +60,6 @@ FUN(PDFObject_isIndirect)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 		b = pdf_is_indirect(ctx, obj);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return b ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL
-FUN(PDFObject_isNull)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_obj *obj = from_PDFObject(env, self);
-	int b = 0;
-
-	if (!ctx || !obj) return JNI_FALSE;
-
-	fz_try(ctx)
-		b = pdf_is_null(ctx, obj);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

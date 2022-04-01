@@ -2790,14 +2790,6 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isIndirect
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    isNull
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isNull
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    isBoolean
  * Signature: ()Z
  */
