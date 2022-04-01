@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -21,6 +21,9 @@
 // CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 package com.artifex.mupdf.fitz;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Buffer
 {
@@ -46,6 +49,10 @@ public class Buffer
 		pointer = newNativeBuffer(0);
 	}
 
+	protected Buffer(long p) {
+		pointer = p;
+	}
+
 	public native int getLength();
 	public native int readByte(int at);
 	public native int readBytes(int at, byte[] bs);
@@ -58,6 +65,15 @@ public class Buffer
 	public native void writeRune(int rune);
 	public native void writeLine(String line);
 	public native void writeLines(String... lines);
+
+	public void writeInputStream(InputStream stream)
+	{
+		try {
+			writeBytes(stream.readAllBytes());
+		} catch (IOException e) {
+			throw new RuntimeException("unable to read all bytes from stream into buffer");
+		}
+	}
 
 	public native void save(String filename);
 }
