@@ -218,7 +218,7 @@ public class PDFDocument extends Document
 
 	public PDFObject addEmbeddedFile(String filename, String mimetype, InputStream stream, Date created, Date modified, boolean addChecksum) {
 		Buffer contents = new Buffer();
-		contents.writeInputStream(stream);
+		contents.writeFromStream(stream);
 		long createdTime = created != null ? created.getTime() : -1;
 		long modifiedTime = modified != null ? modified.getTime() : -1;
 		return addEmbeddedFile(filename, mimetype, contents, createdTime, modifiedTime, addChecksum);

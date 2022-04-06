@@ -24,6 +24,7 @@ package com.artifex.mupdf.fitz;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class Buffer
 {
@@ -66,7 +67,20 @@ public class Buffer
 	public native void writeLine(String line);
 	public native void writeLines(String... lines);
 
-	public void writeInputStream(InputStream stream)
+	public native void save(String filename);
+
+	public void readIntoStream(OutputStream stream)
+	{
+		try {
+			byte[] data = new byte[getLength()];
+			readBytes(0, data);
+			stream.write(data);
+		} catch (IOException e) {
+			throw new RuntimeException("unable to write all bytes from buffer into stream");
+		}
+	}
+
+	public void writeFromStream(InputStream stream)
 	{
 		try {
 			writeBytes(stream.readAllBytes());
@@ -75,5 +89,4 @@ public class Buffer
 		}
 	}
 
-	public native void save(String filename);
 }
