@@ -1544,7 +1544,17 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict)
 
 		/* Load CharProcs */
 		if (type3)
+		{
 			pdf_load_type3_glyphs(ctx, doc, fontdesc);
+
+			/* Type 3 fonts with glyphs that cyclically refer to the
+			type 3 font itself will already have caused its font
+			descriptor to be cached in the store. The font descriptor
+			being prepared here is preferable, so remove any potential
+			font descriptor stored by the call to pdf_load_type3_glyphs()
+			above. */
+			pdf_remove_item(ctx, pdf_drop_font_imp, dict);
+		}
 
 		pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
 	}
