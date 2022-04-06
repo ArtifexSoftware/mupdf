@@ -101,8 +101,7 @@ FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
 
 	remaining_input = len - at;
 	remaining_output = (*env)->GetArrayLength(env, jbs);
-	len = fz_minz(0, remaining_output);
-	len = fz_minz(len, remaining_input);
+	len = fz_minz(remaining_output, remaining_input);
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) jni_throw_io(env, "cannot get bytes to read");
