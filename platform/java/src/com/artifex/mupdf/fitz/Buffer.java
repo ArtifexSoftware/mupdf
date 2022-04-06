@@ -83,7 +83,19 @@ public class Buffer
 	public void writeFromStream(InputStream stream)
 	{
 		try {
-			writeBytes(stream.readAllBytes());
+			boolean readAllBytes = false;
+			byte[] data = null;
+			while (!readAllBytes)
+			{
+				int availableBytes = stream.available();
+				if (data == null || availableBytes > data.length)
+					data = new byte[availableBytes];
+				int bytesRead = stream.read(data);
+				if (bytesRead >= 0)
+					writeBytesFrom(data, 0, bytesRead);
+				else
+					readAllBytes = true;
+			}
 		} catch (IOException e) {
 			throw new RuntimeException("unable to read all bytes from stream into buffer");
 		}
