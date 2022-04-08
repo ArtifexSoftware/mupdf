@@ -101,6 +101,35 @@ pdf_count_layer_configs(fz_context *ctx, pdf_document *doc)
 	return desc ? desc->num_configs : 0;
 }
 
+int
+pdf_count_layers(fz_context *ctx, pdf_document *doc)
+{
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	return desc ? desc->len : 0;
+}
+
+const char *
+pdf_layer_name(fz_context *ctx, pdf_document *doc, int layer)
+{
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	return desc ? pdf_dict_get_text_string(ctx, desc->ocgs[layer].obj, PDF_NAME(Name)) : NULL;
+}
+
+int
+pdf_layer_is_enabled(fz_context *ctx, pdf_document *doc, int layer)
+{
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	return desc ? desc->ocgs[layer].state : 0;
+}
+
+void
+pdf_enable_layer(fz_context *ctx, pdf_document *doc, int layer, int enabled)
+{
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	if (desc)
+		desc->ocgs[layer].state = enabled;
+}
+
 static int
 count_entries(fz_context *ctx, pdf_obj *obj)
 {
