@@ -168,7 +168,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 			ui = get_ocg_ui(ctx, desc, fill++);
 			ui->depth = depth;
 			ui->ocg = -1;
-			ui->name = pdf_to_str_buf(ctx, o);
+			ui->name = pdf_to_text_string(ctx, o);
 			ui->button_flags = PDF_LAYER_UI_LABEL;
 			ui->locked = 1;
 			continue;
@@ -184,7 +184,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		ui = get_ocg_ui(ctx, desc, fill++);
 		ui->depth = depth;
 		ui->ocg = j;
-		ui->name = pdf_dict_get_string(ctx, o, PDF_NAME(Name), NULL);
+		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
 		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 	}
