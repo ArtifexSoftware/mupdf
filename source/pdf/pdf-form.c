@@ -259,6 +259,14 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
 			{
 				pdf_obj *leafv = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));
+				pdf_obj *ap = pdf_dict_get(ctx, field, PDF_NAME(AP));
+				pdf_obj *n = pdf_dict_get(ctx, ap, PDF_NAME(N));
+
+				/* Value does not refer to any appearance state in the
+				normal appearance stream dictionary, default to Off instead. */
+				if (pdf_is_dict(ctx, n) && !pdf_dict_get(ctx, n, leafv))
+					leafv = NULL;
+
 				if (!leafv)
 					leafv = PDF_NAME(Off);
 				pdf_dict_put(ctx, field, PDF_NAME(AS), leafv);
