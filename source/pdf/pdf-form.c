@@ -183,13 +183,17 @@ lookup_field_sub(fz_context *ctx, pdf_obj *dict, const char *str)
 			str++;
 	}
 
-	/* If there is a kids array, walk those looking for the appropriate one. */
+	/* If there is a kids array, but the search string is not empty, we have
+	encountered an internal field which represents a set of terminal fields. */
+
+	/* If there is a kids array and the search string is not empty,
+	walk those looking for the appropriate one. */
 	kids = pdf_dict_get(ctx, dict, PDF_NAME(Kids));
-	if (kids)
+	if (kids && *str != 0)
 		return pdf_lookup_field(ctx, kids, str);
 
-	/* No Kids, so we're a terminal node. We accept it as the match if we've
-	 * exhausted the match string. */
+	/* The field may be a terminal or an internal field at this point.
+	Accept it as the match if the match string is exhausted. */
 	if (*str == 0)
 		return dict;
 
