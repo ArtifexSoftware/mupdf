@@ -88,6 +88,13 @@ int pdf_obj_marked(fz_context *ctx, pdf_obj *obj);
 int pdf_mark_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
 
+typedef struct pdf_cycle_list pdf_cycle_list;
+struct pdf_cycle_list {
+	pdf_cycle_list *prev;
+	pdf_obj *obj;
+};
+int pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_obj *obj);
+
 typedef struct
 {
 	int len;
