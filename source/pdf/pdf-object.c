@@ -2427,6 +2427,52 @@ pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *ob
 	return 0;
 }
 
+pdf_mark_bits *
+pdf_new_mark_bits(fz_context *ctx, pdf_document *doc)
+{
+	int n = pdf_xref_len(ctx, doc);
+	int nb = (n + 7) >> 3;
+	pdf_mark_bits *marks = fz_calloc(ctx, offsetof(pdf_mark_bits, bits) + nb, 1);
+	marks->len = n;
+	return marks;
+}
+
+void
+pdf_drop_mark_bits(fz_context *ctx, pdf_mark_bits *marks)
+{
+	fz_free(ctx, marks);
+}
+
+void pdf_mark_bits_reset(fz_context *ctx, pdf_mark_bits *marks)
+{
+	memset(marks->bits, 0, (marks->len + 7) >> 3);
+}
+
+int pdf_mark_bits_set(fz_context *ctx, pdf_mark_bits *marks, pdf_obj *obj)
+{
+	int num = pdf_to_num(ctx, obj);
+	if (num > 0 && num < marks->len)
+	{
+		int x = num >> 3;
+		int m = 1 << (num & 7);
+		if (marks->bits[x] & m)
+			return 1;
+		marks->bits[x] |= m;
+	}
+	return 0;
+}
+
+void pdf_mark_bits_clear(fz_context *ctx, pdf_mark_bits *marks, pdf_obj *obj)
+{
+	int num = pdf_to_num(ctx, obj);
+	if (num > 0 && num < marks->len)
+	{
+		int x = num >> 3;
+		int m = 0xff ^ (1 << (num & 7));
+		marks->bits[x] &= m;
+	}
+}
+
 int
 pdf_mark_list_push(fz_context *ctx, pdf_mark_list *marks, pdf_obj *obj)
 {
