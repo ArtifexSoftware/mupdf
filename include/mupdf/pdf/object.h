@@ -90,8 +90,8 @@ void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
 
 typedef struct pdf_cycle_list pdf_cycle_list;
 struct pdf_cycle_list {
-	pdf_cycle_list *prev;
-	pdf_obj *obj;
+	pdf_cycle_list *up;
+	int num;
 };
 int pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_obj *obj);
 

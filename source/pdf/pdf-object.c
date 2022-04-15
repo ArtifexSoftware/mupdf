@@ -2409,18 +2409,21 @@ pdf_unmark_obj(fz_context *ctx, pdf_obj *obj)
 }
 
 int
-pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_obj *obj)
+pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *obj)
 {
-	pdf_cycle_list *x = prev;
-	obj = pdf_resolve_indirect(ctx, obj);
-	// TODO: check indirect numbers instead
-	while (x) {
-		if (x->obj == obj)
-			return 1;
-		x = x->prev;
+	int num = pdf_to_num(ctx, obj);
+	if (num > 0)
+	{
+		pdf_cycle_list *x = up;
+		while (x)
+		{
+			if (x->num == num)
+				return 1;
+			x = x->up;
+		}
 	}
-	here->prev = prev;
-	here->obj = obj;
+	here->up = up;
+	here->num = num;
 	return 0;
 }
 
