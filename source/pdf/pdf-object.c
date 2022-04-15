@@ -2430,20 +2430,24 @@ pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *ob
 int
 pdf_mark_list_push(fz_context *ctx, pdf_mark_list *list, pdf_obj *obj)
 {
+	int num = pdf_to_num(ctx, obj);
 	int i;
 
+	if (num == 0)
+		return 0;
+
 	for (i = 0; i < list->len; ++i)
-		if (list->list[i] == obj)
+		if (list->list[i] == num)
 			return 1;
 
 	if (list->len == list->max)
 	{
-		int newsize = list->max ? list->max * 2 : 32;
-		list->list = fz_realloc_array(ctx, list->list, newsize, pdf_obj *);
+		int newsize = list->max ? list->max * 2 : 8;
+		list->list = fz_realloc_array(ctx, list->list, newsize, int);
 		list->max = newsize;
 	}
 
-	list->list[list->len++] = obj;
+	list->list[list->len++] = num;
 	return 0;
 }
 
