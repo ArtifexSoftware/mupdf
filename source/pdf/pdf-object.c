@@ -2428,7 +2428,7 @@ pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *ob
 }
 
 int
-pdf_mark_list_push(fz_context *ctx, pdf_mark_list *list, pdf_obj *obj)
+pdf_mark_list_push(fz_context *ctx, pdf_mark_list *marks, pdf_obj *obj)
 {
 	int num = pdf_to_num(ctx, obj);
 	int i;
@@ -2436,41 +2436,47 @@ pdf_mark_list_push(fz_context *ctx, pdf_mark_list *list, pdf_obj *obj)
 	if (num == 0)
 		return 0;
 
-	for (i = 0; i < list->len; ++i)
-		if (list->list[i] == num)
+	/* Note: this is slow, if the mark list is expected to be big use pdf_mark_bits instead! */
+	for (i = 0; i < marks->len; ++i)
+		if (marks->list[i] == num)
 			return 1;
 
-	if (list->len == list->max)
+	if (marks->len == marks->max)
 	{
-		int newsize = list->max ? list->max * 2 : 8;
-		list->list = fz_realloc_array(ctx, list->list, newsize, int);
-		list->max = newsize;
+		int newsize = marks->max << 1;
+		if (marks->list == marks->local_list)
+			marks->list = fz_malloc_array(ctx, newsize, int);
+		else
+			marks->list = fz_realloc_array(ctx, marks->list, newsize, int);
+		marks->max = newsize;
 	}
 
-	list->list[list->len++] = num;
+	marks->list[marks->len++] = num;
 	return 0;
 }
 
 void
-pdf_mark_list_pop(fz_context *ctx, pdf_mark_list *list)
+pdf_mark_list_pop(fz_context *ctx, pdf_mark_list *marks)
 {
-	--list->len;
+	--marks->len;
 }
 
 void
-pdf_mark_list_init(fz_context *ctx, pdf_mark_list *list)
+pdf_mark_list_init(fz_context *ctx, pdf_mark_list *marks)
 {
-	list->len = list->max = 0;
-	list->list = NULL;
+	marks->len = 0;
+	marks->max = nelem(marks->local_list);
+	marks->list = marks->local_list;
 }
 
 void
-pdf_mark_list_free(fz_context *ctx, pdf_mark_list *list)
+pdf_mark_list_free(fz_context *ctx, pdf_mark_list *marks)
 {
-	fz_free(ctx, list->list);
-	list->len = 0;
-	list->max = 0;
-	list->list = NULL;
+	if (marks->list != marks->local_list)
+		fz_free(ctx, marks->list);
+	marks->len = 0;
+	marks->max = 0;
+	marks->list = NULL;
 }
 
 void

@@ -100,6 +100,7 @@ typedef struct
 	int len;
 	int max;
 	int *list;
+	int local_list[8];
 } pdf_mark_list;
 
 int pdf_mark_list_push(fz_context *ctx, pdf_mark_list *list, pdf_obj *obj);
