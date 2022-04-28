@@ -494,8 +494,8 @@ static int fetch_next(fz_context *ctx, fz_stream *stm, size_t len)
 	return -1;
 }
 
-EM_JS(void, js_init_fetch, (struct fetch_state *state, char *url, int content_length, int block_shift), {
-	fetcher.postMessage(['OPEN', state, [UTF8ToString(url), content_length, block_shift]]);
+EM_JS(void, js_init_fetch, (struct fetch_state *state, char *url, int content_length, int block_shift, int prefetch), {
+	fetcher.postMessage(['OPEN', state, [UTF8ToString(url), content_length, block_shift, prefetch]]);
 });
 
 EMSCRIPTEN_KEEPALIVE
@@ -508,7 +508,7 @@ void onFetchData(struct fetch_state *state, int block, uint8_t *data, int size)
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_stream *openURL(char *url, int content_length, int block_size)
+fz_stream *openURL(char *url, int content_length, int block_size, int prefetch)
 {
 	fz_stream *stm = NULL;
 	struct fetch_state *state = NULL;
@@ -534,7 +534,7 @@ fz_stream *openURL(char *url, int content_length, int block_size)
 		// stm->progressive = 1;
 		stm->seek = fetch_seek;
 
-		js_init_fetch(state, url, content_length, block_shift);
+		js_init_fetch(state, url, content_length, block_shift, prefetch);
 	}
 	fz_catch(ctx)
 	{

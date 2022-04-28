@@ -39,7 +39,7 @@ Module.onRuntimeInitialized = function () {
 	wasm_onFetchData = Module.cwrap('onFetchData', 'null', ['number', 'number', 'number', 'number']);
 	wasm_openDocumentFromBuffer = Module.cwrap('openDocumentFromBuffer', 'number', ['number', 'number', 'string']);
 
-	mupdf.openURL = Module.cwrap('openURL', 'number', ['string', 'number', 'number']);
+	mupdf.openURL = Module.cwrap('openURL', 'number', ['string', 'number', 'number', 'number']);
 	mupdf.openDocumentFromStream = Module.cwrap('openDocumentFromStream', 'number', ['number', 'string']);
 	mupdf.freeDocument = Module.cwrap('freeDocument', 'null', ['number']);
 	mupdf.documentTitle = Module.cwrap('documentTitle', 'string', ['number']);

@@ -26,12 +26,13 @@
 
 let fetchStates = {};
 
-function initFetch(id, url, contentLength, blockShift) {
+function initFetch(id, url, contentLength, blockShift, prefetch) {
 	console.log("OPEN", url, "PROGRESSIVELY");
 	fetchStates[id] = {
 		url: url,
 		blockShift: blockShift,
 		blockSize: 1 << blockShift,
+		prefetch: prefetch,
 		contentLength: contentLength,
 		map: new Array((contentLength >>> blockShift) + 1).fill(0),
 		closed: false,
@@ -65,7 +66,8 @@ async function fetchBlock(id, block) {
 		state.map[block] = 2;
 		postMessage(['DATA', id, block, buffer], [buffer]);
 
-		prefetchNextBlock(id, block + 1);
+		if (state.prefetch)
+			prefetchNextBlock(id, block + 1);
 	} catch(error) {
 		state.map[block] = 0;
 		postMessage(['ERROR', id, block, error.toString()]);
@@ -99,7 +101,7 @@ onmessage = function (event) {
 	let [ cmd, id, arg ] = event.data;
 	switch (cmd) {
 	case 'OPEN':
-		initFetch(id, arg[0], arg[1], arg[2]);
+		initFetch(id, arg[0], arg[1], arg[2], arg[3]);
 		break;
 	case 'READ':
 		fetchBlock(id, arg);
