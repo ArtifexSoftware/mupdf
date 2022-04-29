@@ -362,6 +362,9 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
 	fz_colorspace *cs = NULL;
 	pdf_cycle_list cycle;
 
+	if (pdf_is_indirect(ctx, obj) && pdf_cycle(ctx, &cycle, cycle_up, obj))
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive colorspace");
+
 	if (pdf_is_name(ctx, obj))
 	{
 		if (pdf_name_eq(ctx, obj, PDF_NAME(Pattern)))
@@ -408,9 +411,6 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
 
 			else
 			{
-				if (pdf_cycle(ctx, &cycle, cycle_up, obj))
-					fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive colorspace");
-
 				if ((cs = pdf_find_item(ctx, fz_drop_colorspace_imp, obj)) != NULL)
 					return cs;
 
@@ -456,8 +456,6 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
 	 * handle it, so do our best. */
 	else if (pdf_is_dict(ctx, obj))
 	{
-		if (pdf_cycle(ctx, &cycle, cycle_up, obj))
-			fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive colorspace");
 		if ((cs = pdf_find_item(ctx, fz_drop_colorspace_imp, obj)) != NULL)
 			return cs;
 		cs = load_icc_based(ctx, obj, 1, &cycle);

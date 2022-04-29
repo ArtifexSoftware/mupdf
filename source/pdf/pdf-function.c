@@ -1221,7 +1221,6 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 static void
 load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
-	pdf_cycle_list cycle;
 	pdf_function **funcs;
 	pdf_obj *obj;
 	pdf_obj *sub;
@@ -1239,9 +1238,6 @@ load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict, pdf_cycl
 	if (!pdf_is_array(ctx, obj))
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "stitching function has no input functions");
 
-	if (pdf_cycle(ctx, &cycle, cycle_up, obj))
-		fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive function");
-
 	k = pdf_array_len(ctx, obj);
 
 	func->u.st.funcs = Memento_label(fz_malloc_array(ctx, k, pdf_function*), "stitch_fns");
@@ -1252,7 +1248,7 @@ load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict, pdf_cycl
 	for (i = 0; i < k; i++)
 	{
 		sub = pdf_array_get(ctx, obj, i);
-		funcs[i] = pdf_load_function_imp(ctx, sub, 1, func->n, &cycle);
+		funcs[i] = pdf_load_function_imp(ctx, sub, 1, func->n, cycle_up);
 
 		func->size += pdf_function_size(ctx, funcs[i]);
 		func->u.st.k ++;
