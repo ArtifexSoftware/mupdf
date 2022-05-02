@@ -360,8 +360,11 @@ static int
 pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
 	pdf_obj *obj;
+	pdf_cycle_list cycle;
+	if (pdf_cycle(ctx, &cycle, cycle_up, dict))
+		return 0;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
-	if (pdf_resources_use_blending(ctx, obj, cycle_up))
+	if (pdf_resources_use_blending(ctx, obj, &cycle))
 		return 1;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 	return pdf_extgstate_uses_blending(ctx, obj);
@@ -371,9 +374,12 @@ static int
 pdf_xobject_uses_blending(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
 	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
+	pdf_cycle_list cycle;
+	if (pdf_cycle(ctx, &cycle, cycle_up, dict))
+		return 0;
 	if (pdf_name_eq(ctx, pdf_dict_getp(ctx, dict, "Group/S"), PDF_NAME(Transparency)))
 		return 1;
-	return pdf_resources_use_blending(ctx, obj, cycle_up);
+	return pdf_resources_use_blending(ctx, obj, &cycle);
 }
 
 static int
@@ -436,8 +442,11 @@ static int
 pdf_pattern_uses_overprint(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
 	pdf_obj *obj;
+	pdf_cycle_list cycle;
+	if (pdf_cycle(ctx, &cycle, cycle_up, dict))
+		return 0;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
-	if (pdf_resources_use_overprint(ctx, obj, cycle_up))
+	if (pdf_resources_use_overprint(ctx, obj, &cycle))
 		return 1;
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(ExtGState));
 	return pdf_extgstate_uses_overprint(ctx, obj);
@@ -447,7 +456,10 @@ static int
 pdf_xobject_uses_overprint(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
 	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
-	return pdf_resources_use_overprint(ctx, obj, cycle_up);
+	pdf_cycle_list cycle;
+	if (pdf_cycle(ctx, &cycle, cycle_up, dict))
+		return 0;
+	return pdf_resources_use_overprint(ctx, obj, &cycle);
 }
 
 static int
