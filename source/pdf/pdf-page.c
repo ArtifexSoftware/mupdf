@@ -665,6 +665,13 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 	int i, n;
 	pdf_obj *nameobj, *cols;
 
+	if (!obj)
+		return;
+
+	// Already seen this ColorSpace...
+	if (pdf_mark_list_push(ctx, clearme, obj))
+		return;
+
 	nameobj = pdf_array_get(ctx, obj, 0);
 	if (pdf_name_eq(ctx, nameobj, PDF_NAME(Separation)))
 	{
@@ -707,22 +714,10 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 	}
 	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(Indexed)))
 	{
-		if (pdf_is_indirect(ctx, obj))
-		{
-			if (pdf_mark_list_push(ctx, clearme, obj))
-				return; /* already been here */
-		}
-
 		find_seps(ctx, seps, pdf_array_get(ctx, obj, 1), clearme);
 	}
 	else if (pdf_name_eq(ctx, nameobj, PDF_NAME(DeviceN)))
 	{
-		if (pdf_is_indirect(ctx, obj))
-		{
-			if (pdf_mark_list_push(ctx, clearme, obj))
-				return; /* already been here */
-		}
-
 		/* If the separation colorants exists for this DeviceN color space
 		 * add those prior to our search for DeviceN color */
 		cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME(Colorants));
@@ -738,6 +733,13 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 	int i, j, n, m;
 	pdf_obj *arr;
 	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
+
+	if (!obj)
+		return;
+
+	// Already seen this ColorSpace...
+	if (pdf_mark_list_push(ctx, clearme, obj))
+		return;
 
 	if (!pdf_name_eq(ctx, nameobj, PDF_NAME(DeviceN)))
 		return;
@@ -797,8 +799,12 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 	pdf_obj *obj;
 	int i, n;
 
+	if (!res)
+		return;
+
+	// Already seen this Resources...
 	if (pdf_mark_list_push(ctx, clearme, res))
-		return; /* already been here */
+		return;
 
 	dict = pdf_dict_get(ctx, res, PDF_NAME(ColorSpace));
 	n = pdf_dict_len(ctx, dict);
@@ -821,9 +827,13 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 	for (i = 0; i < n; i++)
 	{
 		obj = pdf_dict_get_val(ctx, dict, i);
-		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)), clearme);
-		/* Recurse on XObject forms. */
-		scan_page_seps(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Resources)), seps, fn, clearme);
+		// Already seen this XObject...
+		if (!pdf_mark_list_push(ctx, clearme, obj))
+		{
+			fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)), clearme);
+			/* Recurse on XObject forms. */
+			scan_page_seps(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Resources)), seps, fn, clearme);
+		}
 	}
 }
 
