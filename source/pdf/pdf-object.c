@@ -2479,13 +2479,13 @@ pdf_mark_list_push(fz_context *ctx, pdf_mark_list *marks, pdf_obj *obj)
 	int num = pdf_to_num(ctx, obj);
 	int i;
 
-	if (num == 0)
-		return 0;
-
-	/* Note: this is slow, if the mark list is expected to be big use pdf_mark_bits instead! */
-	for (i = 0; i < marks->len; ++i)
-		if (marks->list[i] == num)
-			return 1;
+	if (num > 0)
+	{
+		/* Note: this is slow, if the mark list is expected to be big use pdf_mark_bits instead! */
+		for (i = 0; i < marks->len; ++i)
+			if (marks->list[i] == num)
+				return 1;
+	}
 
 	if (marks->len == marks->max)
 	{
