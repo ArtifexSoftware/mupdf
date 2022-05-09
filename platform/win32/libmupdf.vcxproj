@@ -1108,6 +1108,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\separation.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\shade.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\store.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\story.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\stream.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\string-util.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\structured-text.h" />

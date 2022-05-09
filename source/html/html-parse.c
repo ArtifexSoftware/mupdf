@@ -528,20 +528,41 @@ static void fz_drop_html_box(fz_context *ctx, fz_html_box *box)
 static void fz_drop_html_imp(fz_context *ctx, fz_storable *stor)
 {
 	fz_html *html = (fz_html *)stor;
-	fz_drop_html_box(ctx, html->root);
-	fz_drop_pool(ctx, html->pool);
+	fz_drop_html_box(ctx, html->tree.root);
+	fz_drop_pool(ctx, html->tree.pool);
+}
+
+static void fz_drop_html_story_imp(fz_context *ctx, fz_storable *stor)
+{
+	fz_html_story *story = (fz_html_story *)stor;
+	fz_drop_html_box(ctx, story->tree.root);
+	fz_drop_html_font_set(ctx, story->font_set);
+	fz_drop_pool(ctx, story->tree.pool);
+}
+
+void fz_drop_html_tree(fz_context *ctx, fz_html_tree *tree)
+{
+	fz_defer_reap_start(ctx);
+	fz_drop_storable(ctx, &tree->storable);
+	fz_defer_reap_end(ctx);
 }
 
 void fz_drop_html(fz_context *ctx, fz_html *html)
 {
-	fz_defer_reap_start(ctx);
-	fz_drop_storable(ctx, &html->storable);
-	fz_defer_reap_end(ctx);
+	fz_drop_html_tree(ctx, &html->tree);
+}
+
+void fz_drop_html_story(fz_context *ctx, fz_html_story *story)
+{
+	if (!story)
+		return;
+
+	fz_drop_html_tree(ctx, &story->tree);
 }
 
 fz_html *fz_keep_html(fz_context *ctx, fz_html *html)
 {
-	return fz_keep_storable(ctx, &html->storable);
+	return fz_keep_storable(ctx, &html->tree.storable);
 }
 
 static fz_html_box *new_box(fz_context *ctx, fz_pool *pool, fz_bidi_direction markup_dir)
@@ -1294,13 +1315,12 @@ fix_nexts(fz_html_box *box)
 	}
 }
 
-static fz_html *
-fz_parse_html_imp(fz_context *ctx,
+static void
+fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5)
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook)
 {
 	fz_xml *root, *node;
-	fz_html *html = NULL;
 	char *title;
 
 	fz_css_match match;
@@ -1316,6 +1336,9 @@ fz_parse_html_imp(fz_context *ctx,
 	g.emit_white = 0;
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 	g.styles = NULL;
+
+	if (rtitle)
+		*rtitle = NULL;
 
 	if (try_xml && try_html5)
 	{
@@ -1334,10 +1357,11 @@ fz_parse_html_imp(fz_context *ctx,
 	}
 	else if (try_xml)
 		g.xml = fz_parse_xml(ctx, buf, 1);
-	else if (try_html5)
-		g.xml = fz_parse_xml_from_html5(ctx, buf);
 	else
-		return NULL; /* should never happen! */
+	{
+		assert(try_html5);
+		g.xml = fz_parse_xml_from_html5(ctx, buf);
+	}
 
 	root = fz_xml_root(g.xml);
 
@@ -1356,7 +1380,7 @@ fz_parse_html_imp(fz_context *ctx,
 
 	fz_try(ctx)
 	{
-		if (fz_xml_find(root, "FictionBook"))
+		if (try_fictionbook && fz_xml_find(root, "FictionBook"))
 		{
 			g.is_fb2 = 1;
 			fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
@@ -1394,24 +1418,18 @@ fz_parse_html_imp(fz_context *ctx,
 	{
 		fz_css_style style;
 
-		g.pool = fz_new_pool(ctx);
-		html = fz_pool_alloc(ctx, g.pool, sizeof *html);
-		FZ_INIT_STORABLE(html, 1, fz_drop_html_imp);
-		html->pool = g.pool;
-		html->root = new_box(ctx, g.pool, DEFAULT_DIR);
-		html->layout_w = 0;
-		html->layout_h = 0;
-		html->layout_em = 0;
+		g.pool = tree->pool;
+		tree->root = new_box(ctx, g.pool, DEFAULT_DIR);
 
 		fz_match_css_at_page(ctx, &match, g.css);
 		fz_apply_css_style(ctx, g.set, &style, &match);
-		html->root->style = fz_css_enlist(ctx, &style, &g.styles, g.pool);
+		tree->root->style = fz_css_enlist(ctx, &style, &g.styles, g.pool);
 		// TODO: transfer page margins out of this hacky box
 
-		generate_boxes(ctx, root, html->root, &match, 0, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
-		fix_nexts(html->root);
+		generate_boxes(ctx, root, tree->root, &match, 0, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
+		fix_nexts(tree->root);
 
-		detect_directionality(ctx, g.pool, html->root);
+		detect_directionality(ctx, g.pool, tree->root);
 
 		if (g.is_fb2)
 		{
@@ -1419,18 +1437,24 @@ fz_parse_html_imp(fz_context *ctx,
 			node = fz_xml_find_down(node, "description");
 			node = fz_xml_find_down(node, "title-info");
 			node = fz_xml_find_down(node, "book-title");
-			title = fz_xml_text(fz_xml_down(node));
-			if (title)
-				html->title = fz_pool_strdup(ctx, g.pool, title);
+			if (rtitle)
+			{
+				title = fz_xml_text(fz_xml_down(node));
+				if (title)
+					*rtitle = fz_pool_strdup(ctx, g.pool, title);
+			}
 		}
 		else
 		{
 			node = fz_xml_find(root, "html");
 			node = fz_xml_find_down(node, "head");
 			node = fz_xml_find_down(node, "title");
-			title = fz_xml_text(fz_xml_down(node));
-			if (title)
-				html->title = fz_pool_strdup(ctx, g.pool, title);
+			if (rtitle)
+			{
+				title = fz_xml_text(fz_xml_down(node));
+				if (title)
+					*rtitle = fz_pool_strdup(ctx, g.pool, title);
+			}
 		}
 	}
 	fz_always(ctx)
@@ -1441,11 +1465,67 @@ fz_parse_html_imp(fz_context *ctx,
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_html(ctx, html);
+		if (rtitle)
+		{
+			fz_free(ctx, *rtitle);
+			*rtitle = NULL;
+		}
+		/* Dropping the tree works regardless of whether the tree is part of an fz_html or not. */
+		fz_drop_html_tree(ctx, tree);
 		fz_rethrow(ctx);
 	}
+}
+
+static fz_html *
+fz_parse_html_imp(fz_context *ctx,
+	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
+	int try_xml, int try_html5)
+{
+	fz_pool *pool = fz_new_pool(ctx);
+	fz_html *html = fz_pool_alloc(ctx, pool, sizeof *html); /* Can't fail */
+
+	html->tree.pool = pool;
+	FZ_INIT_STORABLE(&(html->tree), 1, fz_drop_html_imp);
+	html->layout_w = 0;
+	html->layout_h = 0;
+	html->layout_em = 0;
+
+	fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1);
 
 	return html;
+}
+
+fz_html_story *
+fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
+{
+	fz_pool *pool = fz_new_pool(ctx);
+	fz_html_story *story = NULL;
+
+	fz_var(story);
+
+	fz_try(ctx)
+	{
+		story = fz_pool_alloc(ctx, pool, sizeof *story);
+		memset(story, 0, sizeof(*story));
+		FZ_INIT_STORABLE(&(story->tree), 1, fz_drop_html_story_imp);
+		story->tree.pool = pool;
+		story->font_set = fz_new_html_font_set(ctx);
+		story->em = em;
+	}
+	fz_catch(ctx)
+	{
+		if (story == NULL)
+			fz_drop_pool(ctx, pool);
+		else
+		{
+			fz_drop_html_font_set(ctx, story->font_set);
+			fz_drop_html_tree(ctx, &story->tree);
+		}
+	}
+
+	fz_parse_html_tree(ctx, story->font_set, NULL, ".", buf, user_css, 0, 1, &story->tree, NULL, 0);
+
+	return story;
 }
 
 fz_html *
@@ -1594,7 +1674,7 @@ fz_debug_html(fz_context *ctx, fz_html_box *box)
 static size_t
 fz_html_size(fz_context *ctx, fz_html *html)
 {
-	return html ? fz_pool_size(ctx, html->pool) : 0;
+	return html ? fz_pool_size(ctx, html->tree.pool) : 0;
 }
 
 /* Magic to make html storable. */

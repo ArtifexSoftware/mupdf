@@ -857,5 +857,8 @@
     <ClInclude Include="..\..\source\pdf\pdf-annot-imp.h">
       <Filter>pdf</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\story.h">
+      <Filter>!include\fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
