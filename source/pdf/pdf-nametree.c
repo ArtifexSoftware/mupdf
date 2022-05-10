@@ -32,6 +32,9 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle, pdf_cycle_l
 	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
 	pdf_obj *names = pdf_dict_get(ctx, node, PDF_NAME(Names));
 
+	if (pdf_cycle(ctx, &cycle, cycle_up, node))
+		return NULL;
+
 	if (pdf_is_array(ctx, kids))
 	{
 		int l = 0;
@@ -51,10 +54,24 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle, pdf_cycle_l
 				l = m + 1;
 			else
 			{
-				if (pdf_cycle(ctx, &cycle, cycle_up, node))
+				pdf_obj *obj = pdf_lookup_name_imp(ctx, kid, needle, &cycle);
+				if (obj)
+					return obj;
+				else
 					break;
-				return pdf_lookup_name_imp(ctx, kid, needle, &cycle);
 			}
+		}
+
+		/* Spec says names should be sorted (hence the binary search,
+		 * above), but Acrobat copes with non-sorted. Drop back to a
+		 * simple search if the binary search fails. */
+		r = pdf_array_len(ctx, kids);
+		for (l = 0; l < r; l++)
+		{
+			pdf_obj *kid = pdf_array_get(ctx, kids, l);
+			pdf_obj *obj = pdf_lookup_name_imp(ctx, kid, needle, &cycle);
+			if (obj)
+				return obj;
 		}
 	}
 
