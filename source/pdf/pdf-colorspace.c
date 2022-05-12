@@ -460,6 +460,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
 			return cs;
 		cs = load_icc_based(ctx, obj, 1, &cycle);
 		pdf_store_item(ctx, obj, cs, 1000);
+		return cs;
 	}
 
 	fz_throw(ctx, FZ_ERROR_SYNTAX, "could not parse color space (%d 0 R)", pdf_to_num(ctx, obj));
