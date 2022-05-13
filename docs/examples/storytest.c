@@ -111,27 +111,27 @@ const char content[] =
 	"Could atone for that dismal surprise!</p>"
 	"</div>"
 
-	"<p>It strongly advised that the Butcher should be<br>"
+	"<p style=\"-mupdf-leading:7pt;\">It strongly advised that the Butcher should be<br>"
 	"Conveyed in a separate ship:<br>"
 	"But the Bellman declared that would never agree<br>"
 	"With the plans he had made for the trip:</p>"
 
-	"<p>Navigation was always a difficult art,<br>"
+	"<p style=\"-mupdf-leading:11pt;\">Navigation was always a difficult art,<br>"
 	"Though with only one ship and one bell:<br>"
 	"And he feared he must really decline, for his part,<br>"
 	"Undertaking another as well.</p>"
 
-	"<p>The Beaver's best course was, no doubt, to procure<br>"
+	"<p style=\"-mupdf-leading:15pt;\">The Beaver's best course was, no doubt, to procure<br>"
 	"A second-hand dagger-proof coat-<br>"
 	"So the Baker advised it-and next, to insure<br>"
 	"Its life in some Office of note:</p>"
 
-	"<p>This the Banker suggested, and offered for hire<br>"
+	"<p style=\"-mupdf-leading:20pt;\">This the Banker suggested, and offered for hire<br>"
 	"(On moderate terms), or for sale,<br>"
 	"Two excellent Policies, one Against Fire,<br>"
 	"And one Against Damage From Hail.</p>"
 
-	"<p>Yet still, ever after that sorrowful day,<br>"
+	"<p style=\"-mupdf-leading:30pt;\">Yet still, ever after that sorrowful day,<br>"
 	"Whenever the Butcher was by,<br>"
 	"The Beaver kept looking the opposite way,<br>"
 	"And appeared unaccountably shy.</p>"

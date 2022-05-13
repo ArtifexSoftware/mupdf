@@ -143,6 +143,7 @@ enum
 	PRO_FONT_VARIANT,
 	PRO_FONT_WEIGHT,
 	PRO_HEIGHT,
+	PRO_LEADING,
 	PRO_LETTER_SPACING,
 	PRO_LINE_HEIGHT,
 	PRO_LIST_STYLE_IMAGE,
@@ -225,7 +226,7 @@ enum {
 	LST_ARMENIAN, LST_GEORGIAN,
 };
 
-enum { N_NUMBER='u', N_LENGTH='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a' };
+enum { N_NUMBER='u', N_LENGTH='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a', N_UNDEFINED='x' };
 
 struct fz_css_number_s
 {
@@ -262,6 +263,7 @@ struct fz_css_style_s
 	 * on structure copies. */
 	unsigned int blank : 6;
 	fz_css_number line_height;
+	fz_css_number leading;
 	fz_css_color background_color;
 	fz_css_color border_color[4];
 	fz_css_color color;
@@ -446,6 +448,7 @@ const fz_css_style *fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz
 
 float fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value);
 float fz_from_css_number_scale(fz_css_number number, float scale);
+int fz_css_number_defined(fz_css_number number);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 void fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,

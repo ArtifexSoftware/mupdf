@@ -339,7 +339,10 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_
 	node->x = 0;
 	node->y = 0;
 	node->w = 0;
-	node->h = fz_from_css_number_scale(node->box->style->line_height, em);
+	if (fz_css_number_defined(node->box->style->leading))
+		node->h = fz_from_css_number(node->box->style->leading, em, em, 0);
+	else
+		node->h = fz_from_css_number_scale(node->box->style->line_height, em);
 
 	s = get_node_text(ctx, node);
 	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, s);
@@ -352,11 +355,14 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_
 	}
 }
 
-static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline)
+static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline, float *leading)
 {
 	float max_a = 0, max_d = 0, h = node->h;
+	*leading = node->h;
 	while (node != end)
 	{
+		if (fz_css_number_defined(node->box->style->leading))
+			*leading = node->h;
 		if (node->type == FLOW_IMAGE)
 		{
 			if (node->h > max_a)
@@ -528,8 +534,8 @@ static void find_accumulated_margins(fz_context *ctx, fz_html_box *box, float *w
 
 static int flush_line(fz_context *ctx, fz_html_box *box, float page_h, float page_w, float line_w, int align, float indent, fz_html_flow *a, fz_html_flow *b, fz_html_restarter *restart)
 {
-	float avail, line_h, baseline;
-	line_h = measure_line(a, b, &baseline);
+	float avail, line_h, baseline, vadv;
+	line_h = measure_line(a, b, &baseline, &vadv);
 	if (page_h > 0)
 	{
 		avail = page_h - fmodf(box->b, page_h);
@@ -552,7 +558,7 @@ static int flush_line(fz_context *ctx, fz_html_box *box, float page_h, float pag
 		}
 	}
 	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline, line_h);
-	box->b += line_h;
+	box->b += vadv;
 	if (restart)
 		restart->potential = NULL;
 
