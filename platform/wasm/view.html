@@ -231,7 +231,7 @@ div.error {
 
 <div id="searchDialog" class="dialog" style="display:none">
 <div class="flex">
-<input id="searchText" type="text" size="40" oninput="updateSearch()" placeholder="Search...">
+<input id="searchText" type="search" size="40" oninput="updateSearch()" onkeydown="searchBoxKey(event)" placeholder="Search...">
 <button onclick="runSearch(-1)">&lt;</button>
 <button onclick="runSearch(1)">&gt;</button>
 <button onclick="hideSearch()">X</button>
@@ -245,9 +245,17 @@ div.error {
 
 </body>
 
-<script src="mupdf-async.js"></script>
-<script>
+<script src="libmupdf.js"></script>
+<script src="mupdf.js"></script>
+<script type="module">
 "use strict";
+
+mupdf.onInitialized = function () {
+	emptyNode(document.getElementById("pages"));
+	let params = new URLSearchParams(window.location.search);
+	if (params.has("file"))
+		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
+}
 
 let doc, pageCount;
 let currentPage = 0;
@@ -335,19 +343,24 @@ function runSearchBG(page, dir) {
 		} else {
 			console.log("Searching page", page);
 			searchStatus.textContent = "Searching page " + page + ".";
-			mupdf.search(doc, page, dpi, searchNeedle)
-				.then(hits => {
-					if (hits.length > 0) {
-						pageDIV[page].scrollIntoView();
-					} else
-						runSearchBG(page, dir);
-				});
+
+			const hits = mupdf.search(doc, page, dpi, searchNeedle)
+			if (hits.length > 0) {
+				pageDIV[page].scrollIntoView();
+			} else {
+				runSearchBG(page, dir);
+			}
 		}
 	} else {
 		searchStatus.textContent = "";
 	}
 }
 
+function searchBoxKey(event) {
+	if (event.key != "Enter")
+		return;
+	runSearch(event.shiftKey ? -1 : 1);
+}
 function runSearch(direction) {
 	updateSearch();
 	runSearchBG(currentPage, direction);
@@ -356,19 +369,18 @@ function runSearch(direction) {
 function pageSearch(pageNumber) {
 	console.log("SEARCH", pageNumber, JSON.stringify(searchNeedle));
 	searchDirty[pageNumber] = false;
-	mupdf.search(doc, pageNumber, dpi, searchNeedle)
-		.then(hits =>  {
-			emptyNode(pageHIT[pageNumber]);
-			for (let bbox of hits) {
-				let div = document.createElement("div");
-				div.classList.add("searchHit");
-				div.style.left = bbox.x + 'px';
-				div.style.top = bbox.y + 'px';
-				div.style.width = bbox.w + 'px';
-				div.style.height = bbox.h + 'px';
-				pageHIT[pageNumber].appendChild(div);
-			}
-		});
+
+	let hits = mupdf.search(doc, pageNumber, dpi, searchNeedle);
+	emptyNode(pageHIT[pageNumber]);
+	for (let bbox of hits) {
+		let div = document.createElement("div");
+		div.classList.add("searchHit");
+		div.style.left = bbox.x + 'px';
+		div.style.top = bbox.y + 'px';
+		div.style.width = bbox.w + 'px';
+		div.style.height = bbox.h + 'px';
+		pageHIT[pageNumber].appendChild(div);
+	}
 }
 
 function isVisible(element, slop) {
@@ -385,8 +397,9 @@ function emptyNode(node) {
 		node.removeChild(node.firstChild);
 }
 
+// TODO - change
 function logError(where, error) {
-	console.log("mupdf." + where + ": " + error.name + ": " + error.message);
+	console.error(`mupdf.${where}:`, error);
 }
 
 function showDocumentError(where, error) {
@@ -411,7 +424,7 @@ async function openFile(file) {
 	if (file instanceof File) {
 		freeDocument();
 		try {
-			doc = await mupdf.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
+			doc = new mupdf.Document(await file.arrayBuffer(), file.name);
 			initDocument(file.name);
 		} catch (error) {
 			showDocumentError("openFile", error);
@@ -431,17 +444,13 @@ async function openURL(url, progressive, prefetch) {
 		console.log("HEAD", url);
 		console.log("Content-Length", contentLength);
 		console.log("Content-Type", contentType);
-		if (acceptRanges === 'bytes' && progressive) {
-			console.log("USING HTTP RANGE REQUESTS");
-			let stm = await mupdf.openURL(url, contentLength, Math.max(progressive << 10, 1 << 16), prefetch);
-			doc = await mupdf.openDocumentFromStream(stm, contentType || url);
-		} else {
-			let bodyResponse = await fetch(url);
-			if (!bodyResponse.ok)
-				throw new Error("Could not fetch document.");
-			let buffer = await bodyResponse.arrayBuffer();
-			doc = await mupdf.openDocumentFromBuffer(buffer, contentType || url);
-		}
+
+		let bodyResponse = await fetch(url);
+		if (!bodyResponse.ok)
+			throw new Error("Could not fetch document.");
+		let buffer = await bodyResponse.arrayBuffer();
+		doc = new mupdf.Document(buffer, contentType || url);
+
 		initDocument(url);
 	} catch (error) {
 		showDocumentError("openURL", error);
@@ -464,8 +473,8 @@ function freeDocument() {
 async function initDocument(url) {
 	console.log("INIT DOCUMENT", doc, url);
 
-	pageCount = await mupdf.countPages(doc);
-	let title = await mupdf.documentTitle(doc);
+	pageCount = doc.countPages();
+	let title = doc.title();
 
 	console.log("mupdf: Loaded", JSON.stringify(url), "with", pageCount, "pages.");
 
@@ -475,8 +484,8 @@ async function initDocument(url) {
 		document.title = url;
 
 	// Use second page as default page size (the cover page is often differently sized)
-	let defaultW = await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, dpi);
-	let defaultH = await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, dpi);
+	let defaultW = 100;//await mupdf.pageWidth(doc, pageCount > 1 ? 2 : 1, dpi);
+	let defaultH = 100;//await mupdf.pageHeight(doc, pageCount > 1 ? 2 : 1, dpi);
 
 	let pagesDiv = document.getElementById("pages");
 	pagesDiv.scrollTo(0, 0);
@@ -495,7 +504,7 @@ async function initDocument(url) {
 		dirty[i] = true;
 	}
 
-	let outline = await mupdf.documentOutline(doc);
+	let outline = false;//await mupdf.documentOutline(doc);
 	if (outline) {
 		let outlineNode = document.getElementById("outline");
 		buildOutline(outlineNode, outline);
@@ -566,38 +575,6 @@ async function setZoom(newZoom) {
 	updateView();
 }
 
-function parseStructuredText(output, data) {
-	let nodes = [];
-	let pdf_w = [];
-	let html_w = [];
-	let text_len = [];
-	for (let block of data.blocks) {
-		if (block.type === 'text') {
-			for (let line of block.lines) {
-				let text = document.createElement("span");
-				text.style.left = line.bbox.x + 'px';
-				text.style.top = (line.y - line.font.size * 0.8) + 'px';
-				text.style.height = line.bbox.h + 'px';
-				text.style.fontSize = line.font.size + 'px';
-				text.style.fontFamily = line.font.family;
-				text.style.fontWeight = line.font.weight;
-				text.style.fontStyle = line.font.style;
-				text.textContent = line.text;
-				output.appendChild(text);
-				nodes.push(text);
-				pdf_w.push(line.bbox.w);
-				text_len.push(line.text.length-1);
-			}
-		}
-	}
-	for (let i = 0; i < nodes.length; ++i)
-		if (text_len[i] > 0)
-			html_w[i] = nodes[i].clientWidth;
-	for (let i = 0; i < nodes.length; ++i)
-		if (text_len[i] > 0)
-			nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
-}
-
 function updateView() {
 	let i, n = dirty.length;
 	let current = 0;
@@ -638,27 +615,64 @@ function updateView() {
 			hit.classList.add("searchHitList");
 			div.appendChild(hit);
 
-			mupdf.drawPageAsPNG(doc, pageNumber, dpi * devicePixelRatio)
-				.then(data => img.src = URL.createObjectURL(new Blob([data], {type:"image/png"})))
-				.catch(error => showPageError("drawPageAsPNG", div, error));
+			const page = doc.loadPage(pageNumber);
 
-			mupdf.pageLinks(doc, pageNumber, dpi)
-				.then(data => {
-					for (let link of data) {
-						let a = document.createElement("a");
-						a.href = link.href;
-						a.style.left = link.x + 'px';
-						a.style.top = link.y + 'px';
-						a.style.width = link.w + 'px';
-						a.style.height = link.h + 'px';
-						map.appendChild(a);
+			try {
+				let pngData = mupdf.drawPageAsPng(doc, pageNumber, dpi * devicePixelRatio);
+				img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
+			} catch (error) {
+				showPageError("drawPageAsPNG", div, error);
+			}
+
+			try {
+				let links = mupdf.getPageLinks(doc, pageNumber, dpi * devicePixelRatio);
+				for (let link of links) {
+					let a = document.createElement("a");
+					a.href = link.href;
+					a.style.left = link.x + 'px';
+					a.style.top = link.y + 'px';
+					a.style.width = link.w + 'px';
+					a.style.height = link.h + 'px';
+					map.appendChild(a);
+				}
+			} catch (error) {
+				logError("pageLinks", error);
+			}
+
+			try {
+				let nodes = [];
+				let pdf_w = [];
+				let html_w = [];
+				let text_len = [];
+				let jsonData = mupdf.getPageText(doc, pageNumber, dpi * devicePixelRatio);
+				for (let block of jsonData.blocks) {
+					if (block.type === 'text') {
+						for (let line of block.lines) {
+							let text = document.createElement("span");
+							text.style.left = line.bbox.x + 'px';
+							text.style.top = (line.y - line.font.size * 0.8) + 'px';
+							text.style.height = line.bbox.h + 'px';
+							text.style.fontSize = line.font.size + 'px';
+							text.style.fontFamily = line.font.family;
+							text.style.fontWeight = line.font.weight;
+							text.style.fontStyle = line.font.style;
+							text.textContent = line.text;
+							txt.appendChild(text);
+							nodes.push(text);
+							pdf_w.push(line.bbox.w);
+							text_len.push(line.text.length-1);
+						}
 					}
-				})
-				.catch(error => logError("pageLinks", error));
-
-			mupdf.pageText(doc, pageNumber, dpi)
-				.then(data => parseStructuredText(txt, data))
-				.catch(error => logError("pageText", error));
+				}
+				for (let i = 0; i < nodes.length; ++i)
+					if (text_len[i] > 0)
+						html_w[i] = nodes[i].clientWidth;
+				for (let i = 0; i < nodes.length; ++i)
+					if (text_len[i] > 0)
+						nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
+			} catch (error) {
+				logError("getPageText", error);
+			}
 		}
 
 		if (searchNeedle && searchNeedle.length > 0) {
@@ -730,17 +744,6 @@ window.addEventListener("keydown", function (event) {
 		}
 	}
 });
-
-window.onerror = function (message, source, line, col, error) {
-	alert(message);
-}
-
-mupdf.oninit = function () {
-	emptyNode(document.getElementById("pages"));
-	let params = new URLSearchParams(window.location.search);
-	if (params.has("file"))
-		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
-}
 
 </script>
 </html>

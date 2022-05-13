@@ -22,21 +22,26 @@
 
 #include "emscripten.h"
 #include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include <string.h>
-#include <math.h>
 
 static fz_context *ctx;
 
+static fz_rect out_rect;
+static fz_irect out_irect;
+static fz_matrix out_matrix;
+
+// TODO - instrument fz_throw to include call stack
 void wasm_rethrow(fz_context *ctx)
 {
 	if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-		EM_ASM({ throw "trylater"; });
+		EM_ASM({ throw new MupdfTryLaterError("operation in progress"); });
 	else
-		EM_ASM({ throw new Error(UTF8ToString($0)); }, fz_caught_message(ctx));
+		EM_ASM({ throw new MupdfError("mupdf error: " + UTF8ToString($0)); }, fz_caught_message(ctx));
 }
 
 EMSCRIPTEN_KEEPALIVE
-void initContext(void)
+void wasm_init_context(void)
 {
 	ctx = fz_new_context(NULL, NULL, 100<<20);
 	if (!ctx)
@@ -45,7 +50,24 @@ void initContext(void)
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_document *openDocumentFromBuffer(unsigned char *data, int size, char *magic)
+fz_matrix *wasm_scale(float scale_x, float scale_y) {
+	out_matrix = fz_scale(scale_x, scale_y);
+	return &out_matrix;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect *wasm_transform_rect(
+	float r_0, float r_1, float r_2, float r_3,
+	float tr_0, float tr_1, float tr_2, float tr_3, float tr_4, float tr_5
+) {
+	fz_rect rect = fz_make_rect(r_0, r_1, r_2, r_3);
+	fz_matrix transform = fz_make_matrix(tr_0, tr_1, tr_2, tr_3, tr_4, tr_5);
+	out_rect = fz_transform_rect(rect, transform);
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_document *wasm_open_document_with_buffer(unsigned char *data, int size, char *magic)
 {
 	fz_document *document = NULL;
 	fz_buffer *buf = NULL;
@@ -76,292 +98,13 @@ fz_document *openDocumentFromBuffer(unsigned char *data, int size, char *magic)
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_document *openDocumentFromStream(fz_stream *stm, char *magic)
-{
-	fz_document *document = NULL;
-	fz_try(ctx)
-		document = fz_open_document_with_stream(ctx, magic, stm);
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return document;
-}
-
-EMSCRIPTEN_KEEPALIVE
-void freeDocument(fz_document *doc)
+void wasm_drop_document(fz_document *doc)
 {
 	fz_drop_document(ctx, doc);
 }
 
 EMSCRIPTEN_KEEPALIVE
-int countPages(fz_document *doc)
-{
-	int n = 1;
-	fz_try(ctx)
-		n = fz_count_pages(ctx, doc);
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return n;
-}
-
-static fz_page *lastPage = NULL;
-
-static void loadPage(fz_document *doc, int number)
-{
-	static fz_document *lastPageDoc = NULL;
-	static int lastPageNumber = -1;
-	if (lastPageNumber != number || lastPageDoc != doc)
-	{
-		if (lastPage)
-		{
-			fz_drop_page(ctx, lastPage);
-			lastPage = NULL;
-			lastPageDoc = NULL;
-			lastPageNumber = -1;
-		}
-		lastPage = fz_load_page(ctx, doc, number-1);
-		lastPageDoc = doc;
-		lastPageNumber = number;
-	}
-}
-
-EMSCRIPTEN_KEEPALIVE
-char *pageText(fz_document *doc, int number, float dpi)
-{
-	static unsigned char *data = NULL;
-	fz_stext_page *text = NULL;
-	fz_buffer *buf = NULL;
-	fz_output *out = NULL;
-
-	fz_var(buf);
-	fz_var(out);
-	fz_var(text);
-
-	fz_stext_options opts = { FZ_STEXT_PRESERVE_SPANS };
-
-	fz_free(ctx, data);
-	data = NULL;
-
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-
-		buf = fz_new_buffer(ctx, 0);
-		out = fz_new_output_with_buffer(ctx, buf);
-		text = fz_new_stext_page_from_page(ctx, lastPage, &opts);
-
-		fz_print_stext_page_as_json(ctx, out, text, dpi / 72);
-		fz_close_output(ctx, out);
-		fz_terminate_buffer(ctx, buf);
-
-		fz_buffer_extract(ctx, buf, &data);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_stext_page(ctx, text);
-		fz_drop_output(ctx, out);
-		fz_drop_buffer(ctx, buf);
-	}
-	fz_catch(ctx)
-	{
-		wasm_rethrow(ctx);
-	}
-
-	return (char*)data;
-}
-
-static fz_buffer *lastDrawBuffer = NULL;
-
-EMSCRIPTEN_KEEPALIVE
-void doDrawPageAsPNG(fz_document *doc, int number, float dpi)
-{
-	float zoom = dpi / 72;
-	fz_pixmap *pix = NULL;
-
-	fz_var(pix);
-
-	if (lastDrawBuffer)
-		fz_drop_buffer(ctx, lastDrawBuffer);
-	lastDrawBuffer = NULL;
-
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-		pix = fz_new_pixmap_from_page(ctx, lastPage, fz_scale(zoom, zoom), fz_device_rgb(ctx), 0);
-		lastDrawBuffer = fz_new_buffer_from_pixmap_as_png(ctx, pix, fz_default_color_params);
-	}
-	fz_always(ctx)
-		fz_drop_pixmap(ctx, pix);
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-}
-
-EMSCRIPTEN_KEEPALIVE
-unsigned char *getLastDrawData(void)
-{
-	return lastDrawBuffer ? lastDrawBuffer->data : 0;
-}
-
-EMSCRIPTEN_KEEPALIVE
-int getLastDrawSize(void)
-{
-	return lastDrawBuffer ? lastDrawBuffer->len : 0;
-}
-
-static fz_irect pageBounds(fz_document *doc, int number, float dpi)
-{
-	fz_irect bbox = fz_empty_irect;
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-		bbox = fz_round_rect(fz_transform_rect(fz_bound_page(ctx, lastPage), fz_scale(dpi/72, dpi/72)));
-	}
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return bbox;
-}
-
-EMSCRIPTEN_KEEPALIVE
-int pageWidth(fz_document *doc, int number, float dpi)
-{
-	fz_irect bbox = fz_empty_irect;
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-		bbox = pageBounds(doc, number, dpi);
-	}
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return bbox.x1 - bbox.x0;
-}
-
-EMSCRIPTEN_KEEPALIVE
-int pageHeight(fz_document *doc, int number, float dpi)
-{
-	fz_irect bbox = fz_empty_irect;
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-		bbox = pageBounds(doc, number, dpi);
-	}
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return bbox.y1 - bbox.y0;
-}
-
-EMSCRIPTEN_KEEPALIVE
-char *pageLinks(fz_document *doc, int number, float dpi)
-{
-	static unsigned char *data = NULL;
-	fz_buffer *buf = NULL;
-	fz_link *links = NULL;
-	fz_link *link;
-
-	fz_var(buf);
-	fz_var(links);
-
-	fz_free(ctx, data);
-	data = NULL;
-
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-
-		links = fz_load_links(ctx, lastPage);
-
-		buf = fz_new_buffer(ctx, 0);
-
-		fz_append_string(ctx, buf, "[");
-		for (link = links; link; link = link->next)
-		{
-			fz_irect bbox = fz_round_rect(fz_transform_rect(link->rect, fz_scale(dpi/72, dpi/72)));
-			fz_append_string(ctx, buf, "{");
-			fz_append_printf(ctx, buf, "%q:%d,", "x", bbox.x0);
-			fz_append_printf(ctx, buf, "%q:%d,", "y", bbox.y0);
-			fz_append_printf(ctx, buf, "%q:%d,", "w", bbox.x1 - bbox.x0);
-			fz_append_printf(ctx, buf, "%q:%d,", "h", bbox.y1 - bbox.y0);
-			if (fz_is_external_link(ctx, link->uri))
-			{
-				fz_append_printf(ctx, buf, "%q:%q", "href", link->uri);
-			}
-			else
-			{
-				fz_location link_loc = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
-				int link_page = fz_page_number_from_location(ctx, doc, link_loc);
-				fz_append_printf(ctx, buf, "%q:\"#page%d\"", "href", link_page+1);
-			}
-			fz_append_string(ctx, buf, "}");
-			if (link->next)
-				fz_append_string(ctx, buf, ",");
-		}
-		fz_append_string(ctx, buf, "]");
-		fz_terminate_buffer(ctx, buf);
-
-		fz_buffer_extract(ctx, buf, &data);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, buf);
-		fz_drop_link(ctx, links);
-	}
-	fz_catch(ctx)
-	{
-		wasm_rethrow(ctx);
-	}
-
-	return (char*)data;
-}
-
-EMSCRIPTEN_KEEPALIVE
-char *search(fz_document *doc, int number, float dpi, const char *needle)
-{
-	static unsigned char *data = NULL;
-	fz_buffer *buf = NULL;
-	fz_quad hits[500];
-	int i, n;
-
-	fz_var(buf);
-
-	fz_free(ctx, data);
-	data = NULL;
-
-	fz_try(ctx)
-	{
-		loadPage(doc, number);
-
-		n = fz_search_page(ctx, lastPage, needle, NULL, hits, nelem(hits));
-
-		buf = fz_new_buffer(ctx, 0);
-
-		fz_append_string(ctx, buf, "[");
-		for (i = 0; i < n; ++i)
-		{
-			fz_rect rect = fz_rect_from_quad(hits[i]);
-			fz_irect bbox = fz_round_rect(fz_transform_rect(rect, fz_scale(dpi/72, dpi/72)));
-			if (i > 0) fz_append_string(ctx, buf, ",");
-			fz_append_printf(ctx, buf, "{%q:%d,", "x", bbox.x0);
-			fz_append_printf(ctx, buf, "%q:%d,", "y", bbox.y0);
-			fz_append_printf(ctx, buf, "%q:%d,", "w", bbox.x1 - bbox.x0);
-			fz_append_printf(ctx, buf, "%q:%d}", "h", bbox.y1 - bbox.y0);
-		}
-		fz_append_string(ctx, buf, "]");
-		fz_terminate_buffer(ctx, buf);
-
-		fz_buffer_extract(ctx, buf, &data);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, buf);
-	}
-	fz_catch(ctx)
-	{
-		wasm_rethrow(ctx);
-	}
-
-	return (char*)data;
-}
-
-EMSCRIPTEN_KEEPALIVE
-char *documentTitle(fz_document *doc)
+char *wasm_document_title(fz_document *doc)
 {
 	static char buf[100], *result = NULL;
 	fz_try(ctx)
@@ -375,176 +118,410 @@ char *documentTitle(fz_document *doc)
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_outline *loadOutline(fz_document *doc)
+int wasm_count_pages(fz_document *doc)
+{
+	int n = 1;
+	fz_try(ctx)
+		n = fz_count_pages(ctx, doc);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return n;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_page *wasm_load_page(fz_document *doc, int number)
+{
+	fz_page *page;
+	fz_try(ctx)
+		page = fz_load_page(ctx, doc, number);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return page;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_outline *wasm_load_outline(fz_document *doc)
 {
 	fz_outline *outline = NULL;
-	fz_var(outline);
 	fz_try(ctx)
-	{
 		outline = fz_load_outline(ctx, doc);
-	}
 	fz_catch(ctx)
-	{
-		fz_drop_outline(ctx, outline);
 		wasm_rethrow(ctx);
-	}
 	return outline;
 }
 
 EMSCRIPTEN_KEEPALIVE
-void freeOutline(fz_outline *outline)
+void wasm_drop_page(fz_page *page)
 {
-	fz_drop_outline(ctx, outline);
+	fz_drop_page(ctx, page);
 }
 
 EMSCRIPTEN_KEEPALIVE
-char *outlineTitle(fz_outline *node)
+fz_rect *wasm_bound_page(fz_page *page)
+{
+	fz_try(ctx)
+		out_rect = fz_bound_page(ctx, page);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_stext_page *wasm_new_stext_page_from_page(fz_page *page) {
+	fz_stext_page *stext_page;
+	// FIXME
+	const fz_stext_options options = { FZ_STEXT_PRESERVE_SPANS };
+
+	fz_try(ctx)
+		stext_page = fz_new_stext_page_from_page(ctx, page, &options);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+
+	return stext_page;
+}
+
+EMSCRIPTEN_KEEPALIVE void wasm_print_stext_page_as_json(fz_output *out, fz_stext_page *page, float scale) {
+	fz_try(ctx)
+		fz_print_stext_page_as_json(ctx, out, page, scale);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_link *wasm_load_links(fz_page *page)
+{
+	fz_link *links = NULL;
+	fz_try(ctx)
+		links = fz_load_links(ctx, page);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return links;
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_page *wasm_pdf_page_from_fz_page(fz_page *page) {
+	return pdf_page_from_fz_page(ctx, page);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_link* wasm_next_link(fz_link *link) {
+	return link->next;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect *wasm_link_rect(fz_link *link) {
+	return &link->rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_is_external_link(fz_link *link) {
+	return fz_is_external_link(ctx, link->uri);
+}
+
+EMSCRIPTEN_KEEPALIVE
+char* wasm_link_uri(fz_link *link) {
+	return link->uri;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_resolve_link_chapter(fz_document *doc, const char *uri) {
+	int chapter;
+	fz_try(ctx)
+		chapter = fz_resolve_link(ctx, doc, uri, NULL, NULL).chapter;
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return chapter;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_resolve_link_page(fz_document *doc, const char *uri) {
+	int page;
+	fz_try(ctx)
+		page = fz_resolve_link(ctx, doc, uri, NULL, NULL).page;
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return page;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_page_number_from_location(fz_document *doc, int chapter, int page) {
+	fz_location link_loc = { chapter, page };
+	int page_number;
+	fz_try(ctx)
+		page_number = fz_page_number_from_location(ctx, doc, link_loc);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return page_number;
+}
+
+EMSCRIPTEN_KEEPALIVE
+char *wasm_outline_title(fz_outline *node)
 {
 	return node->title;
 }
 
 EMSCRIPTEN_KEEPALIVE
-int outlinePage(fz_document *doc, fz_outline *node)
+int wasm_outline_page(fz_document *doc, fz_outline *node)
 {
-	return fz_page_number_from_location(ctx, doc, node->page);
+	int pageNumber;
+	fz_try(ctx)
+		pageNumber = fz_page_number_from_location(ctx, doc, node->page);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pageNumber;
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_outline *outlineDown(fz_outline *node)
+fz_outline *wasm_outline_down(fz_outline *node)
 {
 	return node->down;
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_outline *outlineNext(fz_outline *node)
+fz_outline *wasm_outline_next(fz_outline *node)
 {
 	return node->next;
 }
 
-/* PROGRESSIVE FETCH STREAM */
-
-struct fetch_state
-{
-	int block_shift;
-	int block_size;
-	int content_length; // Content-Length in bytes
-	int map_length; // Content-Length in blocks
-	uint8_t *content; // Array buffer with bytes
-	uint8_t *map; // Map of which blocks have been requested and loaded.
-};
-
-static void fetch_close(fz_context *ctx, void *state_)
-{
-	struct fetch_state *state = state_;
-	fz_free(ctx, state->content);
-	fz_free(ctx, state->map);
-	state->content = NULL;
-	state->map = NULL;
-	// TODO: wait for all outstanding requests to complete, then free state
-	// fz_free(ctx, state);
-	EM_ASM({
-		fetchClose($0);
-	}, state);
-}
-
-static void fetch_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
-{
-	struct fetch_state *state = stm->state;
-	stm->wp = stm->rp = state->content;
-	if (whence == SEEK_END)
-		stm->pos = state->content_length + offset;
-	else if (whence == SEEK_CUR)
-		stm->pos += offset;
-	else
-		stm->pos = offset;
-	if (stm->pos < 0)
-		stm->pos = 0;
-	if (stm->pos > state->content_length)
-		stm->pos = state->content_length;
-}
-
-static int fetch_next(fz_context *ctx, fz_stream *stm, size_t len)
-{
-	struct fetch_state *state = stm->state;
-
-	int block = stm->pos >> state->block_shift;
-	int start = block << state->block_shift;
-	int end = start + state->block_size;
-	if (end > state->content_length)
-		end = state->content_length;
-
-	if (state->map[block] == 0) {
-		state->map[block] = 1;
-		EM_ASM({
-			fetchRead($0, $1);
-		}, state, block);
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "waiting for data");
-	}
-
-	if (state->map[block] == 1) {
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "waiting for data");
-	}
-
-	stm->rp = state->content + stm->pos;
-	stm->wp = state->content + end;
-	stm->pos = end;
-
-	if (stm->rp < stm->wp)
-		return *stm->rp++;
-	return -1;
-}
-
-EM_JS(void, js_open_fetch, (struct fetch_state *state, char *url, int content_length, int block_shift, int prefetch), {
-	fetchOpen(state, UTF8ToString(url), content_length, block_shift, prefetch);
-});
-
 EMSCRIPTEN_KEEPALIVE
-void onFetchData(struct fetch_state *state, int block, uint8_t *data, int size)
+pdf_annot *wasm_pdf_first_annot(pdf_page *page)
 {
-	if (state->content) {
-		memcpy(state->content + (block << state->block_shift), data, size);
-		state->map[block] = 2;
-	}
+	return pdf_first_annot(ctx, page);
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_stream *openURL(char *url, int content_length, int block_size, int prefetch)
+pdf_annot *wasm_pdf_next_annot(pdf_annot *annot)
 {
-	fz_stream *stm = NULL;
-	struct fetch_state *state = NULL;
-	fz_var(stm);
-	fz_var(state);
-	fz_try (ctx)
-	{
-		int block_shift = (int)log2(block_size);
+	return pdf_next_annot(ctx, annot);
+}
 
-		if (block_shift < 10 || block_shift > 24)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid block shift: %d", block_shift);
-
-		state = fz_malloc(ctx, sizeof *state);
-		state->block_shift = block_shift;
-		state->block_size = 1 << block_shift;
-		state->content_length = content_length;
-		state->content = fz_malloc(ctx, state->content_length);
-		state->map_length = content_length / state->block_size + 1;
-		state->map = fz_malloc(ctx, state->map_length);
-		memset(state->map, 0, state->map_length);
-
-		stm = fz_new_stream(ctx, state, fetch_next, fetch_close);
-		// stm->progressive = 1;
-		stm->seek = fetch_seek;
-
-		js_open_fetch(state, url, content_length, block_shift, prefetch);
-	}
+EMSCRIPTEN_KEEPALIVE
+fz_rect *wasm_pdf_bound_annot(pdf_annot *annot)
+{
+	fz_try(ctx)
+		out_rect = pdf_bound_annot(ctx, annot);
 	fz_catch(ctx)
-	{
-		if (state)
-		{
-			fz_free(ctx, state->content);
-			fz_free(ctx, state->map);
-			fz_free(ctx, state);
-		}
 		wasm_rethrow(ctx);
-	}
-	return stm;
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_type_string(pdf_annot *annot)
+{
+	const char *type_string = NULL;
+	fz_try(ctx)
+		type_string = pdf_string_from_annot_type(ctx, pdf_annot_type(ctx, annot));
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return type_string;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_search_page(fz_page *page, const char *needle, fz_quad *hit_bbox, int hit_max)
+{
+	int hitCount;
+	fz_try(ctx)
+		hitCount = fz_search_page(ctx, page, needle, NULL, hit_bbox, hit_max);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return hitCount;
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t wasm_size_of_quad() {
+	return sizeof(fz_quad);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect *wasm_rect_from_quad(fz_quad *quad)
+{
+	out_rect = fz_rect_from_quad(*quad);
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_colorspace *wasm_device_gray(void)
+{
+	return fz_device_rgb(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_colorspace *wasm_device_rgb(void)
+{
+	return fz_device_rgb(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_colorspace *wasm_device_bgr(void)
+{
+	return fz_device_bgr(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_colorspace *wasm_device_cmyk(void)
+{
+	return fz_device_cmyk(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_colorspace(fz_colorspace *cs)
+{
+	fz_drop_colorspace(ctx, cs);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_pixmap *wasm_new_pixmap_from_page(fz_page *page,
+	float a, float b, float c, float d, float e, float f,
+	fz_colorspace *colorspace,
+	int alpha)
+{
+	fz_pixmap *pix;
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_page(ctx, page, fz_make_matrix(a,b,c,d,e,f), colorspace, alpha);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pix;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_pixmap(fz_pixmap *pix)
+{
+	fz_drop_pixmap(ctx, pix);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_irect *wasm_pixmap_bbox(fz_pixmap *pix)
+{
+	fz_try(ctx)
+		out_irect = fz_pixmap_bbox(ctx, pix);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return &out_irect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pixmap_stride(fz_pixmap *pix)
+{
+	int stride;
+	fz_try(ctx)
+		stride = fz_pixmap_stride(ctx, pix);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return stride;
+}
+
+EMSCRIPTEN_KEEPALIVE
+unsigned char *wasm_pixmap_samples(fz_pixmap *pix)
+{
+	unsigned char *samples;
+	fz_try(ctx)
+		samples = fz_pixmap_samples(ctx, pix);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return samples;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_buffer *wasm_new_buffer(size_t capacity)
+{
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = fz_new_buffer(ctx, capacity);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return buf;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_buffer *wasm_new_buffer_from_data(unsigned char *data, size_t size)
+{
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = fz_new_buffer_from_data(ctx, data, size);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return buf;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_buffer *wasm_new_buffer_from_pixmap_as_png(fz_pixmap *pix)
+{
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix, fz_default_color_params);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return buf;
+}
+
+EMSCRIPTEN_KEEPALIVE
+unsigned char *wasm_buffer_data(fz_buffer *buf)
+{
+	if (buf)
+		return buf->data;
+	return NULL;
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t wasm_buffer_size(fz_buffer *buf)
+{
+	if (buf)
+		return buf->len;
+	return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_resize_buffer(fz_buffer *buf, size_t capacity) {
+	fz_try(ctx)
+		fz_resize_buffer(ctx, buf, capacity);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_grow_buffer(fz_buffer *buf) {
+	fz_try(ctx)
+		fz_grow_buffer(ctx, buf);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_trim_buffer(fz_buffer *buf) {
+	fz_try(ctx)
+		fz_trim_buffer(ctx, buf);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_clear_buffer(fz_buffer *buf) {
+	fz_try(ctx)
+		fz_clear_buffer(ctx, buf);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_buffer(fz_buffer *buf)
+{
+	fz_drop_buffer(ctx, buf);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_output *wasm_new_output_with_buffer(fz_buffer *buf) {
+	fz_output *output;
+	fz_try(ctx)
+		output = fz_new_output_with_buffer(ctx, buf);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return output;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_close_output(fz_output *output) {
+	fz_try(ctx)
+		fz_close_output(ctx, output);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
 }
