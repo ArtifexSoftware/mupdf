@@ -101,7 +101,7 @@ const char content[] =
 
 	"<p>But at length he explained, in a tremulous tone,<br>"
 	"There was only one Beaver on board;<br>"
-	"And that was a tame one he had of his own,"
+	"And that was a tame one he had of his own,<br>"
 	"Whose death would be deeply deplored.</p>"
 
 	"<div id=\"b\">"

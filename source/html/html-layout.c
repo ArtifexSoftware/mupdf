@@ -953,7 +953,9 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 			/* Set restart->start to be NULL to indicate that we aren't skipping
 			 * any more. */
 			restart->start = NULL;
-			vertical = 0;
+			/* By setting vertical = margin[T], we force the top margin to collapse,
+			 * leaving us with zero space at the top on a restart. */
+			vertical = margin[T];
 		}
 
 		/* If we have a border, then in the event that no content fits, we want to
