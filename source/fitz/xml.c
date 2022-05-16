@@ -20,7 +20,7 @@
 // Artifex Software, Inc., 1305 Grant Avenue - Suite 200, Novato,
 // CA 94945, U.S.A., +1(415)492-9861, for further information.
 
-#include "mupdf/fitz.h"
+#include "xml-imp.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -104,40 +104,6 @@ struct parser
 #endif
 };
 
-struct attribute
-{
-	char *value;
-	struct attribute *next;
-	char name[1];
-};
-
-struct fz_xml_doc
-{
-	fz_pool *pool;
-	fz_xml *root;
-};
-
-/* Text nodes never use the down pointer. Therefore
- * if the down pointer is the MAGIC_TEXT value, we
- * know there is text. */
-struct fz_xml
-{
-	fz_xml *up, *down, *prev, *next;
-#ifdef FZ_XML_SEQ
-	int seq;
-#endif
-	union
-	{
-		char text[1];
-		struct
-		{
-			struct attribute *atts;
-			char name[1];
-		} d;
-	} u;
-};
-
-#define MAGIC_TEXT ((fz_xml *)1)
 #define FZ_TEXT_ITEM(item) (item && item->down == MAGIC_TEXT)
 
 static void xml_indent(int n)

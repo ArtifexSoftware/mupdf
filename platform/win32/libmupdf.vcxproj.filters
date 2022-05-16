@@ -860,5 +860,8 @@
     <ClInclude Include="..\..\include\mupdf\fitz\story.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\fitz\xml-imp.h">
+      <Filter>fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
