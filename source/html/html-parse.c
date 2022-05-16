@@ -535,6 +535,7 @@ static void fz_drop_html_imp(fz_context *ctx, fz_storable *stor)
 static void fz_drop_html_story_imp(fz_context *ctx, fz_storable *stor)
 {
 	fz_html_story *story = (fz_html_story *)stor;
+	fz_free(ctx, story->user_css);
 	fz_drop_html_box(ctx, story->tree.root);
 	fz_drop_html_font_set(ctx, story->font_set);
 	fz_drop_pool(ctx, story->tree.pool);
@@ -1315,10 +1316,40 @@ fix_nexts(fz_html_box *box)
 	}
 }
 
+static fz_xml_doc *
+parse_to_xml(fz_context *ctx, fz_buffer *buf, int try_xml, int try_html5)
+{
+	fz_xml_doc *xml;
+
+	if (try_xml && try_html5)
+	{
+		fz_try(ctx)
+			xml = fz_parse_xml(ctx, buf, 1);
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) == FZ_ERROR_SYNTAX)
+			{
+				fz_warn(ctx, "syntax error in XHTML; retrying using HTML5 parser");
+				xml = fz_parse_xml_from_html5(ctx, buf);
+			}
+			else
+				fz_rethrow(ctx);
+		}
+	}
+	else if (try_xml)
+		xml = fz_parse_xml(ctx, buf, 1);
+	else
+	{
+		assert(try_html5);
+		xml = fz_parse_xml_from_html5(ctx, buf);
+	}
+
+	return xml;
+}
+
 static void
-fz_parse_html_tree(fz_context *ctx,
-	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook)
+xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
+	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook)
 {
 	fz_xml *root, *node;
 	char *title;
@@ -1336,32 +1367,10 @@ fz_parse_html_tree(fz_context *ctx,
 	g.emit_white = 0;
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 	g.styles = NULL;
+	g.xml = xml;
 
 	if (rtitle)
 		*rtitle = NULL;
-
-	if (try_xml && try_html5)
-	{
-		fz_try(ctx)
-			g.xml = fz_parse_xml(ctx, buf, 1);
-		fz_catch(ctx)
-		{
-			if (fz_caught(ctx) == FZ_ERROR_SYNTAX)
-			{
-				fz_warn(ctx, "syntax error in XHTML; retrying using HTML5 parser");
-				g.xml = fz_parse_xml_from_html5(ctx, buf);
-			}
-			else
-				fz_rethrow(ctx);
-		}
-	}
-	else if (try_xml)
-		g.xml = fz_parse_xml(ctx, buf, 1);
-	else
-	{
-		assert(try_html5);
-		g.xml = fz_parse_xml_from_html5(ctx, buf);
-	}
 
 	root = fz_xml_root(g.xml);
 
@@ -1461,7 +1470,6 @@ fz_parse_html_tree(fz_context *ctx,
 	{
 		fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
 		fz_drop_css(ctx, g.css);
-		fz_drop_xml(ctx, g.xml);
 	}
 	fz_catch(ctx)
 	{
@@ -1474,6 +1482,26 @@ fz_parse_html_tree(fz_context *ctx,
 		fz_drop_html_tree(ctx, tree);
 		fz_rethrow(ctx);
 	}
+}
+
+static void
+fz_parse_html_tree(fz_context *ctx,
+	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook)
+{
+	fz_xml_doc *xml;
+
+	if (rtitle)
+		*rtitle = NULL;
+
+	xml = parse_to_xml(ctx, buf, try_xml, try_html5);
+
+	fz_try(ctx)
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook);
+	fz_always(ctx)
+		fz_drop_xml(ctx, xml);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static fz_html *
@@ -1511,16 +1539,20 @@ fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float e
 		story->tree.pool = pool;
 		story->font_set = fz_new_html_font_set(ctx);
 		story->em = em;
+		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
+		story->story = parse_to_xml(ctx, buf, 0, 1);
+
 	}
 	fz_catch(ctx)
 	{
-		if (story == NULL)
-			fz_drop_pool(ctx, pool);
-		else
+		if (story != NULL)
 		{
 			fz_drop_html_font_set(ctx, story->font_set);
 			fz_drop_html_tree(ctx, &story->tree);
+			fz_drop_xml(ctx, story->story);
 		}
+		fz_drop_pool(ctx, pool);
+		fz_rethrow(ctx);
 	}
 
 	fz_parse_html_tree(ctx, story->font_set, NULL, ".", buf, user_css, 0, 1, &story->tree, NULL, 0);
@@ -1788,4 +1820,57 @@ html_filter_store(fz_context *ctx, void *doc, void *key_)
 void fz_purge_stored_html(fz_context *ctx, void *doc)
 {
 	fz_filter_store(ctx, html_filter_store, doc, &fz_html_store_type);
+}
+
+int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled)
+{
+	float w, h;
+
+	if (filled)
+		*filled = fz_empty_rect;
+
+	if (story == NULL || story->complete)
+		return 0;
+
+	/* Convert from XML to box model on the first attempt to place.
+	 * The DOM is unusable from here on in. */
+	if (story->story)
+	{
+		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->story, &story->tree, NULL, 0);
+		fz_drop_xml(ctx, story->story);
+		story->story = NULL;
+	}
+
+	w = where.x1 - where.x0;
+	h = where.y1 - where.y0;
+	/* Confusingly, we call the layout using restart_draw, not restart_place,
+	 * because we don't want to destroy the current values in restart_place
+	 * in case we have to retry later. This means the values are left in
+	 * the correct struct though! */
+	story->restart_draw.start = story->restart_place.start;
+	story->restart_draw.start_flow = story->restart_place.start_flow;
+	story->restart_draw.end = NULL;
+	story->restart_draw.end_flow = NULL;
+	story->tree.root->x = where.x0;
+	story->tree.root->y = where.y0;
+	story->bbox = where;
+	fz_restartable_layout_html(ctx, story->tree.root, w, h, w, h, story->em, &story->restart_draw);
+	story->restart_draw.start = story->restart_place.start;
+	story->restart_draw.start_flow = story->restart_place.start_flow;
+
+	if (filled)
+	{
+		fz_html_box *b = story->tree.root;
+		filled->x0 = b->x - b->margin[L] - b->border[L] - b->padding[L];
+		filled->x1 = b->w + b->margin[R] + b->border[R] + b->padding[R] + b->x;
+		filled->y0 = b->y - b->margin[T] - b->border[T] - b->padding[T];
+		filled->y1 = b->b + b->margin[B] + b->border[B] + b->padding[B];
+	}
+
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
+		fz_debug_html(ctx, story->tree.root);
+#endif
+
+	return story->restart_draw.end == NULL;
 }

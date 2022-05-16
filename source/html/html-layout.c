@@ -1779,50 +1779,6 @@ fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int 
 	fz_draw_restarted_html(ctx, dev, ctm, html->tree.root->down, page_top, page_bot, NULL);
 }
 
-int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled)
-{
-	float w, h;
-
-	if (filled)
-		*filled = fz_empty_rect;
-
-	if (story == NULL || story->complete)
-		return 0;
-
-	w = where.x1 - where.x0;
-	h = where.y1 - where.y0;
-	/* Confusingly, we call the layout using restart_draw, not restart_place,
-	 * because we don't want to destroy the current values in restart_place
-	 * in case we have to retry later. This means the values are left in
-	 * the correct struct though! */
-	story->restart_draw.start = story->restart_place.start;
-	story->restart_draw.start_flow = story->restart_place.start_flow;
-	story->restart_draw.end = NULL;
-	story->restart_draw.end_flow = NULL;
-	story->tree.root->x = where.x0;
-	story->tree.root->y = where.y0;
-	story->bbox = where;
-	fz_restartable_layout_html(ctx, story->tree.root, w, h, w, h, story->em, &story->restart_draw);
-	story->restart_draw.start = story->restart_place.start;
-	story->restart_draw.start_flow = story->restart_place.start_flow;
-
-	if (filled)
-	{
-		fz_html_box *b = story->tree.root;
-		filled->x0 = b->x - b->margin[L] - b->border[L] - b->padding[L];
-		filled->x1 = b->w + b->margin[R] + b->border[R] + b->padding[R] + b->x;
-		filled->y0 = b->y - b->margin[T] - b->border[T] - b->padding[T];
-		filled->y1 = b->b + b->margin[B] + b->border[B] + b->padding[B];
-	}
-
-#ifndef NDEBUG
-	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
-		fz_debug_html(ctx, story->tree.root);
-#endif
-
-	return story->restart_draw.end == NULL;
-}
-
 void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_matrix ctm)
 {
 	float page_top, page_bot;
