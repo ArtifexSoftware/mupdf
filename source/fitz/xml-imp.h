@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -35,32 +35,56 @@ struct attribute
 	char name[1];
 };
 
-struct fz_xml_doc
-{
-	fz_pool *pool;
-	fz_xml *root;
-};
+/**
+	We use a slightly grotty representation for an XML tree.
 
-/* Text nodes never use the down pointer. Therefore
- * if the down pointer is the MAGIC_TEXT value, we
- * know there is text. */
+	The topmost element of the tree is an fz_xml with up == NULL.
+	This signifies that we are a 'doc', rather than a 'node'.
+
+	We only ever get a 'doc' node at the root, and this contains
+	a reference count for the entire tree, together with the
+	fz_pool pointer used to allocate nodes.
+
+	All other structures are 'nodes'. If down is MAGIC_TEXT then
+	they are text nodes (with no children or attributes).
+	Otherwise, they are standard XML nodes with attributes
+	and children.
+*/
+
 struct fz_xml
 {
-	fz_xml *up, *down, *prev, *next;
-#ifdef FZ_XML_SEQ
-	int seq;
-#endif
+	fz_xml *up, *down;
 	union
 	{
-		char text[1];
-		struct
+		struct /* up != NULL */
 		{
-			struct attribute *atts;
-			char name[1];
-		} d;
+			fz_xml *prev, *next;
+#ifdef FZ_XML_SEQ
+			int seq;
+#endif
+			union
+			{
+				char text[1]; /* down == MAGIC_TEXT */
+				struct /* down != MAGIC_TEXT */
+				{
+					struct attribute *atts;
+					char name[1];
+				} d;
+			} u;
+		} node;
+		struct /* up == NULL */
+		{
+			int refs;
+			fz_pool *pool;
+		} doc;
 	} u;
 };
 
 #define MAGIC_TEXT ((fz_xml *)1)
+
+#define FZ_TEXT_ITEM(item) (item && item->down == MAGIC_TEXT)
+#define FZ_DOCUMENT_ITEM(item) (item && item->up == NULL)
+
+size_t xml_parse_entity(int *c, const char *a);
 
 #endif

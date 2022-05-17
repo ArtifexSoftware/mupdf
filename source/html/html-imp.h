@@ -23,6 +23,10 @@
 #ifndef SOURCE_HTML_IMP_H
 #define SOURCE_HTML_IMP_H
 
+#include "mupdf/fitz.h"
+
+#include "../fitz/xml-imp.h"
+
 typedef struct fz_html_font_face_s fz_html_font_face;
 typedef struct fz_html_font_set_s fz_html_font_set;
 typedef struct fz_html_s fz_html;
@@ -338,8 +342,8 @@ struct fz_html_story_s
 	/* The user_css (or NULL) */
 	char *user_css;
 
-	/* The HTML story as XML nodes.*/
-	fz_xml_doc *story;
+	/* The HTML story as XML nodes with a DOM */
+	fz_xml *dom;
 
 	/* The HTML tree of content. */
 	fz_html_tree tree;

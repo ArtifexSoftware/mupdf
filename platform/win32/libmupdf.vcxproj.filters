@@ -612,6 +612,9 @@
     <ClCompile Include="..\..\source\reflow\reflow-doc.c">
       <Filter>reflow</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\html\xml-dom.c">
+      <Filter>html</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">

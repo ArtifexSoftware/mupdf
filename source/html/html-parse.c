@@ -1540,7 +1540,7 @@ fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float e
 		story->font_set = fz_new_html_font_set(ctx);
 		story->em = em;
 		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
-		story->story = parse_to_xml(ctx, buf, 0, 1);
+		story->dom = parse_to_xml(ctx, buf, 0, 1);
 
 	}
 	fz_catch(ctx)
@@ -1549,7 +1549,7 @@ fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float e
 		{
 			fz_drop_html_font_set(ctx, story->font_set);
 			fz_drop_html_tree(ctx, &story->tree);
-			fz_drop_xml(ctx, story->story);
+			fz_drop_xml(ctx, story->dom);
 		}
 		fz_drop_pool(ctx, pool);
 		fz_rethrow(ctx);
@@ -1834,11 +1834,11 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 
 	/* Convert from XML to box model on the first attempt to place.
 	 * The DOM is unusable from here on in. */
-	if (story->story)
+	if (story->dom)
 	{
-		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->story, &story->tree, NULL, 0);
-		fz_drop_xml(ctx, story->story);
-		story->story = NULL;
+		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0);
+		fz_drop_xml(ctx, story->dom);
+		story->dom = NULL;
 	}
 
 	w = where.x1 - where.x0;

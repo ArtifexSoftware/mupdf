@@ -74,6 +74,19 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 */
 void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_matrix ctm);
 
+/*
+	Drop the html story.
+*/
 void fz_drop_html_story(fz_context *ctx, fz_html_story *story);
+
+/*
+	Get a borrowed reference to the DOM document pointer for this
+	story. Do not destroy this reference, it will be destroyed
+	when the story is laid out.
+
+	This only makes sense before the first placement of the story.
+	Once the story is placed, the DOM representation is destroyed.
+*/
+fz_xml *fz_html_story_document(fz_context *ctx, fz_html_story *story);
 
 #endif
