@@ -130,7 +130,7 @@ $(OUT)/source/%.o : source/%.cpp
 
 ifeq ($(HAVE_TESSERACT),yes)
 $(OUT)/source/fitz/tessocr.o : source/fitz/tessocr.cpp
-	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(TESSERACT_CFLAGS)
+	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(TESSERACT_CFLAGS) $(TESSERACT_DEFINES) $(TESSERACT_LANGFLAGS)
 endif
 
 $(OUT)/platform/%.o : platform/%.c
