@@ -4,7 +4,7 @@
 #include <string.h>
 #include <memory.h>
 
-const char content[] =
+const char snark[] =
 	"<!DOCTYPE html>"
 	"<style>"
 	"#a { margin: 30px; }"
@@ -137,6 +137,76 @@ const char content[] =
 	"And appeared unaccountably shy.</p>"
 ;
 
+#define MAX_CAST_MEMBERS 32
+
+typedef struct {
+	const char *title;
+	const char *director;
+	const char *year;
+	const char *cast[MAX_CAST_MEMBERS];
+} film_t;
+
+static const film_t films[] =
+{
+	{
+		"Pulp Fiction",
+		"Quentin Tarantino",
+		"1994",
+		{
+			"John Travolta",
+			"Samuel L Jackson",
+			"Uma Thurman",
+			"Bruce Willis",
+			"Ving Rhames",
+			"Harvey Keitel",
+			"Tim Roth",
+			"Bridget Fonda"
+		}
+	},
+
+	{
+		"The Usual Suspects",
+		"Bryan Singer",
+		"1995",
+		{
+			"Kevin Spacey",
+			"Gabriel Byrne",
+			"Chazz Palminteri",
+			"Benicio Del Toro",
+			"Kevin Pollak",
+			"Pete Postlethwaite",
+			"Steven Baldwin"
+		}
+
+	},
+
+	{
+		"Fight Club",
+		"David Fincher",
+		"1999",
+		{
+			"Brad Pitt",
+			"Edward Norton",
+			"Helena Bonham Carter"
+		}
+	}
+};
+
+const char *festival_template =
+	"<html><head><title>Why do we have a title? Why not?</title></head>"
+	"<body><h1 style=\"text-align:center\">Hook Norton Film Festival</h1>"
+	"<ol>"
+	"<li id=\"filmtemplate\">"
+	"<b id=\"filmtitle\"></b>"
+	"<dl>"
+	"<dt>Director<dd id=\"director\">"
+	"<dt>Release Year<dd id=\"filmyear\">"
+	"<dt>Cast<dd id=\"cast\">"
+	"</dl>"
+	"</li>"
+	"<ul>"
+	"</body></html";
+
 int main(int argc, const char *argv[])
 {
 	fz_context *ctx;
@@ -160,13 +230,155 @@ int main(int argc, const char *argv[])
 	fz_var(buf);
 	fz_var(dev);
 
+	/* First one made with precooked content. */
 	fz_try(ctx)
 	{
 		writer = fz_new_pdf_writer(ctx, "out.pdf", "");
 
-		buf = fz_new_buffer_from_copied_data(ctx, content, strlen(content)+1);
+		buf = fz_new_buffer_from_copied_data(ctx, snark, strlen(snark)+1);
 
 		story = fz_new_html_story(ctx, buf, "", 11);
+
+		do
+		{
+			fz_rect where;
+			fz_rect filled;
+
+			where.x0 = mediabox.x0 + margin;
+			where.y0 = mediabox.y0 + margin;
+			where.x1 = mediabox.x1 - margin;
+			where.y1 = mediabox.y1 - margin;
+
+			dev = fz_begin_page(ctx, writer, mediabox);
+
+			done = fz_place_story(ctx, story, where, &filled);
+
+			fz_draw_story(ctx, story, dev, fz_identity);
+
+			fz_end_page(ctx, writer);
+		}
+		while (!done);
+
+		fz_close_document_writer(ctx, writer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_html_story(ctx, story);
+		fz_drop_buffer(ctx, buf);
+		fz_drop_document_writer(ctx, writer);
+	}
+	fz_catch(ctx)
+	{
+		fprintf(stderr, "Failed with %s", fz_caught_message(ctx));
+	}
+
+	/* Now one made with programmatic content. */
+	writer = NULL;
+	buf = NULL;
+	story = NULL;
+	dev = NULL;
+
+	fz_try(ctx)
+	{
+		fz_xml *dom, *body, *tmp;
+
+		writer = fz_new_pdf_writer(ctx, "out2.pdf", "");
+
+		story = fz_new_html_story(ctx, NULL, "", 11);
+
+		dom = fz_html_story_document(ctx, story);
+
+		body = fz_dom_body(ctx, dom);
+
+		fz_dom_append_child(ctx, body, fz_dom_create_text_node(ctx, dom, "This is some text."));
+		tmp = fz_dom_create_element(ctx, dom, "b");
+		fz_dom_append_child(ctx, body, tmp);
+		fz_dom_append_child(ctx, tmp, fz_dom_create_text_node(ctx, dom, "This is some bold text."));
+		fz_dom_append_child(ctx, body, fz_dom_create_text_node(ctx, dom, "This is some normal text."));
+
+		do
+		{
+			fz_rect where;
+			fz_rect filled;
+
+			where.x0 = mediabox.x0 + margin;
+			where.y0 = mediabox.y0 + margin;
+			where.x1 = mediabox.x1 - margin;
+			where.y1 = mediabox.y1 - margin;
+
+			dev = fz_begin_page(ctx, writer, mediabox);
+
+			done = fz_place_story(ctx, story, where, &filled);
+
+			fz_draw_story(ctx, story, dev, fz_identity);
+
+			fz_end_page(ctx, writer);
+		}
+		while (!done);
+
+		fz_close_document_writer(ctx, writer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_html_story(ctx, story);
+		fz_drop_buffer(ctx, buf);
+		fz_drop_document_writer(ctx, writer);
+	}
+	fz_catch(ctx)
+	{
+		fprintf(stderr, "Failed with %s", fz_caught_message(ctx));
+	}
+
+	/* Now a combination of the two. */
+	writer = NULL;
+	buf = NULL;
+	story = NULL;
+	dev = NULL;
+
+	fz_try(ctx)
+	{
+		fz_xml *dom, *body, *tmp, *templat;
+		int i, j;
+
+		writer = fz_new_pdf_writer(ctx, "out3.pdf", "");
+
+		buf = fz_new_buffer_from_copied_data(ctx, festival_template, strlen(festival_template)+1);
+		story = fz_new_html_story(ctx, buf, "", 11);
+
+		dom = fz_html_story_document(ctx, story);
+
+		body = fz_dom_body(ctx, dom);
+
+		templat = fz_dom_find(ctx, body, NULL, "id", "filmtemplate");
+
+		for (i = 0; i < nelem(films); i++)
+		{
+			fz_xml *film = fz_dom_clone(ctx, templat);
+
+			/* Now fill in some of the template. */
+			tmp = fz_dom_find(ctx, film, NULL, "id", "filmtitle");
+			fz_dom_append_child(ctx, tmp, fz_dom_create_text_node(ctx, dom, films[i].title));
+
+			tmp = fz_dom_find(ctx, film, NULL, "id", "director");
+			fz_dom_append_child(ctx, tmp, fz_dom_create_text_node(ctx, dom, films[i].director));
+
+			tmp = fz_dom_find(ctx, film, NULL, "id", "filmyear");
+			fz_dom_append_child(ctx, tmp, fz_dom_create_text_node(ctx, dom, films[i].year));
+
+			tmp = fz_dom_find(ctx, film, NULL, "id", "cast");
+			for (j = 0; j < MAX_CAST_MEMBERS; j++)
+			{
+				if (films[i].cast[j] == NULL)
+					break;
+				fz_dom_append_child(ctx, tmp, fz_dom_create_text_node(ctx, dom, films[i].cast[j]));
+				fz_dom_append_child(ctx, tmp, fz_dom_create_element(ctx, dom, "br"));
+			}
+
+			fz_dom_append_child(ctx, fz_dom_parent(ctx, templat), film);
+		}
+
+		/* Remove the template. */
+		fz_dom_remove(ctx, templat);
 
 		do
 		{
