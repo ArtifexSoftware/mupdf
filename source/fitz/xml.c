@@ -818,13 +818,22 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	int dofree = 0;
 	unsigned char *s;
 	size_t n;
+	static unsigned char empty_string[] = "";
 
 	fz_var(dofree);
 	fz_var(p);
 
-	/* ensure we are zero-terminated */
-	fz_terminate_buffer(ctx, buf);
-	n = fz_buffer_storage(ctx, buf, &s);
+	if (buf == NULL)
+	{
+		n = 0;
+		s = empty_string;
+	}
+	else
+	{
+		/* ensure we are zero-terminated */
+		fz_terminate_buffer(ctx, buf);
+		n = fz_buffer_storage(ctx, buf, &s);
+	}
 
 	memset(&root, 0, sizeof(root));
 	parser.pool = fz_new_pool(ctx);
@@ -955,15 +964,24 @@ fz_parse_xml_from_html5(fz_context *ctx, fz_buffer *buf)
 	GumboOutput *soup = NULL;
 	GumboOptions opts;
 	struct mem_gumbo mem;
+	static unsigned char empty_string[] = "";
 
 	fz_var(mem.pool);
 	fz_var(soup);
 	fz_var(dofree);
 	fz_var(p);
 
-	/* ensure we are zero-terminated */
-	fz_terminate_buffer(ctx, buf);
-	n = fz_buffer_storage(ctx, buf, &s);
+	if (buf == NULL)
+	{
+		n = 0;
+		s = empty_string;
+	}
+	else
+	{
+		/* ensure we are zero-terminated */
+		fz_terminate_buffer(ctx, buf);
+		n = fz_buffer_storage(ctx, buf, &s);
+	}
 
 	mem.ctx = ctx;
 	mem.pool = NULL;
