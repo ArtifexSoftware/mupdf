@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -21,6 +21,8 @@
 // CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 package com.artifex.mupdf.fitz;
+
+import java.util.Objects;
 
 public class Point
 {
@@ -50,10 +52,16 @@ public class Point
 		return this;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Point))
 			return false;
 		Point other = (Point) obj;
 		return x == other.x && y == other.y;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(x, y);
 	}
 }
