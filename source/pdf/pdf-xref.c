@@ -439,6 +439,14 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 	return &sub->table[i - sub->start];
 }
 
+pdf_xref_entry *pdf_get_xref_entry_no_null(fz_context *ctx, pdf_document *doc, int i)
+{
+	pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
+	if (entry != NULL)
+		return entry;
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d 0 R), but not allowed to return NULL", i);
+}
+
 /*
 	Ensure we have an incremental xref section where we can store
 	updated versions of indirect objects. This is a new xref section
@@ -1486,7 +1494,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc)
 
 	pdf_prime_xref_index(ctx, doc);
 
-	entry = pdf_get_xref_entry(ctx, doc, 0);
+	entry = pdf_get_xref_entry_no_null(ctx, doc, 0);
 	/* broken pdfs where first object is missing */
 	if (!entry->type)
 	{
@@ -1518,7 +1526,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc)
 			 * may solidify the xref, hence invalidating "entry", meaning we
 			 * need a stashed value for the throw. */
 			int64_t ofs = entry->ofs;
-			if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
+			if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry_no_null(ctx, doc, ofs)->type != 'n')
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
 		}
 	}
@@ -1713,7 +1721,7 @@ void pdf_repair_trailer(fz_context *ctx, pdf_document *doc)
 		 */
 		for (i = xref_len - 1; i > 0 && (!hasinfo || !hasroot); --i)
 		{
-			pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
+			pdf_xref_entry *entry = pdf_get_xref_entry_no_null(ctx, doc, i);
 			if (entry->type == 0 || entry->type == 'f')
 				continue;
 
@@ -1961,7 +1969,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 			fz_drop_stream(ctx, sub);
 			sub = NULL;
 
-			entry = pdf_get_xref_entry(ctx, doc, numbuf[i]);
+			entry = pdf_get_xref_entry_no_null(ctx, doc, numbuf[i]);
 
 			pdf_set_obj_parent(ctx, obj, numbuf[i]);
 
@@ -2255,7 +2263,7 @@ pdf_load_unencrypted_object(fz_context *ctx, pdf_document *doc, int num)
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "object out of range (%d 0 R); xref size %d", num, pdf_xref_len(ctx, doc));
 
-	x = pdf_get_xref_entry(ctx, doc, num);
+	x = pdf_get_xref_entry_no_null(ctx, doc, num);
 	if (x->type == 'n')
 	{
 		fz_seek(ctx, doc->file, x->ofs, SEEK_SET);
@@ -2694,7 +2702,7 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 			return;
 		}
 
-		x = pdf_get_xref_entry(ctx, doc, num);
+		x = pdf_get_xref_entry_no_null(ctx, doc, num);
 	}
 
 	fz_drop_buffer(ctx, x->stm_buf);
@@ -2919,7 +2927,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		int max_object_num = pdf_xref_len(ctx, doc);
 
 		stream = pdf_open_stream_number(ctx, doc, objnum);
-		dict = pdf_get_xref_entry(ctx, doc, objnum)->obj;
+		dict = pdf_get_xref_entry_no_null(ctx, doc, objnum)->obj;
 		if (dict == NULL || !pdf_is_dict(ctx, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "malformed hint object");
 
