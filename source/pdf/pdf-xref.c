@@ -1260,6 +1260,14 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc)
 		obj = pdf_dict_get(ctx, trailer, PDF_NAME(W));
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing W entry (%d  R)", num);
+
+		if (pdf_is_indirect(ctx, pdf_array_get(ctx, obj, 0)))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream object type field width an indirect object");
+		if (pdf_is_indirect(ctx, pdf_array_get(ctx, obj, 1)))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream object field 2 width an indirect object");
+		if (pdf_is_indirect(ctx, pdf_array_get(ctx, obj, 2)))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream object field 3 width an indirect object");
+
 		w0 = pdf_array_get_int(ctx, obj, 0);
 		w1 = pdf_array_get_int(ctx, obj, 1);
 		w2 = pdf_array_get_int(ctx, obj, 2);
