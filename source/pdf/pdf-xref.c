@@ -1503,7 +1503,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc)
 	for (i = 0; i < xref_len; i++)
 	{
 		entry = pdf_get_xref_entry(ctx, doc, i);
-		if (entry->type == 'n')
+		if (entry && entry->type == 'n')
 		{
 			/* Special case code: "0000000000 * n" means free,
 			 * according to some producers (inc Quartz) */
@@ -1512,7 +1512,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc)
 			else if (entry->ofs <= 0 || entry->ofs >= doc->file_size)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
 		}
-		if (entry->type == 'o')
+		if (entry && entry->type == 'o')
 		{
 			/* Read this into a local variable here, because pdf_get_xref_entry
 			 * may solidify the xref, hence invalidating "entry", meaning we
@@ -2280,6 +2280,8 @@ object_updated:
 	rnum = num;
 
 	x = pdf_get_xref_entry(ctx, doc, num);
+	if (x == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d 0 R)", num);
 
 	if (x->obj != NULL)
 		return x;
