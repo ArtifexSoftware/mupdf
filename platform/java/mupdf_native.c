@@ -101,9 +101,11 @@ static jclass cls_DisplayList;
 static jclass cls_Document;
 static jclass cls_DocumentWriter;
 static jclass cls_DocumentWriter_OCRListener;
+static jclass cls_DOM;
 static jclass cls_FitzInputStream;
 static jclass cls_FloatArray;
 static jclass cls_Font;
+static jclass cls_HTMLStory;
 static jclass cls_IOException;
 static jclass cls_IllegalArgumentException;
 static jclass cls_Image;
@@ -177,10 +179,12 @@ static jfieldID fid_DisplayList_pointer;
 static jfieldID fid_DocumentWriter_ocrlistener;
 static jfieldID fid_DocumentWriter_pointer;
 static jfieldID fid_Document_pointer;
+static jfieldID fid_DOM_pointer;
 static jfieldID fid_FitzInputStream_closed;
 static jfieldID fid_FitzInputStream_markpos;
 static jfieldID fid_FitzInputStream_pointer;
 static jfieldID fid_Font_pointer;
+static jfieldID fid_HTMLStory_pointer;
 static jfieldID fid_Image_pointer;
 static jfieldID fid_LinkDestination_chapter;
 static jfieldID fid_LinkDestination_height;
@@ -292,6 +296,7 @@ static jmethodID mid_Device_strokeText;
 static jmethodID mid_DisplayList_init;
 static jmethodID mid_DocumentWriter_OCRListener_progress;
 static jmethodID mid_Document_init;
+static jmethodID mid_DOM_init;
 static jmethodID mid_FitzInputStream_init;
 static jmethodID mid_Font_init;
 static jmethodID mid_Image_init;
@@ -826,6 +831,10 @@ static int find_fids(JNIEnv *env)
 	cls_DocumentWriter_OCRListener = get_class(&err, env, PKG"DocumentWriter$OCRListener");
 	mid_DocumentWriter_OCRListener_progress = get_method(&err, env, "progress", "(II)Z");
 
+	cls_DOM = get_class(&err, env, PKG"DOM");
+	fid_DOM_pointer = get_field(&err, env, "pointer", "J");
+	mid_DOM_init = get_method(&err, env, "<init>", "(J)V");
+
 	cls_FitzInputStream = get_class(&err, env, PKG"FitzInputStream");
 	fid_FitzInputStream_pointer = get_field(&err, env, "pointer", "J");
 	fid_FitzInputStream_markpos = get_field(&err, env, "markpos", "J");
@@ -835,6 +844,9 @@ static int find_fids(JNIEnv *env)
 	cls_Font = get_class(&err, env, PKG"Font");
 	fid_Font_pointer = get_field(&err, env, "pointer", "J");
 	mid_Font_init = get_method(&err, env, "<init>", "(J)V");
+
+	cls_HTMLStory = get_class(&err, env, PKG"HTMLStory");
+	fid_HTMLStory_pointer = get_field(&err, env, "pointer", "J");
 
 	cls_Image = get_class(&err, env, PKG"Image");
 	fid_Image_pointer = get_field(&err, env, "pointer", "J");
@@ -1272,6 +1284,8 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 #include "jni/strokestate.c"
 #include "jni/structuredtext.c"
 #include "jni/text.c"
+#include "jni/htmlstory.c"
+#include "jni/dom.c"
 
 #ifdef HAVE_ANDROID
 #include "jni/android/androiddrawdevice.c"

@@ -50,7 +50,14 @@ fz_xml *fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white);
 fz_xml *fz_parse_xml_from_html5(fz_context *ctx, fz_buffer *buf);
 
 /**
-	Free the XML node and all its children and siblings.
+	Add a reference to the XML.
+*/
+fz_xml *fz_keep_xml(fz_context *ctx, fz_xml *xml);
+
+/**
+	Drop a reference to the XML. When the last reference is
+	dropped, the node and all its children and siblings will
+	be freed.
 */
 void fz_drop_xml(fz_context *ctx, fz_xml *xml);
 
