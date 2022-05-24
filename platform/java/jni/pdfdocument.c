@@ -73,7 +73,7 @@ static void event_cb(fz_context *ctx, pdf_document *pdf, pdf_doc_event *event, v
 			if (!jmessage || (*env)->ExceptionCheck(env))
 				fz_throw_java_and_detach_thread(ctx, env, detach);
 
-			jcheckboxmsg = (*env)->NewStringUTF(env, alert->message);
+			jcheckboxmsg = (*env)->NewStringUTF(env, alert->check_box_message);
 			if (!jcheckboxmsg || (*env)->ExceptionCheck(env))
 				fz_throw_java_and_detach_thread(ctx, env, detach);
 
