@@ -65,7 +65,7 @@ static void event_cb(fz_context *ctx, pdf_document *pdf, pdf_doc_event *event, v
 			if (!jpdf || (*env)->ExceptionCheck(env))
 				fz_throw_java_and_detach_thread(ctx, env, detach);
 
-			jtitle = (*env)->NewStringUTF(env, alert->message);
+			jtitle = (*env)->NewStringUTF(env, alert->title);
 			if (!jtitle || (*env)->ExceptionCheck(env))
 				fz_throw_java_and_detach_thread(ctx, env, detach);
 
