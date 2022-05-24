@@ -71,6 +71,8 @@ EXAMPLE_JAVA_OBJECTS := $(subst example/,../../$(OUT)/example/,$(EXAMPLE_JAVA_SO
 
 default: $(MUPDF_JAVA) $(MUPDF_JAR) $(EXAMPLE_JAVA_OBJECTS)
 
+jar: $(MUPDF_JAR)
+
 MUPDF_CORE := ../../$(OUT)/libmupdf.a ../../$(OUT)/libmupdf-third.a
 ifeq "$(OS)" "Linux"
 $(MUPDF_CORE) : .FORCE
