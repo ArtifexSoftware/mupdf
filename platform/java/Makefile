@@ -18,6 +18,7 @@ else ifeq ($(build),memento)
 else
   BUILD_FLAGS := -DNDEBUG -O2
 endif
+BUILD_FLAGS += $(XCFLAGS)
 
 ifndef OUT
   OUT := build/java/$(build)
