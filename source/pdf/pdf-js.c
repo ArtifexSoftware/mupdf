@@ -90,8 +90,8 @@ static void app_alert(js_State *J)
 	evt.title = js_isdefined(J, 4) ? js_tostring(J, 4) : "PDF alert";
 
 	evt.check_box_message = "Do not show this message again";
-	evt.initially_checked = 1;
-	evt.finally_checked = 1;
+	evt.initially_checked = 0;
+	evt.finally_checked = 0;
 
 	if (js_isobject(J, 6))
 	{
