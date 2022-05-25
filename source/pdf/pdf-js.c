@@ -97,7 +97,8 @@ static void app_alert(js_State *J)
 	{
 		if (js_hasproperty(J, 6, "cMsg"))
 		{
-			evt.check_box_message = js_tostring(J, -1);
+			if (js_iscoercible(J, -1))
+				evt.check_box_message = js_tostring(J, -1);
 			js_pop(J, 1);
 		}
 		if (js_hasproperty(J, 6, "bInitialValue"))
