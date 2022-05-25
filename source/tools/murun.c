@@ -630,7 +630,7 @@ static fz_link_dest_type link_dest_type_from_string(const char *str);
 
 static fz_link_dest ffi_tolinkdest(js_State *J, int idx)
 {
-	fz_link_dest dest = { { 0, -1 }, FZ_LINK_DEST_XYZ, 0, 0, 0, 0, 0 };
+	fz_link_dest dest = fz_make_link_dest_none();
 
 	if (js_hasproperty(J, idx, "chapter")) {
 		dest.loc.chapter = js_tointeger(J, -1);
