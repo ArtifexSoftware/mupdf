@@ -89,12 +89,15 @@ static void app_alert(js_State *J)
 	evt.button_group_type = js_tointeger(J, 3);
 	evt.title = js_isdefined(J, 4) ? js_tostring(J, 4) : "PDF alert";
 
-	evt.check_box_message = "Do not show this message again";
+	evt.has_check_box = 0;
+	evt.check_box_message = NULL;
 	evt.initially_checked = 0;
 	evt.finally_checked = 0;
 
 	if (js_isobject(J, 6))
 	{
+		evt.has_check_box = 1;
+		evt.check_box_message = "Do not show this message again";
 		if (js_hasproperty(J, 6, "cMsg"))
 		{
 			if (js_iscoercible(J, -1))
