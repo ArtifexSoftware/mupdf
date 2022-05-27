@@ -1028,6 +1028,12 @@ static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 
 	if (js_isuserdata(J, idx, "fz_buffer"))
 		buf = fz_keep_buffer(ctx, js_touserdata(J, idx, "fz_buffer"));
+	else if (!js_iscoercible(J, idx)) {
+		fz_try(ctx)
+			buf = fz_new_buffer(ctx, 1);
+		fz_catch(ctx)
+			rethrow(J);
+	}
 	else {
 		const char *str = js_tostring(J, idx);
 		fz_try(ctx)
