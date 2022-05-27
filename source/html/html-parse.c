@@ -313,7 +313,27 @@ static const char *pairbrk[29] =
 };
 
 static fz_html_box *
-find_flow_encloser(fz_html_box *flow)
+find_block_encloser(fz_context *ctx, fz_html_box *top)
+{
+	/* This code was written to assume that there will always be a
+	 * block box enclosing callers of this. Bug 705323 shows that
+	 * this isn't always the case. In the absence of a reproducer
+	 * file, all I can do is try to patch around the issue so that
+	 * we won't crash. */
+	while (top->type != BOX_BLOCK)
+	{
+		if (top->up == NULL)
+		{
+			fz_warn(ctx, "Block encloser not found. Please report this file!");
+			break;
+		}
+		top = top->up;
+	}
+	return top;
+}
+
+static fz_html_box *
+find_flow_encloser(fz_context *ctx, fz_html_box *flow)
 {
 	/* This code was written to assume that there will always be a
 	 * flow box enclosing callers of this. Bug 705324 shows that
@@ -639,14 +659,12 @@ static fz_html_box *insert_block_box(fz_context *ctx, fz_html_box *box, fz_html_
 	}
 	else if (top->type == BOX_FLOW)
 	{
-		while (top->type != BOX_BLOCK)
-			top = top->up;
+		top = find_block_encloser(ctx, top);
 		insert_box(ctx, box, BOX_BLOCK, top);
 	}
 	else if (top->type == BOX_INLINE)
 	{
-		while (top->type != BOX_BLOCK)
-			top = top->up;
+		top = find_block_encloser(ctx, top);
 		insert_box(ctx, box, BOX_BLOCK, top);
 	}
 	return top;
@@ -698,7 +716,14 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 	else
 	{
 		while (top->type != BOX_BLOCK && top->type != BOX_TABLE_CELL)
+		{
+			if (top->up == NULL)
+			{
+				fz_warn(ctx, "Box encloser not found. Please report this file!");
+				break;
+			}
 			top = top->up;
+		}
 
 		/* Here 'next' actually means 'last of my children' */
 		if (top->next && top->next->type == BOX_FLOW)
