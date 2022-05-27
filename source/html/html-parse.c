@@ -169,7 +169,13 @@ static void fz_drop_html_flow(fz_context *ctx, fz_html_flow *flow)
 static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, int type, int extras)
 {
 	size_t size = (type == FLOW_IMAGE ? sizeof(fz_html_flow) : offsetof(fz_html_flow, content) + extras);
-	fz_html_flow *flow = fz_pool_alloc(ctx, pool, size);
+	fz_html_flow *flow;
+
+	/* Shouldn't happen, but bug 705324. */
+	if (top == NULL || top->type != BOX_FLOW)
+		return NULL;
+
+	flow = fz_pool_alloc(ctx, pool, size);
 	flow->type = type;
 	flow->expand = 0;
 	flow->bidi_level = 0;
@@ -184,7 +190,8 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html_box *top, 
 static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_SPACE, 0);
-	flow->expand = 1;
+	if (flow)
+		flow->expand = 1;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
@@ -205,6 +212,8 @@ static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html_box *top, f
 static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, const char *a, const char *b, int lang)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_WORD, b - a + 1);
+	if (flow == NULL)
+		return;
 	memcpy(flow->content.text, a, b - a);
 	flow->content.text[b - a] = 0;
 	flow->markup_lang = lang;
@@ -213,7 +222,8 @@ static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_h
 static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, fz_image *img)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_IMAGE, 0);
-	flow->content.image = fz_keep_image(ctx, img);
+	if (flow)
+		flow->content.image = fz_keep_image(ctx, img);
 }
 
 static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
@@ -302,6 +312,26 @@ static const char *pairbrk[29] =
 	"_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
 };
 
+static fz_html_box *
+find_flow_encloser(fz_html_box *flow)
+{
+	/* This code was written to assume that there will always be a
+	 * flow box enclosing callers of this. Bug 705324 shows that
+	 * this isn't always the case. In the absence of a reproducer
+	 * file, all I can do is try to patch around the issue so that
+	 * we won't crash. */
+	while (flow->type != BOX_FLOW)
+	{
+		if (flow->up == NULL)
+		{
+			fz_warn(ctx, "Flow encloser not found. Please report this file!");
+			break;
+		}
+		flow = flow->up;
+	}
+	return flow;
+}
+
 static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, int lang, struct genstate *g)
 {
 	fz_html_box *flow;
@@ -312,9 +342,9 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 
 	static const char *space = " ";
 
-	flow = box;
-	while (flow->type != BOX_FLOW)
-		flow = flow->up;
+	flow = find_flow_encloser(ctx, box);
+	if (flow == NULL)
+		return;
 
 	while (*text)
 	{
@@ -459,18 +489,16 @@ static fz_image *load_svg_image(fz_context *ctx, fz_archive *zip, const char *ba
 static void generate_anchor(fz_context *ctx, fz_html_box *box, struct genstate *g)
 {
 	fz_pool *pool = g->pool;
-	fz_html_box *flow = box;
-	while (flow->type != BOX_FLOW)
-		flow = flow->up;
+	fz_html_box *flow = find_flow_encloser(ctx, box);
 	add_flow_anchor(ctx, pool, flow, box);
 }
 
 static void generate_image(fz_context *ctx, fz_html_box *box, fz_image *img, struct genstate *g)
 {
-	fz_html_box *flow = box;
+	fz_html_box *flow;
 	fz_pool *pool = g->pool;
-	while (flow->type != BOX_FLOW)
-		flow = flow->up;
+
+	flow = find_flow_encloser(ctx, box);
 
 	flush_space(ctx, flow, box, 0, g);
 
@@ -737,16 +765,12 @@ generate_boxes(fz_context *ctx,
 					style.font_size.value = 1;
 					style.font_size.unit = N_SCALE;
 					box->style = fz_css_enlist(ctx, &style, &g->styles, g->pool);
-					flow = box;
-					while (flow->type != BOX_FLOW)
-						flow = flow->up;
+					flow = find_flow_encloser(ctx, box);
 					add_flow_break(ctx, g->pool, flow, box);
 				}
 				else
 				{
-					flow = top;
-					while (flow->type != BOX_FLOW)
-						flow = flow->up;
+					flow = find_flow_encloser(ctx, top);
 					add_flow_break(ctx, g->pool, flow, top);
 				}
 				g->at_bol = 1;
