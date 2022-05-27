@@ -57,6 +57,11 @@ public class DOM
 	public native DOM addAttribute(String att, String val);
 	public native DOM removeAttribute(String att);
 	public native String attribute(String att);
+	public static class DOMAttribute {
+		String attribute;
+		String value;
+	};
+	public native DOMAttribute[] attributes();
 	public native DOM find(String tag, String att, String val);
 	public native DOM findNext(String tag, String att, String val);
 }

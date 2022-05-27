@@ -215,6 +215,63 @@ FUN(DOM_attribute)(JNIEnv *env, jobject self, jstring jatt)
 	return to_String_safe(ctx, env, val);
 }
 
+JNIEXPORT jobjectArray JNICALL
+FUN(DOM_attributes)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_xml *dom = from_DOM_safe(env, self);
+	const char *att = NULL;
+	const char *val = NULL;
+	jobjectArray jarr;
+	jstring jatt, jval;
+	jobject jobj;
+	size_t i;
+	int n;
+
+	fz_try(ctx)
+	{
+		n = 0;
+		while (1)
+		{
+			val = fz_dom_get_attribute(ctx, dom, n, &att);
+			if (att == NULL)
+				break;
+			n++;
+		}
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jarr = (*env)->NewObjectArray(env, n, cls_DOMAttribute, NULL);
+	if (!jarr) jni_throw_run(env, "cannot create attribute array");
+
+	for (i = 0; i < (size_t)n; i++)
+	{
+		fz_try(ctx)
+			val = fz_dom_get_attribute(ctx, dom, i, &att);
+		fz_catch(ctx)
+			jni_rethrow(env, ctx);
+
+		jobj = (*env)->NewObject(env, cls_DOMAttribute, mid_DOMAttribute_init);
+		if (!jobj) jni_throw_run(env, "cannot create DOMAttribute");
+		jatt = (*env)->NewStringUTF(env, att);
+		if (!jatt) jni_throw_run(env, "cannot create String from attribute");
+		if (val == NULL)
+			jval = NULL;
+		else {
+			jval = (*env)->NewStringUTF(env, val);
+			if (!jval) jni_throw_run(env, "cannot create String from attribute");
+		}
+		(*env)->SetObjectField(env, jobj, fid_DOMAttribute_attribute, jatt);
+		(*env)->SetObjectField(env, jobj, fid_DOMAttribute_value, jval);
+		(*env)->SetObjectArrayElement(env, jarr, i, jobj);
+		if ((*env)->ExceptionCheck(env))
+			return NULL;
+	}
+
+	return jarr;
+}
+
 JNIEXPORT jobject JNICALL
 FUN(DOM_find)(JNIEnv *env, jobject self, jstring jtag, jstring jatt, jstring jval)
 {

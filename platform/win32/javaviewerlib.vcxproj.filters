@@ -294,6 +294,9 @@
     <ClCompile Include="..\java\jni\xml.c">
       <Filter>jni</Filter>
     </ClCompile>
+    <ClCompile Include="..\java\jni\dom.c">
+      <Filter>jni</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\java\mupdf_native.h" />
