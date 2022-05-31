@@ -565,7 +565,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 		ind_obj = pdf_new_indirect(ctx, doc, ind_obj_num, 0);
 		pdf_array_push(ctx, annot_arr, ind_obj);
 
-		link = fz_new_link(ctx, bbox, uri);
+		link = fz_new_derived_link(ctx, fz_link, bbox, uri);
 
 		linkp = &page->links;
 
