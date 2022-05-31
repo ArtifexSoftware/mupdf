@@ -1,0 +1,15 @@
+{
+  "name": "muwasm",
+  "version": "0.1.0",
+  "description": "JS port of mupdf",
+  "main": "lib/mupdf.js",
+  "repository": "http://git.ghostscript.com/?p=mupdf.git",
+  "author": "Artifex Software, Inc.",
+  "license": "AGPL",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^8.16.0"
+  }
+}

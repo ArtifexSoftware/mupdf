@@ -3,16 +3,18 @@
 //
 // JS functions and classes shoud be added to this file to be available from C code.
 
+/* eslint-disable no-unused-vars */
+
 class MupdfError extends Error {
 	constructor(message) {
-	  super(message);
-	  this.name = "MupdfError";
+		super(message);
+		this.name = "MupdfError";
 	}
 }
 
 class MupdfTryLaterError extends MupdfError {
 	constructor(message) {
-	  super(message);
-	  this.name = "MupdfTryLaterError";
+		super(message);
+		this.name = "MupdfTryLaterError";
 	}
 }

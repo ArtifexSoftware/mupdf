@@ -23,13 +23,13 @@
 "use strict";
 
 const fs = require("fs");
-const mupdf = require("./mupdf.js");
+const mupdf = require("./lib/mupdf.js");
 
 let input;
 if (process.argv[2] != null) {
 	input = fs.readFileSync(process.argv[2]);
 } else {
-	input = fs.readFileSync('samples/annotations_galore_II.pdf');
+	input = fs.readFileSync("samples/annotations_galore_II.pdf");
 }
 
 mupdf.onInitialized = function () {
@@ -52,4 +52,4 @@ mupdf.onInitialized = function () {
 	console.log("pageText:", mupdf.getPageText(doc, 1, dpi));
 	console.log("pageLinks:", mupdf.getPageLinks(doc, 1, dpi));
 	console.log("pageAnnotations:", mupdf.getPageAnnotations(doc, 1, dpi));
-}
+};

@@ -23,7 +23,7 @@ $(MUPDF_CORE): .FORCE
 		XCFLAGS='-DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0' \
 		libs
 
-libmupdf.js libmupdf.wasm: $(MUPDF_CORE) wrap.c wrap-deps.js
+libmupdf.js libmupdf.wasm: $(MUPDF_CORE) lib/wrap.c lib/wrap-deps.js
 	BASH_SOURCE=$(EMSDK_DIR)/emsdk_env.sh \
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	emcc -o $@ $(BUILD_FLAGS) \
@@ -37,8 +37,8 @@ libmupdf.js libmupdf.wasm: $(MUPDF_CORE) wrap.c wrap-deps.js
 		-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap", "UTF8ToString","lengthBytesUTF8","stringToUTF8"]' \
 		-s EXPORTED_FUNCTIONS='["_malloc","_free"]' \
 		-I ../../include \
-		--pre-js wrap-deps.js \
-		wrap.c \
+		--pre-js lib/wrap-deps.js \
+		lib/wrap.c \
 		$(BUILD_DIR)/libmupdf.a \
 		$(BUILD_DIR)/libmupdf-third.a
 

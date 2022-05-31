@@ -26,12 +26,12 @@ var mupdf = {};
 
 mupdf.onInitialized = function () {
 	throw new Error("MuPDF is initialized and ready to use");
-}
+};
 
 // If running in Node.js environment
-if (typeof require === 'function') {
-	var libmupdf = require("./libmupdf.js");
-	if (typeof module === 'object')
+if (typeof require === "function") {
+	var libmupdf = require("../libmupdf.js");
+	if (typeof module === "object")
 		module.exports = mupdf;
 }
 
@@ -59,7 +59,7 @@ mupdf._to_rect = function (ptr) {
 		libmupdf.HEAPF32[ptr+2],
 		libmupdf.HEAPF32[ptr+3],
 	];
-}
+};
 
 mupdf._to_irect = function (ptr) {
 	ptr = ptr >> 2;
@@ -69,7 +69,7 @@ mupdf._to_irect = function (ptr) {
 		libmupdf.HEAP32[ptr+2],
 		libmupdf.HEAP32[ptr+3],
 	];
-}
+};
 
 mupdf._to_matrix = function (ptr) {
 	ptr = ptr >> 2;
@@ -81,20 +81,20 @@ mupdf._to_matrix = function (ptr) {
 		libmupdf.HEAPF32[ptr+4],
 		libmupdf.HEAPF32[ptr+5],
 	];
-}
+};
 
 // TODO - better handle matrices.
 // TODO - write Rect and Matrix classes
 mupdf.scale_matrix = function(scale_x, scale_y) {
 	return mupdf._to_matrix(libmupdf._wasm_scale(scale_x, scale_y));
-}
+};
 
 mupdf.transform_rect = function(rect, matrix) {
 	return mupdf._to_rect(libmupdf._wasm_transform_rect(
 		rect[0], rect[1], rect[2], rect[3],
 		matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5],
 	));
-}
+};
 
 const finalizer = new FinalizationRegistry(callback => callback());
 
@@ -115,7 +115,7 @@ mupdf._Wrapper = class _Wrapper {
 	toString() {
 		return `[${this.constructor.name} ${this.pointer}]`;
 	}
-}
+};
 
 mupdf.Document = class Document extends mupdf._Wrapper {
 	constructor(data, magic) {
@@ -127,8 +127,8 @@ mupdf.Document = class Document extends mupdf._Wrapper {
 		super(
 			libmupdf.ccall(
 				"wasm_open_document_with_buffer",
-				'number',
-				['number', 'number', 'string'],
+				"number",
+				["number", "number", "string"],
 				[pointer, n, magic]
 			),
 			libmupdf._wasm_drop_document
@@ -152,7 +152,7 @@ mupdf.Document = class Document extends mupdf._Wrapper {
 	loadOutline() {
 		return new mupdf.Outline(libmupdf._wasm_load_outline(this.pointer));
 	}
-}
+};
 
 mupdf.Page = class Page extends mupdf._Wrapper {
 	constructor(pointer) {
@@ -229,7 +229,7 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 			libmupdf._free(hits_ptr);
 		}
 	}
-}
+};
 
 mupdf.Links = class Links extends mupdf._Wrapper {
 	constructor(links) {
@@ -237,7 +237,7 @@ mupdf.Links = class Links extends mupdf._Wrapper {
 		super(links[0] || 0, () => {});
 		this.links = links;
 	}
-}
+};
 
 mupdf.Link = class Link extends mupdf._Wrapper {
 	constructor(pointer) {
@@ -263,9 +263,9 @@ mupdf.Link = class Link extends mupdf._Wrapper {
 			libmupdf._wasm_resolve_link_page(this.pointer),
 		);
 	}
-}
+};
 
-mupdf.Location = class Location extends mupdf._Wrapper {
+mupdf.Location = class Location {
 	constructor(chapter, page) {
 		this.chapter = chapter;
 		this.page = page;
@@ -274,7 +274,7 @@ mupdf.Location = class Location extends mupdf._Wrapper {
 	pageNumber(document) {
 		return libmupdf._wasm_page_number_from_location(document.pointer, this.chapter, this.page);
 	}
-}
+};
 
 function new_outline(pointer) {
 	if (pointer === 0)
@@ -305,7 +305,7 @@ mupdf.Outline = class Outline extends mupdf._Wrapper {
 	next() {
 		return new_outline(libmupdf._wasm_outline_next(this.pointer));
 	}
-}
+};
 
 mupdf.PdfPage = class PdfPage extends mupdf._Wrapper {
 	constructor(pointer) {
@@ -322,14 +322,14 @@ mupdf.PdfPage = class PdfPage extends mupdf._Wrapper {
 
 		return new mupdf.Annotations(annotations);
 	}
-}
+};
 
 mupdf.Annotations = class Annotations extends mupdf._Wrapper {
 	constructor(annotations) {
 		super(annotations[0] || 0, () => {});
 		this.annotations = annotations;
 	}
-}
+};
 
 mupdf.Annotation = class Annotation extends mupdf._Wrapper {
 	// TODO - the lifetime handling of this is actually complicated
@@ -344,13 +344,13 @@ mupdf.Annotation = class Annotation extends mupdf._Wrapper {
 	annotType() {
 		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_type_string(this.pointer));
 	}
-}
+};
 
 mupdf.ColorSpace = class ColorSpace extends mupdf._Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_colorspace);
 	}
-}
+};
 
 mupdf.Pixmap = class Pixmap extends mupdf._Wrapper {
 	constructor(pointer) {
@@ -379,7 +379,7 @@ mupdf.Pixmap = class Pixmap extends mupdf._Wrapper {
 			libmupdf._wasm_drop_buffer(buf);
 		}
 	}
-}
+};
 
 mupdf.Buffer = class Buffer extends mupdf._Wrapper {
 	// TODO drop function
@@ -422,7 +422,7 @@ mupdf.Buffer = class Buffer extends mupdf._Wrapper {
 
 		return libmupdf.UTF8ToString(data, size);
 	}
-}
+};
 
 mupdf.Output = class Output extends mupdf._Wrapper {
 	constructor(buffer) {
@@ -433,7 +433,7 @@ mupdf.Output = class Output extends mupdf._Wrapper {
 	close() {
 		libmupdf._wasm_close_output(this.pointer);
 	}
-}
+};
 
 mupdf.STextPage = class STextPage extends mupdf._Wrapper {
 	constructor(pointer) {
@@ -444,7 +444,7 @@ mupdf.STextPage = class STextPage extends mupdf._Wrapper {
 	printAsJson(output, scale) {
 		libmupdf._wasm_print_stext_page_as_json(output.pointer, this.pointer, scale);
 	}
-}
+};
 
 
 
@@ -470,7 +470,7 @@ mupdf.drawPageAsPng = function(document, pageNumber, dpi) {
 		pixmap?.free();
 		page?.free();
 	}
-}
+};
 
 mupdf.getPageText = function(document, pageNumber, dpi) {
 	let page;
@@ -497,7 +497,7 @@ mupdf.getPageText = function(document, pageNumber, dpi) {
 		stextPage?.free();
 		page?.free();
 	}
-}
+};
 
 mupdf.getPageLinks = function(document, pageNumber, dpi) {
 	const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
@@ -525,14 +525,14 @@ mupdf.getPageLinks = function(document, pageNumber, dpi) {
 				w: x1 - x0,
 				h: y1 - y0,
 				href
-			}
+			};
 		});
 	}
 	finally {
 		page?.free();
 		links_ptr?.free();
 	}
-}
+};
 
 mupdf.getPageAnnotations = function(document, pageNumber, dpi) {
 	let page;
@@ -559,13 +559,13 @@ mupdf.getPageAnnotations = function(document, pageNumber, dpi) {
 				h: y1 - y0,
 				type: annotation.annotType(),
 				ref: annotation.pointer,
-			}
+			};
 		});
 	}
 	finally {
 		page?.free();
 	}
-}
+};
 
 
 mupdf.search = function(document, pageNumber, dpi, needle) {
