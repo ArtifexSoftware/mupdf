@@ -43,6 +43,21 @@ FUN(Link_getBounds)(JNIEnv *env, jobject self)
 	return to_Rect_safe(ctx, env, link->rect);
 }
 
+JNIEXPORT void JNICALL
+FUN(Link_setBounds)(JNIEnv *env, jobject self, jobject jbbox)
+{
+	fz_context *ctx = get_context(env);
+	fz_link *link = from_Link(env, self);
+	fz_rect bbox = from_Rect(env, jbbox);
+
+	if (!ctx || !link) return;
+
+	fz_try(ctx)
+		fz_set_link_rect(ctx, link, bbox);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
 JNIEXPORT jstring JNICALL
 FUN(Link_getURI)(JNIEnv *env, jobject self)
 {

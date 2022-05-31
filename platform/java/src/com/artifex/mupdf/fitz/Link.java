@@ -41,6 +41,8 @@ public class Link
 	}
 
 	public native Rect getBounds();
+	public native void setBounds(Rect bbox);
+
 	public native String getURI();
 
 	public boolean isExternal() {

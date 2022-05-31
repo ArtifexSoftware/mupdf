@@ -520,10 +520,30 @@ static void pdf_drop_link_imp(fz_context *ctx, fz_link *link)
 	pdf_drop_obj(ctx, ((pdf_link *) link)->obj);
 }
 
+static void pdf_set_link_rect(fz_context *ctx, fz_link *link_, fz_rect rect)
+{
+	pdf_link *link = (pdf_link *) link_;
+	if (link == NULL)
+		return;
+
+	pdf_begin_operation(ctx, link->page->doc, "Set link rectangle");
+
+	fz_try(ctx)
+	{
+		pdf_dict_put_rect(ctx, link->obj, PDF_NAME(Rect), rect);
+		link->super.rect = rect;
+	}
+	fz_always(ctx)
+		pdf_end_operation(ctx, link->page->doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 fz_link *pdf_new_link(fz_context *ctx, pdf_page *page, fz_rect rect, const char *uri, pdf_obj *obj)
 {
 	pdf_link *link = fz_new_derived_link(ctx, pdf_link, rect, uri);
 	link->super.drop = (fz_link_drop_link_fn*) pdf_drop_link_imp;
+	link->super.set_rect = pdf_set_link_rect;
 	link->page = page; /* only borrowed, as the page owns the link */
 	link->obj = pdf_keep_obj(ctx, obj);
 	return &link->super;

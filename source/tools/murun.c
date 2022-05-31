@@ -3323,6 +3323,18 @@ static void ffi_Link_get_bounds(js_State *J)
 	ffi_pushrect(J, link->rect);
 }
 
+static void ffi_Link_set_bounds(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_link *link = js_touserdata(J, 0, "fz_link");
+	fz_rect rect = ffi_torect(J, 1);
+
+	fz_try(ctx)
+		fz_set_link_rect(ctx, link, rect);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Link_get_uri(js_State *J)
 {
 	fz_link *link = js_touserdata(J, 0, "fz_link");
@@ -8207,7 +8219,7 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
-		jsB_propacc(J, "Link.bounds", ffi_Link_get_bounds, NULL);
+		jsB_propacc(J, "Link.bounds", ffi_Link_get_bounds, ffi_Link_set_bounds);
 		jsB_propacc(J, "Link.uri", ffi_Link_get_uri, NULL);
 	}
 	js_setregistry(J, "fz_link");
