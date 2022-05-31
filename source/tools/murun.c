@@ -90,6 +90,15 @@ static void jsB_propcon(js_State *J, const char *tag, const char *name, js_CFunc
 	js_defproperty(J, -2, realname, JS_DONTENUM);
 }
 
+static void jsB_propacc(js_State *J, const char *name, js_CFunction cgetfun, js_CFunction csetfun)
+{
+	const char *realname = strchr(name, '.');
+	realname = realname ? realname + 1 : name;
+	js_newcfunction(J, cgetfun, name, 0);
+	js_newcfunction(J, csetfun, name, 1);
+	js_defaccessor(J, -3, realname, JS_READONLY | JS_DONTENUM | JS_DONTCONF);
+}
+
 static void jsB_gc(js_State *J)
 {
 	int report = js_toboolean(J, 1);
@@ -814,15 +823,16 @@ static fz_link_dest_type link_dest_type_from_string(const char *str)
 	return FZ_LINK_DEST_FIT;
 }
 
+static void ffi_gc_fz_link(js_State *J, void *link)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_link(ctx, link);
+}
+
 static void ffi_pushlink(js_State *J, fz_link *link)
 {
-	js_newobject(J);
-
-	ffi_pushrect(J, link->rect);
-	js_setproperty(J, -2, "bounds");
-
-	js_pushstring(J, link->uri);
-	js_setproperty(J, -2, "uri");
+	js_getregistry(J, "fz_link");
+	js_newuserdata(J, "fz_link", link, ffi_gc_fz_link);
 }
 
 static void ffi_pushlinkdest(js_State *J, const fz_link_dest dest)
@@ -3283,7 +3293,7 @@ static void ffi_Page_getLinks(js_State *J)
 
 	js_newarray(J);
 	for (link = links; link; link = link->next) {
-		ffi_pushlink(J, link);
+		ffi_pushlink(J, fz_keep_link(ctx, link));
 		js_setindex(J, -2, i++);
 	}
 
@@ -3304,15 +3314,19 @@ static void ffi_Page_createLink(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	if (js_try(J)) {
-		fz_drop_link(ctx, link);
-		js_throw(J);
-	}
-
 	ffi_pushlink(J, link);
+}
 
-	js_endtry(J);
-	fz_drop_link(ctx, link);
+static void ffi_Link_get_bounds(js_State *J)
+{
+	fz_link *link = js_touserdata(J, 0, "fz_link");
+	ffi_pushrect(J, link->rect);
+}
+
+static void ffi_Link_get_uri(js_State *J)
+{
+	fz_link *link = js_touserdata(J, 0, "fz_link");
+	js_pushstring(J, link->uri);
 }
 
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
@@ -8189,6 +8203,14 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.createLink", ffi_Page_createLink, 2);
 	}
 	js_setregistry(J, "fz_page");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
+		jsB_propacc(J, "Link.bounds", ffi_Link_get_bounds, NULL);
+		jsB_propacc(J, "Link.uri", ffi_Link_get_uri, NULL);
+	}
+	js_setregistry(J, "fz_link");
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);

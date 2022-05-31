@@ -20,49 +20,36 @@
 // Artifex Software, Inc., 1305 Grant Avenue - Suite 200, Novato,
 // CA 94945, U.S.A., +1(415)492-9861, for further information.
 
-package com.artifex.mupdf.fitz;
+/* Link interface */
 
-public class Link
+JNIEXPORT void JNICALL
+FUN(Link_finalize)(JNIEnv *env, jobject self)
 {
-	static {
-		Context.init();
-	}
+	fz_context *ctx = get_context(env);
+	fz_link *link = from_Link_safe(env, self);
+	if (!ctx || !link) return;
+	(*env)->SetLongField(env, self, fid_Link_pointer, 0);
+	fz_drop_link(ctx, link);
+}
 
-	private long pointer;
+JNIEXPORT jobject JNICALL
+FUN(Link_getBounds)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_link *link = from_Link(env, self);
 
-	protected native void finalize();
+	if (!ctx || !link) return NULL;
 
-	public void destroy() {
-		finalize();
-	}
+	return to_Rect_safe(ctx, env, link->rect);
+}
 
-	protected Link(long p) {
-		pointer = p;
-	}
+JNIEXPORT jstring JNICALL
+FUN(Link_getURI)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_link *link = from_Link(env, self);
 
-	public native Rect getBounds();
-	public native String getURI();
+	if (!ctx || !link) return NULL;
 
-	public boolean isExternal() {
-		String uri = getURI();
-		char c = uri.charAt(0);
-		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z'))
-			return false;
-
-		for (int i = 1; i < uri.length(); i++)
-		{
-			c = uri.charAt(i);
-			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-					(c >= '0' && c <= '9') ||
-					c == '+' || c == '-' || c == '.')
-				continue;
-			else
-				return c == ':';
-		}
-		return false;
-	}
-
-	public String toString() {
-		return "Link(bounds="+getBounds()+",uri="+getURI()+")";
-	}
+	return (*env)->NewStringUTF(env, link->uri);
 }

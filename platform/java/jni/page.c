@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -219,32 +219,14 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 	link = links;
 	for (i = 0; link && i < link_count; i++)
 	{
-		jobject jbounds = NULL;
 		jobject jlink = NULL;
-		jobject juri = NULL;
 
-		jbounds = to_Rect_safe(ctx, env, link->rect);
-		if (!jbounds || (*env)->ExceptionCheck(env))
-		{
-			fz_drop_link(ctx, links);
-			return NULL;
-		}
-
-		juri = (*env)->NewStringUTF(env, link->uri);
-		if (!juri || (*env)->ExceptionCheck(env))
-		{
-			fz_drop_link(ctx, links);
-			return NULL;
-		}
-
-		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, juri);
+		jlink = to_Link_safe(ctx, env, link);
 		if (!jlink || (*env)->ExceptionCheck(env))
 		{
 			fz_drop_link(ctx, links);
 			return NULL;
 		}
-		(*env)->DeleteLocalRef(env, juri);
-		(*env)->DeleteLocalRef(env, jbounds);
 
 		(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
 		if ((*env)->ExceptionCheck(env))

@@ -225,6 +225,9 @@
     <ClCompile Include="..\java\jni\nativedevice.c">
       <Filter>jni</Filter>
     </ClCompile>
+    <ClCompile Include="..\java\jni\link.c">
+      <Filter>jni</Filter>
+    </ClCompile>
     <ClCompile Include="..\java\jni\outlineiterator.c">
       <Filter>jni</Filter>
     </ClCompile>
