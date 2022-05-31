@@ -781,6 +781,15 @@ void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect)
 	return link->set_rect(ctx, link, rect);
 }
 
+void fz_set_link_uri(fz_context *ctx, fz_link *link, const char *uri)
+{
+	if (link == NULL)
+		return;
+	if (link->set_uri == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support updating link uri");
+	return link->set_uri(ctx, link, uri);
+}
+
 void *
 fz_process_opened_pages(fz_context *ctx, fz_document *doc, fz_process_opened_page_fn *process_opened_page, void *state)
 {

@@ -68,3 +68,24 @@ FUN(Link_getURI)(JNIEnv *env, jobject self)
 
 	return (*env)->NewStringUTF(env, link->uri);
 }
+
+JNIEXPORT void JNICALL
+FUN(Link_setURI)(JNIEnv *env, jobject self, jstring juri)
+{
+	fz_context *ctx = get_context(env);
+	fz_link *link = from_Link(env, self);
+	const char *uri = NULL;
+
+	if (!ctx || !link) return;
+
+	if (juri)
+		uri = (*env)->GetStringUTFChars(env, juri, NULL);
+
+	fz_try(ctx)
+		fz_set_link_uri(ctx, link, uri);
+	fz_always(ctx)
+		if (juri)
+			(*env)->ReleaseStringUTFChars(env, juri, uri);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

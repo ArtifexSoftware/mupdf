@@ -1390,6 +1390,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Link_setBounds
 JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Link_getURI
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Link
+ * Method:    setURI
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Link_setURI
+  (JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif

@@ -30,6 +30,7 @@
 
 typedef struct fz_link fz_link;
 typedef void (fz_link_set_rect_fn)(fz_context *ctx, fz_link *link, fz_rect rect);
+typedef void (fz_link_set_uri_fn)(fz_context *ctx, fz_link *link, const char *uri);
 typedef void (fz_link_drop_link_fn)(fz_context *ctx, fz_link *link);
 
 /**
@@ -58,6 +59,7 @@ typedef struct fz_link
 	fz_rect rect;
 	char *uri;
 	fz_link_set_rect_fn *set_rect;
+	fz_link_set_uri_fn *set_uri;
 	fz_link_drop_link_fn *drop;
 } fz_link;
 
@@ -123,5 +125,6 @@ void fz_drop_link(fz_context *ctx, fz_link *link);
 int fz_is_external_link(fz_context *ctx, const char *uri);
 
 void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect);
+void fz_set_link_uri(fz_context *ctx, fz_link *link, const char *uri);
 
 #endif
