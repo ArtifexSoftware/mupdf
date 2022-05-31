@@ -912,6 +912,7 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->super.separations = (fz_page_separations_fn *)pdf_page_separations;
 	page->super.overprint = (fz_page_uses_overprint_fn *)pdf_page_uses_overprint;
 	page->super.create_link = (fz_page_create_link_fn *)pdf_create_link;
+	page->super.delete_link = (fz_page_delete_link_fn *)pdf_delete_link;
 
 	page->obj = NULL;
 

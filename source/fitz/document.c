@@ -772,6 +772,15 @@ fz_link *fz_create_link(fz_context *ctx, fz_page *page, fz_rect bbox, const char
 	return page->create_link(ctx, page, bbox, uri);
 }
 
+void fz_delete_link(fz_context *ctx, fz_page *page, fz_link *link)
+{
+	if (page == NULL || link == NULL)
+		return;
+	if (page->delete_link == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support deleting links");
+	return page->delete_link(ctx, page, link);
+}
+
 void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect)
 {
 	if (link == NULL)

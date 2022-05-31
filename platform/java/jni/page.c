@@ -419,6 +419,22 @@ FUN(Page_createLink)(JNIEnv *env, jobject self, jobject jrect, jstring juri)
 	return to_Link_safe_own(ctx, env, link);
 }
 
+JNIEXPORT void JNICALL
+FUN(Page_deleteLink)(JNIEnv *env, jobject self, jobject jlink)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_link *link = from_Link(env, jlink);
+
+	if (!ctx || !page)
+		return;
+
+	fz_try(ctx)
+		fz_delete_link(ctx, page, link);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
 JNIEXPORT jobject JNICALL
 FUN(Page_getDocument)(JNIEnv *env, jobject self)
 {

@@ -315,6 +315,11 @@ pdf_annot *pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_
 fz_link *pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri);
 
 /*
+	delete an existing link from the specified page.
+*/
+void pdf_delete_link(fz_context *ctx, pdf_page *page, fz_link *link);
+
+/*
 	create a new annotation of the specified type on the
 	specified page. Populate it with sensible defaults per the type.
 
