@@ -6,10 +6,18 @@
   "repository": "http://git.ghostscript.com/?p=mupdf.git",
   "author": "Artifex Software, Inc.",
   "license": "AGPL",
+  "engines": {
+    "node": ">=18.4.0"
+  },
   "scripts": {
-    "lint": "eslint ."
+    "server": "http-server -p 8000",
+    "lint": "eslint .",
+    "test": "jest"
   },
   "devDependencies": {
-    "eslint": "^8.16.0"
+    "chai": "^4.3.6",
+    "eslint": "^8.16.0",
+    "http-server": "^14.1.1",
+    "jest": "^28.1.1"
   }
 }

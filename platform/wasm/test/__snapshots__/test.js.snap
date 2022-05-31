@@ -1,0 +1,89 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`mupdf Link rect() should return Link hitbox 1`] = `
+Rect {
+  "x0": 47.297698974609375,
+  "x1": 214.86700439453125,
+  "y0": 77.02801513671875,
+  "y1": 100.0009765625,
+}
+`;
+
+exports[`mupdf Page search() should return list of hitboxes of search results 1`] = `
+Array [
+  Rect {
+    "x0": 144.376220703125,
+    "x1": 154.38421630859375,
+    "y0": 711.4500122070312,
+    "y1": 736.1820068359375,
+  },
+  Rect {
+    "x0": 274.7394714355469,
+    "x1": 284.7474670410156,
+    "y0": 711.4500122070312,
+    "y1": 736.1820068359375,
+  },
+  Rect {
+    "x0": 440.0064697265625,
+    "x1": 456.00848388671875,
+    "y0": 711.4500122070312,
+    "y1": 736.1820068359375,
+  },
+]
+`;
+
+exports[`mupdf Page toSTextPage() should return a valid STextPage 1`] = `
+Object {
+  "blocks": Array [
+    Object {
+      "bbox": Object {
+        "h": 24,
+        "w": 500,
+        "x": 54,
+        "y": 711,
+      },
+      "lines": Array [
+        Object {
+          "bbox": Object {
+            "h": 24,
+            "w": 239,
+            "x": 54,
+            "y": 711,
+          },
+          "font": Object {
+            "family": "sans-serif",
+            "name": "Present",
+            "size": 18,
+            "style": "normal",
+            "weight": "normal",
+          },
+          "text": "Test file created by Jeff Moran",
+          "wmode": 0,
+          "x": 54,
+          "y": 730,
+        },
+        Object {
+          "bbox": Object {
+            "h": 24,
+            "w": 114,
+            "x": 440,
+            "y": 711,
+          },
+          "font": Object {
+            "family": "sans-serif",
+            "name": "Present",
+            "size": 18,
+            "style": "normal",
+            "weight": "normal",
+          },
+          "text": "April 27, 2000",
+          "wmode": 0,
+          "x": 440,
+          "y": 730,
+        },
+      ],
+      "type": "text",
+    },
+  ],
+}
+`;

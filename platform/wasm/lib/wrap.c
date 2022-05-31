@@ -35,9 +35,9 @@ static fz_matrix out_matrix;
 void wasm_rethrow(fz_context *ctx)
 {
 	if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-		EM_ASM({ throw new MupdfTryLaterError("operation in progress"); });
+		EM_ASM({ throw new libmupdf.MupdfTryLaterError("operation in progress"); });
 	else
-		EM_ASM({ throw new MupdfError("mupdf error: " + UTF8ToString($0)); }, fz_caught_message(ctx));
+		EM_ASM({ throw new libmupdf.MupdfError(UTF8ToString($0)); }, fz_caught_message(ctx));
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -457,17 +457,19 @@ fz_buffer *wasm_new_buffer_from_pixmap_as_png(fz_pixmap *pix)
 EMSCRIPTEN_KEEPALIVE
 unsigned char *wasm_buffer_data(fz_buffer *buf)
 {
-	if (buf)
-		return buf->data;
-	return NULL;
+	return buf->data;
 }
 
 EMSCRIPTEN_KEEPALIVE
 size_t wasm_buffer_size(fz_buffer *buf)
 {
-	if (buf)
-		return buf->len;
-	return 0;
+	return buf->len;
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t wasm_buffer_capacity(fz_buffer *buf)
+{
+	return buf->cap;
 }
 
 EMSCRIPTEN_KEEPALIVE

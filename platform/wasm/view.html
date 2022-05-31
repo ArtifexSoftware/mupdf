@@ -249,12 +249,12 @@ div.error {
 <script>
 "use strict";
 
-mupdfView.onInitialized = function () {
+mupdfView.ready.then(function () {
 	emptyNode(document.getElementById("pages"));
 	let params = new URLSearchParams(window.location.search);
 	if (params.has("file"))
 		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
-}
+});
 
 let documentOpen = false;
 let pageCount;
