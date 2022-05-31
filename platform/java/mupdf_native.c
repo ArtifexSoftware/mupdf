@@ -840,8 +840,8 @@ static int find_fids(JNIEnv *env)
 	mid_DOM_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_DOMAttribute = get_class(&err, env, PKG"DOM$DOMAttribute");
-	fid_DOMAttribute_attribute = get_field(&err, env, "attribute", "Ljava/lang/string;");
-	fid_DOMAttribute_value = get_field(&err, env, "value", "Ljava/lang/string;");
+	fid_DOMAttribute_attribute = get_field(&err, env, "attribute", "Ljava/lang/String;");
+	fid_DOMAttribute_value = get_field(&err, env, "value", "Ljava/lang/String;");
 	mid_DOMAttribute_init = get_method(&err, env, "<init>", "()V");
 
 	cls_FitzInputStream = get_class(&err, env, PKG"FitzInputStream");
