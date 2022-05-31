@@ -515,8 +515,22 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 	return NULL;
 }
 
+static void pdf_drop_link_imp(fz_context *ctx, fz_link *link)
+{
+	pdf_drop_obj(ctx, ((pdf_link *) link)->obj);
+}
+
+fz_link *pdf_new_link(fz_context *ctx, pdf_page *page, fz_rect rect, const char *uri, pdf_obj *obj)
+{
+	pdf_link *link = fz_new_derived_link(ctx, pdf_link, rect, uri);
+	link->super.drop = (fz_link_drop_link_fn*) pdf_drop_link_imp;
+	link->page = page; /* only borrowed, as the page owns the link */
+	link->obj = pdf_keep_obj(ctx, obj);
+	return &link->super;
+}
+
 static fz_link *
-pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, fz_matrix page_ctm)
+pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict, int pagenum, fz_matrix page_ctm)
 {
 	pdf_obj *action;
 	pdf_obj *obj;
@@ -551,7 +565,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, fz
 		return NULL;
 
 	fz_try(ctx)
-		link = fz_new_derived_link(ctx, fz_link, bbox, uri);
+		link = (fz_link *) pdf_new_link(ctx, page, bbox, uri, dict);
 	fz_always(ctx)
 		fz_free(ctx, uri);
 	fz_catch(ctx)
@@ -561,7 +575,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, fz
 }
 
 fz_link *
-pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, int pagenum, fz_matrix page_ctm)
+pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots, int pagenum, fz_matrix page_ctm)
 {
 	fz_link *link, *head, *tail;
 	pdf_obj *obj;
@@ -577,7 +591,7 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, int pa
 		fz_try(ctx)
 		{
 			obj = pdf_array_get(ctx, annots, i);
-			link = pdf_load_link(ctx, doc, obj, pagenum, page_ctm);
+			link = pdf_load_link(ctx, doc, page, obj, pagenum, page_ctm);
 		}
 		fz_catch(ctx)
 		{
