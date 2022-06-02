@@ -99,10 +99,10 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is zero (or less)");
 	if (bpc > 16)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is too large: %d", bpc);
-	if (w > (1 << 16))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too wide");
-	if (h > (1 << 16))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too high");
+	if (SIZE_MAX / w < (size_t)(bpc+7)/8)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too large");
+	if (SIZE_MAX / h < w * (size_t)((bpc+7)/8))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too large");
 
 	fz_var(mask);
 	fz_var(image);
@@ -130,6 +130,9 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		{
 			n = 1;
 		}
+
+		if (SIZE_MAX / n < h * ((size_t)w) * ((bpc+7)/8))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too large");
 
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME(Decode), PDF_NAME(D));
 		if (obj)
