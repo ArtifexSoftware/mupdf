@@ -778,7 +778,7 @@ void fz_delete_link(fz_context *ctx, fz_page *page, fz_link *link)
 		return;
 	if (page->delete_link == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support deleting links");
-	return page->delete_link(ctx, page, link);
+	page->delete_link(ctx, page, link);
 }
 
 void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect)
@@ -787,7 +787,7 @@ void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect)
 		return;
 	if (link->set_rect == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support updating link bounds");
-	return link->set_rect(ctx, link, rect);
+	link->set_rect(ctx, link, rect);
 }
 
 void fz_set_link_uri(fz_context *ctx, fz_link *link, const char *uri)
@@ -796,7 +796,7 @@ void fz_set_link_uri(fz_context *ctx, fz_link *link, const char *uri)
 		return;
 	if (link->set_uri == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support updating link uri");
-	return link->set_uri(ctx, link, uri);
+	link->set_uri(ctx, link, uri);
 }
 
 void *
