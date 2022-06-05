@@ -731,13 +731,14 @@ close_rld(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_rld(fz_context *ctx, fz_stream *chain)
 {
+	fz_stream *stm;
 	fz_rld *state = fz_malloc_struct(ctx, fz_rld);
 	state->chain = fz_keep_stream(ctx, chain);
 	state->run = 0;
 	state->n = 0;
 	state->c = 0;
 
-	fz_stream *stm = fz_new_stream(ctx, state, next_rld, close_rld);
+	stm = fz_new_stream(ctx, state, next_rld, close_rld);
 
 	/* Don't explode RLE compression bombs. */
 	if (chain->next == next_rld)
