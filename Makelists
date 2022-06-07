@@ -731,8 +731,12 @@ endif
 ifeq ($(HAVE_NEON),yes)
 TESSERACT_DEFINES += -DHAVE_NEON
 TESSERACT_BUILD_CFLAGS += $(NEONFLAGS)
-TESSERACT_SRC += thirdparty/tesseract/src/arch/intsimdmatrixneon.cpp
 endif
+# Always include the neon code - it will compile to nothing if
+# neon isn't enabled. We need to always include it, because it
+# will be used if __aarch64__ is defined, which implies the
+# presence of NEON even without the HAVE_NEON flags.
+TESSERACT_SRC += thirdparty/tesseract/src/arch/intsimdmatrixneon.cpp
 
 TESSERACT_BUILD_CFLAGS += $(TESSERACT_DEFINES)
 
