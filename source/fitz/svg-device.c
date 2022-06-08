@@ -107,36 +107,85 @@ end_def(fz_context *ctx, svg_device *sdev)
 
 /* Helper functions */
 
+struct svg_path_walker_state {
+	fz_buffer *out;
+	int space; // needs space
+	float x, y; // last location
+	int cmd; // last command
+};
+
+static void
+svg_path_emit_number(fz_context *ctx, struct svg_path_walker_state *pws, float a)
+{
+	if (pws->space && a >= 0)
+		fz_append_byte(ctx, pws->out, ' ');
+	fz_append_printf(ctx, pws->out, "%g", a);
+	pws->space = 1;
+}
+
+static void
+svg_path_emit_command(fz_context *ctx, struct svg_path_walker_state *pws, char cmd)
+{
+	if (pws->cmd != cmd) {
+		fz_append_byte(ctx, pws->out, cmd);
+		pws->space = 0;
+		pws->cmd = cmd;
+	}
+}
+
 static void
 svg_path_moveto(fz_context *ctx, void *arg, float x, float y)
 {
-	fz_buffer *out = (fz_buffer *)arg;
-
-	fz_append_printf(ctx, out, "M %g %g ", x, y);
+	struct svg_path_walker_state *pws = arg;
+	svg_path_emit_command(ctx, pws, 'M');
+	svg_path_emit_number(ctx, pws, x);
+	svg_path_emit_number(ctx, pws, y);
+	pws->cmd = 'L';
+	pws->x = x;
+	pws->y = y;
 }
 
 static void
 svg_path_lineto(fz_context *ctx, void *arg, float x, float y)
 {
-	fz_buffer *out = (fz_buffer *)arg;
-
-	fz_append_printf(ctx, out, "L %g %g ", x, y);
+	struct svg_path_walker_state *pws = arg;
+	if (pws->x == x) {
+		svg_path_emit_command(ctx, pws, 'V');
+		svg_path_emit_number(ctx, pws, y);
+	} else if (pws->y == y) {
+		svg_path_emit_command(ctx, pws, 'H');
+		svg_path_emit_number(ctx, pws, x);
+	} else {
+		svg_path_emit_command(ctx, pws, 'L');
+		svg_path_emit_number(ctx, pws, x);
+		svg_path_emit_number(ctx, pws, y);
+	}
+	pws->x = x;
+	pws->y = y;
 }
 
 static void
 svg_path_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
 {
-	fz_buffer *out = (fz_buffer *)arg;
-
-	fz_append_printf(ctx, out, "C %g %g %g %g %g %g ", x1, y1, x2, y2, x3, y3);
+	struct svg_path_walker_state *pws = arg;
+	svg_path_emit_command(ctx, pws, 'C');
+	svg_path_emit_number(ctx, pws, x1);
+	svg_path_emit_number(ctx, pws, y1);
+	svg_path_emit_number(ctx, pws, x2);
+	svg_path_emit_number(ctx, pws, y2);
+	svg_path_emit_number(ctx, pws, x3);
+	svg_path_emit_number(ctx, pws, y3);
+	pws->x = x3;
+	pws->y = y3;
 }
 
 static void
 svg_path_close(fz_context *ctx, void *arg)
 {
-	fz_buffer *out = (fz_buffer *)arg;
-
-	fz_append_printf(ctx, out, "Z ");
+	struct svg_path_walker_state *pws = arg;
+	svg_path_emit_command(ctx, arg, 'Z');
+	pws->x = NAN;
+	pws->y = NAN;
 }
 
 static const fz_path_walker svg_path_walker =
@@ -150,8 +199,9 @@ static const fz_path_walker svg_path_walker =
 static void
 svg_dev_path(fz_context *ctx, svg_device *sdev, const fz_path *path)
 {
+	struct svg_path_walker_state pws = { sdev->out, 0, NAN, NAN, 0 };
 	fz_append_printf(ctx, sdev->out, " d=\"");
-	fz_walk_path(ctx, path, &svg_path_walker, sdev->out);
+	fz_walk_path(ctx, path, &svg_path_walker, &pws);
 	fz_append_printf(ctx, sdev->out, "\"");
 }
 
