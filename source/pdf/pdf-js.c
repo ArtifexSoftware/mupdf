@@ -1305,5 +1305,7 @@ int pdf_js_event_result(pdf_js *js) { return 1; }
 char *pdf_js_event_value(pdf_js *js) { return ""; }
 void pdf_js_execute(pdf_js *js, const char *name, const char *source, char **result) { }
 int pdf_js_event_result_validate(pdf_js *js, char **newvalue) { *newvalue=NULL; return 1; }
+pdf_js_console *pdf_js_get_console(fz_context *ctx, pdf_document *doc) { return NULL; }
+void pdf_js_set_console(fz_context *ctx, pdf_document *doc, pdf_js_console *console, void *user) { }
 
 #endif /* FZ_ENABLE_JS */
