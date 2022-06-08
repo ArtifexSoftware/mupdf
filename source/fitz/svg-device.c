@@ -522,19 +522,19 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 				path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
 				if (path)
 				{
-					fz_append_printf(ctx, out, "<path id=\"font_%x_%x\"", fnt->id, gid);
+					fz_append_printf(ctx, out, "<path id=\"font_%d_%d\"", fnt->id, gid);
 					svg_dev_path(ctx, sdev, path);
 					fz_append_printf(ctx, out, "/>\n");
 					fz_drop_path(ctx, path);
 				}
 				else
 				{
-					fz_append_printf(ctx, out, "<g id=\"font_%x_%x\"></g>\n", fnt->id, gid);
+					fz_append_printf(ctx, out, "<g id=\"font_%d_%d\"></g>\n", fnt->id, gid);
 				}
 			}
 			else if (fz_font_t3_procs(ctx, span->font))
 			{
-				fz_append_printf(ctx, out, "<g id=\"font_%x_%x\">\n", fnt->id, gid);
+				fz_append_printf(ctx, out, "<g id=\"font_%d_%d\">\n", fnt->id, gid);
 				fz_run_t3_glyph(ctx, span->font, gid, fz_identity, dev);
 				fnt = &sdev->fonts[font_idx]; /* recursion may realloc the font array! */
 				fz_append_printf(ctx, out, "</g>\n");
@@ -574,7 +574,7 @@ svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_s
 		trm.f = it->y;
 		mtx = fz_concat(trm, ctm);
 
-		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%x_%x\"", fnt->id, gid);
+		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%d_%d\"", fnt->id, gid);
 		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
 		fz_append_printf(ctx, out, "/>\n");
@@ -610,7 +610,7 @@ svg_dev_text_span_as_paths_stroke(fz_context *ctx, fz_device *dev, const fz_text
 		trm.f = it->y;
 		mtx = fz_concat(trm, ctm);
 
-		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%x_%x\"", fnt->id, gid);
+		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%d_%d\"", fnt->id, gid);
 		svg_dev_stroke_state(ctx, sdev, stroke, mtx);
 		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_stroke_color(ctx, sdev, colorspace, color, alpha, color_params);
@@ -660,7 +660,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 	int num = sdev->id++;
 
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<clipPath id=\"cp%d\">\n", num);
+	fz_append_printf(ctx, out, "<clipPath id=\"clip_%d\">\n", num);
 	fz_append_printf(ctx, out, "<path");
 	svg_dev_ctm(ctx, sdev, ctm);
 	svg_dev_path(ctx, sdev, path);
@@ -668,7 +668,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 		fz_append_printf(ctx, out, " fill-rule=\"evenodd\"");
 	fz_append_printf(ctx, out, "/>\n</clipPath>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g clip-path=\"url(#cp%d)\">\n", num);
+	fz_append_printf(ctx, out, "<g clip-path=\"url(#clip_%d)\">\n", num);
 }
 
 static void
@@ -684,7 +684,7 @@ svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 	bounds = fz_bound_path(ctx, path, stroke, ctm);
 
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_append_printf(ctx, out, "<path");
 	svg_dev_ctm(ctx, sdev, ctm);
@@ -693,7 +693,7 @@ svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 	svg_dev_path(ctx, sdev, path);
 	fz_append_printf(ctx, out, "/>\n</mask>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", num);
+	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", num);
 }
 
 static void
@@ -767,7 +767,7 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 	bounds = fz_bound_text(ctx, text, NULL, ctm);
 
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
 			num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_append_printf(ctx, out, " maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n");
 	if (sdev->text_as_text)
@@ -789,7 +789,7 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 	}
 	fz_append_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", num);
+	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", num);
 }
 
 static void
@@ -807,7 +807,7 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	bounds = fz_bound_text(ctx, text, NULL, ctm);
 
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_append_printf(ctx, out, " maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n");
 	if (sdev->text_as_text)
@@ -830,7 +830,7 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	}
 	fz_append_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", num);
+	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", num);
 }
 
 static void
@@ -872,7 +872,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 				break;
 		if (i >= 0)
 		{
-			fz_append_printf(ctx, out, "<use xlink:href=\"#im%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
+			fz_append_printf(ctx, out, "<use xlink:href=\"#image_%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
 					sdev->images[i].id, img->w, img->h);
 			return;
 		}
@@ -890,7 +890,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 		id = sdev->id++;
 		out = start_def(ctx, sdev);
 
-		fz_append_printf(ctx, out, "<image id=\"im%d\" width=\"%d\" height=\"%d\" xlink:href=\"", id, img->w, img->h);
+		fz_append_printf(ctx, out, "<image id=\"image_%d\" width=\"%d\" height=\"%d\" xlink:href=\"", id, img->w, img->h);
 		fz_append_image_as_data_uri(ctx, out, img);
 		fz_append_printf(ctx, out, "\"/>\n");
 
@@ -900,7 +900,7 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 		sdev->images[sdev->num_images].image = fz_keep_image(ctx, img);
 		sdev->num_images++;
 
-		fz_append_printf(ctx, out, "<use xlink:href=\"#im%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
+		fz_append_printf(ctx, out, "<use xlink:href=\"#image_%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
 				id, img->w, img->h);
 	}
 	else
@@ -998,14 +998,14 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 
 	local_ctm = fz_concat(scale, ctm);
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\">\n", mask);
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\">\n", mask);
 	svg_send_image(ctx, sdev, image, color_params);
 	fz_append_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
 	fz_append_printf(ctx, out, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"", image->w, image->h);
 	svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
 	svg_dev_ctm(ctx, sdev, local_ctm);
-	fz_append_printf(ctx, out, " mask=\"url(#ma%d)\"/>\n", mask);
+	fz_append_printf(ctx, out, " mask=\"url(#mask_%d)\"/>\n", mask);
 }
 
 static void
@@ -1022,13 +1022,13 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 
 	local_ctm = fz_concat(scale, ctm);
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\">\n<g", mask);
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\">\n<g", mask);
 	svg_dev_ctm(ctx, sdev, local_ctm);
 	fz_append_printf(ctx, out, ">\n");
 	svg_send_image(ctx, sdev, image, fz_default_color_params/* FIXME */);
 	fz_append_printf(ctx, out, "</g>\n</mask>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", mask);
+	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", mask);
 }
 
 static void
@@ -1049,7 +1049,7 @@ svg_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 	int mask = sdev->id++;
 
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<mask id=\"ma%d\">\n", mask);
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\">\n", mask);
 
 	if (dev->container_len > 0)
 		dev->container[dev->container_len-1].user = mask;
@@ -1067,7 +1067,7 @@ svg_dev_end_mask(fz_context *ctx, fz_device *dev)
 
 	fz_append_printf(ctx, out, "\"/>\n</mask>\n");
 	out = end_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", mask);
+	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", mask);
 }
 
 static void
@@ -1170,7 +1170,7 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, 
 	/* The first thing we do is to capture the contents of the pattern
 	 * as a def we can reuse. */
 	out = start_def(ctx, sdev);
-	fz_append_printf(ctx, out, "<g id=\"pac%d\">\n", t->pattern);
+	fz_append_printf(ctx, out, "<g id=\"pattern_tile_%d\">\n", t->pattern);
 
 	return 0;
 }
@@ -1200,7 +1200,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 	 * pattern tile, we need to render the pattern contents several times
 	 * to ensure that the pattern tile contains everything. */
 
-	fz_append_printf(ctx, out, "<pattern id=\"pa%d\" patternUnits=\"userSpaceOnUse\" patternContentUnits=\"userSpaceOnUse\"",
+	fz_append_printf(ctx, out, "<pattern id=\"pattern_%d\" patternUnits=\"userSpaceOnUse\" patternContentUnits=\"userSpaceOnUse\"",
 		t->pattern);
 	fz_append_printf(ctx, out, " x=\"0\" y=\"0\" width=\"%g\" height=\"%g\">\n",
 		t->step.x, t->step.y);
@@ -1208,14 +1208,14 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 	if (t->view.x0 > 0 || t->step.x < t->view.x1 || t->view.y0 > 0 || t->step.y < t->view.y1)
 	{
 		cp = sdev->id++;
-		fz_append_printf(ctx, out, "<clipPath id=\"cp%d\">\n", cp);
+		fz_append_printf(ctx, out, "<clipPath id=\"clip_%d\">\n", cp);
 		fz_append_printf(ctx, out, "<path d=\"M %g %g L %g %g L %g %g L %g %g Z\"/>\n",
 			t->view.x0, t->view.y0,
 			t->view.x1, t->view.y0,
 			t->view.x1, t->view.y1,
 			t->view.x0, t->view.y1);
 		fz_append_printf(ctx, out, "</clipPath>\n");
-		fz_append_printf(ctx, out, "<g clip-path=\"url(#cp%d)\">\n", cp);
+		fz_append_printf(ctx, out, "<g clip-path=\"url(#clip_%d)\">\n", cp);
 	}
 
 	/* All the pattern contents will have their own ctm applied. Let's
@@ -1230,7 +1230,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 
 	for (x = 0; x > -w; x -= t->step.x)
 		for (y = 0; y > -h; y -= t->step.y)
-			fz_append_printf(ctx, out, "<use x=\"%g\" y=\"%g\" xlink:href=\"#pac%d\"/>\n", x, y, t->pattern);
+			fz_append_printf(ctx, out, "<use x=\"%g\" y=\"%g\" xlink:href=\"#pattern_tile_%d\"/>\n", x, y, t->pattern);
 
 	fz_append_printf(ctx, out, "</g>\n");
 	if (cp != -1)
@@ -1241,7 +1241,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 	/* Finally, fill a rectangle with the pattern. */
 	fz_append_printf(ctx, out, "<rect");
 	svg_dev_ctm(ctx, sdev, t->ctm);
-	fz_append_printf(ctx, out, " fill=\"url(#pa%d)\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"/>\n",
+	fz_append_printf(ctx, out, " fill=\"url(#pattern_%d)\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"/>\n",
 		t->pattern, t->area.x0, t->area.y0, t->area.x1 - t->area.x0, t->area.y1 - t->area.y0);
 }
 
@@ -1252,7 +1252,7 @@ svg_dev_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 	fz_buffer *out = sdev->out;
 
 	sdev->layers++;
-	fz_append_printf(ctx, out, "<g id=\"Layer-%d\" data-name=\"%s\">\n", sdev->layers, name);
+	fz_append_printf(ctx, out, "<g id=\"layer_%d\" data-name=\"%s\">\n", sdev->layers, name);
 }
 
 static void
@@ -1367,7 +1367,7 @@ fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page
 	dev->out = dev->main;
 
 	dev->save_id = id;
-	dev->id = id ? *id : 0;
+	dev->id = id ? *id : 1;
 	dev->layers = 0;
 	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
 	dev->reuse_images = reuse_images;
