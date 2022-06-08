@@ -1036,10 +1036,10 @@ svg_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 		"overlay",	/* FZ_BLEND_OVERLAY */
 		"darken",	/* FZ_BLEND_DARKEN */
 		"lighten",	/* FZ_BLEND_LIGHTEN */
-		"color_dodge",	/* FZ_BLEND_COLOR_DODGE */
-		"color_burn",	/* FZ_BLEND_COLOR_BURN */
-		"hard_light",	/* FZ_BLEND_HARD_LIGHT */
-		"soft_light",	/* FZ_BLEND_SOFT_LIGHT */
+		"color-dodge",	/* FZ_BLEND_COLOR_DODGE */
+		"color-burn",	/* FZ_BLEND_COLOR_BURN */
+		"hard-light",	/* FZ_BLEND_HARD_LIGHT */
+		"soft-light",	/* FZ_BLEND_SOFT_LIGHT */
 		"difference",	/* FZ_BLEND_DIFFERENCE */
 		"exclusion",	/* FZ_BLEND_EXCLUSION */
 		"hue",		/* FZ_BLEND_HUE */
@@ -1051,14 +1051,7 @@ svg_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 	if (blendmode < FZ_BLEND_NORMAL || blendmode > FZ_BLEND_LUMINOSITY)
 		blendmode = FZ_BLEND_NORMAL;
 	if (blendmode != FZ_BLEND_NORMAL && (sdev->blend_bitmask & (1<<blendmode)) == 0)
-	{
 		sdev->blend_bitmask |= (1<<blendmode);
-		out = start_def(ctx, sdev);
-		fz_append_printf(ctx, out,
-				"<filter id=\"blend_%d\"><feBlend mode=\"%s\" in2=\"BackgroundImage\" in=\"SourceGraphic\"/></filter>\n",
-				blendmode, blend_names[blendmode]);
-		out = end_def(ctx, sdev);
-	}
 
 	/* FIXME: Handle alpha == 0 somehow? */
 	/* SVG 1.1 doesn't support adequate blendmodes/knockout etc, so just ignore it for now */
@@ -1067,7 +1060,7 @@ svg_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 	else
 		fz_append_printf(ctx, out, "<g opacity=\"%g\"", alpha);
 	if (blendmode != FZ_BLEND_NORMAL)
-		fz_append_printf(ctx, out, " filter=\"url(#blend_%d)\"", blendmode);
+		fz_append_printf(ctx, out, " style=\"mix-blend-mode:%s\"", blend_names[blendmode]);
 	fz_append_printf(ctx, out, ">\n");
 }
 
@@ -1254,9 +1247,7 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 		fz_write_printf(ctx, out, "</defs>\n");
 	}
 
-	fz_write_printf(ctx, out, "<g enable-background=\"new\">\n");
 	fz_write_buffer(ctx, out, sdev->main);
-	fz_write_printf(ctx, out, "</g>\n");
 
 	fz_write_printf(ctx, out, "</svg>\n");
 }
