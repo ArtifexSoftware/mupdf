@@ -429,6 +429,9 @@
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-buffer.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-buffer-verify.cc">
+      <Filter>harfbuzz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-buffer-serialize.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
@@ -507,13 +510,13 @@
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-myanmar.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-syllabic.cc">
+      <Filter>harfbuzz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-thai.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-use.cc">
-      <Filter>harfbuzz</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-use-table.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-vowel-constraints.cc">
