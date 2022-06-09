@@ -46,27 +46,48 @@ onmessage = async function (event) {
 		postMessage(["RESULT", id, result]);
 	} catch (error) {
 		if (error instanceof mupdf.MupdfTryLaterError) {
-			//trylaterQueue.push(event);
-			console.error("TRYLATER ERROR");
+			trylaterQueue.push(event);
 		} else {
 			postMessage(["ERROR", id, {name: error.name, message: error.message, stack: error.stack}]);
 		}
 	}
 };
 
+let trylaterScheduled = false;
+let trylaterQueue = [];
+mupdf.onFetchCompleted = function (id) {
+	if (!trylaterScheduled) {
+		trylaterScheduled = true;
+
+		setTimeout(() => {
+			trylaterScheduled = false;
+			let currentQueue = trylaterQueue;
+			trylaterQueue = [];
+			currentQueue.forEach(onmessage);
+		}, 0);
+	}
+};
+
 const workerMethods = {};
 
+let openStream = null;
 let openDocument = null;
+
+workerMethods.openStreamFromUrl = function (url, contentLength, progressive, prefetch) {
+	openStream = mupdf.Stream.fromUrl(url, contentLength, Math.max(progressive << 10, 1 << 16), prefetch);
+	// TODO - close stream?
+};
 
 workerMethods.openDocumentFromBuffer = function (buffer, magic) {
 	// TODO - check types
 	openDocument = mupdf.Document.openFromJsBuffer(buffer, magic);
 };
 
-workerMethods.openDocumentFromUrl = function (url, contentLength, progressive, prefetch, magic) {
-	let stream = mupdf.Stream.fromUrl(url, contentLength, Math.max(progressive << 10, 1 << 16), prefetch);
-	// TODO - close stream?
-	openDocument = mupdf.Document.openFromStream(stream, magic);
+workerMethods.openDocumentFromStream = function (magic) {
+	if (openStream == null) {
+		throw new Error("openDocumentFromStream called but no stream has been open")
+	}
+	openDocument = mupdf.Document.openFromStream(openStream, magic);
 };
 
 workerMethods.freeDocument = function () {

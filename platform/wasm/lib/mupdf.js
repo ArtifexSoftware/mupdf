@@ -143,6 +143,9 @@ class Matrix {
 
 // TODO - All constructors should take a pointer, plus a private token
 
+// TODO - replace constructors with static factory methods.
+// All constructors should take a pointer, plus a private token
+
 const finalizer = new FinalizationRegistry(callback => callback());
 
 class Wrapper {
@@ -206,6 +209,17 @@ class Document extends Wrapper {
 
 	static openFromStream(stream, magic) {
 		assert(stream instanceof Stream, "invalid stream argument");
+		let pointer = libmupdf.ccall(
+			"wasm_open_document_with_stream",
+			"number",
+			["number", "string"],
+			[stream.pointer, magic]
+		);
+		return new Document(pointer);
+	}
+
+	// TODO - Rename "magic" to "MIME-type" ?
+	static openFromStream(stream, magic) {
 		let pointer = libmupdf.ccall(
 			"wasm_open_document_with_stream",
 			"number",
@@ -889,6 +903,20 @@ class Stream extends Wrapper {
 		this.internalBuffer = internalBuffer;
 	}
 
+	static fromUrl(url, contentLength, block_size, prefetch) {
+		let url_size = libmupdf.lengthBytesUTF8(url);
+		let url_ptr = libmupdf._malloc(url_size) + 1;
+		libmupdf.stringToUTF8(url, url_ptr, url_size + 1);
+
+		try {
+			let pointer = libmupdf._wasm_open_stream_from_url(url_ptr, contentLength, block_size, prefetch);
+			return new Stream(pointer);
+		}
+		finally {
+			libmupdf._free(url_ptr);
+		}
+	}
+
 	// This takes a reference to the buffer, not a clone.
 	// Modifying the buffer after calling this function will change the returned stream's output.
 	static fromBuffer(buffer) {
@@ -936,6 +964,100 @@ class STextPage extends Wrapper {
 }
 
 
+// Background progressive fetch
+
+// TODO - move in Stream
+function onFetchData(id, block, data) {
+	let n = data.byteLength;
+	let p = libmupdf._malloc(n);
+	libmupdf.HEAPU8.set(new Uint8Array(data), p);
+	libmupdf._wasm_on_data_fetched(id, block, p, n);
+	libmupdf._free(p);
+}
+
+// TODO - replace with map
+let fetchStates = {};
+
+function fetchOpen(id, url, contentLength, blockShift, prefetch) {
+	console.log("OPEN", url, "PROGRESSIVELY");
+	fetchStates[id] = {
+		url: url,
+		blockShift: blockShift,
+		blockSize: 1 << blockShift,
+		prefetch: prefetch,
+		contentLength: contentLength,
+		map: new Array((contentLength >>> blockShift) + 1).fill(0),
+		closed: false,
+	};
+}
+
+async function fetchRead(id, block) {
+	let state = fetchStates[id];
+
+	if (state.map[block] > 0)
+		return;
+
+	state.map[block] = 1;
+	let contentLength = state.contentLength;
+	let url = state.url;
+	let start = block << state.blockShift;
+	let end = start + state.blockSize;
+	if (end > contentLength)
+		end = contentLength;
+
+	try {
+		let response = await fetch(url, { headers: { Range: `bytes=${start}-${end-1}` } });
+		if (state.closed)
+			return;
+
+		// TODO - use ReadableStream instead?
+		let buffer = await response.arrayBuffer();
+		if (state.closed)
+			return;
+
+		console.log("READ", url, block+1, "/", state.map.length);
+		state.map[block] = 2;
+
+		onFetchData(id, block, buffer);
+
+		onFetchCompleted(id);
+
+		// TODO - Does this create a risk of stack overflow?
+		if (state.prefetch)
+			fetchReadNext(id, block + 1);
+	} catch (error) {
+		state.map[block] = 0;
+		console.log("FETCH ERROR", url, block, error.toString);
+	}
+}
+
+function fetchReadNext(id, next) {
+	let state = fetchStates[id];
+	if (!state)
+		return;
+
+	// Don't prefetch if we're already waiting for any blocks.
+	for (let block = 0; block < state.map.length; ++block)
+		if (state.map[block] === 1)
+			return;
+
+	// Find next block to prefetch (starting with the last fetched block)
+	for (let block = next; block < state.map.length; ++block)
+		if (state.map[block] === 0)
+			return fetchRead(id, block);
+
+	// Find next block to prefetch (starting from the beginning)
+	for (let block = 0; block < state.map.length; ++block)
+		if (state.map[block] === 0)
+			return fetchRead(id, block);
+
+	console.log("ALL BLOCKS READ");
+}
+
+function fetchClose(id) {
+	fetchStates[id].closed = true;
+	delete fetchStates[id];
+}
 
 // --- EXPORTS ---
 
@@ -959,9 +1081,18 @@ const mupdf = {
 	Stream,
 	Output,
 	STextPage,
+	onFetchCompleted: () => {},
 };
 
+// TODO - Figure out better naming scheme for fetch methods
+function onFetchCompleted(id) {
+	mupdf.onFetchCompleted(id);
+}
+
 const libmupdf_injections = {
+	fetchOpen,
+	fetchRead,
+	fetchClose,
 	MupdfError,
 	MupdfTryLaterError,
 };

@@ -74,8 +74,15 @@ function wrap(func) {
 	};
 }
 
+const wrap_openStreamFromUrl = wrap("openStreamFromUrl");
+const wrap_openDocumentFromStream = wrap("openDocumentFromStream");
+
+mupdfView.openDocumentFromUrl = async function (url, contentLength, progressive, prefetch, magic) {
+	await wrap_openStreamFromUrl(url, contentLength, progressive, prefetch);
+	return await wrap_openDocumentFromStream(magic);
+};
+
 mupdfView.openDocumentFromBuffer = wrap("openDocumentFromBuffer");
-mupdfView.openDocumentFromUrl = wrap("openDocumentFromUrl");
 mupdfView.freeDocument = wrap("freeDocument");
 
 mupdfView.documentTitle = wrap("documentTitle");
