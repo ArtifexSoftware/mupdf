@@ -6,9 +6,14 @@ EMSDK_DIR ?= /opt/emsdk
 BUILD_DIR ?= ../../build/wasm/$(build)
 
 ifeq ($(build),debug)
-  BUILD_FLAGS := -Wall -O0
+  LIB_BUILD_FLAGS := -Os -g
+  BUILD_FLAGS := -Wall -O0 -g
+else ifeq ($(build),sanitize)
+  LIB_BUILD_FLAGS := -O2 -g -fsanitize=null
+  BUILD_FLAGS := -Wall -O0 -g -fsanitize=null -fsanitize=address -fsanitize=leak
 else
-  BUILD_FLAGS := -Wall -Os
+  LIB_BUILD_FLAGS := -O2
+  BUILD_FLAGS := -Wall -Os -flto
 endif
 
 all: libmupdf.js libmupdf.wasm
@@ -20,7 +25,7 @@ $(MUPDF_CORE): .FORCE
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	$(MAKE) -j4 -C ../.. \
 		OS=wasm build=$(build) \
-		XCFLAGS='-DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0' \
+		XCFLAGS='$(LIB_BUILD_FLAGS) -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0' \
 		libs
 
 libmupdf.js libmupdf.wasm: $(MUPDF_CORE) lib/wrap.c
