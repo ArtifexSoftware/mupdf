@@ -29,8 +29,6 @@ List of changes in MuPDF 1.20.0
 
 	Update to zlib 1.2.12 for security fix.
 
-	Too many bug fixes to list.
-
 List of changes in MuPDF 1.19.0
 
 	Removed support for Luratech JBIG2 and JPEG2000 decoders.
