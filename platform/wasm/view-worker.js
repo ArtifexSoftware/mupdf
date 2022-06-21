@@ -42,9 +42,9 @@ onmessage = async function (event) {
 	} catch (error) {
 		if (error instanceof mupdf.MupdfTryLaterError) {
 			//trylaterQueue.push(event);
+			console.error("TRYLATER ERROR");
 		} else {
-			// TODO - send the callstack of the error to the main thread?
-			console.error(`Error calling ${func}:`, error);
+			console.error(`${error.name} calling ${func}: ${error.message}\n${error.stack}`);
 			postMessage(["ERROR", id, {name: error.name, message: error.message}]);
 		}
 	}
@@ -85,7 +85,7 @@ workerMethods.documentOutline = function () {
 		while (node) {
 			let entry = {
 				title: node.title(),
-				page: node.pageNumber(),
+				page: node.pageNumber(openDocument),
 			};
 			let down = node.down();
 			if (down)
@@ -153,8 +153,9 @@ workerMethods.getPageLinks = function(pageNumber, dpi) {
 			if (link.isExternalLink()) {
 				href = link.uri();
 			} else {
-				const pageNumber = link.resolve().pageNumber();
-				href = `#${pageNumber + 1}`;
+				const linkPageNumber = link.resolve(openDocument).pageNumber(openDocument);
+				// TODO - document the "+ 1" better
+				href = `#page${linkPageNumber + 1}`;
 			}
 
 			return {
@@ -200,12 +201,23 @@ workerMethods.getPageText = function(pageNumber, dpi) {
 	}
 };
 
-workerMethods.search = function(pageNumber, needle) {
+workerMethods.search = function(pageNumber, dpi, needle) {
 	let page;
 
 	try {
 		page = openDocument.loadPage(pageNumber);
-		return page.search(needle);
+		const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
+		const hits = page.search(needle);
+		return hits.map(searchHit => {
+			const [x0, y0, x1, y1] = mupdf.transform_rect(searchHit, doc_to_screen);
+
+			return {
+				x: x0,
+				y: y0,
+				w: x1 - x0,
+				h: y1 - y0,
+			};
+		});
 	}
 	finally {
 		page?.free();

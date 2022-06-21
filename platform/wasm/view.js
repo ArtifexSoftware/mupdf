@@ -69,7 +69,7 @@ function wrap(func) {
 }
 
 mupdfView.openDocumentFromBuffer = wrap("openDocumentFromBuffer");
-mupdfView.openDocumentFromStream = wrap("openDocumentFromUrl");
+mupdfView.openDocumentFromUrl = wrap("openDocumentFromUrl");
 mupdfView.freeDocument = wrap("freeDocument");
 
 mupdfView.documentTitle = wrap("documentTitle");

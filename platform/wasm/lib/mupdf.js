@@ -22,13 +22,9 @@
 
 "use strict";
 
-var mupdf = {};
-
 // If running in Node.js environment
 if (typeof require === "function") {
 	var libmupdf = require("../libmupdf.js");
-	if (typeof module === "object")
-		module.exports = mupdf;
 }
 
 class MupdfError extends Error {
@@ -45,28 +41,7 @@ class MupdfTryLaterError extends MupdfError {
 	}
 }
 
-mupdf.MupdfError = MupdfError;
-mupdf.MupdfTryLaterError = MupdfTryLaterError;
-
-const libmupdf_injections = {
-	MupdfError,
-	MupdfTryLaterError,
-};
-
-mupdf.ready = libmupdf(libmupdf_injections).then(m => {
-	libmupdf = m;
-
-	console.log("WASM MODULE READY");
-
-	libmupdf._wasm_init_context();
-
-	mupdf.DeviceGray = new mupdf.ColorSpace(libmupdf._wasm_device_gray());
-	mupdf.DeviceRGB = new mupdf.ColorSpace(libmupdf._wasm_device_rgb());
-	mupdf.DeviceBGR = new mupdf.ColorSpace(libmupdf._wasm_device_bgr());
-	mupdf.DeviceCMYK = new mupdf.ColorSpace(libmupdf._wasm_device_cmyk());
-});
-
-mupdf._to_rect = function (ptr) {
+function _to_rect(ptr) {
 	ptr = ptr >> 2;
 	return [
 		libmupdf.HEAPF32[ptr],
@@ -74,9 +49,9 @@ mupdf._to_rect = function (ptr) {
 		libmupdf.HEAPF32[ptr+2],
 		libmupdf.HEAPF32[ptr+3],
 	];
-};
+}
 
-mupdf._to_irect = function (ptr) {
+function _to_irect(ptr) {
 	ptr = ptr >> 2;
 	return [
 		libmupdf.HEAP32[ptr],
@@ -84,9 +59,9 @@ mupdf._to_irect = function (ptr) {
 		libmupdf.HEAP32[ptr+2],
 		libmupdf.HEAP32[ptr+3],
 	];
-};
+}
 
-mupdf._to_matrix = function (ptr) {
+function _to_matrix(ptr) {
 	ptr = ptr >> 2;
 	return [
 		libmupdf.HEAPF32[ptr],
@@ -96,24 +71,24 @@ mupdf._to_matrix = function (ptr) {
 		libmupdf.HEAPF32[ptr+4],
 		libmupdf.HEAPF32[ptr+5],
 	];
-};
+}
 
 // TODO - better handle matrices.
 // TODO - write Rect and Matrix classes
-mupdf.scale_matrix = function(scale_x, scale_y) {
+function scale_matrix(scale_x, scale_y) {
 	return mupdf._to_matrix(libmupdf._wasm_scale(scale_x, scale_y));
-};
+}
 
-mupdf.transform_rect = function(rect, matrix) {
+function transform_rect(rect, matrix) {
 	return mupdf._to_rect(libmupdf._wasm_transform_rect(
 		rect[0], rect[1], rect[2], rect[3],
 		matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5],
 	));
-};
+}
 
 const finalizer = new FinalizationRegistry(callback => callback());
 
-mupdf._Wrapper = class _Wrapper {
+class Wrapper {
 	constructor(pointer, dropFunction) {
 		this.pointer = pointer;
 		this.dropFunction = dropFunction;
@@ -130,10 +105,15 @@ mupdf._Wrapper = class _Wrapper {
 	toString() {
 		return `[${this.constructor.name} ${this.pointer}]`;
 	}
-};
+}
 
-mupdf.Document = class Document extends mupdf._Wrapper {
-	constructor(data, magic) {
+class Document extends Wrapper {
+	constructor(pointer) {
+		super(pointer, libmupdf._wasm_drop_document);
+	}
+
+	// TODO - Rename "magic" to "MIME-type" ?
+	static openFromData(data, magic) {
 		let n = data.byteLength;
 		let pointer = libmupdf._malloc(n);
 		let src = new Uint8Array(data);
@@ -155,8 +135,8 @@ mupdf.Document = class Document extends mupdf._Wrapper {
 	}
 
 	loadPage(pageNumber) {
-		// TODO - document "-1" better
-		return new mupdf.Page(libmupdf._wasm_load_page(this.pointer, pageNumber - 1));
+		// TODO - document the "- 1" better
+		return new Page(libmupdf._wasm_load_page(this.pointer, pageNumber - 1));
 	}
 
 	title() {
@@ -167,15 +147,15 @@ mupdf.Document = class Document extends mupdf._Wrapper {
 	loadOutline() {
 		return new_outline(libmupdf._wasm_load_outline(this.pointer));
 	}
-};
+}
 
-mupdf.Page = class Page extends mupdf._Wrapper {
+class Page extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_page);
 	}
 
 	bounds() {
-		return mupdf._to_rect(libmupdf._wasm_bound_page(this.pointer));
+		return _to_rect(libmupdf._wasm_bound_page(this.pointer));
 	}
 
 	width() {
@@ -189,7 +169,7 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 	}
 
 	toPixmap(m, colorspace, alpha = false) {
-		return new mupdf.Pixmap(
+		return new Pixmap(
 			libmupdf._wasm_new_pixmap_from_page(
 				this.pointer,
 				m[0], m[1], m[2], m[3], m[4], m[5],
@@ -200,7 +180,7 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 	}
 
 	toSTextPage() {
-		return new mupdf.STextPage(
+		return new STextPage(
 			libmupdf._wasm_new_stext_page_from_page(this.pointer)
 		);
 	}
@@ -210,17 +190,17 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 		if (pointer == 0)
 			return null;
 		else
-			return new mupdf.PdfPage(pointer);
+			return new PdfPage(pointer);
 	}
 
 	loadLinks() {
 		let links = [];
 
 		for (let link = libmupdf._wasm_load_links(this.pointer); link !== 0; link = libmupdf._wasm_next_link(link)) {
-			links.push(new mupdf.Link(link));
+			links.push(new Link(link));
 		}
 
-		return new mupdf.Links(links);
+		return new Links(links);
 	}
 
 	search(needle) {
@@ -244,7 +224,7 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 			let rects = [];
 			for (let i = 0; i < hitCount; ++i) {
 				let hit = hits_ptr + i * libmupdf._wasm_size_of_quad();
-				let rect = mupdf._to_rect(libmupdf._wasm_rect_from_quad(hit));
+				let rect = _to_rect(libmupdf._wasm_rect_from_quad(hit));
 				rects.push(rect);
 			}
 
@@ -255,24 +235,24 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 			libmupdf._free(hits_ptr);
 		}
 	}
-};
+}
 
-mupdf.Links = class Links extends mupdf._Wrapper {
+class Links extends Wrapper {
 	constructor(links) {
 		// TODO drop
 		super(links[0] || 0, () => {});
 		this.links = links;
 	}
-};
+}
 
-mupdf.Link = class Link extends mupdf._Wrapper {
+class Link extends Wrapper {
 	constructor(pointer) {
 		// TODO
 		super(pointer, () => {});
 	}
 
 	rect() {
-		return mupdf._to_rect(libmupdf._wasm_link_rect(this.pointer));
+		return _to_rect(libmupdf._wasm_link_rect(this.pointer));
 	}
 
 	isExternalLink() {
@@ -283,41 +263,42 @@ mupdf.Link = class Link extends mupdf._Wrapper {
 		return libmupdf.UTF8ToString(libmupdf._wasm_link_uri(this.pointer));
 	}
 
-	resolve() {
-		return new mupdf.Location(
-			libmupdf._wasm_resolve_link_chapter(this.pointer),
-			libmupdf._wasm_resolve_link_page(this.pointer),
+	resolve(doc) {
+		const uri_string_ptr = libmupdf._wasm_link_uri(this.pointer);
+		return new Location(
+			libmupdf._wasm_resolve_link_chapter(doc.pointer, uri_string_ptr),
+			libmupdf._wasm_resolve_link_page(doc.pointer, uri_string_ptr),
 		);
 	}
-};
+}
 
-mupdf.Location = class Location {
+class Location {
 	constructor(chapter, page) {
 		this.chapter = chapter;
 		this.page = page;
 	}
 
-	pageNumber(document) {
-		return libmupdf._wasm_page_number_from_location(document.pointer, this.chapter, this.page);
+	pageNumber(doc) {
+		return libmupdf._wasm_page_number_from_location(doc.pointer, this.chapter, this.page);
 	}
-};
+}
 
 function new_outline(pointer) {
 	if (pointer === 0)
 		return null;
 	else
-		return new mupdf.Outline(pointer);
+		return new Outline(pointer);
 }
 
 // FIXME - This is pretty non-idiomatic
-mupdf.Outline = class Outline extends mupdf._Wrapper {
+class Outline extends Wrapper {
 	constructor(pointer) {
 		// TODO
 		super(pointer, () => {});
 	}
 
-	pageNumber(document) {
-		return libmupdf._wasm_outline_page(document.pointer, this.pointer);
+	pageNumber(doc) {
+		return libmupdf._wasm_outline_page(doc.pointer, this.pointer);
 	}
 
 	title() {
@@ -331,9 +312,9 @@ mupdf.Outline = class Outline extends mupdf._Wrapper {
 	next() {
 		return new_outline(libmupdf._wasm_outline_next(this.pointer));
 	}
-};
+}
 
-mupdf.PdfPage = class PdfPage extends mupdf._Wrapper {
+class PdfPage extends Wrapper {
 	constructor(pointer) {
 		// TODO
 		super(pointer, () => {});
@@ -343,45 +324,45 @@ mupdf.PdfPage = class PdfPage extends mupdf._Wrapper {
 		let annotations = [];
 
 		for (let annot = libmupdf._wasm_pdf_first_annot(this.pointer); annot !== 0; annot = libmupdf._wasm_pdf_next_annot(annot)) {
-			annotations.push(new mupdf.Annotation(annot));
+			annotations.push(new Annotation(annot));
 		}
 
-		return new mupdf.Annotations(annotations);
+		return new Annotations(annotations);
 	}
-};
+}
 
-mupdf.Annotations = class Annotations extends mupdf._Wrapper {
+class Annotations extends Wrapper {
 	constructor(annotations) {
 		super(annotations[0] || 0, () => {});
 		this.annotations = annotations;
 	}
-};
+}
 
-mupdf.Annotation = class Annotation extends mupdf._Wrapper {
+class Annotation extends Wrapper {
 	// TODO - the lifetime handling of this is actually complicated
 	constructor(pointer) {
 		super(pointer, () => {});
 	}
 
 	bounds() {
-		return mupdf._to_rect(libmupdf._wasm_pdf_bound_annot(this.pointer));
+		return _to_rect(libmupdf._wasm_pdf_bound_annot(this.pointer));
 	}
 
 	annotType() {
 		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_type_string(this.pointer));
 	}
-};
+}
 
-mupdf.ColorSpace = class ColorSpace extends mupdf._Wrapper {
+class ColorSpace extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_colorspace);
 	}
-};
+}
 
-mupdf.Pixmap = class Pixmap extends mupdf._Wrapper {
+class Pixmap extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_pixmap);
-		this.bbox = mupdf._to_irect(libmupdf._wasm_pixmap_bbox(this.pointer));
+		this.bbox = _to_irect(libmupdf._wasm_pixmap_bbox(this.pointer));
 	}
 
 	width() {
@@ -408,9 +389,9 @@ mupdf.Pixmap = class Pixmap extends mupdf._Wrapper {
 			libmupdf._wasm_drop_buffer(buf);
 		}
 	}
-};
+}
 
-mupdf.Buffer = class Buffer extends mupdf._Wrapper {
+class Buffer extends Wrapper {
 	constructor(pointer) {
 		// TODO drop function
 		super(pointer, () => {});
@@ -470,9 +451,9 @@ mupdf.Buffer = class Buffer extends mupdf._Wrapper {
 
 		return libmupdf.UTF8ToString(data, size);
 	}
-};
+}
 
-mupdf.Output = class Output extends mupdf._Wrapper {
+class Output extends Wrapper {
 	constructor(pointer) {
 		// TODO
 		super(pointer, () => {});
@@ -485,9 +466,9 @@ mupdf.Output = class Output extends mupdf._Wrapper {
 	close() {
 		libmupdf._wasm_close_output(this.pointer);
 	}
-};
+}
 
-mupdf.STextPage = class STextPage extends mupdf._Wrapper {
+class STextPage extends Wrapper {
 	constructor(pointer) {
 		// TODO
 		super(pointer, () => {});
@@ -496,138 +477,56 @@ mupdf.STextPage = class STextPage extends mupdf._Wrapper {
 	printAsJson(output, scale) {
 		libmupdf._wasm_print_stext_page_as_json(output.pointer, this.pointer, scale);
 	}
+}
+
+
+
+// --- EXPORTS ---
+
+const mupdf = {
+	MupdfError,
+	MupdfTryLaterError,
+	_to_rect,
+	_to_irect,
+	_to_matrix,
+	scale_matrix,
+	transform_rect,
+	Document,
+	Page,
+	Links,
+	Link,
+	Location,
+	Outline,
+	PdfPage,
+	Annotations,
+	Annotation,
+	ColorSpace,
+	Pixmap,
+	Buffer,
+	Stream,
+	Output,
+	STextPage,
 };
 
-
-
-
-// --- copied from previous C code
-
-// TODO - keep page loaded
-
-mupdf.drawPageAsPng = function(document, pageNumber, dpi) {
-	const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
-	let page;
-	let pixmap;
-
-	// TODO - draw annotations
-	// TODO - use canvas?
-
-	try {
-		page = document.loadPage(pageNumber);
-		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
-		return pixmap.toPNG();
-	}
-	finally {
-		pixmap?.free();
-		page?.free();
-	}
+const libmupdf_injections = {
+	MupdfError,
+	MupdfTryLaterError,
 };
 
-mupdf.getPageText = function(document, pageNumber, dpi) {
-	let page;
-	let stextPage;
+mupdf.ready = libmupdf(libmupdf_injections).then(m => {
+	libmupdf = m;
 
-	let buffer;
-	let output;
+	console.log("WASM MODULE READY");
 
-	try {
-		page = document.loadPage(pageNumber);
-		stextPage = page.toSTextPage();
+	libmupdf._wasm_init_context();
 
-		buffer = new mupdf.Buffer();
-		output = new mupdf.Output(buffer);
+	mupdf.DeviceGray = new ColorSpace(libmupdf._wasm_device_gray());
+	mupdf.DeviceRGB = new ColorSpace(libmupdf._wasm_device_rgb());
+	mupdf.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr());
+	mupdf.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk());
+});
 
-		stextPage.printAsJson(output, dpi / 72);
-		output.close();
-
-		return JSON.parse(buffer.toJsString());
-	}
-	finally {
-		output?.free();
-		buffer?.free();
-		stextPage?.free();
-		page?.free();
-	}
-};
-
-mupdf.getPageLinks = function(document, pageNumber, dpi) {
-	const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
-	let page;
-	let links_ptr;
-
-	try {
-		page = document.loadPage(pageNumber);
-		links_ptr = page.loadLinks();
-
-		return links_ptr.links.map(link => {
-			const [x0, y0, x1, y1] = mupdf.transform_rect(link.rect(), doc_to_screen);
-
-			let href;
-			if (link.isExternalLink()) {
-				href = link.uri();
-			} else {
-				const pageNumber = link.resolve().pageNumber();
-				href = `#${pageNumber + 1}`;
-			}
-
-			return {
-				x: x0,
-				y: y0,
-				w: x1 - x0,
-				h: y1 - y0,
-				href
-			};
-		});
-	}
-	finally {
-		page?.free();
-		links_ptr?.free();
-	}
-};
-
-mupdf.getPageAnnotations = function(document, pageNumber, dpi) {
-	let page;
-	let pdfPage;
-
-	try {
-		page = document.loadPage(pageNumber);
-		pdfPage = page.toPdfPage();
-
-		if (pdfPage == null) {
-			return [];
-		}
-
-		const annotations = pdfPage.annotations();
-		const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
-
-		return annotations.annotations.map(annotation => {
-			const [x0, y0, x1, y1] = mupdf.transform_rect(annotation.bounds(), doc_to_screen);
-
-			return {
-				x: x0,
-				y: y0,
-				w: x1 - x0,
-				h: y1 - y0,
-				type: annotation.annotType(),
-				ref: annotation.pointer,
-			};
-		});
-	}
-	finally {
-		page?.free();
-	}
-};
-
-
-mupdf.search = function(document, pageNumber, dpi, needle) {
-	let page;
-
-	try {
-		page = document.loadPage(pageNumber);
-		return page.search(needle);
-	}
-	finally {
-		page?.free();
-	}
-};
+// If running in Node.js environment
+if (typeof require === "function") {
+	module.exports = mupdf;
+}

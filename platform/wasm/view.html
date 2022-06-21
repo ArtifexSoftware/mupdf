@@ -333,7 +333,7 @@ function hideSearch() {
 	clearSearch();
 }
 
-function runSearchBG(page, dir) {
+async function runSearchBG(page, dir) {
 	let searchStatus = document.getElementById("searchStatus");
 	if (searchNeedle && searchNeedle.length > 0) {
 		page = page + dir;
@@ -344,11 +344,11 @@ function runSearchBG(page, dir) {
 			console.log("Searching page", page);
 			searchStatus.textContent = "Searching page " + page + ".";
 
-			const hits = mupdfView.search(page, dpi, searchNeedle)
+			const hits = await mupdfView.search(page, dpi, searchNeedle)
 			if (hits.length > 0) {
 				pageDIV[page].scrollIntoView();
 			} else {
-				runSearchBG(page, dir);
+				await runSearchBG(page, dir);
 			}
 		}
 	} else {
@@ -363,7 +363,8 @@ function searchBoxKey(event) {
 }
 function runSearch(direction) {
 	updateSearch();
-	runSearchBG(currentPage, direction);
+	runSearchBG(currentPage, direction)
+		.catch(error => logError("pageLinks", error));
 }
 
 async function pageSearch(pageNumber) {
@@ -528,7 +529,8 @@ function buildOutline(listNode, outline) {
 	for (let item of outline) {
 		let itemNode = document.createElement("li");
 		let aNode = document.createElement("a");
-		aNode.href = "#page" + item.page;
+		// TODO - document the "+ 1" better
+		aNode.href = `#page${item.page + 1}`;
 		aNode.textContent = item.title;
 		itemNode.appendChild(aNode);
 		listNode.appendChild(itemNode);
@@ -623,71 +625,72 @@ async function updateView() {
 			hit.classList.add("searchHitList");
 			div.appendChild(hit);
 
-			try {
-				let pngData = await mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio);
-				img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
-			} catch (error) {
-				showPageError("drawPageAsPNG", div, error);
-			}
+			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio)
+				.then(pngData => {
+					img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
+				})
+				.catch(error => {
+					showPageError("drawPageAsPNG", div, error);
+				});
 
-			try {
-				let links = await mupdfView.getPageLinks(pageNumber, dpi * devicePixelRatio);
-				for (let link of links) {
-					let a = document.createElement("a");
-					a.href = link.href;
-					a.style.left = link.x + 'px';
-					a.style.top = link.y + 'px';
-					a.style.width = link.w + 'px';
-					a.style.height = link.h + 'px';
-					map.appendChild(a);
-				}
-			} catch (error) {
-				logError("pageLinks", error);
-			}
+			mupdfView.getPageLinks(pageNumber, dpi * devicePixelRatio)
+				.then(links => {
+					for (let link of links) {
+						let a = document.createElement("a");
+						a.href = link.href;
+						a.style.left = link.x + 'px';
+						a.style.top = link.y + 'px';
+						a.style.width = link.w + 'px';
+						a.style.height = link.h + 'px';
+						map.appendChild(a);
+					}
+				})
+				.catch(error => {
+					logError("pageLinks", error);
+				});
 
-			try {
-				let nodes = [];
-				let pdf_w = [];
-				let html_w = [];
-				let text_len = [];
-				let jsonData = await mupdfView.getPageText(pageNumber, dpi * devicePixelRatio);
-				for (let block of jsonData.blocks) {
-					if (block.type === 'text') {
-						for (let line of block.lines) {
-							let text = document.createElement("span");
-							text.style.left = line.bbox.x + 'px';
-							text.style.top = (line.y - line.font.size * 0.8) + 'px';
-							text.style.height = line.bbox.h + 'px';
-							text.style.fontSize = line.font.size + 'px';
-							text.style.fontFamily = line.font.family;
-							text.style.fontWeight = line.font.weight;
-							text.style.fontStyle = line.font.style;
-							text.textContent = line.text;
-							txt.appendChild(text);
-							nodes.push(text);
-							pdf_w.push(line.bbox.w);
-							text_len.push(line.text.length-1);
+			mupdfView.getPageText(pageNumber, dpi * devicePixelRatio)
+				.then(jsonData => {
+					let nodes = [];
+					let pdf_w = [];
+					let html_w = [];
+					let text_len = [];
+					for (let block of jsonData.blocks) {
+						if (block.type === 'text') {
+							for (let line of block.lines) {
+								let text = document.createElement("span");
+								text.style.left = line.bbox.x + 'px';
+								text.style.top = (line.y - line.font.size * 0.8) + 'px';
+								text.style.height = line.bbox.h + 'px';
+								text.style.fontSize = line.font.size + 'px';
+								text.style.fontFamily = line.font.family;
+								text.style.fontWeight = line.font.weight;
+								text.style.fontStyle = line.font.style;
+								text.textContent = line.text;
+								txt.appendChild(text);
+								nodes.push(text);
+								pdf_w.push(line.bbox.w);
+								text_len.push(line.text.length-1);
+							}
 						}
 					}
-				}
-				for (let i = 0; i < nodes.length; ++i)
-					if (text_len[i] > 0)
-						html_w[i] = nodes[i].clientWidth;
-				for (let i = 0; i < nodes.length; ++i)
-					if (text_len[i] > 0)
-						nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
-			} catch (error) {
-				logError("getPageText", error);
-			}
+					for (let i = 0; i < nodes.length; ++i)
+						if (text_len[i] > 0)
+							html_w[i] = nodes[i].clientWidth;
+					for (let i = 0; i < nodes.length; ++i)
+						if (text_len[i] > 0)
+							nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
+				})
+				.catch(error => {
+						logError("getPageText", error);
+				});
 		}
 
-		try {
-			if (searchNeedle && searchNeedle.length > 0) {
-				if (searchDirty[i] && isVisible(pageDIV[i], 0))
-					await pageSearch(i);
+		if (searchNeedle && searchNeedle.length > 0) {
+			if (searchDirty[i] && isVisible(pageDIV[i], 0)) {
+				pageSearch(i)
+					.catch(error => logError("pageSearch", error));
 			}
-		} catch (error) {
-			logError("pageSearch", error);
 		}
 	}
 	if (current)
