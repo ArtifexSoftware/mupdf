@@ -30,12 +30,34 @@ mupdf.onInitialized = function () {
 
 // If running in Node.js environment
 if (typeof require === "function") {
-	var libmupdf = require("../libmupdf.js");
+	var libmupdf = require("./libmupdf.js");
 	if (typeof module === "object")
 		module.exports = mupdf;
 }
 
-libmupdf().then(m => {
+class MupdfError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "MupdfError";
+	}
+}
+
+class MupdfTryLaterError extends MupdfError {
+	constructor(message) {
+		super(message);
+		this.name = "MupdfTryLaterError";
+	}
+}
+
+mupdf.MupdfError = MupdfError;
+mupdf.MupdfTryLaterError = MupdfTryLaterError;
+
+const libmupdf_injections = {
+	MupdfError,
+	MupdfTryLaterError,
+};
+
+mupdf.ready = libmupdf(libmupdf_injections).then(m => {
 	libmupdf = m;
 
 	console.log("WASM MODULE READY");
@@ -150,7 +172,7 @@ mupdf.Document = class Document extends mupdf._Wrapper {
 	}
 
 	loadOutline() {
-		return new mupdf.Outline(libmupdf._wasm_load_outline(this.pointer));
+		return new_outline(libmupdf._wasm_load_outline(this.pointer));
 	}
 };
 
@@ -162,6 +184,17 @@ mupdf.Page = class Page extends mupdf._Wrapper {
 	bounds() {
 		return mupdf._to_rect(libmupdf._wasm_bound_page(this.pointer));
 	}
+
+	width() {
+		let bounds = this.bounds();
+		return bounds[2] - bounds[0];
+	}
+
+	height() {
+		let bounds = this.bounds();
+		return bounds[3] - bounds[1];
+	}
+
 	toPixmap(m, colorspace, alpha) {
 		return new mupdf.Pixmap(
 			libmupdf._wasm_new_pixmap_from_page(
@@ -382,16 +415,20 @@ mupdf.Pixmap = class Pixmap extends mupdf._Wrapper {
 };
 
 mupdf.Buffer = class Buffer extends mupdf._Wrapper {
-	// TODO drop function
-	constructor(data) {
-		// TODO - multiple constructors?
-		if (data == null) {
-			super(libmupdf._wasm_new_buffer(0), () => {});
-		} else {
-			let pointer = libmupdf._malloc(data.byteLength);
-			libmupdf.HEAPU8.set(new Uint8Array(data), pointer);
-			super(libmupdf._wasm_new_buffer_from_data(pointer, data.byteLength), () => {});
-		}
+	constructor(pointer) {
+		// TODO drop function
+		super(pointer, () => {});
+	}
+
+	static empty(capacity = 0) {
+		let pointer = libmupdf._wasm_new_buffer(capacity);
+		return new Buffer(pointer);
+	}
+
+	static fromJsBuffer(buffer) {
+		let pointer = libmupdf.malloc(buffer.byteLength);
+		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
+		return new Buffer(libmupdf._wasm_new_buffer_from_data(pointer, buffer.byteLength));
 	}
 
 	resize(capacity) {
@@ -425,9 +462,13 @@ mupdf.Buffer = class Buffer extends mupdf._Wrapper {
 };
 
 mupdf.Output = class Output extends mupdf._Wrapper {
-	constructor(buffer) {
+	constructor(pointer) {
 		// TODO
-		super(libmupdf._wasm_new_output_with_buffer(buffer.pointer), () => {});
+		super(pointer, () => {});
+	}
+
+	static withBuffer(buffer) {
+		return new Output(libmupdf._wasm_new_output_with_buffer(buffer.pointer));
 	}
 
 	close() {
@@ -578,4 +619,4 @@ mupdf.search = function(document, pageNumber, dpi, needle) {
 	finally {
 		page?.free();
 	}
-}
+};
