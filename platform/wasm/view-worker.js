@@ -138,7 +138,7 @@ workerMethods.getPageHeight = function (pageNumber, dpi) {
 };
 
 workerMethods.getPageLinks = function(pageNumber, dpi) {
-	const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 	let page;
 	let links_ptr;
 
@@ -147,7 +147,7 @@ workerMethods.getPageLinks = function(pageNumber, dpi) {
 		links_ptr = page.loadLinks();
 
 		return links_ptr.links.map(link => {
-			const [x0, y0, x1, y1] = mupdf.transform_rect(link.rect(), doc_to_screen);
+			const { x0, y0, x1, y1 } = doc_to_screen.transformRect(link.rect());
 
 			let href;
 			if (link.isExternalLink()) {
@@ -206,10 +206,10 @@ workerMethods.search = function(pageNumber, dpi, needle) {
 
 	try {
 		page = openDocument.loadPage(pageNumber);
-		const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
+		const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 		const hits = page.search(needle);
 		return hits.map(searchHit => {
-			const [x0, y0, x1, y1] = mupdf.transform_rect(searchHit, doc_to_screen);
+			const  { x0, y0, x1, y1 } = doc_to_screen.transformRect(searchHit);
 
 			return {
 				x: x0,
@@ -235,10 +235,10 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 		}
 
 		const annotations = pdfPage.annotations();
-		const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
+		const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 
 		return annotations.annotations.map(annotation => {
-			const [x0, y0, x1, y1] = mupdf.transform_rect(annotation.bounds(), doc_to_screen);
+			const { x0, y0, x1, y1 } = doc_to_screen.transformRect(annotation.bounds());
 
 			return {
 				x: x0,
@@ -256,7 +256,7 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 };
 
 workerMethods.drawPageAsPNG = function(pageNumber, dpi) {
-	const doc_to_screen = mupdf.scale_matrix(dpi / 72, dpi / 72);
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 	let page;
 	let pixmap;
 

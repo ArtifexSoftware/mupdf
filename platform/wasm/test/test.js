@@ -36,6 +36,17 @@ describe("mupdf", function () {
 		await mupdf.ready;
 	});
 
+	describe.skip("geometry", function () {
+		describe("Matrix", function () {
+			it("should transform Rect", function () {
+				const matrix = mupdf.Matrix.scale(3, 2);
+				const rect = new mupdf.Rect(10, 10, 20, 20);
+
+				assert.deepEqual(matrix.transformRect(rect), new mupdf.Rect(30, 20, 31, 40));
+			});
+		});
+	});
+
 	describe("Document", function () {
 		describe("openFromData()", function () {
 			it("should return a valid Document", function () {
@@ -64,7 +75,7 @@ describe("mupdf", function () {
 
 				assert.isNotNull(page);
 				assert.instanceOf(page, mupdf.PdfPage);
-				assert.deepEqual(page.bounds(), [ 0, 0, 612, 792 ]);
+				assert.deepEqual(page.bounds(), new mupdf.Rect(0, 0, 612, 792));
 				assert.equal(page.width(), 612);
 				assert.equal(page.height(), 792);
 			});
@@ -98,7 +109,7 @@ describe("mupdf", function () {
 
 		describe("toPixmap()", function () {
 			it("should return a valid Pixmap", function () {
-				let pixmap = page.toPixmap([1,0,0,1,0,0], mupdf.DeviceRGB, false);
+				let pixmap = page.toPixmap(new mupdf.Matrix(1,0,0,1,0,0), mupdf.DeviceRGB, false);
 
 				assert.isNotNull(pixmap);
 				assert.equal(pixmap.width(), 612);
@@ -135,17 +146,6 @@ describe("mupdf", function () {
 				let hits = page.search("a");
 				assert.isArray(hits);
 				expect(hits).toMatchSnapshot();
-			});
-		});
-
-		describe("PdfPage", function () {
-			describe("annotations()", function () {
-				it("should return list of annotations on page", function () {
-					let annotations = page.annotations();
-
-					assert.isNotNull(annotations);
-					assert.lengthOf(annotations.annotations, 8);
-				});
 			});
 		});
 
@@ -373,10 +373,10 @@ describe("mupdf", function () {
 
 	// TODO - Output
 
-	it("should save a document to PNG", async function () {
+	it.skip("should save a document to PNG", async function () {
 		let doc = mupdf.Document.openFromData(input, "application/pdf");
 		var page = doc.loadPage(1);
-		var pix = page.toPixmap([1,0,0,1,0,0], mupdf.DeviceRGB, false);
+		var pix = page.toPixmap(new mupdf.Matrix(1,0,0,1,0,0), mupdf.DeviceRGB, false);
 		var png = pix.toPNG();
 		await fs.mkdir("samples/", { recursive: true });
 		await fs.writeFile("samples/out.png", png);

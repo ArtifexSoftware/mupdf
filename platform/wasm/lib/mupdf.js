@@ -41,50 +41,78 @@ class MupdfTryLaterError extends MupdfError {
 	}
 }
 
-function _to_rect(ptr) {
-	ptr = ptr >> 2;
-	return [
-		libmupdf.HEAPF32[ptr],
-		libmupdf.HEAPF32[ptr+1],
-		libmupdf.HEAPF32[ptr+2],
-		libmupdf.HEAPF32[ptr+3],
-	];
+class Rect {
+	constructor(x0, y0, x1, y1) {
+		this.x0 = x0;
+		this.y0 = y0;
+		this.x1 = x1;
+		this.y1 = y1;
+	}
+
+	static fromFloatRectPtr(ptr) {
+		ptr = ptr >> 2;
+		return new Rect(
+			libmupdf.HEAPF32[ptr],
+			libmupdf.HEAPF32[ptr+1],
+			libmupdf.HEAPF32[ptr+2],
+			libmupdf.HEAPF32[ptr+3],
+		);
+	}
+
+	static fromIntRectPtr(ptr) {
+		ptr = ptr >> 2;
+		return new Rect(
+			libmupdf.HEAP32[ptr],
+			libmupdf.HEAP32[ptr+1],
+			libmupdf.HEAP32[ptr+2],
+			libmupdf.HEAP32[ptr+3],
+		);
+	}
+
+	width() {
+		return this.x1 - this.x0;
+	}
+
+	height() {
+		return this.y1 - this.y0;
+	}
 }
 
-function _to_irect(ptr) {
-	ptr = ptr >> 2;
-	return [
-		libmupdf.HEAP32[ptr],
-		libmupdf.HEAP32[ptr+1],
-		libmupdf.HEAP32[ptr+2],
-		libmupdf.HEAP32[ptr+3],
-	];
+class Matrix {
+	constructor(a, b, c, d, e, f) {
+		this.a = a;
+		this.b = b;
+		this.c = c;
+		this.d = d;
+		this.e = e;
+		this.f = f;
+	}
+
+	static fromPtr(ptr) {
+		ptr = ptr >> 2;
+		return new Matrix(
+			libmupdf.HEAPF32[ptr],
+			libmupdf.HEAPF32[ptr+1],
+			libmupdf.HEAPF32[ptr+2],
+			libmupdf.HEAPF32[ptr+3],
+			libmupdf.HEAPF32[ptr+4],
+			libmupdf.HEAPF32[ptr+5],
+		);
+	}
+
+	static scale(scale_x, scale_y) {
+		return Matrix.fromPtr(libmupdf._wasm_scale(scale_x, scale_y));
+	}
+
+	transformRect(rect) {
+		return Rect.fromFloatRectPtr(libmupdf._wasm_transform_rect(
+			rect.x0, rect.y0, rect.x1, rect.y1,
+			this.a, this.b, this.c, this.d, this.e, this.f,
+		));
+	}
 }
 
-function _to_matrix(ptr) {
-	ptr = ptr >> 2;
-	return [
-		libmupdf.HEAPF32[ptr],
-		libmupdf.HEAPF32[ptr+1],
-		libmupdf.HEAPF32[ptr+2],
-		libmupdf.HEAPF32[ptr+3],
-		libmupdf.HEAPF32[ptr+4],
-		libmupdf.HEAPF32[ptr+5],
-	];
-}
-
-// TODO - better handle matrices.
-// TODO - write Rect and Matrix classes
-function scale_matrix(scale_x, scale_y) {
-	return mupdf._to_matrix(libmupdf._wasm_scale(scale_x, scale_y));
-}
-
-function transform_rect(rect, matrix) {
-	return mupdf._to_rect(libmupdf._wasm_transform_rect(
-		rect[0], rect[1], rect[2], rect[3],
-		matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5],
-	));
-}
+// TODO - All constructors should take a pointer, plus a private token
 
 const finalizer = new FinalizationRegistry(callback => callback());
 
@@ -164,24 +192,26 @@ class Page extends Wrapper {
 	}
 
 	bounds() {
-		return _to_rect(libmupdf._wasm_bound_page(this.pointer));
+		return Rect.fromFloatRectPtr(libmupdf._wasm_bound_page(this.pointer));
 	}
 
 	width() {
-		let bounds = this.bounds();
-		return bounds[2] - bounds[0];
+		return this.bounds().width();
 	}
 
 	height() {
-		let bounds = this.bounds();
-		return bounds[3] - bounds[1];
+		return this.bounds().height();
 	}
 
-	toPixmap(m, colorspace, alpha = false) {
+	toPixmap(transformMatrix, colorspace, alpha = false) {
+		if (!(transformMatrix instanceof Matrix)) {
+			throw new TypeError("transformMatrix argument isn't an instance of Matrix class");
+		}
+		let m = transformMatrix;
 		return new Pixmap(
 			libmupdf._wasm_new_pixmap_from_page(
 				this.pointer,
-				m[0], m[1], m[2], m[3], m[4], m[5],
+				m.a, m.b, m.c, m.d, m.e, m.f,
 				colorspace,
 				alpha
 			)
@@ -225,7 +255,7 @@ class Page extends Wrapper {
 			let rects = [];
 			for (let i = 0; i < hitCount; ++i) {
 				let hit = hits_ptr + i * libmupdf._wasm_size_of_quad();
-				let rect = _to_rect(libmupdf._wasm_rect_from_quad(hit));
+				let rect = Rect.fromFloatRectPtr(libmupdf._wasm_rect_from_quad(hit));
 				rects.push(rect);
 			}
 
@@ -270,7 +300,7 @@ class Link extends Wrapper {
 	}
 
 	rect() {
-		return _to_rect(libmupdf._wasm_link_rect(this.pointer));
+		return Rect.fromFloatRectPtr(libmupdf._wasm_link_rect(this.pointer));
 	}
 
 	isExternalLink() {
@@ -346,7 +376,7 @@ class Annotation extends Wrapper {
 	}
 
 	bounds() {
-		return _to_rect(libmupdf._wasm_pdf_bound_annot(this.pointer));
+		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_bound_annot(this.pointer));
 	}
 
 	annotType() {
@@ -363,15 +393,15 @@ class ColorSpace extends Wrapper {
 class Pixmap extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_pixmap);
-		this.bbox = _to_irect(libmupdf._wasm_pixmap_bbox(this.pointer));
+		this.bbox = Rect.fromIntRectPtr(libmupdf._wasm_pixmap_bbox(this.pointer));
 	}
 
 	width() {
-		return this.bbox[2] - this.bbox[0];
+		return this.bbox.width();
 	}
 
 	height() {
-		return this.bbox[3] - this.bbox[1];
+		return this.bbox.height();
 	}
 
 	samples() {
@@ -518,11 +548,8 @@ class STextPage extends Wrapper {
 const mupdf = {
 	MupdfError,
 	MupdfTryLaterError,
-	_to_rect,
-	_to_irect,
-	_to_matrix,
-	scale_matrix,
-	transform_rect,
+	Rect,
+	Matrix,
 	Document,
 	Page,
 	Links,
