@@ -37,11 +37,20 @@ describe("mupdf", function () {
 	});
 
 	describe("Document", function () {
-		// TODO - openFromStream
-
 		describe("openFromData()", function () {
 			it("should return a valid Document", function () {
 				let doc = mupdf.Document.openFromData(input, "application/pdf");
+				assert.isNotNull(doc);
+				assert.equal(doc.countPages(), 3);
+				assert.equal(doc.title(), "");
+			});
+		});
+
+		describe("openFromStream()", function () {
+			it("should return a valid Document", function () {
+				let stream = mupdf.Stream.fromJsBuffer(input);
+				let doc = mupdf.Document.openFromStream(stream, "application/pdf");
+
 				assert.isNotNull(doc);
 				assert.equal(doc.countPages(), 3);
 				assert.equal(doc.title(), "");
@@ -254,8 +263,7 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.fromJsString("");
 
 				assert.isNotNull(buffer);
-				// Buffer includes '\0' character
-				assert.equal(buffer.size(), 1);
+				assert.equal(buffer.size(), 0);
 				assert.deepEqual(buffer.toJsString(), "");
 			});
 		});
@@ -320,7 +328,48 @@ describe("mupdf", function () {
 		});
 	});
 
-	// TODO - Stream
+	describe("Stream", function () {
+		describe("fromBuffer()", function () {
+			it("should read bytes from buffer", function () {
+				let jsArray = Uint8Array.from([1, 2, 3, 4, 5]);
+				let buffer = mupdf.Buffer.fromJsBuffer(jsArray);
+
+				let stream = mupdf.Stream.fromBuffer(buffer);
+
+				assert.isTrue(stream.readAll().sameContentAs(buffer));
+			});
+		});
+
+		describe("fromJsBuffer()", function () {
+			it("should read bytes from JS buffer", function () {
+				let jsArray = Uint8Array.from([1, 2, 3, 4, 5]);
+				let stream = mupdf.Stream.fromJsBuffer(jsArray);
+
+				assert.isTrue(stream.readAll().sameContentAs(mupdf.Buffer.fromJsBuffer(jsArray)));
+			});
+
+			it("should be valid for empty array", function () {
+				let jsArray = Uint8Array.from([]);
+				let stream = mupdf.Stream.fromJsBuffer(jsArray);
+
+				assert.isTrue(stream.readAll().sameContentAs(mupdf.Buffer.empty()));
+			});
+		});
+
+		describe("fromJsString()", function () {
+			it("should read bytes from string", function () {
+				let stream = mupdf.Stream.fromJsString("Hello world");
+
+				assert.isTrue(stream.readAll().sameContentAs(mupdf.Buffer.fromJsString("Hello world")));
+			});
+
+			it("should be valid for empty string", function () {
+				let stream = mupdf.Stream.fromJsString("");
+
+				assert.isTrue(stream.readAll().sameContentAs(mupdf.Buffer.fromJsString("")));
+			});
+		});
+	});
 
 	// TODO - Output
 

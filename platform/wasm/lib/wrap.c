@@ -455,6 +455,12 @@ fz_buffer *wasm_new_buffer_from_pixmap_as_png(fz_pixmap *pix)
 }
 
 EMSCRIPTEN_KEEPALIVE
+void wasm_drop_buffer(fz_buffer *buf)
+{
+	fz_drop_buffer(ctx, buf);
+}
+
+EMSCRIPTEN_KEEPALIVE
 unsigned char *wasm_buffer_data(fz_buffer *buf)
 {
 	return buf->data;
@@ -505,9 +511,11 @@ void wasm_clear_buffer(fz_buffer *buf) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void wasm_drop_buffer(fz_buffer *buf)
-{
-	fz_drop_buffer(ctx, buf);
+int wasm_buffers_eq(fz_buffer *buf1, fz_buffer *buf2) {
+	if (buf1->len != buf2->len)
+		return 0;
+	else
+		return memcmp(buf1->data, buf2->data, buf1->len) == 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -526,4 +534,42 @@ void wasm_close_output(fz_output *output) {
 		fz_close_output(ctx, output);
 	fz_catch(ctx)
 		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_stream *wasm_new_stream_from_buffer(fz_buffer *buf)
+{
+	fz_stream *stream;
+	fz_try(ctx)
+		stream = fz_open_buffer(ctx, buf);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return stream;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_stream *wasm_new_stream_from_data(unsigned char *data, size_t size)
+{
+	fz_stream *stream;
+	fz_try(ctx)
+		stream = fz_open_memory(ctx, data, size);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return stream;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_stream(fz_stream *stream)
+{
+	fz_drop_stream(ctx, stream);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_buffer *wasm_read_all(fz_stream *stream, size_t initial) {
+	fz_buffer *buffer;
+	fz_try(ctx)
+		buffer = fz_read_all(ctx, stream, initial);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return buffer;
 }

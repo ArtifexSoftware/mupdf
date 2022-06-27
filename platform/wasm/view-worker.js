@@ -225,12 +225,10 @@ workerMethods.search = function(pageNumber, dpi, needle) {
 };
 
 workerMethods.getPageAnnotations = function(pageNumber, dpi) {
-	let page;
 	let pdfPage;
 
 	try {
-		page = openDocument.loadPage(pageNumber);
-		pdfPage = page.toPdfPage();
+		pdfPage = openDocument.loadPage(pageNumber);
 
 		if (pdfPage == null) {
 			return [];
@@ -253,7 +251,7 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 		});
 	}
 	finally {
-		page?.free();
+		pdfPage?.free();
 	}
 };
 

@@ -214,9 +214,9 @@ class Page extends Wrapper {
 			hits_ptr = libmupdf._malloc(libmupdf._wasm_size_of_quad() * MAX_HIT_COUNT);
 
 			// TODO - write conversion method
-			let needle_size = libmupdf.lengthBytesUTF8(needle) + 1;
-			needle_ptr = libmupdf._malloc(needle_size);
-			libmupdf.stringToUTF8(needle, needle_ptr, needle_size);
+			let needle_size = libmupdf.lengthBytesUTF8(needle);
+			needle_ptr = libmupdf._malloc(needle_size) + 1;
+			libmupdf.stringToUTF8(needle, needle_ptr, needle_size + 1);
 
 			let hitCount = libmupdf._wasm_search_page(
 				this.pointer, needle_ptr, hits_ptr, MAX_HIT_COUNT
@@ -410,9 +410,9 @@ class Buffer extends Wrapper {
 	}
 
 	static fromJsString(string) {
-		let string_size = libmupdf.lengthBytesUTF8(string) + 1;
-		let string_ptr = libmupdf._malloc(string_size);
-		libmupdf.stringToUTF8(string, string_ptr, string_size);
+		let string_size = libmupdf.lengthBytesUTF8(string);
+		let string_ptr = libmupdf._malloc(string_size) + 1;
+		libmupdf.stringToUTF8(string, string_ptr, string_size + 1);
 		return new Buffer(libmupdf._wasm_new_buffer_from_data(string_ptr, string_size));
 	}
 
@@ -451,6 +451,37 @@ class Buffer extends Wrapper {
 		let size = libmupdf._wasm_buffer_size(this.pointer);
 
 		return libmupdf.UTF8ToString(data, size);
+	}
+
+	sameContentAs(otherBuffer) {
+		return libmupdf._wasm_buffers_eq(this.pointer, otherBuffer.pointer) !== 0;
+	}
+}
+
+class Stream extends Wrapper {
+	constructor(pointer) {
+		super(pointer, libmupdf._wasm_drop_stream);
+	}
+
+	static fromBuffer(buffer) {
+		return new Stream(libmupdf._wasm_new_stream_from_buffer(buffer.pointer));
+	}
+
+	static fromJsBuffer(buffer) {
+		let pointer = libmupdf._malloc(buffer.byteLength);
+		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
+		return new Stream(libmupdf._wasm_new_stream_from_data(pointer, buffer.byteLength));
+	}
+
+	static fromJsString(string) {
+		let string_size = libmupdf.lengthBytesUTF8(string);
+		let string_ptr = libmupdf._malloc(string_size) + 1;
+		libmupdf.stringToUTF8(string, string_ptr, string_size + 1);
+		return new Stream(libmupdf._wasm_new_stream_from_data(string_ptr, string_size));
+	}
+
+	readAll(suggestedCapacity = 0) {
+		return new Buffer(libmupdf._wasm_read_all(this.pointer, suggestedCapacity));
 	}
 }
 
