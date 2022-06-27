@@ -111,7 +111,7 @@ workerMethods.countPages = function() {
 workerMethods.getPageSizes = function (dpi) {
 	let list = [];
 	let n = openDocument.countPages();
-	for (let i = 1; i <= n; ++i) {
+	for (let i = 0; i < n; ++i) {
 		let page;
 		try {
 			page = openDocument.loadPage(i);
@@ -126,14 +126,15 @@ workerMethods.getPageSizes = function (dpi) {
 	return list;
 };
 
+// TODO - document the "- 1" better
 // TODO - keep page loaded?
 workerMethods.getPageWidth = function (pageNumber, dpi) {
-	let page = openDocument.loadPage(pageNumber);
+	let page = openDocument.loadPage(pageNumber - 1);
 	return page.width() * dpi / 72;
 };
 
 workerMethods.getPageHeight = function (pageNumber, dpi) {
-	let page = openDocument.loadPage(pageNumber);
+	let page = openDocument.loadPage(pageNumber - 1);
 	return page.height() * dpi / 72;
 };
 
@@ -143,7 +144,7 @@ workerMethods.getPageLinks = function(pageNumber, dpi) {
 	let links_ptr;
 
 	try {
-		page = openDocument.loadPage(pageNumber);
+		page = openDocument.loadPage(pageNumber - 1);
 		links_ptr = page.loadLinks();
 
 		return links_ptr.links.map(link => {
@@ -181,7 +182,7 @@ workerMethods.getPageText = function(pageNumber, dpi) {
 	let output;
 
 	try {
-		page = openDocument.loadPage(pageNumber);
+		page = openDocument.loadPage(pageNumber - 1);
 		stextPage = page.toSTextPage();
 
 		buffer = mupdf.Buffer.empty();
@@ -205,7 +206,7 @@ workerMethods.search = function(pageNumber, dpi, needle) {
 	let page;
 
 	try {
-		page = openDocument.loadPage(pageNumber);
+		page = openDocument.loadPage(pageNumber - 1);
 		const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 		const hits = page.search(needle);
 		return hits.map(searchHit => {
@@ -228,7 +229,7 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 	let pdfPage;
 
 	try {
-		pdfPage = openDocument.loadPage(pageNumber);
+		pdfPage = openDocument.loadPage(pageNumber - 1);
 
 		if (pdfPage == null) {
 			return [];
@@ -264,7 +265,7 @@ workerMethods.drawPageAsPNG = function(pageNumber, dpi) {
 	// TODO - use canvas?
 
 	try {
-		page = openDocument.loadPage(pageNumber);
+		page = openDocument.loadPage(pageNumber - 1);
 		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
 		let png = pixmap.toPNG();
 		return png;

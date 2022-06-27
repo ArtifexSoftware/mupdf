@@ -165,8 +165,7 @@ class Document extends Wrapper {
 	}
 
 	loadPage(pageNumber) {
-		// TODO - document the "- 1" better
-		let page_ptr = libmupdf._wasm_load_page(this.pointer, pageNumber - 1);
+		let page_ptr = libmupdf._wasm_load_page(this.pointer, pageNumber);
 		let pdfPage_ptr = libmupdf._wasm_pdf_page_from_fz_page(page_ptr);
 
 		if (pdfPage_ptr !== 0) {

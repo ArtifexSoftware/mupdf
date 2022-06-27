@@ -71,7 +71,7 @@ describe("mupdf", function () {
 		describe("loadPage()", function () {
 			it("should return a valid Page", function () {
 				let doc = mupdf.Document.openFromData(input, "application/pdf");
-				let page = doc.loadPage(1);
+				let page = doc.loadPage(0);
 
 				assert.isNotNull(page);
 				assert.instanceOf(page, mupdf.PdfPage);
@@ -104,7 +104,7 @@ describe("mupdf", function () {
 		let page;
 		beforeAll(function () {
 			doc = mupdf.Document.openFromData(input, "application/pdf");
-			page = doc.loadPage(1);
+			page = doc.loadPage(0);
 		});
 
 		describe("toPixmap()", function () {
@@ -167,7 +167,7 @@ describe("mupdf", function () {
 		let links;
 		beforeAll(function () {
 			doc = mupdf.Document.openFromData(input, "application/pdf");
-			page = doc.loadPage(1);
+			page = doc.loadPage(0);
 			links = page.loadLinks();
 		});
 
@@ -375,7 +375,7 @@ describe("mupdf", function () {
 
 	it.skip("should save a document to PNG", async function () {
 		let doc = mupdf.Document.openFromData(input, "application/pdf");
-		var page = doc.loadPage(1);
+		var page = doc.loadPage(0);
 		var pix = page.toPixmap(new mupdf.Matrix(1,0,0,1,0,0), mupdf.DeviceRGB, false);
 		var png = pix.toPNG();
 		await fs.mkdir("samples/", { recursive: true });
