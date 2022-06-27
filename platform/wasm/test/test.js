@@ -54,6 +54,7 @@ describe("mupdf", function () {
 				let page = doc.loadPage(1);
 
 				assert.isNotNull(page);
+				assert.instanceOf(page, mupdf.PdfPage);
 				assert.deepEqual(page.bounds(), [ 0, 0, 612, 792 ]);
 				assert.equal(page.width(), 612);
 				assert.equal(page.height(), 792);
@@ -111,8 +112,6 @@ describe("mupdf", function () {
 			});
 		});
 
-		// TODO - toPdfPage
-
 		describe("loadLinks()", function () {
 			it("should return list of Links on page", function () {
 				let links = page.loadLinks();
@@ -127,6 +126,17 @@ describe("mupdf", function () {
 				let hits = page.search("a");
 				assert.isArray(hits);
 				expect(hits).toMatchSnapshot();
+			});
+		});
+
+		describe("PdfPage", function () {
+			describe("annotations()", function () {
+				it("should return list of annotations on page", function () {
+					let annotations = page.annotations();
+
+					assert.isNotNull(annotations);
+					assert.lengthOf(annotations.annotations, 8);
+				});
 			});
 		});
 
@@ -182,6 +192,8 @@ describe("mupdf", function () {
 	});
 
 	// TODO - Outline
+
+	// TODO - Annotations
 
 	// TODO - Pixmap
 

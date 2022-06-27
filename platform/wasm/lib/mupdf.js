@@ -107,6 +107,8 @@ class Wrapper {
 	}
 }
 
+// TODO - Add PdfDocument class
+
 class Document extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_document);
@@ -136,7 +138,14 @@ class Document extends Wrapper {
 
 	loadPage(pageNumber) {
 		// TODO - document the "- 1" better
-		return new Page(libmupdf._wasm_load_page(this.pointer, pageNumber - 1));
+		let page_ptr = libmupdf._wasm_load_page(this.pointer, pageNumber - 1);
+		let pdfPage_ptr = libmupdf._wasm_pdf_page_from_fz_page(page_ptr);
+
+		if (pdfPage_ptr !== 0) {
+			return new PdfPage(page_ptr, pdfPage_ptr);
+		} else {
+			return new Page(page_ptr);
+		}
 	}
 
 	title() {
@@ -185,14 +194,6 @@ class Page extends Wrapper {
 		);
 	}
 
-	toPdfPage() {
-		const pointer = libmupdf._wasm_pdf_page_from_fz_page(this.pointer);
-		if (pointer == 0)
-			return null;
-		else
-			return new PdfPage(pointer);
-	}
-
 	loadLinks() {
 		let links = [];
 
@@ -234,6 +235,23 @@ class Page extends Wrapper {
 			libmupdf._free(needle_ptr);
 			libmupdf._free(hits_ptr);
 		}
+	}
+}
+
+class PdfPage extends Page {
+	constructor(pagePointer, pdfPagePointer) {
+		super(pagePointer);
+		this.pdfPagePointer = pdfPagePointer;
+	}
+
+	annotations() {
+		let annotations = [];
+
+		for (let annot = libmupdf._wasm_pdf_first_annot(this.pdfPagePointer); annot !== 0; annot = libmupdf._wasm_pdf_next_annot(annot)) {
+			annotations.push(new Annotation(annot));
+		}
+
+		return new Annotations(annotations);
 	}
 }
 
@@ -311,23 +329,6 @@ class Outline extends Wrapper {
 
 	next() {
 		return new_outline(libmupdf._wasm_outline_next(this.pointer));
-	}
-}
-
-class PdfPage extends Wrapper {
-	constructor(pointer) {
-		// TODO
-		super(pointer, () => {});
-	}
-
-	annotations() {
-		let annotations = [];
-
-		for (let annot = libmupdf._wasm_pdf_first_annot(this.pointer); annot !== 0; annot = libmupdf._wasm_pdf_next_annot(annot)) {
-			annotations.push(new Annotation(annot));
-		}
-
-		return new Annotations(annotations);
 	}
 }
 
