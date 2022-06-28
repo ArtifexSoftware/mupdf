@@ -180,6 +180,14 @@ fz_stext_page *wasm_new_stext_page_from_page(fz_page *page) {
 	return stext_page;
 }
 
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_stext_page(fz_stext_page *page) {
+	fz_try(ctx)
+		fz_drop_stext_page(ctx, page);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
 EMSCRIPTEN_KEEPALIVE void wasm_print_stext_page_as_json(fz_output *out, fz_stext_page *page, float scale) {
 	fz_try(ctx)
 		fz_print_stext_page_as_json(ctx, out, page, scale);

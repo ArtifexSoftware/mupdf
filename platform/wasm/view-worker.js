@@ -107,6 +107,7 @@ workerMethods.countPages = function() {
 	return openDocument.countPages();
 };
 
+// TODO - use hungarian notation for coord spaces
 // TODO - currently this loads every single page. Not very efficient?
 workerMethods.getPageSizes = function (dpi) {
 	let list = [];

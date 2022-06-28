@@ -385,7 +385,4 @@ describe("mupdf", function () {
 
 // TODO
 // - DeviceGray/RGB/etc
-// - _to_rect _to_irect _to_matrix
-// - scale_matrix
-// - transform_rect
 // - Finalizer?

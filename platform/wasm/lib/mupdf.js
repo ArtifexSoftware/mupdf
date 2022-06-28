@@ -120,6 +120,15 @@ class Wrapper {
 	constructor(pointer, dropFunction) {
 		this.pointer = pointer;
 		this.dropFunction = dropFunction;
+
+		// TODO - Fix error types and messages - log values
+		if (typeof pointer !== "number" || pointer === 0)
+			throw new Error("invalid pointer param");
+		if (dropFunction == null)
+			throw new Error("dropFunction is null");
+		if (typeof dropFunction !== "function")
+			throw new Error("dropFunction is not a function");
+
 		finalizer.register(this, () => dropFunction(pointer), this);
 	}
 	free() {
@@ -142,7 +151,6 @@ class Document extends Wrapper {
 		super(pointer, libmupdf._wasm_drop_document);
 	}
 
-	// TODO - Rename "magic" to "MIME-type" ?
 	static openFromData(data, magic) {
 		let n = data.byteLength;
 		let pointer = libmupdf._malloc(n);
@@ -158,6 +166,16 @@ class Document extends Wrapper {
 			),
 			libmupdf._wasm_drop_document
 		);
+	}
+
+	static openFromStream(stream, magic) {
+		let pointer = libmupdf.ccall(
+			"wasm_open_document_with_stream",
+			"number",
+			["number", "string"],
+			[stream.pointer, magic]
+		);
+		return new Document(pointer);
 	}
 
 	countPages() {
@@ -284,10 +302,9 @@ class PdfPage extends Page {
 	}
 }
 
-class Links extends Wrapper {
+// TODO destructor
+class Links {
 	constructor(links) {
-		// TODO drop
-		super(links[0] || 0, () => {});
 		this.links = links;
 	}
 }
@@ -361,9 +378,9 @@ class Outline extends Wrapper {
 	}
 }
 
-class Annotations extends Wrapper {
+// TODO destructor
+class Annotations {
 	constructor(annotations) {
-		super(annotations[0] || 0, () => {});
 		this.annotations = annotations;
 	}
 }
@@ -423,8 +440,7 @@ class Pixmap extends Wrapper {
 
 class Buffer extends Wrapper {
 	constructor(pointer) {
-		// TODO drop function
-		super(pointer, () => {});
+		super(pointer, libmupdf._wasm_drop_buffer);
 	}
 
 	static empty(capacity = 0) {
@@ -516,8 +532,7 @@ class Stream extends Wrapper {
 
 class Output extends Wrapper {
 	constructor(pointer) {
-		// TODO
-		super(pointer, () => {});
+		super(pointer, libmupdf._wasm_drop_output);
 	}
 
 	static withBuffer(buffer) {
@@ -531,8 +546,7 @@ class Output extends Wrapper {
 
 class STextPage extends Wrapper {
 	constructor(pointer) {
-		// TODO
-		super(pointer, () => {});
+		super(pointer, libmupdf._wasm_drop_stext_page);
 	}
 
 	printAsJson(output, scale) {
