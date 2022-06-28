@@ -559,6 +559,24 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 }
 
 static void
+svg_dev_data_text(fz_context *ctx, fz_buffer *out, int c)
+{
+	if (c > 0)
+	{
+		fz_append_string(ctx, out, " data-text=\"");
+		if (c == '&')
+			fz_append_string(ctx, out, "&amp;");
+		else if (c == '"')
+			fz_append_string(ctx, out, "&quot;");
+		else if (c >= 32 && c < 127)
+			fz_append_byte(ctx, out, c);
+		else
+			fz_append_printf(ctx, out, "&#x%04x;", c);
+		fz_append_byte(ctx, out, '"');
+	}
+}
+
+static void
 svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_span *span, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, font *fnt, fz_color_params color_params)
 {
@@ -586,7 +604,9 @@ svg_dev_text_span_as_paths_fill(fz_context *ctx, fz_device *dev, const fz_text_s
 		trm.f = it->y;
 		mtx = fz_concat(trm, ctm);
 
-		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%d_%d\"", fnt->id, gid);
+		fz_append_string(ctx, out, "<use");
+		svg_dev_data_text(ctx, out, it->ucs);
+		fz_append_printf(ctx, out, " xlink:href=\"#font_%d_%d\"", fnt->id, gid);
 		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
 		fz_append_printf(ctx, out, "/>\n");
@@ -622,7 +642,9 @@ svg_dev_text_span_as_paths_stroke(fz_context *ctx, fz_device *dev, const fz_text
 		trm.f = it->y;
 		mtx = fz_concat(trm, ctm);
 
-		fz_append_printf(ctx, out, "<use xlink:href=\"#font_%d_%d\"", fnt->id, gid);
+		fz_append_string(ctx, out, "<use");
+		svg_dev_data_text(ctx, out, it->ucs);
+		fz_append_printf(ctx, out, " xlink:href=\"#font_%d_%d\"", fnt->id, gid);
 		svg_dev_stroke_state(ctx, sdev, stroke, mtx);
 		svg_dev_ctm(ctx, sdev, mtx);
 		svg_dev_stroke_color(ctx, sdev, colorspace, color, alpha, color_params);
