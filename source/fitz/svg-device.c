@@ -1289,11 +1289,11 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 	if (sdev->save_id)
 		*sdev->save_id = sdev->id;
 
-	fz_write_printf(ctx, out, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-	fz_write_printf(ctx, out, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
-	fz_write_printf(ctx, out, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-		"xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" "
-		"width=\"%gpt\" height=\"%gpt\" viewBox=\"0 0 %g %g\">\n",
+	fz_write_string(ctx, out, "<svg");
+	fz_write_string(ctx, out, " xmlns=\"http://www.w3.org/2000/svg\"");
+	fz_write_string(ctx, out, " xmlns:xlink=\"http://www.w3.org/1999/xlink\"");
+	fz_write_string(ctx, out, " version=\"1.1\"");
+	fz_write_printf(ctx, out, " width=\"%gpt\" height=\"%gpt\" viewBox=\"0 0 %g %g\">\n",
 		sdev->page_width, sdev->page_height, sdev->page_width, sdev->page_height);
 
 	if (sdev->defs->len > 0)
