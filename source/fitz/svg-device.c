@@ -900,20 +900,14 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 		}
 
 		id = sdev->id++;
-		out = start_def(ctx, sdev, 1);
 
 		fz_append_printf(ctx, out, "<image id=\"image_%d\" width=\"%d\" height=\"%d\" xlink:href=\"", id, img->w, img->h);
 		fz_append_image_as_data_uri(ctx, out, img);
 		fz_append_printf(ctx, out, "\"/>\n");
 
-		out = end_def(ctx, sdev, 1);
-
 		sdev->images[sdev->num_images].id = id;
 		sdev->images[sdev->num_images].image = fz_keep_image(ctx, img);
 		sdev->num_images++;
-
-		fz_append_printf(ctx, out, "<use xlink:href=\"#image_%d\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/>\n",
-				id, img->w, img->h);
 	}
 	else
 	{
