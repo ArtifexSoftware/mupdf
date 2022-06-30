@@ -98,7 +98,11 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	fz_context *ctx = get_context(env);
 	size_t size = info->width * info->height * 4;
 
-	if (!ctx) jni_throw_run(env, "no context in DrawDevice call");
+	if (!ctx)
+	{
+		jni_throw_run(env, "no context in DrawDevice call");
+		return 1;
+	}
 
 	assert(info);
 	assert(info->object);
@@ -115,6 +119,7 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	{
 		info->pixmap->samples = NULL;
 		jni_throw_run(env, "bitmap lock failed in DrawDevice call");
+		return 1;
 	}
 
 	/* Now offset pixels to allow for the page offsets */
