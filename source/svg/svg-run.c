@@ -562,7 +562,12 @@ svg_parse_path_data(fz_context *ctx, svg_document *doc, const char *str)
 			while (svg_is_whitespace_or_comma(*str))
 				str ++;
 
-			if (svg_is_digit(*str))
+			/* arcto flag arguments are 1-character 0 or 1 */
+			if ((cmd == 'a' || cmd == 'A') && (nargs == 3 || nargs == 4) && (*str == '0' || *str == '1'))
+			{
+				args[nargs++] = *str++ - '0';
+			}
+			else if (svg_is_digit(*str))
 			{
 				str = svg_lex_number(&number, str);
 				if (nargs == nelem(args))
