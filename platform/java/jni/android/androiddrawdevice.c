@@ -100,7 +100,7 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 
 	if (!ctx)
 	{
-		jni_throw_run(env, "no context in DrawDevice call");
+		jni_throw_run_imp(env, "no context in DrawDevice call");
 		return 1;
 	}
 
@@ -118,7 +118,7 @@ static int androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	if (ret != ANDROID_BITMAP_RESULT_SUCCESS)
 	{
 		info->pixmap->samples = NULL;
-		jni_throw_run(env, "bitmap lock failed in DrawDevice call");
+		jni_throw_run_imp(env, "bitmap lock failed in DrawDevice call");
 		return 1;
 	}
 
