@@ -1,5 +1,49 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`mupdf AnnotationList author author() should return a string 1`] = `"Jeff Moran, Acrobat QE "`;
+
+exports[`mupdf AnnotationList border() should return a number 1`] = `0`;
+
+exports[`mupdf AnnotationList bound() should return a Rect 1`] = `
+Rect {
+  "x0": 239.1909942626953,
+  "x1": 435.1390075683594,
+  "y0": 86.48699951171875,
+  "y1": 140.5419921875,
+}
+`;
+
+exports[`mupdf AnnotationList getTransform() should return a Matrix 1`] = `
+Matrix {
+  "a": -4.5622702060654774e-8,
+  "b": -0,
+  "c": -0,
+  "d": -1.2585658737407357e-8,
+  "e": 337.16497802734375,
+  "f": 678.4854736328125,
+}
+`;
+
+exports[`mupdf AnnotationList opacity() should return a number 1`] = `1`;
+
+exports[`mupdf AnnotationList popup() should return a Rect 1`] = `
+Rect {
+  "x0": 2147483520,
+  "x1": -2147483648,
+  "y0": 2147484416,
+  "y1": -2147482752,
+}
+`;
+
+exports[`mupdf AnnotationList rect() should return a Rect 1`] = `
+Rect {
+  "x0": 239.1909942626953,
+  "x1": 435.1390075683594,
+  "y0": 86.48699951171875,
+  "y1": 140.5419921875,
+}
+`;
+
 exports[`mupdf Link rect() should return Link hitbox 1`] = `
 Rect {
   "x0": 47.297698974609375,

@@ -32,6 +32,7 @@ libmupdf.js libmupdf.wasm: $(MUPDF_CORE) lib/wrap.c
 		-s ABORTING_MALLOC=0 \
 		-s ALLOW_MEMORY_GROWTH=1 \
 		-s WASM=1 \
+		-s WASM_BIGINT=1 \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME='"libmupdf"' \
 		-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap", "UTF8ToString","lengthBytesUTF8","stringToUTF8"]' \

@@ -30,6 +30,7 @@ static fz_context *ctx;
 static fz_rect out_rect;
 static fz_irect out_irect;
 static fz_matrix out_matrix;
+static fz_point out_points[2];
 
 // TODO - instrument fz_throw to include call stack
 void wasm_rethrow(fz_context *ctx)
@@ -292,39 +293,6 @@ fz_outline *wasm_outline_next(fz_outline *node)
 }
 
 EMSCRIPTEN_KEEPALIVE
-pdf_annot *wasm_pdf_first_annot(pdf_page *page)
-{
-	return pdf_first_annot(ctx, page);
-}
-
-EMSCRIPTEN_KEEPALIVE
-pdf_annot *wasm_pdf_next_annot(pdf_annot *annot)
-{
-	return pdf_next_annot(ctx, annot);
-}
-
-EMSCRIPTEN_KEEPALIVE
-fz_rect *wasm_pdf_bound_annot(pdf_annot *annot)
-{
-	fz_try(ctx)
-		out_rect = pdf_bound_annot(ctx, annot);
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return &out_rect;
-}
-
-EMSCRIPTEN_KEEPALIVE
-const char *wasm_pdf_annot_type_string(pdf_annot *annot)
-{
-	const char *type_string = NULL;
-	fz_try(ctx)
-		type_string = pdf_string_from_annot_type(ctx, pdf_annot_type(ctx, annot));
-	fz_catch(ctx)
-		wasm_rethrow(ctx);
-	return type_string;
-}
-
-EMSCRIPTEN_KEEPALIVE
 int wasm_search_page(fz_page *page, const char *needle, fz_quad *hit_bbox, int hit_max)
 {
 	int hitCount;
@@ -580,4 +548,706 @@ fz_buffer *wasm_read_all(fz_stream *stream, size_t initial) {
 	fz_catch(ctx)
 		wasm_rethrow(ctx);
 	return buffer;
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_annot *wasm_pdf_keep_annot(pdf_annot *annot)
+{
+	// never throws
+	return pdf_keep_annot(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_drop_annot(pdf_annot *annot)
+{
+	// never throws
+	pdf_drop_annot(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_active(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_active(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_active(pdf_annot *annot, int active)
+{
+	// never throws
+	pdf_set_annot_active(ctx, annot, active);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_hot(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_hot(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_hot(pdf_annot *annot, int hot)
+{
+	// never throws
+	pdf_set_annot_hot(ctx, annot, hot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_matrix* wasm_pdf_annot_transform(pdf_annot *annot)
+{
+	// never throws
+	out_matrix = pdf_annot_transform(ctx, annot);
+	return &out_matrix;
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_annot *wasm_pdf_first_annot(pdf_page *page)
+{
+	// never throws
+	return pdf_first_annot(ctx, page);
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_annot *wasm_pdf_next_annot(pdf_annot *annot)
+{
+	// never throws
+	return pdf_next_annot(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_obj *wasm_pdf_annot_obj(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_obj(ctx, annot);
+}
+
+// Unused
+// TODO - remove?
+EMSCRIPTEN_KEEPALIVE
+pdf_page *wasm_pdf_annot_page(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_page(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect *wasm_pdf_bound_annot(pdf_annot *annot)
+{
+	fz_try(ctx)
+		out_rect = pdf_bound_annot(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_needs_resynthesis(pdf_annot* annot)
+{
+	// never throws
+	return pdf_annot_needs_resynthesis(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_resynthesised(pdf_annot* annot)
+{
+	// never throws
+	pdf_set_annot_resynthesised(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_dirty_annot(pdf_annot* annot)
+{
+	// never throws
+	pdf_dirty_annot(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_annot *wasm_pdf_create_annot_raw(pdf_page *page, enum pdf_annot_type type)
+{
+	pdf_annot *annot;
+	fz_try(ctx)
+		annot = pdf_create_annot_raw(ctx, page, type);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return annot;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_link *wasm_pdf_create_link(pdf_page *page, float bbox_x0, float bbox_y0, float bbox_x1, float bbox_y1, const char *uri)
+{
+	fz_rect bbox = fz_make_rect(bbox_x0, bbox_y0, bbox_x1, bbox_y1);
+	fz_link *link;
+	fz_try(ctx)
+		link = pdf_create_link(ctx, page, bbox, uri);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return link;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_delete_link(pdf_page *page, fz_link *link)
+{
+	fz_try(ctx)
+		pdf_delete_link(ctx, page, link);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_popup(pdf_annot *annot, float rect_x0, float rect_y0, float rect_x1, float rect_y1)
+{
+	fz_rect rect = fz_make_rect(rect_x0, rect_y0, rect_x1, rect_y1);
+	fz_try(ctx)
+		pdf_set_annot_popup(ctx, annot, rect);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect* wasm_pdf_annot_popup(pdf_annot *annot)
+{
+	fz_try(ctx)
+		out_rect = pdf_annot_popup(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return &out_rect;
+}
+
+// TODO - Expand
+EMSCRIPTEN_KEEPALIVE
+pdf_annot *wasm_pdf_create_annot(pdf_page *page, enum pdf_annot_type type)
+{
+	pdf_annot *annot;
+	fz_try(ctx)
+		annot = pdf_create_annot(ctx, page, type);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return annot;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_delete_annot(pdf_page *page, pdf_annot *annot)
+{
+	fz_try(ctx)
+		pdf_delete_annot(ctx, page, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_type_string(pdf_annot *annot)
+{
+	const char *type_string = NULL;
+	fz_try(ctx)
+		type_string = pdf_string_from_annot_type(ctx, pdf_annot_type(ctx, annot));
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return type_string;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_flags(pdf_annot *annot)
+{
+	int flags;
+	fz_try(ctx)
+		flags = pdf_annot_flags(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return flags;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_flags(pdf_annot *annot, int flags)
+{
+	fz_try(ctx)
+		pdf_set_annot_flags(ctx, annot, flags);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_rect* wasm_pdf_annot_rect(pdf_annot *annot)
+{
+	// never throws
+	out_rect = pdf_annot_rect(ctx, annot);
+	return &out_rect;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_rect(pdf_annot *annot, float rect_x0, float rect_y0, float rect_x1, float rect_y1)
+{
+	fz_rect rect = fz_make_rect(rect_x0, rect_y0, rect_x1, rect_y1);
+	fz_try(ctx)
+		pdf_set_annot_rect(ctx, annot, rect);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// Returned string must be freed
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_contents(pdf_annot *annot)
+{
+	const char* contents_str;
+	fz_try(ctx)
+		contents_str = pdf_annot_contents(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return contents_str;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_contents(pdf_annot *annot, const char *text)
+{
+	fz_try(ctx)
+		pdf_set_annot_contents(ctx, annot, text);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_open(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_open(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_is_open(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_is_open(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_is_open(pdf_annot *annot, int is_open)
+{
+	fz_try(ctx)
+		pdf_set_annot_is_open(ctx, annot, is_open);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_icon_name(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_icon_name(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_icon_name(pdf_annot *annot)
+{
+	const char* name;
+	fz_try(ctx)
+		name = pdf_annot_icon_name(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	// Returns a static string, doesn't need to be freed.
+	return name;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_icon_name(pdf_annot *annot, const char *name)
+{
+	fz_try(ctx)
+		pdf_set_annot_icon_name(ctx, annot, name);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// TODO - line endings styles
+// !!!
+// !!!
+
+EMSCRIPTEN_KEEPALIVE
+float wasm_pdf_annot_border(pdf_annot *annot)
+{
+	float border_width;
+	fz_try(ctx)
+		border_width = pdf_annot_border(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return border_width;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_border(pdf_annot *annot, float w)
+{
+	fz_try(ctx)
+		pdf_set_annot_border(ctx, annot, w);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// TODO - fz_document_language
+
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_pdf_annot_language(pdf_annot *annot)
+{
+	static char returned_string[8];
+
+	fz_try(ctx)
+	{
+		fz_text_language language = pdf_annot_language(ctx, annot);
+		fz_string_from_text_language(returned_string, language);
+	}
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+
+	return returned_string;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_language(pdf_annot *annot, const char* lang)
+{
+	fz_try(ctx)
+	{
+		fz_text_language lang_code = fz_text_language_from_string(lang);
+
+		if (lang_code == FZ_LANG_UNSET)
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot set language: language %s not recognized", lang);
+
+		pdf_set_annot_language(ctx, annot, lang_code);
+	}
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_quadding(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_quadding(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_quadding(pdf_annot *annot, int q)
+{
+	fz_try(ctx)
+		pdf_set_annot_quadding(ctx, annot, q);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+float wasm_pdf_annot_opacity(pdf_annot *annot)
+{
+	float opacity;
+	fz_try(ctx)
+		opacity = pdf_annot_opacity(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return opacity;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_opacity(pdf_annot *annot, float opacity)
+{
+	fz_try(ctx)
+		pdf_set_annot_opacity(ctx, annot, opacity);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// pdf_annot_MK_BG
+// pdf_set_annot_color
+// pdf_annot_interior_color
+// !!!
+// !!!
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_line(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_line(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_point *wasm_pdf_annot_line(pdf_annot *annot)
+{
+	fz_try(ctx)
+		pdf_annot_line(ctx, annot, &out_points[0], &out_points[1]);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return out_points;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_line(pdf_annot *annot, float x0, float y0, float x1, float y1)
+{
+	fz_point a = fz_make_point(x0, y0);
+	fz_point b = fz_make_point(x1, y1);
+	fz_try(ctx)
+		pdf_set_annot_line(ctx, annot, a, b);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_vertices(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_vertices(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_vertex_count(pdf_annot *annot)
+{
+	int count;
+	fz_try(ctx)
+		count = pdf_annot_vertex_count(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return count;
+}
+
+fz_point *wasm_pdf_annot_vertex(pdf_annot *annot, int i)
+{
+	fz_try(ctx)
+		out_points[0] = pdf_annot_vertex(ctx, annot, i);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return &out_points[0];
+}
+
+// TODO
+// void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const fz_point *v)
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_clear_annot_vertices(pdf_annot *annot)
+{
+	fz_try(ctx)
+		pdf_clear_annot_vertices(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_add_annot_vertex(pdf_annot *annot, float x, float y)
+{
+	fz_point p = fz_make_point(x, y);
+	fz_try(ctx)
+		pdf_add_annot_vertex(ctx, annot, p);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_vertex(pdf_annot *annot, int i, float x, float y)
+{
+	fz_point p = fz_make_point(x, y);
+	fz_try(ctx)
+		pdf_set_annot_vertex(ctx, annot, i, p);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_quad_points(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_quad_points(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_quad_point_count(pdf_annot *annot)
+{
+	int count;
+	fz_try(ctx)
+		count = pdf_annot_quad_point_count(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return count;
+}
+
+// TODO
+/*
+fz_quad pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx)
+void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const fz_quad *q)
+*/
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_clear_annot_quad_points(pdf_annot *annot)
+{
+	fz_try(ctx)
+		pdf_clear_annot_quad_points(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// TODO
+/*
+void wasm_pdf_add_annot_quad_point(pdf_annot *annot, fz_quad quad)
+*/
+
+// TODO - ink list
+
+EMSCRIPTEN_KEEPALIVE
+int64_t wasm_pdf_annot_modification_date(pdf_annot *annot)
+{
+	int64_t seconds_since_epoch;
+	fz_try(ctx)
+		seconds_since_epoch = pdf_annot_modification_date(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return seconds_since_epoch;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int64_t wasm_pdf_annot_creation_date(pdf_annot *annot)
+{
+	int64_t seconds_since_epoch;
+	fz_try(ctx)
+		seconds_since_epoch = pdf_annot_creation_date(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return seconds_since_epoch;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_modification_date(pdf_annot *annot, int64_t secs)
+{
+	fz_try(ctx)
+		pdf_set_annot_modification_date(ctx, annot, secs);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_creation_date(pdf_annot *annot, int64_t secs)
+{
+	fz_try(ctx)
+		pdf_set_annot_creation_date(ctx, annot, secs);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_author(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_author(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+// Returned string must be freed
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_author(pdf_annot *annot)
+{
+	const char* author;
+	fz_try(ctx)
+		author = pdf_annot_author(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return author;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_author(pdf_annot *annot, const char *author)
+{
+	fz_try(ctx)
+		pdf_set_annot_author(ctx, annot, author);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+// TODO - default appearance
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_field_flags(pdf_annot *annot)
+{
+	int flags;
+	fz_try(ctx)
+		flags = pdf_annot_field_flags(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return flags;
+}
+
+// Returned string must be freed
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_field_value(pdf_annot *widget)
+{
+	const char* value;
+	fz_try(ctx)
+		value = pdf_annot_field_value(ctx, widget);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return value;
+}
+
+// Returned string must be freed
+EMSCRIPTEN_KEEPALIVE
+const char *wasm_pdf_annot_field_label(pdf_annot *widget)
+{
+	const char* label;
+	fz_try(ctx)
+		label = pdf_annot_field_label(ctx, widget);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return label;
+}
+
+// TODO
+//int pdf_set_annot_field_value(fz_context *ctx, pdf_document *doc, pdf_annot *annot, const char *text, int ignore_trigger_events)
+// void pdf_set_annot_appearance(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_rect bbox, pdf_obj *res, fz_buffer *contents)
+// void pdf_set_annot_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_display_list *list)
+
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_filespec(pdf_annot *annot)
+{
+	int res;
+	fz_try(ctx)
+		res = pdf_annot_has_filespec(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return res;
+}
+
+EMSCRIPTEN_KEEPALIVE
+pdf_obj* wasm_pdf_annot_filespec(pdf_annot *annot)
+{
+	pdf_obj* filespec;
+	fz_try(ctx)
+		filespec = pdf_annot_filespec(ctx, annot);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return filespec;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_set_annot_filespec(pdf_annot *annot, pdf_obj *fs)
+{
+	fz_try(ctx)
+		pdf_set_annot_filespec(ctx, annot, fs);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
 }

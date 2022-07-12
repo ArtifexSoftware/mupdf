@@ -24,6 +24,7 @@
 
 const { assert } = require("chai");
 const fs = require("fs/promises");
+const { Rect } = require("../lib/mupdf.js");
 const mupdf = require("../lib/mupdf.js");
 
 describe("mupdf", function () {
@@ -161,6 +162,26 @@ describe("mupdf", function () {
 		});
 	});
 
+	describe("PdfPage", function () {
+		let doc;
+		let page;
+		beforeAll(function () {
+			doc = mupdf.Document.openFromData(input, "application/pdf");
+			page = doc.loadPage(0);
+		});
+
+		describe("annotations()", function () {
+			it("should return AnnotationList", function () {
+				let annotations = page.annotations();
+
+				assert.instanceOf(annotations, mupdf.AnnotationList);
+				assert.lengthOf(annotations.annotations, 8);
+				assert.instanceOf(annotations.annotations[0], mupdf.Annotation);
+			});
+		});
+
+	});
+
 	describe("Link", function () {
 		let doc;
 		let page;
@@ -202,7 +223,356 @@ describe("mupdf", function () {
 
 	// TODO - Outline
 
-	// TODO - Annotations
+	describe("AnnotationList", function () {
+		let doc;
+		let page;
+		let annotations;
+		beforeAll(function () {
+			doc = mupdf.Document.openFromData(input, "application/pdf");
+			page = doc.loadPage(0);
+			annotations = page.annotations();
+		});
+
+		describe("active()", function () {
+			it("should return false by default", function () {
+				let annotation = annotations.annotations[0];
+
+				assert.isFalse(annotation.active());
+			});
+
+			it("should return the value from setActive()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setActive(true);
+				assert.isTrue(annotation.active());
+			});
+		});
+
+		describe("hot()", function () {
+			it("should return false by default", function () {
+				let annotation = annotations.annotations[0];
+
+				assert.isFalse(annotation.hot());
+			});
+
+			it("should return the value from setHot()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setHot(true);
+				assert.isTrue(annotation.hot());
+			});
+		});
+
+		describe("getTransform()", function () {
+			it("should return a Matrix", function () {
+				let annotation = annotations.annotations[0];
+
+				let transform = annotation.getTransform();
+				assert.instanceOf(transform, mupdf.Matrix);
+				expect(transform).toMatchSnapshot();
+			});
+		});
+
+		// TODO page
+
+		describe("bound()", function () {
+			it("should return a Rect", function () {
+				let annotation = annotations.annotations[0];
+
+				let bound = annotation.bound();
+				assert.instanceOf(bound, mupdf.Rect);
+				expect(bound).toMatchSnapshot();
+			});
+		});
+
+		describe("needsResynthesis()", function () {
+			it("should return false by default", function () {
+				let annotation = annotations.annotations[0];
+
+				assert.isFalse(annotation.needsResynthesis());
+			});
+
+			// TODO
+			it.skip("should return true after setResynthesised()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setResynthesised();
+				assert.isTrue(annotation.needsResynthesis());
+			});
+
+			// TODO
+			it.skip("should return true after dirty()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.dirty();
+				assert.isTrue(annotation.needsResynthesis());
+			});
+		});
+
+		describe("popup()", function () {
+			it("should return a Rect", function () {
+				let annotation = annotations.annotations[0];
+
+				let popup = annotation.popup();
+				assert.instanceOf(popup, mupdf.Rect);
+				expect(popup).toMatchSnapshot();
+			});
+
+			it("should return the value from setPopup()", function () {
+				let annotation = annotations.annotations[0];
+
+				let rect = new Rect(10, 10, 20, 20);
+				annotation.setPopup(rect);
+				assert.deepEqual(annotation.popup(), rect);
+			});
+		});
+
+		// TODO - delete
+
+		describe("typeString()", function () {
+			it("should return the annotation's type", function () {
+				assert.equal(annotations.annotations[0].typeString(), "FreeText");
+				assert.equal(annotations.annotations[1].typeString(), "FileAttachment");
+				assert.equal(annotations.annotations[2].typeString(), "FileAttachment");
+			});
+		});
+
+		describe("flags()", function () {
+			// TODO
+			it("should return a number", function () {
+				let annotation = annotations.annotations[0];
+
+				assert.isNumber(annotation.flags());
+			});
+		});
+
+		describe("rect()", function () {
+			it("should return a Rect", function () {
+				let annotation = annotations.annotations[0];
+
+				let rect = annotation.rect();
+				assert.instanceOf(rect, mupdf.Rect);
+				expect(rect).toMatchSnapshot();
+			});
+
+			it("should return the value from setRect()", function () {
+				let annotation = annotations.annotations[0];
+
+				let rect = new Rect(10, 10, 20, 20);
+				annotation.setRect(rect);
+				assert.deepEqual(annotation.rect(), rect);
+			});
+		});
+
+		describe("contents()", function () {
+			it("should return the annotation's text", function () {
+				let annotation = annotations.annotations[0];
+
+				let contents = annotation.contents();
+				assert.equal(contents, "just some links on the page here");
+			});
+
+			it("should be empty for non-text annotations", function () {
+				let annotation = annotations.annotations[1];
+
+				let contents = annotation.contents();
+				assert.equal(contents, "");
+			});
+
+			it("should return the value from setContents()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setContents("hello world");
+				assert.equal(annotation.contents(), "hello world");
+			});
+		});
+
+		describe("open", function () {
+			describe("hasOpen()", function () {
+				it("should return a bool", function () {
+					// TODO - Should return true for Text annots and annots with popup
+					let annotation = annotations.annotations[0];
+
+					assert.isBoolean(annotation.hasOpen());
+				});
+			});
+
+			// TODO - test isOpen, setIsOpen with annot with popup
+		});
+
+		describe("iconName", function () {
+			describe("hasIconName()", function () {
+				it("should return false for FreeText", function () {
+					let annotation = annotations.annotations[0];
+
+					assert.isFalse(annotation.hasIconName());
+				});
+
+				it("should return true for FileAttachment", function () {
+					let annotation = annotations.annotations[1];
+
+					assert.isTrue(annotation.hasIconName());
+				});
+			});
+
+			describe("iconName()", function () {
+				it("should throw for FreeText", function () {
+					let annotation = annotations.annotations[0];
+
+					assert.throws(() => annotation.iconName());
+				});
+
+				it("should return icon name", function () {
+					let annotation = annotations.annotations[1];
+
+					assert.equal(annotation.iconName(), "Graph");
+				});
+
+				it("should return the value from setIconName()", function () {
+					let annotation = annotations.annotations[1];
+
+					annotation.setIconName("Foobar");
+					assert.equal(annotation.iconName(), "Foobar");
+				});
+			});
+
+			describe("setIconName()", function () {
+				it("should throw for FreeText", function () {
+					let annotation = annotations.annotations[0];
+
+					assert.throws(() => annotation.setIconName("Foobar"));
+				});
+			});
+		});
+
+		// TODO - line endings
+
+		describe("border()", function () {
+			it("should return a number", function () {
+				let annotation = annotations.annotations[0];
+
+				let border = annotation.border();
+				assert.isNumber(border);
+				expect(border).toMatchSnapshot();
+			});
+
+			it("should return the value from setBorder()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setBorder(4.0);
+				assert.equal(annotation.border(), 4.0);
+			});
+		});
+
+		describe("language", function () {
+			describe("language()", function () {
+				it("should return a string", function () {
+					let annotation = annotations.annotations[0];
+
+					let language = annotation.language();
+					assert.isString(language);
+				});
+			});
+
+			describe("setLanguage()", function () {
+				it("should throw for invalid string", function () {
+					let annotation = annotations.annotations[0];
+
+					assert.throws(() => annotation.setLanguage("%%%"));
+				});
+
+				it("should set the annotation's language", function () {
+					let annotation = annotations.annotations[0];
+
+					annotation.setLanguage("zh-Hant");
+					assert.equal(annotation.language(), "zh-Hant");
+					annotation.setLanguage("Foo");
+					assert.equal(annotation.language(), "foo");
+				});
+			});
+		});
+
+		// TODO
+		//wasm_pdf_annot_quadding
+		//wasm_pdf_set_annot_quadding
+
+		describe("opacity()", function () {
+			it("should return a number", function () {
+				let annotation = annotations.annotations[0];
+
+				let opacity = annotation.opacity();
+				assert.isNumber(opacity);
+				expect(opacity).toMatchSnapshot();
+			});
+
+			it("should return the value from setOpacity()", function () {
+				let annotation = annotations.annotations[0];
+
+				annotation.setOpacity(0.75);
+				assert.equal(annotation.opacity(), 0.75);
+			});
+		});
+
+		// TODO
+		// pdf_annot_MK_BG
+		// pdf_set_annot_color
+		// pdf_annot_interior_color
+
+		// TODO - line
+		// TODO - vertices
+		// TODO - quad points
+		// TODO - dates
+
+		describe("author", function () {
+			describe("hasAuthor()", function () {
+				it("should return true for FreeText", function () {
+					let annotation = annotations.annotations[0];
+
+					assert.isTrue(annotation.hasAuthor());
+				});
+
+				// TODO - find case where it returns false
+			});
+
+			describe("author()", function () {
+				it("should return a string", function () {
+					let annotation = annotations.annotations[0];
+
+					let author = annotation.author();
+					assert.isString(author);
+					expect(author).toMatchSnapshot();
+				});
+
+				// TODO - find case where it throws
+			});
+
+			describe("setAuthor()", function () {
+				it("should set the annotation's author", function () {
+					let annotation = annotations.annotations[0];
+
+					annotation.setAuthor("Batman");
+					assert.equal(annotation.author(), "Batman");
+				});
+
+				// TODO - find case where it throws
+			});
+		});
+
+		// TODO - default appearance
+
+		describe("fieldFlags()", function () {
+			// TODO - test actual flags?
+			it("should return a number", function () {
+				let annotation = annotations.annotations[0];
+
+				let fieldFlags = annotation.fieldFlags();
+				assert.strictEqual(fieldFlags, 0);
+			});
+		});
+
+		// TODO - fieldValue
+		// TODO - fieldLabel
+	});
 
 	// TODO - Pixmap
 

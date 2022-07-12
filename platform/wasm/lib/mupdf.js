@@ -41,6 +41,21 @@ class MupdfTryLaterError extends MupdfError {
 	}
 }
 
+class Point {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	static fromPtr(ptr) {
+		ptr = ptr >> 2;
+		return new Point(
+			libmupdf.HEAPF32[ptr],
+			libmupdf.HEAPF32[ptr+1],
+		);
+	}
+}
+
 class Rect {
 	constructor(x0, y0, x1, y1) {
 		this.x0 = x0;
@@ -194,7 +209,7 @@ class Document extends Wrapper {
 	}
 
 	title() {
-		// Note - the underlying function uses static memory; we don't need to free
+		// the string returned by this function is static and doesn't need to be freed
 		return libmupdf.UTF8ToString(libmupdf._wasm_document_title(this.pointer));
 	}
 
@@ -298,8 +313,22 @@ class PdfPage extends Page {
 			annotations.push(new Annotation(annot));
 		}
 
-		return new Annotations(annotations);
+		return new AnnotationList(annotations);
 	}
+
+	// TODO wasm_pdf_create_annot_raw
+
+	createLink(bbox, uri) {
+		// TODO bbox is rect
+
+		let uri_size = libmupdf.lengthBytesUTF8(uri);
+		let uri_ptr = libmupdf._malloc(uri_size) + 1;
+		libmupdf.stringToUTF8(uri, uri_ptr, uri_size + 1);
+
+		return new Link(libmupdf._wasm_pdf_create_link(this.pdfPagePointer, bbox.x0, bbox.y0, bbox.x1, bbox.y1, uri_ptr));
+	}
+
+	// TODO wasm_pdf_create_annot
 }
 
 // TODO destructor
@@ -333,6 +362,10 @@ class Link extends Wrapper {
 			libmupdf._wasm_resolve_link_chapter(doc.pointer, uri_string_ptr),
 			libmupdf._wasm_resolve_link_page(doc.pointer, uri_string_ptr),
 		);
+	}
+
+	delete() {
+		// TODO
 	}
 }
 
@@ -379,25 +412,309 @@ class Outline extends Wrapper {
 }
 
 // TODO destructor
-class Annotations {
+class AnnotationList {
 	constructor(annotations) {
 		this.annotations = annotations;
 	}
 }
 
+// TODO extends PdfObj
 class Annotation extends Wrapper {
 	// TODO - the lifetime handling of this is actually complicated
 	constructor(pointer) {
 		super(pointer, () => {});
 	}
 
-	bounds() {
+	active() {
+		return libmupdf._wasm_pdf_annot_active(this.pointer) !== 0;
+	}
+
+	setActive(active) {
+		libmupdf._wasm_pdf_set_annot_active(this.pointer, active ? 1 : 0);
+	}
+
+	hot() {
+		return libmupdf._wasm_pdf_annot_hot(this.pointer) !== 0;
+	}
+
+	setHot(hot) {
+		libmupdf._wasm_pdf_set_annot_hot(this.pointer, hot ? 1 : 0);
+	}
+
+	getTransform() {
+		return Matrix.fromPtr(libmupdf._wasm_pdf_annot_transform(this.pointer));
+	}
+
+	// TODO getObj? Or use extends?
+
+	page() {
+		// TODO - store page ref in class
+	}
+
+	bound() {
 		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_bound_annot(this.pointer));
 	}
 
-	annotType() {
+	needsResynthesis() {
+		return libmupdf._wasm_pdf_annot_needs_resynthesis(this.pointer) !== 0;
+	}
+
+	setResynthesised() {
+		libmupdf._wasm_pdf_set_annot_resynthesised(this.pointer);
+	}
+
+	dirty() {
+		libmupdf._wasm_pdf_dirty_annot(this.pointer);
+	}
+
+	setPopup(rect) {
+		libmupdf._wasm_pdf_set_annot_popup(this.pointer, rect.x0, rect.y0, rect.x1, rect.y1);
+	}
+
+	popup() {
+		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_annot_popup(this.pointer));
+	}
+
+	delete() {
+		// TODO - use page ref
+	}
+
+	typeString() {
+		// the string returned by this function is static and doesn't need to be freed
 		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_type_string(this.pointer));
 	}
+
+	// TODO
+	flags() {
+		return libmupdf._wasm_pdf_annot_flags(this.pointer);
+	}
+
+	setFlags(flags) {
+		return libmupdf._wasm_pdf_set_annot_flags(this.pointer, flags);
+	}
+
+	rect() {
+		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_annot_rect(this.pointer));
+	}
+
+	setRect(rect) {
+		libmupdf._wasm_pdf_set_annot_rect(this.pointer, rect.x0, rect.y0, rect.x1, rect.y1);
+	}
+
+	contents() {
+		let string_ptr = libmupdf._wasm_pdf_annot_contents(this.pointer);
+		try {
+			return libmupdf.UTF8ToString(string_ptr);
+		}
+		finally {
+			libmupdf._free(string_ptr);
+		}
+	}
+
+	setContents(text) {
+		let text_size = libmupdf.lengthBytesUTF8(text);
+		let text_ptr = libmupdf._malloc(text_size) + 1;
+		libmupdf.stringToUTF8(text, text_ptr, text_size + 1);
+		libmupdf._wasm_pdf_set_annot_contents(this.pointer, text_ptr);
+	}
+
+	hasOpen() {
+		return libmupdf._wasm_pdf_annot_has_open(this.pointer) !== 0;
+	}
+
+	isOpen() {
+		return libmupdf._wasm_pdf_annot_is_open(this.pointer) !== 0;
+	}
+
+	setIsOpen(isOpen) {
+		return libmupdf._wasm_pdf_annot_set_is_open(this.pointer, isOpen ? 1 : 0);
+	}
+
+	hasIconName() {
+		return libmupdf._wasm_pdf_annot_has_icon_name(this.pointer) !== 0;
+	}
+
+	iconName() {
+		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_icon_name(this.pointer));
+	}
+
+	setIconName(name) {
+		let name_size = libmupdf.lengthBytesUTF8(name);
+		let name_ptr = libmupdf._malloc(name_size) + 1;
+		libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
+		libmupdf._wasm_pdf_set_annot_icon_name(this.pointer, name_ptr);
+	}
+
+	// TODO - line endings
+
+	border() {
+		return libmupdf._wasm_pdf_annot_border(this.pointer);
+	}
+
+	setBorder(width) {
+		libmupdf._wasm_pdf_set_annot_border(this.pointer, width);
+	}
+
+	// TODO - fz_document_language
+
+	language() {
+		// the string returned by this function is static and doesn't need to be freed
+		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_language(this.pointer));
+	}
+
+	setLanguage(lang) {
+		let lang_size = libmupdf.lengthBytesUTF8(lang);
+		let lang_ptr = libmupdf._malloc(lang_size) + 1;
+		try {
+			libmupdf.stringToUTF8(lang, lang_ptr, lang_size + 1);
+			libmupdf._wasm_pdf_set_annot_language(this.pointer, lang_ptr);
+		}
+		finally {
+			libmupdf._free(lang_ptr);
+		}
+	}
+
+	// TODO
+	//wasm_pdf_annot_quadding
+	//wasm_pdf_set_annot_quadding
+
+	opacity() {
+		return libmupdf._wasm_pdf_annot_opacity(this.pointer);
+	}
+
+	setOpacity(opacity) {
+		libmupdf._wasm_pdf_set_annot_opacity(this.pointer, opacity);
+	}
+
+	// TODO
+	// pdf_annot_MK_BG
+	// pdf_set_annot_color
+	// pdf_annot_interior_color
+
+	hasLine() {
+		return libmupdf._wasm_pdf_annot_has_line(this.pointer) !== 0;
+	}
+
+	line() {
+		let line_ptr = libmupdf._wasm_pdf_annot_line(this.pointer);
+		return [
+			Point.fromPtr(line_ptr),
+			Point.fromPtr(line_ptr + 8),
+		];
+	}
+
+	setLine(point0, point1) {
+		libmupdf._wasm_pdf_set_annot_line(this.pointer, point0.x, point0.y, point1.x, point1.y);
+	}
+
+	hasVertices() {
+		return libmupdf._wasm_pdf_annot_has_vertices(this.pointer) !== 0;
+	}
+
+	vertexCount() {
+		return libmupdf._wasm_pdf_annot_vertex_count(this.pointer);
+	}
+
+	vertex(i) {
+		return Point.fromPtr(libmupdf._wasm_pdf_annot_vertex(this.pointer, i));
+	}
+
+	// TODO pdf_set_annot_vertices
+
+	clearVertices() {
+		libmupdf._wasm_pdf_clear_annot_vertices(this.pointer);
+	}
+
+	addVertex(point) {
+		libmupdf._wasm_pdf_add_annot_vertex(this.pointer, point.x, point.y);
+	}
+
+	setVertex(i, point) {
+		libmupdf._wasm_pdf_set_annot_vertex(this.pointer, i, point.x, point.y);
+	}
+
+	// TODO - quad points
+
+	// FIXME - Dates can't handle BigInt
+	modificationDate() {
+		// libmupdf uses seconds since epoch, but Date expects milliseconds
+		return new Date(libmupdf._wasm_pdf_annot_modification_date(this.pointer) * 1000n);
+	}
+
+	creationDate() {
+		// libmupdf uses seconds since epoch, but Date expects milliseconds
+		return new Date(libmupdf._wasm_pdf_annot_creation_date(this.pointer) * 1000n);
+	}
+
+	setModificationDate(date) {
+		// Date stores milliseconds since epoch, but libmupdf expects seconds
+		libmupdf._wasm_pdf_set_annot_modification_date(this.pointer, date.getValue() / 1000n);
+	}
+
+	setCreationDate(date) {
+		// Date stores milliseconds since epoch, but libmupdf expects seconds
+		libmupdf._wasm_pdf_set_annot_creation_date(this.pointer, date.getValue() / 1000n);
+	}
+
+	hasAuthor() {
+		return libmupdf._wasm_pdf_annot_has_author(this.pointer) !== 0;
+	}
+
+	author() {
+		let string_ptr = libmupdf._wasm_pdf_annot_author(this.pointer);
+		try {
+			return libmupdf.UTF8ToString(string_ptr);
+		}
+		finally {
+			libmupdf._free(string_ptr);
+		}
+	}
+
+	setAuthor(name) {
+		let name_size = libmupdf.lengthBytesUTF8(name);
+		let name_ptr = libmupdf._malloc(name_size) + 1;
+		try {
+			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
+			libmupdf._wasm_pdf_set_annot_author(this.pointer, name_ptr);
+		}
+		finally {
+			libmupdf._free(name_ptr);
+		}
+	}
+
+	// TODO - default appearance
+
+	fieldFlags() {
+		return libmupdf._wasm_pdf_annot_field_flags(this.pointer);
+	}
+
+	fieldValue() {
+		let string_ptr = libmupdf._wasm_pdf_annot_field_value(this.pointer);
+		try {
+			return libmupdf.UTF8ToString(string_ptr);
+		}
+		finally {
+			libmupdf._free(string_ptr);
+		}
+	}
+
+	fieldLabel() {
+		let string_ptr = libmupdf._wasm_pdf_annot_field_label(this.pointer);
+		try {
+			return libmupdf.UTF8ToString(string_ptr);
+		}
+		finally {
+			libmupdf._free(string_ptr);
+		}
+	}
+
+	// TODO
+	//int pdf_set_annot_field_value(fz_context *ctx, pdf_document *doc, pdf_annot *annot, const char *text, int ignore_trigger_events)
+	// void pdf_set_annot_appearance(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_rect bbox, pdf_obj *res, fz_buffer *contents)
+	// void pdf_set_annot_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, const char *appearance, const char *state, fz_matrix ctm, fz_display_list *list)
+
+	// TODO filespec
+
 }
 
 class ColorSpace extends Wrapper {
@@ -570,7 +887,7 @@ const mupdf = {
 	Location,
 	Outline,
 	PdfPage,
-	Annotations,
+	AnnotationList,
 	Annotation,
 	ColorSpace,
 	Pixmap,
