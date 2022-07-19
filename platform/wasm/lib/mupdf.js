@@ -325,7 +325,12 @@ class PdfPage extends Page {
 		let uri_ptr = libmupdf._malloc(uri_size) + 1;
 		libmupdf.stringToUTF8(uri, uri_ptr, uri_size + 1);
 
-		return new Link(libmupdf._wasm_pdf_create_link(this.pdfPagePointer, bbox.x0, bbox.y0, bbox.x1, bbox.y1, uri_ptr));
+		try {
+			return new Link(libmupdf._wasm_pdf_create_link(this.pdfPagePointer, bbox.x0, bbox.y0, bbox.x1, bbox.y1, uri_ptr));
+		}
+		finally {
+			libmupdf._free(uri_ptr);
+		}
 	}
 
 	// TODO wasm_pdf_create_annot
@@ -353,6 +358,7 @@ class Link extends Wrapper {
 	}
 
 	uri() {
+		// the string returned by this function is borrowed and doesn't need to be freed
 		return libmupdf.UTF8ToString(libmupdf._wasm_link_uri(this.pointer));
 	}
 
@@ -399,6 +405,7 @@ class Outline extends Wrapper {
 	}
 
 	title() {
+		// the string returned by this function is borrowed and doesn't need to be freed
 		return libmupdf.UTF8ToString(libmupdf._wasm_outline_title(this.pointer));
 	}
 
@@ -514,8 +521,13 @@ class Annotation extends Wrapper {
 	setContents(text) {
 		let text_size = libmupdf.lengthBytesUTF8(text);
 		let text_ptr = libmupdf._malloc(text_size) + 1;
-		libmupdf.stringToUTF8(text, text_ptr, text_size + 1);
-		libmupdf._wasm_pdf_set_annot_contents(this.pointer, text_ptr);
+		try {
+			libmupdf.stringToUTF8(text, text_ptr, text_size + 1);
+			libmupdf._wasm_pdf_set_annot_contents(this.pointer, text_ptr);
+		}
+		finally {
+			libmupdf._free(text_ptr);
+		}
 	}
 
 	hasOpen() {
@@ -535,14 +547,20 @@ class Annotation extends Wrapper {
 	}
 
 	iconName() {
+		// the string returned by this function is static and doesn't need to be freed
 		return libmupdf.UTF8ToString(libmupdf._wasm_pdf_annot_icon_name(this.pointer));
 	}
 
 	setIconName(name) {
 		let name_size = libmupdf.lengthBytesUTF8(name);
 		let name_ptr = libmupdf._malloc(name_size) + 1;
-		libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
-		libmupdf._wasm_pdf_set_annot_icon_name(this.pointer, name_ptr);
+		try {
+			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
+			libmupdf._wasm_pdf_set_annot_icon_name(this.pointer, name_ptr);
+		}
+		finally {
+			libmupdf._free(name_ptr);
+		}
 	}
 
 	// TODO - line endings
@@ -768,6 +786,8 @@ class Buffer extends Wrapper {
 	static fromJsBuffer(buffer) {
 		let pointer = libmupdf._malloc(buffer.byteLength);
 		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
+		// Note: fz_new_buffer_drom_data takes ownership of the given pointer,
+		// so we don't need to call free
 		return new Buffer(libmupdf._wasm_new_buffer_from_data(pointer, buffer.byteLength));
 	}
 
@@ -775,6 +795,8 @@ class Buffer extends Wrapper {
 		let string_size = libmupdf.lengthBytesUTF8(string);
 		let string_ptr = libmupdf._malloc(string_size) + 1;
 		libmupdf.stringToUTF8(string, string_ptr, string_size + 1);
+		// Note: fz_new_buffer_drom_data takes ownership of the given pointer,
+		// so we don't need to call free
 		return new Buffer(libmupdf._wasm_new_buffer_from_data(string_ptr, string_size));
 	}
 
@@ -821,25 +843,24 @@ class Buffer extends Wrapper {
 }
 
 class Stream extends Wrapper {
-	constructor(pointer) {
+	constructor(pointer, internalBuffer = null) {
 		super(pointer, libmupdf._wasm_drop_stream);
+		// We keep a reference so the internal buffer isn't dropped before the stream is.
+		this.internalBuffer = internalBuffer;
 	}
 
+	// This takes a reference to the buffer, not a clone.
+	// Modifying the buffer after calling this function will change the returned stream's output.
 	static fromBuffer(buffer) {
-		return new Stream(libmupdf._wasm_new_stream_from_buffer(buffer.pointer));
+		return new Stream(libmupdf._wasm_new_stream_from_buffer(buffer.pointer), buffer);
 	}
 
 	static fromJsBuffer(buffer) {
-		let pointer = libmupdf._malloc(buffer.byteLength);
-		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
-		return new Stream(libmupdf._wasm_new_stream_from_data(pointer, buffer.byteLength));
+		return Stream.fromBuffer(Buffer.fromJsBuffer(buffer));
 	}
 
 	static fromJsString(string) {
-		let string_size = libmupdf.lengthBytesUTF8(string);
-		let string_ptr = libmupdf._malloc(string_size) + 1;
-		libmupdf.stringToUTF8(string, string_ptr, string_size + 1);
-		return new Stream(libmupdf._wasm_new_stream_from_data(string_ptr, string_size));
+		return Stream.fromBuffer(Buffer.fromJsString(string));
 	}
 
 	readAll(suggestedCapacity = 0) {
