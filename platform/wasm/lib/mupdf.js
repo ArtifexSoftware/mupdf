@@ -91,6 +91,10 @@ class Rect {
 	height() {
 		return this.y1 - this.y0;
 	}
+
+	translated(xoff, yoff) {
+		return new Rect(this.x0 + xoff, this.y0 + yoff, this.x1 + xoff, this.y1 + yoff);
+	}
 }
 
 class Matrix {
@@ -341,6 +345,10 @@ class Links {
 	constructor(links) {
 		this.links = links;
 	}
+
+	free() {
+		// TODO
+	}
 }
 
 class Link extends Wrapper {
@@ -422,6 +430,10 @@ class Outline extends Wrapper {
 class AnnotationList {
 	constructor(annotations) {
 		this.annotations = annotations;
+	}
+
+	free() {
+		// TODO
 	}
 }
 

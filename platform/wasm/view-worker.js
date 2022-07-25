@@ -37,6 +37,11 @@ onmessage = async function (event) {
 	await mupdf.ready;
 
 	try {
+		if (func == "drawPageAsPNG") {
+			drawPageAsPNG(id, ...args);
+			return;
+		}
+
 		let result = workerMethods[func](...args);
 		postMessage(["RESULT", id, result]);
 	} catch (error) {
@@ -257,7 +262,14 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 	}
 };
 
-workerMethods.drawPageAsPNG = function(pageNumber, dpi) {
+// TODO - Use mupdf instead
+// TODO - Use Map
+const pageWasRendered = {};
+function drawPageAsPNG(id, pageNumber, dpi) {
+	if (pageWasRendered[pageNumber]) {
+		return;
+	}
+
 	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 	let page;
 	let pixmap;
@@ -269,10 +281,97 @@ workerMethods.drawPageAsPNG = function(pageNumber, dpi) {
 		page = openDocument.loadPage(pageNumber - 1);
 		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
 		let png = pixmap.toPNG();
-		return png;
+
+		postMessage(["RENDER", id, { pageNumber, png }]);
+		pageWasRendered[pageNumber] = true;
 	}
 	finally {
 		pixmap?.free();
 		page?.free();
 	}
 };
+
+let currentSelection = null;
+
+workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
+	let pdfPage = openDocument.loadPage(pageNumber - 1);
+
+	if (pdfPage == null) {
+		return;
+	}
+
+	// transform mouse pos from screen coordinates to document coordinates.
+	x = x / (dpi / 72);
+	y = y / (dpi / 72);
+
+	const annotations = pdfPage.annotations();
+	for (const annotation of annotations.annotations) {
+		const bbox = annotation.bound();
+
+		if (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1) {
+			currentSelection = new SelectedAnnotation(pdfPage, annotation, bbox, x, y);
+			pageWasRendered[pageNumber] = true;
+			break;
+		}
+	}
+};
+
+// TODO - handle crossing pages
+workerMethods.mouseDragOnPage = function(pageNumber, dpi, x, y) {
+	// transform mouse pos from screen coordinates to document coordinates.
+	x = x / (dpi / 72);
+	y = y / (dpi / 72);
+
+	let wasChanged = currentSelection?.mouseDrag(x, y) ?? false;
+	pageWasRendered[pageNumber] = !wasChanged;
+	return wasChanged;
+};
+
+// eslint-disable-next-line no-unused-vars
+workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
+	return false;
+};
+
+workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
+	// transform mouse pos from screen coordinates to document coordinates.
+	x = x / (dpi / 72);
+	y = y / (dpi / 72);
+
+	try {
+		let wasChanged = currentSelection?.mouseUp(x, y) ?? false;
+		pageWasRendered[pageNumber] = !wasChanged;
+		return wasChanged;
+	}
+	finally {
+		currentSelection = null;
+	}
+};
+
+class SelectedAnnotation {
+	constructor(pdfPage, annotation, startRect, mouse_x, mouse_y) {
+		this.pdfPage = pdfPage;
+		this.annotation = annotation;
+		this.startRect = startRect;
+		this.currentRect = startRect;
+		this.initial_x = mouse_x;
+		this.initial_y = mouse_y;
+	}
+
+	mouseDrag(x, y) {
+		this.currentRect = this.startRect.translated(x - this.initial_x, y - this.initial_y);
+		console.log(this.currentRect);
+		console.log(this);
+		this.annotation.rect();
+		// TODO - setRect doesn't quite do what we want
+		this.annotation.setRect(this.currentRect);
+		return true;
+	}
+
+	mouseUp(x, y) {
+		this.currentRect = this.startRect.translated(x - this.initial_x, y - this.initial_y);
+		// TODO - setRect doesn't quite do what we want
+		this.annotation.setRect(this.currentRect);
+		this.pdfPage.free();
+		return true;
+	}
+}

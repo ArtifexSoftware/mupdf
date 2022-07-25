@@ -45,6 +45,8 @@ function onWorkerMessage(event) {
 	let [ type, id, result ] = event.data;
 	if (type === "RESULT")
 		messagePromises[id].resolve(result);
+	else if (type === "RENDER")
+		mupdfView.onRender(result.pageNumber, result.png);
 	else if (type === "READY")
 		messagePromises[id].reject(new Error("Unexpected READY message"));
 	else if (type === "ERROR")
@@ -82,4 +84,12 @@ mupdfView.getPageLinks = wrap("getPageLinks");
 mupdfView.getPageText = wrap("getPageText");
 mupdfView.search = wrap("search");
 mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
+
+mupdfView.mouseDownOnPage = wrap("mouseDownOnPage");
+mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");
+mupdfView.mouseMoveOnPage = wrap("mouseMoveOnPage");
+mupdfView.mouseUpOnPage = wrap("mouseUpOnPage");
+
+mupdfView.onRender = () => {};
+
 mupdfView.terminate = function () { worker.terminate(); };

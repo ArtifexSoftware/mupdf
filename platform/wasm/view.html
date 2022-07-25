@@ -260,6 +260,7 @@ let documentOpen = false;
 let pageCount;
 let currentPage = 0;
 let dirty = [];
+let isPressed = [];
 let pageDIV = [];
 let pageHIT = [];
 let zoom = 100;
@@ -585,6 +586,8 @@ async function setZoom(newZoom) {
 	updateView();
 }
 
+const pageImgs = {};
+const pageDivs = {};
 async function updateView() {
 	let i, n = dirty.length;
 	let current = 0;
@@ -597,7 +600,6 @@ async function updateView() {
 			let pageNumber = i;
 			dirty[pageNumber] = false;
 			let div = pageDIV[pageNumber];
-			emptyNode(div);
 
 			let img = new Image();
 			img.draggable = false;
@@ -611,79 +613,16 @@ async function updateView() {
 				img.style.width = div.style.width;
 				img.style.height = div.style.height;
 			};
-			div.appendChild(img);
 
-			let txt = document.createElement("div");
-			txt.classList.add("text");
-			div.appendChild(txt);
+			img.onmousedown = (event) => mouseDown(pageNumber, img, event);
+			img.onmousemove = (event) => mouseMove(pageNumber, img, event);
+			img.onmouseup = (event) => mouseUp(pageNumber, img, event);
 
-			let map = document.createElement("div");
-			map.classList.add("links");
-			div.appendChild(map);
-
-			let hit = pageHIT[i] = document.createElement("div");
-			hit.classList.add("searchHitList");
-			div.appendChild(hit);
+			pageImgs[pageNumber] = img;
+			pageDivs[pageNumber] = div;
 
 			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio)
-				.then(pngData => {
-					img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
-				})
-				.catch(error => {
-					showPageError("drawPageAsPNG", div, error);
-				});
-
-			mupdfView.getPageLinks(pageNumber, dpi * devicePixelRatio)
-				.then(links => {
-					for (let link of links) {
-						let a = document.createElement("a");
-						a.href = link.href;
-						a.style.left = link.x + 'px';
-						a.style.top = link.y + 'px';
-						a.style.width = link.w + 'px';
-						a.style.height = link.h + 'px';
-						map.appendChild(a);
-					}
-				})
-				.catch(error => {
-					logError("pageLinks", error);
-				});
-
-			mupdfView.getPageText(pageNumber, dpi * devicePixelRatio)
-				.then(jsonData => {
-					let nodes = [];
-					let pdf_w = [];
-					let html_w = [];
-					let text_len = [];
-					for (let block of jsonData.blocks) {
-						if (block.type === 'text') {
-							for (let line of block.lines) {
-								let text = document.createElement("span");
-								text.style.left = line.bbox.x + 'px';
-								text.style.top = (line.y - line.font.size * 0.8) + 'px';
-								text.style.height = line.bbox.h + 'px';
-								text.style.fontSize = line.font.size + 'px';
-								text.style.fontFamily = line.font.family;
-								text.style.fontWeight = line.font.weight;
-								text.style.fontStyle = line.font.style;
-								text.textContent = line.text;
-								txt.appendChild(text);
-								nodes.push(text);
-								pdf_w.push(line.bbox.w);
-								text_len.push(line.text.length-1);
-							}
-						}
-					}
-					for (let i = 0; i < nodes.length; ++i)
-						if (text_len[i] > 0)
-							html_w[i] = nodes[i].clientWidth;
-					for (let i = 0; i < nodes.length; ++i)
-						if (text_len[i] > 0)
-							nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
-				})
-				.catch(error => {
-						logError("getPageText", error);
-				});
+				.catch(error => showPageError("drawPageAsPNG", div, error));
 		}
 
 		if (searchNeedle && searchNeedle.length > 0) {
@@ -696,6 +635,63 @@ async function updateView() {
 	if (current)
 		currentPage = current;
 }
+
+mupdfView.onRender = function (pageNumber, pngData) {
+	const img = pageImgs[pageNumber];
+	const div = pageDivs[pageNumber];
+	img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
+	emptyNode(div);
+	div.appendChild(img);
+}
+
+// TODO - fix dirty/update code
+async function mouseDown(pageNumber, img, event) {
+	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
+	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
+	let changed = await mupdfView.mouseDownOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+	isPressed[pageNumber] = true;
+	if (changed) {
+		dirty[pageNumber] = true;
+		setTimeout(() => updateView(), 0);
+	}
+};
+
+async function mouseMove(pageNumber, img, event) {
+	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
+	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
+	let changed;
+	// TODO - handle multiple buttons
+	// see https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
+	if (isPressed[pageNumber]) {
+		if (event.buttons == 0) {
+			// In case we missed an onmouseup event outside of the frame
+			isPressed[pageNumber] = false;
+			changed = await mupdfView.mouseUpOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+		}
+		else {
+			changed = await mupdfView.mouseDragOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+		}
+		if (changed) {
+			dirty[pageNumber] = true;
+			setTimeout(() => updateView(), 0);
+		}
+	}
+	else {
+		await mupdfView.mouseMoveOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+	}
+};
+
+async function mouseUp(pageNumber, img, event) {
+	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
+	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
+	isPressed[pageNumber] = false;
+	let changed = await mupdfView.mouseUpOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+	if (changed) {
+		dirty[pageNumber] = true;
+		setTimeout(() => updateView(), 0);
+	}
+};
+
 
 /* Wait 50ms until scrolling has stopped before sending off page draw requests */
 let scrollTimer = null;
