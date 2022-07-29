@@ -47,6 +47,7 @@ int pdfpages_main(int argc, char *argv[]);
 int pdfcreate_main(int argc, char *argv[]);
 int pdfmerge_main(int argc, char *argv[]);
 int pdfsign_main(int argc, char *argv[]);
+int pdfrecolor_main(int argc, char *argv[]);
 
 int cmapdump_main(int argc, char *argv[]);
 
@@ -66,12 +67,11 @@ static struct {
 	{ mutrace_main, "trace", "trace device calls" },
 #if FZ_ENABLE_PDF
 	{ pdfextract_main, "extract", "extract font and image resources" },
-#endif
-#if FZ_ENABLE_PDF
 	{ pdfinfo_main, "info", "show information about pdf resources" },
 	{ pdfmerge_main, "merge", "merge pages from multiple pdf sources into a new pdf" },
 	{ pdfpages_main, "pages", "show information about pdf pages" },
 	{ pdfposter_main, "poster", "split large page into many tiles" },
+	{ pdfrecolor_main, "recolor", "Change colorspace of pdf document" },
 	{ pdfsign_main, "sign", "manipulate PDF digital signatures" },
 #endif
 #if FZ_ENABLE_JS
