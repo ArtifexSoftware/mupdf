@@ -1609,8 +1609,6 @@ fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float e
 		story->em = em;
 		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
 		story->dom = parse_to_xml(ctx, buf, 0, 1);
-
-		fz_parse_html_tree(ctx, story->font_set, NULL, ".", buf, user_css, 0, 1, &story->tree, NULL, 0);
 	}
 	fz_catch(ctx)
 	{
