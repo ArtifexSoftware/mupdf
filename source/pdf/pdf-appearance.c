@@ -444,15 +444,16 @@ pdf_write_circle_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 static void
 pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res, int close)
 {
-	pdf_obj *verts;
+	pdf_obj *verts, *le;
 	fz_point p;
 	int i, n;
 	float lw;
-	int sc;
+	int sc, ic;
 
 	pdf_write_opacity(ctx, annot, buf, res);
 	lw = pdf_write_border_appearance(ctx, annot, buf);
 	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
+	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
 	*rect = fz_empty_rect;
 
@@ -480,6 +481,35 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 			fz_append_string(ctx, buf, "h\n");
 		maybe_stroke(ctx, buf, sc);
 		*rect = fz_expand_rect(*rect, lw);
+	}
+
+	le = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
+	if (!close && n >= 2 && pdf_array_len(ctx, le) == 2)
+	{
+		float dx, dy, l;
+		fz_point a, b;
+
+		a.x = pdf_array_get_real(ctx, verts, 0*2+0);
+		a.y = pdf_array_get_real(ctx, verts, 0*2+1);
+		b.x = pdf_array_get_real(ctx, verts, 1*2+0);
+		b.y = pdf_array_get_real(ctx, verts, 1*2+1);
+
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		l = sqrtf(dx*dx + dy*dy);
+
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, lw, sc, ic, pdf_array_get(ctx, le, 0));
+
+		a.x = pdf_array_get_real(ctx, verts, (n-1)*2+0);
+		a.y = pdf_array_get_real(ctx, verts, (n-1)*2+1);
+		b.x = pdf_array_get_real(ctx, verts, (n-2)*2+0);
+		b.y = pdf_array_get_real(ctx, verts, (n-2)*2+1);
+
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		l = sqrtf(dx*dx + dy*dy);
+
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, lw, sc, ic, pdf_array_get(ctx, le, 1));
 	}
 }
 
