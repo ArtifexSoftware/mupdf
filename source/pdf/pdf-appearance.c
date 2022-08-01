@@ -271,7 +271,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 	}
 	else if (cap == PDF_NAME(Circle))
 	{
-		float r = fz_max(2.5f, w * 2.5f);
+		float r = fz_max(3.0f, w * 3.0f);
 		float m = r * CIRCLE_MAGIC;
 		fz_append_printf(ctx, buf, "%g %g m\n", x, y+r);
 		fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", x+m, y+r, x+r, y+m, x+r, y);
