@@ -819,6 +819,7 @@ static int should_edit_icolor(enum pdf_annot_type subtype)
 	default:
 		return 0;
 	case PDF_ANNOT_LINE:
+	case PDF_ANNOT_POLYGON:
 	case PDF_ANNOT_POLY_LINE:
 	case PDF_ANNOT_SQUARE:
 	case PDF_ANNOT_CIRCLE:

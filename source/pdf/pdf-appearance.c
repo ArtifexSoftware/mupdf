@@ -479,7 +479,10 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 		}
 		if (close)
 			fz_append_string(ctx, buf, "h\n");
-		maybe_stroke(ctx, buf, sc);
+		if (close)
+			maybe_stroke_and_fill(ctx, buf, sc, ic);
+		else
+			maybe_stroke(ctx, buf, sc);
 		*rect = fz_expand_rect(*rect, lw);
 	}
 
