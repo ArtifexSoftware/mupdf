@@ -68,31 +68,25 @@ fz_rect *wasm_transform_rect(
 }
 
 EMSCRIPTEN_KEEPALIVE
-fz_document *wasm_open_document_with_buffer(unsigned char *data, int size, char *magic)
+fz_document *wasm_open_document_with_buffer(fz_buffer *buf, char *magic)
 {
 	fz_document *document = NULL;
-	fz_buffer *buf = NULL;
 	fz_stream *stm = NULL;
 
 	fz_var(buf);
 	fz_var(stm);
 
-	/* NOTE: We take ownership of input data! */
-
 	fz_try(ctx)
 	{
-		buf = fz_new_buffer_from_data(ctx, data, size);
 		stm = fz_open_buffer(ctx, buf);
 		document = fz_open_document_with_stream(ctx, magic, stm);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, stm);
-		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, data);
 		wasm_rethrow(ctx);
 	}
 	return document;

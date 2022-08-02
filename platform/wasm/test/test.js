@@ -49,9 +49,10 @@ describe("mupdf", function () {
 	});
 
 	describe("Document", function () {
-		describe("openFromData()", function () {
+		describe("openFromJsBuffer()", function () {
 			it("should return a valid Document", function () {
-				let doc = mupdf.Document.openFromData(input, "application/pdf");
+				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
+
 				assert.isNotNull(doc);
 				assert.equal(doc.countPages(), 3);
 				assert.equal(doc.title(), "");
@@ -71,7 +72,7 @@ describe("mupdf", function () {
 
 		describe("loadPage()", function () {
 			it("should return a valid Page", function () {
-				let doc = mupdf.Document.openFromData(input, "application/pdf");
+				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 				let page = doc.loadPage(0);
 
 				assert.isNotNull(page);
@@ -82,7 +83,7 @@ describe("mupdf", function () {
 			});
 
 			it("should throw on OOB", function () {
-				let doc = mupdf.Document.openFromData(input, "application/pdf");
+				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 				assert.throws(() => doc.loadPage(500), mupdf.MupdfError);
 				assert.throws(() => doc.loadPage(-1), mupdf.MupdfError);
 			});
@@ -90,7 +91,7 @@ describe("mupdf", function () {
 
 		describe("loadOutline()", function () {
 			it("should return a null Outline if document doesn't have one", function () {
-				let doc = mupdf.Document.openFromData(input, "application/pdf");
+				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 				let outline = doc.loadOutline();
 
 				assert.isNull(outline);
@@ -104,8 +105,12 @@ describe("mupdf", function () {
 		let doc;
 		let page;
 		beforeAll(function () {
-			doc = mupdf.Document.openFromData(input, "application/pdf");
+			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
+		});
+		afterAll(function () {
+			doc.free();
+			page.free();
 		});
 
 		describe("toPixmap()", function () {
@@ -166,8 +171,12 @@ describe("mupdf", function () {
 		let doc;
 		let page;
 		beforeAll(function () {
-			doc = mupdf.Document.openFromData(input, "application/pdf");
+			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
+		});
+		afterAll(function () {
+			doc.free();
+			page.free();
 		});
 
 		describe("annotations()", function () {
@@ -187,9 +196,14 @@ describe("mupdf", function () {
 		let page;
 		let links;
 		beforeAll(function () {
-			doc = mupdf.Document.openFromData(input, "application/pdf");
+			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
 			links = page.loadLinks();
+		});
+		afterAll(function () {
+			doc.free();
+			page.free();
+			// TODO - free links
 		});
 
 		describe("rect()", function () {
@@ -228,9 +242,14 @@ describe("mupdf", function () {
 		let page;
 		let annotations;
 		beforeAll(function () {
-			doc = mupdf.Document.openFromData(input, "application/pdf");
+			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
 			annotations = page.annotations();
+		});
+		afterAll(function () {
+			doc.free();
+			page.free();
+			// TODO - free annotations
 		});
 
 		describe("active()", function () {
@@ -744,7 +763,7 @@ describe("mupdf", function () {
 	// TODO - Output
 
 	it.skip("should save a document to PNG", async function () {
-		let doc = mupdf.Document.openFromData(input, "application/pdf");
+		let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 		var page = doc.loadPage(0);
 		var pix = page.toPixmap(new mupdf.Matrix(1,0,0,1,0,0), mupdf.DeviceRGB, false);
 		var png = pix.toPNG();

@@ -166,25 +166,31 @@ class Wrapper {
 // TODO - Add PdfDocument class
 
 class Document extends Wrapper {
-	constructor(pointer) {
+	constructor(pointer, buffer = null) {
 		super(pointer, libmupdf._wasm_drop_document);
+		// If this document is built from a buffer, we keep a
+		// reference so it's not garbage-collected before the document
+		this.buffer = buffer;
 	}
 
-	static openFromData(data, magic) {
-		let n = data.byteLength;
-		let pointer = libmupdf._malloc(n);
-		let src = new Uint8Array(data);
-		libmupdf.HEAPU8.set(src, pointer);
-		// TODO - remove ccall
-		super(
-			libmupdf.ccall(
-				"wasm_open_document_with_buffer",
-				"number",
-				["number", "number", "string"],
-				[pointer, n, magic]
-			),
-			libmupdf._wasm_drop_document
+	free() {
+		super.free();
+		this.buffer?.free();
+	}
+
+	static openFromJsBuffer(buffer, magic) {
+		let fzBuffer = Buffer.fromJsBuffer(buffer);
+		return Document.openFromBuffer(fzBuffer, magic);
+	}
+
+	static openFromBuffer(buffer, magic) {
+		let pointer = libmupdf.ccall(
+			"wasm_open_document_with_buffer",
+			"number",
+			["number", "string"],
+			[buffer.pointer, magic]
 		);
+		return new Document(pointer, buffer);
 	}
 
 	static openFromStream(stream, magic) {

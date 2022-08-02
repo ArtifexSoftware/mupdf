@@ -61,7 +61,7 @@ let openDocument = null;
 
 workerMethods.openDocumentFromBuffer = function (buffer, magic) {
 	// TODO - check types
-	openDocument = mupdf.Document.openFromData(buffer, magic);
+	openDocument = mupdf.Document.openFromJsBuffer(buffer, magic);
 };
 
 workerMethods.openDocumentFromUrl = function (url, contentLength, progressive, prefetch, magic) {
@@ -359,8 +359,6 @@ class SelectedAnnotation {
 
 	mouseDrag(x, y) {
 		this.currentRect = this.startRect.translated(x - this.initial_x, y - this.initial_y);
-		console.log(this.currentRect);
-		console.log(this);
 		this.annotation.rect();
 		// TODO - setRect doesn't quite do what we want
 		this.annotation.setRect(this.currentRect);
