@@ -4,6 +4,7 @@ build ?= release
 
 EMSDK_DIR ?= /opt/emsdk
 BUILD_DIR ?= ../../build/wasm/$(build)
+WASM_NO_SETJMP ?= 0
 
 ifeq ($(build),debug)
   LIB_BUILD_FLAGS := -Os -g
@@ -25,7 +26,7 @@ $(MUPDF_CORE): .FORCE
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	$(MAKE) -j4 -C ../.. \
 		OS=wasm build=$(build) \
-		XCFLAGS='$(LIB_BUILD_FLAGS) -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0' \
+		XCFLAGS='$(LIB_BUILD_FLAGS) -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0 -DWASM_NO_SETJMP=$(WASM_NO_SETJMP)' \
 		libs
 
 libmupdf.js libmupdf.wasm: $(MUPDF_CORE) lib/wrap.c
@@ -33,6 +34,7 @@ libmupdf.js libmupdf.wasm: $(MUPDF_CORE) lib/wrap.c
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	emcc -o $@ $(BUILD_FLAGS) \
 		--no-entry \
+		-D WASM_NO_SETJMP=$(WASM_NO_SETJMP) \
 		-s VERBOSE=0 \
 		-s ABORTING_MALLOC=0 \
 		-s ALLOW_MEMORY_GROWTH=1 \

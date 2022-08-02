@@ -49,8 +49,7 @@ onmessage = async function (event) {
 			//trylaterQueue.push(event);
 			console.error("TRYLATER ERROR");
 		} else {
-			console.error(`${error.name} calling ${func}: ${error.message}\n${error.stack}`);
-			postMessage(["ERROR", id, {name: error.name, message: error.message}]);
+			postMessage(["ERROR", id, {name: error.name, message: error.message, stack: error.stack}]);
 		}
 	}
 };

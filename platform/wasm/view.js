@@ -49,8 +49,12 @@ function onWorkerMessage(event) {
 		mupdfView.onRender(result.pageNumber, result.png);
 	else if (type === "READY")
 		messagePromises[id].reject(new Error("Unexpected READY message"));
-	else if (type === "ERROR")
-		messagePromises[id].reject(new Error(`${result.name}: ${result.message}`));
+	else if (type === "ERROR") {
+		let error = new Error(result.message);
+		error.name = result.name;
+		error.stack = result.stack;
+		messagePromises[id].reject(error);
+	}
 	else
 		messagePromises[id].reject(new Error(`Unexpected result type '${type}'`));
 	delete messagePromises[id];

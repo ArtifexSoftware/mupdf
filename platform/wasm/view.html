@@ -399,9 +399,8 @@ function emptyNode(node) {
 		node.removeChild(node.firstChild);
 }
 
-// TODO - change
 function logError(where, error) {
-	console.error(`mupdf.${where}:`, error);
+	console.error(`mupdf.${where}: ${error.message}:\n${error.stack}`);
 }
 
 function showDocumentError(where, error) {
