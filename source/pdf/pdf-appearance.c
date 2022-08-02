@@ -264,7 +264,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 {
 	if (cap == PDF_NAME(Square))
 	{
-		float r = fz_max(2.5f, w * 2.5f);
+		float r = fz_max(3.0f, w * 3.0f);
 		fz_append_printf(ctx, buf, "%g %g %g %g re\n", x-r, y-r, r*2, r*2);
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
 		include_cap(rect, x, y, r);
@@ -283,7 +283,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 	}
 	else if (cap == PDF_NAME(Diamond))
 	{
-		float r = fz_max(2.5f, w * 2.5f);
+		float r = fz_max(3.0f, w * 3.0f);
 		fz_append_printf(ctx, buf, "%g %g m\n", x, y+r);
 		fz_append_printf(ctx, buf, "%g %g l\n", x+r, y);
 		fz_append_printf(ctx, buf, "%g %g l\n", x, y-r);
