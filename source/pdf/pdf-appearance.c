@@ -267,7 +267,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		float r = fz_max(3.0f, w * 3.0f);
 		fz_append_printf(ctx, buf, "%g %g %g %g re\n", x-r, y-r, r*2, r*2);
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
-		include_cap(rect, x, y, r);
+		include_cap(rect, x, y, r + w/2);
 	}
 	else if (cap == PDF_NAME(Circle))
 	{
@@ -289,7 +289,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g l\n", x, y-r);
 		fz_append_printf(ctx, buf, "%g %g l\n", x-r, y);
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
-		include_cap(rect, x, y, r);
+		include_cap(rect, x, y, r + w/sqrtf(2));
 	}
 	else if (cap == PDF_NAME(OpenArrow))
 	{
@@ -305,21 +305,14 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 	else if (cap == PDF_NAME(Butt))
 	{
 		float r = fz_max(3, w * 3);
-		float buttdx = dx * w / 2;
-		float buttdy = dy * w / 2;
 		fz_point a = { x-dy*r, y+dx*r };
 		fz_point b = { x+dy*r, y-dx*r };
-		fz_point a1 = { a.x + buttdx, a.y + buttdy };
-		fz_point a2 = { a.x - buttdx, a.y - buttdy };
-		fz_point b1 = { b.x + buttdx, b.y + buttdy };
-		fz_point b2 = { b.x - buttdx, b.y - buttdy };
 		fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 		fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
 		maybe_stroke(ctx, buf, sc);
-		*rect = fz_include_point_in_rect(*rect, a1);
-		*rect = fz_include_point_in_rect(*rect, a2);
-		*rect = fz_include_point_in_rect(*rect, b1);
-		*rect = fz_include_point_in_rect(*rect, b2);
+		*rect = fz_include_point_in_rect(*rect, a);
+		*rect = fz_include_point_in_rect(*rect, a);
+		*rect = fz_expand_rect(*rect, w);
 	}
 	else if (cap == PDF_NAME(ROpenArrow))
 	{
@@ -346,6 +339,7 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		maybe_stroke(ctx, buf, sc);
 		*rect = fz_include_point_in_rect(*rect, a);
 		*rect = fz_include_point_in_rect(*rect, b);
+		*rect = fz_expand_rect(*rect, w);
 	}
 }
 
