@@ -532,6 +532,43 @@ static void open_attachment_dialog(void)
 	}
 }
 
+static char stamp_image_filename[PATH_MAX];
+
+static void open_stamp_image_dialog(void)
+{
+	const char *name;
+	if (ui_open_file(stamp_image_filename, "Select file for customized stamp:"))
+	{
+		ui.dialog = NULL;
+		if (stamp_image_filename[0] != 0)
+		{
+			fz_image *img = NULL;
+			fz_var(img);
+			fz_try(ctx)
+			{
+				img = fz_new_image_from_file(ctx, stamp_image_filename);
+				pdf_set_annot_stamp_image(ctx, ui.selected_annot, img);
+				name = strrchr(stamp_image_filename, '/');
+				if (!name)
+					name = strrchr(stamp_image_filename, '\\');
+				if (!name)
+					name = stamp_image_filename;
+				else
+					name = name + 1;
+				pdf_set_annot_icon_name(ctx, ui.selected_annot, name);
+			}
+			fz_always(ctx)
+			{
+				fz_drop_image(ctx, img);
+			}
+			fz_catch(ctx)
+			{
+				ui_show_warning_dialog("%s", fz_caught_message(ctx));
+			}
+		}
+	}
+}
+
 static int rects_differ(fz_rect a, fz_rect b, float threshold)
 {
 	if (fz_abs(a.x0 - b.x0) > threshold) return 1;
@@ -1214,6 +1251,17 @@ void do_annotate_panel(void)
 			{
 				if (ui_button("Edit"))
 					is_draw_mode = 1;
+			}
+		}
+
+		if (pdf_annot_type(ctx, ui.selected_annot) == PDF_ANNOT_STAMP)
+		{
+			char attname[PATH_MAX];
+			if (ui_button("Image..."))
+			{
+				fz_dirname(attname, filename, sizeof attname);
+				ui_init_open_file(attname, NULL);
+				ui.dialog = open_stamp_image_dialog;
 			}
 		}
 
