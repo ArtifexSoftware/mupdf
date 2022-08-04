@@ -24,7 +24,7 @@
 
 var mupdfView = {};
 
-const worker = new Worker("view-worker.js");
+const worker = new Worker("mupdf-view-worker.js");
 // TODO - use Map
 const messagePromises = {};
 let lastPromiseId = 0;
