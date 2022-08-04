@@ -109,8 +109,8 @@ describe("mupdf", function () {
 			page = doc.loadPage(0);
 		});
 		afterAll(function () {
-			doc.free();
-			page.free();
+			doc?.free();
+			page?.free();
 		});
 
 		describe("toPixmap()", function () {
@@ -175,8 +175,8 @@ describe("mupdf", function () {
 			page = doc.loadPage(0);
 		});
 		afterAll(function () {
-			doc.free();
-			page.free();
+			doc?.free();
+			page?.free();
 		});
 
 		describe("annotations()", function () {
@@ -201,8 +201,8 @@ describe("mupdf", function () {
 			links = page.loadLinks();
 		});
 		afterAll(function () {
-			doc.free();
-			page.free();
+			doc?.free();
+			page?.free();
 			// TODO - free links
 		});
 
@@ -247,8 +247,8 @@ describe("mupdf", function () {
 			annotations = page.annotations();
 		});
 		afterAll(function () {
-			doc.free();
-			page.free();
+			doc?.free();
+			page?.free();
 			// TODO - free annotations
 		});
 
@@ -636,6 +636,14 @@ describe("mupdf", function () {
 				assert.isNotNull(buffer);
 				assert.equal(buffer.size(), 0);
 				assert.deepEqual(buffer.toUint8Array(), jsArray);
+			});
+
+			it("should throw given invalid value", function () {
+				assert.throws(() => mupdf.Buffer.fromJsBuffer(42));
+				assert.throws(() => mupdf.Buffer.fromJsBuffer([]));
+				assert.throws(() => mupdf.Buffer.fromJsBuffer("hello"));
+				assert.throws(() => mupdf.Buffer.fromJsBuffer({ a: 42 }));
+				assert.throws(() => mupdf.Buffer.fromJsBuffer(null));
 			});
 		});
 

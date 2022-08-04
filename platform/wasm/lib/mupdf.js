@@ -27,6 +27,15 @@ if (typeof require === "function") {
 	var libmupdf = require("../libmupdf.js");
 }
 
+function assert(pred, message) {
+	if (!pred) {
+		if (message == null)
+			throw new Error("assertion failed");
+		else
+			throw new Error(message);
+	}
+}
+
 class MupdfError extends Error {
 	constructor(message) {
 		super(message);
@@ -124,6 +133,7 @@ class Matrix {
 	}
 
 	transformRect(rect) {
+		assert(rect instanceof Rect, "invalid rect argument");
 		return Rect.fromFloatRectPtr(libmupdf._wasm_transform_rect(
 			rect.x0, rect.y0, rect.x1, rect.y1,
 			this.a, this.b, this.c, this.d, this.e, this.f,
@@ -184,6 +194,7 @@ class Document extends Wrapper {
 	}
 
 	static openFromBuffer(buffer, magic) {
+		assert(buffer instanceof Buffer, "invalid buffer argument");
 		let pointer = libmupdf.ccall(
 			"wasm_open_document_with_buffer",
 			"number",
@@ -194,6 +205,7 @@ class Document extends Wrapper {
 	}
 
 	static openFromStream(stream, magic) {
+		assert(stream instanceof Stream, "invalid stream argument");
 		let pointer = libmupdf.ccall(
 			"wasm_open_document_with_stream",
 			"number",
@@ -246,9 +258,8 @@ class Page extends Wrapper {
 	}
 
 	toPixmap(transformMatrix, colorspace, alpha = false) {
-		if (!(transformMatrix instanceof Matrix)) {
-			throw new TypeError("transformMatrix argument isn't an instance of Matrix class");
-		}
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		assert(colorspace instanceof ColorSpace, "invalid colorspace argument");
 		let m = transformMatrix;
 		return new Pixmap(
 			libmupdf._wasm_new_pixmap_from_page(
@@ -329,6 +340,7 @@ class PdfPage extends Page {
 	// TODO wasm_pdf_create_annot_raw
 
 	createLink(bbox, uri) {
+		assert(bbox instanceof Rect, "invalid bbox argument");
 		// TODO bbox is rect
 
 		let uri_size = libmupdf.lengthBytesUTF8(uri);
@@ -377,6 +389,7 @@ class Link extends Wrapper {
 	}
 
 	resolve(doc) {
+		assert(doc instanceof Document, "invalid doc argument");
 		const uri_string_ptr = libmupdf._wasm_link_uri(this.pointer);
 		return new Location(
 			libmupdf._wasm_resolve_link_chapter(doc.pointer, uri_string_ptr),
@@ -396,6 +409,7 @@ class Location {
 	}
 
 	pageNumber(doc) {
+		assert(doc instanceof Document, "invalid doc argument");
 		return libmupdf._wasm_page_number_from_location(doc.pointer, this.chapter, this.page);
 	}
 }
@@ -415,6 +429,7 @@ class Outline extends Wrapper {
 	}
 
 	pageNumber(doc) {
+		assert(doc instanceof Document, "invalid doc argument");
 		return libmupdf._wasm_outline_page(doc.pointer, this.pointer);
 	}
 
@@ -493,6 +508,7 @@ class Annotation extends Wrapper {
 	}
 
 	setPopup(rect) {
+		assert(rect instanceof Rect, "invalid rect argument");
 		libmupdf._wasm_pdf_set_annot_popup(this.pointer, rect.x0, rect.y0, rect.x1, rect.y1);
 	}
 
@@ -523,6 +539,7 @@ class Annotation extends Wrapper {
 	}
 
 	setRect(rect) {
+		assert(rect instanceof Rect, "invalid rect argument");
 		libmupdf._wasm_pdf_set_annot_rect(this.pointer, rect.x0, rect.y0, rect.x1, rect.y1);
 	}
 
@@ -640,6 +657,8 @@ class Annotation extends Wrapper {
 	}
 
 	setLine(point0, point1) {
+		assert(point0 instanceof Point, "invalid point0 argument");
+		assert(point1 instanceof Point, "invalid point1 argument");
 		libmupdf._wasm_pdf_set_annot_line(this.pointer, point0.x, point0.y, point1.x, point1.y);
 	}
 
@@ -662,10 +681,12 @@ class Annotation extends Wrapper {
 	}
 
 	addVertex(point) {
+		assert(point instanceof Point, "invalid point argument");
 		libmupdf._wasm_pdf_add_annot_vertex(this.pointer, point.x, point.y);
 	}
 
 	setVertex(i, point) {
+		assert(point instanceof Point, "invalid point argument");
 		libmupdf._wasm_pdf_set_annot_vertex(this.pointer, i, point.x, point.y);
 	}
 
@@ -802,6 +823,7 @@ class Buffer extends Wrapper {
 	}
 
 	static fromJsBuffer(buffer) {
+		assert(ArrayBuffer.isView(buffer) || buffer instanceof ArrayBuffer, "invalid buffer argument");
 		let pointer = libmupdf._malloc(buffer.byteLength);
 		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
 		// Note: fz_new_buffer_drom_data takes ownership of the given pointer,
@@ -870,6 +892,7 @@ class Stream extends Wrapper {
 	// This takes a reference to the buffer, not a clone.
 	// Modifying the buffer after calling this function will change the returned stream's output.
 	static fromBuffer(buffer) {
+		assert(buffer instanceof Buffer, "invalid buffer argument");
 		return new Stream(libmupdf._wasm_new_stream_from_buffer(buffer.pointer), buffer);
 	}
 
@@ -892,6 +915,7 @@ class Output extends Wrapper {
 	}
 
 	static withBuffer(buffer) {
+		assert(buffer instanceof Buffer, "invalid buffer argument");
 		return new Output(libmupdf._wasm_new_output_with_buffer(buffer.pointer));
 	}
 
@@ -906,6 +930,7 @@ class STextPage extends Wrapper {
 	}
 
 	printAsJson(output, scale) {
+		assert(output instanceof Output, "invalid output argument");
 		libmupdf._wasm_print_stext_page_as_json(output.pointer, this.pointer, scale);
 	}
 }
