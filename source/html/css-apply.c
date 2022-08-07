@@ -714,7 +714,7 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 
 	fz_try(ctx)
 	{
-		if (fz_has_archive_entry(ctx, zip, path))
+		if (zip && fz_has_archive_entry(ctx, zip, path))
 			buf = fz_read_archive_entry(ctx, zip, path);
 		else
 			buf = fz_read_file(ctx, src);
