@@ -71,8 +71,8 @@ fz_rect *wasm_transform_rect(
 EMSCRIPTEN_KEEPALIVE
 fz_document *wasm_open_document_with_buffer(fz_buffer *buffer, char *magic)
 {
-	fz_document *document = NULL;
 	fz_stream *stream = NULL;
+	fz_document *document;
 
 	fz_var(buffer);
 	fz_var(stream);
@@ -96,7 +96,7 @@ fz_document *wasm_open_document_with_buffer(fz_buffer *buffer, char *magic)
 EMSCRIPTEN_KEEPALIVE
 fz_document *wasm_open_document_with_stream(fz_stream* stream, char *magic)
 {
-	fz_document *document = NULL;
+	fz_document *document;
 
 	fz_try(ctx)
 		document = fz_open_document_with_stream(ctx, magic, stream);
@@ -115,7 +115,7 @@ void wasm_drop_document(fz_document *doc)
 EMSCRIPTEN_KEEPALIVE
 char *wasm_document_title(fz_document *doc)
 {
-	static char buf[100], *result = NULL;
+	static char buf[100], *result;
 	fz_try(ctx)
 	{
 		if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
@@ -151,7 +151,7 @@ fz_page *wasm_load_page(fz_document *doc, int number)
 EMSCRIPTEN_KEEPALIVE
 fz_outline *wasm_load_outline(fz_document *doc)
 {
-	fz_outline *outline = NULL;
+	fz_outline *outline;
 	fz_try(ctx)
 		outline = fz_load_outline(ctx, doc);
 	fz_catch(ctx)
@@ -207,7 +207,7 @@ EMSCRIPTEN_KEEPALIVE void wasm_print_stext_page_as_json(fz_output *out, fz_stext
 EMSCRIPTEN_KEEPALIVE
 fz_link *wasm_load_links(fz_page *page)
 {
-	fz_link *links = NULL;
+	fz_link *links;
 	fz_try(ctx)
 		links = fz_load_links(ctx, page);
 	fz_catch(ctx)
@@ -608,8 +608,10 @@ fz_stream *wasm_open_stream_from_url(char *url, int content_length, int block_si
 {
 	fz_stream *stream = NULL;
 	struct fetch_state *state = NULL;
+
 	fz_var(stream);
 	fz_var(state);
+
 	fz_try (ctx)
 	{
 		int block_shift = (int)log2(block_size);
@@ -640,6 +642,7 @@ fz_stream *wasm_open_stream_from_url(char *url, int content_length, int block_si
 			fz_free(ctx, state->map);
 			fz_free(ctx, state);
 		}
+		fz_drop_stream(ctx, stream);
 		wasm_rethrow(ctx);
 	}
 	return stream;
@@ -881,7 +884,7 @@ void wasm_pdf_delete_annot(pdf_page *page, pdf_annot *annot)
 EMSCRIPTEN_KEEPALIVE
 const char *wasm_pdf_annot_type_string(pdf_annot *annot)
 {
-	const char *type_string = NULL;
+	const char *type_string;
 	fz_try(ctx)
 		type_string = pdf_string_from_annot_type(ctx, pdf_annot_type(ctx, annot));
 	fz_catch(ctx)
