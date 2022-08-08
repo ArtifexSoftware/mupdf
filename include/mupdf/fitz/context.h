@@ -48,31 +48,14 @@ typedef struct
 	void (*free)(void *, void *);
 } fz_alloc_context;
 
-#if WASM_NO_SETJMP == 0
-
-	/**
-		Exception macro definitions. Just treat these as a black box -
-		pay no attention to the man behind the curtain.
-	*/
-	#define fz_var(var) fz_var_imp((void *)&(var))
-	#define fz_try(ctx) if (!fz_setjmp(*fz_push_try(ctx))) if (fz_do_try(ctx)) do
-	#define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
-	#define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
-
-#else
-
-	/**
-		Exception macro definitions for WASM_NO_SETJMP. In this mode, we
-		throw JS exceptions directly, and we skip fz_catch and fz_always.
-		Useful for producing cleaner stack traces when debugging.
-		Should *never* be used in production.
-	*/
-	#define fz_var(var) (void)(var)
-	#define fz_try(ctx) do
-	#define fz_always(ctx) while (0); if (0) do
-	#define fz_catch(ctx) while (0); if (0)
-
-#endif
+/**
+	Exception macro definitions. Just treat these as a black box -
+	pay no attention to the man behind the curtain.
+*/
+#define fz_var(var) fz_var_imp((void *)&(var))
+#define fz_try(ctx) if (!fz_setjmp(*fz_push_try(ctx))) if (fz_do_try(ctx)) do
+#define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
+#define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
 
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) FZ_PRINTFLIKE(3,4);
@@ -820,5 +803,25 @@ fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs)
 	}
 	return 0;
 }
+
+
+#if WASM_SKIP_TRY_CATCH
+
+/**
+	Exception macro definitions for WASM_SKIP_TRY_CATCH. In this mode, we
+	throw JS exceptions directly, and we skip fz_catch and fz_always.
+	Useful for producing cleaner stack traces when debugging.
+	Should *never* be used in production.
+*/
+#undef fz_var
+#define fz_var(var) (void)(var)
+#undef fz_try
+#define fz_try(ctx) do
+#undef fz_always
+#define fz_always(ctx) while (0); if (0) do
+#undef fz_catch
+#define fz_catch(ctx) while (0); if (0)
+
+#endif
 
 #endif

@@ -35,7 +35,7 @@
 #endif
 #endif
 
-#if WASM_NO_SETJMP != 0
+#if WASM_SKIP_TRY_CATCH
 #include "emscripten.h"
 #endif
 
@@ -178,7 +178,7 @@ fz_error_cb *fz_error_callback(fz_context *ctx, void **user)
 
 FZ_NORETURN static void throw(fz_context *ctx, int code)
 {
-	#if WASM_NO_SETJMP == 0
+	#if !WASM_SKIP_TRY_CATCH
 
 		if (ctx->error.top > ctx->error.stack_base)
 		{
