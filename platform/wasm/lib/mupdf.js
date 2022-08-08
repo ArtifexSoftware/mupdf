@@ -954,7 +954,7 @@ class Output extends Wrapper {
 
 class STextPage extends Wrapper {
 	constructor(pointer) {
-		super(pointer, libmupdf._wasm_drop_stext_page);
+		super(pointer, libmupdf._wasm_drop_page);
 	}
 
 	printAsJson(output, scale) {

@@ -520,6 +520,12 @@ void wasm_close_output(fz_output *output) {
 		wasm_rethrow(ctx);
 }
 
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_output(fz_output *output)
+{
+	fz_drop_output(ctx, output);
+}
+
 /* PROGRESSIVE FETCH STREAM */
 
 struct fetch_state
@@ -637,12 +643,6 @@ fz_stream *wasm_open_stream_from_url(char *url, int content_length, int block_si
 		wasm_rethrow(ctx);
 	}
 	return stream;
-}
-
-EMSCRIPTEN_KEEPALIVE
-void wasm_drop_stream(fz_stream *stream)
-{
-	fz_drop_stream(ctx, stream);
 }
 
 EMSCRIPTEN_KEEPALIVE
