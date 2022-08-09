@@ -970,13 +970,50 @@ pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags)
 	pdf_dirty_annot(ctx, annot);
 }
 
+static pdf_obj *rect_subtypes[] = {
+	PDF_NAME(Text),
+	PDF_NAME(FreeText),
+	PDF_NAME(Square),
+	PDF_NAME(Circle),
+	PDF_NAME(Redact),
+	PDF_NAME(Stamp),
+	PDF_NAME(Caret),
+	PDF_NAME(Popup),
+	PDF_NAME(FileAttachment),
+	PDF_NAME(Sound),
+	PDF_NAME(Movie),
+	PDF_NAME(Widget),
+	NULL,
+};
+
+int
+pdf_annot_has_rect(fz_context *ctx, pdf_annot *annot)
+{
+	/* True for annotations where the user can manipulate the size or location
+	 * of the annotation through the Rect.
+	 * False for annotations where the Rect is computed from other
+	 * annotation data such as InkList, QuadPoints, and Vertices.
+	 */
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(Rect), rect_subtypes);
+}
+
 fz_rect
 pdf_annot_rect(fz_context *ctx, pdf_annot *annot)
 {
 	fz_matrix page_ctm;
 	fz_rect annot_rect;
-	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-	annot_rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+
+	pdf_annot_push_local_xref(ctx, annot);
+	fz_try(ctx)
+	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(Rect), rect_subtypes);
+		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+		annot_rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 	return fz_transform_rect(annot_rect, page_ctm);
 }
 
@@ -989,6 +1026,8 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(Rect), rect_subtypes);
+
 		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 		inv_page_ctm = fz_invert_matrix(page_ctm);
 		rect = fz_transform_rect(rect, inv_page_ctm);
