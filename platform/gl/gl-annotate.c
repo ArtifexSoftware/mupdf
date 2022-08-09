@@ -499,17 +499,10 @@ static void open_attachment_dialog(void)
 			{
 				int64_t created, modified;
 				fz_buffer *contents;
-				char *filename;
+				const char *filename;
 				pdf_obj *fs;
 
-				filename = strrchr(attach_filename, '/');
-				if (!filename)
-					filename = strrchr(attach_filename, '\\');
-				if (filename)
-					++filename;
-				else
-					filename = attach_filename;
-
+				filename = fz_basename(attach_filename);
 				contents = fz_read_file(ctx, attach_filename);
 				created = fz_stat_ctime(attach_filename);
 				modified = fz_stat_mtime(attach_filename);
@@ -536,7 +529,6 @@ static char stamp_image_filename[PATH_MAX];
 
 static void open_stamp_image_dialog(void)
 {
-	const char *name;
 	if (ui_open_file(stamp_image_filename, "Select file for customized stamp:"))
 	{
 		ui.dialog = NULL;
@@ -548,14 +540,7 @@ static void open_stamp_image_dialog(void)
 			{
 				img = fz_new_image_from_file(ctx, stamp_image_filename);
 				pdf_set_annot_stamp_image(ctx, ui.selected_annot, img);
-				name = strrchr(stamp_image_filename, '/');
-				if (!name)
-					name = strrchr(stamp_image_filename, '\\');
-				if (!name)
-					name = stamp_image_filename;
-				else
-					name = name + 1;
-				pdf_set_annot_icon_name(ctx, ui.selected_annot, name);
+				pdf_set_annot_icon_name(ctx, ui.selected_annot, fz_basename(stamp_image_filename));
 			}
 			fz_always(ctx)
 			{
