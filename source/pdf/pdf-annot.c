@@ -262,16 +262,6 @@ pdf_annot_request_resynthesis(fz_context *ctx, pdf_annot *annot)
 	if (annot == NULL)
 		return;
 
-	/* Some appearances can NEVER be resynthesised. Spot those here. */
-	if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Stamp)))
-	{
-		/* We can't resynthesise a stamp if we don't have the name! */
-		/* In particular, this is the case we hit when we are asked to
-		 * resynthesise an e-sig. Just exit and do nothing. */
-		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Name)) == NULL)
-			return;
-	}
-
 	/* If there are no changes, there is no need to request a resynthesis
 	 * (and indeed, we must not, because any changes caused by the resynth
 	 * will go in as implicit changes into a potentially-non-existent
@@ -735,6 +725,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 				fz_rect stamp_rect = { 12, 12, 12+190, 12+50 };
 				pdf_set_annot_rect(ctx, annot, stamp_rect);
 				pdf_set_annot_color(ctx, annot, 3, red);
+				pdf_set_annot_icon_name(ctx, annot, "Draft");
 			}
 			break;
 
@@ -1171,7 +1162,7 @@ pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot)
 			}
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(Stamp)))
 			{
-				ret = "Draft";
+				ret = ""; // Should be "Draft" according to spec
 				break;
 			}
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(FileAttachment)))
@@ -1203,7 +1194,10 @@ pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name)
 	fz_try(ctx)
 	{
 		check_allowed_subtypes(ctx, annot, PDF_NAME(Name), icon_name_subtypes);
-		pdf_dict_put_name(ctx, annot->obj, PDF_NAME(Name), name);
+		if (name)
+			pdf_dict_put_name(ctx, annot->obj, PDF_NAME(Name), name);
+		else
+			pdf_dict_del(ctx, annot->obj, PDF_NAME(Name));
 	}
 	fz_always(ctx)
 		end_annot_op(ctx, annot);
@@ -1211,6 +1205,27 @@ pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name)
 		fz_rethrow(ctx);
 
 	pdf_dirty_annot(ctx, annot);
+}
+
+int
+pdf_annot_is_standard_stamp(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *name = pdf_dict_get(ctx, annot->obj, PDF_NAME(Name));
+	if (pdf_name_eq(ctx, name, PDF_NAME(Approved))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(AsIs))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Confidential))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Departmental))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Draft))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Experimental))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Expired))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Final))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(ForComment))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(ForPublicRelease))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(NotApproved))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(NotForPublicRelease))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(Sold))) return 1;
+	else if (pdf_name_eq(ctx, name, PDF_NAME(TopSecret))) return 1;
+	else return 0;
 }
 
 enum pdf_line_ending pdf_line_ending_from_name(fz_context *ctx, pdf_obj *end)

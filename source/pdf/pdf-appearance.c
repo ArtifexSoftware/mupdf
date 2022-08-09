@@ -2738,6 +2738,26 @@ retry_after_repair:
 		if (needs_resynth)
 			local_synthesis = 0;
 
+		/* Some appearances can NEVER be resynthesised. Spot those here. */
+		if (needs_resynth)
+		{
+			if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Stamp)))
+			{
+				/* Don't resynthesize Stamps with non-standard names if
+				 * they already have an appearance. These usually have
+				 * custom images already set for their appearance.
+				 */
+				if (!pdf_annot_is_standard_stamp(ctx, annot) && ap_n)
+				{
+					/* However, we allow changing the Rect even if we don't
+					 * resynthesize the appearance. This should also count
+					 * as having a changed appearance. */
+					pdf_set_annot_resynthesised(ctx, annot);
+					needs_resynth = 0;
+				}
+			}
+		}
+
 		if (local_synthesis || needs_resynth)
 		{
 			fz_display_list *dlist;

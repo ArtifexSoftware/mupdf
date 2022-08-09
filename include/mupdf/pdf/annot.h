@@ -590,6 +590,7 @@ void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, enum pd
 
 const char *pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_is_open(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_is_standard_stamp(fz_context *ctx, pdf_annot *annot);
 
 void pdf_annot_line(fz_context *ctx, pdf_annot *annot, fz_point *a, fz_point *b);
 void pdf_set_annot_line(fz_context *ctx, pdf_annot *annot, fz_point a, fz_point b);
