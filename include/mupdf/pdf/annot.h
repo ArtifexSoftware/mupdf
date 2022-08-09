@@ -476,6 +476,13 @@ fz_point pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int
 void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
 
 /*
+	Set the stamp appearance stream to a custom image.
+	Fits the image to the current Rect, and shrinks the Rect
+	to fit the image aspect ratio.
+*/
+void pdf_set_annot_stamp_image(fz_context *ctx, pdf_annot *annot, fz_image *image);
+
+/*
 	Set the bounding box for an annotation, in doc space.
 */
 void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect);

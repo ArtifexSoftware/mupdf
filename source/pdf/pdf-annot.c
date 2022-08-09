@@ -2911,6 +2911,48 @@ pdf_set_annot_appearance_from_display_list(fz_context *ctx, pdf_annot *annot, co
 		fz_rethrow(ctx);
 }
 
+void pdf_set_annot_stamp_image(fz_context *ctx, pdf_annot *annot, fz_image *img)
+{
+	pdf_document *doc = annot->page->doc;
+	fz_buffer *buf = NULL;
+	pdf_obj *res = NULL;
+	pdf_obj *res_xobj;
+
+	begin_annot_op(ctx, annot, "Set stamp image");
+
+	fz_var(res);
+	fz_var(buf);
+
+	fz_try(ctx)
+	{
+		// Shrink Rect to fit image, maintaining aspect ratio.
+		fz_rect rect = pdf_bound_annot(ctx, annot);
+		float s = fz_min((rect.x1 - rect.x0) / img->w, (rect.y1 - rect.y0) / img->h);
+		rect.x1 = rect.x0 + img->w * s;
+		rect.y1 = rect.y0 + img->h * s;
+
+		// Add image resource
+		res = pdf_add_new_dict(ctx, doc, 1);
+		res_xobj = pdf_dict_put_dict(ctx, res, PDF_NAME(XObject), 1);
+		pdf_dict_put_drop(ctx, res_xobj, PDF_NAME(I), pdf_add_image(ctx, doc, img));
+
+		buf = fz_new_buffer_from_shared_data(ctx, (const unsigned char*)"/I Do\n", 6);
+
+		pdf_set_annot_appearance(ctx, annot, "N", NULL, fz_identity, fz_unit_rect, res, buf);
+		pdf_set_annot_rect(ctx, annot, rect);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		pdf_drop_obj(ctx, res);
+		end_annot_op(ctx, annot);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 static pdf_obj *filespec_subtypes[] = {
 	PDF_NAME(FileAttachment),
 	NULL,
