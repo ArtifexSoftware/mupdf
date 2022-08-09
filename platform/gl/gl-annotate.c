@@ -1525,7 +1525,7 @@ static void do_edit_icon(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 	}
 }
 
-static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
+static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect, int lock_aspect)
 {
 	enum {
 		ER_N=1, ER_E=2, ER_S=4, ER_W=8,
@@ -1567,6 +1567,28 @@ static void do_edit_rect(fz_irect canvas_area, fz_irect area, fz_rect *rect)
 		if (rect->y1 < rect->y0) { float t = rect->y1; rect->y1 = rect->y0; rect->y0 = t; }
 		if (rect->x1 < rect->x0 + 10) rect->x1 = rect->x0 + 10;
 		if (rect->y1 < rect->y0 + 10) rect->y1 = rect->y0 + 10;
+
+		if (lock_aspect)
+		{
+			float aspect = (start_rect.x1 - start_rect.x0) / (start_rect.y1 - start_rect.y0);
+			switch (state)
+			{
+			case ER_SW:
+			case ER_NW:
+				rect->x0 = rect->x1 - (rect->y1 - rect->y0) * aspect;
+				break;
+			case ER_NE:
+			case ER_SE:
+			case ER_N:
+			case ER_S:
+				rect->x1 = rect->x0 + (rect->y1 - rect->y0) * aspect;
+				break;
+			case ER_E:
+			case ER_W:
+				rect->y1 = rect->y0 + (rect->x1 - rect->x0) / aspect;
+				break;
+			}
+		}
 
 		/* cancel on right click */
 		if (ui.right)
@@ -1937,7 +1959,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 
 			/* Popup window */
 			case PDF_ANNOT_POPUP:
-				do_edit_rect(canvas_area, area, &bounds);
+				do_edit_rect(canvas_area, area, &bounds, 0);
 				break;
 
 			/* Icons */
@@ -1949,11 +1971,11 @@ void do_annotate_canvas(fz_irect canvas_area)
 				break;
 
 			case PDF_ANNOT_STAMP:
-				do_edit_rect(canvas_area, area, &bounds);
+				do_edit_rect(canvas_area, area, &bounds, 1);
 				break;
 
 			case PDF_ANNOT_FREE_TEXT:
-				do_edit_rect(canvas_area, area, &bounds);
+				do_edit_rect(canvas_area, area, &bounds, 0);
 				break;
 
 			/* Drawings */
@@ -1962,7 +1984,7 @@ void do_annotate_canvas(fz_irect canvas_area)
 				break;
 			case PDF_ANNOT_CIRCLE:
 			case PDF_ANNOT_SQUARE:
-				do_edit_rect(canvas_area, area, &bounds);
+				do_edit_rect(canvas_area, area, &bounds, 0);
 				break;
 			case PDF_ANNOT_POLYGON:
 				if (is_draw_mode)
