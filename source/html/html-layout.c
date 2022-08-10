@@ -1429,7 +1429,6 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 		fz_rethrow(ctx);
 
 	return restartable_ended;
-;
 }
 
 static void draw_rect(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1)
@@ -1832,6 +1831,7 @@ void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_mat
 	story->restart_place.start_flow = story->restart_draw.end_flow;
 	story->restart_place.end = NULL;
 	story->restart_place.end_flow = NULL;
+	story->rect_count++;
 
 	if (story->restart_place.start == NULL)
 		story->complete = 1;
@@ -1853,4 +1853,263 @@ void fz_reset_story(fz_context *ctx, fz_html_story *story)
 	story->restart_draw.start_flow = NULL;
 	story->restart_draw.end = NULL;
 	story->restart_draw.end_flow = NULL;
+	story->rect_count = 0;
+}
+
+static char *
+gather_text(fz_context *ctx, fz_html_box *box)
+{
+	fz_html_flow *node;
+	char *text = NULL;
+
+	fz_var(text);
+
+	fz_try(ctx)
+	{
+		for (node = box->flow_head; node; node = node->next)
+		{
+			const fz_css_style *style = node->box->style;
+
+			if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
+			{
+				const char *s;
+
+				if (node->type == FLOW_SPACE && node->breaks_line)
+					continue;
+				if (node->type == FLOW_SHYPHEN && !node->breaks_line)
+					continue;
+				if (style->visibility != V_VISIBLE)
+					continue;
+
+				s = get_node_text(ctx, node);
+
+				if (text)
+				{
+					size_t newsize = strlen(text) + strlen(s) + 1;
+					text = fz_realloc(ctx, text, newsize);
+					strcat(text, s);
+				}
+				else
+				{
+					text = fz_strdup(ctx, s);
+				}
+			}
+			else if (node->type == FLOW_IMAGE)
+			{
+			}
+		}
+
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, text);
+		fz_rethrow(ctx);
+	}
+
+	return text;
+}
+
+static int enumerate_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_story_position_callback *cb, void *arg, int depth, int rect_num, fz_html_restarter *restart);
+
+static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_story_position_callback *cb, void *arg, int depth, int rect_num, fz_html_restarter *restart)
+{
+	fz_html_box *child;
+	float y0, y1;
+
+	float *padding = box->padding;
+	int stopped = 0;
+	int skipping;
+	fz_html_story_element_position pos;
+
+	assert(fz_html_box_has_boxes(box));
+	y0 = box->y - padding[T];
+	y1 = box->b + padding[B];
+
+	if (y0 > page_bot || y1 < page_top)
+		return 0;
+
+	/* If we're skipping, is this the place we should restart? */
+	if (restart)
+	{
+		if (restart->start == box)
+			restart->start = NULL;
+		if (restart->end == box)
+			return 1;
+	}
+
+	if (restart && restart->end == box)
+		return 1;
+
+	/* Are we skipping? */
+	skipping = (restart && restart->start != NULL);
+
+	if (box->style->visibility == V_VISIBLE && !skipping)
+	{
+		if (box->heading || box->id != NULL)
+		{
+			/* We have a box worthy of a callback. */
+			char *text = NULL;
+			pos.text = NULL;
+			if (box->heading)
+				pos.text = text = gather_text(ctx, box->down);
+			pos.depth = depth;
+			pos.heading = box->heading;
+			pos.open_close = 1;
+			pos.id = box->id;
+			pos.rect.x0 = box->x;
+			pos.rect.y0 = box->y;
+			pos.rect.x1 = box->x + box->w;
+			pos.rect.y1 = box->b;
+			pos.rectangle_num = rect_num;
+			fz_try(ctx)
+				cb(ctx, arg, &pos);
+			fz_always(ctx)
+				fz_free(ctx, text);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
+			pos.text = NULL;
+		}
+	}
+
+	for (child = box->down; child; child = child->next)
+	{
+		if (enumerate_box(ctx, child, page_top, page_bot, cb, arg, depth+1, rect_num, restart))
+		{
+			stopped = 1;
+			break;
+		}
+	}
+
+	if (box->style->visibility == V_VISIBLE && !skipping)
+	{
+		if (box->heading || box->id != NULL)
+		{
+			/* We have a box worthy of a callback that needs closing. */
+			pos.open_close = 2;
+			pos.rectangle_num = rect_num;
+			cb(ctx, arg, &pos);
+		}
+	}
+
+	return stopped;
+}
+
+static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_story_position_callback *cb, void *arg, int depth, int rect_num, fz_html_restarter *restart)
+{
+	fz_html_flow *node;
+	int restartable_ended = 0;
+
+	/* FIXME: HB_DIRECTION_TTB? */
+
+	if (restart && restart->start != NULL && restart->start != box)
+		return 0;
+
+	for (node = box->flow_head; node; node = node->next)
+	{
+		const fz_css_style *style = node->box->style;
+
+		if (restart)
+		{
+			if (restart->start_flow != NULL)
+			{
+				if (restart->start_flow != node)
+					continue;
+				restart->start = NULL;
+				restart->start_flow = NULL;
+			}
+
+			if (restart->end == box && restart->end_flow == node)
+			{
+				restartable_ended = 1;
+				break;
+			}
+		}
+
+		if (node->type == FLOW_IMAGE)
+		{
+			if (node->y >= page_bot || node->y + node->h <= page_top)
+				continue;
+		}
+		else
+		{
+			if (node->y > page_bot || node->y < page_top)
+				continue;
+		}
+
+		if (node->box && node->box->id)
+		{
+			/* We have a node to callback for. */
+			fz_html_story_element_position pos;
+
+			pos.text = NULL;
+			pos.depth = depth;
+			pos.heading = 0;
+			pos.open_close = 1 | 2;
+			pos.id = node->box->id;
+			pos.rect.x0 = node->x;
+			pos.rect.y0 = node->y;
+			pos.rect.x1 = node->x + node->w;
+			pos.rect.y1 = node->y + node->h;
+			pos.rectangle_num = rect_num;
+			cb(ctx, arg, &pos);
+		}
+
+		if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
+		{
+		}
+		else if (node->type == FLOW_IMAGE)
+		{
+			if (style->visibility == V_VISIBLE)
+			{
+				/* FIXME: Maybe callback for images? */
+			}
+		}
+	}
+
+	return restartable_ended;
+}
+
+static int enumerate_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_story_position_callback *cb, void *arg, int depth, int rect_num, fz_html_restarter *restart)
+{
+	switch (box->type)
+	{
+	case BOX_TABLE:
+	case BOX_TABLE_ROW:
+	case BOX_TABLE_CELL:
+	case BOX_BLOCK:
+		if (restart && restart->end == box)
+			return 1;
+		if (enumerate_block_box(ctx, box, page_top, page_bot, cb, arg, depth, rect_num, restart))
+			return 1;
+		break;
+	case BOX_FLOW:
+		if (enumerate_flow_box(ctx, box, page_top, page_bot, cb, arg, depth, rect_num, restart))
+			return 1;
+		break;
+	}
+
+	return 0;
+}
+
+void fz_story_positions(fz_context *ctx, fz_html_story *story, fz_story_position_callback *cb, void *arg)
+{
+	float page_top, page_bot;
+	fz_html_box *b;
+	fz_html_restarter restart;
+	fz_html_box *box;
+	fz_html_box *top;
+
+	if (story == NULL || story->complete)
+		return;
+
+	b = story->tree.root;
+	page_top = b->y - b->margin[T] - b->border[T] - b->padding[T];
+	page_bot = b->b + b->margin[B] + b->border[B] + b->padding[B];
+	top = story->tree.root->down;
+
+	restart = story->restart_draw;
+
+	for (box = top->down; box; box = box->next)
+		if (enumerate_box(ctx, box, page_top, page_bot, cb, arg, 0, story->rect_count+1, &restart))
+			break;
 }

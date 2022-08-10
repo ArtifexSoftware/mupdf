@@ -376,6 +376,9 @@ struct fz_html_story_s
 
 	/* Collected parsing warnings. */
 	fz_buffer *warnings;
+
+	/* Rectangle layout count. */
+	int rect_count;
 };
 
 struct fz_html_box_s
