@@ -75,6 +75,12 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_matrix ctm);
 
 /*
+	Reset the position within the story at which the next layout call
+	will continue to the start of the story.
+*/
+void fz_reset_story(fz_context *ctx, fz_html_story *story);
+
+/*
 	Drop the html story.
 */
 void fz_drop_html_story(fz_context *ctx, fz_html_story *story);

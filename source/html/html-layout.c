@@ -1807,23 +1807,27 @@ void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_mat
 	page_top = b->y - b->margin[T] - b->border[T] - b->padding[T];
 	page_bot = b->b + b->margin[B] + b->border[B] + b->padding[B];
 
-	clip = fz_new_path(ctx);
-	fz_try(ctx)
+	if (dev)
 	{
-		fz_moveto(ctx, clip, bbox.x0, bbox.y0);
-		fz_lineto(ctx, clip, bbox.x1, bbox.y0);
-		fz_lineto(ctx, clip, bbox.x1, bbox.y1);
-		fz_lineto(ctx, clip, bbox.x0, bbox.y1);
-		fz_closepath(ctx, clip);
-		fz_clip_path(ctx, dev, clip, 0, ctm, bbox);
+		clip = fz_new_path(ctx);
+		fz_try(ctx)
+		{
+			fz_moveto(ctx, clip, bbox.x0, bbox.y0);
+			fz_lineto(ctx, clip, bbox.x1, bbox.y0);
+			fz_lineto(ctx, clip, bbox.x1, bbox.y1);
+			fz_lineto(ctx, clip, bbox.x0, bbox.y1);
+			fz_closepath(ctx, clip);
+			fz_clip_path(ctx, dev, clip, 0, ctm, bbox);
+		}
+		fz_always(ctx)
+			fz_drop_path(ctx, clip);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
-	fz_always(ctx)
-		fz_drop_path(ctx, clip);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
 
 	story->restart_place = story->restart_draw;
-	fz_draw_restarted_html(ctx, dev, ctm, story->tree.root->down, 0, page_bot+page_top, &story->restart_place);
+	if (dev)
+		fz_draw_restarted_html(ctx, dev, ctm, story->tree.root->down, 0, page_bot+page_top, &story->restart_place);
 	story->restart_place.start = story->restart_draw.end;
 	story->restart_place.start_flow = story->restart_draw.end_flow;
 	story->restart_place.end = NULL;
@@ -1832,5 +1836,21 @@ void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_mat
 	if (story->restart_place.start == NULL)
 		story->complete = 1;
 
-	fz_pop_clip(ctx, dev);
+	if (dev)
+		fz_pop_clip(ctx, dev);
+}
+
+void fz_reset_story(fz_context *ctx, fz_html_story *story)
+{
+	if (story == NULL)
+		return;
+
+	story->restart_place.start = NULL;
+	story->restart_place.start_flow = NULL;
+	story->restart_place.end = NULL;
+	story->restart_place.end_flow = NULL;
+	story->restart_draw.start = NULL;
+	story->restart_draw.start_flow = NULL;
+	story->restart_draw.end = NULL;
+	story->restart_draw.end_flow = NULL;
 }
