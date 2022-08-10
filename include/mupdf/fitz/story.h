@@ -54,6 +54,21 @@ typedef struct fz_html_story_s fz_html_story;
 fz_html_story *fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em);
 
 /*
+	Retrieve the warnings given from parsing this story.
+
+	If there are warnings, this will be returned as a NULL terminated
+	C string. If there are no warnings, this will return NULL.
+
+	These warnings will not be complete until AFTER any DOM manipulations
+	have been completed.
+
+	This function does not need to be called, but once it has been
+	the DOM is no longer accessible, and any fz_xml pointer
+	retrieved from fz_html_story_docment is no longer valid.
+*/
+const char *fz_story_warnings(fz_context *ctx, fz_html_story *story);
+
+/*
 	Place (or continue placing) a story into the supplied rectangle
 	'where', updating 'filled' with the actual area that was used.
 	Returns zero if all the content fitted, non-zero if there is
@@ -63,6 +78,10 @@ fz_html_story *fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *us
 	again and again, until the placed story is drawn using fz_draw_story,
 	whereupon subsequent calls to fz_place_story will attempt to place
 	the unused remainder of the story.
+
+	After this function is called, the DOM is no longer accessible,
+	and any fz_xml pointer retrieved from fz_html_story_document is no
+	longer valid.
 */
 int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled);
 
@@ -90,8 +109,9 @@ void fz_drop_html_story(fz_context *ctx, fz_html_story *story);
 	story. Do not destroy this reference, it will be destroyed
 	when the story is laid out.
 
-	This only makes sense before the first placement of the story.
-	Once the story is placed, the DOM representation is destroyed.
+	This only makes sense before the first placement of the story
+	or retrieval of the warnings. Once either of those things happen
+	the DOM representation is destroyed.
 */
 fz_xml *fz_html_story_document(fz_context *ctx, fz_html_story *story);
 

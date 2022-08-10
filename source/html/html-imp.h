@@ -373,6 +373,9 @@ struct fz_html_story_s
 
 	/* The default 'em' size. */
 	float em;
+
+	/* Collected parsing warnings. */
+	fz_buffer *warnings;
 };
 
 struct fz_html_box_s

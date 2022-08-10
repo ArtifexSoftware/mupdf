@@ -587,6 +587,8 @@ static void fz_drop_html_story_imp(fz_context *ctx, fz_storable *stor)
 	fz_drop_html_font_set(ctx, story->font_set);
 	fz_drop_xml(ctx, story->dom);
 	fz_drop_html_box(ctx, story->tree.root);
+	fz_drop_buffer(ctx, story->warnings);
+	/* The pool must be the last thing dropped. */
 	fz_drop_pool(ctx, story->tree.pool);
 }
 
@@ -1598,17 +1600,74 @@ fz_parse_html_imp(fz_context *ctx,
 	return html;
 }
 
+typedef struct
+{
+	int saved;
+	fz_warning_cb *old;
+	void *arg;
+	fz_buffer *buffer;
+	fz_context *ctx;
+} warning_save;
+
+static void
+warn_to_buffer(void *user, const char *message)
+{
+	warning_save *save = (warning_save *)user;
+	fz_context *ctx = save->ctx;
+
+	fz_try(ctx)
+	{
+		fz_append_string(ctx, save->buffer, message);
+		fz_append_byte(ctx, save->buffer, '\n');
+	}
+	fz_catch(ctx)
+	{
+		/* Silently swallow the error. */
+	}
+}
+
+static void
+redirect_warnings_to_buffer(fz_context *ctx, fz_buffer *buf, warning_save *save)
+{
+	save->saved = 1;
+	save->old = fz_warning_callback(ctx, &save->arg);
+	save->buffer = buf;
+	save->ctx = ctx;
+
+	fz_flush_warnings(ctx);
+	fz_set_warning_callback(ctx, warn_to_buffer, save);
+}
+
+static void
+restore_warnings(fz_context *ctx, warning_save *save)
+{
+	if (!save->saved)
+		return;
+
+	fz_flush_warnings(ctx);
+	fz_set_warning_callback(ctx, save->old, save->arg);
+}
+
 fz_html_story *
 fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
 {
 	fz_html_story *story = fz_new_derived_html_tree(ctx, fz_html_story, fz_drop_html_story_imp);
+	warning_save saved = { 0 };
+
+	fz_var(saved);
 
 	fz_try(ctx)
 	{
 		story->font_set = fz_new_html_font_set(ctx);
 		story->em = em;
 		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
+		story->warnings = fz_new_buffer(ctx, 128);
+		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
 		story->dom = parse_to_xml(ctx, buf, 0, 1);
+	}
+	fz_always(ctx)
+	{
+		restore_warnings(ctx, &saved);
 	}
 	fz_catch(ctx)
 	{
@@ -1881,6 +1940,31 @@ void fz_purge_stored_html(fz_context *ctx, void *doc)
 	fz_filter_store(ctx, html_filter_store, doc, &fz_html_store_type);
 }
 
+static void
+convert_to_boxes(fz_context *ctx, fz_html_story *story)
+{
+	warning_save saved = { 0 };
+
+	if (story->dom == NULL)
+		return;
+
+	fz_var(saved);
+
+	fz_try(ctx)
+	{
+		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
+		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0);
+		fz_drop_xml(ctx, story->dom);
+		story->dom = NULL;
+	}
+	fz_always(ctx)
+	{
+		restore_warnings(ctx, &saved);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled)
 {
 	float w, h;
@@ -1893,12 +1977,7 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 
 	/* Convert from XML to box model on the first attempt to place.
 	 * The DOM is unusable from here on in. */
-	if (story->dom)
-	{
-		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0);
-		fz_drop_xml(ctx, story->dom);
-		story->dom = NULL;
-	}
+	convert_to_boxes(ctx, story);
 
 	w = where.x1 - where.x0;
 	h = where.y1 - where.y0;
@@ -1932,4 +2011,22 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 #endif
 
 	return story->restart_draw.end != NULL;
+}
+
+const char *
+fz_story_warnings(fz_context *ctx, fz_html_story *story)
+{
+	unsigned char *data;
+
+	if (!story)
+		return NULL;
+
+	convert_to_boxes(ctx, story);
+
+	fz_terminate_buffer(ctx, story->warnings);
+
+	if (fz_buffer_storage(ctx, story->warnings, &data) == 0)
+		return NULL;
+
+	return (const char *)data;
 }
