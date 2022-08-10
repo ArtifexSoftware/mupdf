@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1181,6 +1181,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 			if (!restart || restart->start == NULL)
 				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld, &eop);
 		}
+
 		else if (child->type == BOX_TABLE)
 		{
 			assert(fz_html_box_has_boxes(child));
@@ -1190,6 +1191,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 			if (!restart || restart->start == NULL)
 				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld, &eop);
 		}
+
 		else if (child->type == BOX_FLOW)
 		{
 			layout_flow(ctx, ld, child, box);
@@ -1912,7 +1914,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int 
 
 	ctm = fz_pre_translate(ctm, html->page_margin[L], html->page_margin[T]);
 
-	fz_draw_restarted_html(ctx, dev, ctm, html->tree.root->down, page_top, page_bot, NULL);
+	fz_draw_restarted_html(ctx, dev, ctm, html->tree.root, page_top, page_bot, NULL);
 }
 
 void fz_draw_story(fz_context *ctx, fz_story *story, fz_device *dev, fz_matrix ctm)

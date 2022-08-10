@@ -201,7 +201,7 @@ struct fz_css_match_s
 	fz_css_value *value[NUM_PROPERTIES];
 };
 
-enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_ROW, DIS_TABLE_CELL };
+enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM };
@@ -291,12 +291,12 @@ struct fz_css_style_splay_s {
 
 enum
 {
-	BOX_BLOCK,	/* block-level: contains block, break, flow, and table boxes */
-	BOX_FLOW,	/* block-level: contains only inline boxes */
-	BOX_INLINE,	/* inline-level: contains only inline boxes */
-	BOX_TABLE,	/* table: contains table-row */
-	BOX_TABLE_ROW,	/* table-row: contains table-cell */
-	BOX_TABLE_CELL,	/* table-cell: contains block */
+	BOX_BLOCK,		/* block-level: contains block, break, flow, and table boxes */
+	BOX_FLOW,		/* block-level: contains only inline boxes */
+	BOX_INLINE,		/* inline-level: contains only inline boxes */
+	BOX_TABLE,		/* table: contains table-row */
+	BOX_TABLE_ROW,		/* table-row: contains table-cell */
+	BOX_TABLE_CELL,		/* table-cell: contains block */
 };
 
 typedef struct
@@ -402,8 +402,9 @@ struct fz_html_box_s
 	 * as its normal meaning of 'next sibling', the last sibling
 	 * has next meaning "the last of my children". We correct
 	 * this as a post-processing pass after construction. */
-	fz_html_box *up, *down, *next;
+	fz_html_box *up, *down, *next, *last_child;
 	fz_html_flow *flow_head, **flow_tail;
+	const char *tag;
 	char *id, *href;
 	const fz_css_style *style;
 	/* Only BOX_{BLOCK,TABLE,TABLE_ROW,TABLE_CELL} actually use the following */

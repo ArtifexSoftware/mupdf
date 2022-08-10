@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1170,6 +1170,16 @@ fz_get_css_match_display(fz_css_match *match)
 			return DIS_TABLE_ROW;
 		if (!strcmp(value->data, "table-cell"))
 			return DIS_TABLE_CELL;
+		if (!strcmp(value->data, "table-row-group"))
+			return DIS_TABLE_GROUP;
+		if (!strcmp(value->data, "table-header-group"))
+			return DIS_TABLE_GROUP;
+		if (!strcmp(value->data, "table-footer-group"))
+			return DIS_TABLE_GROUP;
+		if (!strcmp(value->data, "table-column-group"))
+			return DIS_NONE;
+		if (!strcmp(value->data, "table-column"))
+			return DIS_NONE;
 	}
 	return DIS_INLINE;
 }
