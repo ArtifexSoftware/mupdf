@@ -588,6 +588,9 @@
     <ClCompile Include="..\..\source\html\html-parse.c">
       <Filter>html</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\html\story-writer.c">
+      <Filter>html</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\fitz\encode-fax.c">
       <Filter>fitz</Filter>
     </ClCompile>
@@ -864,6 +867,9 @@
       <Filter>pdf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\fitz\story.h">
+      <Filter>!include\fitz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\story-writer.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\fitz\xml-imp.h">
