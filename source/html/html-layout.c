@@ -1012,7 +1012,19 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 	else
 	{
 		/* We're not skipping, so add in the spacings to the top edge of our box. */
-		box->y += margin[T] + border[T] + padding[T];
+		box->y = advance_for_spacing(box->y, margin[T] + border[T] + padding[T], page_h, &eop);
+		if (eop)
+		{
+			box->b = box->y;
+			if (restart && restart->end == NULL)
+			{
+				if (restart->potential)
+					restart->end = restart->potential;
+				else
+					restart->end = box;
+				return 0;
+			}
+		}
 	}
 	/* Start with our content being zero height. */
 	box->b = box->y;
