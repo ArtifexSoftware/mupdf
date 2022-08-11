@@ -966,10 +966,9 @@ static float layout_block(fz_context *ctx, fz_html_box *box, float em, float top
 			vertical = margin[T];
 		}
 
-		/* If we have a border, then in the event that no content fits, we want to
-		 * restart with us, not with the content that doesn't fit. */
-		if (restart->potential == NULL &&
-			(border[T] != 0 || border[R] != 0 || border[B] != 0 || border[L] != 0))
+		/* In the event that no content fits, we want to restart with us, not with the
+		 * content that doesn't fit. */
+		if (restart->potential == NULL)
 			restart->potential = box;
 	}
 
