@@ -1992,7 +1992,7 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 	story->tree.root->x = where.x0;
 	story->tree.root->y = where.y0;
 	story->bbox = where;
-	fz_restartable_layout_html(ctx, story->tree.root, w, h, w, h, story->em, &story->restart_draw);
+	fz_restartable_layout_html(ctx, &story->tree, w, h, w, h, story->em, &story->restart_draw);
 	story->restart_draw.start = story->restart_place.start;
 	story->restart_draw.start_flow = story->restart_place.start_flow;
 
