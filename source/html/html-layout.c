@@ -306,6 +306,7 @@ static int walk_string(string_walker *walker)
 			else
 				glyph = fz_encode_character(ctx, walker->font, unicode);
 			walker->glyph_info[i].codepoint = glyph;
+			walker->glyph_info[i].cluster = i;
 			walker->glyph_pos[i].x_offset = 0;
 			walker->glyph_pos[i].y_offset = 0;
 			walker->glyph_pos[i].x_advance = fz_advance_glyph(ctx, walker->font, glyph, 0) * face->units_per_EM;
@@ -318,7 +319,7 @@ static int walk_string(string_walker *walker)
 
 static const char *get_node_text(fz_context *ctx, fz_html_flow *node)
 {
-	if (node->type == FLOW_WORD)
+	if (node->type == FLOW_WORD || node->type == FLOW_WORD_WRAPPED)
 		return node->content.text;
 	else if (node->type == FLOW_SPACE)
 		return " ";
@@ -353,6 +354,48 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_
 			x += walker.glyph_pos[i].x_advance;
 		node->w += x * em / walker.scale;
 	}
+}
+
+static int measure_string_to_fit(fz_context *ctx, const char *s, fz_html_flow *node, hb_buffer_t *hb_buf, float max_w)
+{
+	string_walker walker;
+	unsigned int i;
+	float em;
+	float line_w;
+	uint32_t min;
+	int fragment_offset;
+
+	node->w = 0;
+	em = node->box->em;
+
+	line_w = 0;
+	fragment_offset = 0;
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, s);
+	while (walk_string(&walker))
+	{
+		for (i = 0; i < walker.glyph_count; i++)
+		{
+			line_w += walker.glyph_pos[i].x_advance * em / walker.scale;
+			if (line_w > max_w)
+				goto split;
+			node->w = line_w;
+		}
+		fragment_offset = walker.end - s;
+	}
+
+	/* This indicates that the whole string fitted. That should never be possible
+	 * as we'd never have called this function in that case! */
+	assert("Spanish Inquisition!" == NULL);
+
+	return 0;
+
+split:
+	min = walker.glyph_info[i].cluster;
+	for (i++; i < walker.glyph_count; i++)
+		if (walker.glyph_info[i].cluster < min)
+			min = walker.glyph_info[i].cluster;
+
+	return (int)min + fragment_offset;
 }
 
 static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline, float *vert_adv)
@@ -587,6 +630,35 @@ typedef struct
 	fz_html_restarter *restart;
 } layout_data;
 
+static int
+break_node(fz_context *ctx, fz_html_flow *node, layout_data *ld, float w)
+{
+	const char *s = get_node_text(ctx, node);
+	float orig_w = node->w;
+	int split_pos;
+	fz_html_flow *new_node;
+
+	/* Only break nodes if overflow_wrap is set to break-word. */
+	if (node->box->style->overflow_wrap != OVERFLOW_WRAP_BREAK_WORD)
+		return 0;
+
+	split_pos = measure_string_to_fit(ctx, s, node, ld->hb_buf, w);
+	if (split_pos == -1)
+		return 0; /* We can't break! */
+
+	new_node = fz_html_split_flow(ctx, ld->pool, node, split_pos);
+	new_node->type = FLOW_WORD_WRAPPED;
+	new_node->h = node->h;
+	new_node->w = orig_w - node->w; /* not a bad estimate? */
+	new_node->expand = node->expand;
+	new_node->script = node->script;
+	new_node->markup_lang = node->markup_lang;
+	new_node->bidi_level = node->bidi_level;
+	new_node->breaks_line = node->breaks_line;
+
+	return 1;
+}
+
 /*
 	Layout a BOX_FLOW.
 
@@ -721,6 +793,13 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 		{
 		default:
 		case FLOW_WORD:
+		case FLOW_WORD_WRAPPED:
+			nonbreak_w = break_w = node->w;
+			if (nonbreak_w > box->w && !candidate && break_node(ctx, node, ld, box->w))
+			{
+				candidate = node->next;
+			}
+			break;
 		case FLOW_IMAGE:
 			nonbreak_w = break_w = node->w;
 			break;
@@ -756,16 +835,18 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 		/* Break the line if we have a candidate break point. */
 		if (node->type == FLOW_BREAK || (line_w + nonbreak_w > box->w && candidate))
 		{
+			fz_html_flow *break_at = (candidate->type == FLOW_WORD_WRAPPED ? candidate : candidate->next);
+
 			candidate->breaks_line = 1;
 			if (candidate->type == FLOW_BREAK)
 				line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
 			else
 				line_align = align;
-			if (flush_line(ctx, box, ld->page_h, box->w, candidate_w, line_align, indent, line, candidate->next, restart))
+			if (flush_line(ctx, box, ld->page_h, box->w, candidate_w, line_align, indent, line, break_at, restart))
 				return;
 
-			line = candidate->next;
-			node = candidate->next;
+			line = break_at;
+			node = break_at;
 			candidate = NULL;
 			candidate_w = 0;
 			indent = 0;
@@ -1309,7 +1390,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					continue;
 			}
 
-			if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
+			if (node->type == FLOW_WORD || node->type == FLOW_WORD_WRAPPED || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 			{
 				string_walker walker;
 				const char *s;
@@ -1885,7 +1966,7 @@ gather_text(fz_context *ctx, fz_html_box *box)
 		{
 			const fz_css_style *style = node->box->style;
 
-			if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
+			if (node->type == FLOW_WORD || node->type == FLOW_WORD_WRAPPED || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 			{
 				const char *s;
 
@@ -2069,7 +2150,7 @@ static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top,
 			cb(ctx, arg, &pos);
 		}
 
-		if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
+		if (node->type == FLOW_WORD || node->type == FLOW_WORD_WRAPPED || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 		{
 		}
 		else if (node->type == FLOW_IMAGE)

@@ -775,6 +775,7 @@ is_inheritable_property(int name)
 		name == PRO_LIST_STYLE_POSITION ||
 		name == PRO_LIST_STYLE_TYPE ||
 		name == PRO_ORPHANS ||
+		name == PRO_OVERFLOW_WRAP ||
 		name == PRO_QUOTES ||
 		name == PRO_TEXT_ALIGN ||
 		name == PRO_TEXT_INDENT ||
@@ -1305,6 +1306,13 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "upper-alpha")) style->list_style_type = LST_UC_ALPHA;
 		else if (!strcmp(value->data, "armenian")) style->list_style_type = LST_ARMENIAN;
 		else if (!strcmp(value->data, "georgian")) style->list_style_type = LST_GEORGIAN;
+	}
+
+	value = value_from_property(match, PRO_OVERFLOW_WRAP);
+	if (value)
+	{
+		if (!strcmp(value->data, "break-word")) style->overflow_wrap = OVERFLOW_WRAP_BREAK_WORD;
+		else style->overflow_wrap = OVERFLOW_WRAP_NORMAL;
 	}
 
 	style->line_height = number_from_property(match, PRO_LINE_HEIGHT, 1.2f, N_SCALE);

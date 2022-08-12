@@ -231,7 +231,7 @@ static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz
 	(void)add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR, 0);
 }
 
-static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
+fz_html_flow *fz_html_split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
 {
 	fz_html_flow *new_flow;
 	char *text;
@@ -1238,7 +1238,7 @@ static void fragment_cb(const uint32_t *fragment,
 			if (len > fragment_len)
 			{
 				/* We need to split this flow box */
-				(void)split_flow(data->ctx, data->pool, data->flow, fragment_len);
+				(void)fz_html_split_flow(data->ctx, data->pool, data->flow, fragment_len);
 				len = fz_utflen(data->flow->content.text);
 			}
 		}
@@ -1272,6 +1272,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 
 			switch (end->type)
 			{
+			case FLOW_WORD_WRAPPED:
 			case FLOW_WORD:
 				len = fz_utflen(end->content.text);
 				text = end->content.text;
@@ -1745,11 +1746,12 @@ fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 		case FLOW_BREAK: printf("break"); break;
 		case FLOW_IMAGE: printf("image"); break;
 		case FLOW_ANCHOR: printf("anchor"); break;
+		case FLOW_WORD_WRAPPED: printf("word_wrapped "); break;
 		}
 		printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
 		if (flow->type == FLOW_IMAGE)
 			printf(" h=%g", flow->h);
-		if (flow->type == FLOW_WORD)
+		if (flow->type == FLOW_WORD || flow->type == FLOW_WORD_WRAPPED)
 			printf(" text='%s'", flow->content.text);
 		printf("\n");
 		if (flow->breaks_line) {
