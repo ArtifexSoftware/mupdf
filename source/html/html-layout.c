@@ -1788,19 +1788,27 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 	/* Are we skipping? */
 	skipping = (restart && restart->start != NULL);
 
-	/* Only draw the content if it's visible (never visible if skipping) */
-	if (box->style->visibility == V_VISIBLE && !skipping)
+	/* Only draw the content if it's visible */
+	if (box->style->visibility == V_VISIBLE)
 	{
 		int suppress;
-		draw_rect(ctx, dev, ctm, page_top, box->style->background_color, x0, y0, x1, y1);
 
-		/* Draw a selection of borders. */
-		/* If we are restarting, don't do the bottom one yet. */
-		suppress = restart ? (1<<B) : 0;
-		do_borders(ctx, dev, ctm, page_top, box, suppress);
+		/* We draw the background rectangle regardless if we are skipping or not, because
+		 * we might find the end-of-skip point inside this box. If there is no content
+		 * then the box height will be 0, so nothing will be drawn. */
+		if (y1 > y0)
+			draw_rect(ctx, dev, ctm, page_top, box->style->background_color, x0, y0, x1, y1);
 
-		if (box->list_item)
-			draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
+		if (!skipping)
+		{
+			/* Draw a selection of borders. */
+			/* If we are restarting, don't do the bottom one yet. */
+			suppress = restart ? (1<<B) : 0;
+			do_borders(ctx, dev, ctm, page_top, box, suppress);
+
+			if (box->list_item)
+				draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
+		}
 	}
 
 	for (child = box->down; child; child = child->next)
