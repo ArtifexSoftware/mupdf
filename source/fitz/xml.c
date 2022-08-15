@@ -503,6 +503,17 @@ static void xml_emit_att_name(fz_context *ctx, struct parser *parser, const char
 	head->u.node.u.d.atts = att;
 }
 
+void fz_xml_add_att(fz_context *ctx, fz_pool *pool, fz_xml *node, const char *key, const char *val)
+{
+	size_t size = offsetof(struct attribute, name) + strlen(key) + 1;
+	struct attribute *att = fz_pool_alloc(ctx, pool, size);
+	memcpy(att->name, key, strlen(key)+1);
+	att->value = fz_pool_alloc(ctx, pool, strlen(val) + 1);
+	memcpy(att->value, val, strlen(val)+1);
+	att->next = node->u.node.u.d.atts;
+	node->u.node.u.d.atts = att;
+}
+
 static void xml_emit_att_value(fz_context *ctx, struct parser *parser, const char *a, const char *b)
 {
 	fz_xml *head = parser->head;
@@ -733,9 +744,17 @@ parse_attribute_name:
 parse_attribute_value:
 	while (iswhite(*p)) ++p;
 	quote = *p++;
+	mark = p;
+
+	/* special case for handling MOBI filepos=00000 syntax */
+	if (quote >= '0' && quote <= '9') {
+		while (*p >= '0' && *p <= '9') ++p;
+		xml_emit_att_value(ctx, parser, mark, p);
+		goto parse_attributes;
+	}
+
 	if (quote != '"' && quote != '\'')
 		return "missing quote character";
-	mark = p;
 	while (*p && *p != quote) ++p;
 	if (*p == quote) {
 		xml_emit_att_value(ctx, parser, mark, p++);

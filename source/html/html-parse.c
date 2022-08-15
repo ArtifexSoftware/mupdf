@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -84,6 +84,16 @@ static const char *html_default_css =
 "ul ul ul{list-style-type:square}"
 "var{font-style:italic}"
 "svg{display:none}"
+;
+
+static const char *mobi_default_css =
+"pagebreak{display:block;page-break-before:always}"
+"dl,ol,ul{margin:0}"
+"p{margin:0}"
+"blockquote{margin:0 40px}"
+"center{display:block;text-align:center}"
+"big{font-size:1.17em}"
+"strike{text-decoration:line-through}"
 ;
 
 static const char *fb2_default_css =
@@ -1405,7 +1415,7 @@ parse_to_xml(fz_context *ctx, fz_buffer *buf, int try_xml, int try_html5)
 
 static void
 xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
-	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook)
+	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi)
 {
 	fz_xml *root, *node;
 	char *title;
@@ -1453,13 +1463,20 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 				fb2_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 			g.images = load_fb2_images(ctx, root);
 		}
+		else if (is_mobi)
+		{
+			g.is_fb2 = 0;
+			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
+			fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
+			if (fz_use_document_css(ctx))
+				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
+		}
 		else
 		{
 			g.is_fb2 = 0;
 			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
 			if (fz_use_document_css(ctx))
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
-			g.images = NULL;
 		}
 
 		if (user_css)
@@ -1540,10 +1557,104 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	}
 }
 
+static const char *mobi_font_size[7] = {
+	"8pt",
+	"10pt",
+	"12pt",
+	"14pt",
+	"16pt",
+	"18pt",
+	"20pt",
+};
+
+static void
+patch_mobi_html(fz_context *ctx, fz_pool *pool, fz_xml *node)
+{
+	fz_xml *down;
+	char buf[500];
+	while (node)
+	{
+		char *tag = fz_xml_tag(node);
+		if (tag)
+		{
+			// Read MOBI attributes, convert to inline CSS style
+			if (!strcmp(tag, "font"))
+			{
+				const char *size = fz_xml_att(node, "size");
+				if (size)
+				{
+					if (!strcmp(size, "1")) size = mobi_font_size[0];
+					else if (!strcmp(size, "2")) size = mobi_font_size[1];
+					else if (!strcmp(size, "3")) size = mobi_font_size[2];
+					else if (!strcmp(size, "4")) size = mobi_font_size[3];
+					else if (!strcmp(size, "5")) size = mobi_font_size[4];
+					else if (!strcmp(size, "6")) size = mobi_font_size[5];
+					else if (!strcmp(size, "7")) size = mobi_font_size[6];
+					else if (!strcmp(size, "+1")) size = mobi_font_size[3];
+					else if (!strcmp(size, "+2")) size = mobi_font_size[4];
+					else if (!strcmp(size, "+3")) size = mobi_font_size[5];
+					else if (!strcmp(size, "+4")) size = mobi_font_size[6];
+					else if (!strcmp(size, "+5")) size = mobi_font_size[6];
+					else if (!strcmp(size, "+6")) size = mobi_font_size[6];
+					else if (!strcmp(size, "-1")) size = mobi_font_size[1];
+					else if (!strcmp(size, "-2")) size = mobi_font_size[0];
+					else if (!strcmp(size, "-3")) size = mobi_font_size[0];
+					else if (!strcmp(size, "-4")) size = mobi_font_size[0];
+					else if (!strcmp(size, "-5")) size = mobi_font_size[0];
+					else if (!strcmp(size, "-6")) size = mobi_font_size[0];
+					fz_snprintf(buf, sizeof buf, "font-size:%s", size);
+					fz_xml_add_att(ctx, pool, node, "style", buf);
+				}
+			}
+			else
+			{
+				char *height = fz_xml_att(node, "height");
+				char *width = fz_xml_att(node, "width");
+				char *align = fz_xml_att(node, "align");
+				if (height || width || align)
+				{
+					buf[0] = 0;
+					if (height)
+					{
+						fz_strlcat(buf, "margin-top:", sizeof buf);
+						fz_strlcat(buf, height, sizeof buf);
+						fz_strlcat(buf, ";", sizeof buf);
+					}
+					if (width)
+					{
+						fz_strlcat(buf, "text-indent:", sizeof buf);
+						fz_strlcat(buf, width, sizeof buf);
+						fz_strlcat(buf, ";", sizeof buf);
+					}
+					if (align)
+					{
+						fz_strlcat(buf, "text-align:", sizeof buf);
+						fz_strlcat(buf, align, sizeof buf);
+						fz_strlcat(buf, ";", sizeof buf);
+					}
+					fz_xml_add_att(ctx, pool, node, "style", buf);
+				}
+				if (!strcmp(tag, "img"))
+				{
+					char *recindex = fz_xml_att(node, "recindex");
+					if (recindex)
+						fz_xml_add_att(ctx, pool, node, "src", recindex);
+				}
+			}
+		}
+
+		down = fz_xml_down(node);
+		if (down)
+			patch_mobi_html(ctx, pool, down);
+
+		node = fz_xml_next(node);
+	}
+}
+
 static void
 fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook)
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi)
 {
 	fz_xml_doc *xml;
 
@@ -1552,8 +1663,11 @@ fz_parse_html_tree(fz_context *ctx,
 
 	xml = parse_to_xml(ctx, buf, try_xml, try_html5);
 
+	if (patch_mobi)
+		patch_mobi_html(ctx, xml->u.doc.pool, xml);
+
 	fz_try(ctx)
-		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook);
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
 	fz_catch(ctx)
@@ -1587,7 +1701,7 @@ fz_new_html_tree_of_size(fz_context *ctx, size_t size, fz_store_drop_fn *drop)
 static fz_html *
 fz_parse_html_imp(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5)
+	int try_xml, int try_html5, int patch_mobi)
 {
 	fz_html *html = fz_new_derived_html_tree(ctx, fz_html, fz_drop_html_imp);
 
@@ -1595,7 +1709,7 @@ fz_parse_html_imp(fz_context *ctx,
 	html->layout_h = 0;
 	html->layout_em = 0;
 
-	fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1);
+	fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi);
 
 	return html;
 }
@@ -1682,21 +1796,28 @@ fz_html *
 fz_parse_fb2(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	/* parse only as XML */
-	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 1, 0);
+	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 1, 0, 0);
 }
 
 fz_html *
 fz_parse_html5(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	/* parse only as HTML5 */
-	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 0, 1);
+	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 0, 1, 0);
 }
 
 fz_html *
 fz_parse_xhtml(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	/* try as XML first, fall back to HTML5 */
-	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 1, 1);
+	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 1, 1, 0);
+}
+
+fz_html *
+fz_parse_mobi(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
+{
+	/* try as XML first, fall back to HTML5 */
+	return fz_parse_html_imp(ctx, set, zip, base_uri, buf, user_css, 1, 1, 1);
 }
 
 static void indent(int level)
@@ -1953,7 +2074,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0);
+		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0);
 		fz_drop_xml(ctx, story->dom);
 		story->dom = NULL;
 	}
