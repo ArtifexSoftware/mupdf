@@ -329,7 +329,6 @@ cat_html_flow(fz_context *ctx, fz_buffer *cat, fz_html_flow *flow)
 		switch (flow->type)
 		{
 		case FLOW_WORD:
-		case FLOW_WORD_WRAPPED:
 			fz_append_string(ctx, cat, flow->content.text);
 			break;
 		case FLOW_SPACE:
