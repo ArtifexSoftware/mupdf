@@ -1157,6 +1157,7 @@
     <ClInclude Include="..\..\source\fitz\unicodedata_db.h" />
     <ClInclude Include="..\..\source\fitz\xml-imp.h" />
     <ClInclude Include="..\..\source\fitz\z-imp.h" />
+    <ClInclude Include="..\..\source\html\html-imp.h" />
     <ClInclude Include="..\..\source\pdf\pdf-annot-imp.h" />
   </ItemGroup>
   <ItemGroup>

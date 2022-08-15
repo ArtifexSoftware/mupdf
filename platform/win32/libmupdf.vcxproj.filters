@@ -866,5 +866,8 @@
     <ClInclude Include="..\..\source\fitz\xml-imp.h">
       <Filter>fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\html\html-imp.h">
+      <Filter>html</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
