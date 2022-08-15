@@ -174,7 +174,7 @@
     <None Include="..\java\src\com\artifex\mupdf\fitz\SeekableStream.java">
       <Filter>com/artifex/mupdf/fitz</Filter>
     </None>
-    <None Include="..\java\src\com\artifex\mupdf\fitz\HTMLStory.java">
+    <None Include="..\java\src\com\artifex\mupdf\fitz\Story.java">
       <Filter>com/artifex/mupdf/fitz</Filter>
     </None>
     <None Include="..\java\src\com\artifex\mupdf\fitz\XML.java">
@@ -291,7 +291,7 @@
     <ClCompile Include="..\java\jni\android\androidimage.c">
       <Filter>jni\android</Filter>
     </ClCompile>
-    <ClCompile Include="..\java\jni\htmlstory.c">
+    <ClCompile Include="..\java\jni\story.c">
       <Filter>jni</Filter>
     </ClCompile>
     <ClCompile Include="..\java\jni\xml.c">

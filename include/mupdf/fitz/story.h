@@ -46,12 +46,12 @@
 */
 
 
-typedef struct fz_html_story_s fz_html_story;
+typedef struct fz_story_s fz_story;
 
 /*
 	Create a text story using styled html.
 */
-fz_html_story *fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em);
+fz_story *fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em);
 
 /*
 	Retrieve the warnings given from parsing this story.
@@ -64,9 +64,9 @@ fz_html_story *fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *us
 
 	This function does not need to be called, but once it has been
 	the DOM is no longer accessible, and any fz_xml pointer
-	retrieved from fz_html_story_docment is no longer valid.
+	retrieved from fz_story_docment is no longer valid.
 */
-const char *fz_story_warnings(fz_context *ctx, fz_html_story *story);
+const char *fz_story_warnings(fz_context *ctx, fz_story *story);
 
 /*
 	Place (or continue placing) a story into the supplied rectangle
@@ -80,10 +80,10 @@ const char *fz_story_warnings(fz_context *ctx, fz_html_story *story);
 	the unused remainder of the story.
 
 	After this function is called, the DOM is no longer accessible,
-	and any fz_xml pointer retrieved from fz_html_story_document is no
+	and any fz_xml pointer retrieved from fz_story_document is no
 	longer valid.
 */
-int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled);
+int fz_place_story(fz_context *ctx, fz_story *story, fz_rect where, fz_rect *filled);
 
 /*
 	Draw the placed story to the given device.
@@ -91,18 +91,18 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 	This moves the point at which subsequent calls to fz_place_story
 	will restart placing to the end of what has just been output.
 */
-void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_matrix ctm);
+void fz_draw_story(fz_context *ctx, fz_story *story, fz_device *dev, fz_matrix ctm);
 
 /*
 	Reset the position within the story at which the next layout call
 	will continue to the start of the story.
 */
-void fz_reset_story(fz_context *ctx, fz_html_story *story);
+void fz_reset_story(fz_context *ctx, fz_story *story);
 
 /*
 	Drop the html story.
 */
-void fz_drop_html_story(fz_context *ctx, fz_html_story *story);
+void fz_drop_story(fz_context *ctx, fz_story *story);
 
 /*
 	Get a borrowed reference to the DOM document pointer for this
@@ -113,7 +113,7 @@ void fz_drop_html_story(fz_context *ctx, fz_html_story *story);
 	or retrieval of the warnings. Once either of those things happen
 	the DOM representation is destroyed.
 */
-fz_xml *fz_html_story_document(fz_context *ctx, fz_html_story *story);
+fz_xml *fz_story_document(fz_context *ctx, fz_story *story);
 
 
 typedef struct
@@ -175,9 +175,9 @@ typedef struct
 	 * story into so far. After the first layout, this will be 1. If a
 	 * layout is repeated, this number is not incremented. */
 	int rectangle_num;
-} fz_html_story_element_position;
+} fz_story_element_position;
 
-typedef void (fz_story_position_callback)(fz_context *ctx, void *arg, const fz_html_story_element_position *);
+typedef void (fz_story_position_callback)(fz_context *ctx, void *arg, const fz_story_element_position *);
 
 /*
 	Enumerate the positions for key blocks in the story.
@@ -185,6 +185,6 @@ typedef void (fz_story_position_callback)(fz_context *ctx, void *arg, const fz_h
 	This will cause the supplied function to be called with details of each
 	element in the story that is either a header, or has an id.
 */
-void fz_story_positions(fz_context *ctx, fz_html_story *story, fz_story_position_callback *cb, void *arg);
+void fz_story_positions(fz_context *ctx, fz_story *story, fz_story_position_callback *cb, void *arg);
 
 #endif

@@ -580,9 +580,9 @@ static void fz_drop_html_imp(fz_context *ctx, fz_storable *stor)
 	fz_drop_pool(ctx, html->tree.pool);
 }
 
-static void fz_drop_html_story_imp(fz_context *ctx, fz_storable *stor)
+static void fz_drop_story_imp(fz_context *ctx, fz_storable *stor)
 {
-	fz_html_story *story = (fz_html_story *)stor;
+	fz_story *story = (fz_story *)stor;
 	fz_free(ctx, story->user_css);
 	fz_drop_html_font_set(ctx, story->font_set);
 	fz_drop_xml(ctx, story->dom);
@@ -608,7 +608,7 @@ void fz_drop_html(fz_context *ctx, fz_html *html)
 	fz_drop_html_tree(ctx, &html->tree);
 }
 
-void fz_drop_html_story(fz_context *ctx, fz_html_story *story)
+void fz_drop_story(fz_context *ctx, fz_story *story)
 {
 	if (!story)
 		return;
@@ -1648,10 +1648,10 @@ restore_warnings(fz_context *ctx, warning_save *save)
 	fz_set_warning_callback(ctx, save->old, save->arg);
 }
 
-fz_html_story *
-fz_new_html_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
+fz_story *
+fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
 {
-	fz_html_story *story = fz_new_derived_html_tree(ctx, fz_html_story, fz_drop_html_story_imp);
+	fz_story *story = fz_new_derived_html_tree(ctx, fz_story, fz_drop_story_imp);
 	warning_save saved = { 0 };
 
 	fz_var(saved);
@@ -1941,7 +1941,7 @@ void fz_purge_stored_html(fz_context *ctx, void *doc)
 }
 
 static void
-convert_to_boxes(fz_context *ctx, fz_html_story *story)
+convert_to_boxes(fz_context *ctx, fz_story *story)
 {
 	warning_save saved = { 0 };
 
@@ -1965,7 +1965,7 @@ convert_to_boxes(fz_context *ctx, fz_html_story *story)
 		fz_rethrow(ctx);
 }
 
-int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect *filled)
+int fz_place_story(fz_context *ctx, fz_story *story, fz_rect where, fz_rect *filled)
 {
 	float w, h;
 
@@ -2014,7 +2014,7 @@ int fz_place_story(fz_context *ctx, fz_html_story *story, fz_rect where, fz_rect
 }
 
 const char *
-fz_story_warnings(fz_context *ctx, fz_html_story *story)
+fz_story_warnings(fz_context *ctx, fz_story *story)
 {
 	unsigned char *data;
 

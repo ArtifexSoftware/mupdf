@@ -1909,7 +1909,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html *html, int 
 	fz_draw_restarted_html(ctx, dev, ctm, html->tree.root->down, page_top, page_bot, NULL);
 }
 
-void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_matrix ctm)
+void fz_draw_story(fz_context *ctx, fz_story *story, fz_device *dev, fz_matrix ctm)
 {
 	float page_top, page_bot;
 	fz_html_box *b;
@@ -1958,7 +1958,7 @@ void fz_draw_story(fz_context *ctx, fz_html_story *story, fz_device *dev, fz_mat
 		fz_pop_clip(ctx, dev);
 }
 
-void fz_reset_story(fz_context *ctx, fz_html_story *story)
+void fz_reset_story(fz_context *ctx, fz_story *story)
 {
 	if (story == NULL)
 		return;
@@ -2037,7 +2037,7 @@ static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top
 	float *padding = box->padding;
 	int stopped = 0;
 	int skipping;
-	fz_html_story_element_position pos;
+	fz_story_element_position pos;
 
 	assert(fz_html_box_has_boxes(box));
 	y0 = box->y - padding[T];
@@ -2157,7 +2157,7 @@ static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top,
 		if (node->box && node->box->id)
 		{
 			/* We have a node to callback for. */
-			fz_html_story_element_position pos;
+			fz_story_element_position pos;
 
 			pos.text = NULL;
 			pos.depth = depth;
@@ -2209,7 +2209,7 @@ static int enumerate_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 	return 0;
 }
 
-void fz_story_positions(fz_context *ctx, fz_html_story *story, fz_story_position_callback *cb, void *arg)
+void fz_story_positions(fz_context *ctx, fz_story *story, fz_story_position_callback *cb, void *arg)
 {
 	float page_top, page_bot;
 	fz_html_box *b;
