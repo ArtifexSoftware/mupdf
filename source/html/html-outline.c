@@ -70,60 +70,66 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 	const char *href;
 	float end;
 
+	float page_y0 = page * page_h;
+	float page_y1 = (page + 1) * page_h;
+
 	while (flow)
 	{
-		href = box_href(flow->box);
 		next = flow->next;
-		if (href && (int)(flow->y / page_h) == page)
+		if (flow->y >= page_y0 && flow->y <= page_y1)
 		{
-			/* Coalesce contiguous flow boxes into one link node */
-			end = flow->x + flow->w;
-			while (next &&
+			href = box_href(flow->box);
+			if (href)
+			{
+				/* Coalesce contiguous flow boxes into one link node */
+				end = flow->x + flow->w;
+				while (next &&
 					next->y == flow->y &&
 					next->h == flow->h &&
 					has_same_href(next->box, href))
-			{
-				end = next->x + next->w;
-				next = next->next;
-			}
-
-			bbox.x0 = flow->x;
-			bbox.y0 = flow->y - page * page_h;
-			bbox.x1 = end;
-			bbox.y1 = bbox.y0 + flow->h;
-			if (flow->type != FLOW_IMAGE)
-			{
-				/* flow->y is the baseline, adjust bbox appropriately */
-				bbox.y0 -= 0.8f * flow->h;
-				bbox.y1 -= 0.8f * flow->h;
-			}
-
-			if (is_internal_uri(href))
-			{
-				if (href[0] == '#')
 				{
-					fz_strlcpy(path, file, sizeof path);
-					fz_strlcat(path, href, sizeof path);
+					end = next->x + next->w;
+					next = next->next;
+				}
+
+				bbox.x0 = flow->x;
+				bbox.y0 = flow->y - page * page_h;
+				bbox.x1 = end;
+				bbox.y1 = bbox.y0 + flow->h;
+				if (flow->type != FLOW_IMAGE)
+				{
+					/* flow->y is the baseline, adjust bbox appropriately */
+					bbox.y0 -= 0.8f * flow->h;
+					bbox.y1 -= 0.8f * flow->h;
+				}
+
+				if (is_internal_uri(href))
+				{
+					if (href[0] == '#')
+					{
+						fz_strlcpy(path, file, sizeof path);
+						fz_strlcat(path, href, sizeof path);
+					}
+					else
+					{
+						fz_strlcpy(path, dir, sizeof path);
+						fz_strlcat(path, "/", sizeof path);
+						fz_strlcat(path, href, sizeof path);
+					}
+					fz_urldecode(path);
+					fz_cleanname(path);
+
+					dest = path;
 				}
 				else
 				{
-					fz_strlcpy(path, dir, sizeof path);
-					fz_strlcat(path, "/", sizeof path);
-					fz_strlcat(path, href, sizeof path);
+					dest = href;
 				}
-				fz_urldecode(path);
-				fz_cleanname(path);
 
-				dest = path;
+				link = fz_new_derived_link(ctx, fz_link, bbox, dest);
+				link->next = head;
+				head = link;
 			}
-			else
-			{
-				dest = href;
-			}
-
-			link = fz_new_derived_link(ctx, fz_link, bbox, dest);
-			link->next = head;
-			head = link;
 		}
 		flow = next;
 	}
