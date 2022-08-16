@@ -74,6 +74,10 @@ const char *fz_story_warnings(fz_context *ctx, fz_story *story);
 	Returns zero if all the content fitted, non-zero if there is
 	more to fit.
 
+	Note, that filled may not be returned as a strict subset of
+	where, due to padding/margins at the bottom of pages, and
+	non-wrapping content extending to the right.
+
 	Subsequent calls will attempt to place the same section of story
 	again and again, until the placed story is drawn using fz_draw_story,
 	whereupon subsequent calls to fz_place_story will attempt to place

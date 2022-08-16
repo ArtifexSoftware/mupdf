@@ -363,7 +363,6 @@ static unsigned int measure_string_to_fit(fz_context *ctx, const char *s, fz_htm
 	float line_w;
 	uint32_t min;
 	int fragment_offset;
-	const char *t;
 	float node_w;
 
 	node_w = 0;
@@ -586,13 +585,24 @@ static void find_accumulated_margins(fz_context *ctx, fz_html_box *box, float *w
 	}
 }
 
-static int flush_line(fz_context *ctx, fz_html_box *box, float page_h, float page_w, float line_w, int align, float indent, fz_html_flow *a, fz_html_flow *b, fz_html_restarter *restart)
+typedef struct
+{
+	fz_pool *pool;
+	float page_top;
+	float page_h;
+	hb_buffer_t *hb_buf;
+	fz_html_restarter *restart;
+} layout_data;
+
+static int flush_line(fz_context *ctx, fz_html_box *box, layout_data *ld, float page_w, float line_w, int align, float indent, fz_html_flow *a, fz_html_flow *b, fz_html_restarter *restart)
 {
 	float avail, line_h, baseline, vadv;
+	float page_h = ld->page_h;
+	float page_top = ld->page_top;
 	line_h = measure_line(a, b, &baseline, &vadv);
 	if (page_h > 0)
 	{
-		avail = page_h - fmodf(box->b, page_h);
+		avail = page_h - fmodf(box->b - page_top, page_h);
 		/* If the line is larger than the available space skip to the start
 		 * of the next page. */
 		if (line_h > avail)
@@ -632,14 +642,6 @@ static void layout_flow_inline(fz_context *ctx, fz_html_box *box, fz_html_box *t
 		box = box->next;
 	}
 }
-
-typedef struct
-{
-	fz_pool *pool;
-	float page_h;
-	hb_buffer_t *hb_buf;
-	fz_html_restarter *restart;
-} layout_data;
 
 static fz_html_flow *
 break_node(fz_context *ctx, fz_html_flow *node, layout_data *ld, float w)
@@ -857,7 +859,7 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 				line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
 			else
 				line_align = align;
-			if (flush_line(ctx, box, ld->page_h, box->w, candidate_w, line_align, indent, line, break_at, restart))
+			if (flush_line(ctx, box, ld, box->w, candidate_w, line_align, indent, line, break_at, restart))
 				return;
 
 			line = break_at;
@@ -876,17 +878,19 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 	if (line)
 	{
 		line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
-		flush_line(ctx, box, ld->page_h, box->w, line_w, line_align, indent, line, NULL, restart);
+		flush_line(ctx, box, ld, box->w, line_w, line_align, indent, line, NULL, restart);
 	}
 }
 
-static int layout_block_page_break(fz_context *ctx, float *yp, float page_h, float vertical, int page_break)
+static int layout_block_page_break(fz_context *ctx, float *yp, layout_data *ld, float vertical, int page_break)
 {
+	float page_h = ld->page_h;
+	float page_top = ld->page_top;
 	if (page_h <= 0)
 		return 0;
 	if (page_break == PB_ALWAYS || page_break == PB_LEFT || page_break == PB_RIGHT)
 	{
-		float avail = page_h - fmodf(*yp - vertical, page_h);
+		float avail = page_h - fmodf(*yp - vertical - page_top, page_h);
 		int number = (*yp + (page_h * 0.1f)) / page_h;
 		if (avail > 0 && avail < page_h)
 		{
@@ -999,9 +1003,11 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 }
 
 static float
-advance_for_spacing(float start_b, float spacing, float page_h, int *eop)
+advance_for_spacing(float start_b, float spacing, layout_data *ld, int *eop)
 {
-	float avail = page_h - fmodf(start_b, page_h);
+	float page_h = ld->page_h;
+	float page_top = ld->page_top;
+	float avail = page_h - fmodf(start_b - page_top, page_h);
 
 	if (spacing > avail)
 	{
@@ -1079,7 +1085,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
 
-	if (layout_block_page_break(ctx, top_b, ld->page_h, vertical, style->page_break_before))
+	if (layout_block_page_break(ctx, top_b, ld, vertical, style->page_break_before))
 		vertical = 0;
 
 	/* Position the left of this box relative to the supplied 'top' positions. */
@@ -1117,7 +1123,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 	else
 	{
 		/* We're not skipping, so add in the spacings to the top edge of our box. */
-		box->y = advance_for_spacing(box->y, margin[T] + border[T] + padding[T], ld->page_h, &eop);
+		box->y = advance_for_spacing(box->y, margin[T] + border[T] + padding[T], ld, &eop);
 		if (eop)
 		{
 			box->b = box->y;
@@ -1174,7 +1180,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 			/* Unless we're still skipping, the base of our box must now be at least as
 			 * far down as the child, plus the childs spacing. */
 			if (!restart || restart->start == NULL)
-				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld->page_h, &eop);
+				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld, &eop);
 		}
 		else if (child->type == BOX_TABLE)
 		{
@@ -1183,7 +1189,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 			first = 0;
 			/* If we're skipping, then take no notice of the child's margins. */
 			if (!restart || restart->start == NULL)
-				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld->page_h, &eop);
+				box->b = advance_for_spacing(child->b, child->padding[B] + child->border[B] + child->margin[B], ld, &eop);
 		}
 		else if (child->type == BOX_FLOW)
 		{
@@ -1222,7 +1228,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 		vertical = 0;
 	}
 
-	if (layout_block_page_break(ctx, &box->b, ld->page_h, 0, style->page_break_after))
+	if (layout_block_page_break(ctx, &box->b, ld, 0, style->page_break_after))
 	{
 		vertical = 0;
 		margin[B] = 0;
@@ -1278,6 +1284,7 @@ fz_restartable_layout_html(fz_context *ctx, fz_html_tree *tree, float w, float h
 
 		ld.restart = restart;
 		ld.page_h = page_h;
+		ld.page_top = box->y;
 		ld.pool = tree->pool;
 		if (restart)
 			restart->potential = NULL;
