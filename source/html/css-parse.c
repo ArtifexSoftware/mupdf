@@ -96,7 +96,7 @@ FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
 	*d++ = '<', n--;
 
 	/* Postfix */
-	n = strlen(err_pos);
+	n = (int)strlen((const char *)err_pos);
 	if (n <= PRE_POST_SIZE)
 	{
 		while (n > 0)

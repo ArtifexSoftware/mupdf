@@ -647,7 +647,6 @@ static fz_html_flow *
 break_node(fz_context *ctx, fz_html_flow *node, layout_data *ld, float w)
 {
 	const char *s = get_node_text(ctx, node);
-	float orig_w = node->w;
 	unsigned int split_pos;
 	fz_html_flow *new_node;
 
