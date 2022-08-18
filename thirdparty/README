@@ -1,7 +1,10 @@
-This directory holds third party libraries as git submodules.
+This directory holds third party libraries.
 
-If the directories are empty, the makefile based build will try
-to use system libraries instead.
+If you got MuPDF from a source release tarball, these libraries have been
+stripped down for size and do not include test files and other auxiliary data.
+If you want the full versions you should clone from git!
+
+If you got MuPDF from a git checkout, these are git submodules.
 
 To set up the third party modules for building from git:
 
@@ -11,5 +14,8 @@ To set up the third party modules for building from git:
 Then after each pull (to make sure they're up to date):
 
 	$ git submodule update
+
+If the directories are empty or missing, the makefile based build will try to
+use system libraries instead.
 
 Do NOT edit files in the submodule checkouts unless you know what you're doing.
