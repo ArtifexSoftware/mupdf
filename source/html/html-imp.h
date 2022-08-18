@@ -396,21 +396,42 @@ struct fz_html_box_s
 	unsigned int markup_dir : 2;
 	unsigned int heading : 3; /* h1..h6 */
 	unsigned int list_item : 23;
-	float x, y, w, b; /* content */
-	float em;
-	/* During construction, 'next' plays double duty; as well
-	 * as its normal meaning of 'next sibling', the last sibling
-	 * has next meaning "the last of my children". We correct
-	 * this as a post-processing pass after construction. */
-	fz_html_box *up, *down, *next, *last_child;
-	fz_html_flow *flow_head, **flow_tail;
+
+	fz_html_box *up, *down, *next;
+
+#ifndef NDEBUG
 	const char *tag;
-	char *id, *href;
+#endif
+	const char *id, *href;
 	const fz_css_style *style;
-	/* Only BOX_{BLOCK,TABLE,TABLE_ROW,TABLE_CELL} actually use the following */
-	float padding[4];
-	float margin[4];
-	float border[4];
+
+	union {
+		/* Only needed during build stage */
+		struct {
+			fz_html_box *last_child;
+			fz_html_flow **flow_tail;
+		} build;
+
+		/* Only needed during layout */
+		struct {
+			float x, y, w, b; /* content */
+			float em;
+		} layout;
+	} s;
+
+	union {
+		/* Only BOX_FLOW use the following */
+		struct {
+			fz_html_flow *head;
+		} flow;
+
+		/* Only BOX_{BLOCK,TABLE,TABLE_ROW,TABLE_CELL} use the following */
+		struct {
+			float padding[4];
+			float margin[4];
+			float border[4];
+		} block;
+	} u;
 };
 
 static inline int
@@ -514,7 +535,7 @@ fz_html *fz_store_html(fz_context *ctx, fz_html *html, void *doc, int chapter);
 fz_html *fz_find_html(fz_context *ctx, void *doc, int chapter);
 void fz_purge_stored_html(fz_context *ctx, void *doc);
 
-void fz_restartable_layout_html(fz_context *ctx, fz_html_tree *tree, float w, float h, float page_w, float page_h, float em, fz_html_restarter *restart);
+void fz_restartable_layout_html(fz_context *ctx, fz_html_tree *tree, float start_x, float start_y, float page_w, float page_h, float em, fz_html_restarter *restart);
 
 fz_html_flow *fz_html_split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset);
 
