@@ -50,6 +50,9 @@ typedef struct fz_story_s fz_story;
 
 /*
 	Create a text story using styled html.
+
+	Passing a NULL buffer will be treated as an empty document.
+	Passing a NULL user_css will be treated as an empty CSS string.
 */
 fz_story *fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em);
 
