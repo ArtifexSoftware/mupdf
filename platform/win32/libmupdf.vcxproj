@@ -1009,6 +1009,7 @@
     <ClCompile Include="..\..\source\html\html-layout.c" />
     <ClCompile Include="..\..\source\html\html-outline.c" />
     <ClCompile Include="..\..\source\html\html-parse.c" />
+    <ClCompile Include="..\..\source\html\mobi.c" />
     <ClCompile Include="..\..\source\html\xml-dom.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />
