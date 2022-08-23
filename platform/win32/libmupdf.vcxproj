@@ -1150,6 +1150,7 @@
     <ClInclude Include="..\..\source\fitz\color-imp.h" />
     <ClInclude Include="..\..\source\fitz\context-imp.h" />
     <ClInclude Include="..\..\source\fitz\draw-imp.h" />
+    <ClInclude Include="..\..\source\fitz\font-table.h" />
     <ClInclude Include="..\..\source\fitz\glyph-imp.h" />
     <ClInclude Include="..\..\source\fitz\glyphbox.h" />
     <ClInclude Include="..\..\source\fitz\html-tags.h" />

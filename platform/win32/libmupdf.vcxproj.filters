@@ -878,5 +878,8 @@
     <ClInclude Include="..\..\source\html\html-imp.h">
       <Filter>html</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\fitz\font-table.h">
+      <Filter>fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
