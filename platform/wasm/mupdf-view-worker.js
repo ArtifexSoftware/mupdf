@@ -282,6 +282,9 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 	}
 };
 
+let currentTool = null;
+let currentSelection = null;
+
 // TODO - Use mupdf instead
 // TODO - Use Map
 const pageWasRendered = {};
@@ -300,6 +303,13 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 	try {
 		page = openDocument.loadPage(pageNumber - 1);
 		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
+
+		// TODO - draw points on hover/select
+		let points = currentTool?.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+
 		let png = pixmap.toPNG();
 
 		postMessage(["RENDER", id, { pageNumber, png }]);
@@ -310,8 +320,6 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 		page?.free();
 	}
 };
-
-let currentSelection = null;
 
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	let pdfPage = openDocument.loadPage(pageNumber - 1);
@@ -324,16 +332,30 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	const annotations = pdfPage.annotations();
-	for (const annotation of annotations.annotations) {
-		const bbox = annotation.bound();
-
-		if (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1) {
-			currentSelection = new SelectedAnnotation(pdfPage, annotation, bbox, x, y);
-			pageWasRendered[pageNumber] = true;
-			break;
+	if (currentTool != null) {
+		let newAnnot = currentTool.mouseDown(pdfPage, x, y);
+		if (newAnnot) {
+			currentTool = null;
+			//currentSelection = newAnnot;
 		}
+		pageWasRendered[pageNumber] = false;
+		return true;
 	}
+
+	// TODO - multi-selection
+	// TODO - differentiate between hovered, selected, held
+
+	const clickedAnnotation = pdfPage.annotations().annotations.find(annotation => {
+		const bbox = annotation.bound();
+		return (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1);
+	});
+	if (clickedAnnotation != null) {
+		currentSelection = new SelectedAnnotation(pdfPage, clickedAnnotation, clickedAnnotation.bound(), x, y);
+		pageWasRendered[pageNumber] = false;
+		return true;
+	}
+
+	return false;
 };
 
 // TODO - handle crossing pages
@@ -393,3 +415,344 @@ class SelectedAnnotation {
 		return true;
 	}
 }
+
+function inSquare(squarePoint, x, y) {
+	return (
+		x >= squarePoint.x - 5 &&
+		x < squarePoint.x + 5 &&
+		y >= squarePoint.y - 5 &&
+		y < squarePoint.y + 5
+	);
+}
+
+class CreateText {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_TEXT);
+		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
+		//pdf_annot_icon_name
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+// TODO - CreateLink
+
+class CreateFreeText {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_FREE_TEXT);
+		annot.setRect(new mupdf.Rect(x, y, x + 200, y + 100));
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateLine {
+	constructor() {
+		this.points = [];
+	}
+
+	mouseDown(pdfPage, x, y) {
+		this.points.push(new mupdf.Point(x, y));
+
+		if (this.points.length == 2) {
+			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_LINE);
+			annot.setLine(this.points[0], this.points[1]);
+			// pdf_set_annot_interior_color
+			// pdf_set_annot_line_ending_styles
+			pdfPage.update();
+			return annot;
+		}
+
+		return null;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateSquare {
+	constructor() {
+		this.points = [];
+	}
+
+	mouseDown(pdfPage, x, y) {
+		this.points.push(new mupdf.Point(x, y));
+
+		if (this.points.length == 2) {
+			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_SQUARE);
+			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
+			// pdf_set_annot_interior_color
+			pdfPage.update();
+			return annot;
+		}
+
+		return null;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateCircle {
+	constructor() {
+		this.points = [];
+	}
+
+	mouseDown(pdfPage, x, y) {
+		this.points.push(new mupdf.Point(x, y));
+
+		if (this.points.length == 2) {
+			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_CIRCLE);
+			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
+			// pdf_set_annot_interior_color
+			pdfPage.update();
+			return annot;
+		}
+
+		return null;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreatePolygon {
+	constructor() {
+		this.points = [];
+	}
+
+	mouseDown(pdfPage, x, y) {
+		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
+			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYGON);
+			for (const point of this.points) {
+				annot.addVertex(point);
+			}
+			pdfPage.update();
+			//pdf_annot_interior_color
+			//pdf_annot_line_ending_styles
+			return annot;
+		}
+
+		this.points.push(new mupdf.Point(x, y));
+		return false;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreatePolyLine {
+	constructor() {
+		this.points = [];
+	}
+
+	mouseDown(pdfPage, x, y) {
+		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
+			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYLINE);
+			for (const point of this.points) {
+				annot.addVertex(point);
+			}
+			pdfPage.update();
+			//pdf_annot_interior_color
+			//pdf_annot_line_ending_styles
+			return annot;
+		}
+
+		this.points.push(new mupdf.Point(x, y));
+		return false;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateStamp {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_STAMP);
+		annot.setRect(new mupdf.Rect(x, y, x + 190, y + 50));
+		//pdf_annot_icon_name
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateCaret {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_CARET);
+		annot.setRect(new mupdf.Rect(x, y, x + 18, y + 15));
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+
+class CreateFileAttachment {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_FILE_ATTACHMENT);
+		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
+		//pdf_annot_icon_name
+		//pdf_annot_filespec
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+class CreateSound {
+	constructor() {}
+
+	mouseDown(pdfPage, x, y) {
+		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_SOUND);
+		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
+		//pdf_annot_icon_name
+		pdfPage.update();
+		return annot;
+	}
+
+	mouseDrag(x, y) {
+		// move last point
+	}
+
+	mouseMove(x, y) {
+		// update hovered
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+}
+
+// TODO - Use Map
+const editionTools = {
+	CreateText,
+	CreateFreeText,
+	CreateLine,
+	CreateSquare,
+	CreateCircle,
+	CreatePolygon,
+	CreatePolyLine,
+	CreateStamp,
+	CreateCaret,
+	CreateFileAttachment,
+	CreateSound,
+};
+
+workerMethods.setEditionTool = function(toolName) {
+	// TODO - warn if missing
+	currentTool = new (editionTools[toolName]);
+	console.log("new tool:", toolName, " - ", currentTool);
+};

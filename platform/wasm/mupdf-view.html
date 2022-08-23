@@ -205,6 +205,22 @@ div.error {
 		</div>
 	</div>
 	<div class="menu">
+		<div class="menu-button">Tools</div>
+		<div class="menu-popup">
+			<div onclick="setTool('CreateText')">Create Text</div>
+			<div onclick="setTool('CreateFreeText')">Create FreeText</div>
+			<div onclick="setTool('CreateLine')">Create Line</div>
+			<div onclick="setTool('CreateSquare')">Create Square</div>
+			<div onclick="setTool('CreateCircle')">Create Circle</div>
+			<div onclick="setTool('CreatePolygon')">Create Polygon</div>
+			<div onclick="setTool('CreatePolyLine')">Create PolyLine</div>
+			<div onclick="setTool('CreateStamp')">Create Stamp</div>
+			<div onclick="setTool('CreateCaret')">Create Caret</div>
+			<div onclick="setTool('CreateFileAttachment')">Create FileAttachment</div>
+			<div onclick="setTool('CreateSound')">Create Sound</div>
+		</div>
+	</div>
+	<div class="menu">
 		<div class="menu-button">View</div>
 		<div class="menu-popup">
 			<div onclick="toggleFullscreen()">Fullscreen</div>
@@ -384,6 +400,10 @@ async function pageSearch(pageNumber) {
 		div.style.height = bbox.h + 'px';
 		pageHIT[pageNumber].appendChild(div);
 	}
+}
+
+function setTool(toolName) {
+	mupdfView.setEditionTool(toolName);
 }
 
 function isVisible(element, slop) {

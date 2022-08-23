@@ -52,6 +52,8 @@ class MupdfTryLaterError extends MupdfError {
 
 class Point {
 	constructor(x, y) {
+		assert(typeof x === "number" && !Number.isNaN(x), "invalid x argument");
+		assert(typeof y === "number" && !Number.isNaN(y), "invalid y argument");
 		this.x = x;
 		this.y = y;
 	}
@@ -67,6 +69,10 @@ class Point {
 
 class Rect {
 	constructor(x0, y0, x1, y1) {
+		assert(typeof x0 === "number" && !Number.isNaN(x0), "invalid x0 argument");
+		assert(typeof y0 === "number" && !Number.isNaN(y0), "invalid y0 argument");
+		assert(typeof x1 === "number" && !Number.isNaN(x1), "invalid x1 argument");
+		assert(typeof y1 === "number" && !Number.isNaN(y1), "invalid y1 argument");
 		this.x0 = x0;
 		this.y0 = y0;
 		this.x1 = x1;
@@ -218,17 +224,6 @@ class Document extends Wrapper {
 		return new Document(pointer);
 	}
 
-	// TODO - Rename "magic" to "MIME-type" ?
-	static openFromStream(stream, magic) {
-		let pointer = libmupdf.ccall(
-			"wasm_open_document_with_stream",
-			"number",
-			["number", "string"],
-			[stream.pointer, magic]
-		);
-		return new Document(pointer);
-	}
-
 	countPages() {
 		return libmupdf._wasm_count_pages(this.pointer);
 	}
@@ -341,6 +336,10 @@ class PdfPage extends Page {
 		this.pdfPagePointer = pdfPagePointer;
 	}
 
+	update() {
+		libmupdf._wasm_pdf_update_page(this.pdfPagePointer);
+	}
+
 	annotations() {
 		let annotations = [];
 
@@ -351,7 +350,16 @@ class PdfPage extends Page {
 		return new AnnotationList(annotations);
 	}
 
-	// TODO wasm_pdf_create_annot_raw
+	createAnnot(annotType) {
+		assert(typeof annotType === "number" && !Number.isNaN(annotType), "invalid annotType argument");
+
+		// TODO - Update annotation list?
+		let annotPointer = libmupdf._wasm_pdf_create_annot(this.pdfPagePointer, annotType);
+		let annot = new Annotation(annotPointer);
+
+		this.update();
+		return annot;
+	}
 
 	createLink(bbox, uri) {
 		assert(bbox instanceof Rect, "invalid bbox argument");
@@ -788,6 +796,37 @@ class Annotation extends Wrapper {
 
 }
 
+const PDF_ANNOT_TEXT = 0;
+const PDF_ANNOT_LINK = 1;
+const PDF_ANNOT_FREE_TEXT = 2;
+const PDF_ANNOT_LINE = 3;
+const PDF_ANNOT_SQUARE = 4;
+const PDF_ANNOT_CIRCLE = 5;
+const PDF_ANNOT_POLYGON = 6;
+const PDF_ANNOT_POLY_LINE = 7;
+const PDF_ANNOT_HIGHLIGHT = 8;
+const PDF_ANNOT_UNDERLINE = 9;
+const PDF_ANNOT_SQUIGGLY = 10;
+const PDF_ANNOT_STRIKE_OUT = 11;
+const PDF_ANNOT_REDACT = 12;
+const PDF_ANNOT_STAMP = 13;
+const PDF_ANNOT_CARET = 14;
+const PDF_ANNOT_INK = 15;
+const PDF_ANNOT_POPUP = 16;
+const PDF_ANNOT_FILE_ATTACHMENT = 17;
+const PDF_ANNOT_SOUND = 18;
+const PDF_ANNOT_MOVIE = 19;
+const PDF_ANNOT_RICH_MEDIA = 20;
+const PDF_ANNOT_WIDGET = 21;
+const PDF_ANNOT_SCREEN = 22;
+const PDF_ANNOT_PRINTER_MARK = 23;
+const PDF_ANNOT_TRAP_NET = 24;
+const PDF_ANNOT_WATERMARK = 25;
+const PDF_ANNOT_3D = 26;
+const PDF_ANNOT_PROJECTION = 27;
+const PDF_ANNOT_UNKNOWN = -1;
+
+
 class ColorSpace extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_colorspace);
@@ -806,6 +845,13 @@ class Pixmap extends Wrapper {
 
 	height() {
 		return this.bbox.height();
+	}
+
+	// TODO
+	drawGrabHandle(x, y) {
+		// TODO
+		const VALUE = 0;
+		libmupdf._wasm_clear_pixmap_rect_with_value(this.pointer, VALUE, x - 5, y - 5, x + 5, y + 5);
 	}
 
 	samples() {
@@ -1064,6 +1110,7 @@ function fetchClose(id) {
 const mupdf = {
 	MupdfError,
 	MupdfTryLaterError,
+	Point,
 	Rect,
 	Matrix,
 	Document,
@@ -1081,6 +1128,35 @@ const mupdf = {
 	Stream,
 	Output,
 	STextPage,
+	PDF_ANNOT_TEXT,
+	PDF_ANNOT_LINK,
+	PDF_ANNOT_FREE_TEXT,
+	PDF_ANNOT_LINE,
+	PDF_ANNOT_SQUARE,
+	PDF_ANNOT_CIRCLE,
+	PDF_ANNOT_POLYGON,
+	PDF_ANNOT_POLY_LINE,
+	PDF_ANNOT_HIGHLIGHT,
+	PDF_ANNOT_UNDERLINE,
+	PDF_ANNOT_SQUIGGLY,
+	PDF_ANNOT_STRIKE_OUT,
+	PDF_ANNOT_REDACT,
+	PDF_ANNOT_STAMP,
+	PDF_ANNOT_CARET,
+	PDF_ANNOT_INK,
+	PDF_ANNOT_POPUP,
+	PDF_ANNOT_FILE_ATTACHMENT,
+	PDF_ANNOT_SOUND,
+	PDF_ANNOT_MOVIE,
+	PDF_ANNOT_RICH_MEDIA,
+	PDF_ANNOT_WIDGET,
+	PDF_ANNOT_SCREEN,
+	PDF_ANNOT_PRINTER_MARK,
+	PDF_ANNOT_TRAP_NET,
+	PDF_ANNOT_WATERMARK,
+	PDF_ANNOT_3D,
+	PDF_ANNOT_PROJECTION,
+	PDF_ANNOT_UNKNOWN,
 	onFetchCompleted: () => {},
 };
 

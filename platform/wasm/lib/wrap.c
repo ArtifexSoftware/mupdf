@@ -384,6 +384,14 @@ fz_irect *wasm_pixmap_bbox(fz_pixmap *pix)
 }
 
 EMSCRIPTEN_KEEPALIVE
+void wasm_clear_pixmap_rect_with_value(fz_pixmap *pix, int value, int rect_x0, int rect_y0, int rect_x1, int rect_y1)
+{
+	fz_irect rect = fz_make_irect(rect_x0, rect_y0, rect_x1, rect_y1);
+	// never throws
+	fz_clear_pixmap_rect_with_value(ctx, pix, value, rect);
+}
+
+EMSCRIPTEN_KEEPALIVE
 int wasm_pixmap_stride(fz_pixmap *pix)
 {
 	int stride;
@@ -696,6 +704,12 @@ fz_buffer *wasm_read_all(fz_stream *stream, size_t initial) {
 }
 
 // ANNOTATION HANDLING
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_pdf_update_page(pdf_page *page)
+{
+	pdf_update_page(ctx, page);
+}
 
 EMSCRIPTEN_KEEPALIVE
 pdf_annot *wasm_pdf_keep_annot(pdf_annot *annot)
