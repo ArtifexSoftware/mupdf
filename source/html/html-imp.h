@@ -387,6 +387,9 @@ struct fz_story_s
 
 	/* Rectangle layout count. */
 	int rect_count;
+
+	/* Archive from which to load any resources. */
+	fz_archive *zip;
 };
 
 struct fz_html_box_s

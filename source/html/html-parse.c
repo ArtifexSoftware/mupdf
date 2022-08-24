@@ -1757,7 +1757,7 @@ restore_warnings(fz_context *ctx, warning_save *save)
 }
 
 fz_story *
-fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
+fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em, fz_archive *zip)
 {
 	fz_story *story = fz_new_derived_html_tree(ctx, fz_story, fz_drop_story_imp);
 	warning_save saved = { 0 };
@@ -1773,6 +1773,7 @@ fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em)
 
 	fz_try(ctx)
 	{
+		story->zip = zip;
 		story->font_set = fz_new_html_font_set(ctx);
 		story->em = em;
 		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
@@ -2073,7 +2074,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, NULL, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0);
+		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0);
 		fz_drop_xml(ctx, story->dom);
 		story->dom = NULL;
 	}
