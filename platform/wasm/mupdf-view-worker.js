@@ -55,7 +55,7 @@ onmessage = async function (event) {
 
 let trylaterScheduled = false;
 let trylaterQueue = [];
-mupdf.onFetchCompleted = function (id) {
+mupdf.onFetchCompleted = function (_id) {
 	if (!trylaterScheduled) {
 		trylaterScheduled = true;
 
@@ -85,7 +85,7 @@ workerMethods.openDocumentFromBuffer = function (buffer, magic) {
 
 workerMethods.openDocumentFromStream = function (magic) {
 	if (openStream == null) {
-		throw new Error("openDocumentFromStream called but no stream has been open")
+		throw new Error("openDocumentFromStream called but no stream has been open");
 	}
 	openDocument = mupdf.Document.openFromStream(openStream, magic);
 };
@@ -319,7 +319,7 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 		pixmap?.free();
 		page?.free();
 	}
-};
+}
 
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	let pdfPage = openDocument.loadPage(pageNumber - 1);
@@ -436,11 +436,11 @@ class CreateText {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -461,11 +461,11 @@ class CreateFreeText {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -494,11 +494,11 @@ class CreateLine {
 		return null;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -526,11 +526,11 @@ class CreateSquare {
 		return null;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -558,11 +558,11 @@ class CreateCircle {
 		return null;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -592,11 +592,11 @@ class CreatePolygon {
 		return false;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -626,11 +626,11 @@ class CreatePolyLine {
 		return false;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -650,11 +650,11 @@ class CreateStamp {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -673,11 +673,11 @@ class CreateCaret {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -699,11 +699,11 @@ class CreateFileAttachment {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
@@ -723,11 +723,11 @@ class CreateSound {
 		return annot;
 	}
 
-	mouseDrag(x, y) {
+	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(x, y) {
+	mouseMove(_x, _y) {
 		// update hovered
 	}
 
