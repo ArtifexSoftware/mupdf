@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -100,32 +100,29 @@ typedef struct
 	const unsigned int *size;
 #define INBUILT_SIZE(e) (*e->size)
 #endif
-	char name[48];
+	char family[48];
 	int script;
 	int lang;
-	int order;
 	int subfont;
 	int attr;
 } font_entry;
 
 #define END_OF_DATA -2
 #define ANY_SCRIPT -1
-#define ANY_ORDER -1
-#define NO_SUBFONT -1
+#define NO_SUBFONT 0
 #define REGULAR 0
-#define CJKV_LANG -1
 
 /* First, declare all the fonts. */
 #ifdef HAVE_OBJCOPY
-#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,ORDER,SUBFONT,ATTR) \
+#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR) \
 extern unsigned char _binary_resources_fonts_##FORGE##_##NAME##_start; \
 extern unsigned char _binary_resources_fonts_##FORGE##_##NAME##_end;
 #else
-#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,ORDER,SUBFONT,ATTR) \
+#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR) \
 extern unsigned char _binary_##NAME[];\
 unsigned int _binary_##NAME##_size;
 #endif
-#define ALIAS(FORGE,NAME,NAME2,SCRIPT,LANG,ORDER,SUBFONT,ATTR)
+#define ALIAS(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR)
 #define EMPTY(SCRIPT)
 
 #include "font-table.h"
@@ -138,15 +135,15 @@ unsigned int _binary_##NAME##_size;
 #ifdef HAVE_OBJCOPY
 #define FONT_DATA(FORGE,NAME) &_binary_resources_fonts_##FORGE##_##NAME##_start
 #define FONT_SIZE(FORGE,NAME) &_binary_resources_fonts_##FORGE##_##NAME##_start, &_binary_resources_fonts_##FORGE##_##NAME##_end
-#define EMPTY(SCRIPT) { NULL, NULL, NULL, "", SCRIPT, FZ_LANG_UNSET, ANY_ORDER, NO_SUBFONT },
+#define EMPTY(SCRIPT) { NULL, NULL, NULL, "", SCRIPT, FZ_LANG_UNSET, NO_SUBFONT, REGULAR },
 #else
 #define FONT_DATA(FORGE,NAME) _binary_##NAME
 #define FONT_SIZE(FORCE,NAME) &_binary_##NAME##_size
-#define EMPTY(SCRIPT) { NULL, 0, "", SCRIPT, FZ_LANG_UNSET, ANY_ORDER, NO_SUBFONT },
+#define EMPTY(SCRIPT) { NULL, 0, "", SCRIPT, FZ_LANG_UNSET, NO_SUBFONT, REGULAR },
 #endif
 
-#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,ORDER,SUBFONT,ATTR) { FONT_DATA(FORGE, NAME), FONT_SIZE(FORGE, NAME), NAME2, SCRIPT, LANG, ORDER, SUBFONT, ATTR },
-#define ALIAS(FORGE,NAME,NAME2,SCRIPT,LANG,ORDER,SUBFONT,ATTR) { FONT_DATA(FORGE, NAME), FONT_SIZE(FORGE, NAME), NAME2, SCRIPT, LANG, ORDER, SUBFONT, ATTR },
+#define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR) { FONT_DATA(FORGE, NAME), FONT_SIZE(FORGE, NAME), NAME2, SCRIPT, LANG, SUBFONT, ATTR },
+#define ALIAS(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR) { FONT_DATA(FORGE, NAME), FONT_SIZE(FORGE, NAME), NAME2, SCRIPT, LANG, SUBFONT, ATTR },
 static font_entry inbuilt_fonts[] =
 {
 #include "font-table.h"
@@ -156,7 +153,7 @@ static font_entry inbuilt_fonts[] =
 #else
 	0,
 #endif
-	"", END_OF_DATA, FZ_LANG_UNSET, ANY_ORDER, NO_SUBFONT }
+	"", END_OF_DATA, FZ_LANG_UNSET, NO_SUBFONT, REGULAR }
 };
 
 #undef FONT
@@ -166,7 +163,7 @@ static font_entry inbuilt_fonts[] =
 #undef FONT_SIZE
 
 static const unsigned char *
-search_by_script_lang(int *size, int *subfont, int script, int language, int order)
+search_by_script_lang(int *size, int *subfont, int script, int language)
 {
 	/* Search in the inbuilt font table. */
 	font_entry *e;
@@ -180,10 +177,8 @@ search_by_script_lang(int *size, int *subfont, int script, int language, int ord
 			continue;
 		if (e->lang != language)
 			continue;
-		if (order != ANY_ORDER && e->order != order && e->order != ANY_ORDER)
-			continue;
 		*size = INBUILT_SIZE(e);
-		if (subfont && e->subfont != NO_SUBFONT)
+		if (subfont)
 			*subfont = e->subfont;
 		return e->data;
 	}
@@ -191,77 +186,17 @@ search_by_script_lang(int *size, int *subfont, int script, int language, int ord
 	return *size = 0, NULL;
 }
 
-static int
-font_name_match(const char *ref, const char *needle, int with_attr)
-{
-	while (1)
-	{
-		int r;
-		int n;
-
-		/* Skip over unimportant chars in both source and needle */
-		do
-		{
-			r = *ref++;
-		}
-		while (r == ' ' || r == '-' || r == '_');
-
-		do
-		{
-			n = *needle++;
-		}
-		while (n == ' ' || n == '-' || n == '_');
-
-		if (r == 0 && n == 0)
-			return 1; /* Match! */
-
-		/* Compare case insensitively */
-		if (r >= 'a' && r <= 'z')
-			r += 'A'-'a';
-		if (n >= 'a' && n <= 'z')
-			n += 'A'-'a';
-
-		if (r == n)
-			continue;
-
-		/* If we ran out of needle, check for us almost matching */
-		if (n == 0)
-		{
-			if (r == 'R' && !fz_strcasecmp(ref, "egular"))
-				return 1;
-			/* If with_attr, then we'll skip */
-			if (with_attr)
-			{
-				if (r == 'B' && !fz_strncasecmp(ref, "old", 3))
-					ref += 3, r = *ref++;
-				if (r == 'O' && !fz_strncasecmp(ref, "blique", 6))
-					ref += 6, r = *ref++;
-				if (r == 'I' && !fz_strncasecmp(ref, "talic", 5))
-					ref += 5, r = *ref++;
-				if (r == 'R' && !fz_strncasecmp(ref, "oman", 4))
-					ref += 4, r = *ref++;
-				if (r == 0)
-					return 1;
-			}
-		}
-		/* If we get here, match has failed. */
-		break;
-	}
-
-	return 0;
-}
-
 static const unsigned char *
-search_by_name(int *size, const char *name, int with_attr, int attr)
+search_by_family(int *size, const char *family, int attr)
 {
 	/* Search in the inbuilt font table. */
 	font_entry *e;
 
 	for (e = inbuilt_fonts; e->script != END_OF_DATA; e++)
 	{
-		if (with_attr && attr != e->attr)
+		if (attr != e->attr)
 			continue;
-		if (font_name_match(e->name, name, with_attr))
+		if (!fz_strcasecmp(e->family, family))
 		{
 			*size = INBUILT_SIZE(e);
 			return e->data;
@@ -271,135 +206,133 @@ search_by_name(int *size, const char *name, int with_attr, int attr)
 	return *size = 0, NULL;
 }
 
-const char *base14_names[] =
-{
-	"Courier",
-	"Courier-Oblique",
-	"Courier-Bold",
-	"Courier-BoldOblique",
-	"Helvetica",
-	"Helvetica-Oblique",
-	"Helvetica-Bold",
-	"Helvetica-BoldOblique",
-	"Times-Roman",
-	"Times-Italic",
-	"Times-Bold",
-	"Times-BoldItalic",
-	"Symbol",
-	"ZapfDingbats"
-};
-
 const unsigned char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 {
 	/* We want to insist on the base14 name matching exactly,
 	 * so we check that here first, before we look in the font table
 	 * to see if we actually have data. */
-	unsigned int i;
 
-	for (i = 0; i < nelem(base14_names); i++)
-	{
-		if (!strcmp(name, base14_names[i]))
-			return search_by_name(size, name, 0, 0);
-	}
+	if (!strcmp(name, "Courier"))
+		return search_by_family(size, "Courier", REGULAR);
+	if (!strcmp(name, "Courier-Oblique"))
+		return search_by_family(size, "Courier", ITALIC);
+	if (!strcmp(name, "Courier-Bold"))
+		return search_by_family(size, "Courier", BOLD);
+	if (!strcmp(name, "Courier-BoldOblique"))
+		return search_by_family(size, "Courier", BOLD|ITALIC);
+
+	if (!strcmp(name, "Helvetica"))
+		return search_by_family(size, "Helvetica", REGULAR);
+	if (!strcmp(name, "Helvetica-Oblique"))
+		return search_by_family(size, "Helvetica", ITALIC);
+	if (!strcmp(name, "Helvetica-Bold"))
+		return search_by_family(size, "Helvetica", BOLD);
+	if (!strcmp(name, "Helvetica-BoldOblique"))
+		return search_by_family(size, "Helvetica", BOLD|ITALIC);
+
+	if (!strcmp(name, "Times-Roman"))
+		return search_by_family(size, "Times", REGULAR);
+	if (!strcmp(name, "Times-Italic"))
+		return search_by_family(size, "Times", ITALIC);
+	if (!strcmp(name, "Times-Bold"))
+		return search_by_family(size, "Times", BOLD);
+	if (!strcmp(name, "Times-BoldItalic"))
+		return search_by_family(size, "Times", BOLD|ITALIC);
+
+	if (!strcmp(name, "Symbol"))
+		return search_by_family(size, "Symbol", REGULAR);
+	if (!strcmp(name, "ZapfDingbats"))
+		return search_by_family(size, "ZapfDingbats", REGULAR);
 
 	*size = 0;
 	return NULL;
 }
 
 const unsigned char *
-fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic, int *size)
+fz_lookup_builtin_font(fz_context *ctx, const char *family, int is_bold, int is_italic, int *size)
 {
-	return search_by_name(size, name, 1, (is_bold ? BOLD : 0) | (is_italic ? ITALIC : 0));
+	return search_by_family(size, family, (is_bold ? BOLD : 0) | (is_italic ? ITALIC : 0));
 }
 
 const unsigned char *
 fz_lookup_cjk_font(fz_context *ctx, int ordering, int *size, int *subfont)
 {
-	return search_by_script_lang(size, subfont, MUPDF_SCRIPT_CJKV, CJKV_LANG, ordering);
+	int lang = FZ_LANG_UNSET;
+	switch (ordering)
+	{
+	case FZ_ADOBE_JAPAN: lang = FZ_LANG_ja; break;
+	case FZ_ADOBE_KOREA: lang = FZ_LANG_ko; break;
+	case FZ_ADOBE_GB: lang = FZ_LANG_zh_Hans; break;
+	case FZ_ADOBE_CNS: lang = FZ_LANG_zh_Hant; break;
+	}
+	return search_by_script_lang(size, subfont, UCDN_SCRIPT_HAN, lang);
 }
 
 int
-fz_lookup_cjk_ordering_by_language(const char *name)
+fz_lookup_cjk_ordering_by_language(const char *lang)
 {
-	if (!strcmp(name, "zh-Hant")) return FZ_ADOBE_CNS;
-	if (!strcmp(name, "zh-TW")) return FZ_ADOBE_CNS;
-	if (!strcmp(name, "zh-HK")) return FZ_ADOBE_CNS;
-	if (!strcmp(name, "zh-Hans")) return FZ_ADOBE_GB;
-	if (!strcmp(name, "zh-CN")) return FZ_ADOBE_GB;
-	if (!strcmp(name, "ja")) return FZ_ADOBE_JAPAN;
-	if (!strcmp(name, "ko")) return FZ_ADOBE_KOREA;
+	if (!strcmp(lang, "zh-Hant")) return FZ_ADOBE_CNS;
+	if (!strcmp(lang, "zh-TW")) return FZ_ADOBE_CNS;
+	if (!strcmp(lang, "zh-HK")) return FZ_ADOBE_CNS;
+	if (!strcmp(lang, "zh-Hans")) return FZ_ADOBE_GB;
+	if (!strcmp(lang, "zh-CN")) return FZ_ADOBE_GB;
+	if (!strcmp(lang, "ja")) return FZ_ADOBE_JAPAN;
+	if (!strcmp(lang, "ko")) return FZ_ADOBE_KOREA;
 	return -1;
+}
+
+static int
+fz_lookup_cjk_language(const char *lang)
+{
+	if (!strcmp(lang, "zh-Hant")) return FZ_LANG_zh_Hant;
+	if (!strcmp(lang, "zh-TW")) return FZ_LANG_zh_Hant;
+	if (!strcmp(lang, "zh-HK")) return FZ_LANG_zh_Hant;
+	if (!strcmp(lang, "zh-Hans")) return FZ_LANG_zh_Hans;
+	if (!strcmp(lang, "zh-CN")) return FZ_LANG_zh_Hans;
+	if (!strcmp(lang, "ja")) return FZ_LANG_ja;
+	if (!strcmp(lang, "ko")) return FZ_LANG_ko;
+	return FZ_LANG_UNSET;
 }
 
 const unsigned char *
 fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int *subfont)
 {
-	int ordering = fz_lookup_cjk_ordering_by_language(lang);
-	if (ordering >= 0)
-		return fz_lookup_cjk_font(ctx, ordering, size, subfont);
-	return *size = 0, *subfont = 0, NULL;
+	return search_by_script_lang(size, subfont, UCDN_SCRIPT_HAN, fz_lookup_cjk_language(lang));
 }
 
 const unsigned char *
 fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont)
 {
-	*subfont = 0;
-
-	switch (script)
-	{
-	case UCDN_SCRIPT_HANGUL:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA, size, subfont);
-	case UCDN_SCRIPT_HIRAGANA:
-	case UCDN_SCRIPT_KATAKANA:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN, size, subfont);
-	case UCDN_SCRIPT_BOPOMOFO:
-		return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS, size, subfont);
-	case UCDN_SCRIPT_HAN:
-		switch (language)
-		{
-		case FZ_LANG_ja: return fz_lookup_cjk_font(ctx, FZ_ADOBE_JAPAN, size, subfont);
-		case FZ_LANG_ko: return fz_lookup_cjk_font(ctx, FZ_ADOBE_KOREA, size, subfont);
-		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB, size, subfont);
-		default:
-		case FZ_LANG_zh_Hant: return fz_lookup_cjk_font(ctx, FZ_ADOBE_CNS, size, subfont);
-		}
-
-	case UCDN_SCRIPT_BRAILLE: break; /* no dedicated font; fallback to NotoSansSymbols will cover this */
-
-	default:
-		return search_by_script_lang(size, subfont, script, language, ANY_ORDER);
-	}
-
-	return *size = 0, NULL;
+	return search_by_script_lang(size, subfont, script, language);
 }
 
 const unsigned char *
 fz_lookup_noto_math_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_MATH, FZ_LANG_UNSET, ANY_ORDER);
+	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_MATH, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_music_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_MUSIC, FZ_LANG_UNSET, ANY_ORDER);
+	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_MUSIC, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_symbol1_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_SYMBOLS, FZ_LANG_UNSET, ANY_ORDER);
+	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_SYMBOLS, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_symbol2_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_SYMBOLS2, FZ_LANG_UNSET, ANY_ORDER);
+	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_SYMBOLS2, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_EMOJI, FZ_LANG_UNSET, ANY_ORDER);
+	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_EMOJI, FZ_LANG_UNSET);
 }
