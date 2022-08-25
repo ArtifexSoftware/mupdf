@@ -41,8 +41,6 @@ except Exception as e:
 
 omit_fns = [
         'fz_open_file_w',
-        'fz_set_stderr',
-        'fz_set_stdout',
         'fz_colorspace_name_process_colorants', # Not implemented in mupdf.so?
         'fz_clone_context_internal',            # Not implemented in mupdf?
         'fz_arc4_final',
@@ -53,10 +51,7 @@ omit_fns = [
         'fz_argv_from_wargv',       # Only defined on Windows. Breaks our out-param wrapper code.
         ]
 
-omit_methods = [
-        'fz_encode_character_with_fallback',    # Has 'fz_font **out_font' arg.
-        'fz_new_draw_device_with_options',      # Has 'fz_pixmap **pixmap' arg.
-        ]
+omit_methods = []
 
 class ClangInfo:
     '''
