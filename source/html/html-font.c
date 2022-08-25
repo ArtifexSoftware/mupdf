@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2022 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -101,10 +101,15 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 			}
 		}
 	}
-	if (best_font)
+
+	// We found a perfect match!
+	if (best_font && best_score == 1 + 2 + 4)
 		return best_font;
 
+	// Try to load a perfect match.
 	data = fz_lookup_builtin_font(ctx, family, is_bold, is_italic, &size);
+	if (!data)
+		data = fz_lookup_builtin_font(ctx, family, 0, 0, &size);
 	if (data)
 	{
 		fz_font *font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
@@ -118,6 +123,11 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 		return font;
 	}
 
+	// Use the imperfect match from before.
+	if (best_font)
+		return best_font;
+
+	// Handle the "default" font aliases.
 	if (!strcmp(family, "monospace") || !strcmp(family, "sans-serif") || !strcmp(family, "serif"))
 		return fz_load_html_default_font(ctx, set, family, is_bold, is_italic);
 
