@@ -1088,7 +1088,7 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
 
 	if (layout_block_page_break(ctx, top_b, ld, vertical, style->page_break_before))
-		vertical = 0;
+		vertical = 0, eop = 1;
 
 	/* Position the left of this box relative to the supplied 'top' positions. */
 	box->s.layout.x = top_x + margin[L] + border[L] + padding[L];
@@ -1126,17 +1126,17 @@ static float layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fl
 	{
 		/* We're not skipping, so add in the spacings to the top edge of our box. */
 		box->s.layout.y = advance_for_spacing(box->s.layout.y, margin[T] + border[T] + padding[T], ld, &eop);
-		if (eop)
+	}
+	if (eop)
+	{
+		box->s.layout.b = box->s.layout.y;
+		if (restart && restart->end == NULL)
 		{
-			box->s.layout.b = box->s.layout.y;
-			if (restart && restart->end == NULL)
-			{
-				if (restart->potential)
-					restart->end = restart->potential;
-				else
-					restart->end = box;
-				return 0;
-			}
+			if (restart->potential)
+				restart->end = restart->potential;
+			else
+				restart->end = box;
+			return 0;
 		}
 	}
 	/* Start with our content being zero height. */
