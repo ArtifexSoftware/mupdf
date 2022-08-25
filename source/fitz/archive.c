@@ -79,6 +79,7 @@ fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size)
 {
 	fz_archive *arch;
 	arch = Memento_label(fz_calloc(ctx, 1, size), "fz_archive");
+	arch->refs = 1;
 	arch->file = fz_keep_stream(ctx, file);
 	return arch;
 }
@@ -116,16 +117,22 @@ fz_open_archive(fz_context *ctx, const char *filename)
 	return arch;
 }
 
+fz_archive *
+fz_keep_archive(fz_context *ctx, fz_archive *arch)
+{
+	return (fz_archive *)fz_keep_imp(ctx, arch, &arch->refs);
+}
+
 void
 fz_drop_archive(fz_context *ctx, fz_archive *arch)
 {
-	if (!arch)
-		return;
-
-	if (arch->drop_archive)
-		arch->drop_archive(ctx, arch);
-	fz_drop_stream(ctx, arch->file);
-	fz_free(ctx, arch);
+	if (fz_drop_imp(ctx, arch, &arch->refs))
+	{
+		if (arch->drop_archive)
+			arch->drop_archive(ctx, arch);
+		fz_drop_stream(ctx, arch->file);
+		fz_free(ctx, arch);
+	}
 }
 
 /* In-memory archive using a fz_tree holding fz_buffers */

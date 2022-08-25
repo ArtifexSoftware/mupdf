@@ -566,6 +566,7 @@ static void fz_drop_story_imp(fz_context *ctx, fz_storable *stor)
 	fz_drop_xml(ctx, story->dom);
 	fz_drop_html_box(ctx, story->tree.root);
 	fz_drop_buffer(ctx, story->warnings);
+	fz_drop_archive(ctx, story->zip);
 	/* The pool must be the last thing dropped. */
 	fz_drop_pool(ctx, story->tree.pool);
 }
@@ -1769,11 +1770,12 @@ fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em, fz
 		buf = local_buffer;
 	}
 
+	fz_var(local_buffer);
 	fz_var(saved);
 
 	fz_try(ctx)
 	{
-		story->zip = zip;
+		story->zip = fz_keep_archive(ctx, zip);
 		story->font_set = fz_new_html_font_set(ctx);
 		story->em = em;
 		story->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
