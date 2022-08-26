@@ -2167,7 +2167,7 @@ static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top,
 				continue;
 		}
 
-		if (node->box && node->box->id)
+		if (node->box->id)
 		{
 			/* We have a node to callback for. */
 			fz_story_element_position pos;
