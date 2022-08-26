@@ -1502,6 +1502,12 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 
 		gen2_children(ctx, &g, tree->root, root, &match);
 
+		tree->root->s.layout.em = 0;
+		tree->root->s.layout.x = 0;
+		tree->root->s.layout.y = 0;
+		tree->root->s.layout.w = 0;
+		tree->root->s.layout.b = 0;
+
 		detect_directionality(ctx, g.pool, tree->root);
 
 		if (g.is_fb2)
