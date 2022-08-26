@@ -666,11 +666,8 @@ static void append_box(fz_context *ctx, fz_html_box *parent, fz_html_box *child)
 
 static fz_html_box *find_block_context(fz_context *ctx, fz_html_box *box)
 {
-	fz_html_box *look = box;
-	while (look->type != BOX_BLOCK && look->type != BOX_TABLE_CELL)
-		look = look->up;
-	if (look)
-		return look;
+	while (box->type != BOX_BLOCK && box->type != BOX_TABLE_CELL)
+		box = box->up;
 	return box;
 }
 
