@@ -120,7 +120,7 @@ extern unsigned char _binary_resources_fonts_##FORGE##_##NAME##_end;
 #else
 #define FONT(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR) \
 extern unsigned char _binary_##NAME[];\
-unsigned int _binary_##NAME##_size;
+extern unsigned int _binary_##NAME##_size;
 #endif
 #define ALIAS(FORGE,NAME,NAME2,SCRIPT,LANG,SUBFONT,ATTR)
 #define EMPTY(SCRIPT)
