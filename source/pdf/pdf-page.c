@@ -1241,7 +1241,7 @@ pdf_add_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, p
 		else
 			pdf_dict_put_dict(ctx, page_obj, PDF_NAME(Resources), 1);
 
-		if (contents)
+		if (contents && contents->len > 0)
 			pdf_dict_put_drop(ctx, page_obj, PDF_NAME(Contents), pdf_add_stream(ctx, doc, contents, NULL, 0));
 	}
 	fz_catch(ctx)
