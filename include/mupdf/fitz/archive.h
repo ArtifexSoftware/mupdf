@@ -297,6 +297,21 @@ void fz_tree_archive_add_buffer(fz_context *ctx, fz_archive *arch_, const char *
 void fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, const void *data, size_t size);
 
 /**
+	Create a new multi archive (initially empty).
+*/
+fz_archive *fz_new_multi_archive(fz_context *ctx);
+
+/**
+	Add an archive to the set of archives handled by a multi
+	archive.
+
+	If path is NULL, then the archive contents will appear at the
+	top level, otherwise, the archives contents will appear prefixed
+	by path.
+*/
+void fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, const char *path);
+
+/**
 	Implementation details: Subject to change.
 */
 

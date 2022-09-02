@@ -22,6 +22,8 @@
 
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 fz_stream *
 fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
@@ -230,4 +232,179 @@ fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, c
 		fz_drop_buffer(ctx, buf);
 		fz_rethrow(ctx);
 	}
+}
+
+typedef struct
+{
+	fz_archive *arch;
+	char *dir;
+} multi_archive_entry;
+
+typedef struct
+{
+	fz_archive super;
+	int len;
+	int max;
+	multi_archive_entry *sub;
+} fz_multi_archive;
+
+static int has_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	fz_multi_archive *arch = (fz_multi_archive *)arch_;
+	int i;
+
+	for (i = 0; i < arch->len; i++)
+	{
+		multi_archive_entry *e = &arch->sub[i];
+		const char *subname = name;
+		if (e->dir)
+		{
+			size_t n = strlen(e->dir);
+			if (strncmp(e->dir, name, n) != 0)
+				continue;
+			subname += n;
+		}
+		if (fz_has_archive_entry(ctx, arch->sub[i].arch, subname))
+			return 1;
+	}
+	return 0;
+}
+
+static fz_buffer *read_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	fz_multi_archive *arch = (fz_multi_archive *)arch_;
+	int i;
+	fz_buffer *res = NULL;
+
+	for (i = 0; i < arch->len; i++)
+	{
+		multi_archive_entry *e = &arch->sub[i];
+		const char *subname = name;
+
+		if (e->dir)
+		{
+			size_t n = strlen(e->dir);
+			if (strncmp(e->dir, name, n) != 0)
+				continue;
+			subname += n;
+		}
+
+		fz_try(ctx)
+			res = fz_read_archive_entry(ctx, arch->sub[i].arch, subname);
+		fz_catch(ctx)
+			res = NULL;
+
+		if (res)
+			break;
+	}
+
+	if (!res)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read %s", name);
+
+	return res;
+}
+
+static fz_stream *open_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	fz_multi_archive *arch = (fz_multi_archive *)arch_;
+	int i;
+	fz_stream *res = NULL;
+
+	for (i = 0; i < arch->len; i++)
+	{
+		multi_archive_entry *e = &arch->sub[i];
+		const char *subname = name;
+
+		if (e->dir)
+		{
+			size_t n = strlen(e->dir);
+			if (strncmp(e->dir, name, n) != 0)
+				continue;
+			subname += n;
+		}
+
+		fz_try(ctx)
+			res = fz_open_archive_entry(ctx, arch->sub[i].arch, subname);
+		fz_catch(ctx)
+			res = NULL;
+
+		if (res)
+			break;
+	}
+
+	if (!res)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s", name);
+
+	return res;
+}
+
+static void drop_multi_archive(fz_context *ctx, fz_archive *arch_)
+{
+	fz_multi_archive *arch = (fz_multi_archive *)arch_;
+	int i;
+
+	for (i = 0; i < arch->len; i++)
+	{
+		multi_archive_entry *e = &arch->sub[i];
+		fz_free(ctx, e->dir);
+		fz_drop_archive(ctx, e->arch);
+	}
+	fz_free(ctx, arch->sub);
+}
+
+fz_archive *
+fz_new_multi_archive(fz_context *ctx)
+{
+	fz_multi_archive *arch;
+
+	arch = fz_new_derived_archive(ctx, NULL, fz_multi_archive);
+	arch->super.format = "multi";
+	arch->super.has_entry = has_multi_entry;
+	arch->super.read_entry = read_multi_entry;
+	arch->super.open_entry = open_multi_entry;
+	arch->super.drop_archive = drop_multi_archive;
+	arch->max = 0;
+	arch->len = 0;
+	arch->sub = NULL;
+
+	return &arch->super;
+}
+
+void
+fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, const char *path)
+{
+	fz_multi_archive *arch = (fz_multi_archive *)arch_;
+	char *clean_path = NULL;
+
+	if (arch->super.has_entry != has_multi_entry)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot mount within a non-multi archive!");
+
+	if (arch->len == arch->max)
+	{
+		int n = arch->max ? arch->max * 2 : 8;
+
+		arch->sub = fz_realloc(ctx, arch->sub, sizeof(*arch->sub) * n);
+		arch->max = n;
+	}
+
+	/* If we have a path, then strip any trailing slashes, and add just one. */
+	if (path)
+	{
+		size_t n = strlen(path);
+
+		while (n > 0 && path[n-1] == '/')
+			n--;
+
+		if (n > 0)
+		{
+			clean_path = fz_malloc(ctx, n + 2);
+			memcpy(clean_path, path, n);
+			clean_path[n] = '/';
+			clean_path[n++] = 0;
+		}
+	}
+
+	arch->sub[arch->len].arch = fz_keep_archive(ctx, sub);
+	arch->sub[arch->len].dir = clean_path;
+	arch->len++;
 }
