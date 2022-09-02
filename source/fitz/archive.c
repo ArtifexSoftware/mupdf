@@ -27,34 +27,82 @@
 fz_stream *
 fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
+	char *local_name;
+	fz_stream *stream = NULL;
+
 	if (arch == NULL || !arch->open_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open archive entry");
-	return arch->open_entry(ctx, arch, name);
+
+	local_name = fz_cleanname(fz_strdup(ctx, name));
+
+	fz_var(stream);
+
+	fz_try(ctx)
+		stream = arch->open_entry(ctx, arch, local_name);
+	fz_always(ctx)
+		fz_free(ctx, local_name);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return stream;
 }
 
 fz_buffer *
 fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
+	char *local_name;
+	fz_buffer *buf = NULL;
+
 	if (arch == NULL || !arch->read_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read archive entry");
-	return arch->read_entry(ctx, arch, name);
+
+	local_name = fz_cleanname(fz_strdup(ctx, name));
+
+	fz_var(buf);
+
+	fz_try(ctx)
+		buf = arch->read_entry(ctx, arch, local_name);
+	fz_always(ctx)
+		fz_free(ctx, local_name);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return buf;
 }
 
 int
 fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
+	char *local_name;
+	int res = 0;
+
 	if (arch == NULL)
 		return 0;
 	if (!arch->has_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot check if archive has entry");
-	return arch->has_entry(ctx, arch, name);
+
+	local_name = fz_cleanname(fz_strdup(ctx, name));
+
+	fz_var(res);
+
+	fz_try(ctx)
+		res = arch->has_entry(ctx, arch, local_name);
+	fz_always(ctx)
+		fz_free(ctx, local_name);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return res;
 }
 
 const char *
 fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx)
 {
+	if (arch == 0)
+		return NULL;
 	if (!arch->list_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot list archive entries");
+
 	return arch->list_entry(ctx, arch, idx);
 }
 
@@ -392,15 +440,23 @@ fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, cons
 	{
 		size_t n = strlen(path);
 
-		while (n > 0 && path[n-1] == '/')
-			n--;
-
-		if (n > 0)
+		clean_path = fz_malloc(ctx, n + 2);
+		memcpy(clean_path, path, n);
+		clean_path[n] = 0;
+		fz_cleanname(clean_path);
+		if (clean_path[0] == '.' && clean_path[1] == 0)
 		{
-			clean_path = fz_malloc(ctx, n + 2);
-			memcpy(clean_path, path, n);
+			fz_free(ctx, clean_path);
+			clean_path = NULL;
+		}
+		else
+		{
+			/* Do a strcat without doing a strcat to avoid the compiler
+			 * complaining at us. We know that n here will be <= n above
+			 * so this is safe. */
+			n = strlen(clean_path);
 			clean_path[n] = '/';
-			clean_path[n++] = 0;
+			clean_path[n + 1] = 0;
 		}
 	}
 
