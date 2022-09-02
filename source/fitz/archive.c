@@ -154,6 +154,8 @@ static fz_buffer *read_tree_entry(fz_context *ctx, fz_archive *arch, const char 
 {
 	fz_tree *tree = ((fz_tree_archive*)arch)->tree;
 	fz_buffer *ent = fz_tree_lookup(ctx, tree, name);
+	if (ent == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read %s", name);
 	return fz_keep_buffer(ctx, ent);
 }
 
@@ -161,6 +163,8 @@ static fz_stream *open_tree_entry(fz_context *ctx, fz_archive *arch, const char 
 {
 	fz_tree *tree = ((fz_tree_archive*)arch)->tree;
 	fz_buffer *ent = fz_tree_lookup(ctx, tree, name);
+	if (ent == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s", name);
 	return fz_open_buffer(ctx, ent);
 }
 
@@ -189,4 +193,41 @@ fz_new_tree_archive(fz_context *ctx, fz_tree *tree)
 	arch->tree = tree;
 
 	return &arch->super;
+}
+
+void
+fz_tree_archive_add_buffer(fz_context *ctx, fz_archive *arch_, const char *name, fz_buffer *buf)
+{
+	fz_tree_archive *arch = (fz_tree_archive *)arch_;
+
+	if (arch == NULL || arch->super.has_entry != has_tree_entry)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot insert into a non-tree archive");
+	buf = fz_keep_buffer(ctx, buf);
+
+	fz_try(ctx)
+		arch->tree = fz_tree_insert(ctx, arch->tree, name, buf);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
+}
+
+void
+fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, const void *data, size_t size)
+{
+	fz_tree_archive *arch = (fz_tree_archive *)arch_;
+	fz_buffer *buf;
+
+	if (arch == NULL || arch->super.has_entry != has_tree_entry)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot insert into a non-tree archive");
+	buf = fz_new_buffer_from_copied_data(ctx, data, size);
+
+	fz_try(ctx)
+		arch->tree = fz_tree_insert(ctx, arch->tree, name, buf);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
 }

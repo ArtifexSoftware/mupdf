@@ -272,7 +272,29 @@ void fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip);
 */
 void fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip);
 
+/**
+	Create an archive that holds named buffers.
+
+	tree can either be a preformed tree with fz_buffers as values,
+	or it can be NULL for an empty tree.
+*/
 fz_archive *fz_new_tree_archive(fz_context *ctx, fz_tree *tree);
+
+/**
+	Add a named buffer to an existing tree archive.
+
+	The tree will take a new reference to the buffer. Ownership
+	is not transferred.
+*/
+void fz_tree_archive_add_buffer(fz_context *ctx, fz_archive *arch_, const char *name, fz_buffer *buf);
+
+/**
+	Add a named block of data to an existing tree archive.
+
+	The data will be copied into a buffer, and so the caller
+	may free it as soon as this returns.
+*/
+void fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, const void *data, size_t size);
 
 /**
 	Implementation details: Subject to change.
