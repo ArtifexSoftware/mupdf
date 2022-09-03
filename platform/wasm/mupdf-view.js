@@ -101,6 +101,7 @@ mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");
 mupdfView.mouseMoveOnPage = wrap("mouseMoveOnPage");
 mupdfView.mouseUpOnPage = wrap("mouseUpOnPage");
 mupdfView.setEditionTool = wrap("setEditionTool");
+mupdfView.deleteItem = wrap("deleteItem");
 
 mupdfView.onRender = () => {};
 

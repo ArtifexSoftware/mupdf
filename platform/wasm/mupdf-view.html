@@ -606,6 +606,13 @@ async function setZoom(newZoom) {
 	updateView();
 }
 
+async function deleteItem() {
+	// TODO - find more elegant way to get dirty page
+	let dirtyPageNumber = await mupdfView.deleteItem();
+	dirty[dirtyPageNumber] = true;
+	updateView();
+}
+
 const pageImgs = {};
 const pageDivs = {};
 async function updateView() {
@@ -691,13 +698,13 @@ async function mouseMove(pageNumber, img, event) {
 		else {
 			changed = await mupdfView.mouseDragOnPage(pageNumber, dpi * devicePixelRatio, x, y);
 		}
-		if (changed) {
-			dirty[pageNumber] = true;
-			setTimeout(() => updateView(), 0);
-		}
 	}
 	else {
-		await mupdfView.mouseMoveOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+		changed = await mupdfView.mouseMoveOnPage(pageNumber, dpi * devicePixelRatio, x, y);
+	}
+	if (changed) {
+		dirty[pageNumber] = true;
+		setTimeout(() => updateView(), 0);
 	}
 };
 
@@ -739,6 +746,10 @@ window.addEventListener("wheel", function (event) {
 }, {passive: false});
 
 window.addEventListener("keydown", function (event) {
+	if (event.key == "Backspace" || event.key == "Delete") {
+		deleteItem();
+	}
+
 	if (event.ctrlKey || event.metaKey) {
 		switch (event.keyCode) {
 		// '=' / '+' on various keyboards

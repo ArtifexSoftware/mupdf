@@ -304,11 +304,8 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 		page = openDocument.loadPage(pageNumber - 1);
 		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
 
-		// TODO - draw points on hover/select
-		let points = currentTool?.points ?? [];
-		for (let point of points) {
-			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
-		}
+		if (pageNumber == currentTool.pageNumber)
+			currentTool.drawOnPage(pixmap, dpi);
 
 		let png = pixmap.toPNG();
 
@@ -322,8 +319,53 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 }
 
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
+	// TODO - Do we want to do a load every time?
 	let pdfPage = openDocument.loadPage(pageNumber - 1);
 
+	if (pdfPage == null) {
+		return;
+	}
+
+	if (pageNumber !== currentTool.pageNumber) {
+		// TODO - schedule paint
+		pageWasRendered[currentTool.pageNumber] = false;
+		currentTool.resetPage(pdfPage, pageNumber);
+	}
+
+	// transform mouse pos from screen coordinates to document coordinates.
+	x = x / (dpi / 72);
+	y = y / (dpi / 72);
+
+	let pageChanged = currentTool.mouseDown(x, y);
+	if (pageChanged) {
+		pageWasRendered[pageNumber] = false;
+	}
+	return pageChanged;
+
+	// TODO - multi-selection
+	// TODO - differentiate between hovered, selected, held
+
+};
+
+// TODO - handle crossing pages
+workerMethods.mouseDragOnPage = function(pageNumber, dpi, x, y) {
+	if (pageNumber !== currentTool.pageNumber)
+		return false;
+
+	// transform mouse pos from screen coordinates to document coordinates.
+	x = x / (dpi / 72);
+	y = y / (dpi / 72);
+
+	let wasChanged = currentTool.mouseDrag(x, y);
+	pageWasRendered[pageNumber] = !wasChanged;
+	return wasChanged;
+};
+
+workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
+	if (pageNumber !== currentTool.pageNumber)
+		return false;
+
+	let pdfPage = openDocument.loadPage(pageNumber - 1);
 	if (pdfPage == null) {
 		return;
 	}
@@ -332,73 +374,41 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	if (currentTool != null) {
-		let newAnnot = currentTool.mouseDown(pdfPage, x, y);
-		if (newAnnot) {
-			currentTool = null;
-			//currentSelection = newAnnot;
-		}
-		pageWasRendered[pageNumber] = false;
-		return true;
-	}
-
-	// TODO - multi-selection
-	// TODO - differentiate between hovered, selected, held
-
-	const clickedAnnotation = pdfPage.annotations().annotations.find(annotation => {
-		const bbox = annotation.bound();
-		return (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1);
-	});
-	if (clickedAnnotation != null) {
-		currentSelection = new SelectedAnnotation(pdfPage, clickedAnnotation, clickedAnnotation.bound(), x, y);
-		pageWasRendered[pageNumber] = false;
-		return true;
-	}
-
-	return false;
-};
-
-// TODO - handle crossing pages
-workerMethods.mouseDragOnPage = function(pageNumber, dpi, x, y) {
-	// transform mouse pos from screen coordinates to document coordinates.
-	x = x / (dpi / 72);
-	y = y / (dpi / 72);
-
-	let wasChanged = currentSelection?.mouseDrag(x, y) ?? false;
+	let wasChanged = currentTool.mouseMove(x, y);
 	pageWasRendered[pageNumber] = !wasChanged;
 	return wasChanged;
 };
 
-// eslint-disable-next-line no-unused-vars
-workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
-	return false;
-};
-
 workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
+	if (pageNumber !== currentTool.pageNumber)
+		return false;
+
 	// transform mouse pos from screen coordinates to document coordinates.
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	try {
-		let wasChanged = currentSelection?.mouseUp(x, y) ?? false;
-		pageWasRendered[pageNumber] = !wasChanged;
-		return wasChanged;
-	}
-	finally {
-		currentSelection = null;
-	}
+	let wasChanged = currentTool.mouseUp(x, y);
+	pageWasRendered[pageNumber] = !wasChanged;
+	return wasChanged;
+};
+
+workerMethods.deleteItem = function () {
+	let wasChanged = currentTool.deleteItem();
+	pageWasRendered[currentTool.pageNumber] = !wasChanged;
+	return wasChanged;
 };
 
 class SelectedAnnotation {
-	constructor(pdfPage, annotation, startRect, mouse_x, mouse_y) {
-		this.pdfPage = pdfPage;
+	constructor(annotation, mouse_x, mouse_y) {
+		// Is this necessary?
 		this.annotation = annotation;
-		this.startRect = startRect;
-		this.currentRect = startRect;
+		this.startRect = annotation.rect();
+		this.currentRect = annotation.rect();
 		this.initial_x = mouse_x;
 		this.initial_y = mouse_y;
 	}
 
+	// TODO - remove
 	mouseDrag(x, y) {
 		this.currentRect = this.startRect.translated(x - this.initial_x, y - this.initial_y);
 		this.annotation.rect();
@@ -407,11 +417,11 @@ class SelectedAnnotation {
 		return true;
 	}
 
+	// TODO - remove
 	mouseUp(x, y) {
 		this.currentRect = this.startRect.translated(x - this.initial_x, y - this.initial_y);
 		// TODO - setRect doesn't quite do what we want
 		this.annotation.setRect(this.currentRect);
-		this.pdfPage.free();
 		return true;
 	}
 }
@@ -425,316 +435,621 @@ function inSquare(squarePoint, x, y) {
 	);
 }
 
-class CreateText {
-	constructor() {}
+function findAnnotationAtPos(pdfPage, x, y) {
+	return pdfPage.annotations().annotations.find(annotation => {
+		const bbox = annotation.bound();
+		return (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1);
+	}) ?? null;
+}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_TEXT);
+class SelectAnnot {
+	constructor() {
+		this.initial_x = null;
+		this.initial_y = null;
+		this.hovered = null;
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
+
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		currentSelection = null;
+	}
+
+	mouseDown(x, y) {
+		const clickedAnnotation = findAnnotationAtPos(this.pdfPage, x, y);
+		let selectionChanged = (currentSelection?.annotation !== clickedAnnotation);
+
+		if (clickedAnnotation != null) {
+			currentSelection = new SelectedAnnotation(
+				clickedAnnotation,
+				x, y
+			);
+			this.initial_x = x;
+			this.initial_y = y;
+		}
+		else {
+			currentSelection = null;
+		}
+
+		return selectionChanged;
+	}
+
+	mouseDrag(x, y) {
+		if (currentSelection == null)
+			return false;
+
+		return currentSelection?.mouseDrag(x, y);
+	}
+
+	mouseMove(x, y) {
+		let prevHovered = this.hovered;
+		this.hovered = findAnnotationAtPos(this.pdfPage, x, y);
+		return prevHovered?.pointer !== this.hovered?.pointer;
+	}
+
+	mouseUp(_x, _y) {
+		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		if (this.hovered != null) {
+			let rect = this.hovered.rect();
+			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y0 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y1 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y0 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y1 * dpi / 72);
+		}
+		if (currentSelection != null) {
+			let rect = currentSelection.annotation.rect();
+			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y0 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y1 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y0 * dpi / 72);
+			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y1 * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		currentSelection?.annotation.delete();
+	}
+}
+
+// TODO - DragSelection
+// TODO - SelectionRect
+
+class CreateText {
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
+
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_TEXT);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 // TODO - CreateLink
 
 class CreateFreeText {
-	constructor() {}
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_FREE_TEXT);
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_FREE_TEXT);
 		annot.setRect(new mupdf.Rect(x, y, x + 200, y + 100));
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateLine {
 	constructor() {
 		this.points = [];
+		this.pdfPage = null;
+		this.pageNumber = null;
 	}
 
-	mouseDown(pdfPage, x, y) {
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		this.points = [];
+	}
+
+	mouseDown(x, y) {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_LINE);
+			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_LINE);
 			annot.setLine(this.points[0], this.points[1]);
 			// pdf_set_annot_interior_color
 			// pdf_set_annot_line_ending_styles
-			pdfPage.update();
-			return annot;
+			this.pdfPage.update();
+			return true;
 		}
 
-		return null;
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateSquare {
 	constructor() {
 		this.points = [];
+		this.pdfPage = null;
+		this.pageNumber = null;
 	}
 
-	mouseDown(pdfPage, x, y) {
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		this.points = [];
+	}
+
+	mouseDown(x, y) {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_SQUARE);
+			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_SQUARE);
 			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
 			// pdf_set_annot_interior_color
-			pdfPage.update();
-			return annot;
+			this.pdfPage.update();
+			return true;
 		}
 
-		return null;
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateCircle {
 	constructor() {
 		this.points = [];
+		this.pdfPage = null;
+		this.pageNumber = null;
 	}
 
-	mouseDown(pdfPage, x, y) {
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		this.points = [];
+	}
+
+	mouseDown(x, y) {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_CIRCLE);
+			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_CIRCLE);
 			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
 			// pdf_set_annot_interior_color
-			pdfPage.update();
-			return annot;
+			this.pdfPage.update();
+			return true;
 		}
 
-		return null;
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreatePolygon {
 	constructor() {
 		this.points = [];
+		this.pdfPage = null;
+		this.pageNumber = null;
 	}
 
-	mouseDown(pdfPage, x, y) {
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		this.points = [];
+	}
+
+	mouseDown(x, y) {
 		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
-			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYGON);
+			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYGON);
 			for (const point of this.points) {
 				annot.addVertex(point);
 			}
-			pdfPage.update();
+			this.pdfPage.update();
 			//pdf_annot_interior_color
 			//pdf_annot_line_ending_styles
-			return annot;
+			return true;
 		}
 
 		this.points.push(new mupdf.Point(x, y));
-		return false;
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreatePolyLine {
 	constructor() {
 		this.points = [];
+		this.pdfPage = null;
+		this.pageNumber = null;
 	}
 
-	mouseDown(pdfPage, x, y) {
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+		this.points = [];
+	}
+
+	mouseDown(x, y) {
 		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
-			let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYLINE);
+			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYLINE);
 			for (const point of this.points) {
 				annot.addVertex(point);
 			}
-			pdfPage.update();
+			this.pdfPage.update();
 			//pdf_annot_interior_color
 			//pdf_annot_line_ending_styles
-			return annot;
+			return true;
 		}
 
 		this.points.push(new mupdf.Point(x, y));
-		return false;
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateStamp {
-	constructor() {}
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_STAMP);
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_STAMP);
 		annot.setRect(new mupdf.Rect(x, y, x + 190, y + 50));
 		//pdf_annot_icon_name
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateCaret {
-	constructor() {}
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_CARET);
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_CARET);
 		annot.setRect(new mupdf.Rect(x, y, x + 18, y + 15));
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 
 class CreateFileAttachment {
-	constructor() {}
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_FILE_ATTACHMENT);
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_FILE_ATTACHMENT);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
 		//pdf_annot_filespec
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
+	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
 	}
 }
 
 class CreateSound {
-	constructor() {}
+	constructor() {
+		this.pdfPage = null;
+		this.pageNumber = null;
+	}
 
-	mouseDown(pdfPage, x, y) {
-		let annot = pdfPage.createAnnot(mupdf.PDF_ANNOT_SOUND);
+	resetPage(pdfPage, pageNumber) {
+		this.pdfPage = pdfPage;
+		this.pageNumber = pageNumber;
+	}
+
+	mouseDown(x, y) {
+		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_SOUND);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
-		pdfPage.update();
-		return annot;
+		this.pdfPage.update();
+		return true;
 	}
 
 	mouseDrag(_x, _y) {
 		// move last point
 	}
 
-	mouseMove(_x, _y) {
+	mouseMove(_pdfPage, _x, _y) {
 		// update hovered
 	}
 
 	mouseUp(_x, _y) {
 		// do nothing
 	}
+
+	drawOnPage(pixmap, dpi) {
+		// TODO - draw points on hover/select
+		let points = this.points ?? [];
+		for (let point of points) {
+			pixmap.drawGrabHandle(point.x * dpi / 72, point.y * dpi / 72);
+		}
+	}
+
+	deleteItem() {
+		// TODO
+	}
 }
+
+currentTool = new SelectAnnot();
 
 // TODO - Use Map
 const editionTools = {
