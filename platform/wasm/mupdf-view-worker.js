@@ -436,10 +436,17 @@ function inSquare(squarePoint, x, y) {
 }
 
 function findAnnotationAtPos(pdfPage, x, y) {
-	return pdfPage.annotations().annotations.find(annotation => {
+	// using Array.findLast would be more elegant, but it isn't stable on
+	// all major platforms
+	let annotations = pdfPage.annotations().annotations;
+	for (let i = annotations.length - 1; i >= 0; i--) {
+		const annotation = annotations[i];
 		const bbox = annotation.bound();
-		return (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1);
-	}) ?? null;
+		if (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1) {
+			return annotation;
+		}
+	}
+	return null;
 }
 
 class SelectAnnot {
