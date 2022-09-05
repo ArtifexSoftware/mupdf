@@ -14,13 +14,19 @@ def clip( text, prefixes, suffixes=''):
         prefixes = prefixes,
     if isinstance( suffixes, str):
         suffixes = suffixes,
-    for prefix in prefixes:
-        if text.startswith( prefix):
-            text = text[ len( prefix):]
+    while 1:
+        for prefix in prefixes:
+            if text.startswith( prefix):
+                text = text[ len( prefix):]
+                break
+        else:
             break
-    for suffix in suffixes:
-        if suffix and text.endswith( suffix):
-            text = text[ :-len( suffix)]
+    while 1:
+        for suffix in suffixes:
+            if suffix and text.endswith( suffix):
+                text = text[ :-len( suffix)]
+                break
+        else:
             break
     return text
 

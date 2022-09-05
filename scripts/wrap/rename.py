@@ -100,6 +100,16 @@ def class_( structname):
     Returns name of class that wraps MuPDF struct `structname`.
     '''
     structname = util.clip( structname, 'struct ')
+
+    # Note that we can't return `structname` here because this will end up with
+    # SWIG complaining like:
+    #
+    #   Error: 'pdf_xref' is multiply defined in the generated target language module
+    #
+    # - because SWIG internally puts everything into a single namespace.
+    #
+    #return structname
+
     return snake_to_camel( structname, initial=True)
     if structname.startswith( 'fz_'):
         return snake_to_camel( util.clip( structname, 'fz_'), initial=True)

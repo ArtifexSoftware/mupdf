@@ -321,7 +321,12 @@ class ClassExtras:
 
         We return None if <name> is a known enum.
         '''
-        name = util.clip( name, 'struct ')
+        verbose = state.state_.show_details( name)
+        if verbose:
+            jlib.log( 'ClassExtras.get(): {=name}')
+        name = util.clip( name, ('const ', 'struct '))
+        if verbose:
+            jlib.log( 'ClassExtras.get(): {=name}')
         if not name.startswith( ('fz_', 'pdf_')):
             return
 
@@ -379,8 +384,8 @@ classextras = ClassExtras(
                         f'({rename.class_("fz_output")}& out, Cm cm, const {rename.class_("fz_pcl_options")}& options)',
                         f'''
                         {{
-                            fz_output*              out2 = out.m_internal;
-                            const fz_pcl_options*   options2 = options.m_internal;
+                            ::fz_output*            out2 = out.m_internal;
+                            const ::fz_pcl_options* options2 = options.m_internal;
                             if (0)  {{}}
                             else if (cm == MONO)    m_internal = {rename.ll_fn('fz_new_mono_pcl_band_writer' )}( out2, options2);
                             else if (cm == COLOR)   m_internal = {rename.ll_fn('fz_new_color_pcl_band_writer')}( out2, options2);
@@ -393,7 +398,7 @@ classextras = ClassExtras(
                         f'({rename.class_("fz_output")}& out, P p)',
                         f'''
                         {{
-                            fz_output*              out2 = out.m_internal;
+                            ::fz_output*    out2 = out.m_internal;
                             if (0)  {{}}
                             else if (p == PNG)  m_internal = {rename.ll_fn('fz_new_png_band_writer')}( out2);
                             else if (p == PNM)  m_internal = {rename.ll_fn('fz_new_pnm_band_writer')}( out2);
@@ -411,8 +416,8 @@ classextras = ClassExtras(
                         f'({rename.class_("fz_output")}& out, Cm cm, const {rename.class_("fz_pwg_options")}& options)',
                         f'''
                         {{
-                            fz_output*              out2 = out.m_internal;
-                            const fz_pwg_options*   options2 = &options.m_internal;
+                            ::fz_output*            out2 = out.m_internal;
+                            const ::fz_pwg_options* options2 = &options.m_internal;
                             if (0)  {{}}
                             else if (cm == MONO)    m_internal = {rename.ll_fn('fz_new_mono_pwg_band_writer' )}( out2, options2);
                             else if (cm == COLOR)   m_internal = {rename.ll_fn('fz_new_pwg_band_writer')}( out2, options2);
@@ -781,7 +786,7 @@ classextras = ClassExtras(
                             ownership of the fz_output, even if they throw an
                             exception. So we need to set out.m_internal to null
                             here so its destructor does nothing. */
-                            fz_output* out2 = out.m_internal;
+                            ::fz_output* out2 = out.m_internal;
                             out.m_internal = NULL;
                             if (0) {{}}
                             else if (output_type == OutputType_CBZ)     m_internal = {rename.ll_fn( 'fz_new_cbz_writer_with_output')}(out2, options);
@@ -840,7 +845,7 @@ classextras = ClassExtras(
                         f'''
                         {{
                             /* Need to transfer ownership of <out>. */
-                            fz_output* out2 = out.m_internal;
+                            ::fz_output* out2 = out.m_internal;
                             out.m_internal = NULL;
                             m_internal = {rename.ll_fn( 'fz_new_document_writer_with_output')}(out2, format, options);
                         }}
@@ -858,7 +863,7 @@ classextras = ClassExtras(
                         f'''
                         {{
                             /* Need to transfer ownership of <out>. */
-                            fz_output* out2 = out.m_internal;
+                            ::fz_output* out2 = out.m_internal;
                             out.m_internal = NULL;
                             m_internal = {rename.ll_fn( 'fz_new_text_writer_with_output')}(format, out2, options);
                         }}
@@ -1017,7 +1022,7 @@ classextras = ClassExtras(
                 copyable = 'default',
                 pod = 'none',
                 extra_cpp = f'''
-                        FZ_FUNCTION {rename.class_("fz_outline_item")}::{rename.class_("fz_outline_item")}(const fz_outline_item* item)
+                        FZ_FUNCTION {rename.class_("fz_outline_item")}::{rename.class_("fz_outline_item")}(const ::fz_outline_item* item)
                         {{
                             if (item)
                             {{
@@ -1062,7 +1067,7 @@ classextras = ClassExtras(
                             f'''
                             {{
                                 /* Create a temporary fz_outline_item. */
-                                fz_outline_item item2;
+                                ::fz_outline_item item2;
                                 item2.title = (char*) item.title().c_str();
                                 item2.uri = (char*) item.uri().c_str();
                                 item2.is_open = item.is_open();
@@ -1077,7 +1082,7 @@ classextras = ClassExtras(
                             f'''
                             {{
                                 /* Create a temporary fz_outline_item. */
-                                fz_outline_item item2;
+                                ::fz_outline_item item2;
                                 item2.title = (char*) item.title().c_str();
                                 item2.uri = (char*) item.uri().c_str();
                                 item2.is_open = item.is_open();
@@ -1182,7 +1187,7 @@ classextras = ClassExtras(
                         f'''
                         {{
                             std::vector<{rename.class_("fz_quad")}> ret(max);
-                            fz_quad* hit_bbox = ret[0].internal();
+                            ::fz_quad* hit_bbox = ret[0].internal();
                             int n = {rename.ll_fn('fz_search_page')}(m_internal, needle, hit_mark, hit_bbox, (int) ret.size());
                             ret.resize(n);
                             return ret;
@@ -1210,7 +1215,7 @@ classextras = ClassExtras(
                     lambda name: f'*({rename.class_("fz_path_walker")}2**) ((fz_path_walker*) {name} + 1)',
                     textwrap.dedent(
                         f'''
-                        m_internal = (fz_path_walker*) {rename.ll_fn("fz_calloc")}(1, sizeof(*m_internal) + sizeof({rename.class_("fz_path_walker")}2*));
+                        m_internal = (::fz_path_walker*) {rename.ll_fn("fz_calloc")}(1, sizeof(*m_internal) + sizeof({rename.class_("fz_path_walker")}2*));
                         *({rename.class_("fz_path_walker")}2**) (m_internal + 1) = this;
                         '''),
                     f'{rename.ll_fn("fz_free")}(m_internal);\n',
@@ -1283,7 +1288,7 @@ classextras = ClassExtras(
         fz_pixmap = ClassExtra(
                 methods_extra = [
                     ExtraMethod( 'std::vector<unsigned char>',
-                        f'{rename.method( "fz_pixmap", "md5_pixmap")}()',
+                        f'{rename.method( "fz_pixmap", "fz_md5_pixmap")}()',
                         f'''
                         {{
                             std::vector<unsigned char>  ret(16);
@@ -1442,7 +1447,7 @@ classextras = ClassExtras(
                         f'transform(const {rename.class_("fz_matrix")}& m)',
                         f'''
                         {{
-                            *(fz_rect*) &this->x0 = {rename.c_fn('fz_transform_rect')}(*(fz_rect*) &this->x0, *(fz_matrix*) &m.a);
+                            *(::fz_rect*) &this->x0 = {rename.c_fn('fz_transform_rect')}(*(::fz_rect*) &this->x0, *(::fz_matrix*) &m.a);
                         }}
                         ''',
                         comment = '/* Transforms *this using fz_transform_rect() with <m>. */',
@@ -1466,7 +1471,7 @@ classextras = ClassExtras(
                     ExtraMethod( 'bool', f'contains({rename.class_("fz_rect")}& rhs)',
                         f'''
                         {{
-                            return {rename.c_fn('fz_contains_rect')}(*(fz_rect*) &x0, *(fz_rect*) &rhs.x0);
+                            return {rename.c_fn('fz_contains_rect')}(*(::fz_rect*) &x0, *(::fz_rect*) &rhs.x0);
                         }}
                         ''',
                         comment = '/* Uses fz_contains_rect(*this, rhs). */',
@@ -1474,7 +1479,7 @@ classextras = ClassExtras(
                     ExtraMethod( 'bool', 'is_empty()',
                         f'''
                         {{
-                            return {rename.c_fn('fz_is_empty_rect')}(*(fz_rect*) &x0);
+                            return {rename.c_fn('fz_is_empty_rect')}(*(::fz_rect*) &x0);
                         }}
                         ''',
                         comment = '/* Uses fz_is_empty_rect(). */',
@@ -1482,7 +1487,7 @@ classextras = ClassExtras(
                     ExtraMethod( 'void', f'union_({rename.class_("fz_rect")}& rhs)',
                         f'''
                         {{
-                            *(fz_rect*) &x0 = {rename.c_fn('fz_union_rect')}(*(fz_rect*) &x0, *(fz_rect*) &rhs.x0);
+                            *(::fz_rect*) &x0 = {rename.c_fn('fz_union_rect')}(*(::fz_rect*) &x0, *(::fz_rect*) &rhs.x0);
                         }}
                         ''',
                         comment = '/* Updates *this using fz_union_rect(). */',
@@ -1523,10 +1528,10 @@ classextras = ClassExtras(
                             return {rename.ll_fn('fz_paint_shade')}(
                                     this->m_internal,
                                     override_cs.m_internal,
-                                    *(fz_matrix*) &ctm.a,
+                                    *(::fz_matrix*) &ctm.a,
                                     dest.m_internal,
-                                    *(fz_color_params*) &color_params.ri,
-                                    *(fz_irect*) &bbox.x0,
+                                    *(::fz_color_params*) &color_params.ri,
+                                    *(::fz_irect*) &bbox.x0,
                                     eop.m_internal,
                                     NULL /*cache*/
                                     );
@@ -1628,7 +1633,7 @@ classextras = ClassExtras(
                             + f')',
                         f'''
                         {{
-                            char* text = {rename.ll_fn('fz_copy_selection')}(m_internal, *(fz_point *) &a.x, *(fz_point *) &b.x, crlf);
+                            char* text = {rename.ll_fn('fz_copy_selection')}(m_internal, *(::fz_point *) &a.x, *(::fz_point *) &b.x, crlf);
                             std::string ret(text);
                             {rename.ll_fn('fz_free')}(text);
                             return ret;
@@ -1641,7 +1646,7 @@ classextras = ClassExtras(
                         f'{rename.method( "fz_stext_page", "fz_copy_rectangle")}({rename.class_("fz_rect")}& area, int crlf)',
                         f'''
                         {{
-                            char* text = {rename.ll_fn('fz_copy_rectangle')}(m_internal, *(fz_rect*) &area.x0, crlf);
+                            char* text = {rename.ll_fn('fz_copy_rectangle')}(m_internal, *(::fz_rect*) &area.x0, crlf);
                             std::string ret(text);
                             {rename.ll_fn('fz_free')}(text);
                             return ret;
@@ -1741,7 +1746,7 @@ classextras = ClassExtras(
                 # POD class, we can simply let our default constructor run.
                 #
                 virtual_fnptrs = (
-                        lambda name: f'(PdfFilterOptions2*) {name}',
+                        lambda name: f'({rename.class_("pdf_filter_options")}2*) {name}',
                         f'this->opaque = this;\n'
                         ),
                 constructors_extra = [
@@ -1768,7 +1773,7 @@ classextras = ClassExtras(
                     ExtraConstructor( '(int size)',
                         f'''
                         {{
-                            m_internal = new pdf_lexbuf;
+                            m_internal = new ::pdf_lexbuf;
                             {rename.ll_fn('pdf_lexbuf_init')}(m_internal, size);
                         }}
                         ''',
@@ -1827,17 +1832,18 @@ classextras = ClassExtras(
                 constructor_raw = 'default',
                 methods_extra = [
                     ExtraMethod(
-                        'PdfObj',
+                        f'{rename.class_("pdf_obj")}',
                         f'{rename.method( "pdf_obj", "pdf_dict_get")}(int key)',
                         f'''
                         {{
-                            pdf_obj* temp = {rename.ll_fn('pdf_dict_get')}(this->m_internal, (pdf_obj*)(uintptr_t) key);
+                            ::pdf_obj* temp = {rename.ll_fn('pdf_dict_get')}(this->m_internal, (::pdf_obj*)(uintptr_t) key);
                             {rename.ll_fn('pdf_keep_obj')}(temp);
-                            auto ret = PdfObj(temp);
+                            auto ret = {rename.class_('pdf_obj')}(temp);
                             return ret;
                         }}
                         ''',
                         comment = '/* Typesafe wrapper for looking up things such as PDF_ENUM_NAME_Annots.*/',
+                        overload=True,
                         ),
                     ]
                 ),
@@ -1880,21 +1886,21 @@ classextras = ClassExtras(
 
         pdf_processor = ClassExtra(
                 virtual_fnptrs = (
-                    lambda name: f'(*(PdfProcessor2**) ({name} + 1))',
-                    f'm_internal = (pdf_processor*) {rename.ll_fn("pdf_new_processor")}(sizeof(*m_internal) + sizeof(PdfProcessor2*));\n'
-                        + '*((PdfProcessor2**) (m_internal + 1)) = this;\n'
+                    lambda name: f'(*({rename.class_("pdf_processor")}2**) ({name} + 1))',
+                    f'm_internal = (::pdf_processor*) {rename.ll_fn("pdf_new_processor")}(sizeof(*m_internal) + sizeof({rename.class_("pdf_processor")}2*));\n'
+                        + f'*(({rename.class_("pdf_processor")}2**) (m_internal + 1)) = this;\n'
                         ,
                     ),
                 constructors_extra = [
                     ExtraConstructor( '()',
-                        '''
+                        f'''
                         : m_internal( NULL)
-                        {
+                        {{
                             if (s_check_refs)
-                            {
-                                s_PdfProcessor_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);
-                            }
-                        }
+                            {{
+                                s_{rename.class_("pdf_processor")}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);
+                            }}
+                        }}
                         ''',
                         comment = '/* Sets m_internal = NULL. */',
                         ),

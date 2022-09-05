@@ -170,6 +170,7 @@ class State:
         self.global_data = dict()
 
         self.enums = dict()
+        self.structs = dict()
 
         # Code should show extra information if state_.show_details(name)
         # returns true.
@@ -182,6 +183,7 @@ class State:
         fns = dict()
         global_data = dict()
         enums = dict()
+        structs = dict()
 
         for cursor in tu.cursor.get_children():
             if cursor.kind==clang.cindex.CursorKind.ENUM_DECL:
@@ -190,9 +192,12 @@ class State:
                 for cursor2 in cursor.get_children():
                     #jlib.log('    {cursor2.spelling=}')
                     name = cursor2.spelling
-                    #if name.startswith('PDF_ENUM_NAME_'):
                     enum_values.append(name)
                 enums[ cursor.type.get_canonical().spelling] = enum_values
+            if cursor.kind==clang.cindex.CursorKind.TYPEDEF_DECL:
+                name = cursor.spelling
+                if name.startswith( ( 'fz_', 'pdf_')):
+                    structs[ name] = cursor
             if (cursor.linkage == clang.cindex.LinkageKind.EXTERNAL
                     or cursor.is_definition()  # Picks up static inline functions.
                     ):
@@ -208,7 +213,8 @@ class State:
         self.functions_cache[ tu] = fns
         self.global_data[ tu] = global_data
         self.enums[ tu] = enums
-        jlib.log('Have populated fns and global_data. {len(enums)=}')
+        self.structs[ tu] = structs
+        jlib.log('Have populated fns and global_data. {len(enums)=} {len(self.structs)}')
 
     def find_functions_starting_with( self, tu, name_prefix, method):
         '''

@@ -604,7 +604,8 @@ Usage:
             args:
                 -d <details>
                     If specified, we show extra diagnostics when wrapping
-                    functions whose name contains <details>.
+                    functions whose name contains <details>. Can be specified
+                    multiple times.
                 --devenv <path>
                     Set path of devenv.com script on Windows. If not specified,
                     as default is used.
@@ -1074,6 +1075,7 @@ def build( build_dirs, swig_command, args):
                 break
 
     jlib.log('{build_dirs.dir_so=}')
+    details = list()
 
     while 1:
         actions = args.next()
@@ -1083,8 +1085,13 @@ def build( build_dirs, swig_command, args):
             force_rebuild = True
         elif actions == '-d':
             d = args.next()
+            details.append( d)
             def fn(name):
-                return name and (d in name)
+                if not name:
+                    return
+                for detail in details:
+                    if detail in name:
+                        return True
             state.state_.show_details = fn
         elif actions == '--devenv':
             devenv = args.next()
