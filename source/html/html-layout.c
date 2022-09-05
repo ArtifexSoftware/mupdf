@@ -737,7 +737,10 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 		if (restart && restart->start_flow)
 		{
 			if (restart->start_flow != node)
+			{
+				indent = 0;
 				continue;
+			}
 			restart->start_flow = NULL;
 		}
 		node->breaks_line = 0; /* reset line breaks from previous layout */
