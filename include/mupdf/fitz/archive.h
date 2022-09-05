@@ -85,8 +85,8 @@ int fz_is_directory(fz_context *ctx, const char *path);
 /**
 	Drop a reference to an archive.
 
-	Closes and releases any memory or filehandles associated
-	with the archive.
+	When the last reference is dropped, this closes and releases
+	any memory or filehandles associated with the archive.
 */
 void fz_drop_archive(fz_context *ctx, fz_archive *arch);
 
@@ -144,6 +144,8 @@ int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
+
+	Throws an exception if a matching entry cannot be found.
 */
 fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
@@ -153,6 +155,8 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 
 	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
+
+	Throws an exception if a matching entry cannot be found.
 */
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 

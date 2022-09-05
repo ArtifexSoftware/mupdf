@@ -301,7 +301,7 @@ static int has_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 	fz_multi_archive *arch = (fz_multi_archive *)arch_;
 	int i;
 
-	for (i = 0; i < arch->len; i++)
+	for (i = arch->len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -324,7 +324,7 @@ static fz_buffer *read_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 	int i;
 	fz_buffer *res = NULL;
 
-	for (i = 0; i < arch->len; i++)
+	for (i = arch->len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -358,7 +358,7 @@ static fz_stream *open_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 	int i;
 	fz_stream *res = NULL;
 
-	for (i = 0; i < arch->len; i++)
+	for (i = arch->len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -391,7 +391,7 @@ static void drop_multi_archive(fz_context *ctx, fz_archive *arch_)
 	fz_multi_archive *arch = (fz_multi_archive *)arch_;
 	int i;
 
-	for (i = 0; i < arch->len; i++)
+	for (i = arch->len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		fz_free(ctx, e->dir);
