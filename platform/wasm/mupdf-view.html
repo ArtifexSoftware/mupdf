@@ -204,7 +204,7 @@ div.error {
 			<div onclick="showSearch()">Search...</div>
 		</div>
 	</div>
-	<div class="menu">
+	<div class="menu" id="tools-menu">
 		<div class="menu-button">Tools</div>
 		<div class="menu-popup">
 			<div onclick="setTool('CreateText')">Create Text</div>
@@ -272,6 +272,13 @@ mupdfView.ready.then(function () {
 	if (params.has("file"))
 		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
 });
+
+const editorMode = true;
+
+if (!editorMode) {
+	// FIXME - This is a very quick-and-dirty way to parameterize a menu
+	document.getElementById("tools-menu").remove();
+}
 
 let documentOpen = false;
 let pageCount;
@@ -641,9 +648,11 @@ async function updateView() {
 				img.style.height = div.style.height;
 			};
 
-			img.onmousedown = (event) => mouseDown(pageNumber, img, event);
-			img.onmousemove = (event) => mouseMove(pageNumber, img, event);
-			img.onmouseup = (event) => mouseUp(pageNumber, img, event);
+			if (editorMode) {
+				img.onmousedown = (event) => mouseDown(pageNumber, img, event);
+				img.onmousemove = (event) => mouseMove(pageNumber, img, event);
+				img.onmouseup = (event) => mouseUp(pageNumber, img, event);
+			}
 
 			pageImgs[pageNumber] = img;
 			pageDivs[pageNumber] = div;
@@ -746,8 +755,10 @@ window.addEventListener("wheel", function (event) {
 }, {passive: false});
 
 window.addEventListener("keydown", function (event) {
-	if (event.key == "Backspace" || event.key == "Delete") {
-		deleteItem();
+	if (editorMode) {
+		if (event.key == "Backspace" || event.key == "Delete") {
+			deleteItem();
+		}
 	}
 
 	if (event.ctrlKey || event.metaKey) {
