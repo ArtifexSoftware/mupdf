@@ -540,7 +540,59 @@ describe("mupdf", function () {
 		// TODO - line
 		// TODO - vertices
 		// TODO - quad points
-		// TODO - dates
+
+		describe.skip("dates", function () {
+			// modificationDate
+			// creationDate
+			// setModificationDate
+			// setCreationDate
+
+			describe("modificationDate()", function () {
+				it("should return a string", function () {
+					let annotation = annotations.annotations[0];
+
+					let modificationDate = annotation.modificationDate();
+					assert.instanceOf(modificationDate, Date);
+					expect(modificationDate).toMatchSnapshot();
+				});
+
+				// TODO - find case where it throws
+			});
+
+			describe("setModificationDate()", function () {
+				it("should set the annotation's modificationDate", function () {
+					let annotation = annotations.annotations[0];
+
+					annotation.setModificationDate(new Date(2020, 3, 20));
+					assert.equal(annotation.modificationDate().getTime(), new Date(2020, 3, 20).getTime());
+				});
+
+				// TODO - find case where it throws
+			});
+
+			describe("creationDate()", function () {
+				it("should return a string", function () {
+					let annotation = annotations.annotations[0];
+
+					let creationDate = annotation.creationDate();
+					assert.instanceOf(creationDate, Date);
+					expect(creationDate).toMatchSnapshot();
+				});
+
+				// TODO - find case where it throws
+			});
+
+			describe("setCreationDate()", function () {
+				it("should set the annotation's creationDate", function () {
+					let annotation = annotations.annotations[0];
+
+					annotation.setCreationDate(new Date(2020, 3, 20));
+					assert.equal(annotation.modificationDate().getTime(), new Date(2020, 3, 20).getTime());
+				});
+
+				// TODO - find case where it throws
+			});
+		});
 
 		describe("author", function () {
 			describe("hasAuthor()", function () {

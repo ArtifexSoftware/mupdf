@@ -13,6 +13,10 @@ Rect {
 }
 `;
 
+exports[`mupdf AnnotationList dates creationDate() should return a string 1`] = `1969-12-31T23:59:59.000Z`;
+
+exports[`mupdf AnnotationList dates modificationDate() should return a string 1`] = `2000-05-19T19:23:36.000Z`;
+
 exports[`mupdf AnnotationList getTransform() should return a Matrix 1`] = `
 Matrix {
   "a": -4.5622702060654774e-8,

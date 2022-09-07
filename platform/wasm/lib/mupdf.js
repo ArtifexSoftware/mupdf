@@ -725,22 +725,24 @@ class Annotation extends Wrapper {
 	// FIXME - Dates can't handle BigInt
 	modificationDate() {
 		// libmupdf uses seconds since epoch, but Date expects milliseconds
-		return new Date(libmupdf._wasm_pdf_annot_modification_date(this.pointer) * 1000n);
+		return new Date(libmupdf._wasm_pdf_annot_modification_date(this.pointer) * 1000);
 	}
 
 	creationDate() {
 		// libmupdf uses seconds since epoch, but Date expects milliseconds
-		return new Date(libmupdf._wasm_pdf_annot_creation_date(this.pointer) * 1000n);
+		return new Date(libmupdf._wasm_pdf_annot_creation_date(this.pointer) * 1000);
 	}
 
 	setModificationDate(date) {
+		assert(date instanceof Date, "invalid date argument");
 		// Date stores milliseconds since epoch, but libmupdf expects seconds
-		libmupdf._wasm_pdf_set_annot_modification_date(this.pointer, date.getValue() / 1000n);
+		libmupdf._wasm_pdf_set_annot_modification_date(this.pointer, date.getTime() / 1000);
 	}
 
 	setCreationDate(date) {
+		assert(date instanceof Date, "invalid date argument");
 		// Date stores milliseconds since epoch, but libmupdf expects seconds
-		libmupdf._wasm_pdf_set_annot_creation_date(this.pointer, date.getValue() / 1000n);
+		libmupdf._wasm_pdf_set_annot_creation_date(this.pointer, date.getTime() / 1000);
 	}
 
 	hasAuthor() {

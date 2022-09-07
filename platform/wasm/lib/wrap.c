@@ -1268,9 +1268,9 @@ void wasm_pdf_add_annot_quad_point(pdf_annot *annot, fz_quad quad)
 // TODO - ink list
 
 EMSCRIPTEN_KEEPALIVE
-int64_t wasm_pdf_annot_modification_date(pdf_annot *annot)
+double wasm_pdf_annot_modification_date(pdf_annot *annot)
 {
-	int64_t seconds_since_epoch;
+	double seconds_since_epoch;
 	fz_try(ctx)
 		seconds_since_epoch = pdf_annot_modification_date(ctx, annot);
 	fz_catch(ctx)
@@ -1279,9 +1279,9 @@ int64_t wasm_pdf_annot_modification_date(pdf_annot *annot)
 }
 
 EMSCRIPTEN_KEEPALIVE
-int64_t wasm_pdf_annot_creation_date(pdf_annot *annot)
+double wasm_pdf_annot_creation_date(pdf_annot *annot)
 {
-	int64_t seconds_since_epoch;
+	double seconds_since_epoch;
 	fz_try(ctx)
 		seconds_since_epoch = pdf_annot_creation_date(ctx, annot);
 	fz_catch(ctx)
@@ -1290,7 +1290,7 @@ int64_t wasm_pdf_annot_creation_date(pdf_annot *annot)
 }
 
 EMSCRIPTEN_KEEPALIVE
-void wasm_pdf_set_annot_modification_date(pdf_annot *annot, int64_t secs)
+void wasm_pdf_set_annot_modification_date(pdf_annot *annot, double secs)
 {
 	fz_try(ctx)
 		pdf_set_annot_modification_date(ctx, annot, secs);
@@ -1299,7 +1299,7 @@ void wasm_pdf_set_annot_modification_date(pdf_annot *annot, int64_t secs)
 }
 
 EMSCRIPTEN_KEEPALIVE
-void wasm_pdf_set_annot_creation_date(pdf_annot *annot, int64_t secs)
+void wasm_pdf_set_annot_creation_date(pdf_annot *annot, double secs)
 {
 	fz_try(ctx)
 		pdf_set_annot_creation_date(ctx, annot, secs);
