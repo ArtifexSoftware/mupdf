@@ -4,8 +4,8 @@ pdfref13.pdf
 
 # Compilation artifacts
 build/
-libmupdf.js
-libmupdf.wasm
+mupdf-wasm.js
+mupdf-wasm.wasm
 
 # Node JS dependencies
 node_modules/

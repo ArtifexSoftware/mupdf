@@ -24,7 +24,7 @@
 
 // If running in Node.js environment
 if (typeof require === "function") {
-	var libmupdf = require("../libmupdf.js");
+	var libmupdf = require("../mupdf-wasm.js");
 }
 
 function assert(pred, message) {

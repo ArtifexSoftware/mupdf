@@ -25,7 +25,7 @@
 "use strict";
 
 // Import the WASM module
-importScripts("libmupdf.js");
+importScripts("mupdf-wasm.js");
 importScripts("lib/mupdf.js");
 
 mupdf.ready.then(() => {
