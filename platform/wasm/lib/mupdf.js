@@ -334,6 +334,7 @@ class PdfPage extends Page {
 	constructor(pagePointer, pdfPagePointer) {
 		super(pagePointer);
 		this.pdfPagePointer = pdfPagePointer;
+		this.annotationList = null;
 	}
 
 	update() {
@@ -347,7 +348,9 @@ class PdfPage extends Page {
 			annotations.push(new Annotation(annot));
 		}
 
-		return new AnnotationList(annotations);
+		// TODO - find other way to structure this
+		this.annotationList = new AnnotationList(annotations);
+		return this.annotationList;
 	}
 
 	createAnnot(annotType) {
@@ -359,6 +362,14 @@ class PdfPage extends Page {
 
 		this.update();
 		return annot;
+	}
+
+	removeAnnot(removedAnnotation) {
+		assert(removedAnnotation instanceof Annotation, "invalid annotation argument");
+		libmupdf._wasm_pdf_delete_annot(this.pointer, removedAnnotation.pointer);
+		if (this.annotationList) {
+			this.annotationList.annotations = this.annotationList.annotations.filter(annot => annot.pointer === removedAnnotation.pointer);
+		}
 	}
 
 	createLink(bbox, uri) {
@@ -469,6 +480,7 @@ class Outline extends Wrapper {
 	}
 }
 
+// TODO - remove this class and have annotations() return an Array directly
 // TODO destructor
 class AnnotationList {
 	constructor(annotations) {
@@ -536,10 +548,6 @@ class Annotation extends Wrapper {
 
 	popup() {
 		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_annot_popup(this.pointer));
-	}
-
-	delete() {
-		// TODO - use page ref
 	}
 
 	typeString() {

@@ -395,7 +395,7 @@ workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
 workerMethods.deleteItem = function () {
 	let wasChanged = currentTool.deleteItem();
 	pageWasRendered[currentTool.pageNumber] = !wasChanged;
-	return wasChanged;
+	return currentTool.pageNumber;
 };
 
 class SelectedAnnotation {
@@ -518,7 +518,10 @@ class SelectAnnot {
 	}
 
 	deleteItem() {
-		currentSelection?.annotation.delete();
+		if (currentSelection?.annotation) {
+			this.pdfPage.removeAnnot(currentSelection?.annotation);
+			return true;
+		}
 	}
 }
 
