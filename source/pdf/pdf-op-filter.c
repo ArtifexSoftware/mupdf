@@ -105,6 +105,10 @@ typedef struct
 	pdf_processor *chain;
 	filter_gstate *gstate;
 	pdf_text_object_state tos;
+	/* If Td_pending, then any Tm_pending can be ignored and we can just
+	 * send a Td with Td_value rather than the Tm. */
+	int Td_pending;
+	fz_point Td_value;
 	int Tm_pending;
 	int BT_pending;
 	int in_BT;
@@ -524,7 +528,15 @@ done_SC:
 			pdf_drop_font(ctx, gstate->sent.text.font);
 			gstate->sent.text = gstate->pending.text;
 			gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
-			if (p->Tm_pending != 0)
+
+			if (p->Td_pending != 0)
+			{
+				if (p->chain->op_Td)
+					p->chain->op_Td(ctx, p->chain, p->Td_value.x, p->Td_value.y);
+				p->Tm_pending = 0;
+				p->Td_pending = 0;
+			}
+			else if (p->Tm_pending != 0)
 			{
 				if (p->chain->op_Tm)
 					p->chain->op_Tm(ctx, p->chain, p->tos.tlm.a, p->tos.tlm.b, p->tos.tlm.c, p->tos.tlm.d, p->tos.tlm.e, p->tos.tlm.f);
@@ -1644,7 +1656,13 @@ pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 
 	p->Tm_adjust = 0;
 	pdf_tos_translate(&p->tos, tx, ty);
-	p->Tm_pending = 1;
+	if (p->Tm_pending)
+		return; /* Exit, just with Tm_pending */
+	if (p->Td_pending)
+		tx += p->Td_value.x, ty += p->Td_value.y;
+	p->Td_value.x = tx;
+	p->Td_value.y = ty;
+	p->Td_pending = 1;
 }
 
 static void
@@ -1655,10 +1673,8 @@ pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 	if (p->gstate->empty_clip_region)
 		return;
 
-	p->Tm_adjust = 0;
-	pdf_tos_translate(&p->tos, tx, ty);
 	p->gstate->pending.text.leading = -ty;
-	p->Tm_pending = 1;
+	pdf_filter_Td(ctx, proc, tx, ty);
 }
 
 static void
@@ -1671,6 +1687,7 @@ pdf_filter_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 
 	pdf_tos_set_matrix(&p->tos, a, b, c, d, e, f);
 	p->Tm_pending = 1;
+	p->Td_pending = 0;
 	p->Tm_adjust = 0;
 }
 
