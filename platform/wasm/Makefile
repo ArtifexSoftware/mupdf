@@ -17,7 +17,7 @@ else
   BUILD_FLAGS := -Wall -Os -flto
 endif
 
-all: mupdf-wasm.js mupdf-wasm.wasm
+all: mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js
 
 MUPDF_CORE := $(BUILD_DIR)/libmupdf.a $(BUILD_DIR)/libmupdf-third.a
 $(MUPDF_CORE): .FORCE
@@ -26,13 +26,14 @@ $(MUPDF_CORE): .FORCE
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	$(MAKE) -j4 -C ../.. \
 		OS=wasm build=$(build) \
-		XCFLAGS='$(LIB_BUILD_FLAGS) -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0 -DWASM_SKIP_TRY_CATCH=$(WASM_SKIP_TRY_CATCH)' \
+		XCFLAGS='$(LIB_BUILD_FLAGS) -pthread -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0 -DWASM_SKIP_TRY_CATCH=$(WASM_SKIP_TRY_CATCH)' \
 		libs
 
-mupdf-wasm.js mupdf-wasm.wasm: $(MUPDF_CORE) lib/wrap.c
+mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js: $(MUPDF_CORE) lib/wrap.c
 	BASH_SOURCE=$(EMSDK_DIR)/emsdk_env.sh \
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	emcc -o $@ $(BUILD_FLAGS) \
+		-pthread \
 		--no-entry \
 		-D WASM_SKIP_TRY_CATCH=$(WASM_SKIP_TRY_CATCH) \
 		-s VERBOSE=0 \
@@ -49,7 +50,7 @@ mupdf-wasm.js mupdf-wasm.wasm: $(MUPDF_CORE) lib/wrap.c
 		$(BUILD_DIR)/libmupdf-third.a
 
 clean:
-	rm -f mupdf-wasm.js mupdf-wasm.wasm
+	rm -f mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js
 	$(MAKE) -C ../../ OS=wasm build=$(build) clean
 
 .PHONY: .FORCE clean
