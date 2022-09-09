@@ -176,6 +176,94 @@ fz_rect *wasm_bound_page(fz_page *page)
 }
 
 EMSCRIPTEN_KEEPALIVE
+void wasm_run_page(
+	fz_page *page,
+	fz_device *dev,
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
+	fz_cookie *cookie
+) {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
+	fz_try(ctx)
+		fz_run_page(ctx, page, dev, ctm, cookie);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_run_page_contents(
+	fz_page *page,
+	fz_device *dev,
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
+	fz_cookie *cookie
+) {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
+	fz_try(ctx)
+		fz_run_page_contents(ctx, page, dev, ctm, cookie);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_run_page_annots(
+	fz_page *page,
+	fz_device *dev,
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
+	fz_cookie *cookie
+) {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
+	fz_try(ctx)
+		fz_run_page_annots(ctx, page, dev, ctm, cookie);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_run_page_widgets(
+	fz_page *page,
+	fz_device *dev,
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
+	fz_cookie *cookie
+) {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
+	fz_try(ctx)
+		fz_run_page_widgets(ctx, page, dev, ctm, cookie);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_device *wasm_new_draw_device(
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
+	fz_pixmap *dest
+) {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
+	fz_device *device;
+	fz_try(ctx)
+		device = fz_new_draw_device(ctx, ctm, dest);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return device;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_close_device(fz_device *dev)
+{
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_drop_device(fz_device *dev)
+{
+	fz_try(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_stext_page *wasm_new_stext_page_from_page(fz_page *page) {
 	fz_stext_page *stext_page;
 	// FIXME
@@ -355,13 +443,31 @@ void wasm_drop_colorspace(fz_colorspace *cs)
 
 EMSCRIPTEN_KEEPALIVE
 fz_pixmap *wasm_new_pixmap_from_page(fz_page *page,
-	float a, float b, float c, float d, float e, float f,
+	float ctm_0, float ctm_1, float ctm_2, float ctm_3, float ctm_4, float ctm_5,
 	fz_colorspace *colorspace,
 	int alpha)
 {
+	fz_matrix ctm = fz_make_matrix(ctm_0, ctm_1, ctm_2, ctm_3, ctm_4, ctm_5);
 	fz_pixmap *pix;
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page(ctx, page, fz_make_matrix(a,b,c,d,e,f), colorspace, alpha);
+		pix = fz_new_pixmap_from_page(ctx, page, ctm, colorspace, alpha);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pix;
+}
+
+EMSCRIPTEN_KEEPALIVE
+fz_pixmap *wasm_new_pixmap_with_bbox(
+	fz_colorspace *colorspace,
+	int bbox_x0, int bbox_y0, int bbox_x1, int bbox_y1,
+	fz_separations *seps,
+	int alpha
+)
+{
+	fz_irect bbox = fz_make_irect(bbox_x0, bbox_y0, bbox_x1, bbox_y1);
+	fz_pixmap *pix;
+	fz_try(ctx)
+		pix = fz_new_pixmap_with_bbox(ctx, colorspace, bbox, seps, alpha);
 	fz_catch(ctx)
 		wasm_rethrow(ctx);
 	return pix;
@@ -389,6 +495,20 @@ void wasm_clear_pixmap_rect_with_value(fz_pixmap *pix, int value, int rect_x0, i
 	fz_irect rect = fz_make_irect(rect_x0, rect_y0, rect_x1, rect_y1);
 	// never throws
 	fz_clear_pixmap_rect_with_value(ctx, pix, value, rect);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_clear_pixmap(fz_pixmap *pix)
+{
+	// never throws
+	fz_clear_pixmap(ctx, pix);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_clear_pixmap_with_value(fz_pixmap *pix, int value)
+{
+	// never throws
+	fz_clear_pixmap_with_value(ctx, pix, value);
 }
 
 EMSCRIPTEN_KEEPALIVE

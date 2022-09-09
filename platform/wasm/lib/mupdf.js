@@ -110,6 +110,10 @@ class Rect {
 	translated(xoff, yoff) {
 		return new Rect(this.x0 + xoff, this.y0 + yoff, this.x1 + xoff, this.y1 + yoff);
 	}
+
+	transformed(matrix) {
+		return matrix.transformRect(this);
+	}
 }
 
 class Matrix {
@@ -121,6 +125,8 @@ class Matrix {
 		this.e = e;
 		this.f = f;
 	}
+
+	static identity = new Matrix(1, 0, 0, 1, 0, 0);
 
 	static fromPtr(ptr) {
 		ptr = ptr >> 2;
@@ -266,6 +272,55 @@ class Page extends Wrapper {
 		return this.bounds().height();
 	}
 
+	run(device, transformMatrix, cookie = null) {
+		// TODO - transformMatrix = Matrix.identity
+		assert(device instanceof Device, "invalid device argument");
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		let m = transformMatrix;
+		libmupdf._wasm_run_page(
+			this.pointer,
+			device.pointer,
+			m.a, m.b, m.c, m.d, m.e, m.f,
+			cookie?.pointer,
+		);
+	}
+
+	runContents(device, transformMatrix, cookie = null) {
+		assert(device instanceof Device, "invalid device argument");
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		let m = transformMatrix;
+		libmupdf._wasm_run_page_contents(
+			this.pointer,
+			device.pointer,
+			m.a, m.b, m.c, m.d, m.e, m.f,
+			cookie?.pointer,
+		);
+	}
+
+	runAnnots(device, transformMatrix = new Matrix(), cookie = null) {
+		assert(device instanceof Device, "invalid device argument");
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		let m = transformMatrix;
+		libmupdf._wasm_run_page_annots(
+			this.pointer,
+			device.pointer,
+			m.a, m.b, m.c, m.d, m.e, m.f,
+			cookie?.pointer,
+		);
+	}
+
+	runWidgets(device, transformMatrix, cookie = null) {
+		assert(device instanceof Device, "invalid device argument");
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		let m = transformMatrix;
+		libmupdf._wasm_run_page_widgets(
+			this.pointer,
+			device.pointer,
+			m.a, m.b, m.c, m.d, m.e, m.f,
+			cookie?.pointer,
+		);
+	}
+
 	toPixmap(transformMatrix, colorspace, alpha = false) {
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		assert(colorspace instanceof ColorSpace, "invalid colorspace argument");
@@ -278,6 +333,24 @@ class Page extends Wrapper {
 				alpha
 			)
 		);
+	}
+
+	toPixmapTest(transform, colorspace, alpha = false, cookie = null, drawContents = true, drawAnnots = true, drawWidgets = true) {
+		let bbox = this.bounds().transformed(transform);
+		let pixmap = Pixmap.withBbox(colorspace, bbox, alpha);
+		if (alpha)
+			pixmap.clear();
+		else
+			pixmap.clearWithWhite();
+		let device = Device.drawDevice(transform, pixmap);
+		if (drawContents)
+			this.runContents(device, Matrix.identity, cookie);
+		if (drawAnnots)
+			this.runAnnots(device, Matrix.identity, cookie);
+		if (drawWidgets)
+			this.runWidgets(device, Matrix.identity, cookie);
+		device.close();
+		return pixmap;
 	}
 
 	toSTextPage() {
@@ -849,6 +922,23 @@ class Pixmap extends Wrapper {
 		this.bbox = Rect.fromIntRectPtr(libmupdf._wasm_pixmap_bbox(this.pointer));
 	}
 
+	static withBbox(colorspace, bbox, alpha) {
+		return new Pixmap(libmupdf._wasm_new_pixmap_with_bbox(
+			colorspace.pointer,
+			bbox.x0, bbox.y0, bbox.x1, bbox.y1,
+			0,
+			alpha,
+		));
+	}
+
+	clear() {
+		libmupdf._wasm_clear_pixmap(this.pointer);
+	}
+
+	clearWithWhite() {
+		libmupdf._wasm_clear_pixmap_with_value(this.pointer, 0xff);
+	}
+
 	width() {
 		return this.bbox.width();
 	}
@@ -870,6 +960,7 @@ class Pixmap extends Wrapper {
 		let p = libmupdf._wasm_pixmap_samples(this.pointer);
 		return libmupdf.HEAPU8.subarray(p, p + n);
 	}
+
 	toPNG() {
 		let buf = libmupdf._wasm_new_buffer_from_pixmap_as_png(this.pointer);
 		try {
@@ -879,6 +970,26 @@ class Pixmap extends Wrapper {
 		} finally {
 			libmupdf._wasm_drop_buffer(buf);
 		}
+	}
+}
+
+class Device extends Wrapper {
+	constructor(pointer) {
+		super(pointer, libmupdf._wasm_drop_device);
+	}
+
+	static drawDevice(transformMatrix, pixmap) {
+		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
+		assert(pixmap instanceof Pixmap, "invalid pixmap argument");
+		let m = transformMatrix;
+		return new Device(libmupdf._wasm_new_draw_device(
+			m.a, m.b, m.c, m.d, m.e, m.f,
+			pixmap.pointer
+		));
+	}
+
+	close() {
+		libmupdf._wasm_close_device(this.pointer);
 	}
 }
 
