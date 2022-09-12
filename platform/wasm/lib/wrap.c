@@ -264,6 +264,21 @@ void wasm_drop_device(fz_device *dev)
 }
 
 EMSCRIPTEN_KEEPALIVE
+fz_cookie *wasm_new_cookie() {
+	fz_cookie *cookie;
+	fz_try(ctx)
+		cookie = fz_malloc_struct(ctx, fz_cookie);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return cookie;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_free_cookie(fz_cookie *cookie) {
+	fz_free(ctx, cookie);
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_stext_page *wasm_new_stext_page_from_page(fz_page *page) {
 	fz_stext_page *stext_page;
 	// FIXME

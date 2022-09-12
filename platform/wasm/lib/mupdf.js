@@ -272,8 +272,8 @@ class Page extends Wrapper {
 		return this.bounds().height();
 	}
 
-	run(device, transformMatrix, cookie = null) {
-		// TODO - transformMatrix = Matrix.identity
+	// TODO - allow transformMatrix to be an array
+	run(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		let m = transformMatrix;
@@ -285,7 +285,7 @@ class Page extends Wrapper {
 		);
 	}
 
-	runContents(device, transformMatrix, cookie = null) {
+	runContents(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		let m = transformMatrix;
@@ -297,7 +297,7 @@ class Page extends Wrapper {
 		);
 	}
 
-	runAnnots(device, transformMatrix = new Matrix(), cookie = null) {
+	runAnnots(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		let m = transformMatrix;
@@ -309,7 +309,7 @@ class Page extends Wrapper {
 		);
 	}
 
-	runWidgets(device, transformMatrix, cookie = null) {
+	runWidgets(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		let m = transformMatrix;
@@ -321,35 +321,20 @@ class Page extends Wrapper {
 		);
 	}
 
-	toPixmap(transformMatrix, colorspace, alpha = false) {
+	toPixmap(transformMatrix, colorspace, alpha = false, cookie = null) {
 		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		assert(colorspace instanceof ColorSpace, "invalid colorspace argument");
-		let m = transformMatrix;
-		return new Pixmap(
-			libmupdf._wasm_new_pixmap_from_page(
-				this.pointer,
-				m.a, m.b, m.c, m.d, m.e, m.f,
-				colorspace,
-				alpha
-			)
-		);
-	}
 
-	toPixmapTest(transform, colorspace, alpha = false, cookie = null, drawContents = true, drawAnnots = true, drawWidgets = true) {
-		let bbox = this.bounds().transformed(transform);
+		let bbox = this.bounds().transformed(transformMatrix);
 		let pixmap = Pixmap.withBbox(colorspace, bbox, alpha);
 		if (alpha)
 			pixmap.clear();
 		else
 			pixmap.clearWithWhite();
-		let device = Device.drawDevice(transform, pixmap);
-		if (drawContents)
-			this.runContents(device, Matrix.identity, cookie);
-		if (drawAnnots)
-			this.runAnnots(device, Matrix.identity, cookie);
-		if (drawWidgets)
-			this.runWidgets(device, Matrix.identity, cookie);
-		device.close();
+
+		let device = Device.drawDevice(transformMatrix, pixmap);
+		this.run(device, Matrix.identity, cookie);
+
 		return pixmap;
 	}
 
@@ -993,6 +978,16 @@ class Device extends Wrapper {
 	}
 }
 
+class JobCookie extends Wrapper {
+	constructor(pointer) {
+		super(pointer, libmupdf._wasm_free_cookie);
+	}
+
+	static create() {
+		return new JobCookie(libmupdf._wasm_new_cookie());
+	}
+}
+
 class Buffer extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_buffer);
@@ -1245,6 +1240,8 @@ const mupdf = {
 	Annotation,
 	ColorSpace,
 	Pixmap,
+	Device,
+	JobCookie,
 	Buffer,
 	Stream,
 	Output,
@@ -1305,6 +1302,15 @@ mupdf.ready = libmupdf(libmupdf_injections).then(m => {
 	mupdf.DeviceRGB = new ColorSpace(libmupdf._wasm_device_rgb());
 	mupdf.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr());
 	mupdf.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk());
+
+	let buffer = libmupdf.wasmMemory.buffer;
+	if (globalThis.SharedArrayBuffer != null && buffer instanceof globalThis.SharedArrayBuffer) {
+		return { sharedBuffer: buffer };
+	}
+	else {
+		return { sharedBuffer: null };
+	}
+
 });
 
 // If running in Node.js environment

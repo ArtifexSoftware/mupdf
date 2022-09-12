@@ -28,8 +28,8 @@
 importScripts("mupdf-wasm.js");
 importScripts("lib/mupdf.js");
 
-mupdf.ready.then(() => {
-	postMessage(["READY"]);
+mupdf.ready.then(result => {
+	postMessage(["READY", result.sharedBuffer]);
 });
 
 onmessage = async function (event) {
@@ -285,38 +285,53 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 let currentTool = null;
 let currentSelection = null;
 
+let jobCookies = {};
+
 // TODO - Use mupdf instead
 // TODO - Use Map
-const pageWasRendered = {};
+const lastPageRender = {};
 function drawPageAsPNG(id, pageNumber, dpi) {
-	if (pageWasRendered[pageNumber]) {
+	if (lastPageRender[pageNumber] != null && lastPageRender[pageNumber].dpi === dpi) {
+		postMessage(["RESULT", id, null]);
 		return;
 	}
 
 	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+
 	let page;
 	let pixmap;
+	let cookie;
 
 	// TODO - draw annotations
 	// TODO - use canvas?
 
 	try {
+		cookie = mupdf.JobCookie.create();
+		jobCookies[cookie.pointer] = cookie;
+		postMessage(["RESULT", id, cookie?.pointer]);
+		// TODO - on error
+
 		page = openDocument.loadPage(pageNumber - 1);
-		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false);
+		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false, cookie);
 
 		if (pageNumber == currentTool.pageNumber)
 			currentTool.drawOnPage(pixmap, dpi);
 
 		let png = pixmap.toPNG();
 
-		postMessage(["RENDER", id, { pageNumber, png }]);
-		pageWasRendered[pageNumber] = true;
+		postMessage(["RENDER", id, { pageNumber, png, cookiePointer: cookie?.pointer }]);
+		lastPageRender[pageNumber] = { dpi };
 	}
 	finally {
 		pixmap?.free();
 		page?.free();
 	}
 }
+
+
+workerMethods.deleteCookie = function(cookiePointer) {
+	delete jobCookies[cookiePointer];
+};
 
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	// TODO - Do we want to do a load every time?
@@ -328,7 +343,7 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 
 	if (pageNumber !== currentTool.pageNumber) {
 		// TODO - schedule paint
-		pageWasRendered[currentTool.pageNumber] = false;
+		lastPageRender[currentTool.pageNumber] = false;
 		currentTool.resetPage(pdfPage, pageNumber);
 	}
 
@@ -338,7 +353,7 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 
 	let pageChanged = currentTool.mouseDown(x, y);
 	if (pageChanged) {
-		pageWasRendered[pageNumber] = false;
+		lastPageRender[pageNumber] = null;
 	}
 	return pageChanged;
 
@@ -356,9 +371,11 @@ workerMethods.mouseDragOnPage = function(pageNumber, dpi, x, y) {
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	let wasChanged = currentTool.mouseDrag(x, y);
-	pageWasRendered[pageNumber] = !wasChanged;
-	return wasChanged;
+	let pageChanged = currentTool.mouseDrag(x, y);
+	if (pageChanged) {
+		lastPageRender[pageNumber] = null;
+	}
+	return pageChanged;
 };
 
 workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
@@ -374,9 +391,11 @@ workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	let wasChanged = currentTool.mouseMove(x, y);
-	pageWasRendered[pageNumber] = !wasChanged;
-	return wasChanged;
+	let pageChanged = currentTool.mouseMove(x, y);
+	if (pageChanged) {
+		lastPageRender[pageNumber] = null;
+	}
+	return pageChanged;
 };
 
 workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
@@ -387,14 +406,16 @@ workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
 	x = x / (dpi / 72);
 	y = y / (dpi / 72);
 
-	let wasChanged = currentTool.mouseUp(x, y);
-	pageWasRendered[pageNumber] = !wasChanged;
-	return wasChanged;
+	let pageChanged = currentTool.mouseUp(x, y);
+	if (pageChanged) {
+		lastPageRender[pageNumber] = null;
+	}
+	return pageChanged;
 };
 
 workerMethods.deleteItem = function () {
-	let wasChanged = currentTool.deleteItem();
-	pageWasRendered[currentTool.pageNumber] = !wasChanged;
+	let pageChanged = currentTool.deleteItem();
+	lastPageRender[currentTool.pageNumber] = !pageChanged;
 	return currentTool.pageNumber;
 };
 

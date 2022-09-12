@@ -35,6 +35,7 @@ mupdfView.ready = new Promise((resolve, reject) => {
 		if (event.data[0] !== "READY") {
 			reject(new Error(`Unexpected first message: ${event.data}`));
 		} else {
+			mupdfView.wasmMemory = event.data[1];
 			worker.onmessage = onWorkerMessage;
 			resolve();
 		}
@@ -46,7 +47,7 @@ function onWorkerMessage(event) {
 	if (type === "RESULT")
 		messagePromises[id].resolve(result);
 	else if (type === "RENDER")
-		mupdfView.onRender(result.pageNumber, result.png);
+		mupdfView.onRender(result.pageNumber, result.png, result.cookiePointer);
 	else if (type === "READY")
 		messagePromises[id].reject(new Error("Unexpected READY message"));
 	else if (type === "ERROR") {
@@ -57,7 +58,9 @@ function onWorkerMessage(event) {
 	}
 	else
 		messagePromises[id].reject(new Error(`Unexpected result type '${type}'`));
-	delete messagePromises[id];
+
+	if (type !== "RENDER")
+		delete messagePromises[id];
 }
 
 
@@ -95,6 +98,7 @@ mupdfView.getPageLinks = wrap("getPageLinks");
 mupdfView.getPageText = wrap("getPageText");
 mupdfView.search = wrap("search");
 mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
+mupdfView.deleteCookie = wrap("deleteCookie");
 
 mupdfView.mouseDownOnPage = wrap("mouseDownOnPage");
 mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");

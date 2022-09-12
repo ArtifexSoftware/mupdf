@@ -17,7 +17,7 @@ else
   BUILD_FLAGS := -Wall -Os -flto
 endif
 
-all: mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js
+all: mupdf-wasm.js mupdf-wasm.wasm
 
 MUPDF_CORE := $(BUILD_DIR)/libmupdf.a $(BUILD_DIR)/libmupdf-third.a
 $(MUPDF_CORE): .FORCE
@@ -29,7 +29,7 @@ $(MUPDF_CORE): .FORCE
 		XCFLAGS='$(LIB_BUILD_FLAGS) -pthread -DTOFU -DTOFU_CJK -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_JS=0 -DWASM_SKIP_TRY_CATCH=$(WASM_SKIP_TRY_CATCH)' \
 		libs
 
-mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js: $(MUPDF_CORE) lib/wrap.c
+mupdf-wasm.js mupdf-wasm.wasm: $(MUPDF_CORE) lib/wrap.c
 	BASH_SOURCE=$(EMSDK_DIR)/emsdk_env.sh \
 	. $(EMSDK_DIR)/emsdk_env.sh; \
 	emcc -o $@ $(BUILD_FLAGS) \

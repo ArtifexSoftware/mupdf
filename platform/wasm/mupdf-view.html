@@ -622,6 +622,7 @@ async function deleteItem() {
 
 const pageImgs = {};
 const pageDivs = {};
+const jobCookies = {};
 async function updateView() {
 	let i, n = dirty.length;
 	let current = 0;
@@ -658,6 +659,7 @@ async function updateView() {
 			pageDivs[pageNumber] = div;
 
 			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio)
+				.then(cookiePointer => jobCookies[pageNumber] = cookiePointer)
 				.catch(error => showPageError("drawPageAsPNG", div, error));
 		}
 
@@ -672,12 +674,24 @@ async function updateView() {
 		currentPage = current;
 }
 
-mupdfView.onRender = function (pageNumber, pngData) {
+mupdfView.onRender = function (pageNumber, pngData, cookiePointer) {
 	const img = pageImgs[pageNumber];
 	const div = pageDivs[pageNumber];
 	img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
 	emptyNode(div);
 	div.appendChild(img);
+
+	delete jobCookies[pageNumber];
+	mupdfView.deleteCookie(cookiePointer);
+}
+
+function cancelRender(pageNumber) {
+	if (jobCookies[pageNumber] == null) {
+		return;
+	}
+	const int32pointer = jobCookies[pageNumber] >> 2;
+	const wasmMemoryView32 = new Int32Array(mupdfView.wasmMemory);
+	wasmMemoryView32[int32pointer] = 1;
 }
 
 // TODO - fix dirty/update code
