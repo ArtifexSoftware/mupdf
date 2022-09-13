@@ -362,12 +362,11 @@ class Page extends Wrapper {
 		let hits_ptr = 0;
 
 		try {
-			// TODO - use fz_malloc instead
-			hits_ptr = libmupdf._malloc(libmupdf._wasm_size_of_quad() * MAX_HIT_COUNT);
+			hits_ptr = libmupdf._wasm_malloc(libmupdf._wasm_size_of_quad() * MAX_HIT_COUNT);
 
 			// TODO - write conversion method
 			let needle_size = libmupdf.lengthBytesUTF8(needle);
-			needle_ptr = libmupdf._malloc(needle_size) + 1;
+			needle_ptr = libmupdf._wasm_malloc(needle_size) + 1;
 			libmupdf.stringToUTF8(needle, needle_ptr, needle_size + 1);
 
 			let hitCount = libmupdf._wasm_search_page(
@@ -384,8 +383,8 @@ class Page extends Wrapper {
 			return rects;
 		}
 		finally {
-			libmupdf._free(needle_ptr);
-			libmupdf._free(hits_ptr);
+			libmupdf._wasm_free(needle_ptr);
+			libmupdf._wasm_free(hits_ptr);
 		}
 	}
 }
@@ -437,14 +436,14 @@ class PdfPage extends Page {
 		// TODO bbox is rect
 
 		let uri_size = libmupdf.lengthBytesUTF8(uri);
-		let uri_ptr = libmupdf._malloc(uri_size) + 1;
+		let uri_ptr = libmupdf._wasm_malloc(uri_size) + 1;
 		libmupdf.stringToUTF8(uri, uri_ptr, uri_size + 1);
 
 		try {
 			return new Link(libmupdf._wasm_pdf_create_link(this.pdfPagePointer, bbox.x0, bbox.y0, bbox.x1, bbox.y1, uri_ptr));
 		}
 		finally {
-			libmupdf._free(uri_ptr);
+			libmupdf._wasm_free(uri_ptr);
 		}
 	}
 
@@ -639,19 +638,19 @@ class Annotation extends Wrapper {
 			return libmupdf.UTF8ToString(string_ptr);
 		}
 		finally {
-			libmupdf._free(string_ptr);
+			libmupdf._wasm_free(string_ptr);
 		}
 	}
 
 	setContents(text) {
 		let text_size = libmupdf.lengthBytesUTF8(text);
-		let text_ptr = libmupdf._malloc(text_size) + 1;
+		let text_ptr = libmupdf._wasm_malloc(text_size) + 1;
 		try {
 			libmupdf.stringToUTF8(text, text_ptr, text_size + 1);
 			libmupdf._wasm_pdf_set_annot_contents(this.pointer, text_ptr);
 		}
 		finally {
-			libmupdf._free(text_ptr);
+			libmupdf._wasm_free(text_ptr);
 		}
 	}
 
@@ -678,13 +677,13 @@ class Annotation extends Wrapper {
 
 	setIconName(name) {
 		let name_size = libmupdf.lengthBytesUTF8(name);
-		let name_ptr = libmupdf._malloc(name_size) + 1;
+		let name_ptr = libmupdf._wasm_malloc(name_size) + 1;
 		try {
 			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
 			libmupdf._wasm_pdf_set_annot_icon_name(this.pointer, name_ptr);
 		}
 		finally {
-			libmupdf._free(name_ptr);
+			libmupdf._wasm_free(name_ptr);
 		}
 	}
 
@@ -707,13 +706,13 @@ class Annotation extends Wrapper {
 
 	setLanguage(lang) {
 		let lang_size = libmupdf.lengthBytesUTF8(lang);
-		let lang_ptr = libmupdf._malloc(lang_size) + 1;
+		let lang_ptr = libmupdf._wasm_malloc(lang_size) + 1;
 		try {
 			libmupdf.stringToUTF8(lang, lang_ptr, lang_size + 1);
 			libmupdf._wasm_pdf_set_annot_language(this.pointer, lang_ptr);
 		}
 		finally {
-			libmupdf._free(lang_ptr);
+			libmupdf._wasm_free(lang_ptr);
 		}
 	}
 
@@ -815,19 +814,19 @@ class Annotation extends Wrapper {
 			return libmupdf.UTF8ToString(string_ptr);
 		}
 		finally {
-			libmupdf._free(string_ptr);
+			libmupdf._wasm_free(string_ptr);
 		}
 	}
 
 	setAuthor(name) {
 		let name_size = libmupdf.lengthBytesUTF8(name);
-		let name_ptr = libmupdf._malloc(name_size) + 1;
+		let name_ptr = libmupdf._wasm_malloc(name_size) + 1;
 		try {
 			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
 			libmupdf._wasm_pdf_set_annot_author(this.pointer, name_ptr);
 		}
 		finally {
-			libmupdf._free(name_ptr);
+			libmupdf._wasm_free(name_ptr);
 		}
 	}
 
@@ -843,7 +842,7 @@ class Annotation extends Wrapper {
 			return libmupdf.UTF8ToString(string_ptr);
 		}
 		finally {
-			libmupdf._free(string_ptr);
+			libmupdf._wasm_free(string_ptr);
 		}
 	}
 
@@ -853,7 +852,7 @@ class Annotation extends Wrapper {
 			return libmupdf.UTF8ToString(string_ptr);
 		}
 		finally {
-			libmupdf._free(string_ptr);
+			libmupdf._wasm_free(string_ptr);
 		}
 	}
 
@@ -1005,7 +1004,7 @@ class Buffer extends Wrapper {
 
 	static fromJsBuffer(buffer) {
 		assert(ArrayBuffer.isView(buffer) || buffer instanceof ArrayBuffer, "invalid buffer argument");
-		let pointer = libmupdf._malloc(buffer.byteLength);
+		let pointer = libmupdf._wasm_malloc(buffer.byteLength);
 		libmupdf.HEAPU8.set(new Uint8Array(buffer), pointer);
 		// Note: fz_new_buffer_drom_data takes ownership of the given pointer,
 		// so we don't need to call free
@@ -1014,7 +1013,7 @@ class Buffer extends Wrapper {
 
 	static fromJsString(string) {
 		let string_size = libmupdf.lengthBytesUTF8(string);
-		let string_ptr = libmupdf._malloc(string_size) + 1;
+		let string_ptr = libmupdf._wasm_malloc(string_size) + 1;
 		libmupdf.stringToUTF8(string, string_ptr, string_size + 1);
 		// Note: fz_new_buffer_drom_data takes ownership of the given pointer,
 		// so we don't need to call free
@@ -1072,7 +1071,7 @@ class Stream extends Wrapper {
 
 	static fromUrl(url, contentLength, block_size, prefetch) {
 		let url_size = libmupdf.lengthBytesUTF8(url);
-		let url_ptr = libmupdf._malloc(url_size) + 1;
+		let url_ptr = libmupdf._wasm_malloc(url_size) + 1;
 		libmupdf.stringToUTF8(url, url_ptr, url_size + 1);
 
 		try {
@@ -1080,7 +1079,7 @@ class Stream extends Wrapper {
 			return new Stream(pointer);
 		}
 		finally {
-			libmupdf._free(url_ptr);
+			libmupdf._wasm_free(url_ptr);
 		}
 	}
 
@@ -1136,10 +1135,10 @@ class STextPage extends Wrapper {
 // TODO - move in Stream
 function onFetchData(id, block, data) {
 	let n = data.byteLength;
-	let p = libmupdf._malloc(n);
+	let p = libmupdf._wasm_malloc(n);
 	libmupdf.HEAPU8.set(new Uint8Array(data), p);
 	libmupdf._wasm_on_data_fetched(id, block, p, n);
-	libmupdf._free(p);
+	libmupdf._wasm_free(p);
 }
 
 // TODO - replace with map

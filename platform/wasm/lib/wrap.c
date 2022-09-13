@@ -52,6 +52,63 @@ void wasm_init_context(void)
 }
 
 EMSCRIPTEN_KEEPALIVE
+void *wasm_malloc(size_t size)
+{
+	void *pointer;
+	fz_try(ctx)
+		pointer = fz_malloc(ctx, size);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pointer;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void *wasm_malloc_no_throw(size_t size)
+{
+	return fz_malloc_no_throw(ctx, size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void *wasm_calloc(size_t count, size_t size)
+{
+	void *pointer;
+	fz_try(ctx)
+		pointer = fz_calloc(ctx, count, size);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pointer;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void *wasm_calloc_no_throw(size_t count, size_t size)
+{
+	return fz_calloc_no_throw(ctx, count, size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void *wasm_realloc(void *p, size_t size)
+{
+	void *pointer;
+	fz_try(ctx)
+		pointer = fz_realloc(ctx, p, size);
+	fz_catch(ctx)
+		wasm_rethrow(ctx);
+	return pointer;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void *wasm_realloc_no_throw(void *p, size_t size)
+{
+	return fz_realloc_no_throw(ctx, p, size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_free(void *p)
+{
+	fz_free(ctx, p);
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_matrix *wasm_scale(float scale_x, float scale_y) {
 	out_matrix = fz_scale(scale_x, scale_y);
 	return &out_matrix;
