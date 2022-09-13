@@ -334,6 +334,8 @@ class Page extends Wrapper {
 
 		let device = Device.drawDevice(transformMatrix, pixmap);
 		this.run(device, Matrix.identity, cookie);
+		device.close();
+		device.free();
 
 		return pixmap;
 	}
@@ -985,6 +987,10 @@ class JobCookie extends Wrapper {
 
 	static create() {
 		return new JobCookie(libmupdf._wasm_new_cookie());
+	}
+
+	aborted() {
+		return libmupdf._wasm_cookie_aborted(this.pointer);
 	}
 }
 

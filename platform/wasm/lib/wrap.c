@@ -279,6 +279,11 @@ void wasm_free_cookie(fz_cookie *cookie) {
 }
 
 EMSCRIPTEN_KEEPALIVE
+int wasm_cookie_aborted(fz_cookie *cookie) {
+	return cookie->abort;
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_stext_page *wasm_new_stext_page_from_page(fz_page *page) {
 	fz_stext_page *stext_page;
 	// FIXME

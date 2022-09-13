@@ -314,10 +314,14 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 		page = openDocument.loadPage(pageNumber - 1);
 		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false, cookie);
 
+		if (cookie.aborted()) {
+			pixmap = null;
+		}
+
 		if (pageNumber == currentTool.pageNumber)
 			currentTool.drawOnPage(pixmap, dpi);
 
-		let png = pixmap.toPNG();
+		let png = pixmap?.toPNG();
 
 		postMessage(["RENDER", id, { pageNumber, png, cookiePointer: cookie?.pointer }]);
 		lastPageRender[pageNumber] = { dpi };

@@ -675,12 +675,18 @@ async function updateView() {
 }
 
 mupdfView.onRender = function (pageNumber, pngData, cookiePointer) {
+	if (pngData == null) {
+		// render was aborted
+		return;
+	}
+
 	const img = pageImgs[pageNumber];
 	const div = pageDivs[pageNumber];
 	img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
 	emptyNode(div);
 	div.appendChild(img);
 
+	// TODO - delete on error too
 	delete jobCookies[pageNumber];
 	mupdfView.deleteCookie(cookiePointer);
 }
