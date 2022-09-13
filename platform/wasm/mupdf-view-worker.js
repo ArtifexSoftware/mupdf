@@ -79,7 +79,6 @@ workerMethods.openStreamFromUrl = function (url, contentLength, progressive, pre
 };
 
 workerMethods.openDocumentFromBuffer = function (buffer, magic) {
-	// TODO - check types
 	openDocument = mupdf.Document.openFromJsBuffer(buffer, magic);
 };
 
@@ -1102,7 +1101,11 @@ const editionTools = {
 };
 
 workerMethods.setEditionTool = function(toolName) {
-	// TODO - warn if missing
-	currentTool = new (editionTools[toolName]);
-	console.log("new tool:", toolName, " - ", currentTool);
+	if (toolName in editionTools) {
+		currentTool = new (editionTools[toolName]);
+		console.log("new tool:", toolName, " - ", currentTool);
+	}
+	else {
+		console.warn("cannot find tool", toolName);
+	}
 };

@@ -36,6 +36,13 @@ function assert(pred, message) {
 	}
 }
 
+function allocateUTF8(str) {
+	var size = libmupdf.lengthBytesUTF8(str) + 1;
+	var pointer = libmupdf._wasm_malloc(size);
+	libmupdf.stringToUTF8(str, pointer, size);
+	return pointer;
+}
+
 class MupdfError extends Error {
 	constructor(message) {
 		super(message);
@@ -171,13 +178,12 @@ class Wrapper {
 		this.pointer = pointer;
 		this.dropFunction = dropFunction;
 
-		// TODO - Fix error types and messages - log values
 		if (typeof pointer !== "number" || pointer === 0)
-			throw new Error("invalid pointer param");
+			throw new Error(`cannot create ${this.constructor.name}: invalid pointer param value '${pointer}'`);
 		if (dropFunction == null)
-			throw new Error("dropFunction is null");
+			throw new Error(`cannot create ${this.constructor.name}: dropFunction is null`);
 		if (typeof dropFunction !== "function")
-			throw new Error("dropFunction is not a function");
+			throw new Error(`cannot create ${this.constructor.name}: dropFunction value '${dropFunction}' is not a function`);
 
 		finalizer.register(this, () => dropFunction(pointer), this);
 	}
@@ -216,6 +222,7 @@ class Document extends Wrapper {
 
 	static openFromBuffer(buffer, magic) {
 		assert(buffer instanceof Buffer, "invalid buffer argument");
+		assert(typeof magic === "string" || magic instanceof String, "invalid magic argument");
 		let pointer = libmupdf.ccall(
 			"wasm_open_document_with_buffer",
 			"number",
@@ -227,6 +234,7 @@ class Document extends Wrapper {
 
 	static openFromStream(stream, magic) {
 		assert(stream instanceof Stream, "invalid stream argument");
+		assert(typeof magic === "string" || magic instanceof String, "invalid magic argument");
 		let pointer = libmupdf.ccall(
 			"wasm_open_document_with_stream",
 			"number",
@@ -364,11 +372,7 @@ class Page extends Wrapper {
 		try {
 			hits_ptr = libmupdf._wasm_malloc(libmupdf._wasm_size_of_quad() * MAX_HIT_COUNT);
 
-			// TODO - write conversion method
-			let needle_size = libmupdf.lengthBytesUTF8(needle);
-			needle_ptr = libmupdf._wasm_malloc(needle_size) + 1;
-			libmupdf.stringToUTF8(needle, needle_ptr, needle_size + 1);
-
+			let needle_ptr = allocateUTF8(needle);
 			let hitCount = libmupdf._wasm_search_page(
 				this.pointer, needle_ptr, hits_ptr, MAX_HIT_COUNT
 			);
@@ -435,9 +439,7 @@ class PdfPage extends Page {
 		assert(bbox instanceof Rect, "invalid bbox argument");
 		// TODO bbox is rect
 
-		let uri_size = libmupdf.lengthBytesUTF8(uri);
-		let uri_ptr = libmupdf._wasm_malloc(uri_size) + 1;
-		libmupdf.stringToUTF8(uri, uri_ptr, uri_size + 1);
+		let uri_ptr = allocateUTF8(uri);
 
 		try {
 			return new Link(libmupdf._wasm_pdf_create_link(this.pdfPagePointer, bbox.x0, bbox.y0, bbox.x1, bbox.y1, uri_ptr));
@@ -446,8 +448,6 @@ class PdfPage extends Page {
 			libmupdf._wasm_free(uri_ptr);
 		}
 	}
-
-	// TODO wasm_pdf_create_annot
 }
 
 // TODO destructor
@@ -643,10 +643,8 @@ class Annotation extends Wrapper {
 	}
 
 	setContents(text) {
-		let text_size = libmupdf.lengthBytesUTF8(text);
-		let text_ptr = libmupdf._wasm_malloc(text_size) + 1;
+		let text_ptr = allocateUTF8(text);
 		try {
-			libmupdf.stringToUTF8(text, text_ptr, text_size + 1);
 			libmupdf._wasm_pdf_set_annot_contents(this.pointer, text_ptr);
 		}
 		finally {
@@ -676,10 +674,8 @@ class Annotation extends Wrapper {
 	}
 
 	setIconName(name) {
-		let name_size = libmupdf.lengthBytesUTF8(name);
-		let name_ptr = libmupdf._wasm_malloc(name_size) + 1;
+		let name_ptr = allocateUTF8(name);
 		try {
-			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
 			libmupdf._wasm_pdf_set_annot_icon_name(this.pointer, name_ptr);
 		}
 		finally {
@@ -705,10 +701,8 @@ class Annotation extends Wrapper {
 	}
 
 	setLanguage(lang) {
-		let lang_size = libmupdf.lengthBytesUTF8(lang);
-		let lang_ptr = libmupdf._wasm_malloc(lang_size) + 1;
+		let lang_ptr = allocateUTF8(lang);
 		try {
-			libmupdf.stringToUTF8(lang, lang_ptr, lang_size + 1);
 			libmupdf._wasm_pdf_set_annot_language(this.pointer, lang_ptr);
 		}
 		finally {
@@ -781,7 +775,6 @@ class Annotation extends Wrapper {
 
 	// TODO - quad points
 
-	// FIXME - Dates can't handle BigInt
 	modificationDate() {
 		// libmupdf uses seconds since epoch, but Date expects milliseconds
 		return new Date(libmupdf._wasm_pdf_annot_modification_date(this.pointer) * 1000);
@@ -819,10 +812,8 @@ class Annotation extends Wrapper {
 	}
 
 	setAuthor(name) {
-		let name_size = libmupdf.lengthBytesUTF8(name);
-		let name_ptr = libmupdf._wasm_malloc(name_size) + 1;
+		let name_ptr = allocateUTF8(name);
 		try {
-			libmupdf.stringToUTF8(name, name_ptr, name_size + 1);
 			libmupdf._wasm_pdf_set_annot_author(this.pointer, name_ptr);
 		}
 		finally {
@@ -1070,9 +1061,7 @@ class Stream extends Wrapper {
 	}
 
 	static fromUrl(url, contentLength, block_size, prefetch) {
-		let url_size = libmupdf.lengthBytesUTF8(url);
-		let url_ptr = libmupdf._wasm_malloc(url_size) + 1;
-		libmupdf.stringToUTF8(url, url_ptr, url_size + 1);
+		let url_ptr = allocateUTF8(url);
 
 		try {
 			let pointer = libmupdf._wasm_open_stream_from_url(url_ptr, contentLength, block_size, prefetch);
