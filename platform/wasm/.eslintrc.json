@@ -31,5 +31,5 @@
             { "argsIgnorePattern": "^_" }
         ]
     },
-    "ignorePatterns": ["libmupdf.js"]
+    "ignorePatterns": ["mupdf-wasm.js", "mupdf-wasm.worker.js"]
 }

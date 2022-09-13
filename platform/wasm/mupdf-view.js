@@ -29,7 +29,6 @@ const worker = new Worker("mupdf-view-worker.js");
 const messagePromises = {};
 let lastPromiseId = 0;
 
-// eslint-disable-next-line no-unused-vars
 mupdfView.ready = new Promise((resolve, reject) => {
 	worker.onmessage = function (event) {
 		if (event.data[0] !== "READY") {
