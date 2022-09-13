@@ -178,7 +178,7 @@ fz_error_cb *fz_error_callback(fz_context *ctx, void **user)
 
 FZ_NORETURN static void throw(fz_context *ctx, int code)
 {
-	#if !WASM_SKIP_TRY_CATCH
+#if !WASM_SKIP_TRY_CATCH
 
 		if (ctx->error.top > ctx->error.stack_base)
 		{
@@ -196,7 +196,7 @@ FZ_NORETURN static void throw(fz_context *ctx, int code)
 			exit(EXIT_FAILURE);
 		}
 
-	#else
+#else
 		EM_ASM({
 			let message = UTF8ToString($0);
 			console.error("mupdf:", message);
@@ -204,7 +204,7 @@ FZ_NORETURN static void throw(fz_context *ctx, int code)
 		}, ctx->error.message);
 		// Unreachable
 		exit(EXIT_FAILURE);
-	#endif
+#endif
 }
 
 fz_jmp_buf *fz_push_try(fz_context *ctx)
