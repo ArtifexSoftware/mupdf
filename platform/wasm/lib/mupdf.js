@@ -128,6 +128,15 @@ class Matrix {
 
 	static identity = new Matrix(1, 0, 0, 1, 0, 0);
 
+	static from(value) {
+		if (value instanceof Matrix)
+			return value;
+		if (Array.isArray(value) && value.length === 6)
+			return new Matrix(value[0], value[1], value[2], value[3], value[4], value[5]);
+		else
+			throw new Error(`cannot create matrix from '${value}'`);
+	}
+
 	static fromPtr(ptr) {
 		ptr = ptr >> 2;
 		return new Matrix(
@@ -154,9 +163,6 @@ class Matrix {
 }
 
 // TODO - All constructors should take a pointer, plus a private token
-
-// TODO - replace constructors with static factory methods.
-// All constructors should take a pointer, plus a private token
 
 const finalizer = new FinalizationRegistry(callback => callback());
 
@@ -272,11 +278,9 @@ class Page extends Wrapper {
 		return this.bounds().height();
 	}
 
-	// TODO - allow transformMatrix to be an array
 	run(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
-		let m = transformMatrix;
+		let m = Matrix.from(transformMatrix);
 		libmupdf._wasm_run_page(
 			this.pointer,
 			device.pointer,
@@ -287,8 +291,7 @@ class Page extends Wrapper {
 
 	runContents(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
-		let m = transformMatrix;
+		let m = Matrix.from(transformMatrix);
 		libmupdf._wasm_run_page_contents(
 			this.pointer,
 			device.pointer,
@@ -299,8 +302,7 @@ class Page extends Wrapper {
 
 	runAnnots(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
-		let m = transformMatrix;
+		let m = Matrix.from(transformMatrix);
 		libmupdf._wasm_run_page_annots(
 			this.pointer,
 			device.pointer,
@@ -311,8 +313,7 @@ class Page extends Wrapper {
 
 	runWidgets(device, transformMatrix = Matrix.identity, cookie = null) {
 		assert(device instanceof Device, "invalid device argument");
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
-		let m = transformMatrix;
+		let m = Matrix.from(transformMatrix);
 		libmupdf._wasm_run_page_widgets(
 			this.pointer,
 			device.pointer,
@@ -322,10 +323,9 @@ class Page extends Wrapper {
 	}
 
 	toPixmap(transformMatrix, colorspace, alpha = false, cookie = null) {
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		assert(colorspace instanceof ColorSpace, "invalid colorspace argument");
 
-		let bbox = this.bounds().transformed(transformMatrix);
+		let bbox = this.bounds().transformed(Matrix.from(transformMatrix));
 		let pixmap = Pixmap.withBbox(colorspace, bbox, alpha);
 		if (alpha)
 			pixmap.clear();
@@ -966,9 +966,8 @@ class Device extends Wrapper {
 	}
 
 	static drawDevice(transformMatrix, pixmap) {
-		assert(transformMatrix instanceof Matrix, "invalid transformMatrix argument");
 		assert(pixmap instanceof Pixmap, "invalid pixmap argument");
-		let m = transformMatrix;
+		let m = Matrix.from(transformMatrix);
 		return new Device(libmupdf._wasm_new_draw_device(
 			m.a, m.b, m.c, m.d, m.e, m.f,
 			pixmap.pointer
