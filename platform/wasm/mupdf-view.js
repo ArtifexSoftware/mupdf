@@ -25,8 +25,7 @@
 var mupdfView = {};
 
 const worker = new Worker("mupdf-view-worker.js");
-// TODO - use Map
-const messagePromises = {};
+const messagePromises = new Map();
 let lastPromiseId = 0;
 
 mupdfView.ready = new Promise((resolve, reject) => {
@@ -44,22 +43,22 @@ mupdfView.ready = new Promise((resolve, reject) => {
 function onWorkerMessage(event) {
 	let [ type, id, result ] = event.data;
 	if (type === "RESULT")
-		messagePromises[id].resolve(result);
+		messagePromises.get(id).resolve(result);
 	else if (type === "RENDER")
 		mupdfView.onRender(result.pageNumber, result.png, result.cookiePointer);
 	else if (type === "READY")
-		messagePromises[id].reject(new Error("Unexpected READY message"));
+		messagePromises.get(id).reject(new Error("Unexpected READY message"));
 	else if (type === "ERROR") {
 		let error = new Error(result.message);
 		error.name = result.name;
 		error.stack = result.stack;
-		messagePromises[id].reject(error);
+		messagePromises.get(id).reject(error);
 	}
 	else
-		messagePromises[id].reject(new Error(`Unexpected result type '${type}'`));
+		messagePromises.get(id).reject(new Error(`Unexpected result type '${type}'`));
 
 	if (type !== "RENDER")
-		delete messagePromises[id];
+		messagePromises.delete(id);
 }
 
 
@@ -67,7 +66,7 @@ function wrap(func) {
 	return function(...args) {
 		return new Promise(function (resolve, reject) {
 			let id = lastPromiseId++;
-			messagePromises[id] = { resolve, reject };
+			messagePromises.set(id, { resolve, reject });
 			if (args[0] instanceof ArrayBuffer)
 				worker.postMessage([func, id, args], [args[0]]);
 			else

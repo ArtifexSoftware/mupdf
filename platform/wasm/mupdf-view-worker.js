@@ -288,10 +288,9 @@ let currentSelection = null;
 let jobCookies = {};
 
 // TODO - Use mupdf instead
-// TODO - Use Map
-const lastPageRender = {};
+const lastPageRender = new Map();
 function drawPageAsPNG(id, pageNumber, dpi) {
-	if (lastPageRender[pageNumber] != null && lastPageRender[pageNumber].dpi === dpi) {
+	if (lastPageRender.has(pageNumber) && lastPageRender.get(pageNumber).dpi === dpi) {
 		postMessage(["RESULT", id, null]);
 		return;
 	}
@@ -324,7 +323,7 @@ function drawPageAsPNG(id, pageNumber, dpi) {
 		let png = pixmap?.toPNG();
 
 		postMessage(["RENDER", id, { pageNumber, png, cookiePointer: cookie?.pointer }]);
-		lastPageRender[pageNumber] = { dpi };
+		lastPageRender.set(pageNumber, { dpi });
 	}
 	finally {
 		pixmap?.free();
@@ -347,7 +346,7 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 
 	if (pageNumber !== currentTool.pageNumber) {
 		// TODO - schedule paint
-		lastPageRender[currentTool.pageNumber] = false;
+		lastPageRender.delete(currentTool.pageNumber);
 		currentTool.resetPage(pdfPage, pageNumber);
 	}
 
@@ -357,7 +356,7 @@ workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 
 	let pageChanged = currentTool.mouseDown(x, y);
 	if (pageChanged) {
-		lastPageRender[pageNumber] = null;
+		lastPageRender.delete(pageNumber);
 	}
 	return pageChanged;
 
@@ -377,7 +376,7 @@ workerMethods.mouseDragOnPage = function(pageNumber, dpi, x, y) {
 
 	let pageChanged = currentTool.mouseDrag(x, y);
 	if (pageChanged) {
-		lastPageRender[pageNumber] = null;
+		lastPageRender.delete(pageNumber);
 	}
 	return pageChanged;
 };
@@ -397,7 +396,7 @@ workerMethods.mouseMoveOnPage = function(pageNumber, dpi, x, y) {
 
 	let pageChanged = currentTool.mouseMove(x, y);
 	if (pageChanged) {
-		lastPageRender[pageNumber] = null;
+		lastPageRender.delete(pageNumber);
 	}
 	return pageChanged;
 };
@@ -412,14 +411,16 @@ workerMethods.mouseUpOnPage = function(pageNumber, dpi, x, y) {
 
 	let pageChanged = currentTool.mouseUp(x, y);
 	if (pageChanged) {
-		lastPageRender[pageNumber] = null;
+		lastPageRender.delete(pageNumber);
 	}
 	return pageChanged;
 };
 
 workerMethods.deleteItem = function () {
 	let pageChanged = currentTool.deleteItem();
-	lastPageRender[currentTool.pageNumber] = !pageChanged;
+	if (pageChanged) {
+		lastPageRender.delete(currentTool.pageNumber);
+	}
 	return currentTool.pageNumber;
 };
 
@@ -1086,7 +1087,6 @@ class CreateSound {
 
 currentTool = new SelectAnnot();
 
-// TODO - Use Map
 const editionTools = {
 	CreateText,
 	CreateFreeText,
