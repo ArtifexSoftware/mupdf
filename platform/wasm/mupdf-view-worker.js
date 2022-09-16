@@ -335,6 +335,10 @@ workerMethods.deleteCookie = function(cookiePointer) {
 	delete jobCookies[cookiePointer];
 };
 
+workerMethods.resetPageCache = function() {
+	lastPageRender.clear();
+};
+
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
 	// TODO - Do we want to do a load every time?
 	let pdfPage = openDocument.loadPage(pageNumber - 1);

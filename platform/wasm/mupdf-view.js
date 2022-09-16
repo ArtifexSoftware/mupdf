@@ -97,6 +97,7 @@ mupdfView.getPageText = wrap("getPageText");
 mupdfView.search = wrap("search");
 mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
 mupdfView.deleteCookie = wrap("deleteCookie");
+mupdfView.resetPageCache = wrap("resetPageCache");
 
 mupdfView.mouseDownOnPage = wrap("mouseDownOnPage");
 mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");

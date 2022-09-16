@@ -455,6 +455,8 @@ async function openFile(file) {
 	if (file instanceof File) {
 		freeDocument();
 		try {
+			// TODO - have a more elegant way to invalidate previous renders
+			await mupdfView.resetPageCache();
 			await mupdfView.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
 			documentOpen = true;
 			initDocument(file.name);
