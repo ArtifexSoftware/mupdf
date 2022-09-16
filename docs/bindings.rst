@@ -539,15 +539,16 @@ Linux
 
 (Debian-specific; similar packages exist on other distributions.)
 
-* `sudo apt install python3-dev swig python-clang`
+* `sudo apt install python3-dev swig python3-clang`
 * For C#: `sudo apt install mono-devel`
 
 Notes:
 
-* One can do `pip install libclang` instead of installing the `python-clang`
+* One can do `pip install libclang` instead of installing the `python3-clang`
   package in the above command.
 
-* `pip install clang` does not provide a usable Python interface onto the clang
+* Note that, despite its name, the Python `clang` package on pypi.org (`pip
+  install clang`) does not provide a usable Python interface onto the clang
   parser.
 
 

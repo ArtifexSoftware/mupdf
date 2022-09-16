@@ -75,7 +75,8 @@ class ClangInfo:
             # We require 'pip install libclang' which avoids the need to look
             # for libclang.
             return
-        for version in 11, 10, 9, 8, 7, 6,:
+        # As of 2022-09-16, max libclang version is 14.
+        for version in range( 20, 5, -1):
             ok = self._try_init_clang( version)
             if ok:
                 break

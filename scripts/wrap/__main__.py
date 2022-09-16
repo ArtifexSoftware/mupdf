@@ -401,11 +401,13 @@ Tools required to build:
 
             pip install libclang
 
-    SWIG:
+    SWIG for Python bindings:
 
         We work with swig-3 and swig-4. If swig-4 is used, we propogate
         doxygen-style comments for structures and functions into the generated
         C++ code.
+
+    Mono for C# bindings on Unix.
 
 
 Building Python bindings:
@@ -452,18 +454,35 @@ Building Python bindings:
 
         Install required packages:
             Debian:
-                > sudo apt install clang clang-python python3-dev swig
+                > sudo apt install clang python3-clang python3-dev swig
 
             OpenBSD:
                 > pkg_add py3-llvm py3-qt5
 
-        Build:
-            > ./scripts/mupdfwrap.py -d build/shared-release -b all
+        Build and test:
+            > ./scripts/mupdfwrap.py -d build/shared-release -b all --test-python
 
         Use the mupdf module by setting PYTHONPATH:
             > PYTHONPATH=build/shared-release python3
             >>> import mupdf
             >>>
+
+
+Building C# bindings:
+
+    Build MuPDF C# bindings using scripts/mupdfwrap.py:
+
+        > cd .../mupdf
+
+        Install required packages:
+            Debian:
+                > sudo apt install clang python3-clang python3-dev mono-devel
+
+            OpenBSD:
+                > sudo pkg_add py3-llvm py3-qt5 mono
+
+        Build and test:
+            > ./scripts/mupdfwrap.py -d build/shared-release -b --csharp all --test-csharp
 
 
 Generated files:
