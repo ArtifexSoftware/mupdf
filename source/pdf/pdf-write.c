@@ -3024,11 +3024,15 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 	int n = pdf_count_pages(ctx, doc);
 	int i;
 
-	pdf_filter_options filter;
-	memset(&filter, 0, sizeof filter);
-	filter.recurse = 1;
-	filter.sanitize = sanitize;
-	filter.ascii = ascii;
+	pdf_filter_options options = { 0 };
+	pdf_sanitize_filter_options sopts = { 0 };
+	pdf_filter_factory_list list[2] = { 0 };
+
+	options.recurse = 1;
+	options.ascii = ascii;
+	options.filters = sanitize ? list : NULL;
+	list[0].filter = (pdf_filter_factory *)pdf_new_sanitize_filter;
+	list[0].options = &sopts;
 
 	for (i = 0; i < n; i++)
 	{
@@ -3037,10 +3041,10 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 
 		fz_try(ctx)
 		{
-			pdf_filter_page_contents(ctx, doc, page, &filter);
+			pdf_filter_page_contents(ctx, doc, page, &options);
 			for (annot = pdf_first_annot(ctx, page); annot != NULL; annot = pdf_next_annot(ctx, annot))
 			{
-				pdf_filter_annot_contents(ctx, doc, annot, &filter);
+				pdf_filter_annot_contents(ctx, doc, annot, &options);
 			}
 		}
 		fz_always(ctx)

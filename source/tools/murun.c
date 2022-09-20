@@ -1515,10 +1515,17 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 
 #if FZ_ENABLE_PDF
 
+typedef struct resources_stack
+{
+	struct resources_stack *next;
+	pdf_obj *resources;
+} resources_stack;
+
 typedef struct
 {
 	pdf_processor super;
 	js_State *J;
+	resources_stack *rstack;
 	int extgstate;
 } pdf_js_processor;
 
@@ -2135,12 +2142,12 @@ static void js_proc_Do_image(fz_context *ctx, pdf_processor *proc, const char *n
 	PROC_END(2);
 }
 
-static void js_proc_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *xobj, pdf_obj *page_resources)
+static void js_proc_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *xobj)
 {
 	PROC_BEGIN("op_Do_form");
 	js_pushstring(J, name);
 	ffi_pushobj(J, pdf_keep_obj(ctx, xobj));
-	ffi_pushobj(J, pdf_keep_obj(ctx, page_resources));
+	ffi_pushobj(J, pdf_keep_obj(ctx, ((pdf_js_processor*)proc)->rstack->resources));
 	PROC_END(3);
 }
 
@@ -2192,12 +2199,42 @@ static void js_proc_EX(fz_context *ctx, pdf_processor *proc)
 	PROC_END(0);
 }
 
+static void js_proc_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj *res)
+{
+	PROC_BEGIN("push_resources");
+	ffi_pushobj(J, pdf_keep_obj(ctx, res));
+	PROC_END(1);
+}
+
+static pdf_obj *js_proc_pop_resources(fz_context *ctx, pdf_processor *proc)
+{
+	PROC_BEGIN("pop_resources");
+	PROC_END(0);
+	return NULL;
+}
+
+static void js_proc_drop(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_js_processor *pr = (pdf_js_processor *)proc;
+
+	while (pr->rstack)
+	{
+		resources_stack *stk = pr->rstack;
+		pr->rstack = stk->next;
+		pdf_drop_obj(ctx, stk->resources);
+		fz_free(ctx, stk);
+	}
+}
+
 static pdf_processor *new_js_processor(fz_context *ctx, js_State *J)
 {
 	pdf_js_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 
 	proc->super.close_processor = NULL;
-	proc->super.drop_processor = NULL;
+	proc->super.drop_processor = js_proc_drop;
+
+	proc->super.push_resources = js_proc_push_resources;
+	proc->super.pop_resources = js_proc_pop_resources;
 
 	/* general graphics state */
 	proc->super.op_w = js_proc_w;
@@ -6391,7 +6428,7 @@ static void ffi_PDFPage_process(js_State *J)
 	{
 		pdf_obj *resources = pdf_page_resources(ctx, page);
 		pdf_obj *contents = pdf_page_contents(ctx, page);
-		pdf_process_contents(ctx, proc, page->doc, resources, contents, NULL);
+		pdf_process_contents(ctx, proc, page->doc, resources, contents, NULL, NULL);
 		pdf_close_processor(ctx, proc);
 	}
 	fz_always(ctx)
@@ -7481,11 +7518,15 @@ static void ffi_PDFAnnotation_process(js_State *J)
 	pdf_processor *proc = new_js_processor(ctx, J);
 	fz_try(ctx)
 	{
+		pdf_processor_push_resources(ctx, proc, pdf_page_resources(ctx, pdf_annot_page(ctx, annot)));
 		pdf_process_annot(ctx, proc, annot, NULL);
 		pdf_close_processor(ctx, proc);
 	}
 	fz_always(ctx)
+	{
+		pdf_processor_pop_resources(ctx, proc);
 		pdf_drop_processor(ctx, proc);
+	}
 	fz_catch(ctx)
 		rethrow(J);
 }
