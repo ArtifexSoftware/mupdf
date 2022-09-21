@@ -1039,6 +1039,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-nametree.c" />
     <ClCompile Include="..\..\source\pdf\pdf-object.c" />
     <ClCompile Include="..\..\source\pdf\pdf-op-buffer.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-op-color.c" />
     <ClCompile Include="..\..\source\pdf\pdf-op-filter.c" />
     <ClCompile Include="..\..\source\pdf\pdf-op-run.c" />
     <ClCompile Include="..\..\source\pdf\pdf-outline.c" />

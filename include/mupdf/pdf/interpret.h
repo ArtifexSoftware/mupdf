@@ -333,6 +333,47 @@ void pdf_processor_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj 
 pdf_obj *pdf_processor_pop_resources(fz_context *ctx, pdf_processor *proc);
 
 /*
+	opaque: Opaque value that is passed to all the filter functions.
+
+	cs_rewrite: function pointer called to rewrite a colorspace.
+
+	color_rewrite: function pointer called to rewrite a color
+		On entry:
+			*cs = reference to a pdf object representing the colorspace.
+
+			*n = number of color components
+
+			color = *n color values.
+
+		On exit:
+			*cs either the same (for no change in colorspace) or
+			updated to be a new one. Reference must be dropped, and
+			a new kept reference returned!
+
+			*n = number of color components (maybe updated)
+
+			color = *n color values (maybe updated)
+
+	image_rewrite: function pointer called to rewrite an image
+		On entry:
+			*image = reference to an fz_image.
+
+		On exit:
+			*image either the same (for no change) or updated
+			to be a new one. Reference must be dropped, and a
+			new kept reference returned.
+*/
+typedef struct
+{
+	void *opaque;
+	void (*color_rewrite)(fz_context *ctx, void *opaque, pdf_obj **cs, int *n, float color[FZ_MAX_COLORS]);
+	void (*image_rewrite)(fz_context *ctx, void *opaque, fz_image **image);
+} pdf_color_filter_options;
+
+pdf_processor *
+pdf_new_color_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, pdf_color_filter_options *copts);
+
+/*
 	Functions to actually process annotations, glyphs and general stream objects.
 */
 void pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *obj, pdf_obj *res, fz_cookie *cookie, pdf_obj **out_res);
