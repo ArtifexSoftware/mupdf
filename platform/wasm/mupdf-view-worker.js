@@ -39,7 +39,7 @@ if (globalThis.SharedArrayBuffer != null) {
 importScripts("lib/mupdf.js");
 
 mupdf.ready
-	.then(result => postMessage(["READY", result.sharedBuffer]))
+	.then(result => postMessage(["READY", result.sharedBuffer, Object.keys(workerMethods)]))
 	.catch(error => postMessage(["ERROR", error]));
 
 function checkPath(path) {

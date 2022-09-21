@@ -33,6 +33,9 @@ mupdfView.ready = new Promise((resolve, reject) => {
 		let type = event.data[0];
 		if (type === "READY") {
 			mupdfView.wasmMemory = event.data[1];
+			let methodNames = event.data[2];
+			for (let method of methodNames)
+				mupdfView[method] = wrap(method);
 			worker.onmessage = onWorkerMessage;
 			resolve();
 		} else if (type === "ERROR") {
@@ -85,32 +88,5 @@ mupdfView.openDocumentFromUrl = async function (url, contentLength, progressive,
 	await wrap_openStreamFromUrl(url, contentLength, progressive, prefetch);
 	return await wrap_openDocumentFromStream(magic);
 };
-
-mupdfView.openDocumentFromBuffer = wrap("openDocumentFromBuffer");
-mupdfView.freeDocument = wrap("freeDocument");
-
-mupdfView.documentTitle = wrap("documentTitle");
-mupdfView.documentOutline = wrap("documentOutline");
-mupdfView.countPages = wrap("countPages");
-mupdfView.getPageSize = wrap("getPageSize");
-mupdfView.getPageLinks = wrap("getPageLinks");
-mupdfView.getPageText = wrap("getPageText");
-mupdfView.search = wrap("search");
-mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
-mupdfView.drawPageAsPixmap = wrap("drawPageAsPixmap");
-mupdfView.drawPageContentsAsPixmap = wrap("drawPageContentsAsPixmap");
-mupdfView.drawPageAnnotsAsPixmap = wrap("drawPageAnnotsAsPixmap");
-mupdfView.drawPageWidgetsAsPixmap = wrap("drawPageWidgetsAsPixmap");
-mupdfView.createCookie = wrap("createCookie");
-mupdfView.deleteCookie = wrap("deleteCookie");
-
-mupdfView.mouseDownOnPage = wrap("mouseDownOnPage");
-mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");
-mupdfView.mouseMoveOnPage = wrap("mouseMoveOnPage");
-mupdfView.mouseUpOnPage = wrap("mouseUpOnPage");
-mupdfView.setEditionTool = wrap("setEditionTool");
-mupdfView.deleteItem = wrap("deleteItem");
-
-// TODO - Handle page caching
 
 mupdfView.terminate = function () { worker.terminate(); };
