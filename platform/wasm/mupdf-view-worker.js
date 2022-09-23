@@ -24,8 +24,13 @@
 
 "use strict";
 
+
 // Import the WASM module
-importScripts("mupdf-wasm.js");
+if (globalThis.SharedArrayBuffer != null) {
+	importScripts("mupdf-wasm.js");
+} else {
+	importScripts("mupdf-wasm-singlethread.js");
+}
 importScripts("lib/mupdf.js");
 
 mupdf.ready.then(result => {
