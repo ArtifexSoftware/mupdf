@@ -271,7 +271,7 @@ let editorMode;
 let params = new URLSearchParams(window.location.search);
 
 mupdfView.ready.then(function () {
-	emptyNode(document.getElementById("pages"));
+	document.getElementById("pages").replaceChildren();
 	if (params.has("file"))
 		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
 });
@@ -283,16 +283,18 @@ if (!editorMode) {
 	document.getElementById("tools-menu").remove();
 }
 
-let documentOpen = false;
+// factor out in "document" class
 let pageCount;
-let currentPage = 0;
+
 let dirty = [];
 let isPressed = [];
 let pageDIV = [];
 let pageHIT = [];
+
 let zoom = 100;
 let dpi = 96;
 
+let currentSearchPage = 0;
 let searchNeedle = null;
 let searchDirty = [];
 
@@ -324,7 +326,7 @@ function toggleOutline() {
 function clearSearch() {
 	for (let i = 0; i < pageCount; ++i) {
 		if (pageHIT[i])
-			emptyNode(pageHIT[i]);
+			pageHIT[i].replaceChildren();
 		searchDirty[i] = false;
 	}
 }
@@ -391,7 +393,7 @@ function searchBoxKey(event) {
 }
 function runSearch(direction) {
 	updateSearch();
-	runSearchBG(currentPage, direction)
+	runSearchBG(currentSearchPage, direction)
 		.catch(error => logError("pageLinks", error));
 }
 
@@ -400,7 +402,7 @@ async function pageSearch(pageNumber) {
 	searchDirty[pageNumber] = false;
 
 	let hits = await mupdfView.search(pageNumber, dpi, searchNeedle);
-	emptyNode(pageHIT[pageNumber]);
+	pageHIT[pageNumber].replaceChildren();
 	for (let bbox of hits) {
 		let div = document.createElement("div");
 		div.classList.add("searchHit");
@@ -425,11 +427,6 @@ function isVisible(element, slop) {
 	return false;
 }
 
-function emptyNode(node) {
-	while (node.firstChild)
-		node.removeChild(node.firstChild);
-}
-
 function logError(where, error) {
 	console.error(`mupdf.${where}: ${error.message}:\n${error.stack}`);
 }
@@ -439,8 +436,7 @@ function showDocumentError(where, error) {
 	let div = document.createElement("div");
 	div.classList.add("error");
 	div.textContent = error.name + ": " + error.message;
-	emptyNode(document.getElementById("pages"));
-	document.getElementById("pages").appendChild(div);
+	document.getElementById("pages").replaceChildren(div);
 }
 
 function showPageError(where, page, error) {
@@ -448,8 +444,7 @@ function showPageError(where, page, error) {
 	let div = document.createElement("div");
 	div.classList.add("error");
 	div.textContent = error.name + ": " + error.message;
-	emptyNode(page);
-	page.appendChild(div);
+	page.replaceChildren(div);
 }
 
 async function openFile(file) {
@@ -459,7 +454,6 @@ async function openFile(file) {
 			// TODO - have a more elegant way to invalidate previous renders
 			await mupdfView.resetPageCache();
 			await mupdfView.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
-			documentOpen = true;
 			initDocument(file.name);
 		} catch (error) {
 			showDocumentError("openFile", error);
@@ -483,14 +477,12 @@ async function openURL(url, progressive, prefetch) {
 		if (acceptRanges === 'bytes' && progressive) {
 			console.log("USING HTTP RANGE REQUESTS");
 			await mupdfView.openDocumentFromUrl(url, contentLength, progressive, prefetch, contentType || url);
-			documentOpen = true;
 		} else {
 			let bodyResponse = await fetch(url);
 			if (!bodyResponse.ok)
 				throw new Error("Could not fetch document.");
 			let buffer = await bodyResponse.arrayBuffer();
 			await mupdfView.openDocumentFromBuffer(buffer, contentType || url);
-			documentOpen = true;
 		}
 
 		initDocument(url);
@@ -500,16 +492,13 @@ async function openURL(url, progressive, prefetch) {
 }
 
 function freeDocument() {
-	if (documentOpen) {
-		documentOpen = false;
-		mupdfView.freeDocument();
-		pageCount = 0;
-		pageDIV = [];
-		dirty = [];
-		searchDirty = [];
-	}
-	emptyNode(document.getElementById("pages"));
-	emptyNode(document.getElementById("outline"));
+	mupdfView.freeDocument();
+	pageCount = 0;
+	pageDIV = [];
+	dirty = [];
+	searchDirty = [];
+	document.getElementById("pages").replaceChildren();
+	document.getElementById("outline").replaceChildren();
 }
 
 async function initDocument(url) {
@@ -610,7 +599,7 @@ async function setZoom(newZoom) {
 		searchDirty[i] = true;
 		pageDIV[i].style.width = defaultW + 'px';
 		pageDIV[i].style.height = defaultH + 'px';
-		emptyNode(pageDIV[i]);
+		pageDIV[i].replaceChildren();
 		pageHIT[i] = null;
 	}
 	if (current)
@@ -658,10 +647,10 @@ async function updateView() {
 			div.getElementsByClassName("text")[0]?.remove();
 			div.appendChild(txt);
 
-			let map = document.createElement("div");
-			map.classList.add("links");
+			let linksDiv = document.createElement("div");
+			linksDiv.classList.add("links");
 			div.getElementsByClassName("links")[0]?.remove();
-			div.appendChild(map);
+			div.appendChild(linksDiv);
 
 			let hit = pageHIT[i] = document.createElement("div");
 			hit.classList.add("searchHitList");
@@ -669,7 +658,7 @@ async function updateView() {
 			div.appendChild(hit);
 
 			let cookiePointer = await mupdfView.createCookie();
-			mupdfView.drawPageAsPNG2(pageNumber, dpi * devicePixelRatio, cookiePointer)
+			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio, cookiePointer)
 				.then(pngData => {
 					// if render was aborted, return early
 					if (pngData == null)
@@ -694,7 +683,7 @@ async function updateView() {
 						a.style.top = link.y + 'px';
 						a.style.width = link.w + 'px';
 						a.style.height = link.h + 'px';
-						map.appendChild(a);
+						linksDiv.appendChild(a);
 					}
 				})
 				.catch(error => {
@@ -747,7 +736,7 @@ async function updateView() {
 		}
 	}
 	if (current)
-		currentPage = current;
+		currentSearchPage = current;
 }
 
 function cancelRender(pageNumber) {
