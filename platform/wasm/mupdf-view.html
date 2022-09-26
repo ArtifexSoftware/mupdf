@@ -617,18 +617,11 @@ async function setZoom(newZoom) {
 	updateView();
 }
 
-async function deleteItem() {
-	// TODO - find more elegant way to get dirty page
-	let dirtyPageNumber = await mupdfView.deleteItem();
-	dirty[dirtyPageNumber] = true;
-	updateView();
-}
-
-const pageImgs = {};
-const pageDivs = {};
+// TODO factor out
 const jobCookies = {};
 async function updateView() {
-	let i, n = dirty.length;
+	let i;
+	let n = dirty.length;
 	let current = 0;
 	for (i = 1; i <= n; ++i) {
 		if (!current && isVisible(pageDIV[i], -100))
@@ -674,12 +667,22 @@ async function updateView() {
 			div.getElementsByClassName("searchHitList")[0]?.remove();
 			div.appendChild(hit);
 
-			pageImgs[pageNumber] = img;
-			pageDivs[pageNumber] = div;
+			let cookiePointer = await mupdfView.createCookie();
+			mupdfView.drawPageAsPNG2(pageNumber, dpi * devicePixelRatio, cookiePointer)
+				.then(pngData => {
+					// if render was aborted, return early
+					if (pngData == null)
+						return;
 
-			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio)
-				.then(cookiePointer => jobCookies[pageNumber] = cookiePointer)
-				.catch(error => showPageError("drawPageAsPNG", div, error));
+					img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
+					div.getElementsByTagName("img")[0]?.remove();
+					div.insertBefore(img, div.firstChild);
+					mupdfView.deleteCookie(cookiePointer);
+				})
+				.catch(error => {
+					showPageError("drawPageAsPNG", div, error)
+					mupdfView.deleteCookie(cookiePointer)
+				});
 
 			mupdfView.getPageLinks(pageNumber, dpi * devicePixelRatio)
 				.then(links => {
@@ -746,23 +749,6 @@ async function updateView() {
 		currentPage = current;
 }
 
-mupdfView.onRender = function (pageNumber, pngData, cookiePointer) {
-	if (pngData == null) {
-		// render was aborted
-		return;
-	}
-
-	const img = pageImgs[pageNumber];
-	const div = pageDivs[pageNumber];
-	img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
-	div.getElementsByTagName("img")[0]?.remove();
-	div.insertBefore(img, div.firstChild);
-
-	// TODO - delete on error too
-	delete jobCookies[pageNumber];
-	mupdfView.deleteCookie(cookiePointer);
-}
-
 function cancelRender(pageNumber) {
 	if (jobCookies[pageNumber] == null) {
 		return;
@@ -819,6 +805,15 @@ async function mouseUp(pageNumber, img, event) {
 		setTimeout(() => updateView(), 0);
 	}
 };
+
+async function deleteItem() {
+	// TODO - decide which page is selected in the front end
+	// eg await mupdfView.deleteItem(lastClickedPage);
+	// TODO - find more elegant way to get dirty page
+	let dirtyPageNumber = await mupdfView.deleteItem();
+	dirty[dirtyPageNumber] = true;
+	updateView();
+}
 
 
 /* Wait 50ms until scrolling has stopped before sending off page draw requests */

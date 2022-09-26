@@ -44,8 +44,6 @@ function onWorkerMessage(event) {
 	let [ type, id, result ] = event.data;
 	if (type === "RESULT")
 		messagePromises.get(id).resolve(result);
-	else if (type === "RENDER")
-		mupdfView.onRender(result.pageNumber, result.png, result.cookiePointer);
 	else if (type === "READY")
 		messagePromises.get(id).reject(new Error("Unexpected READY message"));
 	else if (type === "ERROR") {
@@ -57,8 +55,7 @@ function onWorkerMessage(event) {
 	else
 		messagePromises.get(id).reject(new Error(`Unexpected result type '${type}'`));
 
-	if (type !== "RENDER")
-		messagePromises.delete(id);
+	messagePromises.delete(id);
 }
 
 
@@ -96,8 +93,8 @@ mupdfView.getPageLinks = wrap("getPageLinks");
 mupdfView.getPageText = wrap("getPageText");
 mupdfView.search = wrap("search");
 mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
+mupdfView.createCookie = wrap("createCookie");
 mupdfView.deleteCookie = wrap("deleteCookie");
-mupdfView.resetPageCache = wrap("resetPageCache");
 
 mupdfView.mouseDownOnPage = wrap("mouseDownOnPage");
 mupdfView.mouseDragOnPage = wrap("mouseDragOnPage");
@@ -106,6 +103,6 @@ mupdfView.mouseUpOnPage = wrap("mouseUpOnPage");
 mupdfView.setEditionTool = wrap("setEditionTool");
 mupdfView.deleteItem = wrap("deleteItem");
 
-mupdfView.onRender = () => {};
+// TODO - Handle page caching
 
 mupdfView.terminate = function () { worker.terminate(); };

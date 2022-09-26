@@ -988,6 +988,18 @@ class JobCookie extends Wrapper {
 	}
 }
 
+function createCookie() {
+	return libmupdf._wasm_new_cookie();
+}
+
+function cookieAborted(cookiePointer) {
+	return libmupdf._wasm_cookie_aborted(cookiePointer);
+}
+
+function deleteCookie(cookiePointer) {
+	libmupdf._wasm_free_cookie(cookiePointer);
+}
+
 class Buffer extends Wrapper {
 	constructor(pointer) {
 		super(pointer, libmupdf._wasm_drop_buffer);
@@ -1240,6 +1252,9 @@ const mupdf = {
 	Pixmap,
 	Device,
 	JobCookie,
+	createCookie,
+	cookieAborted,
+	deleteCookie,
 	Buffer,
 	Stream,
 	Output,

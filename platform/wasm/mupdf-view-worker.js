@@ -42,11 +42,6 @@ onmessage = async function (event) {
 	await mupdf.ready;
 
 	try {
-		if (func == "drawPageAsPNG") {
-			drawPageAsPNG(id, ...args);
-			return;
-		}
-
 		let result = workerMethods[func](...args);
 		postMessage(["RESULT", id, result]);
 	} catch (error) {
@@ -289,59 +284,45 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 let currentTool = null;
 let currentSelection = null;
 
-let jobCookies = {};
-
-// TODO - Use mupdf instead
+// TODO - Move this to mupdf-view
 const lastPageRender = new Map();
-function drawPageAsPNG(id, pageNumber, dpi) {
-	if (lastPageRender.has(pageNumber) && lastPageRender.get(pageNumber).dpi === dpi) {
-		postMessage(["RESULT", id, null]);
-		return;
-	}
 
+workerMethods.drawPageAsPNG = function(pageNumber, dpi, cookiePointer) {
 	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 
 	let page;
 	let pixmap;
-	let cookie;
 
-	// TODO - draw annotations
 	// TODO - use canvas?
 
 	try {
-		cookie = mupdf.JobCookie.create();
-		jobCookies[cookie.pointer] = cookie;
-		postMessage(["RESULT", id, cookie?.pointer]);
-		// TODO - on error
-
 		page = openDocument.loadPage(pageNumber - 1);
-		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false, cookie);
+		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false, cookiePointer);
 
-		if (cookie.aborted()) {
+		if (mupdf.cookieAborted(cookiePointer)) {
 			pixmap = null;
 		}
 
+		// TODO - move to frontend
 		if (pageNumber == currentTool.pageNumber)
 			currentTool.drawOnPage(pixmap, dpi);
 
 		let png = pixmap?.toPNG();
 
-		postMessage(["RENDER", id, { pageNumber, png, cookiePointer: cookie?.pointer }]);
-		lastPageRender.set(pageNumber, { dpi });
+		return png;
 	}
 	finally {
 		pixmap?.free();
 		page?.free();
 	}
-}
-
-
-workerMethods.deleteCookie = function(cookiePointer) {
-	delete jobCookies[cookiePointer];
 };
 
-workerMethods.resetPageCache = function() {
-	lastPageRender.clear();
+workerMethods.createCookie = function() {
+	return mupdf.createCookie();
+};
+
+workerMethods.deleteCookie = function(cookiePointer) {
+	mupdf.deleteCookie(cookiePointer);
 };
 
 workerMethods.mouseDownOnPage = function(pageNumber, dpi, x, y) {
