@@ -268,19 +268,20 @@ div.error {
 
 let editorMode;
 
+let params = new URLSearchParams(window.location.search);
+
 mupdfView.ready.then(function () {
 	emptyNode(document.getElementById("pages"));
-	let params = new URLSearchParams(window.location.search);
 	if (params.has("file"))
 		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
-
-	editorMode = params.get("editor") | 0;
-
-	if (!editorMode) {
-		// FIXME - This is a very quick-and-dirty way to parameterize a menu
-		document.getElementById("tools-menu").remove();
-	}
 });
+
+editorMode = params.get("editor") | 0;
+
+if (!editorMode) {
+	// FIXME - This is a very quick-and-dirty way to parameterize a menu
+	document.getElementById("tools-menu").remove();
+}
 
 let documentOpen = false;
 let pageCount;
