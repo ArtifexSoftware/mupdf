@@ -456,6 +456,7 @@ static struct {
     int            hideMultipleReallocs;
     int            abortOnLeak;
     int            abortOnCorruption;
+    int            verbose;
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
@@ -1508,9 +1509,14 @@ int Memento_listBlocksNested(void)
     }
 
     /* Now display with nesting */
-    for (b = memento.used.head; b; b = b->next) {
-        if ((b->flags & Memento_Flag_HasParent) == 0)
-            doNestedDisplay(b, 0);
+    if (memento.verbose) {
+        for (b = memento.used.head; b; b = b->next) {
+            if ((b->flags & Memento_Flag_HasParent) == 0)
+                doNestedDisplay(b, 0);
+        }
+    }
+    else {
+        fprintf(stderr, " [!verbose: Not showing nestings.]\n");
     }
     fprintf(stderr, " Total number of blocks = %d\n", count);
     fprintf(stderr, " Total size of blocks = "FMTZ"\n", (FMTZ_CAST)size);
@@ -1600,6 +1606,8 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, " (%s)", b->label);
+    if (b->flags & Memento_Flag_KnownLeak)
+        fprintf(stderr, "(Known Leak)");
     fprintf(stderr, "\nEvents:\n");
 
     for (details = b->details; details; details = details->next)
@@ -1674,7 +1682,10 @@ void Memento_fin(void)
             Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
             fprintf(stderr, "\n");
-            Memento_listBlockInfo();
+            if (memento.verbose)
+                Memento_listBlockInfo();
+            else
+                fprintf(stderr, "[!verbose: Not listing details of allocated blocks.]\n");
 #endif
             Memento_breakpoint();
         }
@@ -1932,6 +1943,9 @@ static void Memento_init(void)
 
     env = getenv("MEMENTO_MAXMEMORY");
     memento.maxMemory = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_VERBOSE");
+    memento.verbose = (env ? atoi(env) : 1);
 
     atexit(Memento_fin);
 
@@ -3167,6 +3181,13 @@ int Memento_setParanoia(int i)
     else
         memento.countdown = -memento.paranoia;
     return i;
+}
+
+int Memento_setVerbose(int verbose)
+{
+    int ret = memento.verbose;
+    memento.verbose = verbose;
+    return ret;
 }
 
 int Memento_paranoidAt(int i)
