@@ -132,35 +132,16 @@ workerMethods.countPages = function() {
 };
 
 // TODO - use hungarian notation for coord spaces
-// TODO - currently this loads every single page. Not very efficient?
-workerMethods.getPageSizes = function (dpi) {
-	let list = [];
-	let n = openDocument.countPages();
-	for (let i = 0; i < n; ++i) {
-		let page;
-		try {
-			page = openDocument.loadPage(i);
-			let width = page.width() * dpi / 72;
-			let height = page.height() * dpi / 72;
-			list.push({width, height});
-		}
-		finally {
-			page.free();
-		}
-	}
-	return list;
-};
-
 // TODO - document the "- 1" better
 // TODO - keep page loaded?
-workerMethods.getPageWidth = function (pageNumber, dpi) {
+workerMethods.getPageWidth = function (pageNumber) {
 	let page = openDocument.loadPage(pageNumber - 1);
-	return page.width() * dpi / 72;
+	return page.width();
 };
 
-workerMethods.getPageHeight = function (pageNumber, dpi) {
+workerMethods.getPageHeight = function (pageNumber) {
 	let page = openDocument.loadPage(pageNumber - 1);
-	return page.height() * dpi / 72;
+	return page.height();
 };
 
 workerMethods.getPageLinks = function(pageNumber, dpi) {

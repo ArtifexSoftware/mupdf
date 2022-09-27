@@ -293,13 +293,13 @@ let dirty = [];
 let isPressed = [];
 let pageDIV = [];
 let pageHIT = [];
+let pages = [];
 
 let zoom = 100;
 let dpi = 96;
 
 let currentSearchPage = 0;
 let searchNeedle = null;
-let searchDirty = [];
 
 function toggleFullscreen() {
 	if (document.fullscreen)
@@ -330,8 +330,7 @@ function clearSearch() {
 	for (let i = 0; i < pageCount; ++i) {
 		if (pageHIT[i])
 			pageHIT[i].replaceChildren();
-		searchDirty[i] = false;
-	}
+		}
 }
 
 function updateSearch() {
@@ -341,9 +340,6 @@ function updateSearch() {
 	if (searchNeedle !== newNeedle) {
 		searchNeedle = newNeedle;
 		clearSearch();
-		if (searchNeedle && searchNeedle.length > 0)
-			for (let i = 1; i <= pageCount; ++i)
-				searchDirty[i] = true;
 		if (searchNeedle && searchNeedle.length > 0)
 			updateView();
 	}
@@ -378,6 +374,7 @@ async function runSearchBG(page, dir) {
 			searchStatus.textContent = "Searching page " + page + ".";
 
 			const hits = await mupdfView.search(page, dpi, searchNeedle)
+			pages[page].setSearchNeedle(searchNeedle);
 			if (hits.length > 0) {
 				pageDIV[page].scrollIntoView();
 			} else {
@@ -398,23 +395,6 @@ function runSearch(direction) {
 	updateSearch();
 	runSearchBG(currentSearchPage, direction)
 		.catch(error => logError("pageLinks", error));
-}
-
-async function pageSearch(pageNumber) {
-	console.log("SEARCH", pageNumber, JSON.stringify(searchNeedle));
-	searchDirty[pageNumber] = false;
-
-	let hits = await mupdfView.search(pageNumber, dpi, searchNeedle);
-	pageHIT[pageNumber].replaceChildren();
-	for (let bbox of hits) {
-		let div = document.createElement("div");
-		div.classList.add("searchHit");
-		div.style.left = bbox.x + 'px';
-		div.style.top = bbox.y + 'px';
-		div.style.width = bbox.w + 'px';
-		div.style.height = bbox.h + 'px';
-		pageHIT[pageNumber].appendChild(div);
-	}
 }
 
 function setTool(toolName) {
@@ -499,7 +479,6 @@ function freeDocument() {
 	pageCount = 0;
 	pageDIV = [];
 	dirty = [];
-	searchDirty = [];
 	document.getElementById("pages").replaceChildren();
 	document.getElementById("outline").replaceChildren();
 }
@@ -518,24 +497,17 @@ async function initDocument(url) {
 		document.title = url;
 
 	// Use second page as default page size (the cover page is often differently sized)
-	let defaultW = await mupdfView.getPageWidth(pageCount > 1 ? 2 : 1, dpi);
-	let defaultH = await mupdfView.getPageHeight(pageCount > 1 ? 2 : 1, dpi);
+	let defaultW = await mupdfView.getPageWidth(pageCount > 1 ? 2 : 1);
+	let defaultH = await mupdfView.getPageHeight(pageCount > 1 ? 2 : 1);
 
 	let pagesDiv = document.getElementById("pages");
 	pagesDiv.scrollTo(0, 0);
 	for (let i = 1; i <= pageCount; ++i) {
-		let a = document.createElement("a");
-		a.classList.add("anchor");
-		a.id = "page" + i;
-		pagesDiv.appendChild(a);
-
-		let div = pageDIV[i] = document.createElement("div");
-		div.classList.add("page");
-		div.style.width = defaultW + 'px';
-		div.style.height = defaultH + 'px';
-		pagesDiv.appendChild(div);
-
+		pages[i] = new MupdfPageViewer(mupdfView, i, { w: defaultW, h: defaultH }, dpi);
+		pageDIV[i] = pages[i].rootNode;
 		dirty[i] = true;
+
+		pagesDiv.appendChild(pageDIV[i]);
 	}
 
 	let outline = await mupdfView.documentOutline();
@@ -588,8 +560,7 @@ async function setZoom(newZoom) {
 		return;
 	zoom = newZoom;
 	dpi = (zoom * 96 / 100) | 0;
-	let defaultW = await mupdfView.getPageWidth(pageCount > 1 ? 2 : 1, dpi);
-	let defaultH = await mupdfView.getPageHeight(pageCount > 1 ? 2 : 1, dpi);
+
 	let current = 0;
 	for (let i = 1; i <= pageCount; ++i) {
 		if (isVisible(pageDIV[i], -100)) {
@@ -597,21 +568,19 @@ async function setZoom(newZoom) {
 			break;
 		}
 	}
+
 	for (let i = 1; i <= pageCount; ++i) {
 		dirty[i] = true;
-		searchDirty[i] = true;
-		pageDIV[i].style.width = defaultW + 'px';
-		pageDIV[i].style.height = defaultH + 'px';
-		pageDIV[i].replaceChildren();
 		pageHIT[i] = null;
+		pages[i].setZoom(zoom);
 	}
+
+	// Look for other ways to stay on the page
 	if (current)
 		pageDIV[current].scrollIntoView();
 	updateView();
 }
 
-// TODO factor out
-const jobCookies = {};
 async function updateView() {
 	let i;
 	let n = dirty.length;
@@ -622,133 +591,33 @@ async function updateView() {
 
 		if (dirty[i] && isVisible(pageDIV[i], 1000)) {
 			console.log("mupdf: drawing page", i, "@" + devicePixelRatio + "x");
+
+			pages[i].render(dpi);
 			let pageNumber = i;
 			dirty[pageNumber] = false;
-			let div = pageDIV[pageNumber];
+		}
 
-			let img = new Image();
-			img.draggable = false;
-			// user-select:none disables image.draggable, and we want
-			// to keep pointer-events for the link image-map
-			img.ondragstart = function () { return false; };
-			img.onload = function () {
-				URL.revokeObjectURL(this.src);
-				div.style.width = (this.width / devicePixelRatio) + 'px';
-				div.style.height = (this.height / devicePixelRatio) + 'px';
-				img.style.width = div.style.width;
-				img.style.height = div.style.height;
-			};
+		if (pages[i] && pages[i].lastSearchNeedle !== pages[i].searchNeedle) {
+			pages[i]._loadPageSearch(dpi);
+		}
 
+		/*
+			// Move these callbacks to the browserWindow level
 			if (editorMode) {
 				img.onmousedown = (event) => mouseDown(pageNumber, img, event);
 				img.onmousemove = (event) => mouseMove(pageNumber, img, event);
 				img.onmouseup = (event) => mouseUp(pageNumber, img, event);
 			}
-
-			let txt = document.createElement("div");
-			txt.classList.add("text");
-			div.getElementsByClassName("text")[0]?.remove();
-			div.appendChild(txt);
-
-			let linksDiv = document.createElement("div");
-			linksDiv.classList.add("links");
-			div.getElementsByClassName("links")[0]?.remove();
-			div.appendChild(linksDiv);
-
-			let hit = pageHIT[i] = document.createElement("div");
-			hit.classList.add("searchHitList");
-			div.getElementsByClassName("searchHitList")[0]?.remove();
-			div.appendChild(hit);
-
-			let cookiePointer = await mupdfView.createCookie();
-			mupdfView.drawPageAsPNG(pageNumber, dpi * devicePixelRatio, cookiePointer)
-				.then(pngData => {
-					// if render was aborted, return early
-					if (pngData == null)
-						return;
-
-					img.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}))
-					div.getElementsByTagName("img")[0]?.remove();
-					div.insertBefore(img, div.firstChild);
-					mupdfView.deleteCookie(cookiePointer);
-				})
-				.catch(error => {
-					showPageError("drawPageAsPNG", div, error)
-					mupdfView.deleteCookie(cookiePointer)
-				});
-
-			mupdfView.getPageLinks(pageNumber, dpi * devicePixelRatio)
-				.then(links => {
-					for (let link of links) {
-						let a = document.createElement("a");
-						a.href = link.href;
-						a.style.left = link.x + 'px';
-						a.style.top = link.y + 'px';
-						a.style.width = link.w + 'px';
-						a.style.height = link.h + 'px';
-						linksDiv.appendChild(a);
-					}
-				})
-				.catch(error => {
-					logError("pageLinks", error);
-				});
-
-			mupdfView.getPageText(pageNumber, dpi * devicePixelRatio)
-				.then(jsonData => {
-					console.log("PAGE TEXT:", jsonData);
-					let nodes = [];
-					let pdf_w = [];
-					let html_w = [];
-					let text_len = [];
-					for (let block of jsonData.blocks) {
-						if (block.type === 'text') {
-							for (let line of block.lines) {
-								let text = document.createElement("span");
-								text.style.left = line.bbox.x + 'px';
-								text.style.top = (line.y - line.font.size * 0.8) + 'px';
-								text.style.height = line.bbox.h + 'px';
-								text.style.fontSize = line.font.size + 'px';
-								text.style.fontFamily = line.font.family;
-								text.style.fontWeight = line.font.weight;
-								text.style.fontStyle = line.font.style;
-								text.textContent = line.text;
-								txt.appendChild(text);
-								nodes.push(text);
-								pdf_w.push(line.bbox.w);
-								text_len.push(line.text.length-1);
-							}
-						}
-					}
-					for (let i = 0; i < nodes.length; ++i)
-						if (text_len[i] > 0)
-							html_w[i] = nodes[i].clientWidth;
-					for (let i = 0; i < nodes.length; ++i)
-						if (text_len[i] > 0)
-							nodes[i].style.letterSpacing = ((pdf_w[i] - html_w[i]) / text_len[i]) + 'px';
-				})
-				.catch(error => {
-					logError("getPageText", error);
-				});
-		}
-
-		if (searchNeedle && searchNeedle.length > 0) {
-			if (searchDirty[i] && isVisible(pageDIV[i], 0)) {
-				pageSearch(i)
-					.catch(error => logError("pageSearch", error));
-			}
-		}
+		*/
 	}
+
+	// TODO remove
 	if (current)
 		currentSearchPage = current;
 }
 
 function cancelRender(pageNumber) {
-	if (jobCookies[pageNumber] == null) {
-		return;
-	}
-	const int32pointer = jobCookies[pageNumber] >> 2;
-	const wasmMemoryView32 = new Int32Array(mupdfView.wasmMemory);
-	wasmMemoryView32[int32pointer] = 1;
+	pages[pageNumber]?.cancelRender();
 }
 
 // TODO - fix dirty/update code

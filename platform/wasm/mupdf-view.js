@@ -58,7 +58,7 @@ function onWorkerMessage(event) {
 	messagePromises.delete(id);
 }
 
-
+// TODO - Add cancelation for trylater queues
 function wrap(func) {
 	return function(...args) {
 		return new Promise(function (resolve, reject) {
