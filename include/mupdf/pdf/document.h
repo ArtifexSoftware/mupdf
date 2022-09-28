@@ -577,6 +577,7 @@ void pdf_graft_mapped_page(fz_context *ctx, pdf_graft_map *map, int page_to, pdf
 	pdf operations, together with a set of resources. This
 	sequence/set pair can then be used as the basis for
 	adding a page to the document (see pdf_add_page).
+	Returns a kept reference.
 
 	doc: The document for which these are intended.
 
