@@ -144,8 +144,7 @@ workerMethods.getPageHeight = function (pageNumber) {
 	return page.height();
 };
 
-workerMethods.getPageLinks = function(pageNumber, dpi) {
-	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+workerMethods.getPageLinks = function(pageNumber) {
 	let page;
 	let links_ptr;
 
@@ -154,13 +153,14 @@ workerMethods.getPageLinks = function(pageNumber, dpi) {
 		links_ptr = page.loadLinks();
 
 		return links_ptr.links.map(link => {
-			const { x0, y0, x1, y1 } = doc_to_screen.transformRect(link.rect());
+			const { x0, y0, x1, y1 } = link.rect();
 
 			let href;
 			if (link.isExternalLink()) {
 				href = link.uri();
 			} else {
 				const linkPageNumber = link.resolve(openDocument).pageNumber(openDocument);
+				// TODO - move to front-end
 				// TODO - document the "+ 1" better
 				href = `#page${linkPageNumber + 1}`;
 			}
@@ -180,7 +180,7 @@ workerMethods.getPageLinks = function(pageNumber, dpi) {
 	}
 };
 
-workerMethods.getPageText = function(pageNumber, dpi) {
+workerMethods.getPageText = function(pageNumber) {
 	let page;
 	let stextPage;
 
@@ -194,7 +194,7 @@ workerMethods.getPageText = function(pageNumber, dpi) {
 		buffer = mupdf.Buffer.empty();
 		output = mupdf.Output.withBuffer(buffer);
 
-		stextPage.printAsJson(output, dpi / 72);
+		stextPage.printAsJson(output, 1.0);
 		output.close();
 
 		let text = buffer.toJsString();
@@ -208,15 +208,14 @@ workerMethods.getPageText = function(pageNumber, dpi) {
 	}
 };
 
-workerMethods.search = function(pageNumber, dpi, needle) {
+workerMethods.search = function(pageNumber, needle) {
 	let page;
 
 	try {
 		page = openDocument.loadPage(pageNumber - 1);
-		const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 		const hits = page.search(needle);
 		return hits.map(searchHit => {
-			const  { x0, y0, x1, y1 } = doc_to_screen.transformRect(searchHit);
+			const  { x0, y0, x1, y1 } = searchHit;
 
 			return {
 				x: x0,

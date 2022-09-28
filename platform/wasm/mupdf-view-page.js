@@ -60,12 +60,12 @@ class MupdfPageViewer {
 		this.searchNeedle = null;
 	}
 
-	render(dpi) {
+	render(dpi, searchNeedle) {
 		// TODO - error handling
 		this._loadPageImg({ dpi });
 		this._loadPageText(dpi);
 		this._loadPageLinks(dpi);
-		this._loadPageSearch(dpi);
+		this._loadPageSearch(dpi, searchNeedle);
 	}
 
 	cancelRender() {
@@ -203,10 +203,18 @@ class MupdfPageViewer {
 		}
 	}
 
-	// TODO - Remove dpi argument, calculate scale in the browser thread
+	// TODO - replace "dpi" with "scale"?
 	async _loadPageText(dpi) {
-		// TODO - Add caching
 		// TODO - Disable text when editing (conditions to be figured out)
+		if (this.textNode != null && dpi === this.textNode.dpi) {
+			// Text was already rendered at the right scale, nothing to be done
+			return;
+		}
+		if (this.textResultObject) {
+			// Text was already returned, just needs to be rescaled
+			this._applyPageText(this.textResultObject, dpi);
+			return;
+		}
 
 		let textNode = document.createElement("div");
 		textNode.classList.add("text");
@@ -216,10 +224,10 @@ class MupdfPageViewer {
 		this.rootNode.appendChild(textNode);
 
 		try {
-			this.textPromise = this.worker.getPageText(this.pageNumber, dpi * devicePixelRatio);
+			this.textPromise = this.worker.getPageText(this.pageNumber);
 
 			this.textResultObject = await this.textPromise;
-			this._applyPageText(this.textResultObject);
+			this._applyPageText(this.textResultObject, dpi);
 		}
 		catch (error) {
 			this.showError("_loadPageText", error);
@@ -229,21 +237,23 @@ class MupdfPageViewer {
 		}
 	}
 
-	_applyPageText(textResultObject) {
+	_applyPageText(textResultObject, dpi) {
 		console.log("PAGE TEXT:", textResultObject);
-		this.textNode.replaceChildren();
+		this.textNode.dpi = dpi;
 		let nodes = [];
 		let pdf_w = [];
 		let html_w = [];
 		let text_len = [];
+		let scale = dpi / 72;
+		this.textNode.replaceChildren();
 		for (let block of textResultObject.blocks) {
 			if (block.type === "text") {
 				for (let line of block.lines) {
 					let text = document.createElement("span");
-					text.style.left = line.bbox.x + "px";
-					text.style.top = (line.y - line.font.size * 0.8) + "px";
-					text.style.height = line.bbox.h + "px";
-					text.style.fontSize = line.font.size + "px";
+					text.style.left = (line.bbox.x * scale) + "px";
+					text.style.top = ((line.y - line.font.size * 0.8) * scale) + "px";
+					text.style.height = (line.bbox.h * scale) + "px";
+					text.style.fontSize = (line.font.size * scale) + "px";
 					text.style.fontFamily = line.font.family;
 					text.style.fontWeight = line.font.weight;
 					text.style.fontStyle = line.font.style;
@@ -266,6 +276,16 @@ class MupdfPageViewer {
 	}
 
 	async _loadPageLinks(dpi) {
+		if (this.linksNode != null && dpi === this.linksNode.dpi) {
+			// Links were already rendered at the right scale, nothing to be done
+			return;
+		}
+		if (this.linksResultObject) {
+			// Links were already returned, just need to be rescaled
+			this._applyPageLinks(this.linksResultObject, dpi);
+			return;
+		}
+
 		let linksNode = document.createElement("div");
 		linksNode.classList.add("links");
 
@@ -275,10 +295,10 @@ class MupdfPageViewer {
 		this.rootNode.appendChild(linksNode);
 
 		try {
-			this.linksPromise = this.worker.getPageLinks(this.pageNumber, dpi * devicePixelRatio);
+			this.linksPromise = this.worker.getPageLinks(this.pageNumber);
 
 			this.linksResultObject = await this.linksPromise;
-			this._applyPageLinks(this.linksResultObject);
+			this._applyPageLinks(this.linksResultObject, dpi);
 		}
 		catch (error) {
 			this.showError("_loadPageLinks", error);
@@ -288,57 +308,70 @@ class MupdfPageViewer {
 		}
 	}
 
-	_applyPageLinks(linksResultObject) {
+	_applyPageLinks(linksResultObject, dpi) {
+		let scale = dpi / 72;
+		this.linksNode.dpi = dpi;
 		this.linksNode.replaceChildren();
 		for (let link of linksResultObject) {
 			let a = document.createElement("a");
 			a.href = link.href;
-			a.style.left = link.x + "px";
-			a.style.top = link.y + "px";
-			a.style.width = link.w + "px";
-			a.style.height = link.h + "px";
+			a.style.left = (link.x * scale) + "px";
+			a.style.top = (link.y * scale) + "px";
+			a.style.width = (link.w * scale) + "px";
+			a.style.height = (link.h * scale) + "px";
 			this.linksNode.appendChild(a);
 		}
 	}
 
-	async _loadPageSearch(dpi) {
+	async _loadPageSearch(dpi, searchNeedle) {
+		if (this.searchHitsNode != null && dpi === this.searchHitsNode.dpi && searchNeedle == this.searchHitsNode.searchNeedle) {
+			// Search results were already rendered at the right scale, nothing to be done
+			return;
+		}
+		if (this.searchResultObject && searchNeedle == this.searchHitsNode.searchNeedle) {
+			// Search results were already returned, just need to be rescaled
+			this._applyPageSearch(this.searchResultObject, dpi);
+			return;
+		}
+
 		let searchHitsNode = document.createElement("div");
 		searchHitsNode.classList.add("searchHitList");
 		this.searchHitsNode?.remove();
 		this.searchHitsNode = searchHitsNode;
 		this.rootNode.appendChild(searchHitsNode);
 
-		console.log("_loadPageSearch, this.searchNeedle = ", this.searchNeedle);
-
-		// TODO - Add caching
-		if (this.searchNeedle ?? "" !== "") {
-			console.log("SEARCH", this.pageNumber, JSON.stringify(this.searchNeedle));
-
-			try {
-				this.searchPromise = this.worker.search(this.pageNumber, dpi * devicePixelRatio, this.searchNeedle ?? "");
-				this.lastSearchNeedle = this.searchNeedle;
+		try {
+			if (searchNeedle ?? "" !== "") {
+				console.log("SEARCH", this.pageNumber, JSON.stringify(this.searchNeedle));
+				this.searchPromise = this.worker.search(this.pageNumber, this.searchNeedle ?? "");
 				this.searchResultObject = await this.searchPromise;
-				this._applyPageSearch(this.searchResultObject);
 			}
-			catch (error) {
-				this.showError("_loadPageSearch", error);
+			else {
+				this.searchResultObject = [];
 			}
-			finally {
-				this.searchPromise = null;
-			}
+
+			this._applyPageSearch(this.searchResultObject, searchNeedle, dpi);
+		}
+		catch (error) {
+			this.showError("_loadPageSearch", error);
+		}
+		finally {
+			this.searchPromise = null;
 		}
 	}
 
-	_applyPageSearch(searchResultObject) {
-		console.log("_applyPageSearch");
+	_applyPageSearch(searchResultObject, searchNeedle, dpi) {
+		let scale = dpi / 72;
+		this.searchHitsNode.searchNeedle = searchNeedle;
+		this.searchHitsNode.dpi = dpi;
 		this.searchHitsNode.replaceChildren();
 		for (let bbox of searchResultObject) {
 			let div = document.createElement("div");
 			div.classList.add("searchHit");
-			div.style.left = bbox.x + "px";
-			div.style.top = bbox.y + "px";
-			div.style.width = bbox.w + "px";
-			div.style.height = bbox.h + "px";
+			div.style.left = (bbox.x * scale) + "px";
+			div.style.top = (bbox.y * scale) + "px";
+			div.style.width = (bbox.w * scale) + "px";
+			div.style.height = (bbox.h * scale) + "px";
 			this.searchHitsNode.appendChild(div);
 		}
 	}

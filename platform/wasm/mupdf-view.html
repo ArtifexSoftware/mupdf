@@ -266,6 +266,7 @@ div.error {
 </body>
 
 <script src="mupdf-view.js"></script>
+<script src="mupdf-view-page.js"></script>
 <script>
 "use strict";
 
@@ -362,6 +363,7 @@ function hideSearch() {
 	clearSearch();
 }
 
+// TODO - refactor search
 async function runSearchBG(page, dir) {
 	let searchStatus = document.getElementById("searchStatus");
 	if (searchNeedle && searchNeedle.length > 0) {
@@ -373,7 +375,7 @@ async function runSearchBG(page, dir) {
 			console.log("Searching page", page);
 			searchStatus.textContent = "Searching page " + page + ".";
 
-			const hits = await mupdfView.search(page, dpi, searchNeedle)
+			const hits = await mupdfView.search(page, searchNeedle)
 			pages[page].setSearchNeedle(searchNeedle);
 			if (hits.length > 0) {
 				pageDIV[page].scrollIntoView();
@@ -592,13 +594,9 @@ async function updateView() {
 		if (dirty[i] && isVisible(pageDIV[i], 1000)) {
 			console.log("mupdf: drawing page", i, "@" + devicePixelRatio + "x");
 
-			pages[i].render(dpi);
+			pages[i].render(dpi, searchNeedle);
 			let pageNumber = i;
 			dirty[pageNumber] = false;
-		}
-
-		if (pages[i] && pages[i].lastSearchNeedle !== pages[i].searchNeedle) {
-			pages[i]._loadPageSearch(dpi);
 		}
 
 		/*
