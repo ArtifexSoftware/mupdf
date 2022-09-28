@@ -633,9 +633,11 @@ pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int 
 
 	doc: The document to insert into.
 
-	at: The page number to insert at. 0 inserts at the start.
-	negative numbers, or INT_MAX insert at the end. Otherwise
-	n inserts after page n.
+	at: The page number to insert at (pages numbered from 0).
+	0 <= n <= page_count inserts before page n. Negative numbers
+	or INT_MAX are treated as page count, and insert at the end.
+	0 inserts at the start. All existing pages are after the
+	insertion point are shuffled up.
 
 	page: The page to insert.
 */
