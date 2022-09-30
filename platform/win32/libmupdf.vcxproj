@@ -1049,6 +1049,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-repair.c" />
     <ClCompile Include="..\..\source\pdf\pdf-resources.c" />
     <ClCompile Include="..\..\source\pdf\pdf-run.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-shade-recolor.c" />
     <ClCompile Include="..\..\source\pdf\pdf-shade.c" />
     <ClCompile Include="..\..\source\pdf\pdf-signature.c" />
     <ClCompile Include="..\..\source\pdf\pdf-store.c" />

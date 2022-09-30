@@ -368,6 +368,7 @@ typedef struct
 	void *opaque;
 	void (*color_rewrite)(fz_context *ctx, void *opaque, pdf_obj **cs, int *n, float color[FZ_MAX_COLORS]);
 	void (*image_rewrite)(fz_context *ctx, void *opaque, fz_image **image);
+	pdf_shade_recolorer *shade_rewrite;
 } pdf_color_filter_options;
 
 pdf_processor *

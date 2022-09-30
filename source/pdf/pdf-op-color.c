@@ -998,20 +998,82 @@ static void
 pdf_color_SC_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	pdf_color_processor *p = (pdf_color_processor*)proc;
-	float local_color[FZ_MAX_COLORS] = { 0 };
-	pdf_obj *cs_obj = pdf_dict_gets(ctx, pdf_dict_get(ctx, p->rstack->new_rdb, PDF_NAME(Pattern)), name);
+	pdf_obj *orig;
+	pdf_obj *dict = NULL;
+	char new_name[32];
+	pdf_obj *rewritten;
+	fz_shade *new_shade = NULL;
 
-	rewrite_cs(ctx, p, cs_obj, 0, local_color, 1);
+	orig = pdf_dict_gets(ctx, pdf_dict_get(ctx, p->rstack->old_rdb, PDF_NAME(Pattern)), name);
+	orig = pdf_dict_get(ctx, orig, PDF_NAME(Shading));
+
+	rewritten = pdf_recolor_shade(ctx, orig, p->options->shade_rewrite, p->options->opaque);
+
+	fz_var(new_shade);
+	fz_var(dict);
+
+	fz_try(ctx)
+	{
+		dict = pdf_new_dict(ctx, p->doc, 1);
+		pdf_dict_put_int(ctx, dict, PDF_NAME(PatternType), 2);
+		pdf_dict_put(ctx, dict, PDF_NAME(Shading), rewritten);
+		dict = pdf_add_object(ctx, p->doc, dict);
+		make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), dict);
+
+		new_shade = pdf_load_shading(ctx, p->doc, rewritten);
+
+		if (p->chain->op_sh)
+			p->chain->op_SC_shade(ctx, p->chain, new_name, new_shade);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_shade(ctx, new_shade);
+		pdf_drop_obj(ctx, rewritten);
+		pdf_drop_obj(ctx, dict);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
 pdf_color_sc_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	pdf_color_processor *p = (pdf_color_processor*)proc;
-	float local_color[FZ_MAX_COLORS] = { 0 };
-	pdf_obj *cs_obj = pdf_dict_gets(ctx, pdf_dict_get(ctx, p->rstack->new_rdb, PDF_NAME(Pattern)), name);
+	pdf_obj *orig;
+	pdf_obj *dict = NULL;
+	char new_name[32];
+	pdf_obj *rewritten;
+	fz_shade *new_shade = NULL;
 
-	rewrite_cs(ctx, p, cs_obj, 0, local_color, 0);
+	orig = pdf_dict_gets(ctx, pdf_dict_get(ctx, p->rstack->old_rdb, PDF_NAME(Pattern)), name);
+	orig = pdf_dict_get(ctx, orig, PDF_NAME(Shading));
+
+	rewritten = pdf_recolor_shade(ctx, orig, p->options->shade_rewrite, p->options->opaque);
+
+	fz_var(new_shade);
+	fz_var(dict);
+
+	fz_try(ctx)
+	{
+		dict = pdf_new_dict(ctx, p->doc, 1);
+		pdf_dict_put_int(ctx, dict, PDF_NAME(PatternType), 2);
+		pdf_dict_put(ctx, dict, PDF_NAME(Shading), rewritten);
+		dict = pdf_add_object(ctx, p->doc, dict);
+		make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), dict);
+
+		new_shade = pdf_load_shading(ctx, p->doc, rewritten);
+
+		if (p->chain->op_sh)
+			p->chain->op_sc_shade(ctx, p->chain, new_name, new_shade);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_shade(ctx, new_shade);
+		pdf_drop_obj(ctx, rewritten);
+		pdf_drop_obj(ctx, dict);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -1117,13 +1179,32 @@ static void
 pdf_color_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	pdf_color_processor *p = (pdf_color_processor*)proc;
+	pdf_obj *orig;
+	char new_name[32];
+	pdf_obj *rewritten;
+	fz_shade *new_shade = NULL;
 
-	/* FIXME: Color may not be required at all? */
-	if (p->gstate->unmarked && UNMARKED_FILL)
-		mark_fill(ctx, p);
+	orig = pdf_dict_gets(ctx, pdf_dict_get(ctx, p->rstack->old_rdb, PDF_NAME(Shading)), name);
 
-	if (p->chain->op_sh)
-		p->chain->op_sh(ctx, p->chain, name, shade);
+	rewritten = pdf_recolor_shade(ctx, orig, p->options->shade_rewrite, p->options->opaque);
+
+	fz_var(new_shade);
+
+	fz_try(ctx)
+	{
+		make_resource_instance(ctx, p, PDF_NAME(Shading), "Sh", new_name, sizeof(new_name), rewritten);
+
+		new_shade = pdf_load_shading(ctx, p->doc, rewritten);
+
+		if (p->chain->op_sh)
+			p->chain->op_sh(ctx, p->chain, new_name, new_shade);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_shade(ctx, new_shade);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
