@@ -145,9 +145,9 @@ describe("mupdf", function () {
 			});
 		});
 
-		describe("loadLinks()", function () {
+		describe("getLinks()", function () {
 			it("should return list of Links on page", function () {
-				let links = page.loadLinks();
+				let links = page.getLinks();
 
 				assert.isNotNull(links);
 				assert.lengthOf(links.links, 2);
@@ -175,14 +175,12 @@ describe("mupdf", function () {
 			page?.free();
 		});
 
-		describe("annotations()", function () {
+		describe("getAnnotations()", function () {
 			it("should return list of annotations on page", function () {
-				let annotations = page.annotations();
+				let annotations = page.getAnnotations();
 
-				// TODO - should be array instead
-				assert.instanceOf(annotations, mupdf.AnnotationList);
+				assert.isNotNull(annotations);
 				assert.lengthOf(annotations.annotations, 18);
-				assert.instanceOf(annotations.annotations[0], mupdf.Annotation);
 			});
 		});
 	});
@@ -194,7 +192,7 @@ describe("mupdf", function () {
 		beforeAll(function () {
 			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
-			links = page.loadLinks();
+			links = page.getLinks();
 		});
 		afterAll(function () {
 			doc?.free();
@@ -202,10 +200,10 @@ describe("mupdf", function () {
 			// TODO - free links
 		});
 
-		describe("rect()", function () {
+		describe("getBounds()", function () {
 			it("should return Link hitbox", function () {
 				let link = links.links[0];
-				let linkRect = link.rect();
+				let linkRect = link.getBounds();
 
 				assert.instanceOf(linkRect, mupdf.Rect);
 				expect(linkRect).toMatchSnapshot();
@@ -214,25 +212,25 @@ describe("mupdf", function () {
 
 		// TODO - color
 
-		describe("isExternalLink()", function () {
+		describe("isExternal()", function () {
 			it("should return true if link has external URL", function () {
 				let link = links.links[0];
 
-				assert.isTrue(link.isExternalLink());
+				assert.isTrue(link.isExternal());
 			});
 
 			it("should return false if link has relative URL", function () {
 				let link = links.links[1];
 
-				assert.isFalse(link.isExternalLink());
+				assert.isFalse(link.isExternal());
 			});
 		});
 
-		describe("uri()", function () {
+		describe("getURI()", function () {
 			it("should return link URI", function () {
 				let link = links.links[0];
 
-				assert.equal(link.uri(), "http://www.wikipedia.org/");
+				assert.equal(link.getURI(), "http://www.wikipedia.org/");
 			});
 		});
 
@@ -248,7 +246,7 @@ describe("mupdf", function () {
 		beforeAll(function () {
 			doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 			page = doc.loadPage(0);
-			annotations = page.annotations();
+			annotations = page.getAnnotations();
 		});
 		afterAll(function () {
 			doc?.free();
@@ -665,14 +663,14 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.empty();
 
 				assert.isNotNull(buffer);
-				assert.equal(buffer.size(), 0);
+				assert.equal(buffer.getLength(), 0);
 			});
 
 			it("should reserve at least given capacity", function () {
 				let buffer = mupdf.Buffer.empty(64);
 
 				assert.isNotNull(buffer);
-				assert.equal(buffer.size(), 0);
+				assert.equal(buffer.getLength(), 0);
 				assert.isAtLeast(buffer.capacity(), 64);
 			});
 		});
@@ -683,7 +681,7 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.fromJsBuffer(jsArray);
 
 				assert.isNotNull(buffer);
-				assert.equal(buffer.size(), 5);
+				assert.equal(buffer.getLength(), 5);
 			});
 
 			it("should preserve data through round-trip", function () {
@@ -698,7 +696,7 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.fromJsBuffer(jsArray);
 
 				assert.isNotNull(buffer);
-				assert.equal(buffer.size(), 0);
+				assert.equal(buffer.getLength(), 0);
 				assert.deepEqual(buffer.toUint8Array(), jsArray);
 			});
 
@@ -716,7 +714,7 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.fromJsString("Hello world");
 
 				assert.isNotNull(buffer);
-				assert.isAbove(buffer.size(), 0);
+				assert.isAbove(buffer.getLength(), 0);
 				assert.deepEqual(buffer.toJsString(), "Hello world");
 			});
 
@@ -724,7 +722,7 @@ describe("mupdf", function () {
 				let buffer = mupdf.Buffer.fromJsString("");
 
 				assert.isNotNull(buffer);
-				assert.equal(buffer.size(), 0);
+				assert.equal(buffer.getLength(), 0);
 				assert.deepEqual(buffer.toJsString(), "");
 			});
 		});
@@ -736,7 +734,7 @@ describe("mupdf", function () {
 
 				buffer.resize(128);
 
-				assert.equal(buffer.size(), 5);
+				assert.equal(buffer.getLength(), 5);
 				assert.isAtLeast(buffer.capacity(), 128);
 			});
 
@@ -746,7 +744,7 @@ describe("mupdf", function () {
 
 				buffer.resize(3);
 
-				assert.equal(buffer.size(), 3);
+				assert.equal(buffer.getLength(), 3);
 				assert.isAtLeast(buffer.capacity(), 3);
 			});
 		});
@@ -759,7 +757,7 @@ describe("mupdf", function () {
 
 				buffer.grow();
 
-				assert.equal(buffer.size(), 5);
+				assert.equal(buffer.getLength(), 5);
 				assert.isAtLeast(buffer.capacity(), oldCapacity);
 			});
 		});
@@ -772,7 +770,7 @@ describe("mupdf", function () {
 
 				buffer.trim();
 
-				assert.equal(buffer.size(), 5);
+				assert.equal(buffer.getLength(), 5);
 				assert.equal(buffer.capacity(), 5);
 			});
 		});
@@ -784,7 +782,7 @@ describe("mupdf", function () {
 
 				buffer.clear();
 
-				assert.equal(buffer.size(), 0);
+				assert.equal(buffer.getLength(), 0);
 			});
 		});
 	});

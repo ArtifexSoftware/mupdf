@@ -48,7 +48,7 @@ Rect {
 }
 `;
 
-exports[`mupdf Link rect() should return Link hitbox 1`] = `
+exports[`mupdf Link getBounds() should return Link hitbox 1`] = `
 Rect {
   "x0": 55.22800064086914,
   "x1": 141.56199645996094,

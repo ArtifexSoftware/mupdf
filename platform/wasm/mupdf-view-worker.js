@@ -150,14 +150,14 @@ workerMethods.getPageLinks = function(pageNumber) {
 
 	try {
 		page = openDocument.loadPage(pageNumber - 1);
-		links_ptr = page.loadLinks();
+		links_ptr = page.getLinks();
 
 		return links_ptr.links.map(link => {
-			const { x0, y0, x1, y1 } = link.rect();
+			const { x0, y0, x1, y1 } = link.getBounds();
 
 			let href;
-			if (link.isExternalLink()) {
-				href = link.uri();
+			if (link.isExternal()) {
+				href = link.getURI();
 			} else {
 				const linkPageNumber = link.resolve(openDocument).pageNumber(openDocument);
 				// TODO - move to front-end
@@ -240,7 +240,7 @@ workerMethods.getPageAnnotations = function(pageNumber, dpi) {
 			return [];
 		}
 
-		const annotations = pdfPage.annotations();
+		const annotations = pdfPage.getAnnotations();
 		const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
 
 		return annotations.annotations.map(annotation => {
@@ -433,7 +433,7 @@ function inSquare(squarePoint, x, y) {
 function findAnnotationAtPos(pdfPage, x, y) {
 	// using Array.findLast would be more elegant, but it isn't stable on
 	// all major platforms
-	let annotations = pdfPage.annotations().annotations;
+	let annotations = pdfPage.getAnnotations().annotations;
 	for (let i = annotations.length - 1; i >= 0; i--) {
 		const annotation = annotations[i];
 		const bbox = annotation.bound();
@@ -514,7 +514,7 @@ class SelectAnnot {
 
 	deleteItem() {
 		if (currentSelection?.annotation) {
-			this.pdfPage.removeAnnot(currentSelection?.annotation);
+			this.pdfPage.deleteAnnotation(currentSelection?.annotation);
 			return true;
 		}
 	}
@@ -535,7 +535,7 @@ class CreateText {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_TEXT);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_TEXT);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
 		this.pdfPage.update();
@@ -581,7 +581,7 @@ class CreateFreeText {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_FREE_TEXT);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_FREE_TEXT);
 		annot.setRect(new mupdf.Rect(x, y, x + 200, y + 100));
 		this.pdfPage.update();
 		return true;
@@ -629,7 +629,7 @@ class CreateLine {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_LINE);
+			let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_LINE);
 			annot.setLine(this.points[0], this.points[1]);
 			// pdf_set_annot_interior_color
 			// pdf_set_annot_line_ending_styles
@@ -682,7 +682,7 @@ class CreateSquare {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_SQUARE);
+			let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_SQUARE);
 			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
 			// pdf_set_annot_interior_color
 			this.pdfPage.update();
@@ -734,7 +734,7 @@ class CreateCircle {
 		this.points.push(new mupdf.Point(x, y));
 
 		if (this.points.length == 2) {
-			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_CIRCLE);
+			let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_CIRCLE);
 			annot.setRect(new mupdf.Rect(this.points[0].x, this.points[0].y, this.points[1].x, this.points[1].y));
 			// pdf_set_annot_interior_color
 			this.pdfPage.update();
@@ -784,7 +784,7 @@ class CreatePolygon {
 
 	mouseDown(x, y) {
 		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
-			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYGON);
+			let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_POLYGON);
 			for (const point of this.points) {
 				annot.addVertex(point);
 			}
@@ -838,7 +838,7 @@ class CreatePolyLine {
 
 	mouseDown(x, y) {
 		if (this.points[0] != null && inSquare(this.points[0], x, y)) {
-			let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_POLYLINE);
+			let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_POLYLINE);
 			for (const point of this.points) {
 				annot.addVertex(point);
 			}
@@ -889,7 +889,7 @@ class CreateStamp {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_STAMP);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_STAMP);
 		annot.setRect(new mupdf.Rect(x, y, x + 190, y + 50));
 		//pdf_annot_icon_name
 		this.pdfPage.update();
@@ -933,7 +933,7 @@ class CreateCaret {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_CARET);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_CARET);
 		annot.setRect(new mupdf.Rect(x, y, x + 18, y + 15));
 		this.pdfPage.update();
 		return true;
@@ -977,7 +977,7 @@ class CreateFileAttachment {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_FILE_ATTACHMENT);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_FILE_ATTACHMENT);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
 		//pdf_annot_filespec
@@ -1022,7 +1022,7 @@ class CreateSound {
 	}
 
 	mouseDown(x, y) {
-		let annot = this.pdfPage.createAnnot(mupdf.PDF_ANNOT_SOUND);
+		let annot = this.pdfPage.createAnnotation(mupdf.PDF_ANNOT_SOUND);
 		annot.setRect(new mupdf.Rect(x, y, x + 20, y + 20));
 		//pdf_annot_icon_name
 		this.pdfPage.update();
