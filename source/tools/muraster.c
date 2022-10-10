@@ -1421,6 +1421,13 @@ read_resolution(const char *arg)
 		y_resolution = fz_atoi(arg);
 	else
 		y_resolution = x_resolution;
+
+	if (x_resolution <= 0 || y_resolution <= 0)
+	{
+		fprintf(stderr, "Ignoring invalid resolution\n");
+		x_resolution =  X_RESOLUTION;
+		y_resolution =  Y_RESOLUTION;
+	}
 }
 
 static int
