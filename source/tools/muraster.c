@@ -501,8 +501,6 @@ static struct {
 	char *maxfilename;
 } timing;
 
-#define stringify(A) #A
-
 static int usage(void)
 {
 	fprintf(stderr,
@@ -520,9 +518,9 @@ static int usage(void)
 		"\n"
 		"\t-R {auto,0,90,180,270}\n"
 		"\t\trotate clockwise (default: auto)\n"
-		"\t-r -{,_}\tx and y resolution in dpi (default: " stringify(X_RESOLUTION) "x" stringify(Y_RESOLUTION) ")\n"
-		"\t-w -\tprintable width (in inches) (default: " stringify(PAPER_WIDTH) ")\n"
-		"\t-h -\tprintable height (in inches) (default: " stringify(PAPER_HEIGHT) "\n"
+		"\t-r -{,_}\tx and y resolution in dpi (default: %dx%d)\n"
+		"\t-w -\tprintable width (in inches) (default: %.2f)\n"
+		"\t-h -\tprintable height (in inches) (default: %.2f)\n"
 		"\t-f\tfit file to page if too large\n"
 		"\t-B -\tminimum band height (e.g. 32)\n"
 		"\t-M -\tmax bandmemory (e.g. 655360)\n"
@@ -540,7 +538,8 @@ static int usage(void)
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-A -/-\tnumber of bits of antialiasing (0 to 8) (graphics, text)\n"
 		"\n"
-		"\tpages\tcomma separated list of page numbers and ranges\n"
+		"\tpages\tcomma separated list of page numbers and ranges\n",
+		X_RESOLUTION, Y_RESOLUTION, PAPER_WIDTH, PAPER_HEIGHT
 		);
 	return 1;
 }
