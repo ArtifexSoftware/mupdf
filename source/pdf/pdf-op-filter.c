@@ -872,6 +872,7 @@ filter_show_string(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf,
 	if (!fontdesc)
 		return;
 
+	p->tos.fontdesc = fontdesc;
 	i = 0;
 	while (i < len)
 	{
