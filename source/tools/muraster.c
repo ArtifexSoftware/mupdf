@@ -1003,6 +1003,11 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 	}
 
 	w = render->ibounds.x1 - render->ibounds.x0;
+	h = render->ibounds.y1 - render->ibounds.y0;
+	if (w <= 0 || h <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid page dimensions");
+
+
 	min_band_mem = (size_t)bpp * w * min_band_height;
 	if (min_band_mem > 0)
 		reps = (int)(max_band_memory / min_band_mem);
@@ -1013,7 +1018,6 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 	if (render->num_workers > 0)
 	{
 		int runs, num_bands;
-		h = render->ibounds.y1 - render->ibounds.y0;
 		num_bands = (h + min_band_height - 1) / min_band_height;
 		/* num_bands = number of min_band_height bands */
 		runs = (num_bands + reps-1) / reps;
