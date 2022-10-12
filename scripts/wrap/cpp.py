@@ -2043,7 +2043,7 @@ def function_wrapper_class_aware_body(
     out_cpp.write( f'    {refcheck_if}\n')
     out_cpp.write( f'    if (s_trace) {{\n')
     out_cpp.write( f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "():"\n')
-    out_cpp.write( f'                << "calling mupdf::{rename.ll_fn(fnname)}()\\n";\n')
+    out_cpp.write( f'                << " calling mupdf::{rename.ll_fn(fnname)}()\\n";\n')
     out_cpp.write( f'    }}\n')
     out_cpp.write( f'    #endif\n')
 
