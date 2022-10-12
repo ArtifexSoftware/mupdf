@@ -1296,11 +1296,12 @@ mupdf.ready = libmupdf(libmupdf_injections).then(m => {
 	mupdf.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr());
 	mupdf.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk());
 
-	let buffer = libmupdf.wasmMemory.buffer;
-	if (globalThis.SharedArrayBuffer != null && buffer instanceof globalThis.SharedArrayBuffer) {
+	let buffer = null
+	if (libmupdf.wasmMemory)
+		buffer = libmupdf.wasmMemory.buffer;
+	if (typeof SharedArrayBuffer !== 'undefined' && buffer instanceof SharedArrayBuffer) {
 		return { sharedBuffer: buffer };
-	}
-	else {
+	} else {
 		return { sharedBuffer: null };
 	}
 
