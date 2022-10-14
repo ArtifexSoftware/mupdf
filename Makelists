@@ -282,6 +282,7 @@ OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/cio.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/dwt.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/event.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/function_list.c
+OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/ht_dec.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/image.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/invert.c
 OPENJPEG_SRC += thirdparty/openjpeg/src/lib/openjp2/j2k.c
