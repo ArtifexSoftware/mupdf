@@ -486,40 +486,40 @@
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-name.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-arabic.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-arabic.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-default.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-default.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-hangul.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-hangul.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-hebrew.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-hebrew.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-indic.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-indic.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-khmer.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-khmer.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-myanmar.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-myanmar.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-syllabic.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-syllabic.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-thai.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-thai.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-use.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-use.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-vowel-constraints.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-vowel-constraints.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-fallback.cc">
@@ -576,7 +576,7 @@
     <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-subset-plan.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-indic-table.cc">
+    <ClCompile Include="..\..\thirdparty\harfbuzz\src\hb-ot-shaper-indic-table.cc">
       <Filter>harfbuzz</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\attribute.c">
