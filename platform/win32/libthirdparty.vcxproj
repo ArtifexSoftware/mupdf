@@ -965,6 +965,7 @@
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.c" />
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\event.c" />
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\ht_dec.c" />
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.c" />
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.c" />
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.c" />

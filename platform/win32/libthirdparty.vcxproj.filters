@@ -231,6 +231,9 @@
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.c">
       <Filter>libopenjpeg</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\ht_dec.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.c">
       <Filter>libopenjpeg</Filter>
     </ClCompile>
