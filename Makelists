@@ -76,7 +76,6 @@ HARFBUZZ_BUILD_CFLAGS += -fvisibility-inlines-hidden
 HARFBUZZ_BUILD_CFLAGS += -std=gnu++11
 
 HARFBUZZ_SRC += thirdparty/harfbuzz/src/graph/gsubgpos-context.cc
-HARFBUZZ_SRC += thirdparty/harfbuzz/src/graph/test-classdef-graph.cc
 
 HARFBUZZ_SRC += thirdparty/harfbuzz/src/hb-aat-layout.cc
 HARFBUZZ_SRC += thirdparty/harfbuzz/src/hb-aat-map.cc
