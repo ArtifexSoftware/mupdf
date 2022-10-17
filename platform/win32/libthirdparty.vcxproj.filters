@@ -702,6 +702,9 @@
     <ClCompile Include="..\..\thirdparty\mujs\utftype.c">
       <Filter>libmujs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\ht_dec.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h">
