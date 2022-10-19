@@ -78,6 +78,8 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	}
 	fz_catch(ctx)
 	{
+		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, 0);
+		(*env)->SetObjectField(env, self, fid_NativeDevice_nativeResource, NULL);
 		fz_drop_pixmap(ctx, pixmap);
 		fz_free(ctx, ninfo);
 		jni_rethrow(env, ctx);
@@ -86,6 +88,8 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	/* lockNativeDevice will already have raised a JNI error if there was one. */
 	if (err)
 	{
+		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, 0);
+		(*env)->SetObjectField(env, self, fid_NativeDevice_nativeResource, NULL);
 		fz_drop_pixmap(ctx, pixmap);
 		fz_free(ctx, ninfo);
 		return 0;
