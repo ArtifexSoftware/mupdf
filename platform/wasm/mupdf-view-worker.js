@@ -29,6 +29,7 @@
 if (globalThis.SharedArrayBuffer != null) {
 	importScripts("mupdf-wasm.js");
 } else {
+	console.warn("SharedArrayBuffer not found. Loading mupdf.js single-threaded fallback");
 	importScripts("mupdf-wasm-singlethread.js");
 }
 importScripts("lib/mupdf.js");
