@@ -1,6 +1,9 @@
 List of changes
 
 	Added MOBI input format support.
+	C++/Python/C# binding:
+		Changes to naming of wrapper functions and classes.
+		Added limited support for callbacks into Python, using SWIG Directors.
 
 List of changes in MuPDF 1.20.0
 
