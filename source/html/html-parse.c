@@ -630,6 +630,14 @@ static fz_html_box *new_box(fz_context *ctx, struct genstate *g, fz_xml *node, i
 
 	if (tag && tag[0]=='a' && tag[1]==0)
 	{
+		// Support deprecated anchor syntax with id in "name" instead of "id" attribute.
+		if (!id)
+		{
+			const char *name = fz_xml_att(node, "name");
+			if (name)
+				box->id = fz_pool_strdup(ctx, g->pool, name);
+		}
+
 		if (g->is_fb2)
 		{
 			href = fz_xml_att(node, "l:href");
@@ -763,11 +771,10 @@ static fz_html_box *gen2_inline(fz_context *ctx, struct genstate *g, fz_html_box
 {
 	fz_html_box *this_box;
 	fz_html_box *flow_box;
-	const char *id = fz_xml_att(node, "id");
 	root_box = find_inline_context(ctx, g, root_box);
 	this_box = new_box(ctx, g, node, BOX_INLINE, style);
 	append_box(ctx, root_box, this_box);
-	if (id)
+	if (this_box->id)
 	{
 		flow_box = find_flow_encloser(ctx, this_box);
 		add_flow_anchor(ctx, g->pool, flow_box, this_box);
