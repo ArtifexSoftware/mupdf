@@ -2143,7 +2143,7 @@ static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top
 
 	if (box->style->visibility == V_VISIBLE && !skipping)
 	{
-		if (box->heading || box->id != NULL)
+		if (box->heading || box->id != NULL || box->href)
 		{
 			/* We have a box worthy of a callback. */
 			char *text = NULL;
@@ -2154,6 +2154,7 @@ static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top
 			pos.heading = box->heading;
 			pos.open_close = 1;
 			pos.id = box->id;
+			pos.href = box->href;
 			pos.rect.x0 = box->s.layout.x;
 			pos.rect.y0 = box->s.layout.y;
 			pos.rect.x1 = box->s.layout.x + box->s.layout.w;
@@ -2180,7 +2181,7 @@ static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top
 
 	if (box->style->visibility == V_VISIBLE && !skipping)
 	{
-		if (box->heading || box->id != NULL)
+		if (box->heading || box->id != NULL || box->href)
 		{
 			/* We have a box worthy of a callback that needs closing. */
 			pos.open_close = 2;
@@ -2234,7 +2235,7 @@ static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top,
 				continue;
 		}
 
-		if (node->box->id)
+		if (node->box->id || node->box->href)
 		{
 			/* We have a node to callback for. */
 			fz_story_element_position pos;
@@ -2244,10 +2245,12 @@ static int enumerate_flow_box(fz_context *ctx, fz_html_box *box, float page_top,
 			pos.heading = 0;
 			pos.open_close = 1 | 2;
 			pos.id = node->box->id;
+			pos.href = node->box->href;
+			/* We only have the baseline and the em, so the bbox is a bit of a fudge. */
 			pos.rect.x0 = node->x;
-			pos.rect.y0 = node->y;
+			pos.rect.y0 = node->y - node->h * 0.8f;
 			pos.rect.x1 = node->x + node->w;
-			pos.rect.y1 = node->y + node->h;
+			pos.rect.y1 = node->y + node->h * 0.2f;
 			pos.rectangle_num = rect_num;
 			cb(ctx, arg, &pos);
 		}
