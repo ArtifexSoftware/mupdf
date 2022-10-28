@@ -6,6 +6,8 @@ EMSDK_DIR ?= /opt/emsdk
 BUILD_DIR ?= ../../build/wasm/$(build)
 WASM_SKIP_TRY_CATCH ?= 0
 
+SAMPLES := mupdf-sample-file.pdf pdfref13.pdf ECMA-388.xps
+
 ifeq ($(build),debug)
   LIB_BUILD_FLAGS := -Os -g
   BUILD_FLAGS := -Wall -O0 -g
@@ -17,7 +19,7 @@ else
   BUILD_FLAGS := -Wall -Os -flto
 endif
 
-all: mupdf-wasm.js mupdf-wasm.wasm
+all: mupdf-wasm.js mupdf-wasm.wasm samples
 
 MUPDF_CORE := $(BUILD_DIR)/libmupdf.a $(BUILD_DIR)/libmupdf-third.a
 $(MUPDF_CORE): .FORCE
@@ -48,6 +50,12 @@ mupdf-wasm.js mupdf-wasm.wasm: $(MUPDF_CORE) lib/wrap.c
 		lib/wrap.c \
 		$(BUILD_DIR)/libmupdf.a \
 		$(BUILD_DIR)/libmupdf-third.a
+
+samples: $(SAMPLES:%=samples/%)
+
+$(SAMPLES:%=samples/%):
+	mkdir -p samples/
+	curl 'https://ghostscript.com/~olivier/$@' -o $@
 
 clean:
 	rm -f mupdf-wasm.js mupdf-wasm.wasm mupdf-wasm.worker.js

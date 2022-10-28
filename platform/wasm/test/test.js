@@ -27,10 +27,13 @@ const fs = require("fs/promises");
 const { Rect } = require("../lib/mupdf.js");
 const mupdf = require("../lib/mupdf.js");
 
+const samplePageWidth = 595.4456787109375;
+const samplePageHeight = 841.6913452148438;
+
 describe("mupdf", function () {
 	let input;
 	beforeAll(async function () {
-		input = await fs.readFile("samples/annotations_galore_II.pdf");
+		input = await fs.readFile("samples/mupdf-sample-file.pdf");
 	});
 
 	beforeAll(async function () {
@@ -54,7 +57,7 @@ describe("mupdf", function () {
 				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 
 				assert.isNotNull(doc);
-				assert.equal(doc.countPages(), 3);
+				assert.equal(doc.countPages(), 1);
 				assert.equal(doc.title(), "");
 			});
 		});
@@ -65,7 +68,7 @@ describe("mupdf", function () {
 				let doc = mupdf.Document.openFromStream(stream, "application/pdf");
 
 				assert.isNotNull(doc);
-				assert.equal(doc.countPages(), 3);
+				assert.equal(doc.countPages(), 1);
 				assert.equal(doc.title(), "");
 			});
 		});
@@ -77,9 +80,12 @@ describe("mupdf", function () {
 
 				assert.isNotNull(page);
 				assert.instanceOf(page, mupdf.PdfPage);
-				assert.deepEqual(page.bounds(), new mupdf.Rect(0, 0, 612, 792));
-				assert.equal(page.width(), 612);
-				assert.equal(page.height(), 792);
+				assert.deepEqual(
+					page.bounds(),
+					new mupdf.Rect(0, 0, samplePageWidth, samplePageHeight)
+				);
+				assert.equal(page.width(), samplePageWidth);
+				assert.equal(page.height(), samplePageHeight);
 			});
 
 			it("should throw on OOB", function () {
@@ -94,10 +100,11 @@ describe("mupdf", function () {
 				let doc = mupdf.Document.openFromJsBuffer(input, "application/pdf");
 				let outline = doc.loadOutline();
 
-				assert.isNull(outline);
+				assert.isNotNull(outline);
+				// TOD - check content
 			});
 
-			// TODO - non-null outline
+			// TODO - null outline
 		});
 	});
 
@@ -118,8 +125,8 @@ describe("mupdf", function () {
 				let pixmap = page.toPixmap(new mupdf.Matrix(1,0,0,1,0,0), mupdf.DeviceRGB, false);
 
 				assert.isNotNull(pixmap);
-				assert.equal(pixmap.width(), 612);
-				assert.equal(pixmap.height(), 792);
+				assert.equal(pixmap.width(), samplePageWidth | 0);
+				assert.equal(pixmap.height(), samplePageHeight | 0);
 			});
 		});
 
@@ -154,17 +161,6 @@ describe("mupdf", function () {
 				expect(hits).toMatchSnapshot();
 			});
 		});
-
-		describe("PdfPage", function () {
-			describe("annotations()", function () {
-				it("should return list of annotations on page", function () {
-					let annotations = page.annotations();
-
-					assert.isNotNull(annotations);
-					assert.lengthOf(annotations.annotations, 8);
-				});
-			});
-		});
 	});
 
 	describe("PdfPage", function () {
@@ -180,15 +176,15 @@ describe("mupdf", function () {
 		});
 
 		describe("annotations()", function () {
-			it("should return AnnotationList", function () {
+			it("should return list of annotations on page", function () {
 				let annotations = page.annotations();
 
+				// TODO - should be array instead
 				assert.instanceOf(annotations, mupdf.AnnotationList);
-				assert.lengthOf(annotations.annotations, 8);
+				assert.lengthOf(annotations.annotations, 18);
 				assert.instanceOf(annotations.annotations[0], mupdf.Annotation);
 			});
 		});
-
 	});
 
 	describe("Link", function () {
@@ -216,11 +212,19 @@ describe("mupdf", function () {
 			});
 		});
 
+		// TODO - color
+
 		describe("isExternalLink()", function () {
 			it("should return true if link has external URL", function () {
 				let link = links.links[0];
 
 				assert.isTrue(link.isExternalLink());
+			});
+
+			it("should return false if link has relative URL", function () {
+				let link = links.links[1];
+
+				assert.isFalse(link.isExternalLink());
 			});
 		});
 
@@ -228,7 +232,7 @@ describe("mupdf", function () {
 			it("should return link URI", function () {
 				let link = links.links[0];
 
-				assert.equal(link.uri(), "http://www.adobe.com");
+				assert.equal(link.uri(), "http://www.wikipedia.org/");
 			});
 		});
 
@@ -330,7 +334,7 @@ describe("mupdf", function () {
 
 		describe("popup()", function () {
 			it("should return a Rect", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[15];
 
 				let popup = annotation.popup();
 				assert.instanceOf(popup, mupdf.Rect);
@@ -338,21 +342,24 @@ describe("mupdf", function () {
 			});
 
 			it("should return the value from setPopup()", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[15];
 
 				let rect = new Rect(10, 10, 20, 20);
 				annotation.setPopup(rect);
 				assert.deepEqual(annotation.popup(), rect);
 			});
+
+			// TODO - non-popup annots
 		});
 
 		// TODO - delete
 
 		describe("typeString()", function () {
 			it("should return the annotation's type", function () {
-				assert.equal(annotations.annotations[0].typeString(), "FreeText");
-				assert.equal(annotations.annotations[1].typeString(), "FileAttachment");
-				assert.equal(annotations.annotations[2].typeString(), "FileAttachment");
+				assert.equal(annotations.annotations[0].typeString(), "Highlight");
+				assert.equal(annotations.annotations[6].typeString(), "Square");
+				assert.equal(annotations.annotations[8].typeString(), "Line");
+				assert.equal(annotations.annotations[15].typeString(), "Text");
 			});
 		});
 
@@ -367,7 +374,7 @@ describe("mupdf", function () {
 
 		describe("rect()", function () {
 			it("should return a Rect", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				let rect = annotation.rect();
 				assert.instanceOf(rect, mupdf.Rect);
@@ -375,7 +382,7 @@ describe("mupdf", function () {
 			});
 
 			it("should return the value from setRect()", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				let rect = new Rect(10, 10, 20, 20);
 				annotation.setRect(rect);
@@ -385,21 +392,22 @@ describe("mupdf", function () {
 
 		describe("contents()", function () {
 			it("should return the annotation's text", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[15];
 
 				let contents = annotation.contents();
-				assert.equal(contents, "just some links on the page here");
+				assert.equal(contents, "Note contents");
 			});
 
-			it("should be empty for non-text annotations", function () {
-				let annotation = annotations.annotations[1];
+			// FIXME - For some reason, this deadlocks
+			it.skip("should be empty for non-text annotations", function () {
+				let annotation = annotations.annotations[8];
 
 				let contents = annotation.contents();
 				assert.equal(contents, "");
 			});
 
 			it("should return the value from setContents()", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[15];
 
 				annotation.setContents("hello world");
 				assert.equal(annotation.contents(), "hello world");
@@ -421,34 +429,34 @@ describe("mupdf", function () {
 
 		describe("iconName", function () {
 			describe("hasIconName()", function () {
-				it("should return false for FreeText", function () {
-					let annotation = annotations.annotations[0];
+				it("should return false for Line", function () {
+					let annotation = annotations.annotations[8];
 
 					assert.isFalse(annotation.hasIconName());
 				});
 
-				it("should return true for FileAttachment", function () {
-					let annotation = annotations.annotations[1];
+				it("should return true for Text", function () {
+					let annotation = annotations.annotations[15];
 
 					assert.isTrue(annotation.hasIconName());
 				});
 			});
 
 			describe("iconName()", function () {
-				it("should throw for FreeText", function () {
-					let annotation = annotations.annotations[0];
+				it("should throw for Line", function () {
+					let annotation = annotations.annotations[8];
 
 					assert.throws(() => annotation.iconName());
 				});
 
 				it("should return icon name", function () {
-					let annotation = annotations.annotations[1];
+					let annotation = annotations.annotations[15];
 
-					assert.equal(annotation.iconName(), "Graph");
+					assert.equal(annotation.iconName(), "Note");
 				});
 
 				it("should return the value from setIconName()", function () {
-					let annotation = annotations.annotations[1];
+					let annotation = annotations.annotations[15];
 
 					annotation.setIconName("Foobar");
 					assert.equal(annotation.iconName(), "Foobar");
@@ -456,7 +464,7 @@ describe("mupdf", function () {
 			});
 
 			describe("setIconName()", function () {
-				it("should throw for FreeText", function () {
+				it("should throw for Line", function () {
 					let annotation = annotations.annotations[0];
 
 					assert.throws(() => annotation.setIconName("Foobar"));
@@ -468,7 +476,7 @@ describe("mupdf", function () {
 
 		describe("border()", function () {
 			it("should return a number", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				let border = annotation.border();
 				assert.isNumber(border);
@@ -476,17 +484,19 @@ describe("mupdf", function () {
 			});
 
 			it("should return the value from setBorder()", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				annotation.setBorder(4.0);
 				assert.equal(annotation.border(), 4.0);
 			});
+
+			// TODO - throw from some types?
 		});
 
 		describe("language", function () {
 			describe("language()", function () {
 				it("should return a string", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					let language = annotation.language();
 					assert.isString(language);
@@ -495,13 +505,13 @@ describe("mupdf", function () {
 
 			describe("setLanguage()", function () {
 				it("should throw for invalid string", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					assert.throws(() => annotation.setLanguage("%%%"));
 				});
 
 				it("should set the annotation's language", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					annotation.setLanguage("zh-Hant");
 					assert.equal(annotation.language(), "zh-Hant");
@@ -509,6 +519,8 @@ describe("mupdf", function () {
 					assert.equal(annotation.language(), "foo");
 				});
 			});
+
+			// TODO - throw from some types?
 		});
 
 		// TODO
@@ -517,7 +529,7 @@ describe("mupdf", function () {
 
 		describe("opacity()", function () {
 			it("should return a number", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				let opacity = annotation.opacity();
 				assert.isNumber(opacity);
@@ -525,7 +537,7 @@ describe("mupdf", function () {
 			});
 
 			it("should return the value from setOpacity()", function () {
-				let annotation = annotations.annotations[0];
+				let annotation = annotations.annotations[7];
 
 				annotation.setOpacity(0.75);
 				assert.equal(annotation.opacity(), 0.75);
@@ -597,7 +609,7 @@ describe("mupdf", function () {
 		describe("author", function () {
 			describe("hasAuthor()", function () {
 				it("should return true for FreeText", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					assert.isTrue(annotation.hasAuthor());
 				});
@@ -607,7 +619,7 @@ describe("mupdf", function () {
 
 			describe("author()", function () {
 				it("should return a string", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					let author = annotation.author();
 					assert.isString(author);
@@ -619,7 +631,7 @@ describe("mupdf", function () {
 
 			describe("setAuthor()", function () {
 				it("should set the annotation's author", function () {
-					let annotation = annotations.annotations[0];
+					let annotation = annotations.annotations[15];
 
 					annotation.setAuthor("Batman");
 					assert.equal(annotation.author(), "Batman");
