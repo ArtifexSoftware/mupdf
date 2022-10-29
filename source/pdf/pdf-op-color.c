@@ -1321,7 +1321,7 @@ pdf_color_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *
 	if (image->imagemask)
 	{
 		/* Imagemasks require the color to have been set. */
-		if (p->gstate->unmarked && UNMARKED_FILL)
+		if (p->gstate->unmarked & UNMARKED_FILL)
 			mark_fill(ctx, p);
 	}
 
@@ -1400,7 +1400,7 @@ pdf_color_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_im
 		if (image->imagemask)
 		{
 			/* Imagemasks require the color to have been set. */
-			if (p->gstate->unmarked && UNMARKED_FILL)
+			if (p->gstate->unmarked & UNMARKED_FILL)
 				mark_fill(ctx, p);
 		}
 		else
