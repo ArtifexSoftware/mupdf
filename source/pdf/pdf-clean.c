@@ -156,10 +156,9 @@ pdf_filter_content_stream(
 	fz_try(ctx)
 	{
 		*out_buf = fz_new_buffer(ctx, 1024);
-		proc_buffer = pdf_new_buffer_processor(ctx, *out_buf, options->ascii);
+		top = proc_buffer = pdf_new_buffer_processor(ctx, *out_buf, options->ascii);
 		if (num_filters > 0)
 		{
-			top = proc_buffer;
 			for (i = num_filters - 1; i >= 0; i--)
 				top = list[i] = options->filters[i].filter(ctx, doc, top, struct_parents, transform, options, options->filters[i].options);
 		}
