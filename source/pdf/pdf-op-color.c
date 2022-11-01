@@ -398,7 +398,7 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		if (obj)
 		{
 			/* Make a new entry (or find an existing one), and send that. */
-			make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pat", new_name, sizeof(new_name), cs_obj);
+			make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), cs_obj);
 
 			if (pdf_to_int(ctx, obj) == 1)
 			{
@@ -1146,8 +1146,8 @@ pdf_color_SC_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_sh
 	new_shade = find_rewritten_shade(ctx, p, orig, new_name);
 	if (new_shade)
 	{
-		if (p->chain->op_sh)
-			p->chain->op_sh(ctx, p->chain, new_name, new_shade);
+		if (p->chain->op_SC_shade)
+			p->chain->op_SC_shade(ctx, p->chain, new_name, new_shade);
 		return;
 	}
 
@@ -1198,8 +1198,8 @@ pdf_color_sc_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_sh
 	new_shade = find_rewritten_shade(ctx, p, orig, new_name);
 	if (new_shade)
 	{
-		if (p->chain->op_sh)
-			p->chain->op_sh(ctx, p->chain, new_name, new_shade);
+		if (p->chain->op_sc_shade)
+			p->chain->op_sc_shade(ctx, p->chain, new_name, new_shade);
 		return;
 	}
 
