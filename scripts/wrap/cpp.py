@@ -58,20 +58,18 @@ def declaration_text( type_, name, nest=0, name_is_simple=True, verbose=False, e
     if verbose:
         jlib.log( '{array_n=}')
     if array_n >= 0 or type_.kind == state.clang.cindex.TypeKind.INCOMPLETEARRAY:
-        # Not sure this is correct.
         if verbose: jlib.log( '{array_n=}')
+        if array_n < 0:
+            array_n = ''
         text = declaration_text(
                 type_.get_array_element_type(),
-                name,
+                f'{name}[{array_n}]',
                 nest+1,
                 name_is_simple,
                 verbose=verbose,
                 expand_typedef=expand_typedef,
                 top_level=top_level,
                 )
-        if array_n < 0:
-            array_n = ''
-        text += f'[{array_n}]'
         return text
 
     pointee = type_.get_pointee()
@@ -3196,13 +3194,12 @@ def class_wrapper_virtual_fnptrs(
         return
 
     generated.virtual_fnptrs.append( f'{classname}2')
-    if len(extras.virtual_fnptrs) == 2:
-        self_, alloc = extras.virtual_fnptrs
-        free = None
-    elif len(extras.virtual_fnptrs) == 3:
-        self_, alloc, free = extras.virtual_fnptrs
-    else:
-        assert 0, 'virtual_fnptrs should be length 2 or 3.'
+
+    self_ = extras.virtual_fnptrs.pop( 'self_')
+    self_n = extras.virtual_fnptrs.pop( 'self_n', 1)
+    alloc = extras.virtual_fnptrs.pop( 'alloc')
+    free = extras.virtual_fnptrs.pop( 'free', None)
+    assert not extras.virtual_fnptrs, f'Unused items in virtual_fnptrs: {extras.virtual_fnptrs}'
 
     # Class definition beginning.
     #
@@ -3313,7 +3310,8 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write(')')
         out_cpp.write('\n')
         out_cpp.write('{\n')
-        out_cpp.write(f'    {classname}2* self = {self_("arg_1")};\n')
+        self_expression = self_( f'arg_{self_n}')
+        out_cpp.write(f'    {classname}2* self = {self_expression};\n')
         out_cpp.write(f'    {refcheck_if}\n')
         out_cpp.write(f'    if (s_trace_director)\n')
         out_cpp.write( '    {\n')
@@ -3325,9 +3323,10 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write(f'        return self->{cursor.spelling}(')
         sep = ''
         for i, arg_type in enumerate( fnptr_type.argument_types()):
-            if i == 1:
-                # First two args are (fz_context, {structname}*). Ignore the
-                # second. We pass the fz_context to the virtual fn.
+            if i == self_n:
+                # This is the void* from which we found `self` so ignore
+                # here. Note that we still pass the fz_context to the virtual
+                # fn.
                 continue
             name = f'arg_{i}'
             out_cpp.write( f'{sep}{name}')
@@ -3379,8 +3378,7 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write(f'FZ_FUNCTION {_make_top_level(fnptr_type.get_result().spelling)} {classname}2::{cursor.spelling}(')
         sep = ''
         for i, arg_type in enumerate( fnptr_type.argument_types()):
-            if i == 1:
-                # Ignore arg args - (fz_context, {structname}*).
+            if i == self_n:
                 continue
             name = f'arg_{i}'
             write(f'{sep}')
