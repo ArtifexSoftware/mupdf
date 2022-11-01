@@ -219,53 +219,66 @@ fz_recolor_shade_function(fz_context *ctx, pdf_obj *shade, float samples[256][FZ
 		q += n_out;
 	}
 
+	fz_var(ref);
+	fz_var(output);
+
 	/* Now write the function out again. */
 	fun_obj = pdf_new_dict(ctx, doc, 3);
-	pdf_dict_put_int(ctx, fun_obj, PDF_NAME(FunctionType), 0);
-
-	/* Domain */
-	obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Domain), 2);
-	pdf_array_push_real(ctx, obj, t0);
-	pdf_array_push_real(ctx, obj, t1);
-
-	/* Range */
-	obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Range), 2 * n_out);
-	for (i = 0; i < 2 * n_out; i++)
-		pdf_array_push_real(ctx, obj, range[i]);
-
-	obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Size), 1);
-	pdf_array_push_int(ctx, obj, 256);
-
-	pdf_dict_put_int(ctx, fun_obj, PDF_NAME(BitsPerSample), FUNBPS);
-
-	buf = fz_new_buffer(ctx, 1);
-	output = fz_new_output_with_buffer(ctx, buf);
-
-	q = localp;
-	for (t = 0; t < 256; t++)
+	fz_try(ctx)
 	{
-		for (i = 0; i < n_out; i++)
+		pdf_dict_put_int(ctx, fun_obj, PDF_NAME(FunctionType), 0);
+
+		/* Domain */
+		obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Domain), 2);
+		pdf_array_push_real(ctx, obj, t0);
+		pdf_array_push_real(ctx, obj, t1);
+
+		/* Range */
+		obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Range), 2 * n_out);
+		for (i = 0; i < 2 * n_out; i++)
+			pdf_array_push_real(ctx, obj, range[i]);
+
+		obj = pdf_dict_put_array(ctx, fun_obj, PDF_NAME(Size), 1);
+		pdf_array_push_int(ctx, obj, 256);
+
+		pdf_dict_put_int(ctx, fun_obj, PDF_NAME(BitsPerSample), FUNBPS);
+
+		buf = fz_new_buffer(ctx, 1);
+		output = fz_new_output_with_buffer(ctx, buf);
+
+		q = localp;
+		for (t = 0; t < 256; t++)
 		{
-			float v = q[i];
-			float d = range[2 * i + 1] - range[2 * i];
-			int iv;
+			for (i = 0; i < n_out; i++)
+			{
+				float v = q[i];
+				float d = range[2 * i + 1] - range[2 * i];
+				int iv;
 
-			v -= range[2 * i];
-			if (d != 0)
-				v = v * ((1<<FUNBPS)-1) / d;
-			iv = (int)(v + 0.5);
-			fz_write_bits(ctx, output, iv, FUNBPS);
+				v -= range[2 * i];
+				if (d != 0)
+					v = v * ((1<<FUNBPS)-1) / d;
+				iv = (int)(v + 0.5);
+				fz_write_bits(ctx, output, iv, FUNBPS);
+			}
+			q += n_out;
 		}
-		q += n_out;
-	}
-	fz_write_bits_sync(ctx, output);
-	fz_close_output(ctx, output);
-	fz_drop_output(ctx, output);
+		fz_write_bits_sync(ctx, output);
+		fz_close_output(ctx, output);
 
-	ref = pdf_add_object(ctx, doc, fun_obj);
-	pdf_update_stream(ctx, doc, ref, buf, 0);
-	fz_drop_buffer(ctx, buf);
-	pdf_dict_put(ctx, shade, PDF_NAME(Function), ref);
+		ref = pdf_add_object(ctx, doc, fun_obj);
+		pdf_update_stream(ctx, doc, ref, buf, 0);
+		pdf_dict_put(ctx, shade, PDF_NAME(Function), ref);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_output(ctx, output);
+		fz_drop_buffer(ctx, buf);
+		pdf_drop_obj(ctx, fun_obj);
+		pdf_drop_obj(ctx, ref);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static inline float read_sample(fz_context *ctx, fz_stream *stream, int bits, float min, float max)
@@ -347,17 +360,26 @@ rewrite_decode(fz_context *ctx, pdf_obj *shade, int n_out, float *d_min, float *
 {
 	int i;
 	pdf_obj *obj = pdf_keep_obj(ctx, pdf_dict_get(ctx, shade, PDF_NAME(Decode)));
-	pdf_obj *obj2 = pdf_dict_put_array(ctx, shade, PDF_NAME(Decode), 4);
+	pdf_obj *obj2;
 
-	for (i = 0; i < 4; i++)
+	fz_try(ctx)
 	{
-		pdf_array_push(ctx, obj2, pdf_array_get(ctx, obj, i));
+		obj2 = pdf_dict_put_array(ctx, shade, PDF_NAME(Decode), 4);
+
+		for (i = 0; i < 4; i++)
+		{
+			pdf_array_push(ctx, obj2, pdf_array_get(ctx, obj, i));
+		}
+		for (i = 0; i < n_out; i++)
+		{
+			pdf_array_push_real(ctx, obj2, d_min[i]);
+			pdf_array_push_real(ctx, obj2, d_max[i]);
+		}
 	}
-	for (i = 0; i < n_out; i++)
-	{
-		pdf_array_push_real(ctx, obj2, d_min[i]);
-		pdf_array_push_real(ctx, obj2, d_max[i]);
-	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -852,7 +874,7 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 	pdf_obj *function;
 	pdf_obj *rewritten = NULL;
 	pdf_obj *obj;
-	int type;
+	int type, i;
 	pdf_function *func[FZ_MAX_COLORS] = { NULL };
 	float d0, d1;
 	float samples[256][FZ_MAX_COLORS + 1];
@@ -968,7 +990,9 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 
 		/* From here on in, we're changing the mesh, which means altering a stream.
 		 * We'll need to be an indirect for that to work. */
-		rewritten = pdf_add_object(ctx, doc, rewritten);
+		obj = pdf_add_object(ctx, doc, rewritten);
+		pdf_drop_obj(ctx, rewritten);
+		rewritten = obj;
 
 		switch (type)
 		{
@@ -997,6 +1021,8 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 	}
 	fz_always(ctx)
 	{
+		for (i = 0; i < rd.funcs; i++)
+			pdf_drop_function(ctx, func[i]);
 		fz_drop_colorspace(ctx, src_cs);
 	}
 	fz_catch(ctx)

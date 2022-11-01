@@ -267,7 +267,7 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		cs_obj = pdf_dict_get(ctx, pdf_dict_get(ctx, p->rstack->old_rdb, PDF_NAME(ColorSpace)), cs_obj);
 	}
 
-	/* Until now, cs_obj has been a borrowed refernence. Make it a real one. */
+	/* Until now, cs_obj has been a borrowed reference. Make it a real one. */
 	pdf_keep_obj(ctx, cs_obj);
 
 	/* Whatever happens, from here on in, we must drop cs_obj. */
@@ -897,8 +897,13 @@ pdf_color_Q(fz_context *ctx, pdf_processor *proc)
 	pdf_drop_obj(ctx, gs->cs_fill);
 	pdf_drop_obj(ctx, gs->cs_stroke);
 
-	if (p->chain->op_Q)
-		p->chain->op_Q(ctx, p->chain);
+	fz_try(ctx)
+		if (p->chain->op_Q)
+			p->chain->op_Q(ctx, p->chain);
+	fz_always(ctx)
+		fz_free(ctx, gs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /* text state */
@@ -1095,7 +1100,12 @@ pdf_color_CS(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorspa
 	pdf_obj *cs_obj = pdf_new_name(ctx, name);
 	float color[FZ_MAX_COLORS] = { 1 };
 
-	rewrite_cs(ctx, p, cs_obj, 0, color, 1);
+	fz_try(ctx)
+		rewrite_cs(ctx, p, cs_obj, 0, color, 1);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, cs_obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -1105,7 +1115,12 @@ pdf_color_cs(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorspa
 	pdf_obj *cs_obj = pdf_new_name(ctx, name);
 	float color[FZ_MAX_COLORS] = { 1 };
 
-	rewrite_cs(ctx, p, cs_obj, 0, color, 0);
+	fz_try(ctx)
+		rewrite_cs(ctx, p, cs_obj, 0, color, 0);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, cs_obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -1371,6 +1386,7 @@ pdf_color_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *s
 	fz_always(ctx)
 	{
 		fz_drop_shade(ctx, new_shade);
+		pdf_drop_obj(ctx, rewritten);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -1424,6 +1440,7 @@ pdf_color_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_im
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_obj(ctx, im_obj);
 		fz_drop_image(ctx, image);
 	}
 	fz_catch(ctx)
