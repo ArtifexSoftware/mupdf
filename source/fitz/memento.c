@@ -956,6 +956,10 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
 }
 #endif /* MEMENTO_STACKTRACE_METHOD */
 
+#ifndef MEMENTO_BACKTRACE_MAX
+#define MEMENTO_BACKTRACE_MAX 1
+#endif
+
 #ifdef MEMENTO_DETAILS
 static void Memento_storeDetails(Memento_BlkHeader *head, int type)
 {
@@ -3173,8 +3177,8 @@ int Memento_checkAllMemory(void)
         Memento_breakpoint();
         return 1;
     }
-    return 0;
 #endif
+    return 0;
 }
 
 int Memento_setParanoia(int i)
