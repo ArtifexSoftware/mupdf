@@ -848,7 +848,14 @@ static void gen2_image_common(fz_context *ctx, struct genstate *g, fz_html_box *
 	fz_html_box *img_block_box;
 	fz_html_box *img_inline_box;
 
-	if (display == DIS_BLOCK)
+	if (display == DIS_INLINE || display == DIS_INLINE_BLOCK)
+	{
+		root_box = find_inline_context(ctx, g, root_box);
+		img_inline_box = new_box(ctx, g, node, BOX_INLINE, style);
+		append_box(ctx, root_box, img_inline_box);
+		generate_image(ctx, img_inline_box, img, g);
+	}
+	else
 	{
 		root_box = find_block_context(ctx, root_box);
 		img_block_box = new_box(ctx, g, node, BOX_BLOCK, style);
@@ -856,14 +863,6 @@ static void gen2_image_common(fz_context *ctx, struct genstate *g, fz_html_box *
 
 		root_box = find_inline_context(ctx, g, img_block_box);
 		img_inline_box = new_box(ctx, g, NULL, BOX_INLINE, style);
-		append_box(ctx, root_box, img_inline_box);
-		generate_image(ctx, img_inline_box, img, g);
-	}
-
-	else if (display == DIS_INLINE)
-	{
-		root_box = find_inline_context(ctx, g, root_box);
-		img_inline_box = new_box(ctx, g, node, BOX_INLINE, style);
 		append_box(ctx, root_box, img_inline_box);
 		generate_image(ctx, img_inline_box, img, g);
 	}
