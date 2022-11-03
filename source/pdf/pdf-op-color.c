@@ -35,9 +35,6 @@ typedef struct gstate_stack
 	struct gstate_stack *next;
 	pdf_obj *cs_stroke;
 	pdf_obj *cs_fill;
-	/* Only valid if the matching cs is a pattern. */
-	int n_stroke;
-	int n_fill;
 	int unmarked;
 } gstate_stack;
 
@@ -277,6 +274,20 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 
 	fz_try(ctx)
 	{
+		/* Our gstate always has to contain colorspaces BEFORE rewriting.
+		 * Consider the case where we are given a separation space, and
+		 * we rewrite it to be RGB. Then we change the 'amount' of that
+		 * separation; we can't do that with the RGB value. */
+		if (stroking)
+		{
+			pdf_drop_obj(ctx, p->gstate->cs_stroke);
+			p->gstate->cs_stroke = pdf_keep_obj(ctx, cs_obj);
+		}
+		else
+		{
+			pdf_drop_obj(ctx, p->gstate->cs_fill);
+			p->gstate->cs_fill = pdf_keep_obj(ctx, cs_obj);
+		}
 		/* Now, do any rewriting. This might drop the reference to cs_obj and
 		 * return with a different one. */
 		p->options->color_rewrite(ctx, p->options->opaque, &cs_obj, &n, color);
@@ -286,8 +297,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		{
 			if (stroking)
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_stroke);
-				p->gstate->cs_stroke = PDF_NAME(DeviceGray);
 				if (n == 1)
 					p->chain->op_G(ctx, p->chain, color[0]);
 				else
@@ -295,8 +304,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 			}
 			else
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_fill);
-				p->gstate->cs_fill = PDF_NAME(DeviceGray);
 				if (n == 1)
 					p->chain->op_g(ctx, p->chain, color[0]);
 				else
@@ -309,8 +316,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		{
 			if (stroking)
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_stroke);
-				p->gstate->cs_stroke = PDF_NAME(DeviceRGB);
 				if (n == 3)
 					p->chain->op_RG(ctx, p->chain, color[0], color[1], color[2]);
 				else
@@ -318,8 +323,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 			}
 			else
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_fill);
-				p->gstate->cs_fill = PDF_NAME(DeviceRGB);
 				if (n == 3)
 					p->chain->op_rg(ctx, p->chain, color[0], color[1], color[2]);
 				else
@@ -332,8 +335,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		{
 			if (stroking)
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_stroke);
-				p->gstate->cs_stroke = PDF_NAME(DeviceCMYK);
 				if (n == 4)
 					p->chain->op_K(ctx, p->chain, color[0], color[1], color[2], color[3]);
 				else
@@ -341,8 +342,6 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 			}
 			else
 			{
-				pdf_drop_obj(ctx, p->gstate->cs_fill);
-				p->gstate->cs_fill = PDF_NAME(DeviceCMYK);
 				if (n == 4)
 					p->chain->op_k(ctx, p->chain, color[0], color[1], color[2], color[3]);
 				else
@@ -357,17 +356,9 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		{
 			assert(n == 0);
 			if (stroking)
-			{
-				pdf_drop_obj(ctx, p->gstate->cs_stroke);
-				p->gstate->cs_stroke = PDF_NAME(Pattern);
 				p->chain->op_CS(ctx, p->chain, "Pattern", NULL);
-			}
 			else
-			{
-				pdf_drop_obj(ctx, p->gstate->cs_fill);
-				p->gstate->cs_fill = PDF_NAME(Pattern);
 				p->chain->op_cs(ctx, p->chain, "Pattern", NULL);
-			}
 			break;
 		}
 
@@ -379,17 +370,9 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 
 			cs = pdf_load_colorspace(ctx, cs_obj);
 			if (stroking)
-			{
-				pdf_drop_obj(ctx, p->gstate->cs_stroke);
-				p->gstate->cs_stroke = pdf_keep_obj(ctx, cs_obj);
 				p->chain->op_CS(ctx, p->chain, new_name, cs);
-			}
 			else
-			{
-				pdf_drop_obj(ctx, p->gstate->cs_fill);
-				p->gstate->cs_fill = pdf_keep_obj(ctx, cs_obj);
 				p->chain->op_cs(ctx, p->chain, new_name, cs);
-			}
 			break;
 		}
 
@@ -404,36 +387,18 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 			{
 				pat = pdf_load_pattern(ctx, p->doc, cs_obj);
 				if (stroking)
-				{
-					pdf_drop_obj(ctx, p->gstate->cs_stroke);
-					p->gstate->cs_stroke = pdf_keep_obj(ctx, cs_obj);
-					p->gstate->n_stroke = n;
 					p->chain->op_SC_pattern(ctx, p->chain, new_name, pat, n, color);
-				}
 				else
-				{
-					pdf_drop_obj(ctx, p->gstate->cs_fill);
-					p->gstate->cs_fill = pdf_keep_obj(ctx, cs_obj);
-					p->gstate->n_fill = n;
 					p->chain->op_sc_pattern(ctx, p->chain, new_name, pat, n, color);
-				}
 				break;
 			}
 			else if (pdf_to_int(ctx, obj) == 2)
 			{
 				shade = pdf_load_shading(ctx, p->doc, cs_obj);
 				if (stroking)
-				{
-					pdf_drop_obj(ctx, p->gstate->cs_stroke);
-					p->gstate->cs_stroke = pdf_keep_obj(ctx, cs_obj);
 					p->chain->op_SC_shade(ctx, p->chain, new_name, shade);
-				}
 				else
-				{
-					pdf_drop_obj(ctx, p->gstate->cs_fill);
-					p->gstate->cs_fill = pdf_keep_obj(ctx, cs_obj);
 					p->chain->op_sc_shade(ctx, p->chain, new_name, shade);
-				}
 				break;
 			}
 			else
