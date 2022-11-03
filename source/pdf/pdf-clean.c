@@ -868,7 +868,7 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 
 	pdf_filter_options options = { 0 };
 	pdf_sanitize_filter_options sopts = { 0 };
-	pdf_filter_factory_list list[2] = { 0 };
+	pdf_filter_factory list[2] = { 0 };
 
 	if (opts)
 	{
@@ -884,7 +884,7 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 	if (black_boxes)
 		options.end_page = pdf_redact_end_page;
 
-	list[0].filter = (pdf_filter_factory *)pdf_new_sanitize_filter;
+	list[0].filter = (pdf_filter_factory_fn *)pdf_new_sanitize_filter;
 	list[0].options = &sopts;
 
 	sopts.text_filter = pdf_redact_text_filter;

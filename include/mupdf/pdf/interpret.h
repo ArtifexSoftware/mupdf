@@ -242,13 +242,17 @@ typedef struct pdf_filter_options pdf_filter_options;
 	The options field contains a pointer to a structure with
 	filter specific options in.
 */
-typedef pdf_processor *(pdf_filter_factory)(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *factory_options);
+typedef pdf_processor *(pdf_filter_factory_fn)(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *factory_options);
 
+/*
+	A pdf_filter_factory is a pdf_filter_factory_fn, plus the options
+	needed to instantiate it.
+*/
 typedef struct
 {
-	pdf_filter_factory *filter;
+	pdf_filter_factory_fn *filter;
 	void *options;
-} pdf_filter_factory_list;
+} pdf_filter_factory;
 
 /*
 	recurse: Filter resources recursively.
@@ -280,7 +284,7 @@ struct pdf_filter_options
 	void *end_page_opaque;
 	void (*end_page)(fz_context *ctx, fz_buffer *buffer, void *arg);
 
-	pdf_filter_factory_list *filters;
+	pdf_filter_factory *filters;
 };
 
 /*
