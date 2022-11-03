@@ -60,6 +60,7 @@ class MupdfPageViewer {
 		this.searchNeedle = null;
 	}
 
+	// TODO - move searchNeedle out
 	render(dpi, searchNeedle) {
 		// TODO - error handling
 		this._loadPageImg({ dpi });
@@ -87,7 +88,6 @@ class MupdfPageViewer {
 	}
 
 	setSearchNeedle(searchNeedle = null) {
-		console.log("setSearchNeedle");
 		this.searchNeedle = searchNeedle;
 	}
 
@@ -104,7 +104,6 @@ class MupdfPageViewer {
 		this.textPromise = null;
 		this.linksPromise = null;
 		this.searchPromise = null;
-
 
 		this.imgNode = null;
 		this.renderPromise = null;
@@ -126,6 +125,7 @@ class MupdfPageViewer {
 		this.searchNeedle = null;
 	}
 
+	// TODO - this is destructive and makes other method get null ref errors
 	showError(functionName, error) {
 		console.error(`mupdf.${functionName}: ${error.message}:\n${error.stack}`);
 
@@ -136,7 +136,6 @@ class MupdfPageViewer {
 		this.rootNode.replaceChildren(div);
 	}
 
-	// TODO - make private
 	// --- INTERNAL METHODS ---
 
 	async _loadPageImg(renderArgs) {
@@ -334,16 +333,20 @@ class MupdfPageViewer {
 			return;
 		}
 
+		// TODO - cancel previous load
+
 		let searchHitsNode = document.createElement("div");
 		searchHitsNode.classList.add("searchHitList");
 		this.searchHitsNode?.remove();
 		this.searchHitsNode = searchHitsNode;
 		this.rootNode.appendChild(searchHitsNode);
 
+		this.searchNeedle = searchNeedle ?? "";
+
 		try {
-			if (searchNeedle ?? "" !== "") {
+			if (this.searchNeedle !== "") {
 				console.log("SEARCH", this.pageNumber, JSON.stringify(this.searchNeedle));
-				this.searchPromise = this.worker.search(this.pageNumber, this.searchNeedle ?? "");
+				this.searchPromise = this.worker.search(this.pageNumber, this.searchNeedle);
 				this.searchResultObject = await this.searchPromise;
 			}
 			else {
@@ -374,5 +377,291 @@ class MupdfPageViewer {
 			div.style.height = (bbox.h * scale) + "px";
 			this.searchHitsNode.appendChild(div);
 		}
+	}
+}
+
+let zoomLevels = [ 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200 ];
+
+// TODO - Split into separate file
+class MupdfDocumentViewer {
+	constructor(documentUri, initialPage, showDefaultUi) {
+
+	}
+
+	// TODO - Rename
+	async initDocument(mupdfWorker, docName) {
+		// TODO validate worker param
+
+		const pageCount = await mupdfWorker.countPages();
+		const title = await mupdfWorker.documentTitle();
+
+		// Use second page as default page size (the cover page is often differently sized)
+		const defaultW = await mupdfWorker.getPageWidth(pageCount > 1 ? 2 : 1);
+		const defaultH = await mupdfWorker.getPageHeight(pageCount > 1 ? 2 : 1);
+
+		this.mupdfWorker = mupdfWorker;
+		this.pageCount = pageCount;
+		this.title = title;
+		this.defaultW = defaultW;
+		this.defaultH = defaultH;
+		this.searchNeedle = "";
+
+		this.zoomLevel = 100;
+
+		//document.title = title ?? docName;
+		//console.log("mupdf: Loaded", JSON.stringify(url), "with", pageCount, "pages.");
+
+		//const rootDiv = document.createElement("div");
+
+		this.gridMenubarDiv = document.getElementById("grid-menubar");
+		this.gridSidebarDiv = document.getElementById("grid-sidebar");
+		this.gridPagesDiv = document.getElementById("grid-pages");
+		this.searchDialogDiv = document.getElementById("search-dialog");
+
+		const pagesDiv = document.createElement("div");
+		pagesDiv.id = "pages";
+		pagesDiv.scrollTo(0, 0);
+
+		let pages = new Array(pageCount);
+		for (let i = 0; i < pageCount; ++i) {
+			// TODO - remove 'i + 1'
+			const page = new MupdfPageViewer(mupdfWorker, i + 1, { w: defaultW, h: defaultH }, this._dpi());
+			pages[i] = page;
+			pagesDiv.appendChild(page.rootNode);
+		}
+
+		const searchDivInput = document.createElement("input");
+		searchDivInput.id = "search-text";
+		searchDivInput.type = "search";
+		searchDivInput.size = 40;
+		searchDivInput.addEventListener("input", () => {
+			let newNeedle = searchDivInput.value ?? "";
+			this.setSearch(newNeedle);
+		});
+		searchDivInput.addEventListener("keydown", (event) => {
+			if (event.key == "Enter")
+				this.runSearch(event.shiftKey ? -1 : 1);
+		});
+		const ltButton = document.createElement("button");
+		ltButton.innerText = "<";
+		ltButton.addEventListener("click", () => this.runSearch(-1));
+		const gtButton = document.createElement("button");
+		gtButton.innerText = ">";
+		gtButton.addEventListener("click", () => this.runSearch(1));
+		const hideButton = document.createElement("button");
+		hideButton.innerText = "X";
+		hideButton.addEventListener("click", () => this.hideSearchBox());
+		const searchStatusDiv = document.createElement("div");
+		searchStatusDiv.id = "search-status";
+		searchStatusDiv.innerText = "-";
+
+		const searchFlex = document.createElement("div");
+		searchFlex.classList = [ "flex" ];
+		searchFlex.append(searchDivInput, ltButton, gtButton, hideButton, searchStatusDiv);
+
+		this.searchDialogDiv.appendChild(searchFlex);
+
+		this.searchStatusDiv = searchStatusDiv;
+		this.searchDivInput = searchDivInput;
+		this.currentSearchPage = 1;
+
+		// TODO use rootDiv instead
+		let zoomTimer = null;
+		pagesDiv.addEventListener("wheel", (event) => {
+			if (event.ctrlKey || event.metaKey) {
+				event.preventDefault();
+				if (zoomTimer)
+					return;
+				zoomTimer = setTimeout(function () { zoomTimer = null; }, 250);
+				if (event.deltaY < 0)
+					this.zoomIn();
+				else if (event.deltaY > 0)
+					this.zoomOut();
+			}
+		}, {passive: false});
+
+
+		//this.rootDiv = rootDiv;
+		this.pagesDiv = pagesDiv; // TODO - rename
+		this.pages = pages;
+
+		// TODO - remove await
+		let outline = await mupdfWorker.documentOutline();
+		let outlineNode = document.getElementById("outline");
+		this.outlineNode = outlineNode;
+		if (outline) {
+			this._buildOutline(outlineNode, outline);
+			this.showOutline();
+		} else {
+			this.hideOutline();
+		}
+
+		this._updateView();
+	}
+
+	// TODO - This destroys page elements - figure out correctness?
+	// TODO - remove pagesDiv arg
+	static showDocumentError(functionName, error, pagesDiv) {
+		// TODO - this.clear() ?
+		console.error(`mupdf.${functionName}: ${error.message}:\n${error.stack}`);
+		let errorDiv = document.createElement("div");
+		errorDiv.classList.add("error");
+		errorDiv.textContent = error.name + ": " + error.message;
+		pagesDiv.replaceChildren(errorDiv);
+	}
+
+	_updateView() {
+		const dpi = this._dpi();
+		for (let i = 0; i < this.pages.length; ++i) {
+			if (this._isPageVisibleOrClose(this.pages[i])) {
+				this.pages[i].render(dpi, this.searchNeedle);
+			}
+		}
+	}
+
+	_isPageVisibleOrClose(pageNumber) {
+		// FIXME
+		return true;
+	}
+
+	_dpi() {
+		return (this.zoomLevel * 96 / 100) | 0;
+	}
+
+
+	zoomIn() {
+		// TODO - instead find next larger zoom
+		let curr = zoomLevels.indexOf(this.zoomLevel);
+		let next = zoomLevels[curr + 1];
+		if (next)
+			this.setZoom(next);
+	}
+
+	zoomOut() {
+		let curr = zoomLevels.indexOf(this.zoomLevel);
+		let next = zoomLevels[curr - 1];
+		if (next)
+			this.setZoom(next);
+	}
+
+	async setZoom(newZoom) {
+		if (this.zoomLevel === newZoom)
+			return;
+		this.zoomLevel = newZoom;
+
+		this._updateView();
+	}
+
+
+	clearSearch() {
+		// TODO
+	}
+
+	setSearch(newNeedle) {
+		this.searchStatusDiv.textContent = "";
+		if (this.searchNeedle !== newNeedle) {
+			this.searchNeedle = newNeedle;
+			this._updateView();
+		}
+	}
+
+	showSearchBox() {
+		// TODO - Fix what happens when you re-open search with existing text
+		this.searchDialogDiv.style.display = "flex";
+		this.searchDivInput.focus();
+		this.searchDivInput.select();
+		this._updateView();
+	}
+
+	hideSearchBox() {
+		this.searchStatusDiv.textContent = "";
+		this.searchDialogDiv.style.display = "none";
+		this.searchNeedle = "";
+		this._updateView();
+	}
+
+	async runSearch(direction) {
+		let searchStatus = document.getElementById("search-status");
+		let searchNeedle = this.searchNeedle;
+
+		try {
+			let page = this.currentSearchPage + direction;
+			while (page >= 1 && page < this.pageCount) {
+				// We run the check once per loop iteration,
+				// in case the search was cancel during the 'await' below.
+				if (searchNeedle === "") {
+					searchStatus.textContent = "";
+					return;
+				}
+
+				searchStatus.textContent = `Searching page ${page}.`;
+
+				await this.pages[page]._loadPageSearch(this._dpi(), searchNeedle);
+				const hits = this.pages[page].searchResultObject ?? [];
+				if (hits.length > 0) {
+					this.pages[page].rootNode.scrollIntoView();
+					this.currentSearchPage = page;
+					searchStatus.textContent = `${hits.length} hits on page ${page}.`;
+					return;
+				}
+
+				page += direction;
+			}
+
+			// TODO remove log
+			searchStatus.textContent = "No more search hits.";
+		}
+		catch (error) {
+			console.error(`mupdf.runSearch: ${error.message}:\n${error.stack}`);
+		}
+	}
+
+	cancelSearch() {
+		// TODO
+	}
+
+	showOutline() {
+		this.gridSidebarDiv.style.display = "block";
+		this.gridPagesDiv.classList.replace("sidebarHidden", "sidebarVisible");
+	}
+
+	hideOutline() {
+		this.gridSidebarDiv.style.display = "none";
+		this.gridPagesDiv.classList.replace("sidebarVisible", "sidebarHidden");
+	}
+
+	toggleOutline() {
+		let node = this.gridSidebarDiv;
+		if (node.style.display === "none" || node.style.display === "")
+			this.showOutline();
+		else
+			this.hideOutline();
+	}
+
+	_buildOutline(listNode, outline) {
+		for (let item of outline) {
+			let itemNode = document.createElement("li");
+			let aNode = document.createElement("a");
+			// TODO - document the "+ 1" better
+			aNode.href = `#page${item.page + 1}`;
+			aNode.textContent = item.title;
+			itemNode.appendChild(aNode);
+			listNode.appendChild(itemNode);
+			if (item.down) {
+				itemNode = document.createElement("ul");
+				this._buildOutline(itemNode, item.down);
+				listNode.appendChild(itemNode);
+			}
+		}
+	}
+
+	clear() {
+		for (let page of this.pages ?? []) {
+			page.clear();
+		}
+		this.pagesDiv.replaceChildren();
+		this.outlineNode.replaceChildren();
+		this.searchDialogDiv.replaceChildren();
+		this.cancelSearch();
 	}
 }
