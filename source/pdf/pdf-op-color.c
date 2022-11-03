@@ -1257,7 +1257,7 @@ pdf_color_SC_color(fz_context *ctx, pdf_processor *proc, int n, float *color)
 	pdf_obj *cs_obj = p->gstate->cs_stroke;
 
 	memcpy(local_color, color, sizeof(float) * n);
-	rewrite_cs(ctx, p, cs_obj, n, local_color, 0);
+	rewrite_cs(ctx, p, cs_obj, n, local_color, 1);
 }
 
 static void
