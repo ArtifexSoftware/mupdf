@@ -27,17 +27,19 @@ class MupdfPageViewer {
 		this.worker = worker;
 		this.pageNumber = pageNumber;
 
-		const root = document.createElement("div");
-		root.classList.add("page");
-		root.style.width = (defaultSize.w * dpi / 72) + "px";
-		root.style.height = (defaultSize.h * dpi / 72) + "px";
+		const rootNode = document.createElement("div");
+		rootNode.classList.add("page");
+		rootNode.style.width = (defaultSize.w * dpi / 72) + "px";
+		rootNode.style.height = (defaultSize.h * dpi / 72) + "px";
 
 		const anchor = document.createElement("a");
 		anchor.classList.add("anchor");
-		anchor.id = "page" + pageNumber;
-		root.appendChild(anchor);
+		// TODO - document the "+ 1" better
+		anchor.id = "page" + (pageNumber + 1);
+		rootNode.appendChild(anchor);
+		rootNode.pageNumber = pageNumber;
 
-		this.rootNode = root;
+		this.rootNode = rootNode;
 		this.size = defaultSize;
 
 		this.imgNode = null;
@@ -173,7 +175,8 @@ class MupdfPageViewer {
 
 		try {
 			this.renderCookie = await this.worker.createCookie();
-			this.renderPromise = this.worker.drawPageAsPNG(this.pageNumber, dpi * devicePixelRatio, this.renderCookie);
+			// TODO - remove "+ 1"
+			this.renderPromise = this.worker.drawPageAsPNG(this.pageNumber + 1, dpi * devicePixelRatio, this.renderCookie);
 			let pngData = await this.renderPromise;
 
 			// if render was aborted, return early
@@ -223,7 +226,8 @@ class MupdfPageViewer {
 		this.rootNode.appendChild(textNode);
 
 		try {
-			this.textPromise = this.worker.getPageText(this.pageNumber);
+			// TODO - remove "+ 1"
+			this.textPromise = this.worker.getPageText(this.pageNumber + 1);
 
 			this.textResultObject = await this.textPromise;
 			this._applyPageText(this.textResultObject, dpi);
@@ -294,7 +298,8 @@ class MupdfPageViewer {
 		this.rootNode.appendChild(linksNode);
 
 		try {
-			this.linksPromise = this.worker.getPageLinks(this.pageNumber);
+			// TODO - remove "+ 1"
+			this.linksPromise = this.worker.getPageLinks(this.pageNumber + 1);
 
 			this.linksResultObject = await this.linksPromise;
 			this._applyPageLinks(this.linksResultObject, dpi);
@@ -345,8 +350,9 @@ class MupdfPageViewer {
 
 		try {
 			if (this.searchNeedle !== "") {
-				console.log("SEARCH", this.pageNumber, JSON.stringify(this.searchNeedle));
-				this.searchPromise = this.worker.search(this.pageNumber, this.searchNeedle);
+				// TODO - remove "+ 1"
+				console.log("SEARCH", this.pageNumber + 1, JSON.stringify(this.searchNeedle));
+				this.searchPromise = this.worker.search(this.pageNumber + 1, this.searchNeedle);
 				this.searchResultObject = await this.searchPromise;
 			}
 			else {
@@ -408,6 +414,27 @@ class MupdfDocumentViewer {
 
 		this.zoomLevel = 100;
 
+		this.activePages = new Set();
+		this.pageObserver = new IntersectionObserver(entries => {
+			for (const entry of entries) {
+				if (entry.isIntersecting) {
+					this.activePages.add(entry.target);
+				} else {
+					this.activePages.delete(entry.target);
+				}
+			}
+			// TODO - Stagger updates to avoid rendering pages that are
+			// immediately skipped
+			this._updateView();
+		}, {
+			// This means we have roughly five viewports of vertical "head start" where
+			// the page is rendered before it becomes visible
+			// See
+			rootMargin: "500% 0px",
+		});
+
+		// TODO - Add a second observer with bigger margin to recycle old pages
+
 		//document.title = title ?? docName;
 		//console.log("mupdf: Loaded", JSON.stringify(url), "with", pageCount, "pages.");
 
@@ -424,10 +451,10 @@ class MupdfDocumentViewer {
 
 		let pages = new Array(pageCount);
 		for (let i = 0; i < pageCount; ++i) {
-			// TODO - remove 'i + 1'
-			const page = new MupdfPageViewer(mupdfWorker, i + 1, { w: defaultW, h: defaultH }, this._dpi());
+			const page = new MupdfPageViewer(mupdfWorker, i, { w: defaultW, h: defaultH }, this._dpi());
 			pages[i] = page;
 			pagesDiv.appendChild(page.rootNode);
+			this.pageObserver.observe(page.rootNode);
 		}
 
 		const searchDivInput = document.createElement("input");
@@ -512,18 +539,12 @@ class MupdfDocumentViewer {
 
 	_updateView() {
 		const dpi = this._dpi();
-		for (let i = 0; i < this.pages.length; ++i) {
-			if (this._isPageVisibleOrClose(this.pages[i])) {
-				this.pages[i].render(dpi, this.searchNeedle);
-			}
+		for (const page of this.activePages) {
+			this.pages[page.pageNumber].render(dpi, this.searchNeedle);
 		}
 	}
 
-	_isPageVisibleOrClose(pageNumber) {
-		// FIXME
-		return true;
-	}
-
+	// TODO - remove?
 	_dpi() {
 		return (this.zoomLevel * 96 / 100) | 0;
 	}
@@ -656,6 +677,7 @@ class MupdfDocumentViewer {
 	}
 
 	clear() {
+		this.pageObserver.disconnect();
 		for (let page of this.pages ?? []) {
 			page.clear();
 		}
