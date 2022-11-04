@@ -135,14 +135,9 @@ workerMethods.countPages = function() {
 // TODO - use hungarian notation for coord spaces
 // TODO - document the "- 1" better
 // TODO - keep page loaded?
-workerMethods.getPageWidth = function (pageNumber) {
+workerMethods.getPageSize = function (pageNumber) {
 	let page = openDocument.loadPage(pageNumber - 1);
-	return page.width();
-};
-
-workerMethods.getPageHeight = function (pageNumber) {
-	let page = openDocument.loadPage(pageNumber - 1);
-	return page.height();
+	return { width: page.width(), height: page.height() };
 };
 
 workerMethods.getPageLinks = function(pageNumber) {

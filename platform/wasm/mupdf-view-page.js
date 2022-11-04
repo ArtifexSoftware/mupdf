@@ -26,11 +26,11 @@ class MupdfPageViewer {
 	constructor(worker, pageNumber, defaultSize, dpi) {
 		this.worker = worker;
 		this.pageNumber = pageNumber;
+		this.size = defaultSize;
+		this.sizeIsDefault = true;
 
 		const rootNode = document.createElement("div");
 		rootNode.classList.add("page");
-		rootNode.style.width = (defaultSize.w * dpi / 72) + "px";
-		rootNode.style.height = (defaultSize.h * dpi / 72) + "px";
 
 		const anchor = document.createElement("a");
 		anchor.classList.add("anchor");
@@ -40,7 +40,7 @@ class MupdfPageViewer {
 		rootNode.pageNumber = pageNumber;
 
 		this.rootNode = rootNode;
-		this.size = defaultSize;
+		this._updateSize(dpi);
 
 		this.imgNode = null;
 		this.renderPromise = null;
@@ -80,13 +80,11 @@ class MupdfPageViewer {
 		}
 	}
 
-	// TODO - render on zoom
 	// TODO - update child nodes
-	async setZoom(zoomLevel) {
+	setZoom(zoomLevel) {
 		const dpi = (zoomLevel * 96 / 100) | 0;
 
-		this.rootNode.style.width = (this.size.w * dpi / 72) + "px";
-		this.rootNode.style.height = (this.size.h * dpi / 72) + "px";
+		this._updateSize(dpi);
 	}
 
 	setSearchNeedle(searchNeedle = null) {
@@ -140,8 +138,18 @@ class MupdfPageViewer {
 
 	// --- INTERNAL METHODS ---
 
+	// TODO - remove dpi param
+	_updateSize(dpi) {
+		this.rootNode.style.width = (this.size.width * dpi / 72) + "px";
+		this.rootNode.style.height = (this.size.height * dpi / 72) + "px";
+		if (this.imgNode) {
+			this.imgNode.style.width = (this.size.width * dpi / 72) + "px";
+			this.imgNode.style.height = (this.size.height * dpi / 72) + "px";
+		}
+	}
+
 	async _loadPageImg(renderArgs) {
-		if (this.renderPromise != null) {
+		if (this.renderPromise != null || this.renderIsOngoing) {
 			// If a render is ongoing, we mark the current arguments as queued
 			// to be processed when the render ends.
 			// This also erases any previous queued render arguments.
@@ -156,24 +164,29 @@ class MupdfPageViewer {
 		}
 
 		let { dpi } = renderArgs;
-		let rootNode = this.rootNode;
 
 		let imgNode = new Image();
 		imgNode.draggable = false;
 		// user-select:none disables image.draggable, and we want
 		// to keep pointer-events for the link image-map
-		imgNode.ondragstart = function () { return false; };
-		imgNode.onload = function () {
-			URL.revokeObjectURL(this.src);
-			// TODO - size should not depend on returned image
-			rootNode.style.width = (this.width / devicePixelRatio) + "px";
-			rootNode.style.height = (this.height / devicePixelRatio) + "px";
-			imgNode.style.width = rootNode.style.width;
-			imgNode.style.height = rootNode.style.height;
+		imgNode.ondragstart = () => { return false; };
+		imgNode.onload = () => {
+			URL.revokeObjectURL(imgNode.src);
+			// TODO - there might be a TOCTOU problem with the check above,
+			// which leads to an extraneous render
 			imgNode.renderArgs = renderArgs;
 		};
 
 		try {
+			// FIXME - find better system for skipping duplicate renders
+			this.renderIsOngoing = true;
+
+			if (this.sizeIsDefault) {
+				// TODO - remove "+ 1"
+				this.size = await this.worker.getPageSize(this.pageNumber + 1);
+				this.sizeIsDefault = false;
+				this._updateSize(dpi);
+			}
 			this.renderCookie = await this.worker.createCookie();
 			// TODO - remove "+ 1"
 			this.renderPromise = this.worker.drawPageAsPNG(this.pageNumber + 1, dpi * devicePixelRatio, this.renderCookie);
@@ -196,6 +209,7 @@ class MupdfPageViewer {
 			this.worker.deleteCookie(this.renderCookie);
 			this.renderCookie = null;
 			this.renderPromise = null;
+			this.renderIsOngoing = false;
 		}
 
 		if (this.queuedRenderArgs != null) {
@@ -402,14 +416,12 @@ class MupdfDocumentViewer {
 		const title = await mupdfWorker.documentTitle();
 
 		// Use second page as default page size (the cover page is often differently sized)
-		const defaultW = await mupdfWorker.getPageWidth(pageCount > 1 ? 2 : 1);
-		const defaultH = await mupdfWorker.getPageHeight(pageCount > 1 ? 2 : 1);
+		const defaultSize = await mupdfWorker.getPageSize(pageCount > 1 ? 2 : 1);
 
 		this.mupdfWorker = mupdfWorker;
 		this.pageCount = pageCount;
 		this.title = title;
-		this.defaultW = defaultW;
-		this.defaultH = defaultH;
+		this.defaultSize = defaultSize;
 		this.searchNeedle = "";
 
 		this.zoomLevel = 100;
@@ -451,7 +463,7 @@ class MupdfDocumentViewer {
 
 		let pages = new Array(pageCount);
 		for (let i = 0; i < pageCount; ++i) {
-			const page = new MupdfPageViewer(mupdfWorker, i, { w: defaultW, h: defaultH }, this._dpi());
+			const page = new MupdfPageViewer(mupdfWorker, i, defaultSize, this._dpi());
 			pages[i] = page;
 			pagesDiv.appendChild(page.rootNode);
 			this.pageObserver.observe(page.rootNode);
@@ -570,6 +582,9 @@ class MupdfDocumentViewer {
 			return;
 		this.zoomLevel = newZoom;
 
+		for (const page of this.pages) {
+			page.setZoom(newZoom);
+		}
 		this._updateView();
 	}
 
