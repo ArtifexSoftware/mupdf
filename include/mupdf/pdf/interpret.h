@@ -308,8 +308,11 @@ typedef struct
 pdf_sanitize_filter_options;
 
 /*
-	A sanitize filter factory. The changes made by a filter
-	generated from this are:
+	A sanitize filter factory.
+
+	sopts = pointer to pdf_sanitize_filter_options.
+
+	The changes made by a filter generated from this are:
 
 	* No operations are allowed to change the top level gstate.
 	Additional q/Q operators are inserted to prevent this.
@@ -328,7 +331,7 @@ pdf_sanitize_filter_options;
 	The net graphical effect of the filtered operator stream
 	should be identical to the incoming operator stream.
 */
-pdf_processor *pdf_new_sanitize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, pdf_sanitize_filter_options *sopts);
+pdf_processor *pdf_new_sanitize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *sopts);
 
 pdf_obj *pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_res, fz_matrix ctm, pdf_filter_options *options, pdf_cycle_list *cycle_up);
 
@@ -376,7 +379,7 @@ typedef struct
 } pdf_color_filter_options;
 
 pdf_processor *
-pdf_new_color_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, pdf_color_filter_options *copts);
+pdf_new_color_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *copts);
 
 /*
 	Functions to actually process annotations, glyphs and general stream objects.

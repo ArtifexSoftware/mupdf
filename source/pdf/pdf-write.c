@@ -3038,7 +3038,7 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 	options.recurse = 1;
 	options.ascii = ascii;
 	options.filters = sanitize ? list : NULL;
-	list[0].filter = (pdf_filter_factory_fn *)pdf_new_sanitize_filter;
+	list[0].filter = pdf_new_sanitize_filter;
 	list[0].options = &sopts;
 
 	for (i = 0; i < n; i++)

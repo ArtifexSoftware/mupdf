@@ -2471,9 +2471,10 @@ pdf_new_sanitize_filter(
 	int structparents,
 	fz_matrix transform,
 	pdf_filter_options *options,
-	pdf_sanitize_filter_options *sopts)
+	void *sopts_)
 {
 	pdf_sanitize_processor *proc = pdf_new_processor(ctx, sizeof *proc);
+	pdf_sanitize_filter_options *sopts = (pdf_sanitize_filter_options *)sopts_;
 
 	proc->super.close_processor = pdf_close_sanitize_processor;
 	proc->super.drop_processor = pdf_drop_sanitize_processor;

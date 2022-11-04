@@ -1628,9 +1628,10 @@ pdf_new_color_filter(
 	int struct_parents,
 	fz_matrix transform,
 	pdf_filter_options *global_options,
-	pdf_color_filter_options *options)
+	void *options_)
 {
 	pdf_color_processor *proc = pdf_new_processor(ctx, sizeof * proc);
+	pdf_color_filter_options *options = (pdf_color_filter_options *)options_;
 
 	proc->super.close_processor = pdf_close_color_processor;
 	proc->super.drop_processor = pdf_drop_color_processor;
