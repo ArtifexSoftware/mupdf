@@ -884,6 +884,8 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 
 	fz_var(rewritten);
 
+	rd.funcs = 0;
+
 	fz_try(ctx)
 	{
 		rd.recolor = reshade(ctx, opaque, src_cs, &rd.dst_cs);
@@ -892,7 +894,6 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 
 		rd.src_cs = src_cs;
 		rd.opaque = opaque;
-		rd.funcs = 0;
 
 		rewritten = pdf_deep_copy_obj(ctx, shade);
 
