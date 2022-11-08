@@ -741,6 +741,27 @@ static const char *string_from_join(fz_linejoin join)
 
 #if FZ_ENABLE_PDF
 
+static const char *string_from_border_style(enum pdf_border_style style)
+{
+	switch (style) {
+	default:
+	case PDF_BORDER_STYLE_SOLID: return "Solid";
+	case PDF_BORDER_STYLE_DASHED: return "Dashed";
+	case PDF_BORDER_STYLE_BEVELED: return "Beveled";
+	case PDF_BORDER_STYLE_INSET: return "Inset";
+	case PDF_BORDER_STYLE_UNDERLINE: return "Underline";
+	}
+}
+
+static const char *string_from_border_effect(enum pdf_border_effect effect)
+{
+	switch (effect) {
+	default:
+	case PDF_BORDER_EFFECT_NONE: return "None";
+	case PDF_BORDER_EFFECT_CLOUDY: return "Cloudy";
+	}
+}
+
 static const char *string_from_line_ending(enum pdf_line_ending style)
 {
 	switch (style) {
@@ -792,6 +813,23 @@ static fz_linejoin join_from_string(const char *str)
 }
 
 #ifdef FZ_ENABLE_PDF
+
+static enum pdf_border_style border_style_from_string(const char *str)
+{
+	if (!strcmp(str, "Solid")) return PDF_BORDER_STYLE_SOLID;
+	if (!strcmp(str, "Dashed")) return PDF_BORDER_STYLE_DASHED;
+	if (!strcmp(str, "Beveled")) return PDF_BORDER_STYLE_INSET;
+	if (!strcmp(str, "Inset")) return PDF_BORDER_STYLE_INSET;
+	if (!strcmp(str, "Underline")) return PDF_BORDER_STYLE_UNDERLINE;
+	return PDF_BORDER_STYLE_SOLID;
+}
+
+static enum pdf_border_effect border_effect_from_string(const char *str)
+{
+	if (!strcmp(str, "None")) return PDF_BORDER_EFFECT_NONE;
+	if (!strcmp(str, "Cloudy")) return PDF_BORDER_EFFECT_CLOUDY;
+	return PDF_BORDER_EFFECT_NONE;
+}
 
 static enum pdf_line_ending line_ending_from_string(const char *str)
 {
@@ -7249,6 +7287,194 @@ static void ffi_PDFAnnotation_setLineEndingStyles(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_hasBorder(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_border(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
+static void ffi_PDFAnnotation_getBorderWidth(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float width;
+	fz_try(ctx)
+		width = pdf_annot_border_width(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, width);
+}
+
+static void ffi_PDFAnnotation_setBorderWidth(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float width = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_border_width(ctx, annot, width);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getBorderStyle(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	enum pdf_border_style style;
+	fz_try(ctx)
+		style = pdf_annot_border_style(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, string_from_border_style(style));
+}
+
+static void ffi_PDFAnnotation_setBorderStyle(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *str = js_iscoercible(J, 1) ? js_tostring(J, 1) : "Solid";
+	enum pdf_border_style style = border_style_from_string(str);
+	fz_try(ctx)
+		pdf_set_annot_border_style(ctx, annot, style);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getBorderDashCount(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int count;
+	fz_try(ctx)
+		count = pdf_annot_border_dash_count(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, count);
+}
+
+static void ffi_PDFAnnotation_getBorderDashItem(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int i = js_tointeger(J, 1);
+	float length;
+	fz_try(ctx)
+		length = pdf_annot_border_dash_item(ctx, annot, i);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, length);
+}
+
+static void ffi_PDFAnnotation_clearBorderDash(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_clear_annot_border_dash(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_addBorderDashItem(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float length = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_add_annot_border_dash_item(ctx, annot, length);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_setBorderDashPattern(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int i, n = js_getlength(J, 1);
+	float length;
+
+	fz_try(ctx)
+		pdf_clear_annot_border_dash(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	for (i = 0; i < n; ++i)
+	{
+		js_getindex(J, 1, i);
+		length = js_tonumber(J, -1);
+		js_pop(J, 1);
+		fz_try(ctx)
+			pdf_add_annot_border_dash_item(ctx, annot, length);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_PDFAnnotation_hasBorderEffect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_border_effect(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
+static void ffi_PDFAnnotation_getBorderEffect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	enum pdf_border_effect effect;
+	fz_try(ctx)
+		effect = pdf_annot_border_effect(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, string_from_border_effect(effect));
+}
+
+static void ffi_PDFAnnotation_setBorderEffect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *str = js_iscoercible(J, 1) ? js_tostring(J, 1) : "None";
+	enum pdf_border_effect effect = border_effect_from_string(str);
+	fz_try(ctx)
+		pdf_set_annot_border_effect(ctx, annot, effect);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getBorderEffectIntensity(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float intensity;
+	fz_try(ctx)
+		intensity = pdf_annot_border_effect_intensity(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, intensity);
+}
+
+static void ffi_PDFAnnotation_setBorderEffectIntensity(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	float intensity = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_border_effect_intensity(ctx, annot, intensity);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_hasIcon(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -8598,6 +8824,21 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.hasLineEndingStyles", ffi_PDFAnnotation_hasLineEndingStyles, 0);
 		jsB_propfun(J, "PDFAnnotation.getLineEndingStyles", ffi_PDFAnnotation_getLineEndingStyles, 0);
 		jsB_propfun(J, "PDFAnnotation.setLineEndingStyles", ffi_PDFAnnotation_setLineEndingStyles, 2);
+		jsB_propfun(J, "PDFAnnotation.hasBorder", ffi_PDFAnnotation_hasBorder, 0);
+		jsB_propfun(J, "PDFAnnotation.getBorderStyle", ffi_PDFAnnotation_getBorderStyle, 0);
+		jsB_propfun(J, "PDFAnnotation.setBorderStyle", ffi_PDFAnnotation_setBorderStyle, 1);
+		jsB_propfun(J, "PDFAnnotation.getBorderWidth", ffi_PDFAnnotation_getBorderWidth, 0);
+		jsB_propfun(J, "PDFAnnotation.setBorderWidth", ffi_PDFAnnotation_setBorderWidth, 1);
+		jsB_propfun(J, "PDFAnnotation.getBorderDashCount", ffi_PDFAnnotation_getBorderDashCount, 0);
+		jsB_propfun(J, "PDFAnnotation.getBorderDashItem", ffi_PDFAnnotation_getBorderDashItem, 1);
+		jsB_propfun(J, "PDFAnnotation.setBorderDashPattern", ffi_PDFAnnotation_setBorderDashPattern, 1);
+		jsB_propfun(J, "PDFAnnotation.clearBorderDash", ffi_PDFAnnotation_clearBorderDash, 0);
+		jsB_propfun(J, "PDFAnnotation.addBorderDashItem", ffi_PDFAnnotation_addBorderDashItem, 1);
+		jsB_propfun(J, "PDFAnnotation.hasBorderEffect", ffi_PDFAnnotation_hasBorderEffect, 0);
+		jsB_propfun(J, "PDFAnnotation.getBorderEffect", ffi_PDFAnnotation_getBorderEffect, 0);
+		jsB_propfun(J, "PDFAnnotation.setBorderEffect", ffi_PDFAnnotation_setBorderEffect, 1);
+		jsB_propfun(J, "PDFAnnotation.getBorderEffectIntensity", ffi_PDFAnnotation_getBorderEffectIntensity, 0);
+		jsB_propfun(J, "PDFAnnotation.setBorderEffectIntensity", ffi_PDFAnnotation_setBorderEffectIntensity, 1);
 		jsB_propfun(J, "PDFAnnotation.hasIcon", ffi_PDFAnnotation_hasIcon, 0);
 		jsB_propfun(J, "PDFAnnotation.getIcon", ffi_PDFAnnotation_getIcon, 0);
 		jsB_propfun(J, "PDFAnnotation.setIcon", ffi_PDFAnnotation_setIcon, 1);
