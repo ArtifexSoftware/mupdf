@@ -698,6 +698,10 @@ class Annotation extends Wrapper {
 		return libmupdf._wasm_pdf_set_annot_flags(this.pointer, flags);
 	}
 
+	hasRect() {
+		return libmupdf._wasm_pdf_annot_has_rect(this.pointer) !== 0;
+	}
+
 	rect() {
 		return Rect.fromFloatRectPtr(libmupdf._wasm_pdf_annot_rect(this.pointer));
 	}

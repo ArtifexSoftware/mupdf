@@ -434,7 +434,9 @@ function findAnnotationAtPos(pdfPage, x, y) {
 		const annotation = annotations[i];
 		const bbox = annotation.bound();
 		if (x >= bbox.x0 && x <= bbox.x1 && y >= bbox.y0 && y <= bbox.y1) {
-			return annotation;
+			// TODO - remove this if
+			if (annotation.hasRect())
+				return annotation;
 		}
 	}
 	return null;
@@ -493,14 +495,14 @@ class SelectAnnot {
 
 	drawOnPage(pixmap, dpi) {
 		if (this.hovered != null) {
-			let rect = this.hovered.rect();
+			let rect = this.hovered.bound();
 			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y0 * dpi / 72);
 			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y1 * dpi / 72);
 			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y0 * dpi / 72);
 			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y1 * dpi / 72);
 		}
 		if (currentSelection != null) {
-			let rect = currentSelection.annotation.rect();
+			let rect = currentSelection.annotation.bound();
 			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y0 * dpi / 72);
 			pixmap.drawGrabHandle(rect.x0 * dpi / 72, rect.y1 * dpi / 72);
 			pixmap.drawGrabHandle(rect.x1 * dpi / 72, rect.y0 * dpi / 72);

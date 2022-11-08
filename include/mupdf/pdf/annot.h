@@ -350,6 +350,11 @@ void pdf_set_annot_popup(fz_context *ctx, pdf_annot *annot, fz_rect rect);
 fz_rect pdf_annot_popup(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Check to see if an annotation has a rect.
+*/
+int pdf_annot_has_rect(fz_context *ctx, pdf_annot *annot);
+
+/*
 	Check to see if an annotation has an ink list.
 */
 int pdf_annot_has_ink_list(fz_context *ctx, pdf_annot *annot);

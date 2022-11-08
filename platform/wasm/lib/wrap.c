@@ -1124,6 +1124,13 @@ void wasm_pdf_set_annot_flags(pdf_annot *annot, int flags)
 }
 
 EMSCRIPTEN_KEEPALIVE
+int wasm_pdf_annot_has_rect(pdf_annot *annot)
+{
+	// never throws
+	return pdf_annot_has_rect(ctx, annot);
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_rect* wasm_pdf_annot_rect(pdf_annot *annot)
 {
 	// never throws

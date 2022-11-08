@@ -356,7 +356,7 @@ function freeDocument() {
 
 async function initDocument(docName) {
 	documentViewer = new MupdfDocumentViewer();
-	await documentViewer.initDocument(mupdfView, docName);
+	await documentViewer.initDocument(mupdfView, docName, editorMode);
 
 	document.getElementById("pages").appendChild(documentViewer.pagesDiv);
 
@@ -376,56 +376,6 @@ function cancelRender(pageNumber) {
 	pages[pageNumber]?.cancelRender();
 }
 
-// TODO - fix dirty/update code
-async function mouseDown(pageNumber, img, event) {
-	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
-	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
-	let changed = await mupdfView.mouseDownOnPage(pageNumber, dpi * devicePixelRatio, x, y);
-	isPressed[pageNumber] = true;
-	if (changed) {
-		dirty[pageNumber] = true;
-		setTimeout(() => updateView(), 0);
-	}
-};
-
-// TODO refactor mouse-grabbing to handle special cases.
-// https://pastebin.com/raw/4iVw1pCp
-async function mouseMove(pageNumber, img, event) {
-	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
-	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
-	let changed;
-	// TODO - handle multiple buttons
-	// see https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
-	if (isPressed[pageNumber]) {
-		if (event.buttons == 0) {
-			// In case we missed an onmouseup event outside of the frame
-			isPressed[pageNumber] = false;
-			changed = await mupdfView.mouseUpOnPage(pageNumber, dpi * devicePixelRatio, x, y);
-		}
-		else {
-			changed = await mupdfView.mouseDragOnPage(pageNumber, dpi * devicePixelRatio, x, y);
-		}
-	}
-	else {
-		changed = await mupdfView.mouseMoveOnPage(pageNumber, dpi * devicePixelRatio, x, y);
-	}
-	if (changed) {
-		dirty[pageNumber] = true;
-		setTimeout(() => updateView(), 0);
-	}
-};
-
-async function mouseUp(pageNumber, img, event) {
-	let x = event.clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
-	let y = event.clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
-	isPressed[pageNumber] = false;
-	let changed = await mupdfView.mouseUpOnPage(pageNumber, dpi * devicePixelRatio, x, y);
-	if (changed) {
-		dirty[pageNumber] = true;
-		setTimeout(() => updateView(), 0);
-	}
-};
-
 async function deleteItem() {
 	// TODO - decide which page is selected in the front end
 	// eg await mupdfView.deleteItem(lastClickedPage);
@@ -434,18 +384,6 @@ async function deleteItem() {
 	//dirty[dirtyPageNumber] = true;
 	updateView();
 }
-
-
-/* Wait 50ms until scrolling has stopped before sending off page draw requests */
-let scrollTimer = null;
-document.addEventListener("scroll", function (event) {
-	if (scrollTimer !== null)
-		clearTimeout(scrollTimer);
-	scrollTimer = setTimeout(function () {
-		scrollTimer = null;
-		updateView();
-	}, 50);
-})
 
 window.addEventListener("keydown", function (event) {
 	if (editorMode) {

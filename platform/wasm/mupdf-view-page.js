@@ -123,6 +123,8 @@ class MupdfPageViewer {
 		this.searchResultObject = null;
 		this.lastSearchNeedle = null;
 		this.searchNeedle = null;
+
+		this.mouseIsPressed = false;
 	}
 
 	// TODO - this is destructive and makes other method get null ref errors
@@ -134,6 +136,61 @@ class MupdfPageViewer {
 		div.textContent = error.name + ": " + error.message;
 		this.clear();
 		this.rootNode.replaceChildren(div);
+	}
+
+	async mouseDown(event, dpi) {
+		if (!this.imgNode)
+			return;
+		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
+		// TODO - remove "+ 1"
+		let changed = await this.worker.mouseDownOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
+		this.mouseIsPressed = true;
+		if (changed) {
+			this._invalidatePageImg();
+			this._loadPageImg({ dpi });
+		}
+	}
+
+	async mouseMove(event, dpi) {
+		if (!this.imgNode)
+			return;
+		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
+		let changed;
+		// TODO - handle multiple buttons
+		// see https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
+		if (this.mouseIsPressed) {
+			if (event.buttons == 0) {
+				// In case we missed an onmouseup event outside of the frame
+				this.mouseIsPressed = false;
+				// TODO - remove "+ 1"
+				changed = await this.worker.mouseUpOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
+			}
+			else {
+				// TODO - remove "+ 1"
+				changed = await this.worker.mouseDragOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
+			}
+		}
+		else {
+			// TODO - remove "+ 1"
+			changed = await this.worker.mouseMoveOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
+		}
+		if (changed) {
+			this._invalidatePageImg();
+			this._loadPageImg({ dpi });
+		}
+	}
+
+	async mouseUp(event, dpi) {
+		if (!this.imgNode)
+			return;
+		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
+		this.mouseIsPressed = false;
+		// TODO - remove "+ 1"
+		let changed = await this.worker.mouseUpOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
+		if (changed) {
+			this._invalidatePageImg();
+			this._loadPageImg({ dpi });
+		}
 	}
 
 	// --- INTERNAL METHODS ---
@@ -217,6 +274,11 @@ class MupdfPageViewer {
 			this._loadPageImg(this.queuedRenderArgs);
 			this.queuedRenderArgs = null;
 		}
+	}
+
+	_invalidatePageImg() {
+		if (this.imgNode)
+			this.imgNode.renderArgs = null;
 	}
 
 	// TODO - replace "dpi" with "scale"?
@@ -398,6 +460,13 @@ class MupdfPageViewer {
 			this.searchHitsNode.appendChild(div);
 		}
 	}
+
+	_getLocalCoords(clientX, clientY) {
+		const img = this.imgNode;
+		let x = clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
+		let y = clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
+		return { x, y };
+	}
 }
 
 let zoomLevels = [ 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200 ];
@@ -409,7 +478,7 @@ class MupdfDocumentViewer {
 	}
 
 	// TODO - Rename
-	async initDocument(mupdfWorker, docName) {
+	async initDocument(mupdfWorker, docName, editorMode) {
 		// TODO validate worker param
 
 		const pageCount = await mupdfWorker.countPages();
@@ -425,6 +494,8 @@ class MupdfDocumentViewer {
 		this.searchNeedle = "";
 
 		this.zoomLevel = 100;
+
+		this.editorMode = editorMode;
 
 		this.activePages = new Set();
 		this.pageObserver = new IntersectionObserver(entries => {
@@ -469,6 +540,36 @@ class MupdfDocumentViewer {
 			this.pageObserver.observe(page.rootNode);
 		}
 
+		function isPage(element) {
+			return element.tagName === "IMG" && element.closest("div.page") != null;
+		}
+
+		if (this.editorMode) {
+			// TODO - use pointer events, pointercancel and setPointerCapture
+			pagesDiv.onmousedown = (event) => {
+				if (!isPage(event.target))
+					return;
+
+				const pageNumber = event.target.closest("div.page").pageNumber;
+				pages[pageNumber].mouseDown(event, this._dpi());
+				// TODO - remove "+ 1"
+				this.currentSearchPage = pageNumber + 1;
+			};
+			pagesDiv.onmousemove = (event) => {
+				if (!isPage(event.target))
+					return;
+
+				const pageNumber = event.target.closest("div.page").pageNumber;
+				pages[pageNumber].mouseMove(event, this._dpi());
+			};
+			pagesDiv.onmouseup = (event) => {
+				if (!isPage(event.target))
+					return;
+
+				const pageNumber = event.target.closest("div.page").pageNumber;
+				pages[pageNumber].mouseUp(event, this._dpi());
+			};
+		}
 		const searchDivInput = document.createElement("input");
 		searchDivInput.id = "search-text";
 		searchDivInput.type = "search";
