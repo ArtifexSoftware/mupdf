@@ -411,6 +411,14 @@ struct Memento_BlkHeader
     Memento_BlkDetails **details_tail;
 #endif
 
+    /* On 64bit versions of windows, we need blocks to be returned
+     * from malloc as 128bit aligned due to setjmp. Hence, add a
+     * dummy padding block to make the entire struct a multiple of
+     * 128bits. This has to go before the preblk. */
+#if defined(WIN64)
+    void *dummy;
+#endif
+
     char                 preblk[Memento_PreSize];
 };
 
