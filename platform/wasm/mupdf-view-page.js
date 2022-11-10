@@ -32,6 +32,9 @@ class MupdfPageViewer {
 		const rootNode = document.createElement("div");
 		rootNode.classList.add("page");
 
+		const canvasNode = document.createElement("canvas");
+		rootNode.appendChild(canvasNode);
+
 		const anchor = document.createElement("a");
 		anchor.classList.add("anchor");
 		// TODO - document the "+ 1" better
@@ -40,9 +43,10 @@ class MupdfPageViewer {
 		rootNode.pageNumber = pageNumber;
 
 		this.rootNode = rootNode;
+		this.canvasNode = canvasNode;
+		this.canvasCtx = canvasNode.getContext("2d");
 		this._updateSize(dpi);
 
-		this.imgNode = null;
 		this.renderPromise = null;
 		this.queuedRenderArgs = null;
 		this.renderCookie = null;
@@ -94,7 +98,6 @@ class MupdfPageViewer {
 	clear() {
 		this.cancelRender();
 
-		this.imgNode?.remove();
 		this.textNode?.remove();
 		this.linksNode?.remove();
 		this.searchHitsNode?.remove();
@@ -105,7 +108,6 @@ class MupdfPageViewer {
 		this.linksPromise = null;
 		this.searchPromise = null;
 
-		this.imgNode = null;
 		this.renderPromise = null;
 		this.queuedRenderArgs = null;
 		this.renderCookie = null;
@@ -139,8 +141,6 @@ class MupdfPageViewer {
 	}
 
 	async mouseDown(event, dpi) {
-		if (!this.imgNode)
-			return;
 		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
 		// TODO - remove "+ 1"
 		let changed = await this.worker.mouseDownOnPage(this.pageNumber + 1, dpi * devicePixelRatio, x, y);
@@ -152,8 +152,6 @@ class MupdfPageViewer {
 	}
 
 	async mouseMove(event, dpi) {
-		if (!this.imgNode)
-			return;
 		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
 		let changed;
 		// TODO - handle multiple buttons
@@ -181,8 +179,6 @@ class MupdfPageViewer {
 	}
 
 	async mouseUp(event, dpi) {
-		if (!this.imgNode)
-			return;
 		let { x, y } = this._getLocalCoords(event.clientX, event.clientY);
 		this.mouseIsPressed = false;
 		// TODO - remove "+ 1"
@@ -199,11 +195,9 @@ class MupdfPageViewer {
 	_updateSize(dpi) {
 		this.rootNode.style.width = (this.size.width * dpi / 72) + "px";
 		this.rootNode.style.height = (this.size.height * dpi / 72) + "px";
-		if (this.imgNode) {
-			this.imgNode.style.width = (this.size.width * dpi / 72) + "px";
-			this.imgNode.style.height = (this.size.height * dpi / 72) + "px";
-		}
-	}
+		this.canvasNode.style.width = (this.size.width * dpi / 72) + "px";
+		this.canvasNode.style.height = (this.size.height * dpi / 72) + "px";
+}
 
 	async _loadPageImg(renderArgs) {
 		if (this.renderPromise != null || this.renderIsOngoing) {
@@ -213,26 +207,14 @@ class MupdfPageViewer {
 			this.queuedRenderArgs = renderArgs;
 			return;
 		}
-		if (this.imgNode?.renderArgs != null) {
+		if (this.canvasNode?.renderArgs != null) {
 			// If the current image node was rendered with the same arguments
 			// we skip the render.
-			if (renderArgs.dpi === this.imgNode.renderArgs.dpi)
+			if (renderArgs.dpi === this.canvasNode.renderArgs.dpi)
 				return;
 		}
 
 		let { dpi } = renderArgs;
-
-		let imgNode = new Image();
-		imgNode.draggable = false;
-		// user-select:none disables image.draggable, and we want
-		// to keep pointer-events for the link image-map
-		imgNode.ondragstart = () => { return false; };
-		imgNode.onload = () => {
-			URL.revokeObjectURL(imgNode.src);
-			// TODO - there might be a TOCTOU problem with the check above,
-			// which leads to an extraneous render
-			imgNode.renderArgs = renderArgs;
-		};
 
 		try {
 			// FIXME - find better system for skipping duplicate renders
@@ -246,18 +228,18 @@ class MupdfPageViewer {
 			}
 			this.renderCookie = await this.worker.createCookie();
 			// TODO - remove "+ 1"
-			this.renderPromise = this.worker.drawPageAsPNG(this.pageNumber + 1, dpi * devicePixelRatio, this.renderCookie);
-			let pngData = await this.renderPromise;
+			this.renderPromise = this.worker.drawPageAsPixmap(this.pageNumber + 1, dpi * devicePixelRatio, this.renderCookie);
+			let imageData = await this.renderPromise;
 
 			// if render was aborted, return early
-			if (pngData == null)
+			if (imageData == null)
 				return;
 
-			imgNode.src = URL.createObjectURL(new Blob([pngData], {type:"image/png"}));
+			this.canvasNode.renderArgs = renderArgs;
+			this.canvasNode.width = imageData.width;
+			this.canvasNode.height = imageData.height;
+			this.canvasCtx.putImageData(imageData, 0, 0);
 
-			this.imgNode?.remove();
-			this.imgNode = imgNode;
-			this.rootNode.insertBefore(imgNode, this.rootNode.firstChild);
 		}
 		catch (error) {
 			this.showError("_loadPageImg", error);
@@ -277,8 +259,8 @@ class MupdfPageViewer {
 	}
 
 	_invalidatePageImg() {
-		if (this.imgNode)
-			this.imgNode.renderArgs = null;
+		if (this.canvasNode)
+			this.canvasNode.renderArgs = null;
 	}
 
 	// TODO - replace "dpi" with "scale"?
@@ -462,9 +444,9 @@ class MupdfPageViewer {
 	}
 
 	_getLocalCoords(clientX, clientY) {
-		const img = this.imgNode;
-		let x = clientX - img.getBoundingClientRect().left - img.clientLeft + img.scrollLeft;
-		let y = clientY - img.getBoundingClientRect().top - img.clientTop + img.scrollTop;
+		const canvas = this.canvasNode;
+		let x = clientX - canvas.getBoundingClientRect().left - canvas.clientLeft + canvas.scrollLeft;
+		let y = clientY - canvas.getBoundingClientRect().top - canvas.clientTop + canvas.scrollTop;
 		return { x, y };
 	}
 }
@@ -541,7 +523,7 @@ class MupdfDocumentViewer {
 		}
 
 		function isPage(element) {
-			return element.tagName === "IMG" && element.closest("div.page") != null;
+			return element.tagName === "CANVAS" && element.closest("div.page") != null;
 		}
 
 		if (this.editorMode) {
@@ -609,17 +591,12 @@ class MupdfDocumentViewer {
 		let zoomTimer = null;
 		pagesDiv.addEventListener("wheel", (event) => {
 			if (event.ctrlKey || event.metaKey) {
-				event.preventDefault();
-				if (zoomTimer)
-					return;
-				zoomTimer = setTimeout(function () { zoomTimer = null; }, 250);
 				if (event.deltaY < 0)
 					this.zoomIn();
 				else if (event.deltaY > 0)
 					this.zoomOut();
 			}
 		}, {passive: false});
-
 
 		//this.rootDiv = rootDiv;
 		this.pagesDiv = pagesDiv; // TODO - rename

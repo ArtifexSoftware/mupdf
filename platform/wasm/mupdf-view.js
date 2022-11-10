@@ -91,6 +91,7 @@ mupdfView.getPageLinks = wrap("getPageLinks");
 mupdfView.getPageText = wrap("getPageText");
 mupdfView.search = wrap("search");
 mupdfView.drawPageAsPNG = wrap("drawPageAsPNG");
+mupdfView.drawPageAsPixmap = wrap("drawPageAsPixmap");
 mupdfView.createCookie = wrap("createCookie");
 mupdfView.deleteCookie = wrap("deleteCookie");
 

@@ -611,6 +611,12 @@ unsigned char *wasm_pixmap_samples(fz_pixmap *pix)
 }
 
 EMSCRIPTEN_KEEPALIVE
+int wasm_pixmap_samples_size(fz_pixmap *pix)
+{
+	return pix->w * pix->h * pix->n;
+}
+
+EMSCRIPTEN_KEEPALIVE
 fz_buffer *wasm_new_buffer(size_t capacity)
 {
 	fz_buffer *buf;

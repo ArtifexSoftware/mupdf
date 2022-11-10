@@ -293,6 +293,36 @@ workerMethods.drawPageAsPNG = function(pageNumber, dpi, cookiePointer) {
 	}
 };
 
+workerMethods.drawPageAsPixmap = function(pageNumber, dpi, cookiePointer) {
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+
+	let page;
+	let pixmap;
+
+	try {
+		page = openDocument.loadPage(pageNumber - 1);
+		pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, true, cookiePointer);
+
+		if (mupdf.cookieAborted(cookiePointer)) {
+			return null;
+		}
+
+		// TODO - move to frontend
+		if (pageNumber == currentTool.pageNumber)
+			currentTool.drawOnPage(pixmap, dpi);
+
+		let pixArray = pixmap.toUint8ClampedArray();
+
+		let imageData = new ImageData(pixArray, pixmap.width(), pixmap.height());
+
+		return imageData;
+	}
+	finally {
+		pixmap?.free();
+		page?.free();
+	}
+};
+
 workerMethods.createCookie = function() {
 	return mupdf.createCookie();
 };

@@ -1039,6 +1039,12 @@ class Pixmap extends Wrapper {
 			libmupdf._wasm_drop_buffer(buf);
 		}
 	}
+
+	toUint8ClampedArray() {
+		let n = libmupdf._wasm_pixmap_samples_size(this.pointer);
+		let p = libmupdf._wasm_pixmap_samples(this.pointer);
+		return new Uint8ClampedArray(libmupdf.HEAPU8.buffer, p, n).slice();
+	}
 }
 
 class Device extends Wrapper {
