@@ -488,15 +488,25 @@ class MupdfDocumentViewer {
 					this.activePages.delete(entry.target);
 				}
 			}
-			// TODO - Stagger updates to avoid rendering pages that are
-			// immediately skipped
-			this._updateView();
 		}, {
 			// This means we have roughly five viewports of vertical "head start" where
 			// the page is rendered before it becomes visible
 			// See
 			rootMargin: "500% 0px",
 		});
+
+		// TODO
+		// This is a hack to compensate for the lack of a priority queue
+		// We wait until the user has stopped scrolling to load pages.
+		let scrollTimer = null;
+		document.addEventListener("scroll", function (event) {
+			if (scrollTimer !== null)
+				clearTimeout(scrollTimer);
+			scrollTimer = setTimeout(function () {
+				scrollTimer = null;
+				updateView();
+			}, 50);
+		})
 
 		// TODO - Add a second observer with bigger margin to recycle old pages
 
