@@ -605,6 +605,7 @@ class MupdfDocumentViewer {
 					this.zoomIn();
 				else if (event.deltaY > 0)
 					this.zoomOut();
+				event.preventDefault();
 			}
 		}, {passive: false});
 
