@@ -323,6 +323,108 @@ workerMethods.drawPageAsPixmap = function(pageNumber, dpi, cookiePointer) {
 	}
 };
 
+workerMethods.drawPageContentsAsPixmap = function(pageNumber, dpi, cookiePointer) {
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+
+	let page;
+	let pixmap;
+	let device;
+
+	try {
+		page = openDocument.loadPage(pageNumber - 1);
+
+		let bbox = page.bounds().transformed(Matrix.from(doc_to_screen));
+		pixmap = mupdf.Pixmap.withBbox(mupdf.DeviceRGB, bbox, true);
+		pixmap.clear();
+
+		device = Device.drawDevice(doc_to_screen, pixmap);
+		page.runPageContents(device, Matrix.identity, cookiePointer);
+		device.close();
+
+		if (mupdf.cookieAborted(cookiePointer)) {
+			return null;
+		}
+
+		let pixArray = pixmap.toUint8ClampedArray();
+		let imageData = new ImageData(pixArray, pixmap.width(), pixmap.height());
+
+		return imageData;
+	}
+	finally {
+		pixmap?.free();
+		page?.free();
+		device?.free();
+	}
+};
+
+workerMethods.drawPageAnnotsAsPixmap = function(pageNumber, dpi, cookiePointer) {
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+
+	let page;
+	let pixmap;
+	let device;
+
+	try {
+		page = openDocument.loadPage(pageNumber - 1);
+
+		let bbox = page.bounds().transformed(Matrix.from(doc_to_screen));
+		pixmap = mupdf.Pixmap.withBbox(mupdf.DeviceRGB, bbox, true);
+		pixmap.clear();
+
+		device = Device.drawDevice(doc_to_screen, pixmap);
+		page.runPageAnnots(device, Matrix.identity, cookiePointer);
+		device.close();
+
+		if (mupdf.cookieAborted(cookiePointer)) {
+			return null;
+		}
+
+		let pixArray = pixmap.toUint8ClampedArray();
+		let imageData = new ImageData(pixArray, pixmap.width(), pixmap.height());
+
+		return imageData;
+	}
+	finally {
+		pixmap?.free();
+		page?.free();
+		device?.free();
+	}
+};
+
+workerMethods.drawPageWidgetsAsPixmap = function(pageNumber, dpi, cookiePointer) {
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+
+	let page;
+	let pixmap;
+	let device;
+
+	try {
+		page = openDocument.loadPage(pageNumber - 1);
+
+		let bbox = page.bounds().transformed(Matrix.from(doc_to_screen));
+		pixmap = mupdf.Pixmap.withBbox(mupdf.DeviceRGB, bbox, true);
+		pixmap.clear();
+
+		device = Device.drawDevice(doc_to_screen, pixmap);
+		page.runPageWidgets(device, Matrix.identity, cookiePointer);
+		device.close();
+
+		if (mupdf.cookieAborted(cookiePointer)) {
+			return null;
+		}
+
+		let pixArray = pixmap.toUint8ClampedArray();
+		let imageData = new ImageData(pixArray, pixmap.width(), pixmap.height());
+
+		return imageData;
+	}
+	finally {
+		pixmap?.free();
+		page?.free();
+		device?.free();
+	}
+};
+
 workerMethods.createCookie = function() {
 	return mupdf.createCookie();
 };
