@@ -499,12 +499,12 @@ class MupdfDocumentViewer {
 		// This is a hack to compensate for the lack of a priority queue
 		// We wait until the user has stopped scrolling to load pages.
 		let scrollTimer = null;
-		document.addEventListener("scroll", function (event) {
+		document.addEventListener("scroll", (event) => {
 			if (scrollTimer !== null)
 				clearTimeout(scrollTimer);
-			scrollTimer = setTimeout(function () {
+			scrollTimer = setTimeout(() => {
 				scrollTimer = null;
-				updateView();
+				this._updateView();
 			}, 50);
 		})
 
@@ -621,6 +621,11 @@ class MupdfDocumentViewer {
 			this.showOutline();
 		} else {
 			this.hideOutline();
+		}
+
+		// TODO - remove once we add a priority queue
+		for (let i = 0; i < Math.min(pageCount, 5); ++i) {
+			this.activePages.add(pages[i].rootNode);
 		}
 
 		this._updateView();
