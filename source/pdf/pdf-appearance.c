@@ -383,9 +383,19 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	*rect = fz_expand_rect(*rect, fz_max(1, w));
 }
 
+static fz_rect
+pdf_annot_rect_diff(fz_context *ctx, pdf_annot *annot)
+{
+	fz_rect rd = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(RD));
+	if (!fz_is_valid_rect(rd))
+		return fz_make_rect(0,0,0,0);
+	return rd;
+}
+
 static void
 pdf_write_square_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
 {
+	fz_rect rd;
 	float x, y, w, h;
 	float lw;
 	int sc;
@@ -396,13 +406,21 @@ pdf_write_square_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
-	x = rect->x0 + lw/2;
-	y = rect->y0 + lw/2;
-	w = rect->x1 - rect->x0 - lw;
-	h = rect->y1 - rect->y0 - lw;
+	rd = pdf_annot_rect_diff(ctx, annot);
+
+	x = rect->x0 + lw/2 + rd.x0;
+	y = rect->y0 + lw/2 + rd.y0;
+	w = rect->x1 - rect->x0 - lw - (rd.x0 + rd.x1);
+	h = rect->y1 - rect->y0 - lw - (rd.y0 + rd.y1);
 
 	fz_append_printf(ctx, buf, "%g %g %g %g re\n", x, y, w, h);
 	maybe_stroke_and_fill(ctx, buf, sc, ic);
+
+	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(RD), fz_make_rect(lw / 2, lw / 2, lw / 2, lw / 2));
+	rect->x0 = x - lw;
+	rect->y0 = y - lw;
+	rect->x1 = x + w + lw;
+	rect->y1 = y + h + lw;
 }
 
 static void
@@ -430,6 +448,7 @@ draw_circle_in_box(fz_context *ctx, fz_buffer *buf, float lw, float x0, float y0
 static void
 pdf_write_circle_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
 {
+	fz_rect rd, content_rect;
 	float lw;
 	int sc;
 	int ic;
@@ -439,8 +458,21 @@ pdf_write_circle_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, f
 	sc = pdf_write_stroke_color_appearance(ctx, annot, buf);
 	ic = pdf_write_interior_fill_color_appearance(ctx, annot, buf);
 
-	draw_circle_in_box(ctx, buf, lw, rect->x0, rect->y0, rect->x1, rect->y1);
+	rd = pdf_annot_rect_diff(ctx, annot);
+
+	content_rect.x0 = rect->x0 + rd.x0;
+	content_rect.y0 = rect->y0 + rd.y0;
+	content_rect.x1 = rect->x1 - rd.x1;
+	content_rect.y1 = rect->y1 - rd.y1;
+
+	draw_circle_in_box(ctx, buf, lw, content_rect.x0, content_rect.y0, content_rect.x1, content_rect.y1);
 	maybe_stroke_and_fill(ctx, buf, sc, ic);
+
+	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(RD), fz_make_rect(lw / 2, lw / 2, lw / 2, lw / 2));
+	rect->x0 = content_rect.x0 - lw/2;
+	rect->y0 = content_rect.y0 - lw/2;
+	rect->x1 = content_rect.x1 + lw/2;
+	rect->y1 = content_rect.y1 + lw/2;
 }
 
 static void
