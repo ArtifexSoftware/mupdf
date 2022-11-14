@@ -7714,7 +7714,6 @@ static void ffi_PDFWidget_getOptions(js_State *J)
 			rethrow(J);
 		js_pushstring(J, opt);
 	}
-	js_endtry(J);
 }
 
 static void ffi_PDFWidget_update(js_State *J)
