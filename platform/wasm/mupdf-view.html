@@ -312,6 +312,7 @@ function setTool(toolName) {
 
 async function openFile(file) {
 	if (file instanceof File) {
+		history.replaceState(null, null, window.location.pathname);
 		freeDocument();
 		try {
 			await mupdfView.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
