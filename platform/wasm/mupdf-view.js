@@ -72,6 +72,8 @@ function wrap(func) {
 	};
 }
 
+mupdfView.setLogFilters = wrap("setLogFilters");
+
 const wrap_openStreamFromUrl = wrap("openStreamFromUrl");
 const wrap_openDocumentFromStream = wrap("openDocumentFromStream");
 

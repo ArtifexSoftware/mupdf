@@ -24,7 +24,6 @@
 
 "use strict";
 
-
 // Import the WASM module
 if (globalThis.SharedArrayBuffer != null) {
 	importScripts("mupdf-wasm.js");
@@ -38,12 +37,35 @@ mupdf.ready.then(result => {
 	postMessage(["READY", result.sharedBuffer]);
 });
 
+// A list of RegExp objects to check function names against
+let logFilters = [];
+
+function logCall(id, funcName, args) {
+	for (const filter of logFilters) {
+		if (filter.test(funcName)) {
+			console.log(`(${id}) CALL ${funcName}:`, args);
+			return;
+		}
+	}
+}
+
+function logReturn(id, funcName, value) {
+	for (const filter of logFilters) {
+		if (filter.test(funcName)) {
+			console.log(`(${id}) RETURN ${funcName}:`, value);
+			return;
+		}
+	}
+}
+
 onmessage = async function (event) {
 	let [ func, id, args ] = event.data;
 	await mupdf.ready;
 
 	try {
+		logCall(id, func, args);
 		let result = workerMethods[func](...args);
+		logReturn(id, func, result);
 		postMessage(["RESULT", id, result]);
 	} catch (error) {
 		if (error instanceof mupdf.MupdfTryLaterError) {
@@ -73,6 +95,10 @@ const workerMethods = {};
 
 let openStream = null;
 let openDocument = null;
+
+workerMethods.setLogFilters = function (filters) {
+	logFilters = filters;
+}
 
 workerMethods.openStreamFromUrl = function (url, contentLength, progressive, prefetch) {
 	openStream = mupdf.Stream.fromUrl(url, contentLength, Math.max(progressive << 10, 1 << 16), prefetch);
