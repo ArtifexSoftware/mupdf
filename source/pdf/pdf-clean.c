@@ -205,12 +205,14 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 	fz_buffer *buffer = NULL;
 	pdf_processor *top = NULL;
 	pdf_obj *res = NULL;
+	fz_buffer *new_buf = NULL;
 
 	fz_var(out_res);
 	fz_var(proc_buffer);
 	fz_var(proc_filter);
 	fz_var(buffer);
 	fz_var(res);
+	fz_var(new_buf);
 
 	/* We cannot combine instancing with type3 fonts. The new names for
 	 * instanced form/image resources would clash, since they start over for
@@ -237,10 +239,9 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 			in_res = page_res;
 
 		buffer = fz_new_buffer(ctx, 1024);
-		proc_buffer = pdf_new_buffer_processor(ctx, buffer, options->ascii);
+		top = proc_buffer = pdf_new_buffer_processor(ctx, buffer, options->ascii);
 		if (num_filters > 0)
 		{
-			top = proc_buffer;
 			for (i = num_filters - 1; i >= 0; i--)
 				top = list[i] = options->filters[i].filter(ctx, doc, top, -1, fz_identity, options, options->filters[i].options);
 		}
@@ -257,18 +258,22 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 
 			pdf_close_processor(ctx, proc_buffer);
 
-			pdf_update_stream(ctx, doc, val, fz_clone_buffer(ctx, buffer), 0);
+			new_buf = fz_clone_buffer(ctx, buffer);
+			pdf_update_stream(ctx, doc, val, new_buf, 0);
+			fz_drop_buffer(ctx, new_buf);
+			new_buf = NULL;
 		}
 
 	}
 	fz_always(ctx)
 	{
 		res = pdf_processor_pop_resources(ctx, top);
-		pdf_drop_obj(ctx, res);
 		for (i = 0; i < num_filters; i++)
 			pdf_drop_processor(ctx, list[i]);
 		pdf_drop_processor(ctx, proc_buffer);
 		fz_free(ctx, list);
+		fz_drop_buffer(ctx, new_buf);
+		fz_drop_buffer(ctx, buffer);
 	}
 	fz_catch(ctx)
 	{
