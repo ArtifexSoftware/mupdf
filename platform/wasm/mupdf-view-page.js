@@ -598,7 +598,6 @@ class MupdfDocumentViewer {
 		this.currentSearchPage = 1;
 
 		// TODO use rootDiv instead
-		let zoomTimer = null;
 		pagesDiv.addEventListener("wheel", (event) => {
 			if (event.ctrlKey || event.metaKey) {
 				if (event.deltaY < 0)
