@@ -700,33 +700,33 @@ class MupdfDocumentViewer {
 		this.searchDialogDiv.style.display = "flex";
 		this.searchDivInput.focus();
 		this.searchDivInput.select();
-		this._updateView();
+		this.setSearch(this.searchDivInput.value ?? "");
 	}
 
 	hideSearchBox() {
 		this.searchStatusDiv.textContent = "";
 		this.searchDialogDiv.style.display = "none";
-		this.searchNeedle = "";
-		this._updateView();
+		this.cancelSearch();
+		this.setSearch("");
 	}
 
 	async runSearch(direction) {
+		// TODO - internalize
 		let searchStatus = document.getElementById("search-status");
-		let searchNeedle = this.searchNeedle;
 
 		try {
 			let page = this.currentSearchPage + direction;
 			while (page >= 1 && page < this.pageCount) {
 				// We run the check once per loop iteration,
 				// in case the search was cancel during the 'await' below.
-				if (searchNeedle === "") {
+				if (this.searchNeedle === "") {
 					searchStatus.textContent = "";
 					return;
 				}
 
 				searchStatus.textContent = `Searching page ${page}.`;
 
-				await this.pages[page]._loadPageSearch(this._dpi(), searchNeedle);
+				await this.pages[page]._loadPageSearch(this._dpi(), this.searchNeedle);
 				const hits = this.pages[page].searchResultObject ?? [];
 				if (hits.length > 0) {
 					this.pages[page].rootNode.scrollIntoView();
@@ -738,7 +738,6 @@ class MupdfDocumentViewer {
 				page += direction;
 			}
 
-			// TODO remove log
 			searchStatus.textContent = "No more search hits.";
 		}
 		catch (error) {

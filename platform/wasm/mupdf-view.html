@@ -393,6 +393,10 @@ window.addEventListener("keydown", function (event) {
 		}
 	}
 
+	if (event.key === "Escape") {
+		documentViewer?.hideSearchBox();
+	}
+
 	if (event.ctrlKey || event.metaKey) {
 		switch (event.keyCode) {
 		// '=' / '+' on various keyboards
