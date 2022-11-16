@@ -268,11 +268,15 @@ let editorMode;
 
 let params = new URLSearchParams(window.location.search);
 
-mupdfView.ready.then(function () {
-	document.getElementById("pages").replaceChildren();
-	if (params.has("file"))
-		openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
-});
+mupdfView.ready
+	.then(function () {
+		document.getElementById("pages").replaceChildren();
+		if (params.has("file"))
+			openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
+	})
+	.catch(function (error) {
+		MupdfDocumentViewer.showDocumentError("Load", error, document.getElementById("pages"));
+	});
 
 editorMode = params.get("editor") | 0;
 

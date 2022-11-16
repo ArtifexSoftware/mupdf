@@ -30,12 +30,16 @@ let lastPromiseId = 0;
 
 mupdfView.ready = new Promise((resolve, reject) => {
 	worker.onmessage = function (event) {
-		if (event.data[0] !== "READY") {
-			reject(new Error(`Unexpected first message: ${event.data}`));
-		} else {
+		let type = event.data[0];
+		if (type === "READY") {
 			mupdfView.wasmMemory = event.data[1];
 			worker.onmessage = onWorkerMessage;
 			resolve();
+		} else if (type === "ERROR") {
+			let error = event.data[1];
+			reject(new Error(error));
+		} else {
+			reject(new Error(`Unexpected first message: ${event.data}`));
 		}
 	};
 });

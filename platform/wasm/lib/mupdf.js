@@ -1405,9 +1405,6 @@ const libmupdf_injections = {
 
 mupdf.ready = libmupdf(libmupdf_injections).then(m => {
 	libmupdf = m;
-
-	console.log("WASM MODULE READY");
-
 	libmupdf._wasm_init_context();
 
 	mupdf.DeviceGray = new ColorSpace(libmupdf._wasm_device_gray());
@@ -1415,13 +1412,25 @@ mupdf.ready = libmupdf(libmupdf_injections).then(m => {
 	mupdf.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr());
 	mupdf.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk());
 
-	let buffer = libmupdf.wasmMemory?.buffer;
-	if (typeof SharedArrayBuffer !== "undefined" && buffer instanceof SharedArrayBuffer) {
-		return { sharedBuffer: buffer };
-	} else {
+	if (!globalThis.crossOriginIsolated) {
+		console.warn("MuPDF: The current page is running in a non-isolated context. This means SharedArrayBuffer is not available. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer for details.");
+		return { sharedBuffer: null };
+	}
+	if (globalThis.SharedArrayBuffer == null) {
+		console.warn("MuPDF: You browser does not implement SharedArrayBuffer.");
+		return { sharedBuffer: null };
+	}
+	if (libmupdf.wasmMemory == null) {
+		console.error("MuPDF internal error: emscripten does not export wasmMemory");
+		return { sharedBuffer: null };
+	}
+	if (!(libmupdf.wasmMemory instanceof WebAssembly.Memory) || !(libmupdf.wasmMemory.buffer instanceof SharedArrayBuffer)) {
+		console.error("MuPDF internal error: wasmMemory exported by emscripten is not a valid instance of WebAssembly.Memory");
 		return { sharedBuffer: null };
 	}
 
+	console.log("MuPDF: WASM module running in cross-origin isolated context")
+	return { sharedBuffer: libmupdf.wasmMemory.buffer }
 });
 
 // If running in Node.js environment

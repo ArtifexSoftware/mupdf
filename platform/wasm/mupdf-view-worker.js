@@ -25,17 +25,29 @@
 "use strict";
 
 // Import the WASM module
+// We do additional fetches to these paths to have better error messages in case
+// they're missing because the user forgot to compile them.
 if (globalThis.SharedArrayBuffer != null) {
+	checkPath("mupdf-wasm.wasm");
+	checkPath("mupdf-wasm.js");
 	importScripts("mupdf-wasm.js");
 } else {
-	console.warn("SharedArrayBuffer not found. Loading mupdf.js single-threaded fallback");
+	checkPath("mupdf-wasm-singlethread.wasm");
+	checkPath("mupdf-wasm-singlethread.js");
 	importScripts("mupdf-wasm-singlethread.js");
 }
 importScripts("lib/mupdf.js");
 
-mupdf.ready.then(result => {
-	postMessage(["READY", result.sharedBuffer]);
-});
+mupdf.ready
+	.then(result => postMessage(["READY", result.sharedBuffer]))
+	.catch(error => postMessage(["ERROR", error]));
+
+function checkPath(path) {
+	fetch(path, { method: "HEAD" }).then(response => {
+		if (!response.ok)
+			postMessage(["ERROR", `Failed to load ${path}: Status ${response.status}. This likely indicates that mupdf wasn't compiled to wasm.`]);
+	});
+}
 
 // A list of RegExp objects to check function names against
 let logFilters = [];
