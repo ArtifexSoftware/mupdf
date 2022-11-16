@@ -979,6 +979,8 @@ class Pixmap extends Wrapper {
 	}
 
 	static withBbox(colorspace, bbox, alpha) {
+		// Note that the wasm function expects integers, but we pass JS `Number`
+		// values. Floating-point numbers are truncated to integers automatically.
 		return new Pixmap(libmupdf._wasm_new_pixmap_with_bbox(
 			colorspace.pointer,
 			bbox.x0, bbox.y0, bbox.x1, bbox.y1,

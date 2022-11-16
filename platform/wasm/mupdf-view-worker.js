@@ -163,7 +163,8 @@ workerMethods.countPages = function() {
 // TODO - keep page loaded?
 workerMethods.getPageSize = function (pageNumber) {
 	let page = openDocument.loadPage(pageNumber - 1);
-	return { width: page.width(), height: page.height() };
+	let bounds = page.bounds();
+	return { width: bounds.width(), height: bounds.height() };
 };
 
 workerMethods.getPageLinks = function(pageNumber) {
