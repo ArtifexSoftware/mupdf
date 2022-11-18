@@ -1674,6 +1674,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_drop_xref_sections(ctx, doc);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		doc->file_reading_linearly = 0;
 		fz_warn(ctx, "trying to repair broken xref");
 		repaired = 1;
 	}
