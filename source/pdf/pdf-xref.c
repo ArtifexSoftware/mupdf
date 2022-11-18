@@ -1276,6 +1276,9 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc)
 		if (pdf_is_indirect(ctx, pdf_array_get(ctx, obj, 2)))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream object field 3 width an indirect object");
 
+		if (doc->file_reading_linearly && pdf_dict_get(ctx, trailer, PDF_NAME(Encrypt)))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot read linearly with encryption");
+
 		w0 = pdf_array_get_int(ctx, obj, 0);
 		w1 = pdf_array_get_int(ctx, obj, 1);
 		w2 = pdf_array_get_int(ctx, obj, 2);
@@ -1404,10 +1407,13 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 {
 	int i, len, cap;
 	int64_t *offsets;
+	int populated = 0;
 
 	len = 0;
 	cap = 10;
 	offsets = fz_malloc_array(ctx, cap, int64_t);
+
+	fz_var(populated);
 
 	fz_try(ctx)
 	{
@@ -1431,6 +1437,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 			offsets[len++] = ofs;
 
 			pdf_populate_next_xref_level(ctx, doc);
+			populated = 1;
 			ofs = read_xref_section(ctx, doc, ofs);
 			if (!read_previous)
 				break;
@@ -1442,6 +1449,9 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 	}
 	fz_catch(ctx)
 	{
+		/* Undo pdf_populate_next_xref_level if we've done that already. */
+		if (populated)
+			doc->num_xref_sections--;
 		fz_rethrow(ctx);
 	}
 }
