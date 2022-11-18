@@ -3104,11 +3104,13 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		/* Now, actually use the data we have gathered. */
 		for (i = 0 /*shared_obj_count_page1*/; i < shared_obj_count_total; i++)
 		{
-			doc->hint_obj_offsets[doc->hint_shared[i].number] = doc->hint_shared[i].offset;
+			if (doc->hint_shared[i].number >= 0 && doc->hint_shared[i].number < max_object_num)
+				doc->hint_obj_offsets[doc->hint_shared[i].number] = doc->hint_shared[i].offset;
 		}
 		for (i = 0; i < doc->linear_page_count; i++)
 		{
-			doc->hint_obj_offsets[doc->hint_page[i].number] = doc->hint_page[i].offset;
+			if (doc->hint_page[i].number >= 0 && doc->hint_page[i].number < max_object_num)
+				doc->hint_obj_offsets[doc->hint_page[i].number] = doc->hint_page[i].offset;
 		}
 	}
 	fz_always(ctx)
