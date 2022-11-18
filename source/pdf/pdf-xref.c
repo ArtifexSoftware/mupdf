@@ -2896,6 +2896,9 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
+/* Uncomment the following to test progressive loading. */
+/* #define TEST_PROGRESSIVE_HACK */
+
 pdf_document *
 pdf_open_document(fz_context *ctx, const char *filename)
 {
@@ -2908,6 +2911,9 @@ pdf_open_document(fz_context *ctx, const char *filename)
 	fz_try(ctx)
 	{
 		file = fz_open_file(ctx, filename);
+#ifdef TEST_PROGRESSIVE_HACK
+		file->progressive = 1;
+#endif
 		doc = pdf_new_document(ctx, file);
 		pdf_init_document(ctx, doc);
 	}
@@ -2920,6 +2926,20 @@ pdf_open_document(fz_context *ctx, const char *filename)
 		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
+
+#ifdef TEST_PROGRESSIVE_HACK
+	if (doc->file_reading_linearly)
+	{
+		fz_try(ctx)
+			pdf_progressive_advance(ctx, doc, doc->linear_page_count-1);
+		fz_catch(ctx)
+		{
+			doc->file_reading_linearly = 0;
+			/* swallow the error */
+		}
+	}
+#endif
+
 	return doc;
 }
 
