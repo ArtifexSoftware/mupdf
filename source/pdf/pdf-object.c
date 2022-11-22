@@ -495,8 +495,8 @@ int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 	return pdf_objcmp(ctx, a, b);
 }
 
-int
-pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
+static int
+do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 {
 	int i;
 
@@ -573,6 +573,7 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 		return 0;
 
 	case PDF_DICT:
+		/* FIXME: Isn't this assuming all dicts are sorted? */
 		if (DICT(a)->len != DICT(b)->len)
 			return DICT(a)->len - DICT(b)->len;
 		for (i = 0; i < DICT(a)->len; i++)
@@ -583,31 +584,86 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 				return 1;
 		}
 		/* Dicts are identical, but if they are streams, we can only be sure
-		 * they are identical if the stream contents match. We don't currently
-		 * test for identical stream contents, so if they are streams, require
-		 * a to == b for a match. */
+		 * they are identical if the stream contents match. If '!check_streams',
+		 * then don't test for identical stream contents - only match if a == b.
+		 * Otherwise, do the full, painful, comparison. */
 		{
 			/* Slightly convoluted to know if something is a stream. */
 			pdf_document *doc = DICT(a)->doc;
-			int n = pdf_obj_parent_num(ctx, a);
-			pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, n);
-			if (entry->obj == a && pdf_obj_num_is_stream(ctx, doc, n))
+			int ap = pdf_obj_parent_num(ctx, a);
+			int bp;
+			int a_is_stream = 0;
+			pdf_xref_entry *entrya = pdf_get_xref_entry(ctx, doc, ap);
+			pdf_xref_entry *entryb;
+			if (entrya->obj == a && pdf_obj_num_is_stream(ctx, doc, ap))
 			{
-				/* It's a stream, and we know a != b from above. So mismatch. */
-				return 1;
+				/* It's a stream, and we know a != b from above. */
+				if (!check_streams)
+					return 1; /* mismatch */
+				a_is_stream = 1;
 			}
-			n = pdf_obj_parent_num(ctx, b);
-			entry = pdf_get_xref_entry(ctx, doc, n);
-			if (entry->obj == b && pdf_obj_num_is_stream(ctx, doc, n))
+			bp = pdf_obj_parent_num(ctx, b);
+			entryb = pdf_get_xref_entry(ctx, doc, bp);
+			if (entryb->obj == b && pdf_obj_num_is_stream(ctx, doc, bp))
 			{
 				/* It's a stream, and we know a != b from above. So mismatch. */
-				return 1;
+				if (!check_streams || !a_is_stream)
+					return 1; /* mismatch */
+			}
+			else
+			{
+				/* b is not a stream. We match, iff a is not a stream. */
+				return a_is_stream;
+			}
+			/* So, if we get here, we know check_streams is true, and that both
+			 * a and b are streams. */
+			{
+				fz_buffer *sa = NULL;
+				fz_buffer *sb = NULL;
+				int differ = 1;
+
+				fz_var(sa);
+				fz_var(sb);
+
+				fz_try(ctx)
+				{
+					unsigned char *dataa, *datab;
+					size_t lena, lenb;
+					sa = pdf_load_raw_stream_number(ctx, doc, ap);
+					sb = pdf_load_raw_stream_number(ctx, doc, bp);
+					lena = fz_buffer_storage(ctx, sa, &dataa);
+					lenb = fz_buffer_storage(ctx, sb, &datab);
+					if (lena == lenb && memcmp(dataa, datab, lena) == 0)
+						differ = 0;
+				}
+				fz_always(ctx)
+				{
+					fz_drop_buffer(ctx, sa);
+					fz_drop_buffer(ctx, sb);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
+				}
+				return differ;
 			}
 		}
 
 		return 0;
 	}
 	return 1;
+}
+
+int
+pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+	return do_objcmp(ctx, a, b, 0);
+}
+
+int
+pdf_objcmp_deep(fz_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+	return do_objcmp(ctx, a, b, 1);
 }
 
 int pdf_name_eq(fz_context *ctx, pdf_obj *a, pdf_obj *b)
