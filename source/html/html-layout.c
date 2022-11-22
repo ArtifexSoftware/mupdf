@@ -1341,6 +1341,18 @@ fz_restartable_layout_html(fz_context *ctx, fz_html_tree *tree, float start_x, f
 	fz_var(ld.hb_buf);
 	fz_var(unlocked);
 
+	// nothing to layout
+	if (!box->down)
+	{
+		fz_warn(ctx, "html: nothing to layout");
+		box->s.layout.em = em;
+		box->s.layout.x = start_x;
+		box->s.layout.w = page_w;
+		box->s.layout.y = start_y;
+		box->s.layout.b = start_y;
+		return;
+	}
+
 	fz_hb_lock(ctx);
 
 	fz_try(ctx)
