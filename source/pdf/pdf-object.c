@@ -498,7 +498,7 @@ int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 static int
 do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 {
-	int i;
+	int i, j;
 
 	if (a == b)
 		return 0;
@@ -573,15 +573,36 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 		return 0;
 
 	case PDF_DICT:
-		/* FIXME: Isn't this assuming all dicts are sorted? */
 		if (DICT(a)->len != DICT(b)->len)
 			return DICT(a)->len - DICT(b)->len;
-		for (i = 0; i < DICT(a)->len; i++)
+		if ((a->flags & b->flags) & PDF_FLAGS_SORTED)
 		{
-			if (pdf_objcmp(ctx, DICT(a)->items[i].k, DICT(b)->items[i].k))
-				return 1;
-			if (pdf_objcmp(ctx, DICT(a)->items[i].v, DICT(b)->items[i].v))
-				return 1;
+			/* Both a and b are sorted. Easy. */
+			for (i = 0; i < DICT(a)->len; i++)
+			{
+				if (pdf_objcmp(ctx, DICT(a)->items[i].k, DICT(b)->items[i].k))
+					return 1;
+				if (pdf_objcmp(ctx, DICT(a)->items[i].v, DICT(b)->items[i].v))
+					return 1;
+			}
+		}
+		else
+		{
+			/* Either a or b is not sorted. We need to work harder. */
+			int len = DICT(a)->len;
+			for (i = 0; i < len; i++)
+			{
+				pdf_obj *key = DICT(a)->items[i].k;
+				pdf_obj *val = DICT(a)->items[i].v;
+				for (j = 0; j < len; j++)
+				{
+					if (pdf_objcmp(ctx, key, DICT(b)->items[j].k) == 0 &&
+						pdf_objcmp(ctx, val, DICT(b)->items[j].v) == 0)
+						break; /* Match */
+				}
+				if (j == len)
+					return 1;
+			}
 		}
 		/* Dicts are identical, but if they are streams, we can only be sure
 		 * they are identical if the stream contents match. If '!check_streams',
