@@ -1710,6 +1710,47 @@ classextras = ClassExtras(
 
         fz_text_span = ClassExtra(
                 copyable=False,
+                methods_extra = [
+                    # We provide class-aware accessors where possible. (Some
+                    # types' wrapper classes are not copyable so we can't do
+                    # this for all data).
+                    ExtraMethod(
+                        f'{rename.class_("fz_font")}',
+                        f'font()',
+                        f'''
+                        {{
+                            return {rename.class_("fz_font")}( ll_fz_keep_font( m_internal->font));
+                        }}
+                        ''',
+                        f'/* Gives class-aware access to m_internal->font. */',
+                        ),
+                    ExtraMethod(
+                        f'{rename.class_("fz_matrix")}',
+                        f'trm()',
+                        f'''
+                        {{
+                            return {rename.class_("fz_matrix")}( m_internal->trm);
+                        }}
+                        ''',
+                        f'/* Gives class-aware access to m_internal->trm. */',
+                        ),
+                    ExtraMethod(
+                        f'fz_text_item&',
+                        f'items( int i)',
+                        f'''
+                        {{
+                            assert( i < m_internal->len);
+                            return m_internal->items[i];
+                        }}
+                        ''',
+                        '''
+                        /* Gives access to m_internal->items[i].
+                        Returned reference is only valid as long as `this`.
+                        Provided mainly for use by SWIG bindings.
+                        */
+                        ''',
+                        ),
+                    ],
                 ),
 
         fz_stream = ClassExtra(
