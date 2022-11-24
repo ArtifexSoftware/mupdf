@@ -2315,10 +2315,26 @@ static int Memento_nonLeakBlocksLeaked(void)
     return 0;
 }
 
+static int Memento_checkAllMemoryInternal(void)
+{
+#ifndef MEMENTO_LEAKONLY
+    int ret;
+
+    MEMENTO_LOCK();
+    ret = Memento_checkAllMemoryLocked();
+    MEMENTO_UNLOCK();
+    if (ret & 8) {
+        Memento_breakpoint();
+        return 1;
+    }
+#endif
+    return 0;
+}
+
 void Memento_fin(void)
 {
     int leaked = 0;
-    Memento_checkAllMemory();
+    Memento_checkAllMemoryInternal();
     if (!memento.segv)
     {
         Memento_endStats();
@@ -4208,7 +4224,6 @@ int Memento_checkAllMemory(void)
     ret = Memento_checkAllMemoryLocked();
     MEMENTO_UNLOCK();
     if (ret & 8) {
-        Memento_breakpoint();
         return 1;
     }
 #endif
