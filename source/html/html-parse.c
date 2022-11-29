@@ -150,6 +150,7 @@ struct genstate
 	int section_depth;
 	fz_bidi_direction markup_dir;
 	fz_text_language markup_lang;
+	char *href;
 
 	fz_css_style_splay *styles;
 };
@@ -649,8 +650,11 @@ static fz_html_box *new_box(fz_context *ctx, struct genstate *g, fz_xml *node, i
 			href = fz_xml_att(node, "href");
 		}
 		if (href)
-			box->href = fz_pool_strdup(ctx, g->pool, href);
+			g->href = fz_pool_strdup(ctx, g->pool, href);
 	}
+
+	if (g->href)
+		box->href = g->href;
 
 	if (type == BOX_FLOW)
 	{
@@ -923,6 +927,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 
 	int save_markup_dir = g->markup_dir;
 	int save_markup_lang = g->markup_lang;
+	char *save_href = g->href;
 
 	if (display == DIS_NONE)
 		return;
@@ -1013,6 +1018,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 
 	g->markup_dir = save_markup_dir;
 	g->markup_lang = save_markup_lang;
+	g->href = save_href;
 }
 
 static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *root_node, fz_css_match *root_match)
@@ -1430,6 +1436,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 	g.styles = NULL;
 	g.xml = xml;
+	g.href = NULL;
 
 	if (rtitle)
 		*rtitle = NULL;
