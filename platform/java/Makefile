@@ -114,7 +114,9 @@ $(MUPDF_JAVA) : ../../$(OUT)/mupdf_native.o $(MUPDF_CORE)
 run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
 	$(JAVA) -classpath ../../$(OUT)/ -Djava.library.path="../../$(OUT)" example.Viewer $$MUPDF_ARGS
 
-storytest:  $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
+examples: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
+
+run-storytest: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
 	$(JAVA) -classpath ../../$(OUT)/ -Djava.library.path="../../$(OUT)" example.StoryTest $$MUPDF_ARGS
 
 gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS) $(MUPDF_JAR)
