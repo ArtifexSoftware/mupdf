@@ -1450,12 +1450,14 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 {
 	fz_html_flow *node;
 	fz_text *text = NULL;
+	fz_path *line = NULL;
 	fz_matrix trm;
 	float color[3];
 	float prev_color[3] = { 0, 0, 0 };
 	int restartable_ended = 0;
 
 	fz_var(text);
+	fz_var(line);
 
 	/* FIXME: HB_DIRECTION_TTB? */
 
@@ -1501,6 +1503,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 				string_walker walker;
 				const char *s;
 				float x, y;
+				float em;
 
 				if (node->type == FLOW_SPACE && node->breaks_line)
 					continue;
@@ -1508,6 +1511,8 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					continue;
 				if (style->visibility != V_VISIBLE)
 					continue;
+
+				em = node->box->s.layout.em;
 
 				color[0] = style->color.r / 255.0f;
 				color[1] = style->color.g / 255.0f;
@@ -1526,6 +1531,22 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					prev_color[2] = color[2];
 				}
 
+				if (style->text_decoration > 0)
+				{
+					if (!line)
+						line = fz_new_path(ctx);
+					if (style->text_decoration & TD_UNDERLINE)
+					{
+						fz_moveto(ctx, line, node->x, node->y + 1.5f - page_top);
+						fz_lineto(ctx, line, node->x + node->w, node->y + 1.5f - page_top);
+					}
+					if (style->text_decoration & TD_LINE_THROUGH)
+					{
+						fz_moveto(ctx, line, node->x, node->y - em * 0.3f - page_top);
+						fz_lineto(ctx, line, node->x + node->w, node->y - em * 0.3f - page_top);
+					}
+				}
+
 				if (!text)
 					text = fz_new_text(ctx);
 
@@ -1535,10 +1556,10 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					x = node->x;
 				y = node->y;
 
-				trm.a = node->box->s.layout.em;
+				trm.a = em;
 				trm.b = 0;
 				trm.c = 0;
-				trm.d = -node->box->s.layout.em;
+				trm.d = -em;
 				trm.e = x;
 				trm.f = y - page_top;
 
@@ -1624,9 +1645,19 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 			fz_drop_text(ctx, text);
 			text = NULL;
 		}
+
+		if (line)
+		{
+			fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color, 1, fz_default_color_params);
+			fz_drop_path(ctx, line);
+			line = NULL;
+		}
 	}
 	fz_always(ctx)
+	{
 		fz_drop_text(ctx, text);
+		fz_drop_path(ctx, line);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
