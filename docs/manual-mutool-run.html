@@ -326,6 +326,8 @@ will keep all the graphics required in memory, so will increase the amount of me
 <dd>Create an empty display list. The mediabox rect has the bounds of the page in points.
 <dt>DisplayList#run(device, transform)
 <dd>Play back the recorded device calls onto the device.
+<dt>DisplayList#bound()
+<dd>Returns a rectangle containing the dimensions of the display list contents.
 <dt>DisplayList#toPixmap(transform, colorspace, alpha)
 <dd>Render display list to a pixmap. If alpha is true, it will render to a transparent background, otherwise white.
 <dt>DisplayList#toStructuredText(options)

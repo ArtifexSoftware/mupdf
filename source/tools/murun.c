@@ -4184,6 +4184,19 @@ static void ffi_new_DisplayList(js_State *J)
 	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
 }
 
+static void ffi_DisplayList_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_rect bounds;
+
+	fz_try(ctx)
+		bounds = fz_bound_display_list(ctx, list);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushrect(J, bounds);
+}
+
 static void ffi_DisplayList_run(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -8647,6 +8660,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "DisplayList.run", ffi_DisplayList_run, 2);
+		jsB_propfun(J, "DisplayList.bound", ffi_DisplayList_bound, 0);
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
 		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 1);
 		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 1);

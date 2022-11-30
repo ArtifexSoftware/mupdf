@@ -559,6 +559,14 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DisplayList_newNative
 
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
+ * Method:    getBounds
+ * Signature: ()Lcom/artifex/mupdf/fitz/Rect;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_getBounds
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    toPixmap
  * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;Z)Lcom/artifex/mupdf/fitz/Pixmap;
  */
