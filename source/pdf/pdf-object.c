@@ -2094,10 +2094,11 @@ pdf_obj *
 pdf_dict_geta(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *abbrev)
 {
 	pdf_obj *v;
-	v = pdf_dict_get(ctx, obj, key);
+	/* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
+	v = pdf_dict_get(ctx, obj, abbrev);
 	if (v)
 		return v;
-	return pdf_dict_get(ctx, obj, abbrev);
+	return pdf_dict_get(ctx, obj, key);
 }
 
 static void
