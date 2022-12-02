@@ -283,10 +283,13 @@ pdf_drop_material(fz_context *ctx, pdf_material *mat)
 static void
 pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *dst, const pdf_gstate *src)
 {
+	pdf_font_desc *old_font = dst->text.font;
+
 	dst->ctm = src->ctm;
 
-	pdf_drop_font(ctx, dst->text.font);
-	dst->text.font = pdf_keep_font(ctx, src->text.font);
+	dst->text = src->text;
+	pdf_keep_font(ctx, src->text.font);
+	pdf_drop_font(ctx, old_font);
 
 	pdf_drop_obj(ctx, dst->softmask);
 	dst->softmask = pdf_keep_obj(ctx, src->softmask);
