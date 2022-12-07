@@ -1220,7 +1220,7 @@ get_gid_bbox(fz_context *ctx, fz_font *font, int gid)
 	if (font->bbox_table[gid>>8] == NULL) {
 		font->bbox_table[gid>>8] = Memento_label(fz_malloc_array(ctx, 256, fz_rect), "bbox_table");
 		for (i = 0; i < 256; i++) {
-			font->bbox_table[gid>>8][i] = fz_infinite_rect;
+			font->bbox_table[gid>>8][i] = fz_empty_rect;
 		}
 	}
 
