@@ -400,6 +400,7 @@
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftbbox.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftbitmap.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftdebug.c" />
+    <ClCompile Include="..\..\thirdparty\freetype\src\base\ftfstype.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftgasp.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftglyph.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftinit.c" />
