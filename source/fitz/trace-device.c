@@ -70,6 +70,12 @@ fz_trace_text_span(fz_context *ctx, fz_output *out, fz_text_span *span, int dept
 	int i;
 	fz_trace_indent(ctx, out, depth);
 	fz_write_printf(ctx, out, "<span font=\"%s\" wmode=\"%d\" bidi=\"%d\"", fz_font_name(ctx, span->font), span->wmode, span->bidi_level);
+	if (span->language != FZ_LANG_UNSET)
+	{
+		char text[8];
+		fz_string_from_text_language(text, span->language);
+		fz_write_printf(ctx, out, " lang=\"%s\"", text);
+	}
 	fz_write_printf(ctx, out, " trm=\"%g %g %g %g\">\n", span->trm.a, span->trm.b, span->trm.c, span->trm.d);
 	for (i = 0; i < span->len; i++)
 	{

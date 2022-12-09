@@ -964,7 +964,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 }
 
 static void
-pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
+pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language lang)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_font_desc *fontdesc = gstate->text.font;
@@ -1013,11 +1013,11 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 	}
 
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, lang);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, lang);
 
 	pdf_tos_move_after_char(ctx, &pr->tos);
 }
@@ -1056,6 +1056,31 @@ lookup_mcid(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	return pdf_array_get(ctx, mcids, id);
 }
 
+static fz_text_language
+find_lang_from_mc(fz_context *ctx, pdf_run_processor *pr)
+{
+	marked_content_stack *mc;
+
+	for (mc = pr->marked_content; mc != NULL; mc = mc->next)
+	{
+		size_t len;
+		const char *lang;
+
+		lang = pdf_dict_get_string(ctx, mc->val, PDF_NAME(Lang), &len);
+		if (!lang)
+			lang = pdf_dict_get_string(ctx, lookup_mcid(ctx, pr, mc->val), PDF_NAME(Lang), &len);
+		if (lang)
+		{
+			char text[8];
+			memcpy(text, lang, len < 8 ? len : 7);
+			text[len < 8 ? len : 7] = 0;
+			return fz_text_language_from_string(text);
+		}
+	}
+
+	return FZ_LANG_UNSET;
+}
+
 static void
 show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t len)
 {
@@ -1064,6 +1089,7 @@ show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t l
 	unsigned char *end = buf + len;
 	unsigned int cpt;
 	int cid;
+	fz_text_language lang = find_lang_from_mc(ctx, pr);
 
 	flush_begin_layer(ctx, pr);
 
@@ -1074,7 +1100,7 @@ show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t l
 
 		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
 		if (cid >= 0)
-			pdf_show_char(ctx, pr, cid);
+			pdf_show_char(ctx, pr, cid, lang);
 		else
 			fz_warn(ctx, "cannot encode character");
 		if (cpt == 32 && w == 1)
