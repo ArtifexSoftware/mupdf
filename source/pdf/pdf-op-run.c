@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -102,6 +102,7 @@ typedef struct marked_content_stack
 struct pdf_run_processor
 {
 	pdf_processor super;
+	pdf_document *doc;
 	fz_device *dev;
 	fz_cookie *cookie;
 
@@ -126,6 +127,8 @@ struct pdf_run_processor
 
 	/* xobject cycle detector */
 	pdf_cycle_list *cycle;
+
+	pdf_obj *role_map;
 
 	marked_content_stack *marked_content;
 
@@ -1205,41 +1208,284 @@ pdf_set_pattern(fz_context *ctx, pdf_run_processor *pr, int what, pdf_pattern *p
 	mat->gstate_num = pr->gparent;
 }
 
-static void
-push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tag, pdf_obj *val)
+fz_structure
+structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 {
-	pdf_obj *tagobj = pdf_new_name(ctx, tag);
-	marked_content_stack *mc = NULL;
+	/* Perform Structure mapping to go from tag to standard. */
+	if (proc->role_map)
+	{
+		pdf_obj *o = pdf_dict_get(ctx, proc->role_map, tag);
+		if (o)
+			tag = o;
+	}
 
-	fz_var(mc);
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Document)))
+		return FZ_STRUCTURE_DOCUMENT;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Part)))
+		return FZ_STRUCTURE_PART;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Art)))
+		return FZ_STRUCTURE_ART;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Sect)))
+		return FZ_STRUCTURE_SECT;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Div)))
+		return FZ_STRUCTURE_DIV;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(BlockQuote)))
+		return FZ_STRUCTURE_BLOCKQUOTE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Caption)))
+		return FZ_STRUCTURE_CAPTION;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TOC)))
+		return FZ_STRUCTURE_TOC;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TOCI)))
+		return FZ_STRUCTURE_TOCI;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Index)))
+		return FZ_STRUCTURE_INDEX;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(NonStruct)))
+		return FZ_STRUCTURE_NONSTRUCT;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Private)))
+		return FZ_STRUCTURE_PRIVATE;
+
+	/* Paragraphlike elements (PDF 1.7 - Table 10.21) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(P)))
+		return FZ_STRUCTURE_P;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H)))
+		return FZ_STRUCTURE_H;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H1)))
+		return FZ_STRUCTURE_H1;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H2)))
+		return FZ_STRUCTURE_H2;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H3)))
+		return FZ_STRUCTURE_H3;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H4)))
+		return FZ_STRUCTURE_H4;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H5)))
+		return FZ_STRUCTURE_H5;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(H6)))
+		return FZ_STRUCTURE_H6;
+
+	/* List elements (PDF 1.7 - Table 10.23) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(List)))
+		return FZ_STRUCTURE_LIST;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(LI)))
+		return FZ_STRUCTURE_LISTITEM;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Label)))
+		return FZ_STRUCTURE_LABEL;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(LBody)))
+		return FZ_STRUCTURE_LISTBODY;
+
+	/* Table elements (PDF 1.7 - Table 10.24) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Table)))
+		return FZ_STRUCTURE_TABLE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TR)))
+		return FZ_STRUCTURE_TR;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TH)))
+		return FZ_STRUCTURE_TH;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TD)))
+		return FZ_STRUCTURE_TD;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(THead)))
+		return FZ_STRUCTURE_THEAD;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TBody)))
+		return FZ_STRUCTURE_TBODY;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(TFoot)))
+		return FZ_STRUCTURE_TFOOT;
+
+	/* Inline elements (PDF 1.7 - Table 10.25) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Span)))
+		return FZ_STRUCTURE_SPAN;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Quote)))
+		return FZ_STRUCTURE_QUOTE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Note)))
+		return FZ_STRUCTURE_NOTE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Reference)))
+		return FZ_STRUCTURE_REFERENCE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(BibEntry)))
+		return FZ_STRUCTURE_BIBENTRY;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Code)))
+		return FZ_STRUCTURE_CODE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Link)))
+		return FZ_STRUCTURE_LINK;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Annot)))
+		return FZ_STRUCTURE_ANNOT;
+
+	/* Ruby inline element (PDF 1.7 - Table 10.26) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Ruby)))
+		return FZ_STRUCTURE_RUBY;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(RB)))
+		return FZ_STRUCTURE_RB;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(RT)))
+		return FZ_STRUCTURE_RT;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(RP)))
+		return FZ_STRUCTURE_RP;
+
+	/* Warichu inline element (PDF 1.7 - Table 10.26) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Warichu)))
+		return FZ_STRUCTURE_WARICHU;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(WT)))
+		return FZ_STRUCTURE_WT;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(WP)))
+		return FZ_STRUCTURE_WP;
+
+	/* Illustration elements (PDF 1.7 - Table 10.27) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Figure)))
+		return FZ_STRUCTURE_FIGURE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Formula)))
+		return FZ_STRUCTURE_FORMULA;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Form)))
+		return FZ_STRUCTURE_FORM;
+
+	return FZ_STRUCTURE_INVALID;
+}
+
+static void
+begin_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
+{
+	/* val has been resolved to a dict for us by the originally specified name
+	 * having been looked up in Properties already for us. Either there will
+	 * be a Name entry, or there will be an OCGs and it'll be a group one. */
+	int i, n;
+	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
+	if (obj)
+	{
+		fz_begin_layer(ctx, proc->dev, pdf_to_name(ctx, obj));
+		return;
+	}
+
+	obj = pdf_dict_get(ctx, val, PDF_NAME(OCGs));
+	n = pdf_array_len(ctx, obj);
+	for (i = 0; i < n; i++)
+	{
+		begin_layer(ctx, proc, pdf_array_get(ctx, obj, i));
+	}
+}
+
+static void
+end_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
+{
+	/* val has been resolved to a dict for us by the originally specified name
+	 * having been looked up in Properties already for us. Either there will
+	 * be a Name entry, or there will be an OCGs and it'll be a group one. */
+	int i, n;
+	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
+	if (obj)
+	{
+		fz_end_layer(ctx, proc->dev);
+		return;
+	}
+
+	obj = pdf_dict_get(ctx, val, PDF_NAME(OCGs));
+	n = pdf_array_len(ctx, obj);
+	for (i = n-1; i >= 0; i--)
+	{
+		end_layer(ctx, proc, pdf_array_get(ctx, obj, i));
+	}
+}
+
+static void
+push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr, pdf_obj *val)
+{
+	pdf_obj *tag;
+	marked_content_stack *mc = NULL;
+	int drop_tag = 1;
+	fz_structure standard;
+
+	if (!tagstr)
+		tagstr = "Untitled";
+	tag = pdf_new_name(ctx, tagstr);
+
+	fz_var(drop_tag);
 
 	fz_try(ctx)
 	{
+		/* First, push it on the stack. */
 		mc = fz_malloc_struct(ctx, marked_content_stack);
 		mc->next = proc->marked_content;
-		mc->tag = tagobj;
+		mc->tag = tag;
 		mc->val = pdf_keep_obj(ctx, val);
 		proc->marked_content = mc;
+		drop_tag = 0;
+
+		/* Start any optional content layers. */
+		if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
+			begin_layer(ctx, proc, val);
+
+		/* Structure */
+		standard = structure_type(ctx, proc, tag);
+		if (standard != FZ_STRUCTURE_INVALID)
+		{
+			pdf_flush_text(ctx, proc);
+			fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
+		}
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_obj(ctx, tagobj);
+		if (drop_tag)
+			pdf_drop_obj(ctx, tag);
 		fz_rethrow(ctx);
 	}
 }
 
 static void
-pop_marked_content(fz_context *ctx, pdf_run_processor *proc)
+pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 {
 	marked_content_stack *mc = proc->marked_content;
+	pdf_obj *val, *tag;
+	fz_structure standard;
 
 	if (mc == NULL)
 		return;
 
 	proc->marked_content = mc->next;
-	pdf_drop_obj(ctx, mc->tag);
-	pdf_drop_obj(ctx, mc->val);
+	tag = mc->tag;
+	val = mc->val;
 	fz_free(ctx, mc);
+
+	/* If we're not interested in neatly closing any open layers etc
+	 * in the processor, (maybe we've had errors already), then just
+	 * exit here. */
+	if (!neat)
+	{
+		pdf_drop_obj(ctx, tag);
+		pdf_drop_obj(ctx, val);
+		return;
+	}
+
+	/* Close structure/layers here, in reverse order to how we opened them. */
+	fz_try(ctx)
+	{
+		/* Structure */
+		standard = structure_type(ctx, proc, tag);
+		if (standard != FZ_STRUCTURE_INVALID)
+		{
+			pdf_flush_text(ctx, proc);
+			fz_end_structure(ctx, proc->dev);
+		}
+
+		/* Finally, close any layers. */
+		if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
+			end_layer(ctx, proc, val);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, tag);
+		pdf_drop_obj(ctx, val);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void
+clear_marked_content(fz_context *ctx, pdf_run_processor *pr)
+{
+	if (pr->marked_content == NULL)
+		return;
+
+	fz_try(ctx)
+		while (pr->marked_content)
+			pop_marked_content(ctx, pr, 1);
+	fz_always(ctx)
+		while (pr->marked_content)
+			pop_marked_content(ctx, pr, 0);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -1399,6 +1645,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 	}
 	fz_always(ctx)
 	{
+		clear_marked_content(ctx, pr);
+		pr->marked_content = save_marked_content;
 		pr->default_cs = save_default_cs;
 		fz_drop_default_colorspaces(ctx, xobj_default_cs);
 		fz_drop_colorspace(ctx, cs);
@@ -2038,39 +2286,20 @@ static void pdf_run_Do_form(fz_context *ctx, pdf_processor *proc, const char *na
 static void pdf_run_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-
-	if (!tag)
-		tag = "Untitled";
-
 	push_marked_content(ctx, pr, tag, NULL);
-
-	fz_begin_layer(ctx, pr->dev, tag);
 }
 
 static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	const char *str;
-
-	if (!tag)
-		tag = "Untitled";
-
-	str = pdf_dict_get_text_string(ctx, cooked, PDF_NAME(Name));
-	if (strlen(str) == 0)
-		str = tag;
-
 	push_marked_content(ctx, pr, tag, cooked);
-
-	fz_begin_layer(ctx, pr->dev, str);
 }
 
 static void pdf_run_EMC(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
-	pop_marked_content(ctx, pr);
-
-	fz_end_layer(ctx, pr->dev);
+	pop_marked_content(ctx, pr, 1);
 }
 
 static void pdf_run_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
@@ -2115,8 +2344,7 @@ pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 		pr->gstate[0].clip_depth--;
 	}
 
-	while (pr->marked_content)
-		pop_marked_content(ctx, pr);
+	clear_marked_content(ctx, pr);
 }
 
 static void
@@ -2146,7 +2374,10 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 	}
 
 	while (pr->marked_content)
-		pop_marked_content(ctx, pr);
+		pop_marked_content(ctx, pr, 0);
+
+	pdf_drop_document(ctx, pr->doc);
+	pdf_drop_obj(ctx, pr->role_map);
 }
 
 static void
@@ -2189,7 +2420,7 @@ pdf_run_pop_resources(fz_context *ctx, pdf_processor *proc)
 	gstate: The initial graphics state.
 */
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
+pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -2323,6 +2554,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, int struct
 		proc->super.op_END = pdf_run_END;
 	}
 
+	proc->doc = pdf_keep_document(ctx, doc);
 	proc->dev = dev;
 	proc->cookie = cookie;
 
@@ -2369,6 +2601,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, int struct
 	pdf_gsave(ctx, proc);
 
 	proc->struct_parent = struct_parent;
+	proc->role_map = pdf_keep_obj(ctx, pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), PDF_NAME(RoleMap), NULL));
 
 	return (pdf_processor*)proc;
 }

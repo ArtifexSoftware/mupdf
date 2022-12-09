@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -546,7 +546,8 @@ fz_trace_begin_layer(fz_context *ctx, fz_device *dev_, const char *name)
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
 	fz_trace_indent(ctx, out, dev->depth);
-	fz_write_printf(ctx, out, "<layer name=\"%s\"/>\n", name);
+	fz_write_printf(ctx, out, "<layer name=\"%s\">\n", name);
+	dev->depth++;
 }
 
 static void
@@ -554,8 +555,35 @@ fz_trace_end_layer(fz_context *ctx, fz_device *dev_)
 {
 	fz_trace_device *dev = (fz_trace_device*)dev_;
 	fz_output *out = dev->out;
+	dev->depth--;
 	fz_trace_indent(ctx, out, dev->depth);
-	fz_write_printf(ctx, out, "<end_layer/>\n");
+	fz_write_printf(ctx, out, "</layer>\n");
+}
+
+static void
+fz_trace_begin_structure(fz_context *ctx, fz_device *dev_, fz_structure standard, const char *raw, int uid)
+{
+	fz_trace_device *dev = (fz_trace_device*)dev_;
+	fz_output *out = dev->out;
+	const char *str = fz_structure_to_string(standard);
+	fz_trace_indent(ctx, out, dev->depth);
+	fz_write_printf(ctx, out, "<structure standard=\"%s\"", str);
+	if (raw && strcmp(str, raw))
+		fz_write_printf(ctx, out, " raw=\"%s\"", raw);
+	if (uid != 0)
+		fz_write_printf(ctx, out, " uid=\"%d\"", uid);
+	fz_write_printf(ctx, out, ">\n");
+	dev->depth++;
+}
+
+static void
+fz_trace_end_structure(fz_context *ctx, fz_device *dev_)
+{
+	fz_trace_device *dev = (fz_trace_device*)dev_;
+	fz_output *out = dev->out;
+	dev->depth--;
+	fz_trace_indent(ctx, out, dev->depth);
+	fz_write_printf(ctx, out, "</structure>\n");
 }
 
 static void
@@ -612,6 +640,9 @@ fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out)
 
 	dev->super.begin_layer = fz_trace_begin_layer;
 	dev->super.end_layer = fz_trace_end_layer;
+
+	dev->super.begin_structure = fz_trace_begin_structure;
+	dev->super.end_structure = fz_trace_end_structure;
 
 	dev->super.render_flags = fz_trace_render_flags;
 	dev->super.set_default_colorspaces = fz_trace_set_default_colorspaces;
