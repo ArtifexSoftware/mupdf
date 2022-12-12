@@ -805,6 +805,7 @@ class MupdfDocumentViewer {
 		this.editorMode = editorMode;
 		this.documentHandler = null;
 
+		this.placeholderDiv = document.getElementById("placeholder");
 		this.viewerDivs = {
 			gridMenubarDiv: document.getElementById("grid-menubar"),
 			gridSidebarDiv: document.getElementById("grid-sidebar"),
@@ -822,16 +823,17 @@ class MupdfDocumentViewer {
 				throw new Error(`Argument '${file}' is not a file`);
 			}
 
-			//TODO
-			//history.replaceState(null, null, window.location.pathname);
+			history.replaceState(null, null, window.location.pathname);
 			this.clear();
 
-			// TODO - add "loading" placeholder
+			let loadingText = document.createElement("div");
+			loadingText.textContent = "Loading document...";
+			this.placeholderDiv.replaceChildren(loadingText);
 
 			await this.mupdfWorker.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
 			await this._initDocument(file.name);
 		} catch (error) {
-			MupdfDocumentViewer.showDocumentError("openFile", error, document.getElementById("pages"));
+			this.showDocumentError("openFile", error);
 		}
 	}
 
@@ -839,7 +841,9 @@ class MupdfDocumentViewer {
 		try {
 			this.clear();
 
-			// TODO - add "loading" placeholder
+			let loadingText = document.createElement("div");
+			loadingText.textContent = "Loading document...";
+			this.placeholderDiv.replaceChildren(loadingText);
 
 			let headResponse = await fetch(url, { method: "HEAD" });
 			if (!headResponse.ok)
@@ -865,12 +869,13 @@ class MupdfDocumentViewer {
 
 			await this._initDocument(url);
 		} catch (error) {
-			MupdfDocumentViewer.showDocumentError("openURL", error, document.getElementById("pages"));
+			this.showDocumentError("openURL", error);
 		}
 	}
 
 	openEmpty() {
-		document.getElementById("placeholder").replaceChildren();
+		this.clear();
+		this.placeholderDiv.replaceChildren();
 
 		// TODO - add "empty" placeholder
 		// add drag-and-drop support?
@@ -878,9 +883,7 @@ class MupdfDocumentViewer {
 
 	async _initDocument(docName) {
 		this.documentHandler = await MupdfDocumentHandler.createHandler(this.mupdfWorker, this.viewerDivs, this.editorMode);
-
-		//document.getElementById("pages").replaceChildren();
-		document.getElementById("placeholder").replaceChildren();
+		this.placeholderDiv.replaceChildren();
 
 		console.log("mupdf: Loaded", JSON.stringify(docName), "with", this.documentHandler.pageCount, "pages.");
 
@@ -888,15 +891,15 @@ class MupdfDocumentViewer {
 		document.title = this.documentHandler.title || docName;
 	}
 
-	// TODO - This destroys page elements - figure out correctness?
-	// TODO - remove pagesDiv arg
-	static showDocumentError(functionName, error, pagesDiv) {
-		// TODO - this.clear() ?
+	showDocumentError(functionName, error) {
 		console.error(`mupdf.${functionName}: ${error.message}:\n${error.stack}`);
+
 		let errorDiv = document.createElement("div");
 		errorDiv.classList.add("error");
 		errorDiv.textContent = error.name + ": " + error.message;
-		pagesDiv.replaceChildren(errorDiv);
+
+		this.clear();
+		this.placeholderDiv.replaceChildren(errorDiv);
 	}
 
 	zoomIn() {

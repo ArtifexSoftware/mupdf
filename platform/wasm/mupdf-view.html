@@ -147,6 +147,24 @@ div.flex {
 #pages { margin: 0 auto; }
 #placeholder { margin: 0 auto; }
 
+#placeholder div {
+	padding-top:3em;
+	text-align: center;
+	font-size: 24pt;
+	font-weight: bold;
+	color: silver;
+}
+#placeholder div.error {
+	text-align: left;
+	color: hotpink;
+}
+
+div.error {
+	padding: 1em;
+	color: hotpink;
+	font-size: 20pt;
+}
+
 a.anchor {
 	display:block;
 	position:relative;
@@ -183,12 +201,6 @@ div.text ::selection {
 
 div.searchHitList { position:absolute; }
 div.searchHit { position:absolute; pointer-events:none; outline: 1px solid hotpink; background-color: lightpink; mix-blend-mode: multiply; }
-
-div.error {
-	padding: 1em;
-	color: hotpink;
-	font-size: 20pt;
-}
 
 </style>
 </head>
@@ -246,10 +258,10 @@ div.error {
 	<div id="pages">
 	</div>
 	<div id="placeholder">
-		<center style="color:silver;padding-top:3em;">
-			<h1>Loading WASM, please wait...</h1>
+		<div>
+			Loading WASM, please wait...
 			<!-- TODO - improve placeholder message -->
-		</center>
+		</div>
 	</div>
 </div>
 
@@ -290,7 +302,7 @@ mupdfView.ready
 		}
 	})
 	.catch(function (error) {
-		MupdfDocumentViewer.showDocumentError("Load", error, document.getElementById("pages"));
+		documentViewer.showDocumentError("Load", error);
 	});
 
 function toggleFullscreen() {
