@@ -1,3 +1,11 @@
+List of changes in MuPDF 1.21.1 (Source only release for PyMuPDF)
+
+	Miscelleneous bug fixes, including:
+		Garbage collection problem causing file bloat on clean.
+		Don't assume sorted objects in pdf_objcmp.
+		Don't layout empty documents.
+		Type 3 font char bboxes.
+
 List of changes in MuPDF 1.21.0
 
 	Added MOBI input format support.
