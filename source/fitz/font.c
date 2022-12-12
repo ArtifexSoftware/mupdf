@@ -516,7 +516,11 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 		{
 			data = fz_lookup_noto_font(ctx, script, language, &size, &subfont);
 			if (data)
+			{
 				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, subfont, 0);
+				/* Noto fonts can be embedded. */
+				fz_set_font_embedding(ctx, *fontp, 1);
+			}
 		}
 	}
 
@@ -868,8 +872,10 @@ fz_new_base14_font(fz_context *ctx, const char *name)
 		{
 			ctx->font->base14[x] = fz_new_font_from_memory(ctx, name, data, size, 0, 1);
 			ctx->font->base14[x]->flags.is_serif = (name[0] == 'T'); /* Times-Roman */
-			/* Do not embed base14 fonts by default. */
-			fz_set_font_embedding(ctx, ctx->font->base14[x], 0);
+			/* Ideally we should not embed base14 fonts by default, but we have to
+			 * allow it for now until we have written code in pdf-device to output
+			 * base14s in a 'special' manner. */
+			fz_set_font_embedding(ctx, ctx->font->base14[x], 1);
 			return fz_keep_font(ctx, ctx->font->base14[x]);
 		}
 	}
