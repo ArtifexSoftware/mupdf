@@ -457,14 +457,15 @@ class MupdfPageViewer {
 let zoomLevels = [ 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200 ];
 
 // TODO - Split into separate file
-class MupdfDocumentViewer {
+class MupdfDocumentHandler {
 	constructor(documentUri, initialPage, showDefaultUi) {
 
 	}
 
-	// TODO - Rename
-	async initDocument(mupdfWorker, docName, editorMode) {
+	static async createHandler(mupdfWorker, viewerDivs, editorMode) {
 		// TODO validate worker param
+
+		const handler = new MupdfDocumentHandler();
 
 		const pageCount = await mupdfWorker.countPages();
 		const title = await mupdfWorker.documentTitle();
@@ -472,23 +473,24 @@ class MupdfDocumentViewer {
 		// Use second page as default page size (the cover page is often differently sized)
 		const defaultSize = await mupdfWorker.getPageSize(pageCount > 1 ? 2 : 1);
 
-		this.mupdfWorker = mupdfWorker;
-		this.pageCount = pageCount;
-		this.title = title;
-		this.defaultSize = defaultSize;
-		this.searchNeedle = "";
+		handler.mupdfWorker = mupdfWorker;
+		handler.pageCount = pageCount;
+		handler.title = title;
+		handler.defaultSize = defaultSize;
+		handler.searchNeedle = "";
 
-		this.zoomLevel = 100;
+		handler.zoomLevel = 100;
 
-		this.editorMode = editorMode;
+		handler.editorMode = editorMode;
 
-		this.activePages = new Set();
-		this.pageObserver = new IntersectionObserver(entries => {
+		// TODO - Add a second observer with bigger margin to recycle old pages
+		handler.activePages = new Set();
+		handler.pageObserver = new IntersectionObserver(entries => {
 			for (const entry of entries) {
 				if (entry.isIntersecting) {
-					this.activePages.add(entry.target);
+					handler.activePages.add(entry.target);
 				} else {
-					this.activePages.delete(entry.target);
+					handler.activePages.delete(entry.target);
 				}
 			}
 		}, {
@@ -507,62 +509,59 @@ class MupdfDocumentViewer {
 				clearTimeout(scrollTimer);
 			scrollTimer = setTimeout(() => {
 				scrollTimer = null;
-				this._updateView();
+				handler._updateView();
 			}, 50);
 		})
 
-		// TODO - Add a second observer with bigger margin to recycle old pages
-
-		//document.title = title ?? docName;
-		//console.log("mupdf: Loaded", JSON.stringify(url), "with", pageCount, "pages.");
-
 		//const rootDiv = document.createElement("div");
 
-		this.gridMenubarDiv = document.getElementById("grid-menubar");
-		this.gridSidebarDiv = document.getElementById("grid-sidebar");
-		this.gridPagesDiv = document.getElementById("grid-pages");
-		this.searchDialogDiv = document.getElementById("search-dialog");
+		handler.gridMenubarDiv = viewerDivs.gridMenubarDiv;
+		handler.gridSidebarDiv = viewerDivs.gridSidebarDiv;
+		handler.gridMainDiv = viewerDivs.gridMainDiv;
+		handler.pagesDiv = viewerDivs.pagesDiv;
+		handler.searchDialogDiv = viewerDivs.searchDialogDiv;
+		handler.outlineNode = viewerDivs.outlineNode;
+		handler.searchStatusDiv = viewerDivs.searchStatusDiv;
 
-		const pagesDiv = document.createElement("div");
-		pagesDiv.id = "pages";
+		const pagesDiv = viewerDivs.pagesDiv;
 		pagesDiv.scrollTo(0, 0);
 
 		let pages = new Array(pageCount);
 		for (let i = 0; i < pageCount; ++i) {
-			const page = new MupdfPageViewer(mupdfWorker, i, defaultSize, this._dpi());
+			const page = new MupdfPageViewer(mupdfWorker, i, defaultSize, handler._dpi());
 			pages[i] = page;
 			pagesDiv.appendChild(page.rootNode);
-			this.pageObserver.observe(page.rootNode);
+			handler.pageObserver.observe(page.rootNode);
 		}
 
 		function isPage(element) {
 			return element.tagName === "CANVAS" && element.closest("div.page") != null;
 		}
 
-		if (this.editorMode) {
+		if (handler.editorMode) {
 			// TODO - use pointer events, pointercancel and setPointerCapture
 			pagesDiv.onmousedown = (event) => {
 				if (!isPage(event.target))
 					return;
 
 				const pageNumber = event.target.closest("div.page").pageNumber;
-				pages[pageNumber].mouseDown(event, this._dpi());
+				pages[pageNumber].mouseDown(event, handler._dpi());
 				// TODO - remove "+ 1"
-				this.currentSearchPage = pageNumber + 1;
+				handler.currentSearchPage = pageNumber + 1;
 			};
 			pagesDiv.onmousemove = (event) => {
 				if (!isPage(event.target))
 					return;
 
 				const pageNumber = event.target.closest("div.page").pageNumber;
-				pages[pageNumber].mouseMove(event, this._dpi());
+				pages[pageNumber].mouseMove(event, handler._dpi());
 			};
 			pagesDiv.onmouseup = (event) => {
 				if (!isPage(event.target))
 					return;
 
 				const pageNumber = event.target.closest("div.page").pageNumber;
-				pages[pageNumber].mouseUp(event, this._dpi());
+				pages[pageNumber].mouseUp(event, handler._dpi());
 			};
 		}
 		const searchDivInput = document.createElement("input");
@@ -571,21 +570,21 @@ class MupdfDocumentViewer {
 		searchDivInput.size = 40;
 		searchDivInput.addEventListener("input", () => {
 			let newNeedle = searchDivInput.value ?? "";
-			this.setSearch(newNeedle);
+			handler.setSearch(newNeedle);
 		});
 		searchDivInput.addEventListener("keydown", (event) => {
 			if (event.key == "Enter")
-				this.runSearch(event.shiftKey ? -1 : 1);
+				handler.runSearch(event.shiftKey ? -1 : 1);
 		});
 		const ltButton = document.createElement("button");
 		ltButton.innerText = "<";
-		ltButton.addEventListener("click", () => this.runSearch(-1));
+		ltButton.addEventListener("click", () => handler.runSearch(-1));
 		const gtButton = document.createElement("button");
 		gtButton.innerText = ">";
-		gtButton.addEventListener("click", () => this.runSearch(1));
+		gtButton.addEventListener("click", () => handler.runSearch(1));
 		const hideButton = document.createElement("button");
 		hideButton.innerText = "X";
-		hideButton.addEventListener("click", () => this.hideSearchBox());
+		hideButton.addEventListener("click", () => handler.hideSearchBox());
 		const searchStatusDiv = document.createElement("div");
 		searchStatusDiv.id = "search-status";
 		searchStatusDiv.innerText = "-";
@@ -594,44 +593,44 @@ class MupdfDocumentViewer {
 		searchFlex.classList = [ "flex" ];
 		searchFlex.append(searchDivInput, ltButton, gtButton, hideButton, searchStatusDiv);
 
-		this.searchDialogDiv.appendChild(searchFlex);
+		handler.searchDialogDiv.appendChild(searchFlex);
 
-		this.searchStatusDiv = searchStatusDiv;
-		this.searchDivInput = searchDivInput;
-		this.currentSearchPage = 1;
+		handler.searchStatusDiv = searchStatusDiv;
+		handler.searchDivInput = searchDivInput;
+		handler.currentSearchPage = 1;
 
 		// TODO use rootDiv instead
 		pagesDiv.addEventListener("wheel", (event) => {
 			if (event.ctrlKey || event.metaKey) {
 				if (event.deltaY < 0)
-					this.zoomIn();
+					handler.zoomIn();
 				else if (event.deltaY > 0)
-					this.zoomOut();
+					handler.zoomOut();
 				event.preventDefault();
 			}
 		}, {passive: false});
 
-		//this.rootDiv = rootDiv;
-		this.pagesDiv = pagesDiv; // TODO - rename
-		this.pages = pages;
+		//handler.rootDiv = rootDiv;
+		handler.pagesDiv = pagesDiv; // TODO - rename
+		handler.pages = pages;
 
 		// TODO - remove await
 		let outline = await mupdfWorker.documentOutline();
-		let outlineNode = document.getElementById("outline");
-		this.outlineNode = outlineNode;
+		let outlineNode = viewerDivs.outlineNode;
 		if (outline) {
-			this._buildOutline(outlineNode, outline);
-			this.showOutline();
+			handler._buildOutline(outlineNode, outline);
+			handler.showOutline();
 		} else {
-			this.hideOutline();
+			handler.hideOutline();
 		}
 
 		// TODO - remove once we add a priority queue
 		for (let i = 0; i < Math.min(pageCount, 5); ++i) {
-			this.activePages.add(pages[i].rootNode);
+			handler.activePages.add(pages[i].rootNode);
 		}
 
-		this._updateView();
+		handler._updateView();
+		return handler;
 	}
 
 	// TODO - This destroys page elements - figure out correctness?
@@ -673,7 +672,7 @@ class MupdfDocumentViewer {
 			this.setZoom(next);
 	}
 
-	async setZoom(newZoom) {
+	setZoom(newZoom) {
 		if (this.zoomLevel === newZoom)
 			return;
 		this.zoomLevel = newZoom;
@@ -713,8 +712,7 @@ class MupdfDocumentViewer {
 	}
 
 	async runSearch(direction) {
-		// TODO - internalize
-		let searchStatus = document.getElementById("search-status");
+		let searchStatusDiv = this.searchStatusDiv;
 
 		try {
 			let page = this.currentSearchPage + direction;
@@ -722,25 +720,25 @@ class MupdfDocumentViewer {
 				// We run the check once per loop iteration,
 				// in case the search was cancel during the 'await' below.
 				if (this.searchNeedle === "") {
-					searchStatus.textContent = "";
+					searchStatusDiv.textContent = "";
 					return;
 				}
 
-				searchStatus.textContent = `Searching page ${page}.`;
+				searchStatusDiv.textContent = `Searching page ${page}.`;
 
 				await this.pages[page]._loadPageSearch(this._dpi(), this.searchNeedle);
 				const hits = this.pages[page].searchResultObject ?? [];
 				if (hits.length > 0) {
 					this.pages[page].rootNode.scrollIntoView();
 					this.currentSearchPage = page;
-					searchStatus.textContent = `${hits.length} hits on page ${page}.`;
+					searchStatusDiv.textContent = `${hits.length} hits on page ${page}.`;
 					return;
 				}
 
 				page += direction;
 			}
 
-			searchStatus.textContent = "No more search hits.";
+			searchStatusDiv.textContent = "No more search hits.";
 		}
 		catch (error) {
 			console.error(`mupdf.runSearch: ${error.message}:\n${error.stack}`);
@@ -753,12 +751,12 @@ class MupdfDocumentViewer {
 
 	showOutline() {
 		this.gridSidebarDiv.style.display = "block";
-		this.gridPagesDiv.classList.replace("sidebarHidden", "sidebarVisible");
+		this.gridMainDiv.classList.replace("sidebarHidden", "sidebarVisible");
 	}
 
 	hideOutline() {
 		this.gridSidebarDiv.style.display = "none";
-		this.gridPagesDiv.classList.replace("sidebarVisible", "sidebarHidden");
+		this.gridMainDiv.classList.replace("sidebarVisible", "sidebarHidden");
 	}
 
 	toggleOutline() {
@@ -787,13 +785,172 @@ class MupdfDocumentViewer {
 	}
 
 	clear() {
-		this.pageObserver.disconnect();
+		this.pagesDiv?.replaceChildren();
+		this.outlineNode?.replaceChildren();
+		this.searchDialogDiv?.replaceChildren();
+
+		this.pageObserver?.disconnect();
 		for (let page of this.pages ?? []) {
 			page.clear();
 		}
-		this.pagesDiv.replaceChildren();
-		this.outlineNode.replaceChildren();
-		this.searchDialogDiv.replaceChildren();
 		this.cancelSearch();
+	}
+}
+
+
+// TODO - Split into separate file
+class MupdfDocumentViewer {
+	constructor(mupdfWorker, editorMode) {
+		this.mupdfWorker = mupdfWorker;
+		this.editorMode = editorMode;
+		this.documentHandler = null;
+
+		this.viewerDivs = {
+			gridMenubarDiv: document.getElementById("grid-menubar"),
+			gridSidebarDiv: document.getElementById("grid-sidebar"),
+			gridMainDiv: document.getElementById("grid-main"),
+			pagesDiv: document.getElementById("pages"),
+			searchDialogDiv: document.getElementById("search-dialog"),
+			outlineNode: document.getElementById("outline"),
+			searchStatusDiv: document.getElementById("search-status"),
+		};
+	}
+
+	async openFile(file) {
+		try {
+			if (!(file instanceof File)) {
+				throw new Error(`Argument '${file}' is not a file`);
+			}
+
+			//TODO
+			//history.replaceState(null, null, window.location.pathname);
+			this.clear();
+
+			// TODO - add "loading" placeholder
+
+			await this.mupdfWorker.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
+			await this._initDocument(file.name);
+		} catch (error) {
+			MupdfDocumentViewer.showDocumentError("openFile", error, document.getElementById("pages"));
+		}
+	}
+
+	async openURL(url, progressive, prefetch) {
+		try {
+			this.clear();
+
+			// TODO - add "loading" placeholder
+
+			let headResponse = await fetch(url, { method: "HEAD" });
+			if (!headResponse.ok)
+				throw new Error("Could not fetch document.");
+			let acceptRanges = headResponse.headers.get("Accept-Ranges");
+			let contentLength = headResponse.headers.get("Content-Length");
+			let contentType = headResponse.headers.get("Content-Type");
+			// TODO - Log less stuff
+			console.log("HEAD", url);
+			console.log("Content-Length", contentLength);
+			console.log("Content-Type", contentType);
+
+			if (acceptRanges === 'bytes' && progressive) {
+				console.log("USING HTTP RANGE REQUESTS");
+				await mupdfView.openDocumentFromUrl(url, contentLength, progressive, prefetch, contentType || url);
+			} else {
+				let bodyResponse = await fetch(url);
+				if (!bodyResponse.ok)
+					throw new Error("Could not fetch document.");
+				let buffer = await bodyResponse.arrayBuffer();
+				await mupdfView.openDocumentFromBuffer(buffer, contentType || url);
+			}
+
+			await this._initDocument(url);
+		} catch (error) {
+			MupdfDocumentViewer.showDocumentError("openURL", error, document.getElementById("pages"));
+		}
+	}
+
+	openEmpty() {
+		document.getElementById("placeholder").replaceChildren();
+
+		// TODO - add "empty" placeholder
+		// add drag-and-drop support?
+	}
+
+	async _initDocument(docName) {
+		this.documentHandler = await MupdfDocumentHandler.createHandler(this.mupdfWorker, this.viewerDivs, this.editorMode);
+
+		//document.getElementById("pages").replaceChildren();
+		document.getElementById("placeholder").replaceChildren();
+
+		console.log("mupdf: Loaded", JSON.stringify(docName), "with", this.documentHandler.pageCount, "pages.");
+
+		// Change tab title
+		document.title = this.documentHandler.title || docName;
+	}
+
+	// TODO - This destroys page elements - figure out correctness?
+	// TODO - remove pagesDiv arg
+	static showDocumentError(functionName, error, pagesDiv) {
+		// TODO - this.clear() ?
+		console.error(`mupdf.${functionName}: ${error.message}:\n${error.stack}`);
+		let errorDiv = document.createElement("div");
+		errorDiv.classList.add("error");
+		errorDiv.textContent = error.name + ": " + error.message;
+		pagesDiv.replaceChildren(errorDiv);
+	}
+
+	zoomIn() {
+		this.documentHandler?.zoomIn();
+	}
+
+	zoomOut() {
+		this.documentHandler?.zoomOut();
+	}
+
+	setZoom(newZoom) {
+		this.documentHandler?.setZoom(newZoom);
+	}
+
+	clearSearch() {
+		this.documentHandler?.clearSearch();
+	}
+
+	setSearch(newNeedle) {
+		this.documentHandler?.setSearch(newNeedle);
+	}
+
+	showSearchBox() {
+		this.documentHandler?.showSearchBox();
+	}
+
+	hideSearchBox() {
+		this.documentHandler?.hideSearchBox();
+	}
+
+	runSearch(direction) {
+		this.documentHandler?.runSearch(direction);
+	}
+
+	cancelSearch() {
+		this.documentHandler?.cancelSearch();
+	}
+
+	showOutline() {
+		this.documentHandler?.showOutline();
+	}
+
+	hideOutline() {
+		this.documentHandler?.hideOutline();
+	}
+
+	toggleOutline() {
+		this.documentHandler?.toggleOutline();
+	}
+
+	clear() {
+		this.documentHandler?.clear();
+
+		// TODO
+		//mupdfView.freeDocument();
 	}
 }

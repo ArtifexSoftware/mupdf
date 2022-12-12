@@ -140,11 +140,12 @@ div.flex {
 
 /* PAGES */
 
-#grid-pages { padding-top: var(--menubar-height); }
-#grid-pages.sidebarVisible { padding-left: var(--sidebar-width); }
-#grid-pages.sidebarHidden { padding-left: 0; }
+#grid-main { padding-top: var(--menubar-height); }
+#grid-main.sidebarVisible { padding-left: var(--sidebar-width); }
+#grid-main.sidebarHidden { padding-left: 0; }
 
 #pages { margin: 0 auto; }
+#placeholder { margin: 0 auto; }
 
 a.anchor {
 	display:block;
@@ -204,7 +205,7 @@ div.error {
 	<div class="menu">
 		<div class="menu-button">Edit</div>
 		<div class="menu-popup">
-			<div onclick="showSearch()">Search...</div>
+			<div onclick="documentViewer.showSearchBox()">Search...</div>
 		</div>
 	</div>
 	<div class="menu" id="tools-menu">
@@ -227,7 +228,7 @@ div.error {
 		<div class="menu-button">View</div>
 		<div class="menu-popup">
 			<div onclick="toggleFullscreen()">Fullscreen</div>
-			<div onclick="toggleOutline()">Outline</div>
+			<div onclick="documentViewer.toggleOutline()">Outline</div>
 			<hr>
 			<div onclick="documentViewer?.setZoom(50)">50%</div>
 			<div onclick="documentViewer?.setZoom(75)">75% (72 dpi)</div>
@@ -241,11 +242,13 @@ div.error {
 
 <div id="grid-sidebar"><ul id="outline"></ul></div>
 
-<div id="grid-pages" class="sidebarHidden">
+<div id="grid-main" class="sidebarHidden">
 	<div id="pages">
+	</div>
+	<div id="placeholder">
 		<center style="color:silver;padding-top:3em;">
-		<h1>Loading WASM, please wait...</h1>
-		<!-- TODO - improve placeholder message -->
+			<h1>Loading WASM, please wait...</h1>
+			<!-- TODO - improve placeholder message -->
 		</center>
 	</div>
 </div>
@@ -255,7 +258,7 @@ div.error {
 
 <input type="file" id="open-file-input" style="display:none"
 	accept=".pdf,.xps,application/pdf"
-	onchange="openFile(event.target.files[0])" />
+	onchange="documentViewer.openFile(event.target.files[0])" />
 
 </body>
 
@@ -268,16 +271,6 @@ let editorMode;
 
 let params = new URLSearchParams(window.location.search);
 
-mupdfView.ready
-	.then(function () {
-		document.getElementById("pages").replaceChildren();
-		if (params.has("file"))
-			openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
-	})
-	.catch(function (error) {
-		MupdfDocumentViewer.showDocumentError("Load", error, document.getElementById("pages"));
-	});
-
 editorMode = params.get("editor") | 0;
 
 if (!editorMode) {
@@ -285,7 +278,20 @@ if (!editorMode) {
 	document.getElementById("tools-menu").remove();
 }
 
-let documentViewer = null;
+let documentViewer = new MupdfDocumentViewer(mupdfView, editorMode);
+
+mupdfView.ready
+	.then(function () {
+		if (params.has("file")) {
+			documentViewer.openURL(params.get("file"), params.get("progressive") | 0, params.get("prefetch") | 0);
+		}
+		else {
+			documentViewer.openEmpty();
+		}
+	})
+	.catch(function (error) {
+		MupdfDocumentViewer.showDocumentError("Load", error, document.getElementById("pages"));
+	});
 
 function toggleFullscreen() {
 	if (document.fullscreen)
@@ -294,112 +300,28 @@ function toggleFullscreen() {
 		document.documentElement.requestFullscreen();
 }
 
-function showOutline() {
-	documentViewer?.showOutline();
-}
-
-function hideOutline() {
-	documentViewer?.hideOutline();
-}
-
-function toggleOutline() {
-	documentViewer?.toggleOutline();
-}
-
 function setTool(toolName) {
 	mupdfView.setEditionTool(toolName);
-}
-
-async function openFile(file) {
-	if (file instanceof File) {
-		history.replaceState(null, null, window.location.pathname);
-		freeDocument();
-		try {
-			await mupdfView.openDocumentFromBuffer(await file.arrayBuffer(), file.name);
-			initDocument(file.name);
-		} catch (error) {
-			MupdfDocumentViewer.showDocumentError("openFile", error, document.getElementById("pages"));
-		}
-	}
-}
-
-async function openURL(url, progressive, prefetch) {
-	freeDocument();
-	try {
-		let headResponse = await fetch(url, { method: "HEAD" });
-		if (!headResponse.ok)
-			throw new Error("Could not fetch document.");
-		let acceptRanges = headResponse.headers.get("Accept-Ranges");
-		let contentLength = headResponse.headers.get("Content-Length");
-		let contentType = headResponse.headers.get("Content-Type");
-		// TODO - Log less stuff
-		console.log("HEAD", url);
-		console.log("Content-Length", contentLength);
-		console.log("Content-Type", contentType);
-
-		if (acceptRanges === 'bytes' && progressive) {
-			console.log("USING HTTP RANGE REQUESTS");
-			await mupdfView.openDocumentFromUrl(url, contentLength, progressive, prefetch, contentType || url);
-		} else {
-			let bodyResponse = await fetch(url);
-			if (!bodyResponse.ok)
-				throw new Error("Could not fetch document.");
-			let buffer = await bodyResponse.arrayBuffer();
-			await mupdfView.openDocumentFromBuffer(buffer, contentType || url);
-		}
-
-		initDocument(url);
-	} catch (error) {
-		MupdfDocumentViewer.showDocumentError("openURL", error, document.getElementById("pages"));
-	}
-}
-
-function freeDocument() {
-	documentViewer?.clear();
-	mupdfView.freeDocument();
-}
-
-async function initDocument(docName) {
-	documentViewer = new MupdfDocumentViewer();
-	await documentViewer.initDocument(mupdfView, docName, editorMode);
-
-	document.getElementById("pages").appendChild(documentViewer.pagesDiv);
-
-	console.log("mupdf: Loaded", JSON.stringify(docName), "with", documentViewer.pageCount, "pages.");
-	document.title = documentViewer.title || docName;
-}
-
-// TODO - remove these functions
-function showSearch() {
-	documentViewer.showSearchBox();
-}
-
-function updateView() {
-	documentViewer._updateView();
-}
-
-function cancelRender(pageNumber) {
-	pages[pageNumber]?.cancelRender();
 }
 
 async function deleteItem() {
 	// TODO - decide which page is selected in the front end
 	// eg await mupdfView.deleteItem(lastClickedPage);
 	// TODO - find more elegant way to get dirty page
-	let dirtyPageNumber = await mupdfView.deleteItem();
+	//let dirtyPageNumber = await mupdfView.deleteItem();
 	//dirty[dirtyPageNumber] = true;
-	updateView();
 }
 
 window.addEventListener("keydown", function (event) {
 	if (editorMode) {
 		if (event.key == "Backspace" || event.key == "Delete") {
-			deleteItem();
+			// TODO - check it doesn't happen in search mode or stuff
+			//deleteItem();
 		}
 	}
 
 	if (event.key === "Escape") {
-		documentViewer?.hideSearchBox();
+		documentViewer.hideSearchBox();
 	}
 
 	if (event.ctrlKey || event.metaKey) {
@@ -409,28 +331,28 @@ window.addEventListener("keydown", function (event) {
 		case 107:
 		case 187:
 		case 171:
-			documentViewer?.zoomIn();
+			documentViewer.zoomIn();
 			event.preventDefault();
 			break;
 		// '-'
 		case 173:
 		case 109:
 		case 189:
-			documentViewer?.zoomOut();
+			documentViewer.zoomOut();
 			event.preventDefault();
 			break;
 		// '0'
 		case 48:
 		case 96:
-			documentViewer?.setZoom(100);
+			documentViewer.setZoom(100);
 			break;
 		case 70: // 'F':
 			event.preventDefault();
-			showSearch();
+			documentViewer.showSearchBox();
 			break;
 		case 71: // 'G':
 			event.preventDefault();
-			showSearch();
+			documentViewer.showSearchBox();
 			runSearch(event.shiftKey ? -1 : 1);
 			break;
 		}
