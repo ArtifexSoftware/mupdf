@@ -524,7 +524,6 @@ class MupdfDocumentHandler {
 		handler.searchStatusDiv = viewerDivs.searchStatusDiv;
 
 		const pagesDiv = viewerDivs.pagesDiv;
-		pagesDiv.scrollTo(0, 0);
 
 		let pages = new Array(pageCount);
 		for (let i = 0; i < pageCount; ++i) {
@@ -633,17 +632,6 @@ class MupdfDocumentHandler {
 		return handler;
 	}
 
-	// TODO - This destroys page elements - figure out correctness?
-	// TODO - remove pagesDiv arg
-	static showDocumentError(functionName, error, pagesDiv) {
-		// TODO - this.clear() ?
-		console.error(`mupdf.${functionName}: ${error.message}:\n${error.stack}`);
-		let errorDiv = document.createElement("div");
-		errorDiv.classList.add("error");
-		errorDiv.textContent = error.name + ": " + error.message;
-		pagesDiv.replaceChildren(errorDiv);
-	}
-
 	_updateView() {
 		const dpi = this._dpi();
 		for (const page of this.activePages) {
@@ -656,6 +644,11 @@ class MupdfDocumentHandler {
 		return (this.zoomLevel * 96 / 100) | 0;
 	}
 
+
+	goToPage(pageNumber) {
+		pageNumber = Math.max(0, Math.min(pageNumber, this.pages.length - 1));
+		this.pages[pageNumber].rootNode.scrollIntoView();
+	}
 
 	zoomIn() {
 		// TODO - instead find next larger zoom
@@ -901,6 +894,78 @@ class MupdfDocumentViewer {
 		this.clear();
 		this.placeholderDiv.replaceChildren(errorDiv);
 	}
+
+	goToPage(pageNumber) {
+		this.documentHandler?.goToPage(pageNumber);
+	}
+
+	toggleFullscreen() {
+		if (!document.fullscreenElement) {
+			this.enterFullscreen();
+		} else {
+			this.exitFullscreen();
+		}
+	}
+
+	enterFullscreen() {
+		document.documentElement.requestFullscreen().catch((err) => {
+			console.error("Could not enter fullscreen mode:", err);
+		});
+	}
+
+	exitFullscreen() {
+		document.exitFullscreen();
+	}
+
+	showPageList() {
+		// TODO
+	}
+
+	hidePageList() {
+		// TODO
+	}
+
+	isPageListVisible() {
+		// TODO
+	}
+
+	save() {
+		// TODO
+	}
+
+	exportText() {
+		// TODO
+	}
+
+	print() {
+		// TODO
+	}
+
+	searchForward() {
+		// TODO
+	}
+
+	searchBackward() {
+		// TODO
+	}
+
+	canUndo() {
+		// TODO
+	}
+
+	canRedo() {
+		// TODO
+	}
+
+	undo() {
+		// TODO
+	}
+
+	redo() {
+		// TODO
+	}
+
+
 
 	zoomIn() {
 		this.documentHandler?.zoomIn();

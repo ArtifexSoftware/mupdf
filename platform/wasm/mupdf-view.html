@@ -239,7 +239,7 @@ div.searchHit { position:absolute; pointer-events:none; outline: 1px solid hotpi
 	<div class="menu">
 		<div class="menu-button">View</div>
 		<div class="menu-popup">
-			<div onclick="toggleFullscreen()">Fullscreen</div>
+			<div onclick="documentViewer.toggleFullscreen()">Fullscreen</div>
 			<div onclick="documentViewer.toggleOutline()">Outline</div>
 			<hr>
 			<div onclick="documentViewer?.setZoom(50)">50%</div>
@@ -304,13 +304,6 @@ mupdfView.ready
 	.catch(function (error) {
 		documentViewer.showDocumentError("Load", error);
 	});
-
-function toggleFullscreen() {
-	if (document.fullscreen)
-		document.exitFullscreen();
-	else
-		document.documentElement.requestFullscreen();
-}
 
 function setTool(toolName) {
 	mupdfView.setEditionTool(toolName);
