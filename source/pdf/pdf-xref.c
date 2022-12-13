@@ -2854,6 +2854,13 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 {
 	pdf_document *doc = fz_new_derived_document(ctx, pdf_document);
 
+#ifndef NDEBUG
+	{
+		void pdf_verify_name_table_sanity(void);
+		pdf_verify_name_table_sanity();
+	}
+#endif
+
 	doc->super.drop_document = (fz_document_drop_fn*)pdf_drop_document_imp;
 	doc->super.get_output_intent = (fz_document_output_intent_fn*)pdf_document_output_intent;
 	doc->super.needs_password = (fz_document_needs_password_fn*)pdf_needs_password;

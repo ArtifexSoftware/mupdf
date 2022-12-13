@@ -3487,3 +3487,15 @@ fz_matrix pdf_array_get_matrix(fz_context *ctx, pdf_obj *array, int index)
 {
 	return pdf_to_matrix(ctx, pdf_array_get(ctx, array, index));
 }
+
+#ifndef NDEBUG
+void pdf_verify_name_table_sanity(void)
+{
+	int i;
+
+	for (i = PDF_ENUM_FALSE+1; i < PDF_ENUM_LIMIT-1; i++)
+	{
+		assert(strcmp(PDF_NAME_LIST[i], PDF_NAME_LIST[i+1]) < 0);
+	}
+}
+#endif
