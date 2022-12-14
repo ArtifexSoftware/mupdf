@@ -596,6 +596,34 @@ void fz_end_structure(fz_context *ctx, fz_device *dev)
 	}
 }
 
+void fz_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *meta_text)
+{
+	if (dev->begin_metatext)
+	{
+		fz_try(ctx)
+			dev->begin_metatext(ctx, dev, meta, meta_text);
+		fz_catch(ctx)
+		{
+			fz_disable_device(ctx, dev);
+			fz_rethrow(ctx);
+		}
+	}
+}
+
+void fz_end_metatext(fz_context *ctx, fz_device *dev)
+{
+	if (dev->end_metatext)
+	{
+		fz_try(ctx)
+			dev->end_metatext(ctx, dev);
+		fz_catch(ctx)
+		{
+			fz_disable_device(ctx, dev);
+			fz_rethrow(ctx);
+		}
+	}
+}
+
 fz_rect
 fz_device_current_scissor(fz_context *ctx, fz_device *dev)
 {

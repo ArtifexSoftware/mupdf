@@ -207,6 +207,14 @@ typedef enum
 
 const char *fz_structure_to_string(fz_structure type);
 
+typedef enum
+{
+	FZ_METATEXT_ACTUALTEXT,
+	FZ_METATEXT_ALT,
+	FZ_METATEXT_ABBREVIATION,
+	FZ_METATEXT_TITLE
+} fz_metatext;
+
 struct fz_device
 {
 	int refs;
@@ -251,6 +259,9 @@ struct fz_device
 	void (*begin_structure)(fz_context *, fz_device *, fz_structure standard, const char *raw, int uid);
 	void (*end_structure)(fz_context *, fz_device *);
 
+	void (*begin_metatext)(fz_context *, fz_device *, fz_metatext meta, const char *text);
+	void (*end_metatext)(fz_context *, fz_device *);
+
 	fz_rect d1_rect;
 
 	int container_len;
@@ -288,6 +299,8 @@ void fz_begin_layer(fz_context *ctx, fz_device *dev, const char *layer_name);
 void fz_end_layer(fz_context *ctx, fz_device *dev);
 void fz_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard, const char *raw, int uid);
 void fz_end_structure(fz_context *ctx, fz_device *dev);
+void fz_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text);
+void fz_end_metatext(fz_context *ctx, fz_device *dev);
 
 /**
 	Devices are created by calls to device implementations, for

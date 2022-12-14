@@ -54,7 +54,9 @@ typedef enum
 	FZ_CMD_BEGIN_LAYER,
 	FZ_CMD_END_LAYER,
 	FZ_CMD_BEGIN_STRUCTURE,
-	FZ_CMD_END_STRUCTURE
+	FZ_CMD_END_STRUCTURE,
+	FZ_CMD_BEGIN_METATEXT,
+	FZ_CMD_END_METATEXT
 } fz_display_command;
 
 /* The display list is a list of nodes.
@@ -1399,6 +1401,52 @@ fz_list_end_structure(fz_context *ctx, fz_device *dev)
 }
 
 static void
+fz_list_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text)
+{
+	unsigned char *data;
+	size_t len = (text ? strlen(text) : 0);
+
+	data = fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_BEGIN_METATEXT,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL,
+		NULL, /* stroke */
+		NULL, /* private_data */
+		len + 2); /* private_data_len */
+	data[0] = (char)meta;
+	if (len)
+		memcpy(data+1, text, len+1);
+	else
+		data[1] = 0;
+}
+
+static void
+fz_list_end_metatext(fz_context *ctx, fz_device *dev)
+{
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_END_METATEXT,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL, /* ctm */
+		NULL, /* stroke */
+		NULL, /* private_data */
+		0); /* private_data_len */
+}
+
+static void
 fz_list_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
@@ -1450,6 +1498,9 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev->super.begin_structure = fz_list_begin_structure;
 	dev->super.end_structure = fz_list_end_structure;
+
+	dev->super.begin_metatext = fz_list_begin_metatext;
+	dev->super.end_metatext = fz_list_end_metatext;
 
 	dev->super.drop_device = fz_list_drop_device;
 
@@ -1797,7 +1848,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, fz_m
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
 			n.cmd == FZ_CMD_RENDER_FLAGS || n.cmd == FZ_CMD_DEFAULT_COLORSPACES ||
 			n.cmd == FZ_CMD_BEGIN_LAYER || n.cmd == FZ_CMD_END_LAYER ||
-			n.cmd == FZ_CMD_BEGIN_STRUCTURE || n.cmd == FZ_CMD_END_STRUCTURE
+			n.cmd == FZ_CMD_BEGIN_STRUCTURE || n.cmd == FZ_CMD_END_STRUCTURE ||
+			n.cmd == FZ_CMD_BEGIN_METATEXT || n.cmd == FZ_CMD_END_METATEXT
 			)
 		{
 			empty = 0;
@@ -1974,6 +2026,17 @@ visible:
 			}
 			case FZ_CMD_END_STRUCTURE:
 				fz_end_structure(ctx, dev);
+				break;
+			case FZ_CMD_BEGIN_METATEXT:
+			{
+				const unsigned char *data;
+				align_node_for_pointer(&node);
+				data = (const unsigned char *)node;
+				fz_begin_metatext(ctx, dev, (fz_metatext)data[0], (const char *)(data[1] == 0 ? NULL : &data[1]));
+				break;
+			}
+			case FZ_CMD_END_METATEXT:
+				fz_end_metatext(ctx, dev);
 				break;
 			}
 		}

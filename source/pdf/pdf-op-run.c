@@ -1438,6 +1438,36 @@ structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 }
 
 static void
+begin_metatext(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val, pdf_obj *mcid, fz_metatext meta, pdf_obj *name)
+{
+	pdf_obj *text = pdf_dict_get(ctx, val, name);
+
+	if (!text)
+		text = pdf_dict_get(ctx, mcid, name);
+	if (!text)
+		return;
+
+	pdf_flush_text(ctx, proc);
+
+	fz_begin_metatext(ctx, proc->dev, meta, pdf_to_text_string(ctx, text));
+}
+
+static void
+end_metatext(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val, pdf_obj *mcid, pdf_obj *name)
+{
+	pdf_obj *text = pdf_dict_get(ctx, val, name);
+
+	if (!text)
+		text = pdf_dict_get(ctx, mcid, name);
+	if (!text)
+		return;
+
+	pdf_flush_text(ctx, proc);
+
+	fz_end_metatext(ctx, proc->dev);
+}
+
+static void
 begin_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 {
 	/* val has been resolved to a dict for us by the originally specified name
@@ -1632,6 +1662,18 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 				fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
 			}
 		}
+
+		/* ActualText */
+		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_ACTUALTEXT, PDF_NAME(ActualText));
+
+		/* Alt */
+		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_ALT, PDF_NAME(Alt));
+
+		/* Abbreviation */
+		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_ABBREVIATION, PDF_NAME(E));
+
+		/* Title */
+		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_TITLE, PDF_NAME(T));
 	}
 	fz_catch(ctx)
 	{
@@ -1672,6 +1714,18 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 	{
 		/* Check to see if val contains an MCID. */
 		mc_dict = lookup_mcid(ctx, proc, val);
+
+		/* Title */
+		end_metatext(ctx, proc, val, mc_dict, PDF_NAME(T));
+
+		/* Abbreviation */
+		end_metatext(ctx, proc, val, mc_dict, PDF_NAME(E));
+
+		/* Alt */
+		end_metatext(ctx, proc, val, mc_dict, PDF_NAME(Alt));
+
+		/* ActualText */
+		end_metatext(ctx, proc, val, mc_dict, PDF_NAME(ActualText));
 
 		/* Structure */
 		if (mc_dict)
