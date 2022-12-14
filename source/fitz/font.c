@@ -2198,7 +2198,7 @@ fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font)
 
 		/* How many subfonts are there? */
 		tmp = fz_read_uint32(ctx, stream);
-		if (font->subfont >= tmp || font->subfont < 0)
+		if ((uint32_t)font->subfont >= tmp || font->subfont < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Bad subfont in TTC");
 
 		/* Read through the index table until we get the one for our subfont. */
