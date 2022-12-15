@@ -982,6 +982,28 @@ pdf_show_space(fz_context *ctx, pdf_run_processor *pr, float tadj)
 		pr->tos.tm = fz_pre_translate(pr->tos.tm, 0, tadj);
 }
 
+static pdf_obj *
+lookup_mcid(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
+{
+	pdf_obj *mcid;
+	int id;
+	pdf_obj *mcids;
+
+	if (proc->struct_parent == -1)
+		return NULL;
+
+	mcid = pdf_dict_get(ctx, val, PDF_NAME(MCID));
+	if (!mcid)
+		return NULL;
+
+	if (!pdf_is_number(ctx, mcid))
+		return NULL;
+
+	id = pdf_to_int(ctx, mcid);
+	mcids = pdf_lookup_number(ctx, pdf_dict_getl(ctx, pdf_trailer(ctx, proc->doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), PDF_NAME(ParentTree), NULL), proc->struct_parent);
+	return pdf_array_get(ctx, mcids, id);
+}
+
 static void
 show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t len)
 {
@@ -1386,6 +1408,7 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	marked_content_stack *mc = NULL;
 	int drop_tag = 1;
 	fz_structure standard;
+	pdf_obj *mc_dict = NULL;
 
 	if (!tagstr)
 		tagstr = "Untitled";
@@ -1403,12 +1426,17 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 		proc->marked_content = mc;
 		drop_tag = 0;
 
+		/* Check to see if val contains an MCID. */
+		mc_dict = lookup_mcid(ctx, proc, val);
+
 		/* Start any optional content layers. */
 		if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
 			begin_layer(ctx, proc, val);
 
 		/* Structure */
 		standard = structure_type(ctx, proc, tag);
+		if (standard == FZ_STRUCTURE_INVALID)
+			standard = structure_type(ctx, proc, pdf_dict_get(ctx, mc_dict, PDF_NAME(S)));
 		if (standard != FZ_STRUCTURE_INVALID)
 		{
 			pdf_flush_text(ctx, proc);
@@ -1429,6 +1457,7 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 	marked_content_stack *mc = proc->marked_content;
 	pdf_obj *val, *tag;
 	fz_structure standard;
+	pdf_obj *mc_dict = NULL;
 
 	if (mc == NULL)
 		return;
@@ -1451,8 +1480,13 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 	/* Close structure/layers here, in reverse order to how we opened them. */
 	fz_try(ctx)
 	{
+		/* Check to see if val contains an MCID. */
+		mc_dict = lookup_mcid(ctx, proc, val);
+
 		/* Structure */
 		standard = structure_type(ctx, proc, tag);
+		if (standard == FZ_STRUCTURE_INVALID)
+			standard = structure_type(ctx, proc, pdf_dict_get(ctx, mc_dict, PDF_NAME(S)));
 		if (standard != FZ_STRUCTURE_INVALID)
 		{
 			pdf_flush_text(ctx, proc);
