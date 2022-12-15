@@ -258,10 +258,13 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 
 			pdf_close_processor(ctx, proc_buffer);
 
-			new_buf = fz_clone_buffer(ctx, buffer);
-			pdf_update_stream(ctx, doc, val, new_buf, 0);
-			fz_drop_buffer(ctx, new_buf);
-			new_buf = NULL;
+			if (!options->no_update)
+			{
+				new_buf = fz_clone_buffer(ctx, buffer);
+				pdf_update_stream(ctx, doc, val, new_buf, 0);
+				fz_drop_buffer(ctx, new_buf);
+				new_buf = NULL;
+			}
 		}
 
 	}
@@ -315,8 +318,11 @@ pdf_filter_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *stm, pdf_obj *pa
 	fz_try(ctx)
 	{
 		pdf_filter_content_stream(ctx, doc, stm, old_res, fz_identity, options, struct_parents, &new_buf, &new_res, &cycle);
-		pdf_update_stream(ctx, doc, stm, new_buf, 0);
-		pdf_dict_put(ctx, stm, PDF_NAME(Resources), new_res);
+		if (!options->no_update)
+		{
+			pdf_update_stream(ctx, doc, stm, new_buf, 0);
+			pdf_dict_put(ctx, stm, PDF_NAME(Resources), new_res);
+		}
 	}
 	fz_always(ctx)
 	{
@@ -365,8 +371,11 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 	{
 		new_xobj = pdf_add_object_drop(ctx, doc, pdf_copy_dict(ctx, old_xobj));
 		pdf_filter_content_stream(ctx, doc, old_xobj, old_res, transform, options, struct_parents, &new_buf, &new_res, &cycle);
-		pdf_update_stream(ctx, doc, new_xobj, new_buf, 0);
-		pdf_dict_put(ctx, new_xobj, PDF_NAME(Resources), new_res);
+		if (!options->no_update)
+		{
+			pdf_update_stream(ctx, doc, new_xobj, new_buf, 0);
+			pdf_dict_put(ctx, new_xobj, PDF_NAME(Resources), new_res);
+		}
 	}
 	fz_always(ctx)
 	{
@@ -404,15 +413,18 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 	{
 		if (options->end_page)
 			options->end_page(ctx, buffer, options->end_page_opaque);
-		/* If contents is not a stream it's an array of streams or missing. */
-		if (!pdf_is_stream(ctx, contents))
+		if (!options->no_update)
 		{
-			/* Create a new stream object to replace the array of streams or missing object. */
-			contents = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 1));
-			pdf_dict_put_drop(ctx, page->obj, PDF_NAME(Contents), contents);
+			/* If contents is not a stream it's an array of streams or missing. */
+			if (!pdf_is_stream(ctx, contents))
+			{
+				/* Create a new stream object to replace the array of streams or missing object. */
+				contents = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 1));
+				pdf_dict_put_drop(ctx, page->obj, PDF_NAME(Contents), contents);
+			}
+			pdf_update_stream(ctx, doc, contents, buffer, 0);
+			pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), new_res);
 		}
-		pdf_update_stream(ctx, doc, contents, buffer, 0);
-		pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), new_res);
 	}
 	fz_always(ctx)
 	{

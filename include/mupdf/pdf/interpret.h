@@ -263,6 +263,8 @@ typedef struct
 
 	ascii: If true, escape all binary data in the output.
 
+	no_update: If true, do not update the document at the end.
+
 	end_page_opaque: Opaque value that is passed to all the filter functions.
 
 	end_page: A function called at the end of a page.
@@ -280,6 +282,7 @@ struct pdf_filter_options
 	int recurse;
 	int instance_forms;
 	int ascii;
+	int no_update;
 
 	void *end_page_opaque;
 	void (*end_page)(fz_context *ctx, fz_buffer *buffer, void *arg);
