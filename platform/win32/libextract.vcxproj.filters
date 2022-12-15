@@ -5,13 +5,13 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="!include">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="extract">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="!include/extract">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -31,9 +31,6 @@
       <Filter>extract</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\extract\src\docx.c">
-      <Filter>extract</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\extract\src\docx_template.c ">
       <Filter>extract</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\extract\src\extract.c">
@@ -75,19 +72,19 @@
     <ClCompile Include="..\..\thirdparty\extract\src\zip.c">
       <Filter>extract</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\extract\src\docx_template.c">
+      <Filter>extract</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\thirdparty\extract\include\extract.h">
-      <Filter>!include</Filter>
+    <ClInclude Include="..\..\thirdparty\extract\include\extract\extract.h">
+      <Filter>!include/extract</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\extract\include\extract_alloc.h">
-      <Filter>!include</Filter>
+    <ClInclude Include="..\..\thirdparty\extract\include\extract\alloc.h">
+      <Filter>!include/extract</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\extract\include\extract_buffer.h">
-      <Filter>!include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\extract\include\extract_buffer_impl.h">
-      <Filter>!include</Filter>
+    <ClInclude Include="..\..\thirdparty\extract\include\extract\buffer.h">
+      <Filter>!include/extract</Filter>
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\extract\src\astring.h">
       <Filter>extract</Filter>
@@ -108,6 +105,12 @@
       <Filter>extract</Filter>
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\extract\src\zip.h">
+      <Filter>extract</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\extract\src\compat_stdint.h">
+      <Filter>extract</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\extract\src\compat_va_copy.h">
       <Filter>extract</Filter>
     </ClInclude>
   </ItemGroup>
