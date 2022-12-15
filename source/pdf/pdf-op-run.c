@@ -128,6 +128,8 @@ struct pdf_run_processor
 	pdf_cycle_list *cycle;
 
 	marked_content_stack *marked_content;
+
+	int struct_parent;
 };
 
 typedef struct
@@ -1241,10 +1243,9 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc)
 }
 
 static void
-pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj *page_resources, fz_matrix transform, int is_smask)
+pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *page_resources, fz_matrix transform, int is_smask)
 {
 	pdf_cycle_list cycle_here;
-	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = NULL;
 	int oldtop = 0;
 	int oldbot = -1;
@@ -1260,12 +1261,14 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	fz_default_colorspaces *save_default_cs = NULL;
 	fz_default_colorspaces *xobj_default_cs = NULL;
 	marked_content_stack *save_marked_content = NULL;
+	int save_struct_parent;
+	pdf_obj *struct_parent;
 
 	/* Avoid infinite recursion */
-	pdf_cycle_list *cycle_up = proc->cycle;
+	pdf_cycle_list *cycle_up = pr->cycle;
 	if (xobj == NULL || pdf_cycle(ctx, &cycle_here, cycle_up, xobj))
 		return;
-	proc->cycle = &cycle_here;
+	pr->cycle = &cycle_here;
 
 	fz_var(cs);
 	fz_var(xobj_default_cs);
@@ -1277,9 +1280,16 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 	save_default_cs = pr->default_cs;
 	save_marked_content = pr->marked_content;
 	pr->marked_content = NULL;
+	save_struct_parent = pr->struct_parent;
+
+	pr->struct_parent = -1;
 
 	fz_try(ctx)
 	{
+		struct_parent = pdf_dict_get(ctx, xobj, PDF_NAME(StructParent));
+		if (pdf_is_number(ctx, struct_parent))
+			pr->struct_parent = pdf_to_int(ctx, struct_parent);
+
 		pdf_gsave(ctx, pr);
 
 		gstate = pr->gstate + pr->gtop;
@@ -1392,10 +1402,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_obj *xobj, pdf_obj
 		pr->default_cs = save_default_cs;
 		fz_drop_default_colorspaces(ctx, xobj_default_cs);
 		fz_drop_colorspace(ctx, cs);
-		proc->cycle = cycle_up;
-		while (pr->marked_content)
-			pop_marked_content(ctx, pr);
-		pr->marked_content = save_marked_content;
+		pr->cycle = cycle_up;
+		pr->struct_parent = save_struct_parent;
 	}
 	fz_catch(ctx)
 	{
@@ -2181,7 +2189,7 @@ pdf_run_pop_resources(fz_context *ctx, pdf_processor *proc)
 	gstate: The initial graphics state.
 */
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
+pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -2359,6 +2367,8 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, fz_matrix ctm, const char
 
 	/* We need to save an extra level to allow for level 0 to be the parent gstate level. */
 	pdf_gsave(ctx, proc);
+
+	proc->struct_parent = struct_parent;
 
 	return (pdf_processor*)proc;
 }
