@@ -7710,6 +7710,18 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 		js_throw(J);
 }
 
+static void ffi_PDFAnnotation_hasFilespec(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_filespec(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
 static void ffi_PDFAnnotation_getFilespec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -8866,6 +8878,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.getDefaultAppearance", ffi_PDFAnnotation_getDefaultAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 		jsB_propfun(J, "PDFAnnotation.setAppearance", ffi_PDFAnnotation_setAppearance, 6);
+		jsB_propfun(J, "PDFAnnotation.hasFilespec", ffi_PDFAnnotation_hasFilespec, 0);
 		jsB_propfun(J, "PDFAnnotation.getFilespec", ffi_PDFAnnotation_getFilespec, 0);
 		jsB_propfun(J, "PDFAnnotation.setFilespec", ffi_PDFAnnotation_setFilespec, 1);
 

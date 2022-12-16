@@ -1535,3 +1535,18 @@ FUN(PDFAnnotation_setBorderEffectIntensity)(JNIEnv *env, jobject self, jfloat in
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_hasFileSpecification)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jboolean has = JNI_FALSE;
+
+	fz_try(ctx)
+		has = pdf_annot_has_filespec(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return has;
+}
