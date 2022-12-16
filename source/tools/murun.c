@@ -5611,6 +5611,28 @@ static void ffi_PDFDocument_enableJS(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_disableJS(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_disable_js(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_isJSSupported(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int supported = 0;
+	fz_try(ctx)
+		supported = pdf_js_supported(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, supported);
+}
+
 static void ffi_PDFDocument_countVersions(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -8778,11 +8800,14 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.graftPage", ffi_PDFDocument_graftPage, 3);
 
 		jsB_propfun(J, "PDFDocument.enableJS", ffi_PDFDocument_enableJS, 0);
+		jsB_propfun(J, "PDFDocument.disableJS", ffi_PDFDocument_disableJS, 0);
+		jsB_propfun(J, "PDFDocument.isJSSupported", ffi_PDFDocument_isJSSupported, 0);
+		jsB_propfun(J, "PDFDocument.setJSEventListener", ffi_PDFDocument_setJSEventListener, 1);
+
 		jsB_propfun(J, "PDFDocument.countVersions", ffi_PDFDocument_countVersions, 0);
 		jsB_propfun(J, "PDFDocument.countUnsavedVersions", ffi_PDFDocument_countUnsavedVersions, 0);
 		jsB_propfun(J, "PDFDocument.validateChangeHistory", ffi_PDFDocument_validateChangeHistory, 0);
 		jsB_propfun(J, "PDFDocument.wasPureXFA", ffi_PDFDocument_wasPureXFA, 0);
-		jsB_propfun(J, "PDFDocument.setJSEventListener", ffi_PDFDocument_setJSEventListener, 1);
 
 		jsB_propfun(J, "PDFDocument.hasUnsavedChanges", ffi_PDFDocument_hasUnsavedChanges, 0);
 		jsB_propfun(J, "PDFDocument.wasRepaired", ffi_PDFDocument_wasRepaired, 0);
