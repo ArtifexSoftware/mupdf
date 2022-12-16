@@ -760,7 +760,6 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		flags = FT_Get_FSType_Flags(face);
 		if (flags & (FT_FSTYPE_RESTRICTED_LICENSE_EMBEDDING |
 			FT_FSTYPE_PREVIEW_AND_PRINT_EMBEDDING |
-			FT_FSTYPE_EDITABLE_EMBEDDING |
 			FT_FSTYPE_NO_SUBSETTING |
 			FT_FSTYPE_BITMAP_EMBEDDING_ONLY))
 		{
