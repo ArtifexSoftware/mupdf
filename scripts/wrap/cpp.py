@@ -314,6 +314,18 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if):
             # appears to kill std::cerr on Linux.
             out.write( f'        if ({arg.name}) std::cerr << " {arg.name}=\'" << {arg.name} << "\'";\n')
             out.write( f'        else std::cerr << " {arg.name}:null";\n')
+        elif (0
+                or parse.is_( arg.cursor.type, 'signed char')
+                or parse.is_( arg.cursor.type, 'unsigned char')
+                ):
+            # Typically used for raw data, so not safe to treat as text.
+            out.write( f'        std::cerr << " {arg.name}=" << ((int) {arg.name});\n')
+        elif (0
+                or parse.is_pointer_to(arg.cursor.type, 'signed char')
+                or parse.is_pointer_to(arg.cursor.type, 'unsigned char')
+                ):
+            # Typically used for raw data, so not safe to treat as text.
+            out.write( f'        std::cerr << " {arg.name}=" << ((void*) {arg.name});\n')
         elif arg.cursor.type.kind == state.clang.cindex.TypeKind.POINTER:
             # Don't assume non-const 'char*' is a zero-terminated string.
             out.write( f'        if ({varname_enable()}) std::cerr << " {arg.name}=" << (void*) {arg.name};\n')
