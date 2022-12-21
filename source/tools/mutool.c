@@ -48,6 +48,7 @@ int pdfcreate_main(int argc, char *argv[]);
 int pdfmerge_main(int argc, char *argv[]);
 int pdfsign_main(int argc, char *argv[]);
 int pdfrecolor_main(int argc, char *argv[]);
+int pdftrim_main(int argc, char *argv[]);
 
 int cmapdump_main(int argc, char *argv[]);
 
@@ -73,6 +74,7 @@ static struct {
 	{ pdfposter_main, "poster", "split large page into many tiles" },
 	{ pdfrecolor_main, "recolor", "Change colorspace of pdf document" },
 	{ pdfsign_main, "sign", "manipulate PDF digital signatures" },
+	{ pdftrim_main, "trim", "trim PDF page contents" },
 #endif
 #if FZ_ENABLE_JS
 	{ murun_main, "run", "run javascript" },
