@@ -290,6 +290,17 @@ struct pdf_filter_options
 	pdf_filter_factory *filters;
 };
 
+typedef enum
+{
+	FZ_CULL_PATH_FILL,
+	FZ_CULL_PATH_STROKE,
+	FZ_CULL_PATH_FILL_STROKE,
+	FZ_CULL_CLIP_PATH,
+	FZ_CULL_GLYPH,
+	FZ_CULL_IMAGE,
+	FZ_CULL_SHADING
+} fz_cull_type;
+
 /*
 	image_filter: A function called to assess whether a given
 	image should be removed or not.
@@ -300,6 +311,9 @@ struct pdf_filter_options
 	after_text_object: A function called after each text object.
 	This allows the caller to insert some extra content if
 	desired.
+
+	culler: A function called to see whether each object should
+	be culled or not.
 */
 typedef struct
 {
@@ -307,6 +321,7 @@ typedef struct
 	fz_image *(*image_filter)(fz_context *ctx, void *opaque, fz_matrix ctm, const char *name, fz_image *image);
 	int (*text_filter)(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox);
 	void (*after_text_object)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain, fz_matrix ctm);
+	int (*culler)(fz_context *ctx, void *opaque, fz_rect bbox, fz_cull_type type);
 }
 pdf_sanitize_filter_options;
 
