@@ -424,8 +424,7 @@ struct pdf_document
 	pdf_xref *saved_xref_sections;
 	int *xref_index;
 	int save_in_progress;
-	int has_xref_streams;
-	int has_old_style_xrefs;
+	int last_xref_was_old_style;
 	int has_linearization_object;
 
 	int page_map_nesting;

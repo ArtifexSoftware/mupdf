@@ -1182,7 +1182,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc)
 	if (tok != PDF_TOK_OPEN_DICT)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer dictionary");
 
-	doc->has_old_style_xrefs = 1;
+	doc->last_xref_was_old_style = 1;
 
 	return pdf_parse_dict(ctx, doc, file, buf);
 }
@@ -1223,7 +1223,7 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, in
 		}
 	}
 
-	doc->has_xref_streams = 1;
+	doc->last_xref_was_old_style = 0;
 }
 
 /* Entered with file locked, remains locked throughout. */
