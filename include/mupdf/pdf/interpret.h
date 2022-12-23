@@ -265,9 +265,9 @@ typedef struct
 
 	no_update: If true, do not update the document at the end.
 
-	end_page_opaque: Opaque value that is passed to all the filter functions.
+	opaque: Opaque value that is passed to the complete function.
 
-	end_page: A function called at the end of a page.
+	complete: A function called at the end of processing.
 	This allows the caller to insert some extra content after
 	all other content.
 
@@ -284,8 +284,8 @@ struct pdf_filter_options
 	int ascii;
 	int no_update;
 
-	void *end_page_opaque;
-	void (*end_page)(fz_context *ctx, fz_buffer *buffer, void *arg);
+	void *opaque;
+	void (*complete)(fz_context *ctx, fz_buffer *buffer, void *arg);
 
 	pdf_filter_factory *filters;
 };
@@ -359,8 +359,6 @@ pdf_obj *pdf_processor_pop_resources(fz_context *ctx, pdf_processor *proc);
 
 /*
 	opaque: Opaque value that is passed to all the filter functions.
-
-	cs_rewrite: function pointer called to rewrite a colorspace.
 
 	color_rewrite: function pointer called to rewrite a color
 		On entry:
