@@ -852,8 +852,74 @@ Other intermediate generated files are created in `mupdf/platform/`
             Release/    [Windows 32-bit .dll, .lib, .exp, .pdb etc.]
             x64/
                 Release/    [Windows 64-bit .dll, .lib, .exp, .pdb etc.]
+                    mupdfcpp64.dll
+                    mupdfcpp64.lib
+                    mupdfpyswig.dll
+                    mupdfpyswig.lib
 
 |expand_end|
+
+
+Windows-specifics
+=================
+
+Required predefined macros
+--------------------------
+
+Code that will use the MuPDF DLL must be built with ``FZ_DLL_CLIENT``
+predefined.
+
+The MuPDF DLL itself is built with ``FZ_DLL`` predefined.
+
+DLLs
+----
+
+There is no separate C library, instead the C and C++ APIs are
+both in ``mupdfcpp.dll``, which is built by running devenv on
+``platform/win32/mupdf.sln``.
+
+The Python SWIG library is called ``_mupdf.pyd`` which, despite the name, is a
+standard Windows DLL, built from ``platform/python/mupdfcpp_swig.cpp``.
+
+DLL export of functions and data
+--------------------------------
+
+On Windows, ``include/mupdf/fitz/export.h`` defines ``FZ_FUNCTION`` and
+``FZ_DATA`` to ``__declspec(dllexport)`` and/or ``__declspec(dllimport)``
+depending on whether ``FZ_DLL`` or ``FZ_DLL_CLIENT`` are defined.
+
+All MuPDF C headers prefix declarations of public global data with ``FZ_DATA``.
+
+In generated C++ code:
+
+* Data declarations and definitions are prefixed with ``FZ_DATA``.
+* Function declarations and definitions are prefixed with ``FZ_FUNCTION``.
+* Class method declarations and definitions are prefixed with ``FZ_FUNCTION``.
+
+When building ``mupdfcpp.dll`` on Windows we link with the auto-generated
+``platform/c++/windows_mupdf.def`` file; this lists all C public global data.
+
+For reasons that are not fully understood, we don't seem to need to tag C
+functions with `FZ_FUNCTION`, but this is required for C++ functions otherwise
+we get unresolved symbols when building MuPDF client code.
+
+Building the DLLs
+-----------------
+
+We build Windows binaries by running ``devenv.com`` directly. As of 2021-05-17
+the location of ``devenv.com`` is hard-coded in this Python script.
+
+Building ``_mupdf.pyd`` is tricky because it needs to be built with a
+specific ``Python.h`` and linked with a specific ``python.lib``. This is
+done by setting environmental variables ``MUPDF_PYTHON_INCLUDE_PATH`` and
+``MUPDF_PYTHON_LIBRARY_PATH`` when running ``devenv.com``, which are referenced
+by ``platform/win32/mupdfpyswig.vcxproj``. Thus one cannot easily build
+``_mupdf.pyd`` directly from the Visual Studio GUI.
+
+[In the git history there is code that builds ``_mupdf.pyd`` by running the
+Windows compiler and linker ``cl.exe`` and ``link.exe`` directly, which avoids
+the complications of going via devenv, at the expense of needing to know where
+``cl.exe`` and ``link.exe`` are.]
 
 
 C++ bindings details
