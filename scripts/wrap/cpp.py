@@ -892,10 +892,10 @@ def make_internal_functions( namespace, out_h, out_cpp):
             textwrap.dedent(
             f'''
             /** Internal use only. Looks at environmental variable <name>; returns 0 if unset else int value. */
-            int {rename.internal('env_flag')}(const char* name);
+            FZ_FUNCTION int {rename.internal('env_flag')}(const char* name);
 
             /** Internal use only. Returns `fz_context*` for use by current thread. */
-            fz_context* {rename.internal('context_get')}();
+            FZ_FUNCTION fz_context* {rename.internal('context_get')}();
             '''
             ))
 
@@ -920,7 +920,7 @@ def make_internal_functions( namespace, out_h, out_cpp):
 
     cpp_text = textwrap.dedent(
             f'''
-            int {rename.internal("env_flag")}(const char* name)
+            FZ_FUNCTION int {rename.internal("env_flag")}(const char* name)
             {{
                 const char* s = getenv( name);
                 if (!s) return 0;
@@ -1045,7 +1045,7 @@ def make_internal_functions( namespace, out_h, out_cpp):
 
             static thread_local {rename.internal("thread_state")}  s_thread_state;
 
-            fz_context* {rename.internal("context_get")}()
+            FZ_FUNCTION fz_context* {rename.internal("context_get")}()
             {{
                 if (s_state.m_multithreaded)
                 {{
@@ -1059,7 +1059,7 @@ def make_internal_functions( namespace, out_h, out_cpp):
                 }}
             }}
 
-            void reinit_singlethreaded()
+            FZ_FUNCTION void reinit_singlethreaded()
             {{
                 std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): Reinitialising as single-threaded.\\n";
                 s_state.reinit( false /*multithreaded*/);
@@ -1194,14 +1194,14 @@ def make_function_wrappers(
             {{
                 int         m_code;
                 std::string m_text;
-                const char* what() const throw();
-                {base_name}(int code, const char* text);
+                FZ_FUNCTION const char* what() const throw();
+                FZ_FUNCTION {base_name}(int code, const char* text);
             }};
             '''))
 
     out_exceptions_cpp.write( textwrap.dedent(
             f'''
-            {base_name}::{base_name}(int code, const char* text)
+            FZ_FUNCTION {base_name}::{base_name}(int code, const char* text)
             : m_code(code)
             {{
                 char    code_text[32];
@@ -1215,7 +1215,7 @@ def make_function_wrappers(
                 #endif
             }};
 
-            const char* {base_name}::what() const throw()
+            FZ_FUNCTION const char* {base_name}::what() const throw()
             {{
                 return m_text.c_str();
             }};
@@ -1230,7 +1230,7 @@ def make_function_wrappers(
                 /** For `{enum}`. */
                 struct {typename} : {base_name}
                 {{
-                    {typename}(const char* message);
+                    FZ_FUNCTION {typename}(const char* message);
                 }};
 
                 '''))
@@ -1240,7 +1240,7 @@ def make_function_wrappers(
     for enum, typename, padding in errors():
         out_exceptions_cpp.write( textwrap.dedent(
                 f'''
-                {typename}::{typename}(const char* text)
+                FZ_FUNCTION {typename}::{typename}(const char* text)
                 : {base_name}({enum}, text)
                 {{
                     {refcheck_if}
@@ -1259,12 +1259,12 @@ def make_function_wrappers(
     out_exceptions_h.write( textwrap.dedent(
             f'''
             /** Throw exception appropriate for error in `ctx`. */
-            void {te}(fz_context* ctx);
+            FZ_FUNCTION void {te}(fz_context* ctx);
 
             '''))
     out_exceptions_cpp.write( textwrap.dedent(
             f'''
-            void {te}(fz_context* ctx)
+            FZ_FUNCTION void {te}(fz_context* ctx)
             {{
                 int code = fz_caught(ctx);
                 {refcheck_if}
@@ -1476,7 +1476,7 @@ def make_function_wrappers(
                 {{
                     dict = {rename.ll_fn('pdf_dict_getlv')}( dict, keys);
                 }}
-                catch( std::exception& e)
+                catch( std::exception&)
                 {{
                     va_end(keys);
                     throw;
@@ -1530,7 +1530,7 @@ def make_function_wrappers(
                     va_end( keys);
                     return ret;
                 }}
-                catch (std::exception& e)
+                catch (std::exception&)
                 {{
                     va_end( keys);
                     throw;
@@ -4552,7 +4552,7 @@ def cpp_source(
 
             This should be called before any other use of MuPDF.
             */
-            void reinit_singlethreaded();
+            FZ_FUNCTION void reinit_singlethreaded();
 
             '''))
 

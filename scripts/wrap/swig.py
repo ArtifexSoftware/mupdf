@@ -505,6 +505,14 @@ def build_swig(
             'fz_vthrow',
             'fz_vwarn',
             'fz_write_vprintf',
+
+            'fz_utf8_from_wchar',
+            'fz_wchar_from_utf8',
+            'fz_fopen_utf8',
+            'fz_remove_utf8',
+            'fz_argv_from_wargv',
+            'fz_free_argv',
+            'fz_stdods',
             ):
         text += f'%ignore {i};\n'
         text += f'%ignore m{i};\n'
@@ -512,6 +520,7 @@ def build_swig(
     text += textwrap.dedent(f'''
             // Not implemented in mupdf.so: fz_colorspace_name_process_colorants
             %ignore fz_colorspace_name_process_colorants;
+            %ignore fz_argv_from_wargv;
 
             %ignore fz_open_file_w;
 
