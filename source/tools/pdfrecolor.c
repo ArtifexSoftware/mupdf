@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -134,11 +134,10 @@ rewrite_page_streams(fz_context *ctx, pdf_document *doc, int page_num)
 static int
 usage(void)
 {
-	fprintf(stderr, "mutool convert version " FZ_VERSION "\n");
-	fprintf(stderr, "Usage: mutool convert [options] <input filename>\n");
-	fprintf(stderr, "\t-c <colorspace>\tOutput colorspace (gray(default), rgb, cmyk)\n");
+	fprintf(stderr, "usage: mutool recolor [options] <input filename>\n");
+	fprintf(stderr, "\t-c -\tOutput colorspace (gray(default), rgb, cmyk)\n");
 	fprintf(stderr, "\t-r\tRemove OutputIntent(s)\n");
-	fprintf(stderr, "\t-o <output>\tOutput file\n");
+	fprintf(stderr, "\t-o -\tOutput file\n");
 	return 1;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -161,6 +161,7 @@ int main(int argc, char **argv)
 
 	/* Print usage */
 
+	fprintf(stderr, "mutool version %s\n", FZ_VERSION);
 	fprintf(stderr, "usage: mutool <command> [options]\n");
 
 	for (i = 0; i < (int)nelem(tools); i++)

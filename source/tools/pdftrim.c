@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -182,14 +182,13 @@ read_margins(float *margin, char *arg)
 static int
 usage(void)
 {
-	fprintf(stderr, "mutool convert version " FZ_VERSION "\n");
-	fprintf(stderr, "Usage: mutool trim [options] <input filename>\n");
-	fprintf(stderr, "\t-b <box>\tWhich box to trim to (mediabox(default),cropbox,bleedbox,trimbox,artbox)\n");
-	fprintf(stderr, "\t-m <margin>\tAdd margins to box (+ve for inwards, -ve outwards).\n");
-	fprintf(stderr, "\t\t <margin> = <all> or <V>,<H> or <T>,<R>,<B>,<L>\n");
+	fprintf(stderr, "usage: mutool trim [options] <input filename>\n");
+	fprintf(stderr, "\t-b -\tWhich box to trim to (mediabox(default),cropbox,bleedbox,trimbox,artbox)\n");
+	fprintf(stderr, "\t-m -\tAdd margins to box (+ve for inwards, -ve outwards).\n");
+	fprintf(stderr, "\t\t\t<All> or <V>,<H> or <T>,<R>,<B>,<L>\n");
 	fprintf(stderr, "\t-e\tExclude contents of box, rather than include them\n");
 	fprintf(stderr, "\t-f\tFallback to mediabox if specified box not available\n");
-	fprintf(stderr, "\t-o <output>\tOutput file\n");
+	fprintf(stderr, "\t-o -\tOutput file\n");
 	return 1;
 }
 
