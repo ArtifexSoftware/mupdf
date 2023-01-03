@@ -131,53 +131,47 @@ rewrite_page_streams(fz_context *ctx, pdf_document *doc, int page_num)
 		fz_rethrow(ctx);
 }
 
+static int
+usage(void)
+{
+	fprintf(stderr, "mutool convert version " FZ_VERSION "\n");
+	fprintf(stderr, "Usage: mutool convert [options] <input filename>\n");
+	fprintf(stderr, "\t-c <colorspace>\tOutput colorspace (gray(default), rgb, cmyk)\n");
+	fprintf(stderr, "\t-r\tRemove OutputIntent(s)\n");
+	fprintf(stderr, "\t-o <output>\tOutput file\n");
+	return 1;
+}
+
 int pdfrecolor_main(int argc, char **argv)
 {
 	fz_context *ctx = NULL;
 	pdf_document *pdf = NULL;
 	fz_document *doc = NULL;
 	pdf_write_options opts = pdf_default_write_options;
-	int n, i;
+	int n, i, c;
 	char *infile = NULL;
 	char *outputfile = NULL;
 	int code = EXIT_SUCCESS;
 	const char *colorspace = NULL;
 	int remove_oi = 0;
 
-	for (i = 1; i < argc; i++)
+	while ((c = fz_getopt(argc, argv, "c:o:r")) != -1)
 	{
+		switch (c)
+		{
+		default: return usage();
+
 		// color convert
-		if (!strcmp(argv[i], "-c"))
-		{
-			if (i >= argc-1 || colorspace)
-				goto error;
-			colorspace = argv[++i];
+		case 'c': colorspace = fz_optarg; break;
+		case 'o': outputfile = fz_optarg; break;
+		case 'r': remove_oi = 1; break;
 		}
-		else if (!strcmp(argv[i], "-o"))
-		{
-			if (i >= argc-1)
-				goto error;
-			outputfile = argv[++i];
-		}
-		else if (!strcmp(argv[i], "-r"))
-			remove_oi = 1;
-		else if (infile == NULL)
-			infile = argv[i];
-		else
-			break;
 	}
 
-	if (infile == NULL)
-	{
-		fprintf(stderr, "No input file specified!\n");
-		i = 0;
-	}
+	if (fz_optind == argc || !outputfile)
+		return usage();
 
-	if (outputfile == NULL)
-	{
-		fprintf(stderr, "No output file specified!\n");
-		i = 0;
-	}
+	infile = argv[fz_optind];
 
 	if (colorspace == NULL || !strcmp(colorspace, "gray"))
 		colorspace = "gray";
@@ -188,22 +182,7 @@ int pdfrecolor_main(int argc, char **argv)
 	else
 	{
 		fprintf(stderr, "Unknown colorspace\n");
-		i = 0;
-	}
-
-	if (i < argc)
-	{
-		if (0)
-		{
-error:
-			fprintf(stderr, "Error while parsing options.\n");
-		}
-		fprintf(stderr, "Usage:\n\t%s [options] <input filename>\n", argv[0]);
-		fprintf(stderr, "\t<options>:\n");
-		fprintf(stderr, "\t\t-c <colorspace>\tOutput colorspace (gray(default), rgb, cmyk)\n");
-		fprintf(stderr, "\t\t-r\tRemove OutputIntent(s)\n");
-		fprintf(stderr, "\t\t-o <output>\tOutput file\n");
-		return 1;
+		return usage();
 	}
 
 	/* Set up the options for the file saving. */
