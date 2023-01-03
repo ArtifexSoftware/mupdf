@@ -179,6 +179,20 @@ read_margins(float *margin, char *arg)
 	margin[3] = fz_strtof(e, &e);
 }
 
+static int
+usage(void)
+{
+	fprintf(stderr, "mutool convert version " FZ_VERSION "\n");
+	fprintf(stderr, "Usage: mutool trim [options] <input filename>\n");
+	fprintf(stderr, "\t-b <box>\tWhich box to trim to (mediabox(default),cropbox,bleedbox,trimbox,artbox)\n");
+	fprintf(stderr, "\t-m <margin>\tAdd margins to box (+ve for inwards, -ve outwards).\n");
+	fprintf(stderr, "\t\t <margin> = <all> or <V>,<H> or <T>,<R>,<B>,<L>\n");
+	fprintf(stderr, "\t-e\tExclude contents of box, rather than include them\n");
+	fprintf(stderr, "\t-f\tFallback to mediabox if specified box not available\n");
+	fprintf(stderr, "\t-o <output>\tOutput file\n");
+	return 1;
+}
+
 int pdftrim_main(int argc, char **argv)
 {
 	fz_context *ctx = NULL;
@@ -194,68 +208,26 @@ int pdftrim_main(int argc, char **argv)
 	int box = MEDIABOX;
 	int fallback = 0;
 	float margins[4] = { 0 };
-	int margins_read = 0;
+	int c;
 
-	for (i = 1; i < argc; i++)
+	while ((c = fz_getopt(argc, argv, "b:o:efm:")) != -1)
 	{
-		if (!strcmp(argv[i], "-b"))
+		switch (c)
 		{
-			if (i >= argc-1 || boxname)
-				goto error;
-			boxname = argv[++i];
+		default: return usage();
+
+		case 'b': boxname = fz_optarg; break;
+		case 'o': outputfile = fz_optarg; break;
+		case 'e': exclude = 1; break;
+		case 'f': fallback = 1; break;
+		case 'm': read_margins(margins, fz_optarg); break;
 		}
-		else if (!strcmp(argv[i], "-o"))
-		{
-			if (i >= argc-1)
-				goto error;
-			outputfile = argv[++i];
-		}
-		else if (!strcmp(argv[i], "-e"))
-			exclude = 1;
-		else if (!strcmp(argv[i], "-f"))
-			fallback = 1;
-		else if (!strcmp(argv[i], "-m"))
-		{
-			if (i >= argc-1 || margins_read)
-				goto error;
-			margins_read = 1;
-			read_margins(margins, argv[++i]);
-		}
-		else if (infile == NULL)
-			infile = argv[i];
-		else
-			break;
 	}
 
-	if (infile == NULL)
-	{
-		fprintf(stderr, "No input file specified!\n");
-		i = 0;
-	}
+	if (fz_optind == argc)
+		return usage();
 
-	if (outputfile == NULL)
-	{
-		fprintf(stderr, "No output file specified!\n");
-		i = 0;
-	}
-
-	if (i < argc)
-	{
-		if (0)
-		{
-error:
-			fprintf(stderr, "Error while parsing options.\n");
-		}
-		fprintf(stderr, "Usage:\n\t%s [options] <input filename>\n", argv[0]);
-		fprintf(stderr, "\t<options>:\n");
-		fprintf(stderr, "\t\t-b <box>\tWhich box to trim to (mediabox(default),cropbox,bleedbox,trimbox,artbox)\n");
-		fprintf(stderr, "\t\t-m <margin>\tAdd margins to box (+ve for inwards, -ve outwards).\n");
-		fprintf(stderr, "\t\t\t <margin> = <all> or <V>,<H> or <T>,<R>,<B>,<L>\n");
-		fprintf(stderr, "\t\t-e\tExclude contents of box, rather than include them\n");
-		fprintf(stderr, "\t\t-f\tFallback to mediabox if specified box not available\n");
-		fprintf(stderr, "\t\t-o <output>\tOutput file\n");
-		return 1;
-	}
+	infile = argv[fz_optind];
 
 	if (boxname)
 	{
