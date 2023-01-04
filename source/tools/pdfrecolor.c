@@ -36,7 +36,7 @@ static void
 color_rewrite(fz_context *ctx, void *opaque, pdf_obj **cs_obj, int *n, float color[FZ_MAX_COLORS])
 {
 	fz_colorspace *cs;
-	float cols[4];
+	float cols[4] = { 0 };
 
 	if (pdf_name_eq(ctx, *cs_obj, PDF_NAME(Pattern)))
 		return;
