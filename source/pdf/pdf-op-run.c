@@ -99,6 +99,12 @@ typedef struct marked_content_stack
 	pdf_obj *val;
 } marked_content_stack;
 
+typedef struct begin_layer_stack
+{
+	struct begin_layer_stack *next;
+	char *layer;
+} begin_layer_stack;
+
 struct pdf_run_processor
 {
 	pdf_processor super;
@@ -134,7 +140,45 @@ struct pdf_run_processor
 	pdf_obj *mcid_sent;
 
 	int struct_parent;
+
+	/* Pending begin layers */
+	begin_layer_stack *begin_layer;
+	begin_layer_stack **next_begin_layer;
 };
+
+static void
+push_begin_layer(fz_context *ctx, pdf_run_processor *proc, const char *str)
+{
+	begin_layer_stack *s = fz_malloc_struct(ctx, begin_layer_stack);
+
+	fz_try(ctx)
+		s->layer = fz_strdup(ctx, str);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, s);
+		fz_rethrow(ctx);
+	}
+
+	s->next = NULL;
+	*proc->next_begin_layer = s;
+	proc->next_begin_layer = &s->next;
+}
+
+static void
+flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
+{
+	begin_layer_stack *s;
+
+	while (proc->begin_layer)
+	{
+		s = proc->begin_layer;
+		fz_begin_layer(ctx, proc->dev, s->layer);
+		proc->begin_layer = s->next;
+		fz_free(ctx, s->layer);
+		fz_free(ctx, s);
+	}
+	proc->next_begin_layer = &proc->begin_layer;
+}
 
 typedef struct
 {
@@ -579,6 +623,8 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 	if (pr->super.hidden)
 		return;
 
+	flush_begin_layer(ctx, pr);
+
 	/* PDF has images bottom-up, so flip them right side up here */
 	image_ctm = fz_pre_scale(fz_pre_translate(gstate->ctm, 0, 1), 1, -1);
 
@@ -625,6 +671,8 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	fz_rect bbox;
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
+
+	flush_begin_layer(ctx, pr);
 
 	if (dostroke) {
 		if (pr->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED))
@@ -776,6 +824,9 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	text = pdf_tos_get_text(ctx, &pr->tos);
 	if (!text)
 		return gstate;
+
+	/* If we are going to output text, we need to have flushed any begin layers first. */
+	flush_begin_layer(ctx, pr);
 
 	dofill = dostroke = doclip = doinvisible = 0;
 	switch (pr->tos.text_mode)
@@ -1013,6 +1064,8 @@ show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t l
 	unsigned char *end = buf + len;
 	unsigned int cpt;
 	int cid;
+
+	flush_begin_layer(ctx, pr);
 
 	while (buf < end)
 	{
@@ -1368,7 +1421,8 @@ begin_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
 	if (obj)
 	{
-		fz_begin_layer(ctx, proc->dev, pdf_to_name(ctx, obj));
+		pdf_flush_text(ctx, proc);
+		push_begin_layer(ctx, proc, pdf_to_name(ctx, obj));
 		return;
 	}
 
@@ -1390,6 +1444,7 @@ end_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
 	if (obj)
 	{
+		flush_begin_layer(ctx, proc);
 		fz_end_layer(ctx, proc->dev);
 		return;
 	}
@@ -1411,7 +1466,8 @@ begin_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Title));
 	if (obj)
 	{
-		fz_begin_layer(ctx, proc->dev, pdf_to_text_string(ctx, obj));
+		pdf_flush_text(ctx, proc);
+		push_begin_layer(ctx, proc, pdf_to_text_string(ctx, obj));
 	}
 }
 
@@ -1667,6 +1723,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 		return;
 	pr->cycle = &cycle_here;
 
+	flush_begin_layer(ctx, pr);
+
 	fz_var(cs);
 	fz_var(xobj_default_cs);
 
@@ -1823,6 +1881,8 @@ static void pdf_run_w(fz_context *ctx, pdf_processor *proc, float linewidth)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
+
+	flush_begin_layer(ctx, pr);
 
 	pr->dev->flags &= ~FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
 	gstate->stroke_state = fz_unshare_stroke_state(ctx, gstate->stroke_state);
@@ -1987,6 +2047,7 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_obj *smas
 static void pdf_run_q(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
+	flush_begin_layer(ctx, pr);
 	pdf_gsave(ctx, pr);
 }
 
@@ -2417,6 +2478,8 @@ static void pdf_run_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, co
 static void pdf_run_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
+
+	flush_begin_layer(ctx, pr);
 	pdf_show_shade(ctx, pr, shade);
 }
 
@@ -2523,6 +2586,14 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 		resources_stack *stk = pr->rstack;
 		pr->rstack = stk->next;
 		pdf_drop_obj(ctx, stk->resources);
+		fz_free(ctx, stk);
+	}
+
+	while (pr->begin_layer)
+	{
+		begin_layer_stack *stk = pr->begin_layer;
+		pr->begin_layer = stk->next;
+		fz_free(ctx, stk->layer);
 		fz_free(ctx, stk);
 	}
 
@@ -2725,6 +2796,8 @@ pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_mat
 	proc->gtop = -1;
 
 	proc->marked_content = NULL;
+
+	proc->next_begin_layer = &proc->begin_layer;
 
 	fz_try(ctx)
 	{
