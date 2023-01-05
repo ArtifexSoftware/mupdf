@@ -4500,7 +4500,7 @@ static void ffi_DocumentWriter_close(js_State *J)
 static void ffi_new_Story(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_buffer *contents = ffi_tobuffer(J, 1);
+	fz_buffer *contents = ffi_tobuffer(J, 1); /* FIXME: leak if js_tostring() throws */
 	const char *user_css = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	double em = js_tonumber(J, 3);
 	fz_story *story = NULL;
@@ -4508,6 +4508,8 @@ static void ffi_new_Story(js_State *J)
 	/* TODO Fix archive. */
 	fz_try(ctx)
 		story = fz_new_story(ctx, contents, user_css, em, NULL);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, contents);
 	fz_catch(ctx)
 		rethrow(J);
 
