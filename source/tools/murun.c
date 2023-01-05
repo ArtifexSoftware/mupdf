@@ -5675,7 +5675,7 @@ static void ffi_PDFDocument_wasPureXFA(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int val = 0;
 	fz_try(ctx)
-		val = pdf_validate_change_history(ctx, pdf);
+		val = pdf_was_pure_xfa(ctx, pdf);
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushboolean(J, val);
