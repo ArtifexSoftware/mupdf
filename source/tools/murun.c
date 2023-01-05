@@ -4594,7 +4594,7 @@ static void ffi_DOM_body(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_document_element(js_State *J)
+static void ffi_DOM_documentElement(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4607,7 +4607,7 @@ static void ffi_DOM_document_element(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_create_element(js_State *J)
+static void ffi_DOM_createElement(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4622,7 +4622,7 @@ static void ffi_DOM_create_element(js_State *J)
 }
 
 
-static void ffi_DOM_create_text_node(js_State *J)
+static void ffi_DOM_createTextNode(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4652,7 +4652,7 @@ static void ffi_DOM_find(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_find_next(js_State *J)
+static void ffi_DOM_findNext(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4668,7 +4668,7 @@ static void ffi_DOM_find_next(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_append_child(js_State *J)
+static void ffi_DOM_appendChild(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4680,7 +4680,7 @@ static void ffi_DOM_append_child(js_State *J)
 		rethrow(J);
 }
 
-static void ffi_DOM_insert_before(js_State *J)
+static void ffi_DOM_insertBefore(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4692,7 +4692,7 @@ static void ffi_DOM_insert_before(js_State *J)
 		rethrow(J);
 }
 
-static void ffi_DOM_insert_after(js_State *J)
+static void ffi_DOM_insertAfter(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4728,7 +4728,7 @@ static void ffi_DOM_clone(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_first_child(js_State *J)
+static void ffi_DOM_firstChild(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4780,7 +4780,7 @@ static void ffi_DOM_previous(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_add_attribute(js_State *J)
+static void ffi_DOM_addAttribute(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4795,7 +4795,7 @@ static void ffi_DOM_add_attribute(js_State *J)
 	ffi_pushdom(J, fz_keep_xml(ctx, dom));
 }
 
-static void ffi_DOM_remove_attribute(js_State *J)
+static void ffi_DOM_removeAttribute(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -4822,7 +4822,7 @@ static void ffi_DOM_attribute(js_State *J)
 	js_pushstring(J, val);
 }
 
-static void ffi_DOM_get_attributes(js_State *J)
+static void ffi_DOM_getAttributes(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
@@ -8511,24 +8511,24 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "DOM.body", ffi_DOM_body, 0);
-		jsB_propfun(J, "DOM.documentElement", ffi_DOM_document_element, 0);
-		jsB_propfun(J, "DOM.createElement", ffi_DOM_create_element, 1);
-		jsB_propfun(J, "DOM.createTextNode", ffi_DOM_create_text_node, 1);
+		jsB_propfun(J, "DOM.documentElement", ffi_DOM_documentElement, 0);
+		jsB_propfun(J, "DOM.createElement", ffi_DOM_createElement, 1);
+		jsB_propfun(J, "DOM.createTextNode", ffi_DOM_createTextNode, 1);
 		jsB_propfun(J, "DOM.find", ffi_DOM_find, 3);
-		jsB_propfun(J, "DOM.findNext", ffi_DOM_find_next, 3);
-		jsB_propfun(J, "DOM.appendChild", ffi_DOM_append_child, 1);
-		jsB_propfun(J, "DOM.insertBefore", ffi_DOM_insert_before, 1);
-		jsB_propfun(J, "DOM.insertAfter", ffi_DOM_insert_after, 1);
+		jsB_propfun(J, "DOM.findNext", ffi_DOM_findNext, 3);
+		jsB_propfun(J, "DOM.appendChild", ffi_DOM_appendChild, 1);
+		jsB_propfun(J, "DOM.insertBefore", ffi_DOM_insertBefore, 1);
+		jsB_propfun(J, "DOM.insertAfter", ffi_DOM_insertAfter, 1);
 		jsB_propfun(J, "DOM.remove", ffi_DOM_remove, 0);
 		jsB_propfun(J, "DOM.clone", ffi_DOM_clone, 0);
-		jsB_propfun(J, "DOM.first_child", ffi_DOM_first_child, 0);
+		jsB_propfun(J, "DOM.firstChild", ffi_DOM_firstChild, 0);
 		jsB_propfun(J, "DOM.parent", ffi_DOM_parent, 0);
 		jsB_propfun(J, "DOM.next", ffi_DOM_next, 0);
 		jsB_propfun(J, "DOM.previous", ffi_DOM_previous, 0);
-		jsB_propfun(J, "DOM.addAttribute", ffi_DOM_add_attribute, 2);
-		jsB_propfun(J, "DOM.removeAttribute", ffi_DOM_remove_attribute, 1);
+		jsB_propfun(J, "DOM.addAttribute", ffi_DOM_addAttribute, 2);
+		jsB_propfun(J, "DOM.removeAttribute", ffi_DOM_removeAttribute, 1);
 		jsB_propfun(J, "DOM.attribute", ffi_DOM_attribute, 1);
-		jsB_propfun(J, "DOM.getAttributes", ffi_DOM_get_attributes, 0);
+		jsB_propfun(J, "DOM.getAttributes", ffi_DOM_getAttributes, 0);
 	}
 	js_setregistry(J, "fz_xml");
 
