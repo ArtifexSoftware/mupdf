@@ -1594,7 +1594,7 @@ static void js_proc_j(fz_context *ctx, pdf_processor *proc, int linejoin)
 {
 	if (!((pdf_js_processor*)proc)->extgstate)
 	{
-		PROC_BEGIN("op_w");
+		PROC_BEGIN("op_j");
 		js_pushnumber(J, linejoin);
 		PROC_END(1);
 	}
