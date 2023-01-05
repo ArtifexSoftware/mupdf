@@ -347,8 +347,13 @@ static void ffi_pushoutlineiterator(js_State *J, fz_outline_iterator *iter)
 
 static void ffi_pushdom(js_State *J, fz_xml *dom)
 {
-	js_getregistry(J, "fz_xml");
-	js_newuserdata(J, "fz_xml", dom, ffi_gc_fz_xml);
+	if (dom)
+	{
+		js_getregistry(J, "fz_xml");
+		js_newuserdata(J, "fz_xml", dom, ffi_gc_fz_xml);
+	}
+	else
+		js_pushnull(J);
 }
 
 #if FZ_ENABLE_PDF
@@ -4819,7 +4824,10 @@ static void ffi_DOM_attribute(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_pushstring(J, val);
+	if (val)
+		js_pushstring(J, val);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_DOM_getAttributes(js_State *J)
