@@ -79,6 +79,8 @@ Several global functions that are common for command line shells are available:
 <dd>Load a JavaScript module.
 <dt>write(...)
 <dd>Print arguments to stdout, separated by spaces.
+<dt>repr(object)
+<dd>Format the object into a string with javascript syntax.
 </dl>
 
 <h2>
@@ -190,6 +192,8 @@ If the object has a 'down' property, it contains an array with all the sub-headi
 <dd>Resolve a document internal link uri to a link destination.
 <dt>Document#formatLinkURI(linkDestination)
 <dd>Format a document internal link destination object to an URI string suitable for Page#createLink().
+<dt>Document#outlineIterator()
+<dd>Return an OutlineIterator for the document outline.
 <dt>Document#isPDF()
 <dd>Returns true if the document is a PDF document.
 </dl>
@@ -202,9 +206,9 @@ If the object has a 'down' property, it contains an array with all the sub-headi
 <p>
 A link is a dictionary with keys for:
 <dl>
-<dt>Link#bounds:
+<dt>Link.bounds:
 <dd>A rectangle describing the link's location on the page.
-<dt>Link#uri:
+<dt>Link.uri:
 <dd>A uri describing either a document internal destination or a URL for a web page.
 </dl>
 </p>
@@ -213,19 +217,19 @@ A link is a dictionary with keys for:
 A link destination points to a location within a document and how a document viewer should show that destination.
 It consists of a dictionary with keys for:
 <dl>
-<dt>LinkDestination#chapter, #page:
+<dt>LinkDestination.chapter, .page:
 <dd>The chapter and page within the document.
-<dt>LinkDestination#type:
+<dt>LinkDestination.type:
 <dd>Either "Fit", "FitB", "FitH", "FitBH", "FitV", "FitBV", "FitR" or "XYZ", controlling which of the keys below exist.
-<dt>LinkDestination#x:
+<dt>LinkDestination.x:
 <dd>The left coordinate, valid for FitV, FitBV, FitR and XYZ.
-<dt>LinkDestination#y:
+<dt>LinkDestination.y:
 <dd>The top coordinate, valid for FitH, FitBH, FitR and XYZ.
-<dt>LinkDestination#width:
+<dt>LinkDestination.width:
 <dd>The width of the zoomed in region, valid for XYZ.
-<dt>LinkDestination#height:
+<dt>LinkDestination.height:
 <dd>The height of the zoomed in region, valid for XYZ.
-<dt>LinkDestination#zoom:
+<dt>LinkDestination.zoom:
 <dd>The zoom factor, valid for "XYZ".
 </dl>
 </p>
@@ -395,7 +399,6 @@ will keep all the graphics required in memory, so will increase the amount of me
 The options argument is a comma separated list of flags: preserve-ligatures, preserve-whitespace, preserve-spans, and preserve-images.
 <dt>DisplayList#search(needle)
 <dd>Search the display list text for all instances of 'needle', and return an array with rectangles of all matches found.
-<dd>
 </dl>
 
 <dl>
@@ -418,19 +421,19 @@ Many of the methods take graphics objects as arguments: Path, Text, Image and Sh
 <p>
 The stroking state is a dictionary with keys for:
 <dl>
-<dt>StrokingState#startCap, #dashCap, #endCap:
+<dt>StrokingState.startCap, .dashCap, .endCap:
 <dd>"Butt", "Round", "Square", or "Triangle".
-<dt>StrokingState#lineCap:
+<dt>StrokingState.lineCap:
 <dd>Set startCap, dashCap, and endCap all at once.
-<dt>StrokingState#lineJoin:
+<dt>StrokingState.lineJoin:
 <dd>"Miter", "Round", "Bevel", or "MiterXPS".
-<dt>StrokingState#lineWidth:
+<dt>StrokingState.lineWidth:
 <dd>Thickness of the line.
-<dt>StrokingState#miterLimit:
+<dt>StrokingState.miterLimit:
 <dd>Maximum ratio of the miter length to line width, before beveling the join instead.
-<dt>StrokingState#dashPhase:
+<dt>StrokingState.dashPhase:
 <dd>Starting offset for dash pattern.
-<dt>StrokingState#dashes:
+<dt>StrokingState.dashes:
 <dd>Array of on/off dash lengths.
 </dl>
 
@@ -441,16 +444,16 @@ Colors are specified as arrays with the appropriate number of components for the
 The methods that clip graphics must be balanced with a corresponding popClip.
 
 <dl>
-<dt>Device#fillPath(path, evenOdd, transform, colorspace, color, alpha)
-<dt>Device#strokePath(path, stroke, transform)
+<dt>Device#fillPath(path, evenOdd, transform, colorspace, color, alpha, colorParams)
+<dt>Device#strokePath(path, stroke, transform, colorspace, color, alpha, colorParams)
 <dt>Device#clipPath(path, evenOdd, transform)
 <dt>Device#clipStrokePath(path, stroke, transform)
 <dd>Fill/stroke/clip a path.
 </dl>
 
 <dl>
-<dt>Device#fillText(text, transform, colorspace, color, alpha)
-<dt>Device#strokeText(text, stroke, transform, colorspace, color, alpha)
+<dt>Device#fillText(text, transform, colorspace, color, alpha, colorParams)
+<dt>Device#strokeText(text, stroke, transform, colorspace, color, alpha, colorParams)
 <dt>Device#clipText(text, transform)
 <dt>Device#clipStrokeText(text, stroke, transform)
 <dd>Fill/stroke/clip a text object.
@@ -459,18 +462,18 @@ The methods that clip graphics must be balanced with a corresponding popClip.
 </dl>
 
 <dl>
-<dt>Device#fillShade(shade, transform, alpha)
+<dt>Device#fillShade(shade, transform, alpha, colorParams)
 <dd>Fill a shade (a.k.a. gradient). TODO: this details of gradient fills are not exposed to JavaScript yet.
-<dt>Device#fillImage(shade, transform, alpha)
+<dt>Device#fillImage(shade, transform, alpha, colorParams)
 <dd>Draw an image. An image always fills a unit rectangle [0,0,1,1], so must be transformed to be placed and drawn at the appropriate size.
-<dt>Device#fillImageMask(image, transform, colorspace, color, alpha)
+<dt>Device#fillImageMask(image, transform, colorspace, color, alpha, colorParams)
 <dd>An image mask is an image without color. Fill with the color where the image is opaque.
 <dt>Device#clipImageMask(image, transform)
 <dd>Clip graphics using the image to mask the areas to be drawn.
 </dl>
 
 <dl>
-<dt>Device#beginMask(area, luminosity, backdropColorspace, backdropColor, backdropAlpha)
+<dt>Device#beginMask(area, luminosity, backdropColorspace, backdropColor, backdropAlpha, colorParams)
 <dt>Device#endMask()
 <dd>Create a soft mask. Any drawing commands between beginMask and endMask are grouped and used as a clip mask.
 If luminosity is true, the mask is derived from the luminosity (grayscale value) of the graphics drawn;
@@ -623,11 +626,11 @@ Image objects are similar to Pixmaps, but can contain compressed data.
 <dt>Image#getNumberOfComponents()
 <dt>Image#getBitsPerComponent()
 <dt>Image#getInterpolate()
-<dd>Returns true of interpolated was used during decoding.
+<dd>Returns true if interpolation was used during decoding.
 <dt>Image#getImageMask()
-<dd>Returns true if this image is and imagemask.
+<dd>Returns true if this image is an image mask.
 <dt>Image#getMask()
-<dd>Get another Image used as as mask for this one.
+<dd>Get another Image used as a mask for this one.
 <dt>Image#toPixmap(scaledWidth, scaledHeight)
 <dd>Create a pixmap from the image. The scaledWidth and scaledHeight arguments are optional,
 but may be used to decode a down-scaled pixmap.
@@ -682,7 +685,7 @@ The write options are a string of comma separated options (see the document writ
 <dd>Returns the number of versions of the document in a PDF file, typically 1 + the number of updates.
 <dt>PDFDocument#countUnsavedVersions()
 <dd>Returns the number of unsaved updates to the document.
-<dt>PDFDocument#validateChangedHistory()
+<dt>PDFDocument#validateChangeHistory()
 <dd>Check the history of the document, return the last version that checks out OK. Returns 0 if the entire history is ok, 1 if the next to last version is ok, but the last version has issues, etc.
 <dt>PDFDocument#hasUnsavedChanges()
 <dd>Returns true if the document has been saved since it was last opened or saved.
@@ -742,6 +745,7 @@ The buffer must contain already compressed data that matches the Filter and Deco
 <dt>PDFDocument#newInteger(number)
 <dt>PDFDocument#newReal(number)
 <dt>PDFDocument#newString(string)
+<dt>PDFDocument#newByteString(byteString)
 <dt>PDFDocument#newName(string)
 <dt>PDFDocument#newIndirect(objectNumber, generation)
 <dt>PDFDocument#newArray()
@@ -762,6 +766,10 @@ use a graft map instead.
 Each graft map should only be used with <i>one</i> source document! Make sure to create a new graft map for each source document used.
 <dt>PDFGraftMap#graftObject(object)
 <dd>Use the graft map to copy objects, with the ability to remember previously copied objects.
+<dt>PDFGraftMap#graftPage(map, dstPageNumber, srcDoc, srcPageNumber)
+<dd>Graft a page at the given page number from the source document to the requested page number in the destination document connected to the map.
+<dt>PDFDocument#graftPage(dstDoc, dstPageNumber, srcDoc, srcPageNumber)
+<dd>Graft a page and its resources at the given page number from the source document to the requested page number in the destination document.
 </dl>
 
 <p>
@@ -793,6 +801,10 @@ to JavaScript objects and arrays by getting and setting their properties.
 <dd>Length of the array.
 <dt>PDFObject#push(item)
 <dd>Append item to the end of the array.
+<dt>PDFObject#toString()
+<dd>Returns the object as a pretty-printed string.
+<dt>PDFObject#valueOf()
+<dd>Convert primitive PDF objects to a corresponding primitive null, boolean, number or string javascript objects. Indirect PDF objects get converted to the string "R" while PDF names are converted to plain strings. PDF arrays or dictionaries are returned unchanged.
 </dl>
 
 <p>
@@ -858,11 +870,10 @@ PDF JavaScript actions
 <dt>PDFDocument#disableJS()
 <dd>Disable interpretation of document JavaScript actions.
 <dt>PDFDocument#isJSSupported()
-<dd>Returns true if interpreation of document JavaScript actions is supported.
+<dd>Returns true if interpretation of document JavaScript actions is supported.
 <dt>PDFDocument#setJSEventListener(listener)
 <dd>Calls method onAlert whenever a document JS action trigger an alert.
 </dl>
-
 
 <h2>
 PDF journalling
@@ -878,7 +889,7 @@ PDF journalling
 <dt>PDFDocument#beginImplicitOperation()
 <dd>Begin an implicit journal operation. Implicit operations are operations that happen due to other operations, e.g. updating an annotation.
 <dt>PDFDocument#endOperation()
-<dd>End a previously started normal or implicit operation. AFter this it can be undone/redone using the methods below.
+<dd>End a previously started normal or implicit operation. After this it can be undone/redone using the methods below.
 <dt>PDFDocument#canUndo()
 <dd>Returns true if undo is possible in this state.
 <dt>PDFDocument#canRedo()
@@ -892,9 +903,9 @@ PDF journalling
 <p>
 A PDF journal object contains a numbered array of operations and a reference into this list indicating the current position.
 <dl>
-<dt>PDFJournal#position:
+<dt>PDFJournal.position:
 <dd>The current position in the journal.
-<dt>PDFJournal#steps:
+<dt>PDFJournal.steps:
 <dd>An array containing the name of each step in the journal.
 </dl>
 
@@ -945,7 +956,7 @@ and style ("serif" or "sans-serif").
 <dt>PDFPage#process(processor)
 <dd>Run through the page contents stream and call methods on the supplied PDF processor.
 <dt>PDFPage#toPixmap(transform, colorspace, alpha, renderExtra, usage)
-<dd>Render the page into a Pixmap using the given colorspace and alpha while applying the transform. Rendering fo annotations/widgets can be disabled. A page can be rendered for e.g. "View" or "Print" usage.
+<dd>Render the page into a Pixmap using the given colorspace and alpha while applying the transform. Rendering of annotations/widgets can be disabled. A page can be rendered for e.g. "View" or "Print" usage.
 <dt>PDFPage#getTransform()
 <dd>Return the transform from Fitz page space (upper left page origin, y descending, 72 dpi) to PDF user space (arbitrary page origin, y ascending, UserUnit dpi). This may
 </dl>
@@ -1134,16 +1145,51 @@ After embedding a file into a PDF, it can be connected to an annotation using PD
 <p>
 An EmbeddedFileParams object contain metadata about an embedded file.
 <dl>
-<dt>EmbeddedFileParams#filename:
+<dt>EmbeddedFileParams.filename:
 <dd>The name of the embedded file.
-<dt>EmbeddedFileParams#mimetype:
+<dt>EmbeddedFileParams.mimetype:
 <dd>The MIME type of the embedded file, or undefined if none exists.
-<dt>EmbeddedFileParams#size:
+<dt>EmbeddedFileParams.size:
 <dd>The size in bytes of the embedded file contents.
-<dt>EmbeddedFileParams#creationDate:
+<dt>EmbeddedFileParams.creationDate:
 <dd>The creation date of the embedded file.
-<dt>EmbeddedFileParams#modificationDate:
+<dt>EmbeddedFileParams.modificationDate:
 <dd>The modification date of the embedded file.
+</dl>
+
+<h3>
+OutlineIterator
+</h3>
+
+<p>
+An outline iterator is can be used to walk over all the items in an Outline and query their properties.
+To be able to insert items at the end of a list of sibling items, it can also walk one item past the end of the list.
+
+<dl>
+<dt>OutlineIterator#item()
+<dd>Return an OutlineIteratorItem or undefined if out of range.
+<dt>OutlineIterator#next()
+<dt>OutlineIterator#prev()
+<dt>OutlineIterator#up()
+<dt>OutlineIterator#down()
+<dd>Move the iterator position next/prev/up/down. Returns 0 if the new position has a valid item, or 1 if the position contains no valid item, but one may be inserted at this position.
+<dt>OutlineIterator#insert(item)
+<dd>Insert item before the current item. The position does not change. Returns 0 if the position has a valid item, or 1 if the position has no valid item.
+<dt>OutlineIterator#delete()
+<dd>Delete the current item. This implicitly moves to the next item. Returns 0 if the new position has a valid item, or 1 if the position contains no valid item, but one may be inserted at this position.
+<dt>OutlineIterator#update(item)
+<dd>Updates the current item with the properties of the supplied item.
+</dl>
+
+<p>
+An OutlineIteratorItem is a dictionary with keys for:
+<dl>
+<dt>OutlineIteratorItem.title:
+<dd>The title of the item.
+<dt>OutlineIteratorItem.uri:
+<dd>A uri pointing to the destination. Likely to be a document internal link that can be resolved by Document#resolveLink(), otherwise a link to a web page.
+<dt>OutlineIteratorItem.open:
+<dd>Returns true if the item should be opened when shown in a tree view.
 </dl>
 
 <h3>
@@ -1161,10 +1207,9 @@ removing content from the page.
 <dt>PDFPage#getAnnotations()
 <dd>Return array of all annotations on the page.
 <dt>PDFPage#createAnnotation(type)
-<dd>Create a new blank annotation of a given type.
-The type must be one of the annotation subtypes: "Text", "Link", "FreeText",
-"Line", "Square", "Circle", "Polygon", "PolyLine", "Highlight", "Underline",
-"Squiggly", "StrikeOut", "Redact", "Stamp", "Caret", "Ink", "Popup",
+<dd>Create a new blank annotation of a given annotation type: "Text", "Link",
+"FreeText", "Line", "Square", "Circle", "Polygon", "PolyLine", "Highlight",
+"Underline", "Squiggly", "StrikeOut", "Redact", "Stamp", "Caret", "Ink", "Popup",
 "FileAttachment", "Sound", "Movie", "RichMedia", "Widget", "Screen",
 "PrinterMark", "TrapNet", "Watermark", "3D" or "Projection".
 <dt>PDFPage#deleteAnnotation(annot)
@@ -1208,7 +1253,7 @@ These properties are available for all annotation types.
 
 <dl>
 <dt>PDFAnnotation#getType()
-<dd>Return the annotation subtype.
+<dd>Return the annotation type.
 <dt>PDFAnnotation#getFlags(), #setFlags(flags)
 <dd>Get/set the annotation flags.
 <dt>PDFAnnotation#getContents(), #setContents(text)
@@ -1333,18 +1378,209 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 <dd>Append a single vertex as an array of its X/Y coordinates.
 </dl>
 
+<p>
+Stamp annotations have the option to set a custom image as its appearance.
+
+<dl>
+<dt>PDFAnnotation#setStampImage(image)
+<dd>Set a custom image appearance for a stamp annotation.
+</dl>
+
+<h3>
+PDF Widgets
+</h3>
+
+<dl>
+<dt>PDFPage#getWidgets()
+<dd>Return array of all widgets on the page.
+<dt>PDFWidget#getFieldType()
+<dd>Return string indicating type of widget: "button", "checkbox", "combobox", "listbox", "radiobutton", "signature" or "text".
+<dt>PDFWidget#getFieldFlags()
+<dd>Return the field flags. Refer to the PDF specification for their meanings.
+<dt>PDFWidget#getRect(), #setRect(rect)
+<dd>Get/set the widget bounding box.
+<dt>PDFWidget#getMaxLen()
+<dd>Get maximum allowed length of the string value.
+<dt>PDFWidget#getValue(), #setTextValue(value), #setChoiceValue(value)
+<dd>Get/set the widget string value.
+<dt>PDFWidget#toggle()
+<dd>Toggle the state of the widget, returns 1 if the state changed.
+<dt>PDFWidget#getOptions()
+<dd>Returns an array with one text string describing the state of each kid of radio button/checkbox field.
+<dt>PDFWidget#layoutTextWidget()
+<dd>Layout the value of a text widget. Returns a TextLayout object described below.
+<dt>PDFWidget#isReadOnly()
+<dd>If the value is readonly and the widget cannot be interacted with.
+<dt>PDFWidget#getLabel()
+<dd>Get the field name as a string.
+<dt>PDFWidget#getEditingState(), #setEditingState()
+<dd>Get/set whether the widget is in editing state. When in editing state any changes to the widget value will not cause any side-effects such as changing other widgets or running javascript. This is intended for e.g. when a text widget is interactively having characters typed into it. Once editing is finished the state should reverted back, before updating the widget value again.
+<dt>PDFWidget#update()
+<dd>Update the appearance stream to account for changes to the widget.
+</dl>
+
+<dl>
+<dt>PDFWidget#isSigned()
+<dd>Returns true if the signature is signed.
+<dt>PDFWidget#validateSignature()
+<dd>Returns number of updates ago when signature became invalid. Returns 0 is signature is still valid, 1 if it became invalid during the last save, etc.
+<dt>PDFWidget#checkCertificate()
+<dd>Returns "OK" if signature checked out OK, otherwise a text string containing an error message, e.g. "Self-signed certificate." or "Signature invalidated by change to document.", etc.
+<dt>PDFWidget#getSignatory()
+<dd>Returns a text string with the distinguished name from a signed signature, or a text string with an error message.
+<dt>PDFWidget#previewSignature(signer, signatureConfig, image, reason, location)
+<dd>Return a Pixmap preview of what the signature would look like if signed with the given configuration. Reason and location may be undefined, in which case they are not shown. The signature configuration is described below.
+<dt>PDFWidget#sign(signer, signatureConfig, image, reason, location)
+<dd>Sign the signature with the given configuration. Reason and location may be undefined, in which case they are not shown. The signature configuration is described below.
+<dt>PDFWidget#clearSignature()
+<dd>Clear a signed signature, making it unsigned again.
+</dl>
+
+<dl>
+<dt>new PDFPKCS7Signer(filename, password)
+<dd>Read a certificate and private key from a pfx file and create a signer to hold this information. Used with PDFWidget#sign().
+</dl>
+
+<p>
+A signature configuration of what to include in the signature appearance:
+<dl>
+<dt>showLabels:
+<dd>Whether to include both labels and values or just values on the right hand side.
+<dt>showDN:
+<dd>Whether to include the distinguished name on the right hand side.
+<dt>showTextName:
+<dd>Whether to include the name of the signatory on the right hand side.
+<dt>showDate:
+<dd>Whether to include the date of signing on the right hand side.
+<dt>showGraphicName:
+<dd>Whether to include the signatory name on the left hand side.
+<dt>showLogo:
+<dd>Whether to include the MuPDF logo in the background.
+</dl>
+
+<dl>
+<dt>PDFWidget#eventEnter()
+<dd>Trigger the event when the pointing device enter a widget's active area.
+<dt>PDFWidget#eventExit()
+<dd>Trigger the event when the pointing device exits a widget's active area.
+<dt>PDFWidget#eventDown()
+<dd>Trigger the event when the pointing device's button is depressed within a widget's active area.
+<dt>PDFWidget#eventUp()
+<dd>Trigger the event when the pointing device's button is released within a widget's active area.
+<dt>PDFWidget#eventFocus()
+<dd>Trigger the event when the a widget gains input focus.
+<dt>PDFWidget#eventBlur()
+<dd>Trigger the event when the a widget loses input focus.
+</dl>
+
+<p>
+A description of layouted text value from a text widget with keys:
+<dl>
+<dt>TextLayout.matrix:
+<dt>TextLayout.invMatrix:
+<dd>Normal and inverted transform matrices for the layouted text.
+<dt>TextLayout.lines:
+<dd>An array of text lines belonging to the layouted text:
+<dl>
+<dt>lines.x:
+<dt>lines.y:
+<dd>The coordinate for the text line.
+<dt>lines.fontSize:
+<dd>The text size used for the layouted text line.
+<dt>lines.index:
+<dd>The index of the beginning of the line in the text string.
+<dt>lines.rect:
+<dd>The bounding rectangle for the text line.
+<dt>lines.chars:
+<dd>An array of characters in the text line:
+<dl>
+<dt>chars.x:
+<dt>chars.advance:
+<dd>The position and advance of the character.
+<dt>chars.index:
+<dd>The index of the character in the text string.
+<dt>chars.rect:
+<dd>The bounding rectangle for the character.
+</dl>
+</dl>
+</dl>
+
+<h3>
+Story
+</h3>
+
+<dl>
+<dt>new Story(contents, user_css, em)
+<dd>Create a new story with the given contents, formatted according to the provided user css and em size.
+<dt>Story#document()
+<dd>Return a DOM for an unplaced story. This allows adding content before placing the story.
+<dt>Story#place(rect)
+<dd>Place (or continue placing) a story into the supplied rectangle, returning a PlacementResult described below. Call Story#draw() to draw the placed content before calling Story#place() again to continue placing remaining content.
+<dt>Story#draw(device, matrix)
+<dd>Draw the placed story to the given device with the given transform.
+</dl>
+
+<dl>
+<dt>PlacementResult.filled:
+<dd>The rectangle of the actual area that was used.
+<dt>PlacementResult.more:
+<dd>True if more content remains to be placed, otherwise false if all content fit in the story.
+</dl>
+
+<h3>
+DOM
+</h3>
+
+<dl>
+<dt>DOM#body()
+<dd>Return a DOM for the body element.
+<dt>DOM#documentElement()
+<dd>Return a DOM for the top level element.
+<dt>DOM#createElement(tag)
+<dd>Create an element with the given tag type, but do not link it into the DOM yet.
+<dt>DOM#createTextMode(text)
+<dd>Create a text node with the given text contents, but do not link it into the DOM yet.
+<dt>DOM#find(tag, attribute, value)
+<dd>Find the element matching the tag, attribute and value. Set either of those to null to match anything.
+<dt>DOM#findNext(tag, attribute, value)
+<dd>Find the next element matching the tag, attribute and value. Set either of those to null to match anything.
+<dt>DOM#appendChild(dom, childdom)
+<dd>Insert an element as the last child of a parent, unlinking the child from its current position if required.
+<dt>DOM#insertBefore(dom, elementDom)
+<dd>Insert an element before this element, unlinking the new element from its current position if required.
+<dt>DOM#insertAfter(dom, elementDom)
+<dd>Insert an element after this element, unlinking the new element from its current position if required.
+<dt>DOM#remove()
+<dd>Remove an element from the DOM. The element can be added back elsewhere if required.
+<dt>DOM#clone()
+<dd>Clone an element (and its children). The clone is not yet linked into the DOM.
+<dt>DOM#firstChild()
+<dd>Return the first child of the element as a DOM, or null if no child exist.
+<dt>DOM#parent()
+<dd>Return the parent of the element as a DOM, or null if no parent exists.
+<dt>DOM#next()
+<dd>Return the next element as a DOM, or null if no such element exists.
+<dt>DOM#previous()
+<dd>Return the previous element as a DOM, or null if no such element exists.
+<dt>DOM#addAttribute(attribute, value)
+<dd>Add attribute with the given value, returns the updated element as a DOM.
+<dt>DOM#removeAttribute(attribute)
+<dd>Remove the specified attribute from the element.
+<dt>DOM#attribute(attribute)
+<dd>Return the element's attribute value as a string, or null if no such attribute exists.
+<dt>DOM#getAttributes()
+<dd>Returns a dictionary object with properties and their values corresponding to the element's attributes and their values.
+</dl>
+
 <h2>
 TODO
 </h2>
 
 <p>
-There are several areas in MuPDF that still need bindings to access from JavaScript:
+There are areas in MuPDF that still need bindings to access from JavaScript:
 
 <ul>
 <li>Shadings
-<li>PDFDocument#graftObject()
-<li>PDFWriteDevice
-<li>DocumentWriter
 </ul>
 
 </article>
