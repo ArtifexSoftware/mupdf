@@ -634,10 +634,29 @@ static fz_color_params ffi_tocolorparams(js_State *J, int idx)
 	return fz_default_color_params;
 }
 
+static const char *string_from_ri(uint8_t ri)
+{
+	switch (ri) {
+	default:
+	case 0: return "Perceptual";
+	case 1: return "RelativeColorimetric";
+	case 2: return "Saturation";
+	case 3: return "AbsoluteColorimetric";
+	}
+}
+
+
 static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 {
-	/* TODO */
-	js_pushnull(J);
+	js_newobject(J);
+	js_pushstring(J, string_from_ri(color_params.ri));
+	js_setproperty(J, -2, "renderingIntent");
+	js_pushboolean(J, color_params.bp);
+	js_setproperty(J, -2, "blackPointCompensation");
+	js_pushboolean(J, color_params.op);
+	js_setproperty(J, -2, "overPrinting");
+	js_pushboolean(J, color_params.opm);
+	js_setproperty(J, -2, "overPrintMode");
 }
 
 static fz_link_dest_type link_dest_type_from_string(const char *str);

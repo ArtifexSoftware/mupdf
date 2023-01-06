@@ -509,6 +509,19 @@ Apply a clip mask to restrict the pattern to the desired shape.
 <dd>Tell the device that we are done, and flush any pending output.
 </dl>
 
+<p>
+ColorParams is a dictionary with keys for:
+<dl>
+<dt>ColorParams.renderingIntent:
+<dd>Either of "Perceptual", "RelativeColorimetric", "Saturation" or "AbsoluteColorimetric".
+<dt>ColorParams.blackPointCompensation:
+<dd>True if black point compensation is activated.
+<dt>ColorParams.overPrinting:
+<dd>True if overprint is activated.
+<dt>ColorParams.overPrintMode:
+<dd>The overprint mode.
+</dl>
+
 <h2>
 Path
 </h2>
