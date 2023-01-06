@@ -6453,12 +6453,12 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
 	const char *name = js_tostring(J, 1);
 	pdf_annot *annot = NULL;
-	int subtype;
+	int type;
 
 	fz_try(ctx)
 	{
-		subtype = pdf_annot_type_from_string(ctx, name);
-		annot = pdf_create_annot(ctx, page, subtype);
+		type = pdf_annot_type_from_string(ctx, name);
+		annot = pdf_create_annot(ctx, page, type);
 	}
 	fz_catch(ctx)
 		rethrow(J);
@@ -6645,15 +6645,15 @@ static void ffi_PDFAnnotation_getType(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	int type;
-	const char *subtype = NULL;
+	const char *typestr = NULL;
 	fz_try(ctx)
 	{
 		type = pdf_annot_type(ctx, annot);
-		subtype = pdf_string_from_annot_type(ctx, type);
+		typestr = pdf_string_from_annot_type(ctx, type);
 	}
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, subtype);
+	js_pushstring(J, typestr);
 }
 
 static void ffi_PDFAnnotation_getFlags(js_State *J)
