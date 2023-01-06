@@ -3500,6 +3500,53 @@ static void ffi_new_Pixmap(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_Pixmap_invert(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+
+	fz_try(ctx)
+		fz_invert_pixmap(ctx, pixmap);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_invertLuminance(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+
+	fz_try(ctx)
+		fz_invert_pixmap_luminance(ctx, pixmap);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_gamma(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	float gamma = js_tonumber(J, 1);
+
+	fz_try(ctx)
+		fz_gamma_pixmap(ctx, pixmap, gamma);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_tint(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	float black = js_tonumber(J, 1);
+	float white = js_tonumber(J, 2);
+
+	fz_try(ctx)
+		fz_tint_pixmap(ctx, pixmap, black, white);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Pixmap_warp(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -8758,12 +8805,13 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.getYResolution", ffi_Pixmap_getYResolution, 0);
 		jsB_propfun(J, "Pixmap.getSample", ffi_Pixmap_getSample, 3);
 		jsB_propfun(J, "Pixmap.setResolution", ffi_Pixmap_setResolution, 2);
+		jsB_propfun(J, "Pixmap.invert", ffi_Pixmap_invert, 0);
+		jsB_propfun(J, "Pixmap.invertLuminance", ffi_Pixmap_invertLuminance, 0);
+		jsB_propfun(J, "Pixmap.gamma", ffi_Pixmap_gamma, 1);
+		jsB_propfun(J, "Pixmap.tint", ffi_Pixmap_tint, 2);
 		jsB_propfun(J, "Pixmap.warp", ffi_Pixmap_warp, 3);
 
 		// Pixmap.samples()
-		// Pixmap.invert
-		// Pixmap.tint
-		// Pixmap.gamma
 		// Pixmap.scale()
 
 		jsB_propfun(J, "Pixmap.saveAsPNG", ffi_Pixmap_saveAsPNG, 1);

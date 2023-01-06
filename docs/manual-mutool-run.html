@@ -354,11 +354,19 @@ tiles of a page.
 <dd>Get the value of component k at position x, y (relative to the image origin: 0, 0 is the top left pixel).
 <dt>Pixmap#setResolution(xRes, yRes)
 <dd>Set X/Y resolution in dots per inch.
+<dt>Pixmap#saveAsPNG(fileName, saveAlpha)
+<dd>Save the pixmap as a PNG. Only works for Gray and RGB images.
+<dt>Pixmap#invert()
+<dd>Invert all pixel. All components are processed, except alpha which is unchanged.
+<dt>Pixmap#invertLuminance()
+<dd>Transform all pixels so that luminance of each pixel is inverted, and the chrominance remains as unchanged as possible. All components are processed, except alpha which is unchanged.
+<dt>Pixmap#gamma(gamma)
+<dd>Apply gamma correction to pixmap. All components are processed, except alpha which is unchanged.
+<dt>Pixmap#tint(black, white)
+<dd>Tint all pixels in an RGB, BGR or Gray pixmap. Map black and white respectively to the given hex RGB values.
 <dt>Pixmap#warp(points, width, height)
 <dd>Return a warped subsection of the pixmap, where the result has the requested dimensions. Points give the
 corner points of a convex quadrilateral within the pixmap to be warped, represented as [x0, y0, x1, y1, x2, y2, x3, y3].
-<dt>Pixmap#saveAsPNG(fileName, saveAlpha)
-<dd>Save the pixmap as a PNG. Only works for Gray and RGB images.
 </dl>
 
 <h2>
