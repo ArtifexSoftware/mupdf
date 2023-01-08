@@ -8507,7 +8507,7 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "fz_story");
 
-	js_getregistry(J, "DOM");
+	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "DOM.body", ffi_DOM_body, 0);
