@@ -131,6 +131,7 @@ struct pdf_run_processor
 	pdf_obj *role_map;
 
 	marked_content_stack *marked_content;
+	pdf_obj *mcid_sent;
 
 	int struct_parent;
 };
@@ -1402,6 +1403,79 @@ end_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 }
 
 static void
+pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
+{
+	pdf_obj *struct_tree_root = pdf_dict_getl(ctx, pdf_trailer(ctx, proc->doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), NULL);
+	pdf_obj *parent_tree_root = pdf_dict_get(ctx, struct_tree_root, PDF_NAME(ParentTree));
+
+	while (pdf_objcmp(ctx, proc->mcid_sent, common))
+	{
+		pdf_obj *p = pdf_dict_get(ctx, proc->mcid_sent, PDF_NAME(P));
+		pdf_obj *tag = pdf_dict_get(ctx, proc->mcid_sent, PDF_NAME(S));
+
+		fz_end_structure(ctx, proc->dev);
+		pdf_drop_obj(ctx, proc->mcid_sent);
+		proc->mcid_sent = pdf_keep_obj(ctx, p);
+		if (!pdf_objcmp(ctx, p, struct_tree_root))
+		{
+			pdf_drop_obj(ctx, proc->mcid_sent);
+			proc->mcid_sent = NULL;
+			break;
+		}
+	}
+}
+
+static void
+send_begin_structure(fz_context *ctx, pdf_run_processor *proc, pdf_obj *mc_dict)
+{
+	pdf_obj *common;
+	pdf_obj *parent_tree_root = pdf_dict_getl(ctx, pdf_trailer(ctx, proc->doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), PDF_NAME(ParentTree), NULL);
+
+	/* We are currently nested in A,B,C,...E,F,mcid_sent. We want to update to
+	 * being in A,B,C,...G,H,mc_dict. So we need to find the lowest common
+	 * point. We know that the structure is a tree, so no cycles to worry about.
+	 * Live with an n^2 algorithm for now. */
+	for (common = mc_dict; common != NULL && pdf_objcmp(ctx, common, parent_tree_root); common = pdf_dict_get(ctx, common, PDF_NAME(P)))
+	{
+		pdf_obj *o;
+
+		for (o = proc->mcid_sent; o != NULL && pdf_objcmp(ctx, o, common) && pdf_objcmp(ctx, o, parent_tree_root); o = pdf_dict_get(ctx, o, PDF_NAME(P)));
+		if (!pdf_objcmp(ctx, o, common))
+			break;
+	}
+
+	/* So, we need to pop everything up to common (i.e. everything below common will be closed). */
+	pop_structure_to(ctx, proc, common);
+
+	/* Now we need to send everything between common (proc->mcid_sent) and mc_dict.
+	 * Again, n^2 will do... */
+	while (pdf_objcmp(ctx, proc->mcid_sent, mc_dict))
+	{
+		pdf_obj *send = mc_dict;
+		fz_structure standard;
+		pdf_obj *tag;
+		int uid;
+
+		while (1) {
+			pdf_obj *p = pdf_dict_get(ctx, send, PDF_NAME(P));
+
+			if (!pdf_objcmp(ctx, p, proc->mcid_sent))
+				break;
+			send = p;
+		}
+
+		uid = pdf_to_num(ctx, send);
+		tag = pdf_dict_get(ctx, send, PDF_NAME(S));
+		standard = structure_type(ctx, proc, tag);
+		if (standard != FZ_STRUCTURE_INVALID)
+			fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), uid);
+
+		pdf_drop_obj(ctx, proc->mcid_sent);
+		proc->mcid_sent = pdf_keep_obj(ctx, send);
+	}
+}
+
+static void
 push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr, pdf_obj *val)
 {
 	pdf_obj *tag;
@@ -1434,13 +1508,17 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 			begin_layer(ctx, proc, val);
 
 		/* Structure */
-		standard = structure_type(ctx, proc, tag);
-		if (standard == FZ_STRUCTURE_INVALID)
-			standard = structure_type(ctx, proc, pdf_dict_get(ctx, mc_dict, PDF_NAME(S)));
-		if (standard != FZ_STRUCTURE_INVALID)
+		if (mc_dict)
+			send_begin_structure(ctx, proc, mc_dict);
+		else
 		{
-			pdf_flush_text(ctx, proc);
-			fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
+			/* Maybe drop this entirely? */
+			standard = structure_type(ctx, proc, tag);
+			if (standard != FZ_STRUCTURE_INVALID)
+			{
+				pdf_flush_text(ctx, proc);
+				fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
+			}
 		}
 	}
 	fz_catch(ctx)
@@ -1484,13 +1562,19 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 		mc_dict = lookup_mcid(ctx, proc, val);
 
 		/* Structure */
-		standard = structure_type(ctx, proc, tag);
-		if (standard == FZ_STRUCTURE_INVALID)
-			standard = structure_type(ctx, proc, pdf_dict_get(ctx, mc_dict, PDF_NAME(S)));
-		if (standard != FZ_STRUCTURE_INVALID)
+		if (mc_dict)
 		{
-			pdf_flush_text(ctx, proc);
-			fz_end_structure(ctx, proc->dev);
+			/* Do nothing for now. */
+		}
+		else
+		{
+			/* Maybe drop this entirely? */
+			standard = structure_type(ctx, proc, tag);
+			if (standard != FZ_STRUCTURE_INVALID)
+			{
+				pdf_flush_text(ctx, proc);
+				fz_end_structure(ctx, proc->dev);
+			}
 		}
 
 		/* Finally, close any layers. */
@@ -2377,6 +2461,8 @@ pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 		fz_pop_clip(ctx, pr->dev);
 		pr->gstate[0].clip_depth--;
 	}
+
+	pop_structure_to(ctx, pr, NULL);
 
 	clear_marked_content(ctx, pr);
 }
