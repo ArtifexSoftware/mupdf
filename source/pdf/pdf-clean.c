@@ -904,6 +904,7 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 	list[0].filter = pdf_new_sanitize_filter;
 	list[0].options = &sopts;
 
+	sopts.opaque = page;
 	sopts.text_filter = pdf_redact_text_filter;
 	if (image_method == PDF_REDACT_IMAGE_PIXELS)
 		sopts.image_filter = pdf_redact_image_filter_pixels;
