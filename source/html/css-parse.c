@@ -652,8 +652,11 @@ static fz_css_value *parse_expr(struct lexbuf *buf)
 		if (accept(buf, ','))
 		{
 			white(buf);
-			tail = tail->next = fz_new_css_value(buf->ctx, buf->pool, ',', ",");
-			tail = tail->next = parse_term(buf);
+			if (buf->lookahead != ';')
+			{
+				tail = tail->next = fz_new_css_value(buf->ctx, buf->pool, ',', ",");
+				tail = tail->next = parse_term(buf);
+			}
 		}
 		else if (accept(buf, '/'))
 		{
