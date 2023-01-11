@@ -1822,6 +1822,8 @@ pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
 	p->BT_pending = 1;
 	p->text_sent = 0;
 	p->text_removed = 0;
+	p->Td_pending = 0;
+	p->Td_value.x = p->Td_value.y = 0;
 }
 
 static void
