@@ -63,9 +63,11 @@ struct fz_html_font_set_s
 	fz_html_font_face *custom;
 };
 
+#define UCS_MAX 0x10ffff
+
 enum
 {
-	CSS_KEYWORD = 256,
+	CSS_KEYWORD = UCS_MAX+1,
 	CSS_HASH,
 	CSS_STRING,
 	CSS_NUMBER,
