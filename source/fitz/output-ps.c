@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -23,6 +23,8 @@
 #include "mupdf/fitz.h"
 
 #include "z-imp.h"
+
+#include <limits.h>
 
 typedef struct ps_band_writer_s
 {
