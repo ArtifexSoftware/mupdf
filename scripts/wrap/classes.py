@@ -1773,6 +1773,10 @@ classextras = ClassExtras(
                     ],
                 ),
 
+        fz_story_element_position = ClassExtra(
+                pod='inline',
+                ),
+
         fz_transition = ClassExtra(
                 pod='inline',
                 constructor_raw = True,
