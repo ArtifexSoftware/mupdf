@@ -640,6 +640,11 @@ Usage:
                     exists and its content differs from our generated content,
                     show diff and exit with an error. This can be used to check
                     for regressions when modifying this script.
+                --refcheck-if <text>
+                    Set text used to determine whether to enabling
+                    reference-checking code. For example use `--refcheck-if
+                    '#if 1'` to always enable, `--refcheck-if '#if 0'` to
+                    always disable. Default is '#ifndef NDEBUG'.
                 --python
                 --csharp
                     Whether to generated bindings for python or C#. Default is
@@ -1284,6 +1289,9 @@ def build( build_dirs, swig_command, args):
             build_csharp = True
         elif actions == '--regress':
             check_regress = True
+        elif actions == '--refcheck-if':
+            refcheck_if = args.next()
+            jlib.log( 'Have set {refcheck_if=}')
         elif actions.startswith( '-'):
             raise Exception( f'Unrecognised --build flag: {actions}')
         else:
@@ -1291,6 +1299,16 @@ def build( build_dirs, swig_command, args):
 
     if actions == 'all':
         actions = '0123' if state.state_.windows else 'm0123'
+
+    dir_so_flags = os.path.basename( build_dirs.dir_so).split( '-')
+
+    if state.state_.windows:
+        if 'debug' in dir_so_flags:
+            windows_build_type = 'Debug'
+        elif 'release' in dir_so_flags:
+            windows_build_type = 'Release'
+        else:
+            assert 0, f'Expecting "-release-" or "-debug-" in {build_dirs.dir_so=}'
 
     for action in actions:
         with jlib.LogPrefixScope( f'{action}: '):
@@ -1406,13 +1424,13 @@ def build( build_dirs, swig_command, args):
                             f'cd {build_dirs.dir_mupdf}&&'
                             f'"{devenv}"'
                             f' platform/win32/mupdf.sln'
-                            f' /Build "ReleasePython|{build_dirs.cpu.windows_config}"'
+                            f' /Build "{windows_build_type}Python|{build_dirs.cpu.windows_config}"'
                             f' /Project mupdfcpp'
                             )
                     jlib.system(command, verbose=1, out='log')
 
                     jlib.copy(
-                            f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
+                            f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
                             f'{build_dirs.dir_so}/',
                             verbose=1,
                             )
@@ -1424,7 +1442,6 @@ def build( build_dirs, swig_command, args):
                     cpp_files_text = ''
                     for i in cpp_files:
                         cpp_files_text += ' ' + os.path.relpath(i)
-                    dir_so_flags = os.path.basename( build_dirs.dir_so).split( '-')
                     if 'shared' in dir_so_flags:
                         libmupdfcpp = f'{build_dirs.dir_so}/libmupdfcpp.so'
                         libmupdf = f'{build_dirs.dir_so}/libmupdf.so'
@@ -1576,10 +1593,12 @@ def build( build_dirs, swig_command, args):
                                 build_dirs.python_version,
                                 )
                         jlib.log( '{include=}:')
-                        for dirpath, dirnames, filenames in os.walk( include):
-                            for f in filenames:
-                                p = os.path.join( dirpath, f)
-                                jlib.log( '    {p!r}')
+                        if 0:
+                            # Show contents of include directory.
+                            for dirpath, dirnames, filenames in os.walk( include):
+                                for f in filenames:
+                                    p = os.path.join( dirpath, f)
+                                    jlib.log( '    {p!r}')
                         assert os.path.isfile( os.path.join( include, 'Python.h'))
                         python_root = python_root.replace('\\', '/')
                         # Oddly there doesn't seem to be a
@@ -1616,13 +1635,13 @@ def build( build_dirs, swig_command, args):
                                 f'cd {build_dirs.dir_mupdf}&&'
                                 f'"{devenv}"'
                                 f' platform/win32/mupdfpyswig.sln'
-                                f' /Build "ReleasePython|{build_dirs.cpu.windows_config}"'
+                                f' /Build "{windows_build_type}Python|{build_dirs.cpu.windows_config}"'
                                 f' /Project mupdfpyswig'
                                 )
                         jlib.system(command, verbose=1, out='log', env_extra=env_extra)
 
                         jlib.copy(
-                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfpyswig.dll',
+                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfpyswig.dll',
                                 f'{build_dirs.dir_so}/_mupdf.pyd',
                                 verbose=1,
                                 )
@@ -1645,7 +1664,7 @@ def build( build_dirs, swig_command, args):
                         jlib.system(command, verbose=1, out='log')
 
                         jlib.copy(
-                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}Release/mupdfcsharpswig.dll',
+                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcsharpswig.dll',
                                 f'{build_dirs.dir_so}/mupdfcsharp.dll',
                                 verbose=1,
                                 )

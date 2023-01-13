@@ -884,6 +884,9 @@ def make_internal_functions( namespace, out_h, out_cpp):
             /** Internal use only. Looks at environmental variable <name>; returns 0 if unset else int value. */
             FZ_FUNCTION int {rename.internal('env_flag')}(const char* name);
 
+            /** Internal use only. Looks at environmental variable <name>; returns 0 if unset else int value. */
+            FZ_FUNCTION int {rename.internal('env_flag_check_unset')}( const char* if_, const char* name);
+
             /** Internal use only. Returns `fz_context*` for use by current thread. */
             FZ_FUNCTION fz_context* {rename.internal('context_get')}();
             '''
@@ -910,11 +913,20 @@ def make_internal_functions( namespace, out_h, out_cpp):
 
     cpp_text = textwrap.dedent(
             f'''
-            FZ_FUNCTION int {rename.internal("env_flag")}(const char* name)
+            FZ_FUNCTION int {rename.internal('env_flag')}(const char* name)
             {{
                 const char* s = getenv( name);
                 if (!s) return 0;
                 return atoi( s);
+            }}
+
+            FZ_FUNCTION int {rename.internal('env_flag_check_unset')}(const char* if_, const char* name)
+            {{
+                const char* s = getenv( name);
+                if (s) std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "():"
+                        << " Warning: ignoring environmental variable because"
+                        << " '" << if_ << "' is false: " << name << "\\n";
+                return false;
             }}
 
             struct {rename.internal("state")}
@@ -2508,10 +2520,32 @@ def function_wrapper_class_aware(
 
     if return_extras:
         if not return_extras.copyable:
+            out_h.write(
+                    textwrap.indent(
+                        textwrap.dedent( f'''
+                            /* Class-aware wrapper for `{fnname}()`
+                            is not available because returned wrapper class for `{return_cursor.spelling}`
+                            is non-copyable. */
+                            '''
+                            ),
+                        '    ',
+                        )
+                    )
             if verbose:
                 jlib.log( 'Not creating class-aware wrapper because returned wrapper class is non-copyable: {fnname=}.')
             return
         if not return_extras.constructor_raw:
+            out_h.write(
+                    textwrap.indent(
+                        textwrap.dedent( f'''
+                            /* Class-aware wrapper for `{fnname}()`
+                            is not available because returned wrapper class for `{return_cursor.spelling}`
+                            does not have raw constructor. */
+                            '''
+                            ),
+                        '    ',
+                        )
+                    )
             if verbose:
                 jlib.log( 'Not creating class-aware wrapper because returned wrapper class does not have raw constructor: {fnname=}.')
             return
@@ -3388,6 +3422,7 @@ def class_wrapper_virtual_fnptrs(
         out_h.write( ');\n')
         out_cpp.write( ')\n')
         out_cpp.write( '{\n')
+        out_cpp.write(f'    std::cerr << "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}().\\n";\n')
         out_cpp.write(f'    throw std::runtime_error( "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}().");\n')
         out_cpp.write( '}\n')
 
@@ -4290,6 +4325,8 @@ def cpp_source(
 
             {refcheck_if}
                 static const bool   s_trace_exceptions = mupdf::internal_env_flag("MUPDF_trace_exceptions");
+            #else
+                static const bool   s_trace_exceptions_dummy = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_exceptions");
             #endif
             '''))
 
@@ -4328,6 +4365,10 @@ def cpp_source(
                 static const int    s_trace = mupdf::internal_env_flag("MUPDF_trace");
                 static const bool   s_trace_keepdrop = mupdf::internal_env_flag("MUPDF_trace_keepdrop");
                 static const bool   s_trace_director = mupdf::internal_env_flag("MUPDF_trace_director");
+            #else
+                static const int    s_trace = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace");
+                static const bool   s_trace_keepdrop = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_keepdrop");
+                static const bool   s_trace_director = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_director");
             #endif
             '''))
 
@@ -4350,6 +4391,8 @@ def cpp_source(
 
             {refcheck_if}
                 static const int    s_trace = mupdf::internal_env_flag("MUPDF_trace");
+            #else
+                static const int    s_trace = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace");
             #endif
             '''))
 
@@ -4393,6 +4436,10 @@ def cpp_source(
                 static const int    s_trace = internal_env_flag("MUPDF_trace");
                 static const bool   s_trace_keepdrop = internal_env_flag("MUPDF_trace_keepdrop");
                 static const bool   s_trace_exceptions = internal_env_flag("MUPDF_trace_exceptions");
+            #else
+                static const int    s_trace = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace");
+                static const bool   s_trace_keepdrop = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_keepdrop");
+                static const bool   s_trace_exceptions = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_exceptions");
             #endif
 
             '''))
