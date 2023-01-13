@@ -722,7 +722,7 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *valu
 	/* Only the *-UCS2 CMaps use one-to-many mappings, so assuming unicode should be safe. */
 	if (len >= 2)
 	{
-		int i, j;
+		size_t i, j;
 		/* Look for mranges with either multiple surrogate pairs in, or surrogate pairs
 		 * with other chars. See bug 706131. */
 		for (i = 0, j = 0; i < len; i++, j++)
