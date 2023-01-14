@@ -103,7 +103,6 @@ static void jsB_gc(js_State *J)
 {
 	int report = js_toboolean(J, 1);
 	js_gc(J, report);
-	js_pushundefined(J);
 }
 
 static void jsB_load(js_State *J)
@@ -122,7 +121,6 @@ static void jsB_print(js_State *J)
 		fputs(s, stdout);
 	}
 	putchar('\n');
-	js_pushundefined(J);
 }
 
 static void jsB_write(js_State *J)
@@ -133,7 +131,6 @@ static void jsB_write(js_State *J)
 		if (i > 1) putchar(' ');
 		fputs(s, stdout);
 	}
-	js_pushundefined(J);
 }
 
 static void jsB_read(js_State *J)
@@ -2969,8 +2966,6 @@ static void ffi_Document_getMetaData(js_State *J)
 
 	if (found)
 		js_pushstring(J, info);
-	else
-		js_pushundefined(J);
 }
 
 static void ffi_Document_setMetaData(js_State *J)
@@ -3232,8 +3227,6 @@ static void ffi_OutlineIterator_update(js_State *J)
 	}
 	fz_catch(ctx)
 		rethrow(J);
-
-	js_pushundefined(J);
 }
 
 static void ffi_Page_isPDF(js_State *J)
