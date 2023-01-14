@@ -1526,13 +1526,42 @@ A description of layouted text value from a text widget with keys:
 </dl>
 </dl>
 
+<dl>
+<dt>new Archive(path)
+<dd>Create a new archive based either on a tar- or zip-file or the contents of a directory.
+<dt>Archive#getFormat()
+<dd>Returns a string describing the archive format.
+<dt>Archive#countEntries()
+<dd>Returns the number of entries in the archive.
+<dt>Archive#listEntry(idx)
+<dd>Returns the name of entry number idx in the archive.
+<dt>Archive#hasEntry(name)
+<dd>Returns true if an entry of the given name exists in the archive.
+<dt>Archive#readEntry(name)
+<dd>Returns the contents of the entry of the given name.
+</dl>
+
+<dl>
+<dt>new MultiArchive()
+<dd>Create a new empty multi archive.
+<dt>MultiArchive#mountArchive(subArchive, path)
+<dd>Add an archive to the set of archives handled by a multi archive. If path is null, the subArchive contents appear at the top-level, otherwise they will appear prefixed by the string path.
+</dl>
+
+<dl>
+<dt>new TreeArchive()
+<dd>Create a new empty tree archive.
+<dt>TreeArchive#add(name, buffer)
+<dd>Add a named buffer to a tree archive.
+</dl>
+
 <h3>
 Story
 </h3>
 
 <dl>
-<dt>new Story(contents, user_css, em)
-<dd>Create a new story with the given contents, formatted according to the provided user css and em size.
+<dt>new Story(contents, user_css, em, archive)
+<dd>Create a new story with the given contents, formatted according to the provided user css and em size, and an archive to lookup images, etc.
 <dt>Story#document()
 <dd>Return a DOM for an unplaced story. This allows adding content before placing the story.
 <dt>Story#place(rect)

@@ -231,6 +231,15 @@ struct event_cb_data
 
 /* destructors */
 
+static void ffi_gc_fz_archive(js_State *J, void *arch)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_try(ctx)
+		fz_drop_archive(ctx, arch);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_gc_fz_buffer(js_State *J, void *buf)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1072,6 +1081,33 @@ static int is_number(const char *key, int *idx)
 	char *end;
 	*idx = strtol(key, &end, 10);
 	return *end == 0;
+}
+
+static fz_archive *ffi_toarchive(js_State *J, int idx)
+{
+	if (js_isuserdata(J, idx, "fz_tree_archive"))
+		return js_touserdata(J, idx, "fz_tree_archive");
+	if (js_isuserdata(J, idx, "fz_multi_archive"))
+		return js_touserdata(J, idx, "fz_multi_archive");
+	return js_touserdata(J, idx, "fz_archive");
+}
+
+static void ffi_pusharchive(js_State *J, fz_archive *arch)
+{
+	js_getregistry(J, "fz_archive");
+	js_newuserdata(J, "fz_archive", arch, ffi_gc_fz_archive);
+}
+
+static void ffi_pushmultiarchive(js_State *J, fz_archive *arch)
+{
+	js_getregistry(J, "fz_multi_archive");
+	js_newuserdata(J, "fz_multi_archive", arch, ffi_gc_fz_archive);
+}
+
+static void ffi_pushtreearchive(js_State *J, fz_archive *arch)
+{
+	js_getregistry(J, "fz_tree_archive");
+	js_newuserdata(J, "fz_tree_archive", arch, ffi_gc_fz_archive);
 }
 
 static int ffi_buffer_has(js_State *J, void *buf_, const char *key)
@@ -2747,6 +2783,132 @@ static void ffi_setUserCSS(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_new_Archive(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *path = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	fz_archive *arch = NULL;
+	fz_try(ctx)
+		if (fz_is_directory(ctx, path))
+			arch = fz_open_directory(ctx, path);
+		else
+			arch = fz_open_archive(ctx, path);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pusharchive(J, arch);
+}
+
+static void ffi_Archive_getFormat(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = ffi_toarchive(J, 0);
+	const char *format = NULL;
+	fz_try(ctx)
+		format = fz_archive_format(ctx, arch);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, format);
+}
+
+static void ffi_Archive_countEntries(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = ffi_toarchive(J, 0);
+	int count = 0;
+	fz_try(ctx)
+		count = fz_count_archive_entries(ctx, arch);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, count);
+}
+
+static void ffi_Archive_listEntry(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = ffi_toarchive(J, 0);
+	int idx = js_tointeger(J, 1);
+	const char *name = NULL;
+	fz_try(ctx)
+		name = fz_list_archive_entry(ctx, arch, idx);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, name);
+}
+
+static void ffi_Archive_hasEntry(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = ffi_toarchive(J, 0);
+	const char *name = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	int has = 0;
+	fz_try(ctx)
+		has = fz_has_archive_entry(ctx, arch, name);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
+static void ffi_Archive_readEntry(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = ffi_toarchive(J, 0);
+	const char *name = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	fz_buffer *buf = NULL;
+	fz_try(ctx)
+		buf = fz_read_archive_entry(ctx, arch, name);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushbuffer(J, buf);
+}
+
+static void ffi_new_MultiArchive(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = NULL;
+	fz_try(ctx)
+		arch = fz_new_multi_archive(ctx);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushmultiarchive(J, arch);
+}
+
+static void ffi_new_TreeArchive(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = NULL;
+	fz_try(ctx)
+		arch = fz_new_tree_archive(ctx, NULL);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushtreearchive(J, arch);
+}
+
+static void ffi_MultiArchive_mountArchive(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = js_touserdata(J, 0, "fz_multi_archive");
+	fz_archive *sub = ffi_toarchive(J, 1);
+	const char *path = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	fz_try(ctx)
+		fz_mount_multi_archive(ctx, arch, sub, path);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_TreeArchive_add(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_archive *arch = js_touserdata(J, 0, "fz_tree_archive");
+	const char *name = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	fz_buffer *buf = ffi_tobuffer(J, 2);
+	fz_try(ctx)
+		fz_tree_archive_add_buffer(ctx, arch, name, buf);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_new_Buffer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3577,6 +3739,7 @@ static void ffi_Pixmap_warp(js_State *J)
 	js_getregistry(J, "fz_pixmap");
 	js_newuserdata(J, "fz_pixmap", dest, ffi_gc_fz_pixmap);
 }
+
 
 static void ffi_Pixmap_saveAsPNG(js_State *J)
 {
@@ -4573,12 +4736,12 @@ static void ffi_new_Story(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	const char *user_css = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	double em = js_tonumber(J, 3);
+	fz_archive *arch = js_isdefined(J, 4) ? ffi_toarchive(J, 4) : NULL;
 	fz_buffer *contents = ffi_tobuffer(J, 1);
 	fz_story *story = NULL;
 
-	/* TODO Fix archive. */
 	fz_try(ctx)
-		story = fz_new_story(ctx, contents, user_css, em, NULL);
+		story = fz_new_story(ctx, contents, user_css, em, arch);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, contents);
 	fz_catch(ctx)
@@ -8516,6 +8679,31 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "Archive.getFormat", ffi_Archive_getFormat, 0);
+		jsB_propfun(J, "Archive.countEntries", ffi_Archive_countEntries, 0);
+		jsB_propfun(J, "Archive.listEntry", ffi_Archive_listEntry, 1);
+		jsB_propfun(J, "Archive.hasEntry", ffi_Archive_hasEntry, 1);
+		jsB_propfun(J, "Archive.readEntry", ffi_Archive_readEntry, 1);
+	}
+	js_setregistry(J, "fz_archive");
+
+	js_getregistry(J, "fz_archive");
+	js_newobjectx(J);
+	{
+		jsB_propfun(J, "MultiArchive.mountArchive", ffi_MultiArchive_mountArchive, 2);
+	}
+	js_setregistry(J, "fz_multi_archive");
+
+	js_getregistry(J, "fz_archive");
+	js_newobjectx(J);
+	{
+		jsB_propfun(J, "TreeArchive.add", ffi_TreeArchive_add, 2);
+	}
+	js_setregistry(J, "fz_tree_archive");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
 		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
 		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
@@ -9086,6 +9274,9 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "pdf_document", "PDFDocument", ffi_new_PDFDocument, 1);
 #endif
 
+		jsB_propcon(J, "fz_archive", "Archive", ffi_new_Archive, 1);
+		jsB_propcon(J, "fz_multi_archive", "MultiArchive", ffi_new_MultiArchive, 1);
+		jsB_propcon(J, "fz_tree_archive", "TreeArchive", ffi_new_TreeArchive, 1);
 		jsB_propcon(J, "fz_buffer", "Buffer", ffi_new_Buffer, 1);
 		jsB_propcon(J, "fz_document", "Document", ffi_new_Document, 1);
 		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 3);
@@ -9097,7 +9288,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
-		jsB_propcon(J, "fz_story", "Story", ffi_new_Story, 3);
+		jsB_propcon(J, "fz_story", "Story", ffi_new_Story, 4);
 #if FZ_ENABLE_PDF
 		jsB_propcon(J, "pdf_pkcs7_signer", "PDFPKCS7Signer", ffi_new_PDFPKCS7Signer, 2);
 #endif

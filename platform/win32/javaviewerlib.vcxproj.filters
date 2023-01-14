@@ -183,6 +183,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\java\mupdf_native.c" />
+    <ClCompile Include="..\java\jni\archive.c">
+      <Filter>jni</Filter>
+    </ClCompile>
     <ClCompile Include="..\java\jni\buffer.c">
       <Filter>jni</Filter>
     </ClCompile>
@@ -226,6 +229,9 @@
       <Filter>jni</Filter>
     </ClCompile>
     <ClCompile Include="..\java\jni\link.c">
+      <Filter>jni</Filter>
+    </ClCompile>
+    <ClCompile Include="..\java\jni\multiarchive.c">
       <Filter>jni</Filter>
     </ClCompile>
     <ClCompile Include="..\java\jni\outlineiterator.c">
@@ -277,6 +283,9 @@
       <Filter>jni</Filter>
     </ClCompile>
     <ClCompile Include="..\java\jni\text.c">
+      <Filter>jni</Filter>
+    </ClCompile>
+    <ClCompile Include="..\java\jni\treearchive.c">
       <Filter>jni</Filter>
     </ClCompile>
     <ClCompile Include="..\java\jni\wrap.c">
