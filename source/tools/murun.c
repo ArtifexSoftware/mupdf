@@ -4571,9 +4571,9 @@ static void ffi_DocumentWriter_close(js_State *J)
 static void ffi_new_Story(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_buffer *contents = ffi_tobuffer(J, 1); /* FIXME: leak if js_tostring() throws */
 	const char *user_css = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	double em = js_tonumber(J, 3);
+	fz_buffer *contents = ffi_tobuffer(J, 1);
 	fz_story *story = NULL;
 
 	/* TODO Fix archive. */
@@ -5210,8 +5210,8 @@ static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	fz_buffer *buf = ffi_tobuffer(J, 1); /* FIXME: leak if ffi_toobj throws */
 	pdf_obj *obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
+	fz_buffer *buf = ffi_tobuffer(J, 1);
 	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
@@ -5440,9 +5440,17 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_rect mediabox = ffi_torect(J, 1);
 	int rotate = js_tonumber(J, 2);
-	pdf_obj *resources = ffi_toobj(J, pdf, 3); /* FIXME: leak if ffi_tobuffer throws */
-	fz_buffer *contents = ffi_tobuffer(J, 4);
+	pdf_obj *resources = ffi_toobj(J, pdf, 3);
+	fz_buffer *contents = NULL;
 	pdf_obj *ind = NULL;
+
+	if (js_try(J)) {
+		pdf_drop_obj(ctx, resources);
+		js_throw(J);
+	}
+
+	contents = ffi_tobuffer(J, 4);
+	js_endtry(J);
 
 	fz_try(ctx)
 		ind = pdf_add_page(ctx, pdf, mediabox, rotate, resources, contents);
