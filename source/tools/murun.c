@@ -3700,8 +3700,8 @@ static void ffi_Pixmap_tint(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
-	float black = js_tonumber(J, 1);
-	float white = js_tonumber(J, 2);
+	int black = js_tointeger(J, 1);
+	int white = js_tointeger(J, 2);
 
 	fz_try(ctx)
 		fz_tint_pixmap(ctx, pixmap, black, white);
