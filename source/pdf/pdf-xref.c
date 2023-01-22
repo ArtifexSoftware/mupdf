@@ -3007,10 +3007,9 @@ pdf_resolve_link_imp(fz_context *ctx, fz_document *doc_, const char *uri)
 	return pdf_resolve_link_dest(ctx, doc, uri);
 }
 
-char *
-pdf_format_link_uri_imp(fz_context *ctx, fz_document *doc, fz_link_dest dest)
+char *pdf_format_link_uri(fz_context *ctx, fz_document *doc, fz_link_dest dest)
 {
-	return pdf_format_link_uri(ctx, dest);
+	return pdf_new_uri_from_explicit_dest(ctx, dest);
 }
 
 /*
@@ -3042,7 +3041,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.has_permission = (fz_document_has_permission_fn*)pdf_has_permission;
 	doc->super.outline_iterator = (fz_document_outline_iterator_fn*)pdf_new_outline_iterator;
 	doc->super.resolve_link_dest = pdf_resolve_link_imp;
-	doc->super.format_link_uri = pdf_format_link_uri_imp;
+	doc->super.format_link_uri = pdf_format_link_uri;
 	doc->super.count_pages = pdf_count_pages_imp;
 	doc->super.load_page = pdf_load_page_imp;
 	doc->super.page_label = pdf_page_label_imp;

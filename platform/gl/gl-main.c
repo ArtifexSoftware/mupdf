@@ -88,15 +88,15 @@ static void open_browser(const char *uri)
 	int err;
 #endif
 
-	/* Relative file:// URI, make it absolute! */
-	if (!strncmp(uri, "file://", 7) && uri[7] != '/')
+	/* Relative file: URI, make it absolute! */
+	if (!strncmp(uri, "file:", 5) && uri[5] != '/')
 	{
 		char buf_base[PATH_MAX];
 		char buf_cwd[PATH_MAX];
 		fz_dirname(buf_base, filename, sizeof buf_base);
 		if (getcwd(buf_cwd, sizeof buf_cwd))
 		{
-			fz_snprintf(buf, sizeof buf, "file://%s/%s/%s", buf_cwd, buf_base, uri+7);
+			fz_snprintf(buf, sizeof buf, "file://%s/%s/%s", buf_cwd, buf_base, uri+5);
 			fz_cleanname(buf+7);
 			uri = buf;
 		}
@@ -1785,6 +1785,18 @@ static void load_document(void)
 
 	fz_drop_outline(ctx, outline);
 	fz_drop_document(ctx, doc);
+
+	if (!strncmp(filename, "file://", 7))
+	{
+		anchor = strchr(filename + 7, '#');
+		if (anchor)
+		{
+			memmove(anchor + 1, anchor, strlen(anchor) + 1);
+			*anchor = 0;
+			anchor++;
+		}
+		memmove(filename, filename + 7, strlen(filename));
+	}
 
 	/* If there was an accelerator to load, what would it be called? */
 	if (get_accelerator_filename(accelpath, sizeof(accelpath), 0))

@@ -270,6 +270,19 @@ fz_link_dest pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const cha
 pdf_obj *pdf_new_action_from_link(fz_context *ctx, pdf_document *doc, const char *uri);
 
 /*
+	Create a destination object given a link URI expected to adhere
+	to the Adobe specification "Parameters for Opening PDF files"
+	from the Adobe Acrobat SDK. The resulting destination object
+	will either be a PDF string, or a PDF array referring to a page
+	and suitable zoom level settings. In the latter case the page
+	can be referred to by PDF object number or by page number, this
+	is controlled by the is_remote argument. For remote destinations
+	it is not possible to refer to the page by object number, so
+	page numbers are used instead.
+*/
+pdf_obj *pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int is_remote);
+
+/*
 	Create a link URI string according to the Adobe specification
 	"Parameters for Opening PDF files" from the Adobe Acrobat SDK,
 	version 8.1, which can, at the time of writing, be found here:
@@ -278,7 +291,34 @@ pdf_obj *pdf_new_action_from_link(fz_context *ctx, pdf_document *doc, const char
 
 	The resulting string must be freed by the caller.
 */
-char *pdf_format_link_uri(fz_context *ctx, fz_link_dest dest);
+char *pdf_new_uri_from_explicit_dest(fz_context *ctx, fz_link_dest dest);
+
+/*
+	Create a remote link URI string according to the Adobe specification
+	"Parameters for Opening PDF files" from the Adobe Acrobat SDK,
+	version 8.1, which can, at the time of writing, be found here:
+
+	https://web.archive.org/web/20170921000830/http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
+
+	The file: URI scheme is used in the resulting URI if the remote document
+	is specified by a system independent path (already taking the recommendations
+	in table 3.40 of the PDF 1.7 specification into account), and either a
+	destination name or a page number and zoom level are appended:
+	file:///path/doc.pdf#page=42&view=FitV,100
+	file:///path/doc.pdf#nameddest=G42.123456
+
+	If a URL is used to specify the remote document, then its scheme takes
+	precedence and either a destination name or a page number and zoom level
+	are appended:
+	ftp://example.com/alpha.pdf#page=42&view=Fit
+	https://example.com/bravo.pdf?query=parameter#page=42&view=Fit
+
+	The resulting string must be freed by the caller.
+*/
+char *pdf_append_named_dest_to_uri(fz_context *ctx, const char *url, const char *name);
+char *pdf_append_explicit_dest_to_uri(fz_context *ctx, const char *url, fz_link_dest dest);
+char *pdf_new_uri_from_path_and_named_dest(fz_context *ctx, const char *path, const char *name);
+char *pdf_new_uri_from_path_and_explicit_dest(fz_context *ctx, const char *path, fz_link_dest dest);
 
 /*
 	Create transform to fit appearance stream to annotation Rect

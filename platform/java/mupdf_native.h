@@ -4127,6 +4127,38 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_deletePageLabels
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    formatURIFromPathAndNamedDest
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_formatURIFromPathAndNamedDest
+  (JNIEnv *, jclass, jstring, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    formatURIFromPathAndExplicitDest
+ * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/LinkDestination;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_formatURIFromPathAndExplicitDest
+  (JNIEnv *, jclass, jstring, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    appendNamedDestToURI
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_appendNamedDestToURI
+  (JNIEnv *, jclass, jstring, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    appendExplicitDestToURI
+ * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/LinkDestination;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_appendExplicitDestToURI
+  (JNIEnv *, jclass, jstring, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    countSignatures
  * Signature: ()I
  */

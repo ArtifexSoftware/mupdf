@@ -314,6 +314,20 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
         pdfDocument.deleteObject(obj);
 
+.. method:: formatURIWithPathAndDest(path, destination)
+
+    Format a link :title:`URI` given a system independent path (see table 3.40 in the 1.7 specification) to a remote document and a destination object or a destination string suitable for :ref:`createLink()<mutool_run_js_api_page_create_link>`.
+
+    :arg path: `String` An absolute or relative path to a remote document file.
+    :arg destination: :ref:`Link destiation<mutool_run_js_api_link_dest>` or `String` referring to a destination using either a destination object or a destination name in the remote document.
+
+.. method:: appendDestToURI(uri, destination)
+
+    Append a fragment representing a document destination to a an existing :title:`URI` that points to a remote document. The resulting string is suitable for :ref:`createLink()<mutool_run_js_api_page_create_link>`.
+
+    :arg uri: `String` An URI to a remote document file.
+    :arg destination: :ref:`Link destiation<mutool_run_js_api_link_dest>` or `String` referring to a destination using either a destination object or a destination name in the remote document.
+
 ----
 
 

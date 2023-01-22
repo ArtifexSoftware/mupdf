@@ -221,6 +221,24 @@ public class PDFDocument extends Document
 
 	public native void setPageLabels(int index, int style, String prefix, int start);
 	public native void deletePageLabels(int index);
+	protected static native String formatURIFromPathAndNamedDest(String path, String name);
+	protected static native String formatURIFromPathAndExplicitDest(String path, LinkDestination dest);
+	protected static native String appendNamedDestToURI(String uri, String name);
+	protected static native String appendExplicitDestToURI(String uri, LinkDestination dest);
+
+	public static String formatURIFromPathAndDest(String path, String name) {
+		return formatURIFromPathAndNamedDest(path, name);
+	}
+	public static String formatURIFromPathAndDest(String path, LinkDestination dest) {
+		return formatURIFromPathAndExplicitDest(path, dest);
+	}
+
+	public static String appendDestToURI(String uri, String name) {
+		return appendNamedDestToURI(uri, name);
+	}
+	public static String appendDestToURI(String uri, LinkDestination dest) {
+		return appendExplicitDestToURI(uri, dest);
+	}
 
 	public native int countSignatures();
 
