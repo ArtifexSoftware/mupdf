@@ -353,7 +353,7 @@ typedef struct {
 	fz_html_box *potential;
 } fz_html_restarter;
 
-struct fz_story_s
+struct fz_story
 {
 	/* fz_story is derived from fz_html_tree, so must start with */
 	/* that. Argubly 'tree' should be called 'super'. */
