@@ -1308,7 +1308,7 @@ def build( build_dirs, swig_command, args):
         elif 'release' in dir_so_flags:
             windows_build_type = 'Release'
         else:
-            assert 0, f'Expecting "-release-" or "-debug-" in {build_dirs.dir_so=}'
+            assert 0, f'Expecting "-release-" or "-debug-" in build_dirs.dir_so={build_dirs.dir_so}'
 
     for action in actions:
         with jlib.LogPrefixScope( f'{action}: '):
