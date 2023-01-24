@@ -1063,14 +1063,14 @@ def build_swig(
 
                 def fz_story_positions( story, python_callback):
                     #print( f'fz_story_positions() {{type(story)=}} {{type(python_callback)=}}')
-                    assert isinstance( story, {rename.class_('fz_story_s')})
+                    assert isinstance( story, {rename.class_('fz_story')})
                     assert callable( python_callback)
                     def python_callback2( position):
                         position2 = FzStoryElementPosition( position)
                         python_callback( position2)
                     ll_fz_story_positions( story.m_internal, python_callback2)
 
-                {rename.class_('fz_story_s')}.{rename.method('fz_story_s', 'fz_story_positions')} = fz_story_positions
+                {rename.class_('fz_story')}.{rename.method('fz_story', 'fz_story_positions')} = fz_story_positions
 
                 # Monkey-patch `FzDocumentWriter.__init__()` to set `self._out`
                 # to any `FzOutput2` arg. This ensures that the Python part of
