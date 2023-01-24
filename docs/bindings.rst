@@ -406,6 +406,36 @@ Changelog
 [Note that this is only for changes to the generation of the C++/Python/C#
 APIs; changes to the main MuPDF API are not detailed here.]
 
+* **2023-01-20**:
+
+  * Don't disable SWIG Directors on Windows.
+  * Show warnings if env settings (e.g. ``MUPDF_trace``) will be ignored
+    because we are a release build.
+  * Added Python support for MuPDF Stories.
+
+* **2023-01-12**: New release of Python package **mupdf-1.21.1.20230112.1504**
+  (from **mupdf-1.21.x** git 04c75ec9db31), with pre-built Wheels for Windows and
+  Linux. See: https://pypi.org/project/mupdf
+
+  * Reduced size of Python sdist by excluding some test directories.
+  * Python installation with ``pip`` will now automatically install
+    ``libclang`` and ``swig``.
+  * Added Windows-specific documentation.
+  * Fixes for Windows builds.
+
+* **2022-11-23**:
+
+  * Avoid need to specify ``LD_LIBRARY_PATH`` on Unix by using ``rpath``.
+  * Allow misc prefixes in build directory.
+  * Added accessors to fz_text_span wrapper class. This simplifies use from
+    Python, e.g. returning class wrappers for .font and .trm members, and
+    giving access to the .items[] array.
+  * Improved control over single-threaded behaviour.
+  * Fixed python wrappers for ``fz_set_warning_callback()`` and
+    ``fz_set_error_callback()``.
+  * Fixed implementation of ``ll_pdf_set_annot_color()``.
+
+
 * **2022-10-21**:
 
   * Document that global instances of wrapper classes are not supported.
@@ -667,6 +697,8 @@ Installing with the Python Windows installer from python.org:
 
 * A default installation is sufficient.
 
+* Debug binaries are required for debug builds of the MuPDF Python API.
+
 * If "Customize Installation" is chosen, make sure to include "py launcher" so
   that the ``py`` command will be available.
 
@@ -728,6 +760,9 @@ As above but do a debug build:
 .. code-block:: shell
 
     ./scripts/mupdfwrap.py -d build/shared-debug -b all --test-python
+
+[This requires debug version of the Python interpreter, for example
+``python311_d.lib``.]
 
 C# build and tests:
 
