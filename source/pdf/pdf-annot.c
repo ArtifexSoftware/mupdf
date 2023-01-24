@@ -3363,3 +3363,15 @@ pdf_set_annot_filespec(fz_context *ctx, pdf_annot *annot, pdf_obj *fs)
 
 	pdf_dirty_annot(ctx, annot);
 }
+
+int
+pdf_annot_hidden_for_editing(fz_context *ctx, pdf_annot *annot)
+{
+	return annot->hidden_editing;
+}
+
+void
+pdf_set_annot_hidden_for_editing(fz_context *ctx, pdf_annot *annot, int hidden)
+{
+	annot->hidden_editing = hidden;
+}
