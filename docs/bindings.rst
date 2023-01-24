@@ -53,7 +53,7 @@ Basics
 Low-level C++ API
 -----------------
 
-The MuPDF C API is provided as low-level C++ functions with a `ll_` prefix.
+The MuPDF C API is provided as low-level C++ functions with ``ll_`` prefixes.
 
 * No `fz_context*` arguments.
 
@@ -65,7 +65,7 @@ Class-aware C++ API
 C++ wrapper classes wrap most `fz_*` and `pdf_*` C structs.
 
 * Class names are camel-case versions of the wrapped struct's
-  name.
+  name, for example ``fz_document``'s wrapper class is ``mupdf::FzDocument``.
 
 * Classes automatically handle reference counting of the underlying C structs,
   so there is no need for manual calls to `fz_keep_*()` and `fz_drop_*()`, and
@@ -80,22 +80,35 @@ instead of MuPDF C structs.
 
 * Class-aware functions have the same names as the underlying C API function.
 
+* Args that are pointers to a MuPDF struct will be changed to take a reference to
+  the corresponding wrapper class.
+
+* Where a MuPDF function returns a pointer to a struct, the class-aware C++
+  wrapper will return a wrapper class instance by value.
+
 * Class-aware functions that have a C++ wrapper class as their first parameter
   are also provided as a member function of the wrapper class, with the same
   name as the class-aware function.
 
-Usually it is more convenient to use the class-aware API rather than the
+* Wrapper classes are defined in ``mupdf/platform/c++/include/mupdf/classes.h``.
+
+* Class-aware functions are declared in ``mupdf/platform/c++/include/mupdf/classes2.h``.
+
+Usually it is more convenient to use the class-aware C++ API rather than the
 low-level C++ API.
 
 Example wrappers
 ----------------
 
-The MuPDF C API function
-``fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options)``
-is available as these C++ functions/methods:
+The MuPDF C API function ``fz_new_buffer_from_page()`` is available as these
+C++ functions/methods:
 
 .. code-block:: c++
 
+    // MuPDF C function.
+    fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options);
+
+    // MuPDF C++ wrappers.
     namespace mupdf
     {
         // Low-level wrapper:
@@ -117,7 +130,9 @@ is available as these C++ functions/methods:
 Extensions beyond the basic C API
 ---------------------------------
 
-* Some generated classes have extra  `begin()` and `end()` methods to allow standard C++ iteration:
+* Some generated classes have extra ``begin()`` and ``end()`` methods to allow
+  standard C++ iteration:
+
   |expand_begin|
 
   .. code-block:: c++
@@ -155,10 +170,10 @@ Extensions beyond the basic C API
 
   |expand_end|
 
-* Some custom class methods and constructors.
+* There are various custom class methods and constructors.
 
-* Functions for generating a text representation of 'POD' structs and their C++
-  wrapper classes.
+* There are extra functions for generating a text representation of 'POD'
+  structs and their C++ wrapper classes.
 
   For example for `fz_rect` we provide these functions:
 
@@ -859,40 +874,6 @@ Other intermediate generated files are created in `mupdf/platform/`
 C++ bindings details
 ====================
 
-Class-based API overview
-------------------------
-
-All generated code is in namespace `mupdf`.
-
-Class wrappers are defined for each MuPDF struct.
-
-* These classes are defined in: `mupdf/platform/c++/include/mupdf/classes.h`
-
-MuPDF functions that take a pointer to a MuPDF struct as their first arg
-(ignoring any initial `fz_context*` arg), are usually available as a method of
-the corresponding wrapper class.
-
-Args that are pointers to a MuPDF struct will be changed to take a reference to
-the corresponding wrapper class.
-
-In addition there will be a non-member function called `mupdf::<fnname>()`
-which provides exactly the same functionality, taking a reference to the
-wrapper class as an explicit first arg called `self`.
-
-* These non-member functions are declared in:
-  `mupdf/platform/c++/include/mupdf/classes2.h`
-
-
-Details
-^^^^^^^
-
-* Class wrappers have names that are camel-case versions of the underlying MuPDF C structs.
-
-* All C++ functions omit any `fz_context*` arg.
-
-* All C++ functions convert MuPDF exceptions into C++ exceptions.
-
-
 Wrapper functions
 -----------------
 
@@ -1129,6 +1110,46 @@ Details
         document.pdf_save_document('foo.pdf', mupdf.PdfWriteOptions())
 
 |expand_end|
+
+
+Python differences from C API
+-----------------------------
+
+[The functions listed below are also available as class methods.]
+
+New functions
+^^^^^^^^^^^^^
+
+* ``fz_buffer_extract_copy()``: Returns copy of buffer data as a Python ``bytes``.
+* ``fz_buffer_storage_memoryview()``: Returns Python ``memoryview`` onto buffer data. Relies on buffer contents not changing.
+* ``fz_pixmap_samples2()``: Returns Python ``memoryview`` onto ``fz_pixmap`` data.
+
+
+Implementated in Python
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``fz_format_output_path()``
+* ``pdf_dict_getl()``
+* ``pdf_dict_putl()``
+
+
+Non-standard API or implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``fz_buffer_extract()``: Returns a *copy* of the original buffer data as a Python ``bytes``. Still clears the buffer.
+* ``fz_convert_color()``: No ``float *fv`` param, instead returns ``(rgb0, rgb1, rgb2, rgb3)``.
+* ``fz_fill_text()``: ``color`` arg is tuple/list of 1-4 floats.
+* ``fz_new_buffer_from_copied_data()``: Takes Python ``bytes`` instance.
+* ``fz_set_error_callback()``: Takes a Python callable; no ``void* user`` arg.
+* ``fz_set_warning_callback()``: Takes a Python callable; no ``void* user`` arg.
+* ``fz_warn()``: Takes single Python ``str`` arg.
+* ``pdf_dict_putl_drop()``: Always raises exception because not useful with automatic ref-counts.
+* ``pdf_field_name()``: Uses extra C++ function ``pdf_field_name2()`` which returns ``std::string`` by value.
+* ``pdf_set_annot_color()``: Takes single ``color`` arg which must be float or tuple of 1-4 floats.
+* ``pdf_set_annot_interior_color()``: Takes single ``color`` arg which must be float or tuple of 1-4 floats.
+* ``ll_fz_convert_color()``: No `float *`fv`` param, instead returns ``(rgb0, rgb1, rgb2, rgb3)``.
+* ``ll_pdf_set_annot_color()``: Takes single ``color`` arg which must be float or tuple of 1-4 floats.
+* ``ll_pdf_set_annot_interior_color()``: Takes single ``color`` arg which must be float or tuple of 1-4 floats.
 
 
 Artifex Licensing
