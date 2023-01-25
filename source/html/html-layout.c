@@ -1896,7 +1896,7 @@ static int draw_box(fz_context *ctx, fz_html_box *box, float page_top, float pag
 	if (box->structure != FZ_HTML_STRUCT_UNKNOWN)
 		fz_end_structure(ctx, dev);
 
-	return 0;
+	return ret;
 }
 
 static void
