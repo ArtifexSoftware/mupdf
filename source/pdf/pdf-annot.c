@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1397,7 +1397,6 @@ pdf_annot_border(fz_context *ctx, pdf_annot *annot)
 	fz_try(ctx)
 	{
 		bs = pdf_dict_get(ctx, annot->obj, PDF_NAME(BS));
-		pdf_dict_put(ctx, bs, PDF_NAME(Type), PDF_NAME(Border));
 		bs_w = pdf_dict_get(ctx, bs, PDF_NAME(W));
 		if (pdf_is_number(ctx, bs_w))
 		{
