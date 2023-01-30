@@ -2077,9 +2077,11 @@ classextras = ClassExtras(
                     ExtraConstructor( '()',
                         f'''
                         {{
+                            this->opaque = nullptr;
                             this->image_filter = nullptr;
                             this->text_filter = nullptr;
                             this->after_text_object = nullptr;
+                            this->culler = nullptr;
                         }}
                         ''',
                         comment = '/* Default constructor initialises all members to null. */',
