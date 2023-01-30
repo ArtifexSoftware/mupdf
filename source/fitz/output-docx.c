@@ -764,6 +764,7 @@ static fz_document_writer *fz_new_docx_writer_internal(fz_context *ctx, fz_outpu
 		writer->output = out;
 		if (get_bool_option(ctx, options, "html", 0)) format = extract_format_HTML;
 		if (get_bool_option(ctx, options, "text", 0)) format = extract_format_TEXT;
+		if (get_bool_option(ctx, options, "json", 0)) format = extract_format_JSON;
 		if (extract_alloc_create(s_realloc_fn, writer, &writer->alloc))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create extract_alloc instance");
 		if (extract_begin(writer->alloc, format, &writer->extract))

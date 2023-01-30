@@ -61,6 +61,7 @@
     <ClCompile Include="..\..\thirdparty\extract\src\extract.c" />
     <ClCompile Include="..\..\thirdparty\extract\src\html.c" />
     <ClCompile Include="..\..\thirdparty\extract\src\join.c" />
+    <ClCompile Include="..\..\thirdparty\extract\src\json.c" />
     <ClCompile Include="..\..\thirdparty\extract\src\mem.c" />
     <ClCompile Include="..\..\thirdparty\extract\src\misc-test.c" />
     <ClCompile Include="..\..\thirdparty\extract\src\odt.c" />
@@ -82,6 +83,8 @@
     <ClInclude Include="..\..\thirdparty\extract\src\document.h" />
     <ClInclude Include="..\..\thirdparty\extract\src\docx.h" />
     <ClInclude Include="..\..\thirdparty\extract\src\docx_template.h" />
+    <ClInclude Include="..\..\thirdparty\extract\src\html.h" />
+    <ClInclude Include="..\..\thirdparty\extract\src\json.h" />
     <ClInclude Include="..\..\thirdparty\extract\src\outf.h" />
     <ClInclude Include="..\..\thirdparty\extract\src\xml.h" />
     <ClInclude Include="..\..\thirdparty\extract\src\zip.h" />

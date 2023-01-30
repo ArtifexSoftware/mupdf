@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\thirdparty\extract\src\docx_template.c">
       <Filter>extract</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\extract\src\json.c">
+      <Filter>extract</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\extract\include\extract\extract.h">
@@ -111,6 +114,12 @@
       <Filter>extract</Filter>
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\extract\src\compat_va_copy.h">
+      <Filter>extract</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\extract\src\json.h">
+      <Filter>extract</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\extract\src\html.h">
       <Filter>extract</Filter>
     </ClInclude>
   </ItemGroup>
