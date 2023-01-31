@@ -4555,6 +4555,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPNG
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsJPEG
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsJPEG
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    getX
  * Signature: ()I
  */
