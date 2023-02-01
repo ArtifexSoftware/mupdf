@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -948,23 +948,69 @@ static int layout_block_page_break(fz_context *ctx, layout_data *ld, float *yp, 
 	return 0;
 }
 
+static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row, int ncol)
+{
+	fz_html_box *cell, *child;
+	int col = 0;
+
+	/* Always layout the full row since we can't restart in the middle of a cell.
+	 * If the row doesn't fit fully, we'll postpone it to the next page.
+	 * FIXME: If the row doesn't fit then either, we should split it with the offset.
+	 */
+	fz_html_restarter *save_restart = ld->restart;
+	ld->restart = NULL;
+
+	/* For each cell in the row */
+	for (cell = row->down; cell; cell = cell->next)
+	{
+		float colw = row->s.layout.w / ncol; // TODO: proper calculation
+
+		/* Position the cell, zero height for now. */
+		cell->s.layout.y = cell->s.layout.b = row->s.layout.y;
+		cell->s.layout.x = row->s.layout.x + col * colw;
+		cell->s.layout.w = colw;
+
+		/* Layout cell contents into the cell. */
+		for (child = cell->down; child; child = child->next)
+		{
+			if (child->type == BOX_BLOCK)
+			{
+				layout_block(ctx, ld, child, cell->s.layout.x, &cell->s.layout.b, cell->s.layout.w);
+				cell->s.layout.b += child->u.block.padding[B] + child->u.block.border[B] + child->u.block.margin[B];
+			}
+			else if (child->type == BOX_FLOW)
+			{
+				layout_flow(ctx, ld, child, cell);
+			}
+			cell->s.layout.b = child->s.layout.b;
+		}
+
+		if (cell->s.layout.b > row->s.layout.b)
+			row->s.layout.b = cell->s.layout.b;
+
+		++col;
+	}
+
+	ld->restart = save_restart;
+}
+
 static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_html_box *top)
 {
-	fz_html_box *row, *cell, *child;
+	fz_html_box *row, *cell;
 	int col, ncol = 0;
 	fz_html_restarter *restart = ld->restart;
 
-	if (restart && restart->start == box)
+	if (restart)
 	{
 		/* We have reached the restart point */
-		restart->start = NULL;
+		if (restart->start == box)
+			restart->start = NULL;
 	}
 
 	/* Position table in box flow */
 	box->s.layout.y = box->s.layout.b = top->s.layout.b;
 
-	/* Find the maximum number of columns. (Count 'col' for each row, biggest one
-	 * gives ncol). */
+	/* Find the maximum number of columns. (Count 'col' for each row, biggest one gives ncol). */
 	for (row = box->down; row; row = row->next)
 	{
 		col = 0;
@@ -974,58 +1020,47 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 			ncol = col;
 	}
 
+	/* TODO: Calculate optimal column widths */
+
 	/* Layout each row in turn. */
 	for (row = box->down; row; row = row->next)
 	{
-		col = 0;
-
 		/* Position the row, zero height for now. */
 		row->s.layout.x = box->s.layout.x;
 		row->s.layout.w = box->s.layout.w;
 		row->s.layout.y = row->s.layout.b = box->s.layout.b;
 
-		/* FIXME: If we stop laying out mid-row, then we really ought to cancel the whole
-		 * row, and then restart the whole row next time. But this leads to us needing
-		 * to be careful in case we have a row that will never fit. For now, just stop
-		 * on the first failure. */
-
-		/* For each cell in the row */
-		for (cell = row->down; cell; cell = cell->next)
+		if (restart && restart->start != NULL)
 		{
-			float colw = row->s.layout.w / ncol; // TODO: proper calculation
+			if (restart->start == row)
+				restart->start = NULL;
+			else
+				continue; /* still skipping */
+		}
 
-			/* Position the cell, zero height for now. */
-			cell->s.layout.y = cell->s.layout.b = row->s.layout.y;
-			cell->s.layout.x = row->s.layout.x + col * colw;
-			cell->s.layout.w = colw;
+		layout_table_row(ctx, ld, row, ncol);
 
-			/* Layout cell contents into the cell. */
-			for (child = cell->down; child; child = child->next)
+		/* If the row doesn't fit on the current page, break here and put the row on the next page.
+		 * Unless the row was at the very start of the page, in which case it'll overfloaw instead.
+		 * FIXME: Don't overflow, draw twice with offset to break it abruptly at the page border!
+		 */
+		if (ld->page_h > 0)
+		{
+			float avail = ld->page_h - fmodf(row->s.layout.y - ld->page_top, ld->page_h);
+			float used = row->s.layout.b - row->s.layout.y;
+			if (used > avail && avail < ld->page_h)
 			{
-				if (child->type == BOX_BLOCK)
+				if (restart)
 				{
-					layout_block(ctx, ld, child, cell->s.layout.x, &cell->s.layout.b, cell->s.layout.w);
-					cell->s.layout.b += child->u.block.padding[B] + child->u.block.border[B] + child->u.block.margin[B];
+					restart->end = row;
+					return;
 				}
-				else if (child->type == BOX_FLOW)
+				else
 				{
-					layout_flow(ctx, ld, child, cell);
+					row->s.layout.y += avail;
+					layout_table_row(ctx, ld, row, ncol);
 				}
-				cell->s.layout.b = child->s.layout.b;
-
-				/* If we've reached an endpoint, stop looping. */
-				if (restart && restart->end)
-					break;
 			}
-
-			if (cell->s.layout.b > row->s.layout.b)
-				row->s.layout.b = cell->s.layout.b;
-
-			++col;
-
-			/* If we've reached an endpoint, stop looping. */
-			if (restart && restart->end)
-				break;
 		}
 
 		box->s.layout.b = row->s.layout.b;
