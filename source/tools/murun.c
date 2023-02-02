@@ -4221,6 +4221,54 @@ static void ffi_Pixmap_saveAsJPEG(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Pixmap_saveAsPAM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pam(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPNM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pnm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPBM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pbm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPKM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pkm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Pixmap_convertToColorSpace(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9649,7 +9697,11 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "Pixmap.saveAsPNG", ffi_Pixmap_saveAsPNG, 1);
 		jsB_propfun(J, "Pixmap.saveAsJPEG", ffi_Pixmap_saveAsJPEG, 2);
-		// Pixmap.saveAsPNM, PAM, PWG, PCL
+		jsB_propfun(J, "Pixmap.saveAsPAM", ffi_Pixmap_saveAsPAM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPNM", ffi_Pixmap_saveAsPNM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPBM", ffi_Pixmap_saveAsPBM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPKM", ffi_Pixmap_saveAsPKM, 1);
+		// Pixmap.saveAsPCL?, PCLM?, PDFOCR?, PSD?, PWG?
 
 		// Pixmap.halftone() -> Bitmap
 		// Pixmap.md5()

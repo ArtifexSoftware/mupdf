@@ -79,6 +79,10 @@ public class Pixmap
 
 	public native void saveAsPNG(String filename);
 	public native void saveAsJPEG(String filename, int quality);
+	public native void saveAsPAM(String filename);
+	public native void saveAsPNM(String filename);
+	public native void saveAsPBM(String filename);
+	public native void saveAsPKM(String filename);
 
 	public native int getX();
 	public native int getY();

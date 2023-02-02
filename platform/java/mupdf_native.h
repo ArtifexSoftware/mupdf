@@ -5428,6 +5428,38 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsJPEG
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsPAM
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPAM
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsPNM
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPNM
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsPBM
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPBM
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsPKM
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPKM
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    getX
  * Signature: ()I
  */
