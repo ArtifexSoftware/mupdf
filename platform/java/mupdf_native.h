@@ -5434,6 +5434,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_gamma
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_tint
   (JNIEnv *, jobject, jint, jint);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    convertToColorSpace
+ * Signature: (Lcom/artifex/mupdf/fitz/ColorSpace;Lcom/artifex/mupdf/fitz/ColorSpace;Lcom/artifex/mupdf/fitz/DefaultColorSpaces;IZ)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_convertToColorSpace
+  (JNIEnv *, jobject, jobject, jobject, jobject, jint, jboolean);
+
 #ifdef __cplusplus
 }
 #endif

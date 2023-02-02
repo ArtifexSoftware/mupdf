@@ -330,3 +330,25 @@ FUN(Pixmap_setResolution)(JNIEnv *env, jobject self, jint xres, jint yres)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_convertToColorSpace)(JNIEnv *env, jobject self, jobject jcs, jobject jproof, jobject jdefaultcs, jint jcolorparams, jboolean keep_alpha)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_colorspace *cs = from_ColorSpace(env, jcs);
+	fz_colorspace *proof = from_ColorSpace(env, jproof);
+	fz_default_colorspaces *default_cs = from_DefaultColorSpaces(env, jdefaultcs);
+	fz_color_params color_params = from_ColorParams_safe(env, jcolorparams);
+	fz_pixmap *dst = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+	if (!cs) jni_throw_arg(env, "destination colorspace must not be null");
+
+	fz_try(ctx)
+		dst = fz_convert_pixmap(ctx, pixmap, cs, proof, default_cs, color_params, keep_alpha);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Pixmap_safe_own(ctx, env, dst);
+}

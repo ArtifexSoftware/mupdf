@@ -4131,6 +4131,25 @@ static void ffi_Pixmap_saveAsJPEG(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Pixmap_convertToColorSpace(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_colorspace *proof = js_iscoercible(J, 2) ? js_touserdata(J, 2, "fz_colorspace") : NULL;
+	fz_default_colorspaces *default_cs = js_iscoercible(J, 3) ? ffi_todefaultcolorspaces(J, 3) : NULL;
+	fz_color_params color_params = js_iscoercible(J, 4) ? ffi_tocolorparams(J, 4) : fz_default_color_params;
+	int keep_alpha = js_isdefined(J, 5) ? js_toboolean(J, 5) : 0;
+	fz_pixmap *dst = NULL;
+
+	fz_try(ctx)
+		dst = fz_convert_pixmap(ctx, pixmap, cs, proof, default_cs, color_params, keep_alpha);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushpixmap(J, dst);
+}
+
 static void ffi_Pixmap_bound(js_State *J)
 {
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
@@ -9434,6 +9453,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.gamma", ffi_Pixmap_gamma, 1);
 		jsB_propfun(J, "Pixmap.tint", ffi_Pixmap_tint, 2);
 		jsB_propfun(J, "Pixmap.warp", ffi_Pixmap_warp, 3);
+		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 
 		// Pixmap.samples()
 		// Pixmap.scale()
