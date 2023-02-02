@@ -517,6 +517,28 @@ Apply a clip mask to restrict the pattern to the desired shape.
 </dl>
 
 <dl>
+<dt>Device#renderFlags(set, clear)
+<dd>Set/clear device rendering flags. Both set and clear are arrays where each element is a flag name:
+"mask", "color", "uncacheable", "fillcolor-undefined", "strokecolor-undefined", "startcap-undefined",
+"dashcap-undefined", "endcap-undefined", "linejoin-undefined", "miterlimit-undefined",
+"linewidth-undefined", "bbox-defined", or "gridfit-as-tiled".
+<dt>Device#setDefaultColorSpaces(defaults)
+<dd>Change the set of default colorspaces for the device. See the DefaultColorSpaces object.
+</dl>
+
+<dl>
+<dt>Device#beginStructure(standard, raw, uid)
+<dt>Device#endStructure()
+<dd>Begin/end a standard structure element, the raw tag name and a unique identifier.
+</dl>
+
+<dl>
+<dt>Device#beginMetatext(type, text)
+<dt>Device#endMetatext()
+<dd>Begin/end meta text information, the type (either of "ActualText", "Alt", "Abbreviation", or "Title") and the text value itself.
+</dl>
+
+<dl>
 <dt>Device#close()
 <dd>Tell the device that we are done, and flush any pending output.
 </dl>
@@ -532,6 +554,21 @@ ColorParams is a dictionary with keys for:
 <dd>True if overprint is activated.
 <dt>ColorParams.overPrintMode:
 <dd>The overprint mode.
+</dl>
+
+<p>
+DefaultColorSpaces is a an object with keys for:
+<dl>
+<dt>DefaultColorSpaces#getDefaultGray()
+<dt>DefaultColorSpaces#getDefaultRGB()
+<dt>DefaultColorSpaces#getDefaultCMYK()
+<dt>DefaultColorSpaces#getOutputIntent()
+<dd>Get the default gray/RGB/CMYK colorspace, or the output intent.
+<dt>DefaultColorSpaces#setDefaultGray(colorspace)
+<dt>DefaultColorSpaces#setDefaultRGB(colorspace)
+<dt>DefaultColorSpaces#setDefaultCMYK(colorspace)
+<dt>DefaultColorSpaces#setOutputIntent(colorspace)
+<dd>Set the default gray/RGB/CMYK colorspace, or the output intent, to the provided colorspace.
 </dl>
 
 <h2>

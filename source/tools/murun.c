@@ -267,6 +267,12 @@ static void ffi_gc_fz_colorspace(js_State *J, void *colorspace)
 	fz_drop_colorspace(ctx, colorspace);
 }
 
+static void ffi_gc_fz_default_colorspaces(js_State *J, void *default_cs)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_default_colorspaces(ctx, default_cs);
+}
+
 static void ffi_gc_fz_pixmap(js_State *J, void *pixmap)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -641,12 +647,6 @@ static struct color ffi_tocolor(js_State *J, int idx)
 	return c;
 }
 
-static fz_color_params ffi_tocolorparams(js_State *J, int idx)
-{
-	/* TODO */
-	return fz_default_color_params;
-}
-
 static const char *string_from_ri(uint8_t ri)
 {
 	switch (ri) {
@@ -657,7 +657,6 @@ static const char *string_from_ri(uint8_t ri)
 	case 3: return "AbsoluteColorimetric";
 	}
 }
-
 
 static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 {
@@ -670,6 +669,120 @@ static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 	js_setproperty(J, -2, "overPrinting");
 	js_pushboolean(J, color_params.opm);
 	js_setproperty(J, -2, "overPrintMode");
+}
+
+static fz_color_params ffi_tocolorparams(js_State *J, int idx)
+{
+	fz_color_params color_params = { 0 };
+
+	if (js_hasproperty(J, idx, "renderingIntent"))
+	{
+		js_getproperty(J, idx, "renderingIntent");
+		color_params.ri = js_tointeger(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "blackPointCompensation"))
+	{
+		js_getproperty(J, idx, "blackPointCompensation");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "overPrinting"))
+	{
+		js_getproperty(J, idx, "overPrinting");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "overPrintMode"))
+	{
+		js_getproperty(J, idx, "overPrintMode");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+
+	return color_params;
+}
+
+static void ffi_pushdefaultcolorspaces(js_State *J, fz_default_colorspaces *default_cs)
+{
+	js_getregistry(J, "fz_default_colorspaces");
+	js_newuserdata(J, "fz_default_colorspaces", default_cs, ffi_gc_fz_default_colorspaces);
+}
+
+static fz_default_colorspaces *ffi_todefaultcolorspaces(js_State *J, int idx)
+{
+	return (fz_default_colorspaces *) js_touserdata(J, idx, "fz_default_colorspaces");
+}
+
+static struct {
+	int flag;
+	const char *name;
+} render_flags[] = {
+	{ FZ_DEVFLAG_MASK, "mask" },
+	{ FZ_DEVFLAG_COLOR, "color" },
+	{ FZ_DEVFLAG_UNCACHEABLE, "uncacheable" },
+	{ FZ_DEVFLAG_FILLCOLOR_UNDEFINED, "fillcolor-undefined" },
+	{ FZ_DEVFLAG_STROKECOLOR_UNDEFINED, "strokecolor-undefined" },
+	{ FZ_DEVFLAG_STARTCAP_UNDEFINED, "startcap-undefined" },
+	{ FZ_DEVFLAG_DASHCAP_UNDEFINED, "dashcap-undefined" },
+	{ FZ_DEVFLAG_ENDCAP_UNDEFINED, "endcap-undefined" },
+	{ FZ_DEVFLAG_LINEJOIN_UNDEFINED, "linejoin-undefined" },
+	{ FZ_DEVFLAG_MITERLIMIT_UNDEFINED, "miterlimit-undefined" },
+	{ FZ_DEVFLAG_LINEWIDTH_UNDEFINED, "linewidth-undefined" },
+	{ FZ_DEVFLAG_BBOX_DEFINED, "bbox-defined" },
+	{ FZ_DEVFLAG_GRIDFIT_AS_TILED, "gridfit-as-tiled" },
+};
+
+static void ffi_pushrenderflags(js_State *J, int flags)
+{
+	js_newarray(J);
+	int idx = 0;
+	size_t i;
+	for (i = 0; i < nelem(render_flags); ++i)
+	{
+		if (flags & render_flags[i].flag)
+		{
+			js_pushstring(J, render_flags[i].name);
+			js_setindex(J, -2, idx++);
+		}
+	}
+}
+
+static int ffi_torenderflags(js_State *J, int idx)
+{
+	int flags = 0;
+	const char *name;
+	int i, n = js_getlength(J, idx);
+	size_t k;
+	for (i = 0; i < n; ++i) {
+		js_getindex(J, idx, i);
+		name = js_tostring(J, -1);
+		for (k = 0; k < nelem(render_flags); ++k)
+			if (!strcmp(name, render_flags[k].name))
+				flags |= render_flags[k].flag;
+		js_pop(J, 1);
+	}
+	return flags;
+}
+
+static const char *string_from_metatext(fz_metatext meta_text)
+{
+	switch (meta_text) {
+	default:
+	case FZ_METATEXT_ACTUALTEXT: return "ActualText";
+	case FZ_METATEXT_ALT: return "Alt";
+	case FZ_METATEXT_ABBREVIATION: return "Abbreviation";
+	case FZ_METATEXT_TITLE: return "Title";
+	}
+}
+
+static fz_metatext metatext_from_string(const char *str)
+{
+	if (!strcmp(str, "ActualText")) return FZ_METATEXT_ACTUALTEXT;
+	if (!strcmp(str, "Alt")) return FZ_METATEXT_ALT;
+	if (!strcmp(str, "Abbreviation")) return FZ_METATEXT_ABBREVIATION;
+	if (!strcmp(str, "Title")) return FZ_METATEXT_TITLE;
+	return FZ_METATEXT_ACTUALTEXT;
 }
 
 static fz_link_dest_type link_dest_type_from_string(const char *str);
@@ -1548,6 +1661,37 @@ js_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
+js_dev_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "renderFlags")) {
+		js_copy(J, -2);
+		ffi_pushrenderflags(J, set);
+		ffi_pushrenderflags(J, clear);
+		js_call(J, 2);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "setDefaultColorSpaces")) {
+		js_copy(J, -2);
+		ffi_pushdefaultcolorspaces(J, default_cs);
+		js_call(J, 1);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
 js_dev_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 {
 	js_State *J = ((js_device*)dev)->J;
@@ -1569,6 +1713,67 @@ js_dev_end_layer(fz_context *ctx, fz_device *dev)
 	if (js_try(J))
 		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "endLayer")) {
+		js_copy(J, -2);
+		js_call(J, 0);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard, const char *raw, int uid)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "beginStructure")) {
+		js_copy(J, -2);
+		js_pushstring(J, fz_structure_to_string(standard));
+		js_pushstring(J, raw);
+		js_pushnumber(J, uid);
+		js_call(J, 3);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_end_structure(fz_context *ctx, fz_device *dev)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "endStructure")) {
+		js_copy(J, -2);
+		js_call(J, 0);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "beginMetatext")) {
+		js_copy(J, -2);
+		js_pushstring(J, string_from_metatext(meta));
+		js_pushstring(J, text);
+		js_call(J, 2);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_end_metatext(fz_context *ctx, fz_device *dev)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "endMetatext")) {
 		js_copy(J, -2);
 		js_call(J, 0);
 		js_pop(J, 1);
@@ -1606,8 +1811,17 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 	dev->super.begin_tile = js_dev_begin_tile;
 	dev->super.end_tile = js_dev_end_tile;
 
+	dev->super.render_flags = js_dev_render_flags;
+	dev->super.set_default_colorspaces = js_dev_set_default_colorspaces;
+
 	dev->super.begin_layer = js_dev_begin_layer;
 	dev->super.end_layer = js_dev_end_layer;
+
+	dev->super.begin_structure = js_dev_begin_structure;
+	dev->super.end_structure = js_dev_end_structure;
+
+	dev->super.begin_metatext = js_dev_begin_metatext;
+	dev->super.end_metatext = js_dev_end_metatext;
 
 	dev->J = J;
 	return (fz_device*)dev;
@@ -2757,6 +2971,76 @@ static void ffi_Device_endLayer(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Device_renderFlags(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	int set = ffi_torenderflags(J, 1);
+	int clear = ffi_torenderflags(J, 2);
+	fz_try(ctx)
+		fz_render_flags(ctx, dev, set, clear);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_setDefaultColorSpaces(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 1);
+	fz_try(ctx)
+		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_beginStructure(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_structure str = js_iscoercible(J, 1) ? fz_structure_from_string(js_tostring(J, 1)) : FZ_STRUCTURE_INVALID;
+	const char *raw = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	int uid = js_tointeger(J, 3);
+
+	fz_try(ctx)
+		fz_begin_structure(ctx, dev, str, raw, uid);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_endStructure(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_try(ctx)
+		fz_end_structure(ctx, dev);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_beginMetatext(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_metatext meta = metatext_from_string(js_tostring(J, 1));
+	const char *meta_text = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+
+	fz_try(ctx)
+		fz_begin_metatext(ctx, dev, meta, meta_text);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_endMetatext(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_try(ctx)
+		fz_end_metatext(ctx, dev);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 /* mupdf module */
 
 static void ffi_readFile(js_State *J)
@@ -3657,6 +3941,66 @@ static void ffi_ColorSpace_toString(js_State *J)
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
 	fz_context *ctx = js_getcontext(J);
 	js_pushstring(J, fz_colorspace_name(ctx, colorspace));
+}
+
+static void ffi_DefaultColorSpaces_getDefaultGray(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->gray);
+}
+
+static void ffi_DefaultColorSpaces_getDefaultRGB(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->rgb);
+}
+
+static void ffi_DefaultColorSpaces_getDefaultCMYK(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->cmyk);
+}
+
+static void ffi_DefaultColorSpaces_getOutputIntent(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->oi);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultGray(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->gray);
+	default_cs->gray = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultRGB(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->rgb);
+	default_cs->rgb = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultCMYK(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->cmyk);
+	default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setOutputIntent(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->oi);
+	default_cs->oi = fz_keep_colorspace(ctx, cs);
 }
 
 static void ffi_new_Pixmap(js_State *J)
@@ -8928,6 +9272,16 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "Device.beginLayer", ffi_Device_beginLayer, 1);
 		jsB_propfun(J, "Device.endLayer", ffi_Device_endLayer, 0);
+
+		jsB_propfun(J, "Device.renderFlags", ffi_Device_renderFlags, 2);
+		jsB_propfun(J, "Device.setDefaultColorSpaces", ffi_Device_setDefaultColorSpaces, 1);
+
+		jsB_propfun(J, "Device.beginStructure", ffi_Device_beginStructure, 3);
+		jsB_propfun(J, "Device.endStructure", ffi_Device_endStructure, 0);
+
+		jsB_propfun(J, "Device.beginMetatext", ffi_Device_beginMetatext, 2);
+		jsB_propfun(J, "Device.endMetatext", ffi_Device_endMetatext, 0);
+
 	}
 	js_setregistry(J, "fz_device");
 
@@ -8955,6 +9309,22 @@ int murun_main(int argc, char **argv)
 		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceCMYK");
 	}
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultGray", ffi_DefaultColorSpaces_getDefaultGray, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultRGB", ffi_DefaultColorSpaces_getDefaultRGB, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultCMYK", ffi_DefaultColorSpaces_getDefaultCMYK, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getOutputIntent", ffi_DefaultColorSpaces_getOutputIntent, 0);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultGray", ffi_DefaultColorSpaces_setDefaultGray, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultRGB", ffi_DefaultColorSpaces_setDefaultRGB, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultCMYK", ffi_DefaultColorSpaces_setDefaultCMYK, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setOutputIntent", ffi_DefaultColorSpaces_setOutputIntent, 1);
+	}
+	js_dup(J);
+	js_setglobal(J, "DefaultColorSpaces");
+	js_setregistry(J, "fz_default_colorspaces");
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
