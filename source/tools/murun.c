@@ -368,6 +368,17 @@ static void ffi_pushdom(js_State *J, fz_xml *dom)
 		js_pushnull(J);
 }
 
+static void ffi_pushpixmap(js_State *J, fz_pixmap *pixmap)
+{
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+}
+
+static fz_pixmap *ffi_topixmap(js_State *J, int idx)
+{
+	return (fz_pixmap *) js_touserdata(J, idx, "fz_pixmap");
+}
+
 #if FZ_ENABLE_PDF
 
 static void ffi_pushobj(js_State *J, pdf_obj *obj);
@@ -3764,8 +3775,7 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_Page_toStructuredText(js_State *J)
@@ -4016,14 +4026,13 @@ static void ffi_new_Pixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_Pixmap_invert(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 
 	fz_try(ctx)
 		fz_invert_pixmap(ctx, pixmap);
@@ -4034,7 +4043,7 @@ static void ffi_Pixmap_invert(js_State *J)
 static void ffi_Pixmap_invertLuminance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 
 	fz_try(ctx)
 		fz_invert_pixmap_luminance(ctx, pixmap);
@@ -4045,7 +4054,7 @@ static void ffi_Pixmap_invertLuminance(js_State *J)
 static void ffi_Pixmap_gamma(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	float gamma = js_tonumber(J, 1);
 
 	fz_try(ctx)
@@ -4057,7 +4066,7 @@ static void ffi_Pixmap_gamma(js_State *J)
 static void ffi_Pixmap_tint(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int black = js_tointeger(J, 1);
 	int white = js_tointeger(J, 2);
 
@@ -4070,7 +4079,7 @@ static void ffi_Pixmap_tint(js_State *J)
 static void ffi_Pixmap_warp(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	/* 1 = array of 8 floats for points */
 	int w = js_tonumber(J, 2);
 	int h = js_tonumber(J, 3);
@@ -4094,15 +4103,13 @@ static void ffi_Pixmap_warp(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", dest, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, dest);
 }
-
 
 static void ffi_Pixmap_saveAsPNG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	const char *filename = js_tostring(J, 1);
 
 	fz_try(ctx)
@@ -4114,7 +4121,7 @@ static void ffi_Pixmap_saveAsPNG(js_State *J)
 static void ffi_Pixmap_saveAsJPEG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	const char *filename = js_tostring(J, 1);
 	int quality = js_isdefined(J, 2) ? js_tointeger(J, 2) : 90;
 
@@ -4126,7 +4133,7 @@ static void ffi_Pixmap_saveAsJPEG(js_State *J)
 
 static void ffi_Pixmap_bound(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	fz_rect bounds;
 
 	// fz_irect and fz_pixmap_bbox instead
@@ -4141,7 +4148,7 @@ static void ffi_Pixmap_bound(js_State *J)
 static void ffi_Pixmap_clear(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	if (js_isdefined(J, 1)) {
 		int value = js_tonumber(J, 1);
 		fz_try(ctx)
@@ -4158,49 +4165,49 @@ static void ffi_Pixmap_clear(js_State *J)
 
 static void ffi_Pixmap_getX(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->x);
 }
 
 static void ffi_Pixmap_getY(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->y);
 }
 
 static void ffi_Pixmap_getWidth(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->w);
 }
 
 static void ffi_Pixmap_getHeight(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->h);
 }
 
 static void ffi_Pixmap_getNumberOfComponents(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->n);
 }
 
 static void ffi_Pixmap_getAlpha(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->alpha);
 }
 
 static void ffi_Pixmap_getStride(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->stride);
 }
 
 static void ffi_Pixmap_getSample(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int x = js_tointeger(J, 1);
 	int y = js_tointeger(J, 2);
 	int k = js_tointeger(J, 3);
@@ -4212,26 +4219,26 @@ static void ffi_Pixmap_getSample(js_State *J)
 
 static void ffi_Pixmap_getXResolution(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->xres);
 }
 
 static void ffi_Pixmap_getYResolution(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->yres);
 }
 
 static void ffi_Pixmap_getColorSpace(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	ffi_pushcolorspace(J, pixmap->colorspace);
 }
 
 static void ffi_Pixmap_setResolution(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int xres = js_tointeger(J, 1);
 	int yres = js_tointeger(J, 2);
 
@@ -4248,7 +4255,7 @@ static void ffi_new_Image(js_State *J)
 		mask = js_touserdata(J, 2, "fz_image");
 
 	if (js_isuserdata(J, 1, "fz_pixmap")) {
-		fz_pixmap *pixmap = js_touserdata(J, 1, "fz_pixmap");
+		fz_pixmap *pixmap = ffi_topixmap(J, 1);
 		fz_try(ctx)
 			image = fz_new_image_from_pixmap(ctx, pixmap, mask);
 		fz_catch(ctx)
@@ -4348,8 +4355,7 @@ static void ffi_Image_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_Shade_bound(js_State *J)
@@ -4841,8 +4847,7 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_DisplayList_toStructuredText(js_State *J)
@@ -5037,7 +5042,7 @@ static void ffi_new_DrawDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_matrix transform = ffi_tomatrix(J, 1);
-	fz_pixmap *pixmap = js_touserdata(J, 2, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 2);
 	fz_device *device = NULL;
 
 	fz_try(ctx)
@@ -7185,8 +7190,7 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFPage_getTransform(js_State *J)
@@ -7271,8 +7275,7 @@ static void ffi_PDFAnnotation_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFAnnotation_getObject(js_State *J)
@@ -8907,8 +8910,7 @@ static void ffi_PDFWidget_previewSignature(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFWidget_getEditingState(js_State *J)
