@@ -257,6 +257,94 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_nativeDeviceCMYK
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_getNumberOfComponents
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isGray
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isGray
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isRGB
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isRGB
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isCMYK
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isCMYK
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isIndexed
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isIndexed
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isLab
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isLab
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isDeviceN
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isDeviceN
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isLabICC
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isLabICC
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isSubtractive
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isSubtractive
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isDevice
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isDevice
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isDeviceGray
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isDeviceGray
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    isDeviceCMYK
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isDeviceCMYK
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

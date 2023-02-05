@@ -3953,6 +3953,83 @@ static void ffi_ColorSpace_toString(js_State *J)
 	js_pushstring(J, fz_colorspace_name(ctx, colorspace));
 }
 
+static void ffi_ColorSpace_isGray(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_gray(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isRGB(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_rgb(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isCMYK(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_cmyk(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isIndexed(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_indexed(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isLab(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_lab(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceN(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_n(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isLabICC(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_lab_icc(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isSubtractive(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_subtractive(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDevice(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceGray(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_gray(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceCMYK(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_cmyk(ctx, colorspace));
+}
+
 static void ffi_DefaultColorSpaces_getDefaultGray(js_State *J)
 {
 	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
@@ -9311,6 +9388,17 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
+		jsB_propfun(J, "ColorSpace.isGray", ffi_ColorSpace_isGray, 0);
+		jsB_propfun(J, "ColorSpace.isRGB", ffi_ColorSpace_isRGB, 0);
+		jsB_propfun(J, "ColorSpace.isCMYK", ffi_ColorSpace_isCMYK, 0);
+		jsB_propfun(J, "ColorSpace.isIndexed", ffi_ColorSpace_isIndexed, 0);
+		jsB_propfun(J, "ColorSpace.isLab", ffi_ColorSpace_isLab, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceN", ffi_ColorSpace_isDeviceN, 0);
+		jsB_propfun(J, "ColorSpace.isLabICC", ffi_ColorSpace_isLabICC, 0);
+		jsB_propfun(J, "ColorSpace.isSubtractive", ffi_ColorSpace_isSubtractive, 0);
+		jsB_propfun(J, "ColorSpace.isDevice", ffi_ColorSpace_isDevice, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceGray", ffi_ColorSpace_isDeviceGray, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceCMYK", ffi_ColorSpace_isDeviceCMYK, 0);
 	}
 	js_setregistry(J, "fz_colorspace");
 	{
