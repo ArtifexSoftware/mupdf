@@ -5348,6 +5348,14 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Pixmap_newNative
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    newNativeFromColorAndMask
+ * Signature: (Lcom/artifex/mupdf/fitz/Pixmap;Lcom/artifex/mupdf/fitz/Pixmap;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Pixmap_newNativeFromColorAndMask
+  (JNIEnv *, jobject, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    clear
  * Signature: ()V
  */

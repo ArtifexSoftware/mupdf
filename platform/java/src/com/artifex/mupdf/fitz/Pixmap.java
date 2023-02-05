@@ -37,6 +37,7 @@ public class Pixmap
 	}
 
 	private native long newNative(ColorSpace cs, int x, int y, int w, int h, boolean alpha);
+	private native long newNativeFromColorAndMask(Pixmap color, Pixmap mask);
 
 	private Pixmap(long p) {
 		pointer = p;
@@ -64,6 +65,10 @@ public class Pixmap
 
 	public Pixmap(ColorSpace cs, Rect rect) {
 		this(cs, rect, false);
+	}
+
+	public Pixmap(Pixmap color, Pixmap mask) {
+		pointer = newNativeFromColorAndMask(color, mask);
 	}
 
 	public native void clear();

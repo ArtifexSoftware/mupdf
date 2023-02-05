@@ -53,6 +53,26 @@ FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject jcs, jint x, jint y, ji
 	return jlong_cast(pixmap);
 }
 
+JNIEXPORT jlong JNICALL
+FUN(Pixmap_newNativeFromColorAndMask)(JNIEnv *env, jobject self, jobject jcolor, jobject jmask)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *color = from_Pixmap_safe(env, jcolor);
+	fz_pixmap *mask = from_Pixmap_safe(env, jmask);
+	fz_pixmap *pixmap = NULL;
+
+	if (!ctx) return 0;
+	if (!jcolor) jni_throw_arg(env, "color must not be null");
+	if (!jmask) jni_throw_arg(env, "mask must not be null");
+
+	fz_try(ctx)
+		pixmap = fz_new_pixmap_from_color_and_mask(ctx, color, mask);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlong_cast(pixmap);
+}
+
 JNIEXPORT void JNICALL
 FUN(Pixmap_clear)(JNIEnv *env, jobject self)
 {

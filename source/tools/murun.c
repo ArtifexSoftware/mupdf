@@ -4093,15 +4093,26 @@ static void ffi_DefaultColorSpaces_setOutputIntent(js_State *J)
 static void ffi_new_Pixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
-	fz_irect bounds = ffi_toirect(J, 2);
-	int alpha = js_toboolean(J, 3);
 	fz_pixmap *pixmap = NULL;
 
-	fz_try(ctx)
-		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, bounds, 0, alpha);
-	fz_catch(ctx)
-		rethrow(J);
+	if (js_isuserdata(J, 1, "fz_pixmap")) {
+		fz_pixmap *pix = ffi_topixmap(J, 1);
+		fz_pixmap *mask = ffi_topixmap(J, 2);
+
+		fz_try(ctx)
+			pixmap = fz_new_pixmap_from_color_and_mask(ctx, pix, mask);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
+		fz_irect bounds = ffi_toirect(J, 2);
+		int alpha = js_toboolean(J, 3);
+
+		fz_try(ctx)
+			pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, bounds, 0, alpha);
+		fz_catch(ctx)
+			rethrow(J);
+	}
 
 	ffi_pushpixmap(J, pixmap);
 }
