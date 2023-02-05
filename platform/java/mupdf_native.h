@@ -2625,6 +2625,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setNativeAppear
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setNativeAppearanceImage
+ * Signature: (Lcom/artifex/mupdf/fitz/Image;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setNativeAppearanceImage
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    hasFileSpecification
  * Signature: ()Z
  */
