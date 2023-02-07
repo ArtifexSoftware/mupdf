@@ -3815,6 +3815,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_calculate
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    getVersion
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getVersion
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    countVersions
  * Signature: ()I
  */
