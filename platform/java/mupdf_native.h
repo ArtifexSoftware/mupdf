@@ -4297,6 +4297,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFObject_resolve
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    equals
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_equals
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    readStream
  * Signature: ()[B
  */

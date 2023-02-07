@@ -920,6 +920,8 @@ to JavaScript objects and arrays by getting and setting their properties.
 <dd>Access dictionaries and arrays. Dictionaries and arrays can also be accessed using normal property syntax: obj.Foo = 42; delete obj.Foo; x = obj[5].
 <dt>PDFObject#resolve()
 <dd>If the object is an indirect reference, return the object it points to; otherwise return the object itself.
+<dt>PDFObject#compare(other)
+<dd>Compare the object to another one. Returns 0 on match, non-zero on mismatch. Streams always mismatch.
 <dt>PDFObject#isArray()
 <dt>PDFObject#isDictionary()
 <dt>PDFObject#forEach(function(key,value){...})

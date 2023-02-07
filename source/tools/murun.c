@@ -7283,6 +7283,21 @@ static void ffi_PDFObject_forEach(js_State *J)
 	}
 }
 
+static void ffi_PDFObject_compare(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_obj *other = js_touserdata(J, 1, "pdf_obj");
+	int result = 0;
+
+	fz_try(ctx)
+		result = pdf_objcmp(ctx, obj, other);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, result);
+}
+
 static void ffi_PDFPage_getWidgets(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9987,6 +10002,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.writeStream", ffi_PDFObject_writeStream, 1);
 		jsB_propfun(J, "PDFObject.writeRawStream", ffi_PDFObject_writeRawStream, 1);
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
+		jsB_propfun(J, "PDFObject.compare", ffi_PDFObject_compare, 1);
 	}
 	js_setregistry(J, "pdf_obj");
 
