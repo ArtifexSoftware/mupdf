@@ -28,6 +28,13 @@
 
 #define JZ_CTX_FROM_CINFO(c) (fz_context *)((c)->client_data)
 
+static void fz_jpg_mem_init(j_common_ptr cinfo, fz_context *ctx)
+{
+	cinfo->client_data = ctx;
+}
+
+#define fz_jpg_mem_term(cinfo)
+
 #else /* SHARE_JPEG */
 
 typedef void * backing_store_ptr;
