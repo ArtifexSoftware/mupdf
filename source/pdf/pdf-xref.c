@@ -1096,7 +1096,7 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int start, int len)
 		int newlen = start + len - extend->start;
 		sub = extend;
 		sub->table = fz_realloc_array(ctx, sub->table, newlen, pdf_xref_entry);
-		memset(&sub->table[start - sub->start], 0, sizeof(pdf_xref_entry) * (newlen - sub->len));
+		memset(&sub->table[sub->len], 0, sizeof(pdf_xref_entry) * (newlen - sub->len));
 		sub->len = newlen;
 		if (xref->num_objects < sub->start + sub->len)
 			xref->num_objects = sub->start + sub->len;
