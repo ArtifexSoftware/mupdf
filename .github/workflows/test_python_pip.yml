@@ -1,0 +1,69 @@
+name: Pip build/install and test of Python Bindings
+
+on:
+  #schedule:
+  #  - cron: '13 5 * * *'
+  workflow_dispatch:
+
+jobs:
+
+  test:
+    name: Pip build/install and test of Python Bindings
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [ubuntu-20.04, windows-2019, macos-10.15]
+        # 2023-02-10: Clang-python appears to not find any functions on macos.
+        os: [ubuntu-20.04, windows-2019]
+
+      # Avoid cancelling of all runs after a single failure.
+      fail-fast: false
+
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions/setup-python@v2
+
+      - name: Pip build/install and test of Python Bindings
+
+        # We use a python script to run a series of commands, all inside a venv
+        # so that packages can be installed as required.
+        #
+        # We use pip to build and install the Python bindings. This
+        # will automatically install required packages as specified in
+        # pyproject.toml, and then use setup.py to build and install into the
+        # venv.
+        #
+        # Then we run MuPDF's python tests using the venv's newly-installed
+        # `mupdf` module.
+        #
+
+        run: |
+            import os
+            import platform
+            import subprocess
+            import sys
+
+            venv_name = 'pylocal'
+
+            if platform.system() == 'Windows':
+                venv_py = os.path.join( '.', venv_name, 'Scripts', 'python.exe')
+                venv_activate = os.path.join( '.', venv_name, 'Scripts', 'activate')
+            else:
+                venv_py = f'./{venv_name}/bin/python'
+                venv_activate = f'. {venv_name}/bin/activate'
+
+            command = ''
+            command += f'{sys.executable} -m venv {venv_name}'
+            command += f' && {venv_activate}'
+            command += f' && python -m pip install -U pip'
+            command += f' && python -m pip install -vv .'
+            command += f' && python scripts/mupdfwrap.py -d - --test-python'
+
+            print(f'Running: {command}')
+            sys.stdout.flush()
+            subprocess.run( command, check=1, shell=1)
+
+        shell: python
