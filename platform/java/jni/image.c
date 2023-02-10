@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -102,6 +102,24 @@ FUN(Image_newNativeFromBytes)(JNIEnv *env, jobject self, jbyteArray jByteArray)
 	fz_catch(ctx) {
 		jni_rethrow(env, ctx);
 	}
+
+	return jlong_cast(image);
+}
+
+JNIEXPORT jlong JNICALL
+FUN(Image_newNativeFromBuffer)(JNIEnv *env, jobject self, jobject jbuffer)
+{
+	fz_context *ctx = get_context(env);
+	fz_image *image = NULL;
+	fz_buffer *buffer = from_Buffer_safe(env, jbuffer);
+
+	if (!ctx) return 0;
+	if (!jbuffer) jni_throw_arg(env, "buffer must not be null");
+
+	fz_try(ctx)
+		image = fz_new_image_from_buffer(ctx, buffer);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
 
 	return jlong_cast(image);
 }

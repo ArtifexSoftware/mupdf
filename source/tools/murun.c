@@ -4367,6 +4367,28 @@ static void ffi_new_Image(js_State *J)
 			image = fz_new_image_from_pixmap(ctx, pixmap, mask);
 		fz_catch(ctx)
 			rethrow(J);
+	} else if (js_isuserdata(J, 1, "fz_buffer")) {
+		fz_buffer *buffer = ffi_tobuffer(J, 1);
+		fz_buffer *globals = js_isdefined(J, 2) ? ffi_tobuffer(J, 2) : NULL;
+		fz_buffer *allocated = NULL;
+
+		fz_var(allocated);
+
+		fz_try(ctx)
+		{
+			if (globals)
+			{
+				allocated = fz_new_buffer(ctx, buffer->len + globals->len);
+				fz_append_buffer(ctx, allocated, globals);
+				fz_append_buffer(ctx, allocated, buffer);
+				buffer = allocated;
+			}
+			image = fz_new_image_from_buffer(ctx, buffer);
+		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, allocated);
+		fz_catch(ctx)
+			rethrow(J);
 	} else {
 		const char *name = js_tostring(J, 1);
 		fz_try(ctx)

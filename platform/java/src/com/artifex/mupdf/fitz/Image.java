@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -39,6 +39,7 @@ public class Image
 	private native long newNativeFromPixmap(Pixmap pixmap);
 	private native long newNativeFromFile(String filename);
 	private native long newNativeFromBytes(byte[] bytes);
+	private native long newNativeFromBuffer(Buffer buffer);
 
 	protected Image(long p) {
 		pointer = p;
@@ -54,6 +55,10 @@ public class Image
 
 	public Image(byte[] bytes) {
 		pointer = newNativeFromBytes(bytes);
+	}
+
+	public Image(Buffer buffer) {
+		pointer = newNativeFromBuffer(buffer);
 	}
 
 	public native int getWidth();
