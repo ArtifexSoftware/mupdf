@@ -214,6 +214,25 @@ static inline jfloatArray to_floatArray(fz_context *ctx, JNIEnv *env, const floa
 	return jarr;
 }
 
+static inline jintArray to_intArray(fz_context *ctx, JNIEnv *env, const int *arr, jint n)
+{
+	jintArray jarr;
+
+	if (!ctx) return NULL;
+
+	jarr = (*env)->NewIntArray(env, n);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+	if (!jarr)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot allocate int array");
+
+	(*env)->SetIntArrayRegion(env, jarr, 0, n, (jint *) arr);
+	if ((*env)->ExceptionCheck(env))
+		fz_throw_java(ctx, env);
+
+	return jarr;
+}
+
 /* Conversion functions: C to Java. None of these throw fitz exceptions. */
 
 static inline jobject to_Buffer_safe(fz_context *ctx, JNIEnv *env, fz_buffer *buf)
