@@ -71,6 +71,8 @@ public class Image
 	public native int getBitsPerComponent();
 	public native boolean getImageMask();
 	public native boolean getInterpolate();
+	public native int[] getColorKey();
+	public native float[] getDecode();
 	public native int getOrientation();
 	public native Image getMask();
 

@@ -4494,6 +4494,40 @@ static void ffi_Image_toPixmap(js_State *J)
 	ffi_pushpixmap(J, pixmap);
 }
 
+static void ffi_Image_getColorKey(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int i;
+	if (image->use_colorkey)
+	{
+		js_newarray(J);
+		for (i = 0; i < 2 * image->n; ++i)
+		{
+			js_pushnumber(J, image->colorkey[i]);
+			js_setindex(J, -2, i);
+		}
+	}
+	else
+		js_pushnull(J);
+}
+
+static void ffi_Image_getDecode(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int i;
+	if (image->use_decode)
+	{
+		js_newarray(J);
+		for (i = 0; i < 2 * image->n; ++i)
+		{
+			js_pushnumber(J, image->decode[i]);
+			js_setindex(J, -2, i);
+		}
+	}
+	else
+		js_pushnull(J);
+}
+
 static void ffi_Shade_bound(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9512,6 +9546,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Image.getBitsPerComponent", ffi_Image_getBitsPerComponent, 0);
 		jsB_propfun(J, "Image.getImageMask", ffi_Image_getImageMask, 0);
 		jsB_propfun(J, "Image.getInterpolate", ffi_Image_getInterpolate, 0);
+		jsB_propfun(J, "Image.getColorKey", ffi_Image_getColorKey, 0);
+		jsB_propfun(J, "Image.getDecode", ffi_Image_getDecode, 0);
 		jsB_propfun(J, "Image.getOrientation", ffi_Image_getOrientation, 0);
 		jsB_propfun(J, "Image.getMask", ffi_Image_getMask, 0);
 		jsB_propfun(J, "Image.toPixmap", ffi_Image_toPixmap, 2);

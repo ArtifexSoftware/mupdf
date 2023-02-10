@@ -715,6 +715,10 @@ Image objects are similar to Pixmaps, but can contain compressed data.
 <dt>Image#getBitsPerComponent()
 <dt>Image#getInterpolate()
 <dd>Returns true if interpolation was used during decoding.
+<dt>Image#getColorKey()
+<dd>Returns an array with 2 * N integers for an N component image with color key masking, or null if masking is not used. Each pair of integers define an interval, and component values within that interval are not painted.
+<dt>Image#getDecode()
+<dd>Returns an array with 2 * N numbers for an N component image with color mapping, or null if if mapping is not used. Each pair of numbers define the lower and upper values to which the component values are mapped linearly.
 <dt>Image#getOrientation()
 <dd>Returns the orientation of the image:
 <dl>

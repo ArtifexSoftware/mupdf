@@ -1946,6 +1946,22 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Image_getInterpolate
 
 /*
  * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    getColorKey
+ * Signature: ()[I
+ */
+JNIEXPORT jintArray JNICALL Java_com_artifex_mupdf_fitz_Image_getColorKey
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    getDecode
+ * Signature: ()[F
+ */
+JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_Image_getDecode
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
  * Method:    getOrientation
  * Signature: ()I
  */

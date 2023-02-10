@@ -201,7 +201,6 @@ FUN(Image_getOrientation)(JNIEnv *env, jobject self)
 	return fz_image_orientation(ctx, image);
 }
 
-
 JNIEXPORT jobject JNICALL
 FUN(Image_getMask)(JNIEnv *env, jobject self)
 {
@@ -228,4 +227,36 @@ FUN(Image_toPixmap)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 
 	return to_Pixmap_safe_own(ctx, env, pixmap);
+}
+
+JNIEXPORT jintArray JNICALL
+FUN(Image_getColorKey)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_image *img = from_Image(env, self);
+	int colorkey[FZ_MAX_COLORS * 2];
+
+	if (!ctx || !img) return NULL;
+
+	if (!img->use_colorkey)
+		return NULL;
+
+	memcpy(colorkey, img->colorkey, 2 * img->n * sizeof(int));
+	return to_intArray(ctx, env, colorkey, 2 * img->n);
+}
+
+JNIEXPORT jfloatArray JNICALL
+FUN(Image_getDecode)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_image *img = from_Image(env, self);
+	float decode[FZ_MAX_COLORS * 2];
+
+	if (!ctx || !img) return NULL;
+
+	if (!img->use_decode)
+		return NULL;
+
+	memcpy(decode, img->decode, 2 * img->n * sizeof(float));
+	return to_floatArray(ctx, env, decode, 2 * img->n);
 }
