@@ -4446,6 +4446,13 @@ static void ffi_Image_getInterpolate(js_State *J)
 	js_pushboolean(J, image->interpolate);
 }
 
+static void ffi_Image_getOrientation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, fz_image_orientation(ctx, image));
+}
+
 static void ffi_Image_getImageMask(js_State *J)
 {
 	fz_image *image = js_touserdata(J, 0, "fz_image");
@@ -9503,8 +9510,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Image.getYResolution", ffi_Image_getYResolution, 0);
 		jsB_propfun(J, "Image.getNumberOfComponents", ffi_Image_getNumberOfComponents, 0);
 		jsB_propfun(J, "Image.getBitsPerComponent", ffi_Image_getBitsPerComponent, 0);
-		jsB_propfun(J, "Image.getInterpolate", ffi_Image_getInterpolate, 0);
 		jsB_propfun(J, "Image.getImageMask", ffi_Image_getImageMask, 0);
+		jsB_propfun(J, "Image.getInterpolate", ffi_Image_getInterpolate, 0);
+		jsB_propfun(J, "Image.getOrientation", ffi_Image_getOrientation, 0);
 		jsB_propfun(J, "Image.getMask", ffi_Image_getMask, 0);
 		jsB_propfun(J, "Image.toPixmap", ffi_Image_toPixmap, 2);
 	}

@@ -715,6 +715,24 @@ Image objects are similar to Pixmaps, but can contain compressed data.
 <dt>Image#getBitsPerComponent()
 <dt>Image#getInterpolate()
 <dd>Returns true if interpolation was used during decoding.
+<dt>Image#getOrientation()
+<dd>Returns the orientation of the image:
+<dl>
+<dt>1
+<dd>no rotation or flipping
+<dt>2
+<dd>rotate counter clockwise by 90 degrees
+<dt>4
+<dd>rotate counter clockwise by 180 degrees
+<dt>5
+<dd>rotate counter clockwise by 270 degrees
+<dt>6
+<dd>flip on X, then rotate counter clockwise by 90 degrees
+<dt>7
+<dd>flip on X, then rotate counter clockwise by 180 degrees
+<dt>8
+<dd>flip on X, then rotate counter clockwise by 270 degrees
+</dl>
 <dt>Image#getImageMask()
 <dd>Returns true if this image is an image mask.
 <dt>Image#getMask()

@@ -193,6 +193,15 @@ FUN(Image_getInterpolate)(JNIEnv *env, jobject self)
 	return image && image->interpolate ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT jint JNICALL
+FUN(Image_getOrientation)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_image *image = from_Image(env, self);
+	return fz_image_orientation(ctx, image);
+}
+
+
 JNIEXPORT jobject JNICALL
 FUN(Image_getMask)(JNIEnv *env, jobject self)
 {

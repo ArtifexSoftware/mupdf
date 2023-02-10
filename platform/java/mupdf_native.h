@@ -1946,6 +1946,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Image_getInterpolate
 
 /*
  * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    getOrientation
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getOrientation
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
  * Method:    getMask
  * Signature: ()Lcom/artifex/mupdf/fitz/Image;
  */
