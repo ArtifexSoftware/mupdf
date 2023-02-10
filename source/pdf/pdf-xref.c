@@ -1513,7 +1513,10 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 	{
 		/* Undo pdf_populate_next_xref_level if we've done that already. */
 		if (populated)
+		{
+			pdf_drop_xref_subsec(ctx, &doc->xref_sections[doc->num_xref_sections - 1]);
 			doc->num_xref_sections--;
+		}
 		fz_rethrow(ctx);
 	}
 }
