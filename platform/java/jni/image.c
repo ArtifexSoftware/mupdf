@@ -165,14 +165,18 @@ JNIEXPORT jint JNICALL
 FUN(Image_getXResolution)(JNIEnv *env, jobject self)
 {
 	fz_image *image = from_Image(env, self);
-	return image ? image->xres : 0;
+	int xres = 0;
+	fz_image_resolution(image, &xres, NULL);
+	return xres;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Image_getYResolution)(JNIEnv *env, jobject self)
 {
 	fz_image *image = from_Image(env, self);
-	return image ? image->yres : 0;
+	int yres = 0;
+	fz_image_resolution(image, NULL, &yres);
+	return yres;
 }
 
 JNIEXPORT jboolean JNICALL
