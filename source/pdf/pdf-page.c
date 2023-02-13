@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1341,4 +1341,141 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 		pdf_end_operation(ctx, doc);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+}
+
+/*
+ * Page Labels
+ */
+
+struct page_label_range {
+	int offset;
+	pdf_obj *label;
+};
+
+static void
+pdf_lookup_page_label_imp(fz_context *ctx, pdf_obj *node, int index, struct page_label_range *range)
+{
+	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
+	pdf_obj *nums = pdf_dict_get(ctx, node, PDF_NAME(Nums));
+	int i;
+
+	if (pdf_is_array(ctx, kids))
+	{
+		for (i = 0; i < pdf_array_len(ctx, kids); ++i)
+		{
+			pdf_obj *kid = pdf_array_get(ctx, kids, i);
+			pdf_lookup_page_label_imp(ctx, kid, index, range);
+		}
+	}
+
+	if (pdf_is_array(ctx, nums))
+	{
+		for (i = 0; i < pdf_array_len(ctx, nums); i += 2)
+		{
+			int k = pdf_array_get_int(ctx, nums, i);
+			if (k <= index)
+			{
+				range->offset = k;
+				range->label = pdf_array_get(ctx, nums, i + 1);
+			}
+			else
+			{
+				/* stop looking if we've already passed the index */
+				return;
+			}
+		}
+	}
+}
+
+static struct page_label_range
+pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int index)
+{
+	struct page_label_range range = { 0, NULL };
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+	pdf_obj *labels = pdf_dict_get(ctx, root, PDF_NAME(PageLabels));
+	pdf_lookup_page_label_imp(ctx, labels, index, &range);
+	return range;
+}
+
+static const char *roman_uc[3][10] = {
+	{ "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" },
+	{ "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" },
+	{ "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM" },
+};
+
+static const char *roman_lc[3][10] = {
+	{ "", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix" },
+	{ "", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc" },
+	{ "", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm" },
+};
+
+static void pdf_format_roman_page_label(char *buf, int size, int n, const char *sym[3][10], const char *sym_m)
+{
+	int I = n % 10;
+	int X = (n / 10) % 10;
+	int C = (n / 100) % 10;
+	int M = (n / 1000);
+
+	fz_strlcpy(buf, "", size);
+	while (M--)
+		fz_strlcat(buf, sym_m, size);
+	fz_strlcat(buf, sym[2][C], size);
+	fz_strlcat(buf, sym[1][X], size);
+	fz_strlcat(buf, sym[0][I], size);
+}
+
+static void pdf_format_alpha_page_label(char *buf, int size, int n, int alpha)
+{
+	int reps = (n - 1) / 26 + 1;
+	if (reps > size - 1)
+		reps = size - 1;
+	memset(buf, (n - 1) % 26 + alpha, reps);
+	buf[reps] = '\0';
+}
+
+static void
+pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, int size)
+{
+	pdf_obj *style = pdf_dict_get(ctx, dict, PDF_NAME(S));
+	const char *prefix = pdf_dict_get_text_string(ctx, dict, PDF_NAME(P));
+	int start = pdf_dict_get_int(ctx, dict, PDF_NAME(St));
+	int n;
+
+	// St must be >= 1; default is 1.
+	if (start < 1)
+		start = 1;
+
+	// Add prefix (optional; may be empty)
+	fz_strlcpy(buf, prefix, size);
+	n = strlen(buf);
+	buf += n;
+	size -= n;
+
+	// Append number using style (optional)
+	if (style == PDF_NAME(D))
+		fz_snprintf(buf, size, "%d", index + start);
+	else if (style == PDF_NAME(R))
+		pdf_format_roman_page_label(buf, size, index + start, roman_uc, "M");
+	else if (style == PDF_NAME(r))
+		pdf_format_roman_page_label(buf, size, index + start, roman_lc, "m");
+	else if (style == PDF_NAME(A))
+		pdf_format_alpha_page_label(buf, size, index + start, 'A');
+	else if (style == PDF_NAME(a))
+		pdf_format_alpha_page_label(buf, size, index + start, 'a');
+}
+
+void
+pdf_page_label(fz_context *ctx, pdf_document *doc, int index, char *buf, int size)
+{
+	struct page_label_range range = pdf_lookup_page_label(ctx, doc, index);
+	if (range.label)
+		pdf_format_page_label(ctx, index - range.offset, range.label, buf, size);
+	else
+		fz_snprintf(buf, size, "%d", index + 1);
+}
+
+void
+pdf_page_label_imp(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, int size)
+{
+	pdf_page_label(ctx, pdf_document_from_fz_document(ctx, doc), page, buf, size);
 }

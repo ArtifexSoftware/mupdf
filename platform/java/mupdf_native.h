@@ -4399,6 +4399,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_createLink
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_deleteLink
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    getLabel
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Page_getLabel
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
