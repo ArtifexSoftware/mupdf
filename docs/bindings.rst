@@ -406,12 +406,20 @@ Changelog
 [Note that this is only for changes to the generation of the C++/Python/C#
 APIs; changes to the main MuPDF API are not detailed here.]
 
+* **2023-02-14**:
+
+  * Simplified builds by requiring a standalone libclang (typically pypi.org's
+    libclang in a Python venv) and fixed various issues with using latest
+    libclang.
+  * Added test for exceptions from Python SWIG Director callbacks.
+
 * **2023-02-03**:
 
   * Provide a default constructor for all wrapper classes.
   * Added Python `__repr__()` methods for POD classes, identical to the
     existing `__str__()` methods.
   * Fixed handling of exceptions in Python SWIG Director callbacks.
+  * Fixed wrapping of PDF filters.
 
 * **2023-01-20**:
 
@@ -665,42 +673,74 @@ APIs; changes to the main MuPDF API are not detailed here.]
 * **2020-10-07**: Experimental release of C++ and Python bindings in MuPDF-1.18.0.
 
 
-Building the C++, Python and C# MuPDF APIs
-==========================================
+Building the C++, Python and C# MuPDF APIs from source
+======================================================
 
-Setup
------
+
+Special case for building Python bindings using pip
+---------------------------------------------------
+
+Python bindings can be built from source and installed into a `venv
+<https://docs.python.org/3.8/library/venv.html>`_ on all platforms by using
+`pip`::
+
+    # Windows create+enter venv.
+    py -m venv pylocal
+    .\pylocal\Scripts\activate
+
+    # Unix create+enter venv.
+    python3 -m venv pylocal
+    . pylocal/bin/activate
+
+    # Upgrade pip then build and install into current venv.
+    python -m pip --upgrade pip
+    cd mupdf && python -m pip install .
+
 
 General requirements
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
-* Linux, Windows or OpenBSD.
+* Linux, Windows, or OpenBSD.
 
 * Python development libraries.
 
-* Python package `libclang` - a Python interface onto the libclang C/C++ parser.
+* Build inside a Python `venv <https://docs.python.org/3.8/library/venv.html>`_.
 
-* SWIG version 3 or 4.
+* Python package `libclang` - a `Python interface
+  <https://libclang.readthedocs.io/en/latest/index.html>`_ onto the `libclang
+  C/C++ parser <https://clang.llvm.org/>`_.
 
-* For C# on Unix, we also need Mono.
+  * These instructions generally use Python's pip to install pypi.org's
+    `libclang <https://pypi.org/project/libclang/>`_.
+
+  * Other python/clang packages are available (for example pypi.org's
+    `clang <https://pypi.org/project/clang/>`_, or Debian's
+    `python-clang <https://packages.debian.org/search?keywords=python+clang&searchon=names&suite=stable&section=all>`_)
+    but often require explicit setting of
+    LD_LIBRARY_PATH to point to the correct libclang dynamic library.
+
+* `SWIG <https://swig.org/>`_ version 3 or 4.
+
+  * If only building the Python bindings, one can use pypi.org's `SWIG
+    <https://pypi.org/project/swig/>`_, installing with `python -m pip install
+    swig`. But for simplicity the instructions below will specify a generic
+    SWIG that will also generate C# bindings.
+
+* For C# on Unix, we also need `Mono <https://www.mono-project.com/>`_.
 
 
-Windows
-^^^^^^^
+Setting up on Windows
+^^^^^^^^^^^^^^^^^^^^^
 
-Install Python using the Python Windows installer from the python.org website:
+Install Python:
 
-* http://www.python.org/downloads
-
-Notes about other Python installers:
+* Use the Python Windows installer from the python.org website: http://www.python.org/downloads
 
 * Don't use other installers such as the Microsoft Store Python package.
 
-* If Microsoft Store Python is already installed, leave it in place and install
-  from python.org on top of it - uninstalling before running the python.org
-  installer has been known to cause problems.
-
-Installing with the Python Windows installer from python.org:
+  * If Microsoft Store Python is already installed, leave it in place and install
+    from python.org on top of it - uninstalling before running the python.org
+    installer has been known to cause problems.
 
 * A default installation is sufficient.
 
@@ -711,77 +751,121 @@ Installing with the Python Windows installer from python.org:
 
 * Also see: https://docs.python.org/3/using/windows.html
 
-Other:
+Create and enter a Python `venv
+<https://docs.python.org/3.8/library/venv.html>`_, upgrade to latest pip and
+install libclang::
 
-* Run: `pip install libclang`
+      py -m venv pylocal
+      .\pylocal\Scripts\activate
+      python -m pip install --upgrade pip
+      python -m pip install libclang
 
-* We look for `devenv.com` in some hard-coded locations, which can be overriden
-  with:
+Specifying `SWIG <https://swig.org/>`_:
 
-  * `scripts/mupdfwrap.py -b --devenv <devenv.com-location> ...`
+* When running `scripts/mupdfwrap.py`, specify `--swig-windows-auto`. This will
+  automatically download SWIG to the local directory (if not already present),
+  and use it directly.
 
-* Run `scripts/mupdfwrap.py` with `--swig-windows-auto` so that we
-  automatically download swig to local directory if not already present, and use
-  it directly.
+Specifying location of `devenv.com`:
+
+* `scripts/mupdfwrap.py` looks for `devenv.com` in some hard-coded locations,
+  which can be overriden with::
+
+      scripts/mupdfwrap.py -b --devenv <devenv.com-location> ...
 
 
-Linux
-^^^^^
+Setting up on Linux
+^^^^^^^^^^^^^^^^^^^
 
-(Debian-specific; similar packages exist on other distributions.)
+Create and enter a Python `venv
+<https://docs.python.org/3.8/library/venv.html>`_, upgrade to latest pip and
+install libclang::
 
-* `sudo apt install python3-dev swig clang python3-clang`
-* For C#: `sudo apt install mono-devel`
+      python3 -m venv pylocal
+      . pylocal/bin/activate
+      python -m pip install --upgrade pip
+      pip install libclang
+
+Install Python development libraries and `SWIG <https://swig.org/>`_ using the
+system package manager::
+
+    sudo apt install python3-dev swig
+
+If building the C# bindings, install `Mono <https://www.mono-project.com/>`_
+using the system package manager::
+
+    sudo apt install mono-devel
+
+
+Setting up on OpenBSD
+^^^^^^^^^^^^^^^^^^^^^
+
+Install Python (includes development libraries), `SWIG <https://swig.org/>`_
+and clang-python using the system package manager::
+
+      sudo pkg_add python py3-llvm swig
+
+If building the C# bindings, install `Mono <https://www.mono-project.com/>`_
+using the system package manager::
+
+      sudo pkg_add mono
 
 Notes:
 
-* One can do `pip install libclang` instead of installing the `clang` and
-  `python3-clang` packages in the above command.
+* `libclang` and `SWIG` cannot be installed with pip on OpenBSD - wheels are
+  not available and building from source fails. However unlike on other
+  platforms, the system python-clang package `py3-llvm` is already integrated
+  with the libclang shared library so it can be used directly.
 
-* Note that, despite its name, the Python `clang` package on pypi.org (`pip
-  install clang`) does not provide a usable Python interface onto the clang
-  parser.
-
-
-OpenBSD
-^^^^^^^
-
-* `sudo pkg_add python py3-llvm swig`
-* For C#: `sudo pkg_add mono`
+* The use of the system `py3-llvm` package means that it is not necessary to
+  use a Python venv on OpenBSD.
 
 
 Doing a build
 -------------
 
-Build MuPDF shared library, C++ and Python MuPDF APIs, and run basic tests:
-
-.. code-block:: shell
+Get the MuPDF source tree::
 
     git clone --recursive git://git.ghostscript.com/mupdf.git
+
+Build C++, Python and C# bindings and run tests:
+
+[`--swig-windows-auto` is only required on Windows; it will be ignored on other
+platforms.]
+
+.. code-block:: shell
+
     cd mupdf
-    ./scripts/mupdfwrap.py -b all --test-python
-    ./scripts/mupdfwrap.py -b all --test-python-gui
+    ./scripts/mupdfwrap.py --swig-windows-auto -b all --test-python --test-python-gui
+    ./scripts/mupdfwrap.py --swig-windows-auto -b --csharp all --test-csharp --test-csharp-gui
 
-As above but do a debug build:
-
-.. code-block:: shell
-
-    ./scripts/mupdfwrap.py -d build/shared-debug -b all --test-python
-
-[This requires debug version of the Python interpreter, for example
-`python311_d.lib`.]
-
-C# build and tests:
+As above but do a debug build (this requires debug version of the Python
+interpreter, for example `python311_d.lib`):
 
 .. code-block:: shell
 
-    ./scripts/mupdfwrap.py -b --csharp all --test-csharp
-    ./scripts/mupdfwrap.py -b --csharp all --test-csharp-gui
+    ./scripts/mupdfwrap.py --swig-windows-auto -d build/shared-debug -b all --test-python
 
-For more information:
+
+Notes
+^^^^^
+
+C# build failure: `cstring.i not implemented for this target` and/or `Unknown
+directive '%cstring_output_allocate'`.
+
+* This is probably because SWIG is from pypi.org (e.g with `pip install swig`)
+  and does not include support for C#.
+
+* Solution: install SWIG using the system package manager (e.g. `sudo apt
+  install swig` on Linux, or use `./scripts/mupdfwrap.py --swig-windows-auto
+  ...` on Windows).
+
+More information
+^^^^^^^^^^^^^^^^
 
 * Run `./scripts/mupdfwrap.py -h`.
 * Read the doc-string at beginning of `scripts/wrap/__main__.py+`.
+
 
 How building the APIs works
 ---------------------------
@@ -790,7 +874,10 @@ Building the MuPDF shared library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * On Unix, runs `make` on MuPDF's Makefile.
-* On Windows, runs `devenv.com` on `.sln` and `.vcxproj` files within `platform/win32/ <https://git.ghostscript.com/?p=mupdf.git;a=tree;f=platform/win32>`_.
+* On Windows, runs `devenv.com` on `.sln` and
+  `.vcxproj` files within MuPDF's `platform/win32/
+  <https://git.ghostscript.com/?p=mupdf.git;a=tree;f=platform/win32>`_
+  directory.
 
 Generation of the C++ MuPDF API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -801,7 +888,7 @@ Generation of the C++ MuPDF API
   `setjmp()`/`longjmp()` exceptions into C++ exceptions and automatically
   handling `fz_context`'s internally.
 
-* Generates C++ classes for each `fz_*` and `pdf_*` struct, and uses various
+* Generates C++ wrapper classes for each `fz_*` and `pdf_*` struct, and uses various
   heuristics to define constructors, methods and static methods that call
   `fz_*()` and `pdf_*()` functions. These classes' constructors and destructors
   automatically handle reference counting so class instances can be copied
