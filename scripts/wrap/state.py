@@ -16,9 +16,8 @@ try:
 except Exception as e:
     jlib.log('Warning: failed to import clang.cindex: {e=}\n'
             f'We need Clang Python to build MuPDF python.\n'
-            f'Install with "pip install libclang" or use the --venv option, or:\n'
-            f'    OpenBSD: pkg_add py3-llvm\n'
-            f'    Linux:debian/devuan: apt install python-clang\n'
+            f'Install with `pip install libclang`, or use `--venv pylocal`, or\n'
+            f'(OpenBSD only) `pkg_add py3-llvm.`\n'
             )
     clang = None
 
