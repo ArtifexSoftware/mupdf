@@ -674,6 +674,18 @@ void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int en
 void pdf_page_label(fz_context *ctx, pdf_document *doc, int page, char *buf, int size);
 void pdf_page_label_imp(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, int size);
 
+typedef enum {
+	PDF_PAGE_LABEL_NONE = 0,
+	PDF_PAGE_LABEL_DECIMAL = 'D',
+	PDF_PAGE_LABEL_ROMAN_UC = 'R',
+	PDF_PAGE_LABEL_ROMAN_LC = 'r',
+	PDF_PAGE_LABEL_ALPHA_UC = 'A',
+	PDF_PAGE_LABEL_ALPHA_LC = 'a',
+} pdf_page_label_style;
+
+void pdf_set_page_labels(fz_context *ctx, pdf_document *doc, int index, pdf_page_label_style style, const char *prefix, int start);
+void pdf_delete_page_labels(fz_context *ctx, pdf_document *doc, int index);
+
 fz_text_language pdf_document_language(fz_context *ctx, pdf_document *doc);
 void pdf_set_document_language(fz_context *ctx, pdf_document *doc, fz_text_language lang);
 
