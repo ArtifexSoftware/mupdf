@@ -190,6 +190,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Buffer_writeLines
 
 /*
  * Class:     com_artifex_mupdf_fitz_Buffer
+ * Method:    slice
+ * Signature: (II)Lcom/artifex/mupdf/fitz/Buffer;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Buffer_slice
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Buffer
  * Method:    save
  * Signature: (Ljava/lang/String;)V
  */

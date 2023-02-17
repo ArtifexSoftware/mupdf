@@ -113,6 +113,8 @@ only store bytes.
 <dd>Append arguments to the end of the buffer, separated by spaces.
 <dt>Buffer#writeBuffer(data)
 <dd>Append the contents of the 'data' buffer to the end of the buffer.
+<dt>Buffer#slice(start, end)
+<dd>Create a new Buffer containing a (subset of) the data in this buffer. Start and end are offsets from the beginning of this buffer, and if negative from the end of this buffer.
 <dt>Buffer#save(fileName)
 <dd>Write the contents of the buffer to a file.
 </dl>

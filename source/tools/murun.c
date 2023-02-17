@@ -3290,6 +3290,23 @@ static void ffi_Buffer_save(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Buffer_slice(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	size_t size = fz_buffer_storage(ctx, buf, NULL);
+	int64_t start = js_tointeger(J, 1);
+	int64_t end = js_iscoercible(J, 2) ? js_tointeger(J, 2) : (int64_t) size;
+	fz_buffer *copy = NULL;
+
+	fz_try(ctx)
+		copy = fz_slice_buffer(ctx, buf, start, end);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushbuffer(J, copy);
+}
+
 static void ffi_new_Document(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9399,6 +9416,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Buffer.writeBuffer", ffi_Buffer_writeBuffer, 1);
 		jsB_propfun(J, "Buffer.write", ffi_Buffer_write, 1);
 		jsB_propfun(J, "Buffer.save", ffi_Buffer_save, 1);
+		jsB_propfun(J, "Buffer.slice", ffi_Buffer_slice, 2);
 	}
 	js_setregistry(J, "fz_buffer");
 
