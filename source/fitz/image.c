@@ -755,7 +755,7 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 		tile = fz_load_jxr(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
 	case FZ_IMAGE_JPX:
-		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, NULL);
+		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, image->super.colorspace);
 		break;
 	case FZ_IMAGE_JPEG:
 		/* Scan JPEG stream and patch missing height values in header */
