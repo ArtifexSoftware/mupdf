@@ -621,6 +621,8 @@ static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 		js_getregistry(J, "DeviceGray");
 	else if (colorspace == fz_device_cmyk(ctx))
 		js_getregistry(J, "DeviceCMYK");
+	else if (colorspace == fz_device_lab(ctx))
+		js_getregistry(J, "DeviceLab");
 	else {
 		js_getregistry(J, "fz_colorspace");
 		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, colorspace), ffi_gc_fz_colorspace);
@@ -9509,6 +9511,10 @@ int murun_main(int argc, char **argv)
 		js_getregistry(J, "fz_colorspace");
 		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceCMYK");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_lab(ctx)), ffi_gc_fz_colorspace);
+		js_setregistry(J, "DeviceLab");
 	}
 
 	js_getregistry(J, "Userdata");
@@ -9979,6 +9985,9 @@ int murun_main(int argc, char **argv)
 
 		js_getregistry(J, "DeviceCMYK");
 		js_defproperty(J, -2, "DeviceCMYK", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
+
+		js_getregistry(J, "DeviceLab");
+		js_defproperty(J, -2, "DeviceLab", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
 
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 	}
