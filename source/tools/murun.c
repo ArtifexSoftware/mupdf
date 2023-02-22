@@ -4595,6 +4595,15 @@ static void ffi_Image_getDecode(js_State *J)
 		js_pushnull(J);
 }
 
+static void ffi_Image_setOrientation(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int orientation = js_tointeger(J, 1);
+	if (orientation < 0 || orientation > 8)
+		js_rangeerror(J, "orientation out of range");
+	image->orientation = js_tointeger(J, 1);
+}
+
 static void ffi_Shade_bound(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9638,6 +9647,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Image.getOrientation", ffi_Image_getOrientation, 0);
 		jsB_propfun(J, "Image.getMask", ffi_Image_getMask, 0);
 		jsB_propfun(J, "Image.toPixmap", ffi_Image_toPixmap, 2);
+		jsB_propfun(J, "Image.setOrientation", ffi_Image_setOrientation, 1);
 	}
 	js_setregistry(J, "fz_image");
 

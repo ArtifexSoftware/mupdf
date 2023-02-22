@@ -2034,6 +2034,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_getMask
 
 /*
  * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    setOrientation
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Image_setOrientation
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
  * Method:    toPixmap
  * Signature: ()Lcom/artifex/mupdf/fitz/Pixmap;
  */
