@@ -17,13 +17,14 @@ build:
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-   configuration: docs/src/conf.py
+  configuration: docs/src/conf.py
 
-# If using Sphinx, optionally build your docs in additional formats such as PDF
-formats:
-   - pdf
+  # If using Sphinx, optionally build your docs in additional formats such as
+  # PDF
+  formats:
+    - pdf
 
 # Optionally declare the Python requirements required to build your docs
 python:
-   install:
-   - requirements: docs/src/requirements.txt
+  install:
+    - requirements: docs/src/requirements.txt
