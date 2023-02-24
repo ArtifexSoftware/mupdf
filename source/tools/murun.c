@@ -613,7 +613,9 @@ static void ffi_pusharray(js_State *J, const float *v, int n)
 static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 {
 	fz_context *ctx = js_getcontext(J);
-	if (colorspace == fz_device_rgb(ctx))
+	if (colorspace == NULL)
+		js_pushnull(J);
+	else if (colorspace == fz_device_rgb(ctx))
 		js_getregistry(J, "DeviceRGB");
 	else if (colorspace == fz_device_bgr(ctx))
 		js_getregistry(J, "DeviceBGR");
