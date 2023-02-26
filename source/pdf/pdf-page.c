@@ -239,9 +239,12 @@ pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle)
 {
 	if (doc->fwd_page_map)
 	{
+		pdf_obj *pageobj;
 		if (needle < 0 || needle >= doc->map_page_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d in page tree", needle+1);
-		return pdf_load_object(ctx, doc, doc->fwd_page_map[needle]);
+		pageobj = pdf_load_object(ctx, doc, doc->fwd_page_map[needle]);
+		pdf_drop_obj(ctx, pageobj);
+		return pageobj;
 	} else
 		return pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
 }
