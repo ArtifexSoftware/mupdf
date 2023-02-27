@@ -35,10 +35,6 @@
 #endif
 #endif
 
-#if WASM_SKIP_TRY_CATCH
-#include "emscripten.h"
-#endif
-
 #ifdef __ANDROID__
 #define USE_ANDROID_LOG
 #include <android/log.h>
@@ -178,33 +174,21 @@ fz_error_cb *fz_error_callback(fz_context *ctx, void **user)
 
 FZ_NORETURN static void throw(fz_context *ctx, int code)
 {
-#if !WASM_SKIP_TRY_CATCH
-
-		if (ctx->error.top > ctx->error.stack_base)
-		{
-			ctx->error.top->state += 2;
-			if (ctx->error.top->code != FZ_ERROR_NONE)
-				fz_warn(ctx, "clobbering previous error code and message (throw in always block?)");
-			ctx->error.top->code = code;
-			fz_longjmp(ctx->error.top->buffer, 1);
-		}
-		else
-		{
-			fz_flush_warnings(ctx);
-			if (ctx->error.print)
-				ctx->error.print(ctx->error.print_user, "aborting process from uncaught error!");
-			exit(EXIT_FAILURE);
-		}
-
-#else
-		EM_ASM({
-			let message = UTF8ToString($0);
-			console.error("mupdf:", message);
-			throw new libmupdf.MupdfError(message);
-		}, ctx->error.message);
-		// Unreachable
+	if (ctx->error.top > ctx->error.stack_base)
+	{
+		ctx->error.top->state += 2;
+		if (ctx->error.top->code != FZ_ERROR_NONE)
+			fz_warn(ctx, "clobbering previous error code and message (throw in always block?)");
+		ctx->error.top->code = code;
+		fz_longjmp(ctx->error.top->buffer, 1);
+	}
+	else
+	{
+		fz_flush_warnings(ctx);
+		if (ctx->error.print)
+			ctx->error.print(ctx->error.print_user, "aborting process from uncaught error!");
 		exit(EXIT_FAILURE);
-#endif
+	}
 }
 
 fz_jmp_buf *fz_push_try(fz_context *ctx)
