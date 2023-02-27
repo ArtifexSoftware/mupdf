@@ -322,7 +322,7 @@ vec_dot(const fz_point *a, const fz_point *b)
 static void
 prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 {
-	fz_stext_line *cur_line = cur_block->u.t.last_line;
+	fz_stext_line *cur_line;
 	fz_stext_line *line;
 	fz_point ndir;
 	float size;
@@ -330,6 +330,10 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 	fz_point delta;
 	float spacing;
 
+	if (cur_block == NULL)
+		return;
+
+	cur_line = cur_block->u.t.last_line;
 	if (cur_line == NULL)
 		return;
 
