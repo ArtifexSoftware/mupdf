@@ -330,7 +330,7 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 	fz_point delta;
 	float spacing;
 
-	if (cur_block == NULL)
+	if (cur_block == NULL || cur_block->type != FZ_STEXT_BLOCK_TEXT)
 		return;
 
 	cur_line = cur_block->u.t.last_line;
