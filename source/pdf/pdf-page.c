@@ -246,16 +246,19 @@ pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle)
 	 * maybe it was direct page object rather than a reference. This is illegal, but
 	 * we've seen it in tests_private/pdf/sumatra/page_no_indirect_reference.pdf so
 	 * we might as well cope. */
-	if (doc->fwd_page_map && doc->fwd_page_map[needle] != 0)
+	if (doc->fwd_page_map)
 	{
-		pdf_obj *pageobj;
 		if (needle < 0 || needle >= doc->map_page_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d in page tree", needle+1);
-		pageobj = pdf_load_object(ctx, doc, doc->fwd_page_map[needle]);
-		pdf_drop_obj(ctx, pageobj);
-		return pageobj;
-	} else
-		return pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
+		if (doc->fwd_page_map[needle] != 0)
+		{
+			pdf_obj *pageobj = pdf_load_object(ctx, doc, doc->fwd_page_map[needle]);
+			pdf_drop_obj(ctx, pageobj);
+			return pageobj;
+		}
+	}
+
+	return pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
 }
 
 static int
