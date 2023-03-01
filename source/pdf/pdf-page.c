@@ -94,8 +94,9 @@ pdf_drop_page_tree_internal(fz_context *ctx, pdf_document *doc)
 	int i;
 	fz_free(ctx, doc->rev_page_map);
 	doc->rev_page_map = NULL;
-	for (i = 0; i < doc->map_page_count; i++)
-		pdf_drop_obj(ctx, doc->fwd_page_map[i]);
+	if (doc->fwd_page_map)
+		for (i = 0; i < doc->map_page_count; i++)
+			pdf_drop_obj(ctx, doc->fwd_page_map[i]);
 	fz_free(ctx, doc->fwd_page_map);
 	doc->fwd_page_map = NULL;
 	doc->map_page_count = 0;
