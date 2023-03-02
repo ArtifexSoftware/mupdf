@@ -630,30 +630,30 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_DATE == PDF_WIDGET_TX_FORMAT_DATE;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FORMAT_TIME == PDF_WIDGET_TX_FORMAT_TIME;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_READ_ONLY == PDF_FIELD_IS_READ_ONLY;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_REQUIRED == PDF_FIELD_IS_REQUIRED;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_FIELD_IS_NO_EXPORT == PDF_FIELD_IS_NO_EXPORT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_FIELD_IS_READ_ONLY == PDF_FIELD_IS_READ_ONLY;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_FIELD_IS_REQUIRED == PDF_FIELD_IS_REQUIRED;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_FIELD_IS_NO_EXPORT == PDF_FIELD_IS_NO_EXPORT;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_MULTILINE == PDF_TX_FIELD_IS_MULTILINE;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_PASSWORD == PDF_TX_FIELD_IS_PASSWORD;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_TX_FIELD_IS_COMB == PDF_TX_FIELD_IS_COMB;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FIELD_IS_MULTILINE == PDF_TX_FIELD_IS_MULTILINE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FIELD_IS_PASSWORD == PDF_TX_FIELD_IS_PASSWORD;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_TX_FIELD_IS_COMB == PDF_TX_FIELD_IS_COMB;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF == PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_RADIO == PDF_BTN_FIELD_IS_RADIO;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_BTN_FIELD_IS_PUSHBUTTON == PDF_BTN_FIELD_IS_PUSHBUTTON;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_BTN_FIELD_IS_NO_TOGGLE_TO_OFF == PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_BTN_FIELD_IS_RADIO == PDF_BTN_FIELD_IS_RADIO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_BTN_FIELD_IS_PUSHBUTTON == PDF_BTN_FIELD_IS_PUSHBUTTON;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_COMBO == PDF_CH_FIELD_IS_COMBO;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_EDIT == PDF_CH_FIELD_IS_EDIT;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_SORT == PDF_CH_FIELD_IS_SORT;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_CH_FIELD_IS_MULTI_SELECT == PDF_CH_FIELD_IS_MULTI_SELECT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_CH_FIELD_IS_COMBO == PDF_CH_FIELD_IS_COMBO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_CH_FIELD_IS_EDIT == PDF_CH_FIELD_IS_EDIT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_CH_FIELD_IS_SORT == PDF_CH_FIELD_IS_SORT;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_CH_FIELD_IS_MULTI_SELECT == PDF_CH_FIELD_IS_MULTI_SELECT;
 
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LABELS == PDF_SIGNATURE_SHOW_LABELS;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DN == PDF_SIGNATURE_SHOW_DN;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_DATE == PDF_SIGNATURE_SHOW_DATE;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_TEXT_NAME == PDF_SIGNATURE_SHOW_TEXT_NAME;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_GRAPHIC_NAME == PDF_SIGNATURE_SHOW_GRAPHIC_NAME;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_SHOW_LOGO == PDF_SIGNATURE_SHOW_LOGO;
-	valid &= com_artifex_mupdf_fitz_PDFWidget_PDF_SIGNATURE_DEFAULT_APPEARANCE == PDF_SIGNATURE_DEFAULT_APPEARANCE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_LABELS == PDF_SIGNATURE_SHOW_LABELS;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_DN == PDF_SIGNATURE_SHOW_DN;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_DATE == PDF_SIGNATURE_SHOW_DATE;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_TEXT_NAME == PDF_SIGNATURE_SHOW_TEXT_NAME;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_GRAPHIC_NAME == PDF_SIGNATURE_SHOW_GRAPHIC_NAME;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_SHOW_LOGO == PDF_SIGNATURE_SHOW_LOGO;
+	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_DEFAULT_APPEARANCE == PDF_SIGNATURE_DEFAULT_APPEARANCE;
 
 	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_OKAY == PDF_SIGNATURE_ERROR_OKAY;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_NO_SIGNATURES == PDF_SIGNATURE_ERROR_NO_SIGNATURES;
