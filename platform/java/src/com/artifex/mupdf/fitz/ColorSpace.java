@@ -74,9 +74,5 @@ public class ColorSpace
 	public native boolean isIndexed();
 	public native boolean isLab();
 	public native boolean isDeviceN();
-	public native boolean isLabICC();
 	public native boolean isSubtractive();
-	public native boolean isDevice();
-	public native boolean isDeviceGray();
-	public native boolean isDeviceCMYK();
 }
