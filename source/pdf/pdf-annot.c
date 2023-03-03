@@ -662,10 +662,31 @@ pdf_add_popup_annot(fz_context *ctx, pdf_annot *annot)
 	return popup;
 }
 
+static pdf_obj *popup_subtypes[] = {
+	PDF_NAME(Text),
+	PDF_NAME(FreeText),
+	PDF_NAME(Line),
+	PDF_NAME(Square),
+	PDF_NAME(Circle),
+	PDF_NAME(Polygon),
+	PDF_NAME(PolyLine),
+	PDF_NAME(Highlight),
+	PDF_NAME(Underline),
+	PDF_NAME(Squiggly),
+	PDF_NAME(StrikeOut),
+	PDF_NAME(Stamp),
+	PDF_NAME(Caret),
+	PDF_NAME(Ink),
+	PDF_NAME(FileAttachment),
+	PDF_NAME(Sound),
+	NULL,
+};
+
 void pdf_set_annot_popup(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 {
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *popup;
+	check_allowed_subtypes(ctx, annot, PDF_NAME(Popup), popup_subtypes);
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	inv_page_ctm = fz_invert_matrix(page_ctm);
 	rect = fz_transform_rect(rect, inv_page_ctm);
@@ -678,6 +699,7 @@ fz_rect pdf_annot_popup(fz_context *ctx, pdf_annot *annot)
 	fz_matrix page_ctm;
 	fz_rect rect;
 	pdf_obj *popup;
+	check_allowed_subtypes(ctx, annot, PDF_NAME(Popup), popup_subtypes);
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	popup = pdf_dict_get(ctx, annot->obj, PDF_NAME(Popup));
 	rect = pdf_dict_get_rect(ctx, popup, PDF_NAME(Rect));
