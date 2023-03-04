@@ -9458,6 +9458,66 @@ static void ffi_PDFAnnotation_setHiddenForEditing(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_eventEnter(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_enter(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_eventExit(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_exit(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_eventDown(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_down(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_eventUp(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_up(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_eventFocus(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_focus(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_eventBlur(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	fz_try(ctx)
+		pdf_annot_event_blur(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFWidget_getFieldType(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10666,6 +10726,13 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFAnnotation.getHiddenForEditing", ffi_PDFAnnotation_getHiddenForEditing, 0);
 		jsB_propfun(J, "PDFAnnotation.setHiddenForEditing", ffi_PDFAnnotation_setHiddenForEditing, 1);
+
+		jsB_propfun(J, "PDFAnnotation.eventEnter", ffi_PDFAnnotation_eventEnter, 0);
+		jsB_propfun(J, "PDFAnnotation.eventExit", ffi_PDFAnnotation_eventExit, 0);
+		jsB_propfun(J, "PDFAnnotation.eventDown", ffi_PDFAnnotation_eventDown, 0);
+		jsB_propfun(J, "PDFAnnotation.eventUp", ffi_PDFAnnotation_eventUp, 0);
+		jsB_propfun(J, "PDFAnnotation.eventFocus", ffi_PDFAnnotation_eventFocus, 0);
+		jsB_propfun(J, "PDFAnnotation.eventBlur", ffi_PDFAnnotation_eventBlur, 0);
 	}
 	js_setregistry(J, "pdf_annot");
 
