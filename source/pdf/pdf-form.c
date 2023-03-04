@@ -1009,7 +1009,12 @@ pdf_annot *
 pdf_create_signature_widget(fz_context *ctx, pdf_page *page, char *name)
 {
 	fz_rect rect = { 12, 12, 12+100, 12+50 };
-	pdf_annot *annot = pdf_create_annot_raw(ctx, page, PDF_ANNOT_WIDGET);
+	pdf_annot *annot;
+
+	pdf_begin_operation(ctx, page->doc, "Create signature");
+
+	annot = pdf_create_annot_raw(ctx, page, PDF_ANNOT_WIDGET);
+
 	fz_try(ctx)
 	{
 		pdf_obj *obj = annot->obj;
@@ -1035,9 +1040,11 @@ pdf_create_signature_widget(fz_context *ctx, pdf_page *page, char *name)
 		pdf_array_push(ctx, fields, obj);
 		lock = pdf_dict_put_dict(ctx, obj, PDF_NAME(Lock), 1);
 		pdf_dict_put(ctx, lock, PDF_NAME(Action), PDF_NAME(All));
+		pdf_end_operation(ctx, page->doc);
 	}
 	fz_catch(ctx)
 	{
+		pdf_abandon_operation(ctx, page->doc);
 		pdf_delete_annot(ctx, page, annot);
 	}
 	return (pdf_annot *)annot;
