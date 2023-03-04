@@ -1921,6 +1921,12 @@ static pdf_obj *quadding_subtypes[] = {
 };
 
 int
+pdf_annot_has_quadding(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(Q), quadding_subtypes);
+}
+
+int
 pdf_annot_quadding(fz_context *ctx, pdf_annot *annot)
 {
 	int q;
