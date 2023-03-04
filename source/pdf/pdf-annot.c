@@ -1914,11 +1914,31 @@ pdf_set_annot_language(fz_context *ctx, pdf_annot *annot, fz_text_language lang)
 	pdf_dirty_annot(ctx, annot);
 }
 
+static pdf_obj *quadding_subtypes[] = {
+	PDF_NAME(FreeText),
+	PDF_NAME(Widget),
+	NULL,
+};
+
 int
 pdf_annot_quadding(fz_context *ctx, pdf_annot *annot)
 {
-	int q = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Q));
-	return (q < 0 || q > 2) ? 0 : q;
+	int q;
+
+	pdf_annot_push_local_xref(ctx, annot);
+
+	fz_try(ctx)
+	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(Q), quadding_subtypes);
+		q = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Q));
+		q = (q < 0 || q > 2) ? 0 : q;
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return q;
 }
 
 void
@@ -1930,7 +1950,10 @@ pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q)
 
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(Q), quadding_subtypes);
 		pdf_dict_put_int(ctx, annot->obj, PDF_NAME(Q), q);
+	}
+	fz_always(ctx) {
 		end_annot_op(ctx, annot);
 	}
 	fz_catch(ctx)
