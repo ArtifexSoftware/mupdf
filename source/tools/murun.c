@@ -7508,6 +7508,18 @@ static void ffi_PDFObject_isIndirect(js_State *J)
 	js_pushboolean(J, b);
 }
 
+static void ffi_PDFObject_isInteger(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b = 0;
+	fz_try(ctx)
+		b = pdf_is_int(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
 static void ffi_PDFObject_asIndirect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7605,6 +7617,18 @@ static void ffi_PDFObject_asName(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushstring(J, name);
+}
+
+static void ffi_PDFObject_isReal(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b = 0;
+	fz_try(ctx)
+		b = pdf_is_real(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
 }
 
 static void ffi_PDFObject_isString(js_State *J)
@@ -10793,6 +10817,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.isArray", ffi_PDFObject_isArray, 0);
 		jsB_propfun(J, "PDFObject.isDictionary", ffi_PDFObject_isDictionary, 0);
 		jsB_propfun(J, "PDFObject.isIndirect", ffi_PDFObject_isIndirect, 0);
+		jsB_propfun(J, "PDFObject.isInteger", ffi_PDFObject_isInteger, 0);
 		jsB_propfun(J, "PDFObject.asIndirect", ffi_PDFObject_asIndirect, 0);
 		jsB_propfun(J, "PDFObject.isNull", ffi_PDFObject_isNull, 0);
 		jsB_propfun(J, "PDFObject.isBoolean", ffi_PDFObject_isBoolean, 0);
@@ -10801,6 +10826,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.asNumber", ffi_PDFObject_asNumber, 0);
 		jsB_propfun(J, "PDFObject.isName", ffi_PDFObject_isName, 0);
 		jsB_propfun(J, "PDFObject.asName", ffi_PDFObject_asName, 0);
+		jsB_propfun(J, "PDFObject.isReal", ffi_PDFObject_isReal, 0);
 		jsB_propfun(J, "PDFObject.isString", ffi_PDFObject_isString, 0);
 		jsB_propfun(J, "PDFObject.asString", ffi_PDFObject_asString, 0);
 		jsB_propfun(J, "PDFObject.asByteString", ffi_PDFObject_asByteString, 0);
