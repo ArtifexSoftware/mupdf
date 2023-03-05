@@ -1519,6 +1519,13 @@ fz_stream *pdf_signature_hash_bytes(fz_context *ctx, pdf_document *doc, pdf_obj 
 	return bytes;
 }
 
+int pdf_incremental_change_since_signing_widget(fz_context *ctx, pdf_annot *widget)
+{
+	if (!widget->page)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation not bound to any page");
+	return pdf_signature_incremental_change_since_signing(ctx, widget->page->doc, widget->obj);
+}
+
 int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document *doc, pdf_obj *signature)
 {
 	fz_range *byte_range = NULL;

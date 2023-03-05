@@ -5313,10 +5313,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_checkDigest
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
- * Method:    incrementalChangeAfterSigning
+ * Method:    incrementalChangeSinceSigning
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_incrementalChangeAfterSigning
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_incrementalChangeSinceSigning
   (JNIEnv *, jobject);
 
 /*
@@ -5326,6 +5326,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_incrementalChan
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getDistinguishedName
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    incrementalChangesSinceSigning
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_incrementalChangesSinceSigning
+  (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget

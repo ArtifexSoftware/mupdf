@@ -241,15 +241,19 @@ public class PDFWidget extends PDFAnnotation
 	}
 	public native int checkCertificate(PKCS7Verifier verifier);
 	public native int checkDigest(PKCS7Verifier verifier);
-	public native boolean incrementalChangeAfterSigning();
+	public native boolean incrementalChangeSinceSigning();
+	public boolean incrementalChangeAfterSigning() {
+		return incrementalChangeSinceSigning();
+	}
 	public boolean verify(PKCS7Verifier verifier) {
 		if (checkDigest(verifier) != PKCS7Verifier.PKCS7VerifierOK)
 			return false;
 		if (checkCertificate(verifier) != PKCS7Verifier.PKCS7VerifierOK)
 			return false;
-		return !incrementalChangeAfterSigning();
+		return !incrementalChangeSinceSigning();
 	}
 	public native PKCS7DistinguishedName getDistinguishedName(PKCS7Verifier verifier);
+	public native boolean incrementalChangesSinceSigning();
 
 	public native int validateSignature();
 	public native void clearSignature();
