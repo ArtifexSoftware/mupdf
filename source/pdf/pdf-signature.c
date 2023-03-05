@@ -238,6 +238,8 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_annot *widget, pdf_pkcs7
 {
 	pdf_document *doc;
 
+	if (pdf_dict_get(ctx, widget->obj, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
 	if (pdf_widget_is_readonly(ctx, widget))
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Signature is read only, it cannot be signed.");
 
@@ -435,6 +437,8 @@ void pdf_clear_signature(fz_context *ctx, pdf_annot *widget)
 	int flags;
 	fz_display_list *dlist = NULL;
 
+	if (pdf_dict_get(ctx, widget->obj, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
 	if (pdf_widget_is_readonly(ctx, widget))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read only signature cannot be cleared");
 
@@ -575,6 +579,9 @@ pdf_pkcs7_distinguished_name *pdf_signature_get_signatory(fz_context *ctx, pdf_p
 	size_t contents_len;
 	pdf_pkcs7_distinguished_name *dn;
 
+	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 	if (contents_len == 0)
 		return NULL;
@@ -601,7 +608,13 @@ pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifi
 	pdf_signature_error result = PDF_SIGNATURE_ERROR_UNKNOWN;
 	fz_stream *bytes = NULL;
 	char *contents = NULL;
-	size_t contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
+	size_t contents_len;
+
+	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+
+	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
+
 	fz_var(bytes);
 	fz_try(ctx)
 	{
@@ -631,8 +644,14 @@ pdf_signature_error pdf_check_widget_certificate(fz_context *ctx, pdf_pkcs7_veri
 pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_pkcs7_verifier *verifier, pdf_document *doc, pdf_obj *signature)
 {
 	char *contents = NULL;
-	size_t contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
+	size_t contents_len;
 	pdf_signature_error result = PDF_SIGNATURE_ERROR_UNKNOWN;
+
+	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+
+	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
+
 	fz_try(ctx)
 		result = verifier->check_certificate(ctx, verifier, (unsigned char *)contents, contents_len);
 	fz_always(ctx)
