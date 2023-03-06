@@ -2917,6 +2917,9 @@ pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 {
 	pdf_xref_entry *x;
 
+	if (!doc)
+		return;
+
 	if (doc->local_xref && doc->local_xref_nesting > 0)
 	{
 		pdf_update_local_object(ctx, doc, num, newobj);
