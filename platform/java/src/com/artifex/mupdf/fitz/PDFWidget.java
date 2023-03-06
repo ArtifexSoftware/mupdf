@@ -85,7 +85,8 @@ public class PDFWidget extends PDFAnnotation
 	public static final int SIGNATURE_ERROR_SELF_SIGNED = 4;
 	public static final int SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN = 5;
 	public static final int SIGNATURE_ERROR_NOT_TRUSTED = 6;
-	public static final int SIGNATURE_ERROR_UNKNOWN = 7;
+	public static final int SIGNATURE_ERROR_NOT_SIGNED = 7;
+	public static final int SIGNATURE_ERROR_UNKNOWN = 8;
 
 	// These don't change after creation, so are cached in java fields.
 	private int fieldType;

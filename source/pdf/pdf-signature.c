@@ -581,6 +581,8 @@ pdf_pkcs7_distinguished_name *pdf_signature_get_signatory(fz_context *ctx, pdf_p
 
 	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+		return NULL;
 
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 	if (contents_len == 0)
@@ -612,6 +614,8 @@ pdf_signature_error pdf_check_digest(fz_context *ctx, pdf_pkcs7_verifier *verifi
 
 	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+		return PDF_SIGNATURE_ERROR_NOT_SIGNED;
 
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 
@@ -649,6 +653,8 @@ pdf_signature_error pdf_check_certificate(fz_context *ctx, pdf_pkcs7_verifier *v
 
 	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+		return PDF_SIGNATURE_ERROR_NOT_SIGNED;
 
 	contents_len = pdf_signature_contents(ctx, doc, signature, &contents);
 

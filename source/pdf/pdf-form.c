@@ -1527,6 +1527,8 @@ int pdf_signature_incremental_change_since_signing(fz_context *ctx, pdf_document
 
 	if (pdf_dict_get(ctx, signature, PDF_NAME(FT)) != PDF_NAME(Sig))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
+	if (!pdf_signature_is_signed(ctx, doc, signature))
+		return 0;
 
 	fz_var(byte_range);
 	fz_try(ctx)

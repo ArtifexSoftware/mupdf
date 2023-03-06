@@ -5203,8 +5203,10 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_SELF_SIGNED_IN_CHAIN 5L
 #undef com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_NOT_TRUSTED
 #define com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_NOT_TRUSTED 6L
+#undef com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_NOT_SIGNED
+#define com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_NOT_SIGNED 7L
 #undef com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_UNKNOWN
-#define com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_UNKNOWN 7L
+#define com_artifex_mupdf_fitz_PDFWidget_SIGNATURE_ERROR_UNKNOWN 8L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    getValue
