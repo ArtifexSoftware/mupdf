@@ -566,7 +566,10 @@ gif_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 					/* Read application extension */
 					p = gif_read_ae(ctx, info, p, end);
 				else
-					fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported extension label %02x in gif image", p[1]);
+				{
+					fz_warn(ctx, "ignoring unsupported extension label %02x in gif image", p[1]);
+					p = gif_read_subblocks(ctx, info, p + 2, end, NULL);
+				}
 			}
 			/* Read image descriptor */
 			else if (p[0] == 0x2c)
