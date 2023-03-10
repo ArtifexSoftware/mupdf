@@ -2053,6 +2053,7 @@ def function_wrapper_class_aware_body(
 
         Otherwise we don't wrap the returned value.
     '''
+    verbose = state.state_.show_details( fnname)
     out_cpp.write( f'{{\n')
     return_void = (fn_cursor.result_type.spelling == 'void')
 
@@ -2119,6 +2120,8 @@ def function_wrapper_class_aware_body(
             out_cpp.write( f'    {_make_top_level(return_cursor.spelling)} temp = mupdf::{rename.ll_fn(fnname)}(')
         elif wrap_return == 'pointer':
             out_cpp.write( f'    {_make_top_level(return_cursor.spelling)}* temp = mupdf::{rename.ll_fn(fnname)}(')
+        elif wrap_return == 'const pointer':
+            out_cpp.write( f'    const {_make_top_level(return_cursor.spelling)}* temp = mupdf::{rename.ll_fn(fnname)}(')
         elif return_void:
             out_cpp.write( f'    mupdf::{rename.ll_fn(fnname)}(')
         else:
@@ -2145,7 +2148,7 @@ def function_wrapper_class_aware_body(
         if state.state_.show_details(fnname):
             jlib.log('{=wrap_return}')
         refcounted_return = False
-        if wrap_return == 'pointer' and parse.has_refs( tu, return_cursor.type):
+        if wrap_return in ('pointer', 'const pointer') and parse.has_refs( tu, return_cursor.type):
             refcounted_return = True
             refcounted_return_struct_cursor = return_cursor
         elif class_constructor and parse.has_refs( tu, struct_cursor.type):
@@ -2187,7 +2190,7 @@ def function_wrapper_class_aware_body(
 
         if wrap_return == 'value':
             out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(&temp);\n')
-        elif wrap_return == 'pointer':
+        elif wrap_return in ('pointer', 'const pointer'):
             out_cpp.write( f'    auto ret = {rename.class_(return_cursor.spelling)}(temp);\n')
 
         # Handle wrapper-class out-params - need to keep arg.m_internal and set to
@@ -2487,7 +2490,10 @@ def function_wrapper_class_aware(
                         fn_cpp = f'{return_type} {class_name}::{decl_cpp}'
                     else:
                         fn_cpp = f'{return_type} {decl_cpp}'
-                    wrap_return = 'pointer'
+                    if t.is_const_qualified():
+                        wrap_return = 'const pointer'
+                    else:
+                        wrap_return = 'pointer'
             if verbose:
                 jlib.log( '{=warning_not_copyable warning_no_raw_constructor}')
         else:
