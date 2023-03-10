@@ -790,17 +790,7 @@ def function_wrapper(
             jlib.log( '{arg.cursor=} {arg.name=} {arg.separator=} {arg.alt=} {arg.out_param=}')
         if parse.is_pointer_to(arg.cursor.type, 'fz_context'):
             continue
-        if arg.out_param:
-            decl = ''
-            decl += '\n'
-            decl += '        #ifdef SWIG\n'
-            decl += '            ' + declaration_text( arg.cursor.type, 'OUTPUT') + '\n'
-            decl += '        #else\n'
-            decl += '            ' + declaration_text( arg.cursor.type, arg.name) + '\n'
-            decl += '        #endif\n'
-            decl += '        '
-        else:
-            decl = declaration_text( arg.cursor.type, arg.name, verbose=verbose)
+        decl = declaration_text( arg.cursor.type, arg.name, verbose=verbose)
         if verbose:
             jlib.log( '{decl=}')
         name_args_h += f'{comma}{decl}'
@@ -2400,16 +2390,7 @@ def function_wrapper_class_aware(
         else:
             jlib.logx( '{arg.spelling=}')
             decl_text = declaration_text( arg.cursor.type, arg.name)
-            if arg.out_param:
-                decl_h += '\n'
-                decl_h += '            #ifdef SWIG\n'
-                decl_h += '                ' + declaration_text( arg.cursor.type, 'OUTPUT') + '\n'
-                decl_h += '            #else\n'
-                decl_h += '                ' + decl_text + '\n'
-                decl_h += '            #endif\n'
-                decl_h += '            '
-            else:
-                decl_h += decl_text
+            decl_h += decl_text
             decl_cpp += decl_text
         comma = ', '
 
