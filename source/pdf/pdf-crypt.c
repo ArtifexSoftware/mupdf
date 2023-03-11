@@ -955,21 +955,40 @@ int pdf_crypt_revision(fz_context *ctx, pdf_crypt *crypt)
 	return 0;
 }
 
-char *
-pdf_crypt_method(fz_context *ctx, pdf_crypt *crypt)
+static char *
+crypt_method(fz_context *ctx, int method)
+{
+	switch (method)
+	{
+	default:
+	case PDF_CRYPT_UNKNOWN: return "Unknown";
+	case PDF_CRYPT_NONE: return "None";
+	case PDF_CRYPT_RC4: return "RC4";
+	case PDF_CRYPT_AESV2: return "AES";
+	case PDF_CRYPT_AESV3: return "AES";
+	}
+}
+
+const char *
+pdf_crypt_string_method(fz_context *ctx, pdf_crypt *crypt)
 {
 	if (crypt)
-	{
-		switch (crypt->strf.method)
-		{
-		case PDF_CRYPT_NONE: return "None";
-		case PDF_CRYPT_RC4: return "RC4";
-		case PDF_CRYPT_AESV2: return "AES";
-		case PDF_CRYPT_AESV3: return "AES";
-		case PDF_CRYPT_UNKNOWN: return "Unknown";
-		}
-	}
+		return crypt_method(ctx, crypt->strf.method);
 	return "None";
+}
+
+const char *
+pdf_crypt_stream_method(fz_context *ctx, pdf_crypt *crypt)
+{
+	if (crypt)
+		return crypt_method(ctx, crypt->stmf.method);
+	return "None";
+}
+
+const char *
+pdf_crypt_method(fz_context *ctx, pdf_crypt *crypt)
+{
+	return pdf_crypt_string_method(ctx, crypt);
 }
 
 int
