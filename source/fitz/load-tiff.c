@@ -92,6 +92,8 @@ struct tiff
 
 	const unsigned char *jpegtables; /* point into "file" buffer */
 	unsigned jpegtableslen;
+	unsigned jpegofs;
+	unsigned jpeglen;
 
 	unsigned char *profile;
 	int profilesize;
@@ -140,6 +142,8 @@ enum
 #define TileByteCounts 325
 #define ExtraSamples 338
 #define JPEGTables 347
+#define JPEGInterchangeFormat 513
+#define JPEGInterchangeFormatLength 514
 #define YCbCrSubSampling 530
 #define ICCProfile 34675
 
@@ -962,6 +966,12 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case ICCProfile:
 		tiff->profilesize = count;
 		break;
+	case JPEGInterchangeFormat:
+		tiff_read_tag_value(ctx, &tiff->jpegofs, tiff, type, value, 1);
+		break;
+	case JPEGInterchangeFormatLength:
+		tiff_read_tag_value(ctx, &tiff->jpeglen, tiff, type, value, 1);
+		break;
 	default:
 		/* fz_warn(ctx, "unknown tag: %d t=%d n=%d", tag, type, count); */
 		break;
@@ -1495,6 +1505,41 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 }
 
 static void
+tiff_decode_jpeg(fz_context *ctx, struct tiff *tiff)
+{
+	size_t wlen = (size_t)tiff->imagelength * tiff->stride;
+	size_t size = 0;
+	fz_stream *rawstm = NULL;
+	fz_stream *stm = NULL;
+
+	fz_var(rawstm);
+	fz_var(stm);
+
+	if (tiff->jpegofs + tiff->jpeglen > (size_t)(tiff->ep - tiff->bp))
+	{
+		fz_warn(ctx, "TIFF JPEG image length too long, capping");
+		tiff->jpeglen = (size_t)(tiff->ep - tiff->bp) - tiff->jpegofs;
+	}
+
+	fz_try(ctx)
+	{
+		rawstm = fz_open_memory(ctx, tiff->bp + tiff->jpegofs, tiff->jpeglen);
+		stm = fz_open_dctd(ctx, rawstm, -1, 0, NULL);
+		size = (unsigned)fz_read(ctx, stm, tiff->samples, wlen);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+		fz_drop_stream(ctx, rawstm);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	if (size < wlen)
+		fz_warn(ctx, "premature end of data in jpeg");
+}
+
+static void
 tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
@@ -1508,8 +1553,10 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 		tiff_decode_tiles(ctx, tiff);
 	else if (tiff->rowsperstrip && tiff->stripoffsets && tiff->stripbytecounts)
 		tiff_decode_strips(ctx, tiff);
+	else if (tiff->jpegofs && tiff->jpeglen)
+		tiff_decode_jpeg(ctx, tiff);
 	else
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image is missing both strip and tile data");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is missing strip, tile and jpeg data");
 
 	/* Predictor (only for LZW and Flate) */
 	if ((tiff->compression == 5 || tiff->compression == 8 || tiff->compression == 32946) && tiff->predictor == 2)
