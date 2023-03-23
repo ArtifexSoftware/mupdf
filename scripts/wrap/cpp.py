@@ -1726,6 +1726,7 @@ def class_find_constructor_fns( tu, classname, struct_name, base_name, extras):
         # Add default constructor fn prefix.
         if struct_name.startswith( 'fz_'):
             extras.constructor_prefixes.insert( 0, f'fz_new_')
+            extras.constructor_prefixes.insert( 0, f'pdf_new_')
         elif struct_name.startswith( 'pdf_'):
             extras.constructor_prefixes.insert( 0, f'pdf_new_')
     for fnprefix in extras.constructor_prefixes:
