@@ -3229,7 +3229,7 @@ def get_struct_fnptrs( cursor_struct, shallow_typedef_expansion=False):
         t = cursor.type
         if t.kind == state.clang.cindex.TypeKind.POINTER:
             t = cursor.type.get_pointee()
-            if t.kind == state.clang.cindex.TypeKind.TYPEDEF:
+            if t.kind in (state.clang.cindex.TypeKind.TYPEDEF, state.clang.cindex.TypeKind.ELABORATED):
                 t_cursor = t.get_declaration()
                 t = t_cursor.underlying_typedef_type
             if t.kind == state.clang.cindex.TypeKind.FUNCTIONPROTO:
