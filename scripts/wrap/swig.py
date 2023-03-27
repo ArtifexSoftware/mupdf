@@ -2,6 +2,7 @@
 Support for using SWIG to generate langauge bindings from the C++ bindings.
 '''
 
+import inspect
 import io
 import os
 import re
@@ -69,12 +70,13 @@ def build_swig(
     # Find version of swig. (We use quotes around <swig> to make things work on
     # Windows.)
     try:
-        t = jlib.system( f'"{swig_command}" -version', out='return')
+        t = jlib.system( f'"{swig_command}" -version', out='return', verbose=1)
     except Exception as e:
         if state_.windows:
             raise Exception( 'swig failed; on Windows swig can be auto-installed with: --swig-windows-auto') from e
         else:
             raise
+    jlib.log('SWIG version info:\n========\n{t}\n========')
     m = re.search( 'SWIG Version ([0-9]+)[.]([0-9]+)[.]([0-9]+)', t)
     assert m
     swig_major = int( m.group(1))
@@ -591,8 +593,8 @@ def build_swig(
             6. - which calls SWIG Director C++ code.
             7. - which calls Python derived class's method, which raises a Python exception.
 
-            The exception propogates back up the above stack, being converted
-            into different exception mechanisms as it goes.
+            The exception propagates back up the above stack, being converted
+            into different exception representations as it goes:
 
             6. SWIG Director C++ code (here). We raise a C++ exception.
             5. MuPDF C++ API Director wrapper converts the C++ exception into a MuPDF fz_try/catch exception.
@@ -609,32 +611,111 @@ def build_swig(
             first C++ exception propogate directly through MuPDF C code without
             being a fz_try/catch exception, because it would mess up MuPDF C
             code's fz_try/catch exception stack.
+
+            Unfortuntately MuPDF fz_try/catch exception strings are limited to
+            256 characters so some or all of our detailed backtrace information
+            is lost.
             */
 
-            /* Get text description of the Python exception. todo: perhaps try
-            to represent the Python backtrace in the exception text? */
+            /* Get text description of the Python exception. */
             PyObject* etype;
             PyObject* obj;
             PyObject* trace;
             PyErr_Fetch( &etype, &obj, &trace);
+
+            /* Looks like PyErr_GetExcInfo() fails here, returning NULL.*/
+            /*
+            PyErr_GetExcInfo( &etype, &obj, &trace);
+            std::cerr << "PyErr_GetExcInfo(): etype: " << py_str(etype) << "\\n";
+            std::cerr << "PyErr_GetExcInfo(): obj: " << py_str(obj) << "\\n";
+            std::cerr << "PyErr_GetExcInfo(): trace: " << py_str(trace) << "\\n";
+            */
+
+            std::string message = "Director error: " + py_str(etype) + ": " + py_str(obj) + "\\n";
+
             if (g_mupdf_trace_director)
             {
                 /* __FILE__ and __LINE__ are not useful here because SWIG makes
                 them point to the generic .i code. */
-                std::cerr
-                        #ifndef _WIN32
-                        << __PRETTY_FUNCTION__ << ": "
-                        #endif
-                        << "Converting Python error into C++ exception:"
-                        << "\\n";
+                std::cerr << "========\\n";
+                std::cerr << "g_mupdf_trace_director set: Converting Python error into C++ exception:" << "\\n";
+                #ifndef _WIN32
+                    std::cerr << "    function: " << __PRETTY_FUNCTION__ << "\\n";
+                #endif
                 std::cerr << "    etype: " << py_str(etype) << "\\n";
                 std::cerr << "    obj:   " << py_str(obj) << "\\n";
                 std::cerr << "    trace: " << py_str(trace) << "\\n";
+                std::cerr << "========\\n";
             }
-            std::string message = "Director error: " + py_str(etype) + ": " + py_str(obj);
-            if (etype)  Py_DECREF(etype);
-            if (obj)    Py_DECREF(obj);
-            if (trace)  Py_DECREF(trace);
+
+            PyObject* traceback = PyImport_ImportModule("traceback");
+            if (traceback)
+            {
+                /* Use traceback.format_tb() to get backtrace. */
+                if (0)
+                {
+                    message += "Traceback (from traceback.format_tb()):\\n";
+                    PyObject* traceback_dict = PyModule_GetDict(traceback);
+                    PyObject* format_tb = PyDict_GetItem(traceback_dict, PyString_FromString("format_tb"));
+                    PyObject* ret = PyObject_CallFunctionObjArgs(format_tb, trace, NULL);
+                    PyObject* iter = PyObject_GetIter(ret);
+                    for(;;)
+                    {
+                        PyObject* item = PyIter_Next(iter);
+                        if (!item) break;
+                        message += py_str(item);
+                        Py_DECREF(item);
+                    }
+                    /* `format_tb` and `traceback_dict` are borrowed references.
+                    */
+                    Py_XDECREF(iter);
+                    Py_XDECREF(ret);
+                    Py_XDECREF(traceback);
+                }
+
+                /* Use exception_info() (copied from mupdf/scripts/jlib.py) to get
+                detailed backtrace. */
+                if (1)
+                {
+                    PyObject* globals = PyEval_GetGlobals();
+                    PyObject* exception_info = PyDict_GetItemString(globals, "exception_info");
+                    PyObject* string_return = PyUnicode_FromString("return");
+                    PyObject* ret = PyObject_CallFunctionObjArgs(
+                            exception_info,
+                            trace,
+                            Py_None,
+                            string_return,
+                            NULL
+                            );
+                    Py_XDECREF(string_return);
+                    message += py_str(ret);
+                    Py_XDECREF(ret);
+                }
+            }
+            else
+            {
+                message += "[No backtrace available.]\\n";
+            }
+
+            Py_XDECREF(etype);
+            Py_XDECREF(obj);
+            Py_XDECREF(trace);
+
+            message += "Exception was from C++/Python callback:\\n";
+            message += "    ";
+            #ifdef _WIN32
+                message += __FUNCTION__;
+            #else
+                message += __PRETTY_FUNCTION__;
+            #endif
+            message += "\\n";
+
+            if (1 || g_mupdf_trace_director)
+            {
+                std::cerr << "========\\n";
+                std::cerr << "Director exception handler, message is:\\n" << message << "\\n";
+                std::cerr << "========\\n";
+            }
 
             /* SWIG 4.1 documention talks about throwing a
             Swig::DirectorMethodException here, but this doesn't work for us
@@ -642,7 +723,6 @@ def build_swig(
             next SWIG call of a C/C++ function appear to fail.
             //throw Swig::DirectorMethodException();
             */
-
             throw std::runtime_error( message.c_str());
         }
     }
@@ -847,14 +927,17 @@ def build_swig(
     text += common
 
     if language == 'python':
+
         text += textwrap.dedent(f'''
                 %pointer_functions(int, pint);
 
                 %pythoncode %{{
 
+                import inspect
                 import os
                 import re
                 import sys
+                import traceback
 
                 def log( text):
                     print( text, file=sys.stderr)
@@ -893,6 +976,15 @@ def build_swig(
                 {rename.class_('pdf_document')}.{rename.method('pdf_document', 'pdf_lookup_metadata')} = pdf_lookup_metadata_extra
                 {rename.fn('pdf_lookup_metadata')} = pdf_lookup_metadata_extra
                 ''')
+
+        exception_info_text = inspect.getsource(jlib.exception_info)
+        text += 'import inspect\n'
+        text += 'import io\n'
+        text += 'import os\n'
+        text += 'import sys\n'
+        text += 'import traceback\n'
+        text += 'import types\n'
+        text += exception_info_text
 
     if language == 'python':
         # Make some additions to the generated Python module.
