@@ -1318,6 +1318,19 @@ Python API:
   backtrace is lost.
 
 
+Exceptions in callbacks
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Python exceptions in Director callbacks are propogated back through the
+langauge layers (from Python to C++ to C, then back to C++ and finally to
+Python).
+
+For convenience we add a text representation of the orignal Python backtrace
+to the exception text, but the C layer's fz_try/catch exception handling only
+holds 256 characters of exception text, so this backtrace information may be
+truncated by the time the exception reaches the original Python code's `except
+...` code.
+
 Example
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
