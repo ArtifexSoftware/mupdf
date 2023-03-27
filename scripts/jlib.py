@@ -740,61 +740,72 @@ def exception_info(
         file=None,
         chain=True,
         outer=True,
+        show_exception_type=True,
         _filelinefn=True,
         ):
     '''
     Shows an exception and/or backtrace.
 
-    Alternative to traceback.* functions that print/return
-    information about exceptions and backtraces, such as:
+    Alternative to `traceback.*` functions that print/return information about
+    exceptions and backtraces, such as:
 
-        traceback.format_exc()
-        traceback.format_exception()
-        traceback.print_exc()
-        traceback.print_exception()
+        * `traceback.format_exc()`
+        * `traceback.format_exception()`
+        * `traceback.print_exc()`
+        * `traceback.print_exception()`
 
     Install as system default with:
-        sys.excepthook = lambda type_, exception, traceback: jlib.exception_info( exception)
 
-    Returns None, or the generated text if <file> is 'return'.
+        `sys.excepthook = lambda type_, exception, traceback: jlib.exception_info( exception)`
+
+    Returns `None`, or the generated text if `file` is 'return'.
 
     Args:
         exception_or_traceback:
-            None, a BaseException, a types.TracebackType or a list of
-            inspect.FrameInfo's. If None we use current exception from
-            sys.exc_info() if set, otherwise the current backtrace from
-            inspect.stack().
+            `None`, a `BaseException`, a `types.TracebackType` or a list of
+            `inspect.FrameInfo`'s. If `None` we use current exception from
+            `sys.exc_info()` if set, otherwise the current backtrace from
+            `inspect.stack()`.
         limit:
-            As in traceback.* functions: None to show all frames, positive to
-            show last <limit> frames, negative to exclude outermost -limit
-            frames.
+            As in `traceback.*` functions: `None` to show all frames, positive
+            to show last `limit` frames, negative to exclude outermost `-limit`
+            frames. Zero to not show any backtraces.
         file:
-            As in traceback.* functions: file-like object to which we write
-            output, or sys.stderr if None. Special value 'return' makes us
+            As in `traceback.*` functions: file-like object to which we write
+            output, or `sys.stderr` if `None`. Special value 'return' makes us
             return our output as a string.
         chain:
-            As in traceback.* functions: if true (the default) we show chained
-            exceptions as described in PEP-3134. Special value 'because'
-            reverses the usual ordering, showing higher-level exceptions first
-            and joining with 'Because:' text.
+            As in `traceback.*` functions: if true (the default) we show
+            chained exceptions as described in PEP-3134. Special value
+            'because' reverses the usual ordering, showing higher-level
+            exceptions first and joining with 'Because:' text.
         outer:
             If true (the default) we also show an exception's outer frames
-            above the catch block (see next section for details). We use
-            outer=false internally for chained exceptions to avoid duplication.
+            above the `catch` block (see next section for details). We
+            use `outer=false` internally for chained exceptions to avoid
+            duplication.
+        show_exception_type:
+            Controls whether exception text is prefixed by
+            `f'{type(exception)}: '`. If callable we only include this prefix
+            if `show_exception_type(exception)` is true. Otherwise if true (the
+            default) we include the prefix for all exceptions (this mimcs the
+            behaviour of `traceback.*` functions). Otherwise we exclude the
+            prefix for all exceptions.
         _filelinefn:
             Internal only; makes us omit file:line: information to allow simple
             doctest comparison with expected output.
 
-    Differences from traceback.* functions:
+    Differences from `traceback.*` functions:
 
-        Frames are displayed as one line in the form:
+        Frames are displayed as one line in the form::
+
             <file>:<line>:<function>: <text>
 
         Filenames are displayed as relative to the current directory if
         applicable.
 
         Inclusion of outer frames:
-            Unlike traceback.* functions, stack traces for exceptions include
+            Unlike `traceback.*` functions, stack traces for exceptions include
             outer stack frames above the point at which an exception was caught
             - i.e. frames from the top-level <module> or thread creation to the
             catch block. [Search for 'sys.exc_info backtrace incomplete' for
@@ -805,7 +816,7 @@ def exception_info(
             caught the exception and 'raise:' refers downwards to the frame
             that raised the exception.
 
-            So the backtrace for an exception looks like this:
+            So the backtrace for an exception looks like this::
 
                 <file>:<line>:<fn>: <text>  [in root module.]
                 ...                         [... other frames]
@@ -817,10 +828,10 @@ def exception_info(
 
     Examples:
 
-        In these examples we use file=sys.stdout so we can check the output
-        with doctest, and set _filelinefn=0 so that the output can be matched
-        easily. We also use +ELLIPSIS and '...' to match arbitrary outer frames
-        from the doctest code itself.
+        In these examples we use `file=sys.stdout` so we can check the output
+        with `doctest`, and set `_filelinefn=0` so that the output can be
+        matched easily. We also use `+ELLIPSIS` and `...` to match arbitrary
+        outer frames from the doctest code itself.
 
         Basic handling of an exception:
 
@@ -863,8 +874,8 @@ def exception_info(
             >>> def a():
             ...     b()
 
-            With chain=True (the default), we output low-level exceptions
-            first, matching the behaviour of traceback.* functions:
+            With `chain=True` (the default), we output low-level exceptions
+            first, matching the behaviour of `traceback.*` functions:
 
                 >>> g_chain = True
                 >>> a() # doctest: +REPORT_UDIFF +ELLIPSIS
@@ -885,7 +896,7 @@ def exception_info(
                     c(): raise Exception( 'c: d() failed') from e
                 Exception: c: d() failed
 
-            With chain='because', we output high-level exceptions first:
+            With `chain='because'`, we output high-level exceptions first:
                 >>> g_chain = 'because'
                 >>> a() # doctest: +REPORT_UDIFF +ELLIPSIS
                 Traceback (most recent call last):
@@ -905,7 +916,7 @@ def exception_info(
                     e(): raise Exception( 'e(): deliberate error')
                 Exception: e(): deliberate error
 
-        Show current backtrace by passing exception_or_traceback=None:
+        Show current backtrace by passing `exception_or_traceback=None`:
             >>> def c():
             ...     exception_info( None, file=sys.stdout, _filelinefn=0)
             >>> def b():
@@ -913,15 +924,15 @@ def exception_info(
             >>> def a():
             ...     return b()
 
-            >>> a() # doctest: +REPORT_UDIFF +ELLIPSIS
+            >>> a() # doctest: -REPORT_UDIFF +ELLIPSIS
             Traceback (most recent call last):
                 ...
-                <module>(): a() # doctest: +REPORT_UDIFF +ELLIPSIS
+                <module>(): a() # doctest: -REPORT_UDIFF +ELLIPSIS
                 a(): return b()
                 b(): return c()
                 c(): exception_info( None, file=sys.stdout, _filelinefn=0)
 
-        Show an exception's .__traceback__ backtrace:
+        Show an exception's `.__traceback__` backtrace:
             >>> def c():
             ...     raise Exception( 'foo') # raise
             >>> def b():
@@ -932,9 +943,11 @@ def exception_info(
             ...     except Exception as e:
             ...         exception_info( e.__traceback__, file=sys.stdout, _filelinefn=0)
 
-            >>> a() # doctest: +REPORT_UDIFF +ELLIPSIS
+            >>> a() # doctest: -REPORT_UDIFF +ELLIPSIS
             Traceback (most recent call last):
                 ...
+                <module>(): a() # doctest: -REPORT_UDIFF +ELLIPSIS
+                a(): exception_info( e.__traceback__, file=sys.stdout, _filelinefn=0)
                 a(): b() # call b
                 b(): return c()  # call c
                 c(): raise Exception( 'foo') # raise
@@ -961,9 +974,17 @@ def exception_info(
         out = file if file else sys.stderr
 
     def do_chain( exception):
-        exception_info( exception, limit, out, chain, outer=False, _filelinefn=_filelinefn)
+        exception_info(
+                exception,
+                limit,
+                out,
+                chain,
+                outer=False,
+                show_exception_type=show_exception_type,
+                _filelinefn=_filelinefn,
+                )
 
-    if exception and chain and chain != 'because':
+    if exception and chain and chain != 'because' and chain != 'because-compact':
         # Output current exception first.
         if exception.__cause__:
             do_chain( exception.__cause__)
@@ -975,6 +996,8 @@ def exception_info(
     cwd = os.getcwd() + os.sep
 
     def output_frames( frames, reverse, limit):
+        if limit == 0:
+            return
         if reverse:
             assert isinstance( frames, list)
             frames = reversed( frames)
@@ -993,34 +1016,44 @@ def exception_info(
             else:
                 out.write( f'    {fnname}(): {text}\n')
 
-    out.write( 'Traceback (most recent call last):\n')
-    if exception:
-        tb = exception.__traceback__
-        assert tb
-        if outer:
-            output_frames( inspect.getouterframes( tb.tb_frame), reverse=True, limit=limit)
-            out.write( '    ^except raise:\n')
-        output_frames( inspect.getinnerframes( tb), reverse=False, limit=None)
-    else:
-        if not isinstance( tb, list):
-            inner = inspect.getinnerframes(tb)
-            outer = inspect.getouterframes(tb.tb_frame)
-            tb = outer + inner
-            tb.reverse()
-        output_frames( tb, reverse=True, limit=limit)
+    if limit != 0:
+        out.write( 'Traceback (most recent call last):\n')
+        if exception:
+            tb = exception.__traceback__
+            assert tb
+            if outer:
+                output_frames( inspect.getouterframes( tb.tb_frame), reverse=True, limit=limit)
+                out.write( '    ^except raise:\n')
+            limit2 = 0 if limit == 0 else None
+            output_frames( inspect.getinnerframes( tb), reverse=False, limit=limit2)
+        else:
+            if not isinstance( tb, list):
+                inner = inspect.getinnerframes(tb)
+                outer = inspect.getouterframes(tb.tb_frame)
+                inner.reverse()
+                tb = inner + outer
+            output_frames( tb, reverse=True, limit=limit)
 
     if exception:
-        lines = traceback.format_exception_only( type(exception), exception)
-        for line in lines:
-            out.write( line)
+        if callable(show_exception_type):
+            show_exception_type2 = show_exception_type( exception)
+        else:
+            show_exception_type2 = show_exception_type
+        if show_exception_type2:
+            lines = traceback.format_exception_only( type(exception), exception)
+            for line in lines:
+                out.write( line)
+        else:
+            out.write( str( exception) + '\n')
 
-    if exception and chain == 'because':
+    if exception and (chain == 'because' or chain == 'because-compact'):
         # Output current exception afterwards.
+        pre, post = ('\n', '\n') if chain == 'because' else ('', ' ')
         if exception.__cause__:
-            out.write( '\nBecause:\n')
+            out.write( f'{pre}Because:{post}')
             do_chain( exception.__cause__)
         elif exception.__context__:
-            out.write( '\nBecause error occurred handling this exception:\n')
+            out.write( f'{pre}Because: error occurred handling this exception:{post}')
             do_chain( exception.__context__)
 
     if file == 'return':
