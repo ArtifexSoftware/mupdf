@@ -515,6 +515,23 @@ classextras = ClassExtras(
                         ''',
                 ),
 
+        fz_compressed_buffer = ClassExtra(
+                methods_extra = [
+                    ExtraMethod(
+                        rename.class_('fz_buffer'),
+                        'get_buffer()',
+                        textwrap.dedent(f'''
+                            {{
+                                return {rename.class_('fz_buffer')}(
+                                        {rename.ll_fn('fz_keep_buffer')}(m_internal->buffer)
+                                        );
+                            }}
+                            '''),
+                        '/* Returns wrapper class for fz_buffer *m_internal.buffer. */',
+                        ),
+                    ],
+                ),
+
         fz_context = ClassExtra(
                 copyable = False,
                 ),
