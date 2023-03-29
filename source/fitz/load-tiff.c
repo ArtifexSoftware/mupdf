@@ -482,7 +482,7 @@ tiff_paste_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigne
 }
 
 static void
-tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigned len, unsigned tw, unsigned th, unsigned col, unsigned row)
+tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigned len, unsigned tw, unsigned th, unsigned row, unsigned col)
 {
 	/*
 	This explains how the samples are laid out in tiff data, the spec example is non-obvious.
@@ -635,9 +635,9 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 		data = tiff->data = Memento_label(fz_malloc(ctx, wlen), "tiff_tile_jpg");
 
 		tile = 0;
-		for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
+		for (y = 0; y < tiff->imagelength; y += tiff->tilelength)
 		{
-			for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+			for (x = 0; x < tiff->imagewidth; x += tiff->tilewidth)
 			{
 				unsigned int offset = tiff->tileoffsets[tile];
 				unsigned int rlen = tiff->tilebytecounts[tile];
@@ -652,7 +652,7 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "tile byte count zero");
 
 				decoded = tiff_decode_data(ctx, tiff, rp, rlen, data, wlen);
-				tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->tilewidth, tiff->tilelength, x, y);
+				tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->tilewidth, tiff->tilelength, y, x);
 				tile++;
 			}
 		}
@@ -663,9 +663,9 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 		data = tiff->data = Memento_label(fz_malloc(ctx, wlen), "tiff_tile");
 
 		tile = 0;
-		for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
+		for (y = 0; y < tiff->imagelength; y += tiff->tilelength)
 		{
-			for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+			for (x = 0; x < tiff->imagewidth; x += tiff->tilewidth)
 			{
 				unsigned int offset = tiff->tileoffsets[tile];
 				unsigned int rlen = tiff->tilebytecounts[tile];
@@ -681,7 +681,7 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 				if (tiff_decode_data(ctx, tiff, rp, rlen, data, wlen) != wlen)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "decoded tile is the wrong size");
 
-				tiff_paste_tile(ctx, tiff, data, x, y);
+				tiff_paste_tile(ctx, tiff, data, y, x);
 				tile++;
 			}
 		}
@@ -733,7 +733,7 @@ tiff_decode_strips(fz_context *ctx, struct tiff *tiff)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "strip byte count zero");
 
 			decoded = tiff_decode_data(ctx, tiff, rp, rlen, data, wlen);
-			tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->imagewidth, tiff->rowsperstrip, 0, y);
+			tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->imagewidth, tiff->rowsperstrip, y, 0);
 			strip++;
 		}
 	}
