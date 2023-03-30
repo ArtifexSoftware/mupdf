@@ -1556,7 +1556,7 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 	}
 
 	/* Byte swap 16-bit images to big endian if necessary */
-	if (tiff->bitspersample == 16 && tiff->order == TII)
+	if (tiff->bitspersample == 16 && tiff->order == TII && !tiff->colormap)
 		tiff_swap_byte_order(tiff->samples, tiff->imagewidth * tiff->imagelength * tiff->samplesperpixel);
 
 	/* Lab colorspace expects all sample components 0..255.
