@@ -280,7 +280,7 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
-	srcstride = ((1 + tiff->extrasamples) * tiff->bitspersample + 7) & ~7;
+	srcstride = (tiff->imagewidth * (1 + tiff->extrasamples) * tiff->bitspersample + 7) / 8;
 	if (tiff->stride < 0 || srcstride > (unsigned int)tiff->stride)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient data for format");
 
