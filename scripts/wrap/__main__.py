@@ -1839,6 +1839,15 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             jlib.remove( f'{out2_so}.cmd')
 
                     # Build _mupdf.so.
+                    #
+                    # We define SWIG_PYTHON_SILENT_MEMLEAK to avoid generating
+                    # lots of diagnostics `detected a memory leak of type
+                    # 'mupdf::PdfObj *', no destructor found.` when used with
+                    # mupdfpy. However it's not definitely known that these
+                    # diagnostics are spurious - seems to be to do with two
+                    # separate SWIG Python APIs (mupdf and mupdfpy's `extra`
+                    # module) using the same underlying C library.
+                    #
                     command = ( textwrap.dedent(
                             f'''
                             c++
@@ -1852,6 +1861,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 {cpp_path}
                                 -Wno-deprecated-declarations
                                 -Wno-free-nonheap-object
+                                -DSWIG_PYTHON_SILENT_MEMLEAK
                             ''').strip().replace( '\n', ' \\\n')
                             )
                     sos = []
