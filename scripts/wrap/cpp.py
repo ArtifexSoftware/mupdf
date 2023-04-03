@@ -849,7 +849,7 @@ def make_namespace_close( namespace, out):
         out.write( f'}} /* End of namespace {namespace}. */\n')
 
 
-def make_internal_functions( namespace, out_h, out_cpp):
+def make_internal_functions( namespace, out_h, out_cpp, refcheck_if):
     '''
     Writes internal support functions.
 
@@ -909,6 +909,12 @@ def make_internal_functions( namespace, out_h, out_cpp):
                 return false;
             }}
 
+            {refcheck_if}
+                static const int    s_trace = mupdf::internal_env_flag("MUPDF_trace");
+            #else
+                static const int    s_trace = mupdf::internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace");
+            #endif
+
             struct {rename.internal("state")}
             {{
                 /* Constructor. */
@@ -926,9 +932,24 @@ def make_internal_functions( namespace, out_h, out_cpp):
 
                 void reinit( bool multithreaded)
                 {{
+                    if (s_trace)
+                    {{
+                        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                << " calling fz_drop_context()\\n";
+                    }}
                     fz_drop_context( m_ctx);
                     m_multithreaded = multithreaded;
+                    if (s_trace)
+                    {{
+                        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                << " calling fz_new_context()\\n";
+                    }}
                     m_ctx = fz_new_context(NULL /*alloc*/, (multithreaded) ? &m_locks : nullptr, FZ_STORE_DEFAULT);
+                    if (s_trace)
+                    {{
+                        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                << " calling fz_register_document_handlers()\\n";
+                    }}
                     fz_register_document_handlers(m_ctx);
                 }}
                 static void lock(void *user, int lock)
@@ -945,6 +966,11 @@ def make_internal_functions( namespace, out_h, out_cpp):
                 }}
                 ~{rename.internal("state")}()
                 {{
+                    if (s_trace)
+                    {{
+                        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                << " calling fz_drop_context()\\n";
+                    }}
                     fz_drop_context(m_ctx);
                 }}
 
@@ -997,6 +1023,11 @@ def make_internal_functions( namespace, out_h, out_cpp):
                         context. */
                         /* fixme: we don't actually need to take a lock here. */
                         std::lock_guard<std::mutex> lock( s_state.m_mutex);
+                        if (s_trace)
+                        {{
+                            std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                    << " calling fz_clone_context()\\n";
+                        }}
                         m_ctx = fz_clone_context(s_state.m_ctx);
                     }}
                     return m_ctx;
@@ -1006,6 +1037,11 @@ def make_internal_functions( namespace, out_h, out_cpp):
                     if (m_ctx)
                     {{
                         assert( s_state.m_multithreaded);
+                        if (s_trace)
+                        {{
+                            std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
+                                    << " calling fz_drop_context()\\n";
+                        }}
                         fz_drop_context( m_ctx);
                     }}
 
@@ -1269,7 +1305,7 @@ def make_function_wrappers(
     out_exceptions_cpp.write( f'}}\n')
     out_exceptions_cpp.write( '\n')
 
-    make_internal_functions( namespace, out_internal_h, out_internal_cpp)
+    make_internal_functions( namespace, out_internal_h, out_internal_cpp, refcheck_if)
 
     # Generate wrappers for each function that we find.
     #
