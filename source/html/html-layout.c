@@ -1065,6 +1065,12 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 		++col;
 	}
 
+	/* For each cell in the row - adjust final cell heights to fill the row */
+	for (cell = row->down; cell; cell = cell->next)
+	{
+		cell->s.layout.b = row->s.layout.b - (cell->u.block.padding[B] + cell->u.block.border[B]);
+	}
+
 	ld->restart = save_restart;
 }
 
