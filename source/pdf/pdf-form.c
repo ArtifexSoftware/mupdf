@@ -304,7 +304,7 @@ void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_obj *field, pdf_obj *fields, int exclude)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
-	char *needle = pdf_field_name(ctx, field);
+	char *needle = pdf_load_field_name(ctx, field);
 	int i, n;
 
 	fz_try(ctx)
@@ -312,7 +312,7 @@ static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_ob
 		n = pdf_array_len(ctx, fields);
 		for (i = 0; i < n; i++)
 		{
-			char *name = pdf_field_name(ctx, pdf_array_get(ctx, fields, i));
+			char *name = pdf_load_field_name(ctx, pdf_array_get(ctx, fields, i));
 			int found = !strcmp(needle, name);
 			fz_free(ctx, name);
 			if (found)
@@ -811,7 +811,7 @@ int pdf_field_display(fz_context *ctx, pdf_obj *field)
  * get the field name in a char buffer that has spare room to
  * add more characters at the end.
  */
-static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare, pdf_cycle_list *cycle_up)
+static char *load_field_name(fz_context *ctx, pdf_obj *field, int spare, pdf_cycle_list *cycle_up)
 {
 	pdf_cycle_list cycle;
 	char *res = NULL;
@@ -839,7 +839,7 @@ static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare, pdf_cycl
 
 	if (parent)
 	{
-		res = get_field_name(ctx, parent, spare, &cycle);
+		res = load_field_name(ctx, parent, spare, &cycle);
 	}
 	else
 	{
@@ -858,9 +858,9 @@ static char *get_field_name(fz_context *ctx, pdf_obj *field, int spare, pdf_cycl
 	return res;
 }
 
-char *pdf_field_name(fz_context *ctx, pdf_obj *field)
+char *pdf_load_field_name(fz_context *ctx, pdf_obj *field)
 {
-	return get_field_name(ctx, field, 0, NULL);
+	return load_field_name(ctx, field, 0, NULL);
 }
 
 void pdf_create_field_name(fz_context *ctx, pdf_document *doc, const char *prefix, char *buf, size_t len)
@@ -1727,7 +1727,7 @@ annot_from_name(fz_context *ctx, pdf_document *doc, const char *str)
 static pdf_obj *
 get_locked_fields_from_xfa(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	char *name = pdf_field_name(ctx, field);
+	char *name = pdf_load_field_name(ctx, field);
 	char *n = name;
 	const char *use;
 	fz_xml *node;

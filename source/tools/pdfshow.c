@@ -332,7 +332,7 @@ static void showfield(pdf_obj *field)
 	int ff;
 	int i, n;
 
-	t = pdf_field_name(ctx, field);
+	t = pdf_load_field_name(ctx, field);
 	tu = pdf_dict_get_text_string(ctx, field, PDF_NAME(TU));
 	ft = pdf_dict_get_inheritable(ctx, field, PDF_NAME(FT));
 	ff = pdf_field_flags(ctx, field);

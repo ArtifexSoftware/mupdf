@@ -193,7 +193,7 @@ static void field_getName(js_State *J)
 	pdf_obj *field = js_touserdata(J, 0, "Field");
 	char *name = NULL;
 	fz_try(js->ctx)
-		name = pdf_field_name(js->ctx, field);
+		name = pdf_load_field_name(js->ctx, field);
 	fz_catch(js->ctx)
 		rethrow(js);
 	if (js_try(J)) {

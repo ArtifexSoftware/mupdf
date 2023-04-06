@@ -161,7 +161,7 @@ int pdf_field_flags(fz_context *ctx, pdf_obj *field);
 	Retrieve the name for a field as a C string that
 	must be freed by the caller.
 */
-char *pdf_field_name(fz_context *ctx, pdf_obj *field);
+char *pdf_load_field_name(fz_context *ctx, pdf_obj *field);
 const char *pdf_field_value(fz_context *ctx, pdf_obj *field);
 void pdf_create_field_name(fz_context *ctx, pdf_document *doc, const char *prefix, char *buf, size_t len);
 
