@@ -304,13 +304,25 @@ void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_obj *field, pdf_obj *fields, int exclude)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
-	const char *needle = pdf_field_name(ctx, field);
+	char *needle = pdf_field_name(ctx, field);
 	int i, n;
 
-	n = pdf_array_len(ctx, fields);
-	for (i = 0; i < n; i++)
-		if (!strcmp(needle, pdf_field_name(ctx, pdf_array_get(ctx, fields, i))))
-			break;
+	fz_try(ctx)
+	{
+		n = pdf_array_len(ctx, fields);
+		for (i = 0; i < n; i++)
+		{
+			char *name = pdf_field_name(ctx, pdf_array_get(ctx, fields, i));
+			int found = !strcmp(needle, name);
+			fz_free(ctx, name);
+			if (found)
+				break;
+		}
+	}
+	fz_always(ctx)
+		fz_free(ctx, needle);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	if ((exclude && i < n) || (!exclude && i == n))
 		return;
