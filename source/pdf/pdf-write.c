@@ -2216,12 +2216,10 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 
 			if (opts->crypt_obj)
 			{
-				pdf_obj *encrypt;
 				if (pdf_is_indirect(ctx, opts->crypt_obj))
-					encrypt = pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0);
+					pdf_dict_put_drop(ctx, trailer, PDF_NAME(Encrypt), pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0));
 				else
-					encrypt = opts->crypt_obj;
-				pdf_dict_put(ctx, trailer, PDF_NAME(Encrypt), encrypt);
+					pdf_dict_put(ctx, trailer, PDF_NAME(Encrypt), opts->crypt_obj);
 			}
 
 			if (opts->metadata)
