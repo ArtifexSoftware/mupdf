@@ -587,9 +587,8 @@ Windows builds:
 
     Building the DLLs:
 
-        We build Windows binaries by running devenv.com directly. As of
-        2021-05-17 the location of devenv.com is hard-coded in this Python
-        script.
+        We build Windows binaries by running devenv.com directly. We search
+        for this using scripts/wdev.py.
 
         Building _mupdf.pyd is tricky because it needs to be built with a
         specific Python.h and linked with a specific python.lib. This is done
@@ -631,7 +630,7 @@ Usage:
                     multiple times.
                 --devenv <path>
                     Set path of devenv.com script on Windows. If not specified,
-                    as default is used.
+                    we search for a suitable Visual Studio installation.
                 -f
                     Force rebuilds.
                 --regress
@@ -844,10 +843,20 @@ Usage:
                 * Deactivates the Python environment.
 
         --venv <venv-name> ...
+            Should usually be the first arg in the command line.
+
             Runs mupdfwrap.py in a venv called `venv` containing libclang,
             passing remaining args.
 
                 --venv pylocal -b all
+
+        --vs-upgrade 0 | 1
+            If 1, we use a copy of the Windows build file tree
+            `platform/win32/` called `platform/win32-vs-upgrade`, modifying the
+            copied files with `devenv.com /upgrade`.
+
+            For example this allows use with Visual Studio 2022 if it doesn't
+            have the v142 tools installed.
 
         --windows-cmd ...
             Runs mupdfwrap.py via cmd.exe, passing remaining args. Useful to
@@ -894,6 +903,7 @@ except ModuleNotFoundError:
     resource = None
 
 import jlib
+import wdev
 
 from . import classes
 from . import cpp
@@ -1220,8 +1230,44 @@ def _get_m_command( build_dirs):
 
     return command, actual_build_dir, suffix
 
+_windows_vs_upgrade_cache = dict()
+def _windows_vs_upgrade( vs_upgrade, build_dirs, devenv):
+    '''
+    Creates new {build_dirs.dir_mupdf}/platform/win32-vs-upgrade/ tree with
+    upgraded .sln and .vcxproj files. Returns 'win32-vs-upgrade'
+    '''
+    if not vs_upgrade:
+        return 'win32'
+    key = (build_dirs, devenv)
+    infix = _windows_vs_upgrade_cache.get(key)
+    if infix is None:
+        infix = 'win32-vs-upgrade'
+        prefix1 = f'{build_dirs.dir_mupdf}/platform/win32/'
+        prefix2 = f'{build_dirs.dir_mupdf}/platform/{infix}/'
+        for dirpath, dirnames, filenames in os.walk( prefix1):
+            for filename in filenames:
+                if os.path.splitext( filename)[ 1] in (
+                        '.sln',
+                        '.vcxproj',
+                        '.props',
+                        '.targets',
+                        '.xml',
+                        '.c',
+                        ):
+                    path1 = f'{dirpath}/{filename}'
+                    assert path1.startswith(prefix1)
+                    path2 = prefix2 + path1[ len(prefix1):]
+                    os.makedirs( os.path.dirname(path2), exist_ok=True)
+                    jlib.log('Calling shutil.copy2 {path1=} {path2=}')
+                    shutil.copy2(path1, path2)
+        for path in glob.glob( f'{prefix2}*.sln'):
+            jlib.system(f'"{devenv}" {path} /upgrade', verbose=1)
+        _windows_vs_upgrade_cache[ key] = infix
+    jlib.log('returning {infix=}')
+    return infix
 
-def build( build_dirs, swig_command, args):
+
+def build( build_dirs, swig_command, args, vs_upgrade):
     '''
     Handles -b ...
     '''
@@ -1251,15 +1297,8 @@ def build( build_dirs, swig_command, args):
     devenv = 'devenv.com'
     if state.state_.windows:
         # Search for devenv.com in standard locations.
-        devenvs = (
-                'C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/devenv.com',
-                'C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/IDE/devenv.com',
-                'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/Common7/IDE/devenv.com',
-                )
-        for path in devenvs:
-            if os.path.exists( path):
-                devenv = path
-                break
+        windows_vs = wdev.WindowsVS()
+        devenv = windows_vs.devenv
 
     #jlib.log('{build_dirs.dir_so=}')
     details = list()
@@ -1284,6 +1323,7 @@ def build( build_dirs, swig_command, args):
             state.state_.show_details = fn
         elif actions == '--devenv':
             devenv = args.next()
+            windows_vs = None
             if not state.state_.windows:
                 jlib.log( 'Warning: --devenv was specified, but we are not on Windows so this will have no effect.')
         elif actions == '--python':
@@ -1424,18 +1464,19 @@ def build( build_dirs, swig_command, args):
                     # contain all C functions internally - there is
                     # no mupdf.dll.
                     #
+                    win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
                     jlib.log(f'Building mupdfcpp.dll by running devenv ...')
                     command = (
                             f'cd {build_dirs.dir_mupdf}&&'
                             f'"{devenv}"'
-                            f' platform/win32/mupdf.sln'
+                            f' platform/{win32_infix}/mupdf.sln'
                             f' /Build "{windows_build_type}Python|{build_dirs.cpu.windows_config}"'
                             f' /Project mupdfcpp'
                             )
                     jlib.system(command, verbose=1, out='log')
 
                     jlib.copy(
-                            f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
+                            f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
                             f'{build_dirs.dir_so}/',
                             verbose=1,
                             )
@@ -1635,18 +1676,19 @@ def build( build_dirs, swig_command, args):
                         #
                         os.utime(cpp_path)
 
+                        win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
                         jlib.log('Building mupdfpyswig project')
                         command = (
                                 f'cd {build_dirs.dir_mupdf}&&'
                                 f'"{devenv}"'
-                                f' platform/win32/mupdfpyswig.sln'
+                                f' platform/{win32_infix}/mupdfpyswig.sln'
                                 f' /Build "{windows_build_type}Python|{build_dirs.cpu.windows_config}"'
                                 f' /Project mupdfpyswig'
                                 )
                         jlib.system(command, verbose=1, out='log', env_extra=env_extra)
 
                         jlib.copy(
-                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfpyswig.dll',
+                                f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfpyswig.dll',
                                 f'{build_dirs.dir_so}/_mupdf.pyd',
                                 verbose=1,
                                 )
@@ -1658,18 +1700,19 @@ def build( build_dirs, swig_command, args):
                         cpp_path = f'{build_dirs.dir_mupdf}/platform/csharp/mupdfcpp_swig.cpp'
                         assert os.path.exists(cpp_path), f'SWIG-generated file does not exist: {cpp_path}'
 
+                        win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
                         jlib.log('Building mupdfcsharp project')
                         command = (
                                 f'cd {build_dirs.dir_mupdf}&&'
                                 f'"{devenv}"'
-                                f' platform/win32/mupdfcsharpswig.sln'
+                                f' platform/{win32_infix}/mupdfcsharpswig.sln'
                                 f' /Build "ReleaseCsharp|{build_dirs.cpu.windows_config}"'
                                 f' /Project mupdfcsharpswig'
                                 )
                         jlib.system(command, verbose=1, out='log')
 
                         jlib.copy(
-                                f'{build_dirs.dir_mupdf}/platform/win32/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcsharpswig.dll',
+                                f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcsharpswig.dll',
                                 f'{build_dirs.dir_so}/mupdfcsharp.dll',
                                 verbose=1,
                                 )
@@ -1796,6 +1839,15 @@ def build( build_dirs, swig_command, args):
                             jlib.remove( f'{out2_so}.cmd')
 
                     # Build _mupdf.so.
+                    #
+                    # We define SWIG_PYTHON_SILENT_MEMLEAK to avoid generating
+                    # lots of diagnostics `detected a memory leak of type
+                    # 'mupdf::PdfObj *', no destructor found.` when used with
+                    # mupdfpy. However it's not definitely known that these
+                    # diagnostics are spurious - seems to be to do with two
+                    # separate SWIG Python APIs (mupdf and mupdfpy's `extra`
+                    # module) using the same underlying C library.
+                    #
                     command = ( textwrap.dedent(
                             f'''
                             c++
@@ -1809,6 +1861,7 @@ def build( build_dirs, swig_command, args):
                                 {cpp_path}
                                 -Wno-deprecated-declarations
                                 -Wno-free-nonheap-object
+                                -DSWIG_PYTHON_SILENT_MEMLEAK
                             ''').strip().replace( '\n', ' \\\n')
                             )
                     sos = []
@@ -1875,6 +1928,8 @@ def csharp_settings(build_dirs):
     csc: C# compiler.
     mono: C# interpreter ("" on Windows).
     mupdf_cs: MuPDF C# code.
+
+    E.g. on Windows `csc` can be: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe
     '''
     # On linux requires:
     #   sudo apt install mono-devel
@@ -1886,7 +1941,12 @@ def csharp_settings(build_dirs):
     # which might be because of mixing gcc and clang?
     #
     if state.state_.windows:
-        csc = '"C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe"'
+        import wdev
+        vs = wdev.WindowsVS()
+        jlib.log('{vs.description_ml()=}')
+        csc = vs.csc
+        jlib.log('{csc=}')
+        assert csc, f'Unable to find csc.exe'
         mono = ''
     else:
         mono = 'mono'
@@ -2064,6 +2124,10 @@ def main2():
     #
     swig_command = 'swig'
 
+    # Whether to use `devenv.com /upgrade`.
+    #
+    vs_upgrade = False
+
     args = jlib.Args( sys.argv[1:])
     while 1:
         try:
@@ -2078,7 +2142,7 @@ def main2():
                 print( __doc__)
 
             elif arg == '--build' or arg == '-b':
-                build( build_dirs, swig_command, args)
+                build( build_dirs, swig_command, args, vs_upgrade)
 
             elif arg == '--check-headers':
                 keep_going = False
@@ -2475,7 +2539,7 @@ def main2():
                     jlib.build(
                             ('test-csharp.cs', mupdf_cs),
                             out,
-                            f'{csc} -out:{{OUT}} {{IN}}',
+                            f'"{csc}" -out:{{OUT}} {{IN}}',
                             )
                     if state.state_.windows:
                         out_rel = os.path.relpath( out, build_dirs.dir_so)
@@ -2506,7 +2570,7 @@ def main2():
                 jlib.build(
                         ('scripts/mupdfwrap_gui.cs', mupdf_cs),
                         out,
-                        f'{csc} -unsafe {references}  -out:{{OUT}} {{IN}}'
+                        f'"{csc}" -unsafe {references}  -out:{{OUT}} {{IN}}'
                         )
                 if state.state_.windows:
                     # Don't know how to mimic Unix's LD_LIBRARY_PATH, so for
@@ -2613,6 +2677,9 @@ def main2():
                 command += f' && python {sys.argv[0]} {args_tail}'
                 command += f' && deactivate'
                 jlib.system(command, out='log', verbose=1)
+
+            elif arg == '--vs-upgrade':
+                vs_upgrade = int(args.next())
 
             elif arg == '--windows-cmd':
                 args_tail = ''

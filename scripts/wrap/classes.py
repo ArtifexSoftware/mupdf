@@ -341,10 +341,10 @@ class ClassExtras:
         We return None if <name> is a known enum.
         '''
         verbose = state.state_.show_details( name)
-        if verbose:
+        if 0 and verbose:
             jlib.log( 'ClassExtras.get(): {=name}')
         name = util.clip( name, ('const ', 'struct '))
-        if verbose:
+        if 0 and verbose:
             jlib.log( 'ClassExtras.get(): {=name}')
         if not name.startswith( ('fz_', 'pdf_')):
             return
@@ -513,6 +513,23 @@ classextras = ClassExtras(
                             Fixed_LAB,
                         };
                         ''',
+                ),
+
+        fz_compressed_buffer = ClassExtra(
+                methods_extra = [
+                    ExtraMethod(
+                        rename.class_('fz_buffer'),
+                        'get_buffer()',
+                        textwrap.dedent(f'''
+                            {{
+                                return {rename.class_('fz_buffer')}(
+                                        {rename.ll_fn('fz_keep_buffer')}(m_internal->buffer)
+                                        );
+                            }}
+                            '''),
+                        '/* Returns wrapper class for fz_buffer *m_internal.buffer. */',
+                        ),
+                    ],
                 ),
 
         fz_context = ClassExtra(

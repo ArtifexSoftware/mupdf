@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1932,7 +1932,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 
 	fz_free(ctx, doc->orphans);
 
-	fz_free(ctx, doc->rev_page_map);
+	pdf_drop_page_tree_internal(ctx, doc);
 
 	fz_defer_reap_end(ctx);
 
@@ -2380,14 +2380,11 @@ object_updated:
 	{
 		fz_seek(ctx, doc->file, x->ofs, SEEK_SET);
 
-		doc->caching_object = 1;
 		fz_try(ctx)
 		{
 			x->obj = pdf_parse_ind_obj(ctx, doc, doc->file,
 					&rnum, &rgen, &x->stm_ofs, &try_repair);
 		}
-		fz_always(ctx)
-			doc->caching_object = 0;
 		fz_catch(ctx)
 		{
 			if (!try_repair || fz_caught(ctx) == FZ_ERROR_TRYLATER)
@@ -2408,6 +2405,7 @@ object_updated:
 
 		if (try_repair)
 		{
+perform_repair:
 			fz_try(ctx)
 			{
 				pdf_repair_xref(ctx, doc);
@@ -2445,7 +2443,13 @@ object_updated:
 			if (x == NULL)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d 0 R)", num);
 			if (!x->obj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d 0 R) was not found in its object stream", num);
+			{
+				x->type = 'f';
+				orig_x->type = 'f';
+				if (doc->repair_attempted)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d 0 R) was not found in its object stream", num);
+				goto perform_repair;
+			}
 		}
 	}
 	else if (doc->hint_obj_offsets && read_hinted_object(ctx, doc, num))
@@ -2815,11 +2819,23 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 	if (!strcmp(key, FZ_META_ENCRYPTION))
 	{
 		if (doc->crypt)
-			return 1 + (int)fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
-					pdf_crypt_version(ctx, doc->crypt),
-					pdf_crypt_revision(ctx, doc->crypt),
-					pdf_crypt_length(ctx, doc->crypt),
-					pdf_crypt_method(ctx, doc->crypt));
+		{
+			const char *stream_method = pdf_crypt_stream_method(ctx, doc->crypt);
+			const char *string_method = pdf_crypt_string_method(ctx, doc->crypt);
+			if (stream_method == string_method)
+				return 1 + (int)fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
+						pdf_crypt_version(ctx, doc->crypt),
+						pdf_crypt_revision(ctx, doc->crypt),
+						pdf_crypt_length(ctx, doc->crypt),
+						pdf_crypt_string_method(ctx, doc->crypt));
+			else
+				return 1 + (int)fz_snprintf(buf, size, "Standard V%d R%d %d-bit streams: %s strings: %s",
+						pdf_crypt_version(ctx, doc->crypt),
+						pdf_crypt_revision(ctx, doc->crypt),
+						pdf_crypt_length(ctx, doc->crypt),
+						pdf_crypt_stream_method(ctx, doc->crypt),
+						pdf_crypt_string_method(ctx, doc->crypt));
+		}
 		else
 			return 1 + (int)fz_strlcpy(buf, "None", size);
 	}
@@ -2939,6 +2955,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.format_link_uri = pdf_format_link_uri_imp;
 	doc->super.count_pages = pdf_count_pages_imp;
 	doc->super.load_page = pdf_load_page_imp;
+	doc->super.page_label = pdf_page_label_imp;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
 	doc->super.set_metadata = (fz_document_set_metadata_fn*)pdf_set_metadata;
 

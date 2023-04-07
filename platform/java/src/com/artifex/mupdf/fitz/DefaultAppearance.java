@@ -23,7 +23,7 @@
 package com.artifex.mupdf.fitz;
 
 public class DefaultAppearance {
-	String font;
-	float size;
-	float[] color;
+	public String font;
+	public float size;
+	public float[] color;
 }

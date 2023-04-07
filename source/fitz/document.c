@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -183,6 +183,20 @@ fz_document *
 fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
 {
 	return fz_open_accelerated_document_with_stream(ctx, magic, stream, NULL);
+}
+
+fz_document *
+fz_open_document_with_buffer(fz_context *ctx, const char *magic, fz_buffer *buffer)
+{
+	fz_document *doc;
+	fz_stream *stream = fz_open_buffer(ctx, buffer);
+	fz_try(ctx)
+		doc = fz_open_document_with_stream(ctx, magic, stream);
+	fz_always(ctx)
+		fz_drop_stream(ctx, stream);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return doc;
 }
 
 fz_document *
@@ -850,4 +864,17 @@ fz_process_opened_pages(fz_context *ctx, fz_document *doc, fz_process_opened_pag
 	}
 
 	return ret;
+}
+
+const char *
+fz_page_label(fz_context *ctx, fz_page *page, char *buf, int size)
+{
+	fz_document *doc = page->doc;
+	if (doc->page_label)
+		doc->page_label(ctx, page->doc, page->chapter, page->number, buf, size);
+	else if (fz_count_chapters(ctx, page->doc) > 1)
+		fz_snprintf(buf, size, "%d/%d", page->chapter + 1, page->number + 1);
+	else
+		fz_snprintf(buf, size, "%d", page->number + 1);
+	return buf;
 }

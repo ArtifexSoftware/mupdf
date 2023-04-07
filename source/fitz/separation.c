@@ -714,13 +714,18 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 							for (x = dw; x > 0; x--)
 							{
 								unsigned char a = sd[sc];
-								float inva = 1.0f/a;
-								for (j = 0; j < n; j++)
-									colors[j] = mapped[j] ? 0 : sd[j] * inva;
-								cc.convert(ctx, &cc, colors, convert);
+								if (a == 0)
+									memset(dd, 0, dc);
+								else
+								{
+									float inva = 1.0f/a;
+									for (j = 0; j < n; j++)
+										colors[j] = mapped[j] ? 0 : sd[j] * inva;
+									cc.convert(ctx, &cc, colors, convert);
 
-								for (j = 0; j < dc; j++)
-									dd[j] = fz_clampi(a * convert[j], 0, a);
+									for (j = 0; j < dc; j++)
+										dd[j] = fz_clampi(a * convert[j], 0, a);
+								}
 								dd += dn;
 								sd += sn;
 							}

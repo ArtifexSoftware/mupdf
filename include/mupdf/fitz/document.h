@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -180,6 +180,12 @@ typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc, int 
 	page from a document. See fz_load_page for more information.
 */
 typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int chapter, int page);
+
+/**
+	Type for a function to get the page label of a page in the document.
+	See fz_page_label for more information.
+*/
+typedef void (fz_document_page_label_fn)(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, int size);
 
 /**
 	Type for a function to query
@@ -410,6 +416,11 @@ fz_document *fz_open_accelerated_document(fz_context *ctx, const char *filename,
 	or mime-type.
 */
 fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
+
+/**
+	Open a document using a buffer rather than opening a file on disk.
+*/
+fz_document *fz_open_document_with_buffer(fz_context *ctx, const char *magic, fz_buffer *buffer);
 
 /**
 	Open a document using the specified stream object rather than
@@ -750,6 +761,11 @@ void fz_drop_page(fz_context *ctx, fz_page *page);
 fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
 /**
+	Get page label for a given page.
+*/
+const char *fz_page_label(fz_context *ctx, fz_page *page, char *buf, int size);
+
+/**
 	Check permission flags on document.
 */
 int fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p);
@@ -858,7 +874,7 @@ void *fz_process_opened_pages(fz_context *ctx, fz_document *doc, fz_process_open
 struct fz_page
 {
 	int refs;
-	fz_document *doc; /* reference to parent document */
+	fz_document *doc; /* kept reference to parent document. Guaranteed non-NULL. */
 	int chapter; /* chapter number */
 	int number; /* page number in chapter */
 	int incomplete; /* incomplete from progressive loading; don't cache! */
@@ -875,7 +891,13 @@ struct fz_page
 	fz_page_uses_overprint_fn *overprint;
 	fz_page_create_link_fn *create_link;
 	fz_page_delete_link_fn *delete_link;
-	fz_page **prev, *next; /* linked list of currently open pages */
+
+	/* linked list of currently open pages. This list is maintained
+	 * by fz_load_chapter_page and fz_drop_page. All pages hold a
+	 * kept reference to the document, so the document cannot disappear
+	 * while pages exist. 'Incomplete' pages are NOT kept in this
+	 * list. */
+	fz_page **prev, *next;
 };
 
 /**
@@ -901,13 +923,22 @@ struct fz_document
 	fz_document_count_chapters_fn *count_chapters;
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
+	fz_document_page_label_fn *page_label;
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_set_metadata_fn *set_metadata;
 	fz_document_output_intent_fn *get_output_intent;
 	fz_document_output_accelerator_fn *output_accelerator;
 	int did_layout;
 	int is_reflowable;
-	fz_page *open; /* linked list of currently open pages */
+
+	/* Linked list of currently open pages. These are not
+	 * references, but just a linked list of open pages,
+	 * maintained by fz_load_chapter_page, and fz_drop_page.
+	 * Every page holds a kept reference to the document, so
+	 * the document cannot be destroyed while a page exists.
+	 * Incomplete pages are NOT inserted into this list, but
+	 * do still hold a real document reference. */
+	fz_page *open;
 };
 
 struct fz_document_handler

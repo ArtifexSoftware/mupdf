@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -545,7 +545,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;
 	unsigned char *o, *p;
-	int w, h, x, y, n, pstride, ostride, lcm, i;
+	int w, h, x, y, n, pstride, ostride, lcm, i, alpha;
 	fz_halftone *ht_ = NULL;
 	threshold_fn *thresh;
 
@@ -554,10 +554,16 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	if (!pix)
 		return NULL;
 
-	if (pix->alpha != 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap may not have alpha channel to convert to bitmap");
-
 	n = pix->n;
+	alpha = pix->alpha;
+
+	/* Treat alpha only as greyscale */
+	if (n == 1 && alpha)
+		alpha = 0;
+	n -= alpha;
+
+	if (alpha != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap may not have alpha channel to convert to bitmap");
 
 	switch(n)
 	{
@@ -591,7 +597,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 
 	fz_try(ctx)
 	{
-		ht_line = fz_malloc(ctx, lcm * n);
+		ht_line = fz_malloc(ctx, lcm * (size_t)n);
 		out = fz_new_bitmap(ctx, pix->w, pix->h, n, pix->xres, pix->yres);
 		o = out->samples;
 		p = pix->samples;

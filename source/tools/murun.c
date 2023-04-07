@@ -267,6 +267,12 @@ static void ffi_gc_fz_colorspace(js_State *J, void *colorspace)
 	fz_drop_colorspace(ctx, colorspace);
 }
 
+static void ffi_gc_fz_default_colorspaces(js_State *J, void *default_cs)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_default_colorspaces(ctx, default_cs);
+}
+
 static void ffi_gc_fz_pixmap(js_State *J, void *pixmap)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -360,6 +366,17 @@ static void ffi_pushdom(js_State *J, fz_xml *dom)
 	}
 	else
 		js_pushnull(J);
+}
+
+static void ffi_pushpixmap(js_State *J, fz_pixmap *pixmap)
+{
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+}
+
+static fz_pixmap *ffi_topixmap(js_State *J, int idx)
+{
+	return (fz_pixmap *) js_touserdata(J, idx, "fz_pixmap");
 }
 
 #if FZ_ENABLE_PDF
@@ -546,6 +563,8 @@ static void ffi_pushrect(js_State *J, fz_rect rect)
 	js_pushnumber(J, rect.y1); js_setindex(J, -2, 3);
 }
 
+#if FZ_ENABLE_PDF
+
 static fz_quad ffi_toquad(js_State *J, int idx)
 {
 	fz_quad quad;
@@ -559,6 +578,8 @@ static fz_quad ffi_toquad(js_State *J, int idx)
 	js_getindex(J, idx, 7); quad.lr.y = js_tonumber(J, -1); js_pop(J, 1);
 	return quad;
 }
+
+#endif /* FZ_ENABLE_PDF */
 
 static void ffi_pushquad(js_State *J, fz_quad quad)
 {
@@ -596,7 +617,9 @@ static void ffi_pusharray(js_State *J, const float *v, int n)
 static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 {
 	fz_context *ctx = js_getcontext(J);
-	if (colorspace == fz_device_rgb(ctx))
+	if (colorspace == NULL)
+		js_pushnull(J);
+	else if (colorspace == fz_device_rgb(ctx))
 		js_getregistry(J, "DeviceRGB");
 	else if (colorspace == fz_device_bgr(ctx))
 		js_getregistry(J, "DeviceBGR");
@@ -604,6 +627,8 @@ static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 		js_getregistry(J, "DeviceGray");
 	else if (colorspace == fz_device_cmyk(ctx))
 		js_getregistry(J, "DeviceCMYK");
+	else if (colorspace == fz_device_lab(ctx))
+		js_getregistry(J, "DeviceLab");
 	else {
 		js_getregistry(J, "fz_colorspace");
 		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, colorspace), ffi_gc_fz_colorspace);
@@ -641,12 +666,6 @@ static struct color ffi_tocolor(js_State *J, int idx)
 	return c;
 }
 
-static fz_color_params ffi_tocolorparams(js_State *J, int idx)
-{
-	/* TODO */
-	return fz_default_color_params;
-}
-
 static const char *string_from_ri(uint8_t ri)
 {
 	switch (ri) {
@@ -657,7 +676,6 @@ static const char *string_from_ri(uint8_t ri)
 	case 3: return "AbsoluteColorimetric";
 	}
 }
-
 
 static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 {
@@ -670,6 +688,120 @@ static void ffi_pushcolorparams(js_State *J, fz_color_params color_params)
 	js_setproperty(J, -2, "overPrinting");
 	js_pushboolean(J, color_params.opm);
 	js_setproperty(J, -2, "overPrintMode");
+}
+
+static fz_color_params ffi_tocolorparams(js_State *J, int idx)
+{
+	fz_color_params color_params = { 0 };
+
+	if (js_hasproperty(J, idx, "renderingIntent"))
+	{
+		js_getproperty(J, idx, "renderingIntent");
+		color_params.ri = js_tointeger(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "blackPointCompensation"))
+	{
+		js_getproperty(J, idx, "blackPointCompensation");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "overPrinting"))
+	{
+		js_getproperty(J, idx, "overPrinting");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+	if (js_hasproperty(J, idx, "overPrintMode"))
+	{
+		js_getproperty(J, idx, "overPrintMode");
+		color_params.ri = js_toboolean(J, -1);
+		js_pop(J, 1);
+	}
+
+	return color_params;
+}
+
+static void ffi_pushdefaultcolorspaces(js_State *J, fz_default_colorspaces *default_cs)
+{
+	js_getregistry(J, "fz_default_colorspaces");
+	js_newuserdata(J, "fz_default_colorspaces", default_cs, ffi_gc_fz_default_colorspaces);
+}
+
+static fz_default_colorspaces *ffi_todefaultcolorspaces(js_State *J, int idx)
+{
+	return (fz_default_colorspaces *) js_touserdata(J, idx, "fz_default_colorspaces");
+}
+
+static struct {
+	int flag;
+	const char *name;
+} render_flags[] = {
+	{ FZ_DEVFLAG_MASK, "mask" },
+	{ FZ_DEVFLAG_COLOR, "color" },
+	{ FZ_DEVFLAG_UNCACHEABLE, "uncacheable" },
+	{ FZ_DEVFLAG_FILLCOLOR_UNDEFINED, "fillcolor-undefined" },
+	{ FZ_DEVFLAG_STROKECOLOR_UNDEFINED, "strokecolor-undefined" },
+	{ FZ_DEVFLAG_STARTCAP_UNDEFINED, "startcap-undefined" },
+	{ FZ_DEVFLAG_DASHCAP_UNDEFINED, "dashcap-undefined" },
+	{ FZ_DEVFLAG_ENDCAP_UNDEFINED, "endcap-undefined" },
+	{ FZ_DEVFLAG_LINEJOIN_UNDEFINED, "linejoin-undefined" },
+	{ FZ_DEVFLAG_MITERLIMIT_UNDEFINED, "miterlimit-undefined" },
+	{ FZ_DEVFLAG_LINEWIDTH_UNDEFINED, "linewidth-undefined" },
+	{ FZ_DEVFLAG_BBOX_DEFINED, "bbox-defined" },
+	{ FZ_DEVFLAG_GRIDFIT_AS_TILED, "gridfit-as-tiled" },
+};
+
+static void ffi_pushrenderflags(js_State *J, int flags)
+{
+	js_newarray(J);
+	int idx = 0;
+	size_t i;
+	for (i = 0; i < nelem(render_flags); ++i)
+	{
+		if (flags & render_flags[i].flag)
+		{
+			js_pushstring(J, render_flags[i].name);
+			js_setindex(J, -2, idx++);
+		}
+	}
+}
+
+static int ffi_torenderflags(js_State *J, int idx)
+{
+	int flags = 0;
+	const char *name;
+	int i, n = js_getlength(J, idx);
+	size_t k;
+	for (i = 0; i < n; ++i) {
+		js_getindex(J, idx, i);
+		name = js_tostring(J, -1);
+		for (k = 0; k < nelem(render_flags); ++k)
+			if (!strcmp(name, render_flags[k].name))
+				flags |= render_flags[k].flag;
+		js_pop(J, 1);
+	}
+	return flags;
+}
+
+static const char *string_from_metatext(fz_metatext meta_text)
+{
+	switch (meta_text) {
+	default:
+	case FZ_METATEXT_ACTUALTEXT: return "ActualText";
+	case FZ_METATEXT_ALT: return "Alt";
+	case FZ_METATEXT_ABBREVIATION: return "Abbreviation";
+	case FZ_METATEXT_TITLE: return "Title";
+	}
+}
+
+static fz_metatext metatext_from_string(const char *str)
+{
+	if (!strcmp(str, "ActualText")) return FZ_METATEXT_ACTUALTEXT;
+	if (!strcmp(str, "Alt")) return FZ_METATEXT_ALT;
+	if (!strcmp(str, "Abbreviation")) return FZ_METATEXT_ABBREVIATION;
+	if (!strcmp(str, "Title")) return FZ_METATEXT_TITLE;
+	return FZ_METATEXT_ACTUALTEXT;
 }
 
 static fz_link_dest_type link_dest_type_from_string(const char *str);
@@ -849,7 +981,7 @@ static fz_linejoin join_from_string(const char *str)
 	return FZ_LINEJOIN_MITER;
 }
 
-#ifdef FZ_ENABLE_PDF
+#if FZ_ENABLE_PDF
 
 static enum pdf_border_style border_style_from_string(const char *str)
 {
@@ -1154,8 +1286,6 @@ static void ffi_pushbuffer(js_State *J, fz_buffer *buf)
 			ffi_gc_fz_buffer);
 }
 
-#if FZ_ENABLE_PDF
-
 static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1179,8 +1309,6 @@ static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 
 	return buf;
 }
-
-#endif /* FZ_ENABLE_PDF */
 
 /* device calling into js from c */
 
@@ -1548,6 +1676,37 @@ js_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
+js_dev_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "renderFlags")) {
+		js_copy(J, -2);
+		ffi_pushrenderflags(J, set);
+		ffi_pushrenderflags(J, clear);
+		js_call(J, 2);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "setDefaultColorSpaces")) {
+		js_copy(J, -2);
+		ffi_pushdefaultcolorspaces(J, default_cs);
+		js_call(J, 1);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
 js_dev_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 {
 	js_State *J = ((js_device*)dev)->J;
@@ -1569,6 +1728,67 @@ js_dev_end_layer(fz_context *ctx, fz_device *dev)
 	if (js_try(J))
 		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "endLayer")) {
+		js_copy(J, -2);
+		js_call(J, 0);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard, const char *raw, int uid)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "beginStructure")) {
+		js_copy(J, -2);
+		js_pushstring(J, fz_structure_to_string(standard));
+		js_pushstring(J, raw);
+		js_pushnumber(J, uid);
+		js_call(J, 3);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_end_structure(fz_context *ctx, fz_device *dev)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "endStructure")) {
+		js_copy(J, -2);
+		js_call(J, 0);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "beginMetatext")) {
+		js_copy(J, -2);
+		js_pushstring(J, string_from_metatext(meta));
+		js_pushstring(J, text);
+		js_call(J, 2);
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+}
+
+static void
+js_dev_end_metatext(fz_context *ctx, fz_device *dev)
+{
+	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	if (js_hasproperty(J, -1, "endMetatext")) {
 		js_copy(J, -2);
 		js_call(J, 0);
 		js_pop(J, 1);
@@ -1606,8 +1826,17 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 	dev->super.begin_tile = js_dev_begin_tile;
 	dev->super.end_tile = js_dev_end_tile;
 
+	dev->super.render_flags = js_dev_render_flags;
+	dev->super.set_default_colorspaces = js_dev_set_default_colorspaces;
+
 	dev->super.begin_layer = js_dev_begin_layer;
 	dev->super.end_layer = js_dev_end_layer;
+
+	dev->super.begin_structure = js_dev_begin_structure;
+	dev->super.end_structure = js_dev_end_structure;
+
+	dev->super.begin_metatext = js_dev_begin_metatext;
+	dev->super.end_metatext = js_dev_end_metatext;
 
 	dev->J = J;
 	return (fz_device*)dev;
@@ -2757,6 +2986,76 @@ static void ffi_Device_endLayer(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Device_renderFlags(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	int set = ffi_torenderflags(J, 1);
+	int clear = ffi_torenderflags(J, 2);
+	fz_try(ctx)
+		fz_render_flags(ctx, dev, set, clear);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_setDefaultColorSpaces(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 1);
+	fz_try(ctx)
+		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_beginStructure(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_structure str = js_iscoercible(J, 1) ? fz_structure_from_string(js_tostring(J, 1)) : FZ_STRUCTURE_INVALID;
+	const char *raw = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	int uid = js_tointeger(J, 3);
+
+	fz_try(ctx)
+		fz_begin_structure(ctx, dev, str, raw, uid);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_endStructure(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_try(ctx)
+		fz_end_structure(ctx, dev);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_beginMetatext(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_metatext meta = metatext_from_string(js_tostring(J, 1));
+	const char *meta_text = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+
+	fz_try(ctx)
+		fz_begin_metatext(ctx, dev, meta, meta_text);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Device_endMetatext(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_try(ctx)
+		fz_end_metatext(ctx, dev);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 /* mupdf module */
 
 static void ffi_readFile(js_State *J)
@@ -2991,6 +3290,23 @@ static void ffi_Buffer_save(js_State *J)
 		fz_save_buffer(ctx, buf, filename);
 	fz_catch(ctx)
 		rethrow(J);
+}
+
+static void ffi_Buffer_slice(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	size_t size = fz_buffer_storage(ctx, buf, NULL);
+	int64_t start = js_tointeger(J, 1);
+	int64_t end = js_iscoercible(J, 2) ? js_tointeger(J, 2) : (int64_t) size;
+	fz_buffer *copy = NULL;
+
+	fz_try(ctx)
+		copy = fz_slice_buffer(ctx, buf, start, end);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushbuffer(J, copy);
 }
 
 static void ffi_new_Document(js_State *J)
@@ -3230,8 +3546,14 @@ static void ffi_Document_loadOutline(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
+	if (js_try(J)) {
+		fz_drop_outline(ctx, outline);
+		js_throw(J);
+	}
+
 	to_outline(J, outline);
 
+	js_endtry(J);
 	fz_drop_outline(ctx, outline);
 }
 
@@ -3480,8 +3802,7 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_Page_toStructuredText(js_State *J)
@@ -3595,6 +3916,20 @@ static void ffi_Page_deleteLink(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Page_getLabel(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = ffi_topage(J, 0);
+	char buf[100];
+
+	fz_try(ctx)
+		fz_page_label(ctx, page, buf, sizeof buf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, buf);
+}
+
 static void ffi_Link_get_bounds(js_State *J)
 {
 	fz_link *link = js_touserdata(J, 0, "fz_link");
@@ -3645,27 +3980,174 @@ static void ffi_ColorSpace_toString(js_State *J)
 	js_pushstring(J, fz_colorspace_name(ctx, colorspace));
 }
 
+static void ffi_ColorSpace_isGray(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_gray(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isRGB(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_rgb(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isCMYK(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_cmyk(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isIndexed(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_indexed(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isLab(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_lab(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceN(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_n(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isLabICC(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_lab_icc(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isSubtractive(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_subtractive(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDevice(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceGray(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_gray(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_isDeviceCMYK(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushboolean(J, fz_colorspace_is_device_cmyk(ctx, colorspace));
+}
+
+static void ffi_DefaultColorSpaces_getDefaultGray(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->gray);
+}
+
+static void ffi_DefaultColorSpaces_getDefaultRGB(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->rgb);
+}
+
+static void ffi_DefaultColorSpaces_getDefaultCMYK(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->cmyk);
+}
+
+static void ffi_DefaultColorSpaces_getOutputIntent(js_State *J)
+{
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	ffi_pushcolorspace(J, default_cs->oi);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultGray(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->gray);
+	default_cs->gray = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultRGB(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->rgb);
+	default_cs->rgb = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setDefaultCMYK(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->cmyk);
+	default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+}
+
+static void ffi_DefaultColorSpaces_setOutputIntent(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_default_colorspaces *default_cs = ffi_todefaultcolorspaces(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_drop_colorspace(ctx, default_cs->oi);
+	default_cs->oi = fz_keep_colorspace(ctx, cs);
+}
+
 static void ffi_new_Pixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
-	fz_irect bounds = ffi_toirect(J, 2);
-	int alpha = js_toboolean(J, 3);
 	fz_pixmap *pixmap = NULL;
 
-	fz_try(ctx)
-		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, bounds, 0, alpha);
-	fz_catch(ctx)
-		rethrow(J);
+	if (js_isuserdata(J, 1, "fz_pixmap")) {
+		fz_pixmap *pix = ffi_topixmap(J, 1);
+		fz_pixmap *mask = ffi_topixmap(J, 2);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+		fz_try(ctx)
+			pixmap = fz_new_pixmap_from_color_and_mask(ctx, pix, mask);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
+		fz_irect bounds = ffi_toirect(J, 2);
+		int alpha = js_toboolean(J, 3);
+
+		fz_try(ctx)
+			pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, bounds, 0, alpha);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_Pixmap_invert(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 
 	fz_try(ctx)
 		fz_invert_pixmap(ctx, pixmap);
@@ -3676,7 +4158,7 @@ static void ffi_Pixmap_invert(js_State *J)
 static void ffi_Pixmap_invertLuminance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 
 	fz_try(ctx)
 		fz_invert_pixmap_luminance(ctx, pixmap);
@@ -3687,7 +4169,7 @@ static void ffi_Pixmap_invertLuminance(js_State *J)
 static void ffi_Pixmap_gamma(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	float gamma = js_tonumber(J, 1);
 
 	fz_try(ctx)
@@ -3699,7 +4181,7 @@ static void ffi_Pixmap_gamma(js_State *J)
 static void ffi_Pixmap_tint(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int black = js_tointeger(J, 1);
 	int white = js_tointeger(J, 2);
 
@@ -3712,7 +4194,7 @@ static void ffi_Pixmap_tint(js_State *J)
 static void ffi_Pixmap_warp(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	/* 1 = array of 8 floats for points */
 	int w = js_tonumber(J, 2);
 	int h = js_tonumber(J, 3);
@@ -3736,15 +4218,13 @@ static void ffi_Pixmap_warp(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", dest, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, dest);
 }
-
 
 static void ffi_Pixmap_saveAsPNG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	const char *filename = js_tostring(J, 1);
 
 	fz_try(ctx)
@@ -3756,7 +4236,7 @@ static void ffi_Pixmap_saveAsPNG(js_State *J)
 static void ffi_Pixmap_saveAsJPEG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	const char *filename = js_tostring(J, 1);
 	int quality = js_isdefined(J, 2) ? js_tointeger(J, 2) : 90;
 
@@ -3766,9 +4246,76 @@ static void ffi_Pixmap_saveAsJPEG(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Pixmap_saveAsPAM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pam(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPNM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pnm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPBM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pbm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_saveAsPKM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *filename = js_tostring(J, 1);
+
+	fz_try(ctx)
+		fz_save_pixmap_as_pkm(ctx, pixmap, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Pixmap_convertToColorSpace(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	fz_colorspace *cs = js_touserdata(J, 1, "fz_colorspace");
+	fz_colorspace *proof = js_iscoercible(J, 2) ? js_touserdata(J, 2, "fz_colorspace") : NULL;
+	fz_default_colorspaces *default_cs = js_iscoercible(J, 3) ? ffi_todefaultcolorspaces(J, 3) : NULL;
+	fz_color_params color_params = js_iscoercible(J, 4) ? ffi_tocolorparams(J, 4) : fz_default_color_params;
+	int keep_alpha = js_isdefined(J, 5) ? js_toboolean(J, 5) : 0;
+	fz_pixmap *dst = NULL;
+
+	fz_try(ctx)
+		dst = fz_convert_pixmap(ctx, pixmap, cs, proof, default_cs, color_params, keep_alpha);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushpixmap(J, dst);
+}
+
 static void ffi_Pixmap_bound(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	fz_rect bounds;
 
 	// fz_irect and fz_pixmap_bbox instead
@@ -3783,7 +4330,7 @@ static void ffi_Pixmap_bound(js_State *J)
 static void ffi_Pixmap_clear(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	if (js_isdefined(J, 1)) {
 		int value = js_tonumber(J, 1);
 		fz_try(ctx)
@@ -3800,49 +4347,49 @@ static void ffi_Pixmap_clear(js_State *J)
 
 static void ffi_Pixmap_getX(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->x);
 }
 
 static void ffi_Pixmap_getY(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->y);
 }
 
 static void ffi_Pixmap_getWidth(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->w);
 }
 
 static void ffi_Pixmap_getHeight(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->h);
 }
 
 static void ffi_Pixmap_getNumberOfComponents(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->n);
 }
 
 static void ffi_Pixmap_getAlpha(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->alpha);
 }
 
 static void ffi_Pixmap_getStride(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->stride);
 }
 
 static void ffi_Pixmap_getSample(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int x = js_tointeger(J, 1);
 	int y = js_tointeger(J, 2);
 	int k = js_tointeger(J, 3);
@@ -3854,26 +4401,26 @@ static void ffi_Pixmap_getSample(js_State *J)
 
 static void ffi_Pixmap_getXResolution(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->xres);
 }
 
 static void ffi_Pixmap_getYResolution(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	js_pushnumber(J, pixmap->yres);
 }
 
 static void ffi_Pixmap_getColorSpace(js_State *J)
 {
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	ffi_pushcolorspace(J, pixmap->colorspace);
 }
 
 static void ffi_Pixmap_setResolution(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int xres = js_tointeger(J, 1);
 	int yres = js_tointeger(J, 2);
 
@@ -3890,9 +4437,31 @@ static void ffi_new_Image(js_State *J)
 		mask = js_touserdata(J, 2, "fz_image");
 
 	if (js_isuserdata(J, 1, "fz_pixmap")) {
-		fz_pixmap *pixmap = js_touserdata(J, 1, "fz_pixmap");
+		fz_pixmap *pixmap = ffi_topixmap(J, 1);
 		fz_try(ctx)
 			image = fz_new_image_from_pixmap(ctx, pixmap, mask);
+		fz_catch(ctx)
+			rethrow(J);
+	} else if (js_isuserdata(J, 1, "fz_buffer")) {
+		fz_buffer *buffer = ffi_tobuffer(J, 1);
+		fz_buffer *globals = js_isdefined(J, 2) ? ffi_tobuffer(J, 2) : NULL;
+		fz_buffer *allocated = NULL;
+
+		fz_var(allocated);
+
+		fz_try(ctx)
+		{
+			if (globals)
+			{
+				allocated = fz_new_buffer(ctx, buffer->len + globals->len);
+				fz_append_buffer(ctx, allocated, globals);
+				fz_append_buffer(ctx, allocated, buffer);
+				buffer = allocated;
+			}
+			image = fz_new_image_from_buffer(ctx, buffer);
+		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, allocated);
 		fz_catch(ctx)
 			rethrow(J);
 	} else {
@@ -3952,6 +4521,13 @@ static void ffi_Image_getInterpolate(js_State *J)
 	js_pushboolean(J, image->interpolate);
 }
 
+static void ffi_Image_getOrientation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, fz_image_orientation(ctx, image));
+}
+
 static void ffi_Image_getImageMask(js_State *J)
 {
 	fz_image *image = js_touserdata(J, 0, "fz_image");
@@ -3990,8 +4566,50 @@ static void ffi_Image_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
+}
+
+static void ffi_Image_getColorKey(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int i;
+	if (image->use_colorkey)
+	{
+		js_newarray(J);
+		for (i = 0; i < 2 * image->n; ++i)
+		{
+			js_pushnumber(J, image->colorkey[i]);
+			js_setindex(J, -2, i);
+		}
+	}
+	else
+		js_pushnull(J);
+}
+
+static void ffi_Image_getDecode(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int i;
+	if (image->use_decode)
+	{
+		js_newarray(J);
+		for (i = 0; i < 2 * image->n; ++i)
+		{
+			js_pushnumber(J, image->decode[i]);
+			js_setindex(J, -2, i);
+		}
+	}
+	else
+		js_pushnull(J);
+}
+
+static void ffi_Image_setOrientation(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int orientation = js_tointeger(J, 1);
+	if (orientation < 0 || orientation > 8)
+		js_rangeerror(J, "orientation out of range");
+	image->orientation = js_tointeger(J, 1);
 }
 
 static void ffi_Shade_bound(js_State *J)
@@ -4483,8 +5101,7 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_DisplayList_toStructuredText(js_State *J)
@@ -4679,7 +5296,7 @@ static void ffi_new_DrawDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_matrix transform = ffi_tomatrix(J, 1);
-	fz_pixmap *pixmap = js_touserdata(J, 2, "fz_pixmap");
+	fz_pixmap *pixmap = ffi_topixmap(J, 2);
 	fz_device *device = NULL;
 
 	fz_try(ctx)
@@ -5310,6 +5927,24 @@ static void ffi_new_PDFDocument(js_State *J)
 
 	js_getregistry(J, "pdf_document");
 	js_newuserdata(J, "pdf_document", pdf, ffi_gc_pdf_document);
+}
+
+static void ffi_PDFDocument_getVersion(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int version;
+
+	fz_try(ctx)
+		version = pdf_version(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newobject(J);
+	js_pushnumber(J, version / 10);
+	js_setproperty(J, -2, "major");
+	js_pushnumber(J, version % 10);
+	js_setproperty(J, -2, "minor");
 }
 
 static void ffi_PDFDocument_getTrailer(js_State *J)
@@ -6200,6 +6835,31 @@ static void ffi_PDFDocument_redo(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_setPageLabels(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int index = js_tointeger(J, 1);
+	const char *s = js_tostring(J, 2);
+	const char *p = js_tostring(J, 3);
+	int st = js_iscoercible(J, 4) ? js_tonumber(J, 4) : 1;
+	fz_try(ctx)
+		pdf_set_page_labels(ctx, pdf, index, s[0], p, st);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_deletePageLabels(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int index = js_tointeger(J, 1);
+	fz_try(ctx)
+		pdf_delete_page_labels(ctx, pdf, index);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFGraftMap_graftObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6645,6 +7305,21 @@ static void ffi_PDFObject_forEach(js_State *J)
 	}
 }
 
+static void ffi_PDFObject_compare(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_obj *other = js_touserdata(J, 1, "pdf_obj");
+	int result = 0;
+
+	fz_try(ctx)
+		result = pdf_objcmp(ctx, obj, other);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, result);
+}
+
 static void ffi_PDFPage_getWidgets(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -6790,8 +7465,7 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFPage_getTransform(js_State *J)
@@ -6876,8 +7550,7 @@ static void ffi_PDFAnnotation_toPixmap(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFAnnotation_getObject(js_State *J)
@@ -8512,8 +9185,7 @@ static void ffi_PDFWidget_previewSignature(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_pixmap");
-	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+	ffi_pushpixmap(J, pixmap);
 }
 
 static void ffi_PDFWidget_getEditingState(js_State *J)
@@ -8749,6 +9421,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Buffer.writeBuffer", ffi_Buffer_writeBuffer, 1);
 		jsB_propfun(J, "Buffer.write", ffi_Buffer_write, 1);
 		jsB_propfun(J, "Buffer.save", ffi_Buffer_save, 1);
+		jsB_propfun(J, "Buffer.slice", ffi_Buffer_slice, 2);
 	}
 	js_setregistry(J, "fz_buffer");
 
@@ -8833,6 +9506,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
 		jsB_propfun(J, "Page.createLink", ffi_Page_createLink, 2);
 		jsB_propfun(J, "Page.deleteLink", ffi_Page_deleteLink, 1);
+		jsB_propfun(J, "Page.getLabel", ffi_Page_getLabel, 0);
 	}
 	js_setregistry(J, "fz_page");
 
@@ -8876,6 +9550,16 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "Device.beginLayer", ffi_Device_beginLayer, 1);
 		jsB_propfun(J, "Device.endLayer", ffi_Device_endLayer, 0);
+
+		jsB_propfun(J, "Device.renderFlags", ffi_Device_renderFlags, 2);
+		jsB_propfun(J, "Device.setDefaultColorSpaces", ffi_Device_setDefaultColorSpaces, 1);
+
+		jsB_propfun(J, "Device.beginStructure", ffi_Device_beginStructure, 3);
+		jsB_propfun(J, "Device.endStructure", ffi_Device_endStructure, 0);
+
+		jsB_propfun(J, "Device.beginMetatext", ffi_Device_beginMetatext, 2);
+		jsB_propfun(J, "Device.endMetatext", ffi_Device_endMetatext, 0);
+
 	}
 	js_setregistry(J, "fz_device");
 
@@ -8884,6 +9568,17 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
+		jsB_propfun(J, "ColorSpace.isGray", ffi_ColorSpace_isGray, 0);
+		jsB_propfun(J, "ColorSpace.isRGB", ffi_ColorSpace_isRGB, 0);
+		jsB_propfun(J, "ColorSpace.isCMYK", ffi_ColorSpace_isCMYK, 0);
+		jsB_propfun(J, "ColorSpace.isIndexed", ffi_ColorSpace_isIndexed, 0);
+		jsB_propfun(J, "ColorSpace.isLab", ffi_ColorSpace_isLab, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceN", ffi_ColorSpace_isDeviceN, 0);
+		jsB_propfun(J, "ColorSpace.isLabICC", ffi_ColorSpace_isLabICC, 0);
+		jsB_propfun(J, "ColorSpace.isSubtractive", ffi_ColorSpace_isSubtractive, 0);
+		jsB_propfun(J, "ColorSpace.isDevice", ffi_ColorSpace_isDevice, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceGray", ffi_ColorSpace_isDeviceGray, 0);
+		jsB_propfun(J, "ColorSpace.isDeviceCMYK", ffi_ColorSpace_isDeviceCMYK, 0);
 	}
 	js_setregistry(J, "fz_colorspace");
 	{
@@ -8902,7 +9597,27 @@ int murun_main(int argc, char **argv)
 		js_getregistry(J, "fz_colorspace");
 		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceCMYK");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_lab(ctx)), ffi_gc_fz_colorspace);
+		js_setregistry(J, "DeviceLab");
 	}
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultGray", ffi_DefaultColorSpaces_getDefaultGray, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultRGB", ffi_DefaultColorSpaces_getDefaultRGB, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getDefaultCMYK", ffi_DefaultColorSpaces_getDefaultCMYK, 0);
+		jsB_propfun(J, "DefaultColorSpaces.getOutputIntent", ffi_DefaultColorSpaces_getOutputIntent, 0);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultGray", ffi_DefaultColorSpaces_setDefaultGray, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultRGB", ffi_DefaultColorSpaces_setDefaultRGB, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setDefaultCMYK", ffi_DefaultColorSpaces_setDefaultCMYK, 1);
+		jsB_propfun(J, "DefaultColorSpaces.setOutputIntent", ffi_DefaultColorSpaces_setOutputIntent, 1);
+	}
+	js_dup(J);
+	js_setglobal(J, "DefaultColorSpaces");
+	js_setregistry(J, "fz_default_colorspaces");
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
@@ -8921,10 +9636,14 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Image.getYResolution", ffi_Image_getYResolution, 0);
 		jsB_propfun(J, "Image.getNumberOfComponents", ffi_Image_getNumberOfComponents, 0);
 		jsB_propfun(J, "Image.getBitsPerComponent", ffi_Image_getBitsPerComponent, 0);
-		jsB_propfun(J, "Image.getInterpolate", ffi_Image_getInterpolate, 0);
 		jsB_propfun(J, "Image.getImageMask", ffi_Image_getImageMask, 0);
+		jsB_propfun(J, "Image.getInterpolate", ffi_Image_getInterpolate, 0);
+		jsB_propfun(J, "Image.getColorKey", ffi_Image_getColorKey, 0);
+		jsB_propfun(J, "Image.getDecode", ffi_Image_getDecode, 0);
+		jsB_propfun(J, "Image.getOrientation", ffi_Image_getOrientation, 0);
 		jsB_propfun(J, "Image.getMask", ffi_Image_getMask, 0);
 		jsB_propfun(J, "Image.toPixmap", ffi_Image_toPixmap, 2);
+		jsB_propfun(J, "Image.setOrientation", ffi_Image_setOrientation, 1);
 	}
 	js_setregistry(J, "fz_image");
 
@@ -9010,13 +9729,18 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.gamma", ffi_Pixmap_gamma, 1);
 		jsB_propfun(J, "Pixmap.tint", ffi_Pixmap_tint, 2);
 		jsB_propfun(J, "Pixmap.warp", ffi_Pixmap_warp, 3);
+		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 
 		// Pixmap.samples()
 		// Pixmap.scale()
 
 		jsB_propfun(J, "Pixmap.saveAsPNG", ffi_Pixmap_saveAsPNG, 1);
 		jsB_propfun(J, "Pixmap.saveAsJPEG", ffi_Pixmap_saveAsJPEG, 2);
-		// Pixmap.saveAsPNM, PAM, PWG, PCL
+		jsB_propfun(J, "Pixmap.saveAsPAM", ffi_Pixmap_saveAsPAM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPNM", ffi_Pixmap_saveAsPNM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPBM", ffi_Pixmap_saveAsPBM, 1);
+		jsB_propfun(J, "Pixmap.saveAsPKM", ffi_Pixmap_saveAsPKM, 1);
+		// Pixmap.saveAsPCL?, PCLM?, PDFOCR?, PSD?, PWG?
 
 		// Pixmap.halftone() -> Bitmap
 		// Pixmap.md5()
@@ -9036,6 +9760,7 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "fz_document");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFDocument.getVersion", ffi_PDFDocument_getVersion, 0);
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);
 		jsB_propfun(J, "PDFDocument.createObject", ffi_PDFDocument_createObject, 0);
@@ -9100,6 +9825,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.canRedo", ffi_PDFDocument_canRedo, 0);
 		jsB_propfun(J, "PDFDocument.undo", ffi_PDFDocument_undo, 0);
 		jsB_propfun(J, "PDFDocument.redo", ffi_PDFDocument_redo, 0);
+
+		jsB_propfun(J, "PDFDocument.setPageLabels", ffi_PDFDocument_setPageLabels, 4);
+		jsB_propfun(J, "PDFDocument.deletePageLabels", ffi_PDFDocument_deletePageLabels, 1);
 	}
 	js_setregistry(J, "pdf_document");
 
@@ -9299,6 +10027,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.writeStream", ffi_PDFObject_writeStream, 1);
 		jsB_propfun(J, "PDFObject.writeRawStream", ffi_PDFObject_writeRawStream, 1);
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
+		jsB_propfun(J, "PDFObject.compare", ffi_PDFObject_compare, 1);
 	}
 	js_setregistry(J, "pdf_obj");
 
@@ -9349,6 +10078,9 @@ int murun_main(int argc, char **argv)
 
 		js_getregistry(J, "DeviceCMYK");
 		js_defproperty(J, -2, "DeviceCMYK", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
+
+		js_getregistry(J, "DeviceLab");
+		js_defproperty(J, -2, "DeviceLab", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
 
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 	}

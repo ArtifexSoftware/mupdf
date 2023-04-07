@@ -562,7 +562,7 @@ filter_show_char(fz_context *ctx, pdf_sanitize_processor *p, int cid, int *unico
 	filter_gstate *gstate = p->gstate;
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
 	fz_matrix trm;
-	int ucsbuf[8];
+	int ucsbuf[PDF_MRANGE_CAP];
 	int ucslen;
 	int remove = 0;
 
@@ -1477,7 +1477,6 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	if (sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
 	{
 		/* This segment can be skipped */
-		sd=sd;
 	}
 	else
 	{

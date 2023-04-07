@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -42,6 +42,7 @@
 #endif
 
 #ifndef _WIN32
+#include <sys/stat.h> /* for mkdir */
 #include <unistd.h> /* for getcwd */
 #include <spawn.h> /* for posix_spawn */
 extern char **environ; /* see environ (7) */
@@ -130,7 +131,7 @@ static void open_browser(const char *uri)
 }
 
 static const int zoom_list[] = {
-	24, 36, 48, 60, 72, 84, 96, 108,
+	6, 12, 24, 36, 48, 60, 72, 84, 96, 108,
 	120, 144, 168, 192, 228, 264,
 	300, 350, 400, 450, 500, 550, 600
 };
@@ -496,18 +497,72 @@ static void save_history(void)
 	js_freestate(J);
 }
 
-static int convert_to_accel_path(char outname[], char *absname, size_t len)
+static int
+fz_mkdir(char *path)
+{
+#ifdef _WIN32
+	int ret;
+	wchar_t *wpath = fz_wchar_from_utf8(path);
+
+	if (wpath == NULL)
+		return -1;
+
+	ret = _wmkdir(wpath);
+
+	free(wpath);
+
+	return ret;
+#else
+	return mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO);
+#endif
+}
+
+static int create_accel_path(char outname[], size_t len, int create, const char *absname, ...)
+{
+	va_list args;
+	char *s = outname;
+	size_t z, remain = len;
+	char *arg;
+
+	va_start(args, absname);
+
+	while ((arg = va_arg(args, char *)) != NULL)
+	{
+		z = fz_snprintf(s, remain, "%s", arg);
+		if (z+1 > remain)
+			goto fail; /* won't fit */
+
+		if (create)
+			fz_mkdir(outname);
+		if (!fz_is_directory(ctx, outname))
+			goto fail; /* directory creation failed, or that dir doesn't exist! */
+#ifdef _WIN32
+		s[z] = '\\';
+#else
+		s[z] = '/';
+#endif
+		s[z+1] = 0;
+		s += z+1;
+		remain -= z+1;
+	}
+
+	if (fz_snprintf(s, remain, "%s.accel", absname) >= remain)
+		goto fail; /* won't fit */
+
+	va_end(args);
+
+	return 1;
+
+fail:
+	va_end(args);
+
+	return 0;
+}
+
+static int convert_to_accel_path(char outname[], char *absname, size_t len, int create)
 {
 	char *tmpdir;
 	char *s;
-
-	tmpdir = getenv("TEMP");
-	if (!tmpdir)
-		tmpdir = getenv("TMP");
-	if (!tmpdir)
-		tmpdir = "/var/tmp";
-	if (!fz_is_directory(ctx, tmpdir))
-		tmpdir = "/tmp";
 
 	if (absname[0] == '/' || absname[0] == '\\')
 		++absname;
@@ -519,17 +574,34 @@ static int convert_to_accel_path(char outname[], char *absname, size_t len)
 		++s;
 	}
 
-	if (fz_snprintf(outname, len, "%s/%s.accel", tmpdir, absname) >= len)
-		return 0;
-	return 1;
+#ifdef _WIN32
+	tmpdir = getenv("USERPROFILE");
+	if (tmpdir && create_accel_path(outname, len, create, absname, tmpdir, ".config", "mupdf", NULL))
+		return 1; /* OK! */
+	/* TEMP and TMP are user-specific on modern windows. */
+	tmpdir = getenv("TEMP");
+	if (tmpdir && create_accel_path(outname, len, create, absname, tmpdir, "mupdf", NULL))
+		return 1; /* OK! */
+	tmpdir = getenv("TMP");
+	if (tmpdir && create_accel_path(outname, len, create, absname, tmpdir, "mupdf", NULL))
+		return 1; /* OK! */
+#else
+	tmpdir = getenv("XDG_CACHE_HOME");
+	if (tmpdir && create_accel_path(outname, len, create, absname, tmpdir, "mupdf", NULL))
+		return 1; /* OK! */
+	tmpdir = getenv("HOME");
+	if (tmpdir && create_accel_path(outname, len, create, absname, tmpdir, ".cache", "mupdf", NULL))
+		return 1; /* OK! */
+#endif
+	return 0; /* Fail */
 }
 
-static int get_accelerator_filename(char outname[], size_t len)
+static int get_accelerator_filename(char outname[], size_t len, int create)
 {
 	char absname[PATH_MAX];
 	if (!fz_realpath(filename, absname))
 		return 0;
-	if (!convert_to_accel_path(outname, absname, len))
+	if (!convert_to_accel_path(outname, absname, len, create))
 		return 0;
 	return 1;
 }
@@ -542,7 +614,7 @@ static void save_accelerator(void)
 		return;
 	if (!fz_document_supports_accelerator(ctx, doc))
 		return;
-	if (!get_accelerator_filename(absname, sizeof(absname)))
+	if (!get_accelerator_filename(absname, sizeof(absname), 1))
 		return;
 
 	fz_save_accelerator(ctx, doc, absname);
@@ -984,18 +1056,31 @@ static void render_page(void)
 		fz_clear_pixmap(ctx, page_contents);
 
 		dev = fz_new_draw_device(ctx, draw_page_ctm, page_contents);
-		fz_run_page_contents(ctx, fzpage, dev, fz_identity, NULL);
-		fz_close_device(ctx, dev);
-		fz_drop_device(ctx, dev);
+
+		fz_try(ctx)
+		{
+			fz_run_page_contents(ctx, fzpage, dev, fz_identity, NULL);
+			fz_close_device(ctx, dev);
+		}
+		fz_always(ctx)
+			fz_drop_device(ctx, dev);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	pix = fz_clone_pixmap_area_with_different_seps(ctx, page_contents, NULL, fz_device_rgb(ctx), NULL, fz_default_color_params, NULL);
 	{
 		dev = fz_new_draw_device(ctx, draw_page_ctm, pix);
-		fz_run_page_annots(ctx, fzpage, dev, fz_identity, NULL);
-		fz_run_page_widgets(ctx, fzpage, dev, fz_identity, NULL);
-		fz_close_device(ctx, dev);
-		fz_drop_device(ctx, dev);
+		fz_try(ctx)
+		{
+			fz_run_page_annots(ctx, fzpage, dev, fz_identity, NULL);
+			fz_run_page_widgets(ctx, fzpage, dev, fz_identity, NULL);
+			fz_close_device(ctx, dev);
+		}
+		fz_always(ctx)
+			fz_drop_device(ctx, dev);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	if (currentinvert)
@@ -1701,7 +1786,7 @@ static void load_document(void)
 	fz_drop_document(ctx, doc);
 
 	/* If there was an accelerator to load, what would it be called? */
-	if (get_accelerator_filename(accelpath, sizeof(accelpath)))
+	if (get_accelerator_filename(accelpath, sizeof(accelpath), 0))
 	{
 		/* Check whether that file exists, and isn't older than
 		 * the document. */
@@ -2601,6 +2686,7 @@ static fz_buffer *format_info_text()
 	}
 
 	fz_append_printf(ctx, out, "Page: %d / %d\n", fz_page_number_from_location(ctx, doc, currentpage)+1, fz_count_pages(ctx, doc));
+	fz_append_printf(ctx, out, "Page Label: %s\n", fz_page_label(ctx, fzpage, buf, sizeof buf));
 	{
 		int w = (int)(page_bounds.x1 - page_bounds.x0 + 0.5f);
 		int h = (int)(page_bounds.y1 - page_bounds.y0 + 0.5f);
@@ -2935,7 +3021,10 @@ static void do_open_document_dialog(void)
 static void cleanup(void)
 {
 	save_history();
-	save_accelerator();
+	fz_try(ctx)
+		save_accelerator();
+	fz_catch(ctx)
+		fz_warn(ctx, "cannot save accelerator file");
 
 	ui_finish();
 

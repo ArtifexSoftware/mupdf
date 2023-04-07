@@ -970,7 +970,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	pdf_font_desc *fontdesc = gstate->text.font;
 	fz_matrix trm;
 	int gid;
-	int ucsbuf[8];
+	int ucsbuf[PDF_MRANGE_CAP];
 	int ucslen;
 	int i;
 	int render_direct;
@@ -993,7 +993,12 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 		 * type3 glyphs that seem to inherit current graphics
 		 * attributes, or type 3 glyphs within type3 glyphs). */
 		fz_matrix composed = fz_concat(trm, gstate->ctm);
+		pdf_gsave(ctx, pr);
+		gstate = pr->gstate + pr->gtop;
+		pdf_drop_font(ctx, gstate->text.font);
+		gstate->text.font = NULL; /* don't inherit the current font... */
 		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs);
+		pdf_grestore(ctx, pr);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
 	}
@@ -1001,6 +1006,11 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	ucslen = 0;
 	if (fontdesc->to_unicode)
 		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
+
+	/* ignore obviously bad values in ToUnicode, fall back to the cid_to_ucs table */
+	if (ucslen == 1 && (ucsbuf[0] < 32 || (ucsbuf[0] >= 127 && ucsbuf[0] < 160)))
+		ucslen = 0;
+
 	if (ucslen == 0 && (size_t)cid < fontdesc->cid_to_ucs_len)
 	{
 		ucsbuf[0] = fontdesc->cid_to_ucs[cid];
@@ -1345,6 +1355,20 @@ structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 		return FZ_STRUCTURE_NONSTRUCT;
 	if (pdf_name_eq(ctx, tag, PDF_NAME(Private)))
 		return FZ_STRUCTURE_PRIVATE;
+	/* Grouping elements (PDF 2.0 - Table 364) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(DocumentFragment)))
+		return FZ_STRUCTURE_DOCUMENTFRAGMENT;
+	/* Grouping elements (PDF 2.0 - Table 365) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Aside)))
+		return FZ_STRUCTURE_ASIDE;
+	/* Grouping elements (PDF 2.0 - Table 366) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Title)))
+		return FZ_STRUCTURE_TITLE;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(FENote)))
+		return FZ_STRUCTURE_FENOTE;
+	/* Grouping elements (PDF 2.0 - Table 367) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Sub)))
+		return FZ_STRUCTURE_SUB;
 
 	/* Paragraphlike elements (PDF 1.7 - Table 10.21) */
 	if (pdf_name_eq(ctx, tag, PDF_NAME(P)))
@@ -1369,7 +1393,7 @@ structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 		return FZ_STRUCTURE_LIST;
 	if (pdf_name_eq(ctx, tag, PDF_NAME(LI)))
 		return FZ_STRUCTURE_LISTITEM;
-	if (pdf_name_eq(ctx, tag, PDF_NAME(Label)))
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Lbl)))
 		return FZ_STRUCTURE_LABEL;
 	if (pdf_name_eq(ctx, tag, PDF_NAME(LBody)))
 		return FZ_STRUCTURE_LISTBODY;
@@ -1407,6 +1431,11 @@ structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 		return FZ_STRUCTURE_LINK;
 	if (pdf_name_eq(ctx, tag, PDF_NAME(Annot)))
 		return FZ_STRUCTURE_ANNOT;
+	/* Inline elements (PDF 2.0 - Table 368) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Em)))
+		return FZ_STRUCTURE_EM;
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Strong)))
+		return FZ_STRUCTURE_STRONG;
 
 	/* Ruby inline element (PDF 1.7 - Table 10.26) */
 	if (pdf_name_eq(ctx, tag, PDF_NAME(Ruby)))
@@ -1433,6 +1462,10 @@ structure_type(fz_context *ctx, pdf_run_processor *proc, pdf_obj *tag)
 		return FZ_STRUCTURE_FORMULA;
 	if (pdf_name_eq(ctx, tag, PDF_NAME(Form)))
 		return FZ_STRUCTURE_FORM;
+
+	/* Artifact structure type (PDF 2.0 - Table 375) */
+	if (pdf_name_eq(ctx, tag, PDF_NAME(Artifact)))
+		return FZ_STRUCTURE_ARTIFACT;
 
 	return FZ_STRUCTURE_INVALID;
 }
@@ -1468,13 +1501,19 @@ end_metatext(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val, pdf_obj *mc
 }
 
 static void
-begin_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
+begin_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val, pdf_cycle_list *cycle_up)
 {
 	/* val has been resolved to a dict for us by the originally specified name
 	 * having been looked up in Properties already for us. Either there will
 	 * be a Name entry, or there will be an OCGs and it'll be a group one. */
+	pdf_cycle_list cycle;
+	pdf_obj *obj;
 	int i, n;
-	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
+
+	if (pdf_cycle(ctx, &cycle, cycle_up, val))
+		return;
+
+	obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
 	if (obj)
 	{
 		pdf_flush_text(ctx, proc);
@@ -1486,18 +1525,24 @@ begin_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	n = pdf_array_len(ctx, obj);
 	for (i = 0; i < n; i++)
 	{
-		begin_oc(ctx, proc, pdf_array_get(ctx, obj, i));
+		begin_oc(ctx, proc, pdf_array_get(ctx, obj, i), &cycle);
 	}
 }
 
 static void
-end_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
+end_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val, pdf_cycle_list *cycle_up)
 {
 	/* val has been resolved to a dict for us by the originally specified name
 	 * having been looked up in Properties already for us. Either there will
 	 * be a Name entry, or there will be an OCGs and it'll be a group one. */
+	pdf_cycle_list cycle;
+	pdf_obj *obj;
 	int i, n;
-	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
+
+	if (pdf_cycle(ctx, &cycle, cycle_up, val))
+		return;
+
+	obj = pdf_dict_get(ctx, val, PDF_NAME(Name));
 	if (obj)
 	{
 		flush_begin_layer(ctx, proc);
@@ -1509,7 +1554,7 @@ end_oc(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	n = pdf_array_len(ctx, obj);
 	for (i = n-1; i >= 0; i--)
 	{
-		end_oc(ctx, proc, pdf_array_get(ctx, obj, i));
+		end_oc(ctx, proc, pdf_array_get(ctx, obj, i), &cycle);
 	}
 }
 
@@ -1641,7 +1686,7 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 
 		/* Start any optional content layers. */
 		if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
-			begin_oc(ctx, proc, val);
+			begin_oc(ctx, proc, val, NULL);
 
 		/* Special handling for common non-spec extension. */
 		if (pdf_name_eq(ctx, tag, PDF_NAME(Layer)))
@@ -1746,7 +1791,7 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 			end_layer(ctx, proc, val);
 
 		if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
-			end_oc(ctx, proc, val);
+			end_oc(ctx, proc, val, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -2701,9 +2746,12 @@ pdf_run_pop_resources(fz_context *ctx, pdf_processor *proc)
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	resources_stack *stk = pr->rstack;
 
-	pr->rstack = stk->next;
-	pdf_drop_obj(ctx, stk->resources);
-	fz_free(ctx, stk);
+	if (stk)
+	{
+		pr->rstack = stk->next;
+		pdf_drop_obj(ctx, stk->resources);
+		fz_free(ctx, stk);
+	}
 
 	return NULL;
 }
