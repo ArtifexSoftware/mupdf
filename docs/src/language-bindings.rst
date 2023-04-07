@@ -1259,7 +1259,7 @@ Non-standard API or implementation
 * `ll_pdf_set_annot_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
 * `ll_pdf_set_annot_interior_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
 * `pdf_dict_putl_drop()`: Always raises exception because not useful with automatic ref-counts.
-* `pdf_field_name()`: Uses extra C++ function `pdf_field_name2()` which returns `std::string` by value.
+* `pdf_load_field_name()`: Uses extra C++ function `pdf_load_field_name2()` which returns `std::string` by value.
 * `pdf_set_annot_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
 * `pdf_set_annot_interior_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
 

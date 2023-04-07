@@ -1880,13 +1880,13 @@ classextras = ClassExtras(
                         ),
                     ExtraMethod(
                         f'std::string',
-                        f'{rename.method( "pdf_obj", "pdf_field_name2")}()',
+                        f'{rename.method( "pdf_obj", "pdf_load_field_name2")}()',
                         f'''
                         {{
-                            return {rename.namespace_fn('pdf_field_name2')}( *this);
+                            return {rename.namespace_fn('pdf_load_field_name2')}( *this);
                         }}
                         ''',
-                        comment = f'/* Alternative to `{rename.fn("pdf_field_name")}()` that returns a std::string. */',
+                        comment = f'/* Alternative to `{rename.fn("pdf_load_field_name")}()` that returns a std::string. */',
                         ),
                     ]
                 ),

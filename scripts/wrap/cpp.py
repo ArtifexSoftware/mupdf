@@ -1401,22 +1401,22 @@ def make_function_wrappers(
                         return ret;
                     }}
                     '''))
-        if fnname == "pdf_field_name":  #(fz_context *ctx, pdf_obj *field);
+        if fnname == "pdf_load_field_name":  #(fz_context *ctx, pdf_obj *field);
             # Output wrapper that returns std::string instead of buffer that
             # caller needs to free.
             out_functions_h.write(
                     textwrap.dedent(
                     f'''
-                    /** Alternative to `{rename.ll_fn('pdf_field_name')}()` that returns a std::string. */
-                    FZ_FUNCTION std::string {rename.ll_fn('pdf_field_name2')}(pdf_obj* field);
+                    /** Alternative to `{rename.ll_fn('pdf_load_field_name')}()` that returns a std::string. */
+                    FZ_FUNCTION std::string {rename.ll_fn('pdf_load_field_name2')}(pdf_obj* field);
 
                     '''))
             out_functions_cpp.write(
                     textwrap.dedent(
                     f'''
-                    FZ_FUNCTION std::string {rename.ll_fn('pdf_field_name2')}(pdf_obj* field)
+                    FZ_FUNCTION std::string {rename.ll_fn('pdf_load_field_name2')}(pdf_obj* field)
                     {{
-                        char* buffer = {rename.ll_fn('pdf_field_name')}( field);
+                        char* buffer = {rename.ll_fn('pdf_load_field_name')}( field);
                         std::string ret( buffer);
                         {rename.ll_fn('fz_free')}( buffer);
                         return ret;
@@ -1426,8 +1426,8 @@ def make_function_wrappers(
                     textwrap.indent(
                         textwrap.dedent(
                         f'''
-                        /** Alternative to `{rename.fn('pdf_field_name')}()` that returns a std::string. */
-                        FZ_FUNCTION std::string {rename.fn('pdf_field_name2')}({rename.class_('pdf_obj')}& field);
+                        /** Alternative to `{rename.fn('pdf_load_field_name')}()` that returns a std::string. */
+                        FZ_FUNCTION std::string {rename.fn('pdf_load_field_name2')}({rename.class_('pdf_obj')}& field);
                         '''),
                         '    ',
                         )
@@ -1435,9 +1435,9 @@ def make_function_wrappers(
             out_functions_cpp2.write(
                     textwrap.dedent(
                     f'''
-                    FZ_FUNCTION std::string {rename.fn('pdf_field_name2')}({rename.class_('pdf_obj')}& field)
+                    FZ_FUNCTION std::string {rename.fn('pdf_load_field_name2')}({rename.class_('pdf_obj')}& field)
                     {{
-                        return {rename.ll_fn('pdf_field_name2')}( field.m_internal);
+                        return {rename.ll_fn('pdf_load_field_name2')}( field.m_internal);
                     }}
                     '''))
 
