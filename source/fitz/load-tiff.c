@@ -1360,44 +1360,61 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported subsampling factor");
 	}
 
-	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
-	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
-
 	switch (tiff->photometric)
 	{
 	case 0: /* WhiteIsZero -- inverted */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for bw tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		break;
 	case 1: /* BlackIsZero */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for bw tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		break;
 	case 2: /* RGB */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for rgb tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		break;
 	case 3: /* RGBPal */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for palettized tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		break;
 	case 4: /* Transparency mask */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for transparency mask tiff");
 		tiff->colorspace = NULL;
 		break;
 	case 5: /* CMYK */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 4)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for cmyk tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 		break;
 	case 6: /* YCbCr */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for ycbcr tiff");
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		break;
 	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
 	case 9: /* ICC Style L*a*b* encoding */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for lab tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_lab(ctx));
 		break;
 	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for l tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		if (tiff->bitspersample != 8)
 			tiff->bitspersample = 8;
 		tiff->stride >>= 1;
 		break;
 	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
+		if (tiff->samplesperpixel - !!tiff->extrasamples < 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel for luv tiff");
 		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		if (tiff->bitspersample != 8)
 			tiff->bitspersample = 8;
@@ -1406,6 +1423,9 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
 	}
+
+	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
+	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
 #if FZ_ENABLE_ICC
 	if (tiff->profile)
