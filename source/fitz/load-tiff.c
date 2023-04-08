@@ -1535,7 +1535,12 @@ tiff_decode_jpeg(fz_context *ctx, struct tiff *tiff)
 	fz_var(rawstm);
 	fz_var(stm);
 
-	if (tiff->jpegofs + tiff->jpeglen > (size_t)(tiff->ep - tiff->bp))
+	if (tiff->jpegofs > (size_t)(tiff->ep - tiff->bp))
+	{
+		fz_warn(ctx, "TIFF JPEG image offset too large, capping");
+		tiff->jpegofs = (size_t)(tiff->ep - tiff->bp);
+	}
+	if (tiff->jpeglen > (size_t)(tiff->ep - tiff->bp) - tiff->jpegofs)
 	{
 		fz_warn(ctx, "TIFF JPEG image length too long, capping");
 		tiff->jpeglen = (size_t)(tiff->ep - tiff->bp) - tiff->jpegofs;
