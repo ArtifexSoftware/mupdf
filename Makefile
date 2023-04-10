@@ -495,6 +495,7 @@ android: generate
 		APP_BUILD_SCRIPT=platform/java/Android.mk \
 		APP_PROJECT_PATH=build/android \
 		APP_PLATFORM=android-16 \
+		APP_ABI=x86 \
 		APP_OPTIM=$(build)
 
 c++: c++-$(build)
