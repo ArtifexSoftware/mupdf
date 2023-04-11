@@ -255,7 +255,15 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 		recindex = 1;
 		for (i = extra; i < n; ++i)
 		{
-			uint32_t size = offset[i+1] - offset[i];
+			uint32_t size;
+
+			if (offset[i] >= (uint32_t)mobi->len)
+				continue;
+
+			if (offset[i+1] > offset[i])
+				size = offset[i+1] - offset[i];
+			else
+				size = (uint32_t)mobi->len - offset[i];
 			if (size > 8)
 			{
 				unsigned char *data = mobi->data + offset[i];
