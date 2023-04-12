@@ -260,7 +260,7 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 			if (offset[i] >= (uint32_t)mobi->len)
 				continue;
 
-			if (offset[i+1] > offset[i])
+			if (offset[i+1] > offset[i] && offset[i+1] < (uint32_t)mobi->len)
 				size = offset[i+1] - offset[i];
 			else
 				size = (uint32_t)mobi->len - offset[i];
