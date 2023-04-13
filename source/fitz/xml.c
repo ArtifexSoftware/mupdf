@@ -218,7 +218,7 @@ char *fz_xml_tag(fz_xml *item)
 {
 	/* DOC items can never have MAGIC_TEXT as their down value,
 	 * so this is safe. */
-	return item && !FZ_TEXT_ITEM(item) && item->u.node.u.d.name[0] ? item->u.node.u.d.name : NULL;
+	return item && !FZ_TEXT_ITEM(item) ? item->u.node.u.d.name : NULL;
 }
 
 int fz_xml_is_tag(fz_xml *item, const char *name)
