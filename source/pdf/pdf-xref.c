@@ -1125,6 +1125,14 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int start, int len)
 			solidify = 1;
 			break;
 		}
+		else if (start < sub->start && start + len >= sub->start + sub->len)
+		{
+			/* The end of the start+len range is beyond 'sub'. */
+			/* For now, we won't support extending sub backwards. Just take this as
+			 * needing to solidify. Another variant of case 3. */
+			solidify = 1;
+			break;
+		}
 	}
 
 	num_objects = xref->num_objects;
