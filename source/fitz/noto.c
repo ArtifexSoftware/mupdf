@@ -204,6 +204,8 @@ search_by_family(int *size, const char *family, int attr)
 
 	for (e = inbuilt_fonts; e->script != END_OF_DATA; e++)
 	{
+		if (e->family[0] == '\0')
+			continue;
 		if (attr != e->attr)
 			continue;
 		if (!fz_strcasecmp(e->family, family))
