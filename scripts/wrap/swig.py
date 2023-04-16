@@ -855,6 +855,9 @@ def build_swig(
 
 
             %array_functions(unsigned char, bytes);
+
+            // Useful for fz_stroke_state::dash_list[].
+            %array_functions(float, floats);
             ''')
 
     text += textwrap.dedent(f'''
