@@ -1211,6 +1211,23 @@ can work.
 Python/C# bindings details
 ---------------------------------------------------------------
 
+Extra Python functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Access to raw C arrays
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+SWIG's `carrays.i` and `array_functions(<type>, <name>)` are used to allow
+access to some low-level C arrays inside SWIG-wrapped data.
+
+* `bytes_getitem(array, index)`: Gives access to array of `unsigned char`'s,
+for example in the data returned by `mupdf::FzPixmap`'s `samples()`
+method. Generated with SWIG ode `array_functions(unsigned char, bytes);`.
+
+* `floats_getitem(array, index)`: Gives access to array of `float`'s, for
+example in `fz_stroke_state`'s float dash_list[32]` array. Generated with SWIG
+code `carrays.i` and `array_functions(float, floats);`.
+
 
 Python differences from C API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
