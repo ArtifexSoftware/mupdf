@@ -157,6 +157,10 @@ public class ViewerCore {
 			boolean edit = false;
 			boolean copy = false;
 			boolean annotate = false;
+			boolean form = false;
+			boolean accessibility = false;
+			boolean assemble = false;
+			boolean printHq = false;
 			boolean isPDF = false;
 			boolean reflowable = false;
 			boolean linear = false;
@@ -171,6 +175,10 @@ public class ViewerCore {
 				copy = doc.hasPermission(Document.PERMISSION_COPY);
 				edit = doc.hasPermission(Document.PERMISSION_EDIT);
 				annotate = doc.hasPermission(Document.PERMISSION_ANNOTATE);
+				form = doc.hasPermission(Document.PERMISSION_FORM);
+				accessibility = doc.hasPermission(Document.PERMISSION_ACCESSBILITY);
+				assemble = doc.hasPermission(Document.PERMISSION_ASSEMBLE);
+				printHq = doc.hasPermission(Document.PERMISSION_PRINT_HQ);
 				reflowable = doc.isReflowable();
 				isPDF = doc.isPDF();
 				if (isPDF) {
@@ -182,7 +190,7 @@ public class ViewerCore {
 			}
 			public void run() {
 				callback.onMetadataChange(title, author, format, encryption);
-				callback.onPermissionsChange(print, copy, edit, annotate);
+				callback.onPermissionsChange(print, copy, edit, annotate, form, accessibility, assemble, printHq);
 				callback.onReflowableChange(reflowable);
 				if (isPDF) {
 					callback.onLinearizedChange(linear);
@@ -618,7 +626,7 @@ public class ViewerCore {
 		public void onPageChange(Location page, int chapterNumber, int pageNumber, Rect bbox);
 		public void onPageContentsChange(Pixmap pixmap, Rect[] links, String[] linkURIs, Quad[][] searchHits);
 		public void onPageCountChange(int pages);
-		public void onPermissionsChange(boolean print, boolean copy, boolean edit, boolean annotate);
+		public void onPermissionsChange(boolean print, boolean copy, boolean edit, boolean annotate, boolean form, boolean accessibility, boolean assemble, boolean printHq);
 		public void onReflowableChange(boolean reflowable);
 		public void onSaveComplete();
 		public void onSearchCancelled();

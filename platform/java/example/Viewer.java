@@ -60,6 +60,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected boolean copy;
 	protected boolean edit;
 	protected boolean annotate;
+	protected boolean form;
+	protected boolean accessibility;
+	protected boolean assemble;
+	protected boolean printHq;
 	protected boolean reflowable;
 	protected boolean linearized;
 	protected int updates;
@@ -961,6 +965,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			buffer.append("edit, ");
 		if (annotate)
 			buffer.append("annotate, ");
+		if (form)
+			buffer.append("form, ");
+		if (accessibility)
+			buffer.append("accessibility, ");
+		if (assemble)
+			buffer.append("assemble, ");
+		if (printHq)
+			buffer.append("print-hq, ");
 		if (buffer.length() > 2)
 			buffer.delete(buffer.length() - 2, buffer.length());
 		String permissions = buffer.length() > 0 ? buffer.toString() : null;
@@ -1951,11 +1963,15 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		this.format = format;
 		this.encryption = encryption;
 	}
-	public void onPermissionsChange(boolean print, boolean copy, boolean edit, boolean annotate) {
+	public void onPermissionsChange(boolean print, boolean copy, boolean edit, boolean annotate, boolean form, boolean accessibility, boolean assemble, boolean printHq) {
 		this.print = print;
 		this.copy = copy;
 		this.edit = edit;
 		this.annotate = annotate;
+		this.form = form;
+		this.accessibility = accessibility;
+		this.assemble = assemble;
+		this.printHq = printHq;
 	}
 	public void onLinearizedChange(boolean linearized) {
 		this.linearized = linearized;

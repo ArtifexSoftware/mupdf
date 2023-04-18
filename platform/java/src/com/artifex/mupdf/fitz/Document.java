@@ -230,6 +230,10 @@ public class Document
 	public static final int PERMISSION_COPY = (int) 'c';
 	public static final int PERMISSION_EDIT = (int) 'e';
 	public static final int PERMISSION_ANNOTATE = (int) 'n';
+	public static final int PERMISSION_FORM = (int) 'f';
+	public static final int PERMISSION_ACCESSBILITY = (int) 'y';
+	public static final int PERMISSION_ASSEMBLE = (int) 'a';
+	public static final int PERMISSION_PRINT_HQ = (int) 'h';
 
 	public native boolean hasPermission(int permission);
 

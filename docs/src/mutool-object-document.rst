@@ -55,7 +55,7 @@
 
 .. method:: hasPermission(permission)
 
-    Returns *true* if the document has permission for "print", "annotate", "edit" or "copy".
+    Returns *true* if the document has permission for "print", "annotate", "edit", "copy", "form", "accessbility", "assemble" or "print-hq".
 
     :arg permission: `String` The permission to seek for, e.g. "edit".
     :return: `Boolean`.

@@ -1229,6 +1229,14 @@ extern "C" {
 #define com_artifex_mupdf_fitz_Document_PERMISSION_EDIT 101L
 #undef com_artifex_mupdf_fitz_Document_PERMISSION_ANNOTATE
 #define com_artifex_mupdf_fitz_Document_PERMISSION_ANNOTATE 110L
+#undef com_artifex_mupdf_fitz_Document_PERMISSION_FORM
+#define com_artifex_mupdf_fitz_Document_PERMISSION_FORM 102L
+#undef com_artifex_mupdf_fitz_Document_PERMISSION_ACCESSBILITY
+#define com_artifex_mupdf_fitz_Document_PERMISSION_ACCESSBILITY 121L
+#undef com_artifex_mupdf_fitz_Document_PERMISSION_ASSEMBLE
+#define com_artifex_mupdf_fitz_Document_PERMISSION_ASSEMBLE 97L
+#undef com_artifex_mupdf_fitz_Document_PERMISSION_PRINT_HQ
+#define com_artifex_mupdf_fitz_Document_PERMISSION_PRINT_HQ 104L
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    finalize
@@ -3561,6 +3569,14 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_EDIT 101L
 #undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ANNOTATE
 #define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ANNOTATE 110L
+#undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_FORM
+#define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_FORM 102L
+#undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ACCESSBILITY
+#define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ACCESSBILITY 121L
+#undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ASSEMBLE
+#define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_ASSEMBLE 97L
+#undef com_artifex_mupdf_fitz_PDFDocument_PERMISSION_PRINT_HQ
+#define com_artifex_mupdf_fitz_PDFDocument_PERMISSION_PRINT_HQ 104L
 #undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_UNSET
 #define com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_UNSET 0L
 #undef com_artifex_mupdf_fitz_PDFDocument_LANGUAGE_ur

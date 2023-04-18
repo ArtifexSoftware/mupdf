@@ -845,9 +845,13 @@ pdf_has_permission(fz_context *ctx, pdf_document *doc, fz_permission p)
 	switch (p)
 	{
 	case FZ_PERMISSION_PRINT: return doc->crypt->p & PDF_PERM_PRINT;
-	case FZ_PERMISSION_COPY: return doc->crypt->p & PDF_PERM_COPY;
 	case FZ_PERMISSION_EDIT: return doc->crypt->p & PDF_PERM_MODIFY;
+	case FZ_PERMISSION_COPY: return doc->crypt->p & PDF_PERM_COPY;
 	case FZ_PERMISSION_ANNOTATE: return doc->crypt->p & PDF_PERM_ANNOTATE;
+	case FZ_PERMISSION_FORM: return doc->crypt->p & PDF_PERM_FORM;
+	case FZ_PERMISSION_ACCESSIBILITY: return doc->crypt->p & PDF_PERM_ACCESSIBILITY;
+	case FZ_PERMISSION_ASSEMBLE: return doc->crypt->p & PDF_PERM_ASSEMBLE;
+	case FZ_PERMISSION_PRINT_HQ: return doc->crypt->p & PDF_PERM_PRINT_HQ;
 	}
 	return 1;
 }

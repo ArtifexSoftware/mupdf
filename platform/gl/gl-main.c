@@ -2621,6 +2621,14 @@ static fz_buffer *format_info_text()
 			fz_strlcat(buf, "edit, ", sizeof buf);
 		if (fz_has_permission(ctx, doc, FZ_PERMISSION_ANNOTATE))
 			fz_strlcat(buf, "annotate, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_FORM))
+			fz_strlcat(buf, "form, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_ACCESSIBILITY))
+			fz_strlcat(buf, "accessibility, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_ASSEMBLE))
+			fz_strlcat(buf, "assemble, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_PRINT_HQ))
+			fz_strlcat(buf, "print-hq, ", sizeof buf);
 		if (strlen(buf) > 2)
 			buf[strlen(buf)-2] = 0;
 		else
