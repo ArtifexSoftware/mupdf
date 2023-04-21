@@ -229,12 +229,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     Ends the tiling pattern.
 
 
-
-.. method:: close()
-
-    Tell the device that we are done, and flush any pending output.
-
-
 .. method:: beginLayer(tag)
 
     Begin a marked-content layer with the given tag.
@@ -244,6 +238,55 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 .. method:: endLayer()
 
     End a marked-content layer.
+
+
+.. method:: renderFlags(set, clear)
+
+    Set/clear device rendering flags. Both set and clear are arrays where each element is a flag name:
+
+    `"mask"`, `"color"`, `"uncacheable"`, `"fillcolor-undefined"`, `"strokecolor-undefined"`, `"startcap-undefined"`,
+    `"dashcap-undefined"`, `"endcap-undefined"`, `"linejoin-undefined"`, `"miterlimit-undefined"`,
+    `"linewidth-undefined"`, `"bbox-defined"`, or `"gridfit-as-tiled"`.
+
+    :arg set: `[]`.
+    :arg clear: `[]`.
+
+.. method:: setDefaultColorSpaces(defaults)
+
+    Change the set of default colorspaces for the device. See the :ref:`DefaultColorSpaces<mutool_object_default_color_spaces>` object.
+
+    :arg defaults: `Object`.
+
+.. method:: beginStructure(standard, raw, uid)
+
+    Begin a standard structure element, the raw tag name and a unique identifier.
+
+    :arg standard: `String`. The element name.
+    :arg raw: `String`. The tag name.
+    :arg uid: `String`. The unique identifier.
+
+.. method:: endStructure()
+
+    End a standard structure element.
+
+.. method:: beginMetatext(type, text)
+
+    Begin meta text information.
+
+    :arg type: `String`. The type (either of `"ActualText"`, `"Alt"`, `"Abbreviation"`, or `"Title"`)
+    :arg text: `String`. The text value.
+
+
+.. method:: endMetatext()
+
+    End meta text information.
+
+
+.. method:: close()
+
+    Tell the device that we are done, and flush any pending output.
+
+
 
 
 

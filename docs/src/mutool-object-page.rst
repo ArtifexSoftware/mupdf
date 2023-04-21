@@ -90,6 +90,14 @@
 
     :arg link: `Object` :ref:`Link dictionary<mutool_run_js_api_link_dict>`.
 
+
+.. method:: getLabel()
+
+    Returns the page number as a string using the numbering scheme of the document.
+
+    :return: `String`.
+
+
 .. method:: isPDF()
 
     Returns *true* if the page is from a :title:`PDF` document.

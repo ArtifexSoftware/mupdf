@@ -4,6 +4,10 @@
     height: auto;
 }
 
+.wy-nav-content .icon-home {
+    width: auto;
+}
+
 /* main document page: ensures pages fit to the available width and height */
 .wy-nav-content {
     min-width: 100%;

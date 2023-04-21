@@ -66,6 +66,14 @@ All functions that take `PDFObjects`, do automatic translation between :title:`J
 
     :return: Object.
 
+
+.. method:: compare(other)
+
+    Compare the object to another one. Returns 0 on match, non-zero on mismatch. Streams always mismatch.
+
+    :arg other: `PDFObject`.
+    :return: `Integer`.
+
 .. method:: isArray()
 
     :return: `Boolean`.

@@ -1,6 +1,6 @@
 # Template documentation
 
-Welcome to the MuPDF WASM documentation. This documentation relies on [Sphinx](https://www.sphinx-doc.org/en/master/) to publish HTML docs from markdown files written with [restructured text](https://en.wikipedia.org/wiki/ReStructuredText) (RST).
+Welcome to the MuPDF documentation. This documentation relies on [Sphinx](https://www.sphinx-doc.org/en/master/) to publish HTML docs from markdown files written with [restructured text](https://en.wikipedia.org/wiki/ReStructuredText) (RST).
 
 ## Sphinx version
 
@@ -25,6 +25,8 @@ Within the "docs" folder update the associated restructured text (`.rst`) files.
 
 `sphinx-build -b html src build`
 
+> To force build all the stuff in the `_static` folder (e.g. CSS), do:
+> `sphinx-build -a -b html src build`
 
 This then creates the HTML documentation within the folder "build" in the root of "docs".
 

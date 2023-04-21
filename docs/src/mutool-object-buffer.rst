@@ -14,7 +14,7 @@
 `Buffer`
 --------------
 
-The `Buffer` objects are used for working with binary data. They can be used much like arrays, but are much more efficient since they only store bytes.
+`Buffer` objects are used for working with binary data. They can be used much like arrays, but are much more efficient since they only store bytes.
 
 
 
@@ -31,6 +31,17 @@ The `Buffer` objects are used for working with binary data. They can be used muc
     .. code-block:: javascript
 
         var buffer = new Buffer();
+
+
+.. method:: new Buffer(original)
+
+    *Constructor method*.
+
+    Create a new buffer with a copy of the data from the original buffer.
+
+    :arg original: `Buffer`.
+
+    :return: `Buffer`.
 
 
 .. method:: readFile(fileName)
@@ -108,6 +119,17 @@ The `Buffer` objects are used for working with binary data. They can be used muc
     Append the contents of the 'data' buffer to the end of the buffer.
 
     :arg data: Data buffer.
+
+
+.. method:: slice(start end)
+
+    Create a new buffer containing a (subset of) the data in this buffer. Start and end are offsets from the beginning of this buffer, and if negative from the end of this buffer.
+
+    :arg start: Start index.
+    :arg start: End index.
+
+    :return: `Buffer`.
+
 
 .. method:: save(fileName)
 

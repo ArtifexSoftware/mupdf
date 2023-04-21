@@ -116,6 +116,19 @@
     :arg hot: `Boolean`.
 
 
+.. method:: getHiddenForEditing()
+
+    Get a special annotation hidden flag for editing. This flag prevents the annotation from being rendered.
+
+    :return: `Boolean`.
+
+
+.. method:: setHiddenForEditing(hidden)
+
+    Set a special annotation hidden flag for editing. This flag prevents the annotation from being rendered.
+
+    :arg hidden: `Boolean`.
+
 ----
 
 These properties are available for all annotation types.
