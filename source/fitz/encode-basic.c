@@ -24,6 +24,8 @@
 
 #include "z-imp.h"
 
+#include <limits.h>
+
 struct ahx
 {
 	fz_output *chain;
