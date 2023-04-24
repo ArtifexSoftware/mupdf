@@ -24,6 +24,8 @@
 
 #include "z-imp.h"
 
+#include <limits.h>
+
 typedef struct ps_band_writer_s
 {
 	fz_band_writer super;
