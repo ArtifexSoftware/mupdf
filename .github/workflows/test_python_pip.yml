@@ -12,9 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [ubuntu-20.04, windows-2019, macos-10.15]
-        # 2023-02-10: Clang-python appears to not find any functions on macos.
-        os: [ubuntu-20.04, windows-2019]
+        os: [ubuntu-20.04, windows-2019, macos-latest]
 
       # Avoid cancelling of all runs after a single failure.
       fail-fast: false
@@ -48,16 +46,12 @@ jobs:
 
             venv_name = 'pylocal'
 
-            if platform.system() == 'Windows':
-                venv_py = os.path.join( '.', venv_name, 'Scripts', 'python.exe')
-                venv_activate = os.path.join( '.', venv_name, 'Scripts', 'activate')
-            else:
-                venv_py = f'./{venv_name}/bin/python'
-                venv_activate = f'. {venv_name}/bin/activate'
-
             command = ''
             command += f'{sys.executable} -m venv {venv_name}'
-            command += f' && {venv_activate}'
+            if platform.system() == 'Windows':
+                command += f' && ./{venv_name}/Scripts/activate'.replace('/', os.sep)
+            else:
+                command += f' && . {venv_name}/bin/activate'
             command += f' && python -m pip install -U pip'
             command += f' && python -m pip install -vv .'
             command += f' && python scripts/mupdfwrap.py -d - --test-python'
@@ -67,3 +61,12 @@ jobs:
             subprocess.run( command, check=1, shell=1)
 
         shell: python
+
+      - name: Archive generated code
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: generated-code
+          path: |
+            platform/c++/
+            platform/python/
