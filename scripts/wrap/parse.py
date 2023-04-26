@@ -2,6 +2,8 @@
 Support for accessing parse tree for MuPDF headers.
 '''
 
+import os
+import sys
 import time
 
 import jlib
@@ -27,6 +29,14 @@ def get_extras(tu, type_):
     extras = classes.classextras.get( tu, base_typename)
     return base_type_cursor, base_typename, extras
 
+def fileline( cursor):
+    '''
+    Returns <file>:<line> from cursor.location.
+    '''
+    f = cursor.location.file
+    filename = os.path.relpath( f.name) if f else ''
+    return f'{filename}:{cursor.location.line}'
+
 
 def prefix( name):
     if name.startswith( 'fz_'):
@@ -46,14 +56,86 @@ def get_fz_extras( tu, fzname):
     ce = classes.classextras.get( tu, fzname)
     return ce
 
+def get_members( type_or_cursor, include_empty=False):
+    '''
+    Yields cursor for each member. Uses whichever of
+    clang.cindex.Cursor.get_children() or clang.cindex.Type.get_fields() works.
+
+    Args:
+        type_or_cursor:
+            .
+        include_empty:
+            If false (the default), we first try
+            clang.cindex.Cursor.get_children(), but ignore items for which
+            .spelling==''. If resulting list is empty, we instead use
+            clang.cindex.Type.get_fields().
+
+            Otherwise, we return list of items from
+            clang.cindex.Cursor.get_children(), regardless of whether they
+            have .spelling==''. This allows finding of non-typedef enums, for
+            example.
+    '''
+    if isinstance( type_or_cursor, clang.cindex.Type):
+        cursor = type_or_cursor.get_declaration()
+    elif isinstance( type_or_cursor, clang.cindex.Cursor):
+        cursor = type_or_cursor
+    else:
+        assert 0
+    if cursor.type.kind in (state.clang.cindex.TypeKind.TYPEDEF, state.clang.cindex.TypeKind.ELABORATED):
+        cursor2 = cursor.underlying_typedef_type.get_declaration()
+    else:
+        cursor2 = cursor
+
+    if 0:
+        # Diagnostics to show the difference between
+        # clang.cindex.Cursor.get_children() and
+        # clang.cindex.Type.get_fields().
+        #
+        # For example it looks like clang.cindex.Cursor.get_children() can
+        # return an extra item with .spelling=='' for 'union {...} u;'.
+        #
+        ret_cursor = list()
+        ret_cursor_no_empty = list()
+        ret_type = list()
+        for cursor3 in cursor2.get_children():
+            item = (cursor3.spelling, cursor3.location.file.name, cursor3.location.line)
+            ret_cursor.append( item)
+            if cursor3.spelling:
+                ret_cursor_no_empty.append( item)
+        for cursor3 in cursor.type.get_canonical().get_fields():
+            ret_type.append( (cursor3.spelling, cursor3.location.file.name, cursor3.location.line))
+        ret_cursor.sort()
+        ret_type.sort()
+        ret_cursor_no_empty.sort()
+        if (not ret_cursor_no_empty) and ret_type:
+            jlib.log( 'ret_type and not ret_cursor_no_empty:')
+            for i in ret_type:
+                jlib.log( '    ret_type: {i}')
+        if 0 and ret_cursor != ret_type:
+            jlib.log('get_children() != get_fields():')
+            for i in ret_cursor:
+                jlib.log( '    ret_cursor: {i}')
+            for i in ret_type:
+                jlib.log( '    ret_type: {i}')
+
+    ret = list()
+    for cursor3 in cursor2.get_children():
+        if include_empty or cursor3.spelling:
+            ret.append(cursor3)
+    if not ret:
+        type_ = cursor.type.get_canonical()
+        for cursor3 in type_.get_fields():
+            ret.append( cursor3)
+    for i in ret:
+        yield i
+
 def get_field0( type_):
     '''
     Returns cursor for first field in <type_> or None if <type_> has no fields.
     '''
-    assert isinstance( type_, clang.cindex.Type)
-    type_ = state.get_name_canonical( type_)
-    for field in type_.get_fields():
-        return field
+    verbose = state.state_.show_details( type_.spelling)
+    for cursor in get_members(type_):
+        return cursor
 
 get_base_type_cache = dict()
 def get_base_type( type_):
@@ -111,30 +193,46 @@ def has_refs( tu, type_):
 
     key = type_.spelling
     key = util.clip(key, 'struct ')
+    verbose = state.state_.show_details( key)
     ret = has_refs_cache.get( key, None)
     if ret is None:
         ret = False
-        #jlib.log( 'Analysing {type0.spelling=} {type_.spelling=} {key=}')
+        if verbose:
+            jlib.log( 'Analysing {type0.spelling=} {type_.spelling=} {key=}')
 
         for prefix in (
                 'fz_',
                 'pdf_',
                 ):
-            #jlib.log( '{type_.spelling=} {prefix=}')
+            if verbose:
+                jlib.log( '{type_.spelling=} {prefix=}')
             if key.startswith( prefix):
-                #jlib.log( 'Type is a fz_ or pdf_ struct: {key=}')
+                if verbose:
+                    jlib.log( 'Type is a fz_ or pdf_ struct: {key=}')
                 keep_name = f'{prefix}keep_{key[len(prefix):]}'
                 keep_fn_cursor = state.state_.find_function( tu, keep_name, method=False)
-                #jlib.log( '{keep_name=} {keep_fn_cursor=}')
+                if verbose:
+                    jlib.log( '{keep_name=} {keep_fn_cursor=}')
                 if keep_fn_cursor:
-                    #jlib.log( 'There is a keep() fn for this type so it uses reference counting: {keep_name=}')
+                    if verbose:
+                        jlib.log( 'There is a keep() fn for this type so it uses reference counting: {keep_name=}')
                     base_type_cursor = get_base_type( type_).get_declaration()
                     if base_type_cursor.is_definition():
-                        #jlib.log( 'Type definition is available so we look for .refs member: {key=}')
-                        for cursor in type_.get_fields():
+                        if verbose:
+                            jlib.log( 'Type definition is available so we look for .refs member: {key=} {type_.spelling=} {fileline(base_type_cursor)=}')
+                        if verbose:
+                            jlib.log('type_.get_fields()')
+                            for cursor in get_members(type_):
+                                jlib.log('    {cursor.spelling=}')
+                            jlib.log('base_type_cursor.get_children()')
+                            for cursor in base_type_cursor.get_children():
+                                jlib.log('    {cursor.spelling=}')
+                            jlib.log('.')
+                        for cursor in get_members(type_):
                             name = cursor.spelling
                             type2 = state.get_name_canonical( cursor.type)
-                            #jlib.log( '{name=} {type2.spelling=}')
+                            if verbose:
+                                jlib.log( '{name=} {type2.spelling=}')
                             if name == 'refs' and type2.spelling == 'int':
                                 ret = 'refs', 32
                                 break
@@ -142,11 +240,15 @@ def has_refs( tu, type_):
                                 ret = 'storable.refs', 32
                                 break
                     else:
-                        #jlib.log('Definition is not available for {key=}')
-                        pass
+                        if 0:
+                            jlib.log('Definition is not available for {key=}'
+                                    ' because {base_type_cursor.spelling=} .is_definition()'
+                                    ' returns false.'
+                                    ' base_type_cursor.location={fileline(base_type_cursor)}'
+                                    )
 
                     if not ret:
-                        if 0:
+                        if verbose:
                             jlib.log(
                                     'Cannot find .refs member or we only have forward'
                                     ' declaration, so have to hard-code the size and offset'
@@ -199,7 +301,12 @@ def has_refs( tu, type_):
                                     ' and we have no hard-coded info about size and offset of .regs.'
                                     ' {type0.spelling=} {type_.spelling=} {base_type_cursor.spelling}'
                                     )
-                    assert ret, f'{key} has {keep_name}() but have not found size/location of .refs member.'
+                    assert ret, (
+                            f'{key} has {keep_name}() but have not found size/location of .refs member.'
+                            f' {type_.spelling=}'
+                            f' {base_type_cursor.spelling=}'
+                            f': {fileline(base_type_cursor)}'
+                            )
 
         if type_.spelling in (
                 'struct fz_document',
@@ -271,7 +378,13 @@ def dump_ast( cursor, out=None, depth=0):
             type_canonical = or_none( cursor2.type.get_canonical)
 
             text = indent
-            text += jlib.expand_nv('{cursor2.kind=} {cursor2.displayname=} {cursor2.spelling=}')
+            text += jlib.expand_nv(
+                    '{cursor2.kind=}'
+                    '{cursor2.displayname=}'
+                    ' {cursor2.spelling=}'
+                    ' {cursor2.linkage=}'
+                    ' {cursor2.is_definition()=}'
+                    )
             if result:
                 text += jlib.expand_nv(' {result.spelling=}')
             if type_:
@@ -374,7 +487,7 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
                 # Omit this arg because our generated mupdf_*() wrapping functions
                 # use internalContextGet() to get a context.
                 continue
-            name = arg_cursor.mangled_name or f'arg_{i}'
+            name = arg_cursor.spelling or f'arg_{i}'
             if 0 and name == 'stmofsp':
                 verbose = True
             alt = None
@@ -772,12 +885,13 @@ def find_name( cursor, name, nest=0):
     cursor:
         Item to search.
     '''
+    assert cursor.spelling != ''
     if cursor.spelling == '':
         # Anonymous item; this seems to occur for (non-anonymous) unions.
         #
         # We recurse into children directly.
         #
-        for c in cursor.get_children():
+        for c in get_members(cursor):
             ret = find_name_internal( c, name, nest+1)
             if ret:
                 return ret
@@ -792,7 +906,7 @@ def find_name( cursor, name, nest=0):
         ret = find_name( c, tail, nest+2)
         return ret
 
-    for c in state.get_name_canonical( cursor.type).get_fields():
+    for c in get_members(cursor):
         if c.spelling == '':
             ret = find_name( c, name, nest+1)
             if ret:

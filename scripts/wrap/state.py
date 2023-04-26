@@ -56,9 +56,9 @@ def get_name_canonical( type_):
         #jlib.log( 'Not canonicalising {self.spelling=}')
         return type_
     ret = type_.get_canonical()
-    if 'struct (unnamed at ' in ret.spelling:
+    if 'struct (unnamed' in ret.spelling:
         jlib.log( 'Not canonicalising {type_.spelling=}')
-        ret = self
+        ret = type_
     return ret
 
 
@@ -111,19 +111,23 @@ class State:
                     or cursor.is_definition()  # Picks up static inline functions.
                     ):
                 if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
-                    fnname = cursor.mangled_name
+                    fnname = cursor.spelling
                     if self.show_details( fnname):
                         jlib.log( 'Looking at {fnname=}')
-                    if fnname not in omit_fns:
+                    if fnname in omit_fns:
+                        jlib.log('{fnname=} is in omit_fns')
+                    else:
                         fns[ fnname] = cursor
-                else:
-                    global_data[ cursor.mangled_name] = cursor
+            if (cursor.kind == clang.cindex.CursorKind.VAR_DECL
+                    and cursor.linkage == clang.cindex.LinkageKind.EXTERNAL
+                    ):
+                global_data[ cursor.spelling] = cursor
 
         self.functions_cache[ tu] = fns
         self.global_data[ tu] = global_data
         self.enums[ tu] = enums
         self.structs[ tu] = structs
-        jlib.log('Have populated fns and global_data. {len(enums)=} {len(self.structs)}')
+        jlib.log('Have populated fns and global_data. {len(enums)=} {len(self.structs)} {len(fns)=}')
 
     def find_functions_starting_with( self, tu, name_prefix, method):
         '''
@@ -142,7 +146,7 @@ class State:
                     jlib.log('{fnname=} is in {omit_methods=}')
                 continue
             if not fnname.startswith( name_prefix):
-                if 0 and verbose:
+                if verbose:
                     jlib.log('{fnname=} does not start with {name_prefix=}')
                 continue
             if verbose:

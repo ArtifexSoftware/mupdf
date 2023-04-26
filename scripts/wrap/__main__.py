@@ -920,10 +920,6 @@ assert sys.version_info[0] == 3 and sys.version_info[1] >= 6, (
         'We require python-3.6+')
 
 
-def fileline( cursor):
-    return f'{cursor.location.file}:{cursor.location.line}'
-
-
 def compare_fz_usage(
         tu,
         directory,
@@ -945,8 +941,8 @@ def compare_fz_usage(
     # Set fz_items to map name to info about function/struct.
     #
     fz_items = dict()
-    for cursor in tu.cursor.get_children():
-        name = cursor.mangled_name
+    for cursor in parse.get_members(tu.cursor):
+        name = cursor.spelling
         if not name.startswith( ('fz_', 'pdf_')):
             continue
         uses_structs = False
@@ -1292,6 +1288,9 @@ def build( build_dirs, swig_command, args, vs_upgrade):
     force_rebuild = False
     header_git = False
     refcheck_if = '#ifndef NDEBUG'
+    compiler = 'c++'
+    if state.state_.macos:
+        compiler = 'c++ -std=c++14'
 
     state.state_.show_details = lambda name: False
     devenv = 'devenv.com'
@@ -1493,7 +1492,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         libmupdf = f'{build_dirs.dir_so}/libmupdf.so'
                         command = ( textwrap.dedent(
                                 f'''
-                                c++
+                                {compiler}
                                     -o {libmupdfcpp}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
@@ -1524,7 +1523,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             ofiles.append( ofile)
                             command = ( textwrap.dedent(
                                     f'''
-                                    c++
+                                    {compiler}
                                         {build_dirs.cpp_flags}
                                         -fPIC
                                         -c
@@ -1561,7 +1560,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 f'{build_dirs.dir_so}/libmupdf-third.a'
                                 ]
                         command = textwrap.dedent( f'''
-                                c++
+                                {compiler}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
                                     -o {libmupdfcpp_so}
@@ -1718,7 +1717,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 )
 
                 else:
-                    # We use g++ debug/release flags as implied by
+                    # We use c++ debug/release flags as implied by
                     # --dir-so, but all builds output the same file
                     # mupdf:platform/python/_mupdf.so. We could instead
                     # generate mupdf.py and _mupdf.so in the --dir-so
@@ -1727,7 +1726,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     # [While libmupdfcpp.so requires matching
                     # debug/release build of libmupdf.so, it looks
                     # like _mupdf.so does not require a matching
-                    # libmupdfcpp.so and libmupdf.sp.]
+                    # libmupdfcpp.so and libmupdf.so.]
                     #
                     include3 = ''
                     if build_python:
@@ -1739,7 +1738,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         #
                         # But... it seems that we should not
                         # attempt to specify libpython on the link
-                        # command. The manylinkux docker containers
+                        # command. The manylinux docker containers
                         # don't actually contain libpython.so, and
                         # it seems that this deliberate. And the
                         # link command runs ok.
@@ -1753,8 +1752,18 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         # --cflags gives things like
                         # -Wno-unused-result -g etc, so we just use
                         # --includes.
-                        include3 = jlib.system( f'{python_config} --includes', out='return')
-
+                        include3 = jlib.system( f'{python_config} --includes --ldflags', out='return', verbose=1)
+                        include3 = include3.replace( '\n', ' ')
+                        if state.state_.macos:
+                            # We need this to avoid numerous errors like:
+                            #
+                            # Undefined symbols for architecture x86_64:
+                            #   "_PyArg_UnpackTuple", referenced from:
+                            #       _wrap_ll_fz_warn(_object*, _object*) in mupdfcpp_swig-0a6733.o
+                            #       _wrap_fz_warn(_object*, _object*) in mupdfcpp_swig-0a6733.o
+                            #       ...
+                            include3 += ' -undefined dynamic_lookup'
+                        jlib.log('include3={include3!r}')
 
                     # These are the input files to our g++ command:
                     #
@@ -1808,7 +1817,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             jlib.log( 'Compiling/linking mupdf2')
                             command = ( textwrap.dedent(
                                     f'''
-                                    c++
+                                    {compiler}
                                         -o {out2_so}
                                         {build_dirs.cpp_flags}
                                         -fPIC
@@ -1850,7 +1859,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     #
                     command = ( textwrap.dedent(
                             f'''
-                            c++
+                            {compiler}
                                 -o {out_so}
                                 {build_dirs.cpp_flags}
                                 -fPIC
@@ -2321,6 +2330,11 @@ def main2():
                         out='log',
                         )
                 sys.exit(e)
+
+            elif arg == '--show-ast':
+                filename = args.next()
+                includes = args.next()
+                parse.show_ast( filename, includes)
 
             elif arg == '--swig':
                 swig_command = args.next()
