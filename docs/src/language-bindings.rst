@@ -270,6 +270,18 @@ The Python and C# MuPDF APIs
   * Automatic reference counting, so no need to call `fz_keep_*()` or `fz_drop_*()`, and we have value-semantics for class instances.
   * Native Python and C# exceptions.
 * Output parameters are returned as tuples.
+
+  For example MuPDF C function `fz_read_best()` has prototype::
+
+      fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated);
+
+  The class-aware Python wrapper is:
+
+      mupdf.fz_read_best(stm, initial)
+
+  and returns `(buffer, truncated)`, where `buffer` is a SWIG proxy for a
+  `mupdf::FzBuffer` instance and `truncated` is an integer.
+
 * Allows implementation of mutool in Python - see
   `mupdf:scripts/mutool.py <https://git.ghostscript.com/?p=mupdf.git;a=blob;f=mupdf:scripts/mutool.py>`_
   and
@@ -399,6 +411,61 @@ Changelog
 
 [Note that this is only for changes to the generation of the C++/Python/C#
 APIs; changes to the main MuPDF API are not detailed here.]
+
+* **2023-05-02**:
+
+  * Improved implementation of Python-specific wrappers:
+
+    * Consistently use low-level wrappers to implement high-level wrappers.
+    * Added missing low-level wrappers.
+
+      * `ll_fz_buffer_storage_memoryview()`
+      * `ll_fz_fill_text2()`
+      * `ll_fz_pixmap_copy()`
+      * `ll_fz_parse_page_range_orig()`
+      * `ll_fz_format_output_path()`
+      * `ll_fz_buffer_extract()`
+      * `ll_fz_buffer_extract_copy()`
+      * `ll_fz_new_buffer_from_copied_data()`
+      * `ll_pdf_dict_getl()`
+      * `ll_pdf_dict_putl()`
+      * `ll_fz_fill_text()`
+      * `ll_fz_pixmap_samples_memoryview()`
+
+    * Renamed `mupdf.python_bytes_data()` to `mupdf.python_buffer_data()`
+      because it works on any instance that supports the Python Buffer
+      interface.
+    * Renamed `python_buffer_to_memoryview()` to
+      `fz_buffer_storage_memoryview()`, because it uses a MuPDF `fz_buffer`,
+      not a Python buffer.
+    * Added `ll_fz_pixmap_copy_raw()` for copying raw sample data directly into
+      a `fz_pixmap`.
+    * In wrappers for `pdf_dict_getl()` and `pdf_dict_putl()`, generate
+      diagnostics if variadic args are the wrong type.
+    * Renamed `fz_pixmap_samples2()` to `ll_fz_pixmap_samples_memoryview()`.
+    * Added `fz_warn()`, same as `ll_fz_wrap()`.
+
+  * Fixes for MacOS and improved finding of struct members.
+  * Give Python and C# access to arrays of floats; e.g. for `fz_stroke_state`'s
+    `float dash_list[32];`.
+  * Updated bindings to cope with recent rename `pdf_field_name()` =>
+    `pdf_load_field_name()`.
+  * `MUPDF_trace` also enables
+    `fz_clone_context()`/`fz_new_context()`/`fz_drop_context()` diagnostics.
+  * Disabled questionable diagnostics about memory leaks.
+  * In `fz_compressed_buffer` class wrapper, give access to
+    `m_internal->buffer`.
+  * If Python callback raises an exception, add a Python backtrace to the
+    exception text.
+  * Allow building with Visual Studio 2022 without VS-2019 v142 tools
+    installed. See new `--vs-upgrade 0|1` option.
+  * Also use pdf_new_*() as constructors of `fz_*` structs where applicable.
+    For example this adds `pdf_new_stext_page_from_annot()` as a constructor of
+    `fz_stext_page`.
+  * Use new `scripts/wrap/wdev.py` to find C# compiler `csc.exe` on Windows.
+  * Fixed handling of functions that return `const fz_foo*`.
+  * Use our own handling of out-params instead of SWIG.
+  * Fixes for use with libclang-16.0.0
 
 * **2023-02-14**:
 
@@ -762,8 +829,8 @@ Specifying `SWIG <https://swig.org/>`_:
 
 Specifying location of `devenv.com`:
 
-* `scripts/mupdfwrap.py` looks for `devenv.com` in some hard-coded locations,
-  which can be overriden with::
+* `scripts/mupdfwrap.py` looks for `devenv.com` in standard locations;
+  this can be overriden with::
 
       scripts/mupdfwrap.py -b --devenv <devenv.com-location> ...
 
@@ -1049,8 +1116,7 @@ otherwise we get unresolved symbols when building MuPDF client code.
 Building the DLLs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We build Windows binaries by running `devenv.com` directly. As of 2021-05-17
-the location of `devenv.com` is hard-coded in this Python script.
+We build Windows binaries by running `devenv.com` directly.
 
 Building `_mupdf.pyd` is tricky because it needs to be built with a
 specific `Python.h` and linked with a specific `python.lib`. This is
@@ -1217,16 +1283,31 @@ Extra Python functions
 Access to raw C arrays
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-SWIG's `carrays.i` and `array_functions(<type>, <name>)` are used to allow
-access to some low-level C arrays inside SWIG-wrapped data.
+The following functions can be used from Python to get access to raw data:
 
-* `bytes_getitem(array, index)`: Gives access to array of `unsigned char`'s,
-for example in the data returned by `mupdf::FzPixmap`'s `samples()`
-method. Generated with SWIG ode `array_functions(unsigned char, bytes);`.
+*
+  `mupdf.bytes_getitem(array, index)`: Gives access to individual items
+  in an array of `unsigned char`'s, for example in the data returned by
+  `mupdf::FzPixmap`'s `samples()` method.
 
-* `floats_getitem(array, index)`: Gives access to array of `float`'s, for
-example in `fz_stroke_state`'s float dash_list[32]` array. Generated with SWIG
-code `carrays.i` and `array_functions(float, floats);`.
+*
+  `mupdf.floats_getitem(array, index)`: Gives access to individual items in an
+  array of `float`'s, for example in `fz_stroke_state`'s `float dash_list[32]`
+  array. Generated with SWIG code `carrays.i` and `array_functions(float,
+  floats);`.
+
+*
+  `mupdf.python_buffer_data(b)`: returns a SWIG wrapper for a `const unsigned
+  char*` pointing to a Python buffer instance's raw data. For example `b` can
+  be a Python `bytes` or `bytearray` instance.
+
+*
+  `mupdfpython_mutable_buffer_data(b)`: returns a SWIG wrapper for an `unsigned
+  char*` pointing to a Python buffer instance's raw data. For example `b` can
+  be a Python `bytearray` instance.
+
+[These functions are implemented internally using SWIG's `carrays.i` and
+`pybuffer.i`.
 
 
 Python differences from C API
@@ -1245,36 +1326,38 @@ wrap it in a systematic way.
 
 For example `Md5::fz_md5_final2()`.
 
+For all functions described below, there is also a `ll_*` variant that
+takes/returns raw MuPDF structs instead of wrapper classes.
+
 
 New functions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 * `fz_buffer_extract_copy()`: Returns copy of buffer data as a Python `bytes`.
-* `fz_buffer_storage_memoryview()`: Returns Python `memoryview` onto buffer data. Relies on buffer contents not changing.
-* `fz_pixmap_samples2()`: Returns Python `memoryview` onto `fz_pixmap` data.
+* `fz_buffer_storage_memoryview(buffer, writable)`: Returns a readonly/writable Python memoryview onto `buffer`.
+  Relies on `buffer` existing and not changing size while the memory view is used.
+* `fz_pixmap_samples_memoryview()`: Returns Python `memoryview` onto `fz_pixmap` data.
 
 
 Implemented in Python
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 * `fz_format_output_path()`
+* `fz_story_positions()`
 * `pdf_dict_getl()`
 * `pdf_dict_putl()`
-
 
 Non-standard API or implementation
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 * `fz_buffer_extract()`: Returns a *copy* of the original buffer data as a Python `bytes`. Still clears the buffer.
+* `fz_buffer_storage()`: Returns `(size, data)` where `data` is a low-level SWIG representation of the buffer's storage.
 * `fz_convert_color()`: No `float* fv` param, instead returns `(rgb0, rgb1, rgb2, rgb3)`.
 * `fz_fill_text()`: `color` arg is tuple/list of 1-4 floats.
-* `fz_new_buffer_from_copied_data()`: Takes Python `bytes` instance.
+* `fz_new_buffer_from_copied_data()`: Takes a Python `bytes` (or other Python buffer) instance.
 * `fz_set_error_callback()`: Takes a Python callable; no `void* user` arg.
 * `fz_set_warning_callback()`: Takes a Python callable; no `void* user` arg.
 * `fz_warn()`: Takes single Python `str` arg.
-* `ll_fz_convert_color()`: No `float* fv` param, instead returns `(rgb0, rgb1, rgb2, rgb3)`.
-* `ll_pdf_set_annot_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
-* `ll_pdf_set_annot_interior_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
 * `pdf_dict_putl_drop()`: Always raises exception because not useful with automatic ref-counts.
 * `pdf_load_field_name()`: Uses extra C++ function `pdf_load_field_name2()` which returns `std::string` by value.
 * `pdf_set_annot_color()`: Takes single `color` arg which must be float or tuple of 1-4 floats.
