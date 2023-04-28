@@ -108,9 +108,6 @@ fz_new_pixmap_from_display_list_with_separations(fz_context *ctx, fz_display_lis
 	fz_rect rect;
 	fz_irect bbox;
 	fz_pixmap *pix;
-	fz_device *dev = NULL;
-
-	fz_var(dev);
 
 	rect = fz_bound_display_list(ctx, list);
 	rect = fz_transform_rect(rect, ctm);
@@ -121,6 +118,16 @@ fz_new_pixmap_from_display_list_with_separations(fz_context *ctx, fz_display_lis
 		fz_clear_pixmap(ctx, pix);
 	else
 		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
+
+	return fz_fill_pixmap_from_display_list(ctx, list, ctm, pix);
+}
+
+fz_pixmap *
+fz_fill_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_pixmap *pix)
+{
+	fz_device *dev = NULL;
+
+	fz_var(dev);
 
 	fz_try(ctx)
 	{

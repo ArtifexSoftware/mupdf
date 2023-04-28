@@ -75,6 +75,8 @@ fz_pixmap *fz_new_pixmap_from_page_with_separations(fz_context *ctx, fz_page *pa
 fz_pixmap *fz_new_pixmap_from_page_number_with_separations(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha);
 fz_pixmap *fz_new_pixmap_from_page_contents_with_separations(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, fz_separations *seps, int alpha);
 
+fz_pixmap *fz_fill_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_pixmap *pix);
+
 /**
 	Extract text from page.
 
