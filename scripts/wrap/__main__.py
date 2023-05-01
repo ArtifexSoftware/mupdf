@@ -308,7 +308,7 @@ Python wrapping:
 
         Generic data access:
 
-            `mupdf.python_bytes_data(b: bytes)`:
+            `mupdf.python_buffer_data(b: bytes)`:
                 Returns SWIG proxy for an `unsigned char*` that points to
                 `<b>`'s data.
 
@@ -341,13 +341,13 @@ Python wrapping:
             These take a Python `bytes` instance.
 
             One can create an MuPDF buffer that contains a copy of a Python
-            `bytes` by using the special `mupdf.python_bytes_data()`
+            `bytes` by using the special `mupdf.python_buffer_data()`
             function. This returns a SWIG proxy for an `unsigned char*` that
             points to the `bytes` instance's data:
 
                 ```
                 bs = b'qwerty'
-                buffer_ = mupdf.new_buffer_from_copied_data(mupdf.python_bytes_data(bs), len(bs))
+                buffer_ = mupdf.new_buffer_from_copied_data(mupdf.python_buffer_data(bs), len(bs))
                 ```
 
     Functions taking a `va_list` arg:
@@ -2437,7 +2437,7 @@ def main2():
                     #env_extra[ 'MUPDF_trace'] = '1'
                     #env_extra[ 'MUPDF_check_refs'] = '1'
                     #env_extra[ 'MUPDF_trace_exceptions'] = '1'
-                    command = f'{command_prefix} {script_py}'
+                    command = f'{command_prefix} {script_py} {build_dirs.dir_mupdf}/thirdparty/zlib/zlib.3.pdf'
                     jlib.system( command, env_extra=env_extra, out='log', verbose=1)
 
                 else:

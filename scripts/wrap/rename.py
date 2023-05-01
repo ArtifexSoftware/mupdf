@@ -90,7 +90,6 @@ def fn( fnname):
     wrapper classes for args and return value.
     '''
     return fnname
-    return f'm{fnname}'
 
 def namespace_fn( fnname):
     '''
