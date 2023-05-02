@@ -312,9 +312,9 @@ def build():
                 'mupdf.py',             # Python.
                 ]
     elif macos():
-        jlib.log( 'Contents of {build_dir=} are:')
-        for leaf in os.listdir(build_dir):
-            jlib.log( '    {leaf}')
+        log( f'Contents of {build_dir()} are:')
+        for leaf in os.listdir(build_dir()):
+            log( f'    {leaf}')
         names = [
                 'libmupdf.dylib',   # C.
                 'libmupdfcpp.so',   # C++.
