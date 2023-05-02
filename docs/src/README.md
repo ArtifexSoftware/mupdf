@@ -34,10 +34,12 @@ This then creates the HTML documentation within the folder "build" in the root o
 ## Building PDF documentation
 
 
-- First ensure you have [rst2pdf](https://pypi.org/project/rst2pdf/) installed:
+- First ensure you have [rst2pdf](https://pypi.org/project/rst2pdf/) and
+[svglib](https://pypi.org/project/svglib/) installed:
 
 
 `python -m pip install rst2pdf`
+`python -m pip install svglib`
 
 
 - Then run:

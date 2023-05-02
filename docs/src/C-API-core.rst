@@ -373,7 +373,7 @@ Our matrix structure is a row-major 3x3 matrix with the last column always `[ 0 
 
 
 
-.. code-block:: C
+.. code-block::
 
     / a b 0 \
     | c d 0 |

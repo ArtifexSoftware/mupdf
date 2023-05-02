@@ -45,7 +45,7 @@ copyright = "2004-2023, Artifex"
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = "1.21.2"
+release = "1.22.0"
 
 # The short X.Y version
 version = release
@@ -67,6 +67,17 @@ exclude_patterns = ["_build","build"]
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 default_role = 'any'
+
+# To supress these warnings do the following:
+# See: https://stackoverflow.com/questions/37359407/suppress-warnings-for-unfound-references-with-default-role-any-in-sphinx
+def on_missing_reference(app, env, node, contnode):
+    if node['reftype'] == 'any':
+        return contnode
+    else:
+        return None
+
+def setup(app):
+    app.connect('missing-reference', on_missing_reference)
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
