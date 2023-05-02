@@ -464,7 +464,7 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 			trm.e = char_bbox.x0;
 			trm.f = char_bbox.y0;
 			fz_show_glyph(ctx, text, ocr->font, trm,
-				ocr->chars[i], ocr->chars[i],
+				fz_encode_character(ctx, ocr->font, ocr->chars[i]), ocr->chars[i],
 					0, 0, FZ_BIDI_LTR, 0);
 		}
 
