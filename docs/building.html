@@ -89,7 +89,7 @@ make prefix=/usr/local install
 To install only the command line tools, libraries, and headers invoke make like this:
 
 <pre>
-make HAVE_X11=no HAVE_GLUT=no prefix=/usr/local install
+make --ignore-errors HAVE_X11=no HAVE_GLUT=no prefix=/usr/local install
 </pre>
 
 </article>
