@@ -161,6 +161,12 @@ pdf_xref_entry *pdf_get_populating_xref_entry(fz_context *ctx, pdf_document *doc
 pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i);
 
 /*
+	Map a function across all xref entries in a document.
+*/
+void pdf_xref_entry_map(fz_context *ctx, pdf_document *doc, void (*fn)(fz_context *, pdf_xref_entry *, int i, pdf_document *doc, void *), void *arg);
+
+
+/*
 	Used after loading a document to access entries.
 
 	This will never throw anything, or return NULL if it is
