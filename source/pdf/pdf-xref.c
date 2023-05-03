@@ -1553,6 +1553,11 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 			if (!read_previous)
 				break;
 		}
+
+		/* For pathological files, such as chinese-example.pdf, where the original
+		 * xref in the file is highly fragmented, we can safely solidify it here
+		 * with no ill effects. */
+		ensure_solid_xref(ctx, doc, 0, doc->num_xref_sections-1);
 	}
 	fz_always(ctx)
 	{
