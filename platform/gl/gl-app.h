@@ -78,6 +78,8 @@ enum
 	KEY_F10,
 	KEY_F11,
 	KEY_F12,
+	MOUSE_SIDE_1,
+	MOUSE_SIDE_2,
 };
 
 enum side { ALL, T, R, B, L };

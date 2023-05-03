@@ -2365,12 +2365,12 @@ static void do_app(void)
 		case 'g': jump_to_page(number - 1); break;
 		case 'G': jump_to_location(fz_last_page(ctx, doc)); break;
 
-		case ',': case KEY_PAGE_UP:
+		case ',': case KEY_PAGE_UP: case MOUSE_SIDE_1:
 			number = fz_maxi(number, 1);
 			while (number--)
 				currentpage = fz_previous_page(ctx, doc, currentpage);
 			break;
-		case '.': case KEY_PAGE_DOWN:
+		case '.': case KEY_PAGE_DOWN: case MOUSE_SIDE_2:
 			number = fz_maxi(number, 1);
 			while (number--)
 				currentpage = fz_next_page(ctx, doc, currentpage);

@@ -329,6 +329,8 @@ static void on_mouse(int button, int action, int x, int y)
 		case 4: on_wheel(0, -1, x, y); break;
 		case 5: on_wheel(1, 1, x, y); break;
 		case 6: on_wheel(1, -1, x, y); break;
+		case 7: ui.key = MOUSE_SIDE_1; break;
+		case 8: ui.key = MOUSE_SIDE_2; break;
 		}
 	}
 	else if (action == GLUT_UP)
@@ -341,7 +343,9 @@ static void on_mouse(int button, int action, int x, int y)
 		}
 	}
 	ui.mod = glutGetModifiers();
+	ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
 	run_main_loop();
+	ui.key = ui.plain = 0;
 	ui_invalidate(); // TODO: leave this to caller
 }
 
