@@ -200,6 +200,7 @@ pdf_obj *pdf_dict_puts_dict(fz_context *ctx, pdf_obj *dict, const char *key, int
 
 int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+int64_t pdf_dict_get_int64(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 const char *pdf_dict_get_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 const char *pdf_dict_get_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep);
