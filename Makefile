@@ -459,10 +459,30 @@ install-docs:
 	install -d $(DESTDIR)$(docdir)
 	install -d $(DESTDIR)$(docdir)/examples
 	install -m 644 README COPYING CHANGES $(DESTDIR)$(docdir)
-	install -m 644 docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
 	install -m 644 docs/examples/* $(DESTDIR)$(docdir)/examples
 
 install: install-libs install-apps install-docs
+
+install-docs-html:
+	python3 scripts/build-docs.py
+	install -d $(DESTDIR)$(docdir)
+	install -d $(DESTDIR)$(docdir)/_images
+	install -d $(DESTDIR)$(docdir)/_static
+	install -d $(DESTDIR)$(docdir)/_static/js
+	install -d $(DESTDIR)$(docdir)/_static/css
+	install -d $(DESTDIR)$(docdir)/_static/css/fonts
+	install -m 644 build/docs/html/*.html $(DESTDIR)$(docdir)
+	install -m 644 build/docs/html/*.inv $(DESTDIR)$(docdir)
+	install -m 644 build/docs/html/*.js $(DESTDIR)$(docdir)
+	install -m 644 build/docs/html/_images/* $(DESTDIR)$(docdir)/_images
+	install -m 644 build/docs/html/_static/*.css $(DESTDIR)$(docdir)/_static
+	install -m 644 build/docs/html/_static/*.ico $(DESTDIR)$(docdir)/_static
+	install -m 644 build/docs/html/_static/*.js $(DESTDIR)$(docdir)/_static
+	install -m 644 build/docs/html/_static/*.png $(DESTDIR)$(docdir)/_static
+	install -m 644 build/docs/html/_static/*.svg $(DESTDIR)$(docdir)/_static
+	install -m 644 build/docs/html/_static/js/* $(DESTDIR)$(docdir)/_static/js
+	install -m 644 build/docs/html/_static/css/*.css $(DESTDIR)$(docdir)/_static/css
+	install -m 644 build/docs/html/_static/css/fonts/* $(DESTDIR)$(docdir)/_static/css/fonts
 
 tarball:
 	bash scripts/archive.sh

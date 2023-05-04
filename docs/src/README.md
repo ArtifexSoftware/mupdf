@@ -45,7 +45,7 @@ This then creates the HTML documentation within the folder "build" in the root o
 - Then run:
 
 
-`sphinx-build -b pdf . build/pdf`
+`sphinx-build -b pdf src build/pdf`
 
 This will then generate a single PDF for all of the documentation within `build/pdf`.
 

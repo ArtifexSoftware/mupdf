@@ -80,7 +80,7 @@ File Specification Object
 
 This object is used to represent a file.
 
-In order to retieve information from this object see methods described within :ref:`Embedded files in PDFs<mutool_object_pdf_document_embedded_files>`.
+In order to retrieve information from this object see methods described within :ref:`Embedded files in PDFs<mutool_object_pdf_document_embedded_files>`.
 
 
 
@@ -181,7 +181,7 @@ This `Object` has properties for:
 
 .. _mutool_run_js_api_pdf_widget_text_layout_object:
 
-.. note ``index`` in the paramters list here, otherwise it inserts a hyperlink to index.rst "Welcome"
+.. note ``index`` in the parameters list here, otherwise it inserts a hyperlink to index.rst "Welcome"
 
 Text Layout Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

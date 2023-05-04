@@ -102,10 +102,6 @@ To install only the command line tools, libraries, and headers invoke `make` lik
 
    Results of the build can be found in `build/release` in your "mupdf" folder.
 
-   Building for both :title:`macOS` & :title:`Linux` depend on having both `autoconf` and `automake` installed on your system. If this software is not already on your system (usually `usr/local/bin`) then it can be installed from the `GNU website`_.
-
-   Alternatively, `autoconf` and `automake` can be installed via :title:`Brew` by running: `brew install autoconf automake`.
-
 
 
 Validating your installation
