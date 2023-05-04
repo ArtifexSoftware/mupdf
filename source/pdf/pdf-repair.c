@@ -33,7 +33,7 @@ struct entry
 	int gen;
 	int64_t ofs;
 	int64_t stm_ofs;
-	int stm_len;
+	int64_t stm_len;
 };
 
 static void add_root(fz_context *ctx, pdf_obj *obj, pdf_obj ***roots, int *num_roots, int *max_roots)
@@ -50,11 +50,11 @@ static void add_root(fz_context *ctx, pdf_obj *obj, pdf_obj ***roots, int *num_r
 }
 
 int
-pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root)
+pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int64_t *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root)
 {
 	fz_stream *file = doc->file;
 	pdf_token tok;
-	int stm_len;
+	int64_t stm_len;
 	int64_t local_ofs;
 
 	if (tmpofs == NULL)
@@ -138,7 +138,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Length));
 		if (!pdf_is_indirect(ctx, obj) && pdf_is_int(ctx, obj))
-			stm_len = pdf_to_int(ctx, obj);
+			stm_len = pdf_to_int64(ctx, obj);
 
 		if (doc->file_reading_linearly && page)
 		{
@@ -341,7 +341,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	int num = 0;
 	int gen = 0;
 	int64_t tmpofs, stm_ofs, numofs = 0, genofs = 0;
-	int stm_len;
+	int64_t stm_len;
 	pdf_token tok;
 	int next;
 	int i;

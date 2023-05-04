@@ -112,7 +112,7 @@ typedef struct
 	int64_t first_xref_entry_offset;
 	int64_t file_len;
 	int hints_shared_offset;
-	int hintstream_len;
+	int64_t hintstream_len;
 	pdf_obj *linear_l;
 	pdf_obj *linear_h0;
 	pdf_obj *linear_h1;
@@ -2803,7 +2803,7 @@ make_hint_stream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 		make_page_offset_hints(ctx, doc, opts, buf);
 		obj = pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1);
 		pdf_update_stream(ctx, doc, obj, buf, 0);
-		opts->hintstream_len = (int)fz_buffer_storage(ctx, buf, NULL);
+		opts->hintstream_len = (int64_t)fz_buffer_storage(ctx, buf, NULL);
 	}
 	fz_always(ctx)
 	{

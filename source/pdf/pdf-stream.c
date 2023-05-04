@@ -313,7 +313,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *file_stm, pdf_document *doc, pdf
 	pdf_xref_entry *x = NULL;
 	fz_stream *null_stm, *crypt_stm;
 	int hascrypt;
-	int len;
+	int64_t len;
 
 	if (num > 0 && num < pdf_xref_len(ctx, doc))
 	{
@@ -335,10 +335,10 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *file_stm, pdf_document *doc, pdf
 	}
 
 	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
-	len = pdf_dict_get_int(ctx, stmobj, PDF_NAME(Length));
+	len = pdf_dict_get_int64(ctx, stmobj, PDF_NAME(Length));
 	if (len < 0)
 		len = 0;
-	null_stm = fz_open_endstream_filter(ctx, file_stm, len, offset);
+	null_stm = fz_open_endstream_filter(ctx, file_stm, (uint64_t)len, offset);
 	if (doc->crypt && !hascrypt)
 	{
 		fz_try(ctx)
@@ -483,7 +483,7 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	fz_stream *stm;
 	pdf_obj *dict;
-	int len;
+	int64_t len;
 	fz_buffer *buf = NULL;
 	pdf_xref_entry *x;
 
@@ -497,7 +497,7 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 	dict = pdf_load_object(ctx, doc, num);
 
 	fz_try(ctx)
-		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+		len = pdf_dict_get_int64(ctx, dict, PDF_NAME(Length));
 	fz_always(ctx)
 		pdf_drop_obj(ctx, dict);
 	fz_catch(ctx)
@@ -505,8 +505,11 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 
 	stm = pdf_open_raw_stream_number(ctx, doc, num);
 
+	if (len < 0)
+		len = 1024;
+
 	fz_try(ctx)
-		buf = fz_read_all(ctx, stm, len);
+		buf = fz_read_all(ctx, stm, (size_t)len);
 	fz_always(ctx)
 		fz_drop_stream(ctx, stm);
 	fz_catch(ctx)
