@@ -1743,12 +1743,21 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         # it seems that this deliberate. And the
                         # link command runs ok.
                         #
+                        # todo: maybe instead use sysconfig.get_config_vars() ?
+                        #
                         python_exe = os.path.realpath( sys.executable)
-                        python_config = f'{python_exe}-config'
-                        if not jlib.find_in_paths( python_config):
-                            default = 'python3-config'
-                            jlib.log( 'Warning, cannot find {python_config=}, using {default=}')
-                            python_config = default
+                        jlib.log('python_exe={python_exe}')
+                        python_configs = (
+                                f'{python_exe}-config',
+                                'python3-config',
+                                )
+                        jlib.log('python_configs={python_configs}')
+                        for python_config in python_configs:
+                            if jlib.find_in_paths( python_config):
+                                break
+                        else:
+                            raise Exception( f'Cannot find `python-config`, tried: {python_config}')
+                        jlib.log( 'Using {python_config=}')
                         # --cflags gives things like
                         # -Wno-unused-result -g etc, so we just use
                         # --includes.
