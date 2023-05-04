@@ -460,7 +460,7 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 			trm.a = 10.0f/6 * (char_bbox.x1 - char_bbox.x0);
 			trm.b = 0;
 			trm.c = 0;
-			trm.d = (char_bbox.y1 - char_bbox.y0);
+			trm.d = 10.0f/6 * (char_bbox.y1 - char_bbox.y0);
 			trm.e = char_bbox.x0;
 			trm.f = char_bbox.y0;
 			fz_show_glyph(ctx, text, ocr->font, trm,
