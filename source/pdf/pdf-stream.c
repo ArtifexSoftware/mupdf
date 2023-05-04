@@ -515,22 +515,30 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 	return buf;
 }
 
-static int
-pdf_guess_filter_length(int len, const char *filter)
+static size_t
+pdf_guess_filter_length(size_t len, const char *filter)
 {
-	if (len < 0)
-		len = 0;
+	size_t nlen = len;
+
+	/* First ones get smaller, no overflow check required. */
 	if (!strcmp(filter, "ASCIIHexDecode"))
 		return len / 2;
-	if (!strcmp(filter, "ASCII85Decode"))
+	else if (!strcmp(filter, "ASCII85Decode"))
 		return len * 4 / 5;
+
 	if (!strcmp(filter, "FlateDecode"))
-		return len * 3;
-	if (!strcmp(filter, "RunLengthDecode"))
-		return len * 3;
-	if (!strcmp(filter, "LZWDecode"))
-		return len * 2;
-	return len;
+		nlen = len * 3;
+	else if (!strcmp(filter, "RunLengthDecode"))
+		nlen = len * 3;
+	else if (!strcmp(filter, "LZWDecode"))
+		nlen = len * 2;
+
+	/* Live with a bad estimate - we'll malloc up as we go, but
+	 * it's probably destined to fail anyway. */
+	if (nlen < len)
+		return len;
+
+	return nlen;
 }
 
 /* Check if an entry has a cached stream and return whether it is directly
@@ -590,7 +598,8 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 {
 	fz_stream *stm = NULL;
 	pdf_obj *dict, *obj;
-	int i, len, n;
+	int i, n;
+	size_t len;
 	fz_buffer *buf;
 
 	fz_var(buf);
@@ -607,7 +616,14 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	dict = pdf_load_object(ctx, doc, num);
 	fz_try(ctx)
 	{
-		len = pdf_dict_get_int(ctx, dict, PDF_NAME(Length));
+		int64_t ilen = pdf_dict_get_int64(ctx, dict, PDF_NAME(Length));
+		if (ilen < 0)
+			ilen = 0;
+		len = (size_t)ilen;
+		/* In 32 bit builds, we might find a length being too
+		 * large for a size_t. */
+		if ((int64_t)len != ilen)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Stream too large");
 		obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
 		len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
 		n = pdf_array_len(ctx, obj);
