@@ -255,3 +255,46 @@ fz_save_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pixmap, const char *filename,
 		fz_rethrow(ctx);
 	}
 }
+
+static fz_buffer *
+jpeg_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int quality, int drop)
+{
+	fz_buffer *buf = NULL;
+	fz_output *out = NULL;
+
+	fz_var(buf);
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_write_pixmap_as_jpeg(ctx, out, pix, quality);
+		fz_close_output(ctx, out);
+	}
+	fz_always(ctx)
+	{
+		if (drop)
+			fz_drop_pixmap(ctx, pix);
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
+	return buf;
+}
+
+fz_buffer *
+fz_new_buffer_from_image_as_jpeg(fz_context *ctx, fz_image *image, fz_color_params color_params, int quality)
+{
+	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
+	return jpeg_from_pixmap(ctx, pix, color_params, 1, quality);
+}
+
+fz_buffer *
+fz_new_buffer_from_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int quality)
+{
+	return jpeg_from_pixmap(ctx, pix, color_params, 0, quality);
+}
