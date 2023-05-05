@@ -266,6 +266,8 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 			format = FORMAT_HTML;
 		else if (n == 8 && !memcmp(buf, "TEXtREAd", 8))
 			format = FORMAT_TEXT;
+		else if (n != 8)
+			fz_warn(ctx, "premature end in data");
 		else
 			fz_warn(ctx, "Unknown MOBI/PRC format: %s.", buf);
 
