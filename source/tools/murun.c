@@ -6885,27 +6885,79 @@ static void ffi_PDFGraftMap_graftPage(js_State *J)
 		rethrow(J);
 }
 
-static void ffi_PDFObject_get(js_State *J)
+static pdf_obj *ffi_PDFObject_get_imp(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_obj *val = NULL;
+	int i, n = js_gettop(J);
 
-	if (js_isuserdata(J, 1, "pdf_obj")) {
-		pdf_obj *key = js_touserdata(J, 1, "pdf_obj");
-		pdf_obj *val = NULL;
-		fz_try(ctx)
-			val = pdf_dict_get(ctx, obj, key);
-		fz_catch(ctx)
-			rethrow(J);
-		if (val)
-			ffi_pushobj(J, pdf_keep_obj(ctx, val));
-		else
-			js_pushnull(J);
-	} else {
-		const char *key = js_tostring(J, 1);
-		if (!ffi_pdf_obj_has(J, obj, key))
-			js_pushundefined(J);
+	for (i = 1; i < n && obj; ++i) {
+		if (js_isuserdata(J, i, "pdf_obj")) {
+			pdf_obj *key = js_touserdata(J, i, "pdf_obj");
+			fz_try(ctx)
+				obj = val = pdf_dict_get(ctx, obj, key);
+			fz_catch(ctx)
+				rethrow(J);
+		} else {
+			const char *key = js_tostring(J, i);
+			fz_try(ctx)
+				obj = val = pdf_dict_gets(ctx, obj, key);
+			fz_catch(ctx)
+				rethrow(J);
+		}
 	}
+
+	return val;
+}
+
+static void ffi_PDFObject_get(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *val = ffi_PDFObject_get_imp(J);
+	if (val)
+		ffi_pushobj(J, pdf_keep_obj(ctx, val));
+	else
+		js_pushnull(J);
+}
+
+static void ffi_PDFObject_getNumber(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	float num = 0;
+	fz_try(ctx)
+		if (pdf_is_int(ctx, obj))
+			num = pdf_to_int(ctx, obj);
+		else
+			num = pdf_to_real(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, num);
+}
+
+static void ffi_PDFObject_getName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	const char *name = NULL;
+	fz_try(ctx)
+		name = pdf_to_name(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, name);
+}
+
+static void ffi_PDFObject_getString(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	const char *string = NULL;
+	fz_try(ctx)
+		string = pdf_to_text_string(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, string);
 }
 
 static void ffi_PDFObject_put(js_State *J)
@@ -9999,6 +10051,9 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFObject.getNumber", ffi_PDFObject_getNumber, 1);
+		jsB_propfun(J, "PDFObject.getName", ffi_PDFObject_getName, 1);
+		jsB_propfun(J, "PDFObject.getString", ffi_PDFObject_getString, 1);
 		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 1);
 		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 2);
 		jsB_propfun(J, "PDFObject.push", ffi_PDFObject_push, 1);
