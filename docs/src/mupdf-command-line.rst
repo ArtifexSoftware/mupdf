@@ -430,7 +430,13 @@ There are also several tools specifically for working with :title:`PDF` files:
 
      mutool-pages.rst
 
-   Prints details about media box, artbox, etc. for each page in a :title:`PDF` file.
+   Prints the size and rotation of each page in a PDF. Provides information about :ref:`MediaBox<mutool_trim_defined_boxes>`, :ref:`ArtBox<mutool_trim_defined_boxes>`, etc. for each page in a :title:`PDF` file.
+
+   .. toctree::
+
+     mutool-trim.rst
+
+   This command allows you to make a modified version of a :title:`PDF` with content that falls inside or outside of :ref:`defined boxes<mutool_trim_defined_boxes>` removed.
 
 
    .. toctree::

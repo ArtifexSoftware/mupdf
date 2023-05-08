@@ -10,11 +10,14 @@
    :keywords: MuPDF, pdf, epub
 
 
+
+.. _mutool_pages:
+
 :title:`mutool pages`
 ==========================================
 
 
-The `pages` command prints out `MediaBox`, `CropBox`, etc. as well as `Rotation` and `UserUnit` for each page given (or all if not specified).
+The `pages` command prints out :ref:`MediaBox<mutool_trim_defined_boxes>`, :ref:`CropBox<mutool_trim_defined_boxes>`, etc. as well as `Rotation` and `UserUnit` for each page given (or all if not specified).
 
 
 .. code-block:: bash
