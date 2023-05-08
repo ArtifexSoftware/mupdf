@@ -464,7 +464,6 @@ pdf_xref_entry *pdf_get_xref_entry_no_null(fz_context *ctx, pdf_document *doc, i
 
 void pdf_xref_entry_map(fz_context *ctx, pdf_document *doc, void (*fn)(fz_context *, pdf_xref_entry *, int, pdf_document *, void *), void *arg)
 {
-	int xref_len = pdf_xref_len(ctx, doc);
 	int i, j;
 	pdf_xref_subsec *sub;
 	int xref_base = doc->xref_base;
