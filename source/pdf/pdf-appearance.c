@@ -321,7 +321,7 @@ static fz_point rotate_vector(float angle, float x, float y)
 	return fz_make_point(x*ca - y*sa, x*sa + y*ca);
 }
 
-static void pdf_write_arrow_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect, float x, float y, float dx, float dy, float w)
+static void pdf_write_arrow_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect, float x, float y, float dx, float dy, float w, int close)
 {
 	float r = fz_max(1, w);
 	float angle = atan2f(dy, dx);
@@ -339,6 +339,8 @@ static void pdf_write_arrow_appearance(fz_context *ctx, fz_buffer *buf, fz_rect 
 	fz_append_printf(ctx, buf, "%g %g m\n", a.x, a.y);
 	fz_append_printf(ctx, buf, "%g %g l\n", x, y);
 	fz_append_printf(ctx, buf, "%g %g l\n", b.x, b.y);
+	if (close)
+		fz_append_printf(ctx, buf, "h\n");
 }
 
 static void include_cap(fz_rect *rect, float x, float y, float r)
@@ -380,17 +382,18 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		fz_append_printf(ctx, buf, "%g %g l\n", x+r, y);
 		fz_append_printf(ctx, buf, "%g %g l\n", x, y-r);
 		fz_append_printf(ctx, buf, "%g %g l\n", x-r, y);
+		fz_append_printf(ctx, buf, "h\n");
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
 		include_cap(rect, x, y, r + w/sqrtf(2));
 	}
 	else if (cap == PDF_NAME(OpenArrow))
 	{
-		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w);
+		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w, 0);
 		maybe_stroke(ctx, buf, sc);
 	}
 	else if (cap == PDF_NAME(ClosedArrow))
 	{
-		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w);
+		pdf_write_arrow_appearance(ctx, buf, rect, x, y, dx, dy, w, 1);
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
 	}
 	/* PDF 1.5 */
@@ -408,12 +411,12 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 	}
 	else if (cap == PDF_NAME(ROpenArrow))
 	{
-		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w);
+		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w, 0);
 		maybe_stroke(ctx, buf, sc);
 	}
 	else if (cap == PDF_NAME(RClosedArrow))
 	{
-		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w);
+		pdf_write_arrow_appearance(ctx, buf, rect, x, y, -dx, -dy, w, 1);
 		maybe_stroke_and_fill(ctx, buf, sc, ic);
 	}
 	/* PDF 1.6 */
