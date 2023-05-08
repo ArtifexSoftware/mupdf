@@ -950,6 +950,7 @@
     <ClCompile Include="..\..\source\fitz\load-jxr.c" />
     <ClCompile Include="..\..\source\fitz\load-png.c" />
     <ClCompile Include="..\..\source\fitz\load-pnm.c" />
+    <ClCompile Include="..\..\source\fitz\load-psd.c" />
     <ClCompile Include="..\..\source\fitz\load-tiff.c" />
     <ClCompile Include="..\..\source\fitz\log.c" />
     <ClCompile Include="..\..\source\fitz\memento.c" />

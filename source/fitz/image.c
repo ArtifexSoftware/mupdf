@@ -757,6 +757,9 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 	case FZ_IMAGE_JPX:
 		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, image->super.colorspace);
 		break;
+	case FZ_IMAGE_PSD:
+		tile = fz_load_psd(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
+		break;
 	case FZ_IMAGE_JPEG:
 		/* Scan JPEG stream and patch missing height values in header */
 		{
@@ -1272,6 +1275,8 @@ fz_recognize_image_format(fz_context *ctx, unsigned char p[8])
 	if (p[0] == 0x97 && p[1] == 'J' && p[2] == 'B' && p[3] == '2' &&
 		p[4] == '\r' && p[5] == '\n'  && p[6] == 0x1a && p[7] == '\n')
 		return FZ_IMAGE_JBIG2;
+	if (p[0] == '8' && p[1] == 'B' && p[2] == 'P' && p[3] == 'S')
+		return FZ_IMAGE_PSD;
 	return FZ_IMAGE_UNKNOWN;
 }
 
@@ -1306,6 +1311,9 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		break;
 	case FZ_IMAGE_PNG:
 		fz_load_png_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		break;
+	case FZ_IMAGE_PSD:
+		fz_load_psd_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		break;
 	case FZ_IMAGE_JXR:
 		fz_load_jxr_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
