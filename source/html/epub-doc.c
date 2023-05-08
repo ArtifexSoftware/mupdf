@@ -96,6 +96,83 @@ user_css_sum(fz_context *ctx)
 	return sum;
 }
 
+static int dummy = 1;
+
+struct encrypted {
+	fz_archive super;
+	fz_archive *chain;
+	fz_tree *info;
+};
+
+static int has_encrypted_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	struct encrypted *arch = (struct encrypted *)arch_;
+	return fz_has_archive_entry(ctx, arch->chain, name);
+}
+
+static fz_stream *open_encrypted_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	struct encrypted *arch = (struct encrypted *)arch_;
+	if (fz_tree_lookup(ctx, arch->info, name))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open encrypted data");
+	return fz_open_archive_entry(ctx, arch->chain, name);
+}
+
+static fz_buffer *read_encrypted_entry(fz_context *ctx, fz_archive *arch_, const char *name)
+{
+	struct encrypted *arch = (struct encrypted *)arch_;
+	if (fz_tree_lookup(ctx, arch->info, name))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read encrypted data");
+	return fz_read_archive_entry(ctx, arch->chain, name);
+}
+
+static void drop_encrypted_archive(fz_context *ctx, fz_archive *arch_)
+{
+	struct encrypted *arch = (struct encrypted *)arch_;
+	fz_drop_tree(ctx, arch->info, NULL);
+	fz_drop_archive(ctx, arch->chain);
+}
+
+static fz_archive *new_encrypted_archive(fz_context *ctx, fz_archive *chain, fz_tree *info)
+{
+	struct encrypted *arch;
+
+	arch = fz_new_derived_archive(ctx, NULL, struct encrypted);
+	arch->super.format = "encrypted";
+	arch->super.has_entry = has_encrypted_entry;
+	arch->super.read_entry = read_encrypted_entry;
+	arch->super.open_entry = open_encrypted_entry;
+	arch->super.drop_archive = drop_encrypted_archive;
+	arch->chain = chain;
+	arch->info = info;
+
+	return &arch->super;
+}
+
+static void
+epub_parse_encryption(fz_context *ctx, epub_document *doc, fz_xml *root)
+{
+	fz_tree *info = NULL;
+	fz_xml *edata;
+
+	for (edata = fz_xml_find_down(root, "EncryptedData"); edata; edata = fz_xml_find_next(edata, "EncryptedData"))
+	{
+		fz_xml *cdata = fz_xml_find_down(edata, "CipherData");
+		fz_xml *cref = fz_xml_find_down(cdata, "CipherReference");
+		char *uri = fz_xml_att(cref, "URI");
+		if (uri)
+		{
+			// TODO: Support reading EncryptedKey and EncryptionMethod to decrypt content.
+			info = fz_tree_insert(ctx, info, uri, &dummy);
+		}
+	}
+
+	if (info)
+	{
+		doc->zip = new_encrypted_archive(ctx, doc->zip, info);
+	}
+}
+
 static fz_html *epub_get_laid_out_html(fz_context *ctx, epub_document *doc, epub_chapter *ch);
 
 static int count_laid_out_pages(fz_html *html)
@@ -687,6 +764,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 {
 	fz_archive *zip = doc->zip;
 	fz_buffer *buf = NULL;
+	fz_xml_doc *encryption_xml = NULL;
 	fz_xml_doc *container_xml = NULL;
 	fz_xml_doc *content_opf = NULL;
 	fz_xml *container, *rootfiles, *rootfile;
@@ -698,17 +776,27 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	epub_chapter **tailp;
 	int i;
 
-	if (fz_has_archive_entry(ctx, zip, "META-INF/rights.xml"))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "EPUB is locked by DRM");
-	if (fz_has_archive_entry(ctx, zip, "META-INF/encryption.xml"))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "EPUB is locked by DRM");
-
 	fz_var(buf);
+	fz_var(encryption_xml);
 	fz_var(container_xml);
 	fz_var(content_opf);
 
 	fz_try(ctx)
 	{
+		/* parse META-INF/encryption.xml to figure out which entries are encrypted */
+		if (fz_has_archive_entry(ctx, zip, "META-INF/encryption.xml"))
+		{
+			fz_warn(ctx, "EPUB may be locked by DRM");
+
+			buf = fz_read_archive_entry(ctx, zip, "META-INF/encryption.xml");
+			encryption_xml = fz_parse_xml(ctx, buf, 0);
+			fz_drop_buffer(ctx, buf);
+			buf = NULL;
+
+			epub_parse_encryption(ctx, doc, fz_xml_find(fz_xml_root(encryption_xml), "encryption"));
+			zip = doc->zip;
+		}
+
 		/* parse META-INF/container.xml to find OPF */
 
 		buf = fz_read_archive_entry(ctx, zip, "META-INF/container.xml");
@@ -779,6 +867,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	{
 		fz_drop_xml(ctx, content_opf);
 		fz_drop_xml(ctx, container_xml);
+		fz_drop_xml(ctx, encryption_xml);
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
