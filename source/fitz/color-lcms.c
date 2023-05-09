@@ -498,6 +498,20 @@ fz_icc_transform_pixmap(fz_context *ctx, fz_icc_link *link, const fz_pixmap *src
 			else
 			{
 				cmsDoTransform(GLO link->handle, buffer, outputpos, sw);
+				if (!copy_spots)
+				{
+					/* Copy the alpha by steam */
+					unsigned char *d = outputpos + dn - 1;
+					const unsigned char *s = inputpos + sn -1;
+					int w = sw;
+
+					while (w--)
+					{
+						*d = *s;
+						d += dn;
+						s += sn;
+					}
+				}
 				if (mult == 1)
 					fz_premultiply_row_0or1(ctx, dn, dc, dw, outputpos);
 				else if (mult == 2)
