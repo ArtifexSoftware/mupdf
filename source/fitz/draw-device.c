@@ -1704,7 +1704,7 @@ convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *m
 {
 	fz_pixmap *converted;
 
-	if (fz_colorspace_is_device_n(ctx, src_cs) && dest->seps)
+	if ((fz_colorspace_is_device_n(ctx, src_cs) && dest->seps) || fz_compare_separations(ctx, pixmap->seps, dest->seps))
 	{
 		converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, dest->seps, color_params, dev->default_cs);
 		*eop = set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
@@ -1828,7 +1828,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, fz_matrix 
 
 	fz_try(ctx)
 	{
-		int conversion_required = (src_cs != model || state->dest->seps);
+		int conversion_required = (src_cs != model || fz_compare_separations(ctx, state->dest->seps, pixmap->seps));
 
 		if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 			state = fz_knockout_begin(ctx, dev);

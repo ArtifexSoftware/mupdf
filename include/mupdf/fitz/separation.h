@@ -108,6 +108,14 @@ int fz_count_separations(fz_context *ctx, const fz_separations *sep);
 int fz_count_active_separations(fz_context *ctx, const fz_separations *seps);
 
 /**
+	Compare 2 separations structures (or NULLs).
+
+	Return 0 if identical, non-zero if not identical.
+*/
+int fz_compare_separations(fz_context *ctx, const fz_separations *sep1, const fz_separations *sep2);
+
+
+/**
 	Return a separations object with all the spots in the input
 	separations object that are set to composite, reset to be
 	enabled. If there ARE no spots in the object, this returns
