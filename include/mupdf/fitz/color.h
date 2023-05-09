@@ -255,6 +255,18 @@ int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs);
 int fz_is_valid_blend_colorspace(fz_context *ctx, fz_colorspace *cs);
 
 /**
+	Get the 'base' colorspace for a colorspace.
+
+	For indexed colorspaces, this is the colorspace the index
+	decodes into. For all other colorspaces, it is the colorspace
+	itself.
+
+	The returned colorspace is 'borrowed' (i.e. no additional
+	references are taken or dropped).
+*/
+fz_colorspace *fz_base_colorspace(fz_context *ctx, fz_colorspace *cs);
+
+/**
 	Retrieve global default colorspaces.
 
 	These return borrowed references that should not be dropped,

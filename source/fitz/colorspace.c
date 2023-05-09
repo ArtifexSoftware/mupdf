@@ -281,6 +281,15 @@ int fz_is_valid_blend_colorspace(fz_context *ctx, fz_colorspace *cs)
 		cs->type == FZ_COLORSPACE_CMYK;
 }
 
+fz_colorspace *fz_base_colorspace(fz_context *ctx, fz_colorspace *cs)
+{
+	if (cs == NULL)
+		return NULL;
+	if (cs->type == FZ_COLORSPACE_INDEXED)
+		return cs->u.indexed.base;
+	return cs;
+}
+
 fz_colorspace *
 fz_keep_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
