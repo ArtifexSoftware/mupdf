@@ -421,7 +421,13 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 		/* gray counts as a CMYK with CMY = 0 */
 	}
 	else if (!fz_colorspace_is_subtractive(ctx, src))
-		return NULL;
+	{
+		/* The source pixmap was not in a subtractive space, so we can't
+		 * base overprint decisions on that. But we know we've converted
+		 * to a subtractive destination, so we can base overprint
+		 * decisions on what we ended up with. */
+		src = dest->colorspace;
+	}
 
 	sn = fz_colorspace_n(ctx, src);
 	dn = dest->n - dest->alpha;
