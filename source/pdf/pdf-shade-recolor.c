@@ -154,7 +154,7 @@ fz_recolor_shade_type1(fz_context *ctx, pdf_obj *shade, pdf_function **func, rec
 				v -= range[2 * i];
 				if (d != 0)
 					v = v * ((1<<FUNBPS)-1) / d;
-				iv = (int)(v + 0.5);
+				iv = (int)(v + 0.5f);
 				fz_write_bits(ctx, output, iv, FUNBPS);
 			}
 			p += n_out;
@@ -258,7 +258,7 @@ fz_recolor_shade_function(fz_context *ctx, pdf_obj *shade, float samples[256][FZ
 				v -= range[2 * i];
 				if (d != 0)
 					v = v * ((1<<FUNBPS)-1) / d;
-				iv = (int)(v + 0.5);
+				iv = (int)(v + 0.5f);
 				fz_write_bits(ctx, output, iv, FUNBPS);
 			}
 			q += n_out;

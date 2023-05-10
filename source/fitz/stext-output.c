@@ -298,7 +298,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 		if (line->first_char)
 		{
 			h = line->first_char->size;
-			y = line->first_char->origin.y - h * 0.8;
+			y = line->first_char->origin.y - h * 0.8f;
 		}
 
 		fz_write_printf(ctx, out, "<p style=\"top:%.1fpt;left:%.1fpt;line-height:%.1fpt\">", y, x, h);

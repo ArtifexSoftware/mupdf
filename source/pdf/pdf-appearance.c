@@ -2837,12 +2837,12 @@ pdf_signature_appearance_signed(fz_context *ctx, fz_rect rect, fz_text_language 
 			float img_aspect = (float) img->w / img->h;
 			float rectw = prect.x1 - prect.x0;
 			float recth = prect.y1 - prect.y0;
-			float midx = (prect.x0 + prect.x1) / 2.0;
-			float midy = (prect.y0 + prect.y1) / 2.0;
+			float midx = (prect.x0 + prect.x1) / 2.0f;
+			float midy = (prect.y0 + prect.y1) / 2.0f;
 			float rect_aspect = rectw / recth;
 			float scale = img_aspect > rect_aspect ? rectw / img->w : recth / img->h;
 			fz_matrix ctm = fz_pre_translate(fz_pre_scale(fz_translate(midx, midy), scale * img->w, scale * img->h), -0.5, -0.5);
-			fz_fill_image(ctx, dev, img, ctm, 1.0, fz_default_color_params);
+			fz_fill_image(ctx, dev, img, ctm, 1.0f, fz_default_color_params);
 		}
 
 		if (left_text)
@@ -2912,7 +2912,7 @@ pdf_signature_appearance_unsigned(fz_context *ctx, fz_rect rect, fz_text_languag
 		/* Draw a rectangle with a protusion to the right [xxxxx> */
 		fz_moveto(ctx, path, rect.x0, rect.y0);
 		fz_lineto(ctx, path, rect.x1, rect.y0);
-		fz_lineto(ctx, path, rect.x1 + (rect.y1 - rect.y0) / 2.0, (rect.y0 + rect.y1) / 2.0);
+		fz_lineto(ctx, path, rect.x1 + (rect.y1 - rect.y0) / 2.0f, (rect.y0 + rect.y1) / 2.0f);
 		fz_lineto(ctx, path, rect.x1, rect.y1);
 		fz_lineto(ctx, path, rect.x0, rect.y1);
 		fz_closepath(ctx, path);

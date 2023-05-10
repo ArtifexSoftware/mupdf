@@ -249,7 +249,7 @@ static float sRGB_from_scRGB(float x)
 {
 	if (x < 0.0031308f)
 		return 12.92f * x;
-	return 1.055f * pow(x, 1/2.4f) - 0.055f;
+	return 1.055f * powf(x, 1/2.4f) - 0.055f;
 }
 
 void

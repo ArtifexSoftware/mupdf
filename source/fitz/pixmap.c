@@ -1130,7 +1130,7 @@ fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
 	int k, x, y;
 
 	for (k = 0; k < 256; k++)
-		gamma_map[k] = pow(k / 255.0f, gamma) * 255;
+		gamma_map[k] = powf(k / 255.0f, gamma) * 255;
 
 	for (y = 0; y < pix->h; y++)
 	{
