@@ -321,12 +321,12 @@ vec_dot(const fz_point *a, const fz_point *b)
 }
 
 static void
-prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
+prepend_line_if_possible(fz_context *ctx, fz_stext_page *page, fz_stext_block *cur_block, fz_matrix trm, fz_font *font, float size, int c, fz_point *pen, int color, int no_space)
 {
 	fz_stext_line *cur_line;
 	fz_stext_line *line;
 	fz_point ndir;
-	float size;
+	float cur_size;
 	fz_point p;
 	fz_point delta;
 	float spacing, perp;
@@ -346,10 +346,10 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 		return;
 
 	ndir = cur_line->dir;
-	size = cur_line->last_char->size;
+	cur_size = cur_line->last_char->size;
 	p = line->first_char->origin;
-	delta.x = p.x - q.x;
-	delta.y = p.y - q.y;
+	delta.x = p.x - pen->x;
+	delta.y = p.y - pen->y;
 
 	spacing = ndir.x * delta.x + ndir.y * delta.y;
 	perp = ndir.x * delta.y - ndir.y * delta.x;
@@ -363,6 +363,14 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 	/* If cur_line is not pretty much in line with line, can't prepend it. */
 	if (fabsf(perp) >= size * BASE_MAX_DIST)
 		return;
+
+	/* So we can prepend. Do we need to add a space? Match the sizing logic
+	 * that would happend with normal character addition. */
+	if (spacing >= cur_size * SPACE_DIST && cur_line->last_char->c != ' ' && cur_line->wmode == 0 && !no_space)
+	{
+		/* We need to add a space onto the end of the prepended line. */
+		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', pen, &p, color);
+	}
 
 	/* cur_line plausibly finishes at the start of line. */
 	/* Move all the chars from cur_line onto the start of line */
@@ -564,7 +572,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		/* We are about to start a new line. This means we've finished with this
 		 * one. Can this be prepended to a previous line in this block? */
 		/* dev->pen records the previous stopping point - so where cur_line ends. */
-		prepend_line_if_possible(ctx, cur_block, dev->pen);
+		prepend_line_if_possible(ctx, page, cur_block, trm, font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
 	}
 
 	/* Start a new line */
@@ -591,8 +599,10 @@ flush_text(fz_context *ctx, fz_stext_device *dev)
 {
 	fz_stext_page *page = dev->page;
 
+	float size = fz_matrix_expansion(dev->trm);
+
 	/* Find current position to enter new text. */
-	prepend_line_if_possible(ctx, page->last_block, dev->pen);
+	prepend_line_if_possible(ctx, page, page->last_block, dev->trm, dev->lasttext->tail->font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
 }
 
 static void
