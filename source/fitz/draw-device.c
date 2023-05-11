@@ -2641,6 +2641,12 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, fz_rect area, fz_rect view,
 	 *	bbox.y0 > state->dest->y || bbox.y1 < state->dest->y + state->dest->h);
 	 */
 
+	/* A BBox of zero height or width should still paint one pixel! */
+	if (bbox.x1 == bbox.x0)
+		bbox.x1 = bbox.x0 + 1;
+	if (bbox.y1 == bbox.y0)
+		bbox.y1 = bbox.y0 + 1;
+
 	/* Check to see if we have one cached */
 	if (id)
 	{
