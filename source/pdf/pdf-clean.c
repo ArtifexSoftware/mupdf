@@ -597,7 +597,7 @@ pdf_redact_image_imp(fz_context *ctx, fz_matrix ctm, fz_image *image, fz_pixmap 
 	 * image. We might have just a small section of the image
 	 * being covered, and setting the whole thing to white
 	 * will blank stuff outside the desired area. */
-	if (mask && (pixmap->w > 1 || pixmap->h > 1))
+	if (!mask || pixmap->w > 1 || pixmap->h > 1)
 	{
 		n = pixmap->n - pixmap->alpha;
 		bpp = pixmap->n;
