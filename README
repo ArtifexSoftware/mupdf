@@ -9,7 +9,7 @@ Build instructions can be found in docs/building.html.
 
 LICENSE
 
-MuPDF is Copyright (c) 2006-2022 Artifex Software, Inc.
+MuPDF is Copyright (c) 2006-2023 Artifex Software, Inc.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
@@ -23,12 +23,13 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 
-For commercial licensing, including our "Indie Dev" friendly options,
-please contact sales@artifex.com.
+For commercial licensing please contact sales@artifex.com.
 
 REPORTING BUGS AND PROBLEMS
 
-The MuPDF developers hang out on IRC in the #mupdf channel on Libera.Chat.
+The MuPDF developers hang out on Discord.
+
+	https://discord.gg/KTzD4BEzqh
 
 Report bugs on the ghostscript bugzilla, with MuPDF as the selected component.
 

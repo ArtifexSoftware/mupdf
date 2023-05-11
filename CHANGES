@@ -1,3 +1,12 @@
+List of changes in MuPDF 1.22.1
+
+	This is a bug fix release only.
+
+	Unfortunately a bug slipped into the 1.22.0 release that affects redactions.
+	A mistake in a bugfix meant that we failed to correctly redact some images.
+
+	If you use MuPDF for redactions, it is imperative that you upgrade!
+
 List of changes in MuPDF 1.22.0
 
 	New command line "mutool recolor" to change colorspace of PDF files.
