@@ -86,6 +86,7 @@ void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float 
 #define PARAGRAPH_DIST 1.5f
 #define SPACE_DIST 0.15f
 #define SPACE_MAX_DIST 0.8f
+#define BASE_MAX_DIST 0.8f
 
 typedef struct
 {
@@ -328,7 +329,7 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 	float size;
 	fz_point p;
 	fz_point delta;
-	float spacing;
+	float spacing, perp;
 
 	if (cur_block == NULL || cur_block->type != FZ_STEXT_BLOCK_TEXT)
 		return;
@@ -351,8 +352,16 @@ prepend_line_if_possible(fz_context *ctx, fz_stext_block *cur_block, fz_point q)
 	delta.y = p.y - q.y;
 
 	spacing = ndir.x * delta.x + ndir.y * delta.y;
+	perp = ndir.x * delta.y - ndir.y * delta.x;
 
-	if (fabsf(spacing) >= size * SPACE_MAX_DIST)
+	/* If cur_line overlaps line by more than a small amount, can't prepend it. */
+	if (spacing < -size * SPACE_DIST)
+		return;
+	/* If cur_line is a long way behind line, can't prepend it. */
+	if (spacing >= size * SPACE_MAX_DIST)
+		return;
+	/* If cur_line is not pretty much in line with line, can't prepend it. */
+	if (fabsf(perp) >= size * BASE_MAX_DIST)
 		return;
 
 	/* cur_line plausibly finishes at the start of line. */
@@ -477,7 +486,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		base_offset = -ndir.y * delta.x + ndir.x * delta.y;
 
 		/* Only a small amount off the baseline - we'll take this */
-		if (fabsf(base_offset) < size * 0.8f)
+		if (fabsf(base_offset) < size * BASE_MAX_DIST)
 		{
 			/* LTR or neutral character */
 			if (dev->curdir >= 0)
