@@ -581,7 +581,8 @@ fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *out)
 	}
 	else if (cs->type == FZ_COLORSPACE_INDEXED)
 	{
-		out[0] = fz_clamp(in[0], 0, cs->u.indexed.high) / 255.0f;
+		/* round color index to integer before rescaling to hival */
+		out[0] = fz_clamp((int)(in[0]+0.5), 0, cs->u.indexed.high) / 255.0f;
 	}
 	else
 	{
