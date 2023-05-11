@@ -74,6 +74,9 @@ struct pdf_gstate
 	pdf_material stroke;
 	pdf_material fill;
 
+	/* pattern paint type 2 */
+	int ismask;
+
 	/* text state */
 	pdf_text_state text;
 
@@ -463,6 +466,8 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int p
 
 	if (pat->ismask)
 	{
+		/* Inhibit any changes to the color since we're drawing an uncolored pattern. */
+		gstate->ismask = 1;
 		pdf_unset_pattern(ctx, pr, PDF_FILL);
 		pdf_unset_pattern(ctx, pr, PDF_STROKE);
 		if (what == PDF_FILL)
@@ -1213,6 +1218,8 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, fz_matrix ctm)
 
 	gs->fill.color_params = fz_default_color_params;
 	gs->stroke.color_params = fz_default_color_params;
+
+	gs->ismask = 0;
 }
 
 static void
@@ -1235,6 +1242,10 @@ pdf_set_colorspace(fz_context *ctx, pdf_run_processor *pr, int what, fz_colorspa
 	int n = fz_colorspace_n(ctx, colorspace);
 
 	gstate = pdf_flush_text(ctx, pr);
+
+	/* Don't change color if we're drawing an uncolored pattern tile! */
+	if (gstate->ismask)
+		return;
 
 	mat = what == PDF_FILL ? &gstate->fill : &gstate->stroke;
 
@@ -1263,6 +1274,10 @@ pdf_set_color(fz_context *ctx, pdf_run_processor *pr, int what, float *v)
 	pdf_material *mat;
 
 	gstate = pdf_flush_text(ctx, pr);
+
+	/* Don't change color if we're drawing an uncolored pattern tile! */
+	if (gstate->ismask)
+		return;
 
 	mat = what == PDF_FILL ? &gstate->fill : &gstate->stroke;
 
