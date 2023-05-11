@@ -1665,6 +1665,9 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	fz_structure standard;
 	pdf_obj *mc_dict = NULL;
 
+	/* Flush any pending text so it's not in the wrong layer. */
+	pdf_flush_text(ctx, proc);
+
 	if (!tagstr)
 		tagstr = "Untitled";
 	tag = pdf_new_name(ctx, tagstr);
@@ -1751,6 +1754,9 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 		pdf_drop_obj(ctx, val);
 		return;
 	}
+
+	/* Make sure that any pending text is written into the correct layer. */
+	pdf_flush_text(ctx, proc);
 
 	/* Close structure/layers here, in reverse order to how we opened them. */
 	fz_try(ctx)
