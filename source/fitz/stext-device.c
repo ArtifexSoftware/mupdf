@@ -602,7 +602,8 @@ flush_text(fz_context *ctx, fz_stext_device *dev)
 	float size = fz_matrix_expansion(dev->trm);
 
 	/* Find current position to enter new text. */
-	prepend_line_if_possible(ctx, page, page->last_block, dev->trm, dev->lasttext->tail->font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
+	if (dev->lasttext && dev->lasttext->tail)
+		prepend_line_if_possible(ctx, page, page->last_block, dev->trm, dev->lasttext->tail->font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
 }
 
 static void
