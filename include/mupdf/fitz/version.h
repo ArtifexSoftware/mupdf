@@ -26,6 +26,6 @@
 #define FZ_VERSION "1.22.1"
 #define FZ_VERSION_MAJOR 1
 #define FZ_VERSION_MINOR 22
-#define FZ_VERSION_PATCH 1
+#define FZ_VERSION_PATCH 2
 #endif
 #endif
