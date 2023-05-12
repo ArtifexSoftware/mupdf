@@ -781,7 +781,7 @@ read_container_and_prefix(fz_context *ctx, fz_archive *zip, char *prefix, size_t
 	{
 		const char *p = fz_list_archive_entry(ctx, zip, i);
 		size_t z = strlen(p);
-		const char z0 = sizeof("META-INF/container.xml")-1;
+		size_t z0 = sizeof("META-INF/container.xml")-1;
 
 		if (z < z0)
 			continue;
