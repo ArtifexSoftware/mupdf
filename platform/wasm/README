@@ -1,0 +1,43 @@
+# MuPDF WASM Library
+
+This is a build of MuPDF targeting WASM environments.
+The MuPDF WASM Library can be used both in browsers and in Node.
+
+The way to use it is via a Javascript module.
+
+The WASM library is very similar in design and use to the Java library.
+The same classes and methods can be used in the same way - but there are also
+a few conveniences available here thanks to the dynamic nature of Javascript
+that are not available in the Java API.
+
+## Building
+
+The WebAssembly build has only been tested on Linux at the moment. If you use
+any other platform, you are on your own.
+
+In order to build this you will need to install the Emscripten SDK in
+/opt/emsdk. If you install it elsewhere, you will need to edit the build.sh
+script to point to the appropriate location.
+
+        https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
+
+From the mupdf platform/wasm directory, you can run build.sh to build the WebAssembly
+library. The results of the build are a mupdf-wasm.wasm binary and
+mupdf-wasm.js script, placed in the "bin/" directory.
+
+The mupdf-wasm.wasm binary is quite large, because it contains not only the
+MuPDF library code, but also the 14 core PDF fonts, various CJK mapping
+resources, and ICC profiles. In order to keep it as small as possible, it is
+built with a minimal features set that does not include CJK fonts, EPUB
+support, etc.
+
+In lib/mupdf.js is a module that provides a usable Javascript API on top of
+this WASM binary. This library works both in "node" and in browsers.
+
+## Examples
+
+The example web application in viewer/mupdf-view.html shows how to use the MuPDF
+WASM library to create a PDF viewer that runs in the browser.
+
+Another example is examples/mutool.js which re-implements some of the usual
+mutool commands. This script can be run from the command line using Node.
