@@ -33,6 +33,7 @@
 
 static int x_factor = 0;
 static int y_factor = 0;
+static int x_dir = 1;
 
 static int usage(void)
 {
@@ -40,7 +41,9 @@ static int usage(void)
 		"usage: mutool poster [options] input.pdf [output.pdf]\n"
 		"\t-p -\tpassword\n"
 		"\t-x\tx decimation factor\n"
-		"\t-y\ty decimation factor\n");
+		"\t-y\ty decimation factor\n"
+		"\t-r\tsplit right-to-left\n"
+		);
 	return 1;
 }
 
@@ -147,7 +150,9 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 
 		for (y = yf-1; y >= 0; y--)
 		{
-			for (x = 0; x < xf; x++)
+			int x0 = (x_dir > 0) ? 0 : xf-1;
+			int x1 = (x_dir > 0) ? xf : -1;
+			for (x = x0; x != x1; x += x_dir)
 			{
 				pdf_obj *newpageobj, *newpageref, *newmediabox;
 				fz_rect mb;
@@ -207,13 +212,14 @@ int pdfposter_main(int argc, char **argv)
 	fz_context *ctx;
 	int ret = 0;
 
-	while ((c = fz_getopt(argc, argv, "x:y:p:")) != -1)
+	while ((c = fz_getopt(argc, argv, "x:y:p:r")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'x': x_factor = atoi(fz_optarg); break;
 		case 'y': y_factor = atoi(fz_optarg); break;
+		case 'r': x_dir = -1; break;
 		default: return usage();
 		}
 	}
