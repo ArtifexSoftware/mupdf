@@ -83,19 +83,19 @@ ifeq ($(build),debug)
   CFLAGS += -pipe -g
   LDFLAGS += -g
 else ifeq ($(build),release)
-  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
+  CFLAGS += -pipe -O2 -DNDEBUG
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),small)
-  CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
+  CFLAGS += -pipe -Os -DNDEBUG
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),valgrind)
-  CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND -fno-omit-frame-pointer
+  CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),sanitize)
-  CFLAGS += -pipe -g -fno-omit-frame-pointer $(SANITIZE_FLAGS)
+  CFLAGS += -pipe -g $(SANITIZE_FLAGS)
   LDFLAGS += -g $(SANITIZE_FLAGS)
 else ifeq ($(build),sanitize-release)
-  CFLAGS += -pipe -O2 -DNDEBUG -fno-omit-frame-pointer $(SANITIZE_FLAGS)
+  CFLAGS += -pipe -O2 -DNDEBUG $(SANITIZE_FLAGS)
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s $(SANITIZE_FLAGS)
 else ifeq ($(build),profile)
   CFLAGS += -pipe -O2 -DNDEBUG -pg
@@ -104,7 +104,7 @@ else ifeq ($(build),coverage)
   CFLAGS += -pipe -g -pg -fprofile-arcs -ftest-coverage
   LIBS += -lgcov
 else ifeq ($(build),native)
-  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native
+  CFLAGS += -pipe -O2 -DNDEBUG -march=native
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq ($(build),memento)
   CFLAGS += -pipe -g -DMEMENTO -DMEMENTO_MUPDF_HACKS
@@ -118,7 +118,7 @@ else ifeq ($(build),memento)
     endif
   endif
 else ifeq ($(build),gperf)
-  CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -DGPERF
+  CFLAGS += -pipe -O2 -DNDEBUG -DGPERF
   LIBS += -lprofiler
 else
   $(error unknown build setting: '$(build)')
