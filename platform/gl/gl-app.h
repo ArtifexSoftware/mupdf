@@ -290,6 +290,7 @@ void ui_draw_ibevel_rect(fz_irect area, unsigned int fill, int depressed);
 /* App */
 
 extern fz_context *ctx;
+extern fz_colorspace *profile;
 extern pdf_document *pdf;
 extern pdf_page *page;
 extern fz_stext_page *page_text;

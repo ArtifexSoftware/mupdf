@@ -48,6 +48,8 @@ Command Line Options
 
    `-p` password
       The password needed to open a password protected :title:`PDF` file.
+   `-c` profile.cc
+      Load an ICC profile to use for display (default is sRGB).
    `-r` resolution
       Set the initial zoom level, specified as DPI. The default value is `72`.
    `-W` width

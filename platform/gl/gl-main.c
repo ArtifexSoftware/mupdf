@@ -60,6 +60,7 @@ void glutLeaveMainLoop(void)
 #endif
 
 fz_context *ctx = NULL;
+fz_colorspace *profile = NULL;
 pdf_document *pdf = NULL;
 pdf_page *page = NULL;
 fz_stext_page *page_text = NULL;
@@ -1052,7 +1053,7 @@ static void render_page(void)
 		page_contents = NULL;
 
 		bbox = fz_round_rect(fz_transform_rect(fz_bound_page(ctx, fzpage), draw_page_ctm));
-		page_contents = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), bbox, seps, 0);
+		page_contents = fz_new_pixmap_with_bbox(ctx, profile, bbox, seps, 0);
 		fz_clear_pixmap(ctx, page_contents);
 
 		dev = fz_new_draw_device(ctx, draw_page_ctm, page_contents);
@@ -1068,7 +1069,7 @@ static void render_page(void)
 			fz_rethrow(ctx);
 	}
 
-	pix = fz_clone_pixmap_area_with_different_seps(ctx, page_contents, NULL, fz_device_rgb(ctx), NULL, fz_default_color_params, NULL);
+	pix = fz_clone_pixmap_area_with_different_seps(ctx, page_contents, NULL, profile, NULL, fz_default_color_params, NULL);
 	{
 		dev = fz_new_draw_device(ctx, draw_page_ctm, pix);
 		fz_try(ctx)
@@ -2983,6 +2984,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "usage: %s [options] document [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-c -\tdisplay ICC profile\n");
 	fprintf(stderr, "\t-I\tinvert colors\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
@@ -3076,6 +3078,7 @@ int main(int argc, char **argv)
 #endif
 {
 	const char *trace_file_name = NULL;
+	const char *profile_name = NULL;
 	float scale = 0;
 	int c;
 
@@ -3093,13 +3096,14 @@ int main(int argc, char **argv)
 
 	glutInit(&argc, argv);
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:T:Y:R:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:T:Y:R:c:")) != -1)
 	{
 		switch (c)
 		{
 		default: usage(argv[0]); break;
 		case 'p': password = fz_optarg; break;
 		case 'r': currentzoom = fz_atof(fz_optarg); break;
+		case 'c': profile_name = fz_optarg; break;
 		case 'I': currentinvert = !currentinvert; break;
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
@@ -3147,6 +3151,17 @@ int main(int argc, char **argv)
 		trace_action("	err.name = 'RegressionError';\n");
 		trace_action("	return err;\n");
 		trace_action("}\n");
+	}
+
+	if (profile_name)
+	{
+		fz_buffer *profile_data = fz_read_file(ctx, profile_name);
+		profile = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_RGB, 0, NULL, profile_data);
+		fz_drop_buffer(ctx, profile_data);
+	}
+	else
+	{
+		profile = fz_device_rgb(ctx);
 	}
 
 	if (layout_css)
