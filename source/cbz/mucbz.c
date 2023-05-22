@@ -305,6 +305,50 @@ static const char *cbz_mimetypes[] =
 	NULL
 };
 
+static int
+cbz_recognize_doc_content(fz_context *ctx, fz_stream *stream)
+{
+	fz_archive *arch = NULL;
+	int ret = 0;
+	int i, k, count;
+
+	fz_var(arch);
+	fz_var(ret);
+
+	fz_try(ctx)
+	{
+		arch = fz_try_open_archive_with_stream(ctx, stream);
+		if (arch == NULL)
+			break;
+
+		/* If it's an archive, and we can find at least one plausible page
+		 * then we can open it as a cbz. */
+		count = fz_count_archive_entries(ctx, arch);
+		for (i = 0; i < count && ret == 0; i++)
+		{
+			const char *name = fz_list_archive_entry(ctx, arch, i);
+			const char *ext = name ? strrchr(name, '.') : NULL;
+			if (ext)
+			{
+				for (k = 0; cbz_ext_list[k]; k++)
+				{
+					if (!fz_strcasecmp(ext, cbz_ext_list[k]))
+					{
+						ret = 25;
+						break;
+					}
+				}
+			}
+		}
+	}
+	fz_always(ctx)
+		fz_drop_archive(ctx, arch);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ret;
+}
+
 fz_document_handler cbz_document_handler =
 {
 	NULL,
@@ -313,5 +357,6 @@ fz_document_handler cbz_document_handler =
 	cbz_extensions,
 	cbz_mimetypes,
 	NULL,
-	NULL
+	NULL,
+	cbz_recognize_doc_content
 };

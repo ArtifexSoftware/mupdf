@@ -267,6 +267,52 @@ static const char *svg_mimetypes[] =
 	NULL
 };
 
+static int
+svg_recognize_doc_content(fz_context *ctx, fz_stream *stream)
+{
+	int c;
+	int n = 0;
+	const char *match = "svg";
+	int pos = 0;
+
+	/* Is the first non-whitespace char '<' ? */
+	do
+	{
+		c = fz_read_byte(ctx, stream);
+		if (c == EOF)
+			return 0;
+		if (c == '<')
+			break;
+		if (c != ' ' && c != '\t' && c != '\n' && c != '\r')
+			return 0;
+	}
+	while (++n < 4096);
+
+	/* Then do we find 'svg' in the first 4k? */
+	do
+	{
+		c = fz_read_byte(ctx, stream);
+		if (c == EOF)
+			return 0;
+		if (c >= 'A' && c <= 'Z')
+			c += 'a' - 'A';
+		if (c == match[pos])
+		{
+			pos++;
+			if (pos == 3)
+				return 100;
+		}
+		else
+		{
+			/* Restart matching, but recheck c against the start. */
+			pos = (c == match[0]);
+		}
+	}
+	while (++n < 4096);
+
+	return 0;
+}
+
 fz_document_handler svg_document_handler =
 {
 	NULL,
@@ -275,5 +321,6 @@ fz_document_handler svg_document_handler =
 	svg_extensions,
 	svg_mimetypes,
 	NULL,
-	NULL
+	NULL,
+	svg_recognize_doc_content
 };

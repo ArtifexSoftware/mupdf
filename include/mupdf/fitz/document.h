@@ -360,6 +360,17 @@ typedef fz_document *(fz_document_open_accel_with_stream_fn)(fz_context *ctx, fz
 typedef int (fz_document_recognize_fn)(fz_context *ctx, const char *magic);
 
 /**
+	Recognize a document type from stream contents.
+
+	stream: stream contents to recognise.
+
+	Returns a number between 0 (not recognized) and 100
+	(fully recognized) based on how certain the recognizer
+	is that this is of the required type.
+*/
+typedef int (fz_document_recognize_content_fn)(fz_context *ctx, fz_stream *stream);
+
+/**
 	Type for a function to be called when processing an already opened page.
 	See fz_process_opened_pages.
 */
@@ -387,6 +398,26 @@ void fz_register_document_handlers(fz_context *ctx);
 	a mimetype.
 */
 const fz_document_handler *fz_recognize_document(fz_context *ctx, const char *magic);
+
+/**
+	Given a filename find a document handler that can handle a
+	document of this type.
+
+	filename: The filename of the document. This will be opened and sampled
+	to check data.
+*/
+const fz_document_handler *fz_recognize_document_content(fz_context *ctx, const char *filename);
+
+/**
+	Given a magic find a document handler that can handle a
+	document of this type.
+
+	stream: the file stream to sample.
+
+	magic: Can be a filename extension (including initial period) or
+	a mimetype.
+*/
+const fz_document_handler *fz_recognize_document_stream_content(fz_context *ctx, fz_stream *stream, const char *magic);
 
 /**
 	Open a document file and read its basic structure so pages and
@@ -954,6 +985,7 @@ struct fz_document_handler
 	const char **mimetypes;
 	fz_document_open_accel_fn *open_accel;
 	fz_document_open_accel_with_stream_fn *open_accel_with_stream;
+	fz_document_recognize_content_fn *recognize_content;
 };
 
 #endif

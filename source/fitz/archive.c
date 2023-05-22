@@ -135,7 +135,7 @@ fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size)
 }
 
 fz_archive *
-fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
+fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_archive *arch = NULL;
 
@@ -143,7 +143,16 @@ fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 		arch = fz_open_zip_archive_with_stream(ctx, file);
 	else if (fz_is_tar_archive(ctx, file))
 		arch = fz_open_tar_archive_with_stream(ctx, file);
-	else
+
+	return arch;
+}
+
+fz_archive *
+fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
+{
+	fz_archive *arch = fz_try_open_archive_with_stream(ctx, file);
+
+	if (arch == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize archive");
 
 	return arch;

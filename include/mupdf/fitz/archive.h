@@ -63,6 +63,15 @@ fz_archive *fz_open_archive(fz_context *ctx, const char *filename);
 fz_archive *fz_open_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /**
+	Open zip or tar archive stream.
+
+	Does the same as fz_open_archive_with_stream, but will not throw
+	an error in the event of failing to recognise the format. Will
+	still throw errors in other cases though!
+*/
+fz_archive *fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file);
+
+/**
 	Open a directory as if it was an archive.
 
 	A special case where a directory is opened as if it was an
