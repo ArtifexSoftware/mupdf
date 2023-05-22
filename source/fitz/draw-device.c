@@ -1184,14 +1184,16 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 			else
 			{
 				fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
-				if (path)
-				{
-					fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, colorspace, color, alpha, color_params);
-					fz_drop_path(ctx, path);
-				}
+				if (!path)
+					fz_warn(ctx, "cannot render glyph");
 				else
 				{
-					fz_warn(ctx, "cannot render glyph");
+					fz_try(ctx)
+						fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, colorspace, color, alpha, color_params);
+					fz_always(ctx)
+						fz_drop_path(ctx, path);
+					fz_catch(ctx)
+						fz_rethrow(ctx);
 				}
 			}
 		}
