@@ -4111,6 +4111,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_endOperation
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    abandonOperation
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_abandonOperation
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    getLanguage
  * Signature: ()I
  */

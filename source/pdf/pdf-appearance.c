@@ -3252,16 +3252,17 @@ retry_after_repair:
 		}
 
 		pdf_clean_obj(ctx, annot->obj);
+		pdf_end_operation(ctx, annot->page->doc);
 	}
 	fz_always(ctx)
 	{
 		if (pop_local_xref)
 			pdf_annot_pop_local_xref(ctx, annot);
 		fz_end_throw_on_repair(ctx);
-		pdf_end_operation(ctx, annot->page->doc);
 	}
 	fz_catch(ctx)
 	{
+		pdf_abandon_operation(ctx, annot->page->doc);
 		/* If we hit a repair while synthesising, we need to give it another
 		 * go. Do that directly here, rather than waiting for the next time
 		 * we are called, because we don't want to risk discarding any

@@ -3249,11 +3249,15 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in
 	{
 		pdf_begin_operation(ctx, doc, "Clean content streams");
 		fz_try(ctx)
+		{
 			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii);
-		fz_always(ctx)
 			pdf_end_operation(ctx, doc);
+		}
 		fz_catch(ctx)
+		{
+			pdf_abandon_operation(ctx, doc);
 			fz_rethrow(ctx);
+		}
 	}
 
 	/* When saving a PDF with signatures the file will

@@ -356,6 +356,10 @@ void pdf_begin_implicit_operation(fz_context *ctx, pdf_document *doc);
 /* Call this to end an operation. */
 void pdf_end_operation(fz_context *ctx, pdf_document *doc);
 
+/* Call this to abandon an operation. Revert to the state
+ * when you began. */
+void pdf_abandon_operation(fz_context *ctx, pdf_document *doc);
+
 /* Call this to find out how many undo/redo steps there are, and the
  * current position we are within those. 0 = original document,
  * *steps = final edited version. */

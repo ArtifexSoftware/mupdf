@@ -6765,6 +6765,16 @@ static void ffi_PDFDocument_endOperation(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_abandonOperation(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_abandon_operation(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_canUndo(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9877,6 +9887,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.beginOperation", ffi_PDFDocument_beginOperation, 1);
 		jsB_propfun(J, "PDFDocument.beginImplicitOperation", ffi_PDFDocument_beginImplicitOperation, 0);
 		jsB_propfun(J, "PDFDocument.endOperation", ffi_PDFDocument_endOperation, 0);
+		jsB_propfun(J, "PDFDocument.abandonOperation", ffi_PDFDocument_abandonOperation, 0);
 		jsB_propfun(J, "PDFDocument.canUndo", ffi_PDFDocument_canUndo, 0);
 		jsB_propfun(J, "PDFDocument.canRedo", ffi_PDFDocument_canRedo, 0);
 		jsB_propfun(J, "PDFDocument.undo", ffi_PDFDocument_undo, 0);

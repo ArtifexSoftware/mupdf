@@ -2967,11 +2967,13 @@ pdf_set_metadata(fz_context *ctx, pdf_document *doc, const char *key, const char
 		if (!strncmp(key, FZ_META_INFO, strlen(FZ_META_INFO)))
 			key += strlen(FZ_META_INFO);
 		pdf_dict_put_text_string(ctx, info, pdf_new_name(ctx, key), value);
-	}
-	fz_always(ctx)
 		pdf_end_operation(ctx, doc);
+	}
 	fz_catch(ctx)
+	{
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
+	}
 }
 
 static fz_link_dest

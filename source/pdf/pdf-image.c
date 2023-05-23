@@ -830,6 +830,7 @@ unknown_compression:
 		}
 
 		pdf_update_stream(ctx, doc, imobj, buffer, 1);
+		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
 	{
@@ -837,10 +838,10 @@ unknown_compression:
 		fz_drop_pixmap(ctx, smask_pixmap);
 		fz_drop_pixmap(ctx, pixmap);
 		fz_drop_buffer(ctx, buffer);
-		pdf_end_operation(ctx, doc);
 	}
 	fz_catch(ctx)
 	{
+		pdf_abandon_operation(ctx, doc);
 		pdf_drop_obj(ctx, imobj);
 		fz_rethrow(ctx);
 	}

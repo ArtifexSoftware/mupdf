@@ -343,15 +343,18 @@ pdf_outline_iterator_insert(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 			result = 0;
 			break;
 		}
+		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, outlines);
-		pdf_end_operation(ctx, doc);
 	}
 	fz_catch(ctx)
+	{
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
+	}
 
 	return result;
 }
@@ -368,11 +371,15 @@ pdf_outline_iterator_update(fz_context *ctx, fz_outline_iterator *iter_, fz_outl
 	pdf_begin_operation(ctx, doc, "Update outline item");
 
 	fz_try(ctx)
+	{
 		do_outline_update(ctx, iter->current, item, 0);
-	fz_always(ctx)
 		pdf_end_operation(ctx, doc);
+	}
 	fz_catch(ctx)
+	{
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
+	}
 }
 
 static int
@@ -447,11 +454,13 @@ pdf_outline_iterator_del(fz_context *ctx, fz_outline_iterator *iter_)
 			iter->current = NULL;
 			result = 1;
 		}
-	}
-	fz_always(ctx)
 		pdf_end_operation(ctx, doc);
+	}
 	fz_catch(ctx)
+	{
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
+	}
 
 	return result;
 }
@@ -534,15 +543,15 @@ fz_outline_iterator *pdf_new_outline_iterator(fz_context *ctx, pdf_document *doc
 					 * this time throwing if it's still not correct. */
 					pdf_mark_bits_reset(ctx, marks);
 					pdf_test_outline(ctx, doc, first, marks, obj, NULL);
+					pdf_end_operation(ctx, doc);
 				}
 			}
-			fz_always(ctx)
+			fz_catch(ctx)
 			{
 				if (fixed)
-					pdf_end_operation(ctx, doc);
-			}
-			fz_catch(ctx)
+					pdf_abandon_operation(ctx, doc);
 				fz_rethrow(ctx);
+			}
 		}
 	}
 	fz_always(ctx)

@@ -158,6 +158,8 @@ struct pdf_journal
 	pdf_journal_entry *head;
 	pdf_journal_entry *current;
 	int nesting;
+	pdf_journal_entry *pending;
+	pdf_journal_entry *pending_tail;
 };
 
 #define NAME(obj) ((pdf_obj_name *)(obj))
@@ -875,7 +877,7 @@ discard_journal_entries(fz_context *ctx, pdf_journal_entry **journal_entry)
 }
 
 static void
-new_entry(fz_context *ctx, pdf_document *doc, char *operation, int nest)
+new_entry(fz_context *ctx, pdf_document *doc, char *operation)
 {
 	fz_try(ctx)
 	{
@@ -907,7 +909,6 @@ new_entry(fz_context *ctx, pdf_document *doc, char *operation, int nest)
 	}
 	fz_catch(ctx)
 	{
-		doc->journal->nesting -= nest;
 		fz_free(ctx, operation);
 		fz_rethrow(ctx);
 	}
@@ -917,7 +918,8 @@ new_entry(fz_context *ctx, pdf_document *doc, char *operation, int nest)
  * granularity. Nested operations are all counted within the outermost
  * operation. Any modification performed on a journalled PDF without an
  * operation having been started will throw an error. */
-void pdf_begin_operation(fz_context *ctx, pdf_document *doc, const char *operation_)
+static void
+do_begin_operation(fz_context *ctx, pdf_document *doc, const char *operation_)
 {
 	char *operation;
 
@@ -925,34 +927,62 @@ void pdf_begin_operation(fz_context *ctx, pdf_document *doc, const char *operati
 	if (ctx == NULL || doc == NULL || doc->journal == NULL)
 		return;
 
-	/* Always increment nesting. If we are already in an operation,
-	 * exit. */
-	if (doc->journal->nesting++ > 0)
-		return;
+	/* Always increment nesting. */
+	doc->journal->nesting++;
 
-	operation = fz_strdup(ctx, operation_);
+	operation = operation_ ? fz_strdup(ctx, operation_) : NULL;
 
 #ifdef PDF_DEBUG_JOURNAL
-	fz_write_printf(ctx, fz_stddbg(ctx), "Beginning: %s\n", operation);
+	fz_write_printf(ctx, fz_stddbg(ctx), "Beginning: (->%d) %s\n", doc->journal->nesting, operation ? operation : "<implicit>");
 #endif
 
-	new_entry(ctx, doc, operation, 1);
+	fz_try(ctx)
+	{
+		pdf_journal_entry *entry;
+
+		/* We create a new entry, and link it into the middle of
+		 * the chain. If we actually come to put anything into
+		 * it later, then the call to pdf_add_journal_fragment
+		 * during that addition will discard everything in the
+		 * history that follows it. */
+		entry = fz_malloc_struct(ctx, pdf_journal_entry);
+
+		if (doc->journal->pending_tail == NULL)
+		{
+			entry->prev = NULL;
+			entry->next = doc->journal->pending;
+			doc->journal->pending = entry;
+		}
+		else
+		{
+			entry->prev = doc->journal->pending_tail;
+			entry->next = doc->journal->pending_tail->next;
+			if (doc->journal->pending_tail->next)
+				doc->journal->pending_tail->next->prev = entry;
+			doc->journal->pending_tail->next = entry;
+		}
+		doc->journal->pending_tail = entry;
+		entry->title = operation;
+	}
+	fz_catch(ctx)
+	{
+		doc->journal->nesting--;
+		fz_free(ctx, operation);
+		fz_rethrow(ctx);
+	}
+}
+
+void pdf_begin_operation(fz_context *ctx, pdf_document *doc, const char *operation)
+{
+	if (operation == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "All operations must be named");
+
+	do_begin_operation(ctx, doc, operation);
 }
 
 void pdf_begin_implicit_operation(fz_context *ctx, pdf_document *doc)
 {
-	/* If we aren't journalling this doc, just give up now. */
-	if (ctx == NULL || doc == NULL || doc->journal == NULL)
-		return;
-
-	/* Always increment nesting. If we are already in an operation,
-	 * exit. */
-	if (doc->journal->nesting++ > 0)
-		return;
-
-#ifdef PDF_DEBUG_JOURNAL
-	fz_write_printf(ctx, fz_stddbg(ctx), "Beginning: <implicit>\n");
-#endif
+	do_begin_operation(ctx, doc, NULL);
 }
 
 void pdf_drop_journal(fz_context *ctx, pdf_journal *journal)
@@ -961,6 +991,8 @@ void pdf_drop_journal(fz_context *ctx, pdf_journal *journal)
 		return;
 
 	discard_journal_entries(ctx, &journal->head);
+	/* Shouldn't be any pending ones, but be safe. */
+	discard_journal_entries(ctx, &journal->pending);
 
 	fz_free(ctx, journal);
 }
@@ -997,43 +1029,119 @@ void pdf_end_operation(fz_context *ctx, pdf_document *doc)
 	if (ctx == NULL || doc == NULL || doc->journal == NULL)
 		return;
 
-	/* Decrement the operation nesting count. Only actually have
-	 * anything to do if this reaches zero. */
+	/* Decrement the operation nesting count. */
 	if (--doc->journal->nesting > 0)
-		return;
-
-	/* Now, check to see whether we have actually stored any changes
-	 * (fragments) into our entry. If we have, just exit here. */
-	entry = doc->journal->current;
-	if (entry == NULL || entry->head != NULL)
 	{
+		/* We need to move the contents of doc->pending_tail down to
+		 * be on doc->pending_tail->prev. i.e. we combine fragments
+		 * as these operations become one. */
+		entry = doc->journal->pending_tail;
+
+		/* An implicit operation before we start the file can result in us getting here
+		 * with no entry at all! */
+		if (entry && entry->prev)
+		{
+			if (entry->tail == NULL)
+			{
+				/* Nothing to move. */
+			}
+			else if (entry->prev->tail == NULL)
+			{
+				/* Nothing where we want to move it. */
+				entry->prev->head = entry->head;
+				entry->prev->tail = entry->tail;
+			}
+			else
+			{
+				/* Append one list to the other. */
+				entry->prev->tail->next = entry->head;
+				entry->head->prev = entry->prev->tail;
+				entry->prev->tail = entry->tail;
+			}
 #ifdef PDF_DEBUG_JOURNAL
-		fz_write_printf(ctx, fz_stddbg(ctx), "Ending!\n");
-		dump_changes(ctx, doc, entry);
+			fz_write_printf(ctx, fz_stddbg(ctx), "Ending! (->%d) \"%s\" <= \"%s\"\n", doc->journal->nesting,
+					entry->prev->title ? entry->prev->title : "<implicit>",
+					entry->title ? entry->title : "<implicit>");
 #endif
+			doc->journal->pending_tail = entry->prev;
+			entry->prev->next = NULL;
+			fz_free(ctx, entry->title);
+			fz_free(ctx, entry);
+		}
+		else
+		{
+#ifdef PDF_DEBUG_JOURNAL
+			fz_write_printf(ctx, fz_stddbg(ctx), "Ending! (->%d) no entry\n", doc->journal->nesting);
+#endif
+		}
 		return;
 	}
 
-	/* Didn't actually change anything! Remove the empty entry. */
-#ifdef PDF_DEBUG_JOURNAL
-	fz_write_printf(ctx, fz_stddbg(ctx), "Ending Empty!\n");
-#endif
-	if (doc->journal->head == entry)
+	/* Now, check to see whether we have actually stored any changes
+	 * (fragments) into our entry. If we have, we need to move these
+	 * changes from pending onto current. */
+	entry = doc->journal->pending;
+	assert(entry);
+
+	/* We really ought to have just a single pending entry at this point,
+	 * but implicit operations when we've just loaded a file can mean
+	 * that we don't have an entry at all. */
+	if (entry == NULL)
 	{
-		doc->journal->head = entry->next;
-		if (entry->next)
-			entry->next->prev = NULL;
+		/* Never happens! */
+	}
+	else if (entry->head == NULL)
+	{
+		/* Didn't actually change anything! Remove the empty entry. */
+#ifdef PDF_DEBUG_JOURNAL
+		fz_write_printf(ctx, fz_stddbg(ctx), "Ending Empty!\n");
+#endif
+		discard_journal_entries(ctx, &doc->journal->pending);
+	}
+	else if (entry->title != NULL)
+	{
+		/* Explicit operation. Move the entry off the pending list. */
+		assert(entry->next == NULL);
+		if (doc->journal->current)
+		{
+			doc->journal->current->next = entry;
+			entry->prev = doc->journal->current;
+			doc->journal->current = entry;
+		}
+		else
+		{
+			doc->journal->head = entry;
+			doc->journal->current = entry;
+		}
+#ifdef PDF_DEBUG_JOURNAL
+		fz_write_printf(ctx, fz_stddbg(ctx), "Ending!\n");
+#endif
+	}
+	else if (doc->journal->current == NULL)
+	{
+		/* Implicit operation, with no previous one. */
+#ifdef PDF_DEBUG_JOURNAL
+		fz_write_printf(ctx, fz_stddbg(ctx), "Ending implicit with no previous!\n");
+#endif
+		/* Just drop the record of the changes. */
+		discard_journal_entries(ctx, &doc->journal->pending);
 	}
 	else
 	{
-		entry->prev->next = entry->next;
-		if (entry->next)
-			entry->next->prev = entry->prev;
+		/* Implicit operation. Roll these changes into the previous one.*/
+#ifdef PDF_DEBUG_JOURNAL
+		fz_write_printf(ctx, fz_stddbg(ctx), "Ending implicit!\n");
+#endif
+		doc->journal->current->tail->next = entry->head;
+		entry->head->prev = doc->journal->current->tail;
+		doc->journal->current->tail = entry->tail;
+		entry->head = NULL;
+		entry->tail = NULL;
+		fz_free(ctx, entry->title);
+		fz_free(ctx, entry);
 	}
-	doc->journal->current = entry->prev;
-
-	fz_free(ctx, entry->title);
-	fz_free(ctx, entry);
+	doc->journal->pending = NULL;
+	doc->journal->pending_tail = NULL;
 }
 
 /* Call this to find out how many undo/redo steps there are, and the
@@ -1049,6 +1157,9 @@ int pdf_undoredo_state(fz_context *ctx, pdf_document *doc, int *steps)
 		*steps = 0;
 		return 0;
 	}
+
+	if (doc->journal->pending != NULL || doc->journal->nesting > 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't undo/redo during an operation");
 
 	i = 0;
 	c = 0;
@@ -1090,6 +1201,9 @@ const char *pdf_undoredo_step(fz_context *ctx, pdf_document *doc, int step)
 	if (ctx == NULL || doc == NULL || doc->journal == NULL)
 		return NULL;
 
+	if (doc->journal->pending != NULL || doc->journal->nesting > 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't undo/redo during an operation");
+
 	for (entry = doc->journal->head; step > 0 && entry != NULL; step--, entry = entry->next);
 
 	if (step != 0 || entry == NULL)
@@ -1128,6 +1242,43 @@ swap_fragments(fz_context *ctx, pdf_document *doc, pdf_journal_entry *entry)
 		frag->inactive = old;
 		frag->stream = obuf;
 	}
+}
+
+/* Abandon an operation - unwind back to the previous begin. */
+void pdf_abandon_operation(fz_context *ctx, pdf_document *doc)
+{
+	pdf_journal_entry *entry;
+
+	if (ctx == NULL || doc == NULL || doc->journal == NULL)
+		return;
+
+	if (doc->journal->nesting == 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't abandon a non-existent operation!");
+
+	doc->journal->nesting--;
+
+	entry = doc->journal->pending_tail;
+	assert(entry);
+
+	/* Undo the changes we are about the discard. */
+	swap_fragments(ctx, doc, entry);
+
+	/* And discard entry. */
+	if (entry->prev == NULL)
+	{
+		doc->journal->pending = NULL;
+		doc->journal->pending_tail = NULL;
+	}
+	else
+	{
+		doc->journal->pending_tail = entry->prev;
+		entry->prev->next = NULL;
+		entry->prev = NULL;
+	}
+#ifdef PDF_DEBUG_JOURNAL
+	fz_write_printf(ctx, fz_stddbg(ctx), "Abandoning!\n");
+#endif
+	discard_journal_entries(ctx, &entry);
 }
 
 /* Move backwards in the undo history. Throws an error if we are at the
@@ -1203,8 +1354,12 @@ void pdf_discard_journal(fz_context *ctx, pdf_journal *journal)
 		return;
 
 	discard_journal_entries(ctx, &journal->head);
+	/* Should be NULL, but belt and braces. */
+	discard_journal_entries(ctx, &journal->pending);
 	journal->head = NULL;
 	journal->current = NULL;
+	journal->pending = NULL;
+	journal->pending_tail = NULL;
 }
 
 static void
@@ -1295,11 +1450,19 @@ pdf_add_journal_fragment(fz_context *ctx, pdf_document *doc, int parent, pdf_obj
 	if (doc->journal == NULL)
 		return;
 
-	entry = doc->journal->current;
+	entry = doc->journal->pending_tail;
+	/* We must be in an operation. */
+	assert(entry != NULL);
+	if (entry == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't add a journal fragment absent an operation");
 
+	/* This should never happen, as we should always be appending to the end of
+	 * the pending list. */
+	assert(entry->next == NULL);
 	if (entry->next)
 	{
 		discard_journal_entries(ctx, &entry->next);
+		doc->journal->pending_tail = NULL;
 	}
 
 #ifdef PDF_DEBUG_JOURNAL
@@ -1421,7 +1584,7 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 			memcpy(title, doc->lexbuf.base.buffer, doc->lexbuf.base.len);
 			title[doc->lexbuf.base.len] = 0;
 
-			new_entry(ctx, doc, title, 0);
+			new_entry(ctx, doc, title);
 			continue;
 		}
 		if (fz_skip_string(ctx, stm, /*en*/"djournal") == 0)
