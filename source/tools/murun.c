@@ -5276,7 +5276,8 @@ static void ffi_StructuredText_walk(js_State *J)
 					js_pushnull(J);
 					ffi_pushrect(J, line->bbox);
 					js_pushboolean(J, line->wmode);
-					js_call(J, 2);
+					ffi_pushpoint(J, line->dir);
+					js_call(J, 3);
 					js_pop(J, 1);
 				}
 
