@@ -4673,6 +4673,16 @@ def cpp_source(
             jlib.log('global: {name=}')
         generated.c_globals.append(name)
         windows_def += f'    {name} DATA\n'
+    for fnname, cursor in state.state_.find_functions_starting_with( tu, ('fz_', 'pdf_'), method=False):
+        if fnname == 'fz_is_infinite_irect':
+            jlib.log( '{fnname=} {cursor.storage_class=}')
+        if cursor.storage_class == state.clang.cindex.StorageClass.STATIC:
+            # These fns do not work in windows.def, probably because they are
+            # usually inline?
+            #
+            jlib.log('Not adding to windows_def because static: {fnname}()')
+        else:
+            windows_def += f'    {fnname}\n'
 
     jlib.update_file( windows_def, f'{base}/windows_mupdf.def')
 
