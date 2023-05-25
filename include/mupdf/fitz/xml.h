@@ -27,6 +27,7 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/pool.h"
+#include "mupdf/fitz/archive.h"
 
 /**
 	XML document model
@@ -43,6 +44,20 @@ typedef fz_xml fz_xml_doc;
 	preserve_white: whether to keep or delete all-whitespace nodes.
 */
 fz_xml *fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white);
+
+/**
+	Parse the contents of buffer into a tree of xml nodes.
+
+	preserve_white: whether to keep or delete all-whitespace nodes.
+*/
+fz_xml *fz_parse_xml_stream(fz_context *ctx, fz_stream *stream, int preserve_white);
+
+/**
+	Parse the contents of an archive entry into a tree of xml nodes.
+
+	preserve_white: whether to keep or delete all-whitespace nodes.
+*/
+fz_xml *fz_parse_xml_archive_entry(fz_context *ctx, fz_archive *arch, const char *filename, int preserve_white);
 
 /**
 	Parse the contents of a buffer into a tree of XML nodes,
