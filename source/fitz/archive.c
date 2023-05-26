@@ -134,8 +134,8 @@ fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size)
 	return arch;
 }
 
-fz_archive *
-fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
+static fz_archive *
+do_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_archive *arch = NULL;
 
@@ -148,9 +148,27 @@ fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 }
 
 fz_archive *
+fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
+{
+	fz_archive *arch = NULL;
+
+	fz_var(arch);
+
+	fz_try(ctx)
+		arch = do_try_open_archive_with_stream(ctx, file);
+	fz_catch(ctx)
+	{
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+		/* Otherwise, swallow */
+	}
+
+	return arch;
+}
+
+fz_archive *
 fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
-	fz_archive *arch = fz_try_open_archive_with_stream(ctx, file);
+	fz_archive *arch = do_try_open_archive_with_stream(ctx, file);
 
 	if (arch == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize archive");
