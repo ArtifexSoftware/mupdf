@@ -16,7 +16,7 @@ Welcome to :title:`MuPDF`
 
 
 
-:title:`MuPDF` is a lightweight :title:`PDF`, :title:`XPS`, and :title:`E-book` viewer. It is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_ or  `licensed for commercial <https://artifex.com/licensing/commercial/>`_ use from `Artifex Software, Inc <https://artifex.com/>`_.
+:title:`MuPDF` is a lightweight :title:`PDF`, :title:`XPS`, and :title:`E-book` viewer. It is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_ or  `licensed for commercial <https://artifex.com/licensing/commercial?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link>`_ use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link>`_.
 
 :title:`MuPDF` consists of a software library, command line tools, and viewers for various platforms. To get started with :title:`MuPDF` a developer should :ref:`acquire the source code<quick_start_acquire_source_code>` and :ref:`build the library<quick_start_building_the_library>`.
 

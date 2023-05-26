@@ -293,4 +293,4 @@ and `mupdf-android-fitz.git` repositories.
 
 .. _GNU Affero General Public License: https://www.gnu.org/licenses/agpl-3.0.html
 
-.. _MuPDF product inquiry form: https://artifex.com/contact/mupdf-inquiry.php
+.. _MuPDF product inquiry form: https://artifex.com/contact/mupdf-inquiry.php?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link

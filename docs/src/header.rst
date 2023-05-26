@@ -8,6 +8,6 @@
 
    var url_string = window.location.href;
    var a = document.getElementById('feedbackLinkTop');
-   a.setAttribute("href", "https://artifex.com/contributor/feedback.php?url="+url_string);
+   a.setAttribute("href", "https://artifex.com/contributor/feedback.php?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=header-link&url="+url_string);
 
    </script>
