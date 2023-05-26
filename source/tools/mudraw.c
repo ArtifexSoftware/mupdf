@@ -2645,7 +2645,8 @@ int mudraw_main(int argc, char **argv)
 		{
 			bgprint_flush();
 			fz_drop_document(ctx, doc);
-			fprintf(stderr, "error: cannot draw '%s'\n", filename);
+			fz_log_error(ctx, fz_caught_message(ctx));
+			fz_log_error_printf(ctx, "cannot draw '%s'", filename);
 			errored = 1;
 		}
 
@@ -2738,6 +2739,7 @@ int mudraw_main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
+		fz_log_error(ctx, fz_caught_message(ctx));
 		if (!errored) {
 			fprintf(stderr, "Rendering failed\n");
 			errored = 1;

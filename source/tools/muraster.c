@@ -1730,7 +1730,7 @@ int main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_drop_document(ctx, doc);
-		fprintf(stderr, "error: cannot draw '%s'\n", filename);
+		fz_log_error_printf(ctx, "cannot draw '%s'", filename);
 		errored = 1;
 	}
 

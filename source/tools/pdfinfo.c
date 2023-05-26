@@ -1059,7 +1059,10 @@ int pdfinfo_main(int argc, char **argv)
 	fz_try(ctx)
 		pdfinfo_info(ctx, fz_stdout(ctx), filename, password, show, &argv[fz_optind], argc-fz_optind);
 	fz_catch(ctx)
+	{
+		fz_log_error(ctx, fz_caught_message(ctx));
 		ret = 1;
+	}
 	fz_drop_context(ctx);
 	return ret;
 }

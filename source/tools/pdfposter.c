@@ -205,6 +205,7 @@ int pdfposter_main(int argc, char **argv)
 	pdf_write_options opts = pdf_default_write_options;
 	pdf_document *doc;
 	fz_context *ctx;
+	int ret = 0;
 
 	while ((c = fz_getopt(argc, argv, "x:y:p:")) != -1)
 	{
@@ -235,16 +236,27 @@ int pdfposter_main(int argc, char **argv)
 		exit(1);
 	}
 
-	doc = pdf_open_document(ctx, infile);
-	if (pdf_needs_password(ctx, doc))
-		if (!pdf_authenticate_password(ctx, doc, password))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
+	fz_var(doc);
 
-	decimatepages(ctx, doc);
+	fz_try(ctx)
+	{
+		doc = pdf_open_document(ctx, infile);
+		if (pdf_needs_password(ctx, doc))
+			if (!pdf_authenticate_password(ctx, doc, password))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
 
-	pdf_save_document(ctx, doc, outfile, &opts);
+		decimatepages(ctx, doc);
 
-	pdf_drop_document(ctx, doc);
+		pdf_save_document(ctx, doc, outfile, &opts);
+	}
+	fz_always(ctx)
+		pdf_drop_document(ctx, doc);
+	fz_catch(ctx)
+	{
+		fz_log_error(ctx, fz_caught_message(ctx));
+		ret = 1;
+	}
 	fz_drop_context(ctx);
-	return 0;
+
+	return ret;
 }

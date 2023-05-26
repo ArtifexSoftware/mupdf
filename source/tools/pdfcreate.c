@@ -292,7 +292,10 @@ int pdfcreate_main(int argc, char **argv)
 	fz_always(ctx)
 		pdf_drop_document(ctx, doc);
 	fz_catch(ctx)
+	{
+		fz_log_error(ctx, fz_caught_message(ctx));
 		error = 1;
+	}
 
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);

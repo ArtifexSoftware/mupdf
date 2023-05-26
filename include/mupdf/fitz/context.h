@@ -57,15 +57,101 @@ typedef struct
 #define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
 #define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
 
+/**
+	These macros provide a simple exception handling system. Use them as
+	follows:
+
+	fz_try(ctx)
+		...
+	fz_catch(ctx)
+		...
+
+	or as:
+
+	fz_try(ctx)
+		...
+	fz_always(ctx)
+		...
+	fz_catch(ctx)
+		...
+
+	Code within the fz_try() section can then throw exceptions using fz_throw()
+	(or fz_vthrow()).
+
+	They are implemented with setjmp/longjmp, which can have unfortunate
+	consequences for 'losing' local variable values on a throw. To avoid this
+	we recommend calling 'fz_var(variable)' before the fz_try() for any
+	local variable whose value may change within the fz_try() block and whose
+	value will be required afterwards.
+
+	Do not call anything in the fz_always() section that can throw.
+
+	Any exception can be rethrown from the fz_catch() section using fz_rethrow()
+	as long as there has been no intervening use of fz_try/fz_catch.
+*/
+
+/**
+	Throw an exception.
+
+	This assumes an enclosing fz_try() block within the callstack.
+*/
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) FZ_PRINTFLIKE(3,4);
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
+
+/**
+	Called within a catch block this modifies the current
+	exception's code. If it's of type 'fromcode' it is
+	modified to 'tocode'. Typically used for 'downgrading'
+	exception severity.
+*/
 void fz_morph_error(fz_context *ctx, int fromcode, int tocode);
+
+/**
+	Log a warning.
+
+	This goes to the registered warning stream (stderr by
+	default).
+*/
 void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap);
 void fz_warn(fz_context *ctx, const char *fmt, ...) FZ_PRINTFLIKE(2,3);
+
+/**
+	Within an fz_catch() block, retrieve the formatted message
+	string for the current exception.
+
+	This assumes no intervening use of fz_try/fz_catch.
+*/
 const char *fz_caught_message(fz_context *ctx);
+
+/**
+	Within an fz_catch() block, retrieve the error code for
+	the current exception.
+
+	This assumes no intervening use of fz_try/fz_catch.
+*/
 int fz_caught(fz_context *ctx);
+
+/**
+	Within an fz_catch() block, rethrow the current exception
+	if the errcode of the current exception matches.
+
+	This assumes no intervening use of fz_try/fz_catch.
+*/
 void fz_rethrow_if(fz_context *ctx, int errcode);
+
+/**
+	Format an error message, and log it to the registered
+	error stream (stderr by default).
+*/
+void fz_log_error_printf(fz_context *ctx, const char *fmt, ...) FZ_PRINTFLIKE(2,3);
+void fz_vlog_error_printf(fz_context *ctx, const char *fmt, va_list ap);
+
+/**
+	Log a (preformatted) string to the registered
+	error stream (stderr by default).
+*/
+void fz_log_error(fz_context *ctx, const char *str);
 
 void fz_start_throw_on_repair(fz_context *ctx);
 void fz_end_throw_on_repair(fz_context *ctx);
@@ -581,6 +667,7 @@ fz_jmp_buf *fz_push_try(fz_context *ctx);
 int fz_do_try(fz_context *ctx);
 int fz_do_always(fz_context *ctx);
 int fz_do_catch(fz_context *ctx);
+int fz_do_catch_and_report(fz_context *ctx);
 
 #ifndef FZ_JMPBUF_ALIGN
 #define FZ_JMPBUF_ALIGN 32

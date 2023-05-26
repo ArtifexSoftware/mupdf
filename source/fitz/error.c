@@ -260,18 +260,41 @@ const char *fz_caught_message(fz_context *ctx)
 	return ctx->error.message;
 }
 
+void fz_log_error_printf(fz_context *ctx, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	fz_vlog_error_printf(ctx, fmt, ap);
+	va_end(ap);
+}
+
+void fz_vlog_error_printf(fz_context *ctx, const char *fmt, va_list ap)
+{
+	char message[256];
+
+	fz_flush_warnings(ctx);
+	if (ctx->error.print)
+	{
+		fz_vsnprintf(message, sizeof message, fmt, ap);
+		message[sizeof(message) - 1] = 0;
+
+		ctx->error.print(ctx->error.print_user, message);
+	}
+}
+
+void fz_log_error(fz_context *ctx, const char *str)
+{
+	fz_flush_warnings(ctx);
+	if (ctx->error.print)
+		ctx->error.print(ctx->error.print_user, str);
+}
+
 /* coverity[+kill] */
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
 	fz_vsnprintf(ctx->error.message, sizeof ctx->error.message, fmt, ap);
 	ctx->error.message[sizeof(ctx->error.message) - 1] = 0;
-
-	if (code != FZ_ERROR_ABORT && code != FZ_ERROR_TRYLATER)
-	{
-		fz_flush_warnings(ctx);
-		if (ctx->error.print)
-			ctx->error.print(ctx->error.print_user, ctx->error.message);
-	}
 
 	throw(ctx, code);
 }

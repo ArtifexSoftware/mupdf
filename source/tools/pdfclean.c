@@ -144,6 +144,7 @@ int pdfclean_main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
+		fz_log_error(ctx, fz_caught_message(ctx));
 		errors++;
 	}
 	fz_drop_context(ctx);

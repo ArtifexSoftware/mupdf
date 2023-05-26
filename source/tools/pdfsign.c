@@ -281,10 +281,9 @@ static void process_acro_form(fz_context *ctx, pdf_document *doc)
 int pdfsign_main(int argc, char **argv)
 {
 	fz_context *ctx;
-	pdf_document *doc;
+	pdf_document *doc = NULL;
 	char *password = "";
 	int c;
-	pdf_page *page = NULL;
 
 	while ((c = fz_getopt(argc, argv, "co:p:s:vP:")) != -1)
 	{
@@ -318,11 +317,11 @@ int pdfsign_main(int argc, char **argv)
 		exit(1);
 	}
 
-	fz_var(page);
+	fz_var(doc);
 
-	doc = pdf_open_document(ctx, infile);
 	fz_try(ctx)
 	{
+		doc = pdf_open_document(ctx, infile);
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", infile);
@@ -353,8 +352,8 @@ int pdfsign_main(int argc, char **argv)
 		pdf_drop_document(ctx, doc);
 	fz_catch(ctx)
 	{
-		fz_drop_page(ctx, (fz_page*)page);
-		fprintf(stderr, "error processing signatures: %s\n", fz_caught_message(ctx));
+		fz_log_error(ctx, fz_caught_message(ctx));
+		fz_log_error(ctx, "error processing signatures");
 	}
 
 	fz_flush_warnings(ctx);

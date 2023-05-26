@@ -643,13 +643,17 @@ int pdfshow_main(int argc, char **argv)
 
 		fz_close_output(ctx, out);
 	}
+	fz_always(ctx)
+	{
+		fz_drop_output(ctx, out);
+		pdf_drop_document(ctx, doc);
+	}
 	fz_catch(ctx)
 	{
+		fz_log_error(ctx, fz_caught_message(ctx));
 		errored = 1;
 	}
 
-	fz_drop_output(ctx, out);
-	pdf_drop_document(ctx, doc);
 	fz_drop_context(ctx);
 	return errored;
 }
