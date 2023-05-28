@@ -282,7 +282,7 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if):
     if uses_fz_context:
         icg = rename.internal( 'context_get')
         te = rename.internal( 'throw_exception')
-        out.write(      f'    fz_context* auto_ctx = {icg}();\n')
+        out.write( f'    fz_context* auto_ctx = {icg}();\n')
 
     # Output code that writes diagnostics to std::cerr if $MUPDF_trace is set.
     #
@@ -340,6 +340,15 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if):
     out.write( f'    }}\n')
     out.write( f'    #endif\n')
 
+    if uses_fz_context:
+        out.write( f'    {refcheck_if}\n')
+        out.write( f'        long stack0;\n')
+        out.write( f'        if (s_check_error_stack)\n')
+        out.write( f'        {{\n')
+        out.write( f'            stack0 = auto_ctx->error.top - auto_ctx->error.stack_base;\n')
+        out.write( f'        }}\n')
+        out.write( f'    #endif\n')
+
     # Now output the function call.
     #
     if return_type != 'void':
@@ -385,6 +394,17 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if):
         out.write(      f'        #endif\n')
         out.write(      f'        {te}(auto_ctx);\n')
         out.write(      f'    }}\n')
+
+    if uses_fz_context:
+        out.write( f'    {refcheck_if}\n')
+        out.write( f'        if (s_check_error_stack)\n')
+        out.write( f'        {{\n')
+        out.write( f'            long stack1 = auto_ctx->error.top - auto_ctx->error.stack_base;\n')
+        out.write( f'            if (stack1 != stack0)\n')
+        out.write( f'                std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): MuPDF error stack size changed by {cursor.spelling}(): " << stack0 << " -> " << stack1 << "\\n";\n')
+        out.write( f'        }}\n')
+        out.write( f'    #endif\n')
+
     if return_type != 'void':
         out.write(  f'    return ret;\n')
 
@@ -4629,10 +4649,12 @@ def cpp_source(
                 static const int    s_trace = internal_env_flag("MUPDF_trace");
                 static const bool   s_trace_keepdrop = internal_env_flag("MUPDF_trace_keepdrop");
                 static const bool   s_trace_exceptions = internal_env_flag("MUPDF_trace_exceptions");
+                static const bool   s_check_error_stack = internal_env_flag("MUPDF_check_error_stack");
             #else
                 static const int    s_trace = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace");
                 static const bool   s_trace_keepdrop = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_keepdrop");
                 static const bool   s_trace_exceptions = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_trace_exceptions");
+                static const bool   s_check_error_stack = internal_env_flag_check_unset("{refcheck_if}", "MUPDF_check_error_stack");
             #endif
 
             '''))
