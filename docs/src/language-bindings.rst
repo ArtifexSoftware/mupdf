@@ -214,12 +214,18 @@ environmental variables:
   If `1`, generated code checks MuPDF struct reference counts at
   runtime.
 
+* **MUPDF_check_error_stack**
+
+    If `1`, generated code outputs a diagnostic if a MuPDF function changes the
+    current `fz_context`'s error stack depth.
+
 * **MUPDF_trace**
 
-  If `1`, generated code outputs a diagnostic each time it calls a MuPDF
-  function (apart from keep/drop functions).
+  If `1` or `2`, class-aware code outputs a diagnostic each time it calls a
+  MuPDF function (apart from keep/drop functions).
 
-  If `2`, we also show arg POD and pointer values.
+  If `2`, low-level wrappers output a diagnostic each time they are
+  called. We also show arg POD and pointer values.
 
 * **MUPDF_trace_director**
 
