@@ -125,10 +125,11 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 
 		if (typeflag == TYPE_LONG_NAME)
 		{
-			longname = fz_malloc(ctx, size);
+			longname = fz_malloc(ctx, size + 1);
 			n = fz_read(ctx, file, (unsigned char *) longname, size);
 			if (n < (size_t) size)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in tar long name entry name");
+			longname[size] = '\0';
 
 			fz_seek(ctx, file, 512 - (size % 512), 1);
 		}
