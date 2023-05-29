@@ -93,11 +93,34 @@ struct pdf_xref
 	int64_t end_ofs; /* file offset to end of xref */
 };
 
+/**
+	Retrieve the pdf_xref_entry for a given object.
+
+	This can cause xref reorganisations (solidifications etc) due to
+	repairs, so all held pdf_xref_entries should be considered
+	invalid after this call (other than the returned one).
+*/
 pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num);
 
 int pdf_count_objects(fz_context *ctx, pdf_document *doc);
+
+/**
+	Resolve an indirect object (or chain of objects).
+
+	This can cause xref reorganisations (solidifications etc) due to
+	repairs, so all held pdf_xref_entries should be considered
+	invalid after this call (other than the returned one).
+*/
 pdf_obj *pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_resolve_indirect_chain(fz_context *ctx, pdf_obj *ref);
+
+/**
+	Load a given object.
+
+	This can cause xref reorganisations (solidifications etc) due to
+	repairs, so all held pdf_xref_entries should be considered
+	invalid after this call (other than the returned one).
+*/
 pdf_obj *pdf_load_object(fz_context *ctx, pdf_document *doc, int num);
 pdf_obj *pdf_load_unencrypted_object(fz_context *ctx, pdf_document *doc, int num);
 
@@ -175,6 +198,8 @@ void pdf_xref_entry_map(fz_context *ctx, pdf_document *doc, void (*fn)(fz_contex
 
 	This will never "solidify" the xref, so no entry may be found
 	(NULL will be returned) for free entries.
+
+	Called with a valid i, this will never try/catch or throw.
 */
 pdf_xref_entry *pdf_get_xref_entry_no_change(fz_context *ctx, pdf_document *doc, int i);
 pdf_xref_entry *pdf_get_xref_entry_no_null(fz_context *ctx, pdf_document *doc, int i);
