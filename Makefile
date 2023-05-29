@@ -512,6 +512,9 @@ extract-test:
 tags:
 	$(TAGS_CMD)
 
+find-try-return:
+	@ bash scripts/find-try-return.sh
+
 cscope.files: $(shell find include source platform -name '*.[ch]')
 	@ echo $^ | tr ' ' '\n' > $@
 

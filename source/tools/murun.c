@@ -6211,7 +6211,7 @@ static void ffi_PDFDocument_getEmbeddedFileParams(js_State *J)
 
 	fz_try(ctx)
 		pdf_get_embedded_file_params(ctx, fs, &params);
-	fz_catch (ctx)
+	fz_catch(ctx)
 		rethrow(J);
 
 	ffi_pushembeddedfileparams(J, &params);
@@ -6226,7 +6226,7 @@ static void ffi_PDFDocument_getEmbeddedFileContents(js_State *J)
 
 	fz_try(ctx)
 		contents = pdf_load_embedded_file_contents(ctx, fs);
-	fz_catch (ctx)
+	fz_catch(ctx)
 		rethrow(J);
 
 	ffi_pushbuffer(J, contents);
