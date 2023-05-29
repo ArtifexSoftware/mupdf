@@ -1321,8 +1321,8 @@ fz_load_bmp_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len
 			fz_warn(ctx, "treating invalid next subimage offset as end of file");
 			nextoffset = 0;
 		}
-
-		count++;
+		else
+			count++;
 
 	} while (nextoffset > 0);
 
