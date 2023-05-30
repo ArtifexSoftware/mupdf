@@ -31,7 +31,7 @@
  * When compiling MuPDF DLL itself, FZ_DLL should be defined.
  */
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	#if defined(FZ_DLL)
 		/* Building DLL. */
 		#define FZ_FUNCTION __declspec(dllexport)
