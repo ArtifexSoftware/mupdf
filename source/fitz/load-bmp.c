@@ -1099,15 +1099,15 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 
 	p = bmp_read_info_header(ctx, info, begin, end, p);
 
+	/* clamp bitmap offset to buffer size */
+	if ((uint32_t)(end - begin) < info->bitmapoffset)
+		info->bitmapoffset = end - begin;
+
 	if (has_palette(info))
 		p = bmp_read_palette(ctx, info, begin, end, p);
 
 	if (has_color_masks(info))
 		p = bmp_read_color_masks(ctx, info, begin, end, p);
-
-	/* clamp bitmap offset to buffer size */
-	if ((uint32_t)(end - begin) < info->bitmapoffset)
-		info->bitmapoffset = end - begin;
 
 	info->xres = DPM_TO_DPI(info->xres);
 	info->yres = DPM_TO_DPI(info->yres);
