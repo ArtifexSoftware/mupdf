@@ -773,6 +773,7 @@ def build_swig(
             'fz_vthrow',
             'fz_vwarn',
             'fz_write_vprintf',
+            'fz_vlog_error_printf',
 
             'fz_utf8_from_wchar',
             'fz_wchar_from_utf8',
@@ -799,12 +800,7 @@ def build_swig(
             %ignore {rename.ll_fn('fz_vthrow')};
             %ignore {rename.ll_fn('fz_vwarn')};
             %ignore {rename.ll_fn('fz_write_vprintf')};
-            %ignore {rename.ll_fn('fz_vsnprintf')};
-            %ignore {rename.ll_fn('fz_vthrow')};
-            %ignore {rename.ll_fn('fz_vwarn')};
-            %ignore {rename.ll_fn('fz_append_vprintf')};
-            %ignore {rename.ll_fn('fz_write_vprintf')};
-            %ignore {rename.ll_fn('fz_format_string')};
+            %ignore {rename.ll_fn('fz_vlog_error_printf')};
             %ignore {rename.ll_fn('fz_open_file_w')};
 
             // Ignore custom C++ variadic fns.
