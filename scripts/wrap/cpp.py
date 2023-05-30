@@ -4695,7 +4695,7 @@ def cpp_source(
             jlib.log('global: {name=}')
         generated.c_globals.append(name)
         windows_def += f'    {name} DATA\n'
-    for fnname, cursor in state.state_.find_functions_starting_with( tu, ('fz_', 'pdf_'), method=False):
+    for fnname, cursor in state.state_.find_functions_starting_with( tu, ('fz_', 'pdf_', 'FT_'), method=False):
         if fnname == 'fz_is_infinite_irect':
             jlib.log( '{fnname=} {cursor.storage_class=}')
         if cursor.storage_class == state.clang.cindex.StorageClass.STATIC:
@@ -4705,8 +4705,20 @@ def cpp_source(
             jlib.log('Not adding to windows_def because static: {fnname}()')
         else:
             windows_def += f'    {fnname}\n'
+    # Add some internal fns that PyMuPDF requires.
+    for fnname in (
+            'FT_Get_First_Char',
+            'FT_Get_Next_Char',
+            'pdf_lookup_page_loc',
+            'fz_scale_pixmap',
+            'fz_pixmap_size',
+            'fz_subsample_pixmap',
+            'fz_copy_pixmap_rect',
+            'fz_write_pixmap_as_jpeg',
+            ):
+        windows_def += f'    {fnname}\n'
 
-    jlib.update_file( windows_def, f'{base}/windows_mupdf.def')
+    jlib.fs_update( windows_def, f'{base}/windows_mupdf.def')
 
     def register_fn_use( name):
         assert name.startswith( ('fz_', 'pdf_'))
@@ -4963,7 +4975,7 @@ def test():
             #include "mupdf/pdf.h"
             ''')
     path = 'wrap-test.c'
-    jlib.update_file( text, path)
+    jlib.fs_update( text, path)
     index = state.clang.cindex.Index.create()
     tu = index.parse( path, '-I /usr/include -I include'.split(' '))
     path2 = 'wrap-test.c.c'

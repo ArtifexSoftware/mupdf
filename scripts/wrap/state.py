@@ -313,3 +313,12 @@ class BuildDirs:
             # Use Python we are running under.
             self.cpu = Cpu(cpu_name())
             self.python_version = python_version()
+
+    def windows_build_type(self):
+        dir_so_flags = os.path.basename( self.dir_so).split( '-')
+        if 'debug' in dir_so_flags:
+            return 'Debug'
+        elif 'release' in dir_so_flags:
+            return 'Release'
+        else:
+            assert 0, f'Expecting "-release-" or "-debug-" in build_dirs.dir_so={self.dir_so}'
