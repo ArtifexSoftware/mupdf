@@ -215,12 +215,30 @@ fz_xml *fz_xml_find_down_match(fz_xml *item, const char *tag, const char *att, c
 fz_xml *fz_xml_find_dfs(fz_xml *item, const char *tag, const char *att, const char *match);
 
 /**
+	Perform a depth first search from item, returning the first
+	child that matches the given tag (or any tag if tag is NULL),
+	with the given attribute (if att is non NULL), that matches
+	match (if match is non NULL). The search stops if it ever
+	reaches the top of the tree, or the declared 'top' item.
+*/
+fz_xml *fz_xml_find_dfs_top(fz_xml *item, const char *tag, const char *att, const char *match, fz_xml *top);
+
+/**
 	Perform a depth first search onwards from item, returning the first
 	child that matches the given tag (or any tag if tag is NULL),
 	with the given attribute (if att is non NULL), that matches
 	match (if match is non NULL).
 */
 fz_xml *fz_xml_find_next_dfs(fz_xml *item, const char *tag, const char *att, const char *match);
+
+/**
+	Perform a depth first search onwards from item, returning the first
+	child that matches the given tag (or any tag if tag is NULL),
+	with the given attribute (if att is non NULL), that matches
+	match (if match is non NULL). The search stops if it ever reaches
+	the top of the tree, or the declared 'top' item.
+*/
+fz_xml *fz_xml_find_next_dfs_top(fz_xml *item, const char *tag, const char *att, const char *match, fz_xml *top);
 
 /**
 	DOM-like functions for html in xml.

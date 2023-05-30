@@ -1208,6 +1208,11 @@ fz_parse_xml_from_html5(fz_context *ctx, fz_buffer *buf)
 
 fz_xml *fz_xml_find_dfs(fz_xml *item, const char *tag, const char *att, const char *match)
 {
+	return fz_xml_find_dfs_top(item, tag, att, match, NULL);
+}
+
+fz_xml *fz_xml_find_dfs_top(fz_xml *item, const char *tag, const char *att, const char *match, fz_xml *top)
+{
 	/* Skip over any DOC object. */
 	if (item && FZ_DOCUMENT_ITEM(item))
 		item = item->down;
@@ -1227,6 +1232,9 @@ fz_xml *fz_xml_find_dfs(fz_xml *item, const char *tag, const char *att, const ch
 		else
 			while (1) {
 				item = item->up;
+				/* Stop searching if we hit our declared 'top' item. */
+				if (item == top)
+					return NULL;
 				/* We should never reach item == NULL, but just in case. */
 				if (item == NULL)
 					return NULL;
@@ -1246,6 +1254,11 @@ fz_xml *fz_xml_find_dfs(fz_xml *item, const char *tag, const char *att, const ch
 
 fz_xml *fz_xml_find_next_dfs(fz_xml *item, const char *tag, const char *att, const char *match)
 {
+	return fz_xml_find_next_dfs_top(item, tag, att, match, NULL);
+}
+
+fz_xml *fz_xml_find_next_dfs_top(fz_xml *item, const char *tag, const char *att, const char *match, fz_xml *top)
+{
 	/* Skip over any DOC object. */
 	if (item && FZ_DOCUMENT_ITEM(item))
 		item = item->down;
@@ -1260,6 +1273,9 @@ fz_xml *fz_xml_find_next_dfs(fz_xml *item, const char *tag, const char *att, con
 	else
 		while (1) {
 			item = item->up;
+			/* Stop searching if we hit our declared 'top' item. */
+			if (item == top)
+				return NULL;
 			/* We should never reach item == NULL, but just in case. */
 			if (item == NULL)
 				return NULL;
@@ -1273,7 +1289,7 @@ fz_xml *fz_xml_find_next_dfs(fz_xml *item, const char *tag, const char *att, con
 			}
 		}
 
-	return fz_xml_find_dfs(item, tag, att, match);
+	return fz_xml_find_dfs_top(item, tag, att, match, top);
 }
 
 fz_xml *fz_keep_xml(fz_context *ctx, fz_xml *xml)
