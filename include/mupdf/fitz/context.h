@@ -700,7 +700,6 @@ fz_jmp_buf *fz_push_try(fz_context *ctx);
 int fz_do_try(fz_context *ctx);
 int fz_do_always(fz_context *ctx);
 int fz_do_catch(fz_context *ctx);
-int fz_do_catch_and_report(fz_context *ctx);
 
 #ifndef FZ_JMPBUF_ALIGN
 #define FZ_JMPBUF_ALIGN 32
