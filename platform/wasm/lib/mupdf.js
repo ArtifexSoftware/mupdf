@@ -714,10 +714,10 @@ class Pixmap extends Userdata {
 	}
 
 	getBounds() {
-		let x = libmupdf._wasm_pixmap_x(this)
-		let y = libmupdf._wasm_pixmap_y(this)
-		let w = libmupdf._wasm_pixmap_width(this)
-		let h = libmupdf._wasm_pixmap_height(this)
+		let x = libmupdf._wasm_pixmap_get_x(this)
+		let y = libmupdf._wasm_pixmap_get_y(this)
+		let w = libmupdf._wasm_pixmap_get_w(this)
+		let h = libmupdf._wasm_pixmap_get_h(this)
 		return [ x, y, x + w, y + h ]
 	}
 
