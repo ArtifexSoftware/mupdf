@@ -262,8 +262,8 @@ psd_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 					char text[32];
 
 					v = get16be(&source);
-					if (v == 0 && alpha && alpha_found == 0)
-						alpha_found = 1;
+					if (v == 0 && alpha_found == 0)
+						alpha_found = 1, alpha = 1;
 					else if (v != 2)
 						fz_throw(ctx, FZ_ERROR_GENERIC, "Non CMYK spot found in PSD");
 
@@ -300,6 +300,10 @@ psd_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 			while (data_len--)
 				get8(&source);
 		}
+		if (fz_count_separations(ctx, seps) + info->cs->n + 1 == n && alpha == 0)
+			alpha = 1;
+		if (fz_count_separations(ctx, seps) + info->cs->n + alpha != n)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "PSD contains mismatching spot/alpha data");
 
 		/* Skip over the Layer data. */
 		v = get32be(&source);
