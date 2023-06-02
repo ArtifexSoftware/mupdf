@@ -1231,7 +1231,7 @@ class Document extends Userdata {
 	}
 
 	isReflowable() {
-		// no HTML/EPUB support in WASM
+		// TODO: No HTML/EPUB support in WASM.
 		return false
 	}
 

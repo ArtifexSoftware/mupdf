@@ -618,6 +618,12 @@ int wasm_authenticate_password(fz_document *doc, char *password)
 }
 
 EXPORT
+int wasm_has_permission(fz_document *doc, int perm)
+{
+	INTEGER(fz_has_permission, doc, perm)
+}
+
+EXPORT
 int wasm_count_pages(fz_document *doc)
 {
 	INTEGER(fz_count_pages, doc)
@@ -639,6 +645,12 @@ char * wasm_lookup_metadata(fz_document *doc, char *key)
 			result = buf;
 	})
 	return result;
+}
+
+EXPORT
+void wasm_set_metadata(fz_document *doc, char *key, char *value)
+{
+	VOID(fz_set_metadata, doc, key, value)
 }
 
 EXPORT
