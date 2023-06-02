@@ -5828,10 +5828,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StrokeState_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    newNative
+ * Method:    newNativeStrokeState
  * Signature: (IIIIFFF[F)J
  */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_StrokeState_newNative
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_StrokeState_newNativeStrokeState
   (JNIEnv *, jobject, jint, jint, jint, jint, jfloat, jfloat, jfloat, jfloatArray);
 
 /*

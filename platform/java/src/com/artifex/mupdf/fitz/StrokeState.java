@@ -46,7 +46,7 @@ public class StrokeState
 		finalize();
 	}
 
-	private native long newNative(int startCap, int dashCap, int endCap, int lineJoin, float lineWidth, float miterLimit,
+	private native long newNativeStrokeState(int startCap, int dashCap, int endCap, int lineJoin, float lineWidth, float miterLimit,
 			float dashPhase, float[] dash);
 
 	// Private constructor for the C to use. Any objects created by the
@@ -59,12 +59,12 @@ public class StrokeState
 	}
 
 	public StrokeState(int startCap, int endCap, int lineJoin, float lineWidth, float miterLimit) {
-		pointer = newNative(startCap, 0, endCap, lineJoin, lineWidth, miterLimit, 0, null);
+		pointer = newNativeStrokeState(startCap, 0, endCap, lineJoin, lineWidth, miterLimit, 0, null);
 	}
 
 	public StrokeState(int startCap, int dashCap, int endCap, int lineJoin, float lineWidth, float miterLimit,
 			float dashPhase, float[] dash) {
-		pointer = newNative(startCap, dashCap, endCap, lineJoin, lineWidth, miterLimit, dashPhase, dash);
+		pointer = newNativeStrokeState(startCap, dashCap, endCap, lineJoin, lineWidth, miterLimit, dashPhase, dash);
 	}
 
 	public native int getStartCap();

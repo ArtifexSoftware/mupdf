@@ -33,16 +33,16 @@ FUN(StrokeState_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(StrokeState_newStrokeState)(JNIEnv *env, jobject self, jint startCap, jint dashCap, jint endCap, jint lineJoin, jfloat lineWidth, jfloat miterLimit, jfloat dashPhase, jfloatArray dash)
+FUN(StrokeState_newNativeStrokeState)(JNIEnv *env, jobject self, jint startCap, jint dashCap, jint endCap, jint lineJoin, jfloat lineWidth, jfloat miterLimit, jfloat dashPhase, jfloatArray dash)
 {
 	fz_context *ctx = get_context(env);
 	fz_stroke_state *stroke = NULL;
 	jsize len = 0;
 
 	if (!ctx) return 0;
-	if (!dash) jni_throw_arg(env, "dash must not be null");
 
-	len = (*env)->GetArrayLength(env, dash);
+	if (dash)
+		len = (*env)->GetArrayLength(env, dash);
 
 	fz_try(ctx)
 	{
@@ -59,8 +59,11 @@ FUN(StrokeState_newStrokeState)(JNIEnv *env, jobject self, jint startCap, jint d
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	(*env)->GetFloatArrayRegion(env, dash, 0, len, &stroke->dash_list[0]);
-	if ((*env)->ExceptionCheck(env)) return 0;
+	if (dash)
+	{
+		(*env)->GetFloatArrayRegion(env, dash, 0, len, &stroke->dash_list[0]);
+		if ((*env)->ExceptionCheck(env)) return 0;
+	}
 
 	return jlong_cast(stroke);
 }
