@@ -1959,6 +1959,10 @@ class PDFAnnotation extends Userdata {
         static IS_TOGGLE_NO_VIEW = 1 << (9-1)
         static IS_LOCKED_CONTENTS = 1 << (10-1)
 
+	getObject() {
+		return keepPDFObject(libmupdf._wasm_pdf_annot_obj(this))
+	}
+
 	getBounds() {
 		return fromRect(libmupdf._wasm_pdf_bound_annot(this))
 	}
@@ -1983,10 +1987,6 @@ class PDFAnnotation extends Userdata {
 
 	toDisplayList() {
 		return new DisplayList(libmupdf._wasm_pdf_new_display_list_from_annot(this))
-	}
-
-	getObject() {
-		return keepPDFObject(libmupdf._wasm_pdf_annot_obj(this))
 	}
 
 	update() {
@@ -2203,22 +2203,17 @@ class PDFAnnotation extends Userdata {
 }
 
 class PDFWidget extends PDFAnnotation {
-
 	/* IMPORTANT: Keep in sync with mupdf/pdf/widget.h and PDFWidget.java */
-	static TYPE_UNKNOWN = 0;
-	static TYPE_BUTTON = 1;
-	static TYPE_CHECKBOX = 2;
-	static TYPE_COMBOBOX = 3;
-	static TYPE_LISTBOX = 4;
-	static TYPE_RADIOBUTTON = 5;
-	static TYPE_SIGNATURE = 6;
-	static TYPE_TEXT = 7;
-
-	static TX_FORMAT_NONE = 0;
-	static TX_FORMAT_NUMBER = 1;
-	static TX_FORMAT_SPECIAL = 2;
-	static TX_FORMAT_DATE = 3;
-	static TX_FORMAT_TIME = 4;
+	static TYPES = [
+		"button",
+		"button",
+		"checkbox",
+		"combobox",
+		"listbox",
+		"radiobutton",
+		"signature",
+		"text",
+	]
 
 	/* Field flags */
 	static FIELD_IS_READ_ONLY = 1;
@@ -2241,20 +2236,132 @@ class PDFWidget extends PDFAnnotation {
 	static CH_FIELD_IS_SORT = 1 << 19;
 	static CH_FIELD_IS_MULTI_SELECT = 1 << 21;
 
-	/* Signature appearance */
-	static SIGNATURE_SHOW_LABELS = 1;
-	static SIGNATURE_SHOW_DN = 2;
-	static SIGNATURE_SHOW_DATE = 4;
-	static SIGNATURE_SHOW_TEXT_NAME = 8;
-	static SIGNATURE_SHOW_GRAPHIC_NAME = 16;
-	static SIGNATURE_SHOW_LOGO = 32;
-	static SIGNATURE_DEFAULT_APPEARANCE = 63;
+	getFieldType() {
+		return PDFWidget.TYPES(libmupdf._wasm_pdf_annot_field_type(this))
+	}
 
-	// TODO
+	isButton() {
+		let type = this.getFieldType()
+		return type === "button" || type === "checkbox" || type === "radiobutton"
+	}
+
+	isPushButton() {
+		return this.getFieldType() === "button"
+	}
+
+	isCheckbox() {
+		return this.getFieldType() === "checkbox"
+	}
+
+	isRadioButton() {
+		return this.getFieldType() === "radiobutton"
+	}
+
+	isText() {
+		return this.getFieldType() === "text"
+	}
+
+	isChoice() {
+		let type = this.getFieldType()
+		return type === "combobox" || type === "listbox"
+	}
+
+	isListBox() {
+		return this.getFieldType() === "listbox"
+	}
+
+	isComboBox() {
+		return this.getFieldType() === "combobox"
+	}
+
+	getFieldFlags() {
+		return libmupdf._wasm_pdf_annot_field_flags(this)
+	}
+
+	isMultiline() {
+		return (this.getFieldFlags() & PDFWidget.TX_FIELD_IS_MULTILINE) !== 0
+	}
+
+	isPassword() {
+		return (this.getFieldFlags() & PDFWidget.TX_FIELD_IS_PASSWORD) !== 0
+	}
+
+	isComb() {
+		return (this.getFieldFlags() & PDFWidget.TX_FIELD_IS_COMB) !== 0
+	}
+
+	isReadOnly() {
+		return (this.getFieldFlags() & PDFWidget.FIELD_IS_READ_ONLY) !== 0
+	}
+
+	getLabel() {
+		return fromString(libmupdf._wasm_pdf_annot_field_label(this))
+	}
+
+	getName() {
+		let ptr = libmupdf._wasm_pdf_load_field_name(this)
+		let str = fromString(ptr)
+		libmupdf._wasm_free(ptr)
+		return str
+	}
+
+	getValue() {
+		return fromString(libmupdf._wasm_pdf_annot_field_value(this))
+	}
+
+	setTextValue(value) {
+		return libmupdf._wasm_pdf_set_annot_text_field_value(this, STRING(value))
+	}
+
+	getMaxLen() {
+		return libmupdf._wasm_pdf_annot_text_widget_max_len(this)
+	}
+
+	setChoiceValue(value) {
+		return libmupdf._wasm_pdf_set_annot_choice_field_value(this, STRING(value))
+	}
+
+	getOptions(export=false) {
+		let result = []
+		let n = libmupdf._wasm_pdf_annot_choice_field_option_count(this)
+		for (let i = 0; i < n; ++i) {
+			result.push(
+				fromString(
+					libmupdf._wasm_pdf_annot_choice_field_option(this, export, i)
+				)
+			)
+		}
+	}
+
+	toggle() {
+		libmupdf._wasm_pdf_toggle_widget(this)
+	}
+
+	// Interactive Text Widget editing in a GUI.
+	// TODO: getEditingState()
+	// TODO: setEditingState()
+	// TODO: clearEditingState()
+	// TODO: layoutTextWidget()
+
+	// Interactive form validation Javascript triggers.
+	// NOTE: No embedded PDF Javascript engine in WASM build.
+	// TODO: eventEnter()
+	// TODO: eventExit()
+	// TODO: eventDown()
+	// TODO: eventUp()
+	// TODO: eventFocus()
+	// TODO: eventBlur()
+
+	// NOTE: No OpenSSL support in WASM build.
+	// TODO: isSigned()
+	// TODO: validateSignature()
+	// TODO: checkCertificate()
+	// TODO: checkDigest()
+	// TODO: getSignature()
+	// TODO: previewSignature()
+	// TODO: clearSignature()
+	// TODO: sign()
 }
-
-
-
 
 // Background progressive fetch
 

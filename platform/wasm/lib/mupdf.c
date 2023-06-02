@@ -521,26 +521,26 @@ void wasm_end_group(fz_device *dev)
 	VOID(fz_end_group, dev)
 }
 
-EXPORT int
-_wasm_begin_tile(fz_device *dev, fz_rect *area, fz_rect *view, float xstep, float ystep, fz_matrix *ctm, int id)
+EXPORT
+int wasm_begin_tile(fz_device *dev, fz_rect *area, fz_rect *view, float xstep, float ystep, fz_matrix *ctm, int id)
 {
 	INTEGER(fz_begin_tile_id, dev, *area, *view, xstep, ystep, *ctm, id)
 }
 
 EXPORT
-void _wasm_end_tile(fz_device *dev)
+void wasm_end_tile(fz_device *dev)
 {
 	VOID(fz_end_tile, dev)
 }
 
 EXPORT
-void _wasm_begin_layer(fz_device *dev, char *name)
+void wasm_begin_layer(fz_device *dev, char *name)
 {
 	VOID(fz_begin_layer, dev, name)
 }
 
 EXPORT
-void _wasm_end_layer(fz_device *dev)
+void wasm_end_layer(fz_device *dev)
 {
 	VOID(fz_end_layer, dev)
 }
@@ -1249,6 +1249,65 @@ EXPORT
 void wasm_pdf_set_annot_default_appearance(pdf_annot *annot, char *font, float size, int ncolor, float *color)
 {
 	VOID(pdf_set_annot_default_appearance, annot, font, size, ncolor, color)
+}
+
+// --- PDFWidget ---
+
+EXPORT
+int wasm_pdf_annot_field_type(pdf_annot *widget)
+{
+	INTEGER(pdf_field_type, pdf_annot_obj(ctx, widget))
+}
+
+EXPORT
+int wasm_pdf_annot_field_flags(pdf_annot *widget)
+{
+	INTEGER(pdf_field_flags, pdf_annot_obj(ctx, widget))
+}
+
+PDF_ANNOT_GET(char*, POINTER, field_label)
+PDF_ANNOT_GET(char*, POINTER, field_value)
+
+EXPORT
+char * wasm_pdf_load_field_name(pdf_annot *widget)
+{
+	POINTER(pdf_load_field_name, pdf_annot_obj(ctx, widget))
+}
+
+EXPORT
+int wasm_pdf_annot_text_widget_max_len(pdf_annot *widget)
+{
+	INTEGER(pdf_text_widget_max_len, widget)
+}
+
+EXPORT
+int wasm_pdf_set_annot_text_field_value(pdf_annot *widget, char *value)
+{
+	INTEGER(pdf_set_text_field_value, widget, value)
+}
+
+EXPORT
+int wasm_pdf_set_annot_choice_field_value(pdf_annot *widget, char *value)
+{
+	INTEGER(pdf_set_choice_field_value, widget, value)
+}
+
+EXPORT
+int wasm_pdf_annot_choice_field_option_count(pdf_annot *widget)
+{
+	INTEGER(pdf_choice_field_option_count, pdf_annot_obj(ctx, widget))
+}
+
+EXPORT
+char * wasm_pdf_annot_choice_field_option(pdf_annot *widget, int export, int i)
+{
+	POINTER(pdf_choice_field_option, pdf_annot_obj(ctx, widget), export, i)
+}
+
+EXPORT
+int wasm_pdf_toggle_widget(pdf_annot *widget)
+{
+	INTEGER(pdf_toggle_widget, widget)
 }
 
 // --- PDFObject ---
