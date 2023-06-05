@@ -2321,13 +2321,13 @@ class PDFWidget extends PDFAnnotation {
 		return libmupdf._wasm_pdf_set_annot_choice_field_value(this, STRING(value))
 	}
 
-	getOptions(export=false) {
+	getOptions(isExport=false) {
 		let result = []
 		let n = libmupdf._wasm_pdf_annot_choice_field_option_count(this)
 		for (let i = 0; i < n; ++i) {
 			result.push(
 				fromString(
-					libmupdf._wasm_pdf_annot_choice_field_option(this, export, i)
+					libmupdf._wasm_pdf_annot_choice_field_option(this, isExport, i)
 				)
 			)
 		}
