@@ -64,6 +64,7 @@ public class StructuredText
 		ArrayList<TextLine> lines;
 		ArrayList<TextChar> chrs;
 		Rect lineBbox;
+		Point lineDir;
 		Rect blockBbox;
 
 		BlockWalker() {
@@ -85,14 +86,16 @@ public class StructuredText
 			blocks.add(block);
 		}
 
-		public void beginLine(Rect bbox, int wmode) {
+		public void beginLine(Rect bbox, int wmode, Point dir) {
 			chrs = new ArrayList<TextChar>();
 			lineBbox = bbox;
+			lineDir = dir;
 		}
 
 		public void endLine() {
 			TextLine line = new TextLine();
 			line.bbox = lineBbox;
+			line.dir = lineDir;
 			line.chars =  chrs.toArray(new TextChar[0]);
 			lines.add(line);
 		}
@@ -117,6 +120,7 @@ public class StructuredText
 	public static class TextLine {
 		public TextChar[] chars;
 		public Rect bbox;
+		public Point dir;
 	}
 
 	public static class TextChar {

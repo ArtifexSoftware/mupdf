@@ -27,7 +27,7 @@ public interface StructuredTextWalker
 	void onImageBlock(Rect bbox, Matrix transform, Image image);
 	void beginTextBlock(Rect bbox);
 	void endTextBlock();
-	void beginLine(Rect bbox, int wmode);
+	void beginLine(Rect bbox, int wmode, Point dir);
 	void endLine();
 	void onChar(int c, Point origin, Font font, float size, Quad q);
 }
