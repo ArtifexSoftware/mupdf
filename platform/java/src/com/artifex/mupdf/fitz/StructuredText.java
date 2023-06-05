@@ -104,6 +104,7 @@ public class StructuredText
 			TextChar chr = new TextChar();
 			chr.c = c;
 			chr.quad = quad;
+			chr.origin = origin;
 			chrs.add(chr);
 		}
 
@@ -126,6 +127,7 @@ public class StructuredText
 	public static class TextChar {
 		public int c;
 		public Quad quad;
+		public Point origin;
 		public boolean isWhitespace() {
 			return Character.isWhitespace(c);
 		}
