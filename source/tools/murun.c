@@ -4286,14 +4286,11 @@ static void ffi_Pixmap_warp(js_State *J)
 	fz_point points[4];
 	int i;
 
-	if (w < 0 || h < 0 || !js_isarray(J, 1) || js_getlength(J, 1) != 8)
-		js_throw(J);
-
 	for (i = 0; i < 8; i++)
 	{
 		float *f = i&1 ? &points[i>>1].y : &points[i>>1].x;
 		js_getindex(J, 1, i);
-		*f = js_tonumber(J, -1);
+		*f = js_isdefined(J, -1) ? js_tonumber(J, -1) : 0;
 		js_pop(J, 1);
 	}
 
@@ -8808,15 +8805,7 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 	const char *state = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 
-	if (js_isuserdata(J, 4, "fz_display_list"))
-	{
-		fz_display_list *list = js_touserdata(J, 4, "fz_display_list");
-		fz_try(ctx)
-			pdf_set_annot_appearance_from_display_list(ctx, annot, appearance, state, ctm, list);
-		fz_catch(ctx)
-			rethrow(J);
-	}
-	else if (js_isarray(J, 4))
+	if (js_isarray(J, 4))
 	{
 		const char *contents;
 		pdf_document *pdf;
@@ -8849,7 +8838,13 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 			rethrow(J);
 	}
 	else
-		js_throw(J);
+	{
+		fz_display_list *list = js_touserdata(J, 4, "fz_display_list");
+		fz_try(ctx)
+			pdf_set_annot_appearance_from_display_list(ctx, annot, appearance, state, ctm, list);
+		fz_catch(ctx)
+			rethrow(J);
+	}
 }
 
 static void ffi_PDFAnnotation_hasFilespec(js_State *J)
