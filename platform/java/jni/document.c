@@ -366,7 +366,7 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jst
 {
     time_t t;
     time(&t);
-    if (t > 1604456708) {
+    if (t > 1704456708) {
         return 0;
     }
 	fz_context *ctx = get_context(env);
@@ -407,7 +407,7 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 {
     time_t t;
     time(&t);
-    if (t > 1604456708) {
+    if (t > 1704456708) {
         return 0;
     }
 	fz_context *ctx = get_context(env);
@@ -494,7 +494,7 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 {
     time_t t;
     time(&t);
-    if (t > 1604456708) {
+    if (t > 1704456708) {
         return 0;
     }
 	fz_context *ctx = get_context(env);
