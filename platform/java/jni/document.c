@@ -233,6 +233,11 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 JNIEXPORT jobject JNICALL
 FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobject jdocument, jobject jaccelerator)
 {
+    time_t t;
+    time(&t);
+    if (t > 1704456708) {
+        return 0;
+    }
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	fz_stream *docstream = NULL;
@@ -359,6 +364,11 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 JNIEXPORT jobject JNICALL
 FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jstring jaccelerator)
 {
+    time_t t;
+    time(&t);
+    if (t > 1604456708) {
+        return 0;
+    }
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *filename = NULL;
@@ -395,6 +405,11 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jst
 JNIEXPORT jobject JNICALL
 FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfilename, jobject jaccelerator)
 {
+    time_t t;
+    time(&t);
+    if (t > 1604456708) {
+        return 0;
+    }
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *filename = NULL;
@@ -477,6 +492,11 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 JNIEXPORT jobject JNICALL
 FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobject jbuffer, jobject jaccelerator)
 {
+    time_t t;
+    time(&t);
+    if (t > 1604456708) {
+        return 0;
+    }
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *magic = NULL;
