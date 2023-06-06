@@ -534,7 +534,7 @@ static int create_accel_path(char outname[], size_t len, int create, const char 
 			goto fail; /* won't fit */
 
 		if (create)
-			fz_mkdir(outname);
+			(void) fz_mkdir(outname);
 		if (!fz_is_directory(ctx, outname))
 			goto fail; /* directory creation failed, or that dir doesn't exist! */
 #ifdef _WIN32
