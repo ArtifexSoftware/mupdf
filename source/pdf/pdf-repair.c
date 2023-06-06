@@ -97,7 +97,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
 			if (file->eof)
 				fz_rethrow(ctx);
 			/* Silently swallow the error */
-			dict = pdf_new_dict(ctx, NULL, 2);
+			dict = pdf_new_dict(ctx, doc, 2);
 		}
 
 		/* We must be careful not to try to resolve any indirections

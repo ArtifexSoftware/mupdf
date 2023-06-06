@@ -39,6 +39,9 @@ pdf_new_graft_map(fz_context *ctx, pdf_document *dst)
 {
 	pdf_graft_map *map = NULL;
 
+	if (dst == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create graft make without a destination document");
+
 	map = fz_malloc_struct(ctx, pdf_graft_map);
 
 	map->dst = pdf_keep_document(ctx, dst);

@@ -746,6 +746,9 @@ pdf_new_array(fz_context *ctx, pdf_document *doc, int initialcap)
 	pdf_obj_array *obj;
 	int i;
 
+	if (doc == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create array without a document");
+
 	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_array)), "pdf_obj(array)");
 	obj->super.refs = 1;
 	obj->super.kind = PDF_ARRAY;
@@ -1661,8 +1664,10 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 		return;
 	}
 
+	assert(doc != NULL);
+
 	/* Do we need to drop the page maps? */
-	if (doc && (doc->rev_page_map || doc->fwd_page_map))
+	if (doc->rev_page_map || doc->fwd_page_map)
 	{
 		if (doc->non_structural_change)
 		{
@@ -1983,6 +1988,9 @@ pdf_new_dict(fz_context *ctx, pdf_document *doc, int initialcap)
 {
 	pdf_obj_dict *obj;
 	int i;
+
+	if (doc == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create dictionary without a document");
 
 	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_dict)), "pdf_obj(dict)");
 	obj->super.refs = 1;
@@ -3538,17 +3546,17 @@ void pdf_dict_put_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, cons
 
 void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_rect x)
 {
-	pdf_dict_put_drop(ctx, dict, key, pdf_new_rect(ctx, NULL, x));
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_rect(ctx, pdf_get_bound_document(ctx, dict), x));
 }
 
 void pdf_dict_put_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_matrix x)
 {
-	pdf_dict_put_drop(ctx, dict, key, pdf_new_matrix(ctx, NULL, x));
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_matrix(ctx, pdf_get_bound_document(ctx, dict), x));
 }
 
 void pdf_dict_put_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int64_t time)
 {
-	pdf_dict_put_drop(ctx, dict, key, pdf_new_date(ctx, NULL, time));
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_date(ctx, pdf_get_bound_document(ctx, dict), time));
 }
 
 pdf_obj *pdf_dict_put_array(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int initial)
