@@ -277,7 +277,7 @@ int pdfextract_main(int argc, char **argv)
 {
 	char *infile;
 	char *password = "";
-	int c, o, ret;
+	int c, o, ret = 0;
 
 	while ((c = fz_getopt(argc, argv, "p:raN")) != -1)
 	{
