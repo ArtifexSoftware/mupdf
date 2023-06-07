@@ -143,7 +143,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 		}
 
 		if (typeflag != TYPE_NORMAL_OLD && typeflag != TYPE_NORMAL &&
-			typeflag != TYPE_CONTIGUOUS)
+			typeflag != TYPE_CONTIGUOUS && typeflag != TYPE_LONG_NAME)
 			continue;
 
 		blocks = (size + 511) / 512;
