@@ -4700,6 +4700,14 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_PIXELS 2L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    getObject
+ * Signature: ()Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getObject
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    getAnnotations
  * Signature: ()[Lcom/artifex/mupdf/fitz/PDFAnnotation;
  */

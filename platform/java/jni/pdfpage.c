@@ -241,3 +241,15 @@ FUN(PDFPage_getTransform)(JNIEnv *env, jobject self)
 
 	return to_Matrix_safe(ctx, env, ctm);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFPage_getObject)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+
+	if (!ctx || !page)
+		return NULL;
+
+	return to_PDFObject_safe_own(ctx, env, pdf_keep_obj(ctx, page->obj));
+}
