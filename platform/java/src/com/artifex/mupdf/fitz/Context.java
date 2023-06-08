@@ -57,12 +57,9 @@ public class Context
 		}
 	}
 
-	// FIXME: We should support the store size being changed dynamically.
-	// This requires changes within the MuPDF core.
-	//public native static void setStoreSize(long newSize);
-
-	//  empty the store
+	// empty and shrink the store
 	public native static void emptyStore();
+	public native static boolean shrinkStore(int percent);
 
 	public native static void enableICC();
 	public native static void disableICC();

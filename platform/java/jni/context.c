@@ -312,3 +312,21 @@ FUN(Context_useDocumentCSS)(JNIEnv *env, jclass cls, jboolean state)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(Context_shrinkStore)(JNIEnv *env, jclass cls, jint percent)
+{
+	fz_context *ctx = get_context(env);
+	int success = 0;
+
+	if (!ctx) return 0;
+	if (percent < 0) jni_throw_arg(env, "percent must not be negative");
+	if (percent > 100) jni_throw_arg(env, "percent must not be more than 100");
+
+	fz_try(ctx)
+		success = fz_shrink_store(ctx, percent);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return success != 0;
+}
