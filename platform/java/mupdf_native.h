@@ -4450,10 +4450,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFObject_getArray
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    getDictionary
- * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/PDFObject;
+ * Signature: (Ljava/lang/String;Z)Lcom/artifex/mupdf/fitz/PDFObject;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFObject_getDictionary
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject

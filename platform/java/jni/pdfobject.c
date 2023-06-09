@@ -455,7 +455,7 @@ FUN(PDFObject_getArray)(JNIEnv *env, jobject self, jint index)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
+FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname, jboolean inheritable)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *dict = from_PDFObject(env, self);
@@ -471,7 +471,10 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	if (!name) jni_throw_run(env, "cannot get name to lookup");
 
 	fz_try(ctx)
-		val = pdf_dict_gets(ctx, dict, name);
+		if (inheritable)
+			val = pdf_dict_get_inheritable(ctx, dict, pdf_new_name(ctx, name));
+		else
+			val = pdf_dict_gets(ctx, dict, name);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jname, name);
 	fz_catch(ctx)

@@ -7008,7 +7008,7 @@ static void ffi_PDFGraftMap_graftPage(js_State *J)
 		rethrow(J);
 }
 
-static pdf_obj *ffi_PDFObject_get_imp(js_State *J)
+static pdf_obj *ffi_PDFObject_get_imp(js_State *J, int inheritable)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
@@ -7019,7 +7019,23 @@ static pdf_obj *ffi_PDFObject_get_imp(js_State *J)
 		if (js_isuserdata(J, i, "pdf_obj")) {
 			pdf_obj *key = js_touserdata(J, i, "pdf_obj");
 			fz_try(ctx)
-				obj = val = pdf_dict_get(ctx, obj, key);
+				if (inheritable)
+					obj = val = pdf_dict_get_inheritable(ctx, obj, key);
+				else
+					obj = val = pdf_dict_get(ctx, obj, key);
+			fz_catch(ctx)
+				rethrow(J);
+		} else if (inheritable) {
+			const char *key = js_tostring(J, i);
+			pdf_obj *name = NULL;
+			fz_var(name);
+			fz_try(ctx)
+			{
+				name = pdf_new_name(ctx, key);
+				obj = val = pdf_dict_get_inheritable(ctx, obj, name);
+			}
+			fz_always(ctx)
+				pdf_drop_obj(ctx, name);
 			fz_catch(ctx)
 				rethrow(J);
 		} else {
@@ -7037,7 +7053,17 @@ static pdf_obj *ffi_PDFObject_get_imp(js_State *J)
 static void ffi_PDFObject_get(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *val = ffi_PDFObject_get_imp(J);
+	pdf_obj *val = ffi_PDFObject_get_imp(J, 0);
+	if (val)
+		ffi_pushobj(J, pdf_keep_obj(ctx, val));
+	else
+		js_pushnull(J);
+}
+
+static void ffi_PDFObject_getInheritable(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *val = ffi_PDFObject_get_imp(J, 1);
 	if (val)
 		ffi_pushobj(J, pdf_keep_obj(ctx, val));
 	else
@@ -7047,7 +7073,7 @@ static void ffi_PDFObject_get(js_State *J)
 static void ffi_PDFObject_getNumber(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J, 0);
 	float num = 0;
 	fz_try(ctx)
 		if (pdf_is_int(ctx, obj))
@@ -7062,7 +7088,7 @@ static void ffi_PDFObject_getNumber(js_State *J)
 static void ffi_PDFObject_getName(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J, 0);
 	const char *name = NULL;
 	fz_try(ctx)
 		name = pdf_to_name(ctx, obj);
@@ -7074,7 +7100,7 @@ static void ffi_PDFObject_getName(js_State *J)
 static void ffi_PDFObject_getString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *obj = ffi_PDFObject_get_imp(J);
+	pdf_obj *obj = ffi_PDFObject_get_imp(J, 0);
 	const char *string = NULL;
 	fz_try(ctx)
 		string = pdf_to_text_string(ctx, obj);
@@ -10220,6 +10246,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.getNumber", ffi_PDFObject_getNumber, 1);
 		jsB_propfun(J, "PDFObject.getName", ffi_PDFObject_getName, 1);
 		jsB_propfun(J, "PDFObject.getString", ffi_PDFObject_getString, 1);
+		jsB_propfun(J, "PDFObject.getInheritable", ffi_PDFObject_getInheritable, 1);
 		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 1);
 		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 2);
 		jsB_propfun(J, "PDFObject.push", ffi_PDFObject_push, 1);
