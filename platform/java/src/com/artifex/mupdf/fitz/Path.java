@@ -86,4 +86,47 @@ public class Path implements PathWalker
 	public native Rect getBounds(StrokeState stroke, Matrix ctm);
 
 	public native void walk(PathWalker walker);
+
+	public String toString(String separator) {
+		StringBuffer s = new StringBuffer();
+		this.walk(new ToStringWalker(s, separator));
+		return s.toString();
+	}
+
+	public String toString() {
+		return toString(" ");
+	}
+
+	class ToStringWalker implements PathWalker {
+		StringBuffer out;
+		String separator;
+
+		public ToStringWalker(StringBuffer out, String separator) {
+			this.out = out;
+			this.separator = separator;
+		}
+
+		public void moveTo(float x, float y) {
+			out.append(
+				Float.toString(x) + " " + Float.toString(y) +
+				" m" + separator);
+		}
+
+		public void lineTo(float x, float y) {
+			out.append(
+				Float.toString(x) + " " + Float.toString(y) +
+				" l" + separator);
+		}
+
+		public void curveTo(float cx1, float cy1, float cx2, float cy2, float ex, float ey) {
+			out.append(
+				Float.toString(cx1) + " " + Float.toString(cy1) +
+				Float.toString(cx2) + " " + Float.toString(cy2) +
+				" c" + separator);
+		}
+
+		public void closePath() {
+			out.append("h" + separator);
+		}
+	}
 }
