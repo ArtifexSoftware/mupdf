@@ -189,14 +189,14 @@ typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, i
 	Type for a function to get the page label of a page in the document.
 	See fz_page_label for more information.
 */
-typedef void (fz_document_page_label_fn)(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, int size);
+typedef void (fz_document_page_label_fn)(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, size_t size);
 
 /**
 	Type for a function to query
 	a document's metadata. See fz_lookup_metadata for more
 	information.
 */
-typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, size_t size);
 
 /**
 	Type for a function to set

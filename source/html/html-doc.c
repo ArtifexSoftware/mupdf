@@ -177,7 +177,7 @@ htdoc_load_outline(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-fb2doc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+fb2doc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	html_document *doc = (html_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))
@@ -188,7 +188,7 @@ fb2doc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char
 }
 
 static int
-htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	html_document *doc = (html_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))
@@ -199,7 +199,7 @@ htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char 
 }
 
 static int
-xhtdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+xhtdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	html_document *doc = (html_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))
@@ -210,7 +210,7 @@ xhtdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char
 }
 
 static int
-mobi_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+mobi_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	html_document *doc = (html_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))

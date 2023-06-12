@@ -246,7 +246,7 @@ xps_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-xps_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+xps_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	if (!strcmp(key, FZ_META_FORMAT))
 		return 1 + (int)fz_strlcpy(buf, "XPS", size);

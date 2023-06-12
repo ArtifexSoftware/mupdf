@@ -609,7 +609,7 @@ epub_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 }
 
 static void
-epub_page_label(fz_context *ctx, fz_document *doc_, int chapter, int number, char *buf, int size)
+epub_page_label(fz_context *ctx, fz_document *doc_, int chapter, int number, char *buf, size_t size)
 {
 	fz_snprintf(buf, size, "ch. %d, p. %d", chapter+1, number+1);
 }
@@ -943,7 +943,7 @@ epub_load_outline(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-epub_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+epub_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	epub_document *doc = (epub_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))

@@ -150,6 +150,11 @@ static inline int fz_clampi(int x, int min, int max)
 	return x < min ? min : x > max ? max : x;
 }
 
+static inline int64_t fz_clamp64(int64_t x, int64_t min, int64_t max)
+{
+	return x < min ? min : x > max ? max : x;
+}
+
 static inline double fz_clampd(double x, double min, double max)
 {
 	return x < min ? min : x > max ? max : x;

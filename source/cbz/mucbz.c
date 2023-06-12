@@ -253,7 +253,7 @@ cbz_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 }
 
 static int
-cbz_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+cbz_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
 {
 	cbz_document *doc = (cbz_document*)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))

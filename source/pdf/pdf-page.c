@@ -1696,12 +1696,12 @@ static void pdf_format_alpha_page_label(char *buf, int size, int n, int alpha)
 }
 
 static void
-pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, int size)
+pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, size_t size)
 {
 	pdf_obj *style = pdf_dict_get(ctx, dict, PDF_NAME(S));
 	const char *prefix = pdf_dict_get_text_string(ctx, dict, PDF_NAME(P));
 	int start = pdf_dict_get_int(ctx, dict, PDF_NAME(St));
-	int n;
+	size_t n;
 
 	// St must be >= 1; default is 1.
 	if (start < 1)
@@ -1727,17 +1727,17 @@ pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, int 
 }
 
 void
-pdf_page_label(fz_context *ctx, pdf_document *doc, int index, char *buf, int size)
+pdf_page_label(fz_context *ctx, pdf_document *doc, int index, char *buf, size_t size)
 {
 	struct page_label_range range = pdf_lookup_page_label(ctx, doc, index);
 	if (range.label)
 		pdf_format_page_label(ctx, index - range.offset, range.label, buf, size);
 	else
-		fz_snprintf(buf, size, "%d", index + 1);
+		fz_snprintf(buf, size, "%z", index + 1);
 }
 
 void
-pdf_page_label_imp(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, int size)
+pdf_page_label_imp(fz_context *ctx, fz_document *doc, int chapter, int page, char *buf, size_t size)
 {
 	pdf_page_label(ctx, pdf_document_from_fz_document(ctx, doc), page, buf, size);
 }

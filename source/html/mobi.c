@@ -240,10 +240,11 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 	fz_tree *tree = NULL;
 	uint32_t *offsets = NULL;
 	char buf[32];
-	uint32_t i, k, n, extra;
+	uint32_t i, k, extra;
 	uint32_t recindex;
 	uint32_t minoffset, maxoffset;
 	int format = FORMAT_TEXT;
+	size_t n;
 
 	// https://wiki.mobileread.com/wiki/PalmDOC
 
@@ -276,7 +277,7 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 		// record info list count
 		n = fz_read_uint16(ctx, stm);
 
-		minoffset = fz_tell(ctx, stm) + n * 2 * sizeof (uint32_t) - 1;
+		minoffset = (uint32_t)fz_tell(ctx, stm) + n * 2 * sizeof (uint32_t) - 1;
 		maxoffset = (uint32_t)mobi->len;
 
 		// record info list
