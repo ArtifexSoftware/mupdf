@@ -288,32 +288,9 @@ init_weights(fz_weights *weights, int j)
 }
 
 static void
-add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
-	float x, float F, float G, int src_w, float dst_w)
+insert_weight(fz_weights *weights, int j, int i, int weight)
 {
-	float dist = j - x + 0.5f - ((i + 0.5f)*dst_w/src_w);
-	float f;
-	int min, len, index, weight;
-
-	dist *= G;
-	if (dist < 0)
-		dist = -dist;
-	f = filter->fn(filter, dist)*F;
-	weight = (int)(256*f+0.5f);
-
-	/* Ensure i is in range */
-	if (i < 0 || i >= src_w)
-		return;
-	if (weight == 0)
-	{
-		/* We add a fudge factor here to allow for extreme downscales
-		 * where all the weights round to 0. Ensure that at least one
-		 * (arbitrarily the first one) is non zero. */
-		if (weights->new_line && f > 0)
-			weight = 1;
-		else
-			return;
-	}
+	int min, len, index;
 
 	/* Move j from patch_l...patch_l+patch_w range to 0..patch_w range */
 	j -= weights->patch_l;
@@ -362,6 +339,27 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 		/* Infrequent case */
 		weights->index[index+i-min] += weight;
 	}
+}
+
+static void
+add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
+	float x, float F, float G, int src_w, float dst_w)
+{
+	float dist = j - x + 0.5f - ((i + 0.5f)*dst_w/src_w);
+	float f;
+	int weight;
+
+	dist *= G;
+	if (dist < 0)
+		dist = -dist;
+	f = filter->fn(filter, dist)*F;
+	weight = (int)(256*f+0.5f);
+
+	/* Ensure i is in range */
+	if (i < 0 || i >= src_w)
+		return;
+	if (weight != 0)
+		insert_weight(weights, j, i, weight);
 }
 
 static void
@@ -501,6 +499,13 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 		for (; l <= r; l++)
 		{
 			add_weight(weights, j, l, filter, x, F, G, src_w, dst_w);
+		}
+		if (weights->new_line)
+		{
+			/* In very rare cases (bug 706764) we might not actually
+			 * have generated any non-zero weights for this destination
+			 * pixel. Just use the central pixel. */
+			insert_weight(weights, j, floorf(centre), 1);
 		}
 		check_weights(weights, j, dst_w_int, x, dst_w);
 		if (vertical)
