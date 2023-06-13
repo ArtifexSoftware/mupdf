@@ -696,6 +696,8 @@ parse_closing_element:
 	while (iswhite(*p)) ++p;
 	mark = p;
 	while (isname(*p)) ++p;
+	if (!isname(*mark))
+		return "syntax error in closing element";
 	if (close_tag(ctx, parser, mark, p))
 		return "opening and closing tag mismatch";
 	while (iswhite(*p)) ++p;
