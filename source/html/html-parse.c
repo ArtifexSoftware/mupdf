@@ -1773,7 +1773,13 @@ fz_parse_html_imp(fz_context *ctx,
 	html->layout_h = 0;
 	html->layout_em = 0;
 
-	fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi);
+	fz_try(ctx)
+		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi);
+	fz_catch(ctx)
+	{
+		fz_drop_html(ctx, html);
+		fz_rethrow(ctx);
+	}
 
 	return html;
 }
