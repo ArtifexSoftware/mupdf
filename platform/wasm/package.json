@@ -16,7 +16,9 @@
   "keywords": [
     "mupdf",
     "pdf",
-    "wasm"
+    "wasm",
+    "webassembly",
+    "artifex"
   ],
   "author": "Artifex Software, Inc.",
   "license": "AGPL-3.0-or-later"
