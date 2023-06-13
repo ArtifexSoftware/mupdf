@@ -793,4 +793,16 @@ void pdf_load_journal(fz_context *ctx, pdf_document *doc, const char *filename);
 */
 void pdf_read_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm);
 
+/*
+	Minimize the memory used by a document.
+
+	We walk the in memory xref tables, evicting the PDF objects
+	therein that aren't in use.
+
+	This reduces the current memory use, but any subsequent use
+	of these objects will load them back into memory again.
+*/
+void pdf_minimize_document(fz_context *ctx, pdf_document *doc);
+
+
 #endif

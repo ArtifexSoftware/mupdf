@@ -63,6 +63,7 @@ pdf_obj *pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj);
 
 pdf_obj *pdf_keep_obj(fz_context *ctx, pdf_obj *obj);
 void pdf_drop_obj(fz_context *ctx, pdf_obj *obj);
+pdf_obj *pdf_drop_singleton_obj(fz_context *ctx, pdf_obj *obj);
 
 int pdf_is_null(fz_context *ctx, pdf_obj *obj);
 int pdf_is_bool(fz_context *ctx, pdf_obj *obj);

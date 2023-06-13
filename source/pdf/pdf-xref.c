@@ -5114,3 +5114,35 @@ int pdf_obj_is_incremental(fz_context *ctx, pdf_obj *obj)
 
 	return (v == 0);
 }
+
+void pdf_minimize_document(fz_context *ctx, pdf_document *doc)
+{
+	int i;
+
+	/* Don't throw anything away if we've done a repair! */
+	if (doc == NULL || doc->repair_attempted)
+		return;
+
+	/* Don't throw anything away in the incremental section, as that's where
+	 * all our changes will be. */
+	for (i = doc->num_incremental_sections; i < doc->num_xref_sections; i++)
+	{
+		pdf_xref *xref = &doc->xref_sections[i];
+		pdf_xref_subsec *sub;
+
+		for (sub = xref->subsec; sub; sub = sub->next)
+		{
+			int len = sub->len;
+			int j;
+			for (j = 0; j < len; j++)
+			{
+				pdf_xref_entry *e = &sub->table[j];
+				if (e->obj == NULL)
+					continue;
+				if (e->type != 'o')
+					continue;
+				e->obj = pdf_drop_singleton_obj(ctx, e->obj);
+			}
+		}
+	}
+}
