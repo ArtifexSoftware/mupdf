@@ -228,6 +228,33 @@ fz_read_file(fz_context *ctx, const char *filename)
 	return buf;
 }
 
+fz_buffer *
+fz_try_read_file(fz_context *ctx, const char *filename)
+{
+	fz_stream *stm;
+	fz_buffer *buf = NULL;
+
+	fz_var(buf);
+
+	stm = fz_try_open_file(ctx, filename);
+	if (stm == NULL)
+		return NULL;
+	fz_try(ctx)
+	{
+		buf = fz_read_all(ctx, stm, 0);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return buf;
+}
+
 uint16_t fz_read_uint16(fz_context *ctx, fz_stream *stm)
 {
 	int a = fz_read_byte(ctx, stm);

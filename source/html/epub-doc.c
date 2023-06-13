@@ -114,7 +114,7 @@ static fz_stream *open_encrypted_entry(fz_context *ctx, fz_archive *arch_, const
 {
 	struct encrypted *arch = (struct encrypted *)arch_;
 	if (fz_tree_lookup(ctx, arch->info, name))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open encrypted data");
+		return NULL;
 	return fz_open_archive_entry(ctx, arch->chain, name);
 }
 
@@ -122,7 +122,7 @@ static fz_buffer *read_encrypted_entry(fz_context *ctx, fz_archive *arch_, const
 {
 	struct encrypted *arch = (struct encrypted *)arch_;
 	if (fz_tree_lookup(ctx, arch->info, name))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read encrypted data");
+		return NULL;
 	return fz_read_archive_entry(ctx, arch->chain, name);
 }
 

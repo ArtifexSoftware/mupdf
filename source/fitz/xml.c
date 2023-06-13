@@ -952,10 +952,9 @@ fz_parse_xml_stream(fz_context *ctx, fz_stream *stm, int preserve_white)
 	return xml;
 }
 
-fz_xml *
-fz_parse_xml_archive_entry(fz_context *ctx, fz_archive *arch, const char *filename, int preserve_white)
+static fz_xml *
+parse_and_drop_buffer(fz_context *ctx, fz_buffer *buf, int preserve_white)
 {
-	fz_buffer *buf = fz_read_archive_entry(ctx, arch, filename);
 	fz_xml *xml = NULL;
 
 	fz_var(xml);
@@ -968,6 +967,25 @@ fz_parse_xml_archive_entry(fz_context *ctx, fz_archive *arch, const char *filena
 		fz_rethrow(ctx);
 
 	return xml;
+}
+
+fz_xml *
+fz_parse_xml_archive_entry(fz_context *ctx, fz_archive *arch, const char *filename, int preserve_white)
+{
+	fz_buffer *buf = fz_read_archive_entry(ctx, arch, filename);
+
+	return parse_and_drop_buffer(ctx, buf, preserve_white);
+}
+
+fz_xml *
+fz_try_parse_xml_archive_entry(fz_context *ctx, fz_archive *arch, const char *filename, int preserve_white)
+{
+	fz_buffer *buf = fz_try_read_archive_entry(ctx, arch, filename);
+
+	if (buf == NULL)
+		return NULL;
+
+	return parse_and_drop_buffer(ctx, buf, preserve_white);
 }
 
 fz_xml *

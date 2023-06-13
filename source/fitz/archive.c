@@ -27,6 +27,17 @@
 fz_stream *
 fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
+	fz_stream *stream = fz_try_open_archive_entry(ctx, arch, name);
+
+	if (stream == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open entry %s", name);
+
+	return stream;
+}
+
+fz_stream *
+fz_try_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
+{
 	char *local_name;
 	fz_stream *stream = NULL;
 
@@ -49,6 +60,17 @@ fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 
 fz_buffer *
 fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
+{
+	fz_buffer *buf = fz_try_read_archive_entry(ctx, arch, name);
+
+	if (buf == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read %s", name);
+
+	return buf;
+}
+
+fz_buffer *
+fz_try_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 {
 	char *local_name;
 	fz_buffer *buf = NULL;
@@ -231,8 +253,6 @@ static fz_buffer *read_tree_entry(fz_context *ctx, fz_archive *arch, const char 
 {
 	fz_tree *tree = ((fz_tree_archive*)arch)->tree;
 	fz_buffer *ent = fz_tree_lookup(ctx, tree, name);
-	if (ent == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read %s", name);
 	return fz_keep_buffer(ctx, ent);
 }
 
@@ -240,8 +260,6 @@ static fz_stream *open_tree_entry(fz_context *ctx, fz_archive *arch, const char 
 {
 	fz_tree *tree = ((fz_tree_archive*)arch)->tree;
 	fz_buffer *ent = fz_tree_lookup(ctx, tree, name);
-	if (ent == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s", name);
 	return fz_open_buffer(ctx, ent);
 }
 
@@ -364,17 +382,11 @@ static fz_buffer *read_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 			subname += n;
 		}
 
-		fz_try(ctx)
-			res = fz_read_archive_entry(ctx, arch->sub[i].arch, subname);
-		fz_catch(ctx)
-			res = NULL;
+		res = fz_try_read_archive_entry(ctx, arch->sub[i].arch, subname);
 
 		if (res)
 			break;
 	}
-
-	if (!res)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read %s", name);
 
 	return res;
 }
@@ -398,17 +410,11 @@ static fz_stream *open_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 			subname += n;
 		}
 
-		fz_try(ctx)
-			res = fz_open_archive_entry(ctx, arch->sub[i].arch, subname);
-		fz_catch(ctx)
-			res = NULL;
+		res = fz_open_archive_entry(ctx, arch->sub[i].arch, subname);
 
 		if (res)
 			break;
 	}
-
-	if (!res)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s", name);
 
 	return res;
 }

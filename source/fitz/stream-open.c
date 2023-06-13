@@ -188,6 +188,20 @@ fz_open_file(fz_context *ctx, const char *name)
 	return fz_open_file_ptr(ctx, file);
 }
 
+fz_stream *
+fz_try_open_file(fz_context *ctx, const char *name)
+{
+	FILE *file;
+#ifdef _WIN32
+	file = fz_fopen_utf8(name, "rb");
+#else
+	file = fopen(name, "rb");
+#endif
+	if (file == NULL)
+		return NULL;
+	return fz_open_file_ptr(ctx, file);
+}
+
 #ifdef _WIN32
 fz_stream *
 fz_open_file_w(fz_context *ctx, const wchar_t *name)
@@ -236,6 +250,9 @@ fz_stream *
 fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	fz_stream *stm;
+
+	if (buf == NULL)
+		return NULL;
 
 	fz_keep_buffer(ctx, buf);
 	stm = fz_new_stream(ctx, buf, next_buffer, drop_buffer);

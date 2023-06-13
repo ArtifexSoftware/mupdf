@@ -159,6 +159,14 @@ int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /**
+	Opens an archive entry as a stream.
+
+	Returns NULL if a matching entry cannot be found, otherwise
+	behaves exactly as fz_open_archive_entry.
+*/
+fz_stream *fz_try_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
+
+/**
 	Reads all bytes in an archive entry
 	into a buffer.
 
@@ -168,6 +176,18 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 	Throws an exception if a matching entry cannot be found.
 */
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
+
+/**
+	Reads all bytes in an archive entry
+	into a buffer.
+
+	name: Entry name to look for, this must be an exact match to
+	the entry name in the archive.
+
+	Returns NULL if a matching entry cannot be found. Otherwise behaves
+	the same as fz_read_archive_entry. Exceptions may be thrown.
+*/
+fz_buffer *fz_try_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /**
 	fz_archive: tar implementation
