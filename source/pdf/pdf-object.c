@@ -3514,6 +3514,31 @@ pdf_dict_getp_inheritable(fz_context *ctx, pdf_obj *node, const char *path)
 	return NULL;
 }
 
+pdf_obj *
+pdf_dict_gets_inheritable(fz_context *ctx, pdf_obj *node, const char *key)
+{
+	pdf_obj *slow = node;
+	int halfbeat = 11; /* Don't start moving slow pointer for a while. */
+
+	while (node)
+	{
+		pdf_obj *val = pdf_dict_gets(ctx, node, key);
+		if (val)
+			return val;
+		node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
+		if (node == slow)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in resources");
+		if (--halfbeat == 0)
+		{
+			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
+			halfbeat = 2;
+		}
+	}
+
+	return NULL;
+}
+
+
 void pdf_dict_put_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int x)
 {
 	pdf_dict_put(ctx, dict, key, x ? PDF_TRUE : PDF_FALSE);

@@ -7027,15 +7027,8 @@ static pdf_obj *ffi_PDFObject_get_imp(js_State *J, int inheritable)
 				rethrow(J);
 		} else if (inheritable) {
 			const char *key = js_tostring(J, i);
-			pdf_obj *name = NULL;
-			fz_var(name);
 			fz_try(ctx)
-			{
-				name = pdf_new_name(ctx, key);
-				obj = val = pdf_dict_get_inheritable(ctx, obj, name);
-			}
-			fz_always(ctx)
-				pdf_drop_obj(ctx, name);
+				obj = val = pdf_dict_gets_inheritable(ctx, obj, key);
 			fz_catch(ctx)
 				rethrow(J);
 		} else {

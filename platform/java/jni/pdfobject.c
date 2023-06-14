@@ -472,7 +472,7 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname, jboolean 
 
 	fz_try(ctx)
 		if (inheritable)
-			val = pdf_dict_get_inheritable(ctx, dict, pdf_new_name(ctx, name));
+			val = pdf_dict_gets_inheritable(ctx, dict, name);
 		else
 			val = pdf_dict_gets(ctx, dict, name);
 	fz_always(ctx)
