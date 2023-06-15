@@ -2521,7 +2521,9 @@ perform_repair:
 				 * repair, it may not be. It is safe to call pdf_get_xref_entry_no_change
 				 * here, as it does not try/catch. */
 				ox = pdf_get_xref_entry_no_change(ctx, doc, num);
-				ox->type = 'o'; /* Not recursing any more. */
+				/* Bug 706762: ox can be NULL if the object went away during a repair. */
+				if (ox && ox->type == 'O')
+					ox->type = 'o'; /* Not recursing any more. */
 			}
 			fz_catch(ctx)
 				fz_rethrow(ctx);
