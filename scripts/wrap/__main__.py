@@ -849,8 +849,8 @@ Usage:
         --venv [-0] <venv-name> ...
             Should usually be the first arg in the command line.
 
-            Runs mupdfwrap.py in a venv called `venv-name` containing libclang,
-            passing remaining args.
+            Runs mupdfwrap.py in a venv called `venv-name` containing libclang
+            and swig, passing remaining args.
 
             if `-0` is specified, we assume the venv is already created and do
             not create or install packages in it.
@@ -1204,10 +1204,12 @@ def _get_m_command( build_dirs):
                 in_prefix = False
             elif flag == 'shared':
                 make_args += ' shared=yes'
-                if state.state_.macos:
-                    suffix = '.dylib'
-                else:
-                    suffix = '.so'
+                # `suffix` determines the name of libraries that we create, for
+                # example libmupdfcpp.so, but not libmupdf.so itself - this is
+                # created by `Makefile` etc. We do specify libmupdf.so when
+                # linking but the suffix is unused and on macos we will use
+                # libmupdf.dylib if present.
+                suffix = '.so'
                 build_prefix += f'{flag}-'
                 in_prefix = False
             else:
@@ -1271,6 +1273,34 @@ def _windows_vs_upgrade( vs_upgrade, build_dirs, devenv):
         _windows_vs_upgrade_cache[ key] = infix
     jlib.log('returning {infix=}')
     return infix
+
+
+def macos_patch( library, *sublibraries):
+    '''
+    Patches `library` so that all references to items in `sublibraries` are
+    changed to `@rpath/<leafname>`.
+
+    library:
+        Path of shared library.
+    sublibraries:
+        List of paths of shared libraries; these have typically been
+        specified with `-l` when `library` was created.
+    '''
+    jlib.log( f'macos_patch(): library={library}  sublibraries={sublibraries}')
+    if not state.state_.macos:
+        return
+    jlib.system( f'otool -L {library}', out='log')
+    command = 'install_name_tool'
+    names = []
+    for sublibrary in sublibraries:
+        name = jlib.system( f'otool -D {sublibrary}', out='return').strip()
+        name = name.split('\n')
+        assert len(name) == 2 and name[0] == f'{sublibrary}:', f'{name=}'
+        name = name[1]
+        command += f' -change {name} @rpath/{os.path.basename(name)}'
+    command += f' {library}'
+    jlib.system( command, out='log')
+    jlib.system( f'otool -L {library}', out='log')
 
 
 def build( build_dirs, swig_command, args, vs_upgrade):
@@ -1380,7 +1410,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     # build/shared-release/libmupdf.so, so we need
                     # to copy into build/shared-release-x64-py3.8/.
                     #
-                    jlib.fs_copy( f'{actual_build_dir}/libmupdf{suffix}', f'{build_dirs.dir_so}/libmupdf{suffix}', verbose=1)
+                    jlib.fs_copy( f'{actual_build_dir}/libmupdf.so', f'{build_dirs.dir_so}/libmupdf.so', verbose=1)
 
             elif action == '0':
                 # Generate C++ code that wraps the fz_* API.
@@ -1497,7 +1527,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         command = ( textwrap.dedent(
                                 f'''
                                 {compiler}
-                                    -o {libmupdfcpp}
+                                    -o {os.path.relpath(libmupdfcpp)}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
                                     -I {include1}
@@ -1512,6 +1542,8 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 command,
                                 force_rebuild,
                                 )
+                        macos_patch( libmupdfcpp, f'{build_dirs.dir_so}/libmupdf.dylib')
+
                     elif 'fpic' in dir_so_flags:
                         # We build a .so containing the C and C++ API. This
                         # might be slightly faster than having separate C and
@@ -1628,7 +1660,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
 
 
             elif action == '3':
-                # Compile code from action=='2' to create Python/C# binary.
+                # Compile code from action=='2' to create Python/C# shared library.
                 #
                 if build_python:
                     jlib.log( 'Compiling/linking generated Python module source code to create _mupdf.{"pyd" if state.state_.windows else "so"} ...')
@@ -1721,6 +1753,8 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 )
 
                 else:
+                    # Not Windows.
+
                     # We use c++ debug/release flags as implied by
                     # --dir-so, but all builds output the same file
                     # mupdf:platform/python/_mupdf.so. We could instead
@@ -1732,7 +1766,8 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     # like _mupdf.so does not require a matching
                     # libmupdfcpp.so and libmupdf.so.]
                     #
-                    include3 = ''
+                    flags_compile = ''
+                    flags_link = ''
                     if build_python:
                         # We use python-config which appears to
                         # work better than pkg-config because
@@ -1757,16 +1792,15 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 )
                         jlib.log('python_configs={python_configs}')
                         for python_config in python_configs:
-                            if jlib.fs_find_in_paths( python_config):
+                            if jlib.fs_find_in_paths( python_config, verbose=True):
                                 break
                         else:
-                            raise Exception( f'Cannot find `python-config`, tried: {python_config}')
+                            raise Exception( f'Cannot find `python-config`, tried: {python_configs}')
                         jlib.log( 'Using {python_config=}')
-                        # --cflags gives things like
-                        # -Wno-unused-result -g etc, so we just use
-                        # --includes.
-                        include3 = jlib.system( f'{python_config} --includes --ldflags', out='return', verbose=1)
-                        include3 = include3.replace( '\n', ' ')
+                        # `--cflags` gives things like `-Wno-unused-result -g`
+                        # etc, -so we just use `--includes`.
+                        flags_compile = jlib.system( f'{python_config} --includes', out='return', verbose=1).replace('\n', ' ')
+                        flags_link = jlib.system( f'{python_config} --ldflags', out='return', verbose=1).replace('\n', ' ')
                         if state.state_.macos:
                             # We need this to avoid numerous errors like:
                             #
@@ -1775,8 +1809,9 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             #       _wrap_ll_fz_warn(_object*, _object*) in mupdfcpp_swig-0a6733.o
                             #       _wrap_fz_warn(_object*, _object*) in mupdfcpp_swig-0a6733.o
                             #       ...
-                            include3 += ' -undefined dynamic_lookup'
-                        jlib.log('include3={include3!r}')
+                            flags_link += ' -undefined dynamic_lookup'
+                        jlib.log('flags_compile={flags_compile!r}')
+                        jlib.log('flags_link={flags_link!r}')
 
                     # These are the input files to our g++ command:
                     #
@@ -1831,14 +1866,15 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             command = ( textwrap.dedent(
                                     f'''
                                     {compiler}
-                                        -o {out2_so}
+                                        -o {os.path.relpath(out2_so)}
+                                        {os.path.relpath(cpp2_path)}
                                         {build_dirs.cpp_flags}
                                         -fPIC
                                         --shared
                                         -I {include1}
                                         -I {include2}
-                                        {include3}
-                                        {cpp2_path}
+                                        {flags_compile}
+                                        {flags_link2}
                                         {jlib.link_l_flags( [libmupdf, libmupdfcpp])}
                                         -Wno-deprecated-declarations
                                     ''').strip().replace( '\n', ' \\\n')
@@ -1870,27 +1906,29 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     # separate SWIG Python APIs (mupdf and mupdfpy's `extra`
                     # module) using the same underlying C library.
                     #
+                    sos = []
+                    sos.append( f'{build_dirs.dir_so}/libmupdfcpp.so')
+                    if os.path.basename( build_dirs.dir_so).startswith( 'shared-'):
+                        sos.append( f'{build_dirs.dir_so}/libmupdf.so')
                     command = ( textwrap.dedent(
                             f'''
                             {compiler}
-                                -o {out_so}
+                                -o {os.path.relpath(out_so)}
+                                {cpp_path}
                                 {build_dirs.cpp_flags}
                                 -fPIC
                                 -shared
                                 -I {include1}
                                 -I {include2}
-                                {include3}
-                                {cpp_path}
+                                {flags_compile}
                                 -Wno-deprecated-declarations
                                 -Wno-free-nonheap-object
                                 -DSWIG_PYTHON_SILENT_MEMLEAK
+                                {flags_link}
+                                {jlib.link_l_flags( sos)}
                             ''').strip().replace( '\n', ' \\\n')
                             )
-                    sos = []
-                    sos.append( f'{build_dirs.dir_so}/libmupdfcpp.so')
-                    if os.path.basename( build_dirs.dir_so).startswith( 'shared-'):
-                        sos.append( f'{build_dirs.dir_so}/libmupdf.so')
-                    command += f' \\\n   {jlib.link_l_flags( sos)}'
+                    #command += f' \\\n   {jlib.link_l_flags( sos)}'
                     infiles = [
                             cpp_path,
                             include1,
@@ -1904,6 +1942,10 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             out_so,
                             command,
                             force_rebuild,
+                            )
+                    macos_patch( out_so,
+                            f'{build_dirs.dir_so}/libmupdf.dylib',
+                            f'{build_dirs.dir_so}/libmupdfcpp.so',
                             )
             else:
                 raise Exception( 'unrecognised --build action %r' % action)
@@ -2005,7 +2047,7 @@ def make_docs( build_dirs, languages_original):
         # configuration.
         #
         assert 'docs/generated/' in outdir
-        jlib.ensure_empty_dir( outdir)
+        jlib.fs_ensure_empty_dir( outdir)
         dname = f'{name}.doxygen'
         dname2 = os.path.join( outdir, dname)
         jlib.system( f'cd {outdir}; rm -f {dname}0; doxygen -g {dname}0', out='return')
@@ -2037,7 +2079,7 @@ def make_docs( build_dirs, languages_original):
 
         elif language == 'python':
             ld_library_path = os.path.abspath( f'{build_dirs.dir_so}')
-            jlib.ensure_empty_dir( f'{out_dir}/python')
+            jlib.fs_ensure_empty_dir( f'{out_dir}/python')
             pythonpath = os.path.relpath( f'{build_dirs.dir_so}', f'{out_dir}/python')
             input_relpath = os.path.relpath( f'{build_dirs.dir_so}/mupdf.py', f'{out_dir}/python')
             jlib.system(
@@ -2137,6 +2179,9 @@ def make_docs( build_dirs, languages_original):
 
 
 def main2():
+
+    assert not state.state_.cygwin, \
+            f'This script does not run properly under Cygwin, use `py ...`'
 
     # Set default build directory. Can be overridden by '-d'.
     #
@@ -2375,7 +2420,7 @@ def main2():
                     if not os.path.exists(swig_local):
                         # Extract
                         z = zipfile.ZipFile(f'{name}.zip')
-                        jlib.ensure_empty_dir(f'{name}-0')
+                        jlib.fs_ensure_empty_dir(f'{name}-0')
                         z.extractall(f'{name}-0')
                         os.rename(f'{name}-0/{name}', name)
                         os.rmdir(f'{name}-0')
@@ -2493,11 +2538,12 @@ def main2():
                                 {jlib.link_l_flags( [libmupdf, libmupdfcpp])}
                             ''').replace('\n', '\\\n')
                     jlib.system(command, verbose=1)
-                    jlib.system(
-                            './test.cpp.exe',
-                            verbose=1,
-                            env_extra=dict(LD_LIBRARY_PATH=build_dirs.dir_so),
-                            )
+                    jlib.system( 'pwd', verbose=1)
+                    if state.state_.macos:
+                        #env_extra=dict(DYLD_LIBRARY_PATH=build_dirs.dir_so)
+                        jlib.system( f'DYLD_LIBRARY_PATH={build_dirs.dir_so} ./test.cpp.exe', verbose=1)
+                    else:
+                        jlib.system( './test.cpp.exe', verbose=1, env_extra=dict(LD_LIBRARY_PATH=build_dirs.dir_so))
 
             elif arg == '--test-internal':
                 _test_get_m_command()
@@ -2775,7 +2821,7 @@ def main2():
                     command += f' && . {venv}/bin/activate'
                 if install:
                     command += f' && python -m pip install --upgrade pip'
-                    command += f' && python -m pip install libclang'
+                    command += f' && python -m pip install libclang swig'
                 command += f' && python {sys.argv[0]} {args_tail}'
                 command += f' && deactivate'
                 jlib.system(command, out='log', verbose=1)
