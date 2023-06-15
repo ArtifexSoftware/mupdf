@@ -1409,7 +1409,7 @@ def command_env_text( command, env_extra):
 
 def system(
         command,
-        verbose=None,
+        verbose=True,
         raise_errors=True,
         out=sys.stdout,
         prefix=None,
@@ -1841,7 +1841,7 @@ def fs_update( text, filename, return_different=False):
         fs_rename( filename_temp, filename)
 
 
-def fs_find_in_paths( name, paths=None):
+def fs_find_in_paths( name, paths=None, verbose=False):
     '''
     Looks for `name` in paths and returns complete path. `paths` is list/tuple
     or `os.pathsep`-separated string; if `None` we use `$PATH`. If `name`
@@ -1851,12 +1851,22 @@ def fs_find_in_paths( name, paths=None):
         return name if os.path.isfile( name) else None
     if paths is None:
         paths = os.environ.get( 'PATH', '')
+        if verbose:
+            log('From os.environ["PATH"]: {paths=}')
     if isinstance( paths, str):
         paths = paths.split( os.pathsep)
+        if verbose:
+            log('After split: {paths=}')
     for path in paths:
         p = os.path.join( path, name)
+        if verbose:
+            log('Checking {p=}')
         if os.path.isfile( p):
+            if verbose:
+                log('Returning because is file: {p!r}')
             return p
+    if verbose:
+        log('Returning None because not found: {name!r}')
 
 
 def fs_mtime( filename, default=0):
@@ -2196,10 +2206,11 @@ def link_l_flags( sos, ld_origin=None):
     We return -L flags for each unique parent directory and -l flags for each
     leafname.
 
-    In addition on Linux and OpenBSD we append " -Wl,-rpath='$ORIGIN,-z,origin"
+    In addition on non-Windows we append " -Wl,-rpath,'$ORIGIN,-z,origin"
     so that libraries will be searched for next to each other. This can be
     disabled by setting ld_origin to false.
     '''
+    darwin = (platform.system() == 'Darwin')
     dirs = set()
     names = []
     if isinstance( sos, str):
@@ -2214,6 +2225,9 @@ def link_l_flags( sos, ld_origin=None):
         if name.endswith( '.so'):
             dirs.add( dir_)
             names.append( f'-l {name[3:-3]}')
+        elif darwin and name.endswith( '.dylib'):
+            dirs.add( dir_)
+            names.append( f'-l {name[3:-6]}')
         elif name.endswith( '.a'):
             names.append( so)
         else:
@@ -2222,13 +2236,19 @@ def link_l_flags( sos, ld_origin=None):
     # Important to use sorted() here, otherwise ordering from set() is
     # arbitrary causing occasional spurious rebuilds.
     for dir_ in sorted(dirs):
-        ret += f' -L {dir_}'
+        ret += f' -L {os.path.relpath(dir_)}'
     for name in names:
         ret += f' {name}'
     if ld_origin is None:
-        if os.uname()[0] in ( 'Linux', 'OpenBSD'):
+        if platform.system() != 'Windows':
             ld_origin = True
     if ld_origin:
-        ret += " -Wl,-rpath='$ORIGIN',-z,origin"
+        if darwin:
+            # As well as this link flag, it is also necessary to use
+            # `install_name_tool -change` to rename internal names to
+            # `@rpath/<leafname>`.
+            ret += ' -Wl,-rpath,@loader_path/.'
+        else:
+            ret += " -Wl,-rpath,'$ORIGIN',-z,origin"
     #log('{sos=} {ld_origin=} {ret=}')
-    return ret
+    return ret.strip()
