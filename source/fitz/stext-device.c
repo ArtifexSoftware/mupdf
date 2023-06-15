@@ -268,7 +268,9 @@ remove_last_char(fz_context *ctx, fz_stext_line *line)
 		}
 		if (prev)
 		{
-			/* the characters are pool allocated, so we don't actually leak the removed node */
+			/* The characters are pool allocated, so we don't actually leak the removed node. */
+			/* We do need to drop the char's font reference though. */
+			fz_drop_font(ctx, prev->font);
 			line->last_char = prev;
 			line->last_char->next = NULL;
 		}
