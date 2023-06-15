@@ -1405,8 +1405,8 @@ classextras = ClassExtras(
                         '''
                         :
                         x0(rhs.x0),
-                        x1(rhs.x1),
                         y0(rhs.y0),
+                        x1(rhs.x1),
                         y1(rhs.y1)
                         {
                         }
