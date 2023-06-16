@@ -1021,7 +1021,8 @@ Other intermediate generated files are created in `mupdf/platform/`
     mupdf/
         build/
             shared-release/    [Unix runtime files.]
-                libmupdf.so    [MuPDF C API.]
+                libmupdf.so    [MuPDF C API, not MacOS.]
+                libmupdf.dylib [MuPDF C API, MacOS.]
                 libmupdfcpp.so [MuPDF C++ API.]
                 mupdf.py       [MuPDF Python API.]
                 _mupdf.so      [MuPDF Python API internals.]
