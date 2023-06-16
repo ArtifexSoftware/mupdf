@@ -5376,7 +5376,7 @@ static void ffi_StructuredText_copy(js_State *J)
 static void ffi_new_DisplayListDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_display_list *list = js_touserdata(J, 1, "fz_display_list");
 	fz_device *device = NULL;
 
 	fz_try(ctx)
