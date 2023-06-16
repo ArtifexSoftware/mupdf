@@ -1785,7 +1785,7 @@ js_dev_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_color
 		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "setDefaultColorSpaces")) {
 		js_copy(J, -2);
-		ffi_pushdefaultcolorspaces(J, default_cs);
+		ffi_pushdefaultcolorspaces(J, fz_keep_default_colorspaces(ctx, default_cs));
 		js_call(J, 1);
 		js_pop(J, 1);
 	}
