@@ -91,6 +91,33 @@ var traceDevice = {
 	endTile: function () {
 		print("endTile")
 	},
+	beginLayer: function (name) {
+		print("beginLayer", name)
+	},
+	endLayer: function () {
+		print("endLayer")
+	},
+	beginStructure: function (structure, raw, uid) {
+		print("beginStructure", structure, raw, uiw)
+	},
+	endStructure: function () {
+		print("endStructure")
+	},
+	beginMetatext: function (meta, metatext) {
+		print("beginMetatext", meta, metatext)
+	},
+	endMetatext: function () {
+		print("endMetatext")
+	},
+
+	renderFlags: function (set, clear) {
+		print("renderFlags", set, clear)
+	},
+	setDefaultColorSpaces: function (colorSpaces) {
+		print("setDefaultColorSpaces", colorSpaces.getDefaultGray(),
+		colorSpaces.getDefaultRGB(), colorSpaces.getDefaultCMYK(),
+		colorSpaces.getOutputIntent())
+	},
 
 	close: function () {
 		print("close")
@@ -102,5 +129,5 @@ if (scriptArgs.length != 2)
 else {
 	var doc = Document.openDocument(scriptArgs[0]);
 	var page = doc.loadPage(parseInt(scriptArgs[1])-1);
-	page.run(traceDevice, Identity);
+	page.run(traceDevice, Matrix.identity);
 }
