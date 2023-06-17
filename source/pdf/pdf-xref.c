@@ -2532,7 +2532,8 @@ perform_repair:
 			if (!x->obj)
 			{
 				x->type = 'f';
-				ox->type = 'f';
+				if (ox)
+					ox->type = 'f';
 				if (doc->repair_attempted)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d 0 R) was not found in its object stream", num);
 				goto perform_repair;
