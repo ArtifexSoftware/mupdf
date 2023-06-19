@@ -2,6 +2,8 @@
 #
 import sys
 import os
+import datetime
+import re
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -38,14 +40,33 @@ master_doc = "index"
 
 # General information about the project.
 project = "MuPDF"
-copyright = "2004-2023, Artifex"
+thisday = datetime.date.today()
+copyright = "2004-" + str(thisday.year) + ", Artifex"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = "1.22.0"
+major = None
+minor = None
+patch = None
+
+_path = os.path.abspath(f'{__file__}/../../../include/mupdf/fitz/version.h')
+with open(_path) as f:
+    for line in f:
+        if not major:
+            major = re.search('#define FZ_VERSION_MAJOR ([0-9]+$)', line)
+        if not minor:
+            minor = re.search('#define FZ_VERSION_MINOR ([0-9]+$)', line)
+        if not patch:
+            patch = re.search('#define FZ_VERSION_PATCH ([0-9]+$)', line)
+
+    if major and minor and patch:
+        release = major.group(1) + "." + minor.group(1) + "." + patch.group(1)
+        print(f'{__file__}: setting version from {_path}: {release}')
+    else:
+        raise Exception(f'Failed to find MuPDF version in {_path}')
 
 # The short X.Y version
 version = release
