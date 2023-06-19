@@ -1,8 +1,11 @@
 .. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
+----
 
 .. default-domain:: js
+
+.. include:: html_tags.rst
 
 .. _mutool_object_pdf_page:
 
@@ -15,12 +18,25 @@
 `PDFPage`
 ---------------
 
+Extends :ref:`Page<mutool_run_js_api_page>`.
+
+
+|instance_methods|
+
 .. method:: getAnnotations()
 
     Return array of all annotations on the page.
 
-    :return: `[]`.
+    :return: `[...]`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var annots = pdfPage.getAnnotations();
+
+
+.. _mutool_run_js_api_pdf_page_createAnnotation:
 
 .. method:: createAnnotation(type)
 
@@ -28,6 +44,12 @@
 
     :arg type: `String` representing :ref:`annotation type<mutool_run_js_api_annotation_types>`.
     :return: `PDFAnnotation`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var annot = pdfPage.createAnnotation("Text");
 
 
 .. _mutool_run_js_api_annotation_types:
@@ -79,17 +101,37 @@
 
     :arg annot: `PDFAnnotation`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfPage.deleteAnnotation(annot);
+
+
+.. _mutool_run_js_api_pdf_page_getWidgets:
 
 .. method:: getWidgets()
 
     Return array of all :ref:`widgets<mutool_object_pdf_widget>` on the page.
 
-    :return: `[]`.
+    :return: `[...]`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var widgets = pdfPage.getWidgets();
 
 
 .. method:: update()
 
     Loop through all annotations of the page and update them. Returns true if re-rendering is needed because at least one annotation was changed (due to either events or :title:`JavaScript` actions or annotation editing).
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfPage.update();
 
 .. method:: applyRedactions(blackBoxes, imageMethod)
 
@@ -102,26 +144,58 @@
 
         Redactions are secure as they remove the affected content completely.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfPage.applyRedactions(true, 1);
+
 .. method:: process(processor)
 
     Run through the page contents stream and call methods on the supplied :ref:`PDF processor<mutool_run_js_api_pdf_processor>`.
 
     :arg processor: User defined function.
 
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfPage.process(processor);
+
+
 .. method:: toPixmap(transform, colorspace, alpha, renderExtra, usage)
 
-    Render the page into a `Pixmap` using the given `colorspace` and `alpha` while applying the `transform`. Rendering of annotations/widgets can be disabled. A page can be rendered for e.g. "View" or "Print" `usage`.
+    Render the page into a `Pixmap` using the given `colorspace` and `alpha` while applying the `transform`. Rendering of annotations/widgets can be disabled. A page can be rendered for e.g. "View" or "Print" usage.
 
-    :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
+    :arg transform: `[a,b,c,d,e,f]` The transform :ref:`matrix<mutool_run_js_api_matrix>`.
     :arg colorspace: `ColorSpace`.
     :arg alpha: `Boolean`.
-    :arg renderExtra: `Boolean`.
-    :usage: `String`.
+    :arg renderExtra: `Boolean` Whether annotations and widgets should be rendered.
+    :arg usage: `String` "View" or "Print".
 
+    :return: `Pixmap`.
 
+    |example_tag|
 
-.. method:: getTransform()
+    .. code-block:: javascript
 
-    Return the transform from :title:`Fitz` page space (upper left page origin, y descending, 72 dpi) to :title:`PDF` user space (arbitrary page origin, y ascending, UserUnit dpi).
+        var pixmap = pdfPage.toPixmap(mupdf.Matrix.identity,
+                                      mupdf.ColorSpace.DeviceRGB,
+                                      false,
+                                      true,
+                                      "View");
 
-    :return: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
+.. redundant
+
+    .. method:: getTransform()
+
+        Return the transform from :title:`Fitz` page space (upper left page origin, y descending, 72 dpi) to :title:`PDF` user space (arbitrary page origin, y ascending, UserUnit dpi).
+
+        :return: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
+
+        |example_tag|
+
+        .. code-block:: javascript
+
+            var transform = pdfPage.getTransform();

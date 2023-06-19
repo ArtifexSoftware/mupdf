@@ -348,6 +348,10 @@ This will render a raster file from page one of the input file "mupdf_explored.p
   It is advised to use `rlwrap`_ with `mutool` for command line history and cursor navigation (this can be also installed via :title:`Homebrew` or :title:`MacPorts`).
 
 
+.. note::
+
+   Use `mutool -help` for summary usage.
+
 
 For rendering and converting documents there are three commands available:
 
@@ -447,20 +451,10 @@ There are also several tools specifically for working with :title:`PDF` files:
 
    A tool for running :title:`JavaScript` programs with access to the :title:`MuPDF` library functions.
 
-
-
 .. _mupdf_command_line_mutool_js_api:
 
-:title:`mutool JavaScript` API
-------------------------------------
 
-
-
-
-
-.. toctree::
-
-     mutool-run-js-api.rst
+   See the :ref:`JavaScript API<mutool_run_javascript_api>` for more.
 
 
 

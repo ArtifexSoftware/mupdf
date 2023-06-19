@@ -1,8 +1,11 @@
 .. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
+----
 
 .. default-domain:: js
+
+.. include:: html_tags.rst
 
 .. _mutool_object_protocols:
 
@@ -12,29 +15,12 @@
 
 
 
-
 Object Protocols
 ---------------------------
 
 
 The following objects are standard :title:`JavaScript` objects with assumed properties (i.e. they follow their outlined protocol). They are used throughout the :title:`mutool API` to support object types for various methods.
 
-
-
-.. _mutool_run_js_api_links:
-
-.. _mutool_run_js_api_link_dict:
-
-Link Dictionary Object
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A link is a dictionary with keys for:
-
-`bounds`
-    A rectangle describing the link's location on the page.
-
-`uri`
-    A `uri` describing either a document internal destination or a :title:`URL` for a web page.
 
 
 .. _mutool_run_js_api_link_dest:
@@ -153,7 +139,7 @@ The stroking state is a dictionary with keys for:
         Array of on/off dash lengths.
 
 
-**Example:**
+|example_tag|
 
     `{dashes:[5,10], lineWidth:3, lineCap:'Round'}`
 

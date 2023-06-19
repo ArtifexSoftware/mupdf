@@ -15,10 +15,13 @@ Within the "docs" folder update the associated restructured text (`.rst`) files.
 
 ## Building HTML documentation
 
-- Ensure you have the `sphinx-rtd-theme` installed:
+- Ensure you have the `furo` theme installed:
 
+`pip install furo`
 
-`python -m pip install sphinx-rtd-theme`
+Furo theme, Copyright (c) 2020 Pradyun Gedam <mail@pradyunsg.me>, thank you to:
+
+https://github.com/pradyunsg/furo/blob/main/LICENSE
 
 
 - From the "docs" location run:

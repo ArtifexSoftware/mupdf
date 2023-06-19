@@ -32,6 +32,7 @@ Welcome to :title:`MuPDF`
 
    quick-start-guide.rst
    using-mupdf.rst
+   mupdf-wasm.rst
 
 
 .. toctree::
@@ -40,7 +41,9 @@ Welcome to :title:`MuPDF`
 
    mupdf-command-line.rst
    C-API.rst
+   mupdf-js.rst
    language-bindings.rst
+
 
 .. toctree::
    :caption: Other

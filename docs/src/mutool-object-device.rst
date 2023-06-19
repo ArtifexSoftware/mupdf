@@ -1,12 +1,13 @@
 .. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
+----
+
 .. default-domain:: js
 
+.. include:: html_tags.rst
 
 .. _mutool_object_device:
-
-
 
 .. _mutool_run_js_api_device:
 
@@ -22,7 +23,14 @@ Colors are specified as arrays with the appropriate number of components for the
 
 The methods that clip graphics must be balanced with a corresponding `popClip`.
 
+
+
+
+|instance_methods|
+
 .. method:: fillPath(path, evenOdd, transform, colorspace, color, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Fill a path.
 
@@ -35,13 +43,18 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
 
-    **Example**
+    |example_tag|
 
-    .. code-block:: bash
+    .. code-block:: javascript
 
-        device.fillPath(path, false, Identity, DeviceRGB, [1,0,0], 1);
+        device.fillPath(path, false, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], true);
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
 
 .. method:: strokePath(path, stroke, transform, colorspace, color, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Stroke a path.
 
@@ -53,13 +66,24 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
-    **Example**
+    |example_tag|
 
-    .. code-block:: bash
+    .. code-block:: javascript
 
-        device.strokePath(path, {dashes:[5,10], lineWidth:3, lineCap:'Round'}, Identity, DeviceRGB, [0,1,0], 0.5);
+        device.strokePath(path,
+                          {dashes:[5,10], lineWidth:3, lineCap:'Round'},
+                          mupdf.Matrix.identity,
+                          mupdf.ColorSpace.DeviceRGB,
+                          [0,1,0],
+                          0.5);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
 
 .. method:: clipPath(path, evenOdd, transform)
+
+    |mutool_tag_wasm_soon|
 
     Clip a path.
 
@@ -68,7 +92,19 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.clipPath(path, true, mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
+
 .. method:: clipStrokePath(path, stroke, transform)
+
+    |mutool_tag_wasm_soon|
 
     Clip & stroke a path.
 
@@ -76,9 +112,20 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg stroke: The :ref:`stroke dictionary<mutool_run_js_api_stroke_dictionary>`.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.clipStrokePath(path, true, mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
 
 
 .. method:: fillText(text, transform, colorspace, color, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Fill a text object.
 
@@ -89,7 +136,17 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.fillText(text, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], 1);
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
+
 .. method:: strokeText(text, stroke, transform, colorspace, color, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Stroke a text object.
 
@@ -101,14 +158,40 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.strokeText(text,
+                          {dashes:[5,10], lineWidth:3, lineCap:'Round'},
+                          mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB,
+                          [1,0,0],
+                          1);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
+
 .. method:: clipText(text, transform)
+
+    |mutool_tag_wasm_soon|
 
     Clip a text object.
 
     :arg text: `Text` object.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.clipText(text, mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
+
 .. method:: clipStrokeText(text, stroke, transform)
+
+    |mutool_tag_wasm_soon|
 
     Clip & stroke a text object.
 
@@ -116,13 +199,33 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg stroke: The :ref:`stroke dictionary<mutool_run_js_api_stroke_dictionary>`.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.clipStrokeText(text, {dashes:[5,10], lineWidth:3, lineCap:'Round'},  mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
+
+
 .. method:: ignoreText(text, transform)
+
+    |mutool_tag_wasm_soon|
 
     Invisible text that can be searched but should not be visible, such as for overlaying a scanned OCR image.
 
     :arg text: `Text` object.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.ignoreText(text, mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
 
 
 .. method:: fillShade(shade, transform, alpha, colorParams)
@@ -139,7 +242,18 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.fillShade(shade, mupdf.Matrix.identity, true, {overPrinting:true});
+
+
+
 .. method:: fillImage(image, transform, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Draw an image. An image always fills a unit rectangle `[0,0,1,1]`, so must be transformed to be placed and drawn at the appropriate size.
 
@@ -148,7 +262,20 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.fillImage(image, mupdf.Matrix.identity, false, {overPrinting:true});
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
+
+
 .. method:: fillImageMask(image, transform, colorspace, color, alpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     An image mask is an image without color. Fill with the color where the image is opaque.
 
@@ -159,7 +286,20 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.fillImageMask(image, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, 0xff00ff, true, {});
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
+
+
 .. method:: clipImageMask(image, transform)
+
+    |mutool_tag_wasm_soon|
 
     Clip graphics using the image to mask the areas to be drawn.
 
@@ -167,12 +307,29 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg transform: `[a,b,c,d,e,f]`. The transform :ref:`matrix<mutool_run_js_api_matrix>`.
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.clipImageMask(image, mupdf.Matrix.identity);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
+
 .. method:: popClip()
 
     Pop the clip mask installed by the last clipping operation.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.popClip();
+
 
 .. method:: beginMask(area, luminosity, backdropColorspace, backdropColor, backdropAlpha, colorParams)
+
+    |mutool_tag_wasm_soon|
 
     Create a soft mask. Any drawing commands between `beginMask` and `endMask` are grouped and used as a clip mask.
 
@@ -184,14 +341,31 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg colorParams: The :ref:`color parameters object<mutool_run_js_api_color_params>`.
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginMask(path, true, mupdf.ColorSpace.DeviceRGB, 0xff00ff, false, {});
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
 
 .. method:: endMask()
 
     Ends the mask.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endMask();
+
 
 
 .. method:: beginGroup(area, isolated, knockout, blendmode, alpha)
+
+    |mutool_tag_wasm_soon|
 
     Push/pop a transparency blending group. See the PDF reference for details on `isolated` and `knockout`.
 
@@ -207,9 +381,25 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
        :scale: 50%
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginGroup(path, true, true, "Multiply", 0.5);
+
+
+    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
+
+
 .. method:: endGroup()
 
     Ends the blending group.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endGroup();
 
 
 .. method:: beginTile(areaRect, viewRect, xStep, yStep, transform, id)
@@ -224,9 +414,22 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg id: `Integer` The purpose of `id` is to allow for efficient caching of rendered tiles. If `id` is `0`, then no caching is performed. If it is non-zero, then it assumed to uniquely identify this tile.
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginTile([0,0,100,100], [100,100,200,200], 10, 10, mupdf.Matrix.identity, 0);
+
+
 .. method:: endTile()
 
     Ends the tiling pattern.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endTile();
 
 
 .. method:: beginLayer(tag)
@@ -235,12 +438,27 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
     :arg tag: `String`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginLayer("my tag");
+
+
 .. method:: endLayer()
 
     End a marked-content layer.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endLayer();
+
 
 .. method:: renderFlags(set, clear)
+
+    |mutool_tag_wasm_soon|
 
     Set/clear device rendering flags. Both set and clear are arrays where each element is a flag name:
 
@@ -251,25 +469,68 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg set: `[]`.
     :arg clear: `[]`.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.renderFlags(["mask","startcap-undefined"], []);
+
+    .. |tor_todo| TypeError: device.renderFlags is not a function
+
+
 .. method:: setDefaultColorSpaces(defaults)
 
     Change the set of default colorspaces for the device. See the :ref:`DefaultColorSpaces<mutool_object_default_color_spaces>` object.
 
     :arg defaults: `Object`.
 
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+
+    .. |tor_todo| Ask Tor, how to create a default color space object.
+
+
 .. method:: beginStructure(standard, raw, uid)
+
+    |mutool_tag_wasm_soon|
 
     Begin a standard structure element, the raw tag name and a unique identifier.
 
-    :arg standard: `String`. The element name.
+    :arg standard: `String`. One of the standard :title:`PDF` structure names: "Document", "Part", "BlockQuote", etc.
     :arg raw: `String`. The tag name.
-    :arg uid: `String`. The unique identifier.
+    :arg uid: `Integer`. A unique identifier.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginStructure("Document", "my_tag_name", 123);
+
+    .. |tor_todo| TypeError: device.beginStructure is not a function
+
 
 .. method:: endStructure()
 
+    |mutool_tag_wasm_soon|
+
     End a standard structure element.
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endStructure();
+
+
+    .. |tor_todo| TypeError: device.endStructure is not a function
+
+
 .. method:: beginMetatext(type, text)
+
+    |mutool_tag_wasm_soon|
 
     Begin meta text information.
 
@@ -277,17 +538,42 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg text: `String`. The text value.
 
 
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.beginMetatext("Title", "My title");
+
+
+    .. |tor_todo| WASM: TypeError: device.beginMetatext is not a function
+
+
 .. method:: endMetatext()
 
+    |mutool_tag_wasm_soon|
+
     End meta text information.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        device.endMetatext();
+
+
+    .. |tor_todo| WASM: TypeError: device.endMetatext is not a function
 
 
 .. method:: close()
 
-    Tell the device that we are done, and flush any pending output.
+    Tell the device that we are done, and flush any pending output. Ensure that no items are left on the stack before closing.
 
 
+    |example_tag|
 
+    .. code-block:: javascript
+
+        device.close();
 
 
 
