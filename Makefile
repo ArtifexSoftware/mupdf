@@ -335,6 +335,9 @@ TOOL_APPS += $(MURASTER_EXE)
 ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
   MUVIEW_GLUT_OBJ := $(MUVIEW_GLUT_SRC:%.c=$(OUT)/%.o)
+ifeq ($(HAVE_WIN32),yes)
+  MUVIEW_GLUT_OBJ += $(OUT)/platform/gl/gl-winres.o
+endif
   MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl$(EXE)
   $(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THIRD_GLUT_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(WIN32_LDFLAGS) $(THIRD_GLUT_LIBS)
