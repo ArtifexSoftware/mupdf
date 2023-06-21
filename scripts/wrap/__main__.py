@@ -1410,7 +1410,8 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     # build/shared-release/libmupdf.so, so we need
                     # to copy into build/shared-release-x64-py3.8/.
                     #
-                    jlib.fs_copy( f'{actual_build_dir}/libmupdf.so', f'{build_dirs.dir_so}/libmupdf.so', verbose=1)
+                    suffix2 = '.dylib' if state.state_.macos else '.so'
+                    jlib.fs_copy( f'{actual_build_dir}/libmupdf{suffix2}', f'{build_dirs.dir_so}/libmupdf{suffix2}', verbose=1)
 
             elif action == '0':
                 # Generate C++ code that wraps the fz_* API.
