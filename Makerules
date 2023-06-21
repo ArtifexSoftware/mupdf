@@ -1,10 +1,13 @@
 # Configuration for the Makefile
 
-OS := $(shell uname)
-OS := $(OS:MINGW%=MINGW)
-OS := $(OS:MSYS%=MINGW)
-OS := $(OS:Windows_NT=MINGW)
-OS := $(OS:Darwin=MACOS)
+# We use $OS from environment if set.
+ifeq ($(OS),)
+  OS := $(shell uname)
+  OS := $(OS:MINGW%=MINGW)
+  OS := $(OS:MSYS%=MINGW)
+  OS := $(OS:Windows_NT=MINGW)
+  OS := $(OS:Darwin=MACOS)
+endif
 
 WARNING_CFLAGS := -Wall -Wsign-compare
 
@@ -71,6 +74,12 @@ ifeq ($(shared),yes)
   LIB_CFLAGS = -fPIC
   ifeq ($(OS),MACOS)
     LIB_LDFLAGS = -dynamiclib
+  else ifeq ($(OS),wasm)
+    LIB_LDFLAGS = -shared -sSIDE_MODULE
+    EXE_LDFLAGS = -sMAIN_MODULE
+  else ifeq ($(OS),wasm-mt)
+    LIB_LDFLAGS = -shared -sSIDE_MODULE
+    EXE_LDFLAGS = -sMAIN_MODULE
   else
     LIB_LDFLAGS = -shared
   endif
@@ -169,7 +178,14 @@ else ifeq ($(OS),MACOS)
   endif
 
 else ifeq ($(OS),Linux)
-  HAVE_OBJCOPY := yes
+  ifeq ($(PYODIDE_ROOT),)
+    HAVE_OBJCOPY := yes
+  else
+    # Pyodide's ld does not support -b so we cannot use it to create object
+    # files containing font data, so leave HAVE_OBJCOPY unset. And we need
+    # extra memory when linking.
+    LDFLAGS += -sTOTAL_MEMORY=48MB
+  endif
 
   ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
 	SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
@@ -230,7 +246,9 @@ else ifeq ($(OS),Linux)
 	X11_LIBS := $(shell pkg-config --libs x11 xext)
   endif
 
-  HAVE_LIBCRYPTO := $(shell pkg-config --exists 'libcrypto >= 1.1.0' && echo yes)
+  ifeq ($(HAVE_LIBCRYPTO),)
+    HAVE_LIBCRYPTO := $(shell pkg-config --exists 'libcrypto >= 1.1.0' && echo yes)
+  endif
   ifeq ($(HAVE_LIBCRYPTO),yes)
 	LIBCRYPTO_CFLAGS := $(shell pkg-config --cflags libcrypto) -DHAVE_LIBCRYPTO
 	LIBCRYPTO_LIBS := $(shell pkg-config --libs libcrypto)
