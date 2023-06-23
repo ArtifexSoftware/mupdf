@@ -263,11 +263,6 @@ int pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float 
 fz_link_dest pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri);
 
 /*
-	Create a destination object given an internal link URI.
-*/
-pdf_obj *pdf_new_destination_from_link(fz_context *ctx, pdf_document *doc, const char *uri);
-
-/*
 	Create an action object given a link URI. The action will
 	be a GoTo or URI action depending on whether the link URI
 	specifies a document internal or external destination.
@@ -284,12 +279,6 @@ pdf_obj *pdf_new_action_from_link(fz_context *ctx, pdf_document *doc, const char
 	The resulting string must be freed by the caller.
 */
 char *pdf_format_link_uri(fz_context *ctx, fz_link_dest dest);
-
-/*
-	Parse an internal link URI that uses the Adobe specification
-	"parameters for opening PDF files".
-*/
-fz_link_dest pdf_parse_link_uri(fz_context *ctx, const char *uri);
 
 /*
 	Create transform to fit appearance stream to annotation Rect
@@ -843,8 +832,6 @@ fz_buffer *pdf_load_embedded_file_contents(fz_context *ctx, pdf_obj *fs);
 */
 int pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs);
 
-char *pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
-char *pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int pagenum);
 pdf_obj *pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_page *, pdf_obj *annots, int pagenum, fz_matrix page_ctm);
 

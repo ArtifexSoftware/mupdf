@@ -56,4 +56,18 @@ void pdf_drop_widgets(fz_context *ctx, pdf_annot *widget_list);
 
 void pdf_set_annot_has_changed(fz_context *ctx, pdf_annot *annot);
 
+/*
+	Create a destination object given an internal link URI.
+*/
+pdf_obj *pdf_new_destination_from_link(fz_context *ctx, pdf_document *doc, const char *uri);
+
+/*
+	Parse an internal link URI that uses the Adobe specification
+	"parameters for opening PDF files".
+*/
+fz_link_dest pdf_parse_link_uri(fz_context *ctx, const char *uri);
+
+char *pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+char *pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int pagenum);
+
 #endif
