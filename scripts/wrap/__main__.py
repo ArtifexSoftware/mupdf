@@ -633,6 +633,8 @@ Usage:
                     we search for a suitable Visual Studio installation.
                 -f
                     Force rebuilds.
+                -j <N>
+                    Set -j arg used when action 'm' calls make (not Windows).
                 --regress
                     Checks for regressions in generated C++ code and SWIG .i
                     file (actions 0 and 2 below). If a generated file already
@@ -846,16 +848,16 @@ Usage:
                     * Imports mupdf and checks basic functionality.
                 * Deactivates the Python environment.
 
-        --venv [-0] <venv-name> ...
+        --venv
             Should usually be the first arg in the command line.
 
-            Runs mupdfwrap.py in a venv called `venv-name` containing libclang
-            and swig, passing remaining args.
+            Runs mupdfwrap.py in a venv containing libclang and swig,
+            passing remaining args.
 
             if `-0` is specified, we assume the venv is already created and do
             not create or install packages in it.
 
-                --venv pylocal -b all
+                --venv -b all
 
         --vs-upgrade 0 | 1
             If 1, we use a copy of the Windows build file tree
@@ -870,7 +872,7 @@ Usage:
             get from cygwin to native Windows.
 
             E.g.:
-                --windows-cmd --venv pylocal --swig-windows-auto -b all
+                --windows-cmd --venv --swig-windows-auto -b all
 
     Examples:
 
@@ -887,7 +889,7 @@ Usage:
         python3 -m cProfile -s cumulative ./scripts/mupdfwrap.py -b 0
             Profile generation of C++ source code.
 
-        ./scripts/mupdfwrap.py --venv pylocal --swig-windows-auto -b all -t
+        ./scripts/mupdfwrap.py --venv --swig-windows-auto -b all -t
             Build and test on Windows.
 
 
@@ -897,6 +899,7 @@ import glob
 import os
 import pickle
 import re
+import shlex
 import shutil
 import sys
 import sysconfig
@@ -1161,7 +1164,7 @@ def _test_get_m_command():
     jlib.log( '_get_m_command() ok')
 
 
-def _get_m_command( build_dirs):
+def _get_m_command( build_dirs, j=None):
     '''
     Generates a `make` command for building with `build_dirs.dir_mupdf`.
 
@@ -1177,6 +1180,8 @@ def _get_m_command( build_dirs):
         #
         make = 'CXX=clang++ gmake'
 
+    if j:
+        make += f' -j {j}'
     flags = os.path.basename( build_dirs.dir_so).split('-')
     actual_build_dir = f'{build_dirs.dir_mupdf}/build/'
     make_env = ''
@@ -1303,6 +1308,116 @@ def macos_patch( library, *sublibraries):
     jlib.system( f'otool -L {library}', out='log')
 
 
+def build_0(
+        build_dirs,
+        header_git,
+        check_regress,
+        clang_info_verbose,
+        refcheck_if,
+        cpp_files,
+        h_files,
+        ):
+    '''
+    Handles `-b 0` - generate C++ bindings source.
+    '''
+    # Generate C++ code that wraps the fz_* API.
+
+    if state.state_.have_done_build_0:
+        # This -b 0 stage modifies global data, for example adding
+        # begin() and end() methods to extras[], so must not be run
+        # more than once.
+        jlib.log( 'Skipping second -b 0')
+        return
+
+    jlib.log( 'Generating C++ source code ...')
+
+    # On 32-bit Windows, libclang doesn't work. So we attempt to run 64-bit `-b
+    # 0` to generate C++ code.
+    jlib.log( '{state.state_.windows=} {build_dirs.cpu.bits=} {sys.maxsize=}')
+    if state.state_.windows and build_dirs.cpu.bits == 32:
+        try:
+            jlib.log( 'Trying dummy call of clang.cindex.Index.create()')
+            state.clang.cindex.Index.create()
+        except Exception as e:
+            py = f'py -{state.python_version()}'
+            jlib.log( 'libclang not available on win32; attempting to run separate 64-bit invocation of {sys.argv[0]} with `-b 0`.')
+            jlib.system( f'{py} {sys.argv[0]} --venv -b 0')
+            return
+
+    namespace = 'mupdf'
+    generated = cpp.Generated()
+
+    cpp.cpp_source(
+            build_dirs.dir_mupdf,
+            namespace,
+            f'{build_dirs.dir_mupdf}/platform/c++',
+            header_git,
+            generated,
+            check_regress,
+            clang_info_verbose,
+            refcheck_if,
+            )
+
+    generated.save(f'{build_dirs.dir_mupdf}/platform/c++')
+
+    def check_lists_equal(name, expected, actual):
+        expected.sort()
+        actual.sort()
+        if expected != actual:
+            text = f'Generated {name} filenames differ from expected:\n'
+            text += f'    expected {len(expected)}:\n'
+            for i in expected:
+                text += f'        {i}\n'
+            text += f'    generated {len(actual)}:\n'
+            for i in actual:
+                text += f'        {i}\n'
+            raise Exception(text)
+    check_lists_equal('C++ source', cpp_files, generated.cpp_files)
+    check_lists_equal('C++ headers', h_files, generated.h_files)
+
+    for dir_ in (
+            f'{build_dirs.dir_mupdf}/platform/c++/implementation/',
+            f'{build_dirs.dir_mupdf}/platform/c++/include/', '.h',
+            ):
+        for path in jlib.fs_paths( dir_):
+            path = path.replace('\\', '/')
+            _, ext = os.path.splitext( path)
+            if ext not in ('.h', '.cpp'):
+                continue
+            if path in h_files + cpp_files:
+                continue
+            jlib.log( 'Removing unknown C++ file: {path}')
+            os.remove( path)
+
+    jlib.log( 'Wrapper classes that are containers: {generated.container_classnames=}')
+
+    # Output info about fz_*() functions that we don't make use
+    # of in class methods.
+    #
+    # This is superceded by automatically finding fuctions to wrap.
+    #
+    if 0:   # lgtm [py/unreachable-statement]
+        jlib.log( 'functions that take struct args and are not used exactly once in methods:')
+        num = 0
+        for name in sorted( fn_usage.keys()):
+            n, cursor = fn_usage[ name]
+            if n == 1:
+                continue
+            if not fn_has_struct_args( tu, cursor):
+                continue
+            jlib.log( '    {n} {cursor.displayname} -> {cursor.result_type.spelling}')
+            num += 1
+        jlib.log( 'number of functions that we should maybe add wrappers for: {num}')
+
+
+def link_l_flags(sos):
+    ld_origin = None
+    if os.environ.get('OS') in ('wasm', 'wasm-mt'):
+        # Don't add '-Wl,-rpath*' etc if building for wasm.
+        ld_origin = False
+    return jlib.link_l_flags( sos, ld_origin)
+
+
 def build( build_dirs, swig_command, args, vs_upgrade):
     '''
     Handles -b ...
@@ -1327,10 +1442,15 @@ def build( build_dirs, swig_command, args, vs_upgrade):
     clang_info_verbose = False
     force_rebuild = False
     header_git = False
+    j = None
     refcheck_if = '#ifndef NDEBUG'
-    compiler = 'c++'
-    if state.state_.macos:
+    wasm = os.environ.get('OS') in ('wasm', 'wasm-mt')
+    if wasm:
+        compiler = 'em++'
+    elif state.state_.macos:
         compiler = 'c++ -std=c++14'
+    else:
+        compiler = 'c++'
 
     state.state_.show_details = lambda name: False
     devenv = 'devenv.com'
@@ -1362,9 +1482,12 @@ def build( build_dirs, swig_command, args, vs_upgrade):
             state.state_.show_details = fn
         elif actions == '--devenv':
             devenv = args.next()
+            jlib.log( '{devenv=}')
             windows_vs = None
             if not state.state_.windows:
                 jlib.log( 'Warning: --devenv was specified, but we are not on Windows so this will have no effect.')
+        elif actions == '-j':
+            j = args.next()
         elif actions == '--python':
             build_python = True
             build_csharp = False
@@ -1398,7 +1521,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
             elif action == 'm':
                 # Build libmupdf.so.
                 jlib.log( 'Building libmupdf.so ...')
-                command, actual_build_dir, suffix = _get_m_command( build_dirs)
+                command, actual_build_dir, suffix = _get_m_command( build_dirs, j)
                 jlib.system( command, prefix=jlib.log_text(), out='log', verbose=1)
 
                 if actual_build_dir != build_dirs.dir_so:
@@ -1414,82 +1537,15 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                     jlib.fs_copy( f'{actual_build_dir}/libmupdf{suffix2}', f'{build_dirs.dir_so}/libmupdf{suffix2}', verbose=1)
 
             elif action == '0':
-                # Generate C++ code that wraps the fz_* API.
-                if state.state_.have_done_build_0:
-                    # This -b 0 stage modifies global data, for example adding
-                    # begin() and end() methods to extras[], so must not be run
-                    # more than once.
-                    jlib.log( 'Skipping second -b 0')
-                else:
-                    jlib.log( 'Generating C++ source code ...')
-                    if not state.clang:
-                        raise Exception('Cannot do "-b 0" because failed to import clang.')
-                    namespace = 'mupdf'
-                    generated = cpp.Generated()
-
-                    cpp.cpp_source(
-                            build_dirs.dir_mupdf,
-                            namespace,
-                            f'{build_dirs.dir_mupdf}/platform/c++',
-                            header_git,
-                            generated,
-                            check_regress,
-                            clang_info_verbose,
-                            refcheck_if,
-                            )
-
-                    #generated.functions = state.state_.functions_cache
-                    generated.save(f'{build_dirs.dir_mupdf}/platform/c++')
-
-                    def check_lists_equal(name, expected, actual):
-                        expected.sort()
-                        actual.sort()
-                        if expected != actual:
-                            text = f'Generated {name} filenames differ from expected:\n'
-                            text += f'    expected {len(expected)}:\n'
-                            for i in expected:
-                                text += f'        {i}\n'
-                            text += f'    generated {len(actual)}:\n'
-                            for i in actual:
-                                text += f'        {i}\n'
-                            raise Exception(text)
-                    check_lists_equal('C++ source', cpp_files, generated.cpp_files)
-                    check_lists_equal('C++ headers', h_files, generated.h_files)
-
-                    for dir_ in (
-                            f'{build_dirs.dir_mupdf}/platform/c++/implementation/',
-                            f'{build_dirs.dir_mupdf}/platform/c++/include/', '.h',
-                            ):
-                        for path in jlib.fs_paths( dir_):
-                            path = path.replace('\\', '/')
-                            _, ext = os.path.splitext( path)
-                            if ext not in ('.h', '.cpp'):
-                                continue
-                            if path in h_files + cpp_files:
-                                continue
-                            jlib.log( 'Removing unknown C++ file: {path}')
-                            os.remove( path)
-
-                    jlib.log( 'Wrapper classes that are containers: {generated.container_classnames=}')
-
-                    # Output info about fz_*() functions that we don't make use
-                    # of in class methods.
-                    #
-                    # This is superceded by automatically finding fuctions to wrap.
-                    #
-                    if 0:   # lgtm [py/unreachable-statement]
-                        jlib.log( 'functions that take struct args and are not used exactly once in methods:')
-                        num = 0
-                        for name in sorted( fn_usage.keys()):
-                            n, cursor = fn_usage[ name]
-                            if n == 1:
-                                continue
-                            if not fn_has_struct_args( tu, cursor):
-                                continue
-                            jlib.log( '    {n} {cursor.displayname} -> {cursor.result_type.spelling}')
-                            num += 1
-                        jlib.log( 'number of functions that we should maybe add wrappers for: {num}')
-                    state.state_.have_done_build_0 = True
+                build_0(
+                        build_dirs,
+                        header_git,
+                        check_regress,
+                        clang_info_verbose,
+                        refcheck_if,
+                        cpp_files,
+                        h_files,
+                        )
 
             elif action == '1':
                 # Compile and link generated C++ code to create libmupdfcpp.so.
@@ -1529,12 +1585,13 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 f'''
                                 {compiler}
                                     -o {os.path.relpath(libmupdfcpp)}
+                                    {"-sSIDE_MODULE" if wasm else ""}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
                                     -I {include1}
                                     -I {include2}
                                     {cpp_files_text}
-                                    {jlib.link_l_flags(libmupdf)}
+                                    {link_l_flags(libmupdf)}
                                 ''').strip().replace( '\n', ' \\\n')
                                 )
                         jlib.build(
@@ -1785,23 +1842,32 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         #
                         # todo: maybe instead use sysconfig.get_config_vars() ?
                         #
-                        python_exe = os.path.realpath( sys.executable)
-                        jlib.log('python_exe={python_exe}')
-                        python_configs = (
-                                f'{python_exe}-config',
-                                'python3-config',
-                                )
-                        jlib.log('python_configs={python_configs}')
-                        for python_config in python_configs:
-                            if jlib.fs_find_in_paths( python_config, verbose=True):
-                                break
+
+                        if os.environ.get('PYODIDE_ROOT'):
+                            _include_dir = os.environ[ 'PYO3_CROSS_INCLUDE_DIR']
+                            _lib_dir = os.environ[ 'PYO3_CROSS_LIB_DIR']
+                            jlib.log( 'PYODIDE_ROOT set. {_include_dir=} {_lib_dir=}')
+                            flags_compile = f'-I {_include_dir}'
+                            flags_link = f'-L {_lib_dir}'
+
                         else:
-                            raise Exception( f'Cannot find `python-config`, tried: {python_configs}')
-                        jlib.log( 'Using {python_config=}')
-                        # `--cflags` gives things like `-Wno-unused-result -g`
-                        # etc, -so we just use `--includes`.
-                        flags_compile = jlib.system( f'{python_config} --includes', out='return', verbose=1).replace('\n', ' ')
-                        flags_link = jlib.system( f'{python_config} --ldflags', out='return', verbose=1).replace('\n', ' ')
+                            python_exe = os.path.realpath( sys.executable)
+                            jlib.log('python_exe={python_exe}')
+                            python_configs = (
+                                    f'{python_exe}-config',
+                                    'python3-config',
+                                    )
+                            jlib.log('python_configs={python_configs}')
+                            for python_config in python_configs:
+                                if jlib.fs_find_in_paths( python_config, verbose=True):
+                                    break
+                            else:
+                                raise Exception( f'Cannot find `python-config`, tried: {python_configs}')
+                            jlib.log( 'Using {python_config=}')
+                            # `--cflags` gives things like `-Wno-unused-result -g`
+                            # etc, -so we just use `--includes`.
+                            flags_compile = jlib.system( f'{python_config} --includes', out='return', verbose=1).replace('\n', ' ')
+                            flags_link = jlib.system( f'{python_config} --ldflags', out='return', verbose=1).replace('\n', ' ')
                         if state.state_.macos:
                             # We need this to avoid numerous errors like:
                             #
@@ -1850,11 +1916,10 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             resource.setrlimit( resource.RLIMIT_DATA, (soft_new, hard))
                             jlib.log( 'Have changed RLIMIT_DATA from {jlib.number_sep(soft)} to {jlib.number_sep(soft_new)}.')
 
-                    # We use jlib.link_l_flags() to add -L options
-                    # to search parent directories of each .so that
-                    # we need, and -l with the .so leafname without
-                    # leading 'lib' or trailing '.so'. This ensures
-                    # that at runtime one can set LD_LIBRARY_PATH to
+                    # We use link_l_flags() to add -L options to search parent
+                    # directories of each .so that we need, and -l with the .so
+                    # leafname without leading 'lib' or trailing '.so'. This
+                    # ensures that at runtime one can set LD_LIBRARY_PATH to
                     # parent directories and have everything work.
                     #
 
@@ -1876,7 +1941,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                         -I {include2}
                                         {flags_compile}
                                         {flags_link2}
-                                        {jlib.link_l_flags( [libmupdf, libmupdfcpp])}
+                                        {link_l_flags( [libmupdf, libmupdfcpp])}
                                         -Wno-deprecated-declarations
                                     ''').strip().replace( '\n', ' \\\n')
                             )
@@ -1915,6 +1980,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             f'''
                             {compiler}
                                 -o {os.path.relpath(out_so)}
+                                {"-sMAIN_MODULE" if wasm else ""}
                                 {cpp_path}
                                 {build_dirs.cpp_flags}
                                 -fPIC
@@ -1926,10 +1992,9 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 -Wno-free-nonheap-object
                                 -DSWIG_PYTHON_SILENT_MEMLEAK
                                 {flags_link}
-                                {jlib.link_l_flags( sos)}
+                                {link_l_flags( sos)}
                             ''').strip().replace( '\n', ' \\\n')
                             )
-                    #command += f' \\\n   {jlib.link_l_flags( sos)}'
                     infiles = [
                             cpp_path,
                             include1,
@@ -1978,7 +2043,7 @@ def python_settings(build_dirs, startdir=None):
     else:
         pass
         # We build _mupdf.so using `-Wl,-rpath='$ORIGIN,-z,origin` (see
-        # jlib.link_l_flags() so we don't need to set `LD_LIBRARY_PATH`.
+        # link_l_flags()) so we don't need to set `LD_LIBRARY_PATH`.
         #
         # But if we did set `LD_LIBRARY_PATH`, it would be with:
         #
@@ -2500,8 +2565,7 @@ def main2():
                 if state.state_.windows:
                     win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv=None)
                     windows_build_type = build_dirs.windows_build_type()
-                    lib = f'mupdf-master/platform/{win32_infix}/x64/{windows_build_type}/mupdfcpp64.lib'
-                    dll = f'{build_dirs.dir_so}/mupdfcpp64.lib'
+                    lib = f'mupdf-master/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.lib'
                     vs = wdev.WindowsVS()
                     command = textwrap.dedent(f'''
                             "{vs.vcvars}"&&"{vs.cl}"
@@ -2514,9 +2578,8 @@ def main2():
                                 /out:test.cpp.exe
                             ''').replace('\n', ' ')
                     jlib.system(command, verbose=1)
-                    p = os.path.dirname(dll)
                     path = os.environ.get('PATH')
-                    env_extra = dict(PATH = f'{p}{os.pathsep}{path}' if path else p)
+                    env_extra = dict(PATH = f'{build_dirs.dir_so}{os.pathsep}{path}' if path else build_dirs.dir_so)
                     jlib.system('test.cpp.exe', verbose=1, env_extra=env_extra)
                 else:
                     dir_so_flags = os.path.basename( build_dirs.dir_so).split( '-')
@@ -2536,7 +2599,7 @@ def main2():
                                 {build_dirs.cpp_flags}
                                 {includes}
                                 test.cpp
-                                {jlib.link_l_flags( [libmupdf, libmupdfcpp])}
+                                {link_l_flags( [libmupdf, libmupdfcpp])}
                             ''').replace('\n', '\\\n')
                     jlib.system(command, verbose=1)
                     jlib.system( 'pwd', verbose=1)
@@ -2797,33 +2860,24 @@ def main2():
                 swig.test_swig()
 
             elif arg == '--venv':
-                install = 1
-                while 1:
-                    a = args.next()
-                    if not a.startswith('-'):
-                        venv = a
-                        break
-                    if a == '-0':
-                        install = 0
-                    else:
-                        raise Exception( f'Unrecognised --venv arg: {a!r}')
-                args_tail = ''
+                venv = f'venv-pymupdfwrap-{state.python_version()}-{state.cpu_name()}'
+                # Oddly, shlex.quote(sys.executable), which puts the name
+                # inside single quotes, doesn't work - we get error `The
+                # filename, directory name, or volume label syntax is
+                # incorrect.`.
+                jlib.system(f'"{sys.executable}" -m venv {venv}', out='log', verbose=1)
+                if state.state_.windows:
+                    command = f'{venv}\\Scripts\\activate.bat'
+                else:
+                    command = f'. {venv}/bin/activate'
+                command += f' && python -m pip install --upgrade pip'
+                command += f' && python -m pip install libclang swig'
+                command += f' && python {shlex.quote(sys.argv[0])}'
                 while 1:
                     try:
-                        args_tail += ' ' + args.next()
+                        command += f' {shlex.quote(args.next())}'
                     except StopIteration:
                         break
-                if install:
-                    jlib.system(f'"{sys.executable}" -m venv {venv}', out='log', verbose=1)
-                command = 'true'
-                if state.state_.windows:
-                    command += f' && {venv}\\Scripts\\activate.bat'
-                else:
-                    command += f' && . {venv}/bin/activate'
-                if install:
-                    command += f' && python -m pip install --upgrade pip'
-                    command += f' && python -m pip install libclang swig'
-                command += f' && python {sys.argv[0]} {args_tail}'
                 command += f' && deactivate'
                 jlib.system(command, out='log', verbose=1)
 
@@ -2842,6 +2896,33 @@ def main2():
 
             else:
                 raise Exception( f'unrecognised arg: {arg}')
+
+
+def write_classextras(path):
+    '''
+    Dumps classes.classextras to file using json, with crude handling of class
+    instances.
+    '''
+    import json
+    with open(path, 'w') as f:
+        class encoder(json.JSONEncoder):
+            def default( self, obj):
+                if type(obj).__name__.startswith(('Extra', 'ClassExtra')):
+                    ret = list()
+                    for i in dir( obj):
+                        if not i.startswith( '_'):
+                            ret.append( getattr( obj, i))
+                    return ret
+                if callable(obj):
+                    return obj.__name__
+                return json.JSONEncoder.default(self, obj)
+        json.dump(
+                classes.classextras,
+                f,
+                indent='    ',
+                sort_keys=1,
+                cls = encoder,
+                )
 
 def main():
     jlib.force_line_buffering()
