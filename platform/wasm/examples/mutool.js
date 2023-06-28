@@ -23,9 +23,7 @@
 "use strict"
 
 const fs = require("fs")
-const mupdf = require("../lib/mupdf.js")
-
-mupdf.ready.then(() => main(process.argv.slice(2)))
+const mupdf = require("mupdf")
 
 var mutool = {}
 
@@ -168,5 +166,7 @@ function main(argv) {
 	if (cmd in mutool)
 		mutool[cmd].run(parse_options(argv, mutool[cmd].options))
 	else
-		throw Error("unknown command: " + cmd)
+		throw Error("unknown command: " + cmd + " (valid commands: " + Object.keys(mutool).join(", ") + ")")
 }
+
+main(process.argv.slice(2))

@@ -49,8 +49,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.fillPath(path, false, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], true);
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
-
 
 .. method:: strokePath(path, stroke, transform, colorspace, color, alpha, colorParams)
 
@@ -78,8 +76,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
                           0.5);
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
-
 
 .. method:: clipPath(path, evenOdd, transform)
 
@@ -99,8 +95,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
         device.clipPath(path, true, mupdf.Matrix.identity);
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
-
 
 .. method:: clipStrokePath(path, stroke, transform)
 
@@ -118,8 +112,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.clipStrokePath(path, true, mupdf.Matrix.identity);
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
 
 
 
@@ -141,8 +133,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     .. code-block:: javascript
 
         device.fillText(text, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], 1);
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
 
 .. method:: strokeText(text, stroke, transform, colorspace, color, alpha, colorParams)
 
@@ -169,8 +159,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
                           1);
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
-
 .. method:: clipText(text, transform)
 
     |mutool_tag_wasm_soon|
@@ -186,8 +174,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.clipText(text, mupdf.Matrix.identity);
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
 
 .. method:: clipStrokeText(text, stroke, transform)
 
@@ -206,8 +192,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
         device.clipStrokeText(text, {dashes:[5,10], lineWidth:3, lineCap:'Round'},  mupdf.Matrix.identity);
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
-
 
 .. method:: ignoreText(text, transform)
 
@@ -224,8 +208,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.ignoreText(text, mupdf.Matrix.identity);
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_text is not a function
 
 
 .. method:: fillShade(shade, transform, alpha, colorParams)
@@ -270,8 +252,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
         device.fillImage(image, mupdf.Matrix.identity, false, {overPrinting:true});
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
-
 
 .. method:: fillImageMask(image, transform, colorspace, color, alpha, colorParams)
 
@@ -294,8 +274,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
         device.fillImageMask(image, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, 0xff00ff, true, {});
 
 
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
-
 
 .. method:: clipImageMask(image, transform)
 
@@ -313,8 +291,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.clipImageMask(image, mupdf.Matrix.identity);
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_from_pixmap is not a function
 
 .. method:: popClip()
 
@@ -347,8 +323,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.beginMask(path, true, mupdf.ColorSpace.DeviceRGB, 0xff00ff, false, {});
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
 
 
 .. method:: endMask()
@@ -387,8 +361,6 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
         device.beginGroup(path, true, true, "Multiply", 0.5);
 
-
-    .. |tor_todo| WASM: TypeError: libmupdf._wasm_new_path is not a function
 
 
 .. method:: endGroup()

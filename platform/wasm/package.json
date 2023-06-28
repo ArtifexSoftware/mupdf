@@ -1,13 +1,12 @@
 {
   "name": "mupdf",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "MuPDF WASM Library",
-  "main": "lib/mupdf.js",
+  "exports": "./lib/mupdf.js",
   "files": [
     "lib/mupdf.js",
     "lib/mupdf-wasm.js",
-    "lib/mupdf-wasm.wasm",
-    "examples/mutool.js"
+    "lib/mupdf-wasm.wasm"
   ],
   "repository": {
     "type": "git",

@@ -24,19 +24,17 @@
 
 "use strict"
 
-// Import the WASM module
+// Import the WASM module.
 globalThis.__filename = "../lib/mupdf-wasm.js"
 importScripts("../lib/mupdf-wasm.js")
+
+// Import the MuPDF bindings.
 importScripts("../lib/mupdf.js")
 
-mupdf.ready
-	.then((result) => postMessage([ "READY", result, Object.keys(workerMethods) ]))
-	.catch((error) => postMessage([ "ERROR", error ]))
+const workerMethods = {}
 
 onmessage = async function (event) {
 	let [ func, id, args ] = event.data
-	await mupdf.ready
-
 	try {
 		let result = workerMethods[func](...args)
 		postMessage([ "RESULT", id, result ])
@@ -62,8 +60,6 @@ mupdf.onFetchCompleted = function (_id) {
 		}, 0)
 	}
 }
-
-const workerMethods = {}
 
 let openStream = null
 let openDocument = null
@@ -227,3 +223,5 @@ workerMethods.drawPageAsPixmap = function (pageNumber, dpi) {
 
 	return imageData
 }
+
+postMessage([ "READY", Object.keys(workerMethods) ])

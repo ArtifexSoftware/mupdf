@@ -73,10 +73,6 @@ All functions that take `PDFObjects`, do automatic translation between :title:`J
         arr.put(0, 42);
 
 
-
-    .. |tor_todo| WASM TypeError: doc.newNull is not a function
-
-
 .. method:: delete(ref)
 
     Delete a reference from a `PDFObject`.
@@ -169,8 +165,6 @@ All functions that take `PDFObjects`, do automatic translation between :title:`J
     .. code-block:: javascript
 
         pdfObj.push("item");
-
-    .. |tor_todo| WASM TypeError: doc.newNull is not a function
 
 
 .. method:: toString()

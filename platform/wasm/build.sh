@@ -15,11 +15,12 @@ echo
 
 echo BUILDING MUPDF WASM
 emcc -o lib/mupdf-wasm.js -I $MUPDF_DIR/include lib/mupdf.c \
-	-Os \
 	--no-entry \
 	-sABORTING_MALLOC=0 \
 	-sALLOW_MEMORY_GROWTH=1 \
 	-sMODULARIZE=1 \
+	-sNODEJS_CATCH_EXIT=0 \
+	-sWASM_ASYNC_COMPILATION=0 \
 	-sEXPORT_NAME='"libmupdf"' \
 	-sEXPORTED_RUNTIME_METHODS='["ccall","UTF8ToString","lengthBytesUTF8","stringToUTF8"]' \
 	 $MUPDF_DIR/build/wasm/release/libmupdf.a \

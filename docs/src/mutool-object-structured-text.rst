@@ -23,7 +23,9 @@
 
     |mutool_tag_wasm_soon|
 
-    Search the text for all instances of `needle`, and return an array with :ref:`rectangles<mutool_run_js_api_rectangle>` of all matches found.
+    Search the text for all instances of `needle`, and return an array with all matches found on the page.
+
+    Each match in the result is an array containing one or more QuadPoints that cover the matching text.
 
     :arg needle: `String`.
     :return: `[...]`.
@@ -33,8 +35,6 @@
     .. code-block:: javascript
 
         var result = sText.search("Hello World!");
-
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
 
 
 

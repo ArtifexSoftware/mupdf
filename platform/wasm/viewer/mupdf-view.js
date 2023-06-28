@@ -32,8 +32,7 @@ mupdfView.ready = new Promise((resolve, reject) => {
 	worker.onmessage = function (event) {
 		let type = event.data[0]
 		if (type === "READY") {
-			mupdfView.wasmMemory = event.data[1]
-			let methodNames = event.data[2]
+			let methodNames = event.data[1]
 			for (let method of methodNames)
 				mupdfView[method] = wrap(method)
 			worker.onmessage = onWorkerMessage

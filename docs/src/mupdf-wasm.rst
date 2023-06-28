@@ -27,11 +27,8 @@ Installing
 
    .. code-block:: javascript
 
-      const fs = require("fs");
       const mupdf = require("mupdf");
-      mupdf.ready.then(function () {
-         console.log(mupdf);
-      });
+      console.log(mupdf);
 
 
 - Save this file as "test.js".
@@ -54,11 +51,10 @@ The following :title:`JavaScript` sample demonstrates how to load a local docume
 
       const fs = require("fs");
       const mupdf = require("mupdf");
-      mupdf.ready.then(function () {
-         var input = fs.readFileSync("my_document.pdf");
-         var doc = mupdf.Document.openDocument(input, "application/pdf");
-         console.log(doc.countPages());
-      })
+
+      var input = fs.readFileSync("my_document.pdf");
+      var doc = mupdf.Document.openDocument(input, "application/pdf");
+      console.log(doc.countPages());
 
 
 Trying the Viewer

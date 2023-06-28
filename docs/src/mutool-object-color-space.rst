@@ -104,8 +104,6 @@
 
         var bool = colorSpace.isGray();
 
-    .. |tor_todo| Make wasm method to match this.
-
 
 .. method:: isRGB()
 
@@ -118,8 +116,6 @@
     .. code-block:: javascript
 
         var bool = colorSpace.isRGB();
-
-    .. |tor_todo| Make wasm method to match this.
 
 
 .. method:: isCMYK()
@@ -134,8 +130,6 @@
 
         var bool = colorSpace.isCMYK();
 
-    .. |tor_todo| Make wasm method to match this.
-
 .. method:: isIndexed()
 
     |mutool_tag|
@@ -147,8 +141,6 @@
     .. code-block:: javascript
 
         var bool = colorSpace.isIndexed();
-
-    .. |tor_todo| Make wasm method to match this.
 
 .. method:: isLab()
 
@@ -162,8 +154,6 @@
 
         var bool = colorSpace.isLab();
 
-    .. |tor_todo| Make wasm method to match this.
-
 .. method:: isDeviceN()
 
     |mutool_tag|
@@ -176,8 +166,6 @@
 
         var bool = colorSpace.isDeviceN();
 
-
-    .. |tor_todo| Make wasm method to match this.
 
 
 .. method:: isSubtractive()
@@ -193,8 +181,6 @@
         var bool = colorSpace.isSubtractive();
 
 
-    .. |tor_todo| Make wasm method to match this.
-
 
 .. method:: getType()
 
@@ -204,8 +190,6 @@
 
     :return: `String` One of "None", "Gray", "RGB", "BGR", "CMYK", "Lab", "Indexed", "Separation".
 
-
-    .. |tor_todo| Make mutool run method match this.
 
 
 

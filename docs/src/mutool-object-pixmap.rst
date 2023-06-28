@@ -113,9 +113,6 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
 
         var alpha = pixmap.getAlpha();
 
-
-    .. |tor_todo| In WASM, TypeError: pixmap.getAlpha is not a function
-
 .. method:: getStride()
 
     Number of bytes per row.
@@ -408,7 +405,6 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
 
         var buffer = pixmap.asPNG();
 
-    .. |tor_todo| TypeError: buffer.readByte is not a function
 
 
 .. method:: asPSD()
@@ -426,8 +422,6 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
 
         var buffer = pixmap.asPSD();
 
-    .. |tor_todo| TypeError: libmupdf._wasm_new_buffer_from_pixmap_as_psd is not a function
-
 
 .. method:: asPAM()
 
@@ -444,7 +438,6 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
 
         var buffer = pixmap.asPAM();
 
-    .. |tor_todo| TypeError: buffer.readByte is not a function
 
 
 .. method:: asJPEG(quality)
@@ -461,5 +454,3 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
     .. code-block:: javascript
 
         var buffer = pixmap.asJPEG(80);
-
-    .. |tor_todo| TypeError: buffer.readByte is not a function

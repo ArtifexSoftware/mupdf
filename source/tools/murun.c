@@ -210,7 +210,16 @@ static const char *prefix_js =
 	"	if (this.stackTrace) return this.name + ': ' + this.message + this.stackTrace\n"
 	"	return this.name + ': ' + this.message\n"
 	"}\n"
-	"var Matrix = {\n"
+	;
+
+const char *postfix_js =
+	"require.cache.mupdf = mupdf\n"
+	"require.cache.fs = {\n"
+	"	readFileSync: readFile,\n"
+	"	writeFileSync: function (fn, buf) { buf.save(fn) }\n"
+	"}\n"
+	"\n"
+	"mupdf.Matrix = {\n"
 	"	identity: [ 1, 0, 0, 1, 0, 0 ],\n"
 	"	scale: function (sx, sy) {\n"
 	"		return [ sx, 0, 0, sy, 0, 0 ]\n"
@@ -251,7 +260,8 @@ static const char *prefix_js =
 	"		]\n"
 	"	},\n"
 	"}\n"
-	"var Rect = {\n"
+	"\n"
+	"mupdf.Rect = {\n"
 	"	isEmpty: function (rect) {\n"
 	"		return rect[0] >= rect[2] || rect[1] >= rect[3]\n"
 	"	},\n"
@@ -295,16 +305,6 @@ static const char *prefix_js =
 	"		return [ ax0, bx0, ax1, bx1 ]\n"
 	"	},\n"
 	"}\n"
-	;
-
-const char *postfix_js =
-	"mupdf.ready = { then: function (f) { f() } }\n"
-	"require.cache.fs = {\n"
-	"	readFileSync: readFile,\n"
-	"	writeFileSync: function (fn, buf) { buf.save(fn) }\n"
-	"}\n"
-	"require.cache.mupdf = mupdf\n"
-	"require.cache['.'] = mupdf\n"
 	"\n"
 	"mupdf.PDFDocument.prototype.getEmbeddedFiles = function () {\n"
 	"        function _getEmbeddedFilesRec(result, N) {\n"
@@ -324,7 +324,6 @@ const char *postfix_js =
 	"        return _getEmbeddedFilesRec({}, this.getTrailer().get('Root', 'Names', 'EmbeddedFiles'))\n"
 	"}\n"
 ;
-
 
 struct event_cb_data
 {
@@ -3864,37 +3863,45 @@ static void ffi_Page_getBounds(js_State *J)
 	ffi_pushrect(J, bounds);
 }
 
-static void ffi_Page_run(js_State *J)
+static void ffi_Page_run_imp(js_State *J, void(*run)(fz_context *, fz_page *, fz_device *, fz_matrix, fz_cookie *))
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	fz_device *device = NULL;
 	fz_matrix ctm = ffi_tomatrix(J, 2);
-	int extra = js_isdefined(J, 3) ? js_toboolean(J, 3) : 1;
 
 	if (js_isuserdata(J, 1, "fz_device")) {
 		device = js_touserdata(J, 1, "fz_device");
 		fz_try(ctx)
-			if (extra)
-				fz_run_page(ctx, page, device, ctm, NULL);
-			else
-				fz_run_page_contents(ctx, page, device, ctm, NULL);
+			run(ctx, page, device, ctm, NULL);
 		fz_catch(ctx)
 			rethrow(J);
 	} else {
 		device = new_js_device(ctx, J);
 		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
-		fz_try(ctx) {
-			if (extra)
-				fz_run_page(ctx, page, device, ctm, NULL);
-			else
-				fz_run_page_contents(ctx, page, device, ctm, NULL);
-		}
+		fz_try(ctx)
+			run(ctx, page, device, ctm, NULL);
 		fz_always(ctx)
 			fz_drop_device(ctx, device);
 		fz_catch(ctx)
 			rethrow(J);
 	}
+}
+
+static void ffi_Page_run(js_State *J) {
+	ffi_Page_run_imp(J, fz_run_page);
+}
+
+static void ffi_Page_runPageContents(js_State *J) {
+	ffi_Page_run_imp(J, fz_run_page_contents);
+}
+
+static void ffi_Page_runPageAnnots(js_State *J) {
+	ffi_Page_run_imp(J, fz_run_page_annots);
+}
+
+static void ffi_Page_runPageWidgets(js_State *J) {
+	ffi_Page_run_imp(J, fz_run_page_widgets);
 }
 
 static void ffi_Page_toDisplayList(js_State *J)
@@ -4117,6 +4124,25 @@ static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
 	fz_context *ctx = js_getcontext(J);
 	js_pushnumber(J, fz_colorspace_n(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_getType(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	int t = fz_colorspace_type(ctx, colorspace);
+	switch (t)
+	{
+	default:
+	case FZ_COLORSPACE_NONE: js_pushstring(J, "None"); break;
+	case FZ_COLORSPACE_GRAY: js_pushstring(J, "Gray"); break;
+	case FZ_COLORSPACE_RGB: js_pushstring(J, "RGB"); break;
+	case FZ_COLORSPACE_BGR: js_pushstring(J, "BGR"); break;
+	case FZ_COLORSPACE_CMYK: js_pushstring(J, "CMYK"); break;
+	case FZ_COLORSPACE_LAB: js_pushstring(J, "Lab"); break;
+	case FZ_COLORSPACE_INDEXED: js_pushstring(J, "Indexed"); break;
+	case FZ_COLORSPACE_SEPARATION: js_pushstring(J, "Separation"); break;
+	}
 }
 
 static void ffi_ColorSpace_toString(js_State *J)
@@ -9104,7 +9130,7 @@ static void ffi_PDFAnnotation_hasOpen(js_State *J)
 	js_pushboolean(J, has);
 }
 
-static void ffi_PDFAnnotation_isOpen(js_State *J)
+static void ffi_PDFAnnotation_getIsOpen(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
@@ -9851,7 +9877,11 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "Page.isPDF", ffi_Page_isPDF, 0);
 		jsB_propfun(J, "Page.getBounds", ffi_Page_getBounds, 0);
-		jsB_propfun(J, "Page.run", ffi_Page_run, 3);
+		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
+		jsB_propfun(J, "Page.run", ffi_Page_runPageContents, 2);
+		jsB_propfun(J, "Page.run", ffi_Page_runPageAnnots, 2);
+		jsB_propfun(J, "Page.run", ffi_Page_runPageWidgets, 2);
+
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 4);
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
 		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 1);
@@ -9923,6 +9953,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
+		jsB_propfun(J, "ColorSpace.getType", ffi_ColorSpace_getType, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
 		jsB_propfun(J, "ColorSpace.isGray", ffi_ColorSpace_isGray, 0);
 		jsB_propfun(J, "ColorSpace.isRGB", ffi_ColorSpace_isRGB, 0);
@@ -10307,7 +10338,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setHot", ffi_PDFAnnotation_setHot, 1);
 
 		jsB_propfun(J, "PDFAnnotation.hasOpen", ffi_PDFAnnotation_hasOpen, 0);
-		jsB_propfun(J, "PDFAnnotation.isOpen", ffi_PDFAnnotation_isOpen, 0);
+		jsB_propfun(J, "PDFAnnotation.getIsOpen", ffi_PDFAnnotation_getIsOpen, 0);
 		jsB_propfun(J, "PDFAnnotation.setIsOpen", ffi_PDFAnnotation_setIsOpen, 1);
 
 		jsB_propfun(J, "PDFAnnotation.process", ffi_PDFAnnotation_process, 1);

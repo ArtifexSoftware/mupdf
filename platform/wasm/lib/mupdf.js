@@ -24,9 +24,35 @@
 
 var libmupdf
 
+class TryLaterError extends Error {
+	constructor(message) {
+		super(message)
+		this.name = "TryLaterError"
+	}
+}
+
+const libmupdf_injections = {
+	fetchOpen,
+	fetchRead,
+	fetchClose,
+	TryLaterError,
+}
+
 // If running in Node.js environment
 if (typeof require === "function")
-	libmupdf = require("./mupdf-wasm.js")
+	libmupdf = require("./mupdf-wasm.js")(libmupdf_injections)
+else
+	libmupdf = libmupdf(libmupdf_injections)
+
+libmupdf._wasm_init_context()
+
+// To pass Rect and Matrix as pointer arguments
+var _wasm_point = libmupdf._wasm_malloc(4 * 4) >> 2
+var _wasm_rect = libmupdf._wasm_malloc(4 * 8) >> 2
+var _wasm_matrix = libmupdf._wasm_malloc(4 * 6) >> 2
+var _wasm_color = libmupdf._wasm_malloc(4 * 4) >> 2
+var _wasm_quad = libmupdf._wasm_malloc(4 * 8) >> 2
+var _wasm_string = [ 0, 0 ]
 
 function checkType(value, type) {
 	if (typeof type === "string" && typeof value !== type)
@@ -60,19 +86,35 @@ function checkColor(value) {
 		throw new TypeError("expected color array")
 }
 
+function toBuffer(input) {
+	if (input instanceof Buffer)
+		return input
+	if (input instanceof ArrayBuffer || input instanceof Uint8Array)
+		return new Buffer(input)
+	if (typeof input === "string")
+		return new Buffer(input)
+	throw new TypeError("expected buffer")
+}
+
+function toEnum(value, list) {
+	if (typeof value === "number") {
+		if (value >= 0 && value < list.length)
+			return value
+	}
+	if (typeof value === "string") {
+		let idx = list.indexOf(value)
+		if (idx >= 0)
+			return idx
+	}
+	throw new TypeError(`invalid enum value ("${value}"; expected ${list.join(", ")})`)
+}
+
 function allocateUTF8(str) {
 	var size = libmupdf.lengthBytesUTF8(str) + 1
 	var pointer = libmupdf._wasm_malloc(size)
 	libmupdf.stringToUTF8(str, pointer, size)
 	return pointer
 }
-
-let _wasm_point = 0
-let _wasm_rect = 0
-let _wasm_quad = 0
-let _wasm_matrix = 0
-let _wasm_color = 0
-let _wasm_string = [ 0, 0 ]
 
 function STRING_N(s,i) {
 	if (_wasm_string[i]) {
@@ -95,6 +137,12 @@ function POINT(p) {
 	libmupdf.HEAPF32[_wasm_point + 0] = p[0]
 	libmupdf.HEAPF32[_wasm_point + 1] = p[1]
 	return _wasm_point << 2
+}
+
+function POINT2(p) {
+	libmupdf.HEAPF32[_wasm_point + 2] = p[0]
+	libmupdf.HEAPF32[_wasm_point + 3] = p[1]
+	return (_wasm_point + 2) << 2
 }
 
 function RECT(r) {
@@ -136,9 +184,18 @@ function QUAD(q) {
 }
 
 function COLOR(c) {
-	for (let i = 0; i < c.length; ++i)
-		libmupdf.HEAPF32[_wasm_color + i] = c[i]
+	if (c) {
+		for (let i = 0; i < c.length && i < 4; ++i)
+			libmupdf.HEAPF32[_wasm_color + i] = c[i]
+	}
 	return _wasm_color << 2
+}
+
+function fromColor(n) {
+	let result = new Array(n)
+	for (let i = 0; i < n; ++i)
+		result[i] = libmupdf.HEAPF32[_wasm_color + i]
+	return result
 }
 
 function fromString(ptr) {
@@ -199,6 +256,35 @@ function fromBuffer(buf) {
 	let data = libmupdf._wasm_buffer_get_data(buf)
 	let size = libmupdf._wasm_buffer_get_len(buf)
 	return libmupdf.HEAPU8.slice(data, data + size)
+}
+
+function runSearch(searchFun, searchThis, needle, max_hits = 500) {
+	checkType(needle, "string")
+	let hits = 0
+	let marks = 0
+	try {
+		hits = libmupdf._wasm_malloc(32 * max_hits)
+		marks = libmupdf._wasm_malloc(4 * max_hits)
+		let n = searchFun(searchThis, STRING(needle), marks, hits, max_hits)
+		let outer = []
+		if (n > 0) {
+			let inner = []
+			for (let i = 0; i < n; ++i) {
+				let mark = libmupdf.HEAP32[(marks>>2) + i]
+				let quad = fromQuad(hits + i * 32)
+				if (i > 0 && mark) {
+					outer.push(inner)
+					inner = []
+				}
+				inner.push(quad)
+			}
+			outer.push(inner)
+		}
+		return outer
+	} finally {
+		libmupdf._wasm_free(marks)
+		libmupdf._wasm_free(hits)
+	}
 }
 
 const Matrix = {
@@ -349,8 +435,8 @@ class Buffer extends Userdata {
 			pointer = arg
 		} else if (typeof arg === "string") {
 			let data_len = libmupdf.lengthBytesUTF8(arg)
-			let data_ptr = libmupdf._wasm_malloc(data_len) + 1
-			libmupdf.stringToUTF8(arg, data_len, data_ptr + 1)
+			let data_ptr = libmupdf._wasm_malloc(data_len + 1)
+			libmupdf.stringToUTF8(arg, data_ptr, data_len + 1)
 			pointer = libmupdf._wasm_new_buffer_from_data(data_ptr, data_len)
 		} else if (arg instanceof ArrayBuffer || arg instanceof Uint8Array) {
 			let data_len = arg.byteLength
@@ -396,7 +482,7 @@ class Buffer extends Userdata {
 	}
 
 	asString() {
-		return fromString(libmupdf._wasm_buffer_get_data(this))
+		return fromString(libmupdf._wasm_string_from_buffer(this))
 	}
 }
 
@@ -429,10 +515,23 @@ class ColorSpace extends Userdata {
 	getNumberOfComponents() {
 		return libmupdf._wasm_colorspace_get_n(this)
 	}
+	isGray() { return getType() === "Gray" }
+	isRGB() { return getType() === "RGB" }
+	isCMYK() { return getType() === "CMYK" }
+	isIndexed() { return getType() === "Indexed" }
+	isLab() { return getType() === "Lab" }
+	isDeviceN() { return getType() === "Separation" }
+	isSubtractive() { return getType() === "CMYK" || getType() === "Separation" }
 	toString() {
 		return "[ColorSpace " + this.getName() + "]"
 	}
 }
+
+ColorSpace.DeviceGray = new ColorSpace(libmupdf._wasm_device_gray())
+ColorSpace.DeviceRGB = new ColorSpace(libmupdf._wasm_device_rgb())
+ColorSpace.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr())
+ColorSpace.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk())
+ColorSpace.Lab = new ColorSpace(libmupdf._wasm_device_lab())
 
 class Font extends Userdata {
 	static _drop = "_wasm_drop_font"
@@ -456,15 +555,14 @@ class Font extends Userdata {
 		"ko": 3,
 	}
 
-	constructor(arg1, arg2) {
+	constructor(arg1, arg2, arg3) {
 		let pointer = 0
 		if (typeof arg1 === "number") {
 			pointer = libmupdf._wasm_keep_font(arg1)
 		} else if (typeof arg1 === "string") {
-			pointer = libmupdf._wasm_new_base14_font(STRING(name))
-		}
-		else if (arg1 instanceof Buffer) {
-			pointer = libmupdf._wasm_new_font_from_buffer(arg1, arg2 | 0)
+			pointer = libmupdf._wasm_new_base14_font(STRING(arg1))
+		} else {
+			pointer = libmupdf._wasm_new_font_from_buffer(toBuffer(arg1), arg2 | 0, arg3 | 0)
 		}
 		super(pointer)
 	}
@@ -487,14 +585,14 @@ class Font extends Userdata {
 class Image extends Userdata {
 	static _drop = "_wasm_drop_image"
 
-	constructor(arg1) {
+	constructor(arg1, arg2) {
 		let pointer = 0
 		if (typeof arg1 === "number")
 			pointer = libmupdf._wasm_keep_image(arg1)
 		else if (arg1 instanceof Pixmap)
-			pointer = libmupdf._wasm_new_from_pixmap(arg1)
-		else if (arg1 instanceof Buffer)
-			pointer = libmupdf._wasm_new_image_from_buffer(arg1)
+			pointer = libmupdf._wasm_new_image_from_pixmap(arg1, arg2)
+		else
+			pointer = libmupdf._wasm_new_image_from_buffer(toBuffer(arg1))
 		super(pointer)
 	}
 
@@ -563,21 +661,27 @@ class StrokeState extends Userdata {
 	setLineWidth(w) {
 		libmupdf._wasm_stroke_state_set_linewidth(this, w)
 	}
+	getLineWidth(w) {
+		libmupdf._wasm_stroke_state_get_linewidth(this, w)
+	}
 	getMiterLimit() {
 		return libmupdf._wasm_stroke_state_get_miterlimit(this)
 	}
 	setMiterLimit(m) {
 		libmupdf._wasm_stroke_state_set_miterlimit(this, m)
 	}
+	// TODO: dashes
 }
 
 class Path extends Userdata {
 	static _drop = "_wasm_drop_path"
-	constructor() {
-		super(libmupdf._wasm_new_path())
+	constructor(pointer) {
+		if (pointer === undefined)
+			pointer = libmupdf._wasm_new_path()
+		super(pointer)
 	}
-	getBounds() {
-		return fromRect(libmupdf._wasm_bound_path(this))
+	getBounds(strokeState, transform) {
+		return fromRect(libmupdf._wasm_bound_path(this, strokeState, MATRIX(transform)))
 	}
 	moveTo(x, y) {
 		libmupdf._wasm_moveto(this, x, y)
@@ -612,12 +716,14 @@ class Path extends Userdata {
 class Text extends Userdata {
 	static _drop = "_wasm_drop_text"
 
-	constructor() {
-		super(libmupdf._wasm_new_text())
+	constructor(pointer) {
+		if (pointer === undefined)
+			pointer = libmupdf._wasm_new_text()
+		super(pointer)
 	}
 
-	getBounds() {
-		return fromRect(libmupdf._wasm_bound_text(this))
+	getBounds(strokeState, transform) {
+		return fromRect(libmupdf._wasm_bound_text(this, strokeState, MATRIX(transform)))
 	}
 
 	showGlyph(font, trm, gid, uni, wmode = 0) {
@@ -698,7 +804,9 @@ class DisplayList extends Userdata {
 		libmupdf._wasm_run_display_list(this, device, MATRIX(matrix))
 	}
 
-	// TODO: search
+	search(needle, max_hits = 500) {
+		return runSearch(libmupdf._wasm_search_display_list, this, needle, max_hits)
+	}
 }
 
 class Pixmap extends Userdata {
@@ -745,6 +853,9 @@ class Pixmap extends Userdata {
 	}
 	getNumberOfComponents() {
 		return libmupdf._wasm_pixmap_get_n(this)
+	}
+	getAlpha() {
+		return libmupdf._wasm_pixmap_get_alpha(this)
 	}
 	getXResolution() {
 		return libmupdf._wasm_pixmap_get_xres(this)
@@ -866,9 +977,10 @@ class StructuredText extends Userdata {
 				while (line) {
 					let line_bbox = fromRect(libmupdf._wasm_stext_line_get_bbox(line))
 					let line_wmode = libmupdf._wasm_stext_line_get_wmode(line)
+					let line_dir = fromPoint(libmupdf._wasm_stext_line_get_dir(line))
 
 					if (walker.beginLine)
-						walker.beginLine(line_bbox, line_wmode)
+						walker.beginLine(line_bbox, line_wmode, line_dir)
 
 					if (walker.onChar) {
 						let ch = libmupdf._wasm_stext_line_get_first_char(line)
@@ -905,7 +1017,10 @@ class StructuredText extends Userdata {
 
 	// TODO: highlight(a, b) -> quad[]
 	// TODO: copy(a, b) -> string
-	// TODO: search(needle) -> quad[][]
+
+	search(needle, max_hits = 500) {
+		return runSearch(libmupdf._wasm_search_stext_page, this, needle, max_hits)
+	}
 }
 
 class Device extends Userdata {
@@ -1056,7 +1171,7 @@ class Device extends Userdata {
 	beginGroup(area, colorspace, isolated, knockout, blendmode, alpha) {
 		checkRect(area)
 		checkType(colorspace, ColorSpace)
-		blendmode = Device.BLEND_MODES.indexOf(blendmode)
+		blendmode = toEnum(blendmode, Device.BLEND_MODES)
 		libmupdf._wasm_begin_group(this, RECT(area), colorspace, isolated, knockout, blendmode, alpha)
 	}
 
@@ -1100,7 +1215,7 @@ class DisplayListDevice extends Device {
 	constructor(displayList) {
 		checkType(displayList, DisplayList)
 		super(
-			libmupdf._wasm_new_list_device(displayList)
+			libmupdf._wasm_new_display_list_device(displayList)
 		)
 	}
 }
@@ -1111,7 +1226,7 @@ class DocumentWriter extends Userdata {
 	static _drop = "_wasm_drop_document_writer"
 
 	constructor(buffer, format, options) {
-		checkType(buffer, Buffer)
+		buffer = toBuffer(buffer)
 		super(
 			libmupdf._wasm_new_document_writer_with_buffer(
 				buffer,
@@ -1141,20 +1256,37 @@ class Document extends Userdata {
 	static _drop = "_wasm_drop_document"
 
 	static META_FORMAT = "format"
-	static META_ENCRYPTION = "encryption";
-	static META_INFO_AUTHOR = "info:Author";
-	static META_INFO_TITLE = "info:Title";
-	static META_INFO_SUBJECT = "info:Subject";
-	static META_INFO_KEYWORDS = "info:Keywords";
-	static META_INFO_CREATOR = "info:Creator";
-	static META_INFO_PRODUCER = "info:Producer";
-	static META_INFO_CREATIONDATE = "info:CreationDate";
-	static META_INFO_MODIFICATIONDATE = "info:ModDate";
+	static META_ENCRYPTION = "encryption"
+	static META_INFO_AUTHOR = "info:Author"
+	static META_INFO_TITLE = "info:Title"
+	static META_INFO_SUBJECT = "info:Subject"
+	static META_INFO_KEYWORDS = "info:Keywords"
+	static META_INFO_CREATOR = "info:Creator"
+	static META_INFO_PRODUCER = "info:Producer"
+	static META_INFO_CREATIONDATE = "info:CreationDate"
+	static META_INFO_MODIFICATIONDATE = "info:ModDate"
 
-	static PERMISSION_PRINT = "p".charCodeAt(0)
-	static PERMISSION_COPY = "c".charCodeAt(0)
-	static PERMISSION_EDIT = "e".charCodeAt(0)
-	static PERMISSION_ANNOTATE = "n".charCodeAt(0)
+	static PERMISSION = {
+		"print": "p".charCodeAt(0),
+		"copy": "c".charCodeAt(0),
+		"edit": "e".charCodeAt(0),
+		"annotate": "n".charCodeAt(0),
+		"form": "f".charCodeAt(0),
+		"accessibility": "y".charCodeAt(0),
+		"assemble": "a".charCodeAt(0),
+		"print-hq": "h".charCodeAt(0),
+	}
+
+	static LINK_DEST = [
+		"Fit",
+		"FitB",
+		"FitH",
+		"FitBH",
+		"FitV",
+		"FitBV",
+		"FitR",
+		"XYZ",
+	]
 
 	static openDocument(from, magic) {
 		let pointer = 0
@@ -1174,6 +1306,21 @@ class Document extends Userdata {
 		return new Document(pointer)
 	}
 
+	formatLinkURI(dest) {
+		return fromStringFree(
+			libmupdf._wasm_format_link_uri(this,
+				dest.chapter | 0,
+				dest.page | 0,
+				toEnum(dest.type, Document.LINK_DEST),
+				+dest.x,
+				+dest.y,
+				+dest.width,
+				+dest.height,
+				+dest.zoom
+			)
+		)
+	}
+
 	isPDF() {
 		return false
 	}
@@ -1187,25 +1334,9 @@ class Document extends Userdata {
 	}
 
 	hasPermission(flag) {
-		if (typeof flag === "string") {
-			switch (flag) {
-				case "print":
-					flag = Document.PERMISSION_PRINT
-					break
-				case "annotatate":
-					flag = Document.PERMISSION_ANNOTATE
-					break
-				case "edit":
-					flag = Document.PERMISSION_EDIT
-					break
-				case "copy":
-					flag = Document.PERMISSION_COPY
-					break
-				default:
-					throw new Error("invalid permission name")
-			}
-		}
-		return libmupdf._wasm_has_permission(this, flag)
+		if (!Document.PERMISSION[flag])
+			throw new Error("invalid permission flag: " + flag)
+		return libmupdf._wasm_has_permission(this, Document.PERMISSION[flag])
 	}
 
 	getMetaData(key) {
@@ -1243,7 +1374,7 @@ class Document extends Userdata {
 		let fz_ptr = libmupdf._wasm_load_page(this, index)
 		let pdf_ptr = libmupdf._wasm_pdf_page_from_fz_page(fz_ptr)
 		if (pdf_ptr)
-			return new PDFPage(pdf_ptr)
+			return new PDFPage(this, pdf_ptr)
 		return new Page(fz_ptr)
 	}
 
@@ -1386,33 +1517,18 @@ class Page extends Userdata {
 		return links
 	}
 
+	createLink(bbox, uri) {
+		checkRect(bbox)
+		return new Link(libmupdf._wasm_create_link(this, RECT(bbox), STRING(uri)))
+	}
+
+	deleteLink(link) {
+		checkType(link, Link)
+		libmupdf._wasm_delete_link(this, link)
+	}
+
 	search(needle, max_hits = 500) {
-		checkType(needle, "string")
-		let hits = 0
-		let marks = 0
-		try {
-			hits = libmupdf._wasm_malloc(32 * max_hits)
-			marks = libmupdf._wasm_malloc(4 * max_hits)
-			let n = libmupdf._wasm_search_page(this, STRING(needle), marks, hits, max_hits)
-			let outer = []
-			if (n > 0) {
-				let inner = []
-				for (let i = 0; i < n; ++i) {
-					let mark = libmupdf.HEAP32[(marks>>2) + i]
-					let quad = fromQuad(hits + i * 32)
-					if (i > 0 && mark) {
-						outer.push(inner)
-						inner = []
-					}
-					inner.push(quad)
-				}
-				outer.push(inner)
-			}
-			return outer
-		} finally {
-			libmupdf._wasm_free(marks)
-			libmupdf._wasm_free(hits)
-		}
+		return runSearch(libmupdf._wasm_search_page, this, needle, max_hits)
 	}
 }
 
@@ -1446,24 +1562,24 @@ class PDFDocument extends Document {
 	}
 
 	getTrailer() {
-		return new PDFObject(libmupdf._wasm_pdf_trailer(this))
+		return new PDFObject(this, libmupdf._wasm_pdf_trailer(this))
 	}
 
 	createObject() {
 		let num = libmupdf._wasm_pdf_create_object(this)
-		return fromPDFObject(libmupdf._wasm_pdf_new_indirect(this, num))
+		return fromPDFObject(this, libmupdf._wasm_pdf_new_indirect(this, num))
 	}
 
 	newNull() { return PDFObject.Null }
-	newBool(v) { return fromPDFObject(libmupdf._wasm_pdf_new_bool(v)) }
-	newInteger(v) { return fromPDFObject(libmupdf._wasm_pdf_new_int(v)) }
-	newReal(v) { return fromPDFObject(libmupdf._wasm_pdf_new_real(v)) }
-	newName(v) { return fromPDFObject(libmupdf._wasm_pdf_new_name(v)) }
-	newString(v) { return fromPDFObject(libmupdf._wasm_pdf_new_text_string(v)) }
+	newBool(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_bool(v)) }
+	newInteger(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_int(v)) }
+	newReal(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_real(v)) }
+	newName(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_name(STRING(v))) }
+	newString(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_text_string(STRING(v))) }
 
-	newIndirect(v) { return fromPDFObject(libmupdf._wasm_pdf_new_indirect(this, v)) }
-	newArray(cap=8) { return fromPDFObject(libmupdf._wasm_pdf_new_array(this, cap)) }
-	newDictionary(cap=8) { return fromPDFObject(libmupdf._wasm_pdf_new_dict(this, cap)) }
+	newIndirect(v) { return fromPDFObject(this, libmupdf._wasm_pdf_new_indirect(this, v)) }
+	newArray(cap=8) { return fromPDFObject(this, libmupdf._wasm_pdf_new_array(this, cap)) }
+	newDictionary(cap=8) { return fromPDFObject(this, libmupdf._wasm_pdf_new_dict(this, cap)) }
 
 	deleteObject(num) {
 		if (num instanceof PDFObject)
@@ -1474,47 +1590,46 @@ class PDFDocument extends Document {
 	}
 
 	addObject(obj) {
-		obj = PDFOBJ(obj)
-		return fromPDFObject(libmupdf._wasm_pdf_add_object(this, obj))
+		obj = PDFOBJ(this, obj)
+		return fromPDFObject(this, libmupdf._wasm_pdf_add_object(this, obj))
 	}
 
 	addStream(buf, obj) {
-		obj = PDFOBJ(obj)
-		checkType(buf, Buffer)
+		obj = PDFOBJ(this, obj)
+		buf = toBuffer(buf)
 		libmupdf._wasm_pdf_add_stream(this, buf, obj, 0)
 	}
 
 	addRawStream(buf, obj) {
-		obj = PDFOBJ(obj)
-		checkType(buf, Buffer)
+		obj = PDFOBJ(this, obj)
+		buf = toBuffer(buf)
 		libmupdf._wasm_pdf_add_stream(this, buf, obj, 1)
 	}
 
 	addSimpleFont(font, encoding) {
 		checkType(font, Font)
-		checkType(encoding, "string")
 		if (encoding === "Latin" || encoding === "Latn") encoding = 0
 		else if (encoding === "Greek" || encoding === "Grek") encoding = 1
 		else if (encoding === "Cyrillic" || encoding === "Cyrl") encoding = 2
 		else encoding = 0
-		return fromPDFObject(libmupdf._wasm_pdf_add_simple_font(this, font, encoding))
+		return fromPDFObject(this, libmupdf._wasm_pdf_add_simple_font(this, font, encoding))
 	}
 
 	addCJKFont(font, lang, wmode, serif) {
 		checkType(font, Font)
 		if (typeof lang === "string")
 			lang = Font.CJK_ORDERING_BY_LANG[lang]
-		return fromPDFObject(libmupdf._wasm_pdf_add_cjk_font(this, font, lang, wmode, serif))
+		return fromPDFObject(this, libmupdf._wasm_pdf_add_cjk_font(this, font, lang, wmode, serif))
 	}
 
 	addFont(font) {
 		checkType(font, Font)
-		return fromPDFObject(libmupdf._wasm_pdf_add_font(this, font))
+		return fromPDFObject(this, libmupdf._wasm_pdf_add_font(this, font))
 	}
 
 	addImage(image) {
 		checkType(image, Image)
-		return fromPDFObject(libmupdf._wasm_pdf_add_image(this, image))
+		return fromPDFObject(this, libmupdf._wasm_pdf_add_image(this, image))
 	}
 
 	loadImage(ref) {
@@ -1524,18 +1639,20 @@ class PDFDocument extends Document {
 
 	findPage(index) {
 		checkType(index, "number")
-		return fromPDFObject(libmupdf._wasm_pdf_lookup_page_obj(this, index))
+		return fromPDFObject(this, libmupdf._wasm_pdf_lookup_page_obj(this, index))
 	}
 
 	addPage(mediabox, rotate, resources, contents) {
-		resources = PDFOBJ(resources)
+		resources = PDFOBJ(this, resources)
 		checkRect(mediabox)
 		checkType(rotate, "number")
-		checkType(contents, Buffer)
+		contents = toBuffer(contents)
 		return fromPDFObject(
+			this,
 			libmupdf._wasm_pdf_add_page(
 				this,
 				RECT(mediabox),
+				rotate,
 				resources,
 				contents
 			)
@@ -1543,7 +1660,7 @@ class PDFDocument extends Document {
 	}
 
 	insertPage(at, obj) {
-		obj = PDFOBJ(obj)
+		obj = PDFOBJ(this, obj)
 		checkType(at, "number")
 		libmupdf._wasm_pdf_insert_page(this, at, obj)
 	}
@@ -1561,15 +1678,17 @@ class PDFDocument extends Document {
 	addEmbeddedFile(filename, mimetype, contents, created, modified, checksum = false) {
 		checkType(filename, "string")
 		checkType(mimetype, "string")
-		checkType(contents, Buffer)
+		contents = toBuffer(contents)
 		checkType(created, Date)
 		checkType(modified, Date)
 		checkType(checksum, "boolean")
 		return fromPDFObject(
+			this,
 			libmupdf._wasm_pdf_add_embedded_file(
 				this,
 				STRING(filename),
 				STRING2(mimetype),
+				contents,
 				created.getTime() / 1000 | 0,
 				modified.getTime() / 1000 | 0,
 				checksum
@@ -1582,15 +1701,15 @@ class PDFDocument extends Document {
 		let ptr = libmupdf._wasm_pdf_get_embedded_file_params(ref)
 		return {
 			filename:
-				fromString(libmupdf._wasm_pdf_get_embedded_file_params_filename(ptr)),
+				fromString(libmupdf._wasm_pdf_embedded_file_params_get_filename(ptr)),
 			mimetype:
-				fromString(libmupdf._wasm_pdf_get_embedded_file_params_mimetype(ptr)),
+				fromString(libmupdf._wasm_pdf_embedded_file_params_get_mimetype(ptr)),
 			size:
-				libmupdf._wasm_pdf_get_embedded_file_params_filename(ptr),
+				libmupdf._wasm_pdf_embedded_file_params_get_filename(ptr),
 			creationDate:
-				new Date(libmupdf._wasm_pdf_get_embedded_file_params_created(ptr) * 1000),
+				new Date(libmupdf._wasm_pdf_embedded_file_params_get_created(ptr) * 1000),
 			modificationDate:
-				new Date(libmupdf._wasm_pdf_get_embedded_file_params_modified(ptr) * 1000),
+				new Date(libmupdf._wasm_pdf_embedded_file_params_get_modified(ptr) * 1000),
 		}
 	}
 
@@ -1602,7 +1721,26 @@ class PDFDocument extends Document {
 		return null
 	}
 
+	getEmbeddedFiles() {
+		function _getEmbeddedFilesRec(result, N) {
+			var i, n
+			if (N) {
+				var NN = N.get("Names")
+				if (NN)
+					for (i = 0, n = NN.length; i < n; i += 2)
+						result[NN.get(i+0).asString()] = NN.get(i+1)
+				var NK = N.get("Kids")
+				if (NK)
+					for (i = 0, n = NK.length; i < n; i += 1)
+						_getEmbeddedFilesRec(result, NK.get(i))
+			}
+			return result
+		}
+		return _getEmbeddedFilesRec({}, this.getTrailer().get("Root", "Names", "EmbeddedFiles"))
+	}
+
 	saveToBuffer(options) {
+		checkType(options, "string")
 		// TODO: object options to string options?
 		return new Buffer(libmupdf._wasm_pdf_write_document_buffer(this, STRING(options)))
 	}
@@ -1693,8 +1831,9 @@ class PDFDocument extends Document {
 }
 
 class PDFPage extends Page {
-	constructor(pointer) {
+	constructor(doc, pointer) {
 		super(pointer)
+		this._doc = doc
 		this._annots = null
 	}
 
@@ -1702,11 +1841,31 @@ class PDFPage extends Page {
 		return true
 	}
 
+	toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage = "View") {
+		checkType(colorspace, ColorSpace)
+		checkMatrix(matrix)
+		let result
+		if (showExtras)
+			result = libmupdf._wasm_pdf_new_pixmap_from_page_with_usage(this,
+				MATRIX(matrix),
+				colorspace,
+				alpha,
+				STRING(usage))
+		else
+			result = libmupdf._wasm_pdf_new_pixmap_from_page_contents_with_usage(this,
+				MATRIX(matrix),
+				colorspace,
+				alpha,
+				STRING(usage))
+		return new Pixmap(result)
+	}
+
+
 	getWidgets() {
 		let list = []
 		let widget = libmupdf._wasm_pdf_first_widget(this)
 		while (widget) {
-			list.push(new PDFWidget(libmupdf._wasm_pdf_keep_annot(widget)))
+			list.push(new PDFWidget(this._doc, libmupdf._wasm_pdf_keep_annot(widget)))
 			widget = libmupdf._wasm_pdf_next_widget(widget)
 		}
 		return list
@@ -1717,7 +1876,7 @@ class PDFPage extends Page {
 			this._annots = []
 			let annot = libmupdf._wasm_pdf_first_annot(this)
 			while (annot) {
-				this._annots.push(new PDFAnnotation(libmupdf._wasm_pdf_keep_annot(annot)))
+				this._annots.push(new PDFAnnotation(this._doc, libmupdf._wasm_pdf_keep_annot(annot)))
 				annot = libmupdf._wasm_pdf_next_annot(annot)
 			}
 		}
@@ -1725,9 +1884,8 @@ class PDFPage extends Page {
 	}
 
 	createAnnotation(type) {
-		if (typeof type === "string")
-			type = PDFAnnotation.TYPES.indexOf(type)
-		let annot = new PDFAnnotation(libmupdf._wasm_pdf_create_annot(this, type))
+		type = toEnum(type, PDFAnnotation.TYPES)
+		let annot = new PDFAnnotation(this._doc, libmupdf._wasm_pdf_create_annot(this, type))
 		if (this._annots)
 			this._annots.push(annot)
 		return annot
@@ -1754,21 +1912,16 @@ class PDFPage extends Page {
 	update() {
 		return !!libmupdf._wasm_pdf_update_page(this)
 	}
-
-	createLink(bbox, uri) {
-		checkRect(bbox)
-		return new Link(libmupdf._wasm_pdf_create_link(this, RECT(bbox), STRING(uri)))
-	}
 }
 
-function fromPDFObject(ptr) {
+function fromPDFObject(doc, ptr) {
 	if (ptr === 0)
 		return PDFObject.Null
-	return new PDFObject(ptr)
+	return new PDFObject(doc, ptr)
 }
 
-function keepPDFObject(ptr) {
-	return new PDFObject(libmupdf._wasm_pdf_keep_obj(ptr))
+function keepPDFObject(doc, ptr) {
+	return new PDFObject(doc, libmupdf._wasm_pdf_keep_obj(ptr))
 }
 
 function PDFOBJ(doc, obj) {
@@ -1785,13 +1938,13 @@ function PDFOBJ(doc, obj) {
 	if (obj instanceof Array) {
 		let result = doc.newArray(obj.length)
 		for (let item of obj)
-			result.push(PDFOBJ(item))
+			result.push(PDFOBJ(doc, item))
 		return result
 	}
 	if (obj instanceof Object) {
 		let result = doc.newDictionary()
 		for (let key in obj)
-			result.put(key, PDFOBJ(obj[key]))
+			result.put(key, PDFOBJ(doc, obj[key]))
 		return result
 	}
 	throw new TypeError("cannot convert value to PDFObject")
@@ -1800,8 +1953,9 @@ function PDFOBJ(doc, obj) {
 class PDFObject extends Userdata {
 	static _drop = "_wasm_pdf_drop_obj"
 
-	constructor(pointer) {
+	constructor(doc, pointer) {
 		super(libmupdf._wasm_pdf_keep_obj(pointer))
+		this._doc = doc
 	}
 
 	isNull() { return this === PDFObject.Null }
@@ -1825,7 +1979,7 @@ class PDFObject extends Userdata {
 	readRawStream() { return new Buffer(libmupdf._wasm_pdf_load_raw_stream(this)) }
 
 	resolve() {
-		return fromPDFObject(libmupdf._wasm_pdf_resolve_indirect(this))
+		return fromPDFObject(this, libmupdf._wasm_pdf_resolve_indirect(this))
 	}
 
 	get length() {
@@ -1847,7 +2001,7 @@ class PDFObject extends Userdata {
 		return obj
 	}
 
-	get(...path) { return fromPDFObject(this._get(path)) }
+	get(...path) { return fromPDFObject(this, this._get(path)) }
 	getIndirect(...path) { return libmupdf._wasm_pdf_to_num(this._get(path)) }
 	getBoolean(...path) { return libmupdf._wasm_pdf_to_bool(this._get(path)) }
 	getNumber(...path) { return libmupdf._wasm_pdf_to_number(this._get(path)) }
@@ -1855,7 +2009,7 @@ class PDFObject extends Userdata {
 	getString(...path) { return fromString(libmupdf._wasm_pdf_to_text_string(this._get(path))) }
 
 	put(key, value) {
-		value = PDFOBJ(value)
+		value = PDFOBJ(this._doc, value)
 		if (typeof key === "number")
 			libmupdf._wasm_pdf_array_put(this, key, value)
 		else if (typeof key === PDFObject)
@@ -1865,7 +2019,7 @@ class PDFObject extends Userdata {
 	}
 
 	push(value) {
-		value = PDFOBJ(value)
+		value = PDFOBJ(this._doc, value)
 		libmupdf._wasm_pdf_array_push(this, value)
 	}
 
@@ -1892,6 +2046,8 @@ class PDFObject extends Userdata {
 		return fromStringFree(libmupdf._wasm_pdf_sprint_obj(this, tight, ascii))
 	}
 }
+
+PDFObject.Null = new PDFObject(null, 0)
 
 class PDFAnnotation extends Userdata {
 	static _drop = "_wasm_pdf_drop_annot"
@@ -1928,6 +2084,19 @@ class PDFAnnotation extends Userdata {
 		"Projection",
 	]
 
+	static LINE_ENDING = [
+		"None",
+		"Square",
+		"Circle",
+		"Diamond",
+		"OpenArrow",
+		"ClosedArrow",
+		"Butt",
+		"ROpenArrow",
+		"RClosedArrow",
+		"Slash",
+	]
+
         static LINE_ENDING_NONE = 0
         static LINE_ENDING_SQUARE = 1
         static LINE_ENDING_CIRCLE = 2
@@ -1939,11 +2108,24 @@ class PDFAnnotation extends Userdata {
         static LINE_ENDING_R_CLOSED_ARROW = 8
         static LINE_ENDING_SLASH = 9
 
+	static BORDER_STYLE = [
+		"Solid",
+		"Dashed",
+		"Beveled",
+		"Inset",
+		"Underline"
+	]
+
         static BORDER_STYLE_SOLID = 0
         static BORDER_STYLE_DASHED = 1
         static BORDER_STYLE_BEVELED = 2
         static BORDER_STYLE_INSET = 3
         static BORDER_STYLE_UNDERLINE = 4
+
+	static BORDER_EFFECT = [
+		"None",
+		"Cloudy",
+	]
 
         static BORDER_EFFECT_NONE = 0
         static BORDER_EFFECT_CLOUDY = 1
@@ -1959,8 +2141,13 @@ class PDFAnnotation extends Userdata {
         static IS_TOGGLE_NO_VIEW = 1 << (9-1)
         static IS_LOCKED_CONTENTS = 1 << (10-1)
 
+	constructor(doc, pointer) {
+		super(pointer)
+		this._doc = doc
+	}
+
 	getObject() {
-		return keepPDFObject(libmupdf._wasm_pdf_annot_obj(this))
+		return keepPDFObject(this._doc, libmupdf._wasm_pdf_annot_obj(this))
 	}
 
 	getBounds() {
@@ -2066,13 +2253,12 @@ class PDFAnnotation extends Userdata {
 		libmupdf._wasm_pdf_set_annot_popup(this, RECT(rect))
 	}
 
-	// TODO: rename to getIsOpen ?
-	isOpen() {
+	getIsOpen() {
 		return libmupdf._wasm_pdf_annot_is_open(this)
 	}
 
 	setIsOpen(isOpen) {
-		return libmupdf._wasm_pdf_annot_set_is_open(this, isOpen)
+		return libmupdf._wasm_pdf_set_annot_is_open(this, isOpen)
 	}
 
 	getIcon() {
@@ -2099,12 +2285,136 @@ class PDFAnnotation extends Userdata {
 		return libmupdf._wasm_pdf_set_annot_quadding(this, quadding)
 	}
 
+	getLine() {
+		let a = fromPoint(libmupdf._wasm_pdf_annot_line_1(this))
+		let b = fromPoint(libmupdf._wasm_pdf_annot_line_2(this))
+		return [ a, b ]
+	}
+
+	setLine(a, b) {
+		libmupdf._wasm_pdf_set_annot_line(this, POINT(a), POINT2(b))
+	}
+
+	getLineEndingStyles() {
+		let a = libmupdf._wasm_pdf_annot_line_ending_styles_start(this)
+		let b = libmupdf._wasm_pdf_annot_line_ending_styles_end(this)
+		return {
+			start: PDFAnnotation.LINE_ENDING[a],
+			end: PDFAnnotation.LINE_ENDING[b]
+		}
+	}
+
+	setLineEndingStyles(start, end) {
+		start = toEnum(start, PDFAnnotation.LINE_ENDING)
+		end = toEnum(end, PDFAnnotation.LINE_ENDING)
+		return libmupdf._wasm_pdf_set_annot_line_ending_styles(this, start, end)
+	}
+
+	getColor() {
+		return fromColor(libmupdf._wasm_pdf_annot_color(this, COLOR()))
+	}
+
+	getInteriorColor() {
+		return fromColor(libmupdf._wasm_pdf_annot_interior_color(this, COLOR()))
+	}
+
+	setColor(color) {
+		checkType(color, Array)
+		libmupdf._wasm_pdf_set_annot_color(this, color.length, COLOR(color))
+	}
+
+	setInteriorColor(color) {
+		checkType(color, Array)
+		libmupdf._wasm_pdf_set_annot_interior_color(this, color.length, COLOR(color))
+	}
+
+	getBorderWidth() {
+		return libmupdf._wasm_pdf_annot_border_width(this)
+	}
+
+	setBorderWidth(value) {
+		checkType(value, "number")
+		return libmupdf._wasm_pdf_set_annot_border_width(this, value)
+	}
+
+	getBorderStyle() {
+		return PDFAnnotation.BORDER_STYLE[libmupdf._wasm_pdf_annot_border_style(this)]
+	}
+
+	setBorderStyle(value) {
+		value = toEnum(value, PDFAnnotation.BORDER_STYLE)
+		return libmupdf._wasm_pdf_set_annot_border_style(this, value)
+	}
+
+	getBorderEffect() {
+		return PDFAnnotation.BORDER_EFFECT[libmupdf._wasm_pdf_annot_border_effect(this)]
+	}
+
+	setBorderEffect(value) {
+		value = toEnum(value, PDFAnnotation.BORDER_EFFECT)
+		return libmupdf._wasm_pdf_set_annot_border_effect(this, value)
+	}
+
+	getBorderEffectIntensity() {
+		return libmupdf._wasm_pdf_annot_border_effect_intensity(this)
+	}
+
+	setBorderEffectIntensity(value) {
+		checkType(value, "number")
+		return libmupdf._wasm_pdf_set_annot_border_effect_intensity(this, value)
+	}
+
+	getBorderDashCount() {
+		return libmupdf._wasm_pdf_annot_border_dash_count(this)
+	}
+
+	getBorderDashItem(idx) {
+		return libmupdf._wasm_pdf_annot_border_dash_item(this, idx)
+	}
+
+	clearBorderDash() {
+		return libmupdf._wasm_pdf_clear_annot_border_dash(this)
+	}
+
+	addBorderDashItem(v) {
+		checkType(v, "number")
+		return libmupdf._wasm_pdf_add_annot_border_dash_item(this, v)
+	}
+
+	getBorderDashPattern() {
+		let n = this.getBorderDashCount()
+		let result = new Array(n)
+		for (let i = 0; i < n; ++i)
+			result[i] = this.getBorderDashItem(i)
+		return result
+	}
+
+	setBorderDashPattern(list) {
+		this.clearBorderDash()
+		for (let v of list)
+			this.addBorderDashItem(v)
+	}
+
+	setDefaultAppearance(fontName, size, color) {
+		checkType(fontName, "string")
+		checkType(size, "number")
+		checkColor(color)
+		libmupdf._wasm_pdf_set_annot_default_appearance(this, STRING(fontName), size, color.length, COLOR(color))
+	}
+
+	getDefaultAppearance() {
+		let font = fromString(libmupdf._wasm_pdf_annot_default_appearance_font(this))
+		let size = libmupdf._wasm_pdf_annot_default_appearance_size(this)
+		let color = fromColor(libmupdf._wasm_pdf_annot_default_appearance_color(this, COLOR()))
+		return { font, size, color }
+	}
+
 	getFileSpec() {
-		return keepPDFObject(libmupdf._wasm_pdf_annot_filespec(this))
+		return keepPDFObject(this._doc, libmupdf._wasm_pdf_annot_filespec(this))
 	}
 
 	setFileSpec(fs) {
-		fs = PDFOBJ(fs)
+		fs = PDFOBJ(this._doc, fs)
 		return libmupdf._wasm_pdf_set_annot_filespec(this, fs)
 	}
 
@@ -2117,12 +2427,12 @@ class PDFAnnotation extends Userdata {
 	}
 
 	clearQuadPoints() {
-		libmupdf._wasm_pdf_annot_clear_quad_points(this)
+		libmupdf._wasm_pdf_clear_annot_quad_points(this)
 	}
 
 	addQuadPoint(quad) {
 		checkQuad(quad)
-		libmupdf._wasm_pdf_annot_add_quad_point(this, QUAD(quad))
+		libmupdf._wasm_pdf_add_annot_quad_point(this, QUAD(quad))
 	}
 
 	setQuadPoints(quadlist) {
@@ -2140,12 +2450,12 @@ class PDFAnnotation extends Userdata {
 	}
 
 	clearVertices() {
-		libmupdf._wasm_pdf_annot_clear_vertices(this)
+		libmupdf._wasm_pdf_clear_annot_vertices(this)
 	}
 
 	addVertex(vertex) {
 		checkPoint(vertex)
-		libmupdf._wasm_pdf_annot_add_vertex(this, POINT(vertex))
+		libmupdf._wasm_pdf_add_annot_vertex(this, POINT(vertex))
 	}
 
 	setVertices(vertexlist) {
@@ -2167,16 +2477,16 @@ class PDFAnnotation extends Userdata {
 	}
 
 	clearInkList() {
-		libmupdf._wasm_pdf_annot_clear_ink_list(this)
+		libmupdf._wasm_pdf_clear_annot_ink_list(this)
 	}
 
 	addInkListStroke() {
-		libmupdf._wasm_pdf_annot_add_ink_list_stroke(this)
+		libmupdf._wasm_pdf_add_annot_ink_list_stroke(this)
 	}
 
 	addInkListStrokeVertex(v) {
 		checkPoint(v)
-		libmupdf._wasm_pdf_annot_add_ink_list_stroke_vertex(this, POINT(v))
+		libmupdf._wasm_pdf_add_annot_ink_list_stroke_vertex(this, POINT(v))
 	}
 
 	setInkList(inklist) {
@@ -2188,17 +2498,30 @@ class PDFAnnotation extends Userdata {
 		}
 	}
 
-	// TODO: line ending styles
-	// TODO: color
-	// TODO: interior_color
-	// TODO: border dash
-	// TODO: get default appearance
+	setAppearanceFromDisplayList(appearance, state, transform, list) {
+		checkMatrix(transform)
+		checkType(list, DisplayList)
+		libmupdf._wasm_pdf_set_annot_appearance_from_display_list(
+			this,
+			appearance ? STRING(appearance) : 0,
+			state ? STRING2(state) : 0,
+			MATRIX(transform),
+			list
+		)
+	}
 
-	setDefaultAppearance(fontName, size, color) {
-		checkType(fontName, "string")
-		checkType(size, "number")
-		checkColor(color)
-		libmupdf._wasm_pdf_set_annot_default_appearance(STRING(fontName), size, color.length, COLOR(color))
+	setAppearance(appearance, state, transform, bbox, resources, contents) {
+		checkMatrix(transform)
+		checkRect(bbox)
+		libmupdf._wasm_pdf_set_annot_appearance(
+			this,
+			appearance ? STRING(appearance) : 0,
+			state ? STRING2(state) : 0,
+			MATRIX(transform),
+			RECT(bbox),
+			PDFOBJ(this._doc, resources),
+			toBuffer(contents)
+		)
 	}
 }
 
@@ -2216,25 +2539,25 @@ class PDFWidget extends PDFAnnotation {
 	]
 
 	/* Field flags */
-	static FIELD_IS_READ_ONLY = 1;
-	static FIELD_IS_REQUIRED = 1 << 1;
-	static FIELD_IS_NO_EXPORT = 1 << 2;
+	static FIELD_IS_READ_ONLY = 1
+	static FIELD_IS_REQUIRED = 1 << 1
+	static FIELD_IS_NO_EXPORT = 1 << 2
 
 	/* Text fields */
-	static TX_FIELD_IS_MULTILINE = 1 << 12;
-	static TX_FIELD_IS_PASSWORD = 1 << 13;
-	static TX_FIELD_IS_COMB = 1 << 24;
+	static TX_FIELD_IS_MULTILINE = 1 << 12
+	static TX_FIELD_IS_PASSWORD = 1 << 13
+	static TX_FIELD_IS_COMB = 1 << 24
 
 	/* Button fields */
-	static BTN_FIELD_IS_NO_TOGGLE_TO_OFF = 1 << 14;
-	static BTN_FIELD_IS_RADIO = 1 << 15;
-	static BTN_FIELD_IS_PUSHBUTTON = 1 << 16;
+	static BTN_FIELD_IS_NO_TOGGLE_TO_OFF = 1 << 14
+	static BTN_FIELD_IS_RADIO = 1 << 15
+	static BTN_FIELD_IS_PUSHBUTTON = 1 << 16
 
 	/* Choice fields */
-	static CH_FIELD_IS_COMBO = 1 << 17;
-	static CH_FIELD_IS_EDIT = 1 << 18;
-	static CH_FIELD_IS_SORT = 1 << 19;
-	static CH_FIELD_IS_MULTI_SELECT = 1 << 21;
+	static CH_FIELD_IS_COMBO = 1 << 17
+	static CH_FIELD_IS_EDIT = 1 << 18
+	static CH_FIELD_IS_SORT = 1 << 19
+	static CH_FIELD_IS_MULTI_SELECT = 1 << 21
 
 	getFieldType() {
 		return PDFWidget.TYPES(libmupdf._wasm_pdf_annot_field_type(this))
@@ -2299,10 +2622,7 @@ class PDFWidget extends PDFAnnotation {
 	}
 
 	getName() {
-		let ptr = libmupdf._wasm_pdf_load_field_name(this)
-		let str = fromString(ptr)
-		libmupdf._wasm_free(ptr)
-		return str
+		return fromStringFree(libmupdf._wasm_pdf_load_field_name(this))
 	}
 
 	getValue() {
@@ -2364,13 +2684,6 @@ class PDFWidget extends PDFAnnotation {
 }
 
 // Background progressive fetch
-
-class TryLaterError extends Error {
-	constructor(message) {
-		super(message)
-		this.name = "TryLaterError"
-	}
-}
 
 class Stream extends Userdata {
 	static _drop = "_wasm_drop_stream"
@@ -2472,6 +2785,11 @@ function fetchClose(id) {
 	delete fetchStates[id]
 }
 
+// TODO - Figure out better naming scheme for fetch methods
+function onFetchCompleted(id) {
+	mupdf.onFetchCompleted(id)
+}
+
 // --- EXPORTS ---
 
 const mupdf = {
@@ -2498,38 +2816,6 @@ const mupdf = {
 	Stream,
 	onFetchCompleted: () => {},
 }
-
-// TODO - Figure out better naming scheme for fetch methods
-function onFetchCompleted(id) {
-	mupdf.onFetchCompleted(id)
-}
-
-const libmupdf_injections = {
-	fetchOpen,
-	fetchRead,
-	fetchClose,
-	TryLaterError,
-}
-
-mupdf.ready = libmupdf(libmupdf_injections).then((m) => {
-	libmupdf = m
-	libmupdf._wasm_init_context()
-
-	// To pass Rect and Matrix as pointer arguments
-	_wasm_point = libmupdf._wasm_malloc(4 * 2) >> 2
-	_wasm_rect = libmupdf._wasm_malloc(4 * 8) >> 2
-	_wasm_matrix = libmupdf._wasm_malloc(4 * 6) >> 2
-	_wasm_color = libmupdf._wasm_malloc(4 * 4) >> 2
-	_wasm_quad = libmupdf._wasm_malloc(4 * 8) >> 2
-
-	ColorSpace.DeviceGray = new ColorSpace(libmupdf._wasm_device_gray())
-	ColorSpace.DeviceRGB = new ColorSpace(libmupdf._wasm_device_rgb())
-	ColorSpace.DeviceBGR = new ColorSpace(libmupdf._wasm_device_bgr())
-	ColorSpace.DeviceCMYK = new ColorSpace(libmupdf._wasm_device_cmyk())
-	ColorSpace.Lab = new ColorSpace(libmupdf._wasm_device_lab())
-
-	PDFObject.Null = new PDFObject(0)
-})
 
 // If running in Node.js environment
 if (typeof require === "function")

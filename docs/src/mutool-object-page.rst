@@ -50,8 +50,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
         var rect = page.run(obj, mupdf.Matrix.identity);
 
-    .. |tor_todo| Make mutool run method match this.
-
 
 .. method:: runPageContents(device, matrix)
 
@@ -67,8 +65,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
     .. code-block:: javascript
 
         var rect = page.runPageContents(obj, mupdf.Matrix.identity);
-
-    .. |tor_todo| Make mutool run method match this.
 
 
 .. method:: runPageAnnots(device, matrix)
@@ -86,8 +82,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
         var rect = page.runPageAnnots(obj, mupdf.Matrix.identity);
 
-    .. |tor_todo| Make mutool run method match this.
-
 
 .. method:: runPageWidgets(device, matrix)
 
@@ -104,7 +98,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
         var rect = page.runPageWidgets(obj, mupdf.Matrix.identity);
 
-    .. |tor_todo| Make mutool run method match this.
 
 .. method:: toPixmap(matrix, colorspace, alpha, showExtras)
 
@@ -182,8 +175,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
         var results = page.search("my search phrase");
 
 
-    .. |tor_todo| TypeError: libmupdf._wasm_search_page is not a function.
-
 
 
 .. method:: getLinks()
@@ -217,8 +208,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
         var link = page.createLink([0,0,100,100], "https://example.com");
 
-    .. |tor_todo| WASM add Document.formatLinkURI() if we need to create links.
-
 
 
 .. method:: deleteLink(link)
@@ -234,8 +223,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
     .. code-block:: javascript
 
         page.deleteLink(link_obj);
-
-    .. |tor_todo| add to WASM?
 
 
 .. method:: getLabel()

@@ -126,6 +126,3 @@ A display list records all the device calls for playback later. If you want to r
     .. code-block:: javascript
 
         var results = displayList.search("my search phrase");
-
-
-    .. |tor_todo| In WASM, TypeError: displayList.search is not a function

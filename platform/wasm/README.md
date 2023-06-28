@@ -1,59 +1,46 @@
-<img src="https://mupdf.readthedocs.io/en/latest/_images/mupdf-icon.png" width="96px" height="96px">
-
 # MuPDF.js
 
-This is a build of MuPDF targeting WASM environments from Artifex Software, the creators of MuPDF.
+This is a build of MuPDF targeting WASM environments.
 
-This library can be used both in browsers and in Node via a JavaScript module.
+The MuPDF.js library can be used both in browsers and in Node.
 
+This library is very similar in design and use to the MuPDF Java library.
+The same classes and methods can be used in the same way -- but there are also a few
+conveniences available here thanks to the dynamic nature of Javascript that are
+not available in the Java API.
 
-## Getting started
+## Getting started using NPM
 
+From the command line, go to the folder you want to work from and run:
 
-From the command line, select the folder you want to work from and do:
+	npm install mupdf
 
-`npm install mupdf`
+To verify your installation you can create a file "test.js" with the following script:
 
-To verify your installation you can then create a JavaScript file as such:
-
-```
-const fs = require("fs");
-const mupdf = require("mupdf");
-mupdf.ready.then(function () {
-   console.log(mupdf);
-});
-```
-
-Save this file as “test.js”.
+	const mupdf = require("mupdf")
+	console.log(mupdf)
 
 Then, on the command line, run:
 
-`node test.js`
+	node test.js
 
-This will print the `mupdf` object, along with details on the internal objects, to the console.
-
+If all is well, this will print the `mupdf` module object to the console.
 
 ## Loading a document
 
-The following JavaScript sample demonstrates how to load a local document and then print out the page count. Ensure you have a valid PDF for the "my_document.pdf" file alongside this JavaScript sample before trying it.
+The following example demonstrates how to load a document and then print out the page count.
+Ensure you have a "my_document.pdf" file alongside this example before trying it.
 
-```
-const fs = require("fs");
-const mupdf = require("mupdf");
-mupdf.ready.then(function () {
-   var input = fs.readFileSync("my_document.pdf");
-   var doc = mupdf.Document.openDocument(input, "application/pdf");
-   console.log(doc.countPages());
-})
-```
-
+	const fs = require("fs")
+	const mupdf = require("mupdf")
+	var data = fs.readFileSync("my_document.pdf")
+	var doc = mupdf.Document.openDocument(data, "application/pdf")
+	console.log(doc.countPages())
 
 ## License
 
-AGPLv3 or above, subject to the [MuPDF license](https://www.mupdf.com/licensing/).
-
-
+AGPLv3 or later. See https://www.mupdf.com/licensing/ for more details.
 
 ## Documentation
 
-For full documentation and API please refer to [MuPDF on Read the Docs](https://mupdf.readthedocs.io).
+For documentation please refer to https://mupdf.readthedocs.io/.

@@ -34,8 +34,6 @@ A `Text` object contains text.
         var text = new mupdf.Text();
 
 
-    .. |tor_todo| TypeError: libmupdf._wasm_new_text is not a function
-
 
 
 
