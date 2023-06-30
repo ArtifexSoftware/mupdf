@@ -7015,8 +7015,15 @@ static pdf_obj *ffi_PDFObject_get_imp(js_State *J, int inheritable)
 	pdf_obj *val = NULL;
 	int i, n = js_gettop(J);
 
+
 	for (i = 1; i < n && obj; ++i) {
-		if (js_isuserdata(J, i, "pdf_obj")) {
+		if (pdf_is_array(ctx, obj)) {
+			int key = js_tonumber(J, 1);
+			fz_try(ctx)
+				obj = val = pdf_array_get(ctx, obj, key);
+			fz_catch(ctx)
+				rethrow(J);
+		} else if (js_isuserdata(J, i, "pdf_obj")) {
 			pdf_obj *key = js_touserdata(J, i, "pdf_obj");
 			fz_try(ctx)
 				if (inheritable)
