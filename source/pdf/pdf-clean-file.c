@@ -82,9 +82,14 @@ static int dest_is_valid(fz_context *ctx, pdf_obj *o, int page_count, int *page_
 	pdf_obj *p;
 
 	p = pdf_dict_get(ctx, o, PDF_NAME(A));
-	if (pdf_name_eq(ctx, pdf_dict_get(ctx, p, PDF_NAME(S)), PDF_NAME(GoTo)) &&
-		!string_in_names_list(ctx, pdf_dict_get(ctx, p, PDF_NAME(D)), names_list))
-		return 0;
+	if (pdf_name_eq(ctx, pdf_dict_get(ctx, p, PDF_NAME(S)), PDF_NAME(GoTo)))
+	{
+		pdf_obj *d = pdf_dict_get(ctx, p, PDF_NAME(D));
+		if (pdf_is_array(ctx, d) && !dest_is_valid_page(ctx, pdf_array_get(ctx, d, 0), page_object_nums, page_count))
+			return 0;
+		else if (pdf_is_string(ctx, d) && !string_in_names_list(ctx, d, names_list))
+			return 0;
+	}
 
 	p = pdf_dict_get(ctx, o, PDF_NAME(Dest));
 	if (p == NULL)
