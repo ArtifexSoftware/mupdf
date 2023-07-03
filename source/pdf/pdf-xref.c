@@ -5142,8 +5142,6 @@ void pdf_minimize_document(fz_context *ctx, pdf_document *doc)
 				pdf_xref_entry *e = &sub->table[j];
 				if (e->obj == NULL)
 					continue;
-				if (e->type != 'o')
-					continue;
 				e->obj = pdf_drop_singleton_obj(ctx, e->obj);
 			}
 		}
