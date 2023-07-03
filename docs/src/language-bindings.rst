@@ -747,30 +747,30 @@ Building the C++, Python and C# MuPDF APIs from source
 ---------------------------------------------------------------
 
 
-Special case for building Python bindings using pip
+Generic way to build Python bindings on all platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Python bindings can be built from source and installed into a `venv
-<https://docs.python.org/3.8/library/venv.html>`_ on all platforms by using
-`pip`::
+The Python bindings can be built from source and installed into a `venv
+<https://docs.python.org/3.8/library/venv.html>`_ on all platforms by
+using `pip`::
 
     # Windows create+enter venv.
     py -m venv pylocal
     .\pylocal\Scripts\activate
 
-    # Unix create+enter venv.
+    # Linux/MacOS create+enter venv.
     python3 -m venv pylocal
     . pylocal/bin/activate
 
     # Upgrade pip then build and install into current venv.
-    python -m pip --upgrade pip
-    cd mupdf && python -m pip install .
+    python -m pip install --upgrade pip
+    cd mupdf && python -m pip install -vv .
 
 
 General requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Linux, Windows, or OpenBSD.
+* Windows, Linux, MacOS or OpenBSD.
 
 * Python development libraries.
 
@@ -844,7 +844,7 @@ Specifying location of `devenv.com`:
       scripts/mupdfwrap.py -b --devenv <devenv.com-location> ...
 
 
-Setting up on Linux
+Setting up on Linux or MacOS
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Create and enter a Python `venv
@@ -856,13 +856,18 @@ install libclang::
       python -m pip install --upgrade pip
       pip install libclang
 
-Install Python development libraries and `SWIG <https://swig.org/>`_ using the
-system package manager::
+Install `SWIG <https://swig.org/>`_ using the system package manager,
+for example on Debian-based Linux::
 
-    sudo apt install python3-dev swig
+    sudo apt install swig
+
+If building Python bindings, install Python development libraries, for
+example on Debian-based Linux::
+
+    sudo apt install python3-dev
 
 If building the C# bindings, install `Mono <https://www.mono-project.com/>`_
-using the system package manager::
+using the system package manager, for example on Debian-based Linux::
 
     sudo apt install mono-devel
 
@@ -898,10 +903,17 @@ Get the MuPDF source tree::
 
     git clone --recursive git://git.ghostscript.com/mupdf.git
 
-Build C++, Python and C# bindings and run tests:
+[n the examples below, `--swig-windows-auto` is only required on
+Windows; it will be ignored on other platforms.]
 
-[`--swig-windows-auto` is only required on Windows; it will be ignored on other
-platforms.]
+Build just the C++ bindings and run tests:
+
+.. code-block:: shell
+
+    cd mupdf
+    ./scripts/mupdfwrap.py --swig-windows-auto -b m01 --test-cpp
+
+Build C++, Python and C# bindings and run tests:
 
 .. code-block:: shell
 
@@ -909,8 +921,8 @@ platforms.]
     ./scripts/mupdfwrap.py --swig-windows-auto -b all --test-python --test-python-gui
     ./scripts/mupdfwrap.py --swig-windows-auto -b --csharp all --test-csharp --test-csharp-gui
 
-As above but do a debug build (this requires debug version of the Python
-interpreter, for example `python311_d.lib`):
+As above but do a debug build (this may require a debug version of the
+Python interpreter, for example `python311_d.lib`):
 
 .. code-block:: shell
 
@@ -1032,8 +1044,9 @@ Other intermediate generated files are created in `mupdf/platform/`
             shared-debug/
                 [as shared-release but debug build.]
 
-            shared-release-x32-py3.8/   [Windows runtime files.]
-                mupdfcpp.dll            [MuPDF C and C++ API.]
+            shared-release-x*-py*/      [Windows runtime files.]
+                mupdfcpp.dll            [MuPDF C and C++ API, x32.]
+                mupdfcpp64.dll          [MuPDF C and C++ API, x64.]
                 mupdf.py                [MuPDF Python API.]
                 _mupdf.pyd              [MuPDF Python API internals.]
                 mupdf.cs                [MuPDF C# API.]
@@ -1068,14 +1081,16 @@ Other intermediate generated files are created in `mupdf/platform/`
                 mupdfcpp_swig.cpp
                 mupdfcpp_swig.i
 
-        win32/
-            Release/    [Windows 32-bit .dll, .lib, .exp, .pdb etc.]
-            x64/
-                Release/    [Windows 64-bit .dll, .lib, .exp, .pdb etc.]
-                    mupdfcpp64.dll
-                    mupdfcpp64.lib
-                    mupdfpyswig.dll
-                    mupdfpyswig.lib
+            win32/
+                Release/    [Windows 32-bit .dll, .lib, .exp, .pdb etc.]
+                x64/
+                    Release/    [Windows 64-bit .dll, .lib, .exp, .pdb etc.]
+                        mupdfcpp64.dll  [Copied to build/shared-release*/mupdfcpp64.dll]
+                        mupdfpyswig.dll [Copied to build/shared-release*/_mupdf.pyd]
+                        mupdfcpp64.lib
+                        mupdfpyswig.lib
+
+            win32-vs-upgrade/   [used instead of win32/ if PYMUPDF_SETUP_MUPDF_VS_UPGRADE is '1'.]
 
 |expand_end|
 
