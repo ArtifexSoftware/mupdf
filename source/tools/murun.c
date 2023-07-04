@@ -305,7 +305,26 @@ const char *postfix_js =
 	"}\n"
 	"require.cache.mupdf = mupdf\n"
 	"require.cache['.'] = mupdf\n"
-	;
+	"\n"
+	"mupdf.PDFDocument.prototype.getEmbeddedFiles = function () {\n"
+	"        function _getEmbeddedFilesRec(result, N) {\n"
+	"                var i, n\n"
+	"                if (N) {\n"
+	"                        var NN = N.get('Names')\n"
+	"                        if (NN)\n"
+	"                                for (i = 0, n = NN.length; i < n; i += 2)\n"
+	"                                        result[NN.get(i+0).asString()] = NN.get(i+1)\n"
+	"                        var NK = N.get('Kids')\n"
+	"                        if (NK)\n"
+	"                                for (i = 0, n = NK.length; i < n; i += 1)\n"
+	"                                        _getEmbeddedFilesRec(result, NK.get(i))\n"
+	"                }\n"
+	"                return result\n"
+	"        }\n"
+	"        return _getEmbeddedFilesRec({}, this.getTrailer().get('Root', 'Names', 'EmbeddedFiles'))\n"
+	"}\n"
+;
+
 
 struct event_cb_data
 {
