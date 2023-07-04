@@ -228,14 +228,17 @@ def python_version():
     '''
     Returns two-digit version number of Python as a string, e.g. '3.9'.
     '''
-    return '.'.join(platform.python_version().split('.')[:2])
+    ret = '.'.join(platform.python_version().split('.')[:2])
+    #jlib.log(f'returning ret={ret!r}')
+    return ret
 
 def cpu_name():
     '''
     Returns 'x32' or 'x64' depending on Python build.
     '''
-    #log(f'sys.maxsize={hex(sys.maxsize)}')
-    return f'x{32 if sys.maxsize == 2**31 else 64}'
+    ret = f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
+    #jlib.log(f'returning ret={ret!r}')
+    return ret
 
 def cmd_run_multiple(commands, prefix=None):
     '''
@@ -258,6 +261,7 @@ class BuildDirs:
     def __init__( self):
 
         # Assume we are in mupdf/scripts/.
+        #jlib.log( f'platform.platform(): {platform.platform()}')
         file_ = abspath( __file__)
         assert file_.endswith( f'/scripts/wrap/state.py'), \
                 'Unexpected __file__=%s file_=%s' % (__file__, file_)
@@ -308,7 +312,7 @@ class BuildDirs:
             assert m.group(3), f'No cpu in self.dir_so: {self.dir_so}'
             self.cpu = Cpu( m.group(3))
             self.python_version = m.group(5)
-            #log('{self.cpu=} {self.python_version=} {dir_so=}')
+            #jlib.log('{self.cpu=} {self.python_version=} {dir_so=}')
         else:
             # Use Python we are running under.
             self.cpu = Cpu(cpu_name())

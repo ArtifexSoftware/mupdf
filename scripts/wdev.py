@@ -124,7 +124,7 @@ class WindowsVS:
             for filename in filenames:
                 if filename == 'csc.exe':
                     csc = os.path.join(dirpath, filename)
-                    _log(f'{csc=}')
+                    #_log(f'{csc=}')
                     #break
             #if csc:
             #    break
@@ -295,8 +295,8 @@ def _cpu_name():
     '''
     Returns `x32` or `x64` depending on Python build.
     '''
-    #log(f'sys.maxsize={hex(sys.maxsize)}')
-    return f'x{32 if sys.maxsize == 2**31 else 64}'
+    _log(f'sys.maxsize={hex(sys.maxsize)}')
+    return f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
 
 
 
