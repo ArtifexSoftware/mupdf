@@ -2983,7 +2983,6 @@ pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 
 	fz_try(ctx)
 	{
-		check_allowed_subtypes(ctx, annot, PDF_NAME(M), markup_subtypes);
 		pdf_dict_put_date(ctx, annot->obj, PDF_NAME(M), secs);
 		end_annot_op(ctx, annot);
 	}
