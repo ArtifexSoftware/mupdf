@@ -133,6 +133,12 @@ char *fz_encode_uri(fz_context *ctx, const char *s);
 char *fz_encode_uri_component(fz_context *ctx, const char *s);
 
 /**
+ * Return a new string representing the provided string encoded as an URI path name.
+ * This also encodes the special reserved characters except /.
+ */
+char *fz_encode_uri_pathname(fz_context *ctx, const char *s);
+
+/**
 	create output file name using a template.
 
 	If the path contains %[0-9]*d, the first such pattern will be

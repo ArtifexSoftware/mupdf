@@ -365,13 +365,19 @@ fz_encode_uri_imp(fz_context *ctx, const char *s, const char *unescaped)
 char *
 fz_encode_uri_component(fz_context *ctx, const char *s)
 {
-	return fz_encode_uri_imp(ctx, s, URIUNESCAPED URIRESERVED "#");
+	return fz_encode_uri_imp(ctx, s, URIUNESCAPED);
+}
+
+char *
+fz_encode_uri_pathname(fz_context *ctx, const char *s)
+{
+	return fz_encode_uri_imp(ctx, s, URIUNESCAPED "/");
 }
 
 char *
 fz_encode_uri(fz_context *ctx, const char *s)
 {
-	return fz_encode_uri_imp(ctx, s, URIUNESCAPED);
+	return fz_encode_uri_imp(ctx, s, URIUNESCAPED URIRESERVED "#");
 }
 
 void
