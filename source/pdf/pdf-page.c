@@ -350,35 +350,6 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *page)
 		return pdf_lookup_page_number_slow(ctx, doc, page);
 }
 
-int
-pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *xp, float *yp)
-{
-	pdf_obj *needle, *dest = NULL;
-	char *uri;
-
-	if (xp) *xp = 0;
-	if (yp) *yp = 0;
-
-	needle = pdf_new_string(ctx, name, strlen(name));
-	fz_try(ctx)
-		dest = pdf_lookup_dest(ctx, doc, needle);
-	fz_always(ctx)
-		pdf_drop_obj(ctx, needle);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	if (dest)
-	{
-		uri = pdf_parse_link_dest(ctx, doc, dest);
-		return pdf_resolve_link(ctx, doc, uri, xp, yp);
-	}
-
-	if (!strncmp(name, "page=", 5))
-		return fz_atoi(name + 5) - 1;
-
-	return fz_atoi(name) - 1;
-}
-
 static void
 pdf_flatten_inheritable_page_item(fz_context *ctx, pdf_obj *page, pdf_obj *key)
 {

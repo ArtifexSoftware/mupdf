@@ -1899,13 +1899,7 @@ static void load_document(void)
 			jump_to_location(location);
 		else
 		{
-			location.chapter = 0;
-			if (pdf)
-				location.page = pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
-			else
-				location.page = -1;
-			if (location.page < 0)
-				location = fz_resolve_link(ctx, doc, anchor, NULL, NULL);
+			location = fz_resolve_link(ctx, doc, anchor, NULL, NULL);
 			if (location.page < 0)
 				fz_warn(ctx, "cannot find location: %s", anchor);
 			else

@@ -50,14 +50,6 @@ void pdf_drop_page_tree_internal(fz_context *ctx, pdf_document *doc);
 
 
 /*
-	Find the page number of a named destination.
-
-	For use with looking up the destination page of a fragment
-	identifier in hyperlinks: foo.pdf#bar or foo.pdf#page=5.
-*/
-int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *xp, float *yp);
-
-/*
 	Make page self sufficient.
 
 	Copy any inheritable page keys into the actual page object, removing
