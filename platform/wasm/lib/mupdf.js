@@ -555,14 +555,15 @@ class Font extends Userdata {
 		"ko": 3,
 	}
 
-	constructor(arg1, arg2, arg3) {
+	constructor(name_or_pointer, buffer=null, subfont=0) {
 		let pointer = 0
-		if (typeof arg1 === "number") {
-			pointer = libmupdf._wasm_keep_font(arg1)
-		} else if (typeof arg1 === "string") {
-			pointer = libmupdf._wasm_new_base14_font(STRING(arg1))
+		if (typeof name_or_pointer === "number") {
+			pointer = libmupdf._wasm_keep_font(name_or_pointer)
 		} else {
-			pointer = libmupdf._wasm_new_font_from_buffer(toBuffer(arg1), arg2 | 0, arg3 | 0)
+			if (buffer)
+				pointer = libmupdf._wasm_new_font_from_buffer(STRING(name_or_pointer), toBuffer(buffer), subfont)
+			else
+				pointer = libmupdf._wasm_new_base14_font(STRING(name_or_pointer))
 		}
 		super(pointer)
 	}
