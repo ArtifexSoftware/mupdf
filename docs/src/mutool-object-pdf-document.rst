@@ -24,7 +24,7 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: new PDFDocument()
 
-    |mutool_tag_wasm_soon|
+
 
     *Constructor method*.
 
@@ -140,7 +140,7 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: canBeSavedIncrementally()
 
-    |mutool_tag_wasm_soon|
+
 
     Returns *true* if the document can be saved incrementally, e.g. repaired documents or applying redactions prevents incremental saves.
 
@@ -859,7 +859,7 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: addPage(mediabox, rotate, resources, contents)
 
-    |mutool_tag_wasm_soon|
+
 
     Create a new `PDFPage` object. Note: this function does NOT add it to the page tree, use :ref:`insertPage<mutool_insertPage>` to do that.
 
@@ -900,7 +900,7 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: addSimpleFont(font, encoding)
 
-    |mutool_tag_wasm_soon|
+
 
     Create a `PDFObject` from the `Font` object as a simple font.
 
@@ -918,7 +918,7 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: addCJKFont(font, language, wmode, style)
 
-    |mutool_tag_wasm_soon|
+
 
     Create a `PDFObject` from the Font object as a UTF-16 encoded CID font for the given language ("zh-Hant", "zh-Hans", "ko", or "ja"), writing mode ("H" or "V"), and style ("serif" or "sans-serif").
 
@@ -938,7 +938,7 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: addFont(font)
 
-    |mutool_tag_wasm_soon|
+
 
     Create a `PDFObject` from the `Font` object as an Identity-H encoded CID font.
 
@@ -955,7 +955,7 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: addImage(image)
 
-    |mutool_tag_wasm_soon|
+
 
     Create a `PDFObject` from the `Image` object.
 
@@ -1104,7 +1104,7 @@ Embedded files in :title:`PDFs`
 
 .. method:: getEmbeddedFileContents(fileSpecObject)
 
-    |mutool_tag_wasm_soon|
+
 
     Returns a `Buffer` with the contents of the embedded file referenced by the `fileSpecObject`.
 

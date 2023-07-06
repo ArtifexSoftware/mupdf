@@ -94,7 +94,6 @@
 
 .. method:: isGray()
 
-    |mutool_tag|
 
     Returns true if the object is a gray color space.
 
@@ -107,7 +106,6 @@
 
 .. method:: isRGB()
 
-    |mutool_tag|
 
     Returns true if the object is an RGB color space.
 
@@ -120,7 +118,6 @@
 
 .. method:: isCMYK()
 
-    |mutool_tag|
 
     Returns true if the object is a CMYK color space.
 
@@ -132,7 +129,6 @@
 
 .. method:: isIndexed()
 
-    |mutool_tag|
 
     Returns true if the object is an Indexed color space.
 
@@ -144,7 +140,6 @@
 
 .. method:: isLab()
 
-    |mutool_tag|
 
     Returns true if the object is a Lab color space.
 
@@ -156,7 +151,6 @@
 
 .. method:: isDeviceN()
 
-    |mutool_tag|
 
     Returns true if the object is a Device N color space.
 
@@ -170,7 +164,6 @@
 
 .. method:: isSubtractive()
 
-    |mutool_tag|
 
     Returns true if the object is a subtractive color space.
 
@@ -184,7 +177,6 @@
 
 .. method:: getType()
 
-    |wasm_tag|
 
     Returns a string indicating the type.
 

@@ -19,7 +19,7 @@ A `Text` object contains text.
 
 .. method:: new Text()
 
-    |mutool_tag_wasm_soon|
+
 
     *Constructor method*.
 

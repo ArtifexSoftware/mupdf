@@ -160,7 +160,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
 .. method:: search(needle, max_hits)
 
-    |mutool_tag_wasm_soon|
 
     Search the page text for all instances of the `needle` value, and return an array of search hits. Each search hit is an array of :ref:`rectangles<mutool_run_js_api_quad>` corresponding to all characters in the search hit.
 
@@ -175,6 +174,9 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
         var results = page.search("my search phrase");
 
 
+    .. note::
+
+        The numbers are `[ulx, uly, urx, ury, llx, lly, lrx, lry]` for each rectangle against each result. These type of rectangles are know as "Quads" or "QuadPoints" in the :title:`PDF` specification.
 
 
 .. method:: getLinks()
@@ -211,8 +213,6 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
 
 .. method:: deleteLink(link)
-
-    |mutool_tag_wasm_soon|
 
     Delete the link from the page.
 

@@ -19,8 +19,6 @@
 
 .. method:: new Image(ref)
 
-    |mutool_tag_wasm_soon|
-
     *Constructor method*.
 
     Create a new image from a `Pixmap` data, or load an image file data.

@@ -271,6 +271,8 @@ Alpha values are floats between `0` and `1`, whereby `0` denotes full transparen
 
 .. include:: mutool-object-pdf-widget.rst
 
+.. include:: mutool-object-stroke-state.rst
+
 .. include:: mutool-object-outline-iterator.rst
 
 .. include:: mutool-object-archive.rst

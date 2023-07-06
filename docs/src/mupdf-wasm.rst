@@ -57,6 +57,117 @@ The following :title:`JavaScript` sample demonstrates how to load a local docume
       console.log(doc.countPages());
 
 
+Creating a PDF
+-------------------
+
+The following :title:`JavaScript` sample demonstrates how to create a blank :title:`PDF` file with an assortment of annotations.
+
+
+   .. code-block:: javascript
+
+      var fs = require("fs")
+      var mupdf = require("mupdf")
+
+      function createBlankPDF() {
+          var doc = new mupdf.PDFDocument()
+          doc.insertPage(0, doc.addPage([0, 0, 595, 842], 0, null, ""))
+          return doc
+      }
+
+      function savePDF(doc, path, opts) {
+          fs.writeFileSync(path, doc.saveToBuffer(opts).asUint8Array())
+      }
+
+      try {
+          var doc = createBlankPDF()
+          var page = doc.loadPage(0)
+          var annot
+
+          annot = page.createAnnotation("Text")
+          annot.setRect([200, 10, 250, 50])
+          annot.setContents("This is a Text annotation!")
+          annot.setColor([0,0.5,1])
+
+          annot = page.createAnnotation("FreeText")
+          annot.setRect([10, 10, 200, 50])
+          annot.setContents("This is a FreeText annotation!")
+          annot.setDefaultAppearance("TiRo", 18, [0])
+
+          annot = page.createAnnotation("Circle")
+          annot.setRect([100, 100, 300, 300])
+          annot.setColor([0, 1, 1])
+          annot.setInteriorColor([0.5, 0, 0])
+          annot.setBorderEffect("Cloudy")
+          annot.setBorderEffectIntensity(4)
+          annot.setBorderWidth(10)
+
+          annot = page.createAnnotation("Polygon")
+          annot.setColor([1, 0, 0])
+          annot.setInteriorColor([1, 1, 0])
+          annot.addVertex([10, 100])
+          annot.addVertex([200, 200])
+          annot.addVertex([30, 300])
+
+          annot = page.createAnnotation("Line")
+          annot.setColor([1, 0, 0])
+          annot.setInteriorColor([0, 0, 1])
+          annot.setLine([10, 300], [200, 500])
+          annot.setLineEndingStyles("None", "ClosedArrow")
+
+          annot = page.createAnnotation("Highlight")
+          annot.setColor([1, 1, 0])
+          annot.setQuadPoints([
+              [
+                  80, 70,
+                  190, 70,
+                  80, 90,
+                  190, 90,
+              ]
+          ])
+
+          annot = page.createAnnotation("Stamp")
+          annot.setRect([10, 600, 200, 700])
+          annot.setAppearance(null, null, mupdf.Matrix.identity, [ 0, 0, 100, 100 ], {}, "0 1 0 rg 10 10 50 50 re f")
+
+          annot = page.createAnnotation("Stamp")
+          annot.setRect([10, 750, 200, 850])
+          annot.setIcon("TOP SECRET")
+
+          annot = page.createAnnotation("FileAttachment")
+          annot.setRect([300, 10, 350, 60])
+          annot.setFileSpec(
+              doc.addEmbeddedFile (
+                  "readme.txt",
+                  "text/plain",
+                  "Lorem ipsum dolor...",
+                  new Date(),
+                  new Date(),
+                  false
+              )
+          )
+
+          annot = page.createAnnotation("Ink")
+          annot.setColor([0.5])
+          annot.setBorderWidth(5)
+          annot.addInkListStroke()
+          for (let i = 0; i < 360; i += 5) {
+              let y = Math.sin(i * Math.PI / 180)
+              annot.addInkListStrokeVertex([ 200 + i, 700 + y * 50 ])
+          }
+
+          page.createLink([ 500, 20, 590, 40 ], "https://mupdf.com/")
+          page.createLink([ 500, 40, 590, 60 ], doc.formatLinkURI({ type: "Fit", page: 0 }))
+
+          page.update()
+
+          savePDF(doc, "out.pdf", "")
+
+      } catch (err) {
+          console.error(err)
+          process.exit(1)
+      }
+
+
 Trying the Viewer
 --------------------------
 

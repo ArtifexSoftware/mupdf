@@ -101,7 +101,7 @@ A `Pixmap` object contains a color raster image (short for pixel map). The compo
 
 .. method:: getAlpha()
 
-    |mutool_tag_wasm_soon|
+
 
     *True* if alpha channel is present.
 

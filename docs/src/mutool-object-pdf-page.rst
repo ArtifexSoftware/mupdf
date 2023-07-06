@@ -66,33 +66,89 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
    :header-rows: 1
 
    * - **Name**
+     - **Supported**
+     - **Notes**
    * - Text
+     - Yes
+     -
    * - Link
+     - No
+     - Please use :ref:`Page.createLink()<mutool_run_js_api_page_create_link>`.
    * - FreeText
+     - Yes
+     -
    * - Square
+     - Yes
+     -
    * - Circle
+     - Yes
+     -
    * - Polygon
+     - Yes
+     -
    * - PolyLine
+     - Yes
+     -
    * - Highlight
+     - Yes
+     -
    * - Underline
+     - Yes
+     -
    * - Squiggly
+     - Yes
+     -
    * - StrikeOut
+     - Yes
+     -
    * - Redact
+     - Yes
+     -
    * - Stamp
+     - Yes
+     -
    * - Caret
+     - Yes
+     -
    * - Ink
+     - Yes
+     -
    * - Popup
+     - No
+     -
    * - FileAttachment
+     - Yes
+     -
    * - Sound
+     - Yes
+     -
    * - Movie
+     - Yes
+     -
    * - RichMedia
+     - No
+     -
    * - Widget
+     - No
+     -
    * - Screen
+     - No
+     -
    * - PrinterMark
+     - No
+     -
    * - TrapNet
+     - No
+     -
    * - Watermark
+     - No
+     -
    * - 3D
+     - No
+     -
    * - Projection
+     - No
+     -
 
 
 .. method:: deleteAnnotation(annot)

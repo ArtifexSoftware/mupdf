@@ -111,7 +111,6 @@ A display list records all the device calls for playback later. If you want to r
 
 .. method:: search(needle)
 
-    |mutool_tag_wasm_soon|
 
     Search the display list text for all instances of the `needle` value, and return an array of search hits. Each search hit is an array of :ref:`rectangles<mutool_run_js_api_quad>` corresponding to all characters in the search hit.
 

@@ -115,7 +115,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: setAppearance(appearance, state, transform, displayList)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation appearance stream for the given appearance. The desired appearance is given as a transform along with a display list.
 
@@ -132,7 +132,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: setAppearance(appearance, state, transform, bbox, resources, contents)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation appearance stream for the given appearance. The desired appearance is given as a transform along with a bounding box, a :title:`PDF` dictionary of resources and a content stream.
 
@@ -366,7 +366,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: getColor()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the annotation color, represented as an array of 1, 3, or 4 component values.
 
@@ -382,7 +382,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: setColor(color)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation color, represented as an array of 1, 3, or 4 component values.
 
@@ -570,7 +570,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: getDefaultAppearance()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the default text appearance used for free text annotations.
 
@@ -582,7 +582,7 @@ These properties are only present for some annotation types, so support for them
 
         var appearance = annotation.getDefaultAppearance();
 
-    .. |jamie_todo| how about describing the DefaultApperance as a separate object similar to the link destination?
+    |jamie_todo| how about describing the DefaultApperance as a separate object similar to the link destination?
 
 
 .. method:: setDefaultAppearance(font, size, color)
@@ -597,7 +597,7 @@ These properties are only present for some annotation types, so support for them
 
     .. code-block:: javascript
 
-        annotation.setDefaultAppearance("Times-Roman", 16, [0,0,0]);
+        annotation.setDefaultAppearance("Helv", 16, [0,0,0]);
 
 
 .. method:: hasInteriorColor()
@@ -619,7 +619,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: getInteriorColor()
 
-    |mutool_tag_wasm_soon|
+
 
     Gets the annotation interior color.
 
@@ -635,7 +635,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: setInteriorColor(color)
 
-    |mutool_tag_wasm_soon|
+
 
     Sets the annotation interior color.
 
@@ -713,7 +713,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: getLineEndingStyles()
 
-    |mutool_tag_wasm_soon|
+
 
     Gets the :ref:`line ending styles<mutool_pdf_annotation_line_ending_styles>` object.
 
@@ -729,7 +729,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: setLineEndingStyles(start, end)
 
-    |mutool_tag_wasm_soon|
+
 
     Sets the :ref:`line ending styles<mutool_pdf_annotation_line_ending_styles>` object.
 
@@ -887,7 +887,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: getLine()
 
-    |mutool_tag_wasm_soon|
+
 
     Get line end points, represented by an array of two points, each represented as an `[x, y]` array.
 
@@ -903,7 +903,7 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: setLine(endpoints)
 
-    |mutool_tag_wasm_soon|
+
 
 
     Set the two line end points, represented by an array of two points, each represented as an `[x, y]` array.
@@ -1052,7 +1052,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: getBorderStyle()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the annotation border style, either of "Solid" or "Dashed".
 
@@ -1068,7 +1068,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: setBorderStyle(style)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation border style, either of "Solid" or "Dashed".
 
@@ -1084,7 +1084,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: getBorderWidth()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the border width in points.
 
@@ -1100,7 +1100,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: setBorderWidth(width)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the border width in points. Retain any existing border effects.
 
@@ -1117,7 +1117,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: getBorderDashCount()
 
-    |mutool_tag_wasm_soon|
+
 
     Returns the number of items in the border dash pattern.
 
@@ -1132,7 +1132,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: getBorderDashItem(i)
 
-    |mutool_tag_wasm_soon|
+
 
     Returns the length of dash pattern item `i`.
 
@@ -1149,7 +1149,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: setBorderDashPattern(dashPattern)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation border dash pattern to the given array of dash item lengths. The supplied array represents the respective line stroke and gap lengths, e.g. `[1,1]` sets a small dash and small gap, `[2,1,4,1]` would set a medium dash, a small gap, a longer dash and then another small gap.
 
@@ -1164,7 +1164,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: clearBorderDash()
 
-    |mutool_tag_wasm_soon|
+
 
     Clear the entire border dash pattern for an annotation.
 
@@ -1178,7 +1178,7 @@ The border drawn around some annotations can be controlled by:
 
 .. method:: addBorderDashItem(length)
 
-    |mutool_tag_wasm_soon|
+
 
     Append an item (of the given length) to the end of the border dash pattern.
 
@@ -1214,7 +1214,7 @@ Annotations that have a border effect allows the effect to be controlled by:
 
 .. method:: getBorderEffect()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the annotation border effect, either of "None" or "Cloudy".
 
@@ -1230,7 +1230,7 @@ Annotations that have a border effect allows the effect to be controlled by:
 
 .. method:: setBorderEffect(effect)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation border effect, either of "None" or "Cloudy".
 
@@ -1246,7 +1246,7 @@ Annotations that have a border effect allows the effect to be controlled by:
 
 .. method:: getBorderEffectIntensity()
 
-    |mutool_tag_wasm_soon|
+
 
     Get the annotation border effect intensity.
 
@@ -1263,7 +1263,7 @@ Annotations that have a border effect allows the effect to be controlled by:
 
 .. method:: setBorderEffectIntensity(intensity)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation border effect intensity. Recommended values are between `0` and `2` inclusive.
 
@@ -1308,7 +1308,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: setInkList(inkList)
 
-    |mutool_tag_wasm_soon|
+
 
     Set the annotation ink list, represented as an array of strokes, each an array of points each an array of its X/Y coordinates.
 
@@ -1331,7 +1331,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: clearInkList()
 
-    |mutool_tag_wasm_soon|
+
 
     Clear the list of ink strokes for the annotation.
 
@@ -1345,7 +1345,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: addInkList(stroke)
 
-    |mutool_tag_wasm_soon|
+
 
     To the list of strokes, append a stroke, represented as an array of vertices each an array of its X/Y coordinates.
 
@@ -1368,7 +1368,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: addInkListStroke()
 
-    |mutool_tag_wasm_soon|
+
 
     Add a new empty stroke to the ink annotation.
 
@@ -1382,7 +1382,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: addInkListStrokeVertex(vertex)
 
-    |mutool_tag_wasm_soon|
+
 
     Append a vertex to end of the last stroke in the ink annotation. The vertex is an array of its X/Y coordinates.
 

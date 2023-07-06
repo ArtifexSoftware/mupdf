@@ -70,6 +70,7 @@ Class A-Z Index
 - :ref:`PDFWidget<mutool_run_js_api_object_pdf_widget>`
 - :ref:`Pixmap<mutool_run_js_api_pixmap>`
 - :ref:`Story<mutool_run_js_api_object_story>`
+- :ref:`StrokeState<mutool_run_js_api_stroke_state>`
 - :ref:`StructuredText<mutool_run_js_api_structured_text>`
 - :ref:`Text<mutool_run_js_api_text>`
 - :ref:`XML<mutool_run_js_api_object_xml>`
