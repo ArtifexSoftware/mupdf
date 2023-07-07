@@ -266,7 +266,7 @@ public class PDFAnnotation
 	public native String getIcon();
 	public native void setIcon(String icon);
 	public native boolean hasOpen();
-	public native boolean isOpen();
+	public native boolean getIsOpen();
 	public native void setIsOpen(boolean open);
 
 	public native void eventEnter();

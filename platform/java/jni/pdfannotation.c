@@ -783,7 +783,7 @@ FUN(PDFAnnotation_update)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jboolean JNICALL
-FUN(PDFAnnotation_isOpen)(JNIEnv *env, jobject self)
+FUN(PDFAnnotation_getIsOpen)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
