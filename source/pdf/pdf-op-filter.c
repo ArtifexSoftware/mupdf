@@ -1371,7 +1371,7 @@ pdf_filter_re(fz_context *ctx, pdf_processor *proc, float x, float y, float w, f
 
 	if (p->options->culler)
 	{
-		fz_rectto(ctx, p->path, x, y, w, h);
+		fz_rectto(ctx, p->path, x, y, x+w, y+h);
 		return;
 	}
 
