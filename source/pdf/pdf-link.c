@@ -1307,24 +1307,6 @@ pdf_obj *pdf_add_filespec(fz_context *ctx, pdf_document *doc, const char *filena
 }
 
 pdf_obj *
-pdf_new_destination_name_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
-{
-	char *name = NULL;
-	pdf_obj *dest = NULL;
-	fz_try(ctx)
-	{
-		if (has_named_dest(ctx, uri))
-			name = parse_uri_named_dest(ctx, uri);
-		dest = pdf_new_name(ctx, name);
-	}
-	fz_always(ctx)
-		fz_free(ctx, name);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-	return dest;
-}
-
-pdf_obj *
 pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int is_remote)
 {
 	pdf_obj *dest = NULL;
