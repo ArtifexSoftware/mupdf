@@ -447,7 +447,7 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 }
 
 static fz_rect
-xps_bound_page(fz_context *ctx, fz_page *page_)
+xps_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	xps_page *page = (xps_page*)page_;
 	fz_rect bounds;

@@ -108,7 +108,7 @@ reflow_count_pages(fz_context *ctx, reflow_document *doc, int chapter)
 }
 
 static fz_rect
-reflow_bound_page(fz_context *ctx, fz_page *page_)
+reflow_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	reflow_page *page = (reflow_page *)page_;
 

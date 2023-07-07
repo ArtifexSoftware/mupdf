@@ -44,7 +44,7 @@ svg_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 }
 
 static fz_rect
-svg_bound_page(fz_context *ctx, fz_page *page_)
+svg_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	svg_page *page = (svg_page*)page_;
 	svg_document *doc = page->doc;

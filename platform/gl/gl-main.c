@@ -212,6 +212,7 @@ static int console_h = 14; /* to be scaled by lineheight */
 static int outline_start_x = 0;
 static int console_start_y = 0;
 
+static int oldbox = FZ_MEDIA_BOX, currentbox = FZ_MEDIA_BOX;
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
 static int oldicc = 1, currenticc = 1;
@@ -651,6 +652,7 @@ static char *help_dialog_text =
 	"\n"
 	"< - decrease E-book font size\n"
 	"> - increase E-book font size\n"
+	"B - cycle between MediaBox, CropBox, ArtBox, etc.\n"
 	"A - toggle anti-aliasing\n"
 	"I - toggle inverted color mode\n"
 	"C - toggle tinted color mode\n"
@@ -1027,7 +1029,7 @@ void load_page(void)
 	}
 
 	/* compute bounds here for initial window size */
-	page_bounds = fz_bound_page(ctx, fzpage);
+	page_bounds = fz_bound_page_box(ctx, fzpage, currentbox);
 	transform_page();
 
 	area = fz_irect_from_rect(draw_page_bounds);
@@ -1043,6 +1045,7 @@ static void render_page(void)
 	fz_pixmap *pix;
 	fz_device *dev;
 
+	page_bounds = fz_bound_page_box(ctx, fzpage, currentbox);
 	transform_page();
 
 	fz_set_aa_level(ctx, currentaa);
@@ -1052,7 +1055,7 @@ static void render_page(void)
 		fz_drop_pixmap(ctx, page_contents);
 		page_contents = NULL;
 
-		bbox = fz_round_rect(fz_transform_rect(fz_bound_page(ctx, fzpage), draw_page_ctm));
+		bbox = fz_round_rect(fz_transform_rect(fz_bound_page_box(ctx, fzpage, currentbox), draw_page_ctm));
 		page_contents = fz_new_pixmap_with_bbox(ctx, profile, bbox, seps, 0);
 		fz_clear_pixmap(ctx, page_contents);
 
@@ -1120,7 +1123,8 @@ void render_page_if_changed(void)
 		oldtint != currenttint ||
 		oldicc != currenticc ||
 		oldseparations != currentseparations ||
-		oldaa != currentaa)
+		oldaa != currentaa ||
+		oldbox != currentbox)
 	{
 		page_contents_changed = 1;
 	}
@@ -1136,6 +1140,7 @@ void render_page_if_changed(void)
 		oldicc = currenticc;
 		oldseparations = currentseparations;
 		oldaa = currentaa;
+		oldbox = currentbox;
 		page_contents_changed = 0;
 		page_annots_changed = 0;
 	}
@@ -2390,6 +2395,12 @@ static void do_app(void)
 				currentaa = number;
 			break;
 
+		case 'B':
+			currentbox += 1;
+			if (currentbox >= FZ_UNKNOWN_BOX)
+				currentbox = FZ_MEDIA_BOX;
+			break;
+
 		case 'm':
 			if (number == 0)
 				push_history();
@@ -2709,9 +2720,9 @@ static fz_buffer *format_info_text()
 		if (!size)
 			size = paper_size_name(h, w);
 		if (size)
-			fz_append_printf(ctx, out, "Size: %d x %d (%s)\n", w, h, size);
+			fz_append_printf(ctx, out, "Size: %d x %d (%s - %s)\n", w, h, fz_string_from_box_type(currentbox), size);
 		else
-			fz_append_printf(ctx, out, "Size: %d x %d\n", w, h);
+			fz_append_printf(ctx, out, "Size: %d x %d (%s)\n", w, h, fz_string_from_box_type(currentbox));
 	}
 	fz_append_printf(ctx, out, "ICC rendering: %s.\n", currenticc ? "on" : "off");
 	fz_append_printf(ctx, out, "Spot rendering: %s.\n", currentseparations ? "on" : "off");
@@ -2991,6 +3002,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
 	fprintf(stderr, "\t-c -\tdisplay ICC profile\n");
+	fprintf(stderr, "\t-b -\tuse named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)\n");
 	fprintf(stderr, "\t-I\tinvert colors\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
@@ -3102,7 +3114,7 @@ int main(int argc, char **argv)
 
 	glutInit(&argc, argv);
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJA:B:C:T:Y:R:c:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:")) != -1)
 	{
 		switch (c)
 		{
@@ -3111,6 +3123,7 @@ int main(int argc, char **argv)
 		case 'r': currentzoom = fz_atof(fz_optarg); break;
 		case 'c': profile_name = fz_optarg; break;
 		case 'I': currentinvert = !currentinvert; break;
+		case 'b': currentbox = fz_box_type_from_string(fz_optarg); break;
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
@@ -3215,7 +3228,7 @@ int main(int argc, char **argv)
 				oldzoom = currentzoom;
 
 				/* compute bounds here for initial window size */
-				page_bounds = fz_bound_page(ctx, fzpage);
+				page_bounds = fz_bound_page_box(ctx, fzpage, currentbox);
 				transform_page();
 
 				area = fz_irect_from_rect(draw_page_bounds);

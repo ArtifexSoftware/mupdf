@@ -101,22 +101,38 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		fz_rethrow(ctx);
 }
 
+static fz_rect pdf_page_cropbox(fz_context *ctx, pdf_page *page)
+{
+	pdf_obj *obj = pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(CropBox));
+	if (!obj)
+		obj = pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(MediaBox));
+	return pdf_to_rect(ctx, obj);
+}
+
+static fz_rect pdf_page_mediabox(fz_context *ctx, pdf_page *page)
+{
+	return pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(MediaBox)));
+}
+
 static void
 pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, const char *usage, fz_cookie *cookie)
 {
 	fz_matrix page_ctm;
 	pdf_obj *resources;
 	pdf_obj *contents;
-	fz_rect mediabox;
+	fz_rect fitzbox;
+	fz_rect mediabox, cropbox;
 	pdf_processor *proc = NULL;
 	fz_default_colorspaces *default_cs = NULL;
 	fz_colorspace *colorspace = NULL;
+	fz_path *path = NULL;
 	int struct_parent_num = -1;
 	pdf_obj *struct_parent;
 
 	fz_var(proc);
 	fz_var(colorspace);
 	fz_var(default_cs);
+	fz_var(path);
 
 	if (cookie && page->super.incomplete)
 		cookie->incomplete = 1;
@@ -127,12 +143,15 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 		if (default_cs)
 			fz_set_default_colorspaces(ctx, dev, default_cs);
 
-		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+		pdf_page_transform(ctx, page, &fitzbox, &page_ctm);
 		ctm = fz_concat(page_ctm, ctm);
-		mediabox = fz_transform_rect(mediabox, ctm);
+		fitzbox = fz_transform_rect(fitzbox, ctm);
 
 		resources = pdf_page_resources(ctx, page);
 		contents = pdf_page_contents(ctx, page);
+
+		mediabox = pdf_page_mediabox(ctx, page);
+		cropbox = pdf_page_cropbox(ctx, page);
 
 		if (page->transparency)
 		{
@@ -161,16 +180,29 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 			else
 				colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
 
-			fz_begin_group(ctx, dev, mediabox, colorspace, 1, 0, 0, 1);
+			fz_begin_group(ctx, dev, fitzbox, colorspace, 1, 0, 0, 1);
 		}
 
 		struct_parent = pdf_dict_get(ctx, page->obj, PDF_NAME(StructParents));
 		if (pdf_is_number(ctx, struct_parent))
 			struct_parent_num = pdf_to_int(ctx, struct_parent);
 
+		/* Clip content to CropBox if it is smaller than the MediaBox */
+		if (cropbox.x0 > mediabox.x0 || cropbox.x1 < mediabox.x1 || cropbox.y0 > mediabox.y0 || cropbox.y1 < mediabox.y1)
+		{
+			path = fz_new_path(ctx);
+			fz_rectto(ctx, path, cropbox.x0, cropbox.y0, cropbox.x1, cropbox.y1);
+			fz_clip_path(ctx, dev, path, 1, ctm, fz_infinite_rect);
+		}
+
 		proc = pdf_new_run_processor(ctx, page->doc, dev, ctm, struct_parent_num, usage, NULL, default_cs, cookie);
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie, NULL);
 		pdf_close_processor(ctx, proc);
+
+		if (cropbox.x0 > mediabox.x0 || cropbox.x1 < mediabox.x1 || cropbox.y0 > mediabox.y0 || cropbox.y1 < mediabox.y1)
+		{
+			fz_pop_clip(ctx, dev);
+		}
 
 		if (page->transparency)
 		{
@@ -179,6 +211,7 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 	}
 	fz_always(ctx)
 	{
+		fz_drop_path(ctx, path);
 		pdf_drop_processor(ctx, proc);
 		fz_drop_colorspace(ctx, colorspace);
 		fz_drop_default_colorspaces(ctx, default_cs);

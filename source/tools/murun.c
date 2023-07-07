@@ -7814,13 +7814,21 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	int alpha = js_toboolean(J, 3);
 	int extra = js_isdefined(J, 4) ? js_toboolean(J, 4) : 1;
 	const char *usage = js_isdefined(J, 5) ? js_tostring(J, 5) : "View";
+	const char *box_name = js_isdefined(J, 6) ? js_tostring(J, 6) : NULL;
+	fz_box_type box = FZ_MEDIA_BOX;
 	fz_pixmap *pixmap = NULL;
+
+	if (box_name) {
+		box = fz_box_type_from_string(box_name);
+		if (box == FZ_UNKNOWN_BOX)
+			js_error(J, "invalid page box name");
+	}
 
 	fz_try(ctx)
 		if (extra)
-			pixmap = pdf_new_pixmap_from_page_with_usage(ctx, page, ctm, colorspace, alpha, usage);
+			pixmap = pdf_new_pixmap_from_page_with_usage(ctx, page, ctm, colorspace, alpha, usage, box);
 		else
-			pixmap = pdf_new_pixmap_from_page_contents_with_usage(ctx, page, ctm, colorspace, alpha, usage);
+			pixmap = pdf_new_pixmap_from_page_contents_with_usage(ctx, page, ctm, colorspace, alpha, usage, box);
 
 	fz_catch(ctx)
 		rethrow(J);
@@ -10253,7 +10261,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.update", ffi_PDFPage_update, 0);
 		jsB_propfun(J, "PDFPage.applyRedactions", ffi_PDFPage_applyRedactions, 2);
 		jsB_propfun(J, "PDFPage.process", ffi_PDFPage_process, 1);
-		jsB_propfun(J, "PDFPage.toPixmap", ffi_PDFPage_toPixmap, 5);
+		jsB_propfun(J, "PDFPage.toPixmap", ffi_PDFPage_toPixmap, 6);
 		jsB_propfun(J, "PDFPage.getTransform", ffi_PDFPage_getTransform, 0);
 	}
 	js_setregistry(J, "pdf_page");

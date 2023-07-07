@@ -685,7 +685,15 @@ fz_rect
 fz_bound_page(fz_context *ctx, fz_page *page)
 {
 	if (page && page->bound_page)
-		return page->bound_page(ctx, page);
+		return page->bound_page(ctx, page, FZ_MEDIA_BOX);
+	return fz_empty_rect;
+}
+
+fz_rect
+fz_bound_page_box(fz_context *ctx, fz_page *page, fz_box_type box)
+{
+	if (page && page->bound_page)
+		return page->bound_page(ctx, page, box);
 	return fz_empty_rect;
 }
 
@@ -920,4 +928,33 @@ fz_page_label(fz_context *ctx, fz_page *page, char *buf, int size)
 	else
 		fz_snprintf(buf, size, "%d", page->number + 1);
 	return buf;
+}
+
+
+fz_box_type fz_box_type_from_string(const char *name)
+{
+	if (!fz_strcasecmp(name, "MediaBox"))
+		return FZ_MEDIA_BOX;
+	if (!fz_strcasecmp(name, "CropBox"))
+		return FZ_CROP_BOX;
+	if (!fz_strcasecmp(name, "BleedBox"))
+		return FZ_BLEED_BOX;
+	if (!fz_strcasecmp(name, "TrimBox"))
+		return FZ_TRIM_BOX;
+	if (!fz_strcasecmp(name, "ArtBox"))
+		return FZ_ART_BOX;
+	return FZ_UNKNOWN_BOX;
+}
+
+const char *fz_string_from_box_type(fz_box_type box)
+{
+	switch (box)
+	{
+	case FZ_MEDIA_BOX: return "MediaBox";
+	case FZ_CROP_BOX: return "CropBox";
+	case FZ_BLEED_BOX: return "BleedBox";
+	case FZ_TRIM_BOX: return "TrimBox";
+	case FZ_ART_BOX: return "ArtBox";
+	default: return "UnknownBox";
+	}
 }

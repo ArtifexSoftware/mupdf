@@ -1838,26 +1838,37 @@ class PDFPage extends Page {
 		this._annots = null
 	}
 
+	static BOXES = [
+		"MediaBox",
+		"CropBox",
+		"BleedBox",
+		"TrimBox",
+		"ArtBox"
+	]
+
 	isPDF() {
 		return true
 	}
 
-	toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage = "View") {
+	toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage = "View", box = "MediaBox") {
 		checkType(colorspace, ColorSpace)
 		checkMatrix(matrix)
+		box = toEnum(box, PDFPage.BOXES)
 		let result
 		if (showExtras)
 			result = libmupdf._wasm_pdf_new_pixmap_from_page_with_usage(this,
 				MATRIX(matrix),
 				colorspace,
 				alpha,
-				STRING(usage))
+				STRING(usage),
+				box)
 		else
 			result = libmupdf._wasm_pdf_new_pixmap_from_page_contents_with_usage(this,
 				MATRIX(matrix),
 				colorspace,
 				alpha,
-				STRING(usage))
+				STRING(usage),
+				box)
 		return new Pixmap(result)
 	}
 

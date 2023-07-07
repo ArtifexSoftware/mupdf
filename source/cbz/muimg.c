@@ -56,7 +56,7 @@ img_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 }
 
 static fz_rect
-img_bound_page(fz_context *ctx, fz_page *page_)
+img_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	img_page *page = (img_page*)page_;
 	fz_image *image = page->image;

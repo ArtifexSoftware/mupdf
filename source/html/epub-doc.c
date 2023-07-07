@@ -512,7 +512,7 @@ epub_get_laid_out_html(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 }
 
 static fz_rect
-epub_bound_page(fz_context *ctx, fz_page *page_)
+epub_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	epub_document *doc = (epub_document*)page_->doc;
 	epub_page *page = (epub_page*)page_;

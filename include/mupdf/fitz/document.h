@@ -37,6 +37,19 @@ typedef struct fz_document_handler fz_document_handler;
 typedef struct fz_page fz_page;
 typedef intptr_t fz_bookmark;
 
+typedef enum
+{
+	FZ_MEDIA_BOX,
+	FZ_CROP_BOX,
+	FZ_BLEED_BOX,
+	FZ_TRIM_BOX,
+	FZ_ART_BOX,
+	FZ_UNKNOWN_BOX
+} fz_box_type;
+
+fz_box_type fz_box_type_from_string(const char *name);
+const char *fz_string_from_box_type(fz_box_type box);
+
 /**
 	Simple constructor for fz_locations.
 */
@@ -239,7 +252,7 @@ typedef void (fz_page_drop_page_fn)(fz_context *ctx, fz_page *page);
 	bounding box of a page. See fz_bound_page for more
 	information.
 */
-typedef fz_rect (fz_page_bound_page_fn)(fz_context *ctx, fz_page *page);
+typedef fz_rect (fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_box_type box);
 
 /**
 	Type for a function to run the
@@ -703,6 +716,7 @@ fz_page *fz_new_page_of_size(fz_context *ctx, int size, fz_document *doc);
 	Determine the size of a page at 72 dpi.
 */
 fz_rect fz_bound_page(fz_context *ctx, fz_page *page);
+fz_rect fz_bound_page_box(fz_context *ctx, fz_page *page, fz_box_type box);
 
 /**
 	Run a page through a device.

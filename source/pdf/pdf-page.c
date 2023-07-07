@@ -597,11 +597,11 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 }
 
 fz_rect
-pdf_bound_page(fz_context *ctx, pdf_page *page)
+pdf_bound_page(fz_context *ctx, pdf_page *page, fz_box_type box)
 {
 	fz_matrix page_ctm;
 	fz_rect mediabox;
-	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+	pdf_page_transform_box(ctx, page, &mediabox, &page_ctm, box);
 	return fz_transform_rect(mediabox, page_ctm);
 }
 
@@ -630,44 +630,46 @@ pdf_page_group(fz_context *ctx, pdf_page *page)
 }
 
 void
-pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox, fz_matrix *page_ctm)
+pdf_page_obj_transform_box(fz_context *ctx, pdf_obj *pageobj, fz_rect *outbox, fz_matrix *page_ctm, fz_box_type box)
 {
 	pdf_obj *obj;
-	fz_rect mediabox, cropbox, realbox, pagebox;
+	fz_rect usedbox, tempbox, mediabox;
 	float userunit = 1;
 	int rotate;
 
-	if (!page_mediabox)
-		page_mediabox = &pagebox;
+	if (!outbox)
+		outbox = &tempbox;
 
 	obj = pdf_dict_get(ctx, pageobj, PDF_NAME(UserUnit));
 	if (pdf_is_number(ctx, obj))
 		userunit = pdf_to_real(ctx, obj);
 
-	mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox)));
-	if (fz_is_empty_rect(mediabox))
-	{
-		mediabox.x0 = 0;
-		mediabox.y0 = 0;
-		mediabox.x1 = 612;
-		mediabox.y1 = 792;
-	}
+	obj = NULL;
+	if (box == FZ_ART_BOX)
+		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(ArtBox));
+	if (box == FZ_TRIM_BOX)
+		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(TrimBox));
+	if (box == FZ_BLEED_BOX)
+		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(BleedBox));
+	if (box == FZ_CROP_BOX || !obj)
+		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(CropBox));
+	if (box == FZ_MEDIA_BOX || !obj)
+		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox));
+	usedbox = pdf_to_rect(ctx, obj);
 
-	cropbox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(CropBox)));
-	if (!fz_is_empty_rect(cropbox))
-		mediabox = fz_intersect_rect(mediabox, cropbox);
+	if (fz_is_empty_rect(usedbox))
+		usedbox = fz_make_rect(0, 0, 612, 792);
+	usedbox.x0 = fz_min(usedbox.x0, usedbox.x1);
+	usedbox.y0 = fz_min(usedbox.y0, usedbox.y1);
+	usedbox.x1 = fz_max(usedbox.x0, usedbox.x1);
+	usedbox.y1 = fz_max(usedbox.y0, usedbox.y1);
+	if (usedbox.x1 - usedbox.x0 < 1 || usedbox.y1 - usedbox.y0 < 1)
+		usedbox = fz_unit_rect;
 
-	page_mediabox->x0 = fz_min(mediabox.x0, mediabox.x1);
-	page_mediabox->y0 = fz_min(mediabox.y0, mediabox.y1);
-	page_mediabox->x1 = fz_max(mediabox.x0, mediabox.x1);
-	page_mediabox->y1 = fz_max(mediabox.y0, mediabox.y1);
-
-	if (page_mediabox->x1 - page_mediabox->x0 < 1 || page_mediabox->y1 - page_mediabox->y0 < 1)
-		*page_mediabox = fz_unit_rect;
-
-	rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(Rotate)));
+	*outbox = usedbox;
 
 	/* Snap page rotation to 0, 90, 180 or 270 */
+	rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(Rotate)));
 	if (rotate < 0)
 		rotate = 360 - ((-rotate) % 360);
 	if (rotate >= 360)
@@ -685,15 +687,38 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 	/* Rotate */
 	*page_ctm = fz_pre_rotate(*page_ctm, -rotate);
 
-	/* Translate page origin to 0,0 */
-	realbox = fz_transform_rect(*page_mediabox, *page_ctm);
-	*page_ctm = fz_concat(*page_ctm, fz_translate(-realbox.x0, -realbox.y0));
+	/* Always use MediaBox to set origin to top left */
+	mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox)));
+	if (fz_is_empty_rect(mediabox))
+		mediabox = fz_make_rect(0, 0, 612, 792);
+	mediabox.x0 = fz_min(mediabox.x0, mediabox.x1);
+	mediabox.y0 = fz_min(mediabox.y0, mediabox.y1);
+	mediabox.x1 = fz_max(mediabox.x0, mediabox.x1);
+	mediabox.y1 = fz_max(mediabox.y0, mediabox.y1);
+	if (mediabox.x1 - mediabox.x0 < 1 || mediabox.y1 - mediabox.y0 < 1)
+		mediabox = fz_unit_rect;
+
+	/* Translate page origin of MediaBox to 0,0 */
+	mediabox = fz_transform_rect(mediabox, *page_ctm);
+	*page_ctm = fz_concat(*page_ctm, fz_translate(-mediabox.x0, -mediabox.y0));
 }
 
 void
-pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_matrix *page_ctm)
+pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox, fz_matrix *page_ctm)
 {
-	pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
+	pdf_page_obj_transform_box(ctx, pageobj, page_mediabox, page_ctm, FZ_MEDIA_BOX);
+}
+
+void
+pdf_page_transform_box(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_matrix *page_ctm, fz_box_type box)
+{
+	pdf_page_obj_transform_box(ctx, page->obj, page_mediabox, page_ctm, box);
+}
+
+void
+pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *mediabox, fz_matrix *ctm)
+{
+	pdf_page_transform_box(ctx, page, mediabox, ctm, FZ_MEDIA_BOX);
 }
 
 static void

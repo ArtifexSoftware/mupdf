@@ -113,7 +113,7 @@ htdoc_drop_page(fz_context *ctx, fz_page *page_)
 }
 
 static fz_rect
-htdoc_bound_page(fz_context *ctx, fz_page *page_)
+htdoc_bound_page(fz_context *ctx, fz_page *page_, fz_box_type box)
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
