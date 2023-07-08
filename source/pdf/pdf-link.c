@@ -282,6 +282,11 @@ pdf_parse_link_dest_to_file_with_path(fz_context *ctx, pdf_document *doc, const 
 		const char *name = pdf_to_text_string(ctx, dest);
 		return pdf_new_uri_from_path_and_named_dest(ctx, path, name);
 	}
+	else if (path)
+	{
+		fz_link_dest destination = fz_make_link_dest_none();
+		return pdf_new_uri_from_path_and_explicit_dest(ctx, path, destination);
+	}
 	else
 	{
 		fz_warn(ctx, "invalid link destination");
