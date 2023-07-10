@@ -2524,6 +2524,10 @@ class PDFAnnotation extends Userdata {
 			toBuffer(contents)
 		)
 	}
+
+	applyRedaction(black_boxes = 1, image_method = 2) {
+		libmupdf._wasm_pdf_apply_redaction(this, black_boxes, image_method)
+	}
 }
 
 class PDFWidget extends PDFAnnotation {

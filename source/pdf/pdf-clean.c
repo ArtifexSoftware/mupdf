@@ -452,10 +452,21 @@ void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 }
 
+/* REDACTIONS */
+
+struct redact_filter_state {
+	pdf_filter_options filter_opts;
+	pdf_sanitize_filter_options sanitize_opts;
+	pdf_filter_factory filter_list[2];
+	pdf_page *page;
+	pdf_annot *target; // NULL if all
+};
+
 static void
 pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 {
-	pdf_page *page = opaque;
+	struct redact_filter_state *red = opaque;
+	pdf_page *page = red->page;
 	pdf_annot *annot;
 	pdf_obj *qp;
 	int i, n;
@@ -464,6 +475,8 @@ pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
+		if (red->target != NULL && red->target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
 			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -496,7 +509,8 @@ pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 static int
 pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox)
 {
-	pdf_page *page = opaque;
+	struct redact_filter_state *red = opaque;
+	pdf_page *page = red->page;
 	pdf_annot *annot;
 	pdf_obj *qp;
 	fz_rect r;
@@ -517,6 +531,8 @@ pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, f
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
+		if (red->target != NULL && red->target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
 			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -647,7 +663,8 @@ static fz_image *
 pdf_redact_image_filter_remove(fz_context *ctx, void *opaque, fz_matrix ctm, const char *name, fz_image *image)
 {
 	fz_pixmap *redacted = NULL;
-	pdf_page *page = opaque;
+	struct redact_filter_state *red = opaque;
+	pdf_page *page = red->page;
 	pdf_annot *annot;
 	pdf_obj *qp;
 	fz_rect area;
@@ -660,6 +677,8 @@ pdf_redact_image_filter_remove(fz_context *ctx, void *opaque, fz_matrix ctm, con
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
+		if (red->target != NULL && red->target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
 			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -692,7 +711,8 @@ pdf_redact_image_filter_pixels(fz_context *ctx, void *opaque, fz_matrix ctm, con
 {
 	fz_pixmap *redacted = NULL;
 	fz_pixmap *mask = NULL;
-	pdf_page *page = opaque;
+	struct redact_filter_state *red = opaque;
+	pdf_page *page = red->page;
 	pdf_annot *annot;
 	pdf_obj *qp;
 	fz_quad area, q;
@@ -707,6 +727,8 @@ pdf_redact_image_filter_pixels(fz_context *ctx, void *opaque, fz_matrix ctm, con
 	/* First see if we can redact the image completely */
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
+		if (red->target != NULL && red->target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
 			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -735,6 +757,8 @@ pdf_redact_image_filter_pixels(fz_context *ctx, void *opaque, fz_matrix ctm, con
 	{
 		for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 		{
+			if (red->target != NULL && red->target != annot)
+				continue;
 			if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 			{
 				qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -799,7 +823,7 @@ pdf_redact_image_filter_pixels(fz_context *ctx, void *opaque, fz_matrix ctm, con
 }
 
 static int
-rect_touches_redactions(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_rect area)
+rect_touches_redactions(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_rect area, struct redact_filter_state *red)
 {
 	pdf_annot *annot;
 	pdf_obj *qp;
@@ -809,6 +833,8 @@ rect_touches_redactions(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_r
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
+		if (red->target != NULL && red->target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
 			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
@@ -837,7 +863,7 @@ rect_touches_redactions(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_r
 }
 
 static void
-pdf_redact_page_links(fz_context *ctx, pdf_document *doc, pdf_page *page)
+pdf_redact_page_links(fz_context *ctx, pdf_document *doc, pdf_page *page, struct redact_filter_state *red)
 {
 	pdf_obj *annots;
 	pdf_obj *link;
@@ -852,7 +878,7 @@ pdf_redact_page_links(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		if (pdf_dict_get(ctx, link, PDF_NAME(Subtype)) == PDF_NAME(Link))
 		{
 			area = pdf_dict_get_rect(ctx, link, PDF_NAME(Rect));
-			if (rect_touches_redactions(ctx, doc, page, area))
+			if (rect_touches_redactions(ctx, doc, page, area, red))
 			{
 				pdf_array_delete(ctx, annots, k);
 				continue;
@@ -863,7 +889,7 @@ pdf_redact_page_links(fz_context *ctx, pdf_document *doc, pdf_page *page)
 }
 
 static void
-pdf_redact_page_annotations(fz_context *ctx, pdf_document *doc, pdf_page *page)
+pdf_redact_page_annotations(fz_context *ctx, pdf_document *doc, pdf_page *page, struct redact_filter_state *red)
 {
 	pdf_annot *annot;
 	fz_rect area;
@@ -874,7 +900,7 @@ restart:
 		if (pdf_annot_type(ctx, annot) == PDF_ANNOT_FREE_TEXT)
 		{
 			area = pdf_dict_get_rect(ctx, pdf_annot_obj(ctx, annot), PDF_NAME(Rect));
-			if (rect_touches_redactions(ctx, doc, page, area))
+			if (rect_touches_redactions(ctx, doc, page, area, red))
 			{
 				pdf_delete_annot(ctx, page, annot);
 				goto restart;
@@ -883,68 +909,81 @@ restart:
 	}
 }
 
-int
-pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_options *opts)
+static
+void init_redact_filter(fz_context *ctx, pdf_redact_options *redact_opts, struct redact_filter_state *red, pdf_page *page, pdf_annot *target)
+{
+	int black_boxes = redact_opts ? redact_opts->black_boxes : 0;
+	int image_method = redact_opts ? redact_opts->image_method : PDF_REDACT_IMAGE_PIXELS;
+
+	memset(&red->filter_opts, 0, sizeof red->filter_opts);
+	memset(&red->sanitize_opts, 0, sizeof red->sanitize_opts);
+
+	red->filter_opts.recurse = 0; /* don't redact patterns, softmasks, and type3 fonts */
+	red->filter_opts.instance_forms = 1; /* redact xobjects with instancing */
+	red->filter_opts.ascii = 1;
+	red->filter_opts.opaque = red;
+	red->filter_opts.filters = red->filter_list;
+	if (black_boxes)
+		red->filter_opts.complete = pdf_redact_end_page;
+
+	red->sanitize_opts.opaque = red;
+	red->sanitize_opts.text_filter = pdf_redact_text_filter;
+	if (image_method == PDF_REDACT_IMAGE_PIXELS)
+		red->sanitize_opts.image_filter = pdf_redact_image_filter_pixels;
+	if (image_method == PDF_REDACT_IMAGE_REMOVE)
+		red->sanitize_opts.image_filter = pdf_redact_image_filter_remove;
+
+	red->filter_list[0].filter = pdf_new_sanitize_filter;
+	red->filter_list[0].options = &red->sanitize_opts;
+	red->filter_list[1].filter = NULL;
+	red->filter_list[1].options = NULL;
+
+	red->page = page;
+	red->target = NULL;
+}
+
+static int
+pdf_apply_redaction_imp(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *target, pdf_redact_options *redact_opts)
 {
 	pdf_annot *annot;
 	int has_redactions = 0;
-	int black_boxes = 0;
-	int image_method = PDF_REDACT_IMAGE_PIXELS;
+	struct redact_filter_state red;
 
-	pdf_filter_options options = { 0 };
-	pdf_sanitize_filter_options sopts = { 0 };
-	pdf_filter_factory list[2] = { 0 };
-
-	if (opts)
-	{
-		black_boxes = opts->black_boxes;
-		image_method = opts->image_method;
-	}
-
-	options.recurse = 0; /* don't redact patterns, softmasks, and type3 fonts */
-	options.instance_forms = 1; /* redact xobjects with instancing */
-	options.ascii = 1;
-	options.opaque = page;
-	options.filters = list;
-	if (black_boxes)
-		options.complete = pdf_redact_end_page;
-
-	list[0].filter = pdf_new_sanitize_filter;
-	list[0].options = &sopts;
-
-	sopts.opaque = page;
-	sopts.text_filter = pdf_redact_text_filter;
-	if (image_method == PDF_REDACT_IMAGE_PIXELS)
-		sopts.image_filter = pdf_redact_image_filter_pixels;
-	if (image_method == PDF_REDACT_IMAGE_REMOVE)
-		sopts.image_filter = pdf_redact_image_filter_remove;
-
-	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot)) {
+		if (target != NULL && target != annot)
+			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 			has_redactions = 1;
+	}
 
 	if (!has_redactions)
 		return 0;
 
-	pdf_begin_operation(ctx, doc, "Redact page");
+	init_redact_filter(ctx, redact_opts, &red, page, target);
+
+	if (target)
+		pdf_begin_operation(ctx, doc, "Apply redaction");
+	else
+		pdf_begin_operation(ctx, doc, "Apply redactions on page");
 	fz_try(ctx)
 	{
-		pdf_filter_page_contents(ctx, doc, page, &options);
-		pdf_redact_page_links(ctx, doc, page);
-		pdf_redact_page_annotations(ctx, doc, page);
+		pdf_filter_page_contents(ctx, doc, page, &red.filter_opts);
+		pdf_redact_page_links(ctx, doc, page, &red);
+		pdf_redact_page_annotations(ctx, doc, page, &red);
 
 		annot = pdf_first_annot(ctx, page);
 		while (annot)
 		{
-			if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
+			if (target == NULL || annot == target)
 			{
-				pdf_delete_annot(ctx, page, annot);
-				annot = pdf_first_annot(ctx, page);
+				if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
+				{
+					pdf_delete_annot(ctx, page, annot);
+					annot = pdf_first_annot(ctx, page);
+					continue;
+				}
 			}
-			else
-			{
-				annot = pdf_next_annot(ctx, annot);
-			}
+			annot = pdf_next_annot(ctx, annot);
 		}
 
 		doc->redacted = 1;
@@ -957,4 +996,16 @@ pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_o
 	}
 
 	return 1;
+}
+
+int
+pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_options *redact_opts)
+{
+	return pdf_apply_redaction_imp(ctx, doc, page, NULL, redact_opts);
+}
+
+int
+pdf_apply_redaction(fz_context *ctx, pdf_annot *annot, pdf_redact_options *redact_opts)
+{
+	return pdf_apply_redaction_imp(ctx, annot->page->doc, annot->page, annot, redact_opts);
 }

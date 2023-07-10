@@ -9075,6 +9075,19 @@ static void ffi_PDFAnnotation_update(js_State *J)
 	js_pushboolean(J, changed);
 }
 
+static void ffi_PDFAnnotation_applyRedaction(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	pdf_redact_options opts = { 1, PDF_REDACT_IMAGE_PIXELS };
+	if (js_isdefined(J, 1)) opts.black_boxes = js_toboolean(J, 1);
+	if (js_isdefined(J, 2)) opts.image_method = js_tointeger(J, 2);
+	fz_try(ctx)
+		pdf_apply_redaction(ctx, annot, &opts);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_process(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10341,6 +10354,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.getIsOpen", ffi_PDFAnnotation_getIsOpen, 0);
 		jsB_propfun(J, "PDFAnnotation.setIsOpen", ffi_PDFAnnotation_setIsOpen, 1);
 
+		jsB_propfun(J, "PDFAnnotation.applyRedaction", ffi_PDFAnnotation_applyRedaction, 2);
 		jsB_propfun(J, "PDFAnnotation.process", ffi_PDFAnnotation_process, 1);
 
 		jsB_propfun(J, "PDFAnnotation.getHiddenForEditing", ffi_PDFAnnotation_getHiddenForEditing, 0);

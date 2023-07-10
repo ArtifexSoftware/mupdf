@@ -1566,6 +1566,13 @@ void wasm_pdf_set_annot_appearance(pdf_annot *annot,
 	VOID(pdf_set_annot_appearance, annot, appearance, state, *ctm, *bbox, resources, contents)
 }
 
+EXPORT
+void wasm_pdf_apply_redaction(pdf_annot *annot, int black_boxes, int image_method)
+{
+	pdf_redact_options opts = { black_boxes, image_method };
+	VOID(pdf_apply_redaction, annot, &opts)
+}
+
 // --- PDFWidget ---
 
 EXPORT

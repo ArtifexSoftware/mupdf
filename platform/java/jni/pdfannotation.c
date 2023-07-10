@@ -1597,3 +1597,21 @@ FUN(PDFAnnotation_getHiddenForEditing)(JNIEnv *env, jobject self)
 
 	return hidden;
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_applyRedaction)(JNIEnv *env, jobject self, jboolean blackBoxes, jint imageMethod)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation_safe(env, self);
+	pdf_redact_options opts = { blackBoxes, imageMethod };
+	jboolean redacted = JNI_FALSE;
+
+	if (!ctx || !annot) return JNI_FALSE;
+
+	fz_try(ctx)
+		redacted = pdf_apply_redaction(ctx, annot, &opts);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return redacted;
+}

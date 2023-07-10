@@ -3524,6 +3524,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getHiddenFo
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setHiddenForEditing
   (JNIEnv *, jobject, jboolean);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    applyRedaction
+ * Signature: (ZI)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_applyRedaction
+  (JNIEnv *, jobject, jboolean, jint);
+
 #ifdef __cplusplus
 }
 #endif
