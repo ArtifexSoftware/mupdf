@@ -3456,6 +3456,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 	xref_len = pdf_xref_len(ctx, doc);
 
+	pdf_begin_operation(ctx, doc, "Save document");
 	fz_try(ctx)
 	{
 		initialise_write_state(ctx, doc, in_opts, opts);
@@ -3647,6 +3648,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			complete_signatures(ctx, doc, opts);
 		}
+		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
 	{
@@ -3663,6 +3665,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	}
 	fz_catch(ctx)
 	{
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
 }
