@@ -207,6 +207,9 @@
     <ClCompile Include="..\c++\implementation\internal.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Disabled|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\c++\implementation\extra.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Disabled|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\c++\include\classes.h">

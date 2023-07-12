@@ -612,29 +612,6 @@ classextras = ClassExtras(
                 method_wrappers_static = [
                     'fz_new_xhtml_document_from_document',
                     ],
-                methods_extra = [
-                    # This duplicates our creation of extra fz_lookup_metadata()
-                    # function in make_function_wrappers(). Maybe we could
-                    # parse the generated functions.h instead of fitz.h so that
-                    # we pick up extra C++ wrappers automatically, but this
-                    # would be a fairly major change.
-                    #
-                    ExtraMethod(
-                            'std::string',
-                            f'{rename.method( "fz_document", "fz_lookup_metadata")}(const char* key, int* o_out=NULL)',
-                            f'''
-                            {{
-                                return {rename.ll_fn("fz_lookup_metadata")}(m_internal, key, o_out);
-                            }}
-                            ''',
-                           textwrap.dedent('''
-                            /* Wrapper for fz_lookup_metadata() that returns a std::string and sets
-                            *o_out to length of string plus one. If <key> is not found, returns empty
-                            string with *o_out=-1. <o_out> can be NULL if caller is not interested in
-                            error information. */
-                            ''')
-                            ),
-                    ],
                 ),
 
         # This is a little complicated. Many of the functions that we would
@@ -984,19 +961,6 @@ classextras = ClassExtras(
                         '/* Default constructor calls md5_init(). */',
                         )
                     ],
-                methods_extra = [
-                    ExtraMethod( 'std::vector<unsigned char>',
-                        f'{rename.method("fz_md5", "fz_md5_final2")}()',
-                        f'''
-                        {{
-                            std::vector<unsigned char>  ret(16);
-                            {rename.ll_fn( 'fz_md5_final')}( &m_internal, &ret[0]);
-                            return ret;
-                        }}
-                        ''',
-                        f'/* Wrapper for fz_md5_final() that returns the digest by value. */',
-                        ),
-                    ],
                 ),
 
         fz_outline = ClassExtra(
@@ -1281,47 +1245,6 @@ classextras = ClassExtras(
                 ),
 
         fz_pixmap = ClassExtra(
-                methods_extra = [
-                    ExtraMethod( 'std::vector<unsigned char>',
-                        f'{rename.method( "fz_pixmap", "fz_md5_pixmap")}()',
-                        f'''
-                        {{
-                            std::vector<unsigned char>  ret(16);
-                            {rename.ll_fn( 'fz_md5_pixmap')}( m_internal, &ret[0]);
-                            return ret;
-                        }}
-                        ''',
-                        f'/* Wrapper for fz_md5_pixmap(). */',
-                        ),
-                    ExtraMethod( 'long long',
-                        f'{rename.method( "fz_pixmap", "fz_pixmap_samples_int")}()',
-                        f'''
-                        {{
-                            long long ret = (intptr_t) samples();
-                            return ret;
-                        }}
-                        ''',
-                        f'/* Alternative to pixmap_samples() that returns pointer as integer. */',
-                        ),
-                    ExtraMethod( 'int',
-                        f'{rename.method( "fz_pixmap", "fz_samples_get")}(int offset)',
-                        f'''
-                        {{
-                            return m_internal->samples[offset];
-                        }}
-                        ''',
-                        f'/* Returns m_internal->samples[offset]. */',
-                        ),
-                    ExtraMethod( 'void',
-                        f'{rename.method( "fz_pixmap", "fz_samples_set")}(int offset, int value)',
-                        f'''
-                        {{
-                            m_internal->samples[offset] = value;
-                        }}
-                        ''',
-                        f'/* Sets m_internal->samples[offset] to value. */',
-                        ),
-                    ],
                 constructor_raw = True,
                 accessors = True,
                 ),
@@ -1722,27 +1645,6 @@ classextras = ClassExtras(
                     'pdf_document_from_fz_document',
                     ],
                 methods_extra = [
-                    # This duplicates our creation of extra lookup_metadata()
-                    # function in make_function_wrappers(). Maybe we could
-                    # parse the generated functions.h instead of fitz.h so that
-                    # we pick up extra C++ wrappers automatically, but this
-                    # would be a fairly major change.
-                    #
-                    ExtraMethod(
-                            'std::string',
-                            f'{rename.method("pdf_document", "pdf_lookup_metadata")}(const char* key, int* o_out=NULL)',
-                            f'''
-                            {{
-                                return {rename.ll_fn("pdf_lookup_metadata")}(m_internal, key, o_out);
-                            }}
-                            ''',
-                           textwrap.dedent('''
-                            /* Wrapper for pdf_lookup_metadata() that returns a std::string and sets
-                            *o_out to length of string plus one. If <key> is not found, returns empty
-                            string with *o_out=-1. <o_out> can be NULL if caller is not interested in
-                            error information. */
-                            ''')
-                            ),
                     ExtraMethod(
                         f'{rename.class_("fz_document")}',
                         'super()',

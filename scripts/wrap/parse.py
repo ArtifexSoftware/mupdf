@@ -8,12 +8,16 @@ import time
 
 import jlib
 
+try:
+    import clang
+except ImportError as e:
+    jlib.log( 'Warning, could not import clang: {e}')
+    clang = None
+
 from . import classes
 from . import cpp
 from . import state
 from . import util
-
-clang = state.clang
 
 
 def get_extras(tu, type_):
@@ -55,6 +59,28 @@ def get_fz_extras( tu, fzname):
     fzname = util.clip( fzname, 'struct ')
     ce = classes.classextras.get( tu, fzname)
     return ce
+
+def get_children(cursor):
+    '''
+    Like cursor.get_children() but recurses into cursors with
+    clang.cindex.CursorKind.UNEXPOSED_DECL, which picks up top-level items
+    marked with `extern "C"`.
+    '''
+    verbose = 0
+    for cursor in cursor.get_children():
+        #verbose = state.state_.show_details( cursor.spelling)
+        #verbose = 1
+        if cursor.kind == clang.cindex.CursorKind.UNEXPOSED_DECL:
+            # Things tagged with `extern "C" appear to be within this
+            # cursor.
+            for cursor2 in cursor.get_children():
+                if verbose and cursor.spelling:
+                    jlib.log( '{cursor.spelling=}')
+                yield cursor2
+        elif 1:
+            if verbose and cursor.spelling:
+                jlib.log( '{cursor.spelling=}')
+            yield cursor
 
 def get_members( type_or_cursor, include_empty=False):
     '''
@@ -236,7 +262,7 @@ def has_refs( tu, type_):
                             if name == 'refs' and type2.spelling == 'int':
                                 ret = 'refs', 32
                                 break
-                            if name == 'storable' and type2.spelling == 'struct fz_storable':
+                            if name == 'storable' and type2.spelling in ('struct fz_storable', 'fz_storable'):
                                 ret = 'storable.refs', 32
                                 break
                     else:
@@ -368,6 +394,7 @@ def dump_ast( cursor, out=None, depth=0):
     try:
         indent = depth*4*' '
         for cursor2 in cursor.get_children():
+
             def or_none(f):
                 try:
                     return f()
@@ -378,19 +405,19 @@ def dump_ast( cursor, out=None, depth=0):
             type_canonical = or_none( cursor2.type.get_canonical)
 
             text = indent
-            text += jlib.expand_nv(
+            text += jlib.log_text(
                     '{cursor2.kind=}'
-                    '{cursor2.displayname=}'
+                    ' {cursor2.displayname=}'
                     ' {cursor2.spelling=}'
                     ' {cursor2.linkage=}'
                     ' {cursor2.is_definition()=}'
                     )
             if result:
-                text += jlib.expand_nv(' {result.spelling=}')
+                text += jlib.log_text(' {result.spelling=}')
             if type_:
-                text += jlib.expand_nv(' {type_.spelling=}')
+                text += jlib.log_text(' {type_.spelling=}')
             if type_canonical:
-                text += jlib.expand_nv(' {type_canonical.spelling=}')
+                text += jlib.log_text(' {type_canonical.spelling=}')
             text += '\n'
             if callable(out):
                 out( text)
@@ -471,17 +498,22 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
     # are slow, so we cache the returned items. E.g. this reduces total time of
     # --build 0 from 3.5s to 2.1s.
     #
+    if verbose:
+        jlib.log( '## Looking at args of {cursor.spelling=}')
     key = tu, cursor.location.file, cursor.location.line, include_fz_context, skip_first_alt
     ret = get_args_cache.get( key)
     if not verbose and state.state_.show_details(cursor.spelling):
         verbose = True
-        #jlib.log('Verbose because {cursor.spelling=}')
     if ret is None:
+        if verbose:
+            jlib.log( '## Looking at args of {cursor.spelling=}')
         ret = []
         i = 0
         i_alt = 0
         separator = ''
         for arg_cursor in cursor.get_arguments():
+            if verbose:
+                jlib.log('{arg_cursor.kind=} {arg_cursor.spelling=}')
             assert arg_cursor.kind == clang.cindex.CursorKind.PARM_DECL
             if not include_fz_context and is_pointer_to( arg_cursor.type, 'fz_context'):
                 # Omit this arg because our generated mupdf_*() wrapping functions
@@ -510,6 +542,7 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
                     alt = base_type_cursor
             if verbose:
                 jlib.log( '{arg_cursor.type.spelling=} {base_typename=} {arg_cursor.type.kind=} {get_base_typename(arg_cursor.type)=}')
+                jlib.log( '{get_base_type(arg_cursor.type).kind=}')
             if alt:
                 if is_double_pointer( arg_cursor.type):
                     out_param = True
@@ -526,9 +559,18 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
                         if verbose:
                             jlib.log('setting out_param to true')
                         out_param = True
-            elif base_typename.startswith( ('fz_', 'pdf_')):
+            elif ( base_typename.startswith( ('fz_', 'pdf_'))
+                    and get_base_type(arg_cursor.type).kind != clang.cindex.TypeKind.ENUM
+                    ):
                 # Pointer to fz_ struct is not usually an out-param.
-                if verbose: jlib.log( 'not out-param because arg is: {arg_cursor.displayname=} {base_type.spelling=} {extras}')
+                if verbose:
+                    jlib.log(
+                            'not out-param because pointer to struct:'
+                            ' arg is: {arg_cursor.displayname=}'
+                            ' {base_typename.spelling=}'
+                            ' {extras}'
+                            ' {arg_cursor.type.kind=}'
+                            )
             elif arg_cursor.type.kind == clang.cindex.TypeKind.POINTER:
                 pointee = arg_cursor.type.get_pointee()
                 if verbose:
@@ -714,31 +756,37 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
 
         # Look at resulttype.
         #
-        result_type = state.get_name_canonical( cursor.type.get_result())
+        result_type = cursor.type.get_result()
         if result_type.kind == clang.cindex.TypeKind.POINTER:
-            result_type = state.get_name_canonical( result_type.get_pointee())
-        result_type = util.clip( result_type.spelling, 'struct ')
-        if result_type.startswith( ('fz_', 'pdf_')):
-            result_type_extras = get_fz_extras( tu, result_type)
-            if not result_type_extras:
-                exclude_reasons.append(
-                        (
-                        MethodExcludeReason_NO_EXTRAS,
-                        f'no extras defined for result_type={result_type}',
-                        ))
-            else:
-                if not result_type_extras.constructor_raw:
+            result_type = result_type.get_pointee()
+        result_type_name = state.get_name_canonical( result_type)
+        result_type_name = util.clip( result_type.spelling, 'struct ')
+        if result_type_name.startswith( ('fz_', 'pdf_')):
+            if result_type.kind == clang.cindex.TypeKind.TYPEDEF:
+                result_cursor = result_type.get_declaration()
+                result_type = result_cursor.underlying_typedef_type
+
+            if result_type.kind == state.clang.cindex.TypeKind.ELABORATED:
+                result_type_extras = get_fz_extras( tu, result_type_name)
+                if not result_type_extras:
                     exclude_reasons.append(
                             (
-                            MethodExcludeReason_NO_RAW_CONSTRUCTOR,
-                            f'wrapper for result_type={result_type} does not have raw constructor.',
+                            MethodExcludeReason_NO_EXTRAS,
+                            f'no extras defined for result_type={result_type_name}.'
                             ))
-                if not result_type_extras.copyable:
-                    exclude_reasons.append(
-                            (
-                            MethodExcludeReason_NOT_COPYABLE,
-                                f'wrapper for result_type={result_type} is not copyable.',
-                            ))
+                else:
+                    if not result_type_extras.constructor_raw:
+                        exclude_reasons.append(
+                                (
+                                MethodExcludeReason_NO_RAW_CONSTRUCTOR,
+                                f'wrapper for result_type={result_type_name} does not have raw constructor.',
+                                ))
+                    if not result_type_extras.copyable:
+                        exclude_reasons.append(
+                                (
+                                MethodExcludeReason_NOT_COPYABLE,
+                                f'wrapper for result_type={result_type_name} is not copyable.',
+                                ))
 
         # Look at args
         #
@@ -748,7 +796,8 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
 
             base_typename = get_base_typename( arg.cursor.type)
             if not arg.alt and base_typename.startswith( ('fz_', 'pdf_')):
-                if state.get_name_canonical( arg.cursor.type).kind == clang.cindex.TypeKind.ENUM:
+                t_canonical = state.get_name_canonical( arg.cursor.type)
+                if t_canonical.kind == clang.cindex.TypeKind.ENUM:
                     # We don't (yet) wrap fz_* enums, but for now at least we
                     # still wrap functions that take fz_* enum parameters -
                     # callers will have to use the fz_* type.
@@ -756,12 +805,22 @@ def find_wrappable_function_with_arg0_type_cache_populate( tu):
                     # For example this is required by mutool_draw.py because
                     # mudraw.c calls fz_set_separation_behavior().
                     #
-                    jlib.logx( 'not excluding {fnname=} with enum fz_ param : {arg.cursor.spelling=} {arg.cursor.type.kind} {state.get_name_canonical( arg.cursor.type).kind=}')
+                    jlib.logx(
+                            'not excluding {fnname=} with enum fz_ param:'
+                            ' {arg.cursor.spelling=}'
+                            ' {arg.cursor.type.kind}'
+                            ' {state.get_name_canonical(arg.cursor.type).kind=}'
+                            )
+                elif t_canonical.kind == clang.cindex.TypeKind.POINTER:
+                    pass
                 else:
                     exclude_reasons.append(
                             (
                             MethodExcludeReason_NO_WRAPPER_CLASS,
-                            f'no wrapper class for arg i={i}: {state.get_name_canonical( arg.cursor.type).spelling} {state.get_name_canonical( arg.cursor.type).kind}',
+                            f'no wrapper class for arg i={i}:'
+                                f' {state.get_name_canonical( arg.cursor.type).spelling}'
+                                f' {state.get_name_canonical(arg.cursor.type).kind}'
+                                ,
                             ))
             if i == 0:
                 if arg.alt:
@@ -856,7 +915,7 @@ def find_struct( tu, structname, require_definition=True):
     global find_struct_cache
     if find_struct_cache is None:
         find_struct_cache = dict()
-        for cursor in tu.cursor.get_children():
+        for cursor in get_children( tu.cursor):
             already = find_struct_cache.get( cursor.spelling)
             if already is None:
                 find_struct_cache[ cursor.spelling] = cursor

@@ -10,14 +10,15 @@ import sys
 
 import jlib
 
+from . import parse
 
 try:
     import clang.cindex
 except Exception as e:
     jlib.log('Warning: failed to import clang.cindex: {e=}\n'
             f'We need Clang Python to build MuPDF python.\n'
-            f'Install with `pip install libclang`, or use `--venv pylocal`, or\n'
-            f'(OpenBSD only) `pkg_add py3-llvm.`\n'
+            f'Install with `pip install libclang` (typically inside a Python venv),\n'
+            f'or (OpenBSD only) `pkg_add py3-llvm.`\n'
             )
     clang = None
 
@@ -94,7 +95,10 @@ class State:
         enums = dict()
         structs = dict()
 
-        for cursor in tu.cursor.get_children():
+        for cursor in parse.get_children(tu.cursor):
+            verbose = state_.show_details( cursor.spelling)
+            if verbose:
+                jlib.log('Looking at {cursor.spelling=} {cursor.kind=} {cursor.location=}')
             if cursor.kind==clang.cindex.CursorKind.ENUM_DECL:
                 #jlib.log('ENUM_DECL: {cursor.spelling=}')
                 enum_values = list()
@@ -107,17 +111,14 @@ class State:
                 name = cursor.spelling
                 if name.startswith( ( 'fz_', 'pdf_')):
                     structs[ name] = cursor
-            if (cursor.linkage == clang.cindex.LinkageKind.EXTERNAL
-                    or cursor.is_definition()  # Picks up static inline functions.
-                    ):
-                if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
-                    fnname = cursor.spelling
-                    if self.show_details( fnname):
-                        jlib.log( 'Looking at {fnname=}')
-                    if fnname in omit_fns:
-                        jlib.log('{fnname=} is in omit_fns')
-                    else:
-                        fns[ fnname] = cursor
+            if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
+                fnname = cursor.spelling
+                if self.show_details( fnname):
+                    jlib.log( 'Looking at {fnname=}')
+                if fnname in omit_fns:
+                    jlib.log('{fnname=} is in omit_fns')
+                else:
+                    fns[ fnname] = cursor
             if (cursor.kind == clang.cindex.CursorKind.VAR_DECL
                     and cursor.linkage == clang.cindex.LinkageKind.EXTERNAL
                     ):
@@ -146,7 +147,7 @@ class State:
                     jlib.log('{fnname=} is in {omit_methods=}')
                 continue
             if not fnname.startswith( name_prefix):
-                if verbose:
+                if 0 and verbose:
                     jlib.log('{fnname=} does not start with {name_prefix=}')
                 continue
             if verbose:

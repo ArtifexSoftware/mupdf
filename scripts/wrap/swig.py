@@ -91,6 +91,7 @@ def build_swig(
             #include "mupdf/classes2.h"
             #include "mupdf/internal.h"
             #include "mupdf/exceptions.h"
+            #include "mupdf/extra.h"
 
             #ifdef NDEBUG
                 static bool g_mupdf_trace_director = false;
@@ -755,6 +756,17 @@ def build_swig(
             # These are also enums which we don't want to ignore. SWIGing the
             # functions is hopefully harmless.
             pass
+        elif fnname in ('x0', 'y0', 'x1', 'y1'):
+            # Windows appears to have functions called y0() and y1() e.g. in:
+            #
+            #  C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt\\corecrt_math.h
+            #
+            # If we use `%ignore` with these, e.g. `%ignore ::y0`, swig
+            # unhelpfully seems to also ignore any member variables called `y0`
+            # or `y1`.
+            #
+            jlib.log('Not ignoring {fnname=} because breaks wrapping of fz_rect.')
+            pass
         else:
             text += f'%ignore ::{fnname};\n'
 
@@ -784,7 +796,7 @@ def build_swig(
             'fz_stdods',
             ):
         text += f'%ignore {i};\n'
-        text += f'%ignore m{i};\n'
+        text += f'%ignore {rename.method(None, i)};\n'
 
     text += textwrap.dedent(f'''
             // Not implemented in mupdf.so: fz_colorspace_name_process_colorants
@@ -811,10 +823,18 @@ def build_swig(
 
             // SWIG can't handle this because it uses a valist.
             %ignore {rename.ll_fn('Memento_vasprintf')};
+            %ignore {rename.fn('Memento_vasprintf')};
 
-            // asprintf() isn't available on windows, so exclude Memento_asprintf because
+            %ignore Memento_cpp_new;
+            %ignore Memento_cpp_delete;
+            %ignore Memento_cpp_new_array;
+            %ignore Memento_cpp_delete_array;
+            %ignore Memento_showHash;
+
+            // asprintf() isn't available on Windows, so exclude Memento_asprintf because
             // it is #define-d to asprintf.
             %ignore {rename.ll_fn('Memento_asprintf')};
+            %ignore {rename.fn('Memento_asprintf')};
 
             // Might prefer to #include mupdf/exceptions.h and make the
             // %exception block below handle all the different exception types,
@@ -973,37 +993,30 @@ def build_swig(
 
                 g_mupdf_trace_director = (os.environ.get('MUPDF_trace_director') == '1')
 
-                def fz_lookup_metadata_extra(self, key):
+                def fz_lookup_metadata(document, key):
                     """
-                    Python implementation override of {rename.class_('fz_document')}.lookup_metadata().
-
-                    Returns string or None if not found.
+                    Like fz_lookup_metadata2() but returns None on error
+                    instead of raising exception.
                     """
-                    e = new_pint()
-                    ret = {rename.ll_fn('fz_lookup_metadata')}(self.m_internal, key, e)
-                    e = pint_value(e)
-                    if e < 0:
-                        return None
-                    return ret
+                    try:
+                        return fz_lookup_metadata2(document, key)
+                    except Exception:
+                        return
+                {rename.class_('fz_document')}.{rename.method('fz_document', 'fz_lookup_metadata')} \
+                        = fz_lookup_metadata
 
-                {rename.class_('fz_document')}.{rename.method('fz_document', 'fz_lookup_metadata')} = fz_lookup_metadata_extra
-                {rename.fn('fz_lookup_metadata')} = fz_lookup_metadata_extra
-
-                def pdf_lookup_metadata_extra(self, key):
+                def pdf_lookup_metadata(document, key):
                     """
-                    Python implementation override of {rename.class_('pdf_document')}.{rename.method('pdf_document', 'pdf_lookup_metadata')}().
-
-                    Returns string or None if not found.
+                    Likepsd_lookup_metadata2() but returns None on error
+                    instead of raising exception.
                     """
-                    e = new_pint()
-                    ret = {rename.ll_fn('pdf_lookup_metadata')}(self.m_internal, key, e)
-                    e = pint_value(e)
-                    if e < 0:
-                        return None
-                    return ret
+                    try:
+                        return pdf_lookup_metadata2(document, key)
+                    except Exception:
+                        return
+                {rename.class_('pdf_document')}.{rename.method('pdf_document', 'pdf_lookup_metadata')} \
+                        = pdf_lookup_metadata
 
-                {rename.class_('pdf_document')}.{rename.method('pdf_document', 'pdf_lookup_metadata')} = pdf_lookup_metadata_extra
-                {rename.fn('pdf_lookup_metadata')} = pdf_lookup_metadata_extra
                 ''')
 
         exception_info_text = inspect.getsource(jlib.exception_info)
@@ -1022,6 +1035,10 @@ def build_swig(
         # tuples.
         #
         text += generated.swig_python
+
+        def set_class_method(struct, fn):
+            return f'{rename.class_(struct)}.{rename.method(struct, fn)} = {fn}'
+
         text += textwrap.dedent(f'''
 
                 # Wrap fz_parse_page_range() to fix SWIG bug where a NULL return
@@ -1108,7 +1125,7 @@ def build_swig(
                     """
                     assert isinstance( buffer, FzBuffer)
                     return ll_fz_buffer_extract(buffer.m_internal)
-                FzBuffer.fz_buffer_extract = fz_buffer_extract
+                {set_class_method('fz_buffer', 'fz_buffer_extract')}
 
                 def ll_fz_buffer_extract_copy( buffer):
                     """
@@ -1124,7 +1141,7 @@ def build_swig(
                     """
                     assert isinstance( buffer, FzBuffer)
                     return ll_fz_buffer_extract_copy(buffer.m_internal)
-                FzBuffer.fz_buffer_extract_copy = fz_buffer_extract_copy
+                {set_class_method('fz_buffer', 'fz_buffer_extract_copy')}
 
                 # [ll_fz_buffer_storage_memoryview() is implemented in C.]
                 def fz_buffer_storage_memoryview( buffer, writable=False):
@@ -1135,7 +1152,7 @@ def build_swig(
                     """
                     assert isinstance( buffer, FzBuffer)
                     return ll_fz_buffer_storage_memoryview( buffer.m_internal, writable)
-                FzBuffer.fz_buffer_storage_memoryview = fz_buffer_storage_memoryview
+                {set_class_method('fz_buffer', 'fz_buffer_storage_memoryview')}
 
                 # Overwrite wrappers for fz_new_buffer_from_copied_data() to
                 # take Python buffer.
@@ -1154,7 +1171,7 @@ def build_swig(
                     a `bytes` or similar Python buffer instance.
                     """
                     return FzBuffer( ll_fz_new_buffer_from_copied_data( data))
-                FzBuffer.fz_new_buffer_from_copied_data = fz_new_buffer_from_copied_data
+                {set_class_method('fz_buffer', 'fz_new_buffer_from_copied_data')}
 
                 def ll_pdf_dict_getl(obj, *tail):
                     """
@@ -1180,7 +1197,7 @@ def build_swig(
                         obj = pdf_dict_get(obj, key)
                     assert isinstance(obj, PdfObj)
                     return obj
-                PdfObj.pdf_dict_getl = pdf_dict_getl
+                {set_class_method('pdf_obj', 'pdf_dict_getl')}
 
                 def ll_pdf_dict_putl(obj, val, *tail):
                     """
@@ -1229,11 +1246,11 @@ def build_swig(
                         obj = next_obj
                     key = tail[-1]
                     pdf_dict_put( obj, key, val)
-                PdfObj.pdf_dict_putl = pdf_dict_putl
+                {set_class_method('pdf_obj', 'pdf_dict_putl')}
 
                 def pdf_dict_putl_drop(obj, *tail):
                     raise Exception('mupdf.pdf_dict_putl_drop() is unsupported and unnecessary in Python because reference counting is automatic. Instead use mupdf.pdf_dict_putl().')
-                PdfObj.pdf_dict_putl_drop = pdf_dict_putl_drop
+                {set_class_method('pdf_obj', 'pdf_dict_putl_drop')}
 
                 def ll_pdf_set_annot_color(annot, color):
                     """
@@ -1254,7 +1271,7 @@ def build_swig(
                         raise Exception( f'Unexpected color should be float or list of 1-4 floats: {{color}}')
                 def pdf_set_annot_color(self, color):
                     return ll_pdf_set_annot_color(self.m_internal, color)
-                PdfAnnot.pdf_set_annot_color = pdf_set_annot_color
+                {set_class_method('pdf_annot', 'pdf_set_annot_color')}
 
                 def ll_pdf_set_annot_interior_color(annot, color):
                     """
@@ -1279,7 +1296,7 @@ def build_swig(
                     pdf_set_annot_color2().
                     """
                     return ll_pdf_set_annot_interior_color(self.m_internal, color)
-                PdfAnnot.pdf_set_annot_interior_color = pdf_set_annot_interior_color
+                {set_class_method('pdf_annot', 'pdf_set_annot_interior_color')}
 
                 def ll_fz_fill_text( dev, text, ctm, colorspace, color, alpha, color_params):
                     """
@@ -1301,7 +1318,7 @@ def build_swig(
                             alpha,
                             color_params.internal(),
                             )
-                FzDevice.fz_fill_text = fz_fill_text
+                {set_class_method('fz_device', 'fz_fill_text')}
 
                 # Override mupdf_convert_color() to return (rgb0, rgb1, rgb2, rgb3).
                 def ll_fz_convert_color( ss, sv, ds, is_, params):
@@ -1333,7 +1350,7 @@ def build_swig(
                     Returns (dv0, dv1, dv2, dv3).
                     """
                     return ll_fz_convert_color( ss.m_internal, sv, ds.m_internal, is_.m_internal, params.internal())
-                FzColorspace.fz_convert_color = fz_convert_color
+                {set_class_method('fz_colorspace', 'fz_convert_color')}
 
                 # Override fz_set_warning_callback() and
                 # fz_set_error_callback() to use Python classes derived from
@@ -1418,7 +1435,7 @@ def build_swig(
                     Returns a writable Python `memoryview` for a `FzPixmap`.
                     """
                     return ll_fz_pixmap_samples_memoryview( pixmap.m_internal)
-                FzPixmap.fz_pixmap_samples_memoryview = fz_pixmap_samples_memoryview
+                {set_class_method('fz_pixmap', 'fz_pixmap_samples_memoryview')}
 
                 # Avoid potential unsafe use of variadic args by forcing a
                 # single arg and escaping all '%' characters. (Passing ('%s',
@@ -1436,7 +1453,7 @@ def build_swig(
                 # buffer that must be freed by the caller.
                 ll_pdf_load_field_name = ll_pdf_load_field_name2
                 pdf_load_field_name = pdf_load_field_name2
-                PdfObj.pdf_load_field_name = pdf_load_field_name
+                {set_class_method('pdf_obj', 'pdf_load_field_name')}
 
                 # It's important that when we create class derived
                 # from StoryPositionsCallback, we ensure that
@@ -1468,7 +1485,7 @@ def build_swig(
                         position2 = FzStoryElementPosition( position)
                         python_callback( position2)
                     ll_fz_story_positions( story.m_internal, python_callback2)
-                FzStory.fz_story_positions = fz_story_positions
+                {set_class_method('fz_story', 'fz_story_positions')}
 
                 # Monkey-patch `FzDocumentWriter.__init__()` to set `self._out`
                 # to any `FzOutput2` arg. This ensures that the Python part of
