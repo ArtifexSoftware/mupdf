@@ -1024,6 +1024,81 @@ dump_changes(fz_context *ctx, pdf_document *doc, pdf_journal_entry *entry)
 }
 #endif
 
+/* We build up journal entries as being a list of changes (framents) that
+ * happen all together as part of a single step. When we reach pdf_end_operation
+ * we have all the changes that have happened during this operation in a list
+ * that basically boils down to being:
+ *
+ *     change object x from being A to the value in the xref.
+ *     change object y from being B to the value in the xref.
+ *     change object z from being C to the value in the xref.
+ *     etc.
+ *
+ * The idea is that we can undo, or redo by stepping through that list.
+ * Every object can only be mentioned once in a fragment (otherwise we
+ * get very confused when undoing and redoing).
+ *
+ * When we come to glue 2 entries together (as happens when we end a
+ * nested or implicit operation), we need to be sure that the 2 entries
+ * don't both mention the same object.
+ *
+ * Imagine we've edited a text field from being empty to containing
+ * 'he' by typing each char at a time:
+ *
+ *     Entry 1:
+ *        change object x from being ''.
+ *     Entry 2 (implicit):
+ *        change object x from being 'h'.
+ *
+ * with current xref entry for x being 'he'.
+ *
+ * When we come to combine the two, we can't simply go to:
+ *
+ *     change object x from being ''.
+ *     change object x from being 'h'.
+ *
+ * If we 'undo' that, however, because we run forwards through the list for
+ * both undo and redo, we get it wrong.
+ *
+ * First we replace 'he' by ''.
+ * Then we replace '' by 'h'.
+ *
+ * i.e. leaving us only partly undone.
+ *
+ * Either we need to run in different directions for undo and redo, or we need to
+ * resolve the changes down to a single change for each object. Given that we don't
+ * really want more than one change for each object in each changeset (needless memory
+ * etc), let's resolve the changesets.
+ **/
+static void resolve_undo(fz_context *ctx, pdf_journal_entry *entry)
+{
+	pdf_journal_fragment *start, *current;
+
+	/* Slightly nasty that this is n^2, but any alternative involves
+	 * sorting. Shouldn't be huge lists anyway. */
+	for (start = entry->head; start; start = start->next)
+	{
+		pdf_journal_fragment *next;
+
+		for (current = start->next; current; current = next)
+		{
+			next = current->next;
+
+			if (start->obj_num == current->obj_num)
+			{
+				pdf_drop_obj(ctx, start->inactive);
+				start->inactive = current->inactive;
+				/* start->newobj should not change */
+				/* Now drop current */
+				if (next)
+					next->prev = current->prev;
+				current->prev->next = next;
+				fz_free(ctx, current);
+			}
+		}
+	}
+}
+
 /* Call this to end an operation. */
 void pdf_end_operation(fz_context *ctx, pdf_document *doc)
 {
@@ -1060,6 +1135,8 @@ void pdf_end_operation(fz_context *ctx, pdf_document *doc)
 				entry->prev->tail->next = entry->head;
 				entry->head->prev = entry->prev->tail;
 				entry->prev->tail = entry->tail;
+				/* And resolve any clashing objects */
+				resolve_undo(ctx, entry->prev);
 			}
 #ifdef PDF_DEBUG_JOURNAL
 			fz_write_printf(ctx, fz_stddbg(ctx), "Ending! (->%d) \"%s\" <= \"%s\"\n", doc->journal->nesting,
@@ -1728,15 +1805,20 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 		}
 	}
 
-	/* Find the journal entry to which we will add this object, if there is one. */
-	entry = doc->journal ? doc->journal->current : NULL;
-
-	/* We are about to add a fragment. Everything after this in the
-	 * history must be thrown away. */
-	if (entry)
+	entry = NULL;
+	if (doc->journal)
 	{
-		discard_journal_entries(ctx, &entry->next);
+		/* We are about to add a fragment. Everything after 'current' in the
+		 * history must be thrown away. If current is NULL, then *everything*
+		 * must be thrown away. */
+		discard_journal_entries(ctx, doc->journal->current ? &doc->journal->current->next : &doc->journal->head);
 
+		/* We should be collating into a pending block. */
+		entry = doc->journal->pending;
+		assert(entry);
+
+		/* If we've already stashed a value for this object in this fragment,
+		 * we don't need to stash another one. It'll only confuse us later. */
 		for (frag = entry->head; frag != NULL; frag = frag->next)
 			if (frag->obj_num == parent)
 			{
@@ -1751,9 +1833,12 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 	*/
 	was_empty = pdf_xref_ensure_incremental_object(ctx, doc, parent);
 
+	/* If we're not journalling, or we've already stashed an 'old' value for this
+	 * object, just exit now. */
 	if (entry == NULL)
 		return;
 
+	/* Load the 'old' value and store it in a fragment. */
 	orig = pdf_load_object(ctx, doc, parent);
 
 	fz_var(copy);
