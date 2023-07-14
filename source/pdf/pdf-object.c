@@ -1073,12 +1073,14 @@ dump_changes(fz_context *ctx, pdf_document *doc, pdf_journal_entry *entry)
 static void resolve_undo(fz_context *ctx, pdf_journal_entry *entry)
 {
 	pdf_journal_fragment *start, *current;
+	pdf_journal_fragment *tail = NULL;
 
 	/* Slightly nasty that this is n^2, but any alternative involves
 	 * sorting. Shouldn't be huge lists anyway. */
 	for (start = entry->head; start; start = start->next)
 	{
 		pdf_journal_fragment *next;
+		tail = start;
 
 		for (current = start->next; current; current = next)
 		{
@@ -1086,8 +1088,8 @@ static void resolve_undo(fz_context *ctx, pdf_journal_entry *entry)
 
 			if (start->obj_num == current->obj_num)
 			{
-				pdf_drop_obj(ctx, start->inactive);
-				start->inactive = current->inactive;
+				pdf_drop_obj(ctx, current->inactive);
+				fz_drop_buffer(ctx, current->stream);
 				/* start->newobj should not change */
 				/* Now drop current */
 				if (next)
@@ -1097,6 +1099,7 @@ static void resolve_undo(fz_context *ctx, pdf_journal_entry *entry)
 			}
 		}
 	}
+	entry->tail = tail;
 }
 
 /* Call this to end an operation. */
@@ -1219,6 +1222,8 @@ void pdf_end_operation(fz_context *ctx, pdf_document *doc)
 		entry->tail = NULL;
 		fz_free(ctx, entry->title);
 		fz_free(ctx, entry);
+		/* And resolve any clashing objects */
+		resolve_undo(ctx, doc->journal->current);
 	}
 	doc->journal->pending = NULL;
 	doc->journal->pending_tail = NULL;
