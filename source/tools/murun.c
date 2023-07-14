@@ -191,9 +191,14 @@ static void jsB_repr(js_State *J)
 	js_repr(J, 1);
 }
 
+JS_NORETURN
 static void jsB_quit(js_State *J)
 {
-	exit(js_tonumber(J, 1));
+	fz_context *ctx = js_getcontext(J);
+	int status = js_tonumber(J, 1);
+	js_freestate(J);
+	fz_drop_context(ctx);
+	exit(status);
 }
 
 static const char *prefix_js =
