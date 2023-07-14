@@ -857,7 +857,7 @@ void trace_page_update(void)
 void trace_save_snapshot(void)
 {
 	static int trace_idx = 1;
-	trace_action("page.toPixmap(Identity, DeviceRGB).saveAsPNG(\"trace-%03d.png\");\n", trace_idx++);
+	trace_action("page.toPixmap(Matrix.identity, ColorSpace.DeviceRGB).saveAsPNG(\"trace-%03d.png\");\n", trace_idx++);
 }
 
 static int document_shown_as_dirty = 0;
@@ -1828,7 +1828,7 @@ static void load_document(void)
 		}
 	}
 
-	trace_action("doc = new Document(%q);\n", filename);
+	trace_action("doc = Document.openDocument(%q);\n", filename);
 
 	doc = fz_open_accelerated_document(ctx, filename, accel);
 	pdf = pdf_specifics(ctx, doc);
