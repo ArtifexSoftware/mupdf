@@ -32,11 +32,16 @@ static void pdf_adjust_page_labels(fz_context *ctx, pdf_document *doc, int index
 int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)
 {
+	int pages;
 	/* FIXME: We should reset linear_page_count to 0 when editing starts
 	 * (or when linear loading ends) */
 	if (doc->linear_page_count != 0)
-		return doc->linear_page_count;
-	return pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
+		pages = doc->linear_page_count;
+	else
+		pages = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
+	if (pages < 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid number of pages");
+	return pages;
 }
 
 int pdf_count_pages_imp(fz_context *ctx, fz_document *doc, int chapter)
