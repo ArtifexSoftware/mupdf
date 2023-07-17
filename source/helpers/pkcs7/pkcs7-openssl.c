@@ -633,7 +633,12 @@ static char *x509_get_name_entry_string(fz_context *ctx, X509_NAME *name, int ni
 
 static pdf_pkcs7_distinguished_name *x509_distinguished_name(fz_context *ctx, X509 *x509)
 {
-	pdf_pkcs7_distinguished_name *dn = fz_malloc_struct(ctx, pdf_pkcs7_distinguished_name);
+	pdf_pkcs7_distinguished_name *dn;
+
+	if (x509 == NULL)
+		return NULL;
+
+	dn = fz_malloc_struct(ctx, pdf_pkcs7_distinguished_name);
 
 	fz_try(ctx)
 	{
