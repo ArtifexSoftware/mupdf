@@ -809,16 +809,9 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 	model = state->dest->colorspace;
 
+	bbox = fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest), state->scissor);
 	if (!fz_is_infinite_rect(scissor))
-	{
-		bbox = fz_irect_from_rect(fz_transform_rect(scissor, dev->transform));
-		bbox = fz_intersect_irect(bbox, fz_pixmap_bbox(ctx, state->dest));
-		bbox = fz_intersect_irect(bbox, state->scissor);
-	}
-	else
-	{
-		bbox = fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest), state->scissor);
-	}
+		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(fz_transform_rect(scissor, dev->transform)));
 
 	if (fz_flatten_fill_path(ctx, rast, path, ctm, flatness, bbox, &bbox) || fz_is_rect_rasterizer(ctx, rast))
 	{
@@ -887,16 +880,9 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 
 	model = state->dest->colorspace;
 
+	bbox = fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest), state->scissor);
 	if (!fz_is_infinite_rect(scissor))
-	{
-		bbox = fz_irect_from_rect(fz_transform_rect(scissor, dev->transform));
-		bbox = fz_intersect_irect(bbox, fz_pixmap_bbox(ctx, state->dest));
-		bbox = fz_intersect_irect(bbox, state->scissor);
-	}
-	else
-	{
-		bbox = fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest), state->scissor);
-	}
+		bbox = fz_intersect_irect(bbox, fz_irect_from_rect(fz_transform_rect(scissor, dev->transform)));
 
 	if (fz_flatten_stroke_path(ctx, rast, path, stroke, ctm, flatness, linewidth, bbox, &bbox))
 	{

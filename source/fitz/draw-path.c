@@ -311,6 +311,11 @@ fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, 
 	if (!bbox)
 		bbox = &local_bbox;
 
+	/* If we're given an empty scissor, sanitize it. This makes life easier
+	 * down the line. */
+	if (fz_is_empty_irect(scissor))
+		scissor.x1 = scissor.x0, scissor.y1 = scissor.y0;
+
 	if (fz_reset_rasterizer(ctx, rast, scissor))
 	{
 		empty = do_flatten_fill(ctx, rast, path, ctm, flatness);
