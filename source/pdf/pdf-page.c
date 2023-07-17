@@ -1248,6 +1248,31 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
+
+	/* Adjust the fz layer of cached pages */
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	{
+		fz_page *page, *next;
+
+		for (page = doc->super.open; page != NULL; page = next)
+		{
+			next = page->next;
+			if (page->number == at)
+			{
+				/* We have just 'removed' a page that is in the 'open' list
+				 * (i.e. that someone is holding a reference to). We need
+				 * to remove it so that no one else can load it now its gone.
+				 */
+				if (next)
+					next->prev = page->prev;
+				if (page->prev)
+					*page->prev = page->next;
+			}
+			else if (page->number >= at)
+				page->number--;
+		}
+	}
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 void
@@ -1369,6 +1394,19 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
+
+	/* Adjust the fz layer of cached pages */
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	{
+		fz_page *page;
+
+		for (page = doc->super.open; page != NULL; page = page->next)
+		{
+			if (page->number >= at)
+				page->number++;
+		}
+	}
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 /*
