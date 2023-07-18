@@ -1559,7 +1559,7 @@ pdf_annot_border_width(fz_context *ctx, pdf_annot *annot)
 int
 pdf_annot_border_dash_count(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *bs, *d;
+	pdf_obj *bs, *d, *border;
 	int count;
 
 	pdf_annot_push_local_xref(ctx, annot);
@@ -1569,6 +1569,10 @@ pdf_annot_border_dash_count(fz_context *ctx, pdf_annot *annot)
 		check_allowed_subtypes(ctx, annot, PDF_NAME(BS), border_style_subtypes);
 		bs = pdf_dict_get(ctx, annot->obj, PDF_NAME(BS));
 		d = pdf_dict_get(ctx, bs, PDF_NAME(D));
+		/* Query legacy dash pattern as a fallback */
+		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
+		if (!d && pdf_is_array(ctx, border))
+			d = pdf_array_get(ctx, border, 3);
 		count = pdf_array_len(ctx, d);
 	}
 	fz_always(ctx)
@@ -1582,7 +1586,7 @@ pdf_annot_border_dash_count(fz_context *ctx, pdf_annot *annot)
 float
 pdf_annot_border_dash_item(fz_context *ctx, pdf_annot *annot, int i)
 {
-	pdf_obj *bs, *d;
+	pdf_obj *bs, *d, *border;
 	float length;
 
 	pdf_annot_push_local_xref(ctx, annot);
@@ -1592,6 +1596,10 @@ pdf_annot_border_dash_item(fz_context *ctx, pdf_annot *annot, int i)
 		check_allowed_subtypes(ctx, annot, PDF_NAME(BS), border_style_subtypes);
 		bs = pdf_dict_get(ctx, annot->obj, PDF_NAME(BS));
 		d = pdf_dict_get(ctx, bs, PDF_NAME(D));
+		/* Query legacy dash pattern as a fallback */
+		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
+		if (!d && pdf_is_array(ctx, border))
+			d = pdf_array_get(ctx, border, 3);
 		length = pdf_array_get_real(ctx, d, i);
 	}
 	fz_always(ctx)
@@ -1714,7 +1722,7 @@ pdf_set_annot_border_style(fz_context *ctx, pdf_annot *annot, enum pdf_border_st
 void
 pdf_clear_annot_border_dash(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *bs;
+	pdf_obj *bs, *border;
 
 	begin_annot_op(ctx, annot, "Clear border dash pattern");
 
@@ -1725,6 +1733,10 @@ pdf_clear_annot_border_dash(fz_context *ctx, pdf_annot *annot)
 		if (!pdf_is_dict(ctx, bs))
 			bs = pdf_dict_put_dict(ctx, annot->obj, PDF_NAME(BS), 1);
 		pdf_dict_del(ctx, bs, PDF_NAME(D));
+		/* Remove legacy dash pattern */
+		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
+		if (pdf_is_array(ctx, border))
+			pdf_array_delete(ctx, border, 3);
 		end_annot_op(ctx, annot);
 	}
 	fz_catch(ctx)
@@ -1739,7 +1751,7 @@ pdf_clear_annot_border_dash(fz_context *ctx, pdf_annot *annot)
 void
 pdf_add_annot_border_dash_item(fz_context *ctx, pdf_annot *annot, float length)
 {
-	pdf_obj *bs, *d;
+	pdf_obj *bs, *d, *border;
 
 	begin_annot_op(ctx, annot, "Add border dash pattern item");
 
@@ -1753,6 +1765,10 @@ pdf_add_annot_border_dash_item(fz_context *ctx, pdf_annot *annot, float length)
 		if (!pdf_is_array(ctx, d))
 			d = pdf_dict_put_array(ctx, bs, PDF_NAME(D), 1);
 		pdf_array_push_real(ctx, d, length);
+		/* Remove legacy dash pattern */
+		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
+		if (pdf_is_array(ctx, border))
+			pdf_array_delete(ctx, border, 3);
 		end_annot_op(ctx, annot);
 	}
 	fz_catch(ctx)
