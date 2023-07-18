@@ -634,7 +634,9 @@ Usage:
                 -f
                     Force rebuilds.
                 -j <N>
-                    Set -j arg used when action 'm' calls make (not Windows).
+                    Set -j arg used when action 'm' calls make (not
+                    Windows). If <N> is 0 we use the number of CPUs
+                    (from Python's multiprocessing.cpu_count()).
                 --regress
                     Checks for regressions in generated C++ code and SWIG .i
                     file (actions 0 and 2 below). If a generated file already
@@ -854,11 +856,6 @@ Usage:
             Runs mupdfwrap.py in a venv containing libclang and swig,
             passing remaining args.
 
-            if `-0` is specified, we assume the venv is already created and do
-            not create or install packages in it.
-
-                --venv -b all
-
         --vs-upgrade 0 | 1
             If 1, we use a copy of the Windows build file tree
             `platform/win32/` called `platform/win32-vs-upgrade`, modifying the
@@ -896,6 +893,7 @@ Usage:
 '''
 
 import glob
+import multiprocessing
 import os
 import pickle
 import re
@@ -1180,7 +1178,10 @@ def _get_m_command( build_dirs, j=None):
         #
         make = 'CXX=clang++ gmake'
 
-    if j:
+    if j is not None:
+        if j == '0':
+            j = multiprocessing.cpu_count()
+            jlib.log('Setting -j to  multiprocessing.cpu_count()={j}')
         make += f' -j {j}'
     flags = os.path.basename( build_dirs.dir_so).split('-')
     actual_build_dir = f'{build_dirs.dir_mupdf}/build/'
