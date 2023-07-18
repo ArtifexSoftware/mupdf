@@ -1476,10 +1476,10 @@ static void mark_line_app(fz_context *ctx, fz_edgebuffer *eb, fixed sx, fixed sy
 static void fz_insert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, float fsx, float fsy, float fex, float fey, int rev)
 {
 	fz_edgebuffer *eb = (fz_edgebuffer *)ras;
-	fixed sx = float2fixed(fsx);
-	fixed sy = float2fixed(fsy);
-	fixed ex = float2fixed(fex);
-	fixed ey = float2fixed(fey);
+	fixed sx = safe_float2fixed(fsx);
+	fixed sy = safe_float2fixed(fsy);
+	fixed ex = safe_float2fixed(fex);
+	fixed ey = safe_float2fixed(fey);
 
 	if (fsx < fex)
 	{
