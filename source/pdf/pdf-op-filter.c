@@ -2971,8 +2971,12 @@ pdf_new_sanitize_filter(
 		proc->gstate->sent.ctm = fz_identity;
 		proc->gstate->pending.text.scale = 1;
 		proc->gstate->pending.text.size = -1;
+		proc->gstate->pending.stroke.linewidth = 1;
+		proc->gstate->pending.stroke.miterlimit = 10;
 		proc->gstate->sent.text.scale = 1;
 		proc->gstate->sent.text.size = -1;
+		proc->gstate->sent.stroke.linewidth = 1;
+		proc->gstate->sent.stroke.miterlimit = 10;
 	}
 	fz_catch(ctx)
 	{
