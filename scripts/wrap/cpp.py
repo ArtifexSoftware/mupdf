@@ -4421,7 +4421,10 @@ def cpp_source(
                 self.file = io.StringIO()
                 self.line_begin = True
                 self.regressions = True
+                self.closed = False
             def write( self, text, fileline=False):
+                # Do not allow writes after .close().
+                assert not self.closed, f'File.write() called after .close(). {self.filename=}'
                 if fileline:
                     # Generate #line <line> "<filename>" for our caller's
                     # location. This makes any compiler warnings refer to thei
@@ -4433,18 +4436,16 @@ def cpp_source(
                 self.file.write( text)
                 self.line_begin = text.endswith( '\n')
             def close( self):
+                if self.closed:
+                    # Allow multiple calls to .close().
+                    return
+                self.closed = True
                 if self.filename:
                     # Overwrite if contents differ.
                     text = self.get()
                     if self.tabify:
                         text = tabify( self.filename, text)
                     cr = check_regress
-                    if self.filename in (
-                            os.path.abspath( 'platform/c++/include/mupdf/classes2.h'),
-                            os.path.abspath( 'platform/c++/implementation/classes2.cpp'),
-                            ):
-                        if 0:
-                            cr = False
                     jlib.log('calling util.update_file_regress() check_regress={cr}: {self.filename=}', 1)
                     e = util.update_file_regress( text, self.filename, check_regression=cr)
                     jlib.log('util.update_file_regress() returned => {e}', 1)
@@ -4544,13 +4545,16 @@ def cpp_source(
         name = filename[ len(prefix):]
         header_guard( name, file)
 
-    # We need to write to out_hs.extra here before we do the parse because
-    # out_hs.extra will be part of the input code.
+    # We need to write to out_hs.extra here before we do the parse
+    # because out_hs.extra will be part of the input text passed to the
+    # clang parser.
     #
     make_extra(out_hs.extra, out_cpps.extra)
     out_hs.extra.write( textwrap.dedent('''
             #endif
             '''))
+    out_hs.extra.close()
+    out_cpps.extra.close()
 
     # Now parse.
     #
