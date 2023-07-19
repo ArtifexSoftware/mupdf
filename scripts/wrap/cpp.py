@@ -919,9 +919,9 @@ def make_namespace_close( namespace, out):
         out.write( f'}} /* End of namespace {namespace}. */\n')
 
 
-# libclang can't always find headers so we define our own `std::vector` that
-# works well enough for the generation of the C++ API.
-#
+# libclang can't always find headers so we define our own `std::string`
+# and `std::vector<>` that work well enough for the generation of the
+# C++ API.
 #
 g_extra_declarations = textwrap.dedent(f'''
 
@@ -933,15 +933,18 @@ g_extra_declarations = textwrap.dedent(f'''
                 struct vector
                 {{
                 }};
+
+                struct string
+                {{
+                }};
             }}
 
         #else
 
+            #include <string>
             #include <vector>
 
         #endif
-
-        #include <string>
 
         #include "mupdf/fitz.h"
         #include "mupdf/pdf.h"
