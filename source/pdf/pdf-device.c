@@ -573,11 +573,14 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		else if (enc == ENC_UNICODE)
 			fz_append_printf(ctx, gs->buf, "%04x", it->ucs);
 
-		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
-		if (span->wmode == 0)
-			trm = fz_pre_translate(trm, adv, 0);
-		else
-			trm = fz_pre_translate(trm, 0, adv);
+		if (it->gid != -1)
+		{
+			adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
+			if (span->wmode == 0)
+				trm = fz_pre_translate(trm, adv, 0);
+			else
+				trm = fz_pre_translate(trm, 0, adv);
+		}
 	}
 
 	fz_append_string(ctx, gs->buf, ">]TJ\n");
