@@ -763,17 +763,20 @@ General requirements
 
 * Windows, Linux, MacOS or OpenBSD.
 
-* Python development libraries.
+*
+  Build should take place inside a Python `venv
+  <https://docs.python.org/3.8/library/venv.html>`_.
 
-* Build inside a Python `venv <https://docs.python.org/3.8/library/venv.html>`_.
-
-* Python package `libclang` - a `Python interface
-  <https://libclang.readthedocs.io/en/latest/index.html>`_ onto the `libclang
+*
+  `libclang Python interface onto
+  <https://libclang.readthedocs.io/en/latest/index.html>`_ the `libclang
   C/C++ parser <https://clang.llvm.org/>`_.
 
-* Python and C# bindings need `SWIG <https://swig.org/>`_ version 3 or 4.
+* `swig <https://swig.org/>`_, for Python and C# bindings.
 
-* C# bindings on Unix need `Mono <https://www.mono-project.com/>`_.
+*
+  `Mono <https://www.mono-project.com/>`_, for C# bindings on platforms
+  other than Windows.
 
 
 Setting up
@@ -821,18 +824,17 @@ All platforms
 
 *
   Create and enter a `Python venv
-  <https://docs.python.org/3.8/library/venv.html>`_, and install latest
-  pip.
+  <https://docs.python.org/3.8/library/venv.html>`_ and upgrade pip.
 
   * Windows.
 
-    .. code-block:: shell
+    .. code-block:: bat
 
         py -m venv pylocal
         .\pylocal\Scripts\activate
         python -m pip install --upgrade pip
 
-  * Linux, MacOS, OpenBSD.
+  * Linux, MacOS, OpenBSD
 
     .. code-block:: shell
 
@@ -841,45 +843,47 @@ All platforms
         python -m pip install --upgrade pip
 
 
-Building the Python bindings
+Building and installing the Python bindings using `pip`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Windows, Linux, MacOS.
-
-  The Python bindings can be built from source and installed using
-  `pip`:
 
   .. code-block:: shell
 
       cd mupdf && pip install -vv .
 
-  Alternatively one can build the Python bindings manually:
+* OpenBSD.
+
+  Building using `pip` is not supported because `libclang` is not
+  available from pypi.org so pip will fail to install prerequisites from
+  `pypackage.toml`.
+
+
+Building the Python bindings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Windows, Linux, MacOS.
 
   .. code-block:: shell
 
-      pip install libclang
-      pip install swig
+      pip install libclang swig
       cd mupdf && python scripts/mupdfwrap.py -b all
 
 * OpenBSD.
 
+  `libclang` is not available from pypi.org, but we can instead use
+  the system `py3-llvm` package.
+
   .. code-block:: shell
 
-      sudo pkg_add py3-llvm swig
+      sudo pkg_add py3-llvm
+      pip install swig
       cd mupdf && python scripts/mupdfwrap.py -b all
-
 
 Building the C++ bindings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Windows.
-
-  .. code-block:: shell
-
-      pip install libclang
-      cd mupdf && python scripts/mupdfwrap.py -b 01
-
-* Linux, MacOS.
+* Windows, Linux, MacOS.
 
   .. code-block:: shell
 
@@ -887,6 +891,9 @@ Building the C++ bindings
       cd mupdf && python scripts/mupdfwrap.py -b m01
 
 * OpenBSD.
+
+  `libclang` is not available from pypi.org, but we can instead use
+  the system `py3-llvm` package.
 
   .. code-block:: shell
 
@@ -897,46 +904,89 @@ Building the C++ bindings
 Building the C# bindings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is not quite as simple as building the C++ and Python bindings
-because the SWIG Installed by `pip install swg` is not capable of
-generating C# bindings, and on non-Windows we need to install `Mono
-<https://www.mono-project.com/>`_.
-
 * Windows.
-
-  Run `scripts/mupdfwrap.py` with `--swig-windows-auto`. This will
-  automatically download SWIG to the local directory (if not already
-  present) and use it directly:
 
   .. code-block:: shell
 
-      pip install libclang
-      cd mupdf && python scripts/mupdfwrap.py --swig-windows-auto -b --csharp all
+      pip install libclang swig
+      cd mupdf && python scripts/mupdfwrap.py -b --csharp all
 
-* Linux, MacOS.
+* Linux.
 
-  * Use the system package manager to install SWIG and Mono.
+  .. code-block:: shell
 
-    For example on Debian-based Linux:
+      sudo apt install mono-devel
+      pip install libclang swig
+      cd mupdf && python scripts/mupdfwrap.py -b --csharp all
 
-    .. code-block:: shell
+* MacOS.
 
-        sudo apt install swig
-        sudo apt install mono-devel
-
-  * Then build with:
-
-    .. code-block:: shell
-
-        pip install libclang
-        cd mupdf && python scripts/mupdfwrap.py -b --csharp all
+  Building the C# bindings on MacOS is not currently supported.
 
 * OpenBSD.
 
   .. code-block:: shell
 
-      sudo pkg_add py3-llvm swig mono
+      sudo pkg_add py3-llvm mono
+      pip install swig
       cd mupdf && python scripts/mupdfwrap.py -b --csharp all
+
+
+Using the bindings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To use the bindings, one has to tell the OS where to find the MuPDF
+runtime files.
+
+* C++ and C# bindings:
+
+  * Windows.
+
+    .. code-block:: shell
+
+        set PATH=.../mupdf/build/shared-release-x64-py3.11;%PATH%
+
+    * Replace `x64` with `x32` if using 32-bit.
+
+    * Replace `3.11` with the appropriate python version number.
+
+
+  * Linux, OpenBSD.
+
+    .. code-block:: shell
+
+        LD_LIBRARY_PATH=.../mupdf/build/shared-release
+
+    (`LD_LIBRARY_PATH` must be an absolute path.)
+
+  * MacOS.
+
+    .. code-block:: shell
+
+        DYLD_LIBRARY_PATH=.../mupdf/build/shared-release
+
+* Python bindings:
+
+  If the bindings have been built and installed using `pip install`,
+  they will already be available within the venv.
+
+  Otherwise:
+
+  * Windows.
+
+    .. code-block:: shell
+
+        PYTHONPATH=.../mupdf/build/shared-release-x64-py3.11
+
+    * Replace `x64` with `x32` if using 32-bit.
+
+    * Replace `3.11` with the appropriate python version number.
+
+  * Linux, MacOS, OpenBSD.
+
+    .. code-block:: shell
+
+        PYTHONPATH=.../mupdf/build/shared-release
 
 
 Notes
@@ -946,6 +996,9 @@ Notes
 
   Basic tests can be run by appending args to the `scripts/mupdfwrap.py`
   command.
+
+  This will also demonstrate how to set environment variables such as
+  `PYTHONPATH` or `LD_LIBRARY_PATH` to the MuPDF build directory.
 
   * Python tests.
 
@@ -970,28 +1023,25 @@ Notes
 
       python scripts/mupdfwrap.py -b --devenv <devenv.com-location> ...
 
-* OpenBSD `libclang` and `swig`.
+* OpenBSD `libclang`.
 
   *
-    `libclang` and `SWIG` cannot be installed with pip on OpenBSD -
-    wheels are not available and building from source fails.
+    `libclang` cannot be installed with pip on OpenBSD - wheels are not
+    available and building from source fails.
 
     However unlike on other platforms, the system python-clang package
     (`py3-llvm`) is integrated with the system's libclang and can be
     used directly.
 
-    So the above examples use `pkg_add py3-llvm swig` instead of pip.
+    So the above examples use `pkg_add py3-llvm`.
 
-* Alternatives to Python package `libclang`.
+* Alternatives to Python package `libclang` generally do not work.
 
-  * Other python/clang packages are available (for example pypi.org's
-    `clang <https://pypi.org/project/clang/>`_, or Debian's
-    `python-clang <https://packages.debian.org/search?keywords=python+clang&searchon=names&suite=stable&section=all>`_).
+  For example pypi.org's `clang <https://pypi.org/project/clang/>`_, or
+  Debian's `python-clang <https://packages.debian.org/search?keywords=python+clang&searchon=names&suite=stable&section=all>`_.
 
-  *
-    These are inconvenient to use because they require explicit setting
-    of `LD_LIBRARY_PATH` to point to the correct libclang dynamic
-    library.
+  These are inconvenient to use because they require explicit setting of
+  `LD_LIBRARY_PATH` to point to the correct libclang dynamic library.
 
 * Debug builds.
 
@@ -1022,13 +1072,13 @@ Notes
   C# build failure: `cstring.i not implemented for this target` and/or
   `Unknown directive '%cstring_output_allocate'`.
 
-  * This is probably because SWIG is from pypi.org (e.g with `pip install swig`)
-    and does not include support for C#.
+  This is probably because SWIG does not include support for C#. This
+  has been seen in the past but as of 2023-07-19 pypi.org's default swig
+  seems ok.
 
-  *
-    Solution: install SWIG using the system package manager, for example
-    `sudo apt install swig` on Linux, or use `./scripts/mupdfwrap.py
-    --swig-windows-auto ...` on Windows.
+  A possible solution is to install SWIG using the system package
+  manager, for example `sudo apt install swig` on Linux, or use
+  `./scripts/mupdfwrap.py --swig-windows-auto ...` on Windows.
 
 
 * More information about running `scripts/mupdfwrap.py`.
@@ -1569,7 +1619,7 @@ For convenience we add a text representation of the original Python backtrace
 to the exception text, but the C layer's fz_try/catch exception handling only
 holds 256 characters of exception text, so this backtrace information may be
 truncated by the time the exception reaches the original Python code's `except
-...` code.
+...` block.
 
 Example
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
