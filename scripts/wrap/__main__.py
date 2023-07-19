@@ -851,10 +851,10 @@ Usage:
                 * Deactivates the Python environment.
 
         --venv
-            Should usually be the first arg in the command line.
+            If specified, should be the first arg in the command line.
 
-            Runs mupdfwrap.py in a venv containing libclang and swig,
-            passing remaining args.
+            Re-runs mupdfwrap.py in a Python venv containing libclang
+            and swig, passing remaining args.
 
         --vs-upgrade 0 | 1
             If 1, we use a copy of the Windows build file tree
@@ -896,6 +896,7 @@ import glob
 import multiprocessing
 import os
 import pickle
+import platform
 import re
 import shlex
 import shutil
@@ -2090,6 +2091,8 @@ def csharp_settings(build_dirs):
             csc = 'mono-csc'
         elif state.state_.openbsd:
             csc = 'csc'
+        else:
+            assert 0, f'Do not know where to find mono. {platform.platform()=}'
 
     mupdf_cs = os.path.relpath(f'{build_dirs.dir_so}/mupdf.cs')
     return csc, mono, mupdf_cs
@@ -2268,12 +2271,15 @@ def main2():
     vs_upgrade = False
 
     args = jlib.Args( sys.argv[1:])
+    arg_i = 0
     while 1:
         try:
             arg = args.next()
         except StopIteration:
             break
         #log( 'Handling {arg=}')
+
+        arg_i += 1
 
         with jlib.LogPrefixScope( f'{arg}: '):
 
@@ -2556,8 +2562,10 @@ def main2():
             elif arg == '--test-cpp':
                 code = textwrap.dedent('''
                         #include "mupdf/fitz.h"
+                        #include "mupdf/classes.h"
                         int main()
                         {
+                            mupdf::FzDocument document;
                             fz_rect r = fz_unit_rect;
                             printf("r.x0=%f\\n", r.x0);
                             return 0;
@@ -2797,6 +2805,7 @@ def main2():
                 swig.test_swig()
 
             elif arg == '--venv':
+                assert arg_i == 1, f'If specified, {arg} should be the first argument.'
                 venv = f'venv-pymupdfwrap-{state.python_version()}-{state.cpu_name()}'
                 # Oddly, shlex.quote(sys.executable), which puts the name
                 # inside single quotes, doesn't work - we get error `The
