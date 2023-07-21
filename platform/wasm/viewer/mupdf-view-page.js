@@ -849,6 +849,21 @@ class MupdfDocumentViewer {
 		this.documentHandler?.goToPage(pageNumber)
 	}
 
+	async saveAsPNG() {
+		let pngs = await this.mupdfWorker.getPngs();
+		for (let i = 0; i < pngs.length; i++) {
+			let png = pngs[i];
+			let blob = new Blob([png], { type: 'image/png' });
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = this.documentHandler.title + '_' + (i + 1) + '.png';
+			document.body.append(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(link.href);
+		}
+	}
+
 	toggleFullscreen() {
 		if (!document.fullscreenElement) {
 			this.enterFullscreen()

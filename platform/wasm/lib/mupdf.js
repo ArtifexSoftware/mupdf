@@ -675,7 +675,7 @@ class DisplayList extends Userdata {
 		return fromRect(libmupdf._wasm_bound_display_list(this))
 	}
 
-	toPixmap(matrix, colorspace, alpha = false) {
+	toPixmap(matrix, colorspace, alpha = true) {
 		checkMatrix(matrix)
 		checkType(colorspace, ColorSpace)
 		return new Pixmap(
@@ -704,11 +704,15 @@ class DisplayList extends Userdata {
 class Pixmap extends Userdata {
 	static _drop = "_wasm_drop_pixmap"
 
-	constructor(arg1, bbox = null, alpha = false) {
+	constructor(arg1, bbox = null, alpha = true, page = null) {
 		let pointer = arg1
 		if (arg1 instanceof ColorSpace) {
 			checkRect(bbox)
-			pointer = libmupdf._wasm_new_pixmap_with_bbox(arg1, RECT(bbox), alpha)
+			if (page) {
+				pointer = libmupdf._wasm_new_pixmap_with_bbox_and_page(arg1, RECT(bbox), alpha, page)
+			} else {
+				pointer = libmupdf._wasm_new_pixmap_with_bbox(arg1, RECT(bbox), alpha)
+			}
 		}
 		super(pointer)
 	}
@@ -1345,7 +1349,7 @@ class Page extends Userdata {
 		libmupdf._wasm_run_page_widgets(this, device, MATRIX(matrix))
 	}
 
-	toPixmap(matrix, colorspace, alpha = false, showExtras = true) {
+	toPixmap(matrix, colorspace, alpha = true, showExtras = true) {
 		checkType(colorspace, ColorSpace)
 		checkMatrix(matrix)
 		let result
@@ -1973,7 +1977,7 @@ class PDFAnnotation extends Userdata {
 		libmupdf._wasm_pdf_run_annot(this, device, MATRIX(matrix))
 	}
 
-	toPixmap(matrix, colorspace, alpha = false) {
+	toPixmap(matrix, colorspace, alpha = true) {
 		checkMatrix(matrix)
 		checkType(colorspace, ColorSpace)
 		return new Pixmap(
