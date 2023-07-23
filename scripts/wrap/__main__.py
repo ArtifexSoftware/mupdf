@@ -1343,7 +1343,12 @@ def build_0(
         except Exception as e:
             py = f'py -{state.python_version()}'
             jlib.log( 'libclang not available on win32; attempting to run separate 64-bit invocation of {sys.argv[0]} with `-b 0`.')
-            jlib.system( f'{py} {sys.argv[0]} --venv -b 0')
+            # We use --venv-force-reinstall to workaround a problem where `pip
+            # install libclang` seems to fail to install in the new 64-bit venv
+            # if we are in a 'parent' venv created by pip itself. Maybe venv's
+            # created by pip are somehow more sticky than plain venv's?
+            #
+            jlib.system( f'{py} {sys.argv[0]} --venv-force-reinstall -b 0')
             return
 
     namespace = 'mupdf'
@@ -1911,7 +1916,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         cpp_path = f'{build_dirs.dir_mupdf}/platform/csharp/mupdfcpp_swig.cpp'
                         out_so = f'{build_dirs.dir_so}/mupdfcsharp.so'
 
-                    if os.uname()[0] == 'OpenBSD':
+                    if state.state_.openbsd:
                         # clang needs around 2G on OpenBSD.
                         #
                         soft, hard = resource.getrlimit( resource.RLIMIT_DATA)
@@ -2560,16 +2565,35 @@ def main2():
                 jlib.system( f'rsync -aiRz {build_dirs.dir_mupdf}/docs/generated/./ {destination}', verbose=1, out='log')
 
             elif arg == '--test-cpp':
-                code = textwrap.dedent('''
+                path = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
+                path = path.replace('\\', '/')
+                code = textwrap.dedent(f'''
+                        #include <assert.h>
                         #include "mupdf/fitz.h"
                         #include "mupdf/classes.h"
+                        #include "mupdf/classes2.h"
                         int main()
-                        {
-                            mupdf::FzDocument document;
+                        {{
+                            mupdf::FzDocument document("{path}");
+                            std::string v;
+                            v = mupdf::fz_lookup_metadata2(document, "format");
+                            printf("v=%s\\n", v.c_str());
+                            bool raised = false;
+                            try
+                            {{
+                                v = mupdf::fz_lookup_metadata2(document, "format___");
+                            }}
+                            catch (std::exception& e)
+                            {{
+                                raised = true;
+                                printf("exception: %s\\n", e.what());
+                            }}
+                            if (!raised) exit(1);
+                            printf("v=%s\\n", v.c_str());
                             fz_rect r = fz_unit_rect;
                             printf("r.x0=%f\\n", r.x0);
                             return 0;
-                        }
+                        }}
                         ''')
                 jlib.fs_write( 'test.cpp', code)
                 includes = (
@@ -2804,9 +2828,10 @@ def main2():
             elif arg == '--test-swig':
                 swig.test_swig()
 
-            elif arg == '--venv':
+            elif arg in ('--venv' '--venv-force-reinstall'):
+                force_reinstall = ' --force-reinstall' if arg == '--venv-force-reinstall' else ''
                 assert arg_i == 1, f'If specified, {arg} should be the first argument.'
-                venv = f'venv-pymupdfwrap-{state.python_version()}-{state.cpu_name()}'
+                venv = f'venv-mupdfwrap-{state.python_version()}-{state.cpu_name()}'
                 # Oddly, shlex.quote(sys.executable), which puts the name
                 # inside single quotes, doesn't work - we get error `The
                 # filename, directory name, or volume label syntax is
@@ -2817,7 +2842,11 @@ def main2():
                 else:
                     command = f'. {venv}/bin/activate'
                 command += f' && python -m pip install --upgrade pip'
-                command += f' && python -m pip install libclang swig'
+                if state.state_.openbsd:
+                    jlib.log( 'Not installing libclang on openbsd; we assume py3-llvm is installed')
+                    command += f' && python -m pip install --upgrade swig'
+                else:
+                    command += f' && python -m pip install{force_reinstall} --upgrade libclang swig'
                 command += f' && python {shlex.quote(sys.argv[0])}'
                 while 1:
                     try:
