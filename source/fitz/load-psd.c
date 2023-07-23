@@ -471,6 +471,7 @@ psd_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_pixmap(ctx, image);
 		fz_drop_colorspace(ctx, info->cs);
 		fz_rethrow(ctx);
 	}
