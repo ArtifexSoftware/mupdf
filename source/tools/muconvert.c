@@ -46,6 +46,7 @@ static const char *options = "";
 static fz_context *ctx;
 static fz_document *doc;
 static fz_document_writer *out;
+static fz_box_type page_box = FZ_MEDIA_BOX;
 static int count;
 
 static int usage(void)
@@ -54,6 +55,7 @@ static int usage(void)
 		"Usage: mutool convert [options] file [pages]\n"
 		"\t-p -\tpassword\n"
 		"\n"
+		"\t-b -\tuse named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)\n"
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-W -\tpage width for EPUB layout\n"
 		"\t-H -\tpage height for EPUB layout\n"
@@ -86,9 +88,10 @@ static int usage(void)
 
 static void runpage(int number)
 {
-	fz_rect mediabox;
+	fz_rect box;
 	fz_page *page;
 	fz_device *dev = NULL;
+	fz_matrix ctm;
 
 	page = fz_load_page(ctx, doc, number - 1);
 
@@ -96,9 +99,14 @@ static void runpage(int number)
 
 	fz_try(ctx)
 	{
-		mediabox = fz_bound_page(ctx, page);
-		dev = fz_begin_page(ctx, out, mediabox);
-		fz_run_page(ctx, page, dev, fz_identity, NULL);
+		box = fz_bound_page_box(ctx, page, page_box);
+
+		// Realign page box on 0,0
+		ctm = fz_translate(-box.x0, -box.y0);
+		box = fz_transform_rect(box, ctm);
+
+		dev = fz_begin_page(ctx, out, box);
+		fz_run_page(ctx, page, dev, ctm, NULL);
 		fz_end_page(ctx, out);
 	}
 	fz_always(ctx)
@@ -129,7 +137,7 @@ int muconvert_main(int argc, char **argv)
 	int i, c;
 	int retval = EXIT_SUCCESS;
 
-	while ((c = fz_getopt(argc, argv, "p:A:W:H:S:U:Xo:F:O:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:A:W:H:S:U:Xo:F:O:b:")) != -1)
 	{
 		switch (c)
 		{
@@ -146,6 +154,15 @@ int muconvert_main(int argc, char **argv)
 		case 'o': output = fz_optarg; break;
 		case 'F': format = fz_optarg; break;
 		case 'O': options = fz_optarg; break;
+
+		case 'b':
+			page_box = fz_box_type_from_string(fz_optarg);
+			if (page_box == FZ_UNKNOWN_BOX)
+			{
+				fprintf(stderr, "Invalid box type: %s\n", fz_optarg);
+				return 1;
+			}
+			break;
 		}
 	}
 
