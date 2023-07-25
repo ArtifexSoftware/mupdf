@@ -115,6 +115,7 @@ REFS(device)
 REFS(display_list)
 DROP(stext_page)
 DROP(document_writer)
+DROP(outline_iterator)
 
 REFS(document)
 REFS(page)
@@ -183,6 +184,10 @@ GET(outline, char*, uri)
 GET(outline, fz_outline*, next)
 GET(outline, fz_outline*, down)
 GET(outline, int, is_open)
+
+GET(outline_item, char*, title)
+GET(outline_item, char*, uri)
+GET(outline_item, int, is_open)
 
 GETP(link, fz_rect, rect)
 GET(link, char*, uri)
@@ -913,11 +918,68 @@ char * wasm_page_label(fz_page *page)
 	POINTER(fz_page_label, page, buf, sizeof buf)
 }
 
-
 EXPORT
 int wasm_search_page(fz_page *page, char *needle, int *marks, fz_quad *hits, int hit_max)
 {
 	INTEGER(fz_search_page, page, needle, marks, hits, hit_max)
+}
+
+// --- DocumentIterator ---
+
+EXPORT
+fz_outline_iterator * wasm_new_outline_iterator(fz_document *doc)
+{
+	POINTER(fz_new_outline_iterator, doc)
+}
+
+EXPORT
+int wasm_outline_iterator_next(fz_outline_iterator *iter)
+{
+	INTEGER(fz_outline_iterator_next, iter)
+}
+
+EXPORT
+int wasm_outline_iterator_prev(fz_outline_iterator *iter)
+{
+	INTEGER(fz_outline_iterator_prev, iter)
+}
+
+EXPORT
+int wasm_outline_iterator_up(fz_outline_iterator *iter)
+{
+	INTEGER(fz_outline_iterator_up, iter)
+}
+
+EXPORT
+int wasm_outline_iterator_down(fz_outline_iterator *iter)
+{
+	INTEGER(fz_outline_iterator_down, iter)
+}
+
+EXPORT
+int wasm_outline_iterator_delete(fz_outline_iterator *iter)
+{
+	INTEGER(fz_outline_iterator_delete, iter)
+}
+
+EXPORT
+fz_outline_item * wasm_outline_iterator_item(fz_outline_iterator *iter)
+{
+	POINTER(fz_outline_iterator_item, iter)
+}
+
+EXPORT
+int wasm_outline_iterator_insert(fz_outline_iterator *iter, char *title, char *uri, int is_open)
+{
+	fz_outline_item item = { title, uri, is_open };
+	INTEGER(fz_outline_iterator_insert, iter, &item)
+}
+
+EXPORT
+void wasm_outline_iterator_update(fz_outline_iterator *iter, char *title, char *uri, int is_open)
+{
+	fz_outline_item item = { title, uri, is_open };
+	VOID(fz_outline_iterator_update, iter, &item)
 }
 
 // --- PDFDocument --

@@ -133,6 +133,14 @@ function STRING2(s) {
 	return STRING_N(s, 1)
 }
 
+function STRING_OPT(s) {
+	return typeof s === "string" ? STRING_N(s, 0) : 0
+}
+
+function STRING2_OPT(s) {
+	return typeof s === "string" ? STRING_N(s, 1) : 0
+}
+
 function POINT(p) {
 	libmupdf.HEAPF32[_wasm_point + 0] = p[0]
 	libmupdf.HEAPF32[_wasm_point + 1] = p[1]
@@ -1290,6 +1298,8 @@ class Document extends Userdata {
 	]
 
 	static openDocument(from, magic) {
+		checkType(magic, "string")
+
 		let pointer = 0
 
 		if (from instanceof ArrayBuffer || from instanceof Uint8Array)
@@ -1419,6 +1429,57 @@ class Document extends Userdata {
 			return libmupdf._wasm_resolve_link(this, libmupdf._wasm_link_get_uri(link))
 		}
 		return libmupdf._wasm_resolve_link(this, STRING(link))
+	}
+
+	outlineIterator() {
+		return new OutlineIterator(libmupdf._wasm_new_outline_iterator(this))
+	}
+}
+
+class OutlineIterator extends Userdata {
+	static _drop = "_wasm_drop_outline_iterator"
+
+	item() {
+		let item = libmupdf._wasm_outline_iterator_item(this)
+		if (item) {
+			let title_ptr = libmupdf._wasm_outline_item_get_title(item)
+			let uri_ptr = libmupdf._wasm_outline_item_get_uri(item)
+			let is_open = libmupdf._wasm_outline_item_get_is_open(item)
+			return {
+				title: title_ptr ? fromString(title_ptr) : null,
+				uri: uri_ptr ? fromString(uri_ptr) : null,
+				open: !!is_open,
+			}
+		}
+		return null
+	}
+
+	next() {
+		return libmupdf._wasm_outline_iterator_next(this)
+	}
+
+	prev() {
+		return libmupdf._wasm_outline_iterator_prev(this)
+	}
+
+	up() {
+		return libmupdf._wasm_outline_iterator_up(this)
+	}
+
+	down() {
+		return libmupdf._wasm_outline_iterator_down(this)
+	}
+
+	delete() {
+		return libmupdf._wasm_outline_iterator_delete(this)
+	}
+
+	insert(item) {
+		return libmupdf._wasm_outline_insert(this, STRING_OPT(item.title), STRING2_OPT(item.uri), item.open)
+	}
+
+	update(item) {
+		libmupdf._wasm_outline_update(this, STRING_OPT(item.title), STRING2_OPT(item.uri), item.open)
 	}
 }
 
