@@ -3599,6 +3599,21 @@ static void ffi_Document_resolveLink(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
 	const char *uri = js_tostring(J, 1);
+	fz_location dest = fz_make_location(0, 0);
+
+	fz_try(ctx)
+		dest = fz_resolve_link(ctx, doc, uri, NULL, NULL);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, fz_page_number_from_location(ctx, doc, dest));
+}
+
+static void ffi_Document_resolveLinkDestination(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = ffi_todocument(J, 0);
+	const char *uri = js_tostring(J, 1);
 	fz_link_dest dest = fz_make_link_dest_none();
 
 	fz_try(ctx)
@@ -9834,6 +9849,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.getMetaData", ffi_Document_getMetaData, 1);
 		jsB_propfun(J, "Document.setMetaData", ffi_Document_setMetaData, 2);
 		jsB_propfun(J, "Document.resolveLink", ffi_Document_resolveLink, 1);
+		jsB_propfun(J, "Document.resolveLinkDestination", ffi_Document_resolveLinkDestination, 1);
 		jsB_propfun(J, "Document.formatLinkURI", ffi_Document_formatLinkURI, 1);
 		jsB_propfun(J, "Document.isReflowable", ffi_Document_isReflowable, 0);
 		jsB_propfun(J, "Document.layout", ffi_Document_layout, 3);
