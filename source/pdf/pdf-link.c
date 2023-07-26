@@ -919,6 +919,8 @@ pdf_new_explicit_dest_from_uri(fz_context *ctx, pdf_document *doc, const char *u
 	zoom = uri ? strstr(uri, "zoom=") : NULL;
 	view = uri ? strstr(uri, "view=") : NULL;
 
+	val.loc.chapter = 0;
+
 	if (page)
 	{
 		val.loc.page = fz_atoi(page+5) - 1;
