@@ -451,7 +451,7 @@ pdf_create_annot_raw(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create unknown annotation");
 
 		annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
-		if (annot_arr == NULL)
+		if (!pdf_is_array(ctx, annot_arr))
 		{
 			annot_arr = pdf_new_array(ctx, doc, 0);
 			pdf_dict_put_drop(ctx, page->obj, PDF_NAME(Annots), annot_arr);
@@ -533,7 +533,7 @@ pdf_create_link(fz_context *ctx, pdf_page *page, fz_rect bbox, const char *uri)
 		rect = fz_transform_rect(bbox, page_ctm);
 
 		annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
-		if (annot_arr == NULL)
+		if (!pdf_is_array(ctx, annot_arr))
 		{
 			annot_arr = pdf_new_array(ctx, doc, 0);
 			pdf_dict_put_drop(ctx, page->obj, PDF_NAME(Annots), annot_arr);
