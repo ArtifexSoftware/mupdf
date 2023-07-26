@@ -1566,7 +1566,7 @@ pdf_annot_border_dash_count(fz_context *ctx, pdf_annot *annot)
 		d = pdf_dict_get(ctx, bs, PDF_NAME(D));
 		/* Query legacy dash pattern as a fallback */
 		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
-		if (!d && pdf_is_array(ctx, border))
+		if (!pdf_is_array(ctx, d) && pdf_is_array(ctx, border))
 			d = pdf_array_get(ctx, border, 3);
 		count = pdf_array_len(ctx, d);
 	}
@@ -1593,7 +1593,7 @@ pdf_annot_border_dash_item(fz_context *ctx, pdf_annot *annot, int i)
 		d = pdf_dict_get(ctx, bs, PDF_NAME(D));
 		/* Query legacy dash pattern as a fallback */
 		border = pdf_dict_get(ctx, annot->obj, PDF_NAME(Border));
-		if (!d && pdf_is_array(ctx, border))
+		if (!pdf_is_array(ctx, d) && pdf_is_array(ctx, border))
 			d = pdf_array_get(ctx, border, 3);
 		length = pdf_array_get_real(ctx, d, i);
 	}
@@ -3281,7 +3281,7 @@ pdf_set_annot_appearance(fz_context *ctx, pdf_annot *annot, const char *appearan
 			pdf_drop_obj(ctx, form);
 			form = NULL;
 		}
-		if (!form)
+		if (!pdf_is_dict(ctx, form))
 			form = pdf_new_xobject(ctx, annot->page->doc, bbox, ctm, res, contents);
 		else
 			pdf_update_xobject(ctx, annot->page->doc, form, bbox, ctm, res, contents);

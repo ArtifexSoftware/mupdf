@@ -125,7 +125,7 @@ static void clear_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signatu
 	fz_try(ctx)
 	{
 		parent = pdf_dict_get(ctx, signature, PDF_NAME(P));
-		if (parent != NULL)
+		if (pdf_is_dict(ctx, parent))
 		{
 			pageno = pdf_lookup_page_number(ctx, doc, parent);
 			pagenoend = pageno+1;
@@ -169,7 +169,7 @@ static void sign_signature(fz_context *ctx, pdf_document *doc, pdf_obj *signatur
 		signer = pkcs7_openssl_read_pfx(ctx, certificatefile, certificatepassword);
 
 		parent = pdf_dict_get(ctx, signature, PDF_NAME(P));
-		if (parent != NULL)
+		if (pdf_is_dict(ctx, parent))
 		{
 			pageno = pdf_lookup_page_number(ctx, doc, parent);
 			pagenoend = pageno+1;
