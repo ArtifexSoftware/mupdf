@@ -291,13 +291,37 @@ class BuildDirs:
         dir_so = abspath( dir_so)
         self.dir_so = dir_so
 
-        if 0: pass  # lgtm [py/unreachable-statement]
-        elif '-debug' in dir_so:    self.cpp_flags = '-g'
-        elif '-release' in dir_so:  self.cpp_flags = '-O2 -DNDEBUG'
-        elif '-memento' in dir_so:  self.cpp_flags = '-g -DMEMENTO'
+        if state_.windows:
+            # debug builds have:
+            # /Od
+            # /D _DEBUG
+            # /RTC1
+            # /MDd
+            #
+            if 0: pass  # lgtm [py/unreachable-statement]
+            elif '-release' in dir_so:
+                self.cpp_flags = '/O2 /DNDEBUG'
+            elif '-debug' in dir_so:
+                # `/MDd` forces use of debug runtime and (i think via
+                # it setting `/D _DEBUG`) debug versions of things like
+                # `std::string` (incompatible with release builds). We also set
+                # `/Od` (no optimisation) and `/RTC1` (extra runtime checks)
+                # because these seem to be conventionally set in VS.
+                #
+                self.cpp_flags = '/MDd /Od /RTC1'
+            elif '-memento' in dir_so:
+                self.cpp_flags = '/MDd /Od /RTC1 /DMEMENTO'
+            else:
+                self.cpp_flags = None
+                jlib.log( 'Warning: unrecognised {dir_so=}, so cannot determine cpp_flags')
         else:
-            self.cpp_flags = None
-            jlib.log( 'Warning: unrecognised {dir_so=}, so cannot determine cpp_flags')
+            if 0: pass  # lgtm [py/unreachable-statement]
+            elif '-debug' in dir_so:    self.cpp_flags = '-g'
+            elif '-release' in dir_so:  self.cpp_flags = '-O2 -DNDEBUG'
+            elif '-memento' in dir_so:  self.cpp_flags = '-g -DMEMENTO'
+            else:
+                self.cpp_flags = None
+                jlib.log( 'Warning: unrecognised {dir_so=}, so cannot determine cpp_flags')
 
         # Set self.cpu and self.python_version.
         if state_.windows:
