@@ -1539,6 +1539,25 @@ def system(
     out_log = 0
 
     outs = out if isinstance(out, list) else [out]
+    decoders = dict()
+    def decoders_ensure(encoding):
+        d = decoders.get(encoding)
+        if d is None:
+            class D:
+                pass
+            d = D()
+            # subprocess's universal_newlines and codec.streamreader seem to
+            # always use buffering even with bufsize=0, so they don't reliably
+            # display prompts or other text that doesn't end with a newline.
+            #
+            # So we create our own incremental decode, which seems to work
+            # better.
+            #
+            d.decoder = codecs.getincrementaldecoder(encoding)(errors)
+            d.out = ''
+            decoders[ encoding] = d
+        return d
+
     for i, o in enumerate(outs):
         if o is None:
             out_none += 1
@@ -1551,28 +1570,36 @@ def system(
                 o, o_prefix = o
                 assert o not in (None, subprocess.DEVNULL), f'out[]={o} does not make sense with a prefix ({o_prefix})'
             assert not isinstance(o, (tuple, list))
+            o_decoder = None
             if o == 'return':
                 assert not out_return, f'"return" specified twice does not make sense'
                 out_return = io.StringIO()
-                outs[i] = out_return.write
+                o_fn = out_return.write
             elif o == 'log':
                 assert not out_log, f'"log" specified twice does not make sense'
                 out_log += 1
                 out_frame_record = inspect.stack()[caller]
-                outs[i] = lambda text: log( text, caller=out_frame_record, nv=False, raw=True)
+                o_fn = lambda text: log( text, caller=out_frame_record, nv=False, raw=True)
             elif isinstance(o, int):
-                outs[i] = lambda text: os.write( o, text)
+                o_fn = lambda text: os.write( o, text)
             elif callable(o):
-                outs[i] = o
+                o_fn = o
             else:
                 assert hasattr(o, 'write') and callable(o.write), (
                         f'Do not understand o={o}, must be one of:'
                             ' None, subprocess.DEVNULL, "return", "log", <int>,'
                             ' or support o() or o.write().'
                             )
-                outs[i] = o.write
+                o_decoder = decoders_ensure(o.encoding)
+                def fn(text):
+                    o.write(text)
+                    o.flush()   # Seems to be necessary on Windows.
+                o_fn = fn
             if o_prefix:
-                outs[i] = StreamPrefix( outs[i], o_prefix).write
+                o_fn = StreamPrefix( o_fn, o_prefix).write
+            if not o_decoder:
+                o_decoder = decoders_ensure(encoding)
+            outs[i] = o_fn, o_decoder
 
     if out_pipe:
         stdout = subprocess.PIPE
@@ -1607,16 +1634,6 @@ def system(
             )
 
     if out_pipe:
-        decoder = None
-        if encoding:
-            # subprocess's universal_newlines and codec.streamreader seem to
-            # always use buffering even with bufsize=0, so they don't reliably
-            # display prompts or other text that doesn't end with a newline.
-            #
-            # So we create our own incremental decode, which seems to work
-            # better.
-            #
-            decoder = codecs.getincrementaldecoder(encoding)(errors)
         while 1:
             # os.read() seems to be better for us than child.stdout.read()
             # because it returns a short read if data is not available. Where
@@ -1627,13 +1644,13 @@ def system(
             # multipe calls to write() - it returns all available data, not
             # just from the first unread write() call.
             #
-            output = os.read( child.stdout.fileno(), 10000)
-            if decoder:
-                final = not output
-                output = decoder.decode(output, final)
-            for o in outs:
-                o(output)
-            if not output:
+            output0 = os.read( child.stdout.fileno(), 10000)
+            final = not output0
+            for _, decoder in decoders.items():
+                decoder.out = decoder.decoder.decode(output0, final)
+            for o_fn, o_decoder in outs:
+                o_fn( o_decoder.out)
+            if not output0:
                 break
 
     e = child.wait()
