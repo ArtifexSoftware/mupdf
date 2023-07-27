@@ -1048,25 +1048,14 @@ Notes
   One can specify a debug build using the `-d <build-directory>` arg
   before `-b`.
 
-  * Linux, MacOS, OpenBSD.
+  .. code-block:: shell
 
-    .. code-block:: shell
+      python ./scripts/mupdfwrap.py -d build/shared-debug -b ...
 
-        python ./scripts/mupdfwrap.py -d build/shared-debug -b ...
-
-  * Windows.
-
-    *
-      One has to also specify the CPU type and Python version, for
-      example:
-
-      .. code-block:: shell
-
-          python ./scripts/mupdfwrap.py -d build/shared-debug-x64-py3.11 -b ...
-
-    *
-      Debug builds may require a debug version of the Python
-      interpreter, for example `python311_d.lib`.
+  *
+    Debug builds of the Python and C# bindings on Windows have not been
+    tested. There may be issues with requiring a debug version of the Python
+    interpreter, for example `python311_d.lib`.
 
 *
   C# build failure: `cstring.i not implemented for this target` and/or
@@ -1449,16 +1438,60 @@ Extra functions in C++, Python and C#
 [These functions are available as low-level functions, class-aware
 functions and class methods.]
 
-* `std::string mupdf::fz_lookup_metadata2(mupdf::FzDocument& document, const char* key)`:
-  Return key value or raise an exception if not found:
-* `std::string mupdf::pdf_lookup_metadata2(mupdf::PdfDocument& document, const char* key)`:
-  Return key value or raise an exception if not found:
-* `std::vector<unsigned char> mupdf::fz_md5_pixmap2(mupdf::FzPixmap& pixmap)`:
-  Convenience wrapper for `fz_md5_pixmap()`.
-* `int mupdf::fz_samples_get(mupdf::FzPixmap& pixmap, int offset);
-  Mainly for simple (but slow) access from Python and C#.
-* `void mupdf::fz_samples_set(mupdf::FzPixmap& pixmap, int offset, int value);
-  Mainly for simple (but slow) access from Python and C#.
+.. code-block:: c++
+
+    /**
+    C++ alternative to `fz_lookup_metadata()` that returns a `std::string`
+    or calls `fz_throw()` if not found.
+    */
+    FZ_FUNCTION std::string fz_lookup_metadata2(fz_context* ctx, fz_document* doc, const char* key);
+
+    /**
+    C++ alternative to `pdf_lookup_metadata()` that returns a `std::string`
+    or calls `fz_throw()` if not found.
+    */
+    FZ_FUNCTION std::string pdf_lookup_metadata2(fz_context* ctx, pdf_document* doc, const char* key);
+
+    /**
+    C++ alternative to `fz_md5_pixmap()` that returns the digest by value.
+    */
+    FZ_FUNCTION std::vector<unsigned char> fz_md5_pixmap2(fz_context* ctx, fz_pixmap* pixmap);
+
+    /**
+    C++ alternative to fz_md5_final() that returns the digest by value.
+    */
+    FZ_FUNCTION std::vector<unsigned char> fz_md5_final2(fz_md5* md5);
+
+    /** */
+    FZ_FUNCTION long long fz_pixmap_samples_int(fz_context* ctx, fz_pixmap* pixmap);
+
+    /**
+    Provides simple (but slow) access to pixmap data from Python and C#.
+    */
+    FZ_FUNCTION int fz_samples_get(fz_pixmap* pixmap, int offset);
+
+    /**
+    Provides simple (but slow) write access to pixmap data from Python and
+    C#.
+    */
+    FZ_FUNCTION void fz_samples_set(fz_pixmap* pixmap, int offset, int value);
+
+    /**
+    C++ alternative to fz_highlight_selection() that returns quads in a
+    std::vector.
+    */
+    FZ_FUNCTION std::vector<fz_quad> fz_highlight_selection2(fz_context* ctx, fz_stext_page* page, fz_point a, fz_point b, int max_quads);
+
+    struct fz_search_page2_hit
+    {{
+        fz_quad quad;
+        int mark;
+    }};
+
+    /**
+    C++ alternative to fz_search_page() that returns information in a std::vector.
+    */
+    FZ_FUNCTION std::vector<fz_search_page2_hit> fz_search_page2(fz_context* ctx, fz_document *doc, int number, const char *needle, int hit_max);
 
 
 Python/C# bindings details
