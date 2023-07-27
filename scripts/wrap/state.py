@@ -276,12 +276,7 @@ class BuildDirs:
         self.ref_dir = abspath( f'{self.dir_mupdf}/mupdfwrap_ref')
         assert not self.ref_dir.endswith( '/')
 
-        if state_.windows:
-            # Default build depends on the Python that we are running under.
-            #
-            self.set_dir_so( f'{self.dir_mupdf}/build/shared-release-{cpu_name()}-py{python_version()}')
-        else:
-            self.set_dir_so( f'{self.dir_mupdf}/build/shared-release')
+        self.set_dir_so( f'{self.dir_mupdf}/build/shared-release')
 
     def set_dir_so( self, dir_so):
         '''
@@ -306,8 +301,16 @@ class BuildDirs:
 
         # Set self.cpu and self.python_version.
         if state_.windows:
-            # Infer from self.dir_so.
-            m = re.match( 'shared-([a-z]+)(-(x[0-9]+))?(-py([0-9.]+))?$', os.path.basename(self.dir_so))
+            # Infer cpu and python version from self.dir_so. And append current
+            # cpu and python version if not already present.
+            leaf = os.path.basename(self.dir_so)
+            m = re.match( 'shared-([a-z]+)$', leaf)
+            if m:
+                suffix = f'-{Cpu(cpu_name())}-py{python_version()}'
+                jlib.log('Adding suffix to {leaf!r}: {suffix!r}')
+                self.dir_so += suffix
+                leaf = os.path.basename(self.dir_so)
+            m = re.match( 'shared-([a-z]+)(-(x[0-9]+))?(-py([0-9.]+))?$', leaf)
             #log(f'self.dir_so={self.dir_so} {os.path.basename(self.dir_so)} m={m}')
             assert m, f'Failed to parse dir_so={self.dir_so!r} - should be *-x32|x64-pyA.B'
             assert m.group(3), f'No cpu in self.dir_so: {self.dir_so}'
