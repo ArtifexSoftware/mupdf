@@ -28,6 +28,13 @@ public class Page
 		Context.init();
 	}
 
+	public static final int MEDIA_BOX = 0;
+	public static final int CROP_BOX = 1;
+	public static final int BLEED_BOX = 2;
+	public static final int TRIM_BOX = 3;
+	public static final int ART_BOX = 4;
+	public static final int UNKNOWN_BOX = 5;
+
 	private long pointer;
 
 	protected native void finalize();
@@ -40,7 +47,15 @@ public class Page
 		pointer = p;
 	}
 
-	public native Rect getBounds();
+	private native Rect getBoundsNative(int box);
+
+	public Rect getBounds(int box) {
+		return getBoundsNative(box);
+	}
+
+	public Rect getBounds() {
+		return getBoundsNative(Page.MEDIA_BOX);
+	}
 
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);

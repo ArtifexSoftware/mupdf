@@ -4732,6 +4732,18 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_pushPDFObject
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_PDFPage_MEDIA_BOX
+#define com_artifex_mupdf_fitz_PDFPage_MEDIA_BOX 0L
+#undef com_artifex_mupdf_fitz_PDFPage_CROP_BOX
+#define com_artifex_mupdf_fitz_PDFPage_CROP_BOX 1L
+#undef com_artifex_mupdf_fitz_PDFPage_BLEED_BOX
+#define com_artifex_mupdf_fitz_PDFPage_BLEED_BOX 2L
+#undef com_artifex_mupdf_fitz_PDFPage_TRIM_BOX
+#define com_artifex_mupdf_fitz_PDFPage_TRIM_BOX 3L
+#undef com_artifex_mupdf_fitz_PDFPage_ART_BOX
+#define com_artifex_mupdf_fitz_PDFPage_ART_BOX 4L
+#undef com_artifex_mupdf_fitz_PDFPage_UNKNOWN_BOX
+#define com_artifex_mupdf_fitz_PDFPage_UNKNOWN_BOX 5L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_NONE
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_NONE 0L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_REMOVE
@@ -5240,6 +5252,18 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PKCS7Verifier_newNative
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_Page_MEDIA_BOX
+#define com_artifex_mupdf_fitz_Page_MEDIA_BOX 0L
+#undef com_artifex_mupdf_fitz_Page_CROP_BOX
+#define com_artifex_mupdf_fitz_Page_CROP_BOX 1L
+#undef com_artifex_mupdf_fitz_Page_BLEED_BOX
+#define com_artifex_mupdf_fitz_Page_BLEED_BOX 2L
+#undef com_artifex_mupdf_fitz_Page_TRIM_BOX
+#define com_artifex_mupdf_fitz_Page_TRIM_BOX 3L
+#undef com_artifex_mupdf_fitz_Page_ART_BOX
+#define com_artifex_mupdf_fitz_Page_ART_BOX 4L
+#undef com_artifex_mupdf_fitz_Page_UNKNOWN_BOX
+#define com_artifex_mupdf_fitz_Page_UNKNOWN_BOX 5L
 /*
  * Class:     com_artifex_mupdf_fitz_Page
  * Method:    finalize
@@ -5250,11 +5274,11 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
- * Method:    getBounds
- * Signature: ()Lcom/artifex/mupdf/fitz/Rect;
+ * Method:    getBoundsNative
+ * Signature: (I)Lcom/artifex/mupdf/fitz/Rect;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getBounds
-  (JNIEnv *, jobject);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getBoundsNative
+  (JNIEnv *, jobject, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page

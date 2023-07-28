@@ -57,7 +57,7 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_getBounds)(JNIEnv *env, jobject self)
+FUN(Page_getBoundsNative)(JNIEnv *env, jobject self, jint box)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
@@ -66,7 +66,7 @@ FUN(Page_getBounds)(JNIEnv *env, jobject self)
 	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-		rect = fz_bound_page(ctx, page);
+		rect = fz_bound_page_box(ctx, page, box);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

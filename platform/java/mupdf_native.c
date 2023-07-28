@@ -502,6 +502,13 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_Font_ADOBE_JAPAN == FZ_ADOBE_JAPAN;
 	valid &= com_artifex_mupdf_fitz_Font_ADOBE_KOREA == FZ_ADOBE_KOREA;
 
+	valid &= com_artifex_mupdf_fitz_Page_MEDIA_BOX == FZ_MEDIA_BOX;
+	valid &= com_artifex_mupdf_fitz_Page_CROP_BOX == FZ_CROP_BOX;
+	valid &= com_artifex_mupdf_fitz_Page_ART_BOX == FZ_ART_BOX;
+	valid &= com_artifex_mupdf_fitz_Page_TRIM_BOX == FZ_TRIM_BOX;
+	valid &= com_artifex_mupdf_fitz_Page_BLEED_BOX == FZ_BLEED_BOX;
+	valid &= com_artifex_mupdf_fitz_Page_UNKNOWN_BOX == FZ_UNKNOWN_BOX;
+
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE == PDF_ANNOT_LE_NONE;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE == PDF_ANNOT_LE_SQUARE;
 	valid &= com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CIRCLE == PDF_ANNOT_LE_CIRCLE;

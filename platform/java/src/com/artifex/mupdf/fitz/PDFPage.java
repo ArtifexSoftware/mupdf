@@ -92,4 +92,6 @@ public class PDFPage extends Page
 	public Link createLinkFitBH(Rect bbox, int page, float y) {
 		return createLink(bbox, LinkDestination.FitBH(0, page, y));
 	}
+
+	// TODO: toPixmap with usage and page box
 }
