@@ -63,6 +63,7 @@ static int usage(void)
 		"\t-A\tcreate appearance streams for annotations\n"
 		"\t-AA\trecreate appearance streams for annotations\n"
 		"\t-m\tpreserve metadata\n"
+		"\t-Z\tuse objstms if possible for extra compression\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	return 1;
@@ -89,7 +90,7 @@ int pdfclean_main(int argc, char **argv)
 
 	opts.dont_regenerate_id = 1;
 
-	while ((c = fz_getopt(argc, argv, "adfgilp:sczDAE:O:U:P:m")) != -1)
+	while ((c = fz_getopt(argc, argv, "adfgilmp:sczDAE:O:U:P:Z")) != -1)
 	{
 		switch (c)
 		{
@@ -112,6 +113,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'O': fz_strlcpy(opts.opwd_utf8, fz_optarg, sizeof opts.opwd_utf8); break;
 		case 'U': fz_strlcpy(opts.upwd_utf8, fz_optarg, sizeof opts.upwd_utf8); break;
 		case 'm': opts.do_preserve_metadata = 1; break;
+		case 'Z': opts.do_use_objstms = 1; break;
 
 		default: return usage();
 		}
