@@ -191,7 +191,7 @@
     .. code-block:: javascript
 
         var buf = new mupdf.Buffer();
-        buf.writeLine("hellorld!");
+        buf.writeLine("hello world!");
         var archive = new mupdf.TreeArchive();
         archive.add("file2.txt", buf);
         print(archive.hasEntry("file2.txt"));

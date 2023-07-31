@@ -80,7 +80,7 @@
 
     |wasm_tag|
 
-    Walk through the blocks (images or text blocks) of the structured text. For each text block walk over its lines of text, and for each line each of its characters. For each block, line or charcter the walker will have a method called.
+    Walk through the blocks (images or text blocks) of the structured text. For each text block walk over its lines of text, and for each line each of its characters. For each block, line or character the walker will have a method called.
 
     |example_tag|
 

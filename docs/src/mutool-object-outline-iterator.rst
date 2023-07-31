@@ -19,7 +19,6 @@
 ------------------------
 
 
-|mutool_tag|
 
 An outline iterator can be used to walk over all the items in an :title:`Outline` and query their properties. To be able to insert items at the end of a list of sibling items, it can also walk one item past the end of the list. To get an instance of `OutlineIterator` use :ref:`Document outlineIterator<mutool_run_js_api_document_outlineIterator>`.
 

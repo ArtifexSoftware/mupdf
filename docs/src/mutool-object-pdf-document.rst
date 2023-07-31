@@ -1086,6 +1086,12 @@ Embedded files in :title:`PDFs`
 
     .. |tor_todo| MUTOOL - the `creationDate` & `modificationDate` are in milliseconds since 1970, not a JS Date object.
 
+.. method:: getEmbeddedFiles()
+
+    Returns the embedded files or null for the document.
+
+    :return: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
+
 
 .. method:: getEmbeddedFileParams(fileSpecObject)
 
@@ -1119,6 +1125,9 @@ Embedded files in :title:`PDFs`
         var buffer = pdfDocument.getEmbeddedFileContents(fileSpecObject);
 
 
+
+
+
 .. method:: verifyEmbeddedFileChecksum(fileSpecObject)
 
     Verify the :title:`MD5` checksum of the embedded file contents.
@@ -1133,6 +1142,7 @@ Embedded files in :title:`PDFs`
     .. code-block:: javascript
 
         var fileChecksumValid = pdfDocument.verifyEmbeddedFileChecksum(fileSpecObject);
+
 
 
 

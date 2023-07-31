@@ -1538,3 +1538,21 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
     .. code-block:: javascript
 
         annotation.addVertex([0,0]);
+
+
+.. method:: applyRedaction(blackBoxes, imageMethod)
+
+    Applies redaction to the annotation.
+
+    :arg blackBoxes: `Boolean` Whether to use black boxes at each redaction or not.
+    :arg imageMethod: `Integer`. `0` for no redactions, `1` to redact entire images, `2` for redacting just the covered pixels.
+
+    .. note::
+
+        Redactions are secure as they remove the affected content completely.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        annotation.applyRedaction(true, 1);
