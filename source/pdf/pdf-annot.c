@@ -339,7 +339,7 @@ pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type)
 	}
 }
 
-int
+enum pdf_annot_type
 pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 {
 	if (!strcmp("Text", subtype)) return PDF_ANNOT_TEXT;
