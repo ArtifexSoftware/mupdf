@@ -3144,7 +3144,7 @@ int main(int argc, char **argv)
 
 	ui_init_dpi(scale);
 
-	oldzoom = currentzoom = DEFRES * ui.scale;
+	oldzoom = currentzoom = currentzoom * ui.scale;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 
