@@ -964,3 +964,39 @@ EXTRACT_SRC += thirdparty/extract/src/sys.c
 EXTRACT_SRC += thirdparty/extract/src/text.c
 EXTRACT_SRC += thirdparty/extract/src/xml.c
 EXTRACT_SRC += thirdparty/extract/src/zip.c
+
+# --- BROTLI ---
+
+BROTLI_CFLAGS += -Ithirdparty/brotli/c/include
+
+BROTLI_SRC += thirdparty/brotli/c/common/constants.c
+BROTLI_SRC += thirdparty/brotli/c/common/context.c
+BROTLI_SRC += thirdparty/brotli/c/common/dictionary.c
+BROTLI_SRC += thirdparty/brotli/c/common/platform.c
+BROTLI_SRC += thirdparty/brotli/c/common/shared_dictionary.c
+BROTLI_SRC += thirdparty/brotli/c/common/transform.c
+BROTLI_SRC += thirdparty/brotli/c/dec/bit_reader.c
+BROTLI_SRC += thirdparty/brotli/c/dec/decode.c
+BROTLI_SRC += thirdparty/brotli/c/dec/huffman.c
+BROTLI_SRC += thirdparty/brotli/c/dec/state.c
+BROTLI_SRC += thirdparty/brotli/c/enc/backward_references.c
+BROTLI_SRC += thirdparty/brotli/c/enc/backward_references_hq.c
+BROTLI_SRC += thirdparty/brotli/c/enc/bit_cost.c
+BROTLI_SRC += thirdparty/brotli/c/enc/block_splitter.c
+BROTLI_SRC += thirdparty/brotli/c/enc/brotli_bit_stream.c
+BROTLI_SRC += thirdparty/brotli/c/enc/cluster.c
+BROTLI_SRC += thirdparty/brotli/c/enc/command.c
+BROTLI_SRC += thirdparty/brotli/c/enc/compound_dictionary.c
+BROTLI_SRC += thirdparty/brotli/c/enc/compress_fragment.c
+BROTLI_SRC += thirdparty/brotli/c/enc/compress_fragment_two_pass.c
+BROTLI_SRC += thirdparty/brotli/c/enc/dictionary_hash.c
+BROTLI_SRC += thirdparty/brotli/c/enc/encode.c
+BROTLI_SRC += thirdparty/brotli/c/enc/encoder_dict.c
+BROTLI_SRC += thirdparty/brotli/c/enc/entropy_encode.c
+BROTLI_SRC += thirdparty/brotli/c/enc/fast_log.c
+BROTLI_SRC += thirdparty/brotli/c/enc/histogram.c
+BROTLI_SRC += thirdparty/brotli/c/enc/literal_cost.c
+BROTLI_SRC += thirdparty/brotli/c/enc/memory.c
+BROTLI_SRC += thirdparty/brotli/c/enc/metablock.c
+BROTLI_SRC += thirdparty/brotli/c/enc/static_dict.c
+BROTLI_SRC += thirdparty/brotli/c/enc/utf8_util.c

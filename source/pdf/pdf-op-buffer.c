@@ -963,6 +963,22 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *col
 				proc->sep = 0;
 			}
 			break;
+
+		case FZ_IMAGE_BROTLI:
+			fz_write_string(ctx, out, ahx ? "/F[/AHx/Br]\n" : "/F/Br\n");
+			if (cbuf->params.u.brotli.predictor > 1)
+			{
+				fz_write_string(ctx, out, ahx ? "/DP[null<<\n" : "/DP<<\n");
+				fz_write_printf(ctx, out, "/Predictor %d\n", cbuf->params.u.brotli.predictor);
+				if (cbuf->params.u.brotli.columns != 1)
+					fz_write_printf(ctx, out, "/Columns %d\n", cbuf->params.u.brotli.columns);
+				if (cbuf->params.u.brotli.colors != 1)
+					fz_write_printf(ctx, out, "/Colors %d\n", cbuf->params.u.brotli.colors);
+				if (cbuf->params.u.brotli.bpc != 8)
+					fz_write_printf(ctx, out, "/BitsPerComponent %d\n", cbuf->params.u.brotli.bpc);
+				fz_write_string(ctx, out, ahx ? ">>]\n" : ">>\n");
+			}
+			break;
 		}
 
 		separate(ctx, proc);

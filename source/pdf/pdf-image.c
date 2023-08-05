@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -622,6 +622,17 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 				if (cp->u.flate.bpc)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(BitsPerComponent), cp->u.flate.bpc);
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
+				break;
+			case FZ_IMAGE_BROTLI:
+				if (cp->u.brotli.columns)
+					pdf_dict_put_int(ctx, dp, PDF_NAME(Columns), cp->u.brotli.columns);
+				if (cp->u.brotli.colors)
+					pdf_dict_put_int(ctx, dp, PDF_NAME(Colors), cp->u.brotli.colors);
+				if (cp->u.brotli.predictor)
+					pdf_dict_put_int(ctx, dp, PDF_NAME(Predictor), cp->u.brotli.predictor);
+				if (cp->u.brotli.bpc)
+					pdf_dict_put_int(ctx, dp, PDF_NAME(BitsPerComponent), cp->u.brotli.bpc);
+				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(BrotliDecode));
 				break;
 			case FZ_IMAGE_LZW:
 				if (cp->u.lzw.columns)

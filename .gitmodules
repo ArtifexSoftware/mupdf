@@ -46,3 +46,6 @@
 [submodule "thirdparty/zint"]
 	path = thirdparty/zint
 	url = ../thirdparty-zint.git
+[submodule "thirdparty/brotli"]
+	path = thirdparty/brotli
+	url = ../thirdparty-brotli.git

@@ -720,7 +720,7 @@ typedef struct
 	int do_incremental; /* Write just the changed objects. */
 	int do_pretty; /* Pretty-print dictionaries and arrays. */
 	int do_ascii; /* ASCII hex encode binary streams. */
-	int do_compress; /* Compress streams. */
+	int do_compress; /* Compress streams. 1 zlib, 2 brotli */
 	int do_compress_images; /* Compress (or leave compressed) image streams. */
 	int do_compress_fonts; /* Compress (or leave compressed) font streams. */
 	int do_decompress; /* Decompress streams (except when compressing images/fonts). */

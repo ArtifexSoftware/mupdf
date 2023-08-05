@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -274,6 +274,9 @@ int pdfclean_main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+	if (opts.write.do_compress > 1)
+		fz_warn(ctx, "Brotli compression is currently non-standard and experimental. Files may not be readable in other software.");
 
 	fz_try(ctx)
 	{

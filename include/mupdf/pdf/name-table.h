@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -86,6 +86,8 @@ PDF_MAKE_NAME("BlockQuote", BlockQuote)
 PDF_MAKE_NAME("Border", Border)
 PDF_MAKE_NAME("Bounds", Bounds)
 PDF_MAKE_NAME("Box", Box)
+PDF_MAKE_NAME("Br", Br)
+PDF_MAKE_NAME("BrotliDecode", BrotliDecode)
 PDF_MAKE_NAME("Bt", Bt)
 PDF_MAKE_NAME("Btn", Btn)
 PDF_MAKE_NAME("Butt", Butt)

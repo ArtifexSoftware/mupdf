@@ -162,6 +162,7 @@ SYS_TESSERACT_LIBS := -ltesseract
 SYS_LEPTONICA_LIBS := -llept
 SYS_LIBARCHIVE_LIBS := -larchive
 SYS_ZXINGCPP_LIBS := -lzxing-cpp -lzint
+SYS_BROTLI_LIBS := -lbrotli
 
 ifneq "$(CLUSTER)" ""
   CFLAGS += -DCLUSTER

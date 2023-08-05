@@ -65,6 +65,7 @@ LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(LCMS2_CFLAGS))
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(LIBJPEG_CFLAGS)))
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(MUJS_CFLAGS)))
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(OPENJPEG_CFLAGS)))
+LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(BROTLI_CFLAGS)))
 
 ifdef USE_TESSERACT
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(TESSERACT_CFLAGS)))
@@ -83,6 +84,7 @@ LOCAL_CFLAGS += $(filter-out -I%,$(LCMS2_CFLAGS))
 LOCAL_CFLAGS += $(filter-out -I%,$(LIBJPEG_CFLAGS))
 LOCAL_CFLAGS += $(filter-out -I%,$(MUJS_CFLAGS))
 LOCAL_CFLAGS += $(filter-out -I%,$(OPENJPEG_CFLAGS))
+LOCAL_CFLAGS += $(filter-out -I%,$(BROTLI_CFLAGS))
 
 ifdef USE_TESSERACT
 LOCAL_CFLAGS += -DHAVE_TESSERACT
@@ -177,6 +179,14 @@ LOCAL_CFLAGS += $(filter-out -I%,$(OPENJPEG_CFLAGS) $(OPENJPEG_BUILD_CFLAGS))
 LOCAL_CFLAGS += $(MUPDF_EXTRA_CFLAGS)
 include $(BUILD_STATIC_LIBRARY)
 
+includes $(CLEAR_VARS)
+LOCAL_MODULE += mupdf_thirdparty_brotli
+LOCAL_SRC_FILES += $(patsubst %,$(MUPDF_PATH)/%,$(BROTLI_SRC))
+LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)))
+LOCAL_CFLAGS += $(filter-out -I%,$(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS))
+LOCAL_CFLAGS += $(MUPDF_EXTRA_CFLAGS)
+include $(BUILD_STATIC_LIBRARY)
+
 ifdef USE_TESSERACT
 # --- Build local static library for tesseract ---
 
@@ -246,6 +256,7 @@ LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_lcms2
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_libjpeg
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_mujs
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_openjpeg
+LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_brotli
 
 ifdef USE_LEPTONICA
 LOCAL_STATIC_LIBRARIES += mupdf_thirdparty_leptonica

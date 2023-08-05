@@ -808,10 +808,19 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(Columns), w);
 			}
-			else
+			else if (do_deflate == 1)
 			{
 				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
+			}
+			else
+			{
+				size_t comp_len;
+				int mode = (opts->compression_effort == 0 ? FZ_BROTLI_DEFAULT :
+					FZ_BROTLI_BEST * opts->compression_effort / 100);
+				unsigned char *comp_data = fz_new_brotli_data(ctx, &comp_len, data, len, mode);
+				tmp_comp = fz_new_buffer_from_data(ctx, comp_data, comp_len);
+				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(BrotliDecode));
 			}
 			len = fz_buffer_storage(ctx, tmp_comp, &data);
 		}
@@ -888,10 +897,17 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(Columns), w);
 			}
-			else
+			else if (do_deflate == 1)
 			{
 				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
+			}
+			else
+			{
+				size_t comp_len;
+				unsigned char *comp_data = fz_new_brotli_data(ctx, &comp_len, data, len, FZ_BROTLI_BEST);
+				tmp_comp = fz_new_buffer_from_data(ctx, comp_data, comp_len);
+				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(BrotliDecode));
 			}
 			len = fz_buffer_storage(ctx, tmp_comp, &data);
 		}
@@ -1101,9 +1117,9 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 				do_deflate = opts->do_compress;
 				do_expand = opts->do_expand;
 				if (opts->do_compress_images && is_image_stream(ctx, obj))
-					do_deflate = 1, do_expand = 0;
+					do_deflate = opts->do_compress ? opts->do_compress : 1, do_expand = 0;
 				if (opts->do_compress_fonts && is_font_stream(ctx, obj))
-					do_deflate = 1, do_expand = 0;
+					do_deflate = opts->do_compress ? opts->do_compress : 1, do_expand = 0;
 				if (is_xml_metadata(ctx, obj))
 					do_deflate = 0, do_expand = 0;
 				if (is_jpx_stream(ctx, obj))
@@ -1795,7 +1811,7 @@ static const pdf_write_options pdf_snapshot_write_options = {
 const char *fz_pdf_write_options_usage =
 	"PDF output options:\n"
 	"\tdecompress: decompress all streams (except compress-fonts/images)\n"
-	"\tcompress: compress all streams\n"
+	"\tcompress=yes|flate|brotli: compress all streams, yes defaults to flate\n"
 	"\tcompress-fonts: compress embedded fonts\n"
 	"\tcompress-images: compress images\n"
 	"\tascii: ASCII hex encode binary streams\n"
@@ -1827,7 +1843,14 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 	if (fz_has_option(ctx, args, "decompress", &val))
 		opts->do_decompress = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compress", &val))
-		opts->do_compress = fz_option_eq(val, "yes");
+	{
+		if (fz_option_eq(val, "brotli"))
+			opts->do_compress = 2;
+		else if (fz_option_eq(val, "flate"))
+			opts->do_compress = 1;
+		else
+			opts->do_compress = fz_option_eq(val, "yes");
+	}
 	if (fz_has_option(ctx, args, "compress-fonts", &val))
 		opts->do_compress_fonts = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compress-images", &val))
