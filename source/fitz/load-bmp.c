@@ -1316,7 +1316,7 @@ fz_load_bmp_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len
 		const unsigned char *p = begin + nextoffset;
 
 		if (end - p < 14)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "not enough data for bitmap array (%02x%02x) in bmp image", p[0], p[1]);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "not enough data for bitmap array in bmp image");
 
 		if (!is_bitmap_array(p))
 		{
