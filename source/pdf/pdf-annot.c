@@ -865,6 +865,8 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	if (*annotptr == NULL)
 		return;
 
+	pdf_begin_operation(ctx, page->doc, "Delete Annotation");
+
 	/* Remove annot from page's list */
 	*annotptr = annot->next;
 
@@ -876,8 +878,6 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 		else
 			page->annot_tailp = annotptr;
 	}
-
-	pdf_begin_operation(ctx, page->doc, "Delete Annotation");
 
 	fz_try(ctx)
 	{
