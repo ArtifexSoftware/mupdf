@@ -9759,9 +9759,21 @@ int murun_main(int argc, char **argv)
 	int i;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		exit(1);
+	}
+
 	fz_register_document_handlers(ctx);
 
 	J = js_newstate(alloc, ctx, JS_STRICT);
+	if (!J)
+	{
+		fprintf(stderr, "cannot initialize mujs state\n");
+		fz_drop_context(ctx);
+		exit(1);
+	}
 	js_setcontext(J, ctx);
 
 	/* standard command line javascript functions */
