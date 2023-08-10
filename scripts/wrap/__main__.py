@@ -1458,6 +1458,12 @@ def build( build_dirs, swig_command, args, vs_upgrade):
         compiler = 'em++'
     elif state.state_.macos:
         compiler = 'c++ -std=c++14'
+        # Add extra flags for MacOS cross-compilation, where ARCHFLAGS can be
+        # '-arch arm64'.
+        #
+        archflags = os.environ.get( 'ARCHFLAGS')
+        if archflags:
+            compiler += f' {archflags}'
     else:
         compiler = 'c++'
 
