@@ -1234,14 +1234,13 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 
 	fz_try(ctx)
 	{
-		if (buf)
-			buf = fz_keep_buffer(ctx, buf);
-		else
-			buf = fz_new_buffer(ctx, 256);
 		dev->doc = doc;
 		dev->resources = pdf_keep_obj(ctx, resources);
 		dev->gstates = fz_malloc_struct(ctx, gstate);
-		dev->gstates[0].buf = buf;
+		if (buf)
+			dev->gstates[0].buf = fz_keep_buffer(ctx, buf);
+		else
+			dev->gstates[0].buf = fz_new_buffer(ctx, 256);
 		dev->gstates[0].ctm = fz_identity; // XXX
 		dev->gstates[0].colorspace[0] = fz_device_gray(ctx);
 		dev->gstates[0].colorspace[1] = fz_device_gray(ctx);
@@ -1254,12 +1253,11 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 		dev->max_gstates = 1;
 
 		if (!fz_is_identity(topctm))
-			fz_append_printf(ctx, buf, "%M cm\n", &topctm);
+			fz_append_printf(ctx, dev->gstates[0].buf, "%M cm\n", &topctm);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_buffer(ctx, buf);
-		fz_free(ctx, dev);
+		fz_drop_device(ctx, &dev->super);
 		fz_rethrow(ctx);
 	}
 
