@@ -206,7 +206,10 @@ static void enact_sig_locking(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 	fz_always(ctx)
 		pdf_drop_locked_fields(ctx, locked);
 	fz_catch(ctx)
+	{
+		pop_field_locking(ctx, NULL, &data);
 		fz_rethrow(ctx);
+	}
 }
 
 void
