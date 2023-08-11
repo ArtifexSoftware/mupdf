@@ -83,7 +83,7 @@ int do_sign(void)
 		trace_action("'showLogo':%s}, ", logo ? "true" : "false");
 
 		if (strlen(sign_image_filename) > 0)
-			trace_action("new Image(null, %q), ", sign_image_filename);
+			trace_action("new Image(%q, null), ", sign_image_filename);
 		else
 			trace_action("null, ");
 
