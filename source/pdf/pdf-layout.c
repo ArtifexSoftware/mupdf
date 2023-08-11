@@ -216,6 +216,7 @@ fz_text *pdf_layout_fit_text(fz_context *ctx, fz_font *font, fz_text_language la
 	fz_catch(ctx)
 	{
 		fz_drop_text(ctx, text);
+		fz_rethrow(ctx);
 	}
 
 	return text;
