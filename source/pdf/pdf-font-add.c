@@ -419,7 +419,7 @@ static void
 pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *font)
 {
 	FT_Face face = font->ft_face;
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 
 	int *table;
 	int num_seq = 0;
@@ -460,9 +460,12 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 		return;
 	}
 
-	buf = fz_new_buffer(ctx, 0);
+	fz_var(buf);
+
 	fz_try(ctx)
 	{
+		buf = fz_new_buffer(ctx, 0);
+
 		/* Header boiler plate */
 		fz_append_string(ctx, buf, "/CIDInit /ProcSet findresource begin\n");
 		fz_append_string(ctx, buf, "12 dict begin\n");
