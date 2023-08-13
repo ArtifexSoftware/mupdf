@@ -257,7 +257,7 @@ fz_save_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pixmap, const char *filename,
 }
 
 static fz_buffer *
-jpeg_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int quality, int drop)
+jpeg_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int drop, int quality)
 {
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
