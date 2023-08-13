@@ -1285,6 +1285,7 @@ pdf_obj *pdf_add_filespec(fz_context *ctx, pdf_document *doc, const char *filena
 	size_t len, i;
 
 	fz_var(asciiname);
+	fz_var(filespec);
 
 	fz_try(ctx)
 	{
@@ -1312,9 +1313,10 @@ pdf_obj *pdf_add_filespec(fz_context *ctx, pdf_document *doc, const char *filena
 	fz_always(ctx)
 		fz_free(ctx, asciiname);
 	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, filespec);
 		fz_rethrow(ctx);
-
-
+	}
 
 	return filespec;
 }
