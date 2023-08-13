@@ -9778,6 +9778,14 @@ int murun_main(int argc, char **argv)
 	}
 	js_setcontext(J, ctx);
 
+	if (js_try(J))
+	{
+		fprintf(stderr, "cannot initialize mujs functions\n");
+		js_freestate(J);
+		fz_drop_context(ctx);
+		exit(1);
+	}
+
 	/* standard command line javascript functions */
 
 	js_newcfunction(J, jsB_gc, "gc", 0);
@@ -10532,6 +10540,8 @@ int murun_main(int argc, char **argv)
 	js_setglobal(J, "mupdf");
 
 	js_dostring(J, postfix_js);
+
+	js_endtry(J);
 
 	if (argc > 1) {
 		js_pushstring(J, argv[1]);
