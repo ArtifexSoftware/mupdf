@@ -10544,6 +10544,13 @@ int murun_main(int argc, char **argv)
 	js_endtry(J);
 
 	if (argc > 1) {
+		if (js_try(J))
+		{
+			fprintf(stderr, "cannot initialize scriptArgs/scriptPath\n");
+			js_freestate(J);
+			fz_drop_context(ctx);
+			exit(1);
+		}
 		js_pushstring(J, argv[1]);
 		js_setglobal(J, "scriptPath");
 		js_newarray(J);
@@ -10552,6 +10559,7 @@ int murun_main(int argc, char **argv)
 			js_setindex(J, -2, i - 2);
 		}
 		js_setglobal(J, "scriptArgs");
+		js_endtry(J);
 		if (js_dofile(J, argv[1]))
 		{
 			js_freestate(J);
