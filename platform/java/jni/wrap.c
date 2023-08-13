@@ -45,7 +45,7 @@ static inline jobject to_DefaultColorSpaces(fz_context *ctx, JNIEnv *env, fz_def
 	if (!ctx || !dcs) return NULL;
 
 	fz_keep_default_colorspaces(ctx, dcs);
-	jdcs = (*env)->CallStaticObjectMethod(env, cls_DefaultColorSpaces, mid_DefaultColorSpaces_init, jlong_cast(dcs));
+	jdcs = (*env)->NewObject(env, cls_DefaultColorSpaces, mid_DefaultColorSpaces_init, jlong_cast(dcs));
 	if (!jdcs)
 		fz_drop_default_colorspaces(ctx, dcs);
 	if ((*env)->ExceptionCheck(env))
