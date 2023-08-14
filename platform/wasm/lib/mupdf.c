@@ -1284,6 +1284,15 @@ fz_buffer * wasm_pdf_write_document_buffer(pdf_document *doc, char *options)
 // --- PDFPage ---
 
 EXPORT
+fz_matrix * wasm_pdf_page_transform(pdf_page *page)
+{
+	TRY ({
+		pdf_page_transform(ctx, page, NULL, &out_matrix);
+	})
+	return &out_matrix;
+}
+
+EXPORT
 pdf_annot * wasm_pdf_first_annot(pdf_page *page)
 {
 	POINTER(pdf_first_annot, page)

@@ -1911,6 +1911,10 @@ class PDFPage extends Page {
 		return true
 	}
 
+	getTransform() {
+		return fromMatrix(libmupdf._wasm_pdf_page_transform(this))
+	}
+
 	toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage = "View", box = "MediaBox") {
 		checkType(colorspace, ColorSpace)
 		checkMatrix(matrix)
