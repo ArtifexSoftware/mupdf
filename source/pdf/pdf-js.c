@@ -874,9 +874,14 @@ static void addproperty(js_State *J, const char *name, js_CFunction getfun, js_C
 	js_defaccessor(J, -3, realname, JS_READONLY | JS_DONTENUM | JS_DONTCONF);
 }
 
-static void declare_dom(pdf_js *js)
+static int declare_dom(pdf_js *js)
 {
 	js_State *J = js->imp;
+
+	if (js_try(J))
+	{
+		return -1;
+	}
 
 	/* Allow access to the global environment via the 'global' name */
 	js_pushglobal(J);
@@ -957,10 +962,17 @@ static void declare_dom(pdf_js *js)
 		addmethod(J, "Doc.mailDoc", doc_mailDoc, 6);
 	}
 	js_pop(J, 1);
+
+	js_endtry(J);
+
+	return 0;
 }
 
-static void preload_helpers(pdf_js *js)
+static int preload_helpers(pdf_js *js)
 {
+	if (js_try(js->imp))
+		return -1;
+
 	/* When testing on the cluster:
 	 * Use a fixed date for "new Date" and Date.now().
 	 * Sadly, this breaks uses of the Date function without the new keyword.
@@ -981,6 +993,9 @@ static void preload_helpers(pdf_js *js)
 	js_dostring(js->imp,
 #include "js/util.js.h"
 	);
+
+	js_endtry(js->imp);
+	return 0;
 }
 
 void pdf_drop_js(fz_context *ctx, pdf_js *js)
@@ -1046,8 +1061,10 @@ static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
 		js->console = &default_js_console;
 		js->console_user = js->ctx;
 
-		declare_dom(js);
-		preload_helpers(js);
+		if (declare_dom(js))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot initialize dom interface");
+		if (preload_helpers(js))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot initialize helper functions");
 	}
 	fz_catch(ctx)
 	{
