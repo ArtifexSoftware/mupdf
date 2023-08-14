@@ -168,9 +168,14 @@ fz_open_file_ptr(fz_context *ctx, FILE *file)
 
 fz_stream *fz_open_file_ptr_no_close(fz_context *ctx, FILE *file)
 {
-	fz_stream *stm = fz_open_file_ptr(ctx, file);
+	fz_stream *stm;
+	fz_file_stream *state = fz_malloc_struct(ctx, fz_file_stream);
+	state->file = file;
+
 	/* We don't own the file ptr. Ensure we don't close it */
-	stm->drop = fz_free;
+	stm = fz_new_stream(ctx, state, next_file, fz_free);
+	stm->seek = seek_file;
+
 	return stm;
 }
 
