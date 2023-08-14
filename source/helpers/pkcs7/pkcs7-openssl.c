@@ -228,6 +228,11 @@ static BIO *BIO_new_stream(fz_context *ctx, fz_stream *stm)
 	}
 
 	bio = BIO_new(methods);
+	if (!bio)
+	{
+		BIO_meth_free(methods);
+		return NULL;
+	}
 	data = BIO_get_data(bio);
 	data->ctx = ctx;
 	data->stm = stm;
