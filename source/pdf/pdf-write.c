@@ -1724,7 +1724,13 @@ static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 		fz_drop_buffer(ctx, buf);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate buffer");
 	}
-	fz_resize_buffer(ctx, buf, csize);
+	fz_try(ctx)
+		fz_resize_buffer(ctx, buf, csize);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
 	return buf;
 }
 
