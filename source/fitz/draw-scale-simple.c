@@ -505,7 +505,12 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 			/* In very rare cases (bug 706764) we might not actually
 			 * have generated any non-zero weights for this destination
 			 * pixel. Just use the central pixel. */
-			insert_weight(weights, j, floorf(centre), 1);
+			int src_x = floorf(centre);
+			if (src_x >= src_w)
+				src_x = src_w-1;
+			if (src_x < 0)
+				src_x = 0;
+			insert_weight(weights, j, src_x, 1);
 		}
 		check_weights(weights, j, dst_w_int, x, dst_w);
 		if (vertical)
