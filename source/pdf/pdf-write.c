@@ -2189,65 +2189,74 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 
 	fz_var(trailer);
 
-	if (opts->do_incremental)
+	fz_try(ctx)
 	{
-		trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
-		pdf_dict_put_int(ctx, trailer, PDF_NAME(Size), pdf_xref_len(ctx, doc));
-		pdf_dict_put_int(ctx, trailer, PDF_NAME(Prev), doc->startxref);
-		if (!opts->do_snapshot)
-			doc->startxref = startxref;
-	}
-	else
-	{
-		trailer = pdf_new_dict(ctx, doc, 5);
-
-		nobj = pdf_new_int(ctx, to);
-		pdf_dict_put_drop(ctx, trailer, PDF_NAME(Size), nobj);
-
-		if (first)
+		if (opts->do_incremental)
 		{
-			pdf_obj *otrailer = pdf_trailer(ctx, doc);
-			obj = pdf_dict_get(ctx, otrailer, PDF_NAME(Info));
-			if (obj)
-				pdf_dict_put(ctx, trailer, PDF_NAME(Info), obj);
+			trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
+			pdf_dict_put_int(ctx, trailer, PDF_NAME(Size), pdf_xref_len(ctx, doc));
+			pdf_dict_put_int(ctx, trailer, PDF_NAME(Prev), doc->startxref);
+			if (!opts->do_snapshot)
+				doc->startxref = startxref;
+		}
+		else
+		{
+			trailer = pdf_new_dict(ctx, doc, 5);
 
-			obj = pdf_dict_get(ctx, otrailer, PDF_NAME(Root));
-			if (obj)
-				pdf_dict_put(ctx, trailer, PDF_NAME(Root), obj);
+			nobj = pdf_new_int(ctx, to);
+			pdf_dict_put_drop(ctx, trailer, PDF_NAME(Size), nobj);
 
-
-			obj = pdf_dict_get(ctx, otrailer, PDF_NAME(ID));
-			if (obj)
-				pdf_dict_put(ctx, trailer, PDF_NAME(ID), obj);
-
-			if (opts->crypt_obj)
+			if (first)
 			{
-				if (pdf_is_indirect(ctx, opts->crypt_obj))
-					pdf_dict_put_drop(ctx, trailer, PDF_NAME(Encrypt), pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0));
-				else
-					pdf_dict_put(ctx, trailer, PDF_NAME(Encrypt), opts->crypt_obj);
+				pdf_obj *otrailer = pdf_trailer(ctx, doc);
+				obj = pdf_dict_get(ctx, otrailer, PDF_NAME(Info));
+				if (obj)
+					pdf_dict_put(ctx, trailer, PDF_NAME(Info), obj);
+
+				obj = pdf_dict_get(ctx, otrailer, PDF_NAME(Root));
+				if (obj)
+					pdf_dict_put(ctx, trailer, PDF_NAME(Root), obj);
+
+
+				obj = pdf_dict_get(ctx, otrailer, PDF_NAME(ID));
+				if (obj)
+					pdf_dict_put(ctx, trailer, PDF_NAME(ID), obj);
+
+				if (opts->crypt_obj)
+				{
+					if (pdf_is_indirect(ctx, opts->crypt_obj))
+						pdf_dict_put_drop(ctx, trailer, PDF_NAME(Encrypt), pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0));
+					else
+						pdf_dict_put(ctx, trailer, PDF_NAME(Encrypt), opts->crypt_obj);
+				}
+
+				if (opts->metadata)
+					pdf_dict_putp(ctx, trailer, "Root/Metadata", opts->metadata);
 			}
+			if (main_xref_offset != 0)
+			{
+				nobj = pdf_new_int(ctx, main_xref_offset);
+				pdf_dict_put_drop(ctx, trailer, PDF_NAME(Prev), nobj);
+			}
+		}
 
-			if (opts->metadata)
-				pdf_dict_putp(ctx, trailer, "Root/Metadata", opts->metadata);
-		}
-		if (main_xref_offset != 0)
-		{
-			nobj = pdf_new_int(ctx, main_xref_offset);
-			pdf_dict_put_drop(ctx, trailer, PDF_NAME(Prev), nobj);
-		}
+		fz_write_string(ctx, opts->out, "trailer\n");
+		/* Trailer is NOT encrypted */
+		pdf_print_obj(ctx, opts->out, trailer, opts->do_tight, opts->do_ascii);
+		fz_write_string(ctx, opts->out, "\n");
+
+		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
+
+		doc->last_xref_was_old_style = 1;
 	}
-
-	fz_write_string(ctx, opts->out, "trailer\n");
-	/* Trailer is NOT encrypted */
-	pdf_print_obj(ctx, opts->out, trailer, opts->do_tight, opts->do_ascii);
-	fz_write_string(ctx, opts->out, "\n");
-
-	pdf_drop_obj(ctx, trailer);
-
-	fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
-
-	doc->last_xref_was_old_style = 1;
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, trailer);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static void writexrefstreamsubsect(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *index, fz_buffer *fzbuf, int from, int to)
