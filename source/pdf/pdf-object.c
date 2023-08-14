@@ -3531,9 +3531,17 @@ pdf_sprint_encrypted_obj(fz_context *ctx, char *buf, size_t cap, size_t *len, pd
 	fmt.crypt = crypt;
 	fmt.num = num;
 	fmt.gen = gen;
-	fmt_obj(ctx, &fmt, obj);
 
-	fmt_putc(ctx, &fmt, 0);
+	fz_try(ctx)
+	{
+		fmt_obj(ctx, &fmt, obj);
+		fmt_putc(ctx, &fmt, 0);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, fmt.ptr);
+		fz_rethrow(ctx);
+	}
 
 	return *len = fmt.len-1, fmt.ptr;
 }
