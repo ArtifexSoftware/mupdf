@@ -4792,7 +4792,10 @@ validate_locked_fields(fz_context *ctx, pdf_document *doc, int version, pdf_lock
 	fz_always(ctx)
 		doc->xref_base = o_xref_base;
 	fz_catch(ctx)
+	{
+		fz_free(ctx, changes);
 		fz_rethrow(ctx);
+	}
 
 	for (i = 1; i < num_objs; i++)
 	{
