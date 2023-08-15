@@ -4831,15 +4831,20 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 	 * from version rather than version+1 will give us bad results! */
 	locked = pdf_find_locked_fields(ctx, doc, unsaved_versions+version+1);
 
-	if (!locked->all && locked->includes.len == 0 && locked->p == 0)
+	fz_try(ctx)
 	{
-		/* If nothing is locked at all, then all changes are permissible. */
-		result = 1;
+		if (!locked->all && locked->includes.len == 0 && locked->p == 0)
+		{
+			/* If nothing is locked at all, then all changes are permissible. */
+			result = 1;
+		}
+		else
+			result = validate_locked_fields(ctx, doc, unsaved_versions+version, locked);
 	}
-	else
-		result = validate_locked_fields(ctx, doc, unsaved_versions+version, locked);
-
-	pdf_drop_locked_fields(ctx, locked);
+	fz_always(ctx)
+		pdf_drop_locked_fields(ctx, locked);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return result;
 }
