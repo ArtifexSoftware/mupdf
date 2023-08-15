@@ -3487,8 +3487,8 @@ ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *o
 		fz_rethrow(ctx);
 }
 
-#define OBJSTM_MAXOBJS 64
-#define OBJSTM_MAXLEN 4096
+#define OBJSTM_MAXOBJS 256
+#define OBJSTM_MAXLEN 1<<24
 
 typedef struct
 {
