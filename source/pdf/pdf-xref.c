@@ -692,6 +692,7 @@ int pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int n
 	pdf_xref_entry *new_entry, *old_entry;
 	pdf_xref_subsec *sub = NULL;
 	int i;
+	pdf_obj *copy;
 
 	/* Make sure we have created an xref section for incremental updates */
 	ensure_incremental_xref(ctx, doc);
@@ -717,15 +718,25 @@ int pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int n
 	if (i == 0 || sub == NULL)
 		return 0;
 
+	copy = pdf_deep_copy_obj(ctx, sub->table[num - sub->start].obj);
+
 	/* Move the object to the incremental section */
+	i = doc->xref_index[num];
 	doc->xref_index[num] = 0;
 	old_entry = &sub->table[num - sub->start];
-	new_entry = pdf_get_incremental_xref_entry(ctx, doc, num);
+	fz_try(ctx)
+		new_entry = pdf_get_incremental_xref_entry(ctx, doc, num);
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, copy);
+		doc->xref_index[num] = i;
+		fz_rethrow(ctx);
+	}
 	*new_entry = *old_entry;
 	/* Better keep a copy. We must override the old entry with
 	 * the copy because the caller may be holding a reference to
 	 * the original and expect it to end up in the new entry */
-	old_entry->obj = pdf_deep_copy_obj(ctx, old_entry->obj);
+	old_entry->obj = copy;
 	old_entry->stm_buf = NULL;
 
 	return 1;
@@ -769,10 +780,20 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 	if (sub == NULL)
 		return; /* No object to find */
 
+	copy = pdf_deep_copy_obj(ctx, sub->table[num - sub->start].obj);
+
 	/* Copy the object to the local section */
+	i = doc->xref_index[num];
 	doc->xref_index[num] = 0;
 	old_entry = &sub->table[num - sub->start];
-	new_entry = pdf_get_local_xref_entry(ctx, doc, num);
+	fz_try(ctx)
+		new_entry = pdf_get_local_xref_entry(ctx, doc, num);
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, copy);
+		doc->xref_index[num] = i;
+		fz_rethrow(ctx);
+	}
 	*new_entry = *old_entry;
 	new_entry->stm_buf = NULL;
 	new_entry->obj = NULL;
@@ -780,7 +801,6 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 	 * Better keep a copy. We must override the old entry with
 	 * the copy because the caller may be holding a reference to
 	 * the original and expect it to end up in the new entry */
-	copy = pdf_deep_copy_obj(ctx, old_entry->obj);
 	new_entry->obj = old_entry->obj;
 	old_entry->obj = copy;
 	new_entry->stm_buf = NULL; /* FIXME */
