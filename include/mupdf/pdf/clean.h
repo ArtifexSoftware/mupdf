@@ -24,10 +24,17 @@
 #define MUPDF_PDF_CLEAN_H
 
 #include "mupdf/pdf/document.h"
+#include "mupdf/pdf/image-rewriter.h"
+
+typedef struct
+{
+	pdf_write_options write;
+	pdf_image_rewriter_options image;
+} pdf_clean_options;
 
 /*
 	Read infile, and write selected pages to outfile with the given options.
 */
-void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_write_options *opts, int retainlen, char *retainlist[]);
+void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_clean_options *opts, int retainlen, char *retainlist[]);
 
 #endif

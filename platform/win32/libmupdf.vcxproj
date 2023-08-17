@@ -1177,6 +1177,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-form.c" />
     <ClCompile Include="..\..\source\pdf\pdf-function.c" />
     <ClCompile Include="..\..\source\pdf\pdf-graft.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-image-rewriter.c" />
     <ClCompile Include="..\..\source\pdf\pdf-image.c" />
     <ClCompile Include="..\..\source\pdf\pdf-interpret.c" />
     <ClCompile Include="..\..\source\pdf\pdf-js.c" />
@@ -1287,6 +1288,7 @@
     <ClInclude Include="..\..\include\mupdf\pdf\event.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\font.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\form.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\image-rewriter.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\interpret.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\javascript.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\layer.h" />

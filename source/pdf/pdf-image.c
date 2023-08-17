@@ -822,6 +822,9 @@ unknown_compression:
 			case FZ_COLORSPACE_CMYK:
 				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(DeviceCMYK));
 				break;
+			case FZ_COLORSPACE_LAB:
+				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(Lab));
+				break;
 			default:
 				// TODO: convert to RGB!
 				fz_throw(ctx, FZ_ERROR_GENERIC, "only Gray, RGB, and CMYK colorspaces supported");

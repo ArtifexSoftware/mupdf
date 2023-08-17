@@ -423,7 +423,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		fz_rethrow(ctx);
 }
 
-void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_write_options *opts, int argc, char *argv[])
+void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_clean_options *opts, int argc, char *argv[])
 {
 	globals glo = { 0 };
 
@@ -440,7 +440,9 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 		if (argc)
 			retainpages(ctx, &glo, argc, argv);
 
-		pdf_save_document(ctx, glo.doc, outfile, opts);
+		pdf_rewrite_images(ctx, glo.doc, &opts->image);
+
+		pdf_save_document(ctx, glo.doc, outfile, &opts->write);
 	}
 	fz_always(ctx)
 	{
