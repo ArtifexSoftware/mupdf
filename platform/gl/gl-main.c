@@ -1789,7 +1789,9 @@ static void load_document(void)
 	fz_location location;
 
 	fz_drop_outline(ctx, outline);
+	outline = NULL;
 	fz_drop_document(ctx, doc);
+	doc = NULL;
 
 	if (!strncmp(filename, "file://", 7))
 	{
@@ -1941,6 +1943,7 @@ static void reflow_document(void)
 		return;
 
 	fz_drop_outline(ctx, outline);
+	outline = NULL;
 
 	fz_parse_stext_options(ctx, &opts, reflow_options);
 
