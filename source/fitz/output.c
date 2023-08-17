@@ -388,7 +388,7 @@ fz_stream *
 fz_stream_from_output(fz_context *ctx, fz_output *out)
 {
 	if (out->as_stream == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot derive input stream from output stream");
+		return NULL;
 	fz_flush_output(ctx, out);
 	return out->as_stream(ctx, out->state);
 }
