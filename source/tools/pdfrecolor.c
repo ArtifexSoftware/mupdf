@@ -64,7 +64,7 @@ color_rewrite(fz_context *ctx, void *opaque, pdf_obj **cs_obj, int *n, float col
 }
 
 static void
-image_rewrite(fz_context *ctx, void *opaque, fz_image **image)
+image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix ctm, pdf_obj *im_obj)
 {
 	fz_image *orig = *image;
 	fz_pixmap *pix;

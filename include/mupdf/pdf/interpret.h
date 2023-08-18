@@ -385,13 +385,20 @@ pdf_obj *pdf_processor_pop_resources(fz_context *ctx, pdf_processor *proc);
 			*image either the same (for no change) or updated
 			to be a new one. Reference must be dropped, and a
 			new kept reference returned.
+
+	share_rewrite: function pointer called to rewrite a shade
+
+	repeated_image_rewrite: If 0, then each image is rewritten only once.
+		Otherwise, it is called for every instance (useful if gathering
+		information about the ctm).
 */
 typedef struct
 {
 	void *opaque;
 	void (*color_rewrite)(fz_context *ctx, void *opaque, pdf_obj **cs, int *n, float color[FZ_MAX_COLORS]);
-	void (*image_rewrite)(fz_context *ctx, void *opaque, fz_image **image);
+	void (*image_rewrite)(fz_context *ctx, void *opaque, fz_image **image, fz_matrix ctm, pdf_obj *obj);
 	pdf_shade_recolorer *shade_rewrite;
+	int repeated_image_rewrite;
 } pdf_color_filter_options;
 
 pdf_processor *
