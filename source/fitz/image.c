@@ -1353,6 +1353,19 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	return image;
 }
 
+int
+fz_compressed_image_type(fz_context *ctx, fz_image *image)
+{
+	fz_compressed_image *cim;
+
+	if (image == NULL || image->drop_image != drop_compressed_image)
+		return FZ_IMAGE_UNKNOWN;
+
+	cim = (fz_compressed_image *)image;
+
+	return cim->buffer->params.type;
+}
+
 fz_image *
 fz_new_image_from_file(fz_context *ctx, const char *path)
 {

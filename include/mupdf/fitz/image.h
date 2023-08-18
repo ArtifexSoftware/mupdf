@@ -316,6 +316,14 @@ fz_pixmap *fz_convert_separation_pixmap_to_base(fz_context *ctx, const fz_pixmap
 size_t fz_image_size(fz_context *ctx, fz_image *im);
 
 /**
+	Return the type of a compressed image.
+
+	Any non-compressed image will have the type returned as UNKNOWN.
+*/
+int fz_compressed_image_type(fz_context *ctx, fz_image *image);
+
+
+/**
 	Structure is public to allow other structures to
 	be derived from it. Do not access members directly.
 */
