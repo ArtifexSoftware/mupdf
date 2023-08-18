@@ -841,8 +841,8 @@ unknown_compression:
 	}
 	fz_catch(ctx)
 	{
-		pdf_abandon_operation(ctx, doc);
 		pdf_drop_obj(ctx, imobj);
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
 	return imobj;

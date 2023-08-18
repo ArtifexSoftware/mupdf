@@ -1324,8 +1324,8 @@ pdf_add_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, p
 	}
 	fz_catch(ctx)
 	{
-		pdf_abandon_operation(ctx, doc);
 		pdf_drop_obj(ctx, page_obj);
+		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
 	return page_ref;

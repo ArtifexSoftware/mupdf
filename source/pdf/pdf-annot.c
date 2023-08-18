@@ -790,8 +790,8 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 	}
 	fz_catch(ctx)
 	{
-		pdf_abandon_operation(ctx, page->doc);
 		pdf_drop_annot(ctx, annot);
+		pdf_abandon_operation(ctx, page->doc);
 		fz_rethrow(ctx);
 	}
 
