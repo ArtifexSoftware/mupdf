@@ -3367,8 +3367,8 @@ static void
 ensure_initial_incremental_contents(fz_context *ctx, fz_stream *in, fz_output *out, int64_t len)
 {
 	fz_stream *verify;
-	unsigned char buf0[256];
-	unsigned char buf1[256];
+	unsigned char buf0[4096];
+	unsigned char buf1[4096];
 	size_t n0, n1;
 	int64_t off = 0;
 	int same;
