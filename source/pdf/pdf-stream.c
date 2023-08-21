@@ -427,7 +427,7 @@ pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 	fz_var(decomp);
 	fz_var(pixmap);
 
-	bc = fz_malloc_struct(ctx, fz_compressed_buffer);
+	bc = fz_new_compressed_buffer(ctx);
 	fz_try(ctx)
 	{
 		bc->buffer = fz_new_buffer(ctx, 1024);

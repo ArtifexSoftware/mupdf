@@ -170,4 +170,9 @@ enum
 */
 void fz_drop_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf);
 
+/**
+	Create a new, UNKNOWN format, compressed_buffer;
+*/
+fz_compressed_buffer *fz_new_compressed_buffer(fz_context *ctx);
+
 #endif

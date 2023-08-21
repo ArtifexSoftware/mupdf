@@ -37,6 +37,12 @@ fz_drop_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf)
 	}
 }
 
+fz_compressed_buffer *
+fz_new_compressed_buffer(fz_context *ctx)
+{
+	return fz_malloc_struct(ctx, fz_compressed_buffer);
+}
+
 fz_stream *
 fz_open_image_decomp_stream_from_buffer(fz_context *ctx, fz_compressed_buffer *buffer, int *l2factor)
 {
