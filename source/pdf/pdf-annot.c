@@ -685,7 +685,9 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 
 	int flags = PDF_ANNOT_IS_PRINT; /* Make printable as default */
 
-	pdf_annot *annot;
+	pdf_annot *annot = NULL;
+
+	fz_var(annot);
 
 	pdf_begin_operation(ctx, page->doc, "Create Annotation");
 
