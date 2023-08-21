@@ -135,6 +135,7 @@ static void term_source_dct(j_decompress_ptr cinfo)
 
 static boolean fill_input_buffer_dct(j_decompress_ptr cinfo)
 {
+	static unsigned char eoi[2] = { 0xFF, JPEG_EOI };
 	struct jpeg_source_mgr *src = cinfo->src;
 	fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
 	fz_context *ctx = state->ctx;
@@ -147,13 +148,20 @@ static boolean fill_input_buffer_dct(j_decompress_ptr cinfo)
 	}
 	fz_catch(ctx)
 	{
-		return 0;
+		/* Since fz_available swallows all other errors, the only errors that can
+		 * bubble up to here are TRYLATER and exception stack overflow.
+		 * Ignore this catastrophic failure and treat it as end of file.
+		 * NOTE: We do NOT handle TRYLATER here.
+		 */
+		src->next_input_byte = eoi;
+		src->bytes_in_buffer = 2;
+		return 1;
 	}
+
 	src->next_input_byte = curr_stm->rp;
 
 	if (src->bytes_in_buffer == 0)
 	{
-		static unsigned char eoi[2] = { 0xFF, JPEG_EOI };
 		fz_warn(state->ctx, "premature end of file in jpeg");
 		src->next_input_byte = eoi;
 		src->bytes_in_buffer = 2;
