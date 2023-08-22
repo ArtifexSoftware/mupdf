@@ -290,11 +290,11 @@ fz_buffer *
 fz_new_buffer_from_image_as_jpeg(fz_context *ctx, fz_image *image, fz_color_params color_params, int quality)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-	return jpeg_from_pixmap(ctx, pix, color_params, 1, quality);
+	return jpeg_from_pixmap(ctx, pix, color_params, quality, 1);
 }
 
 fz_buffer *
 fz_new_buffer_from_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int quality)
 {
-	return jpeg_from_pixmap(ctx, pix, color_params, 0, quality);
+	return jpeg_from_pixmap(ctx, pix, color_params, quality, 0);
 }
