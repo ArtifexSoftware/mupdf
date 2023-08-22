@@ -469,7 +469,7 @@ void fz_rethrow_ifFL(fz_context *ctx, const char *file, int line, int err)
 	assert(ctx && ctx->error.errcode >= FZ_ERROR_NONE);
 	if (ctx->error.errcode == err)
 	{
-		(fz_log_error_printf)(ctx, "%s:%d: Rethrowing");
+		(fz_log_error_printf)(ctx, "%s:%d: Rethrowing", file, line);
 		(fz_rethrow)(ctx);
 	}
 }
