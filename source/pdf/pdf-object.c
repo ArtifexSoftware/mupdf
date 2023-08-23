@@ -1417,16 +1417,17 @@ void pdf_redo(fz_context *ctx, pdf_document *doc)
 	entry = doc->journal->current;
 	if (entry == NULL)
 	{
-		/* Move to the start of a non-empty list */
-		/* We know doc->journal->head is non NULL by construction. */
+		/* If journal->current is null then everything has been undone. */
+		/* Go to the first change in journal->head if it exists. */
 		entry = doc->journal->head;
 	}
 	else
 	{
 		entry = entry->next;
-		if (entry == NULL)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Already at end of history");
 	}
+
+	if (entry == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Already at end of history");
 
 	doc->journal->current = entry;
 
