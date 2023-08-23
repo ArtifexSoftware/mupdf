@@ -937,7 +937,7 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 
 	*rect = fz_empty_rect;
 
-	fz_append_printf(ctx, buf, "1 j\n");
+	fz_append_printf(ctx, buf, "1 J\n1 j\n");
 
 	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME(InkList));
 	n = pdf_array_len(ctx, ink_list);
