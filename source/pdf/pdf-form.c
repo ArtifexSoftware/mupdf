@@ -546,7 +546,10 @@ static void toggle_check_box(fz_context *ctx, pdf_annot *annot)
 		if (as && as != PDF_NAME(Off))
 		{
 			if (is_radio && is_no_toggle_to_off)
+			{
+				end_annot_op(ctx, annot);
 				break;
+			}
 			val = PDF_NAME(Off);
 		}
 		else
