@@ -1412,7 +1412,7 @@ static void Memento_removeBlockSplay(Memento_Blocks    *blks,
             b->parent->left = replacement;
         else
             b->parent->right = replacement;
-            VALGRIND_MAKE_MEM_NOACCESS(b->parent, sizeof(*b->parent));
+        VALGRIND_MAKE_MEM_NOACCESS(b->parent, sizeof(*b->parent));
     } else {
         VALGRIND_MAKE_MEM_DEFINED(&blks->top, sizeof(blks->top));
         blks->top = replacement;
