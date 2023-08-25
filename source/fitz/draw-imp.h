@@ -290,7 +290,7 @@ static inline void fz_insert_rasterizer(fz_context *ctx, fz_rasterizer *r, float
 }
 
 /*
-	fz_insert_rasterizer: Insert a rectangle into a rasterizer.
+	fz_insert_rasterizer_rect: Insert a rectangle into a rasterizer.
 
 	x0, y0: One corner of the rectangle.
 
