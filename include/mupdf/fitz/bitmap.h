@@ -61,6 +61,13 @@ fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /**
+	Invert bitmap.
+
+	Never throws exceptions.
+*/
+void fz_invert_bitmap(fz_context *ctx, fz_bitmap *bmp);
+
+/**
 	A halftone is a set of threshold tiles, one per component. Each
 	threshold tile is a pixmap, possibly of varying sizes and
 	phases. Currently, we only provide one 'default' halftone tile

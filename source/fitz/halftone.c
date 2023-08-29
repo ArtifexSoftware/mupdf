@@ -524,6 +524,20 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0);
 }
 
+void fz_invert_bitmap(fz_context *ctx, fz_bitmap *bmp)
+{
+	unsigned char *s = bmp->samples;
+	int w, h, w2 = (bmp->w+7)>>3;
+
+	for (h = bmp->h; h > 0; h--)
+	{
+		unsigned char *t = s;
+		for (w = w2; w > 0; w--)
+			*t++ ^= 255;
+		s += bmp->stride;
+	}
+}
+
 /* TAOCP, vol 2, p337 */
 static int gcd(int u, int v)
 {
