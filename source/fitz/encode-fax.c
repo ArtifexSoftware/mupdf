@@ -220,9 +220,8 @@ putrun(fz_context *ctx, fz_buffer *out, int run, int c)
 }
 
 fz_buffer *
-fz_compress_ccitt_fax_g4(fz_context *ctx, const unsigned char *src, int columns, int rows)
+fz_compress_ccitt_fax_g4(fz_context *ctx, const unsigned char *src, int columns, int rows, ptrdiff_t stride)
 {
-	int stride = (columns + 7) >> 3;
 	fz_buffer *out = fz_new_buffer(ctx, (stride * rows) >> 3);
 	const unsigned char *ref = NULL;
 
@@ -285,9 +284,8 @@ fz_compress_ccitt_fax_g4(fz_context *ctx, const unsigned char *src, int columns,
 }
 
 fz_buffer *
-fz_compress_ccitt_fax_g3(fz_context *ctx, const unsigned char *src, int columns, int rows)
+fz_compress_ccitt_fax_g3(fz_context *ctx, const unsigned char *src, int columns, int rows, ptrdiff_t stride)
 {
-	int stride = (columns + 7) >> 3;
 	fz_buffer *out = fz_new_buffer(ctx, (stride * rows) >> 3);
 	int i;
 

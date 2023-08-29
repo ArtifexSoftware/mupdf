@@ -1839,7 +1839,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		{
 			if (is_bitmap_stream(ctx, obj, len, &w, &h))
 			{
-				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h);
+				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, (w+7)>>3);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(CCITTFaxDecode));
 				dp = pdf_dict_put_dict(ctx, obj, PDF_NAME(DecodeParms), 1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
@@ -1919,7 +1919,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		{
 			if (is_bitmap_stream(ctx, obj, len, &w, &h))
 			{
-				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h);
+				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, (w+7)>>3);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(CCITTFaxDecode));
 				dp = pdf_dict_put_dict(ctx, obj, PDF_NAME(DecodeParms), 1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
