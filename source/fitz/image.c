@@ -1341,7 +1341,10 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		bc->buffer = fz_keep_buffer(ctx, buffer);
 		bc->params.type = type;
 		if (type == FZ_IMAGE_JPEG)
+		{
 			bc->params.u.jpeg.color_transform = -1;
+			bc->params.u.jpeg.invert_cmyk = 1;
+		}
 		image = fz_new_image_from_compressed_buffer(ctx, w, h, bpc, cspace, xres, yres, 0, 0, NULL, NULL, bc, NULL);
 		image->orientation = orientation;
 	}

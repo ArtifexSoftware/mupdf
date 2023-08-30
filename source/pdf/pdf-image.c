@@ -562,9 +562,22 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 			case FZ_IMAGE_RAW:
 				break;
 			case FZ_IMAGE_JPEG:
+				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(DCTDecode));
 				if (cp->u.jpeg.color_transform >= 0)
 					pdf_dict_put_int(ctx, dp, PDF_NAME(ColorTransform), cp->u.jpeg.color_transform);
-				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(DCTDecode));
+				if (cp->u.jpeg.invert_cmyk && image->n == 4)
+				{
+					pdf_obj *arr;
+					arr = pdf_dict_put_array(ctx, imobj, PDF_NAME(Decode), 8);
+					pdf_array_push_int(ctx, arr, 1);
+					pdf_array_push_int(ctx, arr, 0);
+					pdf_array_push_int(ctx, arr, 1);
+					pdf_array_push_int(ctx, arr, 0);
+					pdf_array_push_int(ctx, arr, 1);
+					pdf_array_push_int(ctx, arr, 0);
+					pdf_array_push_int(ctx, arr, 1);
+					pdf_array_push_int(ctx, arr, 0);
+				}
 				break;
 			case FZ_IMAGE_JPX:
 				if (cp->u.jpx.smask_in_data)

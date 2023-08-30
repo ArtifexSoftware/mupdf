@@ -39,6 +39,7 @@ typedef struct
 	union {
 		struct {
 			int color_transform; /* Use -1 for unset */
+			int invert_cmyk; /* Use 1 for standalone JPEG files */
 		} jpeg;
 		struct {
 			int smask_in_data;

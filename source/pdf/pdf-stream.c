@@ -151,7 +151,8 @@ build_compression_params(fz_context *ctx, pdf_obj *f, pdf_obj *p, fz_compression
 		pdf_obj *ct = pdf_dict_get(ctx, p, PDF_NAME(ColorTransform));
 
 		params->type = FZ_IMAGE_JPEG;
-		params->u.jpeg.color_transform = (ct ? pdf_to_int(ctx, ct) : -2);
+		params->u.jpeg.color_transform = (ct ? pdf_to_int(ctx, ct) : -1);
+		params->u.jpeg.invert_cmyk = 0;
 	}
 	else if (pdf_name_eq(ctx, f, PDF_NAME(RunLengthDecode)) || pdf_name_eq(ctx, f, PDF_NAME(RL)))
 	{

@@ -404,6 +404,7 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, const unsigned char *rp, un
 
 			stm = fz_open_dctd(ctx, encstm,
 					tiff->photometric == 2 || tiff->photometric == 3 ? 0 : -1,
+					1,
 					0,
 					jpegtables);
 			break;
@@ -1549,7 +1550,7 @@ tiff_decode_jpeg(fz_context *ctx, struct tiff *tiff)
 	fz_try(ctx)
 	{
 		rawstm = fz_open_memory(ctx, tiff->bp + tiff->jpegofs, tiff->jpeglen);
-		stm = fz_open_dctd(ctx, rawstm, -1, 0, NULL);
+		stm = fz_open_dctd(ctx, rawstm, -1, 1, 0, NULL);
 		size = (unsigned)fz_read(ctx, stm, tiff->samples, wlen);
 	}
 	fz_always(ctx)

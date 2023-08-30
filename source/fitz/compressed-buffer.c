@@ -93,7 +93,7 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_stream *tail, fz_compression_par
 					our_l2factor = 3;
 				*l2factor -= our_l2factor;
 			}
-			head = fz_open_dctd(ctx, tail, params->u.jpeg.color_transform, our_l2factor, NULL);
+			head = fz_open_dctd(ctx, tail, params->u.jpeg.color_transform, params->u.jpeg.invert_cmyk, our_l2factor, NULL);
 			break;
 
 		case FZ_IMAGE_JBIG2:
