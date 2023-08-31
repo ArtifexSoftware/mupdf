@@ -334,12 +334,11 @@ class BuildDirs:
                 jlib.log('Adding suffix to {leaf!r}: {suffix!r}')
                 self.dir_so += suffix
                 leaf = os.path.basename(self.dir_so)
-            m = re.match( 'shared-([a-z]+)(-(x[0-9]+))?(-py([0-9.]+))?$', leaf)
+            m = re.search( '-(x[0-9]+)-py([0-9.]+)$', leaf)
             #log(f'self.dir_so={self.dir_so} {os.path.basename(self.dir_so)} m={m}')
             assert m, f'Failed to parse dir_so={self.dir_so!r} - should be *-x32|x64-pyA.B'
-            assert m.group(3), f'No cpu in self.dir_so: {self.dir_so}'
-            self.cpu = Cpu( m.group(3))
-            self.python_version = m.group(5)
+            self.cpu = Cpu( m.group(1))
+            self.python_version = m.group(2)
             #jlib.log('{self.cpu=} {self.python_version=} {dir_so=}')
         else:
             # Use Python we are running under.
