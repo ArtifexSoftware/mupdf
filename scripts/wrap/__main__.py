@@ -905,6 +905,20 @@ import sysconfig
 import tempfile
 import textwrap
 
+if platform.system() == 'Windows':
+    '''
+    shlex.quote() is broken.
+    '''
+    def quote(text):
+        if ' ' in text:
+            if '"' not in text:
+                return f'"{text}"'
+            if "'" not in text:
+                return f"'{text}'"
+            assert 0, f'Cannot handle quotes in {text=}'
+        return text
+    shlex.quote = quote
+
 try:
     import resource
 except ModuleNotFoundError:
