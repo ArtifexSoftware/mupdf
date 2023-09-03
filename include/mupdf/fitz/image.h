@@ -422,6 +422,13 @@ void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *cimg, fz_pixmap 
 fz_pixmap *fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspace *cs);
 
 /**
+	Exposed because compression and decompression need to share this.
+*/
+void opj_lock(fz_context *ctx);
+void opj_unlock(fz_context *ctx);
+
+
+/**
 	Exposed for CBZ.
 */
 int fz_load_tiff_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len);

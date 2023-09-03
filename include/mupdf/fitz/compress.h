@@ -25,6 +25,7 @@
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/buffer.h"
+#include "mupdf/fitz/pixmap.h"
 
 typedef enum
 {

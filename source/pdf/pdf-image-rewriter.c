@@ -489,7 +489,37 @@ fz_recompress_image_as_jpeg(fz_context *ctx, fz_pixmap *pix, const char *quality
 static fz_compressed_buffer *
 fz_recompress_image_as_j2k(fz_context *ctx, fz_pixmap *pix, const char *quality)
 {
-	return NULL;
+	fz_compressed_buffer *cbuf = fz_new_compressed_buffer(ctx);
+	fz_output *out = NULL;
+	int q = fz_atoi(quality);
+
+	if (q <= 0)
+		q = 80; /* Default 1:20 compression */
+	if (q > 100)
+		q = 100;
+
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		cbuf->buffer = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, cbuf->buffer);
+
+		fz_write_pixmap_as_jpx(ctx, out, pix, q);
+		cbuf->params.type = FZ_IMAGE_JPX;
+		cbuf->params.u.jpx.smask_in_data = 0;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_compressed_buffer(ctx, cbuf);
+		fz_rethrow(ctx);
+	}
+
+	return cbuf;
 }
 
 static fz_compressed_buffer *
