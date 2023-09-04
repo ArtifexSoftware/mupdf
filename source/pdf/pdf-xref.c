@@ -1548,6 +1548,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 	int i, len, cap;
 	int64_t *offsets;
 	int populated = 0;
+	int size, xref_len;
 
 	len = 0;
 	cap = 10;
@@ -1587,6 +1588,11 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 		 * xref in the file is highly fragmented, we can safely solidify it here
 		 * with no ill effects. */
 		ensure_solid_xref(ctx, doc, 0, doc->num_xref_sections-1);
+
+		size = pdf_dict_get_int(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size));
+		xref_len = pdf_xref_len(ctx, doc);
+		if (xref_len > size)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "incorrect number of xref entries in trailer, repairing");
 	}
 	fz_always(ctx)
 	{
