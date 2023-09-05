@@ -717,6 +717,7 @@ typedef struct
 	int do_snapshot; /* Do not use directly. Use the snapshot functions. */
 	int do_preserve_metadata; /* When cleaning, preserve metadata unchanged. */
 	int do_use_objstms; /* Use objstms if possible */
+	int compression_effort; /* 0 for default. 100 = max, 1 = min. */
 } pdf_write_options;
 
 FZ_DATA extern const pdf_write_options pdf_default_write_options;

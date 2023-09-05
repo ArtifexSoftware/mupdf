@@ -56,6 +56,7 @@ static int usage(void)
 		"\t-a\tascii hex encode binary streams\n"
 		"\t-d\tdecompress streams\n"
 		"\t-z\tdeflate uncompressed streams\n"
+		"\t-e -\tcompression \"effort\" (0 = default, 1 = min, 100 = max)\n"
 		"\t-f\tcompress font streams\n"
 		"\t-i\tcompress image streams\n"
 		"\t-c\tclean content streams\n"
@@ -90,7 +91,7 @@ int pdfclean_main(int argc, char **argv)
 
 	opts.dont_regenerate_id = 1;
 
-	while ((c = fz_getopt(argc, argv, "adfgilmp:sczDAE:O:U:P:Z")) != -1)
+	while ((c = fz_getopt(argc, argv, "ade:fgilmp:sczDAE:O:U:P:Z")) != -1)
 	{
 		switch (c)
 		{
@@ -101,6 +102,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'f': opts.do_compress_fonts += 1; break;
 		case 'i': opts.do_compress_images += 1; break;
 		case 'a': opts.do_ascii += 1; break;
+		case 'e': opts.compression_effort = fz_atoi(fz_optarg); break;
 		case 'g': opts.do_garbage += 1; break;
 		case 'l': opts.do_linear += 1; break;
 		case 'c': opts.do_clean += 1; break;

@@ -98,6 +98,7 @@ typedef struct
 	int do_snapshot;
 	int do_preserve_metadata;
 	int do_use_objstms;
+	int compression_effort;
 
 	int list_len;
 	int *use_list;
@@ -1725,7 +1726,7 @@ static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		fz_rethrow(ctx);
 }
 
-static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
+static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n, int effort)
 {
 	fz_buffer *buf;
 	uLongf csize;
@@ -1733,6 +1734,7 @@ static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 	uLong longN = (uLong)n;
 	unsigned char *data;
 	size_t cap;
+	int mode;
 
 	if (n != (size_t)longN)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer too large to deflate");
@@ -1741,7 +1743,11 @@ static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 	data = Memento_label(fz_malloc(ctx, cap), "pdf_write_deflate");
 	buf = fz_new_buffer_from_data(ctx, data, cap);
 	csize = (uLongf)cap;
-	t = compress(data, &csize, p, longN);
+	if (effort == 0)
+		mode = Z_DEFAULT_COMPRESSION;
+	else
+		mode = effort * Z_BEST_COMPRESSION / 100;
+	t = compress2(data, &csize, p, longN, mode);
 	if (t != Z_OK)
 	{
 		fz_drop_buffer(ctx, buf);
@@ -1870,7 +1876,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 			}
 			else
 			{
-				tmp_comp = deflatebuf(ctx, data, len);
+				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
 			}
 			len = fz_buffer_storage(ctx, tmp_comp, &data);
@@ -1950,7 +1956,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			}
 			else
 			{
-				tmp_comp = deflatebuf(ctx, data, len);
+				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
 			}
 			len = fz_buffer_storage(ctx, tmp_comp, &data);
@@ -3105,6 +3111,11 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	opts->do_compress_images = in_opts->do_compress_images;
 	opts->do_compress_fonts = in_opts->do_compress_fonts;
 	opts->do_snapshot = in_opts->do_snapshot;
+	opts->compression_effort = in_opts->compression_effort;
+	if (opts->compression_effort < 0)
+		opts->compression_effort = 0;
+	else if (opts->compression_effort > 100)
+		opts->compression_effort = 100;
 
 	opts->do_garbage = in_opts->do_garbage;
 	opts->do_linear = in_opts->do_linear;
