@@ -1152,20 +1152,6 @@ classextras = ClassExtras(
                     ],
                 methods_extra = [
                     ExtraMethod(
-                        f'std::vector<{rename.class_("fz_quad")}>',
-                        f'{rename.method("fz_page", "fz_search_page")}(const char* needle, int *hit_mark, int max)',
-                        f'''
-                        {{
-                            std::vector<{rename.class_("fz_quad")}> ret(max);
-                            ::fz_quad* hit_bbox = ret[0].internal();
-                            int n = {rename.ll_fn('fz_search_page')}(m_internal, needle, hit_mark, hit_bbox, (int) ret.size());
-                            ret.resize(n);
-                            return ret;
-                        }}
-                        ''',
-                        comment=f'/* Wrapper for fz_search_page(). */',
-                        ),
-                    ExtraMethod(
                         f'{rename.class_("fz_document")}',
                         'doc()',
                         f'''
