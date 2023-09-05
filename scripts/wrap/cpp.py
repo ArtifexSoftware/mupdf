@@ -923,6 +923,10 @@ def make_namespace_close( namespace, out):
 # and `std::vector<>` that work well enough for the generation of the
 # C++ API.
 #
+# We also define extra raw functions to aid SWIG-generated code. These
+# are implemented in C++, and should be excluded from the generated
+# windows_def file later on, otherwise we get link errors on Windows.
+#
 g_extra_declarations = textwrap.dedent(f'''
 
         #ifdef MUPDF_WRAP_LIBCLANG
@@ -949,28 +953,58 @@ g_extra_declarations = textwrap.dedent(f'''
         #include "mupdf/fitz.h"
         #include "mupdf/pdf.h"
 
-        /** C++-specific alternative to `fz_lookup_metadata()` that returns a
-        `std::string` or calls `fz_throw()` if not found.
+        /**
+        C++ alternative to `fz_lookup_metadata()` that returns a `std::string`
+        or calls `fz_throw()` if not found.
         */
-        FZ_FUNCTION std::string fz_lookup_metadata2( fz_context* ctx, fz_document* doc, const char *key);
+        FZ_FUNCTION std::string fz_lookup_metadata2(fz_context* ctx, fz_document* doc, const char* key);
 
-        /** C++-specific alternative to `pdf_lookup_metadata()` that returns a
-        `std::string` or calls `fz_throw()` if not found.
+        /**
+        C++ alternative to `pdf_lookup_metadata()` that returns a `std::string`
+        or calls `fz_throw()` if not found.
         */
-        FZ_FUNCTION std::string pdf_lookup_metadata2( fz_context* ctx, pdf_document* doc, const char *key);
+        FZ_FUNCTION std::string pdf_lookup_metadata2(fz_context* ctx, pdf_document* doc, const char* key);
 
-        /** Convenience wrapper for `fz_md5_pixmap()`. */
-        FZ_FUNCTION std::vector<unsigned char> fz_md5_pixmap2(fz_context *ctx, fz_pixmap *pixmap);
+        /**
+        C++ alternative to `fz_md5_pixmap()` that returns the digest by value.
+        */
+        FZ_FUNCTION std::vector<unsigned char> fz_md5_pixmap2(fz_context* ctx, fz_pixmap* pixmap);
 
-        /** Mainly for use by Python/C# test code. */
-        FZ_FUNCTION long long fz_pixmap_samples_int(fz_context *ctx, fz_pixmap *pixmap);
-
-        FZ_FUNCTION int fz_samples_get(fz_pixmap *pixmap, int offset);
-
-        FZ_FUNCTION void fz_samples_set(fz_pixmap *pixmap, int offset, int value);
-
-        /** Wrapper for fz_md5_final() that returns the digest by value. */
+        /**
+        C++ alternative to fz_md5_final() that returns the digest by value.
+        */
         FZ_FUNCTION std::vector<unsigned char> fz_md5_final2(fz_md5* md5);
+
+        /** */
+        FZ_FUNCTION long long fz_pixmap_samples_int(fz_context* ctx, fz_pixmap* pixmap);
+
+        /**
+        Provides simple (but slow) access to pixmap data from Python and C#.
+        */
+        FZ_FUNCTION int fz_samples_get(fz_pixmap* pixmap, int offset);
+
+        /**
+        Provides simple (but slow) write access to pixmap data from Python and
+        C#.
+        */
+        FZ_FUNCTION void fz_samples_set(fz_pixmap* pixmap, int offset, int value);
+
+        /**
+        C++ alternative to fz_highlight_selection() that returns quads in a
+        std::vector.
+        */
+        FZ_FUNCTION std::vector<fz_quad> fz_highlight_selection2(fz_context* ctx, fz_stext_page* page, fz_point a, fz_point b, int max_quads);
+
+        struct fz_search_page2_hit
+        {{
+            fz_quad quad;
+            int mark;
+        }};
+
+        /**
+        C++ alternative to fz_search_page() that returns information in a std::vector.
+        */
+        FZ_FUNCTION std::vector<fz_search_page2_hit> fz_search_page2(fz_context* ctx, fz_document *doc, int number, const char *needle, int hit_max);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1035,6 +1069,44 @@ g_extra_definitions = textwrap.dedent(f'''
         {{
             std::vector<unsigned char>  ret(16);
             fz_md5_final( md5, &ret[0]);
+            return ret;
+        }}
+
+        FZ_FUNCTION std::vector<fz_quad> fz_highlight_selection2(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, int max_quads)
+        {{
+            {{
+                std::vector<fz_quad>    ret(max_quads);
+                int n;
+                fz_try(ctx)
+                {{
+                    n = fz_highlight_selection(ctx, page, a, b, &ret[0], max_quads);
+                }}
+                fz_catch(ctx)
+                {{
+                    n = -1;
+                }}
+                if (n >= 0)
+                {{
+                    ret.resize(n);
+                    return ret;
+                }}
+            }}
+            /* We are careful to only call `fz_throw()` after `ret`'s
+            destructor has been called. */
+            fz_throw(ctx, FZ_ERROR_GENERIC, "fz_highlight_selection() failed");
+        }}
+
+        FZ_FUNCTION std::vector<fz_search_page2_hit> fz_search_page2(fz_context *ctx, fz_document *doc, int number, const char *needle, int hit_max)
+        {{
+            std::vector<fz_quad>    quads(hit_max);
+            std::vector<int>        marks(hit_max);
+            int n = fz_search_page_number(ctx, doc, number, needle, &marks[0], &quads[0], hit_max);
+            std::vector<fz_search_page2_hit>    ret(n);
+            for (int i=0; i<n; ++i)
+            {{
+                ret[i].quad = quads[i];
+                ret[i].mark = marks[i];
+            }}
             return ret;
         }}
         ''')
@@ -3467,11 +3539,16 @@ def get_struct_fnptrs( cursor_struct, shallow_typedef_expansion=False, verbose=F
                     tt = state.get_name_canonical( t)
                     if verbose:
                         jlib.log('{tt.spelling=}')
-                    if not 'struct (unnamed at ' in tt.spelling:
+                    if (0
+                            or 'struct (unnamed at ' in tt.spelling
+                            or 'unnamed struct at ' in tt.spelling
+                            ):
+
                         # This is clang giving an unhelpful name to an
                         # anonymous struct.
                         if verbose:
-                            jlib.log( 'Avoiding clang struct (unnamed at ...) anonymous struct: {tt.spelling=}')
+                            jlib.log( 'Avoiding clang anonymous struct placeholder: {tt.spelling=}')
+                    else:
                         t = tt
                 if verbose:
                     jlib.log('Yielding: {cursor.spelling=} {t.spelling=}')
@@ -3664,6 +3741,14 @@ def class_wrapper_virtual_fnptrs(
         out_h.write(f'    FZ_FUNCTION void use_virtual_{cursor.spelling}( bool use=true);\n')
         out_cpp.write(f'FZ_FUNCTION void {classname}2::use_virtual_{cursor.spelling}( bool use)\n')
         out_cpp.write( '{\n')
+
+        out_cpp.write(f'    {refcheck_if}\n')
+        out_cpp.write(f'    if (s_trace_director)\n')
+        out_cpp.write( '    {\n')
+        out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2::use_virtual_{cursor.spelling}(): this=" << this << " use=" << use << "\\n";\n')
+        out_cpp.write( '    }\n')
+        out_cpp.write( '    #endif\n')
+
         if extras.pod == 'inline':
             # Fnptr (in {classname}2) and virtual function (in {classname})
             # have same name, so we need qualify the fnptr with {classname} to
@@ -3703,8 +3788,8 @@ def class_wrapper_virtual_fnptrs(
         out_h.write( ');\n')
         out_cpp.write( ')\n')
         out_cpp.write( '{\n')
-        out_cpp.write(f'    std::cerr << "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}().\\n";\n')
-        out_cpp.write(f'    throw std::runtime_error( "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}().");\n')
+        out_cpp.write(f'    std::cerr << "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}(): this=" << this << ".\\n";\n')
+        out_cpp.write(f'    throw std::runtime_error( "Unexpected call of unimplemented virtual_fnptrs fn {classname}2::{cursor.spelling}()");\n')
         out_cpp.write( '}\n')
 
     out_h.write(  '};\n')
@@ -4382,6 +4467,7 @@ def cpp_source(
         check_regress,
         clang_info_version,
         refcheck_if,
+        debug,
         ):
     '''
     Generates all .h and .cpp files.
@@ -4406,6 +4492,8 @@ def cpp_source(
             `#if ... ' text for enabling reference-checking code. For example
             `#if 1` to always enable, `#ifndef NDEBUG` to only enable in debug
             builds, `#if 0` to always disable.
+        debug:
+            True if debug build.
 
     Updates <generated> and returns <tu> from clang..
     '''
@@ -4561,7 +4649,10 @@ def cpp_source(
 
     # Now parse.
     #
-    index = state.clang.cindex.Index.create()
+    try:
+        index = state.clang.cindex.Index.create()
+    except Exception as e:
+        raise Exception(f'libclang does not appear to be installed') from e
 
     header = f'{dir_mupdf}/include/mupdf/fitz.h'
     assert os.path.isfile( header), f'header={header}'
@@ -4673,6 +4764,8 @@ def cpp_source(
 
     out_hs.functions.write( textwrap.dedent(
             '''
+            #include "mupdf/extra.h"
+
             #include "mupdf/fitz.h"
             #include "mupdf/pdf.h"
 
@@ -4888,6 +4981,8 @@ def cpp_source(
                 'fz_samples_set',
                 'pdf_lookup_metadata2',
                 'fz_md5_final2',
+                'fz_highlight_selection2',
+                'fz_search_page2',
                 ):
             # These are excluded from windows_def because are C++ so
             # we'd need to use the mangled name in. Instead we mark them
@@ -4907,6 +5002,12 @@ def cpp_source(
             'fz_write_pixmap_as_jpeg',
             ):
         windows_def += f'    {fnname}\n'
+
+    if debug:
+        # In debug builds these are real fns, not macros, and we need to
+        # make them exported.
+        windows_def += f'    fz_lock_debug_lock\n'
+        windows_def += f'    fz_lock_debug_unlock\n'
 
     jlib.fs_update( windows_def, f'{base}/windows_mupdf.def')
 

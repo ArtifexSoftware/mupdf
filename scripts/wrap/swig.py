@@ -74,7 +74,7 @@ def build_swig(
     m = re.search( 'SWIG Version ([0-9]+)[.]([0-9]+)[.]([0-9]+)', t)
     assert m
     swig_major = int( m.group(1))
-    jlib.system( f'which "{swig_command}"')
+    jlib.system( f'which "{swig_command}"', raise_errors=0)
 
     # Create a .i file for SWIG.
     #
@@ -820,6 +820,12 @@ def build_swig(
             %ignore {rename.ll_fn('Memento_vasprintf')};
             %ignore {rename.fn('Memento_vasprintf')};
 
+            // These appear to be not present in Windows debug builds.
+            %ignore fz_assert_lock_held;
+            %ignore fz_assert_lock_not_held;
+            %ignore fz_lock_debug_lock;
+            %ignore fz_lock_debug_unlock;
+
             %ignore Memento_cpp_new;
             %ignore Memento_cpp_delete;
             %ignore Memento_cpp_new_array;
@@ -865,6 +871,7 @@ def build_swig(
                 %template(vectori) vector<int>;
                 %template(vectors) vector<std::string>;
                 %template(vectorq) vector<{rename.namespace_class("fz_quad")}>;
+                %template(vector_search_page2_hit) vector<fz_search_page2_hit>;
             }};
 
             // Make sure that operator++() gets converted to __next__().
@@ -907,7 +914,7 @@ def build_swig(
                                 #ifndef _WIN32
                                 << __PRETTY_FUNCTION__ << ": "
                                 #endif
-                                << "Converting C++ std::exception into Python exception: " << e.what()
+                                << "Converting C++ std::exception into {language} exception: " << e.what()
                                 << "\\n";
                     }}
                     SWIG_exception( SWIG_RuntimeError, e.what());
@@ -920,7 +927,7 @@ def build_swig(
                                 #ifndef _WIN32
                                 << __PRETTY_FUNCTION__ << ": "
                                 #endif
-                                << "Converting unknown C++ exception into Python exception."
+                                << "Converting unknown C++ exception into {language} exception."
                                 << "\\n";
                     }}
                     SWIG_exception( SWIG_RuntimeError, "Unknown exception");
