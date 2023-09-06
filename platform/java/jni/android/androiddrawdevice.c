@@ -88,10 +88,14 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	/* lockNativeDevice will already have raised a JNI error if there was one. */
 	if (err)
 	{
+		jthrowable t = (*env)->ExceptionOccurred(env);
+		(*env)->ExceptionClear(env);
 		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, 0);
 		(*env)->SetObjectField(env, self, fid_NativeDevice_nativeResource, NULL);
 		fz_drop_pixmap(ctx, pixmap);
 		fz_free(ctx, ninfo);
+		if ((*env)->Throw(env, t) < 0)
+			(*env)->ThrowNew(env, cls_RuntimeException, "could not rethrow exception after cleanup when locking failed");
 		return 0;
 	}
 
