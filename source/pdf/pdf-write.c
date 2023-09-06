@@ -3721,6 +3721,18 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			preloadobjstms(ctx, doc);
 		}
 
+		/* If we're using objstms, then the version must be at least 1.5 */
+		if (opts->do_use_objstms && pdf_version(ctx, doc) < 15)
+		{
+			pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
+			pdf_obj *version = pdf_dict_get(ctx, root, PDF_NAME(Version));
+			doc->version = 15;
+			if (opts->do_incremental || version != NULL)
+			{
+				pdf_dict_put(ctx, root, PDF_NAME(Version), PDF_NAME(1_5));
+			}
+		}
+
 		if (opts->do_preserve_metadata)
 			opts->metadata = pdf_keep_obj(ctx, pdf_metadata(ctx, doc));
 
