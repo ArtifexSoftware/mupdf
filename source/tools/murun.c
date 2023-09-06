@@ -9323,6 +9323,7 @@ static void ffi_PDFWidget_getOptions(js_State *J)
 		fz_catch(ctx)
 			rethrow(J);
 		js_pushstring(J, opt);
+		js_setindex(J, -2, i);
 	}
 }
 
