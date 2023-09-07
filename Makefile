@@ -144,6 +144,11 @@ $(OUT)/source/fitz/tessocr.o : source/fitz/tessocr.cpp
 	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(TESSERACT_CFLAGS) $(TESSERACT_DEFINES) $(TESSERACT_LANGFLAGS)
 endif
 
+ifeq ($(HAVE_LEPTONICA),yes)
+$(OUT)/source/fitz/leptonica-wrap.o : source/fitz/leptonica-wrap.c
+	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(LEPTONICA_CFLAGS) $(LEPTONICA_DEFINES) $(LEPTONICA_BUILD_CFLAGS)
+endif
+
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
 
