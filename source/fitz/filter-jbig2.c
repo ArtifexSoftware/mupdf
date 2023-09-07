@@ -168,8 +168,13 @@ static void *fz_jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size)
 fz_jbig2_globals *
 fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf)
 {
-	fz_jbig2_globals *globals = fz_malloc_struct(ctx, fz_jbig2_globals);
+	fz_jbig2_globals *globals;
 	Jbig2Ctx *jctx;
+
+	if (buf == NULL || buf->data == NULL || buf->len == 0)
+		return NULL;
+
+	globals = fz_malloc_struct(ctx, fz_jbig2_globals);
 
 	globals->alloc.ctx = ctx;
 	globals->alloc.alloc.alloc = fz_jbig2_alloc;
