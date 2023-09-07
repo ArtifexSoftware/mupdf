@@ -145,6 +145,10 @@ int64_t fz_tell(fz_context *ctx, fz_stream *stm);
 	offset: The offset to seek to.
 
 	whence: From where the offset is measured (see fseek).
+	SEEK_SET - start of stream.
+	SEEK_CUR - current position.
+	SEEK_END - end of stream.
+
 */
 void fz_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence);
 

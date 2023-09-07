@@ -54,7 +54,7 @@ typedef void (fz_output_write_fn)(fz_context *ctx, void *state, const void *data
 
 	state: The output stream state to seek within.
 
-	offset, whence: as defined for fs_seek_output.
+	offset, whence: as defined for fz_seek().
 */
 typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, int64_t offset, int whence);
 
