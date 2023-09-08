@@ -268,48 +268,51 @@ static const char *svg_mimetypes[] =
 };
 
 static int
-svg_recognize_doc_content(fz_context *ctx, fz_stream *stream)
+svg_recognize_doc_content(fz_context *ctx, fz_stream *stm)
 {
+	// A standalone SVG document is an XML document with an <svg> root element.
+	//
+	// Assume the document is ASCII or UTF-8.
+	//
+	// Parse the start of the file using a simplified XML parser, skipping
+	// processing instructions and comments, and stopping at the first
+	// element.
+	//
+	// Return failure on anything unexpected, or if the first element is not SVG.
+
 	int c;
-	int n = 0;
-	const char *match = "svg";
-	int pos = 0;
 
-	/* Is the first non-whitespace char '<' ? */
-	do
-	{
-		c = fz_read_byte(ctx, stream);
-		if (c == EOF)
-			return 0;
-		if (c == '<')
-			break;
-		if (c != ' ' && c != '\t' && c != '\n' && c != '\r')
-			return 0;
-	}
-	while (++n < 4096);
+parse_text:
+	// Skip whitespace until "<"
+	c = fz_read_byte(ctx, stm);
+	while (c == ' ' || c == '\r' || c == '\n' || c == '\t')
+		c = fz_read_byte(ctx, stm);
+	if (c == '<')
+		goto parse_element;
+	return 0;
 
-	/* Then do we find 'svg' in the first 4k? */
-	do
-	{
-		c = fz_read_byte(ctx, stream);
-		if (c == EOF)
-			return 0;
-		if (c >= 'A' && c <= 'Z')
-			c += 'a' - 'A';
-		if (c == match[pos])
-		{
-			pos++;
-			if (pos == 3)
-				return 100;
-		}
-		else
-		{
-			/* Restart matching, but recheck c against the start. */
-			pos = (c == match[0]);
-		}
-	}
-	while (++n < 4096);
+parse_element:
+	// Either "<?...>" or "<!...>" or "<svg" or not an SVG document.
+	c = fz_read_byte(ctx, stm);
+	if (c == '!' || c == '?')
+		goto parse_comment;
+	if (c != 's')
+		return 0;
+	c = fz_read_byte(ctx, stm);
+	if (c != 'v')
+		return 0;
+	c = fz_read_byte(ctx, stm);
+	if (c != 'g')
+		return 0;
+	return 100;
 
+parse_comment:
+	// Skip everything after "<?" or "<!" until ">"
+	c = fz_read_byte(ctx, stm);
+	while (c != EOF && c != '>')
+		c = fz_read_byte(ctx, stm);
+	if (c == '>')
+		goto parse_text;
 	return 0;
 }
 
