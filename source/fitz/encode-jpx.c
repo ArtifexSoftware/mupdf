@@ -205,9 +205,44 @@ fz_write_pixmap_as_jpx(fz_context *ctx, fz_output *out, fz_pixmap *pix, int q)
 		opj_set_warning_handler(l_codec, warning_callback, ctx);
 		opj_set_error_handler(l_codec, error_callback, ctx);
 
+		/* We encode using tiles. */
+		parameters.cp_tx0 = 0;
+		parameters.cp_ty0 = 0;
+		parameters.tile_size_on = OPJ_TRUE;
+		parameters.cp_tdx = 256;
+		parameters.cp_tdy = 256;
+
+		/* Shrink the tile so it's not more than twice the width/height of the image. */
+		while (parameters.cp_tdx>>1 >= pix->w)
+			parameters.cp_tdx >>= 1;
+		while (parameters.cp_tdy>>1 >= pix->h)
+			parameters.cp_tdy >>= 1;
+
+		/* The tile size must not be smaller than that given by numresolution. */
+		if (parameters.cp_tdx < 1<<(parameters.numresolution-1))
+			parameters.cp_tdx = 1<<(parameters.numresolution-1);
+		if (parameters.cp_tdy < 1<<(parameters.numresolution-1))
+			parameters.cp_tdy = 1<<(parameters.numresolution-1);
+
+		/* FIXME: Calculate layers here? */
+		/* My understanding of the suggestion that I've been given, is that we should pick
+		 * layers to be the largest integer, such that (1<<layers) * tile_size >= w */
+		{
+			int layers = 0;
+			while (pix->w>>(layers+1) >= parameters.cp_tdx &&
+				pix->h>>(layers+1) >= parameters.cp_tdy)
+				layers++;
+			/* But putting layers into parameters.tcp_numlayers causes a crash... */
+		}
+
 		if (q == 100)
 		{
-			/* Lossless compression */
+			/* Lossless compression requested! */
+		}
+		else if (pix->w < 2*parameters.cp_tdx && pix->h < 2*parameters.cp_tdy)
+		{
+			/* We only compress lossily if the image is larger than the tilesize, otherwise work losslessly. */
+			parameters = parameters;
 		}
 		else
 		{
@@ -215,19 +250,6 @@ fz_write_pixmap_as_jpx(fz_context *ctx, fz_output *out, fz_pixmap *pix, int q)
 			parameters.tcp_numlayers = 1;
 			parameters.tcp_rates[0] = (100-q);
 			parameters.cp_disto_alloc = 1;
-		}
-
-		/* The compressor will refuse to encode if the following condition
-		 * is true. We work around this by enabling tiling for such images.
-		 * An alternative would be to reduce numresolution. Not sure which
-		 * is better. */
-		if (fz_mini(pix->w, pix->h) < 1<<(parameters.numresolution-1))
-		{
-			parameters.cp_tx0 = 0;
-			parameters.cp_ty0 = 0;
-			parameters.tile_size_on = OPJ_TRUE;
-			parameters.cp_tdx = 1<<(parameters.numresolution-1);
-			parameters.cp_tdy = 1<<(parameters.numresolution-1);
 		}
 
 		if (! opj_setup_encoder(l_codec, &parameters, image))
