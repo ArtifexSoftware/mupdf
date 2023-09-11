@@ -303,57 +303,72 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 	if ((state[0].blendmode & FZ_BLEND_KNOCKOUT) == 0)
 		return;
 
-	assert((state[1].blendmode & FZ_BLEND_ISOLATED) == 0);
-	assert((state[1].blendmode & FZ_BLEND_MODEMASK) == 0);
-	assert(state[1].shape);
+	fz_try(ctx)
+	{
+		assert((state[1].blendmode & FZ_BLEND_ISOLATED) == 0);
+		assert((state[1].blendmode & FZ_BLEND_MODEMASK) == 0);
+		assert(state[1].shape);
 
 #ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top, "");
-	fz_dump_blend(ctx, "Knockout end: blending ", state[1].dest);
-	if (state[1].shape)
-		fz_dump_blend(ctx, "/S=", state[1].shape);
-	if (state[1].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
-	fz_dump_blend(ctx, " onto ", state[0].dest);
-	if (state[0].shape)
-		fz_dump_blend(ctx, "/S=", state[0].shape);
-	if (state[0].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-	if ((state->blendmode & FZ_BLEND_MODEMASK) != 0)
-		printf(" (blend %d)", state->blendmode & FZ_BLEND_MODEMASK);
-	if ((state->blendmode & FZ_BLEND_ISOLATED) != 0)
-		printf(" (isolated)");
-	printf(" (knockout)");
-#endif
-
-	fz_blend_pixmap_knockout(ctx, state[0].dest, state[1].dest, state[1].shape);
-	fz_drop_pixmap(ctx, state[1].dest);
-	state[1].dest = NULL;
-
-	if (state[1].group_alpha && state[0].group_alpha != state[1].group_alpha)
-	{
-		if (state[0].group_alpha)
-			fz_blend_pixmap_knockout(ctx, state[0].group_alpha, state[1].group_alpha, state[1].shape);
-		fz_drop_pixmap(ctx, state[1].group_alpha);
-		state[1].group_alpha = NULL;
-	}
-
-	if (state[0].shape != state[1].shape)
-	{
+		dump_spaces(dev->top, "");
+		fz_dump_blend(ctx, "Knockout end: blending ", state[1].dest);
+		if (state[1].shape)
+			fz_dump_blend(ctx, "/S=", state[1].shape);
+		if (state[1].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+		fz_dump_blend(ctx, " onto ", state[0].dest);
 		if (state[0].shape)
-			fz_paint_pixmap(state[0].shape, state[1].shape, 255);
-		fz_drop_pixmap(ctx, state[1].shape);
-		state[1].shape = NULL;
-	}
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+		if ((state->blendmode & FZ_BLEND_MODEMASK) != 0)
+			printf(" (blend %d)", state->blendmode & FZ_BLEND_MODEMASK);
+		if ((state->blendmode & FZ_BLEND_ISOLATED) != 0)
+			printf(" (isolated)");
+		printf(" (knockout)");
+#endif
+
+		fz_blend_pixmap_knockout(ctx, state[0].dest, state[1].dest, state[1].shape);
+
+		if (state[1].group_alpha && state[0].group_alpha != state[1].group_alpha)
+		{
+			if (state[0].group_alpha)
+				fz_blend_pixmap_knockout(ctx, state[0].group_alpha, state[1].group_alpha, state[1].shape);
+		}
+
+		if (state[0].shape != state[1].shape)
+		{
+			if (state[0].shape)
+				fz_paint_pixmap(state[0].shape, state[1].shape, 255);
+		}
 
 #ifdef DUMP_GROUP_BLENDS
-	fz_dump_blend(ctx, " to get ", state[0].dest);
-	if (state[0].shape)
-		fz_dump_blend(ctx, "/S=", state[0].shape);
-	if (state[0].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-	printf("\n");
+		fz_dump_blend(ctx, " to get ", state[0].dest);
+		if (state[0].shape)
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+		printf("\n");
 #endif
+	}
+	fz_always(ctx)
+	{
+		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = NULL;
+		if (state[1].group_alpha != state[0].group_alpha)
+		{
+			fz_drop_pixmap(ctx, state[1].group_alpha);
+			state[1].group_alpha = NULL;
+		}
+		if (state[1].shape != state[0].shape)
+		{
+			fz_drop_pixmap(ctx, state[1].shape);
+			state[1].shape = NULL;
+		}
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 }
 
 static int
@@ -2116,47 +2131,61 @@ fz_draw_pop_clip(fz_context *ctx, fz_device *devp)
 	 */
 	if (state[1].mask)
 	{
+		fz_try(ctx)
+		{
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top, "");
-		fz_dump_blend(ctx, "Clipping ", state[1].dest);
-		if (state[1].shape)
-			fz_dump_blend(ctx, "/S=", state[1].shape);
-		if (state[1].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
-		fz_dump_blend(ctx, " onto ", state[0].dest);
-		if (state[0].shape)
-			fz_dump_blend(ctx, "/S=", state[0].shape);
-		if (state[0].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-		fz_dump_blend(ctx, " with ", state[1].mask);
+			dump_spaces(dev->top, "");
+			fz_dump_blend(ctx, "Clipping ", state[1].dest);
+			if (state[1].shape)
+				fz_dump_blend(ctx, "/S=", state[1].shape);
+			if (state[1].group_alpha)
+				fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+			fz_dump_blend(ctx, " onto ", state[0].dest);
+			if (state[0].shape)
+				fz_dump_blend(ctx, "/S=", state[0].shape);
+			if (state[0].group_alpha)
+				fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+			fz_dump_blend(ctx, " with ", state[1].mask);
 #endif
 
-		fz_paint_pixmap_with_mask(state[0].dest, state[1].dest, state[1].mask);
-		if (state[0].shape != state[1].shape)
-		{
-			fz_paint_pixmap_with_mask(state[0].shape, state[1].shape, state[1].mask);
-			fz_drop_pixmap(ctx, state[1].shape);
-			state[1].shape = NULL;
-		}
-		if (state[0].group_alpha != state[1].group_alpha)
-		{
-			fz_paint_pixmap_with_mask(state[0].group_alpha, state[1].group_alpha, state[1].mask);
-			fz_drop_pixmap(ctx, state[1].group_alpha);
-			state[1].group_alpha = NULL;
-		}
-		fz_drop_pixmap(ctx, state[1].mask);
-		state[1].mask = NULL;
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = NULL;
+			fz_paint_pixmap_with_mask(state[0].dest, state[1].dest, state[1].mask);
+			if (state[0].shape != state[1].shape)
+			{
+				fz_paint_pixmap_with_mask(state[0].shape, state[1].shape, state[1].mask);
+			}
+			if (state[0].group_alpha != state[1].group_alpha)
+			{
+				fz_paint_pixmap_with_mask(state[0].group_alpha, state[1].group_alpha, state[1].mask);
+			}
 
 #ifdef DUMP_GROUP_BLENDS
-		fz_dump_blend(ctx, " to get ", state[0].dest);
-		if (state[0].shape)
-			fz_dump_blend(ctx, "/S=", state[0].shape);
-		if (state[0].group_alpha)
-			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-		printf("\n");
+			fz_dump_blend(ctx, " to get ", state[0].dest);
+			if (state[0].shape)
+				fz_dump_blend(ctx, "/S=", state[0].shape);
+			if (state[0].group_alpha)
+				fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+			printf("\n");
 #endif
+		}
+		fz_always(ctx)
+		{
+			fz_drop_pixmap(ctx, state[1].mask);
+			state[1].mask = NULL;
+			fz_drop_pixmap(ctx, state[1].dest);
+			state[1].dest = NULL;
+			if (state[1].shape != state[0].shape)
+			{
+				fz_drop_pixmap(ctx, state[1].shape);
+				state[1].shape = NULL;
+			}
+			if (state[1].group_alpha != state[0].group_alpha)
+			{
+				fz_drop_pixmap(ctx, state[1].group_alpha);
+				state[1].group_alpha = NULL;
+			}
+		}
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 	else
 	{
@@ -2394,92 +2423,100 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 
 	state = pop_stack(ctx, dev, "group");
 
-	alpha = state[1].alpha;
-	blendmode = state[1].blendmode & FZ_BLEND_MODEMASK;
-	isolated = state[1].blendmode & FZ_BLEND_ISOLATED;
+	fz_try(ctx)
+	{
+		alpha = state[1].alpha;
+		blendmode = state[1].blendmode & FZ_BLEND_MODEMASK;
+		isolated = state[1].blendmode & FZ_BLEND_ISOLATED;
 
 #ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top, "");
-	fz_dump_blend(ctx, "Group end: blending ", state[1].dest);
-	if (state[1].shape)
-		fz_dump_blend(ctx, "/S=", state[1].shape);
-	if (state[1].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
-	fz_dump_blend(ctx, " onto ", state[0].dest);
-	if (state[0].shape)
-		fz_dump_blend(ctx, "/S=", state[0].shape);
-	if (state[0].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-	if (alpha != 1.0f)
-		printf(" (alpha %g)", alpha);
-	if (blendmode != 0)
-		printf(" (blend %d)", blendmode);
-	if (isolated != 0)
-		printf(" (isolated)");
-	if (state[1].blendmode & FZ_BLEND_KNOCKOUT)
-		printf(" (knockout)");
-#endif
-
-	if (state[0].dest->colorspace != state[1].dest->colorspace)
-	{
-		fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params, 1);
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = converted;
-	}
-
-	if ((blendmode == 0) && (state[0].shape == state[1].shape) && (state[0].group_alpha == state[1].group_alpha))
-		fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
-	else
-		fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].group_alpha);
-
-	if (state[0].shape != state[1].shape)
-	{
-		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
-		 * isn't alpha * 255, as the blend back fails to take account of alpha. */
-		if (state[0].shape)
-		{
-			if (state[1].shape)
-				fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
-			else
-				fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
-		}
-	}
-	assert(state[0].group_alpha == NULL || state[0].group_alpha != state[1].group_alpha);
-	if (state[0].group_alpha && state[0].group_alpha != state[1].group_alpha)
-	{
-		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf uses an isolated group,
-		 * and goes wrong if this is 255 * alpha, as an alpha effectively gets
-		 * applied twice. CATX5233 page 7 uses a non-isolated group, and goes wrong
-		 * if alpha isn't applied here. */
+		dump_spaces(dev->top, "");
+		fz_dump_blend(ctx, "Group end: blending ", state[1].dest);
+		if (state[1].shape)
+			fz_dump_blend(ctx, "/S=", state[1].shape);
 		if (state[1].group_alpha)
-			fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, isolated ? 255 : alpha * 255);
-		else
-			fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, isolated ? 255 : alpha * 255);
-	}
-
-	assert(state[0].dest != state[1].dest);
-
-#ifdef DUMP_GROUP_BLENDS
-	fz_dump_blend(ctx, " to get ", state[0].dest);
-	if (state[0].shape)
-		fz_dump_blend(ctx, "/S=", state[0].shape);
-	if (state[0].group_alpha)
-		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-	printf("\n");
+			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+		fz_dump_blend(ctx, " onto ", state[0].dest);
+		if (state[0].shape)
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+		if (alpha != 1.0f)
+			printf(" (alpha %g)", alpha);
+		if (blendmode != 0)
+			printf(" (blend %d)", blendmode);
+		if (isolated != 0)
+			printf(" (isolated)");
+		if (state[1].blendmode & FZ_BLEND_KNOCKOUT)
+			printf(" (knockout)");
 #endif
 
-	if (state[0].shape != state[1].shape)
-	{
-		fz_drop_pixmap(ctx, state[1].shape);
-		state[1].shape = NULL;
-	}
-	fz_drop_pixmap(ctx, state[1].group_alpha);
-	state[1].group_alpha = NULL;
-	fz_drop_pixmap(ctx, state[1].dest);
-	state[1].dest = NULL;
+		if (state[0].dest->colorspace != state[1].dest->colorspace)
+		{
+			fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params, 1);
+			fz_drop_pixmap(ctx, state[1].dest);
+			state[1].dest = converted;
+		}
 
-	if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
-		fz_knockout_end(ctx, dev);
+		if ((blendmode == 0) && (state[0].shape == state[1].shape) && (state[0].group_alpha == state[1].group_alpha))
+			fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
+		else
+			fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].group_alpha);
+
+		if (state[0].shape != state[1].shape)
+		{
+			/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
+			 * isn't alpha * 255, as the blend back fails to take account of alpha. */
+			if (state[0].shape)
+			{
+				if (state[1].shape)
+					fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
+				else
+					fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
+			}
+		}
+		assert(state[0].group_alpha == NULL || state[0].group_alpha != state[1].group_alpha);
+		if (state[0].group_alpha && state[0].group_alpha != state[1].group_alpha)
+		{
+			/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf uses an isolated group,
+			 * and goes wrong if this is 255 * alpha, as an alpha effectively gets
+			 * applied twice. CATX5233 page 7 uses a non-isolated group, and goes wrong
+			 * if alpha isn't applied here. */
+			if (state[1].group_alpha)
+				fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, isolated ? 255 : alpha * 255);
+			else
+				fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, isolated ? 255 : alpha * 255);
+		}
+
+		assert(state[0].dest != state[1].dest);
+
+#ifdef DUMP_GROUP_BLENDS
+		fz_dump_blend(ctx, " to get ", state[0].dest);
+		if (state[0].shape)
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+		printf("\n");
+#endif
+
+		if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
+			fz_knockout_end(ctx, dev);
+	}
+	fz_always(ctx)
+	{
+		if (state[0].shape != state[1].shape)
+		{
+			fz_drop_pixmap(ctx, state[1].shape);
+			state[1].shape = NULL;
+		}
+		fz_drop_pixmap(ctx, state[1].group_alpha);
+		state[1].group_alpha = NULL;
+		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = NULL;
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 }
 
 typedef struct
