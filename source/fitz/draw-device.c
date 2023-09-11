@@ -207,6 +207,31 @@ static fz_draw_state *pop_stack(fz_context *ctx, fz_draw_device *dev, const char
 	return state;
 }
 
+static void
+cleanup_post_pop(fz_context *ctx, fz_draw_state *state)
+{
+	if (state[0].dest != state[1].dest)
+	{
+		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = NULL;
+	}
+	if (state[0].mask != state[1].mask)
+	{
+		fz_drop_pixmap(ctx, state[1].mask);
+		state[1].mask = NULL;
+	}
+	if (state[1].group_alpha != state[0].group_alpha)
+	{
+		fz_drop_pixmap(ctx, state[1].group_alpha);
+		state[1].group_alpha = NULL;
+	}
+	if (state[1].shape != state[0].shape)
+	{
+		fz_drop_pixmap(ctx, state[1].shape);
+		state[1].shape = NULL;
+	}
+}
+
 static fz_draw_state *convert_stack(fz_context *ctx, fz_draw_device *dev, const char *message)
 {
 	fz_draw_state *state = &dev->stack[dev->top-1];
@@ -301,7 +326,10 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 
 	state = pop_stack(ctx, dev, "knockout");
 	if ((state[0].blendmode & FZ_BLEND_KNOCKOUT) == 0)
+	{
+		cleanup_post_pop(ctx, state);
 		return;
+	}
 
 	fz_try(ctx)
 	{
@@ -352,20 +380,7 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 #endif
 	}
 	fz_always(ctx)
-	{
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = NULL;
-		if (state[1].group_alpha != state[0].group_alpha)
-		{
-			fz_drop_pixmap(ctx, state[1].group_alpha);
-			state[1].group_alpha = NULL;
-		}
-		if (state[1].shape != state[0].shape)
-		{
-			fz_drop_pixmap(ctx, state[1].shape);
-			state[1].shape = NULL;
-		}
-	}
+		cleanup_post_pop(ctx, state);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
@@ -2168,22 +2183,7 @@ fz_draw_pop_clip(fz_context *ctx, fz_device *devp)
 #endif
 		}
 		fz_always(ctx)
-		{
-			fz_drop_pixmap(ctx, state[1].mask);
-			state[1].mask = NULL;
-			fz_drop_pixmap(ctx, state[1].dest);
-			state[1].dest = NULL;
-			if (state[1].shape != state[0].shape)
-			{
-				fz_drop_pixmap(ctx, state[1].shape);
-				state[1].shape = NULL;
-			}
-			if (state[1].group_alpha != state[0].group_alpha)
-			{
-				fz_drop_pixmap(ctx, state[1].group_alpha);
-				state[1].group_alpha = NULL;
-			}
-		}
+			cleanup_post_pop(ctx, state);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
@@ -2498,25 +2498,14 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
 		printf("\n");
 #endif
-
-		if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
-			fz_knockout_end(ctx, dev);
 	}
 	fz_always(ctx)
-	{
-		if (state[0].shape != state[1].shape)
-		{
-			fz_drop_pixmap(ctx, state[1].shape);
-			state[1].shape = NULL;
-		}
-		fz_drop_pixmap(ctx, state[1].group_alpha);
-		state[1].group_alpha = NULL;
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = NULL;
-	}
+		cleanup_post_pop(ctx, state);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
+	if (state[0].blendmode & FZ_BLEND_KNOCKOUT)
+		fz_knockout_end(ctx, dev);
 }
 
 typedef struct
@@ -2931,15 +2920,10 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	}
 	fz_always(ctx)
 	{
+		cleanup_post_pop(ctx, state);
 		fz_drop_pixmap(ctx, dest);
 		fz_drop_pixmap(ctx, shape);
 		fz_drop_pixmap(ctx, group_alpha);
-		fz_drop_pixmap(ctx, state[1].dest);
-		state[1].dest = NULL;
-		fz_drop_pixmap(ctx, state[1].shape);
-		state[1].shape = NULL;
-		fz_drop_pixmap(ctx, state[1].group_alpha);
-		state[1].group_alpha = NULL;
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
