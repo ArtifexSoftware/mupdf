@@ -1206,12 +1206,12 @@ def _get_m_command( build_dirs, j=None):
     build_prefix = ''
     in_prefix = True
     for i, flag in enumerate( flags):
-        if flag in ('x32', 'x64') or flag.startswith('py'):
+        if flag in ('x32', 'x64') or re.match('py[0-9]', flag):
             # setup.py puts cpu and python version
             # elements into the build directory name
             # when creating wheels; we need to ignore
             # them.
-            pass
+            jlib.log('Ignoring {flag=}')
         else:
             if 0: pass  # lgtm [py/unreachable-statement]
             elif flag == 'debug':
@@ -1437,8 +1437,8 @@ def build_0(
 
 def link_l_flags(sos):
     ld_origin = None
-    if os.environ.get('OS') in ('wasm', 'wasm-mt'):
-        # Don't add '-Wl,-rpath*' etc if building for wasm.
+    if os.environ.get('OS') == 'pyodide':
+        # Don't add '-Wl,-rpath*' etc if building for Pyodide.
         ld_origin = False
     return jlib.link_l_flags( sos, ld_origin)
 
@@ -1471,8 +1471,13 @@ def build( build_dirs, swig_command, args, vs_upgrade):
     header_git = False
     j = None
     refcheck_if = '#ifndef NDEBUG'
-    wasm = os.environ.get('OS') in ('wasm', 'wasm-mt')
-    if wasm:
+    pyodide = (os.environ.get('OS') == 'pyodide')
+    if pyodide:
+        # Looks like Pyodide sets CXX to (for example) /tmp/tmp8h1meqsj/c++.
+        # But for some reason using `compiler = os.environ['CXX']` fails when we
+        # build libmupdfcpp.so, with:
+        #   emsdk/upstream/bin/llvm-nm: error: a.out: No such file or directory
+        # But using `em++` directly seems to work.
         compiler = 'em++'
     elif state.state_.macos:
         compiler = 'c++ -std=c++14'
@@ -1625,7 +1630,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                                 f'''
                                 {compiler}
                                     -o {os.path.relpath(libmupdfcpp)}
-                                    {"-sSIDE_MODULE" if wasm else ""}
+                                    {"-sSIDE_MODULE" if pyodide else ""}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
                                     -I {include1}
@@ -1883,10 +1888,11 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                         # todo: maybe instead use sysconfig.get_config_vars() ?
                         #
 
-                        if os.environ.get('PYODIDE_ROOT'):
+                        if os.environ.get('OS') == 'pyodide':
+                            assert os.environ.get('PYODIDE_ROOT') is not None
                             _include_dir = os.environ[ 'PYO3_CROSS_INCLUDE_DIR']
                             _lib_dir = os.environ[ 'PYO3_CROSS_LIB_DIR']
-                            jlib.log( 'PYODIDE_ROOT set. {_include_dir=} {_lib_dir=}')
+                            jlib.log( 'OS is Pyodide. {_include_dir=} {_lib_dir=}')
                             flags_compile = f'-I {_include_dir}'
                             flags_link = f'-L {_lib_dir}'
 
@@ -2020,7 +2026,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             f'''
                             {compiler}
                                 -o {os.path.relpath(out_so)}
-                                {"-sMAIN_MODULE" if wasm else ""}
+                                {"-sMAIN_MODULE" if pyodide else ""}
                                 {cpp_path}
                                 {build_dirs.cpp_flags}
                                 -fPIC

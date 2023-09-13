@@ -80,6 +80,14 @@ ifeq ($(shared),yes)
   else ifeq ($(OS),wasm-mt)
     LIB_LDFLAGS = -shared -sSIDE_MODULE
     EXE_LDFLAGS = -sMAIN_MODULE
+  else ifeq ($(OS),pyodide)
+    LIB_LDFLAGS = -shared -sSIDE_MODULE
+    EXE_LDFLAGS = -sMAIN_MODULE
+
+    # Pyodide's ld does not support -b so we cannot use it to create object
+    # files containing font data, so leave HAVE_OBJCOPY unset. And we need
+    # extra memory when linking.
+    LDFLAGS += -sTOTAL_MEMORY=48MB
   else
     LIB_LDFLAGS = -shared
   endif
@@ -181,14 +189,7 @@ else ifeq ($(OS),MACOS)
   endif
 
 else ifeq ($(OS),Linux)
-  ifeq ($(PYODIDE_ROOT),)
-    HAVE_OBJCOPY := yes
-  else
-    # Pyodide's ld does not support -b so we cannot use it to create object
-    # files containing font data, so leave HAVE_OBJCOPY unset. And we need
-    # extra memory when linking.
-    LDFLAGS += -sTOTAL_MEMORY=48MB
-  endif
+  HAVE_OBJCOPY := yes
 
   ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
 	SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
@@ -289,6 +290,17 @@ ifeq "$(OS)" "wasm-mt"
   build_prefix += wasm-mt/
   CC = emcc
   CXX = em++
+  AR = emar
+  HAVE_GLUT=no
+  HAVE_X11=no
+  HAVE_OBJCOPY=no
+  HAVE_LIBCRYPTO=no
+  CFLAGS += -pthread
+endif
+
+ifeq "$(OS)" "pyodide"
+  build_prefix += $(OS)/
+  # We use the provided $CC and $CXX.
   AR = emar
   HAVE_GLUT=no
   HAVE_X11=no
