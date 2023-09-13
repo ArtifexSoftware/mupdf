@@ -2243,9 +2243,11 @@ def link_l_flags( sos, ld_origin=None):
         dir_ = os.path.dirname( so)
         name = os.path.basename( so)
         assert name.startswith( 'lib'), f'name={name}'
-        if name.endswith( '.so'):
+        m = re.search( '(.so[.0-9]*)$', name)
+        if m:
+            l = len(m.group(1))
             dirs.add( dir_)
-            names.append( f'-l {name[3:-3]}')
+            names.append( f'-l {name[3:-l]}')
         elif darwin and name.endswith( '.dylib'):
             dirs.add( dir_)
             names.append( f'-l {name[3:-6]}')
