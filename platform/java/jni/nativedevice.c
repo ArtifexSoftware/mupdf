@@ -591,7 +591,7 @@ FUN(NativeDevice_beginGroup)(JNIEnv *env, jobject self, jobject jrect, jobject j
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
 	fz_rect rect = from_Rect(env, jrect);
-	fz_colorspace *cs = from_ColorSpace(env, self);
+	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	NativeDeviceInfo *info;
 	int err;
 
