@@ -70,7 +70,9 @@ SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
 
 ifeq ($(shared),yes)
-  build_prefix += shared-
+  ifeq ($(findstring shared-, $(build_prefix)),)
+    override build_prefix := $(build_prefix)shared-
+  endif
   LIB_CFLAGS = -fPIC
   ifeq ($(OS),MACOS)
     LIB_LDFLAGS = -dynamiclib
