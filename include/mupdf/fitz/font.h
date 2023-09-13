@@ -790,4 +790,10 @@ void fz_ft_unlock(fz_context *ctx);
  * the freeetype lock. */
 int fz_ft_lock_held(fz_context *ctx);
 
+/* Internal function: Extract a ttf from the ttc that underlies
+ * a given fz_font. Caller takes ownership of the returned
+ * buffer.
+ */
+fz_buffer *fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font);
+
 #endif

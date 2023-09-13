@@ -665,6 +665,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-signature.c" />
     <ClCompile Include="..\..\source\pdf\pdf-store.c" />
     <ClCompile Include="..\..\source\pdf\pdf-stream.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-subset.c" />
     <ClCompile Include="..\..\source\pdf\pdf-type3.c" />
     <ClCompile Include="..\..\source\pdf\pdf-unicode.c" />
     <ClCompile Include="..\..\source\pdf\pdf-util.c" />
