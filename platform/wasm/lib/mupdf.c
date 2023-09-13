@@ -399,9 +399,9 @@ fz_buffer * wasm_new_buffer_from_pixmap_as_psd(fz_pixmap *pix)
 }
 
 EXPORT
-fz_buffer * wasm_new_buffer_from_pixmap_as_jpeg(fz_pixmap *pix, int quality)
+fz_buffer * wasm_new_buffer_from_pixmap_as_jpeg(fz_pixmap *pix, int quality, int invert_cmyk)
 {
-	POINTER(fz_new_buffer_from_pixmap_as_jpeg, pix, fz_default_color_params, quality)
+	POINTER(fz_new_buffer_from_pixmap_as_jpeg, pix, fz_default_color_params, quality, invert_cmyk)
 }
 
 EXPORT
