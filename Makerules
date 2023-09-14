@@ -164,6 +164,13 @@ ifneq "$(CLUSTER)" ""
   CFLAGS += -DCLUSTER
 endif
 
+ifeq ($(OS),Linux)
+    LINUX_OR_OPENBSD := yes
+endif
+ifeq ($(OS),OpenBSD)
+    LINUX_OR_OPENBSD := yes
+endif
+
 ifeq ($(OS),MINGW)
   WINDRES := windres
   HAVE_WIN32 := yes
@@ -190,8 +197,11 @@ else ifeq ($(OS),MACOS)
     endif
   endif
 
-else ifeq ($(OS),Linux)
-  HAVE_OBJCOPY := yes
+else ifeq ($(LINUX_OR_OPENBSD),yes)
+
+  ifeq ($(OS),Linux)
+    HAVE_OBJCOPY := yes
+  endif
 
   ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
 	SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
@@ -242,8 +252,13 @@ else ifeq ($(OS),Linux)
 
   HAVE_GLUT := yes
   ifeq ($(HAVE_GLUT),yes)
-	SYS_GLUT_CFLAGS :=
-	SYS_GLUT_LIBS := -lglut -lGL
+    ifeq ($(OS),OpenBSD)
+      SYS_GLUT_CFLAGS := $(shell pkg-config --cflags glut gl)
+      SYS_GLUT_LIBS := $(shell pkg-config --libs glut gl)
+    else
+      SYS_GLUT_CFLAGS :=
+      SYS_GLUT_LIBS := -lglut -lGL
+    endif
   endif
 
   HAVE_X11 := $(shell pkg-config --exists x11 xext && echo yes)
