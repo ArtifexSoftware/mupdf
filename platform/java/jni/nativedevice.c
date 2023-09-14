@@ -730,7 +730,7 @@ FUN(NativeDevice_endStructure)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_beginMetadata)(JNIEnv *env, jobject self, jint meta, jstring jtext)
+FUN(NativeDevice_beginMetatext)(JNIEnv *env, jobject self, jint meta, jstring jtext)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
@@ -761,7 +761,7 @@ FUN(NativeDevice_beginMetadata)(JNIEnv *env, jobject self, jint meta, jstring jt
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_endMetadata)(JNIEnv *env, jobject self)
+FUN(NativeDevice_endMetatext)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self);
