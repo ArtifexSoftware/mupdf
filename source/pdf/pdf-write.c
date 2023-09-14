@@ -2486,7 +2486,7 @@ dowriteobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num
 	if (opts->do_garbage && !opts->use_list[num])
 		return;
 
-	if (entry->type == 'o')
+	if (entry->type == 'o' && (!opts->do_incremental || pdf_xref_is_incremental(ctx, doc, num)))
 	{
 		assert(opts->do_use_objstms);
 		opts->ofs_list[num] = entry->ofs;

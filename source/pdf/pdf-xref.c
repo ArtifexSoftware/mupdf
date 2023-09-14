@@ -733,6 +733,11 @@ int pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int n
 		fz_rethrow(ctx);
 	}
 	*new_entry = *old_entry;
+	if (new_entry->type == 'o')
+	{
+		new_entry->type = 'n';
+		new_entry->gen = 0;
+	}
 	/* Better keep a copy. We must override the old entry with
 	 * the copy because the caller may be holding a reference to
 	 * the original and expect it to end up in the new entry */
@@ -795,6 +800,11 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 		fz_rethrow(ctx);
 	}
 	*new_entry = *old_entry;
+	if (new_entry->type == 'o')
+	{
+		new_entry->type = 'n';
+		new_entry->gen = 0;
+	}
 	new_entry->stm_buf = NULL;
 	new_entry->obj = NULL;
 	/* old entry is incremental and may have changes.
