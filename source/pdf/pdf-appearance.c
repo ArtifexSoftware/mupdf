@@ -963,7 +963,12 @@ pdf_write_ink_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_r
 			fz_append_printf(ctx, buf, "%g %g %c\n", p.x, p.y, 'l');
 	}
 	maybe_stroke(ctx, buf, sc);
-	*rect = fz_expand_rect(*rect, lw);
+
+	/* Account for line width and add an extra 6 points of whitespace padding.
+	 * In case the annotation is a dot or a perfectly horizontal/vertical line,
+	 * we need some extra size to allow selecting it easily.
+	 */
+	*rect = fz_expand_rect(*rect, lw + 6);
 }
 
 /* Contrary to the specification, the points within a QuadPoint are NOT
