@@ -4027,14 +4027,17 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 			pdf_page *page = pdf_load_page(ctx, doc, i);
 			fz_try(ctx)
 			{
-				if (in_opts->do_appearance > 1)
-				{
-					pdf_annot *annot;
-					for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+				pdf_annot *annot;
+				for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+					if (in_opts->do_appearance > 1)
 						pdf_annot_request_resynthesis(ctx, annot);
-					for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+					else
+						pdf_annot_request_synthesis(ctx, annot);
+				for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+					if (in_opts->do_appearance > 1)
 						pdf_annot_request_resynthesis(ctx, annot);
-				}
+					else
+						pdf_annot_request_synthesis(ctx, annot);
 				pdf_update_page(ctx, page);
 			}
 			fz_always(ctx)
