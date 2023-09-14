@@ -796,4 +796,10 @@ int fz_ft_lock_held(fz_context *ctx);
  */
 fz_buffer *fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font);
 
+/* Internal function: Given a ttf in a buffer, create a subset
+ * ttf in a new buffer that only provides the required gids.
+ * Caller takes ownership of the returned buffer.
+ */
+fz_buffer *fz_subset_ttf_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int cidfont);
+
 #endif
