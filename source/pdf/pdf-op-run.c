@@ -1776,12 +1776,12 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 		return;
 	}
 
-	/* Make sure that any pending text is written into the correct layer. */
-	pdf_flush_text(ctx, proc);
-
 	/* Close structure/layers here, in reverse order to how we opened them. */
 	fz_try(ctx)
 	{
+		/* Make sure that any pending text is written into the correct layer. */
+		pdf_flush_text(ctx, proc);
+
 		/* Check to see if val contains an MCID. */
 		mc_dict = lookup_mcid(ctx, proc, val);
 
