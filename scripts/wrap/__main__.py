@@ -2290,13 +2290,18 @@ def make_docs( build_dirs, languages_original):
         else:
             raise Exception( f'unrecognised language param: {lang}')
 
+    make_docs_index( build_dirs, languages_original)
+
+
+def make_docs_index( build_dirs, languages_original):
     # Create index.html with links to the different bindings'
     # documentation.
     #
     #mupdf_dir = os.path.abspath( f'{__file__}/../../..')
+    out_dir = f'{build_dirs.dir_mupdf}/docs/generated'
     top_index_html = f'{out_dir}/index.html'
     with open( top_index_html, 'w') as f:
-        git_id = jlib.get_git_id( build_dirs.dir_mupdf)
+        git_id = jlib.git_get_id( build_dirs.dir_mupdf)
         git_id = git_id.split( '\n')[0]
         f.write( textwrap.dedent( f'''
                 <!DOCTYPE html>
@@ -2452,6 +2457,10 @@ def main2():
             elif arg == '--doc':
                 languages = args.next()
                 make_docs( build_dirs, languages)
+
+            elif arg == '--doc-index':
+                languages = args.next()
+                make_docs_index( build_dirs, languages)
 
             elif arg == '--make':
                 make_command = args.next()
