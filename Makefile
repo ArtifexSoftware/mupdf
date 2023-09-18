@@ -40,7 +40,7 @@ VERSION_MAJOR = $(shell grep "define FZ_VERSION_MAJOR" include/mupdf/fitz/versio
 VERSION_MINOR = $(shell grep "define FZ_VERSION_MINOR" include/mupdf/fitz/version.h | cut -d ' ' -f 3)
 VERSION_PATCH = $(shell grep "define FZ_VERSION_PATCH" include/mupdf/fitz/version.h | cut -d ' ' -f 3)
 
-ifneq ($(OS),MACOS)
+ifeq ($(LINUX_OR_OPENBSD),yes)
   SO_VERSION = .$(VERSION_MINOR).$(VERSION_PATCH)
 endif
 
