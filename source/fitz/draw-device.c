@@ -1108,8 +1108,12 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 				fz_path *path = fz_outline_glyph(ctx, span->font, gid, tm);
 				if (path)
 				{
-					fz_draw_fill_path(ctx, devp, path, 0, in_ctm, colorspace, color, alpha, color_params);
-					fz_drop_path(ctx, path);
+					fz_try(ctx)
+						fz_draw_fill_path(ctx, devp, path, 0, in_ctm, colorspace, color, alpha, color_params);
+					fz_always(ctx)
+						fz_drop_path(ctx, path);
+					fz_catch(ctx)
+						fz_rethrow(ctx);
 				}
 				else
 				{
