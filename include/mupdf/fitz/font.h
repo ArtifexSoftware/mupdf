@@ -742,4 +742,13 @@ struct fz_font
 	int subfont;
 };
 
+void fz_ft_lock(fz_context *ctx);
+
+void fz_ft_unlock(fz_context *ctx);
+
+/* Internal function. Must be called with FT_ALLOC_LOCK
+ * held. Returns 1 if this thread (context!) already holds
+ * the freeetype lock. */
+int fz_ft_lock_held(fz_context *ctx);
+
 #endif

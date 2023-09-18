@@ -432,7 +432,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 		FT_UInt gid;
 
 		table = fz_calloc(ctx, face->num_glyphs, sizeof *table);
-		fz_lock(ctx, FZ_LOCK_FREETYPE);
+		fz_ft_lock(ctx);
 		ucs = FT_Get_First_Char(face, &gid);
 		while (gid > 0)
 		{
@@ -440,7 +440,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 				table[gid] = ucs;
 			ucs = FT_Get_Next_Char(face, ucs, &gid);
 		}
-		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		fz_ft_unlock(ctx);
 	}
 
 	for (k = 0; k < face->num_glyphs; k += n)

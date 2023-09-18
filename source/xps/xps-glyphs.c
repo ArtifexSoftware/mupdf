@@ -81,10 +81,10 @@ xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gi
 	FT_Face face = fz_font_ft_face(ctx, font);
 	FT_Fixed hadv = 0, vadv = 0;
 
-	fz_lock(ctx, FZ_LOCK_FREETYPE);
+	fz_ft_lock(ctx);
 	FT_Get_Advance(face, gid, mask, &hadv);
 	FT_Get_Advance(face, gid, mask | FT_LOAD_VERTICAL_LAYOUT, &vadv);
-	fz_unlock(ctx, FZ_LOCK_FREETYPE);
+	fz_ft_unlock(ctx);
 
 	mtx->hadv = (float) hadv / face->units_per_EM;
 	mtx->vadv = (float) vadv / face->units_per_EM;

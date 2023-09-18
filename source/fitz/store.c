@@ -832,7 +832,7 @@ scavenge(fz_context *ctx, size_t tofree)
 
 		for (item = store->tail; item; item = item->prev)
 		{
-			if (item->val->refs == 1)
+			if (item->val->refs == 1 && (item->val->droppable == NULL || item->val->droppable(ctx, item->val)))
 			{
 				/* This one is evictable */
 				suffix_size += item->size;

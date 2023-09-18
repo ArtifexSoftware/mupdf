@@ -273,7 +273,9 @@ static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 	FT_Face face = fontdesc->font->ft_face;
 	FT_UShort units_per_EM;
 
+	fz_ft_lock(ctx);
 	fterr = FT_Get_Advance(face, gid, mask, &adv);
+	fz_ft_unlock(ctx);
 	if (fterr && fterr != FT_Err_Invalid_Argument)
 		fz_warn(ctx, "FT_Get_Advance(%d): %s", gid, ft_error_string(fterr));
 
@@ -593,6 +595,13 @@ pdf_drop_font(fz_context *ctx, pdf_font_desc *fontdesc)
 	fz_drop_storable(ctx, &fontdesc->storable);
 }
 
+static int
+pdf_font_is_droppable(fz_context *ctx, fz_storable *fontdesc)
+{
+	/* If we aren't holding the FT lock, then we can drop. */
+	return !fz_ft_lock_held(ctx);
+}
+
 static void
 pdf_drop_font_imp(fz_context *ctx, fz_storable *fontdesc_)
 {
@@ -615,7 +624,7 @@ pdf_new_font_desc(fz_context *ctx)
 	pdf_font_desc *fontdesc;
 
 	fontdesc = fz_malloc_struct(ctx, pdf_font_desc);
-	FZ_INIT_STORABLE(fontdesc, 1, pdf_drop_font_imp);
+	FZ_INIT_AWKWARD_STORABLE(fontdesc, 1, pdf_drop_font_imp, pdf_font_is_droppable);
 	fontdesc->size = sizeof(pdf_font_desc);
 
 	fontdesc->font = NULL;
@@ -871,7 +880,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		for (i = 0; i < 256; i++)
 			etable[i] = ft_char_index(face, i);
 
-		fz_lock(ctx, FZ_LOCK_FREETYPE);
+		fz_ft_lock(ctx);
 		has_lock = 1;
 
 		/* built-in and substitute fonts may be a different type than what the document expects */
@@ -980,7 +989,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 					estrings[i] = (char*) fz_glyph_name_from_adobe_standard[i];
 		}
 
-		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		fz_ft_unlock(ctx);
 		has_lock = 0;
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
@@ -1032,7 +1041,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	fz_catch(ctx)
 	{
 		if (has_lock)
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
+			fz_ft_unlock(ctx);
 		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
