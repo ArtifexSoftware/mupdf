@@ -61,16 +61,21 @@ void
 xps_select_font_encoding(fz_context *ctx, fz_font *font, int idx)
 {
 	FT_Face face = fz_font_ft_face(ctx, font);
+	fz_ft_lock(ctx);
 	FT_Set_Charmap(face, face->charmaps[idx]);
+	fz_ft_unlock(ctx);
 }
 
 int
 xps_encode_font_char(fz_context *ctx, fz_font *font, int code)
 {
 	FT_Face face = fz_font_ft_face(ctx, font);
-	int gid = FT_Get_Char_Index(face, code);
+	int gid;
+	fz_ft_lock(ctx);
+	gid = FT_Get_Char_Index(face, code);
 	if (gid == 0 && face->charmap && face->charmap->platform_id == 3 && face->charmap->encoding_id == 0)
 		gid = FT_Get_Char_Index(face, 0xF000 | code);
+	fz_ft_unlock(ctx);
 	return gid;
 }
 

@@ -1862,7 +1862,10 @@ fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size
 	{
 		if (FT_HAS_GLYPH_NAMES(face))
 		{
-			int fterr = FT_Get_Glyph_Name(face, glyph, buf, size);
+			int fterr;
+			fz_ft_lock(ctx);
+			fterr = FT_Get_Glyph_Name(face, glyph, buf, size);
+			fz_ft_unlock(ctx);
 			if (fterr)
 				fz_warn(ctx, "FT_Get_Glyph_Name(%s,%d): %s", font->name, glyph, ft_error_string(fterr));
 		}
@@ -1933,6 +1936,7 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 {
 	if (font->ft_face)
 	{
+		int idx;
 		if (ucs >= 0 && ucs < 0x10000)
 		{
 			int pg = ucs >> 8;
@@ -1941,12 +1945,17 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 			{
 				int i;
 				font->encoding_cache[pg] = fz_malloc_array(ctx, 256, uint16_t);
+				fz_ft_lock(ctx);
 				for (i = 0; i < 256; ++i)
 					font->encoding_cache[pg][i] = FT_Get_Char_Index(font->ft_face, (pg << 8) + i);
+				fz_ft_unlock(ctx);
 			}
 			return font->encoding_cache[pg][ix];
 		}
-		return FT_Get_Char_Index(font->ft_face, ucs);
+		fz_ft_lock(ctx);
+		idx = FT_Get_Char_Index(font->ft_face, ucs);
+		fz_ft_unlock(ctx);
+		return idx;
 	}
 	return ucs;
 }
@@ -1966,13 +1975,17 @@ fz_encode_character_sc(fz_context *ctx, fz_font *font, int unicode)
 			name = fz_glyph_name_from_unicode_sc(unicode);
 			if (name)
 			{
+				fz_ft_lock(ctx);
 				glyph = FT_Get_Name_Index(font->ft_face, (char*)name);
+				fz_ft_unlock(ctx);
 				if (glyph > 0)
 					return glyph;
 			}
 
 			sprintf(buf, "uni%04X.sc", unicode);
+			fz_ft_lock(ctx);
 			glyph = FT_Get_Name_Index(font->ft_face, buf);
+			fz_ft_unlock(ctx);
 			if (glyph > 0)
 				return glyph;
 		}
@@ -1986,9 +1999,11 @@ fz_encode_character_by_glyph_name(fz_context *ctx, fz_font *font, const char *gl
 	int glyph = 0;
 	if (font->ft_face)
 	{
+		fz_ft_lock(ctx);
 		glyph = ft_name_index(font->ft_face, glyphname);
 		if (glyph == 0)
 			glyph = ft_char_index(font->ft_face, fz_unicode_from_glyph_name(glyphname));
+		fz_ft_unlock(ctx);
 	}
 	// TODO: type3 fonts (not needed for now)
 	return glyph;
