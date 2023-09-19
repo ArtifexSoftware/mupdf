@@ -71,6 +71,7 @@ class State:
         self.openbsd = self.os_name == 'OpenBSD'
         self.linux = self.os_name == 'Linux'
         self.macos = self.os_name == 'Darwin'
+        self.pyodide = os.environ.get('OS') == 'pyodide'
         self.have_done_build_0 = False
 
         # Maps from <tu> to dict of fnname: cursor.

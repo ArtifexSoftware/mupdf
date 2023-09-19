@@ -931,6 +931,7 @@ except ModuleNotFoundError:
     resource = None
 
 import jlib
+import pipcl
 import wdev
 
 from . import classes
@@ -1047,49 +1048,10 @@ def windows_find_python_py( cpu=None, version=None):
     Windows only. Looks for python matching `cpu` and `version`, by parsing
     output of `py -0p`.
     '''
-    if cpu is None:
-        cpu = state.Cpu()
-    if version is None:
-        version = state.python_version()
-    command = 'py -0p'
-    jlib.log('Running: {command}')
-    text = jlib.system(command, out='return')
-    for line in text.split('\n'):
-        jlib.log( '    {line}')
-        m = re.match( '^ *-([0-9.]+)-((64)|(32)) +([^\\r*]+)[\\r*]*$', line)
-        if not m:
-            continue
-        version2 = m.group(1)
-        bits = int(m.group(2))
-        if bits != cpu.bits or version2 != version:
-            continue
-        python = m.group(5).strip()
-        # We don't use os.path.dirname() here because it might fail if we are
-        # Cygwin python.
-        root = python[ :python.rfind('\\')]
-        if not os.path.exists(python):
-            # Sometimes it seems that the specified .../python.exe does not exist,
-            # and we have to change it to .../python<version>.exe.
-            #
-            assert python.endswith('.exe'), f'python={python!r}'
-            python2 = f'{python[:-4]}{version}.exe'
-            jlib.log( 'Python {python!r} does not exist; changed to: {python2!r}')
-            assert os.path.exists( python2)
-            python = python2
-
-        jlib.log('{cpu=} {version=}: have found: {python=} {version=} {root=} {cpu=}')
-
-        # Need to run the Python we have found, to find its
-        # sysconfig.get_path('include').
-        #
-        command = f'{python} -c "import sysconfig; print( sysconfig.get_path(\'include\'))"'
-        include = jlib.system( command, out='return').strip()
-        jlib.log( 'for {python=}, sysconfig.get_path("include")) returned: {include!r}')
-
-        jlib.log( 'Returning {=cpu version python root include}')
-        return cpu, version, python, root, include
-
-    raise Exception( f'Failed to find python matching cpu={cpu} version={version}. Run "py -0p" to see available pythons')
+    wp = wdev.WindowsPython(cpu=cpu, version=version)
+    command = f'{wp.path} -c "import sysconfig; print( sysconfig.get_path(\'include\'))"'
+    include = jlib.system( command, out='return').strip()
+    return wp.cpu, wp.version, wp.path, wp.root, include
 
 
 def windows_find_python( cpu=None, version=None):
@@ -1188,7 +1150,7 @@ def get_so_version( build_dirs):
 
     Returns '' on macos.
     '''
-    if state.state_.macos:
+    if state.state_.macos or state.state_.pyodide:
         return ''
     d = dict()
     def get_v( name):
@@ -1477,7 +1439,7 @@ def build_0(
 
 def link_l_flags(sos):
     ld_origin = None
-    if os.environ.get('OS') == 'pyodide':
+    if state.state_.pyodide:
         # Don't add '-Wl,-rpath*' etc if building for Pyodide.
         ld_origin = False
     return jlib.link_l_flags( sos, ld_origin)
@@ -1511,7 +1473,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
     header_git = False
     j = None
     refcheck_if = '#ifndef NDEBUG'
-    pyodide = (os.environ.get('OS') == 'pyodide')
+    pyodide = state.state_.pyodide
     if pyodide:
         # Looks like Pyodide sets CXX to (for example) /tmp/tmp8h1meqsj/c++.
         # But for some reason using `compiler = os.environ['CXX']` fails when we
@@ -1607,7 +1569,8 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                     jlib.system( command, prefix=jlib.log_text(), out='log', verbose=1)
 
                     suffix2 = '.dylib' if state.state_.macos else '.so'
-                    assert os.path.isfile(f'{actual_build_dir}/libmupdf{suffix2}{so_version}')
+                    p = f'{actual_build_dir}/libmupdf{suffix2}{so_version}'
+                    assert os.path.isfile(p), f'Does not exist: {p=}'
 
                     if actual_build_dir != build_dirs.dir_so:
                         # This happens when we are being run by
@@ -1932,33 +1895,10 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         #
                         # todo: maybe instead use sysconfig.get_config_vars() ?
                         #
+                        python_flags = pipcl.PythonFlags()
+                        flags_compile = python_flags.includes
+                        flags_link = python_flags.ldflags
 
-                        if os.environ.get('OS') == 'pyodide':
-                            assert os.environ.get('PYODIDE_ROOT') is not None
-                            _include_dir = os.environ[ 'PYO3_CROSS_INCLUDE_DIR']
-                            _lib_dir = os.environ[ 'PYO3_CROSS_LIB_DIR']
-                            jlib.log( 'OS is Pyodide. {_include_dir=} {_lib_dir=}')
-                            flags_compile = f'-I {_include_dir}'
-                            flags_link = f'-L {_lib_dir}'
-
-                        else:
-                            python_exe = os.path.realpath( sys.executable)
-                            jlib.log('python_exe={python_exe}')
-                            python_configs = (
-                                    f'{python_exe}-config',
-                                    'python3-config',
-                                    )
-                            jlib.log('python_configs={python_configs}')
-                            for python_config in python_configs:
-                                if jlib.fs_find_in_paths( python_config, verbose=True):
-                                    break
-                            else:
-                                raise Exception( f'Cannot find `python-config`, tried: {python_configs}')
-                            jlib.log( 'Using {python_config=}')
-                            # `--cflags` gives things like `-Wno-unused-result -g`
-                            # etc, -so we just use `--includes`.
-                            flags_compile = jlib.system( f'{python_config} --includes', out='return', verbose=1).replace('\n', ' ')
-                            flags_link = jlib.system( f'{python_config} --ldflags', out='return', verbose=1).replace('\n', ' ')
                         if state.state_.macos:
                             # We need this to avoid numerous errors like:
                             #
@@ -1968,6 +1908,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                             #       _wrap_fz_warn(_object*, _object*) in mupdfcpp_swig-0a6733.o
                             #       ...
                             flags_link += ' -undefined dynamic_lookup'
+
                         jlib.log('flags_compile={flags_compile!r}')
                         jlib.log('flags_link={flags_link!r}')
 
