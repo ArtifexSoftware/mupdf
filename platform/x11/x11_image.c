@@ -46,6 +46,8 @@
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
+#include <limits.h>
+
 extern int ffs(int);
 
 static int is_big_endian(void)
@@ -454,6 +456,12 @@ ximage_blit(Drawable d, GC gc,
 	int ax, ay;
 	int w, h;
 	unsigned char *srcptr;
+
+	if (srcw >= (INT_MAX / 4) / srch)
+	{
+		fprintf(stderr, "image size overflow: %d x %d\n", srcw, srch);
+		exit(1);
+	}
 
 	for (ay = 0; ay < srch; ay += HEIGHT)
 	{
