@@ -1622,13 +1622,13 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 }
 
 static const char *mobi_font_size[7] = {
-	"8pt",
-	"10pt",
-	"12pt",
-	"14pt",
-	"16pt",
-	"18pt",
-	"20pt",
+	"0.67em",
+	"0.83em",
+	"1em",
+	"1.17em",
+	"1.33em",
+	"1.5em",
+	"1.67em",
 };
 
 static void
