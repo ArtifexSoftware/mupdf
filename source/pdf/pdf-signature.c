@@ -309,7 +309,11 @@ void pdf_sign_signature(fz_context *ctx, pdf_annot *widget,
 	int logo = flags & PDF_SIGNATURE_SHOW_LOGO;
 	fz_rect rect = pdf_annot_rect(ctx, widget);
 	fz_text_language lang = pdf_annot_language(ctx, widget);
+#ifdef CLUSTER
+	int64_t now = 1112281971; /* release date of MuPDF 0.1 */
+#else
 	int64_t now = time(NULL);
+#endif
 	char *name = NULL;
 	char *info = NULL;
 	fz_display_list *dlist = NULL;

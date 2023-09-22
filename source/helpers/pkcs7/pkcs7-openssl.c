@@ -716,6 +716,14 @@ static int signer_create_digest(fz_context *ctx, pdf_pkcs7_signer *signer, fz_st
 	if (si == NULL)
 		goto exit;
 
+#ifdef CLUSTER
+	{
+		ASN1_UTCTIME *sign_time;
+		time_t now = 1112281971; /* release date of MuPDF 0.1 */
+		sign_time = X509_time_adj(NULL, 0, &now);
+		PKCS7_add_signed_attribute(si, NID_pkcs9_signingTime, V_ASN1_UTCTIME, sign_time);
+	}
+#endif
 	PKCS7_add_signed_attribute(si, NID_pkcs9_contentType, V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data));
 	PKCS7_add_certificate(p7, osigner->x509);
 
