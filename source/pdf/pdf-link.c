@@ -1497,7 +1497,7 @@ pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri)
 		}
 		else if (has_named_dest(ctx, uri))
 		{
-			char *name = parse_uri_named_dest(ctx, uri);
+			name = parse_uri_named_dest(ctx, uri);
 
 			needle = pdf_new_string(ctx, name, strlen(name));
 			destobj = resolve_dest(ctx, doc, needle);
