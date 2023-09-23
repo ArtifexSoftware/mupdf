@@ -2199,7 +2199,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	}
 	else if (ff & PDF_TX_FIELD_IS_COMB)
 	{
-		int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
+		int maxlen = pdf_dict_get_inheritable_int(ctx, annot->obj, PDF_NAME(MaxLen));
 		if (has_bc && maxlen > 1)
 		{
 			float cell_w = (w - 2 * b) / maxlen;
@@ -2267,7 +2267,7 @@ pdf_layout_text_widget(fz_context *ctx, pdf_annot *annot)
 		}
 		else if (ff & PDF_TX_FIELD_IS_COMB)
 		{
-			int maxlen = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
+			int maxlen = pdf_dict_get_inheritable_int(ctx, annot->obj, PDF_NAME(MaxLen));
 			layout_variable_text(ctx, out, text, lang, font, size, q, x, y, w, h, 0, 0.8f, 1.2f, 0, maxlen, 0);
 		}
 		else

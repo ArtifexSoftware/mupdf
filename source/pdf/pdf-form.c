@@ -62,7 +62,7 @@ const char *pdf_field_value(fz_context *ctx, pdf_obj *field)
 
 int pdf_field_flags(fz_context *ctx, pdf_obj *obj)
 {
-	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, obj, PDF_NAME(Ff)));
+	return pdf_dict_get_inheritable_int(ctx, obj, PDF_NAME(Ff));
 }
 
 int pdf_field_type(fz_context *ctx, pdf_obj *obj)
@@ -948,6 +948,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_obj *field, pdf_obj *col)
 	char buf[100];
 	const char *font;
 	float size, color[4];
+	/* TODO? */
 	const char *da = pdf_to_str_buf(ctx, pdf_dict_get_inheritable(ctx, field, PDF_NAME(DA)));
 	int n;
 
@@ -1059,7 +1060,7 @@ pdf_update_widget(fz_context *ctx, pdf_annot *widget)
 int pdf_text_widget_max_len(fz_context *ctx, pdf_annot *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
-	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(MaxLen)));
+	return pdf_dict_get_inheritable_int(ctx, annot->obj, PDF_NAME(MaxLen));
 }
 
 int pdf_text_widget_format(fz_context *ctx, pdf_annot *tw)
@@ -1838,7 +1839,7 @@ get_locked_fields_from_xfa(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 static void
 lock_field(fz_context *ctx, pdf_obj *f)
 {
-	int ff = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, f, PDF_NAME(Ff)));
+	int ff = pdf_dict_get_inheritable_int(ctx, f, PDF_NAME(Ff));
 
 	if ((ff & PDF_FIELD_IS_READ_ONLY) ||
 		!pdf_name_eq(ctx, pdf_dict_get(ctx, f, PDF_NAME(Type)), PDF_NAME(Annot)) ||

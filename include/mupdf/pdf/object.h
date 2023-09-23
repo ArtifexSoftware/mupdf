@@ -211,6 +211,17 @@ fz_rect pdf_dict_get_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 fz_matrix pdf_dict_get_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 int64_t pdf_dict_get_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 
+int pdf_dict_get_inheritable_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+int pdf_dict_get_inheritable_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+int64_t pdf_dict_get_inheritable_int64(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+float pdf_dict_get_inheritable_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+const char *pdf_dict_get_inheritable_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+const char *pdf_dict_get_inheritable_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep);
+const char *pdf_dict_get_inheritable_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+fz_rect pdf_dict_get_inheritable_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+fz_matrix pdf_dict_get_inheritable_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+int64_t pdf_dict_get_inheritable_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+
 void pdf_array_push_bool(fz_context *ctx, pdf_obj *array, int x);
 void pdf_array_push_int(fz_context *ctx, pdf_obj *array, int64_t x);
 void pdf_array_push_real(fz_context *ctx, pdf_obj *array, double x);

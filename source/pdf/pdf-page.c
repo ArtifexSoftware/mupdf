@@ -674,7 +674,7 @@ pdf_page_obj_transform_box(fz_context *ctx, pdf_obj *pageobj, fz_rect *outbox, f
 	*outbox = usedbox;
 
 	/* Snap page rotation to 0, 90, 180 or 270 */
-	rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(Rotate)));
+	rotate = pdf_dict_get_inheritable_int(ctx, pageobj, PDF_NAME(Rotate));
 	if (rotate < 0)
 		rotate = 360 - ((-rotate) % 360);
 	if (rotate >= 360)
@@ -693,7 +693,7 @@ pdf_page_obj_transform_box(fz_context *ctx, pdf_obj *pageobj, fz_rect *outbox, f
 	*page_ctm = fz_pre_rotate(*page_ctm, -rotate);
 
 	/* Always use MediaBox to set origin to top left */
-	mediabox = pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox)));
+	mediabox = pdf_dict_get_inheritable_rect(ctx, pageobj, PDF_NAME(MediaBox));
 	if (fz_is_empty_rect(mediabox))
 		mediabox = fz_make_rect(0, 0, 612, 792);
 	mediabox.x0 = fz_min(mediabox.x0, mediabox.x1);

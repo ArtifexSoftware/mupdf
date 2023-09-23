@@ -3829,6 +3829,51 @@ fz_matrix pdf_dict_get_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 	return pdf_to_matrix(ctx, pdf_dict_get(ctx, dict, key));
 }
 
+int pdf_dict_get_inheritable_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_bool(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+int pdf_dict_get_inheritable_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+int64_t pdf_dict_get_inheritable_int64(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_int64(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+float pdf_dict_get_inheritable_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_real(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+const char *pdf_dict_get_inheritable_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_name(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+const char *pdf_dict_get_inheritable_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, size_t *sizep)
+{
+	return pdf_to_string(ctx, pdf_dict_get_inheritable(ctx, dict, key), sizep);
+}
+
+const char *pdf_dict_get_inheritable_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_text_string(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+fz_rect pdf_dict_get_inheritable_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_rect(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
+fz_matrix pdf_dict_get_inheritable_matrix(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_matrix(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
 int64_t pdf_dict_get_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 {
 	return pdf_to_date(ctx, pdf_dict_get(ctx, dict, key));

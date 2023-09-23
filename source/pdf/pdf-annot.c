@@ -241,7 +241,7 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 		flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
 		if (flags & PDF_ANNOT_IS_NO_ROTATE)
 		{
-			int rotate = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, annot->page->obj, PDF_NAME(Rotate)));
+			int rotate = pdf_dict_get_inheritable_int(ctx, annot->page->obj, PDF_NAME(Rotate));
 			fz_point tp = fz_transform_point_xy(rect.x0, rect.y1, page_ctm);
 			page_ctm = fz_concat(page_ctm, fz_translate(-tp.x, -tp.y));
 			page_ctm = fz_concat(page_ctm, fz_rotate(-rotate));
@@ -719,7 +719,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 				fz_rect text_rect = { 12, 12, 12+200, 12+100 };
 
 				/* Use undocumented Adobe property to match page rotation. */
-				int rot = pdf_to_int(ctx, pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(Rotate)));
+				int rot = pdf_dict_get_inheritable_int(ctx, page->obj, PDF_NAME(Rotate));
 				if (rot != 0)
 					pdf_dict_put_int(ctx, annot->obj, PDF_NAME(Rotate), rot);
 
