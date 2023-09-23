@@ -141,7 +141,11 @@ def mupdf_version():
     #
     # This also allows us to easily experiment on test.pypi.org.
     #
-    ret = base_version + time.strftime(".%Y%m%d.%H%M")
+    # We have to protect against the time component containing `.0` as this is
+    # prohibited by PEP-440.
+    #
+    tail = time.strftime(".%Y%m%d.%H%M").replace('.0', '.')
+    ret = base_version + tail
     #log(f'Have created version number: {ret}')
     return ret
 
@@ -447,13 +451,16 @@ https://mupdf.com/r/C-and-Python-APIs
 
 """
 
+with open(f'{root_dir()}/COPYING') as f:
+    license = f.read()
+
 mupdf_package = pipcl.Package(
         name = 'mupdf',
         version = mupdf_version(),
         root = root_dir(),
         summary = 'Python bindings for MuPDF library.',
         description = description,
-        classifiers = [
+        classifier = [
                 'Development Status :: 4 - Beta',
                 'Intended Audience :: Developers',
                 'License :: OSI Approved :: GNU Affero General Public License v3',
@@ -461,13 +468,15 @@ mupdf_package = pipcl.Package(
                 ],
         author = 'Artifex Software, Inc.',
         author_email = 'support@artifex.com',
-        url_docs = 'https://mupdf.com/r/C-and-Python-APIs',
-        url_home = 'https://mupdf.com/',
-        url_source = 'https://git.ghostscript.com/?p=mupdf.git',
-        url_tracker = 'https://bugs.ghostscript.com/',
+        home_page = 'https://mupdf.com/',
+        project_url = [
+            ('Documentation, https://mupdf.com/r/C-and-Python-APIs/'),
+            ('Source, https://git.ghostscript.com/?p=mupdf.git'),
+            ('Tracker, https://bugs.ghostscript.com/'),
+            ],
         keywords = 'PDF',
         platform = None,
-        license_files = ['COPYING'],
+        license = license,
         fn_build = build,
         fn_clean = clean,
         fn_sdist = sdist,

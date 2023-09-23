@@ -313,7 +313,8 @@ class Package:
             maintainer_email:
                 Maintainer email.
             license:
-                A string containing the license text.
+                A string containing the license text. Omitted from generated
+                metadata if multi-line.
             classifier:
                 A string or list of strings. Also see:
 
@@ -455,13 +456,15 @@ class Package:
         assert_str_or_multi( provides_extra)
 
         # https://packaging.python.org/en/latest/specifications/core-metadata/.
-        assert re.match('([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$', name, re.IGNORECASE)
+        assert re.match('([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$', name, re.IGNORECASE), \
+                f'Bad name: {name!r}'
 
         # PEP-440.
         assert re.match(
                 r'^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$',
                 version,
-                )
+                ), \
+                f'Bad version: {version!r}.'
 
         # https://packaging.python.org/en/latest/specifications/binary-distribution-format/
         if tag_python:
@@ -1089,15 +1092,22 @@ class Package:
         #
         ret = ['']
         def add(key, value):
-            if value is not None:
-                if isinstance( value, (tuple, list)):
-                    for v in value:
-                        add( key, v)
-                else:
-                    assert '\n' not in value, f'key={key} value contains newline: {value!r}'
-                    if key == 'Project-URL':
-                        assert value.count(',') == 1, f'For {key=}, should have one comma in {value!r}.'
-                    ret[0] += f'{key}: {value}\n'
+            if value is None:
+                return
+            if isinstance( value, (tuple, list)):
+                for v in value:
+                    add( key, v)
+                return
+            if key == 'License' and '\n' in value:
+                # This is ok because we write `self.license` into
+                # *.dist-info/COPYING.
+                #
+                _log( f'Omitting license because contains newline(s).')
+                return
+            assert '\n' not in value, f'key={key} value contains newline: {value!r}'
+            if key == 'Project-URL':
+                assert value.count(',') == 1, f'For {key=}, should have one comma in {value!r}.'
+            ret[0] += f'{key}: {value}\n'
         #add('Description', self.description)
         add('Metadata-Version', '2.1')
 
