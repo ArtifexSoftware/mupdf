@@ -226,8 +226,8 @@ pdf_lookup_number_imp(fz_context *ctx, pdf_obj *node, int needle, pdf_cycle_list
 			int m = (l + r) >> 1;
 			pdf_obj *kid = pdf_array_get(ctx, kids, m);
 			pdf_obj *limits = pdf_dict_get(ctx, kid, PDF_NAME(Limits));
-			int first = pdf_to_int(ctx, pdf_array_get(ctx, limits, 0));
-			int last = pdf_to_int(ctx, pdf_array_get(ctx, limits, 1));
+			int first = pdf_array_get_int(ctx, limits, 0);
+			int last = pdf_array_get_int(ctx, limits, 1);
 
 			if (needle < first)
 				r = m - 1;
@@ -251,7 +251,7 @@ pdf_lookup_number_imp(fz_context *ctx, pdf_obj *node, int needle, pdf_cycle_list
 		while (l <= r)
 		{
 			int m = (l + r) >> 1;
-			int key = pdf_to_int(ctx, pdf_array_get(ctx, nums, m * 2));
+			int key = pdf_array_get_int(ctx, nums, m * 2);
 			pdf_obj *val = pdf_array_get(ctx, nums, m * 2 + 1);
 
 			if (needle < key)
@@ -265,7 +265,7 @@ pdf_lookup_number_imp(fz_context *ctx, pdf_obj *node, int needle, pdf_cycle_list
 		/* Parallel the nametree lookup above by allowing for non-sorted lists. */
 		r = pdf_array_len(ctx, nums)/2;
 		for (l = 0; l < r; l++)
-			if (needle == pdf_to_int(ctx, pdf_array_get(ctx, nums, l * 2)))
+			if (needle == pdf_array_get_int(ctx, nums, l * 2))
 				return pdf_array_get(ctx, nums, l * 2 + 1);
 	}
 

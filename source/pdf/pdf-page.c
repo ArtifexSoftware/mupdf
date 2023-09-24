@@ -743,7 +743,7 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 	if (pdf_name_eq(ctx, nameobj, PDF_NAME(Separation)))
 	{
 		fz_colorspace *cs;
-		const char *name = pdf_to_name(ctx, pdf_array_get(ctx, obj, 1));
+		const char *name = pdf_array_get_name(ctx, obj, 1);
 
 		/* Skip 'special' colorants. */
 		if (!strcmp(name, "Black") ||
@@ -816,7 +816,7 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 	for (j = 0; j < m; j++)
 	{
 		fz_colorspace *cs;
-		const char *name = pdf_to_name(ctx, pdf_array_get(ctx, arr, j));
+		const char *name = pdf_array_get_name(ctx, arr, j);
 
 		/* Skip 'special' colorants. */
 		if (!strcmp(name, "Black") ||

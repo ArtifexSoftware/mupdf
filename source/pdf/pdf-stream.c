@@ -644,7 +644,7 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 		len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
 		n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
-			len = pdf_guess_filter_length(len, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
+			len = pdf_guess_filter_length(len, pdf_array_get_name(ctx, obj, i));
 	}
 	fz_always(ctx)
 	{

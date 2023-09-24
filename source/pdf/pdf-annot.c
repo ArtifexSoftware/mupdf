@@ -932,8 +932,8 @@ pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 
 	fz_try(ctx)
 	{
-		pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype));
-		ret = pdf_annot_type_from_string(ctx, pdf_to_name(ctx, subtype));
+		const char *subtype = pdf_dict_get_name(ctx, annot->obj, PDF_NAME(Subtype));
+		ret = pdf_annot_type_from_string(ctx, subtype);
 	}
 	fz_always(ctx)
 		pdf_annot_pop_local_xref(ctx, annot);

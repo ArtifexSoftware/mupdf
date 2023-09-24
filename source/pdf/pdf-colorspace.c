@@ -162,7 +162,7 @@ load_devicen(fz_context *ctx, pdf_obj *array, int is_devn, pdf_cycle_list *cycle
 		cs->u.separation.tint = pdf_load_function(ctx, tintobj, n, cs->u.separation.base->n);
 		if (pdf_is_array(ctx, nameobj))
 			for (i = 0; i < n; i++)
-				fz_colorspace_name_colorant(ctx, cs, i, pdf_to_name(ctx, pdf_array_get(ctx, nameobj, i)));
+				fz_colorspace_name_colorant(ctx, cs, i, pdf_array_get_name(ctx, nameobj, i));
 		else
 			fz_colorspace_name_colorant(ctx, cs, 0, pdf_to_name(ctx, nameobj));
 	}

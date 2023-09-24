@@ -240,10 +240,10 @@ static void
 rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, float *color, int stroking)
 {
 	char new_name[MAX_REWRITTEN_NAME];
-	pdf_obj *obj;
 	fz_colorspace *cs = NULL;
 	pdf_pattern *pat = NULL;
 	fz_shade *shade = NULL;
+	int type;
 
 	if (stroking)
 		p->gstate->unmarked &= ~UNMARKED_STROKE;
@@ -387,32 +387,30 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		}
 
 		/* Has it been rewritten to be a pattern? */
-		obj = pdf_dict_get(ctx, cs_obj, PDF_NAME(PatternType));
-		if (obj)
-		{
-			/* Make a new entry (or find an existing one), and send that. */
-			make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), cs_obj);
+		type = pdf_dict_get_int(ctx, cs_obj, PDF_NAME(PatternType));
+		if (type < 1 || type > 2)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Bad PatternType");
 
-			if (pdf_to_int(ctx, obj) == 1)
-			{
-				pat = pdf_load_pattern(ctx, p->doc, cs_obj);
-				if (stroking)
-					p->chain->op_SC_pattern(ctx, p->chain, new_name, pat, n, color);
-				else
-					p->chain->op_sc_pattern(ctx, p->chain, new_name, pat, n, color);
-				break;
-			}
-			else if (pdf_to_int(ctx, obj) == 2)
-			{
-				shade = pdf_load_shading(ctx, p->doc, cs_obj);
-				if (stroking)
-					p->chain->op_SC_shade(ctx, p->chain, new_name, shade);
-				else
-					p->chain->op_sc_shade(ctx, p->chain, new_name, shade);
-				break;
-			}
+		/* Make a new entry (or find an existing one), and send that. */
+		make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), cs_obj);
+
+		if (type == 1)
+		{
+			pat = pdf_load_pattern(ctx, p->doc, cs_obj);
+			if (stroking)
+				p->chain->op_SC_pattern(ctx, p->chain, new_name, pat, n, color);
 			else
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Bad PatternType");
+				p->chain->op_sc_pattern(ctx, p->chain, new_name, pat, n, color);
+			break;
+		}
+		else if (type == 2)
+		{
+			shade = pdf_load_shading(ctx, p->doc, cs_obj);
+			if (stroking)
+				p->chain->op_SC_shade(ctx, p->chain, new_name, shade);
+			else
+				p->chain->op_sc_shade(ctx, p->chain, new_name, shade);
+			break;
 		}
 
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal rewritten colorspace");

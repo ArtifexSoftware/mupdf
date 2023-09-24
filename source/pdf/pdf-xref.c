@@ -4296,7 +4296,7 @@ check_field(fz_context *ctx, pdf_document *doc, pdf_changes *changes, pdf_obj *o
 		t = pdf_dict_get(ctx, old_obj, PDF_NAME(T));
 		if (t != NULL)
 		{
-			name = pdf_to_text_string(ctx, pdf_dict_get(ctx, old_obj, PDF_NAME(T)));
+			name = pdf_dict_get_text_string(ctx, old_obj, PDF_NAME(T));
 			n = strlen(name)+1;
 			if (*name_prefix)
 				n += 1 + strlen(name_prefix);
@@ -4473,7 +4473,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				 * We need to remove <Fields> from <excludes>. */
 				for (i = 0; i < len; i++)
 				{
-					const char *s = pdf_to_text_string(ctx, pdf_array_get(ctx, f, i));
+					const char *s = pdf_array_get_text_string(ctx, f, i);
 					int r, w;
 
 					for (r = w = 0; r < fields->excludes.len; r++)
@@ -4490,7 +4490,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				 * We need to add <Fields> to <include> (avoiding repetition). */
 				for (i = 0; i < len; i++)
 				{
-					const char *s = pdf_to_text_string(ctx, pdf_array_get(ctx, f, i));
+					const char *s = pdf_array_get_text_string(ctx, f, i);
 
 					for (r = 0; r < fields->includes.len; r++)
 					{
@@ -4512,7 +4512,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				{
 					for (i = 0; i < len; i++)
 					{
-						const char *s = pdf_to_text_string(ctx, pdf_array_get(ctx, f, i));
+						const char *s = pdf_array_get_text_string(ctx, f, i);
 						if (!strcmp(s, fields->excludes.list[r]))
 							break;
 					}
@@ -4528,7 +4528,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				fields->all = 1;
 				for (i = 0; i < len; i++)
 				{
-					const char *s = pdf_to_text_string(ctx, pdf_array_get(ctx, f, i));
+					const char *s = pdf_array_get_text_string(ctx, f, i);
 					for (r = 0; r < fields->includes.len; r++)
 					{
 						if (!strcmp(s, fields->includes.list[r]))
@@ -4566,7 +4566,7 @@ find_locked_fields_value(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *v)
 		tp = pdf_dict_get(ctx, sr, PDF_NAME(TransformParams));
 		if (pdf_name_eq(ctx, tm, PDF_NAME(DocMDP)))
 		{
-			int p = pdf_to_int(ctx, pdf_dict_get(ctx, tp, PDF_NAME(P)));
+			int p = pdf_dict_get_int(ctx, tp, PDF_NAME(P));
 
 			if (p == 0)
 				p = 2;

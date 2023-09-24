@@ -497,9 +497,7 @@ pdf_outline_iterator_item(fz_context *ctx, fz_outline_iterator *iter_)
 			iter->item.uri = Memento_label(pdf_parse_link_action(ctx, doc, obj, -1), "outline_uri");
 	}
 
-	obj = pdf_dict_get(ctx, iter->current, PDF_NAME(Count));
-
-	iter->item.is_open = (pdf_to_int(ctx, obj) > 0);
+	iter->item.is_open = pdf_dict_get_int(ctx, iter->current, PDF_NAME(Count)) > 0;
 
 	return &iter->item;
 }

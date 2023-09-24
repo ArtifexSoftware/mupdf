@@ -789,7 +789,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	{
 		fontdesc = pdf_new_font_desc(ctx);
 
-		basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BaseFont)));
+		basefont = pdf_dict_get_name(ctx, dict, PDF_NAME(BaseFont));
 
 		descriptor = pdf_dict_get(ctx, dict, PDF_NAME(FontDescriptor));
 		if (descriptor)
@@ -1168,7 +1168,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 	{
 		/* Get font name and CID collection */
 
-		basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME(BaseFont)));
+		basefont = pdf_dict_get_name(ctx, dict, PDF_NAME(BaseFont));
 
 		{
 			pdf_obj *cidinfo;

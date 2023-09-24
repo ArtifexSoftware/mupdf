@@ -449,16 +449,17 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 {
 	if (csi->name[0])
 	{
-		pdf_obj *patres, *patobj, *type;
+		pdf_obj *patres, *patobj;
+		int type;
 
 		patres = pdf_dict_get(ctx, csi->rdb, PDF_NAME(Pattern));
 		patobj = pdf_dict_gets(ctx, patres, csi->name);
 		if (!patobj)
 			fz_throw(ctx, FZ_ERROR_MINOR, "cannot find Pattern resource '%s'", csi->name);
 
-		type = pdf_dict_get(ctx, patobj, PDF_NAME(PatternType));
+		type = pdf_dict_get_int(ctx, patobj, PDF_NAME(PatternType));
 
-		if (pdf_to_int(ctx, type) == 1)
+		if (type == 1)
 		{
 			if (proc->op_SC_pattern && proc->op_sc_pattern)
 			{
@@ -477,7 +478,7 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 			}
 		}
 
-		else if (pdf_to_int(ctx, type) == 2)
+		else if (type == 2)
 		{
 			if (proc->op_SC_shade && proc->op_sc_shade)
 			{
@@ -498,7 +499,7 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 
 		else
 		{
-			fz_throw(ctx, FZ_ERROR_MINOR, "unknown pattern type: %d", pdf_to_int(ctx, type));
+			fz_throw(ctx, FZ_ERROR_MINOR, "unknown pattern type: %d", type);
 		}
 	}
 
