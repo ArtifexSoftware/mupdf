@@ -920,7 +920,7 @@ pdf_recolor_shade(fz_context *ctx, pdf_obj *shade, pdf_shade_recolorer *reshade,
 
 			new_bg = pdf_dict_put_array(ctx, rewritten, PDF_NAME(Background), rd.dst_cs->n);
 			for (i = 0; i < n; i++)
-				pdf_array_put(ctx, new_bg, i, pdf_new_real(ctx, bg[i]));
+				pdf_array_put_real(ctx, new_bg, i, bg[i]);
 			pdf_dict_put(ctx, rewritten, PDF_NAME(Background), new_bg);
 		}
 

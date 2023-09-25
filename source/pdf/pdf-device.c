@@ -1091,7 +1091,6 @@ static void
 pdf_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	pdf_document *doc = pdev->doc;
 	int num;
 	pdf_obj *form_ref;
 	gstate *gs;
@@ -1109,10 +1108,9 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 		if (obj == NULL)
 		{
 			/* No, better make one */
-			obj = pdf_new_dict(ctx, doc, 2);
+			obj = pdf_dict_puts_dict(ctx, pdev->resources, text, 2);
 			pdf_dict_put(ctx, obj, PDF_NAME(Type), PDF_NAME(ExtGState));
 			pdf_dict_put_name(ctx, obj, PDF_NAME(BM), fz_blendmode_name(blendmode));
-			pdf_dict_putp_drop(ctx, pdev->resources, text, obj);
 		}
 	}
 

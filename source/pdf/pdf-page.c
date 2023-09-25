@@ -1609,8 +1609,7 @@ pdf_adjust_page_labels(fz_context *ctx, pdf_document *doc, int index, int adjust
 
 		// Increase/decrease the indices in the name tree
 		for (; i < pdf_array_len(ctx, range.nums); i += 2)
-			pdf_array_put_drop(ctx, range.nums, i,
-				pdf_new_int(ctx, pdf_array_get_int(ctx, range.nums, i) + adjust));
+			pdf_array_put_int(ctx, range.nums, i, pdf_array_get_int(ctx, range.nums, i) + adjust);
 
 		// TODO: delete page labels that have no effect (zero range)
 

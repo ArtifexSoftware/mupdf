@@ -561,7 +561,7 @@ FUN(PDFObject_putArrayString)(JNIEnv *env, jobject self, jint index, jstring jst
 	fz_try(ctx)
 	{
 		if (str)
-			pdf_array_put_drop(ctx, arr, index, pdf_new_string(ctx, str, strlen(str)));
+			pdf_array_put_string(ctx, arr, index, str, strlen(str));
 		else
 			pdf_array_put(ctx, arr, index, PDF_NULL);
 	}

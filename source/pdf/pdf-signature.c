@@ -161,7 +161,7 @@ check_field_locking(fz_context *ctx, pdf_obj *obj, void *data_, pdf_obj **ff)
 
 			if (((flags & PDF_FIELD_IS_READ_ONLY) == 0) && /* Field is not currently locked */
 				pdf_is_field_locked(ctx, data->locked, data->prefix->name)) /* Field should be locked */
-				pdf_dict_put_drop(ctx, obj, PDF_NAME(Ff), pdf_new_int(ctx, flags | PDF_FIELD_IS_READ_ONLY));
+				pdf_dict_put_int(ctx, obj, PDF_NAME(Ff), flags | PDF_FIELD_IS_READ_ONLY);
 		}
 	}
 	fz_catch(ctx)
@@ -247,7 +247,7 @@ pdf_sign_signature_with_appearance(fz_context *ctx, pdf_annot *widget, pdf_pkcs7
 
 		sf = pdf_to_int(ctx, pdf_dict_get(ctx, form, PDF_NAME(SigFlags)));
 		if ((sf & (PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY)) != (PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY))
-			pdf_dict_put_drop(ctx, form, PDF_NAME(SigFlags), pdf_new_int(ctx, sf | PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY));
+			pdf_dict_put_int(ctx, form, PDF_NAME(SigFlags), sf | PDF_SIGFLAGS_SIGSEXIST | PDF_SIGFLAGS_APPENDONLY);
 
 		pdf_signature_set_value(ctx, doc, wobj, signer, t);
 		pdf_end_operation(ctx, doc);

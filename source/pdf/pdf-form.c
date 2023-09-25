@@ -267,7 +267,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 				if (pdf_is_dict(ctx, n) && !pdf_dict_get(ctx, n, leafv))
 					leafv = NULL;
 
-				if (!leafv)
+				if (!pdf_is_name(ctx, leafv))
 					leafv = PDF_NAME(Off);
 				pdf_dict_put(ctx, field, PDF_NAME(AS), leafv);
 			}
@@ -905,7 +905,6 @@ void pdf_field_set_display(fz_context *ctx, pdf_obj *field, int d)
 	{
 		int mask = (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
 		int f = pdf_dict_get_int(ctx, field, PDF_NAME(F)) & ~mask;
-		pdf_obj *fo;
 
 		switch (d)
 		{
@@ -922,8 +921,7 @@ void pdf_field_set_display(fz_context *ctx, pdf_obj *field, int d)
 			break;
 		}
 
-		fo = pdf_new_int(ctx, f);
-		pdf_dict_put_drop(ctx, field, PDF_NAME(F), fo);
+		pdf_dict_put_int(ctx, field, PDF_NAME(F), f);
 	}
 	else
 	{
@@ -1328,7 +1326,7 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_annot *tw, const char *opts[])
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_annot *tw, int n, const char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
-	pdf_obj *optarr = NULL, *opt;
+	pdf_obj *optarr = NULL;
 	int i;
 
 	if (!annot)
@@ -1344,18 +1342,12 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_annot *tw, int n, const ch
 			optarr = pdf_new_array(ctx, annot->page->doc, n);
 
 			for (i = 0; i < n; i++)
-			{
-				opt = pdf_new_text_string(ctx, opts[i]);
-				pdf_array_push_drop(ctx, optarr, opt);
-			}
+				pdf_array_push_text_string(ctx, optarr, opts[i]);
 
 			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(V), optarr);
 		}
 		else
-		{
-			opt = pdf_new_text_string(ctx, opts[0]);
-			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME(V), opt);
-		}
+			pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(V), opts[0]);
 
 		/* FIXME: when n > 1, we should be regenerating the indexes */
 		pdf_dict_del(ctx, annot->obj, PDF_NAME(I));
@@ -1846,7 +1838,7 @@ lock_field(fz_context *ctx, pdf_obj *f)
 		!pdf_name_eq(ctx, pdf_dict_get(ctx, f, PDF_NAME(Subtype)), PDF_NAME(Widget)))
 		return;
 
-	pdf_dict_put(ctx, f, PDF_NAME(Ff), pdf_new_int(ctx, ff | PDF_FIELD_IS_READ_ONLY));
+	pdf_dict_put_int(ctx, f, PDF_NAME(Ff), ff | PDF_FIELD_IS_READ_ONLY);
 }
 
 static void
@@ -1908,15 +1900,12 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 		pdf_dict_put(ctx, v, PDF_NAME(Type), PDF_NAME(Sig));
 		pdf_dict_put_date(ctx, v, PDF_NAME(M), stime);
 
-		o = pdf_new_array(ctx, doc, 1);
-		pdf_dict_put(ctx, v, PDF_NAME(Reference), o);
-		r = pdf_new_dict(ctx, doc, 4);
-		pdf_array_put(ctx, o, 0, r);
+		o = pdf_dict_put_array(ctx, v, PDF_NAME(Reference), 1);
+		r = pdf_array_put_dict(ctx, o, 0, 4);
 		pdf_dict_put(ctx, r, PDF_NAME(Data), pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)));
 		pdf_dict_put(ctx, r, PDF_NAME(TransformMethod), PDF_NAME(FieldMDP));
 		pdf_dict_put(ctx, r, PDF_NAME(Type), PDF_NAME(SigRef));
-		t = pdf_new_dict(ctx, doc, 5);
-		pdf_dict_put(ctx, r, PDF_NAME(TransformParams), t);
+		t = pdf_dict_put_dict(ctx, r, PDF_NAME(TransformParams), 5);
 
 		l = pdf_dict_getp(ctx, field, "Lock/Action");
 		if (l)

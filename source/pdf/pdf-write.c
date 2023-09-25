@@ -1202,8 +1202,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		opts->linear_l = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME(L), opts->linear_l);
 		opts->linear_h0 = pdf_new_int(ctx, INT_MIN);
-		o = pdf_new_array(ctx, doc, 2);
-		pdf_dict_put_drop(ctx, params_obj, PDF_NAME(H), o);
+		o = pdf_dict_put_array(ctx, params_obj, PDF_NAME(H), 2);
 		pdf_array_push(ctx, o, opts->linear_h0);
 		opts->linear_h1 = pdf_new_int(ctx, INT_MIN);
 		pdf_array_push(ctx, o, opts->linear_h1);
@@ -2179,7 +2178,6 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 {
 	pdf_obj *trailer = NULL;
 	pdf_obj *obj;
-	pdf_obj *nobj = NULL;
 
 	fz_write_string(ctx, opts->out, "xref\n");
 	opts->first_xref_entry_offset = fz_tell_output(ctx, opts->out);
@@ -2227,8 +2225,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 		{
 			trailer = pdf_new_dict(ctx, doc, 5);
 
-			nobj = pdf_new_int(ctx, to);
-			pdf_dict_put_drop(ctx, trailer, PDF_NAME(Size), nobj);
+			pdf_dict_put_int(ctx, trailer, PDF_NAME(Size), to);
 
 			if (first)
 			{
@@ -2258,10 +2255,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 					pdf_dict_putp(ctx, trailer, "Root/Metadata", opts->metadata);
 			}
 			if (main_xref_offset != 0)
-			{
-				nobj = pdf_new_int(ctx, main_xref_offset);
-				pdf_dict_put_drop(ctx, trailer, PDF_NAME(Prev), nobj);
-			}
+				pdf_dict_put_int(ctx, trailer, PDF_NAME(Prev), main_xref_offset);
 		}
 
 		fz_write_string(ctx, opts->out, "trailer\n");
@@ -3352,8 +3346,8 @@ new_identity(fz_context *ctx, pdf_document *doc)
 	fz_memrnd(ctx, rnd, nelem(rnd));
 
 	id = pdf_dict_put_array(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID), 2);
-	pdf_array_push_drop(ctx, id, pdf_new_string(ctx, (char *) rnd + 0, nelem(rnd) / 2));
-	pdf_array_push_drop(ctx, id, pdf_new_string(ctx, (char *) rnd + 16, nelem(rnd) / 2));
+	pdf_array_push_string(ctx, id, (char *) rnd + 0, nelem(rnd) / 2);
+	pdf_array_push_string(ctx, id, (char *) rnd + 16, nelem(rnd) / 2);
 
 	return id;
 }
@@ -3366,7 +3360,7 @@ change_identity(fz_context *ctx, pdf_document *doc, pdf_obj *id)
 	{
 		/* Update second half of ID array with new random data. */
 		fz_memrnd(ctx, rnd, 16);
-		pdf_array_put_drop(ctx, id, 1, pdf_new_string(ctx, (char *)rnd, 16));
+		pdf_array_put_string(ctx, id, 1, (char *)rnd, 16);
 	}
 }
 
@@ -3556,8 +3550,8 @@ flush_gathered(fz_context *ctx, pdf_document *doc, objstm_gather_data *data)
 		fz_drop_output(ctx, out);
 		out = NULL;
 
-		pdf_dict_put_drop(ctx, obj, PDF_NAME(First), pdf_new_int(ctx, first));
-		pdf_dict_put_drop(ctx, obj, PDF_NAME(N), pdf_new_int(ctx, data->n));
+		pdf_dict_put_int(ctx, obj, PDF_NAME(First), first);
+		pdf_dict_put_int(ctx, obj, PDF_NAME(N), data->n);
 		pdf_dict_put(ctx, obj, PDF_NAME(Type), PDF_NAME(ObjStm));
 
 		fz_close_output(ctx, data->content_out);

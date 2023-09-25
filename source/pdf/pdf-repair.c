@@ -648,10 +648,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
-		obj = pdf_new_int(ctx, maxnum + 1);
-		pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size), obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
+		pdf_dict_put_int(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size), maxnum + 1);
 
 		if (roots)
 		{
