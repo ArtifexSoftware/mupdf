@@ -473,7 +473,7 @@ pdf_copy_jbig2_random_segments(fz_context *ctx, fz_buffer *output, const unsigne
 }
 
 static fz_buffer *
-pdf_jbig2_stream_from_file(fz_context *ctx, fz_buffer *input, fz_jbig2_globals *globals_, int embedded, int page)
+pdf_jbig2_stream_from_file(fz_context *ctx, fz_buffer *input, fz_jbig2_globals *globals_, int page)
 {
 	fz_buffer *globals = fz_jbig2_globals_data(ctx, globals_);
 	size_t globals_size = globals ? globals->len : 0;
@@ -481,20 +481,14 @@ pdf_jbig2_stream_from_file(fz_context *ctx, fz_buffer *input, fz_jbig2_globals *
 	int flags;
 	size_t header = 9;
 
-	if (globals_size == 0 && embedded)
-		return fz_keep_buffer(ctx, input);
-
-	if (!embedded)
+	if (input->len < 9)
+		return NULL; /* not enough data! */
+	flags = input->data[8];
+	if ((flags & 2) == 0)
 	{
-		if (input->len < 9)
+		if (input->len < 13)
 			return NULL; /* not enough data! */
-		flags = input->data[8];
-		if ((flags & 2) == 0)
-		{
-			if (input->len < 13)
-				return NULL; /* not enough data! */
-			header = 13;
-		}
+		header = 13;
 	}
 
 	output = fz_new_buffer(ctx, input->len + globals_size);
@@ -502,15 +496,10 @@ pdf_jbig2_stream_from_file(fz_context *ctx, fz_buffer *input, fz_jbig2_globals *
 	{
 		if (globals_size > 0)
 			fz_append_buffer(ctx, output, globals);
-		if (embedded)
-			fz_append_buffer(ctx, output, input);
+		if ((flags & 1) == 0)
+			pdf_copy_jbig2_random_segments(ctx, output, input->data + header, input->len - header, page);
 		else
-		{
-			if ((flags & 1) == 0)
-				pdf_copy_jbig2_random_segments(ctx, output, input->data + header, input->len - header, page);
-			else
-				pdf_copy_jbig2_segments(ctx, output, input->data + header, input->len - header, page);
-		}
+			pdf_copy_jbig2_segments(ctx, output, input->data + header, input->len - header, page);
 	}
 	fz_catch(ctx)
 	{
@@ -585,10 +574,16 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(JPXDecode));
 				break;
 			case FZ_IMAGE_JBIG2:
-				buffer = pdf_jbig2_stream_from_file(ctx, cbuffer->buffer,
-					cp->u.jbig2.globals,
-					cp->u.jbig2.embedded,
-					1);
+				if (cp->u.jbig2.embedded && cp->u.jbig2.globals)
+				{
+					pdf_obj *globals_ref = pdf_add_new_dict(ctx, doc, 1);
+					pdf_update_stream(ctx, doc, globals_ref, fz_jbig2_globals_data(ctx, cp->u.jbig2.globals), 0);
+					pdf_dict_put(ctx, dp, PDF_NAME(JBIG2Globals), globals_ref);
+				}
+				else
+					buffer = pdf_jbig2_stream_from_file(ctx, cbuffer->buffer,
+						cp->u.jbig2.globals,
+						1);
 				if (!buffer)
 					goto unknown_compression;
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(JBIG2Decode));
