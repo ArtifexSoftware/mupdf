@@ -400,8 +400,8 @@ static void fz_compute_image_key(fz_context *ctx, fz_image *image, fz_matrix *ct
 		float frac_w = (float) (key->rect.x1 - key->rect.x0) / image->w;
 		float frac_h = (float) (key->rect.y1 - key->rect.y0) / image->h;
 		float a = ctm->a * frac_w;
-		float b = ctm->b * frac_h;
-		float c = ctm->c * frac_w;
+		float b = ctm->b * frac_w;
+		float c = ctm->c * frac_h;
 		float d = ctm->d * frac_h;
 		*w = sqrtf(a * a + b * b);
 		*h = sqrtf(c * c + d * d);
