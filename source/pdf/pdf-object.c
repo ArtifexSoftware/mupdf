@@ -351,6 +351,12 @@ int pdf_to_bool(fz_context *ctx, pdf_obj *obj)
 	return obj == PDF_TRUE;
 }
 
+int pdf_to_bool_default(fz_context *ctx, pdf_obj *obj, int def)
+{
+	RESOLVE(obj);
+	return obj == PDF_TRUE ? 1 : obj == PDF_FALSE ? 0 : def;
+}
+
 int pdf_to_int(fz_context *ctx, pdf_obj *obj)
 {
 	RESOLVE(obj);
@@ -361,6 +367,18 @@ int pdf_to_int(fz_context *ctx, pdf_obj *obj)
 	if (obj->kind == PDF_REAL)
 		return (int)(NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
 	return 0;
+}
+
+int pdf_to_int_default(fz_context *ctx, pdf_obj *obj, int def)
+{
+	RESOLVE(obj);
+	if (obj < PDF_LIMIT)
+		return def;
+	if (obj->kind == PDF_INT)
+		return (int)NUM(obj)->u.i;
+	if (obj->kind == PDF_REAL)
+		return (int)(NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
+	return def;
 }
 
 int64_t pdf_to_int64(fz_context *ctx, pdf_obj *obj)
@@ -385,6 +403,18 @@ float pdf_to_real(fz_context *ctx, pdf_obj *obj)
 	if (obj->kind == PDF_INT)
 		return NUM(obj)->u.i;
 	return 0;
+}
+
+float pdf_to_real_default(fz_context *ctx, pdf_obj *obj, float def)
+{
+	RESOLVE(obj);
+	if (obj < PDF_LIMIT)
+		return def;
+	if (obj->kind == PDF_REAL)
+		return NUM(obj)->u.f;
+	if (obj->kind == PDF_INT)
+		return NUM(obj)->u.i;
+	return def;
 }
 
 const char *pdf_to_name(fz_context *ctx, pdf_obj *obj)
@@ -3833,9 +3863,19 @@ int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 	return pdf_to_bool(ctx, pdf_dict_get(ctx, dict, key));
 }
 
+int pdf_dict_get_bool_default(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int def)
+{
+	return pdf_to_bool_default(ctx, pdf_dict_get(ctx, dict, key), def);
+}
+
 int pdf_dict_get_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 {
 	return pdf_to_int(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+int pdf_dict_get_int_default(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int def)
+{
+	return pdf_to_int_default(ctx, pdf_dict_get(ctx, dict, key), def);
 }
 
 int64_t pdf_dict_get_int64(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
@@ -3846,6 +3886,11 @@ int64_t pdf_dict_get_int64(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 float pdf_dict_get_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 {
 	return pdf_to_real(ctx, pdf_dict_get(ctx, dict, key));
+}
+
+float pdf_dict_get_real_default(fz_context *ctx, pdf_obj *dict, pdf_obj *key, float def)
+{
+	return pdf_to_real_default(ctx, pdf_dict_get(ctx, dict, key), def);
 }
 
 const char *pdf_dict_get_name(fz_context *ctx, pdf_obj *dict, pdf_obj *key)

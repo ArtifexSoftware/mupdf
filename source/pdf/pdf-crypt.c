@@ -86,10 +86,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption handler: '%s'", pdf_to_name(ctx, obj));
 	}
 
-	crypt->v = 0;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(V));
-	if (pdf_is_int(ctx, obj))
-		crypt->v = pdf_to_int(ctx, obj);
+	crypt->v = pdf_dict_get_int_default(ctx, dict, PDF_NAME(V), 0);
 	if (crypt->v != 0 && crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
 	{
 		pdf_drop_crypt(ctx, crypt);
@@ -180,10 +177,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		memcpy(crypt->ue, pdf_to_str_buf(ctx, obj), 32);
 	}
 
-	crypt->encrypt_metadata = 1;
-	obj = pdf_dict_get(ctx, dict, PDF_NAME(EncryptMetadata));
-	if (pdf_is_bool(ctx, obj))
-		crypt->encrypt_metadata = pdf_to_bool(ctx, obj);
+	crypt->encrypt_metadata = pdf_dict_get_bool_default(ctx, dict, PDF_NAME(EncryptMetadata), 1);
 
 	/* Extract file identifier string */
 
@@ -201,9 +195,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	crypt->length = 40;
 	if (crypt->v == 2 || crypt->v == 4)
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Length));
-		if (pdf_is_int(ctx, obj))
-			crypt->length = pdf_to_int(ctx, obj);
+		crypt->length = pdf_dict_get_int_default(ctx, dict, PDF_NAME(Length), crypt->length);
 
 		/* work-around for pdf generators that assume length is in bytes */
 		if (crypt->length < 40)
@@ -328,9 +320,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 				fz_warn(ctx, "unknown encryption method: %s", pdf_to_name(ctx, obj));
 		}
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Length));
-		if (pdf_is_int(ctx, obj))
-			cf->length = pdf_to_int(ctx, obj);
+		cf->length = pdf_dict_get_int_default(ctx, dict, PDF_NAME(Length), cf->length);
 	}
 	else if (!is_identity)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d 0 R)", pdf_to_num(ctx, crypt->cf));

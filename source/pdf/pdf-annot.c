@@ -1928,16 +1928,12 @@ pdf_set_annot_quadding(fz_context *ctx, pdf_annot *annot, int q)
 
 float pdf_annot_opacity(fz_context *ctx, pdf_annot *annot)
 {
-	float ret = 1;
+	float ret;
 
 	pdf_annot_push_local_xref(ctx, annot);
 
 	fz_try(ctx)
-	{
-		pdf_obj *ca = pdf_dict_get(ctx, annot->obj, PDF_NAME(CA));
-		if (pdf_is_number(ctx, ca))
-			ret = pdf_to_real(ctx, ca);
-	}
+		ret = pdf_dict_get_real_default(ctx, annot->obj, PDF_NAME(CA), 1);
 	fz_always(ctx)
 		pdf_annot_pop_local_xref(ctx, annot);
 	fz_catch(ctx)

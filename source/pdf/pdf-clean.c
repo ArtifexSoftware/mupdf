@@ -290,7 +290,6 @@ static void
 pdf_filter_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *stm, pdf_obj *page_res, pdf_filter_options *options, pdf_cycle_list *cycle_up)
 {
 	pdf_cycle_list cycle;
-	pdf_obj *struct_parents_obj;
 	int struct_parents;
 	pdf_obj *new_res = NULL;
 	fz_buffer *new_buf = NULL;
@@ -301,10 +300,7 @@ pdf_filter_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *stm, pdf_obj *pa
 
 	// TODO for RJW: XObject can also be a StructParent; how do we handle that case?
 
-	struct_parents_obj = pdf_dict_get(ctx, stm, PDF_NAME(StructParents));
-	struct_parents = -1;
-	if (pdf_is_number(ctx, struct_parents_obj))
-		struct_parents = pdf_to_int(ctx, struct_parents_obj);
+	struct_parents = pdf_dict_get_int_default(ctx, stm, PDF_NAME(StructParents), -1);
 
 	old_res = pdf_dict_get(ctx, stm, PDF_NAME(Resources));
 	if (!old_res)
@@ -341,7 +337,6 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 	pdf_obj *new_xobj;
 	pdf_obj *new_res, *old_res;
 	fz_buffer *new_buf;
-	pdf_obj *struct_parents_obj;
 	int struct_parents;
 	fz_matrix matrix;
 
@@ -352,10 +347,7 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 	// TODO for RJW: XObject can also be a StructParent; how do we handle that case?
 	// TODO for RJW: will we run into trouble by duplicating StructParents stuff?
 
-	struct_parents_obj = pdf_dict_get(ctx, old_xobj, PDF_NAME(StructParents));
-	struct_parents = -1;
-	if (pdf_is_number(ctx, struct_parents_obj))
-		struct_parents = pdf_to_int(ctx, struct_parents_obj);
+	struct_parents = pdf_dict_get_int_default(ctx, old_xobj, PDF_NAME(StructParents), -1);
 
 	old_res = pdf_dict_get(ctx, old_xobj, PDF_NAME(Resources));
 	if (!old_res)
@@ -394,15 +386,11 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_filter_options *options)
 {
 	pdf_obj *contents, *old_res;
-	pdf_obj *struct_parents_obj;
 	pdf_obj *new_res;
 	fz_buffer *buffer;
 	int struct_parents;
 
-	struct_parents_obj = pdf_dict_get(ctx, page->obj, PDF_NAME(StructParents));
-	struct_parents = -1;
-	if (pdf_is_number(ctx, struct_parents_obj))
-		struct_parents = pdf_to_int(ctx, struct_parents_obj);
+	struct_parents = pdf_dict_get_int_default(ctx, page->obj, PDF_NAME(StructParents), -1);
 
 	contents = pdf_page_contents(ctx, page);
 	old_res = pdf_page_resources(ctx, page);

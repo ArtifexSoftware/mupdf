@@ -1865,7 +1865,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 	fz_default_colorspaces *xobj_default_cs = NULL;
 	marked_content_stack *save_marked_content = NULL;
 	int save_struct_parent;
-	pdf_obj *struct_parent;
 	pdf_obj *oc;
 
 	/* Avoid infinite recursion */
@@ -1888,13 +1887,9 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 	pr->marked_content = NULL;
 	save_struct_parent = pr->struct_parent;
 
-	pr->struct_parent = -1;
-
 	fz_try(ctx)
 	{
-		struct_parent = pdf_dict_get(ctx, xobj, PDF_NAME(StructParent));
-		if (pdf_is_number(ctx, struct_parent))
-			pr->struct_parent = pdf_to_int(ctx, struct_parent);
+		pr->struct_parent = pdf_dict_get_int_default(ctx, xobj, PDF_NAME(StructParent), -1);
 
 		oc = pdf_dict_get(ctx, xobj, PDF_NAME(OC));
 		if (oc)

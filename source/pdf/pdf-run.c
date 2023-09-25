@@ -32,7 +32,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	fz_default_colorspaces *default_cs = NULL;
 	int flags;
 	int resources_pushed = 0;
-	int struct_parent_num = -1;
+	int struct_parent_num;
 	pdf_obj *struct_parent;
 
 	fz_var(proc);
@@ -80,8 +80,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		ctm = fz_concat(page_ctm, ctm);
 
 		struct_parent = pdf_dict_getl(ctx, page->obj, PDF_NAME(StructParent));
-		if (pdf_is_number(ctx, struct_parent))
-			struct_parent_num = pdf_to_int(ctx, struct_parent);
+		struct_parent_num = pdf_to_int_default(ctx, struct_parent, -1);
 
 		proc = pdf_new_run_processor(ctx, page->doc, dev, ctm, struct_parent_num, usage, NULL, default_cs, cookie);
 		pdf_processor_push_resources(ctx, proc, pdf_page_resources(ctx, annot->page));
@@ -126,7 +125,7 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 	fz_default_colorspaces *default_cs = NULL;
 	fz_colorspace *colorspace = NULL;
 	fz_path *path = NULL;
-	int struct_parent_num = -1;
+	int struct_parent_num;
 	pdf_obj *struct_parent;
 
 	fz_var(proc);
@@ -184,8 +183,7 @@ pdf_run_page_contents_with_usage_imp(fz_context *ctx, pdf_document *doc, pdf_pag
 		}
 
 		struct_parent = pdf_dict_get(ctx, page->obj, PDF_NAME(StructParents));
-		if (pdf_is_number(ctx, struct_parent))
-			struct_parent_num = pdf_to_int(ctx, struct_parent);
+		struct_parent_num = pdf_to_int_default(ctx, struct_parent, -1);
 
 		/* Clip content to CropBox if it is smaller than the MediaBox */
 		if (cropbox.x0 > mediabox.x0 || cropbox.x1 < mediabox.x1 || cropbox.y0 > mediabox.y0 || cropbox.y1 < mediabox.y1)

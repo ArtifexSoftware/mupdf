@@ -229,6 +229,7 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 {
 	fz_rect bbox;
 	pdf_obj *obj;
+	float unit;
 	int j;
 
 	obj = pdf_dict_get(ctx, pageref, PDF_NAME(MediaBox));
@@ -237,15 +238,11 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 
 	bbox = pdf_to_rect(ctx, obj);
 
-	obj = pdf_dict_get(ctx, pageref, PDF_NAME(UserUnit));
-	if (pdf_is_number(ctx, obj))
-	{
-		float unit = pdf_to_real(ctx, obj);
-		bbox.x0 *= unit;
-		bbox.y0 *= unit;
-		bbox.x1 *= unit;
-		bbox.y1 *= unit;
-	}
+	unit = pdf_dict_get_real_default(ctx, pageref, PDF_NAME(UserUnit), 1);
+	bbox.x0 *= unit;
+	bbox.y0 *= unit;
+	bbox.x1 *= unit;
+	bbox.y1 *= unit;
 
 	for (j = 0; j < glo->dims; j++)
 		if (!memcmp(glo->dim[j].u.dim.bbox, &bbox, sizeof (fz_rect)))

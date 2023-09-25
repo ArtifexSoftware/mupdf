@@ -1279,10 +1279,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 		/* Horizontal */
 
-		dw = 1000;
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(DW));
-		if (obj)
-			dw = pdf_to_int(ctx, obj);
+		dw = pdf_dict_get_int_default(ctx, dict, PDF_NAME(DW), 1000);
 		pdf_set_default_hmtx(ctx, fontdesc, dw);
 
 		widths = pdf_dict_get(ctx, dict, PDF_NAME(W));

@@ -562,7 +562,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition
 
 	obj = pdf_dict_get(ctx, transdict, PDF_NAME(D));
 
-	transition->duration = (obj ? pdf_to_real(ctx, obj) : 1);
+	transition->duration = pdf_to_real_default(ctx, obj, 1);
 
 	transition->vertical = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(Dm)), PDF_NAME(H));
 	transition->outwards = !pdf_name_eq(ctx, pdf_dict_get(ctx, transdict, PDF_NAME(M)), PDF_NAME(I));
@@ -645,9 +645,7 @@ pdf_page_obj_transform_box(fz_context *ctx, pdf_obj *pageobj, fz_rect *outbox, f
 	if (!outbox)
 		outbox = &tempbox;
 
-	obj = pdf_dict_get(ctx, pageobj, PDF_NAME(UserUnit));
-	if (pdf_is_number(ctx, obj))
-		userunit = pdf_to_real(ctx, obj);
+	userunit = pdf_dict_get_real_default(ctx, pageobj, PDF_NAME(UserUnit), 1);
 
 	obj = NULL;
 	if (box == FZ_ART_BOX)
