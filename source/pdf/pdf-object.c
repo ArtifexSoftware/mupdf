@@ -3963,6 +3963,11 @@ fz_matrix pdf_dict_get_inheritable_matrix(fz_context *ctx, pdf_obj *dict, pdf_ob
 	return pdf_to_matrix(ctx, pdf_dict_get_inheritable(ctx, dict, key));
 }
 
+int64_t pdf_dict_get_inheritable_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_date(ctx, pdf_dict_get_inheritable(ctx, dict, key));
+}
+
 int64_t pdf_dict_get_date(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 {
 	return pdf_to_date(ctx, pdf_dict_get(ctx, dict, key));
