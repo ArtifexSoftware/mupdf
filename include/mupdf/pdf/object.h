@@ -231,6 +231,15 @@ void pdf_array_push_text_string(fz_context *ctx, pdf_obj *array, const char *x);
 pdf_obj *pdf_array_push_array(fz_context *ctx, pdf_obj *array, int initial);
 pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial);
 
+void pdf_array_put_bool(fz_context *ctx, pdf_obj *array, int i, int x);
+void pdf_array_put_int(fz_context *ctx, pdf_obj *array, int i, int64_t x);
+void pdf_array_put_real(fz_context *ctx, pdf_obj *array, int i, double x);
+void pdf_array_put_name(fz_context *ctx, pdf_obj *array, int i, const char *x);
+void pdf_array_put_string(fz_context *ctx, pdf_obj *array, int i, const char *x, size_t n);
+void pdf_array_put_text_string(fz_context *ctx, pdf_obj *array, int i, const char *x);
+pdf_obj *pdf_array_put_array(fz_context *ctx, pdf_obj *array, int i, int initial);
+pdf_obj *pdf_array_put_dict(fz_context *ctx, pdf_obj *array, int i, int initial);
+
 int pdf_array_get_bool(fz_context *ctx, pdf_obj *array, int index);
 int pdf_array_get_int(fz_context *ctx, pdf_obj *array, int index);
 float pdf_array_get_real(fz_context *ctx, pdf_obj *array, int index);

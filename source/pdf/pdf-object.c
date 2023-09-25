@@ -3784,6 +3784,50 @@ pdf_obj *pdf_array_push_dict(fz_context *ctx, pdf_obj *array, int initial)
 	return obj;
 }
 
+void pdf_array_put_bool(fz_context *ctx, pdf_obj *array, int i, int x)
+{
+	pdf_array_put(ctx, array, i, x ? PDF_TRUE : PDF_FALSE);
+}
+
+void pdf_array_put_int(fz_context *ctx, pdf_obj *array, int i, int64_t x)
+{
+	pdf_array_put_drop(ctx, array, i, pdf_new_int(ctx, x));
+}
+
+void pdf_array_put_real(fz_context *ctx, pdf_obj *array, int i, double x)
+{
+	pdf_array_put_drop(ctx, array, i, pdf_new_real(ctx, x));
+}
+
+void pdf_array_put_name(fz_context *ctx, pdf_obj *array, int i, const char *x)
+{
+	pdf_array_put_drop(ctx, array, i, pdf_new_name(ctx, x));
+}
+
+void pdf_array_put_string(fz_context *ctx, pdf_obj *array, int i, const char *x, size_t n)
+{
+	pdf_array_put_drop(ctx, array, i, pdf_new_string(ctx, x, n));
+}
+
+void pdf_array_put_text_string(fz_context *ctx, pdf_obj *array, int i, const char *x)
+{
+	pdf_array_put_drop(ctx, array, i, pdf_new_text_string(ctx, x));
+}
+
+pdf_obj *pdf_array_put_array(fz_context *ctx, pdf_obj *array, int i, int initial)
+{
+	pdf_obj *obj = pdf_new_array(ctx, pdf_get_bound_document(ctx, array), initial);
+	pdf_array_put_drop(ctx, array, i, obj);
+	return obj;
+}
+
+pdf_obj *pdf_array_put_dict(fz_context *ctx, pdf_obj *array, int i, int initial)
+{
+	pdf_obj *obj = pdf_new_dict(ctx, pdf_get_bound_document(ctx, array), initial);
+	pdf_array_put_drop(ctx, array, i, obj);
+	return obj;
+}
+
 int pdf_dict_get_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
 {
 	return pdf_to_bool(ctx, pdf_dict_get(ctx, dict, key));
