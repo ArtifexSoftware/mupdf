@@ -443,6 +443,38 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Cookie_newNative
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Cookie_abort
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Cookie
+ * Method:    getProgress
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Cookie_getProgress
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Cookie
+ * Method:    getProgressMax
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Cookie_getProgressMax
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Cookie
+ * Method:    getErrors
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Cookie_getErrors
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Cookie
+ * Method:    getIncomplete
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Cookie_getIncomplete
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

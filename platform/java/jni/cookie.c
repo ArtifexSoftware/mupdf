@@ -58,3 +58,47 @@ FUN(Cookie_abort)(JNIEnv *env, jobject self)
 
 	cookie->abort = 1;
 }
+
+JNIEXPORT jint JNICALL
+FUN(Cookie_getProgress)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_cookie *cookie = from_Cookie(env, self);
+
+	if (!ctx || !cookie) return 0;
+
+	return cookie->progress;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Cookie_getProgressMax)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_cookie *cookie = from_Cookie(env, self);
+
+	if (!ctx || !cookie) return 0;
+
+	return cookie->progress_max;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Cookie_getErrors)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_cookie *cookie = from_Cookie(env, self);
+
+	if (!ctx || !cookie) return 0;
+
+	return cookie->errors;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(Cookie_getIncomplete)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_cookie *cookie = from_Cookie(env, self);
+
+	if (!ctx || !cookie) return JNI_FALSE;
+
+	return cookie->incomplete ? JNI_TRUE : JNI_FALSE;
+}

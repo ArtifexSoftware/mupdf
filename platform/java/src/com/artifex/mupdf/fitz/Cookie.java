@@ -43,4 +43,8 @@ public class Cookie
 	}
 
 	public native void abort();
+	public native int getProgress();
+	public native int getProgressMax();
+	public native int getErrors();
+	public native boolean getIncomplete();
 }
