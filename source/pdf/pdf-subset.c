@@ -424,6 +424,38 @@ subset_ttf(fz_context *ctx, pdf_document *doc, font_usage_t *font, pdf_obj *font
 }
 
 static void
+subset_cff(fz_context *ctx, pdf_document *doc, font_usage_t *font, pdf_obj *fontfile, int symbolic, int cidfont)
+{
+	fz_buffer *buf = pdf_load_stream(ctx, fontfile);
+	fz_buffer *newbuf = NULL;
+
+	if (buf->len == 0)
+	{
+		fz_drop_buffer(ctx, buf);
+		return;
+	}
+
+	fz_var(newbuf);
+
+	fz_try(ctx)
+	{
+		newbuf = fz_subset_cff_for_gids(ctx, buf, font->gids.heap, font->gids.len, symbolic, cidfont);
+
+		pdf_update_stream(ctx, doc, fontfile, newbuf, 0);
+		pdf_dict_put_int(ctx, fontfile, PDF_NAME(Length1), newbuf->len);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, newbuf);
+		fz_drop_buffer(ctx, buf);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+static void
 adjust_simple_font(fz_context *ctx, pdf_document *doc, font_usage_t *font)
 {
 	pdf_obj *obj = font->obj;
@@ -561,12 +593,38 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc)
 				pdf_obj *cidfont = pdf_array_get(ctx, pdf_dict_get(ctx, font->obj, PDF_NAME(DescendantFonts)), 0);
 				pdf_obj *fontdesc = pdf_dict_get(ctx, cidfont, PDF_NAME(FontDescriptor));
 				pdf_obj *fontfile = pdf_dict_get(ctx, fontdesc, PDF_NAME(FontFile2));
+				pdf_obj *subtype = pdf_dict_get(ctx, cidfont, PDF_NAME(Subtype));
 				int flags = pdf_dict_get_int(ctx, fontdesc, PDF_NAME(Flags));
 				int symbolic = (!!(flags & 4)) | ((flags & 32) == 0);
-				pdf_debug_obj(ctx, fontdesc);
 				if (fontfile)
 				{
 					subset_ttf(ctx, doc, font, fontfile, symbolic, 1);
+					prefix_font_name(ctx, doc, fontdesc, fontfile);
+					continue;
+				}
+				fontfile = pdf_dict_get(ctx, fontdesc, PDF_NAME(FontFile3));
+				if (pdf_name_eq(ctx, subtype, PDF_NAME(CIDFontType0)) && fontfile)
+				{
+					subtype = pdf_dict_get(ctx, fontfile, PDF_NAME(Subtype));
+					if (pdf_name_eq(ctx, subtype, PDF_NAME(CIDFontType0C)))
+					{
+						subset_cff(ctx, doc, font, fontfile, symbolic, 1);
+						prefix_font_name(ctx, doc, fontdesc, fontfile);
+						continue;
+					}
+				}
+			}
+			else if (pdf_name_eq(ctx, subtype, PDF_NAME(Type1)))
+			{
+				pdf_obj *fontdesc = pdf_dict_get(ctx, font->obj, PDF_NAME(FontDescriptor));
+				pdf_obj *fontfile = pdf_dict_get(ctx, fontdesc, PDF_NAME(FontFile3));
+				pdf_obj *st2 = pdf_dict_get(ctx, fontfile, PDF_NAME(Subtype));
+				int flags = pdf_dict_get_int(ctx, fontdesc, PDF_NAME(Flags));
+				int symbolic = (!!(flags & 4)) | ((flags & 32) == 0);
+				if (pdf_name_eq(ctx, st2, PDF_NAME(Type1C)))
+				{
+					subset_cff(ctx, doc, font, fontfile, symbolic, 0);
+					adjust_simple_font(ctx, doc, font);
 					prefix_font_name(ctx, doc, fontdesc, fontfile);
 					continue;
 				}

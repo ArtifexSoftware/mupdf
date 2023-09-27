@@ -802,4 +802,6 @@ fz_buffer *fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font);
  */
 fz_buffer *fz_subset_ttf_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int cidfont);
 
+fz_buffer *fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int cidfont);
+
 #endif
