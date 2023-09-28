@@ -1615,3 +1615,18 @@ FUN(PDFAnnotation_applyRedaction)(JNIEnv *env, jobject self, jboolean blackBoxes
 
 	return redacted;
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_hasRect)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jboolean has = JNI_FALSE;
+
+	fz_try(ctx)
+		has = pdf_annot_has_rect(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return has;
+}
