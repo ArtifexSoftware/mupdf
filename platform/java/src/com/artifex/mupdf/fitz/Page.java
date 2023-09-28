@@ -54,7 +54,7 @@ public class Page
 	}
 
 	public Rect getBounds() {
-		return getBoundsNative(Page.MEDIA_BOX);
+		return getBoundsNative(Page.CROP_BOX);
 	}
 
 	public native void run(Device dev, Matrix ctm, Cookie cookie);

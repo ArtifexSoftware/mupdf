@@ -7835,7 +7835,7 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	int extra = js_isdefined(J, 4) ? js_toboolean(J, 4) : 1;
 	const char *usage = js_isdefined(J, 5) ? js_tostring(J, 5) : "View";
 	const char *box_name = js_isdefined(J, 6) ? js_tostring(J, 6) : NULL;
-	fz_box_type box = FZ_MEDIA_BOX;
+	fz_box_type box = FZ_CROP_BOX;
 	fz_pixmap *pixmap = NULL;
 
 	if (box_name) {
