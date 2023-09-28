@@ -685,7 +685,7 @@ fz_rect
 fz_bound_page(fz_context *ctx, fz_page *page)
 {
 	if (page && page->bound_page)
-		return page->bound_page(ctx, page, FZ_MEDIA_BOX);
+		return page->bound_page(ctx, page, FZ_CROP_BOX);
 	return fz_empty_rect;
 }
 

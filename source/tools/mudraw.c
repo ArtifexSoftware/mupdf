@@ -309,7 +309,7 @@ static int res_specified = 0;
 static int width = 0;
 static int height = 0;
 static int fit = 0;
-static int page_box = FZ_MEDIA_BOX;
+static int page_box = FZ_CROP_BOX;
 
 static float layout_w = FZ_DEFAULT_LAYOUT_W;
 static float layout_h = FZ_DEFAULT_LAYOUT_H;

@@ -212,7 +212,7 @@ static int console_h = 14; /* to be scaled by lineheight */
 static int outline_start_x = 0;
 static int console_start_y = 0;
 
-static int oldbox = FZ_MEDIA_BOX, currentbox = FZ_MEDIA_BOX;
+static int oldbox = FZ_CROP_BOX, currentbox = FZ_CROP_BOX;
 static int oldtint = 0, currenttint = 0;
 static int oldinvert = 0, currentinvert = 0;
 static int oldicc = 1, currenticc = 1;

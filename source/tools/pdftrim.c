@@ -186,7 +186,7 @@ int pdftrim_main(int argc, char **argv)
 	int code = EXIT_SUCCESS;
 	int exclude = 0;
 	const char *boxname = NULL;
-	fz_box_type box = FZ_MEDIA_BOX;
+	fz_box_type box = FZ_CROP_BOX;
 	int fallback = 0;
 	float margins[4] = { 0 };
 	int c;
