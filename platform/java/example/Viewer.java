@@ -125,7 +125,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected Panel outlinePanel;
 	protected List outlineList;
 
-	protected Progressmeter meter;
+	protected OCRProgressmeter OCRmeter;
 
 	protected int number = 0;
 
@@ -1393,17 +1393,17 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		final String selectedPath = new StringBuffer(fileDialog.getDirectory()).append(File.separatorChar).append(fileDialog.getFile()).toString();
-		meter = new Progressmeter(this, "Saving...", pages);
-		meter.setLocationRelativeTo(this);
-		meter.setVisible(true);
+		OCRmeter = new OCRProgressmeter(this, "Saving...", pages);
+		OCRmeter.setLocationRelativeTo(this);
+		OCRmeter.setVisible(true);
 		pageCanvas.requestFocusInWindow();
 
 		if (options.indexOf("ocr-language=") < 0)
-			doc.save(selectedPath, options, meter, new ViewerCore.OnException() {
+			doc.save(selectedPath, options, OCRmeter, new ViewerCore.OnException() {
 				public void run(Throwable t) {
 					if (t instanceof IOException)
 						exception(t);
-					else if (t instanceof RuntimeException && !meter.cancelled)
+					else if (t instanceof RuntimeException && !OCRmeter.cancelled)
 						exception(t);
 				}
 			});
@@ -1411,9 +1411,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		{
 			try {
 				FileStream fs = new FileStream(selectedPath, "rw");
-				doc.save(fs, options, meter, new ViewerCore.OnException() {
+				doc.save(fs, options, OCRmeter, new ViewerCore.OnException() {
 					public void run(Throwable t) {
-						if (t instanceof RuntimeException && !meter.cancelled)
+						if (t instanceof RuntimeException && !OCRmeter.cancelled)
 							exception(t);
 					}
 				});
@@ -1424,8 +1424,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	}
 
 	public void onSaveComplete() {
-		if (meter != null)
-			meter.dispose();
+		if (OCRmeter != null)
+			OCRmeter.done();
 	}
 
 	class SaveOptionsDialog extends Dialog implements ActionListener, ItemListener, KeyListener {
@@ -1715,18 +1715,18 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
-	class Progressmeter extends Dialog implements DocumentWriter.OCRListener, ActionListener, KeyListener {
+	class Progressmeter extends Dialog implements ActionListener, KeyListener {
 		Label info = new Label("", Label.CENTER);
 		Button cancel = new Button("Cancel");
 		boolean cancelled = false;
-		int pages;
+		boolean done = false;
 
-		public Progressmeter(Frame parent, String title, int pages) {
-			super(parent, title, true);
+		public Progressmeter(Frame parent, String title, boolean modal, String initialText) {
+			super(parent, title, modal);
 
 			setLayout(new GridLayout(2, 1));
 
-			info.setText("Progress: Page 65535/65535: 100%");
+			info.setText(initialText);
 			add(info);
 
 			cancel.addActionListener(this);
@@ -1736,14 +1736,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			pack();
 			setResizable(false);
 			cancel.requestFocusInWindow();
-
-			this.pages = pages;
-			progress(-1, 0);
 		}
 
 		public void actionPerformed(ActionEvent e) {
 			if (e.getSource() == cancel)
-				cancelled = true;
+				cancel();
 		}
 
 		public void keyPressed(KeyEvent e) { }
@@ -1751,7 +1748,37 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 
 		public void keyTyped(KeyEvent e) {
 			if (e.getKeyChar() == '\u001b')
-				cancelled = true;
+				cancel();
+		}
+
+		public void cancel() {
+			cancelled = true;
+		}
+
+		public void done() {
+			done = true;
+		}
+
+		public boolean progress(String text) {
+			info.setText(text);
+			return cancelled || done;
+		}
+	}
+
+	class OCRProgressmeter extends Progressmeter implements DocumentWriter.OCRListener {
+		int pages;
+
+		public OCRProgressmeter(Frame parent, String title, int pages) {
+			super(parent, title, true, "Progress: Page 65535/65535: 100%");
+			this.pages = pages;
+			progress(-1, 0);
+			setVisible(true);
+		}
+
+		public void done() {
+			super.done();
+			setVisible(false);
+			dispose();
 		}
 
 		public boolean progress(int page, int percent) {
@@ -1773,9 +1800,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			text.append(percent);
 			text.append("%");
 
-			info.setText(text.toString());
-
-			return cancelled;
+			return progress(text.toString());
 		}
 	}
 
