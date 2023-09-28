@@ -408,7 +408,7 @@ public class ViewerCore {
 		});
 	}
 
-	public void renderPage(final Matrix ctm, final Rect bbox, final boolean icc, final int antialias, final boolean invert, final boolean tint, final int tintBlack, final int tintWhite, final OnException onException) {
+	public void renderPage(final Matrix ctm, final Rect bbox, final boolean icc, final int antialias, final boolean invert, final boolean tint, final int tintBlack, final int tintWhite, final Cookie cookie, final OnException onException) {
 		worker.add(new Worker.Task() {
 			Pixmap pixmap = null;
 			Rect[] links = null;
@@ -452,7 +452,7 @@ public class ViewerCore {
 				Context.setAntiAliasLevel(antialias);
 
 				DrawDevice dev = new DrawDevice(pixmap);
-				page.run(dev, ctm, null);
+				page.run(dev, ctm, cookie);
 				dev.close();
 				dev.destroy();
 

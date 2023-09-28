@@ -126,6 +126,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected List outlineList;
 
 	protected OCRProgressmeter OCRmeter;
+	protected RenderProgressmeter renderMeter;
 
 	protected int number = 0;
 
@@ -578,10 +579,17 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		ctm.f -= atOrigin.y0;
 		Rect bounds = new Rect(bbox).transform(ctm);
 
-		doc.renderPage(ctm, bounds, icc, antialias, invert, tint, tintBlack, tintWhite,
+		Cookie cookie = new Cookie();
+
+		renderMeter = new RenderProgressmeter(this, "Rendering...", cookie, 250);
+		renderMeter.setLocationRelativeTo(this);
+		pageCanvas.requestFocusInWindow();
+
+		doc.renderPage(ctm, bounds, icc, antialias, invert, tint, tintBlack, tintWhite, cookie,
 			new ViewerCore.OnException() {
 				public void run(Throwable t) {
-					exception(t);
+					if (!renderMeter.cancelled)
+						exception(t);
 				}
 			}
 		);
@@ -1804,6 +1812,73 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
+	class RenderProgressmeter extends Progressmeter {
+		Cookie cookie;
+
+		public RenderProgressmeter(Frame parent, String title, Cookie cookie, final int update) {
+			super(parent, title, false, "Progress: 100%");
+			this.cookie = cookie;
+
+			(new Thread() {
+				public void run() {
+					try {
+						int slept = 0;
+						while (!progress(slept))
+						{
+							sleep(update);
+							slept += update;
+						}
+					} catch (InterruptedException e) {
+					}
+				}
+			}).start();
+		}
+
+		public void cancel() {
+			super.cancel();
+			cookie.abort();
+		}
+
+		public boolean progress(int slept) {
+			int progress = cookie.getProgress();
+			int max = cookie.getProgressMax();
+
+			if (max <= 0 && progress < 100)
+				max = 100;
+			else if (max <= 0 && progress > 100)
+			{
+				int v = progress;
+				max = 10;
+				while (v > 10)
+				{
+					v /= 10;
+					max *= 10;
+				}
+			}
+
+			if (progress >= max)
+				done = true;
+
+			int percent = (int) ((float) progress / max * 100.0f);
+
+			StringBuilder text = new StringBuilder();
+			text.append("Progress: ");
+			text.append(percent);
+			text.append("%");
+
+			if (slept > 0)
+				setVisible(true);
+
+			if (progress(text.toString()))
+			{
+				setVisible(false);
+				dispose();
+				return true;
+			}
+
+			return false;
+		}
+	}
 
 	public static void main(String[] args) {
 		String selectedPath;
@@ -1938,6 +2013,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		this.linkURIs = linkURIs;
 		this.hits = hits;
 		redraw();
+		if (renderMeter != null)
+			renderMeter.done();
 	}
 	public void onSearchStart(Location startPage, Location finalPage, int direction, String needle) {
 		searchField.setEnabled(false);
