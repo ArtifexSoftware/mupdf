@@ -1203,6 +1203,7 @@ template_span_with_mask_1_general(byte * FZ_RESTRICT dp, const byte * FZ_RESTRIC
 static fz_forceinline void
 template_span_with_mask_3_general(byte * FZ_RESTRICT dp, const byte * FZ_RESTRICT sp, int a, const byte * FZ_RESTRICT mp, int w)
 {
+	int bigendian_p = isbigendian();
 	do
 	{
 		int ma = *mp++;
@@ -1240,9 +1241,18 @@ template_span_with_mask_3_general(byte * FZ_RESTRICT dp, const byte * FZ_RESTRIC
 			d0 = (((d0<<8) + (s0-d0)*ma)>>8) & mask;
 			d1 = ((d1<<8) + (s1-d1)*ma) & ~mask;
 			d0 |= d1;
-			assert((d0>>24) >= (d0 & 0xff));
-			assert((d0>>24) >= ((d0>>8) & 0xff));
-			assert((d0>>24) >= ((d0>>16) & 0xff));
+			if (bigendian_p)
+			{
+				assert((d0 & 0xff) >= (d0>>24));
+				assert((d0 & 0xff) >= ((d0>>16) & 0xff));
+				assert((d0 & 0xff) >= ((d0>>8) & 0xff));
+			}
+			else
+			{
+				assert((d0>>24) >= (d0 & 0xff));
+				assert((d0>>24) >= ((d0>>8) & 0xff));
+				assert((d0>>24) >= ((d0>>16) & 0xff));
+			}
 			*(uint32_t *)dp = d0;
 			sp += 4;
 			dp += 4;
