@@ -281,7 +281,7 @@ char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poi
 char *fz_copy_rectangle(fz_context *ctx, fz_stext_page *page, fz_rect area, int crlf);
 
 /**
-	Options for creating a pixmap and draw device.
+	Options for creating structured text.
 */
 typedef struct
 {
