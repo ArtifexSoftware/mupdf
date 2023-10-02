@@ -173,7 +173,7 @@ xps_lookup_link_target(fz_context *ctx, fz_document *doc_, const char *target_ur
 	for (target = doc->target; target; target = target->next)
 		if (!strcmp(target->name, needle))
 			return fz_make_link_dest_xyz(0, target->page, 0, 0, 0);
-	return fz_make_link_dest_none();
+	return fz_make_link_dest_xyz(0, fz_atoi(needle) - 1, 0, 0, 0);
 }
 
 static void
