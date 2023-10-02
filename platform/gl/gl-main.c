@@ -1569,10 +1569,10 @@ static void do_page_selection(void)
 			n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
 		}
 
-		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
+		glColor4f(0.0, 0.1, 0.4, 0.3f);
 
-		glColor4f(1, 1, 1, 1);
 		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
 		{
