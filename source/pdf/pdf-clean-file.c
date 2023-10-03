@@ -235,16 +235,17 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 
 static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 {
-	pdf_obj *oldroot, *root, *pages, *kids, *olddests;
+	pdf_obj *oldroot, *pages, *kids, *olddests;
+	pdf_obj *root = NULL;
 	pdf_document *doc = glo->doc;
 	int argidx = 0;
 	pdf_obj *names_list = NULL;
 	pdf_obj *outlines;
 	pdf_obj *ocproperties;
-	pdf_obj *allfields;
+	pdf_obj *allfields = NULL;
 	int pagecount;
 	int i;
-	int *page_object_nums;
+	int *page_object_nums = NULL;
 
 	/* Keep only pages/type and (reduced) dest entries to avoid
 	 * references to unretained pages */
@@ -254,159 +255,171 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	outlines = pdf_dict_get(ctx, oldroot, PDF_NAME(Outlines));
 	ocproperties = pdf_dict_get(ctx, oldroot, PDF_NAME(OCProperties));
 
-	root = pdf_new_dict(ctx, doc, 3);
-	pdf_dict_put(ctx, root, PDF_NAME(Type), pdf_dict_get(ctx, oldroot, PDF_NAME(Type)));
-	pdf_dict_put(ctx, root, PDF_NAME(Pages), pdf_dict_get(ctx, oldroot, PDF_NAME(Pages)));
-	if (outlines)
-		pdf_dict_put(ctx, root, PDF_NAME(Outlines), outlines);
-	if (ocproperties)
-		pdf_dict_put(ctx, root, PDF_NAME(OCProperties), ocproperties);
+	fz_var(root);
+	fz_var(names_list);
+	fz_var(allfields);
+	fz_var(page_object_nums);
 
-	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
-
-	/* Create a new kids array with only the pages we want to keep */
-	kids = pdf_dict_put_array(ctx, pages, PDF_NAME(Kids), 1);
-
-	/* Retain pages specified */
-	while (argc - argidx)
+	fz_try(ctx)
 	{
-		int page, spage, epage;
-		const char *pagelist = argv[argidx];
+		root = pdf_new_dict(ctx, doc, 3);
+		pdf_dict_put(ctx, root, PDF_NAME(Type), pdf_dict_get(ctx, oldroot, PDF_NAME(Type)));
+		pdf_dict_put(ctx, root, PDF_NAME(Pages), pdf_dict_get(ctx, oldroot, PDF_NAME(Pages)));
+		if (outlines)
+			pdf_dict_put(ctx, root, PDF_NAME(Outlines), outlines);
+		if (ocproperties)
+			pdf_dict_put(ctx, root, PDF_NAME(OCProperties), ocproperties);
+
+		pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
+
+		/* Create a new kids array with only the pages we want to keep */
+		kids = pdf_dict_put_array(ctx, pages, PDF_NAME(Kids), 1);
+
+		/* Retain pages specified */
+		while (argc - argidx)
+		{
+			int page, spage, epage;
+			const char *pagelist = argv[argidx];
+
+			pagecount = pdf_count_pages(ctx, doc);
+
+			while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
+			{
+				if (spage < epage)
+					for (page = spage; page <= epage; ++page)
+						retainpage(ctx, doc, pages, kids, page);
+				else
+					for (page = spage; page >= epage; --page)
+						retainpage(ctx, doc, pages, kids, page);
+			}
+
+			argidx++;
+		}
+
+		/* Update page count */
+		pdf_dict_put_int(ctx, pages, PDF_NAME(Count), pdf_array_len(ctx, kids));
 
 		pagecount = pdf_count_pages(ctx, doc);
-
-		while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
+		page_object_nums = fz_calloc(ctx, pagecount, sizeof(*page_object_nums));
+		for (i = 0; i < pagecount; i++)
 		{
-			if (spage < epage)
-				for (page = spage; page <= epage; ++page)
-					retainpage(ctx, doc, pages, kids, page);
-			else
-				for (page = spage; page >= epage; --page)
-					retainpage(ctx, doc, pages, kids, page);
+			pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
+			page_object_nums[i] = pdf_to_num(ctx, pageref);
 		}
 
-		argidx++;
-	}
-
-	/* Update page count */
-	pdf_dict_put_int(ctx, pages, PDF_NAME(Count), pdf_array_len(ctx, kids));
-
-	pagecount = pdf_count_pages(ctx, doc);
-	page_object_nums = fz_calloc(ctx, pagecount, sizeof(*page_object_nums));
-	for (i = 0; i < pagecount; i++)
-	{
-		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
-		page_object_nums[i] = pdf_to_num(ctx, pageref);
-	}
-
-	/* If we had an old Dests tree (now reformed as an olddests
-	 * dictionary), keep any entries in there that point to
-	 * valid pages. This may mean we keep more than we need, but
-	 * it's safe at least. */
-	if (olddests)
-	{
-		pdf_obj *names, *dests;
-		int len = pdf_dict_len(ctx, olddests);
-
-		names = pdf_dict_put_dict(ctx, root, PDF_NAME(Names), 1);
-		dests = pdf_dict_put_dict(ctx, names, PDF_NAME(Dests), 1);
-		names_list = pdf_dict_put_array(ctx, dests, PDF_NAME(Names), 32);
-
-		for (i = 0; i < len; i++)
+		/* If we had an old Dests tree (now reformed as an olddests
+		 * dictionary), keep any entries in there that point to
+		 * valid pages. This may mean we keep more than we need, but
+		 * it's safe at least. */
+		if (olddests)
 		{
-			pdf_obj *key = pdf_dict_get_key(ctx, olddests, i);
-			pdf_obj *val = pdf_dict_get_val(ctx, olddests, i);
-			pdf_obj *dest = pdf_dict_get(ctx, val, PDF_NAME(D));
+			pdf_obj *names, *dests;
+			int len = pdf_dict_len(ctx, olddests);
 
-			dest = pdf_array_get(ctx, dest ? dest : val, 0);
-			if (dest_is_valid_page(ctx, dest, page_object_nums, pagecount))
+			names = pdf_dict_put_dict(ctx, root, PDF_NAME(Names), 1);
+			dests = pdf_dict_put_dict(ctx, names, PDF_NAME(Dests), 1);
+			names_list = pdf_dict_put_array(ctx, dests, PDF_NAME(Names), 32);
+
+			for (i = 0; i < len; i++)
 			{
-				pdf_array_push_string(ctx, names_list, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
-				pdf_array_push(ctx, names_list, val);
+				pdf_obj *key = pdf_dict_get_key(ctx, olddests, i);
+				pdf_obj *val = pdf_dict_get_val(ctx, olddests, i);
+				pdf_obj *dest = pdf_dict_get(ctx, val, PDF_NAME(D));
+
+				dest = pdf_array_get(ctx, dest ? dest : val, 0);
+				if (dest_is_valid_page(ctx, dest, page_object_nums, pagecount))
+				{
+					pdf_array_push_string(ctx, names_list, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
+					pdf_array_push(ctx, names_list, val);
+				}
+			}
+
+			pdf_drop_obj(ctx, olddests);
+		}
+
+		/* Edit each pages /Annot list to remove any links that point to nowhere. */
+		for (i = 0; i < pagecount; i++)
+		{
+			pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
+
+			pdf_obj *annots = pdf_dict_get(ctx, pageref, PDF_NAME(Annots));
+
+			int len = pdf_array_len(ctx, annots);
+			int j;
+
+			for (j = 0; j < len; j++)
+			{
+				pdf_obj *o = pdf_array_get(ctx, annots, j);
+
+				if (!pdf_name_eq(ctx, pdf_dict_get(ctx, o, PDF_NAME(Subtype)), PDF_NAME(Link)))
+					continue;
+
+				if (!dest_is_valid(ctx, o, pagecount, page_object_nums, names_list))
+				{
+					/* Remove this annotation */
+					pdf_array_delete(ctx, annots, j);
+					len--;
+					j--;
+				}
 			}
 		}
 
-		pdf_drop_obj(ctx, olddests);
-	}
-
-	/* Edit each pages /Annot list to remove any links that point to nowhere. */
-	for (i = 0; i < pagecount; i++)
-	{
-		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
-
-		pdf_obj *annots = pdf_dict_get(ctx, pageref, PDF_NAME(Annots));
-
-		int len = pdf_array_len(ctx, annots);
-		int j;
-
-		for (j = 0; j < len; j++)
+		/* Locate all fields on retained pages */
+		allfields = pdf_new_array(ctx, doc, 1);
+		for (i = 0; i < pagecount; i++)
 		{
-			pdf_obj *o = pdf_array_get(ctx, annots, j);
+			pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
 
-			if (!pdf_name_eq(ctx, pdf_dict_get(ctx, o, PDF_NAME(Subtype)), PDF_NAME(Link)))
-				continue;
+			pdf_obj *annots = pdf_dict_get(ctx, pageref, PDF_NAME(Annots));
 
-			if (!dest_is_valid(ctx, o, pagecount, page_object_nums, names_list))
+			int len = pdf_array_len(ctx, annots);
+			int j;
+
+			for (j = 0; j < len; j++)
 			{
-				/* Remove this annotation */
-				pdf_array_delete(ctx, annots, j);
-				len--;
-				j--;
+				pdf_obj *f = pdf_array_get(ctx, annots, j);
+
+				if (pdf_dict_get(ctx, f, PDF_NAME(Subtype)) == PDF_NAME(Widget))
+					pdf_array_push(ctx, allfields, f);
 			}
 		}
-	}
 
-	/* Locate all fields on retained pages */
-	allfields = pdf_new_array(ctx, doc, 1);
-	for (i = 0; i < pagecount; i++)
-	{
-		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
-
-		pdf_obj *annots = pdf_dict_get(ctx, pageref, PDF_NAME(Annots));
-
-		int len = pdf_array_len(ctx, annots);
-		int j;
-
-		for (j = 0; j < len; j++)
+		/* From non-terminal widget fields, strip out annot references not
+		 * belonging to any retained page. */
+		for (i = 0; i < pdf_array_len(ctx, allfields); i++)
 		{
-			pdf_obj *f = pdf_array_get(ctx, annots, j);
+			pdf_obj *f = pdf_array_get(ctx, allfields, i);
 
-			if (pdf_dict_get(ctx, f, PDF_NAME(Subtype)) == PDF_NAME(Widget))
-				pdf_array_push(ctx, allfields, f);
+			while (pdf_dict_get(ctx, f, PDF_NAME(Parent)))
+				f = pdf_dict_get(ctx, f, PDF_NAME(Parent));
+
+			strip_stale_annot_refs(ctx, f, pagecount, page_object_nums);
+		}
+
+		/* For terminal fields, if action destination is not valid,
+		 * remove the action */
+		for (i = 0; i < pdf_array_len(ctx, allfields); i++)
+		{
+			pdf_obj *f = pdf_array_get(ctx, allfields, i);
+
+			if (!dest_is_valid(ctx, f, pagecount, page_object_nums, names_list))
+				pdf_dict_del(ctx, f, PDF_NAME(A));
+		}
+
+		if (strip_outlines(ctx, doc, outlines, pagecount, page_object_nums, names_list) == 0)
+		{
+			pdf_dict_del(ctx, root, PDF_NAME(Outlines));
 		}
 	}
-
-	/* From non-terminal widget fields, strip out annot references not
-	 * belonging to any retained page. */
-	for (i = 0; i < pdf_array_len(ctx, allfields); i++)
+	fz_always(ctx)
 	{
-		pdf_obj *f = pdf_array_get(ctx, allfields, i);
-
-		while (pdf_dict_get(ctx, f, PDF_NAME(Parent)))
-			f = pdf_dict_get(ctx, f, PDF_NAME(Parent));
-
-		strip_stale_annot_refs(ctx, f, pagecount, page_object_nums);
+		fz_free(ctx, page_object_nums);
+		pdf_drop_obj(ctx, allfields);
+		pdf_drop_obj(ctx, names_list);
+		pdf_drop_obj(ctx, root);
 	}
-
-	/* For terminal fields, if action destination is not valid,
-	 * remove the action */
-	for (i = 0; i < pdf_array_len(ctx, allfields); i++)
-	{
-		pdf_obj *f = pdf_array_get(ctx, allfields, i);
-
-		if (!dest_is_valid(ctx, f, pagecount, page_object_nums, names_list))
-			pdf_dict_del(ctx, f, PDF_NAME(A));
-	}
-
-	if (strip_outlines(ctx, doc, outlines, pagecount, page_object_nums, names_list) == 0)
-	{
-		pdf_dict_del(ctx, root, PDF_NAME(Outlines));
-	}
-
-	fz_free(ctx, page_object_nums);
-	pdf_drop_obj(ctx, allfields);
-	pdf_drop_obj(ctx, names_list);
-	pdf_drop_obj(ctx, root);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_write_options *opts, int argc, char *argv[])
