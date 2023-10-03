@@ -273,7 +273,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
 		/* Create a new kids array with only the pages we want to keep */
-		kids = pdf_dict_put_array(ctx, pages, PDF_NAME(Kids), 1);
+		kids = pdf_new_array(ctx, doc, 1);
 
 		/* Retain pages specified */
 		while (argc - argidx)
@@ -298,6 +298,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 
 		/* Update page count */
 		pdf_dict_put_int(ctx, pages, PDF_NAME(Count), pdf_array_len(ctx, kids));
+		pdf_dict_put_drop(ctx, pages, PDF_NAME(Kids), kids);
 
 		pagecount = pdf_count_pages(ctx, doc);
 		page_object_nums = fz_calloc(ctx, pagecount, sizeof(*page_object_nums));
