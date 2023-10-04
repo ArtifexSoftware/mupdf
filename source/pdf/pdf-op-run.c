@@ -1627,24 +1627,67 @@ pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
 	}
 }
 
+struct line
+{
+	pdf_obj *obj;
+	struct line *child;
+};
+
+static pdf_obj *
+find_most_recent_common_ancestor_imp(fz_context *ctx, pdf_obj *a, struct line *line_a, pdf_obj *b, struct line *line_b, pdf_cycle_list *cycle_up_a, pdf_cycle_list *cycle_up_b)
+{
+	struct line line;
+	pdf_obj *common = NULL;
+	pdf_cycle_list cycle;
+	pdf_obj *parent;
+
+	/* First ascend one lineage. */
+	if (pdf_is_dict(ctx, a))
+	{
+		if (pdf_cycle(ctx, &cycle, cycle_up_a, a))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in structure tree");
+		line.obj = a;
+		line.child = line_a;
+		parent = pdf_dict_get(ctx, a, PDF_NAME(P));
+		return find_most_recent_common_ancestor_imp(ctx, parent, &line, b, NULL, &cycle, NULL);
+	}
+	/* Then ascend the other lineage. */
+	else if (pdf_is_dict(ctx, b))
+	{
+		if (pdf_cycle(ctx, &cycle, cycle_up_b, b))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in structure tree");
+		line.obj = b;
+		line.child = line_b;
+		parent = pdf_dict_get(ctx, b, PDF_NAME(P));
+		return find_most_recent_common_ancestor_imp(ctx, a, line_a, parent, &line, cycle_up_a, &cycle);
+	}
+
+	/* Once both lineages are know, traverse top-down to find most recent common ancestor. */
+	while (line_a && line_b && !pdf_objcmp(ctx, line_a->obj, line_b->obj))
+	{
+		common = line_a->obj;
+		line_a = line_a->child;
+		line_b = line_b->child;
+	}
+	return common;
+}
+
+static pdf_obj *
+find_most_recent_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+	if (!pdf_is_dict(ctx, a) || !pdf_is_dict(ctx, b))
+		return NULL;
+	return find_most_recent_common_ancestor_imp(ctx, a, NULL, b, NULL, NULL, NULL);
+}
+
 static void
 send_begin_structure(fz_context *ctx, pdf_run_processor *proc, pdf_obj *mc_dict)
 {
-	pdf_obj *common;
-	pdf_obj *parent_tree_root = pdf_dict_getl(ctx, pdf_trailer(ctx, proc->doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), PDF_NAME(ParentTree), NULL);
+	pdf_obj *common = NULL;
 
 	/* We are currently nested in A,B,C,...E,F,mcid_sent. We want to update to
-	 * being in A,B,C,...G,H,mc_dict. So we need to find the lowest common
-	 * point. We know that the structure is a tree, so no cycles to worry about.
-	 * Live with an n^2 algorithm for now. */
-	for (common = mc_dict; common != NULL && pdf_objcmp(ctx, common, parent_tree_root); common = pdf_dict_get(ctx, common, PDF_NAME(P)))
-	{
-		pdf_obj *o;
-
-		for (o = proc->mcid_sent; o != NULL && pdf_objcmp(ctx, o, common) && pdf_objcmp(ctx, o, parent_tree_root); o = pdf_dict_get(ctx, o, PDF_NAME(P)));
-		if (!pdf_objcmp(ctx, o, common))
-			break;
-	}
+	 * being in A,B,C,...G,H,mc_dict. So we need to find the lowest common point. */
+	common = find_most_recent_ancestor(ctx, proc->mcid_sent, mc_dict);
 
 	/* So, we need to pop everything up to common (i.e. everything below common will be closed). */
 	pop_structure_to(ctx, proc, common);
