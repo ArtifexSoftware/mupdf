@@ -93,9 +93,11 @@ typedef struct
 	fz_device super;
 	fz_stext_page *page;
 	fz_point pen, start;
+	fz_point lag_pen;
 	fz_matrix trm;
 	int new_obj;
 	int lastchar;
+	int lastbidi;
 	int flags;
 	int color;
 	const fz_text *lasttext;
@@ -277,6 +279,39 @@ remove_last_char(fz_context *ctx, fz_stext_line *line)
 	}
 }
 
+static fz_stext_char *reverse_bidi_span(fz_stext_char *curr, fz_stext_char *tail)
+{
+	fz_stext_char *prev, *next;
+	prev = tail;
+	while (curr != tail)
+	{
+		next = curr->next;
+		curr->next = prev;
+		prev = curr;
+		curr = next;
+	}
+	return prev;
+}
+
+static void reverse_bidi_line(fz_stext_line *line)
+{
+	fz_stext_char *a, *b, **prev;
+	prev = &line->first_char;
+	for (a = line->first_char; a; a = a->next)
+	{
+		if (a->bidi)
+		{
+			b = a;
+			while (b->next && b->next->bidi)
+				b = b->next;
+			if (a != b)
+				*prev = reverse_bidi_span(a, b->next);
+		}
+		prev = &a->next;
+		line->last_char = a;
+	}
+}
+
 static int is_hyphen(int c)
 {
 	/* check for: hyphen-minus, soft hyphen, hyphen, and non-breaking hyphen */
@@ -304,6 +339,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
+
+	/* Preserve RTL-ness only (and ignore level) so we can use bit 2 as "visual" tag for reordering pass. */
+	bidi = bidi & 1;
 
 	/* dir = direction vector for motion. ndir = normalised(dir) */
 	if (wmode == 0)
@@ -361,6 +399,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	{
 		/* Don't advance pen or break lines for no-glyph characters in a cluster */
 		add_char_to_line(ctx, page, cur_line, trm, font, size, c, &dev->pen, &dev->pen, bidi, dev->color);
+		dev->lastbidi = bidi;
 		dev->lastchar = c;
 		return;
 	}
@@ -388,58 +427,103 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		 * direction. Calculate 2 distances; how far off the previous
 		 * baseline we are, together with how far along the baseline
 		 * we are from the expected position. */
-		spacing = ndir.x * delta.x + ndir.y * delta.y;
-		base_offset = -ndir.y * delta.x + ndir.x * delta.y;
+		spacing = (ndir.x * delta.x + ndir.y * delta.y) / size;
+		base_offset = (-ndir.y * delta.x + ndir.x * delta.y) / size;
 
 		/* Only a small amount off the baseline - we'll take this */
-		if (fabsf(base_offset) < size * BASE_MAX_DIST)
+		if (fabsf(base_offset) < BASE_MAX_DIST)
 		{
-			/* LTR or neutral character */
-			if ((bidi & 1) == 0)
+			/* If mixed LTR and RTL content */
+			if ((bidi & 1) != (dev->lastbidi & 1))
 			{
-				if (fabsf(spacing) < size * SPACE_DIST)
+				/* Ignore jumps within line when switching between LTR and RTL text. */
+				new_line = 0;
+			}
+
+			/* RTL */
+			else if (bidi & 1)
+			{
+				fz_point logical_delta = fz_make_point(p.x - dev->lag_pen.x, p.y - dev->lag_pen.y);
+				float logical_spacing = (ndir.x * logical_delta.x + ndir.y * logical_delta.y) / size + adv;
+
+				/* If the pen is where we would have been if we
+				 * had advanced backwards from the previous
+				 * character by this character's advance, we
+				 * are probably seeing characters emitted in
+				 * logical order.
+				 */
+				if (fabsf(logical_spacing) < SPACE_DIST)
+				{
+					new_line = 0;
+				}
+
+				/* However, if the pen has advanced to where we would expect it
+				 * in an LTR context, we're seeing them emitted in visual order
+				 * and should flag them for reordering!
+				 */
+				else if (fabsf(spacing) < SPACE_DIST)
+				{
+					bidi = 3; /* mark line as visual */
+					new_line = 0;
+				}
+
+				/* And any other small jump could be a missing space. */
+				else if (logical_spacing < 0 && logical_spacing > -SPACE_MAX_DIST)
+				{
+					if (dev->lastchar != ' ' && wmode == 0)
+						add_space = 1;
+					new_line = 0;
+				}
+
+				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
+				{
+					bidi = 3; /* mark line as visual */
+					if (dev->lastchar != ' ' && wmode == 0)
+						add_space = 1;
+					new_line = 0;
+				}
+
+				else
+				{
+					/* Motion is large and unexpected (probably a new table column). */
+					new_line = 1;
+				}
+			}
+
+			/* LTR or neutral character */
+			else
+			{
+				if (fabsf(spacing) < SPACE_DIST)
 				{
 					/* Motion is in line and small enough to ignore. */
 					new_line = 0;
 				}
-				else if (fabsf(spacing) > size * SPACE_MAX_DIST)
-				{
-					/* Motion is in line and large enough to warrant splitting to a new line */
-					new_line = 1;
-				}
-				else if (spacing < 0)
-				{
-					/* Motion is backward in line! Ignore this odd spacing. */
-					new_line = 0;
-				}
-				else
+				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					/* Motion is forward in line and large enough to warrant us adding a space. */
 					if (dev->lastchar != ' ' && wmode == 0)
 						add_space = 1;
 					new_line = 0;
 				}
-			}
-
-			/* RTL character -- disable space character and column detection heuristics */
-			else
-			{
-				new_line = 0;
-#if 0 /* TODO: handle RTL visual/logical ordering */
-				if (spacing > size * SPACE_DIST || spacing < 0)
-					rtl = 0; /* backward (or big jump to 'right' side) means logical order */
+				else if (spacing < 0)
+				{
+					/* Motion is backward in line! */
+					new_line = 1;
+				}
 				else
-					rtl = 1; /* visual order, we need to reverse in a post process pass */
-#endif
+				{
+					/* Motion is large and unexpected (probably a new table column). */
+					new_line = 1;
+				}
 			}
 		}
 
 		/* Enough for a new line, but not enough for a new paragraph */
-		else if (fabsf(base_offset) <= size * PARAGRAPH_DIST)
+		else if (fabsf(base_offset) <= PARAGRAPH_DIST)
 		{
 			/* Check indent to spot text-indent style paragraphs */
 			if (wmode == 0 && cur_line && dev->new_obj)
-				if (fabsf(p.x - dev->start.x) > size * 0.5f)
+				if (fabsf(p.x - dev->start.x) > 0.5f)
 					new_para = 1;
 			new_line = 1;
 		}
@@ -478,6 +562,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q, bidi, dev->color);
 	dev->lastchar = c;
+	dev->lastbidi = bidi;
+	dev->lag_pen = p;
 	dev->pen = q;
 
 	dev->new_obj = 0;
@@ -778,6 +864,7 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 			continue;
 		for (line = block->u.t.first_line; line; line = line->next)
 		{
+			int reorder = 0;
 			for (ch = line->first_char; ch; ch = ch->next)
 			{
 				fz_rect ch_box = fz_rect_from_quad(ch->quad);
@@ -785,8 +872,12 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 					line->bbox = ch_box;
 				else
 					line->bbox = fz_union_rect(line->bbox, ch_box);
+				if (ch->bidi == 3)
+					reorder = 1;
 			}
 			block->bbox = fz_union_rect(block->bbox, line->bbox);
+			if (reorder)
+				reverse_bidi_line(line);
 		}
 	}
 
@@ -861,6 +952,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->trm = fz_identity;
 	dev->lastchar = ' ';
 	dev->lasttext = NULL;
+	dev->lastbidi = 0;
 
 	return (fz_device*)dev;
 }
