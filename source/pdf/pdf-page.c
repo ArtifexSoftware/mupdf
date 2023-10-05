@@ -33,6 +33,8 @@ int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)
 {
 	int pages;
+	if (doc->is_fdf)
+		return 0;
 	/* FIXME: We should reset linear_page_count to 0 when editing starts
 	 * (or when linear loading ends) */
 	if (doc->linear_page_count != 0)
@@ -1113,6 +1115,9 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 	pdf_page *page;
 	pdf_annot *annot;
 	pdf_obj *pageobj, *obj;
+
+	if (doc->is_fdf)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "FDF documents have no pages");
 
 	if (doc->file_reading_linearly)
 	{

@@ -360,7 +360,8 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	fz_var(list);
 	fz_var(obj);
 
-	fz_warn(ctx, "repairing PDF document");
+	if (!doc->is_fdf)
+		fz_warn(ctx, "repairing PDF document");
 
 	if (doc->repair_attempted)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Repair failed already - not trying again");
@@ -388,7 +389,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		{
 			for (j = 0; j < n - 4; j++)
 			{
-				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
+				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0 || memcmp(&buf->scratch[j], "%FDF", 4) == 0)
 				{
 					fz_seek(ctx, doc->file, (int64_t)(j + 8), 0); /* skip "%PDF-X.Y" */
 					break;

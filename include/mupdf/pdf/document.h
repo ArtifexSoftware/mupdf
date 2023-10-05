@@ -403,6 +403,7 @@ struct pdf_document
 	fz_stream *file;
 
 	int version;
+	int is_fdf;
 	int64_t startxref;
 	int64_t file_size;
 	pdf_crypt *crypt;
