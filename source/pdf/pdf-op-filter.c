@@ -2420,7 +2420,10 @@ pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char 
 			if (image)
 			{
 				fz_try(ctx)
+				{
+					copy_resource(ctx, p, PDF_NAME(ColorSpace), colorspace);
 					p->chain->op_BI(ctx, p->chain, image, colorspace);
+				}
 				fz_always(ctx)
 					fz_drop_image(ctx, image);
 				fz_catch(ctx)
@@ -2429,6 +2432,7 @@ pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char 
 		}
 		else
 		{
+			copy_resource(ctx, p, PDF_NAME(ColorSpace), colorspace);
 			p->chain->op_BI(ctx, p->chain, image, colorspace);
 		}
 	}
