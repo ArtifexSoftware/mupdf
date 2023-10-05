@@ -21,7 +21,6 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "mupdf/ucdn.h"
 
 #include <string.h>
 #include <limits.h>
@@ -62,39 +61,6 @@ static int line_length(fz_stext_line *line)
 	return n;
 }
 
-static int
-direction_from_bidi_class(int bidiclass, int curdir)
-{
-	switch (bidiclass)
-	{
-	/* strong */
-	case UCDN_BIDI_CLASS_L: return 1;
-	case UCDN_BIDI_CLASS_R: return -1;
-	case UCDN_BIDI_CLASS_AL: return -1;
-
-	/* weak */
-	case UCDN_BIDI_CLASS_EN:
-	case UCDN_BIDI_CLASS_ES:
-	case UCDN_BIDI_CLASS_ET:
-	case UCDN_BIDI_CLASS_AN:
-	case UCDN_BIDI_CLASS_CS:
-	case UCDN_BIDI_CLASS_NSM:
-	case UCDN_BIDI_CLASS_BN:
-		return curdir;
-
-	/* neutral */
-	case UCDN_BIDI_CLASS_B:
-	case UCDN_BIDI_CLASS_S:
-	case UCDN_BIDI_CLASS_WS:
-	case UCDN_BIDI_CLASS_ON:
-		return curdir;
-
-	/* embedding, override, pop ... we don't support them */
-	default:
-		return 0;
-	}
-}
-
 static float largest_size_in_line(fz_stext_line *line)
 {
 	fz_stext_char *ch;
@@ -110,7 +76,6 @@ static int find_closest_in_line(fz_stext_line *line, int idx, fz_point q)
 	fz_stext_char *ch;
 	float closest_dist = 1e30f;
 	int closest_idx = idx;
-	int bidi = 0;
 	float d1, d2;
 
 	float hsize = largest_size_in_line(line) / 2;
@@ -123,7 +88,6 @@ static int find_closest_in_line(fz_stext_line *line, int idx, fz_point q)
 		(line->first_char->quad.ll.y + line->first_char->quad.ul.y) / 2
 	);
 
-
 	// Signed distance perpendicular mid-line (positive is below)
 	float vdist = linedist(p1, vdir, q);
 	if (vdist < -hsize)
@@ -133,17 +97,15 @@ static int find_closest_in_line(fz_stext_line *line, int idx, fz_point q)
 
 	for (ch = line->first_char; ch; ch = ch->next)
 	{
-		bidi = direction_from_bidi_class(ucdn_get_bidi_class(ch->c), bidi);
-
-		if (bidi >= 0)
-		{
-			d1 = fz_abs(linedist(ch->quad.ll, hdir, q));
-			d2 = fz_abs(linedist(ch->quad.lr, hdir, q));
-		}
-		else
+		if (ch->bidi & 1)
 		{
 			d1 = fz_abs(linedist(ch->quad.lr, hdir, q));
 			d2 = fz_abs(linedist(ch->quad.ll, hdir, q));
+		}
+		else
+		{
+			d1 = fz_abs(linedist(ch->quad.ll, hdir, q));
+			d2 = fz_abs(linedist(ch->quad.lr, hdir, q));
 		}
 
 		if (d1 < closest_dist)

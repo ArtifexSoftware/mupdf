@@ -603,12 +603,13 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page,
 						name = font_full_name(ctx, font);
 						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", name, size);
 					}
-					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" color=\"#%06x\" c=\"",
+					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" c=\"",
 							ch->quad.ul.x, ch->quad.ul.y,
 							ch->quad.ur.x, ch->quad.ur.y,
 							ch->quad.ll.x, ch->quad.ll.y,
 							ch->quad.lr.x, ch->quad.lr.y,
 							ch->origin.x, ch->origin.y,
+							ch->bidi,
 							ch->color);
 					switch (ch->c)
 					{

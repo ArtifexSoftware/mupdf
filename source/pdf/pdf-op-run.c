@@ -26,6 +26,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "mupdf/ucdn.h"
+
 #define TILE
 
 /*
@@ -126,6 +128,7 @@ struct pdf_run_processor
 
 	/* text object state */
 	pdf_text_object_state tos;
+	int bidi;
 
 	/* graphics state */
 	pdf_gstate *gstate;
@@ -968,6 +971,41 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	return pr->gstate + pr->gtop;
 }
 
+static int
+guess_bidi_level(int bidiclass, int cur_bidi)
+{
+	switch (bidiclass)
+	{
+	/* strong */
+	case UCDN_BIDI_CLASS_L: return 0;
+	case UCDN_BIDI_CLASS_R: return 1;
+	case UCDN_BIDI_CLASS_AL: return 1;
+
+	/* weak */
+	case UCDN_BIDI_CLASS_EN:
+	case UCDN_BIDI_CLASS_ES:
+	case UCDN_BIDI_CLASS_ET:
+		return 0;
+	case UCDN_BIDI_CLASS_AN:
+		return 1;
+	case UCDN_BIDI_CLASS_CS:
+	case UCDN_BIDI_CLASS_NSM:
+	case UCDN_BIDI_CLASS_BN:
+		return cur_bidi;
+
+	/* neutral */
+	case UCDN_BIDI_CLASS_B:
+	case UCDN_BIDI_CLASS_S:
+	case UCDN_BIDI_CLASS_WS:
+	case UCDN_BIDI_CLASS_ON:
+		return cur_bidi;
+
+	/* embedding, override, pop ... we don't support them */
+	default:
+		return 0;
+	}
+}
+
 static void
 pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language lang)
 {
@@ -1027,12 +1065,15 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 		ucslen = 1;
 	}
 
+	/* guess bidi level from unicode value */
+	pr->bidi = guess_bidi_level(ucdn_get_bidi_class(ucsbuf[0]), pr->bidi);
+
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, lang);
+	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, lang);
+		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
 
 	pdf_tos_move_after_char(ctx, &pr->tos);
 }
@@ -2397,6 +2438,7 @@ static void pdf_run_BT(fz_context *ctx, pdf_processor *proc)
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->tos.tm = fz_identity;
 	pr->tos.tlm = fz_identity;
+	pr->bidi = 0;
 }
 
 static void pdf_run_ET(fz_context *ctx, pdf_processor *proc)

@@ -95,7 +95,6 @@ typedef struct
 	fz_point pen, start;
 	fz_matrix trm;
 	int new_obj;
-	int curdir;
 	int lastchar;
 	int flags;
 	int color;
@@ -191,7 +190,7 @@ add_image_block_to_page(fz_context *ctx, fz_stext_page *page, fz_matrix ctm, fz_
 }
 
 static fz_stext_line *
-add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, const fz_point *dir, int wmode)
+add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, const fz_point *dir, int wmode, int bidi)
 {
 	fz_stext_line *line = fz_pool_alloc(ctx, page->pool, sizeof *block->u.t.first_line);
 	line->prev = block->u.t.last_line;
@@ -210,7 +209,7 @@ add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, c
 }
 
 static fz_stext_char *
-add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_matrix trm, fz_font *font, float size, int c, fz_point *p, fz_point *q, int color)
+add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_matrix trm, fz_font *font, float size, int c, fz_point *p, fz_point *q, int bidi, int color)
 {
 	fz_stext_char *ch = fz_pool_alloc(ctx, page->pool, sizeof *line->first_char);
 	fz_point a, d;
@@ -225,6 +224,7 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 
 	ch->c = c;
 	ch->color = color;
+	ch->bidi = bidi;
 	ch->origin = *p;
 	ch->size = size;
 	ch->font = fz_keep_font(ctx, font);
@@ -277,39 +277,6 @@ remove_last_char(fz_context *ctx, fz_stext_line *line)
 	}
 }
 
-static int
-direction_from_bidi_class(int bidiclass, int curdir)
-{
-	switch (bidiclass)
-	{
-	/* strong */
-	case UCDN_BIDI_CLASS_L: return 1;
-	case UCDN_BIDI_CLASS_R: return -1;
-	case UCDN_BIDI_CLASS_AL: return -1;
-
-	/* weak */
-	case UCDN_BIDI_CLASS_EN:
-	case UCDN_BIDI_CLASS_ES:
-	case UCDN_BIDI_CLASS_ET:
-	case UCDN_BIDI_CLASS_AN:
-	case UCDN_BIDI_CLASS_CS:
-	case UCDN_BIDI_CLASS_NSM:
-	case UCDN_BIDI_CLASS_BN:
-		return curdir;
-
-	/* neutral */
-	case UCDN_BIDI_CLASS_B:
-	case UCDN_BIDI_CLASS_S:
-	case UCDN_BIDI_CLASS_WS:
-	case UCDN_BIDI_CLASS_ON:
-		return curdir;
-
-	/* embedding, override, pop ... we don't support them */
-	default:
-		return 0;
-	}
-}
-
 static int is_hyphen(int c)
 {
 	/* check for: hyphen-minus, soft hyphen, hyphen, and non-breaking hyphen */
@@ -323,76 +290,7 @@ vec_dot(const fz_point *a, const fz_point *b)
 }
 
 static void
-prepend_line_if_possible(fz_context *ctx, fz_stext_page *page, fz_stext_block *cur_block, fz_matrix trm, fz_font *font, float size, int c, fz_point *pen, int color, int no_space)
-{
-	fz_stext_line *cur_line;
-	fz_stext_line *line;
-	fz_point ndir;
-	float cur_size;
-	fz_point p;
-	fz_point delta;
-	float spacing, perp;
-
-	if (cur_block == NULL || cur_block->type != FZ_STEXT_BLOCK_TEXT)
-		return;
-
-	cur_line = cur_block->u.t.last_line;
-	if (cur_line == NULL)
-		return;
-
-	line = cur_line->prev;
-	if (line == NULL)
-		return;
-
-	if (line->wmode != cur_line->wmode)
-		return;
-
-	ndir = cur_line->dir;
-	cur_size = cur_line->last_char->size;
-	p = line->first_char->origin;
-	delta.x = p.x - pen->x;
-	delta.y = p.y - pen->y;
-
-	spacing = ndir.x * delta.x + ndir.y * delta.y;
-	perp = ndir.x * delta.y - ndir.y * delta.x;
-
-	/* If cur_line overlaps line by more than a small amount, can't prepend it. */
-	if (spacing < -size * SPACE_DIST)
-		return;
-	/* If cur_line is a long way behind line, can't prepend it. */
-	if (spacing >= size * SPACE_MAX_DIST)
-		return;
-	/* If cur_line is not pretty much in line with line, can't prepend it. */
-	if (fabsf(perp) >= size * BASE_MAX_DIST)
-		return;
-
-	/* So we can prepend. Do we need to add a space? Match the sizing logic
-	 * that would happend with normal character addition. */
-	if (spacing >= cur_size * SPACE_DIST && cur_line->last_char->c != ' ' && cur_line->wmode == 0 && !no_space)
-	{
-		/* We need to add a space onto the end of the prepended line. */
-		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', pen, &p, color);
-	}
-
-	/* cur_line plausibly finishes at the start of line. */
-	/* Move all the chars from cur_line onto the start of line */
-	cur_line->last_char->next = line->first_char;
-	line->first_char = cur_line->first_char;
-	cur_line->first_char = NULL;
-	cur_line->last_char = NULL;
-
-	/* Merge the bboxes */
-	line->bbox = fz_union_rect(line->bbox, cur_line->bbox);
-
-	/* Unlink cur_line from the block. */
-	cur_block->u.t.last_line = cur_block->u.t.last_line->prev;
-	cur_block->u.t.last_line->next = NULL;
-
-	/* Can't bin the line storage as it's from a pool. */
-}
-
-static void
-fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int force_new_line)
+fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int bidi, int force_new_line)
 {
 	fz_stext_page *page = dev->page;
 	fz_stext_block *cur_block;
@@ -406,8 +304,6 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
-
-	dev->curdir = direction_from_bidi_class(ucdn_get_bidi_class(c), dev->curdir);
 
 	/* dir = direction vector for motion. ndir = normalised(dir) */
 	if (wmode == 0)
@@ -464,7 +360,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	if (cur_line && glyph < 0)
 	{
 		/* Don't advance pen or break lines for no-glyph characters in a cluster */
-		add_char_to_line(ctx, page, cur_line, trm, font, size, c, &dev->pen, &dev->pen, dev->color);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, c, &dev->pen, &dev->pen, bidi, dev->color);
 		dev->lastchar = c;
 		return;
 	}
@@ -499,7 +395,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		if (fabsf(base_offset) < size * BASE_MAX_DIST)
 		{
 			/* LTR or neutral character */
-			if (dev->curdir >= 0)
+			if ((bidi & 1) == 0)
 			{
 				if (fabsf(spacing) < size * SPACE_DIST)
 				{
@@ -569,26 +465,18 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		new_line = 0;
 	}
 
-	if (new_line)
-	{
-		/* We are about to start a new line. This means we've finished with this
-		 * one. Can this be prepended to a previous line in this block? */
-		/* dev->pen records the previous stopping point - so where cur_line ends. */
-		prepend_line_if_possible(ctx, page, cur_block, trm, font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
-	}
-
 	/* Start a new line */
 	if (new_line || !cur_line || force_new_line)
 	{
-		cur_line = add_line_to_block(ctx, page, cur_block, &ndir, wmode);
+		cur_line = add_line_to_block(ctx, page, cur_block, &ndir, wmode, bidi);
 		dev->start = p;
 	}
 
 	/* Add synthetic space */
 	if (add_space && !(dev->flags & FZ_STEXT_INHIBIT_SPACES))
-		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', &dev->pen, &p, dev->color);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', &dev->pen, &p, bidi, dev->color);
 
-	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q, dev->color);
+	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q, bidi, dev->color);
 	dev->lastchar = c;
 	dev->pen = q;
 
@@ -597,19 +485,16 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 }
 
 static void
-flush_text(fz_context *ctx, fz_stext_device *dev)
-{
-	fz_stext_page *page = dev->page;
-
-	float size = fz_matrix_expansion(dev->trm);
-
-	/* Find current position to enter new text. */
-	if (dev->lasttext && dev->lasttext->tail)
-		prepend_line_if_possible(ctx, page, page->last_block, dev->trm, dev->lasttext->tail->font, size, ' ', &dev->pen, dev->color, (dev->flags & FZ_STEXT_INHIBIT_SPACES));
-}
-
-static void
-fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int force_new_line)
+fz_add_stext_char(fz_context *ctx,
+	fz_stext_device *dev,
+	fz_font *font,
+	int c,
+	int glyph,
+	fz_matrix trm,
+	float adv,
+	int wmode,
+	int bidi,
+	int force_new_line)
 {
 	/* ignore when one unicode character maps to multiple glyphs */
 	if (c == -1)
@@ -620,31 +505,31 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, i
 		switch (c)
 		{
 		case 0xFB00: /* ff */
-			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, bidi, 0);
 			return;
 		case 0xFB01: /* fi */
-			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 'i', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 'i', -1, trm, 0, wmode, bidi, 0);
 			return;
 		case 0xFB02: /* fl */
-			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 'l', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 'l', -1, trm, 0, wmode, bidi, 0);
 			return;
 		case 0xFB03: /* ffi */
-			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, 0);
-			fz_add_stext_char_imp(ctx, dev, font, 'i', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, bidi, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'i', -1, trm, 0, wmode, bidi, 0);
 			return;
 		case 0xFB04: /* ffl */
-			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, 0);
-			fz_add_stext_char_imp(ctx, dev, font, 'l', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 'f', -1, trm, 0, wmode, bidi, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 'l', -1, trm, 0, wmode, bidi, 0);
 			return;
 		case 0xFB05: /* long st */
 		case 0xFB06: /* st */
-			fz_add_stext_char_imp(ctx, dev, font, 's', glyph, trm, adv, wmode, force_new_line);
-			fz_add_stext_char_imp(ctx, dev, font, 't', -1, trm, 0, wmode, 0);
+			fz_add_stext_char_imp(ctx, dev, font, 's', glyph, trm, adv, wmode, bidi, force_new_line);
+			fz_add_stext_char_imp(ctx, dev, font, 't', -1, trm, 0, wmode, bidi, 0);
 			return;
 		}
 	}
@@ -676,7 +561,7 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, i
 		}
 	}
 
-	fz_add_stext_char_imp(ctx, dev, font, c, glyph, trm, adv, wmode, force_new_line);
+	fz_add_stext_char_imp(ctx, dev, font, c, glyph, trm, adv, wmode, bidi, force_new_line);
 }
 
 static void
@@ -714,6 +599,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_m
 			trm,
 			adv,
 			span->wmode,
+			span->bidi_level,
 			(i == 0) && (dev->flags & FZ_STEXT_PRESERVE_SPANS));
 	}
 }
@@ -886,8 +772,6 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	fz_stext_line *line;
 	fz_stext_char *ch;
 
-	flush_text(ctx, tdev);
-
 	for (block = page->first_block; block; block = block->next)
 	{
 		if (block->type != FZ_STEXT_BLOCK_TEXT)
@@ -976,7 +860,6 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->pen.y = 0;
 	dev->trm = fz_identity;
 	dev->lastchar = ' ';
-	dev->curdir = 1;
 	dev->lasttext = NULL;
 
 	return (fz_device*)dev;
