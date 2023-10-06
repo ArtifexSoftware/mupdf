@@ -1194,7 +1194,7 @@ def _get_m_command( build_dirs, j=None):
         make = 'CXX=clang++ gmake'
 
     if j is not None:
-        if j == '0':
+        if j == 0:
             j = multiprocessing.cpu_count()
             jlib.log('Setting -j to  multiprocessing.cpu_count()={j}')
         make += f' -j {j}'
@@ -1469,7 +1469,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
     clang_info_verbose = False
     force_rebuild = False
     header_git = False
-    j = None
+    j = 0
     refcheck_if = '#ifndef NDEBUG'
     wasm = os.environ.get('OS') in ('wasm', 'wasm-mt')
     if wasm:
@@ -1520,7 +1520,7 @@ def build( build_dirs, swig_command, args, vs_upgrade):
             if not state.state_.windows:
                 jlib.log( 'Warning: --devenv was specified, but we are not on Windows so this will have no effect.')
         elif actions == '-j':
-            j = args.next()
+            j = int(args.next())
         elif actions == '--python':
             build_python = True
             build_csharp = False

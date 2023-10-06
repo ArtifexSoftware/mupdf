@@ -1359,7 +1359,10 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if):
 
             FZ_FUNCTION void reinit_singlethreaded()
             {{
-                std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): Reinitialising as single-threaded.\\n";
+                if (0)
+                {{
+                    std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): Reinitialising as single-threaded.\\n";
+                }}
                 s_state.reinit( false /*multithreaded*/);
             }}
             ''')
