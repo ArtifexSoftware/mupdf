@@ -32,6 +32,7 @@ extern fz_document_handler html_document_handler;
 extern fz_document_handler xhtml_document_handler;
 extern fz_document_handler mobi_document_handler;
 extern fz_document_handler epub_document_handler;
+extern fz_document_handler txt_document_handler;
 
 void fz_register_document_handlers(fz_context *ctx)
 {
@@ -55,6 +56,7 @@ void fz_register_document_handlers(fz_context *ctx)
 	fz_register_document_handler(ctx, &html_document_handler);
 	fz_register_document_handler(ctx, &xhtml_document_handler);
 	fz_register_document_handler(ctx, &mobi_document_handler);
+	fz_register_document_handler(ctx, &txt_document_handler);
 #endif /* FZ_ENABLE_HTML */
 #if FZ_ENABLE_EPUB
 	fz_register_document_handler(ctx, &epub_document_handler);

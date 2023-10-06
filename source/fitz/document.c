@@ -26,7 +26,7 @@
 
 enum
 {
-	FZ_DOCUMENT_HANDLER_MAX = 10
+	FZ_DOCUMENT_HANDLER_MAX = 32
 };
 
 #define DEFW (450)

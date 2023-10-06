@@ -28,7 +28,7 @@
 
 enum { T, R, B, L };
 
-enum { FORMAT_FB2, FORMAT_XHTML, FORMAT_HTML5, FORMAT_MOBI };
+enum { FORMAT_FB2, FORMAT_XHTML, FORMAT_HTML5, FORMAT_MOBI, FORMAT_TXT };
 
 typedef struct
 {
@@ -251,6 +251,7 @@ htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *buf
 		case FORMAT_HTML5: doc->html = fz_parse_html5(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx)); break;
 		case FORMAT_XHTML: doc->html = fz_parse_xhtml(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx)); break;
 		case FORMAT_MOBI: doc->html = fz_parse_mobi(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx)); break;
+		case FORMAT_TXT: doc->html = fz_parse_txt(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx)); break;
 		}
 		doc->outline = fz_load_html_outline(ctx, doc->html);
 	}
@@ -430,4 +431,38 @@ fz_document_handler mobi_document_handler =
 	mobi_open_document_with_stream,
 	mobi_extensions,
 	mobi_mimetypes
+};
+
+static fz_document *
+txt_open_document_with_stream(fz_context *ctx, fz_stream *file)
+{
+	return htdoc_open_document_with_buffer(ctx, NULL, fz_read_all(ctx, file, 0), FORMAT_TXT);
+}
+
+static fz_document *
+txt_open_document(fz_context *ctx, const char *filename)
+{
+	return htdoc_open_document_with_buffer(ctx, NULL, fz_read_file(ctx, filename), FORMAT_TXT);
+}
+
+static const char *txt_extensions[] =
+{
+	"txt",
+	"text",
+	NULL
+};
+
+static const char *txt_mimetypes[] =
+{
+	"text.plain",
+	NULL
+};
+
+fz_document_handler txt_document_handler =
+{
+	NULL,
+	txt_open_document,
+	txt_open_document_with_stream,
+	txt_extensions,
+	txt_mimetypes
 };

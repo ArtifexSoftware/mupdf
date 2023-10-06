@@ -235,6 +235,27 @@ float fz_read_float(fz_context *ctx, fz_stream *stm);
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
 
 /**
+	Read a utf-8 rune from a stream.
+
+	In the event of encountering badly formatted utf-8 codes
+	(such as a leading code with an unexpected number of following
+	codes) no error/exception is given, but undefined values may be
+	returned.
+*/
+int fz_read_rune(fz_context *ctx, fz_stream *in);
+
+/**
+	Read a utf-16 rune from a stream. (little endian and
+	big endian respectively).
+
+	In the event of encountering badly formatted utf-16 codes
+	(mismatched surrogates) no error/exception is given, but
+	undefined values may be returned.
+*/
+int fz_read_utf16_le(fz_context *ctx, fz_stream *stm);
+int fz_read_utf16_be(fz_context *ctx, fz_stream *stm);
+
+/**
 	A function type for use when implementing
 	fz_streams. The supplied function of this type is called
 	whenever data is required, and the current buffer is empty.
