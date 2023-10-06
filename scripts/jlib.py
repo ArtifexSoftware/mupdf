@@ -2178,7 +2178,7 @@ def build(
         except Exception:
             command0 = None
         if command != command0:
-           reasons.append( 'command has changed')
+           reasons.append( f'command has changed: {command0!r} => {command!r}')
 
     if not reasons or all_reasons:
         reason = fs_any_newer( infiles, outfiles)
