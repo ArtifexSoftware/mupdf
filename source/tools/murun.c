@@ -3168,6 +3168,24 @@ static void ffi_Device_endMetatext(js_State *J)
 
 /* mupdf module */
 
+static void ffi_enableICC(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_try(ctx)
+		fz_enable_icc(ctx);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_disableICC(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_try(ctx)
+		fz_disable_icc(ctx);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_readFile(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10555,6 +10573,8 @@ int murun_main(int argc, char **argv)
 #endif
 
 		jsB_propfun(J, "readFile", ffi_readFile, 1);
+		jsB_propfun(J, "enableICC", ffi_enableICC, 0);
+		jsB_propfun(J, "disableICC", ffi_disableICC, 0);
 
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 	}
