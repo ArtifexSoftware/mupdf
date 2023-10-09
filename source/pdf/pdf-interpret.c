@@ -566,20 +566,17 @@ pdf_process_EMC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 static void
 pdf_process_gsave(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
+	++csi->gstate;
 	if (proc->op_q)
 		proc->op_q(ctx, proc);
-	++csi->gstate;
 }
 
 static void
 pdf_process_grestore(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
-	if (csi->gstate > 0)
-	{
-		if (proc->op_Q)
-			proc->op_Q(ctx, proc);
-		--csi->gstate;
-	}
+	--csi->gstate;
+	if (proc->op_Q)
+		proc->op_Q(ctx, proc);
 }
 
 static void
