@@ -36,6 +36,7 @@ typedef struct
 	int ahxencode;
 	int extgstate;
 	int newlines;
+	int balance;
 	pdf_obj *res;
 	pdf_obj *last_res;
 	resources_stack *rstack;
@@ -180,6 +181,8 @@ pdf_out_q(fz_context *ctx, pdf_processor *proc_)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	proc->balance++;
+
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "q");
@@ -190,6 +193,10 @@ static void
 pdf_out_Q(fz_context *ctx, pdf_processor *proc_)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
+
+	proc->balance--;
+	if (proc->balance < 0)
+		fz_warn(ctx, "gstate underflow (too many Q operators)");
 
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
@@ -1126,9 +1133,22 @@ pdf_out_EX(fz_context *ctx, pdf_processor *proc_)
 }
 
 static void
-pdf_close_output_processor(fz_context *ctx, pdf_processor *proc)
+pdf_close_output_processor(fz_context *ctx, pdf_processor *proc_)
 {
-	fz_output *out = ((pdf_output_processor*)proc)->out;
+	pdf_output_processor *proc = (pdf_output_processor*)proc_;
+	fz_output *out = proc->out;
+
+	/* Add missing 'Q' operators to get back to zero. */
+	/* We can't prepend missing 'q' operators to guarantee we don't underflow. */
+	while (proc->balance > 0)
+	{
+		proc->balance--;
+		if (proc->sep)
+			fz_write_byte(ctx, proc->out, ' ');
+		fz_write_byte(ctx, out, 'Q');
+		post_op(ctx, proc);
+	}
+
 	fz_close_output(ctx, out);
 }
 
@@ -1296,6 +1316,8 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode, int new
 	proc->newlines = newlines;
 
 	proc->super.requirements = PDF_PROCESSOR_REQUIRES_DECODED_IMAGES;
+
+	proc->balance = 0;
 
 	return (pdf_processor*)proc;
 }
