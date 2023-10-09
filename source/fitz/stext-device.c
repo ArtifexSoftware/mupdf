@@ -21,7 +21,6 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "mupdf/ucdn.h"
 
 #include "glyphbox.h"
 
@@ -324,6 +323,12 @@ vec_dot(const fz_point *a, const fz_point *b)
 	return a->x * b->x + a->y * b->y;
 }
 
+static int may_add_space(int lastchar)
+{
+	/* basic latin, greek, cyrillic, hebrew, arabic unicode blocks */
+	return (lastchar != ' ' && lastchar < 0x700);
+}
+
 static void
 fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int bidi, int force_new_line)
 {
@@ -470,7 +475,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				/* And any other small jump could be a missing space. */
 				else if (logical_spacing < 0 && logical_spacing > -SPACE_MAX_DIST)
 				{
-					if (dev->lastchar != ' ' && wmode == 0)
+					if (wmode == 0 && may_add_space(dev->lastchar))
 						add_space = 1;
 					new_line = 0;
 				}
@@ -478,7 +483,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					bidi = 3; /* mark line as visual */
-					if (dev->lastchar != ' ' && wmode == 0)
+					if (wmode == 0 && may_add_space(dev->lastchar))
 						add_space = 1;
 					new_line = 0;
 				}
@@ -501,7 +506,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					/* Motion is forward in line and large enough to warrant us adding a space. */
-					if (dev->lastchar != ' ' && wmode == 0)
+					if (wmode == 0 && may_add_space(dev->lastchar))
 						add_space = 1;
 					new_line = 0;
 				}
