@@ -348,3 +348,9 @@ fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
 	return search_by_script_lang(size, NULL, MUPDF_SCRIPT_EMOJI, FZ_LANG_UNSET);
 }
+
+const unsigned char *
+fz_lookup_noto_boxes_font(fz_context *ctx, int *size)
+{
+	return search_by_family(size, "Nimbus Boxes", REGULAR);
+}

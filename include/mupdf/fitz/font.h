@@ -384,6 +384,7 @@ const unsigned char *fz_lookup_noto_music_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_symbol1_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_symbol2_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_boxes_font(fz_context *ctx, int *len);
 
 /**
 	Try to load a fallback font for the
