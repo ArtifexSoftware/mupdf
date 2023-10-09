@@ -407,7 +407,7 @@ pdf_new_color_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, i
 /*
 	Functions to actually process annotations, glyphs and general stream objects.
 */
-void pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *obj, pdf_obj *res, fz_cookie *cookie, pdf_obj **out_res);
+void pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *res, pdf_obj *stm, fz_cookie *cookie, pdf_obj **out_res);
 void pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_annot *annot, fz_cookie *cookie);
 void pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *resources, fz_buffer *contents);
 
