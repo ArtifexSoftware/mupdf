@@ -1316,3 +1316,65 @@ pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode, int 
 	}
 	return proc;
 }
+
+/* Simplified processor that only counts matching q/Q pairs. */
+
+typedef struct
+{
+	pdf_processor super;
+	int *balance;
+	int *minimum;
+} pdf_balance_processor;
+
+static void
+pdf_balance_q(fz_context *ctx, pdf_processor *proc_)
+{
+	pdf_balance_processor *proc = (pdf_balance_processor*)proc_;
+	(*proc->balance)++;
+}
+
+static void
+pdf_balance_Q(fz_context *ctx, pdf_processor *proc_)
+{
+	pdf_balance_processor *proc = (pdf_balance_processor*)proc_;
+	(*proc->balance)--;
+	if (*proc->balance < *proc->minimum)
+		*proc->minimum = *proc->balance;
+}
+
+static pdf_processor *
+pdf_new_balance_processor(fz_context *ctx, int *balance, int *minimum)
+{
+	pdf_balance_processor *proc = pdf_new_processor(ctx, sizeof *proc);
+
+	proc->super.op_q = pdf_balance_q;
+	proc->super.op_Q = pdf_balance_Q;
+
+	proc->balance = balance;
+	proc->minimum = minimum;
+
+	return (pdf_processor*)proc;
+}
+
+void
+pdf_count_q_balance(fz_context *ctx, pdf_document *doc, pdf_obj *res, pdf_obj *stm, int *underflow, int *overflow)
+{
+	pdf_processor *proc;
+
+	int balance = 0;
+	int minimum = 0;
+
+	proc = pdf_new_balance_processor(ctx, &balance, &minimum);
+	fz_try(ctx)
+	{
+		pdf_process_raw_contents(ctx, proc, doc, res, stm, NULL);
+		pdf_close_processor(ctx, proc);
+	}
+	fz_always(ctx)
+		pdf_drop_processor(ctx, proc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	*underflow = -minimum;
+	*overflow = balance - minimum;
+}
