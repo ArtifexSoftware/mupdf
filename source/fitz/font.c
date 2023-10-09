@@ -316,7 +316,7 @@ struct fz_font_context
 	fz_font *base14[14];
 	fz_font *cjk[4];
 	struct { fz_font *serif, *sans; } fallback[256];
-	fz_font *symbol1, *symbol2, *math, *music;
+	fz_font *symbol1, *symbol2, *math, *music, *boxes;
 	fz_font *emoji;
 };
 
@@ -628,6 +628,19 @@ static fz_font *fz_load_fallback_emoji_font(fz_context *ctx)
 			ctx->font->emoji = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
 	}
 	return ctx->font->emoji;
+}
+
+static fz_font *fz_load_fallback_boxes_font(fz_context *ctx)
+{
+	const unsigned char *data;
+	int size;
+	if (!ctx->font->boxes)
+	{
+		data = fz_lookup_noto_boxes_font(ctx, &size);
+		if (data)
+			ctx->font->boxes = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+	}
+	return ctx->font->boxes;
 }
 
 static const struct ft_error ft_errors[] =
@@ -2112,6 +2125,14 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	}
 
 	font = fz_load_fallback_emoji_font(ctx);
+	if (font)
+	{
+		gid = fz_encode_character(ctx, font, unicode);
+		if (gid > 0)
+			return *out_font = font, gid;
+	}
+
+	font = fz_load_fallback_boxes_font(ctx);
 	if (font)
 	{
 		gid = fz_encode_character(ctx, font, unicode);

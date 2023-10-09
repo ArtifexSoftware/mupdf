@@ -80,6 +80,8 @@ FONT(sil,	CharisSIL_BoldItalic_cff,	"Charis SIL",		ANY_SCRIPT,	FZ_LANG_UNSET,	NO
 #endif
 
 #ifndef TOFU_NOTO
+FONT(urw,	NimbusBoxes_Regular_cff,	"Nimbus Boxes",		ANY_SCRIPT,	FZ_LANG_UNSET,	NO_SUBFONT,	REGULAR)
+
 FONT(noto,	NotoSerif_Regular_otf,	"Noto Serif",	UCDN_SCRIPT_LATIN,	FZ_LANG_UNSET,	NO_SUBFONT,	REGULAR)
 ALIAS(noto,	NotoSerif_Regular_otf,	"Noto Serif",	UCDN_SCRIPT_GREEK,	FZ_LANG_UNSET,	NO_SUBFONT,	REGULAR)
 ALIAS(noto,	NotoSerif_Regular_otf,	"Noto Serif",	UCDN_SCRIPT_CYRILLIC,	FZ_LANG_UNSET,	NO_SUBFONT,	REGULAR)
