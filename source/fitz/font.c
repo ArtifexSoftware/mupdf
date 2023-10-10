@@ -428,6 +428,7 @@ void fz_drop_font_context(fz_context *ctx)
 		fz_drop_font(ctx, ctx->font->math);
 		fz_drop_font(ctx, ctx->font->music);
 		fz_drop_font(ctx, ctx->font->emoji);
+		fz_drop_font(ctx, ctx->font->boxes);
 		fz_free(ctx, ctx->font);
 		ctx->font = NULL;
 	}
