@@ -120,10 +120,25 @@ pdf_load_page_tree_internal(fz_context *ctx, pdf_document *doc)
 	 * stuff that hits the document at a time. */
 	fz_try(ctx)
 	{
+		int idx;
+
 		doc->map_page_count = pdf_count_pages(ctx, doc);
-		doc->rev_page_map = Memento_label(fz_calloc(ctx, doc->map_page_count, sizeof(pdf_rev_page_map)), "pdf_rev_page_map");
-		doc->fwd_page_map = Memento_label(fz_calloc(ctx, doc->map_page_count, sizeof(pdf_obj *)), "pdf_fwd_page_map");
-		pdf_load_page_tree_imp(ctx, doc, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages"), 0, NULL);
+		while (1)
+		{
+			doc->rev_page_map = Memento_label(fz_calloc(ctx, doc->map_page_count, sizeof(pdf_rev_page_map)), "pdf_rev_page_map");
+			doc->fwd_page_map = Memento_label(fz_calloc(ctx, doc->map_page_count, sizeof(pdf_obj *)), "pdf_fwd_page_map");
+			idx = pdf_load_page_tree_imp(ctx, doc, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages"), 0, NULL);
+			if (idx < doc->map_page_count)
+			{
+				/* The document claims more pages that it has. Fix that. */
+				fz_warn(ctx, "Document claims to have %d pages, but only has %d.", doc->map_page_count, idx);
+				/* This put drops the page tree! */
+				pdf_dict_putp_drop(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count", pdf_new_int(ctx, idx));
+				doc->map_page_count = idx;
+				continue;
+			}
+			break;
+		}
 		qsort(doc->rev_page_map, doc->map_page_count, sizeof *doc->rev_page_map, cmp_rev_page_map);
 	}
 	fz_catch(ctx)

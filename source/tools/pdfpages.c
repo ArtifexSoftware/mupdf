@@ -137,10 +137,21 @@ showpages(fz_context *ctx, pdf_document *doc, fz_output *out, const char *pageli
 	pagecount = pdf_count_pages(ctx, doc);
 	while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
 	{
+		int fail;
 		if (spage > epage)
 			page = spage, spage = epage, epage = page;
 		for (page = spage; page <= epage; page++)
-			ret |= showpage(ctx, doc, out, page);
+		{
+			fail = showpage(ctx, doc, out, page);
+			/* On the first failure, check for the pagecount having changed. */
+			if (fail && !ret)
+			{
+				pagecount = pdf_count_pages(ctx, doc);
+				if (epage > pagecount)
+					epage = pagecount;
+			}
+			ret |= fail;
+		}
 	}
 
 	return ret;
