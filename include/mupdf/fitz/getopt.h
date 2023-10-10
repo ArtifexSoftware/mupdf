@@ -32,8 +32,6 @@ typedef struct
 	void *opaque;
 } fz_getopt_long_options;
 
-extern fz_getopt_long_options *fz_longopt;
-
 /**
 	Simple functions/variables for use in tools.
 
@@ -47,7 +45,7 @@ extern fz_getopt_long_options *fz_longopt;
 	return the char. The exception to this is when the option requires an
 	argument and none is supplied; in this case we return ':'.
 
-	In the event of matching a long option, this function returns 0, with fz_longopt
+	In the event of matching a long option, this function returns 0, with fz_optlong
 	set to point to the matching option.
 
 	A long option entry may be followed with : to indicate there is an argument to the
