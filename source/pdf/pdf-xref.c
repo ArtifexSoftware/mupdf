@@ -3030,6 +3030,13 @@ pdf_set_metadata(fz_context *ctx, pdf_document *doc, const char *key, const char
 
 	fz_try(ctx)
 	{
+		/* Ensure we have an Info dictionary. */
+		if (!pdf_is_dict(ctx, info))
+		{
+			info = pdf_add_new_dict(ctx, doc, 8);
+			pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info), info);
+		}
+
 		if (!strcmp(key, FZ_META_INFO_TITLE))
 			pdf_dict_put_text_string(ctx, info, PDF_NAME(Title), value);
 		else if (!strcmp(key, FZ_META_INFO_AUTHOR))
