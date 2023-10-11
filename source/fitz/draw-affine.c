@@ -4041,7 +4041,7 @@ fz_paint_image_imp(fz_context *ctx,
 	}
 
 #if FZ_PLOTTERS_RGB
-	if (dn == 3 && img->n == 1 + sa && !color && !fz_overprint_required(eop))
+	if (dn == 3 && dst->s == 0 && img->n == 1 + sa && !color && !fz_overprint_required(eop))
 	{
 		if (dolerp)
 			paintfn = fz_paint_affine_g2rgb_lerp(da, sa, fa, fb, dn, alpha);

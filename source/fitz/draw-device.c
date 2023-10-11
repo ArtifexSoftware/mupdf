@@ -1726,7 +1726,8 @@ convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *m
 {
 	fz_pixmap *converted;
 
-	if ((fz_colorspace_is_device_n(ctx, src_cs) && dest->seps) || fz_compare_separations(ctx, pixmap->seps, dest->seps))
+	/* It's OK to plot a pixmap with no seps onto a dest with seps, but if the pixmap has seps, then they must match! */
+	if ((fz_colorspace_is_device_n(ctx, src_cs) && dest->seps) || (pixmap->seps != NULL && fz_compare_separations(ctx, pixmap->seps, dest->seps)))
 	{
 		converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, dest->seps, color_params, dev->default_cs);
 		*eop = set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
