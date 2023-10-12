@@ -310,7 +310,7 @@ void fz_write_bits_sync(fz_context *ctx, fz_output *out);
 
 /**
 	Our customised 'printf'-like string formatter.
-	Takes %c, %d, %s, %u, %x, as usual.
+	Takes %c, %d, %s, %u, %x, %X as usual.
 	Modifiers are not supported except for zero-padding ints (e.g.
 	%02d, %03u, %04x, etc).
 	%g output in "as short as possible hopefully lossless
@@ -322,8 +322,8 @@ void fz_write_bits_sync(fz_context *ctx, fz_output *out);
 	%P outputs a fz_point*.
 	%n outputs a PDF name (with appropriate escaping).
 	%q and %( output escaped strings in C/PDF syntax.
-	%l{d,u,x} indicates that the values are int64_t.
-	%z{d,u,x} indicates that the value is a size_t.
+	%l{d,u,x,X} indicates that the values are int64_t.
+	%z{d,u,x,X} indicates that the value is a size_t.
 
 	user: An opaque pointer that is passed to the emit function.
 
