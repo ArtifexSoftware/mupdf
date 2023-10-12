@@ -17,8 +17,13 @@ typedef struct
 	/* Columns are numbered from 1. */
 	/* The column we are at. */
 	int col_at;
-	/* The column we last signalled. */
+	/* The column we last signalled. If this is 0, then we haven't
+	 * even started a row yet. */
 	int col_signalled;
+
+	/* If we are currently processing a spreadsheet, store the current
+	 * sheets name here. */
+	const char *sheet_name;
 
 	int shared_string_max;
 	int shared_string_len;
@@ -426,28 +431,26 @@ static char *lookup_rel(fz_context *ctx, fz_xml *rels, const char *id)
 static void
 send_cell_formatting(fz_context *ctx, doc_info *info)
 {
+	if (info->col_signalled == 0)
+	{
+		fz_write_string(ctx, info->out, "<tr>\n");
+		info->col_signalled = 1;
+		if (info->col_at > 1)
+			fz_write_string(ctx, info->out, "<td>");
+	}
+
 	/* Send the label */
-	if (info->opts.output_cell_names && info->label)
+	while (info->col_signalled < info->col_at)
 	{
-		fz_write_printf(ctx, info->out, "<p id=\"%s\">\n", info->label);
-		info->col_signalled = info->col_at;
+		fz_write_string(ctx, info->out, "</td>");
+		info->col_signalled++;
+		if (info->col_signalled < info->col_at)
+			fz_write_string(ctx, info->out, "<td>");
 	}
-	else if (info->opts.output_cell_markers)
-	{
-		while (info->col_signalled < info->col_at)
-		{
-			fz_write_string(ctx, info->out, "<br/>\n");
-			info->col_signalled++;
-		}
-	}
+	if (info->sheet_name && info->sheet_name[0])
+		fz_write_printf(ctx, info->out, "<td id=\"%s!%s\">", info->sheet_name, info->label);
 	else
-	{
-		while (info->col_signalled < info->col_at)
-		{
-			fz_write_string(ctx, info->out, "&nbsp;");
-			info->col_signalled++;
-		}
-	}
+		fz_write_printf(ctx, info->out, "<td id=\"%s\">", info->label);
 }
 
 static void
@@ -592,8 +595,20 @@ show_cell(fz_context *ctx, fz_xml *cell, doc_info *info)
 static void
 new_row(fz_context *ctx, doc_info *info)
 {
-	info->col_at = 0;
-	info->col_signalled = info->opts.output_cell_markers || info->opts.output_cell_names ? 0 : 1;
+	if (info->col_signalled)
+	{
+		/* We've sent at least one cell. So need to close the
+		 * td and tr */
+		fz_write_string(ctx, info->out, "</td>\n</tr>\n");
+	}
+	else
+	{
+		/* We've not sent anything for this row. Keep the counts
+		 * correct. */
+		fz_write_string(ctx, info->out, "<tr></tr>\n");
+	}
+	info->col_at = 1;
+	info->col_signalled = 0;
 	fz_free(ctx, info->label);
 	info->label = NULL;
 }
@@ -608,10 +623,13 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 	fz_output_xml(ctx, fz_stddbg(ctx), xml, 0);
 #endif
 
-	new_row(ctx, info);
-
 	if (info->opts.output_sheet_names)
 		fz_write_printf(ctx, info->out, "<!-- SHEET %s-->\n", name);
+	fz_write_printf(ctx, info->out, "<table id=\"%s\">\n", name);
+
+	info->sheet_name = name;
+	info->col_at = 0;
+	info->col_signalled = 0;
 
 	fz_try(ctx)
 	{
@@ -628,11 +646,6 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 			}
 			else
 			{
-				if (fz_xml_is_tag(pos, "row"))
-				{
-					new_row(ctx, info);
-				}
-
 				/* Try to move down. */
 				next = fz_xml_down(pos);
 				if (next)
@@ -660,15 +673,11 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 				/* Check for hitting the top. */
 				if (pos == NULL)
 					break;
+
 				/* We've returned to a node. See if it's a 'row'. */
 				if (fz_xml_is_tag(pos, "row"))
-				{
-					if (info->opts.output_cell_row_markers)
-						fz_write_string(ctx, info->out, "<br/>\n");
-					else
-						fz_write_string(ctx, info->out, "</p>");
 					new_row(ctx, info);
-				}
+
 				next = fz_xml_next(pos);
 				if (next)
 				{
@@ -677,6 +686,9 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 				}
 			}
 		}
+		if (info->col_signalled)
+			fz_write_printf(ctx, info->out, "</td>\n</tr>\n");
+		fz_write_printf(ctx, info->out, "</table>\n");
 	}
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
