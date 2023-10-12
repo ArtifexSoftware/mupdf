@@ -104,15 +104,23 @@ struct parser
 #endif
 };
 
-static void xml_indent(int n)
+static void xml_indent(fz_context *ctx, fz_output *out, int n)
 {
 	while (n--) {
-		putchar(' ');
-		putchar(' ');
+		fz_write_byte(ctx, out, ' ');
+		fz_write_byte(ctx, out, ' ');
 	}
 }
 
 void fz_debug_xml(fz_xml *item, int level)
+{
+	/* This is a bit nasty as it relies on implementation
+	 * details of both fz_stdout, and fz_write_printf coping
+	 * with NULL ctx. */
+	fz_output_xml(NULL, fz_stdout(NULL), item, level);
+}
+
+void fz_output_xml(fz_context *ctx, fz_output *out, fz_xml *item, int level)
 {
 	char *s;
 
@@ -122,64 +130,63 @@ void fz_debug_xml(fz_xml *item, int level)
 	/* Skip over the DOC object at the top. */
 	if (item->up == NULL)
 	{
-		fz_debug_xml(item->down, level);
+		fz_output_xml(ctx, out, item->down, level);
 		return;
 	}
 
 	s = fz_xml_text(item);
+	xml_indent(ctx, out, level);
 	if (s)
 	{
 		int c;
-		xml_indent(level);
-		putchar('"');
+		fz_write_byte(ctx, out, '"');
 		while (*s) {
 			s += fz_chartorune(&c, s);
 			switch (c) {
 			default:
 				if (c > 0xFFFF)
-					printf("\\u{%X}", c);
+					fz_write_printf(ctx, out, "\\u{%X}", c);
 				else if (c < 32 || c > 127)
-					printf("\\u%04X", c);
+					fz_write_printf(ctx, out, "\\u%04X", c);
 				else
-					putchar(c);
+					fz_write_byte(ctx, out, c);
 				break;
-			case '\\': putchar('\\'); putchar('\\'); break;
-			case '\b': putchar('\\'); putchar('b'); break;
-			case '\f': putchar('\\'); putchar('f'); break;
-			case '\n': putchar('\\'); putchar('n'); break;
-			case '\r': putchar('\\'); putchar('r'); break;
-			case '\t': putchar('\\'); putchar('t'); break;
+			case '\\': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, '\\'); break;
+			case '\b': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, 'b'); break;
+			case '\f': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, 'f'); break;
+			case '\n': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, 'n'); break;
+			case '\r': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, 'r'); break;
+			case '\t': fz_write_byte(ctx, out, '\\'); fz_write_byte(ctx, out, 't'); break;
 			}
 		}
-		putchar('"');
+		fz_write_byte(ctx, out, '"');
 #ifdef FZ_XML_SEQ
-		printf(" <%d>", item->seq);
+		fz_write_printf(ctx, out, " <%d>", item->seq);
 #endif
-		putchar('\n');
+		fz_write_byte(ctx, out, '\n');
 	}
 	else
 	{
 		fz_xml *child;
 		struct attribute *att;
 
-		xml_indent(level);
 #ifdef FZ_XML_SEQ
-		printf("(%s <%d>\n", item->u.node.u.d.name, item->u.node.seq);
+		fz_write_printf(ctx, out, "(%s <%d>\n", item->u.node.u.d.name, item->u.node.seq);
 #else
-		printf("(%s\n", item->u.node.u.d.name);
+		fz_write_printf(ctx, out, "(%s\n", item->u.node.u.d.name);
 #endif
 		for (att = item->u.node.u.d.atts; att; att = att->next)
 		{
-			xml_indent(level);
-			printf("=%s %s\n", att->name, att->value);
+			xml_indent(ctx, out, level);
+			fz_write_printf(ctx, out, "=%s %s\n", att->name, att->value);
 		}
 		for (child = fz_xml_down(item); child; child = child->u.node.next)
-			fz_debug_xml(child, level + 1);
-		xml_indent(level);
+			fz_output_xml(ctx, out, child, level + 1);
+		xml_indent(ctx, out, level);
 #ifdef FZ_XML_SEQ
-		printf(")%s <%d>\n", item->u.node.u.d.name, item->u.node.seq);
+		fz_write_printf(ctx, out, ")%s <%d>\n", item->u.node.u.d.name, item->u.node.seq);
 #else
-		printf(")%s\n", item->u.node.u.d.name);
+		fz_write_printf(ctx, out, ")%s\n", item->u.node.u.d.name);
 #endif
 	}
 }
@@ -768,7 +775,8 @@ parse_attribute_value:
 	return "end of data in attribute value";
 }
 
-static int fast_tolower(int c) {
+static int fast_tolower(int c)
+{
 	if ((unsigned)c - 'A' < 26)
 		return c | 32;
 	return c;

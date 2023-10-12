@@ -161,7 +161,13 @@ void fz_xml_add_att(fz_context *ctx, fz_pool *pool, fz_xml *node, const char *ke
 char *fz_xml_text(fz_xml *item);
 
 /**
-	Pretty-print an XML tree to stdout.
+	Pretty-print an XML tree to given output.
+*/
+void fz_output_xml(fz_context *ctx, fz_output *out, fz_xml *item, int level);
+
+/**
+	Pretty-print an XML tree to stdout. (Deprecated, use
+	fz_output_xml in preference).
 */
 void fz_debug_xml(fz_xml *item, int level);
 
