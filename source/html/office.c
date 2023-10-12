@@ -34,8 +34,9 @@ typedef struct
 } doc_info;
 
 static void
-doc_escape(fz_context *ctx, fz_output *output, const char *str)
+doc_escape(fz_context *ctx, fz_output *output, const char *str_)
 {
+	const unsigned char *str = (const unsigned char *)str_;
 	int c;
 
 	if (!str)
@@ -55,13 +56,10 @@ doc_escape(fz_context *ctx, fz_output *output, const char *str)
 		{
 			fz_write_string(ctx, output, "&gt;");
 		}
-		else if ((c >= 32 && c < 127) || c == '\t' || c == '\n' || c == '\r')
-		{
-			fz_write_byte(ctx, output, c);
-		}
 		else
 		{
-			// Ignore.
+			/* We get utf-8 in, just parrot it out again. */
+			fz_write_byte(ctx, output, c);
 		}
 	}
 }
@@ -153,7 +151,7 @@ show_footnote(fz_context *ctx, fz_xml *v, doc_info *info)
 }
 
 static void
-process_doc_stream(fz_context *ctx, fz_xml *xml, doc_info *info)
+process_doc_stream(fz_context *ctx, fz_xml *xml, doc_info *info, int do_pages)
 {
 	fz_xml *pos;
 	fz_xml *next;
@@ -166,13 +164,13 @@ process_doc_stream(fz_context *ctx, fz_xml *xml, doc_info *info)
 #endif
 
 	/* First off, see if we can do page numbers. */
-	if (info->opts.output_page_numbers)
+	if (do_pages)
 	{
 		pos = fz_xml_find_dfs(xml, "lastRenderedPageBreak", NULL, NULL);
 		if (pos)
 		{
 			/* We *can* do page numbers, so start here. */
-			fz_write_string(ctx, info->out, "<!-- page 1 -->\n");
+			fz_write_string(ctx, info->out, "<div id=\"page1\">\n");
 			info->page = 1;
 		}
 	}
@@ -271,11 +269,12 @@ process_doc_stream(fz_context *ctx, fz_xml *xml, doc_info *info)
 			{
 				fz_write_string(ctx, info->out, "\t");
 			}
-			else if (fz_xml_is_tag(pos, "lastRenderedPageBreak"))
+			else if (do_pages && fz_xml_is_tag(pos, "lastRenderedPageBreak"))
 			{
+				if (info->page)
+					fz_write_string(ctx, info->out, "\n</div>\n");
 				info->page++;
-				if (info->opts.output_page_numbers)
-					fz_write_printf(ctx, info->out, "<!-- PAGE %d -->\n", info->page);
+				fz_write_printf(ctx, info->out, "<div id=\"page%d\">\n", info->page);
 			}
 			/* Try to move down. */
 			down = fz_xml_down(pos);
@@ -331,15 +330,18 @@ process_doc_stream(fz_context *ctx, fz_xml *xml, doc_info *info)
 			}
 		}
 	}
+
+	if (do_pages && info->page)
+		fz_write_string(ctx, info->out, "\n</div>\n");
 }
 
 static void
-process_item(fz_context *ctx, fz_archive *arch, const char *file, doc_info *info)
+process_item(fz_context *ctx, fz_archive *arch, const char *file, doc_info *info, int do_pages)
 {
 	fz_xml *xml = fz_parse_xml_archive_entry(ctx, arch, file, 1);
 
 	fz_try(ctx)
-		process_doc_stream(ctx, xml, info);
+		process_doc_stream(ctx, xml, info, do_pages);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
 	fz_catch(ctx)
@@ -365,7 +367,7 @@ process_rootfile(fz_context *ctx, fz_archive *arch, const char *file, doc_info *
 				char *href = fz_xml_att(item, "href");
 				if (type && href && !strcmp(type, "application/xml"))
 				{
-					process_item(ctx, arch, href, info);
+					process_item(ctx, arch, href, info, 1);
 				}
 				item = fz_xml_find_next_dfs(pos, "item", "id", idref);
 			}
@@ -623,8 +625,6 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 	fz_output_xml(ctx, fz_stddbg(ctx), xml, 0);
 #endif
 
-	if (info->opts.output_sheet_names)
-		fz_write_printf(ctx, info->out, "<!-- SHEET %s-->\n", name);
 	fz_write_printf(ctx, info->out, "<table id=\"%s\">\n", name);
 
 	info->sheet_name = name;
@@ -699,7 +699,9 @@ process_sheet(fz_context *ctx, fz_archive *arch, const char *name, const char *f
 static void
 process_slide(fz_context *ctx, fz_archive *arch, const char *file, doc_info *info)
 {
-	process_item(ctx, arch, file, info);
+	fz_write_printf(ctx, info->out, "<div id=\"slide%d\">\n", info->page++);
+	process_item(ctx, arch, file, info, 0);
+	fz_write_printf(ctx, info->out, "</div>\n");
 }
 
 static char *
@@ -1001,14 +1003,11 @@ process_office_document(fz_context *ctx, fz_archive *arch, const char *file, doc
 		pos = fz_xml_find_dfs(xml, "sldId", NULL, NULL);
 		if (pos)
 		{
-			int slide = 1;
 			while (pos)
 			{
 				char *id = fz_xml_att(pos, "r:id");
 				char *sheet = lookup_rel(ctx, rels, id);
 
-				if (info->opts.output_page_numbers)
-					fz_write_printf(ctx, info->out, "<!-- PAGE %d -->\n", slide++);
 				if (sheet)
 				{
 					resolved_rel = make_absolute_path(ctx, file, sheet);
@@ -1024,7 +1023,7 @@ process_office_document(fz_context *ctx, fz_archive *arch, const char *file, doc
 		/* Let's try it as word. */
 		{
 			load_footnotes(ctx, arch, rels, info, file);
-			process_doc_stream(ctx, xml, info);
+			process_doc_stream(ctx, xml, info, 1);
 		}
 	}
 	fz_always(ctx)
