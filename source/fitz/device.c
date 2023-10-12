@@ -62,6 +62,8 @@ fz_disable_device(fz_context *ctx, fz_device *dev)
 	dev->end_layer = NULL;
 	dev->begin_structure = NULL;
 	dev->end_structure = NULL;
+	dev->begin_metatext = NULL;
+	dev->end_metatext = NULL;
 }
 
 void
