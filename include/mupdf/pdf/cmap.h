@@ -103,6 +103,8 @@ void pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, unsigned int srclo,
 
 /*
 	Add a single one-to-many mapping.
+
+	len <= 256.
 */
 void pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int one, int *many, size_t len);
 void pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap);
