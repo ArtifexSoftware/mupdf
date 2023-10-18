@@ -718,6 +718,12 @@ pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsign
 void
 pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *values, size_t len)
 {
+	int *ovalues = values;
+	/* len is always restricted to <= 256 by the callers. */
+	int local[256];
+
+	assert(len <= 256);
+
 	/* Decode unicode surrogate pairs. */
 	/* Only the *-UCS2 CMaps use one-to-many mappings, so assuming unicode should be safe. */
 	if (len >= 2)
@@ -727,15 +733,22 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *valu
 		 * with other chars. See bug 706131. */
 		for (i = 0, j = 0; i < len; i++, j++)
 		{
-			int hi = values[i];
+			int hi = ovalues[i];
 			if (hi >= 0xd800 && hi < 0xdc00 && i < len-1)
 			{
-				int lo = values[i+1];
+				int lo = ovalues[i+1];
 				if (lo >= 0xdc00 && lo < 0xe000)
 				{
 					hi = ((hi - 0xD800) << 10) + (lo - 0xDC00) + 0x10000;
 					i++;
 				}
+			}
+			if (values != local)
+			{
+				/* We can't change the callers data, so copy stuff in. */
+				if (j)
+					memcpy(local, values, sizeof(local[0]) * (j-1));
+				values = local;
 			}
 			values[j] = hi;
 		}
