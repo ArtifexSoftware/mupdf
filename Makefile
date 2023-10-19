@@ -69,7 +69,7 @@ ifdef RANLIB
   RANLIB_CMD = $(QUIET_RANLIB) $(RANLIB) $@
 endif
 LINK_CMD = $(QUIET_LINK) $(MKTGTDIR) ; $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-TAGS_CMD = $(QUIET_TAGS) ctags -R --c-kinds=+p --exclude=platform/python --exclude=platform/c++
+TAGS_CMD = $(QUIET_TAGS) ctags
 WINDRES_CMD = $(QUIET_WINDRES) $(MKTGTDIR) ; $(WINDRES) $< $@
 OBJCOPY_CMD = $(QUIET_OBJCOPY) $(MKTGTDIR) ; $(LD) -r -b binary -z noexecstack -o $@ $<
 GENDEF_CMD = $(QUIET_GENDEF) gendef - $< > $@
@@ -532,7 +532,9 @@ extract-test:
 	$(MAKE) -C thirdparty/extract mutool=../../build/debug/mutool test-mutool
 
 tags:
-	$(TAGS_CMD)
+	$(TAGS_CMD) --sort=no --exclude=docs --exclude=scripts --exclude="*.h" --c-kinds=+p-t $$(git ls-files)
+	$(TAGS_CMD) -a --sort=no --exclude=docs --exclude=scripts --exclude="*.c" --c-kinds=+p-t $$(git ls-files)
+	$(TAGS_CMD) -a --sort=no --exclude=docs --exclude=scripts --c-kinds=t $$(git ls-files)
 
 find-try-return:
 	@ bash scripts/find-try-return.sh
