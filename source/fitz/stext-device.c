@@ -513,7 +513,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				else if (spacing < 0)
 				{
 					/* Motion is backward in line! */
-					new_line = 1;
+					new_line = 0;
 				}
 				else
 				{
