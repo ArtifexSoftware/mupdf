@@ -1475,12 +1475,11 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
     refcheck_if = '#ifndef NDEBUG'
     pyodide = state.state_.pyodide
     if pyodide:
-        # Looks like Pyodide sets CXX to (for example) /tmp/tmp8h1meqsj/c++.
-        # But for some reason using `compiler = os.environ['CXX']` fails when we
-        # build libmupdfcpp.so, with:
-        #   emsdk/upstream/bin/llvm-nm: error: a.out: No such file or directory
-        # But using `em++` directly seems to work.
-        compiler = 'em++'
+        # Looks like Pyodide sets CXX to (for example) /tmp/tmp8h1meqsj/c++. We
+        # don't evaluate it here, because that would force a rebuild each time
+        # because of the command changing.
+        assert os.environ.get('CXX', None), 'Pyodide build but $CXX not defined.'
+        compiler = '$CXX'
     elif state.state_.macos:
         compiler = 'c++ -std=c++14'
         # Add extra flags for MacOS cross-compilation, where ARCHFLAGS can be
@@ -1629,14 +1628,58 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                     cpp_files_text = ''
                     for i in cpp_files:
                         cpp_files_text += ' ' + os.path.relpath(i)
-                    if 'shared' in dir_so_flags:
-                        libmupdfcpp = f'{build_dirs.dir_so}/libmupdfcpp.so{so_version}'
-                        libmupdf = f'{build_dirs.dir_so}/libmupdf.so{so_version}'
+                    libmupdfcpp = f'{build_dirs.dir_so}/libmupdfcpp.so{so_version}'
+                    libmupdf = f'{build_dirs.dir_so}/libmupdf.so{so_version}'
+                    if pyodide:
+                        # Compile/link separately. Otherwise
+                        # emsdk/upstream/bin/llvm-nm: error: a.out: No such
+                        # file or directory
+                        o_files = list()
+                        for cpp_file in cpp_files:
+                            o_file = f'{os.path.relpath(cpp_file)}.o'
+                            o_files.append(o_file)
+                            command = textwrap.dedent(
+                                    f'''
+                                    {compiler}
+                                        -c
+                                        -o {o_file}
+                                        {build_dirs.cpp_flags}
+                                        -fPIC
+                                        -I {include1}
+                                        -I {include2}
+                                        {cpp_file}
+                                    ''').strip().replace( '\n', ' \\\n')
+                            jlib.build(
+                                    [include1, include2, cpp_file],
+                                    o_file,
+                                    command,
+                                    force_rebuild,
+                                    )
                         command = ( textwrap.dedent(
                                 f'''
                                 {compiler}
                                     -o {os.path.relpath(libmupdfcpp)}
-                                    {"-sSIDE_MODULE" if pyodide else ""}
+                                    -sSIDE_MODULE
+                                    {build_dirs.cpp_flags}
+                                    -fPIC -shared
+                                    -I {include1}
+                                    -I {include2}
+                                    {" ".join(o_files)}
+                                    {link_l_flags(libmupdf)}
+                                ''').strip().replace( '\n', ' \\\n')
+                                )
+                        jlib.build(
+                                [include1, include2] + o_files,
+                                libmupdfcpp,
+                                command,
+                                force_rebuild,
+                                )
+
+                    elif 'shared' in dir_so_flags:
+                        command = ( textwrap.dedent(
+                                f'''
+                                {compiler}
+                                    -o {os.path.relpath(libmupdfcpp)}
                                     {build_dirs.cpp_flags}
                                     -fPIC -shared
                                     -I {include1}
@@ -2008,43 +2051,100 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                     sos.append( f'{build_dirs.dir_so}/libmupdfcpp.so{so_version}')
                     if os.path.basename( build_dirs.dir_so).startswith( 'shared-'):
                         sos.append( f'{build_dirs.dir_so}/libmupdf.so{so_version}')
-                    command = ( textwrap.dedent(
-                            f'''
-                            {compiler}
-                                -o {os.path.relpath(out_so)}
-                                {"-sMAIN_MODULE" if pyodide else ""}
-                                {cpp_path}
-                                {build_dirs.cpp_flags}
-                                -fPIC
-                                -shared
-                                -I {include1}
-                                -I {include2}
-                                {flags_compile}
-                                -Wno-deprecated-declarations
-                                -Wno-free-nonheap-object
-                                -DSWIG_PYTHON_SILENT_MEMLEAK
-                                {flags_link}
-                                {link_l_flags( sos)}
-                            ''').strip().replace( '\n', ' \\\n')
-                            )
-                    infiles = [
-                            cpp_path,
-                            include1,
-                            include2,
-                            libmupdf,
-                            ]
-                    infiles += sos
+                    if pyodide:
+                        # Need to use separate compilation/linking.
+                        o_file = f'{os.path.relpath(cpp_path)}.o'
+                        command = ( textwrap.dedent(
+                                f'''
+                                {compiler}
+                                    -c
+                                    -o {o_file}
+                                    {cpp_path}
+                                    {build_dirs.cpp_flags}
+                                    -fPIC
+                                    -I {include1}
+                                    -I {include2}
+                                    {flags_compile}
+                                    -Wno-deprecated-declarations
+                                    -Wno-free-nonheap-object
+                                    -DSWIG_PYTHON_SILENT_MEMLEAK
+                                ''').strip().replace( '\n', ' \\\n')
+                                )
+                        infiles = [
+                                cpp_path,
+                                include1,
+                                include2,
+                                ]
+                        jlib.build(
+                                infiles,
+                                o_file,
+                                command,
+                                force_rebuild,
+                                )
 
-                    jlib.build(
-                            infiles,
-                            out_so,
-                            command,
-                            force_rebuild,
-                            )
-                    macos_patch( out_so,
-                            f'{build_dirs.dir_so}/libmupdf.dylib{so_version}',
-                            f'{build_dirs.dir_so}/libmupdfcpp.so{so_version}',
-                            )
+                        command = ( textwrap.dedent(
+                                f'''
+                                {compiler}
+                                    -o {os.path.relpath(out_so)}
+                                    -sSIDE_MODULE
+                                    {o_file}
+                                    {build_dirs.cpp_flags}
+                                    -shared
+                                    {flags_link}
+                                    {link_l_flags( sos)}
+                                ''').strip().replace( '\n', ' \\\n')
+                                )
+                        infiles = [
+                                o_file,
+                                libmupdf,
+                                ]
+                        infiles += sos
+
+                        jlib.build(
+                                infiles,
+                                out_so,
+                                command,
+                                force_rebuild,
+                                )
+                    else:
+                        # Not Pyodide.
+                        command = ( textwrap.dedent(
+                                f'''
+                                {compiler}
+                                    -o {os.path.relpath(out_so)}
+                                    {"-sMAIN_MODULE" if 0 and pyodide else ""}
+                                    {cpp_path}
+                                    {build_dirs.cpp_flags}
+                                    -fPIC
+                                    -shared
+                                    -I {include1}
+                                    -I {include2}
+                                    {flags_compile}
+                                    -Wno-deprecated-declarations
+                                    -Wno-free-nonheap-object
+                                    -DSWIG_PYTHON_SILENT_MEMLEAK
+                                    {flags_link}
+                                    {link_l_flags( sos)}
+                                ''').strip().replace( '\n', ' \\\n')
+                                )
+                        infiles = [
+                                cpp_path,
+                                include1,
+                                include2,
+                                libmupdf,
+                                ]
+                        infiles += sos
+
+                        jlib.build(
+                                infiles,
+                                out_so,
+                                command,
+                                force_rebuild,
+                                )
+                        macos_patch( out_so,
+                                f'{build_dirs.dir_so}/libmupdf.dylib{so_version}',
+                                f'{build_dirs.dir_so}/libmupdfcpp.so{so_version}',
+                                )
             else:
                 raise Exception( 'unrecognised --build action %r' % action)
 
