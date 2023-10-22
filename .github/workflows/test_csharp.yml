@@ -43,8 +43,8 @@ jobs:
                 sys.stdout.flush()
                 subprocess.run( command, shell=True, check=True)
 
-            if platform.system() == 'Linux':
-                run(f'sudo apt install swig')
+            #if platform.system() == 'Linux':
+            #    run(f'sudo apt install swig')
 
             venv_name = 'pylocal'
 
@@ -54,8 +54,8 @@ jobs:
                 command += f' && .\\{venv_name}\\Scripts\\activate'
             else:
                 command += f' && . {venv_name}/bin/activate'
-            command += f' && python -m pip install -U pip libclang'
-            command += f' && python scripts/mupdfwrap.py --swig-windows-auto -b --csharp all --test-csharp'
+            command += f' && python -m pip install -U pip libclang swig setuptools'
+            command += f' && python scripts/mupdfwrap.py -b --csharp all --test-csharp'
 
             run( command)
 
