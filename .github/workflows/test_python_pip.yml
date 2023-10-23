@@ -52,7 +52,7 @@ jobs:
                 command += f' && ./{venv_name}/Scripts/activate'.replace('/', os.sep)
             else:
                 command += f' && . {venv_name}/bin/activate'
-            command += f' && python -m pip install -U pip'
+            command += f' && python -m pip install -U pip setuptools'
             command += f' && python -m pip install -vv .'
             command += f' && python scripts/mupdfwrap.py -d - --test-python'
 
