@@ -1624,6 +1624,69 @@ classextras = ClassExtras(
                 constructor_raw = 'default',
                 ),
 
+        pdf_clean_options = ClassExtra(
+                constructors_extra = [
+                    ExtraConstructor( '()',
+                        f'''
+                        {{
+                            /* Use memcpy() otherwise we get 'invalid array assignment' errors. */
+                            memcpy(&this->internal()->write, &pdf_default_write_options, sizeof(this->internal()->write));
+                            memset(&this->internal()->image, 0, sizeof(this->internal()->image));
+                        }}
+                        ''',
+                        comment = '/* Default constructor, makes copy of pdf_default_write_options. */'
+                        ),
+                    ExtraConstructor(
+                        f'(const {rename.class_("pdf_clean_options")}& rhs)',
+                        f'''
+                        {{
+                            *this = rhs;
+                        }}
+                        ''',
+                        comment = '/* Copy constructor using raw memcopy(). */'
+                        ),
+                ],
+                methods_extra = [
+                    ExtraMethod(
+                        f'{rename.class_("pdf_clean_options")}&',
+                        f'operator=(const {rename.class_("pdf_clean_options")}& rhs)',
+                        f'''
+                        {{
+                            memcpy(this->internal(), rhs.internal(), sizeof(*this->internal()));
+                            return *this;
+                        }}
+                        ''',
+                        comment = '/* Assignment using plain memcpy(). */',
+                        ),
+                    ExtraMethod(
+                        f'void',
+                        f'write_opwd_utf8_set(const std::string& text)',
+                        f'''
+                        {{
+                            size_t len = std::min(text.size(), sizeof(write.opwd_utf8) - 1);
+                            memcpy(write.opwd_utf8, text.c_str(), len);
+                            write.opwd_utf8[len] = 0;
+                        }}
+                        ''',
+                        '/* Copies <text> into write.opwd_utf8[]. */',
+                        ),
+                    ExtraMethod(
+                        f'void',
+                        f'write_upwd_utf8_set(const std::string& text)',
+                        f'''
+                        {{
+                            size_t len = std::min(text.size(), sizeof(write.upwd_utf8) - 1);
+                            memcpy(write.upwd_utf8, text.c_str(), len);
+                            write.upwd_utf8[len] = 0;
+                        }}
+                        ''',
+                        '/* Copies <text> into upwd_utf8[]. */',
+                        ),
+                ],
+                pod = 'inline',
+                copyable = 'default',
+                ),
+
         pdf_document = ClassExtra(
                 constructor_prefixes = [
                     'pdf_open_document',
@@ -1815,6 +1878,11 @@ classextras = ClassExtras(
                 copyable = 'default',
                 ),
 
+        pdf_image_rewriter_options = ClassExtra(
+                pod = 'inline',
+                copyable = 'default',
+                ),
+
         pdf_processor = ClassExtra(
                 virtual_fnptrs = dict(
                     self_ = lambda name: f'(*({rename.class_("pdf_processor")}2**) ({name} + 1))',
@@ -1863,47 +1931,47 @@ classextras = ClassExtras(
                         ''',
                         comment = '/* Copy constructor using raw memcopy(). */'
                         ),
+                ],
+                methods_extra = [
+                    ExtraMethod(
+                        f'{rename.class_("pdf_write_options")}&',
+                        f'operator=(const {rename.class_("pdf_write_options")}& rhs)',
+                        f'''
+                        {{
+                            memcpy(this->internal(), rhs.internal(), sizeof(*this->internal()));
+                            return *this;
+                        }}
+                        ''',
+                        comment = '/* Assignment using plain memcpy(). */',
+                        ),
+                    ExtraMethod(
+                        # Would prefer to call this opwd_utf8_set() but
+                        # this conflicts with SWIG-generated accessor for
+                        # opwd_utf8.
+                        f'void',
+                        f'opwd_utf8_set_value(const std::string& text)',
+                        f'''
+                        {{
+                            size_t len = std::min(text.size(), sizeof(opwd_utf8) - 1);
+                            memcpy(opwd_utf8, text.c_str(), len);
+                            opwd_utf8[len] = 0;
+                        }}
+                        ''',
+                        '/* Copies <text> into opwd_utf8[]. */',
+                        ),
+                    ExtraMethod(
+                        f'void',
+                        f'upwd_utf8_set_value(const std::string& text)',
+                        f'''
+                        {{
+                            size_t len = std::min(text.size(), sizeof(upwd_utf8) - 1);
+                            memcpy(upwd_utf8, text.c_str(), len);
+                            upwd_utf8[len] = 0;
+                        }}
+                        ''',
+                        '/* Copies <text> into upwd_utf8[]. */',
+                        ),
                     ],
-                    methods_extra = [
-                        ExtraMethod(
-                            f'{rename.class_("pdf_write_options")}&',
-                            f'operator=(const {rename.class_("pdf_write_options")}& rhs)',
-                            f'''
-                            {{
-                                memcpy(this->internal(), rhs.internal(), sizeof(*this->internal()));
-                                return *this;
-                            }}
-                            ''',
-                            comment = '/* Assignment using plain memcpy(). */',
-                            ),
-                        ExtraMethod(
-                            # Would prefer to call this opwd_utf8_set() but
-                            # this conflicts with SWIG-generated accessor for
-                            # opwd_utf8.
-                            f'void',
-                            f'opwd_utf8_set_value(const std::string& text)',
-                            f'''
-                            {{
-                                size_t len = std::min(text.size(), sizeof(opwd_utf8) - 1);
-                                memcpy(opwd_utf8, text.c_str(), len);
-                                opwd_utf8[len] = 0;
-                            }}
-                            ''',
-                            '/* Copies <text> into opwd_utf8[]. */',
-                            ),
-                        ExtraMethod(
-                            f'void',
-                            f'upwd_utf8_set_value(const std::string& text)',
-                            f'''
-                            {{
-                                size_t len = std::min(text.size(), sizeof(upwd_utf8) - 1);
-                                memcpy(upwd_utf8, text.c_str(), len);
-                                upwd_utf8[len] = 0;
-                            }}
-                            ''',
-                            '/* Copies <text> into upwd_utf8[]. */',
-                            ),
-                        ],
                 pod = 'inline',
                 copyable = 'default',
                 )
