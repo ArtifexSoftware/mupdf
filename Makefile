@@ -535,9 +535,9 @@ TAG_HDR_FILES=$(shell git ls-files | grep -v '^\(docs\|scripts\|generated\)' | g
 TAG_SRC_FILES=$(shell git ls-files | grep -v '^\(docs\|scripts\|generated\)' | grep -v '\.h$$')
 
 tags:
-	$(TAGS_CMD) --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
-	$(TAGS_CMD) -a --sort=no --c-kinds=+p-t $(TAG_SRC_FILES)
-	$(TAGS_CMD) -a --sort=no --c-kinds=t $(TAG_HDR_FILES) $(TAG_SRC_FILES)
+	$(TAGS_CMD) --sort=no --c-kinds=+p-t $(TAG_SRC_FILES)
+	$(TAGS_CMD) -a --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
+	$(TAGS_CMD) -a --sort=no --c-kinds=t $(TAG_SRC_FILES) $(TAG_HDR_FILES)
 
 find-try-return:
 	@ bash scripts/find-try-return.sh
