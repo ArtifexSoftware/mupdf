@@ -531,10 +531,13 @@ extract-test:
 	$(MAKE) debug
 	$(MAKE) -C thirdparty/extract mutool=../../build/debug/mutool test-mutool
 
+TAG_HDR_FILES=$(shell git ls-files | grep -v '^\(docs\|scripts\|generated\)' | grep '\.h$$')
+TAG_SRC_FILES=$(shell git ls-files | grep -v '^\(docs\|scripts\|generated\)' | grep -v '\.h$$')
+
 tags:
-	$(TAGS_CMD) --sort=no --exclude=docs --exclude=scripts --exclude="*.h" --c-kinds=+p-t $$(git ls-files)
-	$(TAGS_CMD) -a --sort=no --exclude=docs --exclude=scripts --exclude="*.c" --c-kinds=+p-t $$(git ls-files)
-	$(TAGS_CMD) -a --sort=no --exclude=docs --exclude=scripts --c-kinds=t $$(git ls-files)
+	$(TAGS_CMD) --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
+	$(TAGS_CMD) -a --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
+	$(TAGS_CMD) -a --sort=no --c-kinds=t $(TAG_HDR_FILES) $(TAG_SRC_FILES)
 
 find-try-return:
 	@ bash scripts/find-try-return.sh
