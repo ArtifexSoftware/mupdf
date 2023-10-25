@@ -273,7 +273,7 @@ int fz_do_always(fz_context *ctx)
 #endif
 }
 
-int fz_do_catch(fz_context *ctx)
+int (fz_do_catch)(fz_context *ctx)
 {
 	ctx->error.errcode = ctx->error.top->code;
 	return (ctx->error.top--)->state > 1;
@@ -387,6 +387,14 @@ errcode_to_string(int exc)
 	default:
 		return "<Invalid>";
 	}
+}
+
+int fz_do_catchFL(fz_context *ctx, const char *file, int line)
+{
+	int rc = (fz_do_catch)(ctx);
+	if (rc)
+		(fz_log_error_printf)(ctx, "%s:%d: Catching", file, line);
+	return rc;
 }
 
 

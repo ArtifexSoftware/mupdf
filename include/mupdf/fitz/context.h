@@ -177,6 +177,7 @@ void fz_end_throw_on_repair(fz_context *ctx);
 #define fz_log_error_printf(CTX, ...) fz_log_error_printfFL(CTX, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_vlog_error_printf(CTX, FMT, VA) fz_log_error_printfFL(CTX, __FILE__, __LINE__, FMT, VA)
 #define fz_log_error(CTX, STR) fz_log_error_printfFL(CTX, __FILE__, __LINE__, STR)
+#define fz_do_catch(CTX) fz_do_catchFL(CTX, __FILE__, __LINE__)
 FZ_NORETURN void fz_vthrowFL(fz_context *ctx, const char *file, int line, int errcode, const char *fmt, va_list ap);
 FZ_NORETURN void fz_throwFL(fz_context *ctx, const char *file, int line, int errcode, const char *fmt, ...) FZ_PRINTFLIKE(5,6);
 FZ_NORETURN void fz_rethrowFL(fz_context *ctx, const char *file, int line);
@@ -187,6 +188,7 @@ void fz_rethrow_ifFL(fz_context *ctx, const char *file, int line, int errcode);
 void fz_log_error_printfFL(fz_context *ctx, const char *file, int line, const char *fmt, ...) FZ_PRINTFLIKE(4,5);
 void fz_vlog_error_printfFL(fz_context *ctx, const char *file, int line, const char *fmt, va_list ap);
 void fz_log_errorFL(fz_context *ctx, const char *file, int line, const char *str);
+int fz_do_catchFL(fz_context *ctx, const char *file, int line);
 #endif
 
 enum
@@ -699,7 +701,7 @@ void fz_var_imp(void *);
 fz_jmp_buf *fz_push_try(fz_context *ctx);
 int fz_do_try(fz_context *ctx);
 int fz_do_always(fz_context *ctx);
-int fz_do_catch(fz_context *ctx);
+int (fz_do_catch)(fz_context *ctx);
 
 #ifndef FZ_JMPBUF_ALIGN
 #define FZ_JMPBUF_ALIGN 32
