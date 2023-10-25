@@ -144,6 +144,7 @@ int fz_caught(fz_context *ctx);
 	This assumes no intervening use of fz_try/fz_catch.
 */
 void fz_rethrow_if(fz_context *ctx, int errcode);
+void fz_rethrow_unless(fz_context *ctx, int errcode);
 
 /**
 	Format an error message, and log it to the registered
@@ -174,6 +175,7 @@ void fz_end_throw_on_repair(fz_context *ctx);
 #define fz_vwarn(CTX, FMT, VA) fz_vwarnFL(CTX, __FILE__, __LINE__, FMT, VA)
 #define fz_warn(CTX, ...) fz_warnFL(CTX, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_rethrow_if(CTX, ERRCODE) fz_rethrow_ifFL(CTX, __FILE__, __LINE__, ERRCODE)
+#define fz_rethrow_unless(CTX, ERRCODE) fz_rethrow_unlessFL(CTX, __FILE__, __LINE__, ERRCODE)
 #define fz_log_error_printf(CTX, ...) fz_log_error_printfFL(CTX, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_vlog_error_printf(CTX, FMT, VA) fz_log_error_printfFL(CTX, __FILE__, __LINE__, FMT, VA)
 #define fz_log_error(CTX, STR) fz_log_error_printfFL(CTX, __FILE__, __LINE__, STR)
@@ -185,6 +187,7 @@ void fz_morph_errorFL(fz_context *ctx, const char *file, int line, int fromcode,
 void fz_vwarnFL(fz_context *ctx, const char *file, int line, const char *fmt, va_list ap);
 void fz_warnFL(fz_context *ctx, const char *file, int line, const char *fmt, ...) FZ_PRINTFLIKE(4,5);
 void fz_rethrow_ifFL(fz_context *ctx, const char *file, int line, int errcode);
+void fz_rethrow_unlessFL(fz_context *ctx, const char *file, int line, int errcode);
 void fz_log_error_printfFL(fz_context *ctx, const char *file, int line, const char *fmt, ...) FZ_PRINTFLIKE(4,5);
 void fz_vlog_error_printfFL(fz_context *ctx, const char *file, int line, const char *fmt, va_list ap);
 void fz_log_errorFL(fz_context *ctx, const char *file, int line, const char *str);

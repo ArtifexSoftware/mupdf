@@ -360,6 +360,13 @@ void (fz_rethrow_if)(fz_context *ctx, int err)
 		fz_rethrow(ctx);
 }
 
+void (fz_rethrow_unless)(fz_context *ctx, int err)
+{
+	assert(ctx && ctx->error.errcode >= FZ_ERROR_NONE);
+	if (ctx->error.errcode != err)
+		fz_rethrow(ctx);
+}
+
 #if FZ_VERBOSE_EXCEPTIONS
 static const char *
 errcode_to_string(int exc)
@@ -469,6 +476,16 @@ void fz_morph_errorFL(fz_context *ctx, const char *file, int line, int fromerr, 
 	{
 		(fz_log_error_printf)(ctx, "%s:%d: Morphing %s->%s", file, line, errcode_to_string(fromerr), errcode_to_string(toerr));
 		ctx->error.errcode = toerr;
+	}
+}
+
+void fz_rethrow_unlessFL(fz_context *ctx, const char *file, int line, int err)
+{
+	assert(ctx && ctx->error.errcode >= FZ_ERROR_NONE);
+	if (ctx->error.errcode != err)
+	{
+		(fz_log_error_printf)(ctx, "%s:%d: Rethrowing", file, line);
+		(fz_rethrow)(ctx);
 	}
 }
 
