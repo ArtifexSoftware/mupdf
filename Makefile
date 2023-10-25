@@ -536,7 +536,7 @@ TAG_SRC_FILES=$(shell git ls-files | grep -v '^\(docs\|scripts\|generated\)' | g
 
 tags:
 	$(TAGS_CMD) --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
-	$(TAGS_CMD) -a --sort=no --c-kinds=+p-t $(TAG_HDR_FILES)
+	$(TAGS_CMD) -a --sort=no --c-kinds=+p-t $(TAG_SRC_FILES)
 	$(TAGS_CMD) -a --sort=no --c-kinds=t $(TAG_HDR_FILES) $(TAG_SRC_FILES)
 
 find-try-return:
