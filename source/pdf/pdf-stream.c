@@ -38,6 +38,7 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_report_error(ctx);
 		return 0;
 	}
 
@@ -699,6 +700,7 @@ pdf_open_object_array(fz_context *ctx, pdf_document *doc, pdf_obj *list)
 				fz_drop_stream(ctx, stm);
 				fz_rethrow(ctx);
 			}
+			fz_report_error(ctx);
 			fz_warn(ctx, "cannot load content stream part %d/%d", i + 1, n);
 		}
 	}

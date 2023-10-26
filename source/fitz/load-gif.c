@@ -409,7 +409,10 @@ gif_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, const u
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring embedded ICC profile in GIF");
+	}
 
 	return p;
 #else

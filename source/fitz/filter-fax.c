@@ -644,6 +644,7 @@ loop:
 		}
 		fz_catch(ctx)
 		{
+			fz_report_error(ctx);
 			goto error;
 		}
 	}
@@ -656,6 +657,7 @@ loop:
 		}
 		fz_catch(ctx)
 		{
+			fz_report_error(ctx);
 			goto error;
 		}
 	}

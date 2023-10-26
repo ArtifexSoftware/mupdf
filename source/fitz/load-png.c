@@ -391,7 +391,10 @@ png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigne
 		fz_drop_stream(ctx, mstm);
 	}
 	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring embedded ICC profile in PNG");
+	}
 #endif
 }
 

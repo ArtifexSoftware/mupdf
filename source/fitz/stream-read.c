@@ -126,6 +126,7 @@ fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated, si
 		if (truncated)
 		{
 			*truncated = 1;
+			fz_report_error(ctx);
 		}
 		else
 		{

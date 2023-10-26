@@ -1331,7 +1331,10 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 			fz_drop_image(ctx, img);
 		}
 		fz_catch(ctx)
+		{
+			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
+		}
 	}
 	else if (doc->zip)
 	{
@@ -1362,7 +1365,10 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 			fz_drop_image(ctx, img);
 		}
 		fz_catch(ctx)
+		{
+			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
+		}
 	}
 	else
 	{

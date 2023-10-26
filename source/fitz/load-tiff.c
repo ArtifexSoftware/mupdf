@@ -1444,7 +1444,10 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		fz_always(ctx)
 			fz_drop_buffer(ctx, buff);
 		fz_catch(ctx)
+		{
+			fz_report_error(ctx);
 			fz_warn(ctx, "ignoring embedded ICC profile");
+		}
 	}
 #endif
 

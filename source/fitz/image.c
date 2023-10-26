@@ -1065,6 +1065,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	fz_catch(ctx)
 	{
 		/* Do nothing */
+		fz_report_error(ctx);
 	}
 
 	return tile;

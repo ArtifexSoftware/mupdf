@@ -385,6 +385,7 @@ static void epub_load_accelerator(fz_context *ctx, epub_document *doc, fz_stream
 				fz_free(ctx, acc->pages_in_chapter);
 			fz_free(ctx, acc);
 			/* Swallow the error and run unaccelerated */
+			fz_report_error(ctx);
 			make_new = 1;
 		}
 	}
@@ -917,6 +918,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 				fz_catch(ctx)
 				{
 					fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+					fz_report_error(ctx);
 					fz_warn(ctx, "ignoring chapter %s", s);
 				}
 			}
