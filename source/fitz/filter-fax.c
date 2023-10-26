@@ -644,6 +644,7 @@ loop:
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			goto error;
 		}
@@ -657,6 +658,7 @@ loop:
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			goto error;
 		}

@@ -971,6 +971,7 @@ fz_init_process_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colo
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "cannot create ICC link, falling back to fast color conversion");
 			cc->convert = fz_lookup_fast_color_converter(ctx, ss, ds);
@@ -1083,6 +1084,7 @@ static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, co
 			fz_hash_insert(ctx, cc->hash, ss, val);
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_free(ctx, val);
 		}
@@ -1886,6 +1888,7 @@ fz_convert_pixmap_samples(fz_context *ctx, const fz_pixmap *src, fz_pixmap *dst,
 			}
 			fz_catch(ctx)
 			{
+				fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 				fz_report_error(ctx);
 				fz_warn(ctx, "falling back to fast color conversion");
 				fz_convert_fast_pixmap_samples(ctx, src, dst, copy_spots);

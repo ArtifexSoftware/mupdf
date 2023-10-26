@@ -3249,6 +3249,7 @@ retry_after_repair:
 				fz_catch(ctx)
 				{
 					fz_rethrow_if(ctx, FZ_ERROR_REPAIRED);
+					fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 					fz_report_error(ctx);
 					fz_warn(ctx, "cannot create appearance stream");
 				}

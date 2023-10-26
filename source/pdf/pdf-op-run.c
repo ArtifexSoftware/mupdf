@@ -446,6 +446,7 @@ pdf_grestore(fz_context *ctx, pdf_run_processor *pr)
 		{
 			/* Silently swallow the problem - restores must
 			 * never throw! */
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY); // FIXME - unsure if we can throw here?
 			fz_report_error(ctx);
 		}
 		clip_depth--;

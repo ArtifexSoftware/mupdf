@@ -544,6 +544,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			fz_drop_buffer(ctx, cbuf);
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "ignoring embedded ICC profile in JPX");
 		}

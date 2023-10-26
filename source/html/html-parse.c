@@ -1167,6 +1167,7 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
 	{
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring stylesheet %s", path);
 	}
@@ -1207,6 +1208,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 			}
 			fz_catch(ctx)
 			{
+				fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 				fz_report_error(ctx);
 				fz_warn(ctx, "ignoring inline stylesheet");
 			}
@@ -1232,6 +1234,7 @@ fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "ignoring inline stylesheet");
 		}
@@ -1548,6 +1551,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring styles");
 	}
@@ -1811,6 +1815,7 @@ warn_to_buffer(void *user, const char *message)
 	fz_catch(ctx)
 	{
 		/* Silently swallow the error. */
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 	}
 }

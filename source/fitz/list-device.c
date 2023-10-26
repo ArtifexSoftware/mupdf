@@ -2073,6 +2073,7 @@ visible:
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			/* Swallow the error */
 			if (cookie)
 				cookie->errors++;

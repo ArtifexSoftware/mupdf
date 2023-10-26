@@ -1332,6 +1332,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
 		}
@@ -1366,6 +1367,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		}
 		fz_catch(ctx)
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
 		}

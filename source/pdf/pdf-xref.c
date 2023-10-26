@@ -911,6 +911,7 @@ pdf_version(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 		fz_warn(ctx, "Ignoring broken Root/Version number.");
 	}
@@ -1740,6 +1741,7 @@ pdf_check_linear(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		/* Silently swallow this error. */
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 	}
 }
@@ -1795,6 +1797,7 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_drop_obj(ctx, dict);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 		/* Drop back to non linearized reading mode */
 		doc->file_reading_linearly = 0;
@@ -1855,6 +1858,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		pdf_drop_xref_sections(ctx, doc);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		doc->file_reading_linearly = 0;
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 		fz_warn(ctx, "trying to repair broken xref");
 		repaired = 1;
@@ -1924,6 +1928,7 @@ void pdf_repair_trailer(fz_context *ctx, pdf_document *doc)
 			fz_catch(ctx)
 			{
 				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+				fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 				fz_report_error(ctx);
 				fz_warn(ctx, "ignoring broken object (%d 0 R)", i);
 				continue;
@@ -2012,6 +2017,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		/* Swallow error, but continue dropping */
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		fz_report_error(ctx);
 	}
 
@@ -2053,6 +2059,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 		fz_catch(ctx)
 		{
 			/* Swallow error, but continue dropping */
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 		}
 	}
@@ -2540,7 +2547,9 @@ object_updated:
 		}
 		fz_catch(ctx)
 		{
-			if (!try_repair || fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+			if (!try_repair)
 				fz_rethrow(ctx);
 			else
 				fz_report_error(ctx);
@@ -2571,6 +2580,7 @@ perform_repair:
 			fz_catch(ctx)
 			{
 				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+				fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 				fz_rethrow_if(ctx, FZ_ERROR_REPAIRED);
 				fz_report_error(ctx);
 				if (rnum == num)
@@ -2664,6 +2674,7 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_rethrow_if(ctx, FZ_ERROR_REPAIRED);
 			fz_report_error(ctx);
 			fz_warn(ctx, "cannot load object (%d 0 R) into cache", num);
@@ -3426,6 +3437,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		doc->hints_loaded = 1;
 		/* We won't use the linearized object anymore. */
 		doc->file_reading_linearly = 0;
+		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 		/* Any other error becomes a TRYLATER */
 		fz_report_error(ctx);
 		fz_throw(ctx, FZ_ERROR_TRYLATER, "malformed hints object");
@@ -3537,6 +3549,9 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 				/* Still not got a page */
 				fz_rethrow(ctx);
 			}
+			// TODO: should we really swallow this error?
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+			fz_report_error(ctx);
 		}
 		else
 			fz_rethrow(ctx);

@@ -114,6 +114,7 @@ pdf_try_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *fon
 		}
 		else
 		{
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 		}
 	}

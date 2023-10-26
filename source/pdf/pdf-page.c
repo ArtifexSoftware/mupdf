@@ -259,6 +259,7 @@ pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle)
 		fz_catch(ctx)
 		{
 			doc->page_tree_broken = 1;
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			fz_warn(ctx, "Page tree load failed. Falling back to slow lookup");
 		}
@@ -785,6 +786,7 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 			return; /* ignore broken colorspace */
 		}
@@ -861,6 +863,7 @@ find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj, pdf_mark_list *c
 			fz_catch(ctx)
 			{
 				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+				fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 				fz_report_error(ctx);
 				continue; /* ignore broken colorspace */
 			}
@@ -1033,6 +1036,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 		}
 	}
@@ -1049,6 +1053,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 		}
 	}
@@ -1065,6 +1070,7 @@ pdf_load_default_colorspaces_imp(fz_context *ctx, fz_default_colorspaces *defaul
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
 			fz_report_error(ctx);
 		}
 	}
