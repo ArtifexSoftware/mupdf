@@ -512,6 +512,7 @@
     <ClCompile Include="..\..\source\fitz\getopt.c" />
     <ClCompile Include="..\..\source\fitz\glyph.c" />
     <ClCompile Include="..\..\source\fitz\glyphbox.c" />
+    <ClCompile Include="..\..\source\fitz\gz-doc.c" />
     <ClCompile Include="..\..\source\fitz\halftone.c" />
     <ClCompile Include="..\..\source\fitz\harfbuzz.c" />
     <ClCompile Include="..\..\source\fitz\hash.c" />
