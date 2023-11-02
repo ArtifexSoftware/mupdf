@@ -926,6 +926,7 @@ except ModuleNotFoundError:
     resource = None
 
 import jlib
+import pipcl
 import wdev
 
 from . import classes
@@ -1891,23 +1892,9 @@ def build( build_dirs, swig_command, args, vs_upgrade):
                             flags_link = f'-L {_lib_dir}'
 
                         else:
-                            python_exe = os.path.realpath( sys.executable)
-                            jlib.log('python_exe={python_exe}')
-                            python_configs = (
-                                    f'{python_exe}-config',
-                                    'python3-config',
-                                    )
-                            jlib.log('python_configs={python_configs}')
-                            for python_config in python_configs:
-                                if jlib.fs_find_in_paths( python_config, verbose=True):
-                                    break
-                            else:
-                                raise Exception( f'Cannot find `python-config`, tried: {python_configs}')
-                            jlib.log( 'Using {python_config=}')
-                            # `--cflags` gives things like `-Wno-unused-result -g`
-                            # etc, -so we just use `--includes`.
-                            flags_compile = jlib.system( f'{python_config} --includes', out='return', verbose=1).replace('\n', ' ')
-                            flags_link = jlib.system( f'{python_config} --ldflags', out='return', verbose=1).replace('\n', ' ')
+                            python_flags = pipcl.PythonFlags()
+                            flags_compile = python_flags.includes
+                            flags_link = python_flags.ldflags
                         if state.state_.macos:
                             # We need this to avoid numerous errors like:
                             #
