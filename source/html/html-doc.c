@@ -220,6 +220,15 @@ mobi_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *
 	return -1;
 }
 
+static int
+txt_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, size_t size)
+{
+	html_document *doc = (html_document*)doc_;
+	if (!strcmp(key, FZ_META_FORMAT))
+		return (int)fz_strlcpy(buf, "Text", size);
+	return -1;
+}
+
 static fz_document *
 htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *buf, int format)
 {
@@ -244,6 +253,7 @@ htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *buf
 		case FORMAT_HTML5: doc->super.lookup_metadata = htdoc_lookup_metadata; break;
 		case FORMAT_XHTML: doc->super.lookup_metadata = xhtdoc_lookup_metadata; break;
 		case FORMAT_MOBI: doc->super.lookup_metadata = mobi_lookup_metadata; break;
+		case FORMAT_TXT: doc->super.lookup_metadata = txt_lookup_metadata; break;
 		case FORMAT_OFFICE: doc->super.lookup_metadata = NULL; break;
 		}
 		doc->super.is_reflowable = 1;
