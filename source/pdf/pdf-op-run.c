@@ -1732,6 +1732,7 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	int drop_tag = 1;
 	fz_structure standard;
 	pdf_obj *mc_dict = NULL;
+	int fallback = 0;
 
 	/* Flush any pending text so it's not in the wrong layer. */
 	pdf_flush_text(ctx, proc);
@@ -1765,10 +1766,18 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 
 		/* Structure */
 		if (mc_dict)
-			send_begin_structure(ctx, proc, mc_dict);
-		else
 		{
-			/* Maybe drop this entirely? */
+			fz_try(ctx)
+				send_begin_structure(ctx, proc, mc_dict);
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "structure tree broken, assume tree is missing: %s", fz_caught_message(ctx));
+				fallback = 1;
+			}
+		}
+
+		if (!mc_dict || fallback)
+		{
 			standard = structure_type(ctx, proc, tag);
 			if (standard != FZ_STRUCTURE_INVALID)
 			{
