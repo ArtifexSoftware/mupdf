@@ -164,8 +164,6 @@ libarchive_seek(struct archive *a, void *client_data, la_int64_t offset, int whe
 static int
 libarchive_close(struct archive *a, void *client_data)
 {
-	fz_libarchive_archive *arch = (fz_libarchive_archive *)client_data;
-
 	/* Nothing to do. Stream is dropped when the fz_archive is closed. */
 	return ARCHIVE_OK;
 }
@@ -239,7 +237,7 @@ lookup_archive_entry(fz_context *ctx, fz_libarchive_archive *arch, const char *n
 
 	for (idx = 0; idx < arch->entries_len; idx++)
 	{
-		if (!strcmp(name, arch->entries[idx]->name))
+		if (!strcmp(name, (const char *)arch->entries[idx]->name))
 			return idx;
 	}
 
@@ -257,7 +255,7 @@ static const char *list_libarchive_entry(fz_context *ctx, fz_archive *arch_, int
 	fz_libarchive_archive *arch = (fz_libarchive_archive *)arch_;
 	if (idx < 0 || idx >= arch->entries_len)
 		return NULL;
-	return arch->entries[idx]->name;
+	return (const char *)arch->entries[idx]->name;
 }
 
 static int count_libarchive_entries(fz_context *ctx, fz_archive *arch_)
@@ -270,7 +268,6 @@ static fz_buffer *
 read_libarchive_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 {
 	fz_libarchive_archive *arch = (fz_libarchive_archive *)arch_;
-	fz_stream *file = arch->super.file;
 	fz_buffer *ubuf = NULL;
 	int idx;
 	struct archive_entry *entry;
@@ -311,7 +308,7 @@ read_libarchive_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 		if (ret < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read archive data");
 		if ((size_t)ret != size)
-			fz_warn(ctx, "Premature end of data reading archive entry data (%z vs %z)", (size_t)ubuf->len, (size_t)size);
+			fz_warn(ctx, "Premature end of data reading archive entry data (%zu vs %zu)", (size_t)ubuf->len, (size_t)size);
 	}
 	fz_always(ctx)
 		arch->ctx = NULL;
@@ -327,7 +324,6 @@ read_libarchive_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 static fz_stream *
 open_libarchive_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 {
-	fz_libarchive_archive *arch = (fz_libarchive_archive *)arch_;
 	fz_buffer *buf = read_libarchive_entry(ctx, arch_, name);
 	fz_stream *stm = NULL;
 
@@ -553,8 +549,6 @@ libarchived_seek(struct archive *a, void *client_data, la_int64_t offset, int wh
 static int
 libarchived_close(struct archive *a, void *client_data)
 {
-	fz_libarchived_state *state = (fz_libarchived_state *)client_data;
-
 	/* Nothing to do. Stream is dropped when the fz_stream is dropped. */
 	return ARCHIVE_OK;
 }
@@ -563,16 +557,12 @@ static int
 next_libarchived(fz_context *ctx, fz_stream *stm, size_t required)
 {
 	fz_libarchived_state *state = stm->state;
-	fz_stream *chain = state->chain;
-	unsigned char *outbuf = state->block;
-	int outlen = sizeof(state->block);
 	la_ssize_t z;
-	const char *s;
 
 	if (stm->eof)
 		return EOF;
 
-	z = archive_read_data(state->archive, state->block, outlen);
+	z = archive_read_data(state->archive, state->block, sizeof(state->block));
 	if (z < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read compressed data");
 	if (z == 0)
