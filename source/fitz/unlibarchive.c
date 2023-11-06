@@ -376,6 +376,10 @@ fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 			if (r != ARCHIVE_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt archive");
 
+			path = archive_entry_pathname_utf8(entry);
+			if (!path)
+				continue;
+
 			if (arch->entries_len == arch->entries_max)
 			{
 				int new_max = arch->entries_max * 2;
@@ -385,8 +389,6 @@ fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 				arch->entries = fz_realloc(ctx, arch->entries, sizeof(arch->entries[0]) * new_max);
 				arch->entries_max = new_max;
 			}
-
-			path = archive_entry_pathname_utf8(entry);
 
 			z = strlen(path);
 			arch->entries[arch->entries_len] = fz_malloc(ctx, sizeof(entry_t) - 32 + z + 1);
