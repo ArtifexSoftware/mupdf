@@ -729,6 +729,8 @@ struct fz_font
 	short width_default; /* in 1000 units */
 	short *width_table; /* in 1000 units */
 
+	float space_width; /* for space detection -- used by PDF only */
+
 	/* cached glyph metrics */
 	float **advance_cache;
 
