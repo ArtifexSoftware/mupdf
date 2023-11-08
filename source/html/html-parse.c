@@ -2430,7 +2430,7 @@ fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in)
 		outbuf = fz_new_buffer(ctx, 1024);
 		out = fz_new_output_with_buffer(ctx, outbuf);
 
-		fz_write_string(ctx, out, "<!doctype html><style>pre{white-space:pre-wrap}</style><pre>");
+		fz_write_string(ctx, out, "<!doctype html><style>body{margin:0}pre{page-break-before:always;margin:0;white-space:pre-wrap;}</style><pre>");
 
 		if (encoding == ENCODING_UTF16_LE || encoding == ENCODING_UTF16_BE)
 		{
@@ -2477,6 +2477,11 @@ fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in)
 				col += n-1;
 				while (n--)
 					fz_write_byte(ctx, out, ' ');
+			}
+			else if (c == 12)
+			{
+				col = -1;
+				fz_write_string(ctx, out, "</pre><pre>\n");
 			}
 			else if (c == '<')
 				fz_write_string(ctx, out, "&lt;");
