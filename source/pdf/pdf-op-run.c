@@ -143,6 +143,7 @@ struct pdf_run_processor
 	pdf_obj *mcid_sent;
 
 	int struct_parent;
+	int broken_struct_tree;
 
 	/* Pending begin layers */
 	begin_layer_stack *begin_layer;
@@ -1732,7 +1733,6 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	int drop_tag = 1;
 	fz_structure standard;
 	pdf_obj *mc_dict = NULL;
-	int fallback = 0;
 
 	/* Flush any pending text so it's not in the wrong layer. */
 	pdf_flush_text(ctx, proc);
@@ -1765,18 +1765,18 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 			begin_layer(ctx, proc, val);
 
 		/* Structure */
-		if (mc_dict)
+		if (mc_dict && !proc->broken_struct_tree)
 		{
 			fz_try(ctx)
 				send_begin_structure(ctx, proc, mc_dict);
 			fz_catch(ctx)
 			{
 				fz_warn(ctx, "structure tree broken, assume tree is missing: %s", fz_caught_message(ctx));
-				fallback = 1;
+				proc->broken_struct_tree = 1;
 			}
 		}
 
-		if (!mc_dict || fallback)
+		if (!mc_dict || proc->broken_struct_tree)
 		{
 			standard = structure_type(ctx, proc, tag);
 			if (standard != FZ_STRUCTURE_INVALID)
