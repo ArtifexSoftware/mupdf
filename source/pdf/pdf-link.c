@@ -146,10 +146,10 @@ populate_destination(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int is_r
 		rect.x1 = arg3v;
 		rect.y1 = arg4v;
 		fz_transform_rect(rect, ctm);
-		destination->x = rect.x0;
-		destination->y = rect.y0;
-		destination->w = rect.x1 - rect.x0;
-		destination->h = rect.y1 - rect.y0;
+		destination->x = fz_min(rect.x0, rect.x1);
+		destination->y = fz_min(rect.y0, rect.y1);
+		destination->w = fz_abs(rect.x1 - rect.x0);
+		destination->h = fz_abs(rect.y1 - rect.y0);
 		break;
 	}
 }
