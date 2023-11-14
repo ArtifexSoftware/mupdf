@@ -1069,6 +1069,9 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 		}
 	}
 	while (tok != PDF_TOK_EOF);
+
+	if (syntax_errors > 0)
+		fz_warn(ctx, "encountered syntax errors; page may not be correct");
 }
 
 void pdf_processor_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj *res)
