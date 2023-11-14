@@ -1183,7 +1183,7 @@ pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int 
 		char *name = parse_uri_named_dest(ctx, uri);
 
 		fz_try(ctx)
-			dest = pdf_new_name(ctx, name);
+			dest = pdf_new_text_string(ctx, name);
 		fz_always(ctx)
 			fz_free(ctx, name);
 		fz_catch(ctx)
@@ -1332,7 +1332,7 @@ pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri)
 		{
 			name = parse_uri_named_dest(ctx, uri);
 
-			needle = pdf_new_string(ctx, name, strlen(name));
+			needle = pdf_new_text_string(ctx, name);
 			destobj = resolve_dest(ctx, doc, needle);
 			if (destobj)
 			{
