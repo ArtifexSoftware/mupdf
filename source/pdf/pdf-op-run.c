@@ -1012,6 +1012,10 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	if (fontdesc->to_unicode)
 		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
 
+	/* convert ascii whitespace control characters to spaces */
+	if (ucslen == 1 && (ucsbuf[0] >= 8 && ucsbuf[0] <= 13))
+		ucsbuf[0] = ' ';
+
 	/* ignore obviously bad values in ToUnicode, fall back to the cid_to_ucs table */
 	if (ucslen == 1 && (ucsbuf[0] < 32 || (ucsbuf[0] >= 127 && ucsbuf[0] < 160)))
 		ucslen = 0;
