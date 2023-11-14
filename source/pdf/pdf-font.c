@@ -1526,7 +1526,6 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict)
 	pdf_obj *charprocs;
 	pdf_font_desc *fontdesc = NULL;
 	int type3 = 0;
-	int space_width;
 
 	if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
 	{
@@ -1599,11 +1598,6 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict)
 		pdf_drop_font(ctx, fontdesc);
 		fz_rethrow(ctx);
 	}
-
-	/* Set the space width for stext-device's missing space detection */
-	space_width = pdf_lookup_hmtx(ctx, fontdesc, 32).w;
-	if (space_width > 0 && space_width < 1000)
-		fontdesc->font->space_width = space_width * 0.001f;
 
 	return fontdesc;
 }

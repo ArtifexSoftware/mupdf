@@ -83,6 +83,8 @@ void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float 
 /* Extract text into blocks and lines. */
 
 #define PARAGRAPH_DIST 1.5f
+#define SPACE_DIST 0.15f
+#define SPACE_MAX_DIST 0.8f
 #define BASE_MAX_DIST 0.8f
 
 typedef struct
@@ -343,9 +345,6 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	float spacing = 0;
 	float base_offset = 0;
 
-	float space_dist = font->space_width * 0.5f;
-	float space_max_dist = font->space_width * 3.0f;
-
 	/* Preserve RTL-ness only (and ignore level) so we can use bit 2 as "visual" tag for reordering pass. */
 	bidi = bidi & 1;
 
@@ -458,7 +457,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				 * are probably seeing characters emitted in
 				 * logical order.
 				 */
-				if (fabsf(logical_spacing) < space_dist)
+				if (fabsf(logical_spacing) < SPACE_DIST)
 				{
 					new_line = 0;
 				}
@@ -467,21 +466,21 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				 * in an LTR context, we're seeing them emitted in visual order
 				 * and should flag them for reordering!
 				 */
-				else if (fabsf(spacing) < space_dist)
+				else if (fabsf(spacing) < SPACE_DIST)
 				{
 					bidi = 3; /* mark line as visual */
 					new_line = 0;
 				}
 
 				/* And any other small jump could be a missing space. */
-				else if (logical_spacing < 0 && logical_spacing > -space_max_dist)
+				else if (logical_spacing < 0 && logical_spacing > -SPACE_MAX_DIST)
 				{
 					if (wmode == 0 && may_add_space(dev->lastchar))
 						add_space = 1;
 					new_line = 0;
 				}
 
-				else if (spacing > 0 && spacing < space_max_dist)
+				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					bidi = 3; /* mark line as visual */
 					if (wmode == 0 && may_add_space(dev->lastchar))
@@ -499,12 +498,12 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 			/* LTR or neutral character */
 			else
 			{
-				if (fabsf(spacing) < space_dist)
+				if (fabsf(spacing) < SPACE_DIST)
 				{
 					/* Motion is in line and small enough to ignore. */
 					new_line = 0;
 				}
-				else if (spacing > 0 && spacing < space_max_dist)
+				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					/* Motion is forward in line and large enough to warrant us adding a space. */
 					if (wmode == 0 && may_add_space(dev->lastchar))

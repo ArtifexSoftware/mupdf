@@ -124,8 +124,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->bbox.x1 = 1;
 	font->bbox.y1 = 1;
 
-	font->space_width = 0.25;
-
 	font->glyph_count = glyph_count;
 
 	font->bbox_table = NULL;
