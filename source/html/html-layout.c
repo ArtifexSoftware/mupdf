@@ -999,6 +999,17 @@ static float largest_max_width(fz_context *ctx, fz_html_box *box)
 	return r_max;
 }
 
+static void squish_block(fz_context *ctx, fz_html_box *box)
+{
+	fz_html_box *child;
+
+	box->s.layout.b = box->s.layout.y;
+	if (box->type == BOX_FLOW)
+		return;
+	for (child = box->down; child; child = child->next)
+		squish_block(ctx, child);
+}
+
 static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row, int ncol, struct column_width *colw, float spacing)
 {
 	fz_html_box *cell, *child;
@@ -1226,19 +1237,23 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 			row->s.layout.x = box->s.layout.x;
 			row->s.layout.w = box->s.layout.w;
 			row->s.layout.y = row->s.layout.b = box->s.layout.b;
+			row->s.layout.b = row->s.layout.y;
 
 			if (restart && restart->start != NULL)
 			{
 				if (restart->start == row)
 					restart->start = NULL;
 				else
+				{
+					squish_block(ctx, row);
 					continue; /* still skipping */
+				}
 			}
 
 			layout_table_row(ctx, ld, row, ncol, colw, spacing);
 
 			/* If the row doesn't fit on the current page, break here and put the row on the next page.
-			 * Unless the row was at the very start of the page, in which case it'll overfloaw instead.
+			 * Unless the row was at the very start of the page, in which case it'll overflow instead.
 			 * FIXME: Don't overflow, draw twice with offset to break it abruptly at the page border!
 			 */
 			if (ld->page_h > 0)
