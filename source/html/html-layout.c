@@ -1111,7 +1111,11 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 	}
 
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
-	if (layout_block_page_break(ctx, ld, &top->s.layout.b, box->style->page_break_before))
+	if (restart && restart->start != NULL)
+	{
+		/* We're still skipping, don't check for pagebreak before! */
+	}
+	else if (layout_block_page_break(ctx, ld, &top->s.layout.b, box->style->page_break_before))
 		eop = 1;
 
 	/* Position table in box flow, and add margins and padding */
@@ -1283,6 +1287,22 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 		fz_free(ctx, colw);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	if (restart && restart->start != NULL)
+	{
+		/* We're still skipping, don't check for pagebreak after! */
+	}
+	else if (layout_block_page_break(ctx, ld, &top->s.layout.b, box->style->page_break_after))
+	{
+		if (restart && restart->end == NULL)
+		{
+			if (restart->potential)
+				restart->end = restart->potential;
+			else
+				restart->end = box;
+			return;
+		}
+	}
 }
 
 /* === LAYOUT BLOCKS === */
@@ -1330,7 +1350,11 @@ static void layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 	}
 
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
-	if (layout_block_page_break(ctx, ld, &top->s.layout.b, style->page_break_before))
+	if (restart && restart->start != NULL)
+	{
+		/* We're still skipping, don't check for pagebreak before! */
+	}
+	else if (layout_block_page_break(ctx, ld, &top->s.layout.b, style->page_break_before))
 		eop = 1;
 
 	/* Important to remember that box->{x,y,w,b} are the coordinates of the content. The
@@ -1431,7 +1455,21 @@ static void layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 		box->s.layout.b += fz_from_css_number_scale(style->line_height, em);
 	}
 
-	(void) layout_block_page_break(ctx, ld, &box->s.layout.b, style->page_break_after);
+	if (restart && restart->start != NULL)
+	{
+		/* We're still skipping, don't check for pagebreak after! */
+	}
+	else if (layout_block_page_break(ctx, ld, &box->s.layout.b, style->page_break_after))
+	{
+		if (restart && restart->end == NULL)
+		{
+			if (restart->potential)
+				restart->end = restart->potential;
+			else
+				restart->end = box;
+			return;
+		}
+	}
 }
 
 /* === LAYOUT === */
