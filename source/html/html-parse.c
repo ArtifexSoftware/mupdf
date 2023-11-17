@@ -1518,6 +1518,48 @@ parse_to_xml(fz_context *ctx, fz_buffer *buf, int try_xml, int try_html5)
 	return xml;
 }
 
+static void move_background_color_style_up(fz_context *ctx, struct genstate *g, fz_html_box *root, fz_html_box *from)
+{
+	fz_css_color transparent = { 0, 0, 0, 0 };
+	fz_css_style s1, s2;
+	memcpy(&s1, root->style, sizeof s1);
+	memcpy(&s2, from->style, sizeof s2);
+	s1.background_color = s2.background_color;
+	s2.background_color = transparent;
+	root->style = fz_css_enlist(ctx, &s1, &g->styles, g->pool);
+	from->style = fz_css_enlist(ctx, &s2, &g->styles, g->pool);
+}
+
+static void move_background_color_up(fz_context *ctx, struct genstate *g, fz_html_box *root)
+{
+	fz_html_box *html, *body;
+
+	if (root->style->background_color.a != 0)
+	{
+		return;
+	}
+
+	html = root->down;
+	if (html && !strcmp(html->tag, "html"))
+	{
+		if (html->style->background_color.a != 0)
+		{
+			move_background_color_style_up(ctx, g, root, html);
+			return;
+		}
+
+		body = html->down;
+		if (body && !strcmp(body->tag, "body"))
+		{
+			if (body->style->background_color.a != 0)
+			{
+				move_background_color_style_up(ctx, g, root, body);
+				return;
+			}
+		}
+	}
+}
+
 static void
 xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
 	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi)
@@ -1525,7 +1567,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	fz_xml *root, *node;
 	char *title;
 
-	fz_css_match match;
+	fz_css_match root_match, match;
 	struct genstate g = {0};
 
 	g.pool = NULL;
@@ -1605,24 +1647,31 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	fz_try(ctx)
 	{
 		fz_css_style style;
+		int display;
 
-		fz_match_css_at_page(ctx, &match, g.css);
-		fz_apply_css_style(ctx, g.set, &style, &match);
+		fz_match_css_at_page(ctx, &root_match, g.css);
+		fz_apply_css_style(ctx, g.set, &style, &root_match);
 
 		g.pool = tree->pool;
 		g.markup_dir = DEFAULT_DIR;
 		g.markup_lang = FZ_LANG_UNSET;
 
+		// Create root node
 		tree->root = new_box(ctx, &g, NULL, BOX_BLOCK, &style);
 		// TODO: transfer page margins out of this hacky box
 
-		gen2_children(ctx, &g, tree->root, root, &match);
-
+		tree->root->tag = ":root";
 		tree->root->s.layout.em = 0;
 		tree->root->s.layout.x = 0;
 		tree->root->s.layout.y = 0;
 		tree->root->s.layout.w = 0;
 		tree->root->s.layout.b = 0;
+
+		// Create document node (html).
+		fz_match_css(ctx, &match, &root_match, g.css, root);
+		fz_apply_css_style(ctx, g.set, &style, &match);
+		display = fz_get_css_match_display(&match);
+		gen2_tag(ctx, &g, tree->root, root, &match, display, &style);
 
 		detect_directionality(ctx, g.pool, tree->root);
 
@@ -1650,6 +1699,9 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 				if (title)
 					*rtitle = fz_pool_strdup(ctx, g.pool, title);
 			}
+
+			// Move html or body background-color to :root.
+			move_background_color_up(ctx, &g, tree->root);
 		}
 	}
 	fz_always(ctx)
