@@ -1368,7 +1368,7 @@ def build_0(
 
     # On 32-bit Windows, libclang doesn't work. So we attempt to run 64-bit `-b
     # 0` to generate C++ code.
-    jlib.log( '{state.state_.windows=} {build_dirs.cpu.bits=} {sys.maxsize=}')
+    jlib.log( '{state.state_.windows=} {build_dirs.cpu.bits=}')
     if state.state_.windows and build_dirs.cpu.bits == 32:
         try:
             jlib.log( 'Trying dummy call of clang.cindex.Index.create()')
