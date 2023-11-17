@@ -333,6 +333,8 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if):
             # appears to kill std::cerr on Linux.
             out.write( f'        if ({arg.name}) std::cerr << " {arg.name}=\'" << {arg.name} << "\'";\n')
             out.write( f'        else std::cerr << " {arg.name}:null";\n')
+        elif parse.is_( arg.cursor.type, 'va_list'):
+            out.write( f'        std::cerr << " {arg.name}:va_list";\n')
         elif (0
                 or parse.is_( arg.cursor.type, 'signed char')
                 or parse.is_( arg.cursor.type, 'unsigned char')
