@@ -660,6 +660,9 @@
     <ClCompile Include="..\..\source\html\txt.c">
       <Filter>html</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\uncfb.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">

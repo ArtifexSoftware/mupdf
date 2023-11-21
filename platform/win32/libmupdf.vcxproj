@@ -580,6 +580,7 @@
     <ClCompile Include="..\..\source\fitz\pool.c" />
     <ClCompile Include="..\..\source\fitz\printf.c" />
     <ClCompile Include="..\..\source\fitz\random.c" />
+    <ClCompile Include="..\..\source\fitz\uncfb.c" />
     <ClCompile Include="..\..\source\fitz\unchm.c" />
     <ClCompile Include="..\..\source\fitz\unlibarchive.c" />
     <ClCompile Include="..\..\source\fitz\warp.c" />
