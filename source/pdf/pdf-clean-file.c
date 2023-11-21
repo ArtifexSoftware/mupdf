@@ -469,10 +469,10 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 
 					if (spage < epage)
 						for (page = spage; page <= epage; ++page)
-							pages[len++] = page;
+							pages[len++] = page - 1;
 					else
 						for (page = spage; page >= epage; --page)
-							pages[len++] = page;
+							pages[len++] = page - 1;
 				}
 
 				argidx++;
