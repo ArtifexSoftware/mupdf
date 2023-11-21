@@ -1005,6 +1005,11 @@ g_extra_declarations = textwrap.dedent(f'''
         C++ alternative to fz_search_page() that returns information in a std::vector.
         */
         FZ_FUNCTION std::vector<fz_search_page2_hit> fz_search_page2(fz_context* ctx, fz_document *doc, int number, const char *needle, int hit_max);
+
+        /**
+        C++ alternative to fz_string_from_text_language() that returns information in a std::string.
+        */
+        FZ_FUNCTION std::string fz_string_from_text_language2(fz_text_language lang);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1108,6 +1113,13 @@ g_extra_definitions = textwrap.dedent(f'''
                 ret[i].mark = marks[i];
             }}
             return ret;
+        }}
+
+        FZ_FUNCTION std::string fz_string_from_text_language2(fz_text_language lang)
+        {{
+            char    str[8];
+            fz_string_from_text_language(str, lang);
+            return std::string(str);
         }}
         ''')
 
@@ -4986,6 +4998,7 @@ def cpp_source(
                 'fz_md5_final2',
                 'fz_highlight_selection2',
                 'fz_search_page2',
+                'fz_string_from_text_language2',
                 ):
             # These are excluded from windows_def because are C++ so
             # we'd need to use the mangled name in. Instead we mark them
