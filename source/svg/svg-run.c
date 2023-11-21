@@ -1204,8 +1204,10 @@ svg_run_g(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, cons
 {
 	svg_state local_state = *inherit_state;
 	fz_xml *node;
+	char font_family[100];
 
 	svg_parse_common(ctx, doc, root, &local_state);
+	svg_parse_font_attributes(ctx, doc, root, &local_state, font_family, sizeof font_family);
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 		svg_run_element(ctx, dev, doc, node, &local_state);
