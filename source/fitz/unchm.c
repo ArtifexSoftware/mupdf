@@ -396,7 +396,10 @@ read_listing_chunk(fz_context *ctx, fz_chm_archive *chm, uint32_t dir_chunk_size
 			n = fz_read(ctx, stm, (uint8_t *)name, namelen);
 			if (n < namelen)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated name in CHM");
-			name[namelen] = 0;
+			if (namelen > 1 && name[namelen - 1] == '/')
+				name[namelen - 1] = 0;
+			else
+				name[namelen] = 0;
 			left -= namelen;
 			sec = get_encint(ctx, stm, &left);
 			off = get_encint(ctx, stm, &left);
