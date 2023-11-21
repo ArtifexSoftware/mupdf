@@ -339,7 +339,7 @@ get_encint(fz_context *ctx, fz_stream *stm, uint32_t *left)
 {
 	uint32_t v = 0;
 	uint32_t w;
-	int n = 4;
+	int res, n = 4;
 
 	do
 	{
@@ -347,9 +347,10 @@ get_encint(fz_context *ctx, fz_stream *stm, uint32_t *left)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Overly long encoded int in CHM");
 
 		(*left) -= 1;
-		w = fz_read_byte(ctx, stm);
-		if (w == EOF)
+		res = fz_read_byte(ctx, stm);
+		if (res == EOF)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "EOF in encoded int in CHM");
+		w = res;
 		v = (v<<7) | (w & 127);
 	}
 	while (w & 128);
