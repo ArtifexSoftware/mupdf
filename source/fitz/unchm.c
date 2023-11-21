@@ -105,7 +105,7 @@ next_chm(fz_context *ctx, fz_stream *stm, size_t required)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Short read in CHM handling");
 		stm->pos += n;
 		stm->rp = state->buffer;
-		stm->wp = stm->wp + left;
+		stm->wp = stm->rp + left;
 		return *stm->rp++;
 	}
 
