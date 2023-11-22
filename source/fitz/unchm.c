@@ -461,6 +461,8 @@ prep_decompress(fz_context *ctx, fz_chm_archive *chm)
 		reset_interval *= 0x8000;
 		chm->window_size *= 0x8000;
 	}
+	if (chm->window_size == 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported CHM window size");
 	if (reset_interval != chm->window_size || (chm->window_size & 0x7fff))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported CHM reset interval");
 	chm->reset_block_interval = chm->window_size / 0x8000;
