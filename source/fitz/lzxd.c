@@ -255,7 +255,7 @@ typedef struct
 
 typedef struct
 {
-	uint16_t len;
+	uint32_t len;
 	uint16_t v[32];
 } vec16_t;
 
@@ -276,7 +276,7 @@ drop_vec8(fz_context *ctx, vec8_t *vec)
 }
 
 static vec16_t *
-new_vec16(fz_context *ctx, uint16_t len)
+new_vec16(fz_context *ctx, uint32_t len)
 {
 	vec16_t *v = fz_calloc(ctx, sizeof(vec16_t) + (len - 32)*sizeof(uint16_t), 1);
 
