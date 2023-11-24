@@ -502,9 +502,8 @@ tree_update_range_with_pretree(fz_context *ctx, canonical_tree_t *self, bitstrea
 				// "Decode new code" is used to parse the next code from the bitstream, which
 				// has a value range of [0, 16].
 				uint16_t code = tree_decode_element(ctx, pretree, bstm);
-				assert(code <= 16);
 
-				if (i + same > self->len)
+				if (i + same > self->len || code > 16)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Overrun with pretree codes");
 
 				value = (17 + self->v[i] - code) % 17;
