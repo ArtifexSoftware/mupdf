@@ -229,7 +229,7 @@ typedef struct
 static vec8_t *
 new_vec8(fz_context *ctx, uint16_t len)
 {
-	vec8_t *v = fz_calloc(ctx, sizeof(vec8_t) + (len - 32)*sizeof(uint8_t), 1);
+	vec8_t *v = fz_malloc(ctx, sizeof(vec8_t) + (((size_t)len) - 32)*sizeof(uint8_t));
 
 	v->len = len;
 
@@ -245,7 +245,7 @@ drop_vec8(fz_context *ctx, vec8_t *vec)
 static vec16_t *
 new_vec16(fz_context *ctx, uint32_t len)
 {
-	vec16_t *v = fz_calloc(ctx, sizeof(vec16_t) + (len - 32)*sizeof(uint16_t), 1);
+	vec16_t *v = fz_malloc(ctx, sizeof(vec16_t) + (((size_t)len) - 32)*sizeof(uint16_t));
 
 	v->len = len;
 
@@ -297,9 +297,12 @@ typedef struct
 static canonical_tree_t *
 new_canonical_tree(fz_context *ctx, size_t count)
 {
+	vec8_t *vec;
 	// > In the case of the very first such tree, the delta is calculated against a tree
 	// > in which all elements have a zero path length.
-	return new_vec8(ctx, (uint16_t)count);
+	vec = new_vec8(ctx, (uint16_t)count);
+	memset(vec->v, 0, count);
+	return vec;
 }
 
 static void
