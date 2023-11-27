@@ -1012,6 +1012,11 @@ g_extra_declarations = textwrap.dedent(f'''
         C++ alternative to fz_string_from_text_language() that returns information in a std::string.
         */
         FZ_FUNCTION std::string fz_string_from_text_language2(fz_text_language lang);
+
+        /**
+        C++ alternative to fz_get_glyph_name() that returns information in a std::string.
+        */
+        FZ_FUNCTION std::string fz_get_glyph_name2(fz_context *ctx, fz_font *font, int glyph);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1122,6 +1127,13 @@ g_extra_definitions = textwrap.dedent(f'''
             char    str[8];
             fz_string_from_text_language(str, lang);
             return std::string(str);
+        }}
+
+        FZ_FUNCTION std::string fz_get_glyph_name2(fz_context *ctx, fz_font *font, int glyph)
+        {{
+            char name[32];
+            fz_get_glyph_name(ctx, font, glyph, name, sizeof(name));
+            return std::string(name);
         }}
         ''')
 
@@ -5005,6 +5017,7 @@ def cpp_source(
                 'fz_highlight_selection2',
                 'fz_search_page2',
                 'fz_string_from_text_language2',
+                'fz_get_glyph_name2',
                 ):
             # These are excluded from windows_def because are C++ so
             # we'd need to use the mangled name in. Instead we mark them

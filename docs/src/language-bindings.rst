@@ -1525,6 +1525,11 @@ functions and class methods.]
     */
     FZ_FUNCTION std::string fz_string_from_text_language2(fz_text_language lang);
 
+    /**
+    C++ alternative to fz_get_glyph_name() that returns information in a std::string.
+    */
+    FZ_FUNCTION std::string fz_get_glyph_name2(fz_context *ctx, fz_font *font, int glyph);
+
 
 Python/C# bindings details
 ---------------------------------------------------------------
