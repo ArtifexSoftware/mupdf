@@ -806,7 +806,7 @@ bmp_read_color_profile(fz_context *ctx, struct info *info, const unsigned char *
 		fz_buffer *profile;
 		fz_colorspace *cs;
 
-		if ((uint32_t)(end - begin) < info->profileoffset + info->profilesize)
+		if ((uint32_t)(end - begin) < info->profilesize)
 		{
 			fz_warn(ctx, "ignoring truncated color profile in bmp image");
 			return NULL;
