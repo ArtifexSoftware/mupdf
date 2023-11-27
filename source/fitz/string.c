@@ -479,6 +479,16 @@ fz_cleanname(char *name)
 	return name;
 }
 
+char *
+fz_cleanname_strdup(fz_context *ctx, const char *name)
+{
+	size_t len = strlen(name);
+	char *newname = fz_malloc(ctx, fz_maxz(2, len + 1));
+	memcpy(newname, name, len + 1);
+	newname[len] = '\0';
+	return fz_cleanname(newname);
+}
+
 enum
 {
 	UTFmax = 4, /* maximum bytes per rune */
