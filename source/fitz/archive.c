@@ -56,7 +56,7 @@ fz_try_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	if (arch == NULL || !arch->open_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open archive entry");
 
-	local_name = fz_cleanname(fz_strdup(ctx, name));
+	local_name = fz_cleanname_strdup(ctx, name);
 
 	fz_var(stream);
 
@@ -90,7 +90,7 @@ fz_try_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	if (arch == NULL || !arch->read_entry || !arch->has_entry || name == NULL)
 		return NULL;
 
-	local_name = fz_cleanname(fz_strdup(ctx, name));
+	local_name = fz_cleanname_strdup(ctx, name);
 
 	fz_var(buf);
 
@@ -119,7 +119,7 @@ fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	if (!arch->has_entry)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot check if archive has entry");
 
-	local_name = fz_cleanname(fz_strdup(ctx, name));
+	local_name = fz_cleanname_strdup(ctx, name);
 
 	fz_var(res);
 
@@ -496,11 +496,7 @@ fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, cons
 	if (path)
 	{
 		size_t n = strlen(path);
-
-		clean_path = fz_malloc(ctx, n + 2);
-		memcpy(clean_path, path, n);
-		clean_path[n] = 0;
-		fz_cleanname(clean_path);
+		clean_path = fz_cleanname_strdup(ctx, path);
 		if (clean_path[0] == '.' && clean_path[1] == 0)
 		{
 			fz_free(ctx, clean_path);
