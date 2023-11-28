@@ -1605,7 +1605,7 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 				}
 			}
 		default:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown packing method found in path");
+			assert(!"Unknown packing method found in path");
 		}
 	}
 	fz_catch(ctx)
