@@ -872,10 +872,17 @@ void fz_set_font_embedding(fz_context *ctx, fz_font *font, int embed)
 {
 	if (!font)
 		return;
-	if (font->flags.never_embed)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Embedding not permitted/possible");
-
-	font->flags.embed = !!embed;
+	if (embed)
+	{
+		if (font->flags.never_embed)
+			fz_warn(ctx, "not allowed to embed font: %s", font->name);
+		else
+			font->flags.embed = 1;
+	}
+	else
+	{
+		font->flags.embed = 0;
+	}
 }
 
 static int
