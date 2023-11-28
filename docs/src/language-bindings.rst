@@ -94,6 +94,17 @@ instead of MuPDF C structs.
 Usually it is more convenient to use the class-aware C++ API rather than the
 low-level C++ API.
 
+C++ Exceptions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+C++ exceptions use classes for each `FZ_ERROR_*` enum, all derived from a class
+`mupdf::FzErrorBase` which in turn derives from `std::exception`.
+
+For example if MuPDF C code does `fz_throw(ctx, FZ_ERROR_GENERIC,
+"something failed")`, this will appear as a C++ exception with type
+`mupdf::FzErrorGeneric`. Its `what()` method will return `code=2: something
+failed`, and it will have a public member `m_code` set to `FZ_ERROR_GENERIC`.
+
 Example wrappers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
