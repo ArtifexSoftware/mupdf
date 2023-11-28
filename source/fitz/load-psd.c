@@ -209,7 +209,7 @@ psd_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 		c = get16be(&source);
 		if (c == 4) /* CMYK (+ Spots?) */
 		{
-			if (n < 4)
+			if (n != 4)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "CMYK PSD with %d chans not supported!", n);
 			info->cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 		}
