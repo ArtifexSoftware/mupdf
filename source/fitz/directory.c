@@ -91,7 +91,7 @@ fz_open_directory(fz_context *ctx, const char *path)
 	fz_directory *dir;
 
 	if (!fz_is_directory(ctx, path))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "'%s' is not a directory", path);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "'%s' is not a directory", path);
 
 	dir = fz_new_derived_archive(ctx, NULL, fz_directory);
 	dir->super.format = "dir";

@@ -416,7 +416,7 @@ fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt,
 		num[i++] = '0';
 	n = s - fmt;
 	if (n + i + strlen(p) >= size)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "path name buffer overflow");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "path name buffer overflow");
 	memcpy(path, fmt, n);
 	while (i > 0)
 		path[n++] = num[--i];

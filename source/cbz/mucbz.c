@@ -222,7 +222,7 @@ cbz_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 	fz_buffer *buf = NULL;
 
 	if (number < 0 || number >= doc->page_count)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load page %d", number);
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid page number %d", number);
 
 	fz_var(page);
 

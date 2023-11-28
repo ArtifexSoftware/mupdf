@@ -1333,7 +1333,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
 			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
 		}
@@ -1368,7 +1368,7 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
 			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
 		}
@@ -1606,7 +1606,7 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 	int version;
 
 	if (!fz_xml_is_tag(root, "svg"))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "expected svg element (found %s)", fz_xml_tag(root));
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "expected svg element (found %s)", fz_xml_tag(root));
 
 	version_att = fz_xml_att(root, "version");
 	w_att = fz_xml_att(root, "width");

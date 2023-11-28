@@ -199,9 +199,9 @@ fz_open_accelerated_document_with_stream(fz_context *ctx, const char *magic, fz_
 	const fz_document_handler *handler;
 
 	if (stream == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "no document to open");
 	if (magic == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "missing file type");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "missing file type");
 
 	handler = fz_recognize_document_stream_content(ctx, stream, magic);
 	if (!handler)
@@ -254,7 +254,7 @@ fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *
 	fz_var(afile);
 
 	if (filename == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "no document to open");
 
 	handler = fz_recognize_document_content(ctx, filename);
 	if (!handler)
@@ -324,7 +324,7 @@ void fz_output_accelerator(fz_context *ctx, fz_document *doc, fz_output *accel)
 	if (doc->output_accelerator == NULL)
 	{
 		fz_drop_output(ctx, accel);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Document does not support writing an accelerator");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Document does not support writing an accelerator");
 	}
 
 	doc->output_accelerator(ctx, doc, accel);
@@ -457,7 +457,7 @@ fz_format_link_uri(fz_context *ctx, fz_document *doc, fz_link_dest dest)
 {
 	if (doc && doc->format_link_uri)
 		return doc->format_link_uri(ctx, doc, dest);
-	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create internal links for this document type");
+	fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot create internal links for this document type");
 }
 
 fz_location
@@ -519,7 +519,7 @@ fz_load_page(fz_context *ctx, fz_document *doc, int number)
 			return fz_load_chapter_page(ctx, doc, i, number - start);
 		start += m;
 	}
-	fz_throw(ctx, FZ_ERROR_GENERIC, "Page not found: %d", number+1);
+	fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid page number: %d", number+1);
 }
 
 fz_location fz_last_page(fz_context *ctx, fz_document *doc)
@@ -836,7 +836,7 @@ fz_link *fz_create_link(fz_context *ctx, fz_page *page, fz_rect bbox, const char
 	if (page == NULL || uri == NULL)
 		return NULL;
 	if (page->create_link == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support creating links");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "This format of document does not support creating links");
 	return page->create_link(ctx, page, bbox, uri);
 }
 
@@ -845,7 +845,7 @@ void fz_delete_link(fz_context *ctx, fz_page *page, fz_link *link)
 	if (page == NULL || link == NULL)
 		return;
 	if (page->delete_link == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support deleting links");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "This format of document does not support deleting links");
 	page->delete_link(ctx, page, link);
 }
 
@@ -854,7 +854,7 @@ void fz_set_link_rect(fz_context *ctx, fz_link *link, fz_rect rect)
 	if (link == NULL)
 		return;
 	if (link->set_rect_fn == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support updating link bounds");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "This format of document does not support updating link bounds");
 	link->set_rect_fn(ctx, link, rect);
 }
 
@@ -863,7 +863,7 @@ void fz_set_link_uri(fz_context *ctx, fz_link *link, const char *uri)
 	if (link == NULL)
 		return;
 	if (link->set_uri_fn == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "This format of document does not support updating link uri");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "This format of document does not support updating link uri");
 	link->set_uri_fn(ctx, link, uri);
 }
 

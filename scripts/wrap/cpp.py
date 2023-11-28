@@ -1501,7 +1501,7 @@ def make_function_wrappers(
         '''
         Yields (enum, typename, padding) for each error.
         E.g.:
-            enum=FZ_ERROR_MEMORY
+            enum=FZ_ERROR_SYSTEM
             typename=mupdf_error_memory
             padding='  '
         '''

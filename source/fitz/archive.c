@@ -42,7 +42,7 @@ fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	fz_stream *stream = fz_try_open_archive_entry(ctx, arch, name);
 
 	if (stream == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open entry %s", name);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cannot find entry %s", name);
 
 	return stream;
 }
@@ -76,7 +76,7 @@ fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	fz_buffer *buf = fz_try_read_archive_entry(ctx, arch, name);
 
 	if (buf == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read %s", name);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cannot find entry %s", name);
 
 	return buf;
 }
@@ -203,7 +203,7 @@ fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 		arch = do_try_open_archive_with_stream(ctx, file);
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_MEMORY);
+		fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
 		/* Otherwise, swallow */
 		fz_report_error(ctx);
 	}
@@ -320,7 +320,8 @@ fz_tree_archive_add_buffer(fz_context *ctx, fz_archive *arch_, const char *name,
 	fz_tree_archive *arch = (fz_tree_archive *)arch_;
 
 	if (arch == NULL || arch->super.has_entry != has_tree_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot insert into a non-tree archive");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot insert into a non-tree archive");
+
 	buf = fz_keep_buffer(ctx, buf);
 
 	fz_try(ctx)
@@ -339,7 +340,8 @@ fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, c
 	fz_buffer *buf;
 
 	if (arch == NULL || arch->super.has_entry != has_tree_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot insert into a non-tree archive");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot insert into a non-tree archive");
+
 	buf = fz_new_buffer_from_copied_data(ctx, data, size);
 
 	fz_try(ctx)
@@ -482,7 +484,7 @@ fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, cons
 	char *clean_path = NULL;
 
 	if (arch->super.has_entry != has_multi_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot mount within a non-multi archive!");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot mount within a non-multi archive");
 
 	if (arch->len == arch->max)
 	{
