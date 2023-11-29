@@ -1570,6 +1570,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 	offsets = fz_malloc_array(ctx, cap, int64_t);
 
 	fz_var(populated);
+	fz_var(offsets);
 
 	fz_try(ctx)
 	{
