@@ -544,6 +544,8 @@ xps_recognize_doc_content(fz_context *ctx, fz_stream *stream)
 	fz_try(ctx)
 	{
 		arch = fz_try_open_archive_with_stream(ctx, stream);
+		if (arch == NULL)
+			break;
 
 		xml = fz_try_parse_xml_archive_entry(ctx, arch, "/_rels/.rels", 0);
 		if (xml == NULL)

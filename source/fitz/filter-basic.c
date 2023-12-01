@@ -397,7 +397,7 @@ fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain)
 	if (state->count == state->max)
 	{
 		fz_drop_stream(ctx, chain);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Concat filter size exceeded");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "concatenated more streams than promised");
 	}
 
 	state->chain[state->count++] = chain;

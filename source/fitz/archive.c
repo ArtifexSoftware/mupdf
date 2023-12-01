@@ -172,8 +172,8 @@ fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size)
 	return arch;
 }
 
-static fz_archive *
-do_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
+fz_archive *
+fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_archive *arch = NULL;
 	int i;
@@ -193,30 +193,11 @@ do_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 }
 
 fz_archive *
-fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
-{
-	fz_archive *arch = NULL;
-
-	fz_var(arch);
-
-	fz_try(ctx)
-		arch = do_try_open_archive_with_stream(ctx, file);
-	fz_catch(ctx)
-	{
-		fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-		/* Otherwise, swallow */
-		fz_report_error(ctx);
-	}
-
-	return arch;
-}
-
-fz_archive *
 fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
-	fz_archive *arch = do_try_open_archive_with_stream(ctx, file);
+	fz_archive *arch = fz_try_open_archive_with_stream(ctx, file);
 	if (arch == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize archive");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cannot recognize archive");
 	return arch;
 }
 
@@ -583,14 +564,14 @@ void fz_register_archive_handler(fz_context *ctx, const fz_archive_handler *hand
 
 	ac = ctx->archive;
 	if (ac == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "archive handler list not found");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "archive handler list not found");
 
 	for (i = 0; i < ac->count; i++)
 		if (ac->handler[i] == handler)
 			return;
 
 	if (ac->count >= FZ_ARCHIVE_HANDLER_MAX)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Too many archive handlers");
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Too many archive handlers");
 
 	ac->handler[ac->count++] = handler;
 }

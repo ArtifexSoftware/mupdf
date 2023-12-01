@@ -75,14 +75,14 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 
 	dc = ctx->handler;
 	if (dc == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Document handler list not found");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Document handler list not found");
 
 	for (i = 0; i < dc->count; i++)
 		if (dc->handler[i] == handler)
 			return;
 
 	if (dc->count >= FZ_DOCUMENT_HANDLER_MAX)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Too many document handlers");
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Too many document handlers");
 
 	dc->handler[dc->count++] = handler;
 }
@@ -96,7 +96,7 @@ fz_recognize_document_stream_content(fz_context *ctx, fz_stream *stream, const c
 
 	dc = ctx->handler;
 	if (dc->count == 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "No document handlers registered");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "No document handlers registered");
 
 	ext = strrchr(magic, '.');
 	if (ext)
