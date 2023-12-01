@@ -524,8 +524,7 @@ pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, size_t pw
 			memcpy(data + j * data_len, data, data_len);
 
 		/* Step 3: encrypt data using data block as key and iv */
-		if (fz_aes_setkey_enc(&aes, block, 128))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", 128);
+		(void)fz_aes_setkey_enc(&aes, block, 128);
 		fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, data_len * 64, block + 16, data, data);
 
 		/* Step 4: determine SHA-2 hash size for this round */
@@ -577,8 +576,7 @@ pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 		hash);
 
 	memset(iv, 0, sizeof(iv));
-	if (fz_aes_setkey_dec(&aes, hash, 256))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	(void)fz_aes_setkey_dec(&aes, hash, 256);
 	fz_aes_crypt_cbc(&aes, FZ_AES_DECRYPT, 32, iv, ownerkey ? crypt->oe : crypt->ue, crypt->key);
 }
 
@@ -1368,8 +1366,7 @@ pdf_compute_user_password_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *p
 
 	/* Step b) - Use hash as AES-key when encrypting the file encryption key. */
 	memset(iv, 0, sizeof(iv));
-	if (fz_aes_setkey_enc(&aes, hash, 256))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	(void)fz_aes_setkey_enc(&aes, hash, 256);
 	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 32, iv, crypt->key, outputencryption);
 }
 
@@ -1397,8 +1394,7 @@ pdf_compute_owner_password_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 
 	/* Step b) - Use hash as AES-key when encrypting the file encryption key. */
 	memset(iv, 0, sizeof(iv));
-	if (fz_aes_setkey_enc(&aes, hash, 256))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	(void)fz_aes_setkey_enc(&aes, hash, 256);
 	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 32, iv, crypt->key, outputencryption);
 }
 
@@ -1427,8 +1423,7 @@ pdf_compute_permissions_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *out
 
 	/* Step f) - Use file encryption key as AES-key when encrypting buffer. */
 	memset(iv, 0, sizeof(iv));
-	if (fz_aes_setkey_enc(&aes, crypt->key, 256))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
+	(void)fz_aes_setkey_enc(&aes, crypt->key, 256);
 	fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, 16, iv, buf, output);
 }
 
