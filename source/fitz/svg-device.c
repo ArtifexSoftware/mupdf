@@ -570,6 +570,9 @@ svg_dev_data_text(fz_context *ctx, fz_buffer *out, int c)
 			fz_append_string(ctx, out, "&quot;");
 		else if (c >= 32 && c < 127 && c != '<' && c != '>')
 			fz_append_byte(ctx, out, c);
+		else if (c >= 0xD800 && c <= 0xDFFF)
+			/* no surrogate characters in SVG */
+			fz_append_printf(ctx, out, "&#xFFFD;");
 		else
 			fz_append_printf(ctx, out, "&#x%04x;", c);
 		fz_append_byte(ctx, out, '"');
