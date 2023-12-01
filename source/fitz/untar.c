@@ -243,7 +243,6 @@ fz_is_tar_archive(fz_context *ctx, fz_stream *file)
 {
 	const unsigned char gnusignature[6] = { 'u', 's', 't', 'a', 'r', ' ' };
 	const unsigned char paxsignature[6] = { 'u', 's', 't', 'a', 'r', '\0' };
-	const unsigned char v7signature[6] = { '\0', '\0', '\0', '\0', '\0', '\0' };
 	unsigned char data[6];
 	size_t n;
 
@@ -254,8 +253,6 @@ fz_is_tar_archive(fz_context *ctx, fz_stream *file)
 	if (!memcmp(data, gnusignature, nelem(gnusignature)))
 		return 1;
 	if (!memcmp(data, paxsignature, nelem(paxsignature)))
-		return 1;
-	if (!memcmp(data, v7signature, nelem(v7signature)))
 		return 1;
 
 	return 0;
