@@ -116,7 +116,17 @@ fz_recognize_document_stream_content(fz_context *ctx, fz_stream *stream, const c
 			if (dc->handler[i]->recognize_content)
 			{
 				fz_seek(ctx, stream, 0, SEEK_SET);
-				score = dc->handler[i]->recognize_content(ctx, stream);
+				fz_try(ctx)
+				{
+					score = dc->handler[i]->recognize_content(ctx, stream);
+				}
+				fz_catch(ctx)
+				{
+					/* in case of zip errors when recognizing EPUB/XPS/DOCX files */
+					fz_rethrow_unless(ctx, FZ_ERROR_FORMAT);
+					(void)fz_convert_error(ctx, NULL); /* ugly hack to silence the error message */
+					score = 0;
+				}
 			}
 			if (best_score < score)
 			{
