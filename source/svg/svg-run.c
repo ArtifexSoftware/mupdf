@@ -890,6 +890,7 @@ svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *
 static void
 svg_lex_viewbox(const char *s, float *x, float *y, float *w, float *h)
 {
+	*x = *y = *w = *h = 0;
 	while (svg_is_whitespace_or_comma(*s)) ++s;
 	if (svg_is_digit(*s)) s = svg_lex_number(x, s);
 	while (svg_is_whitespace_or_comma(*s)) ++s;
