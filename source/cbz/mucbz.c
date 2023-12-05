@@ -226,11 +226,7 @@ cbz_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 
 	fz_var(page);
 
-	if (doc->arch)
-		buf = fz_read_archive_entry(ctx, doc->arch, doc->page[number]);
-	if (!buf)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load cbz page");
-
+	buf = fz_read_archive_entry(ctx, doc->arch, doc->page[number]);
 	fz_try(ctx)
 	{
 		page = fz_new_derived_page(ctx, cbz_page, doc_);
