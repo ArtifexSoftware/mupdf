@@ -1156,6 +1156,12 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 	if (doc->is_fdf)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "FDF documents have no pages");
 
+	if (chapter != 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid chapter number: %d", chapter);
+
+	if (number < 0 || number >= pdf_count_pages(ctx, doc))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid page number: %d", number);
+
 	if (doc->file_reading_linearly)
 	{
 		pageobj = pdf_progressive_advance(ctx, doc, number);
