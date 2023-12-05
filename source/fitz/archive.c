@@ -54,7 +54,7 @@ fz_try_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	fz_stream *stream = NULL;
 
 	if (arch == NULL || !arch->open_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open archive entry");
+		return NULL;
 
 	local_name = fz_cleanname_strdup(ctx, name);
 
@@ -117,7 +117,7 @@ fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	if (arch == NULL)
 		return 0;
 	if (!arch->has_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot check if archive has entry");
+		return 0;
 
 	local_name = fz_cleanname_strdup(ctx, name);
 
@@ -139,7 +139,7 @@ fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx)
 	if (arch == 0)
 		return NULL;
 	if (!arch->list_entry)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot list archive entries");
+		return NULL;
 
 	return arch->list_entry(ctx, arch, idx);
 }
@@ -150,7 +150,7 @@ fz_count_archive_entries(fz_context *ctx, fz_archive *arch)
 	if (arch == NULL)
 		return 0;
 	if (!arch->count_entries)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot count archive entries");
+		return 0;
 	return arch->count_entries(ctx, arch);
 }
 
@@ -158,7 +158,7 @@ const char *
 fz_archive_format(fz_context *ctx, fz_archive *arch)
 {
 	if (arch == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read format of non-existent archive");
+		return "undefined";
 	return arch->format;
 }
 
@@ -215,10 +215,8 @@ fz_archive *
 fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_archive *arch = do_try_open_archive_with_stream(ctx, file);
-
 	if (arch == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize archive");
-
 	return arch;
 }
 
