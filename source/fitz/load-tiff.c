@@ -1356,9 +1356,11 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		if (tiff->samplesperpixel != 3)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid samples per pixel for YCbCr");
 		if (tiff->bitspersample != 8)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported bits per sample when subsampling");
-		if (tiff->ycbcrsubsamp[0] == 0 || tiff->ycbcrsubsamp[1] == 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported subsampling factor");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid bits per sample when subsampling");
+		if (tiff->ycbcrsubsamp[0] != 1 && tiff->ycbcrsubsamp[0] != 2 && tiff->ycbcrsubsamp[0] != 4)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid subsampling factor");
+		if (tiff->ycbcrsubsamp[1] != 1 && tiff->ycbcrsubsamp[1] != 2 && tiff->ycbcrsubsamp[1] != 4)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid subsampling factor");
 	}
 
 	switch (tiff->photometric)
