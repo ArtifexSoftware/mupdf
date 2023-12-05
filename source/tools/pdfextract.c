@@ -254,9 +254,6 @@ static void extractobject(int num)
 {
 	pdf_obj *ref;
 
-	if (!doc)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-
 	fz_try(ctx)
 	{
 		ref = pdf_new_indirect(ctx, doc, num, 0);
