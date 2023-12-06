@@ -1768,6 +1768,7 @@ def build_swig(
                     -I{os.path.relpath(include1)}
                     -I{os.path.relpath(include2)}
                     -ignoremissing
+                    -DMUPDF_FITZ_HEAP_H
                     {os.path.relpath(swig_i)}
                 ''').strip().replace( '\n', "" if state_.windows else "\\\n")
                 )
