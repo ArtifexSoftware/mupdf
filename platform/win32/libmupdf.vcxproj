@@ -620,6 +620,7 @@
     <ClCompile Include="..\..\source\html\mobi.c" />
     <ClCompile Include="..\..\source\html\office.c" />
     <ClCompile Include="..\..\source\html\story-writer.c" />
+    <ClCompile Include="..\..\source\html\txt.c" />
     <ClCompile Include="..\..\source\html\xml-dom.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />
@@ -740,6 +741,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\write-pixmap.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\writer.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\xml.h" />
+    <ClInclude Include="..\..\include\mupdf\html.h" />
     <ClInclude Include="..\..\include\mupdf\memento.h" />
     <ClInclude Include="..\..\include\mupdf\pdf.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\annot.h" />
