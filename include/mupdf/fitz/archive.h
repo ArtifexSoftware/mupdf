@@ -88,6 +88,9 @@ fz_archive *fz_open_directory(fz_context *ctx, const char *path);
 
 /**
 	Determine if a given path is a directory.
+
+	In the case of the path not existing, or having no access
+	we will return 0.
 */
 int fz_is_directory(fz_context *ctx, const char *path);
 
