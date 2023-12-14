@@ -3146,6 +3146,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.page_label = pdf_page_label_imp;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
 	doc->super.set_metadata = (fz_document_set_metadata_fn*)pdf_set_metadata;
+	doc->super.run_structure = (fz_document_run_structure_fn *)pdf_run_document_structure;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
