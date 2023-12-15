@@ -106,6 +106,63 @@ int fz_lookup_blendmode(const char *name);
 */
 const char *fz_blendmode_name(int blendmode);
 
+/*
+	Generic function type.
+
+	Different function implementations will derive from this.
+*/
+typedef struct fz_function fz_function;
+
+typedef void (fz_function_eval_fn)(fz_context *, fz_function *, const float *, float *);
+
+enum
+{
+	FZ_FUNCTION_MAX_N = FZ_MAX_COLORS,
+	FZ_FUNCTION_MAX_M = FZ_MAX_COLORS
+};
+
+struct fz_function
+{
+	fz_storable storable;
+	size_t size;
+	int m;					/* number of input values */
+	int n;					/* number of output values */
+
+	fz_function_eval_fn *eval;
+};
+
+fz_function *fz_new_function_of_size(fz_context *ctx, int size, size_t size2, int m, int n, fz_function_eval_fn *eval, fz_store_drop_fn *drop);
+
+#define fz_new_derived_function(CTX,TYPE,SIZE,M,N,EVAL,DROP) \
+	((TYPE*)Memento_label(fz_new_function_of_size(CTX,sizeof(TYPE),SIZE,M,N,EVAL,DROP), #TYPE))
+
+/*
+	Evaluate a function.
+
+	Input vector = (in[0], ..., in[inlen-1])
+	Output vector = (out[0], ..., out[outlen-1])
+
+	If inlen or outlen do not match that expected by the function, this
+	routine will truncate or extend the input/output (with 0's) as
+	required.
+*/
+void fz_eval_function(fz_context *ctx, fz_function *func, const float *in, int inlen, float *out, int outlen);
+
+/*
+	Keep a function reference.
+*/
+fz_function *fz_keep_function(fz_context *ctx, fz_function *func);
+
+/*
+	Drop a function reference.
+*/
+void fz_drop_function(fz_context *ctx, fz_function *func);
+
+/*
+	Function size
+*/
+size_t fz_function_size(fz_context *ctx, fz_function *func);
+
 /**
 	The device structure is public to allow devices to be
 	implemented outside of fitz.

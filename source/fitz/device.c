@@ -837,3 +837,64 @@ fz_structure_from_string(const char *str)
 	if (!strcmp(str, "Form")) return FZ_STRUCTURE_FORM;
 	return FZ_STRUCTURE_INVALID;
 }
+
+fz_function *
+fz_keep_function(fz_context *ctx, fz_function *func)
+{
+	return fz_keep_storable(ctx, &func->storable);
+}
+
+void
+fz_drop_function(fz_context *ctx, fz_function *func)
+{
+	fz_drop_storable(ctx, &func->storable);
+}
+
+size_t
+fz_function_size(fz_context *ctx, fz_function *func)
+{
+	return (func ? func->size : 0);
+}
+
+void
+fz_eval_function(fz_context *ctx, fz_function *func, const float *in, int inlen, float *out, int outlen)
+{
+	float fakein[FZ_FUNCTION_MAX_M];
+	float fakeout[FZ_FUNCTION_MAX_N];
+	int i;
+
+	if (inlen < func->m)
+	{
+		for (i = 0; i < inlen; ++i)
+			fakein[i] = in[i];
+		for (; i < func->m; ++i)
+			fakein[i] = 0;
+		in = fakein;
+	}
+
+	if (outlen < func->n)
+	{
+		func->eval(ctx, func, in, fakeout);
+		for (i = 0; i < outlen; ++i)
+			out[i] = fakeout[i];
+	}
+	else
+	{
+		func->eval(ctx, func, in, out);
+		for (i = func->n; i < outlen; ++i)
+			out[i] = 0;
+	}
+}
+
+fz_function *
+fz_new_function_of_size(fz_context *ctx, int size, size_t size2, int m, int n, fz_function_eval_fn *eval, fz_store_drop_fn *drop)
+{
+	fz_function *fn = fz_calloc(ctx, 1, size);
+
+	FZ_INIT_STORABLE(fn, 1, drop);
+	fn->eval = eval;
+	fn->m = m;
+	fn->n = n;
+
+	return fn;
+}
