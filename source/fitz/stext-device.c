@@ -1165,7 +1165,7 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ct
 	fz_rect *bounds = actualtext_bounds(tdev);
 
 	/* Unless we are being told to preserve images OR we are in an actualtext, nothing to do here. */
-	if ((tdev->opts.flags & FZ_STEXT_PRESERVE_IMAGES) == 0 || bounds == NULL)
+	if ((tdev->opts.flags & FZ_STEXT_PRESERVE_IMAGES) == 0 && bounds == NULL)
 		return;
 
 	/* If the alpha is less than 50% then it's probably a watermark or effect or something. Skip it. */
