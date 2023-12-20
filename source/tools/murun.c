@@ -4550,6 +4550,29 @@ static void ffi_Pixmap_clear(js_State *J)
 	}
 }
 
+static void ffi_Pixmap_computeMD5(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	const char *hexdigit = "0123456789abcdef";
+	unsigned char digest[16] = { 0 };
+	char str[33];
+	size_t i;
+
+	fz_try(ctx)
+		fz_md5_pixmap(ctx, pixmap, digest);
+	fz_catch(ctx)
+		rethrow(J);
+
+	for (i = 0; i < nelem(digest); i++)
+	{
+		str[2*i] = hexdigit[(digest[i] >> 4) & 0xf];
+		str[2*i+1] = hexdigit[digest[i] & 0xf];
+	}
+	str[32] = '\0';
+	js_pushstring(J, str);
+}
+
 static void ffi_Pixmap_getX(js_State *J)
 {
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
@@ -10290,6 +10313,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.getBounds", ffi_Pixmap_getBounds, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
 
+		jsB_propfun(J, "Pixmap.computeMD5", ffi_Pixmap_computeMD5, 0);
 		jsB_propfun(J, "Pixmap.getX", ffi_Pixmap_getX, 0);
 		jsB_propfun(J, "Pixmap.getY", ffi_Pixmap_getY, 0);
 		jsB_propfun(J, "Pixmap.getWidth", ffi_Pixmap_getWidth, 0);
