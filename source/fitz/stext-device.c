@@ -1084,9 +1084,9 @@ pop_metatext(fz_context *ctx, fz_stext_device *dev)
 		return;
 
 	prev = dev->metatext->prev;
+	bounds = dev->metatext->bounds;
 	fz_free(ctx, dev->metatext->text);
 	fz_free(ctx, dev->metatext);
-	bounds = dev->metatext->bounds;
 	dev->metatext = prev;
 	if (prev)
 		prev->bounds = fz_union_rect(prev->bounds, bounds);
