@@ -1902,7 +1902,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		else
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, opts->crypt, num, gen, len));
-			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, opts->crypt, num, gen);
+			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, opts->crypt, num, gen, NULL);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			pdf_encrypt_data(ctx, opts->crypt, num, gen, write_data, opts->out, data, len);
 		}
@@ -1982,7 +1982,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		else
 		{
 			pdf_dict_put_int(ctx, obj, PDF_NAME(Length), pdf_encrypted_len(ctx, opts->crypt, num, gen, (int)len));
-			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, opts->crypt, num, gen);
+			pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, opts->crypt, num, gen, NULL);
 			fz_write_string(ctx, opts->out, "\nstream\n");
 			pdf_encrypt_data(ctx, opts->crypt, num, gen, write_data, opts->out, data, len);
 		}
@@ -2151,7 +2151,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			else
 			{
 				fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
-				pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : opts->crypt, num, gen);
+				pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : opts->crypt, num, gen, NULL);
 				fz_write_string(ctx, opts->out, "\nendobj\n\n");
 			}
 		}
@@ -3527,6 +3527,7 @@ typedef struct
 	fz_output *content_out;
 	int root_num;
 	int info_num;
+	int sep;
 } objstm_gather_data;
 
 static void
@@ -3592,6 +3593,7 @@ flush_gathered(fz_context *ctx, pdf_document *doc, objstm_gather_data *data)
 		}
 
 		data->n = 0;
+		data->sep = 0;
 	}
 	fz_always(ctx)
 	{
@@ -3648,7 +3650,7 @@ objstm_gather(fz_context *ctx, pdf_xref_entry *x, int i, pdf_document *doc, void
 		data->content_out = fz_new_output_with_buffer(ctx, data->content_buf);
 
 	olen = data->content_buf->len;
-	pdf_print_encrypted_obj(ctx, data->content_out, x->obj, 1, 0, NULL, 0, 0);
+	pdf_print_encrypted_obj(ctx, data->content_out, x->obj, 1, 0, NULL, 0, 0, NULL);
 	data->objnum[data->n] = i;
 	len = data->content_buf->len;
 	data->len[data->n] = len - olen;
