@@ -2978,7 +2978,7 @@ def main2():
                 else:
                     command_venv_enter = f'. {venv}/bin/activate'
 
-                command += f'{command_venv_enter} && python -m pip install --upgrade pip'
+                command = f'{command_venv_enter} && python -m pip install --upgrade pip'
                 if state.state_.openbsd:
                     jlib.log( 'Not installing libclang on openbsd; we assume py3-llvm is installed.')
                     command += f' && python -m pip install --upgrade swig setuptools'
