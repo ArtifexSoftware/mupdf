@@ -72,6 +72,20 @@ pdf_load_embedded_cmap_imp(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, 
 			usecmap = pdf_load_embedded_cmap_imp(ctx, doc, obj, &cycle);
 			pdf_set_usecmap(ctx, cmap, usecmap);
 		}
+		else if (strlen(cmap->usecmap_name) > 0)
+		{
+			fz_try(ctx)
+			{
+				usecmap = pdf_load_system_cmap(ctx, cmap->usecmap_name);
+				pdf_set_usecmap(ctx, cmap, usecmap);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+				fz_report_error(ctx);
+				fz_warn(ctx, "cannot load system CMap: %s", pdf_to_name(ctx, obj));
+			}
+		}
 
 		pdf_store_item(ctx, stmobj, cmap, pdf_cmap_size(ctx, cmap));
 	}
