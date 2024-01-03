@@ -621,14 +621,14 @@ install-shared-c: install-shared-check shared install-headers
 	install -d $(DESTDIR)$(libdir)
 	install -m 644 $(OUT)/libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/
 ifneq ($(OS),OpenBSD)
-	ln -s libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)
+	ln -sf libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)
 endif
 
 install-shared-c++: install-shared-c c++
 	install -m 644 platform/c++/include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
 	install -m 644 $(OUT)/libmupdfcpp.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/
 ifneq ($(OS),OpenBSD)
-	ln -s libmupdfcpp.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdfcpp.$(SO)
+	ln -sf libmupdfcpp.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdfcpp.$(SO)
 endif
 
 install-shared-python: install-shared-c++ python
