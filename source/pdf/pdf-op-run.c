@@ -1096,11 +1096,11 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	pr->bidi = guess_bidi_level(ucdn_get_bidi_class(ucsbuf[0]), pr->bidi);
 
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+	fz_show_glyph_aux(ctx, pr->tos.text, fontdesc->font, trm, gid, ucsbuf[0], cid, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+		fz_show_glyph_aux(ctx, pr->tos.text, fontdesc->font, trm, -1, ucsbuf[i], -1, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
 
 	pdf_tos_move_after_char(ctx, &pr->tos);
 }
