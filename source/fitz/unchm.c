@@ -364,11 +364,14 @@ read_listing_chunk(fz_context *ctx, fz_chm_archive *chm, uint32_t dir_chunk_size
 	fz_stream *stm = chm->super.file;
 	unsigned char data[4];
 	size_t n;
+	static const uint8_t pmgi[] = { 'P', 'M', 'G', 'I' };
 	static const uint8_t pmgl[] = { 'P', 'M', 'G', 'L' };
 	uint32_t left;
 	char *name = NULL;
 
 	n = fz_read(ctx, stm, data, nelem(data));
+	if (n == nelem(pmgi) && memcmp(data, pmgi, nelem(pmgi)) == 0)
+		return; /* Ignore Index chunks, we only want listing chunks. */
 	if (n != nelem(pmgl) || memcmp(data, pmgl, nelem(pmgl)))
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Expected a PMGL chunk in CHM");
 
