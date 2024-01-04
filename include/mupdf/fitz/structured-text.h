@@ -133,6 +133,7 @@ enum
 	FZ_STEXT_DEHYPHENATE = 16,
 	FZ_STEXT_PRESERVE_SPANS = 32,
 	FZ_STEXT_MEDIABOX_CLIP = 64,
+	FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE = 128,
 };
 
 /**
@@ -185,7 +186,7 @@ struct fz_stext_line
 */
 struct fz_stext_char
 {
-	int c;
+	int c; /* unicode character value */
 	int color; /* sRGB hex color */
 	fz_point origin;
 	fz_quad quad;
