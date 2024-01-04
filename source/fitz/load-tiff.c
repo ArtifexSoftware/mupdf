@@ -840,6 +840,7 @@ tiff_read_tag_value(fz_context *ctx, unsigned *p, struct tiff *tiff, unsigned ty
 		unsigned newn = (tiff->ep - tiff->rp) / divisor;
 		memset(&p[newn], 0, (n - newn) * sizeof (unsigned));
 		fz_warn(ctx, "TIFF tag extends beyond end of file, truncating tag");
+		n = newn;
 	}
 
 	while (n--)
