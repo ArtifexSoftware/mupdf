@@ -978,10 +978,15 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 static void
 process_office_document(fz_context *ctx, fz_archive *arch, const char *file, doc_info *info)
 {
-	char *file_rels = make_rel_name(ctx, file);
+	char *file_rels;
 	fz_xml *xml = NULL;
 	fz_xml *rels = NULL;
 	char *resolved_rel = NULL;
+
+	if (file == NULL)
+		return;
+
+	file_rels = make_rel_name(ctx, file);
 
 	fz_var(resolved_rel);
 
@@ -1155,7 +1160,8 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 			while (pos)
 			{
 				const char *file = fz_xml_att(pos, "Target");
-				process_office_document(ctx, archive, file, &info);
+				if (file)
+					process_office_document(ctx, archive, file, &info);
 				pos = fz_xml_find_next_dfs(pos, "Relationship", "Type", schema);
 			}
 		}
