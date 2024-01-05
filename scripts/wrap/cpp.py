@@ -5010,12 +5010,6 @@ def cpp_source(
     for fnname in (
             'FT_Get_First_Char',
             'FT_Get_Next_Char',
-            'pdf_lookup_page_loc',
-            'fz_scale_pixmap',
-            'fz_pixmap_size',
-            'fz_subsample_pixmap',
-            'fz_copy_pixmap_rect',
-            'fz_write_pixmap_as_jpeg',
             ):
         windows_def += f'    {fnname}\n'
 
