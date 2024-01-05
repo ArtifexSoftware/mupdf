@@ -411,6 +411,9 @@ pdf_gsave(fz_context *ctx, pdf_run_processor *pr)
 {
 	if (pr->gtop == pr->gcap-1)
 	{
+		if (pr->gcap * 2 >= 4096)
+			fz_throw(ctx, FZ_ERROR_LIMIT, "too many nested graphics states");
+
 		pr->gstate = fz_realloc_array(ctx, pr->gstate, pr->gcap*2, pdf_gstate);
 		pr->gcap *= 2;
 	}
