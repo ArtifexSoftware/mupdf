@@ -107,6 +107,10 @@ detect_txt_encoding(fz_context *ctx, fz_buffer *buf)
 		}
 	}
 
+	(void)count_tabs;
+	(void)count_hi;
+	(void)count_controls;
+
 	if (plausibly_utf8)
 		return ENCODING_UTF8;
 	return ENCODING_ASCII;
