@@ -1020,6 +1020,28 @@ g_extra_declarations = textwrap.dedent(f'''
         C++ alternative to fz_get_glyph_name() that returns information in a std::string.
         */
         FZ_FUNCTION std::string fz_get_glyph_name2(fz_context *ctx, fz_font *font, int glyph);
+
+        /**
+        Extra struct containing fz_install_load_system_font_funcs()'s args,
+        which we wrap with virtual_fnptrs set to allow use from Python/C# via
+        Swig Directors.
+        */
+        typedef struct fz_install_load_system_font_funcs_args
+        {{
+            fz_load_system_font_fn *f;
+            fz_load_system_cjk_font_fn *f_cjk;
+            fz_load_system_fallback_font_fn *f_fallback;
+        }} fz_install_load_system_font_funcs_args;
+
+        /**
+        Alternative to fz_install_load_system_font_funcs() that takes args in a
+        struct, to allow use from Python/C# via Swig Directors.
+        */
+        void fz_install_load_system_font_funcs2(fz_context *ctx, fz_install_load_system_font_funcs_args* args);
+
+        /* Internal singleton state to allow Swig Director class to find
+        fz_install_load_system_font_funcs_args class wrapper instance. */
+        extern void* fz_install_load_system_font_funcs2_state;
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1138,6 +1160,13 @@ g_extra_definitions = textwrap.dedent(f'''
             fz_get_glyph_name(ctx, font, glyph, name, sizeof(name));
             return std::string(name);
         }}
+
+        void fz_install_load_system_font_funcs2(fz_context *ctx, fz_install_load_system_font_funcs_args* args)
+        {{
+            fz_install_load_system_font_funcs(ctx, args->f, args->f_cjk, args->f_fallback);
+        }}
+
+        void* fz_install_load_system_font_funcs2_state = nullptr;
         ''')
 
 def make_extra( out_extra_h, out_extra_cpp):
@@ -3775,9 +3804,9 @@ def class_wrapper_virtual_fnptrs(
         refcheck_if,
         ):
     '''
-    Generate extra wrapper class for structs that contain function pointers,
-    for use as a SWIG Director class so that the function pointers can be made
-    to effectively point to Python or C# code.
+    Generate extra wrapper class if struct contains function pointers, for
+    use as a SWIG Director class so that the function pointers can be made to
+    effectively point to Python or C# code.
     '''
     if not extras.virtual_fnptrs:
         return
@@ -3899,7 +3928,7 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write(')')
         out_cpp.write('\n')
         out_cpp.write('{\n')
-        self_expression = self_( f'arg_{self_n}')
+        self_expression = self_() if self_n is None else self_( f'arg_{self_n}')
         out_cpp.write(f'    {classname}2* self = {self_expression};\n')
         out_cpp.write(f'    {refcheck_if}\n')
         out_cpp.write(f'    if (s_trace_director)\n')
