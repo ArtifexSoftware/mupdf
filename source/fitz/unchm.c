@@ -470,6 +470,9 @@ prep_decompress(fz_context *ctx, fz_chm_archive *chm)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported CHM reset interval");
 	chm->reset_block_interval = chm->window_size / 0x8000;
 
+	if (reset_entry->size == 0 && data_entry->size == 0)
+		return;
+
 	// Now read the reset table.
 	fz_seek(ctx, chm->super.file, chm->section0_offset + reset_entry->offset, SEEK_SET);
 	fz_skip(ctx, chm->super.file, 4); // 2
@@ -552,7 +555,7 @@ fz_open_chm_archive_with_stream(fz_context *ctx, fz_stream *file)
 
 		/* Header section 0: 0x18 bytes we just skip. */
 		/* Header section 1: The directory listing. */
-		fz_seek(ctx, file, header_len + 0x18, SEEK_SET);
+		fz_seek(ctx, file, chm->section[1].offset, SEEK_SET);
 		n = fz_read(ctx, file, data, nelem(data));
 		if (n != nelem(itsp) || memcmp(data, itsp, nelem(itsp)))
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Not a CHM file");
@@ -568,7 +571,7 @@ fz_open_chm_archive_with_stream(fz_context *ctx, fz_stream *file)
 		last_listing_chunk = fz_read_uint32_le(ctx, file);
 		fz_skip(ctx, file, 8); /* -1 - unknown, num_dir_chunks */
 
-		chm->chunk0_offset = header_len + dir_header_len + 0x18;
+		chm->chunk0_offset = chm->section[1].offset + dir_header_len;
 		for (v = first_listing_chunk; v <= last_listing_chunk; v++)
 		{
 			fz_seek(ctx, file, chm->chunk0_offset + v * dir_chunk_size, SEEK_SET);
