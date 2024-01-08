@@ -258,11 +258,9 @@ cbz_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *b
 }
 
 static fz_document *
-cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
+cbz_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
 {
-	cbz_document *doc;
-
-	doc = fz_new_derived_document(ctx, cbz_document);
+	cbz_document *doc = fz_new_derived_document(ctx, cbz_document);
 
 	doc->super.drop_document = cbz_drop_document;
 	doc->super.count_pages = cbz_count_pages;
@@ -311,7 +309,7 @@ static const char *cbz_mimetypes[] =
 };
 
 static int
-cbz_recognize_doc_content(fz_context *ctx, fz_stream *stream)
+cbz_recognize_doc_content(fz_context *ctx, fz_stream *stream, fz_archive *dir)
 {
 	fz_archive *arch = NULL;
 	int ret = 0;
@@ -319,6 +317,13 @@ cbz_recognize_doc_content(fz_context *ctx, fz_stream *stream)
 
 	fz_var(arch);
 	fz_var(ret);
+
+	/* FIXME: Maybe consider: if stream == NULL then use dir as archive.
+	 * This would enable us to open directories of unpacked cbz's. Is
+	 * this a good thing, or is it too permissive? */
+
+	if (stream == NULL)
+		return 0;
 
 	fz_try(ctx)
 	{
@@ -357,11 +362,8 @@ cbz_recognize_doc_content(fz_context *ctx, fz_stream *stream)
 fz_document_handler cbz_document_handler =
 {
 	NULL,
-	NULL,
-	cbz_open_document_with_stream,
+	cbz_open_document,
 	cbz_extensions,
 	cbz_mimetypes,
-	NULL,
-	NULL,
 	cbz_recognize_doc_content
 };

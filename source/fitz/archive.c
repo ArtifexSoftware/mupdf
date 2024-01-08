@@ -178,6 +178,9 @@ fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 	fz_archive *arch = NULL;
 	int i;
 
+	if (file == NULL)
+		return NULL;
+
 	for (i = 0; i < ctx->archive->count; i++)
 	{
 		fz_seek(ctx, file, 0, SEEK_SET);

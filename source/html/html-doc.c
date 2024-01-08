@@ -195,7 +195,7 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	fz_try(ctx)
 	{
 		if (format->convert_to_html)
-			buffer_html = format->convert_to_html(ctx, set, buffer_in, user_css);
+			buffer_html = format->convert_to_html(ctx, set, buffer_in, zip, user_css);
 		else
 			buffer_html = fz_keep_buffer(ctx, buffer_in);
 		html = fz_parse_html(ctx, set, zip, base_uri, buffer_html, user_css, format->try_xml, format->try_html5, format->patch_mobi);
@@ -234,8 +234,7 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *
 		doc->super.lookup_metadata = htdoc_lookup_metadata;
 		doc->super.is_reflowable = 1;
 
-		doc->zip = zip;
-		zip = NULL;
+		doc->zip = fz_keep_archive(ctx, zip);
 		doc->format = format;
 		doc->set = fz_new_html_font_set(ctx);
 		doc->html = generic_parse(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx), format);
@@ -245,7 +244,6 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
 	{
-		fz_drop_archive(ctx, zip);
 		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
@@ -283,32 +281,30 @@ fz_htdoc_open_document_with_file(fz_context *ctx, const char *filename, const fz
 }
 
 fz_document *
-fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, const char *dirname, fz_stream *stm, const fz_htdoc_format_t *format)
+fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *zip, const fz_htdoc_format_t *format)
 {
-	fz_archive *dir = NULL;
 	fz_buffer *buf = NULL;
 
-	fz_var(dir);
-	fz_var(buf);
-
-	fz_try(ctx)
-	{
-		dir = fz_open_directory(ctx, dirname);
+	if (stm)
 		buf = fz_read_all(ctx, stm, 0);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_archive(ctx, dir);
-		fz_rethrow(ctx);
-	}
 
-	return fz_htdoc_open_document_with_buffer(ctx, dir, buf, format);
+	return fz_htdoc_open_document_with_buffer(ctx, zip, buf, format);
 }
 
 fz_document *
 fz_htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file, const fz_htdoc_format_t *format)
 {
-	return fz_htdoc_open_document_with_stream_and_dir(ctx, ".", file, format);
+	fz_archive *dir = fz_open_directory(ctx, ".");
+	fz_document *doc;
+
+	fz_try(ctx)
+		doc = fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, format);
+	fz_always(ctx)
+		fz_drop_archive(ctx, dir);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return doc;
 }
 
 /* Variant specific functions */
@@ -323,17 +319,9 @@ static const fz_htdoc_format_t fz_htdoc_html5 =
 };
 
 static fz_document *
-htdoc_open_document_with_stream_imp(fz_context *ctx, fz_stream *file)
+htdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
 {
-	return fz_htdoc_open_document_with_stream(ctx, file, &fz_htdoc_html5);
-}
-
-fz_document *
-htdoc_open_document(fz_context *ctx, const char *filename)
-{
-	char dirname[2048];
-	fz_dirname(dirname, filename, sizeof dirname);
-	return fz_htdoc_open_document_with_file_and_dir(ctx, dirname, filename, &fz_htdoc_html5);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_html5);
 }
 
 static const char *htdoc_extensions[] =
@@ -353,11 +341,8 @@ fz_document_handler html_document_handler =
 {
 	NULL,
 	htdoc_open_document,
-	htdoc_open_document_with_stream_imp,
 	htdoc_extensions,
 	htdoc_mimetypes,
-	NULL,
-	NULL,
 };
 
 /* XHTML document handler */
@@ -370,17 +355,9 @@ static const fz_htdoc_format_t fz_htdoc_xhtml =
 };
 
 static fz_document *
-xhtdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
+xhtdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
 {
-	return fz_htdoc_open_document_with_stream_and_dir(ctx, ".", file, &fz_htdoc_xhtml);
-}
-
-static fz_document *
-xhtdoc_open_document(fz_context *ctx, const char *filename)
-{
-	char dirname[2048];
-	fz_dirname(dirname, filename, sizeof dirname);
-	return fz_htdoc_open_document_with_file_and_dir(ctx, dirname, filename, &fz_htdoc_xhtml);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_xhtml);
 }
 
 static const char *xhtdoc_extensions[] =
@@ -399,7 +376,6 @@ fz_document_handler xhtml_document_handler =
 {
 	NULL,
 	xhtdoc_open_document,
-	xhtdoc_open_document_with_stream,
 	xhtdoc_extensions,
 	xhtdoc_mimetypes
 };
@@ -414,15 +390,9 @@ static const fz_htdoc_format_t fz_htdoc_fb2 =
 };
 
 static fz_document *
-fb2doc_open_document_with_stream(fz_context *ctx, fz_stream *file)
+fb2doc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
 {
-	return fz_htdoc_open_document_with_stream(ctx, file, &fz_htdoc_fb2);
-}
-
-static fz_document *
-fb2doc_open_document(fz_context *ctx, const char *filename)
-{
-	return fz_htdoc_open_document_with_file(ctx, filename, &fz_htdoc_fb2);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_fb2);
 }
 
 static const char *fb2doc_extensions[] =
@@ -444,7 +414,6 @@ fz_document_handler fb2_document_handler =
 {
 	NULL,
 	fb2doc_open_document,
-	fb2doc_open_document_with_stream,
 	fb2doc_extensions,
 	fb2doc_mimetypes
 };
@@ -482,15 +451,9 @@ mobi_open_document_with_buffer(fz_context *ctx, fz_buffer *mobi)
 }
 
 static fz_document *
-mobi_open_document_with_stream(fz_context *ctx, fz_stream *file)
+mobi_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
 {
 	return mobi_open_document_with_buffer(ctx, fz_read_all(ctx, file, 0));
-}
-
-static fz_document *
-mobi_open_document(fz_context *ctx, const char *filename)
-{
-	return mobi_open_document_with_buffer(ctx, fz_read_file(ctx, filename));
 }
 
 static const char *mobi_extensions[] =
@@ -511,7 +474,6 @@ fz_document_handler mobi_document_handler =
 {
 	NULL,
 	mobi_open_document,
-	mobi_open_document_with_stream,
 	mobi_extensions,
 	mobi_mimetypes
 };
