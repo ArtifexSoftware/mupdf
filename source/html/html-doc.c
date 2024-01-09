@@ -252,35 +252,6 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *
 }
 
 fz_document *
-fz_htdoc_open_document_with_file_and_dir(fz_context *ctx, const char *dirname, const char *filename, const fz_htdoc_format_t *format)
-{
-	fz_archive *dir = NULL;
-	fz_buffer *buf = NULL;
-
-	fz_var(dir);
-	fz_var(buf);
-
-	fz_try(ctx)
-	{
-		dir = fz_open_directory(ctx, dirname);
-		buf = fz_read_file(ctx, filename);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_archive(ctx, dir);
-		fz_rethrow(ctx);
-	}
-
-	return fz_htdoc_open_document_with_buffer(ctx, dir, buf, format);
-}
-
-fz_document *
-fz_htdoc_open_document_with_file(fz_context *ctx, const char *filename, const fz_htdoc_format_t *format)
-{
-	return fz_htdoc_open_document_with_buffer(ctx, NULL, fz_read_file(ctx, filename), format);
-}
-
-fz_document *
 fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *zip, const fz_htdoc_format_t *format)
 {
 	fz_buffer *buf = NULL;
@@ -289,22 +260,6 @@ fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_a
 		buf = fz_read_all(ctx, stm, 0);
 
 	return fz_htdoc_open_document_with_buffer(ctx, zip, buf, format);
-}
-
-fz_document *
-fz_htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file, const fz_htdoc_format_t *format)
-{
-	fz_archive *dir = fz_open_directory(ctx, ".");
-	fz_document *doc;
-
-	fz_try(ctx)
-		doc = fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, format);
-	fz_always(ctx)
-		fz_drop_archive(ctx, dir);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
 }
 
 /* Variant specific functions */

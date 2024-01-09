@@ -46,13 +46,7 @@ typedef struct
 
 fz_document *fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *buf, const fz_htdoc_format_t *format);
 
-fz_document *fz_htdoc_open_document_with_file_and_dir(fz_context *ctx, const char *dirname, const char *filename, const fz_htdoc_format_t *format);
-
-fz_document *fz_htdoc_open_document_with_file(fz_context *ctx, const char *filename, const fz_htdoc_format_t *format);
-
 fz_document *fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *zip, const fz_htdoc_format_t *format);
-
-fz_document *fz_htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file, const fz_htdoc_format_t *format);
 
 
 
