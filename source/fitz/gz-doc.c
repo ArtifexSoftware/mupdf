@@ -27,7 +27,7 @@
 #endif
 
 static fz_document *
-gz_open_document(fz_context *ctx, fz_stream *ostm, fz_stream *accel, fz_archive *zip)
+gz_open_document(fz_context *ctx, fz_stream *ostm, fz_stream *accel, fz_archive *dir)
 {
 	fz_stream *stm = fz_open_flated(ctx, ostm, 16 + MAX_WBITS);
 	fz_buffer *buf = NULL;

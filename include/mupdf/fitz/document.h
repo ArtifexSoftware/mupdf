@@ -323,12 +323,13 @@ typedef void (fz_page_delete_link_fn)(fz_context *ctx, fz_page *page, fz_link *l
 	accel: fz_stream to read accelerator data from. May be
 	NULL. May be ignored.
 
-	zip: Archive to read associated content from (like images for
-	an html stream). Maybe NULL. May be ignored.
+	dir: 'Directory context' in which the document is loaded;
+	associated content from (like images for an html stream
+	will be loaded from this). Maybe NULL. May be ignored.
 
 	Pointer to opened document. Throws exception in case of error.
 */
-typedef fz_document *(fz_document_open_fn)(fz_context *ctx, fz_stream *stream, fz_stream *accel, fz_archive *zip);
+typedef fz_document *(fz_document_open_fn)(fz_context *ctx, fz_stream *stream, fz_stream *accel, fz_archive *dir);
 
 /**
 	Recognize a document type from
@@ -349,7 +350,7 @@ typedef int (fz_document_recognize_fn)(fz_context *ctx, const char *magic);
 	stream: stream contents to recognise (may be NULL if document is
 	a directory).
 
-	dir: directory from which stream is loaded.
+	dir: directory context from which stream is loaded.
 
 	Returns a number between 0 (not recognized) and 100
 	(fully recognized) based on how certain the recognizer

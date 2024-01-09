@@ -567,12 +567,12 @@ xps_recognize_doc_content(fz_context *ctx, fz_stream *stream, fz_archive *dir)
 }
 
 static fz_document *
-xps_open(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+xps_open(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
 	if (file)
 		return xps_open_document_with_stream(ctx, file);
 	else
-		return xps_open_document_with_directory(ctx, zip);
+		return xps_open_document_with_directory(ctx, dir);
 }
 
 fz_document_handler xps_document_handler =

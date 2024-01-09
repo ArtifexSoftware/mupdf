@@ -249,9 +249,9 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 }
 
 fz_document *
-fz_open_document_with_stream_and_dir(fz_context *ctx, const char *magic, fz_stream *stream, fz_archive *zip)
+fz_open_document_with_stream_and_dir(fz_context *ctx, const char *magic, fz_stream *stream, fz_archive *dir)
 {
-	return fz_open_accelerated_document_with_stream_and_dir(ctx, magic, stream, NULL, zip);
+	return fz_open_accelerated_document_with_stream_and_dir(ctx, magic, stream, NULL, dir);
 }
 
 fz_document *
@@ -288,12 +288,12 @@ fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *
 	if (fz_is_directory(ctx, filename))
 	{
 		/* Cannot accelerate directories, currently. */
-		fz_archive *zip = fz_open_directory(ctx, filename);
+		fz_archive *dir = fz_open_directory(ctx, filename);
 
 		fz_try(ctx)
-			doc = fz_open_accelerated_document_with_stream_and_dir(ctx, filename, NULL, NULL, zip);
+			doc = fz_open_accelerated_document_with_stream_and_dir(ctx, filename, NULL, NULL, dir);
 		fz_always(ctx)
-			fz_drop_archive(ctx, zip);
+			fz_drop_archive(ctx, dir);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 

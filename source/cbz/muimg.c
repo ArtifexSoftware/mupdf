@@ -172,7 +172,7 @@ img_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *b
 }
 
 static fz_document *
-img_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+img_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
 	img_document *doc = fz_new_derived_document(ctx, img_document);
 

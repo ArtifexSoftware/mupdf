@@ -1091,7 +1091,7 @@ process_office_document_properties(fz_context *ctx, fz_archive *arch, const char
 }
 
 static fz_buffer *
-fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_archive *zip, const char *user_css, fz_office_to_html_opts *opts)
+fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_archive *dir, const char *user_css, fz_office_to_html_opts *opts)
 {
 	fz_stream *stream = NULL;
 	fz_archive *archive = NULL;
@@ -1120,7 +1120,7 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 			archive = fz_open_archive_with_stream(ctx, stream);
 		}
 		else
-			archive = fz_keep_archive(ctx, zip);
+			archive = fz_keep_archive(ctx, dir);
 		buffer_out = fz_new_buffer(ctx, 1024);
 		info.out = fz_new_output_with_buffer(ctx, buffer_out);
 

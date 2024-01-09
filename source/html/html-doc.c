@@ -213,12 +213,12 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 }
 
 fz_document *
-fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *buf, const fz_htdoc_format_t *format)
+fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *dir, fz_buffer *buf, const fz_htdoc_format_t *format)
 {
 	html_document *doc = NULL;
 
 	fz_var(doc);
-	fz_var(zip);
+	fz_var(dir);
 
 	fz_try(ctx)
 	{
@@ -234,7 +234,7 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *
 		doc->super.lookup_metadata = htdoc_lookup_metadata;
 		doc->super.is_reflowable = 1;
 
-		doc->zip = fz_keep_archive(ctx, zip);
+		doc->zip = fz_keep_archive(ctx, dir);
 		doc->format = format;
 		doc->set = fz_new_html_font_set(ctx);
 		doc->html = generic_parse(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx), format);
@@ -252,14 +252,14 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *zip, fz_buffer *
 }
 
 fz_document *
-fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *zip, const fz_htdoc_format_t *format)
+fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *dir, const fz_htdoc_format_t *format)
 {
 	fz_buffer *buf = NULL;
 
 	if (stm)
 		buf = fz_read_all(ctx, stm, 0);
 
-	return fz_htdoc_open_document_with_buffer(ctx, zip, buf, format);
+	return fz_htdoc_open_document_with_buffer(ctx, dir, buf, format);
 }
 
 /* Variant specific functions */
@@ -274,9 +274,9 @@ static const fz_htdoc_format_t fz_htdoc_html5 =
 };
 
 static fz_document *
-htdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+htdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
-	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_html5);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, &fz_htdoc_html5);
 }
 
 static const char *htdoc_extensions[] =
@@ -310,9 +310,9 @@ static const fz_htdoc_format_t fz_htdoc_xhtml =
 };
 
 static fz_document *
-xhtdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+xhtdoc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
-	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_xhtml);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, &fz_htdoc_xhtml);
 }
 
 static const char *xhtdoc_extensions[] =
@@ -345,9 +345,9 @@ static const fz_htdoc_format_t fz_htdoc_fb2 =
 };
 
 static fz_document *
-fb2doc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+fb2doc_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
-	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, zip, &fz_htdoc_fb2);
+	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, &fz_htdoc_fb2);
 }
 
 static const char *fb2doc_extensions[] =
@@ -385,13 +385,13 @@ static const fz_htdoc_format_t fz_htdoc_mobi =
 static fz_document *
 mobi_open_document_with_buffer(fz_context *ctx, fz_buffer *mobi)
 {
-	fz_archive *zip = NULL;
+	fz_archive *dir = NULL;
 	fz_buffer *html;
-	fz_var(zip);
+	fz_var(dir);
 	fz_try(ctx)
 	{
-		zip = fz_extract_html_from_mobi(ctx, mobi);
-		html = fz_read_archive_entry(ctx, zip, "index.html");
+		dir = fz_extract_html_from_mobi(ctx, mobi);
+		html = fz_read_archive_entry(ctx, dir, "index.html");
 	}
 	fz_always(ctx)
 	{
@@ -399,14 +399,14 @@ mobi_open_document_with_buffer(fz_context *ctx, fz_buffer *mobi)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_archive(ctx, zip);
+		fz_drop_archive(ctx, dir);
 		fz_rethrow(ctx);
 	}
-	return fz_htdoc_open_document_with_buffer(ctx, zip, html, &fz_htdoc_mobi);
+	return fz_htdoc_open_document_with_buffer(ctx, dir, html, &fz_htdoc_mobi);
 }
 
 static fz_document *
-mobi_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *zip)
+mobi_open_document(fz_context *ctx, fz_stream *file, fz_stream *accel, fz_archive *dir)
 {
 	return mobi_open_document_with_buffer(ctx, fz_read_all(ctx, file, 0));
 }
