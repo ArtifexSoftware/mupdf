@@ -42,6 +42,9 @@ VERSION_PATCH = $(shell grep "define FZ_VERSION_PATCH" include/mupdf/fitz/versio
 
 ifeq ($(LINUX_OR_OPENBSD),yes)
   SO_VERSION = .$(VERSION_MINOR).$(VERSION_PATCH)
+  ifeq ($(OS),Linux)
+    SO_VERSION_LINUX := yes
+  endif
 endif
 
 # --- Commands ---
@@ -93,9 +96,11 @@ $(OUT)/%.exe: %.c
 	$(LINK_CMD)
 
 $(OUT)/%.$(SO)$(SO_VERSION):
-	$(LINK_CMD) $(LIB_LDFLAGS) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
-ifneq ($(SO_VERSION),)
+ifeq ($(SO_VERSION_LINUX),yes)
+	$(LINK_CMD) -Wl,-soname,$(notdir $@) $(LIB_LDFLAGS) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
 	ln -sf $(notdir $@) $(patsubst %$(SO_VERSION), %, $@)
+else
+	$(LINK_CMD) $(LIB_LDFLAGS) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
 endif
 
 $(OUT)/%.def: $(OUT)/%.$(SO)$(SO_VERSION)
