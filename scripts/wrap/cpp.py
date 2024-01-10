@@ -1037,11 +1037,11 @@ g_extra_declarations = textwrap.dedent(f'''
         Alternative to fz_install_load_system_font_funcs() that takes args in a
         struct, to allow use from Python/C# via Swig Directors.
         */
-        void fz_install_load_system_font_funcs2(fz_context *ctx, fz_install_load_system_font_funcs_args* args);
+        FZ_FUNCTION void fz_install_load_system_font_funcs2(fz_context *ctx, fz_install_load_system_font_funcs_args* args);
 
         /* Internal singleton state to allow Swig Director class to find
         fz_install_load_system_font_funcs_args class wrapper instance. */
-        extern void* fz_install_load_system_font_funcs2_state;
+        FZ_DATA extern void* fz_install_load_system_font_funcs2_state;
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -5196,8 +5196,12 @@ def cpp_source(
     for structname, cursor in state.state_.structs[ tu].items():
         generated.c_structs.append( structname)
 
+    # Create windows_mupdf.def, containing explicit exports for all MuPDF
+    # global data and functions. We do this instead of explicitly prefixing
+    # everything with FZ_FUNCTION or FZ_DATA in the MuPDF header files.
+    #
+    windows_def_path = os.path.relpath(f'{base}/windows_mupdf.def')
     windows_def = ''
-    #windows_def += 'LIBRARY mupdfcpp\n'    # This breaks things.
     windows_def += 'EXPORTS\n'
 
     for name, cursor in state.state_.find_global_data_starting_with( tu, ('fz_', 'pdf_')):
@@ -5213,23 +5217,15 @@ def cpp_source(
             # usually inline?
             #
             jlib.log('Not adding to windows_def because static: {fnname}()', 1)
-        elif fnname in (
-                'fz_lookup_metadata2',
-                'fz_md5_pixmap2',
-                'fz_pixmap_samples_int',
-                'fz_samples_get',
-                'fz_samples_set',
-                'pdf_lookup_metadata2',
-                'fz_md5_final2',
-                'fz_highlight_selection2',
-                'fz_search_page2',
-                'fz_string_from_text_language2',
-                'fz_get_glyph_name2',
-                ):
-            # These are excluded from windows_def because are C++ so
-            # we'd need to use the mangled name in. Instead we mark them
-            # with FZ_FUNCTION.
-            pass
+        elif os.path.abspath(cursor.extent.start.file.name) == os.path.abspath(out_hs.extra.filename):
+            # Items defined in out_hs.extra are C++ so we would need to use the
+            # mangled name if we added them to windows_def. Instead they are
+            # explicitly prefixed with `FZ_FUNCTION`.
+            #
+            # (We use os.path.abspath() to avoid problems with back and forward
+            # slashes in cursor.extent.start.file.name on Windows.)
+            #
+            jlib.log('Not adding to {windows_def_path} because defined in {os.path.relpath(out_hs.extra.filename)}: {cursor.spelling}')
         else:
             windows_def += f'    {fnname}\n'
     # Add some internal fns that PyMuPDF requires.
@@ -5245,7 +5241,7 @@ def cpp_source(
         windows_def += f'    fz_lock_debug_lock\n'
         windows_def += f'    fz_lock_debug_unlock\n'
 
-    jlib.fs_update( windows_def, f'{base}/windows_mupdf.def')
+    jlib.fs_update( windows_def, windows_def_path)
 
     def register_fn_use( name):
         assert name.startswith( ('fz_', 'pdf_'))
