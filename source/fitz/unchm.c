@@ -543,6 +543,8 @@ fz_open_chm_archive_with_stream(fz_context *ctx, fz_stream *file)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported CHM version");
 
 		header_len = fz_read_uint32_le(ctx, file);
+		if (header_len < 0x60)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported header size");
 		fz_skip(ctx, file, 4 + 4 + 4 + 32); /* 1 - Unknown, timestamp, language id, 2 * GUIDs */
 
 		chm->section[0].offset = fz_read_uint64_le(ctx, file);
