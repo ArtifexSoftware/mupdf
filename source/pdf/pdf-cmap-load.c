@@ -23,6 +23,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include "cmaps/TrueType-UCS2.h"
+
 #include <string.h>
 
 static pdf_cmap *
@@ -117,6 +119,7 @@ pdf_load_builtin_cmap(fz_context *ctx, const char *name)
 {
 	if (!strcmp(name, "Identity-H")) return pdf_new_identity_cmap(ctx, 0, 2);
 	if (!strcmp(name, "Identity-V")) return pdf_new_identity_cmap(ctx, 1, 2);
+	if (!strcmp(name, "TrueType-UCS2")) return &cmap_TrueType_UCS2;
 	return NULL;
 }
 
@@ -243,6 +246,7 @@ static pdf_cmap *table[] = {
 	&cmap_KSCms_UHC_HW_V,
 	&cmap_KSCms_UHC_V,
 	&cmap_KSCpc_EUC_H,
+	&cmap_TrueType_UCS2,
 	&cmap_UniCNS_UCS2_H,
 	&cmap_UniCNS_UCS2_V,
 	&cmap_UniCNS_UTF16_H,
