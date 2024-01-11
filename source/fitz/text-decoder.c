@@ -192,7 +192,7 @@ void fz_init_text_decoder(fz_context *ctx, fz_text_decoder *dec, const char *enc
 	else if (!fz_strcasecmp(enc, "euc-tw"))
 		fz_init_cjk_text_decoder(ctx, dec, "CNS-EUC-H", "Adobe-CNS1-UCS2");
 	else if (!fz_strcasecmp(enc, "big5"))
-		fz_init_cjk_text_decoder(ctx, dec, "ETenms-B5-H", "Adobe-CNS1-UCS2");
+		fz_init_cjk_text_decoder(ctx, dec, "ETen-B5-H", "Adobe-CNS1-UCS2");
 	else if (!fz_strcasecmp(enc, "big5-hkscs"))
 		fz_init_cjk_text_decoder(ctx, dec, "HKscs-B5-H", "Adobe-CNS1-UCS2");
 
