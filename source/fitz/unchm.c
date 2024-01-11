@@ -619,3 +619,9 @@ fz_open_chm_archive(fz_context *ctx, const char *filename)
 
 	return chm;
 }
+
+const fz_archive_handler fz_chm_archive_handler =
+{
+	fz_is_chm_archive,
+	fz_open_chm_archive_with_stream
+};

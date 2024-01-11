@@ -517,12 +517,6 @@ const fz_archive_handler fz_libarchive_archive_handler =
 	fz_open_libarchive_archive_with_stream
 };
 
-const fz_archive_handler fz_chm_archive_handler =
-{
-	fz_is_chm_archive,
-	fz_open_chm_archive_with_stream
-};
-
 const fz_archive_handler fz_cfb_archive_handler =
 {
 	fz_is_cfb_archive,

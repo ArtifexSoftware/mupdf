@@ -1353,7 +1353,8 @@ fz_lzxd_decompress_chunk(fz_context *ctx, fz_lzxd_t *self, const uint8_t *chunk,
 		}
 		}
 
-		assert(advance != 0);
+		if (advance == 0)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt LZX stream");
 		decoded_len += advance;
 
 		if (self->current_block.size < advance)
