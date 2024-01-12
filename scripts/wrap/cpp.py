@@ -1042,9 +1042,21 @@ g_extra_declarations = textwrap.dedent(f'''
         /* Internal singleton state to allow Swig Director class to find
         fz_install_load_system_font_funcs_args class wrapper instance. */
         FZ_DATA extern void* fz_install_load_system_font_funcs2_state;
+
+        /* Helper for calling a `fz_document_open_fn` function pointer via Swig
+        from Python/C#. */
+        FZ_FUNCTION fz_document* fz_document_open_fn_call(fz_context *ctx, fz_document_open_fn fn, fz_stream *stream, fz_stream *accel, fz_archive *dir);
+
+        /* Helper for calling a `fz_document_recognize_content_fn` function
+        pointer via Swig from Python/C#. */
+        FZ_FUNCTION int fz_document_recognize_content_fn_call(fz_context *ctx, fz_document_recognize_content_fn fn, fz_stream *stream, fz_archive *dir);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
+
+        #include "mupdf/exceptions.h"
+        #include "mupdf/internal.h"
+
         FZ_FUNCTION std::string fz_lookup_metadata2( fz_context* ctx, fz_document* doc, const char* key)
         {{
             /* Find length first. */
@@ -1167,6 +1179,16 @@ g_extra_definitions = textwrap.dedent(f'''
         }}
 
         void* fz_install_load_system_font_funcs2_state = nullptr;
+
+        FZ_FUNCTION fz_document* fz_document_open_fn_call(fz_context *ctx, fz_document_open_fn fn, fz_stream *stream, fz_stream *accel, fz_archive *dir)
+        {{
+            return fn(ctx, stream, accel, dir);
+        }}
+
+        FZ_FUNCTION int fz_document_recognize_content_fn_call(fz_context *ctx, fz_document_recognize_content_fn fn, fz_stream *stream, fz_archive *dir)
+        {{
+            return fn(ctx, stream, dir);
+        }}
         ''')
 
 def make_extra( out_extra_h, out_extra_cpp):
@@ -2016,72 +2038,6 @@ def make_function_wrappers(
                 }}
             }}
             '''))
-
-    # Write custom functions to allow calling of fz_document_handler function
-    # pointers.
-    #
-    # Would be good to extend function_wrapper() and
-    # function_wrapper_class_aware() to work with fnptr type as well as actual
-    # functions. But for now we specify things manually and don't support
-    # passing wrapper classes.
-    #
-    def fnptr_wrapper(
-            return_type,
-            fnptr,
-            fnptr_args, # Must include leading comma.
-            fnptr_arg_names, # Must include leading comma.
-            ):
-        decl = f'''FZ_FUNCTION {return_type} {rename.ll_fn(fnptr)}_call({fnptr} fn{fnptr_args})'''
-        out_functions_h.write(
-                textwrap.indent(
-                    textwrap.dedent( f'''
-                        /* Helper for calling a {fnptr}. Provides a `fz_context` and coverts
-                        fz_try..fz_catch exceptions into C++ exceptions. */
-                        {decl};
-                        '''),
-                    '    ',
-                    )
-                )
-        out_functions_cpp.write( textwrap.dedent( f'''
-                {decl}
-                {{
-                    fz_context* ctx = mupdf::internal_context_get();
-                    {return_type} ret;
-                    fz_try(ctx)
-                    {{
-                        ret = fn( ctx{fnptr_arg_names});
-                    }}
-                    fz_catch(ctx)
-                    {{
-                        mupdf::internal_throw_exception( ctx);
-                    }}
-                    return ret;
-                }}
-                '''))
-    fnptr_wrapper(
-            'fz_document*',
-            'fz_document_open_fn',
-            ', const char* filename',
-            ', filename',
-            )
-    fnptr_wrapper(
-            'fz_document*',
-            'fz_document_open_with_stream_fn',
-            ', fz_stream* stream',
-            ', stream',
-            )
-    fnptr_wrapper(
-            'fz_document*',
-            'fz_document_open_accel_fn',
-            ', const char* filename, const char* accel',
-            ', filename, accel',
-            )
-    fnptr_wrapper(
-            'fz_document*',
-            'fz_document_open_accel_with_stream_fn',
-            ', fz_stream* stream, fz_stream* accel',
-            ', stream, accel',
-            )
 
 
 def class_add_iterator( tu, struct_cursor, struct_name, classname, extras, refcheck_if):
