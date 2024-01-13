@@ -1105,6 +1105,7 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 	int i;
 
 	fz_var(archive);
+	fz_var(stream);
 	fz_var(buffer_out);
 	fz_var(xml);
 	fz_var(rels);
