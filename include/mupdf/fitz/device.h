@@ -316,7 +316,7 @@ struct fz_device
 	void (*pop_clip)(fz_context *, fz_device *);
 
 	void (*begin_mask)(fz_context *, fz_device *, fz_rect area, int luminosity, fz_colorspace *, const float *bc, fz_color_params );
-	void (*end_mask)(fz_context *, fz_device *);
+	void (*end_mask)(fz_context *, fz_device *, fz_function *fn);
 	void (*begin_group)(fz_context *, fz_device *, fz_rect area, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha);
 	void (*end_group)(fz_context *, fz_device *);
 
@@ -361,6 +361,7 @@ void fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 void fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, fz_rect scissor);
 void fz_begin_mask(fz_context *ctx, fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, const float *bc, fz_color_params color_params);
 void fz_end_mask(fz_context *ctx, fz_device *dev);
+void fz_end_mask_tr(fz_context *ctx, fz_device *dev, fz_function *fn);
 void fz_begin_group(fz_context *ctx, fz_device *dev, fz_rect area, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha);
 void fz_end_group(fz_context *ctx, fz_device *dev);
 void fz_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);

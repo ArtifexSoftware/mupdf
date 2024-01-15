@@ -416,20 +416,26 @@ fz_begin_mask(fz_context *ctx, fz_device *dev, fz_rect area, int luminosity, fz_
 }
 
 void
-fz_end_mask(fz_context *ctx, fz_device *dev)
+fz_end_mask_tr(fz_context *ctx, fz_device *dev, fz_function *fn)
 {
 	pop_push_clip_stack(ctx, dev, fz_device_container_stack_is_mask, fz_device_container_stack_is_clip);
 
 	if (dev->end_mask)
 	{
 		fz_try(ctx)
-			dev->end_mask(ctx, dev);
+			dev->end_mask(ctx, dev, fn);
 		fz_catch(ctx)
 		{
 			fz_disable_device(ctx, dev);
 			fz_rethrow(ctx);
 		}
 	}
+}
+
+void
+fz_end_mask(fz_context *ctx, fz_device *dev)
+{
+	fz_end_mask_tr(ctx, dev, NULL);
 }
 
 void
