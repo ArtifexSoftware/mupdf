@@ -93,5 +93,11 @@ public class PDFPage extends Page
 		return createLink(bbox, LinkDestination.FitBH(0, page, y));
 	}
 
+	public native void setPageBox(int box, Rect rect);
+
+	public void setCropBox(Rect rect) {
+		setPageBox(Page.CROP_BOX, rect);
+	}
+
 	// TODO: toPixmap with usage and page box
 }

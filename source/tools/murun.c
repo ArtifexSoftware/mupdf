@@ -7934,6 +7934,25 @@ static void ffi_PDFPage_getTransform(js_State *J)
 	ffi_pushmatrix(J, ctm);
 }
 
+static void ffi_PDFPage_setPageBox(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = js_touserdata(J, 0, "pdf_page");
+	const char *box_name = js_tostring(J, 1);
+	fz_rect rect = ffi_torect(J, 2);
+	int box;
+
+	box = fz_box_type_from_string(box_name);
+	if (box == FZ_UNKNOWN_BOX)
+		js_error(J, "invalid page box name");
+
+	fz_try(ctx)
+		pdf_set_page_box(ctx, page, box, rect);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+
 static void ffi_PDFAnnotation_getBounds(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10392,6 +10411,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.process", ffi_PDFPage_process, 1);
 		jsB_propfun(J, "PDFPage.toPixmap", ffi_PDFPage_toPixmap, 6);
 		jsB_propfun(J, "PDFPage.getTransform", ffi_PDFPage_getTransform, 0);
+		jsB_propfun(J, "PDFPage.setPageBox", ffi_PDFPage_setPageBox, 2);
 	}
 	js_setregistry(J, "pdf_page");
 

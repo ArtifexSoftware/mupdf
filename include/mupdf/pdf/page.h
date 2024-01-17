@@ -80,6 +80,8 @@ pdf_obj *pdf_page_resources(fz_context *ctx, pdf_page *page);
 pdf_obj *pdf_page_contents(fz_context *ctx, pdf_page *page);
 pdf_obj *pdf_page_group(fz_context *ctx, pdf_page *page);
 
+void pdf_set_page_box(fz_context *ctx, pdf_page *page, fz_box_type box, fz_rect rect);
+
 /*
 	Get the separation details for a page.
 */
