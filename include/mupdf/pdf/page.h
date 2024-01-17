@@ -163,10 +163,17 @@ enum {
 	PDF_REDACT_IMAGE_PIXELS,
 };
 
+enum {
+	PDF_REDACT_LINE_ART_NONE,
+	PDF_REDACT_LINE_ART_REMOVE_IF_COVERED,
+	PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED
+};
+
 typedef struct
 {
 	int black_boxes;
 	int image_method;
+	int line_art;
 } pdf_redact_options;
 
 int pdf_redact_page(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_redact_options *opts);
