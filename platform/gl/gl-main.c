@@ -2556,7 +2556,7 @@ static char *short_signature_error_desc(pdf_signature_error err)
 	}
 }
 
-const char *format_date(int64_t secs)
+const char *format_date(int64_t secs64)
 {
 	static char buf[100];
 #ifdef _POSIX_SOURCE
@@ -2564,6 +2564,7 @@ const char *format_date(int64_t secs)
 #else
 	struct tm *tm;
 #endif
+	time_t secs = secs64;
 
 	if (secs <= 0)
 		return NULL;
