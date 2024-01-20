@@ -327,7 +327,16 @@ fz_pixmap * wasm_get_pixmap_from_image(fz_image *image)
 EXPORT
 fz_pixmap * wasm_new_pixmap_from_page(fz_page *page, fz_matrix *ctm, fz_colorspace *colorspace, int alpha)
 {
-	POINTER(fz_new_pixmap_from_page, page, *ctm, colorspace, alpha)
+	fz_separations *seps = NULL;
+	fz_var(seps);
+	seps = fz_page_separations(ctx, page);
+	if (seps)
+	{
+		int i, n = fz_count_separations(ctx, seps);
+		for (i = 0; i < n; i++)
+			fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_SPOT);
+	}
+	POINTER(fz_new_pixmap_from_page_with_separations, page, *ctm, colorspace, seps, alpha)
 }
 
 EXPORT
@@ -345,7 +354,27 @@ fz_pixmap * wasm_pdf_new_pixmap_from_page_contents_with_usage(pdf_page *page, fz
 EXPORT
 fz_pixmap * wasm_new_pixmap_with_bbox(fz_colorspace *colorspace, fz_rect *bbox, int alpha)
 {
-	POINTER(fz_new_pixmap_with_bbox, colorspace, fz_irect_from_rect(*bbox), NULL, alpha)
+	fz_separations *seps = NULL;
+	fz_var(seps);
+	seps = fz_new_separations(ctx, 0);
+	POINTER(fz_new_pixmap_with_bbox, colorspace, fz_irect_from_rect(*bbox), seps, alpha)
+}
+
+EXPORT
+fz_pixmap * wasm_new_pixmap_with_bbox_and_page(fz_colorspace *colorspace, fz_rect *bbox, int alpha, fz_page *page)
+{
+	fz_separations *seps = NULL;
+	fz_var(seps);
+	seps = fz_page_separations(ctx, page);
+	if (seps)
+	{
+		int i, n = fz_count_separations(ctx, seps);
+		for (i = 0; i < n; i++)
+			fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_COMPOSITE);
+	} else {
+		seps = fz_new_separations(ctx, 0);
+	}
+	POINTER(fz_new_pixmap_with_bbox, colorspace, fz_irect_from_rect(*bbox), seps, alpha)
 }
 
 EXPORT

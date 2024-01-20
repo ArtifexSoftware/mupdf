@@ -192,22 +192,43 @@ workerMethods.drawPageAsPNG = function (pageNumber, dpi) {
 	// TODO - use canvas?
 
 	let page = openDocument.loadPage(pageNumber - 1)
-	let pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false)
+	//let pixmap = page.toPixmap(doc_to_screen, mupdf.DeviceRGB, false)
+	let bbox = Rect.transform(page.getBounds(), doc_to_screen)
+	let pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true, page)
 
-	let png = pixmap?.saveAsPNG()
+	let png = pixmap?.asPNG()
 
 	pixmap?.destroy()
 
 	return png
 }
 
+workerMethods.getPngs = function (dpi = 300) {
+	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72);
+	const pages = openDocument.countPages();
+	let pngs = [];
+	for (let i = 0; i < pages; i++) {
+		let page = openDocument.loadPage(i);
+		let bbox = Rect.transform(page.getBounds(), doc_to_screen);
+		let pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true, page);
+		pixmap.clear()
+		let device = new mupdf.DrawDevice(doc_to_screen, pixmap)
+		page.run(device, Matrix.identity)
+		device.close()
+		let png = pixmap?.asPNG();
+		pixmap?.destroy();
+		pngs.push(png);
+	}
+	return pngs;
+};
+
 workerMethods.drawPageAsPixmap = function (pageNumber, dpi) {
 	const doc_to_screen = mupdf.Matrix.scale(dpi / 72, dpi / 72)
 
 	let page = openDocument.loadPage(pageNumber - 1)
 	let bbox = Rect.transform(page.getBounds(), doc_to_screen)
-	let pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true)
-	pixmap.clear(255)
+	let pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true, page)
+	pixmap.clear()
 
 	let device = new mupdf.DrawDevice(doc_to_screen, pixmap)
 	page.run(device, Matrix.identity)
