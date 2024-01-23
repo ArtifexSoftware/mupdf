@@ -5909,6 +5909,12 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Shade_finalize
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_Story_FLAGS_NO_OVERFLOW
+#define com_artifex_mupdf_fitz_Story_FLAGS_NO_OVERFLOW 1L
+#undef com_artifex_mupdf_fitz_Story_ALL_FITTED
+#define com_artifex_mupdf_fitz_Story_ALL_FITTED 0L
+#undef com_artifex_mupdf_fitz_Story_OVERFLOW_WIDTH
+#define com_artifex_mupdf_fitz_Story_OVERFLOW_WIDTH 2L
 /*
  * Class:     com_artifex_mupdf_fitz_Story
  * Method:    finalize
@@ -5928,10 +5934,10 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Story_newStory
 /*
  * Class:     com_artifex_mupdf_fitz_Story
  * Method:    place
- * Signature: (Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/Rect;)Z
+ * Signature: (Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/Rect;I)I
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Story_place
-  (JNIEnv *, jobject, jobject, jobject);
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Story_place
+  (JNIEnv *, jobject, jobject, jobject, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Story

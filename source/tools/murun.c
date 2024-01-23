@@ -5583,11 +5583,12 @@ static void ffi_Story_place(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_story *story = js_touserdata(J, 0, "fz_story");
 	fz_rect rect = ffi_torect(J, 1);
+	int flags = js_iscoercible(J, 2) ? js_tointeger(J, 2) : 0;
 	fz_rect filled = fz_empty_rect;
 	int more;
 
 	fz_try(ctx)
-		more = fz_place_story(ctx, story, rect, &filled);
+		more = fz_place_story_flags(ctx, story, rect, &filled, flags);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -5596,7 +5597,7 @@ static void ffi_Story_place(js_State *J)
 	ffi_pushrect(J, filled);
 	js_setproperty(J, -2, "filled");
 
-	js_pushboolean(J, !!more);
+	js_pushnumber(J, more);
 	js_setproperty(J, -2, "more");
 }
 
@@ -9995,7 +9996,7 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
-		jsB_propfun(J, "Story.place", ffi_Story_place, 1);
+		jsB_propfun(J, "Story.place", ffi_Story_place, 2);
 		jsB_propfun(J, "Story.draw", ffi_Story_draw, 2);
 		jsB_propfun(J, "Story.document", ffi_Story_document, 0);
 	}
