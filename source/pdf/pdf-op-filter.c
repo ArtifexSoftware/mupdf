@@ -976,7 +976,7 @@ filter_show_text(fz_context *ctx, pdf_sanitize_processor *p, pdf_obj *text)
 				if (fontdesc->wmode == 0)
 				{
 					adjust_text(ctx, p, tadj, 0);
-					p->tos.tm = fz_pre_translate(p->tos.tm, tadj * p->gstate->pending.text.scale, 0);
+					p->tos.tm = fz_pre_translate(p->tos.tm, -tadj * p->gstate->pending.text.scale, 0);
 				}
 				else
 				{
