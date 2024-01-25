@@ -485,7 +485,8 @@ install-docs:
 
 	install -d $(DESTDIR)$(docdir)
 	install -d $(DESTDIR)$(docdir)/examples
-	install -m 644 README COPYING CHANGES $(DESTDIR)$(docdir)
+	install -m 644 README CHANGES $(DESTDIR)$(docdir)
+	install -m 644 $(wildcard COPYING LICENSE) $(DESTDIR)$(docdir)
 	install -m 644 docs/examples/* $(DESTDIR)$(docdir)/examples
 
 install: install-libs install-apps install-docs
