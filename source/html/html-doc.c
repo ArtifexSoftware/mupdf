@@ -266,14 +266,14 @@ fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_a
 
 /* Generic HTML document handler */
 
-static int isws(char c)
+static int isws(int c)
 {
 	return c == 32 || c == 9 || c == 10 || c == 13 || c == 12;
 }
 
 int htdoc_recognize_html_content(fz_context *ctx, fz_stream *stream, fz_archive *dir)
 {
-	char buffer[4096];
+	uint8_t buffer[4096];
 	size_t i, n, m;
 	enum {
 		state_top,
@@ -286,6 +286,7 @@ int htdoc_recognize_html_content(fz_context *ctx, fz_stream *stream, fz_archive 
 		state_comment
 	};
 	int state = state_top;
+	int type = 0;
 
 	if (stream == NULL)
 		return 0;
@@ -298,9 +299,45 @@ int htdoc_recognize_html_content(fz_context *ctx, fz_stream *stream, fz_archive 
 	if (n == 0)
 		return 0;
 
-	for (i = 0; i < n; i++)
+	i = 0;
+	if (n >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
 	{
-		char c = buffer[i];
+		/* UTF-8 encoded BOM. Just skip it. */
+		i = 3;
+	}
+	else if (n >= 2 && buffer[0] == 0xFE && buffer[1] == 0xFF)
+	{
+		/* UTF-16, big endian. */
+		type = 1;
+		i = 2;
+		n &= ~1;
+	}
+	else if (n >= 2 && buffer[0] == 0xFF && buffer[1] == 0xFE)
+	{
+		/* UTF-16, little endian. */
+		i = 2;
+		type = 2;
+		n &= ~1;
+	}
+
+	while (i < n)
+	{
+		int c;
+
+		switch (type)
+		{
+		case 0: /* UTF-8 */
+			c = buffer[i++];
+			break;
+		case 1: /* UTF-16 - big endian */
+			c = buffer[i++] << 8;
+			c |= buffer[i++];
+			break;
+		case 2: /* UTF-16 - little endian */
+			c = buffer[i++];
+			c |= buffer[i++] << 8;
+			break;
+		}
 
 		switch (state)
 		{
