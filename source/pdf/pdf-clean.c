@@ -823,7 +823,6 @@ rect_touches_redactions(fz_context *ctx, fz_rect area, struct redact_filter_stat
 	fz_rect r, s;
 	int i, n;
 	pdf_page *page = red->page;
-	pdf_document *doc = red->page->doc;
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
