@@ -107,7 +107,7 @@ fz_calloc(fz_context *ctx, size_t count, size_t size)
 	if (count == 0 || size == 0)
 		return NULL;
 	if (count > SIZE_MAX / size)
-		fz_throw(ctx, FZ_ERROR_SYSTEM, "calloc (%zu x %zu bytes) failed (size_t overflow)", count, size);
+		fz_throw(ctx, FZ_ERROR_LIMIT, "calloc (%zu x %zu bytes) failed (size_t overflow)", count, size);
 	p = do_scavenging_malloc(ctx, count * size);
 	if (!p)
 		fz_throw(ctx, FZ_ERROR_SYSTEM, "calloc (%zu x %zu bytes) failed", count, size);
