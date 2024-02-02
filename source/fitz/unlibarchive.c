@@ -411,7 +411,7 @@ fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 			path = archive_entry_pathname_utf8(entry);
 			if (!path)
 			{
-				path = fz_wchar_to_utf8(ctx, archive_entry_pathname_w(entry));
+				path = fz_utf8_from_wchar(ctx, archive_entry_pathname_w(entry));
 				free_path = 1;
 			}
 			if (!path)
