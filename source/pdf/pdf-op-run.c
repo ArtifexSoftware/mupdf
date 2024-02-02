@@ -219,6 +219,8 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	int saved_blendmode;
 	fz_function *tr = NULL;
 
+	fz_var(tr);
+
 	save->softmask = softmask;
 	if (softmask == NULL)
 		return gstate;
