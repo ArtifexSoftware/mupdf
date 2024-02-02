@@ -389,7 +389,7 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 		/* Has it been rewritten to be a pattern? */
 		type = pdf_dict_get_int(ctx, cs_obj, PDF_NAME(PatternType));
 		if (type < 1 || type > 2)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Bad PatternType");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad PatternType");
 
 		/* Make a new entry (or find an existing one), and send that. */
 		make_resource_instance(ctx, p, PDF_NAME(Pattern), "Pa", new_name, sizeof(new_name), cs_obj);
@@ -413,7 +413,7 @@ rewrite_cs(fz_context *ctx, pdf_color_processor *p, pdf_obj *cs_obj, int n, floa
 			break;
 		}
 
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal rewritten colorspace");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Illegal rewritten colorspace");
 	}
 	fz_always(ctx)
 	{
