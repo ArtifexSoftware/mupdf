@@ -1730,6 +1730,7 @@ def build_swig(
                         -outdir {os.path.relpath(build_dirs.dir_so)}
                         -o {cpp}
                         -includeall
+                        {os.environ.get('XCXXFLAGS', '')}
                         -I{os.path.relpath(build_dirs.dir_mupdf)}/platform/python/include
                         -I{os.path.relpath(include1)}
                         -I{os.path.relpath(include2)}
