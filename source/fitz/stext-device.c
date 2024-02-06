@@ -1076,7 +1076,7 @@ fz_stext_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const
 	mt->prev = tdev->metatext;
 	tdev->metatext = mt;
 	mt->type = meta;
-	mt->text = fz_strdup(ctx, text);
+	mt->text = text ? fz_strdup(ctx, text) : NULL;
 	mt->bounds = fz_empty_rect;
 }
 
