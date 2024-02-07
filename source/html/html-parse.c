@@ -1093,14 +1093,14 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 		break;
 	}
 
-	if (!strcmp(tag, "ol"))
+	if (tag && !strcmp(tag, "ol"))
 	{
 		int save_list_counter = g->list_counter;
 		g->list_counter = 0;
 		gen2_children(ctx, g, this_box, node, match);
 		g->list_counter = save_list_counter;
 	}
-	else if (!strcmp(tag, "section"))
+	else if (tag && !strcmp(tag, "section"))
 	{
 		int save_section_depth = g->section_depth;
 		g->section_depth++;
