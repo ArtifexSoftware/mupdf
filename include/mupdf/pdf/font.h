@@ -158,7 +158,9 @@ int pdf_font_writing_supported(fz_context *ctx, fz_font *font);
 /*
 	Subset fonts by scanning the document to establish usage, and then
 	rewriting the font files.
+
+	EXPERIMENTAL AND SUBJECT TO CHANGE.
 */
-void pdf_subset_fonts(fz_context *ctx, pdf_document *doc);
+void pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int pages_len, int *pages);
 
 #endif

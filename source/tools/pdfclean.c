@@ -65,7 +65,7 @@ static int usage(void)
 		"\t-A\tcreate appearance streams for annotations\n"
 		"\t-AA\trecreate appearance streams for annotations\n"
 		"\t-m\tpreserve metadata\n"
-		"\t-S\tsubset fonts if possible\n"
+		"\t-S\tsubset fonts if possible [EXPERIMENTAL!]\n"
 		"\t-Z\tuse objstms if possible for extra compression\n"
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-subsample-method -\n\t\taverage, bicubic\n"
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-subsample-dpi -[,-]\n\t\tDPI at which to subsample [+ target dpi]\n"

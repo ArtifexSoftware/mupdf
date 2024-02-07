@@ -530,10 +530,9 @@ prefix_font_name(fz_context *ctx, pdf_document *doc, pdf_obj *fontdesc, pdf_obj 
 }
 
 void
-pdf_subset_fonts(fz_context *ctx, pdf_document *doc)
+pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, int *pages)
 {
 	int i;
-	int pagecount = pdf_count_pages(ctx, doc);
 	pdf_page *page = NULL;
 	fonts_usage_t usage = { 0 };
 
@@ -542,9 +541,9 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc)
 	fz_try(ctx)
 	{
 		/* Process every page. */
-		for (i = 0; i < pagecount; i++)
+		for (i = 0; i < len; i++)
 		{
-			page = pdf_load_page(ctx, doc, i);
+			page = pdf_load_page(ctx, doc, pages[i]);
 
 			examine_page(ctx, doc, page, &usage);
 
