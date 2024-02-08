@@ -413,7 +413,7 @@ static int usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
+		"\t\traster: png, pnm, pam, pbm, pkm, pwg, pcl, ps, pdf, j2k\n"
 		"\t\tvector: svg, pdf, trace, ocr.trace\n"
 		"\t\ttext: txt, html, xhtml, stext, stext.json\n"
 #ifndef OCR_DISABLED
