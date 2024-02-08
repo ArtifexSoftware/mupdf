@@ -1859,5 +1859,7 @@ pdf_new_color_filter(
 	proc->global_options = global_options;
 	proc->options = options;
 
+	proc->super.requirements = PDF_PROCESSOR_REQUIRES_DECODED_IMAGES | proc->chain->requirements;
+
 	return (pdf_processor*)proc;
 }

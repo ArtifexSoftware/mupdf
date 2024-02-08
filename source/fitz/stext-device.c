@@ -1394,5 +1394,8 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	if (opts)
 		dev->opts = *opts;
 
+	if ((dev->flags & FZ_STEXT_PRESERVE_IMAGES) == 0)
+		dev->super.hints |= FZ_DONT_DECODE_IMAGES;
+
 	return (fz_device*)dev;
 }
