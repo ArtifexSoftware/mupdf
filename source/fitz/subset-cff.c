@@ -259,7 +259,7 @@ index_load(fz_context *ctx, index_t *index, const uint8_t *base, uint32_t len, u
 	index->index_offset = offset;
 
 	if (offset >= len || len-offset < 2)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated index");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	index->count = get16(data);
 
@@ -267,11 +267,11 @@ index_load(fz_context *ctx, index_t *index, const uint8_t *base, uint32_t len, u
 		return offset+2;
 
 	if (offset + 4 >= len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated index");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	os = index->offsize = data[2];
 	if (index->offsize < 1 || index->offsize > 4)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal offsize");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Illegal offsize");
 
 	index->offset = data + 3;
 
@@ -279,23 +279,23 @@ index_load(fz_context *ctx, index_t *index, const uint8_t *base, uint32_t len, u
 	index->data_offset = data_offset + offset;
 
 	if (data_offset > len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated index");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	data += 3;
 	prev = get_offset(data, os);
 	if (prev != 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt index");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt index");
 	data += os;
 	for (i = index->count; i > 0; i--)
 	{
 		v = get_offset(data, os);
 		data += os;
 		if (v < prev)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Index not monotonic");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Index not monotonic");
 		prev = v;
 	}
 	if (v > len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated index");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	data += prev - 1;
 	index->index_size = data - data0;
@@ -310,7 +310,7 @@ index_get(fz_context *ctx, index_t *index, int idx)
 	uint32_t v;
 
 	if (idx < 0 || idx > index->count)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Index bounds");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Index bounds");
 
 	os = index->offsize;
 	idx *= os;
@@ -420,7 +420,7 @@ dict_get_byte(fz_context *ctx, dict_iterator *di)
 	if (di->offset == di->end_offset)
 		di->eod = 1;
 	if (di->eod)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Overlong DICT data");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Overlong DICT data");
 	b = di->base[di->offset++];
 
 	return b;
@@ -449,7 +449,7 @@ dict_get_arg(fz_context *ctx, dict_iterator *di)
 	else if (b0 <= 27)
 	{
 malformed:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Malformed DICT");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed DICT");
 	}
 	else if (b0 == 28)
 	{
@@ -542,7 +542,7 @@ dict_next(fz_context *ctx, dict_iterator *di)
 			break;
 		}
 		if (n == DICT_MAX_ARGS)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Too many operands");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Too many operands");
 		n++;
 	}
 	di->num_args = n;
@@ -560,7 +560,7 @@ dict_init(fz_context *ctx, dict_iterator *di, const uint8_t *base, size_t len, u
 	di->eod = (di->offset == di->end_offset);
 
 	if (di->offset > len || end > len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Malformed DICT");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed DICT");
 
 	return dict_next(ctx, di);
 }
@@ -575,10 +575,10 @@ static uint32_t
 dict_arg_int(fz_context *ctx, dict_iterator *di, int idx)
 {
 	if (idx < 0 || idx >= di->num_args)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Missing dict arg");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Missing dict arg");
 
 	if (di->arg[idx].type != da_int)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "DICT arg not an int");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "DICT arg not an int");
 
 	return di->arg[idx].u.i;
 }
@@ -866,7 +866,7 @@ use_sub_char(fz_context *ctx, cff_t *cff, int code)
 #define ATLEAST(n) if (sp < n) goto atleast_fail;
 #define POP(n) if (sp < n) goto atleast_fail;
 #define PUSH(n) \
-do { if (sp + n > (int)(sizeof(stack)/sizeof(*stack))) fz_throw(ctx, FZ_ERROR_GENERIC, "Stack overflow"); sp += n; } while (0)
+do { if (sp + n > (int)(sizeof(stack)/sizeof(*stack))) fz_throw(ctx, FZ_ERROR_FORMAT, "Stack overflow"); sp += n; } while (0)
 
 static void
 execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t *end)
@@ -890,7 +890,7 @@ execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t
 		case 15:
 		case 16:
 		case 17:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Reserved charstring byte");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Reserved charstring byte");
 			break;
 
 		/* Deal with all the hints together */
@@ -942,7 +942,7 @@ clear:
 			if (pc == end)
 			{
 overflow:
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer overflow in charstring");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Buffer overflow in charstring");
 			}
 			c = *pc++;
 			switch (c)
@@ -1007,14 +1007,14 @@ overflow:
 			case 20: /* put */
 				ATLEAST(2);
 				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] > sizeof(trans)/sizeof(*trans))
-					fz_throw(ctx, FZ_ERROR_GENERIC, "Transient array over/underflow");
+					fz_throw(ctx, FZ_ERROR_FORMAT, "Transient array over/underflow");
 				trans[(int)stack[sp-1]] = stack[sp-2];
 				sp -= 2;
 				break;
 			case 21: /* get */
 				ATLEAST(1);
 				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] > sizeof(trans)/sizeof(*trans))
-					fz_throw(ctx, FZ_ERROR_GENERIC, "Transient array over/underflow");
+					fz_throw(ctx, FZ_ERROR_FORMAT, "Transient array over/underflow");
 				stack[sp-1] = trans[(int)stack[sp-1]];
 				break;
 
@@ -1071,7 +1071,7 @@ overflow:
 				if (N == 0)
 					break;
 				if (N < 0)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid roll");
+					fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid roll");
 				ATLEAST(2+N);
 				if (J < 0)
 				{
@@ -1102,7 +1102,7 @@ overflow:
 
 
 			default:
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Reserved charstring byte");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Reserved charstring byte");
 			}
 		}
 		case 14: /* endchar */
@@ -1162,7 +1162,7 @@ overflow:
 	}
 	return;
 atleast_fail:
-	fz_throw(ctx, FZ_ERROR_GENERIC, "Insufficient operators on the stack: op=%d", c);
+	fz_throw(ctx, FZ_ERROR_FORMAT, "Insufficient operators on the stack: op=%d", c);
 }
 
 static void
@@ -1217,7 +1217,7 @@ get_encoding_len(fz_context *ctx, cff_t *cff)
 	}
 
 	if (encoding_offset + 2 > cff->len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt encoding");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt encoding");
 
 	fmt = *d++;
 	n = *d++;
@@ -1234,22 +1234,22 @@ get_encoding_len(fz_context *ctx, cff_t *cff)
 		size = 2 + n * 3;
 		break;
 	default:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad format encoding");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Bad format encoding");
 	}
 
 	if (encoding_offset + size > cff->len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt encoding");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt encoding");
 
 	if (fmt & 128)
 	{
 		if (encoding_offset + size + 1 > cff->len)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt encoding");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt encoding");
 
 		n = *d++;
 		size += 1 + n*3;
 
 		if (encoding_offset + size > cff->len)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt encoding");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt encoding");
 	}
 	cff->encoding_len = size;
 }
@@ -1270,7 +1270,7 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 	}
 
 	if (charset_offset + 1 > cff->len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 
 	fmt = *d++;
 	n = cff->charstrings_index.count;
@@ -1287,7 +1287,7 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 			/* uint16_t first; */
 			uint32_t nleft;
 			if (d + 3>= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			/* first = get16(d); */
 			nleft = d[2] + 1;
 			d += 3;
@@ -1302,7 +1302,7 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 			/* uint16_t first; */
 			uint32_t nleft;
 			if (d + 4 >= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			/* first = get16(d); */
 			nleft = get16(d+2) + 1;
 			d += 4;
@@ -1311,7 +1311,7 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 	}
 	else
 	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad charset format");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Bad charset format");
 	}
 
 	cff->charset_len = (uint32_t)(d - d0);
@@ -1333,7 +1333,7 @@ get_fdselect_len(fz_context *ctx, cff_t *cff)
 	}
 
 	if (fdselect_offset + 1 > cff->len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt fdselect");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 
 	fmt = *d++;
 	n = cff->charstrings_index.count;
@@ -1345,7 +1345,7 @@ get_fdselect_len(fz_context *ctx, cff_t *cff)
 	else if (fmt == 3)
 	{
 		if (d + 2 >= cff->base + cff->len)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt fdselect");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 		n = get16(d);
 		d += 2;
 		while (n > 0)
@@ -1353,14 +1353,14 @@ get_fdselect_len(fz_context *ctx, cff_t *cff)
 			/* uint16_t first; */
 			uint32_t nleft;
 			if (d + 3 >= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			/* first = get16(d); */
 			nleft = d[2] + 1;
 			d += 3;
 			n -= nleft;
 		}
 		if (d + 2 >= cff->base + cff->len)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt fdselect");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 		d += 2;
 	}
 
@@ -1377,7 +1377,7 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 	uint32_t i;
 
 	if (charset_offset + 1 > cff->len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 
 	fmt = *d++;
 
@@ -1399,7 +1399,7 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 			uint16_t first;
 			uint32_t nleft;
 			if (d + 3 >= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			first = get16(d);
 			nleft = d[2] + 1;
 			d += 3;
@@ -1416,7 +1416,7 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 			uint16_t first;
 			uint32_t nleft;
 			if (d + 4 >= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt charset");
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			first = get16(d);
 			nleft = get16(d+2) + 1;
 			d += 4;
@@ -1428,7 +1428,7 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 	}
 	else
 	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad charset format");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Bad charset format");
 	}
 }
 
@@ -1900,7 +1900,7 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		cff.cidfont = cidfont;
 
 		if (len < 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated CFF");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated CFF");
 
 		cff.major = base[0];
 		cff.minor = base[1];
@@ -1908,10 +1908,10 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		cff.offsize = base[3];
 
 		if (cff.offsize < 0 || cff.offsize > 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid offsize in CFF");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid offsize in CFF");
 
 		if (len > UINT32_MAX)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "CFF too large");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "CFF too large");
 
 		/* First, the name index */
 		cff.top_dict_index_offset = index_load(ctx, &cff.name_index, base, (uint32_t)len, cff.headersize);
@@ -1929,7 +1929,7 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		read_top_dict(ctx, &cff, 0);
 
 		if (cff.charstrings_index_offset == 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Missing charstrings table");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Missing charstrings table");
 
 		index_load(ctx, &cff.charstrings_index, base, (uint32_t)len, cff.charstrings_index_offset);
 		index_load(ctx, &cff.local_index, base, (uint32_t)len, cff.local_index_offset);

@@ -158,7 +158,7 @@ read_table(fz_context *ctx, fz_stream *stm, uint32_t tag, int compulsory)
 	if (off == 0)
 	{
 		if (compulsory)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Required %c%c%c%c table missing", tag>>24, (tag>>16)&0xff, (tag>>8)&0xff, tag & 0xff);
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Required %c%c%c%c table missing", tag>>24, (tag>>16)&0xff, (tag>>8)&0xff, tag & 0xff);
 		return NULL;
 	}
 
@@ -404,7 +404,7 @@ ptr_list_compact(fz_context *ctx, ptr_list_t *pl, filter_t *fil, uint8_t *base, 
 	pl->block_len = block_len;
 
 	if (base < block || (size_t)(base - block) > block_len || (size_t)(base - block) + n * eltsize >= block_len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Ptr List creation failed");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Ptr List creation failed");
 
 	for (i = 0; i < n; i++)
 	{
@@ -470,14 +470,14 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	fz_try(ctx)
 	{
 		if (get16(d) != 0 || t->len < 6)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported name table format");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported name table format");
 
 		n = get16(d+2);
 		off = get16(d+4);
 		name_data_size = t->len - 6 + 12*n;
 
 		if (t->len < 6 + 12*n)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated name table");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name table");
 
 		ptr_list_compact(ctx, &pl, filter_name_tables, d+6, n, 12, d, t->len);
 
@@ -523,7 +523,7 @@ load_enc_tab0(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	int i;
 
 	if (data_size < 262)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated cmap 0 format table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated cmap 0 format table");
 
 	d += offset + 6;
 
@@ -542,13 +542,13 @@ load_enc_tab4(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	uint32_t i;
 
 	if (data_size < 26)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cmap4 too small");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cmap4 too small");
 
 	enc->max = 256;
 	seg_count = get16(d+offset+6); /* 2 * seg_count */
 
 	if (seg_count & 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Malformed cmap4 table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap4 table");
 	seg_count >>= 1;
 
 	/* Run through the segments, counting how many are used. */
@@ -592,12 +592,12 @@ load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 	uint32_t i, n;
 
 	if (data_size < 6 || get16(d) != 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported cmap table format");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported cmap table format");
 
 	n = get16(d+2);
 
 	if (data_size < 4 + 8*n)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated cmap table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated cmap table");
 
 	for (i = 0; i < n; i++)
 	{
@@ -611,7 +611,7 @@ load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 			continue;
 
 		if (offset < 4 + 8 * n || offset + 2 >= data_size)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cmap table data out of range");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "cmap table data out of range");
 
 		fmt = get16(d+offset);
 		switch(fmt)
@@ -623,7 +623,7 @@ load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 			enc = load_enc_tab4(ctx, d, data_size, offset);
 			break;
 		default:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported cmap table format %d", fmt);
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported cmap table format %d", fmt);
 		}
 
 		enc->pid = pid;
@@ -661,7 +661,7 @@ load_encoding(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 				enc = load_enc(ctx, t, 1, 0);
 		}
 		if (!enc)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "No suitable cmap table found");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "No suitable cmap table found");
 	}
 	fz_always(ctx)
 	{
@@ -827,7 +827,7 @@ read_maxp(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	fz_buffer *t = read_table(ctx, stm, TAG("maxp"), 1);
 
 	if (t->len < 6)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "truncated maxp table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated maxp table");
 
 	ttf->orig_num_glyphs = get16(t->data+4);
 
@@ -844,14 +844,14 @@ read_head(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	if (t->len < 54)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "truncated head table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated head table");
 	}
 
 	version = get32(t->data);
 	if (version != 0x00010000)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported head table version 0x%08x", version);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported head table version 0x%08x", version);
 	}
 
 	ttf->index_to_loc_formatp = t->data+50;
@@ -859,7 +859,7 @@ read_head(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	if (ttf->index_to_loc_format & ~1)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported index_to_loc_format 0x%04x", ttf->index_to_loc_format);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported index_to_loc_format 0x%04x", ttf->index_to_loc_format);
 	}
 
 	add_table(ctx, ttf, TAG("head"), t);
@@ -874,7 +874,7 @@ read_loca(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	t = read_table(ctx, stm, TAG("loca"), 1);
 
 	if (t->len < len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "truncated loca table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated loca table");
 
 	ttf->loca = t->data;
 	ttf->loca_len = &t->len;
@@ -892,14 +892,14 @@ read_hhea(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	if (t->len < 36)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "truncated hhea table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated hhea table");
 	}
 
 	version = get32(t->data);
 	if (version != 0x00010000)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported hhea table version 0x%08x", version);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported hhea table version 0x%08x", version);
 	}
 
 	ttf->orig_num_long_hor_metrics = get16(t->data+34);
@@ -980,14 +980,14 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 		return; /* Single glyph - no dependencies */
 	data += 4 * 2 + 2;
 	if (len < 4*2 + 2)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 	len -= 4 * 2 + 2;
 	do
 	{
 		uint16_t idx, skip;
 
 		if (len < 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 
 		flags = get16(data);
 		idx = get16(data+2);
@@ -1024,7 +1024,7 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 			break;
 		}
 		if (len < skip)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 		data += skip;
 		len -= skip;
 	}
@@ -1038,14 +1038,14 @@ renumber_composite(fz_context *ctx, ttf_t *ttf, uint8_t *data, uint32_t len)
 
 	data += 4 * 2 + 2;
 	if (len < 4*2 + 2)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 	len -= 4 * 2 + 2;
 	do
 	{
 		uint16_t skip;
 
 		if (len < 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 
 		flags = get16(data);
 		put16(data+2, ttf->gid_renum[get16(data+2)]);
@@ -1073,7 +1073,7 @@ renumber_composite(fz_context *ctx, ttf_t *ttf, uint8_t *data, uint32_t len)
 			break;
 		}
 		if (len < skip)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Corrupt glyf data");
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 		data += skip;
 		len -= skip;
 	}
@@ -1092,7 +1092,7 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 	if (t->len < len)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "truncated glyf table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated glyf table");
 	}
 
 	add_table(ctx, ttf, TAG("glyf"), t);
@@ -1245,11 +1245,11 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	uint8_t *d0, *e, *idx;
 
 	if (len < 2 + 2 * ttf->orig_num_glyphs)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated post table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated post table");
 
 	n = get16(d);
 	if ((uint32_t)n != ttf->orig_num_glyphs)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Malformed post table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
 
 	d0 = d;
 	d += 2; len -= 2;
@@ -1329,7 +1329,7 @@ subset_post(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids
 	if (len < 32)
 	{
 		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Truncated post table");
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated post table");
 	}
 
 	fmt = get32(d);
