@@ -114,7 +114,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->t3resources = NULL;
 	font->t3procs = NULL;
 	font->t3lists = NULL;
-	font->t3widths = NULL;
 	font->t3flags = NULL;
 	font->t3doc = NULL;
 	font->t3run = NULL;
@@ -206,7 +205,6 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 			fz_drop_display_list(ctx, font->t3lists[i]);
 	fz_free(ctx, font->t3procs);
 	fz_free(ctx, font->t3lists);
-	fz_free(ctx, font->t3widths);
 	fz_free(ctx, font->t3flags);
 
 	if (font->ft_face)
@@ -1538,7 +1536,6 @@ fz_new_type3_font(fz_context *ctx, const char *name, fz_matrix matrix)
 	{
 		font->t3procs = fz_calloc(ctx, 256, sizeof(fz_buffer*));
 		font->t3lists = fz_calloc(ctx, 256, sizeof(fz_display_list*));
-		font->t3widths = fz_calloc(ctx, 256, sizeof(float));
 		font->t3flags = fz_calloc(ctx, 256, sizeof(unsigned short));
 	}
 	fz_catch(ctx)
@@ -1835,17 +1832,6 @@ fz_advance_ft_glyph_aux(fz_context *ctx, fz_font *font, int gid, int wmode, int 
 	FT_Fixed adv = 0;
 	int mask;
 
-	/* PDF and substitute font widths. */
-	if (font->flags.ft_stretch)
-	{
-		if (font->width_table)
-		{
-			if (gid < font->width_count)
-				return font->width_table[gid] / 1000.0f;
-			return font->width_default / 1000.0f;
-		}
-	}
-
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
 	if (wmode)
 		mask |= FT_LOAD_VERTICAL_LAYOUT;
@@ -1857,12 +1843,7 @@ fz_advance_ft_glyph_aux(fz_context *ctx, fz_font *font, int gid, int wmode, int 
 	if (fterr && fterr != FT_Err_Invalid_Argument)
 	{
 		fz_warn(ctx, "FT_Get_Advance(%s,%d): %s", font->name, gid, ft_error_string(fterr));
-		if (font->width_table)
-		{
-			if (gid < font->width_count)
-				return font->width_table[gid] / 1000.0f;
-			return font->width_default / 1000.0f;
-		}
+		return 0;
 	}
 	return (float) adv / ((FT_Face)font->ft_face)->units_per_EM;
 }
@@ -1871,14 +1852,6 @@ static float
 fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {
 	return fz_advance_ft_glyph_aux(ctx, font, gid, wmode, 0);
-}
-
-static float
-fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
-{
-	if (gid < 0 || gid > 255)
-		return 0;
-	return font->t3widths[gid];
 }
 
 void
@@ -1908,6 +1881,14 @@ fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size
 float
 fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {
+	/* Use PDF font widths table if available */
+	if (font->width_table)
+	{
+		if (gid < font->width_count)
+			return font->width_table[gid] / 1000.0f;
+		return font->width_default / 1000.0f;
+	}
+
 	if (font->ft_face)
 	{
 		if (wmode)
@@ -1953,8 +1934,7 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 
 		return fz_advance_ft_glyph(ctx, font, gid, 0);
 	}
-	if (font->t3procs)
-		return fz_advance_t3_glyph(ctx, font, gid);
+
 	return 0;
 }
 
