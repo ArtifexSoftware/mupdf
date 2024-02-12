@@ -3422,12 +3422,42 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 {
 	int i, n;
 	pdf_obj *key, *val;
+	int skip = 0;
+	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME(Type));
 
 	n = pdf_dict_len(ctx, obj);
+
+	/* Open the dictionary.
+	 * We spot /Type and /Subtype here so we can sent those first,
+	 * in order. The hope is this will improve compression, because
+	 * we'll be consistently sending those first. */
 	if (fmt->tight) {
 		fmt_puts(ctx, fmt, "<<");
+		if (type)
+		{
+			pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
+			fmt_obj(ctx, fmt, PDF_NAME(Type));
+			fmt_obj(ctx, fmt, type);
+			if (subtype)
+			{
+				fmt_obj(ctx, fmt, PDF_NAME(Subtype));
+				fmt_obj(ctx, fmt, subtype);
+				skip |= 2; /* Skip Subtype */
+			}
+			skip |= 1; /* Skip Type */
+		}
+
+		/* Now send all the key/value pairs except the ones we have decided to
+		 * skip. */
 		for (i = 0; i < n; i++) {
 			key = pdf_dict_get_key(ctx, obj, i);
+			if (skip)
+			{
+				if ((skip & 1) != 0 && key == PDF_NAME(Type))
+					continue;
+				if ((skip & 2) != 0 && key == PDF_NAME(Subtype))
+					continue;
+			}
 			val = pdf_dict_get_val(ctx, obj, i);
 			fmt_obj(ctx, fmt, key);
 			if (key == PDF_NAME(Contents) && is_signature(ctx, obj))
