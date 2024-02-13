@@ -464,8 +464,10 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	uint32_t i, n, off;
 	ptr_list_t pl = { 0 };
 	size_t name_data_size;
-	uint8_t *new_name_data;
+	uint8_t *new_name_data = NULL;
 	size_t new_len;
+
+	fz_var(new_name_data);
 
 	fz_try(ctx)
 	{
@@ -506,6 +508,7 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	fz_always(ctx)
 	{
 		drop_ptr_list(ctx, &pl);
+		fz_free(ctx, new_name_data);
 	}
 	fz_catch(ctx)
 	{
@@ -1456,8 +1459,15 @@ fz_subset_ttf_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 	}
 	fz_always(ctx)
 	{
+		int i;
+
 		fz_drop_output(ctx, out);
 		fz_drop_stream(ctx, stm);
+		for (i = 0; i < ttf.len; i++)
+			fz_drop_buffer(ctx, ttf.table[i].tab);
+		fz_free(ctx, ttf.table);
+		fz_free(ctx, ttf.gid_renum);
+		fz_free(ctx, ttf.encoding);
 	}
 	fz_catch(ctx)
 	{
