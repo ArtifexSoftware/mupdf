@@ -868,6 +868,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "usage: %s [options] file.pdf [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-F -\tfullscreen\n");
 	fprintf(stderr, "\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
 	fprintf(stderr, "\t-C -\tRRGGBB (tint color in hexadecimal syntax)\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
@@ -907,7 +908,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:")) != -1)
+	while ((c = fz_getopt(argc, argv, "IFp:r:A:C:W:H:S:U:Xb:")) != -1)
 	{
 		switch (c)
 		{
@@ -919,6 +920,7 @@ int main(int argc, char **argv)
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atoi(fz_optarg); break;
 		case 'I': gapp.invert = 1; break;
+		case 'F': gapp.fullscreen = 1; break;
 		case 'A': fz_set_aa_level(ctx, atoi(fz_optarg)); break;
 		case 'W': gapp.layout_w = fz_atof(fz_optarg); break;
 		case 'H': gapp.layout_h = fz_atof(fz_optarg); break;
