@@ -2225,6 +2225,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 			trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
 			pdf_dict_put_int(ctx, trailer, PDF_NAME(Size), pdf_xref_len(ctx, doc));
 			pdf_dict_put_int(ctx, trailer, PDF_NAME(Prev), doc->startxref);
+			pdf_dict_del(ctx, trailer, PDF_NAME(XRefStm));
 			if (!opts->do_snapshot)
 				doc->startxref = startxref;
 		}
