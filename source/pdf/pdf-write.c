@@ -3063,7 +3063,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 	}
 }
 
-static void clean_content_streams(fz_context *ctx, pdf_document *doc, int sanitize, int ascii)
+static void clean_content_streams(fz_context *ctx, pdf_document *doc, int sanitize, int ascii, int newlines)
 {
 	int n = pdf_count_pages(ctx, doc);
 	int i;
@@ -3074,6 +3074,7 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 
 	options.recurse = 1;
 	options.ascii = ascii;
+	options.newlines = newlines;
 	options.filters = sanitize ? list : NULL;
 	list[0].filter = pdf_new_sanitize_filter;
 	list[0].options = &sopts;
@@ -3330,7 +3331,7 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in
 		pdf_begin_operation(ctx, doc, "Clean content streams");
 		fz_try(ctx)
 		{
-			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii);
+			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii, in_opts->do_pretty);
 			pdf_end_operation(ctx, doc);
 		}
 		fz_catch(ctx)

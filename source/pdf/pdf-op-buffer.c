@@ -35,6 +35,7 @@ typedef struct
 	fz_output *out;
 	int ahxencode;
 	int extgstate;
+	int newlines;
 	pdf_obj *res;
 	pdf_obj *last_res;
 	resources_stack *rstack;
@@ -42,6 +43,18 @@ typedef struct
 } pdf_output_processor;
 
 /* general graphics state */
+
+static void
+post_op(fz_context *ctx, pdf_output_processor *proc)
+{
+	if (proc->newlines)
+	{
+		fz_write_byte(ctx, proc->out, '\n');
+		proc->sep = 0;
+	}
+	else
+		proc->sep = 1;
+}
 
 static void
 pdf_out_w(fz_context *ctx, pdf_processor *proc_, float linewidth)
@@ -54,7 +67,7 @@ pdf_out_w(fz_context *ctx, pdf_processor *proc_, float linewidth)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g w", linewidth);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -68,7 +81,7 @@ pdf_out_j(fz_context *ctx, pdf_processor *proc_, int linejoin)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%d j", linejoin);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -82,7 +95,7 @@ pdf_out_J(fz_context *ctx, pdf_processor *proc_, int linecap)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%d J", linecap);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -96,7 +109,7 @@ pdf_out_M(fz_context *ctx, pdf_processor *proc_, float a)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g M", a);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -112,7 +125,7 @@ pdf_out_d(fz_context *ctx, pdf_processor *proc_, pdf_obj *array, float phase)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g d", phase);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -126,7 +139,7 @@ pdf_out_ri(fz_context *ctx, pdf_processor *proc_, const char *intent)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%n ri", intent);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -140,7 +153,7 @@ pdf_out_i(fz_context *ctx, pdf_processor *proc_, float flatness)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g i", flatness);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -151,7 +164,7 @@ pdf_out_gs_begin(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_ob
 	proc->extgstate = 1;
 
 	fz_write_printf(ctx, proc->out, "%n gs", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -170,7 +183,7 @@ pdf_out_q(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "q");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -181,7 +194,7 @@ pdf_out_Q(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "Q");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -192,7 +205,7 @@ pdf_out_cm(fz_context *ctx, pdf_processor *proc_, float a, float b, float c, flo
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g %g %g cm", a, b, c, d, e, f);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* path construction */
@@ -205,7 +218,7 @@ pdf_out_m(fz_context *ctx, pdf_processor *proc_, float x, float y)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g m", x, y);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -216,7 +229,7 @@ pdf_out_l(fz_context *ctx, pdf_processor *proc_, float x, float y)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g l", x, y);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -227,7 +240,7 @@ pdf_out_c(fz_context *ctx, pdf_processor *proc_, float x1, float y1, float x2, f
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g %g %g c", x1, y1, x2, y2, x3, y3);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -238,7 +251,7 @@ pdf_out_v(fz_context *ctx, pdf_processor *proc_, float x2, float y2, float x3, f
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g v", x2, y2, x3, y3);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -249,7 +262,7 @@ pdf_out_y(fz_context *ctx, pdf_processor *proc_, float x1, float y1, float x3, f
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g c", x1, y1, x3, y3);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -260,7 +273,7 @@ pdf_out_h(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "h");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -271,7 +284,7 @@ pdf_out_re(fz_context *ctx, pdf_processor *proc_, float x, float y, float w, flo
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g re", x, y, w, h);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* path painting */
@@ -284,7 +297,7 @@ pdf_out_S(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "S");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -295,7 +308,7 @@ pdf_out_s(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "s");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -306,7 +319,7 @@ pdf_out_F(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "F");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -317,7 +330,7 @@ pdf_out_f(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "f");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -328,7 +341,7 @@ pdf_out_fstar(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "f*");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -339,7 +352,7 @@ pdf_out_B(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "B");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -350,7 +363,7 @@ pdf_out_Bstar(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "B*");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -361,7 +374,7 @@ pdf_out_b(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "b");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -372,7 +385,7 @@ pdf_out_bstar(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "b*");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -383,7 +396,7 @@ pdf_out_n(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "n");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* clipping paths */
@@ -396,7 +409,7 @@ pdf_out_W(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "W");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -407,7 +420,7 @@ pdf_out_Wstar(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "W*");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* text objects */
@@ -420,7 +433,7 @@ pdf_out_BT(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "BT");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -431,7 +444,7 @@ pdf_out_ET(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "ET");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* text state */
@@ -444,7 +457,7 @@ pdf_out_Tc(fz_context *ctx, pdf_processor *proc_, float charspace)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g Tc", charspace);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -455,7 +468,7 @@ pdf_out_Tw(fz_context *ctx, pdf_processor *proc_, float wordspace)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g Tw", wordspace);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -467,7 +480,7 @@ pdf_out_Tz(fz_context *ctx, pdf_processor *proc_, float scale)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g Tz", scale);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -478,7 +491,7 @@ pdf_out_TL(fz_context *ctx, pdf_processor *proc_, float leading)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g TL", leading);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -487,7 +500,7 @@ pdf_out_Tf(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_font_des
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n %g Tf", name, size);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -498,7 +511,7 @@ pdf_out_Tr(fz_context *ctx, pdf_processor *proc_, int render)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%d Tr", render);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -509,7 +522,7 @@ pdf_out_Ts(fz_context *ctx, pdf_processor *proc_, float rise)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g Ts", rise);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* text positioning */
@@ -522,7 +535,7 @@ pdf_out_Td(fz_context *ctx, pdf_processor *proc_, float tx, float ty)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g Td", tx, ty);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -533,7 +546,7 @@ pdf_out_TD(fz_context *ctx, pdf_processor *proc_, float tx, float ty)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g TD", tx, ty);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -544,7 +557,7 @@ pdf_out_Tm(fz_context *ctx, pdf_processor *proc_, float a, float b, float c, flo
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g %g %g Tm", a, b, c, d, e, f);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -555,7 +568,7 @@ pdf_out_Tstar(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "T*");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* text showing */
@@ -604,7 +617,7 @@ pdf_out_TJ(fz_context *ctx, pdf_processor *proc_, pdf_obj *array)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "TJ");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -614,7 +627,7 @@ pdf_out_Tj(fz_context *ctx, pdf_processor *proc_, char *str, size_t len)
 
 	fz_write_pdf_string(ctx, proc->out, (const unsigned char *)str, len);
 	fz_write_string(ctx, proc->out, "TJ");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -624,7 +637,7 @@ pdf_out_squote(fz_context *ctx, pdf_processor *proc_, char *str, size_t len)
 
 	fz_write_pdf_string(ctx, proc->out, (const unsigned char *)str, len);
 	fz_write_string(ctx, proc->out, "'");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -637,7 +650,7 @@ pdf_out_dquote(fz_context *ctx, pdf_processor *proc_, float aw, float ac, char *
 	fz_write_printf(ctx, proc->out, "%g %g ", aw, ac);
 	fz_write_pdf_string(ctx, proc->out, (const unsigned char *)str, len);
 	fz_write_string(ctx, proc->out, "\"");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* type 3 fonts */
@@ -650,7 +663,7 @@ pdf_out_d0(fz_context *ctx, pdf_processor *proc_, float wx, float wy)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g d0", wx, wy);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -661,7 +674,7 @@ pdf_out_d1(fz_context *ctx, pdf_processor *proc_, float wx, float wy, float llx,
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g %g %g d1", wx, wy, llx, lly, urx, ury);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* color */
@@ -672,7 +685,7 @@ pdf_out_CS(fz_context *ctx, pdf_processor *proc_, const char *name, fz_colorspac
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n CS", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -681,7 +694,7 @@ pdf_out_cs(fz_context *ctx, pdf_processor *proc_, const char *name, fz_colorspac
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n cs", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -695,7 +708,7 @@ pdf_out_SC_pattern(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, proc->out, "%g ", color[i]);
 	fz_write_printf(ctx, proc->out, "%n SCN", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -709,7 +722,7 @@ pdf_out_sc_pattern(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, proc->out, "%g ", color[i]);
 	fz_write_printf(ctx, proc->out, "%n scn", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -718,7 +731,7 @@ pdf_out_SC_shade(fz_context *ctx, pdf_processor *proc_, const char *name, fz_sha
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n SCN", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -727,7 +740,7 @@ pdf_out_sc_shade(fz_context *ctx, pdf_processor *proc_, const char *name, fz_sha
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n scn", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -741,7 +754,7 @@ pdf_out_SC_color(fz_context *ctx, pdf_processor *proc_, int n, float *color)
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, proc->out, "%g ", color[i]);
 	fz_write_string(ctx, proc->out, "SCN");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -755,7 +768,7 @@ pdf_out_sc_color(fz_context *ctx, pdf_processor *proc_, int n, float *color)
 	for (i = 0; i < n; ++i)
 		fz_write_printf(ctx, proc->out, "%g ", color[i]);
 	fz_write_string(ctx, proc->out, "scn");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -766,7 +779,7 @@ pdf_out_G(fz_context *ctx, pdf_processor *proc_, float g)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g G", g);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -777,7 +790,7 @@ pdf_out_g(fz_context *ctx, pdf_processor *proc_, float g)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g g", g);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -788,7 +801,7 @@ pdf_out_RG(fz_context *ctx, pdf_processor *proc_, float r, float g, float b)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g RG", r, g, b);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -799,7 +812,7 @@ pdf_out_rg(fz_context *ctx, pdf_processor *proc_, float r, float g, float b)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g rg", r, g, b);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -810,7 +823,7 @@ pdf_out_K(fz_context *ctx, pdf_processor *proc_, float c, float m, float y, floa
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g K", c, m, y, k);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -821,7 +834,7 @@ pdf_out_k(fz_context *ctx, pdf_processor *proc_, float c, float m, float y, floa
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_printf(ctx, proc->out, "%g %g %g %g k", c, m, y, k);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* shadings, images, xobjects */
@@ -982,7 +995,7 @@ pdf_out_sh(fz_context *ctx, pdf_processor *proc_, const char *name, fz_shade *sh
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n sh", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -991,7 +1004,7 @@ pdf_out_Do_image(fz_context *ctx, pdf_processor *proc_, const char *name, fz_ima
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n Do", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1000,7 +1013,7 @@ pdf_out_Do_form(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_obj
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n Do", name);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* marked content */
@@ -1011,7 +1024,7 @@ pdf_out_MP(fz_context *ctx, pdf_processor *proc_, const char *tag)
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n MP", tag);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1026,7 +1039,7 @@ pdf_out_DP(fz_context *ctx, pdf_processor *proc_, const char *tag, pdf_obj *raw,
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "DP");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1035,7 +1048,7 @@ pdf_out_BMC(fz_context *ctx, pdf_processor *proc_, const char *tag)
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
 	fz_write_printf(ctx, proc->out, "%n BMC", tag);
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1050,7 +1063,7 @@ pdf_out_BDC(fz_context *ctx, pdf_processor *proc_, const char *tag, pdf_obj *raw
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "BDC");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1061,7 +1074,7 @@ pdf_out_EMC(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "EMC");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 /* compatibility */
@@ -1074,7 +1087,7 @@ pdf_out_BX(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "BX");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1085,7 +1098,7 @@ pdf_out_EX(fz_context *ctx, pdf_processor *proc_)
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
 	fz_write_string(ctx, proc->out, "EX");
-	proc->sep = 1;
+	post_op(ctx, proc);
 }
 
 static void
@@ -1128,7 +1141,7 @@ pdf_out_pop_resources(fz_context *ctx, pdf_processor *proc)
 }
 
 pdf_processor *
-pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
+pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode, int newlines)
 {
 	pdf_output_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 
@@ -1256,6 +1269,7 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 
 	proc->out = out;
 	proc->ahxencode = ahxencode;
+	proc->newlines = newlines;
 
 	proc->super.requirements = PDF_PROCESSOR_REQUIRES_DECODED_IMAGES;
 
@@ -1263,13 +1277,13 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 }
 
 pdf_processor *
-pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode)
+pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode, int newlines)
 {
 	pdf_processor *proc = NULL;
 	fz_output *out = fz_new_output_with_buffer(ctx, buffer);
 	fz_try(ctx)
 	{
-		proc = pdf_new_output_processor(ctx, out, ahxencode);
+		proc = pdf_new_output_processor(ctx, out, ahxencode, newlines);
 	}
 	fz_catch(ctx)
 	{
