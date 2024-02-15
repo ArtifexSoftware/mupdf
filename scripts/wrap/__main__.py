@@ -640,10 +640,10 @@ Usage:
                     Set -j arg used when action 'm' calls make (not
                     Windows). If <N> is 0 we use the number of CPUs
                     (from Python's multiprocessing.cpu_count()).
-                --m-target
+                --m-target <target>
                     Set target for action 'm'. Default is blank, so make will
                     build the default `all` target.
-                --m-vars
+                --m-vars <text>
                     Text to insert near start of the action 'm' make command,
                     typically to set MuPDF build flags, for example:
                         --m-vars 'HAVE_LIBCRYPTO=no'
