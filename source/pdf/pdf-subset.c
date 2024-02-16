@@ -310,6 +310,10 @@ show_string(fz_context *ctx, pdf_font_analysis_processor *p, unsigned char *buf,
 	size_t pos = 0;
 	font_usage_t *font = &p->usage->font[gs->current_font];
 
+	/* e.g. for non-embedded base14 fonts. */
+	if (fontdesc == NULL)
+		return;
+
 	while (pos < len)
 	{
 		unsigned int cpt;
