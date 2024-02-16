@@ -463,13 +463,18 @@ find_string_in_block(const uint8_t *str, size_t str_len, const uint8_t *block, s
 static void
 subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 {
-	fz_buffer *t = read_table(ctx, stm, TAG("name"), 1);
-	uint8_t *d = t->data;
+	fz_buffer *t = read_table(ctx, stm, TAG("name"), 0);
+	uint8_t *d;
 	uint32_t i, n, off;
 	ptr_list_t pl = { 0 };
 	size_t name_data_size;
 	uint8_t *new_name_data = NULL;
 	size_t new_len;
+
+	if (t == NULL)
+		return; /* No name table */
+
+	d = t->data;
 
 	fz_var(new_name_data);
 
@@ -526,12 +531,13 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 static encoding_t *
 load_enc_tab0(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 {
-	encoding_t *enc = fz_malloc_struct(ctx, encoding_t);
+	encoding_t *enc;
 	int i;
 
 	if (data_size < 262)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated cmap 0 format table");
 
+	enc = fz_malloc_struct(ctx, encoding_t);
 	d += offset + 6;
 
 	enc->max = 256;
@@ -544,19 +550,21 @@ load_enc_tab0(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 static encoding_t *
 load_enc_tab4(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 {
-	encoding_t *enc = fz_malloc_struct(ctx, encoding_t);
+	encoding_t *enc;
 	uint16_t seg_count;
 	uint32_t i;
 
 	if (data_size < 26)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "cmap4 too small");
 
-	enc->max = 256;
 	seg_count = get16(d+offset+6); /* 2 * seg_count */
 
 	if (seg_count & 1)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap4 table");
 	seg_count >>= 1;
+
+	enc = fz_malloc_struct(ctx, encoding_t);
+	enc->max = 256;
 
 	/* Run through the segments, counting how many are used. */
 	for (i = 0; i < seg_count; i++)
@@ -586,6 +594,37 @@ load_enc_tab4(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 			if (target != 0)
 				enc->gid[s] = target;
 		}
+	}
+
+	return enc;
+}
+
+static encoding_t *
+load_enc_tab6(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
+{
+	encoding_t *enc;
+	uint16_t first_code;
+	uint16_t entry_count;
+	uint16_t length;
+	uint32_t i;
+
+	if (data_size < 10)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cmap6 too small");
+
+	length = get16(d+offset+2);
+	first_code = get16(d+offset+6);
+	entry_count = get16(d+offset+8);
+
+	if (length < entry_count*2 + 10 || first_code + entry_count >= 256)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap6 table");
+
+	enc = fz_malloc_struct(ctx, encoding_t);
+	enc->max = 256;
+
+	/* Run through the segments, counting how many are used. */
+	for (i = 0; i < entry_count; i++)
+	{
+		enc->gid[first_code+i] = get16(d+offset+10+i*2);
 	}
 
 	return enc;
@@ -628,6 +667,9 @@ load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 			break;
 		case 4:
 			enc = load_enc_tab4(ctx, d, data_size, offset);
+			break;
+		case 6:
+			enc = load_enc_tab6(ctx, d, data_size, offset);
 			break;
 		default:
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Unsupported cmap table format %d", fmt);
@@ -834,7 +876,10 @@ read_maxp(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	fz_buffer *t = read_table(ctx, stm, TAG("maxp"), 1);
 
 	if (t->len < 6)
+	{
+		fz_drop_buffer(ctx, t);
 		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated maxp table");
+	}
 
 	ttf->orig_num_glyphs = get16(t->data+4);
 
@@ -881,7 +926,10 @@ read_loca(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	t = read_table(ctx, stm, TAG("loca"), 1);
 
 	if (t->len < len)
+	{
+		fz_drop_buffer(ctx, t);
 		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated loca table");
+	}
 
 	ttf->loca = t->data;
 	ttf->loca_len = &t->len;
@@ -1175,10 +1223,23 @@ static void
 subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 {
 	fz_buffer *t = read_table(ctx, stm, TAG("hmtx"), 1);
-	uint16_t i;
+	uint16_t i, max16;
 	uint8_t *s = t->data;
 	uint8_t *d = t->data;
 	int cidfont = (ttf->encoding == NULL);
+	size_t max = t->len;
+
+	if (ttf->orig_num_long_hor_metrics * 4 > max)
+	{
+		fz_drop_buffer(ctx, t);
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed hmtx table");
+	}
+	max -= ttf->orig_num_long_hor_metrics * 4;
+	max /= 2;
+	if (max > ttf->orig_num_glyphs)
+		max = ttf->orig_num_glyphs;
+	/* We know orig_num_glyphs is 16bit, so this cast safe. */
+	max16 = (uint16_t)max;
 
 	for (i = 0; i < ttf->orig_num_long_hor_metrics; i++)
 	{
@@ -1194,7 +1255,7 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 		}
 		s += 4;
 	}
-	for ( ; i < ttf->orig_num_glyphs; i++)
+	for ( ; i < max16; i++)
 	{
 		if (i == 0 || ttf->is_otf || ttf->gid_renum[i])
 		{
