@@ -1591,6 +1591,9 @@ rewrite_fdarray(fz_context *ctx, cff_t *cff, uint32_t offset0)
 	uint8_t os;
 	uint32_t offset;
 
+	if (cff->fdarray == NULL)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Expected to rewrite an fdarray");
+
 	/* Count how many bytes the index will require. */
 	for (i = 0; i < n; i++)
 	{
@@ -2201,6 +2204,15 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		drop_usage_list(ctx, &cff.global_usage);
 		drop_usage_list(ctx, &cff.gids_to_keep);
 		drop_usage_list(ctx, &cff.extra_gids_to_keep);
+		if (cff.fdarray)
+		{
+			int n = cff.fdarray_index.count;
+			int i;
+
+			for (i = 0; i < n; i++)
+				fz_drop_buffer(ctx, cff.fdarray[i].rewritten_dict);
+			fz_free(ctx, cff.fdarray);
+		}
 	}
 	fz_catch(ctx)
 	{

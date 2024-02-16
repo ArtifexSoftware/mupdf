@@ -197,6 +197,10 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 			{
 				cidfont = 0; // fontsub2a
 			}
+			else if (pdf_name_eq(ctx, subtype, PDF_NAME(CIDFontType0C)))
+			{
+				is_cff = 1;
+			}
 			else
 			{
 				is_cff = 1;
