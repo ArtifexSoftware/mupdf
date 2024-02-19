@@ -442,6 +442,7 @@ typedef struct
 	float scale;
 	float leading;
 	pdf_font_desc *font;
+	fz_string *fontname;
 	float size;
 	int render;
 	float rise;
