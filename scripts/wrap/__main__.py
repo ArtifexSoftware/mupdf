@@ -1162,6 +1162,8 @@ def get_so_version( build_dirs):
     '''
     if state.state_.macos or state.state_.pyodide:
         return ''
+    if os.environ.get('USE_SONAME') == 'no':
+        return ''
     d = dict()
     def get_v( name):
         path = f'{build_dirs.dir_mupdf}/include/mupdf/fitz/version.h'
@@ -1705,7 +1707,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
 
                     elif 'shared' in dir_so_flags:
                         link_soname_arg = ''
-                        if state.state_.linux:
+                        if state.state_.linux and so_version:
                             link_soname_arg = f'-Wl,-soname,{os.path.basename(libmupdfcpp)}'
                         command = ( textwrap.dedent(
                                 f'''
