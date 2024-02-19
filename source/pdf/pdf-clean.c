@@ -460,7 +460,7 @@ pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 	pdf_obj *qp;
 	int i, n;
 
-	fz_append_string(ctx, buf, "0 g\n");
+	fz_append_string(ctx, buf, " 0 g\n");
 
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 	{
