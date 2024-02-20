@@ -372,7 +372,7 @@ ptr_list_add(fz_context *ctx, ptr_list_t *pl, uint8_t *ptr)
 		int n = pl->max * 2;
 		if (n == 0)
 			n = 32;
-		pl->ptr = fz_malloc(ctx, sizeof(*pl->ptr) * n);
+		pl->ptr = fz_realloc(ctx, pl->ptr, sizeof(*pl->ptr) * n);
 		pl->max = n;
 	}
 	pl->ptr[pl->len++] = ptr;
@@ -485,7 +485,7 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 
 		n = get16(d+2);
 		off = get16(d+4);
-		name_data_size = t->len - 6 + 12*n;
+		name_data_size = t->len - 6 - 12*n;
 
 		if (t->len < 6 + 12*n)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name table");
@@ -1023,6 +1023,12 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 	if (ttf->gid_renum[i] != 0)
 		return;
 
+	if (i > ttf->orig_num_glyphs)
+	{
+		fz_warn(ctx, "TTF subsetting; gid > num_gids!");
+		return;
+	}
+
 	ttf->gid_renum[i] = 1;
 
 	/* If this glyf is composite, then we need to add any dependencies of it. */
@@ -1030,6 +1036,8 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 	len = get_loca(ctx, ttf, i+1) - offset;
 	if (len == 0)
 		return;
+	if (offset+2 > glyf->len)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 	data = glyf->data + offset;
 	if ((int16_t)get16(data) >= 0)
 		return; /* Single glyph - no dependencies */
