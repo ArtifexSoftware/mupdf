@@ -1333,6 +1333,9 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 
 	/* Store all the indexes. */
 	j = 0;
+	if (len < n*2)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+	len -= n*2;
 	for (i = 0; i < n; i++)
 	{
 		uint16_t o = get16(d);
@@ -1367,23 +1370,33 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	/* Run through the list moving the strings down that we care about. */
 	j = 0;
 	e = d;
+	n = (int16_t)heap.len;
 	for (i = 0; i < n; i++)
 	{
-		uint8_t len = *d+1;
+		uint8_t slen;
+
+		if (len < 1)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+		slen = *d+1;
+		if (len < slen)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+		len -= slen;
 
 		if (j >= heap.len || heap.heap[j].a != i)
 		{
 			/* Drop this one. */
-			d += len;
+			d += slen;
 		}
 
-		memmove(e, d, len);
-		d += len;
-		e += len;
+		memmove(e, d, slen);
+		d += slen;
+		e += slen;
 
 		put16(idx + 2*i, 258 + j);
 		j++;
 	}
+
+	fz_free(ctx, heap.heap);
 
 	return e - d0;
 }
