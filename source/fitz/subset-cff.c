@@ -1763,12 +1763,22 @@ make_new_top_dict(fz_context *ctx, cff_t *cff)
 			switch (k)
 			{
 			case DICT_OP_charset:
-				di.arg[0].u.i = 0x80000000;
-				cff->top_dict_fixup_offsets.charset = fz_tell_output(ctx, out);
+				if (cff->charset_offset < 2)
+					di.arg[0].u.i = cff->charset_offset;
+				else
+				{
+					di.arg[0].u.i = 0x80000000;
+					cff->top_dict_fixup_offsets.charset = fz_tell_output(ctx, out);
+				}
 				break;
 			case DICT_OP_Encoding:
-				di.arg[0].u.i = 0x80000000;
-				cff->top_dict_fixup_offsets.encoding = fz_tell_output(ctx, out);
+				if (cff->encoding_offset < 2)
+					di.arg[0].u.i = cff->encoding_offset;
+				else
+				{
+					di.arg[0].u.i = 0x80000000;
+					cff->top_dict_fixup_offsets.encoding = fz_tell_output(ctx, out);
+				}
 				break;
 			case DICT_OP_CharStrings:
 				di.arg[0].u.i = 0x80000000;
