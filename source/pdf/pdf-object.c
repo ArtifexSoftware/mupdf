@@ -2943,6 +2943,16 @@ pdf_mark_list_pop(fz_context *ctx, pdf_mark_list *marks)
 	--marks->len;
 }
 
+int
+pdf_mark_list_check(fz_context *ctx, pdf_mark_list *marks, pdf_obj *obj)
+{
+	if (pdf_mark_list_push(ctx, marks, obj))
+		return 1;
+	pdf_mark_list_pop(ctx, marks);
+
+	return 0;
+}
+
 void
 pdf_mark_list_init(fz_context *ctx, pdf_mark_list *marks)
 {
