@@ -1315,7 +1315,7 @@ shrink_loca_if_possible(fz_context *ctx, ttf_t *ttf)
 static size_t
 subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int num_gids)
 {
-	int16_t i, n;
+	int i, n;
 	int j;
 	fz_int2_heap heap = { 0 };
 	uint8_t *d0, *e, *idx;
@@ -1333,9 +1333,9 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 
 	/* Store all the indexes. */
 	j = 0;
-	if (len < n*2)
+	if (len < (size_t)n*2)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
-	len -= n*2;
+	len -= (size_t)n*2;
 	for (i = 0; i < n; i++)
 	{
 		uint16_t o = get16(d);
@@ -1370,7 +1370,7 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	/* Run through the list moving the strings down that we care about. */
 	j = 0;
 	e = d;
-	n = (int16_t)heap.len;
+	n = heap.len;
 	for (i = 0; i < n; i++)
 	{
 		uint8_t slen;
