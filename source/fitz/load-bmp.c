@@ -627,7 +627,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 	dstride = pix->stride;
 	if (!info->topdown)
 	{
-		ddp = pix->samples + (height - 1) * dstride;
+		ddp = pix->samples + ((size_t) (height - 1)) * ((size_t) dstride);
 		dstride = -dstride;
 	}
 
@@ -657,8 +657,8 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 
 	for (y = 0; y < height; y++)
 	{
-		const unsigned char *sp = ssp + y * sstride;
-		unsigned char *dp = ddp + y * dstride;
+		const unsigned char *sp = ssp + ((size_t) y) * ((size_t) sstride);
+		unsigned char *dp = ddp + ((size_t) y) * ((size_t) dstride);
 
 		switch (bitcount)
 		{
