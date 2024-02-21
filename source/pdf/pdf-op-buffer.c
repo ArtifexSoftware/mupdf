@@ -182,7 +182,7 @@ pdf_out_q(fz_context *ctx, pdf_processor *proc_)
 
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
-	fz_write_printf(ctx, proc->out, "q");
+	fz_write_string(ctx, proc->out, "q");
 	post_op(ctx, proc);
 }
 
@@ -193,7 +193,7 @@ pdf_out_Q(fz_context *ctx, pdf_processor *proc_)
 
 	if (proc->sep)
 		fz_write_byte(ctx, proc->out, ' ');
-	fz_write_printf(ctx, proc->out, "Q");
+	fz_write_string(ctx, proc->out, "Q");
 	post_op(ctx, proc);
 }
 
@@ -909,7 +909,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *col
 		}
 		if (cbuf->params.u.jpeg.invert_cmyk && img->n == 4)
 		{
-			fz_write_printf(ctx, out, "/D[1 0 1 0 1 0 1 0]");
+			fz_write_string(ctx, out, "/D[1 0 1 0 1 0 1 0]");
 			proc->sep = 0;
 		}
 		break;
