@@ -898,7 +898,7 @@ All page objects are structured into a page tree, which defines the order the pa
     :arg contents: Contents string. This represents the page content stream - see section 3.7.1 in the PDF 1.7 specification.
 
 
-    :return: `PDFPage`.
+    :return: `PDFObject`.
 
 
     |example_tag|
@@ -915,7 +915,8 @@ All page objects are structured into a page tree, which defines the order the pa
         fonts.put("Helv", helvetica);
         var resources = pdfDocument.addObject(pdfDocument.newDictionary());
         resources.put("Font", fonts);
-        var blankPage = pdfDocument.addPage([0,0,300,350], 0, resources, "BT /Helv 12 Tf 100 100 Td (MuPDF!)Tj ET");
+        var pageObject = pdfDocument.addPage([0,0,300,350], 0, resources, "BT /Helv 12 Tf 100 100 Td (MuPDF!)Tj ET");
+        pdfDocument.insertPage(-1, pageObject);
 
 
     |example_tag|
