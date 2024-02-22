@@ -1055,21 +1055,21 @@ The following functions can be used to copy objects from one :title:`PDF` docume
         pdfDocument.graftObject(obj);
 
 
-.. method:: graftPage(dstDoc, dstPageNumber, srcDoc, srcPageNumber)
-
-    |mutool_tag|
+.. method:: graftPage(to, srcDoc, srcPageNumber)
 
     Graft a page and its resources at the given page number from the source document to the requested page number in the document.
 
-    :arg dstPageNumber: The page number where the source page will be inserted. Page numbers start at `0`, and `-1` means at the end of the document.
+    :arg to: The page number to insert the page before. Page numbers start at `0` and `-1` means at the end of the document.
     :arg srcDoc: Source document.
     :arg srcPageNumber: Source page number.
 
     |example_tag|
 
+    This would copy the first page of the source document (`0`) to the last page (-1) of the current PDF document.
+
     .. code-block:: javascript
 
-        pdfDocument.graftObject(-1, srcdoc, 0);
+        pdfDocument.graftPage(-1, srcDoc, 0);
 
 
 ----
