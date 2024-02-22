@@ -615,11 +615,11 @@ load_enc_tab6(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	first_code = get16(d+offset+6);
 	entry_count = get16(d+offset+8);
 
-	if (length < entry_count*2 + 10 || first_code + entry_count >= 256)
+	if (length < entry_count*2 + 10)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap6 table");
 
-	enc = fz_malloc_struct(ctx, encoding_t);
-	enc->max = 256;
+	enc = fz_calloc(ctx, 1, sizeof(encoding_t) + sizeof(uint16_t) * (first_code + entry_count - 256));
+	enc->max = first_code + entry_count;
 
 	/* Run through the segments, counting how many are used. */
 	for (i = 0; i < entry_count; i++)
