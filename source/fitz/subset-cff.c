@@ -1502,18 +1502,7 @@ get_fdselect_len(fz_context *ctx, cff_t *cff)
 		if (d + 2 >= cff->base + cff->len)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 		n = get16(d);
-		d += 2;
-		while (n > 0)
-		{
-			/* uint16_t first; */
-			uint32_t nleft;
-			if (d + 3 >= cff->base + cff->len)
-				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
-			/* first = get16(d); */
-			nleft = d[2] + 1;
-			d += 3;
-			n -= nleft;
-		}
+		d += 2 + 3*n;
 		if (d + 2 >= cff->base + cff->len)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 		d += 2;
