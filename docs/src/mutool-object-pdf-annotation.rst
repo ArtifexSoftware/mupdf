@@ -572,9 +572,9 @@ These properties are only present for some annotation types, so support for them
 
 
 
-    Get the default text appearance used for free text annotations.
+    Get the :ref:`default text appearance <mutool_run_js_api_object_default_appearance_text_object>` used for free text annotations.
 
-    :return: `{font:String, size:Integer, color:[r,g,b]}` Returns an object with the key/value pairs.
+    :return: `{font:String, size:Integer, color:[r,g,b]}` Returns :ref:`a default text appearance <mutool_run_js_api_object_default_appearance_text_object>` with the key/value pairs.
 
     |example_tag|
 
@@ -582,7 +582,6 @@ These properties are only present for some annotation types, so support for them
 
         var appearance = annotation.getDefaultAppearance();
 
-    |jamie_todo| how about describing the DefaultApperance as a separate object similar to the link destination?
 
 
 .. method:: setDefaultAppearance(font, size, color)
@@ -950,7 +949,6 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: setIsOpen(state)
 
-    |mutool_tag_wasm_soon|
 
     Set annotation open state.
 
@@ -987,7 +985,6 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: getFilespec()
 
-    |mutool_tag|
 
     Gets the file specification object.
 
@@ -1007,7 +1004,6 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: setFilespec(fileSpecObject)
 
-    |mutool_tag|
 
     Sets the file specification object.
 
