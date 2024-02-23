@@ -1598,14 +1598,17 @@ functions and class methods.]
                 int yres,
                 int interpolate,
                 int imagemask,
-                const std::vector<float>* decode,
-                const std::vector<int>* colorkey,
+                const std::vector<float>& decode,
+                const std::vector<int>& colorkey,
                 fz_compressed_buffer* buffer,
                 fz_image* mask
                 );
 
         /** Swig-friendly wrapper for pdf_rearrange_pages(). */
-        void pdf_rearrange_pages2(fz_context* ctx, pdf_document* doc, const std::vector<int>* pages);
+        void pdf_rearrange_pages2(fz_context* ctx, pdf_document* doc, const std::vector<int>& pages);
+
+        /** Swig-friendly wrapper for pdf_subset_fonts(). */
+        void pdf_subset_fonts2(fz_context *ctx, pdf_document *doc, const std::vector<int>& pages);
 
 
 Python/C# bindings details
