@@ -206,8 +206,6 @@ bmp_decompress_huffman1d(fz_context *ctx, struct info *info, const unsigned char
 			1 /* black is 1 */
 		);
 		buf = fz_read_all(ctx, decstm, 1024);
-		size = fz_buffer_storage(ctx, buf, &decoded);
-
 		size = fz_buffer_extract(ctx, buf, &decoded);
 		*end = decoded + size;
 	}
