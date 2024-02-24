@@ -829,6 +829,10 @@ bmp_read_color_profile(fz_context *ctx, struct info *info, const unsigned char *
 
 		return cs;
 	}
+	else if (info->colorspacetype == 0x73524742)
+	{
+		return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+	}
 
 	fz_warn(ctx, "ignoring color profile with unknown type in bmp image");
 	return NULL;
