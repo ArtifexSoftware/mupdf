@@ -685,7 +685,7 @@ static pdf_obj *get_subtype(fz_context *ctx, font_usage_t *font)
 }
 
 void
-pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, int *pages)
+pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 {
 	int i, j;
 	pdf_page *page = NULL;
