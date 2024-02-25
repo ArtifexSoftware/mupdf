@@ -1287,7 +1287,7 @@ g_extra_definitions = textwrap.dedent(f'''
 
         void pdf_subset_fonts2(fz_context *ctx, pdf_document *doc, const std::vector<int>& pages)
         {{
-            return pdf_rearrange_pages(ctx, doc, pages.size(), &pages[0]);
+            return pdf_subset_fonts(ctx, doc, pages.size(), &pages[0]);
         }}
         ''')
 
