@@ -445,13 +445,13 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 			if (!pdf_authenticate_password(ctx, pdf, password))
 				fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot authenticate password: %s", infile);
 
+		len = cap = 0;
+
 		/* Only retain the specified subset of the pages */
 		if (argc)
 		{
 			int pagecount = pdf_count_pages(ctx, pdf);
 			int argidx = 0;
-
-			len = cap = 0;
 
 			while (argc - argidx)
 			{
