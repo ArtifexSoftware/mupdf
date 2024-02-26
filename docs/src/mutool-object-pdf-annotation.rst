@@ -541,6 +541,20 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 These properties are only present for some annotation types, so support for them must be checked before use.
 
+.. method:: hasRect()
+
+    |mutool_tag_wasm_soon|
+
+    Checks the support for annotation bounding box.
+
+    :return: `Boolean`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var hasRect = annotation.hasRect();
+
 .. method:: getRect()
 
     Get the annotation bounding box.

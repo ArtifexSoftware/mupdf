@@ -8132,6 +8132,18 @@ static void ffi_PDFAnnotation_setContents(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_hasRect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_rect(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
 static void ffi_PDFAnnotation_getRect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10465,6 +10477,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setFlags", ffi_PDFAnnotation_setFlags, 1);
 		jsB_propfun(J, "PDFAnnotation.getContents", ffi_PDFAnnotation_getContents, 0);
 		jsB_propfun(J, "PDFAnnotation.setContents", ffi_PDFAnnotation_setContents, 1);
+		jsB_propfun(J, "PDFAnnotation.hasRect", ffi_PDFAnnotation_hasRect, 0);
 		jsB_propfun(J, "PDFAnnotation.getRect", ffi_PDFAnnotation_getRect, 0);
 		jsB_propfun(J, "PDFAnnotation.setRect", ffi_PDFAnnotation_setRect, 1);
 		jsB_propfun(J, "PDFAnnotation.getBorder", ffi_PDFAnnotation_getBorder, 0);
