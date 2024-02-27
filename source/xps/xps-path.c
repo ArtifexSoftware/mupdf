@@ -573,6 +573,7 @@ xps_parse_poly_quadratic_bezier_segment(fz_context *ctx, xps_document *doc, fz_p
 	while (*s != 0)
 	{
 		while (*s == ' ') s++;
+		x[n] = y[n] = 0;
 		s = xps_parse_point(ctx, doc, s, &x[n], &y[n]);
 		n ++;
 		if (n == 2)
@@ -621,6 +622,7 @@ xps_parse_poly_bezier_segment(fz_context *ctx, xps_document *doc, fz_path *path,
 	while (*s != 0)
 	{
 		while (*s == ' ') s++;
+		x[n] = y[n] = 0;
 		s = xps_parse_point(ctx, doc, s, &x[n], &y[n]);
 		n ++;
 		if (n == 3)
@@ -659,6 +661,7 @@ xps_parse_poly_line_segment(fz_context *ctx, xps_document *doc, fz_path *path, f
 	while (*s != 0)
 	{
 		while (*s == ' ') s++;
+		x = y = 0;
 		s = xps_parse_point(ctx, doc, s, &x, &y);
 		if (stroking && !is_stroked)
 			fz_moveto(ctx, path, x, y);
