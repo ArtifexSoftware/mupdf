@@ -4255,6 +4255,9 @@ def class_wrapper(
 
     # Look for function that can be used by copy constructor and operator=.
     #
+    if refs:
+        assert extras.copyable != 'default', f'Non-POD class for {struct_name=} has refs, so must not use copyable="default"'
+
     if not extras.pod and extras.copyable and extras.copyable != 'default':
         class_copy_constructor(
                 tu,
