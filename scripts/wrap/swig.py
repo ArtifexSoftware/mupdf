@@ -888,6 +888,8 @@ def build_swig(
             %include carrays.i
             %include cdata.i
             %include std_vector.i
+            %include std_map.i
+
             {"%include argcargv.i" if language=="python" else ""}
 
             %array_class(unsigned char, uchar_array);
@@ -901,6 +903,7 @@ def build_swig(
                 %template(vectorf) vector<float>;
                 %template(vectord) vector<double>;
                 %template(vectors) vector<std::string>;
+                %template(map_string_int) map<std::string, int>;
                 %template(vectorq) vector<{rename.namespace_class("fz_quad")}>;
                 %template(vector_search_page2_hit) vector<fz_search_page2_hit>;
             }};

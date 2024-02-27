@@ -2399,6 +2399,23 @@ def class_find_destructor_fns( tu, struct_name, base_name):
     return destructor_fns
 
 
+def num_instances(refcheck_if, delta, name):
+    '''
+    Retuns C++ code to embed in a wrapper class constructor/destructor function
+    to update the class static `s_num_instances` variable.
+    '''
+    ret = ''
+    ret += f'    {refcheck_if}\n'
+    if delta == +1:
+        ret += '    ++s_num_instances;\n'
+    elif delta == -1:
+        ret += '    --s_num_instances;\n'
+    else:
+        assert 0
+    ret += '    #endif\n'
+    return ret
+
+
 def class_constructor_default(
         tu,
         struct_cursor,
@@ -2444,6 +2461,9 @@ def class_constructor_default(
             out_cpp.write(f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
             out_cpp.write( '    }\n')
             out_cpp.write( '    #endif\n')
+
+    out_cpp.write(num_instances(refcheck_if, +1, classname))
+
     out_cpp.write( f'}};\n')
 
 
@@ -2531,6 +2551,7 @@ def class_copy_constructor(
             out_cpp.write(f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
             out_cpp.write( '    }\n')
             out_cpp.write( '    #endif\n')
+        out_cpp.write(num_instances(refcheck_if, +1, classname))
         out_cpp.write( '}\n')
         out_cpp.write( '\n')
 
@@ -2823,6 +2844,9 @@ def function_wrapper_class_aware_body(
                 out_cpp.write( f'        s_{class_name}_refs_check.check( this, __FILE__, __LINE__, __FUNCTION__);\n')
             out_cpp.write( f'    }}\n')
             out_cpp.write( f'    #endif\n')
+
+    if class_constructor:
+        out_cpp.write(num_instances(refcheck_if, +1, class_name))
 
     if not return_void and not class_constructor:
         out_cpp.write( f'    return ret;\n')
@@ -3299,20 +3323,25 @@ def class_custom_method(
     out_cpp.write( f'FZ_FUNCTION {return_space}{classname}::{name_args_no_defaults}')
 
     body = textwrap.dedent(extramethod.body)
+
+    end = body.rfind('}')
+    assert end >= 0
+    out_cpp.write( body[:end])
+
     if is_constructor and parse.has_refs( tu, struct_cursor.type):
         # Insert ref checking code into end of custom constructor body.
-        end = body.rfind('}')
-        assert end >= 0
-        out_cpp.write( body[:end])
         out_cpp.write( f'    {refcheck_if}\n')
         out_cpp.write( f'    if (s_check_refs)\n')
         out_cpp.write( f'    {{\n')
         out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
         out_cpp.write( f'    }}\n')
         out_cpp.write( f'    #endif\n')
-        out_cpp.write( body[end:])
-    else:
-        out_cpp.write( body)
+    if is_constructor:
+        out_cpp.write( num_instances(refcheck_if, +1, classname))
+    if is_destructor:
+        out_cpp.write( num_instances(refcheck_if, -1, classname))
+
+    out_cpp.write( body[end:])
 
     out_cpp.write( f'\n')
 
@@ -3386,6 +3415,9 @@ def class_raw_constructor(
             out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
             out_cpp.write( f'    }}\n')
             out_cpp.write( f'    #endif\n')
+
+        out_cpp.write(num_instances(refcheck_if, +1, classname))
+
         out_cpp.write( '}\n')
         out_cpp.write( '\n')
 
@@ -3406,6 +3438,8 @@ def class_raw_constructor(
                     out_cpp.write( f'    memcpy(this->{c.spelling}, &internal.{c.spelling}, sizeof(this->{c.spelling}));\n')
                 else:
                     out_cpp.write( f'    this->{c.spelling} = internal.{c.spelling};\n')
+
+            out_cpp.write(num_instances(refcheck_if, +1, classname))
             out_cpp.write( '}\n')
             out_cpp.write( '\n')
 
@@ -3429,6 +3463,7 @@ def class_raw_constructor(
                     out_cpp.write( f'        s_{classname}_refs_check.add( this, __FILE__, __LINE__, __FUNCTION__);\n')
                     out_cpp.write( f'    }}\n')
                     out_cpp.write( f'    #endif\n')
+
                 out_cpp.write( '    return ret;\n')
                 out_cpp.write( '}\n')
                 out_cpp.write( '\n')
@@ -3579,7 +3614,7 @@ def class_destructor(
         fnname, cursor = destructor_fns[0]
         register_fn_use( cursor.spelling)
         out_h.write( f'    /** Destructor using {cursor.spelling}(). */\n')
-        out_h.write( f'    FZ_FUNCTION ~{classname}();\n');
+        out_h.write( f'    FZ_FUNCTION ~{classname}();\n')
 
         out_cpp.write( f'FZ_FUNCTION {classname}::~{classname}()\n')
         out_cpp.write(  '{\n')
@@ -3591,10 +3626,27 @@ def class_destructor(
             out_cpp.write( f'        s_{classname}_refs_check.remove( this, __FILE__, __LINE__, __FUNCTION__);\n')
             out_cpp.write(  '    }\n')
             out_cpp.write( f'    #endif\n')
+
+        out_cpp.write(num_instances(refcheck_if, -1, classname))
+
         out_cpp.write(  '}\n')
         out_cpp.write( '\n')
     else:
+        out_h.write(f'    {refcheck_if}\n')
+        out_h.write(f'    /** Destructor only decrements s_num_instances. */\n')
+        out_h.write(f'    FZ_FUNCTION ~{classname}();\n')
+        out_h.write( '    #else\n')
         out_h.write( '    /** We use default destructor. */\n')
+        out_h.write( '    #endif\n')
+
+        out_cpp.write( f'{refcheck_if}\n')
+        out_cpp.write( f'FZ_FUNCTION {classname}::~{classname}()\n')
+        out_cpp.write(  '{\n')
+        out_cpp.write(num_instances(refcheck_if, -1, classname))
+        out_cpp.write(  '}\n')
+        out_cpp.write( '#endif\n')
+        out_cpp.write( '\n')
+
 
 
 def pod_class_members(
@@ -4489,6 +4541,17 @@ def class_wrapper(
         out_h.write( f'    /** Pointer to wrapped data. */\n')
         out_h.write( f'    ::{struct_name}* m_internal;\n')
 
+    # Declare static `num_instances` variable.
+    out_h.write(  '\n')
+    out_h.write(f'    /* Ideally this would be in `{refcheck_if}...#endif`, but Swig will\n')
+    out_h.write(f'    generate code regardless so we always need to have this available. */\n')
+    out_h.write(f'    static int s_num_instances;\n')
+
+    out_cpp.write(f'/* Ideally this would be in `{refcheck_if}...#endif`, but Swig will\n')
+    out_cpp.write(f'generate code regardless so we always need to have this available. */\n')
+    out_cpp.write(f'int {classname}::s_num_instances = 0;\n')
+    out_cpp.write(f'\n')
+
     # Make operator<< (std::ostream&, ...) for POD classes.
     #
     has_to_string = False
@@ -5080,6 +5143,7 @@ def cpp_source(
             #include "mupdf/functions.h"
             #include "mupdf/pdf.h"
 
+            #include <map>
             #include <string>
             #include <vector>
 
@@ -5415,6 +5479,19 @@ def cpp_source(
             FZ_FUNCTION void reinit_singlethreaded();
 
             '''))
+
+    # Generate num_instances diagnostic fn.
+    out_hs.classes.write('\n')
+    out_hs.classes.write('/** Returns map from class name (for example FzDocument) to s_num_instances. */\n')
+    out_hs.classes.write('std::map<std::string, int> num_instances();\n')
+    out_cpps.classes.write('std::map<std::string, int> num_instances()\n')
+    out_cpps.classes.write('{\n')
+    out_cpps.classes.write('    std::map<std::string, int> ret;\n')
+    for classname, struct_cursor, struct_name in classes_:
+        out_cpps.classes.write(f'    ret["{classname}"] = {classname}::s_num_instances;\n')
+    out_cpps.classes.write('    \n')
+    out_cpps.classes.write('    return ret;\n')
+    out_cpps.classes.write('}\n')
 
     # Write close of namespace.
     out_hs.classes.write( out_h_classes_end.get())
