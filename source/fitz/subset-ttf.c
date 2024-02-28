@@ -1205,7 +1205,7 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 			if (enc)
 			{
 				if ((int16_t)get16(t->data + new_start) < 0)
-					renumber_composite(ctx, ttf, t->data, (uint32_t)t->len);
+					renumber_composite(ctx, ttf, t->data + new_start, len);
 				put_loca(ctx, ttf, ttf->gid_renum[i], new_start);
 			}
 			else
