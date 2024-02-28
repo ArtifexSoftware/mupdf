@@ -4545,7 +4545,7 @@ def class_wrapper(
     out_h.write(  '\n')
     out_h.write(f'    /* Ideally this would be in `{refcheck_if}...#endif`, but Swig will\n')
     out_h.write(f'    generate code regardless so we always need to have this available. */\n')
-    out_h.write(f'    static int s_num_instances;\n')
+    out_h.write(f'    FZ_DATA static int s_num_instances;\n')
 
     out_cpp.write(f'/* Ideally this would be in `{refcheck_if}...#endif`, but Swig will\n')
     out_cpp.write(f'generate code regardless so we always need to have this available. */\n')
@@ -5483,8 +5483,8 @@ def cpp_source(
     # Generate num_instances diagnostic fn.
     out_hs.classes.write('\n')
     out_hs.classes.write('/** Returns map from class name (for example FzDocument) to s_num_instances. */\n')
-    out_hs.classes.write('std::map<std::string, int> num_instances();\n')
-    out_cpps.classes.write('std::map<std::string, int> num_instances()\n')
+    out_hs.classes.write('FZ_FUNCTION std::map<std::string, int> num_instances();\n')
+    out_cpps.classes.write('FZ_FUNCTION std::map<std::string, int> num_instances()\n')
     out_cpps.classes.write('{\n')
     out_cpps.classes.write('    std::map<std::string, int> ret;\n')
     for classname, struct_cursor, struct_name in classes_:
