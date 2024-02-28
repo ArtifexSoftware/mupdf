@@ -1253,10 +1253,11 @@ calc_percentile(int *hist, float thr, float scale, float minval, float maxval)
 }
 
 static void
-calc_percentiles(fz_context *ctx, int nsamples, float *samples, float *minprct, float *maxprct)
+calc_percentiles(fz_context *ctx, size_t nsamples, float *samples, float *minprct, float *maxprct)
 {
 	float minval, maxval, scale;
-	int *hist, size, k;
+	size_t size, k;
+	int *hist;
 
 	minval = maxval = samples[0];
 	for (k = 1; k < nsamples; k++)
@@ -1271,7 +1272,7 @@ calc_percentiles(fz_context *ctx, int nsamples, float *samples, float *minprct, 
 		return;
 	}
 
-	size = fz_mini(65535, nsamples);
+	size = fz_minz(65535, nsamples);
 	scale = (size - 1) / (maxval - minval);
 
 	hist = fz_calloc(ctx, size, sizeof(int));
@@ -1301,18 +1302,24 @@ fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, 
 	float minsample, maxsample, mu;
 	float k1, d0, sigma, sigmasq2;
 	float minprct, maxprct, range;
-	int y, k, n = fz_colorspace_n(ctx, cs);
-	int nsamples = w * h * n;
+	int y;
+	size_t k, nsamples;
 #define KIMKAUTZC1 (3.0f)
 #define KIMKAUTZC2 (0.5f)
 #define MAXLD (logf(300.0f))
 #define MINLD (logf(0.3f))
 
-	fz_var(pixmap);
 	fz_var(lsamples);
+
+	pixmap = fz_new_pixmap(ctx, cs, w, h, NULL, 0);
 
 	fz_try(ctx)
 	{
+		nsamples = (size_t) w * h;
+		if ((size_t) pixmap->n > SIZE_MAX / nsamples)
+			fz_throw(ctx, FZ_ERROR_LIMIT, "too many floating point samples to convert to pixmap");
+		nsamples *= pixmap->n;
+
 		lsamples = fz_malloc(ctx, nsamples * sizeof(float));
 
 		mu = 0;
@@ -1345,8 +1352,6 @@ fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, 
 		calc_percentiles(ctx, nsamples, samples, &minprct, &maxprct);
 		range = maxprct - minprct;
 
-		pixmap = fz_new_pixmap(ctx, cs, w, h, NULL, 0);
-
 		dp = pixmap->samples + pixmap->stride * (h - 1);
 		sample = samples;
 
@@ -1354,7 +1359,7 @@ fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, 
 		{
 			unsigned char *dpp = dp;
 
-			for (k = 0; k < w * n; k++)
+			for (k = 0; k < (size_t) w * pixmap->n; k++)
 				*dpp++ = 255.0f * (fz_clamp(*sample++, minprct, maxprct) - minprct) / range;
 
 			dp -= pixmap->stride;
