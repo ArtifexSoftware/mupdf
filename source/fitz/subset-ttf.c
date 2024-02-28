@@ -563,8 +563,8 @@ load_enc_tab4(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap4 table");
 	seg_count >>= 1;
 
-	enc = fz_malloc_struct(ctx, encoding_t);
-	enc->max = 256;
+	enc = fz_calloc(ctx, 1, sizeof(encoding_t) + sizeof(uint16_t) * (65536 - 256));
+	enc->max = 65536;
 
 	/* Run through the segments, counting how many are used. */
 	for (i = 0; i < seg_count; i++)
