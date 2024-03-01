@@ -580,6 +580,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 	uint32_t x;
 	int32_t y;
 
+	assert(info->width > 0 && info->width <= SHRT_MAX);
+	assert(info->height > 0 && info->height <= SHRT_MAX);
+
 	if (info->compression == BI_NONE)
 		ssp = p;
 	else if (info->compression == BI_RLE4)
