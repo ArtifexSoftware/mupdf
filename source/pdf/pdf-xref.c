@@ -2152,7 +2152,8 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 		count = pdf_dict_get_int(ctx, objstm, PDF_NAME(N));
 		first = pdf_dict_get_int(ctx, objstm, PDF_NAME(First));
 
-		validate_object_number_range(ctx, first, count, "object stream");
+		if (count < 0 || count > PDF_MAX_OBJECT_NUMBER)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "number of objects in object stream out of range");
 
 		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
 		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
