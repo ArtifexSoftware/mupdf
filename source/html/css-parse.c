@@ -224,6 +224,8 @@ static fz_css_value *fz_new_css_value(fz_context *ctx, fz_pool *pool, int type, 
 
 static void css_lex_next(struct lexbuf *buf)
 {
+	if (buf->c == 0)
+		return;
 	buf->s += fz_chartorune(&buf->c, (const char *)buf->s);
 	if (buf->c == '\n')
 		++buf->line;
@@ -237,7 +239,7 @@ static void css_lex_init(fz_context *ctx, struct lexbuf *buf, fz_pool *pool, con
 	buf->s = (const unsigned char *)s;
 	buf->lookahead = EOF;
 	buf->start = buf->s;
-	buf->c = 0;
+	buf->c = -1;
 	buf->file = file;
 	buf->line = 1;
 	css_lex_next(buf);
