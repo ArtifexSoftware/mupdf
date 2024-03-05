@@ -148,7 +148,7 @@ struct info
 #define is_valid_os2_compression(info) (is_os2_bmp(info) && ((info)->compression == BI_NONE || (info)->compression == BI_RLE8 || (info)->compression == BI_RLE4 || (info)->compression == BI_HUFFMAN1D || (info)->compression == BI_RLE24))
 #define is_valid_compression(info) (is_valid_win_compression(info) || is_valid_os2_compression(info))
 
-#define is_valid_rgb_bitcount(info) ((info)->compression == BI_NONE && ((info)->bitcount == 1 || (info)->bitcount == 2 || (info)->bitcount == 4 || (info)->bitcount == 8 || (info)->bitcount == 16 || (info)->bitcount == 24 || (info)->bitcount == 32))
+#define is_valid_rgb_bitcount(info) ((info)->compression == BI_NONE && ((info)->bitcount == 1 || (info)->bitcount == 2 || (info)->bitcount == 4 || (info)->bitcount == 8 || (info)->bitcount == 16 || (info)->bitcount == 24 || (info)->bitcount == 32 || (info)->bitcount == 64))
 #define is_valid_rle8_bitcount(info) ((info)->compression == BI_RLE8 && (info)->bitcount == 8)
 #define is_valid_rle4_bitcount(info) ((info)->compression == BI_RLE4 && (info)->bitcount == 4)
 #define is_valid_bitfields_bitcount(info) (is_win_bmp(info) && (info)->compression == BI_BITFIELDS && ((info)->bitcount == 16 || (info)->bitcount == 32))
@@ -670,6 +670,24 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 
 		switch (bitcount)
 		{
+		case 64:
+			for (x = 0; x < width; x++)
+			{
+				uint32_t a = (((uint16_t)sp[7]) << 8) | (((uint16_t)sp[6]) << 0);
+				uint32_t r = (((uint16_t)sp[5]) << 8) | (((uint16_t)sp[4]) << 0);
+				uint32_t g = (((uint16_t)sp[3]) << 8) | (((uint16_t)sp[2]) << 0);
+				uint32_t b = (((uint16_t)sp[1]) << 8) | (((uint16_t)sp[0]) << 0);
+				r = (r * 255 + 4096) >> 13;
+				g = (g * 255 + 4096) >> 13;
+				b = (b * 255 + 4096) >> 13;
+				a = (a * 255 + 4096) >> 13;
+				*dp++ = r;
+				*dp++ = g;
+				*dp++ = b;
+				*dp++ = a;
+				sp += 8;
+			}
+			break;
 		case 32:
 			for (x = 0; x < width; x++)
 			{
@@ -1040,7 +1058,7 @@ bmp_read_info_header(fz_context *ctx, struct info *info, const unsigned char *be
 		info->bmask = 0x0000001f;
 		info->amask = 0x00000000;
 	}
-	else if (info->bitcount >= 24)
+	else if (info->bitcount == 24 || info->bitcount == 32)
 	{
 		info->rmask = 0x00ff0000;
 		info->gmask = 0x0000ff00;
