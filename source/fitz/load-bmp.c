@@ -28,6 +28,8 @@
 #include <string.h>
 #include <limits.h>
 
+#undef BMP_DEBUG
+
 static const unsigned char web_palette[] = {
 	0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x66, 0x00, 0x00, 0x99, 0x00, 0x00, 0xCC, 0x00, 0x00, 0xFF, 0x00, 0x00,
 	0x00, 0x00, 0x33, 0x33, 0x00, 0x33, 0x66, 0x00, 0x33, 0x99, 0x00, 0x33, 0xCC, 0x00, 0x33, 0xFF, 0x00, 0x33,
@@ -654,6 +656,12 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 	gtrunc = info->gbits < 8 ? 5 : (info->gbits - 8);
 	btrunc = info->bbits < 8 ? 5 : (info->bbits - 8);
 	atrunc = info->abits < 8 ? 5 : (info->abits - 8);
+#ifdef BMP_DEBUG
+	fz_warn(ctx, "rbits = %2d mult = %2d trunc = %2d", info->rbits, rmult, rtrunc);
+	fz_warn(ctx, "gbits = %2d mult = %2d trunc = %2d", info->gbits, gmult, gtrunc);
+	fz_warn(ctx, "bbits = %2d mult = %2d trunc = %2d", info->bbits, bmult, btrunc);
+	fz_warn(ctx, "abits = %2d mult = %2d trunc = %2d", info->abits, amult, atrunc);
+#endif
 
 	for (y = 0; y < height; y++)
 	{
@@ -792,9 +800,17 @@ bmp_read_color_profile(fz_context *ctx, struct info *info, const unsigned char *
 
 		for (i = 0; i < 3; i++)
 			gamma[i] = (float) info->gamma[i] / (float) (1 << 16);
-
 		for (i = 0; i < 9; i++)
 			matrix[i] = (float) info->endpoints[i] / (float) (1 << 30);
+
+#ifdef BMP_DEBUG
+		fz_warn(ctx, "wp = %.6f %.6f %.6f", wp[0], wp[1], wp[2]);
+		fz_warn(ctx, "bp = %.6f %.6f %.6f", bp[0], bp[1], bp[2]);
+		fz_warn(ctx, "endpoints = %.6f %.6f %.6f", matrix[0], matrix[1], matrix[2]);
+		fz_warn(ctx, "endpoints = %.6f %.6f %.6f", matrix[3], matrix[4], matrix[5]);
+		fz_warn(ctx, "endpoints = %.6f %.6f %.6f", matrix[6], matrix[7], matrix[8]);
+		fz_warn(ctx, "gamma = %.6f %.6f %.6f", gamma[0], gamma[1], gamma[2]);
+#endif
 
 		return fz_new_cal_rgb_colorspace(ctx, wp, bp, gamma, matrix);
 	}
@@ -1183,6 +1199,52 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 	compute_mask_info(info->gmask, &info->gshift, &info->gbits);
 	compute_mask_info(info->bmask, &info->bshift, &info->bbits);
 	compute_mask_info(info->amask, &info->ashift, &info->abits);
+
+#ifdef BMP_DEBUG
+	{
+		#define chr(c) (((c) >= ' ' && (c) <= '~') ? (c) : '?')
+		fz_warn(ctx, "type = %02x%02x %c%c", info->type[0], info->type[1], chr(info->type[0]), chr(info->type[1]));
+		if (is_bitmap_array(info->type)) fz_warn(ctx, "\tbitmap array");
+		if (is_bitmap(info->type)) fz_warn(ctx, "\tbitmap");
+		fz_warn(ctx, "version = %zu", (size_t) info->version);
+		if (is_os2_bmp(info)) fz_warn(ctx, "OS/2 bmp");
+		if (is_win_bmp(info)) fz_warn(ctx, "Windows bmp");
+		fz_warn(ctx, "bitmapoffset = %zu", (size_t) info->bitmapoffset);
+		fz_warn(ctx, "width = %zu", (size_t) info->width);
+		fz_warn(ctx, "height = %zu", (size_t) info->height);
+		fz_warn(ctx, "bitcount = %zu", (size_t) info->bitcount);
+		fz_warn(ctx, "compression = %zu", (size_t) info->compression);
+		if (info->compression == BI_NONE) fz_warn(ctx, "\tNone");
+		if (info->compression == BI_RLE8) fz_warn(ctx, "\tRLE 8");
+		if (info->compression == BI_RLE4) fz_warn(ctx, "\tRLE 4");
+		if (is_valid_win_compression(info) && info->compression == BI_BITFIELDS) fz_warn(ctx, "\tBITFIELDS");
+		if (is_valid_os2_compression(info) && info->compression == BI_HUFFMAN1D) fz_warn(ctx, "\tHUFFMAN1D");
+		if (info->compression == BI_JPEG) fz_warn(ctx, "\tJPEG");
+		if (info->compression == BI_RLE24) fz_warn(ctx, "\tRLE24");
+		if (info->compression == BI_PNG) fz_warn(ctx, "\tPNG");
+		if (info->compression == BI_ALPHABITS) fz_warn(ctx, "\tALPHABITS");
+		fz_warn(ctx, "bitmapsize = %zu", (size_t) info->bitmapsize);
+		fz_warn(ctx, "xres = %zu", (size_t) info->xres);
+		fz_warn(ctx, "yres = %zu", (size_t) info->yres);
+		fz_warn(ctx, "colors = %zu", (size_t) info->colors);
+		fz_warn(ctx, "rmask = 0x%08zx rshift = %d rbits = %d", (size_t) info->rmask, info->rshift, info->rbits);
+		fz_warn(ctx, "gmask = 0x%08zx gshift = %d gbits = %d", (size_t) info->gmask, info->gshift, info->gbits);
+		fz_warn(ctx, "bmask = 0x%08zx bshift = %d bbits = %d", (size_t) info->bmask, info->bshift, info->bbits);
+		fz_warn(ctx, "amask = 0x%08zx ashift = %d abits = %d", (size_t) info->amask, info->ashift, info->abits);
+		fz_warn(ctx, "colorspacetype = %08zx %c%c%c%c", (size_t) info->colorspacetype,
+		chr((info->colorspacetype >> 24) & 0xff),
+		chr((info->colorspacetype >> 16) & 0xff),
+		chr((info->colorspacetype >>  8) & 0xff),
+		chr((info->colorspacetype >>  0) & 0xff));
+		fz_warn(ctx, "endpoints[%d] = 0x%08zx 0x%08zx 0x%08zx", 0, (size_t) info->endpoints[0], (size_t) info->endpoints[1], (size_t) info->endpoints[2]);
+		fz_warn(ctx, "endpoints[%d] = 0x%08zx 0x%08zx 0x%08zx", 3, (size_t) info->endpoints[3], (size_t) info->endpoints[4], (size_t) info->endpoints[5]);
+		fz_warn(ctx, "endpoints[%d] = 0x%08zx 0x%08zx 0x%08zx", 6, (size_t) info->endpoints[6], (size_t) info->endpoints[7], (size_t) info->endpoints[8]);
+		fz_warn(ctx, "gamma = 0x%08zx 0x%08zx 0x%08zx", (size_t) info->gamma[0], (size_t) info->gamma[1], (size_t) info->gamma[2]);
+		fz_warn(ctx, "profileoffset = %zu", (size_t) info->profileoffset);
+		fz_warn(ctx, "profilesize = %zu", (size_t) info->profilesize);
+		#undef chr
+	}
+#endif
 
 	if (info->width == 0 || info->width > SHRT_MAX || info->height == 0 || info->height > SHRT_MAX)
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image dimensions (%u x %u) out of range in bmp image", info->width, info->height);
