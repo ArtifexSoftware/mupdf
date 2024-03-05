@@ -1878,7 +1878,6 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	pdf_obj *tag;
 	marked_content_stack *mc = NULL;
 	int drop_tag = 1;
-	fz_structure standard;
 	pdf_obj *mc_dict = NULL;
 
 	/* Flush any pending text so it's not in the wrong layer. */
@@ -1924,15 +1923,23 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 			}
 		}
 
+#if 0
+		/* Previously, I'd tried to send stuff like:
+		 *	/Artifact <</Type/Pagination>>BDC
+		 * as a structure entry, lured by the fact that 'Artifact' is a
+		 * structure tag. I now believe this is wrong. Only stuff with
+		 * an MCID pointer should be sent using the structure mechanism.
+		 */
 		if (!mc_dict || proc->broken_struct_tree)
 		{
-			standard = structure_type(ctx, proc, tag);
+			fz_structure standard = structure_type(ctx, proc, tag);
 			if (standard != FZ_STRUCTURE_INVALID)
 			{
 				pdf_flush_text(ctx, proc);
 				fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
 			}
 		}
+#endif
 
 		/* ActualText */
 		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_ACTUALTEXT, PDF_NAME(ActualText));
