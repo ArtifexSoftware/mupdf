@@ -665,11 +665,15 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 		case 32:
 			for (x = 0; x < width; x++)
 			{
-				unsigned int sample = (sp[3] << 24) | (sp[2] << 16) | (sp[1] << 8) | sp[0];
-				unsigned int r = (sample & info->rmask) >> info->rshift;
-				unsigned int g = (sample & info->gmask) >> info->gshift;
-				unsigned int b = (sample & info->bmask) >> info->bshift;
-				unsigned int a = info->abits == 0 ? 255 : (sample & info->amask) >> info->ashift;
+				uint32_t sample =
+					(((uint32_t) sp[3]) << 24) |
+					(((uint32_t) sp[2]) << 16) |
+					(((uint32_t) sp[1]) <<  8) |
+					(((uint32_t) sp[0]) <<  0);
+				uint32_t r = (sample & info->rmask) >> info->rshift;
+				uint32_t g = (sample & info->gmask) >> info->gshift;
+				uint32_t b = (sample & info->bmask) >> info->bshift;
+				uint32_t a = info->abits == 0 ? 255 : (sample & info->amask) >> info->ashift;
 				*dp++ = (r * rmult) >> rtrunc;
 				*dp++ = (g * gmult) >> gtrunc;
 				*dp++ = (b * bmult) >> btrunc;
@@ -690,11 +694,13 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 		case 16:
 			for (x = 0; x < width; x++)
 			{
-				unsigned int sample = (sp[1] << 8) | sp[0];
-				unsigned int r = (sample & info->rmask) >> info->rshift;
-				unsigned int g = (sample & info->gmask) >> info->gshift;
-				unsigned int b = (sample & info->bmask) >> info->bshift;
-				unsigned int a = (sample & info->amask) >> info->ashift;
+				uint16_t sample =
+					(((uint16_t)sp[1]) << 8) |
+					(((uint16_t)sp[0]) << 0);
+				uint16_t r = (sample & info->rmask) >> info->rshift;
+				uint16_t g = (sample & info->gmask) >> info->gshift;
+				uint16_t b = (sample & info->bmask) >> info->bshift;
+				uint16_t a = (sample & info->amask) >> info->ashift;
 				*dp++ = (r * rmult) >> rtrunc;
 				*dp++ = (g * gmult) >> gtrunc;
 				*dp++ = (b * bmult) >> btrunc;
