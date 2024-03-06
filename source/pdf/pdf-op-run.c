@@ -1801,23 +1801,12 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 			}
 		}
 
-#if 0
 		/* Previously, I'd tried to send stuff like:
 		 *	/Artifact <</Type/Pagination>>BDC
 		 * as a structure entry, lured by the fact that 'Artifact' is a
 		 * structure tag. I now believe this is wrong. Only stuff with
 		 * an MCID pointer should be sent using the structure mechanism.
 		 */
-		if (!mc_dict || proc->broken_struct_tree)
-		{
-			fz_structure standard = pdf_structure_type(ctx, proc->role_map, tag);
-			if (standard != FZ_STRUCTURE_INVALID)
-			{
-				pdf_flush_text(ctx, proc);
-				fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), 0);
-			}
-		}
-#endif
 
 		/* ActualText */
 		begin_metatext(ctx, proc, val, mc_dict, FZ_METATEXT_ACTUALTEXT, PDF_NAME(ActualText));
@@ -1844,7 +1833,6 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 {
 	marked_content_stack *mc = proc->marked_content;
 	pdf_obj *val, *tag;
-	fz_structure standard;
 	pdf_obj *mc_dict = NULL;
 
 	if (mc == NULL)
@@ -1887,19 +1875,10 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 		end_metatext(ctx, proc, val, mc_dict, PDF_NAME(ActualText));
 
 		/* Structure */
-		if (mc_dict)
+		if (mc_dict && !proc->broken_struct_tree)
 		{
-			/* Do nothing for now. */
-		}
-		else
-		{
-			/* Maybe drop this entirely? */
-			standard = pdf_structure_type(ctx, proc->role_map, tag);
-			if (standard != FZ_STRUCTURE_INVALID)
-			{
-				pdf_flush_text(ctx, proc);
-				fz_end_structure(ctx, proc->dev);
-			}
+			pdf_obj *p = pdf_dict_get(ctx, mc_dict, PDF_NAME(P));
+			pop_structure_to(ctx, proc, p);
 		}
 
 		/* Finally, close any layers. */
