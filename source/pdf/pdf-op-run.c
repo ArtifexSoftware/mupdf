@@ -1562,22 +1562,25 @@ end_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 static void
 structure_dump(fz_context *ctx, const char *str, pdf_obj *obj)
 {
-	printf("%s STACK=", str);
+	fprintf(stderr, "%s STACK=", str);
 
 	if (obj == NULL)
 	{
-		printf("empty\n");
+		fprintf(stderr, "empty\n");
 		return;
 	}
 
 	do
 	{
+		pdf_obj *s = pdf_dict_get(ctx, obj, PDF_NAME(S));
 		int n = pdf_to_num(ctx, obj);
-		printf(" %d", n);
+		fprintf(stderr, " %d", n);
+		if (s)
+			fprintf(stderr, "[%s]", pdf_to_name(ctx, s));
 		obj = pdf_dict_get(ctx, obj, PDF_NAME(P));
 	}
 	while (obj);
-	printf("\n");
+	fprintf(stderr, "\n");
 }
 #endif
 
@@ -1591,7 +1594,7 @@ pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
 
 	{
 		int n = pdf_to_num(ctx, common);
-		printf("Popping until %d\n", n);
+		fprintf(stderr, "Popping until %d\n", n);
 	}
 #endif
 
@@ -1600,6 +1603,9 @@ pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
 		pdf_obj *p = pdf_dict_get(ctx, proc->mcid_sent, PDF_NAME(P));
 		pdf_obj *tag = pdf_dict_get(ctx, proc->mcid_sent, PDF_NAME(S));
 		fz_structure standard = pdf_structure_type(ctx, proc->role_map, tag);
+#ifdef DEBUG_STRUCTURE
+		fprintf(stderr, "sending pop [tag=%s][std=%d]\n", pdf_to_name(ctx, tag) ? pdf_to_name(ctx, tag) : "null", standard);
+#endif
 		if (standard != FZ_STRUCTURE_INVALID)
 			fz_end_structure(ctx, proc->dev);
 		pdf_drop_obj(ctx, proc->mcid_sent);
@@ -1703,7 +1709,7 @@ send_begin_structure(fz_context *ctx, pdf_run_processor *proc, pdf_obj *mc_dict)
 	pdf_obj *common = NULL;
 
 #ifdef DEBUG_STRUCTURE
-	printf("send_begin_structure  %d\n", pdf_to_num(ctx, mc_dict));
+	fprintf(stderr, "send_begin_structure  %d\n", pdf_to_num(ctx, mc_dict));
 	structure_dump(ctx, "on entry", proc->mcid_sent);
 #endif
 
@@ -1761,12 +1767,12 @@ send_begin_structure(fz_context *ctx, pdf_run_processor *proc, pdf_obj *mc_dict)
 			}
 		}
 
-#ifdef DEBUG_STRUCTURE
-		printf("sending %d\n", pdf_to_num(ctx, send));
-#endif
 		idx = get_struct_index(ctx, send);
 		tag = pdf_dict_get(ctx, send, PDF_NAME(S));
 		standard = pdf_structure_type(ctx, proc->role_map, tag);
+#ifdef DEBUG_STRUCTURE
+		fprintf(stderr, "sending %d[idx=%d][tag=%s][std=%d]\n", pdf_to_num(ctx, send), idx, pdf_to_name(ctx, tag) ? pdf_to_name(ctx, tag) : "null", standard);
+#endif
 		if (standard != FZ_STRUCTURE_INVALID)
 			fz_begin_structure(ctx, proc->dev, standard, pdf_to_name(ctx, tag), idx);
 
