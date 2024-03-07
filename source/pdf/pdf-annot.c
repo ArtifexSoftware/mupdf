@@ -3477,7 +3477,7 @@ pdf_annot_filespec(fz_context *ctx, pdf_annot *annot)
 void
 pdf_set_annot_filespec(fz_context *ctx, pdf_annot *annot, pdf_obj *fs)
 {
-	if (!pdf_is_embedded_file(ctx, fs))
+	if (fs != PDF_NULL && !pdf_is_embedded_file(ctx, fs))
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot set non-filespec as annotation filespec");
 
 	begin_annot_op(ctx, annot, "Set filespec");
