@@ -1325,55 +1325,17 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 }
 
 fz_pixmap *
-fz_load_bmp(fz_context *ctx, const unsigned char *p, size_t total)
-{
-	struct info info;
-	fz_pixmap *image;
-
-	fz_try(ctx)
-	{
-		image = (fz_pixmap *) bmp_read_image(ctx, &info, p, p + total, p, 0);
-		image->xres = info.xres;
-		image->yres = info.yres;
-	}
-	fz_always(ctx)
-		fz_drop_colorspace(ctx, info.cs);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return image;
-}
-
-void
-fz_load_bmp_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
-{
-	struct info info;
-
-	fz_try(ctx)
-	{
-		bmp_read_image(ctx, &info, p, p + total, p, 1);
-		*cspacep = fz_keep_colorspace(ctx, info.cs);
-		*wp = info.width;
-		*hp = info.height;
-		*xresp = info.xres;
-		*yresp = info.yres;
-	}
-	fz_always(ctx)
-		fz_drop_colorspace(ctx, info.cs);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-}
-
-fz_pixmap *
 fz_load_bmp_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage)
 {
 	const unsigned char *begin = buf;
 	const unsigned char *end = buf + len;
 	const unsigned char *p = begin;
-	struct info info;
+	struct info info = { 0 };
 	int nextoffset = 0;
-	fz_pixmap *image;
+	fz_pixmap *image = NULL;
 	int origidx = subimage;
+
+	(void) p;
 
 	do
 	{
@@ -1390,6 +1352,7 @@ fz_load_bmp_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int 
 			/* read16(p+10) == suitable pelx dimensions */
 			/* read16(p+12) == suitable pely dimensions */
 			p += 14;
+			(void) p;
 		}
 		else if (is_bitmap(p))
 		{
@@ -1422,6 +1385,73 @@ fz_load_bmp_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int 
 		fz_rethrow(ctx);
 
 	return image;
+}
+
+void
+fz_load_bmp_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, int subimage)
+{
+	const unsigned char *begin = buf;
+	const unsigned char *end = buf + len;
+	const unsigned char *p = begin;
+	struct info info = { 0 };
+	int nextoffset = 0;
+	int origidx = subimage;
+
+	(void) p;
+
+	do
+	{
+		p = begin + nextoffset;
+
+		if (end - p < 14)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for bitmap array (%02x%02x) in bmp image", p[0], p[1]);
+
+		if (is_bitmap_array(p))
+		{
+			/* read16(p+0) == type */
+			/* read32(p+2) == size of this header in bytes */
+			nextoffset = read32(p + 6);
+			/* read16(p+10) == suitable pelx dimensions */
+			/* read16(p+12) == suitable pely dimensions */
+			p += 14;
+			(void) p;
+		}
+		else if (is_bitmap(p))
+		{
+			nextoffset = 0;
+		}
+		else
+		{
+			fz_warn(ctx, "treating invalid subimage as end of file");
+			nextoffset = 0;
+		}
+
+		if (end - begin < nextoffset)
+		{
+			fz_warn(ctx, "treating invalid next subimage offset as end of file");
+			nextoffset = 0;
+		}
+		else
+			subimage--;
+
+	} while (subimage >= 0 && nextoffset > 0);
+
+	if (subimage != -1)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "subimage index (%d) out of range in bmp image", origidx);
+
+	fz_try(ctx)
+	{
+		(void) bmp_read_image(ctx, &info, begin, end, p, 1);
+		*cspacep = fz_keep_colorspace(ctx, info.cs);
+		*wp = info.width;
+		*hp = info.height;
+		*xresp = info.xres;
+		*yresp = info.yres;
+	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, info.cs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 int
@@ -1469,4 +1499,16 @@ fz_load_bmp_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len
 	} while (nextoffset > 0);
 
 	return count;
+}
+
+fz_pixmap *
+fz_load_bmp(fz_context *ctx, const unsigned char *p, size_t total)
+{
+	return fz_load_bmp_subimage(ctx, p, total, 0);
+}
+
+void
+fz_load_bmp_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+{
+	return fz_load_bmp_info_subimage(ctx, p, total, wp, hp, xresp, yresp, cspacep, 0);
 }
