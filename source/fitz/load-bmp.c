@@ -1208,6 +1208,22 @@ bmp_read_image(fz_context *ctx, struct info *info, const unsigned char *begin, c
 			info->endpoints[8] == 0x00000002) /* intent */
 	{
 		info->rmask = 0;
+		/* default masks */
+		if (info->bitcount == 16)
+		{
+			info->rmask = 0x00007c00;
+			info->gmask = 0x000003e0;
+			info->bmask = 0x0000001f;
+			info->amask = 0x00000000;
+		}
+		else if (info->bitcount >= 24)
+		{
+			info->rmask = 0x00ff0000;
+			info->gmask = 0x0000ff00;
+			info->bmask = 0x000000ff;
+			info->amask = 0x00000000;
+		}
+
 		info->colorspacetype = 0x73524742;
 		info->intent = 0x00000002;
 	}
