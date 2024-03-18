@@ -1225,6 +1225,7 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
             # them.
             jlib.log('Ignoring {flag=}')
             build_suffix += f'-{flag}'
+            actual_build_dir += f'-{flag}'
         else:
             if 0: pass  # lgtm [py/unreachable-statement]
             elif flag == 'debug':
@@ -3002,11 +3003,16 @@ def main2():
                     command_venv_enter = f'. {venv}/bin/activate'
 
                 command = f'{command_venv_enter} && python -m pip install --upgrade pip'
-                if state.state_.openbsd:
-                    jlib.log( 'Not installing libclang on openbsd; we assume py3-llvm is installed.')
-                    command += f' && python -m pip install --upgrade swig setuptools'
-                else:
-                    command += f' && python -m pip install{force_reinstall} --upgrade libclang swig setuptools'
+
+                # Required packages are specified by
+                # setup.py:get_requires_for_build_wheel().
+                mupdf_root = os.path.abspath( f'{__file__}/../../../')
+                sys.path.insert(0, f'{mupdf_root}')
+                import setup
+                del sys.path[0]
+                packages = setup.get_requires_for_build_wheel()
+                packages = ' '.join(packages)
+                command += f' && python -m pip install{force_reinstall} --upgrade {packages}'
                 jlib.system(command, out='log', verbose=1)
 
                 command = f'{command_venv_enter} && python {shlex.quote(sys.argv[0])}'
