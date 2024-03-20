@@ -145,7 +145,7 @@ All functions that take `PDFObjects`, do automatic translation between :title:`J
 
     Iterate over all the entries in a dictionary or array and call a function for each key-value pair.
 
-    :arg fun: Function in the format `function(key,value){...}`.
+    :arg fun: Function in the format `function(value,key){...}`.
 
     |example_tag|
 
