@@ -245,8 +245,8 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	FILE *file;
 	fz_output *out;
 
-	if (filename == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "no output to write to");
+	if (filename == NULL || !strcmp(filename, "-") || !fz_strcasecmp(filename, "stdout"))
+		return fz_new_output(ctx, 0, NULL, stdout_write, NULL, NULL);
 
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
 		return fz_new_output(ctx, 0, NULL, null_write, NULL, NULL);
