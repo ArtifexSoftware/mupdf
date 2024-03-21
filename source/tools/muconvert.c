@@ -63,7 +63,7 @@ static int usage(void)
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
-		"\t-o -\toutput file name (%%d for page number)\n"
+		"\t-o -\toutput file name (%%d for page number, - for stdout)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
 		"\t\t\traster: cbz, png, pnm, pgm, ppm, pam, pbm, pkm.\n"
 		"\t\t\tprint-raster: pcl, pclm, ps, pwg.\n"
