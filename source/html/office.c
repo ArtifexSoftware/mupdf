@@ -927,6 +927,7 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 
 	fz_var(xml);
 	fz_var(str);
+	fz_var(resolved);
 
 	fz_try(ctx)
 	{
