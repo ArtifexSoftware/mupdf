@@ -641,8 +641,17 @@ Usage:
                     Windows). If <N> is 0 we use the number of CPUs
                     (from Python's multiprocessing.cpu_count()).
                 --m-target <target>
-                    Set target for action 'm'. Default is blank, so make will
-                    build the default `all` target.
+                    Comma-separated list of target(s) to be built by action 'm'
+                    (Unix) or action '1' (Windows).
+
+                    On Unix, the specified target(s) are used as Make target(s)
+                    instead of implicit `all`. For example `--m-target libs`
+                    can be used to disable the default building of tools.
+
+                    On Windows, for each specified target, `/Project <target>`
+                    is appended to the devenv command. So one can use
+                    `--m-target mutool,muraster` to build mutool.exe and
+                    muraster.exe as well as mupdfcpp64.dll.
                 --m-vars <text>
                     Text to insert near start of the action 'm' make command,
                     typically to set MuPDF build flags, for example:
@@ -1269,7 +1278,8 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
     if build_suffix:
         make_args += f' build_suffix={build_suffix}'
     if m_target:
-        make_args += f' {m_target}'
+        for t in m_target.split(','):
+            make_args += f' {t}'
     command = f'cd {build_dirs.dir_mupdf} &&'
     if make_env:
         command += make_env
@@ -1647,6 +1657,9 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                             f' /Build "{build}"'
                             f' /Project mupdfcpp'
                             )
+                    if m_target:
+                        for t in m_target.split(','):
+                            command += f' /Project {t}'
                     jlib.system(command, verbose=1, out='log')
 
                     jlib.fs_copy(
