@@ -1655,12 +1655,13 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                             f'"{devenv}"'
                             f' platform/{win32_infix}/mupdf.sln'
                             f' /Build "{build}"'
-                            f' /Project mupdfcpp'
                             )
+                    projects = ['mupdfcpp']
                     if m_target:
-                        for t in m_target.split(','):
-                            command += f' /Project {t}'
-                    jlib.system(command, verbose=1, out='log')
+                        projects += m_target.split(',')
+                    for project in projects:
+                        command2 = f'{command} /Project {project}'
+                        jlib.system(command2, verbose=1, out='log')
 
                     jlib.fs_copy(
                             f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
