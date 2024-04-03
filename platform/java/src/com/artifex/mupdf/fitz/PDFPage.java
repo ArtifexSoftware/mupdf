@@ -44,14 +44,21 @@ public class PDFPage extends Page
 	public static final int REDACT_LINE_ART_REMOVE_IF_COVERED = 1;
 	public static final int REDACT_LINE_ART_REMOVE_IF_TOUCHED = 2;
 
-	public native boolean applyRedactions(boolean blackBoxes, int imageMethod, int lineArt);
+	public static final int REDACT_TEXT_REMOVE = 0;
+	public static final int REDACT_TEXT_NONE = 1;
+
+	public native boolean applyRedactions(boolean blackBoxes, int imageMethod, int lineArt, int text);
 
 	public boolean applyRedactions() {
-		return applyRedactions(true, REDACT_IMAGE_PIXELS, REDACT_LINE_ART_NONE);
+		return applyRedactions(true, REDACT_IMAGE_PIXELS, REDACT_LINE_ART_NONE, REDACT_TEXT_REMOVE);
 	}
 
 	public boolean applyRedactions(boolean blackBoxes, int imageMethod) {
-		return applyRedactions(blackBoxes, imageMethod, REDACT_LINE_ART_NONE);
+		return applyRedactions(blackBoxes, imageMethod, REDACT_LINE_ART_NONE, REDACT_TEXT_REMOVE);
+	}
+
+	public boolean applyRedactions(boolean blackBoxes, int imageMethod, int lineArt) {
+		return applyRedactions(blackBoxes, imageMethod, lineArt, REDACT_TEXT_REMOVE);
 	}
 
 	public native boolean update();
