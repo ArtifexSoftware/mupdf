@@ -344,9 +344,14 @@ public class PDFAnnotation
 	public native boolean getHiddenForEditing();
 	public native void setHiddenForEditing(boolean hidden);
 
+	public boolean applyRedaction(boolean blackBoxes)
+	{
+		return applyRedaction(blackBoxes, PDFPage.REDACT_IMAGE_PIXELS, PDFPage.REDACT_LINE_ART_NONE);
+	}
+
 	public boolean applyRedaction(boolean blackBoxes, int imageMethod)
 	{
-		return applyRedaction(blackBoxes, imageMethod, 0);
+		return applyRedaction(blackBoxes, imageMethod, PDFPage.REDACT_LINE_ART_NONE);
 	}
 
 	public native boolean applyRedaction(boolean blackBoxes, int imageMethod, int lineArt);
