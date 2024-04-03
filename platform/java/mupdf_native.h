@@ -3559,10 +3559,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setHiddenForEdi
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    applyRedaction
- * Signature: (ZII)Z
+ * Signature: (ZIII)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_applyRedaction
-  (JNIEnv *, jobject, jboolean, jint, jint);
+  (JNIEnv *, jobject, jboolean, jint, jint, jint);
 
 #ifdef __cplusplus
 }
@@ -4822,6 +4822,10 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_LINE_ART_REMOVE_IF_COVERED 1L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_LINE_ART_REMOVE_IF_TOUCHED
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_LINE_ART_REMOVE_IF_TOUCHED 2L
+#undef com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE
+#define com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE 0L
+#undef com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_NONE
+#define com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_NONE 1L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    getObject
@@ -4857,10 +4861,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_deleteAnnotation
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    applyRedactions
- * Signature: (ZII)Z
+ * Signature: (ZIII)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFPage_applyRedactions
-  (JNIEnv *, jobject, jboolean, jint, jint);
+  (JNIEnv *, jobject, jboolean, jint, jint, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
