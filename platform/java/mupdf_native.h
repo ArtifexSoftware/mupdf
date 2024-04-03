@@ -4818,10 +4818,10 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_IMAGE_REMOVE_UNLESS_INVISIBLE 3L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_NONE
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_NONE 0L
-#undef com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_TOUCHED
-#define com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_TOUCHED 1L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_COVERED
-#define com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_COVERED 2L
+#define com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_COVERED 1L
+#undef com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_TOUCHED
+#define com_artifex_mupdf_fitz_PDFPage_REDACT_LINEART_IF_TOUCHED 2L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    getObject
