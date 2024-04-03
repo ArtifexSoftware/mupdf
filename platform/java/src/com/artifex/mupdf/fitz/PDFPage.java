@@ -41,8 +41,8 @@ public class PDFPage extends Page
 	public static final int REDACT_IMAGE_REMOVE_UNLESS_INVISIBLE = 3;
 
 	public static final int REDACT_LINEART_NONE = 0;
-	public static final int REDACT_LINEART_IF_TOUCHED = 1;
-	public static final int REDACT_LINEART_IF_COVERED = 2;
+	public static final int REDACT_LINEART_IF_COVERED = 1;
+	public static final int REDACT_LINEART_IF_TOUCHED = 2;
 
 	public native boolean applyRedactions(boolean blackBoxes, int imageMethod, int lineArt);
 
