@@ -1161,6 +1161,14 @@ pdf_drop_output_processor(fz_context *ctx, pdf_processor *proc)
 }
 
 static void
+pdf_reset_output_processor(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_output_processor *p = (pdf_output_processor *)proc;
+
+	fz_reset_output(ctx, p->out);
+}
+
+static void
 pdf_out_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj *res)
 {
 	pdf_output_processor *p = (pdf_output_processor *)proc;
@@ -1191,6 +1199,7 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode, int new
 
 	proc->super.close_processor = pdf_close_output_processor;
 	proc->super.drop_processor = pdf_drop_output_processor;
+	proc->super.reset_processor = pdf_reset_output_processor;
 
 	proc->super.push_resources = pdf_out_push_resources;
 	proc->super.pop_resources = pdf_out_pop_resources;

@@ -2828,6 +2828,14 @@ pdf_sanitize_pop_resources(fz_context *ctx, pdf_processor *proc)
 	return pdf_processor_pop_resources(ctx, p->chain);
 }
 
+static void
+pdf_reset_sanitize_processor(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+
+	pdf_reset_processor(ctx, p->chain);
+}
+
 pdf_processor *
 pdf_new_sanitize_filter(
 	fz_context *ctx,
@@ -2843,6 +2851,7 @@ pdf_new_sanitize_filter(
 
 	proc->super.close_processor = pdf_close_sanitize_processor;
 	proc->super.drop_processor = pdf_drop_sanitize_processor;
+	proc->super.reset_processor = pdf_reset_sanitize_processor;
 
 	proc->super.push_resources = pdf_sanitize_push_resources;
 	proc->super.pop_resources = pdf_sanitize_pop_resources;
