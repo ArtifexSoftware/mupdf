@@ -1221,9 +1221,6 @@ pdf_filter_q(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
 	filter_push(ctx, p);
 }
 
