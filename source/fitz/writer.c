@@ -302,12 +302,13 @@ fz_new_document_writer_with_buffer(fz_context *ctx, fz_buffer *buffer, const cha
 {
 	fz_document_writer *wri;
 	fz_output *out = fz_new_output_with_buffer(ctx, buffer);
-	fz_try(ctx)
+	fz_try(ctx) {
 		wri = fz_new_document_writer_with_output(ctx, out, format, options);
-	fz_always(ctx)
+	}
+	fz_catch(ctx) {
 		fz_drop_output(ctx, out);
-	fz_catch(ctx)
 		fz_rethrow(ctx);
+	}
 	return wri;
 }
 
