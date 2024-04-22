@@ -5540,15 +5540,25 @@ static void ffi_new_DrawDevice(js_State *J)
 static void ffi_new_DocumentWriter(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *filename = js_tostring(J, 1);
+	const char *filename = NULL;
 	const char *format = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	const char *options = js_iscoercible(J, 3) ? js_tostring(J, 3) : NULL;
 	fz_document_writer *wri = NULL;
+	fz_buffer *buf = NULL;
 
-	fz_try(ctx)
-		wri = fz_new_document_writer(ctx, filename, format, options);
-	fz_catch(ctx)
+	if (js_isuserdata(J, 1, "fz_buffer"))
+		buf = js_touserdata(J, 1, "fz_buffer");
+	else
+		filename = js_tostring(J, 1);
+
+	fz_try(ctx) {
+		if (buf)
+			wri = fz_new_document_writer_with_buffer(ctx, buf, format, options);
+		else
+			wri = fz_new_document_writer(ctx, filename, format, options);
+	} fz_catch(ctx) {
 		rethrow(J);
+	}
 
 	js_getregistry(J, "fz_document_writer");
 	js_newuserdata(J, "fz_document_writer", wri, ffi_gc_fz_document_writer);
