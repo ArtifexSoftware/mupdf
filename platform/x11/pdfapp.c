@@ -1150,6 +1150,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 				winresize(app, w, h);
 		}
 
+		winfullscreen(app, app->fullscreen);
 		winrepaint(app);
 
 		wincursor(app, ARROW);
