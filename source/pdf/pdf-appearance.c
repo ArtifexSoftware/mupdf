@@ -479,12 +479,22 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	*rect = fz_expand_rect(*rect, fz_max(1, w));
 }
 
+/* The rect diff is NOT an fz_rect. It's differences between
+ * 2 rects. We return it as a rect for convenience. */
 static fz_rect
 pdf_annot_rect_diff(fz_context *ctx, pdf_annot *annot)
 {
-	fz_rect rd = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(RD));
-	if (!fz_is_valid_rect(rd))
-		return fz_make_rect(0,0,0,0);
+	pdf_obj *rd_obj = pdf_dict_get(ctx, annot->obj, PDF_NAME(RD));
+	fz_rect rd;
+
+	if (!pdf_is_array(ctx, rd_obj))
+		return fz_make_rect(0, 0, 0, 0);
+
+	rd.x0 = pdf_array_get_real(ctx, rd_obj, 0);
+	rd.y0 = pdf_array_get_real(ctx, rd_obj, 1);
+	rd.x1 = pdf_array_get_real(ctx, rd_obj, 2);
+	rd.y1 = pdf_array_get_real(ctx, rd_obj, 3);
+
 	return rd;
 }
 
