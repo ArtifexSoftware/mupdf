@@ -1916,8 +1916,22 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 		/* Structure */
 		if (mc_dict && !proc->broken_struct_tree && pushed)
 		{
-			pdf_obj *p = pdf_dict_get(ctx, mc_dict, PDF_NAME(P));
-			pop_structure_to(ctx, proc, p);
+			/* Is there a nested mc_dict? If so we want to pop back to that.
+			 * If not, we want to pop back to the top.
+			 * proc->marked_content = the previous one, but maybe not the
+			 * previous one with an mc_dict. So we may need to search further.
+			 */
+			pdf_obj *previous_mcid = NULL;
+			marked_content_stack *mc_with_mcid = proc->marked_content;
+			while (mc_with_mcid)
+			{
+				previous_mcid = lookup_mcid(ctx, proc, mc_with_mcid->val);
+				if (previous_mcid != NULL)
+					break;
+				mc_with_mcid = mc_with_mcid->next;
+			}
+
+			pop_structure_to(ctx, proc, previous_mcid);
 		}
 
 		/* Finally, close any layers. */
