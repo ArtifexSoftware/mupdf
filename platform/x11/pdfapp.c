@@ -396,6 +396,7 @@ static int make_fake_doc(pdfapp_t *app)
 	}
 	fz_catch(ctx)
 	{
+		fz_report_error(ctx);
 		fz_drop_document(ctx, (fz_document *) pdf);
 		return 1;
 	}
@@ -508,6 +509,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 	}
 	fz_catch(ctx)
 	{
+		fz_report_error(ctx);
 		if (!reload || make_fake_doc(app))
 			pdfapp_error(app, "cannot open document");
 	}
@@ -522,6 +524,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 		}
 		fz_catch(ctx)
 		{
+			fz_report_error(ctx);
 			pdfapp_error(app, "cannot load javascript embedded in document");
 		}
 	}
@@ -592,6 +595,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 	}
 	fz_catch(ctx)
 	{
+		fz_report_error(ctx);
 		pdfapp_error(app, "cannot open document");
 	}
 
@@ -724,6 +728,7 @@ static int pdfapp_save(pdfapp_t *app)
 			}
 			fz_catch(app->ctx)
 			{
+				fz_report_error(app->ctx);
 				/* Ignore any error, so we drop out with
 				 * failure below. */
 			}
@@ -957,9 +962,14 @@ void pdfapp_reloadpage(pdfapp_t *app)
 	if (app->outline_deferred == PDFAPP_OUTLINE_LOAD_NOW)
 	{
 		fz_try(app->ctx)
+		{
 			app->outline = fz_load_outline(app->ctx, app->doc);
+		}
 		fz_catch(app->ctx)
+		{
+			fz_report_error(app->ctx);
 			app->outline = NULL;
+		}
 		app->outline_deferred = 0;
 	}
 	pdfapp_showpage(app, 1, 1, 1, 0, 0);
@@ -1094,7 +1104,10 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		fz_always(app->ctx)
 			fz_drop_device(app->ctx, idev);
 		fz_catch(app->ctx)
+		{
+			fz_report_error(app->ctx);
 			cookie.errors++;
+		}
 	}
 
 	if (transition && drawpage)
