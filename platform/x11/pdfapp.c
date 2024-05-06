@@ -2138,3 +2138,27 @@ void pdfapp_postblit(pdfapp_t *app)
 		app->in_transit = 0;
 	}
 }
+
+void pdfapp_load_profile(pdfapp_t *app, char *profile_name)
+{
+	fz_buffer *profile_data = NULL;
+	fz_var(profile_data);
+	fz_try(app->ctx)
+	{
+		profile_data = fz_read_file(app->ctx, profile_name);
+#ifdef _WIN32
+		app->colorspace = fz_new_icc_colorspace(app->ctx, FZ_COLORSPACE_BGR, 0, NULL, profile_data);
+#else
+		app->colorspace = fz_new_icc_colorspace(app->ctx, FZ_COLORSPACE_RGB, 0, NULL, profile_data);
+#endif
+	}
+	fz_always(app->ctx)
+	{
+		fz_drop_buffer(app->ctx, profile_data);
+	}
+	fz_catch(app->ctx)
+	{
+		fz_report_error(app->ctx);
+		pdfapp_error(app, "cannot load color profile");
+	}
+}
