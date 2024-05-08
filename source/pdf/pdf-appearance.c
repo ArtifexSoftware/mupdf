@@ -2312,7 +2312,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		fz_append_printf(ctx, buf, "q 1 0 0 1 %g %g cm\n", rd.x0, -rd.y1);
 
 #if FZ_ENABLE_HTML_ENGINE
-	rc = pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(RC));
+	rc = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(RC));
 	if (rc)
 		write_rich_content(ctx, annot, buf, res, rc, size, w, h);
 	else
