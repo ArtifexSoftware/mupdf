@@ -149,6 +149,7 @@ struct pdf_run_processor
 
 	marked_content_stack *marked_content;
 	pdf_obj *mcid_sent;
+	pdf_obj *pending_mcid_pop;
 
 	int struct_parent;
 	int broken_struct_tree;
@@ -157,6 +158,10 @@ struct pdf_run_processor
 	begin_layer_stack *begin_layer;
 	begin_layer_stack **next_begin_layer;
 };
+
+/* Forward definition */
+static void
+pop_any_pending_mcid_changes(fz_context *ctx, pdf_run_processor *pr);
 
 static void
 push_begin_layer(fz_context *ctx, pdf_run_processor *proc, const char *str)
@@ -688,6 +693,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 	if (image == NULL)
 		return;
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
 	/* PDF has images bottom-up, so flip them right side up here */
@@ -737,6 +743,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
 	if (dostroke) {
@@ -890,6 +897,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	if (!text)
 		return gstate;
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	/* If we are going to output text, we need to have flushed any begin layers first. */
 	flush_begin_layer(ctx, pr);
 
@@ -1208,6 +1216,7 @@ show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, size_t l
 	int cid;
 	fz_text_language lang = find_lang_from_mc(ctx, pr);
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
 	while (buf < end)
@@ -1622,6 +1631,16 @@ pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
 #endif
 }
 
+static void
+pop_any_pending_mcid_changes(fz_context *ctx, pdf_run_processor *pr)
+{
+	if (pr->pending_mcid_pop == NULL)
+		return;
+
+	pop_structure_to(ctx, pr, pr->pending_mcid_pop);
+	pr->pending_mcid_pop = NULL;
+}
+
 struct line
 {
 	pdf_obj *obj;
@@ -1794,6 +1813,9 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 	int drop_tag = 1;
 	pdf_obj *mc_dict = NULL;
 
+	/* Ignore any pending pops. */
+	proc->pending_mcid_pop = NULL;
+
 	/* Flush any pending text so it's not in the wrong layer. */
 	pdf_flush_text(ctx, proc);
 
@@ -1931,7 +1953,7 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 				mc_with_mcid = mc_with_mcid->next;
 			}
 
-			pop_structure_to(ctx, proc, previous_mcid);
+			proc->pending_mcid_pop = previous_mcid;
 		}
 
 		/* Finally, close any layers. */
@@ -1994,6 +2016,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 		return;
 	pr->cycle = &cycle_here;
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
 	fz_var(cs);
@@ -2155,6 +2178,7 @@ static void pdf_run_w(fz_context *ctx, pdf_processor *proc, float linewidth)
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
 	pr->dev->flags &= ~FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
@@ -2758,6 +2782,7 @@ static void pdf_run_sh(fz_context *ctx, pdf_processor *proc, const char *name, f
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
+	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 	pdf_show_shade(ctx, pr, shade);
 }
