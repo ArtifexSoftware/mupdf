@@ -2116,7 +2116,7 @@ static void
 write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res, const char *rc, float size, float w, float h)
 {
 	fz_rect rect = { 0, 0, w, h };
-	fz_buffer *inbuf = fz_new_buffer_from_copied_data(ctx, rc, strlen(rc)+1);
+	fz_buffer *inbuf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)rc, strlen(rc)+1);
 	fz_story *story = NULL;
 	fz_device *dev = NULL;
 	fz_buffer *buf2 = NULL;
