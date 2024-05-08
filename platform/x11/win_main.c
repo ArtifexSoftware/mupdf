@@ -1366,7 +1366,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		gapp.pageno = atoi(argv[fz_optind++]);
 
 	if (profile_name)
-		pdfapp_load_profile(&gapp, profile_name)
+		pdfapp_load_profile(&gapp, profile_name);
 
 	if (kbps)
 		pdfapp_open_progressive(&gapp, filename, 0, kbps);
