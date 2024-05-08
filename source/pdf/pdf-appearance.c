@@ -202,19 +202,36 @@ static float pdf_write_border_appearance(fz_context *ctx, pdf_annot *annot, fz_b
 	return w;
 }
 
+static int
+write_color(fz_context *ctx, fz_buffer *buf, int n, float *color, int stroke)
+{
+	if (n == 4)
+		fz_append_printf(ctx, buf, "%g %g %g %g %c\n", color[0], color[1], color[2], color[3], stroke ? 'K' : 'k');
+	else if (n == 3)
+		fz_append_printf(ctx, buf, "%g %g %g %s\n", color[0], color[1], color[2], stroke ? "RG" : "rg");
+	else if (n == 1)
+		fz_append_printf(ctx, buf, "%g %c\n", color[0], stroke ? 'G' : 'g');
+	else
+		return 0;
+	return 1;
+}
+
+static void
+write_color0(fz_context *ctx, fz_buffer *buf, int n, float *color, int stroke)
+{
+	if (n == 0)
+		fz_append_printf(ctx, buf, "0 %c\n", stroke ? 'G' : 'g');
+	else
+		write_color(ctx, buf, n, color, stroke);
+}
+
+
 static int pdf_write_stroke_color_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
 {
 	float color[4];
 	int n;
 	pdf_annot_color(ctx, annot, &n, color);
-	switch (n)
-	{
-	default: return 0;
-	case 1: fz_append_printf(ctx, buf, "%g G\n", color[0]); break;
-	case 3: fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]); break;
-	case 4: fz_append_printf(ctx, buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]); break;
-	}
-	return 1;
+	return write_color(ctx, buf, n, color, 1);
 }
 
 static int pdf_is_dark_fill_color(fz_context *ctx, pdf_annot *annot)
@@ -246,14 +263,7 @@ static int pdf_write_fill_color_appearance(fz_context *ctx, pdf_annot *annot, fz
 	float color[4];
 	int n;
 	pdf_annot_color(ctx, annot, &n, color);
-	switch (n)
-	{
-	default: return 0;
-	case 1: fz_append_printf(ctx, buf, "%g g\n", color[0]); break;
-	case 3: fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]); break;
-	case 4: fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]); break;
-	}
-	return 1;
+	return write_color(ctx, buf, n, color, 0);
 }
 
 static int pdf_write_interior_fill_color_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
@@ -261,14 +271,7 @@ static int pdf_write_interior_fill_color_appearance(fz_context *ctx, pdf_annot *
 	float color[4];
 	int n;
 	pdf_annot_interior_color(ctx, annot, &n, color);
-	switch (n)
-	{
-	default: return 0;
-	case 1: fz_append_printf(ctx, buf, "%g g\n", color[0]); break;
-	case 3: fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]); break;
-	case 4: fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]); break;
-	}
-	return 1;
+	return write_color(ctx, buf, n, color, 0);
 }
 
 static int pdf_write_MK_BG_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
@@ -276,14 +279,7 @@ static int pdf_write_MK_BG_appearance(fz_context *ctx, pdf_annot *annot, fz_buff
 	float color[4];
 	int n;
 	pdf_annot_MK_BG(ctx, annot, &n, color);
-	switch (n)
-	{
-	default: return 0;
-	case 1: fz_append_printf(ctx, buf, "%g g\n", color[0]); break;
-	case 3: fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]); break;
-	case 4: fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]); break;
-	}
-	return 1;
+	return write_color(ctx, buf, n, color, 0);
 }
 
 static int pdf_write_MK_BC_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf)
@@ -291,14 +287,7 @@ static int pdf_write_MK_BC_appearance(fz_context *ctx, pdf_annot *annot, fz_buff
 	float color[4];
 	int n;
 	pdf_annot_MK_BC(ctx, annot, &n, color);
-	switch (n)
-	{
-	default: return 0;
-	case 1: fz_append_printf(ctx, buf, "%g G\n", color[0]); break;
-	case 3: fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]); break;
-	case 4: fz_append_printf(ctx, buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]); break;
-	}
-	return 1;
+	return write_color(ctx, buf, n, color, 1);
 }
 
 static void maybe_stroke_and_fill(fz_context *ctx, fz_buffer *buf, int sc, int ic)
@@ -1999,14 +1988,7 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 		}
 
 		fz_append_string(ctx, buf, "BT\n");
-		if (n == 4)
-			fz_append_printf(ctx, buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]);
-		else if (n == 3)
-			fz_append_printf(ctx, buf, "%g %g %g rg\n", color[0], color[1], color[2]);
-		else if (n == 1)
-			fz_append_printf(ctx, buf, "%g g\n", color[0]);
-		else if (n == 0)
-			fz_append_printf(ctx, buf, "0 g\n");
+		write_color0(ctx, buf, n, color, 0);
 		if (multiline)
 		{
 			fz_append_printf(ctx, buf, "%g %g Td\n", padding, padding+h-baseline+lineheight);
@@ -2230,14 +2212,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	b = pdf_write_border_appearance(ctx, annot, buf);
 	if (b > 0)
 	{
-		if (n == 4)
-			fz_append_printf(ctx, buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]);
-		else if (n == 3)
-			fz_append_printf(ctx, buf, "%g %g %g RG\n", color[0], color[1], color[2]);
-		else if (n == 1)
-			fz_append_printf(ctx, buf, "%g G\n", color[0]);
-		else if (n == 0)
-			fz_append_printf(ctx, buf, "0 G\n");
+		write_color0(ctx, buf, n, color, 1);
 		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b / 2 + rd.x0, b / 2 + rd.y0, w - b - rd.x1 - rd.x0, h - b - rd.y1 - rd.y0);
 	}
 
