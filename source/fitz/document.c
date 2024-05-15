@@ -29,10 +29,6 @@ enum
 	FZ_DOCUMENT_HANDLER_MAX = 32
 };
 
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
-
 #define DEFW (450)
 #define DEFH (600)
 #define DEFEM (12)
