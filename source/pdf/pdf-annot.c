@@ -679,6 +679,7 @@ static pdf_obj *popup_subtypes[] = {
 	PDF_NAME(Ink),
 	PDF_NAME(FileAttachment),
 	PDF_NAME(Sound),
+	PDF_NAME(Redact),
 	NULL,
 };
 
