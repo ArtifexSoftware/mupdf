@@ -7889,6 +7889,21 @@ static void ffi_PDFPage_deleteAnnotation(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFPage_createSignature(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *page = js_touserdata(J, 0, "pdf_page");
+	const char *name = js_tostring(J, 1);
+	pdf_annot *widget;
+
+	fz_try(ctx)
+		widget = pdf_create_signature_widget(ctx, page, (char *) name);
+	fz_catch(ctx)
+		rethrow(J);
+	js_getregistry(J, "pdf_widget");
+	js_newuserdata(J, "pdf_widget", widget, ffi_gc_pdf_annot);
+}
+
 static void ffi_PDFPage_update(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10525,6 +10540,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.getAnnotations", ffi_PDFPage_getAnnotations, 0);
 		jsB_propfun(J, "PDFPage.createAnnotation", ffi_PDFPage_createAnnotation, 1);
 		jsB_propfun(J, "PDFPage.deleteAnnotation", ffi_PDFPage_deleteAnnotation, 1);
+		jsB_propfun(J, "PDFPage.createSignature", ffi_PDFPage_createSignature, 0);
 		jsB_propfun(J, "PDFPage.update", ffi_PDFPage_update, 0);
 		jsB_propfun(J, "PDFPage.applyRedactions", ffi_PDFPage_applyRedactions, 4);
 		jsB_propfun(J, "PDFPage.process", ffi_PDFPage_process, 1);
