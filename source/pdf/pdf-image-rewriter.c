@@ -933,7 +933,12 @@ void pdf_rewrite_images(fz_context *ctx, pdf_document *doc, pdf_image_rewriter_o
 		opts->gray_lossless_image_subsample_threshold == 0 &&
 		opts->gray_lossy_image_subsample_threshold == 0 &&
 		opts->color_lossless_image_subsample_threshold == 0 &&
-		opts->color_lossy_image_subsample_threshold == 0)
+		opts->color_lossy_image_subsample_threshold == 0 &&
+		opts->bitonal_image_recompress_method == FZ_RECOMPRESS_NEVER &&
+		opts->color_lossy_image_recompress_method == FZ_RECOMPRESS_NEVER &&
+		opts->color_lossless_image_recompress_method == FZ_RECOMPRESS_NEVER &&
+		opts->gray_lossy_image_recompress_method == FZ_RECOMPRESS_NEVER &&
+		opts->gray_lossless_image_recompress_method == FZ_RECOMPRESS_NEVER)
 		return;
 
 	/* Pass 1: Gather information */
