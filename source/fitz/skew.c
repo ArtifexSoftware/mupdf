@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <limits.h>
 
-#ifdef ARCH_HAS_SSE
+#if ARCH_HAS_SSE
 #include <emmintrin.h>
 #include <smmintrin.h>
 #endif
@@ -106,7 +106,7 @@ static int sum_c(const uint8_t *data)
 	return sum;
 }
 
-#ifdef ARCH_HAS_SSE
+#if ARCH_HAS_SSE
 static inline int sum_sse(const uint8_t *data)
 {
 	__m128i mm0, mm1, mm2, mm3, mm4, mm5;
@@ -146,7 +146,7 @@ fz_skew_process(fz_context *ctx, fz_skew *skew, const uint8_t *input)
 	int i;
 	int off = skew->y++;
 
-#if 0//def ARCH_HAS_SSE
+#if ARCH_HAS_SSE
 	for (i = 0; i < NUM_SKEW_COLS * 2; i++)
 		skew->tables[i][off] = sum_sse(input + skew->offsets[i]);
 #else
