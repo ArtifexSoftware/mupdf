@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2023 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -521,6 +521,9 @@ static void pdf_set_link_rect(fz_context *ctx, fz_link *link_, fz_rect rect)
 	if (link == NULL)
 		return;
 
+	if (!link->page)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "link not bound to a page");
+
 	pdf_begin_operation(ctx, link->page->doc, "Set link rectangle");
 
 	fz_try(ctx)
@@ -541,6 +544,9 @@ static void pdf_set_link_uri(fz_context *ctx, fz_link *link_, const char *uri)
 	pdf_link *link = (pdf_link *) link_;
 	if (link == NULL)
 		return;
+
+	if (!link->page)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "link not bound to a page");
 
 	pdf_begin_operation(ctx, link->page->doc, "Set link uri");
 

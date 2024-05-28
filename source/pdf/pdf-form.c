@@ -1126,14 +1126,15 @@ merge_changes(fz_context *ctx, const char *value, int start, int end, const char
 
 int pdf_set_text_field_value(fz_context *ctx, pdf_annot *widget, const char *update)
 {
-	pdf_document *doc = widget->page->doc;
+	pdf_document *doc;
 	pdf_keystroke_event evt = { 0 };
 	char *new_change = NULL;
 	char *new_value = NULL;
 	char *merged_value = NULL;
 	int rc = 1;
 
-	pdf_begin_operation(ctx, doc, "Edit text field");
+	begin_annot_op(ctx, widget, "Edit text field");
+	doc = widget->page->doc;
 
 	fz_var(new_value);
 	fz_var(new_change);
@@ -1178,6 +1179,7 @@ int pdf_set_text_field_value(fz_context *ctx, pdf_annot *widget, const char *upd
 		fz_free(ctx, new_change);
 		fz_free(ctx, evt.newChange);
 		fz_free(ctx, merged_value);
+		end_annot_op(ctx, widget);
 	}
 	fz_catch(ctx)
 	{
@@ -1577,6 +1579,10 @@ int pdf_widget_is_signed(fz_context *ctx, pdf_annot *widget)
 {
 	if (widget == NULL)
 		return 0;
+
+	if (!widget->page)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "annotation not bound to any page");
+
 	return pdf_signature_is_signed(ctx, widget->page->doc, widget->obj);
 }
 
