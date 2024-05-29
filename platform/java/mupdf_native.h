@@ -3691,6 +3691,22 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_UC 65L
 #undef com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_LC
 #define com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_LC 97L
+#undef com_artifex_mupdf_fitz_PDFDocument_NOT_ZUGFERD
+#define com_artifex_mupdf_fitz_PDFDocument_NOT_ZUGFERD 0L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_COMFORT
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_COMFORT 0L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_BASIC
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_BASIC 1L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_EXTENDED
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_EXTENDED 2L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_BASIC_WL
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_BASIC_WL 3L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_MINIMUM
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_MINIMUM 4L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_XRECHNUNG
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_XRECHNUNG 5L
+#undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_UNKNOWN
+#define com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_UNKNOWN 6L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    newNative
@@ -4338,6 +4354,30 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countAssociatedFi
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_associatedFile
   (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    zugferdProfile
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdProfile
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    zugferdVersion
+ * Signature: ()F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdVersion
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    zugferdXML
+ * Signature: ()Lcom/artifex/mupdf/fitz/Buffer;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdXML
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

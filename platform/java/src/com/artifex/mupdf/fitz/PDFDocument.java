@@ -282,4 +282,17 @@ public class PDFDocument extends Document
 
 	public native int countAssociatedFiles();
 	public native PDFObject associatedFile(int idx);
+
+	public static final int NOT_ZUGFERD = 0;
+	public static final int ZUGFERD_COMFORT = 0;
+	public static final int ZUGFERD_BASIC = 1;
+	public static final int ZUGFERD_EXTENDED = 2;
+	public static final int ZUGFERD_BASIC_WL = 3;
+	public static final int ZUGFERD_MINIMUM = 4;
+	public static final int ZUGFERD_XRECHNUNG = 5;
+	public static final int ZUGFERD_UNKNOWN = 6;
+
+	public native int zugferdProfile();
+	public native float zugferdVersion();
+	public native Buffer zugferdXML();
 }

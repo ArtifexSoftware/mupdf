@@ -7292,6 +7292,43 @@ static void ffi_PDFDocument_associatedFile(js_State *J)
 	ffi_pushobj(J, obj);
 }
 
+static void ffi_PDFDocument_zugferdProfile(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	enum pdf_zugferd_profile profile;
+	float version;
+	fz_try(ctx)
+		profile = pdf_zugferd_profile(ctx, pdf, &version);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, pdf_zugferd_profile_to_string(ctx, profile));
+}
+
+static void ffi_PDFDocument_zugferdVersion(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	float version;
+	fz_try(ctx)
+		(void)pdf_zugferd_profile(ctx, pdf, &version);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, version);
+}
+
+static void ffi_PDFDocument_zugferdXML(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = pdf_zugferd_xml(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushbuffer(J, buf);
+}
+
 static void ffi_appendDestToURI(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10793,6 +10830,9 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.countAssociatedFiles", ffi_PDFDocument_countAssociatedFiles, 0);
 		jsB_propfun(J, "PDFDocument.associatedFile", ffi_PDFDocument_associatedFile, 1);
+		jsB_propfun(J, "PDFDocument.zugferdProfile", ffi_PDFDocument_zugferdProfile, 0);
+		jsB_propfun(J, "PDFDocument.zugferdVersion", ffi_PDFDocument_zugferdVersion, 0);
+		jsB_propfun(J, "PDFDocument.zugferdXml", ffi_PDFDocument_zugferdXML, 0);
 	}
 	js_setregistry(J, "pdf_document");
 

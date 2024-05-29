@@ -1839,3 +1839,50 @@ FUN(PDFDocument_associatedFile)(JNIEnv *env, jobject self, jint idx)
 
 	return to_PDFObject_safe_own(ctx, env, af);
 }
+
+JNIEXPORT jint JNICALL
+FUN(PDFDocument_zugferdProfile)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	enum pdf_zugferd_profile p;
+	float version;
+
+	fz_try(ctx)
+		p = pdf_zugferd_profile(ctx, doc, &version);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return (int)p;
+}
+
+JNIEXPORT jfloat JNICALL
+FUN(PDFDocument_zugferdVersion)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	enum pdf_zugferd_profile p;
+	float version;
+
+	fz_try(ctx)
+		p = pdf_zugferd_profile(ctx, doc, &version);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return (jfloat)version;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_zugferdXML)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	fz_buffer *buf;
+
+	fz_try(ctx)
+		buf = pdf_zugferd_xml(ctx, doc);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}

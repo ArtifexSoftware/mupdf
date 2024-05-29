@@ -1194,6 +1194,62 @@ Embedded/Associated files in :title:`PDFs`
 
 
 
+----
+
+
+.. _mutool_object_pdf_document_zugferd:
+
+ZUGFeRD support in :title:`PDFs`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+.. method:: zugferdProfile()
+
+    Determine if the current PDF is a ZUGFeRD PDF, and, if so, return the profile type in use. Possible return values include: "NOT ZUGFERD", "COMFORT", "BASIC", "EXTENDED", "BASIC WL", "MINIMUM", "XRECHNUNG", and "UNKNOWN".
+
+    :return: `String`.
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var profile = pdfDocument.zugferdProfile();
+
+
+
+.. method:: zugferdVersion()
+
+    Determine if the current PDF is a ZUGFeRD PDF, and, if so, return the version of the spec it claims to conforms to.
+    This will return 0 for non-zugferd PDFs.
+
+    :return: `Float`.
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var version = pdfDocument.zugferdVersion();
+
+
+
+.. method:: zugferdXML()
+
+    Return a buffer containing the embedded ZUGFeRD XML data from this PDF.
+
+    :return: `Buffer`.
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var buf = pdfDocument.zugferdXML();
+
+
+
 .. External links
 
 .. _Mimetype: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
