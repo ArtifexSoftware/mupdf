@@ -4323,6 +4323,22 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_loadEmbeddedFi
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_verifyEmbeddedFileChecksum
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    countAssociatedFiles
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countAssociatedFiles
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    associatedFile
+ * Signature: (I)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_associatedFile
+  (JNIEnv *, jobject, jint);
+
 #ifdef __cplusplus
 }
 #endif
@@ -4991,6 +5007,22 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_getTransform
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_setPageBox
   (JNIEnv *, jobject, jint, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    countAssociatedFiles
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFPage_countAssociatedFiles
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    associatedFile
+ * Signature: (I)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_associatedFile
+  (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus
 }

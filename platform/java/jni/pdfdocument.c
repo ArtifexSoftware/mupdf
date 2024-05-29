@@ -1809,3 +1809,33 @@ FUN(PDFDocument_rearrangePages)(JNIEnv *env, jobject self, jobject jpages)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jint JNICALL
+FUN(PDFDocument_countAssociatedFiles)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	int n;
+
+	fz_try(ctx)
+		n = pdf_count_document_associated_files(ctx, doc);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return n;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_associatedFile)(JNIEnv *env, jobject self, jint idx)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	pdf_obj *af;
+
+	fz_try(ctx)
+		af = pdf_document_associated_file(ctx, doc, idx);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_PDFObject_safe_own(ctx, env, af);
+}

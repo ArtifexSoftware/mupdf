@@ -678,6 +678,9 @@
     <ClCompile Include="..\..\source\fitz\skew.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-af.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">

@@ -279,4 +279,7 @@ public class PDFDocument extends Document
 			super(filename, mimetype, size, created, modified);
 		}
 	}
+
+	public native int countAssociatedFiles();
+	public native PDFObject associatedFile(int idx);
 }

@@ -1054,7 +1054,7 @@ The following functions can be used to copy objects from one :title:`PDF` docume
 
 .. _mutool_object_pdf_document_embedded_files:
 
-Embedded files in :title:`PDFs`
+Embedded/Associated files in :title:`PDFs`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -1155,6 +1155,41 @@ Embedded files in :title:`PDFs`
     .. code-block:: javascript
 
         var fileChecksumValid = pdfDocument.verifyEmbeddedFileChecksum(fileSpecObject);
+
+
+
+
+.. method:: countAssociatedFiles()
+
+    Return the number of Associated Files on this document. Note that this is the number of files associated at the document level, not necessarily the total number of files associated with elements throughout the entire document.
+
+    :return: `Integer`
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var count = pdfDocument.countAssociatedFiles();
+
+
+
+
+.. method:: associatedFile(n)
+
+    Return the Filespec object that represents the nth Associated File on this document. 0 <= n < count, where count is the value given by countAssociatedFiles().
+
+    :return fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var obj = pdfDocument.associatedFile(0);
+
+
+
 
 
 

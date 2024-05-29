@@ -627,6 +627,7 @@
     <ClCompile Include="..\..\source\html\story-writer.c" />
     <ClCompile Include="..\..\source\html\txt.c" />
     <ClCompile Include="..\..\source\html\xml-dom.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-af.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />
     <ClCompile Include="..\..\source\pdf\pdf-clean-file.c" />
