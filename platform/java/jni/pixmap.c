@@ -515,13 +515,13 @@ FUN(Pixmap_skewDetect)(JNIEnv *env, jobject self)
 	return (jfloat)ang;
 }
 
-JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_detectDocument(JNIEnv *env, jobject self)
+JNIEXPORT jfloatArray JNICALL
+FUN(Pixmap_detectDocument)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
 	fz_point points[4];
 	int found;
-	jfloatArray arr;
 
 	if (!ctx || !pixmap) return NULL;
 
@@ -530,5 +530,5 @@ JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_detectDocument(
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_floatArray(ctx, env, arr, 8);
+	return to_floatArray(ctx, env, (float *)&points[0], 8);
 }
