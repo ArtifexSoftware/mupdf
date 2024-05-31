@@ -505,11 +505,23 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 		new_len = 0;
 		for (i = 0; i < pl.len; i++)
 		{
-			uint32_t name_len = get16(pl.ptr[i] + 8);
-			uint8_t *name = d+off+get16(pl.ptr[i] + 10);
-			uint32_t offset = find_string_in_block(name, name_len, new_name_data, new_len);
+			uint32_t name_len, offset, name_off;
+			uint8_t *name;
+
+			if (t->len < (size_t) (pl.ptr[i] - t->data) + 8 + 2)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name length in name table");
+			name_len = get16(pl.ptr[i] + 8);
+
+			if (t->len < (size_t) (pl.ptr[i] - t->data) + 10 + 2)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name offset in name table");
+			name_off = off + get16(pl.ptr[i] + 10);
+			name = d + name_off;
+
+			offset = find_string_in_block(name, name_len, new_name_data, new_len);
 			if (offset == UNFOUND)
 			{
+				if (t->len < name_off + name_len)
+					fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name in name table");
 				if (name_data_size < new_len + name_len)
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Bad name table in TTF");
 				memcpy(new_name_data + new_len, name, name_len);
