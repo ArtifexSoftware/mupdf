@@ -891,6 +891,12 @@ struct pdf_embedded_file_params {
 /*
 	Check if pdf object is a file specification.
 */
+int pdf_is_filespec(fz_context *ctx, pdf_obj *fs);
+
+/*
+	Check if pdf object is a file specification where the data
+	is embedded within the file.
+*/
 int pdf_is_embedded_file(fz_context *ctx, pdf_obj *fs);
 
 /*

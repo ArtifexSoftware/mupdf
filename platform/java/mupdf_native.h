@@ -4853,6 +4853,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_pushString
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_pushPDFObject
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    isFilespec
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isFilespec
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
