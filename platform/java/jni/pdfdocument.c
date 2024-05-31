@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2024 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1529,6 +1529,12 @@ FUN(PDFDocument_addEmbeddedFile)(JNIEnv *env, jobject self, jstring jfilename, j
 
 JNIEXPORT jstring JNICALL
 FUN(PDFDocument_getEmbeddedFileParams)(JNIEnv *env, jobject self, jobject jfs)
+{
+	return FUN(PDFDocument_getFilespecParams)(env, self, jfs);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(PDFDocument_getFilespecParams)(JNIEnv *env, jobject self, jobject jfs)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *fs = from_PDFObject_safe(env, jfs);

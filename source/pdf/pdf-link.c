@@ -308,6 +308,12 @@ pdf_is_embedded_file(fz_context *ctx, pdf_obj *fs)
 void
 pdf_get_embedded_file_params(fz_context *ctx, pdf_obj *fs, pdf_embedded_file_params *out)
 {
+	pdf_get_filespec_params(ctx, fs, out);
+}
+
+void
+pdf_get_filespec_params(fz_context *ctx, pdf_obj *fs, pdf_filespec_params *out)
+{
 	pdf_obj *file, *params, *filename, *subtype;
 	if (!out)
 		return;

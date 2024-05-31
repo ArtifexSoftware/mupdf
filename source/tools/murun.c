@@ -6435,7 +6435,7 @@ static void ffi_pushembeddedfileparams(js_State *J, pdf_embedded_file_params *pa
 	js_setproperty(J, -2, "modificationDate");
 }
 
-static void ffi_PDFDocument_getEmbeddedFileParams(js_State *J)
+static void ffi_PDFDocument_getFilespecParams(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
@@ -6450,6 +6450,11 @@ static void ffi_PDFDocument_getEmbeddedFileParams(js_State *J)
 		rethrow(J);
 
 	ffi_pushembeddedfileparams(J, &params);
+}
+
+static void ffi_PDFDocument_getEmbeddedFileParams(js_State *J)
+{
+	ffi_PDFDocument_getFilespecParams(J);
 }
 
 static void ffi_PDFDocument_getEmbeddedFileContents(js_State *J)
@@ -10680,6 +10685,7 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.addEmbeddedFile", ffi_PDFDocument_addEmbeddedFile, 6);
 		jsB_propfun(J, "PDFDocument.getEmbeddedFileParams", ffi_PDFDocument_getEmbeddedFileParams, 1);
+		jsB_propfun(J, "PDFDocument.getFilespecParams", ffi_PDFDocument_getFilespecParams, 1);
 		jsB_propfun(J, "PDFDocument.getEmbeddedFileContents", ffi_PDFDocument_getEmbeddedFileContents, 1);
 		jsB_propfun(J, "PDFDocument.verifyEmbeddedFileChecksum", ffi_PDFDocument_verifyEmbeddedFileChecksum, 1);
 

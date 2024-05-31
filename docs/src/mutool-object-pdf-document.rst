@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -1102,17 +1102,23 @@ Embedded files in :title:`PDFs`
 
 .. method:: getEmbeddedFileParams(fileSpecObject)
 
+    Historical alias for getFilespecParams.
+
+
+
+.. method:: getFilespecParams(fileSpecObject)
+
     Return an object describing the file referenced by the `fileSpecObject`.
 
     :arg fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
 
-    :return: `Object` :ref:`Embedded File Object<mutool_run_js_api_pdf_document_embedded_file_object>`.
+    :return: `Object` :ref:`Filespec Params Object<mutool_run_js_api_pdf_document_filespec_params_object>`.
 
     |example_tag|
 
     .. code-block:: javascript
 
-        var obj = pdfDocument.getEmbeddedFileParams(fileSpecObject);
+        var obj = pdfDocument.getFilespecParams(fileSpecObject);
 
 
 .. method:: getEmbeddedFileContents(fileSpecObject)
