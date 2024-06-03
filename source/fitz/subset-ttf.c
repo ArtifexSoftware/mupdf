@@ -517,11 +517,11 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 			name_off = off + get16(pl.ptr[i] + 10);
 			name = d + name_off;
 
+			if (t->len < name_off + name_len)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name in name table");
 			offset = find_string_in_block(name, name_len, new_name_data, new_len);
 			if (offset == UNFOUND)
 			{
-				if (t->len < name_off + name_len)
-					fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated name in name table");
 				if (name_data_size < new_len + name_len)
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Bad name table in TTF");
 				memcpy(new_name_data + new_len, name, name_len);
