@@ -997,7 +997,10 @@ read_hhea(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 
 	ttf->orig_num_long_hor_metrics = get16(t->data+34);
 	if (ttf->orig_num_long_hor_metrics > ttf->orig_num_glyphs)
+	{
+		fz_drop_buffer(ctx, t);
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Overlong hhea table");
+	}
 
 	add_table(ctx, ttf, TAG("hhea"), t);
 
