@@ -1060,14 +1060,14 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 	const uint8_t *data;
 	uint16_t flags;
 
-	if (ttf->gid_renum[i] != 0)
-		return;
-
-	if (i > ttf->orig_num_glyphs)
+	if (i >= ttf->orig_num_glyphs)
 	{
-		fz_warn(ctx, "TTF subsetting; gid > num_gids!");
+		fz_warn(ctx, "TTF subsetting; gid >= num_gids!");
 		return;
 	}
+
+	if (ttf->gid_renum[i] != 0)
+		return;
 
 	ttf->gid_renum[i] = 1;
 
