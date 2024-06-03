@@ -1493,7 +1493,13 @@ subset_post(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids
 		return;
 	}
 	d += 32; len -= 32;
-	len = subset_post2(ctx, ttf, d, len, gids, num_gids);
+	fz_try(ctx)
+		len = subset_post2(ctx, ttf, d, len, gids, num_gids);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, t);
+		fz_rethrow(ctx);
+	}
 
 	t->len = len;
 
