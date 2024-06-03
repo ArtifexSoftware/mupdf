@@ -1221,12 +1221,19 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 				glyph_used(ctx, ttf, t, enc->gid[i]);
 
 		/* Now convert from a usage table to a renumbering table. */
-		ttf->gid_renum[0] = 0;
-		j = 1;
-		for (i = 1; i < ttf->orig_num_glyphs; i++)
-			if (ttf->gid_renum[i])
-				ttf->gid_renum[i] = j++;
-		ttf->new_num_glyphs = j;
+		if (ttf->orig_num_glyphs > 0)
+		{
+			ttf->gid_renum[0] = 0;
+			j = 1;
+			for (i = 1; i < ttf->orig_num_glyphs; i++)
+				if (ttf->gid_renum[i])
+					ttf->gid_renum[i] = j++;
+			ttf->new_num_glyphs = j;
+		}
+		else
+		{
+			ttf->new_num_glyphs = 0;
+		}
 	}
 	else
 	{
