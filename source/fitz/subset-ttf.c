@@ -1007,7 +1007,7 @@ read_hhea(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	/* Previously gids 0 to orig_num_long_hor_metrics-1 were described with
 	 * hor metrics, and the ones afterwards were fixed widths. Find where
 	 * that dividing line is in our new reduced set. */
-	if (ttf->encoding && !ttf->is_otf)
+	if (ttf->encoding && !ttf->is_otf && ttf->orig_num_long_hor_metrics > 0)
 	{
 		ttf->new_num_long_hor_metrics = 0;
 		for (i = ttf->orig_num_long_hor_metrics-1; i > 0; i--)
