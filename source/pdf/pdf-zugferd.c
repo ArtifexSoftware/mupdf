@@ -80,13 +80,14 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 
 					if (version100(v) != 100)
 						fz_warn(ctx, "Unexpected version");
-					*version = 1.0;
+					if (version)
+						*version = 1.0;
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
 					else if (strcmp(df, "ZUGFeRD-invoice.xml"))
 						fz_warn(ctx, "ZUGFeRD doc has non-standard filename");
-					if (fname)
+					if (fname && df)
 						*fname = fz_strdup(ctx, df); /* Nothing can throw after this */
 					break;
 				}
@@ -123,13 +124,14 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 
 					if (version100(v) != 100)
 						fz_warn(ctx, "Unexpected version");
-					*version = 2.0f;
+					if (version)
+						*version = 2.0f;
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
 					else if (strcmp(df, "zugferd-invoice.xml"))
 						fz_warn(ctx, "ZUGFeRD doc has non-standard filename");
-					if (fname)
+					if (fname && df)
 						*fname = fz_strdup(ctx, df); /* Nothing can throw after this */
 					break;
 				}
@@ -170,7 +172,8 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 						fz_warn(ctx, "Unexpected version");
 					else if (ret != PDF_ZUGFERD_XRECHNUNG && version100(v) != 100)
 						fz_warn(ctx, "Unexpected version");
-					*version = 2.1f;
+					if (version)
+						*version = 2.1f;
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
@@ -178,7 +181,7 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 						fz_warn(ctx, "ZUGFeRD doc has non-standard filename");
 					else if (ret != PDF_ZUGFERD_XRECHNUNG && strcmp(df, "factur-x.xml"))
 						fz_warn(ctx, "ZUGFeRD doc has non-standard filename");
-					if (fname)
+					if (fname && df)
 						*fname = fz_strdup(ctx, df); /* Nothing can throw after this */
 					break;
 				}
