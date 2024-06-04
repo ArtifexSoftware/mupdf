@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -70,11 +70,11 @@ These are the third party libraries used by :title:`MuPDF`.
      - JPEG-XR decoding
      - special
    * - Tesseract_
-     - 5.0.0-alpha-20201231 with patches
+     - 5.3.4 with patches
      - OCR
      - Apache 2.0
    * - Leptonica_
-     - 1.80.0 with patches
+     - 1.84.1 with patches
      - Tesseract dependency
      - BSD-style
 
