@@ -172,8 +172,21 @@ fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx)
 
 void fz_drop_document_handler_context(fz_context *ctx)
 {
-	if (!ctx)
+	int i;
+
+	if (!ctx || !ctx->handler)
 		return;
+
+	for (i = 0; i < ctx->handler->count; i++)
+	{
+		if (ctx->handler->handler[i]->fin)
+		{
+			fz_try(ctx)
+				ctx->handler->handler[i]->fin(ctx, ctx->handler->handler[i]);
+			fz_catch(ctx)
+				fz_ignore_error(ctx);
+		}
+	}
 
 	if (fz_drop_imp(ctx, ctx->handler, &ctx->handler->refs))
 	{
@@ -264,7 +277,7 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 						fz_seek(ctx, stream, 0, SEEK_SET);
 					fz_try(ctx)
 					{
-						score = dc->handler[i]->recognize_content(ctx, stream, dir);
+						score = dc->handler[i]->recognize_content(ctx, dc->handler[i], stream, dir);
 					}
 					fz_catch(ctx)
 					{
@@ -292,7 +305,7 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 				const char **entry;
 
 				if (dc->handler[i]->recognize)
-					score = dc->handler[i]->recognize(ctx, magic);
+					score = dc->handler[i]->recognize(ctx, dc->handler[i], magic);
 
 				for (entry = &dc->handler[i]->mimetypes[0]; *entry; entry++)
 					if (!fz_strcasecmp(magic, *entry) && score < 100)
@@ -405,7 +418,7 @@ fz_open_accelerated_document_with_stream_and_dir(fz_context *ctx, const char *ma
 	if (!handler)
 		fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "cannot find document handler for file type: '%s'", magic);
 	fz_try(ctx)
-		ret = handler->open(ctx, wrapped_stream, accel, dir);
+		ret = handler->open(ctx, handler, wrapped_stream, accel, dir);
 	fz_always(ctx)
 	{
 		if (wrapped_stream != stream)
@@ -494,7 +507,7 @@ fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *
 			fz_dirname(dirname, filename, sizeof dirname);
 			dir = fz_open_directory(ctx, dirname);
 		}
-		doc = handler->open(ctx, file, afile, dir);
+		doc = handler->open(ctx, handler, file, afile, dir);
 	}
 	fz_always(ctx)
 	{
