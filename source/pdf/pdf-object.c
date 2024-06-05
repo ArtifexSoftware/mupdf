@@ -3564,7 +3564,7 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	}
 	else if (pdf_is_int(ctx, obj))
 	{
-		fz_snprintf(buf, sizeof buf, "%d", pdf_to_int(ctx, obj));
+		fz_snprintf(buf, sizeof buf, "%ld", pdf_to_int64(ctx, obj));
 		fmt_puts(ctx, fmt, buf);
 		fmt->sep = 1;
 		return;
