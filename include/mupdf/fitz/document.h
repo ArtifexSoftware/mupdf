@@ -1058,6 +1058,7 @@ struct fz_document_handler
 	const char **mimetypes;
 	fz_document_recognize_content_fn *recognize_content;
 	int wants_dir;
+	int wants_file;
 };
 
 #endif
