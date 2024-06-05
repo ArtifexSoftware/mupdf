@@ -148,6 +148,9 @@ $(OUT)/source/fitz/memento.o : source/fitz/memento.c
 $(OUT)/source/%.o : source/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement $(LIB_CFLAGS) $(THIRD_CFLAGS)
 
+$(OUT)/thirdparty/so/source/%.o : thirdparty/so/source/%.c
+	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement $(LIB_CFLAGS) $(THIRD_CFLAGS)
+
 $(OUT)/source/%.o : source/%.cpp
 	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS)
 
@@ -465,7 +468,7 @@ SO_INSTALL_MODE ?= 644
 
 third: $(THIRD_LIB)
 extra-libs: $(THIRD_GLUT_LIB)
-libs: $(LIBS_TO_INSTALL_IN_BIN) $(LIBS_TO_INSTALL_IN_LIB)
+libs: $(LIBS_TO_INSTALL_IN_BIN) $(LIBS_TO_INSTALL_IN_LIB) $(COMMERCIAL_LIBS)
 tools: $(TOOL_APPS)
 apps: $(TOOL_APPS) $(VIEW_APPS)
 
