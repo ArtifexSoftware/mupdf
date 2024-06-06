@@ -31,6 +31,28 @@ version100(const char *v)
 	return (int)(100*f + 0.5f);
 }
 
+static const char *
+tag_or_text(fz_xml *x, const char *find)
+{
+	const char *text;
+	const char *f = strchr(find, ':');
+
+	/* If we find a : we have a namespace. Search for both with and
+	 * without the namespace. */
+	if (f)
+		f++;
+
+	text = fz_xml_att(x, find);
+	if (text == NULL && f)
+		text = fz_xml_att(x, f);
+	if (text == NULL)
+		text = fz_xml_text(fz_xml_down(fz_xml_find_down(x, find)));
+	if (text == NULL && f)
+		text = fz_xml_text(fz_xml_down(fz_xml_find_down(x, f)));
+
+	return text;
+}
+
 static enum pdf_zugferd_profile
 do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fname)
 {
@@ -63,10 +85,10 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 			while (x)
 			{
 				/* The Version tag in the document appears to always be 1.0 */
-				const char *v = fz_xml_att(x, "zf:Version");
-				const char *cl = fz_xml_att(x, "zf:ConformanceLevel");
-				const char *df = fz_xml_att(x, "zf:DocumentFileName");
-				const char *dt = fz_xml_att(x, "zf:DocumentType");
+				const char *v = tag_or_text(x, "zf:Version");
+				const char *cl = tag_or_text(x, "zf:ConformanceLevel");
+				const char *df = tag_or_text(x, "zf:DocumentFileName");
+				const char *dt = tag_or_text(x, "zf:DocumentType");
 				if (v && dt && !strcmp(dt, "INVOICE"))
 				{
 					if (!cl)
@@ -103,10 +125,10 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 		{
 			while (x)
 			{
-				const char *v = fz_xml_att(x, "fx:Version");
-				const char *cl = fz_xml_att(x, "fx:ConformanceLevel");
-				const char *df = fz_xml_att(x, "fx:DocumentFileName");
-				const char *dt = fz_xml_att(x, "fx:DocumentType");
+				const char *v = tag_or_text(x, "fx:Version");
+				const char *cl = tag_or_text(x, "fx:ConformanceLevel");
+				const char *df = tag_or_text(x, "fx:DocumentFileName");
+				const char *dt = tag_or_text(x, "fx:DocumentType");
 				if (v && dt && !strcmp(dt, "INVOICE"))
 				{
 					if (!cl)
@@ -147,10 +169,10 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 		{
 			while (x)
 			{
-				const char *v = fz_xml_text(fz_xml_down(fz_xml_find_down(x, "Version")));
-				const char *cl = fz_xml_text(fz_xml_down(fz_xml_find_down(x, "ConformanceLevel")));
-				const char *df = fz_xml_text(fz_xml_down(fz_xml_find_down(x, "DocumentFileName")));
-				const char *dt = fz_xml_text(fz_xml_down(fz_xml_find_down(x, "DocumentType")));
+				const char *v = tag_or_text(x, "fx:Version");
+				const char *cl = tag_or_text(x, "fx:ConformanceLevel");
+				const char *df = tag_or_text(x, "fx:DocumentFileName");
+				const char *dt = tag_or_text(x, "fx:DocumentType");
 				if (v && dt && !strcmp(dt, "INVOICE"))
 				{
 					if (!cl)
