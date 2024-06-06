@@ -955,6 +955,7 @@ import wdev
 
 from . import classes
 from . import cpp
+from . import csharp
 from . import make_cppyy
 from . import parse
 from . import state
@@ -2246,46 +2247,6 @@ def python_settings(build_dirs, startdir=None):
         #
     return env_extra, command_prefix
 
-def csharp_settings(build_dirs):
-    '''
-    Returns (csc, mono, mupdf_cs).
-
-    csc: C# compiler.
-    mono: C# interpreter ("" on Windows).
-    mupdf_cs: MuPDF C# code.
-
-    E.g. on Windows `csc` can be: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe
-    '''
-    # On linux requires:
-    #   sudo apt install mono-devel
-    #
-    # OpenBSD:
-    #   pkg_add mono
-    # but we get runtime error when exiting:
-    #   mono:build/shared-release/libmupdfcpp.so: undefined symbol '_ZdlPv'
-    # which might be because of mixing gcc and clang?
-    #
-    if state.state_.windows:
-        import wdev
-        vs = wdev.WindowsVS()
-        jlib.log('{vs.description_ml()=}')
-        csc = vs.csc
-        jlib.log('{csc=}')
-        assert csc, f'Unable to find csc.exe'
-        mono = ''
-    else:
-        mono = 'mono'
-        if state.state_.linux:
-            csc = 'mono-csc'
-        elif state.state_.openbsd:
-            csc = 'csc'
-        else:
-            assert 0, f'Do not know where to find mono. {platform.platform()=}'
-
-    mupdf_cs = os.path.relpath(f'{build_dirs.dir_so}/mupdf.cs')
-    return csc, mono, mupdf_cs
-
-
 def make_docs( build_dirs, languages_original):
 
     languages = languages_original
@@ -2865,13 +2826,19 @@ def main2():
                     jlib.log( 'Tests ran ok.')
 
             elif arg == '--test-csharp':
-                csc, mono, mupdf_cs = csharp_settings(build_dirs)
+                csc, mono, mupdf_cs = csharp.csharp_settings(build_dirs)
 
                 # Our tests look for zlib.3.pdf in their current directory.
+                testfile = f'{build_dirs.dir_so}/zlib.3.pdf' if state.state_.windows else 'zlib.3.pdf'
                 jlib.fs_copy(
                         f'{build_dirs.dir_mupdf}/thirdparty/zlib/zlib.3.pdf',
-                        f'{build_dirs.dir_so}/zlib.3.pdf' if state.state_.windows else 'zlib.3.pdf'
+                        testfile
                         )
+                testfile2 = testfile + b'\xf0\x90\x90\xb7'.decode() + '.pdf'
+                jlib.log(f'{testfile=}')
+                jlib.log(f'{testfile2=}')
+                jlib.log(f'{testfile2}')
+                shutil.copy2(testfile, testfile2)
 
                 if 1:
                     # Build and run simple test.
@@ -2894,9 +2861,13 @@ def main2():
                                 raise Exception( f'command failed: {command}')
                         else:
                             jlib.system(f'LD_LIBRARY_PATH={build_dirs.dir_so} {mono} ./{out}', verbose=1)
+                if 1:
+                    # Build and run test using minimal swig library to test
+                    # handling of Unicode strings.
+                    swig.test_swig_csharp()
 
             elif arg == '--test-csharp-gui':
-                csc, mono, mupdf_cs = csharp_settings(build_dirs)
+                csc, mono, mupdf_cs = csharp.csharp_settings(build_dirs)
 
                 # Build and run gui test.
                 #
