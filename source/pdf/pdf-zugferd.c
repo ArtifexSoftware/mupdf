@@ -23,14 +23,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-static int
-version100(const char *v)
-{
-	float f = fz_atof(v);
-
-	return (int)(100*f + 0.5f);
-}
-
 static const char *
 tag_or_text(fz_xml *x, const char *find)
 {
@@ -100,10 +92,8 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 					else if (!strcmp(cl, "EXTENDED"))
 						ret = PDF_ZUGFERD_EXTENDED;
 
-					if (version100(v) != 100)
-						fz_warn(ctx, "Unexpected version");
 					if (version)
-						*version = 1.0;
+						*version = fz_atof(v);
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
@@ -144,10 +134,8 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 					else if (!strcmp(cl, "MINIMUM"))
 						ret = PDF_ZUGFERD_MINIMUM;
 
-					if (version100(v) != 100)
-						fz_warn(ctx, "Unexpected version");
 					if (version)
-						*version = 2.0f;
+						*version = fz_atof(v);
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
@@ -190,12 +178,8 @@ do_zugferd_profile(fz_context *ctx, pdf_document *doc, float *version, char **fn
 					else if (!strcmp(cl, "XRECHNUNG"))
 						ret = PDF_ZUGFERD_XRECHNUNG;
 
-					if (ret == PDF_ZUGFERD_XRECHNUNG && version100(v) != 210)
-						fz_warn(ctx, "Unexpected version");
-					else if (ret != PDF_ZUGFERD_XRECHNUNG && version100(v) != 100)
-						fz_warn(ctx, "Unexpected version");
 					if (version)
-						*version = 2.1f;
+						*version = fz_atof(v);
 
 					if (!df)
 						fz_warn(ctx, "ZUGFeRD doc is missing filename");
