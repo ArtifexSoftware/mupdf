@@ -657,6 +657,8 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj
 	return head;
 }
 
+#define isnanorzero(x) (isnan(x) || (x) == 0)
+
 static char*
 format_explicit_dest_link_uri(fz_context *ctx, const char *schema, const char *uri, fz_link_dest dest)
 {
@@ -699,19 +701,19 @@ format_explicit_dest_link_uri(fz_context *ctx, const char *schema, const char *u
 		else
 			return fz_asprintf(ctx, "%s%s%cpage=%d&view=FitBV,%g", schema, uri, "#&"[has_frag], pageno, dest.x);
 	case FZ_LINK_DEST_XYZ:
-		if (!isnan(dest.zoom) && !isnan(dest.x) && !isnan(dest.y))
+		if (!isnanorzero(dest.zoom) && !isnan(dest.x) && !isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=%g,%g,%g", schema, uri, "#&"[has_frag], pageno, dest.zoom, dest.x, dest.y);
-		else if (!isnan(dest.zoom) && !isnan(dest.x) && isnan(dest.y))
+		else if (!isnanorzero(dest.zoom) && !isnan(dest.x) && isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=%g,%g,nan", schema, uri, "#&"[has_frag], pageno, dest.zoom, dest.x);
-		else if (!isnan(dest.zoom) && isnan(dest.x) && !isnan(dest.y))
+		else if (!isnanorzero(dest.zoom) && isnan(dest.x) && !isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=%g,nan,%g", schema, uri, "#&"[has_frag], pageno, dest.zoom, dest.y);
-		else if (!isnan(dest.zoom) && isnan(dest.x) && isnan(dest.y))
+		else if (!isnanorzero(dest.zoom) && isnan(dest.x) && isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=%g,nan,nan", schema, uri, "#&"[has_frag], pageno, dest.zoom);
-		else if (isnan(dest.zoom) && !isnan(dest.x) && !isnan(dest.y))
+		else if (isnanorzero(dest.zoom)&& !isnan(dest.x) && !isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=nan,%g,%g", schema, uri, "#&"[has_frag], pageno, dest.x, dest.y);
-		else if (isnan(dest.zoom) && !isnan(dest.x) && isnan(dest.y))
+		else if (isnanorzero(dest.zoom) && !isnan(dest.x) && isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=nan,%g,nan", schema, uri, "#&"[has_frag], pageno, dest.x);
-		else if (isnan(dest.zoom) && isnan(dest.x) && !isnan(dest.y))
+		else if (isnanorzero(dest.zoom) && isnan(dest.x) && !isnan(dest.y))
 			return fz_asprintf(ctx, "%s%s%cpage=%d&zoom=nan,nan,%g", schema, uri, "#&"[has_frag], pageno, dest.y);
 		else
 			return fz_asprintf(ctx, "%s%s%cpage=%d", schema, uri, "#&"[has_frag], pageno);
