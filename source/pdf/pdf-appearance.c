@@ -2273,7 +2273,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	pdf_write_dash_pattern(ctx, annot, buf, res);
 
 	if (pdf_write_fill_color_appearance(ctx, annot, buf))
-		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", rd.x0, rd.y0, w - rd.x1 - rd.x0, h - rd.y1 - rd.y0);
+		fz_append_printf(ctx, buf, "%g %g %g %g re\nf\n", rd.x0, rd.y0, w - rd.x1 - rd.x0, h - rd.y1 - rd.y0);
 
 	b = pdf_write_border_appearance(ctx, annot, buf);
 	if (b > 0)
