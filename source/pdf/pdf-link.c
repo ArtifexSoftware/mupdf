@@ -1310,7 +1310,26 @@ pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int 
 					pdf_array_push_real(ctx, dest, p.x);
 				break;
 			case FZ_LINK_DEST_XYZ:
-				p = fz_transform_point_xy(val.x, val.y, invctm);
+				if (invctm.a == 0 && invctm.d == 0)
+				{
+					/* Rotating by 90 or 270 degrees. */
+					p = fz_transform_point_xy(isnan(val.x) ? 0 : val.x, isnan(val.y) ? 0 : val.y, invctm);
+					if (isnan(val.x))
+						p.y = val.x;
+					if (isnan(val.y))
+						p.x = val.y;
+				}
+				else if (invctm.b == 0 && invctm.c == 0)
+				{
+					/* No rotation, or 180 degrees. */
+					p = fz_transform_point_xy(isnan(val.x) ? 0 : val.x, isnan(val.y) ? 0 : val.y, invctm);
+					if (isnan(val.x))
+						p.x = val.x;
+					if (isnan(val.y))
+						p.y = val.y;
+				}
+				else
+					p = fz_transform_point_xy(val.x, val.y, invctm);
 				pdf_array_push(ctx, dest, PDF_NAME(XYZ));
 				if (isnan(p.x))
 					pdf_array_push(ctx, dest, PDF_NULL);
