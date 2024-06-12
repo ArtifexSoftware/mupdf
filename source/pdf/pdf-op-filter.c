@@ -1769,11 +1769,13 @@ pdf_filter_W(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 	fz_rect r;
+	fz_matrix ctm;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	r = fz_bound_path(ctx, p->path, NULL, p->gstate->pending.ctm);
+	ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
+	r = fz_bound_path(ctx, p->path, NULL, ctm);
 	p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
@@ -1792,11 +1794,13 @@ pdf_filter_Wstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 	fz_rect r;
+	fz_matrix ctm;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	r = fz_bound_path(ctx, p->path, NULL, p->gstate->pending.ctm);
+	ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
+	r = fz_bound_path(ctx, p->path, NULL, ctm);
 	p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
