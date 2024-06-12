@@ -327,6 +327,11 @@ void fz_write_bits(fz_context *ctx, fz_output *out, unsigned int data, int num_b
 void fz_write_bits_sync(fz_context *ctx, fz_output *out);
 
 /**
+	Copy the stream contents to the output.
+*/
+void fz_write_stream(fz_context *ctx, fz_output *out, fz_stream *in);
+
+/**
 	Our customised 'printf'-like string formatter.
 	Takes %c, %d, %s, %u, %x, %X as usual.
 	The only modifiers supported are:

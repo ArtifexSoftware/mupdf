@@ -836,3 +836,15 @@ void fz_write_bits_sync(fz_context *ctx, fz_output *out)
 		return;
 	fz_write_bits(ctx, out, 0, 8 - out->buffered);
 }
+
+void
+fz_write_stream(fz_context *ctx, fz_output *out, fz_stream *in)
+{
+	size_t z;
+
+	while ((z = fz_available(ctx, in, 4096)) != 0)
+	{
+		fz_write_data(ctx, out, in->rp, z);
+		in->rp += z;
+	}
+}
