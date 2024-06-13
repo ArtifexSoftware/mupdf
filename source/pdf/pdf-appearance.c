@@ -470,7 +470,7 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 
 /* The rect diff is NOT an fz_rect. It's differences between
  * 2 rects. We return it as a rect for convenience. */
-static fz_rect
+fz_rect
 pdf_annot_rect_diff(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *rd_obj = pdf_dict_get(ctx, annot->obj, PDF_NAME(RD));
