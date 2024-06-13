@@ -3903,10 +3903,14 @@ static void ffi_Page_getBounds(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
+	fz_box_type box_type = FZ_CROP_BOX;
 	fz_rect bounds;
 
+	if (js_iscoercible(J, 1))
+		box_type = fz_box_type_from_string(js_tostring(J, 1));
+
 	fz_try(ctx)
-		bounds = fz_bound_page(ctx, page);
+		bounds = fz_bound_page_box(ctx, page, box_type);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -10490,7 +10494,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Page.isPDF", ffi_Page_isPDF, 0);
-		jsB_propfun(J, "Page.getBounds", ffi_Page_getBounds, 0);
+		jsB_propfun(J, "Page.getBounds", ffi_Page_getBounds, 1);
 		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
 		jsB_propfun(J, "Page.runPageContents", ffi_Page_runPageContents, 2);
 		jsB_propfun(J, "Page.runPageAnnots", ffi_Page_runPageAnnots, 2);
