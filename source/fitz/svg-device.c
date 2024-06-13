@@ -49,6 +49,20 @@ typedef struct
 	fz_image *image;
 } image;
 
+typedef struct svg_layer_dict
+{
+	struct svg_layer_dict *next;
+	int number;
+	char name[1];
+} svg_layer_dict;
+
+typedef struct svg_layer
+{
+	struct svg_layer *next;
+	struct svg_layer *prev;
+	svg_layer_dict *dict;
+} svg_layer;
+
 typedef struct
 {
 	fz_device super;
@@ -79,7 +93,9 @@ typedef struct
 	int max_images;
 	image *images;
 
-	int layers;
+	svg_layer *current_layers;
+	svg_layer_dict *layer_dict;
+	int layer_count;
 
 	float page_width;
 	float page_height;
@@ -689,6 +705,34 @@ svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
+pop_all_layers(fz_context *ctx, svg_device *sdev)
+{
+	svg_layer *layer;
+
+	for (layer = sdev->current_layers; layer; layer = layer->next)
+		fz_append_string(ctx, sdev->main, "</g>\n");
+}
+
+static void
+push_all_layers(fz_context *ctx, svg_device *sdev)
+{
+	svg_layer *layer = sdev->current_layers;
+
+	if (layer == NULL)
+		return;
+
+	while (layer->next)
+		layer = layer->next;
+
+	do
+	{
+		fz_append_printf(ctx, sdev->main, "<g id=\"layer_%d\" data-name=\"%s\">\n", layer->dict->number, layer->dict->name);
+		layer = layer->prev;
+	}
+	while (layer);
+}
+
+static void
 svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -696,6 +740,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 	int num = sdev->id++;
 
+	pop_all_layers(ctx, sdev);
 	out = start_def(ctx, sdev, 0);
 	fz_append_printf(ctx, out, "<clipPath id=\"clip_%d\">\n", num);
 	fz_append_printf(ctx, out, "<path");
@@ -706,6 +751,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 	fz_append_printf(ctx, out, "/>\n</clipPath>\n");
 	out = end_def(ctx, sdev, 0);
 	fz_append_printf(ctx, out, "<g clip-path=\"url(#clip_%d)\">\n", num);
+	push_all_layers(ctx, sdev);
 }
 
 static void
@@ -1284,9 +1330,35 @@ svg_dev_begin_layer(fz_context *ctx, fz_device *dev, const char *name)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_buffer *out = sdev->out;
+	svg_layer_dict *dict;
+	svg_layer *layer;
 
-	sdev->layers++;
-	fz_append_printf(ctx, out, "<g id=\"layer_%d\" data-name=\"%s\">\n", sdev->layers, name ? name : "");
+	if (name == NULL)
+		name = "";
+
+	/* Have we seen this layer name before? */
+	for (dict = sdev->layer_dict; dict; dict = dict->next)
+		if (strcmp(dict->name, name) == 0)
+			break;
+
+	if (dict == NULL)
+	{
+		dict = fz_malloc(ctx, sizeof(*dict) + strlen(name));
+		dict->next = sdev->layer_dict;
+		sdev->layer_dict = dict;
+		strcpy(dict->name, name);
+		dict->number = sdev->layer_count++;
+	}
+
+	layer = fz_malloc_struct(ctx, svg_layer);
+	layer->dict = dict;
+	layer->next = sdev->current_layers;
+	if (layer->next)
+		layer->next->prev = layer;
+	layer->prev = NULL;
+	sdev->current_layers = layer;
+
+	fz_append_printf(ctx, out, "<g id=\"layer_%d\" data-name=\"%s\">\n", dict->number, name);
 }
 
 static void
@@ -1294,11 +1366,14 @@ svg_dev_end_layer(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_buffer *out = sdev->out;
+	svg_layer *layer = sdev->current_layers;
 
-	if (sdev->layers == 0)
+	if (layer == NULL)
 		return;
 
-	sdev->layers--;
+	sdev->current_layers = layer->next;
+	fz_free(ctx, layer);
+
 	fz_append_printf(ctx, out, "</g>\n");
 }
 
@@ -1307,11 +1382,19 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->real_out;
+	svg_layer_dict *dict, *next_dict;
+	svg_layer *layer, *next_layer;
 
-	while (sdev->layers > 0)
+	pop_all_layers(ctx, sdev);
+	for (layer = sdev->current_layers; layer; layer = next_layer)
 	{
-		fz_append_string(ctx, sdev->main, "</g>\n");
-		sdev->layers--;
+		next_layer = layer->next;
+		fz_free(ctx, layer);
+	}
+	for (dict = sdev->layer_dict; dict; dict = next_dict)
+	{
+		next_dict = dict->next;
+		fz_free(ctx, dict);
 	}
 
 	if (sdev->save_id)
@@ -1402,7 +1485,6 @@ fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page
 
 	dev->save_id = id;
 	dev->id = id ? *id : 1;
-	dev->layers = 0;
 	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
 	dev->reuse_images = reuse_images;
 	dev->page_width = page_width;
