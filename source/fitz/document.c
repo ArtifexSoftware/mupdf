@@ -40,15 +40,20 @@ enum
 static fz_output *
 fz_new_output_to_tempfile(fz_context *ctx, char **namep)
 {
-	char namebuf[L_tmpnam];
 	fz_output *out = NULL;
+#ifdef _WIN32
+	char namebuf[L_tmpnam];
+	int attempts = 0;
+#else
+	char namebuf[] = "/tmp/fztmpXXXXXX";
+#endif
+
 
 	fz_var(out);
 
 #ifdef _WIN32
 	/* Windows has no mkstemp command, so we have to use the old-style
 	 * tmpnam based system, and retry in the case of races. */
-	int attempts = 0;
 	do
 	{
 		if (tmpnam(namebuf) == NULL)
@@ -70,11 +75,9 @@ fz_new_output_to_tempfile(fz_context *ctx, char **namep)
 	while (out == NULL);
 #else
 	{
-		int fd;
 		FILE *file;
-		strcpy(namebuf, "/tmp/fztmpXXXXXX");
+		int fd = mkstemp(namebuf);
 
-		fd = mkstemp(namebuf);
 		if (fd == -1)
 			fz_throw(ctx, FZ_ERROR_SYSTEM, "Cannot mkstemp: %s", strerror(errno));
 		file = fdopen(fd, "w");
