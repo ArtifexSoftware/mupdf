@@ -1789,9 +1789,7 @@ def build_swig(
             # include/mupdf/fitz/heap.h. Otherwise swig's preprocessor seems to
             # ignore #undef's in include/mupdf/fitz/heap-imp.h then complains
             # about redefinition of macros in include/mupdf/fitz/heap.h.
-            command = (
-                    textwrap.dedent(
-                    f'''
+            command = (f'''
                     "{swig_command}"
                         {"-D_WIN32" if state_.windows else ""}
                         -c++
@@ -1810,8 +1808,7 @@ def build_swig(
                         -ignoremissing
                         -DMUPDF_FITZ_HEAP_H
                         {swig_i}
-                    ''').strip().replace( '\n', "" if state_.windows else " \\\n")
-                    )
+                    ''')
             return command
 
         def modify_py( rebuilt, swig_py, do_enums):
@@ -1889,9 +1886,7 @@ def build_swig(
             # swig generated c dll reference to a c sharp project".
             #
             dllimport = 'mupdfcsharp.dll'
-        command = (
-                textwrap.dedent(
-                f'''
+        command = (f'''
                 "{swig_command}"
                     {"-D_WIN32" if state_.windows else ""}
                     -c++
@@ -1911,8 +1906,8 @@ def build_swig(
                     -ignoremissing
                     -DMUPDF_FITZ_HEAP_H
                     {os.path.relpath(swig_i)}
-                ''').strip().replace( '\n', "" if state_.windows else "\\\n")
-                )
+                ''')
+
         rebuilt = jlib.build(
                 (swig_i, include1, include2),
                 (f'{outdir}/mupdf.cs', os.path.relpath(swig_cpp)),
