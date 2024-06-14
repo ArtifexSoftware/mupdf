@@ -1700,7 +1700,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                         -I {include1}
                                         -I {include2}
                                         {cpp_file}
-                                    ''').strip().replace( '\n', ' \\\n')
+                                    ''')
                             jlib.build(
                                     [include1, include2, cpp_file],
                                     o_file,
@@ -1718,7 +1718,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -I {include2}
                                     {" ".join(o_files)}
                                     {link_l_flags(libmupdf)}
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                                 )
                         jlib.build(
                                 [include1, include2] + o_files,
@@ -1743,7 +1743,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -I {include2}
                                     {cpp_files_text}
                                     {link_l_flags(libmupdf)}
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                                 )
                         command_was_run = jlib.build(
                                 [include1, include2] + cpp_files,
@@ -1780,7 +1780,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                         -I {include2}
                                         -o {ofile}
                                         {cpp_file}
-                                    ''').strip().replace( '\n', ' \\\n')
+                                    ''')
                                     )
                             jlib.build(
                                     [include1, include2, cpp_file],
@@ -1815,7 +1815,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -o {libmupdfcpp_so}
                                     {' '.join(ofiles)}
                                     {' '.join(alibs)}
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                         jlib.build(
                                 ofiles + alibs,
                                 libmupdfcpp_so,
@@ -2078,7 +2078,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                         {flags_link2}
                                         {link_l_flags( [libmupdf, libmupdfcpp])}
                                         -Wno-deprecated-declarations
-                                    ''').strip().replace( '\n', ' \\\n')
+                                    ''')
                             )
                             infiles = [
                                     cpp2_path,
@@ -2129,7 +2129,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -Wno-deprecated-declarations
                                     -Wno-free-nonheap-object
                                     -DSWIG_PYTHON_SILENT_MEMLEAK
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                                 )
                         infiles = [
                                 cpp_path,
@@ -2153,7 +2153,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -shared
                                     {flags_link}
                                     {link_l_flags( sos)}
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                                 )
                         infiles = [
                                 o_file,
@@ -2187,7 +2187,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     -DSWIG_PYTHON_SILENT_MEMLEAK
                                     {flags_link}
                                     {link_l_flags( sos)}
-                                ''').strip().replace( '\n', ' \\\n')
+                                ''')
                                 )
                         infiles = [
                                 cpp_path,
@@ -2769,8 +2769,7 @@ def main2():
                         f' -I {build_dirs.dir_mupdf}/include'
                         f' -I {build_dirs.dir_mupdf}/platform/c++/include'
                         )
-                # Enable asserts in this test.
-                cpp_flags = build_dirs.cpp_flags.replace( '-DNDEBUG', '')
+                cpp_flags = build_dirs.cpp_flags
                 if state.state_.windows:
                     win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv=None)
                     windows_build_type = build_dirs.windows_build_type()
@@ -2785,7 +2784,7 @@ def main2():
                                 /link
                                 {lib}
                                 /out:{exe}
-                            ''').replace('\n', ' ')
+                            ''')
                     jlib.system(command, verbose=1)
                     path = os.environ.get('PATH')
                     env_extra = dict(PATH = f'{build_dirs.dir_so}{os.pathsep}{path}' if path else build_dirs.dir_so)
@@ -2809,7 +2808,7 @@ def main2():
                                 {includes}
                                 {src}
                                 {link_l_flags( [libmupdf, libmupdfcpp])}
-                            ''').replace('\n', '\\\n')
+                            ''')
                     jlib.system(command, verbose=1)
                     jlib.system( 'pwd', verbose=1)
                     if state.state_.macos:
