@@ -1040,14 +1040,6 @@ g_extra_declarations = textwrap.dedent(f'''
         fz_install_load_system_font_funcs_args class wrapper instance. */
         FZ_DATA extern void* fz_install_load_system_font_funcs2_state;
 
-        /** Helper for calling a `fz_document_open_fn` function pointer via Swig
-        from Python/C#. */
-        FZ_FUNCTION fz_document* fz_document_open_fn_call(fz_context* ctx, fz_document_open_fn fn, fz_stream* stream, fz_stream* accel, fz_archive* dir);
-
-        /** Helper for calling a `fz_document_recognize_content_fn` function
-        pointer via Swig from Python/C#. */
-        FZ_FUNCTION int fz_document_recognize_content_fn_call(fz_context* ctx, fz_document_recognize_content_fn fn, fz_stream* stream, fz_archive* dir);
-
         /** Swig-friendly wrapper for pdf_choice_widget_options(), returns the
         options directly in a vector. */
         FZ_FUNCTION std::vector<std::string> pdf_choice_widget_options2(fz_context* ctx, pdf_annot* tw, int exportval);
@@ -1207,16 +1199,6 @@ g_extra_definitions = textwrap.dedent(f'''
         }}
 
         void* fz_install_load_system_font_funcs2_state = nullptr;
-
-        FZ_FUNCTION fz_document* fz_document_open_fn_call(fz_context* ctx, fz_document_open_fn fn, fz_stream* stream, fz_stream* accel, fz_archive* dir)
-        {{
-            return fn(ctx, stream, accel, dir);
-        }}
-
-        FZ_FUNCTION int fz_document_recognize_content_fn_call(fz_context* ctx, fz_document_recognize_content_fn fn, fz_stream* stream, fz_archive* dir)
-        {{
-            return fn(ctx, stream, dir);
-        }}
 
         FZ_FUNCTION std::vector<std::string> pdf_choice_widget_options2(fz_context* ctx, pdf_annot* tw, int exportval)
         {{
