@@ -237,7 +237,7 @@
 #endif /* FZ_ENABLE_ICC */
 
 #ifdef FZ_ENABLE_HTML_ENGINE
-#if FZ_ENABLE_HTML_ENGINE == 1
+#if FZ_ENABLE_HTML_ENGINE == 0
 #if FZ_ENABLE_HTML == 1
 #error FZ_ENABLE_HTML cannot work without FZ_ENABLE_HTML_ENGINE
 #endif
