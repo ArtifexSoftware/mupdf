@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. include:: header.rst
@@ -10,7 +10,7 @@
 Welcome to :title:`MuPDF`
 ================================
 
-.. image:: images/mupdf-icon.png
+.. image:: images/mupdf-web-icon.png
    :align: left
    :scale: 20%
 

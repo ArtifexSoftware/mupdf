@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. default-domain:: js
@@ -117,7 +117,7 @@ An example input file, which adds an image, a triangle and some text:
    %%CJKFont Song zh-Hant
    %%CJKFont Mincho ja
    %%CJKFont Batang ko
-   %%Image I0 logo/mupdf-simplified-logo.png
+   %%Image I0 docs/examples/huntingofthesnark.png
 
    % Draw an image.
    q
