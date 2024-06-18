@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2024 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -98,19 +98,27 @@ public class Quad
 		return this;
 	}
 
+	protected float cross(float ax, float ay, float bx, float by, float px, float py) {
+		bx -= ax;
+		by -= ay;
+		px -= ax;
+		py -= ay;
+		return bx * py - by * px;
+	}
+
 	protected boolean triangleContainsPoint(float x, float y, float ax, float ay, float bx, float by, float cx, float cy) {
-		float s, t, area;
-		s = ay * cx - ax * cy + (cy - ay) * x + (ax - cx) * y;
-		t = ax * by - ay * bx + (ay - by) * x + (bx - ax) * y;
+		float crossa = cross(ax, ay, bx, by, x, y);
+		float crossb = cross(bx, by, cx, cy, x, y);
+		float crossc = cross(cx, cy, ax, ay, x, y);
 
-		if ((s < 0) != (t < 0))
-			return false;
+		if (crossa == 0 && crossb == 0 && crossc == 0)
+			return ax == x && ay == y;
+		if (crossa >= 0 && crossb >= 0 && crossc >= 0)
+			return true;
+		if (crossa <= 0 && crossb <= 0 && crossc <= 0)
+			return true;
 
-		area = -by * cx + ay * (cx - bx) + ax * (by - cy) + bx * cy;
-
-		return area < 0 ?
-			(s <= 0 && s + t >= area) :
-			(s >= 0 && s + t <= area);
+		return false;
 	}
 
 	public boolean contains(float x, float y) {
