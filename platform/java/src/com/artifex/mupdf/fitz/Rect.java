@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2024 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -56,10 +56,23 @@ public class Rect
 
 	public Rect(Quad q)
 	{
-		this.x0 = q.ll_x;
-		this.y0 = q.ll_y;
-		this.x1 = q.ur_x;
-		this.y1 = q.ur_y;
+		if (!q.isValid())
+		{
+			this.x0 = this.y0 = FZ_MAX_INF_RECT;
+			this.x1 = this.y1 = FZ_MIN_INF_RECT;
+		}
+		else if (!q.isInfinite())
+		{
+			this.x0 = this.y0 = FZ_MIN_INF_RECT;
+			this.x1 = this.y1 = FZ_MAX_INF_RECT;
+		}
+		else
+		{
+			this.x0 = q.ll_x;
+			this.y0 = q.ll_y;
+			this.x1 = q.ur_x;
+			this.y1 = q.ur_y;
+		}
 	}
 
 	public Rect(Rect r)
