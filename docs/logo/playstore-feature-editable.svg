@@ -5,8 +5,30 @@
    version="1.1"
    id="svg29"
    xml:space="preserve"
+   sodipodi:docname="playstore-feature-editable.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+     id="namedview397"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     showgrid="false"
+     inkscape:zoom="2.546875"
+     inkscape:cx="197.10429"
+     inkscape:cy="125.05521"
+     inkscape:window-width="1920"
+     inkscape:window-height="980"
+     inkscape:window-x="484"
+     inkscape:window-y="354"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg29" /><defs
      id="defs7"><rect
        x="268.05052"
        y="48.495982"
@@ -25,7 +47,12 @@
          id="stop2" /><stop
          offset="1"
          stop-color="#fd8f2f"
-         id="stop4" /></linearGradient></defs><rect
+         id="stop4" /></linearGradient><rect
+       x="184.93253"
+       y="-14.134969"
+       width="269.65128"
+       height="281.24945"
+       id="rect477" /></defs><rect
      style="fill:#ffffff;stroke-width:1.722;stroke-miterlimit:6.4;paint-order:markers stroke fill"
      id="rect611"
      width="512"
@@ -92,18 +119,41 @@
      transform="matrix(0.66564226,0,0,0.66564226,74.49527,26.940945)"><tspan
        x="268.05078"
        y="93.673941"
-       id="tspan438"><tspan
+       id="tspan666"><tspan
          style="font-weight:900;font-family:'Source Han Sans';-inkscape-font-specification:'Source Han Sans Heavy'"
-         id="tspan436">Read PDF, XPS,
+         id="tspan664">Read PDF, XPS,
 </tspan></tspan><tspan
        x="268.05078"
        y="155.66161"
-       id="tspan442"><tspan
+       id="tspan670"><tspan
          style="font-weight:900;font-family:'Source Han Sans';-inkscape-font-specification:'Source Han Sans Heavy'"
-         id="tspan440">CBZ, EPUB, and
+         id="tspan668">CBZ, EPUB, and
 </tspan></tspan><tspan
        x="268.05078"
        y="217.64928"
-       id="tspan446"><tspan
+       id="tspan674"><tspan
          style="font-weight:900;font-family:'Source Han Sans';-inkscape-font-specification:'Source Han Sans Heavy'"
-         id="tspan444">FB2 documents.</tspan></tspan></text></svg>
+         id="tspan672">FB2 documents.</tspan></tspan></text><text
+     xml:space="preserve"
+     id="text475"
+     style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:37.3333px;line-height:48.0667px;font-family:C059;-inkscape-font-specification:'C059, Italic';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:-0.39px;word-spacing:0px;white-space:pre;shape-inside:url(#rect477);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     transform="translate(62.421358,18.602068)"><tspan
+       x="184.93164"
+       y="18.746576"
+       id="tspan676">PDF,
+</tspan><tspan
+       x="184.93164"
+       y="66.813272"
+       id="tspan678">  XPS,
+</tspan><tspan
+       x="184.93164"
+       y="114.87997"
+       id="tspan680">    CBZ,
+</tspan><tspan
+       x="184.93164"
+       y="162.94666"
+       id="tspan682">      FB2,
+</tspan><tspan
+       x="184.93164"
+       y="211.01336"
+       id="tspan684">        EPUB</tspan></text></svg>
