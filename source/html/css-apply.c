@@ -701,7 +701,7 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 }
 
 void
-fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css_set *css, fz_xml *node)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
@@ -716,18 +716,21 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 		match->value[i] = NULL;
 	}
 
-	for (rule = css->rule; rule; rule = rule->next)
+	for (i = 0; i < css->len; i++)
 	{
-		sel = rule->selector;
-		while (sel)
+		for (rule = css->css[i]->rule; rule; rule = rule->next)
 		{
-			if (match_selector(sel, node))
+			sel = rule->selector;
+			while (sel)
 			{
-				for (prop = rule->declaration; prop; prop = prop->next)
-					add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
-				break;
+				if (match_selector(sel, node))
+				{
+					for (prop = rule->declaration; prop; prop = prop->next)
+						add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
+					break;
+				}
+				sel = sel->next;
 			}
-			sel = sel->next;
 		}
 	}
 
@@ -757,7 +760,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 }
 
 void
-fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css)
+fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_set *css)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
@@ -771,18 +774,21 @@ fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css)
 		match->value[i] = NULL;
 	}
 
-	for (rule = css->rule; rule; rule = rule->next)
+	for (i = 0; i < css->len; i++)
 	{
-		sel = rule->selector;
-		while (sel)
+		for (rule = css->css[i]->rule; rule; rule = rule->next)
 		{
-			if (sel->name && !strcmp(sel->name, "@page"))
+			sel = rule->selector;
+			while (sel)
 			{
-				for (prop = rule->declaration; prop; prop = prop->next)
-					add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
-				break;
+				if (sel->name && !strcmp(sel->name, "@page"))
+				{
+					for (prop = rule->declaration; prop; prop = prop->next)
+						add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
+					break;
+				}
+				sel = sel->next;
 			}
-			sel = sel->next;
 		}
 	}
 }
@@ -873,19 +879,15 @@ fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, c
 
 	for (rule = css->rule; rule; rule = rule->next)
 	{
-		if (!rule->loaded)
+		sel = rule->selector;
+		while (sel)
 		{
-			rule->loaded = 1;
-			sel = rule->selector;
-			while (sel)
+			if (sel->name && !strcmp(sel->name, "@font-face"))
 			{
-				if (sel->name && !strcmp(sel->name, "@font-face"))
-				{
-					fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
-					break;
-				}
-				sel = sel->next;
+				fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
+				break;
 			}
+			sel = sel->next;
 		}
 	}
 }
@@ -1817,5 +1819,19 @@ fz_debug_css(fz_context *ctx, fz_css *css)
 	{
 		print_rule(rule);
 		rule = rule->next;
+	}
+}
+
+void
+fz_debug_css_set(fz_context *ctx, fz_css_set *cset)
+{
+	int i;
+
+	if (cset == NULL)
+		return;
+	for (i = 0; i < cset->len; i++)
+	{
+		printf("CSS Set entry %d\n", i);
+		fz_debug_css(ctx, cset->css[i]);
 	}
 }

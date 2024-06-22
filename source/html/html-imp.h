@@ -33,6 +33,7 @@ typedef struct fz_html_box_s fz_html_box;
 typedef struct fz_html_flow_s fz_html_flow;
 typedef struct fz_css_style_splay_s fz_css_style_splay;
 
+typedef struct fz_css_set_s fz_css_set;
 typedef struct fz_css_s fz_css;
 typedef struct fz_css_rule_s fz_css_rule;
 typedef struct fz_css_match_s fz_css_match;
@@ -75,8 +76,17 @@ enum
 	CSS_URI,
 };
 
+struct fz_css_set_s
+{
+	fz_pool *pool;	// For stray 'style' properties.
+	int len;
+	int max;
+	fz_css **css;
+};
+
 struct fz_css_s
 {
+	int refs;
 	fz_pool *pool;
 	fz_css_rule *rule;
 };
@@ -86,7 +96,6 @@ struct fz_css_rule_s
 	fz_css_selector *selector;
 	fz_css_property *declaration;
 	fz_css_rule *next;
-	int loaded;
 };
 
 struct fz_css_selector_s
@@ -511,14 +520,18 @@ struct fz_html_flow_s
 
 
 fz_css *fz_new_css(fz_context *ctx);
-void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file);
+fz_css_set *fz_new_css_set(fz_context *ctx);
+fz_css *fz_parse_css(fz_context *ctx, fz_css_set *set, const char *source, const char *file);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source);
+fz_css *fz_keep_css(fz_context *ctx, fz_css *css);
 void fz_drop_css(fz_context *ctx, fz_css *css);
+void fz_drop_css_set(fz_context *ctx, fz_css_set *css);
 void fz_debug_css(fz_context *ctx, fz_css *css);
+void fz_debug_css_set(fz_context *ctx, fz_css_set *cset);
 const char *fz_css_property_name(int name);
 
-void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node);
-void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
+void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css_set *css, fz_xml *node);
+void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_set *css);
 
 int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);

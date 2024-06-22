@@ -209,7 +209,7 @@ struct genstate
 	fz_xml_doc *xml;
 	int is_fb2;
 	const char *base_uri;
-	fz_css *css;
+	fz_css_set *css;
 	int at_bol;
 	fz_html_box *emit_white;
 	int last_brk_cls;
@@ -1212,11 +1212,12 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 }
 
 static void
-html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css, fz_xml *root, const char *href)
+html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root, const char *href)
 {
 	char path[2048];
 	char css_base_uri[2048];
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
+	fz_css *css;
 
 	fz_var(buf);
 
@@ -1228,11 +1229,10 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 
 	fz_dirname(css_base_uri, path, sizeof css_base_uri);
 
-	buf = NULL;
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
-		fz_parse_css(ctx, css, fz_string_from_buffer(ctx, buf), path);
+		css = fz_parse_css(ctx, cset, fz_string_from_buffer(ctx, buf), path);
 		fz_add_css_font_faces(ctx, set, zip, css_base_uri, css);
 	}
 	fz_always(ctx)
@@ -1246,9 +1246,10 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 }
 
 static void
-html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css, fz_xml *root)
+html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root)
 {
 	fz_xml *html, *head, *node;
+	fz_css *css;
 
 	html = fz_xml_find(root, "html");
 	head = fz_xml_find_down(html, "head");
@@ -1265,7 +1266,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 					char *href = fz_xml_att(node, "href");
 					if (href)
 					{
-						html_load_css_link(ctx, set, zip, base_uri, css, root, href);
+						html_load_css_link(ctx, set, zip, base_uri, cset, root, href);
 					}
 				}
 			}
@@ -1275,7 +1276,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 			char *s = concat_text(ctx, node);
 			fz_try(ctx)
 			{
-				fz_parse_css(ctx, css, s, "<style>");
+				css = fz_parse_css(ctx, cset, s, "<style>");
 				fz_add_css_font_faces(ctx, set, zip, base_uri, css);
 			}
 			fz_always(ctx)
@@ -1291,9 +1292,10 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 }
 
 static void
-fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css, fz_xml *root)
+fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root)
 {
 	fz_xml *fictionbook, *stylesheet;
+	fz_css *css;
 
 	fictionbook = fz_xml_find(root, "FictionBook");
 	stylesheet = fz_xml_find_down(fictionbook, "stylesheet");
@@ -1302,7 +1304,7 @@ fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		char *s = concat_text(ctx, stylesheet);
 		fz_try(ctx)
 		{
-			fz_parse_css(ctx, css, s, "<stylesheet>");
+			css = fz_parse_css(ctx, cset, s, "<stylesheet>");
 			fz_add_css_font_faces(ctx, set, zip, base_uri, css);
 		}
 		fz_catch(ctx)
@@ -1598,6 +1600,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 {
 	fz_xml *root, *node;
 	char *title;
+	fz_css *css;
 
 	fz_css_match root_match, match;
 	struct genstate g = {0};
@@ -1624,7 +1627,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		*rtitle = NULL;
 
 	root = fz_xml_root(g.xml);
-	g.css = fz_new_css(ctx);
+	g.css = fz_new_css_set(ctx);
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_XML")))
@@ -1636,7 +1639,8 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		if (try_fictionbook && fz_xml_find(root, "FictionBook"))
 		{
 			g.is_fb2 = 1;
-			fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
+			css = fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
 			if (fz_use_document_css(ctx))
 				fb2_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 			g.images = load_fb2_images(ctx, root);
@@ -1644,40 +1648,43 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		else if (is_mobi)
 		{
 			g.is_fb2 = 0;
-			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
-			fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
+			css = fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
+			css = fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
 			if (fz_use_document_css(ctx))
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 		}
 		else
 		{
 			g.is_fb2 = 0;
-			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
+			css = fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
 			if (fz_use_document_css(ctx))
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 		}
 
 		if (user_css)
 		{
-			fz_parse_css(ctx, g.css, user_css, "<user>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", g.css);
+			css = fz_parse_css(ctx, g.css, user_css, "<user>");
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
 		}
 	}
 	fz_catch(ctx)
 	{
 		fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
-		fz_drop_css(ctx, g.css);
+		fz_drop_css_set(ctx, g.css);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
 		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring styles");
-		g.css = fz_new_css(ctx);
+		g.css = fz_new_css_set(ctx);
 		g.images = NULL;
 	}
 
 #ifndef NDEBUG
 	if (fz_atoi(getenv("FZ_DEBUG_CSS")))
-		fz_debug_css(ctx, g.css);
+		fz_debug_css_set(ctx, g.css);
 #endif
 
 	fz_try(ctx)
@@ -1743,7 +1750,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	fz_always(ctx)
 	{
 		fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
-		fz_drop_css(ctx, g.css);
+		fz_drop_css_set(ctx, g.css);
 	}
 	fz_catch(ctx)
 	{

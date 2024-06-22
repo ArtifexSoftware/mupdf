@@ -139,6 +139,7 @@ fz_css *fz_new_css(fz_context *ctx)
 		css = fz_pool_alloc(ctx, pool, sizeof *css);
 		css->pool = pool;
 		css->rule = NULL;
+		css->refs = 1;
 	}
 	fz_catch(ctx)
 	{
@@ -149,10 +150,47 @@ fz_css *fz_new_css(fz_context *ctx)
 	return css;
 }
 
+fz_css *fz_keep_css(fz_context *ctx, fz_css *css)
+{
+	return fz_keep_imp(ctx, css, &css->refs);
+}
+
 void fz_drop_css(fz_context *ctx, fz_css *css)
 {
-	if (css)
+	if (fz_drop_imp(ctx, css, &css->refs))
 		fz_drop_pool(ctx, css->pool);
+}
+
+fz_css_set *fz_new_css_set(fz_context *ctx)
+{
+	fz_css_set *cset = fz_malloc_struct(ctx, fz_css_set);
+
+	fz_try(ctx)
+	{
+		cset->pool = fz_new_pool(ctx);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, cset);
+		fz_rethrow(ctx);
+	}
+
+	return cset;
+}
+
+void fz_drop_css_set(fz_context *ctx, fz_css_set *cset)
+{
+	int i;
+
+	if (!cset)
+		return;
+
+	for (i = 0; i < cset->len; i++)
+		fz_drop_css(ctx, cset->css[i]);
+
+	fz_drop_pool(ctx, cset->pool);
+	fz_free(ctx, cset->css);
+	fz_free(ctx, cset);
 }
 
 static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_pool *pool, fz_css_selector *selector, fz_css_property *declaration)
@@ -1101,10 +1139,45 @@ fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const c
 	return parse_declaration_list(&buf);
 }
 
-void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file)
+/* Takes ownership of css. */
+static void
+fz_add_css_to_set(fz_context *ctx, fz_css_set *cset, fz_css *css)
+{
+	if (cset->len == cset->max)
+	{
+		int n = cset->max * 2;
+		if (n == 0)
+			n = 8;
+
+		fz_try(ctx)
+			cset->css = fz_realloc(ctx, cset->css, sizeof(cset->css[0]) * n);
+		fz_catch(ctx)
+		{
+			fz_drop_css(ctx, css);
+			fz_rethrow(ctx);
+		}
+		cset->max = n;
+	}
+
+	cset->css[cset->len++] = css;
+}
+
+fz_css *fz_parse_css(fz_context *ctx, fz_css_set *set, const char *source, const char *file)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, css->pool, source, file);
-	next(&buf);
-	css->rule = parse_stylesheet(&buf, css->rule);
+	fz_css *css = fz_new_css(ctx);
+	fz_try(ctx)
+	{
+		css_lex_init(ctx, &buf, css->pool, source, file);
+		next(&buf);
+		css->rule = parse_stylesheet(&buf, css->rule);
+		fz_add_css_to_set(ctx, set, css);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_css(ctx, css);
+		fz_rethrow(ctx);
+	}
+
+	return css;
 }
