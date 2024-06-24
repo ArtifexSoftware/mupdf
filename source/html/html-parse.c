@@ -221,7 +221,47 @@ typedef struct genstate
 	char *href;
 
 	fz_css_style_splay *styles;
+	fz_css_cache *css_cache;
 } genstate;
+
+static void
+do_drop_css(fz_context *ctx, void *css)
+{
+	fz_drop_css(ctx, (fz_css *)css);
+}
+
+void fz_drop_css_cache(fz_context *ctx, fz_css_cache *cache)
+{
+	if (cache == NULL)
+		return;
+
+	fz_drop_tree(ctx, *cache, do_drop_css);
+	*cache = NULL;
+}
+
+static void
+fz_css_cache_add(fz_context *ctx, fz_css_cache *cache, const char *path, fz_css *css)
+{
+	if (cache == NULL)
+		return;
+
+	fz_try(ctx)
+		*cache = fz_tree_insert(ctx, *cache, path, fz_keep_css(ctx, css));
+	fz_catch(ctx)
+	{
+		fz_drop_css(ctx, css);
+		fz_rethrow(ctx);
+	}
+}
+
+fz_css *fz_css_cache_find(fz_context *ctx, fz_css_cache *cache, const char *path)
+{
+	if (cache == NULL)
+		return NULL;
+
+	return fz_tree_lookup(ctx, *cache, path);
+}
+
 
 static int iswhite(int c)
 {
@@ -1211,11 +1251,13 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 	return s;
 }
 
-static void
+static fz_css *
 fz_parse_css_for_html(fz_context *ctx, struct genstate *g, const char *base_uri, const char *source, const char *file)
 {
 	fz_css *css = fz_parse_css(ctx, g->css, source, file);
 	fz_add_css_font_faces(ctx, g->set, g->zip, base_uri, css);
+
+	return css;
 }
 
 static void
@@ -1224,6 +1266,7 @@ html_load_css_link(fz_context *ctx, genstate *g, fz_xml *root, const char *href)
 	char path[2048];
 	char css_base_uri[2048];
 	fz_buffer *buf = NULL;
+	fz_css *css;
 
 	fz_var(buf);
 
@@ -1235,10 +1278,17 @@ html_load_css_link(fz_context *ctx, genstate *g, fz_xml *root, const char *href)
 
 	fz_dirname(css_base_uri, path, sizeof css_base_uri);
 
+	css = fz_css_cache_find(ctx, g->css_cache, path);
+	if (css)
+	{
+		fz_add_css_font_faces(ctx, g->set, g->zip, css_base_uri, css);
+		return;
+	}
+
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, g->zip, path);
-		fz_parse_css_for_html(ctx, g, css_base_uri, fz_string_from_buffer(ctx, buf), path);
+		css = fz_parse_css_for_html(ctx, g, css_base_uri, fz_string_from_buffer(ctx, buf), path);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -1248,6 +1298,8 @@ html_load_css_link(fz_context *ctx, genstate *g, fz_xml *root, const char *href)
 		fz_report_error(ctx);
 		fz_warn(ctx, "ignoring stylesheet %s", path);
 	}
+
+	fz_css_cache_add(ctx, g->css_cache, path, css);
 }
 
 static void
@@ -1593,7 +1645,7 @@ static void move_background_color_up(fz_context *ctx, struct genstate *g, fz_htm
 
 static void
 xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
-	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi)
+	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi, fz_css_cache *cache)
 {
 	fz_xml *root, *node;
 	char *title;
@@ -1618,6 +1670,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	g.markup_lang = FZ_LANG_UNSET;
 	g.href = NULL;
 	g.styles = NULL;
+	g.css_cache = cache;
 
 	if (rtitle)
 		*rtitle = NULL;
@@ -1850,7 +1903,8 @@ patch_mobi_html(fz_context *ctx, fz_pool *pool, fz_xml *node)
 static void
 fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi)
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi,
+	fz_css_cache *cache)
 {
 	fz_xml_doc *xml;
 
@@ -1863,7 +1917,7 @@ fz_parse_html_tree(fz_context *ctx,
 		patch_mobi_html(ctx, xml->u.doc.pool, xml);
 
 	fz_try(ctx)
-		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi);
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi, cache);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
 	fz_catch(ctx)
@@ -1897,7 +1951,7 @@ fz_new_html_tree_of_size(fz_context *ctx, size_t size, fz_store_drop_fn *drop)
 fz_html *
 fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi)
+	int try_xml, int try_html5, int patch_mobi, fz_css_cache *cache)
 {
 	fz_html *html = fz_new_derived_html_tree(ctx, fz_html, fz_drop_html_imp);
 
@@ -1906,7 +1960,7 @@ fz_parse_html(fz_context *ctx,
 	html->layout_em = 0;
 
 	fz_try(ctx)
-		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi);
+		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi, cache);
 	fz_catch(ctx)
 	{
 		fz_drop_html(ctx, html);
@@ -2007,10 +2061,10 @@ fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em, fz
 }
 
 fz_html *
-fz_parse_xhtml(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
+fz_parse_xhtml(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css, fz_css_cache *cache)
 {
 	/* try as XML first, fall back to HTML5 */
-	return fz_parse_html(ctx, set, zip, base_uri, buf, user_css, 1, 1, 0);
+	return fz_parse_html(ctx, set, zip, base_uri, buf, user_css, 1, 1, 0, cache);
 }
 
 static void indent(int level)
@@ -2289,7 +2343,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0);
+		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0, NULL);
 	}
 	fz_always(ctx)
 	{

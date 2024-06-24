@@ -35,7 +35,7 @@ typedef struct fz_tree fz_tree;
 /**
 	Look for the value of a node in the tree with the given key.
 
-	Simple pointer equivalence is used for key.
+	Strcmp equivalence is used for key.
 
 	Returns NULL for no match.
 */

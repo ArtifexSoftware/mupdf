@@ -67,6 +67,8 @@ typedef struct
 	 * to the most recently used html block here, thus
 	 * ensuring that the stored copy won't be evicted. */
 	fz_html *most_recent_html;
+
+	fz_css_cache css_cache;
 } epub_document;
 
 struct epub_chapter
@@ -483,7 +485,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 
 	buf = fz_read_archive_entry(ctx, zip, ch->path);
 	fz_try(ctx)
-		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx), 1, 1, 0);
+		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx), 1, 1, 0, &doc->css_cache);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
@@ -647,6 +649,7 @@ epub_drop_document(fz_context *ctx, fz_document *doc_)
 	fz_free(ctx, doc->dc_creator);
 	fz_drop_html(ctx, doc->most_recent_html);
 	fz_purge_stored_html(ctx, doc);
+	fz_drop_css_cache(ctx, &doc->css_cache);
 }
 
 static const char *
@@ -1024,6 +1027,7 @@ epub_init(fz_context *ctx, fz_archive *zip, fz_stream *accel)
 		doc->css_sum = user_css_sum(ctx);
 		epub_load_accelerator(ctx, doc, accel);
 		epub_parse_header(ctx, doc);
+		doc->css_cache = NULL;
 	}
 	fz_catch(ctx)
 	{

@@ -580,9 +580,13 @@ fz_archive *fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi);
 
 fz_structure fz_html_tag_to_structure(const char *tag);
 
+typedef fz_tree *fz_css_cache;
+
 fz_html *fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *dir, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi);
+	int try_xml, int try_html5, int patch_mobi, fz_css_cache *css);
+
+void fz_drop_css_cache(fz_context *ctx, fz_css_cache *cache);
 
 fz_buffer *fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in);
 

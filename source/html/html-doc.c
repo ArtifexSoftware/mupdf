@@ -36,6 +36,7 @@ typedef struct
 	fz_html *html;
 	fz_outline *outline;
 	const fz_htdoc_format_t *format;
+	fz_css_cache css_cache;
 } html_document;
 
 typedef struct
@@ -53,6 +54,7 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 	fz_drop_html(ctx, doc->html);
 	fz_drop_html_font_set(ctx, doc->set);
 	fz_drop_outline(ctx, doc->outline);
+	fz_drop_css_cache(ctx, &doc->css_cache);
 }
 
 static fz_link_dest
@@ -187,7 +189,7 @@ htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char 
 }
 
 static fz_html *
-generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buffer_in, const char *user_css, const fz_htdoc_format_t *format)
+generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buffer_in, const char *user_css, const fz_htdoc_format_t *format, fz_css_cache *cache)
 {
 	fz_buffer *buffer_html = NULL;
 	fz_html *html = NULL;
@@ -198,7 +200,7 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 			buffer_html = format->convert_to_html(ctx, set, buffer_in, zip, user_css);
 		else
 			buffer_html = fz_keep_buffer(ctx, buffer_in);
-		html = fz_parse_html(ctx, set, zip, base_uri, buffer_html, user_css, format->try_xml, format->try_html5, format->patch_mobi);
+		html = fz_parse_html(ctx, set, zip, base_uri, buffer_html, user_css, format->try_xml, format->try_html5, format->patch_mobi, cache);
 	}
 	fz_always(ctx)
 	{
@@ -234,10 +236,11 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *dir, fz_buffer *
 		doc->super.lookup_metadata = htdoc_lookup_metadata;
 		doc->super.is_reflowable = 1;
 
+		doc->css_cache = NULL;
 		doc->zip = fz_keep_archive(ctx, dir);
 		doc->format = format;
 		doc->set = fz_new_html_font_set(ctx);
-		doc->html = generic_parse(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx), format);
+		doc->html = generic_parse(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx), format, &doc->css_cache);
 		doc->outline = fz_load_html_outline(ctx, doc->html);
 	}
 	fz_always(ctx)
