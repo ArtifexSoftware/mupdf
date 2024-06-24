@@ -200,7 +200,7 @@ static const char *find_known_fb2_tag(const char *tag)
 	return NULL;
 }
 
-struct genstate
+typedef struct genstate
 {
 	fz_pool *pool;
 	fz_html_font_set *set;
@@ -221,7 +221,7 @@ struct genstate
 	char *href;
 
 	fz_css_style_splay *styles;
-};
+} genstate;
 
 static int iswhite(int c)
 {
@@ -345,7 +345,7 @@ fz_html_flow *fz_html_split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *f
 	return new_flow;
 }
 
-static void flush_space(fz_context *ctx, fz_html_box *flow, int lang, struct genstate *g)
+static void flush_space(fz_context *ctx, fz_html_box *flow, int lang, genstate *g)
 {
 	static const char *space = " ";
 	fz_pool *pool = g->pool;
@@ -1212,16 +1212,22 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 }
 
 static void
-html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root, const char *href)
+fz_parse_css_for_html(fz_context *ctx, struct genstate *g, const char *base_uri, const char *source, const char *file)
+{
+	fz_css *css = fz_parse_css(ctx, g->css, source, file);
+	fz_add_css_font_faces(ctx, g->set, g->zip, base_uri, css);
+}
+
+static void
+html_load_css_link(fz_context *ctx, genstate *g, fz_xml *root, const char *href)
 {
 	char path[2048];
 	char css_base_uri[2048];
 	fz_buffer *buf = NULL;
-	fz_css *css;
 
 	fz_var(buf);
 
-	fz_strlcpy(path, base_uri, sizeof path);
+	fz_strlcpy(path, g->base_uri, sizeof path);
 	fz_strlcat(path, "/", sizeof path);
 	fz_strlcat(path, href, sizeof path);
 	fz_urldecode(path);
@@ -1231,9 +1237,8 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 
 	fz_try(ctx)
 	{
-		buf = fz_read_archive_entry(ctx, zip, path);
-		css = fz_parse_css(ctx, cset, fz_string_from_buffer(ctx, buf), path);
-		fz_add_css_font_faces(ctx, set, zip, css_base_uri, css);
+		buf = fz_read_archive_entry(ctx, g->zip, path);
+		fz_parse_css_for_html(ctx, g, css_base_uri, fz_string_from_buffer(ctx, buf), path);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -1246,10 +1251,9 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 }
 
 static void
-html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root)
+html_load_css(fz_context *ctx, genstate *g, fz_xml *root)
 {
 	fz_xml *html, *head, *node;
-	fz_css *css;
 
 	html = fz_xml_find(root, "html");
 	head = fz_xml_find_down(html, "head");
@@ -1266,7 +1270,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 					char *href = fz_xml_att(node, "href");
 					if (href)
 					{
-						html_load_css_link(ctx, set, zip, base_uri, cset, root, href);
+						html_load_css_link(ctx, g, root, href);
 					}
 				}
 			}
@@ -1275,10 +1279,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		{
 			char *s = concat_text(ctx, node);
 			fz_try(ctx)
-			{
-				css = fz_parse_css(ctx, cset, s, "<style>");
-				fz_add_css_font_faces(ctx, set, zip, base_uri, css);
-			}
+				fz_parse_css_for_html(ctx, g, g->base_uri, s, "<style>");
 			fz_always(ctx)
 				fz_free(ctx, s);
 			fz_catch(ctx)
@@ -1292,10 +1293,9 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 }
 
 static void
-fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_set *cset, fz_xml *root)
+fb2_load_css(fz_context *ctx, genstate *g, fz_xml *root)
 {
 	fz_xml *fictionbook, *stylesheet;
-	fz_css *css;
 
 	fictionbook = fz_xml_find(root, "FictionBook");
 	stylesheet = fz_xml_find_down(fictionbook, "stylesheet");
@@ -1303,10 +1303,7 @@ fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	{
 		char *s = concat_text(ctx, stylesheet);
 		fz_try(ctx)
-		{
-			css = fz_parse_css(ctx, cset, s, "<stylesheet>");
-			fz_add_css_font_faces(ctx, set, zip, base_uri, css);
-		}
+			fz_parse_css_for_html(ctx, g, g->base_uri, s, "<stylesheet>");
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
@@ -1600,7 +1597,6 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 {
 	fz_xml *root, *node;
 	char *title;
-	fz_css *css;
 
 	fz_css_match root_match, match;
 	struct genstate g = {0};
@@ -1639,36 +1635,28 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		if (try_fictionbook && fz_xml_find(root, "FictionBook"))
 		{
 			g.is_fb2 = 1;
-			css = fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
+			fz_parse_css_for_html(ctx, &g, g.base_uri, fb2_default_css, "<default:fb2>");
 			if (fz_use_document_css(ctx))
-				fb2_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
+				fb2_load_css(ctx, &g, root);
 			g.images = load_fb2_images(ctx, root);
 		}
 		else if (is_mobi)
 		{
 			g.is_fb2 = 0;
-			css = fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
-			css = fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
+			fz_parse_css_for_html(ctx, &g, g.base_uri, mobi_default_css, "<default:html>");
 			if (fz_use_document_css(ctx))
-				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
+				html_load_css(ctx, &g, root);
 		}
 		else
 		{
 			g.is_fb2 = 0;
-			css = fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
+			fz_parse_css_for_html(ctx, &g, g.base_uri, html_default_css, "<default:html>");
 			if (fz_use_document_css(ctx))
-				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
+				html_load_css(ctx, &g, root);
 		}
 
 		if (user_css)
-		{
-			css = fz_parse_css(ctx, g.css, user_css, "<user>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", css);
-		}
+			fz_parse_css_for_html(ctx, &g, g.base_uri, user_css, "<user>");
 	}
 	fz_catch(ctx)
 	{
