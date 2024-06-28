@@ -3306,9 +3306,13 @@ def class_custom_method(
         return_space = ''
         comment = 'Custom destructor.'
         is_destructor = True
+    elif extramethod.name_args.startswith('operator '):
+        name_args = extramethod.name_args
+        comment = 'Custom operator.'
+        return_space = ''
     else:
         # Constructor.
-        assert extramethod.name_args.startswith( '('), f'bad constructor/destructor in classname={classname}'
+        assert extramethod.name_args.startswith( '('), f'bad constructor/destructor in {classname=}: {extramethod.name_args=}'
         name_args = f'{classname}{extramethod.name_args}'
         return_space = ''
         comment = 'Custom constructor.'
@@ -4509,7 +4513,7 @@ def class_wrapper(
                 )
 
     # If class has '{structname}* m_internal;', provide access to m_iternal as
-    # an integer, for use by python etc.
+    # an integer, for use by python etc, and provide `operator bool()`.
     if not extras.pod:
         class_custom_method(
                 tu,
@@ -4530,6 +4534,35 @@ def class_wrapper(
                 out_cpp,
                 refcheck_if,
                 )
+        class_custom_method(
+                tu,
+                register_fn_use,
+                struct_cursor,
+                classname,
+                classes.ExtraMethod(
+                    '',
+                    'operator bool()',
+                    f'''
+                    {{
+                        {refcheck_if}
+                        if (s_trace)
+                        {{
+                            std::cerr << __FILE__ << ":" << __LINE__ << ":"
+                                    << " {classname}::operator bool() called,"
+                                    << " m_internal=" << m_internal << "."
+                                    << "\\n";
+                        }}
+                        #endif
+                        return m_internal ? true : false;
+                    }}
+                    ''',
+                    '/** Return true iff `m_internal` is not null. */',
+                    ),
+                out_h,
+                out_cpp,
+                refcheck_if,
+                )
+
     # Class members.
     #
     out_h.write( '\n')

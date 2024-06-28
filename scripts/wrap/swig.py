@@ -1579,7 +1579,7 @@ def build_swig(
                         if isinstance( arg, FzOutput2):
                             assert not out, "More than one FzOutput2 passed to FzDocumentWriter.__init__()"
                             out = arg
-                    if out:
+                    if out is not None:
                         self._out = out
                     return FzDocumentWriter__init__0(self, *args)
                 FzDocumentWriter.__init__ = FzDocumentWriter__init__1
