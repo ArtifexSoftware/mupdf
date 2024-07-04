@@ -9502,7 +9502,7 @@ static void ffi_PDFAnnotation_setFilespec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	pdf_obj *fs = js_touserdata(J, 1, "pdf_obj");
+	pdf_obj *fs = js_iscoercible(J, 1) ? js_touserdata(J, 1, "pdf_obj") : NULL;
 
 	fz_try(ctx)
 		pdf_set_annot_filespec(ctx, annot, fs);
