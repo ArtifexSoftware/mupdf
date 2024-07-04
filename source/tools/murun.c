@@ -9506,8 +9506,6 @@ static void ffi_PDFAnnotation_setFilespec(js_State *J)
 
 	fz_try(ctx)
 		pdf_set_annot_filespec(ctx, annot, fs);
-	fz_always(ctx)
-		pdf_drop_obj(ctx, fs);
 	fz_catch(ctx)
 		rethrow(J);
 }
