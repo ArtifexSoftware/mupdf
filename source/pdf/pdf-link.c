@@ -387,7 +387,7 @@ pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs)
 static const char *
 pdf_guess_mime_type_from_file_name(fz_context *ctx, const char *filename)
 {
-	const char *ext = strrchr(filename, '.');
+	const char *ext = filename ? strrchr(filename, '.') : NULL;
 	if (ext)
 	{
 		if (!fz_strcasecmp(ext, ".pdf")) return "application/pdf";
@@ -1170,6 +1170,9 @@ pdf_obj *pdf_add_filespec(fz_context *ctx, pdf_document *doc, const char *filena
 	char *asciiname = NULL;
 	const char *s;
 	size_t len, i;
+
+	if (!filename)
+		filename = "";
 
 	fz_var(asciiname);
 	fz_var(filespec);
