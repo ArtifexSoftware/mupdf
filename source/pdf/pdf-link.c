@@ -1195,6 +1195,7 @@ pdf_obj *pdf_add_filespec(fz_context *ctx, pdf_document *doc, const char *filena
 		{
 			pdf_obj *ef = pdf_dict_put_dict(ctx, filespec, PDF_NAME(EF), 1);
 			pdf_dict_put(ctx, ef, PDF_NAME(F), embedded_file);
+			pdf_dict_put(ctx, ef, PDF_NAME(UF), embedded_file);
 		}
 	}
 	fz_always(ctx)
