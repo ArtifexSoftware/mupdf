@@ -9499,7 +9499,7 @@ static void ffi_PDFAnnotation_getFilespec(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushobj(J, fs);
+	ffi_pushobj(J, pdf_keep_obj(ctx, fs));
 }
 
 static void ffi_PDFAnnotation_setFilespec(js_State *J)
