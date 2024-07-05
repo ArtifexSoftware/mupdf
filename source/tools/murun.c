@@ -6403,7 +6403,11 @@ static void ffi_PDFDocument_addEmbeddedFile(js_State *J)
 	fz_always(ctx)
 		fz_drop_buffer(ctx, contents);
 	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, ind);
 		rethrow(J);
+	}
+
 	ffi_pushobj(J, ind);
 }
 
