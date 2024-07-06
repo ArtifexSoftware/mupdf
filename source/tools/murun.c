@@ -10130,7 +10130,7 @@ static void ffi_PDFWidget_previewSignature(js_State *J)
 		fz_rect rect = pdf_annot_rect(ctx, widget);
 		fz_text_language lang = pdf_annot_language(ctx, widget);
 
-		if (pdf_dict_get(ctx, pdf_annot_obj(ctx, widget), PDF_NAME(FT)) != PDF_NAME(Sig))
+		if (pdf_dict_get_inheritable(ctx, pdf_annot_obj(ctx, widget), PDF_NAME(FT)) != PDF_NAME(Sig))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "annotation is not a signature widget");
 
 		pixmap = pdf_preview_signature_as_pixmap(ctx,
