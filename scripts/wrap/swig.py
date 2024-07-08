@@ -1813,6 +1813,7 @@ def build_swig(
 
         def modify_py( rebuilt, swig_py, do_enums):
             if not rebuilt:
+                jlib.log(f'Not rebuilding {swig_py=} because {rebuilt=}.')
                 return
             swig_py_leaf = os.path.basename( swig_py)
             assert swig_py_leaf.endswith( '.py')
@@ -1822,13 +1823,6 @@ def build_swig(
             os.rename( swig_py, swig_py_tmp)
             with open( swig_py_tmp) as f:
                 swig_py_content = f.read()
-
-            if state_.windows:
-                jlib.log('Adding prefix to {swig_cpp=}')
-                prefix = ''
-                postfix = ''
-                with open( swig_cpp) as f:
-                    swig_py_content = prefix + swig_py_content + postfix
 
             if do_enums:
                 # Change all our PDF_ENUM_NAME_* enums so that they are actually
@@ -1940,7 +1934,8 @@ def build_swig(
     else:
         assert 0
 
-    if swig_cpp_old:
+    # Disabled; see above for explanation.
+    if 0 and swig_cpp_old:
         with open( swig_cpp_old) as f:
             swig_cpp_contents_old = f.read()
         with open(swig_cpp) as f:

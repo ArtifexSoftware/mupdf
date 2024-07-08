@@ -1923,6 +1923,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         # the entire solution even if we specify
                         # /Project.]
                         #
+                        jlib.log(f'Touching file in case we are building for a different python version: {cpp_path=}')
                         os.utime(cpp_path)
 
                         win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
