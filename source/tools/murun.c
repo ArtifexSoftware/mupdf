@@ -5488,17 +5488,17 @@ static void ffi_DisplayList_search(js_State *J)
 	ffi_pushsearch(J, marks, hits, n);
 }
 
-static void ffi_StructuredText_walk(js_State *J)
+static void
+stext_walk(js_State *J, fz_stext_block *block)
 {
-	fz_stext_page *page = js_touserdata(J, 0, "fz_stext_page");
-	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;
 
-	for (block = page->first_block; block; block = block->next)
+	while (block)
 	{
-		if (block->type == FZ_STEXT_BLOCK_IMAGE)
+		switch (block->type)
 		{
+		case FZ_STEXT_BLOCK_IMAGE:
 			if (js_hasproperty(J, 1, "onImageBlock"))
 			{
 				js_pushnull(J);
@@ -5508,9 +5508,8 @@ static void ffi_StructuredText_walk(js_State *J)
 				js_call(J, 3);
 				js_pop(J, 1);
 			}
-		}
-		else if (block->type == FZ_STEXT_BLOCK_TEXT)
-		{
+			break;
+		case FZ_STEXT_BLOCK_TEXT:
 			if (js_hasproperty(J, 1, "beginTextBlock"))
 			{
 				js_pushnull(J);
@@ -5563,8 +5562,39 @@ static void ffi_StructuredText_walk(js_State *J)
 				js_call(J, 0);
 				js_pop(J, 1);
 			}
+			break;
+		case FZ_STEXT_BLOCK_STRUCT:
+			if (block->u.s.down)
+			{
+				if (js_hasproperty(J, 1, "beginStruct"))
+				{
+					js_pushnull(J);
+					js_pushstring(J, fz_structure_to_string(block->u.s.down->standard));
+					js_pushstring(J, block->u.s.down->raw);
+					js_pushnumber(J, block->u.s.index);
+					js_call(J, 3);
+					js_pop(J, 1);
+				}
+				if (block->u.s.down)
+					stext_walk(J, block->u.s.down->first_block);
+				if (js_hasproperty(J, 1, "endStruct"))
+				{
+					js_pushnull(J);
+					js_call(J, 0);
+					js_pop(J, 1);
+				}
+			}
+			break;
 		}
+		block = block->next;
 	}
+}
+
+static void ffi_StructuredText_walk(js_State *J)
+{
+	fz_stext_page *page = js_touserdata(J, 0, "fz_stext_page");
+
+	stext_walk(J, page->first_block);
 }
 
 static void ffi_StructuredText_search(js_State *J)
