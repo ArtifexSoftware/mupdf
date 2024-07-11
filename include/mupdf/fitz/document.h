@@ -239,7 +239,7 @@ typedef void (fz_document_run_structure_fn)(fz_context *ctx, fz_document *doc, f
 
 	Returns a borrowed handle.
 */
-typedef fz_document *(fz_document_as_pdf)(fz_context *ctx, fz_document *doc);
+typedef fz_document *(fz_document_as_pdf_fn)(fz_context *ctx, fz_document *doc);
 
 /**
 	Type for a function to make
@@ -1064,7 +1064,7 @@ struct fz_document
 	fz_document_output_intent_fn *get_output_intent;
 	fz_document_output_accelerator_fn *output_accelerator;
 	fz_document_run_structure_fn *run_structure;
-	fz_document_as_pdf *as_pdf;
+	fz_document_as_pdf_fn *as_pdf;
 	int did_layout;
 	int is_reflowable;
 
