@@ -234,6 +234,13 @@ typedef void (fz_document_output_accelerator_fn)(fz_context *ctx, fz_document *d
 typedef void (fz_document_run_structure_fn)(fz_context *ctx, fz_document *doc, fz_device *dev, fz_cookie *cookie);
 
 /**
+	Get a handle to this document as PDF.
+
+	Returns a borrowed handle.
+*/
+typedef fz_document *(fz_document_as_pdf)(fz_context *ctx, fz_document *doc);
+
+/**
 	Type for a function to make
 	a bookmark. See fz_make_bookmark for more information.
 */
@@ -1056,6 +1063,7 @@ struct fz_document
 	fz_document_output_intent_fn *get_output_intent;
 	fz_document_output_accelerator_fn *output_accelerator;
 	fz_document_run_structure_fn *run_structure;
+	fz_document_as_pdf *as_pdf;
 	int did_layout;
 	int is_reflowable;
 
