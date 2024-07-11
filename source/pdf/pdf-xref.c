@@ -3114,6 +3114,12 @@ char *pdf_format_link_uri(fz_context *ctx, fz_document *doc, fz_link_dest dest)
 	return pdf_new_uri_from_explicit_dest(ctx, dest);
 }
 
+static fz_document *
+as_pdf(fz_context *ctx, fz_document *doc)
+{
+	return doc;
+}
+
 /*
 	Initializers for the fz_document interface.
 
@@ -3150,6 +3156,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
 	doc->super.set_metadata = (fz_document_set_metadata_fn*)pdf_set_metadata;
 	doc->super.run_structure = (fz_document_run_structure_fn *)pdf_run_document_structure;
+	doc->super.as_pdf = (fz_document_as_pdf *)as_pdf;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
@@ -3568,7 +3575,9 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 
 pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
 {
-	return (pdf_document *)((ptr && ptr->count_pages == pdf_count_pages_imp) ? ptr : NULL);
+	if (!ptr || !ptr->as_pdf)
+		return NULL;
+	return ptr->as_pdf(ctx, ptr);
 }
 
 pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr)
