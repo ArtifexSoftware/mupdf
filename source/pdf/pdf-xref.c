@@ -3195,7 +3195,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
 	doc->super.set_metadata = (fz_document_set_metadata_fn*)pdf_set_metadata;
 	doc->super.run_structure = (fz_document_run_structure_fn *)pdf_run_document_structure;
-	doc->super.as_pdf = (fz_document_as_pdf *)as_pdf;
+	doc->super.as_pdf = (fz_document_as_pdf_fn *)as_pdf;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
@@ -3612,11 +3612,16 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 	return doc->linear_page_refs[pagenum];
 }
 
-pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
+pdf_document *fz_document_as_pdf(fz_context *ctx, fz_document *ptr)
 {
 	if (!ptr || !ptr->as_pdf)
 		return NULL;
-	return ptr->as_pdf(ctx, ptr);
+	return (pdf_document *)fz_keep_document(ctx, ptr->as_pdf(ctx, ptr));
+}
+
+pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
+{
+	return (pdf_document *)((ptr && ptr->count_pages == pdf_count_pages_imp) ? ptr : NULL);
 }
 
 pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *page)

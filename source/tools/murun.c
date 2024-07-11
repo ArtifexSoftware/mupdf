@@ -534,12 +534,19 @@ static void ffi_pushdocument(js_State *J, fz_document *document)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdocument = pdf_document_from_fz_document(ctx, document);
 	if (pdocument) {
+		/* This relies on the fact that pdocument == document! */
 		js_getregistry(J, "pdf_document");
 		js_newuserdata(J, "pdf_document", document, ffi_gc_pdf_document);
 	} else {
 		js_getregistry(J, "fz_document");
 		js_newuserdata(J, "fz_document", document, ffi_gc_fz_document);
 	}
+}
+
+static void ffi_pushpdfdocument(js_State *J, pdf_document *document)
+{
+	js_getregistry(J, "pdf_document");
+	js_newuserdata(J, "pdf_document", document, ffi_gc_pdf_document);
 }
 
 static void ffi_pushsigner(js_State *J, pdf_pkcs7_signer *signer)
@@ -3488,6 +3495,23 @@ static void ffi_Document_openDocument(js_State *J)
 static void ffi_Document_isPDF(js_State *J)
 {
 	js_pushboolean(J, js_isuserdata(J, 0, "pdf_document"));
+}
+
+static void ffi_Document_asPDF(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = ffi_todocument(J, 0);
+	pdf_document *pdf;
+
+	fz_try(ctx)
+		pdf = fz_document_as_pdf(ctx, doc);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (pdf != NULL)
+		ffi_pushpdfdocument(J, pdf);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_Document_formatLinkURI(js_State *J)
@@ -10066,6 +10090,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
 		jsB_propfun(J, "Document.loadOutline", ffi_Document_loadOutline, 0);
 		jsB_propfun(J, "Document.outlineIterator", ffi_Document_outlineIterator, 0);
+		jsB_propfun(J, "Document.asPDF", ffi_Document_asPDF, 0);
 	}
 	js_setregistry(J, "fz_document");
 

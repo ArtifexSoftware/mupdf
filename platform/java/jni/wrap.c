@@ -691,6 +691,7 @@ static inline jobject to_Document_safe_own(fz_context *ctx, JNIEnv *env, fz_docu
 
 	pdf = pdf_document_from_fz_document(ctx, doc);
 	if (pdf)
+		/* This relies on the fact that pdf == doc! */
 		obj = (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
 	else
 		obj = (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
