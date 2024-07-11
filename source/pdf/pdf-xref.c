@@ -3712,13 +3712,18 @@ static const char *pdf_mimetypes[] =
 };
 
 static int
-pdf_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir)
+pdf_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir, void **state, fz_document_recognize_state_free_fn **free_state)
 {
 	const char *match = "%PDF-";
 	const char *match2 = "%FDF-";
 	int pos = 0;
 	int n = 4096+5;
 	int c;
+
+	if (state)
+		*state = NULL;
+	if (free_state)
+		*free_state = NULL;
 
 	if (stream == NULL)
 		return 0;
@@ -3746,7 +3751,7 @@ pdf_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, f
 }
 
 static fz_document *
-open_document(fz_context *ctx, const fz_document_handler *handler, fz_stream *file, fz_stream *accel, fz_archive *zip)
+open_document(fz_context *ctx, const fz_document_handler *handler, fz_stream *file, fz_stream *accel, fz_archive *zip, void *state)
 {
 	if (file == NULL)
 		return NULL;
