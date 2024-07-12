@@ -324,18 +324,24 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 			xobj = pdf_dict_get(ctx, obj, PDF_NAME(G));
 
 			colorspace = pdf_xobject_colorspace(ctx, xobj);
-			if (colorspace)
-				colorspace_n = fz_colorspace_n(ctx, colorspace);
+			fz_try(ctx)
+			{
+				if (colorspace)
+					colorspace_n = fz_colorspace_n(ctx, colorspace);
 
-			/* Default background color is black. */
-			for (k = 0; k < colorspace_n; k++)
-				softmask_bc[k] = 0;
-			/* Which in CMYK means not all zeros! This should really be
-			 * a test for subtractive color spaces, but this will have
-			 * to do for now. */
-			if (fz_colorspace_is_cmyk(ctx, colorspace))
-				softmask_bc[3] = 1.0f;
-			fz_drop_colorspace(ctx, colorspace);
+				/* Default background color is black. */
+				for (k = 0; k < colorspace_n; k++)
+					softmask_bc[k] = 0;
+				/* Which in CMYK means not all zeros! This should really be
+				 * a test for subtractive color spaces, but this will have
+				 * to do for now. */
+				if (fz_colorspace_is_cmyk(ctx, colorspace))
+					softmask_bc[3] = 1.0f;
+			}
+			fz_always(ctx)
+				fz_drop_colorspace(ctx, colorspace);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
 
 			bc = pdf_dict_get(ctx, obj, PDF_NAME(BC));
 			if (pdf_is_array(ctx, bc))
