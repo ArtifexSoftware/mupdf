@@ -211,6 +211,8 @@ flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
 
 static void nest_layer_clip(fz_context *ctx, pdf_run_processor *proc)
 {
+	if (proc->nest_depth == nelem(proc->nest_mark))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "layer/clip nesting too deep");
 	proc->nest_mark[proc->nest_depth++] = CLIP_MARK;
 }
 
