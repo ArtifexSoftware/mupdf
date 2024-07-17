@@ -71,7 +71,7 @@ make_sampled_shade_function(fz_context *ctx, fz_shade *shade, int funcs, pdf_fun
 	if (funcs != 1)
 		n = funcs;
 	shade->function_stride = n + 1;
-	shade->function = fz_malloc(ctx, sizeof(float) * 256 * shade->function_stride);
+	shade->function = Memento_label(fz_malloc(ctx, sizeof(float) * 256 * shade->function_stride), "shade samples");
 
 	pdf_sample_shade_function(ctx, shade->function, n, funcs, func, t0, t1);
 }
