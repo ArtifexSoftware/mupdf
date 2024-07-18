@@ -218,7 +218,7 @@ int pdf_needs_password(fz_context *ctx, pdf_document *doc);
 int pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pw);
 
 int pdf_has_permission(fz_context *ctx, pdf_document *doc, fz_permission p);
-int pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *ptr, int size);
+int pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *ptr, size_t size);
 
 fz_outline *pdf_load_outline(fz_context *ctx, pdf_document *doc);
 

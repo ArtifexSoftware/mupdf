@@ -2004,8 +2004,9 @@ pdf_invalidate_xfa(fz_context *ctx, pdf_document *doc)
 }
 
 static void
-pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
+pdf_drop_document_imp(fz_context *ctx, fz_document *doc_)
 {
+	pdf_document *doc = (pdf_document*)doc_;
 	int i;
 
 	fz_defer_reap_start(ctx);
@@ -2988,7 +2989,7 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 }
 
 int
-pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *buf, int size)
+pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *buf, size_t size)
 {
 	if (!strcmp(key, FZ_META_FORMAT))
 	{
@@ -3121,6 +3122,47 @@ char *pdf_format_link_uri(fz_context *ctx, fz_document *doc, fz_link_dest dest)
 	saves roughly 6MB of space.
 */
 
+static fz_colorspace *pdf_document_output_intent_imp(fz_context *ctx, fz_document *doc)
+{
+	return pdf_document_output_intent(ctx, (pdf_document*)doc);
+}
+
+int pdf_needs_password_imp(fz_context *ctx, fz_document *doc)
+{
+	return pdf_needs_password(ctx, (pdf_document*)doc);
+}
+
+int pdf_authenticate_password_imp(fz_context *ctx, fz_document *doc, const char *pw)
+{
+	return pdf_authenticate_password(ctx, (pdf_document*)doc, pw);
+}
+
+int pdf_has_permission_imp(fz_context *ctx, fz_document *doc, fz_permission p)
+{
+	return pdf_has_permission(ctx, (pdf_document*)doc, p);
+}
+
+fz_outline_iterator *pdf_new_outline_iterator_imp(fz_context *ctx, fz_document *doc)
+{
+	return pdf_new_outline_iterator(ctx, (pdf_document*)doc);
+}
+
+int pdf_lookup_metadata_imp(fz_context *ctx, fz_document *doc, const char *key, char *ptr, size_t size)
+{
+	return pdf_lookup_metadata(ctx, (pdf_document*)doc, key, ptr, size);
+}
+
+void pdf_set_metadata_imp(fz_context *ctx, fz_document *doc, const char *key, const char *value)
+{
+	pdf_set_metadata(ctx, (pdf_document*)doc, key, value);
+}
+
+void pdf_run_document_structure_imp(fz_context *ctx, fz_document *doc, fz_device *dev, fz_cookie *cookie)
+{
+	pdf_run_document_structure(ctx, (pdf_document*)doc, dev, cookie);
+}
+
+
 static pdf_document *
 pdf_new_document(fz_context *ctx, fz_stream *file)
 {
@@ -3133,20 +3175,20 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	}
 #endif
 
-	doc->super.drop_document = (fz_document_drop_fn*)pdf_drop_document_imp;
-	doc->super.get_output_intent = (fz_document_output_intent_fn*)pdf_document_output_intent;
-	doc->super.needs_password = (fz_document_needs_password_fn*)pdf_needs_password;
-	doc->super.authenticate_password = (fz_document_authenticate_password_fn*)pdf_authenticate_password;
-	doc->super.has_permission = (fz_document_has_permission_fn*)pdf_has_permission;
-	doc->super.outline_iterator = (fz_document_outline_iterator_fn*)pdf_new_outline_iterator;
+	doc->super.drop_document = pdf_drop_document_imp;
+	doc->super.get_output_intent = pdf_document_output_intent_imp;
+	doc->super.needs_password = pdf_needs_password_imp;
+	doc->super.authenticate_password = pdf_authenticate_password_imp;
+	doc->super.has_permission = pdf_has_permission_imp;
+	doc->super.outline_iterator = pdf_new_outline_iterator_imp;
 	doc->super.resolve_link_dest = pdf_resolve_link_imp;
 	doc->super.format_link_uri = pdf_format_link_uri;
 	doc->super.count_pages = pdf_count_pages_imp;
 	doc->super.load_page = pdf_load_page_imp;
 	doc->super.page_label = pdf_page_label_imp;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)pdf_lookup_metadata;
-	doc->super.set_metadata = (fz_document_set_metadata_fn*)pdf_set_metadata;
-	doc->super.run_structure = (fz_document_run_structure_fn *)pdf_run_document_structure;
+	doc->super.lookup_metadata = pdf_lookup_metadata_imp;
+	doc->super.set_metadata = pdf_set_metadata_imp;
+	doc->super.run_structure = pdf_run_document_structure_imp;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
