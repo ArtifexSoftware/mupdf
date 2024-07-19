@@ -3610,9 +3610,11 @@ pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
 	return (pdf_document *)((ptr && ptr->count_pages == pdf_count_pages_imp) ? ptr : NULL);
 }
 
-pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr)
+pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *page)
 {
-	return (pdf_page *)((ptr && ptr->bound_page == (fz_page_bound_page_fn*)pdf_bound_page) ? ptr : NULL);
+	if (pdf_document_from_fz_document(ctx, page->doc))
+		return (pdf_page*) page;
+	return NULL;
 }
 
 pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc)
