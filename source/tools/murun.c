@@ -3504,7 +3504,7 @@ static void ffi_Document_asPDF(js_State *J)
 	pdf_document *pdf;
 
 	fz_try(ctx)
-		pdf = fz_document_as_pdf(ctx, doc);
+		pdf = fz_new_pdf_document_from_fz_document(ctx, doc);
 	fz_catch(ctx)
 		rethrow(J);
 
