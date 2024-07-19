@@ -1067,7 +1067,7 @@ static fz_link * pdf_create_link_imp(fz_context *ctx, fz_page *page, fz_rect bbo
 
 static void pdf_delete_link_imp(fz_context *ctx, fz_page *page, fz_link *link)
 {
-	return pdf_delete_link(ctx, (pdf_page*)page, link);
+	pdf_delete_link(ctx, (pdf_page*)page, link);
 }
 
 static pdf_page *
