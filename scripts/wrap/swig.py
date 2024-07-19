@@ -1880,9 +1880,14 @@ def build_swig(
             # swig generated c dll reference to a c sharp project".
             #
             dllimport = 'mupdfcsharp.dll'
+
+        # See https://www.swig.org/Doc4.2/CSharp.html `23.3.1 Primitive types`
+        # for description of SWIGWORDSIZE64. If we were to build on 32-bit Linux
+        # we would have to remove the `-DSWIGWORDSIZE64` flag.
         command = (f'''
                 "{swig_command}"
                     {"-D_WIN32" if state_.windows else ""}
+                    {"-DSWIGWORDSIZE64" if state_.linux else ""}
                     -c++
                     -csharp
                     -Wextra
