@@ -1110,7 +1110,7 @@ FUN(Document_asPDF)(JNIEnv *env, jobject self, jobject jdest)
 	jobject obj;
 
 	fz_try(ctx)
-		pdf = fz_document_as_pdf(env, doc);
+		pdf = fz_new_pdf_document_from_fz_document(env, doc);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

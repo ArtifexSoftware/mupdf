@@ -220,7 +220,7 @@ pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr);
 	Note that this returns a kept pointer that the caller is responsible
 	for freeing, unlike pdf_specifics or pdf_document_from_fz_document.
 */
-pdf_document *fz_document_as_pdf(fz_context *ctx, fz_document *ptr);
+pdf_document *fz_new_pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr);
 
 int pdf_needs_password(fz_context *ctx, pdf_document *doc);
 

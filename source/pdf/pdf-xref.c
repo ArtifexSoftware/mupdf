@@ -3615,7 +3615,7 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 	return doc->linear_page_refs[pagenum];
 }
 
-pdf_document *fz_document_as_pdf(fz_context *ctx, fz_document *ptr)
+pdf_document *fz_new_pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
 {
 	if (!ptr || !ptr->as_pdf)
 		return NULL;
