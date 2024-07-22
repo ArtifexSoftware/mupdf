@@ -562,7 +562,12 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 						add_space = 1;
 					new_line = 0;
 				}
-
+				else if (spacing < 0 && spacing > -SPACE_MAX_DIST)
+				{
+					/* Motion is in line, but negative. We've probably got overlapping
+					 * chars here. Live with it. */
+					new_line = 0;
+				}
 				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
 				{
 					bidi = 3; /* mark line as visual */
@@ -584,6 +589,12 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				if (fabsf(spacing) < SPACE_DIST)
 				{
 					/* Motion is in line and small enough to ignore. */
+					new_line = 0;
+				}
+				else if (spacing < 0 && spacing > -SPACE_MAX_DIST)
+				{
+					/* Motion is in line, but negative. We've probably got overlapping
+					 * chars here. Live with it. */
 					new_line = 0;
 				}
 				else if (spacing > 0 && spacing < SPACE_MAX_DIST)
