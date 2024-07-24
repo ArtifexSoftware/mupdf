@@ -1102,23 +1102,19 @@ FUN(Document_formatLinkURI)(JNIEnv *env, jobject self, jobject jdest)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_asPDF)(JNIEnv *env, jobject self, jobject jdest)
+FUN(Document_asPDF)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
 	pdf_document *pdf;
-	jobject obj;
 
 	fz_try(ctx)
-		pdf = fz_new_pdf_document_from_fz_document(env, doc);
+		pdf = fz_new_pdf_document_from_fz_document(ctx, doc);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
 	if (!pdf)
 		return NULL;
 
-	obj = to_PDFDocument_safe(ctx, env, pdf);
-	pdf_drop_obj(ctx, pdf);
-
-	return obj;
+	return to_PDFDocument_safe_own(ctx, env, pdf);
 }
