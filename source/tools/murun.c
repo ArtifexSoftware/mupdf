@@ -486,6 +486,11 @@ static fz_pixmap *ffi_topixmap(js_State *J, int idx)
 	return (fz_pixmap *) js_touserdata(J, idx, "fz_pixmap");
 }
 
+static fz_image *ffi_toimage(js_State *J, int idx)
+{
+	return (fz_image *) js_touserdata(J, idx, "fz_image");
+}
+
 #if FZ_ENABLE_PDF
 
 static void ffi_pushobj(js_State *J, pdf_obj *obj);
@@ -9488,12 +9493,20 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	const char *appearance = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
-	const char *state = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
-	fz_matrix ctm = ffi_tomatrix(J, 3);
 
-	if (js_isarray(J, 4))
+	if (js_isuserdata(J, 1, "fz_image"))
 	{
+		fz_image *img = ffi_toimage(J, 1);
+		fz_try(ctx)
+			pdf_set_annot_stamp_image(ctx, annot, img);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else if (js_isarray(J, 4))
+	{
+		const char *appearance = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+		const char *state = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+		fz_matrix ctm = ffi_tomatrix(J, 3);
 		const char *contents;
 		pdf_document *pdf;
 		fz_buffer *buf;
@@ -9526,6 +9539,9 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 	}
 	else
 	{
+		const char *appearance = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+		const char *state = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+		fz_matrix ctm = ffi_tomatrix(J, 3);
 		fz_display_list *list = js_touserdata(J, 4, "fz_display_list");
 		fz_try(ctx)
 			pdf_set_annot_appearance_from_display_list(ctx, annot, appearance, state, ctm, list);
