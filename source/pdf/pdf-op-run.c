@@ -431,6 +431,12 @@ pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *dst, const pdf_gstate *src)
 	pdf_drop_obj(ctx, dst->softmask);
 	dst->softmask = pdf_keep_obj(ctx, src->softmask);
 
+	pdf_drop_obj(ctx, dst->softmask_resources);
+	dst->softmask_resources = pdf_keep_obj(ctx, src->softmask_resources);
+
+	fz_drop_colorspace(ctx, dst->softmask_cs);
+	dst->softmask_cs = fz_keep_colorspace(ctx, src->softmask_cs);
+
 	fz_drop_stroke_state(ctx, dst->stroke_state);
 	dst->stroke_state = fz_keep_stroke_state(ctx, src->stroke_state);
 }
