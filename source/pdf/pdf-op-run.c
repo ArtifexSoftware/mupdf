@@ -2386,6 +2386,8 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_obj *smas
 		gstate->softmask = NULL;
 		pdf_drop_obj(ctx, gstate->softmask_resources);
 		gstate->softmask_resources = NULL;
+		fz_drop_colorspace(ctx, gstate->softmask_cs);
+		gstate->softmask_cs = NULL;
 	}
 
 	if (smask)
