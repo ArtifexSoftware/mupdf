@@ -400,7 +400,7 @@ typedef int (fz_document_recognize_content_fn)(fz_context *ctx, const fz_documen
 
 	opaque: The value previously returned by the init call.
 */
-typedef void fz_document_handler_fin_fn(fz_context *ctx, const fz_document_handler *handler);
+typedef void (fz_document_handler_fin_fn)(fz_context *ctx, const fz_document_handler *handler);
 
 
 
