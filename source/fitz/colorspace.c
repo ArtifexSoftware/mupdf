@@ -648,17 +648,17 @@ fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs)
 
 fz_colorspace *fz_default_gray(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
-	return default_cs ? default_cs->gray : fz_device_gray(ctx);
+	return (default_cs && default_cs->gray) ? default_cs->gray : fz_device_gray(ctx);
 }
 
 fz_colorspace *fz_default_rgb(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
-	return default_cs ? default_cs->rgb : fz_device_rgb(ctx);
+	return (default_cs && default_cs->rgb) ? default_cs->rgb : fz_device_rgb(ctx);
 }
 
 fz_colorspace *fz_default_cmyk(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
-	return default_cs ? default_cs->cmyk : fz_device_cmyk(ctx);
+	return (default_cs && default_cs->cmyk)  ? default_cs->cmyk : fz_device_cmyk(ctx);
 }
 
 fz_colorspace *fz_default_output_intent(fz_context *ctx, const fz_default_colorspaces *default_cs)
