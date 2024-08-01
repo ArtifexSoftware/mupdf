@@ -956,6 +956,16 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 		fn(ctx, seps, pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace)), clearme);
 	}
 
+	dict = pdf_dict_get(ctx, res, PDF_NAME(Pattern));
+	n = pdf_dict_len(ctx, dict);
+	for (i = 0; i < n; i++)
+	{
+		pdf_obj *obj2;
+		obj = pdf_dict_get_val(ctx, dict, i);
+		obj2 = pdf_dict_get(ctx, obj, PDF_NAME(Shading));
+		fn(ctx, seps, pdf_dict_get(ctx, obj2, PDF_NAME(ColorSpace)), clearme);
+	}
+
 	dict = pdf_dict_get(ctx, res, PDF_NAME(XObject));
 	n = pdf_dict_len(ctx, dict);
 	for (i = 0; i < n; i++)
