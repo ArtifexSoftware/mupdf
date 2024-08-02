@@ -213,14 +213,14 @@ prepare_mesh_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input
 		int n = fz_colorspace_n(ctx, dest->colorspace);
 		int a = dest->alpha;
 		int m = dest->n - a;
+		for (i = n; i < m; i++)
+			output[i] = 0;
 		if (ptd->cc.convert)
 			ptd->cc.convert(ctx, &ptd->cc, input, output);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < m; i++)
 			output[i] *= 255;
-		for (; i < m; i++)
-			output[i] = 0;
 		if (a)
-			output[i] = 255;
+			output[m] = 255;
 	}
 }
 
@@ -334,7 +334,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 				cache->full = 0;
 			}
 			else
-				fz_init_cached_color_converter(ctx, &ptd.cc, colorspace, temp->colorspace, NULL, color_params);
+				fz_init_cached_color_converter(ctx, &ptd.cc, colorspace, temp->colorspace, temp->seps, NULL, color_params);
 
 			/* Drop the existing contents of the cache. */
 			if (cache)
@@ -424,7 +424,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, fz_m
 						cache->full2 = 0;
 					}
 					else
-						fz_find_color_converter(ctx, &cc, colorspace, dest->colorspace, NULL, color_params);
+						fz_find_color_converter(ctx, &cc, colorspace, dest->colorspace, dest->seps, NULL, color_params);
 
 					/* Drop the existing contents of the cache */
 					if (cache)

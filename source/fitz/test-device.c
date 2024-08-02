@@ -219,7 +219,7 @@ static void fz_test_fill_compressed_8bpc_image(fz_context *ctx, fz_test_device *
 		fz_color_converter cc;
 		unsigned int n = (unsigned int)image->n;
 
-		fz_init_cached_color_converter(ctx, &cc, image->colorspace, fz_device_rgb(ctx), NULL, color_params);
+		fz_init_cached_color_converter(ctx, &cc, image->colorspace, fz_device_rgb(ctx), NULL, NULL, color_params);
 
 		fz_try(ctx)
 		{
@@ -289,7 +289,7 @@ fz_test_fill_other_image(fz_context *ctx, fz_test_device *dev, fz_pixmap *pix, f
 		fz_color_converter cc;
 		unsigned int n = (unsigned int)pix->n-1;
 
-		fz_init_cached_color_converter(ctx, &cc, pix->colorspace, fz_device_rgb(ctx), NULL, color_params);
+		fz_init_cached_color_converter(ctx, &cc, pix->colorspace, fz_device_rgb(ctx), NULL, NULL, color_params);
 
 		fz_try(ctx)
 		{
