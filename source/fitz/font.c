@@ -272,28 +272,12 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
 
 float fz_font_ascender(fz_context *ctx, fz_font *font)
 {
-	if (font->t3procs)
-		return font->bbox.y1;
-	else
-	{
-		FT_Face face = font->ft_face;
-		if (face->ascender == 0)
-			return 0.8f;
-		return (float)face->ascender / face->units_per_EM;
-	}
+	return font->ascender;
 }
 
 float fz_font_descender(fz_context *ctx, fz_font *font)
 {
-	if (font->t3procs)
-		return font->bbox.y0;
-	else
-	{
-		FT_Face face = font->ft_face;
-		if (face->descender == 0)
-			return -0.2f;
-		return (float)face->descender / face->units_per_EM;
-	}
+	return font->descender;
 }
 
 /*
@@ -784,6 +768,16 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		(float) face->bbox.yMin / face->units_per_EM,
 		(float) face->bbox.xMax / face->units_per_EM,
 		(float) face->bbox.yMax / face->units_per_EM);
+
+	if (face->ascender == 0)
+		font->ascender = 0.8f;
+	else
+		font->ascender = (float)face->ascender / face->units_per_EM;
+
+	if (face->descender == 0)
+		font->descender = -0.2f;
+	else
+		font->descender = (float)face->descender / face->units_per_EM;
 
 	font->subfont = index;
 

@@ -755,6 +755,9 @@ struct fz_font
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
+	float ascender;
+	float descender;
+
 	int glyph_count;
 
 	/* per glyph bounding box cache. */

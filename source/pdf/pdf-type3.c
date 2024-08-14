@@ -85,6 +85,9 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		fz_set_font_bbox(ctx, font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
+		font->ascender = bbox.y1;
+		font->descender = bbox.y0;
+
 		/* Encoding */
 
 		for (i = 0; i < 256; i++)
