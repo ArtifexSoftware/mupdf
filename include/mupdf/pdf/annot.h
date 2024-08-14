@@ -771,6 +771,14 @@ int pdf_annot_has_intent(fz_context *ctx, pdf_annot *annot);
 enum pdf_intent pdf_annot_intent(fz_context *ctx, pdf_annot *annot);
 void pdf_set_annot_intent(fz_context *ctx, pdf_annot *annot, enum pdf_intent it);
 
+int pdf_annot_has_callout(fz_context *ctx, pdf_annot *annot);
+enum pdf_line_ending pdf_annot_callout_style(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_callout_style(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending style);
+void pdf_annot_callout_line(fz_context *ctx, pdf_annot *annot, fz_point callout[3], int *n);
+void pdf_set_annot_callout_line(fz_context *ctx, pdf_annot *annot, fz_point callout[3], int n);
+fz_point pdf_annot_callout_point(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_callout_point(fz_context *ctx, pdf_annot *annot, fz_point p);
+
 void pdf_parse_default_appearance_unmapped(fz_context *ctx, const char *da, char *font_name, int font_name_len, float *size, int *n, float color[4]);
 void pdf_parse_default_appearance(fz_context *ctx, const char *da, const char **font, float *size, int *n, float color[4]);
 void pdf_print_default_appearance(fz_context *ctx, char *buf, int nbuf, const char *font, float size, int n, const float *color);

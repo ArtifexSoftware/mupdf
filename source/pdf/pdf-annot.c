@@ -1138,6 +1138,13 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 		rect.y1 += rd.y1;
 
 		pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
+
+		/* recalculate callout line as necessary */
+		if (pdf_annot_has_callout(ctx, annot))
+		{
+			pdf_set_annot_callout_point(ctx, annot, pdf_annot_callout_point(ctx, annot));
+		}
+
 		pdf_dirty_annot(ctx, annot);
 		end_annot_op(ctx, annot);
 	}
@@ -3333,6 +3340,200 @@ pdf_set_annot_intent(fz_context *ctx, pdf_annot *annot, enum pdf_intent it)
 		abandon_annot_op(ctx, annot);
 		fz_rethrow(ctx);
 	}
+}
+
+static pdf_obj *callout_subtypes[] = {
+	PDF_NAME(FreeText),
+	NULL,
+};
+
+int pdf_annot_has_callout(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(CL), callout_subtypes);
+}
+
+enum pdf_line_ending pdf_annot_callout_style(fz_context *ctx, pdf_annot *annot)
+{
+	enum pdf_line_ending style = PDF_ANNOT_LE_NONE;
+	pdf_obj *obj;
+	pdf_annot_push_local_xref(ctx, annot);
+	fz_try(ctx)
+	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(CL), callout_subtypes);
+		obj = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
+		style = pdf_line_ending_from_name(ctx, obj);
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return style;
+}
+
+void pdf_set_annot_callout_style(fz_context *ctx, pdf_annot *annot, enum pdf_line_ending style)
+{
+	begin_annot_op(ctx, annot, "Set callout style");
+
+	fz_try(ctx)
+	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(CL), callout_subtypes);
+		pdf_dict_put(ctx, annot->obj, PDF_NAME(LE), pdf_name_from_line_ending(ctx, style));
+	}
+	fz_catch(ctx)
+	{
+		abandon_annot_op(ctx, annot);
+		fz_rethrow(ctx);
+	}
+
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_annot_callout_line(fz_context *ctx, pdf_annot *annot, fz_point callout[3], int *np)
+{
+	pdf_annot_push_local_xref(ctx, annot);
+	fz_try(ctx)
+	{
+		fz_matrix page_ctm;
+		pdf_obj *obj;
+		int n;
+
+		check_allowed_subtypes(ctx, annot, PDF_NAME(CL), callout_subtypes);
+
+		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+
+		obj = pdf_dict_get(ctx, annot->obj, PDF_NAME(CL));
+		n = pdf_array_len(ctx, obj);
+		if (n == 4 || n == 6)
+		{
+			callout[0] = fz_transform_point_xy(pdf_array_get_real(ctx, obj, 0), pdf_array_get_real(ctx, obj, 1), page_ctm);
+			callout[1] = fz_transform_point_xy(pdf_array_get_real(ctx, obj, 2), pdf_array_get_real(ctx, obj, 3), page_ctm);
+			if (n == 4)
+			{
+				*np = 2;
+				callout[2] = fz_make_point(0, 0);
+			}
+			else
+			{
+				*np = 3;
+				callout[2] = fz_transform_point_xy(pdf_array_get_real(ctx, obj, 4), pdf_array_get_real(ctx, obj, 5), page_ctm);
+			}
+		}
+		else
+		{
+			callout[0] = fz_make_point(0, 0);
+			callout[1] = fz_make_point(0, 0);
+			callout[2] = fz_make_point(0, 0);
+			*np = 0;
+		}
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void pdf_set_annot_callout_line(fz_context *ctx, pdf_annot *annot, fz_point callout[3], int n)
+{
+	begin_annot_op(ctx, annot, "Set callout");
+
+	fz_try(ctx)
+	{
+		fz_matrix page_ctm;
+		fz_point p;
+		int i;
+		pdf_obj *obj;
+
+		check_allowed_subtypes(ctx, annot, PDF_NAME(CL), callout_subtypes);
+
+		if (n == 2 || n == 3)
+		{
+			pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+			obj = pdf_dict_put_array(ctx, annot->obj, PDF_NAME(CL), n * 2);
+			for (i = 0; i < n; ++i)
+			{
+				p = fz_transform_point(callout[i], page_ctm);
+				pdf_array_push_real(ctx, obj, p.x);
+				pdf_array_push_real(ctx, obj, p.y);
+			}
+		}
+		else
+		{
+			pdf_dict_del(ctx, annot->obj, PDF_NAME(CL));
+		}
+
+		pdf_dirty_annot(ctx, annot);
+		end_annot_op(ctx, annot);
+	}
+	fz_catch(ctx)
+	{
+		abandon_annot_op(ctx, annot);
+		fz_rethrow(ctx);
+	}
+}
+
+fz_point pdf_annot_callout_point(fz_context *ctx, pdf_annot *annot)
+{
+	fz_point line[3];
+	int n;
+
+	pdf_annot_callout_line(ctx, annot, line, &n);
+	if (n > 0)
+		return line[0];
+	return fz_make_point(0, 0);
+}
+
+void pdf_set_annot_callout_point(fz_context *ctx, pdf_annot *annot, fz_point p)
+{
+	fz_rect rect;
+	fz_point a, b, line[3];
+	float m;
+
+	rect = pdf_annot_rect(ctx, annot);
+
+	// Make line from center of text box to designated end point.
+	a = fz_make_point((rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2);
+	b = p;
+
+	// No CalloutLine if end point is within the text box itself.
+	if (fz_is_point_inside_rect(p, rect))
+	{
+		line[0] = p;
+		line[1] = a;
+		pdf_set_annot_callout_line(ctx, annot, line, 2);
+		return;
+	}
+
+	// Simplified Cohen-Sutherland algorithm to find intersection of line and text box.
+	m = (b.y - a.y) / (b.x - a.x);
+	for (;;)
+	{
+		if (b.y < rect.y0) {
+			b.x = a.x + (rect.y0 - a.y) / m;
+			b.y = rect.y0;
+		}
+		else
+		if (b.y > rect.y1) {
+			b.x = a.x + (rect.y1 - a.y) / m;
+			b.y = rect.y1;
+		}
+		else
+		if (b.x < rect.x0) {
+			b.y = a.y + (rect.x0 - a.x) * m;
+			b.x = rect.x0;
+		}
+		else
+		if (b.x > rect.x1) {
+			b.y = a.y + (rect.x1 - a.x) * m;
+			b.x = rect.x1;
+		}
+		else
+			break;
+	}
+
+	// Draw line from intersection to end point.
+	line[0] = p;
+	line[1] = b;
+	pdf_set_annot_callout_line(ctx, annot, line, 2);
 }
 
 void

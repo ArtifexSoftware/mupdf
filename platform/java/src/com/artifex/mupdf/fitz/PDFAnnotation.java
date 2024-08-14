@@ -277,6 +277,27 @@ public class PDFAnnotation
 		return list;
 	}
 
+	public native boolean hasCallout();
+	public native int getCalloutStyle();
+	public native void setCalloutStyle(int s);
+	public native Point getCalloutPoint();
+	public native void setCalloutPoint(Point p);
+	public native Point[] getCalloutLine();
+	public native void setCalloutLineNative(int n, Point a, Point b, Point c);
+	public void setCalloutLine() {
+		setCalloutLineNative(0, null, null, null);
+	}
+	public void setCalloutLine(Point[] line) {
+		if (line.length == 0)
+			setCalloutLineNative(0, null, null, null);
+		else if (line.length == 2)
+			setCalloutLineNative(2, line[0], line[1], null);
+		else if (line.length == 3)
+			setCalloutLineNative(3, line[0], line[1], line[2]);
+		else
+			throw new IllegalArgumentException("Callout Line must have 0, 2, or 3 points.");
+	}
+
 	public native boolean hasIcon();
 	public native String getIcon();
 	public native void setIcon(String icon);

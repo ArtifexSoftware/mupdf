@@ -9776,6 +9776,113 @@ static void ffi_PDFAnnotation_setPopup(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_hasCallout(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_callout(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
+static void ffi_PDFAnnotation_getCalloutStyle(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	enum pdf_line_ending style = PDF_ANNOT_LE_NONE;
+	fz_try(ctx)
+		style = pdf_annot_callout_style(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushliteral(J, string_from_line_ending(style));
+}
+
+static void ffi_PDFAnnotation_setCalloutStyle(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	enum pdf_line_ending style = line_ending_from_string(js_tostring(J, 1));
+	fz_try(ctx)
+		pdf_set_annot_callout_style(ctx, annot, style);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getCalloutLine(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point line[3];
+	int i, n;
+	fz_try(ctx)
+		pdf_annot_callout_line(ctx, annot, line, &n);
+	fz_catch(ctx)
+		rethrow(J);
+	if (n == 2 || n == 3)
+	{
+		js_newarray(J);
+		for (i = 0; i < n; ++i)
+		{
+			ffi_pushpoint(J, line[i]);
+			js_setindex(J, -2, i);
+		}
+	}
+	else
+	{
+		js_pushnull(J);
+	}
+}
+
+static void ffi_PDFAnnotation_setCalloutLine(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point line[3];
+	int i, n;
+
+	n = js_getlength(J, 1);
+	if (n == 1 || n == 2 || n == 3)
+	{
+		for (i = 0; i < n; ++i)
+		{
+			js_getindex(J, 1, i);
+			line[i] = ffi_topoint(J, -1);
+			js_pop(J, 1);
+		}
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_callout_line(ctx, annot, line, n);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getCalloutPoint(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point p;
+	fz_try(ctx)
+		p = pdf_annot_callout_point(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushpoint(J, p);
+}
+
+static void ffi_PDFAnnotation_setCalloutPoint(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point p = ffi_topoint(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_callout_point(ctx, annot, p);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getHiddenForEditing(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -11097,6 +11204,14 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.hasPopup", ffi_PDFAnnotation_hasPopup, 0);
 		jsB_propfun(J, "PDFAnnotation.getPopup", ffi_PDFAnnotation_getPopup, 0);
 		jsB_propfun(J, "PDFAnnotation.setPopup", ffi_PDFAnnotation_setPopup, 1);
+
+		jsB_propfun(J, "PDFAnnotation.hasCallout", ffi_PDFAnnotation_hasCallout, 0);
+		jsB_propfun(J, "PDFAnnotation.getCalloutStyle", ffi_PDFAnnotation_getCalloutStyle, 0);
+		jsB_propfun(J, "PDFAnnotation.setCalloutStyle", ffi_PDFAnnotation_setCalloutStyle, 1);
+		jsB_propfun(J, "PDFAnnotation.getCalloutPoint", ffi_PDFAnnotation_getCalloutPoint, 0);
+		jsB_propfun(J, "PDFAnnotation.setCalloutPoint", ffi_PDFAnnotation_setCalloutPoint, 1);
+		jsB_propfun(J, "PDFAnnotation.getCalloutLine", ffi_PDFAnnotation_getCalloutLine, 0);
+		jsB_propfun(J, "PDFAnnotation.setCalloutLine", ffi_PDFAnnotation_setCalloutLine, 1);
 
 		jsB_propfun(J, "PDFAnnotation.applyRedaction", ffi_PDFAnnotation_applyRedaction, 3);
 		jsB_propfun(J, "PDFAnnotation.process", ffi_PDFAnnotation_process, 1);
