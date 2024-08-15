@@ -2393,6 +2393,8 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 			0.8f, 1.2f, 1, 0, 0);
 	if (rd.x0 != 0 || rd.y0 != 0 || r != 0)
 		fz_append_printf(ctx, buf, "Q\n");
+
+	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(RD), rd);
 }
 
 static void

@@ -488,7 +488,10 @@ int pdf_annot_has_author(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
 
 /*
-	Retrieve the annotation bounds in doc space.
+	Retrieve the annotation design rectangle in doc space.
+	Note: This is NOT the same as the bounding rectangle.
+	The design rectangle is the bounding rectangle adjusted
+	by the RD padding.
 */
 fz_rect pdf_annot_rect(fz_context *ctx, pdf_annot *annot);
 
@@ -602,7 +605,7 @@ void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
 void pdf_set_annot_stamp_image(fz_context *ctx, pdf_annot *annot, fz_image *image);
 
 /*
-	Set the bounding box for an annotation, in doc space.
+	Set the design rectangle for an annotation, in doc space.
 */
 void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect);
 

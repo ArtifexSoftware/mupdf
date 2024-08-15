@@ -1089,26 +1089,36 @@ fz_rect
 pdf_annot_rect(fz_context *ctx, pdf_annot *annot)
 {
 	fz_matrix page_ctm;
-	fz_rect annot_rect;
+	fz_rect rect;
+	fz_rect rd;
 
 	pdf_annot_push_local_xref(ctx, annot);
 	fz_try(ctx)
 	{
 		check_allowed_subtypes(ctx, annot, PDF_NAME(Rect), rect_subtypes);
 		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-		annot_rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+		rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+
+		/* remove RD adjustment from bounding box to get design box */
+		rd = pdf_annot_rect_diff(ctx, annot);
+		rect.x0 += rd.x0;
+		rect.x1 -= rd.x1;
+		rect.y0 += rd.y0;
+		rect.y1 -= rd.y1;
 	}
 	fz_always(ctx)
 		pdf_annot_pop_local_xref(ctx, annot);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	return fz_transform_rect(annot_rect, page_ctm);
+
+	return fz_transform_rect(rect, page_ctm);
 }
 
 void
 pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 {
 	fz_matrix page_ctm, inv_page_ctm;
+	fz_rect rd;
 
 	begin_annot_op(ctx, annot, "Set rectangle");
 
@@ -1119,6 +1129,13 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect rect)
 		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 		inv_page_ctm = fz_invert_matrix(page_ctm);
 		rect = fz_transform_rect(rect, inv_page_ctm);
+
+		/* add RD adjustment to design box to get bounding box */
+		rd = pdf_annot_rect_diff(ctx, annot);
+		rect.x0 -= rd.x0;
+		rect.x1 += rd.x1;
+		rect.y0 -= rd.y0;
+		rect.y1 += rd.y1;
 
 		pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(Rect), rect);
 		pdf_dirty_annot(ctx, annot);

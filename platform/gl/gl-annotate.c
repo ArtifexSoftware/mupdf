@@ -2035,7 +2035,11 @@ void do_annotate_canvas(fz_irect canvas_area)
 	{
 		enum pdf_annot_type subtype = pdf_annot_type(ctx, annot);
 
-		bounds = pdf_bound_annot(ctx, annot);
+		if (pdf_annot_has_rect(ctx, annot))
+			bounds = pdf_annot_rect(ctx, annot);
+		else
+			bounds = pdf_bound_annot(ctx, annot);
+
 		bounds = fz_transform_rect(bounds, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
 
