@@ -431,14 +431,20 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 	}
 }
 
+static float pdf_write_line_caption(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res, fz_point a, fz_point b);
+
 static void
 pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res)
 {
 	pdf_obj *line, *le;
-	fz_point a, b;
 	float w;
+	fz_point a, b, aa, ab, ba, bb;
+	float dx, dy, line_length, ll, lle, llo;
 	int sc;
 	int ic;
+
+	// The start and end point of the actual line (a, b)
+	// The start and end points of the leader line (aa, ab, ba, bb)
 
 	pdf_write_opacity(ctx, annot, buf, res);
 	pdf_write_dash_pattern(ctx, annot, buf, res);
@@ -452,13 +458,67 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	b.x = pdf_array_get_real(ctx, line, 2);
 	b.y = pdf_array_get_real(ctx, line, 3);
 
-	fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", a.x, a.y, b.x, b.y);
-	maybe_stroke(ctx, buf, sc);
+	/* vector of line */
+	dx = b.x - a.x;
+	dy = b.y - a.y;
+	line_length = hypotf(dx, dy);
+	dx /= line_length;
+	dy /= line_length;
 
 	rect->x0 = fz_min(a.x, b.x);
 	rect->y0 = fz_min(a.y, b.y);
 	rect->x1 = fz_max(a.x, b.x);
 	rect->y1 = fz_max(a.y, b.y);
+
+	ll = pdf_dict_get_real(ctx, annot->obj, PDF_NAME(LL));
+
+	if (ll != 0)
+	{
+		lle = pdf_dict_get_real(ctx, annot->obj, PDF_NAME(LLE));
+		llo = pdf_dict_get_real(ctx, annot->obj, PDF_NAME(LLO));
+		if (ll < 0) {
+			lle = -lle;
+			llo = -llo;
+		}
+
+		aa = fz_make_point(a.x - dy * (llo), a.y + dx * (llo));
+		ba = fz_make_point(b.x - dy * (llo), b.y + dx * (llo));
+		ab = fz_make_point(a.x - dy * (llo + ll + lle), a.y + dx * (llo + ll + lle));
+		bb = fz_make_point(b.x - dy * (llo + ll + lle), b.y + dx * (llo + ll + lle));
+		a = fz_make_point(a.x - dy * (llo + ll), a.y + dx * (llo + ll));
+		b = fz_make_point(b.x - dy * (llo + ll), b.y + dx * (llo + ll));
+
+		fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", aa.x, aa.y, ab.x, ab.y);
+		fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", ba.x, ba.y, bb.x, bb.y);
+
+		*rect = fz_include_point_in_rect(*rect, a);
+		*rect = fz_include_point_in_rect(*rect, b);
+		*rect = fz_include_point_in_rect(*rect, ab);
+		*rect = fz_include_point_in_rect(*rect, bb);
+	}
+
+	if (pdf_dict_get_bool(ctx, annot->obj, PDF_NAME(Cap)))
+	{
+		float gap = pdf_write_line_caption(ctx, annot, buf, rect, res, a, b);
+		if (gap > 0)
+		{
+			fz_point m = fz_make_point((a.x + b.x) / 2, (a.y + b.y) / 2);
+			fz_point ca = fz_make_point(m.x - dx * gap, m.y - dy * gap);
+			fz_point cb = fz_make_point(m.x + dx * gap, m.y + dy * gap);
+			fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", a.x, a.y, ca.x, ca.y);
+			fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", cb.x, cb.y, b.x, b.y);
+		}
+		else
+		{
+			fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", a.x, a.y, b.x, b.y);
+		}
+	}
+	else
+	{
+		fz_append_printf(ctx, buf, "%g %g m\n%g %g l\n", a.x, a.y, b.x, b.y);
+	}
+
+	maybe_stroke(ctx, buf, sc);
 
 	le = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
 	if (pdf_array_len(ctx, le) == 2)
@@ -2254,6 +2314,103 @@ escape_text(fz_context *ctx, const char *s)
 	return d2;
 }
 #endif
+
+static float
+pdf_write_line_caption(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, pdf_obj **res, fz_point a, fz_point b)
+{
+	float dx, dy, line_length;
+	fz_point co;
+	float size;
+	const char *text;
+	pdf_obj *res_font;
+	fz_font *font = NULL;
+	fz_matrix tm;
+	int lang;
+	int top;
+	float tw;
+
+	fz_var(font);
+
+	fz_try(ctx)
+	{
+		// vector of line
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		line_length = hypotf(dx, dy);
+		dx /= line_length;
+		dy /= line_length;
+
+		text = pdf_annot_contents(ctx, annot);
+		lang = pdf_annot_language(ctx, annot);
+		co = pdf_dict_get_point(ctx, annot->obj, PDF_NAME(CO));
+
+		font = fz_new_base14_font(ctx, "Helvetica");
+		if (!*res)
+			*res = pdf_new_dict(ctx, annot->page->doc, 1);
+		res_font = pdf_dict_put_dict(ctx, *res, PDF_NAME(Font), 1);
+		add_required_fonts(ctx, annot->page->doc, res_font, lang, font, "Helv", text);
+		size = 12;
+
+		tw = measure_string(ctx, lang, font, text) * size;
+
+		// don't inline if CP says so
+		top = 0;
+		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(CP)) == PDF_NAME(Top))
+			top = 1;
+
+		// don't inline if caption wouldn't fit
+		if (tw + size > line_length)
+			top = 1;
+
+		tm = fz_rotate(atan2(dy, dx) * 180 / M_PI);
+		tm.e = (a.x + b.x) / 2 - dx * (tw / 2);
+		tm.f = (a.y + b.y) / 2 - dy * (tw / 2);
+
+		// caption offset
+		if (co.x || co.y)
+		{
+			// don't write text inline
+			top = 1;
+
+			if (co.y < 0)
+				co.y -= size;
+
+			tm.e += co.x * dx - co.y * dy;
+			tm.f += co.x * dy + co.y * dx;
+		}
+		else if (top)
+		{
+			tm.e -= dy * size * 0.2f;
+			tm.f += dx * size * 0.2f;
+		}
+		else
+		{
+			tm.e += dy * size * 0.3f;
+			tm.f -= dx * size * 0.3f;
+		}
+
+		fz_append_printf(ctx, buf, "q\n%M cm\n", &tm);
+		fz_append_string(ctx, buf, "0 g\n"); // Acrobat always draws captions in black
+		fz_append_printf(ctx, buf, "BT\n");
+		write_string(ctx, buf, lang, font, "Helv", size, text, text + strlen(text));
+		fz_append_printf(ctx, buf, "ET\n");
+		fz_append_printf(ctx, buf, "Q\n");
+
+		*rect = fz_include_point_in_rect(*rect, fz_make_point(tm.e - dx * tw/2, tm.f - dy * tw/2));
+		*rect = fz_include_point_in_rect(*rect, fz_make_point(tm.e + dx * tw/2, tm.f + dy * tw/2));
+		*rect = fz_expand_rect(*rect, size);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_font(ctx, font);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	if (!top)
+		return (tw + size / 2) / 2;
+	return 0;
+}
 
 static void
 pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
