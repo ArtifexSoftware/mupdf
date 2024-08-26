@@ -9475,6 +9475,121 @@ static void ffi_PDFAnnotation_setLine(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getLineLeader(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v;
+	fz_try(ctx)
+		v = pdf_annot_line_leader(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, v);
+}
+
+static void ffi_PDFAnnotation_getLineLeaderExtension(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v;
+	fz_try(ctx)
+		v = pdf_annot_line_leader_extension(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, v);
+}
+
+static void ffi_PDFAnnotation_getLineLeaderOffset(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v;
+	fz_try(ctx)
+		v = pdf_annot_line_leader_offset(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, v);
+}
+
+static void ffi_PDFAnnotation_setLineLeader(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v = js_trynumber(J, 1, 0);
+	fz_try(ctx)
+		pdf_set_annot_line_leader(ctx, annot, v);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_setLineLeaderExtension(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v = js_trynumber(J, 1, 0);
+	fz_try(ctx)
+		pdf_set_annot_line_leader_extension(ctx, annot, v);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_setLineLeaderOffset(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	float v = js_trynumber(J, 1, 0);
+	fz_try(ctx)
+		pdf_set_annot_line_leader_offset(ctx, annot, v);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getLineCaption(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int cap;
+	fz_try(ctx)
+		cap = pdf_annot_line_caption(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, cap);
+}
+
+static void ffi_PDFAnnotation_setLineCaption(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int cap = js_toboolean(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_line_caption(ctx, annot, cap);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getLineCaptionOffset(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point offset;
+	fz_try(ctx)
+		offset = pdf_annot_line_caption_offset(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushpoint(J, offset);
+}
+
+static void ffi_PDFAnnotation_setLineCaptionOffset(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_point offset = ffi_topoint(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_line_caption_offset(ctx, annot, offset);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -11169,6 +11284,16 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.hasLine", ffi_PDFAnnotation_hasLine, 0);
 		jsB_propfun(J, "PDFAnnotation.getLine", ffi_PDFAnnotation_getLine, 0);
 		jsB_propfun(J, "PDFAnnotation.setLine", ffi_PDFAnnotation_setLine, 2);
+		jsB_propfun(J, "PDFAnnotation.getLineLeader", ffi_PDFAnnotation_getLineLeader, 0);
+		jsB_propfun(J, "PDFAnnotation.setLineLeader", ffi_PDFAnnotation_setLineLeader, 1);
+		jsB_propfun(J, "PDFAnnotation.getLineLeaderExtension", ffi_PDFAnnotation_getLineLeaderExtension, 0);
+		jsB_propfun(J, "PDFAnnotation.setLineLeaderExtension", ffi_PDFAnnotation_setLineLeaderExtension, 1);
+		jsB_propfun(J, "PDFAnnotation.getLineLeaderOffset", ffi_PDFAnnotation_getLineLeaderOffset, 0);
+		jsB_propfun(J, "PDFAnnotation.setLineLeaderOffset", ffi_PDFAnnotation_setLineLeaderOffset, 1);
+		jsB_propfun(J, "PDFAnnotation.getLineCaption", ffi_PDFAnnotation_getLineCaption, 0);
+		jsB_propfun(J, "PDFAnnotation.setLineCaption", ffi_PDFAnnotation_setLineCaption, 1);
+		jsB_propfun(J, "PDFAnnotation.getLineCaptionOffset", ffi_PDFAnnotation_getLineCaptionOffset, 0);
+		jsB_propfun(J, "PDFAnnotation.setLineCaptionOffset", ffi_PDFAnnotation_setLineCaptionOffset, 1);
 
 		jsB_propfun(J, "PDFAnnotation.hasInkList", ffi_PDFAnnotation_hasInkList, 0);
 		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);

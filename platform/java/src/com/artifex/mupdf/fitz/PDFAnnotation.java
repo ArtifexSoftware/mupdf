@@ -313,6 +313,16 @@ public class PDFAnnotation
 	public native boolean hasLine();
 	public native Point[] getLine();
 	public native void setLine(Point a, Point b);
+	public native float getLineLeader();
+	public native void setLineLeader(float length);
+	public native float getLineLeaderExtension();
+	public native void setLineLeaderExtension(float extension);
+	public native float getLineLeaderOffset();
+	public native void setLineLeaderOffset(float offset);
+	public native boolean getLineCaption();
+	public native void setLineCaption(boolean caption);
+	public native Point getLineCaptionOffset();
+	public native void setLineCaptionOffset(Point offset);
 
 	public native boolean hasFilespec();
 	public native void setFilespec(PDFObject fs);

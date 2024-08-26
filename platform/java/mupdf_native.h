@@ -3484,6 +3484,86 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLine
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getLineLeader
+ * Signature: ()F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLineLeader
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLineLeader
+ * Signature: (F)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineLeader
+  (JNIEnv *, jobject, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getLineLeaderExtension
+ * Signature: ()F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLineLeaderExtension
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLineLeaderExtension
+ * Signature: (F)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineLeaderExtension
+  (JNIEnv *, jobject, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getLineLeaderOffset
+ * Signature: ()F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLineLeaderOffset
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLineLeaderOffset
+ * Signature: (F)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineLeaderOffset
+  (JNIEnv *, jobject, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getLineCaption
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLineCaption
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLineCaption
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineCaption
+  (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getLineCaptionOffset
+ * Signature: ()Lcom/artifex/mupdf/fitz/Point;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getLineCaptionOffset
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setLineCaptionOffset
+ * Signature: (Lcom/artifex/mupdf/fitz/Point;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineCaptionOffset
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    hasFilespec
  * Signature: ()Z
  */

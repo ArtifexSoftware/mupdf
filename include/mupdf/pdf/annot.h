@@ -748,6 +748,18 @@ int pdf_annot_is_standard_stamp(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_line(fz_context *ctx, pdf_annot *annot, fz_point *a, fz_point *b);
 void pdf_set_annot_line(fz_context *ctx, pdf_annot *annot, fz_point a, fz_point b);
 
+float pdf_annot_line_leader(fz_context *ctx, pdf_annot *annot);
+float pdf_annot_line_leader_extension(fz_context *ctx, pdf_annot *annot);
+float pdf_annot_line_leader_offset(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_line_leader(fz_context *ctx, pdf_annot *annot, float ll);
+void pdf_set_annot_line_leader_extension(fz_context *ctx, pdf_annot *annot, float lle);
+void pdf_set_annot_line_leader_offset(fz_context *ctx, pdf_annot *annot, float llo);
+
+int pdf_annot_line_caption(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_line_caption(fz_context *ctx, pdf_annot *annot, int cap);
+fz_point pdf_annot_line_caption_offset(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_line_caption_offset(fz_context *ctx, pdf_annot *annot, fz_point offset);
+
 int pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot);
 fz_point pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i);
 
