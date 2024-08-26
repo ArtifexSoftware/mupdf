@@ -2039,6 +2039,22 @@ pdf_array_find(fz_context *ctx, pdf_obj *arr, pdf_obj *obj)
 	return -1;
 }
 
+pdf_obj *pdf_new_point(fz_context *ctx, pdf_document *doc, fz_point point)
+{
+	pdf_obj *arr = pdf_new_array(ctx, doc, 2);
+	fz_try(ctx)
+	{
+		pdf_array_push_real(ctx, arr, point.x);
+		pdf_array_push_real(ctx, arr, point.y);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, arr);
+		fz_rethrow(ctx);
+	}
+	return arr;
+}
+
 pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, fz_rect rect)
 {
 	pdf_obj *arr = pdf_new_array(ctx, doc, 4);
@@ -3812,6 +3828,11 @@ void pdf_dict_put_text_string(fz_context *ctx, pdf_obj *dict, pdf_obj *key, cons
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_text_string(ctx, x));
 }
 
+void pdf_dict_put_point(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_point x)
+{
+	pdf_dict_put_drop(ctx, dict, key, pdf_new_point(ctx, pdf_get_bound_document(ctx, dict), x));
+}
+
 void pdf_dict_put_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key, fz_rect x)
 {
 	pdf_dict_put_drop(ctx, dict, key, pdf_new_rect(ctx, pdf_get_bound_document(ctx, dict), x));
@@ -3992,6 +4013,11 @@ const char *pdf_dict_get_text_string_opt(fz_context *ctx, pdf_obj *dict, pdf_obj
 	if (!pdf_is_string(ctx, obj))
 		return NULL;
 	return pdf_to_text_string(ctx, obj);
+}
+
+fz_point pdf_dict_get_point(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
+{
+	return pdf_to_point(ctx, pdf_dict_get(ctx, dict, key), 0);
 }
 
 fz_rect pdf_dict_get_rect(fz_context *ctx, pdf_obj *dict, pdf_obj *key)
