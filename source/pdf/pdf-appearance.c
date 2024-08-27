@@ -345,6 +345,10 @@ pdf_write_line_cap_appearance(fz_context *ctx, fz_buffer *buf, fz_rect *rect,
 		float x, float y, float dx, float dy, float w,
 		int sc, int ic, pdf_obj *cap)
 {
+	float l = sqrtf(dx*dx + dy*dy);
+	dx = dx / l;
+	dy = dy / l;
+
 	if (cap == PDF_NAME(Square))
 	{
 		float r = fz_max(3.0f, w * 3.0f);
@@ -461,9 +465,8 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	{
 		float dx = b.x - a.x;
 		float dy = b.y - a.y;
-		float l = sqrtf(dx*dx + dy*dy);
-		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, w, sc, ic, pdf_array_get(ctx, le, 0));
-		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx/l, -dy/l, w, sc, ic, pdf_array_get(ctx, le, 1));
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx, dy, w, sc, ic, pdf_array_get(ctx, le, 0));
+		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx, -dy, w, sc, ic, pdf_array_get(ctx, le, 1));
 	}
 	*rect = fz_expand_rect(*rect, fz_max(1, w));
 }
@@ -943,7 +946,7 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 	le = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
 	if (!close && n >= 2 && pdf_array_len(ctx, le) == 2)
 	{
-		float dx, dy, l;
+		float dx, dy;
 		fz_point a, b;
 
 		a.x = pdf_array_get_real(ctx, verts, 0*2+0);
@@ -953,9 +956,8 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 
 		dx = b.x - a.x;
 		dy = b.y - a.y;
-		l = sqrtf(dx*dx + dy*dy);
 
-		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, lw, sc, ic, pdf_array_get(ctx, le, 0));
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx, dy, lw, sc, ic, pdf_array_get(ctx, le, 0));
 
 		a.x = pdf_array_get_real(ctx, verts, (n-1)*2+0);
 		a.y = pdf_array_get_real(ctx, verts, (n-1)*2+1);
@@ -964,9 +966,8 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 
 		dx = b.x - a.x;
 		dy = b.y - a.y;
-		l = sqrtf(dx*dx + dy*dy);
 
-		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx/l, dy/l, lw, sc, ic, pdf_array_get(ctx, le, 1));
+		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx, dy, lw, sc, ic, pdf_array_get(ctx, le, 1));
 	}
 
 	if (exp == 0)
@@ -2265,113 +2266,112 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	int q, r, n;
 	int lang;
 	fz_rect rd;
+	pdf_obj *le;
+	int ic;
+	fz_rect text_box;
+	fz_matrix tfm;
 #if FZ_ENABLE_HTML_ENGINE
 	const char *rc, *ds;
 	char *free_rc = NULL;
 #endif
 
-	/* /Rotate is an undocumented annotation property supported by Adobe.
-	 * When Rotate is used, neither the box, nor the arrow move at all.
-	 * Only the position of the text moves within the box. Thus we don't
-	 * need to adjust rd at all! */
 	text = pdf_annot_contents(ctx, annot);
-	r = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Rotate));
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);
 	lang = pdf_annot_language(ctx, annot);
 	rd = pdf_annot_rect_diff(ctx, annot);
 
-	w = rect->x1 - rect->x0;
-	h = rect->y1 - rect->y0;
+	/* /Rotate is an undocumented annotation property supported by Adobe.
+	 * When Rotate is used, neither the box, nor the arrow move at all.
+	 * Only the position of the text moves within the box. Thus we don't
+	 * need to adjust rd at all! */
+	r = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(Rotate));
 
-	*matrix = fz_identity;
-	*bbox = fz_make_rect(0, 0, w, h);
+	// Adjust input Rect for RD to get the bounds of the text box area
+	text_box = *rect;
+	text_box.x0 += rd.x0;
+	text_box.y0 += rd.y0;
+	text_box.x1 -= rd.x1;
+	text_box.y1 -= rd.y1;
+
+	*rect = text_box;
+
+	// Size of text box area (including padding and border)
+	w = text_box.x1 - text_box.x0;
+	h = text_box.y1 - text_box.y0;
 
 	pdf_write_opacity(ctx, annot, buf, res);
 	pdf_write_dash_pattern(ctx, annot, buf, res);
 
-	if (pdf_write_fill_color_appearance(ctx, annot, buf))
-		fz_append_printf(ctx, buf, "%g %g %g %g re\nf\n", rd.x0, rd.y0, w - rd.x1 - rd.x0, h - rd.y1 - rd.y0);
-
+	// Set stroke and fill colors for box and callout line
+	ic = pdf_write_fill_color_appearance(ctx, annot, buf);
+	write_color0(ctx, buf, n, color, 1);
 	b = pdf_write_border_appearance(ctx, annot, buf);
-	if (b > 0)
-	{
-		write_color0(ctx, buf, n, color, 1);
-		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", b / 2 + rd.x0, b / 2 + rd.y0, w - b - rd.x1 - rd.x0, h - b - rd.y1 - rd.y0);
-	}
 
+	// Draw Callout line
 	if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(IT)), PDF_NAME(FreeTextCallout)))
 	{
 		pdf_obj *cl = pdf_dict_get(ctx, annot->obj, PDF_NAME(CL));
-		fz_matrix tfm = fz_translate(-rect->x0, -rect->y0);
-
-		if (cl)
+		int i, n = pdf_array_len(ctx, cl);
+		if (n == 4 || n == 6)
 		{
-			int i, n = pdf_array_len(ctx, cl);
-			float points[6];
-			fz_point p;
+			float xy[6];
 
-			if (n > 6)
-				n = 6;
 			for (i = 0; i < n; i += 2)
 			{
-				p.x = pdf_array_get_real(ctx, cl, i);
-				p.y = pdf_array_get_real(ctx, cl, i+1);
-				p = fz_transform_point(p, tfm);
-				points[i] = p.x;
-				points[i + 1] = p.y;
+				float x = xy[i+0] = pdf_array_get_real(ctx, cl, i+0);
+				float y = xy[i+1] = pdf_array_get_real(ctx, cl, i+1);
+				if (x < rect->x0) rect->x0 = x;
+				if (y < rect->y0) rect->y0 = y;
+				if (x > rect->x1) rect->x1 = x;
+				if (y > rect->y1) rect->y1 = y;
 			}
-			if (n < 4)
-			{
-				/* Illegal */
-			}
-			else
-			{
-				fz_rect dummy = fz_empty_rect;
 
-				if (n < 6)
-				{
-					fz_append_printf(ctx, buf, "%g %g m %g %g l\nS\n",
-						points[0], points[1],
-						points[2], points[3]);
-				}
-				else
-				{
-					fz_append_printf(ctx, buf, "%g %g m %g %g l %g %g l\nS\n",
-						points[0], points[1],
-						points[2], points[3],
-						points[4], points[5]);
-				}
-				pdf_write_line_cap_appearance(ctx, buf, &dummy,
-					points[0], points[1],
-					points[2] - points[0], points[3] - points[1], b,
-					1, 0, pdf_dict_get(ctx, annot->obj, PDF_NAME(LE)));
-			}
+			fz_append_printf(ctx, buf, "%g %g m\n", xy[0], xy[1]);
+			for (i = 2; i < n; i += 2)
+				fz_append_printf(ctx, buf, "%g %g l\n", xy[i+0], xy[i+1]);
+			fz_append_printf(ctx, buf, "S\n");
+
+			le = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
+			pdf_write_line_cap_appearance(ctx, buf, rect,
+				xy[0], xy[1],
+				xy[2] - xy[0], xy[3] - xy[1], b,
+				1, ic, le);
 		}
 	}
 
-	fz_append_printf(ctx, buf, "%g %g %g %g re\nW\nn\n", b, b, w-b*2, h-b*2);
+	// Draw text box background
+	if (ic)
+		fz_append_printf(ctx, buf, "%g %g %g %g re\nf\n", text_box.x0, text_box.y0, w, h);
 
-	w -= rd.x0 + rd.x1;
-	h -= rd.y0 + rd.y1;
+	// Draw text box border
+	if (b > 0)
+		fz_append_printf(ctx, buf, "%g %g %g %g re\nS\n", text_box.x0 + b/2, text_box.y0 + b/2, w - b, h - b);
+
+	// Clip text to box
+	fz_append_printf(ctx, buf, "%g %g %g %g re\nW\nn\n", text_box.x0 + b, text_box.y0 + b, w - b * 2, h - b * 2);
+
+	// Recompute Rect and RD to account for Callout line
+	rd.x0 = text_box.x0 - rect->x0;
+	rd.y0 = text_box.y0 - rect->y0;
+	rd.x1 = rect->x1 - text_box.x1;
+	rd.y1 = rect->y1 - text_box.y1;
+
+	// Compute rotation (and offset) transform for text
 	if (r == 90 || r == 270)
 	{
 		float t = w; w = h; h = t;
 	}
-
-	if (rd.x0 != 0 || rd.y0 != 0 || r != 0)
-	{
-		fz_matrix tfm = fz_rotate(r);
-		if (r == 270)
-			tfm.e += 0, tfm.f += w;
-		else if (r == 90)
-			tfm.e += h, tfm.f -= 0;
-		else if (r == 180)
-			tfm.e += w, tfm.f += h;
-		tfm.e += rd.x0;
-		tfm.f += rd.y0;
-		fz_append_printf(ctx, buf, "q %g %g %g %g %g %g cm\n", tfm.a, tfm.b, tfm.c, tfm.d, tfm.e, tfm.f);
-	}
+	tfm = fz_rotate(r);
+	if (r == 270)
+		tfm.e += 0, tfm.f += w;
+	else if (r == 90)
+		tfm.e += h, tfm.f -= 0;
+	else if (r == 180)
+		tfm.e += w, tfm.f += h;
+	tfm.e += text_box.x0;
+	tfm.f += text_box.y0;
+	fz_append_printf(ctx, buf, "q\n%g %g %g %g %g %g cm\n", tfm.a, tfm.b, tfm.c, tfm.d, tfm.e, tfm.f);
 
 #if FZ_ENABLE_HTML_ENGINE
 	ds = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(DS));
@@ -2389,12 +2389,17 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	}
 	else
 #endif
+	{
 		write_variable_text(ctx, annot, buf, res, lang, text, font, size, n, color, q, w, h, b*2,
 			0.8f, 1.2f, 1, 0, 0);
-	if (rd.x0 != 0 || rd.y0 != 0 || r != 0)
-		fz_append_printf(ctx, buf, "Q\n");
+	}
+
+	fz_append_printf(ctx, buf, "Q\n");
 
 	pdf_dict_put_rect(ctx, annot->obj, PDF_NAME(RD), rd);
+
+	*matrix = fz_identity;
+	*bbox = *rect;
 }
 
 static void
