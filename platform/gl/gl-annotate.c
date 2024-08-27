@@ -43,6 +43,30 @@ static pdf_document *pdf_has_redactions_doc = NULL;
 static int pdf_has_redactions;
 static int do_snapshot;
 
+static int label_slider(const char *label, int *value, int min, int max)
+{
+	int changed;
+	ui_panel_begin(0, ui.gridsize, 0, 0, 0);
+	ui_layout(R, NONE, CENTER, 0, 0);
+	changed = ui_slider(value, min, max, 100);
+	ui_layout(L, X, CENTER, 0, 0);
+	ui_label("%s: %d", label, *value);
+	ui_panel_end();
+	return changed;
+}
+
+static int label_select(const char *label, const char *id, const char *current, const char *options[], int n)
+{
+	int changed;
+	ui_panel_begin(0, ui.gridsize, 0, 0, 0);
+	ui_layout(L, NONE, CENTER, 0, 0);
+	ui_label("%s: ", label);
+	ui_layout(T, X, CENTER, 0, 0);
+	changed = ui_select(id, current, options, n);
+	ui_panel_end();
+	return changed;
+}
+
 static int pdf_filter(const char *fn)
 {
 	const char *extension = strrchr(fn, '.');
@@ -705,8 +729,7 @@ static void do_annotate_color(char *label,
 	float color[4];
 	int hex, choice, n;
 	get_color(ctx, ui.selected_annot, &n, color);
-	ui_label("%s:", label);
-	choice = ui_select(label, name_from_hex(hex_from_color(n, color)), color_names, nelem(color_names));
+	choice = label_select(label, label, name_from_hex(hex_from_color(n, color)), color_names, nelem(color_names));
 	if (choice != -1)
 	{
 		hex = color_values[choice];
@@ -955,12 +978,13 @@ static void do_border(void)
 	static int choice;
 	enum pdf_border_style style;
 
+	ui_spacer();
+
 	width = pdf_annot_border_width(ctx, ui.selected_annot);
 	style = pdf_annot_border_style(ctx, ui.selected_annot);
 
 	width = fz_clampi(width, 0, 12);
-	ui_label("Border: %d", width);
-	if (ui_slider(&width, 0, 12, 100))
+	if (label_slider("Border", &width, 0, 12))
 	{
 		pdf_set_annot_border_width(ctx, ui.selected_annot, width);
 		trace_action("annot.setBorderWidth(%d);\n", width);
@@ -969,8 +993,7 @@ static void do_border(void)
 	width = fz_max(width, 1);
 
 	choice = detect_border_style(style, width);
-	ui_label("Border style:");
-	choice = ui_select("BorderStyle", border_styles[choice], border_styles, nelem(border_styles));
+	choice = label_select("Style", "BorderStyle", border_styles[choice], border_styles, nelem(border_styles));
 	if (choice != -1)
 	{
 		pdf_clear_annot_border_dash(ctx, ui.selected_annot);
@@ -1003,8 +1026,7 @@ static void do_border(void)
 		if (pdf_annot_border_effect(ctx, ui.selected_annot) == PDF_BORDER_EFFECT_NONE)
 			intensity = 0;
 
-		ui_label("Border effect:");
-		intensity = ui_select("BorderEffect", border_intensities[intensity], border_intensities, nelem(border_intensities));
+		intensity = label_select("Effect", "BorderEffect", border_intensities[intensity], border_intensities, nelem(border_intensities));
 		if (intensity != -1)
 		{
 			enum pdf_border_effect effect = intensity ? PDF_BORDER_EFFECT_CLOUDY : PDF_BORDER_EFFECT_NONE;
@@ -1051,7 +1073,7 @@ void do_annotate_panel(void)
 	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
 		++n;
 
-	ui_list_begin(&annot_list, n, 0, ui.lineheight * 10 + 4);
+	ui_list_begin(&annot_list, n, 0, ui.lineheight * 6 + 4);
 	for (idx=0, annot = pdf_first_annot(ctx, page); annot; ++idx, annot = pdf_next_annot(ctx, annot))
 	{
 		char buf[256];
@@ -1084,7 +1106,6 @@ void do_annotate_panel(void)
 
 		do_annotate_contents();
 
-		ui_spacer();
 
 		if (subtype == PDF_ANNOT_FREE_TEXT)
 		{
@@ -1097,18 +1118,10 @@ void do_annotate_panel(void)
 			static float text_size_f, text_color[4];
 			static int text_size;
 
-			q = pdf_annot_quadding(ctx, ui.selected_annot);
-			ui_label("Text Alignment:");
-			choice = ui_select("Q", quadding_names[q], quadding_names, nelem(quadding_names));
-			if (choice != -1)
-			{
-				trace_action("annot.setQuadding(%d);\n", choice);
-				pdf_set_annot_quadding(ctx, ui.selected_annot, choice);
-			}
+			ui_spacer();
 
 			text_lang = fz_string_from_text_language(lang_buf, pdf_annot_language(ctx, ui.selected_annot));
-			ui_label("Text Language:");
-			lang_choice = ui_select("DA/Lang", text_lang, lang_names, nelem(lang_names));
+			lang_choice = label_select("Language", "DA/Lang", text_lang, lang_names, nelem(lang_names));
 			if (lang_choice != -1)
 			{
 				text_lang = lang_names[lang_choice];
@@ -1116,14 +1129,19 @@ void do_annotate_panel(void)
 				pdf_set_annot_language(ctx, ui.selected_annot, fz_text_language_from_string(text_lang));
 			}
 
+			q = pdf_annot_quadding(ctx, ui.selected_annot);
+			choice = label_select("Text Align", "Q", quadding_names[q], quadding_names, nelem(quadding_names));
+			if (choice != -1)
+			{
+				trace_action("annot.setQuadding(%d);\n", choice);
+				pdf_set_annot_quadding(ctx, ui.selected_annot, choice);
+			}
+
 			pdf_annot_default_appearance_unmapped(ctx, ui.selected_annot, text_font_buf, sizeof text_font_buf, &text_size_f, &n, text_color);
 			text_size = text_size_f;
-			ui_label("Text Font:");
-			font_choice = ui_select("DA/Font", text_font_buf, font_names, nelem(font_names));
-			ui_label("Text Size: %d", text_size);
-			size_changed = ui_slider(&text_size, 8, 36, 256);
-			ui_label("Text Color:");
-			color_choice = ui_select("DA/Color", name_from_hex(hex_from_color(n, text_color)), color_names+1, nelem(color_names)-1);
+			font_choice = label_select("Text Font", "DA/Font", text_font_buf, font_names, nelem(font_names));
+			size_changed = label_slider("Text Size", &text_size, 8, 36);
+			color_choice = label_select("Text Color", "DA/Color", name_from_hex(hex_from_color(n, text_color)), color_names+1, nelem(color_names)-1);
 			if (font_choice != -1 || color_choice != -1 || size_changed)
 			{
 				if (font_choice != -1)
@@ -1154,7 +1172,6 @@ void do_annotate_panel(void)
 						text_font, text_size);
 				pdf_set_annot_default_appearance(ctx, ui.selected_annot, text_font, text_size, n, text_color);
 			}
-			ui_spacer();
 		}
 
 		if (subtype == PDF_ANNOT_LINE || subtype == PDF_ANNOT_POLY_LINE)
@@ -1162,13 +1179,12 @@ void do_annotate_panel(void)
 			enum pdf_line_ending s, e;
 			int s_choice, e_choice;
 
+			ui_spacer();
+
 			pdf_annot_line_ending_styles(ctx, ui.selected_annot, &s, &e);
 
-			ui_label("Line Start:");
-			s_choice = ui_select("LE0", line_ending_styles[s], line_ending_styles, nelem(line_ending_styles));
-
-			ui_label("Line End:");
-			e_choice = ui_select("LE1", line_ending_styles[e], line_ending_styles, nelem(line_ending_styles));
+			s_choice = label_select("Line End 1", "LE0", line_ending_styles[s], line_ending_styles, nelem(line_ending_styles));
+			e_choice = label_select("Line End 2", "LE1", line_ending_styles[e], line_ending_styles, nelem(line_ending_styles));
 
 			if (s_choice != -1 || e_choice != -1)
 			{
@@ -1182,13 +1198,14 @@ void do_annotate_panel(void)
 		if (pdf_annot_has_icon_name(ctx, ui.selected_annot))
 		{
 			const char *name = pdf_annot_icon_name(ctx, ui.selected_annot);
-			ui_label("Icon:");
+
 			switch (pdf_annot_type(ctx, ui.selected_annot))
 			{
 			default:
 				break;
 			case PDF_ANNOT_TEXT:
-				choice = ui_select("Icon", name, text_icons, nelem(text_icons));
+				ui_spacer();
+				choice = label_select("Icon", "Icon", name, text_icons, nelem(text_icons));
 				if (choice != -1)
 				{
 					trace_action("annot.setIcon(%q);\n", text_icons[choice]);
@@ -1196,7 +1213,8 @@ void do_annotate_panel(void)
 				}
 				break;
 			case PDF_ANNOT_FILE_ATTACHMENT:
-				choice = ui_select("Icon", name, file_attachment_icons, nelem(file_attachment_icons));
+				ui_spacer();
+				choice = label_select("Icon", "Icon", name, file_attachment_icons, nelem(file_attachment_icons));
 				if (choice != -1)
 				{
 					trace_action("annot.setIcon(%q);\n", file_attachment_icons[choice]);
@@ -1204,7 +1222,8 @@ void do_annotate_panel(void)
 				}
 				break;
 			case PDF_ANNOT_SOUND:
-				choice = ui_select("Icon", name, sound_icons, nelem(sound_icons));
+				ui_spacer();
+				choice = label_select("Icon", "Icon", name, sound_icons, nelem(sound_icons));
 				if (choice != -1)
 				{
 					trace_action("annot.setIcon(%q);\n", sound_icons[choice]);
@@ -1212,7 +1231,8 @@ void do_annotate_panel(void)
 				}
 				break;
 			case PDF_ANNOT_STAMP:
-				choice = ui_select("Icon", name, stamp_icons, nelem(stamp_icons));
+				ui_spacer();
+				choice = label_select("Icon", "Icon", name, stamp_icons, nelem(stamp_icons));
 				if (choice != -1)
 				{
 					trace_action("annot.setIcon(%q);\n", stamp_icons[choice]);
@@ -1225,6 +1245,8 @@ void do_annotate_panel(void)
 		if (pdf_annot_has_border(ctx, ui.selected_annot))
 			do_border();
 
+		ui_spacer();
+
 		if (should_edit_color(subtype))
 			do_annotate_color("Color", pdf_annot_color, pdf_set_annot_color);
 		if (should_edit_icolor(subtype))
@@ -1232,19 +1254,17 @@ void do_annotate_panel(void)
 
 		{
 			static int opacity;
-			opacity = pdf_annot_opacity(ctx, ui.selected_annot) * 255;
-			ui_label("Opacity:");
-			if (ui_slider(&opacity, 0, 255, 256))
+			opacity = pdf_annot_opacity(ctx, ui.selected_annot) * 100;
+			if (label_slider("Opacity", &opacity, 0, 100))
 			{
-				trace_action("annot.setOpacity(%g);\n", opacity / 255.0f);
-				pdf_set_annot_opacity(ctx, ui.selected_annot, opacity / 255.0f);
+				trace_action("annot.setOpacity(%g);\n", opacity / 100.0f);
+				pdf_set_annot_opacity(ctx, ui.selected_annot, opacity / 100.0f);
 			}
 		}
 
-		ui_spacer();
-
 		if (pdf_annot_has_quad_points(ctx, ui.selected_annot))
 		{
+			ui_spacer();
 			if (is_draw_mode)
 			{
 				n = pdf_annot_quad_point_count(ctx, ui.selected_annot);
@@ -1266,6 +1286,7 @@ void do_annotate_panel(void)
 
 		if (pdf_annot_has_vertices(ctx, ui.selected_annot))
 		{
+			ui_spacer();
 			if (is_draw_mode)
 			{
 				n = pdf_annot_vertex_count(ctx, ui.selected_annot);
@@ -1287,6 +1308,7 @@ void do_annotate_panel(void)
 
 		if (pdf_annot_has_ink_list(ctx, ui.selected_annot))
 		{
+			ui_spacer();
 			if (is_draw_mode)
 			{
 				n = pdf_annot_ink_list_count(ctx, ui.selected_annot);
@@ -1309,6 +1331,7 @@ void do_annotate_panel(void)
 		if (pdf_annot_type(ctx, ui.selected_annot) == PDF_ANNOT_STAMP)
 		{
 			char attname[PATH_MAX];
+			ui_spacer();
 			if (ui_button("Image..."))
 			{
 				fz_dirname(attname, filename, sizeof attname);
@@ -1322,6 +1345,7 @@ void do_annotate_panel(void)
 			pdf_embedded_file_params params;
 			char attname[PATH_MAX];
 			pdf_obj *fs = pdf_annot_filespec(ctx, ui.selected_annot);
+			ui_spacer();
 			if (pdf_is_embedded_file(ctx, fs))
 			{
 				if (ui_button("Save..."))
@@ -1343,7 +1367,6 @@ void do_annotate_panel(void)
 		}
 
 		ui_spacer();
-
 		if (ui_button("Delete"))
 		{
 			trace_action("page.deleteAnnotation(annot);\n");
@@ -1517,7 +1540,7 @@ void do_redact_panel(void)
 
 	ui_spacer();
 
-	ui_list_begin(&annot_list, num_redact, 0, ui.lineheight * 10 + 4);
+	ui_list_begin(&annot_list, num_redact, 0, ui.lineheight * 6 + 4);
 	for (idx=0, annot = pdf_first_annot(ctx, page); annot; ++idx, annot = pdf_next_annot(ctx, annot))
 	{
 		char buf[50];
