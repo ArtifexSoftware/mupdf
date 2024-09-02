@@ -1721,6 +1721,9 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 	doc->journal->current = NULL;
 	if (pos > 0)
 	{
+		if (doc->journal->head == NULL)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Badly formed journal");
+
 		doc->journal->current = doc->journal->head;
 		while (--pos)
 		{
