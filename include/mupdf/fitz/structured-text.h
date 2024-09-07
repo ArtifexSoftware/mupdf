@@ -310,13 +310,20 @@ struct fz_stext_line
 struct fz_stext_char
 {
 	int c; /* unicode character value */
-	int bidi; /* even for LTR, odd for RTL */
+	uint16_t bidi; /* even for LTR, odd for RTL - probably only needs 8 bits? */
+	uint16_t flags;
 	int color; /* sRGB hex color */
 	fz_point origin;
 	fz_quad quad;
 	float size;
 	fz_font *font;
 	fz_stext_char *next;
+};
+
+enum
+{
+	FZ_STEXT_STRIKEOUT = 1,
+	FZ_STEXT_UNDERLINE = 2
 };
 
 /**
