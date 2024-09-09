@@ -134,6 +134,9 @@ typedef struct fz_stext_struct fz_stext_struct;
 	FZ_STEXT_COLLECT_VECTORS: If this option is set, we will collect
 	details (currently just the bbox) of vector graphics. This is intended
 	to be of use in segmentation analysis.
+
+	FZ_STEXT_IGNORE_ACTUALTEXT: If this option is set, we will no longer
+	replace text by the ActualText replacement specified in the document.
 */
 enum
 {
@@ -147,7 +150,8 @@ enum
 	FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE = 128,
 	FZ_STEXT_COLLECT_STRUCTURE = 256,
 	FZ_STEXT_ACCURATE_BBOXES = 512,
-	FZ_STEXT_COLLECT_VECTORS = 1024
+	FZ_STEXT_COLLECT_VECTORS = 1024,
+	FZ_STEXT_IGNORE_ACTUALTEXT = 2048
 };
 
 /**

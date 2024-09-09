@@ -1035,13 +1035,15 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 static void
 fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix ctm)
 {
-	metatext_t *mt;
+	fz_stext_device *tdev = (fz_stext_device*)dev;
+	metatext_t *mt = NULL;
 
 	if (span->len == 0)
 		return;
 
 	/* Are we in an actualtext? */
-	mt = find_actualtext(dev);
+	if (!(tdev->opts.flags & FZ_STEXT_IGNORE_ACTUALTEXT))
+		mt = find_actualtext(dev);
 
 	if (mt)
 		do_extract_within_actualtext(ctx, dev, span, ctm, mt);
@@ -1405,6 +1407,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_ACCURATE_BBOXES;
 	if (fz_has_option(ctx, string, "vectors", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_COLLECT_VECTORS;
+	if (fz_has_option(ctx, string, "ignore-actualtext", & val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_IGNORE_ACTUALTEXT;
 
 	opts->flags |= FZ_STEXT_MEDIABOX_CLIP;
 	if (fz_has_option(ctx, string, "mediabox-clip", &val) && fz_option_eq(val, "no"))
