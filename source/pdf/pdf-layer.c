@@ -739,12 +739,26 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 			for (i = 0; i < len; i++)
 			{
 				int hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, pdf_array_get(ctx, obj, i), &cycle);
-				if ((combine & 1) == 0)
-					hidden = !hidden;
-				if (combine & 2)
-					on &= hidden;
-				else
-					on |= hidden;
+				if (combine == 0 && !hidden)
+				{
+					on = 1;
+					break;
+				}
+				else if (combine == 1 && hidden)
+				{
+					on = 0;
+					break;
+				}
+				else if (combine == 2 && hidden)
+				{
+					on = 1;
+					break;
+				}
+				else if (combine == 3 && !hidden)
+				{
+					on = 0;
+					break;
+				}
 			}
 		}
 		else
