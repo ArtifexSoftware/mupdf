@@ -232,7 +232,7 @@ ocgcmp(const void *a_, const void *b_)
 	return (b->n - a->n);
 }
 
-static int
+int
 find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 {
 	int n = pdf_to_num(ctx, obj);

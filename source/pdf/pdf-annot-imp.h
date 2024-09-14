@@ -48,7 +48,10 @@ typedef struct
 	fz_link super;
 	pdf_page *page;
 	pdf_obj *obj;
+	pdf_obj *set_ocg_state;
 } pdf_link;
+
+int find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj);
 
 void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
