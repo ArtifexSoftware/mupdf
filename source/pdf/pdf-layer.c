@@ -287,12 +287,96 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 }
 
 void
+pdf_select_default_layer_config(fz_context *ctx, pdf_document *doc)
+{
+	pdf_ocg_descriptor *desc;
+	int i, j, len, len2;
+	pdf_obj *obj, *cobj;
+	pdf_obj *name;
+
+	desc = pdf_read_ocg(ctx, doc);
+
+	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
+	if (!obj)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown Layer config (None known!)");
+
+	cobj = pdf_dict_get(ctx, obj, PDF_NAME(D));
+	if (!cobj)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "No default Layer config");
+
+	pdf_drop_obj(ctx, desc->intent);
+	desc->intent = pdf_keep_obj(ctx, pdf_dict_get(ctx, cobj, PDF_NAME(Intent)));
+
+	len = desc->len;
+	name = pdf_dict_get(ctx, cobj, PDF_NAME(BaseState));
+	if (pdf_name_eq(ctx, name, PDF_NAME(Unchanged)))
+	{
+		/* Do nothing */
+	}
+	else if (pdf_name_eq(ctx, name, PDF_NAME(OFF)))
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 0;
+		}
+	}
+	else /* Default to ON */
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 1;
+		}
+	}
+
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(ON));
+	len2 = pdf_array_len(ctx, obj);
+	for (i = 0; i < len2; i++)
+	{
+		pdf_obj *o = pdf_array_get(ctx, obj, i);
+		for (j=0; j < len; j++)
+		{
+			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			{
+				desc->ocgs[j].state = 1;
+				break;
+			}
+		}
+	}
+
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(OFF));
+	len2 = pdf_array_len(ctx, obj);
+	for (i = 0; i < len2; i++)
+	{
+		pdf_obj *o = pdf_array_get(ctx, obj, i);
+		for (j=0; j < len; j++)
+		{
+			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			{
+				desc->ocgs[j].state = 0;
+				break;
+			}
+		}
+	}
+
+	desc->current = -1;
+
+	drop_ui(ctx, desc);
+	load_ui(ctx, desc, obj, cobj);
+}
+
+void
 pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 {
 	pdf_ocg_descriptor *desc;
 	int i, j, len, len2;
 	pdf_obj *obj, *cobj;
 	pdf_obj *name;
+
+	if (config == -1)
+	{
+		pdf_select_default_layer_config(ctx, doc);
+		return;
+	}
 
 	desc = pdf_read_ocg(ctx, doc);
 
@@ -376,11 +460,41 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 }
 
 void
+pdf_default_layer_config_info(fz_context *ctx, pdf_document *doc, pdf_layer_config *info)
+{
+	pdf_obj *ocprops;
+	pdf_obj *obj;
+
+	if (!info)
+		return;
+
+	info->name = NULL;
+	info->creator = NULL;
+
+	ocprops = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties");
+	if (!ocprops)
+		return;
+
+	obj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
+	if (!obj)
+		return;
+
+	info->creator = pdf_dict_get_string(ctx, obj, PDF_NAME(Creator), NULL);
+	info->name = pdf_dict_get_string(ctx, obj, PDF_NAME(Name), NULL);
+}
+
+void
 pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info)
 {
 	pdf_ocg_descriptor *desc;
 	pdf_obj *ocprops;
 	pdf_obj *obj;
+
+	if (config_num == -1)
+	{
+		pdf_default_layer_config_info(ctx, doc, info);
+		return;
+	}
 
 	if (!info)
 		return;
@@ -812,7 +926,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		}
 		qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 
-		pdf_select_layer_config(ctx, doc, 0);
+		pdf_select_default_layer_config(ctx, doc);
 	}
 	fz_catch(ctx)
 	{
