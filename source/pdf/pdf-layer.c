@@ -257,6 +257,27 @@ find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 }
 
 static int
+find_rbgroup(fz_context *ctx, pdf_obj *ocg, pdf_obj *rbgroups)
+{
+	int len = pdf_array_len(ctx, rbgroups);
+
+	for (int i = 0; i < len; i++)
+	{
+		pdf_obj *group = pdf_array_get(ctx, rbgroups, i);
+		int len2 = pdf_array_len(ctx, group);
+
+		for (int j = 0; j < len2; j++)
+		{
+			pdf_obj *item = pdf_array_get(ctx, group, j);
+			if (!pdf_objcmp(ctx, item, ocg))
+				return i;
+		}
+	}
+
+	return -1;
+}
+
+static int
 populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order, int depth, pdf_obj *rbgroups, pdf_obj *locked,
 	pdf_cycle_list *cycle_up)
 {
@@ -294,7 +315,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		ui->depth = depth;
 		ui->ocg = j;
 		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
-		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
+		ui->button_flags = find_rbgroup(ctx, o, rbgroups) >= 0 ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 	}
 	return fill;
@@ -604,32 +625,27 @@ pdf_drop_ocg(fz_context *ctx, pdf_document *doc)
 static void
 clear_radio_group(fz_context *ctx, pdf_document *doc, pdf_obj *ocg)
 {
-	pdf_obj *rbgroups = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties/RBGroups");
-	int len, i;
+	pdf_obj *group, *rbgroups;
+	int i, j, k, len;
 
-	len = pdf_array_len(ctx, rbgroups);
-	for (i = 0; i < len; i++)
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	if (!desc)
+		return;
+
+	rbgroups = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties/D/RBGroups");
+
+	i = find_rbgroup(ctx, ocg, rbgroups);
+	if (i < 0)
+		return;
+
+	group = pdf_array_get(ctx, rbgroups, i);
+	len = pdf_array_len(ctx, group);
+
+	for (j = 0; j < len; j++)
 	{
-		pdf_obj *group = pdf_array_get(ctx, rbgroups, i);
-
-		if (pdf_array_contains(ctx, ocg, group))
-		{
-			int len2 = pdf_array_len(ctx, group);
-			int j;
-
-			for (j = 0; j < len2; j++)
-			{
-				pdf_obj *g = pdf_array_get(ctx, group, j);
-				int k;
-				for (k = 0; k < doc->ocg->len; k++)
-				{
-					pdf_ocg_entry *s = &doc->ocg->ocgs[k];
-
-					if (!pdf_objcmp(ctx, s->obj, g))
-						s->state = 0;
-				}
-			}
-		}
+		pdf_obj *g = pdf_array_get(ctx, group, j);
+		k = find_ocg(ctx, desc, g);
+		doc->ocg->ocgs[k].state = 0;
 	}
 }
 
