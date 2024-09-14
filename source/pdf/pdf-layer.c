@@ -95,6 +95,64 @@ struct pdf_ocg_descriptor
 	pdf_ocg_ui *ui;
 };
 
+typedef struct ve_stack
+{
+	pdf_obj **items;
+	int count;
+	int capacity;
+} ve_stack;
+
+static int pdf_is_ve_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve, pdf_cycle_list *cycle_up, ve_stack *stack);
+
+static ve_stack *ve_new_stack(fz_context *ctx, int initial_capacity)
+{
+	ve_stack* tbr = fz_malloc_struct(ctx, ve_stack);
+	tbr->count = 0;
+	tbr->items = fz_malloc_array(ctx, initial_capacity, pdf_obj*);
+	tbr->capacity = initial_capacity;
+	return tbr;
+}
+
+static void ve_stack_pop(ve_stack *stack)
+{
+	if (stack->count > 0)
+	{
+		stack->count--;
+	}
+}
+
+static void ve_stack_push(fz_context *ctx, ve_stack *stack, pdf_obj *item)
+{
+	if (stack->count >= stack->capacity)
+	{
+		int newCapacity = stack->capacity * 2;
+		stack->items = fz_realloc(ctx, stack->items, sizeof(pdf_obj*) * newCapacity);
+		stack->capacity = newCapacity;
+	}
+
+	stack->items[stack->count] = item;
+	stack->count++;
+}
+
+static int ve_stack_contains(fz_context *ctx, pdf_obj *item, ve_stack *stack)
+{
+	for (int i = 0; i < stack->count; i++)
+	{
+		if (!pdf_objcmp(ctx, item, stack->items[i]))
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void ve_stack_free(fz_context *ctx, ve_stack *stack)
+{
+	fz_free(ctx, stack->items);
+	fz_free(ctx, stack);
+}
+
 int
 pdf_count_layer_configs(fz_context *ctx, pdf_document *doc)
 {
@@ -705,7 +763,7 @@ ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, const char *name)
 }
 
 static int
-pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg, pdf_cycle_list *cycle_up)
+pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg, pdf_cycle_list *cycle_up, ve_stack* stack)
 {
 	pdf_cycle_list cycle;
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
@@ -821,9 +879,24 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 		int combine, on = 0;
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
-		if (pdf_is_array(ctx, obj)) {
-			/* FIXME: Calculate visibility from array */
-			return 0;
+		if (pdf_is_array(ctx, obj))
+		{
+			int tbr, owns_stack = 0;
+			if (!stack)
+			{
+				stack = ve_new_stack(ctx, 4);
+				owns_stack = 1;
+			}
+
+			ve_stack_push(ctx, stack, ocg);
+			tbr = pdf_is_ve_hidden(ctx, doc, rdb, usage, obj, cycle_up, stack);
+
+			if (owns_stack)
+				ve_stack_free(ctx, stack);
+			else
+				ve_stack_pop(stack);
+
+			return tbr;
 		}
 		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
@@ -852,7 +925,7 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 			len = pdf_array_len(ctx, obj);
 			for (i = 0; i < len; i++)
 			{
-				int hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, pdf_array_get(ctx, obj, i), &cycle);
+				int hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, pdf_array_get(ctx, obj, i), &cycle, stack);
 				if (combine == 0 && !hidden)
 				{
 					on = 1;
@@ -877,7 +950,7 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 		}
 		else
 		{
-			on = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, obj, &cycle);
+			on = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, obj, &cycle, stack);
 			if ((combine & 1) == 0)
 				on = !on;
 		}
@@ -888,10 +961,133 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 	return 0;
 }
 
+static int pdf_is_ve_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve, pdf_cycle_list *cycle_up, ve_stack* stack)
+{
+	pdf_obj *op, *item;
+	int len;
+	len = pdf_array_len(ctx, ve);
+
+	if (len < 2)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+	op = pdf_array_get(ctx, ve, 0);
+
+	if (pdf_name_eq(ctx, op, PDF_NAME(Not)))
+	{
+		int tbr;
+
+		if (len != 2)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		item = pdf_array_get(ctx, ve, 1);
+
+		if (ve_stack_contains(ctx, item, stack))
+		{
+			fz_warn(ctx, "Circular reference in visibility expression!");
+			return 0;
+		}
+
+		ve_stack_push(ctx, stack, item);
+
+		if (!pdf_is_array(ctx, item))
+		{
+			tbr = !pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+		}
+		else
+		{
+			tbr = !pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+		}
+
+		ve_stack_pop(stack);
+
+		return tbr;
+	}
+	else if (pdf_name_eq(ctx, op, PDF_NAME(And)))
+	{
+		int hidden, visible = 1;
+
+		if (len < 3)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		for (int i = 1; i < len; i++)
+		{
+			item = pdf_array_get(ctx, ve, i);
+
+			if (ve_stack_contains(ctx, item, stack))
+			{
+				fz_warn(ctx, "Circular reference in visibility expression!");
+				return 0;
+			}
+
+			ve_stack_push(ctx, stack, item);
+
+			if (!pdf_is_array(ctx, item))
+			{
+				hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+			else
+			{
+				hidden = pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+
+			ve_stack_pop(stack);
+
+			if (hidden)
+			{
+				visible = 0;
+				break;
+			}
+		}
+		return !visible;
+	}
+	else if (pdf_name_eq(ctx, op, PDF_NAME(Or)))
+	{
+		int hidden, visible = 0;
+
+		if (len < 3)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		for (int i = 1; i < len; i++)
+		{
+			item = pdf_array_get(ctx, ve, i);
+
+			if (ve_stack_contains(ctx, item, stack))
+			{
+				fz_warn(ctx, "Circular reference in visibility expression!");
+				return 0;
+			}
+
+			ve_stack_push(ctx, stack, item);
+
+			if (!pdf_is_array(ctx, item))
+			{
+				hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+			else
+			{
+				hidden = pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+
+			ve_stack_pop(stack);
+
+			if (!hidden)
+			{
+				visible = 1;
+				break;
+			}
+		}
+		return !visible;
+	}
+	else
+	{
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+	}
+}
+
 int
 pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg)
 {
-	return pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL);
+	return pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL, NULL);
 }
 
 pdf_ocg_descriptor *
