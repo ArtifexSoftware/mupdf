@@ -766,7 +766,60 @@ static void do_annotate_date(void)
 		ui_label("Date: %s", s);
 }
 
-static void do_annotate_contents(void)
+static const char *intent_names[] = {
+	"Default", // all
+	"FreeTextCallout", // freetext
+	"FreeTextTypewriter", // freetext
+	"LineArrow", // line
+	"LineDimension", // line
+	"PolyLineDimension", // polyline
+	"PolygonCloud", // polygon
+	"PolygonDimension", // polygon
+	"StampImage", // stamp
+	"StampSnapshot", // stamp
+};
+
+static enum pdf_intent do_annotate_intent(void)
+{
+	enum pdf_intent intent;
+	int choice;
+
+	if (!pdf_annot_has_intent(ctx, ui.selected_annot))
+		return PDF_ANNOT_IT_DEFAULT;
+
+	intent = pdf_annot_intent(ctx, ui.selected_annot);
+	choice = label_select("Intent", "IT", intent_names[intent], intent_names, nelem(intent_names));
+	if (choice != -1)
+	{
+		trace_action("annot.setIntent(%d);\n", choice);
+		pdf_set_annot_intent(ctx, ui.selected_annot, choice);
+		intent = choice;
+
+		// Changed intent!
+		if (intent == PDF_ANNOT_IT_FREETEXT_CALLOUT)
+		{
+			pdf_set_annot_callout_point(ctx, ui.selected_annot, fz_make_point(0, 0));
+			pdf_set_annot_callout_style(ctx, ui.selected_annot, PDF_ANNOT_LE_OPEN_ARROW);
+		}
+	}
+
+	// Press 'c' to move Callout line to current cursor position.
+	if (intent == PDF_ANNOT_IT_FREETEXT_CALLOUT)
+	{
+		if (!ui.focus && ui.key && ui.plain)
+		{
+			if (ui.key == 'c')
+			{
+				fz_point p = fz_transform_point(fz_make_point(ui.x, ui.y), view_page_inv_ctm);
+				pdf_set_annot_callout_point(ctx, ui.selected_annot, p);
+			}
+		}
+	}
+
+	return intent;
+}
+
+static int do_annotate_contents(void)
 {
 	static int is_same_edit_operation = 1;
 	static pdf_annot *last_annot = NULL;
@@ -801,6 +854,8 @@ static void do_annotate_contents(void)
 			is_same_edit_operation = 1;
 		}
 	}
+
+	return input.text[0] != 0;
 }
 
 static const char *file_attachment_icons[] = { "Graph", "Paperclip", "PushPin", "Tag" };
@@ -1042,6 +1097,7 @@ void do_annotate_panel(void)
 {
 	static struct list annot_list;
 	enum pdf_annot_type subtype;
+	enum pdf_intent intent;
 	pdf_annot *annot;
 	int idx;
 	int n;
@@ -1090,7 +1146,7 @@ void do_annotate_panel(void)
 
 	if (ui.selected_annot && (subtype = pdf_annot_type(ctx, ui.selected_annot)) != PDF_ANNOT_WIDGET)
 	{
-		int n, choice;
+		int n, choice, has_content;
 		pdf_obj *obj;
 
 		/* common annotation properties */
@@ -1104,8 +1160,24 @@ void do_annotate_panel(void)
 		if (obj)
 			ui_label("Popup: %d 0 R", pdf_to_num(ctx, obj));
 
-		do_annotate_contents();
+		has_content = do_annotate_contents();
 
+		intent = do_annotate_intent();
+		if (subtype == PDF_ANNOT_FREE_TEXT && intent == PDF_ANNOT_IT_FREETEXT_CALLOUT)
+		{
+			enum pdf_line_ending s;
+			int s_choice;
+
+			s = pdf_annot_callout_style(ctx, ui.selected_annot);
+
+			s_choice = label_select("Callout", "CL", line_ending_styles[s], line_ending_styles, nelem(line_ending_styles));
+			if (s_choice != -1)
+			{
+				s = s_choice;
+				trace_action("annot.setCalloutStyle(%q);\n", line_ending_styles[s]);
+				pdf_set_annot_callout_style(ctx, ui.selected_annot, s);
+			}
+		}
 
 		if (subtype == PDF_ANNOT_FREE_TEXT)
 		{
@@ -1192,6 +1264,46 @@ void do_annotate_panel(void)
 				if (e_choice != -1) e = e_choice;
 				trace_action("annot.setLineEndingStyles(%q, %q);\n", line_ending_styles[s], line_ending_styles[e]);
 				pdf_set_annot_line_ending_styles(ctx, ui.selected_annot, s, e);
+			}
+		}
+
+		if (subtype == PDF_ANNOT_LINE)
+		{
+			static int ll, lle, llo;
+			static int cap;
+
+			ll = pdf_annot_line_leader(ctx, ui.selected_annot);
+			if (label_slider("Leader", &ll, -20, 20))
+			{
+				pdf_set_annot_line_leader(ctx, ui.selected_annot, ll);
+				trace_action("annot.setLineLeader(%d);\n", ll);
+			}
+
+			if (ll)
+			{
+				lle = pdf_annot_line_leader_extension(ctx, ui.selected_annot);
+				if (label_slider("  LLE", &lle, 0, 20))
+				{
+					pdf_set_annot_line_leader_extension(ctx, ui.selected_annot, lle);
+					trace_action("annot.setLineLeaderExtension(%d);\n", ll);
+				}
+
+				llo = pdf_annot_line_leader_offset(ctx, ui.selected_annot);
+				if (label_slider("  LLO", &llo, 0, 20))
+				{
+					pdf_set_annot_line_leader_offset(ctx, ui.selected_annot, llo);
+					trace_action("annot.setLineLeaderOffset(%d);\n", ll);
+				}
+			}
+
+			if (has_content)
+			{
+				cap = pdf_annot_line_caption(ctx, ui.selected_annot);
+				if (ui_checkbox("Caption", &cap))
+				{
+					pdf_set_annot_line_caption(ctx, ui.selected_annot, cap);
+					trace_action("annot.setLineCaption(%s);\n", cap ? "true" : "false");
+				}
 			}
 		}
 
