@@ -2387,12 +2387,9 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 			if (obj)
 				pdf_dict_put(ctx, dict, PDF_NAME(ID), obj);
 
-			if (opts->do_incremental)
-			{
-				obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
-				if (obj)
-					pdf_dict_put(ctx, dict, PDF_NAME(Encrypt), obj);
-			}
+			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
+			if (obj)
+				pdf_dict_put(ctx, dict, PDF_NAME(Encrypt), obj);
 		}
 
 		pdf_dict_put_int(ctx, dict, PDF_NAME(Size), to);
