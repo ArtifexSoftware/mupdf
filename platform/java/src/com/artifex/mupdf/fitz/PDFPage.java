@@ -115,6 +115,9 @@ public class PDFPage extends Page
 		setPageBox(Page.CROP_BOX, rect);
 	}
 
+	// compute the bounding box of all objects on a page.
+	public native Rect getBBox();
+
 	public native int countAssociatedFiles();
 	public native PDFObject associatedFile(int idx);
 
