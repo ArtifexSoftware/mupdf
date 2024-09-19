@@ -3658,7 +3658,9 @@ objstm_gather(fz_context *ctx, pdf_xref_entry *x, int i, pdf_document *doc, void
 	pdf_cache_object(ctx, doc, i);
 
 	if (x->type != 'n' || x->stm_buf != NULL || x->stm_ofs != 0 || x->gen != 0)
-		return; /* Ineligible for using an objstm */
+		return; /* Stream objects, objects with generation number != 0 cannot be put in objstms */
+	if (i == data->opts->crypt_object_number)
+		return; /* Encryption dictionaries can also not be put in objstms */
 
 	/* FIXME: Can we do a pass through to check for such objects more exactly? */
 	if (pdf_is_int(ctx, x->obj))
