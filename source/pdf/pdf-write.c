@@ -2278,8 +2278,12 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 				if (obj)
 					pdf_dict_put(ctx, trailer, PDF_NAME(ID), obj);
 
+				/* The encryption dictionary is kept in the writer state to handle
+				   the encryption dictionary object being renumbered during repair.*/
 				if (opts->crypt_obj)
 				{
+					/* If the encryption dictionary used to be an indirect reference from the trailer,
+					   store it the same way in the trailer in the saved file. */
 					if (pdf_is_indirect(ctx, opts->crypt_obj))
 						pdf_dict_put_drop(ctx, trailer, PDF_NAME(Encrypt), pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0));
 					else
@@ -2387,9 +2391,17 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 			if (obj)
 				pdf_dict_put(ctx, dict, PDF_NAME(ID), obj);
 
-			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
-			if (obj)
-				pdf_dict_put(ctx, dict, PDF_NAME(Encrypt), obj);
+			/* The encryption dictionary is kept in the writer state to handle
+			   the encryption dictionary object being renumbered during repair.*/
+			if (opts->crypt_obj)
+			{
+				/* If the encryption dictionary used to be an indirect reference from the trailer,
+				   store it the same way in the xref stream in the saved file. */
+				if (pdf_is_indirect(ctx, opts->crypt_obj))
+					pdf_dict_put_drop(ctx, dict, PDF_NAME(Encrypt), pdf_new_indirect(ctx, doc, opts->crypt_object_number, 0));
+				else
+					pdf_dict_put(ctx, dict, PDF_NAME(Encrypt), opts->crypt_obj);
+			}
 		}
 
 		pdf_dict_put_int(ctx, dict, PDF_NAME(Size), to);
