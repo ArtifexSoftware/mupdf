@@ -57,6 +57,9 @@ public class Page
 		return getBoundsNative(Page.CROP_BOX);
 	}
 
+	// compute the bounding box of all objects on a page.
+	public native Rect getBBox();
+
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageAnnots(Device dev, Matrix ctm, Cookie cookie);

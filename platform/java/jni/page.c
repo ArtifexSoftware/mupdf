@@ -73,6 +73,34 @@ FUN(Page_getBoundsNative)(JNIEnv *env, jobject self, jint box)
 	return to_Rect_safe(ctx, env, rect);
 }
 
+JNIEXPORT jobject JNICALL
+FUN(Page_getBBox)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_rect bbox = fz_empty_rect;
+	fz_device *dev = NULL;
+
+	if (!ctx || !page) return NULL;
+
+	fz_try(ctx)
+	{
+		dev = fz_new_bbox_device(ctx, &bbox);
+		fz_run_page(ctx, page, dev, fz_identity, NULL);
+		fz_close_device(ctx, dev);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return to_Rect_safe(ctx, env, bbox);
+}
+
 JNIEXPORT void JNICALL
 FUN(Page_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
 {
