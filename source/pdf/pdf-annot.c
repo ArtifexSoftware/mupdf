@@ -2314,6 +2314,7 @@ static pdf_obj *interior_color_subtypes[] = {
 	PDF_NAME(Line),
 	PDF_NAME(PolyLine),
 	PDF_NAME(Polygon),
+	PDF_NAME(Redact),
 	PDF_NAME(Square),
 	NULL,
 };
