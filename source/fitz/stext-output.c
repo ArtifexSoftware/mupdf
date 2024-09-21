@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2024 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -545,8 +545,12 @@ run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			fz_print_stext_block_as_xhtml(ctx, out, block);
 			break;
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\" raw=\"%s\" std=\"%s\">\n",
-					block->u.s.index, block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, "<struct idx=\"%d\"",
+					block->u.s.index);
+			if (block->u.s.down)
+				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
+						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, ">\n");
 			if (block->u.s.down)
 				run_to_xhtml(ctx, block->u.s.down->first_block, out);
 			fz_write_printf(ctx, out, "</struct>\n");
@@ -665,8 +669,11 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			break;
 
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\" raw=\"%s\" std=\"%s\">\n",
-					block->u.s.index, block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, "<struct idx=\"%d\"", block->u.s.index);
+			if (block->u.s.down)
+				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
+						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, ">\n");
 			if (block->u.s.down)
 				as_xml(ctx, block->u.s.down->first_block, out);
 			fz_write_printf(ctx, out, "</struct>\n");
