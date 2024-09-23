@@ -121,6 +121,7 @@ typedef struct
 	int lastbidi;
 	int flags;
 	int color;
+	int last_was_fake_bold;
 	const fz_text *lasttext;
 	fz_stext_options opts;
 
@@ -352,6 +353,8 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 	ch->size = size;
 	ch->font = fz_keep_font(ctx, font);
 	ch->flags = flags | (synthetic ? FZ_STEXT_SYNTHETIC : 0);
+	if (font->flags.is_bold)
+		ch->flags |= FZ_STEXT_BOLD;
 
 	if (line->wmode == 0)
 	{
@@ -472,6 +475,97 @@ static int may_add_space(int lastchar)
 	return (lastchar != ' ' && (lastchar < 0x700 || (lastchar >= 0x2000 && lastchar <= 0x20CF)));
 }
 
+#define FAKEBOLD_THRESHOLD_RECIP 10
+
+static int
+close(float a, float b, float size)
+{
+	a -= b;
+	if (a < 0)
+		a = -a;
+
+	return FAKEBOLD_THRESHOLD_RECIP * a < size;
+}
+
+static int
+font_equiv(fz_context *ctx, fz_font *f, fz_font *g)
+{
+	unsigned char fdigest[16];
+	unsigned char gdigest[16];
+
+	if (f == g)
+		return 1;
+
+	if (strcmp(f->name, g->name) != 0)
+		return 0;
+
+	fz_font_digest(ctx, f, fdigest);
+	fz_font_digest(ctx, g, gdigest);
+
+	return (memcmp(fdigest, gdigest, 16) == 0);
+}
+
+static int
+check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c, fz_point p, float size, int flags)
+{
+	fz_stext_line *line;
+	fz_stext_char *ch;
+
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down != NULL && check_for_fake_bold(ctx, block->u.s.down->first_block, font, c, p, size, flags))
+				return 1;
+		}
+		else if (block->type == FZ_STEXT_BLOCK_TEXT)
+		{
+			for (line = block->u.t.first_line; line != NULL; line = line->next)
+			{
+				fz_stext_char *pr = NULL;
+				for (ch = line->first_char; ch != NULL; ch = ch->next)
+				{
+					/* Not perfect, but it'll do! */
+					if (ch->c == c && close(ch->origin.x, p.x, size) && close(ch->origin.y, p.y, size) && font_equiv(ctx, ch->font, font))
+					{
+						/* If we were filled before, and we are stroking now... */
+						if ((ch->flags & (FZ_STEXT_FILLED | FZ_STEXT_STROKED)) == FZ_STEXT_FILLED &&
+							(flags & (FZ_STEXT_FILLED | FZ_STEXT_STROKED)) == FZ_STEXT_STROKED)
+						{
+							/* Update this to be filled + stroked, but don't specifically mark it as fake bold. */
+							ch->flags |= flags;
+							return 1;
+						}
+						/* Overlaying spaces is tricksy. How can that count as boldening when it doesn't mark? We only accept these
+						 * as boldening if either the char before, or the char after were also boldened. */
+						ch->flags |= flags;
+
+						if (c == ' ')
+						{
+							if ((pr && (pr->flags & FZ_STEXT_BOLD) != 0) ||
+								(ch->next && (ch->next->flags & FZ_STEXT_BOLD) != 0))
+							{
+								/* OK, we can be bold. */
+								ch->flags |= FZ_STEXT_BOLD;
+								return 1;
+							}
+							/* Ignore this and keep going */
+						}
+						else
+						{
+							ch->flags |= FZ_STEXT_BOLD;
+							return 1;
+						}
+					}
+					pr = ch;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 static void
 fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int bidi, int force_new_line, int flags)
 {
@@ -537,6 +631,21 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		q.y = trm.f;
 	}
 
+	if ((dev->opts.flags & FZ_STEXT_COLLECT_STYLES) != 0)
+	{
+		if (glyph == -1)
+		{
+			if (dev->last_was_fake_bold)
+				goto move_pen_and_exit;
+		}
+		else if (check_for_fake_bold(ctx, page->first_block, font, c, p, size, flags))
+		{
+			dev->last_was_fake_bold = 1;
+			goto move_pen_and_exit;
+		}
+		dev->last_was_fake_bold = 0;
+	}
+
 	/* Find current position to enter new text. */
 	cur_block = page->last_struct ? page->last_struct->last_block : page->last_block;
 	if (cur_block && cur_block->type != FZ_STEXT_BLOCK_TEXT)
@@ -562,6 +671,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	else
 	{
 		/* Detect fake bold where text is printed twice in the same place. */
+		/* Largely supplanted by the check_for_fake_bold mechanism above,
+		 * but we leave this in for backward compatibility as it's cheap,
+		 * and works even when FZ_STEXT_COLLECT_STYLES is not set. */
 		delta.x = fabsf(q.x - dev->pen.x);
 		delta.y = fabsf(q.y - dev->pen.y);
 		if (delta.x < FLT_EPSILON && delta.y < FLT_EPSILON && c == dev->lastchar)
@@ -716,6 +828,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &p, &q, bidi, dev->color, 0, flags);
 
+move_pen_and_exit:
 	dev->lastchar = c;
 	dev->lastbidi = bidi;
 	dev->lag_pen = p;
@@ -1095,7 +1208,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
-	if (text == tdev->lasttext)
+	if (text == tdev->lasttext && (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES) == 0)
 		return;
 	tdev->color = hexrgba_from_color(ctx, colorspace, color, alpha);
 	tdev->new_obj = 1;
@@ -1111,7 +1224,7 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
-	if (text == tdev->lasttext)
+	if (text == tdev->lasttext && (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES) == 0)
 		return;
 	tdev->color = hexrgba_from_color(ctx, colorspace, color, alpha);
 	tdev->new_obj = 1;
@@ -1126,7 +1239,7 @@ fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
-	if (text == tdev->lasttext)
+	if (text == tdev->lasttext && (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES) == 0)
 		return;
 	tdev->color = 0;
 	tdev->new_obj = 1;
@@ -1141,7 +1254,7 @@ fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, 
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
-	if (text == tdev->lasttext)
+	if (text == tdev->lasttext && (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES) == 0)
 		return;
 	tdev->color = 0;
 	tdev->new_obj = 1;
@@ -1156,7 +1269,7 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_ma
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_text_span *span;
-	if (text == tdev->lasttext)
+	if (text == tdev->lasttext && (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES) == 0)
 		return;
 	tdev->color = 0;
 	tdev->new_obj = 1;
@@ -1457,6 +1570,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_SEGMENT;
 	if (fz_has_option(ctx, string, "paragraph-break", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_PARAGRAPH_BREAK;
+	if (fz_has_option(ctx, string, "collect-styles", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_COLLECT_STYLES;
 
 	opts->flags |= FZ_STEXT_CLIP;
 	if (fz_has_option(ctx, string, "mediabox-clip", &val))
@@ -1851,7 +1966,8 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
-	check_for_strikeout(ctx, tdev, page, path, ctm);
+	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
+		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
 		add_vector(ctx, page, path_bounds, 0, cs, color, alpha, cp);
@@ -1869,7 +1985,8 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
-	check_for_strikeout(ctx, tdev, page, path, ctm);
+	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
+		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
 		add_vector(ctx, page, path_bounds, 1, cs, color, alpha, cp);
@@ -2066,9 +2183,6 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->super.begin_metatext = fz_stext_begin_metatext;
 	dev->super.end_metatext = fz_stext_end_metatext;
 
-	dev->super.fill_path = fz_stext_fill_path;
-	dev->super.stroke_path = fz_stext_stroke_path;
-
 	dev->super.fill_shade = fz_stext_fill_shade;
 	dev->super.fill_image = fz_stext_fill_image;
 	dev->super.fill_image_mask = fz_stext_fill_image_mask;
@@ -2081,6 +2195,11 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 			dev->super.begin_structure = fz_stext_begin_structure;
 			dev->super.end_structure = fz_stext_end_structure;
 		}
+		if (opts->flags & (FZ_STEXT_COLLECT_VECTORS | FZ_STEXT_COLLECT_STYLES))
+		{
+			dev->super.fill_path = fz_stext_fill_path;
+			dev->super.stroke_path = fz_stext_stroke_path;
+		}
 	}
 	dev->page = page;
 	dev->pen.x = 0;
@@ -2089,6 +2208,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->lastchar = ' ';
 	dev->lasttext = NULL;
 	dev->lastbidi = 0;
+	dev->last_was_fake_bold = 1;
 	if (opts)
 		dev->opts = *opts;
 
