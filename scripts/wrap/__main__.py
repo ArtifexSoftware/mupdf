@@ -2835,6 +2835,8 @@ def main2():
                         f'{build_dirs.dir_mupdf}/thirdparty/zlib/zlib.3.pdf',
                         testfile
                         )
+                # Create test file whose name contains unicode character, which
+                # scripts/mupdfwrap_test.cs will attempt to open.
                 testfile2 = testfile + b'\xf0\x90\x90\xb7'.decode() + '.pdf'
                 jlib.log(f'{testfile=}')
                 jlib.log(f'{testfile2=}')
