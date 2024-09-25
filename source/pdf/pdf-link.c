@@ -568,7 +568,7 @@ static void pdf_set_link_rect(fz_context *ctx, fz_link *link_, fz_rect rect)
 		return;
 
 	if (!link->page)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "link not bound to a page");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "link not bound to a page");
 
 	pdf_begin_operation(ctx, link->page->doc, "Set link rectangle");
 
@@ -592,7 +592,7 @@ static void pdf_set_link_uri(fz_context *ctx, fz_link *link_, const char *uri)
 		return;
 
 	if (!link->page)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "link not bound to a page");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "link not bound to a page");
 
 	pdf_begin_operation(ctx, link->page->doc, "Set link uri");
 
