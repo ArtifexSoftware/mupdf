@@ -323,7 +323,8 @@ struct fz_stext_char
 enum
 {
 	FZ_STEXT_STRIKEOUT = 1,
-	FZ_STEXT_UNDERLINE = 2
+	FZ_STEXT_UNDERLINE = 2,
+	FZ_STEXT_SYNTHETIC = 4
 };
 
 /**
