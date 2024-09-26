@@ -130,6 +130,10 @@ typedef struct fz_stext_struct fz_stext_struct;
 	change the returned stext structure from being a simple list of blocks
 	into effectively being a 'tree' that should be walked in depth-first
 	order.
+
+	FZ_STEXT_COLLECT_VECTORS: If this option is set, we will collect
+	details (currently just the bbox) of vector graphics. This is intended
+	to be of use in segmentation analysis.
 */
 enum
 {
@@ -142,7 +146,8 @@ enum
 	FZ_STEXT_MEDIABOX_CLIP = 64,
 	FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE = 128,
 	FZ_STEXT_COLLECT_STRUCTURE = 256,
-	FZ_STEXT_ACCURATE_BBOXES = 512
+	FZ_STEXT_ACCURATE_BBOXES = 512,
+	FZ_STEXT_COLLECT_VECTORS = 1024
 };
 
 /**
@@ -272,7 +277,8 @@ enum
 {
 	FZ_STEXT_BLOCK_TEXT = 0,
 	FZ_STEXT_BLOCK_IMAGE = 1,
-	FZ_STEXT_BLOCK_STRUCT = 2
+	FZ_STEXT_BLOCK_STRUCT = 2,
+	FZ_STEXT_BLOCK_VECTOR = 3
 };
 
 /**
@@ -287,6 +293,7 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
+		struct { fz_rect bbox; } v;
 	} u;
 	fz_stext_block *prev, *next;
 };

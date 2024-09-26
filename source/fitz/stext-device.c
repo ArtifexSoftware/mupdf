@@ -150,6 +150,7 @@ const char *fz_stext_options_usage =
 	"\tmediabox-clip=no: include characters outside mediabox\n"
 	"\tstructured=no: don't collect structure data\n"
 	"\taccurate-bboxes=no: calculate char bboxes for from the outlines\n"
+	"\tvectors=no: include vector bboxes in output\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -1402,6 +1403,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE;
 	if (fz_has_option(ctx, string, "accurate-bboxes", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_ACCURATE_BBOXES;
+	if (fz_has_option(ctx, string, "vectors", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_COLLECT_VECTORS;
 
 	opts->flags |= FZ_STEXT_MEDIABOX_CLIP;
 	if (fz_has_option(ctx, string, "mediabox-clip", &val) && fz_option_eq(val, "no"))
@@ -1684,6 +1687,15 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 }
 
 static void
+add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox)
+{
+	fz_stext_block *b = add_block_to_page(ctx, page);
+
+	b->type = FZ_STEXT_BLOCK_VECTOR;
+	b->u.v.bbox = bbox;
+}
+
+static void
 fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
@@ -1696,6 +1708,9 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
 	check_for_strikeout(ctx, tdev, page, path, ctm);
+
+	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
+		add_vector(ctx, page, path_bounds);
 }
 
 static void
@@ -1703,13 +1718,17 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_page *page = tdev->page;
+	fz_rect path_bounds = fz_bound_path(ctx, path, ss, ctm);
 	fz_rect *bounds = actualtext_bounds((fz_stext_device *)dev);
 
 	/* If we're in an actualttext, then update the bounds to include this content. */
 	if (bounds != NULL)
-		*bounds = fz_union_rect(*bounds, fz_bound_path(ctx, path, ss, ctm));
+		*bounds = fz_union_rect(*bounds, path_bounds);
 
 	check_for_strikeout(ctx, tdev, page, path, ctm);
+
+	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
+		add_vector(ctx, page, path_bounds);
 }
 
 static void
