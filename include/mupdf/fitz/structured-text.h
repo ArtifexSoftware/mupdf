@@ -93,6 +93,7 @@ typedef struct fz_stext_char fz_stext_char;
 typedef struct fz_stext_line fz_stext_line;
 typedef struct fz_stext_block fz_stext_block;
 typedef struct fz_stext_struct fz_stext_struct;
+typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 
 /**
 	FZ_STEXT_PRESERVE_LIGATURES: If this option is activated
@@ -282,7 +283,8 @@ enum
 	FZ_STEXT_BLOCK_TEXT = 0,
 	FZ_STEXT_BLOCK_IMAGE = 1,
 	FZ_STEXT_BLOCK_STRUCT = 2,
-	FZ_STEXT_BLOCK_VECTOR = 3
+	FZ_STEXT_BLOCK_VECTOR = 3,
+	FZ_STEXT_BLOCK_GRID = 4
 };
 
 /**
@@ -297,6 +299,7 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
+		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; } b;
 	} u;
 	fz_stext_block *prev, *next;
 };
@@ -398,6 +401,16 @@ struct fz_stext_struct
  *                       first_block|   |last_block
  *                                  :   :
  */
+
+ struct fz_stext_grid_positions
+ {
+	int len;
+	int max_uncertainty;
+	struct {
+		float pos;
+		int uncertainty;
+	} list[1];
+ };
 
 FZ_DATA extern const char *fz_stext_options_usage;
 

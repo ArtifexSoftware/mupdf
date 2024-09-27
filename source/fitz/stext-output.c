@@ -600,6 +600,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
+	int i;
 
 	while (block)
 	{
@@ -683,6 +684,22 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 		case FZ_STEXT_BLOCK_VECTOR:
 			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" />\n",
 					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
+			break;
+
+		case FZ_STEXT_BLOCK_GRID:
+			fz_write_printf(ctx, out, "<grid xpos=\"");
+			for (i = 0; i < block->u.b.xs->len; i++)
+				fz_write_printf(ctx, out, "%g ", block->u.b.xs->list[i].pos);
+			fz_write_printf(ctx, out, "\" xuncertainty=\"");
+			for (i = 0; i < block->u.b.xs->len; i++)
+				fz_write_printf(ctx, out, "%d ", block->u.b.xs->list[i].uncertainty);
+			fz_write_printf(ctx, out, "\" xmaxuncertainty=\"%d\" ypos=\"", block->u.b.xs->max_uncertainty);
+			for (i = 0; i < block->u.b.ys->len; i++)
+				fz_write_printf(ctx, out, "%g ", block->u.b.ys->list[i].pos);
+			fz_write_printf(ctx, out, "\" yuncertainty=\"");
+			for (i = 0; i < block->u.b.ys->len; i++)
+				fz_write_printf(ctx, out, "%d ", block->u.b.ys->list[i].uncertainty);
+			fz_write_printf(ctx, out, "\" ymaxuncertainty=\"%d\" />\n", block->u.b.ys->max_uncertainty);
 			break;
 		}
 		block = block->next;
