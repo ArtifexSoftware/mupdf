@@ -152,6 +152,11 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	for left-to-right, top-to-bottom paragraphs. Works best on a segmented
 	page.
 
+	FZ_STEXT_TABLE_HUNT: If this option is set, we will hunt for tables
+	within the stext. Details of the potential tables found will be
+	inserted into the stext for the caller to interpret. This will work
+	best on a segmented page.
+
 	FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE: If this option is set, then
 	in the event that we fail to find a unicode value for a given
 	character, we we instead return its CID in the unicode field. We
@@ -184,6 +189,7 @@ enum
 	FZ_STEXT_IGNORE_ACTUALTEXT = 2048,
 	FZ_STEXT_SEGMENT = 4096,
 	FZ_STEXT_PARAGRAPH_BREAK = 8192,
+	FZ_STEXT_TABLE_HUNT = 16384,
 	FZ_STEXT_COLLECT_STYLES = 32768,
 	FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE = 65536,
 
@@ -459,7 +465,10 @@ struct fz_stext_struct
 	int len;
 	int max_uncertainty;
 	struct {
+		int reinforcement;
 		float pos;
+		float min;
+		float max;
 		int uncertainty;
 	} list[1];
  };
@@ -609,6 +618,12 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page);
 	Attempt to break paragraphs at plausible places.
 */
 void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
+
+/**
+	Hunt for possible tables on a page, and update the stext with
+	information.
+*/
+void fz_table_hunt(fz_context *ctx, fz_stext_page *page);
 
 /**
 	Create a device to extract the text on a page.

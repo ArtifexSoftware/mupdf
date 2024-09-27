@@ -154,6 +154,7 @@ const char *fz_stext_options_usage =
 	"\taccurate-bboxes=no: calculate char bboxes for from the outlines\n"
 	"\tvectors=no: include vector bboxes in output\n"
 	"\tsegment=no: don't attempt to segment the page\n"
+	"\ttable-hunt: hunt for tables within a (segmented) page\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -1523,6 +1524,9 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	if (tdev->opts.flags & FZ_STEXT_SEGMENT)
 		fz_segment_stext_page(ctx, page);
 
+	if (tdev->opts.flags & FZ_STEXT_TABLE_HUNT)
+		fz_table_hunt(ctx, page);
+
 	if (tdev->opts.flags & FZ_STEXT_PARAGRAPH_BREAK)
 		fz_paragraph_break(ctx, page);
 }
@@ -1570,6 +1574,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_SEGMENT;
 	if (fz_has_option(ctx, string, "paragraph-break", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_PARAGRAPH_BREAK;
+	if (fz_has_option(ctx, string, "table-hunt", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_TABLE_HUNT;
 	if (fz_has_option(ctx, string, "collect-styles", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_COLLECT_STYLES;
 

@@ -683,7 +683,8 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			break;
 
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\"", block->u.s.index);
+			fz_write_printf(ctx, out, "<struct idx=\"%d\" bbox=\"%g %g %g %g\"", block->u.s.index,
+					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 			if (block->u.s.down)
 				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
 						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));

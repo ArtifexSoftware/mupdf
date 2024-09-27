@@ -146,13 +146,6 @@ push_if_intersect_suitable(rectlist_t *dst, const fz_rect *a, const fz_rect *b)
 	if (!fz_is_valid_rect(c))
 		return;
 
-	/* If the intersect is too narrow or too tall, ignore it.
-	* We don't care about inter character spaces, for example.
-	* Arbitrary 6 point threshold. */
-#define THRESHOLD 6
-	if (c.x0 + THRESHOLD >= c.x1 || c.y0+THRESHOLD >= c.y1)
-		return;
-
 	rectlist_append(dst, &c);
 }
 
@@ -245,6 +238,21 @@ static int boxer_results(boxer_t *boxer, fz_rect **list)
 {
 	*list = boxer->list->list;
 	return boxer->list->len;
+}
+#endif
+
+/* Currently unused debugging routine */
+#if 0
+static void
+boxer_dump(fz_context *ctx, boxer_t *boxer)
+{
+	int i;
+
+	printf("bbox = %g %g %g %g\n", boxer->mediabox.x0, boxer->mediabox.y0, boxer->mediabox.x1, boxer->mediabox.y1);
+	for (i = 0; i < boxer->list->len; i++)
+	{
+		printf("%d %g %g %g %g\n", i, boxer->list->list[i].x0, boxer->list->list[i].y0, boxer->list->list[i].x1, boxer->list->list[i].y1);
+	}
 }
 #endif
 
@@ -511,6 +519,9 @@ do_dump_stext(fz_stext_block *block, int depth)
 				break;
 			case FZ_STEXT_BLOCK_IMAGE:
 				printf("IMAGE %p\n", block);
+				break;
+			case FZ_STEXT_BLOCK_VECTOR:
+				printf("VECTOR %p\n", block);
 				break;
 			case FZ_STEXT_BLOCK_STRUCT:
 				printf("STRUCT %p\n", block);
@@ -801,6 +812,46 @@ analyse_sub(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 	return ret;
 }
 
+static int
+line_isnt_all_spaces(fz_context *ctx, fz_stext_line *line)
+{
+	fz_stext_char *ch;
+	for (ch = line->first_char; ch != NULL; ch = ch->next)
+		if (ch->c != 32 && ch->c != 160)
+			return 1;
+	return 0;
+}
+
+static void
+feed_line(fz_context *ctx, boxer_t *boxer, fz_stext_line *line)
+{
+	fz_stext_char *ch;
+
+	for (ch = line->first_char; ch != NULL; ch = ch->next)
+	{
+		fz_rect r = fz_empty_rect;
+
+		if (ch->c == ' ')
+			continue;
+
+		do
+		{
+			fz_rect bbox = fz_rect_from_quad(ch->quad);
+			float margin = ch->size/2;
+			bbox.x0 -= margin;
+			bbox.y0 -= margin;
+			bbox.x1 += margin;
+			bbox.y1 += margin;
+			r = fz_union_rect(r, bbox);
+			ch = ch->next;
+		}
+		while (ch != NULL && ch->c != ' ');
+		boxer_feed(ctx, boxer, &r);
+		if (ch == NULL)
+			break;
+	}
+}
+
 int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 {
 	boxer_t *boxer;
@@ -829,7 +880,8 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 			{
 			case FZ_STEXT_BLOCK_TEXT:
 				for (line = block->u.t.first_line; line != NULL; line = line->next)
-					boxer_feed(ctx, boxer, &line->bbox);
+					if (line_isnt_all_spaces(ctx, line))
+						feed_line(ctx, boxer, line);
 				break;
 			case FZ_STEXT_BLOCK_VECTOR:
 				boxer_feed(ctx, boxer, &block->bbox);
