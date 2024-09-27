@@ -297,7 +297,6 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
-		struct { fz_rect bbox; } v;
 	} u;
 	fz_stext_block *prev, *next;
 };

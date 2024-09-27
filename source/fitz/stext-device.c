@@ -1696,7 +1696,7 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox)
 	fz_stext_block *b = add_block_to_page(ctx, page);
 
 	b->type = FZ_STEXT_BLOCK_VECTOR;
-	b->u.v.bbox = bbox;
+	b->bbox = bbox;
 }
 
 static void
