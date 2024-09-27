@@ -679,6 +679,11 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 				as_xml(ctx, block->u.s.down->first_block, out);
 			fz_write_printf(ctx, out, "</struct>\n");
 			break;
+
+		case FZ_STEXT_BLOCK_VECTOR:
+			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" />\n",
+					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
+			break;
 		}
 		block = block->next;
 	}
