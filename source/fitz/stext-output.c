@@ -607,8 +607,19 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 		switch (block->type)
 		{
 		case FZ_STEXT_BLOCK_TEXT:
-			fz_write_printf(ctx, out, "<block bbox=\"%g %g %g %g\">\n",
+			fz_write_printf(ctx, out, "<block bbox=\"%g %g %g %g\"",
 					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_UNKNOWN)
+				fz_write_printf(ctx, out, " justify=\"unknown\"");
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_LEFT)
+				fz_write_printf(ctx, out, " justify=\"left\"");
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_CENTRE)
+				fz_write_printf(ctx, out, " justify=\"centre\"");
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_RIGHT)
+				fz_write_printf(ctx, out, " justify=\"right\"");
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL)
+				fz_write_printf(ctx, out, " justify=\"full\"");
+			fz_write_printf(ctx, out, ">\n");
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
 				fz_font *font = NULL;

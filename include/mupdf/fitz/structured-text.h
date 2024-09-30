@@ -146,6 +146,11 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	FZ_STEXT_SEGMENT: If this option is set, we will attempt to segment
 	the page into different regions. This will deliberately not do anything
 	to pages with structure information present.
+
+	FZ_STEXT_PARAGRAPH_BREAK: If this option is set, we will break blocks
+	of text at what appear to be paragraph boundaries. This only works
+	for left-to-right, top-to-bottom paragraphs. Works best on a segmented
+	page.
 */
 enum
 {
@@ -162,6 +167,7 @@ enum
 	FZ_STEXT_COLLECT_VECTORS = 1024,
 	FZ_STEXT_IGNORE_ACTUALTEXT = 2048,
 	FZ_STEXT_SEGMENT = 4096,
+	FZ_STEXT_PARAGRAPH_BREAK = 8192,
 
 	/* An old, deprecated option. */
 	FZ_STEXT_MEDIABOX_CLIP = FZ_STEXT_CLIP
@@ -299,6 +305,15 @@ enum
 	FZ_STEXT_BLOCK_GRID = 4
 };
 
+enum
+{
+	FZ_STEXT_TEXT_JUSTIFY_UNKNOWN = 0,
+	FZ_STEXT_TEXT_JUSTIFY_LEFT = 1,
+	FZ_STEXT_TEXT_JUSTIFY_CENTRE = 2,
+	FZ_STEXT_TEXT_JUSTIFY_RIGHT = 3,
+	FZ_STEXT_TEXT_JUSTIFY_FULL = 4,
+};
+
 /**
 	A text block is a list of lines of text (typically a paragraph),
 	or an image.
@@ -308,7 +323,7 @@ struct fz_stext_block
 	int type;
 	fz_rect bbox;
 	union {
-		struct { fz_stext_line *first_line, *last_line; } t;
+		struct { fz_stext_line *first_line, *last_line; int flags;} t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
 		struct { uint8_t stroked; uint32_t argb; } v;
@@ -565,6 +580,11 @@ fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts
 	versions!
 */
 int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page);
+
+/**
+	Attempt to break paragraphs at plausible places.
+*/
+void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
 
 /**
 	Create a device to extract the text on a page.
