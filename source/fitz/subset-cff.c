@@ -128,6 +128,7 @@ typedef struct
 	uint32_t fdselect_offset;
 	uint32_t fdselect_len;
 	uint32_t fdarray_index_offset;
+	uint32_t charstring_type;
 
 	uint16_t unpacked_charset_len;
 	uint16_t unpacked_charset_max;
@@ -1766,6 +1767,9 @@ read_top_dict(fz_context *ctx, cff_t *cff, int idx)
 		case DICT_OP_Encoding:
 			cff->encoding_offset = dict_arg_int(ctx, &di, 0);
 			break;
+		case DICT_OP_CharstringType:
+			cff->charstring_type = 1;
+			break;
 		case DICT_OP_CharStrings:
 			cff->charstrings_index_offset = dict_arg_int(ctx, &di, 0);
 			break;
@@ -2105,15 +2109,21 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 
 		/* Next the Global subr index */
 		index_load(ctx, &cff.global_index, base, (uint32_t)len, cff.global_index_offset);
-		if (cff.global_index.count < 1240)
+
+		/* Default value, possibly updated by top dict entries */
+		cff.charstring_type = 2;
+
+		/* CFF files can contain several fonts, but we only want the first one. */
+		read_top_dict(ctx, &cff, 0);
+
+		if (cff.charstring_type == 1)
+			cff.gsubr_bias = 0;
+		else if (cff.global_index.count < 1240)
 			cff.gsubr_bias = 107;
 		else if (cff.global_index.count < 33900)
 			cff.gsubr_bias = 1131;
 		else
 			cff.gsubr_bias = 32768;
-
-		/* CFF files can contain several fonts, but we only want the first one. */
-		read_top_dict(ctx, &cff, 0);
 
 		if (cff.charstrings_index_offset == 0)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Missing charstrings table");
