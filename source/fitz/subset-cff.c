@@ -1556,13 +1556,13 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 		for (i = 1; i < n;)
 		{
 			uint16_t first;
-			uint32_t nleft;
+			int32_t nleft;
 			if (d + 3 >= cff->base + cff->len)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			first = get16(d);
 			nleft = d[2] + 1;
 			d += 3;
-			while (nleft--)
+			while (nleft-- && i < n)
 			{
 				cff->gid_to_cid[i++] = first++;
 			}
@@ -1573,13 +1573,13 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 		for (i = 1; i < n; i++)
 		{
 			uint16_t first;
-			uint32_t nleft;
+			int32_t nleft;
 			if (d + 4 >= cff->base + cff->len)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			first = get16(d);
 			nleft = get16(d+2);
 			d += 4;
-			while (nleft--)
+			while (nleft-- && i < n)
 			{
 				cff->gid_to_cid[i++] = first++;
 			}
