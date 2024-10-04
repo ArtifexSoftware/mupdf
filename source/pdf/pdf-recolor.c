@@ -163,6 +163,7 @@ void pdf_recolor_page(fz_context *ctx, pdf_document *doc, int pagenum, const pdf
 	case 4:
 		rd.outcs = fz_device_cmyk(ctx);
 		rd.outcs_obj = PDF_NAME(DeviceCMYK);
+		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported number of components");
 	}
