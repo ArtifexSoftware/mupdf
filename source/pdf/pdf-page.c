@@ -1258,6 +1258,47 @@ pdf_update_default_colorspaces(fz_context *ctx, fz_default_colorspaces *old_cs, 
 	return new_cs;
 }
 
+void pdf_nuke_page(fz_context *ctx, pdf_page *page)
+{
+	pdf_nuke_links(ctx, page);
+	pdf_nuke_annots(ctx, page);
+	pdf_drop_obj(ctx, page->obj);
+	page->obj = NULL;
+}
+
+void pdf_sync_page(fz_context *ctx, pdf_page *page)
+{
+	pdf_sync_links(ctx, page);
+	pdf_sync_annots(ctx, page);
+}
+
+void pdf_sync_open_pages(fz_context *ctx, pdf_document *doc)
+{
+	fz_page *page, *next;
+	pdf_page *ppage;
+	int number;
+
+	for (page = doc->super.open; page != NULL; page = next)
+	{
+		next = page->next;
+		ppage = (pdf_page*)page;
+		number = pdf_lookup_page_number(ctx, doc, ppage->obj);
+		if (number < 0)
+		{
+			pdf_nuke_page(ctx, ppage);
+			if (next)
+				next->prev = page->prev;
+			if (page->prev)
+				*page->prev = page->next;
+		}
+		else
+		{
+			pdf_sync_page(ctx, ppage);
+			page->number = number;
+		}
+	}
+}
+
 pdf_page *
 pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 {
@@ -1309,7 +1350,7 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 			fz_matrix page_ctm;
 			pdf_page_transform(ctx, page, &page_cropbox, &page_ctm);
 			page->links = pdf_load_link_annots(ctx, doc, page, obj, number, page_ctm);
-			pdf_load_annots(ctx, page, obj);
+			pdf_load_annots(ctx, page);
 		}
 	}
 	fz_catch(ctx)
@@ -1419,33 +1460,11 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 	fz_catch(ctx)
 	{
 		pdf_abandon_operation(ctx, doc);
+		pdf_sync_open_pages(ctx, doc);
 		fz_rethrow(ctx);
 	}
 
-	/* Adjust the fz layer of cached pages */
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	{
-		fz_page *page, *next;
-
-		for (page = doc->super.open; page != NULL; page = next)
-		{
-			next = page->next;
-			if (page->number == at)
-			{
-				/* We have just 'removed' a page that is in the 'open' list
-				 * (i.e. that someone is holding a reference to). We need
-				 * to remove it so that no one else can load it now its gone.
-				 */
-				if (next)
-					next->prev = page->prev;
-				if (page->prev)
-					*page->prev = page->next;
-			}
-			else if (page->number >= at)
-				page->number--;
-		}
-	}
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	pdf_sync_open_pages(ctx, doc);
 }
 
 void
@@ -1565,21 +1584,10 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 	fz_catch(ctx)
 	{
 		pdf_abandon_operation(ctx, doc);
+		pdf_sync_open_pages(ctx, doc);
 		fz_rethrow(ctx);
 	}
-
-	/* Adjust the fz layer of cached pages */
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	{
-		fz_page *page;
-
-		for (page = doc->super.open; page != NULL; page = page->next)
-		{
-			if (page->number >= at)
-				page->number++;
-		}
-	}
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	pdf_sync_open_pages(ctx, doc);
 }
 
 /*

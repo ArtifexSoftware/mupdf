@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2024 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -545,8 +545,12 @@ run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			fz_print_stext_block_as_xhtml(ctx, out, block);
 			break;
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\" raw=\"%s\" std=\"%s\">\n",
-					block->u.s.index, block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, "<struct idx=\"%d\"",
+					block->u.s.index);
+			if (block->u.s.down)
+				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
+						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, ">\n");
 			if (block->u.s.down)
 				run_to_xhtml(ctx, block->u.s.down->first_block, out);
 			fz_write_printf(ctx, out, "</struct>\n");
@@ -626,14 +630,15 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 						name = font_full_name(ctx, font);
 						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", name, size);
 					}
-					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" c=\"",
+					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" flags=\"%d\" c=\"",
 							ch->quad.ul.x, ch->quad.ul.y,
 							ch->quad.ur.x, ch->quad.ur.y,
 							ch->quad.ll.x, ch->quad.ll.y,
 							ch->quad.lr.x, ch->quad.lr.y,
 							ch->origin.x, ch->origin.y,
 							ch->bidi,
-							ch->color);
+							ch->color,
+							ch->flags);
 					switch (ch->c)
 					{
 					case '<': fz_write_string(ctx, out, "&lt;"); break;
@@ -665,11 +670,19 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			break;
 
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\" raw=\"%s\" std=\"%s\">\n",
-					block->u.s.index, block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, "<struct idx=\"%d\"", block->u.s.index);
+			if (block->u.s.down)
+				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
+						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
+			fz_write_printf(ctx, out, ">\n");
 			if (block->u.s.down)
 				as_xml(ctx, block->u.s.down->first_block, out);
 			fz_write_printf(ctx, out, "</struct>\n");
+			break;
+
+		case FZ_STEXT_BLOCK_VECTOR:
+			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" />\n",
+					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 			break;
 		}
 		block = block->next;
@@ -801,8 +814,8 @@ fz_print_stext_page_as_json(fz_context *ctx, fz_output *out, fz_stext_page *page
 
 /* Plain text */
 
-void
-fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page)
+static void
+do_as_text(fz_context *ctx, fz_output *out, fz_stext_block *first_block)
 {
 	fz_stext_block *block;
 	fz_stext_line *line;
@@ -810,10 +823,11 @@ fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page
 	char utf[10];
 	int i, n;
 
-	for (block = page->first_block; block; block = block->next)
+	for (block = first_block; block; block = block->next)
 	{
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
+		switch (block->type)
 		{
+		case FZ_STEXT_BLOCK_TEXT:
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
 				for (ch = line->first_char; ch; ch = ch->next)
@@ -825,8 +839,19 @@ fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page
 				fz_write_string(ctx, out, "\n");
 			}
 			fz_write_string(ctx, out, "\n");
+			break;
+		case FZ_STEXT_BLOCK_STRUCT:
+			if (block->u.s.down != NULL)
+				do_as_text(ctx, out, block->u.s.down->first_block);
+			break;
 		}
 	}
+}
+
+void
+fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page)
+{
+	do_as_text(ctx, out, page->first_block);
 }
 
 /* Text output writer */
