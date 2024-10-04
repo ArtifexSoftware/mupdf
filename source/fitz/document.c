@@ -897,9 +897,11 @@ static void
 fz_reap_dead_pages(fz_context *ctx, fz_document *doc)
 {
 	fz_page *page;
+	fz_page *next_page;
 
-	for (page = doc->open; page; page = page->next)
+	for (page = doc->open; page; page = next_page)
 	{
+		next_page = page->next;
 		if (!page->doc)
 		{
 			if (page->next != NULL)
@@ -1082,12 +1084,12 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 		if (page->drop_page)
 			page->drop_page(ctx, page);
 
+		fz_drop_document(ctx, page->doc);
+
 		// Mark the page as dead so we can reap the struct allocation later.
 		page->doc = NULL;
 		page->chapter = -1;
 		page->number = -1;
-
-		fz_drop_document(ctx, page->doc);
 	}
 }
 
