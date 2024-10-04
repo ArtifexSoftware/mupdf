@@ -909,6 +909,8 @@ fz_reap_dead_pages(fz_context *ctx, fz_document *doc)
 			if (page->prev != NULL)
 				*page->prev = page->next;
 			fz_free(ctx, page);
+			if (page == doc->open)
+				doc->open = next_page;
 		}
 	}
 }
