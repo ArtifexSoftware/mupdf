@@ -1083,15 +1083,17 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 {
 	if (fz_drop_imp(ctx, page, &page->refs))
 	{
+		fz_document *doc = page->doc;
+
 		if (page->drop_page)
 			page->drop_page(ctx, page);
-
-		fz_drop_document(ctx, page->doc);
 
 		// Mark the page as dead so we can reap the struct allocation later.
 		page->doc = NULL;
 		page->chapter = -1;
 		page->number = -1;
+
+		fz_drop_document(ctx, doc);
 	}
 }
 
