@@ -97,7 +97,7 @@ typedef struct
 	size_t len;
 
 	int symbolic;
-	int cidfont;
+	int is_cidfont;
 
 	uint8_t major;
 	uint8_t minor;
@@ -1761,6 +1761,9 @@ read_top_dict(fz_context *ctx, cff_t *cff, int idx)
 	{
 		switch (k)
 		{
+		case DICT_OP_ROS:
+			cff->is_cidfont = 1;
+			break;
 		case DICT_OP_charset:
 			cff->charset_offset = dict_arg_int(ctx, &di, 0);
 			break;
@@ -2058,7 +2061,7 @@ cid_to_gid(fz_context *ctx, cff_t *cff, uint16_t cid)
 }
 
 fz_buffer *
-fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int cidfont)
+fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int is_pdf_cidfont)
 {
 	cff_t cff = { 0 };
 	fz_buffer *newbuf = NULL;
@@ -2082,7 +2085,6 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		cff.len = len;
 
 		cff.symbolic = symbolic;
-		cff.cidfont = cidfont;
 
 		if (len < 4)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated CFF");
@@ -2139,16 +2141,21 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		index_load(ctx, &cff.fdarray_index, base, (uint32_t)len, cff.fdarray_index_offset);
 
 		/* Move our list of gids into our own storage. */
-		if (cidfont)
+		if (is_pdf_cidfont && cff.is_cidfont)
 		{
-			/* For CIDFonts we are given CIDs here, not gids. Accordingly
-			 * we need to look them up in the charset */
+			/* For CIDFontType0 FontDescriptor with a CFF that uses CIDFont operators,
+			 * we are given CIDs here, not GIDs. Accordingly
+			 * we need to look them up in the CharSet.
+			 */
 			load_charset_for_cidfont(ctx, &cff);
 			for (i = 0; i < num_gids; i++)
 				usage_list_add(ctx, &cff.gids_to_keep, cid_to_gid(ctx, &cff, gids[i]));
 		}
 		else
 		{
+			/* For CIDFontType0 FontDescriptor with a CFF that DOES NOT use CIDFont operators,
+			 * and for Type1 FontDescriptors, we are given GIDs directly.
+			 */
 			for (i = 0; i < num_gids; i++)
 				usage_list_add(ctx, &cff.gids_to_keep, gids[i]);
 		}
@@ -2164,7 +2171,7 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		subset_locals(ctx, &cff);
 		subset_globals(ctx, &cff);
 
-		if (cidfont)
+		if (is_pdf_cidfont && cff.is_cidfont)
 		{
 			get_fdselect_len(ctx, &cff);
 			read_fdarray_and_privates(ctx, &cff);
