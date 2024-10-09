@@ -3980,12 +3980,15 @@ def class_wrapper_virtual_fnptrs(
     self_n = extras.virtual_fnptrs.pop( 'self_n', 1)
     alloc = extras.virtual_fnptrs.pop( 'alloc')
     free = extras.virtual_fnptrs.pop( 'free', None)
+    comment = extras.virtual_fnptrs.pop( 'comment', None)
     assert not extras.virtual_fnptrs, f'Unused items in virtual_fnptrs: {extras.virtual_fnptrs}'
 
     # Class definition beginning.
     #
     out_h.write( '\n')
     out_h.write( f'/** Wrapper class for struct {struct_name} with virtual fns for each fnptr; this is for use as a SWIG Director class. */\n')
+    if comment:
+        out_h.write(comment)
     out_h.write( f'struct {classname}2 : {classname}\n')
     out_h.write(  '{\n')
 
