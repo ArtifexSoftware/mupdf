@@ -95,6 +95,64 @@ struct pdf_ocg_descriptor
 	pdf_ocg_ui *ui;
 };
 
+typedef struct ve_stack
+{
+	pdf_obj **items;
+	int count;
+	int capacity;
+} ve_stack;
+
+static int pdf_is_ve_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve, pdf_cycle_list *cycle_up, ve_stack *stack);
+
+static ve_stack *ve_new_stack(fz_context *ctx, int initial_capacity)
+{
+	ve_stack* tbr = fz_malloc_struct(ctx, ve_stack);
+	tbr->count = 0;
+	tbr->items = fz_malloc_array(ctx, initial_capacity, pdf_obj*);
+	tbr->capacity = initial_capacity;
+	return tbr;
+}
+
+static void ve_stack_pop(ve_stack *stack)
+{
+	if (stack->count > 0)
+	{
+		stack->count--;
+	}
+}
+
+static void ve_stack_push(fz_context *ctx, ve_stack *stack, pdf_obj *item)
+{
+	if (stack->count >= stack->capacity)
+	{
+		int newCapacity = stack->capacity * 2;
+		stack->items = fz_realloc(ctx, stack->items, sizeof(pdf_obj*) * newCapacity);
+		stack->capacity = newCapacity;
+	}
+
+	stack->items[stack->count] = item;
+	stack->count++;
+}
+
+static int ve_stack_contains(fz_context *ctx, pdf_obj *item, ve_stack *stack)
+{
+	for (int i = 0; i < stack->count; i++)
+	{
+		if (!pdf_objcmp(ctx, item, stack->items[i]))
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void ve_stack_free(fz_context *ctx, ve_stack *stack)
+{
+	fz_free(ctx, stack->items);
+	fz_free(ctx, stack);
+}
+
 int
 pdf_count_layer_configs(fz_context *ctx, pdf_document *doc)
 {
@@ -174,7 +232,7 @@ ocgcmp(const void *a_, const void *b_)
 	return (b->n - a->n);
 }
 
-static int
+int
 find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 {
 	int n = pdf_to_num(ctx, obj);
@@ -193,8 +251,29 @@ find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 		else if (c > 0)
 			l = m + 1;
 		else
-			return c;
+			return m;
 	}
+	return -1;
+}
+
+static int
+find_rbgroup(fz_context *ctx, pdf_obj *ocg, pdf_obj *rbgroups)
+{
+	int len = pdf_array_len(ctx, rbgroups);
+
+	for (int i = 0; i < len; i++)
+	{
+		pdf_obj *group = pdf_array_get(ctx, rbgroups, i);
+		int len2 = pdf_array_len(ctx, group);
+
+		for (int j = 0; j < len2; j++)
+		{
+			pdf_obj *item = pdf_array_get(ctx, group, j);
+			if (!pdf_objcmp(ctx, item, ocg))
+				return i;
+		}
+	}
+
 	return -1;
 }
 
@@ -236,7 +315,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		ui->depth = depth;
 		ui->ocg = j;
 		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
-		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
+		ui->button_flags = find_rbgroup(ctx, o, rbgroups) >= 0 ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 	}
 	return fill;
@@ -287,12 +366,96 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 }
 
 void
+pdf_select_default_layer_config(fz_context *ctx, pdf_document *doc)
+{
+	pdf_ocg_descriptor *desc;
+	int i, j, len, len2;
+	pdf_obj *obj, *cobj;
+	pdf_obj *name;
+
+	desc = pdf_read_ocg(ctx, doc);
+
+	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
+	if (!obj)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown Layer config (None known!)");
+
+	cobj = pdf_dict_get(ctx, obj, PDF_NAME(D));
+	if (!cobj)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "No default Layer config");
+
+	pdf_drop_obj(ctx, desc->intent);
+	desc->intent = pdf_keep_obj(ctx, pdf_dict_get(ctx, cobj, PDF_NAME(Intent)));
+
+	len = desc->len;
+	name = pdf_dict_get(ctx, cobj, PDF_NAME(BaseState));
+	if (pdf_name_eq(ctx, name, PDF_NAME(Unchanged)))
+	{
+		/* Do nothing */
+	}
+	else if (pdf_name_eq(ctx, name, PDF_NAME(OFF)))
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 0;
+		}
+	}
+	else /* Default to ON */
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 1;
+		}
+	}
+
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(ON));
+	len2 = pdf_array_len(ctx, obj);
+	for (i = 0; i < len2; i++)
+	{
+		pdf_obj *o = pdf_array_get(ctx, obj, i);
+		for (j=0; j < len; j++)
+		{
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
+			{
+				desc->ocgs[j].state = 1;
+				break;
+			}
+		}
+	}
+
+	obj = pdf_dict_get(ctx, cobj, PDF_NAME(OFF));
+	len2 = pdf_array_len(ctx, obj);
+	for (i = 0; i < len2; i++)
+	{
+		pdf_obj *o = pdf_array_get(ctx, obj, i);
+		for (j=0; j < len; j++)
+		{
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
+			{
+				desc->ocgs[j].state = 0;
+				break;
+			}
+		}
+	}
+
+	desc->current = -1;
+
+	drop_ui(ctx, desc);
+	load_ui(ctx, desc, obj, cobj);
+}
+
+void
 pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 {
 	pdf_ocg_descriptor *desc;
 	int i, j, len, len2;
 	pdf_obj *obj, *cobj;
 	pdf_obj *name;
+
+	if (config == -1)
+	{
+		pdf_select_default_layer_config(ctx, doc);
+		return;
+	}
 
 	desc = pdf_read_ocg(ctx, doc);
 
@@ -346,7 +509,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		for (j=0; j < len; j++)
 		{
-			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
 			{
 				desc->ocgs[j].state = 1;
 				break;
@@ -361,7 +524,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		for (j=0; j < len; j++)
 		{
-			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
 			{
 				desc->ocgs[j].state = 0;
 				break;
@@ -376,11 +539,41 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 }
 
 void
+pdf_default_layer_config_info(fz_context *ctx, pdf_document *doc, pdf_layer_config *info)
+{
+	pdf_obj *ocprops;
+	pdf_obj *obj;
+
+	if (!info)
+		return;
+
+	info->name = NULL;
+	info->creator = NULL;
+
+	ocprops = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties");
+	if (!ocprops)
+		return;
+
+	obj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
+	if (!obj)
+		return;
+
+	info->creator = pdf_dict_get_string(ctx, obj, PDF_NAME(Creator), NULL);
+	info->name = pdf_dict_get_string(ctx, obj, PDF_NAME(Name), NULL);
+}
+
+void
 pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info)
 {
 	pdf_ocg_descriptor *desc;
 	pdf_obj *ocprops;
 	pdf_obj *obj;
+
+	if (config_num == -1)
+	{
+		pdf_default_layer_config_info(ctx, doc, info);
+		return;
+	}
 
 	if (!info)
 		return;
@@ -432,32 +625,27 @@ pdf_drop_ocg(fz_context *ctx, pdf_document *doc)
 static void
 clear_radio_group(fz_context *ctx, pdf_document *doc, pdf_obj *ocg)
 {
-	pdf_obj *rbgroups = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties/RBGroups");
-	int len, i;
+	pdf_obj *group, *rbgroups;
+	int i, j, k, len;
 
-	len = pdf_array_len(ctx, rbgroups);
-	for (i = 0; i < len; i++)
+	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+	if (!desc)
+		return;
+
+	rbgroups = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties/D/RBGroups");
+
+	i = find_rbgroup(ctx, ocg, rbgroups);
+	if (i < 0)
+		return;
+
+	group = pdf_array_get(ctx, rbgroups, i);
+	len = pdf_array_len(ctx, group);
+
+	for (j = 0; j < len; j++)
 	{
-		pdf_obj *group = pdf_array_get(ctx, rbgroups, i);
-
-		if (pdf_array_contains(ctx, ocg, group))
-		{
-			int len2 = pdf_array_len(ctx, group);
-			int j;
-
-			for (j = 0; j < len2; j++)
-			{
-				pdf_obj *g = pdf_array_get(ctx, group, j);
-				int k;
-				for (k = 0; k < doc->ocg->len; k++)
-				{
-					pdf_ocg_entry *s = &doc->ocg->ocgs[k];
-
-					if (!pdf_objcmp_resolve(ctx, s->obj, g))
-						s->state = 0;
-				}
-			}
-		}
+		pdf_obj *g = pdf_array_get(ctx, group, j);
+		k = find_ocg(ctx, desc, g);
+		doc->ocg->ocgs[k].state = 0;
 	}
 }
 
@@ -591,7 +779,7 @@ ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, const char *name)
 }
 
 static int
-pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg, pdf_cycle_list *cycle_up)
+pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg, pdf_cycle_list *cycle_up, ve_stack* stack)
 {
 	pdf_cycle_list cycle;
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
@@ -707,9 +895,24 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 		int combine, on = 0;
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME(VE));
-		if (pdf_is_array(ctx, obj)) {
-			/* FIXME: Calculate visibility from array */
-			return 0;
+		if (pdf_is_array(ctx, obj))
+		{
+			int tbr, owns_stack = 0;
+			if (!stack)
+			{
+				stack = ve_new_stack(ctx, 4);
+				owns_stack = 1;
+			}
+
+			ve_stack_push(ctx, stack, ocg);
+			tbr = pdf_is_ve_hidden(ctx, doc, rdb, usage, obj, cycle_up, stack);
+
+			if (owns_stack)
+				ve_stack_free(ctx, stack);
+			else
+				ve_stack_pop(stack);
+
+			return tbr;
 		}
 		name = pdf_dict_get(ctx, ocg, PDF_NAME(P));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
@@ -738,18 +941,32 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 			len = pdf_array_len(ctx, obj);
 			for (i = 0; i < len; i++)
 			{
-				int hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, pdf_array_get(ctx, obj, i), &cycle);
-				if ((combine & 1) == 0)
-					hidden = !hidden;
-				if (combine & 2)
-					on &= hidden;
-				else
-					on |= hidden;
+				int hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, pdf_array_get(ctx, obj, i), &cycle, stack);
+				if (combine == 0 && !hidden)
+				{
+					on = 1;
+					break;
+				}
+				else if (combine == 1 && hidden)
+				{
+					on = 0;
+					break;
+				}
+				else if (combine == 2 && hidden)
+				{
+					on = 1;
+					break;
+				}
+				else if (combine == 3 && !hidden)
+				{
+					on = 0;
+					break;
+				}
 			}
 		}
 		else
 		{
-			on = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, obj, &cycle);
+			on = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, obj, &cycle, stack);
 			if ((combine & 1) == 0)
 				on = !on;
 		}
@@ -760,10 +977,133 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 	return 0;
 }
 
+static int pdf_is_ve_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ve, pdf_cycle_list *cycle_up, ve_stack* stack)
+{
+	pdf_obj *op, *item;
+	int len;
+	len = pdf_array_len(ctx, ve);
+
+	if (len < 2)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+	op = pdf_array_get(ctx, ve, 0);
+
+	if (pdf_name_eq(ctx, op, PDF_NAME(Not)))
+	{
+		int tbr;
+
+		if (len != 2)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		item = pdf_array_get(ctx, ve, 1);
+
+		if (ve_stack_contains(ctx, item, stack))
+		{
+			fz_warn(ctx, "Circular reference in visibility expression!");
+			return 0;
+		}
+
+		ve_stack_push(ctx, stack, item);
+
+		if (!pdf_is_array(ctx, item))
+		{
+			tbr = !pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+		}
+		else
+		{
+			tbr = !pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+		}
+
+		ve_stack_pop(stack);
+
+		return tbr;
+	}
+	else if (pdf_name_eq(ctx, op, PDF_NAME(And)))
+	{
+		int hidden, visible = 1;
+
+		if (len < 3)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		for (int i = 1; i < len; i++)
+		{
+			item = pdf_array_get(ctx, ve, i);
+
+			if (ve_stack_contains(ctx, item, stack))
+			{
+				fz_warn(ctx, "Circular reference in visibility expression!");
+				return 0;
+			}
+
+			ve_stack_push(ctx, stack, item);
+
+			if (!pdf_is_array(ctx, item))
+			{
+				hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+			else
+			{
+				hidden = pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+
+			ve_stack_pop(stack);
+
+			if (hidden)
+			{
+				visible = 0;
+				break;
+			}
+		}
+		return !visible;
+	}
+	else if (pdf_name_eq(ctx, op, PDF_NAME(Or)))
+	{
+		int hidden, visible = 0;
+
+		if (len < 3)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+
+		for (int i = 1; i < len; i++)
+		{
+			item = pdf_array_get(ctx, ve, i);
+
+			if (ve_stack_contains(ctx, item, stack))
+			{
+				fz_warn(ctx, "Circular reference in visibility expression!");
+				return 0;
+			}
+
+			ve_stack_push(ctx, stack, item);
+
+			if (!pdf_is_array(ctx, item))
+			{
+				hidden = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+			else
+			{
+				hidden = pdf_is_ve_hidden(ctx, doc, rdb, usage, item, cycle_up, stack);
+			}
+
+			ve_stack_pop(stack);
+
+			if (!hidden)
+			{
+				visible = 1;
+				break;
+			}
+		}
+		return !visible;
+	}
+	else
+	{
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid Visibility Expression");
+	}
+}
+
 int
 pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const char *usage, pdf_obj *ocg)
 {
-	return pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL);
+	return pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL, NULL);
 }
 
 pdf_ocg_descriptor *
@@ -798,7 +1138,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		}
 		qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 
-		pdf_select_layer_config(ctx, doc, 0);
+		pdf_select_default_layer_config(ctx, doc);
 	}
 	fz_catch(ctx)
 	{
