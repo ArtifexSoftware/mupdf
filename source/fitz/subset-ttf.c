@@ -263,7 +263,7 @@ write_tables(fz_context *ctx, ttf_t *ttf, fz_output *out)
 	/* number of tables */
 	fz_write_uint16_be(ctx, out, ttf->len);
 
-	while (1<<(i+1) < ttf->len)
+	while (1<<(i+1) <= ttf->len)
 		i++;
 
 	/* searchRange */
