@@ -1932,6 +1932,10 @@ classextras = ClassExtras(
                     ),
                 ),
 
+        pdf_recolor_options = ClassExtra(
+                pod = 'inline',
+                ),
+
         pdf_redact_options = ClassExtra(
                 pod = 'inline',
                 ),
