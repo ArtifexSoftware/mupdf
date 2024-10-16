@@ -463,13 +463,39 @@ void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page 
 /**
 	Search for occurrence of 'needle' in text page.
 
-	Return the number of hits and store hit quads in the passed in
+	Return the number of quads and store hit quads in the passed in
 	array.
 
 	NOTE: This is an experimental interface and subject to change
 	without notice.
 */
 int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max);
+
+/**
+	Callback function for use in searching.
+
+	Called with the list of quads that correspond to a single hit.
+
+	The callback should return with 0 to continue the search, or 1 to abort it.
+	All other values are reserved at this point.
+*/
+typedef int (fz_search_callback_fn)(fz_context *ctx, void *opaque, int num_quads, fz_quad *hit_bbox);
+
+/**
+	Search for occurrence of 'needle' in text page.
+
+	Call callback once for each hit. This callback will receive
+	(potentially) multiple quads for each hit.
+
+	Returns the number of hits - note that this is potentially
+	different from (i.e. is not greater than) the number of quads
+	as returned by the non callback API.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+int fz_search_stext_page_cb(fz_context *ctx, fz_stext_page *text, const char *needle, fz_search_callback_fn *cb, void *opaque);
+
 
 /**
 	Return a list of quads to highlight lines inside the selection
