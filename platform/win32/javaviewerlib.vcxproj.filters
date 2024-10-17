@@ -261,6 +261,9 @@
     <ClCompile Include="..\java\jni\pdfdocument.c">
       <Filter>jni</Filter>
     </ClCompile>
+    <ClCompile Include="..\java\jni\pdffilespec.c">
+      <Filter>jni</Filter>
+    </ClCompile>
     <ClCompile Include="..\java\jni\pdfgraftmap.c">
       <Filter>jni</Filter>
     </ClCompile>
