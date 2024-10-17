@@ -304,6 +304,7 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
+		struct { uint8_t stroked; uint8_t rgba[4]; } v;
 		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; } b;
 	} u;
 	fz_stext_block *prev, *next;

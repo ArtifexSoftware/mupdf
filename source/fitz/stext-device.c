@@ -1696,13 +1696,30 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	}
 }
 
-static void
-add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox)
+static uint8_t
+to255(float x)
 {
+	if (x <= 0)
+		return 0;
+	if (x >= 1)
+		return 255;
+	return (uint8_t)(x*255 + 0.5);
+}
+
+static void
+add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, int stroked, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
+{
+	float rgb[3];
 	fz_stext_block *b = add_block_to_page(ctx, page);
 
 	b->type = FZ_STEXT_BLOCK_VECTOR;
 	b->bbox = bbox;
+	b->u.v.stroked = stroked;
+	fz_convert_color(ctx, cs, color, fz_device_rgb(ctx), rgb, NULL, cp);
+	b->u.v.rgba[0] = to255(rgb[0]);
+	b->u.v.rgba[1] = to255(rgb[1]);
+	b->u.v.rgba[2] = to255(rgb[2]);
+	b->u.v.rgba[3] = to255(alpha);
 }
 
 static void
@@ -1720,7 +1737,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 	check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vector(ctx, page, path_bounds);
+		add_vector(ctx, page, path_bounds, 0, cs, color, alpha, cp);
 }
 
 static void
@@ -1738,7 +1755,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 	check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vector(ctx, page, path_bounds);
+		add_vector(ctx, page, path_bounds, 1, cs, color, alpha, cp);
 }
 
 static void
