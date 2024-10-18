@@ -1093,6 +1093,14 @@ g_extra_declarations = textwrap.dedent(f'''
         must end with one of 'efg' otherwise we throw an exception. */
         std::string fz_format_double(fz_context* ctx, const char* fmt, double value);
 
+        struct fz_font_ucs_gid
+        {{
+            unsigned long ucs;
+            unsigned int gid;
+        }};
+
+        /** SWIG-friendly wrapper for fz_enumerate_font_cmap(). */
+        std::vector<fz_font_ucs_gid> fz_enumerate_font_cmap2(fz_context* ctx, fz_font* font);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1308,6 +1316,20 @@ g_extra_definitions = textwrap.dedent(f'''
             s_format_check(ctx, fmt, "efg");
             fz_snprintf(buffer, sizeof(buffer), fmt, value);
             return buffer;
+        }}
+
+        static void fz_enumerate_font_cmap2_cb(fz_context* ctx, void* opaque, unsigned long ucs, unsigned int gid)
+        {{
+            std::vector<fz_font_ucs_gid>& ret = *(std::vector<fz_font_ucs_gid>*) opaque;
+            fz_font_ucs_gid item = {{ucs, gid}};
+            ret.push_back(item);
+        }}
+
+        std::vector<fz_font_ucs_gid> fz_enumerate_font_cmap2(fz_context* ctx, fz_font* font)
+        {{
+            std::vector<fz_font_ucs_gid> ret;
+            fz_enumerate_font_cmap(ctx, font, fz_enumerate_font_cmap2_cb, &ret);
+            return ret;
         }}
         ''')
 
