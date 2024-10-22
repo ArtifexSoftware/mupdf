@@ -676,7 +676,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		{
 			/* Check indent to spot text-indent style paragraphs */
 			if (wmode == 0 && cur_line && dev->new_obj)
-				if (fabsf(p.x - dev->start.x) > 0.5f)
+				if ((p.x - dev->start.x) > 0.5f)
 					new_para = 1;
 			new_line = 1;
 		}
