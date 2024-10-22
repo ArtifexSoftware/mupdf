@@ -1573,15 +1573,15 @@ is_path_rect(fz_context *ctx, fz_path *path, fz_point *from, fz_point *to, float
 		else
 			break;
 	}
-	d32x = rd.corners[3].x - rd.corners[2].x;
-	d32y = rd.corners[3].y - rd.corners[2].y;
+	d32x = rd.corners[2].x - rd.corners[3].x;
+	d32y = rd.corners[2].y - rd.corners[3].y;
 
 	/* So d32x and d01x need to be the same for this to be a strikeout. */
 	if (!feq(d32x, d01x) || !feq(d32y, d01y))
 		return 0;
 
 	/* We are plausibly a rectangle. */
-	*thickness = sqrtf(d32x * d32x + d32y * d32y);
+	*thickness = sqrtf(d03x * d03x + d03y * d03y);
 
 	from->x = (rd.corners[0].x + rd.corners[3].x)/2;
 	from->y = (rd.corners[0].y + rd.corners[3].y)/2;
