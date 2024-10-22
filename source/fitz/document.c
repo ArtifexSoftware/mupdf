@@ -897,9 +897,11 @@ static void
 fz_reap_dead_pages(fz_context *ctx, fz_document *doc)
 {
 	fz_page *page;
+	fz_page *next_page;
 
-	for (page = doc->open; page; page = page->next)
+	for (page = doc->open; page; page = next_page)
 	{
+		next_page = page->next;
 		if (!page->doc)
 		{
 			if (page->next != NULL)
@@ -907,6 +909,8 @@ fz_reap_dead_pages(fz_context *ctx, fz_document *doc)
 			if (page->prev != NULL)
 				*page->prev = page->next;
 			fz_free(ctx, page);
+			if (page == doc->open)
+				doc->open = next_page;
 		}
 	}
 }
@@ -1079,6 +1083,8 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 {
 	if (fz_drop_imp(ctx, page, &page->refs))
 	{
+		fz_document *doc = page->doc;
+
 		if (page->drop_page)
 			page->drop_page(ctx, page);
 
@@ -1087,7 +1093,7 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 		page->chapter = -1;
 		page->number = -1;
 
-		fz_drop_document(ctx, page->doc);
+		fz_drop_document(ctx, doc);
 	}
 }
 

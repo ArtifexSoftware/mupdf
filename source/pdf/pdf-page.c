@@ -1052,6 +1052,7 @@ pdf_drop_page_imp(fz_context *ctx, fz_page *page_)
 		link = (pdf_link *) link->super.next;
 	}
 	fz_drop_link(ctx, page->links);
+	page->links = NULL;
 
 	annot = page->annots;
 	while (annot)
@@ -1060,6 +1061,7 @@ pdf_drop_page_imp(fz_context *ctx, fz_page *page_)
 		annot = annot->next;
 	}
 	pdf_drop_annots(ctx, page->annots);
+	page->annots = NULL;
 
 	widget = page->widgets;
 	while (widget)
@@ -1068,7 +1070,10 @@ pdf_drop_page_imp(fz_context *ctx, fz_page *page_)
 		widget = widget->next;
 	}
 	pdf_drop_widgets(ctx, page->widgets);
+	page->widgets = NULL;
 	pdf_drop_obj(ctx, page->obj);
+	page->obj = NULL;
+	page->doc = NULL;
 }
 
 static void pdf_run_page_contents_imp(fz_context *ctx, fz_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
@@ -1281,6 +1286,8 @@ void pdf_sync_open_pages(fz_context *ctx, pdf_document *doc)
 	for (page = doc->super.open; page != NULL; page = next)
 	{
 		next = page->next;
+		if (page->doc == NULL)
+			continue;
 		ppage = (pdf_page*)page;
 		number = pdf_lookup_page_number(ctx, doc, ppage->obj);
 		if (number < 0)

@@ -581,6 +581,7 @@
     <ClCompile Include="..\..\source\fitz\printf.c" />
     <ClCompile Include="..\..\source\fitz\random.c" />
     <ClCompile Include="..\..\source\fitz\skew.c" />
+    <ClCompile Include="..\..\source\fitz\stext-boxer.c" />
     <ClCompile Include="..\..\source\fitz\text-decoder.c" />
     <ClCompile Include="..\..\source\fitz\uncfb.c" />
     <ClCompile Include="..\..\source\fitz\unlibarchive.c" />
@@ -663,6 +664,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-page.c" />
     <ClCompile Include="..\..\source\pdf\pdf-parse.c" />
     <ClCompile Include="..\..\source\pdf\pdf-pattern.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-recolor.c" />
     <ClCompile Include="..\..\source\pdf\pdf-repair.c" />
     <ClCompile Include="..\..\source\pdf\pdf-resources.c" />
     <ClCompile Include="..\..\source\pdf\pdf-run.c" />
@@ -769,6 +771,7 @@
     <ClInclude Include="..\..\include\mupdf\pdf\object.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\page.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\parse.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\recolor.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\resource.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\xref.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\zugferd.h" />

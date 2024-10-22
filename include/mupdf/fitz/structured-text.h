@@ -93,6 +93,7 @@ typedef struct fz_stext_char fz_stext_char;
 typedef struct fz_stext_line fz_stext_line;
 typedef struct fz_stext_block fz_stext_block;
 typedef struct fz_stext_struct fz_stext_struct;
+typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 
 /**
 	FZ_STEXT_PRESERVE_LIGATURES: If this option is activated
@@ -137,6 +138,10 @@ typedef struct fz_stext_struct fz_stext_struct;
 
 	FZ_STEXT_IGNORE_ACTUALTEXT: If this option is set, we will no longer
 	replace text by the ActualText replacement specified in the document.
+
+	FZ_STEXT_SEGMENT: If this option is set, we will attempt to segment
+	the page into different regions. This will deliberately not do anything
+	to pages with structure information present.
 */
 enum
 {
@@ -151,7 +156,8 @@ enum
 	FZ_STEXT_COLLECT_STRUCTURE = 256,
 	FZ_STEXT_ACCURATE_BBOXES = 512,
 	FZ_STEXT_COLLECT_VECTORS = 1024,
-	FZ_STEXT_IGNORE_ACTUALTEXT = 2048
+	FZ_STEXT_IGNORE_ACTUALTEXT = 2048,
+	FZ_STEXT_SEGMENT = 4096
 };
 
 /**
@@ -282,7 +288,8 @@ enum
 	FZ_STEXT_BLOCK_TEXT = 0,
 	FZ_STEXT_BLOCK_IMAGE = 1,
 	FZ_STEXT_BLOCK_STRUCT = 2,
-	FZ_STEXT_BLOCK_VECTOR = 3
+	FZ_STEXT_BLOCK_VECTOR = 3,
+	FZ_STEXT_BLOCK_GRID = 4
 };
 
 /**
@@ -297,6 +304,8 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
+		struct { uint8_t stroked; uint8_t rgba[4]; } v;
+		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; } b;
 	} u;
 	fz_stext_block *prev, *next;
 };
@@ -399,6 +408,16 @@ struct fz_stext_struct
  *                                  :   :
  */
 
+ struct fz_stext_grid_positions
+ {
+	int len;
+	int max_uncertainty;
+	struct {
+		float pos;
+		int uncertainty;
+	} list[1];
+ };
+
 FZ_DATA extern const char *fz_stext_options_usage;
 
 /**
@@ -499,6 +518,20 @@ typedef struct
 	string.
 */
 fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string);
+
+/**
+	Perform segmentation analysis on an (unstructured) page to look for
+	recursive subdivisions.
+
+	Essentially this code attempts to split the page horizontally and/or
+	vertically repeatedly into smaller and smaller "segments" (divisions).
+
+	Returns 0 if no changes were made to the document.
+
+	This is experimental code, and may change (or be removed) in future
+	versions!
+*/
+int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page);
 
 /**
 	Create a device to extract the text on a page.
