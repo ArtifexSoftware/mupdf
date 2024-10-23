@@ -1834,9 +1834,20 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 
 	if (*lc == 0 || *lc == 'l')
 	{
+		pdf_default_layer_config_info(ctx, pdoc, &info);
+		if (info.name || info.creator)
+		{
+			fprintf(stderr, "Default layer config:\n  d:");
+			if (info.name)
+				fprintf(stderr, " Name=\"%s\"", info.name);
+			if (info.creator)
+				fprintf(stderr, " Creator=\"%s\"", info.creator);
+			fprintf(stderr, "\n");
+		}
+
 		int num_configs = pdf_count_layer_configs(ctx, pdoc);
 
-		fprintf(stderr, "Layer configs:\n");
+		fprintf(stderr, "Alternative layer configs:\n");
 		for (config = 0; config < num_configs; config++)
 		{
 			fprintf(stderr, " %s%d:", config < 10 ? " " : "", config);
@@ -1851,13 +1862,22 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 	}
 
 	/* Read the config number */
-	if (*lc < '0' || *lc > '9')
+	if (*lc == 'd')
 	{
-		fprintf(stderr, "cannot find number expected for -y\n");
-		return;
+		pdf_select_default_layer_config(ctx, pdoc);
+		config = -1;
+		lc++;
 	}
-	config = fz_atoi(lc);
-	pdf_select_layer_config(ctx, pdoc, config);
+	else
+	{
+		if (*lc < '0' || *lc > '9')
+		{
+			fprintf(stderr, "cannot find number expected for -y\n");
+			return;
+		}
+		config = fz_atoi(lc);
+		pdf_select_layer_config(ctx, pdoc, config);
+	}
 
 	while (*lc)
 	{
@@ -1883,8 +1903,17 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 	}
 
 	/* Now list the final state of the config */
-	fprintf(stderr, "Layer Config %d:\n", config);
-	pdf_layer_config_info(ctx, pdoc, config, &info);
+	if (config >= 0)
+	{
+		fprintf(stderr, "Layer Config %d:\n", config);
+		pdf_layer_config_info(ctx, pdoc, config, &info);
+	}
+	else
+	{
+		fprintf(stderr, "Default Layer Config:");
+		pdf_default_layer_config_info(ctx, pdoc, &info);
+	}
+
 	if (info.name)
 		fprintf(stderr, " Name=\"%s\"", info.name);
 	if (info.creator)
