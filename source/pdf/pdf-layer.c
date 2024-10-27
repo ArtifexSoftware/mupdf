@@ -1138,7 +1138,10 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		}
 		qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 
-		pdf_select_default_layer_config(ctx, doc);
+		if (ocgs)
+		{
+			pdf_select_default_layer_config(ctx, doc);
+		}
 	}
 	fz_catch(ctx)
 	{
