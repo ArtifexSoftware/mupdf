@@ -345,7 +345,7 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 	}
 
 	ch->c = c;
-	ch->color = color;
+	ch->argb = color;
 	ch->bidi = bidi;
 	ch->origin = *p;
 	ch->size = size;
@@ -1060,14 +1060,15 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_m
 		do_extract(ctx, dev, span, ctm, 0, span->len);
 }
 
-static int hexrgb_from_color(fz_context *ctx, fz_colorspace *colorspace, const float *color)
+static int hexrgba_from_color(fz_context *ctx, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	float rgb[3];
 	fz_convert_color(ctx, colorspace, color, fz_device_rgb(ctx), rgb, NULL, fz_default_color_params);
 	return
-		(fz_clampi(rgb[0] * 255, 0, 255) << 16) |
-		(fz_clampi(rgb[1] * 255, 0, 255) << 8) |
-		(fz_clampi(rgb[2] * 255, 0, 255));
+		(fz_clampi(alpha * 255 + 0.5f, 0, 255) << 24) |
+		(fz_clampi(rgb[0] * 255 + 0.5f, 0, 255) << 16) |
+		(fz_clampi(rgb[1] * 255 + 0.5f, 0, 255) << 8) |
+		(fz_clampi(rgb[2] * 255 + 0.5f, 0, 255));
 }
 
 static void
@@ -1078,7 +1079,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matr
 	fz_text_span *span;
 	if (text == tdev->lasttext)
 		return;
-	tdev->color = hexrgb_from_color(ctx, colorspace, color);
+	tdev->color = hexrgba_from_color(ctx, colorspace, color, alpha);
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
@@ -1094,7 +1095,7 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 	fz_text_span *span;
 	if (text == tdev->lasttext)
 		return;
-	tdev->color = hexrgb_from_color(ctx, colorspace, color);
+	tdev->color = hexrgba_from_color(ctx, colorspace, color, alpha);
 	tdev->new_obj = 1;
 	for (span = text->head; span; span = span->next)
 		fz_stext_extract(ctx, tdev, span, ctm);
@@ -1795,30 +1796,15 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	}
 }
 
-static uint8_t
-to255(float x)
-{
-	if (x <= 0)
-		return 0;
-	if (x >= 1)
-		return 255;
-	return (uint8_t)(x*255 + 0.5);
-}
-
 static void
 add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, int stroked, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
 {
-	float rgb[3];
 	fz_stext_block *b = add_block_to_page(ctx, page);
 
 	b->type = FZ_STEXT_BLOCK_VECTOR;
 	b->bbox = bbox;
 	b->u.v.stroked = stroked;
-	fz_convert_color(ctx, cs, color, fz_device_rgb(ctx), rgb, NULL, cp);
-	b->u.v.rgba[0] = to255(rgb[0]);
-	b->u.v.rgba[1] = to255(rgb[1]);
-	b->u.v.rgba[2] = to255(rgb[2]);
-	b->u.v.rgba[3] = to255(alpha);
+	b->u.v.argb = hexrgba_from_color(ctx, cs, color, alpha);
 }
 
 static void
