@@ -5571,7 +5571,7 @@ stext_walk(js_State *J, fz_stext_block *block)
 						ffi_pushfont(J, ch->font);
 						js_pushnumber(J, ch->size);
 						ffi_pushquad(J, ch->quad);
-						js_pushnumber(J, ch->color);
+						js_pushnumber(J, ch->argb);
 						js_call(J, 6);
 						js_pop(J, 1);
 					}
