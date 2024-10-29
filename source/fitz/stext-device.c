@@ -147,7 +147,7 @@ const char *fz_stext_options_usage =
 	"\tpreserve-spans: do not merge spans on the same line\n"
 	"\tdehyphenate: attempt to join up hyphenated words\n"
 	"\tuse-cid-for-unknown-unicode: guess unicode from cid if normal mapping fails\n"
-	"\tmediabox-clip=no: include characters outside mediabox\n"
+	"\tclip: do not include text that is completely clipped\n"
 	"\tstructured=no: don't collect structure data\n"
 	"\taccurate-bboxes=no: calculate char bboxes for from the outlines\n"
 	"\tvectors=no: include vector bboxes in output\n"
@@ -827,12 +827,15 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 		}
 		dev->last.valid = 1;
 
-		if (dev->flags & FZ_STEXT_MEDIABOX_CLIP)
-			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &dev->page->mediabox))
+		if (dev->flags & FZ_STEXT_CLIP)
+		{
+			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
+			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
 				continue;
 			}
+		}
 		dev->last.clipped = 0;
 
 		/* Calculate bounding box and new pen position based on font metrics */
@@ -888,7 +891,7 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 		if (rune == 0)
 			break;
 
-		if (dev->flags & FZ_STEXT_MEDIABOX_CLIP)
+		if (dev->flags & FZ_STEXT_CLIP)
 			if (dev->last.clipped)
 				continue;
 
@@ -987,12 +990,15 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		}
 		dev->last.valid = 1;
 
-		if (dev->flags & FZ_STEXT_MEDIABOX_CLIP)
-			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &dev->page->mediabox))
+		if (dev->flags & FZ_STEXT_CLIP)
+		{
+			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
+			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
 				continue;
 			}
+		}
 		dev->last.clipped = 0;
 
 		/* Calculate bounding box and new pen position based on font metrics */
@@ -1416,9 +1422,15 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 	if (fz_has_option(ctx, string, "segment", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_SEGMENT;
 
-	opts->flags |= FZ_STEXT_MEDIABOX_CLIP;
-	if (fz_has_option(ctx, string, "mediabox-clip", &val) && fz_option_eq(val, "no"))
-		opts->flags ^= FZ_STEXT_MEDIABOX_CLIP;
+	opts->flags |= FZ_STEXT_CLIP;
+	if (fz_has_option(ctx, string, "mediabox-clip", &val))
+	{
+		fz_warn(ctx, "The 'mediabox-clip' option has been deprecated. Use 'clip' instead.");
+		if (fz_option_eq(val, "no"))
+			opts->flags ^= FZ_STEXT_CLIP;
+	}
+	if (fz_has_option(ctx, string, "clip", &val) && fz_option_eq(val, "no"))
+		opts->flags ^= FZ_STEXT_CLIP;
 
 	opts->scale = 1;
 	if (fz_has_option(ctx, string, "resolution", &val))
