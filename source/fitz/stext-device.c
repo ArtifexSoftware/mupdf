@@ -830,6 +830,7 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 		if (dev->flags & FZ_STEXT_CLIP)
 		{
 			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
+			r = fz_intersect_rect(r, dev->page->mediabox);
 			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
@@ -993,6 +994,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		if (dev->flags & FZ_STEXT_CLIP)
 		{
 			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
+			r = fz_intersect_rect(r, dev->page->mediabox);
 			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
@@ -1332,6 +1334,7 @@ fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix 
 
 	local_ctm = ctm;
 	scissor = fz_device_current_scissor(ctx, dev);
+	scissor = fz_intersect_rect(scissor, tdev->page->mediabox);
 	image = fz_new_image_from_shade(ctx, shade, &local_ctm, color_params, scissor);
 	fz_try(ctx)
 		fz_stext_fill_image(ctx, dev, image, local_ctm, alpha, color_params);
