@@ -1358,6 +1358,20 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	start = (showtime ? gettime() : 0);
 
+	if (output_file_per_page)
+	{
+		char text_buffer[512];
+
+		bgprint_flush();
+		if (out)
+		{
+			fz_close_output(ctx, out);
+			fz_drop_output(ctx, out);
+		}
+		fz_format_output_path(ctx, text_buffer, sizeof text_buffer, output, pagenum);
+		out = fz_new_output_with_path(ctx, text_buffer, 0);
+	}
+
 	page = fz_load_page(ctx, doc, pagenum - 1);
 
 	if (spots != SPOTS_NONE)
@@ -1456,20 +1470,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_rethrow(ctx);
 		}
 		features = iscolor ? " color" : " grayscale";
-	}
-
-	if (output_file_per_page)
-	{
-		char text_buffer[512];
-
-		bgprint_flush();
-		if (out)
-		{
-			fz_close_output(ctx, out);
-			fz_drop_output(ctx, out);
-		}
-		fz_format_output_path(ctx, text_buffer, sizeof text_buffer, output, pagenum);
-		out = fz_new_output_with_path(ctx, text_buffer, 0);
 	}
 
 	if (bgprint.active)
