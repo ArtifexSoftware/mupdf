@@ -2534,7 +2534,7 @@ int mudraw_main(int argc, char **argv)
 			fz_register_document_handlers(ctx);
 #ifdef HAVE_SMARTOFFICE
 			{
-				void *cfg = so_doc_handler_enable(ctx, "en-gb");
+				void *cfg = so_doc_handler_enable(ctx, "en-gb", NULL, 1);
 				so_doc_handler_configure(ctx, cfg, SO_DOC_HANDLER_MODE, SO_DOC_HANDLER_MODE_HTML);
 			}
 #endif
