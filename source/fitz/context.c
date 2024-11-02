@@ -145,6 +145,9 @@ static void fz_init_random_context(fz_context *ctx)
 void
 fz_drop_context(fz_context *ctx)
 {
+	int free_master = 0;
+	int call_log = 0;
+
 	if (!ctx)
 		return;
 
@@ -157,6 +160,28 @@ fz_drop_context(fz_context *ctx)
 		abort();
 #endif
 	}
+
+
+	assert(ctx->master);
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	ctx->master->context_count--;
+	if (ctx->master->context_count == 0)
+	{
+		call_log = 1;
+		if (ctx->master != ctx)
+			free_master = 1;
+	}
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+
+	/* We call the log with ctx intact, apart from the master
+	 * pointer having had the context_count reduced. The
+	 * only possible problem here is if fz_log_activity
+	 * clones the context, but it really shouldn't be doing
+	 * that! */
+	if (call_log)
+		fz_log_activity(ctx, FZ_ACTIVITY_SHUTDOWN, NULL);
+	if (free_master)
+		ctx->alloc.free(ctx->alloc.user, ctx->master);
 
 	/* Other finalisation calls go here (in reverse order) */
 	fz_drop_document_handler_context(ctx);
@@ -173,7 +198,15 @@ fz_drop_context(fz_context *ctx)
 	assert(ctx->error.top == ctx->error.stack_base);
 
 	/* Free the context itself */
-	ctx->alloc.free(ctx->alloc.user, ctx);
+	if (ctx->master == ctx && ctx->context_count != 0)
+	{
+		/* Need to delay our freeing until all our children have died. */
+		ctx->master = NULL;
+	}
+	else
+	{
+		ctx->alloc.free(ctx->alloc.user, ctx);
+	}
 }
 
 static void
@@ -218,6 +251,10 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 	ctx->alloc = *alloc;
 	ctx->locks = *locks;
 
+	/* We are our own master! */
+	ctx->master = ctx;
+	ctx->context_count = 1;
+
 	ctx->error.print = fz_default_error_callback;
 	ctx->warn.print = fz_default_warning_callback;
 
@@ -261,6 +298,11 @@ fz_clone_context(fz_context *ctx)
 	if (!new_ctx)
 		return NULL;
 
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	ctx->master->context_count++;
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	new_ctx->master = ctx->master;
+
 	/* First copy old context, including pointers to shared contexts */
 	memcpy(new_ctx, ctx, sizeof (fz_context));
 
@@ -292,4 +334,21 @@ void *fz_user_context(fz_context *ctx)
 		return NULL;
 
 	return ctx->user;
+}
+
+void fz_register_activity_logger(fz_context *ctx, fz_activity_fn *activity, void *opaque)
+{
+	if (ctx == NULL)
+		return;
+
+	ctx->activity.activity = activity;
+	ctx->activity.opaque = opaque;
+}
+
+void fz_log_activity(fz_context *ctx, fz_activity_reason reason, void *arg)
+{
+	if (ctx == NULL || ctx->activity.activity == NULL)
+		return;
+
+	ctx->activity.activity(ctx, ctx->activity.opaque, reason, arg);
 }

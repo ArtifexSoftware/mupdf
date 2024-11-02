@@ -816,13 +816,41 @@ typedef struct
 	float min_line_width;
 } fz_aa_context;
 
+typedef enum
+{
+	FZ_ACTIVITY_NEW_DOC = 0,
+	FZ_ACTIVITY_SHUTDOWN = 1
+} fz_activity_reason;
+
+typedef void (fz_activity_fn)(fz_context *ctx, void *opaque, fz_activity_reason reason, void *reason_arg);
+
+typedef struct
+{
+	void *opaque;
+	fz_activity_fn *activity;
+} fz_activity_context;
+
+void fz_register_activity_logger(fz_context *ctx, fz_activity_fn *activity, void *opaque);
+
 struct fz_context
 {
 	void *user;
+
+	/* If master points to itself, then we are the master context.
+	 * If master is NULL, then we are the master context, but we have
+	 * been destroyed. We exist just so the count of clones can live
+	 * on. Otherwise master points to the master context from which
+	 * we were cloned. */
+	fz_context *master;
+	/* The number of contexts in this family. 1 for this one, plus
+	 * 1 for every context cloned (directly or indirectly) from it. */
+	int context_count;
+
 	fz_alloc_context alloc;
 	fz_locks_context locks;
 	fz_error_context error;
 	fz_warn_context warn;
+	fz_activity_context activity;
 
 	/* unshared contexts */
 	fz_aa_context aa;
