@@ -574,7 +574,7 @@ load_enc_tab4(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	uint16_t seg_count;
 	uint32_t i;
 
-	if (data_size < 26)
+	if (data_size < offset + 26)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "cmap4 too small");
 
 	seg_count = get16(d+offset+6); /* 2 * seg_count */
