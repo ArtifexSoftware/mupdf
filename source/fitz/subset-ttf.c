@@ -792,7 +792,7 @@ reduce_encoding(fz_context *ctx, ttf_t *ttf, int *gids, int num_gids)
 		}
 
 		/* Not found */
-		enc->gid[0] = 0;
+		enc->gid[i] = 0;
 	found:
 		{}
 	}
