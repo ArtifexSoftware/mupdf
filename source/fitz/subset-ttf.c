@@ -1379,10 +1379,10 @@ shrink_loca_if_possible(fz_context *ctx, ttf_t *ttf)
 static size_t
 subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int num_gids)
 {
-	int i, n;
+	int i, n, new_glyphs;
 	int j;
 	fz_int2_heap heap = { 0 };
-	uint8_t *d0, *e, *idx;
+	uint8_t *d0, *e, *idx , *p;
 
 	if (len < 2 + 2 * ttf->orig_num_glyphs)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated post table");
@@ -1394,27 +1394,35 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	d0 = d;
 	d += 2; len -= 2;
 	idx = d;
+	e = d;
+	p = d;
 
-	/* Store all the indexes. */
-	j = 0;
+	/* Store all kept indexes. */
 	if (len < (size_t)n*2)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+	new_glyphs = 0;
+	j = 0;
 	len -= (size_t)n*2;
 	for (i = 0; i < n; i++)
 	{
 		uint16_t o = get16(d);
 		fz_int2 i2;
-		d += 2;
+		p += 2;
 
 		/* We're only keeping gids we want. */
-		if (j >= num_gids || gids[j] != i)
+		if (i != 0 && (j >= num_gids || gids[j] != i))
 		{
-			put16(d-2, 0);
+			memmove(d, d + 2, (n - i - 1) * 2);
 			continue;
 		}
+		if (i != 0)
+			j++;
+
+		d += 2;
+		e += 2;
 
 		/* We want this gid. */
-		j++;
+		new_glyphs++;
 
 		/* 257 or smaller: same as in the basic order. */
 		if (o <= 257)
@@ -1426,6 +1434,11 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		fz_int2_heap_insert(ctx, &heap, i2);
 	}
 
+	d = p;
+
+	/* Update number of indexes */
+	put16(d0, new_glyphs);
+
 	fz_int2_heap_sort(ctx, &heap);
 
 	/* So, the heap is sorted on i2.a (the string indexes we want to keep),
@@ -1433,7 +1446,6 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 
 	/* Run through the list moving the strings down that we care about. */
 	j = 0;
-	e = d;
 	n = heap.len;
 	for (i = 0; i < n; i++)
 	{
@@ -1450,13 +1462,14 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		{
 			/* Drop this one. */
 			d += slen;
+			continue;
 		}
 
 		memmove(e, d, slen);
 		d += slen;
 		e += slen;
 
-		put16(idx + 2*i, 258 + j);
+		put16(idx + 2*j, 258 + j);
 		j++;
 	}
 
@@ -1507,7 +1520,7 @@ subset_post(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids
 		fz_rethrow(ctx);
 	}
 
-	t->len = len;
+	t->len = 32 + len;
 
 	add_table(ctx, ttf, TAG("post"), t);
 }
