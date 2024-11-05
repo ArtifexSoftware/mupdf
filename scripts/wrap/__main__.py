@@ -1161,6 +1161,8 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
     if m_target:
         for t in m_target.split(','):
             make_args += f' {t}'
+    else:
+        make_args += f' libs libmupdf-threads'
     command = f'cd {build_dirs.dir_mupdf} &&'
     if make_env:
         command += make_env
@@ -1629,7 +1631,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                             f' platform/{win32_infix}/mupdf.sln'
                             f' /Build "{build}"'
                             )
-                    projects = ['mupdfcpp']
+                    projects = ['mupdfcpp', 'libmuthreads']
                     if m_target:
                         projects += m_target.split(',')
                     for project in projects:

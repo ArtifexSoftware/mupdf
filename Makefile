@@ -472,6 +472,7 @@ libs: $(LIBS_TO_INSTALL_IN_BIN) $(LIBS_TO_INSTALL_IN_LIB) $(COMMERCIAL_LIBS)
 commercial-libs: $(COMMERCIAL_LIBS)
 tools: $(TOOL_APPS)
 apps: $(TOOL_APPS) $(VIEW_APPS)
+libmupdf-threads: $(THREAD_LIB)
 
 install-headers:
 	install -d $(DESTDIR)$(incdir)/mupdf
