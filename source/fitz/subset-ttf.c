@@ -1202,8 +1202,8 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 	uint32_t len = get_loca(ctx, ttf, ttf->orig_num_glyphs);
 	fz_buffer *t = read_table(ctx, stm, TAG("glyf"), 1);
 	encoding_t *enc = ttf->encoding;
-	uint32_t i, j;
-	uint32_t new_start, old_start, old_end;
+	uint32_t last_loca, i, j, k;
+	uint32_t new_start, old_start, old_end, last_loca_ofs;
 
 	if (t->len < len)
 	{
@@ -1253,35 +1253,69 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 	}
 
 	/* Now subset the glyf table. */
-	new_start = 0;
-	old_start = get_loca(ctx, ttf, 0);
-	if (old_start >= t->len)
-		fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
-	for (i = 0; i < ttf->orig_num_glyphs; i++)
+	if (enc)
 	{
-		old_end = get_loca(ctx, ttf, i+1);
+		old_start = get_loca(ctx, ttf, 0);
+		if (old_start > t->len)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
+		old_end = get_loca(ctx, ttf, 1);
 		if (old_end > t->len || old_end < old_start)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
-		if ((old_end != old_start) && (i == 0 || ttf->gid_renum[i] != 0))
+		len = old_end - old_start;
+		new_start = 0;
+		put_loca(ctx, ttf, 0, new_start);
+		last_loca = 0;
+		last_loca_ofs = len;
+		for (i = 0; i < ttf->orig_num_glyphs; i++)
 		{
+			old_end = get_loca(ctx, ttf, i + 1);
+			if (old_end > t->len || old_end < old_start)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
 			len = old_end - old_start;
-			memmove(t->data + new_start, t->data + old_start, len);
-			if (enc)
+			if (len > 0 && (i == 0 || ttf->gid_renum[i] != 0))
 			{
+				memmove(t->data + new_start, t->data + old_start, len);
 				if ((int16_t)get16(t->data + new_start) < 0)
 					renumber_composite(ctx, ttf, t->data + new_start, len);
-				put_loca(ctx, ttf, ttf->gid_renum[i], new_start);
+				for (k = last_loca + 1; k <= ttf->gid_renum[i]; k++)
+					put_loca(ctx, ttf, k, last_loca_ofs);
+				new_start += len;
+				last_loca = ttf->gid_renum[i];
+				last_loca_ofs = new_start;
+			}
+			old_start = old_end;
+		}
+		for (k = last_loca + 1; k <= ttf->new_num_glyphs; k++)
+			put_loca(ctx, ttf, k, last_loca_ofs);
+	}
+	else
+	{
+		new_start = 0;
+		old_start = get_loca(ctx, ttf, 0);
+		if (old_start > t->len)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
+		for (i = 0; i < ttf->orig_num_glyphs; i++)
+		{
+			old_end = get_loca(ctx, ttf, i + 1);
+			if (old_end > t->len || old_end < old_start)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
+			len = old_end - old_start;
+			if (len > 0 && ttf->gid_renum[i] != 0)
+			{
+				memmove(t->data + new_start, t->data + old_start, len);
+				put_loca(ctx, ttf, i, new_start);
+				new_start += len;
 			}
 			else
+			{
 				put_loca(ctx, ttf, i, new_start);
-			new_start += len;
+			}
+			old_start = old_end;
 		}
-		else if (!enc)
-			put_loca(ctx, ttf, i, new_start);
-		old_start = old_end;
+		put_loca(ctx, ttf, ttf->orig_num_glyphs, new_start);
 	}
-	put_loca(ctx, ttf, ttf->new_num_glyphs, new_start);
-	*ttf->loca_len = (size_t) (ttf->new_num_glyphs+1) * (2<<ttf->index_to_loc_format);
+
+	*ttf->loca_len = (size_t) (ttf->new_num_glyphs + 1) * (2<<ttf->index_to_loc_format);
 	t->len = new_start;
 }
 
