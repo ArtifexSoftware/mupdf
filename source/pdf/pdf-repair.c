@@ -370,6 +370,8 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	if (doc->repair_attempted)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Repair failed already - not trying again");
 
+	doc->bias = 0; // reset bias!
+
 	doc->repair_attempted = 1;
 	doc->repair_in_progress = 1;
 
@@ -390,11 +392,11 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		n = fz_read(ctx, doc->file, (unsigned char *)buf->scratch, fz_minz(buf->size, 1024));
 
 		fz_seek(ctx, doc->file, 0, 0);
-		if (n >= 4)
+		if (n >= 5)
 		{
-			for (j = 0; j < n - 4; j++)
+			for (j = 0; j < n - 5; j++)
 			{
-				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0 || memcmp(&buf->scratch[j], "%FDF", 4) == 0)
+				if (memcmp(&buf->scratch[j], "%PDF-", 5) == 0 || memcmp(&buf->scratch[j], "%FDF-", 5) == 0)
 				{
 					fz_seek(ctx, doc->file, (int64_t)(j + 8), 0); /* skip "%PDF-X.Y" */
 					break;

@@ -424,6 +424,7 @@ struct pdf_document
 
 	int version;
 	int is_fdf;
+	int bias;
 	int64_t startxref;
 	int64_t file_size;
 	pdf_crypt *crypt;

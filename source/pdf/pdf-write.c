@@ -106,6 +106,8 @@ typedef struct
 	int *gen_list;
 	int *renumber_map;
 
+	int bias; /* when saving incrementally to a file with garbage before the version marker */
+
 	/* The following extras are required for linearization */
 	int *rev_renumber_map;
 	int start;
@@ -2202,9 +2204,9 @@ static void writexrefsubsect(fz_context *ctx, pdf_write_state *opts, int from, i
 	for (num = from; num < to; num++)
 	{
 		if (opts->use_list[num])
-			fz_write_printf(ctx, opts->out, "%010lu %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010lu %05d n \n", opts->ofs_list[num] - opts->bias, opts->gen_list[num]);
 		else
-			fz_write_printf(ctx, opts->out, "%010lu %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010lu %05d f \n", opts->ofs_list[num] - opts->bias, opts->gen_list[num]);
 	}
 }
 
@@ -2254,7 +2256,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 			pdf_dict_put_int(ctx, trailer, PDF_NAME(Prev), doc->startxref);
 			pdf_dict_del(ctx, trailer, PDF_NAME(XRefStm));
 			if (!opts->do_snapshot)
-				doc->startxref = startxref;
+				doc->startxref = startxref - opts->bias;
 		}
 		else
 		{
@@ -2302,7 +2304,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 		pdf_print_obj(ctx, opts->out, trailer, opts->do_tight, opts->do_ascii);
 		fz_write_string(ctx, opts->out, "\n");
 
-		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
+		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref - opts->bias);
 
 		doc->last_xref_was_old_style = 1;
 	}
@@ -2341,7 +2343,7 @@ static void writexrefstreamsubsect(fz_context *ctx, pdf_document *doc, pdf_write
 		else
 		{
 			f1 = 1; /* Object */
-			f2 = opts->ofs_list[num];
+			f2 = opts->ofs_list[num] - opts->bias;
 			f3 = opts->gen_list[num];
 		}
 		fz_append_byte(ctx, fzbuf, f1);
@@ -2410,12 +2412,12 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 		{
 			pdf_dict_put_int(ctx, dict, PDF_NAME(Prev), doc->startxref);
 			if (!opts->do_snapshot)
-				doc->startxref = startxref;
+				doc->startxref = startxref - opts->bias;
 		}
 		else
 		{
 			if (main_xref_offset != 0)
-				pdf_dict_put_int(ctx, dict, PDF_NAME(Prev), main_xref_offset);
+				pdf_dict_put_int(ctx, dict, PDF_NAME(Prev), main_xref_offset - opts->bias);
 		}
 
 		pdf_dict_put(ctx, dict, PDF_NAME(Type), PDF_NAME(XRef));
@@ -2463,7 +2465,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0, 1);
-		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref);
+		fz_write_printf(ctx, opts->out, "startxref\n%lu\n%%%%EOF\n", startxref - opts->bias);
 
 		if (opts->do_snapshot)
 			pdf_delete_object(ctx, doc, num);
@@ -4106,6 +4108,9 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 				fz_warn(ctx, "could not create annotation appearances");
 		}
 	}
+
+	if (in_opts->do_incremental)
+		opts.bias = doc->bias;
 
 	prepare_for_save(ctx, doc, in_opts);
 
