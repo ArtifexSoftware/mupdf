@@ -156,8 +156,35 @@ void HEAP_CAT(HEAP_TYPE_NAME,_uniq)(fz_context *ctx, HEAP_TYPE_NAME *heap
 }
 #endif
 
+#ifdef HEAP_DUMP
+void HEAP_CAT(HEAP_TYPE_NAME,_dump)(fz_context *ctx, fz_output *out, HEAP_TYPE_NAME *heap)
+#ifndef MUPDF_FITZ_HEAP_IMPLEMENT
+;
+#else
+{
+	int n = heap->len;
+	int i;
+	HEAP_CONTAINER_TYPE *h = heap->heap;
+
+	fz_write_printf(ctx, out, "Heap %p len %d:\n", heap, n);
+	for (i = 0; i < n; i++)
+		HEAP_DUMP(ctx, out, i, &h[i]);
+}
+#endif
+
+void HEAP_CAT(HEAP_TYPE_NAME,_debug)(fz_context *ctx, HEAP_TYPE_NAME *heap)
+#ifndef MUPDF_FITZ_HEAP_IMPLEMENT
+;
+#else
+{
+	HEAP_CAT(HEAP_TYPE_NAME,_dump)(ctx, fz_stddbg(ctx), heap);
+}
+#endif
+#endif
+
 #undef HEAP_CONTAINER_TYPE
 #undef HEAP_TYPE_NAME
 #undef HEAP_CMP
 #undef HEAP_XCAT
 #undef HEAP_CAT
+#undef HEAP_DUMP
