@@ -178,6 +178,8 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	int is_ttf = 0;
 	unsigned char digest[16];
 
+	p->gs->current_font = -1; /* unknown font! */
+
 	if (dict == NULL)
 		return;
 
@@ -343,11 +345,13 @@ show_string(fz_context *ctx, pdf_font_analysis_processor *p, unsigned char *buf,
 	gstate *gs = p->gs;
 	pdf_font_desc *fontdesc = gs->font;
 	size_t pos = 0;
-	font_usage_t *font = &p->usage->font[gs->current_font];
+	font_usage_t *font;
 
-	/* e.g. for non-embedded base14 fonts. */
-	if (fontdesc == NULL)
+	// Not an embedded font!
+	if (gs->current_font < 0 || fontdesc == NULL)
 		return;
+
+	font = &p->usage->font[gs->current_font];
 
 	while (pos < len)
 	{
@@ -471,6 +475,8 @@ pdf_new_font_analysis_processor(fz_context *ctx, fonts_usage_t *usage)
 		fz_free(ctx, proc);
 		fz_rethrow(ctx);
 	}
+
+	proc->gs->current_font = -1; // no font set yet
 
 	proc->usage = usage;
 
