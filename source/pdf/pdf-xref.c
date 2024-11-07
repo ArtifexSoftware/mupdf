@@ -1886,6 +1886,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 
 		if (repaired)
 		{
+			pdf_repair_obj_stms(ctx, doc);
 			pdf_repair_trailer(ctx, doc);
 		}
 	}
@@ -1903,7 +1904,6 @@ void pdf_repair_trailer(fz_context *ctx, pdf_document *doc)
 	int i;
 
 	int xref_len = pdf_xref_len(ctx, doc);
-	pdf_repair_obj_stms(ctx, doc);
 
 	hasroot = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)) != NULL);
 	hasinfo = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info)) != NULL);
