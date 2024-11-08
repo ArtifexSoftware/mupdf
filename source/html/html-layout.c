@@ -1808,18 +1808,47 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 
 /* === DRAW === */
 
+typedef struct
+{
+	float rgb[3];
+	float a;
+} unpacked_color;
+
+static inline unpacked_color
+unpack_color(const fz_css_color src)
+{
+	unpacked_color dst;
+	dst.rgb[0] = src.r / 255.0f;
+	dst.rgb[1] = src.g / 255.0f;
+	dst.rgb[2] = src.b / 255.0f;
+	dst.a = src.a / 255.0f;
+	return dst;
+}
+
+static inline int
+color_eq(fz_css_color a, fz_css_color b)
+{
+	return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+}
+
 static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
 {
 	fz_html_flow *node;
 	fz_text *text = NULL;
 	fz_path *line = NULL;
 	fz_matrix trm;
-	float color[3];
-	float prev_color[3] = { 0, 0, 0 };
+	fz_css_color prev_color = { 0, 0, 0, 0 };
+	fz_css_color prev_fill_color = { 0, 0, 0, 0 };
+	fz_css_color prev_stroke_color = { 0, 0, 0, 0 };
+	float line_width, prev_line_width = 0;
+	int filling, prev_filling = 0;
+	int stroking, prev_stroking = 0;
 	int restartable_ended = 0;
+	fz_stroke_state *ss = NULL;
 
 	fz_var(text);
 	fz_var(line);
+	fz_var(ss);
 
 	/* FIXME: HB_DIRECTION_TTB? */
 
@@ -1876,21 +1905,57 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 
 				em = node->box->s.layout.em;
 
-				color[0] = style->color.r / 255.0f;
-				color[1] = style->color.g / 255.0f;
-				color[2] = style->color.b / 255.0f;
+				line_width = fz_from_css_number(style->text_stroke_width, 1, 1, 1);
+				filling = style->text_fill_color.a != 0;
+				stroking = style->text_stroke_color.a != 0;
+				if (stroking)
+				{
+					if(ss == NULL)
+						ss = fz_new_stroke_state(ctx);
+				}
 
-				if (color[0] != prev_color[0] || color[1] != prev_color[1] || color[2] != prev_color[2])
+				if (	/* If we've changed whether we're filling... */
+					filling != prev_filling ||
+					/* Or we're filling and the color has changed... */
+					(prev_filling && !color_eq(style->text_fill_color, prev_fill_color)) ||
+					/* Or we've changed whether we're stroking... */
+					stroking != prev_stroking ||
+					/* Or we're stroking, and the color or linewidth has changed... */
+					(prev_stroking && (!color_eq(style->text_stroke_color, prev_stroke_color) || line_width != prev_line_width)))
 				{
 					if (text)
 					{
-						fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), prev_color, 1, fz_default_color_params);
+						if (prev_filling)
+						{
+							unpacked_color color = unpack_color(prev_fill_color);
+							fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+						}
+						if (prev_stroking)
+						{
+							unpacked_color color = unpack_color(prev_stroke_color);
+							ss->linewidth = prev_line_width;
+							fz_stroke_text(ctx, dev, text, ss, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+						}
 						fz_drop_text(ctx, text);
 						text = NULL;
 					}
-					prev_color[0] = color[0];
-					prev_color[1] = color[1];
-					prev_color[2] = color[2];
+					prev_filling = filling;
+					prev_stroking = stroking;
+				}
+				prev_fill_color = style->text_fill_color;
+				prev_stroke_color = style->text_stroke_color;
+				prev_line_width = line_width;
+
+				if (!color_eq(style->color, prev_color))
+				{
+					if (line)
+					{
+						unpacked_color color = unpack_color(prev_color);
+						fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+						fz_drop_path(ctx, line);
+						line = NULL;
+					}
+					prev_color = style->color;
 				}
 
 				if (style->text_decoration > 0)
@@ -1988,29 +2053,51 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 			{
 				if (text)
 				{
-					fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, fz_default_color_params);
+					if (filling)
+					{
+						unpacked_color color = unpack_color(prev_fill_color);
+						fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+					}
+					if (stroking)
+					{
+						unpacked_color color = unpack_color(prev_stroke_color);
+						ss->linewidth = line_width;
+						fz_stroke_text(ctx, dev, text, ss, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+					}
 					fz_drop_text(ctx, text);
 					text = NULL;
 				}
 				if (style->visibility == V_VISIBLE)
 				{
+					float alpha = style->color.a / 255.0f;
 					fz_matrix itm = fz_pre_translate(ctm, node->x, node->y - page_top);
 					itm = fz_pre_scale(itm, node->w, node->h);
-					fz_fill_image(ctx, dev, node->content.image, itm, 1, fz_default_color_params);
+					fz_fill_image(ctx, dev, node->content.image, itm, alpha, fz_default_color_params);
 				}
 			}
 		}
 
 		if (text)
 		{
-			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, fz_default_color_params);
+			if (filling)
+			{
+				unpacked_color color = unpack_color(prev_fill_color);
+				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+			}
+			if (stroking)
+			{
+				unpacked_color color = unpack_color(prev_stroke_color);
+				ss->linewidth = prev_line_width;
+				fz_stroke_text(ctx, dev, text, ss, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+			}
 			fz_drop_text(ctx, text);
 			text = NULL;
 		}
 
 		if (line)
 		{
-			fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color, 1, fz_default_color_params);
+			unpacked_color color = unpack_color(prev_color);
+			fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
 			fz_drop_path(ctx, line);
 			line = NULL;
 		}
@@ -2019,6 +2106,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 	{
 		fz_drop_text(ctx, text);
 		fz_drop_path(ctx, line);
+		fz_drop_stroke_state(ctx, ss);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -2147,7 +2235,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 	fz_matrix trm;
 	fz_html_flow *line;
 	float y, w;
-	float color[3];
+	float color[4];
 	const char *s;
 	char buf[40];
 	int c, g;
@@ -2201,8 +2289,9 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		color[0] = box->style->color.r / 255.0f;
 		color[1] = box->style->color.g / 255.0f;
 		color[2] = box->style->color.b / 255.0f;
+		color[3] = box->style->color.a / 255.0f;
 
-		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1, fz_default_color_params);
+		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, color[3], fz_default_color_params);
 	}
 	fz_always(ctx)
 		fz_drop_text(ctx, text);

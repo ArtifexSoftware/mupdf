@@ -817,6 +817,7 @@ pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 	pdf_dev_ctm(ctx, pdev, ctm);
 	pdf_dev_alpha(ctx, pdev, alpha, 1);
 	pdf_dev_color(ctx, pdev, colorspace, color, 1, color_params);
+	pdf_dev_stroke_state(ctx, pdev, stroke);
 
 	for (span = text->head; span; span = span->next)
 	{
