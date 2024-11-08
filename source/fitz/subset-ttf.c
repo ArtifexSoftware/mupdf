@@ -1329,25 +1329,22 @@ static void
 subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 {
 	fz_buffer *t = read_table(ctx, stm, TAG("hmtx"), 1);
-	uint16_t i, max16;
+	uint16_t long_metrics, short_metrics, i, k;
 	uint8_t *s = t->data;
 	uint8_t *d = t->data;
 	int cidfont = (ttf->encoding == NULL);
-	size_t max = t->len;
 
-	if (ttf->orig_num_long_hor_metrics * 4 > max)
-	{
-		fz_drop_buffer(ctx, t);
-		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed hmtx table");
-	}
-	max -= ttf->orig_num_long_hor_metrics * 4;
-	max /= 2;
-	if (max > ttf->orig_num_glyphs)
-		max = ttf->orig_num_glyphs;
-	/* We know orig_num_glyphs is 16bit, so this cast safe. */
-	max16 = (uint16_t)max;
+	long_metrics = ttf->orig_num_long_hor_metrics;
+	if (long_metrics > ttf->orig_num_glyphs)
+		long_metrics = ttf->orig_num_glyphs;
+	if (long_metrics > t->len / 4)
+		long_metrics = t->len / 4;
 
-	for (i = 0; i < ttf->orig_num_long_hor_metrics; i++)
+	short_metrics = (t->len - long_metrics * 4) / 2;
+	if (short_metrics > ttf->orig_num_glyphs - long_metrics)
+		short_metrics = ttf->orig_num_glyphs - long_metrics;
+
+	for (i = 0; i < long_metrics; i++)
 	{
 		if (i == 0 || ttf->is_otf || ttf->gid_renum[i])
 		{
@@ -1361,7 +1358,7 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 		}
 		s += 4;
 	}
-	for ( ; i < max16; i++)
+	for (k = 0 ; k < short_metrics; k++, i++)
 	{
 		if (i == 0 || ttf->is_otf || ttf->gid_renum[i])
 		{
