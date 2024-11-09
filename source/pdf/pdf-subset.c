@@ -797,7 +797,7 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 			{
 				if (font->is_ttf)
 					subset_ttf(ctx, doc, font, font->fontfile, symbolic, font->is_cidfont);
-				else
+				else if (font->is_cidfont)
 					subset_cff(ctx, doc, font, font->fontfile, symbolic, font->is_cidfont);
 			}
 			fz_catch(ctx)
