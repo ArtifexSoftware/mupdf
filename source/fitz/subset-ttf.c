@@ -734,11 +734,10 @@ load_encoding(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	{
 		if (ttf->symbolic)
 		{
-			/* PDF Spec says that for symbolic fonts we look for (1,0). */
-			/* (3, 0) may also be present, but we'll just use (1, 0) for
-			 * now. If we find files with a (3,0), but not a (1,0), then
-			 * we'll deal with that then. */
+			/* For symbolic fonts, we look for (1,0) as per PDF Spec, then (3,0). */
 			enc = load_enc(ctx, t, 1, 0);
+			if (!enc)
+				enc = load_enc(ctx, t, 3, 0);
 		}
 		else
 		{
