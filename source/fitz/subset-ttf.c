@@ -1346,7 +1346,7 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 
 	for (i = 0; i < long_metrics; i++)
 	{
-		if (i == 0 || ttf->is_otf || ttf->gid_renum[i])
+		if (i == 0 || ttf->is_otf || (i < ttf->orig_num_glyphs && ttf->gid_renum[i]))
 		{
 			put32(d, get32(s));
 			d += 4;
@@ -1360,7 +1360,7 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	}
 	for (k = 0 ; k < short_metrics; k++, i++)
 	{
-		if (i == 0 || ttf->is_otf || ttf->gid_renum[i])
+		if (i == 0 || ttf->is_otf || (i < ttf->orig_num_glyphs && ttf->gid_renum[i]))
 		{
 			put16(d, get16(s));
 			d += 2;
