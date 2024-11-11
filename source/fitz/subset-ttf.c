@@ -745,6 +745,8 @@ load_encoding(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 			enc = load_enc(ctx, t, 3, 1);
 			if (!enc)
 				enc = load_enc(ctx, t, 1, 0);
+			if (!enc)
+				enc = load_enc(ctx, t, 0, 1);
 		}
 		if (!enc)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "No suitable cmap table found");
