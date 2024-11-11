@@ -251,6 +251,19 @@ offsize_for_offset(uint32_t offset)
 	return 4;
 }
 
+uint16_t
+subr_bias(fz_context *ctx, cff_t *cff, uint16_t count)
+{
+	if (cff->charstring_type == 1)
+		return 0;
+	else if (count < 1240)
+		return 107;
+	else if (count < 33900)
+		return 1131;
+	else
+		return 32768;
+}
+
 /* Index functions */
 
 /* "Load" an index and check it for plausibility (no overflows etc) */
@@ -2118,26 +2131,14 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		/* CFF files can contain several fonts, but we only want the first one. */
 		read_top_dict(ctx, &cff, 0);
 
-		if (cff.charstring_type == 1)
-			cff.gsubr_bias = 0;
-		else if (cff.global_index.count < 1240)
-			cff.gsubr_bias = 107;
-		else if (cff.global_index.count < 33900)
-			cff.gsubr_bias = 1131;
-		else
-			cff.gsubr_bias = 32768;
+		cff.gsubr_bias = subr_bias(ctx, &cff, cff.global_index.count);
 
 		if (cff.charstrings_index_offset == 0)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Missing charstrings table");
 
 		index_load(ctx, &cff.charstrings_index, base, (uint32_t)len, cff.charstrings_index_offset);
 		index_load(ctx, &cff.local_index, base, (uint32_t)len, cff.local_index_offset);
-		if (cff.local_index.count < 1240)
-			cff.subr_bias = 107;
-		else if (cff.local_index.count < 33900)
-			cff.subr_bias = 1131;
-		else
-			cff.subr_bias = 32768;
+		cff.subr_bias = subr_bias(ctx, &cff, cff.local_index.count);
 		index_load(ctx, &cff.fdarray_index, base, (uint32_t)len, cff.fdarray_index_offset);
 
 		/* Move our list of gids into our own storage. */
