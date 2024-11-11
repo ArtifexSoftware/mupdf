@@ -112,8 +112,8 @@ typedef struct
 	index_t charstrings_index;
 	index_t local_index;
 	index_t fdarray_index;
-	int gsubr_bias;
-	int subr_bias;
+	uint16_t gsubr_bias;
+	uint16_t subr_bias;
 	uint32_t top_dict_index_offset;
 	uint32_t string_index_offset;
 	uint32_t global_index_offset;
@@ -137,9 +137,15 @@ typedef struct
 	struct
 	{
 		fz_buffer *rewritten_dict;
+		fz_buffer *rewritten_private;
 		uint32_t offset;
 		uint32_t len;
 		uint32_t fixup;
+		uint32_t local_index_offset;
+		index_t local_index;
+		usage_list_t local_usage;
+		uint16_t subr_bias;
+		fz_buffer *local_subset;
 	} *fdarray;
 
 	struct
@@ -164,6 +170,7 @@ typedef struct
 	usage_list_t extra_gids_to_keep;
 
 	uint16_t *gid_to_cid;
+	uint8_t *gid_to_font;
 } cff_t;
 
 /* cid -> gid */
@@ -778,10 +785,12 @@ do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_li
 
 	/* Write out the index header */
 	put16(d, num_charstrings); /* count */
-	put8(d+2, offset_size); /* offset size */
+	d +=2;
+	put8(d, offset_size); /* offset size */
+	d += 1;
+
 
 	/* Now copy the charstrings themselves */
-	d += 3;
 	strings = d + offset_size * (num_charstrings+1) - 1;
 	gid = 0;
 	fill = 1;
@@ -831,6 +840,15 @@ static void
 subset_globals(fz_context *ctx, cff_t *cff)
 {
 	do_subset(ctx, cff, &cff->global_subset, &cff->global_usage, &cff->global_index, 0);
+}
+
+static void
+subset_fdarray_locals(fz_context *ctx, cff_t *cff)
+{
+	uint16_t i, n = cff->fdarray_index.count;
+
+	for (i = 0; i < n; i++)
+		do_subset(ctx, cff, &cff->fdarray[i].local_subset, &cff->fdarray[i].local_usage, &cff->fdarray[i].local_index, 0);
 }
 
 /* Charstring "executing" functions */
@@ -899,11 +917,11 @@ drop_usage_list(fz_context *ctx, usage_list_t *list)
 }
 
 static void
-mark_subr_used(fz_context *ctx, cff_t *cff, int subr, int global)
+mark_subr_used(fz_context *ctx, cff_t *cff, int subr, int global, int local_subr_bias, usage_list_t *local_usage)
 {
-	usage_list_t *list = global ? &cff->global_usage : &cff->local_usage;
+	usage_list_t *list = global ? &cff->global_usage : local_usage;
 
-	subr += global ? cff->gsubr_bias : cff->subr_bias;
+	subr += global ? cff->gsubr_bias : local_subr_bias;
 
 	usage_list_add(ctx, list, subr);
 }
@@ -945,7 +963,7 @@ use_sub_char(fz_context *ctx, cff_t *cff, int code)
 do { if (sp + n > (int)(sizeof(stack)/sizeof(*stack))) fz_throw(ctx, FZ_ERROR_FORMAT, "Stack overflow"); sp += n; } while (0)
 
 static void
-execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t *end)
+execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t *end, uint16_t subr_bias, usage_list_t *local_usage)
 {
 	double trans[32] = { 0 };
 	double stack[48];
@@ -1017,7 +1035,7 @@ clear:
 
 		case 10: /* callsubr */
 			ATLEAST(1);
-			mark_subr_used(ctx, cff, stack[sp-1], 0);
+			mark_subr_used(ctx, cff, stack[sp-1], 0, subr_bias, local_usage);
 			sp--;
 			break;
 		case 11: /* return */
@@ -1213,7 +1231,7 @@ overflow:
 			break;
 		case 29: /* callgsubr */
 			ATLEAST(1);
-			mark_subr_used(ctx, cff, stack[sp-1], 1);
+			mark_subr_used(ctx, cff, stack[sp-1], 1, subr_bias, local_usage);
 			sp--;
 			break;
 		case 28: /* shortint */
@@ -1262,8 +1280,35 @@ atleast_fail:
 	fz_throw(ctx, FZ_ERROR_FORMAT, "Insufficient operators on the stack: op=%d", c);
 }
 
+
+usage_list_t *
+get_font_locals(fz_context *ctx, cff_t *cff, int gid, int is_pdf_cidfont, uint16_t *subr_bias)
+{
+	usage_t *gids = cff->gids_to_keep.list;
+	int num_gids = cff->gids_to_keep.len;
+
+	if (is_pdf_cidfont && cff->is_cidfont)
+	{
+		uint8_t font = 0;
+		if (gid < num_gids && gids[gid].num < cff->charstrings_index.count)
+			font = cff->gid_to_font[gids[gid].num];
+		else if (gid == 0)
+			font = cff->gid_to_font[gid];
+		if (font >= cff->fdarray_index.count)
+			font = 0;
+
+		if (subr_bias)
+			*subr_bias = cff->fdarray[font].subr_bias;
+		return &cff->fdarray[font].local_usage;
+	}
+
+	if (subr_bias)
+		*subr_bias = cff->subr_bias;
+	return &cff->local_usage;
+}
+
 static void
-scan_charstrings(fz_context *ctx, cff_t *cff)
+scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 {
 	uint32_t offset, end;
 	int num_charstrings = (int)cff->charstrings_index.count;
@@ -1271,6 +1316,8 @@ scan_charstrings(fz_context *ctx, cff_t *cff)
 	usage_t *gids = cff->gids_to_keep.list;
 	int num_gids = cff->gids_to_keep.len;
 	int changed;
+	uint16_t subr_bias;
+	usage_list_t *local_usage = NULL;
 
 	/* Scan through the charstrings.*/
 	offset = index_get(ctx, &cff->charstrings_index, 0);
@@ -1292,7 +1339,8 @@ scan_charstrings(fz_context *ctx, cff_t *cff)
 			/* Drop this */
 			continue;
 		}
-		execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end]);
+		local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
+		execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
 	}
 
 	/* Now we search the 'extra' ones, the 'subrs' (local) and 'gsubrs' (globals)
@@ -1311,7 +1359,9 @@ scan_charstrings(fz_context *ctx, cff_t *cff)
 			usage_list_add(ctx, &cff->gids_to_keep, gid);
 			offset = index_get(ctx, &cff->charstrings_index, gid);
 			end = index_get(ctx, &cff->charstrings_index, gid+1);
-			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end]);
+
+			local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
+			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
 			changed = 1;
 		}
 
@@ -1324,7 +1374,9 @@ scan_charstrings(fz_context *ctx, cff_t *cff)
 			gid = cff->local_usage.list[i].num;
 			offset = index_get(ctx, &cff->local_index, gid);
 			end = index_get(ctx, &cff->local_index, gid+1);
-			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end]);
+
+			local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
+			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
 			changed = 1;
 		}
 
@@ -1337,7 +1389,9 @@ scan_charstrings(fz_context *ctx, cff_t *cff)
 			gid = cff->global_usage.list[i].num;
 			offset = index_get(ctx, &cff->global_index, gid);
 			end = index_get(ctx, &cff->global_index, gid+1);
-			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end]);
+
+			local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
+			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
 			changed = 1;
 		}
 	}
@@ -1502,13 +1556,13 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 }
 
 static void
-get_fdselect_len(fz_context *ctx, cff_t *cff)
+read_fdselect(fz_context *ctx, cff_t *cff)
 {
 	uint32_t fdselect_offset = cff->fdselect_offset;
 	const uint8_t *d = cff->base + fdselect_offset;
 	const uint8_t *d0 = d;
 	uint8_t fmt;
-	uint32_t n;
+	uint16_t n, m, i, first, last, k;
 
 	if (fdselect_offset == 0)
 	{
@@ -1522,19 +1576,35 @@ get_fdselect_len(fz_context *ctx, cff_t *cff)
 	fmt = *d++;
 	n = cff->charstrings_index.count;
 
+	cff->gid_to_font = fz_calloc(ctx, n, sizeof(*cff->gid_to_font));
+
 	if (fmt == 0)
 	{
-		d += n;
+		for (i = 0; i < n; i++)
+		{
+			if (d >= cff->base + cff->len)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
+			cff->gid_to_font[i] = d[0];
+			d++;
+		}
 	}
 	else if (fmt == 3)
 	{
 		if (d + 2 >= cff->base + cff->len)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
-		n = get16(d);
-		d += 2 + 3*n;
-		if (d + 2 >= cff->base + cff->len)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
+		m = get16(d);
 		d += 2;
+
+		for (i = 0; i < m; i++)
+		{
+			if (d + 5 >= cff->base + cff->len)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
+			first = get16(d);
+			last = get16(d + 3);
+			for (k = first; k < last; k++)
+				cff->gid_to_font[k] = d[2];
+			d += 3;
+		}
 	}
 
 	cff->fdselect_len = (uint32_t)(d - d0);
@@ -1680,9 +1750,17 @@ rewrite_fdarray(fz_context *ctx, cff_t *cff, uint32_t offset0)
 	{
 		assert(cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup] == 29);
 		assert(cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+5] == 29);
-		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+1], cff->fdarray[i].len);
+		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+1], cff->fdarray[i].rewritten_private->len);
 		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+6], offset);
-		offset += cff->fdarray[i].len;
+		offset += cff->fdarray[i].rewritten_private->len;
+		if (cff->fdarray[i].local_subset)
+		{
+			offset += cff->fdarray[i].local_subset->len;
+		}
+		else
+		{
+			offset += 2;
+		}
 	}
 
 	return offset;
@@ -1920,7 +1998,7 @@ make_new_private_dict(fz_context *ctx, cff_t *cff)
 		{
 			/* Everything is in the DICT except for the local subr offset. Insert
 			 * that now. This is tricky, because what is the offset? It depends on
-			 * the size of he dict we are creating now, and the size of the dict
+			 * the size of the dict we are creating now, and the size of the dict
 			 * we are creating now depends on the size of the offset! */
 			/* Length so far */
 			len = fz_tell_output(ctx, out);
@@ -1976,6 +2054,8 @@ read_fdarray_and_privates(fz_context *ctx, cff_t *cff)
 	dict_operator k;
 	uint16_t i;
 	uint16_t n = cff->fdarray_index.count;
+	int subrs;
+	int64_t len;
 
 	cff->fdarray = fz_calloc(ctx, n, sizeof(*cff->fdarray));
 
@@ -2016,6 +2096,91 @@ read_fdarray_and_privates(fz_context *ctx, cff_t *cff)
 			fz_drop_output(ctx, out);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
+
+
+		offset = cff->fdarray[i].offset;
+		end = cff->fdarray[i].offset + cff->fdarray[i].len;
+
+		fz_try(ctx)
+		{
+			cff->fdarray[i].rewritten_private = fz_new_buffer(ctx, 1024);
+
+			out = fz_new_output_with_buffer(ctx, cff->fdarray[i].rewritten_private);
+			cff->fdarray[i].local_index_offset = 0;
+
+			subrs = 0;
+
+			for (k = dict_init(ctx, &di, cff->base, cff->len, offset, end); dict_more(&di); k = dict_next(ctx, &di))
+			{
+				switch (k)
+				{
+				case DICT_OP_Subrs:
+					subrs = 1;
+					cff->fdarray[i].local_index_offset = dict_arg_int(ctx, &di, 0) + offset;
+					break;
+				default:
+					dict_write_args(ctx, out, &di);
+					break;
+				}
+			}
+
+			if (subrs != 0)
+			{
+				/* Everything is in the DICT except for the local subr offset. Insert
+				 * that now. This is tricky, because what is the offset? It depends on
+				 * the size of he dict we are creating now, and the size of the dict
+				 * we are creating now depends on the size of the offset! */
+				/* Length so far */
+				len = fz_tell_output(ctx, out);
+				/* We have to encode an offset, plus the Subrs token (19). Offset
+				 * can take up to 5 bytes. */
+				if (len+2 < 107)
+				{
+					/* We can code it with a single byte encoding */
+					len += 2;
+					fz_write_byte(ctx, out, len + 139);
+				}
+				else if (len+3 < 1131)
+				{
+					/* We can code it with a 2 byte encoding */
+					/* (b0-247) * 256 + b1 + 108 == len+3 */
+					len = len+3 - 108;
+					fz_write_byte(ctx, out, (len>>8) + 247);
+					fz_write_byte(ctx, out, len);
+				}
+				else if (len+4 < 32767)
+				{
+					/* We can code it with a 3 byte encoding */
+					len += 4;
+					fz_write_byte(ctx, out, 28);
+					fz_write_byte(ctx, out, len>>8);
+					fz_write_byte(ctx, out, len);
+				}
+				else
+				{
+					/* We can code it with a 5 byte encoding */
+					len += 5;
+					fz_write_byte(ctx, out, 29);
+					fz_write_byte(ctx, out, len>>24);
+					fz_write_byte(ctx, out, len>>16);
+					fz_write_byte(ctx, out, len>>8);
+					fz_write_byte(ctx, out, len);
+				}
+				fz_write_byte(ctx, out, DICT_OP_Subrs);
+			}
+
+			fz_close_output(ctx, out);
+		}
+		fz_always(ctx)
+			fz_drop_output(ctx, out);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+
+		if (cff->fdarray[i].local_index_offset != 0)
+		{
+			index_load(ctx, &cff->fdarray[i].local_index, cff->base, cff->len, cff->fdarray[i].local_index_offset);
+			cff->fdarray[i].subr_bias = subr_bias(ctx, cff, cff->fdarray[i].local_index.count);
+		}
 	}
 }
 
@@ -2054,7 +2219,11 @@ output_fdarray(fz_context *ctx, fz_output *out, cff_t *cff)
 	/* Now we can write out the private dicts, unchanged from the original file. */
 	for (i = 0; i < n; i++)
 	{
-		fz_write_data(ctx, out, cff->base + cff->fdarray[i].offset, cff->fdarray[i].len);
+		fz_write_data(ctx, out, cff->fdarray[i].rewritten_private->data, cff->fdarray[i].rewritten_private->len);
+		if (cff->fdarray[i].local_subset)
+			fz_write_data(ctx, out, cff->fdarray[i].local_subset->data, cff->fdarray[i].local_subset->len);
+		else
+			fz_write_uint16_be(ctx, out, 0);
 	}
 }
 
@@ -2073,6 +2242,7 @@ cid_to_gid(fz_context *ctx, cff_t *cff, uint16_t cid)
 	return 0;
 }
 
+
 fz_buffer *
 fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids, int symbolic, int is_pdf_cidfont)
 {
@@ -2082,6 +2252,7 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 	size_t len;
 	fz_output *out = NULL;
 	int i;
+	uint16_t n, k;
 
 	fz_var(newbuf);
 	fz_var(out);
@@ -2141,6 +2312,15 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		cff.subr_bias = subr_bias(ctx, &cff, cff.local_index.count);
 		index_load(ctx, &cff.fdarray_index, base, (uint32_t)len, cff.fdarray_index_offset);
 
+		get_encoding_len(ctx, &cff);
+		get_charset_len(ctx, &cff);
+
+		if (is_pdf_cidfont && cff.is_cidfont)
+		{
+			read_fdselect(ctx, &cff);
+			read_fdarray_and_privates(ctx, &cff);
+		}
+
 		/* Move our list of gids into our own storage. */
 		if (is_pdf_cidfont && cff.is_cidfont)
 		{
@@ -2161,22 +2341,15 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 				usage_list_add(ctx, &cff.gids_to_keep, gids[i]);
 		}
 
-		get_encoding_len(ctx, &cff);
-		get_charset_len(ctx, &cff);
-
 		/* Scan charstrings. */
-		scan_charstrings(ctx, &cff);
+		scan_charstrings(ctx, &cff, is_pdf_cidfont);
 
 		/* Now subset the data. */
 		subset_charstrings(ctx, &cff);
+		if (is_pdf_cidfont && cff.is_cidfont)
+			subset_fdarray_locals(ctx, &cff);
 		subset_locals(ctx, &cff);
 		subset_globals(ctx, &cff);
-
-		if (is_pdf_cidfont && cff.is_cidfont)
-		{
-			get_fdselect_len(ctx, &cff);
-			read_fdarray_and_privates(ctx, &cff);
-		}
 
 		/* FIXME: cull the strings? */
 
@@ -2288,17 +2461,21 @@ fz_subset_cff_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 		fz_drop_buffer(ctx, cff.local_subset);
 		fz_drop_buffer(ctx, cff.global_subset);
 		fz_free(ctx, cff.gid_to_cid);
+		fz_free(ctx, cff.gid_to_font);
 		drop_usage_list(ctx, &cff.local_usage);
 		drop_usage_list(ctx, &cff.global_usage);
 		drop_usage_list(ctx, &cff.gids_to_keep);
 		drop_usage_list(ctx, &cff.extra_gids_to_keep);
 		if (cff.fdarray)
 		{
-			int n = cff.fdarray_index.count;
-			int i;
-
-			for (i = 0; i < n; i++)
-				fz_drop_buffer(ctx, cff.fdarray[i].rewritten_dict);
+			n = cff.fdarray_index.count;
+			for (k = 0; k < n; k++)
+			{
+				fz_drop_buffer(ctx, cff.fdarray[k].rewritten_dict);
+				fz_drop_buffer(ctx, cff.fdarray[k].rewritten_private);
+				fz_drop_buffer(ctx, cff.fdarray[k].local_subset);
+				drop_usage_list(ctx, &cff.fdarray[k].local_usage);
+			}
 			fz_free(ctx, cff.fdarray);
 		}
 		fz_free(ctx, cff.unpacked_charset);
