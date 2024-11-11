@@ -723,7 +723,7 @@ dict_write_args(fz_context *ctx, fz_output *out, dict_iterator *di)
 }
 
 static void
-do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_list, index_t *index)
+do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_list, index_t *index, int keep_notdef)
 {
 	uint8_t *d, *strings;
 	uint32_t i, offset, end;
@@ -748,7 +748,7 @@ do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_li
 			/* Keep this */
 			gid++;
 		}
-		else if (i == 0)
+		else if (keep_notdef && i == 0)
 		{
 			/* Keep this. */
 		}
@@ -794,7 +794,7 @@ do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_li
 			/* Keep this */
 			gid++;
 		}
-		else if (i == 0)
+		else if (keep_notdef && i == 0)
 		{
 			/* Keep this */
 		}
@@ -818,19 +818,19 @@ do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_li
 static void
 subset_charstrings(fz_context *ctx, cff_t *cff)
 {
-	do_subset(ctx, cff, &cff->charstrings_subset, &cff->gids_to_keep, &cff->charstrings_index);
+	do_subset(ctx, cff, &cff->charstrings_subset, &cff->gids_to_keep, &cff->charstrings_index, 1);
 }
 
 static void
 subset_locals(fz_context *ctx, cff_t *cff)
 {
-	do_subset(ctx, cff, &cff->local_subset, &cff->local_usage, &cff->local_index);
+	do_subset(ctx, cff, &cff->local_subset, &cff->local_usage, &cff->local_index, 0);
 }
 
 static void
 subset_globals(fz_context *ctx, cff_t *cff)
 {
-	do_subset(ctx, cff, &cff->global_subset, &cff->global_usage, &cff->global_index);
+	do_subset(ctx, cff, &cff->global_subset, &cff->global_usage, &cff->global_index, 0);
 }
 
 /* Charstring "executing" functions */
