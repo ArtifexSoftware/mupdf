@@ -834,9 +834,6 @@ make_cmap(fz_context *ctx, ttf_t *ttf)
 	}
 	segs++; /* For the terminator */
 
-
-
-
 	len = 12 + 14 + 2 + segs * 2 * 4 + entries * 2;
 	buf = fz_new_buffer(ctx, len);
 	d = buf->data;
