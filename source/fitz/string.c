@@ -62,6 +62,15 @@ int
 fz_tolower(int c)
 {
 	const int *p;
+
+	/* Make ASCII fast. */
+	if (c < 128)
+	{
+		if (c >= 'A' && c <= 'Z')
+			c += 'a' - 'A';
+		return c;
+	}
+
 	p = fz_ucd_bsearch(c, ucd_tolower2, nelem(ucd_tolower2) / 3, 3);
 	if (p && c >= p[0] && c <= p[1])
 		return c + p[2];
@@ -96,21 +105,53 @@ fz_strncasecmp(const char *a, const char *b, size_t n)
 {
 	if (!n--)
 		return 0;
-	for (; *a && *b && n && (*a == *b || fz_tolower(*a) == fz_tolower(*b)); a++, b++, n--)
-		;
-	return fz_tolower(*a) - fz_tolower(*b);
+	while (n > 0)
+	{
+		int ucs_a, ucs_b, n_a, n_b;
+		n_a = fz_chartorunen(&ucs_a, a, n);
+		n_b = fz_chartorunen(&ucs_b, b, n);
+		/* We believe that for all unicode characters X and Y, s.t.
+		 * fz_tolower(X) == fz_tolower(Y), X and Y must utf8 encode to
+		 * the same number of bytes. */
+		assert(n_a == n_b);
+		assert((size_t)n_a <= n);
+		if (ucs_a != ucs_b)
+		{
+			ucs_a = fz_tolower(ucs_a);
+			ucs_b = fz_tolower(ucs_b);
+		}
+		if (ucs_a == ucs_b)
+		{
+			if (ucs_a == 0)
+				return 0;
+		}
+		else
+			return ucs_a - ucs_b;
+		a += n_a;
+		b += n_b;
+		n -= n_a;
+	}
+	return 0;
 }
 
 int
 fz_strcasecmp(const char *a, const char *b)
 {
-	while (fz_tolower(*a) == fz_tolower(*b))
+	while (1)
 	{
-		if (*a++ == 0)
-			return 0;
-		b++;
+		int ucs_a, ucs_b;
+		a += fz_chartorune(&ucs_a, a);
+		b += fz_chartorune(&ucs_b, b);
+		ucs_a = fz_tolower(ucs_a);
+		ucs_b = fz_tolower(ucs_b);
+		if (ucs_a == ucs_b)
+		{
+			if (ucs_a == 0)
+				return 0;
+		}
+		else
+			return ucs_a - ucs_b;
 	}
-	return fz_tolower(*a) - fz_tolower(*b);
 }
 
 char *
@@ -597,6 +638,93 @@ bad:
 }
 
 int
+fz_chartorunen(int *rune, const char *str, size_t n)
+{
+	int c, c1, c2, c3;
+	int l;
+
+	if (n < 1)
+		goto bad;
+
+	/*
+	 * one character sequence
+	 *	00000-0007F => T1
+	 */
+	c = *(const unsigned char*)str;
+	if(c < Tx) {
+		*rune = c;
+		return 1;
+	}
+
+	if (n < 2)
+		goto bad;
+
+	/*
+	 * two character sequence
+	 *	0080-07FF => T2 Tx
+	 */
+	c1 = *(const unsigned char*)(str+1) ^ Tx;
+	if(c1 & Testx)
+		goto bad;
+	if(c < T3) {
+		if(c < T2)
+			goto bad;
+		l = ((c << Bitx) | c1) & Rune2;
+		if(l <= Rune1)
+			goto bad;
+		*rune = l;
+		return 2;
+	}
+
+	if (n < 3)
+		goto bad;
+
+	/*
+	 * three character sequence
+	 *	0800-FFFF => T3 Tx Tx
+	 */
+	c2 = *(const unsigned char*)(str+2) ^ Tx;
+	if(c2 & Testx)
+		goto bad;
+	if(c < T4) {
+		l = ((((c << Bitx) | c1) << Bitx) | c2) & Rune3;
+		if(l <= Rune2)
+			goto bad;
+		*rune = l;
+		return 3;
+	}
+
+	if (n < 4)
+		goto bad;
+
+	/*
+	 * four character sequence (21-bit value)
+	 *	10000-1FFFFF => T4 Tx Tx Tx
+	 */
+	c3 = *(const unsigned char*)(str+3) ^ Tx;
+	if (c3 & Testx)
+		goto bad;
+	if (c < T5) {
+		l = ((((((c << Bitx) | c1) << Bitx) | c2) << Bitx) | c3) & Rune4;
+		if (l <= Rune3)
+			goto bad;
+		*rune = l;
+		return 4;
+	}
+	/*
+	 * Support for 5-byte or longer UTF-8 would go here, but
+	 * since we don't have that, we'll just fall through to bad.
+	 */
+
+	/*
+	 * bad decoding
+	 */
+bad:
+	*rune = Bad;
+	return 1;
+}
+
+int
 fz_runetochar(char *str, int rune)
 {
 	/* Runes are signed, so convert to unsigned for range check. */
@@ -1004,4 +1132,61 @@ fz_wchar_from_utf8(fz_context *ctx, const char *path)
 	*w = 0;
 
 	return wpath;
+}
+
+const char *
+fz_strstr(const char *haystack, const char *needle)
+{
+	size_t matchlen = 0;
+	char d;
+
+	if (haystack == NULL || needle == NULL)
+		return NULL;
+
+	while ((d = needle[matchlen]) != 0)
+	{
+		char c = *haystack++;
+		if (c == 0)
+			return NULL;
+		if (c == d)
+			matchlen++;
+		else
+		{
+			haystack -= matchlen - 1;
+			matchlen = 0;
+		}
+	}
+
+	return haystack - matchlen;
+}
+
+const char *
+fz_strstrcase(const char *haystack, const char *needle)
+{
+	size_t matchlen = 0;
+	size_t firstlen;
+
+	if (haystack == NULL || needle == NULL)
+		return NULL;
+
+	while (1)
+	{
+		int c, d;
+		int nc, nd;
+
+		nd = fz_chartorune(&d, &needle[matchlen]);
+		if (d == 0)
+			break;
+		nc = fz_chartorune(&c, haystack);
+		if (matchlen == 0)
+			firstlen = nc;
+		haystack += nc;
+		matchlen += nd;
+		if (c == 0)
+			return NULL;
+		if (c != d)
+			haystack -= matchlen - firstlen, matchlen = 0;
+	}
+
+	return haystack - matchlen;
 }
