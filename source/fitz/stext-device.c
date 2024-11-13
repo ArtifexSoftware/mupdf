@@ -1633,6 +1633,90 @@ line_crosses_rect(fz_point a, fz_point b, fz_rect r)
 	return fz_is_point_inside_rect(a, r);
 }
 
+static float
+calculate_ascent(fz_point p, fz_point origin, fz_point dir)
+{
+	return fabsf((origin.x-p.x)*dir.y - (origin.y-p.y)*dir.x);
+}
+
+/* Create us a rect from the given quad, but extend it downwards
+ * to allow for underlines that pass under the glyphs. */
+static fz_rect expanded_rect_from_quad(fz_quad quad, fz_point dir, fz_point origin, float size)
+{
+	/* Consider the two rects from A and g respectively.
+	 *
+	 * ul +------+ ur   or
+	 *    |  /\  |         ul +------+ ur
+	 *    | /__\ |            | /''\ |
+	 *    |/    \|            |(    ||
+	 * ll +------+ lr         | ''''||
+	 *                        |  ''' | <-expected underline level
+	 *                     ll +------+ lr
+	 *
+	 * So an underline won't cross A's rect, but will cross g's.
+	 * We want to make a rect that includes a suitable amount of
+	 * space underneath. The information we have available to us
+	 * is summed up here:
+	 *
+	 *  ul +---------+ ur
+	 *     |         |
+	 *     | origin  |
+	 *     |+----------> dir
+	 *     |         |
+	 *  ll +---------+ lr
+	 *
+	 * Consider the distance from ul to the line that passes through
+	 * the origin with direction dir. Similarly, consider the distance
+	 * from ur to the same line. This can be thought of as the 'ascent'
+	 * of this character.
+	 *
+	 * We'd like the distance from ul to ll to be greater than this, so
+	 * as to ensure we cover the possible location where an underline
+	 * might reasonably go.
+	 *
+	 * If we have a line (l) through point A with direction vector u,
+	 * the distance between point P and line(l) is:
+	 *
+	 * d(P,l) = || AP x u || / || u ||
+	 *
+	 * where x is the cross product.
+	 *
+	 * For us, because || dir || = 1:
+	 *
+	 * d(ul, origin) = || (origin-ul) x dir ||
+	 *
+	 * The cross product is only defined in 3 (or 7!) dimensions, so
+	 * extend both vectors into 3d by defining a 0 z component.
+	 *
+	 * (origin-ul) x dir = [ (origin.y - ul.y) . 0     - 0                 . dir.y ]
+	 *                     [ 0                 . dir.x - (origin.x - ul.y) . 0     ]
+	 *                     [ (origin.x - ul.x) . dir.y - (origin.y - ul.y) . dir.x ]
+	 *
+	 * So d(ul, origin) = abs(D) where D = (origin.x-ul.x).dir.y - (origin.y-ul.y).dir.x
+	 */
+	float ascent = (calculate_ascent(quad.ul, origin, dir) + calculate_ascent(quad.ur, origin, dir)) / 2;
+	fz_point left = { quad.ll.x - quad.ul.x, quad.ll.y - quad.ul.y };
+	fz_point right = { quad.lr.x - quad.ur.x, quad.lr.y - quad.ur.y };
+	float height = (hypotf(left.x, left.y) + hypotf(right.x, right.y))/2;
+	int neg = 0;
+
+	/* We'd like height to be at least ascent + 1/4 size */
+	if (height < 0)
+		neg = 1, height = -height;
+	if (height < ascent + size * 0.25f)
+		height = ascent + size * 0.25f;
+
+	height -= ascent;
+	if (neg)
+		height = -height;
+	quad.ll.x += - height * dir.y;
+	quad.ll.y +=   height * dir.x;
+	quad.lr.x += - height * dir.y;
+	quad.lr.y +=   height * dir.x;
+
+	return fz_rect_from_quad(quad);
+}
+
 static void
 check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page, const fz_path *path, fz_matrix ctm)
 {
@@ -1679,7 +1763,7 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 				fz_stext_char *ch;
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
-					fz_rect ch_box = fz_rect_from_quad(ch->quad);
+					fz_rect ch_box = expanded_rect_from_quad(ch->quad, line->dir, ch->origin, ch->size);
 
 					if (line_crosses_rect(from, to, ch_box))
 					{
