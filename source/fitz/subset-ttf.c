@@ -72,8 +72,8 @@ typedef struct
 	int is_otf;
 	int symbolic;
 	encoding_t *encoding;
-	uint32_t orig_num_glyphs;
-	uint32_t new_num_glyphs;
+	uint16_t orig_num_glyphs;
+	uint16_t new_num_glyphs;
 	uint16_t index_to_loc_format;
 	uint8_t *index_to_loc_formatp;
 	uint16_t orig_num_long_hor_metrics;
@@ -1416,7 +1416,7 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	fz_int2_heap heap = { 0 };
 	uint8_t *d0, *e, *idx , *p;
 
-	if (len < 2 + 2 * ttf->orig_num_glyphs)
+	if (len < (size_t) 2 + 2 * ttf->orig_num_glyphs)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated post table");
 
 	n = get16(d);
