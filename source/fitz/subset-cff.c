@@ -966,7 +966,7 @@ static void
 execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t *end, uint16_t subr_bias, usage_list_t *local_usage)
 {
 	double trans[32] = { 0 };
-	double stack[48];
+	double stack[513];
 	int sp = 0;
 	int stem_hints = 0;
 	uint8_t c;
