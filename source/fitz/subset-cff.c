@@ -1594,6 +1594,8 @@ read_fdselect(fz_context *ctx, cff_t *cff)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 		m = get16(d);
 		d += 2;
+		if (m > cff->charstrings_index.count)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 
 		for (i = 0; i < m; i++)
 		{
@@ -1601,6 +1603,8 @@ read_fdselect(fz_context *ctx, cff_t *cff)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 			first = get16(d);
 			last = get16(d + 3);
+			if (first >= cff->charstrings_index.count || last > cff->charstrings_index.count || first >= last)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt fdselect");
 			for (k = first; k < last; k++)
 				cff->gid_to_font[k] = d[2];
 			d += 3;
