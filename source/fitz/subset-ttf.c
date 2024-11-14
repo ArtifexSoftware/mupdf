@@ -140,7 +140,7 @@ find_table(fz_context *ctx, fz_stream *stm, uint32_t tag, uint32_t *len)
 		uint32_t t = fz_read_uint32(ctx, stm);
 		uint32_t cs = fz_read_uint32(ctx, stm);
 		uint32_t off = fz_read_uint32(ctx, stm);
-		cs = cs; /* UNUSED */
+		(void) cs; /* UNUSED */
 		*len = fz_read_uint32(ctx, stm);
 		if (t == tag)
 			return off;
@@ -303,7 +303,7 @@ fix_checksum(fz_context *ctx, fz_buffer *buf)
 	fz_stream *stm = fz_open_buffer(ctx, buf);
 	uint32_t csumpos = find_table(ctx, stm, TAG("head"), &namesize) + 8;
 
-	len = len; // UNUSED
+	(void) len; // UNUSED
 
 	fz_drop_stream(ctx, stm);
 
