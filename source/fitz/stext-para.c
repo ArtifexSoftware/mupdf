@@ -719,18 +719,17 @@ typedef struct
 	float l, r;
 } justify_data;
 
+#define JUSTIFY_THRESHOLD 1
+
 static int
 justify_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg, float line_height)
 {
 	justify_data *data = (justify_data *)arg;
-	float size = 12;
 
 	if (line->prev)
 		line = line->prev;
-	if (line->first_char)
-		size = line->first_char->size;
 
-	if (data->l < block->bbox.x0 + size && data->r > block->bbox.x1 - size)
+	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
 		data->count_justified++;
 	data->count_lines++;
 
@@ -757,12 +756,8 @@ static void
 justify_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 {
 	justify_data *data = (justify_data *)arg;
-	float size = 12;
 
-	if (line->first_char)
-		size = line->first_char->size;
-
-	if (data->l < block->bbox.x0 + size && data->r > block->bbox.x1 - size)
+	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
 		data->count_justified++;
 	data->count_lines++;
 }
@@ -771,12 +766,8 @@ static int
 justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg, float line_height)
 {
 	justify_data *data = (justify_data *)arg;
-	float size = 12;
 
-	if (line->prev->first_char)
-		size = line->prev->first_char->size;
-
-	if (data->l < block->bbox.x0 + size && data->r > block->bbox.x1 - size)
+	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
 	{
 		/* Justified */
 	}
@@ -827,7 +818,7 @@ break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext
 		return;
 	/* If at least half of the lines don't appear to be justified, then
 	 * don't trust 'em. */
-	if (data->count_justified < data->count_lines/2)
+	if (data->count_justified * 2 < data->count_lines)
 		return;
 	block->u.t.flags = FZ_STEXT_TEXT_JUSTIFY_FULL;
 
