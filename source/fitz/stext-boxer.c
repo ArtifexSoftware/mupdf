@@ -702,7 +702,9 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 	newblock->u.s.down->first_block = target;
 	target->prev = NULL;
 
-	for (block = target; block->next != NULL; block = block->next);
+	for (block = target; block->next != NULL; block = block->next)
+		newblock->bbox = fz_union_rect(newblock->bbox, block->bbox);
+	newblock->bbox = fz_union_rect(newblock->bbox, block->bbox);
 	newblock->u.s.down->last_block = block;
 
 #ifdef DEBUG_STRUCT
