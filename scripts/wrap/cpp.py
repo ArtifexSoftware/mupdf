@@ -1402,7 +1402,7 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
             {{
                 std::cerr << file << ":" << line << ":" << fn << "(): "
                         << "MuPDF C++ internal assert failure: " << expression
-                        << "\\n";
+                        << "\\n" << std::flush;
                 abort();
             }}
 
@@ -1466,6 +1466,7 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                         std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
                                 << " calling fz_register_document_handlers()\\n";
                     }}
+                    internal_assert("m_ctx = fz_new_context()" && m_ctx);
                     fz_register_document_handlers(m_ctx);
                 }}
                 static void lock(void *user, int lock)
@@ -1548,6 +1549,7 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                         }}
                         internal_assert(s_state_valid);
                         m_ctx = fz_clone_context(s_state.m_ctx);
+                        internal_assert("m_ctx = fz_clone_context()" && m_ctx);
                     }}
                     return m_ctx;
                 }}
