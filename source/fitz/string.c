@@ -103,8 +103,6 @@ fz_strnlen(const char *s, size_t n)
 int
 fz_strncasecmp(const char *a, const char *b, size_t n)
 {
-	if (!n--)
-		return 0;
 	while (n > 0)
 	{
 		int ucs_a, ucs_b, n_a, n_b;
@@ -115,18 +113,19 @@ fz_strncasecmp(const char *a, const char *b, size_t n)
 		 * the same number of bytes. */
 		assert(n_a == n_b);
 		assert((size_t)n_a <= n);
+
+		// one or both of the strings are short
+		if (ucs_a == 0 || ucs_b == 0)
+			return ucs_a - ucs_b;
+
 		if (ucs_a != ucs_b)
 		{
 			ucs_a = fz_tolower(ucs_a);
 			ucs_b = fz_tolower(ucs_b);
 		}
-		if (ucs_a == ucs_b)
-		{
-			if (ucs_a == 0)
-				return 0;
-		}
-		else
+		if (ucs_a != ucs_b)
 			return ucs_a - ucs_b;
+
 		a += n_a;
 		b += n_b;
 		n -= n_a;
