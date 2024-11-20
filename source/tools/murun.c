@@ -351,6 +351,23 @@ const char *postfix_js =
 	"		root_names_efs_names.push(efs[efs_keys[i]])\n"
 	"	}\n"
 	"}\n"
+	"mupdf.PDFDocument.prototype.loadNameTree = function loadNameTree(treeName) {\n"
+	"	var root = this.getTrailer().get('Root').get('Names').get(treeName)\n"
+	"	var dict = {}\n"
+	"	if (root && root.isDictionary())\n"
+	"		this._loadNameTreeRec(dict, root)\n"
+	"	return dict\n"
+	"}\n"
+	"mupdf.PDFDocument.prototype._loadNameTreeRec = function (dict, node) {\n"
+	"	var kids = node.get('Kids')\n"
+	"	if (kids && kids.isArray())\n"
+	"		for (var i = 0; i < kids.length; i += 1)\n"
+	"			loadNameTreeRec(dict, kids[i])\n"
+	"	var names = node.get('Names')\n"
+	"	if (names && names.isArray())\n"
+	"		for (var i = 0; i < names.length; i += 2)\n"
+	"			dict[names[i].asString()] = names[i+1]\n"
+	"}\n"
 ;
 
 struct event_cb_data
