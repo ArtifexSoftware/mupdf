@@ -1890,10 +1890,10 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	{
 		if (repaired)
 		{
-			/* pdf_repair_xref may access xref_index, so reset it properly */
+			/* pdf_repair_xref_base may access xref_index, so reset it properly */
 			if (doc->xref_index)
 				memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
-			pdf_repair_xref(ctx, doc);
+			pdf_repair_xref_base(ctx, doc);
 			pdf_prime_xref_index(ctx, doc);
 		}
 
@@ -2602,7 +2602,7 @@ object_updated:
 perform_repair:
 			fz_try(ctx)
 			{
-				pdf_repair_xref(ctx, doc);
+				pdf_repair_xref_base(ctx, doc);
 				pdf_prime_xref_index(ctx, doc);
 				pdf_repair_obj_stms(ctx, doc);
 				pdf_repair_trailer(ctx, doc);
@@ -5370,4 +5370,12 @@ void pdf_minimize_document(fz_context *ctx, pdf_document *doc)
 			}
 		}
 	}
+}
+
+void pdf_repair_xref(fz_context *ctx, pdf_document *doc)
+{
+	pdf_repair_xref_base(ctx, doc);
+	pdf_prime_xref_index(ctx, doc);
+	pdf_repair_obj_stms(ctx, doc);
+	pdf_repair_trailer(ctx, doc);
 }
