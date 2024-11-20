@@ -3836,7 +3836,8 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			pdf_obj *crypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
 			int crypt_num = pdf_to_num(ctx, crypt);
-			opts->crypt_object_number = opts->renumber_map[crypt_num];
+			if (crypt_num < opts->list_len)
+				opts->crypt_object_number = opts->renumber_map[crypt_num];
 		}
 
 		/* Make renumbering affect all indirect references and update xref */
