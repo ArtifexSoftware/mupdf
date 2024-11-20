@@ -1647,7 +1647,7 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 	}
 }
 
-static void
+void
 pdf_prime_xref_index(fz_context *ctx, pdf_document *doc)
 {
 	int i, j;
