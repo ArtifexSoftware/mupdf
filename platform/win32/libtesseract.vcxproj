@@ -355,7 +355,6 @@
     <ClCompile Include="..\..\thirdparty\tesseract\src\lstm\reversed.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\lstm\series.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\lstm\stridemap.cpp" />
-    <ClCompile Include="..\..\thirdparty\tesseract\src\lstm\tfnetwork.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\lstm\weightmatrix.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\textord\alignedblob.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\textord\baselinedetect.cpp" />

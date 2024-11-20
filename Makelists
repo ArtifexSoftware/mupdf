@@ -681,7 +681,6 @@ TESSERACT_SRC += thirdparty/tesseract/src/lstm/reconfig.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/lstm/reversed.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/lstm/series.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/lstm/stridemap.cpp
-TESSERACT_SRC += thirdparty/tesseract/src/lstm/tfnetwork.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/lstm/weightmatrix.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/textord/alignedblob.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/textord/baselinedetect.cpp
