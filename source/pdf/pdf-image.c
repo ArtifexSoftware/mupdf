@@ -584,11 +584,13 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image)
 					pdf_update_stream(ctx, doc, globals_ref, fz_jbig2_globals_data(ctx, cp->u.jbig2.globals), 0);
 				}
 				else
+				{
 					buffer = pdf_jbig2_stream_from_file(ctx, cbuffer->buffer,
 						cp->u.jbig2.globals,
 						1);
-				if (!buffer)
-					goto unknown_compression;
+					if (!buffer)
+						goto unknown_compression;
+				}
 				pdf_dict_put(ctx, imobj, PDF_NAME(Filter), PDF_NAME(JBIG2Decode));
 				break;
 			case FZ_IMAGE_FAX:
