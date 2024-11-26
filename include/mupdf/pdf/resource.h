@@ -57,10 +57,18 @@ typedef struct
 	int local_xref;
 } pdf_font_resource_key;
 
+typedef struct
+{
+	unsigned char digest[16];
+	int local_xref;
+} pdf_colorspace_resource_key;
+
 pdf_obj *pdf_find_font_resource(fz_context *ctx, pdf_document *doc, int type, int encoding, fz_font *item, pdf_font_resource_key *key);
 pdf_obj *pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, pdf_font_resource_key *key, pdf_obj *obj);
+pdf_obj *pdf_find_colorspace_resource(fz_context *ctx, pdf_document *doc, fz_colorspace *item, pdf_colorspace_resource_key *key);
+pdf_obj *pdf_insert_colorspace_resource(fz_context *ctx, pdf_document *doc, pdf_colorspace_resource_key *key, pdf_obj *obj);
 void pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc);
-void pdf_purge_local_font_resources(fz_context *ctx, pdf_document *doc);
+void pdf_purge_local_resources(fz_context *ctx, pdf_document *doc);
 
 typedef struct pdf_function pdf_function;
 
@@ -101,6 +109,8 @@ int pdf_is_jpx_image(fz_context *ctx, pdf_obj *dict);
 fz_image *pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 
 pdf_obj *pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image);
+
+pdf_obj *pdf_add_colorspace(fz_context *ctx, pdf_document *doc, fz_colorspace *cs);
 
 typedef struct
 {

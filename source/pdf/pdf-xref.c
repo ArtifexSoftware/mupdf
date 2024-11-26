@@ -5235,7 +5235,7 @@ void pdf_drop_local_xref(fz_context *ctx, pdf_xref *xref)
 
 void pdf_drop_local_xref_and_resources(fz_context *ctx, pdf_document *doc)
 {
-	pdf_purge_local_font_resources(ctx, doc);
+	pdf_purge_local_resources(ctx, doc);
 	pdf_purge_locals_from_store(ctx, doc);
 	pdf_drop_local_xref(ctx, doc->local_xref);
 	doc->local_xref = NULL;

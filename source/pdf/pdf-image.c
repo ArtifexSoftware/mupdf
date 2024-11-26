@@ -775,66 +775,8 @@ unknown_compression:
 		}
 		else
 		{
-			fz_colorspace *cs;
-
-			cs = pixmap ? pixmap->colorspace : image->colorspace;
-			switch (fz_colorspace_type(ctx, cs))
-			{
-			case FZ_COLORSPACE_INDEXED:
-				{
-					fz_colorspace *basecs;
-					unsigned char *lookup = NULL;
-					int high = 0;
-					int basen;
-					pdf_obj *arr;
-
-					basecs = cs->u.indexed.base;
-					high = cs->u.indexed.high;
-					lookup = cs->u.indexed.lookup;
-					basen = basecs->n;
-
-					arr = pdf_dict_put_array(ctx, imobj, PDF_NAME(ColorSpace), 4);
-
-					pdf_array_push(ctx, arr, PDF_NAME(Indexed));
-					switch (fz_colorspace_type(ctx, basecs))
-					{
-					case FZ_COLORSPACE_GRAY:
-						pdf_array_push(ctx, arr, PDF_NAME(DeviceGray));
-						break;
-					case FZ_COLORSPACE_RGB:
-						pdf_array_push(ctx, arr, PDF_NAME(DeviceRGB));
-						break;
-					case FZ_COLORSPACE_CMYK:
-						pdf_array_push(ctx, arr, PDF_NAME(DeviceCMYK));
-						break;
-					default:
-						// TODO: convert to RGB!
-						fz_throw(ctx, FZ_ERROR_ARGUMENT, "only indexed Gray, RGB, and CMYK colorspaces supported");
-						break;
-					}
-
-					pdf_array_push_int(ctx, arr, high);
-					pdf_array_push_string(ctx, arr, (char *) lookup, (size_t)basen * (high + 1));
-				}
-				break;
-			case FZ_COLORSPACE_NONE:
-			case FZ_COLORSPACE_GRAY:
-				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(DeviceGray));
-				break;
-			case FZ_COLORSPACE_RGB:
-				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(DeviceRGB));
-				break;
-			case FZ_COLORSPACE_CMYK:
-				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(DeviceCMYK));
-				break;
-			case FZ_COLORSPACE_LAB:
-				pdf_dict_put(ctx, imobj, PDF_NAME(ColorSpace), PDF_NAME(Lab));
-				break;
-			default:
-				// TODO: convert to RGB!
-				fz_throw(ctx, FZ_ERROR_ARGUMENT, "only Gray, RGB, and CMYK colorspaces supported");
-				break;
-			}
+			fz_colorspace *cs = pixmap ? pixmap->colorspace : image->colorspace;
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME(ColorSpace), pdf_add_colorspace(ctx, doc, cs));
 		}
 
 		if (image->mask)

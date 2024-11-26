@@ -248,6 +248,11 @@ int fz_colorspace_is_device(fz_context *ctx, fz_colorspace *cs)
 	return cs && (cs->flags & FZ_COLORSPACE_IS_DEVICE);
 }
 
+int fz_colorspace_is_icc(fz_context *ctx, fz_colorspace *cs)
+{
+	return cs && (cs->flags & FZ_COLORSPACE_IS_ICC);
+}
+
 int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	return cs && (cs->type == FZ_COLORSPACE_LAB) && (cs->flags & FZ_COLORSPACE_IS_ICC);
@@ -1921,5 +1926,16 @@ fz_convert_pixmap_samples(fz_context *ctx, const fz_pixmap *src, fz_pixmap *dst,
 		fz_rethrow(ctx);
 #else
 	fz_convert_fast_pixmap_samples(ctx, src, dst, copy_spots);
+#endif
+}
+
+void fz_colorspace_digest(fz_context *ctx, fz_colorspace *cs, unsigned char digest[16])
+{
+#if FZ_ENABLE_ICC
+	if (!fz_colorspace_is_icc(ctx, cs))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "must have icc profile for colorspace digest");
+	memcpy(digest, cs->u.icc.md5, 16);
+#else
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "ICC support disabled");
 #endif
 }
