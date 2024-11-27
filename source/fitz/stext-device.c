@@ -85,6 +85,7 @@ void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float 
 #define SPACE_DIST 0.15f
 #define SPACE_MAX_DIST 0.8f
 #define BASE_MAX_DIST 0.8f
+#define FAKE_BOLD_MAX_DIST 0.25f
 
 /* We keep a stack of the different metatexts that apply at any
  * given point (normally none!). Whenever we get some content
@@ -582,6 +583,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
+	float dist;
 
 	/* Preserve RTL-ness only (and ignore level) so we can use bit 2 as "visual" tag for reordering pass. */
 	bidi = bidi & 1;
@@ -675,9 +677,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		/* Largely supplanted by the check_for_fake_bold mechanism above,
 		 * but we leave this in for backward compatibility as it's cheap,
 		 * and works even when FZ_STEXT_COLLECT_STYLES is not set. */
-		delta.x = fabsf(q.x - dev->pen.x);
-		delta.y = fabsf(q.y - dev->pen.y);
-		if (delta.x < FLT_EPSILON && delta.y < FLT_EPSILON && c == dev->lastchar)
+		dist = hypotf(q.x - dev->pen.x, q.y - dev->pen.y) / size;
+		if (dist < FAKE_BOLD_MAX_DIST && c == dev->lastchar)
 			return;
 
 		/* Calculate how far we've moved since the last character. */
