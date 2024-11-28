@@ -141,7 +141,7 @@ fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float 
 	if (is_italic) fz_write_string(ctx, out, "<i>");
 	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%.1fpt", family, size);
 	if (color != 0 && color != CMYK_BLACK)
-		fz_write_printf(ctx, out, ";color:#%06x", color);
+		fz_write_printf(ctx, out, ";color:#%06x", color & 0xffffff);
 	fz_write_printf(ctx, out, "\">");
 }
 
@@ -683,7 +683,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			break;
 
 		case FZ_STEXT_BLOCK_VECTOR:
-			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" stroke=\"%d\" argba=\"%08x\"/>\n",
+			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" stroke=\"%d\" argb=\"%08x\"/>\n",
 					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1,
 					!!block->u.v.stroked, block->u.v.argb);
 			break;
