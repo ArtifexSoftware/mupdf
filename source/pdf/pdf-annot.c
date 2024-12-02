@@ -978,7 +978,7 @@ remove_from_tree(fz_context *ctx, pdf_obj *arr, pdf_obj *item, pdf_cycle_list *c
 	for (i = 0; i < n; ++i)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, arr, i);
-		if (obj == item)
+		if (!pdf_objcmp(ctx, obj, item))
 		{
 			pdf_array_delete(ctx, arr, i);
 			res = 1;
