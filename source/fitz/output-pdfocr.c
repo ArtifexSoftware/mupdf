@@ -1015,7 +1015,7 @@ fz_band_writer *fz_new_pdfocr_band_writer(fz_context *ctx, fz_output *out, const
 	fz_catch(ctx)
 	{
 		fz_drop_band_writer(ctx, &writer->super);
-		fz_throw(ctx, FZ_ERROR_LIBRARY, "OCR initialisation failed");
+		fz_rethrow(ctx);
 	}
 
 	return &writer->super;
