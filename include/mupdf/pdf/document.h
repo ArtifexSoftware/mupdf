@@ -268,12 +268,24 @@ typedef struct
 } pdf_layer_config;
 
 /*
-	Fetch the name (and optionally creator) of the given layer config.
+	Fetch the name (and optionally creator) of the default layer config.
 
 	doc: The document in question.
 
-	config_num: A value in the 0..n-1 range, where n is the
-	value returned from pdf_count_layer_configs.
+	info: Pointer to structure to fill in. Pointers within
+	this structure may be set to NULL if no information is
+	available.
+*/
+void pdf_default_layer_config_info(fz_context *ctx, pdf_document *doc, pdf_layer_config *info);
+
+/*
+	Fetch the name (and optionally creator) of the given alternative layer config.
+
+	doc: The document in question.
+
+	config_num: A value in the -1..n-1 range, where n is the
+	value returned from pdf_count_layer_configs. If this is
+	-1, information is returned about the default layer config.
 
 	info: Pointer to structure to fill in. Pointers within
 	this structure may be set to NULL if no information is
@@ -282,14 +294,24 @@ typedef struct
 void pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info);
 
 /*
+	Set the current configuration to default layer configuration.
+	This updates the visibility of the optional content groups
+	within the document.
+
+	doc: The document in question.
+*/
+void pdf_select_default_layer_config(fz_context *ctx, pdf_document *doc);
+
+/*
 	Set the current configuration.
 	This updates the visibility of the optional content groups
 	within the document.
 
 	doc: The document in question.
 
-	config_num: A value in the 0..n-1 range, where n is the
-	value returned from pdf_count_layer_configs.
+	config_num: A value in the -1..n-1 range, where n is the
+	value returned from pdf_count_layer_configs. If this is
+	-1, the default layer configuration is selected.
 */
 void pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config_num);
 

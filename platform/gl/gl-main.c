@@ -1460,36 +1460,44 @@ static void do_links(fz_link *link)
 		bounds = fz_transform_rect(link->rect, view_page_ctm);
 		area = fz_irect_from_rect(bounds);
 
-		if (ui_mouse_inside(area))
+		if (!pdf || !pdf_is_link_hidden(ctx, "View", link))
 		{
-			if (!tooltip)
-				tooltip = link->uri;
-			ui.hot = link;
-			if (!ui.active && ui.down)
-				ui.active = link;
-		}
-
-		if (ui.hot == link || showlinks)
-		{
-			if (ui.active == link && ui.hot == link)
-				glColor4f(0, 0, 1, 0.4f);
-			else if (ui.hot == link)
-				glColor4f(0, 0, 1, 0.2f);
-			else
-				glColor4f(0, 0, 1, 0.1f);
-			glRectf(area.x0, area.y0, area.x1, area.y1);
-		}
-
-		if (ui.active == link && !ui.down)
-		{
-			if (ui.hot == link)
+			if (ui_mouse_inside(area))
 			{
-				if (fz_is_external_link(ctx, link->uri))
-					open_browser(link->uri);
+				if ((!pdf || !pdf_is_link_set_ocg_state(link)) && !tooltip)
+					tooltip = link->uri;
+				ui.hot = link;
+				if (!ui.active && ui.down)
+					ui.active = link;
+			}
+
+			if (ui.hot == link || showlinks)
+			{
+				if (ui.active == link && ui.hot == link)
+					glColor4f(0, 0, 1, 0.4f);
+				else if (ui.hot == link)
+					glColor4f(0, 0, 1, 0.2f);
 				else
+					glColor4f(0, 0, 1, 0.1f);
+				glRectf(area.x0, area.y0, area.x1, area.y1);
+			}
+
+			if (ui.active == link && !ui.down)
+			{
+				if (ui.hot == link)
 				{
-					fz_location loc = fz_resolve_link(ctx, doc, link->uri, &link_x, &link_y);
-					jump_to_location_xy(loc, link_x, link_y);
+					if (pdf && pdf_is_link_set_ocg_state(link))
+					{
+						pdf_activate_link_set_ocg_state(ctx, pdf, link);
+						page_contents_changed = 1;
+					}
+					else if (fz_is_external_link(ctx, link->uri))
+						open_browser(link->uri);
+					else
+					{
+						fz_location loc = fz_resolve_link(ctx, doc, link->uri, &link_x, &link_y);
+						jump_to_location_xy(loc, link_x, link_y);
+					}
 				}
 			}
 		}
@@ -2990,6 +2998,11 @@ void run_main_loop(void)
 		fz_report_error(ctx);
 	}
 	ui_end();
+
+	if (page_contents_changed)
+	{
+		run_main_loop();
+	}
 }
 
 static void usage(const char *argv0)
