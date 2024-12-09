@@ -818,7 +818,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	flush_begin_layer(ctx, pr);
 
 	if (dostroke) {
-		if (pr->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED))
+		if (pr->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED | FZ_DEVFLAG_DASH_PATTERN_UNDEFINED))
 			pr->dev->flags |= FZ_DEVFLAG_UNCACHEABLE;
 		else if (gstate->stroke_state->dash_len != 0 && pr->dev->flags & (FZ_DEVFLAG_STARTCAP_UNDEFINED | FZ_DEVFLAG_DASHCAP_UNDEFINED | FZ_DEVFLAG_ENDCAP_UNDEFINED))
 			pr->dev->flags |= FZ_DEVFLAG_UNCACHEABLE;
@@ -2302,6 +2302,7 @@ static void pdf_run_d(fz_context *ctx, pdf_processor *proc, pdf_obj *array, floa
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
 	int len, i;
 
+	pr->dev->flags &= ~FZ_DEVFLAG_DASH_PATTERN_UNDEFINED;
 	len = pdf_array_len(ctx, array);
 	gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(ctx, gstate->stroke_state, len);
 	gstate->stroke_state->dash_len = len;
@@ -2718,14 +2719,6 @@ static void pdf_run_d1(fz_context *ctx, pdf_processor *proc, float wx, float wy,
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags |= FZ_DEVFLAG_MASK | FZ_DEVFLAG_BBOX_DEFINED;
-	pr->dev->flags &= ~(FZ_DEVFLAG_FILLCOLOR_UNDEFINED |
-				FZ_DEVFLAG_STROKECOLOR_UNDEFINED |
-				FZ_DEVFLAG_STARTCAP_UNDEFINED |
-				FZ_DEVFLAG_DASHCAP_UNDEFINED |
-				FZ_DEVFLAG_ENDCAP_UNDEFINED |
-				FZ_DEVFLAG_LINEJOIN_UNDEFINED |
-				FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
-				FZ_DEVFLAG_LINEWIDTH_UNDEFINED);
 	pr->dev->d1_rect.x0 = fz_min(llx, urx);
 	pr->dev->d1_rect.y0 = fz_min(lly, ury);
 	pr->dev->d1_rect.x1 = fz_max(llx, urx);

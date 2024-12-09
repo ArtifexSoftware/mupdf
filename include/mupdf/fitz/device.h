@@ -58,12 +58,9 @@ enum
 	FZ_DEVFLAG_LINEJOIN_UNDEFINED = 256,
 	FZ_DEVFLAG_MITERLIMIT_UNDEFINED = 512,
 	FZ_DEVFLAG_LINEWIDTH_UNDEFINED = 1024,
-	/* Arguably we should have a bit for the dash pattern itself
-	 * being undefined, but that causes problems; do we assume that
-	 * it should always be set to non-dashing at the start of every
-	 * glyph? */
 	FZ_DEVFLAG_BBOX_DEFINED = 2048,
 	FZ_DEVFLAG_GRIDFIT_AS_TILED = 4096,
+	FZ_DEVFLAG_DASH_PATTERN_UNDEFINED = 8192,
 };
 
 enum
