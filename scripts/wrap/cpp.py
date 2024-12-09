@@ -2666,7 +2666,21 @@ def function_name_implies_kept_references( fnname):
             'fz_get_pixmap_from_image',
             ):
         return True
-    for i in ('new', 'create', 'find', 'load', 'open', 'keep', 'read', 'add', 'parse', 'graft', 'copy', 'deep_copy'):
+    for i in (
+            'add',
+            'convert',
+            'copy',
+            'create',
+            'deep_copy',
+            'find',
+            'graft',
+            'keep',
+            'load',
+            'new',
+            'open',
+            'parse',
+            'read',
+            ):
         if fnname.startswith(f'fz_{i}_') or fnname.startswith(f'pdf_{i}_'):
             if state.state_.show_details(fnname):
                 jlib.log('Assuming that {fnname=} returns a kept reference.')
