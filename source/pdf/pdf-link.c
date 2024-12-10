@@ -559,6 +559,7 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int p
 static void pdf_drop_link_imp(fz_context *ctx, fz_link *link)
 {
 	pdf_drop_obj(ctx, ((pdf_link *) link)->obj);
+	pdf_drop_obj(ctx, ((pdf_link *) link)->set_ocg_state);
 }
 
 static void pdf_set_link_rect(fz_context *ctx, fz_link *link_, fz_rect rect)
@@ -619,16 +620,18 @@ fz_link *pdf_new_link(fz_context *ctx, pdf_page *page, fz_rect rect, const char 
 	link->super.set_uri_fn = pdf_set_link_uri;
 	link->page = page; /* only borrowed, as the page owns the link */
 	link->obj = pdf_keep_obj(ctx, obj);
+	link->set_ocg_state = NULL;
 	return &link->super;
 }
 
 static fz_link *
 pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict, int pagenum, fz_matrix page_ctm)
 {
-	pdf_obj *action;
+	pdf_obj *action, *s;
 	pdf_obj *obj;
 	fz_rect bbox;
 	char *uri;
+	pdf_obj *link_set_ocg_state = NULL;
 	fz_link *link = NULL;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME(Subtype));
@@ -651,7 +654,18 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict,
 		/* fall back to additional action button's down/up action */
 		if (!action)
 			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME(AA)), PDF_NAME(U), PDF_NAME(D));
-		uri = pdf_parse_link_action(ctx, doc, action, pagenum);
+
+		s = pdf_dict_get(ctx, action, PDF_NAME(S));
+
+		if (pdf_name_eq(ctx, PDF_NAME(SetOCGState), s))
+		{
+			link_set_ocg_state = pdf_dict_get(ctx, action, PDF_NAME(State));
+			uri = fz_asprintf(ctx, "#SetOCGState");
+		}
+		else
+		{
+			uri = pdf_parse_link_action(ctx, doc, action, pagenum);
+		}
 	}
 
 	if (!uri)
@@ -664,7 +678,90 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict,
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
+	if (link_set_ocg_state)
+	{
+		((pdf_link*)link)->set_ocg_state = pdf_keep_obj(ctx, link_set_ocg_state);
+	}
+
 	return link;
+}
+
+int pdf_is_link_set_ocg_state(fz_link* link)
+{
+	if (((pdf_link*)link)->set_ocg_state)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+int pdf_is_link_hidden(fz_context *ctx, const char *usage, fz_link* link)
+{
+	pdf_obj *obj, *oc, *rdb;
+	pdf_page *page;
+
+	obj = ((pdf_link*)link)->obj;
+	oc = pdf_dict_get(ctx, obj, PDF_NAME(OC));
+
+	if (!oc)
+		return 0;
+
+	page = ((pdf_link*)link)->page;
+	rdb = pdf_page_resources(ctx, page);
+
+	return pdf_is_ocg_hidden(ctx, page->doc, rdb, usage, oc);
+}
+
+void pdf_activate_link_set_ocg_state(fz_context *ctx, pdf_document *doc, fz_link *link)
+{
+
+	int len, currOp;
+	pdf_obj *item;
+	pdf_obj *state = ((pdf_link*)link)->set_ocg_state;
+
+	if (!state)
+		return;
+
+	len = pdf_array_len(ctx, state);
+
+	if (len <= 1)
+		return;
+
+	currOp = -1;
+
+	for (int i = 0; i < len; i++)
+	{
+		item = pdf_array_get(ctx, state, i);
+
+		if (pdf_name_eq(ctx, item, PDF_NAME(ON)))
+			currOp = 0;
+		else if (pdf_name_eq(ctx, item, PDF_NAME(OFF)))
+			currOp = 1;
+		else if (pdf_name_eq(ctx, item, PDF_NAME(Toggle)))
+			currOp = 2;
+		else
+		{
+			pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
+			int index = find_ocg(ctx, desc, item);
+
+			switch (currOp)
+			{
+			case 0:
+				pdf_enable_layer(ctx, doc, index, 1);
+				break;
+			case 1:
+				pdf_enable_layer(ctx, doc, index, 0);
+				break;
+			case 2:
+				pdf_enable_layer(ctx, doc, index, !pdf_layer_is_enabled(ctx, doc, index));
+				break;
+			default:
+				fz_warn(ctx, "Unknown visibility operation.");
+				break;
+			}
+		}
+	}
 }
 
 fz_link *

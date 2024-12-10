@@ -963,6 +963,24 @@ int pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs);
 pdf_obj *pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_page *, pdf_obj *annots, int pagenum, fz_matrix page_ctm);
 
+/*
+	Checks whether a PDF link annotation is actually a
+	SetOCGState action.
+*/
+int pdf_is_link_set_ocg_state(fz_link* link);
+
+/*
+	Activates the SetOCGState action specified by a PDF
+	link annotations.
+*/
+void pdf_activate_link_set_ocg_state(fz_context *ctx, pdf_document *doc, fz_link *link);
+
+/*
+	Checks whether a link is hidden because its OCG is
+	not visible.
+*/
+int pdf_is_link_hidden(fz_context *ctx, const char *usage, fz_link* link);
+
 void pdf_annot_MK_BG(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 void pdf_annot_MK_BC(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 int pdf_annot_MK_BG_rgb(fz_context *ctx, pdf_annot *annot, float rgb[3]);

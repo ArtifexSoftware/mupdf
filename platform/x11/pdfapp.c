@@ -1911,11 +1911,14 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 	p = fz_transform_point(p, ctm);
 
+	pdf_document *pdf_doc = pdf_specifics(app->ctx, app->doc);
+
 	for (link = app->page_links; link; link = link->next)
 	{
-		if (p.x >= link->rect.x0 && p.x <= link->rect.x1)
-			if (p.y >= link->rect.y0 && p.y <= link->rect.y1)
-				break;
+		if (!pdf_doc || !pdf_is_link_hidden(ctx, "View", link))
+			if (p.x >= link->rect.x0 && p.x <= link->rect.x1)
+				if (p.y >= link->rect.y0 && p.y <= link->rect.y1)
+					break;
 	}
 
 	if (link)
@@ -1923,7 +1926,13 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		wincursor(app, HAND);
 		if (btn == 1 && state == 1 && !processed)
 		{
-			if (fz_is_external_link(ctx, link->uri))
+			if (pdf_doc && pdf_is_link_set_ocg_state(link))
+			{
+				pdf_activate_link_set_ocg_state(ctx, pdf_doc, link);
+				pdfapp_showpage(app, 1, 1, 1, 0, 0);
+				wincursor(app, HAND);
+			}
+			else if (fz_is_external_link(ctx, link->uri))
 				pdfapp_gotouri(app, link->uri);
 			else
 			{
