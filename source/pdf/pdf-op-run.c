@@ -1158,30 +1158,48 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	int ucslen;
 	int i;
 	int render_direct;
+	int type3_hitr;
 
 	gid = pdf_tos_make_trm(ctx, &pr->tos, &gstate->text, fontdesc, cid, &trm, &adv);
 
 	/* If we are uncachable, then render direct. */
 	render_direct = !fz_glyph_cacheable(ctx, fontdesc->font, gid);
 
+	/* PDF spec: ISO 32000-2 latest version at the time of writing:
+	 * Section 9.3.6:
+	 * Where text is drawn using a Type 3 font:
+	 *  + if text rendering mode is set to a value of 3 or 7, the text shall not be rendered.
+	 *  + if text rendering mode is set to a value other than 3 or 7, the text shall be rendered using the glyph descriptions in the Type 3 font.
+	 *  + If text rendering mode is set to a value of 4, 5, 6 or 7, nothing shall be added to the clipping path.
+	 */
+	type3_hitr = (fontdesc->font->t3procs && pr->tos.text_mode >= 4);
+
 	/* flush buffered text if rendermode has changed */
-	if (!pr->tos.text || gstate->text.render != pr->tos.text_mode || render_direct)
+	if (!pr->tos.text || gstate->text.render != pr->tos.text_mode || render_direct || type3_hitr)
 	{
 		gstate = pdf_flush_text(ctx, pr);
 		pdf_tos_reset(ctx, &pr->tos, gstate->text.render);
 	}
 
-	if (render_direct)
+	/* If Type3 and tr >= 4, then ignore the clipping path part. */
+	if (type3_hitr)
+		pr->tos.text_mode -= 4;
+
+	if (render_direct && pr->tos.text_mode != 3 /* or 7, by type3_hitr */)
 	{
 		/* Render the glyph stream direct here (only happens for
 		 * type3 glyphs that seem to inherit current graphics
 		 * attributes, or type 3 glyphs within type3 glyphs). */
 		fz_matrix composed = fz_concat(trm, gstate->ctm);
+		/* Whatever problems the underlying char has is no concern of
+		 * ours. Store the flags, restore them afterwards. */
+		int old_flags = pr->dev->flags;
 		pdf_gsave(ctx, pr);
 		gstate = pr->gstate + pr->gtop;
 		pdf_drop_font(ctx, gstate->text.font);
 		gstate->text.font = NULL; /* don't inherit the current font... */
 		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs);
+		pr->dev->flags = old_flags;
 		pdf_grestore(ctx, pr);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
