@@ -2749,6 +2749,8 @@ static void pdf_run_CS(fz_context *ctx, pdf_processor *proc, const char *name, f
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	if (!strcmp(name, "Pattern"))
 		pdf_set_pattern(ctx, pr, PDF_STROKE, NULL, NULL);
 	else
@@ -2759,6 +2761,8 @@ static void pdf_run_cs(fz_context *ctx, pdf_processor *proc, const char *name, f
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	if (!strcmp(name, "Pattern"))
 		pdf_set_pattern(ctx, pr, PDF_FILL, NULL, NULL);
 	else
@@ -2769,6 +2773,8 @@ static void pdf_run_SC_color(fz_context *ctx, pdf_processor *proc, int n, float 
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_color(ctx, pr, PDF_STROKE, color);
 }
 
@@ -2776,6 +2782,8 @@ static void pdf_run_sc_color(fz_context *ctx, pdf_processor *proc, int n, float 
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_color(ctx, pr, PDF_FILL, color);
 }
 
@@ -2783,6 +2791,8 @@ static void pdf_run_SC_pattern(fz_context *ctx, pdf_processor *proc, const char 
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_pattern(ctx, pr, PDF_STROKE, pat, color);
 }
 
@@ -2790,6 +2800,8 @@ static void pdf_run_sc_pattern(fz_context *ctx, pdf_processor *proc, const char 
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_pattern(ctx, pr, PDF_FILL, pat, color);
 }
 
@@ -2797,6 +2809,8 @@ static void pdf_run_SC_shade(fz_context *ctx, pdf_processor *proc, const char *n
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_shade(ctx, pr, PDF_STROKE, shade);
 }
 
@@ -2804,6 +2818,8 @@ static void pdf_run_sc_shade(fz_context *ctx, pdf_processor *proc, const char *n
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_shade(ctx, pr, PDF_FILL, shade);
 }
 
@@ -2811,6 +2827,8 @@ static void pdf_run_G(fz_context *ctx, pdf_processor *proc, float g)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_STROKE, fz_device_gray(ctx));
 	pdf_set_color(ctx, pr, PDF_STROKE, &g);
 }
@@ -2819,6 +2837,8 @@ static void pdf_run_g(fz_context *ctx, pdf_processor *proc, float g)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_FILL, fz_device_gray(ctx));
 	pdf_set_color(ctx, pr, PDF_FILL, &g);
 }
@@ -2828,6 +2848,8 @@ static void pdf_run_K(fz_context *ctx, pdf_processor *proc, float c, float m, fl
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	float color[4] = {c, m, y, k};
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_STROKE, fz_device_cmyk(ctx));
 	pdf_set_color(ctx, pr, PDF_STROKE, color);
 }
@@ -2837,6 +2859,8 @@ static void pdf_run_k(fz_context *ctx, pdf_processor *proc, float c, float m, fl
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	float color[4] = {c, m, y, k};
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_FILL, fz_device_cmyk(ctx));
 	pdf_set_color(ctx, pr, PDF_FILL, color);
 }
@@ -2846,6 +2870,8 @@ static void pdf_run_RG(fz_context *ctx, pdf_processor *proc, float r, float g, f
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	float color[3] = {r, g, b};
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_STROKE, fz_device_rgb(ctx));
 	pdf_set_color(ctx, pr, PDF_STROKE, color);
 }
@@ -2855,6 +2881,8 @@ static void pdf_run_rg(fz_context *ctx, pdf_processor *proc, float r, float g, f
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	float color[3] = {r, g, b};
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
+	if (pr->dev->flags & FZ_DEVFLAG_MASK)
+		return;
 	pdf_set_colorspace(ctx, pr, PDF_FILL, fz_device_rgb(ctx));
 	pdf_set_color(ctx, pr, PDF_FILL, color);
 }
