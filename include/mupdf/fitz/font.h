@@ -761,7 +761,7 @@ struct fz_font
 	float *t3widths; /* has 256 entries if used */
 	unsigned short *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
-	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs);
+	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device *dev, fz_matrix ctm, void *gstate, fz_default_colorspaces *default_cs, void *fill_gstate, void *stroke_gstate);
 	void (*t3freeres)(fz_context *ctx, void *doc, void *resources);
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */

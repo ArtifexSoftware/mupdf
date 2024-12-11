@@ -1194,11 +1194,17 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 		/* Whatever problems the underlying char has is no concern of
 		 * ours. Store the flags, restore them afterwards. */
 		int old_flags = pr->dev->flags;
+		pdf_gstate *fill_gstate = NULL;
+		pdf_gstate *stroke_gstate = NULL;
 		pdf_gsave(ctx, pr);
 		gstate = pr->gstate + pr->gtop;
+		if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.gstate_num >= 0)
+			fill_gstate = pr->gstate + gstate->fill.gstate_num;
+		if (gstate->stroke.kind == PDF_MAT_PATTERN && gstate->stroke.gstate_num >= 0)
+			stroke_gstate = pr->gstate + gstate->stroke.gstate_num;
 		pdf_drop_font(ctx, gstate->text.font);
 		gstate->text.font = NULL; /* don't inherit the current font... */
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs);
+		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs, fill_gstate, stroke_gstate);
 		pr->dev->flags = old_flags;
 		pdf_grestore(ctx, pr);
 		/* Render text invisibly so that it can still be extracted. */
@@ -3073,7 +3079,7 @@ pdf_run_pop_resources(fz_context *ctx, pdf_processor *proc)
 	gstate: The initial graphics state.
 */
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie)
+pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie, pdf_gstate *fill_gstate, pdf_gstate *stroke_gstate)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -3242,14 +3248,31 @@ pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_mat
 		proc->gtop = 0;
 		pdf_init_gstate(ctx, &proc->gstate[0], ctm);
 
+		if (fill_gstate)
+		{
+			pdf_copy_gstate(ctx, &proc->gstate[0], fill_gstate);
+			proc->gstate[0].clip_depth = 0;
+			proc->gtop++;
+		}
+		if (stroke_gstate)
+		{
+			pdf_copy_gstate(ctx, &proc->gstate[proc->gtop], stroke_gstate);
+			proc->gstate[proc->gtop].clip_depth = 0;
+			proc->gtop++;
+		}
 		if (gstate)
 		{
-			pdf_copy_gstate(ctx, &proc->gstate[0], gstate);
-			proc->gstate[0].clip_depth = 0;
-			proc->gstate[0].ctm = ctm;
+			pdf_copy_gstate(ctx, &proc->gstate[proc->gtop], gstate);
+			proc->gstate[proc->gtop].clip_depth = 0;
+			proc->gstate[proc->gtop].ctm = ctm;
 		}
+		proc->gparent = proc->gtop;
+		if (fill_gstate)
+			proc->gstate[proc->gtop].fill.gstate_num = 0;
+		if (stroke_gstate)
+			proc->gstate[proc->gtop].fill.gstate_num = (fill_gstate != NULL);
 
-		/* We need to save an extra level to allow for level 0 to be the parent gstate level. */
+		/* We need to save an extra level to allow for the parent gstate level. */
 		pdf_gsave(ctx, proc);
 
 		/* Structure details */

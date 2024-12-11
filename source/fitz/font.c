@@ -1604,7 +1604,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 
 	fz_try(ctx)
 	{
-		font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, fz_identity, NULL, NULL);
+		font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, fz_identity, NULL, NULL, NULL, NULL);
 		fz_close_device(ctx, dev);
 		font->t3flags[gid] = dev->flags;
 		d1_rect = dev->d1_rect;
@@ -1747,7 +1747,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 }
 
 void
-fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, fz_matrix trm, void *gstate, fz_default_colorspaces *def_cs)
+fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, fz_matrix trm, void *gstate, fz_default_colorspaces *def_cs, void *fill_gstate, void *stroke_gstate)
 {
 	fz_matrix ctm;
 
@@ -1765,7 +1765,7 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	}
 
 	ctm = fz_concat(font->t3matrix, trm);
-	font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm, gstate, def_cs);
+	font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm, gstate, def_cs, fill_gstate, stroke_gstate);
 }
 
 fz_rect

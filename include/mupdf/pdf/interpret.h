@@ -215,7 +215,7 @@ void pdf_count_q_balance(fz_context *ctx, pdf_document *doc, pdf_obj *res, pdf_o
 
 /* Functions to set up pdf_process structures */
 
-pdf_processor *pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie);
+pdf_processor *pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_matrix ctm, int struct_parent, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, fz_cookie *cookie, pdf_gstate *fill_gstate, pdf_gstate *stroke_gstate);
 
 /*
 	Create a buffer processor.
