@@ -146,7 +146,16 @@ static int init_base_context(JNIEnv *env)
 		(void)pthread_mutex_init(&mutexes[i], NULL);
 #endif
 
-	base_context = fz_new_context(NULL, &locks, FZ_STORE_DEFAULT);
+#ifdef FZ_JAVA_STORE_SIZE
+	size_t fz_store_size = FZ_JAVA_STORE_SIZE;
+#else
+	size_t fz_store_size = FZ_STORE_DEFAULT;
+#endif
+	char *env_fz_store_size = getenv("FZ_JAVA_STORE_SIZE");
+	if (env_fz_store_size)
+		fz_store_size = atol(env_fz_store_size);
+	base_context = fz_new_context(NULL, &locks, fz_store_size);
+
 	if (!base_context)
 	{
 		LOGE("cannot create base context");
