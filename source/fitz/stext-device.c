@@ -850,8 +850,19 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 			adv = 0;
 
 		unicode = span->items[i].ucs;
-		if (unicode == FZ_REPLACEMENT_CHARACTER && (dev->flags & FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE))
-			unicode = span->items[i].cid;
+		if (unicode == FZ_REPLACEMENT_CHARACTER)
+		{
+			if (dev->flags & FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE)
+			{
+				unicode = span->items[i].cid;
+				flags |= FZ_STEXT_UNICODE_IS_CID;
+			}
+			else if (dev->flags & FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE)
+			{
+				unicode = span->items[i].gid;
+				flags |= FZ_STEXT_UNICODE_IS_GID;
+			}
+		}
 
 		/* Send the chars we have through. */
 		fz_add_stext_char(ctx, dev, font,

@@ -151,6 +151,22 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	of text at what appear to be paragraph boundaries. This only works
 	for left-to-right, top-to-bottom paragraphs. Works best on a segmented
 	page.
+
+	FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE: If this option is set, then
+	in the event that we fail to find a unicode value for a given
+	character, we we instead return its CID in the unicode field. We
+	will set the FZ_STEXT_UNICODE_IS_CID bit in the char flags word to
+	indicate that this has happened.
+
+	FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE: If this option is set, then
+	in the event that we fail to find a unicode value for a given
+	character, we we instead return its glyph in the unicode field.
+	We will set the FZ_STEXT_UNICODE_IS_GID bit in the char flags word
+	to indicate that this has happened.
+
+	Setting both FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE and
+	FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE will give undefined behaviour.
+
 */
 enum
 {
@@ -168,6 +184,7 @@ enum
 	FZ_STEXT_IGNORE_ACTUALTEXT = 2048,
 	FZ_STEXT_SEGMENT = 4096,
 	FZ_STEXT_PARAGRAPH_BREAK = 8192,
+	FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE = 65536,
 
 	/* An old, deprecated option. */
 	FZ_STEXT_MEDIABOX_CLIP = FZ_STEXT_CLIP
@@ -368,7 +385,9 @@ enum
 	FZ_STEXT_SYNTHETIC = 4,
 	FZ_STEXT_FILLED = 16,
 	FZ_STEXT_STROKED = 32,
-	FZ_STEXT_CLIPPED = 64
+	FZ_STEXT_CLIPPED = 64,
+	FZ_STEXT_UNICODE_IS_CID = 128,
+	FZ_STEXT_UNICODE_IS_GID = 256,
 };
 
 /**
