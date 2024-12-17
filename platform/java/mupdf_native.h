@@ -2623,6 +2623,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_endMetatext
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_OutlineIterator_FLAG_BOLD
+#define com_artifex_mupdf_fitz_OutlineIterator_FLAG_BOLD 1L
+#undef com_artifex_mupdf_fitz_OutlineIterator_FLAG_ITALIC
+#define com_artifex_mupdf_fitz_OutlineIterator_FLAG_ITALIC 2L
 /*
  * Class:     com_artifex_mupdf_fitz_OutlineIterator
  * Method:    finalize
@@ -2666,18 +2670,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_OutlineIterator_down
 /*
  * Class:     com_artifex_mupdf_fitz_OutlineIterator
  * Method:    insert
- * Signature: (Ljava/lang/String;Ljava/lang/String;Z)I
+ * Signature: (Ljava/lang/String;Ljava/lang/String;ZFFFI)I
  */
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_OutlineIterator_insert
-  (JNIEnv *, jobject, jstring, jstring, jboolean);
-
-/*
- * Class:     com_artifex_mupdf_fitz_OutlineIterator
- * Method:    update
- * Signature: (Ljava/lang/String;Ljava/lang/String;Z)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_OutlineIterator_update
-  (JNIEnv *, jobject, jstring, jstring, jboolean);
+  (JNIEnv *, jobject, jstring, jstring, jboolean, jfloat, jfloat, jfloat, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_OutlineIterator

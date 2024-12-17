@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1269,7 +1269,7 @@ static int count_outline(fz_outline *node, int end)
 
 static void do_outline_imp(struct list *list, int end, fz_outline *node, int depth)
 {
-	int is_selected, was_open, n, np;
+	int is_selected, is_open, was_open, n, np;
 
 	if (!node)
 		return;
@@ -1283,12 +1283,13 @@ static void do_outline_imp(struct list *list, int end, fz_outline *node, int dep
 		if (node->next && (np = fz_page_number_from_location(ctx, doc, node->next->page)) >= 0)
 			n = np;
 
-		was_open = node->is_open;
+		is_open = was_open = node->is_open;
 		is_selected = 0;
 		if (fz_count_chapters(ctx, doc) == 1)
 			is_selected = (p>=0) && (currentpage.page == p || (currentpage.page > p && currentpage.page < n));
-		if (ui_tree_item(list, node, node->title, is_selected, depth, !!node->down, &node->is_open))
+		if (ui_tree_item(list, node, node->title, is_selected, depth, !!node->down, &is_open))
 		{
+			node->is_open = is_open;
 			if (p < 0)
 			{
 				currentpage = fz_resolve_link(ctx, doc, node->uri, &node->x, &node->y);
@@ -1299,6 +1300,7 @@ static void do_outline_imp(struct list *list, int end, fz_outline *node, int dep
 				jump_to_page_xy(p, node->x, node->y);
 			}
 		}
+		node->is_open = is_open;
 
 		if (node->down && (was_open || is_selected))
 			do_outline_imp(list, n, node->down, depth + 1);

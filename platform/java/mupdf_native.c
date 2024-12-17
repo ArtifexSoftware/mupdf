@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -696,6 +696,9 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_Pixmap_DESKEW_BORDER_MAINTAIN == FZ_DESKEW_BORDER_MAINTAIN;
 	valid &= com_artifex_mupdf_fitz_Pixmap_DESKEW_BORDER_DECREASE == FZ_DESKEW_BORDER_DECREASE;
 
+	valid &= com_artifex_mupdf_fitz_OutlineIterator_FLAG_BOLD == FZ_OUTLINE_FLAG_BOLD;
+	valid &= com_artifex_mupdf_fitz_OutlineIterator_FLAG_ITALIC == FZ_OUTLINE_FLAG_ITALIC;
+
 	return valid ? 1 : 0;
 }
 
@@ -1103,7 +1106,7 @@ static int find_fids(JNIEnv *env)
 	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;[L"PKG"Outline;)V");
 
 	cls_OutlineItem = get_class(&err, env, PKG"OutlineIterator$OutlineItem");
-	mid_OutlineItem_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;Z)V");
+	mid_OutlineItem_init = get_method(&err, env, "<init>", "(Ljava/lang/String;Ljava/lang/String;ZFFFI)V");
 
 	cls_OutlineIterator = get_class(&err, env, PKG"OutlineIterator");
 	fid_OutlineIterator_pointer = get_field(&err, env, "pointer", "J");

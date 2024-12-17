@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1043,6 +1043,18 @@ static fz_outline_item ffi_tooutlineitem(js_State *J, int idx)
 		}
 		else
 			item.uri = NULL;
+	}
+	if (js_hasproperty(J, idx, "r")) {
+		item.r = js_tonumber(J, -1);
+	}
+	if (js_hasproperty(J, idx, "g")) {
+		item.g = js_tonumber(J, -1);
+	}
+	if (js_hasproperty(J, idx, "b")) {
+		item.b = js_tonumber(J, -1);
+	}
+	if (js_hasproperty(J, idx, "flags")) {
+		item.flags = js_tonumber(J, -1);
 	}
 
 	return item;
@@ -3838,6 +3850,7 @@ static void ffi_OutlineIterator_item(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_outline_iterator *iter = js_touserdata(J, 0, "fz_outline_iterator");
 	fz_outline_item *item;
+	uint32_t color;
 
 	fz_try(ctx)
 		item = fz_outline_iterator_item(ctx, iter);
@@ -3866,6 +3879,18 @@ static void ffi_OutlineIterator_item(js_State *J)
 
 	js_pushboolean(J, item->is_open);
 	js_setproperty(J, -2, "open");
+
+	js_pushnumber(J, item->r);
+	js_setproperty(J, -2, "r");
+
+	js_pushnumber(J, item->g);
+	js_setproperty(J, -2, "g");
+
+	js_pushnumber(J, item->b);
+	js_setproperty(J, -2, "b");
+
+	js_pushnumber(J, item->flags);
+	js_setproperty(J, -2, "flags");
 }
 
 static void ffi_OutlineIterator_next(js_State *J)
