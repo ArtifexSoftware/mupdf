@@ -65,6 +65,13 @@ typedef struct pdf_filter_gstate
 	pdf_text_state text;
 } pdf_filter_gstate;
 
+typedef enum
+{
+	NO_CLIP_OP,
+	CLIP_W,
+	CLIP_Wstar
+} clip_op_t;
+
 typedef struct filter_gstate
 {
 	struct filter_gstate *next;
@@ -72,6 +79,7 @@ typedef struct filter_gstate
 	fz_rect clip_rect;
 	pdf_filter_gstate pending;
 	pdf_filter_gstate sent;
+	clip_op_t clip_op;
 } filter_gstate;
 
 typedef struct
@@ -1505,7 +1513,6 @@ cull_segmenter_rectto(fz_context *ctx, void *arg, float x1, float y1, float x2, 
 	fz_rectto(ctx, sd->segment, x1, y1, x2, y2);
 }
 
-
 static int
 cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 {
@@ -1525,10 +1532,27 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	{
 		filter_flush(ctx, p, flush);
 		fz_walk_path(ctx, p->path, &cull_replay_walker, p);
-		/* Even in the case of a clip path, we want to drop the path here.
-		 * This is because we've sent it already. The only thing that's
-		 * supposed to follow a clipping operator is either a path painting
-		 * operator, or 'n'. */
+
+		if (p->gstate->clip_op != NO_CLIP_OP)
+		{
+			fz_rect r;
+
+			/* ctm has always been flushed by now. */
+			r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
+			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
+			if (p->gstate->clip_op == CLIP_W)
+			{
+				if (p->chain->op_W)
+					p->chain->op_W(ctx, p->chain);
+			}
+			else
+			{
+				if (p->chain->op_Wstar)
+					p->chain->op_Wstar(ctx, p->chain);
+			}
+			p->gstate->clip_op = NO_CLIP_OP;
+		}
+
 		fz_drop_path(ctx, p->path);
 		p->path = NULL;
 		p->path = fz_new_path(ctx);
@@ -1555,6 +1579,8 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	sd.p = p;
 	sd.segment = NULL;
 	sd.type = type;
+	if (p->gstate->clip_op != NO_CLIP_OP)
+		sd.type += FZ_CULL_CLIP_PATH_FILL - FZ_CULL_PATH_FILL;
 	sd.flush = flush;
 	fz_try(ctx)
 	{
@@ -1565,6 +1591,26 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		fz_drop_path(ctx, sd.segment);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	if (sd.any_sent != 0 && p->gstate->clip_op != NO_CLIP_OP)
+	{
+		fz_rect r;
+
+		/* ctm has always been flushed by now. */
+		r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
+		p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
+		if (p->gstate->clip_op == CLIP_W)
+		{
+			if (p->chain->op_W)
+				p->chain->op_W(ctx, p->chain);
+		}
+		else
+		{
+			if (p->chain->op_Wstar)
+				p->chain->op_Wstar(ctx, p->chain);
+		}
+		p->gstate->clip_op = NO_CLIP_OP;
+	}
 
 	fz_drop_path(ctx, p->path);
 	p->path = NULL;
@@ -1717,9 +1763,8 @@ pdf_filter_n(fz_context *ctx, pdf_processor *proc)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	fz_drop_path(ctx, p->path);
-	p->path = NULL;
-	p->path = fz_new_path(ctx);
+	if (cull_path(ctx, p, FZ_CULL_PATH_DROP, FLUSH_ALL))
+		return;
 
 	if (p->chain->op_n)
 		p->chain->op_n(ctx, p->chain);
@@ -1731,48 +1776,26 @@ static void
 pdf_filter_W(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
-	fz_rect r;
-	fz_matrix ctm;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
-	r = fz_bound_path(ctx, p->path, NULL, ctm);
-	p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
-
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
-	if (cull_path(ctx, p, FZ_CULL_CLIP_PATH, FLUSH_CTM))
-		return;
-
-	if (p->chain->op_W)
-		p->chain->op_W(ctx, p->chain);
+	/* This operator does nothing when it is seen. It just affects the
+	 * behaviour of the subsequent path drawing operation. */
+	p->gstate->clip_op = CLIP_W;
 }
 
 static void
 pdf_filter_Wstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
-	fz_rect r;
-	fz_matrix ctm;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
-	r = fz_bound_path(ctx, p->path, NULL, ctm);
-	p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
-
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
-	if (cull_path(ctx, p, FZ_CULL_CLIP_PATH, FLUSH_CTM))
-		return;
-
-	if (p->chain->op_Wstar)
-		p->chain->op_Wstar(ctx, p->chain);
+	/* This operator does nothing when it is seen. It just affects the
+	 * behaviour of the subsequent path drawing operation. */
+	p->gstate->clip_op = CLIP_Wstar;
 }
 
 /* text objects */
@@ -2961,6 +2984,7 @@ pdf_new_sanitize_filter(
 		proc->gstate->sent.stroke.linewidth = 1;
 		proc->gstate->sent.stroke.miterlimit = 10;
 		proc->gstate->clip_rect = fz_infinite_rect;
+		proc->gstate->clip_op = NO_CLIP_OP;
 	}
 	fz_catch(ctx)
 	{

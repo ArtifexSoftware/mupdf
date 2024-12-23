@@ -865,7 +865,8 @@ pdf_redact_image_filter_pixels(fz_context *ctx, void *opaque, fz_matrix ctm, con
 			fz_rethrow(ctx);
 		return image;
 	}
-	return image;
+
+	return fz_keep_image(ctx, image);
 }
 
 /* Returns 0 if area does not intersect with any of our redactions.
@@ -976,6 +977,9 @@ static int culler(fz_context *ctx, void *opaque, fz_rect bbox, fz_cull_type type
 	case FZ_CULL_PATH_FILL:
 	case FZ_CULL_PATH_STROKE:
 	case FZ_CULL_PATH_FILL_STROKE:
+	case FZ_CULL_CLIP_PATH_FILL:
+	case FZ_CULL_CLIP_PATH_STROKE:
+	case FZ_CULL_CLIP_PATH_FILL_STROKE:
 		if (red->line_art == PDF_REDACT_LINE_ART_REMOVE_IF_COVERED)
 			return (rect_touches_redactions(ctx, bbox, red) == 2);
 		else if (red->line_art == PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
