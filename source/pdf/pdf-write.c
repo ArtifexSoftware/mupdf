@@ -3921,6 +3921,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 					lastfree = num;
 				}
 			}
+			opts->gen_list[0] = 0xffff;
 
 			if (opts->do_linear && opts->page_count > 0)
 			{
