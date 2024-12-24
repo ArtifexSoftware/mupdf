@@ -709,10 +709,11 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
  * Scan for and remove duplicate objects (slow)
  */
 
-static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
+static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
 	int num, other;
 	int xref_len = pdf_xref_len(ctx, doc);
+	int changed = 0;
 
 	expand_lists(ctx, opts, xref_len);
 	for (num = 1; num < xref_len; num++)
@@ -749,9 +750,12 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			opts->use_list[fz_maxi(num, other)] = 0;
 
 			/* One duplicate was found, do not look for another */
+			changed = 1;
 			break;
 		}
 	}
+
+	return changed;
 }
 
 /*
@@ -3723,6 +3727,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	int num;
 	int xref_len;
 	pdf_obj *id1, *id = NULL;
+	int changed;
 
 	if (in_opts->do_incremental)
 	{
@@ -3810,41 +3815,44 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 		expand_lists(ctx, opts, xref_len);
 
-		/* Sweep & mark objects from the trailer */
-		if (opts->do_garbage >= 1 || opts->do_linear)
+		do
 		{
-			/* Start by removing indirect /Length attributes on streams */
-			for (num = 0; num < xref_len; num++)
-				bake_stream_length(ctx, doc, num);
+			changed = 0;
+			/* Sweep & mark objects from the trailer */
+			if (opts->do_garbage >= 1 || opts->do_linear)
+			{
+				/* Start by removing indirect /Length attributes on streams */
+				for (num = 0; num < xref_len; num++)
+					bake_stream_length(ctx, doc, num);
 
-			(void)markobj(ctx, doc, opts, pdf_trailer(ctx, doc));
+				(void)markobj(ctx, doc, opts, pdf_trailer(ctx, doc));
+			}
+			else
+			{
+				for (num = 0; num < xref_len; num++)
+					opts->use_list[num] = 1;
+			}
+
+			/* Coalesce and renumber duplicate objects */
+			if (opts->do_garbage >= 3)
+				changed = removeduplicateobjs(ctx, doc, opts);
+
+			/* Compact xref by renumbering and removing unused objects */
+			if (opts->do_garbage >= 2 || opts->do_linear)
+				compactxref(ctx, doc, opts);
+
+			/* Make renumbering affect all indirect references and update xref */
+			if (opts->do_garbage >= 2 || opts->do_linear)
+				renumberobjs(ctx, doc, opts);
 		}
-		else
-		{
-			for (num = 0; num < xref_len; num++)
-				opts->use_list[num] = 1;
-		}
-
-		/* Coalesce and renumber duplicate objects */
-		if (opts->do_garbage >= 3)
-			removeduplicateobjs(ctx, doc, opts);
-
-		/* Compact xref by renumbering and removing unused objects */
-		if (opts->do_garbage >= 2 || opts->do_linear)
-			compactxref(ctx, doc, opts);
+		while (changed);
 
 		opts->crypt_object_number = 0;
 		if (opts->crypt)
 		{
 			pdf_obj *crypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
-			int crypt_num = pdf_to_num(ctx, crypt);
-			if (crypt_num < opts->list_len)
-				opts->crypt_object_number = opts->renumber_map[crypt_num];
+			opts->crypt_object_number = pdf_to_num(ctx, crypt);
 		}
-
-		/* Make renumbering affect all indirect references and update xref */
-		if (opts->do_garbage >= 2 || opts->do_linear)
-			renumberobjs(ctx, doc, opts);
 
 		if (opts->do_use_objstms)
 			gather_to_objstms(ctx, doc, opts, xref_len);
