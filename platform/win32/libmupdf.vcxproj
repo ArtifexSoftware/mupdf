@@ -563,6 +563,7 @@
     <ClCompile Include="..\..\source\fitz\ocr-device.c" />
     <ClCompile Include="..\..\source\fitz\outline.c" />
     <ClCompile Include="..\..\source\fitz\output-cbz.c" />
+    <ClCompile Include="..\..\source\fitz\output-csv.c" />
     <ClCompile Include="..\..\source\fitz\output-docx.c" />
     <ClCompile Include="..\..\source\fitz\output-jpeg.c" />
     <ClCompile Include="..\..\source\fitz\output-pcl.c" />

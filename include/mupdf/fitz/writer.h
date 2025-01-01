@@ -154,6 +154,9 @@ fz_document_writer *fz_new_pwg_writer_with_output(fz_context *ctx, fz_output *ou
 fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_cbz_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
 
+fz_document_writer *fz_new_csv_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_csv_writer_with_output(fz_context *ctx, fz_output *out, const char *options);
+
 /**
 	Used to report progress of the OCR operation.
 
