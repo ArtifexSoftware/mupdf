@@ -130,6 +130,11 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	this option subsumes an older, now deprecated, FZ_STEXT_MEDIABOX_CLIP
 	option.
 
+	FZ_STEXT_CLIP_RECT: If this option is set, characters that would be entirely
+	clipped away by the specified 'clip' rectangle in the options struct
+	will be ignored. This enables content from specific subsections of pages to
+	be extracted.
+
 	FZ_STEXT_COLLECT_STRUCTURE: If this option is set, we will collect
 	the structure as specified using begin/end_structure calls. This will
 	change the returned stext structure from being a simple list of blocks
@@ -192,6 +197,7 @@ enum
 	FZ_STEXT_TABLE_HUNT = 16384,
 	FZ_STEXT_COLLECT_STYLES = 32768,
 	FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE = 65536,
+	FZ_STEXT_CLIP_RECT = (1<<17),
 
 	/* An old, deprecated option. */
 	FZ_STEXT_MEDIABOX_CLIP = FZ_STEXT_CLIP
@@ -592,6 +598,7 @@ typedef struct
 {
 	int flags;
 	float scale;
+	fz_rect clip;
 } fz_stext_options;
 
 /**

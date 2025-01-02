@@ -11,7 +11,6 @@
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 // details.
-//
 // You should have received a copy of the GNU Affero General Public License
 // along with MuPDF. If not, see <https://www.gnu.org/licenses/agpl-3.0.en.html>
 //
@@ -151,11 +150,13 @@ const char *fz_stext_options_usage =
 	"\tdehyphenate: attempt to join up hyphenated words\n"
 	"\tuse-cid-for-unknown-unicode: guess unicode from cid if normal mapping fails\n"
 	"\tclip: do not include text that is completely clipped\n"
+	"\tclip-rect=x0:y0:x1:y1 specify clipping rectangle within which to collect content\n"
 	"\tstructured=no: don't collect structure data\n"
 	"\taccurate-bboxes=no: calculate char bboxes for from the outlines\n"
 	"\tvectors=no: include vector bboxes in output\n"
 	"\tsegment=no: don't attempt to segment the page\n"
 	"\ttable-hunt: hunt for tables within a (segmented) page\n"
+	"\tcollect-flags: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -921,6 +922,22 @@ fz_add_stext_char(fz_context *ctx,
 	fz_add_stext_char_imp(ctx, dev, font, c, glyph, trm, adv, wmode, bidi, force_new_line, flags);
 }
 
+static fz_rect
+current_clip(fz_context *ctx, fz_stext_device *dev)
+{
+	fz_rect r = fz_infinite_rect;
+
+	if (dev->flags & FZ_STEXT_CLIP)
+	{
+		r = fz_device_current_scissor(ctx, &dev->super);
+		r = fz_intersect_rect(r, dev->page->mediabox);
+	}
+	if (dev->flags & FZ_STEXT_CLIP_RECT)
+		r = fz_intersect_rect(r, dev->opts.clip);
+
+	return r;
+}
+
 static void
 do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix ctm, int start, int end, int flags)
 {
@@ -946,10 +963,9 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 		dev->last.valid = 1;
 		dev->last.flags = flags;
 
-		if (dev->flags & FZ_STEXT_CLIP)
+		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
 		{
-			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
-			r = fz_intersect_rect(r, dev->page->mediabox);
+			fz_rect r = current_clip(ctx, dev);
 			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
@@ -1023,7 +1039,7 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 		if (rune == 0)
 			break;
 
-		if (dev->flags & FZ_STEXT_CLIP)
+		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
 			if (dev->last.clipped)
 				continue;
 
@@ -1123,10 +1139,9 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		}
 		dev->last.valid = 1;
 
-		if (dev->flags & FZ_STEXT_CLIP)
+		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
 		{
-			fz_rect r = fz_device_current_scissor(ctx, &dev->super);
-			r = fz_intersect_rect(r, dev->page->mediabox);
+			fz_rect r = current_clip(ctx, dev);
 			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
 			{
 				dev->last.clipped = 1;
@@ -1468,6 +1483,8 @@ fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix 
 
 	local_ctm = ctm;
 	scissor = fz_device_current_scissor(ctx, dev);
+	if (dev->flags & FZ_STEXT_CLIP_RECT)
+		scissor = fz_intersect_rect(scissor, tdev->opts.clip);
 	scissor = fz_intersect_rect(scissor, tdev->page->mediabox);
 	image = fz_new_image_from_shade(ctx, shade, &local_ctm, color_params, scissor);
 	fz_try(ctx)
@@ -1542,6 +1559,34 @@ fz_stext_drop_device(fz_context *ctx, fz_device *dev)
 		pop_metatext(ctx, tdev);
 }
 
+static int
+val_is_rect(const char *val, fz_rect *rp)
+{
+	fz_rect r;
+	const char *s;
+
+	s = strchr(val, ':');
+	if (s == NULL || s == val)
+		return 0;
+	r.x0 = fz_atof(val);
+	val = s+1;
+	s = strchr(val, ':');
+	if (s == NULL || s == val)
+		return 0;
+	r.y0 = fz_atof(val);
+	val = s+1;
+	s = strchr(val, ':');
+	if (s == NULL || s == val)
+		return 0;
+	r.x1 = fz_atof(val);
+	val = s+1;
+	r.y1 = fz_atof(val);
+
+	*rp = r;
+
+	return 1;
+}
+
 fz_stext_options *
 fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string)
 {
@@ -1589,6 +1634,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 	}
 	if (fz_has_option(ctx, string, "clip", &val) && fz_option_eq(val, "no"))
 		opts->flags ^= FZ_STEXT_CLIP;
+	if (fz_has_option(ctx, string, "clip-rect", &val) && val_is_rect(val, &opts->clip))
+		opts->flags |= FZ_STEXT_CLIP_RECT;
 
 	opts->scale = 1;
 	if (fz_has_option(ctx, string, "resolution", &val))
