@@ -251,6 +251,7 @@
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\capi.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\hocrrenderer.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\lstmboxrenderer.cpp" />
+    <ClCompile Include="..\..\thirdparty\tesseract\src\api\pagerenderer.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\pdfrenderer.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\renderer.cpp" />
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\wordstrboxrenderer.cpp" />

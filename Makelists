@@ -582,6 +582,7 @@ TESSERACT_SRC += thirdparty/tesseract/src/api/baseapi.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/capi.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/hocrrenderer.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/lstmboxrenderer.cpp
+TESSERACT_SRC += thirdparty/tesseract/src/api/pagerenderer.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/pdfrenderer.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/renderer.cpp
 TESSERACT_SRC += thirdparty/tesseract/src/api/wordstrboxrenderer.cpp

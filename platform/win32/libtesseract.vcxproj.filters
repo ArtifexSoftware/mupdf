@@ -998,6 +998,9 @@
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\lstmboxrenderer.cpp">
       <Filter>Source Files\tesseract\api</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\tesseract\src\api\pagerenderer.cpp">
+      <Filter>Source Files\tesseract\api</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\thirdparty\tesseract\src\api\pdfrenderer.cpp">
       <Filter>Source Files\tesseract\api</Filter>
     </ClCompile>
