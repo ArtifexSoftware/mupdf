@@ -832,7 +832,17 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 					boxer_feed(ctx, boxer, &line->bbox);
 				break;
 			case FZ_STEXT_BLOCK_VECTOR:
-				boxer_feed(ctx, boxer, &block->bbox);
+			{
+				/* Allow a 1 point margin around vectors to avoid hairline
+				 * cracks between supposedly abutting things. */
+				int VECTOR_MARGIN = 1;
+				fz_rect r = block->bbox;
+				r.x0 -= VECTOR_MARGIN;
+				r.y0 -= VECTOR_MARGIN;
+				r.x1 += VECTOR_MARGIN;
+				r.y1 += VECTOR_MARGIN;
+				boxer_feed(ctx, boxer, &r);
+			}
 			}
 		}
 
