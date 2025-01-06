@@ -319,7 +319,7 @@ static void filter_flush(fz_context *ctx, pdf_sanitize_processor *p, int flush)
 		flush_tags(ctx, p, &p->pending_tags);
 
 	if (flush & FLUSH_OP)
-		(void)ensure_pushed(ctx, p);
+		gstate = ensure_pushed(ctx, p);
 
 	if (flush & FLUSH_CTM)
 	{
@@ -1215,7 +1215,7 @@ pdf_filter_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	filter_flush(ctx, p, FLUSH_ALL);
+	filter_flush(ctx, p, FLUSH_ALL | FLUSH_OP);
 	if (p->chain->op_gs_begin)
 		p->chain->op_gs_begin(ctx, p->chain, name, extgstate);
 	copy_resource(ctx, p, PDF_NAME(ExtGState), name);
