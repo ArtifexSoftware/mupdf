@@ -3181,11 +3181,7 @@ int main(int argc, char **argv)
 	}
 
 	if (layout_css)
-	{
-		fz_buffer *buf = fz_read_file(ctx, layout_css);
-		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
-		fz_drop_buffer(ctx, buf);
-	}
+		fz_load_user_css(ctx, layout_css);
 	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	if (fz_optind < argc)

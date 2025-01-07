@@ -590,6 +590,12 @@ const char *fz_user_css(fz_context *ctx);
 void fz_set_user_css(fz_context *ctx, const char *text);
 
 /**
+	Set the user stylesheet by loading the source from a file.
+	If the file is missing, do nothing.
+*/
+void fz_load_user_css(fz_context *ctx, const char *filename);
+
+/**
 	Return whether to respect document styles in HTML and EPUB.
 */
 int fz_use_document_css(fz_context *ctx);
