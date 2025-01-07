@@ -41,6 +41,10 @@ csv_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 {
 	fz_csv_writer *wri = (fz_csv_writer*)wri_;
 	wri->page = fz_new_stext_page(ctx, mediabox);
+	wri->options.flags |= FZ_STEXT_COLLECT_VECTORS;
+	wri->options.flags |= FZ_STEXT_ACCURATE_BBOXES;
+	wri->options.flags |= FZ_STEXT_SEGMENT;
+	wri->options.flags |= FZ_STEXT_TABLE_HUNT;
 	return fz_new_stext_device(ctx, wri->page, &wri->options);
 }
 
@@ -203,8 +207,6 @@ csv_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_try(ctx)
 	{
 		fz_close_device(ctx, dev);
-
-		fz_table_hunt(ctx, wri->page);
 
 		/* Output UTF-8 BOM */
 		fz_write_printf(ctx, wri->out, "%C", 0xFEFF);
