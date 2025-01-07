@@ -434,11 +434,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int kbps
 		fz_register_document_handlers(ctx);
 
 		if (app->layout_css)
-		{
-			fz_buffer *buf = fz_read_file(ctx, app->layout_css);
-			fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
-			fz_drop_buffer(ctx, buf);
-		}
+			fz_load_user_css(ctx, app->layout_css);
 
 		fz_set_use_document_css(ctx, app->layout_use_doc_css);
 

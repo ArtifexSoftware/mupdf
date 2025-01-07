@@ -86,6 +86,26 @@ const char *fz_user_css(fz_context *ctx)
 	return ctx->style->user_css;
 }
 
+void fz_load_user_css(fz_context *ctx, const char *filename)
+{
+	fz_buffer *buf = NULL;
+	fz_var(buf);
+	fz_try(ctx)
+	{
+		buf = fz_read_file(ctx, filename);
+		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+	}
+	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
+		fz_warn(ctx, "cannot read user css file");
+	}
+}
+
 static void fz_new_tuning_context(fz_context *ctx)
 {
 	if (ctx)
