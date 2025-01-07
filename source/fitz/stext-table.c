@@ -1310,10 +1310,23 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 		if (bbox.x0 == block->bbox.x0 && bbox.y0 == block->bbox.y0 && bbox.x1 == block->bbox.x1 && bbox.y1 == block->bbox.y1)
 		{
 			/* Trivially included */
+			if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down)
+			{
+				if (block->u.s.down->standard == FZ_STRUCTURE_TD)
+				{
+					/* Don't copy TDs! Just copy the contents */
+					move_contained_content(ctx, page, dest, block->u.s.down, r);
+					continue;
+				}
+			}
 			unlink_block(block, sfirst, slast);
 			insert_block_before(block, before, page, dest);
-			before = block->next;
+			assert(before == block->next);
 			continue;
+		}
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			move_contained_content(ctx, page, dest, block->u.s.down, r);
 		}
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
 		{
@@ -1336,7 +1349,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					{
 						newblock = fz_pool_alloc(ctx, page->pool, sizeof(fz_stext_block));
 						insert_block_before(newblock, before, page, dest);
-						before = newblock->next;
+						assert(before == newblock->next);
 					}
 
 					unlink_line_from_block(line, block);
@@ -1790,11 +1803,10 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	fz_try(ctx)
 	{
 		/* Now see whether the content looks like tables.
-		 * Currently, we pass descend == 0, which means we only consider content at
-		 * this level. If we pass 1, then we'll consider all the content at this
-		 * level, plus the children. This might allow for where we have oversegmented,
-		 * but really needs us to fixup the content. */
-		walk_blocks(ctx, &xs, &ys, *first_block, 0);
+		 * Currently, we pass descend == 1, which means we consider all the
+		 * content at this level, plus any children. This allows us to cope
+		 * with having oversegmented. */
+		walk_blocks(ctx, &xs, &ys, *first_block, 1);
 
 		sanitize_positions(ctx, &xs);
 		sanitize_positions(ctx, &ys);
