@@ -1702,7 +1702,7 @@ merge_rows(grid_walker_data *gd)
 }
 
 static fz_stext_struct *
-check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_grid_positions *yps, fz_stext_page *page, fz_stext_struct *parent)
+check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_grid_positions *yps, fz_stext_page *page, fz_stext_struct *parent, int num_subtables)
 {
 	fz_stext_block **first_blockp = parent ? &parent->first_block : &page->first_block;
 	grid_walker_data gd = { 0 };
@@ -1735,6 +1735,23 @@ check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_gri
 		if (gd.xpos->len < 3 || gd.ypos->len < 3)
 			break;
 
+		if (num_subtables > 0)
+		{
+			/* We are risking throwing away a table we've already found for this
+			 * one. Only do it if this one is really convincing. */
+			int x, y;
+			for (x = 0; x < gd.xpos->len; x++)
+				if (gd.xpos->list[x].uncertainty != 0)
+					break;
+			if (x != gd.xpos->len)
+				break;
+			for (y = 0; y < gd.xpos->len; y++)
+				if (gd.ypos->list[y].uncertainty != 0)
+					break;
+			if (y != gd.ypos->len)
+				break;
+		}
+
 		/* Now we should have the entire table calculated. */
 		table = transcribe_table(ctx, &gd, page, parent);
 	}
@@ -1762,7 +1779,7 @@ bbox_of_blocks(fz_stext_block *block)
 	return r;
 }
 
-static void
+static int
 do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 {
 	div_list xs = { 0 };
@@ -1772,10 +1789,11 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
 	fz_stext_grid_positions *xps = NULL;
 	fz_stext_grid_positions *yps = NULL;
+	int num_subtables = 0;
 
 	/* No content? Just bale. */
 	if (*first_block == NULL)
-		return;
+		return 0;
 
 	/* First off, descend into any children to see if those look like tables. */
 	count = 0;
@@ -1785,7 +1803,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 		{
 			if (block->u.s.down)
 			{
-				do_table_hunt(ctx, page, block->u.s.down);
+				num_subtables += do_table_hunt(ctx, page, block->u.s.down);
 				count++;
 			}
 		}
@@ -1793,9 +1811,11 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 			count++;
 	}
 
-	/* If all we have is a single child, no more to hunt. */
-	if (count <= 1)
-		return;
+	/* If we don't have at least a single child, no more to hunt. */
+	/* We only need a single block, because a single text block can
+	 * contain an entire unbordered table. */
+	if (count < 1)
+		return num_subtables;
 
 	fz_var(xps);
 	fz_var(yps);
@@ -1818,7 +1838,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 			fz_rect rect = bbox_of_blocks(*first_block);
 			xps = make_table_positions(ctx, &xs, rect.x0, rect.x1);
 			yps = make_table_positions(ctx, &ys, rect.y0, rect.y1);
-			table = check_for_grid_lines(ctx, xps, yps, page, parent);
+			table = check_for_grid_lines(ctx, xps, yps, page, parent, num_subtables);
 
 			if (table != NULL)
 			{
@@ -1832,6 +1852,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 				block->bbox.y0 = block->u.b.ys->list[0].pos;
 				block->bbox.x1 = block->u.b.xs->list[block->u.b.xs->len-1].pos;
 				block->bbox.y1 = block->u.b.ys->list[block->u.b.ys->len-1].pos;
+				num_subtables = 1;
 			}
 #ifdef DEBUG_WRITE_AS_PS
 			{
@@ -1870,6 +1891,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	return num_subtables;
 }
 
 void
