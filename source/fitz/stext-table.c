@@ -496,7 +496,7 @@ insert_block_before(fz_stext_block *block, fz_stext_block *before, fz_stext_page
 		block->prev = page->last_block;
 		if (page->last_block)
 			page->last_block->next = block;
-		if (page->first_block)
+		if (page->first_block == NULL)
 			page->first_block = block;
 		page->last_block = block;
 	}
