@@ -85,7 +85,7 @@ void fz_add_layout_char(fz_context *ctx, fz_layout_block *block, float x, float 
 #define SPACE_DIST 0.15f
 #define SPACE_MAX_DIST 0.8f
 #define BASE_MAX_DIST 0.8f
-#define FAKE_BOLD_MAX_DIST 0.25f
+#define FAKE_BOLD_MAX_DIST 0.1f
 
 /* We keep a stack of the different metatexts that apply at any
  * given point (normally none!). Whenever we get some content
