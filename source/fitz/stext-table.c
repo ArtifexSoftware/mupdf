@@ -803,8 +803,7 @@ walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_b
 				float rpos;
 				int left = 1;
 				int right = 0;
-				div_list_push(ctx, ys, 1, line->bbox.y0);
-				div_list_push(ctx, ys, 0, line->bbox.y1);
+				int non_empty = 0;
 				for (ch = line->first_char; ch != NULL; ch = ch->next)
 				{
 					if (ch->c == ' ')
@@ -844,6 +843,7 @@ walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_b
 					}
 					else
 					{
+						non_empty = 1;
 						if (left)
 						{
 							float lpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
@@ -853,6 +853,11 @@ walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_b
 						rpos = fz_max(ch->quad.lr.x, ch->quad.ur.x);
 						right = 1;
 					}
+				}
+				if (non_empty)
+				{
+					div_list_push(ctx, ys, 1, line->bbox.y0);
+					div_list_push(ctx, ys, 0, line->bbox.y1);
 				}
 				if (right)
 					div_list_push(ctx, xs, 0, rpos);
