@@ -1323,8 +1323,7 @@ pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *te
 		tos->char_tx = (w0 * text->size + text->char_space) * text->scale;
 		tos->char_ty = 0;
 	}
-
-	if (fontdesc->wmode == 1)
+	else
 	{
 		pdf_vmtx v = pdf_lookup_vmtx(ctx, fontdesc, cid);
 		float w1 = *adv = v.w * 0.001f;
