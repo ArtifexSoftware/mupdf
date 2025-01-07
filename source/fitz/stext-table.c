@@ -1701,6 +1701,158 @@ merge_rows(grid_walker_data *gd)
 	}
 }
 
+static int
+tr_is_empty(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_STRUCT)
+			return 0;
+		if (!block->u.s.down)
+		{
+		}
+		else if (block->u.s.down->standard != FZ_STRUCTURE_TD)
+			return 0;
+		else if (block->u.s.down->first_block != NULL)
+			return 0;
+	}
+
+	return 1;
+}
+
+static int
+table_is_empty(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_GRID)
+			continue;
+		if (block->type != FZ_STEXT_BLOCK_STRUCT)
+			return 0;
+		if (!block->u.s.down)
+		{
+		}
+		else if (block->u.s.down->standard != FZ_STRUCTURE_TR)
+			return 0;
+		else if (!tr_is_empty(ctx, block->u.s.down->first_block))
+			return 0;
+	}
+
+	return 1;
+}
+
+static void
+tidy_td_divs(fz_context *ctx, fz_stext_struct *parent)
+{
+	while (1)
+	{
+		fz_stext_block *block = parent->first_block;
+
+		if (block == NULL || block->next != NULL || block->type != FZ_STEXT_BLOCK_STRUCT || block->u.s.down == NULL || block->u.s.down->standard != FZ_STRUCTURE_DIV)
+			return;
+
+		parent->first_block = block->u.s.down->first_block;
+		parent->last_block = block->u.s.down->last_block;
+	}
+}
+
+static void
+tidy_tr_divs(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down && block->u.s.down->standard == FZ_STRUCTURE_TD)
+			tidy_td_divs(ctx, block->u.s.down);
+	}
+}
+
+static void
+tidy_table_divs(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_GRID)
+			continue;
+		if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down && block->u.s.down->standard == FZ_STRUCTURE_TR)
+			tidy_tr_divs(ctx, block->u.s.down->first_block);
+	}
+}
+
+static int
+div_is_empty(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_STRUCT)
+			return 0;
+		if (!block->u.s.down)
+		{
+		}
+		else if (block->u.s.down->standard == FZ_STRUCTURE_TABLE)
+		{
+			tidy_table_divs(ctx, block->u.s.down->first_block);
+			return table_is_empty(ctx, block->u.s.down->first_block);
+		}
+		else if (block->u.s.down->standard != FZ_STRUCTURE_DIV)
+			return 0;
+		else if (!div_is_empty(ctx, block->u.s.down->first_block))
+			return 0;
+	}
+
+	return 1;
+}
+
+static void
+tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
+{
+	fz_stext_block **first_blockp = parent ? &parent->first_block : &page->first_block;
+	fz_stext_block **last_blockp = parent ? &parent->last_block : &page->last_block;
+	fz_stext_block *block, *next_block;
+
+	for (block = *first_blockp; block != NULL; block = next_block)
+	{
+		next_block = block->next;
+		if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down)
+		{
+			if (block->u.s.down->standard == FZ_STRUCTURE_TABLE)
+			{
+				tidy_table_divs(ctx, block->u.s.down->first_block);
+				if (table_is_empty(ctx, block->u.s.down->first_block))
+				{
+					/* Remove block */
+					if (block->prev)
+						block->prev->next = next_block;
+					else
+						*first_blockp = next_block;
+					if (next_block)
+						next_block->prev = block->prev;
+					else
+						*last_blockp = block->prev;
+				}
+				else
+				{
+					tidy_orphaned_tables(ctx, page, block->u.s.down);
+				}
+			}
+			if (block->u.s.down->standard == FZ_STRUCTURE_DIV)
+			{
+				if (block->u.s.down == NULL || div_is_empty(ctx, block->u.s.down->first_block))
+				{
+					/* Remove block */
+					if (block->prev)
+						block->prev->next = next_block;
+					else
+						*first_blockp = next_block;
+					if (next_block)
+						next_block->prev = block->prev;
+					else
+						*last_blockp = block->prev;
+				}
+			}
+		}
+	}
+}
+
 static fz_stext_struct *
 check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_grid_positions *yps, fz_stext_page *page, fz_stext_struct *parent, int num_subtables)
 {
@@ -1754,6 +1906,8 @@ check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_gri
 
 		/* Now we should have the entire table calculated. */
 		table = transcribe_table(ctx, &gd, page, parent);
+
+		tidy_orphaned_tables(ctx, page, parent);
 	}
 	fz_always(ctx)
 	{
