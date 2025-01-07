@@ -246,7 +246,6 @@ fz_new_csv_writer_with_output(fz_context *ctx, fz_output *out, const char *optio
 
 	fz_try(ctx)
 	{
-		fz_output *out_temp = out;
 		wri = fz_new_derived_document_writer(ctx, fz_csv_writer, csv_begin_page, csv_end_page, csv_close_writer, csv_drop_writer);
 		fz_parse_stext_options(ctx, &wri->options, options);
 		wri->out = out;

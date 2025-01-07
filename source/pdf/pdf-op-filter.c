@@ -228,29 +228,6 @@ filter_pop(fz_context *ctx, pdf_sanitize_processor *p)
 	return 0;
 }
 
-/* We never allow the topmost gstate to be changed. This allows us
- * to pop back to the zeroth level and be sure that our gstate is
- * sane. This is important for being able to add new operators at
- * the end of pages in a sane way. */
-static filter_gstate *
-gstate_to_update(fz_context *ctx, pdf_sanitize_processor *p)
-{
-	filter_gstate *gstate = p->gstate;
-
-	/* If we're not the top, that's fine */
-	if (gstate->next != NULL)
-		return gstate;
-
-	/* We are the top. Push a group, so we're not */
-	filter_push(ctx, p);
-	gstate = p->gstate;
-	gstate->pushed = 1;
-	if (p->chain->op_q)
-		p->chain->op_q(ctx, p->chain);
-
-	return p->gstate;
-}
-
 static void flush_tags(fz_context *ctx, pdf_sanitize_processor *p, tag_record **tags)
 {
 	tag_record *tag = *tags;
