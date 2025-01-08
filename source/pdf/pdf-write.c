@@ -861,7 +861,8 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	int *new_use_list;
 	int xref_len = pdf_xref_len(ctx, doc);
 
-	new_use_list = fz_calloc(ctx, pdf_xref_len(ctx, doc)+3, sizeof(int));
+	expand_lists(ctx, opts, xref_len);
+	new_use_list = fz_calloc(ctx, opts->list_len, sizeof(int));
 
 	fz_var(newxref);
 	fz_try(ctx)
