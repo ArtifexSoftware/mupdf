@@ -4067,24 +4067,25 @@ def class_wrapper_virtual_fnptrs(
     out_cpp.write('    #endif\n')
     out_cpp.write( '}\n')
 
+    # Destructor. This needs to be virtual with an empty implementation,
+    # because instances will generally be derived classes.
+    out_h.write( '\n')
+    out_h.write( '    /** == Destructor. */\n')
+    out_h.write(f'    FZ_FUNCTION virtual ~{classname}2();\n')
+    out_cpp.write('\n')
+    out_cpp.write(f'FZ_FUNCTION {classname}2::~{classname}2()\n')
+    out_cpp.write( '{\n')
+    out_cpp.write(f'    {trace_if}\n')
+    out_cpp.write(f'    if (s_trace_director)\n')
+    out_cpp.write( '    {\n')
+    out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": ~{classname}2(): this=" << this << "\\n";\n')
+    if not extras.pod:
+        out_cpp.write( f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": ~{classname}2(): m_internal=" << m_internal << "\\n";\n')
+    out_cpp.write( '    }\n')
+    out_cpp.write(f'    #endif\n')
     if free:
-        # Destructor
-        out_h.write( '\n')
-        out_h.write( '    /** == Destructor. */\n')
-        out_h.write(f'    FZ_FUNCTION ~{classname}2();\n')
-        out_cpp.write('\n')
-        out_cpp.write(f'FZ_FUNCTION {classname}2::~{classname}2()\n')
-        out_cpp.write( '{\n')
-        out_cpp.write(f'    {trace_if}\n')
-        out_cpp.write(f'    if (s_trace_director)\n')
-        out_cpp.write( '    {\n')
-        out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": ~{classname}2(): this=" << this << "\\n";\n')
-        if not extras.pod:
-            out_cpp.write( f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": ~{classname}2(): m_internal=" << m_internal << "\\n";\n')
-        out_cpp.write( '    }\n')
-        out_cpp.write(f'    #endif\n')
         out_cpp.write(f'    {free}\n')
-        out_cpp.write( '}\n')
+    out_cpp.write( '}\n')
 
     def write(text):
         out_h.write(text)
