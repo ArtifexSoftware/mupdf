@@ -780,6 +780,33 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 #endif
 }
 
+static int
+all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down == NULL)
+				continue;
+			if (block->u.s.down->standard == FZ_STRUCTURE_H ||
+				block->u.s.down->standard == FZ_STRUCTURE_H1 ||
+				block->u.s.down->standard == FZ_STRUCTURE_H2 ||
+				block->u.s.down->standard == FZ_STRUCTURE_H3 ||
+				block->u.s.down->standard == FZ_STRUCTURE_H4 ||
+				block->u.s.down->standard == FZ_STRUCTURE_H5 ||
+				block->u.s.down->standard == FZ_STRUCTURE_H6)
+				continue;
+			if (!all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
+				return 0;
+		}
+		if (block->type == FZ_STEXT_BLOCK_TEXT && block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_FULL)
+			return 0;
+	}
+
+	return 1;
+}
+
 static void
 walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_block, int descend)
 {
@@ -792,7 +819,8 @@ walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_b
 		switch (block->type)
 		{
 		case FZ_STEXT_BLOCK_STRUCT:
-			if (descend && block->u.s.down)
+			/* Don't descend into */
+			if (descend && block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
 				walk_blocks(ctx, xs, ys, block->u.s.down->first_block, descend);
 			break;
 		case FZ_STEXT_BLOCK_VECTOR:
@@ -1331,7 +1359,8 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 		}
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
-			move_contained_content(ctx, page, dest, block->u.s.down, r);
+			if (block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
+				move_contained_content(ctx, page, dest, block->u.s.down, r);
 		}
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
 		{

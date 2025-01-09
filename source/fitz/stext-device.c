@@ -1542,11 +1542,11 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	if (tdev->opts.flags & FZ_STEXT_SEGMENT)
 		fz_segment_stext_page(ctx, page);
 
-	if (tdev->opts.flags & FZ_STEXT_TABLE_HUNT)
-		fz_table_hunt(ctx, page);
-
 	if (tdev->opts.flags & FZ_STEXT_PARAGRAPH_BREAK)
 		fz_paragraph_break(ctx, page);
+
+	if (tdev->opts.flags & FZ_STEXT_TABLE_HUNT)
+		fz_table_hunt(ctx, page);
 }
 
 static void
