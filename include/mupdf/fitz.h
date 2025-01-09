@@ -43,6 +43,7 @@ extern "C" {
 #include "mupdf/fitz/tree.h"
 #include "mupdf/fitz/bidi.h"
 #include "mupdf/fitz/xml.h"
+#include "mupdf/fitz/json.h"
 
 /* I/O */
 #include "mupdf/fitz/buffer.h"
