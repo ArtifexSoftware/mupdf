@@ -847,9 +847,10 @@ typedef enum
 {
 	LOOKING_FOR_BULLET = 0,
 	LOOKING_FOR_POST_BULLET = 1,
-	FOUND_BULLET = 2,
-	CONTINUATION_LINE = 3,
-	NO_BULLET = 4
+	LOOKING_FOR_POST_NUMERICAL_BULLET = 2,
+	FOUND_BULLET = 3,
+	CONTINUATION_LINE = 4,
+	NO_BULLET = 5
 } list_state;
 
 typedef struct
@@ -927,10 +928,16 @@ is_roman(int c)
 	return 0;
 }
 
-static int
+typedef enum {
+	NOT_A_BULLET,
+	BULLET,
+	NUMERICAL_BULLET
+} bullet_t;
+
+static bullet_t
 is_bullet(int *buffer, int len)
 {
-	int i;
+	int i, decimal_pos, decimals_found;
 
 	if (len == 1 && (
 		buffer[0] == '*' ||
@@ -986,33 +993,49 @@ is_bullet(int *buffer, int len)
 		buffer[0] == 0x1FBC2 || /* MIDDLE THIRD WHITE RIGHT POINTING INDEX */
 		buffer[0] == 0x1FBC3 || /* RIGHT THIRD WHITE RIGHT POINTING INDEX */
 		0))
-		return 1;
+		return BULLET;
 
 	if (len > 2 && buffer[0] == '(' && buffer[len-1] == ')')
-		return is_bullet(buffer+1, len-2);
+		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
 	if (len > 2 && buffer[0] == '<' && buffer[len-1] == '>')
-		return is_bullet(buffer+1, len-2);
+		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
 	if (len > 2 && buffer[0] == '[' && buffer[len-1] == ']')
-		return is_bullet(buffer+1, len-2);
+		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
 	if (len > 2 && buffer[0] == '{' && buffer[len-1] == '}')
-		return is_bullet(buffer+1, len-2);
+		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
 
 	if (len > 2 && buffer[len-1] == ':')
-		return is_bullet(buffer, len-1);
+		return is_bullet(buffer, len-1) ? BULLET : NOT_A_BULLET;
 
 	/* Look for a), b) etc */
 	if (len > 2 && buffer[0] >= 'a' && buffer[0] <= 'z' && buffer[1] == ')')
-		return 1;
+		return BULLET;
 
 	/* Look for numbers */
+	/* Be careful not to interpret rows of numbers, like:
+	 *    10.02 12.03
+	 * as bullets.
+	 */
+	decimal_pos = 0;
+	decimals_found = 0;
 	for (i = 0; i < len; i++)
-		if (buffer[i] < '0' || buffer[i] > '9')
+	{
+		if (buffer[i] >= '0' && buffer[i] <= '9')
+		{
+		}
+		else if (buffer[i] == '.')
+		{
+			decimal_pos = i;
+			decimals_found++;
+		}
+		else
 			break;
-	if (i == len)
-		return 1;
+	}
+	if (i == len && decimals_found <= 1)
+		return decimals_found <= 1 ? NUMERICAL_BULLET : BULLET;
 	/* or number.something */
-	if (buffer[i] == '.' && i < len-1)
-		return is_bullet(buffer+i+1, len-i-1);
+	if (decimals_found && i == decimal_pos+1 && i < len)
+		return is_bullet(buffer+i, len-i);
 
 	/* Look for roman */
 	for (i = 0; i < len; i++)
@@ -1022,10 +1045,10 @@ is_bullet(int *buffer, int len)
 		return 1;
 	/* or roman.something */
 	if (buffer[i] == '.' && i < len-1)
-		return is_bullet(buffer+i+1, len-i-1);
+		return is_bullet(buffer+i+1, len-i-1) ? BULLET : NOT_A_BULLET;
 
 	/* FIXME: Others. */
-	return 0;
+	return NOT_A_BULLET;
 }
 
 static int
@@ -1046,10 +1069,14 @@ list_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 		case LOOKING_FOR_BULLET:
 			if (ch->c == ' ')
 			{
+				bullet_t bullet_type;
 				/* We have a space */
 				if (data->buffer_fill == 0)
 					continue; /* Just skip leading spaces */
-				if (is_bullet(data->buffer, data->buffer_fill))
+				bullet_type = is_bullet(data->buffer, data->buffer_fill);
+				if (bullet_type == NUMERICAL_BULLET)
+					data->state = LOOKING_FOR_POST_NUMERICAL_BULLET;
+				else if (bullet_type)
 					data->state = LOOKING_FOR_POST_BULLET;
 				else
 				{
@@ -1064,7 +1091,14 @@ list_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 			{
 				/* We have a gap large enough to be a space while we've
 				 * got something in the buffer. */
-				if (is_bullet(data->buffer, data->buffer_fill))
+				bullet_t bullet_type = is_bullet(data->buffer, data->buffer_fill);
+				/* Numerical bullets can't be followed by numbers. */
+				if (bullet_type == NUMERICAL_BULLET)
+				{
+					if (data->buffer[0] >= '0' && data->buffer[0] <= '9')
+						bullet_type = NOT_A_BULLET;
+				}
+				if (bullet_type)
 				{
 					data->state = FOUND_BULLET;
 					if (data->bullet_line_start == NULL)
@@ -1097,6 +1131,24 @@ list_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 			data->bullet_r = r.x1;
 			break;
 		case LOOKING_FOR_POST_BULLET:
+			if (ch->c != ' ')
+			{
+				data->state = FOUND_BULLET;
+				if (data->bullet_line_start == NULL)
+					data->bullet_line_start = data->this_line_start;
+				data->post_bullet_indent = r.x0;
+			}
+			break;
+		case LOOKING_FOR_POST_NUMERICAL_BULLET:
+			if (ch->c >= '0' && ch->c <= '9')
+			{
+				/* Numberical bullets can't be followed by numbers. */
+				if (approx_eq(data->l, data->post_bullet_indent, ch->size))
+					data->state = CONTINUATION_LINE;
+				else
+					data->state = NO_BULLET;
+				return 0;
+			}
 			if (ch->c != ' ')
 			{
 				data->state = FOUND_BULLET;
