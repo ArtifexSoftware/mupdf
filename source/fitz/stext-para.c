@@ -721,6 +721,8 @@ typedef struct
 	stext_pos *pos;
 	int count_lines;
 	int count_justified;
+	int spaces_exist_in_this_line;
+	int non_digits_exist_in_this_line;
 	float l, r;
 } justify_data;
 
@@ -734,8 +736,10 @@ justify_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, voi
 	if (line->prev)
 		line = line->prev;
 
-	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
+	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
+	data->spaces_exist_in_this_line = 0;
+	data->non_digits_exist_in_this_line = 0;
 	data->count_lines++;
 
 	data->l = block->bbox.x1;
@@ -748,6 +752,13 @@ static int
 justify_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 {
 	justify_data *data = (justify_data *)arg;
+	fz_stext_char *ch;
+
+	for (ch = line->first_char; ch != NULL; ch = ch->next)
+		if (ch->c == ' ')
+			data->spaces_exist_in_this_line = 1;
+		else if ((ch->c <= '0' || ch->c >= '9') && ch->c != '.')
+			data->non_digits_exist_in_this_line = 1;
 
 	if (line->bbox.x0 < data->l)
 		data->l = line->bbox.x0;
@@ -762,7 +773,7 @@ justify_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *a
 {
 	justify_data *data = (justify_data *)arg;
 
-	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
+	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
 	data->count_lines++;
 }
@@ -813,6 +824,8 @@ break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext
 	data->pos = pos;
 	data->count_lines = 0;
 	data->count_justified = 0;
+	data->spaces_exist_in_this_line = 0;
+	data->non_digits_exist_in_this_line = 0;
 	data->l = block->bbox.x1;
 	data->r = block->bbox.x0;
 
