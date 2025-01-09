@@ -596,6 +596,25 @@ fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out)
 /* Detailed XML dump of the entire structured text data */
 
 static void
+xml_write_char(fz_context *ctx, fz_output *out, int c)
+{
+	switch (c)
+	{
+	case '<': fz_write_string(ctx, out, "&lt;"); break;
+	case '>': fz_write_string(ctx, out, "&gt;"); break;
+	case '&': fz_write_string(ctx, out, "&amp;"); break;
+	case '"': fz_write_string(ctx, out, "&quot;"); break;
+	case '\'': fz_write_string(ctx, out, "&apos;"); break;
+	default:
+		if (c >= 32 && c <= 127)
+			fz_write_printf(ctx, out, "%c", c);
+		else
+			fz_write_printf(ctx, out, "&#x%x;", c);
+		break;
+	}
+}
+
+static void
 as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 {
 	fz_stext_line *line;
@@ -626,10 +645,21 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 				float size = 0;
 				const char *name = NULL;
 
-				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\">\n",
+				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\"",
 						line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1,
 						line->wmode,
 						line->dir.x, line->dir.y);
+
+				/* This is duplication of information, but it makes it MUCH easier to search for
+				 * text fragments in large output. */
+				{
+					fz_write_printf(ctx, out, " text=\"");
+					for (ch = line->first_char; ch; ch = ch->next)
+						xml_write_char(ctx, out, ch->c);
+					fz_write_printf(ctx, out, "\"");
+				}
+
+				fz_write_printf(ctx, out, ">\n");
 
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
@@ -652,20 +682,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 							ch->argb & 0xFFFFFF,
 							ch->argb>>24,
 							ch->flags);
-					switch (ch->c)
-					{
-					case '<': fz_write_string(ctx, out, "&lt;"); break;
-					case '>': fz_write_string(ctx, out, "&gt;"); break;
-					case '&': fz_write_string(ctx, out, "&amp;"); break;
-					case '"': fz_write_string(ctx, out, "&quot;"); break;
-					case '\'': fz_write_string(ctx, out, "&apos;"); break;
-					default:
-						   if (ch->c >= 32 && ch->c <= 127)
-							   fz_write_printf(ctx, out, "%c", ch->c);
-						   else
-							   fz_write_printf(ctx, out, "&#x%x;", ch->c);
-						   break;
-					}
+					xml_write_char(ctx, out, ch->c);
 					fz_write_string(ctx, out, "\"/>\n");
 				}
 
