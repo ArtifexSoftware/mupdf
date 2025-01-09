@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Artifex Software, Inc.
+// Copyright (C) 2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1902,7 +1902,7 @@ check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_gri
 					break;
 			if (x != gd.xpos->len)
 				break;
-			for (y = 0; y < gd.xpos->len; y++)
+			for (y = 0; y < gd.ypos->len; y++)
 				if (gd.ypos->list[y].uncertainty != 0)
 					break;
 			if (y != gd.ypos->len)
