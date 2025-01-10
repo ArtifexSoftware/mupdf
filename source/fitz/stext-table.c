@@ -983,15 +983,25 @@ find_grid_pos_with_reinforcement(fz_context *ctx, fz_stext_grid_positions *pos, 
 }
 
 static int
-find_cell(fz_stext_grid_positions *pos, float x)
+find_cell_l(fz_stext_grid_positions *pos, float x)
 {
 	int i;
 
 	for (i = 0; i < pos->len; i++)
 		if (x < pos->list[i].pos)
 			return i-1;
-	if (x == pos->list[pos->len-1].pos)
-		return pos->len-1;
+
+	return -1;
+}
+
+static int
+find_cell_r(fz_stext_grid_positions *pos, float x)
+{
+	int i;
+
+	for (i = 0; i < pos->len; i++)
+		if (x <= pos->list[i].pos)
+			return i-1;
 
 	return -1;
 }
@@ -1163,10 +1173,10 @@ erase_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 						/* A single space. Accept it. */
 					}
 					r = fz_rect_from_quad(ch->quad);
-					x0 = find_cell(gd->xpos, r.x0);
-					x1 = find_cell(gd->xpos, r.x1);
-					y0 = find_cell(gd->ypos, r.y0);
-					y1 = find_cell(gd->ypos, r.y1);
+					x0 = find_cell_l(gd->xpos, r.x0);
+					x1 = find_cell_r(gd->xpos, r.x1);
+					y0 = find_cell_l(gd->ypos, r.y0);
+					y1 = find_cell_r(gd->ypos, r.y1);
 					if (x0 < 0 || x1 <0 || y0 < 0 || y1 < 0)
 						continue;
 					if (x0 < x1)
