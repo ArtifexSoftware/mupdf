@@ -34,7 +34,6 @@
 #endif
 
 #include "mupdf/helpers/pkcs7-openssl.h"
-
 #include "mujs.h"
 
 #ifndef _WIN32
@@ -271,17 +270,18 @@ static char *get_history_filename(void)
 	return history_path;
 }
 
-static int read_history_file_as_json(js_State *J)
+static fz_json *read_history_file_as_json(fz_context *ctx, fz_pool *pool)
 {
 	fz_buffer *buf = NULL;
 	const char *json = "{}";
 	const char *history_file;
+	fz_json *result = NULL;
 
 	fz_var(buf);
 
 	history_file = get_history_filename();
 	if (strlen(history_file) == 0)
-		return 0;
+		return NULL;
 
 	if (fz_file_exists(ctx, history_file))
 	{
@@ -294,135 +294,124 @@ static int read_history_file_as_json(js_State *J)
 			;
 	}
 
-	js_getglobal(J, "JSON");
-	js_getproperty(J, -1, "parse");
-	js_pushnull(J);
-	js_pushstring(J, json);
-	if (js_pcall(J, 1))
+	fz_try(ctx)
 	{
-		fz_warn(ctx, "Can't parse history file: %s", js_trystring(J, -1, "error"));
-		js_pop(J, 1);
-		js_newobject(J);
+		result = fz_parse_json(ctx, pool, json);
 	}
-	else
+	fz_catch(ctx)
 	{
-		js_rot2pop1(J);
+		fz_report_error(ctx);
+		fz_warn(ctx, "can't parse history file");
+		result = NULL;
 	}
-
 	fz_drop_buffer(ctx, buf);
-	return 1;
+
+	if (result == NULL || result->type != FZ_JSON_OBJECT)
+		result = fz_json_new_object(ctx, pool);
+	return result;
 }
 
-static fz_location try_location(js_State *J)
+static fz_location load_location(fz_context *ctx, fz_json *val)
 {
-	fz_location loc;
-	if (js_isnumber(J, -1))
-		loc = fz_make_location(0, js_tryinteger(J, -1, 1) - 1);
-	else
-	{
-		js_getindex(J, -1, 0);
-		loc.chapter = js_tryinteger(J, -1, 1) - 1;
-		js_pop(J, 1);
-		js_getindex(J, -1, 1);
-		loc.page = js_tryinteger(J, -1, 1) - 1;
-		js_pop(J, 1);
-	}
-	return loc;
+	if (fz_json_is_number(ctx, val))
+		return fz_make_location(0, fz_json_to_number(ctx, val) - 1);
+	if (fz_json_is_array(ctx, val))
+		return fz_make_location(
+			fz_json_to_number(ctx, fz_json_array_get(ctx, val, 0)) - 1,
+			fz_json_to_number(ctx, fz_json_array_get(ctx, val, 1)) - 1
+		);
+	return fz_make_location(0, 0);
 }
 
-static void push_location(js_State *J, fz_location loc)
+static fz_json *save_location(fz_context *ctx, fz_pool *pool, fz_location loc)
 {
+	fz_json *arr;
 	if (loc.chapter == 0)
-		js_pushnumber(J, (double)loc.page+1);
+	{
+		return fz_json_new_number(ctx, pool, loc.page + 1);
+	}
 	else
 	{
-		js_newarray(J);
-		js_pushnumber(J, (double)loc.chapter+1);
-		js_setindex(J, -2, 0);
-		js_pushnumber(J, (double)loc.page+1);
-		js_setindex(J, -2, 1);
+		arr = fz_json_new_array(ctx, pool);
+		fz_json_array_push(ctx, pool, arr, fz_json_new_number(ctx, pool, loc.chapter + 1));
+		fz_json_array_push(ctx, pool, arr, fz_json_new_number(ctx, pool, loc.page + 1));
+		return arr;
 	}
 }
 
 static void load_history(void)
 {
-	js_State *J;
 	char absname[PATH_MAX];
+	fz_pool *pool = NULL;
+	fz_json *json, *item, *arr, *val;
 	int i, n;
+
+	fz_var(pool);
 
 	if (!fz_realpath(filename, absname))
 		return;
 
-	J = js_newstate(NULL, NULL, 0);
-
-	if (!read_history_file_as_json(J))
-		return;
-
-	if (js_hasproperty(J, -1, absname))
+	fz_try(ctx)
 	{
-		if (js_hasproperty(J, -1, "current"))
+		pool = fz_new_pool(ctx);
+		json = read_history_file_as_json(ctx, pool);
+		if (json)
 		{
-			currentpage = try_location(J);
-			js_pop(J, 1);
-		}
-
-		if (js_hasproperty(J, -1, "history"))
-		{
-			if (js_isarray(J, -1))
+			item = fz_json_object_get(ctx, json, absname);
+			if (item)
 			{
-				history_count = fz_clampi(js_getlength(J, -1), 0, nelem(history));
-				for (i = 0; i < history_count; ++i)
+				val = fz_json_object_get(ctx, item, "current");
+				if (val)
+					currentpage = load_location(ctx, val);
+
+				arr = fz_json_object_get(ctx, item, "history");
+				if (fz_json_is_array(ctx, arr))
 				{
-					js_getindex(J, -1, i);
-					history[i].loc = try_location(J);
-					js_pop(J, 1);
+					history_count = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(history));
+					for (i = 0; i < history_count; ++i)
+						history[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
+				}
+
+				arr = fz_json_object_get(ctx, item, "future");
+				if (fz_json_is_array(ctx, arr))
+				{
+					future_count = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(future));
+					for (i = 0; i < future_count; ++i)
+						future[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
+				}
+
+				arr = fz_json_object_get(ctx, item, "marks");
+				if (fz_json_is_array(ctx, arr))
+				{
+					n = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(marks));
+					for (i = 0; i < n; ++i)
+						marks[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
 				}
 			}
-			js_pop(J, 1);
-		}
 
-		if (js_hasproperty(J, -1, "future"))
-		{
-			if (js_isarray(J, -1))
-			{
-				future_count = fz_clampi(js_getlength(J, -1), 0, nelem(future));
-				for (i = 0; i < future_count; ++i)
-				{
-					js_getindex(J, -1, i);
-					future[i].loc = try_location(J);
-					js_pop(J, 1);
-				}
-			}
-			js_pop(J, 1);
-		}
-
-		if (js_hasproperty(J, -1, "marks"))
-		{
-			if (js_isarray(J, -1))
-			{
-				n = fz_clampi(js_getlength(J, -1), 0, nelem(marks));
-				for (i = 0; i < n; ++i)
-				{
-					js_getindex(J, -1, i);
-					marks[i].loc = try_location(J);
-					js_pop(J, 1);
-				}
-			}
-			js_pop(J, 1);
 		}
 	}
-
-	js_freestate(J);
+	fz_always(ctx)
+	{
+		fz_drop_pool(ctx, pool);
+	}
+	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
+		fz_warn(ctx, "Can't read history file.");
+	}
 }
 
 static void save_history(void)
 {
-	js_State *J;
+	fz_pool *pool;
 	char absname[PATH_MAX];
 	fz_output *out = NULL;
-	const char *json;
+	fz_json *json, *item, *arr;
+	const char *history_file;
 	int i;
 
+	fz_var(pool);
 	fz_var(out);
 
 	if (!doc)
@@ -431,68 +420,51 @@ static void save_history(void)
 	if (!fz_realpath(filename, absname))
 		return;
 
-	J = js_newstate(NULL, NULL, 0);
-
-	if (!read_history_file_as_json(J))
-		return;
-
-	js_newobject(J);
-	{
-		push_location(J, currentpage);
-		js_setproperty(J, -2, "current");
-
-		js_newarray(J);
-		for (i = 0; i < history_count; ++i)
-		{
-			push_location(J, history[i].loc);
-			js_setindex(J, -2, i);
-		}
-		js_setproperty(J, -2, "history");
-
-		js_newarray(J);
-		for (i = 0; i < future_count; ++i)
-		{
-			push_location(J, future[i].loc);
-			js_setindex(J, -2, i);
-		}
-		js_setproperty(J, -2, "future");
-
-		js_newarray(J);
-		for (i = 0; i < (int)nelem(marks); ++i)
-		{
-			push_location(J, marks[i].loc);
-			js_setindex(J, -2, i);
-		}
-		js_setproperty(J, -2, "marks");
-	}
-	js_setproperty(J, -2, absname);
-
-	js_getglobal(J, "JSON");
-	js_getproperty(J, -1, "stringify");
-	js_pushnull(J);
-	js_copy(J, -4);
-	js_pushnull(J);
-	js_pushnumber(J, 0);
-	js_call(J, 3);
-	js_rot2pop1(J);
-	json = js_tostring(J, -1);
-
 	fz_try(ctx)
 	{
-		const char *history_file = get_history_filename();
-		if (strlen(history_file) > 0) {
-			out = fz_new_output_with_path(ctx, history_file, 0);
-			fz_write_string(ctx, out, json);
-			fz_write_byte(ctx, out, '\n');
-			fz_close_output(ctx, out);
+		pool = fz_new_pool(ctx);
+		json = read_history_file_as_json(ctx, pool);
+		if (json)
+		{
+			item = fz_json_new_object(ctx, pool);
+			fz_json_object_set(ctx, pool, item, "current", save_location(ctx, pool, currentpage));
+
+			arr = fz_json_new_array(ctx, pool);
+			for (i = 0; i < history_count; ++i)
+				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, history[i].loc));
+			fz_json_object_set(ctx, pool, item, "history", arr);
+
+			arr = fz_json_new_array(ctx, pool);
+			for (i = 0; i < future_count; ++i)
+				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, future[i].loc));
+			fz_json_object_set(ctx, pool, item, "future", arr);
+
+			arr = fz_json_new_array(ctx, pool);
+			for (i = 0; i < (int)nelem(marks); ++i)
+				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, marks[i].loc));
+			fz_json_object_set(ctx, pool, item, "marks", arr);
+
+			fz_json_object_set(ctx, pool, json, absname, item);
+
+			history_file = get_history_filename();
+			if (strlen(history_file) > 0) {
+				out = fz_new_output_with_path(ctx, history_file, 0);
+				fz_write_json(ctx, out, json);
+				fz_write_byte(ctx, out, '\n');
+				fz_close_output(ctx, out);
+			}
 		}
 	}
 	fz_always(ctx)
+	{
+		fz_drop_pool(ctx, pool);
 		fz_drop_output(ctx, out);
+	}
 	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
 		fz_warn(ctx, "Can't write history file.");
-
-	js_freestate(J);
+	}
 }
 
 
