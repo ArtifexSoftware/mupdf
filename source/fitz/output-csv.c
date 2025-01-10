@@ -69,20 +69,54 @@ output_line(fz_context *ctx, fz_output *out, fz_stext_line *line)
 	}
 }
 
+static fz_rect
+whitespaceless_bbox(fz_context *ctx, fz_stext_block *block)
+{
+	fz_rect r = fz_empty_rect;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down)
+				r = fz_union_rect(r, whitespaceless_bbox(ctx, block->u.s.down->first_block));
+			continue;
+		}
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
+		{
+			r = fz_union_rect(r, block->bbox);
+			continue;
+		}
+		for (line = block->u.t.first_line; line != NULL; line = line->next)
+		{
+			for (ch = line->first_char; ch != NULL; ch = ch->next)
+			{
+				if (ch->c != ' ')
+					r = fz_union_rect(r, fz_rect_from_quad(ch->quad));
+			}
+		}
+	}
+
+	return r;
+}
+
 /* We have output up to and including position *pos on entry to this function.
  * We preserve that on output. */
 static void
 output_td(fz_context *ctx, fz_csv_writer *wri, fz_stext_block *grid, int *pos, fz_stext_block *block)
 {
 	int x0, x1;
-
 	if (block && grid)
 	{
+		fz_rect r = whitespaceless_bbox(ctx, block);
+
 		for (x0 = 0; x0 < grid->u.b.xs->len; x0++)
-			if (block->bbox.x0 < grid->u.b.xs->list[x0].pos)
+			if (r.x0 < grid->u.b.xs->list[x0].pos)
 				break;
 		for (x1 = x0; x1 < grid->u.b.xs->len; x1++)
-			if (block->bbox.x1 <= grid->u.b.xs->list[x1].pos)
+			if (r.x1 <= grid->u.b.xs->list[x1].pos)
 				break;
 		x0--;
 		x1--;
