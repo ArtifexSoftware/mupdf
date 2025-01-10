@@ -567,6 +567,12 @@ fz_chartorune(int *rune, const char *str)
 	int c, c1, c2, c3;
 	int l;
 
+	/* overlong null character */
+	if((unsigned char)str[0] == 0xc0 && (unsigned char)str[1] == 0x80) {
+		*rune = 0;
+		return 2;
+	}
+
 	/*
 	 * one character sequence
 	 *	00000-0007F => T1
@@ -658,6 +664,12 @@ fz_chartorunen(int *rune, const char *str, size_t n)
 	if (n < 2)
 		goto bad;
 
+	/* overlong null character */
+	if((unsigned char)str[0] == 0xc0 && (unsigned char)str[1] == 0x80) {
+		*rune = 0;
+		return 2;
+	}
+
 	/*
 	 * two character sequence
 	 *	0080-07FF => T2 Tx
@@ -728,6 +740,13 @@ fz_runetochar(char *str, int rune)
 {
 	/* Runes are signed, so convert to unsigned for range check. */
 	unsigned int c = (unsigned int)rune;
+
+	/* overlong null character */
+	if (c == 0) {
+		str[0] = (char)0xc0;
+		str[1] = (char)0x80;
+		return 2;
+	}
 
 	/*
 	 * one character sequence
