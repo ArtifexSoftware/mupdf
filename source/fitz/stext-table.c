@@ -28,6 +28,8 @@
 
 /* #define DEBUG_TABLE_STRUCTURE */
 
+/* #define DEBUG_TABLE_HUNT */
+
 /*
  * The algorithm.
  *
@@ -643,7 +645,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	pos->list[0].max = pos->list[0].pos;
 	pos->list[0].uncertainty = 0;
 #ifdef DEBUG_TABLE_HUNT
-	printf("|%g ", post->list[0].pos);
+	printf("|%g ", pos->list[0].pos);
 #endif
 	for (i = 0; i < len; i++)
 	{
@@ -657,9 +659,9 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 				pos->list[edges++].uncertainty = wind;
 #ifdef DEBUG_TABLE_HUNT
 				if (wind)
-					printf("?%g(%d) ", post->list[0].pos, wind);
+					printf("?%g(%d) ", pos->list[edges].pos, wind);
 				else
-					printf("|%g ", post->list[0].pos);
+					printf("|%g ", pos->list[edges].pos);
 #endif
 			}
 			wind += xs->list[i].freq;
@@ -679,7 +681,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	pos->list[edges].uncertainty = 0;
 	pos->max_uncertainty = hi;
 #ifdef DEBUG_TABLE_HUNT
-	printf("|%g\n", post->list[edges].pos);
+	printf("|%g\n", pos->list[edges].pos);
 #endif
 
 	return pos;
