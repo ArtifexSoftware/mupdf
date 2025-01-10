@@ -261,6 +261,26 @@
  *	The output from this step is the list of possible grid positions
  *	(X and Y), with uncertainty values.
  *
+ *	We have skipped over the handling of spaces in the above
+ *	description. On the one hand, we'd quite like to treat
+ *	sentences as long unbroken regions of content. But sometimes
+ *	we can get awkward content like:
+ *
+ *	P subtelomeric                 24.38 8.15  11.31 0.94   1.46
+ *	                               11.08 6.93  15.34 0.00   0.73
+ *	Pericentromeric region; C band 20.42 9.26  13.64 0.81   0.81
+ *	                               16.50 7.03  14.45 0.17   5.15
+
+ *	where the content is frequently sent with spaces instead of
+ *	small gaps (particular in tables of digits, because numerals
+ *	are often the same width even in proportional fonts).
+ *
+ *	To cope with this, as we send potential edges into the start/stop
+ *	positions, we send 'weak' edges for the start and stops of runs
+ *	of spaces. We then post process the edges to remove any local
+ *	minima regions in the 'wind' values that are bounded purely by
+ *	'weak' edges.
+ *
  * Step 3: Cell analysis
  *
  *	So, armed with the output from step 2, we can examine each grid
@@ -588,14 +608,15 @@ typedef struct
 	int len;
 	int max;
 	struct {
-		int left;
+		uint8_t left;
+		uint8_t weak;
 		float pos;
 		int freq;
 	} *list;
 } div_list;
 
 static void
-div_list_push(fz_context *ctx, div_list *div, int left, float pos)
+div_list_push(fz_context *ctx, div_list *div, int left, int weak, float pos)
 {
 	int i;
 
@@ -607,6 +628,7 @@ div_list_push(fz_context *ctx, div_list *div, int left, float pos)
 		else if (div->list[i].pos == pos && div->list[i].left == left)
 		{
 			div->list[i].freq++;
+			div->list[i].weak &= weak;
 			return;
 		}
 	}
@@ -624,6 +646,7 @@ div_list_push(fz_context *ctx, div_list *div, int left, float pos)
 		memmove(&div->list[i+1], &div->list[i], sizeof(div->list[0]) * (div->len - i));
 	div->len++;
 	div->list[i].left = left;
+	div->list[i].weak = weak;
 	div->list[i].pos = pos;
 	div->list[i].freq = 1;
 }
@@ -725,7 +748,7 @@ clone_grid_positions(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positio
 static void
 sanitize_positions(fz_context *ctx, div_list *xs)
 {
-	int i, j;
+	int i, j, wind, changed;
 
 #ifdef DEBUG_TABLE_HUNT
 	printf("OK:\n");
@@ -733,7 +756,7 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 	{
 		if (xs->list[i].left)
 			printf("[");
-		printf("%g(%d)", xs->list[i].pos, xs->list[i].freq);
+		printf("%g(%d%s)", xs->list[i].pos, xs->list[i].freq, xs->list[i].weak ? "weak" : "");
 		if (!xs->list[i].left)
 			printf("]");
 		printf(" ");
@@ -741,55 +764,94 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 	printf("\n");
 #endif
 
-	/* Now, combine runs of left and right */
-	for (i = 0; i < xs->len; i++)
+	if (xs->len == 0)
+		return;
+
+	do
 	{
-		if (xs->list[i].left)
+		/* Now, combine runs of left and right */
+		for (i = 0; i < xs->len; i++)
 		{
-			j = i;
-			while (i < xs->len-1 && xs->list[i+1].left)
+			if (xs->list[i].left)
 			{
-				i++;
-				xs->list[j].freq += xs->list[i].freq;
-				xs->list[i].freq = 0;
+				j = i;
+				while (i < xs->len-1 && xs->list[i+1].left)
+				{
+					i++;
+					xs->list[j].freq += xs->list[i].freq;
+					xs->list[j].weak &= xs->list[i].weak;
+					xs->list[i].freq = 0;
+				}
+			}
+			else
+			{
+				while (i < xs->len-1 && !xs->list[i+1].left)
+				{
+					i++;
+					xs->list[i].freq += xs->list[i-1].freq;
+					xs->list[i].weak &= xs->list[i-1].weak;
+					xs->list[i-1].freq = 0;
+				}
 			}
 		}
-		else
-		{
-			while (i < xs->len-1 && !xs->list[i+1].left)
-			{
-				i++;
-				xs->list[i].freq += xs->list[i-1].freq;
-				xs->list[i-1].freq = 0;
-			}
-		}
-	}
 
 #ifdef DEBUG_TABLE_HUNT
-	printf("Shrunk:\n");
-	for (i = 0; i < xs->len; i++)
-	{
-		if (xs->list[i].left)
-			printf("[");
-		printf("%g(%d)", xs->list[i].pos, xs->list[i].freq);
-		if (!xs->list[i].left)
-			printf("]");
-		printf(" ");
-	}
-	printf("\n");
+		printf("Shrunk:\n");
+		for (i = 0; i < xs->len; i++)
+		{
+			if (xs->list[i].left)
+				printf("[");
+			printf("%g(%d%s)", xs->list[i].pos, xs->list[i].freq, xs->list[i].weak ? "weak" : "");
+			if (!xs->list[i].left)
+				printf("]");
+			printf(" ");
+		}
+		printf("\n");
 #endif
 
-	/* Now remove the 0 frequency ones. */
-	j = 0;
-	for (i = 0; i < xs->len; i++)
-	{
-		if (xs->list[i].freq == 0)
-			continue;
-		if (i != j)
-			xs->list[j] = xs->list[i];
-		j++;
+		/* Now remove the 0 frequency ones. */
+		j = 0;
+		for (i = 0; i < xs->len; i++)
+		{
+			if (xs->list[i].freq == 0)
+				continue;
+			if (i != j)
+				xs->list[j] = xs->list[i];
+			j++;
+		}
+		xs->len = j;
+
+		/* Now run across looking for local minima where at least one
+		 * edge is 'weak'. If the wind at that point is non-zero, then
+		 * remove the weak edges from consideration and retry. */
+		wind = 0;
+		changed = 0;
+		i = 0;
+		while (1)
+		{
+			assert(xs->list[i].left);
+			for (; xs->list[i].left; i++)
+			{
+				wind += xs->list[i].freq;
+			}
+			assert(i < xs->len);
+			for (; xs->list[i].left == 0 && i < xs->len; i++)
+			{
+				wind -= xs->list[i].freq;
+			}
+			if (i == xs->len)
+				break;
+			if (wind != 0 && (xs->list[i-1].weak || xs->list[i].weak))
+			{
+				int m = fz_mini(xs->list[i-1].freq, xs->list[i].freq);
+				assert(m > 0);
+				xs->list[i-1].freq -= m;
+				xs->list[i].freq -= m;
+				changed = 1;
+			}
+		}
 	}
-	xs->len = j;
+	while (changed);
 
 #ifdef DEBUG_TABLE_HUNT
 	printf("Compacted:\n");
@@ -797,7 +859,7 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 	{
 		if (xs->list[i].left)
 			printf("[");
-		printf("%g(%d)", xs->list[i].pos, xs->list[i].freq);
+		printf("%g(%d%s)", xs->list[i].pos, xs->list[i].freq, xs->list[i].weak ? "weak" : "");
 		if (!xs->list[i].left)
 			printf("]");
 		printf(" ");
@@ -806,9 +868,14 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 #endif
 }
 
+/* We want to check for whether a DIV that we are about to descend into
+ * contains a column of justified text. We will accept some headers in
+ * this text, but not JUST headers. */
 static int
 all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
 {
+	int just_headers = 1;
+
 	for (; block != NULL; block = block->next)
 	{
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
@@ -826,15 +893,53 @@ all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
 			if (!all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
 				return 0;
 		}
+		just_headers = 0;
 		if (block->type == FZ_STEXT_BLOCK_TEXT && block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_FULL)
 			return 0;
 	}
 
+	if (just_headers)
+		return 0;
+
 	return 1;
 }
 
+static fz_rect
+walk_to_find_bounds(fz_context *ctx, fz_stext_block *first_block)
+{
+	fz_rect bounds = fz_empty_rect;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+
+	for (block = first_block; block != NULL; block = block->next)
+	{
+		switch (block->type)
+		{
+		case FZ_STEXT_BLOCK_STRUCT:
+			if (block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
+				bounds = fz_union_rect(bounds, walk_to_find_bounds(ctx, block->u.s.down->first_block));
+			break;
+		case FZ_STEXT_BLOCK_VECTOR:
+			break;
+		case FZ_STEXT_BLOCK_TEXT:
+			for (line = block->u.t.first_line; line != NULL; line = line->next)
+			{
+				for (ch = line->first_char; ch != NULL; ch = ch->next)
+				{
+					if (ch->c != ' ')
+						bounds = fz_union_rect(bounds, fz_rect_from_quad(ch->quad));
+				}
+			}
+			break;
+		}
+	}
+
+	return bounds;
+}
+
 static void
-walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_block, int descend)
+walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_block, fz_rect bounds)
 {
 	fz_stext_block *block;
 	fz_stext_line *line;
@@ -846,75 +951,108 @@ walk_blocks(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_b
 		{
 		case FZ_STEXT_BLOCK_STRUCT:
 			/* Don't descend into */
-			if (descend && block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
-				walk_blocks(ctx, xs, ys, block->u.s.down->first_block, descend);
+			if (block->u.s.down && !fz_is_empty_rect(fz_intersect_rect(bounds, block->bbox)))
+				walk_blocks(ctx, xs, ys, block->u.s.down->first_block, bounds);
 			break;
 		case FZ_STEXT_BLOCK_VECTOR:
 			break;
 		case FZ_STEXT_BLOCK_TEXT:
 			for (line = block->u.t.first_line; line != NULL; line = line->next)
 			{
-				float rpos;
-				int left = 1;
-				int right = 0;
-				int non_empty = 0;
+				fz_rect region = fz_empty_rect;
+
+				region.y0 = line->bbox.y0;
+				region.y1 = line->bbox.y1;
+
+				if (region.y0 < bounds.y0)
+					region.y0 = bounds.y0;
+				if (region.y1 > bounds.y1)
+					region.y1 = bounds.y1;
+				if (region.y0 >= region.y1)
+					break;
+
+				/* Skip leading spaces. */
 				for (ch = line->first_char; ch != NULL; ch = ch->next)
+					if (ch->c != ' ')
+						break;
+
+				for (; ch != NULL; ch = ch->next)
 				{
 					if (ch->c == ' ')
 					{
-						if (ch->next == NULL)
+						/* Find the last space char in this run. */
+						fz_stext_char *last_space;
+
+						for (last_space = ch; last_space->next != NULL && last_space->next->c == ' '; last_space = last_space->next);
+
+						/* If we're not the last char in the line (i.e. we're not a trailing space,
+						 * then send a 'weak' gap for the spaces, assuming it's sane to do so). */
+						if (last_space->next != NULL)
 						{
-							/* This is a trailing space. We've seen cases where we get
-							 * trailing spaces on cell contents and this screws stuff
-							 * up (e.g. dotted-gridlines-tables.pdf). */
-							if (right)
+							float rpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
+							float lpos = fz_min(last_space->next->quad.ll.x, last_space->next->quad.ll.x);
+
+							/* Clamp these to the bounds */
+							rpos = fz_clamp(rpos, bounds.x0, bounds.x1);
+							lpos = fz_clamp(lpos, bounds.x0, bounds.x1);
+
+							/* So we have a region (rpos...lpos) to add. */
+							/* This can be positioned in various different ways relative to the
+							 * current region:
+							 *                [region]
+							 *   (rpos..lpos)                            OK
+							 *        (rpos..lpos)                       OK, but adjust lpos
+							 *                     (rpos..lpos)          OK, but adjust rpos
+							 *                         (rpos..lpos)      OK
+							 *            (rpos  ..  lpos)               OK
+							 */
+							if (lpos >= region.x1)
 							{
-								/* Send a 'right' as the left position of this space. */
-								float lpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
-								div_list_push(ctx, xs, 0, lpos);
-								left = 1;
-								right = 0;
+								if (rpos >= region.x0 && rpos < region.x1)
+									rpos = region.x1;
 							}
-						}
-						else if (ch->next->c == ' ')
-						{
-							/* Run of multiple spaces. Send a 'right' as the left position
-							 * of this space, and then skip forwards. */
-							if (right)
+							else if (rpos <= region.x0)
 							{
-								float lpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
-								div_list_push(ctx, xs, 0, lpos);
-								while (ch->next && ch->next->c == ' ')
-									ch = ch->next;
-								left = 1;
-								right = 0;
+								if (lpos > region.x0)
+									lpos = region.x0;
 							}
+							else
+								rpos = lpos; /* Make it an invalid region */
+
+							if (rpos < lpos)
+							{
+								/* Send a weak right at the start of the spaces... */
+								div_list_push(ctx, xs, 0, 1, rpos);
+								/* and a weak left at the end. */
+								div_list_push(ctx, xs, 1, 1, lpos);
+							}
+
+							/* Expand the region as required. */
+							if (rpos < region.x0)
+								region.x0 = rpos;
+							if (lpos > region.x1)
+								region.x1 = lpos;
 						}
-						else
-						{
-							/* Ignore any other spaces. Don't start or end a run on them. */
-						}
+						/* Jump over the spaces */
+						ch = last_space;
 					}
 					else
 					{
-						non_empty = 1;
-						if (left)
-						{
-							float lpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
-							div_list_push(ctx, xs, 1, lpos);
-							left = 0;
-						}
-						rpos = fz_max(ch->quad.lr.x, ch->quad.ur.x);
-						right = 1;
+						float lpos = fz_min(ch->quad.ll.x, ch->quad.ul.x);
+						float rpos = fz_max(ch->quad.lr.x, ch->quad.ur.x);
+						if (lpos < region.x0)
+							region.x0 = lpos;
+						if (rpos > region.x1)
+							region.x1 = rpos;
 					}
 				}
-				if (non_empty)
+				if (!fz_is_empty_rect(region))
 				{
-					div_list_push(ctx, ys, 1, line->bbox.y0);
-					div_list_push(ctx, ys, 0, line->bbox.y1);
+					div_list_push(ctx, xs, 1, 0, region.x0);
+					div_list_push(ctx, xs, 0, 0, region.x1);
+					div_list_push(ctx, ys, 1, 0, region.y0);
+					div_list_push(ctx, ys, 0, 0, region.y1);
 				}
-				if (right)
-					div_list_push(ctx, xs, 0, rpos);
 			}
 			break;
 		}
@@ -1132,6 +1270,12 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 	}
 }
 
+static int
+is_numeric(int c)
+{
+	return (c >= '0' && c <= '9');
+}
+
 static void
 erase_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 {
@@ -1160,6 +1304,7 @@ erase_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			for (line = block->u.t.first_line; line != NULL; line = line->next)
 			{
 				fz_stext_char *ch = line->first_char;
+				int was_numeric = 0;
 
 				/* Skip leading spaces */
 				while (ch != NULL && ch->c == ' ')
@@ -1180,10 +1325,20 @@ erase_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 							/* Run of spaces. Skip 'em. */
 							while (ch->next && ch->next->c == 32)
 								ch = ch->next;
+							was_numeric = 0;
+							continue;
+						}
+						if (was_numeric || is_numeric(ch->next->c))
+						{
+							/* Single spaces around numbers are ignored. */
+							was_numeric = 0;
 							continue;
 						}
 						/* A single space. Accept it. */
+						was_numeric = 0;
 					}
+					else
+						was_numeric = is_numeric(ch->c);
 					r = fz_rect_from_quad(ch->quad);
 					x0 = find_cell_l(gd->xpos, r.x0);
 					x1 = find_cell_r(gd->xpos, r.x1);
@@ -2208,11 +2363,9 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 
 	fz_try(ctx)
 	{
-		/* Now see whether the content looks like tables.
-		 * Currently, we pass descend == 1, which means we consider all the
-		 * content at this level, plus any children. This allows us to cope
-		 * with having oversegmented. */
-		walk_blocks(ctx, &xs, &ys, *first_block, 1);
+		/* Now see whether the content looks like tables. */
+		fz_rect bounds = walk_to_find_bounds(ctx, *first_block);
+		walk_blocks(ctx, &xs, &ys, *first_block, bounds);
 
 		sanitize_positions(ctx, &xs);
 		sanitize_positions(ctx, &ys);
