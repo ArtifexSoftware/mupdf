@@ -1343,12 +1343,12 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 	fz_stext_block *before = dest ? dest->first_block : page->first_block;
 	fz_stext_block **sfirst = src ? &src->first_block : &page->first_block;
 	fz_stext_block **slast = src ? &src->last_block : &page->last_block;
-	fz_stext_block *block, *next;
+	fz_stext_block *block, *next_block;
 
-	for (block = *sfirst; block != NULL; block = next)
+	for (block = *sfirst; block != NULL; block = next_block)
 	{
 		fz_rect bbox = fz_intersect_rect(block->bbox, r);
-		next = block->next;
+		next_block = block->next;
 		/* Don't use fz_is_empty_rect here, as that will exclude zero height areas like spaces. */
 		if (bbox.x0 > bbox.x1 || bbox.y0 > bbox.y1)
 			continue; /* Trivially excluded */
@@ -1442,6 +1442,19 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 						newline->last_char = ch;
 						newline->bbox = fz_union_rect(newline->bbox, crect);
 					}
+					if (line->first_char == NULL)
+					{
+						/* We've removed all the chars from this line.
+						 * Better remove the line too. */
+						if (line->prev)
+							line->prev->next = next_line;
+						else
+							block->u.t.first_line = next_line;
+						if (next_line)
+							next_line->prev = line->prev;
+						else
+							block->u.t.last_line = line->prev;
+					}
 					if (newline)
 					{
 						if (newblock == NULL)
@@ -1460,6 +1473,18 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 			{
 				recalc_bbox(block);
 				recalc_bbox(newblock);
+			}
+			if (block->u.t.first_line == NULL)
+			{
+				/* We've removed all the lines from the block. Should remove that too! */
+				if (block->prev)
+					block->prev->next = next_block;
+				else
+					*sfirst = block->next;
+				if (next_block)
+					next_block->prev = block->prev;
+				else
+					*slast = block->prev;
 			}
 		}
 	}
@@ -1882,7 +1907,8 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 			}
 			if (block->u.s.down->standard == FZ_STRUCTURE_DIV)
 			{
-				if (block->u.s.down == NULL || div_is_empty(ctx, block->u.s.down->first_block))
+				tidy_orphaned_tables(ctx, page, block->u.s.down);
+				if (div_is_empty(ctx, block->u.s.down->first_block))
 				{
 					/* Remove block */
 					if (block->prev)
