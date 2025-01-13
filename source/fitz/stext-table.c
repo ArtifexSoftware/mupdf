@@ -451,7 +451,7 @@
 
 
 static fz_stext_block *
-add_grid_block(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block)
+add_grid_block(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, fz_stext_block **last_block)
 {
 	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof(**first_block));
 	memset(block, 0, sizeof(*block));
@@ -459,7 +459,15 @@ add_grid_block(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_bloc
 	block->bbox = fz_empty_rect; /* Fixes bug 703267. */
 	block->next = *first_block;
 	if (*first_block)
+	{
 		(*first_block)->prev = block;
+		assert(*last_block);
+	}
+	else
+	{
+		assert(*last_block == NULL);
+		*last_block = block;
+	}
 	*first_block = block;
 	return block;
 }
@@ -470,14 +478,24 @@ insert_block_before(fz_stext_block *block, fz_stext_block *before, fz_stext_page
 	if (before)
 	{
 		/* We have a block to insert it before, so we know it's not the last. */
+		assert(dest->first_block != NULL && dest->last_block != NULL);
 		block->next = before;
 		block->prev = before->prev;
 		if (before->prev)
+		{
+			assert(before->prev->next == before);
 			before->prev->next = block;
+		}
 		else if (dest)
+		{
+			assert(dest->first_block == before);
 			dest->first_block = block;
+		}
 		else
+		{
+			assert(page->first_block == before);
 			page->first_block = block;
+		}
 		before->prev = block;
 	}
 	else if (dest)
@@ -486,7 +504,10 @@ insert_block_before(fz_stext_block *block, fz_stext_block *before, fz_stext_page
 		block->next = NULL;
 		block->prev = dest->last_block;
 		if (dest->last_block)
+		{
+			assert(dest->last_block->next == NULL);
 			dest->last_block->next = block;
+		}
 		if (dest->first_block == NULL)
 			dest->first_block = block;
 		dest->last_block = block;
@@ -497,7 +518,10 @@ insert_block_before(fz_stext_block *block, fz_stext_block *before, fz_stext_page
 		block->next = NULL;
 		block->prev = page->last_block;
 		if (page->last_block)
+		{
+			assert(page->last_block->next == NULL);
 			page->last_block->next = block;
+		}
 		if (page->first_block == NULL)
 			page->first_block = block;
 		page->last_block = block;
@@ -1298,13 +1322,25 @@ unlink_line_from_block(fz_stext_line *line, fz_stext_block *block)
 	fz_stext_line *next_line = line->next;
 
 	if (line->prev)
+	{
+		assert(line->prev->next == line);
 		line->prev->next = next_line;
+	}
 	else
+	{
+		assert(block->u.t.first_line == line);
 		block->u.t.first_line = next_line;
+	}
 	if (next_line)
+	{
+		assert(next_line->prev = line);
 		next_line->prev = line->prev;
+	}
 	else
+	{
+		assert(block->u.t.last_line == line);
 		block->u.t.last_line = line->prev;
+	}
 }
 
 static void
@@ -1312,11 +1348,13 @@ append_line_to_block(fz_stext_line *line, fz_stext_block *block)
 {
 	if (block->u.t.last_line == NULL)
 	{
+		assert(block->u.t.first_line == NULL);
 		block->u.t.first_line = block->u.t.last_line = line;
 		line->prev = NULL;
 	}
 	else
 	{
+		assert(block->u.t.last_line->next == NULL);
 		line->prev = block->u.t.last_line;
 		block->u.t.last_line->next = line;
 		block->u.t.last_line = line;
@@ -1328,14 +1366,83 @@ static void
 unlink_block(fz_stext_block *block, fz_stext_block **first, fz_stext_block **last)
 {
 	if (block->prev)
+	{
+		assert(block->prev->next == block);
 		block->prev->next = block->next;
+	}
 	else
+	{
+		assert(*first == block);
 		*first = block->next;
+	}
 	if (block->next)
+	{
+		assert(block->next->prev == block);
 		block->next->prev = block->prev;
+	}
 	else
+	{
+		assert(*last == block);
 		*last = block->prev;
+	}
 }
+
+#ifndef NDEBUG
+static int
+verify_stext(fz_context *ctx, fz_stext_page *page, fz_stext_struct *src)
+{
+	fz_stext_block *block;
+	fz_stext_block **first = src ? &src->first_block : &page->first_block;
+	fz_stext_block **last = src ? &src->last_block : &page->last_block;
+	int max = 0;
+
+	assert((*first == NULL) == (*last == NULL));
+
+	for (block = *first; block != NULL; block = block->next)
+	{
+		fz_stext_line *line;
+
+		if (block->prev == NULL)
+			assert(*first == block);
+		else
+			assert(block->prev->next == block);
+		if (block->next == NULL)
+			assert(*last == block);
+		else
+			assert(block->next->prev == block);
+
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down)
+			{
+				int m = verify_stext(ctx, page, block->u.s.down);
+				if (m > max)
+					max = m;
+			}
+			continue;
+		}
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
+			continue;
+		assert((block->u.t.first_line == NULL) == (block->u.t.last_line == NULL));
+		for (line = block->u.t.first_line; line != NULL; line = line->next)
+		{
+			fz_stext_char *ch;
+
+			if (line->next == NULL)
+				assert(block->u.t.last_line == line);
+			else
+				assert(line->next->prev == line);
+
+			assert((line->first_char == NULL) == (line->last_char == NULL));
+
+			for (ch = line->first_char; ch != NULL; ch = ch->next)
+				assert(ch->next != NULL || line->last_char == ch);
+		}
+	}
+
+	return max+1;
+}
+#endif
 
 static fz_rect
 move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *dest, fz_stext_struct *src, fz_rect r)
@@ -1478,13 +1585,25 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 			{
 				/* We've removed all the lines from the block. Should remove that too! */
 				if (block->prev)
+				{
+					assert(block->prev->next == block);
 					block->prev->next = next_block;
+				}
 				else
+				{
+					assert(*sfirst == block);
 					*sfirst = block->next;
+				}
 				if (next_block)
+				{
+					assert(next_block->prev == block);
 					next_block->prev = block->prev;
+				}
 				else
+				{
+					assert(*slast == block);
 					*slast = block->prev;
+				}
 			}
 		}
 	}
@@ -1892,13 +2011,25 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 				{
 					/* Remove block */
 					if (block->prev)
+					{
+						assert(block->prev->next == block);
 						block->prev->next = next_block;
+					}
 					else
+					{
+						assert(*first_blockp == block);
 						*first_blockp = next_block;
+					}
 					if (next_block)
+					{
+						assert(next_block->prev == block);
 						next_block->prev = block->prev;
+					}
 					else
+					{
+						assert(*last_blockp == block);
 						*last_blockp = block->prev;
+					}
 				}
 				else
 				{
@@ -1912,13 +2043,25 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 				{
 					/* Remove block */
 					if (block->prev)
+					{
+						assert(block->prev->next == block);
 						block->prev->next = next_block;
+					}
 					else
+					{
+						assert(*first_blockp == block);
 						*first_blockp = next_block;
+					}
 					if (next_block)
+					{
+						assert(next_block->prev == block);
 						next_block->prev = block->prev;
+					}
 					else
+					{
+						assert(*last_blockp == block);
 						*last_blockp = block->prev;
+					}
 				}
 			}
 		}
@@ -2071,7 +2214,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 				fz_stext_block *block;
 				fz_stext_grid_positions *xps2 = clone_grid_positions(ctx, page, xps);
 				fz_stext_grid_positions *yps2 = clone_grid_positions(ctx, page, yps);
-				block = add_grid_block(ctx, page, &table->first_block);
+				block = add_grid_block(ctx, page, &table->first_block, &table->last_block);
 				block->u.b.xs = xps2;
 				block->u.b.ys = yps2;
 				block->bbox.x0 = block->u.b.xs->list[0].pos;
@@ -2127,5 +2270,9 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 	if (page == NULL)
 		return;
 
+	assert(verify_stext(ctx, page, NULL));
+
 	do_table_hunt(ctx, page, NULL);
+
+	assert(verify_stext(ctx, page, NULL));
 }
