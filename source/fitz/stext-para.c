@@ -172,9 +172,14 @@ static fz_stext_block *split_block_at_line(fz_context *ctx, stext_pos *pos, fz_s
 	newblock->bbox = fz_empty_rect;
 	newblock->prev = block;
 	newblock->next = block->next;
-	block->next = newblock;
-	if (*pos->plast == block)
+	if (block->next)
+		block->next->prev = newblock;
+	else
+	{
+		assert(*pos->plast == block);
 		*pos->plast = newblock;
+	}
+	block->next = newblock;
 	newblock->type = FZ_STEXT_BLOCK_TEXT;
 	newblock->u.t.flags = block->u.t.flags;
 	newblock->u.t.first_line = line;
