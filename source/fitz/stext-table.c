@@ -1066,6 +1066,9 @@ add_v_line(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, 
 	return 0;
 }
 
+/* Shared internal routine with stext-boxer.c  */
+fz_rect fz_collate_small_vector_run(fz_stext_block **blockp);
+
 static void
 walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 {
@@ -1107,17 +1110,11 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			{
 				/* Try merging multiple successive vectors to get better
 				 * results. */
+				r = fz_collate_small_vector_run(&block);
+				w = r.x1 - r.x0;
+				h = r.y1 - r.y0;
 				if (w > h)
 				{
-					while (block->next != NULL &&
-						block->next->type == FZ_STEXT_BLOCK_VECTOR &&
-						block->next->bbox.y0 == r.y0 &&
-						block->next->bbox.y1 == r.y1 &&
-						(block->next->bbox.x0 < r.x1 + 1 || block->next->bbox.x1 > r.x0 - 1))
-					{
-						block = block->next;
-						r = fz_union_rect(r, block->bbox);
-					}
 #ifdef DEBUG
 					if (add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1))
 #endif
@@ -1125,15 +1122,6 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 				}
 				else
 				{
-					while (block->next != NULL &&
-						block->next->type == FZ_STEXT_BLOCK_VECTOR &&
-						block->next->bbox.x0 == r.x0 &&
-						block->next->bbox.x1 == r.x1 &&
-						(block->next->bbox.y0 < r.y1 + 1 || block->next->bbox.y1 > r.y0 - 1))
-					{
-						block = block->next;
-						r = fz_union_rect(r, block->bbox);
-					}
 #ifdef DEBUG
 					if (add_v_line(ctx, gd, r.y0, r.y1, r.x0, r.x1))
 #endif

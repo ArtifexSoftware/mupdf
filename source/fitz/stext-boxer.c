@@ -852,6 +852,51 @@ feed_line(fz_context *ctx, boxer_t *boxer, fz_stext_line *line)
 	}
 }
 
+/* Internal, non-API function, shared with stext-table. */
+fz_rect
+fz_collate_small_vector_run(fz_stext_block **blockp)
+{
+	fz_stext_block *block = *blockp;
+	fz_stext_block *next;
+	fz_rect r = block->bbox;
+	int MAX_SIZE = 2;
+	int MAX_GAP = 2;
+
+	float w = r.x1 - r.x0;
+	float h = r.y1 - r.y0;
+
+	if (w < MAX_SIZE)
+	{
+		while ((next = block->next) != NULL &&
+			next->type == FZ_STEXT_BLOCK_VECTOR &&
+			next->bbox.x0 == r.x0 &&
+			next->bbox.x1 == r.x1 &&
+			((next->bbox.y1 > r.y1 && next->bbox.y0 <= r.y1 + MAX_GAP) ||
+			(next->bbox.y0 < r.y0 && next->bbox.y1 >= r.y0 - MAX_GAP)))
+		{
+			r = fz_union_rect(r, next->bbox);
+			block = next;
+		}
+	}
+	if (h < MAX_SIZE)
+	{
+		while ((next = block->next) != NULL &&
+			next->type == FZ_STEXT_BLOCK_VECTOR &&
+			next->bbox.y0 == r.y0 &&
+			next->bbox.y1 == r.y1 &&
+			((next->bbox.x1 > r.x1 && next->bbox.x0 <= r.x1 + MAX_GAP) ||
+			(next->bbox.x0 < r.x0 && next->bbox.x1 >= r.x0 - MAX_GAP)))
+		{
+			r = fz_union_rect(r, next->bbox);
+			block = next;
+		}
+	}
+
+	*blockp = block;
+
+	return r;
+}
+
 int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 {
 	boxer_t *boxer;
@@ -888,7 +933,8 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 				/* Allow a 1 point margin around vectors to avoid hairline
 				 * cracks between supposedly abutting things. */
 				int VECTOR_MARGIN = 1;
-				fz_rect r = block->bbox;
+				fz_rect r = fz_collate_small_vector_run(&block);
+
 				r.x0 -= VECTOR_MARGIN;
 				r.y0 -= VECTOR_MARGIN;
 				r.x1 += VECTOR_MARGIN;
