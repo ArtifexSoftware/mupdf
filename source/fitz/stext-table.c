@@ -2107,6 +2107,14 @@ check_for_grid_lines(fz_context *ctx, fz_stext_grid_positions *xps, fz_stext_gri
 				break;
 		}
 
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Transcribing table: (%g,%g)->(%g,%g)\n",
+			gd.xpos->list[0].pos,
+			gd.ypos->list[0].pos,
+			gd.xpos->list[gd.xpos->len-1].pos,
+			gd.ypos->list[gd.ypos->len-1].pos);
+#endif
+
 		/* Now we should have the entire table calculated. */
 		table = transcribe_table(ctx, &gd, page, parent);
 
