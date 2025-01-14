@@ -2226,7 +2226,7 @@ write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **
 	fz_story *story = NULL;
 	fz_device *dev = NULL;
 	fz_buffer *buf2 = NULL;
-	const char *default_css = "@page{margin:0} body{margin:0} p{margin:0}";
+	const char *default_css = "@page{margin:0} body{margin:0;line-height:1.2;white-space:pre-wrap;} p{margin:0}";
 	char *css = NULL;
 
 	fz_var(story);
@@ -2238,7 +2238,7 @@ write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **
 	fz_try(ctx)
 	{
 		if (ds)
-			css = fz_asprintf(ctx, "%s body{% s}", default_css, ds);
+			css = fz_asprintf(ctx, "%s body{%s}", default_css, ds);
 		story = fz_new_story(ctx, inbuf, css ? css : default_css, size, NULL);
 		dev = pdf_page_write(ctx, annot->page->doc, rect, res, &buf2);
 		fz_place_story(ctx, story, rect2, NULL);
@@ -2261,6 +2261,7 @@ write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **
 #endif
 
 #if FZ_ENABLE_HTML_ENGINE
+
 static char *
 escape_text(fz_context *ctx, const char *s)
 {
@@ -2312,6 +2313,64 @@ escape_text(fz_context *ctx, const char *s)
 
 	return d2;
 }
+
+int text_needs_rich_layout(fz_context *ctx, const char *s)
+{
+	int c, script;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+
+		// base 14 fonts
+		if (fz_windows_1252_from_unicode(c) > 0)
+			continue;
+		if (fz_iso8859_7_from_unicode(c) > 0)
+			continue;
+		if (fz_koi8u_from_unicode(c) > 0)
+			continue;
+
+		// cjk fonts
+		script = ucdn_get_script(c);
+		if (
+			script == UCDN_SCRIPT_HANGUL ||
+			script == UCDN_SCRIPT_HIRAGANA ||
+			script == UCDN_SCRIPT_KATAKANA ||
+			script == UCDN_SCRIPT_BOPOMOFO ||
+			script == UCDN_SCRIPT_HAN
+		)
+			continue;
+
+		return 1;
+	}
+	return 0;
+}
+
+static unsigned int hex_from_color(fz_context *ctx, int n, float color[4])
+{
+	float rgb[4];
+	int r, g, b;
+	switch (n)
+	{
+	default:
+		r = g = b = 0;
+	case 1:
+		r = g = b = color[0] * 255;
+		break;
+	case 3:
+		r = color[0] * 255;
+		g = color[1] * 255;
+		b = color[2] * 255;
+		break;
+	case 4:
+		fz_convert_color(ctx, fz_device_cmyk(ctx), color, fz_device_rgb(ctx), rgb, NULL, fz_default_color_params);
+		r = rgb[0] * 255;
+		g = rgb[1] * 255;
+		b = rgb[2] * 255;
+		break;
+	}
+	return (r<<16) | (g<<8) | b;
+}
+
 #endif
 
 static float
@@ -2429,6 +2488,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 #if FZ_ENABLE_HTML_ENGINE
 	const char *rc, *ds;
 	char *free_rc = NULL;
+	char ds_buf[400];
 #endif
 
 	text = pdf_annot_contents(ctx, annot);
@@ -2532,8 +2592,21 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 #if FZ_ENABLE_HTML_ENGINE
 	ds = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(DS));
 	rc = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(RC));
-	if (!rc && ds && text)
+	if (!rc && (ds || text_needs_rich_layout(ctx, text)))
+	{
 		rc = free_rc = escape_text(ctx, text);
+		if (!ds)
+		{
+			fz_snprintf(ds_buf, sizeof ds_buf,
+				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;",
+				full_font_name(&font),
+				size,
+				hex_from_color(ctx, n, color),
+				(q == 0 ? "left" : q == 1 ? "center" : "right")
+			);
+			ds = ds_buf;
+		}
+	}
 	if (rc)
 	{
 		fz_try(ctx)
