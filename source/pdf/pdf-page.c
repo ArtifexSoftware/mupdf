@@ -364,6 +364,7 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *page)
 		fz_catch(ctx)
 		{
 			doc->page_tree_broken = 1;
+			fz_report_error(ctx);
 			fz_warn(ctx, "Page tree load failed. Falling back to slow lookup.");
 		}
 	}
