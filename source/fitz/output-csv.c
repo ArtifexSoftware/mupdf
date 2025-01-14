@@ -102,6 +102,22 @@ whitespaceless_bbox(fz_context *ctx, fz_stext_block *block)
 	return r;
 }
 
+static void
+output_td_contents(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down)
+				output_td_contents(ctx, out, block->u.s.down->first_block);
+			continue;
+		}
+		if (block->type == FZ_STEXT_BLOCK_TEXT)
+			output_line(ctx, out, block->u.t.first_line);
+	}
+}
+
 /* We have output up to and including position *pos on entry to this function.
  * We preserve that on output. */
 static void
@@ -133,11 +149,7 @@ output_td(fz_context *ctx, fz_csv_writer *wri, fz_stext_block *grid, int *pos, f
 	}
 
 	fz_write_printf(ctx, wri->out, "\"");
-	for (; block != NULL; block = block->next)
-	{
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
-			output_line(ctx, wri->out, block->u.t.first_line);
-	}
+	output_td_contents(ctx, wri->out, block);
 	fz_write_printf(ctx, wri->out, "\"");
 
 	/* Send any extra , to allow for colspans */
