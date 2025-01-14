@@ -1422,15 +1422,15 @@ void pdf_undo(fz_context *ctx, pdf_document *doc)
 	fz_write_printf(ctx, fz_stddbg(ctx), "Undo!\n");
 #endif
 
+	doc->journal->current = entry->prev;
+
+	swap_fragments(ctx, doc, entry);
+
 	// nuke all caches
 	pdf_drop_page_tree_internal(ctx, doc);
 	pdf_sync_open_pages(ctx, doc);
 	for (frag = entry->head; frag; frag = frag->next)
 		pdf_purge_object_from_store(ctx, doc, frag->obj_num);
-
-	doc->journal->current = entry->prev;
-
-	swap_fragments(ctx, doc, entry);
 }
 
 /* Move forwards in the undo history. Throws an error if we are at the
