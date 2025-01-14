@@ -6882,7 +6882,7 @@ static void ffi_PDFDocument_rearrangePages(js_State *J)
 	js_endtry(J);
 
 	fz_try(ctx)
-		pdf_rearrange_pages(ctx, pdf, n, pages);
+		pdf_rearrange_pages(ctx, pdf, n, pages, PDF_CLEAN_STRUCTURE_DROP);
 	fz_always(ctx)
 		fz_free(ctx, pages);
 	fz_catch(ctx)

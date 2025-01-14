@@ -255,7 +255,7 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 	return nc;
 }
 
-static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int count, const int *new_page_list)
+static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int count, const int *new_page_list, pdf_clean_options_structure structure)
 {
 	pdf_obj *oldroot, *pages, *kids, *olddests;
 	pdf_obj *root = NULL;
@@ -265,8 +265,8 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 	pdf_obj *allfields = NULL;
 	int pagecount, i;
 	int *page_object_nums = NULL;
-	pdf_obj *structtreeroot;
-	pdf_obj *ostructparents;
+	pdf_obj *structtreeroot = NULL;
+	pdf_obj *ostructparents = NULL;
 	pdf_obj *structparents = NULL;
 
 	/* Keep only pages/type and (reduced) dest entries to avoid
@@ -276,10 +276,13 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 	olddests = pdf_load_name_tree(ctx, doc, PDF_NAME(Dests));
 	outlines = pdf_dict_get(ctx, oldroot, PDF_NAME(Outlines));
 	ocproperties = pdf_dict_get(ctx, oldroot, PDF_NAME(OCProperties));
-	structtreeroot = pdf_dict_get(ctx, oldroot, PDF_NAME(StructTreeRoot));
-	ostructparents = pdf_dict_get(ctx, structtreeroot, PDF_NAME(ParentTree));
-	if (structtreeroot)
-		structparents = pdf_new_dict(ctx, doc, 3);
+	if (structure == PDF_CLEAN_STRUCTURE_KEEP)
+	{
+		structtreeroot = pdf_dict_get(ctx, oldroot, PDF_NAME(StructTreeRoot));
+		ostructparents = pdf_dict_get(ctx, structtreeroot, PDF_NAME(ParentTree));
+		if (structtreeroot)
+			structparents = pdf_new_dict(ctx, doc, 3);
+	}
 
 	fz_var(root);
 	fz_var(names_list);
@@ -442,12 +445,15 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 	}
 }
 
-void pdf_rearrange_pages(fz_context *ctx, pdf_document *doc, int count, const int *new_page_list)
+void pdf_rearrange_pages(fz_context *ctx, pdf_document *doc, int count, const int *new_page_list, pdf_clean_options_structure structure)
 {
+	if (structure < PDF_CLEAN_STRUCTURE_DROP || structure > PDF_CLEAN_STRUCTURE_KEEP)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid structure argument");
+
 	pdf_begin_operation(ctx, doc, "Rearrange pages");
 	fz_try(ctx)
 	{
-		pdf_rearrange_pages_imp(ctx, doc, count, new_page_list);
+		pdf_rearrange_pages_imp(ctx, doc, count, new_page_list, structure);
 		pdf_end_operation(ctx, doc);
 	}
 	fz_catch(ctx)
@@ -510,7 +516,7 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 				argidx++;
 			}
 
-			pdf_rearrange_pages(ctx, pdf, len, pages);
+			pdf_rearrange_pages(ctx, pdf, len, pages, opts ? opts->structure : PDF_CLEAN_STRUCTURE_DROP);
 		}
 
 		pdf_rewrite_images(ctx, pdf, &opts->image);
