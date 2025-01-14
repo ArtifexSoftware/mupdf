@@ -699,6 +699,9 @@
     <ClCompile Include="..\..\source\fitz\output-csv.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\json.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
@@ -985,6 +988,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\pdf\recolor.h">
       <Filter>!include\pdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\json.h">
+      <Filter>!include\fitz</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

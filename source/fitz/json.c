@@ -676,7 +676,7 @@ const char *fz_json_to_string(fz_context *ctx, fz_json *json)
 int fz_json_array_length(fz_context *ctx, fz_json *array)
 {
 	fz_json_array *entry;
-	int n;
+	int n = 0;
 	if (array->type != FZ_JSON_ARRAY)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "not an array");
 	for (entry = array->u.array; entry; entry = entry->next)
@@ -687,7 +687,7 @@ int fz_json_array_length(fz_context *ctx, fz_json *array)
 fz_json *fz_json_array_get(fz_context *ctx, fz_json *array, int ix)
 {
 	fz_json_array *entry;
-	int n;
+	int n = 0;
 	if (array->type != FZ_JSON_ARRAY)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "not an array");
 	for (entry = array->u.array; entry; entry = entry->next)
