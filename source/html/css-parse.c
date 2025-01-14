@@ -274,6 +274,14 @@ static void css_push_char(struct lexbuf *buf, int c)
 	buf->string_len += n;
 }
 
+static void css_push_zero(struct lexbuf *buf)
+{
+	if (buf->string_len + 1 >= (int)nelem(buf->string))
+		fz_css_error(buf, "token too long");
+	buf->string[buf->string_len] = 0;
+	buf->string_len += 1;
+}
+
 static int css_lex_accept(struct lexbuf *buf, int t)
 {
 	if (buf->c == t)
@@ -311,7 +319,7 @@ static int css_lex_number(struct lexbuf *buf)
 	if (css_lex_accept(buf, '%'))
 	{
 		css_push_char(buf, '%');
-		css_push_char(buf, 0);
+		css_push_zero(buf);
 		return CSS_PERCENT;
 	}
 
@@ -324,11 +332,11 @@ static int css_lex_number(struct lexbuf *buf)
 			css_push_char(buf, buf->c);
 			css_lex_next(buf);
 		}
-		css_push_char(buf, 0);
+		css_push_zero(buf);
 		return CSS_LENGTH;
 	}
 
-	css_push_char(buf, 0);
+	css_push_zero(buf);
 	return CSS_NUMBER;
 }
 
@@ -339,7 +347,7 @@ static int css_lex_keyword(struct lexbuf *buf)
 		css_push_char(buf, buf->c);
 		css_lex_next(buf);
 	}
-	css_push_char(buf, 0);
+	css_push_zero(buf);
 	return CSS_KEYWORD;
 }
 
@@ -350,7 +358,7 @@ static int css_lex_hash(struct lexbuf *buf)
 		css_push_char(buf, buf->c);
 		css_lex_next(buf);
 	}
-	css_push_char(buf, 0);
+	css_push_zero(buf);
 	return CSS_HASH;
 }
 
@@ -385,7 +393,7 @@ static int css_lex_string(struct lexbuf *buf, int q)
 		}
 	}
 	css_lex_expect(buf, q);
-	css_push_char(buf, 0);
+	css_push_zero(buf);
 	return CSS_STRING;
 }
 
@@ -418,7 +426,7 @@ static void css_lex_uri(struct lexbuf *buf)
 		else
 			fz_css_error(buf, "unexpected character in url");
 	}
-	css_push_char(buf, 0);
+	css_push_zero(buf);
 }
 
 static int css_lex(struct lexbuf *buf)
