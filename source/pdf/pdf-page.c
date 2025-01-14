@@ -297,7 +297,7 @@ pdf_count_pages_before_kid(fz_context *ctx, pdf_document *doc, pdf_obj *parent, 
 		else
 			total++;
 	}
-	fz_throw(ctx, FZ_ERROR_FORMAT, "kid not found in parent's kids array");
+	return -1; // the page we're looking for is not in the page tree (it has been deleted)
 }
 
 static int
@@ -306,6 +306,7 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	pdf_mark_list mark_list;
 	int needle = pdf_to_num(ctx, node);
 	int total = 0;
+	int n;
 	pdf_obj *parent;
 
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME(Type)), PDF_NAME(Page)))
@@ -322,7 +323,16 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 		{
 			if (pdf_mark_list_push(ctx, &mark_list, parent))
 				fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in page tree (parents)");
-			total += pdf_count_pages_before_kid(ctx, doc, parent, needle);
+			n = pdf_count_pages_before_kid(ctx, doc, parent, needle);
+
+			// Page was not found in page tree!
+			if (n < 0)
+			{
+				total = -1;
+				break;
+			}
+
+			total += n;
 			needle = pdf_to_num(ctx, parent);
 			parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
 		}
