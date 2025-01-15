@@ -48,8 +48,14 @@ csv_begin_page(fz_context *ctx, fz_document_writer *wri_, fz_rect mediabox)
 	return fz_new_stext_device(ctx, wri->page, &wri->options);
 }
 
+typedef struct
+{
+	int leading;
+	int spaces;
+} space_data;
+
 static void
-output_line(fz_context *ctx, fz_output *out, fz_stext_line *line)
+output_line(fz_context *ctx, fz_output *out, fz_stext_line *line, space_data *sd)
 {
 	for (; line != NULL; line = line->next)
 	{
@@ -57,6 +63,19 @@ output_line(fz_context *ctx, fz_output *out, fz_stext_line *line)
 
 		for (ch = line->first_char; ch != NULL; ch = ch->next)
 		{
+			if (ch->c == ' ')
+			{
+				if (!sd->leading)
+					sd->spaces++;
+				continue;
+			}
+			sd->leading = 0;
+			/* Compact all runs of spaces to single ones. */
+			if (sd->spaces > 0)
+			{
+				fz_write_printf(ctx, out, " ");
+				sd->spaces = 0;
+			}
 			if (ch->c == '\"')
 			{
 				fz_write_printf(ctx, out, "\"\"");
@@ -103,18 +122,18 @@ whitespaceless_bbox(fz_context *ctx, fz_stext_block *block)
 }
 
 static void
-output_td_contents(fz_context *ctx, fz_output *out, fz_stext_block *block)
+output_td_contents(fz_context *ctx, fz_output *out, fz_stext_block *block, space_data *sd)
 {
 	for (; block != NULL; block = block->next)
 	{
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
 			if (block->u.s.down)
-				output_td_contents(ctx, out, block->u.s.down->first_block);
+				output_td_contents(ctx, out, block->u.s.down->first_block, sd);
 			continue;
 		}
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
-			output_line(ctx, out, block->u.t.first_line);
+			output_line(ctx, out, block->u.t.first_line, sd);
 	}
 }
 
@@ -124,6 +143,8 @@ static void
 output_td(fz_context *ctx, fz_csv_writer *wri, fz_stext_block *grid, int *pos, fz_stext_block *block)
 {
 	int x0, x1;
+	space_data sd = { 0 };
+
 	if (block && grid)
 	{
 		fz_rect r = whitespaceless_bbox(ctx, block);
@@ -149,7 +170,7 @@ output_td(fz_context *ctx, fz_csv_writer *wri, fz_stext_block *grid, int *pos, f
 	}
 
 	fz_write_printf(ctx, wri->out, "\"");
-	output_td_contents(ctx, wri->out, block);
+	output_td_contents(ctx, wri->out, block, &sd);
 	fz_write_printf(ctx, wri->out, "\"");
 
 	/* Send any extra , to allow for colspans */
