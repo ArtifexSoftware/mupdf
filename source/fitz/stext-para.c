@@ -88,6 +88,14 @@ lines_move_plausibly_like_paragraph(fz_stext_block *block)
 		float x = (line->bbox.x0 + line->bbox.x1)/2;
 		float y = (line->bbox.y0 + line->bbox.y1)/2;
 		float height = line->bbox.y1 - line->bbox.y0;
+		fz_stext_char *ch;
+
+		/* Ignore any completely empty lines */
+		for (ch = line->first_char; ch != NULL; ch = ch->next)
+			if (ch->c != ' ')
+				break;
+		if (ch == NULL)
+			continue;
 
 		if (firstline)
 		{
@@ -571,6 +579,7 @@ detect_titles_by_font_usage(fz_context *ctx, stext_pos *pos, fz_stext_block *blo
 
 typedef struct
 {
+	fz_rect bbox;
 	stext_pos *pos;
 } indent_data;
 
@@ -578,7 +587,7 @@ static int
 indent_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg, float line_height)
 {
 	indent_data *data = (indent_data *)arg;
-	float indent = line->bbox.x0 - block->bbox.x0;
+	float indent = line->bbox.x0 - data->bbox.x0;
 
 	if (indent > line_height)
 	{
@@ -591,17 +600,19 @@ indent_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void
 }
 
 static void
-break_paragraphs_by_indent(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
+break_paragraphs_by_indent(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	indent_data data[1];
 
 	data->pos = pos;
+	data->bbox = bbox;
 
 	line_walker(ctx, block, indent_newline, NULL, NULL, data);
 }
 
 typedef struct
 {
+	fz_rect bbox;
 	stext_pos *pos;
 	float line_gap;
 	float prev_line_gap;
@@ -647,7 +658,7 @@ trailing_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void 
 	trailing_data *data = (trailing_data *)arg;
 	fz_stext_char *ch;
 
-	data->line_gap = block->bbox.x1 - line->bbox.x1;
+	data->line_gap = data->bbox.x1 - line->bbox.x1;
 	if (line->last_char && (
 		(line->last_char->c >= 'A' && line->last_char->c <= 'Z') ||
 		(line->last_char->c >= 'a' && line->last_char->c <= 'z') ||
@@ -700,10 +711,11 @@ trailing_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void 
 }
 
 static void
-break_paragraphs_by_analysing_trailing_gaps(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
+break_paragraphs_by_analysing_trailing_gaps(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	trailing_data data[1];
 
+	data->bbox = bbox;
 	data->pos = pos;
 	data->line_gap = 0;
 	data->prev_line_gap = 0;
@@ -716,6 +728,7 @@ break_paragraphs_by_analysing_trailing_gaps(fz_context *ctx, stext_pos *pos, fz_
 
 typedef struct
 {
+	fz_rect bbox;
 	stext_pos *pos;
 	int count_lines;
 	int count_justified;
@@ -734,14 +747,14 @@ justify_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, voi
 	if (line->prev)
 		line = line->prev;
 
-	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
+	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
 	data->spaces_exist_in_this_line = 0;
 	data->non_digits_exist_in_this_line = 0;
 	data->count_lines++;
 
-	data->l = block->bbox.x1;
-	data->r = block->bbox.x0;
+	data->l = data->bbox.x1;
+	data->r = data->bbox.x0;
 
 	return 0;
 }
@@ -753,15 +766,21 @@ justify_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *
 	fz_stext_char *ch;
 
 	for (ch = line->first_char; ch != NULL; ch = ch->next)
+	{
 		if (ch->c == ' ')
 			data->spaces_exist_in_this_line = 1;
-		else if ((ch->c <= '0' || ch->c >= '9') && ch->c != '.')
-			data->non_digits_exist_in_this_line = 1;
-
-	if (line->bbox.x0 < data->l)
-		data->l = line->bbox.x0;
-	if (line->bbox.x1 > data->r)
-		data->r = line->bbox.x1;
+		else
+		{
+			float left = fz_min(ch->quad.ll.x, ch->quad.ul.x);
+			float right = fz_max(ch->quad.lr.x, ch->quad.ur.x);
+			if ((ch->c <= '0' || ch->c >= '9') && ch->c != '.')
+				data->non_digits_exist_in_this_line = 1;
+			if (left < data->l)
+				data->l = left;
+			if (right > data->r)
+				data->r = right;
+		}
+	}
 
 	return 0;
 }
@@ -771,7 +790,7 @@ justify_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *a
 {
 	justify_data *data = (justify_data *)arg;
 
-	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
+	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
 	data->count_lines++;
 }
@@ -781,7 +800,7 @@ justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 {
 	justify_data *data = (justify_data *)arg;
 
-	if (data->l < block->bbox.x0 + JUSTIFY_THRESHOLD && data->r > block->bbox.x1 - JUSTIFY_THRESHOLD)
+	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD)
 	{
 		/* Justified */
 	}
@@ -792,8 +811,8 @@ justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 		return 1;
 	}
 
-	data->l = block->bbox.x1;
-	data->r = block->bbox.x0;
+	data->l = data->bbox.x1;
+	data->r = data->bbox.x0;
 
 	return 0;
 }
@@ -811,21 +830,43 @@ justify2_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void 
 	return 0;
 }
 
+static fz_rect
+text_block_marked_bbox(fz_context *ctx, fz_stext_block *block)
+{
+	fz_stext_line *line;
+	fz_stext_char *ch;
+	fz_rect r = fz_empty_rect;
+
+	for (line = block->u.t.first_line; line != NULL; line = line->next)
+	{
+		for (ch = line->first_char; ch != NULL; ch = ch->next)
+		{
+			if (ch->c == ' ')
+				continue;
+			r = fz_union_rect(r, fz_rect_from_quad(ch->quad));
+		}
+	}
+
+	return r;
+}
+
 static void
-break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
+break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	justify_data data[1];
 
 	if (block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_UNKNOWN)
 		return;
 
+	data->bbox = bbox;
+
 	data->pos = pos;
 	data->count_lines = 0;
 	data->count_justified = 0;
 	data->spaces_exist_in_this_line = 0;
 	data->non_digits_exist_in_this_line = 0;
-	data->l = block->bbox.x1;
-	data->r = block->bbox.x0;
+	data->l = bbox.x1;
+	data->r = bbox.x0;
 
 	line_walker(ctx, block, justify_newline, justify_line, justify_end, data);
 
@@ -1225,6 +1266,7 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 {
 	fz_stext_block *block;
 	stext_pos pos;
+	fz_rect bbox;
 
 	pos.pool = page->pool;
 	pos.idx = 0;
@@ -1255,6 +1297,14 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			dump_block(ctx, "Around the top level block loop:", block);
 #endif
 
+			/* Firstly, and somewhat annoyingly we need to find the bbox of the
+			 * block that doesn't include for trailing spaces. If we just use
+			 * the normal bbox, then lines that end in "foo " will end further
+			 * to the right of lines that end in "ba-", and consequently we'll
+			 * fail to detect blocks as being justified.
+			 * See PMC2656817_00002.pdf as an example. */
+			bbox = text_block_marked_bbox(ctx, block);
+
 			/* Look for bulletted list items. */
 			break_list_items(ctx, &pos, block);
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
@@ -1272,21 +1322,21 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 				break;
 
 			/* Now look at breaking based upon indents */
-			break_paragraphs_by_indent(ctx, &pos, block);
+			break_paragraphs_by_indent(ctx, &pos, block, bbox);
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
 				break;
 
 			/* Now we're going to look for unindented paragraphs. We do this by
 			 * considering if the first word on the next line would have fitted
 			 * into the space left at the end of the previous line. */
-			break_paragraphs_by_analysing_trailing_gaps(ctx, &pos, block);
+			break_paragraphs_by_analysing_trailing_gaps(ctx, &pos, block, bbox);
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
 				break;
 
 			/* Now look to see if a block looks like fully justified text. If it
 			 * does, then any line that doesn't reach the right hand side must be
 			 * a paragraph break. */
-			break_paragraphs_within_justified_text(ctx, &pos, block);
+			break_paragraphs_within_justified_text(ctx, &pos, block, bbox);
 			break;
 		}
 	}
