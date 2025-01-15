@@ -2174,6 +2174,17 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	if (count < 1)
 		return num_subtables;
 
+	/* We only look for a table at this level if we either at the top
+	 * or on a div. This saves us looking for tables within an 'H'
+	 * for example. */
+	if (parent != NULL && parent->standard != FZ_STRUCTURE_DIV)
+		return num_subtables;
+
+	/* If all the content here looks like a column of text, don't
+	 * hunt for a table within it. */
+	if (all_blocks_are_justified_or_headers(ctx, *first_block))
+		return num_subtables;
+
 	fz_var(xps);
 	fz_var(yps);
 
