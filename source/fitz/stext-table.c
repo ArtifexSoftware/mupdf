@@ -1774,9 +1774,14 @@ merge_columns(grid_walker_data *gd)
 	for (x = gd->cells->w-3; x >= 0; x--)
 	{
 		/* Can column x be merged with column x+1? */
-		/* We never merge 2 columns where the uncertainty of the division between them is 0. */
-		if (gd->xpos->list[x+1].uncertainty == 0)
-			break;
+		/* We only ever want to merge columns if content crossed between them somewhere.
+		 * Don't use uncertainty for this, because uncertainty doesn't allow for
+		 * whitespace. */
+		for (y = 0; y < gd->cells->h-1; y++)
+			if (get_cell(gd->cells, x+1, y)->v_crossed == 1)
+				break;
+		if (y == gd->cells->h-1)
+			continue;
 		/* This requires all the pairs of cells in those 2 columns to be mergeable. */
 		for (y = 0; y < gd->cells->h-1; y++)
 		{
@@ -1842,9 +1847,14 @@ merge_rows(grid_walker_data *gd)
 	for (y = gd->cells->h-3; y >= 0; y--)
 	{
 		/* Can row y be merged with row y+1? */
-		/* We never merge 2 rows where the uncertainty of the division between them is 0. */
-		if (gd->ypos->list[y+1].uncertainty == 0)
-			break;
+		/* We only ever want to merge rows if content crossed between them somewhere.
+		 * Don't use uncertainty for this, because uncertainty doesn't allow for
+		 * whitespace. */
+		for (x = 0; x < gd->cells->w-1; x++)
+			if (get_cell(gd->cells, x, y+1)->h_crossed == 1)
+				break;
+		if (x == gd->cells->w-1)
+			continue;
 		/* This requires all the pairs of cells in those 2 rows to be mergeable. */
 		for (x = 0; x < gd->cells->w-1; x++)
 		{
