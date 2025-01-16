@@ -1466,7 +1466,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 		}
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
-			if (block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
+			if (block->u.s.down)
 				move_contained_content(ctx, page, dest, block->u.s.down, r);
 		}
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
