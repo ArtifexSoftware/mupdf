@@ -904,6 +904,8 @@ all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
 	return 1;
 }
 
+#define TWO_INCHES (72*2)
+
 static fz_rect
 walk_to_find_bounds(fz_context *ctx, fz_stext_block *first_block)
 {
@@ -917,12 +919,22 @@ walk_to_find_bounds(fz_context *ctx, fz_stext_block *first_block)
 		switch (block->type)
 		{
 		case FZ_STEXT_BLOCK_STRUCT:
-			if (block->u.s.down && !all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
-				bounds = fz_union_rect(bounds, walk_to_find_bounds(ctx, block->u.s.down->first_block));
+			if (!block->u.s.down)
+				continue;
+			if (block->u.s.down->standard == FZ_STRUCTURE_H)
+			{
+				if (block->next != NULL &&
+					block->next->type == FZ_STEXT_BLOCK_TEXT &&
+					block->next->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL)
+					continue;
+			}
+			bounds = fz_union_rect(bounds, walk_to_find_bounds(ctx, block->u.s.down->first_block));
 			break;
 		case FZ_STEXT_BLOCK_VECTOR:
 			break;
 		case FZ_STEXT_BLOCK_TEXT:
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL && block->bbox.x1 - block->bbox.x0 >= TWO_INCHES)
+				continue;
 			for (line = block->u.t.first_line; line != NULL; line = line->next)
 			{
 				for (ch = line->first_char; ch != NULL; ch = ch->next)
