@@ -24,6 +24,9 @@
     <bin2coff__cff_ Include="..\..\resources\fonts\urw\Dingbats.cff">
       <Filter>fonts\urw</Filter>
     </bin2coff__cff_>
+    <bin2coff__cff_ Include="..\..\resources\fonts\urw\NimbusBoxes-Regular.cff">
+      <Filter>fonts\urw</Filter>
+    </bin2coff__cff_>
     <bin2coff__cff_ Include="..\..\resources\fonts\urw\NimbusMonoPS-Bold.cff">
       <Filter>fonts\urw</Filter>
     </bin2coff__cff_>
@@ -74,9 +77,6 @@
     </bin2coff__cff_>
     <bin2coff__cff_ Include="..\..\resources\fonts\sil\CharisSIL.cff">
       <Filter>fonts\sil</Filter>
-    </bin2coff__cff_>
-    <bin2coff__cff_ Include="..\..\resources\fonts\urw\NimbusBoxes-Regular.cff">
-      <Filter>fonts\urw</Filter>
     </bin2coff__cff_>
     <!-- DUMP:CFF -->
   </ItemGroup>

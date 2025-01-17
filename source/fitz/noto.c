@@ -470,9 +470,9 @@ fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language)
 	case UCDN_SCRIPT_BRAHMI: return "Brahmi";
 	case UCDN_SCRIPT_MANDAIC: return "Mandaic";
 	case UCDN_SCRIPT_CHAKMA: return "Chakma";
-	case UCDN_SCRIPT_MIAO: return "Miao";
 	case UCDN_SCRIPT_MEROITIC_CURSIVE: return "Meroitic";
 	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS: return "Meroitic";
+	case UCDN_SCRIPT_MIAO: return "Miao";
 	case UCDN_SCRIPT_SHARADA: return "Sharada";
 	case UCDN_SCRIPT_SORA_SOMPENG: return "SoraSompeng";
 	case UCDN_SCRIPT_TAKRI: return "Takri";
