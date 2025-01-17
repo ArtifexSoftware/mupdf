@@ -257,6 +257,14 @@ DEFNOTO(NotoSansSignWriting_Regular_otf,		"Noto Sans SignWriting",		UCDN_SCRIPT_
 
 #define DEFNOTO(symbol, name, script) EMPTY(script)
 
+DEFNOTO(NotoSansTodhri_Regular_otf,			"Noto Sans Todhri",			UCDN_SCRIPT_TODHRI)
+DEFNOTO(NotoSansGaray_Regular_otf,			"Noto Sans Garay",			UCDN_SCRIPT_GARAY)
+DEFNOTO(NotoSansTuluTigalari_Regular_otf,		"Noto Sans Tulu Tigalari",		UCDN_SCRIPT_TULU_TIGALARI)
+DEFNOTO(NotoSansSunuwar_Regular_otf,			"Noto Sans Sunuwar",			UCDN_SCRIPT_SUNUWAR)
+DEFNOTO(NotoSansGurungKhema_Regular_otf,		"Noto Sans Gurung Khema",		UCDN_SCRIPT_GURUNG_KHEMA)
+DEFNOTO(NotoSansKiratRai_Regular_otf,			"Noto Sans Kirat Rai",			UCDN_SCRIPT_KIRAT_RAI)
+DEFNOTO(NotoSansOlOnal_Regular_otf,			"Noto Sans Ol Onal",			UCDN_SCRIPT_OL_ONAL)
+
 #undef DEFNOTO
 
 #ifndef TOFU_SYMBOL
