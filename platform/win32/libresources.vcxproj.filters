@@ -318,9 +318,6 @@
     <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSansOldTurkic-Regular.otf">
       <Filter>fonts\noto</Filter>
     </bin2coff__otf_>
-    <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSansOriya-Regular.otf">
-      <Filter>fonts\noto</Filter>
-    </bin2coff__otf_>
     <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSansOsage-Regular.otf">
       <Filter>fonts\noto</Filter>
     </bin2coff__otf_>
@@ -493,6 +490,9 @@
       <Filter>fonts\noto</Filter>
     </bin2coff__otf_>
     <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSerifNyiakengPuachueHmong-Regular.otf">
+      <Filter>fonts\noto</Filter>
+    </bin2coff__otf_>
+    <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSerifOriya-Regular.otf">
       <Filter>fonts\noto</Filter>
     </bin2coff__otf_>
     <bin2coff__otf_ Include="..\..\resources\fonts\noto\NotoSerifSinhala-Regular.otf">
