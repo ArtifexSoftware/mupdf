@@ -897,6 +897,19 @@ void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *pr
 	}
 }
 
+/*
+	A couple of notes about the path bounding algorithm.
+
+	Firstly, we don't expand the bounds immediately on a move, because
+	a sequence of moves together will only actually use the last one,
+	and trailing moves are ignored. This is achieved using 'trailing_move'.
+
+	Secondly, we watch for paths that are entirely rectilinear (all segments
+	move left/right/up/down only, with no curves). Such "only_right_angles"
+	paths can be bounded with us ignoring any mitre limit. This is a really
+	common case that can otherwise bloats simple boxes far more than is
+	useful. This is particular annoying during table recognition!
+*/
 typedef struct
 {
 	fz_matrix ctm;
@@ -904,14 +917,22 @@ typedef struct
 	fz_point move;
 	int trailing_move;
 	int first;
+	int only_right_angles;
+	fz_point prev;
 } bound_path_arg;
 
 static void
 bound_moveto(fz_context *ctx, void *arg_, float x, float y)
 {
 	bound_path_arg *arg = (bound_path_arg *)arg_;
-	arg->move = fz_transform_point_xy(x, y, arg->ctm);
+	arg->move = arg->prev = fz_transform_point_xy(x, y, arg->ctm);
 	arg->trailing_move = 1;
+}
+
+static inline int
+eq0(float x)
+{
+	return x >= -0.001 && x <= 0.001;
 }
 
 static void
@@ -932,6 +953,9 @@ bound_lineto(fz_context *ctx, void *arg_, float x, float y)
 		arg->trailing_move = 0;
 		bound_expand(&arg->rect, arg->move);
 	}
+	if (arg->only_right_angles && !eq0(arg->prev.x - p.x) && !eq0(arg->prev.y - p.y))
+		arg->only_right_angles = 0;
+	arg->prev = p;
 }
 
 static void
@@ -954,6 +978,8 @@ bound_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y
 		arg->trailing_move = 0;
 		bound_expand(&arg->rect, arg->move);
 	}
+	arg->only_right_angles = 0;
+	arg->prev = p;
 }
 
 static const fz_path_walker bound_path_walker =
@@ -964,28 +990,8 @@ static const fz_path_walker bound_path_walker =
 	NULL
 };
 
-fz_rect
-fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm)
-{
-	bound_path_arg arg;
-
-	arg.ctm = ctm;
-	arg.rect = fz_empty_rect;
-	arg.trailing_move = 0;
-	arg.first = 1;
-
-	fz_walk_path(ctx, path, &bound_path_walker, &arg);
-
-	if (!arg.first && stroke)
-	{
-		arg.rect = fz_adjust_rect_for_stroke(ctx, arg.rect, stroke, ctm);
-	}
-
-	return arg.rect;
-}
-
-fz_rect
-fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *stroke, fz_matrix ctm)
+static fz_rect
+adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *stroke, fz_matrix ctm, int no_mitre)
 {
 	float expand;
 
@@ -999,12 +1005,12 @@ fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *str
 	{
 		/* Mitring can't apply in this case. */
 	}
-	else if (stroke->linejoin == FZ_LINEJOIN_MITER && stroke->miterlimit > 0.5f)
+	else if (!no_mitre && stroke->linejoin == FZ_LINEJOIN_MITER && stroke->miterlimit > 0.5f)
 	{
 		/* miter limit is expressed in terms of the linewidth, not half the line width. */
 		expand *= stroke->miterlimit * 2;
 	}
-	else if (stroke->linejoin == FZ_LINEJOIN_MITER_XPS && stroke->miterlimit > 1.0f)
+	else if (!no_mitre && stroke->linejoin == FZ_LINEJOIN_MITER_XPS && stroke->miterlimit > 1.0f)
 	{
 		/* for xps, miter limit is expressed in terms of half the linewidth. */
 		expand *= stroke->miterlimit;
@@ -1017,6 +1023,33 @@ fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *str
 	r.x1 += expand;
 	r.y1 += expand;
 	return r;
+}
+
+fz_rect
+fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm)
+{
+	bound_path_arg arg;
+
+	arg.ctm = ctm;
+	arg.rect = fz_empty_rect;
+	arg.trailing_move = 0;
+	arg.first = 1;
+	arg.only_right_angles = 1;
+
+	fz_walk_path(ctx, path, &bound_path_walker, &arg);
+
+	if (!arg.first && stroke)
+	{
+		arg.rect = adjust_rect_for_stroke(ctx, arg.rect, stroke, ctm, arg.only_right_angles);
+	}
+
+	return arg.rect;
+}
+
+fz_rect
+fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *stroke, fz_matrix ctm)
+{
+	return adjust_rect_for_stroke(ctx, r, stroke, ctm, 0);
 }
 
 void
