@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -63,7 +63,9 @@ static fz_font *load_noto_arabic(fz_context *ctx)
 static fz_font *load_noto_try(fz_context *ctx, const char *stem)
 {
 	fz_font *font = load_noto(ctx, "NotoSerif", stem, "-Regular", 0);
+	if (!font) font = load_noto(ctx, "NotoSerif", stem, "-VF", 0);
 	if (!font) font = load_noto(ctx, "NotoSans", stem, "-Regular", 0);
+	if (!font) font = load_noto(ctx, "NotoSans", stem, "-VF", 0);
 	if (!font) font = load_noto(ctx, "DroidSans", stem, "-Regular", 0);
 	return font;
 }
