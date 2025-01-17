@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -504,7 +504,7 @@ fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language)
 	case UCDN_SCRIPT_HATRAN: return "Hatran";
 	case UCDN_SCRIPT_MULTANI: return "Multani";
 	case UCDN_SCRIPT_OLD_HUNGARIAN: return "OldHungarian";
-	case UCDN_SCRIPT_SIGNWRITING: return "Signwriting";
+	case UCDN_SCRIPT_SIGNWRITING: return "SignWriting";
 	case UCDN_SCRIPT_ADLAM: return "Adlam";
 	case UCDN_SCRIPT_BHAIKSUKI: return "Bhaiksuki";
 	case UCDN_SCRIPT_MARCHEN: return "Marchen";
