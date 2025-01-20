@@ -704,13 +704,14 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 				pos->list[edges].min = xs->list[i-1].pos;
 				pos->list[edges].max = xs->list[i].pos;
 				pos->list[edges].pos = (xs->list[i-1].pos + xs->list[i].pos)/2;
-				pos->list[edges++].uncertainty = wind;
+				pos->list[edges].uncertainty = wind;
 #ifdef DEBUG_TABLE_HUNT
 				if (wind)
 					printf("?%g(%d) ", pos->list[edges].pos, wind);
 				else
 					printf("|%g ", pos->list[edges].pos);
 #endif
+				edges++;
 			}
 			wind += xs->list[i].freq;
 			if (wind > hi)
