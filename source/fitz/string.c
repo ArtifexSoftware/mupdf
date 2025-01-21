@@ -884,6 +884,18 @@ int64_t fz_atoi64(const char *s)
 	return atoll(s);
 }
 
+size_t fz_atoz(const char *s)
+{
+	int64_t i;
+
+	if (s == NULL)
+		return 0;
+	i = atoll(s);
+	if (i < 0 || (size_t)i != i)
+		return 0;
+	return (size_t)i;
+}
+
 int fz_is_page_range(fz_context *ctx, const char *s)
 {
 	/* TODO: check the actual syntax... */
