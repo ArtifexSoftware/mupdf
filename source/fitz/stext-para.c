@@ -1305,11 +1305,6 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			 * See PMC2656817_00002.pdf as an example. */
 			bbox = text_block_marked_bbox(ctx, block);
 
-			/* Look for bulletted list items. */
-			break_list_items(ctx, &pos, block);
-			if (block->type != FZ_STEXT_BLOCK_TEXT)
-				break;
-
 			/* Think about breaking lines at Titles. */
 			/* First, underlined ones. */
 			detect_underlined_titles(ctx, &pos, block);
@@ -1337,6 +1332,12 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			 * does, then any line that doesn't reach the right hand side must be
 			 * a paragraph break. */
 			break_paragraphs_within_justified_text(ctx, &pos, block, bbox);
+			if (block->type != FZ_STEXT_BLOCK_TEXT)
+				break;
+
+			/* Look for bulletted list items. */
+			break_list_items(ctx, &pos, block);
+
 			break;
 		}
 	}
