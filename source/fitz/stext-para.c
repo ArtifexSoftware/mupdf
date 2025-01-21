@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Artifex Software, Inc.
+// Copyright (C) 2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1032,7 +1032,7 @@ is_bullet(int *buffer, int len)
 			break;
 	}
 	if (i == len && decimals_found <= 1)
-		return decimals_found <= 1 ? NUMERICAL_BULLET : BULLET;
+		return NUMERICAL_BULLET;
 	/* or number.something */
 	if (decimals_found && i == decimal_pos+1 && i < len)
 		return is_bullet(buffer+i, len-i);
