@@ -1535,13 +1535,30 @@ classextras = ClassExtras(
 
         fz_stext_options = ClassExtra(
                 constructors_extra = [
-                    ExtraConstructor( '(int flags)',
+                    ExtraConstructor( '(int flags, float scale=1.0)',
                         '''
-                        : flags( flags)
+                        :
+                        flags(flags),
+                        scale(scale)
+                        {
+                            assert(!flags & FZ_STEXT_CLIP_RECT);
+                        }
+                        ''',
+                        comment = '/* Construct with .flags, .scale but no clip. */',
+                        ),
+                    ExtraConstructor( '(int flags, fz_rect clip, float scale=1.0)',
+                        '''
+                        :
+                        flags(flags | FZ_STEXT_CLIP_RECT),
+                        scale(scale),
+                        clip(clip)
                         {
                         }
                         ''',
-                        comment = '/* Construct with .flags set to <flags>. */',
+                        comment =
+                                '/* Construct with .flags, .scale and .clip; FZ_STEXT_CLIP_RECT\n'
+                                'is automatically set in .flags. */'
+                                ,
                         ),
                     ],
                 pod='inline',
