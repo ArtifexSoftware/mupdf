@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -290,7 +290,7 @@ pdf_count_pages_before_kid(fz_context *ctx, pdf_document *doc, pdf_obj *parent, 
 		{
 			pdf_obj *count = pdf_dict_get(ctx, kid, PDF_NAME(Count));
 			int n = pdf_to_int(ctx, count);
-			if (!pdf_is_int(ctx, count) || n < 0)
+			if (!pdf_is_int(ctx, count) || n < 0 || INT_MAX - total <= n)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "illegal or missing count in pages tree");
 			total += n;
 		}
@@ -331,6 +331,8 @@ pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 				total = -1;
 				break;
 			}
+			if (INT_MAX - total <= n)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "illegal or missing count in pages tree");
 
 			total += n;
 			needle = pdf_to_num(ctx, parent);
