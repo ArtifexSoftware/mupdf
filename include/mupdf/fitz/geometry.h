@@ -91,6 +91,14 @@ int fz_atoi(const char *s);
 int64_t fz_atoi64(const char *s);
 
 /**
+	size_t atoi that copes with NULL.
+
+	NOTE: limited to 63bits. Negative numbers
+	are returned as 0.
+*/
+size_t fz_atoz(const char *s);
+
+/**
 	Some standard math functions, done as static inlines for speed.
 	People with compilers that do not adequately implement inline
 	may like to reimplement these using macros.
