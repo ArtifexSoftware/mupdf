@@ -732,9 +732,14 @@ typedef struct
 	stext_pos *pos;
 	int count_lines;
 	int count_justified;
-	int spaces_exist_in_this_line;
 	int non_digits_exist_in_this_line;
-	float l, r;
+	fz_rect fragment_box;
+	fz_rect line_box;
+	int gap_count_this_line;
+	float gap_size_this_line;
+	int bad_gap;
+	float xmin, xmax;
+	float last_min_space;
 } justify_data;
 
 #define JUSTIFY_THRESHOLD 1
@@ -747,18 +752,78 @@ justify_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, voi
 	if (line->prev)
 		line = line->prev;
 
-	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
+	data->line_box = fz_union_rect(data->line_box, data->fragment_box);
+	if (data->line_box.x0 < data->bbox.x0 + JUSTIFY_THRESHOLD && data->line_box.x1 > data->bbox.x1 - JUSTIFY_THRESHOLD && data->gap_count_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
-	data->spaces_exist_in_this_line = 0;
 	data->non_digits_exist_in_this_line = 0;
 	data->count_lines++;
+	data->gap_size_this_line = 0;
+	data->gap_count_this_line = 0;
+	data->fragment_box = fz_empty_rect;
+	data->line_box = fz_empty_rect;
 
-	data->l = data->bbox.x1;
-	data->r = data->bbox.x0;
+	data->xmin = INFINITY;
+	data->xmax = -INFINITY;
 
 	return 0;
 }
 
+static void
+fragment_end(justify_data *data)
+{
+	float gap;
+
+	if (fz_is_empty_rect(data->fragment_box))
+	{
+		/* No fragment. Nothing to do. */
+		return;
+	}
+	if (fz_is_empty_rect(data->line_box))
+	{
+		/* First fragment of the line; no gap yet. */
+		gap = 0;
+	}
+	else if (data->fragment_box.x0 > data->line_box.x1)
+	{
+		/* This whole fragment is to the right of the line so far. */
+		gap = data->fragment_box.x0 - data->line_box.x1;
+	}
+	else if (data->fragment_box.x1 < data->line_box.x0)
+	{
+		/* This whole fragment is the left of the line so far. */
+		gap = data->line_box.x1 - data->fragment_box.x0;
+	}
+	else
+	{
+		/* Abutting or overlapping fragment. Ignore it. */
+		gap = 0;
+	}
+	data->line_box = fz_union_rect(data->line_box, data->fragment_box);
+	data->fragment_box = fz_empty_rect;
+	if (gap < data->last_min_space)
+		return;
+	/* So we have a gap to consider */
+	if (data->gap_count_this_line > 0)
+	{
+		/* Allow for double spaces, cos some layouts put
+		 * double spaces before full stops. */
+		if (fabs(gap - data->gap_size_this_line) > 1 &&
+			fabs(gap/2.0 - data->gap_size_this_line) < 1)
+			gap /= 2;
+		if (fabs(gap - data->gap_size_this_line) > 1)
+			data->bad_gap = 1;
+	}
+	data->gap_size_this_line = (data->gap_size_this_line * data->gap_count_this_line + gap) / (data->gap_count_this_line + 1);
+	data->gap_count_this_line++;
+}
+
+/* This is trickier than you'd imagine. We want to walk the line, looking
+ * for how large the spaces are. In a justified line, all the spaces should
+ * be pretty much the same size. (Except maybe before periods). But we want
+ * to cope with bidirectional text which can send glyphs in unexpected orders.
+ * e.g.   abc fed ghi
+ * So we have to walk over "fragments" at a time.
+ */
 static int
 justify_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 {
@@ -767,19 +832,37 @@ justify_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *
 
 	for (ch = line->first_char; ch != NULL; ch = ch->next)
 	{
+		fz_rect r = fz_rect_from_quad(ch->quad);
+		float min_space = ch->size * 0.15f; /* Matches SPACE_DIST from stext-device. */
+
 		if (ch->c == ' ')
-			data->spaces_exist_in_this_line = 1;
-		else
 		{
-			float left = fz_min(ch->quad.ll.x, ch->quad.ul.x);
-			float right = fz_max(ch->quad.lr.x, ch->quad.ur.x);
-			if ((ch->c <= '0' || ch->c >= '9') && ch->c != '.')
-				data->non_digits_exist_in_this_line = 1;
-			if (left < data->l)
-				data->l = left;
-			if (right > data->r)
-				data->r = right;
+			/* This ends a fragment, but we don't treat it as such.
+			 * Just continue, because we'll end the fragment next time
+			 * around the loop (this copes with trailing spaces, and
+			 * multiple spaces, and gaps between 'lines' that are on
+			 * the same line. */
+			data->last_min_space = min_space;
+			continue;
 		}
+		if ((ch->c <= '0' || ch->c >= '9') && ch->c != '.')
+			data->non_digits_exist_in_this_line = 1;
+		if (!fz_is_empty_rect(data->fragment_box))
+		{
+			if (r.x0 > data->fragment_box.x1 + data->last_min_space)
+			{
+				/* Fragment ends due to gap on right. */
+				fragment_end(data);
+			}
+			else if (r.x1 < data->fragment_box.x0 - data->last_min_space)
+			{
+				/* Fragment ends due to gap on left. */
+				fragment_end(data);
+			}
+		}
+		/* Extend the fragment */
+		data->fragment_box = fz_union_rect(data->fragment_box, r);
+		data->last_min_space = min_space;
 	}
 
 	return 0;
@@ -790,7 +873,9 @@ justify_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *a
 {
 	justify_data *data = (justify_data *)arg;
 
-	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD && data->spaces_exist_in_this_line && data->non_digits_exist_in_this_line)
+	fragment_end(data);
+	data->line_box = fz_union_rect(data->line_box, data->fragment_box);
+	if (data->line_box.x0 < data->bbox.x0 + JUSTIFY_THRESHOLD && data->line_box.x1 > data->bbox.x1 - JUSTIFY_THRESHOLD && data->gap_count_this_line && data->non_digits_exist_in_this_line)
 		data->count_justified++;
 	data->count_lines++;
 }
@@ -800,7 +885,7 @@ justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 {
 	justify_data *data = (justify_data *)arg;
 
-	if (data->l < data->bbox.x0 + JUSTIFY_THRESHOLD && data->r > data->bbox.x1 - JUSTIFY_THRESHOLD)
+	if (data->line_box.x0 < data->bbox.x0 + JUSTIFY_THRESHOLD && data->line_box.x1 > data->bbox.x1 - JUSTIFY_THRESHOLD)
 	{
 		/* Justified */
 	}
@@ -811,8 +896,7 @@ justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 		return 1;
 	}
 
-	data->l = data->bbox.x1;
-	data->r = data->bbox.x0;
+	data->line_box = fz_empty_rect;
 
 	return 0;
 }
@@ -821,11 +905,15 @@ static int
 justify2_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 {
 	justify_data *data = (justify_data *)arg;
+	fz_stext_char *ch;
 
-	if (line->bbox.x0 < data->l)
-		data->l = line->bbox.x0;
-	if (line->bbox.x1 > data->r)
-		data->r = line->bbox.x1;
+	for (ch = line->first_char; ch != NULL; ch = ch->next)
+	{
+		if (ch->c == ' ')
+			continue;
+
+		data->line_box = fz_union_rect(data->line_box, fz_rect_from_quad(ch->quad));
+	}
 
 	return 0;
 }
@@ -863,10 +951,14 @@ break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext
 	data->pos = pos;
 	data->count_lines = 0;
 	data->count_justified = 0;
-	data->spaces_exist_in_this_line = 0;
 	data->non_digits_exist_in_this_line = 0;
-	data->l = bbox.x1;
-	data->r = bbox.x0;
+	data->bad_gap = 0;
+	data->gap_size_this_line = 0;
+	data->gap_count_this_line = 0;
+	data->fragment_box = fz_empty_rect;
+	data->line_box = fz_empty_rect;
+	data->xmin = INFINITY;
+	data->xmax = -INFINITY;
 
 	line_walker(ctx, block, justify_newline, justify_line, justify_end, data);
 
@@ -876,6 +968,12 @@ break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext
 	/* If at least half of the lines don't appear to be justified, then
 	 * don't trust 'em. */
 	if (data->count_justified * 2 < data->count_lines)
+		return;
+	/* If the "badness" we've seen to do with big gaps (i.e. how much
+	 * bigger the gaps are than we'd reasonably expect) is too large
+	 * then we can't be a justified block. We are prepared to forgive
+	 * larger sizes in larger paragraphs. */
+	if (data->bad_gap)
 		return;
 	block->u.t.flags = FZ_STEXT_TEXT_JUSTIFY_FULL;
 
