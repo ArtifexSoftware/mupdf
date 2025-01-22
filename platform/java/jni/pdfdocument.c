@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1818,7 +1818,7 @@ FUN(PDFDocument_rearrangePages)(JNIEnv *env, jobject self, jobject jpages)
 	}
 
 	fz_try(ctx)
-		pdf_rearrange_pages(ctx, pdf, len, pages);
+		pdf_rearrange_pages(ctx, pdf, len, pages, PDF_CLEAN_STRUCTURE_DROP);
 	fz_always(ctx)
 		fz_free(ctx, pages);
 	fz_catch(ctx)
