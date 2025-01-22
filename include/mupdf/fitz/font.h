@@ -425,6 +425,13 @@ const unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
 const unsigned char *fz_lookup_noto_boxes_font(fz_context *ctx, int *len);
 
 /**
+	Look up the Noto font file name for a given script.
+	From the returned font stem, you can look for Noto fonts on the system in the form:
+		Noto(Sans|Serif)${STEM}-Regular.(otf|ttf)
+*/
+const char *fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language);
+
+/**
 	Try to load a fallback font for the
 	given combination of font attributes. Whether a font is
 	present or not will depend on the configuration in which
