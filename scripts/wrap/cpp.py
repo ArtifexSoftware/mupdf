@@ -1084,7 +1084,12 @@ g_extra_declarations = textwrap.dedent(f'''
                 );
 
         /** Swig-friendly wrapper for pdf_rearrange_pages(). */
-        void pdf_rearrange_pages2(fz_context* ctx, pdf_document* doc, const std::vector<int>& pages);
+        void pdf_rearrange_pages2(
+                fz_context* ctx,
+                pdf_document* doc,
+                const std::vector<int>& pages,
+                pdf_clean_options_structure structure
+                );
 
         /** Swig-friendly wrapper for pdf_subset_fonts(). */
         void pdf_subset_fonts2(fz_context *ctx, pdf_document *doc, const std::vector<int>& pages);
@@ -1291,9 +1296,14 @@ g_extra_definitions = textwrap.dedent(f'''
             return ret;
         }}
 
-        void pdf_rearrange_pages2(fz_context* ctx, pdf_document* doc, const std::vector<int>& pages)
+        void pdf_rearrange_pages2(
+                fz_context* ctx,
+                pdf_document* doc,
+                const std::vector<int>& pages,
+                pdf_clean_options_structure structure
+                )
         {{
-            return pdf_rearrange_pages(ctx, doc, pages.size(), &pages[0]);
+            return pdf_rearrange_pages(ctx, doc, pages.size(), &pages[0], structure);
         }}
 
         void pdf_subset_fonts2(fz_context *ctx, pdf_document *doc, const std::vector<int>& pages)
