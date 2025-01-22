@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -26,6 +26,16 @@
 #include "mupdf/pdf/document.h"
 #include "mupdf/pdf/image-rewriter.h"
 
+/**
+	Specifies whether the PDF's structure tree should be dropped or
+	kept when rearranging or subsetting its pages.
+
+	PDF_CLEAN_STRUCTURE_DROP: Remove the structure tree entirely.
+
+	PDF_CLEAN_STRUCTURE_KEEP: Preserve the structure tree. When
+	redacting a document, preserving the structure tree might leak
+	information.
+ */
 typedef enum {
 	PDF_CLEAN_STRUCTURE_DROP = 0,
 	PDF_CLEAN_STRUCTURE_KEEP = 1
