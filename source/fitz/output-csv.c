@@ -144,10 +144,13 @@ output_td(fz_context *ctx, fz_csv_writer *wri, fz_stext_block *grid, int *pos, f
 {
 	int x0, x1;
 	space_data sd = { 0 };
+	fz_rect r = whitespaceless_bbox(ctx, block);
+
+	if (fz_is_empty_rect(r))
+		return;
 
 	if (block && grid)
 	{
-		fz_rect r = whitespaceless_bbox(ctx, block);
 
 		for (x0 = 0; x0 < grid->u.b.xs->len; x0++)
 			if (r.x0 < grid->u.b.xs->list[x0].pos)
