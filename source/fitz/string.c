@@ -891,7 +891,7 @@ size_t fz_atoz(const char *s)
 	if (s == NULL)
 		return 0;
 	i = atoll(s);
-	if (i < 0 || (size_t)i != i)
+	if (i < 0 || (int64_t)(size_t)i != i)
 		return 0;
 	return (size_t)i;
 }
