@@ -56,8 +56,6 @@ font_is_bold(fz_font *font)
 		return 0;
 	if (font->flags.is_bold)
 		return 1;
-	if (font->name == NULL)
-		return 0;
 
 	if (fz_strstrcase(font->name, "Bold") != NULL)
 		return 1;
