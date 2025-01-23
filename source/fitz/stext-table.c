@@ -1321,7 +1321,7 @@ unlink_line_from_block(fz_stext_line *line, fz_stext_block *block)
 	}
 	if (next_line)
 	{
-		assert(next_line->prev = line);
+		assert(next_line->prev == line);
 		next_line->prev = line->prev;
 	}
 	else
