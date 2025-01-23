@@ -26,6 +26,8 @@
 
 /* #define DEBUG_SPLITS */
 
+/* #define DEBUG_PARA_SPLITS */
+
 static void
 recalc_bbox(fz_stext_block *block)
 {
@@ -318,6 +320,7 @@ typedef struct
 	fz_stext_line *title_start;
 	fz_stext_line *title_end;
 	underline_state underlined;
+	int changed;
 } underlined_data;
 
 static int
@@ -344,6 +347,7 @@ underlined_break(fz_context *ctx, fz_stext_block *block, underlined_data *data)
 	if (line)
 	{
 		(void)split_block_at_line(ctx, data->pos, block, line);
+		data->changed = 1;
 		if (line == data->title_start)
 		{
 			/* Don't label the latter part as a title yet, we'll do it when
@@ -429,7 +433,7 @@ underlined_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void
 		underlined_break(ctx, block, data);
 }
 
-static void
+static int
 detect_underlined_titles(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
 {
 	/* Let's do the title scanning, where our criteria is
@@ -440,8 +444,11 @@ detect_underlined_titles(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
 	data->title_start = NULL;
 	data->title_end = NULL;
 	data->underlined = UNDERLINE_UNKNOWN;
+	data->changed = 0;
 
 	line_walker(ctx, block, underlined_newline, underlined_line, underlined_end, data);
+
+	return data->changed;
 }
 
 
@@ -453,6 +460,7 @@ typedef struct
 	fz_stext_line *title_start;
 	fz_stext_line *title_end;
 	fz_font *font;
+	int changed;
 } font_data;
 
 #define MIXED_FONT ((fz_font *)1)
@@ -481,6 +489,7 @@ font_break(fz_context *ctx, fz_stext_block *block, font_data *data)
 	if (line)
 	{
 		(void)split_block_at_line(ctx, data->pos, block, line);
+		data->changed = 1;
 		if (line == data->title_start)
 		{
 			/* Don't label the latter part as a title yet, we'll do it when
@@ -564,7 +573,7 @@ font_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 		font_break(ctx, block, data);
 }
 
-static void
+static int
 detect_titles_by_font_usage(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
 {
 	font_data data[1];
@@ -573,14 +582,18 @@ detect_titles_by_font_usage(fz_context *ctx, stext_pos *pos, fz_stext_block *blo
 	data->title_start = NULL;
 	data->title_end = NULL;
 	data->font = NULL;
+	data->changed = 0;
 
 	line_walker(ctx, block, font_newline, font_line, font_end, data);
+
+	return data->changed;
 }
 
 typedef struct
 {
 	fz_rect bbox;
 	stext_pos *pos;
+	int changed;
 } indent_data;
 
 static int
@@ -593,21 +606,25 @@ indent_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void
 	{
 		/* Break the block here! */
 		(void)split_block_at_line(ctx, data->pos, block, line);
+		data->changed = 1;
 		return 1;
 	}
 
 	return 0;
 }
 
-static void
+static int
 break_paragraphs_by_indent(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	indent_data data[1];
 
 	data->pos = pos;
 	data->bbox = bbox;
+	data->changed = 0;
 
 	line_walker(ctx, block, indent_newline, NULL, NULL, data);
+
+	return data->changed;
 }
 
 typedef struct
@@ -619,6 +636,7 @@ typedef struct
 	int looking_for_space;
 	float space_size;
 	int maybe_ends_paragraph;
+	int changed;
 } trailing_data;
 
 static int
@@ -640,6 +658,7 @@ trailing_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 			/* We could have fitted this word into the previous line. */
 			/* So presumably that was a paragraph break. Split here. */
 			(void)split_block_at_line(ctx, data->pos, block, line);
+			data->changed = 1;
 			return 1;
 		}
 		data->looking_for_space = 0;
@@ -702,6 +721,7 @@ trailing_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void 
 			/* We could have fitted this word into the previous line. */
 			/* So presumably that was a paragraph break. Split here. */
 			(void)split_block_at_line(ctx, data->pos, block, line);
+			data->changed = 1;
 			return 1;
 		}
 		data->looking_for_space = 0;
@@ -710,7 +730,7 @@ trailing_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void 
 	return 0;
 }
 
-static void
+static int
 break_paragraphs_by_analysing_trailing_gaps(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	trailing_data data[1];
@@ -722,8 +742,11 @@ break_paragraphs_by_analysing_trailing_gaps(fz_context *ctx, stext_pos *pos, fz_
 	data->looking_for_space = 0;
 	data->space_size = 99999;
 	data->maybe_ends_paragraph = 0;
+	data->changed = 0;
 
 	line_walker(ctx, block, trailing_newline, trailing_line, NULL, data);
+
+	return data->changed;
 }
 
 typedef struct
@@ -740,6 +763,7 @@ typedef struct
 	int bad_gap;
 	float xmin, xmax;
 	float last_min_space;
+	int changed;
 } justify_data;
 
 #define JUSTIFY_THRESHOLD 1
@@ -893,6 +917,7 @@ justify2_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, vo
 	{
 		/* Break after line */
 		(void)split_block_at_line(ctx, data->pos, block, line);
+		data->changed = 1;
 		return 1;
 	}
 
@@ -938,13 +963,13 @@ text_block_marked_bbox(fz_context *ctx, fz_stext_block *block)
 	return r;
 }
 
-static void
+static int
 break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
 	justify_data data[1];
 
 	if (block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_UNKNOWN)
-		return;
+		return 0;
 
 	data->bbox = bbox;
 
@@ -959,25 +984,28 @@ break_paragraphs_within_justified_text(fz_context *ctx, stext_pos *pos, fz_stext
 	data->line_box = fz_empty_rect;
 	data->xmin = INFINITY;
 	data->xmax = -INFINITY;
+	data->changed = 0;
 
 	line_walker(ctx, block, justify_newline, justify_line, justify_end, data);
 
 	/* We can't really derive anything about single lines! */
 	if (data->count_lines < 2)
-		return;
+		return 0;
 	/* If at least half of the lines don't appear to be justified, then
 	 * don't trust 'em. */
 	if (data->count_justified * 2 < data->count_lines)
-		return;
+		return 0;
 	/* If the "badness" we've seen to do with big gaps (i.e. how much
 	 * bigger the gaps are than we'd reasonably expect) is too large
 	 * then we can't be a justified block. We are prepared to forgive
 	 * larger sizes in larger paragraphs. */
 	if (data->bad_gap)
-		return;
+		return 0;
 	block->u.t.flags = FZ_STEXT_TEXT_JUSTIFY_FULL;
 
 	line_walker(ctx, block, justify2_newline, justify2_line, NULL, data);
+
+	return data->changed;
 }
 
 typedef enum
@@ -1001,6 +1029,7 @@ typedef struct
 	float l;
 	fz_stext_line *bullet_line_start;
 	fz_stext_line *this_line_start;
+	int changed;
 } list_data;
 
 static int
@@ -1014,6 +1043,7 @@ list_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *
 		{
 			/* We need to split the block before the bullet started. */
 			(void)split_block_at_line(ctx, data->pos, block, data->bullet_line_start);
+			data->changed = 1;
 			return 1;
 		}
 		if (data->bullet_line_start != data->this_line_start)
@@ -1021,6 +1051,7 @@ list_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *
 			/* We've found a second bullet. Break before the previous line. */
 			(void)split_block_at_line(ctx, data->pos, block, data->this_line_start);
 			block_to_struct(ctx, data->pos, block, FZ_STRUCTURE_LISTITEM);
+			data->changed = 1;
 			return 1;
 		}
 	}
@@ -1031,6 +1062,7 @@ list_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *
 		 * break that into a new block. */
 		(void)split_block_at_line(ctx, data->pos, block, data->this_line_start);
 		block_to_struct(ctx, data->pos, block, FZ_STRUCTURE_LISTITEM);
+		data->changed = 1;
 		return 1;
 	}
 
@@ -1339,6 +1371,7 @@ list_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 		{
 			/* We need to split the block before the start of the bullet. */
 			(void)split_block_at_line(ctx, data->pos, block, data->bullet_line_start);
+			data->changed = 1;
 			return;
 		}
 		if (data->bullet_line_start != data->this_line_start)
@@ -1346,6 +1379,7 @@ list_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 			/* We've found a second bullet. Break before the line. */
 			(void)split_block_at_line(ctx, data->pos, block, data->this_line_start);
 			block_to_struct(ctx, data->pos, block, FZ_STRUCTURE_LISTITEM);
+			data->changed = 1;
 			return;
 		}
 		block_to_struct(ctx, data->pos, block, FZ_STRUCTURE_LISTITEM);
@@ -1357,6 +1391,7 @@ list_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 		 * break that into a new block. */
 		(void)split_block_at_line(ctx, data->pos, block, data->this_line_start);
 		block_to_struct(ctx, data->pos, block, FZ_STRUCTURE_LISTITEM);
+		data->changed = 1;
 		return;
 	}
 	else if (data->bullet_line_start)
@@ -1366,13 +1401,13 @@ list_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 	}
 }
 
-static void
+static int
 break_list_items(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
 {
 	list_data data[1];
 
 	if (block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_UNKNOWN)
-		return;
+		return 0;
 
 	data->pos = pos;
 	data->state = LOOKING_FOR_BULLET;
@@ -1381,14 +1416,29 @@ break_list_items(fz_context *ctx, stext_pos *pos, fz_stext_block *block)
 	data->bullet_line_start = NULL;
 	data->this_line_start = block->u.t.first_line;
 	data->bullet_r = block->bbox.x0;
+	data->changed = 0;
 
 	line_walker(ctx, block, list_newline, list_line, list_end, data);
+
+	return data->changed;
+}
+
+static int
+is_header(fz_structure s)
+{
+	return (s == FZ_STRUCTURE_H ||
+		s == FZ_STRUCTURE_H1 ||
+		s == FZ_STRUCTURE_H2 ||
+		s == FZ_STRUCTURE_H3 ||
+		s == FZ_STRUCTURE_H4 ||
+		s == FZ_STRUCTURE_H5 ||
+		s == FZ_STRUCTURE_H6);
 }
 
 static void
-do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_stext_block **plast, fz_stext_struct *parent)
+do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_stext_block **plast, fz_stext_struct *parent, int in_header)
 {
-	fz_stext_block *block;
+	fz_stext_block *block, *next_block;
 	stext_pos pos;
 	fz_rect bbox;
 
@@ -1401,8 +1451,10 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 	/* First off, in order for us to consider a block to be suitable for paragraph
 	 * splitting, we want it to be a series of lines moving down the page, (or left
 	 * to right within a line). */
-	for (block = *pfirst; block != NULL; block = block->next)
+	for (block = *pfirst; block != NULL; block = next_block)
 	{
+		next_block = block->next;
+
 		switch (block->type)
 		{
 		case FZ_STEXT_BLOCK_STRUCT:
@@ -1411,7 +1463,10 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			else
 				pos.idx = block->u.s.index+1;
 			if (block->u.s.down)
-				do_para_break(ctx, page, &block->u.s.down->first_block, &block->u.s.down->last_block, block->u.s.down);
+			{
+				int header = in_header | is_header(block->u.s.down->standard);
+				do_para_break(ctx, page, &block->u.s.down->first_block, &block->u.s.down->last_block, block->u.s.down, header);
+			}
 			break;
 		case FZ_STEXT_BLOCK_TEXT:
 			if (!lines_move_plausibly_like_paragraph(block))
@@ -1429,38 +1484,98 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			 * See PMC2656817_00002.pdf as an example. */
 			bbox = text_block_marked_bbox(ctx, block);
 
+#ifdef DEBUG_PARA_SPLITS
+			{
+				fz_stext_line *line;
+
+				for (line = block->u.t.first_line; line != NULL; line = line->next)
+				{
+					fz_stext_char *ch;
+
+					for (ch = line->first_char; ch != NULL; ch = ch->next)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%C", ch->c);
+					}
+				}
+			}
+#endif
+
 			/* Think about breaking lines at Titles. */
 			/* First, underlined ones. */
-			detect_underlined_titles(ctx, &pos, block);
+			if (detect_underlined_titles(ctx, &pos, block))
+				next_block = block->next; /* We split the block! */
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
+			{
+				next_block = block;
 				break;
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "A");
+#endif
 
 			/* Next, ones that use bold fonts. */
-			detect_titles_by_font_usage(ctx, &pos, block);
-			if (block->type != FZ_STEXT_BLOCK_TEXT)
-				break;
+			if (!in_header)
+			{
+				if (detect_titles_by_font_usage(ctx, &pos, block))
+					next_block = block->next; /* We split the block! */
+				if (block->type != FZ_STEXT_BLOCK_TEXT)
+				{
+					next_block = block;
+					break;
+				}
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "B");
+#endif
 
 			/* Now look at breaking based upon indents */
-			break_paragraphs_by_indent(ctx, &pos, block, bbox);
+			if (break_paragraphs_by_indent(ctx, &pos, block, bbox))
+				next_block = block->next; /* We split the block! */
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
+			{
+				next_block = block;
 				break;
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "C");
+#endif
 
 			/* Now we're going to look for unindented paragraphs. We do this by
 			 * considering if the first word on the next line would have fitted
 			 * into the space left at the end of the previous line. */
-			break_paragraphs_by_analysing_trailing_gaps(ctx, &pos, block, bbox);
+			if (break_paragraphs_by_analysing_trailing_gaps(ctx, &pos, block, bbox))
+				next_block = block->next; /* We split the block! */
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
+			{
+				next_block = block;
 				break;
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "D");
+#endif
 
 			/* Now look to see if a block looks like fully justified text. If it
 			 * does, then any line that doesn't reach the right hand side must be
 			 * a paragraph break. */
-			break_paragraphs_within_justified_text(ctx, &pos, block, bbox);
+			if (break_paragraphs_within_justified_text(ctx, &pos, block, bbox))
+				next_block = block->next; /* We split the block! */
 			if (block->type != FZ_STEXT_BLOCK_TEXT)
+			{
+				next_block = block;
 				break;
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "E");
+#endif
 
 			/* Look for bulletted list items. */
-			break_list_items(ctx, &pos, block);
+			if (break_list_items(ctx, &pos, block))
+				next_block = block->next; /* We split the block! */
 
 			break;
 		}
@@ -1470,5 +1585,5 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 void
 fz_paragraph_break(fz_context *ctx, fz_stext_page *page)
 {
-	do_para_break(ctx, page, &page->first_block, &page->last_block, NULL);
+	do_para_break(ctx, page, &page->first_block, &page->last_block, NULL, 0);
 }
