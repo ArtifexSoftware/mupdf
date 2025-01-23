@@ -380,8 +380,8 @@ static const char *pairbrk[29] =
 	"%^^%%%^^^__%%%%_%%__^^^%%%%%_", /* PR prefix numeric */
 	"%^^%%%^^^__%%%__%%__^^^______", /* PO postfix numeric */
 	"%^^%%%^^^%%%%%_%%%__^^^______", /* NU numeric */
-	"%^^%%%^^^__%%%_%%%__^^^______", /* AL ordinary alphabetic and symbol characters */
-	"%^^%%%^^^__%%%_%%%__^^^______", /* HL hebrew letter */
+	"%^^%%%^^^%%%%%_%%%__^^^______", /* AL ordinary alphabetic and symbol characters */
+	"%^^%%%^^^%%%%%_%%%__^^^______", /* HL hebrew letter */
 	"_^^%%%^^^_%____%%%__^^^______", /* ID ideographic */
 	"_^^%%%^^^______%%%__^^^______", /* IN inseparable characters */
 	"_^^%_%^^^__%____%%__^^^______", /* HY hyphens */
@@ -389,7 +389,7 @@ static const char *pairbrk[29] =
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* BB break before */
 	"_^^%%%^^^_______%%_^^^^______", /* B2 break opportunity before and after */
 	"____________________^________", /* ZW zero width space */
-	"%^^%%%^^^__%%%_%%%__^^^______", /* CM combining mark */
+	"%^^%%%^^^%_%%%_%%%__^^^______", /* CM combining mark */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* WJ word joiner */
 	"_^^%%%^^^_%____%%%__^^^___%%_", /* H2 hangul leading/vowel syllable */
 	"_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/vowel/trailing syllable */
