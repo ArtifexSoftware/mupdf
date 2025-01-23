@@ -1072,7 +1072,7 @@ typedef enum {
 } bullet_t;
 
 static bullet_t
-is_bullet(int *buffer, int len)
+is_bullet_aux(int *buffer, int len, int contained)
 {
 	int i, decimal_pos, decimals_found;
 
@@ -1129,24 +1129,26 @@ is_bullet(int *buffer, int len)
 		buffer[0] == 0x1FBC1 || /* LEFT THIRD WHITE RIGHT POINTING INDEX */
 		buffer[0] == 0x1FBC2 || /* MIDDLE THIRD WHITE RIGHT POINTING INDEX */
 		buffer[0] == 0x1FBC3 || /* RIGHT THIRD WHITE RIGHT POINTING INDEX */
+		buffer[0] == 0xFFFD || /* UNICODE_REPLACEMENT_CHARACTER */
 		0))
 		return BULLET;
 
-	if (len > 2 && buffer[0] == '(' && buffer[len-1] == ')')
-		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
-	if (len > 2 && buffer[0] == '<' && buffer[len-1] == '>')
-		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
-	if (len > 2 && buffer[0] == '[' && buffer[len-1] == ']')
-		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
-	if (len > 2 && buffer[0] == '{' && buffer[len-1] == '}')
-		return is_bullet(buffer+1, len-2) ? BULLET : NOT_A_BULLET;
+	if (!contained)
+	{
+		if (len > 2 && buffer[0] == '(' && buffer[len-1] == ')')
+			return is_bullet_aux(buffer+1, len-2, 1) ? BULLET : NOT_A_BULLET;
+		if (len > 2 && buffer[0] == '<' && buffer[len-1] == '>')
+			return is_bullet_aux(buffer+1, len-2, 1) ? BULLET : NOT_A_BULLET;
+		if (len > 2 && buffer[0] == '[' && buffer[len-1] == ']')
+			return is_bullet_aux(buffer+1, len-2, 1) ? BULLET : NOT_A_BULLET;
+		if (len > 2 && buffer[0] == '{' && buffer[len-1] == '}')
+			return is_bullet_aux(buffer+1, len-2, 1) ? BULLET : NOT_A_BULLET;
 
-	if (len > 2 && buffer[len-1] == ':')
-		return is_bullet(buffer, len-1) ? BULLET : NOT_A_BULLET;
-
-	/* Look for a), b) etc */
-	if (len > 2 && buffer[0] >= 'a' && buffer[0] <= 'z' && buffer[1] == ')')
-		return BULLET;
+		if (len > 1 && buffer[len-1] == ':')
+			return is_bullet_aux(buffer, len-1, 1) ? BULLET : NOT_A_BULLET;
+		if (len > 1 && buffer[len-1] == ')')
+			return is_bullet_aux(buffer, len-1, 1) ? BULLET : NOT_A_BULLET;
+	}
 
 	/* Look for numbers */
 	/* Be careful not to interpret rows of numbers, like:
@@ -1172,7 +1174,7 @@ is_bullet(int *buffer, int len)
 		return NUMERICAL_BULLET;
 	/* or number.something */
 	if (decimals_found && i == decimal_pos+1 && i < len)
-		return is_bullet(buffer+i, len-i);
+		return is_bullet_aux(buffer+i, len-i, 0) ? BULLET : NOT_A_BULLET;;
 
 	/* Look for roman */
 	for (i = 0; i < len; i++)
@@ -1182,10 +1184,37 @@ is_bullet(int *buffer, int len)
 		return 1;
 	/* or roman.something */
 	if (buffer[i] == '.' && i < len-1)
-		return is_bullet(buffer+i+1, len-i-1) ? BULLET : NOT_A_BULLET;
+		return is_bullet_aux(buffer+i+1, len-i-1, 0) ? BULLET : NOT_A_BULLET;
 
 	/* FIXME: Others. */
 	return NOT_A_BULLET;
+}
+
+static bullet_t
+is_bullet(int *buffer, int len)
+{
+	return is_bullet_aux(buffer, len, 0);
+}
+
+static int
+eval_buffer_for_bullet(fz_context *ctx, list_data *data, float size)
+{
+	bullet_t bullet_type;
+
+	bullet_type = is_bullet(data->buffer, data->buffer_fill);
+	if (bullet_type == NUMERICAL_BULLET)
+		data->state = LOOKING_FOR_POST_NUMERICAL_BULLET;
+	else if (bullet_type)
+		data->state = LOOKING_FOR_POST_BULLET;
+	else
+	{
+		if (approx_eq(data->l, data->post_bullet_indent, size/2))
+			data->state = CONTINUATION_LINE;
+		else
+			data->state = NO_BULLET;
+		return 1;
+	}
+	return 0;
 }
 
 static int
@@ -1206,50 +1235,18 @@ list_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 		case LOOKING_FOR_BULLET:
 			if (ch->c == ' ')
 			{
-				bullet_t bullet_type;
 				/* We have a space */
 				if (data->buffer_fill == 0)
 					continue; /* Just skip leading spaces */
-				bullet_type = is_bullet(data->buffer, data->buffer_fill);
-				if (bullet_type == NUMERICAL_BULLET)
-					data->state = LOOKING_FOR_POST_NUMERICAL_BULLET;
-				else if (bullet_type)
-					data->state = LOOKING_FOR_POST_BULLET;
-				else
-				{
-					if (approx_eq(data->l, data->post_bullet_indent, ch->size))
-						data->state = CONTINUATION_LINE;
-					else
-						data->state = NO_BULLET;
+				if (eval_buffer_for_bullet(ctx, data, ch->size))
 					return 0;
-				}
 			}
 			else if (data->buffer_fill > 0 && r.x0 - data->bullet_r > ch->size/2)
 			{
 				/* We have a gap large enough to be a space while we've
 				 * got something in the buffer. */
-				bullet_t bullet_type = is_bullet(data->buffer, data->buffer_fill);
-				/* Numerical bullets can't be followed by numbers. */
-				if (bullet_type == NUMERICAL_BULLET)
-				{
-					if (data->buffer[0] >= '0' && data->buffer[0] <= '9')
-						bullet_type = NOT_A_BULLET;
-				}
-				if (bullet_type)
-				{
-					data->state = FOUND_BULLET;
-					if (data->bullet_line_start == NULL)
-						data->bullet_line_start = data->this_line_start;
-					data->post_bullet_indent = r.x0;
-				}
-				else
-				{
-					if (approx_eq(data->l, data->post_bullet_indent, ch->size))
-						data->state = CONTINUATION_LINE;
-					else
-						data->state = NO_BULLET;
-				}
-				return 0;
+				if (eval_buffer_for_bullet(ctx, data, ch->size))
+					return 0;
 			}
 			else if (data->buffer_fill < (int)nelem(data->buffer))
 			{
@@ -1307,6 +1304,35 @@ list_end(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg)
 {
 	list_data *data = (list_data *)arg;
 
+	if (data->state == LOOKING_FOR_BULLET)
+	{
+		eval_buffer_for_bullet(ctx, data, 0);
+		/* If we ended up thinking we'd found a bullet, subject to
+		 * what follows not being of a specific form, then we're
+		 * fine, because nothing follows us! */
+		if (data->state == LOOKING_FOR_POST_NUMERICAL_BULLET ||
+			data->state == LOOKING_FOR_POST_BULLET)
+		{
+			data->state = FOUND_BULLET;
+			if (data->bullet_line_start == NULL)
+				data->bullet_line_start = data->this_line_start;
+		}
+		/* FIXME: This block contains just a bullet - not the content
+		 * for the bullet. We see this with page-12.pdf.
+		 *    <>    Rising commitment to battery...
+		 *          committed to in-house battery...
+		 *          developing and maufacturing...
+		 *
+		 * The <> is in a whole different DIV to the following text.
+		 * Really we want to look for if the "next" content (for some
+		 * definition of next) is on the same line as the bullet. If
+		 * it is, we want to merge the 2 divs.
+		 *
+		 * But that's a really tricky thing to do given the recursive
+		 * block walk we are current doing. Think about this.
+		 * For now, we just mark the <> as being a list item.
+		 */
+	}
 	if (data->state == FOUND_BULLET)
 	{
 		if (block->u.t.first_line != data->bullet_line_start && data->state == FOUND_BULLET)
