@@ -408,7 +408,7 @@ static const char *pairbrk[32] =
 	"_^^%%%^^^_______%%__^^^_____%__%", /* RI regional indicator */
 	"_^^%%%^^^_%____%%%__^^^_______%%", /* EB emoji base */
 	"_^^%%%^^^_%____%%%__^^^________%", /* EM emoji modifier */
-	"_^^%%%^^^_____%_%%__^^^______%%%", /* ZWJ zero width joiner */
+	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* ZWJ zero width joiner */
 };
 
 static fz_html_box *
