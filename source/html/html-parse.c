@@ -378,25 +378,25 @@ static const char *pairbrk[32] =
 /*	-PLPULSXYSROULLDNYAB2WMJ23LVTIBMW- */
 /*	-                               J- */
 	"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", /* OP open punctuation */
-	"_^^%%^^^^%%_____%%__^^^________%", /* CL close punctuation */
-	"_^^%%^^^^%%%%%__%%__^^^________%", /* CP close parenthesis */
+	"_^^%%^^^^%%____%%%__^^^________%", /* CL close punctuation */
+	"_^^%%^^^^%%%%%_%%%__^^^________%", /* CP close parenthesis */
 	"^^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* QU quotation */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* GL non-breaking glue */
-	"_^^%%%^^^_______%%__^^^________%", /* NS nonstarters */
+	"_^^%%%^^^______%%%__^^^________%", /* NS nonstarters */
 	"_^^%%%^^^______%%%__^^^________%", /* EX exclamation/interrogation */
-	"_^^%%%^^^__%_%__%%__^^^________%", /* SY symbols allowing break after */
-	"_^^%%%^^^__%%%__%%__^^^________%", /* IS infix numeric separator */
-	"%^^%%%^^^__%%%%_%%__^^^%%%%%_%%%", /* PR prefix numeric */
-	"%^^%%%^^^__%%%__%%__^^^________%", /* PO postfix numeric */
+	"_^^%%%^^^__%_%_%%%__^^^________%", /* SY symbols allowing break after */
+	"_^^%%%^^^__%%%_%%%__^^^________%", /* IS infix numeric separator */
+	"%^^%%%^^^__%%%%%%%__^^^%%%%%_%%%", /* PR prefix numeric */
+	"%^^%%%^^^__%%%_%%%__^^^________%", /* PO postfix numeric */
 	"%^^%%%^^^%%%%%_%%%__^^^________%", /* NU numeric */
 	"%^^%%%^^^%%%%%_%%%__^^^________%", /* AL ordinary alphabetic and symbol characters */
 	"%^^%%%^^^%%%%%_%%%__^^^________%", /* HL hebrew letter */
 	"_^^%%%^^^_%____%%%__^^^________%", /* ID ideographic */
 	"_^^%%%^^^______%%%__^^^________%", /* IN inseparable characters */
-	"_^^%_%^^^__%____%%__^^^________%", /* HY hyphens */
-	"_^^%_%^^^_______%%__^^^________%", /* BA break after */
+	"_^^%_%^^^__%___%%%__^^^________%", /* HY hyphens */
+	"_^^%_%^^^______%%%__^^^________%", /* BA break after */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* BB break before */
-	"_^^%%%^^^_______%%_^^^^________%", /* B2 break opportunity before and after */
+	"_^^%%%^^^______%%%_^^^^________%", /* B2 break opportunity before and after */
 	"____________________^___________", /* ZW zero width space */
 	"%^^%%%^^^%_%%%_%%%__^^^________%", /* CM combining mark */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* WJ word joiner */
@@ -405,7 +405,7 @@ static const char *pairbrk[32] =
 	"_^^%%%^^^_%____%%%__^^^%%%%____%", /* JL hangul leading jamo */
 	"_^^%%%^^^_%____%%%__^^^___%%___%", /* JV hangul vowel jamo */
 	"_^^%%%^^^_%____%%%__^^^____%___%", /* JT hangul trailing jamo */
-	"_^^%%%^^^_______%%__^^^_____%__%", /* RI regional indicator */
+	"_^^%%%^^^______%%%__^^^_____%__%", /* RI regional indicator */
 	"_^^%%%^^^_%____%%%__^^^_______%%", /* EB emoji base */
 	"_^^%%%^^^_%____%%%__^^^________%", /* EM emoji modifier */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%%%%", /* ZWJ zero width joiner */
