@@ -495,11 +495,17 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 				const char *pagelist = argv[argidx];
 
 				while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
-				{
-					if (len + (epage - spage + 1) >= cap)
+				{	
+					/* 
+						fix segfault on call  
+						'mutool clean mupdf_explored.pdf test.pdf 220-100'
+						segfault happens if startpage > endpage
+					*/
+					int pagedelta = epage >= spage ? epage-spage : spage-epage;
+					if (len + (pagedelta + 1) >= cap)
 					{
 						int n = cap ? cap * 2 : 8;
-						while (len + (epage - spage + 1) >= n)
+						while (len + (pagedelta + 1) >= n)
 							n *= 2;
 						pages = fz_realloc_array(ctx, pages, n, int);
 						cap = n;
