@@ -5557,6 +5557,22 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setTextValue
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    getEditingState
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getEditingState
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    setEditingState
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_setEditingState
+  (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    textQuads
  * Signature: ()[Lcom/artifex/mupdf/fitz/Quad;
  */

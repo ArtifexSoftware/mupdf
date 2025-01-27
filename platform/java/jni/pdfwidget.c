@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -688,4 +688,35 @@ FUN(PDFWidget_getName)(JNIEnv *env, jobject self)
 	if (!jname || (*env)->ExceptionCheck(env))
 		jni_throw_run(env, "cannot create widget name string");
 	return jname;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFWidget_getEditingState)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *widget = from_PDFWidget_safe(env, self);
+	jboolean editing = JNI_FALSE;
+
+	if (!ctx || !widget) return JNI_FALSE;
+
+	fz_try(ctx)
+		editing = pdf_get_widget_editing_state(ctx, widget);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return editing;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFWidget_setEditingState)(JNIEnv *env, jobject self, jboolean editing)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *widget = from_PDFWidget_safe(env, self);
+
+	if (!ctx || !widget) return;
+
+	fz_try(ctx)
+		pdf_set_widget_editing_state(ctx, widget, editing);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
 }

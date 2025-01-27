@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -150,6 +150,9 @@ public class PDFWidget extends PDFAnnotation
 	}
 	public native boolean setTextValue(String val);
 
+	public native boolean getEditingState();
+	public native void setEditingState(boolean editing);
+
 	/* WIP in-line text editing support */
 	public native Quad[] textQuads();
 	public native void setEditing(boolean state);
@@ -283,4 +286,5 @@ public class PDFWidget extends PDFAnnotation
 		public int index;
 		public Rect rect;
 	}
+
 }
