@@ -667,3 +667,25 @@ FUN(PDFWidget_getLabel)(JNIEnv *env, jobject self)
 
 	return (*env)->NewStringUTF(env, text);
 }
+
+JNIEXPORT jstring JNICALL
+FUN(PDFWidget_getName)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *widget = from_PDFWidget_safe(env, self);
+	char *name = NULL;
+	jstring jname;
+
+	if (!ctx || !widget) return NULL;
+
+	fz_try(ctx)
+		name = pdf_load_field_name(ctx, pdf_annot_obj(ctx, widget));
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jname = (*env)->NewStringUTF(env, name);
+	fz_free(ctx, name);
+	if (!jname || (*env)->ExceptionCheck(env))
+		jni_throw_run(env, "cannot create widget name string");
+	return jname;
+}

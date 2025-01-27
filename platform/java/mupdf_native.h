@@ -5533,6 +5533,14 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getLabel
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    getName
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getName
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    toggle
  * Signature: ()Z
  */

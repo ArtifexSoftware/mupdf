@@ -109,6 +109,7 @@ public class PDFWidget extends PDFAnnotation
 	public native String getValue();
 	public native boolean setValue(String val);
 	public native String getLabel();
+	public native String getName();
 
 	/* Button fields */
 
