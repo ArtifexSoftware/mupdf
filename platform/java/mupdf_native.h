@@ -1885,6 +1885,38 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Font_getName
 
 /*
  * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    isMono
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Font_isMono
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    isSerif
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Font_isSerif
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    isBold
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Font_isBold
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    isItalic
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Font_isItalic
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
  * Method:    encodeCharacter
  * Signature: (I)I
  */
