@@ -262,12 +262,16 @@ fz_insert_gel_rect(fz_context *ctx, fz_rasterizer *ras, float fx0, float fy0, fl
 	if (fy0 <= fy1)
 	{
 		fy0 = floorf(fy0 * vscale);
-		fy1 = ceilf(fy1 * vscale);
+		fy1 = floorf(fy1 * vscale);
+		if (fy1 == fy0)
+			fy1 = ceilf(fy1 * vscale);
 	}
 	else
 	{
-		fy0 = ceilf(fy0 * vscale);
+		fy0 = floorf(fy0 * vscale);
 		fy1 = floorf(fy1 * vscale);
+		if (fy1 == fy0)
+			fy1 = ceilf(fy1 * vscale);
 	}
 
 	fx0 = fz_clamp(fx0, ras->clip.x0, ras->clip.x1);
