@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -72,7 +72,7 @@ FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
 	/* We're going to try to output:
 	 * <section prior to the error> ">" <the char that tripped> "<" <section after the error>
 	 */
-	/* Is the section prior to the error too long? If so, truncate it with an elipsis. */
+	/* Is the section prior to the error too long? If so, truncate it with an ellipsis. */
 	n = sizeof(text)-1;
 	if (err_pos - s > n-PRE_POST_SIZE - 3)
 	{

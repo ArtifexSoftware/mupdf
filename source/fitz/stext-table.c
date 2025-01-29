@@ -359,7 +359,7 @@
  *	We can merge two adjacent columns if all the pairs of
  *	cells in the two columns are mergeable.
  *
- *	Cells are held to be mergable or not based upon the following
+ *	Cells are held to be mergeable or not based upon the following
  *	rules:
  *		If there is a line between 2 cells - not mergeable.
  *		else if the uncertainty between 2 cells is 0 - not mergeable.

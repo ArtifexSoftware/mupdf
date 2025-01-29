@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1604,7 +1604,7 @@ fz_subset_ttf_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 			reduce_encoding(ctx, &ttf, gids, num_gids);
 		}
 
-		/* Read maxp and store the table. Rememeber orig_num_glyphs. */
+		/* Read maxp and store the table. Remember orig_num_glyphs. */
 		read_maxp(ctx, &ttf, stm);
 
 		/* Read head and store the table. Remember the loca index size. */

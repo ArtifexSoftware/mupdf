@@ -90,7 +90,7 @@ C++ wrapping:
 
             Most calling code should use class-aware wrapper functions or
             wrapper class methods in preference to these low-level wrapper
-            funtions.
+            functions.
 
     Text representation of POD data:
 
@@ -383,7 +383,7 @@ Tools required to build:
 
             We work with clang-6 or clang-7, but clang-6 appears to not be able
             to cope with function args that are themselves function pointers,
-            so wrappers for MuPDF functions are ommited from the generated C++
+            so wrappers for MuPDF functions are omitted from the generated C++
             code.
 
         Unix:
@@ -407,7 +407,7 @@ Tools required to build:
 
     SWIG for Python/C# bindings:
 
-        We work with swig-3 and swig-4. If swig-4 is used, we propogate
+        We work with swig-3 and swig-4. If swig-4 is used, we propagate
         doxygen-style comments for structures and functions into the generated
         C++ code.
 
@@ -645,7 +645,7 @@ Usage:
                     updated, so that mtimes are unchanged.
 
                     Also removes any other .cpp or .h files from
-                    mupdf/platform/c++/{implmentation,include}.
+                    mupdf/platform/c++/{implementation,include}.
 
                 1:
                     Compile and link source files created by action=0.
@@ -814,7 +814,7 @@ Usage:
                 * Activates the Python environment.
                 * Runs setup.py install.
                     * Builds C, C++ and Python librariess in build/shared-release.
-                    * Copies build/shared-release/*.so into virtual envionment.
+                    * Copies build/shared-release/*.so into virtual environment.
                 * Runs scripts/mupdfwrap_test.py.
                     * Imports mupdf and checks basic functionality.
                 * Deactivates the Python environment.
@@ -1343,7 +1343,7 @@ def build_0(
     # Output info about fz_*() functions that we don't make use
     # of in class methods.
     #
-    # This is superceded by automatically finding fuctions to wrap.
+    # This is superseded by automatically finding functions to wrap.
     #
     if 0:   # lgtm [py/unreachable-statement]
         jlib.log( 'functions that take struct args and are not used exactly once in methods:')

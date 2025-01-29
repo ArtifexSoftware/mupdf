@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -21,7 +21,7 @@
 // CA 94129, USA, for further information.
 
 /* This file has preprocessor magic in it to instantiate both
- * protoypes and implementations for heap sorting structures
+ * prototypes and implementations for heap sorting structures
  * of various different types. Effectively, it's templating for
  * C.
  *

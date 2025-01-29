@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -578,7 +578,7 @@ pdf_obj *pdf_graft_mapped_object(fz_context *ctx, pdf_graft_map *map, pdf_obj *o
 	destination document of the graft. This involves a deep copy
 	of the objects in question.
 
-	map: A map targetted at the document into which the page should
+	map: A map targeted at the document into which the page should
 	be inserted.
 
 	page_to: The position within the destination document at which

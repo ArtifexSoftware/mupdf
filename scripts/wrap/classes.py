@@ -154,7 +154,7 @@ class ClassExtra:
             Otherwise if true, generated wrapper class must be copyable. If
             pod is false, we generate a copy constructor by looking for a
             fz_keep_*() function; it's an error if we can't find this function
-            [2024-01-24 fixme: actually we don't apear to raise an
+            [2024-01-24 fixme: actually we don't appear to raise an
             error in this case, instead we make class non-copyable.
             e.g. FzCompressedBuffer.].
 
@@ -402,7 +402,7 @@ classextras = ClassExtras(
 
         fz_band_writer = ClassExtra(
                 class_top = '''
-                    /* We use these enums to support construction via all the relevent MuPDF functions. */
+                    /* We use these enums to support construction via all the relevant MuPDF functions. */
 
                     enum Cm
                     {
@@ -523,7 +523,7 @@ classextras = ClassExtras(
                     ],
                 constructor_raw=1,
                 class_top = '''
-                        /* We use this enums to support construction via all the relevent MuPDF functions. */
+                        /* We use this enums to support construction via all the relevant MuPDF functions. */
                         enum Fixed
                         {
                             Fixed_GRAY,
@@ -587,7 +587,7 @@ classextras = ClassExtras(
                             ),
                 ],
                 pod = True,
-                # Other code asyncronously writes to our fields, so we are not
+                # Other code asynchronously writes to our fields, so we are not
                 # copyable. todo: maybe tie us to all objects to which we have
                 # been associated?
                 #
@@ -1770,7 +1770,7 @@ classextras = ClassExtras(
                 # We don't need to allocate extra space, and because we are a
                 # POD class, we can simply let our default constructor run.
                 #
-                # this->opaque is passsed as arg[2].
+                # this->opaque is passed as arg[2].
                 #
                 virtual_fnptrs = dict(
                         self_ = lambda name: f'({rename.class_("pdf_filter_options")}2*) {name}',

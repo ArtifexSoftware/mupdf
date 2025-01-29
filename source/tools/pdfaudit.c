@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Artifex Software, Inc.
+// Copyright (C) 2023-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2002,7 +2002,7 @@ filter_file(fz_context *ctx, fz_output *out, const char *filename)
 				output_size(ctx, out, pdf->file_size, audit_type[i], counts[i].obj, counts[i].objstm);
 			}
 			fz_write_printf(ctx, out, "</table>\n");
-			fz_write_printf(ctx, out, "<p>NOTE: The percentanges are as percentages of the complete file. This again means that"
+			fz_write_printf(ctx, out, "<p>NOTE: The percentages are as percentages of the complete file. This again means that"
 						" the percentages in the &quot;in objstms&quot; column are misleading as the objstms are"
 						" typically compressed!</p>\n");
 		}
@@ -2039,7 +2039,7 @@ filter_file(fz_context *ctx, fz_output *out, const char *filename)
 				fz_write_printf(ctx, out, "<tr align=right><td align=left>%s<td>%,zd<td>%.2f%%</tr>\n", op_names[i], ou.len[i], 100.f * ou.len[i] / total);
 			}
 			fz_write_printf(ctx, out, "</table>\n");
-			fz_write_printf(ctx, out, "<p>NOTE: The percentanges are of the operator stream content found.</p>\n");
+			fz_write_printf(ctx, out, "<p>NOTE: The percentages are of the operator stream content found.</p>\n");
 		}
 
 	}

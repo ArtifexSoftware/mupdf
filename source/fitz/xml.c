@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -359,7 +359,7 @@ void fz_drop_xml(fz_context *ctx, fz_xml *xml)
 	if (!xml)
 		return;
 
-	/* Whereever we are in the tree, we want the doc node at the root. */
+	/* Wherever we are in the tree, we want the doc node at the root. */
 	while (xml->up)
 		xml = xml->up;
 

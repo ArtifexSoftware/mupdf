@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -285,7 +285,7 @@ enum
  *	MuPDF automatically sends the minimal end_structure/begin_structure
  *	pairs to move us between nodes in the tree.
  *
- *	In order to accomodate this information within the structured text
+ *	In order to accommodate this information within the structured text
  *	data structures an additional block type is used. Previously a
  *	"page" was just a list of blocks, either text or images. e.g.
  *

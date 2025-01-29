@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -64,7 +64,7 @@
 	Our implementation is a 'simple' recursive descent of the structure. We know the width of the area we are laying out into at each point,
 	and we know the top/left coords of the enclosing block. So we start with a well defined left/top point, offset that for margins/borders/padding
 	etc, calculate the width from the enclosing width (via the CSS). We set the height of the content to be zero to start with, and after laying
-	out each of (any) child elements, we ensure that the base of our box is always large enough to enclose the childs boxes with the appropriate
+	out each of (any) child elements, we ensure that the base of our box is always large enough to enclose the child's boxes with the appropriate
 	padding.
 
 	VERTICAL MARGIN COLLAPSE:
@@ -1431,7 +1431,7 @@ static void layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 				layout_table(ctx, ld, child, box);
 
 			/* Unless we're still skipping, the base of our box must now be at least as
-			 * far down as the child, plus the childs spacing. */
+			 * far down as the child, plus the child's spacing. */
 			if (!restart || restart->start == NULL)
 			{
 				box->s.layout.b = advance_for_spacing(ctx, ld,

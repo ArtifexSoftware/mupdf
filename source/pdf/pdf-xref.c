@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2248,7 +2248,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 					/* If we've just read a 'null' object, don't leave this as a NULL 'o' object,
 					 * as that will a) confuse the code that called us into thinking that nothing
 					 * was loaded, and b) cause the entire objstm to be reloaded every time that
-					 * object is acccessed. Instead, just mark it as an 'f'. */
+					 * object is accessed. Instead, just mark it as an 'f'. */
 					if (obj == NULL)
 						entry->type = 'f';
 					fz_drop_buffer(ctx, entry->stm_buf);

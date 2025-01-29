@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -88,7 +88,7 @@ typedef struct
 	to 'pack' them into some target block of memory. If if coord_len
 	and cmd_len are both < 256, then they are PACKED_FLAT into an
 	fz_packed_path with the coords and cmds in the bytes afterwards,
-	all inside the target block. If they cannot be accomodated in
+	all inside the target block. If they cannot be accommodated in
 	that way, then they are PACKED_OPEN, where an fz_path is put
 	into the target block, and cmds and coords remain pointers to
 	allocated blocks.

@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -1013,7 +1013,7 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: setIcon(name)
 
-    Sets the annotation icon name, either one of the standard :ref:`icon names<mutool_pdf_annotation_icon_names>`, or something custom. Note that standard icon names can be used to resynthesize the annotation apperance, but custom names cannot.
+    Sets the annotation icon name, either one of the standard :ref:`icon names<mutool_pdf_annotation_icon_names>`, or something custom. Note that standard icon names can be used to resynthesize the annotation appearance, but custom names cannot.
 
     :arg name: `String`.
 

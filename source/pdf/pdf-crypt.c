@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1068,7 +1068,7 @@ pdf_compute_object_key(pdf_crypt *crypt, pdf_crypt_filter *cf, int num, int gen,
 
 	/* Encryption method version 0 is undocumented, but a lucky
 	   guess revealed that all streams/strings in those PDFs are
-	   encrypted using the same 40 bit file enryption key using RC4. */
+	   encrypted using the same 40 bit file encryption key using RC4. */
 	if (crypt->v == 0 || cf->method == PDF_CRYPT_AESV3)
 	{
 		memcpy(key, crypt->key, key_len);

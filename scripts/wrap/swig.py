@@ -1,5 +1,5 @@
 '''
-Support for using SWIG to generate langauge bindings from the C++ bindings.
+Support for using SWIG to generate language bindings from the C++ bindings.
 '''
 
 import inspect
@@ -715,7 +715,7 @@ def build_swig(
 
             6. SWIG Director C++ code (here). We raise a C++ exception.
             5. MuPDF C++ API Director wrapper converts the C++ exception into a MuPDF fz_try/catch exception.
-            4. MuPDF C code allows the exception to propogate or catches and rethrows or throws a new fz_try/catch exception.
+            4. MuPDF C code allows the exception to propagate or catches and rethrows or throws a new fz_try/catch exception.
             3. MuPDF C++ API wrapper function converts the fz_try/catch exception into a C++ exception.
             2. SWIG C++ code converts the C++ exception into a Python exception.
             1. Python code receives the Python exception.
@@ -725,7 +725,7 @@ def build_swig(
             finally back into a Python exception.
 
             Each of these stages is necessary. In particular we cannot let the
-            first C++ exception propogate directly through MuPDF C code without
+            first C++ exception propagate directly through MuPDF C code without
             being a fz_try/catch exception, because it would mess up MuPDF C
             code's fz_try/catch exception stack.
 
@@ -834,7 +834,7 @@ def build_swig(
                 std::cerr << "========\\n";
             }
 
-            /* SWIG 4.1 documention talks about throwing a
+            /* SWIG 4.1 documentation talks about throwing a
             Swig::DirectorMethodException here, but this doesn't work for us
             because it sets Python's error state again, which makes the
             next SWIG call of a C/C++ function appear to fail.

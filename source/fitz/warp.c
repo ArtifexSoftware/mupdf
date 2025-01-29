@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -503,7 +503,7 @@ fz_autowarp_pixmap(fz_context *ctx, fz_pixmap *src, const fz_point points[4])
 
 /*
 	Corner detection: We shall steal the algorithm from the Dropbox
-	Document Scanner, as decribed here:
+	Document Scanner, as described here:
 
 	https://dropbox.tech/machine-learning/fast-and-accurate-document-detection-for-scanning
 
@@ -1103,7 +1103,7 @@ nonmax(fz_context *ctx, fz_pixmap *dst, const fz_pixmap *src, int pass)
 			}
 			if (mag < q || mag < r)
 			{
-				/* Neighouring edges are stronger.
+				/* Neighbouring edges are stronger.
 				 * Lose this one. */
 				*d++ = 0;
 			}
@@ -1158,7 +1158,7 @@ nonmax(fz_context *ctx, fz_pixmap *dst, const fz_pixmap *src, int pass)
 				}
 				if (mag < q || mag < r)
 				{
-					/* Neighouring edges are stronger.
+					/* Neighbouring edges are stronger.
 					 * Lose this one. */
 					*d++ = 0;
 				}
@@ -1215,7 +1215,7 @@ nonmax(fz_context *ctx, fz_pixmap *dst, const fz_pixmap *src, int pass)
 			}
 			if (mag < q || mag < r)
 			{
-				/* Neighouring edges are stronger.
+				/* Neighbouring edges are stronger.
 				 * Lose this one. */
 				*d++ = 0;
 			}

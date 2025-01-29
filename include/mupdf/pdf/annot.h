@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -395,7 +395,7 @@ enum pdf_border_effect
 pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type);
 
 /*
-	Delete an annoation from the page.
+	Delete an annotation from the page.
 
 	This unlinks the annotation from the page structure and drops
 	the pages reference to it. Any reference held by the caller
@@ -582,12 +582,12 @@ fz_quad pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i);
 int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot);
 
 /*
-	How many vertexes in stroke i of the ink list for an annotation?
+	How many vertices in stroke i of the ink list for an annotation?
 */
 int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i);
 
 /*
-	Get vertex k from stroke i of the ink list for an annoation, in
+	Get vertex k from stroke i of the ink list for an annotation, in
 	doc space.
 */
 fz_point pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k);
@@ -700,7 +700,7 @@ void pdf_add_annot_quad_point(fz_context *ctx, pdf_annot *annot, fz_quad quad);
 	Set the ink list for an annotation.
 
 	n strokes. For 0 <= i < n, stroke i has count[i] points,
-	The vertexes for all the strokes are packed into a single
+	The vertices for all the strokes are packed into a single
 	array, pointed to by v.
 */
 void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const fz_point *v);
@@ -934,7 +934,7 @@ int pdf_is_embedded_file(fz_context *ctx, pdf_obj *fs);
 	If a checksum is added it can later be verified by calling
 	pdf_verify_embedded_file_checksum().
 */
-pdf_obj *pdf_add_embedded_file(fz_context *ctx, pdf_document *doc, const char *filename, const char *mimetype, fz_buffer *contents, int64_t created, int64_t modifed, int add_checksum);
+pdf_obj *pdf_add_embedded_file(fz_context *ctx, pdf_document *doc, const char *filename, const char *mimetype, fz_buffer *contents, int64_t created, int64_t modified, int add_checksum);
 
 /*
 	Obtain parameters for a filespec: name, size,

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Artifex Software, Inc.
+// Copyright (C) 2023-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -709,7 +709,7 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 		cfb->num_dir_sectors = fz_read_uint32_le(ctx, file);
 		cfb->num_fat_sectors = fz_read_uint32_le(ctx, file);
 		cfb->dir_sector0 = fz_read_uint32_le(ctx, file);
-		(void)fz_read_uint32_le(ctx, file); /* Transation signature number */
+		(void)fz_read_uint32_le(ctx, file); /* Transaction signature number */
 		expect32(ctx, file, 0x1000, "Bad mini stream cutoff size");
 		cfb->mini_fat_sector0 = fz_read_uint32_le(ctx, file);
 		cfb->num_mini_fat_sectors = fz_read_uint32_le(ctx, file);

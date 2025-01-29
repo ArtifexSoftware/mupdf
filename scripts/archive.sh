@@ -7,7 +7,7 @@ echo git archive $STEM.tar
 git archive --format=tar --prefix=$STEM/ -o $STEM.tar HEAD
 
 function make_submodule_archive {
-	# Make tarballs for submodules, stripped of unneccessary files.
+	# Make tarballs for submodules, stripped of unnecessary files.
 	M=$1
 	shift
 	echo git archive submodule-$M.tar

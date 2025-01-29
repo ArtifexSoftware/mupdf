@@ -94,7 +94,7 @@ exclude_patterns = ["_build","build"]
 # documents.
 default_role = 'any'
 
-# To supress these warnings do the following:
+# To suppress these warnings do the following:
 # See: https://stackoverflow.com/questions/37359407/suppress-warnings-for-unfound-references-with-default-role-any-in-sphinx
 def on_missing_reference(app, env, node, contnode):
     if node['reftype'] == 'any':

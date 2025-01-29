@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -809,15 +809,15 @@ static int fz_is_point_inside_triangle(fz_point p, fz_point a, fz_point b, fz_po
 	 * One of the cross products being 0 indicates that the point is on a line.
 	 * Two of the cross products being 0 indicates that the point is on a vertex.
 	 *
-	 * If 2 of the vertexes are the same, the algorithm still works.
-	 * Iff all 3 of the vertexes are the same, the cross products are all zero. The
+	 * If 2 of the vertices are the same, the algorithm still works.
+	 * Iff all 3 of the vertices are the same, the cross products are all zero. The
 	 * value of p is irrelevant.
 	 */
 	float crossa = cross(a, b, p);
 	float crossb = cross(b, c, p);
 	float crossc = cross(c, a, p);
 
-	/* Check for degenerate case. All vertexes the same. */
+	/* Check for degenerate case. All vertices the same. */
 	if (crossa == 0 && crossb == 0 && crossc == 0)
 		return a.x == p.x && a.y == p.y;
 

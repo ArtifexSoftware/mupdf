@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -491,8 +491,8 @@ tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *ti
 {
 	/*
 	This explains how the samples are laid out in tiff data, the spec example is non-obvious.
-	The y, cb, cr indicies follow the spec, i.e. y17 is the y sample at row 1, column 7.
-	All indicies start at 0.
+	The y, cb, cr indices follow the spec, i.e. y17 is the y sample at row 1, column 7.
+	All indices start at 0.
 
 	hexlookup = (horizontalsubsampling & 0xf) << 4 | (verticalsubsampling & 0xf)
 

@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -188,8 +188,8 @@ so that they can easily be used to represent tiles of a page.
 
     Get the value of component ``index`` at position `x`, `y` (relative to the image origin: 0, 0 is the top left pixel).
 
-    :arg x: X co-ordinate.
-    :arg y: Y co-ordinate.
+    :arg x: X coordinate.
+    :arg y: Y coordinate.
     :arg index: Component index. i.e. For CMYK ColorSpaces 0 = Cyan, for RGB 0 = Red etc.
     :return: `Int`.
 

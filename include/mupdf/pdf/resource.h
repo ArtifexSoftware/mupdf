@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -47,7 +47,7 @@ void pdf_purge_object_from_store(fz_context *ctx, pdf_document *doc, int num);
 enum { PDF_SIMPLE_FONT_RESOURCE=1, PDF_CID_FONT_RESOURCE=2, PDF_CJK_FONT_RESOURCE=3 };
 enum { PDF_SIMPLE_ENCODING_LATIN, PDF_SIMPLE_ENCODING_GREEK, PDF_SIMPLE_ENCODING_CYRILLIC };
 
-/* The contents of this structure are defined publically just so we can
+/* The contents of this structure are defined publicly just so we can
  * define this on the stack. */
 typedef struct
 {

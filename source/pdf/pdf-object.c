@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1055,7 +1055,7 @@ dump_changes(fz_context *ctx, pdf_document *doc, pdf_journal_entry *entry)
 }
 #endif
 
-/* We build up journal entries as being a list of changes (framents) that
+/* We build up journal entries as being a list of changes (fragments) that
  * happen all together as part of a single step. When we reach pdf_end_operation
  * we have all the changes that have happened during this operation in a list
  * that basically boils down to being:
@@ -2467,7 +2467,7 @@ pdf_obj *
 pdf_dict_geta(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *abbrev)
 {
 	pdf_obj *v;
-	/* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
+	/* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precedence. */
 	v = pdf_dict_get(ctx, obj, abbrev);
 	if (v)
 		return v;

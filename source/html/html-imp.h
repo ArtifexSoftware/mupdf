@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -380,7 +380,7 @@ typedef struct {
 struct fz_story
 {
 	/* fz_story is derived from fz_html_tree, so must start with */
-	/* that. Argubly 'tree' should be called 'super'. */
+	/* that. Arguably 'tree' should be called 'super'. */
 	fz_html_tree tree;
 
 	/* The user_css (or NULL) */

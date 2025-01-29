@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2189,7 +2189,7 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 		/* We have no blocks at ANY level. */
 		page->first_block = newblock;
 	}
-	/* Whereever we linked it in, that's where we want to continue adding content. */
+	/* Wherever we linked it in, that's where we want to continue adding content. */
 	page->last_struct = newblock->u.s.down;
 	page->last_block = NULL;
 }

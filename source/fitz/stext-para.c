@@ -242,7 +242,7 @@ static void block_to_struct(fz_context *ctx, stext_pos *pos, fz_stext_block *blo
 			as if we've got a newline). This is not the same as being
 			called every fz_stext_line, as we frequently get multiple
 			fz_stext_line's on a single horizontal line. If this returns
-			0, excecution continues. Return 1 to stop the walking.
+			0, execution continues. Return 1 to stop the walking.
 	line_fn		Called for every fz_stext_line (typically used to process
 			characters).
 	end_fn		Called at the end of the block (with line being the final
@@ -1308,7 +1308,7 @@ list_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 		case LOOKING_FOR_POST_NUMERICAL_BULLET:
 			if (ch->c >= '0' && ch->c <= '9')
 			{
-				/* Numberical bullets can't be followed by numbers. */
+				/* Numerical bullets can't be followed by numbers. */
 				if (approx_eq(data->l, data->post_bullet_indent, ch->size))
 					data->state = CONTINUATION_LINE;
 				else
@@ -1573,7 +1573,7 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			fz_write_printf(ctx, fz_stddbg(ctx), "E");
 #endif
 
-			/* Look for bulletted list items. */
+			/* Look for bulleted list items. */
 			if (break_list_items(ctx, &pos, block))
 				next_block = block->next; /* We split the block! */
 
