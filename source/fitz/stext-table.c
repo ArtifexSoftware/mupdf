@@ -971,6 +971,8 @@ walk_to_find_content(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block
 		case FZ_STEXT_BLOCK_VECTOR:
 			break;
 		case FZ_STEXT_BLOCK_TEXT:
+		{
+			fz_rect justified_region = fz_empty_rect;
 			for (line = block->u.t.first_line; line != NULL; line = line->next)
 			{
 				fz_rect region = fz_empty_rect;
@@ -1064,11 +1066,24 @@ walk_to_find_content(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block
 				{
 					div_list_push(ctx, xs, 1, 0, region.x0);
 					div_list_push(ctx, xs, 0, 0, region.x1);
-					div_list_push(ctx, ys, 1, 0, region.y0);
-					div_list_push(ctx, ys, 0, 0, region.y1);
+					/* For justified regions, we don't break after each line, but
+					 * rather before/after the region as a whole. */
+					if (block->u.t.flags != FZ_STEXT_TEXT_JUSTIFY_FULL)
+					{
+						div_list_push(ctx, ys, 1, 0, region.y0);
+						div_list_push(ctx, ys, 0, 0, region.y1);
+					}
+					else
+						justified_region = fz_union_rect(justified_region, region);
 				}
 			}
+			if (!fz_is_empty_rect(justified_region) && block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL)
+			{
+				div_list_push(ctx, ys, 1, 0, justified_region.y0);
+				div_list_push(ctx, ys, 0, 0, justified_region.y1);
+			}
 			break;
+		}
 		}
 	}
 }
