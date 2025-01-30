@@ -31,7 +31,7 @@
  */
 
 #ifndef MUPDF_FITZ_HEAP_I_KNOW_WHAT_IM_DOING
-#error Do not include heap-imp.h unless you know what you're doing
+#error Do not include heap-imp.h unless you know what you are doing
 #endif
 
 #define HEAP_XCAT(A,B) A##B
