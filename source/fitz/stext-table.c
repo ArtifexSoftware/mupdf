@@ -2427,6 +2427,23 @@ tidy_table_divs(fz_context *ctx, fz_stext_block *block)
 }
 
 static int
+struct_is_empty(fz_context *ctx, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_STRUCT)
+			return 0;
+		if (!block->u.s.down)
+		{
+		}
+		else if (!struct_is_empty(ctx, block->u.s.down->first_block))
+			return 0;
+	}
+
+	return 1;
+}
+
+static int
 div_is_empty(fz_context *ctx, fz_stext_block *block)
 {
 	for (; block != NULL; block = block->next)
@@ -2442,7 +2459,10 @@ div_is_empty(fz_context *ctx, fz_stext_block *block)
 			return table_is_empty(ctx, block->u.s.down->first_block);
 		}
 		else if (block->u.s.down->standard != FZ_STRUCTURE_DIV)
-			return 0;
+		{
+			if (!struct_is_empty(ctx, block->u.s.down->first_block))
+				return 0;
+		}
 		else if (!div_is_empty(ctx, block->u.s.down->first_block))
 			return 0;
 	}
