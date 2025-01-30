@@ -2562,6 +2562,11 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	if (*first_block == NULL)
 		return 0;
 
+	/* If all the content here looks like a column of text, don't
+	 * hunt for a table within it. */
+	if (all_blocks_are_justified_or_headers(ctx, *first_block))
+		return num_subtables;
+
 	/* First off, descend into any children to see if those look like tables. */
 	count = 0;
 	for (block = *first_block; block != NULL; block = block->next)
@@ -2590,10 +2595,6 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	if (parent != NULL && parent->standard != FZ_STRUCTURE_DIV)
 		return num_subtables;
 
-	/* If all the content here looks like a column of text, don't
-	 * hunt for a table within it. */
-	if (all_blocks_are_justified_or_headers(ctx, *first_block))
-		return num_subtables;
 
 	fz_var(gd);
 
