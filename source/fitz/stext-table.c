@@ -689,7 +689,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	edges = 1;
 	pos->list[0].pos = min;
 	pos->list[0].min = min;
-	pos->list[0].max = pos->list[0].pos;
+	pos->list[0].max = xs->list[0].pos;
 	pos->list[0].uncertainty = 0;
 	pos->list[0].reinforcement = 1;
 #ifdef DEBUG_TABLE_HUNT
