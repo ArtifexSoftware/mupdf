@@ -1950,6 +1950,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					{
 						newblock = fz_pool_alloc(ctx, page->pool, sizeof(fz_stext_block));
 						insert_block_before(newblock, before, page, dest);
+						newblock->u.t.flags = block->u.t.flags;
 						assert(before == newblock->next);
 					}
 
@@ -2018,6 +2019,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 
 							/* Add the block onto our target list */
 							insert_block_before(newblock, before, page, dest);
+							newblock->u.t.flags = block->u.t.flags;
 							before = newblock->next;
 						}
 						append_line_to_block(newline, newblock);
