@@ -639,6 +639,24 @@ void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
 void fz_table_hunt(fz_context *ctx, fz_stext_page *page);
 
 /**
+	Interpret the bounded contents of a given stext page as
+	a table.
+
+	The page contents will be rewritten to contain a Table
+	structure with the identified content in it.
+
+	This uses the same logic as for fz_table_hunt, without the
+	actual hunting. fz_table_hunt hunts to find possible bounds
+	for multiple tables on the page; this routine just finds a
+	single table contained within the given rectangle.
+
+	Returns the stext_block list that contains the content of
+	the table.
+*/
+fz_stext_block *
+fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+
+/**
 	Create a device to extract the text on a page.
 
 	Gather the text on a page into blocks and lines.

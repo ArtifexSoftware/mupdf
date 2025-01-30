@@ -2097,275 +2097,6 @@ find_table_insertion_point(fz_context *ctx, fz_rect r, fz_stext_block *block)
 	return after;
 }
 
-static fz_stext_struct *
-transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_stext_struct *parent)
-{
-	int w = gd->xpos->len;
-	int h = gd->ypos->len;
-	int x, y;
-	char *sent_tab = fz_calloc(ctx, 1, w*h);
-	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
-	fz_stext_struct *table, *tr, *td;
-	fz_stext_block *before;
-	fz_rect r;
-
-	/* Where should we insert the table in the data? */
-	r.x0 = gd->xpos->list[0].pos;
-	r.x1 = gd->xpos->list[w-1].pos;
-	r.y0 = gd->ypos->list[0].pos;
-	r.y1 = gd->ypos->list[h-1].pos;
-	before = find_table_insertion_point(ctx, r, *first_block);
-
-	/* Make table */
-	table = add_struct_block_before(ctx, before, page, parent, FZ_STRUCTURE_TABLE, "Table");
-
-	/* Run through the cells, and guess at spanning. */
-	for (y = 0; y < h-1; y++)
-	{
-		/* Have we sent this entire row before? */
-		for (x = 0; x < w-1; x++)
-		{
-			if (!sent_tab[x+y*w])
-				break;
-		}
-		if (x == w-1)
-			continue; /* No point in sending a row with nothing in it! */
-
-		/* Make TR */
-		tr = add_struct_block_before(ctx, NULL, page, table, FZ_STRUCTURE_TR, "TR");
-
-		for (x = 0; x < w-1; x++)
-		{
-			int x2, y2;
-			int cellw = 1;
-			int cellh = 1;
-
-			/* Have we sent this cell already? */
-			if (sent_tab[x+y*w])
-				continue;
-
-			/* Find the width of the cell */
-			for (x2 = x+1; x2 < w-1; x2++)
-			{
-				cell_t *cell = get_cell(gd->cells, x2, y);
-				if (cell->v_line)
-					break; /* Can't go past a line */
-				if (gd->xpos->list[x2].uncertainty == 0)
-					break; /* An uncertainty of 0 is as good as a line. */
-				if (!cell->v_crossed)
-					break;
-				cellw++;
-			}
-			/* Find the height of the cell */
-			for (y2 = y+1; y2 < h-1; y2++)
-			{
-				cell_t *cell;
-				int h_crossed = 0;
-				if (gd->ypos->list[y2].uncertainty == 0)
-					break; /* An uncertainty of 0 is as good as a line. */
-
-				cell = get_cell(gd->cells, x, y2);
-				if (cell->h_line)
-					break; /* Can't extend down through a line. */
-				if (cell->h_crossed)
-					h_crossed = 1;
-				for (x2 = x+1; x2 < x+cellw; x2++)
-				{
-					cell_t *cell = get_cell(gd->cells, x2, y2);
-					if (cell->h_line)
-						break;
-					if (cell->v_line)
-						break; /* Can't go past a line */
-					if (gd->xpos->list[x2].uncertainty == 0)
-						break; /* An uncertainty of 0 is as good as a line. */
-					if (!cell->v_crossed)
-						break;
-					if (cell->h_crossed)
-						h_crossed = 1;
-				}
-				if (x2 == x+cellw && h_crossed)
-					cellh++;
-				else
-					break;
-			}
-			/* Make TD */
-			td = add_struct_block_before(ctx, NULL, page, tr, FZ_STRUCTURE_TD, "TD");
-			r.x0 = gd->xpos->list[x].pos;
-			r.x1 = gd->xpos->list[x+cellw].pos;
-			r.y0 = gd->ypos->list[y].pos;
-			r.y1 = gd->ypos->list[y+cellh].pos;
-			/* Use r, not REAL contents bbox, as otherwise spanned rows
-			 * can end up empty. */
-			td->up->bbox = r;
-			move_contained_content(ctx, page, td, parent, r);
-#ifdef DEBUG_TABLE_STRUCTURE
-			printf("(%d,%d) + (%d,%d)\n", x, y, cellw, cellh);
-#endif
-			for (y2 = y; y2 < y+cellh; y2++)
-				for (x2 = x; x2 < x+cellw; x2++)
-					sent_tab[x2+y2*w] = 1;
-		}
-		r.x0 = gd->xpos->list[0].pos;
-		r.x1 = gd->xpos->list[gd->xpos->len-1].pos;
-		r.y0 = gd->ypos->list[y].pos;
-		r.y1 = gd->ypos->list[y+1].pos;
-		tr->up->bbox = r;
-		table->up->bbox = fz_union_rect(table->up->bbox, tr->up->bbox);
-	}
-	fz_free(ctx, sent_tab);
-
-	return table;
-}
-
-static void
-merge_column(grid_walker_data *gd, int x)
-{
-	int y;
-	for (y = 0; y < gd->cells->h; y++)
-	{
-		cell_t *d = &gd->cells->cell[x + y * (gd->cells->w-1)];
-		cell_t *s = &gd->cells->cell[x + y * gd->cells->w];
-
-		if (x > 0)
-			memcpy(d-x, s-x, x * sizeof(*d));
-		d->full = s[0].full || s[1].full;
-		d->h_crossed = s[0].h_crossed || s[1].h_crossed;
-		d->h_line = s[0].h_line; /* == s[1].h_line */
-		d->v_crossed = s[0].v_crossed;
-		d->v_line = s[0].v_line;
-		if (x < gd->cells->w - 2)
-			memcpy(d+1, s+2, (gd->cells->w - 2 - x) * sizeof(*d));
-	}
-	gd->cells->w--;
-
-	if (x < gd->xpos->len - 2)
-		memcpy(&gd->xpos->list[x+1], &gd->xpos->list[x+2], (gd->xpos->len - 2 - x) * sizeof(gd->xpos->list[0]));
-	gd->xpos->len--;
-}
-
-static void
-merge_columns(grid_walker_data *gd)
-{
-	int x, y;
-
-	for (x = gd->cells->w-3; x >= 0; x--)
-	{
-		/* Can column x be merged with column x+1? */
-		/* We only ever want to merge columns if content crossed between them somewhere.
-		 * Don't use uncertainty for this, because uncertainty doesn't allow for
-		 * whitespace. */
-		for (y = 0; y < gd->cells->h-1; y++)
-			if (get_cell(gd->cells, x+1, y)->v_crossed == 1)
-				break;
-		if (y == gd->cells->h-1)
-			continue;
-		/* This requires all the pairs of cells in those 2 columns to be mergeable. */
-		for (y = 0; y < gd->cells->h-1; y++)
-		{
-			cell_t *a = get_cell(gd->cells, x, y);
-			cell_t *b = get_cell(gd->cells, x+1, y);
-			/* If there is a divider, we can't merge. */
-			if (b->v_line)
-				break;
-			/* If either is empty, we can merge. */
-			if (!a->full || !b->full)
-				continue;
-			/* If we differ in h linedness, we can't merge */
-			if (!!a->h_line != !!b->h_line)
-				break;
-			/* If both are full, we can only merge if we cross. */
-			if (a->full && b->full && b->v_crossed)
-				continue;
-			/* Otherwise we can't merge */
-			break;
-		}
-		if (y == gd->cells->h-1)
-		{
-			/* Merge the column! */
-#ifdef DEBUG_TABLE_STRUCTURE
-			printf("Merging column %d\n", x);
-#endif
-			merge_column(gd, x);
-#ifdef DEBUG_TABLE_STRUCTURE
-			asciiart_table(gd);
-#endif
-		}
-	}
-}
-
-static void
-merge_row(grid_walker_data *gd, int y)
-{
-	int x;
-	int w = gd->cells->w;
-	cell_t *d = &gd->cells->cell[y * w];
-	for (x = 0; x < gd->cells->w-1; x++)
-	{
-		if (d->full == 0)
-			d->full = d[w].full;
-		if (d->h_crossed == 0)
-			d->h_crossed = d[w].h_crossed;
-		d++;
-	}
-	if (y < gd->cells->h - 2)
-		memcpy(d, d+w, (gd->cells->h - 2 - y) * w * sizeof(*d));
-	gd->cells->h--;
-
-	if (y < gd->ypos->len - 2)
-		memcpy(&gd->ypos->list[y+1], &gd->ypos->list[y+2], (gd->ypos->len - 2 - y) * sizeof(gd->ypos->list[0]));
-	gd->ypos->len--;
-}
-
-static void
-merge_rows(grid_walker_data *gd)
-{
-	int x, y;
-
-	for (y = gd->cells->h-3; y >= 0; y--)
-	{
-		/* Can row y be merged with row y+1? */
-		/* We only ever want to merge rows if content crossed between them somewhere.
-		 * Don't use uncertainty for this, because uncertainty doesn't allow for
-		 * whitespace. */
-		for (x = 0; x < gd->cells->w-1; x++)
-			if (get_cell(gd->cells, x, y+1)->h_crossed == 1)
-				break;
-		if (x == gd->cells->w-1)
-			continue;
-		/* This requires all the pairs of cells in those 2 rows to be mergeable. */
-		for (x = 0; x < gd->cells->w-1; x++)
-		{
-			cell_t *a = get_cell(gd->cells, x, y);
-			cell_t *b = get_cell(gd->cells, x, y+1);
-			/* If there is a divider, we can't merge. */
-			if (b->h_line)
-				break;
-			/* If either is empty, we can merge. */
-			if (!a->full || !b->full)
-				continue;
-			/* If we differ in v linedness, we can't merge */
-			if (!!a->v_line != !!b->v_line)
-				break;
-			/* If both are full, we can only merge if we cross. */
-			if (a->full && b->full && b->h_crossed)
-				continue;
-			/* Otherwise we can't merge */
-			break;
-		}
-		if (x == gd->cells->w-1)
-		{
-			/* Merge the row! */
-#ifdef DEBUG_TABLE_STRUCTURE
-			printf("Merging row %d\n", y);
-#endif
-			merge_row(gd, y);
-#ifdef DEBUG_TABLE_STRUCTURE
-			asciiart_table(gd);
-#endif
-		}
-	}
-}
-
 static int
 tr_is_empty(fz_context *ctx, fz_stext_block *block)
 {
@@ -2563,11 +2294,349 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 	}
 }
 
+static fz_stext_struct *
+transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_stext_struct *parent)
+{
+	int w = gd->xpos->len;
+	int h = gd->ypos->len;
+	int x, y;
+	char *sent_tab = fz_calloc(ctx, 1, w*h);
+	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
+	fz_stext_struct *table, *tr, *td;
+	fz_stext_block *before;
+	fz_rect r;
+
+	/* Where should we insert the table in the data? */
+	r.x0 = gd->xpos->list[0].pos;
+	r.x1 = gd->xpos->list[w-1].pos;
+	r.y0 = gd->ypos->list[0].pos;
+	r.y1 = gd->ypos->list[h-1].pos;
+	before = find_table_insertion_point(ctx, r, *first_block);
+
+	/* Make table */
+	table = add_struct_block_before(ctx, before, page, parent, FZ_STRUCTURE_TABLE, "Table");
+
+	/* Run through the cells, and guess at spanning. */
+	for (y = 0; y < h-1; y++)
+	{
+		/* Have we sent this entire row before? */
+		for (x = 0; x < w-1; x++)
+		{
+			if (!sent_tab[x+y*w])
+				break;
+		}
+		if (x == w-1)
+			continue; /* No point in sending a row with nothing in it! */
+
+		/* Make TR */
+		tr = add_struct_block_before(ctx, NULL, page, table, FZ_STRUCTURE_TR, "TR");
+
+		for (x = 0; x < w-1; x++)
+		{
+			int x2, y2;
+			int cellw = 1;
+			int cellh = 1;
+
+			/* Have we sent this cell already? */
+			if (sent_tab[x+y*w])
+				continue;
+
+			/* Find the width of the cell */
+			for (x2 = x+1; x2 < w-1; x2++)
+			{
+				cell_t *cell = get_cell(gd->cells, x2, y);
+				if (cell->v_line)
+					break; /* Can't go past a line */
+				if (gd->xpos->list[x2].uncertainty == 0)
+					break; /* An uncertainty of 0 is as good as a line. */
+				if (!cell->v_crossed)
+					break;
+				cellw++;
+			}
+			/* Find the height of the cell */
+			for (y2 = y+1; y2 < h-1; y2++)
+			{
+				cell_t *cell;
+				int h_crossed = 0;
+				if (gd->ypos->list[y2].uncertainty == 0)
+					break; /* An uncertainty of 0 is as good as a line. */
+
+				cell = get_cell(gd->cells, x, y2);
+				if (cell->h_line)
+					break; /* Can't extend down through a line. */
+				if (cell->h_crossed)
+					h_crossed = 1;
+				for (x2 = x+1; x2 < x+cellw; x2++)
+				{
+					cell_t *cell = get_cell(gd->cells, x2, y2);
+					if (cell->h_line)
+						break;
+					if (cell->v_line)
+						break; /* Can't go past a line */
+					if (gd->xpos->list[x2].uncertainty == 0)
+						break; /* An uncertainty of 0 is as good as a line. */
+					if (!cell->v_crossed)
+						break;
+					if (cell->h_crossed)
+						h_crossed = 1;
+				}
+				if (x2 == x+cellw && h_crossed)
+					cellh++;
+				else
+					break;
+			}
+			/* Make TD */
+			td = add_struct_block_before(ctx, NULL, page, tr, FZ_STRUCTURE_TD, "TD");
+			r.x0 = gd->xpos->list[x].pos;
+			r.x1 = gd->xpos->list[x+cellw].pos;
+			r.y0 = gd->ypos->list[y].pos;
+			r.y1 = gd->ypos->list[y+cellh].pos;
+			/* Use r, not REAL contents bbox, as otherwise spanned rows
+			 * can end up empty. */
+			td->up->bbox = r;
+			move_contained_content(ctx, page, td, parent, r);
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("(%d,%d) + (%d,%d)\n", x, y, cellw, cellh);
+#endif
+			for (y2 = y; y2 < y+cellh; y2++)
+				for (x2 = x; x2 < x+cellw; x2++)
+					sent_tab[x2+y2*w] = 1;
+		}
+		r.x0 = gd->xpos->list[0].pos;
+		r.x1 = gd->xpos->list[gd->xpos->len-1].pos;
+		r.y0 = gd->ypos->list[y].pos;
+		r.y1 = gd->ypos->list[y+1].pos;
+		tr->up->bbox = r;
+		table->up->bbox = fz_union_rect(table->up->bbox, tr->up->bbox);
+	}
+	fz_free(ctx, sent_tab);
+
+	{
+		fz_stext_block *block;
+		fz_stext_grid_positions *xps2 = copy_grid_positions_to_pool(ctx, page, gd->xpos);
+		fz_stext_grid_positions *yps2 = copy_grid_positions_to_pool(ctx, page, gd->ypos);
+		block = add_grid_block(ctx, page, &table->first_block, &table->last_block);
+		block->u.b.xs = xps2;
+		block->u.b.ys = yps2;
+		block->bbox.x0 = block->u.b.xs->list[0].pos;
+		block->bbox.y0 = block->u.b.ys->list[0].pos;
+		block->bbox.x1 = block->u.b.xs->list[block->u.b.xs->len-1].pos;
+		block->bbox.y1 = block->u.b.ys->list[block->u.b.ys->len-1].pos;
+	}
+	tidy_orphaned_tables(ctx, page, parent);
+
+	return table;
+}
+
+static void
+merge_column(grid_walker_data *gd, int x)
+{
+	int y;
+	for (y = 0; y < gd->cells->h; y++)
+	{
+		cell_t *d = &gd->cells->cell[x + y * (gd->cells->w-1)];
+		cell_t *s = &gd->cells->cell[x + y * gd->cells->w];
+
+		if (x > 0)
+			memcpy(d-x, s-x, x * sizeof(*d));
+		d->full = s[0].full || s[1].full;
+		d->h_crossed = s[0].h_crossed || s[1].h_crossed;
+		d->h_line = s[0].h_line; /* == s[1].h_line */
+		d->v_crossed = s[0].v_crossed;
+		d->v_line = s[0].v_line;
+		if (x < gd->cells->w - 2)
+			memcpy(d+1, s+2, (gd->cells->w - 2 - x) * sizeof(*d));
+	}
+	gd->cells->w--;
+
+	if (x < gd->xpos->len - 2)
+		memcpy(&gd->xpos->list[x+1], &gd->xpos->list[x+2], (gd->xpos->len - 2 - x) * sizeof(gd->xpos->list[0]));
+	gd->xpos->len--;
+}
+
+static void
+merge_columns(grid_walker_data *gd)
+{
+	int x, y;
+
+	for (x = gd->cells->w-3; x >= 0; x--)
+	{
+		/* Can column x be merged with column x+1? */
+		/* We only ever want to merge columns if content crossed between them somewhere.
+		 * Don't use uncertainty for this, because uncertainty doesn't allow for
+		 * whitespace. */
+		for (y = 0; y < gd->cells->h-1; y++)
+			if (get_cell(gd->cells, x+1, y)->v_crossed == 1)
+				break;
+		if (y == gd->cells->h-1)
+			continue;
+		/* This requires all the pairs of cells in those 2 columns to be mergeable. */
+		for (y = 0; y < gd->cells->h-1; y++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x+1, y);
+			/* If there is a divider, we can't merge. */
+			if (b->v_line)
+				break;
+			/* If either is empty, we can merge. */
+			if (!a->full || !b->full)
+				continue;
+			/* If we differ in h linedness, we can't merge */
+			if (!!a->h_line != !!b->h_line)
+				break;
+			/* If both are full, we can only merge if we cross. */
+			if (a->full && b->full && b->v_crossed)
+				continue;
+			/* Otherwise we can't merge */
+			break;
+		}
+		if (y == gd->cells->h-1)
+		{
+			/* Merge the column! */
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Merging column %d\n", x);
+#endif
+			merge_column(gd, x);
+#ifdef DEBUG_TABLE_STRUCTURE
+			asciiart_table(gd);
+#endif
+		}
+	}
+}
+
+static void
+merge_row(grid_walker_data *gd, int y)
+{
+	int x;
+	int w = gd->cells->w;
+	cell_t *d = &gd->cells->cell[y * w];
+	for (x = 0; x < gd->cells->w-1; x++)
+	{
+		if (d->full == 0)
+			d->full = d[w].full;
+		if (d->h_crossed == 0)
+			d->h_crossed = d[w].h_crossed;
+		d++;
+	}
+	if (y < gd->cells->h - 2)
+		memcpy(d, d+w, (gd->cells->h - 2 - y) * w * sizeof(*d));
+	gd->cells->h--;
+
+	if (y < gd->ypos->len - 2)
+		memcpy(&gd->ypos->list[y+1], &gd->ypos->list[y+2], (gd->ypos->len - 2 - y) * sizeof(gd->ypos->list[0]));
+	gd->ypos->len--;
+}
+
+static void
+merge_rows(grid_walker_data *gd)
+{
+	int x, y;
+
+	for (y = gd->cells->h-3; y >= 0; y--)
+	{
+		/* Can row y be merged with row y+1? */
+		/* We only ever want to merge rows if content crossed between them somewhere.
+		 * Don't use uncertainty for this, because uncertainty doesn't allow for
+		 * whitespace. */
+		for (x = 0; x < gd->cells->w-1; x++)
+			if (get_cell(gd->cells, x, y+1)->h_crossed == 1)
+				break;
+		if (x == gd->cells->w-1)
+			continue;
+		/* This requires all the pairs of cells in those 2 rows to be mergeable. */
+		for (x = 0; x < gd->cells->w-1; x++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x, y+1);
+			/* If there is a divider, we can't merge. */
+			if (b->h_line)
+				break;
+			/* If either is empty, we can merge. */
+			if (!a->full || !b->full)
+				continue;
+			/* If we differ in v linedness, we can't merge */
+			if (!!a->v_line != !!b->v_line)
+				break;
+			/* If both are full, we can only merge if we cross. */
+			if (a->full && b->full && b->h_crossed)
+				continue;
+			/* Otherwise we can't merge */
+			break;
+		}
+		if (x == gd->cells->w-1)
+		{
+			/* Merge the row! */
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Merging row %d\n", y);
+#endif
+			merge_row(gd, y);
+#ifdef DEBUG_TABLE_STRUCTURE
+			asciiart_table(gd);
+#endif
+		}
+	}
+}
+
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
+find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content, fz_rect bounds)
 {
 	div_list xs = { 0 };
 	div_list ys = { 0 };
+	int failed = 1;
+
+	fz_try(ctx)
+	{
+		walk_to_find_content(ctx, &xs, &ys, content, bounds);
+
+		sanitize_positions(ctx, &xs);
+		sanitize_positions(ctx, &ys);
+
+		/* Run across the line, counting 'winding' */
+		/* If we don't have at least 2 rows and 2 columns, give up. */
+		if (xs.len <= 2 || ys.len <= 2)
+			break;
+
+		gd->xpos = make_table_positions(ctx, &xs, bounds.x0, bounds.x1);
+		gd->ypos = make_table_positions(ctx, &ys, bounds.y0, bounds.y1);
+		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
+
+		/* Walk the content looking for grid lines. These
+		 * lines refine our positions. */
+		walk_grid_lines(ctx, gd, content);
+		/* Now, we walk the content looking for content that crosses
+		 * these grid lines. This allows us to spot spanned cells. */
+		if (calculate_spanned_content(ctx, gd, content))
+			break; /* Unlikely to be a table. */
+
+#ifdef DEBUG_TABLE_STRUCTURE
+		asciiart_table(gd);
+#endif
+		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
+		merge_columns(gd);
+		merge_rows(gd);
+
+		/* Did we shrink the table so much it's not a table any more? */
+		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
+			break;
+
+		failed = 0;
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, xs.list);
+		fz_free(ctx, ys.list);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return failed;
+}
+
+static int
+do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
+{
 	fz_stext_block *block;
 	int count;
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
@@ -2619,37 +2688,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	{
 		/* Now see whether the content looks like tables. */
 		fz_rect bounds = walk_to_find_bounds(ctx, *first_block);
-		walk_to_find_content(ctx, &xs, &ys, *first_block, bounds);
 
-		sanitize_positions(ctx, &xs);
-		sanitize_positions(ctx, &ys);
-
-		/* Run across the line, counting 'winding' */
-		/* If we don't have at least 2 rows and 2 columns, give up. */
-		if (xs.len <= 2 || ys.len <= 2)
-			break;
-
-		gd.xpos = make_table_positions(ctx, &xs, bounds.x0, bounds.x1);
-		gd.ypos = make_table_positions(ctx, &ys, bounds.y0, bounds.y1);
-		gd.cells = new_cells(ctx, gd.xpos->len, gd.ypos->len);
-
-		/* Walk the content looking for grid lines. These
-		 * lines refine our positions. */
-		walk_grid_lines(ctx, &gd, *first_block);
-		/* Now, we walk the content looking for content that crosses
-		 * these grid lines. This allows us to spot spanned cells. */
-		if (calculate_spanned_content(ctx, &gd, *first_block))
-			break; /* Unlikely to be a table. */
-
-#ifdef DEBUG_TABLE_STRUCTURE
-		asciiart_table(&gd);
-#endif
-		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
-		merge_columns(&gd);
-		merge_rows(&gd);
-
-		/* Did we shrink the table so much it's not a table any more? */
-		if (gd.xpos->len <= 2 || gd.ypos->len <= 2)
+		if (find_table_within_bounds(ctx, &gd, *first_block, bounds))
 			break;
 
 		if (num_subtables > 0)
@@ -2678,24 +2718,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 #endif
 
 		/* Now we should have the entire table calculated. */
-		table = transcribe_table(ctx, &gd, page, parent);
-
-		tidy_orphaned_tables(ctx, page, parent);
-
-		if (table != NULL)
-		{
-			fz_stext_block *block;
-			fz_stext_grid_positions *xps2 = copy_grid_positions_to_pool(ctx, page, gd.xpos);
-			fz_stext_grid_positions *yps2 = copy_grid_positions_to_pool(ctx, page, gd.ypos);
-			block = add_grid_block(ctx, page, &table->first_block, &table->last_block);
-			block->u.b.xs = xps2;
-			block->u.b.ys = yps2;
-			block->bbox.x0 = block->u.b.xs->list[0].pos;
-			block->bbox.y0 = block->u.b.ys->list[0].pos;
-			block->bbox.x1 = block->u.b.xs->list[block->u.b.xs->len-1].pos;
-			block->bbox.y1 = block->u.b.ys->list[block->u.b.ys->len-1].pos;
-			num_subtables = 1;
-		}
+		(void)transcribe_table(ctx, &gd, page, parent);
+		num_subtables = 1;
 #ifdef DEBUG_WRITE_AS_PS
 		{
 			int i;
@@ -2725,8 +2749,6 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	}
 	fz_always(ctx)
 	{
-		fz_free(ctx, xs.list);
-		fz_free(ctx, ys.list);
 		fz_free(ctx, gd.xpos);
 		fz_free(ctx, gd.ypos);
 		fz_free(ctx, gd.cells);
@@ -2748,4 +2770,70 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 	do_table_hunt(ctx, page, NULL);
 
 	assert(verify_stext(ctx, page, NULL));
+}
+
+fz_stext_block *
+fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+{
+	fz_stext_struct *table = NULL;
+	grid_walker_data gd = { 0 };
+
+	/* No content? Just bale. */
+	if (page == NULL || page->first_block == NULL)
+		return NULL;
+
+	fz_var(gd);
+
+	fz_try(ctx)
+	{
+		if (find_table_within_bounds(ctx, &gd, page->first_block, bounds))
+			break;
+
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Transcribing table: (%g,%g)->(%g,%g)\n",
+			gd.xpos->list[0].pos,
+			gd.ypos->list[0].pos,
+			gd.xpos->list[gd.xpos->len-1].pos,
+			gd.ypos->list[gd.ypos->len-1].pos);
+#endif
+
+		/* Now we should have the entire table calculated. */
+		table = transcribe_table(ctx, &gd, page, NULL);
+#ifdef DEBUG_WRITE_AS_PS
+		{
+			int i;
+			printf("%% TABLE\n");
+			for (i = 0; i < block->u.b.xs->len; i++)
+			{
+				if (block->u.b.xs->list[i].uncertainty)
+					printf("0 1 0 setrgbcolor\n");
+				else
+					printf("0 0.5 0 setrgbcolor\n");
+				printf("%g %g moveto %g %g lineto stroke\n",
+					block->u.b.xs->list[i].pos, block->bbox.y0,
+					block->u.b.xs->list[i].pos, block->bbox.y1);
+			}
+			for (i = 0; i < block->u.b.ys->len; i++)
+			{
+				if (block->u.b.ys->list[i].uncertainty)
+					printf("0 1 0 setrgbcolor\n");
+				else
+				printf("0 0.5 0 setrgbcolor\n");
+				printf("%g %g moveto %g %g lineto stroke\n",
+					block->bbox.x0, block->u.b.ys->list[i].pos,
+					block->bbox.x1, block->u.b.ys->list[i].pos);
+			}
+		}
+#endif
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, gd.xpos);
+		fz_free(ctx, gd.ypos);
+		fz_free(ctx, gd.cells);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return table ? table->first_block : NULL;
 }
