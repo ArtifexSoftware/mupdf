@@ -99,7 +99,7 @@ typedef struct word_record_s {
 	int len;
 	fz_rect bbox;
 	int n;
-	int unicode[1];
+	int unicode[FZ_FLEXIBLE_ARRAY];
 } word_record;
 
 typedef struct fz_ocr_device_s

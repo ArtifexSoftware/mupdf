@@ -83,13 +83,13 @@ typedef struct
 	pdf_obj super;
 	char *text; /* utf8 encoded text string */
 	size_t len;
-	char buf[1];
+	char buf[FZ_FLEXIBLE_ARRAY];
 } pdf_obj_string;
 
 typedef struct
 {
 	pdf_obj super;
-	char n[1];
+	char n[FZ_FLEXIBLE_ARRAY];
 } pdf_obj_name;
 
 typedef struct

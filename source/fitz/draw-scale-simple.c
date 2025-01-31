@@ -208,7 +208,7 @@ typedef struct
 	int n;		/* number of components (src->n) */
 	int new_line;	/* True if no weights for the current output pixel */
 	int patch_l;	/* How many output pixels we skip over */
-	int index[1];
+	int index[FZ_FLEXIBLE_ARRAY];
 } fz_weights;
 
 struct fz_scale_cache

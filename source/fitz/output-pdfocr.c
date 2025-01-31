@@ -510,7 +510,7 @@ typedef struct word_t
 	float bbox[4];
 	int dirn;
 	int len;
-	int chars[1];
+	int chars[FZ_FLEXIBLE_ARRAY];
 } word_t;
 
 typedef struct

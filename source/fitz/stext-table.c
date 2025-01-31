@@ -1112,7 +1112,7 @@ typedef struct
 {
 	int w;
 	int h;
-	cell_t cell[1];
+	cell_t cell[FZ_FLEXIBLE_ARRAY];
 } cells_t;
 
 typedef struct

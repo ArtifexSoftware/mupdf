@@ -110,7 +110,7 @@ int pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_o
 typedef struct
 {
 	int len;
-	unsigned char bits[1];
+	unsigned char bits[FZ_FLEXIBLE_ARRAY];
 } pdf_mark_bits;
 
 pdf_mark_bits *pdf_new_mark_bits(fz_context *ctx, pdf_document *doc);

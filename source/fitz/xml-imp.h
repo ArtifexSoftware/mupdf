@@ -32,7 +32,7 @@ struct attribute
 {
 	char *value;
 	struct attribute *next;
-	char name[1];
+	char name[FZ_FLEXIBLE_ARRAY];
 };
 
 /**
@@ -68,7 +68,7 @@ struct fz_xml
 				struct /* down != MAGIC_TEXT */
 				{
 					struct attribute *atts;
-					char name[1];
+					char name[FZ_FLEXIBLE_ARRAY];
 				} d;
 			} u;
 		} node;

@@ -30,7 +30,7 @@ typedef struct boxer_s boxer_t;
 typedef struct {
 	int len;
 	int max;
-	fz_rect list[1];
+	fz_rect list[FZ_FLEXIBLE_ARRAY];
 } rectlist_t;
 
 struct boxer_s {

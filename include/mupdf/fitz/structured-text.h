@@ -441,7 +441,7 @@ struct fz_stext_struct
 	fz_structure standard;
 	/* Documents can use their own non-standard structure types, which
 	 * are held as 'raw' strings. */
-	char raw[1];
+	char raw[FZ_FLEXIBLE_ARRAY];
 };
 
 /* An example to show how fz_stext_blocks and fz_stext_structs interact:
@@ -482,7 +482,7 @@ struct fz_stext_struct
 		float min;
 		float max;
 		int uncertainty;
-	} list[1];
+	} list[FZ_FLEXIBLE_ARRAY];
  };
 
 FZ_DATA extern const char *fz_stext_options_usage;

@@ -3884,7 +3884,7 @@ enum {
 typedef struct
 {
 	int num_obj;
-	int obj_changes[1];
+	int obj_changes[FZ_FLEXIBLE_ARRAY];
 } pdf_changes;
 
 static int

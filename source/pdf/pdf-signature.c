@@ -132,7 +132,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 typedef struct fieldname_prefix
 {
 	struct fieldname_prefix *prev;
-	char name[1];
+	char name[FZ_FLEXIBLE_ARRAY];
 } fieldname_prefix;
 
 typedef struct

@@ -757,7 +757,7 @@ void fz_memrnd(fz_context *ctx, uint8_t *block, int len);
 typedef struct
 {
 	int refs;
-	char str[1];
+	char str[FZ_FLEXIBLE_ARRAY];
 } fz_string;
 
 /*
