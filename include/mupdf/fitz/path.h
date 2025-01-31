@@ -444,4 +444,15 @@ fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_strok
 */
 fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 
+/**
+	Check whether a given path, under the given transform
+	is an axis-aligned rectangle.
+
+	We accept zero width or height rectangles, so
+	"move 100, 100; line 200, 100" would count as
+	a rectangle too.
+*/
+int fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm);
+
+
 #endif

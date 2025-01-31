@@ -344,6 +344,12 @@ enum
 	FZ_STEXT_TEXT_JUSTIFY_FULL = 4,
 };
 
+enum
+{
+	FZ_STEXT_VECTOR_IS_STROKED = 1,
+	FZ_STEXT_VECTOR_IS_RECTANGLE = 2,
+};
+
 /**
 	A text block is a list of lines of text (typically a paragraph),
 	or an image.
@@ -356,7 +362,7 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; int flags;} t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
-		struct { uint8_t stroked; uint32_t argb; } v;
+		struct { uint32_t flags; uint32_t argb; } v;
 		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; } b;
 	} u;
 	fz_stext_block *prev, *next;

@@ -1663,3 +1663,135 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 	}
 	return new_path;
 }
+
+typedef struct
+{
+	fz_matrix ctm;
+	fz_point p[4];
+	int count;
+	int trailing_move;
+} rect_path_arg;
+
+static void
+rect_moveto(fz_context *ctx, void *arg_, float x, float y)
+{
+	rect_path_arg *arg = (rect_path_arg *)arg_;
+	fz_point p = fz_transform_point_xy(x, y, arg->ctm);
+
+	/* If we've already decided that it's not a rectangle. Just exit. */
+	if (arg->count < 0)
+		return;
+
+	/* We should never get multiple successive moves, by construction. */
+
+	/* If we're starting out... */
+	if (arg->count == 0)
+	{
+		arg->p[0] = p;
+		arg->count = 1;
+		return;
+	}
+
+	/* Otherwise, any move is fine, as long as it's not followed by another line... */
+	arg->trailing_move = 1;
+}
+
+static void
+rect_lineto(fz_context *ctx, void *arg_, float x, float y)
+{
+	rect_path_arg *arg = (rect_path_arg *)arg_;
+	fz_point p = fz_transform_point_xy(x, y, arg->ctm);
+
+	/* If we've already decided that it's not a rectangle. Just exit. */
+	if (arg->count < 0)
+		return;
+
+	if (arg->trailing_move)
+	{
+		arg->count = -1;
+		return;
+	}
+
+	/* Watch for pesky lines back to the same place. */
+	if (arg->p[arg->count-1].x == p.x && arg->p[arg->count-1].y == p.y)
+		return;
+
+	if (arg->count < 4)
+	{
+		arg->p[arg->count++] = p;
+		return;
+	}
+
+	/* Allow for lines back to the start. */
+	if (arg->count == 4)
+	{
+		if (arg->p[0].x == p.x && arg->p[0].y == p.y)
+		{
+			arg->count++;
+			return;
+		}
+	}
+
+	arg->count = -1;
+}
+
+static void
+rect_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	rect_path_arg *arg = (rect_path_arg *)arg_;
+
+	arg->count = -1;
+}
+
+static const fz_path_walker rect_path_walker =
+{
+	rect_moveto,
+	rect_lineto,
+	rect_curveto,
+	NULL
+};
+
+int
+fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm)
+{
+	rect_path_arg arg;
+
+	arg.ctm = ctm;
+	arg.trailing_move = 0;
+	arg.count = 0;
+
+	fz_walk_path(ctx, path, &rect_path_walker, &arg);
+
+	if (arg.count < 0)
+		return 0;
+
+	/* 3 entries are bad, unless the last one returns the first. */
+	if (arg.count == 3 && (arg.p[0].x != arg.p[2].x || arg.p[0].y != arg.p[2].y))
+	{
+		return 0;
+	}
+	if (arg.count == 2 || arg.count == 3)
+	{
+		if (arg.p[0].x == arg.p[1].x || arg.p[0].y == arg.p[1].y)
+			return 1;
+	}
+	/* All that's left are 4 entry ones */
+	if (arg.count != 4)
+		return 0;
+
+	if (arg.p[0].x == arg.p[1].x)
+	{
+		/* p[0]  p[3]
+		 * p[1]  p[2]
+		 */
+		return (arg.p[1].y == arg.p[2].y && arg.p[0].y == arg.p[3].y && arg.p[2].x == arg.p[3].x);
+	}
+	if (arg.p[0].y == arg.p[1].y)
+	{
+		/* p[0]  p[1]
+		 * p[3]  p[2]
+		 */
+		return (arg.p[1].x == arg.p[2].x && arg.p[0].x == arg.p[3].x && arg.p[2].y == arg.p[3].y);
+	}
+	return 0;
+}
