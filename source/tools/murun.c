@@ -3850,7 +3850,6 @@ static void ffi_OutlineIterator_item(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_outline_iterator *iter = js_touserdata(J, 0, "fz_outline_iterator");
 	fz_outline_item *item;
-	uint32_t color;
 
 	fz_try(ctx)
 		item = fz_outline_iterator_item(ctx, iter);
