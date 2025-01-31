@@ -1517,10 +1517,17 @@ where_is(fz_stext_grid_positions *pos, float x, int *in)
 	return i-1;
 }
 
+enum
+{
+	VECTOR_IS_CONTENT = 0,
+	VECTOR_IS_BORDER = 1,
+	VECTOR_IS_UNKNOWN = 2
+};
+
 /* So a vector can either be a border, or contained
  * in some cells, or something completely else. */
 static int
-classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r)
+classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r, int is_rect)
 {
 	int at_x0, at_x1, at_y0, at_y1;
 	int ix0 = where_is(gd->xpos, r.x0, &at_x0);
@@ -1530,48 +1537,48 @@ classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r)
 
 	/* No idea, just treat it as a border. */
 	if (at_x0 == IN_UNKNOWN || at_x1 == IN_UNKNOWN || at_y0 == IN_UNKNOWN || at_y1 == IN_UNKNOWN)
-		return 1; /* border */
+		return VECTOR_IS_BORDER;
 
 	if (at_x0 == IN_BORDER && at_x1 == IN_BORDER)
 	{
 		/* Vector is aligned along sides of cells. */
-		return 1; /* border */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 	if (at_y0 == IN_BORDER && at_y1 == IN_BORDER)
 	{
 		/* Vector is aligned along sides of cells. */
-		return 1; /* border */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 	if (at_x0 == IN_CELL && at_x1 == IN_CELL)
 	{
 		/* Content within a cell (or 1d range of cells). */
-		return 0; /* cell */
+		return VECTOR_IS_CONTENT;
 	}
 	if (at_y0 == IN_CELL && at_y1 == IN_CELL)
 	{
 		/* Content within a cell (or 1d range of cells). */
-		return 0; /* cell */
+		return VECTOR_IS_CONTENT;
 	}
 	if (at_x0 == IN_BORDER && at_x1 == IN_CELL && ix0 == ix1)
 	{
-		return 1; /* probably background? return as border so it gets ignored. */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 	if (at_x0 == IN_CELL && at_x1 == IN_BORDER && ix0+1 == ix1)
 	{
-		return 1; /* probably background? return as border so it gets ignored. */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 	if (at_y0 == IN_BORDER && at_y1 == IN_CELL && iy0 == iy1)
 	{
-		return 1; /* probably background? return as border so it gets ignored. */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 	if (at_y0 == IN_CELL && at_y1 == IN_BORDER && iy0+1 == iy1)
 	{
-		return 1; /* probably background? return as border so it gets ignored. */
+		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
 	}
 
 	/* unknown - take this as indication that this maybe isn't
 	 * table. */
-	return 2;
+	return VECTOR_IS_UNKNOWN;
 }
 
 #undef IN_CELL
@@ -1604,14 +1611,12 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 		}
 		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
 		{
-			switch (classify_vector(ctx, gd, block->bbox))
+			switch (classify_vector(ctx, gd, block->bbox, !!(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE)))
 			{
-			case 0:
-				/* Vector contained in cell */
+			case VECTOR_IS_CONTENT:
 				mark_cells_for_content(ctx, gd, block->bbox);
 				break;
-			case 1:
-				/* Vector looks like a border */
+			case VECTOR_IS_BORDER:
 				break;
 			default:
 				duff++;
