@@ -6,7 +6,7 @@ ifndef build
   build := release
 endif
 
-default: all
+default: apps libs
 
 include Makerules
 
@@ -365,7 +365,7 @@ MURASTER_OBJ := $(OUT)/source/tools/muraster.o
 MURASTER_EXE := $(OUT)/muraster$(EXE)
 $(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREAD_LIB)
 	$(LINK_CMD) $(EXE_LDFLAGS) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
-TOOL_APPS += $(MURASTER_EXE)
+EXTRA_TOOL_APPS += $(MURASTER_EXE)
 
 ifeq ($(HAVE_GLUT),yes)
   MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
@@ -410,7 +410,7 @@ ifeq ($(HAVE_PTHREAD),yes)
   MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/prog_stream.o
   $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
 	$(LINK_CMD) $(EXE_LDFLAGS) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS) $(CURL_LIBS) $(PTHREAD_LIBS)
-  VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
+  EXTRA_VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
 endif
 endif
 endif
@@ -476,6 +476,7 @@ libs: $(LIBS_TO_INSTALL_IN_BIN) $(LIBS_TO_INSTALL_IN_LIB) $(COMMERCIAL_LIBS)
 commercial-libs: $(COMMERCIAL_LIBS)
 tools: $(TOOL_APPS)
 apps: $(TOOL_APPS) $(VIEW_APPS)
+extra-apps: $(EXTRA_TOOL_APPS) $(EXTRA_VIEW_APPS)
 libmupdf-threads: $(THREAD_LIB)
 
 install-headers:
@@ -495,6 +496,10 @@ endif
 install-apps: apps
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(LIBS_TO_INSTALL_IN_BIN) $(TOOL_APPS) $(VIEW_APPS) $(DESTDIR)$(bindir)
+
+install-extra-apps: extra-apps
+	install -d $(DESTDIR)$(bindir)
+	install -m 755 $(LIBS_TO_INSTALL_IN_BIN) $(EXTRA_TOOL_APPS) $(EXTRA_VIEW_APPS) $(DESTDIR)$(bindir)
 
 install-docs:
 	install -d $(DESTDIR)$(mandir)/man1
@@ -568,7 +573,7 @@ cscope.files: $(shell find include source platform -name '*.[ch]')
 cscope.out: cscope.files
 	cscope -b
 
-all: libs apps
+all: libs apps extra-apps
 
 clean:
 	rm -rf $(OUT)
