@@ -917,7 +917,7 @@ pdf_write_polygon_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, 
 	struct cloud_list cloud_list;
 	float cloud = 0;
 	pdf_obj *verts, *le;
-	fz_point p, first, last;
+	fz_point p, first = {0,0}, last = {0,0};
 	int i, n;
 	float lw;
 	int sc, ic;

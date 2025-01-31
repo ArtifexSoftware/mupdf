@@ -1409,21 +1409,20 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			fz_rect r = fz_collate_small_vector_run(&block);
 			float w = r.x1 - r.x0;
 			float h = r.y1 - r.y0;
-			int failed;
 			if (w > h && h < 2)
 			{
 				/* Thin, wide line */
-				failed = add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+				(void) add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 			else if (w < h && w < 2)
 			{
 				/* Thin, wide line */
-				failed = add_v_line(ctx, gd, r.y0, r.y1, r.x0, r.x1);
+				(void) add_v_line(ctx, gd, r.y0, r.y1, r.x0, r.x1);
 			}
 			else
 			{
 				/* Rectangle */
-				failed = add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+				(void) add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 		}
 	}
