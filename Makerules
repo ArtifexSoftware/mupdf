@@ -280,7 +280,9 @@ else ifeq ($(LINUX_OR_OPENBSD),yes)
     endif
   endif
 
-  HAVE_X11 := $(shell pkg-config --exists x11 xext && echo yes)
+  ifeq ($(HAVE_X11),)
+    HAVE_X11 := $(shell pkg-config --exists x11 xext && echo yes)
+  endif
   ifeq ($(HAVE_X11),yes)
 	X11_CFLAGS := $(shell pkg-config --cflags x11 xext)
 	X11_LIBS := $(shell pkg-config --libs x11 xext)
