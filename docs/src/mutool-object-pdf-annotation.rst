@@ -796,7 +796,7 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
     .. note::
 
-        Setting a value of `0` effectivley removes the line leader.
+        Setting a value of `0` effectively removes the line leader.
 
 
 .. method:: getLineLeader()
@@ -818,7 +818,7 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
     .. note::
 
-        Setting a value of `0` effectivley removes the line leader extension.
+        Setting a value of `0` effectively removes the line leader extension.
 
 .. method:: getLineLeaderExtension()
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -3392,7 +3392,7 @@ pdf_signature_appearance_unsigned(fz_context *ctx, fz_rect rect, fz_text_languag
 		font = fz_new_base14_font(ctx, "Helvetica");
 
 		path = fz_new_path(ctx);
-		/* Draw a rectangle with a protusion to the right [xxxxx> */
+		/* Draw a rectangle with a protrusion to the right [xxxxx> */
 		fz_moveto(ctx, path, rect.x0, rect.y0);
 		fz_lineto(ctx, path, rect.x1, rect.y0);
 		fz_lineto(ctx, path, rect.x1 + (rect.y1 - rect.y0) / 2.0f, (rect.y0 + rect.y1) / 2.0f);

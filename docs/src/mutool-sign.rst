@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. default-domain:: js
@@ -104,7 +104,7 @@ Once you know the object number of an unsigned signature field, then do the foll
 
 .. code-block:: bash
 
-   mutool sign -s certificate.pfx -P pasword123 -o signed.pdf unsigned.pdf 4242
+   mutool sign -s certificate.pfx -P password123 -o signed.pdf unsigned.pdf 4242
 
 This assumes that object `4242 0 R` is the signature field. Re-running `sign -v` on `signed.pdf` should then show that the signature was signed.
 

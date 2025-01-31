@@ -1773,7 +1773,7 @@ score_by_area(const hough_point_t *points, const hough_route_t *route)
 	return (double_area_of_quad*4)/double_area;
 }
 
-/* The first n+1 edges of the route are filled in, as are rhe first n
+/* The first n+1 edges of the route are filled in, as are the first n
  * points.
  * 2*i   = edge number
  * 2*i+1 = point number

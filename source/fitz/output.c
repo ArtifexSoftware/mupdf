@@ -252,7 +252,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 
 	/* If <append> is false, we use fopen()'s 'x' flag to force an error if
 	 * some other process creates the file immediately after we have removed
-	 * it - this avoids vlunerability where a less-privilege process can create
+	 * it - this avoids vulnerability where a less-privilege process can create
 	 * a link and get us to overwrite a different file. See:
 	 * 	https://bugs.ghostscript.com/show_bug.cgi?id=701797
 	 * 	http://www.open-std.org/jtc1/sc22//WG14/www/docs/n1339.pdf

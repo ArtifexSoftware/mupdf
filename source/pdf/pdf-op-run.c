@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1803,7 +1803,7 @@ get_struct_index(fz_context *ctx, pdf_obj *send)
 	int i, n;
 
 	if (p == NULL)
-		return 0; /* Presumably the StructTreeToot */
+		return 0; /* Presumably the StructTreeRoot */
 
 	/* So, get the kids array. */
 	k = pdf_dict_get(ctx, p, PDF_NAME(K));

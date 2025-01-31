@@ -252,7 +252,7 @@
  *
  *	So, instead of just looking for points where the trace
  *	drops to zero, we instead look for local minima. Each local
- *	minima represents a place where there might be a grid dividier.
+ *	minima represents a place where there might be a grid divider.
  *	The value of wind at such points can be considered the
  *	"uncertainty" with which there might be a divider there.
  *	Clear dividers (with a wind value of 0) have no uncertainty.

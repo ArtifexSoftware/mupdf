@@ -938,7 +938,7 @@ pdf_obj *pdf_add_embedded_file(fz_context *ctx, pdf_document *doc, const char *f
 
 /*
 	Obtain parameters for a filespec: name, size,
-	creation and modification dates cnad MIME type.
+	creation and modification dates and MIME type.
 */
 void pdf_get_filespec_params(fz_context *ctx, pdf_obj *fs, pdf_filespec_params *out);
 
@@ -955,7 +955,7 @@ fz_buffer *pdf_load_embedded_file_contents(fz_context *ctx, pdf_obj *fs);
 
 /*
 	Verifies the embedded file checksum. Returns 1
-	if the verifiction is successful or there is no
+	if the verification is successful or there is no
 	checksum to be verified, or 0 if verification fails.
 */
 int pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs);

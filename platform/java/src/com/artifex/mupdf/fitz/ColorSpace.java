@@ -57,7 +57,6 @@ public class ColorSpace
 	public static ColorSpace DeviceRGB = new ColorSpace(nativeDeviceRGB());
 	public static ColorSpace DeviceBGR = new ColorSpace(nativeDeviceBGR());
 	public static ColorSpace DeviceCMYK = new ColorSpace(nativeDeviceCMYK());
-
 	public native int getNumberOfComponents();
 
 	public String toString() {

@@ -2016,7 +2016,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 	fz_rect path_bounds = fz_bound_path(ctx, path, NULL, ctm);
 	fz_rect *bounds = actualtext_bounds(tdev);
 
-	/* If we're in an actualttext, then update the bounds to include this content. */
+	/* If we're in an actualtext, then update the bounds to include this content. */
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
@@ -2035,7 +2035,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 	fz_rect path_bounds = fz_bound_path(ctx, path, ss, ctm);
 	fz_rect *bounds = actualtext_bounds((fz_stext_device *)dev);
 
-	/* If we're in an actualttext, then update the bounds to include this content. */
+	/* If we're in an actualtext, then update the bounds to include this content. */
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 

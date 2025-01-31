@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -167,7 +167,7 @@ FUN(PDFPage_getWidgets)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	/* no widgegts, return NULL instead of empty array */
+	/* no widgets, return NULL instead of empty array */
 	if (count == 0)
 		return NULL;
 

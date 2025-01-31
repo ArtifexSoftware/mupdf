@@ -205,7 +205,7 @@ pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr);
 /*
 	Get a pdf_document handle from an fz_document handle.
 
-	This is superfically similar to pdf_document_from_fz_document
+	This is superficially similar to pdf_document_from_fz_document
 	(and the older pdf_specifics).
 
 	For fz_documents that are actually pdf_documents, this will return

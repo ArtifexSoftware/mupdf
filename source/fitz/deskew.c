@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -125,7 +125,7 @@
  *
  * Let us now consider the output position of each of the corners of
  * our src_w * src_h input rectangle under this transformation. For
- * simplity of notation, let's call these just 'w' and 'h'.
+ * simplicity of notation, let's call these just 'w' and 'h'.
  *
  * We know that by the properties of 2x2 matrices, (0, 0) maps to
  * (0, 0) and (w, h) maps the the sum of where (w,0) (0,h) map to,
