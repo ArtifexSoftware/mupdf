@@ -422,7 +422,7 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 			ocr->words = fz_realloc_array(ctx, ocr->words, new_max, word_record *);
 			ocr->words_max = new_max;
 		}
-		word = (word_record *)Memento_label(fz_malloc(ctx, sizeof(word_record) + sizeof(int) * (ocr->char_len-1)), "word_record");
+		word = fz_malloc_flexible(ctx, word_record, unicode, ocr->char_len);
 		word->len = ocr->char_len;
 		word->bbox = ocr->word_bbox;
 		word->n = 0;

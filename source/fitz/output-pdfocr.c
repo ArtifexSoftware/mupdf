@@ -689,7 +689,7 @@ queue_word(fz_context *ctx, char_callback_data_t *cb)
 	if (cb->word_len == 0)
 		return;
 
-	word = fz_malloc(ctx, sizeof(*word) + (cb->word_len-1)*sizeof(int));
+	word = fz_malloc_flexible(ctx, word_t, chars, cb->word_len);
 	word->next = NULL;
 	word->len = cb->word_len;
 	memcpy(word->bbox, cb->word_bbox, 4*sizeof(float));

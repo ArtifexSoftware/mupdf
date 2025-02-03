@@ -4776,7 +4776,7 @@ validate_locked_fields(fz_context *ctx, pdf_document *doc, int version, pdf_lock
 	int all_indirects = 1;
 
 	num_objs = doc->max_xref_len;
-	changes = Memento_label(fz_calloc(ctx, 1, sizeof(*changes) + sizeof(int)*(num_objs-1)), "pdf_changes");
+	changes = fz_malloc_flexible(ctx, pdf_changes, obj_changes, num_objs);
 	changes->num_obj = num_objs;
 
 	fz_try(ctx)

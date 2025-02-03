@@ -680,7 +680,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	}
 	assert(!xs->list[i-1].left);
 
-	pos = fz_calloc(ctx, 1, sizeof(*pos) + (edges-1) * sizeof(pos->list[0]));
+	pos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, edges);
 	pos->len = edges;
 
 	/* Copy the edges in */
@@ -740,11 +740,9 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 static fz_stext_grid_positions *
 copy_grid_positions_to_pool(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xs)
 {
-	size_t z = sizeof(*xs) + (xs->len-1) * sizeof(xs->list[0]);
+	size_t z = offsetof(fz_stext_grid_positions, list) + (xs->len) * sizeof(xs->list[0]);
 	fz_stext_grid_positions *xs2 = fz_pool_alloc(ctx, page->pool, z);
-
 	memcpy(xs2, xs, z);
-
 	return xs2;
 }
 
@@ -1203,8 +1201,8 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float at)
 	cells_t *cells;
 
 	/* Realloc the required structs */
-	*posp = pos = fz_realloc(ctx, pos, sizeof(*pos) + n * sizeof(pos->list[0]));
-	cells = gd->cells = fz_realloc(ctx, gd->cells, sizeof(*gd->cells) + sizeof(gd->cells->cell[0]) * ((gd->cells->w + (1-row)) * (gd->cells->h + row) - 1));
+	*posp = pos = fz_realloc_flexible(ctx, pos, fz_stext_grid_positions, list, n);
+	cells = gd->cells = fz_realloc_flexible(ctx, gd->cells, cells_t, cell, gd->cells->w + (1-row) * (gd->cells->h + row));
 	/* If both pass, then we're safe to shuffle the data. */
 
 	/* First, expand the grid pos. */
@@ -1676,7 +1674,7 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 
 static cells_t *new_cells(fz_context *ctx, int w, int h)
 {
-	cells_t *cells = fz_calloc(ctx, 1, sizeof(cells_t) + sizeof(cells->cell[0]) * (w * h - 1));
+	cells_t *cells = fz_malloc_flexible(ctx, cells_t, cell, w * h);
 	cells->w = w;
 	cells->h = h;
 

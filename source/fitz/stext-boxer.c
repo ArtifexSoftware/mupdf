@@ -55,7 +55,7 @@ static int fz_rect_contains_rect(fz_rect a, fz_rect b)
 static rectlist_t *
 rectlist_create(fz_context *ctx, int max)
 {
-	rectlist_t *list = fz_malloc(ctx, sizeof(rectlist_t) + sizeof(fz_rect)*(max-1));
+	rectlist_t *list = fz_malloc_flexible(ctx, rectlist_t, list, max);
 
 	list->len = 0;
 	list->max = max;
@@ -491,7 +491,7 @@ new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, fz
 		raw = "";
 	z = strlen(raw);
 
-	str = fz_pool_alloc(ctx, page->pool, sizeof(*str) + z);
+	str = fz_pool_alloc(ctx, page->pool, offsetof(fz_stext_struct, raw) + z + 1);
 	str->first_block = NULL;
 	str->last_block = NULL;
 	str->standard = standard;

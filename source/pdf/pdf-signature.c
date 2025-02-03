@@ -165,7 +165,7 @@ check_field_locking(fz_context *ctx, pdf_obj *obj, void *data_, pdf_obj **ff)
 			n += 1;
 		if (data->prefix->name[0])
 			n += strlen(data->prefix->name);
-		prefix = fz_calloc(ctx, 1, sizeof(*prefix)+n);
+		prefix = fz_malloc_flexible(ctx, fieldname_prefix, name, n);
 		prefix->prev = data->prefix;
 		if (data->prefix->name[0])
 			strcpy(prefix->name, data->prefix->name);
