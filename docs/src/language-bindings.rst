@@ -1317,6 +1317,9 @@ functions and class methods.]
         must end with one of 'efg' otherwise we throw an exception. */
         std::string fz_format_double(fz_context* ctx, const char* fmt, double value);
 
+        /** SWIG-friendly wrapper for pdf_set_annot_callout_line(). */
+        void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout);
+
 
 Python/C# bindings details
 ---------------------------------------------------------------
