@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1221,7 +1221,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 			return 0;
 		}
-		return 1;
+		break;
 
 	/* unicode encoded chars, including escape, backspace etc... */
 	case WM_CHAR:
