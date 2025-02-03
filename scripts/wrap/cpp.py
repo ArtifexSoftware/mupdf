@@ -1106,6 +1106,9 @@ g_extra_declarations = textwrap.dedent(f'''
 
         /** SWIG-friendly wrapper for fz_enumerate_font_cmap(). */
         std::vector<fz_font_ucs_gid> fz_enumerate_font_cmap2(fz_context* ctx, fz_font* font);
+
+        /** SWIG-friendly wrapper for pdf_set_annot_callout_line(). */
+        void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1340,6 +1343,11 @@ g_extra_definitions = textwrap.dedent(f'''
             std::vector<fz_font_ucs_gid> ret;
             fz_enumerate_font_cmap(ctx, font, fz_enumerate_font_cmap2_cb, &ret);
             return ret;
+        }}
+
+        void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout)
+        {{
+            pdf_set_annot_callout_line(ctx, annot, &callout[0], callout.size());
         }}
         ''')
 
