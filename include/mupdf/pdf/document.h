@@ -495,8 +495,6 @@ struct pdf_document
 	int hint_obj_offsets_max;
 	int64_t *hint_obj_offsets;
 
-	int resources_localised;
-
 	pdf_lexbuf_large lexbuf;
 
 	pdf_js *js;
