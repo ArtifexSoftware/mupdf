@@ -579,29 +579,31 @@ def build_swig(
                     int n
                     )
             {{
+                #define PDF_NAME2(X) {rename.namespace_class('pdf_obj')}(PDF_NAME(X))
                 for ( int i=0; i<n; ++i)
                 {{
                     {rename.namespace_class('pdf_obj')} o = {rename.namespace_fn('pdf_array_get')}( old_annots, i);
                     if ({rename.namespace_fn('pdf_dict_gets')}( o, "IRT").m_internal)
                         continue;
-                    {rename.namespace_class('pdf_obj')} subtype = {rename.namespace_fn('pdf_dict_get')}( o, PDF_NAME(Subtype));
-                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME(Link)))
+                    {rename.namespace_class('pdf_obj')} subtype = {rename.namespace_fn('pdf_dict_get')}( o, PDF_NAME2(Subtype));
+                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME2(Link)))
                         continue;
-                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME(Popup)))
+                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME2(Popup)))
                         continue;
-                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME(Widget)))
+                    if ( {rename.namespace_fn('pdf_name_eq')}( subtype, PDF_NAME2(Widget)))
                     {{
                         /* fixme: C++ API doesn't yet wrap fz_warn() - it
                         excludes all variadic fns. */
                         //mupdf::fz_warn( "skipping widget annotation");
                         continue;
                     }}
-                    {rename.namespace_fn('pdf_dict_del')}( o, PDF_NAME(Popup));
-                    {rename.namespace_fn('pdf_dict_del')}( o, PDF_NAME(P));
+                    {rename.namespace_fn('pdf_dict_del')}( o, PDF_NAME2(Popup));
+                    {rename.namespace_fn('pdf_dict_del')}( o, PDF_NAME2(P));
                     {rename.namespace_class('pdf_obj')} copy_o = {rename.namespace_fn('pdf_graft_mapped_object')}( graft_map, o);
                     {rename.namespace_class('pdf_obj')} annot = {rename.namespace_fn('pdf_new_indirect')}( doc_des, {rename.namespace_fn('pdf_to_num')}( copy_o), 0);
                     {rename.namespace_fn('pdf_array_push')}( new_annots, annot);
                 }}
+                #undef PDF_NAME2
             }}
             ''')
 

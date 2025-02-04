@@ -2837,7 +2837,7 @@ def main2():
                             f'convert -o zlib.3.pdf-%d.png {zlib_pdf}',
                             f'draw -o zlib.3.pdf-%d.png -s tmf -v -y l -w 150 -R 30 -h 200 {zlib_pdf}',
                             f'draw -o zlib.png -R 10 {zlib_pdf}',
-                            f'clean -gggg -l {zlib_pdf} zlib.clean.pdf',
+                            f'clean -gggg {zlib_pdf} zlib.clean.pdf',
                             ):
                         command = f'{command_prefix} {mutool_py} {args2}'
                         jlib.log( 'running: {command}')

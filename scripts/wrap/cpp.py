@@ -2269,7 +2269,7 @@ def class_add_iterator( tu, struct_cursor, struct_name, classname, extras, refch
             classes.ExtraMethod( f'{classname}Iterator', 'end()',
                     f'''
                     {{
-                        auto ret = {classname}Iterator(NULL);
+                        auto ret = {classname}Iterator({it_type}());
                         {refcheck_if}
                         #if {check_refs}
                         if (s_check_refs)
@@ -3490,10 +3490,21 @@ def class_raw_constructor(
         constructor_decl = f'{classname}(::{struct_name}* internal)'
     out_h.write( '\n')
     out_h.write( f'    {comment}\n')
+    explicit = ''
+    if parse.has_refs( tu, struct_cursor.type):
+        # Don't allow implicit construction from low-level struct, because our
+        # destructor will drop it without a prior balancing keep.
+        explicit = f'explicit '
+        out_h.write(
+                f'    /* This constructor is marked as `explicit` because wrapper classes do not\n'
+                f'    call `keep`in constructors, but do call `drop` in destructors. So\n'
+                f'    automatic construction from a {struct_name}* will generally cause an\n'
+                f'    unbalanced `drop` resulting in errors such as SEGV. */\n'
+                )
     if extras.constructor_raw == 'default':
-        out_h.write( f'    FZ_FUNCTION {classname}(::{struct_name}* internal=NULL);\n')
+        out_h.write( f'    FZ_FUNCTION {explicit}{classname}(::{struct_name}* internal=NULL);\n')
     else:
-        out_h.write( f'    FZ_FUNCTION {constructor_decl};\n')
+        out_h.write( f'    FZ_FUNCTION {explicit}{constructor_decl};\n')
 
     if extras.constructor_raw != 'declaration_only':
         out_cpp.write( f'FZ_FUNCTION {classname}::{constructor_decl}\n')
@@ -3681,10 +3692,12 @@ def class_accessors(
         out_cpp.write( '{\n')
         if keep_function:
             out_cpp.write( f'    {rename.ll_fn(keep_function)}(m_internal->{cursor.spelling});\n')
-        if extras.pod:
-            out_cpp.write( f'    return m_internal.{cursor.spelling};\n')
+            out_cpp.write( f'    return ({classname2}) m_internal->{cursor.spelling};\n')
         else:
-            out_cpp.write( f'    return m_internal->{cursor.spelling};\n')
+            if extras.pod:
+                out_cpp.write( f'    return m_internal.{cursor.spelling};\n')
+            else:
+                out_cpp.write( f'    return m_internal->{cursor.spelling};\n')
         out_cpp.write( '}\n')
         out_cpp.write( '\n')
     assert n, f'No fields found for {struct_cursor.spelling}.'
