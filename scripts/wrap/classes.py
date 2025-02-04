@@ -1515,7 +1515,7 @@ classextras = ClassExtras(
                             if (m_internal->type != FZ_STEXT_BLOCK_IMAGE) {{
                                 throw std::runtime_error("Not an image");
                             }}
-                            return {rename.ll_fn('fz_keep_image')}(m_internal->u.i.image);
+                            return {rename.class_("fz_image")}({rename.ll_fn('fz_keep_image')}(m_internal->u.i.image));
                         }}
                         ''',
                         comment=f'/* Returns m_internal.u.i.image if m_internal->type is FZ_STEXT_BLOCK_IMAGE, else throws. */',
