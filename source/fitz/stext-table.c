@@ -2553,8 +2553,8 @@ merge_row(grid_walker_data *gd, int y)
 	{
 		if (d->full == 0)
 			d->full = d[w].full;
-		if (d->h_crossed == 0)
-			d->h_crossed = d[w].h_crossed;
+		if (d->v_crossed == 0)
+			d->v_crossed = d[w].v_crossed;
 		d++;
 	}
 	if (y < gd->cells->h - 2)
@@ -2589,13 +2589,13 @@ merge_rows(grid_walker_data *gd)
 			cell_t *b = get_cell(gd->cells, x, y+1);
 			/* If there is a divider, we can't merge. */
 			if (b->h_line)
-				break;
+				goto cant_merge;
 			/* If either is empty, we can merge. */
 			if (!a->full || !b->full)
 				continue;
 			/* If we differ in v linedness, we can't merge */
 			if (!!a->v_line != !!b->v_line)
-				break;
+				goto cant_merge;
 			/* If both are full, we can only merge if we cross. */
 			if (a->full && b->full && b->h_crossed)
 				continue;
@@ -2612,7 +2612,41 @@ merge_rows(grid_walker_data *gd)
 #ifdef DEBUG_TABLE_STRUCTURE
 			asciiart_table(gd);
 #endif
+			continue;
 		}
+
+		/* OK, so we failed to be able to merge y and y+1. But if we get here, we
+		 * know this wasn't because of any lines being in the way. So we can try
+		 * a different set of criteria. If every non-empty cell in line y+1 is either
+		 * into from line y, or crosses into line y+2, then it's probably a 'straddling'
+		 * line. Just remove it. */
+		if (y+2 >= gd->cells->h)
+			continue;
+		for (x = 0; x < gd->cells->w-1; x++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x, y+1);
+			cell_t *c = get_cell(gd->cells, x, y+2);
+			if (!b->full)
+				continue;
+			if (!b->h_crossed && !c->h_crossed)
+				break;
+		}
+		if (x == gd->cells->w-1)
+		{
+			/* Merge the row! */
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Merging row %d (case 2)\n", y);
+#endif
+			merge_row(gd, y);
+#ifdef DEBUG_TABLE_STRUCTURE
+			asciiart_table(gd);
+#endif
+		}
+
+
+cant_merge:
+		{}
 	}
 }
 
