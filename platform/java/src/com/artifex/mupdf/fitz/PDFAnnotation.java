@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -342,6 +342,8 @@ public class PDFAnnotation
 	public native void eventFocus();
 	public native void eventBlur();
 
+	public native void requestSynthesis();
+	public native void requestResynthesis();
 	public native boolean update();
 
 	public native PDFObject getObject();
