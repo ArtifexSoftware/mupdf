@@ -346,6 +346,9 @@ public class PDFAnnotation
 	public native void requestResynthesis();
 	public native boolean update();
 
+	public native boolean getHot();
+	public native void setHot(boolean hot);
+
 	public native PDFObject getObject();
 
 	/* See PDFDocument.LANGUAGE_* */

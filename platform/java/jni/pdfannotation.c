@@ -2038,3 +2038,34 @@ FUN(PDFAnnotation_requestResynthesis)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_getHot)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jboolean hot = JNI_FALSE;
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		hot = pdf_annot_hot(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+
+	return hot;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setHot)(JNIEnv *env, jobject self, jboolean hot)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_hot(ctx, annot, hot);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
