@@ -664,6 +664,12 @@ loop:
 		}
 	}
 
+	/* Some Fax streams appear to give up at the end. We could detect for this
+	 * with this:
+	 * if (fax->a >= fax->columns && fax->rows == fax->ridx+1)
+	 * 	goto eol;
+	 */
+
 	/* no eol check after makeup codes nor in the middle of an H code */
 	if (fax->stage == STATE_MAKEUP || fax->stage == STATE_H1 || fax->stage == STATE_H2)
 		goto loop;
@@ -728,14 +734,14 @@ eol:
 			fax->dim = 2;
 	}
 
-	/* if end_of_line & encoded_byte_align, EOLs are *not* optional */
-	if (fax->encoded_byte_align)
-	{
-		if (fax->end_of_line)
-			eat_bits(fax, (12 - fax->bidx) & 7);
-		else
-			eat_bits(fax, (8 - fax->bidx) & 7);
-	}
+	/* If end_of_line & encoded_byte_align - we don't know what to do here.
+	 * GS doesn't offer us any hints either. Previously, we used to do:
+	 *      eat_bits(fax, (12 - fax->bidx) & 7);
+	 * but we can't understand what we were trying to do, and it fails with
+	 * at least one file. Removing it doesn't harm anything in the cluster,
+	 * and brings us into line with gs. */
+	if (fax->encoded_byte_align && !fax->end_of_line)
+		eat_bits(fax, (8 - fax->bidx) & 7);
 
 	/* no more space in output, don't decode the next row yet */
 	if (p == fax->buffer + max)
