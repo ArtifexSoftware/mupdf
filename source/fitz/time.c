@@ -34,7 +34,7 @@
 
 #ifndef _WINRT
 
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
+#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 
 int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
