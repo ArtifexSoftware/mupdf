@@ -1420,6 +1420,11 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc)
 
 		size = pdf_to_int(ctx, obj);
 
+		/* Bug708176: If the PDF file producer has declared Size without
+		 * including this object, then increment it. */
+		if (size == num)
+			pdf_dict_put_int(ctx, trailer, PDF_NAME(Size), size+1);
+
 		obj = pdf_dict_get(ctx, trailer, PDF_NAME(W));
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "xref stream missing W entry (%d  R)", num);
