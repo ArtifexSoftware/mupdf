@@ -304,4 +304,6 @@ public class PDFDocument extends Document
 
 	public native Image loadImage(PDFObject imgobj);
 	public native PDFObject lookupDest(PDFObject destination);
+
+	public native void subsetFonts();
 }

@@ -7476,6 +7476,15 @@ static void ffi_PDFDocument_saveJournal(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_subsetFonts(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_subset_fonts(ctx, pdf, 0, NULL);
+	fz_catch(ctx)
+		rethrow(J);
+}
 
 static void ffi_PDFDocument_setPageLabels(js_State *J)
 {
@@ -11345,6 +11354,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.undo", ffi_PDFDocument_undo, 0);
 		jsB_propfun(J, "PDFDocument.redo", ffi_PDFDocument_redo, 0);
 		jsB_propfun(J, "PDFDocument.saveJournal", ffi_PDFDocument_saveJournal, 1);
+
+		jsB_propfun(J, "PDFDocument.subsetFonts", ffi_PDFDocument_subsetFonts, 0);
 
 		jsB_propfun(J, "PDFDocument.setPageLabels", ffi_PDFDocument_setPageLabels, 4);
 		jsB_propfun(J, "PDFDocument.deletePageLabels", ffi_PDFDocument_deletePageLabels, 1);

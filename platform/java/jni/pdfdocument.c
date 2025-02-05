@@ -2003,3 +2003,15 @@ FUN(PDFDocument_getLayerName)(JNIEnv *env, jobject self, jint layer)
 
 	return (*env)->NewStringUTF(env, name);
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFDocument_subsetFonts)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+
+	fz_try(ctx)
+		pdf_subset_fonts(ctx, doc, 0, NULL);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

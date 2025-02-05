@@ -130,6 +130,18 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
         pdfDocument.save("fewer_pages.pdf", "garbage");
 
 
+.. method:: subsetFonts()
+
+    |mutool_tag|
+
+    Scan the document and establish which glyphs are used from each font, next rewrite the font files such that they only contain the used glyphs. By removing unused glyphs the size of the font files inside the PDF will be reduced.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfDocument.subsetFonts();
+
 
 .. method:: save(fileName, options)
 
