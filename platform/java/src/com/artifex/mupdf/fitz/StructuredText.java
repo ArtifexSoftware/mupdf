@@ -51,6 +51,9 @@ public class StructuredText
 	public native Quad snapSelection(Point a, Point b, int mode);
 	public native String copy(Point a, Point b);
 
+	public final static int VECTOR_IS_STROKED = 1;
+	public final static int VECTOR_IS_RECTANGLE = 2;
+
 	public native void walk(StructuredTextWalker walker);
 
 	public TextBlock[] getBlocks() {
@@ -112,6 +115,9 @@ public class StructuredText
 		}
 
 		public void endStruct() {
+		}
+
+		public void onVector(Rect bbox, VectorInfo info, int argb) {
 		}
 
 		TextBlock[] getBlocks() {

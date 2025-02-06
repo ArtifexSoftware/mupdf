@@ -32,4 +32,10 @@ public interface StructuredTextWalker
 	void onChar(int c, Point origin, Font font, float size, Quad q);
 	void beginStruct(String standard, String raw, int index);
 	void endStruct();
+	void onVector(Rect bbox, VectorInfo info, int argb);
+
+	public static class VectorInfo {
+		public boolean isStroked;
+		public boolean isRectangle;
+	}
 }

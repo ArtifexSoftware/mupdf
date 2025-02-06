@@ -155,6 +155,7 @@ static jclass cls_String;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
 static jclass cls_StructuredTextWalker;
+static jclass cls_StructuredTextWalker_VectorInfo;
 static jclass cls_Text;
 static jclass cls_TextBlock;
 static jclass cls_TextChar;
@@ -255,6 +256,8 @@ static jfieldID fid_Rect_y1;
 static jfieldID fid_Shade_pointer;
 static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
+static jfieldID fid_StructuredTextWalker_VectorInfo_isRectangle;
+static jfieldID fid_StructuredTextWalker_VectorInfo_isStroked;
 static jfieldID fid_TextBlock_bbox;
 static jfieldID fid_TextBlock_lines;
 static jfieldID fid_TextChar_c;
@@ -383,6 +386,8 @@ static jmethodID mid_StructuredTextWalker_endStruct;
 static jmethodID mid_StructuredTextWalker_endTextBlock;
 static jmethodID mid_StructuredTextWalker_onChar;
 static jmethodID mid_StructuredTextWalker_onImageBlock;
+static jmethodID mid_StructuredTextWalker_onVector;
+static jmethodID mid_StructuredTextWalker_VectorInfo_init;
 static jmethodID mid_StructuredText_init;
 static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
@@ -700,6 +705,9 @@ static int check_enums()
 
 	valid &= com_artifex_mupdf_fitz_OutlineIterator_FLAG_BOLD == FZ_OUTLINE_FLAG_BOLD;
 	valid &= com_artifex_mupdf_fitz_OutlineIterator_FLAG_ITALIC == FZ_OUTLINE_FLAG_ITALIC;
+
+	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED == FZ_STEXT_VECTOR_IS_STROKED;
+	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE == FZ_STEXT_VECTOR_IS_RECTANGLE;
 
 	return valid ? 1 : 0;
 }
@@ -1261,6 +1269,12 @@ static int find_fids(JNIEnv *env)
 	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;IL"PKG"Point;)V");
 	mid_StructuredTextWalker_endLine = get_method(&err, env, "endLine", "()V");
 	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;)V");
+	mid_StructuredTextWalker_onVector = get_method(&err, env, "onVector", "(L"PKG"Rect;L"PKG"StructuredTextWalker$VectorInfo;I)V");
+
+	cls_StructuredTextWalker_VectorInfo = get_class(&err, env, PKG"StructuredTextWalker$VectorInfo");
+	fid_StructuredTextWalker_VectorInfo_isRectangle = get_field(&err, env, "isRectangle", "Z");
+	fid_StructuredTextWalker_VectorInfo_isStroked = get_field(&err, env, "isStroked", "Z");
+	mid_StructuredTextWalker_VectorInfo_init = get_method(&err, env, "<init>", "()V");
 
 	cls_Text = get_class(&err, env, PKG"Text");
 	fid_Text_pointer = get_field(&err, env, "pointer", "J");
@@ -1440,6 +1454,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
 	(*env)->DeleteGlobalRef(env, cls_StructuredTextWalker);
+	(*env)->DeleteGlobalRef(env, cls_StructuredTextWalker_VectorInfo);
 	(*env)->DeleteGlobalRef(env, cls_Text);
 	(*env)->DeleteGlobalRef(env, cls_TextBlock);
 	(*env)->DeleteGlobalRef(env, cls_TextChar);

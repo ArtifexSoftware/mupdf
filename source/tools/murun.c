@@ -807,6 +807,14 @@ static void ffi_pushcolor(js_State *J, fz_colorspace *colorspace, const float *c
 	js_pushnumber(J, alpha);
 }
 
+static void ffi_pushargb(js_State *J, int argb)
+{
+	fz_context *ctx = js_getcontext(J);
+	char *color = fz_asprintf(ctx, "#%08x", argb);
+	js_pushstring(J, color);
+	fz_free(ctx, color);
+}
+
 static struct color ffi_tocolor(js_State *J, int idx)
 {
 	struct color c;
@@ -5676,6 +5684,21 @@ stext_walk(js_State *J, fz_stext_block *block)
 					js_call(J, 0);
 					js_pop(J, 1);
 				}
+			}
+			break;
+		case FZ_STEXT_BLOCK_VECTOR:
+			if (js_hasproperty(J, 1, "onVector"))
+			{
+				js_pushnull(J);
+				ffi_pushrect(J, block->bbox);
+				js_newobject(J);
+				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
+				js_setproperty(J, -2, "isStroked");
+				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE);
+				js_setproperty(J, -2, "isRectangle");
+				ffi_pushargb(J, block->u.v.argb);
+				js_call(J, 4);
+				js_pop(J, 1);
 			}
 			break;
 		}

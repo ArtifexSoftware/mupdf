@@ -145,6 +145,7 @@ java_stext_walk(JNIEnv *env, fz_context *ctx, jobject walker, fz_stext_block *bl
 	jobject jorigin = NULL;
 	jobject jfont = NULL;
 	jobject jquad = NULL;
+	jobject jvecinfo = NULL;
 
 	if (block == NULL)
 		return; /* structured text has no blocks to walk */
@@ -239,6 +240,20 @@ java_stext_walk(JNIEnv *env, fz_context *ctx, jobject walker, fz_stext_block *bl
 
 			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_endStruct);
 			if ((*env)->ExceptionCheck(env)) return;
+		}
+		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
+		{
+			jbbox = to_Rect_safe(ctx, env, block->bbox);
+			if (!jbbox) return;
+
+			jvecinfo = to_VectorInfo_safe(ctx, env, block->u.v.flags);
+			if (!jvecinfo) return;
+
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_onVector, jbbox, jvecinfo, block->u.v.argb);
+			if ((*env)->ExceptionCheck(env)) return;
+
+			(*env)->DeleteLocalRef(env, jvecinfo);
+			(*env)->DeleteLocalRef(env, jbbox);
 		}
 	}
 }

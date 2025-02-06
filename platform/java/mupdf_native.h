@@ -6479,6 +6479,10 @@ extern "C" {
 #define com_artifex_mupdf_fitz_StructuredText_SELECT_WORDS 1L
 #undef com_artifex_mupdf_fitz_StructuredText_SELECT_LINES
 #define com_artifex_mupdf_fitz_StructuredText_SELECT_LINES 2L
+#undef com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED
+#define com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED 1L
+#undef com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE
+#define com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE 2L
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    finalize
