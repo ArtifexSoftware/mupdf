@@ -376,8 +376,10 @@ static jmethodID mid_SeekableStream_seek;
 static jmethodID mid_Shade_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredTextWalker_beginLine;
+static jmethodID mid_StructuredTextWalker_beginStruct;
 static jmethodID mid_StructuredTextWalker_beginTextBlock;
 static jmethodID mid_StructuredTextWalker_endLine;
+static jmethodID mid_StructuredTextWalker_endStruct;
 static jmethodID mid_StructuredTextWalker_endTextBlock;
 static jmethodID mid_StructuredTextWalker_onChar;
 static jmethodID mid_StructuredTextWalker_onImageBlock;
@@ -1252,7 +1254,9 @@ static int find_fids(JNIEnv *env)
 
 	cls_StructuredTextWalker = get_class(&err, env, PKG"StructuredTextWalker");
 	mid_StructuredTextWalker_onImageBlock = get_method(&err, env, "onImageBlock", "(L"PKG"Rect;L"PKG"Matrix;L"PKG"Image;)V");
+	mid_StructuredTextWalker_beginStruct = get_method(&err, env, "beginStruct", "(Ljava/lang/String;Ljava/lang/String;I)V");
 	mid_StructuredTextWalker_beginTextBlock = get_method(&err, env, "beginTextBlock", "(L"PKG"Rect;)V");
+	mid_StructuredTextWalker_endStruct = get_method(&err, env, "endStruct", "()V");
 	mid_StructuredTextWalker_endTextBlock = get_method(&err, env, "endTextBlock", "()V");
 	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;IL"PKG"Point;)V");
 	mid_StructuredTextWalker_endLine = get_method(&err, env, "endLine", "()V");

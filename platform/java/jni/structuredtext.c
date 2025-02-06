@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -133,12 +133,9 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 	return jstring;
 }
 
-JNIEXPORT void JNICALL
-FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
+static void
+java_stext_walk(JNIEnv *env, fz_context *ctx, jobject walker, fz_stext_block *block)
 {
-	fz_context *ctx = get_context(env);
-	fz_stext_page *page = from_StructuredText(env, self);
-	fz_stext_block *block = NULL;
 	fz_stext_line *line = NULL;
 	fz_stext_char *ch = NULL;
 	jobject jbbox = NULL;
@@ -149,19 +146,16 @@ FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
 	jobject jfont = NULL;
 	jobject jquad = NULL;
 
-	if (!ctx || !page) return;
-	if (!walker) jni_throw_arg_void(env, "walker must not be null");
-
-	if (page->first_block == NULL)
+	if (block == NULL)
 		return; /* structured text has no blocks to walk */
 
-	for (block = page->first_block; block; block = block->next)
+	for (; block; block = block->next)
 	{
-		jbbox = to_Rect_safe(ctx, env, block->bbox);
-		if (!jbbox) return;
-
 		if (block->type == FZ_STEXT_BLOCK_IMAGE)
 		{
+			jbbox = to_Rect_safe(ctx, env, block->bbox);
+			if (!jbbox) return;
+
 			jtrm = to_Matrix_safe(ctx, env, block->u.i.transform);
 			if (!jtrm) return;
 
@@ -177,6 +171,9 @@ FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
 		}
 		else if (block->type == FZ_STEXT_BLOCK_TEXT)
 		{
+			jbbox = to_Rect_safe(ctx, env, block->bbox);
+			if (!jbbox) return;
+
 			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginTextBlock, jbbox);
 			if ((*env)->ExceptionCheck(env)) return;
 
@@ -223,5 +220,37 @@ FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
 			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_endTextBlock);
 			if ((*env)->ExceptionCheck(env)) return;
 		}
+		else if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			jstring jstandard = to_String_safe(ctx, env, fz_structure_to_string(block->u.s.down->standard));
+			if (!jstandard) return;
+
+			jstring jraw = to_String_safe(ctx, env, block->u.s.down->raw);
+			if (!jraw) return;
+
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginStruct, jstandard, jraw, block->u.s.index);
+			if ((*env)->ExceptionCheck(env)) return;
+
+			(*env)->DeleteLocalRef(env, jraw);
+			(*env)->DeleteLocalRef(env, jstandard);
+
+			if (block->u.s.down)
+				java_stext_walk(env, ctx, walker, block->u.s.down->first_block);
+
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_endStruct);
+			if ((*env)->ExceptionCheck(env)) return;
+		}
 	}
+}
+
+JNIEXPORT void JNICALL
+FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *page = from_StructuredText(env, self);
+
+	if (!ctx || !page) return;
+	if (!walker) jni_throw_arg_void(env, "walker must not be null");
+
+	java_stext_walk(env, ctx, walker, page->first_block);
 }

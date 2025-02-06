@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -106,6 +106,12 @@ public class StructuredText
 			chr.quad = quad;
 			chr.origin = origin;
 			chrs.add(chr);
+		}
+
+		public void beginStruct(String standard, String raw, int index) {
+		}
+
+		public void endStruct() {
 		}
 
 		TextBlock[] getBlocks() {
