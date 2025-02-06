@@ -361,7 +361,7 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 		return pdf_keep_obj(ctx, old_xobj);
 
 	matrix = pdf_dict_get_matrix(ctx, old_xobj, PDF_NAME(Matrix));
-	transform = fz_concat(transform, matrix);
+	transform = fz_concat(matrix, transform);
 
 	fz_try(ctx)
 	{
