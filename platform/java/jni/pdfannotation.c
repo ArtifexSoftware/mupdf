@@ -2046,12 +2046,12 @@ FUN(PDFAnnotation_getHot)(JNIEnv *env, jobject self)
 	pdf_annot *annot = from_PDFAnnotation(env, self);
 	jboolean hot = JNI_FALSE;
 
-	if (!ctx || !annot) return;
+	if (!ctx || !annot) return JNI_FALSE;
 
 	fz_try(ctx)
 		hot = pdf_annot_hot(ctx, annot);
 	fz_catch(ctx)
-		jni_rethrow_void(env, ctx);
+		jni_rethrow(env, ctx);
 
 	return hot;
 }
