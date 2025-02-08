@@ -1900,3 +1900,19 @@ FUN(PDFDocument_zugferdXML)(JNIEnv *env, jobject self)
 
 	return to_Buffer_safe_own(ctx, env, buf);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_loadImage)(JNIEnv *env, jobject self, jobject jobj)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	pdf_obj *obj = from_PDFObject(env, jobj);
+	fz_image *img;
+
+	fz_try(ctx)
+		img = pdf_load_image(ctx, doc, obj);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Image_safe_own(ctx, env, img);
+}

@@ -4591,6 +4591,14 @@ JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdVersion
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdXML
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    loadImage
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/Image;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_loadImage
+  (JNIEnv *, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif

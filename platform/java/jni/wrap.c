@@ -664,6 +664,19 @@ static inline jobject to_DisplayList_safe_own(fz_context *ctx, JNIEnv *env, fz_d
 	return jlist;
 }
 
+static inline jobject to_Image_safe_own(fz_context *ctx, JNIEnv *env, fz_image *img)
+{
+	jobject jimg;
+
+	if (!ctx || !img) return NULL;
+
+	jimg = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
+	if (!jimg)
+		fz_drop_image(ctx, img);
+
+	return jimg;
+}
+
 static inline jobject to_NativeDevice_safe_own(fz_context *ctx, JNIEnv *env, fz_device *device)
 {
 	jobject jdev;

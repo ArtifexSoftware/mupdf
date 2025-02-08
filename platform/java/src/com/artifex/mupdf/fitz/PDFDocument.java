@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -296,4 +296,6 @@ public class PDFDocument extends Document
 	public native int zugferdProfile();
 	public native float zugferdVersion();
 	public native Buffer zugferdXML();
+
+	public native Image loadImage(PDFObject imgobj);
 }
