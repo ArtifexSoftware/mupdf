@@ -25,14 +25,6 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Archive_newNativeArchive
 
 /*
  * Class:     com_artifex_mupdf_fitz_Archive
- * Method:    newNativeMultiArchive
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Archive_newNativeMultiArchive
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Archive
  * Method:    getFormat
  * Signature: ()Ljava/lang/String;
  */
@@ -49,11 +41,11 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Archive_countEntries
 
 /*
  * Class:     com_artifex_mupdf_fitz_Archive
- * Method:    listEntries
- * Signature: ()Ljava/lang/String;
+ * Method:    listEntry
+ * Signature: (I)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Archive_listEntries
-  (JNIEnv *, jobject);
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Archive_listEntry
+  (JNIEnv *, jobject, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Archive
@@ -2199,6 +2191,14 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     com_artifex_mupdf_fitz_MultiArchive
+ * Method:    newNativeMultiArchive
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_MultiArchive_newNativeMultiArchive
+  (JNIEnv *, jclass);
+
 /*
  * Class:     com_artifex_mupdf_fitz_MultiArchive
  * Method:    mountArchive
@@ -6701,6 +6701,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Text_walk
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     com_artifex_mupdf_fitz_TreeArchive
+ * Method:    newNativeTreeArchive
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_TreeArchive_newNativeTreeArchive
+  (JNIEnv *, jclass);
+
 /*
  * Class:     com_artifex_mupdf_fitz_TreeArchive
  * Method:    add
