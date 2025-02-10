@@ -2069,3 +2069,28 @@ FUN(PDFAnnotation_setHot)(JNIEnv *env, jobject self, jboolean hot)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_process)(JNIEnv *env, jobject self, jobject jproc)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	pdf_processor *proc = make_pdf_processor(env, ctx, jproc);
+
+	if (!ctx || !annot) return;
+	if (!proc) jni_throw_arg_void(env, "processor must not be null");
+
+	fz_try(ctx)
+	{
+		pdf_processor_push_resources(ctx, proc, pdf_page_resources(ctx, pdf_annot_page(ctx, annot)));
+		pdf_process_annot(ctx, proc, annot, NULL);
+		pdf_close_processor(ctx, proc);
+	}
+	fz_always(ctx)
+	{
+		pdf_processor_pop_resources(ctx, proc);
+		pdf_drop_processor(ctx, proc);
+	}
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

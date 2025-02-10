@@ -3846,6 +3846,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setHiddenForEdi
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_applyRedaction
   (JNIEnv *, jobject, jboolean, jint, jint, jint);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    process
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFProcessor;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_process
+  (JNIEnv *, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif
@@ -5339,6 +5347,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFPage_countAssociatedFiles
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_associatedFile
   (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    process
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFProcessor;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_process
+  (JNIEnv *, jobject, jobject);
 
 #ifdef __cplusplus
 }

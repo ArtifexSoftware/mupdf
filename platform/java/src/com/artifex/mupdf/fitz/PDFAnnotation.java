@@ -425,4 +425,6 @@ public class PDFAnnotation
 
 	/** @deprecated use setBorderWidth instead. */
 	public void setBorder(float width) { setBorderWidth(width); }
+
+	public native void process(PDFProcessor processor);
 }

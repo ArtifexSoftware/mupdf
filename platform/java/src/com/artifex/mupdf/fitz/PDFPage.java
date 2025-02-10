@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -119,4 +119,6 @@ public class PDFPage extends Page
 	public native PDFObject associatedFile(int idx);
 
 	// TODO: toPixmap with usage and page box
+
+	public native void process(PDFProcessor processor);
 }

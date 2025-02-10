@@ -299,3 +299,30 @@ FUN(PDFPage_associatedFile)(JNIEnv *env, jobject self, jint idx)
 
 	return to_PDFObject_safe_own(ctx, env, af);
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFPage_process)(JNIEnv *env, jobject self, jobject jproc)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	pdf_processor *proc = make_pdf_processor(env, ctx, jproc);
+	pdf_obj *resources;
+	pdf_obj *contents;
+
+	if (!ctx || !page) return;
+	if (!proc) jni_throw_arg_void(env, "processor must not be null");
+
+	fz_try(ctx)
+	{
+		resources = pdf_page_resources(ctx, page);
+		contents = pdf_page_contents(ctx, page);
+		pdf_process_contents(ctx, proc, page->doc, resources, contents, NULL, NULL);
+		pdf_close_processor(ctx, proc);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_processor(ctx, proc);
+	}
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

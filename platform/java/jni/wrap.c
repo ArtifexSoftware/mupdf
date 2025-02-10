@@ -494,6 +494,20 @@ static inline jobject to_DOM_safe(fz_context *ctx, JNIEnv *env, fz_xml *xml)
 	return jxml;
 }
 
+static inline jobject to_Shade_safe(fz_context *ctx, JNIEnv *env, fz_shade *sh)
+{
+	jobject jsh;
+
+	if (!ctx || !sh) return NULL;
+
+	fz_keep_shade(ctx, sh);
+	jsh = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(sh));
+	if (!jsh) fz_drop_shade(ctx, sh);
+	if ((*env)->ExceptionCheck(env)) return NULL;
+
+	return jsh;
+}
+
 static inline jobject to_String_safe(fz_context *ctx, JNIEnv *env, const char *val)
 {
 	jstring jval;
