@@ -2,6 +2,7 @@
 
 REV=$(git describe --tags)
 STEM=mupdf-$REV-source
+CSTEM=mupdf-$REV-source-commercial
 
 echo git archive $STEM.tar
 git archive --format=tar --prefix=$STEM/ -o $STEM.tar HEAD
@@ -37,8 +38,18 @@ make_submodule_archive openjpeg
 make_submodule_archive tesseract	unittest
 make_submodule_archive zlib		test contrib
 
+# Generate commercial tarball
+cp $STEM.tar $CSTEM.tar
+tar f $CSTEM.tar --wildcards --delete ${STEM}/COPYING
+tar -r -f $CSTEM.tar --owner=0 --group=0 --mode=664 --transform=s,$(dirname "$0")/customer\.txt,${STEM}/LICENSE, "$(dirname "$0")/customer.txt"
+
+echo gzip $CSTEM.tar
+pigz -f -k -11 $CSTEM.tar
+rm -f $CSTEM.tar
+
 echo gzip $STEM.tar
 pigz -f -k -11 $STEM.tar
 
 echo lzip $STEM.tar
 plzip -9 -f -k $STEM.tar
+rm -f $STEM.tar
