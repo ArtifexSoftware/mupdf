@@ -318,43 +318,6 @@ def build_swig(
                     return ret;
                 }}
 
-
-                /* mupdfpy optimisation for copying pixmap. Copies first <n>
-                bytes of each pixel from <src> to <pm>. <pm> and <src> must
-                have same `.w` and `.h` */
-                void ll_fz_pixmap_copy( fz_pixmap* pm, const fz_pixmap* src, int n)
-                {{
-                    assert( pm->w == src->w);
-                    assert( pm->h == src->h);
-                    assert( n <= pm->n);
-                    assert( n <= src->n);
-
-                    if (pm->n == src->n)
-                    {{
-                        // identical samples
-                        assert( pm->stride == src->stride);
-                        memcpy( pm->samples, src->samples, pm->w * pm->h * pm->n);
-                    }}
-                    else
-                    {{
-                        for ( int y=0; y<pm->h; ++y)
-                        {{
-                            for ( int x=0; x<pm->w; ++x)
-                            {{
-                                memcpy(
-                                        pm->samples + pm->stride * y + pm->n * x,
-                                        src->samples + src->stride * y + src->n * x,
-                                        n
-                                        );
-                                if (pm->alpha)
-                                {{
-                                    src->samples[ src->stride * y + src->n * x] = 255;
-                                }}
-                            }}
-                        }}
-                    }}
-                }}
-
                 /* mupdfpy optimisation for copying raw data into pixmap. `samples` must
                 have enough data to fill the pixmap. */
                 void ll_fz_pixmap_copy_raw( fz_pixmap* pm, const void* samples)
