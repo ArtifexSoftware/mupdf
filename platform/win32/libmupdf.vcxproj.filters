@@ -992,5 +992,8 @@
     <ClInclude Include="..\..\include\mupdf\fitz\json.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\barcode.h">
+      <Filter>!include\fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

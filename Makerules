@@ -20,6 +20,13 @@ ifeq ($(tesseract),yes)
   USE_TESSERACT := yes
 endif
 
+ifeq ($(barcode),yes)
+  build_suffix := $(build_suffix)-barcode
+  USE_ZXINGCPP := yes
+else
+  CFLAGS += -DFZ_ENABLE_BARCODE=0
+endif
+
 ifeq ($(tofu),yes)
   build_suffix := $(build_suffix)-tofu
   CFLAGS += -DTOFU
@@ -172,6 +179,7 @@ SYS_ZLIB_LIBS := -lz
 SYS_TESSERACT_LIBS := -ltesseract
 SYS_LEPTONICA_LIBS := -llept
 SYS_LIBARCHIVE_LIBS := -larchive
+SYS_ZXINGCPP_LIBS := -lzxing-cpp -lzint
 
 ifneq "$(CLUSTER)" ""
   CFLAGS += -DCLUSTER
@@ -261,6 +269,12 @@ else ifeq ($(LINUX_OR_OPENBSD),yes)
   ifeq ($(HAVE_SYS_LIBARCHIVE),yes)
 	SYS_LIBARCHIVE_CFLAGS := $(shell pkg-config --cflags libarchive)
 	SYS_LIBARCHIVE_LIBS := $(shell pkg-config --libs libarchive)
+  endif
+
+  HAVE_SYS_ZXINGCPP := $(shell pkg-config --exists 'zxing >= 2.3.0' && echo yes)
+  ifeq ($(HAVE_SYS_ZXINGCPP),yes)
+	SYS_ZXINGCPP_CFLAGS := $(shell pkg-config --cflags zxing)
+	SYS_ZXINGCPP_LIBS := $(shell pkg-config --libs zxing)
   endif
 
   HAVE_SYS_CURL := $(shell pkg-config --exists libcurl && echo yes)

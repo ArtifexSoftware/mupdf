@@ -97,6 +97,13 @@
 /* #define FZ_ENABLE_JS 1 */
 
 /**
+	Choose whether to enable barcode functionality.
+	It is enabled by default, unless disabled by the build
+	system.
+*/
+/* #define FZ_ENABLE_BARCODE 1 */
+
+/**
 	Choose which fonts to include.
 	By default we include the base 14 PDF fonts,
 	DroidSansFallback from Android for CJK, and
@@ -275,6 +282,10 @@
 #ifndef OCR_DISABLED
 #define OCR_DISABLED
 #endif
+#endif
+
+#if !defined(FZ_ENABLE_BARCODE)
+#define FZ_ENABLE_BARCODE 1
 #endif
 
 #endif /* FZ_CONFIG_H */

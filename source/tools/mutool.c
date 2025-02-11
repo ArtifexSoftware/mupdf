@@ -50,6 +50,7 @@ int pdfsign_main(int argc, char *argv[]);
 int pdfrecolor_main(int argc, char *argv[]);
 int pdftrim_main(int argc, char *argv[]);
 int pdfbake_main(int argc, char *argv[]);
+int mubar_main(int argc, char *argv[]);
 
 int cmapdump_main(int argc, char *argv[]);
 int pdfaudit_main(int argc, char *argv[]);
@@ -89,6 +90,7 @@ static struct {
 #endif
 	{ pdfaudit_main, "audit", "Produce usage stats from PDF files" },
 #endif
+	{ mubar_main, "bar", "Encode/Decode barcodes" },
 };
 
 static int

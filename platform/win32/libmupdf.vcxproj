@@ -707,6 +707,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\archive.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\band-writer.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\barcode.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\bidi.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\bitmap.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\buffer.h" />

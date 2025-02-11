@@ -630,6 +630,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\tools\cmapdump.c" />
+    <ClCompile Include="..\..\source\tools\mubar.c" />
     <ClCompile Include="..\..\source\tools\muconvert.c" />
     <ClCompile Include="..\..\source\tools\mudraw.c" />
     <ClCompile Include="..\..\source\tools\murun.c" />
@@ -659,6 +660,10 @@
     </ProjectReference>
     <ProjectReference Include="sodochandler.vcxproj">
       <Project>{56391FFF-C9BA-4F40-AE2B-EF93702871B2}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="libmubarcode.vcxproj">
+      <Project>{20257483-89b9-4703-a77d-8049ac3a0d04}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

@@ -164,6 +164,9 @@ $(OUT)/source/fitz/leptonica-wrap.o : source/fitz/leptonica-wrap.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(LEPTONICA_CFLAGS) $(LEPTONICA_DEFINES) $(LEPTONICA_BUILD_CFLAGS)
 endif
 
+$(OUT)/source/fitz/barcode.o : source/fitz/barcode.cpp
+	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_BUILD_CFLAGS) $(ZXINGCPP_LANGFLAGS)
+
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
 
@@ -349,6 +352,7 @@ MUTOOL_SRC += source/tools/muconvert.c
 MUTOOL_SRC += source/tools/mudraw.c
 MUTOOL_SRC += source/tools/murun.c
 MUTOOL_SRC += source/tools/mutrace.c
+MUTOOL_SRC += source/tools/mubar.c
 MUTOOL_SRC += source/tools/cmapdump.c
 MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
