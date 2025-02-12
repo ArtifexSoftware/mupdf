@@ -133,6 +133,7 @@ pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc)
 {
 	if (doc)
 	{
+		fz_drop_hash_table(ctx, doc->resources.colorspaces);
 		fz_drop_hash_table(ctx, doc->resources.fonts);
 	}
 }
