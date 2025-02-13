@@ -22,6 +22,7 @@
 
 #include "mupdf/fitz.h"
 #include "pdf-annot-imp.h"
+#include "pdf-imp.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -1831,15 +1832,30 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 	}
 }
 
+static void
+id_and_password(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *encrypt, *id;
+
+	pdf_prime_xref_index(ctx, doc);
+
+	encrypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
+	id = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID));
+
+	if (pdf_is_dict(ctx, encrypt))
+		doc->crypt = pdf_new_crypt(ctx, encrypt, id);
+
+	/* Allow lazy clients to read encrypted files with a blank password */
+	(void)pdf_authenticate_password(ctx, doc, "");
+}
+
 /*
  * Initialize and load xref tables.
  * If password is not null, try to decrypt.
  */
-
 static void
 pdf_init_document(fz_context *ctx, pdf_document *doc)
 {
-	pdf_obj *encrypt, *id;
 	int repaired = 0;
 
 	fz_try(ctx)
@@ -1891,133 +1907,15 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		repaired = 1;
 	}
 
-	fz_try(ctx)
+	if (repaired)
 	{
-		if (repaired)
-		{
-			/* pdf_repair_xref_base may access xref_index, so reset it properly */
-			if (doc->xref_index)
-				memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
-			pdf_repair_xref_base(ctx, doc);
-			pdf_prime_xref_index(ctx, doc);
-		}
-
-		encrypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt));
-		id = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID));
-		if (pdf_is_dict(ctx, encrypt))
-			doc->crypt = pdf_new_crypt(ctx, encrypt, id);
-
-		/* Allow lazy clients to read encrypted files with a blank password */
-		(void)pdf_authenticate_password(ctx, doc, "");
-
-		if (repaired)
-		{
-			pdf_repair_obj_stms(ctx, doc);
-			pdf_repair_trailer(ctx, doc);
-		}
+		/* pdf_repair_xref may access xref_index, so reset it properly */
+		if (doc->xref_index)
+			memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
+		pdf_repair_xref_aux(ctx, doc, id_and_password);
 	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
-void pdf_repair_trailer(fz_context *ctx, pdf_document *doc)
-{
-	int hasroot, hasinfo;
-	pdf_obj *obj, *nobj;
-	pdf_obj *dict = NULL;
-	int i;
-
-	int xref_len = pdf_xref_len(ctx, doc);
-
-	hasroot = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)) != NULL);
-	hasinfo = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info)) != NULL);
-
-	fz_var(dict);
-
-	fz_try(ctx)
-	{
-		/* Scan from the end so we have a better chance of finding
-		 * newer objects if there are multiple instances of Info and
-		 * Root objects.
-		 */
-		for (i = xref_len - 1; i > 0 && (!hasinfo || !hasroot); --i)
-		{
-			pdf_xref_entry *entry = pdf_get_xref_entry_no_null(ctx, doc, i);
-			if (entry->type == 0 || entry->type == 'f')
-				continue;
-
-			fz_try(ctx)
-			{
-				dict = pdf_load_object(ctx, doc, i);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-				fz_report_error(ctx);
-				fz_warn(ctx, "ignoring broken object (%d 0 R)", i);
-				continue;
-			}
-
-			if (!hasroot)
-			{
-				obj = pdf_dict_get(ctx, dict, PDF_NAME(Type));
-				if (obj == PDF_NAME(Catalog))
-				{
-					nobj = pdf_new_indirect(ctx, doc, i, 0);
-					pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), nobj);
-					hasroot = 1;
-				}
-			}
-
-			if (!hasinfo)
-			{
-				if (pdf_dict_get(ctx, dict, PDF_NAME(Creator)) || pdf_dict_get(ctx, dict, PDF_NAME(Producer)))
-				{
-					nobj = pdf_new_indirect(ctx, doc, i, 0);
-					pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info), nobj);
-					hasinfo = 1;
-				}
-			}
-
-			pdf_drop_obj(ctx, dict);
-			dict = NULL;
-		}
-	}
-	fz_always(ctx)
-	{
-		/* ensure that strings are not used in their repaired, non-decrypted form */
-		if (doc->crypt)
-		{
-			pdf_crypt *tmp;
-			pdf_clear_xref(ctx, doc);
-
-			/* ensure that Encryption dictionary and ID are cached without decryption,
-			   otherwise a decrypted Encryption dictionary and ID may be used when saving
-			   the PDF causing it to be inconsistent (since strings/streams are encrypted
-			   with the actual encryption key, not the decrypted encryption key). */
-			tmp = doc->crypt;
-			doc->crypt = NULL;
-			fz_try(ctx)
-			{
-				(void) pdf_resolve_indirect(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Encrypt)));
-				(void) pdf_resolve_indirect(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(ID)));
-			}
-			fz_always(ctx)
-				doc->crypt = tmp;
-			fz_catch(ctx)
-			{
-				fz_rethrow(ctx);
-			}
-		}
-	}
-	fz_catch(ctx)
-	{
-		pdf_drop_obj(ctx, dict);
-		fz_rethrow(ctx);
-	}
+	else
+		id_and_password(ctx, doc);
 }
 
 void
@@ -2606,12 +2504,7 @@ object_updated:
 		{
 perform_repair:
 			fz_try(ctx)
-			{
-				pdf_repair_xref_base(ctx, doc);
-				pdf_prime_xref_index(ctx, doc);
-				pdf_repair_obj_stms(ctx, doc);
-				pdf_repair_trailer(ctx, doc);
-			}
+				pdf_repair_xref(ctx, doc);
 			fz_catch(ctx)
 			{
 				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
@@ -5379,8 +5272,5 @@ void pdf_minimize_document(fz_context *ctx, pdf_document *doc)
 
 void pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 {
-	pdf_repair_xref_base(ctx, doc);
-	pdf_prime_xref_index(ctx, doc);
-	pdf_repair_obj_stms(ctx, doc);
-	pdf_repair_trailer(ctx, doc);
+	pdf_repair_xref_aux(ctx, doc, pdf_prime_xref_index);
 }

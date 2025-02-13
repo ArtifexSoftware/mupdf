@@ -995,5 +995,8 @@
     <ClInclude Include="..\..\include\mupdf\fitz\barcode.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\pdf\pdf-imp.h">
+      <Filter>pdf</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

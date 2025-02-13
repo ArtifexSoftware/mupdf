@@ -801,6 +801,7 @@
     <ClInclude Include="..\..\source\fitz\z-imp.h" />
     <ClInclude Include="..\..\source\html\html-imp.h" />
     <ClInclude Include="..\..\source\pdf\pdf-annot-imp.h" />
+    <ClInclude Include="..\..\source\pdf\pdf-imp.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="libpkcs7.vcxproj">
