@@ -1321,10 +1321,16 @@ FUN(PDFDocument_canUndo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	jboolean can = JNI_FALSE;
 
 	if (!ctx || !pdf) return JNI_FALSE;
 
-	return pdf_can_undo(ctx, pdf);
+	fz_try(ctx)
+		can = pdf_can_undo(ctx, pdf);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return can;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1332,10 +1338,16 @@ FUN(PDFDocument_canRedo)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	jboolean can = JNI_FALSE;
 
 	if (!ctx || !pdf) return JNI_FALSE;
 
-	return pdf_can_redo(ctx, pdf);
+	fz_try(ctx)
+		can = pdf_can_redo(ctx, pdf);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return can;
 }
 
 JNIEXPORT void JNICALL
