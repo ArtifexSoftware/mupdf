@@ -498,7 +498,7 @@ insert_block_before(fz_stext_block *block, fz_stext_block *before, fz_stext_page
 	if (before)
 	{
 		/* We have a block to insert it before, so we know it's not the last. */
-		assert(dest->first_block != NULL && dest->last_block != NULL);
+		assert(dest ? (dest->first_block != NULL && dest->last_block != NULL) : (page->first_block != NULL && page->last_block != NULL));
 		block->next = before;
 		block->prev = before->prev;
 		if (before->prev)
