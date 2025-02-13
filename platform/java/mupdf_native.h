@@ -4607,6 +4607,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_zugferdXML
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_loadImage
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    lookupDest
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_lookupDest
+  (JNIEnv *, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif

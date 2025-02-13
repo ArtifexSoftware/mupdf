@@ -1928,3 +1928,21 @@ FUN(PDFDocument_loadImage)(JNIEnv *env, jobject self, jobject jobj)
 
 	return to_Image_safe_own(ctx, env, img);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_lookupDest)(JNIEnv *env, jobject self, jobject jdest)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	pdf_obj *dest = from_PDFObject(env, jdest);
+	pdf_obj *obj = NULL;
+
+	if (!ctx) return NULL;
+
+	fz_try(ctx)
+		obj = pdf_lookup_dest(ctx, doc, dest);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_PDFObject_safe_own(ctx, env, obj);
+}

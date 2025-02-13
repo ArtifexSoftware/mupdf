@@ -298,4 +298,5 @@ public class PDFDocument extends Document
 	public native Buffer zugferdXML();
 
 	public native Image loadImage(PDFObject imgobj);
+	public native PDFObject lookupDest(PDFObject destination);
 }
