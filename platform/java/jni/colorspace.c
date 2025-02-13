@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -78,8 +78,8 @@ FUN(ColorSpace_isGray)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_gray(ctx, cs);
 	fz_catch(ctx)
@@ -92,8 +92,8 @@ FUN(ColorSpace_isRGB)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_rgb(ctx, cs);
 	fz_catch(ctx)
@@ -106,8 +106,8 @@ FUN(ColorSpace_isCMYK)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_cmyk(ctx, cs);
 	fz_catch(ctx)
@@ -120,8 +120,8 @@ FUN(ColorSpace_isIndexed)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_indexed(ctx, cs);
 	fz_catch(ctx)
@@ -134,8 +134,8 @@ FUN(ColorSpace_isLab)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_lab(ctx, cs);
 	fz_catch(ctx)
@@ -148,8 +148,8 @@ FUN(ColorSpace_isDeviceN)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_device_n(ctx, cs);
 	fz_catch(ctx)
@@ -162,8 +162,8 @@ FUN(ColorSpace_isSubtractive)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	int result = 0;
-	if (!ctx) return 0;
+	int result = JNI_FALSE;
+	if (!ctx) return JNI_FALSE;
 	fz_try(ctx)
 		result = fz_colorspace_is_subtractive(ctx, cs);
 	fz_catch(ctx)

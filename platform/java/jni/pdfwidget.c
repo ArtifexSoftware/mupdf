@@ -279,7 +279,7 @@ FUN(PDFWidget_isSigned)(JNIEnv *env, jobject self)
 	pdf_annot *widget = from_PDFWidget_safe(env, self);
 	jboolean val = JNI_FALSE;
 
-	if (!ctx || !widget) return 0;
+	if (!ctx || !widget) return JNI_FALSE;
 
 	fz_try(ctx)
 		val = !!pdf_widget_is_signed(ctx, widget);

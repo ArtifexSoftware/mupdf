@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -330,7 +330,7 @@ FUN(Context_shrinkStore)(JNIEnv *env, jclass cls, jint percent)
 	fz_context *ctx = get_context(env);
 	int success = 0;
 
-	if (!ctx) return 0;
+	if (!ctx) return JNI_FALSE;
 	if (percent < 0) jni_throw_arg(env, "percent must not be negative");
 	if (percent > 100) jni_throw_arg(env, "percent must not be more than 100");
 

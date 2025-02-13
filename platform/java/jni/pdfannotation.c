@@ -1955,7 +1955,7 @@ FUN(PDFAnnotation_getLineCaption)(JNIEnv *env, jobject self)
 	pdf_annot *annot = from_PDFAnnotation(env, self);
 	jboolean v;
 
-	if (!ctx || !annot) return 0;
+	if (!ctx || !annot) return JNI_FALSE;
 
 	fz_try(ctx)
 		v = pdf_annot_line_caption(ctx, annot);
