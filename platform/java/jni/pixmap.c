@@ -101,6 +101,125 @@ FUN(Pixmap_clearWithValue)(JNIEnv *env, jobject self, jint value)
 		jni_rethrow_void(env, ctx);
 }
 
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asPNG)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_png(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asJPEG)(JNIEnv *env, jobject self, jint quality, jboolean invert_cmyk)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, invert_cmyk);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asPAM)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_pam(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asPNM)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_pnm(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asPBM)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_pbm(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asPKM)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_pkm(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_asJPX)(JNIEnv *env, jobject self, jint quality)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_buffer *buf = NULL;
+
+	if (!ctx || !pixmap) return NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_jpx(ctx, pixmap, fz_default_color_params, quality);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Buffer_safe_own(ctx, env, buf);
+}
+
 JNIEXPORT void JNICALL
 FUN(Pixmap_saveAsPNG)(JNIEnv *env, jobject self, jstring jfilename)
 {

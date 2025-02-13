@@ -78,6 +78,14 @@ public class Pixmap
 		clearWithValue(value);
 	}
 
+	public native Buffer asPNG();
+	public native Buffer asJPEG(int quality, boolean invertCMYK);
+	public native Buffer asPAM();
+	public native Buffer asPNM();
+	public native Buffer asPBM();
+	public native Buffer asPKM();
+	public native Buffer asJPX(int quality);
+
 	public native void saveAsPNG(String filename);
 	public native void saveAsJPEG(String filename, int quality);
 	public native void saveAsPAM(String filename);
