@@ -1155,6 +1155,7 @@ typedef struct
 	cells_t *cells;
 	fz_stext_grid_positions *xpos;
 	fz_stext_grid_positions *ypos;
+	fz_rect bounds;
 } grid_walker_data;
 
 static cell_t *
@@ -1440,8 +1441,14 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
 		{
 			fz_rect r = fz_collate_small_vector_run(&block);
-			float w = r.x1 - r.x0;
-			float h = r.y1 - r.y0;
+			float w, h;
+
+			r = fz_intersect_rect(r, gd->bounds);
+			if (fz_is_empty_rect(r))
+				continue;
+
+			w = r.x1 - r.x0;
+			h = r.y1 - r.y0;
 			if (w > h && h < 2)
 			{
 				/* Thin, wide line */
@@ -1468,13 +1475,18 @@ is_numeric(int c)
 }
 
 static int
-mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect r)
+mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s)
 {
-	int x0 = find_cell_l(gd->xpos, r.x0);
-	int x1 = find_cell_r(gd->xpos, r.x1);
-	int y0 = find_cell_l(gd->ypos, r.y0);
-	int y1 = find_cell_r(gd->ypos, r.y1);
-	int x, y;
+	fz_rect r = fz_intersect_rect(gd->bounds, s);
+	int x0, x1, y0, y1, x, y;
+
+	if (fz_is_empty_rect(r))
+		return 0;
+
+	x0 = find_cell_l(gd->xpos, r.x0);
+	x1 = find_cell_r(gd->xpos, r.x1);
+	y0 = find_cell_l(gd->ypos, r.y0);
+	y1 = find_cell_r(gd->ypos, r.y1);
 
 	if (x0 < 0 || x1 < 0 || y0 < 0 || y1 < 0)
 		return 1;
@@ -1545,7 +1557,7 @@ where_is(fz_stext_grid_positions *pos, float x, int *in)
 		}
 	}
 
-	*in = IN_CELL;
+	*in = IN_BORDER;
 	return i-1;
 }
 
@@ -1553,7 +1565,8 @@ enum
 {
 	VECTOR_IS_CONTENT = 0,
 	VECTOR_IS_BORDER = 1,
-	VECTOR_IS_UNKNOWN = 2
+	VECTOR_IS_UNKNOWN = 2,
+	VECTOR_IS_IGNORABLE = 3
 };
 
 /* So a vector can either be a border, or contained
@@ -1562,14 +1575,19 @@ static int
 classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r, int is_rect)
 {
 	int at_x0, at_x1, at_y0, at_y1;
-	int ix0 = where_is(gd->xpos, r.x0, &at_x0);
-	int ix1 = where_is(gd->xpos, r.x1, &at_x1);
-	int iy0 = where_is(gd->ypos, r.y0, &at_y0);
-	int iy1 = where_is(gd->ypos, r.y1, &at_y1);
+	int ix0, ix1, iy0, iy1;
+
+	r = fz_intersect_rect(r, gd->bounds);
+	if (fz_is_empty_rect(r))
+		return VECTOR_IS_IGNORABLE;
+	ix0 = where_is(gd->xpos, r.x0, &at_x0);
+	ix1 = where_is(gd->xpos, r.x1, &at_x1);
+	iy0 = where_is(gd->ypos, r.y0, &at_y0);
+	iy1 = where_is(gd->ypos, r.y1, &at_y1);
 
 	/* No idea, just treat it as a border. */
 	if (at_x0 == IN_UNKNOWN || at_x1 == IN_UNKNOWN || at_y0 == IN_UNKNOWN || at_y1 == IN_UNKNOWN)
-		return VECTOR_IS_BORDER;
+		return VECTOR_IS_IGNORABLE;
 
 	if (at_x0 == IN_BORDER && at_x1 == IN_BORDER)
 	{
@@ -1649,6 +1667,7 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 				mark_cells_for_content(ctx, gd, block->bbox);
 				break;
 			case VECTOR_IS_BORDER:
+			case VECTOR_IS_IGNORABLE:
 				break;
 			default:
 				duff++;
@@ -2673,6 +2692,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	if (all_blocks_are_justified_or_headers(ctx, *first_block))
 		return num_subtables;
 
+	gd.bounds = fz_infinite_rect;
+
 	/* First off, descend into any children to see if those look like tables. */
 	count = 0;
 	for (block = *first_block; block != NULL; block = block->next)
@@ -2806,6 +2827,7 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 
 	fz_try(ctx)
 	{
+		gd.bounds = bounds;
 		if (find_table_within_bounds(ctx, &gd, page->first_block, bounds))
 			break;
 
