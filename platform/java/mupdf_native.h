@@ -6396,6 +6396,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Shade_finalize
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Shade
+ * Method:    getBounds
+ * Signature: (Lcom/artifex/mupdf/fitz/Matrix;)Lcom/artifex/mupdf/fitz/Rect;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Shade_getBounds
+  (JNIEnv *, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif
