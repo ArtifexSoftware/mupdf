@@ -259,6 +259,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_getNumberOfCompone
 
 /*
  * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    toString
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_toString
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
  * Method:    isGray
  * Signature: ()Z
  */

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -58,14 +58,7 @@ public class ColorSpace
 	public static ColorSpace DeviceBGR = new ColorSpace(nativeDeviceBGR());
 	public static ColorSpace DeviceCMYK = new ColorSpace(nativeDeviceCMYK());
 	public native int getNumberOfComponents();
-
-	public String toString() {
-		if (this == DeviceGray) return "DeviceGray";
-		if (this == DeviceRGB) return "DeviceRGB";
-		if (this == DeviceBGR) return "DeviceBGR";
-		if (this == DeviceCMYK) return "DeviceCMYK";
-		return "ColorSpace(" + getNumberOfComponents() + ")";
-	}
+	public native String toString();
 
 	public native boolean isGray();
 	public native boolean isRGB();

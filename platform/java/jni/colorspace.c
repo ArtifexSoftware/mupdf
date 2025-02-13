@@ -170,3 +170,17 @@ FUN(ColorSpace_isSubtractive)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 	return result;
 }
+
+JNIEXPORT jstring JNICALL
+FUN(ColorSpace_toString)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_colorspace *cs = from_ColorSpace(env, self);
+	const char *name = NULL;
+	if (!ctx) return NULL;
+	fz_try(ctx)
+		name = fz_colorspace_name(ctx, cs);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+	return (*env)->NewStringUTF(env, name);
+}
