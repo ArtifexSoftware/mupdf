@@ -6472,6 +6472,22 @@ JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Pixmap_skewDetect
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    warp
+ * Signature: ([Lcom/artifex/mupdf/fitz/Point;II)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_warp
+  (JNIEnv *, jobject, jobjectArray, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    autowarp
+ * Signature: ([Lcom/artifex/mupdf/fitz/Point;)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_autowarp
+  (JNIEnv *, jobject, jobjectArray);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    nativeDetectDocument
  * Signature: ()[F
  */

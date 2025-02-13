@@ -144,6 +144,8 @@ public class Pixmap
 	}
 
 	public native float skewDetect();
+	public native Pixmap warp(Point[] points, int width, int height);
+	public native Pixmap autowarp(Point[] points);
 
 	private native float[] nativeDetectDocument();
 
