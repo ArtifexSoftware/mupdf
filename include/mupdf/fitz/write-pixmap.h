@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -272,6 +272,8 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out);
 	Ownership of the buffer is returned.
 */
 fz_buffer *fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, fz_color_params color_params);
+fz_buffer *fz_new_buffer_from_image_as_pbm(fz_context *ctx, fz_image *image, fz_color_params color_params);
+fz_buffer *fz_new_buffer_from_image_as_pkm(fz_context *ctx, fz_image *image, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_image_as_pnm(fz_context *ctx, fz_image *image, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_image_as_pam(fz_context *ctx, fz_image *image, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_image_as_psd(fz_context *ctx, fz_image *image, fz_color_params color_params);
@@ -284,6 +286,8 @@ fz_buffer *fz_new_buffer_from_image_as_jpx(fz_context *ctx, fz_image *image, fz_
 	Ownership of the buffer is returned.
 */
 fz_buffer *fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
+fz_buffer *fz_new_buffer_from_pixmap_as_pbm(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
+fz_buffer *fz_new_buffer_from_pixmap_as_pkm(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_pixmap_as_psd(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params);
