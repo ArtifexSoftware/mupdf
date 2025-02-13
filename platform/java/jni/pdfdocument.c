@@ -1844,6 +1844,8 @@ FUN(PDFDocument_countAssociatedFiles)(JNIEnv *env, jobject self)
 	pdf_document *doc = from_PDFDocument(env, self);
 	int n;
 
+	if (!ctx) return 0;
+
 	fz_try(ctx)
 		n = pdf_count_document_associated_files(ctx, doc);
 	fz_catch(ctx)
@@ -1858,6 +1860,8 @@ FUN(PDFDocument_associatedFile)(JNIEnv *env, jobject self, jint idx)
 	fz_context *ctx = get_context(env);
 	pdf_document *doc = from_PDFDocument(env, self);
 	pdf_obj *af;
+
+	if (!ctx) return NULL;
 
 	fz_try(ctx)
 		af = pdf_document_associated_file(ctx, doc, idx);
@@ -1875,6 +1879,8 @@ FUN(PDFDocument_zugferdProfile)(JNIEnv *env, jobject self)
 	enum pdf_zugferd_profile p;
 	float version;
 
+	if (!ctx) return 0;
+
 	fz_try(ctx)
 		p = pdf_zugferd_profile(ctx, doc, &version);
 	fz_catch(ctx)
@@ -1889,6 +1895,8 @@ FUN(PDFDocument_zugferdVersion)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *doc = from_PDFDocument(env, self);
 	float version;
+
+	if (!ctx) return 0;
 
 	fz_try(ctx)
 		(void) pdf_zugferd_profile(ctx, doc, &version);
@@ -1905,6 +1913,8 @@ FUN(PDFDocument_zugferdXML)(JNIEnv *env, jobject self)
 	pdf_document *doc = from_PDFDocument(env, self);
 	fz_buffer *buf;
 
+	if (!ctx) return NULL;
+
 	fz_try(ctx)
 		buf = pdf_zugferd_xml(ctx, doc);
 	fz_catch(ctx)
@@ -1920,6 +1930,8 @@ FUN(PDFDocument_loadImage)(JNIEnv *env, jobject self, jobject jobj)
 	pdf_document *doc = from_PDFDocument(env, self);
 	pdf_obj *obj = from_PDFObject(env, jobj);
 	fz_image *img;
+
+	if (!ctx) return NULL;
 
 	fz_try(ctx)
 		img = pdf_load_image(ctx, doc, obj);
