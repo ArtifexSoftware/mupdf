@@ -670,6 +670,13 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	assert(xs->list[0].left);
 	for (i = 0; i < len; i++)
 	{
+		if (xs->list[i].pos >= min)
+			break;
+	}
+	for (; i < len; i++)
+	{
+		if (xs->list[i].pos >= max)
+			break;
 		if (xs->list[i].left)
 		{
 			if (local_min)
@@ -689,14 +696,26 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	edges = 1;
 	pos->list[0].pos = min;
 	pos->list[0].min = min;
-	pos->list[0].max = xs->list[0].pos;
+	pos->list[0].max = fz_max(xs->list[0].pos, min);
 	pos->list[0].uncertainty = 0;
 	pos->list[0].reinforcement = 1;
 #ifdef DEBUG_TABLE_HUNT
 	printf("|%g ", pos->list[0].pos);
 #endif
+	/* Skip over entries to the left of min. */
 	for (i = 0; i < len; i++)
 	{
+		if (xs->list[i].pos >= min)
+			break;
+		if (xs->list[i].left)
+			wind += xs->list[i].freq;
+		else
+			wind -= xs->list[i].freq;
+	}
+	for (; i < len; i++)
+	{
+		if (xs->list[i].pos >= max)
+			break;
 		if (xs->list[i].left)
 		{
 			if (local_min)
@@ -725,8 +744,9 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	}
 	assert(wind == 0);
 	pos->list[edges].pos = max;
-	pos->list[edges].min = xs->list[i-1].pos;
+	pos->list[edges].min = fz_min(xs->list[i-1].pos, max);
 	pos->list[edges].max = max;
+	assert(max >= xs->list[i-1].pos);
 	pos->list[edges].uncertainty = 0;
 	pos->list[edges].reinforcement = 1;
 	pos->max_uncertainty = hi;
