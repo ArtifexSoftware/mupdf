@@ -326,3 +326,36 @@ FUN(PDFPage_process)(JNIEnv *env, jobject self, jobject jproc)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFPage_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolean alpha, jboolean showExtra, jstring jusage, jint box)
+{
+	fz_context *ctx = get_context(env);
+	pdf_page *page = from_PDFPage(env, self);
+	fz_colorspace *cs = from_ColorSpace(env, jcs);
+	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_pixmap *pixmap = NULL;
+	const char *usage = NULL;
+
+	if (!ctx || !page) return NULL;
+	if (jusage)
+	{
+		usage = (*env)->GetStringUTFChars(env, jusage, NULL);
+		if (!usage) return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		if (showExtra)
+			pixmap = pdf_new_pixmap_from_page_with_usage(ctx, page, ctm, cs, alpha, usage, box);
+		else
+			pixmap = pdf_new_pixmap_from_page_contents_with_usage(ctx, page, ctm, cs, alpha, usage, box);
+	}
+	fz_always(ctx)
+		if (usage)
+			(*env)->ReleaseStringUTFChars(env, jusage, usage);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Pixmap_safe_own(ctx, env, pixmap);
+}

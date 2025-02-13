@@ -5356,6 +5356,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_associatedFile
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFPage_process
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFPage
+ * Method:    toPixmap
+ * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;ZZLjava/lang/String;I)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFPage_toPixmap
+  (JNIEnv *, jobject, jobject, jobject, jboolean, jboolean, jstring, jint);
+
 #ifdef __cplusplus
 }
 #endif
