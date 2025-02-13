@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -523,6 +523,20 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 {
 	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0);
 }
+
+fz_bitmap *fz_new_bitmap_from_image(fz_context *ctx, fz_image *img, fz_halftone *ht)
+{
+	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
+	fz_bitmap *bitmap;
+	fz_try(ctx)
+		bitmap = fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0);
+	fz_always(ctx)
+		fz_drop_pixmap(ctx, pix);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return bitmap;
+}
+
 
 void fz_invert_bitmap(fz_context *ctx, fz_bitmap *bmp)
 {
