@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -84,6 +84,7 @@ public class Pixmap
 	public native void saveAsPNM(String filename);
 	public native void saveAsPBM(String filename);
 	public native void saveAsPKM(String filename);
+	public native void saveAsJPX(String filename, int quality);
 
 	public native int getX();
 	public native int getY();

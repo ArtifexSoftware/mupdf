@@ -6184,6 +6184,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPKM
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    saveAsJPX
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsJPX
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    getX
  * Signature: ()I
  */

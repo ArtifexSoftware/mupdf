@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -221,6 +221,27 @@ FUN(Pixmap_saveAsPKM)(JNIEnv *env, jobject self, jstring jfilename)
 
 	fz_try(ctx)
 		fz_save_pixmap_as_pkm(ctx, pixmap, filename);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Pixmap_saveAsJPX)(JNIEnv *env, jobject self, jstring jfilename, jint quality)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	const char *filename = "null";
+
+	if (!ctx || !pixmap) return;
+	if (!jfilename) jni_throw_arg_void(env, "filename must not be null");
+
+	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (!filename) return;
+
+	fz_try(ctx)
+		fz_save_pixmap_as_jpx(ctx, pixmap, filename, quality);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	fz_catch(ctx)
