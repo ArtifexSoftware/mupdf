@@ -281,6 +281,11 @@ public class PDFDocument extends Document
 		}
 	}
 
+	public native int countLayers();
+	public native boolean isLayerVisible(int layer);
+	public native void setLayerVisible(int layer, boolean visible);
+	public native String getLayerName(int layer);
+
 	public native int countAssociatedFiles();
 	public native PDFObject associatedFile(int idx);
 

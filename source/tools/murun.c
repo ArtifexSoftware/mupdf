@@ -7502,6 +7502,56 @@ static void ffi_PDFDocument_deletePageLabels(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_countLayers(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int n = 0;
+	fz_try(ctx)
+		n = pdf_count_layers(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, n);
+}
+
+static void ffi_PDFDocument_isLayerVisible(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int layer = js_tointeger(J, 1);
+	int x = 0;
+	fz_try(ctx)
+		x = pdf_layer_is_enabled(ctx, pdf, layer);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, x);
+}
+
+static void ffi_PDFDocument_setLayerVisible(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int layer = js_tointeger(J, 1);
+	int x = js_toboolean(J, 2);
+	fz_try(ctx)
+		pdf_enable_layer(ctx, pdf, layer, x);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_getLayerName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int layer = js_tointeger(J, 1);
+	const char *name;
+	fz_try(ctx)
+		name = pdf_layer_name(ctx, pdf, layer);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, name);
+}
+
 static void ffi_PDFDocument_countAssociatedFiles(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -11298,6 +11348,11 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.setPageLabels", ffi_PDFDocument_setPageLabels, 4);
 		jsB_propfun(J, "PDFDocument.deletePageLabels", ffi_PDFDocument_deletePageLabels, 1);
+
+		jsB_propfun(J, "PDFDocument.countLayers", ffi_PDFDocument_countLayers, 0);
+		jsB_propfun(J, "PDFDocument.isLayerVisible", ffi_PDFDocument_isLayerVisible, 1);
+		jsB_propfun(J, "PDFDocument.setLayerVisible", ffi_PDFDocument_setLayerVisible, 2);
+		jsB_propfun(J, "PDFDocument.getLayerName", ffi_PDFDocument_getLayerName, 1);
 
 		jsB_propfun(J, "PDFDocument.countAssociatedFiles", ffi_PDFDocument_countAssociatedFiles, 0);
 		jsB_propfun(J, "PDFDocument.associatedFile", ffi_PDFDocument_associatedFile, 1);

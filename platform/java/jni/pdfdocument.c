@@ -1946,3 +1946,60 @@ FUN(PDFDocument_lookupDest)(JNIEnv *env, jobject self, jobject jdest)
 
 	return to_PDFObject_safe_own(ctx, env, obj);
 }
+
+JNIEXPORT jint JNICALL
+FUN(PDFDocument_countLayers)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	jint layers = 0;
+
+	fz_try(ctx)
+		layers = pdf_count_layers(ctx, doc);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return layers;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFDocument_isLayerVisible)(JNIEnv *env, jobject self, jint layer)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	jboolean visible = JNI_FALSE;
+
+	fz_try(ctx)
+		visible = pdf_layer_is_enabled(ctx, doc, layer);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return visible;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFDocument_setLayerVisible)(JNIEnv *env, jobject self, jint layer, jboolean visible)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+
+	fz_try(ctx)
+		pdf_enable_layer(ctx, doc, layer, visible);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(PDFDocument_getLayerName)(JNIEnv *env, jobject self, jint layer)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+	const char *name = NULL;
+
+	fz_try(ctx)
+		name = pdf_layer_name(ctx, doc, layer);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return (*env)->NewStringUTF(env, name);
+}

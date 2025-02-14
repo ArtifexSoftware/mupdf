@@ -1166,6 +1166,8 @@ Embedded/Associated files in :title:`PDFs`
         var fileChecksumValid = pdfDocument.verifyEmbeddedFileChecksum(fileSpecObject);
 
 
+----
+
 
 
 .. method:: countAssociatedFiles()
@@ -1201,6 +1203,81 @@ Embedded/Associated files in :title:`PDFs`
 
 
 
+
+
+----
+
+
+.. _mutool_object_pdf_document_layers:
+
+Layers in :title:`PDFs`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+.. method:: countLayers()
+
+    Return the number of optional content layers in this document.
+
+    :return: `Integer`
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var count = pdfDocument.countLayers();
+
+
+
+
+.. method:: isLayerVisible()
+
+    Return whether layer n is visible, where n is 0 <= n < countLayers().
+
+    :return: `Boolean`
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var visible = pdfDocument.isLayerVisible(1);
+
+
+
+
+.. method:: setLayerVisible(n, visible)
+
+    Set layer n to be visible or invisible, where n is 0 <= n < countLayers().
+
+    Pages affected by a visibility change, need to be processed again for the layers to be visible/invisible.
+
+    :arg n: `Integer`.
+    :arg visible: `Boolean`.
+    :return: `Integer`
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfDocument.setLayerVisible(1, true);
+
+
+
+
+.. method:: getLayerName(n)
+
+    Return the name of layer number n, where n is 0 <= n < countLayers().
+
+    :return: `String`.
+
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var name = pdfDocument.getLayerName(0);
 
 
 ----
