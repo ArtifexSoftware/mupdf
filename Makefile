@@ -213,33 +213,33 @@ FONT_BIN += $(sort $(wildcard resources/fonts/sil/*.cff))
 
 # Note: The tests here must match the equivalent tests in noto.c
 
-ifneq ($(filter -DTOFU_CJK,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU_CJK,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/han/%.ttc, $(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/droid/DroidSansFallbackFull.ttf, $(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/droid/DroidSansFallback.ttf, $(FONT_BIN))
 endif
 
-ifneq ($(filter -DTOFU_CJK_EXT,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU_CJK_EXT,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/han/%.ttc, $(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/droid/DroidSansFallbackFull.ttf, $(FONT_BIN))
 endif
 
-ifneq ($(filter -DTOFU_CJK_LANG,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU_CJK_LANG,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/han/%.ttc, $(FONT_BIN))
 endif
 
-ifneq ($(filter -DTOFU,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/noto/%.otf,$(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/noto/%.ttf,$(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/sil/%.cff,$(FONT_BIN))
 endif
 
-ifneq ($(filter -DTOFU_NOTO,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU_NOTO,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/noto/%.otf,$(FONT_BIN))
   FONT_BIN := $(filter-out resources/fonts/noto/%.ttf,$(FONT_BIN))
 endif
 
-ifneq ($(filter -DTOFU_SIL,$(XCFLAGS)),)
+ifneq ($(filter -DTOFU_SIL,$(CFLAGS)),)
   FONT_BIN := $(filter-out resources/fonts/sil/%.cff,$(FONT_BIN))
 endif
 

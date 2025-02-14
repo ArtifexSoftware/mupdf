@@ -22,33 +22,33 @@ endif
 
 ifeq ($(tofu),yes)
   build_suffix := $(build_suffix)-tofu
-  XCFLAGS += -DTOFU
+  CFLAGS += -DTOFU
 endif
 
 ifeq ($(tofu_cjk),yes)
   build_suffix := $(build_suffix)-tofu_cjk
-  XCFLAGS += -DTOFU_CJK
+  CFLAGS += -DTOFU_CJK
 endif
 
 ifeq ($(tofu_cjk_ext),yes)
   build_suffix := $(build_suffix)-tofu_cjk_ext
-  XCFLAGS += -DTOFU_CJK_EXT
+  CFLAGS += -DTOFU_CJK_EXT
 endif
 
 ifeq ($(tofu_cjk_lang),yes)
   build_suffix := $(build_suffix)-tofu_cjk_lang
-  XCFLAGS += -DTOFU_CJK_LANG
+  CFLAGS += -DTOFU_CJK_LANG
 endif
 
 ifeq ($(archive),yes)
   build_suffix := $(build_suffix)-archive
-  XCFLAGS += -DHAVE_LIBARCHIVE
+  CFLAGS += -DHAVE_LIBARCHIVE
   HAVE_LIBARCHIVE := yes
 endif
 
 ifeq ($(commercial),yes)
   build_suffix := $(build_suffix)-commercial
-  XCFLAGS += -DHAVE_SMARTOFFICE
+  CFLAGS += -DHAVE_SMARTOFFICE
   HAVE_SMARTOFFICE := yes
 endif
 
