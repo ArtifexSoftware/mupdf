@@ -2643,6 +2643,12 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	int has_bc = 0;
 	int q, r, n;
 
+#if FZ_ENABLE_HTML_ENGINE
+	const char *rc, *ds;
+	char *free_rc = NULL;
+	char ds_buf[400];
+#endif
+
 	r = pdf_dict_get_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(MK)), PDF_NAME(R));
 	q = pdf_annot_quadding(ctx, annot);
 	pdf_annot_default_appearance(ctx, annot, &font, &size, &n, color);
@@ -2669,6 +2675,37 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	}
 
 	fz_append_printf(ctx, buf, "%g %g %g %g re\nW\nn\n", b, b, w-b*2, h-b*2);
+
+#if FZ_ENABLE_HTML_ENGINE
+	ds = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(DS));
+	rc = pdf_dict_get_text_string_opt(ctx, annot->obj, PDF_NAME(RV));
+	if (!rc && (ds || text_needs_rich_layout(ctx, text)))
+	{
+		rc = free_rc = escape_text(ctx, text);
+		if (!ds)
+		{
+			fz_snprintf(ds_buf, sizeof ds_buf,
+				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;white-space:%s;",
+				full_font_name(&font),
+				size,
+				hex_from_color(ctx, n, color),
+				(q == 0 ? "left" : q == 1 ? "center" : "right"),
+				((ff & PDF_TX_FIELD_IS_MULTILINE) ? "normal" : "nowrap")
+			);
+			ds = ds_buf;
+		}
+	}
+	if (rc)
+	{
+		fz_try(ctx)
+			write_rich_content(ctx, annot, buf, res, rc ? rc : text, ds, size, w, h, b * 2);
+		fz_always(ctx)
+			fz_free(ctx, free_rc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
+	else
+#endif
 
 	if (ff & PDF_TX_FIELD_IS_MULTILINE)
 	{
