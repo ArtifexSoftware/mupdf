@@ -1752,8 +1752,6 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 			fz_free(ctx, *rtitle);
 			*rtitle = NULL;
 		}
-		/* Dropping the tree works regardless of whether the tree is part of an fz_html or not. */
-		fz_drop_html_tree(ctx, tree);
 		fz_rethrow(ctx);
 	}
 }
