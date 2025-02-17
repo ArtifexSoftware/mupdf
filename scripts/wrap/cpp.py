@@ -4159,8 +4159,9 @@ def class_wrapper_virtual_fnptrs(
     for cursor, fnptr_type in get_fnptrs( shallow_typedef_expansion=True):
 
         # Write static callback.
+        return_type = _make_top_level(fnptr_type.get_result().spelling)
         out_cpp.write(f'/* Static callback, calls self->{cursor.spelling}(). */\n')
-        out_cpp.write(f'static {_make_top_level(fnptr_type.get_result().spelling)} {classname}2_s_{cursor.spelling}')
+        out_cpp.write(f'static {return_type} {classname}2_s_{cursor.spelling}')
         out_cpp.write('(')
         sep = ''
         for i, arg_type in enumerate( fnptr_type.argument_types()):
@@ -4179,9 +4180,11 @@ def class_wrapper_virtual_fnptrs(
         out_cpp.write(f'        std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2_s_{cursor.spelling}(): arg_0=" << arg_0 << " arg_1=" << arg_1 << " self=" << self << "\\n";\n')
         out_cpp.write( '    }\n')
         out_cpp.write( '    #endif\n')
-        out_cpp.write( '    try\n')
         out_cpp.write( '    {\n')
-        out_cpp.write(f'        return self->{cursor.spelling}(')
+        out_cpp.write( '        char error_message[256] = "";\n')
+        out_cpp.write( '        try\n')
+        out_cpp.write( '        {\n')
+        out_cpp.write(f'            return self->{cursor.spelling}(')
         sep = ''
         for i, arg_type in enumerate( fnptr_type.argument_types()):
             if i == self_n:
@@ -4193,18 +4196,25 @@ def class_wrapper_virtual_fnptrs(
             out_cpp.write( f'{sep}{name}')
             sep = ', '
         out_cpp.write(');\n')
-        out_cpp.write('    }\n')
+        out_cpp.write('        }\n')
 
         # todo: catch our different exception types and map to FZ_ERROR_*.
-        out_cpp.write( '    catch (std::exception& e)\n')
-        out_cpp.write( '    {\n')
-        out_cpp.write(f'        {trace_if}\n')
-        out_cpp.write( '        if (s_trace_director)\n')
+        out_cpp.write( '        catch (std::exception& e)\n')
         out_cpp.write( '        {\n')
-        out_cpp.write(f'            std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2_s_{cursor.spelling}(): converting std::exception to fz_throw(): " << e.what() << "\\n";\n')
+        out_cpp.write(f'            {trace_if}\n')
+        out_cpp.write( '            if (s_trace_director)\n')
+        out_cpp.write( '            {\n')
+        out_cpp.write(f'                std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << ": {classname}2_s_{cursor.spelling}(): converting std::exception to fz_throw(): " << e.what() << "\\n";\n')
+        out_cpp.write( '            }\n')
+        out_cpp.write( '            #endif\n')
+        out_cpp.write( '            fz_strlcpy(error_message, e.what(), sizeof(error_message));\n')
         out_cpp.write( '        }\n')
-        out_cpp.write( '        #endif\n')
-        out_cpp.write( '        fz_throw(arg_0, FZ_ERROR_GENERIC, "%s", e.what());\n')
+        out_cpp.write( '        /* We defer fz_throw() to here, to ensure that `std::exception& e` has been destructed. */\n')
+        out_cpp.write( '        fz_throw(arg_0, FZ_ERROR_GENERIC, "%s", error_message);\n')
+        if return_type != 'void':
+            out_cpp.write(f'        /* Keep compiler happy. */\n')
+            out_cpp.write(f'        {return_type} ret;\n')
+            out_cpp.write(f'        return ret;\n')
         out_cpp.write( '    }\n')
         out_cpp.write('}\n')
 
