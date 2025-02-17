@@ -961,6 +961,7 @@ fz_load_chapter_page(fz_context *ctx, fz_document *doc, int chapter, int number)
 				doc->open->prev = &page->next;
 			doc->open = page;
 			page->prev = &doc->open;
+			page->in_doc = 1;
 		}
 		return page;
 	}
@@ -1103,6 +1104,12 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 		page->number = -1;
 
 		fz_drop_document(ctx, doc);
+
+		// If page has never been added to the list of open pages in a document,
+		// it will not get be reaped upon document freeing; instead free the page
+		// immediately.
+		if (!page->in_doc)
+			fz_free(ctx, page);
 	}
 }
 
