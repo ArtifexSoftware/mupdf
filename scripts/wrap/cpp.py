@@ -1109,6 +1109,15 @@ g_extra_declarations = textwrap.dedent(f'''
 
         /** SWIG-friendly wrapper for pdf_set_annot_callout_line(). */
         void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout);
+
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_display_list(). */
+        std::string fz_decode_barcode_from_display_list2(fz_context *ctx, fz_barcode_type *type, fz_display_list *list, fz_rect subarea, int rotate);
+
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_pixmap(). */
+        std::string fz_decode_barcode_from_pixmap2(fz_context *ctx, fz_barcode_type *type, fz_pixmap *pix, int rotate);
+
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_page(). */
+        std::string fz_decode_barcode_from_page2(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1348,6 +1357,30 @@ g_extra_definitions = textwrap.dedent(f'''
         void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout)
         {{
             pdf_set_annot_callout_line(ctx, annot, &callout[0], callout.size());
+        }}
+
+        std::string fz_decode_barcode_from_display_list2(fz_context *ctx, fz_barcode_type *type, fz_display_list *list, fz_rect subarea, int rotate)
+        {{
+            char* ret = fz_decode_barcode_from_display_list(ctx, type, list, subarea, rotate);
+            std::string ret2 = ret;
+            fz_free(ctx, ret);
+            return ret2;
+        }}
+
+        std::string fz_decode_barcode_from_pixmap2(fz_context *ctx, fz_barcode_type *type, fz_pixmap *pix, int rotate)
+        {{
+            char* ret = fz_decode_barcode_from_pixmap(ctx, type, pix, rotate);
+            std::string ret2 = ret;
+            fz_free(ctx, ret);
+            return ret2;
+        }}
+
+        std::string fz_decode_barcode_from_page2(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate)
+        {{
+            char* ret = fz_decode_barcode_from_page(ctx, type, page, subarea, rotate);
+            std::string ret2 = ret;
+            fz_free(ctx, ret);
+            return ret2;
         }}
         ''')
 
