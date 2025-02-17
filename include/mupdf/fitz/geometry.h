@@ -547,8 +547,6 @@ fz_matrix fz_transform_page(fz_rect mediabox, float resolution, float rotate);
 /**
 	Create an inverse matrix.
 
-	inverse: Place to store inverse matrix.
-
 	matrix: Matrix to invert. A degenerate matrix, where the
 	determinant is equal to zero, can not be inverted and the
 	original matrix is returned instead.
@@ -560,9 +558,9 @@ fz_matrix fz_invert_matrix(fz_matrix matrix);
 /**
 	Attempt to create an inverse matrix.
 
-	inverse: Place to store inverse matrix.
+	inv: Place to store inverse matrix.
 
-	matrix: Matrix to invert. A degenerate matrix, where the
+	src: Matrix to invert. A degenerate matrix, where the
 	determinant is equal to zero, can not be inverted.
 
 	Returns 1 if matrix is degenerate (singular), or 0 otherwise.
