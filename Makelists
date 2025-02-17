@@ -845,6 +845,7 @@ ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODMultiUPCEANReader.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODReader.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODUPCAWriter.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODUPCEANCommon.cpp
+ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODUPCEWriter.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/oned/ODWriterHelper.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/pdf417/PDFBarcodeValue.cpp
 ZXINGCPP_SRC += thirdparty/zxing-cpp/core/src/pdf417/PDFBoundingBox.cpp
