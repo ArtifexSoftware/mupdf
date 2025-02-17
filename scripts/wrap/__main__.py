@@ -1093,15 +1093,11 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
             jlib.log('Setting -j to  multiprocessing.cpu_count()={j}')
         make += f' -j {j}'
     flags = os.path.basename( build_dirs.dir_so).split('-')
-    actual_build_dir = f'{build_dirs.dir_mupdf}/build/'
     make_env = ''
     make_args = ' HAVE_GLUT=no HAVE_PTHREAD=yes verbose=yes'
     if m_vars:
         make_args += f' {m_vars}'
     suffix = None
-    build_prefix = ''
-    build_suffix = ''
-    in_prefix = True
     for i, flag in enumerate( flags):
         if flag in ('x32', 'x64') or re.match('py[0-9]', flag):
             # setup.py puts cpu and python version
@@ -1109,59 +1105,32 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
             # when creating wheels; we need to ignore
             # them.
             jlib.log('Ignoring {flag=}')
-            build_suffix += f'-{flag}'
-            actual_build_dir += f'-{flag}'
         else:
             if 0: pass  # lgtm [py/unreachable-statement]
             elif flag == 'debug':
                 make_args += ' build=debug'
-                in_prefix = False
             elif flag == 'release':
                 make_args += ' build=release'
-                in_prefix = False
             elif flag == 'memento':
                 make_args += ' build=memento'
-                in_prefix = False
             elif flag == 'shared':
                 make_args += ' shared=yes'
-                # `suffix` determines the name of libraries that we create, for
-                # example libmupdfcpp.so, but not libmupdf.so itself - this is
-                # created by `Makefile` etc. We do specify libmupdf.so when
-                # linking but the suffix is unused and on macos we will use
-                # libmupdf.dylib if present.
                 suffix = '.so'
-                build_prefix += f'{flag}-'
-                in_prefix = False
             elif flag == 'tesseract':
                 make_args += ' HAVE_LEPTONICA=yes HAVE_TESSERACT=yes'
-                build_prefix += f'{flag}-'
             elif flag == 'bsymbolic':
                 make_env += ' XLIB_LDFLAGS=-Wl,-Bsymbolic'
-                build_prefix += f'{flag}-'
+            elif flag == 'barcode':
+                make_args += ' barcode=yes'
             elif flag == 'Py_LIMITED_API':
-                build_prefix += f'{flag}-'
+                pass
             elif flag.startswith('Py_LIMITED_API='):    # fixme: obsolete.
-                build_prefix += f'{flag}-'
+                pass
             elif flag.startswith('Py_LIMITED_API_'):
-                build_prefix += f'{flag}-'
+                pass
             else:
-                if not in_prefix:
-                    raise Exception( f'Unrecognised flag {flag!r} in {flags!r} in {build_dirs.dir_so!r}')
-                if flag == 'fpic':
-                    make_env += ' CFLAGS="-fPIC"'
-                    suffix = '.a'
-                else:
-                    #jlib.log(f'Ignoring unrecognised flag {flag!r} in {flags!r} in {build_dirs.dir_so!r}')
-                    pass
-                build_prefix += f'{flag}-'
-            if i:
-                actual_build_dir += '-'
-            actual_build_dir += flag
-    assert suffix, f'Leaf must contain "shared-" or "fpic-": build_dirs.dir_so={build_dirs.dir_so}'
-    if build_prefix:
-        make_args += f' build_prefix={build_prefix}'
-    if build_suffix:
-        make_args += f' build_suffix={build_suffix}'
+                jlib.log(f'Ignoring unrecognised flag {flag!r} in {flags!r} in {build_dirs.dir_so!r}')
+    make_args += f' OUT=build/{os.path.basename(build_dirs.dir_so)}'
     if m_target:
         for t in m_target.split(','):
             make_args += f' {t}'
@@ -1172,7 +1141,7 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
         command += make_env
     command += f' {make}{make_args}'
 
-    return command, actual_build_dir, suffix
+    return command, build_dirs.dir_so, suffix
 
 _windows_vs_upgrade_cache = dict()
 def _windows_vs_upgrade( vs_upgrade, build_dirs, devenv):
