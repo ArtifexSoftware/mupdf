@@ -92,6 +92,7 @@ extern "C" {
 #include "mupdf/fitz/story-writer.h"
 
 #include "mupdf/fitz/deskew.h"
+#include "mupdf/fitz/barcode.h"
 
 #ifdef __cplusplus
 }
