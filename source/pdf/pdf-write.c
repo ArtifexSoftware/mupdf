@@ -1810,19 +1810,20 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_encrypt = fz_option_eq(val, "yes") ? PDF_ENCRYPT_NONE : PDF_ENCRYPT_KEEP;
 	if (fz_has_option(ctx, args, "encrypt", &val))
 	{
-		opts->do_encrypt = PDF_ENCRYPT_UNKNOWN;
 		if (fz_option_eq(val, "none") || fz_option_eq(val, "no"))
 			opts->do_encrypt = PDF_ENCRYPT_NONE;
-		if (fz_option_eq(val, "keep"))
+		else if (fz_option_eq(val, "keep"))
 			opts->do_encrypt = PDF_ENCRYPT_KEEP;
-		if (fz_option_eq(val, "rc4-40") || fz_option_eq(val, "yes"))
+		else if (fz_option_eq(val, "rc4-40") || fz_option_eq(val, "yes"))
 			opts->do_encrypt = PDF_ENCRYPT_RC4_40;
-		if (fz_option_eq(val, "rc4-128"))
+		else if (fz_option_eq(val, "rc4-128"))
 			opts->do_encrypt = PDF_ENCRYPT_RC4_128;
-		if (fz_option_eq(val, "aes-128"))
+		else if (fz_option_eq(val, "aes-128"))
 			opts->do_encrypt = PDF_ENCRYPT_AES_128;
-		if (fz_option_eq(val, "aes-256"))
+		else if (fz_option_eq(val, "aes-256"))
 			opts->do_encrypt = PDF_ENCRYPT_AES_256;
+		else
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "unknown encryption in options");
 	}
 	if (fz_has_option(ctx, args, "owner-password", &val))
 		fz_copy_option(ctx, val, opts->opwd_utf8, nelem(opts->opwd_utf8));
