@@ -1110,13 +1110,16 @@ g_extra_declarations = textwrap.dedent(f'''
         /** SWIG-friendly wrapper for pdf_set_annot_callout_line(). */
         void pdf_set_annot_callout_line2(fz_context *ctx, pdf_annot *annot, std::vector<fz_point>& callout);
 
-        /** SWIG-friendly wrapper for fz_decode_barcode_from_display_list(). */
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_display_list(),
+        avoiding leak of the returned string. */
         std::string fz_decode_barcode_from_display_list2(fz_context *ctx, fz_barcode_type *type, fz_display_list *list, fz_rect subarea, int rotate);
 
-        /** SWIG-friendly wrapper for fz_decode_barcode_from_pixmap(). */
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_pixmap(), avoiding
+        leak of the returned string. */
         std::string fz_decode_barcode_from_pixmap2(fz_context *ctx, fz_barcode_type *type, fz_pixmap *pix, int rotate);
 
-        /** SWIG-friendly wrapper for fz_decode_barcode_from_page(). */
+        /** SWIG-friendly wrapper for fz_decode_barcode_from_page(), avoiding
+        leak of the returned string. */
         std::string fz_decode_barcode_from_page2(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate);
         ''')
 
