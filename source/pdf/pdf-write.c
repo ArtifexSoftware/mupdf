@@ -3724,6 +3724,15 @@ gather_to_objstms(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int
 }
 
 static void
+prepass(fz_context *ctx, pdf_document *doc)
+{
+	int num;
+
+	for (num = 1; num < pdf_xref_len(ctx, doc); ++num)
+		pdf_cache_object(ctx, doc, num);
+}
+
+static void
 do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, const pdf_write_options *in_opts)
 {
 	int lastfree;
@@ -3745,11 +3754,16 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		fz_write_string(ctx, opts->out, "\n");
 	}
 
-	xref_len = pdf_xref_len(ctx, doc);
-
 	pdf_begin_operation(ctx, doc, "Save document");
 	fz_try(ctx)
 	{
+		/* First, we do a prepass across the document to load all the objects
+		 * into memory. We'll end up doing this later on anyway, but by doing
+		 * it here, we force any repairs to happen before writing proper
+		 * starts. */
+		prepass(ctx, doc);
+		xref_len = pdf_xref_len(ctx, doc);
+
 		initialise_write_state(ctx, doc, in_opts, opts);
 
 		if (!opts->dont_regenerate_id)
