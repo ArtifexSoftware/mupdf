@@ -234,10 +234,8 @@ endif
 ifeq ($(HAVE_LEPTONICA),yes)
   THIRD_CFLAGS += -DHAVE_LEPTONICA
 ifeq ($(USE_SYSTEM_LEPTONICA),yes)
-  THIRD_CFLAGS += $(SYS_LEPTONICA_CFLAGS)
   THIRD_LIBS += $(SYS_LEPTONICA_LIBS)
 else
-  THIRD_CFLAGS += $(LEPTONICA_CFLAGS)
   THIRD_LIBS += $(LEPTONICA_LIBS)
   THIRD_SRC += $(LEPTONICA_SRC)
 $(OUT)/thirdparty/leptonica/%.o: thirdparty/leptonica/%.c
@@ -250,10 +248,8 @@ endif
 ifeq ($(HAVE_TESSERACT),yes)
   THIRD_CFLAGS += -DHAVE_TESSERACT
 ifeq ($(USE_SYSTEM_TESSERACT),yes)
-  THIRD_CFLAGS += $(SYS_TESSERACT_CFLAGS)
   THIRD_LIBS += $(SYS_TESSERACT_LIBS) -lstdc++
 else
-  THIRD_CFLAGS += $(TESSERACT_CFLAGS)
   THIRD_LIBS += $(TESSERACT_LIBS)
   THIRD_SRC += $(TESSERACT_SRC)
 $(OUT)/thirdparty/tesseract/%.o: thirdparty/tesseract/%.cpp
