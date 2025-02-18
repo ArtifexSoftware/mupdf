@@ -346,8 +346,18 @@ enum
 
 enum
 {
+	/* Indicates that this vector came from a stroked
+	 * path. */
 	FZ_STEXT_VECTOR_IS_STROKED = 1,
+
+	/* Indicates that this vector came from a rectangular
+	 * (axis-aligned) path (or path segment). */
 	FZ_STEXT_VECTOR_IS_RECTANGLE = 2,
+
+	/* Indicates that this vector came from a path
+	 * segment, and more segments from this same path are
+	 * still to come. */
+	FZ_STEXT_VECTOR_CONTINUES = 4
 };
 
 /**

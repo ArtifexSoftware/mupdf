@@ -1998,14 +1998,189 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 }
 
 static void
-add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, uint32_t flags, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
+add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, uint32_t flags, uint32_t argb)
 {
 	fz_stext_block *b = add_block_to_page(ctx, page);
 
 	b->type = FZ_STEXT_BLOCK_VECTOR;
 	b->bbox = bbox;
 	b->u.v.flags = flags;
-	b->u.v.argb = hexrgba_from_color(ctx, cs, color, alpha);
+	b->u.v.argb = argb;
+}
+
+typedef struct
+{
+	fz_matrix ctm;
+	uint32_t argb;
+	uint32_t flags;
+	fz_stext_page *page;
+	fz_rect leftovers;
+	fz_rect pending;
+	int count;
+	fz_point p[5];
+} split_path_data;
+
+static void
+maybe_rect(fz_context *ctx, split_path_data *sp)
+{
+	int rect = 0;
+	int i;
+
+	if (sp->count >= 0)
+	{
+		if (sp->count == 3)
+		{
+			/* Allow for "moveto A, lineto B, lineto A, close" */
+			if (feq(sp->p[0].x, sp->p[2].x) || feq(sp->p[0].y, sp->p[2].y))
+				sp->count = 2;
+		}
+		if (sp->count == 2)
+		{
+			if (feq(sp->p[0].x, sp->p[1].x) || feq(sp->p[0].y, sp->p[1].y))
+				rect = 1; /* Count that as a rect */
+		}
+		else if (sp->count == 4 || sp->count == 5)
+		{
+			if (feq(sp->p[0].x, sp->p[1].x) && feq(sp->p[2].x, sp->p[3].x) && feq(sp->p[0].y, sp->p[3].y) && feq(sp->p[1].y, sp->p[2].y))
+				rect = 1;
+			else if (feq(sp->p[0].x, sp->p[3].x) && feq(sp->p[1].x, sp->p[2].x) && feq(sp->p[0].y, sp->p[1].y) && feq(sp->p[2].y, sp->p[3].y))
+				rect = 1;
+		}
+		if (rect)
+		{
+			fz_rect bounds;
+
+			bounds.x0 = bounds.x1 = sp->p[0].x;
+			bounds.y0 = bounds.y1 = sp->p[0].y;
+			for (i = 1; i < sp->count; i++)
+				bounds = fz_include_point_in_rect(bounds, sp->p[i]);
+			if (fz_is_valid_rect(sp->pending))
+				add_vector(ctx, sp->page, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb);
+			sp->pending = bounds;
+			return;
+		}
+
+		for (i = 0; i < sp->count; i++)
+			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
+	}
+}
+
+static void
+split_move(fz_context *ctx, void *arg, float x, float y)
+{
+	split_path_data *sp = (split_path_data *)arg;
+	fz_point p = fz_transform_point_xy(x, y, sp->ctm);
+
+	maybe_rect(ctx, sp);
+	sp->p[0] = p;
+	sp->count = 1;
+}
+
+static void
+split_line(fz_context *ctx, void *arg, float x, float y)
+{
+	split_path_data *sp = (split_path_data *)arg;
+	fz_point p = fz_transform_point_xy(x, y, sp->ctm);
+	int i;
+
+	if (sp->count >= 0)
+	{
+		/* Check for lines to the same point. */
+		if (feq(sp->p[sp->count-1].x, p.x) && feq(sp->p[sp->count-1].y, p.y))
+			return;
+		/* If we're still maybe a rect, just record the point. */
+		if (sp->count < 4)
+		{
+			sp->p[sp->count++] = p;
+			return;
+		}
+		/* Check for close line? */
+		if (sp->count == 4)
+		{
+			if (feq(sp->p[0].x, p.x) && feq(sp->p[0].y, p.y))
+			{
+				/* We've just drawn a line back to the start point. */
+				/* Needless saving of point, but it makes the logic
+				 * easier elsewhere. */
+				sp->p[sp->count++] = p;
+				return;
+			}
+		}
+		/* We can no longer be a rect. Output the points we had saved. */
+		for (i = 0; i < sp->count; i++)
+			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
+		/* Remember we're not a rect. */
+		sp->count = -1;
+	}
+	/* Roll this point into the non-rect bounds. */
+	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p);
+}
+
+static void
+split_curve(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	split_path_data *sp = (split_path_data *)arg;
+	fz_point p1 = fz_transform_point_xy(x1, y1, sp->ctm);
+	fz_point p2 = fz_transform_point_xy(x2, y2, sp->ctm);
+	fz_point p3 = fz_transform_point_xy(x3, y3, sp->ctm);
+	int i;
+
+	if (sp->count >= 0)
+	{
+		/* We can no longer be a rect. Output the points we had saved. */
+		for (i = 0; i < sp->count; i++)
+			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
+		/* Remember we're not a rect. */
+		sp->count = -1;
+	}
+	/* Roll these points into the non-rect bounds. */
+	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p1);
+	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p2);
+	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p3);
+}
+
+static void
+split_close(fz_context *ctx, void *arg)
+{
+	split_path_data *sp = (split_path_data *)arg;
+
+	maybe_rect(ctx, sp);
+	sp->count = 0;
+}
+
+
+static const
+fz_path_walker split_path_rects =
+{
+	split_move,
+	split_line,
+	split_curve,
+	split_close
+};
+
+static void
+add_vectors_from_path(fz_context *ctx, fz_stext_page *page, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke)
+{
+	int have_leftovers;
+	split_path_data sp;
+
+	sp.ctm = ctm;
+	sp.argb = hexrgba_from_color(ctx, cs, color, alpha);
+	sp.flags = stroke ? FZ_STEXT_VECTOR_IS_STROKED : 0;
+	sp.page = page;
+	sp.count = 0;
+	sp.leftovers = fz_empty_rect;
+	sp.pending = fz_empty_rect;
+	fz_walk_path(ctx, path, &split_path_rects, &sp);
+
+	have_leftovers = fz_is_valid_rect(sp.leftovers);
+
+	maybe_rect(ctx, &sp);
+
+	if (fz_is_valid_rect(sp.pending))
+		add_vector(ctx, page, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb);
+	if (have_leftovers)
+		add_vector(ctx, page, sp.leftovers, sp.flags, sp.argb);
 }
 
 static void
@@ -2024,10 +2199,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-	{
-		uint32_t flags = fz_path_is_rect(ctx, path, ctm) ? FZ_STEXT_VECTOR_IS_RECTANGLE : 0;
-		add_vector(ctx, page, path_bounds, flags, cs, color, alpha, cp);
-	}
+		add_vectors_from_path(ctx, page, path, ctm, cs, color, alpha, cp, 0);
 }
 
 static void
@@ -2046,10 +2218,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-	{
-		uint32_t flags = fz_path_is_rect(ctx, path, ctm) ? FZ_STEXT_VECTOR_IS_RECTANGLE : 0;
-		add_vector(ctx, page, path_bounds, flags | FZ_STEXT_VECTOR_IS_STROKED, cs, color, alpha, cp);
-	}
+		add_vectors_from_path(ctx, page, path, ctm, cs, color, alpha, cp, 1);
 }
 
 static void

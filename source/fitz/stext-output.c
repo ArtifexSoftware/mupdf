@@ -712,10 +712,11 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			break;
 
 		case FZ_STEXT_BLOCK_VECTOR:
-			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" stroke=\"%d\" rectangle=\"%d\" argb=\"%08x\"/>\n",
+			fz_write_printf(ctx, out, "<vector bbox=\"%g %g %g %g\" stroke=\"%d\" rectangle=\"%d\" continues=\"%d\" argb=\"%08x\"/>\n",
 					block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1,
 					!!(block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED),
 					!!(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE),
+					!!(block->u.v.flags & FZ_STEXT_VECTOR_CONTINUES),
 					block->u.v.argb);
 			break;
 
