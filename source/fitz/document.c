@@ -1098,13 +1098,13 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 		page->chapter = -1;
 		page->number = -1;
 
-		fz_drop_document(ctx, doc);
-
 		// If page has never been added to the list of open pages in a document,
 		// it will not get be reaped upon document freeing; instead free the page
 		// immediately.
 		if (!page->in_doc)
 			fz_free(ctx, page);
+
+		fz_drop_document(ctx, doc);
 	}
 }
 
