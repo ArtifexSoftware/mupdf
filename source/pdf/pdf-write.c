@@ -2166,8 +2166,11 @@ objstm_gather(fz_context *ctx, pdf_xref_entry *x, int i, pdf_document *doc, objs
 		return; /* pdf_cache_object does not like being called for i == 0 which should be free. */
 	pdf_cache_object(ctx, doc, i);
 
-	if (x->type != 'n' || x->stm_buf != NULL || x->stm_ofs != 0 || x->gen != 0)
-		return; /* Stream objects, objects with generation number != 0 cannot be put in objstms */
+	/* Both normal objects and stream objects can get put into objstms (because we've already
+	 * unpacked stream objects from objstms earlier!) Stream objects that are non-incremental
+	 * will be left as they are by the later check. */
+	if ((x->type != 'n' && x->type != 'o') || x->stm_buf != NULL || x->stm_ofs != 0 || x->gen != 0)
+		return; /* Objects with generation number != 0 cannot be put in objstms */
 	if (i == data->opts->crypt_object_number)
 		return; /* Encryption dictionaries can also not be put in objstms */
 
@@ -2217,6 +2220,34 @@ gather_to_objstms(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int
 	}
 
 	flush_gathered(ctx, doc, &data);
+}
+
+static void
+unpack_objstm_objs(fz_context *ctx, pdf_document *doc, int xref_len)
+{
+	int num;
+
+	/* At this point, all our objects are cached already. Let's change
+	 * all the 'o' objects to be 'n' and get rid of the ObjStm objects
+	 * they all came from. */
+	for (num = 1; num < xref_len; ++num)
+	{
+		pdf_xref_entry *x = pdf_get_xref_entry_no_change(ctx, doc, num);
+		if (!x || x->type != 'o')
+			continue;
+
+		/* Change the type of the object to 'n'. */
+		x->type = 'n';
+		/* This leaves x->ofs etc wrong, but that's OK as the object is
+		 * in memory, and we'll fix it up after the write. */
+
+		/* We no longer need the ObjStm that this object came from. */
+		if (x->ofs != 0)
+		{
+			pdf_xref_entry *y = pdf_get_xref_entry_no_change(ctx, doc, x->ofs);
+			y->type = 'f';
+		}
+	}
 }
 
 static void
@@ -2368,11 +2399,18 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 			opts->crypt_object_number = pdf_to_num(ctx, crypt);
 		}
 
-		if (opts->do_use_objstms)
-			gather_to_objstms(ctx, doc, opts, xref_len);
-
 		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 		expand_lists(ctx, opts, xref_len);
+
+		/* If we're about to do a non-incremental write, we can't
+		 * afford to leave any objects in ObjStms. We might have
+		 * changed the objects, and we won't know to update the
+		 * stream. So pull all the objects into memory. */
+		if (!opts->do_incremental)
+			unpack_objstm_objs(ctx, doc, xref_len);
+
+		if (opts->do_use_objstms)
+			gather_to_objstms(ctx, doc, opts, xref_len);
 
 		/* Truncate the xref after compacting and renumbering */
 		if ((opts->do_garbage >= 2) &&
