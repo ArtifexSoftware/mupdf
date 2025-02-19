@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -956,6 +956,8 @@ pdf_repair_trailer(fz_context *ctx, pdf_document *doc)
 void pdf_repair_xref_aux(fz_context *ctx, pdf_document *doc, void (*mid)(fz_context *ctx, pdf_document *doc))
 {
 	pdf_root_list *roots = NULL;
+
+	fz_var(roots);
 
 	fz_try(ctx)
 	{
