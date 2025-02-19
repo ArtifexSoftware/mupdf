@@ -126,6 +126,11 @@ void fz_dirname(char *dir, const char *path, size_t dirsize);
 const char *fz_basename(const char *path);
 
 /**
+	portable strverscmp(3) function
+*/
+int fz_strverscmp(const char *s1, const char *s2);
+
+/**
 	Like fz_decode_uri_component but in-place.
 */
 char *fz_urldecode(char *url);
