@@ -34,10 +34,12 @@
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
 static fz_output *out = NULL;
+static pdf_object_labels *labels = NULL;
 static int showbinary = 0;
 static int showdecode = 1;
-static int tight = 0;
-static int repair = 0;
+static int do_tight = 0;
+static int do_repair = 0;
+static int do_label = 0;
 static int showcolumn;
 
 static int usage(void)
@@ -60,11 +62,11 @@ static int usage(void)
 
 static void showtrailer(void)
 {
-	if (tight)
+	if (do_tight)
 		fz_write_printf(ctx, out, "trailer ");
 	else
 		fz_write_printf(ctx, out, "trailer\n");
-	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), tight, 1);
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), do_tight, 1);
 	fz_write_printf(ctx, out, "\n");
 }
 
@@ -145,6 +147,11 @@ static void showstream(int num)
 	fz_drop_stream(ctx, stm);
 }
 
+static void showlabel(fz_context *ctx, void *arg, const char *label)
+{
+	fz_write_printf(ctx, arg, "%% %s\n", label);
+}
+
 static void showobject(pdf_obj *ref)
 {
 	pdf_obj *obj = pdf_resolve_indirect(ctx, ref);
@@ -157,7 +164,9 @@ static void showobject(pdf_obj *ref)
 		}
 		else
 		{
-			if (tight)
+			if (do_label)
+				pdf_label_object(ctx, labels, num, showlabel, out);
+			if (do_tight)
 			{
 				fz_write_printf(ctx, out, "%d 0 obj ", num);
 				pdf_print_obj(ctx, out, obj, 1, 1);
@@ -176,7 +185,9 @@ static void showobject(pdf_obj *ref)
 	}
 	else
 	{
-		if (tight)
+		if (do_label)
+			pdf_label_object(ctx, labels, num, showlabel, out);
+		if (do_tight)
 		{
 			fz_write_printf(ctx, out, "%d 0 obj ", num);
 			pdf_print_obj(ctx, out, obj, 1, 1);
@@ -493,7 +504,7 @@ static void showpath(char *path, pdf_obj *obj)
 			showobject(obj);
 		else
 		{
-			pdf_print_obj(ctx, out, obj, tight, 0);
+			pdf_print_obj(ctx, out, obj, do_tight, 0);
 			fz_write_string(ctx, out, "\n");
 		}
 	}
@@ -606,7 +617,7 @@ int pdfshow_main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = fz_getopt(argc, argv, "p:o:begr")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:begrL")) != -1)
 	{
 		switch (c)
 		{
@@ -614,8 +625,9 @@ int pdfshow_main(int argc, char **argv)
 		case 'o': output = fz_optarg; break;
 		case 'b': showbinary = 1; break;
 		case 'e': showdecode = 0; break;
-		case 'g': tight = 1; break;
-		case 'r': repair = 1; break;
+		case 'g': do_tight = 1; break;
+		case 'r': do_repair = 1; break;
+		case 'L': do_label = 1; break;
 		default: return usage();
 		}
 	}
@@ -631,6 +643,7 @@ int pdfshow_main(int argc, char **argv)
 		out = fz_stdout(ctx);
 
 	fz_var(doc);
+	fz_var(labels);
 	fz_try(ctx)
 	{
 		doc = pdf_open_document(ctx, filename);
@@ -638,7 +651,7 @@ int pdfshow_main(int argc, char **argv)
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", filename);
 
-		if (repair)
+		if (do_repair)
 		{
 			fz_try(ctx)
 			{
@@ -653,18 +666,20 @@ int pdfshow_main(int argc, char **argv)
 			}
 		}
 
+		if (do_label)
+			labels = pdf_load_object_labels(ctx, doc);
 
 		if (fz_optind == argc)
 			showtrailer();
 
 		while (fz_optind < argc)
 			show(argv[fz_optind++]);
-
-		fz_close_output(ctx, out);
 	}
 	fz_always(ctx)
 	{
+		fz_close_output(ctx, out);
 		fz_drop_output(ctx, out);
+		pdf_drop_object_labels(ctx, labels);
 		pdf_drop_document(ctx, doc);
 	}
 	fz_catch(ctx)

@@ -738,6 +738,7 @@ typedef struct
 	int do_preserve_metadata; /* When cleaning, preserve metadata unchanged. */
 	int do_use_objstms; /* Use objstms if possible */
 	int compression_effort; /* 0 for default. 100 = max, 1 = min. */
+	int do_labels; /* Add labels to each object showing how it can be reached from the Root. */
 } pdf_write_options;
 
 FZ_DATA extern const pdf_write_options pdf_default_write_options;
@@ -869,5 +870,33 @@ int pdf_count_page_associated_files(fz_context *ctx, pdf_page *page);
 	Indexed from 0 to count-1.
 */
 pdf_obj *pdf_page_associated_file(fz_context *ctx, pdf_page *page, int idx);
+
+
+/*
+	A structure used to create "labels" for numbered objects.
+	The labels are different ways to reach an object from the trailer
+	and page tree, using the "mutool show" syntax.
+
+	Note: Paths involving "Parent", "P", "Prev", and "Last" are ignored,
+	as these are used for cycles in the structures which we don't care about
+	labeling.
+*/
+typedef struct pdf_object_labels pdf_object_labels;
+
+/*
+	Scan the entire object structure to create a directed graph
+	of indirect numbered objects and how they can reach each other.
+*/
+pdf_object_labels *pdf_load_object_labels(fz_context *ctx, pdf_document *doc);
+
+void pdf_drop_object_labels(fz_context *ctx, pdf_object_labels *g);
+
+/*
+	Enumerate all the possible labels for a given numbered object.
+	The callback is invoked with a path for each possible way the object
+	can be reached from the PDF trailer.
+*/
+typedef void (pdf_label_object_fn)(fz_context *ctx, void *arg, const char *label);
+void pdf_label_object(fz_context *ctx, pdf_object_labels *g, int num, pdf_label_object_fn *callback, void *arg);
 
 #endif

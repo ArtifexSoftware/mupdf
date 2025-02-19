@@ -66,6 +66,10 @@ typedef struct
 	int *gen_list;
 	int *renumber_map;
 
+	pdf_object_labels *labels;
+	int num_labels;
+	char *obj_labels[100];
+
 	int bias; /* when saving incrementally to a file with garbage before the version marker */
 
 	int crypt_object_number;
@@ -1021,6 +1025,18 @@ static int is_xml_metadata(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
+static void writelabel(fz_context *ctx, void *arg, const char *label)
+{
+	pdf_write_state *opts = arg;
+	if (opts->num_labels < (int)nelem(opts->obj_labels))
+		opts->obj_labels[opts->num_labels++] = fz_strdup(ctx, label);
+}
+
+static int labelcmp(const void *aa, const void *bb)
+{
+	return fz_strverscmp(*(const char **)aa, *(const char **)bb);
+}
+
 static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num, int gen, int skip_xrefs, int unenc)
 {
 	pdf_obj *obj = NULL;
@@ -1028,6 +1044,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	int do_deflate = 0;
 	int do_expand = 0;
 	int skip = 0;
+	int i;
 
 	fz_var(obj);
 	fz_var(buf);
@@ -1059,6 +1076,26 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 
 		if (!skip)
 		{
+			if (opts->labels)
+			{
+				opts->num_labels = 0;
+				pdf_label_object(ctx, opts->labels, num, writelabel, opts);
+				if (opts->num_labels == 0)
+				{
+					fz_write_string(ctx, opts->out, "% unused\n");
+				}
+				else
+				{
+					qsort(opts->obj_labels, opts->num_labels, sizeof(char*), labelcmp);
+					for (i = 0; i < opts->num_labels; ++i)
+					{
+						fz_write_printf(ctx, opts->out, "%% %s\n", opts->obj_labels[i]);
+						fz_free(ctx, opts->obj_labels[i]);
+						opts->obj_labels[i] = NULL;
+					}
+				}
+			}
+
 			if (pdf_obj_num_is_stream(ctx, doc, num))
 			{
 				do_deflate = opts->do_compress;
@@ -1087,6 +1124,11 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 	fz_always(ctx)
 	{
+		for (i = 0; i < opts->num_labels; ++i)
+		{
+			fz_free(ctx, opts->obj_labels[i]);
+			opts->obj_labels[i] = NULL;
+		}
 		fz_drop_buffer(ctx, buf);
 		pdf_drop_obj(ctx, obj);
 	}
@@ -1705,6 +1747,7 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	fz_free(ctx, opts->ofs_list);
 	fz_free(ctx, opts->gen_list);
 	fz_free(ctx, opts->renumber_map);
+	pdf_drop_object_labels(ctx, opts->labels);
 }
 
 const pdf_write_options pdf_default_write_options = {
@@ -1757,6 +1800,7 @@ const char *fz_pdf_write_options_usage =
 	"\tcompress-images: compress images\n"
 	"\tascii: ASCII hex encode binary streams\n"
 	"\tpretty: pretty-print objects with indentation\n"
+	"\tlabels: print object labels\n"
 	"\tlinearize: optimize for web browsers (no longer supported!)\n"
 	"\tclean: pretty-print graphics commands in content streams\n"
 	"\tsanitize: sanitize graphics commands in content streams\n"
@@ -1790,6 +1834,8 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_compress_images = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compression-effort", &val))
 		opts->compression_effort = fz_atoi(val);
+	if (fz_has_option(ctx, args, "labels", &val))
+		opts->do_labels = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "ascii", &val))
 		opts->do_ascii = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "pretty", &val))
@@ -2294,6 +2340,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		xref_len = pdf_xref_len(ctx, doc);
 
 		initialise_write_state(ctx, doc, in_opts, opts);
+
+		if (in_opts->do_labels)
+			opts->labels = pdf_load_object_labels(ctx, doc);
 
 		if (!opts->dont_regenerate_id)
 		{

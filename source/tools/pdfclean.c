@@ -62,6 +62,7 @@ static int usage(void)
 		"\t-c\tclean content streams\n"
 		"\t-s\tsanitize content streams\n"
 		"\t-t\t'tighten' objects\n"
+		"\t-L\twrite object labels\n"
 		"\t-A\tcreate appearance streams for annotations\n"
 		"\t-AA\trecreate appearance streams for annotations\n"
 		"\t-m\tpreserve metadata\n"
@@ -131,7 +132,7 @@ int pdfclean_main(int argc, char **argv)
 	opts.write = pdf_default_write_options;
 	opts.write.dont_regenerate_id = 1;
 
-	while ((c = fz_getopt_long(argc, argv, "ade:fgilmp:stczDAE:O:U:P:SZ", longopts)) != -1)
+	while ((c = fz_getopt_long(argc, argv, "ade:fgilmp:stczDAE:LO:U:P:SZ", longopts)) != -1)
 	{
 		switch (c)
 		{
@@ -149,6 +150,7 @@ int pdfclean_main(int argc, char **argv)
 		case 's': opts.write.do_sanitize += 1; break;
 		case 't': tighten = 1; break;
 		case 'A': opts.write.do_appearance += 1; break;
+		case 'L': opts.write.do_labels = 1; break;
 
 		case 'D': opts.write.do_encrypt = PDF_ENCRYPT_NONE; break;
 		case 'E': opts.write.do_encrypt = encrypt_method_from_string(fz_optarg); break;
