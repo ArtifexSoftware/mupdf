@@ -25,7 +25,8 @@
  */
 
 #include "mupdf/fitz.h"
-#include "mupdf/fitz/barcode.h"
+
+#if FZ_ENABLE_BARCODE
 
 #if FZ_ENABLE_PDF
 #include "mupdf/pdf.h" /* for pdf output */
@@ -44,7 +45,7 @@ static int size;
 
 static int usage(void)
 {
-	int i, n;
+	int i;
 
 	fprintf(stderr,
 		"usage: mubar [options] <file>\n"
@@ -53,10 +54,9 @@ static int usage(void)
 		"\t-c\tencode barcode from data in file (otherwise decode barcode from file)\n"
 		"ENCODING:\n"
 		"\t-F -\tbar code format (defaults to qrcode)\n");
-	n = nelem(fz_barcode_type_strings);
-	for (i = 1; i < n; i++)
+	for (i = FZ_BARCODE_NONE + 1; i < FZ_BARCODE__LIMIT; i++)
 	{
-		fprintf(stderr, "\t\t%s\n", fz_barcode_type_strings[i]);
+		fprintf(stderr, "\t\t%s\n", fz_string_from_barcode_type(i));
 	}
 	fprintf(stderr,
 		"\t-q\tAdd quiet zones\n"
@@ -137,7 +137,7 @@ int mubar_main(int argc, char **argv)
 		{
 			if (bartypestring)
 			{
-				bartype = fz_barcode_from_string(ctx, bartypestring);
+				bartype = fz_barcode_type_from_string(bartypestring);
 				if (bartype == FZ_BARCODE_NONE)
 					fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown bar code type");
 			}
@@ -220,3 +220,15 @@ int mubar_main(int argc, char **argv)
 
 	return (errored != 0);
 }
+
+#else
+
+#include <stdio.h>
+
+int mubar_main(int argc, char **argv)
+{
+	fprintf(stderr, "barcode support disabled\n");
+	return 1;
+}
+
+#endif

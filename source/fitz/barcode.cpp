@@ -94,7 +94,7 @@ BarcodeFormat formats[FZ_BARCODE__LIMIT] =
 };
 
 fz_barcode_type
-fz_barcode_from_string(fz_context *ctx, const char *str)
+fz_barcode_type_from_string(const char *str)
 {
 	int n = nelem(fz_barcode_type_strings);
 	int i;
@@ -108,6 +108,14 @@ fz_barcode_from_string(fz_context *ctx, const char *str)
 			return (fz_barcode_type)i;
 	}
 	return FZ_BARCODE_NONE;
+}
+
+const char *
+fz_string_from_barcode_type(fz_barcode_type type)
+{
+	if (type < 0 || type >= FZ_BARCODE__LIMIT)
+		return "unknown";
+	return fz_barcode_type_strings[type];
 }
 
 static fz_barcode_type

@@ -58,16 +58,16 @@ typedef enum
 } fz_barcode_type;
 
 /**
-	List of strings corresponding to the above barcode types.
+	Return barcode string matching one of the above barcode types.
 	All lowercase, e.g. "none", "aztec" etc.
 */
-FZ_DATA extern const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT];
+const char *fz_string_from_barcode_type(fz_barcode_type type);
 
 /**
 	Helper function to search the above list (case insensitively)
 	for an exact match. Returns FZ_BARCODE_NONE if no match found.
 */
-fz_barcode_type fz_barcode_from_string(fz_context *ctx, const char *str);
+fz_barcode_type fz_barcode_type_from_string(const char *str);
 
 
 /**

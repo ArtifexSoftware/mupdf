@@ -90,7 +90,9 @@ static struct {
 #endif
 	{ pdfaudit_main, "audit", "Produce usage stats from PDF files" },
 #endif
-	{ mubar_main, "bar", "Encode/Decode barcodes" },
+#if FZ_ENABLE_BARCODE
+	{ mubar_main, "barcode", "encode/decode barcodes" },
+#endif
 };
 
 static int
