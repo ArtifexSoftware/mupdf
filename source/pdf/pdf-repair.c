@@ -545,6 +545,7 @@ pdf_repair_xref_base(fz_context *ctx, pdf_document *doc)
 						errcode == FZ_ERROR_SYSTEM)
 					{
 						pdf_drop_root_list(ctx, roots);
+						roots = NULL;
 						fz_rethrow(ctx);
 					}
 					fz_report_error(ctx);
