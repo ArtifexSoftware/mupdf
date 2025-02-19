@@ -61,7 +61,7 @@ typedef enum
 	List of strings corresponding to the above barcode types.
 	All lowercase, e.g. "none", "aztec" etc.
 */
-extern const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT];
+FZ_DATA extern const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT];
 
 /**
 	Helper function to search the above list (case insensitively)
