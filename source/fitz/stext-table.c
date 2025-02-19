@@ -698,7 +698,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	pos->list[0].min = min;
 	pos->list[0].max = fz_max(xs->list[0].pos, min);
 	pos->list[0].uncertainty = 0;
-	pos->list[0].reinforcement = 1;
+	pos->list[0].reinforcement = 0;
 #ifdef DEBUG_TABLE_HUNT
 	printf("|%g ", pos->list[0].pos);
 #endif
@@ -748,7 +748,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	pos->list[edges].max = max;
 	assert(max >= xs->list[i-1].pos);
 	pos->list[edges].uncertainty = 0;
-	pos->list[edges].reinforcement = 1;
+	pos->list[edges].reinforcement = 0;
 	pos->max_uncertainty = hi;
 #ifdef DEBUG_TABLE_HUNT
 	printf("|%g\n", pos->list[edges].pos);
@@ -1164,76 +1164,18 @@ get_cell(cells_t *cells, int x, int y)
 	return &cells->cell[x + y * cells->w];
 }
 
-#define SPLIT_MARGIN 4
-/* Find which pos in the list, if any, corresponds to a given 'x' value.
- * Each pos has a 'min' and a 'max' value, and a 'pos' position that lines
- * somewhere between these values (expanded by a small amount of 'wiggle
- * room' to allow for dotted paths etc).  */
-static int
-find_grid_pos(fz_context *ctx, fz_stext_grid_positions *pos, float x, int consider_split)
-{
-	int i;
-	float prev = (pos->len > 0) ? pos->list[0].min : 0;
-	float next;
-	float wiggle;
-
-	for (i = 0; i < pos->len; prev = next, i++)
-	{
-		next = (i < pos->len - 1) ? pos->list[i+1].min : pos->list[i].max;
-		wiggle = next - pos->list[i].max;
-		if (wiggle >= 1)
-			wiggle = 1;
-		if (x > pos->list[i].max + wiggle)
-			continue;
-		wiggle = pos->list[i].min - prev;
-		if (wiggle >= 1)
-			wiggle = 1;
-		if (x < pos->list[i].min - wiggle)
-			return -1;
-
-		/* If we've been reinforced here already, then we expect pos
-		 * to be a decent match. If we're off by a way, then maybe
-		 * there should be another division here? */
-		if (consider_split && pos->list[i].reinforcement > 0)
-		{
-			float d = pos->list[i].pos - x;
-			if (d < 0)
-				d = -d;
-			if (d > SPLIT_MARGIN)
-				return -2;
-		}
-
-		return i;
-	}
-
-	return -1;
-}
-
-static void
-reinforce_grid_pos(fz_context *ctx, fz_stext_grid_positions *pos, int ix, float x)
-{
-	int r;
-
-	/* Don't move the left and right edges in. These are pegged at max/min respectively. */
-	if (ix == 0 || ix == pos->len-1)
-		return;
-
-	r = pos->list[ix].reinforcement++;
-	pos->list[ix].pos = (pos->list[ix].pos * r + x) / (r+1);
-}
-
 #ifdef DEBUG_TABLE_STRUCTURE
 static void
 asciiart_table(grid_walker_data *gd);
 #endif
 
-static int
-split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float at)
+static fz_stext_grid_positions *
+split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, int i, int early)
 {
 	fz_stext_grid_positions **posp = row ? &gd->ypos : &gd->xpos;
 	fz_stext_grid_positions *pos = *posp;
 	int n = pos->len;
-	int i, j, x, y, w, h;
+	int x, y, w, h;
 	cells_t *cells;
 
 	/* Realloc the required structs */
@@ -1241,74 +1183,210 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float at)
 	cells = gd->cells = fz_realloc_flexible(ctx, gd->cells, cells_t, cell, (gd->cells->w + (1-row)) * (gd->cells->h + row));
 	/* If both pass, then we're safe to shuffle the data. */
 
-	/* First, expand the grid pos. */
-	i = find_grid_pos(ctx, pos, at, 0);
 #ifdef DEBUG_TABLE_STRUCTURE
-	printf("Before split %s %d (%g)\n", row ? "row" : "col", i, at);
+	printf("Before split %s %d\n", row ? "row" : "col", i);
 	asciiart_table(gd);
 #endif
 
-	assert(i >= 0);
+	assert(i >= 0 && i < n);
 	memmove(&pos->list[i+1], &pos->list[i], sizeof(pos->list[0]) * (n-i));
-	if (pos->list[i].pos > at)
-	{
-		/* We want to split position i (into i and i+1) and return i. */
-		pos->list[i].max = pos->list[i+1].min = at + SPLIT_MARGIN;
-		pos->list[i].pos = at;
-		assert(pos->list[i].pos <= pos->list[i].max && pos->list[i+1].min <= pos->list[i+1].pos);
-		pos->list[i].reinforcement = 0;
-		/* We have made this new position by splitting cell i-1 in two */
-		assert(i > 0);
-		j = i-1;
-	}
-	else
-	{
-		/* We want to split position i (into i and i+1) and return i+1. */
-		pos->list[i].max = pos->list[i+1].min = at - SPLIT_MARGIN;
-		pos->list[i+1].pos = at;
-		assert(pos->list[i].pos <= pos->list[i].max && pos->list[i+1].min <= pos->list[i+1].pos);
-		pos->list[i+1].reinforcement = 0;
-		/* We have made this new position by splitting cell i into two */
-		j = i;
-	}
 	pos->len++;
 
 	/* Next expand the cells. Only h_line and v_line are filled in so far. */
 	w = cells->w;
 	h = cells->h;
+	if (early && i > 0)
+		i--, early = 0;
 	if (row)
 	{
 		/* Add a row */
 		cells->h = h+1;
-		/* Expand the table, duplicating row j */
-		memmove(&cells->cell[(j+1)*w], &cells->cell[j*w], (h-i)*w*sizeof(cells->cell[0]));
-		/* v_lines are carried over. h_lines need to be unset. */
-		for (x = 0; x < w; x++)
-			cells->cell[x + (j+1)*w].h_line = 0;
+		/* Expand the table, duplicating row i */
+		memmove(&cells->cell[(i+1)*w], &cells->cell[i*w], (h-i)*w*sizeof(cells->cell[0]));
+
+		if (early)
+		{
+			/* We are splitting row 0 into 0 and 1, with 0 being the new one. */
+			for (x = 0; x < w; x++)
+			{
+				cells->cell[x].h_line = 0;
+				cells->cell[x].v_line = 0;
+			}
+		}
+		else
+		{
+			/* We are splitting row i into i and i+1, with i+1 being the new one. */
+			/* v_lines are carried over. h_lines need to be unset. */
+			for (x = 0; x < w; x++)
+				cells->cell[x + (i+1)*w].h_line = 0;
+		}
 	}
 	else
 	{
 		/* Add a column */
 		cells->w = w+1;
-		/* Expand the table, duplicating column j */
+		/* Expand the table, duplicating column i */
 		for (y = h-1; y >= 0; y--)
 		{
-			for (x = w; x > j; x--)
+			for (x = w; x > i; x--)
 				cells->cell[x + y*(w+1)] = cells->cell[x-1 + y*w];
 			for (; x >= 0; x--)
 				cells->cell[x + y*(w+1)] = cells->cell[x + y*w];
 		}
-		/* h_lines are carried over. v_lines need to be reset */
-		for (y = 0; y < h; y++)
-			cells->cell[j+1 + y*(w+1)].v_line = 0;
+		if (early)
+		{
+			/* We are splitting col 0 into 0 and 1, with 0 being the new one. */
+			for (y = 0; y < h; y++)
+			{
+				cells->cell[y*(w+1)].h_line = 0;
+				cells->cell[y*(w+1)].v_line = 0;
+			}
+		}
+		else
+		{
+			/* h_lines are carried over. v_lines need to be reset */
+			for (y = 0; y < h; y++)
+				cells->cell[i+1 + y*(w+1)].v_line = 0;
+		}
 	}
 
 #ifdef DEBUG_TABLE_STRUCTURE
 	printf("After split\n");
 	asciiart_table(gd);
 #endif
+	return pos;
+}
 
-	return i;
+/*	This routine finds (and reinforces) grid positions for lines.
+ *
+ *	If we have a thin line from (x0, y0) to (x1, y0), then we are
+ *	pretty sure that y0 will be on the edge of a cell. We are less
+ *	sure that x0 and x1 will match up to the edge of a cell.
+ *	Stylistically some tables overrun or underrun such lines.
+ *
+ *	Similarly from (x0, y0) to (x0, y1), we expect x0 to be accurate
+ *	but y0 and y1 less so.
+ *
+ *	If we have a wider rectangle, from (x0, y0) to (x1, y1) then
+ *	we fully expect all sides to be accurate.
+ */
+static int
+find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inaccurate)
+{
+	const int WIGGLE_ROOM = 2;
+	int i;
+	fz_stext_grid_positions *pos = row ? gd->ypos : gd->xpos;
+
+	assert(x >= pos->list[0].min && x <= pos->list[pos->len-1].max);
+
+#ifdef DEBUG_TABLE_STRUCTURE
+	printf("Looking for %g in %s splits:\n", x, row ? "row" : "col");
+	for (i = 0; i < pos->len; i++)
+	{
+		printf("%d\t%g\t%g\t%g\t%d\n", i, pos->list[i].min, pos->list[i].pos, pos->list[i].max, pos->list[i].reinforcement);
+	}
+#endif
+
+	while (inaccurate) /* So we can break out */
+	{
+		float prev = 0;
+
+		/* If we start/finish outside the range of the table, then we
+		 * want to extend the table. So ignore 'inaccurate' in this
+		 * case. Match the logic below. */
+		if (x < pos->list[0].min)
+			break;
+		if (x < pos->list[0].pos - WIGGLE_ROOM && pos->list[0].reinforcement > 0)
+			break;
+		if (x > pos->list[pos->len-1].max)
+			break;
+		if (x > pos->list[pos->len-1].pos + WIGGLE_ROOM && pos->list[pos->len-1].reinforcement > 0)
+			break;
+
+		/* Just find the closest one. No reinforcement. */
+		for (i = 0; i < pos->len; i++)
+		{
+			if (x < pos->list[i].min)
+			{
+				float mid = (prev + pos->list[i].min)/2;
+				if (x < mid)
+					return i-1;
+				return i;
+			}
+			prev = pos->list[i].max;
+			if (x <= prev)
+				return i;
+		}
+		assert("Never happens" == NULL);
+
+		return -1;
+	}
+
+	for (i = 0; i < pos->len; i++)
+	{
+		if (x < pos->list[i].min)
+		{
+			/* Split i into i and i+1, and make i the new one. */
+			assert(i > 0);
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Splitting before %d\n", i);
+#endif
+			pos = split_grid_pos(ctx, gd, row, i, 1);
+			pos->list[i-1].max = pos->list[i].min = (pos->list[i-1].max + x)/2;
+			pos->list[i].pos = x;
+			pos->list[i].max = pos->list[i+1].min = (pos->list[i+1].pos + x)/2;
+			pos->list[i].reinforcement = 1;
+			return i;
+		}
+		else if (x <= pos->list[i].max)
+		{
+			/* We are in the range for the ith divider. */
+			if (pos->list[i].reinforcement == 0)
+			{
+				/* If we've not been reinforced before, reinforce now. */
+				pos->list[i].pos = x;
+				pos->list[i].reinforcement = 1;
+				return i;
+			}
+			/* We've been reinforced before. This ought to be a pretty good
+			 * indication. */
+			if (pos->list[i].pos - WIGGLE_ROOM < x && x < pos->list[i].pos + WIGGLE_ROOM)
+			{
+				/* We are a close match to the previously predicted pos
+				 * value. */
+				pos->list[i].pos = pos->list[i].pos * pos->list[i].reinforcement + x;
+				pos->list[i].pos /= ++pos->list[i].reinforcement;
+				return i;
+			}
+			/* We need to split i into i and i+1. */
+			pos = split_grid_pos(ctx, gd, row, i, pos->list[i].pos > x);
+			if (pos->list[i].pos > x)
+			{
+				/* Make i the new one */
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("Splitting %d (early)\n", i);
+#endif
+				pos->list[i].pos = x;
+				pos->list[i].max = pos->list[i+1].min = (pos->list[i+1].pos + x)/2;
+				pos->list[i].reinforcement = 1;
+				return i;
+			}
+			else
+			{
+				/* Make i+1 the new one */
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("Splitting %d (late)\n", i);
+#endif
+				pos->list[i+1].pos = x;
+				pos->list[i].max = pos->list[i+1].min = (pos->list[i].pos + x)/2;
+				pos->list[i].reinforcement = 1;
+				return i+1;
+			}
+		}
+	}
+	assert("Never happens" == NULL);
+
+	return -1;
 }
 
 static int
@@ -1337,91 +1415,56 @@ find_cell_r(fz_stext_grid_positions *pos, float x)
 
 /* Add a horizontal line. Return 1 if the line doesn't seem to be a border line.
  * Record which cells that was a border for. */
-static int
+static void
 add_h_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
 {
-	int start = find_grid_pos(ctx, gd->xpos, x0, 0);
-	int end = find_grid_pos(ctx, gd->xpos, x1, 0);
+	int start = find_grid_pos(ctx, gd, 0, x0, 1);
+	int end = find_grid_pos(ctx, gd, 0, x1, 1);
 	float y = (y0 + y1) / 2;
-	int yidx = find_grid_pos(ctx, gd->ypos, y, 1);
+	int yidx = find_grid_pos(ctx, gd, 1, y, 0);
 	int i;
-
-	if (start < 0 || end < 0 || yidx < 0 || start >= end)
-		return 1;
-
-	if (yidx == -2)
-		yidx = split_grid_pos(ctx, gd, 1, y);
-	if (yidx < 0)
-		return 1;
-
-	reinforce_grid_pos(ctx, gd->xpos, start, x0);
-	reinforce_grid_pos(ctx, gd->xpos, end, x1);
-	reinforce_grid_pos(ctx, gd->ypos, yidx, y);
 
 	for (i = start; i < end; i++)
 		get_cell(gd->cells, i, yidx)->h_line++;
-
-	return 0;
 }
 
 /* Add a vertical line. Return 1 if the line doesn't seem to be a border line.
  * Record which cells that was a border for. */
-static int
+static void
 add_v_line(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, float x1)
 {
-	int start = find_grid_pos(ctx, gd->ypos, y0, 0);
-	int end = find_grid_pos(ctx, gd->ypos, y1, 0);
+	int start = find_grid_pos(ctx, gd, 1, y0, 1);
+	int end = find_grid_pos(ctx, gd, 1, y1, 1);
 	float x = (x0 + x1) / 2;
-	int xidx = find_grid_pos(ctx, gd->xpos, x, 1);
+	int xidx = find_grid_pos(ctx, gd, 0, x, 0);
 	int i;
-
-	if (start < 0 || end < 0 || start >= end)
-		return 1;
-
-	if (xidx == -2)
-		xidx = split_grid_pos(ctx, gd, 0, x);
-	if (xidx < 0)
-		return 1;
-
-	reinforce_grid_pos(ctx, gd->ypos, start, y0);
-	reinforce_grid_pos(ctx, gd->ypos, end, y1);
-	reinforce_grid_pos(ctx, gd->xpos, xidx, x);
 
 	for (i = start; i < end; i++)
 		get_cell(gd->cells, xidx, i)->v_line++;
-
-	return 0;
 }
 
-static int
-add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
+static void
+add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
 {
-	int ix0 = find_grid_pos(ctx, gd->xpos, x0, 0);
-	int ix1 = find_grid_pos(ctx, gd->xpos, x1, 0);
-	int iy0 = find_grid_pos(ctx, gd->ypos, y0, 0);
-	int iy1 = find_grid_pos(ctx, gd->ypos, y1, 0);
+	int ix0 = find_grid_pos(ctx, gd, 0, x0, 0);
+	int ix1 = find_grid_pos(ctx, gd, 0, x1, 0);
+	int iy0 = find_grid_pos(ctx, gd, 1, y0, 0);
+	int iy1 = find_grid_pos(ctx, gd, 1, y1, 0);
 	int i;
 
-	if (ix0 < 0 || ix1 < 0 || iy0 < 0 || iy1 < 0 || ix0 >= ix1 || iy0 >= iy1)
-		return 1;
-
-	reinforce_grid_pos(ctx, gd->xpos, ix0, x0);
-	reinforce_grid_pos(ctx, gd->xpos, ix1, x1);
-	reinforce_grid_pos(ctx, gd->ypos, iy0, y0);
-	reinforce_grid_pos(ctx, gd->ypos, iy1, y1);
-
-	for (i = ix0; i < ix1; i++)
+	if (stroked)
 	{
-		get_cell(gd->cells, i, iy0)->h_line++;
-		get_cell(gd->cells, i, iy1)->h_line++;
+		for (i = ix0; i < ix1; i++)
+		{
+			get_cell(gd->cells, i, iy0)->h_line++;
+			get_cell(gd->cells, i, iy1)->h_line++;
+		}
+		for (i = iy0; i < iy1; i++)
+		{
+			get_cell(gd->cells, ix0, i)->v_line++;
+			get_cell(gd->cells, ix1, i)->v_line++;
+		}
 	}
-	for (i = iy0; i < iy1; i++)
-	{
-		get_cell(gd->cells, ix0, i)->v_line++;
-		get_cell(gd->cells, ix1, i)->v_line++;
-	}
-
-	return 0;
 }
 
 /* Shared internal routine with stext-boxer.c  */
@@ -1440,11 +1483,16 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 		}
 		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
 		{
-			fz_rect r = fz_collate_small_vector_run(&block);
+			fz_rect r;
 			float w, h;
 
+			/* Only process rectangle blocks. */
+			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
+				continue;
+
+			r = fz_collate_small_vector_run(&block);
 			r = fz_intersect_rect(r, gd->bounds);
-			if (fz_is_empty_rect(r))
+			if (!fz_is_valid_rect(r))
 				continue;
 
 			w = r.x1 - r.x0;
@@ -1462,7 +1510,7 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			else
 			{
 				/* Rectangle */
-				(void) add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+				(void) add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
 			}
 		}
 	}
@@ -1513,6 +1561,7 @@ mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s)
 #define IN_BORDER 1
 #define IN_UNKNOWN 2
 
+#define SPLIT_MARGIN 4
 static int
 where_is(fz_stext_grid_positions *pos, float x, int *in)
 {
@@ -1624,6 +1673,11 @@ classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r, int is_rect)
 	if (at_y0 == IN_CELL && at_y1 == IN_BORDER && iy0+1 == iy1)
 	{
 		return is_rect ? VECTOR_IS_BORDER : VECTOR_IS_CONTENT;
+	}
+
+	if (is_rect)
+	{
+		return VECTOR_IS_IGNORABLE;
 	}
 
 	/* unknown - take this as indication that this maybe isn't
@@ -2501,6 +2555,27 @@ merge_columns(grid_walker_data *gd)
 	for (x = gd->cells->w-3; x >= 0; x--)
 	{
 		/* Can column x be merged with column x+1? */
+		/* An empty column can certainly be merged if the h_lines are the same,
+		 * and there is no v_line. */
+		for (y = 0; y < gd->cells->h-1; y++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x+1, y);
+			if (a->full || !!a->h_line != !!b->h_line || b->v_line)
+				break;
+		}
+		if (y == gd->cells->h-1)
+			goto merge_column;
+		/* An empty column can certainly be merged if the h_lines are the same. */
+		for (y = 0; y < gd->cells->h-1; y++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x+1, y);
+			if (b->full || !!a->h_line != !!b->h_line || b->v_line)
+				break;
+		}
+		if (y == gd->cells->h-1)
+			goto merge_column;
 		/* We only ever want to merge columns if content crossed between them somewhere.
 		 * Don't use uncertainty for this, because uncertainty doesn't allow for
 		 * whitespace. */
@@ -2532,6 +2607,7 @@ merge_columns(grid_walker_data *gd)
 		if (y == gd->cells->h-1)
 		{
 			/* Merge the column! */
+merge_column:
 #ifdef DEBUG_TABLE_STRUCTURE
 			printf("Merging column %d\n", x);
 #endif
@@ -2574,6 +2650,27 @@ merge_rows(grid_walker_data *gd)
 	for (y = gd->cells->h-3; y >= 0; y--)
 	{
 		/* Can row y be merged with row y+1? */
+		/* An empty row can certainly be merged if the v_lines are the same,
+		 * and there is no h_line. */
+		for (x = 0; x < gd->cells->w-1; x++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x, y+1);
+			if (a->full || !!a->v_line != !!b->v_line || b->h_line)
+				break;
+		}
+		if (x == gd->cells->w-1)
+			goto merge_row;
+		/* An empty row can certainly be merged if the v_lines are the same. */
+		for (x = 0; x < gd->cells->w-1; x++)
+		{
+			cell_t *a = get_cell(gd->cells, x, y);
+			cell_t *b = get_cell(gd->cells, x, y+1);
+			if (b->full || !!a->v_line != !!b->v_line || b->h_line)
+				break;
+		}
+		if (x == gd->cells->w-1)
+			goto merge_row;
 		/* We only ever want to merge rows if content crossed between them somewhere.
 		 * Don't use uncertainty for this, because uncertainty doesn't allow for
 		 * whitespace. */
@@ -2605,6 +2702,7 @@ merge_rows(grid_walker_data *gd)
 		if (x == gd->cells->w-1)
 		{
 			/* Merge the row! */
+merge_row:
 #ifdef DEBUG_TABLE_STRUCTURE
 			printf("Merging row %d\n", y);
 #endif
@@ -2651,6 +2749,137 @@ cant_merge:
 }
 
 static int
+remove_bordered_empty_cells(grid_walker_data *gd)
+{
+	int x, y, x1, y1, x2, y2;
+	int changed = 0;
+
+	/* We are looking for a region of cells that's bordered,
+	 * and empty, and where the borders don't extend...
+	 *
+	 *      '    '
+	 *      '    '
+	 * . . .'____'. . .
+	 *      |    |
+	 *      |    |
+	 * . . .|____|. . .
+	 *      '    '
+	 *      '    '
+	 *      '    '
+	 */
+
+	for (y = 0; y < gd->cells->h-1; y++)
+	{
+		for (x = 0; x < gd->cells->w-1; x++)
+		{
+			cell_t *u = y > 0 ? get_cell(gd->cells, x, y-1) : NULL;
+			cell_t *l = x > 0 ? get_cell(gd->cells, x-1, y) : NULL;
+			cell_t *c = get_cell(gd->cells, x, y);
+			cell_t *ll = x > 0 ? get_cell(gd->cells, x-1, y+1) : NULL;
+			cell_t *lc = get_cell(gd->cells, x, y+1);
+			cell_t *lr = get_cell(gd->cells, x+1, y+1);
+
+			if (c->full)
+				continue;
+			if (!c->h_line || !c->v_line)
+				continue;
+			if (l != NULL && l->h_line)
+				continue;
+			if (u != NULL && u->v_line)
+				continue;
+			/* So c (x, y) is a reasonable top left of the bounded region. */
+			for (x1 = x+1; x1 < gd->cells->w; x1++)
+			{
+				u = y > 0 ? get_cell(gd->cells, x1, y-1) : NULL;
+				c = get_cell(gd->cells, x1, y);
+
+				if (u != NULL && u->v_line)
+					goto bad_region;
+				if (c->h_line && !c->v_line)
+					continue;
+				if (c->h_line || !c->v_line)
+					goto bad_region;
+				break;
+			}
+			if (x1 == gd->cells->w)
+				goto bad_region;
+			/* If we get here, then we have the top row of a bounded region
+			 * that runs from (x,y) to (x1-1, y). So, can we extend that region
+			 * downwards? */
+			for (y1 = y+1; y1 < gd->cells->h; y1++)
+			{
+				c = get_cell(gd->cells, x, y1);
+
+				if (!c->h_line && c->v_line)
+				{
+					/* This could be the start of a line. */
+					for (x2 = x+1; x2 < x1; x2++)
+					{
+						c = get_cell(gd->cells, x2, y1);
+						if (c->full || c->h_line || c->v_line)
+							goto bad_region;
+					}
+					c = get_cell(gd->cells, x1, y1);
+					if (c->h_line || !c->v_line)
+						goto bad_region;
+					/* That line was fine! Region is extended. */
+				}
+				else if (c->h_line && !c->v_line)
+				{
+					/* This might be the bottom line of the bounded region. */
+					for (x2 = x+1; x2 < x1; x2++)
+					{
+						c = get_cell(gd->cells, x2, y1);
+						if (!c->h_line || c->v_line)
+							goto bad_region;
+					}
+					c = get_cell(gd->cells, x1, y1);
+					if (c->h_line || c->v_line)
+						goto bad_region;
+					break;
+				}
+				else
+					goto bad_region;
+			}
+			if (y1 == gd->cells->h)
+				goto bad_region;
+			/* So we have a bounded region from x,y to x1-1,y1-1 */
+			for (y2 = y; y2 < y1; y2++)
+			{
+				for (x2 = x; x2 < x1; x2++)
+				{
+					c = get_cell(gd->cells, x2, y2);
+					c->h_line = 0;
+					c->v_line = 0;
+					c->full = 1;
+					if (x2 > x)
+						c->v_crossed = 1;
+					if (y2 > y)
+						c->h_crossed = 1;
+				}
+				c = get_cell(gd->cells, x2, y2);
+				c->v_line = 0;
+			}
+			for (x2 = x; x2 < x1; x2++)
+				get_cell(gd->cells, x2, y2)->h_line = 0;
+			changed = 1;
+bad_region:
+			{}
+		}
+	}
+
+#ifdef DEBUG_TABLE_STRUCTURE
+	if (changed)
+	{
+		printf("Simplified empty bounded cells to give:\n");
+		asciiart_table(gd);
+	}
+#endif
+
+	return changed;
+}
+
+static int
 find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content, fz_rect bounds)
 {
 	div_list xs = { 0 };
@@ -2685,8 +2914,12 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 		asciiart_table(gd);
 #endif
 		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
-		merge_columns(gd);
-		merge_rows(gd);
+		do
+		{
+			merge_columns(gd);
+			merge_rows(gd);
+		}
+		while (remove_bordered_empty_cells(gd));
 
 		/* Did we shrink the table so much it's not a table any more? */
 		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
