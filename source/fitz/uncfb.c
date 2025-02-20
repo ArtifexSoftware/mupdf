@@ -760,23 +760,24 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 				for (i = 0; i < 64; i += 2)
 				{
 					int ucs = get16(buffer+off+i);
-					count += fz_runelen(ucs);
 					if (ucs == 0)
 						break;
+					count += fz_runelen(ucs);
 				}
 				if (i+2 != namelen || i == 64)
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed name in CFB directory");
 
 				/* Copy the name. */
-				cfb->entries[cfb->count++].name = fz_malloc(ctx, count);
+				cfb->entries[cfb->count++].name = fz_malloc(ctx, count + 1);
 				count = 0;
 				for (i = 0; i < 64; i += 2)
 				{
 					int ucs = buffer[off+i] + (buffer[off+i+1]<<8);
-					count += fz_runetochar(&cfb->entries[cfb->count-1].name[count], ucs);
 					if (ucs == 0)
 						break;
+					count += fz_runetochar(&cfb->entries[cfb->count-1].name[count], ucs);
 				}
+				cfb->entries[cfb->count-1].name[count] = 0;
 
 				cfb->entries[cfb->count-1].sector = get32(buffer+off+128-12);
 				cfb->entries[cfb->count-1].size = get_len(ctx, cfb, buffer+off+128-8);
