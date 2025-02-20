@@ -653,6 +653,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-image.c" />
     <ClCompile Include="..\..\source\pdf\pdf-interpret.c" />
     <ClCompile Include="..\..\source\pdf\pdf-js.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-label.c" />
     <ClCompile Include="..\..\source\pdf\pdf-layer.c" />
     <ClCompile Include="..\..\source\pdf\pdf-layout.c" />
     <ClCompile Include="..\..\source\pdf\pdf-lex.c" />
