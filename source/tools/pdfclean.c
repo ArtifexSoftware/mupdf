@@ -61,7 +61,8 @@ static int usage(void)
 		"\t-i\tcompress image streams\n"
 		"\t-c\tclean content streams\n"
 		"\t-s\tsanitize content streams\n"
-		"\t-t\t'tighten' objects\n"
+		"\t-t\tcompact object syntax\n"
+		"\t-tt\tindented object syntax\n"
 		"\t-L\twrite object labels\n"
 		"\t-A\tcreate appearance streams for annotations\n"
 		"\t-AA\trecreate appearance streams for annotations\n"
@@ -92,7 +93,7 @@ int pdfclean_main(int argc, char **argv)
 	char *outfile = "out.pdf";
 	char *password = "";
 	int c;
-	int tighten = 0;
+	int pretty = -1;
 	pdf_clean_options opts = { 0 };
 	int errors = 0;
 	fz_context *ctx;
@@ -148,7 +149,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'l': opts.write.do_linear += 1; break;
 		case 'c': opts.write.do_clean += 1; break;
 		case 's': opts.write.do_sanitize += 1; break;
-		case 't': tighten = 1; break;
+		case 't': pretty = (pretty < 0) ? 0 : 1; break;
 		case 'A': opts.write.do_appearance += 1; break;
 		case 'L': opts.write.do_labels = 1; break;
 
@@ -247,8 +248,14 @@ int pdfclean_main(int argc, char **argv)
 		}
 	}
 
-	if ((opts.write.do_ascii || opts.write.do_decompress) && !opts.write.do_compress)
-		opts.write.do_pretty = !tighten;
+	if (pretty < 0)
+	{
+		if ((opts.write.do_ascii || opts.write.do_decompress) && !opts.write.do_compress)
+			pretty = 1;
+		else
+			pretty = 0;
+	}
+	opts.write.do_pretty = pretty;
 
 	if (argc - fz_optind < 1)
 		return usage();
