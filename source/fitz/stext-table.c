@@ -1216,8 +1216,8 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float at)
 	cells_t *cells;
 
 	/* Realloc the required structs */
-	*posp = pos = fz_realloc_flexible(ctx, pos, fz_stext_grid_positions, list, n);
-	cells = gd->cells = fz_realloc_flexible(ctx, gd->cells, cells_t, cell, gd->cells->w + (1-row) * (gd->cells->h + row));
+	*posp = pos = fz_realloc_flexible(ctx, pos, fz_stext_grid_positions, list, n+1);
+	cells = gd->cells = fz_realloc_flexible(ctx, gd->cells, cells_t, cell, (gd->cells->w + (1-row)) * (gd->cells->h + row));
 	/* If both pass, then we're safe to shuffle the data. */
 
 	/* First, expand the grid pos. */
@@ -1260,7 +1260,7 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float at)
 		/* Add a row */
 		cells->h = h+1;
 		/* Expand the table, duplicating row j */
-		memmove(&cells->cell[j+1*w], &cells->cell[j*w], (h-i)*w*sizeof(cells->cell[0]));
+		memmove(&cells->cell[(j+1)*w], &cells->cell[j*w], (h-i)*w*sizeof(cells->cell[0]));
 		/* v_lines are carried over. h_lines need to be unset. */
 		for (x = 0; x < w; x++)
 			cells->cell[x + (j+1)*w].h_line = 0;
