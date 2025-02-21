@@ -1089,7 +1089,7 @@ fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 	}
 
 	parser.pool = fz_new_pool(ctx);
-	parser.head = root = fz_pool_alloc(ctx, parser.pool, offsetof(fz_xml, u.node.u.d.name) + 1);
+	parser.head = root = fz_pool_alloc_flexible(ctx, parser.pool, fz_xml, u.node.u.d.name, 1);
 	parser.preserve_white = preserve_white;
 	parser.depth = 0;
 #ifdef FZ_XML_SEQ
