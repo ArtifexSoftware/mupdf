@@ -1094,7 +1094,7 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
         make += f' -j {j}'
     flags = os.path.basename( build_dirs.dir_so).split('-')
     make_env = ''
-    make_args = ' HAVE_GLUT=no HAVE_PTHREAD=yes verbose=yes'
+    make_args = ' HAVE_GLUT=no HAVE_PTHREAD=yes verbose=yes barcode=yes'
     if m_vars:
         make_args += f' {m_vars}'
     suffix = None
@@ -1120,8 +1120,6 @@ def _get_m_command( build_dirs, j=None, make=None, m_target=None, m_vars=None):
                 make_args += ' HAVE_LEPTONICA=yes HAVE_TESSERACT=yes'
             elif flag == 'bsymbolic':
                 make_env += ' XLIB_LDFLAGS=-Wl,-Bsymbolic'
-            elif flag == 'barcode':
-                make_args += ' barcode=yes'
             elif flag == 'Py_LIMITED_API':
                 pass
             elif flag.startswith('Py_LIMITED_API='):    # fixme: obsolete.
