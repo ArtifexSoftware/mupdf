@@ -168,34 +168,59 @@ pdf_drop_object_labels(fz_context *ctx, pdf_object_labels *g)
 		fz_drop_pool(ctx, g->pool);
 }
 
-static void
-find_paths(fz_context *ctx, pdf_object_labels *g, int here, char *leaf_path, pdf_label_object_fn *callback, void *arg)
+static char *
+prepend(char *path_buffer, char *path, const char *fmt, ...)
 {
-	char path[100];
+	char buf[256];
+	size_t z;
+	va_list args;
+
+	va_start(args, fmt);
+	z = fz_vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+
+	/* We always want to leave ourselves at least 3 chars for
+	 * a future "..." */
+	if (path_buffer + z + 3 <= path)
+	{
+		path -= z;
+		memcpy(path, buf, z);
+		return path;
+	}
+
+	/* Just put ... in now. */
+	path -= 3;
+	path[0] = '.';
+	path[1] = '.';
+	path[2] = '.';
+
+	return path;
+}
+
+static void
+find_paths(fz_context *ctx, pdf_object_labels *g, int here, char *path_buffer, char *leaf_path, pdf_label_object_fn *callback, void *arg)
+{
 	pdf_object_label_node *node;
 	int next;
 	if (here == g->root)
 	{
-		fz_snprintf(path, sizeof path, "trailer/Root%s", leaf_path);
-		callback(ctx, arg, path);
+		prepend(path_buffer, leaf_path, "trailer/Root");
+		callback(ctx, arg, prepend(path_buffer, leaf_path, "trailer/Root"));
 		return;
 	}
 	if (here == g->info)
 	{
-		fz_snprintf(path, sizeof path, "trailer/Info%s", leaf_path);
-		callback(ctx, arg, path);
+		callback(ctx, arg, prepend(path_buffer, leaf_path, "trailer/Info"));
 		return;
 	}
 	if (here == g->encrypt)
 	{
-		fz_snprintf(path, sizeof path, "trailer/Encrypt%s", leaf_path);
-		callback(ctx, arg, path);
+		callback(ctx, arg, prepend(path_buffer, leaf_path, "trailer/Encrypt"));
 		return;
 	}
 	if (g->pages[here])
 	{
-		fz_snprintf(path, sizeof path, "pages/%d%s", g->pages[here], leaf_path);
-		callback(ctx, arg, path);
+		callback(ctx, arg, prepend(path_buffer, leaf_path, "pages/%d", g->pages[here]));
 	}
 	for (node = g->nodes[here]; node; node = node->next)
 	{
@@ -206,19 +231,17 @@ find_paths(fz_context *ctx, pdf_object_labels *g, int here, char *leaf_path, pdf
 			continue;
 		if (g->pages[next])
 		{
-			fz_snprintf(path, sizeof path, "pages/%d%s%s", g->pages[next], node->path, leaf_path);
-			callback(ctx, arg, path);
+			callback(ctx, arg, prepend(path_buffer, leaf_path, "pages/%d%s", g->pages[next], node->path));
 		}
 		else
 		{
+			char *p = prepend(path_buffer, leaf_path, "%s", node->path);
 			g->seen[next] = 1;
-			// if we can't fit "trailer/Root" prefix then stop searching and truncate the path
-			if (fz_snprintf(path, sizeof path, "%s%s", node->path, leaf_path) < (sizeof path) - 13) {
-				find_paths(ctx, g, next, path, callback, arg);
-			} else {
-				fz_snprintf(path, sizeof path, "...%s", leaf_path);
-				callback(ctx, arg, path);
-			}
+			// if we've run out of room in the path buffer, send this and stop.
+			if (p[0] == '.' && p[1] == '.' && p[2] == '.')
+				callback(ctx, arg, p);
+			else
+				find_paths(ctx, g, next, path_buffer, p, callback, arg);
 			g->seen[next] = 0;
 		}
 	}
@@ -228,9 +251,12 @@ void
 pdf_label_object(fz_context *ctx, pdf_object_labels *g, int num, pdf_label_object_fn *callback, void *arg)
 {
 	int i;
+	char path[4096];
+
 	if (num < 1 || num >= g->object_count)
 		return;
 	for (i = 1; i < g->object_count; ++i)
 		g->seen[i] = 0;
-	find_paths(ctx, g, num, "", callback, arg);
+	path[sizeof(path)-1] = 0;
+	find_paths(ctx, g, num, path, &path[sizeof(path)-1], callback, arg);
 }
