@@ -136,54 +136,54 @@
     <ClCompile Include="..\..\thirdparty\zxing-cpp\core\src\WriteBarcode.cpp" />
     <ClCompile Include="..\..\thirdparty\zxing-cpp\core\src\ZXingC.cpp" />
     <ClCompile Include="..\..\thirdparty\zxing-cpp\core\src\ZXingCpp.cpp" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\2of5.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\auspost.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\aztec.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\bc412.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\bmp.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\codablock.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code1.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code128.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code16k.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code49.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\common.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\composite.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dllversion.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dotcode.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dxfilmedge.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\eci.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\emf.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\filemem.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\general_field.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gif.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gridmtx.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\hanxin.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\imail.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\large.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\library.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\mailmark.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\maxicode.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\medical.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\output.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\pcx.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\plessey.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\png.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\postal.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\ps.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\qr.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\raster.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\rss.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\svg.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\telepen.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\tif.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\ultra.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\upcean.c" />
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\vector.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\2of5.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\auspost.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\aztec.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\bc412.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\bmp.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\codablock.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\code.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\code1.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\code128.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\code16k.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\code49.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\common.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\composite.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\dllversion.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\dmatrix.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\dotcode.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\dxfilmedge.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\eci.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\emf.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\filemem.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\general_field.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\gif.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\gridmtx.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\gs1.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\hanxin.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\imail.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\large.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\library.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\mailmark.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\maxicode.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\medical.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\output.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\pcx.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\pdf417.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\plessey.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\png.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\postal.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\ps.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\qr.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\raster.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\reedsol.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\rss.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\svg.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\telepen.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\tif.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\ultra.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\upcean.c" />
+    <ClCompile Include="..\..\thirdparty\zint\backend\vector.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\zxing-cpp\core\src\aztec\AZDecoder.h" />
@@ -344,50 +344,50 @@
     <ClInclude Include="..\..\thirdparty\zxing-cpp\core\src\ZXingCpp.h" />
     <ClInclude Include="..\..\thirdparty\zxing-cpp\core\src\ZXTestSupport.h" />
     <ClInclude Include="..\..\thirdparty\zxing-cpp\core\src\ZXVersion.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\aztec.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\big5.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\bmp.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\channel_precalcs.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code1.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code128.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code49.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\common.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\composite.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix_trace.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\eci.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\eci_sb.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\emf.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\filemem.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gb18030.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gb2312.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gbk.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\general_field.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gridmtx.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1_lint.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\hanxin.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\iso3166.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\iso4217.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\ksx1001.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\large.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\maxicode.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\output.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pcx.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417_tabs.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417_trace.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\qr.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\raster_font.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol_logs.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\rss.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\sjis.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\tif.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\tif_lzw.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zfiletypes.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zint.h" />
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zintconfig.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\aztec.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\big5.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\bmp.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\channel_precalcs.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\code1.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\code128.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\code49.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\common.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\composite.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\dmatrix.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\dmatrix_trace.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\eci.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\eci_sb.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\emf.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\filemem.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gb18030.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gb2312.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gbk.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\general_field.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gridmtx.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gs1.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\gs1_lint.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\hanxin.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\iso3166.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\iso4217.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\ksx1001.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\large.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\maxicode.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\output.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\pcx.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417_tabs.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417_trace.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\qr.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\raster_font.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\reedsol.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\reedsol_logs.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\rss.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\sjis.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\tif.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\tif_lzw.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\zfiletypes.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\zint.h" />
+    <ClInclude Include="..\..\thirdparty\zint\backend\zintconfig.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
@@ -494,7 +494,7 @@
       </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -524,7 +524,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -547,7 +547,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -571,7 +571,7 @@
       </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -593,7 +593,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -616,7 +616,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zxing-cpp\zint\backend</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\thirdparty\zxing-cpp\core\src;..\..\scripts\zxing-cpp\;..\..\thirdparty\zint\backend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>

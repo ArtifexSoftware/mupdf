@@ -286,7 +286,7 @@ $(OUT)/thirdparty/zxing-cpp/core/src/pdf147/%.o: thirdparty/zxing-cpp/core/src/p
 	$(CXX_CMD) $(LIB_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_BUILD_CFLAGS) $(ZXINGCPP_LANGFLAGS)
 $(OUT)/thirdparty/zxing-cpp/core/src/qrcode/%.o: thirdparty/zxing-cpp/core/src/qrcode/%.cpp
 	$(CXX_CMD) $(LIB_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_BUILD_CFLAGS) $(ZXINGCPP_LANGFLAGS)
-$(OUT)/thirdparty/zxing-cpp/zint/backend/%.o: thirdparty/zxing-cpp/zint/backend/%.c
+$(OUT)/thirdparty/zint/backend/%.o: thirdparty/zint/backend/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_BUILD_CFLAGS)
 endif
 endif

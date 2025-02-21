@@ -43,3 +43,6 @@
 [submodule "thirdparty/zxing-cpp"]
 	path = thirdparty/zxing-cpp
 	url = ../thirdparty-zxing-cpp.git
+[submodule "thirdparty/zint"]
+	path = thirdparty/zint
+	url = ../thirdparty-zint.git

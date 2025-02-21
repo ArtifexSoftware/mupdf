@@ -378,133 +378,133 @@
     <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\bmp.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\codablock.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\codablock.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\code.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code1.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\code1.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code16k.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\code16k.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code49.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\code49.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\code128.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\code128.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\common.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\common.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\composite.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\composite.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dllversion.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\dllversion.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\dmatrix.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dotcode.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\dotcode.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\dxfilmedge.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\dxfilmedge.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\eci.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\eci.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\emf.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\emf.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\filemem.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\filemem.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\general_field.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\general_field.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gif.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\gif.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gridmtx.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\gridmtx.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\gs1.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\hanxin.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\hanxin.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\imail.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\imail.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\large.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\large.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\library.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\library.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\mailmark.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\mailmark.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\maxicode.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\maxicode.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\medical.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\medical.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\output.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\output.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\pcx.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\pcx.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\pdf417.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\plessey.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\plessey.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\png.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\png.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\postal.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\postal.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\ps.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\ps.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\qr.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\qr.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\raster.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\raster.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\reedsol.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\rss.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\rss.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\svg.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\svg.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\telepen.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\telepen.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\tif.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\tif.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\ultra.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\ultra.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\upcean.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\upcean.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\vector.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\vector.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
     <ClCompile Include="..\..\scripts\zxing-cpp\eci_dedup.cpp">
@@ -986,136 +986,136 @@
     <ClInclude Include="..\..\thirdparty\zxing-cpp\core\src\oned\ODWriterHelper.h">
       <Filter>Source Files\oned</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\aztec.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\aztec.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\big5.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\big5.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\bmp.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\bmp.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\channel_precalcs.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\channel_precalcs.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code1.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\code1.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code49.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\code49.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\code128.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\code128.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\common.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\common.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\composite.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\composite.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\dmatrix.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\dmatrix_trace.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\dmatrix_trace.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\eci.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\eci.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\eci_sb.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\eci_sb.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\emf.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\emf.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\filemem.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\filemem.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gb2312.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gb2312.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gb18030.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gb18030.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gbk.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gbk.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\general_field.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\general_field.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gridmtx.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gridmtx.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gs1.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\gs1_lint.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\gs1_lint.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\hanxin.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\hanxin.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\iso3166.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\iso3166.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\iso4217.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\iso4217.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\ksx1001.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\ksx1001.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\large.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\large.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\maxicode.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\maxicode.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\output.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\output.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pcx.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\pcx.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417_tabs.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417_tabs.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\pdf417_trace.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\pdf417_trace.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\qr.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\qr.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\raster_font.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\raster_font.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\reedsol.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\reedsol_logs.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\reedsol_logs.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\rss.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\rss.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\sjis.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\sjis.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\tif.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\tif.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\tif_lzw.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\tif_lzw.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zfiletypes.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\zfiletypes.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zint.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\zint.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\thirdparty\zxing-cpp\zint\backend\zintconfig.h">
+    <ClInclude Include="..\..\thirdparty\zint\backend\zintconfig.h">
       <Filter>Source Files\libzint</Filter>
     </ClInclude>
   </ItemGroup>
