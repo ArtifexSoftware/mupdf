@@ -743,10 +743,6 @@ def text_split_last_of( text, substrings):
     return text[ :pos], text[ pos:]
 
 
-
-log_levels_add_env()
-
-
 def force_line_buffering():
     '''
     Ensure `sys.stdout` and `sys.stderr` are line-buffered. E.g. makes things
@@ -1244,6 +1240,9 @@ def time_duration( seconds, verbose=False, s_format='%i'):
     if seconds < 0:
         ret = '-%s' % ret
     return ret
+
+
+log_levels_add_env()
 
 
 def date_time( t=None):
