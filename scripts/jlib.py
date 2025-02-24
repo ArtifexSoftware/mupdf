@@ -509,7 +509,7 @@ def log_levels_add_env( name='JLIB_log_levels'):
             if 0:   # lgtm [py/unreachable-statement]
                 pass
             elif len( ffl) == 1:
-                filename = ffl
+                filename = ffl[0]
                 function = None
             elif len( ffl) == 2:
                 filename, function = ffl
