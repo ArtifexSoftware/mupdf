@@ -331,7 +331,11 @@ def log_levels_find( caller):
     if not s_log_levels_items:
         return 0
 
-    tb = traceback.extract_stack( None, 1+caller)
+    if isinstance(caller, inspect.FrameInfo):
+        tb = traceback.extract_stack( None, 1)
+    else:
+        tb = traceback.extract_stack( None, 1+caller)
+
     if len(tb) == 0:
         return 0
     filename, line, function, text = tb[0]
