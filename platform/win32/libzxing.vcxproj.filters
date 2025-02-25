@@ -363,19 +363,19 @@
     <ClCompile Include="..\..\thirdparty\zxing-cpp\core\src\oned\ODWriterHelper.cpp">
       <Filter>Source Files\oned</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\2of5.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\2of5.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\auspost.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\auspost.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\aztec.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\aztec.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\bc412.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\bc412.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\thirdparty\zxing-cpp\zint\backend\bmp.c">
+    <ClCompile Include="..\..\thirdparty\zint\backend\bmp.c">
       <Filter>Source Files\libzint</Filter>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\zint\backend\codablock.c">
