@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -28,7 +28,22 @@ extern "C"
 #include "mupdf/fitz/barcode.h"
 #include "mupdf/fitz/util.h"
 
-const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT] =
+}
+
+#if FZ_ENABLE_BARCODE
+
+#ifndef ZXING_EXPERIMENTAL_API
+#define ZXING_EXPERIMENTAL_API
+#endif
+#include "ReadBarcode.h"
+#include "WriteBarcode.h"
+
+using namespace ZXing;
+
+extern "C"
+{
+
+static const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT] =
 {
 	"none",
 	"aztec",
@@ -52,21 +67,6 @@ const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT] =
 	"dxfilmedge",
 	"databarlimited"
 };
-
-}
-
-#if FZ_ENABLE_BARCODE
-
-#ifndef ZXING_EXPERIMENTAL_API
-#define ZXING_EXPERIMENTAL_API
-#endif
-#include "ReadBarcode.h"
-#include "WriteBarcode.h"
-
-using namespace ZXing;
-
-extern "C"
-{
 
 BarcodeFormat formats[FZ_BARCODE__LIMIT] =
 {
@@ -380,6 +380,9 @@ char *fz_decode_barcode_from_display_list(fz_context *ctx, fz_barcode_type *type
 
 #else
 
+extern "C"
+{
+
 char *fz_decode_barcode_from_display_list(fz_context *ctx, fz_barcode_type *type, fz_display_list *list, fz_rect subarea, int rotate)
 {
 	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
@@ -405,9 +408,16 @@ fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const ch
 	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
 }
 
-fz_barcode_type fz_barcode_from_string(fz_context *ctx, const char *str)
+fz_barcode_type fz_barcode_type_from_string(const char *str)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	return FZ_BARCODE_NONE;
+}
+
+const char *fz_string_from_barcode_type(fz_barcode_type type)
+{
+	return "unknown";
+}
+
 }
 
 #endif /* FZ_ENABLE_BARCODE */
