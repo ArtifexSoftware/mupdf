@@ -2680,7 +2680,6 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	int count;
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
 	int num_subtables = 0;
-	fz_stext_struct *table = NULL;
 	grid_walker_data gd = { 0 };
 
 	/* No content? Just bale. */
