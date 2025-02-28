@@ -2169,25 +2169,43 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 	return r;
 }
 
-static fz_stext_block *
-find_table_insertion_point(fz_context *ctx, fz_rect r, fz_stext_block *block)
+typedef struct
 {
-	fz_stext_block *after = NULL;
+	fz_stext_block *block;
+	fz_stext_struct *parent;
+} tree_pos;
 
-	for (; block != NULL; block = block->next)
+/* This is still not perfect, but it's better! */
+static tree_pos
+find_table_insertion_point(fz_context *ctx, fz_rect r, tree_pos current, tree_pos best)
+{
+	fz_stext_block *block;
+
+	for (block = current.block; block != NULL; block = block->next)
 	{
-		fz_rect s = fz_intersect_rect(r, block->bbox);
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down != NULL && fz_is_rect_inside_rect(r, block->bbox))
+			{
+				tree_pos down;
 
-		if (s.x0 > s.x1 || s.y0 > s.y1)
-			continue;
-		after = block;
+				down.parent = block->u.s.down;
+				down.block = block->u.s.down->first_block;
+				best = find_table_insertion_point(ctx, r, down, best);
+			}
+		}
+		else
+		{
+			/* Is block a better precursor than best? (Or a valid precursor, if best.block == NULL) */
+			if (block->bbox.y1 < r.y0 && (best.block == NULL || best.block->bbox.y1 < block->bbox.y1))
+			{
+				best.block = block;
+				best.parent = current.parent;
+			}
+		}
 	}
 
-	/* Convert to before */
-	if (after)
-		after = after->next;
-
-	return after;
+	return best;
 }
 
 static int
@@ -2396,18 +2414,29 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	char *sent_tab = fz_calloc(ctx, 1, w*h);
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
 	fz_stext_struct *table, *tr, *td;
-	fz_stext_block *before;
 	fz_rect r;
+	tree_pos insert, top;
 
 	/* Where should we insert the table in the data? */
 	r.x0 = gd->xpos->list[0].pos;
 	r.x1 = gd->xpos->list[w-1].pos;
 	r.y0 = gd->ypos->list[0].pos;
 	r.y1 = gd->ypos->list[h-1].pos;
-	before = find_table_insertion_point(ctx, r, *first_block);
+#ifdef DEBUG_TABLE_STRUCTURE
+	fz_print_stext_page_as_xml(ctx, fz_stddbg(ctx), page, 0);
+#endif
+	top.block = *first_block;
+	top.parent = parent;
+	insert.block = NULL;
+	insert.parent = NULL;
+	insert = find_table_insertion_point(ctx, r, top, insert);
+
+	/* Convert to 'before' */
+	if (insert.block)
+		insert.block = insert.block->next;
 
 	/* Make table */
-	table = add_struct_block_before(ctx, before, page, parent, FZ_STRUCTURE_TABLE, "Table");
+	table = add_struct_block_before(ctx, insert.block, page, insert.parent, FZ_STRUCTURE_TABLE, "Table");
 
 	/* Run through the cells, and guess at spanning. */
 	for (y = 0; y < h-1; y++)
