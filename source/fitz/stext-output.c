@@ -352,23 +352,115 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 	}
 }
 
-void
-fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page, int id)
+static const char *
+html_tag_for_struct(fz_stext_struct *s)
 {
-	fz_stext_block *block;
+	const char *raw;
 
-	float w = page->mediabox.x1 - page->mediabox.x0;
-	float h = page->mediabox.y1 - page->mediabox.y0;
+	if (s == NULL)
+		return "DIV";
 
-	fz_write_printf(ctx, out, "<div id=\"page%d\" style=\"width:%.1fpt;height:%.1fpt\">\n", id, w, h);
+	raw = s->raw;
+	if (raw == NULL)
+		raw = fz_structure_to_string(s->standard);
 
-	for (block = page->first_block; block; block = block->next)
+	if (!fz_strcasecmp(raw, "blockquote"))
+		return "blockquote";
+	if (!fz_strcasecmp(raw, "title"))
+		return "h1";
+	if (!fz_strcasecmp(raw, "sub"))
+		return "sub";
+	if (!fz_strcasecmp(raw, "p"))
+		return "p";
+	if (!fz_strcasecmp(raw, "h"))
+		return "h1"; /* Pick one! */
+	if (!fz_strcasecmp(raw, "h1"))
+		return "h1";
+	if (!fz_strcasecmp(raw, "h2"))
+		return "h2";
+	if (!fz_strcasecmp(raw, "h3"))
+		return "h3";
+	if (!fz_strcasecmp(raw, "h4"))
+		return "h4";
+	if (!fz_strcasecmp(raw, "h5"))
+		return "h5";
+	if (!fz_strcasecmp(raw, "h6"))
+		return "h6";
+
+	if (!fz_strcasecmp(raw, "list"))
+		return "ul";
+	if (!fz_strcasecmp(raw, "listitem"))
+		return "li";
+	if (!fz_strcasecmp(raw, "table"))
+		return "table";
+	if (!fz_strcasecmp(raw, "tr"))
+		return "tr";
+	if (!fz_strcasecmp(raw, "th"))
+		return "th";
+	if (!fz_strcasecmp(raw, "td"))
+		return "td";
+	if (!fz_strcasecmp(raw, "thead"))
+		return "thead";
+	if (!fz_strcasecmp(raw, "tbody"))
+		return "tbody";
+	if (!fz_strcasecmp(raw, "tfoot"))
+		return "tfoot";
+
+	if (!fz_strcasecmp(raw, "span"))
+		return "span";
+	if (!fz_strcasecmp(raw, "code"))
+		return "code";
+	if (!fz_strcasecmp(raw, "em"))
+		return "em";
+	if (!fz_strcasecmp(raw, "strong"))
+		return "strong";
+
+	return "div";
+}
+
+static void
+print_blocks_as_html(fz_context *ctx, fz_output *out, fz_stext_block *block);
+
+static void
+fz_print_stext_struct_as_html(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	const char *tag;
+
+	if (block->u.s.down == NULL)
+		return;
+
+	tag = html_tag_for_struct(block->u.s.down);
+
+	fz_write_printf(ctx, out, "<%s>\n", tag);
+
+	print_blocks_as_html(ctx, out, block->u.s.down->first_block);
+
+	fz_write_printf(ctx, out, "</%s>\n", tag);
+}
+
+static void
+print_blocks_as_html(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	for (; block; block = block->next)
 	{
 		if (block->type == FZ_STEXT_BLOCK_IMAGE)
 			fz_print_stext_image_as_html(ctx, out, block);
 		else if (block->type == FZ_STEXT_BLOCK_TEXT)
 			fz_print_stext_block_as_html(ctx, out, block);
+		else if (block->type == FZ_STEXT_BLOCK_STRUCT)
+			fz_print_stext_struct_as_html(ctx, out, block);
 	}
+}
+
+void
+fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page, int id)
+{
+	float w = page->mediabox.x1 - page->mediabox.x0;
+	float h = page->mediabox.y1 - page->mediabox.y0;
+
+	fz_write_printf(ctx, out, "<div id=\"page%d\" style=\"width:%.1fpt;height:%.1fpt\">\n", id, w, h);
+
+	print_blocks_as_html(ctx, out, page->first_block);
 
 	fz_write_string(ctx, out, "</div>\n");
 }
@@ -396,6 +488,141 @@ fz_print_stext_trailer_as_html(fz_context *ctx, fz_output *out)
 }
 
 /* XHTML output (semantic, little layout, suitable for reflow) */
+
+static void
+find_table_pos(fz_stext_grid_positions *xs, float x0, float x1, int *ix0, int *ix1)
+{
+	int i;
+
+	*ix0 = -1;
+	*ix1 = -1;
+
+	for (i = 1; i < xs->len; i++)
+		if (x0 < xs->list[i].pos)
+		{
+			*ix0 = i-1;
+			break;
+		}
+	for (; i < xs->len; i++)
+		if (x1 < xs->list[i].pos)
+		{
+			*ix1 = i-1;
+			break;
+		}
+	if (i == xs->len)
+		*ix1 = i-1;
+}
+
+static void
+run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out);
+
+static void
+fz_print_stext_table_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	fz_stext_block *grid, *tr, *td;
+	int w, h;
+	int x, y;
+	uint8_t *cells;
+	int malformed = 0;
+
+	for (grid = block; grid != NULL; grid = grid->next)
+		if (grid->type == FZ_STEXT_BLOCK_GRID)
+			break;
+	if (grid == NULL)
+	{
+		fz_warn(ctx, "Malformed table data");
+		return;
+	}
+	w = grid->u.b.xs->len;
+	h = grid->u.b.ys->len;
+	cells = fz_calloc(ctx, w, h);
+
+	fz_try(ctx)
+	{
+		fz_write_printf(ctx, out, "<table>\n");
+
+		y = 0;
+		for (tr = grid->next; tr != NULL; tr = tr->next)
+		{
+			if (tr->type != FZ_STEXT_BLOCK_STRUCT || tr->u.s.down == NULL || tr->u.s.down->standard != FZ_STRUCTURE_TR)
+			{
+				malformed = 1;
+				continue;
+			}
+			fz_write_printf(ctx, out, "<tr>\n");
+			x = 0;
+			for (td = tr->u.s.down->first_block; td != NULL; td = td->next)
+			{
+				int x0, y0, x1, y1;
+				if (td->type != FZ_STEXT_BLOCK_STRUCT || td->u.s.down == NULL || td->u.s.down->standard != FZ_STRUCTURE_TD)
+				{
+					malformed = 1;
+					continue;
+				}
+				find_table_pos(grid->u.b.xs, td->bbox.x0, td->bbox.x1, &x0, &x1);
+				find_table_pos(grid->u.b.ys, td->bbox.y0, td->bbox.y1, &y0, &y1);
+				if (x0 < 0 || x1 < 0 || x1 >= w)
+				{
+					malformed = 1;
+					x0 = x;
+					x1 = x+1;
+				}
+				if (y0 < 0 || y1 < 0 || y1 >= h)
+				{
+					malformed = 1;
+					y0 = y;
+					y1 = y+1;
+				}
+				if (y < y0)
+				{
+					malformed = 1;
+					continue;
+				}
+				if (x > x0)
+				{
+					malformed = 1;
+				}
+				while (x < x0)
+				{
+					uint8_t *c = &cells[x + w*y];
+					if (*c == 0)
+					{
+						fz_write_printf(ctx, out, "<td></td>");
+						*c = 1;
+					}
+					x++;
+				}
+				fz_write_string(ctx, out, "<td");
+				if (x1 > x0+1)
+					fz_write_printf(ctx, out, " rowspan=%d", x1-x0);
+				if (y1 > y0+1)
+					fz_write_printf(ctx, out, " colspan=%d", y1-y0);
+				fz_write_string(ctx, out, ">\n");
+				run_to_xhtml(ctx, td->u.s.down->first_block, out);
+				fz_write_printf(ctx, out, "</td>\n");
+				for ( ; y0 < y1; y0++)
+					for (x = x0; x < x1; x++)
+					{
+						uint8_t *c = &cells[x + w*y0];
+						if (*c != 0)
+							malformed = 1;
+						*c = 1;
+					}
+			}
+			fz_write_printf(ctx, out, "</tr>\n");
+			y++;
+		}
+
+		fz_write_printf(ctx, out, "</table>\n");
+	}
+	fz_always(ctx)
+		fz_free(ctx, cells);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	if (malformed)
+		fz_warn(ctx, "Malformed table data");
+}
 
 static void
 fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
@@ -532,6 +759,29 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 }
 
 static void
+fz_print_struct_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	const char *tag;
+
+	if (block->u.s.down == NULL)
+		return;
+
+	if (block->u.s.down->standard == FZ_STRUCTURE_TABLE)
+	{
+		fz_print_stext_table_as_xhtml(ctx, out, block->u.s.down->first_block);
+		return;
+	}
+
+	tag = html_tag_for_struct(block->u.s.down);
+
+	fz_write_printf(ctx, out, "<%s>\n", tag);
+
+	run_to_xhtml(ctx, block->u.s.down->first_block, out);
+
+	fz_write_printf(ctx, out, "</%s>\n", tag);
+}
+
+static void
 run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 {
 	while (block)
@@ -545,15 +795,7 @@ run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 			fz_print_stext_block_as_xhtml(ctx, out, block);
 			break;
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "<struct idx=\"%d\"",
-					block->u.s.index);
-			if (block->u.s.down)
-				fz_write_printf(ctx, out, " raw=\"%s\" std=\"%s\"",
-						block->u.s.down->raw, fz_structure_to_string(block->u.s.down->standard));
-			fz_write_printf(ctx, out, ">\n");
-			if (block->u.s.down)
-				run_to_xhtml(ctx, block->u.s.down->first_block, out);
-			fz_write_printf(ctx, out, "</struct>\n");
+			fz_print_struct_as_xhtml(ctx, out, block);
 			break;
 		}
 		block = block->next;
