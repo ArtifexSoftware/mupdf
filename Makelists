@@ -413,6 +413,7 @@ GLUT_LIBS += -lXrandr
 # --- LEPTONICA (optional, used by Tesseract) ---
 
 LEPTONICA_CFLAGS += -Ithirdparty/leptonica/src
+LEPTONICA_CFLAGS += -Iscripts/tesseract
 
 LEPTONICA_BUILD_CFLAGS += -Iscripts/tesseract
 LEPTONICA_BUILD_CFLAGS += -DLEPTONICA_INTERCEPT_ALLOC=1
