@@ -87,6 +87,23 @@ endif
 
 include Makelists
 
+# --- BROTLI ---
+
+ifeq ($(USE_SYSTEM_BROTLI),yes)
+  THIRD_CFLAGS += $(SYS_BROTLI_CFLAGS)
+  THIRD_LIBS += $(SYS_BROTLI_LIBS)
+else
+  THIRD_CFLAGS += $(BROTLI_CFLAGS)
+  THIRD_LIBS += $(BROTLI_LIBS)
+  THIRD_SRC += $(BROTLI_SRC)
+$(OUT)/thirdparty/brotli/c/common/%.o: thirdparty/brotli/c/common/%.c
+	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
+$(OUT)/thirdparty/brotli/c/dec/%.o: thirdparty/brotli/c/dec/%.c
+	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
+$(OUT)/thirdparty/brotli/c/enc/%.o: thirdparty/brotli/c/enc/%.c
+	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
+endif
+
 # --- FREETYPE 2 ---
 
 ifeq ($(USE_SYSTEM_FREETYPE),yes)
@@ -359,20 +376,3 @@ endif
 SODOCHANDLER_SRC := $(sort $(wildcard thirdparty/so/source/*.c))
 SODOCHANDLER_OBJ := $(SODOCHANDLER_SRC:%.c=$(OUT)/%.o)
 $(SODOCHANDLER_LIB) : $(SODOCHANDLER_OBJ)
-
-# --- BROTLI ---
-
-ifeq ($(USE_SYSTEM_BROTLI),yes)
-  THIRD_CFLAGS += $(SYS_BROTLI_CFLAGS)
-  THIRD_LIBS += $(SYS_BROTLI_LIBS)
-else
-  THIRD_CFLAGS += $(BROTLI_CFLAGS)
-  THIRD_LIBS += $(BROTLI_LIBS)
-  THIRD_SRC += $(BROTLI_SRC)
-$(OUT)/thirdparty/brotli/c/common/%.o: thirdparty/brotli/c/common/%.c
-	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
-$(OUT)/thirdparty/brotli/c/dec/%.o: thirdparty/brotli/c/dec/%.c
-	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
-$(OUT)/thirdparty/brotli/c/enc/%.o: thirdparty/brotli/c/enc/%.c
-	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
-endif
