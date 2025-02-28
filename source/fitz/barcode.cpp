@@ -391,27 +391,27 @@ extern "C"
 
 char *fz_decode_barcode_from_display_list(fz_context *ctx, fz_barcode_type *type, fz_display_list *list, fz_rect subarea, int rotate)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "Barcode functionality not included");
 }
 
 char *fz_decode_barcode_from_pixmap(fz_context *ctx, fz_barcode_type *type, fz_pixmap *pix, int rotate)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "Barcode functionality not included");
 }
 
 fz_image *fz_new_barcode_image(fz_context *ctx, fz_barcode_type type, const char *value, int size, int ec_level, int quiet, int hrt)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "Barcode functionality not included");
 }
 
 char *fz_decode_barcode_from_page(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "Barcode functionality not included");
 }
 
 fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const char *value, int size, int ec_level, int quiet, int hrt)
 {
-	fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode functionality not included");
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "Barcode functionality not included");
 }
 
 fz_barcode_type fz_barcode_type_from_string(const char *str)
