@@ -330,12 +330,10 @@ pdfocr_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	int s = writer->super.s;
 	int a = writer->super.alpha;
 	int sh = writer->options.strip_height;
-	int strips;
 
 	if (sh == 0)
 		sh = h;
 	assert(sh != 0 && "pdfocr_write_header() should not be given zero height input.");
-	strips = (h + sh-1)/sh;
 
 	if (a != 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "PDFOCR cannot write alpha channel");
@@ -420,7 +418,6 @@ flush_strip(fz_context *ctx, pdfocr_band_writer *writer, int fill)
 static void
 post_skew_write_band(fz_context *ctx, pdfocr_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *sp)
 {
-	fz_output *out = writer->super.out;
 	int w = writer->deskewed_w;
 	int h = writer->deskewed_h;
 	int n = writer->super.n;
@@ -478,9 +475,7 @@ pdfocr_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band
 	pdfocr_band_writer *writer = (pdfocr_band_writer *)writer_;
 	fz_output *out = writer->super.out;
 	int w = writer->super.w;
-	int h = writer->super.h;
 	int n = writer->super.n;
-	int sh = writer->options.strip_height;
 	unsigned char *d;
 
 	if (!out)
