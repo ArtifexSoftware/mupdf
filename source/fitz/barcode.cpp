@@ -22,6 +22,8 @@
 
 #include "mupdf/fitz/config.h"
 
+#include "mupdf/fitz.h"
+
 #if FZ_ENABLE_BARCODE
 
 #ifndef HAVE_ZXINGCPP
