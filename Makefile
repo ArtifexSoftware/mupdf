@@ -47,6 +47,13 @@ ifneq ($(OS),Darwin)
   endif
 endif
 
+# workaround argument list too long errors
+ifeq (4.0,$(firstword $(sort $(MAKE_VERSION) 4.0)))
+  USE_ARGUMENT_FILE=yes
+else
+  USE_ARGUMENT_FILE=no
+endif
+
 # --- Commands ---
 
 ifneq ($(verbose),yes)
@@ -66,7 +73,11 @@ endif
 MKTGTDIR = mkdir -p $(dir $@)
 CC_CMD = $(QUIET_CC) $(MKTGTDIR) ; $(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
 CXX_CMD = $(QUIET_CXX) $(MKTGTDIR) ; $(CXX) $(CFLAGS) $(XCXXFLAGS) -MMD -MP -o $@ -c $<
-AR_CMD = $(QUIET_AR) $(MKTGTDIR) ; $(AR) cr $@ $^
+ifeq ($(USE_ARGUMENT_FILE),yes)
+  AR_CMD = $(QUIET_AR) $(MKTGTDIR) ; $(AR) cr $@ $(file > $@.in,$^) @$@.in
+else
+  AR_CMD = $(QUIET_AR) $(MKTGTDIR) ; $(AR) cr $@ $^
+endif
 ifdef RANLIB
   RANLIB_CMD = $(QUIET_RANLIB) $(RANLIB) $@
 endif
@@ -76,7 +87,11 @@ OBJCOPY_CMD = $(QUIET_OBJCOPY) $(MKTGTDIR) ; $(LD) -r -b binary -z noexecstack -
 SYMLINK_CMD = $(QUIET_SYMLINK) $(MKTGTDIR) ; ln -sf
 
 ifeq ($(shared),yes)
-  LINK_SO_CMD = $(QUIET_LINK_SO) $(MKTGTDIR) ; $(CC) $(LIB_LDFLAGS) $(LDFLAGS) -o $@ $^
+  ifeq ($(USE_ARGUMENT_FILE),yes)
+    LINK_SO_CMD = $(QUIET_LINK_SO) $(MKTGTDIR) ; $(CC) $(LIB_LDFLAGS) $(LDFLAGS) -o $@ $(file > $@.in,$^) @$@.in
+  else
+    LINK_SO_CMD = $(QUIET_LINK_SO) $(MKTGTDIR) ; $(CC) $(LIB_LDFLAGS) $(LDFLAGS) -o $@ $^
+  endif
   ifeq ($(OS),OpenBSD)
     # OpenBSD linker magic doesn't use soname; so fake it by using -L$(OUT) and -lmupdf.
     LINK_CMD = $(QUIET_LINK) $(MKTGTDIR) ; $(CC) $(EXE_LDFLAGS) $(LDFLAGS) -o $@ -L$(OUT) \
