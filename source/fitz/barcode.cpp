@@ -23,31 +23,28 @@
 #include "mupdf/fitz/config.h"
 
 #if FZ_ENABLE_BARCODE
+
 #ifndef HAVE_ZXINGCPP
 #error "FZ_ENABLE_BARCODE set without HAVE_ZXINGCPP!"
 #endif
+
+#include "ReadBarcode.h"
+
+#ifdef ZXING_EXPERIMENTAL_API
+#include "WriteBarcode.h"
+#else
+#include "BitMatrix.h"
+#include "MultiFormatWriter.h"
 #endif
+
+using namespace ZXing;
+
 
 extern "C"
 {
 
 #include "mupdf/fitz/barcode.h"
 #include "mupdf/fitz/util.h"
-
-}
-
-#if FZ_ENABLE_BARCODE
-
-#ifndef ZXING_EXPERIMENTAL_API
-#define ZXING_EXPERIMENTAL_API
-#endif
-#include "ReadBarcode.h"
-#include "WriteBarcode.h"
-
-using namespace ZXing;
-
-extern "C"
-{
 
 static const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT] =
 {
@@ -138,6 +135,8 @@ format_to_fz(BarcodeFormat format)
 	return FZ_BARCODE_NONE;
 }
 
+#ifdef ZXING_EXPERIMENTAL_API
+
 fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const char *value, int size, int ec_level, int quiet, int hrt)
 {
 	fz_pixmap *pix;
@@ -224,6 +223,94 @@ fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const ch
 
 	return pix;
 }
+
+#else
+
+fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const char *value, int size, int ec_level, int quiet, int hrt)
+{
+	fz_pixmap *pix;
+	int x, y, w, h;
+	uint8_t *tmp_copy = NULL;
+
+	if (type <= FZ_BARCODE_NONE || type >= FZ_BARCODE__LIMIT)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported barcode type");
+	if (ec_level < 0 || ec_level >= 8)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported barcode error correction level");
+
+	/* The following has been carefully constructed to ensure
+	 * that the mixture of C++ and fz error handling works OK.
+	 * The try here doesn't call anything that might fz_throw.
+	 * When the try exits, all the C++ objects should be
+	 * destructed, leaving us just with a malloced temporary
+	 * copy of the bitmap data. */
+	{
+		char exception_text[256] = "";
+		try
+		{
+			auto format = formats[type];
+			auto writer = MultiFormatWriter(format);
+			BitMatrix matrix;
+			writer.setEncoding(CharacterSet::UTF8);
+			writer.setMargin(quiet ? 10 : 0);
+			writer.setEccLevel(ec_level);
+			matrix = writer.encode(value, size, size ? size : 50);
+			auto bitmap = ToMatrix<uint8_t>(matrix);
+
+			// TODO: human readable text (not available with non-experimental API)
+
+			const uint8_t *src = bitmap.data();
+			if (src != NULL)
+			{
+				h = bitmap.height();
+				w = bitmap.width();
+				tmp_copy = (uint8_t *)malloc(w * h);
+			}
+			if (tmp_copy != NULL)
+			{
+				uint8_t *dst = tmp_copy;
+				for (y = 0; y < h; y++)
+				{
+					const uint8_t *s = src;
+					src += w;
+					for (x = 0; x < w; x++)
+					{
+						*dst++ = *s;
+						s ++;
+					}
+				}
+			}
+		}
+		catch (std::exception & e)
+		{
+			/* If C++ throws an exception to here, we can trust
+			 * that it will have freed everything in the above
+			 * block. That just leaves tmp_copy outstanding. */
+			free(tmp_copy);
+			fz_strlcpy(exception_text, e.what(), sizeof(exception_text));
+		}
+		if (exception_text[0])
+			fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode exception: %s", exception_text);
+	}
+
+	if (tmp_copy == NULL)
+		fz_throw(ctx, FZ_ERROR_LIBRARY, "Barcode generation failed");
+
+	fz_try(ctx)
+	{
+		pix = fz_new_pixmap(ctx, fz_device_gray(ctx), w, h, NULL, 0);
+		pix->xres = 72;
+		pix->yres = 72;
+		memcpy(pix->samples, tmp_copy, w*h);
+	}
+	fz_always(ctx)
+		free(tmp_copy);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return pix;
+}
+
+#endif
 
 fz_image *fz_new_barcode_image(fz_context *ctx, fz_barcode_type type, const char *value, int size, int ec_level, int quiet, int hrt)
 {

@@ -805,11 +805,13 @@ TESSERACT_BUILD_CFLAGS += $(TESSERACT_DEFINES)
 # --- ZXINGCPP (optional) ---
 
 ZXINGCPP_LANGFLAGS = -std=c++20
-ZXINGCPP_CFLAGS += -Ithirdparty/zxing-cpp/core/src
 
-ZXINGCPP_DEFINES  = -DZXING_USE_ZINT
-ZXINGCPP_DEFINES += -DZXING_EXPERIMENTAL_API
-ZXINGCPP_DEFINES += -DZINT_NO_PNG
+ZXINGCPP_CFLAGS += -Ithirdparty/zxing-cpp/core/src
+ZXINGCPP_CFLAGS += -DZXING_EXPERIMENTAL_API
+
+ZXINGCPP_BUILD_CFLAGS  = -DZXING_USE_ZINT
+ZXINGCPP_BUILD_CFLAGS += -DZXING_EXPERIMENTAL_API
+ZXINGCPP_BUILD_CFLAGS += -DZINT_NO_PNG
 
 ZXINGCPP_BUILD_CFLAGS += -Ithirdparty/zint/backend
 ZXINGCPP_BUILD_CFLAGS += -Iscripts/zxing-cpp
@@ -973,8 +975,6 @@ ZXINGCPP_SRC += thirdparty/zint/backend/tif.c
 ZXINGCPP_SRC += thirdparty/zint/backend/ultra.c
 ZXINGCPP_SRC += thirdparty/zint/backend/upcean.c
 ZXINGCPP_SRC += thirdparty/zint/backend/vector.c
-
-ZXINGCPP_BUILD_CFLAGS += $(ZXINGCPP_DEFINES)
 
 # --- EXTRACT ---
 
