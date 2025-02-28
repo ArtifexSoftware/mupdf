@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -997,7 +997,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *col
 			proc->sep = !ahx;
 			if (cbuf->params.u.lzw.predictor > 1)
 			{
-				fz_write_string(ctx, out, ahx ? "/DP[<<null" : "/DP<<");
+				fz_write_string(ctx, out, ahx ? "/DP[null<<" : "/DP<<");
 				fz_write_printf(ctx, out, "/Predictor %d", cbuf->params.u.lzw.predictor);
 				if (cbuf->params.u.lzw.columns != 1)
 					fz_write_printf(ctx, out, "/Columns %d", cbuf->params.u.lzw.columns);
