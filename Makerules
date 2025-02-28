@@ -158,11 +158,11 @@ SYS_LIBJPEG_LIBS := -ljpeg
 SYS_MUJS_LIBS := -lmujs
 SYS_OPENJPEG_LIBS := -lopenjp2
 SYS_ZLIB_LIBS := -lz
+SYS_BROTLI_LIBS := -lbrotlidec -lbrotlienc
 SYS_TESSERACT_LIBS := -ltesseract
 SYS_LEPTONICA_LIBS := -llept
 SYS_LIBARCHIVE_LIBS := -larchive
 SYS_ZXINGCPP_LIBS := -lzxing-cpp -lzint
-SYS_BROTLI_LIBS := -lbrotli
 
 ifneq "$(CLUSTER)" ""
   CFLAGS += -DCLUSTER
@@ -227,6 +227,10 @@ else
   ifeq ($(shell pkg-config --exists zlib && echo yes),yes)
     SYS_ZLIB_CFLAGS := $(shell pkg-config --cflags zlib)
     SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
+  endif
+  ifeq ($(shell pkg-config --exists libbrotlidec libbrotlienc && echo yes),yes)
+    SYS_BROTLI_CFLAGS := $(shell pkg-config --cflags libbrotlidec libbrotlienc)
+    SYS_BROTLI_LIBS := $(shell pkg-config --libs libbrotlidec libbrotlienc)
   endif
 
   HAVE_SYS_LEPTONICA := $(shell pkg-config --exists 'lept >= 1.7.4' && echo yes)
