@@ -973,7 +973,6 @@ ZXINGCPP_SRC += thirdparty/zint/backend/tif.c
 ZXINGCPP_SRC += thirdparty/zint/backend/ultra.c
 ZXINGCPP_SRC += thirdparty/zint/backend/upcean.c
 ZXINGCPP_SRC += thirdparty/zint/backend/vector.c
-ZXINGCPP_SRC += source/fitz/barcode.cpp
 
 ZXINGCPP_BUILD_CFLAGS += $(ZXINGCPP_DEFINES)
 
