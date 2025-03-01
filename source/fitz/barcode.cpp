@@ -20,8 +20,6 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#include "mupdf/fitz/config.h"
-
 #include "mupdf/fitz.h"
 
 #if FZ_ENABLE_BARCODE
@@ -44,9 +42,6 @@ using namespace ZXing;
 
 extern "C"
 {
-
-#include "mupdf/fitz/barcode.h"
-#include "mupdf/fitz/util.h"
 
 static const char *fz_barcode_type_strings[FZ_BARCODE__LIMIT] =
 {
