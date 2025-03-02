@@ -349,7 +349,7 @@ char *fz_decode_barcode_from_page(fz_context *ctx, fz_barcode_type *type, fz_pag
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, fz_identity, pix);
-		fz_run_page_contents(ctx, page, dev, fz_identity, NULL);
+		fz_run_page(ctx, page, dev, fz_identity, NULL);
 		fz_close_device(ctx, dev);
 
 		str = fz_decode_barcode_from_pixmap(ctx, type, pix, rotate);
