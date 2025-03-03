@@ -142,21 +142,24 @@ typedef struct
 
 const char *fz_stext_options_usage =
 	"Text output options:\n"
-	"\tinhibit-spaces: don't add spaces between gaps in the text\n"
 	"\tpreserve-images: keep images in output\n"
 	"\tpreserve-ligatures: do not expand ligatures into constituent characters\n"
-	"\tpreserve-whitespace: do not convert all whitespace into space characters\n"
 	"\tpreserve-spans: do not merge spans on the same line\n"
+	"\tpreserve-whitespace: do not convert all whitespace into space characters\n"
+	"\tinhibit-spaces: don't add spaces between gaps in the text\n"
+	"\tparagraph-break: break blocks at paragraph boundaries\n"
 	"\tdehyphenate: attempt to join up hyphenated words\n"
-	"\tuse-cid-for-unknown-unicode: guess unicode from cid if normal mapping fails\n"
+	"\tignore-actualtext: do not apply ActualText replacements\n"
+	"\tuse-cid-for-unknown-unicode: use character code if unicode mapping fails\n"
+	"\tuse-gid-for-unknown-unicode: use glyph index if unicode mapping fails\n"
+	"\taccurate-bboxes: calculate char bboxes for from the outlines\n"
+	"\tcollect-styles: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
 	"\tclip: do not include text that is completely clipped\n"
 	"\tclip-rect=x0:y0:x1:y1 specify clipping rectangle within which to collect content\n"
-	"\tstructured=no: don't collect structure data\n"
-	"\taccurate-bboxes=no: calculate char bboxes for from the outlines\n"
-	"\tvectors=no: include vector bboxes in output\n"
-	"\tsegment=no: don't attempt to segment the page\n"
+	"\tstructured: collect structure markup\n"
+	"\tvectors: include vector bboxes in output\n"
+	"\tsegment: attempt to segment the page\n"
 	"\ttable-hunt: hunt for tables within a (segmented) page\n"
-	"\tcollect-flags: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -1610,6 +1613,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_COLLECT_STRUCTURE;
 	if (fz_has_option(ctx, string, "use-cid-for-unknown-unicode", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE;
+	if (fz_has_option(ctx, string, "use-gid-for-unknown-unicode", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE;
 	if (fz_has_option(ctx, string, "accurate-bboxes", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_ACCURATE_BBOXES;
 	if (fz_has_option(ctx, string, "vectors", &val) && fz_option_eq(val, "yes"))

@@ -138,7 +138,7 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
 
 .. method:: toStructuredText(options)
 
-    Extract the text on the page into a `StructuredText` object. The options argument is a comma separated list of flags: "preserve-ligatures", "preserve-whitespace", "preserve-spans", "preserve-images", "inhibit-spaces", "dehyphenate", "structured", "use-cid-for-unknown-unicode", and "ignore-actualtext".
+    Extract the text on the page into a `StructuredText` object. The options argument is a comma separated list of flags: "preserve-ligatures", "preserve-whitespace", "preserve-spans", "preserve-images", "inhibit-spaces", "dehyphenate", "structured", "use-cid-for-unknown-unicode", "use-gid-for-unknown-unicode", and "ignore-actualtext".
 
     :arg options: `String`.
     :return: `StructuredText`.
