@@ -131,7 +131,7 @@
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>
       </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -162,7 +162,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;MEMENTO;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;MEMENTO;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -185,7 +185,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -208,7 +208,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>
       </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -231,7 +231,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;MEMENTO;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;MEMENTO;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -254,7 +254,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
