@@ -685,7 +685,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 		else
 			local_min = 1;
 	}
-	assert(!xs->list[i-1].left);
+	assert(!xs->list[len-1].left);
 
 	pos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, edges);
 	pos->len = edges;
@@ -742,7 +742,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 			local_min = 1;
 		}
 	}
-	assert(wind == 0);
+	assert(i < len || wind == 0);
 	pos->list[edges].pos = max;
 	pos->list[edges].min = fz_min(xs->list[i-1].pos, max);
 	pos->list[edges].max = max;
