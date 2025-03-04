@@ -477,6 +477,8 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 
 	if (opts == NULL)
 		opts = &default_opts;
+	if (argc > 0 && argv == NULL)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "arguments array must be set if arguments exist");
 
 	fz_try(ctx)
 	{
