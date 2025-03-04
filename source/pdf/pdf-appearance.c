@@ -2353,6 +2353,7 @@ static unsigned int hex_from_color(fz_context *ctx, int n, float color[4])
 	{
 	default:
 		r = g = b = 0;
+		break;
 	case 1:
 		r = g = b = color[0] * 255;
 		break;
