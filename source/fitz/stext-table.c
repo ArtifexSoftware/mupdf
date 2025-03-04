@@ -2751,7 +2751,6 @@ merge_row:
 			continue;
 		for (x = 0; x < gd->cells->w-1; x++)
 		{
-			cell_t *a = get_cell(gd->cells, x, y);
 			cell_t *b = get_cell(gd->cells, x, y+1);
 			cell_t *c = get_cell(gd->cells, x, y+2);
 			if (!b->full)
@@ -2804,9 +2803,6 @@ remove_bordered_empty_cells(grid_walker_data *gd)
 			cell_t *u = y > 0 ? get_cell(gd->cells, x, y-1) : NULL;
 			cell_t *l = x > 0 ? get_cell(gd->cells, x-1, y) : NULL;
 			cell_t *c = get_cell(gd->cells, x, y);
-			cell_t *ll = x > 0 ? get_cell(gd->cells, x-1, y+1) : NULL;
-			cell_t *lc = get_cell(gd->cells, x, y+1);
-			cell_t *lr = get_cell(gd->cells, x+1, y+1);
 
 			if (c->full)
 				continue;
