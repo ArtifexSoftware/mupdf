@@ -1067,7 +1067,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_m
 		do_extract(ctx, dev, span, ctm, 0, span->len, flags);
 }
 
-static int hexrgba_from_color(fz_context *ctx, fz_colorspace *colorspace, const float *color, float alpha)
+static uint32_t hexrgba_from_color(fz_context *ctx, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	float rgb[3];
 	fz_convert_color(ctx, colorspace, color, fz_device_rgb(ctx), rgb, NULL, fz_default_color_params);
