@@ -831,6 +831,30 @@ int fz_is_point_inside_rect(fz_point p, fz_rect r);
 int fz_is_point_inside_irect(int x, int y, fz_irect r);
 
 /**
+	Inclusion test for rects.
+
+	rects are assumed to be both open or both closed.
+
+	No invalid rect can include any other rect.
+	No invalid rect can be included by any rect.
+	Empty (point) rects can include themselves.
+	Empty (line) rects can include many (subline) rects.
+*/
+int fz_is_rect_inside_rect(fz_rect inner, fz_rect outer);
+
+/**
+	Inclusion test for irects.
+
+	rects are assumed to be both open or both closed.
+
+	No invalid rect can include any other rect.
+	No invalid rect can be included by any rect.
+	Empty (point) rects can include themselves.
+	Empty (line) rects can include many (subline) rects.
+*/
+int fz_is_irect_inside_irect(fz_irect inner, fz_irect outer);
+
+/**
 	Inclusion test for quad in quad.
 
 	This may break down if quads are not 'well formed'.

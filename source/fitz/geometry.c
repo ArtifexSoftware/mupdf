@@ -773,6 +773,28 @@ int fz_is_point_inside_irect(int x, int y, fz_irect r)
 	return (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1);
 }
 
+int fz_is_rect_inside_rect(fz_rect inner, fz_rect outer)
+{
+	if (!fz_is_valid_rect(outer))
+		return 0;
+	if (!fz_is_valid_rect(inner))
+		return 0;
+	if (inner.x0 >= outer.x0 && inner.x1 <= outer.x1 && inner.y0 >= outer.y0 && inner.y1 <= outer.y1)
+		return 1;
+	return 0;
+}
+
+int fz_is_irect_inside_irect(fz_irect inner, fz_irect outer)
+{
+	if (!fz_is_valid_irect(outer))
+		return 0;
+	if (!fz_is_valid_irect(inner))
+		return 0;
+	if (inner.x0 >= outer.x0 && inner.x1 <= outer.x1 && inner.y0 >= outer.y0 && inner.y1 <= outer.y1)
+		return 1;
+	return 0;
+}
+
 /* cross (b-a) with (p-a) */
 static float
 cross(fz_point a, fz_point b, fz_point p)
