@@ -2484,6 +2484,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		if (opts->do_use_objstms)
 			gather_to_objstms(ctx, doc, opts, xref_len);
 
+		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to the gather */
+		expand_lists(ctx, opts, xref_len);
+
 		/* Truncate the xref after compacting and renumbering */
 		if ((opts->do_garbage >= 2) &&
 			!opts->do_incremental)
