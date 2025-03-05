@@ -102,7 +102,7 @@ fz_output *fz_stderr(fz_context *ctx)
 static void
 stdods_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 {
-	unsigned char *buf = fz_malloc(ctx, count+1);
+	char *buf = fz_malloc(ctx, count+1);
 
 	memcpy(buf, buffer, count);
 	buf[count] = 0;
@@ -632,7 +632,7 @@ fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 void
 fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, size_t size, int newline)
 {
-	static const char set[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	static const char set[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	size_t i;
 	for (i = 0; i + 3 <= size; i += 3)
 	{
@@ -676,7 +676,7 @@ fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *buf, int newl
 void
 fz_append_base64(fz_context *ctx, fz_buffer *out, const unsigned char *data, size_t size, int newline)
 {
-	static const char set[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	static const char set[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	size_t i;
 	for (i = 0; i + 3 <= size; i += 3)
 	{

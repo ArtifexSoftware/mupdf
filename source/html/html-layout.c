@@ -202,7 +202,7 @@ destroy_hb_shaper_data(fz_context *ctx, void *handle)
 }
 
 static const hb_feature_t small_caps_feature[1] = {
-	{ HB_TAG('s','m','c','p'), 1, 0, -1 }
+	{ HB_TAG('s','m','c','p'), 1, 0, (unsigned int)-1 }
 };
 
 static int walk_string(string_walker *walker)
@@ -1103,7 +1103,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 
 static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_html_box *top)
 {
-	fz_html_box *row, *cell;
+	fz_html_box *row;
 	int col, ncol = 0;
 	float min_tabw, max_tabw;
 	struct column_width *colw;
@@ -1161,6 +1161,7 @@ static void layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_
 	/* Find the maximum number of columns. (Count 'col' for each row, biggest one gives ncol). */
 	for (row = box->down; row; row = row->next)
 	{
+		fz_html_box *cell;
 		col = 0;
 		for (cell = row->down; cell; cell = cell->next)
 			++col;

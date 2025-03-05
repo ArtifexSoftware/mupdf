@@ -357,7 +357,7 @@ fz_decode_uri(fz_context *ctx, const char *s)
 		{
 			int a = tohex(*s++);
 			int b = tohex(*s++);
-			int c = a << 4 | b;
+			c = a << 4 | b;
 			if (strchr(URIRESERVED "#", c)) {
 				*p++ = '%';
 				*p++ = HEX[a];
@@ -743,8 +743,8 @@ fz_runetochar(char *str, int rune)
 
 	/* overlong null character */
 	if (c == 0) {
-		str[0] = (char)0xc0;
-		str[1] = (char)0x80;
+		((unsigned char *)str)[0] = 0xc0;
+		((unsigned char *)str)[1] = 0x80;
 		return 2;
 	}
 
@@ -851,7 +851,6 @@ fz_utflen(const char *s)
 			s += fz_chartorune(&rune, s);
 		n++;
 	}
-	return 0;
 }
 
 float fz_atof(const char *s)
@@ -998,7 +997,7 @@ static char *twoway_memmem(const unsigned char *h, const unsigned char *z, const
 		BITOP(byteset, n[i], |=), shift[n[i]] = i+1;
 
 	/* Compute maximal suffix */
-	ip = -1; jp = 0; k = p = 1;
+	ip = (size_t)-1; jp = 0; k = p = 1;
 	while (jp+k<l) {
 		if (n[ip+k] == n[jp+k]) {
 			if (k == p) {
@@ -1018,7 +1017,7 @@ static char *twoway_memmem(const unsigned char *h, const unsigned char *z, const
 	p0 = p;
 
 	/* And with the opposite comparison */
-	ip = -1; jp = 0; k = p = 1;
+	ip = (size_t)-1; jp = 0; k = p = 1;
 	while (jp+k<l) {
 		if (n[ip+k] == n[jp+k]) {
 			if (k == p) {
@@ -1221,7 +1220,7 @@ fz_strstrcase(const char *haystack, const char *needle)
 	return haystack - matchlen;
 }
 
-static inline int isdigit(int c) {
+static inline int my_isdigit(int c) {
 	return c >= '0' && c <= '9';
 }
 
@@ -1241,17 +1240,17 @@ fz_strverscmp(const char *l0, const char *r0)
 	for (dp=i=0; l[i]==r[i]; i++) {
 		int c = l[i];
 		if (!c) return 0;
-		if (!isdigit(c)) dp=i+1, z=1;
+		if (!my_isdigit(c)) dp=i+1, z=1;
 		else if (c!='0') z=0;
 	}
 
 	if (l[dp]!='0' && r[dp]!='0') {
 		/* If we're not looking at a digit sequence that began
 		 * with a zero, longest digit string is greater. */
-		for (j=i; isdigit(l[j]); j++)
-			if (!isdigit(r[j])) return 1;
-		if (isdigit(r[j])) return -1;
-	} else if (z && dp<i && (isdigit(l[i]) || isdigit(r[i]))) {
+		for (j=i; my_isdigit(l[j]); j++)
+			if (!my_isdigit(r[j])) return 1;
+		if (my_isdigit(r[j])) return -1;
+	} else if (z && dp<i && (my_isdigit(l[i]) || my_isdigit(r[i]))) {
 		/* Otherwise, if common prefix of digit sequence is
 		 * all zeros, digits order less than non-digits. */
 		return (unsigned char)(l[i]-'0') - (unsigned char)(r[i]-'0');

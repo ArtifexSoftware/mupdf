@@ -586,9 +586,9 @@ fz_transform_rect(fz_rect r, fz_matrix m)
 	 * invalid rectangle after transformation. */
 	if (invalid)
 	{
-		float t;
-		t = r.x0; r.x0 = r.x1; r.x1 = t;
-		t = r.y0; r.y0 = r.y1; r.y1 = t;
+		float f;
+		f = r.x0; r.x0 = r.x1; r.x1 = f;
+		f = r.y0; r.y0 = r.y1; r.y1 = f;
 	}
 	return r;
 }

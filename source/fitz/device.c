@@ -785,8 +785,6 @@ fz_structure_to_string(fz_structure type)
 	case FZ_STRUCTURE_ARTIFACT:
 		return "Artifact";
 	}
-
-	return NULL;
 }
 
 fz_structure

@@ -904,8 +904,6 @@ load_shared_strings(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *i
 
 	fz_try(ctx)
 	{
-		fz_xml *pos;
-
 		resolved = make_absolute_path(ctx, file, ss_file);
 		xml = fz_parse_xml_archive_entry(ctx, arch, resolved, 1);
 

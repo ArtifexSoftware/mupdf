@@ -44,13 +44,13 @@ string_in_names_list(fz_context *ctx, pdf_obj *p, pdf_obj *names_list)
  * Recreate page tree to only retain specified pages.
  */
 
-static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_obj *kids, int page, pdf_obj *structparents, pdf_obj *ostructparents)
+static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parentobj, pdf_obj *kids, int page, pdf_obj *structparents, pdf_obj *ostructparents)
 {
 	pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, page);
 
 	pdf_flatten_inheritable_page_items(ctx, pageref);
 
-	pdf_dict_put(ctx, pageref, PDF_NAME(Parent), parent);
+	pdf_dict_put(ctx, pageref, PDF_NAME(Parent), parentobj);
 
 	/* Store page object in new kids array */
 	pdf_array_push(ctx, kids, pageref);

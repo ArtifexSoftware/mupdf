@@ -2726,8 +2726,8 @@ intermediate_run:
 					ww -= len;
 					do
 					{
-						int v = *ddp;
 						int a = *runp++;
+						v = *ddp;
 						if (v == 0)
 						{
 							*ddp++ = a;
@@ -2855,8 +2855,8 @@ intermediate_run:
 					ww -= len;
 					do
 					{
-						int v = *ddp;
 						int a = *runp++;
+						v = *ddp;
 						if (v == 0)
 						{
 							*ddp++ = fz_mul255(a, alpha);

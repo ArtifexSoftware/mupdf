@@ -2490,7 +2490,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 					h_crossed = 1;
 				for (x2 = x+1; x2 < x+cellw; x2++)
 				{
-					cell_t *cell = get_cell(gd->cells, x2, y2);
+					cell = get_cell(gd->cells, x2, y2);
 					if (cell->h_line)
 						break;
 					if (cell->v_line)

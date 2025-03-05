@@ -710,7 +710,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 		bit = NULL;
 		if (render->num_workers > 0)
 		{
-			int band;
 			for (band = 0; band < fz_mini(render->num_workers, bands); band++)
 			{
 				worker_t *w = &workers[band];

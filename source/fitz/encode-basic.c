@@ -34,7 +34,7 @@ struct ahx
 
 static void ahx_write(fz_context *ctx, void *opaque, const void *data, size_t n)
 {
-	static const char tohex[16] = "0123456789ABCDEF";
+	static const char tohex[17] = "0123456789ABCDEF";
 	struct ahx *state = opaque;
 	const unsigned char *p = data;
 	while (n-- > 0)

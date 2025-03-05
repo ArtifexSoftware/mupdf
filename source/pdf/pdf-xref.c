@@ -3096,6 +3096,10 @@ void pdf_run_document_structure_imp(fz_context *ctx, fz_document *doc, fz_device
 	pdf_run_document_structure(ctx, (pdf_document*)doc, dev, cookie);
 }
 
+#ifndef NDEBUG
+void pdf_verify_name_table_sanity(void);
+#endif
+
 
 static pdf_document *
 pdf_new_document(fz_context *ctx, fz_stream *file)
@@ -3103,10 +3107,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	pdf_document *doc = fz_new_derived_document(ctx, pdf_document);
 
 #ifndef NDEBUG
-	{
-		void pdf_verify_name_table_sanity(void);
-		pdf_verify_name_table_sanity();
-	}
+	pdf_verify_name_table_sanity();
 #endif
 
 	doc->super.drop_document = pdf_drop_document_imp;
@@ -4527,7 +4528,6 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				for (i = 0; i < len; i++)
 				{
 					const char *s = pdf_array_get_text_string(ctx, f, i);
-					int r, w;
 
 					for (r = w = 0; r < fields->excludes.len; r++)
 					{

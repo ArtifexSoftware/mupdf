@@ -538,5 +538,4 @@ fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language)
 	case UCDN_SCRIPT_KAWI: return "Kawi";
 	case UCDN_SCRIPT_NAG_MUNDARI: return "NagMundari";
 	}
-	return NULL;
 }

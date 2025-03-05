@@ -1068,7 +1068,7 @@ tiff_read_tag_array(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		if (value > (size_t)(tiff->ep - tiff->bp))
 			fz_throw(ctx, FZ_ERROR_FORMAT, "TIFF JPEG tables offset out of range");
 		if (value + count > (size_t)(tiff->ep - tiff->bp))
-			count = (size_t)(tiff->ep - tiff->bp) - value;
+			count = (unsigned int)(tiff->ep - tiff->bp) - value;
 		tiff->jpegtables = tiff->bp + value;
 		tiff->jpegtableslen = count;
 		break;
@@ -1079,7 +1079,7 @@ tiff_read_tag_array(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		if (value > (size_t)(tiff->ep - tiff->bp))
 			fz_throw(ctx, FZ_ERROR_FORMAT, "TIFF profile offset out of range");
 		if (value + count > (size_t)(tiff->ep - tiff->bp))
-			count = (size_t)(tiff->ep - tiff->bp) - value;
+			count = (unsigned int)(tiff->ep - tiff->bp) - value;
 		tiff->profile = Memento_label(fz_malloc(ctx, count), "tiff_profile");
 		/* ICC profile data type is set to UNDEFINED.
 		 * TBYTE reading not correct in tiff_read_tag_value */
@@ -1550,12 +1550,12 @@ tiff_decode_jpeg(fz_context *ctx, struct tiff *tiff)
 	if (tiff->jpegofs > (size_t)(tiff->ep - tiff->bp))
 	{
 		fz_warn(ctx, "TIFF JPEG image offset too large, capping");
-		tiff->jpegofs = (size_t)(tiff->ep - tiff->bp);
+		tiff->jpegofs = (unsigned int)(tiff->ep - tiff->bp);
 	}
 	if (tiff->jpeglen > (size_t)(tiff->ep - tiff->bp) - tiff->jpegofs)
 	{
 		fz_warn(ctx, "TIFF JPEG image length too long, capping");
-		tiff->jpeglen = (size_t)(tiff->ep - tiff->bp) - tiff->jpegofs;
+		tiff->jpeglen = (unsigned int)(tiff->ep - tiff->bp) - tiff->jpegofs;
 	}
 
 	fz_try(ctx)

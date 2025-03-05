@@ -561,8 +561,6 @@ fz_blend_nonseparable(byte * FZ_RESTRICT bp, int bal, const byte * FZ_RESTRICT s
 				/* CMYK */
 				if (complement)
 				{
-					int k;
-
 					rr = 255 - rr;
 					rg = 255 - rg;
 					rb = 255 - rb;

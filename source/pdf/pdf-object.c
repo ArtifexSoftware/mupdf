@@ -718,8 +718,6 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 				return differ;
 			}
 		}
-
-		return 0;
 	}
 	return 1;
 }
@@ -1708,8 +1706,8 @@ void pdf_deserialise_journal(fz_context *ctx, pdf_document *doc, fz_stream *stm)
 		if (fz_skip_string(ctx, stm, "entry\n") == 0)
 		{
 			/* Read the fragment title. */
-			pdf_token tok = pdf_lex(ctx, stm, &doc->lexbuf.base);
 			char *title;
+			tok = pdf_lex(ctx, stm, &doc->lexbuf.base);
 
 			if (tok != PDF_TOK_STRING)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "Bad string in journal");

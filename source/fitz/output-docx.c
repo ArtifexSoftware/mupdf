@@ -105,7 +105,6 @@ static void dev_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_m
 				fz_text_item *item = &span->items[i];
 				float adv = 0;
 				fz_rect bounds;
-				fz_matrix combined;
 
 				trm.e = item->x;
 				trm.f = item->y;

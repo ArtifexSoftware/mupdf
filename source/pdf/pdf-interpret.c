@@ -884,7 +884,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 
 	if (cookie)
 	{
-		cookie->progress_max = -1;
+		cookie->progress_max = (size_t)-1;
 		cookie->progress = 0;
 	}
 

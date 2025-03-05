@@ -83,10 +83,10 @@ fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int b
 		text->head = text->tail = fz_new_text_span(ctx, font, wmode, bidi_level, markup_dir, language, trm);
 	}
 	else if (text->tail->font != font ||
-		text->tail->wmode != wmode ||
-		text->tail->bidi_level != bidi_level ||
-		text->tail->markup_dir != markup_dir ||
-		text->tail->language != language ||
+		text->tail->wmode != (unsigned int)wmode ||
+		text->tail->bidi_level != (unsigned int)bidi_level ||
+		text->tail->markup_dir != (unsigned int)markup_dir ||
+		text->tail->language != (unsigned int)language ||
 		text->tail->trm.a != trm.a ||
 		text->tail->trm.b != trm.b ||
 		text->tail->trm.c != trm.c ||

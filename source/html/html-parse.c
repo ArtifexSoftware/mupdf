@@ -1436,7 +1436,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 
 	while (end)
 	{
-		int level = end->bidi_level;
+		unsigned int level = end->bidi_level;
 
 		/* Gather the text from the flow up into a single buffer (at
 		 * least, as much of it as has the same direction markup). */

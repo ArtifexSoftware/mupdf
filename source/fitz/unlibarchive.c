@@ -710,24 +710,18 @@ fz_archive *
 fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "libarchive support not included");
-
-	return NULL;
 }
 
 fz_archive *
 fz_open_libarchive_archive(fz_context *ctx, const char *filename)
 {
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "libarchive support not included");
-
-	return NULL;
 }
 
 fz_stream *
 fz_open_libarchived(fz_context *ctx, fz_stream *chain)
 {
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "libarchive support not included");
-
-	return NULL;
 }
 
 #endif

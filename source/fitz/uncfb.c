@@ -527,7 +527,7 @@ static int count_cfb_entries(fz_context *ctx, fz_archive *arch)
 }
 
 static const uint8_t sig[8] = { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 };
-static const uint8_t zeros[16];
+static const uint8_t zeros[16] = { 0 };
 
 int
 fz_is_cfb_archive(fz_context *ctx, fz_stream *file)
@@ -717,8 +717,8 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 		cfb->num_difat_sectors = fz_read_uint32_le(ctx, file);
 		for (i = 0; i < 109; i++)
 			cfb->difat[i] = fz_read_uint32_le(ctx, file);
-		cfb->fatcache_sector = -1;
-		cfb->minifatcache_sector = -1;
+		cfb->fatcache_sector = (uint32_t)-1;
+		cfb->minifatcache_sector = (uint32_t)-1;
 
 		/* Read the directory entries. */
 		/* On our first pass through, EVERYTHING goes into the entries. */
@@ -736,7 +736,7 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 
 			for (off = 0; off < z; off += 128)
 			{
-				int i, count = 0;
+				int count = 0;
 				int type;
 				int namelen = get16(buffer+off+64);
 

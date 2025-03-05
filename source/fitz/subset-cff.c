@@ -1733,7 +1733,7 @@ rewrite_fdarray(fz_context *ctx, cff_t *cff, uint32_t offset0)
 	uint16_t n = cff->fdarray_index.count;
 	uint32_t len = 0;
 	uint8_t os;
-	uint32_t offset;
+	size_t offset;
 
 	if (cff->fdarray == NULL)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Expected to rewrite an fdarray");
@@ -1754,8 +1754,8 @@ rewrite_fdarray(fz_context *ctx, cff_t *cff, uint32_t offset0)
 	{
 		assert(cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup] == 29);
 		assert(cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+5] == 29);
-		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+1], cff->fdarray[i].rewritten_private->len);
-		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+6], offset);
+		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+1], (uint32_t)cff->fdarray[i].rewritten_private->len);
+		put32(&cff->fdarray[i].rewritten_dict->data[cff->fdarray[i].fixup+6], (uint32_t)offset);
 		offset += cff->fdarray[i].rewritten_private->len;
 		if (cff->fdarray[i].local_subset)
 		{
@@ -1767,7 +1767,7 @@ rewrite_fdarray(fz_context *ctx, cff_t *cff, uint32_t offset0)
 		}
 	}
 
-	return offset;
+	return (uint32_t)offset;
 }
 
 static void
@@ -2182,7 +2182,7 @@ read_fdarray_and_privates(fz_context *ctx, cff_t *cff)
 
 		if (cff->fdarray[i].local_index_offset != 0)
 		{
-			index_load(ctx, &cff->fdarray[i].local_index, cff->base, cff->len, cff->fdarray[i].local_index_offset);
+			index_load(ctx, &cff->fdarray[i].local_index, cff->base, (uint32_t)cff->len, cff->fdarray[i].local_index_offset);
 			cff->fdarray[i].subr_bias = subr_bias(ctx, cff, cff->fdarray[i].local_index.count);
 		}
 	}

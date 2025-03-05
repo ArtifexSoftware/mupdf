@@ -1339,9 +1339,9 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	if (long_metrics > ttf->orig_num_glyphs)
 		long_metrics = ttf->orig_num_glyphs;
 	if (long_metrics > t->len / 4)
-		long_metrics = t->len / 4;
+		long_metrics = (uint16_t)(t->len / 4);
 
-	short_metrics = (t->len - long_metrics * 4) / 2;
+	short_metrics = (uint16_t)((t->len - long_metrics * 4) / 2);
 	if (short_metrics > ttf->orig_num_glyphs - long_metrics)
 		short_metrics = ttf->orig_num_glyphs - long_metrics;
 

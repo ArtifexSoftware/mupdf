@@ -603,7 +603,6 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "pixmap must be grayscale or CMYK to convert to bitmap");
-		return NULL;
 	}
 
 	if (ht == NULL)

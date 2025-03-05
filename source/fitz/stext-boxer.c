@@ -604,8 +604,8 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 		{
 			/* Need to look at the parts. */
 			fz_stext_line *line, *next_line;
-			fz_stext_block *newblock = NULL;
 
+			newblock = NULL;
 			for (line = block->u.t.first_line; line != NULL; line = next_line)
 			{
 				next_line = line->next;

@@ -522,8 +522,8 @@ pdf_write_line_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_
 	le = pdf_dict_get(ctx, annot->obj, PDF_NAME(LE));
 	if (pdf_array_len(ctx, le) == 2)
 	{
-		float dx = b.x - a.x;
-		float dy = b.y - a.y;
+		dx = b.x - a.x;
+		dy = b.y - a.y;
 		pdf_write_line_cap_appearance(ctx, buf, rect, a.x, a.y, dx, dy, w, sc, ic, pdf_array_get(ctx, le, 0));
 		pdf_write_line_cap_appearance(ctx, buf, rect, b.x, b.y, -dx, -dy, w, sc, ic, pdf_array_get(ctx, le, 1));
 	}
@@ -2529,12 +2529,12 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(IT)), PDF_NAME(FreeTextCallout)))
 	{
 		pdf_obj *cl = pdf_dict_get(ctx, annot->obj, PDF_NAME(CL));
-		int i, n = pdf_array_len(ctx, cl);
-		if (n == 4 || n == 6)
+		int i, len = pdf_array_len(ctx, cl);
+		if (len == 4 || len == 6)
 		{
 			float xy[6];
 
-			for (i = 0; i < n; i += 2)
+			for (i = 0; i < len; i += 2)
 			{
 				float x = xy[i+0] = pdf_array_get_real(ctx, cl, i+0);
 				float y = xy[i+1] = pdf_array_get_real(ctx, cl, i+1);
@@ -2545,7 +2545,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 			}
 
 			fz_append_printf(ctx, buf, "%g %g m\n", xy[0], xy[1]);
-			for (i = 2; i < n; i += 2)
+			for (i = 2; i < len; i += 2)
 				fz_append_printf(ctx, buf, "%g %g l\n", xy[i+0], xy[i+1]);
 			fz_append_printf(ctx, buf, "S\n");
 

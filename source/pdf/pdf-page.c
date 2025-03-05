@@ -1957,13 +1957,13 @@ pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, size
 	if (style == PDF_NAME(D))
 		fz_snprintf(buf, size, "%d", index + start);
 	else if (style == PDF_NAME(R))
-		pdf_format_roman_page_label(buf, size, index + start, roman_uc, "M");
+		pdf_format_roman_page_label(buf, (int)size, index + start, roman_uc, "M");
 	else if (style == PDF_NAME(r))
-		pdf_format_roman_page_label(buf, size, index + start, roman_lc, "m");
+		pdf_format_roman_page_label(buf, (int)size, index + start, roman_lc, "m");
 	else if (style == PDF_NAME(A))
-		pdf_format_alpha_page_label(buf, size, index + start, 'A');
+		pdf_format_alpha_page_label(buf, (int)size, index + start, 'A');
 	else if (style == PDF_NAME(a))
-		pdf_format_alpha_page_label(buf, size, index + start, 'a');
+		pdf_format_alpha_page_label(buf, (int)size, index + start, 'a');
 }
 
 void
