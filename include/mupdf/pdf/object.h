@@ -438,4 +438,6 @@ void pdf_add_journal_fragment(fz_context *ctx, pdf_document *doc, int parent, pd
 char *pdf_format_date(fz_context *ctx, int64_t time, char *s, size_t n);
 int64_t pdf_parse_date(fz_context *ctx, const char *s);
 
+int pdf_is_image_stream(fz_context *ctx, pdf_obj *obj);
+
 #endif

@@ -993,7 +993,7 @@ static int is_jpx_filter(fz_context *ctx, pdf_obj *o)
 	return 0;
 }
 
-static int is_image_stream(fz_context *ctx, pdf_obj *obj)
+int pdf_is_image_stream(fz_context *ctx, pdf_obj *obj)
 {
 	pdf_obj *o;
 	if ((o = pdf_dict_get(ctx, obj, PDF_NAME(Type)), pdf_name_eq(ctx, o, PDF_NAME(XObject))))
@@ -1118,7 +1118,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			{
 				do_deflate = opts->do_compress;
 				do_expand = opts->do_expand;
-				if (opts->do_compress_images && is_image_stream(ctx, obj))
+				if (opts->do_compress_images && pdf_is_image_stream(ctx, obj))
 					do_deflate = opts->do_compress ? opts->do_compress : 1, do_expand = 0;
 				if (opts->do_compress_fonts && is_font_stream(ctx, obj))
 					do_deflate = opts->do_compress ? opts->do_compress : 1, do_expand = 0;

@@ -400,6 +400,10 @@ public class PDFAnnotation
 		setNativeAppearanceImage(image);
 	}
 
+	public native PDFObject getStampImageObject();
+	public native void setStampImageObject(PDFObject image);
+	public native void setStampImage(Image image);
+
 	public native boolean getHiddenForEditing();
 	public native void setHiddenForEditing(boolean hidden);
 

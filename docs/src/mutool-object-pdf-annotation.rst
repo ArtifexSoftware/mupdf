@@ -1791,3 +1791,42 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
     .. code-block:: javascript
 
         annotation.applyRedaction(true, 1);
+
+
+.. method:: getStampImageObject()
+
+    If the annotation is a stamp annotation and it consists of an image, return the `PDFObject` representing that image.
+
+    :return: A `PDFObject` corresponding to the stamp annotation image, otherwise null.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var pdfobj = annotation.getStampImageObject();
+
+
+.. method:: setStampImageObject(imgobj)
+
+    Create an appearance stream containing the image passed as argument and set that as the normal appearance of the annotation.
+
+    :arg imgobj: A `PDFObject` corresponding to the desired image.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        annotation.setStampImageObject(imgobj);
+
+
+.. method:: setStampImage(img)
+
+    Add the image passed as argument to the document as a PDF object, and pass a reference to that object to when setting the normal appearance of the stamp annotation.
+
+    :arg img: The `Image` desired to become the stamp annotations appearance.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        annotation.setStampImage(img);

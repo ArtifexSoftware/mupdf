@@ -1463,7 +1463,7 @@ write_stamp(fz_context *ctx, fz_buffer *buf, fz_font *font, const char *text, fl
 }
 
 static void
-pdf_write_stamp_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, fz_rect *bbox, pdf_obj **res)
+pdf_write_stamp_appearance_rubber(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
 {
 	fz_font *font;
 	pdf_obj *res_font;
@@ -1551,6 +1551,36 @@ pdf_write_stamp_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz
 		rect->y0 = yc - 25 * xs;
 		rect->y1 = yc + 25 * xs;
 	}
+
+	*matrix = fz_identity;
+}
+
+static void
+pdf_write_stamp_appearance_image(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res, pdf_obj *img)
+{
+	pdf_obj *res_xobj;
+
+	if (!*res)
+		*res = pdf_new_dict(ctx, annot->page->doc, 1);
+	res_xobj = pdf_dict_put_dict(ctx, *res, PDF_NAME(XObject), 1);
+	pdf_dict_put(ctx, res_xobj, PDF_NAME(I), img);
+
+	pdf_write_opacity(ctx, annot, buf, res);
+
+	fz_append_string(ctx, buf, "/I Do\n");
+
+	*bbox = fz_unit_rect;
+	*matrix = fz_identity;
+}
+
+static void
+pdf_write_stamp_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rect *rect, fz_rect *bbox, fz_matrix *matrix, pdf_obj **res)
+{
+	pdf_obj *img = pdf_annot_stamp_image_obj(ctx, annot);
+	if (img)
+		pdf_write_stamp_appearance_image(ctx, annot, buf, rect, bbox, matrix, res, img);
+	else
+		pdf_write_stamp_appearance_rubber(ctx, annot, buf, rect, bbox, matrix, res);
 }
 
 static void
@@ -2981,8 +3011,7 @@ pdf_write_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf,
 		*bbox = *rect;
 		break;
 	case PDF_ANNOT_STAMP:
-		pdf_write_stamp_appearance(ctx, annot, buf, rect, bbox, res);
-		*matrix = fz_identity;
+		pdf_write_stamp_appearance(ctx, annot, buf, rect, bbox, matrix, res);
 		break;
 	case PDF_ANNOT_FREE_TEXT:
 		pdf_write_free_text_appearance(ctx, annot, buf, rect, bbox, matrix, res);

@@ -296,8 +296,8 @@ fz_pixmap *fz_new_barcode_pixmap(fz_context *ctx, fz_barcode_type type, const ch
 	fz_try(ctx)
 	{
 		pix = fz_new_pixmap(ctx, fz_device_gray(ctx), w, h, NULL, 0);
-		pix->xres = 72;
-		pix->yres = 72;
+		pix->xres = 36;
+		pix->yres = 36;
 		memcpy(pix->samples, tmp_copy, w*h);
 	}
 	fz_always(ctx)

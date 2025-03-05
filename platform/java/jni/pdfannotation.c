@@ -2094,3 +2094,50 @@ FUN(PDFAnnotation_process)(JNIEnv *env, jobject self, jobject jproc)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(PDFAnnotation_getStampImageObject)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	pdf_obj *obj = NULL;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		obj = pdf_annot_stamp_image_obj(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_PDFObject_safe(ctx, env, obj);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setStampImageObject)(JNIEnv *env, jobject self, jobject jobj)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	pdf_obj *obj = from_PDFObject(env, jobj);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_stamp_image_obj(ctx, annot, obj);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setStampImage)(JNIEnv *env, jobject self, jobject jimg)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	fz_image *img = from_Image(env, jimg);
+
+	if (!ctx || !annot) return;
+
+	fz_try(ctx)
+		pdf_set_annot_stamp_image(ctx, annot, img);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}

@@ -9806,11 +9806,46 @@ static void ffi_PDFAnnotation_setDefaultAppearance(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_setStampImage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	fz_image *img = ffi_toimage(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_stamp_image(ctx, annot, img);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_setStampImageObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	pdf_obj *obj = js_touserdata(J, 1, "pdf_obj");
+	fz_try(ctx)
+		pdf_set_annot_stamp_image_obj(ctx, annot, obj);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getStampImageObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	pdf_obj *obj = NULL;
+	fz_try(ctx)
+		obj = pdf_annot_stamp_image_obj(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	return ffi_pushobj(J, pdf_keep_obj(ctx, obj));
+}
+
 static void ffi_PDFAnnotation_setAppearance(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
 
+	// setAppearance(image)
 	if (js_isuserdata(J, 1, "fz_image"))
 	{
 		fz_image *img = ffi_toimage(J, 1);
@@ -9819,6 +9854,8 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 		fz_catch(ctx)
 			rethrow(J);
 	}
+
+	// setAppearance(appearance, state, matrix, bbox, resources, contents)
 	else if (js_isarray(J, 4))
 	{
 		const char *appearance = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
@@ -9854,6 +9891,8 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 		fz_catch(ctx)
 			rethrow(J);
 	}
+
+	// setAppearance(appearance, state, matrix, display_list)
 	else
 	{
 		const char *appearance = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
@@ -11449,6 +11488,10 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setQuadding", ffi_PDFAnnotation_setQuadding, 1);
 		jsB_propfun(J, "PDFAnnotation.getLanguage", ffi_PDFAnnotation_getLanguage, 0);
 		jsB_propfun(J, "PDFAnnotation.setLanguage", ffi_PDFAnnotation_setLanguage, 1);
+
+		jsB_propfun(J, "PDFAnnotation.getStampImageObject", ffi_PDFAnnotation_getStampImageObject, 0);
+		jsB_propfun(J, "PDFAnnotation.setStampImageObject", ffi_PDFAnnotation_setStampImageObject, 1);
+		jsB_propfun(J, "PDFAnnotation.setStampImage", ffi_PDFAnnotation_setStampImage, 1);
 
 		jsB_propfun(J, "PDFAnnotation.hasIntent", ffi_PDFAnnotation_hasIntent, 0);
 		jsB_propfun(J, "PDFAnnotation.getIntent", ffi_PDFAnnotation_getIntent, 0);

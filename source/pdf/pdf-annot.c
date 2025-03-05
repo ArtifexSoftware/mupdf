@@ -1442,6 +1442,7 @@ pdf_annot_is_standard_stamp(fz_context *ctx, pdf_annot *annot)
 	else if (pdf_name_eq(ctx, name, PDF_NAME(NotForPublicRelease))) return 1;
 	else if (pdf_name_eq(ctx, name, PDF_NAME(Sold))) return 1;
 	else if (pdf_name_eq(ctx, name, PDF_NAME(TopSecret))) return 1;
+	else if (pdf_annot_stamp_image_obj(ctx, annot) != NULL) return 1;
 	else return 0;
 }
 
@@ -4183,52 +4184,62 @@ static pdf_obj *stamp_subtypes[] = {
 	NULL,
 };
 
-void pdf_set_annot_stamp_image(fz_context *ctx, pdf_annot *annot, fz_image *img)
+pdf_obj *
+pdf_annot_stamp_image_obj(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_document *doc;
-	fz_buffer *buf = NULL;
-	pdf_obj *res = NULL;
-	pdf_obj *res_xobj;
-	fz_rect rect;
-	float s;
+	pdf_obj *obj, *imgobj = NULL;
 
+	pdf_annot_push_local_xref(ctx, annot);
+
+	fz_try(ctx)
+	{
+		obj = pdf_dict_getp(ctx, annot->obj, "AP/N/Resources/XObject");
+		if (pdf_dict_len(ctx, obj) == 1)
+		{
+			obj = pdf_dict_get_val(ctx, obj, 0);
+			if (pdf_is_image_stream(ctx, obj))
+				imgobj = obj;
+		}
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return imgobj;
+}
+
+void pdf_set_annot_stamp_image_obj(fz_context *ctx, pdf_annot *annot, pdf_obj *ref)
+{
 	begin_annot_op(ctx, annot, "Set stamp image");
-	doc = annot->page->doc;
-
-	fz_var(res);
-	fz_var(buf);
 
 	fz_try(ctx)
 	{
 		check_allowed_subtypes(ctx, annot, PDF_NAME(Stamp), stamp_subtypes);
 
-		// Shrink Rect to fit image, maintaining aspect ratio.
-		rect = pdf_bound_annot(ctx, annot);
-		s = fz_min((rect.x1 - rect.x0) / img->w, (rect.y1 - rect.y0) / img->h);
-		rect.x1 = rect.x0 + img->w * s;
-		rect.y1 = rect.y0 + img->h * s;
+		pdf_dict_del(ctx, annot->obj, PDF_NAME(AP));
+		pdf_dict_putp(ctx, annot->obj, "AP/N/Resources/XObject/I", ref);
 
-		// Add image resource
-		res = pdf_add_new_dict(ctx, doc, 1);
-		res_xobj = pdf_dict_put_dict(ctx, res, PDF_NAME(XObject), 1);
-		pdf_dict_put_drop(ctx, res_xobj, PDF_NAME(I), pdf_add_image(ctx, doc, img));
-
-		buf = fz_new_buffer_from_shared_data(ctx, (const unsigned char*)"/I Do\n", 6);
-
-		pdf_set_annot_appearance(ctx, annot, "N", NULL, fz_identity, fz_unit_rect, res, buf);
-		pdf_set_annot_rect(ctx, annot, rect);
 		end_annot_op(ctx, annot);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, buf);
-		pdf_drop_obj(ctx, res);
 	}
 	fz_catch(ctx)
 	{
 		abandon_annot_op(ctx, annot);
 		fz_rethrow(ctx);
 	}
+
+	pdf_dirty_annot(ctx, annot);
+}
+
+void pdf_set_annot_stamp_image(fz_context *ctx, pdf_annot *annot, fz_image *img)
+{
+	pdf_obj *ref = pdf_add_image(ctx, annot->page->doc, img);
+	fz_try(ctx)
+		pdf_set_annot_stamp_image_obj(ctx, annot, ref);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, ref);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static pdf_obj *filespec_subtypes[] = {
