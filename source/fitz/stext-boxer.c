@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Artifex Software, Inc.
+// Copyright (C) 2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -324,7 +324,6 @@ static int
 boxer_subdivide(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, fz_stext_block **last_block, boxer_t *boxer, int depth)
 {
 	rectlist_t *list = boxer->list;
-	int num_h = 0, num_v = 0;
 	double max_h = 0, max_v = 0;
 	int i;
 
@@ -340,7 +339,6 @@ boxer_subdivide(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_blo
 			{
 				max_h = size;
 			}
-			num_h++;
 		}
 		if (r.y0 <= boxer->mediabox.y0 && r.y1 >= boxer->mediabox.y1)
 		{
@@ -350,7 +348,6 @@ boxer_subdivide(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_blo
 			{
 				max_v = size;
 			}
-			num_v++;
 		}
 	}
 
