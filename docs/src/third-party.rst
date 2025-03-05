@@ -74,7 +74,7 @@ These are the third party libraries used by :title:`MuPDF`.
      - OCR
      - Apache 2.0
    * - Leptonica_
-     - 1.84.1 with patches
+     - 1.85.0 with patches
      - Tesseract dependency
      - BSD-style
 
