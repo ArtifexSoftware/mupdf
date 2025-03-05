@@ -878,7 +878,7 @@ int fz_page_number_from_location(fz_context *ctx, fz_document *doc, fz_location 
 }
 
 int
-fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size)
+fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, size_t size)
 {
 	if (buf && size > 0)
 		buf[0] = 0;

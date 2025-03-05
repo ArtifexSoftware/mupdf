@@ -942,7 +942,7 @@ int fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p);
 	(will be larger than 'size' if the output was truncated), or -1 if the
 	key is not recognized or found.
 */
-int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, size_t size);
 
 #define FZ_META_FORMAT "format"
 #define FZ_META_ENCRYPTION "encryption"
