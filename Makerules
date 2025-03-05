@@ -251,7 +251,7 @@ else
     SYS_LIBARCHIVE_LIBS := $(shell pkg-config --libs libarchive)
   endif
 
-  HAVE_SYS_ZXINGCPP := $(shell pkg-config --exists 'zxing >= 2.3.0' && echo yes)
+  HAVE_SYS_ZXINGCPP := $(shell pkg-config --exists 'zxing >= 2.0.0' && echo yes)
   ifeq ($(HAVE_SYS_ZXINGCPP),yes)
     SYS_ZXINGCPP_CFLAGS := $(shell pkg-config --cflags zxing)
     SYS_ZXINGCPP_LIBS := $(shell pkg-config --libs zxing)

@@ -39,7 +39,6 @@
 
 using namespace ZXing;
 
-
 extern "C"
 {
 
@@ -88,9 +87,11 @@ BarcodeFormat formats[FZ_BARCODE__LIMIT] =
 	BarcodeFormat::UPCA,
 	BarcodeFormat::UPCE,
 	BarcodeFormat::MicroQRCode,
+#ifdef ZXING_EXPERIMENTAL_API
 	BarcodeFormat::RMQRCode,
 	BarcodeFormat::DXFilmEdge,
-	BarcodeFormat::DataBarLimited
+	BarcodeFormat::DataBarLimited,
+#endif
 };
 
 fz_barcode_type
@@ -360,9 +361,9 @@ char *fz_decode_barcode_from_page(fz_context *ctx, fz_barcode_type *type, fz_pag
 	return str;
 }
 
+
 char *fz_decode_barcode_from_pixmap(fz_context *ctx, fz_barcode_type *type, fz_pixmap *pix, int rotate)
 {
-	fz_colorspace *cs;
 	ImageFormat format;
 	char *ret = NULL;
 	char *tmp_copy = NULL;
@@ -370,11 +371,10 @@ char *fz_decode_barcode_from_pixmap(fz_context *ctx, fz_barcode_type *type, fz_p
 	if (pix == NULL)
 		return NULL;
 
-	cs = fz_pixmap_colorspace(ctx, pix);
-	if (cs == NULL || cs->n == 1)
-		format = pix->alpha ? ImageFormat::LumA : ImageFormat::Lum;
-	else if (cs->n == 3)
-		format = pix->alpha ? ImageFormat::RGBA : ImageFormat::RGB;
+	if (pix->n == 1)
+		format = ImageFormat::Lum;
+	else if (pix->n == 3)
+		format = ImageFormat::RGB;
 	else
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Barcodes can be greyscale or RGB only");
 
@@ -388,31 +388,20 @@ char *fz_decode_barcode_from_pixmap(fz_context *ctx, fz_barcode_type *type, fz_p
 		char exception_text[256] = "";
 		try
 		{
-			ReaderOptions options{};
 			ImageView image{pix->samples, pix->w, pix->h, format};
-			Barcodes barcodes = ReadBarcodes(image.rotated(rotate), options);
+			auto barcode = ReadBarcode(image.rotated(rotate));
+			std::string str;
 
-			// if we did not find anything, insert a dummy to produce some output for each file
-			if (barcodes.empty())
-				return NULL;
+			if (barcode.isValid())
+				str = barcode.text(TextMode::Escaped);
+			else if (barcode.error())
+				str = ToString(barcode.error());
+			else
+				str = "Unknown " + ToString(barcode.format());
+			if (type)
+				*type = format_to_fz(barcode.format());
 
-			/* We only return the first one. */
-			for (auto&& barcode : barcodes)
-			{
-				std::string str;
-
-				if (barcode.isValid())
-					str = barcode.text(TextMode::Escaped);
-				else if (barcode.error())
-					str = ToString(barcode.error());
-				else
-					str = "Unknown " + ToString(barcode.format());
-				if (type)
-					*type = format_to_fz(barcode.format());
-
-				tmp_copy = strdup(str.c_str());
-				break;
-			}
+			tmp_copy = strdup(str.c_str());
 		}
 		catch (std::exception & e)
 		{
