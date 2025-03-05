@@ -124,7 +124,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
@@ -141,7 +141,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -156,7 +156,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -173,7 +173,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <ProjectReference>
@@ -191,7 +191,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MinimalRebuild />
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -207,7 +207,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4018;4244;4146</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4101;4146;4244;4267</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
   </ItemDefinitionGroup>

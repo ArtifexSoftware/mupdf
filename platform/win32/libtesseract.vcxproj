@@ -525,7 +525,7 @@
       </ForceConformanceInForLoopScope>
       <RemoveUnreferencedCodeData>false</RemoveUnreferencedCodeData>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -546,7 +546,7 @@
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -569,7 +569,7 @@
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -594,7 +594,7 @@
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -615,7 +615,7 @@
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -638,7 +638,7 @@
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <DisableSpecificWarnings>4244;4267;4566;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4146;4244;4267;4566</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
