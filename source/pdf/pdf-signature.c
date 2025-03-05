@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -213,7 +213,7 @@ static void enact_sig_locking(fz_context *ctx, pdf_document *doc, pdf_obj *sig)
 	pdf_obj *fields;
 	static pdf_obj *ff_names[2] = { PDF_NAME(Ff), NULL };
 	pdf_obj *ff = NULL;
-	static fieldname_prefix null_prefix = { NULL, "" };
+	static fieldname_prefix null_prefix = { NULL, { 0 } };
 	sig_locking_data data = { locked, &null_prefix };
 
 	if (locked == NULL)
