@@ -2443,6 +2443,18 @@ pdf_load_unencrypted_object(fz_context *ctx, pdf_document *doc, int num)
 	return NULL;
 }
 
+int
+pdf_object_exists(fz_context *ctx, pdf_document *doc, int num)
+{
+	pdf_xref_entry *x;
+	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+		return 0;
+	x = pdf_get_xref_entry(ctx, doc, num);
+	if (x && (x->type == 'n' || x->type == 'o'))
+		return 1;
+	return 0;
+}
+
 pdf_xref_entry *
 pdf_cache_object(fz_context *ctx, pdf_document *doc, int num)
 {

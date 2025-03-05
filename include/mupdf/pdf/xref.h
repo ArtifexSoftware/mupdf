@@ -102,6 +102,8 @@ struct pdf_xref
 */
 pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num);
 
+int pdf_object_exists(fz_context *ctx, pdf_document *doc, int num);
+
 int pdf_count_objects(fz_context *ctx, pdf_document *doc);
 
 /**

@@ -2327,7 +2327,15 @@ prepass(fz_context *ctx, pdf_document *doc)
 	int num;
 
 	for (num = 1; num < pdf_xref_len(ctx, doc); ++num)
-		pdf_cache_object(ctx, doc, num);
+	{
+		if (pdf_object_exists(ctx, doc, num))
+		{
+			fz_try(ctx)
+				pdf_cache_object(ctx, doc, num);
+			fz_catch(ctx)
+				fz_report_error(ctx);
+		}
+	}
 }
 
 static void
