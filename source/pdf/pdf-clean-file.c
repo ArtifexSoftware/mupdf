@@ -467,7 +467,7 @@ void pdf_rearrange_pages(fz_context *ctx, pdf_document *doc, int count, const in
 
 void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, pdf_clean_options *opts, int argc, char *argv[])
 {
-	const pdf_clean_options default_opts = { 0 };
+	pdf_clean_options default_opts = { 0 };
 	pdf_document *pdf = NULL;
 	int *pages = NULL;
 	int cap, len, page;
