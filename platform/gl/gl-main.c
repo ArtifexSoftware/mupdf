@@ -270,7 +270,7 @@ static char *get_history_filename(void)
 	return history_path;
 }
 
-static fz_json *read_history_file_as_json(fz_context *ctx, fz_pool *pool)
+static fz_json *read_history_file_as_json(fz_pool *pool)
 {
 	fz_buffer *buf = NULL;
 	const char *json = "{}";
@@ -311,7 +311,7 @@ static fz_json *read_history_file_as_json(fz_context *ctx, fz_pool *pool)
 	return result;
 }
 
-static fz_location load_location(fz_context *ctx, fz_json *val)
+static fz_location load_location(fz_json *val)
 {
 	if (fz_json_is_number(ctx, val))
 		return fz_make_location(0, fz_json_to_number(ctx, val) - 1);
@@ -323,7 +323,7 @@ static fz_location load_location(fz_context *ctx, fz_json *val)
 	return fz_make_location(0, 0);
 }
 
-static fz_json *save_location(fz_context *ctx, fz_pool *pool, fz_location loc)
+static fz_json *save_location(fz_pool *pool, fz_location loc)
 {
 	fz_json *arr;
 	if (loc.chapter == 0)
@@ -354,7 +354,7 @@ static void load_history(void)
 	fz_try(ctx)
 	{
 		pool = fz_new_pool(ctx);
-		json = read_history_file_as_json(ctx, pool);
+		json = read_history_file_as_json(pool);
 		if (json)
 		{
 			item = fz_json_object_get(ctx, json, absname);
@@ -362,14 +362,14 @@ static void load_history(void)
 			{
 				val = fz_json_object_get(ctx, item, "current");
 				if (val)
-					currentpage = load_location(ctx, val);
+					currentpage = load_location(val);
 
 				arr = fz_json_object_get(ctx, item, "history");
 				if (fz_json_is_array(ctx, arr))
 				{
 					history_count = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(history));
 					for (i = 0; i < history_count; ++i)
-						history[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
+						history[i].loc = load_location(fz_json_array_get(ctx, arr, i));
 				}
 
 				arr = fz_json_object_get(ctx, item, "future");
@@ -377,7 +377,7 @@ static void load_history(void)
 				{
 					future_count = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(future));
 					for (i = 0; i < future_count; ++i)
-						future[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
+						future[i].loc = load_location(fz_json_array_get(ctx, arr, i));
 				}
 
 				arr = fz_json_object_get(ctx, item, "marks");
@@ -385,7 +385,7 @@ static void load_history(void)
 				{
 					n = fz_clampi(fz_json_array_length(ctx, arr), 0, nelem(marks));
 					for (i = 0; i < n; ++i)
-						marks[i].loc = load_location(ctx, fz_json_array_get(ctx, arr, i));
+						marks[i].loc = load_location(fz_json_array_get(ctx, arr, i));
 				}
 			}
 
@@ -423,25 +423,25 @@ static void save_history(void)
 	fz_try(ctx)
 	{
 		pool = fz_new_pool(ctx);
-		json = read_history_file_as_json(ctx, pool);
+		json = read_history_file_as_json(pool);
 		if (json)
 		{
 			item = fz_json_new_object(ctx, pool);
-			fz_json_object_set(ctx, pool, item, "current", save_location(ctx, pool, currentpage));
+			fz_json_object_set(ctx, pool, item, "current", save_location(pool, currentpage));
 
 			arr = fz_json_new_array(ctx, pool);
 			for (i = 0; i < history_count; ++i)
-				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, history[i].loc));
+				fz_json_array_push(ctx, pool, arr, save_location(pool, history[i].loc));
 			fz_json_object_set(ctx, pool, item, "history", arr);
 
 			arr = fz_json_new_array(ctx, pool);
 			for (i = 0; i < future_count; ++i)
-				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, future[i].loc));
+				fz_json_array_push(ctx, pool, arr, save_location(pool, future[i].loc));
 			fz_json_object_set(ctx, pool, item, "future", arr);
 
 			arr = fz_json_new_array(ctx, pool);
 			for (i = 0; i < (int)nelem(marks); ++i)
-				fz_json_array_push(ctx, pool, arr, save_location(ctx, pool, marks[i].loc));
+				fz_json_array_push(ctx, pool, arr, save_location(pool, marks[i].loc));
 			fz_json_object_set(ctx, pool, item, "marks", arr);
 
 			fz_json_object_set(ctx, pool, json, absname, item);
