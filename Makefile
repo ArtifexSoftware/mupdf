@@ -453,7 +453,7 @@ install-headers:
 install-libs: libs install-headers
 	install -d $(DESTDIR)$(libdir)
 ifeq ($(shared),yes)
-	install -m 644 $(OUT)/libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)$(SO_VERSION)
+	install -m $(SO_INSTALL_MODE) $(OUT)/libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)$(SO_VERSION)
   ifneq ($(OS),OpenBSD)
 	ln -sf libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)$(SO_VERSION_MAJOR)
 	ln -sf libmupdf.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdf.$(SO)
