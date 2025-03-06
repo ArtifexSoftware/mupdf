@@ -53,6 +53,10 @@ These are the third party libraries used by :title:`MuPDF`.
      - 0.10.1
      - HTML5 parser
      - Apache 2.0
+   * - `brotli`_
+     - 1.1.0 with upstream and local patches
+     - Brotli compression
+     - MIT-style
    * - **Optional**
      -
      -
@@ -99,6 +103,7 @@ These are the third party libraries used by :title:`MuPDF`.
 .. _openjpeg: http://www.openjpeg.org/
 .. _zlib: http://www.zlib.net/
 .. _gumbo-parser: https://github.com/google/gumbo-parser
+.. _brotli: https://brotli.org/
 .. _FreeGLUT: http://freeglut.sourceforge.net/
 .. _curl: http://curl.haxx.se/
 .. _JPEG-XR reference: https://www.itu.int/rec/T-REC-T.835/
