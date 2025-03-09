@@ -905,7 +905,9 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			else
 			{
 				size_t comp_len;
-				unsigned char *comp_data = fz_new_brotli_data(ctx, &comp_len, data, len, FZ_BROTLI_BEST);
+				int mode = (opts->compression_effort == 0 ? FZ_BROTLI_DEFAULT :
+					FZ_BROTLI_BEST * opts->compression_effort / 100);
+				unsigned char *comp_data = fz_new_brotli_data(ctx, &comp_len, data, len, mode);
 				tmp_comp = fz_new_buffer_from_data(ctx, comp_data, comp_len);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(BrotliDecode));
 			}
