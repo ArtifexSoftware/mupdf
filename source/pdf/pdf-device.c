@@ -952,6 +952,8 @@ pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
+	fz_warn(ctx, "the pdf device does not support shadings; output may be incomplete");
+
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
 }
@@ -997,6 +999,8 @@ static void
 pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_matrix ctm, fz_rect scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
+
+	fz_warn(ctx, "the pdf device does not support image masks; output may be incomplete");
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
