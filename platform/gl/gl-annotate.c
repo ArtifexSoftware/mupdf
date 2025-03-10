@@ -1095,6 +1095,11 @@ static void do_border(void)
 	}
 }
 
+static int image_file_filter(const char *fn)
+{
+	return !!strstr(fn, ".jpg") || !!strstr(fn, ".jpeg") || !!strstr(fn, ".png");
+}
+
 void do_annotate_panel(void)
 {
 	static struct list annot_list;
@@ -1449,7 +1454,7 @@ void do_annotate_panel(void)
 			if (ui_button("Image..."))
 			{
 				fz_dirname(attname, filename, sizeof attname);
-				ui_init_open_file(attname, NULL);
+				ui_init_open_file(attname, image_file_filter);
 				ui.dialog = open_stamp_image_dialog;
 			}
 		}
