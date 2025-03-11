@@ -200,15 +200,15 @@ else
     LDFLAGS += -pthread
   endif
 
-  ifeq ($(shell pkg-config --exists freetype2 && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'freetype2 >= 18.3.12' && echo yes),yes)
     SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
     SYS_FREETYPE_LIBS := $(shell pkg-config --libs freetype2)
   endif
-  ifeq ($(shell pkg-config --exists gumbo && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'gumbo >= 0.10.0' && echo yes),yes)
     SYS_GUMBO_CFLAGS := $(shell pkg-config --cflags gumbo)
     SYS_GUMBO_LIBS := $(shell pkg-config --libs gumbo)
   endif
-  ifeq ($(shell pkg-config --exists harfbuzz && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'harfbuzz >= 2.0.0' && echo yes),yes)
     SYS_HARFBUZZ_CFLAGS := $(shell pkg-config --cflags harfbuzz)
     SYS_HARFBUZZ_LIBS := $(shell pkg-config --libs harfbuzz)
   endif
@@ -220,15 +220,15 @@ else
     SYS_LIBJPEG_CFLAGS := $(shell pkg-config --cflags libjpeg)
     SYS_LIBJPEG_LIBS := $(shell pkg-config --libs libjpeg)
   endif
-  ifeq ($(shell pkg-config --exists libopenjp2 && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'libopenjp2 >= 2.1.0' && echo yes),yes)
     SYS_OPENJPEG_CFLAGS := $(shell pkg-config --cflags libopenjp2)
     SYS_OPENJPEG_LIBS := $(shell pkg-config --libs libopenjp2)
   endif
-  ifeq ($(shell pkg-config --exists zlib && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'zlib >= 1.2.6' && echo yes),yes)
     SYS_ZLIB_CFLAGS := $(shell pkg-config --cflags zlib)
     SYS_ZLIB_LIBS := $(shell pkg-config --libs zlib)
   endif
-  ifeq ($(shell pkg-config --exists libbrotlidec libbrotlienc && echo yes),yes)
+  ifeq ($(shell pkg-config --exists 'libbrotlidec libbrotlienc >= 0.6.0' && echo yes),yes)
     SYS_BROTLI_CFLAGS := $(shell pkg-config --cflags libbrotlidec libbrotlienc)
     SYS_BROTLI_LIBS := $(shell pkg-config --libs libbrotlidec libbrotlienc)
   endif
