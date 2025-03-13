@@ -2316,6 +2316,10 @@ unpack_objstm_objs(fz_context *ctx, pdf_document *doc, int xref_len)
 		if (x->ofs != 0)
 		{
 			pdf_xref_entry *y = pdf_get_xref_entry_no_change(ctx, doc, x->ofs);
+			/* The xref entry y for the objstm containing the object identified by
+			xref entry x above must exist, otherwise that object would not be labelled
+			'o' in the xref. */
+			assert(y != NULL);
 			y->type = 'f';
 		}
 	}
