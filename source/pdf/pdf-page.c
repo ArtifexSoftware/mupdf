@@ -1280,6 +1280,7 @@ void pdf_nuke_page(fz_context *ctx, pdf_page *page)
 	pdf_nuke_annots(ctx, page);
 	pdf_drop_obj(ctx, page->obj);
 	page->obj = NULL;
+	page->super.in_doc = 0;
 }
 
 void pdf_sync_page(fz_context *ctx, pdf_page *page)
