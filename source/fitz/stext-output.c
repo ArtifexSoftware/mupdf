@@ -895,9 +895,25 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 				/* This is duplication of information, but it makes it MUCH easier to search for
 				 * text fragments in large output. */
 				{
+					int valid = 1;
 					fz_write_printf(ctx, out, " text=\"");
 					for (ch = line->first_char; ch; ch = ch->next)
-						xml_write_char(ctx, out, ch->c);
+					{
+						if (valid)
+							valid = fz_is_valid_xml_char(ch->c);
+						xml_write_char(ctx, out, fz_range_limit_xml_char(ch->c));
+					}
+					if (!valid)
+					{
+						fz_write_printf(ctx, out, "\" hextext=\"");
+						for (ch = line->first_char; ch; ch = ch->next)
+						{
+							char text[8];
+							int n = fz_runetochar(text, ch->c);
+							for (i = 0; i < n; i++)
+								fz_write_printf(ctx, out, "%02x", text[i]);
+						}
+					}
 					fz_write_printf(ctx, out, "\"");
 				}
 
@@ -907,12 +923,23 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 				{
 					if (ch->font != font || ch->size != size)
 					{
+						const char *s;
 						if (font)
 							fz_write_string(ctx, out, "</font>\n");
 						font = ch->font;
 						size = ch->size;
-						name = font_full_name(ctx, font);
-						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", name, size);
+						s = name = font_full_name(ctx, font);
+						while (*s)
+						{
+							int c = *s++;
+							if (c < 32 || c >= 127)
+								break;
+						}
+						if (*s)
+							fz_write_printf(ctx, out, "<font hexname=%>", name);
+						else
+							fz_write_printf(ctx, out, "<font name=\"%s\"", name);
+						fz_write_printf(ctx, out, " size=\"%g\">\n", size);
 					}
 					fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" alpha=\"#%02x\" flags=\"%d\" c=\"",
 							ch->quad.ul.x, ch->quad.ul.y,
@@ -925,6 +952,14 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 							ch->argb>>24,
 							ch->flags);
 					xml_write_char(ctx, out, ch->c);
+					if (!fz_is_valid_xml_char(ch->c))
+					{
+						char text[8];
+						int n = fz_runetochar(text, ch->c);
+						fz_write_string(ctx, out, "\" hexc=\"");
+						for (i = 0; i < n; i++)
+							fz_write_printf(ctx, out, "%02x", text[i]);
+					}
 					fz_write_string(ctx, out, "\"/>\n");
 				}
 
