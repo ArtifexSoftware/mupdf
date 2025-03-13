@@ -1225,7 +1225,7 @@ tiff_read_ifd(fz_context *ctx, struct tiff *tiff)
 
 	offset = tiff->rp - tiff->bp;
 	count = readshort(tiff);
-	if (count * 12 > (unsigned)(tiff->ep - tiff->rp))
+	if (count > (unsigned)(tiff->ep - tiff->rp) / 12)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "overlarge IFD entry count %u", count);
 	original = offset + 2;
 	original_rp = tiff->rp;
