@@ -23,6 +23,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include "pdf-imp.h"
+
 #include <string.h>
 
 typedef enum
@@ -2686,7 +2688,7 @@ pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *r
 	if (!pdf_is_number(ctx, mcid))
 		return;
 	bdc->mcid_num = pdf_to_int(ctx, mcid);
-	bdc->mcid_obj = pdf_keep_obj(ctx, pdf_array_get(ctx, p->structarray, bdc->mcid_num));
+	bdc->mcid_obj = pdf_keep_obj(ctx, pdf_lookup_mcid_in_mcids(ctx, bdc->mcid_num, p->structarray));
 	str = pdf_dict_get(ctx, bdc->mcid_obj, PDF_NAME(Alt));
 	if (str)
 		bdc->alt.utf8 = pdf_new_utf8_from_pdf_string_obj(ctx, str);

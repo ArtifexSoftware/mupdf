@@ -30,4 +30,6 @@
 
 void pdf_repair_xref_aux(fz_context *ctx, pdf_document *doc, void (*mid)(fz_context *ctx, pdf_document *doc));
 
+pdf_obj *pdf_lookup_mcid_in_mcids(fz_context *ctx, int id, pdf_obj *mcids);
+
 #endif /* MUPDF_PDF_PDF_IMP_H */

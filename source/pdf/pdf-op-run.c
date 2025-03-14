@@ -1259,6 +1259,54 @@ pdf_show_space(fz_context *ctx, pdf_run_processor *pr, float tadj)
 		pr->tos.tm = fz_pre_translate(pr->tos.tm, 0, tadj);
 }
 
+static int
+int_in_singleton_or_array(fz_context *ctx, pdf_obj *k, int id)
+{
+	/* In the most common case the /K value will be id. */
+	if (pdf_is_int(ctx, k) && pdf_to_int(ctx, k) == id)
+		return 1;
+
+	/* In the next most common case, there will be an array of
+	 * items, one of which is k. */
+	if (pdf_is_array(ctx, k))
+	{
+		int i, n = pdf_array_len(ctx, k);
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *o = pdf_array_get(ctx, k, i);
+			if (pdf_is_int(ctx, o) && pdf_to_int(ctx, o) == id)
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+pdf_obj *
+pdf_lookup_mcid_in_mcids(fz_context *ctx, int id, pdf_obj *mcids)
+{
+	pdf_obj *mcid = pdf_array_get(ctx, mcids, id);
+	pdf_obj *k = pdf_dict_get(ctx, mcid, PDF_NAME(K));
+	int i, n;
+
+	if (int_in_singleton_or_array(ctx, k, id))
+		return mcid;
+
+	/* At this point, something has gone wrong. One common case that
+	 * appears to fail is where the MCIDs array has the right things
+	 * in, but at the wrong indexes. So do some searching. */
+	n = pdf_array_len(ctx, mcids);
+	for (i = 0; i < n; i++)
+	{
+		pdf_obj *o = pdf_array_get(ctx, mcids, i);
+		if (int_in_singleton_or_array(ctx, pdf_dict_get(ctx, o, PDF_NAME(K)), id))
+			return o;
+	}
+
+	return NULL;
+}
+
 static pdf_obj *
 lookup_mcid(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 {
@@ -1278,7 +1326,7 @@ lookup_mcid(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 
 	id = pdf_to_int(ctx, mcid);
 	mcids = pdf_lookup_number(ctx, pdf_dict_getl(ctx, pdf_trailer(ctx, proc->doc), PDF_NAME(Root), PDF_NAME(StructTreeRoot), PDF_NAME(ParentTree), NULL), proc->struct_parent);
-	return pdf_array_get(ctx, mcids, id);
+	return pdf_lookup_mcid_in_mcids(ctx, id, mcids);
 }
 
 static fz_text_language
