@@ -209,9 +209,7 @@ static fz_stext_block *split_block_at_line(fz_context *ctx, stext_pos *pos, fz_s
 /* Convert a block to being a struct that contains just that block. */
 static void block_to_struct(fz_context *ctx, stext_pos *pos, fz_stext_block *block, int structtype)
 {
-	const char *raw = "";
-	size_t z = raw ? strlen(raw) : 0;
-	fz_stext_struct *str = fz_pool_alloc(ctx, pos->pool, sizeof(*str) + z);
+	fz_stext_struct *str = fz_pool_alloc_flexible(ctx, pos->pool, fz_stext_struct, raw, 1);
 	fz_stext_block *new_block = fz_pool_alloc(ctx, pos->pool, sizeof(*new_block));
 
 	str->up = block;
@@ -219,10 +217,7 @@ static void block_to_struct(fz_context *ctx, stext_pos *pos, fz_stext_block *blo
 	str->first_block = new_block;
 	str->last_block = new_block;
 	str->standard = structtype;
-	if (raw)
-		strcpy(str->raw, raw);
-	else
-		str->raw[0] = 0;
+	str->raw[0] = 0;
 
 	new_block->type = block->type;
 	new_block->bbox = block->bbox;
