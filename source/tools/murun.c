@@ -807,16 +807,13 @@ static void ffi_pushcolor(js_State *J, fz_colorspace *colorspace, const float *c
 	js_pushnumber(J, alpha);
 }
 
-void ffi_pushrgba(js_State *J, int c)
+void ffi_pushrgb(js_State *J, uint32_t argb)
 {
-	int a = (c >> 24) & 0xff;
-	int rgb = c & 0xffffff;
-	char s[10];
-	if (a == 255)
-		fz_snprintf(s, nelem(s), "#%06x", rgb);
-	else
-		fz_snprintf(s, nelem(s), "#%08x", rgb << 8 | a);
-	js_pushstring(J, s);
+	float rgb[3];
+	rgb[0] = ((argb >> 16) & 0xff) / 255.0f;
+	rgb[1] = ((argb >> 8) & 0xff) / 255.0f;
+	rgb[2] = ((argb) & 0xff) / 255.0f;
+	ffi_pusharray(J, rgb, 3);
 }
 
 static struct color ffi_tocolor(js_State *J, int idx)
@@ -5660,7 +5657,7 @@ stext_walk(js_State *J, fz_stext_block *block)
 						ffi_pushfont(J, ch->font);
 						js_pushnumber(J, ch->size);
 						ffi_pushquad(J, ch->quad);
-						ffi_pushrgba(J, ch->argb);
+						ffi_pushrgb(J, ch->argb);
 						js_call(J, 6);
 						js_pop(J, 1);
 					}
@@ -5713,7 +5710,7 @@ stext_walk(js_State *J, fz_stext_block *block)
 				js_setproperty(J, -2, "isStroked");
 				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE);
 				js_setproperty(J, -2, "isRectangle");
-				ffi_pushrgba(J, block->u.v.argb);
+				ffi_pushrgb(J, block->u.v.argb);
 				js_call(J, 4);
 				js_pop(J, 1);
 			}
