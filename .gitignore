@@ -1,4 +1,4 @@
-# Optional thirdparty libraryes
+﻿# Optional thirdparty libraryes
 thirdparty/luratech
 thirdparty/jpegxr
 thirdparty/mapping-resources-pdf
@@ -52,3 +52,14 @@ platform/win32/Release
 platform/win32/ReleaseOpenssl
 platform/win32/Memento
 platform/win32/x64
+/.vs
+/pylocal
+/platforms/c++
+/platforms/win32/.vs/*
+/platforms/win32/Debug
+/platforms/win32/Release
+/platforms/win32/x64
+/platforms/win32/pylocal
+/venv-mupdfwrap-3.10-x64
+/venv-mupdfwrap-3.11-x64
+/platforms/win32

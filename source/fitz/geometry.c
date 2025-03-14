@@ -25,6 +25,7 @@
 #include <math.h>
 #include <float.h>
 #include <limits.h>
+#include <stdint.h>
 
 #define MAX4(a,b,c,d) fz_max(fz_max(a,b), fz_max(c,d))
 #define MIN4(a,b,c,d) fz_min(fz_min(a,b), fz_min(c,d))
@@ -376,6 +377,7 @@ fz_normalize_vector(fz_point p)
 /* biggest and smallest integers that a float can represent perfectly (i.e. 24 bits) */
 #define MAX_SAFE_INT 16777216
 #define MIN_SAFE_INT -16777216
+#define FZ_NAN (0.0f / 0.0f)
 
 const fz_rect fz_infinite_rect = { FZ_MIN_INF_RECT, FZ_MIN_INF_RECT, FZ_MAX_INF_RECT, FZ_MAX_INF_RECT };
 const fz_rect fz_empty_rect = { FZ_MAX_INF_RECT, FZ_MAX_INF_RECT, FZ_MIN_INF_RECT, FZ_MIN_INF_RECT };
@@ -388,7 +390,7 @@ const fz_irect fz_invalid_irect = { 0, 0, -1, -1 };
 const fz_irect fz_unit_bbox = { 0, 0, 1, 1 };
 
 const fz_quad fz_infinite_quad = { { -INFINITY, INFINITY}, {INFINITY, INFINITY}, {-INFINITY, -INFINITY}, {INFINITY, -INFINITY} };
-const fz_quad fz_invalid_quad = { {NAN, NAN}, {NAN, NAN}, {NAN, NAN}, {NAN, NAN} };
+const fz_quad fz_invalid_quad = { {FZ_NAN, FZ_NAN}, {FZ_NAN, FZ_NAN}, {FZ_NAN, FZ_NAN}, {FZ_NAN, FZ_NAN} };
 
 fz_irect
 fz_irect_from_rect(fz_rect r)

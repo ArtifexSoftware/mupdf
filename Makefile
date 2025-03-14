@@ -118,13 +118,13 @@ $(OUT)/source/tools/%.o : source/tools/%.c
 $(OUT)/generated/%.o : generated/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) -O0
 
-$(OUT)/platform/x11/%.o : platform/x11/%.c
+$(OUT)/platforms/x11/%.o : platforms/x11/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(X11_CFLAGS)
 
-$(OUT)/platform/x11/curl/%.o : platform/x11/%.c
+$(OUT)/platforms/x11/curl/%.o : platforms/x11/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(X11_CFLAGS) $(CURL_CFLAGS)
 
-$(OUT)/platform/gl/%.o : platform/gl/%.c
+$(OUT)/platforms/gl/%.o : platforms/gl/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(THIRD_CFLAGS) $(THIRD_GLUT_CFLAGS)
 
 ifeq ($(HAVE_OBJCOPY),yes)
@@ -157,7 +157,7 @@ endif
 $(OUT)/source/fitz/barcode.o : source/fitz/barcode.cpp
 	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_LANGFLAGS)
 
-$(OUT)/platform/%.o : platform/%.c
+$(OUT)/platforms/%.o : platforms/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
@@ -345,7 +345,7 @@ $(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREA
 EXTRA_TOOL_APPS += $(MURASTER_EXE)
 
 ifeq ($(HAVE_GLUT),yes)
-  MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
+  MUVIEW_GLUT_SRC += $(sort $(wildcard platforms/gl/*.c))
   MUVIEW_GLUT_OBJ := $(MUVIEW_GLUT_SRC:%.c=$(OUT)/%.o)
   MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl
   $(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THIRD_GLUT_LIB) $(PKCS7_LIB)
@@ -355,9 +355,9 @@ endif
 
 ifeq ($(HAVE_X11),yes)
   MUVIEW_X11_EXE := $(OUT)/mupdf-x11
-  MUVIEW_X11_OBJ += $(OUT)/platform/x11/pdfapp.o
-  MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_main.o
-  MUVIEW_X11_OBJ += $(OUT)/platform/x11/x11_image.o
+  MUVIEW_X11_OBJ += $(OUT)/platforms/x11/pdfapp.o
+  MUVIEW_X11_OBJ += $(OUT)/platforms/x11/x11_main.o
+  MUVIEW_X11_OBJ += $(OUT)/platforms/x11/x11_image.o
   $(MUVIEW_X11_EXE) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS)
   VIEW_APPS += $(MUVIEW_X11_EXE)
@@ -367,11 +367,11 @@ ifeq ($(HAVE_X11),yes)
 ifeq ($(HAVE_CURL),yes)
 ifeq ($(HAVE_PTHREAD),yes)
   MUVIEW_X11_CURL_EXE := $(OUT)/mupdf-x11-curl
-  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/pdfapp.o
-  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_main.o
-  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/x11_image.o
-  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/curl_stream.o
-  MUVIEW_X11_CURL_OBJ += $(OUT)/platform/x11/curl/prog_stream.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platforms/x11/curl/pdfapp.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platforms/x11/curl/x11_main.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platforms/x11/curl/x11_image.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platforms/x11/curl/curl_stream.o
+  MUVIEW_X11_CURL_OBJ += $(OUT)/platforms/x11/curl/prog_stream.o
   $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(CURL_LIB)
 	$(LINK_CMD) $(THIRD_LIBS) $(X11_LIBS) $(LIBCRYPTO_LIBS) $(CURL_LIBS) $(PTHREAD_LIBS)
   EXTRA_VIEW_APPS += $(MUVIEW_X11_CURL_EXE)
@@ -508,7 +508,7 @@ tarball:
 
 # --- Clean and Default ---
 
-WATCH_SRCS = $(shell find include source platform -type f -name '*.[ch]')
+WATCH_SRCS = $(shell find include source platforms -type f -name '*.[ch]')
 watch:
 	@ inotifywait -q -e modify $(WATCH_SRCS)
 
@@ -516,10 +516,10 @@ watch-recompile:
 	@ while ! inotifywait -q -e modify $(WATCH_SRCS) ; do time -p $(MAKE) ; done
 
 java:
-	$(MAKE) -C platform/java build=$(build)
+	$(MAKE) -C platforms/java build=$(build)
 
 java-clean:
-	$(MAKE) -C platform/java build=$(build) clean
+	$(MAKE) -C platforms/java build=$(build) clean
 
 extract-test:
 	$(MAKE) debug
@@ -536,7 +536,7 @@ tags:
 find-try-return:
 	@ bash scripts/find-try-return.sh
 
-cscope.files: $(shell find include source platform -name '*.[ch]')
+cscope.files: $(shell find include source platforms -name '*.[ch]')
 	@ echo $^ | tr ' ' '\n' > $@
 
 cscope.out: cscope.files
@@ -571,9 +571,9 @@ shared-clean:
 
 android: generate
 	ndk-build -j8 \
-		APP_BUILD_SCRIPT=platform/java/Android.mk \
+		APP_BUILD_SCRIPT=platforms/java/Android.mk \
 		APP_PROJECT_PATH=build/android \
-		APP_PLATFORM=android-16 \
+		APP_platforms=android-16 \
 		APP_OPTIM=$(build)
 
 # --- C++, Python and C#, and system installation ---
@@ -583,11 +583,11 @@ python: python-$(build)
 csharp: csharp-$(build)
 
 c++-clean:
-	rm -rf platform/c++
+	rm -rf platforms/c++
 python-clean:
-	rm -rf platform/python
+	rm -rf platforms/python
 csharp-clean:
-	rm -rf platform/csharp
+	rm -rf platforms/csharp
 
 # $(OUT) only contains the `shared-` infix if shared=yes and targets that
 # require shared-libraries only work if shared=yes. So if this is not the case,
@@ -632,7 +632,7 @@ endif
 install-shared-c: install-shared-check install-libs install-headers
 
 install-shared-c++: install-shared-c c++
-	install -m 644 platform/c++/include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
+	install -m 644 platforms/c++/include/mupdf/*.h $(DESTDIR)$(incdir)/mupdf
 	install -m $(SO_INSTALL_MODE) $(OUT)/libmupdfcpp.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/
 ifneq ($(OS),OpenBSD)
 	ln -sf libmupdfcpp.$(SO)$(SO_VERSION) $(DESTDIR)$(libdir)/libmupdfcpp.$(SO)

@@ -1,51 +1,51 @@
 [submodule "thirdparty/jbig2dec"]
 	path = thirdparty/jbig2dec
-	url = ../jbig2dec.git
+	url = https://github.com/ArtifexSoftware/jbig2dec.git
 [submodule "thirdparty/mujs"]
 	path = thirdparty/mujs
-	url = ../mujs.git
+	url = https://github.com/ArtifexSoftware/mujs.git
 [submodule "thirdparty/freetype"]
 	path = thirdparty/freetype
-	url = ../thirdparty-freetype2.git
+	url = https://github.com/ArtifexSoftware/thirdparty-freetype2.git
 [submodule "thirdparty/gumbo-parser"]
 	path = thirdparty/gumbo-parser
-	url = ../thirdparty-gumbo-parser.git
+	url = https://github.com/ArtifexSoftware/thirdparty-gumbo-parser.git
 [submodule "thirdparty/harfbuzz"]
 	path = thirdparty/harfbuzz
-	url = ../thirdparty-harfbuzz.git
+	url = https://github.com/ArtifexSoftware/thirdparty-harfbuzz.git
 [submodule "thirdparty/jpeg"]
 	path = thirdparty/libjpeg
-	url = ../thirdparty-libjpeg.git
+	url = https://github.com/ArtifexSoftware/thirdparty-libjpeg.git
 [submodule "thirdparty/lcms2"]
 	path = thirdparty/lcms2
-	url = ../thirdparty-lcms2.git
+	url = https://github.com/ArtifexSoftware/thirdparty-lcms2.git
 [submodule "thirdparty/openjpeg"]
 	path = thirdparty/openjpeg
-	url = ../thirdparty-openjpeg.git
+	url = https://github.com/ArtifexSoftware/thirdparty-openjpeg.git
 [submodule "thirdparty/zlib"]
 	path = thirdparty/zlib
-	url = ../thirdparty-zlib.git
+	url = https://github.com/ArtifexSoftware/thirdparty-zlib.git
 [submodule "thirdparty/curl"]
 	path = thirdparty/curl
-	url = ../thirdparty-curl.git
+	url = https://github.com/ArtifexSoftware/thirdparty-curl.git
 [submodule "thirdparty/freeglut"]
 	path = thirdparty/freeglut
-	url = ../thirdparty-freeglut.git
+	url = https://github.com/ArtifexSoftware/thirdparty-freeglut.git
 [submodule "thirdparty/tesseract"]
 	path = thirdparty/tesseract
-	url = ../thirdparty-tesseract.git
+	url = https://github.com/ArtifexSoftware/thirdparty-tesseract.git
 [submodule "thirdparty/leptonica"]
 	path = thirdparty/leptonica
-	url = ../thirdparty-leptonica.git
+	url = https://github.com/ArtifexSoftware/thirdparty-leptonica.git
 [submodule "thirdparty/extract"]
 	path = thirdparty/extract
-	url = ../extract.git
+	url = https://github.com/ArtifexSoftware/extract.git
 [submodule "thirdparty/zxing-cpp"]
 	path = thirdparty/zxing-cpp
-	url = ../thirdparty-zxing-cpp.git
+	url = https://github.com/ArtifexSoftware/thirdparty-zxing-cpp.git
 [submodule "thirdparty/zint"]
 	path = thirdparty/zint
-	url = ../thirdparty-zint.git
+	url = https://github.com/ArtifexSoftware/thirdparty-zint.git
 [submodule "thirdparty/brotli"]
 	path = thirdparty/brotli
-	url = ../thirdparty-brotli.git
+	url = https://github.com/ArtifexSoftware/thirdparty-brotli.git

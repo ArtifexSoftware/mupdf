@@ -1,4 +1,4 @@
-import calendar
+﻿import calendar
 import codecs
 import inspect
 import io
@@ -1873,7 +1873,7 @@ def fs_update( text, filename, return_different=False):
     Otherwise we return true if file has changed.
     '''
     try:
-        with open( filename) as f:
+        with open( filename, encoding="utf-8") as f:
             text0 = f.read()
     except OSError:
         text0 = None

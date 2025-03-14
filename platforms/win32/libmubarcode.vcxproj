@@ -27,48 +27,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\thirdparty\extract\src\alloc.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\astring.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\boxer.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\buffer.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\document.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\docx.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\docx_template.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\extract.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\html.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\join.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\json.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\mem.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\odt.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\odt_template.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\outf.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\rect.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\sys.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\text.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\xml.c" />
-    <ClCompile Include="..\..\thirdparty\extract\src\zip.c" />
+    <ClCompile Include="..\..\source\fitz\barcode.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\thirdparty\extract\include\extract\extract.h" />
-    <ClInclude Include="..\..\thirdparty\extract\include\extract\alloc.h" />
-    <ClInclude Include="..\..\thirdparty\extract\include\extract\buffer.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\astring.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\compat_stdint.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\compat_va_copy.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\document.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\docx.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\docx_template.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\html.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\json.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\outf.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\xml.h" />
-    <ClInclude Include="..\..\thirdparty\extract\src\zip.h" />
+  </ItemGroup>
+  <ItemGroup>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{da38ca0b-89b9-4703-a77d-8049ac3a0d04}</ProjectGuid>
-    <RootNamespace>libextract</RootNamespace>
+    <ProjectGuid>{20257483-89b9-4703-a77d-8049ac3a0d04}</ProjectGuid>
+    <RootNamespace>libmubarcode</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -136,41 +105,52 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Platform)\$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Platform)\$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(Platform)\$(Configuration)\extract\</IntDir>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode>false</SupportJustMyCode>
+      <BufferSecurityCheck>
+      </BufferSecurityCheck>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <RemoveUnreferencedCodeData>false</RemoveUnreferencedCodeData>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -180,17 +160,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MEMENTO;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;MEMENTO;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -200,19 +181,20 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -224,18 +206,21 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
+      <ConformanceMode>
+      </ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -245,17 +230,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MEMENTO;_DEBUG;_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;MEMENTO;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -265,19 +251,20 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZXING_EXPERIMENTAL_API;HAVE_ZXINGCPP=1;FZ_ENABLE_BARCODE=1;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\extract\src;..\..\thirdparty\extract\include;..\..\thirdparty\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\thirdparty\zxing-cpp\core\src\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <DisableSpecificWarnings>4130;4706</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>4100;4200;4611;4702</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -287,6 +274,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="libzxing.vcxproj">
+      <Project>{74832025-89b9-4703-a77d-8049ac3a0d04}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

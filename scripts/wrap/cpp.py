@@ -5307,7 +5307,7 @@ def cpp_source(
         #
         args = [
                 '-I', f'{dir_mupdf}/include',
-                '-I', f'{dir_mupdf}/platform/c++/include',
+                '-I', f'{dir_mupdf}/platforms/c++/include',
                 '-D', 'MUPDF_WRAP_LIBCLANG',
                 '-D', 'FZ_FUNCTION=',
                 ]

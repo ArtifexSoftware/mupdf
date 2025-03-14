@@ -1,4 +1,4 @@
-'''
+﻿'''
 Support for using SWIG to generate language bindings from the C++ bindings.
 '''
 
@@ -1691,32 +1691,32 @@ def build_swig(
         # cope with some code in system headers.
         #
         # So instead we copy include/mupdf/pdf/object.h into
-        # {build_dirs.dir_mupdf}/platform/python/include/mupdf/pdf/object.h,
+        # {build_dirs.dir_mupdf}/platforms/python/include/mupdf/pdf/object.h,
         # manually expanding the #include using a Python .replace() call. Then
-        # we specify {build_dirs.dir_mupdf}/platform/python/include as the
+        # we specify {build_dirs.dir_mupdf}/platforms/python/include as the
         # first include path so that our modified mupdf/pdf/object.h will get
         # included in preference to the original.
         #
-        os.makedirs(f'{build_dirs.dir_mupdf}/platform/python/include/mupdf/pdf', exist_ok=True)
+        os.makedirs(f'{build_dirs.dir_mupdf}/platforms/python/include/mupdf/pdf', exist_ok=True)
         with open( f'{build_dirs.dir_mupdf}/include/mupdf/pdf/object.h') as f:
             o = f.read()
         with open( f'{build_dirs.dir_mupdf}/include/mupdf/pdf/name-table.h') as f:
             name_table_h = f.read()
         oo = o.replace( '#include "mupdf/pdf/name-table.h"\n', name_table_h)
         assert oo != o
-        jlib.fs_update( oo, f'{build_dirs.dir_mupdf}/platform/python/include/mupdf/pdf/object.h')
+        jlib.fs_update( oo, f'{build_dirs.dir_mupdf}/platforms/python/include/mupdf/pdf/object.h')
 
     swig_i      = build_dirs.mupdfcpp_swig_i(language)
     swig_cpp    = build_dirs.mupdfcpp_swig_cpp(language)
     include1    = f'{build_dirs.dir_mupdf}/include/'
-    include2    = f'{build_dirs.dir_mupdf}/platform/c++/include'
+    include2    = f'{build_dirs.dir_mupdf}/platforms/c++/include'
     swig_py     = f'{build_dirs.dir_so}/mupdf.py'
 
-    swig2_i     = f'{build_dirs.dir_mupdf}/platform/{language}/mupdfcpp2_swig.i'
-    swig2_cpp   = f'{build_dirs.dir_mupdf}/platform/{language}/mupdfcpp2_swig.cpp'
+    swig2_i     = f'{build_dirs.dir_mupdf}/platforms/{language}/mupdfcpp2_swig.i'
+    swig2_cpp   = f'{build_dirs.dir_mupdf}/platforms/{language}/mupdfcpp2_swig.cpp'
     swig2_py    = f'{build_dirs.dir_so}/mupdf2.py'
 
-    os.makedirs( f'{build_dirs.dir_mupdf}/platform/{language}', exist_ok=True)
+    os.makedirs( f'{build_dirs.dir_mupdf}/platforms/{language}', exist_ok=True)
     os.makedirs( f'{build_dirs.dir_so}', exist_ok=True)
     util.update_file_regress( text, swig_i, check_regress)
     jlib.fs_update( '', swig2_i)
@@ -1772,11 +1772,11 @@ def build_swig(
                         -Wextra
                         {disable_swig_warnings}
                         -module {module}
-                        -outdir {os.path.relpath(build_dirs.dir_mupdf)}/platform/python
+                        -outdir {os.path.relpath(build_dirs.dir_mupdf)}/platforms/python
                         -o {cpp}
                         -includeall
                         {os.environ.get('XCXXFLAGS', '')}
-                        -I{os.path.relpath(build_dirs.dir_mupdf)}/platform/python/include
+                        -I{os.path.relpath(build_dirs.dir_mupdf)}/platforms/python/include
                         -I{os.path.relpath(include1)}
                         -I{os.path.relpath(include2)}
                         -ignoremissing
@@ -1811,7 +1811,7 @@ def build_swig(
 
         # Make main mupdf .so.
         command = make_command( 'mupdf', swig_cpp, swig_i)
-        swig_py_ = f'{build_dirs.dir_mupdf}/platform/python/mupdf.py'
+        swig_py_ = f'{build_dirs.dir_mupdf}/platforms/python/mupdf.py'
         rebuilt = jlib.build(
                 (swig_i, include1, include2),
                 (swig_cpp, swig_py_),
@@ -1824,11 +1824,11 @@ def build_swig(
 
 
     elif language == 'csharp':
-        outdir = os.path.relpath(f'{build_dirs.dir_mupdf}/platform/csharp')
+        outdir = os.path.relpath(f'{build_dirs.dir_mupdf}/platforms/csharp')
         os.makedirs(outdir, exist_ok=True)
         # Looks like swig comes up with 'mupdfcpp_swig_wrap.cxx' leafname.
         #
-        # We include platform/python/include in order to pick up the modified
+        # We include platforms/python/include in order to pick up the modified
         # include/mupdf/pdf/object.h that we generate elsewhere.
         dllimport = 'mupdfcsharp.so'
         if state_.windows:
@@ -1858,7 +1858,7 @@ def build_swig(
                     -outfile mupdf.cs
                     -o {os.path.relpath(swig_cpp)}
                     -includeall
-                    -I{os.path.relpath(build_dirs.dir_mupdf)}/platform/python/include
+                    -I{os.path.relpath(build_dirs.dir_mupdf)}/platforms/python/include
                     -I{os.path.relpath(include1)}
                     -I{os.path.relpath(include2)}
                     -ignoremissing

@@ -1,4 +1,4 @@
-'''
+﻿'''
 Misc state.
 '''
 
@@ -361,7 +361,7 @@ class BuildDirs:
         # different values of Py_LIMITED_API can be tested without rebuilding
         # unnecessarily.
         Py_LIMITED_API_infix = f'-Py_LIMITED_API_{self.Py_LIMITED_API}' if self.Py_LIMITED_API else ''
-        self.mupdfcpp_swig_i    = lambda language: f'{self.dir_mupdf}/platform/{language}/mupdfcpp_swig{Py_LIMITED_API_infix}.i'
+        self.mupdfcpp_swig_i    = lambda language: f'{self.dir_mupdf}/platforms/{language}/mupdfcpp_swig{Py_LIMITED_API_infix}.i'
         self.mupdfcpp_swig_cpp  = lambda language: self.mupdfcpp_swig_i(language) + '.cpp'
 
     def windows_build_type(self):

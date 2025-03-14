@@ -44,6 +44,7 @@
       <DisableSpecificWarnings>4100;4200</DisableSpecificWarnings>
       <MinimalRebuild>
       </MinimalRebuild>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

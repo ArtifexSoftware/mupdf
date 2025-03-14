@@ -25,7 +25,7 @@ Internal testing only - environmental variables:
         MuPDF headers.
 
         If we are an sdist we default to not re-generating C++ - the generated
-        files will be already available in platform/c++/. Otherwise we default
+        files will be already available in platforms/c++/. Otherwise we default
         to generating C++ source code.
 
     MUPDF_SETUP_USE_SWIG
@@ -277,19 +277,19 @@ def sdist():
     paths += [
             'build/shared-release/mupdf.py',
             'git-info',
-            'platform/c++/generated.pickle',
-            'platform/c++/implementation/classes.cpp',
-            'platform/c++/implementation/classes2.cpp',
-            'platform/c++/implementation/exceptions.cpp',
-            'platform/c++/implementation/functions.cpp',
-            'platform/c++/implementation/internal.cpp',
-            'platform/c++/include/mupdf/classes.h',
-            'platform/c++/include/mupdf/classes2.h',
-            'platform/c++/include/mupdf/exceptions.h',
-            'platform/c++/include/mupdf/functions.h',
-            'platform/c++/include/mupdf/internal.h',
-            'platform/c++/windows_mupdf.def',
-            'platform/python/mupdfcpp_swig.i.cpp',
+            'platforms/c++/generated.pickle',
+            'platforms/c++/implementation/classes.cpp',
+            'platforms/c++/implementation/classes2.cpp',
+            'platforms/c++/implementation/exceptions.cpp',
+            'platforms/c++/implementation/functions.cpp',
+            'platforms/c++/implementation/internal.cpp',
+            'platforms/c++/include/mupdf/classes.h',
+            'platforms/c++/include/mupdf/classes2.h',
+            'platforms/c++/include/mupdf/exceptions.h',
+            'platforms/c++/include/mupdf/functions.h',
+            'platforms/c++/include/mupdf/internal.h',
+            'platforms/c++/windows_mupdf.def',
+            'platforms/python/mupdfcpp_swig.i.cpp',
             ]
     return paths
 
@@ -369,13 +369,13 @@ def clean(all_):
     if all_:
         return [
                 'build',
-                'platform/win32/Release',
-                'platform/win32/ReleaseDLL',
-                'platform/win32/Win32',
-                'platform/win32/x64',
+                'platforms/win32/Release',
+                'platforms/win32/ReleaseDLL',
+                'platforms/win32/Win32',
+                'platforms/win32/x64',
                 ]
     else:
-        # Ideally we would return selected directories in platform/win32/ if on
+        # Ideally we would return selected directories in platforms/win32/ if on
         # Windows, but that would get a little involved.
         #
         return build_dir()
