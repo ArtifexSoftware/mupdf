@@ -1,4 +1,4 @@
-name: Build and test of C# Bindings
+﻿name: Build and test of C# Bindings
 
 on:
   schedule:
@@ -43,8 +43,8 @@ jobs:
                 sys.stdout.flush()
                 subprocess.run( command, shell=True, check=True)
 
-            #if platform.system() == 'Linux':
-            #    run(f'sudo apt install swig')
+            if platform.system() == 'Linux':
+                run(f'sudo apt install mono-complete')
 
             venv_name = 'pylocal'
 
