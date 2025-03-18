@@ -760,7 +760,7 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 static fz_stext_grid_positions *
 copy_grid_positions_to_pool(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xs)
 {
-	size_t z = offsetof(fz_stext_grid_positions, list) + (xs->len) * sizeof(xs->list[0]);
+	size_t z = offsetof(fz_stext_grid_positions, list) + sizeof(xs->list[0]) * (xs->len);
 	fz_stext_grid_positions *xs2 = fz_pool_alloc(ctx, page->pool, z);
 	memcpy(xs2, xs, z);
 	return xs2;
@@ -1202,7 +1202,7 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, int i, int early)
 		/* Add a row */
 		cells->h = h+1;
 		/* Expand the table, duplicating row i */
-		memmove(&cells->cell[(i+1)*w], &cells->cell[i*w], (h-i)*w*sizeof(cells->cell[0]));
+		memmove(&cells->cell[(i+1)*w], &cells->cell[i*w], sizeof(cells->cell[0])*(h-i)*w);
 
 		if (early)
 		{
@@ -2411,7 +2411,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	int w = gd->xpos->len;
 	int h = gd->ypos->len;
 	int x, y;
-	char *sent_tab = fz_calloc(ctx, 1, w*h);
+	char *sent_tab = fz_calloc(ctx, 1, w*(size_t)h);
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
 	fz_stext_struct *table, *tr, *td;
 	fz_rect r;
@@ -2560,19 +2560,19 @@ merge_column(grid_walker_data *gd, int x)
 		cell_t *s = &gd->cells->cell[x + y * gd->cells->w];
 
 		if (x > 0)
-			memcpy(d-x, s-x, x * sizeof(*d));
+			memcpy(d-x, s-x, sizeof(*d) * x);
 		d->full = s[0].full || s[1].full;
 		d->h_crossed = s[0].h_crossed || s[1].h_crossed;
 		d->h_line = s[0].h_line; /* == s[1].h_line */
 		d->v_crossed = s[0].v_crossed;
 		d->v_line = s[0].v_line;
 		if (x < gd->cells->w - 2)
-			memcpy(d+1, s+2, (gd->cells->w - 2 - x) * sizeof(*d));
+			memcpy(d+1, s+2, sizeof(*d) * (gd->cells->w - 2 - x));
 	}
 	gd->cells->w--;
 
 	if (x < gd->xpos->len - 2)
-		memcpy(&gd->xpos->list[x+1], &gd->xpos->list[x+2], (gd->xpos->len - 2 - x) * sizeof(gd->xpos->list[0]));
+		memcpy(&gd->xpos->list[x+1], &gd->xpos->list[x+2], sizeof(gd->xpos->list[0]) * (gd->xpos->len - 2 - x));
 	gd->xpos->len--;
 }
 
@@ -2663,11 +2663,11 @@ merge_row(grid_walker_data *gd, int y)
 		d++;
 	}
 	if (y < gd->cells->h - 2)
-		memcpy(d, d+w, (gd->cells->h - 2 - y) * w * sizeof(*d));
+		memcpy(d, d+w, sizeof(*d) * (gd->cells->h - 2 - y) * w);
 	gd->cells->h--;
 
 	if (y < gd->ypos->len - 2)
-		memcpy(&gd->ypos->list[y+1], &gd->ypos->list[y+2], (gd->ypos->len - 2 - y) * sizeof(gd->ypos->list[0]));
+		memcpy(&gd->ypos->list[y+1], &gd->ypos->list[y+2], sizeof(gd->ypos->list[0]) * (gd->ypos->len - 2 - y));
 	gd->ypos->len--;
 }
 

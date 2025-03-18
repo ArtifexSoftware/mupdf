@@ -416,8 +416,8 @@ make_x_weights(fz_context *ctx,
 
 	max_weights = (max_weights + 3) & ~3;
 
-	weights = (weight_t *)fz_malloc_aligned(ctx, max_weights * dst_w * sizeof(*weights) + SSE_SLOP, sizeof(weight_t) * 4);
-	memset(weights, 0, max_weights * dst_w * sizeof(*weights));
+	weights = (weight_t *)fz_malloc_aligned(ctx, sizeof(*weights) * max_weights * dst_w + SSE_SLOP, sizeof(weight_t) * 4);
+	memset(weights, 0, sizeof(*weights) * max_weights * dst_w);
 	fz_try(ctx)
 		index = (index_t *)fz_malloc(ctx, sizeof(*index) * dst_w + SSE_SLOP);
 	fz_catch(ctx)
@@ -536,7 +536,7 @@ make_y_weights(fz_context *ctx,
 	/* Ensure that we never try to access before 0 */
 	offset += (double)FILTER_WIDTH/squeeze;
 
-	weights = (weight_t *)fz_malloc_aligned(ctx, max_weights * dst_w * sizeof(*weights), sizeof(weight_t) * 4);
+	weights = (weight_t *)fz_malloc_aligned(ctx, sizeof(*weights) * max_weights * dst_w, sizeof(weight_t) * 4);
 	fz_try(ctx)
 		index = (index_t *)fz_malloc(ctx, sizeof(*index) * dst_w);
 	fz_catch(ctx)
