@@ -154,6 +154,7 @@ const char *fz_stext_options_usage =
 	"\tuse-gid-for-unknown-unicode: use glyph index if unicode mapping fails\n"
 	"\taccurate-bboxes: calculate char bboxes for from the outlines\n"
 	"\taccurate-ascenders: calculate ascender/descender from font glyphs\n"
+	"\taccurate-side-bearings: expand char bboxes to completely include width of glyphs\n"
 	"\tcollect-styles: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
 	"\tclip: do not include text that is completely clipped\n"
 	"\tclip-rect=x0:y0:x1:y1 specify clipping rectangle within which to collect content\n"
@@ -340,7 +341,7 @@ add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, c
 #define NON_ACCURATE_GLYPH (-1)
 
 static fz_stext_char *
-add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_matrix trm, fz_font *font, float size, int c, int glyph, fz_point *p, fz_point *q, int bidi, int color, int synthetic, int flags)
+add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_matrix trm, fz_font *font, float size, int c, int glyph, fz_point *p, fz_point *q, int bidi, int color, int synthetic, int flags, int dev_flags)
 {
 	fz_stext_char *ch = fz_pool_alloc(ctx, page->pool, sizeof *line->first_char);
 	fz_point a, d;
@@ -365,6 +366,8 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 
 	if (line->wmode == 0)
 	{
+		fz_rect bounds;
+		int bounded = 0;
 		a.x = 0;
 		d.x = 0;
 		if (glyph == NON_ACCURATE_GLYPH_ADDED_SPACE)
@@ -381,9 +384,19 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 		else
 		{
 			/* Any glyph in accurate mode */
-			fz_rect bounds = fz_bound_glyph(ctx, font, glyph, fz_identity);
+			bounds = fz_bound_glyph(ctx, font, glyph, fz_identity);
+			bounded = 1;
 			a.y = bounds.y1;
 			d.y = bounds.y0;
+		}
+		if (dev_flags & FZ_STEXT_ACCURATE_SIDE_BEARINGS)
+		{
+			if (!bounded)
+				bounds = fz_bound_glyph(ctx, font, glyph, fz_identity);
+			if (a.x > bounds.x0)
+				a.x = bounds.x0;
+			if (d.y < bounds.x1)
+				d.y = bounds.x1;
 		}
 	}
 	else
@@ -663,7 +676,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	if (cur_line && glyph < 0)
 	{
 		/* Don't advance pen or break lines for no-glyph characters in a cluster */
-		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags, dev->flags);
 		dev->lastbidi = bidi;
 		dev->lastchar = c;
 		return;
@@ -831,9 +844,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	/* Add synthetic space */
 	if (add_space && !(dev->flags & FZ_STEXT_INHIBIT_SPACES))
-		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? NON_ACCURATE_GLYPH_ADDED_SPACE : NON_ACCURATE_GLYPH, &dev->pen, &p, bidi, dev->color, 1, flags);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? NON_ACCURATE_GLYPH_ADDED_SPACE : NON_ACCURATE_GLYPH, &dev->pen, &p, bidi, dev->color, 1, flags, dev->flags);
 
-	add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &p, &q, bidi, dev->color, 0, flags);
+	add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &p, &q, bidi, dev->color, 0, flags, dev->flags);
 
 move_pen_and_exit:
 	dev->lastchar = c;
@@ -1635,6 +1648,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_COLLECT_STYLES;
 	if (fz_has_option(ctx, string, "accurate-ascenders", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_ACCURATE_ASCENDERS;
+	if (fz_has_option(ctx, string, "accurate-side-bearings", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_ACCURATE_SIDE_BEARINGS;
 
 	opts->flags |= FZ_STEXT_CLIP;
 	if (fz_has_option(ctx, string, "mediabox-clip", &val))
