@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. include:: header.rst
