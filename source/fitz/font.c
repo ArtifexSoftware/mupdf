@@ -716,6 +716,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	FT_ULong tag, size, i, n;
 	FT_UShort flags;
 	char namebuf[sizeof(font->name)];
+	fz_ascdesc_source ascdesc_src = FZ_ASCDESC_FROM_FONT;
 
 	fz_keep_freetype(ctx);
 
@@ -772,14 +773,16 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		(float) face->bbox.yMax / face->units_per_EM);
 
 	if (face->ascender == 0)
-		font->ascender = 0.8f;
+		font->ascender = 0.8f, ascdesc_src = FZ_ASCDESC_DEFAULT;
 	else
 		font->ascender = (float)face->ascender / face->units_per_EM;
 
 	if (face->descender == 0)
-		font->descender = -0.2f;
+		font->descender = -0.2f, ascdesc_src = FZ_ASCDESC_DEFAULT;
 	else
 		font->descender = (float)face->descender / face->units_per_EM;
+
+	font->ascdesc_src = ascdesc_src;
 
 	font->subfont = index;
 
@@ -2380,4 +2383,29 @@ void fz_enumerate_font_cmap(fz_context *ctx, fz_font *font, fz_cmap_callback *cb
 		fz_ft_lock(ctx);
 	}
 	fz_ft_unlock(ctx);
+}
+
+void fz_calculate_font_ascender_descender(fz_context *ctx, fz_font *font)
+{
+	int i, n;
+	fz_rect bounds = fz_empty_rect;
+	fz_matrix trm = { 1, 0, 0, 1, 0, 0 };
+
+	if (font == NULL)
+		return;
+
+	if (font->ascdesc_src == FZ_ASCDESC_FROM_BOUNDS)
+		return;
+
+	n = font->glyph_count;
+	for (i = 0; i < n; i++)
+	{
+		bounds = fz_union_rect(bounds, fz_bound_glyph(ctx, font, i, trm));
+	}
+
+	if (bounds.y1 > font->ascender)
+		font->ascender = bounds.y1;
+	if (bounds.y0 < font->descender)
+		font->descender = bounds.y0;
+	font->ascdesc_src = FZ_ASCDESC_FROM_BOUNDS;
 }

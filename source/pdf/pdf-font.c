@@ -1500,6 +1500,7 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 
 	fontdesc->font->ascender = fontdesc->ascent / 1000.0f;
 	fontdesc->font->descender = fontdesc->descent / 1000.0f;
+	fontdesc->font->ascdesc_src = FZ_ASCDESC_FROM_FONT;
 }
 
 static void

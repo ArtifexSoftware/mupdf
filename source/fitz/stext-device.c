@@ -153,6 +153,7 @@ const char *fz_stext_options_usage =
 	"\tuse-cid-for-unknown-unicode: use character code if unicode mapping fails\n"
 	"\tuse-gid-for-unknown-unicode: use glyph index if unicode mapping fails\n"
 	"\taccurate-bboxes: calculate char bboxes for from the outlines\n"
+	"\taccurate-ascenders: calculate ascender/descender from font glyphs\n"
 	"\tcollect-styles: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
 	"\tclip: do not include text that is completely clipped\n"
 	"\tclip-rect=x0:y0:x1:y1 specify clipping rectangle within which to collect content\n"
@@ -860,6 +861,9 @@ fz_add_stext_char(fz_context *ctx,
 	/* ignore when one unicode character maps to multiple glyphs */
 	if (c == -1)
 		return;
+
+	if (dev->flags & FZ_STEXT_ACCURATE_ASCENDERS)
+		fz_calculate_font_ascender_descender(ctx, font);
 
 	if (!(dev->flags & FZ_STEXT_PRESERVE_LIGATURES))
 	{
@@ -1629,6 +1633,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_TABLE_HUNT;
 	if (fz_has_option(ctx, string, "collect-styles", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_COLLECT_STYLES;
+	if (fz_has_option(ctx, string, "accurate-ascenders", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_ACCURATE_ASCENDERS;
 
 	opts->flags |= FZ_STEXT_CLIP;
 	if (fz_has_option(ctx, string, "mediabox-clip", &val))
