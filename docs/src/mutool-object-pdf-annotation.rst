@@ -1792,6 +1792,46 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
         annotation.applyRedaction(true, 1);
 
+.. method:: getRichContents()
+
+    Obtain the annotation's rich-text contents, as opposed to the plain text contents obtained by :ref:`getContents()<mutool_object_pdf_annotation_get_contents>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var richContents = annotation.getRichContents();
+
+.. method:: setRichContents(plainText, richText)
+
+    Set the annotation's rich-text contents, as opposed to the plain text contents set by :ref:`setContents()<mutool_object_pdf_annotation_set_contents>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        annotation.setRichContents("plain text", "<b><i>Rich-Text</i></b>");
+
+.. method:: getRichDefaults()
+
+    Get the default style used for the annotation's rich-text contents.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var richDefaults = annotation.getRichDefaults();
+
+.. method:: setRichDefaults(style)
+
+    Set the default style used for the annotation's rich-text contents.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        annotation.setRichDefaults("font-size: 16pt");
+
 
 .. method:: getStampImageObject()
 

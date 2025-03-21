@@ -140,6 +140,10 @@ public class PDFAnnotation
 	public native void setFlags(int flags);
 	public native String getContents();
 	public native void setContents(String contents);
+	public native String getRichContents();
+	public native void setRichContents(String plainText, String richText);
+	public native String getRichDefaults();
+	public native void setRichDefaults(String style);
 	public native float[] getColor();
 	public native void setColor(float[] color);
 	public native float getOpacity();

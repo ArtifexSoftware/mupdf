@@ -798,6 +798,11 @@ void pdf_annot_default_appearance_unmapped(fz_context *ctx, pdf_annot *annot, ch
 void pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, int *n, float color[4]);
 void pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *font, float size, int n, const float *color);
 
+const char *pdf_annot_rich_contents(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_rich_contents(fz_context *ctx, pdf_annot *annot, const char *plain, const char *rich);
+const char *pdf_annot_rich_defaults(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_rich_defaults(fz_context *ctx, pdf_annot *annot, const char *style);
+
 /*
  * Request that an appearance stream should be generated for an annotation if none is present.
  * It will be created in future calls to pdf_update_annot or pdf_update_page.

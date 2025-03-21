@@ -2095,6 +2095,103 @@ FUN(PDFAnnotation_process)(JNIEnv *env, jobject self, jobject jproc)
 		jni_rethrow_void(env, ctx);
 }
 
+JNIEXPORT jstring JNICALL
+FUN(PDFAnnotation_getRichContents)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *contents = NULL;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		contents = pdf_annot_rich_contents(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_String_safe(ctx, env, contents);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setRichContents)(JNIEnv *env, jobject self, jstring jplaintext, jstring jrichtext)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *plaintext = NULL;
+	const char *richtext = NULL;
+
+	if (!ctx || !annot) return;
+
+	if (jplaintext)
+	{
+		plaintext = (*env)->GetStringUTFChars(env, jplaintext, NULL);
+		if (!plaintext) return;
+	}
+	if (jrichtext)
+	{
+		richtext = (*env)->GetStringUTFChars(env, jrichtext, NULL);
+		if (!richtext)
+		{
+			if (plaintext)
+				(*env)->ReleaseStringUTFChars(env, jplaintext, plaintext);
+			return;
+		}
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_rich_contents(ctx, annot, plaintext, richtext);
+	fz_always(ctx)
+	{
+		if (richtext)
+			(*env)->ReleaseStringUTFChars(env, jrichtext, richtext);
+		if (plaintext)
+			(*env)->ReleaseStringUTFChars(env, jplaintext, plaintext);
+	}
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(PDFAnnotation_getRichDefaults)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *defaults = NULL;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		defaults = pdf_annot_rich_defaults(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_String_safe(ctx, env, defaults);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setRichDefault)(JNIEnv *env, jobject self, jstring jstyle)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *style = NULL;
+
+	if (!ctx || !annot) return;
+
+	if (jstyle)
+	{
+		style = (*env)->GetStringUTFChars(env, jstyle, NULL);
+		if (!style) return;
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_rich_defaults(ctx, annot, style);
+	fz_always(ctx)
+		if (style)
+			(*env)->ReleaseStringUTFChars(env, jstyle, style);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
 JNIEXPORT jobject JNICALL
 FUN(PDFAnnotation_getStampImageObject)(JNIEnv *env, jobject self)
 {

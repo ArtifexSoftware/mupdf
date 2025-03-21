@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1258,6 +1258,53 @@ pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 	{
 		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(Contents), text);
 		pdf_dict_del(ctx, annot->obj, PDF_NAME(RC)); /* not supported */
+		pdf_dirty_annot(ctx, annot);
+		end_annot_op(ctx, annot);
+	}
+	fz_catch(ctx)
+	{
+		abandon_annot_op(ctx, annot);
+		fz_rethrow(ctx);
+	}
+}
+
+const char *
+pdf_annot_rich_contents(fz_context *ctx, pdf_annot *annot)
+{
+	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(RC));
+}
+
+void
+pdf_set_annot_rich_contents(fz_context *ctx, pdf_annot *annot, const char *plain, const char *rich)
+{
+	begin_annot_op(ctx, annot, "Set rich contents");
+	fz_try(ctx)
+	{
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(Contents), plain);
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(RC), rich);
+		pdf_dirty_annot(ctx, annot);
+		end_annot_op(ctx, annot);
+	}
+	fz_catch(ctx)
+	{
+		abandon_annot_op(ctx, annot);
+		fz_rethrow(ctx);
+	}
+}
+
+const char *
+pdf_annot_rich_defaults(fz_context *ctx, pdf_annot *annot)
+{
+	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(DS));
+}
+
+void
+pdf_set_annot_rich_defaults(fz_context *ctx, pdf_annot *annot, const char *style)
+{
+	begin_annot_op(ctx, annot, "Set rich defaults");
+	fz_try(ctx)
+	{
+		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(DS), style);
 		pdf_dirty_annot(ctx, annot);
 		end_annot_op(ctx, annot);
 	}

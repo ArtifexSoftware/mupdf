@@ -8668,6 +8668,57 @@ static void ffi_PDFAnnotation_setContents(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getRichContents(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *contents = NULL;
+
+	fz_try(ctx)
+		contents = pdf_annot_rich_contents(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, contents);
+}
+
+static void ffi_PDFAnnotation_setRichContents(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *plain_text = js_tostring(J, 1);
+	const char *rich_text = js_tostring(J, 2);
+	fz_try(ctx)
+		pdf_set_annot_rich_contents(ctx, annot, plain_text, rich_text);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getRichDefaults(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *contents = NULL;
+
+	fz_try(ctx)
+		contents = pdf_annot_rich_defaults(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, contents);
+}
+
+static void ffi_PDFAnnotation_setRichDefaults(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *style = js_tostring(J, 1);
+	fz_try(ctx)
+		pdf_set_annot_rich_defaults(ctx, annot, style);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_hasRect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -11553,6 +11604,11 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.hasPopup", ffi_PDFAnnotation_hasPopup, 0);
 		jsB_propfun(J, "PDFAnnotation.getPopup", ffi_PDFAnnotation_getPopup, 0);
 		jsB_propfun(J, "PDFAnnotation.setPopup", ffi_PDFAnnotation_setPopup, 1);
+
+		jsB_propfun(J, "PDFAnnotation.getRichContents", ffi_PDFAnnotation_getRichContents, 0);
+		jsB_propfun(J, "PDFAnnotation.setRichContents", ffi_PDFAnnotation_setRichContents, 2);
+		jsB_propfun(J, "PDFAnnotation.getRichDefaults", ffi_PDFAnnotation_getRichDefaults, 0);
+		jsB_propfun(J, "PDFAnnotation.setRichDefaults", ffi_PDFAnnotation_setRichDefaults, 1);
 
 		jsB_propfun(J, "PDFAnnotation.hasCallout", ffi_PDFAnnotation_hasCallout, 0);
 		jsB_propfun(J, "PDFAnnotation.getCalloutStyle", ffi_PDFAnnotation_getCalloutStyle, 0);
