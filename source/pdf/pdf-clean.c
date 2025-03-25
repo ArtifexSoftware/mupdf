@@ -1028,7 +1028,7 @@ void init_redact_filter(fz_context *ctx, pdf_redact_options *redact_opts, struct
 	red->filter_list[1].options = NULL;
 
 	red->page = page;
-	red->target = NULL;
+	red->target = target;
 }
 
 static int
