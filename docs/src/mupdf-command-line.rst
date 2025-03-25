@@ -456,6 +456,13 @@ There are also several tools specifically for working with :title:`PDF` files:
 
    See the :ref:`JavaScript API<mutool_run_javascript_api>` for more.
 
+	 .. toctree::
+
+		 mutool-audit.rst
+
+	 This command generates a report on the exact usage of operators and space within a :title:`PDF` file.
+
+
 
 
 
