@@ -444,6 +444,11 @@ There are also several tools specifically for working with :title:`PDF` files:
 
    This command allows you to make a modified version of a :title:`PDF` with content that falls inside or outside of :ref:`defined boxes<mutool_trim_defined_boxes>` removed.
 
+   .. toctree::
+
+     mutool-audit.rst
+
+   This command generates a report on the exact usage of operators and space within a :title:`PDF` file.
 
    .. toctree::
 
@@ -455,13 +460,6 @@ There are also several tools specifically for working with :title:`PDF` files:
 
 
    See the :ref:`JavaScript API<mutool_run_javascript_api>` for more.
-
-	 .. toctree::
-
-		 mutool-audit.rst
-
-	 This command generates a report on the exact usage of operators and space within a :title:`PDF` file.
-
 
 
 
