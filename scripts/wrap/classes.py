@@ -1541,7 +1541,7 @@ classextras = ClassExtras(
                         flags(flags),
                         scale(scale)
                         {
-                            assert(!flags & FZ_STEXT_CLIP_RECT);
+                            assert(!(flags & FZ_STEXT_CLIP_RECT));
                         }
                         ''',
                         comment = '/* Construct with .flags, .scale but no clip. */',
