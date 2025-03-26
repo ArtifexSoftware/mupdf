@@ -160,6 +160,12 @@ struct pdf_run_processor
 	begin_layer_stack **next_begin_layer;
 
 	int mc_depth;
+	/* The nest_mark array holds a record of the way in which clips and
+	 * marked content are nested to ensure we pop stuff in the same order
+	 * that we push it - i.e. to keep calls nested nicely. An entry x,
+	 * where x >= 0 represents that a push has happened for mc_depth == x.
+	 * An entry x, where x < 0 means that -x clips have happened at this
+	 * position. */
 	int nest_depth;
 	int nest_mark[1024];
 };
@@ -208,13 +214,20 @@ flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
 	proc->next_begin_layer = &proc->begin_layer;
 }
 
-#define CLIP_MARK -1
-
 static void nest_layer_clip(fz_context *ctx, pdf_run_processor *proc)
 {
 	if (proc->nest_depth == nelem(proc->nest_mark))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "layer/clip nesting too deep");
-	proc->nest_mark[proc->nest_depth++] = CLIP_MARK;
+	if (proc->nest_depth > 0 && proc->nest_mark[proc->nest_depth-1] < 0)
+	{
+		/* The last mark was a clip. Just increase that count. */
+		proc->nest_mark[proc->nest_depth-1]--;
+	}
+	else
+	{
+		/* Create a new entry for a single clip. */
+		proc->nest_mark[proc->nest_depth++] = -1;
+	}
 }
 
 static void
@@ -531,14 +544,21 @@ pdf_grestore(fz_context *ctx, pdf_run_processor *pr)
 		fz_try(ctx)
 		{
 			// End layer early (before Q) if unbalanced Q appears between BMC and EMC.
-			while (pr->nest_depth > 0 && pr->nest_mark[pr->nest_depth-1] != CLIP_MARK)
+			while (pr->nest_depth > 0 && pr->nest_mark[pr->nest_depth-1] >= 0)
 			{
 				fz_end_layer(ctx, pr->dev);
 				pr->nest_depth--;
 			}
 
-			fz_pop_clip(ctx, pr->dev);
-			pr->nest_depth--;
+			if (pr->nest_depth > 0)
+			{
+				/* So this one must be a clip record. */
+				fz_pop_clip(ctx, pr->dev);
+				/* Pop a single clip record off. */
+				pr->nest_mark[pr->nest_depth-1]++;
+				if (pr->nest_mark[pr->nest_depth-1] == 0)
+					pr->nest_depth--;
+			}
 
 			// End layer late (after Q) if unbalanced EMC appears between q and Q.
 			while (pr->nest_depth > 0 && pr->nest_mark[pr->nest_depth-1] > pr->mc_depth)
@@ -3029,11 +3049,20 @@ pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 
 	while (pr->nest_depth > 0)
 	{
-		if (pr->nest_mark[pr->nest_depth-1] == CLIP_MARK)
+		if (pr->nest_mark[pr->nest_depth-1] < 0)
+		{
+			/* It's a clip. */
 			fz_pop_clip(ctx, pr->dev);
+			pr->nest_mark[pr->nest_depth-1]++;
+			if (pr->nest_mark[pr->nest_depth-1] == 0)
+				pr->nest_depth--;
+		}
 		else
+		{
+			/* It's a layer. */
 			fz_end_layer(ctx, pr->dev);
-		pr->nest_depth--;
+			pr->nest_depth--;
+		}
 	}
 
 	pop_structure_to(ctx, pr, NULL);
