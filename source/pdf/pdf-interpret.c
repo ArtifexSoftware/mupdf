@@ -621,6 +621,8 @@ pdf_process_grestore(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 static void
 pdf_process_end(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
+	if (proc->op_EOD)
+		proc->op_EOD(ctx, proc);
 	while (csi->gstate > 0)
 		pdf_process_grestore(ctx, proc, csi);
 	if (proc->op_END)
