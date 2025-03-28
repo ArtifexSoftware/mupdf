@@ -98,7 +98,7 @@ typedef struct
 #define INBUILT_SIZE(e) (e->end - e->start)
 #else
 	const unsigned int *size;
-#define INBUILT_SIZE(e) (*e->size)
+#define INBUILT_SIZE(e) (e->size ? *e->size : 0)
 #endif
 	char family[48];
 	int script;
