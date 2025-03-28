@@ -1386,6 +1386,7 @@ typedef struct
 	int *min_q;
 	int *min_op_q;
 	int first;
+	int ending;
 } pdf_balance_processor;
 
 static void
@@ -1399,6 +1400,10 @@ static void
 pdf_balance_Q(fz_context *ctx, pdf_processor *proc_)
 {
 	pdf_balance_processor *proc = (pdf_balance_processor*)proc_;
+
+	if (proc->ending)
+		return;
+
 	(*proc->balance)--;
 	if (*proc->balance < *proc->min_q)
 		*proc->min_q = *proc->balance;
@@ -1438,6 +1443,13 @@ static void pdf_balance_BI(fz_context *ctx, pdf_processor *p, fz_image *img, con
 static void pdf_balance_sh(fz_context *ctx, pdf_processor *p, const char *name, fz_shade *shade) BALANCE
 static void pdf_balance_Do_image(fz_context *ctx, pdf_processor *p, const char *name, fz_image *image) BALANCE
 static void pdf_balance_Do_form(fz_context *ctx, pdf_processor *p, const char *name, pdf_obj *xobj) BALANCE
+
+static void pdf_balance_EOD(fz_context *ctx, pdf_processor *p)
+{
+	pdf_balance_processor *proc = (pdf_balance_processor *)p;
+
+	proc->ending = 1;
+}
 
 static pdf_processor *
 pdf_new_balance_processor(fz_context *ctx, int *balance, int *min_q, int *min_op_q)
@@ -1547,6 +1559,8 @@ pdf_new_balance_processor(fz_context *ctx, int *balance, int *min_q, int *min_op
 	/* compatibility */
 	proc->super.op_BX = pdf_balance_void;
 	proc->super.op_EX = pdf_balance_void;
+
+	proc->super.op_EOD = pdf_balance_EOD;
 
 	proc->balance = balance;
 	proc->min_q = min_q;

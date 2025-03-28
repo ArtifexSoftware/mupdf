@@ -178,6 +178,10 @@ struct pdf_processor
 	void (*op_gs_OPM)(fz_context *ctx, pdf_processor *proc, int i);
 	void (*op_gs_UseBlackPtComp)(fz_context *ctx, pdf_processor *proc, pdf_obj *name);
 
+	/* EOD is used to signify end of data (before any finalise/close down/
+	 * automatically added gstate pops). */
+	void (*op_EOD)(fz_context *ctx, pdf_processor *proc);
+
 	/* END is used to signify end of stream (finalise and close down) */
 	void (*op_END)(fz_context *ctx, pdf_processor *proc);
 
