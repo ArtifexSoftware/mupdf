@@ -179,7 +179,7 @@ LOCAL_CFLAGS += $(filter-out -I%,$(OPENJPEG_CFLAGS) $(OPENJPEG_BUILD_CFLAGS))
 LOCAL_CFLAGS += $(MUPDF_EXTRA_CFLAGS)
 include $(BUILD_STATIC_LIBRARY)
 
-includes $(CLEAR_VARS)
+include $(CLEAR_VARS)
 LOCAL_MODULE += mupdf_thirdparty_brotli
 LOCAL_SRC_FILES += $(patsubst %,$(MUPDF_PATH)/%,$(BROTLI_SRC))
 LOCAL_C_INCLUDES += $(patsubst -I%,$(MUPDF_PATH)/%,$(filter -I%,$(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)))
