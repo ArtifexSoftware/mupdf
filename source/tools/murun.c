@@ -2051,7 +2051,6 @@ typedef struct
 {
 	pdf_processor super;
 	js_State *J;
-	resources_stack *rstack;
 	int extgstate;
 } pdf_js_processor;
 
@@ -2673,8 +2672,7 @@ static void js_proc_Do_form(fz_context *ctx, pdf_processor *proc, const char *na
 	PROC_BEGIN("op_Do_form");
 	js_pushstring(J, name);
 	ffi_pushobj(J, pdf_keep_obj(ctx, xobj));
-	ffi_pushobj(J, pdf_keep_obj(ctx, ((pdf_js_processor*)proc)->rstack->resources));
-	PROC_END(3);
+	PROC_END(2);
 }
 
 static void js_proc_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
@@ -2739,25 +2737,12 @@ static pdf_obj *js_proc_pop_resources(fz_context *ctx, pdf_processor *proc)
 	return NULL;
 }
 
-static void js_proc_drop(fz_context *ctx, pdf_processor *proc)
-{
-	pdf_js_processor *pr = (pdf_js_processor *)proc;
-
-	while (pr->rstack)
-	{
-		resources_stack *stk = pr->rstack;
-		pr->rstack = stk->next;
-		pdf_drop_obj(ctx, stk->resources);
-		fz_free(ctx, stk);
-	}
-}
-
 static pdf_processor *new_js_processor(fz_context *ctx, js_State *J)
 {
 	pdf_js_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 
 	proc->super.close_processor = NULL;
-	proc->super.drop_processor = js_proc_drop;
+	proc->super.drop_processor = NULL;
 
 	proc->super.push_resources = js_proc_push_resources;
 	proc->super.pop_resources = js_proc_pop_resources;
