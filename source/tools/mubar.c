@@ -32,193 +32,268 @@
 #include "mupdf/pdf.h" /* for pdf output */
 #endif
 
-/* Globals */
-static int create;
-static const char *output;
-static char *bartypestring;
-static fz_barcode_type bartype;
-static int rotation;
-static int quiet;
-static int hrt;
-static int ec_level;
-static int size;
-
-static int usage(void)
+static int mubar_usage(void)
 {
-	int i;
-
+	int i, n, c;
+	const char *s;
 	fprintf(stderr,
-		"usage: mubar [options] <file>\n"
-		"\t-v\tversion\n"
-		"\t-h\tdisplay this help\n"
-		"\t-c\tencode barcode from data in file (otherwise decode barcode from file)\n"
-		"ENCODING:\n"
-		"\t-F -\tbar code format (defaults to qrcode)\n");
-	for (i = FZ_BARCODE_NONE + 1; i < FZ_BARCODE__LIMIT; i++)
-	{
-		fprintf(stderr, "\t\t%s\n", fz_string_from_barcode_type(i));
-	}
-	fprintf(stderr,
-		"\t-q\tAdd quiet zones\n"
-		"\t-t\tAdd human readable text\n"
-		"\t-e -\tError correction level (0-8)\n"
-		"\t-s -\tSize\n"
-		"\t-o -\toutput file name (default: out.png)\n"
-		"DECODING:\n"
+		"usage to decode: mutool barcode -d [options] input [pages]\n"
+		"\t-p -\tpassword for encrypted PDF files\n"
+		"\t-o -\toutput file (default: stdout)\n"
 		"\t-r -\trotation\n"
-		);
-	return 1;
+	);
+	fprintf(stderr,
+		"usage to create: mutool barcode -c [options] text\n"
+		"\t-o -\toutput file (default: out.png)\n"
+		"\t-q\tadd quiet zones\n"
+		"\t-t\tadd human readable text (when possible)\n"
+		"\t-e -\terror correction level (0-8)\n"
+		"\t-s -\tsize of barcode image\n"
+		"\t-F -\tbarcode format (default: qrcode)\n"
+	);
+	for (c = 0, i = FZ_BARCODE_NONE + 1; i < FZ_BARCODE__LIMIT; i++)
+	{
+		s = fz_string_from_barcode_type(i);
+		n = strlen(s);
+		if (c + 2 + n > 78)
+		{
+			fprintf(stderr, ",\n\t\t%s", s);
+			c = 8 + n;
+		}
+		else
+		{
+			if (c == 0)
+			{
+				fprintf(stderr, "\t\t%s", s);
+				c += 8 + n;
+			}
+			else
+			{
+				fprintf(stderr, ", %s", s);
+				c += n + 2;
+			}
+		}
+	}
+	fprintf(stderr, "\n");
+	return EXIT_FAILURE;
 }
 
-int mubar_main(int argc, char **argv)
+int mubar_create(int argc, char **argv)
 {
-	fz_document *doc = NULL;
-	fz_page *page = NULL;
-	int c;
 	fz_context *ctx;
-	int errored = 0;
-	char *text = NULL;
-	const char *infile;
-	fz_image *image = NULL;
 	fz_pixmap *pixmap = NULL;
-	fz_buffer *buf = NULL;
-	const char *format;
-	fz_document_writer *writer = NULL;
-	fz_device *dev = NULL;
-	fz_rect bounds;
+	int retval = EXIT_SUCCESS;
 
-	fz_var(doc);
-	fz_var(errored);
-	fz_var(page);
-	fz_var(text);
-	fz_var(image);
-	fz_var(pixmap);
-	fz_var(buf);
-	fz_var(writer);
-	fz_var(dev);
+	const char *output = "out.png";
+	const char *format = "png";
 
-	while ((c = fz_getopt(argc, argv, "co:r:F:vdqte:s:")) != -1)
+	fz_barcode_type bartype = FZ_BARCODE_QRCODE;
+	int quiet = 0;
+	int hrt = 0;
+	int ec_level = 0;
+	int size = 256;
+	int c;
+
+	while ((c = fz_getopt(argc, argv, "F:ce:o:qs:td:")) != -1)
 	{
 		switch (c)
 		{
-		default: return usage();
-
-		case 'c': create = 1; break;
-		case 'o': output = fz_optarg; break;
-		case 'F': bartypestring = fz_optarg; break;
-		case 'r': rotation = fz_atof(fz_optarg); break;
-		case 'q': quiet = 1; break;
-		case 't': hrt = 1; break;
+		case 'F':
+			bartype = fz_barcode_type_from_string(fz_optarg);
+			if (bartype == FZ_BARCODE_NONE)
+				return mubar_usage();
+			break;
+		case 'c': break;
 		case 'e': ec_level = fz_atoi(fz_optarg); break;
+		case 'o': output = fz_optarg; break;
+		case 'q': quiet = 1; break;
 		case 's': size = fz_atoi(fz_optarg); break;
-
-		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
-		case 'h': usage(); return 1;
+		case 't': hrt = 1; break;
+		default: return mubar_usage();
 		}
 	}
 
 	if (fz_optind == argc)
-		return usage();
-
-	infile = argv[fz_optind];
+		return mubar_usage();
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");
-		exit(1);
+		return EXIT_FAILURE;
 	}
+
+	format = strrchr(output, '.');
+	if (format == NULL)
+		return mubar_usage();
+
+	fz_var(pixmap);
 
 	fz_try(ctx)
 	{
-		fz_register_document_handlers(ctx);
+		pixmap = fz_new_barcode_pixmap(ctx, bartype, argv[fz_optind], size, ec_level, quiet, hrt);
 
-		if (create)
+		if (!fz_strcasecmp(format, ".png"))
 		{
-			if (bartypestring)
-			{
-				bartype = fz_barcode_type_from_string(bartypestring);
-				if (bartype == FZ_BARCODE_NONE)
-					fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown bar code type");
-			}
-			else
-				bartype = FZ_BARCODE_QRCODE;
-
-			buf = fz_read_file(ctx, infile);
-			fz_terminate_buffer(ctx, buf);
-
-			if (output == NULL)
-				output = "out.png";
-			format = strrchr(output, '.');
-			if (format != NULL)
-				format++;
-			if (format == NULL || format[1] == 0)
-				format = "png";
-
-			if (fz_strcasecmp(format, "png") == 0)
-			{
-				pixmap = fz_new_barcode_pixmap(ctx, bartype, (const char *)buf->data, size, ec_level, quiet, hrt);
-				fz_save_pixmap_as_png(ctx, pixmap, output);
-			}
-			else
-			{
-				fz_matrix ctm;
-				image = fz_new_barcode_image(ctx, bartype, (const char *)buf->data, size, ec_level, quiet, hrt);
-				ctm.a = image->w;
-				ctm.b = 0;
-				ctm.c = 0;
-				ctm.d = image->h;
-				ctm.e = 0;
-				ctm.f = 0;
-
-				bounds.x0 = 0;
-				bounds.y0 = 0;
-				bounds.x1 = image->w;
-				bounds.y1 = image->h;
-
-				writer = fz_new_document_writer(ctx, output, format, "");
-				dev = fz_begin_page(ctx, writer, bounds);
-				fz_fill_image(ctx, dev, image, ctm, 1, fz_default_color_params);
-				fz_end_page(ctx, writer);
-				dev = NULL;
-				fz_close_document_writer(ctx, writer);
-				fz_drop_document_writer(ctx, writer);
-				writer = NULL;
-			}
+			fz_save_pixmap_as_png(ctx, pixmap, output);
+		}
+		else if (!fz_strcasecmp(format, ".pdf"))
+		{
+			fz_pclm_options opts = {};
+			opts.compress = 1;
+			opts.strip_height = pixmap->h;
+			fz_save_pixmap_as_pclm(ctx, pixmap, output, 0, &opts);
 		}
 		else
 		{
-			doc = fz_open_document(ctx, infile);
-			page = fz_load_page(ctx, doc, 0);
-			text = fz_decode_barcode_from_page(ctx, &bartype, page, fz_infinite_rect, rotation);
-			if (text)
-				printf("Decoded as: '%s'\n", text);
-			else
-				printf("No barcode found\n");
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid output format (must be PNG or PDF)\n");
 		}
 	}
 	fz_always(ctx)
 	{
-		fz_free(ctx, text);
-		fz_drop_image(ctx, image);
 		fz_drop_pixmap(ctx, pixmap);
-		fz_drop_buffer(ctx, buf);
-		fz_drop_page(ctx, page);
-		fz_drop_document(ctx, doc);
-		fz_drop_document_writer(ctx, writer);
 	}
 	fz_catch(ctx)
 	{
 		fz_report_error(ctx);
-		if (!errored) {
-			fprintf(stderr, "Rendering failed\n");
-			errored = 1;
-		}
+		retval = EXIT_FAILURE;
 	}
 
 	fz_drop_context(ctx);
 
-	return (errored != 0);
+	return retval;
+}
+
+static void mubar_decode_page(fz_context *ctx, fz_output *out, fz_document *doc, int page_no, int rotation)
+{
+	fz_barcode_type type;
+	fz_page *page = fz_load_page(ctx, doc, page_no-1);
+	char *text;
+	fz_try(ctx)
+	{
+		text = fz_decode_barcode_from_page(ctx, &type, page, fz_infinite_rect, rotation);
+		if (text && type != FZ_BARCODE_NONE)
+			fz_write_printf(ctx, out, "%s: %s\n", fz_string_from_barcode_type(type), text);
+		else
+			fz_write_string(ctx, out, "none\n");
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, text);
+		fz_drop_page(ctx, page);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+int mubar_decode(int argc, char **argv)
+{
+	fz_context *ctx;
+	fz_document *doc = NULL;
+	fz_output *out = NULL;
+	int i, c, start, end, p, count;
+	const char *range = NULL;
+	int retval = EXIT_SUCCESS;
+
+	const char *output = NULL;
+	const char *password = NULL;
+	int rotation = 0;
+
+	while ((c = fz_getopt(argc, argv, "do:r:p:")) != -1)
+	{
+		switch (c)
+		{
+		case 'd': break;
+		case 'o': output = fz_optarg; break;
+		case 'r': rotation = fz_atof(fz_optarg); break;
+		case 'p': password = fz_optarg; break;
+		default: return mubar_usage();
+		}
+	}
+
+	if (fz_optind == argc)
+		return mubar_usage();
+
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		return EXIT_FAILURE;
+	}
+
+	fz_try(ctx)
+		fz_register_document_handlers(ctx);
+	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
+		fprintf(stderr, "cannot register document handlers\n");
+		fz_drop_context(ctx);
+		return EXIT_FAILURE;
+	}
+
+	fz_var(doc);
+	fz_var(out);
+	fz_try(ctx)
+	{
+		if (output)
+			out = fz_new_output_with_path(ctx, output, 0);
+		else
+			out = fz_stdout(ctx);
+
+		for (i = fz_optind; i < argc; ++i)
+		{
+			doc = fz_open_document(ctx, argv[i]);
+			if (fz_needs_password(ctx, doc))
+				if (!fz_authenticate_password(ctx, doc, password))
+					fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot authenticate password: %s", argv[i]);
+			count = fz_count_pages(ctx, doc);
+
+			if (i+1 < argc && fz_is_page_range(ctx, argv[i+1]))
+				range = argv[++i];
+			else
+				range = "1-N";
+
+			while ((range = fz_parse_page_range(ctx, range, &start, &end, count)))
+			{
+				if (start < end)
+					for (p = start; p <= end; ++p)
+						mubar_decode_page(ctx, out, doc, p, rotation);
+				else
+					for (p = start; p >= end; --p)
+						mubar_decode_page(ctx, out, doc, p, rotation);
+			}
+
+			fz_drop_document(ctx, doc);
+			doc = NULL;
+		}
+
+		if (output)
+			fz_close_output(ctx, out);
+	}
+	fz_always(ctx)
+	{
+		if (output)
+			fz_drop_output(ctx, out);
+		fz_drop_document(ctx, doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_report_error(ctx);
+		retval = EXIT_FAILURE;
+	}
+
+	fz_drop_context(ctx);
+
+	return retval;
+}
+
+int mubar_main(int argc, char **argv)
+{
+	if (argc > 2 && !strcmp(argv[1], "-c"))
+		return mubar_create(argc, argv);
+	if (argc > 2 && !strcmp(argv[1], "-d"))
+		return mubar_decode(argc, argv);
+	return mubar_usage();
 }
 
 #else
