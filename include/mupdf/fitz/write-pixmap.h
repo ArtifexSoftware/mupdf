@@ -166,7 +166,7 @@ void fz_write_pixmap_as_pclm(fz_context *ctx, fz_output *out, const fz_pixmap *p
 /**
 	Save a (Greyscale or RGB) pixmap as pclm.
 */
-void fz_save_pixmap_as_pclm(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pclm_options *options);
+void fz_save_pixmap_as_pclm(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int append, const fz_pclm_options *options);
 
 /**
 	PDFOCR output
