@@ -1906,7 +1906,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 
 				em = node->box->s.layout.em;
 
-				line_width = fz_from_css_number(style->text_stroke_width, 1, 1, 1);
+				line_width = fz_from_css_number(style->text_stroke_width, em, em, 0);
 				filling = style->text_fill_color.a != 0;
 				stroking = style->text_stroke_color.a != 0;
 				if (stroking)

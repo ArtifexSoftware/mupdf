@@ -1496,7 +1496,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->leading = number_from_property(match, PRO_LEADING, 0, N_UNDEFINED);
 
 	style->text_indent = number_from_property(match, PRO_TEXT_INDENT, 0, N_LENGTH);
-	style->text_stroke_width = number_from_property(match, PRO_TEXT_STROKE_WIDTH, 1, N_LENGTH);
+	style->text_stroke_width = number_from_property(match, PRO_TEXT_STROKE_WIDTH, 0, N_LENGTH);
 
 	style->width = number_from_property(match, PRO_WIDTH, 0, N_AUTO);
 	style->height = number_from_property(match, PRO_HEIGHT, 0, N_AUTO);
