@@ -313,9 +313,15 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 			else if (pdf_name_eq(ctx, PDF_NAME(V2), obj))
 				cf->method = PDF_CRYPT_RC4;
 			else if (pdf_name_eq(ctx, PDF_NAME(AESV2), obj))
+			{
 				cf->method = PDF_CRYPT_AESV2;
+				cf->length = 128;
+			}
 			else if (pdf_name_eq(ctx, PDF_NAME(AESV3), obj))
+			{
 				cf->method = PDF_CRYPT_AESV3;
+				cf->length = 256;
+			}
 			else
 				fz_warn(ctx, "unknown encryption method: %s", pdf_to_name(ctx, obj));
 		}
