@@ -3699,6 +3699,13 @@ retry_after_repair:
 				local_synthesis = 1;
 		}
 
+		/* Need to reconstruct appearance streams on all widgets if NeedAppearances is true */
+		if (subtype == PDF_NAME(Widget))
+		{
+			if (ap_n && pdf_to_bool(ctx, pdf_dict_getl(ctx, pdf_trailer(ctx, annot->page->doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(NeedAppearances), NULL)))
+				local_synthesis = 1;
+		}
+
 		/* We need to put this appearance stream back into the document. */
 		needs_resynth = pdf_annot_needs_resynthesis(ctx, annot);
 		if (needs_resynth)
