@@ -1492,11 +1492,10 @@ void
 pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end)
 {
 	int count = pdf_count_pages(ctx, doc);
-
-	if (end < 0 || end > count)
-		end = count+1;
-	if (start < 0)
-		start = 0;
+	if (end < 0)
+		end = count;
+	start = fz_clampi(start, 0, count);
+	end = fz_clampi(end, 0, count);
 	while (start < end)
 	{
 		pdf_delete_page(ctx, doc, start);
