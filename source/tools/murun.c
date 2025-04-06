@@ -4622,6 +4622,50 @@ static void ffi_Pixmap_asPNG(js_State *J)
 	ffi_pushbuffer(J, buf);
 }
 
+static void ffi_Pixmap_asPSD(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	fz_buffer *buf = NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_psd(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushbuffer(J, buf);
+}
+
+static void ffi_Pixmap_asPAM(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	fz_buffer *buf = NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_pam(ctx, pixmap, fz_default_color_params);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushbuffer(J, buf);
+}
+
+static void ffi_Pixmap_asJPEG(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	int quality = js_isdefined(J, 1) ? js_tointeger(J, 1) : 90;
+	int invert_cmyk = js_isdefined(J, 1) ? js_toboolean(J, 1) : 0;
+	fz_buffer *buf = NULL;
+
+	fz_try(ctx)
+		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, invert_cmyk);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushbuffer(J, buf);
+}
+
 static void ffi_Pixmap_autowarp(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4888,6 +4932,42 @@ static void ffi_Pixmap_getSample(js_State *J)
 	if (y < 0 || y >= pixmap->h) js_rangeerror(J, "Y out of range");
 	if (k < 0 || k >= pixmap->n) js_rangeerror(J, "N out of range");
 	js_pushnumber(J, pixmap->samples[(x + y * pixmap->w) * pixmap->n + k]);
+}
+
+static void ffi_Pixmap_getPixels(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = ffi_topixmap(J, 0);
+	int w, h, n, stride, x, y, k, m;
+	unsigned char *p;
+
+	fz_try(ctx)
+	{
+		w = fz_pixmap_width(ctx, pixmap);
+		h = fz_pixmap_height(ctx, pixmap);
+		n = fz_pixmap_components(ctx, pixmap);
+		stride = fz_pixmap_stride(ctx, pixmap);
+	}
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	p = fz_pixmap_samples(ctx, pixmap);
+	m = 0;
+	for (y = 0; y < h; y++)
+	{
+		int remain = stride;
+		for (x = 0; x < w; x++)
+		{
+			for (k = 0; k < n; k++)
+			{
+				js_pushnumber(J, *p++);
+				remain--;
+				js_setindex(J, -2, m++);
+			}
+		}
+		p += remain;
+	}
 }
 
 static void ffi_Pixmap_getXResolution(js_State *J)
@@ -11451,6 +11531,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.getXResolution", ffi_Pixmap_getXResolution, 0);
 		jsB_propfun(J, "Pixmap.getYResolution", ffi_Pixmap_getYResolution, 0);
 		jsB_propfun(J, "Pixmap.getSample", ffi_Pixmap_getSample, 3);
+		jsB_propfun(J, "Pixmap.getPixels", ffi_Pixmap_getPixels, 0);
 		jsB_propfun(J, "Pixmap.setResolution", ffi_Pixmap_setResolution, 2);
 		jsB_propfun(J, "Pixmap.invert", ffi_Pixmap_invert, 0);
 		jsB_propfun(J, "Pixmap.invertLuminance", ffi_Pixmap_invertLuminance, 0);
@@ -11461,12 +11542,15 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.deskew", ffi_Pixmap_deskew, 2);
 		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 		jsB_propfun(J, "Pixmap.autowarp", ffi_Pixmap_autowarp, 1);
-		jsB_propfun(J, "Pixmap.detectdocument", ffi_Pixmap_detect_document, 0);
+		jsB_propfun(J, "Pixmap.detectDocument", ffi_Pixmap_detect_document, 0);
 
 		// Pixmap.getPixels() - Buffer
 		// Pixmap.scale()
 
 		jsB_propfun(J, "Pixmap.asPNG", ffi_Pixmap_asPNG, 0);
+		jsB_propfun(J, "Pixmap.asPSD", ffi_Pixmap_asPSD, 0);
+		jsB_propfun(J, "Pixmap.asPAM", ffi_Pixmap_asPAM, 0);
+		jsB_propfun(J, "Pixmap.asJPEG", ffi_Pixmap_asJPEG, 2);
 
 		jsB_propfun(J, "Pixmap.saveAsPNG", ffi_Pixmap_saveAsPNG, 1);
 		jsB_propfun(J, "Pixmap.saveAsJPEG", ffi_Pixmap_saveAsJPEG, 2);

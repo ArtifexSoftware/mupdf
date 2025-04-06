@@ -91,6 +91,26 @@ so that they can easily be used to represent tiles of a page.
 
         var h = pixmap.getHeight();
 
+.. method:: getX()
+
+    :return: `Int` The x coordinate of the pixmap.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var x = pixmap.getX();
+
+.. method:: getY()
+
+    :return: `Int` The y coordinate of the pixmap.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var y = pixmap.getY();
+
 .. method:: getNumberOfComponents()
 
     Number of colors; plus one if an alpha channel is present.
@@ -290,6 +310,20 @@ so that they can easily be used to represent tiles of a page.
 
         pixmap.saveAsPKM("fileName.pkm");
 
+.. method:: saveAsJPX(fileName)
+
+    |mutool_tag|
+
+    Save the `Pixmap` as a :title:`JPX`.
+
+    :arg fileName: `String`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pixmap.saveAsJPX("fileName.jpx");
+
 
 
 .. method:: invert()
@@ -345,6 +379,7 @@ so that they can easily be used to represent tiles of a page.
 
 
 
+.. _mutool_run_js_api_pixmap_warp:
 .. method:: warp(points, width, height)
 
     Return a warped subsection of the `Pixmap`, where the result has the requested dimensions.
@@ -361,6 +396,22 @@ so that they can easily be used to represent tiles of a page.
     .. code-block:: javascript
 
         var warpedPixmap = pixmap.warp([0,0,100,0,0,100,100,100],200,200);
+
+
+.. method:: autowarp(points)
+
+    Same as :ref:`Pixmap.warp()<mutool_run_js_api_pixmap_warp>` except that width and height are automatically determined.
+
+    :arg points: `[x0, y0, x1, y1, x2, y2, x3, y3, x4, y4]`
+    Points give the corner points of a convex quadrilateral within the `Pixmap` to be warped.
+
+    :return: `Pixmap`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var warpedPixmap = pixmap.autowarp([0,0,100,0,0,100,100,100]);
 
 
 .. method:: convertToColorSpace(colorspace, proof, defaultColorSpaces, colorParams, keepAlpha)
@@ -449,12 +500,15 @@ so that they can easily be used to represent tiles of a page.
 
 
 
-.. method:: asJPEG(quality)
+.. method:: asJPEG(quality, invertCMYK)
 
     |wasm_tag|
 
     Returns a buffer of the `Pixmap` as a :title:`JPEG`.
     Note, if the `Pixmap` has an alpha channel then an exception will be thrown.
+
+    :arg quality: `Integer`. The desired quality in percent.
+    :arg invertCMYK: `Boolean`. Whether to invert CMYK.
 
 
     :return: `Buffer`.
@@ -465,6 +519,21 @@ so that they can easily be used to represent tiles of a page.
 
         var buffer = pixmap.asJPEG(80);
 
+
+.. method:: detectDocument(points)
+
+    |wasm_tag|
+
+    Detect a "document" in a `Pixmap` (either grayscale or rgb, without alpha)
+    Note, if the `Pixmap` is not Greyscale with no alpha then an exception will be thrown.
+
+    :return: `[x0,y0,x1,y1,x2,y2,x3,y3]`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var documentLocation = pixmap.detectDocument([0,0,100,0,100,100,0,100]);
 
 .. method:: skewDetect()
 
@@ -499,3 +568,18 @@ so that they can easily be used to represent tiles of a page.
     .. code-block:: javascript
 
         var deskewed = pixmap.deskew(angle, 0);
+
+
+.. method:: computeMD5()
+
+    |wasm_tag|
+
+    Returns the MD5 digest of the pixmap pixel data.
+
+    :return: `String` containing digest as 16 hex digits.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var md5 = pixmap.computeMD5();
