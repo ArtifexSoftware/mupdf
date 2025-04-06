@@ -41,6 +41,7 @@ public class OutlineIterator
 	public native int up();
 	public native int down();
 
+	public native int insert(String title, String uri, boolean is_open, float r, float g, float b, int flags);
 	public int insert(OutlineItem item)
 	{
 		return insert(item.title, item.uri, item.is_open, item.r, item.g, item.b, item.flags);
@@ -49,15 +50,12 @@ public class OutlineIterator
 	{
 		return insert(title, uri, is_open, 0, 0, 0, 0);
 	}
-	public native int insert(String title, String uri, boolean is_open, float r, float g, float b, int flags);
+	public native void update(String title, String uri, boolean is_open, float r, float g, float b, int flags);
 	public void update(OutlineItem item)
 	{
 		update(item.title, item.uri, item.is_open, item.r, item.g, item.b, item.flags);
 	}
-	public void update(String title, String uri, boolean is_open, float r, float g, float b, int flags)
-	{
-		update(title, uri, is_open, r, g, b, flags);
-	}
+
 	public native OutlineItem item();
 	public native int delete();
 

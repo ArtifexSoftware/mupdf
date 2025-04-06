@@ -2765,6 +2765,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_OutlineIterator_insert
 
 /*
  * Class:     com_artifex_mupdf_fitz_OutlineIterator
+ * Method:    update
+ * Signature: (Ljava/lang/String;Ljava/lang/String;ZFFFI)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_OutlineIterator_update
+  (JNIEnv *, jobject, jstring, jstring, jboolean, jfloat, jfloat, jfloat, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_OutlineIterator
  * Method:    item
  * Signature: ()Lcom/artifex/mupdf/fitz/OutlineIterator/OutlineItem;
  */
