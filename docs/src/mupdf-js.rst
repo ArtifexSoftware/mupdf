@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -69,6 +69,7 @@ Class A-Z Index
 - :ref:`PDFPage<mutool_run_js_api_pdf_page>`
 - :ref:`PDFWidget<mutool_run_js_api_object_pdf_widget>`
 - :ref:`Pixmap<mutool_run_js_api_pixmap>`
+- :ref:`Shade<mutool_run_js_api_shade>`
 - :ref:`Story<mutool_run_js_api_object_story>`
 - :ref:`StrokeState<mutool_run_js_api_stroke_state>`
 - :ref:`StructuredText<mutool_run_js_api_structured_text>`
@@ -377,6 +378,8 @@ Alpha values are floats between `0` and `1`, whereby `0` denotes full transparen
 .. include:: mutool-object-outline-iterator.rst
 
 .. include:: mutool-object-archive.rst
+
+.. include:: mutool-object-shade.rst
 
 .. include:: mutool-object-story.rst
 

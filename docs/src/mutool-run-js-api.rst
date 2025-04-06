@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -276,6 +276,8 @@ Alpha values are floats between `0` and `1`, whereby `0` denotes full transparen
 .. include:: mutool-object-outline-iterator.rst
 
 .. include:: mutool-object-archive.rst
+
+.. include:: mutool-object-shade.rst
 
 .. include:: mutool-object-story.rst
 
