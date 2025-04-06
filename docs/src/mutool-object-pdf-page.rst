@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -303,3 +303,48 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
     .. code-block:: javascript
 
         var obj = pdfPage.associatedFile(0);
+
+
+
+.. method:: getObject()
+
+    Return the `PDFObject` that corresponds to this PDF page.
+
+    :return: `Object` :ref:`PDFObject<mutool_run_js_api_pdf_object>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var pageObj = pdfPage.getObject();
+
+
+
+.. method:: setPageBox(boxname, rect)
+
+    Modify the page boxes using fitz space coordinates.
+
+    Note that changing the CropBox will change the fitz coordinate space mapping,
+    invalidating all bounding boxes previously acquired.
+
+    :arg boxname: `String` representing :ref:`box type<mutool_run_js_api_box_types>`.
+    :arg rect: `Array`. `[ulx,uly,lrx,lry]` :ref:`Rectangle<mutool_run_js_api_rectangle>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        pdfPage.setPageBox("MediaBox", [0, 0, 612, 792]);
+
+.. _mutool_run_js_api_box_types
+
+**Box name values**
+.. list-table::
+   :header-rows: 1
+
+   * - **Box names**
+   * - "MediaBox"
+   * - "CropBox"
+   * - "BleedBox"
+   * - "TrimBox"
+   * - "ArtBox"

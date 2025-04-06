@@ -124,4 +124,8 @@ public class PDFPage extends Page
 	public Pixmap toPixmap(Matrix ctm, ColorSpace cs, boolean alpha, boolean showExtras, String usage) {
 		return toPixmap(ctm, cs, alpha, showExtras, usage, Page.CROP_BOX);
 	}
+
+	public boolean isPDF() {
+		return true;
+	}
 }
