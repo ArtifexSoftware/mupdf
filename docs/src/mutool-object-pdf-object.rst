@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -485,3 +485,65 @@ Primitive :title:`PDF` objects such as booleans, names, and numbers can usually 
     .. code-block:: javascript
 
         var val = pdfObj.asByteString();
+
+.. method:: getNumber()
+
+    Convert a primitive :title:`PDF` integer or real object to a `Number` :title:`JavaScript` object.
+
+    :return: `Number`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var nbr = pdfObj.getNumber();
+
+.. method:: getName()
+
+    Convert a primitive :title:`PDF` name object to a `String` :title:`JavaScript` object.
+
+    :return: `String`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var name = pdfObj.getName();
+
+.. method:: getString()
+
+    Convert a primitive :title:`PDF` string object to a `String` :title:`JavaScript` object.
+
+    :return: `String`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var str = pdfObj.getString();
+
+.. method:: getInheritable()
+
+    Access dictionaries and array in the `PDFObject`.
+
+    For a dictionary, if the requested key does not exist, getInheritable()
+    will walk Parent references to parent dictionaries and lookup the same
+    key there. If no key can be found in any parent or grand-parent or
+    grand-grand-parent, all the way up, null is returned.
+
+    :arg ref: Key or index.
+    :return: The value for the key or index.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var dict = pdfDocument.newDictionary();
+        var grandParent = pdfDocument.newDictionary();
+        var grandgrandParent = pdfDocument.newDictionary();
+	grandgrandParent.put("my_key", "my_value");
+	grandParent.put("Parent", grandgrandParent);
+	dict.put("Parent", grandParent);
+        var value = dict.getInheritable("my_key");
+        var arr = pdfDocument.newArray();
+        var value = arr.get(0);
