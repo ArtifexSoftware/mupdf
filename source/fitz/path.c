@@ -1492,6 +1492,54 @@ fz_new_stroke_state(fz_context *ctx)
 	return fz_new_stroke_state_with_dash_len(ctx, 0);
 }
 
+fz_linecap
+fz_linecap_from_string(const char *str)
+{
+	if (!strcmp(str, "Round"))
+		return FZ_LINECAP_ROUND;
+	if (!strcmp(str, "Square"))
+		return FZ_LINECAP_SQUARE;
+	if (!strcmp(str, "Triangle"))
+		return FZ_LINECAP_TRIANGLE;
+	return FZ_LINECAP_BUTT;
+}
+
+const char *
+fz_string_from_linecap(fz_linecap cap)
+{
+	switch (cap) {
+	default:
+	case FZ_LINECAP_BUTT: return "Butt";
+	case FZ_LINECAP_ROUND: return "Round";
+	case FZ_LINECAP_SQUARE: return "Square";
+	case FZ_LINECAP_TRIANGLE: return "Triangle";
+	}
+}
+
+fz_linejoin
+fz_linejoin_from_string(const char *str)
+{
+	if (!strcmp(str, "Round"))
+		return FZ_LINEJOIN_ROUND;
+	if (!strcmp(str, "Bevel"))
+		return FZ_LINEJOIN_BEVEL;
+	if (!strcmp(str, "MiterXPS"))
+		return FZ_LINEJOIN_MITER_XPS;
+	return FZ_LINEJOIN_MITER;
+}
+
+const char *
+fz_string_from_linejoin(fz_linejoin join)
+{
+	switch (join) {
+	default:
+	case FZ_LINEJOIN_MITER: return "Miter";
+	case FZ_LINEJOIN_ROUND: return "Round";
+	case FZ_LINEJOIN_BEVEL: return "Bevel";
+	case FZ_LINEJOIN_MITER_XPS: return "MiterXPS";
+	}
+}
+
 fz_stroke_state *
 fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {

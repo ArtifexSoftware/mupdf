@@ -132,19 +132,15 @@ This `Object` contains a numbered array of operations and a reference into this 
 
 
 
-.. _mutool_run_js_api_stroke_dictionary:
 .. _mutool_run_js_api_stroke_object:
 
 Stroking State Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The stroking state is a dictionary with keys for:
-
-    - `startCap`, `dashCap`, `endCap`
-        "Butt", "Round", "Square", or "Triangle".
+The stroking state constructor parameters have keys for:
 
     - `lineCap`
-        Set `startCap`, `dashCap`, and `endCap` all at once.
+        "Butt", "Round", "Square", or "Triangle".
 
     - `lineJoin`
         "Miter", "Round", "Bevel", or "MiterXPS".

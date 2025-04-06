@@ -444,6 +444,11 @@ fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_strok
 */
 fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 
+fz_linecap fz_linecap_from_string(const char *s);
+const char *fz_string_from_linecap(fz_linecap cap);
+fz_linejoin fz_linejoin_from_string(const char *s);
+const char *fz_string_from_linejoin(fz_linejoin join);
+
 /**
 	Check whether a given path, under the given transform
 	is an axis-aligned rectangle.

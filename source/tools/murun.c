@@ -498,6 +498,12 @@ static void ffi_gc_fz_xml(js_State *J, void *xml)
 	fz_drop_xml(ctx, xml);
 }
 
+static void ffi_gc_fz_stroke_state(js_State *J, void *stroke)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_stroke_state(ctx, stroke);
+}
+
 static void ffi_pushoutlineiterator(js_State *J, fz_outline_iterator *iter)
 {
 	js_getregistry(J, "fz_outline_iterator");
@@ -1069,28 +1075,6 @@ static fz_outline_item ffi_tooutlineitem(js_State *J, int idx)
 	return item;
 }
 
-static const char *string_from_cap(fz_linecap cap)
-{
-	switch (cap) {
-	default:
-	case FZ_LINECAP_BUTT: return "Butt";
-	case FZ_LINECAP_ROUND: return "Round";
-	case FZ_LINECAP_SQUARE: return "Square";
-	case FZ_LINECAP_TRIANGLE: return "Triangle";
-	}
-}
-
-static const char *string_from_join(fz_linejoin join)
-{
-	switch (join) {
-	default:
-	case FZ_LINEJOIN_MITER: return "Miter";
-	case FZ_LINEJOIN_ROUND: return "Round";
-	case FZ_LINEJOIN_BEVEL: return "Bevel";
-	case FZ_LINEJOIN_MITER_XPS: return "MiterXPS";
-	}
-}
-
 #if FZ_ENABLE_PDF
 
 static const char *string_from_border_style(enum pdf_border_style style)
@@ -1146,22 +1130,6 @@ static const char *string_from_destination_type(fz_link_dest_type type)
 	case FZ_LINK_DEST_FIT_BH: return "FitBH";
 	case FZ_LINK_DEST_FIT_BV: return "FitBV";
 	}
-}
-
-static fz_linecap cap_from_string(const char *str)
-{
-	if (!strcmp(str, "Round")) return FZ_LINECAP_ROUND;
-	if (!strcmp(str, "Square")) return FZ_LINECAP_SQUARE;
-	if (!strcmp(str, "Triangle")) return FZ_LINECAP_TRIANGLE;
-	return FZ_LINECAP_BUTT;
-}
-
-static fz_linejoin join_from_string(const char *str)
-{
-	if (!strcmp(str, "Round")) return FZ_LINEJOIN_ROUND;
-	if (!strcmp(str, "Bevel")) return FZ_LINEJOIN_BEVEL;
-	if (!strcmp(str, "MiterXPS")) return FZ_LINEJOIN_MITER_XPS;
-	return FZ_LINEJOIN_MITER;
 }
 
 #if FZ_ENABLE_PDF
@@ -1281,73 +1249,14 @@ static void ffi_pushlinkdest(js_State *J, const fz_link_dest dest)
 
 static void ffi_pushstroke(js_State *J, const fz_stroke_state *stroke)
 {
-	js_newobject(J);
-	js_pushliteral(J, string_from_cap(stroke->start_cap));
-	js_setproperty(J, -2, "startCap");
-	js_pushliteral(J, string_from_cap(stroke->dash_cap));
-	js_setproperty(J, -2, "dashCap");
-	js_pushliteral(J, string_from_cap(stroke->end_cap));
-	js_setproperty(J, -2, "endCap");
-	js_pushliteral(J, string_from_join(stroke->linejoin));
-	js_setproperty(J, -2, "lineJoin");
-	js_pushnumber(J, stroke->linewidth);
-	js_setproperty(J, -2, "lineWidth");
-	js_pushnumber(J, stroke->miterlimit);
-	js_setproperty(J, -2, "miterLimit");
-	js_pushnumber(J, stroke->dash_phase);
-	js_setproperty(J, -2, "dashPhase");
-	ffi_pusharray(J, stroke->dash_list, stroke->dash_len);
-	js_setproperty(J, -2, "dashes");
+	fz_context *ctx = js_getcontext(J);
+	js_getregistry(J, "fz_stroke_state");
+	js_newuserdata(J, "fz_stroke_state", fz_keep_stroke_state(ctx, stroke), NULL);
 }
 
-static fz_stroke_state ffi_tostroke(js_State *J, int idx)
+static fz_stroke_state *ffi_tostroke(js_State *J, int idx)
 {
-	fz_stroke_state stroke = fz_default_stroke_state;
-	if (js_hasproperty(J, idx, "lineCap")) {
-		stroke.start_cap = cap_from_string(js_tostring(J, -1));
-		stroke.dash_cap = stroke.start_cap;
-		stroke.end_cap = stroke.start_cap;
-	}
-	if (js_hasproperty(J, idx, "startCap")) {
-		stroke.start_cap = cap_from_string(js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "dashCap")) {
-		stroke.dash_cap = cap_from_string(js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "endCap")) {
-		stroke.end_cap = cap_from_string(js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "lineJoin")) {
-		stroke.linejoin = join_from_string(js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "lineWidth")) {
-		stroke.linewidth = js_tonumber(J, -1);
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "miterLimit")) {
-		stroke.miterlimit = js_tonumber(J, -1);
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "dashPhase")) {
-		stroke.dash_phase = js_tonumber(J, -1);
-		js_pop(J, 1);
-	}
-	if (js_hasproperty(J, idx, "dashes")) {
-		int i, n = js_getlength(J, -1);
-		if (n > (int)nelem(stroke.dash_list))
-			n = nelem(stroke.dash_list);
-		stroke.dash_len = n;
-		for (i = 0; i < n; ++i) {
-			js_getindex(J, -1, i);
-			stroke.dash_list[i] = js_tonumber(J, -1);
-			js_pop(J, 1);
-		}
-	}
-	return stroke;
+	return (fz_stroke_state *) js_touserdata(J, idx, "fz_stroke_state");
 }
 
 static void ffi_pushtext(js_State *J, const fz_text *text)
@@ -2885,6 +2794,119 @@ static pdf_processor *new_js_processor(fz_context *ctx, js_State *J)
 
 #endif /* FZ_ENABLE_PDF */
 
+static void ffi_new_StrokeState(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_stroke_state *stroke = NULL;
+
+	if (js_hasproperty(J, 1, "dashes"))
+	{
+		int i, n = js_getlength(J, -1);
+		fz_try(ctx)
+			stroke = fz_new_stroke_state_with_dash_len(ctx, n);
+		fz_catch(ctx)
+			rethrow(J);
+		js_pop(J, 1);
+
+		if (js_try(J)) {
+			fz_drop_stroke_state(ctx, stroke);
+			js_throw(J);
+		}
+		for (i = 0; i < n; ++i) {
+			js_getindex(J, -1, i);
+			stroke->dash_list[i] = js_tonumber(J, -1);
+			js_pop(J, 1);
+		}
+
+		js_pop(J, 1);
+		js_endtry(J);
+	}
+	else
+	{
+		fz_try(ctx)
+			stroke = fz_new_stroke_state(ctx);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+	if (js_try(J)) {
+		fz_drop_stroke_state(ctx, stroke);
+		js_throw(J);
+	}
+
+	if (js_hasproperty(J, 1, "lineCap"))
+	{
+		int linecap = fz_linecap_from_string(js_tostring(J, -1));
+		stroke->start_cap = stroke->dash_cap = stroke->end_cap = linecap;
+		js_pop(J, 1);
+	}
+
+	if (js_hasproperty(J, 1, "lineJoin"))
+	{
+		stroke->linejoin = fz_linejoin_from_string(js_tostring(J, -1));
+		js_pop(J, 1);
+	}
+
+	if (js_hasproperty(J, 1, "lineWidth"))
+	{
+		stroke->linewidth = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+
+	if (js_hasproperty(J, 1, "miterLimit"))
+	{
+		stroke->miterlimit = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+
+	if (js_hasproperty(J, 1, "dashPhase"))
+	{
+		stroke->dash_phase = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+
+	js_getregistry(J, "fz_stroke_state");
+	js_newuserdata(J, "fz_stroke_state", stroke, ffi_gc_fz_stroke_state);
+
+	js_endtry(J);
+}
+
+static void ffi_StrokeState_getLineCap(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	js_pushliteral(J, fz_string_from_linecap(stroke->start_cap));
+}
+
+static void ffi_StrokeState_getLineJoin(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	js_pushstring(J, fz_string_from_linejoin(stroke->linejoin));
+}
+
+static void ffi_StrokeState_getLineWidth(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	js_pushnumber(J, stroke->linewidth);
+}
+
+static void ffi_StrokeState_getMiterLimit(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	js_pushnumber(J, stroke->miterlimit);
+}
+
+static void ffi_StrokeState_getDashPhase(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	js_pushnumber(J, stroke->dash_phase);
+}
+
+static void ffi_StrokeState_getDashes(js_State *J)
+{
+	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
+	ffi_pusharray(J, stroke->dash_list, stroke->dash_len);
+}
+
 /* device calling into c from js */
 
 static void ffi_Device_close(js_State *J)
@@ -2917,12 +2939,12 @@ static void ffi_Device_strokePath(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
 	fz_path *path = js_touserdata(J, 1, "fz_path");
-	fz_stroke_state stroke = ffi_tostroke(J, 2);
+	fz_stroke_state *stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	struct color c = ffi_tocolor(J, 4);
 	fz_color_params color_params = ffi_tocolorparams(J, 7);
 	fz_try(ctx)
-		fz_stroke_path(ctx, dev, path, &stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
+		fz_stroke_path(ctx, dev, path, stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -2945,10 +2967,10 @@ static void ffi_Device_clipStrokePath(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
 	fz_path *path = js_touserdata(J, 1, "fz_path");
-	fz_stroke_state stroke = ffi_tostroke(J, 2);
+	fz_stroke_state *stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	fz_try(ctx)
-		fz_clip_stroke_path(ctx, dev, path, &stroke, ctm, fz_infinite_rect);
+		fz_clip_stroke_path(ctx, dev, path, stroke, ctm, fz_infinite_rect);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -2972,12 +2994,12 @@ static void ffi_Device_strokeText(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
 	fz_text *text = js_touserdata(J, 1, "fz_text");
-	fz_stroke_state stroke = ffi_tostroke(J, 2);
+	fz_stroke_state *stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	struct color c = ffi_tocolor(J, 4);
 	fz_color_params color_params = ffi_tocolorparams(J, 7);
 	fz_try(ctx)
-		fz_stroke_text(ctx, dev, text, &stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
+		fz_stroke_text(ctx, dev, text, stroke, ctm, c.colorspace, c.color, c.alpha, color_params);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -2999,10 +3021,10 @@ static void ffi_Device_clipStrokeText(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
 	fz_text *text = js_touserdata(J, 1, "fz_text");
-	fz_stroke_state stroke = ffi_tostroke(J, 2);
+	fz_stroke_state *stroke = ffi_tostroke(J, 2);
 	fz_matrix ctm = ffi_tomatrix(J, 3);
 	fz_try(ctx)
-		fz_clip_stroke_text(ctx, dev, text, &stroke, ctm, fz_infinite_rect);
+		fz_clip_stroke_text(ctx, dev, text, stroke, ctm, fz_infinite_rect);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -5581,12 +5603,12 @@ static void ffi_Path_getBounds(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_path *path = js_touserdata(J, 0, "fz_path");
-	fz_stroke_state stroke = ffi_tostroke(J, 1);
+	fz_stroke_state *stroke = ffi_tostroke(J, 1);
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	fz_rect bounds;
 
 	fz_try(ctx)
-		bounds = fz_bound_path(ctx, path, &stroke, ctm);
+		bounds = fz_bound_path(ctx, path, stroke, ctm);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -11316,6 +11338,18 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "StrokeState.getLineCap", ffi_StrokeState_getLineCap, 0);
+		jsB_propfun(J, "StrokeState.getLineJoin", ffi_StrokeState_getLineJoin, 0);
+		jsB_propfun(J, "StrokeState.getLineWidth", ffi_StrokeState_getLineWidth, 0);
+		jsB_propfun(J, "StrokeState.getMiterLimit", ffi_StrokeState_getMiterLimit, 0);
+		jsB_propfun(J, "StrokeState.getDashPhase", ffi_StrokeState_getDashPhase, 0);
+		jsB_propfun(J, "StrokeState.getDashes", ffi_StrokeState_getDashes, 0);
+	}
+	js_setregistry(J, "fz_stroke_state");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
 		jsB_propfun(J, "Device.close", ffi_Device_close, 0);
 
 		jsB_propfun(J, "Device.fillPath", ffi_Device_fillPath, 7);
@@ -11963,6 +11997,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
 		jsB_propcon(J, "fz_story", "Story", ffi_new_Story, 4);
+		jsB_propcon(J, "fz_stroke_state", "StrokeState", ffi_new_StrokeState, 1);
 #if FZ_ENABLE_PDF
 		jsB_propcon(J, "pdf_pkcs7_signer", "PDFPKCS7Signer", ffi_new_PDFPKCS7Signer, 2);
 #endif

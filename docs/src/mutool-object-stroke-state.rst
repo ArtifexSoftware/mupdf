@@ -17,12 +17,12 @@
 A `StrokeState` object is used to define stroke styles.
 
 
-.. method:: new StrokeState()
+.. method:: new StrokeState(obj)
 
 
     *Constructor method*.
 
-    Create a new empty stroke state object.
+    Create a new stroke state object with the specified :ref:`properties<mutool_run_js_api_stroke_object>`.
 
     :return: `StrokeState`.
 
@@ -30,24 +30,19 @@ A `StrokeState` object is used to define stroke styles.
 
     .. code-block:: javascript
 
-        var strokeState = new mupdf.StrokeState();
+        var strokeState = new mupdf.StrokeState({
+                lineCap: 'Butt',
+                lineJoin: 'Round',
+                lineWidth: 1.5,
+                miterLimit: 10.0,
+                dashPhase: 0,
+                dashes: [ 4, 8 ],
+        })
 
 
 
 |instance_methods|
 
-
-
-.. method:: setLineCap(style)
-
-
-    :arg style: `String` One of "Butt", "Round" or "Square".
-
-    |example_tag|
-
-    .. code-block:: javascript
-
-        strokeState.setLineCap("Butt");
 
 
 .. method:: getLineCap()
@@ -62,18 +57,6 @@ A `StrokeState` object is used to define stroke styles.
         var lineCap = strokeState.getLineCap();
 
 
-.. method:: setLineJoin(style)
-
-
-    :arg style: `String` One of "Miter", "Round" or "Bevel".
-
-    |example_tag|
-
-    .. code-block:: javascript
-
-        strokeState.setLineJoin("Butt");
-
-
 .. method:: getLineJoin()
 
 
@@ -86,18 +69,6 @@ A `StrokeState` object is used to define stroke styles.
         var lineJoin = strokeState.getLineJoin();
 
 
-.. method:: setLineWidth(width)
-
-
-    :arg width: `Integer`.
-
-    |example_tag|
-
-    .. code-block:: javascript
-
-        strokeState.setLineWidth(2);
-
-
 .. method:: getLineWidth()
 
 
@@ -108,18 +79,6 @@ A `StrokeState` object is used to define stroke styles.
     .. code-block:: javascript
 
         var width = strokeState.getLineWidth();
-
-
-.. method:: setMiterLimit(width)
-
-
-    :arg width: `Integer`.
-
-    |example_tag|
-
-    .. code-block:: javascript
-
-        strokeState.setMiterLimit(2);
 
 
 .. method:: getMiterLimit()
