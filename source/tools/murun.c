@@ -6961,6 +6961,33 @@ static void ffi_PDFDocument_save(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_saveToBuffer(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	const char *options = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	pdf_write_options pwo;
+	fz_buffer *buf;
+	fz_output *out;
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 32 << 10);
+		out = fz_new_output_with_buffer(ctx, buf);
+		pdf_parse_write_options(ctx, &pwo, options);
+		pdf_write_document(ctx, pdf, out, &pwo);
+		fz_close_output(ctx, out);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		rethrow(J);
+	}
+	ffi_pushbuffer(J, buf);
+}
+
 static void ffi_PDFDocument_rearrangePages(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7647,6 +7674,45 @@ static void ffi_PDFDocument_zugferdXML(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushbuffer(J, buf);
+}
+
+static void ffi_PDFDocument_getLanguage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_text_language lang;
+	char text[8];
+	fz_try(ctx)
+	{
+		lang = pdf_document_language(ctx, pdf);
+		fz_string_from_text_language(text, lang);
+	}
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, text);
+}
+
+static void ffi_PDFDocument_setLanguage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	const char *lang = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	fz_try(ctx)
+		pdf_set_document_language(ctx, pdf, fz_text_language_from_string(lang));
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_bake(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int bake_annots = js_iscoercible(J, 1) ? js_toboolean(J, 1) : 1;
+	int bake_widgets = js_iscoercible(J, 2) ? js_toboolean(J, 2) : 1;
+	fz_try(ctx)
+		pdf_bake_document(ctx, pdf, bake_annots, bake_widgets);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_appendDestToURI(js_State *J)
@@ -11455,6 +11521,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.lookupDest", ffi_PDFDocument_lookupDest, 1);
 		jsB_propfun(J, "PDFDocument.rearrangePages", ffi_PDFDocument_rearrangePages, 1);
 		jsB_propfun(J, "PDFDocument.save", ffi_PDFDocument_save, 2);
+		jsB_propfun(J, "PDFDocument.saveToBuffer", ffi_PDFDocument_saveToBuffer, 1);
 
 		jsB_propfun(J, "PDFDocument.newNull", ffi_PDFDocument_newNull, 0);
 		jsB_propfun(J, "PDFDocument.newBoolean", ffi_PDFDocument_newBoolean, 1);
@@ -11512,6 +11579,10 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.zugferdProfile", ffi_PDFDocument_zugferdProfile, 0);
 		jsB_propfun(J, "PDFDocument.zugferdVersion", ffi_PDFDocument_zugferdVersion, 0);
 		jsB_propfun(J, "PDFDocument.zugferdXml", ffi_PDFDocument_zugferdXML, 0);
+
+		jsB_propfun(J, "PDFDocument.getLangauge", ffi_PDFDocument_getLanguage, 0);
+		jsB_propfun(J, "PDFDocument.setLangauge", ffi_PDFDocument_setLanguage, 1);
+		jsB_propfun(J, "PDFDocument.bake", ffi_PDFDocument_bake, 2);
 	}
 	js_setregistry(J, "pdf_document");
 

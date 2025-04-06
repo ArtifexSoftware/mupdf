@@ -306,4 +306,6 @@ public class PDFDocument extends Document
 	public native PDFObject lookupDest(PDFObject destination);
 
 	public native void subsetFonts();
+
+	public native void bake(boolean bakeAnnots, boolean bakeWidgets);
 }

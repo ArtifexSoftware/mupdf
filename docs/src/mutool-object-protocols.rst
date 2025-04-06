@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -276,3 +276,13 @@ Default Appearance Text Object
 
 `color`
     Array representing the :ref:`color value<mutool_run_js_api_colors>`.
+
+
+
+
+.. _mutool_run_js_api_object_name_tree_object:
+
+NameTree Object
+~~~~~~~~~~~~~~~~~~~
+
+Where each property and its values come from one of the name/value pairs from the corresponding name tree.

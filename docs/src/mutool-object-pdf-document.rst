@@ -438,6 +438,21 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
     :arg bakeWidgets: `Boolean` Whether to bake widgets or not. Defaults to `true`.
 
 
+.. method:: loadNameTree(treeName)
+
+    Return an object whose properties and their values come from corresponding names/values from the given name tree.
+
+    :return: `Object` :ref:`NameTree Object<mutool_run_js_api_name_tree_object>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var dests = pdfDocument.loadNameTree("Dests");
+	for (var p in dests) {
+	    console.log("Destination: " + p);
+	}
+
 ----
 
 :title:`PDF` Journalling
@@ -563,7 +578,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
     .. code-block:: javascript
 
         pdfDocument.saveJournal("test.journal");
-
 
 ----
 
@@ -1018,6 +1032,20 @@ All page objects are structured into a page tree, which defines the order the pa
         var image = pdfDocument.loadImage(obj);
 
 
+.. method:: lookupDest(obj)
+
+    Find the destination corresponding to a specific named destination given as a name or byte string in the form of a `PDFObject`.
+
+    :arg obj: `PDFObject`.
+
+    :return: `PDFObject` that the named destination represents or null.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var destination = pdfDocument.lookupDest(nameobj);
+
 ----
 
 
@@ -1120,6 +1148,23 @@ Embedded/Associated files in :title:`PDFs`
 
     :return: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
 
+.. method:: deleteEmbeddedFile(filename)
+
+    Delete an embedded file with the given filename.
+
+    :arg filename: `String` Name of embedded file to delete.
+
+.. method:: insertEmbeddedFile(filename, fileSpecObject)
+
+    Insert the given file specification as an embedded file using the given filename.
+
+    :arg filename: `String` Name of the file to insert.
+    :arg fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
+
+    .. code-block:: javascript
+
+        pdfDocument.insertEmbeddedFile("test.txt", fileSpecObject);
+        pdfDocument.deleteEmbeddedFile("test.txt");
 
 .. method:: getEmbeddedFileParams(fileSpecObject)
 
@@ -1177,6 +1222,17 @@ Embedded/Associated files in :title:`PDFs`
 
         var fileChecksumValid = pdfDocument.verifyEmbeddedFileChecksum(fileSpecObject);
 
+.. method:: isEmbeddedFile(object)
+
+    Check if the given `Object` is a :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
+
+    :return: `Boolean`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var isFileSpecObject = pdfDocument.isEmbeddedFile(obj);
 
 ----
 

@@ -4799,6 +4799,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_lookupDest
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_subsetFonts
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    bake
+ * Signature: (ZZ)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_bake
+  (JNIEnv *, jobject, jboolean, jboolean);
+
 #ifdef __cplusplus
 }
 #endif

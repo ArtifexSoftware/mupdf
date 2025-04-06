@@ -2027,3 +2027,15 @@ FUN(PDFDocument_subsetFonts)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow_void(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(PDFDocument_bake)(JNIEnv *env, jobject self, jboolean bake_annots, jboolean bake_widgets)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = from_PDFDocument(env, self);
+
+	fz_try(ctx)
+		pdf_bake_document(ctx, doc, bake_annots, bake_widgets);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
