@@ -3433,6 +3433,35 @@ static void ffi_new_Buffer(js_State *J)
 	ffi_pushbuffer(J, buf);
 }
 
+static void ffi_Buffer_readByte(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	unsigned char index = js_tonumber(J, 1);
+	unsigned char *p = NULL;
+	size_t len;
+	fz_try(ctx)
+		len = fz_buffer_storage(ctx, buf, &p);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (index >= 0 && index < len)
+		js_pushnumber(J, p[index]);
+}
+
+static void ffi_Buffer_getLength(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	size_t len;
+	fz_try(ctx)
+		len = fz_buffer_storage(ctx, buf, NULL);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, len);
+}
+
 static void ffi_Buffer_writeByte(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10993,6 +11022,8 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "Buffer.getLength", ffi_Buffer_getLength, 0);
+		jsB_propfun(J, "Buffer.readbyte", ffi_Buffer_readByte, 1);
 		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
 		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
