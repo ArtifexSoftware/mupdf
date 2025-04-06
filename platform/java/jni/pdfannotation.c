@@ -2151,6 +2151,23 @@ FUN(PDFAnnotation_setRichContents)(JNIEnv *env, jobject self, jstring jplaintext
 		jni_rethrow_void(env, ctx);
 }
 
+JNIEXPORT jboolean JNICALL
+FUN(PDFAnnotation_hasRichDefaults)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	jboolean has = JNI_FALSE;
+
+	if (!ctx || !annot) return JNI_FALSE;
+
+	fz_try(ctx)
+		has = pdf_annot_has_rich_defaults(ctx, annot);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return has;
+}
+
 JNIEXPORT jstring JNICALL
 FUN(PDFAnnotation_getRichDefaults)(JNIEnv *env, jobject self)
 {

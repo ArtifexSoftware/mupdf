@@ -483,6 +483,16 @@ int pdf_annot_has_popup(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_author(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Check to see if an annotation has rich content.
+*/
+int pdf_annot_has_rich_contents(fz_context *ctx, pdf_annot *annot);
+
+/*
+	Check to see if an annotation has rich default styles.
+*/
+int pdf_annot_has_rich_defaults(fz_context *ctx, pdf_annot *annot);
+
+/*
 	Retrieve the annotation flags.
 */
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);

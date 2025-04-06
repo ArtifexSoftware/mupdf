@@ -1268,9 +1268,37 @@ pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 	}
 }
 
+static pdf_obj *markup_subtypes[] = {
+	PDF_NAME(Text),
+	PDF_NAME(FreeText),
+	PDF_NAME(Line),
+	PDF_NAME(Square),
+	PDF_NAME(Circle),
+	PDF_NAME(Polygon),
+	PDF_NAME(PolyLine),
+	PDF_NAME(Highlight),
+	PDF_NAME(Underline),
+	PDF_NAME(Squiggly),
+	PDF_NAME(StrikeOut),
+	PDF_NAME(Redact),
+	PDF_NAME(Stamp),
+	PDF_NAME(Caret),
+	PDF_NAME(Ink),
+	PDF_NAME(FileAttachment),
+	PDF_NAME(Sound),
+	NULL,
+};
+
+int
+pdf_annot_has_rich_contents(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(RC), markup_subtypes);
+}
+
 const char *
 pdf_annot_rich_contents(fz_context *ctx, pdf_annot *annot)
 {
+	check_allowed_subtypes(ctx, annot, PDF_NAME(RC), markup_subtypes);
 	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(RC));
 }
 
@@ -1280,6 +1308,7 @@ pdf_set_annot_rich_contents(fz_context *ctx, pdf_annot *annot, const char *plain
 	begin_annot_op(ctx, annot, "Set rich contents");
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(RC), markup_subtypes);
 		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(Contents), plain);
 		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(RC), rich);
 		pdf_dirty_annot(ctx, annot);
@@ -1292,9 +1321,22 @@ pdf_set_annot_rich_contents(fz_context *ctx, pdf_annot *annot, const char *plain
 	}
 }
 
+static pdf_obj *default_style_subtypes[] = {
+	PDF_NAME(FreeText),
+	PDF_NAME(Widget),
+	NULL,
+};
+
+int
+pdf_annot_has_rich_defaults(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(DS), default_style_subtypes);
+}
+
 const char *
 pdf_annot_rich_defaults(fz_context *ctx, pdf_annot *annot)
 {
+	check_allowed_subtypes(ctx, annot, PDF_NAME(DS), default_style_subtypes);
 	return pdf_dict_get_text_string(ctx, annot->obj, PDF_NAME(DS));
 }
 
@@ -1304,6 +1346,7 @@ pdf_set_annot_rich_defaults(fz_context *ctx, pdf_annot *annot, const char *style
 	begin_annot_op(ctx, annot, "Set rich defaults");
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(DS), default_style_subtypes);
 		pdf_dict_put_text_string(ctx, annot->obj, PDF_NAME(DS), style);
 		pdf_dirty_annot(ctx, annot);
 		end_annot_op(ctx, annot);
@@ -3371,27 +3414,6 @@ pdf_add_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, fz_point p[])
 
 	pdf_dirty_annot(ctx, annot);
 }
-
-static pdf_obj *markup_subtypes[] = {
-	PDF_NAME(Text),
-	PDF_NAME(FreeText),
-	PDF_NAME(Line),
-	PDF_NAME(Square),
-	PDF_NAME(Circle),
-	PDF_NAME(Polygon),
-	PDF_NAME(PolyLine),
-	PDF_NAME(Highlight),
-	PDF_NAME(Underline),
-	PDF_NAME(Squiggly),
-	PDF_NAME(StrikeOut),
-	PDF_NAME(Redact),
-	PDF_NAME(Stamp),
-	PDF_NAME(Caret),
-	PDF_NAME(Ink),
-	PDF_NAME(FileAttachment),
-	PDF_NAME(Sound),
-	NULL,
-};
 
 /*
 	Get annotation's modification date in seconds since the epoch.

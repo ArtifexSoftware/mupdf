@@ -2976,6 +2976,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setRichContents
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    hasRichDefaults
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_hasRichDefaults
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getRichDefaults
  * Signature: ()Ljava/lang/String;
  */

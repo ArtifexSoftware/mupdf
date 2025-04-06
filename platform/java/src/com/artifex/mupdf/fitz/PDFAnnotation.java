@@ -142,6 +142,7 @@ public class PDFAnnotation
 	public native void setContents(String contents);
 	public native String getRichContents();
 	public native void setRichContents(String plainText, String richText);
+	public native boolean hasRichDefaults();
 	public native String getRichDefaults();
 	public native void setRichDefaults(String style);
 	public native float[] getColor();
