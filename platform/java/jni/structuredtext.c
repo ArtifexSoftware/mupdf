@@ -269,3 +269,105 @@ FUN(StructuredText_walk)(JNIEnv *env, jobject self, jobject walker)
 
 	java_stext_walk(env, ctx, walker, page->first_block);
 }
+
+JNIEXPORT jstring JNICALL
+FUN(StructuredText_asJSON)(JNIEnv *env, jobject self, jfloat scale)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *page = from_StructuredText(env, self);
+	fz_output *out = NULL;
+	fz_buffer *buf = NULL;
+	char *str = NULL;
+
+	if (!ctx || !page) return NULL;
+
+	fz_var(buf);
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_print_stext_page_as_json(ctx, out, page, scale);
+		fz_close_output(ctx, out);
+		fz_terminate_buffer(ctx, buf);
+		(void)fz_buffer_extract(ctx, buf, (unsigned char**)&str);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		jni_rethrow(env, ctx);
+	}
+
+	return to_String_safe_own(ctx, env, str);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(StructuredText_asHTML)(JNIEnv *env, jobject self, jint id)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *page = from_StructuredText(env, self);
+	fz_output *out = NULL;
+	fz_buffer *buf = NULL;
+	char *str = NULL;
+
+	if (!ctx || !page) return NULL;
+
+	fz_var(buf);
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_print_stext_page_as_html(ctx, out, page, id);
+		fz_close_output(ctx, out);
+		fz_terminate_buffer(ctx, buf);
+		(void)fz_buffer_extract(ctx, buf, (unsigned char**)&str);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		jni_rethrow(env, ctx);
+	}
+
+	return to_String_safe_own(ctx, env, str);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(StructuredText_asText)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *page = from_StructuredText(env, self);
+	fz_output *out = NULL;
+	fz_buffer *buf = NULL;
+	char *str = NULL;
+
+	if (!ctx || !page) return NULL;
+
+	fz_var(buf);
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_print_stext_page_as_text(ctx, out, page);
+		fz_close_output(ctx, out);
+		fz_terminate_buffer(ctx, buf);
+		(void)fz_buffer_extract(ctx, buf, (unsigned char**)&str);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		jni_rethrow(env, ctx);
+	}
+
+	return to_String_safe_own(ctx, env, str);
+}

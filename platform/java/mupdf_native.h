@@ -6947,6 +6947,30 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_copy
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StructuredText_walk
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_StructuredText
+ * Method:    asJSON
+ * Signature: (F)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_asJSON
+  (JNIEnv *, jobject, jfloat);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_StructuredText
+ * Method:    asHTML
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_asHTML
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_StructuredText
+ * Method:    asText
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_asText
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

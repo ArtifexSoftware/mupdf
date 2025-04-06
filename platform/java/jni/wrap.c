@@ -813,6 +813,18 @@ static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap
 	return jobj;
 }
 
+static inline jobject to_String_safe_own(fz_context *ctx, JNIEnv *env, char *val)
+{
+	jstring jval;
+	if (!ctx) return NULL;
+
+	jval = (*env)->NewStringUTF(env, val);
+
+	fz_free(ctx, val);
+
+	return jval;
+}
+
 static inline jobject to_StructuredText_safe_own(fz_context *ctx, JNIEnv *env, fz_stext_page *text)
 {
 	jobject jtext;

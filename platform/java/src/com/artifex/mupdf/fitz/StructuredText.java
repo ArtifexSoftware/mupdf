@@ -56,6 +56,18 @@ public class StructuredText
 
 	public native void walk(StructuredTextWalker walker);
 
+	public native String asJSON(float scale);
+	public native String asHTML(int id);
+	public native String asText();
+
+	public String asJSON() {
+		return asJSON(1.0f);
+	}
+
+	public String asHTML() {
+		return asHTML(0);
+	}
+
 	public TextBlock[] getBlocks() {
 		BlockWalker walker = new BlockWalker();
 		walk(walker);
