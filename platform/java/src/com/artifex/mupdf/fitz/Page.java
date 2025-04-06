@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -96,4 +96,8 @@ public class Page
 	public native void deleteLink(Link link);
 
 	public native String getLabel();
+
+	public boolean isPDF() {
+		return false;
+	}
 }
