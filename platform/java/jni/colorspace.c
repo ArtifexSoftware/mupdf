@@ -184,3 +184,41 @@ FUN(ColorSpace_toString)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 	return (*env)->NewStringUTF(env, name);
 }
+
+JNIEXPORT jlong JNICALL
+FUN(ColorSpace_newNativeColorSpace)(JNIEnv *env, jobject self, jstring jname, jobject jbuffer)
+{
+	fz_context *ctx = get_context(env);
+	fz_buffer *buf = from_Buffer_safe(env, jbuffer);
+	fz_colorspace *cs = NULL;
+	const char *name = NULL;
+
+	if (!ctx) return 0;
+	name = (*env)->GetStringUTFChars(env, jname, NULL);
+
+	fz_try(ctx)
+		cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, name, buf);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jname, name);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlong_cast(cs);
+}
+
+JNIEXPORT jint JNICALL
+FUN(ColorSpace_getType)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_colorspace *cs = from_ColorSpace(env, self);
+	int cstype = FZ_COLORSPACE_NONE;
+
+	if (!ctx) return 0;
+
+	fz_try(ctx)
+		cstype = fz_colorspace_type(ctx, cs);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return cstype;
+}

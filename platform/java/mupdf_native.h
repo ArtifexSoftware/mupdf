@@ -217,6 +217,22 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Buffer_asString
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_artifex_mupdf_fitz_ColorSpace_NONE
+#define com_artifex_mupdf_fitz_ColorSpace_NONE 0L
+#undef com_artifex_mupdf_fitz_ColorSpace_GRAY
+#define com_artifex_mupdf_fitz_ColorSpace_GRAY 1L
+#undef com_artifex_mupdf_fitz_ColorSpace_RGB
+#define com_artifex_mupdf_fitz_ColorSpace_RGB 2L
+#undef com_artifex_mupdf_fitz_ColorSpace_BGR
+#define com_artifex_mupdf_fitz_ColorSpace_BGR 3L
+#undef com_artifex_mupdf_fitz_ColorSpace_CMYK
+#define com_artifex_mupdf_fitz_ColorSpace_CMYK 4L
+#undef com_artifex_mupdf_fitz_ColorSpace_LAB
+#define com_artifex_mupdf_fitz_ColorSpace_LAB 5L
+#undef com_artifex_mupdf_fitz_ColorSpace_INDEXED
+#define com_artifex_mupdf_fitz_ColorSpace_INDEXED 6L
+#undef com_artifex_mupdf_fitz_ColorSpace_SEPARATION
+#define com_artifex_mupdf_fitz_ColorSpace_SEPARATION 7L
 /*
  * Class:     com_artifex_mupdf_fitz_ColorSpace
  * Method:    finalize
@@ -224,6 +240,14 @@ extern "C" {
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_finalize
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    newNativeColorSpace
+ * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/Buffer;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_newNativeColorSpace
+  (JNIEnv *, jobject, jstring, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_ColorSpace
@@ -327,6 +351,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isDeviceN
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_isSubtractive
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_ColorSpace
+ * Method:    getType
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_ColorSpace_getType
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

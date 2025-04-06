@@ -40,6 +40,12 @@ public class ColorSpace
 		pointer = p;
 	}
 
+	private native long newNativeColorSpace(String name, Buffer buffer);
+
+	public ColorSpace(String name, Buffer buffer) {
+		pointer = newNativeColorSpace(name, buffer);
+	}
+
 	private static native long nativeDeviceGray();
 	private static native long nativeDeviceRGB();
 	private static native long nativeDeviceBGR();
@@ -67,4 +73,15 @@ public class ColorSpace
 	public native boolean isLab();
 	public native boolean isDeviceN();
 	public native boolean isSubtractive();
+
+	public native int getType();
+
+	public static final int NONE = 0;
+	public static final int GRAY = 1;
+	public static final int RGB = 2;
+	public static final int BGR = 3;
+	public static final int CMYK = 4;
+	public static final int LAB = 5;
+	public static final int INDEXED = 6;
+	public static final int SEPARATION = 7;
 }

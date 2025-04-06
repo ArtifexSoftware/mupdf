@@ -791,6 +791,15 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED == FZ_STEXT_VECTOR_IS_STROKED;
 	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE == FZ_STEXT_VECTOR_IS_RECTANGLE;
 
+	valid &= com_artifex_mupdf_fitz_ColorSpace_NONE == FZ_COLORSPACE_NONE;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_GRAY == FZ_COLORSPACE_GRAY;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_RGB == FZ_COLORSPACE_RGB;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_BGR == FZ_COLORSPACE_BGR;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_CMYK == FZ_COLORSPACE_CMYK;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_LAB == FZ_COLORSPACE_LAB;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_INDEXED == FZ_COLORSPACE_INDEXED;
+	valid &= com_artifex_mupdf_fitz_ColorSpace_SEPARATION == FZ_COLORSPACE_SEPARATION;
+
 	return valid ? 1 : 0;
 }
 
