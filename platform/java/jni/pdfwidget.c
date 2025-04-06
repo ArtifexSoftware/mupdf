@@ -407,6 +407,44 @@ FUN(PDFWidget_getDistinguishedName)(JNIEnv *env, jobject self, jobject jverifier
 	return jname;
 }
 
+JNIEXPORT jstring JNICALL
+FUN(PDFWidget_getSignatory)(JNIEnv *env, jobject self, jobject jverifier)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *widget = from_PDFWidget_safe(env, self);
+	java_pkcs7_verifier *verifier = from_PKCS7Verifier_safe(env, jverifier);
+	pdf_document *pdf = pdf_annot_page(ctx, widget)->doc;
+	pdf_pkcs7_distinguished_name *name;
+	char *s = NULL;
+	char buf[800];
+
+	if (!ctx || !widget || !pdf) return NULL;
+	if (!verifier) jni_throw_arg(env, "verifier must not be null");
+
+	fz_var(s);
+
+	fz_try(ctx)
+	{
+		name = pdf_signature_get_widget_signatory(ctx, &verifier->base, widget);
+		if (name)
+		{
+			s = pdf_signature_format_distinguished_name(ctx, name);
+			fz_strlcpy(buf, s, sizeof buf);
+			fz_free(ctx, s);
+		}
+		else
+		{
+			fz_strlcpy(buf, "Signature information missing.", sizeof buf);
+		}
+	}
+	fz_always(ctx)
+		pdf_signature_drop_distinguished_name(ctx, name);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_String_safe(ctx, env, &buf[0]);
+}
+
 JNIEXPORT jboolean JNICALL
 FUN(PDFWidget_signNative)(JNIEnv *env, jobject self, jobject jsigner, jint flags, jobject jimage, jstring jreason, jstring jlocation)
 {

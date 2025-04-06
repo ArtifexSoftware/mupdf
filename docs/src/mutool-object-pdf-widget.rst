@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -253,6 +253,19 @@ To get the widgets on a page see: :ref:`PDFPage getWidgets()<mutool_run_js_api_p
 
         widget.update();
 
+.. method:: getName()
+
+    Retrieve the name for a field as a `String`.
+
+    :return: `String` name of field.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var fieldName = widget.getName();
+
+
 
 Signature Methods
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -308,6 +321,23 @@ Signature Methods
 
     .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
 
+
+.. method:: checkDigest()
+
+    |mutool_tag_wasm_soon|
+
+    Returns "OK" if digest checked out OK, otherwise a text string containing an error message.
+
+    :return: `String`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var result = widget.checkDigest();
+
+
+    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: getSignatory()
 
@@ -473,7 +503,7 @@ Widget Events
 
     |mutool_tag_wasm_soon|
 
-    Trigger the event when the a widget gains input focus.
+    Trigger the event when a widget gains input focus.
 
     |example_tag|
 
@@ -488,7 +518,7 @@ Widget Events
 
     |mutool_tag_wasm_soon|
 
-    Trigger the event when the a widget loses input focus.
+    Trigger the event when a widget loses input focus.
 
     |example_tag|
 

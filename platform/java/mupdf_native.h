@@ -5885,6 +5885,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getDistinguished
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFWidget
+ * Method:    getSignatory
+ * Signature: (Lcom/artifex/mupdf/fitz/PKCS7Verifier;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFWidget_getSignatory
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFWidget
  * Method:    incrementalChangesSinceSigning
  * Signature: ()Z
  */
