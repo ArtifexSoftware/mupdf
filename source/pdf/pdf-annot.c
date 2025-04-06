@@ -3987,6 +3987,18 @@ pdf_annot_default_appearance_unmapped(fz_context *ctx, pdf_annot *annot, char *f
 		fz_rethrow(ctx);
 }
 
+static pdf_obj *default_appearance_subtypes[] = {
+	PDF_NAME(FreeText),
+	PDF_NAME(Widget),
+	NULL,
+};
+
+int
+pdf_annot_has_default_appearance(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype_wrap(ctx, annot, PDF_NAME(DA), default_appearance_subtypes);
+}
+
 void
 pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **font, float *size, int *n, float color[4])
 {
@@ -3995,6 +4007,7 @@ pdf_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char **fon
 
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(DA), default_appearance_subtypes);
 		da = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(DA));
 		if (!da)
 		{
@@ -4018,6 +4031,7 @@ pdf_set_annot_default_appearance(fz_context *ctx, pdf_annot *annot, const char *
 
 	fz_try(ctx)
 	{
+		check_allowed_subtypes(ctx, annot, PDF_NAME(DA), default_appearance_subtypes);
 		pdf_print_default_appearance(ctx, buf, sizeof buf, font, size, n, color);
 
 		pdf_dict_put_string(ctx, annot->obj, PDF_NAME(DA), buf, strlen(buf));
