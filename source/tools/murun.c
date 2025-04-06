@@ -8697,6 +8697,18 @@ static void ffi_PDFAnnotation_setContents(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_hasRichContents(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_rich_contents(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
 static void ffi_PDFAnnotation_getRichContents(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -9841,6 +9853,18 @@ static void ffi_PDFAnnotation_setLineCaptionOffset(js_State *J)
 		pdf_set_annot_line_caption_offset(ctx, annot, offset);
 	fz_catch(ctx)
 		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_hasDefaultAppearance(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_default_appearance(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
 }
 
 static void ffi_PDFAnnotation_getDefaultAppearance(js_State *J)
@@ -11579,6 +11603,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.getIntent", ffi_PDFAnnotation_getIntent, 0);
 		jsB_propfun(J, "PDFAnnotation.setIntent", ffi_PDFAnnotation_setIntent, 1);
 
+		jsB_propfun(J, "PDFAnnotation.hasDefaultAppearance", ffi_PDFAnnotation_hasDefaultAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.getDefaultAppearance", ffi_PDFAnnotation_getDefaultAppearance, 0);
 		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 		jsB_propfun(J, "PDFAnnotation.setAppearance", ffi_PDFAnnotation_setAppearance, 6);
@@ -11636,6 +11661,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.getPopup", ffi_PDFAnnotation_getPopup, 0);
 		jsB_propfun(J, "PDFAnnotation.setPopup", ffi_PDFAnnotation_setPopup, 1);
 
+		jsB_propfun(J, "PDFAnnotation.hasRichContents", ffi_PDFAnnotation_hasRichContents, 0);
 		jsB_propfun(J, "PDFAnnotation.getRichContents", ffi_PDFAnnotation_getRichContents, 0);
 		jsB_propfun(J, "PDFAnnotation.setRichContents", ffi_PDFAnnotation_setRichContents, 2);
 		jsB_propfun(J, "PDFAnnotation.getRichDefaults", ffi_PDFAnnotation_getRichDefaults, 0);

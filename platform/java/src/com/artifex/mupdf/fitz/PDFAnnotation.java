@@ -140,6 +140,7 @@ public class PDFAnnotation
 	public native void setFlags(int flags);
 	public native String getContents();
 	public native void setContents(String contents);
+	public native boolean hasRichContents();
 	public native String getRichContents();
 	public native void setRichContents(String plainText, String richText);
 	public native boolean hasRichDefaults();
@@ -364,6 +365,7 @@ public class PDFAnnotation
 	public native int getQuadding();
 	public native void setQuadding(int quadding);
 
+	public native boolean hasDefaultAppearance();
 	public native DefaultAppearance getDefaultAppearance();
 	public native void setDefaultAppearance(String font, float size, float[] color);
 
