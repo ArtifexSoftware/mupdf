@@ -1792,10 +1792,10 @@ extern "C" {
 /*
  * Class:     com_artifex_mupdf_fitz_DrawDevice
  * Method:    newNative
- * Signature: (Lcom/artifex/mupdf/fitz/Pixmap;)J
+ * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/Pixmap;)J
  */
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DrawDevice_newNative
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jobject, jobject);
 
 #ifdef __cplusplus
 }
