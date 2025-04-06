@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -46,6 +46,33 @@
     .. code-block:: javascript
 
         var uri = link.getURI();
+
+
+.. method:: setBounds(rect)
+
+    Set a :ref:`rectangle<mutool_run_js_api_rectangle>` describing the link's location on the page.
+
+    :arg rect: `[ulx,uly,lrx,lry]`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        link.setBounds([0, 0, 100, 100]);
+
+
+.. method:: setURI(uri)
+
+    Set the URI describing the link's destination from the given uri string.
+
+    :arg url: `String` The new URI for the link.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        link.setURI("https://artifex.com");
+
 
 
 
