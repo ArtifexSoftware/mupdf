@@ -63,7 +63,7 @@ typedef struct
 	float miterlimit;
 	float dash_phase;
 	int dash_len;
-	float dash_list[32];
+	float dash_list[FZ_FLEXIBLE_ARRAY];
 } fz_stroke_state;
 
 typedef struct

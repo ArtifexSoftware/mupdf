@@ -2397,7 +2397,6 @@ static void pdf_run_d(fz_context *ctx, pdf_processor *proc, pdf_obj *array, floa
 	pr->dev->flags &= ~FZ_DEVFLAG_DASH_PATTERN_UNDEFINED;
 	len = pdf_array_len(ctx, array);
 	gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(ctx, gstate->stroke_state, len);
-	gstate->stroke_state->dash_len = len;
 	for (i = 0; i < len; i++)
 		gstate->stroke_state->dash_list[i] = pdf_array_get_real(ctx, array, i);
 	gstate->stroke_state->dash_phase = phase;
