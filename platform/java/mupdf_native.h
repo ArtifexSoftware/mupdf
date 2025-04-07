@@ -6624,10 +6624,10 @@ JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_computeMD5
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
- * Method:    skewDetect
+ * Method:    detectSkew
  * Signature: ()F
  */
-JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Pixmap_skewDetect
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Pixmap_detectSkew
   (JNIEnv *, jobject);
 
 /*

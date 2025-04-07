@@ -143,7 +143,7 @@ public class Pixmap
 		return new Pixmap(newNativeDeskew(angle, border));
 	}
 
-	public native float skewDetect();
+	public native float detectSkew();
 	public native Pixmap warp(Point[] points, int width, int height);
 	public native Pixmap autowarp(Point[] points);
 

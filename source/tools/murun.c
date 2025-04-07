@@ -4592,14 +4592,14 @@ static void ffi_Pixmap_warp(js_State *J)
 	ffi_pushpixmap(J, dest);
 }
 
-static void ffi_Pixmap_skewDetect(js_State *J)
+static void ffi_Pixmap_detectSkew(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	double angle;
 
 	fz_try(ctx)
-		angle = fz_skew_detect(ctx, pixmap);
+		angle = fz_detect_skew(ctx, pixmap);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -11688,7 +11688,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.gamma", ffi_Pixmap_gamma, 1);
 		jsB_propfun(J, "Pixmap.tint", ffi_Pixmap_tint, 2);
 		jsB_propfun(J, "Pixmap.warp", ffi_Pixmap_warp, 3);
-		jsB_propfun(J, "Pixmap.skewDetect", ffi_Pixmap_skewDetect, 0);
+		jsB_propfun(J, "Pixmap.detectSkew", ffi_Pixmap_detectSkew, 0);
 		jsB_propfun(J, "Pixmap.deskew", ffi_Pixmap_deskew, 2);
 		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 		jsB_propfun(J, "Pixmap.autowarp", ffi_Pixmap_autowarp, 1);

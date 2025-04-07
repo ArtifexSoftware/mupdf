@@ -834,7 +834,7 @@ do_skew_correct(fz_context *ctx, pdfocr_band_writer *writer)
 	fz_pixmap *deskewed;
 
 	if (writer->options.skew_correct == 1)
-		writer->options.skew_angle = fz_skew_detect(ctx, writer->skew_bitmap);
+		writer->options.skew_angle = fz_detect_skew(ctx, writer->skew_bitmap);
 
 	deskewed = fz_deskew_pixmap(ctx, writer->skew_bitmap, writer->options.skew_angle, writer->options.skew_border);
 

@@ -535,7 +535,7 @@ so that they can easily be used to represent tiles of a page.
 
         var documentLocation = pixmap.detectDocument([0,0,100,0,100,100,0,100]);
 
-.. method:: skewDetect()
+.. method:: detectSkew()
 
     |wasm_tag|
 
@@ -549,7 +549,7 @@ so that they can easily be used to represent tiles of a page.
 
     .. code-block:: javascript
 
-        var angle = pixmap.skewDetect();
+        var angle = pixmap.detectSkew();
 
 
 .. method:: deskew(angle, border)

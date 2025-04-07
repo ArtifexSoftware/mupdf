@@ -639,7 +639,7 @@ FUN(Pixmap_newNativeDeskew)(JNIEnv *env, jobject self, jfloat ang, jint border)
 }
 
 JNIEXPORT jfloat JNICALL
-FUN(Pixmap_skewDetect)(JNIEnv *env, jobject self)
+FUN(Pixmap_detectSkew)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
@@ -648,7 +648,7 @@ FUN(Pixmap_skewDetect)(JNIEnv *env, jobject self)
 	if (!ctx || !pixmap) return 0;
 
 	fz_try(ctx)
-		ang = fz_skew_detect(ctx, pixmap);
+		ang = fz_detect_skew(ctx, pixmap);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
