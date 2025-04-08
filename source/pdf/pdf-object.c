@@ -3680,7 +3680,8 @@ pdf_sprint_encrypted_obj(fz_context *ctx, char *buf, size_t cap, size_t *len, pd
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, fmt.ptr);
+		if (!buf || cap == 0)
+			fz_free(ctx, fmt.ptr);
 		fz_rethrow(ctx);
 	}
 
