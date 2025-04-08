@@ -133,7 +133,8 @@ pdf_enable_layer(fz_context *ctx, pdf_document *doc, int layer, int enabled)
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
 	if (desc && layer >= 0 && layer < desc->len)
 		desc->ocgs[layer].state = enabled;
-	fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid layer index");
+	else
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid layer index");
 }
 
 static int
