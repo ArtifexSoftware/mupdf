@@ -4938,10 +4938,10 @@ def refcount_check_code( out, refcheck_if):
 
                 static RefsCheck<fz_document, FzDocument> s_FzDocument_refs_check;
 
-            Then if s_check_refs is true, each constructor function calls
-            .add(), the destructor calls .remove() and other class functions
-            call .check(). This ensures that we check reference counting after
-            each class operation.
+            Then if s_check_refs is true, constructor functions call .add(),
+            the destructor calls .remove() and other class functions call
+            .check(). This ensures that we check reference counting after each
+            class operation.
 
             If <allow_int_this> is true, we allow _this->m_internal to be
             an invalid pointer less than 4096, in which case we don't try
@@ -4969,6 +4969,10 @@ def refcount_check_code( out, refcheck_if):
                     assert(m_size == 32 || m_size == 16 || m_size == 8 || m_size == -1);
                 }}
 
+                /* Called before keep/drop.
+
+                Check that refs+delta and
+                m_this_to_num[this_->m_internal]+delta are consistent. */
                 void change( const ClassWrapper* this_, const char* file, int line, const char* fn, int delta)
                 {{
                     assert( s_check_refs);
@@ -5008,6 +5012,7 @@ def refcount_check_code( out, refcheck_if):
                     if (m_size == 32)   refs = *(int32_t*) refs_ptr;
                     if (m_size == 16)   refs = *(int16_t*) refs_ptr;
                     if (m_size ==  8)   refs = *(int8_t* ) refs_ptr;
+                    refs += delta;
 
                     int& n = m_this_to_num[ this_->m_internal];
                     int n_prev = n;
