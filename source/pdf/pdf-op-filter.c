@@ -1440,7 +1440,7 @@ cull_replay_rectto(fz_context *ctx, void *arg, float x1, float y1, float x2, flo
 typedef struct
 {
 	pdf_sanitize_processor *p;
-	fz_stroke_state sstate;
+	fz_stroke_state *sstate;
 	fz_path *segment;
 	fz_matrix ctm;
 	int any_sent;
@@ -1468,7 +1468,7 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	if (sd->segment == NULL)
 		return;
 
-	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? &sd->sstate : NULL;
+	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? sd->sstate : NULL;
 	r = fz_bound_path(ctx, sd->segment, st, sd->ctm);
 
 	if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
@@ -1602,16 +1602,14 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 
 	if (type == FZ_CULL_PATH_STROKE || type == FZ_CULL_PATH_FILL_STROKE)
 	{
-		sd.sstate.refs = -1;
-		sd.sstate.start_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate.dash_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate.end_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate.linejoin = p->gstate->pending.stroke.linejoin;
-		sd.sstate.linewidth = p->gstate->pending.stroke.linewidth;
-		sd.sstate.miterlimit = p->gstate->pending.stroke.miterlimit;
+		sd.sstate = fz_new_stroke_state(ctx);
+		sd.sstate->start_cap = p->gstate->pending.stroke.linecap;
+		sd.sstate->dash_cap = p->gstate->pending.stroke.linecap;
+		sd.sstate->end_cap = p->gstate->pending.stroke.linecap;
+		sd.sstate->linejoin = p->gstate->pending.stroke.linejoin;
+		sd.sstate->linewidth = p->gstate->pending.stroke.linewidth;
+		sd.sstate->miterlimit = p->gstate->pending.stroke.miterlimit;
 		/* Ignore dash for now. */
-		sd.sstate.dash_phase = 0;
-		sd.sstate.dash_len = 0;
 	}
 
 	sd.p = p;
@@ -1626,7 +1624,10 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		end_segment(ctx, &sd);
 	}
 	fz_always(ctx)
+	{
 		fz_drop_path(ctx, sd.segment);
+		fz_drop_stroke_state(ctx, sd.sstate);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
