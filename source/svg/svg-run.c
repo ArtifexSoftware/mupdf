@@ -36,7 +36,7 @@
 typedef struct svg_state
 {
 	fz_matrix transform;
-	fz_stroke_state stroke;
+	fz_stroke_state *stroke;
 	int use_depth;
 
 	float viewport_w, viewport_h;
@@ -74,7 +74,7 @@ static void svg_stroke(fz_context *ctx, fz_device *dev, svg_document *doc, fz_pa
 {
 	float opacity = state->opacity * state->stroke_opacity;
 	if (path)
-		fz_stroke_path(ctx, dev, path, &state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, fz_default_color_params);
+		fz_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, fz_default_color_params);
 }
 
 static void svg_draw_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
@@ -954,7 +954,7 @@ static const char *linejoin_table[] = { "miter", "round", "bevel" };
 static void
 svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
-	fz_stroke_state *stroke = &state->stroke;
+	fz_stroke_state *stroke = state->stroke;
 
 	char *transform_att = fz_xml_att(node, "transform");
 
@@ -1059,7 +1059,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	}
 	else
 	{
-		stroke->linewidth = svg_parse_number_from_style(ctx, doc, style_att, "stroke-width", state->stroke.linewidth);
+		stroke->linewidth = svg_parse_number_from_style(ctx, doc, style_att, "stroke-width", state->stroke->linewidth);
 	}
 
 	if (stroke_linecap_att)
@@ -1104,7 +1104,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	}
 	else
 	{
-		stroke->miterlimit = svg_parse_number_from_style(ctx, doc, style_att, "stroke-miterlimit", state->stroke.miterlimit);
+		stroke->miterlimit = svg_parse_number_from_style(ctx, doc, style_att, "stroke-miterlimit", state->stroke->miterlimit);
 	}
 }
 
@@ -1463,7 +1463,7 @@ svg_run_text_string(fz_context *ctx, fz_device *dev, fz_matrix trm, const char *
 				fz_default_color_params);
 		if (state->stroke_is_set)
 			fz_stroke_text(ctx, dev, text,
-				&state->stroke,
+				state->stroke,
 				state->transform,
 				fz_device_rgb(ctx), state->stroke_color,
 				state->opacity,
@@ -1656,7 +1656,7 @@ svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *de
 
 	/* Initial graphics state */
 	state.transform = ctm;
-	state.stroke = fz_default_stroke_state;
+	state.stroke = fz_new_stroke_state(ctx);
 	state.use_depth = 0;
 
 	state.viewport_w = DEF_WIDTH;
@@ -1689,5 +1689,16 @@ svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *de
 	state.is_italic = 0;
 	state.text_anchor = 0;
 
-	svg_run_svg(ctx, dev, doc, root, &state);
+	fz_try(ctx)
+	{
+		svg_run_svg(ctx, dev, doc, root, &state);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stroke_state(ctx, state.stroke);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }

@@ -659,11 +659,11 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 
 #ifdef DEBUG_LAYOUT_RESTARTING
 		/* Output us some crufty debug */
-		if(restart->start_flow == NULL)
+		if (restart->start_flow == NULL)
 			printf("<restart>");
 		for (node = box->u.flow.head; node; node = node->next)
 		{
-			if(restart->start_flow == node)
+			if (restart->start_flow == node)
 				printf("<restart>");
 			switch (node->type)
 			{
@@ -1846,10 +1846,12 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 	int stroking, prev_stroking = 0;
 	int restartable_ended = 0;
 	fz_stroke_state *ss = NULL;
+	fz_stroke_state *line_ss = NULL;
 
 	fz_var(text);
 	fz_var(line);
 	fz_var(ss);
+	fz_var(line_ss);
 
 	/* FIXME: HB_DIRECTION_TTB? */
 
@@ -1911,8 +1913,13 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 				stroking = style->text_stroke_color.a != 0;
 				if (stroking)
 				{
-					if(ss == NULL)
+					if (ss == NULL)
 						ss = fz_new_stroke_state(ctx);
+				}
+				if (line)
+				{
+					if (line_ss == NULL)
+						line_ss = fz_new_stroke_state(ctx);
 				}
 
 				if (	/* If we've changed whether we're filling... */
@@ -1952,7 +1959,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					if (line)
 					{
 						unpacked_color color = unpack_color(prev_color);
-						fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+						fz_stroke_path(ctx, dev, line, line_ss, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
 						fz_drop_path(ctx, line);
 						line = NULL;
 					}
@@ -2098,7 +2105,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 		if (line)
 		{
 			unpacked_color color = unpack_color(prev_color);
-			fz_stroke_path(ctx, dev, line, &fz_default_stroke_state, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
+			fz_stroke_path(ctx, dev, line, line_ss, ctm, fz_device_rgb(ctx), color.rgb, color.a, fz_default_color_params);
 			fz_drop_path(ctx, line);
 			line = NULL;
 		}
@@ -2108,6 +2115,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 		fz_drop_text(ctx, text);
 		fz_drop_path(ctx, line);
 		fz_drop_stroke_state(ctx, ss);
+		fz_drop_stroke_state(ctx, line_ss);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
