@@ -139,7 +139,7 @@ int mubar_create(int argc, char **argv)
 		}
 		else if (!fz_strcasecmp(format, ".pdf"))
 		{
-			fz_pclm_options opts = {};
+			fz_pclm_options opts = { 0 };
 			opts.compress = 1;
 			opts.strip_height = pixmap->h;
 			fz_save_pixmap_as_pclm(ctx, pixmap, output, 0, &opts);
