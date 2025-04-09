@@ -362,6 +362,7 @@ GLUT_BUILD_CFLAGS += -Ithirdparty/freeglut/src
 GLUT_BUILD_CFLAGS += -DHAVE_UNISTD_H
 GLUT_BUILD_CFLAGS += -DHAVE_STDINT_H
 GLUT_BUILD_CFLAGS += -DHAVE_X11_EXTENSIONS_XRANDR_H
+GLUT_BUILD_CFLAGS += $(SYS_GL_CFLAGS)
 
 GLUT_SRC += thirdparty/freeglut/src/fg_callbacks.c
 GLUT_SRC += thirdparty/freeglut/src/fg_cursor.c
@@ -406,9 +407,7 @@ GLUT_SRC += thirdparty/freeglut/src/x11/fg_window_x11.c
 GLUT_SRC += thirdparty/freeglut/src/x11/fg_window_x11_glx.c
 GLUT_SRC += thirdparty/freeglut/src/x11/fg_xinput_x11.c
 
-GLUT_LIBS += -lGL
-GLUT_LIBS += -lX11
-GLUT_LIBS += -lXrandr
+GLUT_LIBS += $(SYS_GL_LIBS)
 
 # --- LEPTONICA (optional, used by Tesseract) ---
 
