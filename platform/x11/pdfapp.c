@@ -788,9 +788,9 @@ int pdfapp_preclose(pdfapp_t *app)
 	return 1;
 }
 
-static void pdfapp_viewctm(fz_matrix *mat, pdfapp_t *app)
+static fz_matrix pdfapp_viewctm(pdfapp_t *app)
 {
-	*mat = fz_transform_page(app->page_bbox, app->resolution, app->rotate);
+	return fz_transform_page(app->page_bbox, app->resolution, app->rotate);
 }
 
 static void pdfapp_panview(pdfapp_t *app, int newx, int newy)
@@ -1078,7 +1078,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		}
 		wintitle(app, buf);
 
-		pdfapp_viewctm(&ctm, app);
+		ctm = pdfapp_viewctm(app);
 		bounds = fz_transform_rect(app->page_bbox, ctm);
 		ibounds = fz_round_rect(bounds);
 		bounds = fz_rect_from_irect(ibounds);
@@ -1250,7 +1250,7 @@ void pdfapp_inverthit(pdfapp_t *app)
 	fz_matrix ctm;
 	int i;
 
-	pdfapp_viewctm(&ctm, app);
+	ctm = pdfapp_viewctm(app);
 
 	for (i = 0; i < app->hit_count; i++)
 	{
@@ -1902,7 +1902,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	p.x = x - app->panx + irect.x0;
 	p.y = y - app->pany + irect.y0;
 
-	pdfapp_viewctm(&ctm, app);
+	ctm = pdfapp_viewctm(app);
 	ctm = fz_invert_matrix(ctm);
 
 	p = fz_transform_point(p, ctm);
@@ -2075,7 +2075,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	fz_stext_char *ch;
 	fz_rect sel;
 
-	pdfapp_viewctm(&ctm, app);
+	ctm = pdfapp_viewctm(app);
 	ctm = fz_invert_matrix(ctm);
 	sel = fz_transform_rect(app->selr, ctm);
 
