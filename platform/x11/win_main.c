@@ -751,6 +751,11 @@ void wincursor(pdfapp_t *app, int curs)
 		SetCursor(caretcurs);
 }
 
+void int winisresolutionacceptable(pdfapp_t *app, fz_matrix ctm)
+{
+	return 1;
+}
+
 void wintitle(pdfapp_t *app, char *title)
 {
 	wchar_t wide[256], *dp;

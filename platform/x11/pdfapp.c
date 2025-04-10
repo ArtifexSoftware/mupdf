@@ -1062,6 +1062,11 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		char buf2[64];
 		size_t len;
 
+		while (!winisresolutionacceptable(app, pdfapp_viewctm(app)))
+		{
+			app->resolution = zoom_out(app->resolution);
+		}
+
 		sprintf(buf2, " - %d/%d (%g dpi)",
 				app->pageno, app->pagecount, app->resolution);
 		len = MAX_TITLE-strlen(buf2);
