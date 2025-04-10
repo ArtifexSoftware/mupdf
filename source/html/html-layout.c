@@ -1969,7 +1969,11 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 				if (style->text_decoration > 0)
 				{
 					if (!line)
+					{
 						line = fz_new_path(ctx);
+						if (line_ss == NULL)
+							line_ss = fz_new_stroke_state(ctx);
+					}
 					if (style->text_decoration & TD_UNDERLINE)
 					{
 						fz_moveto(ctx, line, node->x, node->y + 1.5f - page_top);
