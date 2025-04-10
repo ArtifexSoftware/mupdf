@@ -458,6 +458,12 @@ There are also several tools specifically for working with :title:`PDF` files:
 
    .. toctree::
 
+     mutool-bake.rst
+
+   This command changes the colorspace of a :title:`PDF` file.
+
+   .. toctree::
+
      mutool-run.rst
 
    A tool for running :title:`JavaScript` programs with access to the :title:`MuPDF` library functions.
