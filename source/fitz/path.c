@@ -1562,7 +1562,10 @@ fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, 
 		return shared;
 
 	unshared = fz_new_stroke_state_with_dash_len(ctx, len);
-	memcpy(unshared, shared, offsetof(fz_stroke_state, dash_list));
+	if (shared->dash_len >= len)
+		memcpy(unshared, shared, offsetof(fz_stroke_state, dash_list) + sizeof(float) * len);
+	else
+		memcpy(unshared, shared, offsetof(fz_stroke_state, dash_list));
 	unshared->refs = 1;
 	unshared->dash_len = len;
 
