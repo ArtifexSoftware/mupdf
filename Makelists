@@ -791,7 +791,7 @@ endif
 
 ifeq ($(HAVE_NEON),yes)
 TESSERACT_DEFINES += -DHAVE_NEON
-TESSERACT_BUILD_CFLAGS += -mneon
+TESSERACT_BUILD_CFLAGS += -mfpu=neon
 endif
 # Always include the neon code - it will compile to nothing if
 # neon isn't enabled. We need to always include it, because it
