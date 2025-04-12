@@ -1453,6 +1453,31 @@ fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 	return fz_keep_imp(ctx, stroke, &stroke->refs);
 }
 
+int
+fz_stroke_state_eq(fz_context *ctx, const fz_stroke_state *a, const fz_stroke_state *b)
+{
+	int i;
+
+	if (a == NULL && b == NULL) return 1;
+
+	if (a == NULL && b != NULL) return 0;
+	if (a != NULL && b == NULL) return 0;
+
+	if (a->start_cap != b->start_cap) return 0;
+	if (a->dash_cap != b->dash_cap) return 0;
+	if (a->end_cap != b->end_cap) return 0;
+	if (a->linejoin != b->linejoin) return 0;
+	if (a->linewidth != b->linewidth) return 0;
+	if (a->miterlimit != b->miterlimit) return 0;
+	if (a->dash_phase != b->dash_phase) return 0;
+	if (a->dash_len != b->dash_len) return 0;
+
+	for (i = 0; i < a->dash_len; i++)
+		if (a->dash_list[i] != b->dash_list[i]) return 0;
+
+	return 1;
+}
+
 void
 fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 {

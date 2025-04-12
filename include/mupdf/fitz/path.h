@@ -394,6 +394,7 @@ fz_stroke_state *fz_new_stroke_state_with_dash_len(fz_context *ctx, int len);
 	this can cause race conditions.
 */
 fz_stroke_state *fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
+int fz_stroke_state_eq(fz_context *ctx, const fz_stroke_state *a, const fz_stroke_state *b);
 
 /**
 	Drop a reference to a stroke state structure, destroying the
