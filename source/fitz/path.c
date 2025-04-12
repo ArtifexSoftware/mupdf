@@ -1539,7 +1539,7 @@ fz_string_from_linejoin(fz_linejoin join)
 }
 
 fz_stroke_state *
-fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
+fz_clone_stroke_state(fz_context *ctx, const fz_stroke_state *stroke)
 {
 	fz_stroke_state *clone = fz_new_stroke_state_with_dash_len(ctx, stroke->dash_len);
 	size_t size = offsetof(fz_stroke_state, dash_list) + sizeof(float) * stroke->dash_len;

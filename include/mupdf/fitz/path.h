@@ -442,7 +442,7 @@ fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_strok
 	Exceptions may be thrown in the event of a failure to
 	allocate.
 */
-fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
+fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
 
 fz_linecap fz_linecap_from_string(const char *s);
 const char *fz_string_from_linecap(fz_linecap cap);
