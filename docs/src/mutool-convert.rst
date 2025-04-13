@@ -145,7 +145,7 @@ The `convert` command converts an input file into another format.
          - `ignore-actualtext` do not apply ActualText replacements
          - `use-cid-for-unknown-unicode` use character code if unicode mapping fails
          - `use-gid-for-unknown-unicode` use glyph index if unicode mapping fails
-         - `accurate-bboxes` calculate char bboxes for from the outlines
+         - `accurate-bboxes` calculate char bboxes from the outlines
          - `collect-styles` attempt to detect text features (fake bold, strikeout, underlined etc)
          - `clip` do not include text that is completely clipped
          - `clip-rect=x0:y0:x1:y1` specify clipping rectangle within which to collect content

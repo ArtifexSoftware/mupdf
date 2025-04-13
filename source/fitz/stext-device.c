@@ -152,7 +152,7 @@ const char *fz_stext_options_usage =
 	"\tignore-actualtext: do not apply ActualText replacements\n"
 	"\tuse-cid-for-unknown-unicode: use character code if unicode mapping fails\n"
 	"\tuse-gid-for-unknown-unicode: use glyph index if unicode mapping fails\n"
-	"\taccurate-bboxes: calculate char bboxes for from the outlines\n"
+	"\taccurate-bboxes: calculate char bboxes from the outlines\n"
 	"\taccurate-ascenders: calculate ascender/descender from font glyphs\n"
 	"\taccurate-side-bearings: expand char bboxes to completely include width of glyphs\n"
 	"\tcollect-styles: attempt to detect text features (fake bold, strikeout, underlined etc)\n"
