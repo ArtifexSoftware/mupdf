@@ -22,6 +22,8 @@
 
 #include "mupdf/fitz.h"
 
+#if FZ_ENABLE_BROTLI
+
 #include "brotli/decode.h"
 
 #include <string.h>
@@ -121,3 +123,14 @@ fz_open_brotlid(fz_context *ctx, fz_stream *chain)
 
 	return fz_new_stream(ctx, state, next_brotlid, close_brotlid);
 }
+
+#else
+
+fz_stream *
+fz_open_brotlid(fz_context *ctx, fz_stream *chain)
+{
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "brotli compression not enabled");
+	return NULL;
+}
+
+#endif

@@ -22,6 +22,8 @@
 
 #include "mupdf/fitz.h"
 
+#if FZ_ENABLE_BROTLI
+
 #include "brotli/encode.h"
 
 #include <limits.h>
@@ -109,3 +111,29 @@ size_t fz_brotli_bound(fz_context *ctx, size_t size)
 {
 	return BrotliEncoderMaxCompressedSize(size);
 }
+
+#else
+
+size_t fz_brotli_bound(fz_context *ctx, size_t size)
+{
+	return size;
+}
+
+void fz_compress_brotli(fz_context *ctx, unsigned char *dest, size_t *dest_len, const unsigned char *source, size_t source_len, fz_brotli_level level)
+{
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "brotli compression not enabled");
+}
+
+unsigned char *fz_new_brotli_data_from_buffer(fz_context *ctx, size_t *compressed_length, fz_buffer *buffer, fz_brotli_level level)
+{
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "brotli compression not enabled");
+	return NULL;
+}
+
+unsigned char *fz_new_brotli_data(fz_context *ctx, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_brotli_level level)
+{
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "brotli compression not enabled");
+	return NULL;
+}
+
+#endif

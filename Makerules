@@ -11,6 +11,10 @@ WARNING_CFLAGS := -Wall -Wsign-compare
 
 build_suffix :=
 
+ifeq ($(brotli),no)
+  CFLAGS += -DFZ_ENABLE_BROTLI=0
+endif
+
 ifeq ($(tesseract),yes)
   build_suffix := $(build_suffix)-tesseract
   USE_TESSERACT := yes

@@ -90,6 +90,12 @@
 /* #define FZ_ENABLE_JPX 1 */
 
 /**
+	Choose whether to enable Brotli compression support.
+	By default, it is enabled.
+*/
+/* #define FZ_ENABLE_BROTLI 1 */
+
+/**
 	Choose whether to enable JavaScript.
 	By default JavaScript is enabled both for mutool and PDF
 	interactivity.
@@ -234,6 +240,10 @@
 #ifndef FZ_ENABLE_JPX
 #define FZ_ENABLE_JPX 1
 #endif /* FZ_ENABLE_JPX */
+
+#ifndef FZ_ENABLE_BROTLI
+#define FZ_ENABLE_BROTLI 1
+#endif /* FZ_ENABLE_BROTLI */
 
 #ifndef FZ_ENABLE_JS
 #define FZ_ENABLE_JS 1
