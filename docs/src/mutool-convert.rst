@@ -38,6 +38,8 @@ The `convert` command converts an input file into another format.
          - print-raster: `pcl`, `pclm`, `ps`, `pwg`.
          - vector: `pdf`, `svg`.
          - text: `html`, `xhtml`, `text`, `stext`.
+   `-b` box
+      Use named page box (`MediaBox`, `CropBox`, `BleedBox`, `TrimBox`, or `ArtBox`), see :ref:`defined boxes<mutool_trim_defined_boxes>`.
    `-A` bits
       Specify how many bits of anti-aliasing to use. The default is `8`.
    `-W` width
@@ -146,6 +148,8 @@ The `convert` command converts an input file into another format.
          - `use-cid-for-unknown-unicode` use character code if unicode mapping fails
          - `use-gid-for-unknown-unicode` use glyph index if unicode mapping fails
          - `accurate-bboxes` calculate char bboxes from the outlines
+         - `accurate-ascenders` calculate ascender/descender from font glyphs
+         - `accurate-side-bearings` expand character bboxes to completely include width of glyphs
          - `collect-styles` attempt to detect text features (fake bold, strikeout, underlined etc)
          - `clip` do not include text that is completely clipped
          - `clip-rect=x0:y0:x1:y1` specify clipping rectangle within which to collect content

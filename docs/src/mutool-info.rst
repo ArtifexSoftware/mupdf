@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. default-domain:: js
@@ -48,6 +48,9 @@ The `info` command shows info about the objects on pages in an input file. For e
 
       `-X`
          List form and postscript xobjects.
+
+      `-Z`
+         List ZUGFeRD info.
 
 
 ----

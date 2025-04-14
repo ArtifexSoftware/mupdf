@@ -11,11 +11,13 @@
 - `labels` Print labels for how to reach each object as comments in the output PDF.
 - `ascii` ASCII hex encode binary streams.
 - `pretty` Pretty-print objects with indentation.
-- `linearize` Optimize for web browsers.
+- `linearize` Optimize for web browsers. No longer supported!
 - `clean` Pretty-print graphics commands in content streams.
 - `sanitize` Sanitize graphics commands in content streams.
 - `incremental` Write changes as incremental update.
 - `objstms` Use object and cross-reference streams when creating PDF.
+- `appearance=yes` Create appearance streams for annotations that miss appearance streams.
+- `appearance=all` Recreate appearance streams for all annotations.
 - `continue-on-error` Continue saving the document even if there is an error.
 - `garbage` Garbage collect unused objects.
 
