@@ -24,11 +24,11 @@
 `Font` objects can be created from :title:`TrueType`, :title:`OpenType`, :title:`Type1` or :title:`CFF` fonts. In :title:`PDF` there are also special :title:`Type3` fonts.
 
 
-.. method:: new Font(ref)
+.. method:: new Font(name, data, index)
 
     *Constructor method*.
 
-    Create a new font, either using a built-in font name or a file name.
+    Create a new font, either using a built-in font, or from a file or buffer.
 
     The built-in standard :title:`PDF` fonts are:
 
@@ -49,7 +49,9 @@
 
     The built-in CJK fonts are referenced by language code: `zh-Hant`, `zh-Hans`, `ja`, `ko`.
 
-    :arg ref: Font name or file name.
+    :arg name: Font name.
+    :arg data: Either a Buffer or a file name.
+    :arg index: Subfont index (only used for TTC fonts).
 
     :return: `Font`.
 
@@ -57,7 +59,8 @@
 
     .. code-block:: javascript
 
-        var font = new mupdf.Font("Times-Roman");
+        var times = new mupdf.Font("Times-Roman")
+        var font = new mupdf.Font("Comic Sans", "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS.ttf")
 
 
 

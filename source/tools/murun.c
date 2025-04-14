@@ -5224,19 +5224,26 @@ static void ffi_new_Font(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	const char *name = js_tostring(J, 1);
-	int index = js_isnumber(J, 2) ? js_tonumber(J, 2) : 0;
-	const unsigned char *data;
-	int size;
+	const char *path = js_isstring(J, 2) ? js_tostring(J, 2) : NULL;
+	fz_buffer *buffer = js_isuserdata(J, 2, "fz_buffer") ? js_touserdata(J, 2, "fz_buffer") : NULL;
+	int index = js_isnumber(J, 3) ? js_tonumber(J, 3) : 0;
 	fz_font *font = NULL;
 
 	fz_try(ctx) {
-		data = fz_lookup_base14_font(ctx, name, &size);
-		if (!data)
-			data = fz_lookup_cjk_font_by_language(ctx, name, &size, &index);
-		if (data)
-			font = fz_new_font_from_memory(ctx, name, data, size, index, 0);
+		if (path)
+			font = fz_new_font_from_file(ctx, name, path, index, 0);
+		else if (buffer)
+			font = fz_new_font_from_buffer(ctx, name, buffer, index, 0);
+		else if (!strcmp(name, "zh-Hant"))
+			font = fz_new_cjk_font(ctx, FZ_ADOBE_CNS);
+		else if (!strcmp(name, "zh-Hans"))
+			font = fz_new_cjk_font(ctx, FZ_ADOBE_GB);
+		else if (!strcmp(name, "ja"))
+			font = fz_new_cjk_font(ctx, FZ_ADOBE_JAPAN);
+		else if (!strcmp(name, "ko"))
+			font = fz_new_cjk_font(ctx, FZ_ADOBE_KOREA);
 		else
-			font = fz_new_font_from_file(ctx, name, name, index, 0);
+			font = fz_new_base14_font(ctx, name);
 	}
 	fz_catch(ctx)
 		rethrow(J);
@@ -12105,7 +12112,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_buffer", "Buffer", ffi_new_Buffer, 1);
 		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 3);
 		jsB_propcon(J, "fz_image", "Image", ffi_new_Image, 2);
-		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 2);
+		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 3);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
 		jsB_propcon(J, "fz_path", "Path", ffi_new_Path, 0);
 		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 1);
