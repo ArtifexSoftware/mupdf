@@ -1402,6 +1402,74 @@ static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 	return buf;
 }
 
+/* font loading callbacks */
+
+static fz_font *load_js_font_file(fz_context *ctx, const char *name, const char *script, int bold, int italic)
+{
+	js_State *J = fz_user_context(ctx);
+	fz_font *font = NULL;
+	if (js_try(J))
+		rethrow_as_fz(J);
+	js_getregistry(J, "load_font_file");
+	if (js_iscallable(J, -1)) {
+		js_pushnull(J);
+		if (name)
+			js_pushstring(J, name);
+		else
+			js_pushundefined(J);
+		if (script)
+			js_pushstring(J, script);
+		else
+			js_pushundefined(J);
+		js_pushboolean(J, bold);
+		js_pushboolean(J, italic);
+		js_call(J, 4);
+		if (js_iscoercible(J, -1))
+			font = fz_keep_font(ctx, js_touserdata(J, -1, "fz_font"));
+		js_pop(J, 1);
+	}
+	js_endtry(J);
+	return font;
+}
+
+static fz_font *load_js_font(fz_context *ctx, const char *name, int bold, int italic, int needs_exact_metrics)
+{
+	return load_js_font_file(ctx, name, "undefined", bold, italic);
+}
+
+static fz_font *load_js_cjk_font(fz_context *ctx, const char *name, int ordering, int serif)
+{
+	switch (ordering)
+	{
+	case FZ_ADOBE_CNS: return load_js_font_file(ctx, name, "TC", 0, 0);
+	case FZ_ADOBE_GB: return load_js_font_file(ctx, name, "SC", 0, 0);
+	case FZ_ADOBE_JAPAN: return load_js_font_file(ctx, name, "JP", 0, 0);
+	case FZ_ADOBE_KOREA: return load_js_font_file(ctx, name, "KR", 0, 0);
+	}
+	return NULL;
+}
+
+static fz_font *load_js_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
+{
+	return load_js_font_file(ctx, "undefined", fz_lookup_script_name(ctx, script, language), bold, italic);
+}
+
+static void ffi_installLoadFontFunction(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	js_copy(J, 1);
+	js_setregistry(J, "load_font_file");
+	fz_try(ctx) {
+		fz_install_load_system_font_funcs(ctx,
+			load_js_font,
+			load_js_cjk_font,
+			load_js_fallback_font
+		);
+	} fz_catch(ctx) {
+		rethrow(J);
+	}
+}
+
 /* device calling into js from c */
 
 typedef struct
@@ -11259,7 +11327,9 @@ int murun_main(int argc, char **argv)
 		fz_drop_context(ctx);
 		exit(1);
 	}
+
 	js_setcontext(J, ctx);
+	fz_set_user_context(ctx, J);
 
 	if (js_try(J))
 	{
@@ -12130,6 +12200,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "disableICC", ffi_disableICC, 0);
 
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
+
+		jsB_propfun(J, "installLoadFontFunction", ffi_installLoadFontFunction, 1);
 	}
 
 	js_pushglobal(J);

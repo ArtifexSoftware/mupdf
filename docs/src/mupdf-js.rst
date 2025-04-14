@@ -503,7 +503,19 @@ Global :title:`MuPDF` methods
    :arg userStyleSheet: Link to :title:`CSS` stylesheet file.
    :arg usePublisherStyles: `Boolean`.
 
+.. method:: installLoadFontFunction(callback)
 
+   |mutool_tag|
+
+   Install a handler to load system (or missing) fonts.
+
+   The callback function will be called with four arguments:
+
+        `callback(fontName, scriptName, isBold, isItalic)`
+
+   The callback should return either a `Font` object for the requested font, or
+   `null` if an exact match cannot be found (so that the font loading machinery
+   can keep looking through the chain of fallback fonts).
 
 .. method:: quit(exitStatus)
 

@@ -539,3 +539,19 @@ fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language)
 	case UCDN_SCRIPT_NAG_MUNDARI: return "NagMundari";
 	}
 }
+
+const char *
+fz_lookup_script_name(fz_context *ctx, int script, int language)
+{
+	switch (script) {
+	case UCDN_SCRIPT_COMMON:
+	case UCDN_SCRIPT_INHERITED:
+	case UCDN_SCRIPT_UNKNOWN:
+		return "Common";
+	case UCDN_SCRIPT_LATIN: return "Latin";
+	case UCDN_SCRIPT_GREEK: return "Greek";
+	case UCDN_SCRIPT_CYRILLIC: return "Cyrillic";
+	case UCDN_SCRIPT_ARABIC: return "Arabic";
+	default: return fz_lookup_noto_stem_from_script(ctx, script, language);
+	}
+}

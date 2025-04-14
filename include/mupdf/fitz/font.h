@@ -430,6 +430,7 @@ const unsigned char *fz_lookup_noto_boxes_font(fz_context *ctx, int *len);
 		Noto(Sans|Serif)${STEM}-Regular.(otf|ttf)
 */
 const char *fz_lookup_noto_stem_from_script(fz_context *ctx, int script, int language);
+const char *fz_lookup_script_name(fz_context *ctx, int script, int language);
 
 /**
 	Try to load a fallback font for the
