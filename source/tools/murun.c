@@ -10297,7 +10297,7 @@ static void ffi_PDFAnnotation_getStampImageObject(js_State *J)
 		obj = pdf_annot_stamp_image_obj(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
-	return ffi_pushobj(J, pdf_keep_obj(ctx, obj));
+	ffi_pushobj(J, pdf_keep_obj(ctx, obj));
 }
 
 static void ffi_PDFAnnotation_setAppearance(js_State *J)
