@@ -47,7 +47,7 @@ static int usage(void)
 		"\t-gg\tin addition to -g compact xref table\n"
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
 		"\t-gggg\tin addition to -ggg check streams for duplication\n"
-		"\t-l\tlinearize PDF\n"
+		"\t-l\tlinearize PDF (no longer supported!)\n"
 		"\t-D\tsave file without encryption\n"
 		"\t-E -\tsave file with new encryption (rc4-40, rc4-128, aes-128, or aes-256)\n"
 		"\t-O -\towner password (only if encrypting)\n"
