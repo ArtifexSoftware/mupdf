@@ -54,7 +54,7 @@ static int mubar_usage(void)
 	for (c = 0, i = FZ_BARCODE_NONE + 1; i < FZ_BARCODE__LIMIT; i++)
 	{
 		s = fz_string_from_barcode_type(i);
-		n = strlen(s);
+		n = (int)strlen(s);
 		if (c + 2 + n > 78)
 		{
 			fprintf(stderr, ",\n\t\t%s", s);
