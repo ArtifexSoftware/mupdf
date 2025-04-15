@@ -15,6 +15,16 @@ ifeq ($(brotli),no)
   CFLAGS += -DFZ_ENABLE_BROTLI=0
 endif
 
+ifeq ($(html),no)
+  CFLAGS += -DFZ_ENABLE_HTML_ENGINE=0
+  CFLAGS += -DFZ_ENABLE_HTML=0
+  CFLAGS += -DFZ_ENABLE_EPUB=0
+  CFLAGS += -DFZ_ENABLE_FB2=0
+  CFLAGS += -DFZ_ENABLE_MOBI=0
+  CFLAGS += -DFZ_ENABLE_OFFICE=0
+  CFLAGS += -DFZ_ENABLE_TXT=0
+endif
+
 ifeq ($(tesseract),yes)
   build_suffix := $(build_suffix)-tesseract
   USE_TESSERACT := yes
