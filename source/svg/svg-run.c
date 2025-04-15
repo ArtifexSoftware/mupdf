@@ -63,6 +63,17 @@ typedef struct svg_state
 static void svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state);
 static void svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *state);
 
+void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *parent)
+{
+	memcpy(child, parent, sizeof(svg_state));
+	child->stroke = fz_clone_stroke_state(ctx, parent->stroke);
+}
+
+void svg_end_state(fz_context *ctx, svg_state *child)
+{
+	fz_drop_stroke_state(ctx, child->stroke);
+}
+
 static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->fill_opacity;
@@ -107,8 +118,7 @@ static void approx_circle(fz_context *ctx, fz_path *path, float cx, float cy, fl
 static void
 svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 
 	char *x_att = fz_xml_att(node, "x");
 	char *y_att = fz_xml_att(node, "y");
@@ -127,11 +137,10 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	fz_path *path = NULL;
 
 	fz_var(path);
-	fz_var(stroke);
 
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
@@ -181,7 +190,7 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -191,8 +200,7 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 static void
 svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 
 	char *cx_att = fz_xml_att(node, "cx");
 	char *cy_att = fz_xml_att(node, "cy");
@@ -203,11 +211,9 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 	float r = 0;
 	fz_path *path;
 
-	fz_var(stroke);
-
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (cx_att) cx = svg_parse_length(cx_att, local_state.viewbox_w, local_state.fontsize);
@@ -224,7 +230,7 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -234,8 +240,7 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 static void
 svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 
 	char *cx_att = fz_xml_att(node, "cx");
 	char *cy_att = fz_xml_att(node, "cy");
@@ -249,11 +254,9 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 
 	fz_path *path;
 
-	fz_var(stroke);
-
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (cx_att) cx = svg_parse_length(cx_att, local_state.viewbox_w, local_state.fontsize);
@@ -271,7 +274,7 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -280,8 +283,7 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 static void
 svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 	fz_path *path = NULL;
 
 	char *x1_att = fz_xml_att(node, "x1");
@@ -294,12 +296,11 @@ svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	float x2 = 0;
 	float y2 = 0;
 
-	fz_var(stroke);
 	fz_var(path);
 
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (x1_att) x1 = svg_parse_length(x1_att, local_state.viewbox_w, local_state.fontsize);
@@ -318,7 +319,7 @@ svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -382,16 +383,14 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 static void
 svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 	fz_path *path = NULL;
 
-	fz_var(stroke);
 	fz_var(path);
 
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (local_state.stroke_is_set)
@@ -403,7 +402,7 @@ svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *nod
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -412,16 +411,14 @@ svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *nod
 static void
 svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 	fz_path *path = NULL;
 
-	fz_var(stroke);
 	fz_var(path);
 
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		path = svg_parse_polygon_imp(ctx, doc, node, 1);
@@ -430,7 +427,7 @@ svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -900,19 +897,17 @@ svg_parse_path_data(fz_context *ctx, fz_path *path, const char *str)
 static void
 svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 	fz_path *path = NULL;
 
 	const char *d_att = fz_xml_att(node, "d");
 	/* unused: char *path_length_att = fz_xml_att(node, "pathLength"); */
 
-	fz_var(stroke);
 	fz_var(path);
 
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (d_att)
@@ -925,7 +920,7 @@ svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 	fz_always(ctx)
 	{
 		fz_drop_path(ctx, path);
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -1234,19 +1229,16 @@ svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_
 static void
 svg_run_svg(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
-	fz_stroke_state *stroke = NULL;
+	svg_state local_state;
 	fz_xml *node;
 
 	char *w_att = fz_xml_att(root, "width");
 	char *h_att = fz_xml_att(root, "height");
 	char *viewbox_att = fz_xml_att(root, "viewBox");
 
-	fz_var(stroke);
-
 	fz_try(ctx)
 	{
-		stroke = local_state.stroke = fz_clone_stroke_state(ctx, inherit_state->stroke);
+		svg_begin_state(ctx, &local_state, inherit_state);
 
 		/* get default viewport from viewBox if width and/or height is missing */
 		if (viewbox_att && (!w_att || !h_att))
@@ -1265,7 +1257,7 @@ svg_run_svg(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 			svg_run_element(ctx, dev, doc, node, &local_state);
 	}
 	fz_always(ctx)
-		fz_drop_stroke_state(ctx, stroke);
+		svg_end_state(ctx, &local_state);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
@@ -1273,26 +1265,43 @@ svg_run_svg(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 static void
 svg_run_g(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
+	svg_state local_state;
 	fz_xml *node;
 
-	svg_parse_common(ctx, doc, root, &local_state);
+	fz_try(ctx)
+	{
+		svg_begin_state(ctx, &local_state, inherit_state);
+		svg_parse_common(ctx, doc, root, &local_state);
 
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
-		svg_run_element(ctx, dev, doc, node, &local_state);
+		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+			svg_run_element(ctx, dev, doc, node, &local_state);
+	}
+	fz_always(ctx)
+		svg_end_state(ctx, &local_state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
 svg_run_use_symbol(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *use, fz_xml *symbol, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
+	svg_state local_state;
 	fz_xml *node;
 
-	svg_parse_viewport(ctx, doc, use, &local_state);
-	svg_parse_viewbox(ctx, doc, use, &local_state);
+	fz_try(ctx)
+	{
+		svg_begin_state(ctx, &local_state, inherit_state);
 
-	for (node = fz_xml_down(symbol); node; node = fz_xml_next(node))
-		svg_run_element(ctx, dev, doc, node, &local_state);
+		svg_parse_viewport(ctx, doc, use, &local_state);
+		svg_parse_viewbox(ctx, doc, use, &local_state);
+
+		for (node = fz_xml_down(symbol); node; node = fz_xml_next(node))
+			svg_run_element(ctx, dev, doc, node, &local_state);
+	}
+	fz_always(ctx)
+		svg_end_state(ctx, &local_state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static int
@@ -1311,11 +1320,12 @@ is_use_cycle(fz_xml *use, fz_xml *symbol)
 static void
 svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
+	svg_state local_state;
 
 	char *href_att = fz_xml_att_alt(root, "xlink:href", "href");
 	char *x_att = fz_xml_att(root, "x");
 	char *y_att = fz_xml_att(root, "y");
+	fz_xml *linked = NULL;
 
 	float x = 0;
 	float y = 0;
@@ -1326,38 +1336,50 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 		return;
 	}
 
-	svg_parse_common(ctx, doc, root, &local_state);
-	if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
-	if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
-
-	local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
-
-	if (href_att && href_att[0] == '#')
+	fz_try(ctx)
 	{
-		fz_xml *linked = fz_tree_lookup(ctx, doc->idmap, href_att + 1);
-		if (is_use_cycle(root, linked))
-		{
-			fz_warn(ctx, "svg: cyclic <use> reference");
-			return;
-		}
+		svg_begin_state(ctx, &local_state, inherit_state);
 
-		if (linked)
+		svg_parse_common(ctx, doc, root, &local_state);
+		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
+		if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
+
+		local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
+
+		if (href_att && href_att[0] == '#')
 		{
-			if (fz_xml_is_tag(linked, "symbol"))
-				svg_run_use_symbol(ctx, dev, doc, root, linked, &local_state);
+			linked = fz_tree_lookup(ctx, doc->idmap, href_att + 1);
+			if (linked)
+			{
+				if (is_use_cycle(root, linked))
+					fz_warn(ctx, "svg: cyclic <use> reference");
+
+				if (fz_xml_is_tag(linked, "symbol"))
+					svg_run_use_symbol(ctx, dev, doc, root, linked, &local_state);
+				else
+					svg_run_element(ctx, dev, doc, linked, &local_state);
+			}
 			else
-				svg_run_element(ctx, dev, doc, linked, &local_state);
-			return;
+			{
+				fz_warn(ctx, "svg: cannot find linked symbol");
+			}
 		}
-	}
+		else
+		{
+			fz_warn(ctx, "svg: cannot find linked symbol");
+		}
 
-	fz_warn(ctx, "svg: cannot find linked symbol");
+	}
+	fz_always(ctx)
+		svg_end_state(ctx, &local_state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
 svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
 {
-	svg_state local_state = *inherit_state;
+	svg_state local_state;
 	float x=0, y=0, w=0, h=0;
 	const char *data;
 
@@ -1370,94 +1392,104 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 	char *w_att = fz_xml_att(root, "width");
 	char *h_att = fz_xml_att(root, "height");
 
-	svg_parse_common(ctx, doc, root, &local_state);
-	if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
-	if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
-	if (w_att) w = svg_parse_length(w_att, local_state.viewbox_w, local_state.fontsize);
-	if (h_att) h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
-
-	if (w <= 0 || h <= 0)
-		return;
-
-	if (!href_att)
-		return;
-
-	local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
-	local_state.transform = fz_concat(fz_scale(w, h), local_state.transform);
-
-	if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
-		data = href_att + strlen(jpeg_uri);
-	else if (!strncmp(href_att, png_uri, strlen(png_uri)))
-		data = href_att + strlen(png_uri);
-	else
-		data = NULL;
-	if (data)
+	fz_try(ctx)
 	{
-		fz_image *img = NULL;
-		fz_buffer *buf;
+		svg_begin_state(ctx, &local_state, inherit_state);
 
-		fz_var(img);
+		svg_parse_common(ctx, doc, root, &local_state);
+		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
+		if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
+		if (w_att) w = svg_parse_length(w_att, local_state.viewbox_w, local_state.fontsize);
+		if (h_att) h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
 
-		buf = fz_new_buffer_from_base64(ctx, data, 0);
-		fz_try(ctx)
-		{
-			fz_matrix orient;
-			img = fz_new_image_from_buffer(ctx, buf);
-			orient = fz_image_orientation_matrix(ctx, img);
-			local_state.transform = fz_concat(orient, local_state.transform);
-			fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_buffer(ctx, buf);
-			fz_drop_image(ctx, img);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-			fz_report_error(ctx);
-			fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
-		}
-	}
-	else if (doc->zip)
-	{
-		char path[2048];
-		fz_buffer *buf = NULL;
-		fz_image *img = NULL;
+		if (w <= 0 || h <= 0)
+			break; // out of try-catch
 
-		fz_var(buf);
-		fz_var(img);
+		if (!href_att)
+			break; // out of try-catch
 
-		fz_strlcpy(path, doc->base_uri, sizeof path);
-		fz_strlcat(path, "/", sizeof path);
-		fz_strlcat(path, href_att, sizeof path);
-		fz_urldecode(path);
+		local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
+		local_state.transform = fz_concat(fz_scale(w, h), local_state.transform);
 
-		fz_try(ctx)
+		if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
+			data = href_att + strlen(jpeg_uri);
+		else if (!strncmp(href_att, png_uri, strlen(png_uri)))
+			data = href_att + strlen(png_uri);
+		else
+			data = NULL;
+		if (data)
 		{
-			fz_matrix orient;
-			buf = fz_read_archive_entry(ctx, doc->zip, path);
-			img = fz_new_image_from_buffer(ctx, buf);
-			orient = fz_image_orientation_matrix(ctx, img);
-			local_state.transform = fz_concat(orient, local_state.transform);
-			fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
+			fz_image *img = NULL;
+			fz_buffer *buf;
+
+			fz_var(img);
+
+			buf = fz_new_buffer_from_base64(ctx, data, 0);
+			fz_try(ctx)
+			{
+				fz_matrix orient;
+				img = fz_new_image_from_buffer(ctx, buf);
+				orient = fz_image_orientation_matrix(ctx, img);
+				local_state.transform = fz_concat(orient, local_state.transform);
+				fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
+			}
+			fz_always(ctx)
+			{
+				fz_drop_buffer(ctx, buf);
+				fz_drop_image(ctx, img);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+				fz_report_error(ctx);
+				fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
+			}
 		}
-		fz_always(ctx)
+		else if (doc->zip)
 		{
-			fz_drop_buffer(ctx, buf);
-			fz_drop_image(ctx, img);
+			char path[2048];
+			fz_buffer *buf = NULL;
+			fz_image *img = NULL;
+
+			fz_var(buf);
+			fz_var(img);
+
+			fz_strlcpy(path, doc->base_uri, sizeof path);
+			fz_strlcat(path, "/", sizeof path);
+			fz_strlcat(path, href_att, sizeof path);
+			fz_urldecode(path);
+
+			fz_try(ctx)
+			{
+				fz_matrix orient;
+				buf = fz_read_archive_entry(ctx, doc->zip, path);
+				img = fz_new_image_from_buffer(ctx, buf);
+				orient = fz_image_orientation_matrix(ctx, img);
+				local_state.transform = fz_concat(orient, local_state.transform);
+				fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
+			}
+			fz_always(ctx)
+			{
+				fz_drop_buffer(ctx, buf);
+				fz_drop_image(ctx, img);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+				fz_report_error(ctx);
+				fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
+			}
 		}
-		fz_catch(ctx)
+		else
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-			fz_report_error(ctx);
 			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
 		}
+
 	}
-	else
-	{
-		fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
-	}
+	fz_always(ctx)
+		svg_end_state(ctx, &local_state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static fz_font *
@@ -1583,7 +1615,7 @@ static fz_matrix
 svg_run_text(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state,
 	float x, float y, int is_first, int is_last)
 {
-	svg_state local_state = *inherit_state;
+	svg_state local_state;
 	char font_family[100];
 	fz_xml *node;
 	fz_matrix trm;
@@ -1595,35 +1627,44 @@ svg_run_text(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, c
 	char *dx_att = fz_xml_att(root, "dx");
 	char *dy_att = fz_xml_att(root, "dy");
 
-	svg_parse_common(ctx, doc, root, &local_state);
-	svg_parse_font_attributes(ctx, doc, root, &local_state, font_family, sizeof font_family);
-
-	trm = fz_scale(local_state.fontsize, -local_state.fontsize);
-	trm.e = x;
-	trm.f = y;
-
-	if (x_att) trm.e = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
-	if (y_att) trm.f = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
-
-	if (dx_att) trm.e += svg_parse_length(dx_att, local_state.viewbox_w, local_state.fontsize);
-	if (dy_att) trm.f += svg_parse_length(dy_att, local_state.viewbox_h, local_state.fontsize);
-
-	cif = is_first;
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
+	fz_try(ctx)
 	{
-		cil = is_last && !fz_xml_next(node);
-		text = fz_xml_text(node);
-		if (text)
+		svg_begin_state(ctx, &local_state, inherit_state);
+
+		svg_parse_common(ctx, doc, root, &local_state);
+		svg_parse_font_attributes(ctx, doc, root, &local_state, font_family, sizeof font_family);
+
+		trm = fz_scale(local_state.fontsize, -local_state.fontsize);
+		trm.e = x;
+		trm.f = y;
+
+		if (x_att) trm.e = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
+		if (y_att) trm.f = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
+
+		if (dx_att) trm.e += svg_parse_length(dx_att, local_state.viewbox_w, local_state.fontsize);
+		if (dy_att) trm.f += svg_parse_length(dy_att, local_state.viewbox_h, local_state.fontsize);
+
+		cif = is_first;
+		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 		{
-			svg_collapse_whitespace(text, cif, cil);
-			trm = svg_run_text_string(ctx, dev, trm, text, &local_state);
+			cil = is_last && !fz_xml_next(node);
+			text = fz_xml_text(node);
+			if (text)
+			{
+				svg_collapse_whitespace(text, cif, cil);
+				trm = svg_run_text_string(ctx, dev, trm, text, &local_state);
+			}
+			else if (fz_xml_is_tag(node, "tspan"))
+				trm = svg_run_text(ctx, dev, doc, node, &local_state, trm.e, trm.f, cif, cil);
+			else if (fz_xml_is_tag(node, "textPath"))
+				trm = svg_run_text(ctx, dev, doc, node, &local_state, trm.e, trm.f, cif, cil);
+			cif = 0;
 		}
-		else if (fz_xml_is_tag(node, "tspan"))
-			trm = svg_run_text(ctx, dev, doc, node, &local_state, trm.e, trm.f, cif, cil);
-		else if (fz_xml_is_tag(node, "textPath"))
-			trm = svg_run_text(ctx, dev, doc, node, &local_state, trm.e, trm.f, cif, cil);
-		cif = 0;
 	}
+	fz_always(ctx)
+		svg_end_state(ctx, &local_state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return trm;
 }
