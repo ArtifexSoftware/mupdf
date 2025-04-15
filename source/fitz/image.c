@@ -1142,6 +1142,8 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 	image->colorspace = fz_keep_colorspace(ctx, colorspace);
 	image->interpolate = interpolate;
 	image->imagemask = imagemask;
+	image->intent = 0;
+	image->has_intent = 0;
 	image->use_colorkey = (colorkey != NULL);
 	if (colorkey)
 		memcpy(image->colorkey, colorkey, sizeof(int)*image->n*2);

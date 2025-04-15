@@ -69,6 +69,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 	float decode[FZ_MAX_COLORS * 2];
 	int colorkey[FZ_MAX_COLORS * 2];
 	int stride;
+	pdf_obj *intent;
 
 	int i;
 	fz_compressed_buffer *buffer;
@@ -84,6 +85,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		bpc = 8;
 	imagemask = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME(ImageMask), PDF_NAME(IM)));
 	interpolate = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME(Interpolate), PDF_NAME(I)));
+	intent = pdf_dict_get(ctx, dict, PDF_NAME(Intent));
 
 	indexed = 0;
 	use_colorkey = 0;
@@ -210,6 +212,14 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			image = fz_new_image_from_compressed_buffer(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, NULL, mask);
 			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, (fz_compressed_image *)image);
 		}
+		if (pdf_name_eq(ctx, intent, PDF_NAME(Perceptual)))
+			image->has_intent = 1, image->intent = FZ_RI_PERCEPTUAL;
+		else if (pdf_name_eq(ctx, intent, PDF_NAME(AbsoluteColorimetric)))
+			image->has_intent = 1, image->intent = FZ_RI_ABSOLUTE_COLORIMETRIC;
+		else if (pdf_name_eq(ctx, intent, PDF_NAME(RelativeColorimetric)))
+			image->has_intent = 1, image->intent = FZ_RI_RELATIVE_COLORIMETRIC;
+		else if (pdf_name_eq(ctx, intent, PDF_NAME(Saturation)))
+			image->has_intent = 1, image->intent = FZ_RI_SATURATION;
 	}
 	fz_always(ctx)
 	{

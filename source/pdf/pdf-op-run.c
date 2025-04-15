@@ -745,14 +745,18 @@ static void
 pdf_show_image_imp(fz_context *ctx, pdf_run_processor *pr, fz_image *image, fz_matrix image_ctm, fz_rect bbox)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
+	fz_color_params cp = gstate->fill.color_params;
+
+	if (image->has_intent)
+		cp.ri = image->intent;
 
 	if (image->colorspace)
 	{
-		fz_fill_image(ctx, pr->dev, image, image_ctm, gstate->fill.alpha, gstate->fill.color_params);
+		fz_fill_image(ctx, pr->dev, image, image_ctm, gstate->fill.alpha, cp);
 	}
 	else if (gstate->fill.kind == PDF_MAT_COLOR)
 	{
-		fz_fill_image_mask(ctx, pr->dev, image, image_ctm, gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, gstate->fill.color_params);
+		fz_fill_image_mask(ctx, pr->dev, image, image_ctm, gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, cp);
 	}
 	else if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.pattern)
 	{
@@ -763,7 +767,7 @@ pdf_show_image_imp(fz_context *ctx, pdf_run_processor *pr, fz_image *image, fz_m
 	else if (gstate->fill.kind == PDF_MAT_SHADE && gstate->fill.shade)
 	{
 		fz_clip_image_mask(ctx, pr->dev, image, image_ctm, bbox);
-		fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, gstate->fill.color_params);
+		fz_fill_shade(ctx, pr->dev, gstate->fill.shade, pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, cp);
 		fz_pop_clip(ctx, pr->dev);
 	}
 }
