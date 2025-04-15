@@ -790,13 +790,20 @@ static const char *intent_names[] = {
 static enum pdf_intent do_annotate_intent(void)
 {
 	enum pdf_intent intent;
+	const char *intent_name;
 	int choice;
 
 	if (!pdf_annot_has_intent(ctx, ui.selected_annot))
 		return PDF_ANNOT_IT_DEFAULT;
 
 	intent = pdf_annot_intent(ctx, ui.selected_annot);
-	choice = label_select("Intent", "IT", intent_names[intent], intent_names, nelem(intent_names));
+
+	if (intent == PDF_ANNOT_IT_UNKNOWN)
+		intent_name = "Unknown";
+	else
+		intent_name = intent_names[intent];
+
+	choice = label_select("Intent", "IT", intent_name, intent_names, nelem(intent_names));
 	if (choice != -1)
 	{
 		trace_action("annot.setIntent(%d);\n", choice);
