@@ -1635,7 +1635,17 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 		size = pdf_dict_get_int(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size));
 		xref_len = pdf_xref_len(ctx, doc);
 		if (xref_len > size)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "incorrect number of xref entries in trailer, repairing");
+		{
+			if (xref_len == size+1)
+			{
+				/* Bug 708456 && Bug 708176. Allow for (sadly, quite common
+				 * PDF generators that can't get size right). */
+				fz_warn(ctx, "Trailer Size is off-by-one. Ignoring.");
+				pdf_dict_put_int(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size), size+1);
+			}
+			else
+				fz_throw(ctx, FZ_ERROR_FORMAT, "incorrect number of xref entries in trailer, repairing");
+		}
 	}
 	fz_always(ctx)
 	{
