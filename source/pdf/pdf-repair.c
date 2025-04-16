@@ -275,7 +275,10 @@ entry_offset(fz_context *ctx, pdf_document *doc, int num)
 
 	/* It must be in a stream. Return the entry of that stream. */
 	entry = pdf_get_populating_xref_entry(ctx, doc, entry->ofs);
-	assert(entry->type == 'n');
+	/* If it's NOT in a stream, then we'll invalidate this entry in a moment.
+	 * For now, just return an illegal offset. */
+	if (entry->type != 'n')
+		return -1;
 
 	return entry->ofs;
 }
@@ -333,10 +336,18 @@ pdf_repair_obj_stm(fz_context *ctx, pdf_document *doc, int stm_num)
 			if (entry->type != 0 && entry->type != 'f')
 			{
 				int64_t existing_entry_offset = entry_offset(ctx, doc, n);
-				int64_t this_entry_offset = entry_offset(ctx, doc, stm_num);
 
-				if (existing_entry_offset > this_entry_offset)
-					replace = 0;
+				if (existing_entry_offset < 0)
+				{
+					/* The existing entry is invalid. Anything must be better than that! */
+				}
+				else
+				{
+					int64_t this_entry_offset = entry_offset(ctx, doc, stm_num);
+
+					if (existing_entry_offset > this_entry_offset)
+						replace = 0;
+				}
 			}
 
 			if (replace)
