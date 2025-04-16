@@ -23,6 +23,7 @@ function make_submodule_archive {
 
 # Remove test files from thirdparty source archives.
 
+make_submodule_archive brotli		tests
 make_submodule_archive curl		tests
 make_submodule_archive extract		test
 make_submodule_archive freeglut
@@ -36,7 +37,9 @@ make_submodule_archive libjpeg		libjpeg/test*
 make_submodule_archive mujs
 make_submodule_archive openjpeg
 make_submodule_archive tesseract	unittest
+make_submodule_archive zint
 make_submodule_archive zlib		test contrib
+make_submodule_archive zxing-cpp	test
 
 # Generate commercial tarball
 cp $STEM.tar $CSTEM.tar
