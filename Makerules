@@ -277,11 +277,10 @@ else
     SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
   endif
 
-  HAVE_GLUT := yes
+  ifeq ($(HAVE_GLUT),)
+    HAVE_GLUT := $(shell pkg-config --exists gl x11 xrandr && echo yes)
+  endif
   ifeq ($(HAVE_GLUT),yes)
-    ifneq ($(shell pkg-config --exists gl x11 xrandr && echo yes),yes)
-      $(error GLUT depends on gl, x11 and xrandr from the system, but some are missing)
-    endif
     SYS_GL_CFLAGS := $(shell pkg-config --cflags gl x11 xrandr)
     SYS_GL_LIBS := $(shell pkg-config --libs gl x11 xrandr)
     ifeq ($(shell pkg-config --exists glut && echo yes),yes)
