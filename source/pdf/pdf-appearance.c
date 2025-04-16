@@ -2258,7 +2258,7 @@ write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **
 	fz_story *story = NULL;
 	fz_device *dev = NULL;
 	fz_buffer *buf2 = NULL;
-	const char *default_css = "@page{margin:0} body{margin:0;line-height:1.2;} p{margin:0}";
+	const char *default_css = "@page{margin:0} body{margin:0;line-height:1.2;white-space:pre-wrap;} p{margin:0}";
 	char *css = NULL;
 
 	fz_var(story);
@@ -2640,7 +2640,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		if (!ds)
 		{
 			fz_snprintf(ds_buf, sizeof ds_buf,
-				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;white-space:pre-wrap",
+				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;",
 				full_font_name(&font),
 				size,
 				hex_from_color(ctx, n, color),
@@ -2727,12 +2727,11 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		if (!ds)
 		{
 			fz_snprintf(ds_buf, sizeof ds_buf,
-				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;white-space:%s;",
+				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s",
 				full_font_name(&font),
 				size,
 				hex_from_color(ctx, n, color),
-				(q == 0 ? "left" : q == 1 ? "center" : "right"),
-				((ff & PDF_TX_FIELD_IS_MULTILINE) ? "pre-wrap" : "pre")
+				(q == 0 ? "left" : q == 1 ? "center" : "right")
 			);
 			ds = ds_buf;
 		}
