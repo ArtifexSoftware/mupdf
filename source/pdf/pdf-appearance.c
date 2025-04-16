@@ -2242,21 +2242,23 @@ layout_variable_text(fz_context *ctx, fz_layout_block *out,
 
 #if FZ_ENABLE_HTML_ENGINE
 static void
-write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res, const char *rc, const char *ds, float size, float w, float h, float b)
+write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **res, const char *rc, const char *ds, float size, float w, float h, float b, int multiline)
 {
-	/* rect is the actual rectangle that we are writing into. We use this to feed to
-	 * the pdfwriting device. */
-	fz_rect rect = { 0, 0, w, h };
-	/* rect2 is a slightly indented, and much taller rectangle that we fill into.
+	/* border_box is the actual rectangle that we are writing into.
+	 * We use this to feed to the pdfwriting device. */
+	fz_rect border_box = { 0, 0, w, h };
+
+	/* content_box is adjusted for padding and has added height.
 	 * We know a clipping rectangle will have been set to the proper rectangle
 	 * so we can allow text to flow out the bottom of the rectangle rather than
 	 * just missing it out. This matches adobe. */
-	fz_rect rect2 = { b, b, w - b*2, h+100 };
+	fz_rect content_box = fz_make_rect(b, b, w - b*2, h + size * 2);
+
 	fz_buffer *inbuf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)rc, strlen(rc)+1);
 	fz_story *story = NULL;
 	fz_device *dev = NULL;
 	fz_buffer *buf2 = NULL;
-	const char *default_css = "@page{margin:0} body{margin:0;line-height:1.2;white-space:pre-wrap;} p{margin:0}";
+	const char *default_css = "@page{margin:0} body{margin:0;line-height:1.2;} p{margin:0}";
 	char *css = NULL;
 
 	fz_var(story);
@@ -2265,13 +2267,22 @@ write_rich_content(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj **
 	fz_var(buf2);
 	fz_var(css);
 
+	// single-line should be centered in the box. adjust content box accordingly.
+	// this matches the math in write_variable_text.
+	if (!multiline)
+	{
+		float ty = ((h - b * 2) - size) / 2;
+		content_box.y0 = h - b - 0.8f * size + ty;
+		content_box.y1 = content_box.y0 + size * 2;
+	}
+
 	fz_try(ctx)
 	{
 		if (ds)
 			css = fz_asprintf(ctx, "%s body{%s}", default_css, ds);
 		story = fz_new_story(ctx, inbuf, css ? css : default_css, size, NULL);
-		dev = pdf_page_write(ctx, annot->page->doc, rect, res, &buf2);
-		fz_place_story(ctx, story, rect2, NULL);
+		dev = pdf_page_write(ctx, annot->page->doc, border_box, res, &buf2);
+		fz_place_story(ctx, story, content_box, NULL);
 		fz_draw_story(ctx, story, dev, fz_identity);
 		fz_close_device(ctx, dev);
 
@@ -2629,7 +2640,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 		if (!ds)
 		{
 			fz_snprintf(ds_buf, sizeof ds_buf,
-				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;",
+				"font-family:%s;font-size:%gpt;color:#%06x;text-align:%s;white-space:pre-wrap",
 				full_font_name(&font),
 				size,
 				hex_from_color(ctx, n, color),
@@ -2641,7 +2652,7 @@ pdf_write_free_text_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (rc)
 	{
 		fz_try(ctx)
-			write_rich_content(ctx, annot, buf, res, rc ? rc : text, ds, size, w, h, b * 2);
+			write_rich_content(ctx, annot, buf, res, rc ? rc : text, ds, size, w, h, b * 2, 1);
 		fz_always(ctx)
 			fz_free(ctx, free_rc);
 		fz_catch(ctx)
@@ -2721,7 +2732,7 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 				size,
 				hex_from_color(ctx, n, color),
 				(q == 0 ? "left" : q == 1 ? "center" : "right"),
-				((ff & PDF_TX_FIELD_IS_MULTILINE) ? "normal" : "nowrap")
+				((ff & PDF_TX_FIELD_IS_MULTILINE) ? "pre-wrap" : "pre")
 			);
 			ds = ds_buf;
 		}
@@ -2729,7 +2740,8 @@ pdf_write_tx_widget_appearance(fz_context *ctx, pdf_annot *annot, fz_buffer *buf
 	if (rc)
 	{
 		fz_try(ctx)
-			write_rich_content(ctx, annot, buf, res, rc ? rc : text, ds, size, w, h, b * 2);
+			write_rich_content(ctx, annot, buf, res, rc ? rc : text, ds, size, w, h, b * 2,
+				(ff & PDF_TX_FIELD_IS_MULTILINE));
 		fz_always(ctx)
 			fz_free(ctx, free_rc);
 		fz_catch(ctx)
