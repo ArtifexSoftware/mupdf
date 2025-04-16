@@ -81,6 +81,14 @@ These are the third party libraries used by :title:`MuPDF`.
      - 1.85.0 with patches
      - Tesseract dependency
      - BSD-style
+   * - Zint_
+     - 2.13.0.9
+     - Zxing-cpp dependency
+     - BSD-style
+   * - Zxing-cpp_
+     - 2.3.0 with patches
+     - Barcode decoding/encoding
+     - Apache 2.0
 
 
 
@@ -111,3 +119,5 @@ These are the third party libraries used by :title:`MuPDF`.
 .. _Leptonica: https://github.com/DanBloomberg/leptonica
 .. _jbig2dec: https://jbig2dec.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link
 .. _MuJS: https://mujs.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link
+.. _Zint: https://www.zint.org.uk/
+.. _Zxing-cpp: https://github.com/zxing-cpp/zxing-cpp
