@@ -211,6 +211,7 @@ LIBJPEG_SRC += thirdparty/libjpeg/jutils.c
 
 LCMS2_CFLAGS += -Ithirdparty/lcms2/include
 LCMS2_CFLAGS += -DHAVE_LCMS2MT
+LCMS2_CFLAGS += -DLCMS2MT_PREFIX=lcms2mt_
 
 LCMS2_SRC += thirdparty/lcms2/src/cmsalpha.c
 LCMS2_SRC += thirdparty/lcms2/src/cmscam02.c
