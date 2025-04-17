@@ -417,7 +417,13 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 			fz_write_string(ctx, out, "\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n");
 		fz_write_string(ctx, out, "\033E"); /* reset printer */
 		/* Reset the margins */
-		fz_write_string(ctx, out, "\033&10e-180u36Z");
+		/* ESC & l # E  =  Top Margin in decipoints */
+		fz_write_string(ctx, out, "\033&l0E");
+		/* ESC & l # U  =  Left (Long-Edge) offset registration */
+		/* I don't like it that we have to hardcode -180 decipoints in here, but it seems to work. */
+		fz_write_string(ctx, out, "\033&l-180U");
+		/* ESC & l # Z  =  Top (Short-Edge) offset registration */
+		fz_write_string(ctx, out, "\033&l0Z");
 		/* If the printer supports it, set orientation */
 		if (pcl->features & PCL_HAS_ORIENTATION)
 		{
@@ -838,6 +844,7 @@ color_pcl_compress_column(fz_context *ctx, color_pcl_band_writer *writer, const 
 					break;
 				blanks++;
 				y++;
+				sp += stride;
 			}
 
 			if (blanks)
