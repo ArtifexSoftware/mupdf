@@ -464,6 +464,12 @@ There are also several tools specifically for working with :title:`PDF` files:
 
    .. toctree::
 
+     mutool-barcode.rst
+
+   This command decodes/encodes barcodes.
+
+   .. toctree::
+
      mutool-run.rst
 
    A tool for running :title:`JavaScript` programs with access to the :title:`MuPDF` library functions.
