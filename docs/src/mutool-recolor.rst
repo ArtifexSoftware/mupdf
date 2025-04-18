@@ -31,7 +31,7 @@ a :title:`PDF` file.
    Options are as follows:
 
    `-c` colorspace
-      The desired colorspace used in the output document: `gray` (default), `rgb` or `cmyk.
+      The desired colorspace used in the output document: `gray` (default), `rgb` or `cmyk`.
 
    `-o` output file
       Use the specified filename for the output :title:`PDF` file with altered colorspaces.

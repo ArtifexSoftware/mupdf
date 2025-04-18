@@ -442,7 +442,7 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
     Return an object whose properties and their values come from corresponding names/values from the given name tree.
 
-    :return: `Object` :ref:`NameTree Object<mutool_run_js_api_name_tree_object>`.
+    :return: `Object` :ref:`NameTree Object<mutool_run_js_api_object_name_tree>`.
 
     |example_tag|
 

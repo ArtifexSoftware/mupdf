@@ -276,7 +276,7 @@ Default Appearance Text Object
 
 
 
-.. _mutool_run_js_api_object_name_tree_object:
+.. _mutool_run_js_api_object_name_tree:
 
 NameTree Object
 ~~~~~~~~~~~~~~~~~~~

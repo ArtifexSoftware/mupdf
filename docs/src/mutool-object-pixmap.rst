@@ -385,7 +385,7 @@ so that they can easily be used to represent tiles of a page.
     Return a warped subsection of the `Pixmap`, where the result has the requested dimensions.
 
     :arg points: `[x0, y0, x1, y1, x2, y2, x3, y3, x4, y4]`
-    Points give the corner points of a convex quadrilateral within the `Pixmap` to be warped.
+                 Points give the corner points of a convex quadrilateral within the `Pixmap` to be warped.
     :arg width: `Int`.
     :arg height: `Int`.
 
@@ -403,7 +403,7 @@ so that they can easily be used to represent tiles of a page.
     Same as :ref:`Pixmap.warp()<mutool_run_js_api_pixmap_warp>` except that width and height are automatically determined.
 
     :arg points: `[x0, y0, x1, y1, x2, y2, x3, y3, x4, y4]`
-    Points give the corner points of a convex quadrilateral within the `Pixmap` to be warped.
+                 Points give the corner points of a convex quadrilateral within the `Pixmap` to be warped.
 
     :return: `Pixmap`.
 

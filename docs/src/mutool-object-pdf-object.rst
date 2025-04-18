@@ -25,14 +25,14 @@ All functions that take `PDFObjects`, do automatic translation between
 
 - Null, booleans, and numbers are translated directly.
 - :title:`JavaScript` strings are translated to :title:`PDF` names, unless
-they are surrounded by parentheses: "Foo" becomes the :title:`PDF` name /Foo
-and "(Foo)" becomes the :title:`PDF` string (Foo).
+  they are surrounded by parentheses: "Foo" becomes the :title:`PDF` name /Foo
+  and "(Foo)" becomes the :title:`PDF` string (Foo).
 - Arrays and dictionaries are recursively translated to :title:`PDF` arrays
-and dictionaries. Be aware of cycles though! The translation does NOT cope
-with cyclic references!
+  and dictionaries. Be aware of cycles though! The translation does NOT cope
+  with cyclic references!
 - The translation goes both ways: :title:`PDF` dictionaries and arrays can
-be accessed similarly to :title:`JavaScript` objects and arrays by getting
-and setting their properties.
+  be accessed similarly to :title:`JavaScript` objects and arrays by getting
+  and setting their properties.
 
 
 |instance_props|

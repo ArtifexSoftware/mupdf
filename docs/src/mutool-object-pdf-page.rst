@@ -336,9 +336,10 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
 
         pdfPage.setPageBox("MediaBox", [0, 0, 612, 792]);
 
-.. _mutool_run_js_api_box_types
+.. _mutool_run_js_api_box_types:
 
 **Box name values**
+
 .. list-table::
    :header-rows: 1
 

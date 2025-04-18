@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -55,6 +55,7 @@ components in your app. This includes (but is not limited to):
 - AdMob by Google
 - Crashlytics
 - Answers
+
 *etc.*
 
 Just because a library ships with :title:`Android` or is made by :title:`Google` does *not* make it :title:`AGPL` compatible!

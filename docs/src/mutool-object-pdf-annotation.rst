@@ -339,6 +339,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 
 
+.. _mutool_object_pdf_annotation_get_contents:
 
 .. method:: getContents()
 
@@ -351,6 +352,8 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
     .. code-block:: javascript
 
         var contents = annotation.getContents();
+
+.. _mutool_object_pdf_annotation_set_contents:
 
 .. method:: setContents(text)
 
@@ -1970,9 +1973,10 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
         annotation.setIntent("LineArrow");
 
-.. _mutool_pdf_annotation_intent_types
+.. _mutool_pdf_annotation_intent_types:
 
 **Intent values**
+
 .. list-table::
    :header-rows: 1
 

@@ -1,6 +1,7 @@
 .. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
+:orphan:
 
 .. default-domain:: js
 
