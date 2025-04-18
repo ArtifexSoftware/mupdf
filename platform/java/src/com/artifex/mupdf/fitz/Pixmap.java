@@ -165,4 +165,23 @@ public class Pixmap
 
 		return points;
 	}
+
+	public native BarcodeInfo decodeBarcode(float rotate);
+	public BarcodeInfo decodeBarcode() {
+		return decodeBarcode(0);
+	}
+
+	public static native Pixmap encodeBarcode(int type, String contents, int size, int errorCorrectionLevel, boolean quietZones, boolean humanReadableText);
+	public static Pixmap encodeBarcode(int type, String contents, int size, int errorCorrectionLevel, boolean quietZones) {
+		return encodeBarcode(type, contents, size, errorCorrectionLevel, quietZones, false);
+	}
+	public static Pixmap encodeBarcode(int type, String contents, int size, int errorCorrectionLevel) {
+		return encodeBarcode(type, contents, size, errorCorrectionLevel, false, false);
+	}
+	public static Pixmap encodeBarcode(int type, String contents, int size) {
+		return encodeBarcode(type, contents, size, 2, false, false);
+	}
+	public static Pixmap encodeBarcode(int type, String contents) {
+		return encodeBarcode(type, contents, 0, 2, false, false);
+	}
 }

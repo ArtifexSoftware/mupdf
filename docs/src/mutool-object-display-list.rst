@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -127,3 +127,20 @@ A display list records all the device calls for playback later. If you want to r
     .. code-block:: javascript
 
         var results = displayList.search("my search phrase");
+
+
+
+.. method:: decodeBarcode(subarea, rotate)
+
+    Decodes a barcode detected in the pixmap, and returns an object with properties for barcode type and contents.
+
+    :arg subarea: `[ulx,uly,lrx,lry]` :ref:`Rectangle<mutool_run_js_api_rectangle>` Only detect barcode within subarea.
+    :arg rotate: `Integer` Degrees of rotation to rotate pixmap before detecting barcode.
+
+    :return: :ref:`BarcodeInfo<mutool_run_js_api_object_barcode_info>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var barcodeInfo = displaylist.decodeBarcode([0, 0, 100, 100 ], 0);

@@ -282,3 +282,14 @@ NameTree Object
 ~~~~~~~~~~~~~~~~~~~
 
 Where each property and its values come from one of the name/value pairs from the corresponding name tree.
+
+.. _mutool_run_js_api_object_barcode_info:
+
+BarcodeInfo Object
+~~~~~~~~~~~~~~~~~~~~~
+
+`type`
+    String describing the type of barcode detected.
+
+`contents`
+    String containing the textual contents of the decoded barcode.

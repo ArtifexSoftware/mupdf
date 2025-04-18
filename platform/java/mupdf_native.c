@@ -92,6 +92,7 @@ static jclass cls_AlertResult;
 static jclass cls_Archive;
 static jclass cls_ArrayList;
 static jclass cls_ArrayOfQuad;
+static jclass cls_BarcodeInfo;
 static jclass cls_Buffer;
 static jclass cls_ColorSpace;
 static jclass cls_Context;
@@ -173,6 +174,8 @@ static jclass cls_UnsupportedOperationException;
 static jfieldID fid_AlertResult_buttonPressed;
 static jfieldID fid_AlertResult_checkboxChecked;
 static jfieldID fid_Archive_pointer;
+static jfieldID fid_BarcodeInfo_type;
+static jfieldID fid_BarcodeInfo_contents;
 static jfieldID fid_Buffer_pointer;
 static jfieldID fid_ColorSpace_pointer;
 static jfieldID fid_Context_Version_major;
@@ -286,6 +289,7 @@ static jmethodID mid_Archive_init;
 static jmethodID mid_ArrayList_add;
 static jmethodID mid_ArrayList_toArray;
 static jmethodID mid_ArrayList_init;
+static jmethodID mid_BarcodeInfo_init;
 static jmethodID mid_Buffer_init;
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
@@ -491,6 +495,28 @@ static fz_context *base_context;
 static int check_enums()
 {
 	int valid = 1;
+
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_NONE == FZ_BARCODE_NONE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_AZTEC == FZ_BARCODE_AZTEC;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_CODABAR == FZ_BARCODE_CODABAR;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_CODE39 == FZ_BARCODE_CODE39;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_CODE93 == FZ_BARCODE_CODE93;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_CODE128 == FZ_BARCODE_CODE128;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_DATABAR == FZ_BARCODE_DATABAR;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_DATABAREXPANDED == FZ_BARCODE_DATABAREXPANDED;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_DATAMATRIX == FZ_BARCODE_DATAMATRIX;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_EAN8 == FZ_BARCODE_EAN8;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_EAN13 == FZ_BARCODE_EAN13;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_ITF == FZ_BARCODE_ITF;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_MAXICODE == FZ_BARCODE_MAXICODE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_PDF417 == FZ_BARCODE_PDF417;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_QRCODE == FZ_BARCODE_QRCODE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_UPCA == FZ_BARCODE_UPCA;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_UPCE == FZ_BARCODE_UPCE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_MICROQRCODE == FZ_BARCODE_MICROQRCODE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_RMQRCODE == FZ_BARCODE_RMQRCODE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_DXFILMEDGE == FZ_BARCODE_DXFILMEDGE;
+	valid &= com_artifex_mupdf_fitz_BarcodeInfo_BARCODE_DATABARLIMITED == FZ_BARCODE_DATABARLIMITED;
 
 	valid &= com_artifex_mupdf_fitz_Device_BLEND_NORMAL == FZ_BLEND_NORMAL;
 	valid &= com_artifex_mupdf_fitz_Device_BLEND_MULTIPLY == FZ_BLEND_MULTIPLY;
@@ -1075,6 +1101,11 @@ static int find_fids(JNIEnv *env)
 	mid_Archive_init = get_method(&err, env, "<init>", "(J)V");
 	fid_Archive_pointer = get_field(&err, env, "pointer", "J");
 
+	cls_BarcodeInfo = get_class(&err, env, PKG"BarcodeInfo");
+	fid_BarcodeInfo_type = get_field(&err, env, "type", "I");
+	fid_BarcodeInfo_contents = get_field(&err, env, "contents", "Ljava/lang/String;");
+	mid_BarcodeInfo_init = get_method(&err, env, "<init>", "(ILjava/lang/String;)V");
+
 	cls_Buffer = get_class(&err, env, PKG"Buffer");
 	mid_Buffer_init = get_method(&err, env, "<init>", "(J)V");
 	fid_Buffer_pointer = get_field(&err, env, "pointer", "J");
@@ -1565,6 +1596,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Archive);
 	(*env)->DeleteGlobalRef(env, cls_ArrayList);
 	(*env)->DeleteGlobalRef(env, cls_ArrayOfQuad);
+	(*env)->DeleteGlobalRef(env, cls_BarcodeInfo);
 	(*env)->DeleteGlobalRef(env, cls_Buffer);
 	(*env)->DeleteGlobalRef(env, cls_ColorSpace);
 	(*env)->DeleteGlobalRef(env, cls_Context);
@@ -1689,6 +1721,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 #include "jni/nativedevice.c"
 
 #include "jni/archive.c"
+#include "jni/barcodeinfo.c"
 #include "jni/buffer.c"
 #include "jni/colorspace.c"
 #include "jni/cookie.c"

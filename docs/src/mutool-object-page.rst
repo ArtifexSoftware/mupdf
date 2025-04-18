@@ -251,3 +251,20 @@ The base class for a :ref:`PDF Page<mutool_run_js_api_pdf_page>`.
     .. note::
 
         As `PDFPage` extends `Page` this method will return **false**. It is only if we actually have an instance of a `PDFPage` when this method is overridden to return **true**.
+
+
+
+.. method:: decodeBarcode(subarea, rotate)
+
+    Decodes a barcode detected in the pixmap, and returns an object with properties for barcode type and contents.
+
+    :arg subarea: `[ulx,uly,lrx,lry]` :ref:`Rectangle<mutool_run_js_api_rectangle>` Only detect barcode within subarea.
+    :arg rotate: `Integer` Degrees of rotation to rotate pixmap before detecting barcode.
+
+    :return: :ref:`BarcodeInfo<mutool_run_js_api_object_barcode_info>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var barcodeInfo = displaylist.decodeBarcode([0, 0, 100, 100 ], 0);

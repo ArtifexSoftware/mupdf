@@ -100,4 +100,12 @@ public class Page
 	public boolean isPDF() {
 		return false;
 	}
+
+	public native BarcodeInfo decodeBarcode(Rect subarea, float rotate);
+	public BarcodeInfo decodeBarcode(Rect subarea) {
+		return decodeBarcode(subarea, 0);
+	}
+	public BarcodeInfo decodeBarcode() {
+		return decodeBarcode(Rect.Infinite(), 0);
+	}
 }

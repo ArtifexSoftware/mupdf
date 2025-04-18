@@ -737,3 +737,57 @@ FUN(Pixmap_autowarp)(JNIEnv *env, jobject self, jobject jpoints)
 
 	return to_Pixmap_safe_own(ctx, env, dest);
 }
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_decodeBarcode)(JNIEnv *env, jobject self, jfloat rotate)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	fz_barcode_type type = FZ_BARCODE_NONE;
+	char *contents = NULL;
+	jobject jcontents;
+	jobject jbarcodeinfo;
+
+	if (!ctx || !pixmap)
+		return NULL;
+
+	fz_try(ctx)
+		contents = fz_decode_barcode_from_pixmap(ctx, &type, pixmap, rotate);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	jcontents = (*env)->NewStringUTF(env, contents);
+	fz_free(ctx, contents);
+	if (!jcontents || (*env)->ExceptionCheck(env))
+		return NULL;
+
+	jbarcodeinfo = (*env)->NewObject(env, cls_BarcodeInfo, mid_BarcodeInfo_init, type, jcontents);
+	if (!jbarcodeinfo || (*env)->ExceptionCheck(env))
+		return NULL;
+
+	return jbarcodeinfo;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Pixmap_encodeBarcode)(JNIEnv *env, jobject self, jint barcode_type, jstring jcontents, jint size, jint ec, jboolean quiet, jboolean hrt)
+{
+	fz_context *ctx = get_context(env);
+	const char *contents = NULL;
+	fz_pixmap *pix = NULL;
+
+	if (!ctx)
+		return NULL;
+
+	contents = (*env)->GetStringUTFChars(env, jcontents, NULL);
+	if (!contents) jni_throw_run(env, "cannot get characters in contents string");
+
+	fz_try(ctx)
+		pix = fz_new_barcode_pixmap(ctx, barcode_type, contents, size, ec, quiet, hrt);
+	fz_always(ctx)
+		if (contents)
+			(*env)->ReleaseStringUTFChars(env, jcontents, contents);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Pixmap_safe_own(ctx, env, pix);
+}

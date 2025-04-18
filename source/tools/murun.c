@@ -4370,6 +4370,35 @@ static void ffi_Page_getLabel(js_State *J)
 	js_pushstring(J, buf);
 }
 
+static void ffi_Page_decodeBarcode(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = ffi_topage(J, 0);
+	fz_rect subarea = js_iscoercible(J, 1) ? ffi_torect(J, 1) : fz_infinite_rect;
+	float rotate = js_iscoercible(J, 2) ? js_tonumber(J, 2) : 0;
+	char *text;
+	fz_barcode_type type;
+
+	fz_try(ctx)
+		text = fz_decode_barcode_from_page(ctx, &type, page, subarea, rotate);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J))
+	{
+		fz_free(ctx, text);
+		js_throw(J);
+	}
+
+	js_newobject(J);
+	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_setproperty(J, -2, "type");
+	js_pushstring(J, text);
+	js_setproperty(J, -2, "contents");
+	js_endtry(J);
+	fz_free(ctx, text);
+}
+
 static void ffi_Link_getBounds(js_State *J)
 {
 	fz_link *link = js_touserdata(J, 0, "fz_link");
@@ -4813,6 +4842,34 @@ static void ffi_Pixmap_detectDocument(js_State *J)
 	}
 }
 
+static void ffi_Pixmap_decodeBarcode(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	float rotate = js_iscoercible(J, 1) ? js_tonumber(J, 1) : 0;
+	char *text;
+	fz_barcode_type type;
+
+	fz_try(ctx)
+		text = fz_decode_barcode_from_pixmap(ctx, &type, pixmap, rotate);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J))
+	{
+		fz_free(ctx, text);
+		js_throw(J);
+	}
+
+	js_newobject(J);
+	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_setproperty(J, -2, "type");
+	js_pushstring(J, text);
+	js_setproperty(J, -2, "contents");
+	js_endtry(J);
+	fz_free(ctx, text);
+}
+
 static void ffi_Pixmap_saveAsPNG(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -5089,6 +5146,25 @@ static void ffi_Pixmap_setResolution(js_State *J)
 	int yres = js_tointeger(J, 2);
 
 	fz_set_pixmap_resolution(ctx, pixmap, xres, yres);
+}
+
+static void ffi_encodeBarcode_Pixmap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_barcode_type barcode_type = fz_barcode_type_from_string(js_tostring(J, 1));
+	const char *contents = js_tostring(J, 2);
+	int size = js_iscoercible(J, 3) ? js_tointeger(J, 3) : 0;
+	int ec = js_iscoercible(J, 4) ? js_tointeger(J, 4) : 2;
+	int quiet = js_iscoercible(J, 5) ? js_toboolean(J, 5) : 0;
+	int hrt = js_iscoercible(J, 6) ? js_toboolean(J, 6) : 0;
+	fz_pixmap *pix;
+
+	fz_try(ctx)
+		pix = fz_new_barcode_pixmap(ctx, barcode_type, contents, size, ec, quiet, hrt);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushpixmap(J, pix);
 }
 
 static void ffi_new_Image(js_State *J)
@@ -5810,6 +5886,35 @@ static void ffi_DisplayList_search(js_State *J)
 
 	if (state.error)
 		js_throw(J);
+}
+
+static void ffi_DisplayList_decodeBarcode(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_rect subarea = js_iscoercible(J, 1) ? ffi_torect(J, 1) : fz_infinite_rect;
+	float rotate = js_iscoercible(J, 2) ? js_tonumber(J, 2) : 0;
+	char *text;
+	fz_barcode_type type;
+
+	fz_try(ctx)
+		text = fz_decode_barcode_from_display_list(ctx, &type, list, subarea, rotate);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J))
+	{
+		fz_free(ctx, text);
+		js_throw(J);
+	}
+
+	js_newobject(J);
+	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_setproperty(J, -2, "type");
+	js_pushstring(J, text);
+	js_setproperty(J, -2, "contents");
+	js_endtry(J);
+	fz_free(ctx, text);
 }
 
 static void
@@ -11514,6 +11619,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.createLink", ffi_Page_createLink, 2);
 		jsB_propfun(J, "Page.deleteLink", ffi_Page_deleteLink, 1);
 		jsB_propfun(J, "Page.getLabel", ffi_Page_getLabel, 0);
+		jsB_propfun(J, "Page.decodeBarcode", ffi_Page_decodeBarcode, 2);
 	}
 	js_setregistry(J, "fz_page");
 
@@ -11727,6 +11833,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
 		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 1);
 		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 1);
+		jsB_propfun(J, "DisplayList.decodeBarcode", ffi_DisplayList_decodeBarcode, 2);
 	}
 	js_setregistry(J, "fz_display_list");
 
@@ -11773,6 +11880,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 		jsB_propfun(J, "Pixmap.autowarp", ffi_Pixmap_autowarp, 1);
 		jsB_propfun(J, "Pixmap.detectDocument", ffi_Pixmap_detectDocument, 0);
+		jsB_propfun(J, "Pixmap.decodeBarcode", ffi_Pixmap_decodeBarcode, 1);
 
 		// Pixmap.getPixels() - Buffer
 		// Pixmap.scale()
@@ -12184,6 +12292,11 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_tree_archive", "TreeArchive", ffi_new_TreeArchive, 1);
 		jsB_propcon(J, "fz_buffer", "Buffer", ffi_new_Buffer, 1);
 		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 3);
+		js_getglobal(J, "Pixmap");
+		{
+			jsB_propfun(J, "encodeBarcode", ffi_encodeBarcode_Pixmap, 6);
+		}
+		js_pop(J, 1);
 		jsB_propcon(J, "fz_image", "Image", ffi_new_Image, 2);
 		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 3);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);

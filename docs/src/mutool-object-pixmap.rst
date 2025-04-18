@@ -583,3 +583,62 @@ so that they can easily be used to represent tiles of a page.
     .. code-block:: javascript
 
         var md5 = pixmap.computeMD5();
+
+
+
+.. method:: decodeBarcode(rotate)
+
+    Decodes a barcode detected in the pixmap, and returns an object with properties for barcode type and contents.
+
+    :arg rotate: `Integer` Degrees of rotation to rotate pixmap before detecting barcode.
+
+    :return: :ref:`BarcodeInfo<mutool_run_js_api_object_barcode_info>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var barcodeInfo = pixmap.decodeBarcode(0);
+
+
+
+.. method:: encodeBarcode(barcodeType, contents, size, errorCorrectionLevel, quietZones, humanReadableText)
+
+    Encodes a barcode into a pixmap.
+
+    :arg barcodeType: `String` The desired barcode type, one of:
+
+      - `aztec`
+      - `codabar`
+      - `code39`
+      - `code93`
+      - `code128`
+      - `databar`
+      - `databarexpanded`
+      - `datamatrix`
+      - `ean8`
+      - `ean13`
+      - `itf`
+      - `maxicode`
+      - `pdf417`
+      - `qrcode`
+      - `upca`
+      - `upce`
+      - `microqrcode`
+      - `rmqrcode`
+      - `dxfilmedge`
+      - `databarlimited`
+
+    :arg contents: `String` The textual content to encode into the barcode.
+    :arg size: `Integer` The size of the barcode in pixels.
+    :arg errorCorrectionLevel: `Integer` The error correction level (0-8).
+    :arg quietZones: `Boolean` Whether to add an empty margin around the barcode.
+    :arg humanReadableText: `Boolean` Whether to add human-readable text. Some barcodes, e.g. EAN-13, can have the barcode contents printed in human-readable text next to the barcode.
+
+    :return: :ref:`Pixmap<mutool_run_js_api_pixmap>`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var pix = Pixmap.encodeBarcode("qrcode", "Hello world!", 100, 2, true, false);
