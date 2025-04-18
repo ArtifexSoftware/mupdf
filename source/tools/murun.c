@@ -4784,7 +4784,7 @@ static void ffi_Pixmap_autowarp(js_State *J)
 	ffi_pushpixmap(J, dest);
 }
 
-static void ffi_Pixmap_detect_document(js_State *J)
+static void ffi_Pixmap_detectDocument(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
@@ -11769,7 +11769,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.deskew", ffi_Pixmap_deskew, 2);
 		jsB_propfun(J, "Pixmap.convertToColorSpace", ffi_Pixmap_convertToColorSpace, 5);
 		jsB_propfun(J, "Pixmap.autowarp", ffi_Pixmap_autowarp, 1);
-		jsB_propfun(J, "Pixmap.detectDocument", ffi_Pixmap_detect_document, 0);
+		jsB_propfun(J, "Pixmap.detectDocument", ffi_Pixmap_detectDocument, 0);
 
 		// Pixmap.getPixels() - Buffer
 		// Pixmap.scale()
