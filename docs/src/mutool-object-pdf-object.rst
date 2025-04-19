@@ -440,6 +440,8 @@ Primitive :title:`PDF` objects such as booleans, names, and numbers can usually 
 
 .. method:: isReal()
 
+    |mutool_tag|
+
     Returns *true* if the object is a `Real` object.
 
     :return: `Boolean`.
@@ -541,9 +543,9 @@ Primitive :title:`PDF` objects such as booleans, names, and numbers can usually 
         var dict = pdfDocument.newDictionary();
         var grandParent = pdfDocument.newDictionary();
         var grandgrandParent = pdfDocument.newDictionary();
-	grandgrandParent.put("my_key", "my_value");
-	grandParent.put("Parent", grandgrandParent);
-	dict.put("Parent", grandParent);
+        grandgrandParent.put("my_key", "my_value");
+        grandParent.put("Parent", grandgrandParent);
+        dict.put("Parent", grandParent);
         var value = dict.getInheritable("my_key");
         var arr = pdfDocument.newArray();
         var value = arr.get(0);

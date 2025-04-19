@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -35,6 +35,10 @@
 
 
 .. method:: new Buffer(original)
+
+    |wasm_tag|
+
+    .. |tor_todo| is this correct? does the API work like this?
 
     *Constructor method*.
 
@@ -102,8 +106,6 @@
 
 .. method:: getLength()
 
-    |wasm_tag|
-
     Returns the number of bytes in the buffer. `Read-only`.
 
     :return: `Integer`.
@@ -129,8 +131,6 @@
 
 
 .. method:: readByte(at)
-
-    |wasm_tag|
 
     Read the byte at the supplied index.
 
@@ -218,8 +218,6 @@
 
 .. method:: save(fileName)
 
-    |mutool_tag|
-
     Write the contents of the buffer to a file.
 
     :arg fileName: Filename to save to.
@@ -247,8 +245,6 @@
 
 
 .. method:: asString()
-
-    |wasm_tag|
 
     Returns the buffer as a `String`.
 

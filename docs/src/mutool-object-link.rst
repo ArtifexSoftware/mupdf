@@ -79,8 +79,6 @@
 .. _mutool_run_js_api_link_isExternal:
 .. method:: isExternal()
 
-    |wasm_tag|
-
     Returns a boolean indicating if the link is external or not. If the link URI has a valid scheme followed by `:` then it considered to be external, e.g. https://example.com.
 
     :return: `Boolean`.

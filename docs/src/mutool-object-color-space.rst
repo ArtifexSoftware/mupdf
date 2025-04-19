@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -190,6 +190,7 @@
 `DefaultColorSpaces`
 ------------------------------
 
+|mutool_tag|
 
 .. |jamie_todo| Look into the Device interfaces and see how DefaultColorSpaces is used there.
 

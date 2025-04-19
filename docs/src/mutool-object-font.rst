@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -24,11 +24,11 @@
 `Font` objects can be created from :title:`TrueType`, :title:`OpenType`, :title:`Type1` or :title:`CFF` fonts. In :title:`PDF` there are also special :title:`Type3` fonts.
 
 
-.. method:: new Font(name, data, index)
+.. method:: new Font(name)
 
     *Constructor method*.
 
-    Create a new font, either using a built-in font, or from a file or buffer.
+    Create a new font from a named built-in font.
 
     The built-in standard :title:`PDF` fonts are:
 
@@ -49,9 +49,7 @@
 
     The built-in CJK fonts are referenced by language code: `zh-Hant`, `zh-Hans`, `ja`, `ko`.
 
-    :arg name: Font name.
-    :arg data: Either a Buffer or a file name.
-    :arg index: Subfont index (only used for TTC fonts).
+    :arg name: `String` Font name.
 
     :return: `Font`.
 
@@ -60,6 +58,43 @@
     .. code-block:: javascript
 
         var times = new mupdf.Font("Times-Roman")
+
+.. method:: new Font(name, buffer, index)
+
+    *Constructor method*.
+
+    Create a new font from a buffer.
+
+    :arg name: `String` Name given to loaded font.
+    :arg buffer: `Buffer` A buffer containing font data.
+    :arg index: `Integer` Subfont index (only used for TTC fonts).
+
+    :return: `Font`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var font = new mupdf.Font("Comic Sans", "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS.ttf")
+
+.. method:: new Font(name, filename, index)
+
+    |mutool_tag|
+
+    *Constructor method*.
+
+    Create a new font, a font file.
+
+    :arg name: `String` Name given to loaded font.
+    :arg filename: `String` Name of file containing font data.
+    :arg index: `Integer` Subfont index (only used for TTC fonts).
+
+    :return: `Font`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
         var font = new mupdf.Font("Comic Sans", "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS.ttf")
 
 

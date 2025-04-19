@@ -41,8 +41,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: new PDFDocument(fileName)
 
-    |mutool_tag|
-
     *Constructor method*.
 
     Load a :title:`PDF` document from file.
@@ -75,8 +73,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: setLanguage(lang)
 
-    |wasm_tag|
-
     Sets the language for the document.
 
     :arg lang: `String`.
@@ -90,8 +86,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 
 .. method:: getLanguage()
-
-    |wasm_tag|
 
     Gets the language for the document.
 
@@ -132,8 +126,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: subsetFonts()
 
-    |mutool_tag|
-
     Scan the document and establish which glyphs are used from each font, next rewrite the font files such that they only contain the used glyphs. By removing unused glyphs the size of the font files inside the PDF will be reduced.
 
     |example_tag|
@@ -144,8 +136,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 
 .. method:: save(fileName, options)
-
-    |mutool_tag|
 
     Write the `PDFDocument` to file. The options are a string of comma separated options (see the :ref:`mutool convert options<mutool_convert>`).
 
@@ -161,8 +151,6 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 
 .. method:: saveToBuffer(options)
-
-    |wasm_tag|
 
     Saves the document to a buffer. The options are a string of comma separated options (see the :ref:`mutool convert options<mutool_convert>`).
 
@@ -351,12 +339,16 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: formatURIWithPathAndDest(path, destination)
 
+    |mutool_tag|
+
     Format a link :title:`URI` given a system independent path (see table 3.40 in the 1.7 specification) to a remote document and a destination object or a destination string suitable for :ref:`createLink()<mutool_run_js_api_page_create_link>`.
 
     :arg path: `String` An absolute or relative path to a remote document file.
     :arg destination: :ref:`Link destination<mutool_run_js_api_link_dest>` or `String` referring to a destination using either a destination object or a destination name in the remote document.
 
 .. method:: appendDestToURI(uri, destination)
+
+    |mutool_tag|
 
     Append a fragment representing a document destination to a an existing :title:`URI` that points to a remote document. The resulting string is suitable for :ref:`createLink()<mutool_run_js_api_page_create_link>`.
 
@@ -406,7 +398,7 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
 
 .. method:: setJSEventListener(listener)
 
-    |mutool_tag|
+    |mutool_tag_wasm_soon|
 
     Calls the listener whenever a document :title:`JavaScript` action triggers an event.
 
@@ -449,9 +441,9 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
     .. code-block:: javascript
 
         var dests = pdfDocument.loadNameTree("Dests");
-	for (var p in dests) {
-	    console.log("Destination: " + p);
-	}
+        for (var p in dests) {
+            console.log("Destination: " + p);
+        }
 
 ----
 
@@ -568,6 +560,8 @@ With :title:`MuPDF` it is also possible to create, edit and manipulate :title:`P
         pdfDocument.redo();
 
 .. method:: saveJournal(filename)
+
+    |mutool_tag|
 
     Save the journal to a file.
 
@@ -1034,6 +1028,8 @@ All page objects are structured into a page tree, which defines the order the pa
 
 .. method:: lookupDest(obj)
 
+    |mutool_tag|
+
     Find the destination corresponding to a specific named destination given as a name or byte string in the form of a `PDFObject`.
 
     :arg obj: `PDFObject`.
@@ -1172,7 +1168,9 @@ Embedded/Associated files in :title:`PDFs`
 
 
 
-.. method:: getFilespecParams(fileSpecObject)
+.. method:: getFileSpecParams(fileSpecObject)
+
+    |mutool_tag|
 
     Return an object describing the file referenced by the `fileSpecObject`.
 
@@ -1184,7 +1182,7 @@ Embedded/Associated files in :title:`PDFs`
 
     .. code-block:: javascript
 
-        var obj = pdfDocument.getFilespecParams(fileSpecObject);
+        var obj = pdfDocument.getFileSpecParams(fileSpecObject);
 
 
 .. method:: getEmbeddedFileContents(fileSpecObject)
@@ -1208,6 +1206,8 @@ Embedded/Associated files in :title:`PDFs`
 
 
 .. method:: verifyEmbeddedFileChecksum(fileSpecObject)
+
+    |mutool_tag|
 
     Verify the :title:`MD5` checksum of the embedded file contents.
 
@@ -1240,6 +1240,8 @@ Embedded/Associated files in :title:`PDFs`
 
 .. method:: countAssociatedFiles()
 
+    |mutool_tag|
+
     Return the number of Associated Files on this document. Note that this is the number of files associated at the document level, not necessarily the total number of files associated with elements throughout the entire document.
 
     :return: `Integer`
@@ -1255,6 +1257,8 @@ Embedded/Associated files in :title:`PDFs`
 
 
 .. method:: associatedFile(n)
+
+    |mutool_tag|
 
     Return the Filespec object that represents the nth Associated File on this document. 0 <= n < count, where count is the value given by countAssociatedFiles().
 
@@ -1360,6 +1364,8 @@ ZUGFeRD support in :title:`PDFs`
 
 .. method:: zugferdProfile()
 
+    |mutool_tag|
+
     Determine if the current PDF is a ZUGFeRD PDF, and, if so, return the profile type in use. Possible return values include: "NOT ZUGFERD", "COMFORT", "BASIC", "EXTENDED", "BASIC WL", "MINIMUM", "XRECHNUNG", and "UNKNOWN".
 
     :return: `String`.
@@ -1374,6 +1380,8 @@ ZUGFeRD support in :title:`PDFs`
 
 
 .. method:: zugferdVersion()
+
+    |mutool_tag|
 
     Determine if the current PDF is a ZUGFeRD PDF, and, if so, return the version of the spec it claims to conforms to.
     This will return 0 for non-zugferd PDFs.
@@ -1391,6 +1399,8 @@ ZUGFeRD support in :title:`PDFs`
 
 .. method:: zugferdXML()
 
+    |mutool_tag|
+
     Return a buffer containing the embedded ZUGFeRD XML data from this PDF.
 
     :return: `Buffer`.
@@ -1401,7 +1411,6 @@ ZUGFeRD support in :title:`PDFs`
     .. code-block:: javascript
 
         var buf = pdfDocument.zugferdXML();
-
 
 
 .. External links

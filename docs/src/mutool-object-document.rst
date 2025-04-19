@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -291,6 +291,8 @@
 
 
 .. method:: asPDF()
+
+    |mutool_tag|
 
     Returns a pdf version of the document (if possible). PDF documents return the same object. Documents that have an underlying PDF representation return that. Other document types return null.
 

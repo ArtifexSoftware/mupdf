@@ -132,6 +132,8 @@ A display list records all the device calls for playback later. If you want to r
 
 .. method:: decodeBarcode(subarea, rotate)
 
+    |mutool_tag|
+
     Decodes a barcode detected in the pixmap, and returns an object with properties for barcode type and contents.
 
     :arg subarea: `[ulx,uly,lrx,lry]` :ref:`Rectangle<mutool_run_js_api_rectangle>` Only detect barcode within subarea.

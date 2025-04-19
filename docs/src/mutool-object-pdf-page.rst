@@ -211,6 +211,8 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
 
 .. method:: process(processor)
 
+    |mutool_tag|
+
     Run through the page contents stream and call methods on the supplied :ref:`PDF processor<mutool_run_js_api_pdf_processor>`.
 
     :arg processor: User defined function.
@@ -263,6 +265,8 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
 
 .. method:: createSignature(name)
 
+    |mutool_tag|
+
     Create a new signature widget with the given name as field label.
 
     :arg name: `String` The desired field label.
@@ -276,6 +280,8 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
         var signatureWidget = pdfPage.createSignature("test");
 
 .. method:: countAssociatedFiles()
+
+    |mutool_tag|
 
     Return the number of Associated Files on this page. Note that this is the number of files associated to this page, not necessarily the total number of files associated with elements throughout the entire document.
 
@@ -292,6 +298,8 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
 
 
 .. method:: associatedFile(n)
+
+    |mutool_tag|
 
     Return the Filespec object that represents the nth Associated File on this page. 0 <= n < count, where count is the value given by countAssociatedFiles().
 

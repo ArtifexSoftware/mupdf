@@ -147,7 +147,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: setAppearance(image)
 
-
+    |mutool_tag|
 
     Set a stamp annotation's appearance to that of an image.
 
@@ -189,6 +189,8 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
 .. method:: requestSynthesis()
 
+    |mutool_tag|
+
     Request that an appearance stream should be generated for an annotation if none present.
     The appearance stream itself will be created in future calls to update() on
     :ref:`PDFAnnotation<mutool_run_js_api_pdf_annotation>` or :ref:`PDFPage<mutool_run_js_api_pdf_page>`.
@@ -200,6 +202,8 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
         annotation.requestSynthesis();
 
 .. method:: requestResynthesis()
+
+    |mutool_tag|
 
     Request that an appearance stream should be re-generated for an annotation next time update() is
     called on :ref:`PDFAnnotation<mutool_run_js_api_pdf_annotation>` or :ref:`PDFPage<mutool_run_js_api_pdf_page>`.
@@ -582,6 +586,8 @@ These properties are only present for some annotation types, so support for them
 
 .. method:: hasDefaultAppearance()
 
+    |mutool_tag|
+
     Returns whether the annotation is capable of supporting a bounding box.
 
     :return: `Boolean`.
@@ -625,6 +631,8 @@ These properties are only present for some annotation types, so support for them
 
 
 .. method:: hasQuadding()
+
+    |mutool_tag|
 
     Returns whether the annotation is capable of supporting quadding (justification).
 
@@ -884,8 +892,6 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: setLineLeader(ll)
 
-    |mutool_tag|
-
     Sets the line leader length.
 
     :arg ll: `Number`. The length of leader lines that extend from each endpoint of the line perpendicular to the line itself. A positive value means that the leader lines appear in the direction that is clockwise when traversing the line from its starting point to its ending point a negative value indicates the opposite direction.
@@ -897,16 +903,12 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: getLineLeader()
 
-    |mutool_tag|
-
     Gets the line leader length.
 
     :return: `Number`
 
 
 .. method:: setLineLeaderExtension(lle)
-
-    |mutool_tag|
 
     Sets the line leader extension.
 
@@ -918,16 +920,12 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: getLineLeaderExtension()
 
-    |mutool_tag|
-
     Gets the line leader extension.
 
     :return: `Number`
 
 
 .. method:: setLineLeaderOffset(llo)
-
-    |mutool_tag|
 
     Sets the line leader offset.
 
@@ -948,8 +946,6 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: setLineCaption(enable)
 
-    |mutool_tag|
-
     Sets whether line caption is enabled or not.
 
     :arg enable: `Boolean`.
@@ -962,16 +958,12 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: getLineCaption()
 
-    |mutool_tag|
-
     Returns whether the line caption is enabled or not.
 
     :return: `Boolean`.
 
 
 .. method:: setLineCaptionOffset(point)
-
-    |mutool_tag|
 
     Sets any line caption offset.
 
@@ -990,8 +982,6 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 
 .. method:: getLineCaptionOffset()
-
-    |mutool_tag|
 
     Returns the line caption offset as a point, `[x, y]`.
 
@@ -1013,8 +1003,6 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: hasCallout()
 
-    |mutool_tag|
-
     Returns whether the annotation is capable of supporting a callout or not.
 
 
@@ -1023,16 +1011,12 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: setCalloutLine(points)
 
-    |mutool_tag|
-
     Takes an array of 2 or 3 points.
 
     :arg points: [ [x1, y1], [x2, y2], [x3, y3]? ].
 
 
 .. method:: getCalloutLine()
-
-    |mutool_tag|
 
     Returns the array of points.
 
@@ -1041,16 +1025,12 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: setCalloutPoint(point)
 
-    |mutool_tag|
-
     Takes a point where the callout should point to.
 
     :arg points: `[x,y]`.
 
 
 .. method:: getCalloutPoint()
-
-    |mutool_tag|
 
     Returns the callout point.
 
@@ -1059,16 +1039,12 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: setCalloutStyle(style)
 
-    |mutool_tag|
-
     Sets the style of the callout line.
 
     :arg style: `String`. A :ref:`line ending style <mutool_pdf_annotation_line_ending_styles>`.
 
 
 .. method:: getCalloutStyle()
-
-    |mutool_tag|
 
     Returns the callout style.
 
@@ -1185,6 +1161,8 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 .. method:: hasPopup()
 
+    |mutool_tag|
+
     Returns whether the annotation is capable of supporting a popup or not.
 
     :return: `Boolean`.
@@ -1265,6 +1243,8 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
 
 .. method:: hasFilespec()
+
+    |mutool_tag|
 
     Returns whether the annotation is capable of supporting the annotation file specification.
 
@@ -1635,7 +1615,7 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: addInkList(stroke)
 
-
+    |mutool_tag|
 
     To the list of strokes, append a stroke, represented as an array of vertices each an array of its X/Y coordinates.
 
@@ -1845,6 +1825,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: hasRichContents()
 
+    |mutool_tag|
+
     Returns whether the annotation is capable of supporting rich text contents.
 
     :return: `Boolean`.
@@ -1857,6 +1839,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: getRichContents()
 
+    |mutool_tag|
+
     Obtain the annotation's rich-text contents, as opposed to the plain text contents obtained by :ref:`getContents()<mutool_object_pdf_annotation_get_contents>`.
 
     |example_tag|
@@ -1866,6 +1850,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
         var richContents = annotation.getRichContents();
 
 .. method:: setRichContents(plainText, richText)
+
+    |mutool_tag|
 
     Set the annotation's rich-text contents, as opposed to the plain text contents set by :ref:`setContents()<mutool_object_pdf_annotation_set_contents>`.
 
@@ -1877,6 +1863,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: getRichDefaults()
 
+    |mutool_tag|
+
     Get the default style used for the annotation's rich-text contents.
 
     |example_tag|
@@ -1886,6 +1874,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
         var richDefaults = annotation.getRichDefaults();
 
 .. method:: setRichDefaults(style)
+
+    |mutool_tag|
 
     Set the default style used for the annotation's rich-text contents.
 
@@ -1897,6 +1887,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 
 .. method:: getStampImageObject()
+
+    |mutool_tag|
 
     If the annotation is a stamp annotation and it consists of an image, return the `PDFObject` representing that image.
 
@@ -1911,6 +1903,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: setStampImageObject(imgobj)
 
+    |mutool_tag|
+
     Create an appearance stream containing the image passed as argument and set that as the normal appearance of the annotation.
 
     :arg imgobj: A `PDFObject` corresponding to the desired image.
@@ -1924,6 +1918,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: setStampImage(img)
 
+    |mutool_tag|
+
     Add the image passed as argument to the document as a PDF object, and pass a reference to that object to when setting the normal appearance of the stamp annotation.
 
     :arg img: The `Image` desired to become the stamp annotations appearance.
@@ -1936,6 +1932,8 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 
 .. method:: hasIntent()
+
+    |mutool_tag|
 
     Returns whether the annotation is capable of supporting intent (justification).
 

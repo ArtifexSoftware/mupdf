@@ -39,6 +39,28 @@ so that they can easily be used to represent tiles of a page.
 
         var pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, [0,0,100,100], true);
 
+.. method:: new Pixmap(pixmap, mask)
+
+    |mutool_tag|
+
+    *Constructor method*.
+
+    Create a new pixmap based on an existing pixmap without alpha, and combining it with a single component soft mask of the same dimensions.
+
+    :arg pixmap: `Pixmap` Used to set the color of pixels in the result.
+    :arg mask: `Pixmap` Used to set the alpha of pixels in the resul.t
+
+    :return: `Pixmap`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var pix = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, [0,0,100,100], false);
+        var mask = new mupdf.Pixmap(mupdf.ColorSpace.DeviceGray, [0,0,100,100], false);
+        // Set pixels in pix to desired RGB color values.
+        // Set pixels in mask to desired alpha levels.
+        var pixmapWithAlpha = new mupdf.Pixmap(pix, mask);
 
 
 |instance_methods|
@@ -400,6 +422,8 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: autowarp(points)
 
+    |mutool_tag|
+
     Same as :ref:`Pixmap.warp()<mutool_run_js_api_pixmap_warp>` except that width and height are automatically determined.
 
     :arg points: `[x0, y0, x1, y1, x2, y2, x3, y3, x4, y4]`
@@ -436,8 +460,6 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: getPixels()
 
-    |wasm_tag|
-
     Returns an array of pixels for the `Pixmap`.
 
 
@@ -451,8 +473,6 @@ so that they can easily be used to represent tiles of a page.
 
 
 .. method:: asPNG()
-
-    |wasm_tag|
 
     Returns a buffer of the `Pixmap` as a :title:`PNG`.
 
@@ -469,8 +489,6 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: asPSD()
 
-    |wasm_tag|
-
     Returns a buffer of the `Pixmap` as a :title:`PSD`.
 
 
@@ -484,8 +502,6 @@ so that they can easily be used to represent tiles of a page.
 
 
 .. method:: asPAM()
-
-    |wasm_tag|
 
     Returns a buffer of the `Pixmap` as a :title:`PAM`.
 
@@ -501,8 +517,6 @@ so that they can easily be used to represent tiles of a page.
 
 
 .. method:: asJPEG(quality, invertCMYK)
-
-    |wasm_tag|
 
     Returns a buffer of the `Pixmap` as a :title:`JPEG`.
     Note, if the `Pixmap` has an alpha channel then an exception will be thrown.
@@ -522,7 +536,7 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: detectDocument(points)
 
-    |wasm_tag|
+    |mutool_tag|
 
     Detect a "document" in a `Pixmap` (either grayscale or rgb, without alpha)
     Note, if the `Pixmap` is not Greyscale with no alpha then an exception will be thrown.
@@ -537,7 +551,7 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: detectSkew()
 
-    |wasm_tag|
+    |mutool_tag|
 
     Returns the angle of skew detected from `Pixmap`.
     Note, if the `Pixmap` is not Greyscale with no alpha then an exception will be thrown.
@@ -554,7 +568,7 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: deskew(angle, border)
 
-    |wasm_tag|
+    |mutool_tag|
 
     Returns a new `Pixmap` being the deskewed version of the supplied `Pixmap`.
     Note, if a `Pixmap` is supplied that is not RGB or Greyscale, or has alpha then an exception will be thrown.
@@ -572,7 +586,7 @@ so that they can easily be used to represent tiles of a page.
 
 .. method:: computeMD5()
 
-    |wasm_tag|
+    |mutool_tag|
 
     Returns the MD5 digest of the pixmap pixel data.
 
@@ -587,6 +601,8 @@ so that they can easily be used to represent tiles of a page.
 
 
 .. method:: decodeBarcode(rotate)
+
+    |mutool_tag|
 
     Decodes a barcode detected in the pixmap, and returns an object with properties for barcode type and contents.
 
@@ -603,6 +619,8 @@ so that they can easily be used to represent tiles of a page.
 
 
 .. method:: encodeBarcode(barcodeType, contents, size, errorCorrectionLevel, quietZones, humanReadableText)
+
+    |mutool_tag|
 
     Encodes a barcode into a pixmap.
 

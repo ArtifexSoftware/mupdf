@@ -81,8 +81,6 @@ instance use :ref:`Page toStructuredText()<mutool_page_toStructuredText>`.
 
 .. method:: walk(walker)
 
-    |wasm_tag|
-
     :arg walker: Function with protocol methods, see example below for details.
 
     Walk through the blocks (images or text blocks) of the structured text.
@@ -133,8 +131,6 @@ instance use :ref:`Page toStructuredText()<mutool_page_toStructuredText>`.
 
 .. method:: asJSON(scale)
 
-    |wasm_tag|
-
     Returns the instance in :title:`JSON` format.
 
     :arg scale: `Float` Default: `1`. Multiply all the coordinates by this factor to get the coordinates at another resolution. The structured text has all coordinates in points (72 DPI), however you may want to use the coordinates in the `StructuredText` data at another resolution.
@@ -155,8 +151,6 @@ instance use :ref:`Page toStructuredText()<mutool_page_toStructuredText>`.
 
 .. method:: asHTML(id)
 
-    |wasm_tag|
-
     Returns the instance in :title:`HTML` format.
 
     :arg is: `Integer`
@@ -172,8 +166,6 @@ instance use :ref:`Page toStructuredText()<mutool_page_toStructuredText>`.
 
 
 .. method:: asText()
-
-    |wasm_tag|
 
     Returns the instance in :title:`Text` format.
 

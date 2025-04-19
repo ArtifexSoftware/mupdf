@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -168,17 +168,13 @@ A `Path` object represents vector graphics as drawn by a pen. A path can be eith
 
 .. method:: walk(pathWalker)
 
-    |mutool_tag_wasm_soon|
-
     Call `moveTo`, `lineTo`, `curveTo` and `closePath` methods on the `pathWalker` object to replay the path.
-
 
     :arg pathWalker: The path walker object. A user definable :title:`JavaScript` object which can be used to trigger your own functions on the path methods.
 
     .. note::
 
         A path walker object has callback methods that are called when `walk()` walks over `moveTo`, `lineTo`, `curveTo` and `closePath` operators in a `Path`.
-
 
     |example_tag|
 
@@ -192,8 +188,6 @@ A `Path` object represents vector graphics as drawn by a pen. A path can be eith
                 //... do whatever ...
             },
         }
-
-    .. |tor_todo|  WASM, throws 'TODO'
 
 
 .. method:: transform(transform)

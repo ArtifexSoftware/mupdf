@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -438,6 +438,8 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
 
 
 .. method:: setDefaultColorSpaces(defaults)
+
+    |mutool_tag_wasm_soon|
 
     Change the set of default colorspaces for the device. See the :ref:`DefaultColorSpaces<mutool_object_default_color_spaces>` object.
 

@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 ----
@@ -19,6 +19,26 @@
 ---------------------
 
 `DocumentWriter` objects are used to create new documents in several formats.
+
+.. method:: new DocumentWriter(buffer, format, options)
+
+    *Constructor method*.
+
+    Create a new document writer to create a document with the specified format and output options. The `options` argument is a comma separated list of flags and key-value pairs.
+
+    The output `format` & `options` are the same as in the :ref:`mutool convert<mutool_convert>` command.
+
+
+    :arg buffer: The buffer to output to.
+    :arg format: The file format.
+    :arg options: The options as key-value pairs.
+    :return: `DocumentWriter`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var writer = new mupdf.DocumentWriter(buffer, "PDF", "");
 
 
 .. method:: new DocumentWriter(filename, format, options)
@@ -42,31 +62,6 @@
     .. code-block:: javascript
 
         var writer = new mupdf.DocumentWriter("out.pdf", "PDF", "");
-
-
-
-.. method:: new DocumentWriter(buffer, format, options)
-
-    |wasm_tag|
-
-    *Constructor method*.
-
-    Create a new document writer to create a document with the specified format and output options. The `options` argument is a comma separated list of flags and key-value pairs.
-
-    The output `format` & `options` are the same as in the :ref:`mutool convert<mutool_convert>` command.
-
-
-    :arg buffer: The buffer to output to.
-    :arg format: The file format.
-    :arg options: The options as key-value pairs.
-    :return: `DocumentWriter`.
-
-    |example_tag|
-
-    .. code-block:: javascript
-
-        var writer = new mupdf.DocumentWriter(buffer, "PDF", "");
-
 
 
 
