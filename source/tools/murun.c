@@ -7055,7 +7055,7 @@ static void ffi_pushembeddedfileparams(js_State *J, pdf_embedded_file_params *pa
 	js_setproperty(J, -2, "modificationDate");
 }
 
-static void ffi_PDFDocument_getFilespecParams(js_State *J)
+static void ffi_PDFDocument_getFileSpecParams(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
@@ -7074,7 +7074,7 @@ static void ffi_PDFDocument_getFilespecParams(js_State *J)
 
 static void ffi_PDFDocument_getEmbeddedFileParams(js_State *J)
 {
-	ffi_PDFDocument_getFilespecParams(J);
+	ffi_PDFDocument_getFileSpecParams(J);
 }
 
 static void ffi_PDFDocument_getEmbeddedFileContents(js_State *J)
@@ -8767,7 +8767,7 @@ static void ffi_PDFObject_compare(js_State *J)
 	js_pushboolean(J, result);
 }
 
-static void ffi_PDFObject_isFilespec(js_State *J)
+static void ffi_PDFObject_isFileSpec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
@@ -10474,7 +10474,7 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 	}
 }
 
-static void ffi_PDFAnnotation_hasFilespec(js_State *J)
+static void ffi_PDFAnnotation_hasFileSpec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
@@ -10486,7 +10486,7 @@ static void ffi_PDFAnnotation_hasFilespec(js_State *J)
 	js_pushboolean(J, has);
 }
 
-static void ffi_PDFAnnotation_getFilespec(js_State *J)
+static void ffi_PDFAnnotation_getFileSpec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
@@ -10500,7 +10500,7 @@ static void ffi_PDFAnnotation_getFilespec(js_State *J)
 	ffi_pushobj(J, pdf_keep_obj(ctx, fs));
 }
 
-static void ffi_PDFAnnotation_setFilespec(js_State *J)
+static void ffi_PDFAnnotation_setFileSpec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
@@ -11931,7 +11931,7 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.addEmbeddedFile", ffi_PDFDocument_addEmbeddedFile, 6);
 		jsB_propfun(J, "PDFDocument.getEmbeddedFileParams", ffi_PDFDocument_getEmbeddedFileParams, 1);
-		jsB_propfun(J, "PDFDocument.getFilespecParams", ffi_PDFDocument_getFilespecParams, 1);
+		jsB_propfun(J, "PDFDocument.getFileSpecParams", ffi_PDFDocument_getFileSpecParams, 1);
 		jsB_propfun(J, "PDFDocument.getEmbeddedFileContents", ffi_PDFDocument_getEmbeddedFileContents, 1);
 		jsB_propfun(J, "PDFDocument.verifyEmbeddedFileChecksum", ffi_PDFDocument_verifyEmbeddedFileChecksum, 1);
 		jsB_propfun(J, "PDFDocument.isEmbeddedFile", ffi_PDFDocument_isEmbeddedFile, 1);
@@ -12103,9 +12103,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setDefaultAppearance", ffi_PDFAnnotation_setDefaultAppearance, 3);
 		jsB_propfun(J, "PDFAnnotation.setAppearance", ffi_PDFAnnotation_setAppearance, 6);
 
-		jsB_propfun(J, "PDFAnnotation.hasFilespec", ffi_PDFAnnotation_hasFilespec, 0);
-		jsB_propfun(J, "PDFAnnotation.getFilespec", ffi_PDFAnnotation_getFilespec, 0);
-		jsB_propfun(J, "PDFAnnotation.setFilespec", ffi_PDFAnnotation_setFilespec, 1);
+		jsB_propfun(J, "PDFAnnotation.hasFileSpec", ffi_PDFAnnotation_hasFileSpec, 0);
+		jsB_propfun(J, "PDFAnnotation.getFileSpec", ffi_PDFAnnotation_getFileSpec, 0);
+		jsB_propfun(J, "PDFAnnotation.setFileSpec", ffi_PDFAnnotation_setFileSpec, 1);
 
 		jsB_propfun(J, "PDFAnnotation.hasLine", ffi_PDFAnnotation_hasLine, 0);
 		jsB_propfun(J, "PDFAnnotation.getLine", ffi_PDFAnnotation_getLine, 0);
@@ -12264,7 +12264,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.writeRawStream", ffi_PDFObject_writeRawStream, 1);
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
 		jsB_propfun(J, "PDFObject.compare", ffi_PDFObject_compare, 1);
-		jsB_propfun(J, "PDFObject.isFilespec", ffi_PDFObject_isFilespec, 0);
+		jsB_propfun(J, "PDFObject.isFileSpec", ffi_PDFObject_isFileSpec, 0);
 	}
 	js_setregistry(J, "pdf_obj");
 

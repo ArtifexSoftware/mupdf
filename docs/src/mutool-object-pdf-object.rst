@@ -233,7 +233,7 @@ All functions that take `PDFObjects`, do automatic translation between
         var val = pdfObj.asIndirect();
 
 
-.. method:: isFilespec()
+.. method:: isFileSpec()
 
     Is the object a file specification (or a reference to a file specification).
 
@@ -244,7 +244,7 @@ All functions that take `PDFObjects`, do automatic translation between
 
     .. code-block:: javascript
 
-        var val = pdfObj.isFilespec();
+        var val = pdfObj.isFileSpec();
 
 
 

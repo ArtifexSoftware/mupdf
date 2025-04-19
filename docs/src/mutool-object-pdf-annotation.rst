@@ -1242,7 +1242,7 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
     "Open" refers to whether the annotation is display in an open state when the page is loaded. A Text Note annotation is considered "Open" if the user has clicked on it to view its contents.
 
 
-.. method:: hasFilespec()
+.. method:: hasFileSpec()
 
     |mutool_tag|
 
@@ -1254,13 +1254,13 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
     .. code-block:: javascript
 
-        var hasFileSpec = annotation.hasFilespec();
+        var hasFileSpec = annotation.hasFileSpec();
 
 
 
 
 
-.. method:: getFilespec()
+.. method:: getFileSpec()
 
 
     Gets the file specification object.
@@ -1271,15 +1271,15 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
     .. code-block:: javascript
 
-        var fileSpec = annotation.getFilespec(true);
+        var fileSpec = annotation.getFileSpec(true);
 
 
 
 
-.. _mutool_run_js_api_pdf_annotation_setFilespec:
+.. _mutool_run_js_api_pdf_annotation_setFileSpec:
 
 
-.. method:: setFilespec(fileSpecObject)
+.. method:: setFileSpec(fileSpecObject)
 
 
     Sets the file specification object.
@@ -1291,7 +1291,7 @@ Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotatio
 
     .. code-block:: javascript
 
-        annotation.setFilespec({filename:"my_file.pdf",
+        annotation.setFileSpec({filename:"my_file.pdf",
                                 mimetype:"application/pdf",
                                 size:1000,
                                 creationDate:date,
