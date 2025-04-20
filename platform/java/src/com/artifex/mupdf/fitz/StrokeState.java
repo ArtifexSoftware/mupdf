@@ -73,5 +73,5 @@ public class StrokeState
 	public native float getLineWidth();
 	public native float getMiterLimit();
 	public native float getDashPhase();
-	public native float[] getDashes();
+	public native float[] getDashPattern();
 }

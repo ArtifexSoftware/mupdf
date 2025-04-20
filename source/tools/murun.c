@@ -2870,7 +2870,7 @@ static void ffi_new_StrokeState(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stroke_state *stroke = NULL;
 
-	if (js_hasproperty(J, 1, "dashes"))
+	if (js_hasproperty(J, 1, "dashPattern"))
 	{
 		int i, n = js_getlength(J, -1);
 		fz_try(ctx)
@@ -2972,7 +2972,7 @@ static void ffi_StrokeState_getDashPhase(js_State *J)
 	js_pushnumber(J, stroke->dash_phase);
 }
 
-static void ffi_StrokeState_getDashes(js_State *J)
+static void ffi_StrokeState_getDashPattern(js_State *J)
 {
 	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
 	ffi_pusharray(J, stroke->dash_list, stroke->dash_len);
@@ -11642,7 +11642,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "StrokeState.getLineWidth", ffi_StrokeState_getLineWidth, 0);
 		jsB_propfun(J, "StrokeState.getMiterLimit", ffi_StrokeState_getMiterLimit, 0);
 		jsB_propfun(J, "StrokeState.getDashPhase", ffi_StrokeState_getDashPhase, 0);
-		jsB_propfun(J, "StrokeState.getDashes", ffi_StrokeState_getDashes, 0);
+		jsB_propfun(J, "StrokeState.getDashPattern", ffi_StrokeState_getDashPattern, 0);
 	}
 	js_setregistry(J, "fz_stroke_state");
 

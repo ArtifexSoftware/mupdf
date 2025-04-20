@@ -43,6 +43,7 @@ Changes from 1.25 to 1.26
     - `PDFAnnotation.setFilespec` renamed `PDFAnnotation.setFileSpec`
     - `PDFDocument.getFilespecParams` renamed `PDFDocument.getFileSpecParams`.
     - `PDFObject.isFilespec` renamed `PDFObject.isFileSpec`.
+- `StrokeState.getDashes` renamed `StrokeState.getDashPattern`.
 
 
 Changes from 1.24 to 1.25

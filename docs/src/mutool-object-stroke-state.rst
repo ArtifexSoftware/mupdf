@@ -36,7 +36,7 @@ A `StrokeState` object is used to define stroke styles.
                 lineWidth: 1.5,
                 miterLimit: 10.0,
                 dashPhase: 0,
-                dashes: [ 4, 8 ],
+                dashPattern: [ 4, 8 ],
         })
 
 
@@ -91,3 +91,27 @@ A `StrokeState` object is used to define stroke styles.
     .. code-block:: javascript
 
         var limit = strokeState.getMiterLimit();
+
+.. method:: getDashPhase()
+
+    |mutool_tag|
+
+    :return: `Float`.
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var limit = strokeState.getDashPhase();
+
+.. method:: getDashPattern()
+
+    |mutool_tag|
+
+    :return: [ `Float`, `Float`, ... ].
+
+    |example_tag|
+
+    .. code-block:: javascript
+
+        var dashPattern = strokeState.getDashPattern();

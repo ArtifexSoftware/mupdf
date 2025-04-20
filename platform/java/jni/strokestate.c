@@ -104,7 +104,7 @@ FUN(StrokeState_getDashPhase)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jfloatArray JNICALL
-FUN(StrokeState_getDashes)(JNIEnv *env, jobject self)
+FUN(StrokeState_getDashPattern)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_stroke_state *stroke = from_StrokeState(env, self);

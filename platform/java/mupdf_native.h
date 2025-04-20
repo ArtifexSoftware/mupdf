@@ -6965,10 +6965,10 @@ JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getDashPhase
 
 /*
  * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    getDashes
+ * Method:    getDashPattern
  * Signature: ()[F
  */
-JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getDashes
+JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getDashPattern
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus
