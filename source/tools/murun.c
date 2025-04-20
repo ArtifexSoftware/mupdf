@@ -11513,7 +11513,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "Buffer.getLength", ffi_Buffer_getLength, 0);
-		jsB_propfun(J, "Buffer.readbyte", ffi_Buffer_readByte, 1);
+		jsB_propfun(J, "Buffer.readByte", ffi_Buffer_readByte, 1);
 		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
 		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
@@ -11630,7 +11630,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Link.setBounds", ffi_Link_setBounds, 1);
 		jsB_propfun(J, "Link.getURI", ffi_Link_getURI, 0);
 		jsB_propfun(J, "Link.setURI", ffi_Link_setURI, 1);
-		jsB_propfun(J, "isExternal", ffi_Link_isExternal, 0);
+		jsB_propfun(J, "Link.isExternal", ffi_Link_isExternal, 0);
 	}
 	js_setregistry(J, "fz_link");
 
@@ -11708,6 +11708,8 @@ int murun_main(int argc, char **argv)
 	js_dup(J);
 	js_setglobal(J, "ColorSpace");
 	js_setregistry(J, "fz_colorspace");
+
+	// create new Colorspace from icc buffer/filename
 
 	js_getglobal(J, "ColorSpace");
 	{
@@ -12000,7 +12002,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.associatedFile", ffi_PDFDocument_associatedFile, 1);
 		jsB_propfun(J, "PDFDocument.zugferdProfile", ffi_PDFDocument_zugferdProfile, 0);
 		jsB_propfun(J, "PDFDocument.zugferdVersion", ffi_PDFDocument_zugferdVersion, 0);
-		jsB_propfun(J, "PDFDocument.zugferdXml", ffi_PDFDocument_zugferdXML, 0);
+		jsB_propfun(J, "PDFDocument.zugferdXML", ffi_PDFDocument_zugferdXML, 0);
 
 		jsB_propfun(J, "PDFDocument.getLangauge", ffi_PDFDocument_getLanguage, 0);
 		jsB_propfun(J, "PDFDocument.setLangauge", ffi_PDFDocument_setLanguage, 1);
