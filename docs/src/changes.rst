@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2024 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -33,6 +33,11 @@ To minimise the impact of such changes, we undertake to list the :title:`API` ch
 .. important::
 
    The changes listed below only affects *existing* :title:`APIs`.
+
+Changes from 1.25 to 1.26
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- `fz_skew_detect` renamed `fz_detect_skew`.
+
 
 Changes from 1.24 to 1.25
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
