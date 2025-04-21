@@ -8,15 +8,7 @@
 
 .. raw:: html
 
-   <div class="feedbackLink"><a id="feedbackLinkBottom" target=_blank>Do you have any feedback on this page?</b></a></div>
 
-   <script>
-
-      var url_string = window.location.href;
-      var a = document.getElementById('feedbackLinkBottom');
-      a.setAttribute("href", "https://artifex.com/contributor/feedback.php?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=footer-link&url="+url_string);
-
-   </script>
 
    <hr>
 
