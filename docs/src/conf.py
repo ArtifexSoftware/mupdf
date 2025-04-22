@@ -119,38 +119,13 @@ rst_prolog = """
 
    <span class="wasm_tag">wasm only</span>
 
-.. raw:: html
-
-   <form class="sidebar-search-container top" method="get" action="search.html" role="search">
-      <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
-      <input type="hidden" name="check_keywords" value="yes">
-      <input type="hidden" name="area" value="default">
-    </form>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-        <div class="discordLink" style="display:flex;align-items:center;margin-top: -5px;">
-            <a href="https://discord.gg/DQjvZ6ERqH" target=_blank>Find <b>#mupdf</b> on <b>Discord</b></a>
-            <a href="https://discord.gg/DQjvZ6ERqH" target=_blank><img src="_images/discord-mark-blue.svg" alt="Discord logo" /></a>
-        </div>
-    </div>
 """
 
 rst_epilog = """
 .. raw:: html
-   <br><br><br>
-   <hr>
 
-   <p style="color:#999">This software is provided AS-IS with no warranty, either express or implied. This software is distributed under license and may not be copied, modified or distributed except as expressly authorized under the terms of that license. Refer to licensing information at <a href="https://www.artifex.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=footer-link">artifex.com</a> or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA, for further information.</p>
+   <p class="footer-disclaimer">This software is provided AS-IS with no warranty, either express or implied. This software is distributed under license and may not be copied, modified or distributed except as expressly authorized under the terms of that license. Refer to licensing information at <a href="https://www.artifex.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=footer-link">artifex.com</a> or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA, for further information.</p>
 
-.. note - this ensures that the Sphinx build system will pull in the image (as it is referenced in an RST file) to _images,
-   we don't want to display it via rst markup due to limitations (hence width:0), however we do want it available for our raw HTML
-   which we use in the rst_prolog
-
-.. image:: images/discord-mark-blue.svg
-          :alt: Discord logo
-          :width: 0
-          :height: 0
-          :target: https://discord.gg/TSpYGBW4eq
 """
 
 # The reST default role (used for this markup: `text`) to use for all
@@ -226,6 +201,14 @@ html_static_path = ["_static"]
 html_theme_options = {
     "light_logo": "mupdf-sidebar-logo-dark.png",
     "dark_logo": "mupdf-sidebar-logo-light.png",
+    "footer_icons": [
+        {
+            "name": "Discord",
+            "url": "https://discord.gg/DQjvZ6ERqH",
+            "class": "discord-link",
+            "html": "Find <b>#mupdf</b> on Discord <img class='discord-link' src='_static/discord-mark-blue.svg'>"
+        },
+    ],
 }
 
 # A list of CSS files. The entry must be a filename string or a tuple containing
