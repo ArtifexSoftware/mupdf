@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -154,7 +153,6 @@ A typical structure for a fetcher process (see `curl-stream.c`, `mupdf-curl` in 
 - Whenever :title:`MuPDF` attempts to read from the stream, we check to see if we have data for this area of the file already. If we do, we can return it. If not, we remember this as the next "fill point" for our receiver process and throw a `FZ_ERROR_TRYLATER` error.
 
 
-.. include:: footer.rst
 
 
 

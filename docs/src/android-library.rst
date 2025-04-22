@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -286,7 +285,6 @@ and `mupdf-android-fitz.git` repositories.
 
 
 
-.. include:: footer.rst
 
 
 

@@ -2,7 +2,6 @@
 .. All Rights Reserved.
 
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -176,7 +175,6 @@ Changes from 1.14 to 1.15
    The `op_BI` callback is now passed an additional colorspace resource name.
 
 
-.. include:: footer.rst
 
 
 

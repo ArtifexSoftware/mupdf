@@ -485,6 +485,10 @@ install: install-libs install-apps install-docs
 docs:
 	python3 scripts/build-docs.py
 
+docs-clean:
+	rm -rf build/docs/html
+	rm -rf build/docs/doctree
+
 install-docs-html: docs
 	install -d $(DESTDIR)$(docdir)
 	install -d $(DESTDIR)$(docdir)/_images

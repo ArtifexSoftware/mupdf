@@ -3,7 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -110,7 +109,6 @@ The `show` command will print the specified objects and streams to `stdout`. Str
       mutool show $FILE grep | grep '/Filter/DCTDecode'
 
 
-.. include:: footer.rst
 
 
 

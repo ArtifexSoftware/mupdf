@@ -3,9 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: html_tags.rst
-
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -121,7 +118,6 @@ To clear a signature use the `-c` option:
         mutool sign -c -o unsigned.pdf signed.pdf 4242
 
 
-.. include:: footer.rst
 
 
 

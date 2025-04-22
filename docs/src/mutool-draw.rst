@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -144,7 +143,6 @@ The `draw` command will render a document to image files, convert to another vec
 
 
 
-.. include:: footer.rst
 
 
 

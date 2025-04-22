@@ -1,13 +1,3 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_pdf_document:
 
 
@@ -1136,7 +1126,7 @@ Embedded/Associated files in :title:`PDFs`
                                                          false);
 
 
-    .. |tor_todo| MUTOOL - the `creationDate` & `modificationDate` are in milliseconds since 1970, not a JS Date object.
+    .. TODO(tor): MUTOOL - the `creationDate` & `modificationDate` are in milliseconds since 1970, not a JS Date object.
 
 .. method:: getEmbeddedFiles()
 

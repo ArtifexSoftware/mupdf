@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -61,7 +60,6 @@ The `poster` command reads the input PDF file and for each page chops it up into
 
 
 
-.. include:: footer.rst
 
 
 

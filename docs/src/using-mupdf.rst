@@ -2,7 +2,6 @@
 .. All Rights Reserved.
 
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -324,7 +323,6 @@ Any objects returned by functions that do not have any of these special words, a
 
 
 
-.. include:: footer.rst
 
 
 

@@ -1,7 +1,6 @@
 .. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -86,6 +85,3 @@ Then in this case we are working in the **PDF** coordinate space with the origin
         Q                               % Restore graphics state
 
     For more see `page 337 of the Adobe PDF Reference Guide <https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf>`_.
-
-
-.. include:: footer.rst

@@ -2,7 +2,6 @@
 .. All Rights Reserved.
 
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -246,7 +245,6 @@ See Mozilla's page on `Using Promises`_ for more.
 
 
 
-.. include:: footer.rst
 
 ..   External links
 

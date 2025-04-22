@@ -1,12 +1,3 @@
-.. Copyright (C) 2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_shade:
 
 .. _mutool_run_js_api_shade:

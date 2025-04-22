@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -110,6 +109,5 @@ Encoding barcodes
     The text/numbers to be encoded into a barcode.
 
 
-.. include:: footer.rst
 
 .. External links

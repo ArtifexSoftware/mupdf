@@ -3,7 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -137,7 +136,6 @@ The `clean` command pretty prints and rewrites the syntax of a :title:`PDF` file
    Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N), where the character N denotes the last page. If no pages are specified, then all pages will be included.
 
 
-.. include:: footer.rst
 
 
 

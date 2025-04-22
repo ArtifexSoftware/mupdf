@@ -3,7 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -482,7 +481,6 @@ There are also several tools specifically for working with :title:`PDF` files:
 
 
 
-.. include:: footer.rst
 
 
 

@@ -1,12 +1,3 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_pdf_annotation:
 
 .. _mutool_run_js_api_pdf_annotation:
@@ -110,7 +101,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
         annotation.process(processor);
 
-    .. |tor_todo| WASM process is not a function and no processor interface exists.
+    .. TODO(tor): WASM process is not a function and no processor interface exists.
 
 
 .. method:: setAppearance(appearance, state, transform, displayList)
@@ -481,7 +472,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
         annotation.setCreationDate(new Date());
 
-    .. |tor_todo| In mutool this is milliseconds we need to change it to Date
+    .. TODO(tor): In mutool this is milliseconds we need to change it to Date
 
 
 .. method:: getModificationDate()
@@ -509,7 +500,7 @@ To get the annotations on a page see: :ref:`PDFPage getAnnotations()<mutool_run_
 
         annotation.setModificationDate(new Date());
 
-    .. |tor_todo| In mutool this is milliseconds we need to change it to Date
+    .. TODO(tor): In mutool this is milliseconds we need to change it to Date
 
 
 
@@ -2006,7 +1997,7 @@ PDF annotations my have event handlers reacting to different interactive events 
 
         annot.eventEnter();
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: eventExit()
 
@@ -2020,7 +2011,7 @@ PDF annotations my have event handlers reacting to different interactive events 
 
         annot.eventExit();
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: eventDown()
 
@@ -2035,7 +2026,7 @@ PDF annotations my have event handlers reacting to different interactive events 
         widget.eventDown();
 
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: eventUp()
 
@@ -2050,7 +2041,7 @@ PDF annotations my have event handlers reacting to different interactive events 
         widget.eventUp();
 
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: eventFocus()
 
@@ -2065,7 +2056,7 @@ PDF annotations my have event handlers reacting to different interactive events 
         widget.eventFocus();
 
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)
 
 .. method:: eventBlur()
 
@@ -2080,4 +2071,4 @@ PDF annotations my have event handlers reacting to different interactive events 
         widget.eventBlur();
 
 
-    .. |tor_todo| WASM, Even says "TODO" in the mupdf.js source file :)
+    .. TODO(tor): WASM, Even says "TODO" in the mupdf.js source file :)

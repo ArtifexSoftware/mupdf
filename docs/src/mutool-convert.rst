@@ -3,7 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -180,7 +179,6 @@ The `convert` command converts an input file into another format.
 
 
 
-.. include:: footer.rst
 
 
 

@@ -3,7 +3,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -65,7 +64,6 @@ The `info` command shows info about the objects on pages in an input file. For e
    Comma separated list of page numbers and ranges. If no pages are supplied then all document pages will be considered for the output file.
 
 
-.. include:: footer.rst
 
 
 

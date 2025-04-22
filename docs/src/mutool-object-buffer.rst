@@ -1,12 +1,3 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_buffer:
 
 .. _mutool_run_js_api_buffer:
@@ -38,7 +29,7 @@
 
     |wasm_tag|
 
-    .. |tor_todo| is this correct? does the API work like this?
+    .. TODO(tor): is this correct? does the API work like this?
 
     *Constructor method*.
 

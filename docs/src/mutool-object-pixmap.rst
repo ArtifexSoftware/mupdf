@@ -1,12 +1,3 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_pixmap:
 
 .. _mutool_run_js_api_pixmap:
@@ -455,7 +446,7 @@ so that they can easily be used to represent tiles of a page.
     :return: `Pixmap`.
 
 
-    .. |tor_todo| Can't get any joy out of this one because of `DefaultColorSpaces` not working for me.
+    .. TODO(tor): Can't get any joy out of this one because of `DefaultColorSpaces` not working for me.
 
 
 .. method:: getPixels()

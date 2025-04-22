@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -52,7 +51,6 @@ a :title:`PDF` file.
    Optional name of output :title:`PDF` file. If none is given `out.pdf` is used by default.
 
 
-.. include:: footer.rst
 
 
 

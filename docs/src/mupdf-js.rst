@@ -4,13 +4,8 @@
 
 .. default-domain:: js
 
-.. include:: html_tags.rst
-
-
 .. title:: MuPDF & JavaScript
 
-.. include:: header.rst
-.. include:: html_tags.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -353,6 +348,8 @@ Alpha values are floats between `0` and `1`, whereby `0` denotes full transparen
 
 .. include:: mutool-object-device.rst
 
+.. include:: mutool-object-stroke-state.rst
+
 .. include:: mutool-object-path.rst
 
 .. include:: mutool-object-text.rst
@@ -693,7 +690,6 @@ Compatibility
 
 
 
-.. include:: footer.rst
 
 
 

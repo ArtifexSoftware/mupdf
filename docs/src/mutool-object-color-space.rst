@@ -1,12 +1,3 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
-.. All Rights Reserved.
-
-----
-
-.. default-domain:: js
-
-.. include:: html_tags.rst
-
 .. _mutool_object_color_space:
 
 .. _mutool_run_javascript_api_colorspace:
@@ -192,7 +183,7 @@
 
 |mutool_tag|
 
-.. |jamie_todo| Look into the Device interfaces and see how DefaultColorSpaces is used there.
+.. TODO(jamie): Look into the Device interfaces and see how DefaultColorSpaces is used there.
 
 
 `DefaultColorSpaces` is an object with keys for:

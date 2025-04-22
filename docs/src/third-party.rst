@@ -2,7 +2,6 @@
 .. All Rights Reserved.
 
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -98,7 +97,6 @@ These are the third party libraries used by :title:`MuPDF`.
 
 
 
-.. include:: footer.rst
 
 
 

@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -74,7 +73,6 @@ These figures should be taken as being indicative, rather
 than 100% accurate.
 
 
-.. include:: footer.rst
 
 
 

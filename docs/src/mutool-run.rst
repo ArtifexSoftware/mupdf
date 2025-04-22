@@ -4,7 +4,6 @@
 
 .. default-domain:: js
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -158,7 +157,6 @@ Advanced examples
 
 
 
-.. include:: footer.rst
 
 
 

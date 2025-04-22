@@ -1,7 +1,6 @@
 .. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
-.. include:: header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -1569,7 +1568,6 @@ Here is an example PDF filter written in Python that removes alternating items:
 
 
 
-.. include:: footer.rst
 
 
 

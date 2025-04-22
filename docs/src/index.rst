@@ -1,7 +1,6 @@
 .. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
-.. include:: header.rst
 
 
 .. This is the TOC in the sidebar!
@@ -53,5 +52,3 @@ Welcome to :title:`MuPDF`
    android-library.rst
    changes.rst
    third-party.rst
-
-.. include:: footer.rst
