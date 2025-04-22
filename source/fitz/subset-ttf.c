@@ -875,7 +875,7 @@ make_cmap(fz_context *ctx, ttf_t *ttf)
 		put16(d + offset, entries - offset); /* offset */
 
 		/* Insert an entry */
-		if (!ttf->is_otf && ttf->gid_renum && i < ttf->orig_num_glyphs && enc->gid[i] < ttf->orig_num_glyphs)
+		if (!ttf->is_otf && ttf->gid_renum && i < enc->max && enc->gid[i] < ttf->orig_num_glyphs)
 			put16(d + entries, (ttf->is_otf || ttf->gid_renum == NULL) ? enc->gid[i] : ttf->gid_renum[enc->gid[i]]);
 		else
 			put16(d + entries, enc->gid[i]);
@@ -890,7 +890,7 @@ make_cmap(fz_context *ctx, ttf_t *ttf)
 				while (seg_end < i)
 				{
 					seg_end++;
-					if (!ttf->is_otf && ttf->gid_renum && seg_end < ttf->orig_num_glyphs && enc->gid[seg_end] < ttf->orig_num_glyphs)
+					if (!ttf->is_otf && ttf->gid_renum && seg_end < enc->max && enc->gid[seg_end] < ttf->orig_num_glyphs)
 						put16(d + entries, ttf->gid_renum[enc->gid[seg_end]]);
 					else
 						put16(d + entries, enc->gid[seg_end]);
@@ -1442,12 +1442,14 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		p += 2;
 
 		/* We're only keeping gids we want. */
-		if (i != 0 && (j >= num_gids || gids[j] != i))
+		/* Note we need to keep both the gids we were given by the caller, but also
+		 * those required as composites (in gid_renum, if we have it). */
+		if (i != 0 && (j >= num_gids || gids[j] != i) && (ttf->gid_renum == NULL || ttf->gid_renum[i] == 0))
 		{
 			memmove(d, d + 2, (n - i - 1) * 2);
 			continue;
 		}
-		if (i != 0)
+		if (j < num_gids && gids[j] == i)
 			j++;
 
 		d += 2;
