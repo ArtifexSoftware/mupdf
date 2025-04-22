@@ -1433,7 +1433,7 @@ key_rewritten:
 		break;
 
 	case '<':
-		if (app->layout_em > 6)
+		if (fz_is_document_reflowable(app->ctx, app->doc) && app->layout_em > 6)
 		{
 			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, fz_location_from_page_number(app->ctx, app->doc, app->pageno));
 			app->layout_em -= 1;
@@ -1444,7 +1444,7 @@ key_rewritten:
 		}
 		break;
 	case '>':
-		if (app->layout_em < 36)
+		if (fz_is_document_reflowable(app->ctx, app->doc) && app->layout_em < 36)
 		{
 			fz_bookmark mark = fz_make_bookmark(app->ctx, app->doc, fz_location_from_page_number(app->ctx, app->doc, app->pageno));
 			app->layout_em += 1;
