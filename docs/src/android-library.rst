@@ -85,7 +85,7 @@ The :title:`MuPDF` library needs :title:`Android` version 4.1 or newer.
 Make sure that the `minSdkVersion` in your app's `build.gradle` is at least 16.
 
 
-.. code-block::
+.. code-block:: groovy
 
    android {
       defaultConfig {
@@ -100,7 +100,7 @@ The :title:`MuPDF` library can be retrieved as a pre-built artifact from our :ti
 In your project's top `build.gradle`, add the line to the repositories section:
 
 
-.. code-block::
+.. code-block:: groovy
 
    allprojects {
       repositories {
@@ -114,7 +114,7 @@ In your project's top `build.gradle`, add the line to the repositories section:
 Then add the :title:`MuPDF` viewer library to your app's dependencies.
 In your app's `build.gradle`, add the line to the dependencies section:
 
-.. code-block::
+.. code-block:: groovy
 
    dependencies {
       api 'com.artifex.mupdf:viewer:1.15.+'

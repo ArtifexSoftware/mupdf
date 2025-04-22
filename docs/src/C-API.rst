@@ -2,7 +2,7 @@
 .. All Rights Reserved.
 
 
-.. include:: header.rst
+.. include:: ../header.rst
 
 .. meta::
    :description: MuPDF documentation
@@ -80,7 +80,7 @@ The PDF module provides access to the low level PDF structure, letting you query
 
 
 
-.. include:: footer.rst
+.. include:: ../footer.rst
 
 
 
