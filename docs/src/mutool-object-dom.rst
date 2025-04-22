@@ -3,12 +3,12 @@
 .. _mutool_run_js_api_object_xml:
 
 
-`XML`
+`DOM`
 -------------
 
 |mutool_tag|
 
-This represents an :title:`HTML` or an :title:`XML` node. It is a helper class intended to access the :title:`DOM` (:title:`Document Object Model`) content of a :ref:`Story<mutool_object_story>` object.
+This represents an :title:`HTML` or an :title:`DOM` node. It is a helper class intended to access the :title:`DOM` (:title:`Document Object Model`) content of a :ref:`Story<mutool_object_story>` object.
 
 
 |instance_methods|
@@ -16,9 +16,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: body()
 
-    Return an `XML` for the body element.
+    Return an `DOM` for the body element.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -29,9 +29,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: documentElement()
 
-    Return an `XML` for the top level element.
+    Return an `DOM` for the top level element.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -41,11 +41,11 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: createElement(tag)
 
-    Create an element with the given tag type, but do not link it into the `XML` yet.
+    Create an element with the given tag type, but do not link it into the `DOM` yet.
 
     :arg tag: `String`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -56,11 +56,11 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: createTextNode(text)
 
-    Create a text node with the given text contents, but do not link it into the `XML` yet.
+    Create a text node with the given text contents, but do not link it into the `DOM` yet.
 
     :arg text: `String`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -76,7 +76,7 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
     :arg attribute: `String`.
     :arg value: `String`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
 
     |example_tag|
@@ -94,7 +94,7 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
     :arg attribute: `String`.
     :arg value: `String`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -107,8 +107,8 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
     Insert an element as the last child of a parent, unlinking the child from its current position if required.
 
-    :arg dom: `XML`.
-    :arg childDom: `XML`.
+    :arg dom: `DOM`.
+    :arg childDom: `DOM`.
 
     |example_tag|
 
@@ -121,8 +121,8 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
     Insert an element before this element, unlinking the new element from its current position if required.
 
-    :arg dom: `XML`.
-    :arg elementDom: `XML`.
+    :arg dom: `DOM`.
+    :arg elementDom: `DOM`.
 
     |example_tag|
 
@@ -135,8 +135,8 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
     Insert an element after this element, unlinking the new element from its current position if required.
 
-    :arg dom: `XML`.
-    :arg elementDom: `XML`.
+    :arg dom: `DOM`.
+    :arg elementDom: `DOM`.
 
     |example_tag|
 
@@ -146,9 +146,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: remove()
 
-    Remove this element from the `XML`. The element can be added back elsewhere if required.
+    Remove this element from the `DOM`. The element can be added back elsewhere if required.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -159,9 +159,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: clone()
 
-    Clone this element (and its children). The clone is not yet linked into the `XML`.
+    Clone this element (and its children). The clone is not yet linked into the `DOM`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
@@ -171,9 +171,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: firstChild()
 
-    Return the first child of the element as a `XML`, or `null` if no child exist.
+    Return the first child of the element as a `DOM`, or `null` if no child exist.
 
-    :return: `XML` \| `null`.
+    :return: `DOM` \| `null`.
 
     |example_tag|
 
@@ -183,9 +183,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: parent()
 
-    Return the parent of the element as a `XML`, or `null` if no parent exists.
+    Return the parent of the element as a `DOM`, or `null` if no parent exists.
 
-    :return: `XML` \| `null`.
+    :return: `DOM` \| `null`.
 
     |example_tag|
 
@@ -195,9 +195,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: next()
 
-    Return the next element as a `XML`, or `null` if no such element exists.
+    Return the next element as a `DOM`, or `null` if no such element exists.
 
-    :return: `XML` \| `null`.
+    :return: `DOM` \| `null`.
 
 
     |example_tag|
@@ -208,9 +208,9 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: previous()
 
-    Return the previous element as a `XML`, or `null` if no such element exists.
+    Return the previous element as a `DOM`, or `null` if no such element exists.
 
-    :return: `XML` \| `null`.
+    :return: `DOM` \| `null`.
 
 
     |example_tag|
@@ -221,12 +221,12 @@ This represents an :title:`HTML` or an :title:`XML` node. It is a helper class i
 
 .. method:: addAttribute(attribute, value)
 
-    Add attribute with the given value, returns the updated element as an `XML`.
+    Add attribute with the given value, returns the updated element as an `DOM`.
 
     :arg attribute: `String`.
     :arg value: `String`.
 
-    :return: `XML`.
+    :return: `DOM`.
 
     |example_tag|
 
