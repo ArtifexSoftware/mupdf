@@ -11,15 +11,16 @@
 .. _mupdf_command_line:
 
 
-:title:`MuPDF` on the command line
+MuPDF Tools
 ==========================================
 
 
-:title:`MuPDF` has few command line options available:
+:title:`MuPDF` has several tools available:
 
-- :ref:`mupdf-gl<mupdf_command_line_mupdf_gl>` A handy viewer UI.
-- :ref:`muraster<mupdf_command_line_muraster>` Can be used to convert :title:`PDF` pages to raster images.
-- :ref:`mutool<mupdf_command_line_mutool>` An all purpose tool for dealing with :title:`PDF` files. Used in conjunction with the :ref:`mutool JavaScript API<mupdf_command_line_mutool_js_api>`
+- :ref:`mupdf-gl<mupdf_command_line_mupdf_gl>` A handy GUI viewer for Windows and Linux.
+- :ref:`mutool<mupdf_command_line_mutool>` An all purpose tool for dealing with :title:`PDF` files.
+- :ref:`mutool run<mupdf_command_line_mutool_run>` Run simple scripts using the Javascript bindings.
+- :ref:`muraster<mupdf_command_line_muraster>` An example RIP to render documents to raster images.
 
 .. _mupdf_command_line_mupdf_gl:
 
@@ -250,8 +251,7 @@ This is a much simpler version of `mutool draw` command. As such it can be used 
 
 
 
-Command Line Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Command Line Options**
 
 
 .. code-block:: bash
@@ -344,12 +344,7 @@ This will render a raster file from page one of the input file "mupdf_explored.p
 
 .. note::
 
-  It is advised to use `rlwrap`_ with `mutool` for command line history and cursor navigation (this can be also installed via :title:`Homebrew` or :title:`MacPorts`).
-
-
-.. note::
-
-   Use `mutool -help` for summary usage.
+   Run `mutool` without any arguments for summary usage.
 
 
 For rendering and converting documents there are three commands available:
@@ -472,9 +467,6 @@ There are also several tools specifically for working with :title:`PDF` files:
      mutool-run.rst
 
    A tool for running :title:`JavaScript` programs with access to the :title:`MuPDF` library functions.
-
-.. _mupdf_command_line_mutool_js_api:
-
 
    See the :ref:`JavaScript API<mutool_run_javascript_api>` for more.
 

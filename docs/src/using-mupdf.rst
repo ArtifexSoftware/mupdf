@@ -8,7 +8,7 @@
    :keywords: MuPDF, pdf, epub
 
 
-Using :title:`MuPDF` with :title:`C`
+Using MuPDF with C
 ==========================================
 
 This intends to be an introductory guide into how to use :title:`MuPDF` with your :title:`C` code and as such assumes at least an intermediate knowledge of programming with :title:`C`.

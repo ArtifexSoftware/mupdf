@@ -4,9 +4,6 @@
 
 .. default-domain:: js
 
-.. title:: MuPDF & JavaScript
-
-
 .. meta::
    :description: MuPDF documentation
    :keywords: MuPDF, pdf, epub
@@ -16,7 +13,7 @@
 .. _mutool_run_javascript_api:
 .. _mupdf_javascript_api:
 
-:title:`MuPDF` & :title:`Javascript`
+Javascript Bindings
 ==========================================
 
 

@@ -9,7 +9,7 @@
 
 .. _How_To_Guide_Coordinate_System:
 
-The **MuPDF** Coordinate System
+Coordinate Systems
 =================================
 
 Origin Point, Point Size and Y-Axis

@@ -8,7 +8,7 @@
    :keywords: MuPDF, pdf, epub
 
 
-Third Party Libraries Used by :title:`MuPDF`
+Third Party Libraries
 ==================================================
 
 These are the third party libraries used by :title:`MuPDF`.

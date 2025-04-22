@@ -7,7 +7,7 @@
    :keywords: MuPDF, pdf, epub
 
 
-Language Bindings
+C++, Python, and C# Bindings
 ===============================================================
 
 ..

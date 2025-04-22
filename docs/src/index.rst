@@ -25,30 +25,29 @@ Welcome to :title:`MuPDF`
 
 
 .. toctree::
-   :caption: User Guide
-   :maxdepth: 2
+   :caption: User Guides
+   :maxdepth: 1
 
    quick-start-guide.rst
    using-mupdf.rst
    mupdf-wasm.rst
-   coordinate-system.rst
-
+   android-library.rst
+   mupdf-command-line.rst
 
 .. toctree::
-   :caption: API Reference
+   :caption: Reference
    :maxdepth: 2
 
-   mupdf-command-line.rst
+   coordinate-system.rst
    C-API.rst
    mupdf-js.rst
    language-bindings.rst
+   progressive-loading.rst
 
 
 .. toctree::
    :caption: Other
    :maxdepth: 2
 
-   progressive-loading.rst
-   android-library.rst
    changes.rst
    third-party.rst

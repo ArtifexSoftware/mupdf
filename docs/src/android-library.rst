@@ -10,7 +10,7 @@
    :keywords: MuPDF, pdf, epub
 
 
-Android Library
+Using MuPDF with Android
 ===============================
 
 

@@ -8,8 +8,12 @@
    :keywords: MuPDF, pdf, epub
 
 
-Using :title:`MuPDF WASM`
+Using MuPDF with Javascript
 ==========================================
+
+.. note::
+
+    You can also use the Javascript bindings with the :ref:`mupdf_command_line_mutool_run` command!
 
 
 Installing

@@ -8,7 +8,7 @@
    :keywords: MuPDF, pdf, epub
 
 
-Changes
+Change Log
 ==========================================
 
 - For the full list of changes between versions of :title:`MuPDF` see CHANGES_.
