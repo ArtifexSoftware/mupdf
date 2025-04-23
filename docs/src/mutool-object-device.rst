@@ -328,7 +328,7 @@ The methods that clip graphics must be balanced with a corresponding `popClip`.
     :arg alpha: The :ref:`alpha value<mutool_run_js_api_alpha>`.
 
 
-    .. image:: images/isolated-and-knockout.png
+    .. image:: images/isolated-and-knockout.webp
        :align: center
        :scale: 50%
 

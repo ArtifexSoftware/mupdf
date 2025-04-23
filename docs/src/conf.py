@@ -187,7 +187,7 @@ html_theme = "furo"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-# html_logo = "_static/mupdf-sidebar-logo-dark.png"
+html_logo = "_static/mupdf-sidebar-logo.webp"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -199,8 +199,6 @@ html_favicon = "_static/favicon.ico"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_theme_options = {
-    "light_logo": "mupdf-sidebar-logo-dark.png",
-    "dark_logo": "mupdf-sidebar-logo-light.png",
     "footer_icons": [
         {
             "name": "Discord",

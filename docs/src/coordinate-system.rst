@@ -19,7 +19,7 @@ In **PDF**, the origin (for example: `(0, 0)`) of a page is located at its **bot
 
 
 
-.. image:: images/img-coordinate-space.png
+.. image:: images/img-coordinate-space.webp
 
 
 .. note::
@@ -54,7 +54,7 @@ For example:
 
 Results in:
 
-.. image:: images/200x200-rect.png
+.. image:: images/200x200-rect.webp
 
 
 

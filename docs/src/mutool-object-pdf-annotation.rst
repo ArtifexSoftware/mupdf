@@ -876,7 +876,7 @@ Line Leaders
 
 In a PDF line annotation, "line leaders" refer to visual elements that can be added to the endpoints of a line annotation to enhance its appearance or meaning.
 
-.. image:: images/leader-lines.png
+.. image:: images/leader-lines.webp
           :alt: Leader lines explained
           :width: 100%
 
@@ -962,7 +962,7 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
     :arg point: `Array`. A point, `[x, y]`, specifying the offset of the caption text from its normal position. The first value is the horizontal offset along the annotation line from its midpoint, with a positive value indicating offset to the right and a negative value indicating offset to the left. The second value is the vertical offset perpendicular to the annotation line, with a positive value indicating a shift up and a negative value indicating a shift down.
 
 
-    .. image:: images/offset-caption.png
+    .. image:: images/offset-caption.webp
           :alt: Offset caption explained
           :width: 100%
 
@@ -987,7 +987,7 @@ Callouts
 
 Callouts are used with :ref:`"FreeText" annotations <mutool_run_js_api_annotation_types>` and allow for a graphical line to point to an area on a page.
 
-.. image:: images/callout-annot.png
+.. image:: images/callout-annot.webp
           :alt: Callout annotation
           :width: 100%
 
