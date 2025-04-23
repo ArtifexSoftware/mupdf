@@ -197,7 +197,7 @@ This matrix is represented in :title:`JavaScript` as `[a,b,c,d,e,f]`.
 Rectangles
 ~~~~~~~~~~~~
 
-Rectangles are 4-element arrays, specifying the minimum and maximum corners (typically upper left and lower right, in a coordinate space with the origin at the top left with descending y): `[ulx,uly,lrx,lry]`. Rectangles are always X- and Y-axis aligned.
+Rectangles are 4-element arrays, describing axis-aligned rectangles by specifying the minimum and maximum corners (typically upper left and lower right, in a coordinate space with the origin at the top left with descending y): `[ulx,uly,lrx,lry]`. Rectangles are always X- and Y-axis aligned.
 
 If the minimum x coordinate is bigger than the maximum x coordinate, :title:`MuPDF` treats the rectangle as infinite in size.
 
@@ -271,6 +271,18 @@ If the minimum x coordinate is bigger than the maximum x coordinate, :title:`MuP
    .. code-block:: javascript
 
       var m = mupdf.Rect.transform([0,0,100,100], [1,0.5,1,1,1,1]);
+
+
+.. _mutool_run_js_api_quad:
+
+Quadrilaterals
+~~~~~~~~~~~~~~~~~
+
+Quads are 8-element arrays, describing quadrilaterals by specifying its four corners (in the order upper left, upper right, lower left and lower right, in a coordinate space with the origin at the top left with descending y): `[ulx,uly,urx,ury,llx,lly,lrx,lry]`.
+
+In contrast to rectangles, quads are not by definition axis-aligned.
+
+If all the coordinates are infinite and of the expected sign, :title:`MuPDF` considers the quad to be infinite in size.
 
 
 .. _mutool_run_js_api_colors:
