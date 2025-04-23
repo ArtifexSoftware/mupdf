@@ -777,6 +777,7 @@ pdf_page_obj_transform_box(fz_context *ctx, pdf_obj *pageobj, fz_rect *outbox, f
 	if (!pdf_is_array(ctx, obj))
 		obj = pdf_dict_get_inheritable(ctx, pageobj, PDF_NAME(MediaBox));
 	cropbox = pdf_to_rect(ctx, obj);
+	cropbox = fz_intersect_rect(cropbox, mediabox);
 	if (fz_is_empty_rect(cropbox))
 		cropbox = fz_make_rect(0, 0, 612, 792);
 	cropbox.x0 = fz_min(cropbox.x0, cropbox.x1);
