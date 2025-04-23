@@ -668,6 +668,20 @@ load_enc_tab6(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	return enc;
 }
 
+static int
+is_encoding_all_zeros(fz_context *ctx, encoding_t *enc)
+{
+	uint32_t i;
+
+	if (enc != NULL)
+		for (i = 0; i < enc->max; i++)
+			if (enc->gid[i] != 0)
+				return 0;
+
+	return 1;
+}
+
+
 static encoding_t *
 load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 {
@@ -715,6 +729,13 @@ load_enc(fz_context *ctx, fz_buffer *t, int pid, int psid)
 
 		enc->pid = pid;
 		enc->psid = psid;
+
+		if (is_encoding_all_zeros(ctx, enc))
+		{
+			// ignore any encoding that is all zeros
+			fz_free(ctx, enc);
+			enc = NULL;
+		}
 
 		return enc;
 	}
