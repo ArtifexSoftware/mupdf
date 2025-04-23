@@ -531,6 +531,12 @@ java:
 java-clean:
 	$(MAKE) -C platform/java build=$(build) clean
 
+wasm:
+	$(MAKE) -C platform/wasm
+
+wasm-clean:
+	$(MAKE) -C platform/wasm clean
+
 extract-test:
 	$(MAKE) debug
 	$(MAKE) -C thirdparty/extract mutool=../../build/debug/mutool test-mutool
