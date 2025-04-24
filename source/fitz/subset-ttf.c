@@ -1434,7 +1434,7 @@ shrink_loca_if_possible(fz_context *ctx, ttf_t *ttf)
 static size_t
 subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int num_gids)
 {
-	int i, n, new_glyphs;
+	int i, n, new_glyphs, old_strings;
 	int j;
 	fz_int2_heap heap = { 0 };
 	uint8_t *d0, *e, *idx , *p;
@@ -1455,6 +1455,7 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	/* Store all kept indexes. */
 	if (len < (size_t)n*2)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+	old_strings = 0;
 	new_glyphs = 0;
 	j = 0;
 	len -= (size_t)n*2;
@@ -1463,6 +1464,9 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		uint16_t o = get16(d);
 		fz_int2 i2;
 		p += 2;
+
+		if (o >= 258)
+			old_strings++;
 
 		/* We're only keeping gids we want. */
 		/* Note we need to keep both the gids we were given by the caller, but also
@@ -1503,7 +1507,7 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 
 	/* Run through the list moving the strings down that we care about. */
 	j = 0;
-	n = heap.len;
+	n = old_strings;
 	for (i = 0; i < n; i++)
 	{
 		uint8_t slen;
