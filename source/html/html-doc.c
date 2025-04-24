@@ -180,7 +180,7 @@ htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char 
 {
 	html_document *doc = (html_document *)doc_;
 	if (!strcmp(key, FZ_META_FORMAT))
-		return (int)fz_strlcpy(buf, doc->format->format_name, size);
+		return 1 + (int)fz_strlcpy(buf, doc->format->format_name, size);
 	if (!strcmp(key, FZ_META_INFO_TITLE) && doc->html->title)
 		return 1 + (int)fz_strlcpy(buf, doc->html->title, size);
 	return -1;
