@@ -1434,10 +1434,10 @@ shrink_loca_if_possible(fz_context *ctx, ttf_t *ttf)
 static size_t
 subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int num_gids)
 {
-	int i, n, new_glyphs, old_strings;
+	int i, n, new_glyphs, old_strings, new_strings;
 	int j;
 	fz_int2_heap heap = { 0 };
-	uint8_t *d0, *e, *idx , *p;
+	uint8_t *d0, *e, *p;
 
 	if (len < (size_t) 2 + 2 * ttf->orig_num_glyphs)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated post table");
@@ -1448,7 +1448,6 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 
 	d0 = d;
 	d += 2; len -= 2;
-	idx = d;
 	e = d;
 	p = d;
 
@@ -1456,6 +1455,7 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 	if (len < (size_t)n*2)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
 	old_strings = 0;
+	new_strings = 0;
 	new_glyphs = 0;
 	j = 0;
 	len -= (size_t)n*2;
@@ -1485,14 +1485,20 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		/* We want this gid. */
 		new_glyphs++;
 
-		/* 257 or smaller: same as in the basic order. */
+		/* 257 or smaller: same as in the basic order, keep it as such. */
 		if (o <= 257)
 			continue;
+
+		/* We want this gid, and it is a string. */
+		new_strings++;
 
 		/* Store the index. */
 		i2.a = o - 258;
 		i2.b = i;
 		fz_int2_heap_insert(ctx, &heap, i2);
+
+		/* Update string index value in table entry. */
+		put16(d - 2, 257 + new_strings);
 	}
 
 	d = p;
@@ -1530,7 +1536,6 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		d += slen;
 		e += slen;
 
-		put16(idx + 2*j, 258 + j);
 		j++;
 	}
 
