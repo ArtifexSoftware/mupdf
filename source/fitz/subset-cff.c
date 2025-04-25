@@ -1658,14 +1658,14 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 	}
 	else if (fmt == 2)
 	{
-		for (i = 1; i < n; i++)
+		for (i = 1; i < n;)
 		{
 			uint16_t first;
 			int32_t nleft;
 			if (d + 4 >= cff->base + cff->len)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 			first = get16(d);
-			nleft = get16(d+2);
+			nleft = get16(d+2) + 1;
 			d += 4;
 			while (nleft-- && i < n)
 			{
