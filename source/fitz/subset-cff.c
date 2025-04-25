@@ -1312,7 +1312,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 {
 	uint32_t offset, end;
 	int num_charstrings = (int)cff->charstrings_index.count;
-	int i, gid;
+	int i, gid, font;
 	usage_t *gids = cff->gids_to_keep.list;
 	int num_gids = cff->gids_to_keep.len;
 	int changed;
@@ -1378,6 +1378,26 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 			local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
 			execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
 			changed = 1;
+		}
+
+		/* Now, run through the per-font locals, seeing what per-font locals and globals they call.  */
+		for (font = 0; font < cff->fdarray_index.count; font++)
+		{
+			for (i = 0; i < cff->fdarray[font].local_usage.len; i++)
+			{
+				gid = cff->fdarray[font].local_usage.list[i].num;
+
+				if (cff->fdarray[font].local_usage.list[i].scanned)
+					continue;
+				cff->fdarray[font].local_usage.list[i].scanned = 1;
+				gid = cff->fdarray[font].local_usage.list[i].num;
+				offset = index_get(ctx, &cff->fdarray[font].local_index, gid);
+				end = index_get(ctx, &cff->fdarray[font].local_index, gid+1);
+
+				local_usage = get_font_locals(ctx, cff, gid, is_pdf_cidfont, &subr_bias);
+				execute_charstring(ctx, cff, &cff->base[offset], &cff->base[end], subr_bias, local_usage);
+				changed = 1;
+			}
 		}
 
 		/* Now, run through the globals, seeing what globals they call.  */
