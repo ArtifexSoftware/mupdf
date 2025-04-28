@@ -582,6 +582,7 @@ static fz_location search_page = {-1, -1};
 static fz_location search_hit_page = {-1, -1};
 static int search_active = 0;
 char *search_needle = 0;
+fz_search_options search_options = FZ_SEARCH_IGNORE_CASE;
 int search_hit_count = 0;
 fz_quad search_hit_quads[5000];
 
@@ -2824,6 +2825,10 @@ static void do_canvas(void)
 
 	if (showsearch)
 	{
+		int search_ignore_case = !!(search_options & FZ_SEARCH_IGNORE_CASE);
+		int search_ignore_diacritics = !!(search_options & FZ_SEARCH_IGNORE_DIACRITICS);
+		int search_regexp = !!(search_options & FZ_SEARCH_REGEXP);
+
 		ui_layout(T, X, NW, 0, 0);
 		ui_panel_begin(0, ui.gridsize + ui.padsize*4, ui.padsize*2, ui.padsize*2, 1);
 		ui_layout(L, NONE, W, ui.padsize, 0);
@@ -2845,8 +2850,27 @@ static void do_canvas(void)
 				search_page = currentpage;
 			}
 		}
-		if (ui.focus != &search_input)
-			showsearch = 0;
+		ui_panel_end();
+
+		ui_panel_begin(0, ui.gridsize + ui.padsize*4, ui.padsize*2, ui.padsize*2, 1);
+		ui_layout(L, NONE, W, ui.padsize, 0);
+
+		// put focus back to search text field after toggling these checkboxes
+		if (ui_checkbox("Ignore case", &search_ignore_case))
+			ui.focus = &search_input;
+		if (ui_checkbox("Ignore diacritics", &search_ignore_diacritics))
+			ui.focus = &search_input;
+		if (ui_checkbox("Regexp", &search_regexp))
+			ui.focus = &search_input;
+
+		search_options = FZ_SEARCH_EXACT;
+		if (search_ignore_case)
+			search_options |= FZ_SEARCH_IGNORE_CASE;
+		if (search_ignore_diacritics)
+			search_options |= FZ_SEARCH_IGNORE_DIACRITICS;
+		if (search_regexp)
+			search_options |= FZ_SEARCH_REGEXP;
+
 		ui_panel_end();
 	}
 
@@ -2878,10 +2902,10 @@ void do_main(void)
 
 		while (search_active && glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
 		{
-			search_hit_count = fz_search_chapter_page_number(ctx, doc,
+			search_hit_count = fz_match_chapter_page_number(ctx, doc,
 				search_page.chapter, search_page.page,
 				search_needle,
-				NULL, search_hit_quads, nelem(search_hit_quads));
+				NULL, search_hit_quads, nelem(search_hit_quads), search_options);
 			trace_action("hits = doc.loadPage(%d).search(%q);\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
 			trace_action("print('Search page %d:', repr(%q), hits.length, repr(hits));\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
 			if (search_hit_count)
