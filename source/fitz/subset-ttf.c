@@ -755,14 +755,14 @@ load_encoding(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	{
 		if (ttf->symbolic)
 		{
-			/* For symbolic fonts, we look for (1,0) as per PDF Spec, then (3,0). */
-			enc = load_enc(ctx, t, 1, 0);
+			/* For symbolic fonts, we look for (3,0) as per PDF Spec, then (1,0). */
+			enc = load_enc(ctx, t, 3, 0);
 			if (!enc)
-				enc = load_enc(ctx, t, 3, 0);
+				enc = load_enc(ctx, t, 1, 0);
 		}
 		else
 		{
-			/* For non symbolic fonts, we look for (3,1) then (1,0). */
+			/* For non symbolic fonts, we look for (3,1) then (1,0), then (0,1), and finally (0,3). */
 			enc = load_enc(ctx, t, 3, 1);
 			if (!enc)
 				enc = load_enc(ctx, t, 1, 0);
