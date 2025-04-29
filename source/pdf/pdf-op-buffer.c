@@ -601,6 +601,7 @@ pdf_out_Tj(fz_context *ctx, pdf_processor *proc_, char *str, size_t len)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_pdf_string(ctx, proc->out, (const unsigned char *)str, len);
 	fz_write_string(ctx, proc->out, "Tj");
 	post_op(ctx, proc);
@@ -611,6 +612,7 @@ pdf_out_squote(fz_context *ctx, pdf_processor *proc_, char *str, size_t len)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_pdf_string(ctx, proc->out, (const unsigned char *)str, len);
 	fz_write_string(ctx, proc->out, "'");
 	post_op(ctx, proc);
@@ -657,6 +659,7 @@ pdf_out_CS(fz_context *ctx, pdf_processor *proc_, const char *name, fz_colorspac
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n CS", name);
 	post_op(ctx, proc);
 }
@@ -666,6 +669,7 @@ pdf_out_cs(fz_context *ctx, pdf_processor *proc_, const char *name, fz_colorspac
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n cs", name);
 	post_op(ctx, proc);
 }
@@ -701,6 +705,7 @@ pdf_out_SC_shade(fz_context *ctx, pdf_processor *proc_, const char *name, fz_sha
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n SCN", name);
 	post_op(ctx, proc);
 }
@@ -710,6 +715,7 @@ pdf_out_sc_shade(fz_context *ctx, pdf_processor *proc_, const char *name, fz_sha
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n scn", name);
 	post_op(ctx, proc);
 }
@@ -1021,6 +1027,7 @@ pdf_out_sh(fz_context *ctx, pdf_processor *proc_, const char *name, fz_shade *sh
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n sh", name);
 	post_op(ctx, proc);
 }
@@ -1030,6 +1037,7 @@ pdf_out_Do_image(fz_context *ctx, pdf_processor *proc_, const char *name, fz_ima
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n Do", name);
 	post_op(ctx, proc);
 }
@@ -1039,6 +1047,7 @@ pdf_out_Do_form(fz_context *ctx, pdf_processor *proc_, const char *name, pdf_obj
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n Do", name);
 	post_op(ctx, proc);
 }
@@ -1050,6 +1059,7 @@ pdf_out_MP(fz_context *ctx, pdf_processor *proc_, const char *tag)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n MP", tag);
 	post_op(ctx, proc);
 }
@@ -1060,6 +1070,7 @@ pdf_out_DP(fz_context *ctx, pdf_processor *proc_, const char *tag, pdf_obj *raw,
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 	int ahx = proc->ahxencode;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n", tag);
 	proc->sep = 1;
 	pdf_print_encrypted_obj(ctx, proc->out, raw, 1, ahx, NULL, 0, 0, &proc->sep);
@@ -1073,6 +1084,7 @@ pdf_out_BMC(fz_context *ctx, pdf_processor *proc_, const char *tag)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n BMC", tag);
 	post_op(ctx, proc);
 }
@@ -1083,6 +1095,7 @@ pdf_out_BDC(fz_context *ctx, pdf_processor *proc_, const char *tag, pdf_obj *raw
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 	int ahx = proc->ahxencode;
 
+	separate(ctx, proc);
 	fz_write_printf(ctx, proc->out, "%n", tag);
 	proc->sep = 1;
 	pdf_print_encrypted_obj(ctx, proc->out, raw, 1, ahx, NULL, 0, 0, &proc->sep);
