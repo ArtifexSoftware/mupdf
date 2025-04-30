@@ -497,7 +497,7 @@ static void save_attachment_dialog(void)
 				fz_buffer *buf = pdf_load_embedded_file_contents(ctx, fs);
 				fz_save_buffer(ctx, buf, attach_filename);
 				fz_drop_buffer(ctx, buf);
-				trace_action("tmp = annot.getFilespec()\n");
+				trace_action("tmp = annot.getFileSpec()\n");
 				trace_action("doc.getEmbeddedFileContents(tmp).save(\"%s\");\n", attach_filename);
 				trace_action("tmp = doc.verifyEmbeddedFileChecksum(tmp);\n");
 				trace_action("if (tmp != true)\n");
@@ -537,7 +537,7 @@ static void open_attachment_dialog(void)
 					created, modified, 0);
 				pdf_set_annot_filespec(ctx, ui.selected_annot, fs);
 				fz_drop_buffer(ctx, contents);
-				trace_action("annot.setFilespec(doc.addEmbeddedFile(\"%s\", null, readFile(\"%s\"), new Date(%d).getTime(), new Date(%d).getTime(), false));\n", filename, attach_filename, created, modified);
+				trace_action("annot.setFileSpec(doc.addEmbeddedFile(\"%s\", null, readFile(\"%s\"), new Date(%d).getTime(), new Date(%d).getTime(), false));\n", filename, attach_filename, created, modified);
 			}
 			fz_always(ctx)
 			{
