@@ -191,6 +191,75 @@ static void jsB_repr(js_State *J)
 	js_repr(J, 1);
 }
 
+static const char *import_stms[] = {
+	"import * as mupdf from \"mupdf\"",
+	"import * as mupdf from 'mupdf'",
+	"import mupdf from \"mupdf\"",
+	"import mupdf from 'mupdf'",
+};
+
+static int murun_dofile(js_State *J, const char *filename)
+{
+	fz_context *ctx = js_getcontext(J);
+	FILE *f;
+	char *imp;
+	char *s;
+	long n;
+	size_t t;
+	int i;
+
+	f = fopen(filename, "rb");
+	if (!f) {
+		js_error(J, "cannot open file: '%s'", filename);
+	}
+
+	if (fseek(f, 0, SEEK_END) < 0) {
+		fclose(f);
+		js_error(J, "cannot seek in file: '%s'", filename);
+	}
+
+	n = ftell(f);
+	if (n < 0) {
+		fclose(f);
+		js_error(J, "cannot tell in file: '%s'", filename);
+	}
+
+	if (fseek(f, 0, SEEK_SET) < 0) {
+		fclose(f);
+		js_error(J, "cannot seek in file: '%s'", filename);
+	}
+
+	s = fz_malloc(ctx, n + 1);
+	if (!s) {
+		fclose(f);
+		js_error(J, "cannot allocate storage for file contents: '%s'", filename);
+	}
+
+	t = fread(s, 1, n, f);
+	if (t != (size_t) n) {
+		fz_free(ctx, s);
+		fclose(f);
+		js_error(J, "cannot read data from file: '%s'", filename);
+	}
+	s[n] = 0;
+
+	fclose(f);
+
+	// Scrub "import mupdf" statements so that the same scripts
+	// can run in both mupdf.js and mutool run if they otherwise
+	// stick to ES5 syntax.
+	for (i = 0; i < (int)nelem(import_stms); ++i)
+	{
+		imp = strstr(s, import_stms[i]);
+		if (imp)
+			memset(imp, ' ', strlen(import_stms[i]));
+	}
+
+	i = js_dostring(J, s);
+	fz_free(ctx, s);
+	return i;
+}
+
 JS_NORETURN
 static void jsB_quit(js_State *J)
 {
@@ -12346,7 +12415,7 @@ int murun_main(int argc, char **argv)
 		}
 		js_setglobal(J, "scriptArgs");
 		js_endtry(J);
-		if (js_dofile(J, argv[1]))
+		if (murun_dofile(J, argv[1]))
 		{
 			js_freestate(J);
 			fz_drop_context(ctx);
