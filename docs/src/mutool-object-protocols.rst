@@ -66,7 +66,7 @@ In order to retrieve information from this object see methods described within :
 Embedded File Params Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Historical equivalent to Filespec Params Object. This `Object` contains metadata about a filespec, it has properties for:
+Historical equivalent to FileSpec Params Object. This `Object` contains metadata about a filespec, it has properties for:
 
 `filename`
     The name of the embedded file.
@@ -86,7 +86,7 @@ Historical equivalent to Filespec Params Object. This `Object` contains metadata
 
 .. _mutool_run_js_api_pdf_document_filespec_params_object:
 
-Filespec Params Object
+FileSpec Params Object
 ~~~~~~~~~~~~~~~~~~~~~~
 
 This `Object` contains metadata about a filespec, it has properties for:

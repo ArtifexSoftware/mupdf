@@ -1111,7 +1111,7 @@ Embedded/Associated files in :title:`PDFs`
 
     .. note::
 
-        After embedding a file into a :title:`PDF`, it can be connected to an annotation using :ref:`PDFAnnotation.setFilespec()<mutool_run_js_api_pdf_annotation_setFilespec>`.
+        After embedding a file into a :title:`PDF`, it can be connected to an annotation using :ref:`PDFAnnotation.setFileSpec()<mutool_run_js_api_pdf_annotation_setFileSpec>`.
 
 
     |example_tag|
@@ -1154,7 +1154,7 @@ Embedded/Associated files in :title:`PDFs`
 
 .. method:: getEmbeddedFileParams(fileSpecObject)
 
-    Historical alias for getFilespecParams.
+    Historical alias for getFileSpecParams.
 
 
 
@@ -1166,7 +1166,7 @@ Embedded/Associated files in :title:`PDFs`
 
     :arg fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
 
-    :return: `Object` :ref:`Filespec Params Object<mutool_run_js_api_pdf_document_filespec_params_object>`.
+    :return: `Object` :ref:`FileSpec Params Object<mutool_run_js_api_pdf_document_filespec_params_object>`.
 
     |example_tag|
 
@@ -1250,7 +1250,7 @@ Embedded/Associated files in :title:`PDFs`
 
     |mutool_tag|
 
-    Return the Filespec object that represents the nth Associated File on this document. 0 <= n < count, where count is the value given by countAssociatedFiles().
+    Return the FileSpec object that represents the nth Associated File on this document. 0 <= n < count, where count is the value given by countAssociatedFiles().
 
     :return fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
 

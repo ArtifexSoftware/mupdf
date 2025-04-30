@@ -292,7 +292,7 @@ Extends :ref:`Page<mutool_run_js_api_page>`.
 
     |mutool_tag|
 
-    Return the Filespec object that represents the nth Associated File on this page. 0 <= n < count, where count is the value given by countAssociatedFiles().
+    Return the FileSpec object that represents the nth Associated File on this page. 0 <= n < count, where count is the value given by countAssociatedFiles().
 
     :return fileSpecObject: `Object` :ref:`File Specification Object<mutool_run_js_api_file_spec_object>`.
 
