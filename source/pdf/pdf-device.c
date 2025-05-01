@@ -1111,12 +1111,15 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 	{
 		char text[32];
 		pdf_obj *obj;
-		fz_snprintf(text, sizeof(text), "ExtGState/BlendMode%d", blendmode);
-		obj = pdf_dict_getp(ctx, pdev->resources, text);
+		pdf_obj *egs = pdf_dict_get(ctx, pdev->resources, PDF_NAME(ExtGState));
+		if (egs == NULL)
+			egs = pdf_dict_put_dict(ctx, pdev->resources, PDF_NAME(ExtGState), 4);
+		fz_snprintf(text, sizeof(text), "BlendMode%d", blendmode);
+		obj = pdf_dict_gets(ctx, egs, text);
 		if (obj == NULL)
 		{
 			/* No, better make one */
-			obj = pdf_dict_puts_dict(ctx, pdev->resources, text, 2);
+			obj = pdf_dict_puts_dict(ctx, egs, text, 2);
 			pdf_dict_put(ctx, obj, PDF_NAME(Type), PDF_NAME(ExtGState));
 			pdf_dict_put_name(ctx, obj, PDF_NAME(BM), fz_blendmode_name(blendmode));
 		}
