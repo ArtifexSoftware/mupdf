@@ -1498,9 +1498,20 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 	if (fontdesc->descent > 0)
 		fontdesc->descent = -fontdesc->descent;
 
-	fontdesc->font->ascender = fontdesc->ascent / 1000.0f;
-	fontdesc->font->descender = fontdesc->descent / 1000.0f;
-	fontdesc->font->ascdesc_src = FZ_ASCDESC_FROM_FONT;
+	if (fontdesc->ascent <= 0 || fontdesc->ascent > FZ_MAX_TRUSTWORTHY_ASCENT * 1000 ||
+		fontdesc->descent < FZ_MAX_TRUSTWORTHY_DESCENT * 1000)
+	{
+		fz_warn(ctx, "bogus font ascent/descent values (%g / %g)", fontdesc->ascent, fontdesc->descent);
+		fontdesc->font->ascender = 0.8f;
+		fontdesc->font->descender = -0.2f;
+		fontdesc->font->ascdesc_src = FZ_ASCDESC_DEFAULT;
+	}
+	else
+	{
+		fontdesc->font->ascender = fontdesc->ascent / 1000.0f;
+		fontdesc->font->descender = fontdesc->descent / 1000.0f;
+		fontdesc->font->ascdesc_src = FZ_ASCDESC_FROM_FONT;
+	}
 }
 
 static void

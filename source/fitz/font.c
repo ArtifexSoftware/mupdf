@@ -772,15 +772,19 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		(float) face->bbox.xMax / face->units_per_EM,
 		(float) face->bbox.yMax / face->units_per_EM);
 
-	if (face->ascender == 0)
+	if (face->ascender <= 0 || face->ascender > FZ_MAX_TRUSTWORTHY_ASCENT * face->units_per_EM)
 		font->ascender = 0.8f, ascdesc_src = FZ_ASCDESC_DEFAULT;
 	else
 		font->ascender = (float)face->ascender / face->units_per_EM;
 
-	if (face->descender == 0)
+	if (face->descender < FZ_MAX_TRUSTWORTHY_DESCENT * face->units_per_EM || face->descender > -FZ_MAX_TRUSTWORTHY_DESCENT * face->units_per_EM)
 		font->descender = -0.2f, ascdesc_src = FZ_ASCDESC_DEFAULT;
 	else
+	{
 		font->descender = (float)face->descender / face->units_per_EM;
+		if (font->descender > 0)
+			font->descender = -font->descender;
+	}
 
 	font->ascdesc_src = ascdesc_src;
 

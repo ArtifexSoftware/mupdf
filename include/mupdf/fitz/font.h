@@ -769,6 +769,9 @@ typedef enum
 	FZ_ASCDESC_FROM_BOUNDS
 } fz_ascdesc_source;
 
+#define FZ_MAX_TRUSTWORTHY_ASCENT 8
+#define FZ_MAX_TRUSTWORTHY_DESCENT -2
+
 struct fz_font
 {
 	int refs;
