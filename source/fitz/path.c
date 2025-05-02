@@ -1820,6 +1820,12 @@ static const fz_path_walker rect_path_walker =
 int
 fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm)
 {
+	return fz_path_is_rect_with_bounds(ctx, path, ctm, NULL);
+}
+
+int
+fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm, fz_rect *bounds)
+{
 	rect_path_arg arg;
 
 	arg.ctm = ctm;
@@ -1839,7 +1845,16 @@ fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm)
 	if (arg.count == 2 || arg.count == 3)
 	{
 		if (arg.p[0].x == arg.p[1].x || arg.p[0].y == arg.p[1].y)
+		{
+			if (bounds)
+			{
+				bounds->x0 = fz_min(arg.p[0].x, arg.p[1].x);
+				bounds->x1 = fz_max(arg.p[0].x, arg.p[1].x);
+				bounds->y0 = fz_min(arg.p[0].y, arg.p[1].y);
+				bounds->y1 = fz_max(arg.p[0].y, arg.p[1].y);
+			}
 			return 1;
+		}
 	}
 	/* All that's left are 4 entry ones */
 	if (arg.count != 4)
@@ -1850,14 +1865,34 @@ fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm)
 		/* p[0]  p[3]
 		 * p[1]  p[2]
 		 */
-		return (arg.p[1].y == arg.p[2].y && arg.p[0].y == arg.p[3].y && arg.p[2].x == arg.p[3].x);
+		if (arg.p[1].y == arg.p[2].y && arg.p[0].y == arg.p[3].y && arg.p[2].x == arg.p[3].x)
+		{
+			if (bounds)
+			{
+				bounds->x0 = fz_min(arg.p[0].x, arg.p[3].x);
+				bounds->x1 = fz_max(arg.p[0].x, arg.p[3].x);
+				bounds->y0 = fz_min(arg.p[0].y, arg.p[1].y);
+				bounds->y1 = fz_max(arg.p[0].y, arg.p[1].y);
+			}
+			return 1;
+		}
 	}
 	if (arg.p[0].y == arg.p[1].y)
 	{
 		/* p[0]  p[1]
 		 * p[3]  p[2]
 		 */
-		return (arg.p[1].x == arg.p[2].x && arg.p[0].x == arg.p[3].x && arg.p[2].y == arg.p[3].y);
+		if (arg.p[1].x == arg.p[2].x && arg.p[0].x == arg.p[3].x && arg.p[2].y == arg.p[3].y)
+		{
+			if (bounds)
+			{
+				bounds->x0 = fz_min(arg.p[0].x, arg.p[1].x);
+				bounds->x1 = fz_max(arg.p[0].x, arg.p[1].x);
+				bounds->y0 = fz_min(arg.p[0].y, arg.p[3].y);
+				bounds->y1 = fz_max(arg.p[0].y, arg.p[3].y);
+			}
+			return 1;
+		}
 	}
 	return 0;
 }

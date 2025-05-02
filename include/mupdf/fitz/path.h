@@ -460,5 +460,18 @@ const char *fz_string_from_linejoin(fz_linejoin join);
 */
 int fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm);
 
+/**
+	Check whether a given path, under the given transform
+	is an axis-aligned rectangle.
+
+	We accept zero width or height rectangles, so
+	"move 100, 100; line 200, 100" would count as
+	a rectangle too.
+
+	bounds = NULL, or place to return the rectangle
+	bounds if the path is a rectangle.
+*/
+int fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm, fz_rect *bounds);
+
 
 #endif

@@ -216,6 +216,13 @@ static void
 pdf_dev_path(fz_context *ctx, pdf_device *pdev, const fz_path *path)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
+	fz_rect bounds;
+
+	if (fz_path_is_rect_with_bounds(ctx, path, fz_identity, &bounds))
+	{
+		fz_append_printf(ctx, gs->buf, "%g %g %g %g re\n", bounds.x0, bounds.y0, bounds.x1-bounds.x0, bounds.y1-bounds.y0);
+		return;
+	}
 
 	fz_walk_path(ctx, path, &pdf_dev_path_proc, (void *)gs->buf);
 }
