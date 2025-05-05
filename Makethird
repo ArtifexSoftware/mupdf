@@ -189,6 +189,7 @@ endif
 
 # --- MuJS ---
 
+ifeq ($(USE_MUJS),yes)
 ifeq ($(USE_SYSTEM_MUJS),yes)
   THIRD_CFLAGS += $(SYS_MUJS_CFLAGS)
   THIRD_LIBS += $(SYS_MUJS_LIBS)
@@ -198,6 +199,7 @@ else
   THIRD_SRC += $(MUJS_SRC)
 $(OUT)/thirdparty/mujs/%.o: thirdparty/mujs/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(MUJS_CFLAGS) $(MUJS_BUILD_CFLAGS)
+endif
 endif
 
 # --- ZLIB ---

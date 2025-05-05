@@ -18,6 +18,13 @@ else
   USE_BROTLI := yes
 endif
 
+ifeq ($(mujs),no)
+  CFLAGS += -DFZ_ENABLE_JS=0
+  USE_MUJS := no
+else
+  USE_MUJS := yes
+endif
+
 ifeq ($(html),no)
   CFLAGS += -DFZ_ENABLE_HTML_ENGINE=0
   CFLAGS += -DFZ_ENABLE_HTML=0
