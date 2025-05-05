@@ -34,7 +34,10 @@
 #endif
 
 #include "mupdf/helpers/pkcs7-openssl.h"
+
+#if FZ_ENABLE_JS
 #include "mujs.h"
+#endif
 
 #ifndef _WIN32
 #include <sys/stat.h> /* for mkdir */
@@ -202,10 +205,8 @@ static int canvas_y = 0, canvas_h = 100;
 
 static int outline_w = 14; /* to be scaled by lineheight */
 static int annotate_w = 12; /* to be scaled by lineheight */
-static int console_h = 14; /* to be scaled by lineheight */
 
 static int outline_start_x = 0;
-static int console_start_y = 0;
 
 static int oldbox = FZ_CROP_BOX, currentbox = FZ_CROP_BOX;
 static int oldtint = 0, currenttint = 0;
@@ -227,11 +228,15 @@ static int showundo = 0;
 static int showlayers = 0;
 static int showlinks = 0;
 static int showsearch = 0;
-static int showconsole = 0;
 int showannotate = 0;
 int showform = 0;
 
+#if FZ_ENABLE_JS
+static int showconsole = 0;
+static int console_h = 14; /* to be scaled by lineheight */
 static pdf_js_console gl_js_console;
+static int console_start_y = 0;
+#endif
 
 static const char *tooltip = NULL;
 
@@ -1608,8 +1613,10 @@ static void shrinkwrap(void)
 		w += outline_w + 4;
 	if (showannotate)
 		w += annotate_w;
+#if FZ_ENABLE_JS
 	if (showconsole)
 		h += console_h;
+#endif
 	if (screen_w > 0 && w > screen_w)
 		w = screen_w;
 	if (screen_h > 0 && h > screen_h)
@@ -1839,12 +1846,14 @@ static void load_document(void)
 
 	if (pdf)
 	{
+#if FZ_ENABLE_JS
 		if (enable_js)
 		{
 			trace_action("doc.enableJS();\n");
 			pdf_enable_js(ctx, pdf);
 			pdf_js_set_console(ctx, pdf, &gl_js_console, NULL);
 		}
+#endif
 
 		reload_or_start_journalling();
 
@@ -2072,6 +2081,8 @@ static void clear_search(void)
 	search_hit_count = 0;
 }
 
+#if FZ_ENABLE_JS
+
 #define MAX_CONSOLE_LINES 500
 
 static fz_buffer *console_buffer;
@@ -2273,6 +2284,8 @@ void do_console(void)
 	ui_panel_end();
 }
 
+#endif
+
 static void do_app(void)
 {
 	if (ui.mod == GLUT_ACTIVE_ALT)
@@ -2303,7 +2316,9 @@ static void do_app(void)
 		case 'L': showlinks = !showlinks; break;
 		case 'F': showform = !showform; break;
 		case 'i': ui.dialog = info_dialog; break;
+#if FZ_ENABLE_JS
 		case '`': case KEY_F12: toggle_console(); break;
+#endif
 		case 'r': reload(); break;
 		case 'q': quit(); break;
 		case 'S': do_save_pdf_file(); break;
@@ -2929,11 +2944,13 @@ void do_main(void)
 		ui_panel_end();
 	}
 
+#if FZ_ENABLE_JS
 	if (showconsole)
 	{
 		do_console();
 		ui_splitter(&console_start_y, &console_h, 6*ui.lineheight, 25*ui.lineheight, T);
 	}
+#endif
 
 	do_canvas();
 
@@ -3038,7 +3055,9 @@ static void cleanup(void)
 
 	fz_flush_warnings(ctx);
 
+#if FZ_ENABLE_JS
 	console_fin();
+#endif
 
 	fz_drop_output(ctx, trace_file);
 	fz_drop_stext_page(ctx, page_text);
@@ -3125,7 +3144,9 @@ int main(int argc, char **argv)
 	fz_set_stddbg(ctx, fz_stdods(ctx));
 #endif
 
+#if FZ_ENABLE_JS
 	console_init();
+#endif
 
 	fz_register_document_handlers(ctx);
 
@@ -3236,7 +3257,9 @@ int main(int argc, char **argv)
 
 	annotate_w *= ui.lineheight;
 	outline_w *= ui.lineheight;
+#if FZ_ENABLE_JS
 	console_h *= ui.lineheight;
+#endif
 
 	glutMainLoop();
 
