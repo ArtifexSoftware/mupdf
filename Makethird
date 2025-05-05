@@ -89,6 +89,7 @@ include Makelists
 
 # --- BROTLI ---
 
+ifeq ($(USE_BROTLI),yes)
 ifeq ($(USE_SYSTEM_BROTLI),yes)
   THIRD_CFLAGS += $(SYS_BROTLI_CFLAGS)
   THIRD_LIBS += $(SYS_BROTLI_LIBS)
@@ -102,6 +103,7 @@ $(OUT)/thirdparty/brotli/c/dec/%.o: thirdparty/brotli/c/dec/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
 $(OUT)/thirdparty/brotli/c/enc/%.o: thirdparty/brotli/c/enc/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(BROTLI_CFLAGS) $(BROTLI_BUILD_CFLAGS)
+endif
 endif
 
 # --- FREETYPE 2 ---

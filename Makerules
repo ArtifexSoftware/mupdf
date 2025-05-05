@@ -13,6 +13,9 @@ build_suffix :=
 
 ifeq ($(brotli),no)
   CFLAGS += -DFZ_ENABLE_BROTLI=0
+  USE_BROTLI := no
+else
+  USE_BROTLI := yes
 endif
 
 ifeq ($(html),no)
