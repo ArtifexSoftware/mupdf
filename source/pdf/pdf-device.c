@@ -1043,6 +1043,8 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 
 	pdf_dev_end_text(ctx, pdev);
 
+	pdf_dev_ctm(ctx, pdev, fz_identity);
+
 	/* Make a new form to contain the contents of the softmask */
 	pdf_dev_new_form(ctx, &form_ref, pdev, bbox, 0, 0, 1, colorspace);
 
@@ -1111,6 +1113,8 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox, fz_colorspace
 	gstate *gs;
 
 	pdf_dev_end_text(ctx, pdev);
+
+	pdf_dev_ctm(ctx, pdev, fz_identity);
 
 	num = pdf_dev_new_form(ctx, &form_ref, pdev, bbox, isolated, knockout, alpha, cs);
 
