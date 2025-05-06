@@ -199,7 +199,7 @@ find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 		else if (c > 0)
 			l = m + 1;
 		else
-			return c;
+			return m;
 	}
 	return -1;
 }
