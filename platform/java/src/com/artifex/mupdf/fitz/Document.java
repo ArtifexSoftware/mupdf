@@ -192,8 +192,6 @@ public class Document
 		return -1;
 	}
 
-	public native Quad[][] search(int chapter, int page, String needle);
-
 	public native Location resolveLink(String uri);
 	public Location resolveLink(Outline link) {
 		return resolveLink(link.uri);

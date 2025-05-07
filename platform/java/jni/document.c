@@ -1020,38 +1020,6 @@ FUN(Document_hasPermission)(JNIEnv *env, jobject self, jint permission)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_search)(JNIEnv *env, jobject self, jint chapter, jint page, jstring jneedle)
-{
-	fz_context *ctx = get_context(env);
-	fz_document *doc = from_Document(env, self);
-	const char *needle = NULL;
-	search_state state = { env, NULL, 0 };
-
-	if (!ctx || !doc) return NULL;
-	if (!jneedle) jni_throw_arg(env, "needle must not be null");
-
-	needle = (*env)->GetStringUTFChars(env, jneedle, NULL);
-	if (!needle) return NULL;
-
-	state.hits = (*env)->NewObject(env, cls_ArrayList, mid_ArrayList_init);
-	if (!state.hits || (*env)->ExceptionCheck(env)) return NULL;
-
-	fz_try(ctx)
-		fz_search_chapter_page_number_cb(ctx, doc, chapter, page, needle, hit_callback, &state);
-	fz_always(ctx)
-	{
-		(*env)->ReleaseStringUTFChars(env, jneedle, needle);
-	}
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	if (state.error)
-		return NULL;
-
-	return (*env)->CallObjectMethod(env, state.hits, mid_ArrayList_toArray);
-}
-
-JNIEXPORT jobject JNICALL
 FUN(Document_resolveLinkDestination)(JNIEnv *env, jobject self, jstring juri)
 {
 	fz_context *ctx = get_context(env);

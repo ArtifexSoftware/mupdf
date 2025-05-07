@@ -46,7 +46,19 @@ public class StructuredText
 		pointer = p;
 	}
 
-	public native Quad[][] search(String needle);
+	public static final int SEARCH_EXACT = 0;
+	public static final int SEARCH_IGNORE_CASE = 1;
+	public static final int SEARCH_IGNORE_DIACRITICS = 2;
+	public static final int SEARCH_REGEXP = 4;
+	public static final int SEARCH_KEEP_WHITESPACE = 8;
+	public static final int SEARCH_KEEP_LINES = 16;
+	public static final int SEARCH_KEEP_PARAGRAPHS = 32;
+
+	public native Quad[][] search(String needle, int style);
+	public Quad[][] search(String needle)
+	{
+		return search(needle, StructuredText.SEARCH_IGNORE_CASE);
+	}
 	public native Quad[] highlight(Point a, Point b);
 	public native Quad snapSelection(Point a, Point b, int mode);
 	public native String copy(Point a, Point b);

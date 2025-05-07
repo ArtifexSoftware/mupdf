@@ -1103,10 +1103,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toStructuredTe
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    search
- * Signature: (Ljava/lang/String;)[[Lcom/artifex/mupdf/fitz/Quad;
+ * Signature: (Ljava/lang/String;I)[[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_DisplayList_search
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
@@ -1467,14 +1467,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_countPages
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_loadPage
   (JNIEnv *, jobject, jint, jint);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Document
- * Method:    search
- * Signature: (IILjava/lang/String;)[[Lcom/artifex/mupdf/fitz/Quad;
- */
-JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Document_search
-  (JNIEnv *, jobject, jint, jint, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
@@ -6176,10 +6168,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toStructuredText
 /*
  * Class:     com_artifex_mupdf_fitz_Page
  * Method:    search
- * Signature: (Ljava/lang/String;)[[Lcom/artifex/mupdf/fitz/Quad;
+ * Signature: (Ljava/lang/String;I)[[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Page_search
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
@@ -6982,6 +6974,22 @@ extern "C" {
 #define com_artifex_mupdf_fitz_StructuredText_SELECT_WORDS 1L
 #undef com_artifex_mupdf_fitz_StructuredText_SELECT_LINES
 #define com_artifex_mupdf_fitz_StructuredText_SELECT_LINES 2L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_EXACT
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_EXACT 0L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_CASE
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_CASE 1L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_DIACRITICS
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_DIACRITICS 2L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_REGEXP
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_REGEXP 4L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_WHITESPACE
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_WHITESPACE 8L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_LINES
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_LINES 16L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_PARAGRAPHS
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_PARAGRAPHS 32L
+#undef com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_HYPHENS
+#define com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_HYPHENS 64L
 #undef com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED
 #define com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED 1L
 #undef com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE
@@ -6997,10 +7005,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StructuredText_finalize
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    search
- * Signature: (Ljava/lang/String;)[[Lcom/artifex/mupdf/fitz/Quad;
+ * Signature: (Ljava/lang/String;I)[[Lcom/artifex/mupdf/fitz/Quad;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_search
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText

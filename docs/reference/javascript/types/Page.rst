@@ -153,7 +153,7 @@ Instance methods
 	to a character in the search hit.
 
 	:param string needle: The text to search for.
-	:param number maxHits: Maximum number of hits to return.
+	:param number options: Optional options for the search. A logical or of options such as `StructuredText.SEARCH_EXACT`.
 
 	:returns: Array of Array of `Quad`
 

@@ -4568,19 +4568,33 @@ static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad,
 	return 0;
 }
 
+static fz_search_options search_options_from_string(const char *args)
+{
+	fz_search_options mask = 0;
+	// TODO: stricter parsing of options bitmask string
+	if (strstr(args, "exact")) mask |= FZ_SEARCH_EXACT;
+	if (strstr(args, "ignore-case")) mask |= FZ_SEARCH_IGNORE_CASE;
+	if (strstr(args, "ignore-diacritics")) mask |= FZ_SEARCH_IGNORE_DIACRITICS;
+	if (strstr(args, "regexps")) mask |= FZ_SEARCH_REGEXP;
+	if (strstr(args, "keep-whitespace")) mask |= FZ_SEARCH_KEEP_WHITESPACE;
+	if (strstr(args, "keep-lines")) mask |= FZ_SEARCH_KEEP_LINES;
+	if (strstr(args, "keep-paragraphs")) mask |= FZ_SEARCH_KEEP_PARAGRAPHS;
+	if (strstr(args, "keep-hyphens")) mask |= FZ_SEARCH_KEEP_HYPHENS;
+	return mask;
+}
+
 static void ffi_Page_search(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	const char *needle = js_tostring(J, 1);
-	search_state state = { J, 0, 0, 0 };
-
-	state.max_hits = js_iscoercible(J, 2) ? js_tointeger(J, 2) : 500;
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	search_state state = { J, 0, 0 };
 
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_match_page_cb(ctx, page, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
+		fz_match_page_cb(ctx, page, needle, hit_callback, &state, options);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -6192,14 +6206,13 @@ static void ffi_DisplayList_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *needle = js_tostring(J, 1);
-	search_state state = { J, 0, 0, 0 };
-
-	state.max_hits = js_iscoercible(J, 2) ? js_tointeger(J, 2) : 500;
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	search_state state = { J, 0, 0 };
 
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_match_display_list_cb(ctx, list, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
+		fz_match_display_list_cb(ctx, list, needle, hit_callback, &state, options);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -6365,13 +6378,14 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	const char *needle = js_tostring(J, 1);
-	search_state state = { J, 0, 0, 0 };
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	search_state state = { J, 0, 0 };
 
 	state.max_hits = js_iscoercible(J, 2) ? js_tointeger(J, 2) : 500;
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_match_stext_page_cb(ctx, text, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
+		fz_match_stext_page_cb(ctx, text, needle, hit_callback, &state, options);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -11907,7 +11921,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 4);
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
 		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 1);
-		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
+		jsB_propfun(J, "Page.search", ffi_Page_search, 2);
 		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
 		jsB_propfun(J, "Page.createLink", ffi_Page_createLink, 2);
 		jsB_propfun(J, "Page.deleteLink", ffi_Page_deleteLink, 1);
@@ -12092,7 +12106,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "DisplayList.getBounds", ffi_DisplayList_getBounds, 0);
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
 		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 1);
-		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 1);
+		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 2);
 		jsB_propfun(J, "DisplayList.decodeBarcode", ffi_DisplayList_decodeBarcode, 2);
 	}
 	js_setregistry(J, "fz_display_list");
@@ -12101,7 +12115,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "StructuredText.walk", ffi_StructuredText_walk, 1);
-		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 1);
+		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 2);
 		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 2);
 		jsB_propfun(J, "StructuredText.copy", ffi_StructuredText_copy, 2);
 		jsB_propfun(J, "StructuredText.asJSON", ffi_StructuredText_asJSON, 1);
@@ -12692,6 +12706,12 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "SELECT_WORDS", FZ_SELECT_WORDS);
 		jsB_enum(J, "StructuredText", "SELECT_LINES", FZ_SELECT_LINES);
 
+		jsB_enum(J, "StructuredText", "SEARCH_EXACT", FZ_SEARCH_EXACT);
+		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_CASE", FZ_SEARCH_IGNORE_CASE);
+		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_DIACRITICS", FZ_SEARCH_IGNORE_DIACRITICS);
+		jsB_enum(J, "StructuredText", "SEARCH_REGEXP", FZ_SEARCH_REGEXP);
+
+		jsB_enum(J, "StructuredText", "VECTOR_IS_STROKED", FZ_STEXT_VECTOR_IS_STROKED);
 		jsB_enum(J, "StructuredText", "VECTOR_IS_RECTANGLE", FZ_STEXT_VECTOR_IS_RECTANGLE);
 	}
 
