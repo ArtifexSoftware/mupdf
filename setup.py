@@ -33,11 +33,15 @@ Internal testing only - environmental variables:
         run swig.
 '''
 
+# Work around pip 25/pyproject_hooks 1.2.0 path meddling:
+import sys
+if sys.meta_path[0].__class__.__name__ == '_BackendPathFinder':
+    sys.meta_path.pop(0)
+
 import os
 import platform
 import re
 import subprocess
-import sys
 import time
 
 
