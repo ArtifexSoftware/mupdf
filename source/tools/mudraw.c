@@ -959,7 +959,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
-			if (!output || !strcmp(output, "-"))
+			if (!output)
 				outs = fz_stdout(ctx);
 			else
 			{
@@ -2047,7 +2047,7 @@ int mudraw_main(int argc, char **argv)
 
 		case 'p': password = fz_optarg; break;
 
-		case 'o': output = fz_optarg; break;
+		case 'o': output = fz_optpath(fz_optarg); break;
 		case 'F': format = fz_optarg; break;
 
 		case 'R': rotation = fz_atof(fz_optarg); break;

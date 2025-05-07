@@ -62,7 +62,7 @@ int pdfrecolor_main(int argc, char **argv)
 
 		// color convert
 		case 'c': colorspace = fz_optarg; break;
-		case 'o': outputfile = fz_optarg; break;
+		case 'o': outputfile = fz_optpath(fz_optarg); break;
 		case 'r': remove_oi = 1; break;
 		}
 	}
