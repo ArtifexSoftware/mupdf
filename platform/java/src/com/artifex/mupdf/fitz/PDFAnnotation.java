@@ -333,9 +333,6 @@ public class PDFAnnotation
 	public native boolean hasFilespec();
 	public native void setFilespec(PDFObject fs);
 	public native PDFObject getFilespec();
-	public boolean hasFilespecification() { return hasFilespec(); }
-	public void setFilespecification(PDFObject fs) { setFilespec(fs); }
-	public PDFObject getFilespecification() { return getFilespec(); }
 
 	public native boolean hasIntent();
 	public native int getIntent();

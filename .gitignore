@@ -26,7 +26,6 @@ node_modules
 *.xcworkspace
 *.xcuserdatad
 user.make
-guide
 
 # Temporary and build files:
 *.class
