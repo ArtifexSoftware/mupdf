@@ -400,7 +400,7 @@ underlined_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, voi
 
 	/* Check that all the rest of the the chars match our expected value. */
 	for (ch = line->first_char; ch != NULL; ch = ch->next)
-		if ((!!(line->first_char->flags & FZ_STEXT_UNDERLINE)) ^ (data->underlined == UNDERLINE_YES))
+		if ((!!(ch->flags & FZ_STEXT_UNDERLINE)) ^ (data->underlined == UNDERLINE_YES))
 		{
 			/* Differs! So, Mixed. */
 			data->underlined = UNDERLINE_MIXED;
@@ -542,7 +542,7 @@ font_line(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg
 		data->font = line->first_char->font;
 
 	for (ch = line->first_char; ch != NULL; ch = ch->next)
-		if (line->first_char->font != data->font)
+		if (ch->font != data->font)
 		{
 			data->font = MIXED_FONT;
 			break;
