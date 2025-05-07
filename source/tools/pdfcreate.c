@@ -265,7 +265,7 @@ int pdfcreate_main(int argc, char **argv)
 	{
 		switch (c)
 		{
-		case 'o': output = fz_optarg; break;
+		case 'o': output = fz_optpath(fz_optarg); break;
 		case 'O': flags = fz_optarg; break;
 		default: return usage();
 		}

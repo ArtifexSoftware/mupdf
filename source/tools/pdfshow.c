@@ -622,7 +622,7 @@ int pdfshow_main(int argc, char **argv)
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
-		case 'o': output = fz_optarg; break;
+		case 'o': output = fz_optpath(fz_optarg); break;
 		case 'b': showbinary = 1; break;
 		case 'e': showdecode = 0; break;
 		case 'g': do_tight = 1; break;
