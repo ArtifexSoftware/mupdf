@@ -14,7 +14,7 @@ Args:
     build:
         Build docs:
         * Create and enter a Python venv.
-        * Install packages as specified in file `docs/src/requirements.txt`.
+        * Install packages as specified in file `docs/requirements.txt`.
         * Run `sphinx-build`.
     clean:
         Removes generated directory.
@@ -72,7 +72,7 @@ def build(pip):
     macos = platform.system() == 'Darwin'
 
     root = os.path.relpath(os.path.abspath(f'{__file__}/../..'))
-    dir_in = f'{root}/docs/src'
+    dir_in = f'{root}/docs'
     dir_out = f'{root}/build/docs'
     dir_venv = f'{root}/build/docs/venv'
 
