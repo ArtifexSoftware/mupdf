@@ -596,6 +596,7 @@
     <ClCompile Include="..\..\source\fitz\pool.c" />
     <ClCompile Include="..\..\source\fitz\printf.c" />
     <ClCompile Include="..\..\source\fitz\random.c" />
+    <ClCompile Include="..\..\source\fitz\regexp.c" />
     <ClCompile Include="..\..\source\fitz\skew.c" />
     <ClCompile Include="..\..\source\fitz\stext-boxer.c" />
     <ClCompile Include="..\..\source\fitz\stext-para.c" />
