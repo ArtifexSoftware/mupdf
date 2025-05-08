@@ -243,6 +243,8 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 	if (dc->count == 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "No document handlers registered");
 
+	if (magic == NULL)
+		magic = "";
 	ext = strrchr(magic, '.');
 	if (ext)
 		ext = ext + 1;
