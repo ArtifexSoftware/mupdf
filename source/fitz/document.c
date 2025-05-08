@@ -278,80 +278,77 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 
 	fz_try(ctx)
 	{
-		if ((stream && stream->seek != NULL) || (stream == NULL && dir != NULL))
-		{
-			for (i = 0; i < dc->count; i++)
-			{
-				void *state = NULL;
-				fz_document_recognize_state_free_fn *free_state = NULL;
-				int score = 0;
+		int can_recognize_stream = ((stream && stream->seek != NULL) || (stream == NULL && dir != NULL));
 
-				if (dc->handler[i]->recognize_content)
+		for (i = 0; i < dc->count; i++)
+		{
+			void *state = NULL;
+			fz_document_recognize_state_free_fn *free_state = NULL;
+			int score = 0;
+			int magic_score = 0;
+			const char **entry;
+
+			/* Get a score from recognizing the stream */
+			if (dc->handler[i]->recognize_content && can_recognize_stream)
+			{
+				if (stream)
+					fz_seek(ctx, stream, 0, SEEK_SET);
+				fz_try(ctx)
 				{
-					if (stream)
-						fz_seek(ctx, stream, 0, SEEK_SET);
-					fz_try(ctx)
-					{
-						score = dc->handler[i]->recognize_content(ctx, dc->handler[i], stream, dir, &state, &free_state);
-					}
-					fz_catch(ctx)
-					{
-						/* in case of zip errors when recognizing EPUB/XPS/DOCX files */
-						fz_rethrow_unless(ctx, FZ_ERROR_FORMAT);
-						(void)fz_convert_error(ctx, NULL); /* ugly hack to silence the error message */
-						score = 0;
-					}
+					score = dc->handler[i]->recognize_content(ctx, dc->handler[i], stream, dir, &state, &free_state);
 				}
-				if (best_score < score)
+				fz_catch(ctx)
 				{
-					best_score = score;
-					best_i = i;
-					if (best_free_state)
-						best_free_state(ctx, best_state);
-					best_free_state = free_state;
-					best_state = state;
+					/* in case of zip errors when recognizing EPUB/XPS/DOCX files */
+					fz_rethrow_unless(ctx, FZ_ERROR_FORMAT);
+					(void)fz_convert_error(ctx, NULL); /* ugly hack to silence the error message */
+					score = 0;
 				}
-				else if (free_state)
-					free_state(ctx, state);
 			}
-			if (stream)
-				fz_seek(ctx, stream, 0, SEEK_SET);
-		}
 
-		if (best_score < 100)
-		{
-			for (i = 0; i < dc->count; i++)
+			/* Now get a score from recognizing the magic */
+			if (dc->handler[i]->recognize)
+				magic_score = dc->handler[i]->recognize(ctx, dc->handler[i], magic);
+
+			for (entry = &dc->handler[i]->mimetypes[0]; *entry; entry++)
+				if (!fz_strcasecmp(magic, *entry) && score < 100)
+				{
+					magic_score = 100;
+					break;
+				}
+
+			if (ext)
 			{
-				int score = 0;
-				const char **entry;
-
-				if (dc->handler[i]->recognize)
-					score = dc->handler[i]->recognize(ctx, dc->handler[i], magic);
-
-				for (entry = &dc->handler[i]->mimetypes[0]; *entry; entry++)
-					if (!fz_strcasecmp(magic, *entry) && score < 100)
+				for (entry = &dc->handler[i]->extensions[0]; *entry; entry++)
+					if (!fz_strcasecmp(ext, *entry) && score < 100)
 					{
-						score = 100;
+						magic_score = 100;
 						break;
 					}
-
-				if (ext)
-				{
-					for (entry = &dc->handler[i]->extensions[0]; *entry; entry++)
-						if (!fz_strcasecmp(ext, *entry) && score < 100)
-						{
-							score = 100;
-							break;
-						}
-				}
-
-				if (best_score < score)
-				{
-					best_score = score;
-					best_i = i;
-				}
 			}
+
+			/* If we recognized the format (at least partially), and the magic_score matches, then that's
+			 * definitely the one we want to use. */
+			if (score > 0 && magic_score > 0)
+				score = 1000;
+			/* Otherwise, if we didn't recognize the format, we'll weakly believe in the magic, but
+			 * we won't let it override anything that actually will cope. */
+			else if (magic_score > 0)
+				score = 1;
+			if (best_score < score)
+			{
+				best_score = score;
+				best_i = i;
+				if (best_free_state)
+					best_free_state(ctx, best_state);
+				best_free_state = free_state;
+				best_state = state;
+			}
+			else if (free_state)
+				free_state(ctx, state);
 		}
+		if (stream)
+			fz_seek(ctx, stream, 0, SEEK_SET);
 	}
 	fz_catch(ctx)
 	{
