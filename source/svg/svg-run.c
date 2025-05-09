@@ -209,7 +209,9 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 	float cx = 0;
 	float cy = 0;
 	float r = 0;
-	fz_path *path;
+	fz_path *path = NULL;
+
+	fz_var(path);
 
 	fz_try(ctx)
 	{
@@ -252,7 +254,9 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 	float rx = 0;
 	float ry = 0;
 
-	fz_path *path;
+	fz_path *path = NULL;
+
+	fz_var(path);
 
 	fz_try(ctx)
 	{
