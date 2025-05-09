@@ -1124,6 +1124,10 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		return;
 	}
 
+	/* We haven't consumed the whole string, so there must be runes left.
+	 * Shut coverity up. */
+	assert(z != 0);
+
 	/* Spot a matching postfix. Can't send it til the end. */
 	for (end = span->len; end > start; end--)
 	{
