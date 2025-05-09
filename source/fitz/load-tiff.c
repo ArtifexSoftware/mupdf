@@ -784,22 +784,22 @@ static inline int tiff_readbyte(struct tiff *tiff)
 
 static inline unsigned readshort(struct tiff *tiff)
 {
-	unsigned a = tiff_readbyte(tiff);
-	unsigned b = tiff_readbyte(tiff);
+	int a = tiff_readbyte(tiff);
+	int b = tiff_readbyte(tiff);
 	if (tiff->order == TII)
-		return (b << 8) | a;
-	return (a << 8) | b;
+		return (unsigned)((b << 8) | a);
+	return (unsigned)((a << 8) | b);
 }
 
 static inline unsigned tiff_readlong(struct tiff *tiff)
 {
-	unsigned a = tiff_readbyte(tiff);
-	unsigned b = tiff_readbyte(tiff);
-	unsigned c = tiff_readbyte(tiff);
-	unsigned d = tiff_readbyte(tiff);
+	int a = tiff_readbyte(tiff);
+	int b = tiff_readbyte(tiff);
+	int c = tiff_readbyte(tiff);
+	int d = tiff_readbyte(tiff);
 	if (tiff->order == TII)
-		return (d << 24) | (c << 16) | (b << 8) | a;
-	return (a << 24) | (b << 16) | (c << 8) | d;
+		return (unsigned)((d << 24) | (c << 16) | (b << 8) | a);
+	return (unsigned)((a << 24) | (b << 16) | (c << 8) | d);
 }
 
 static void
