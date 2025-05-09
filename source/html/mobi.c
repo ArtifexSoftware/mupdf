@@ -289,9 +289,8 @@ fz_extract_html_from_mobi(fz_context *ctx, fz_buffer *mobi)
 				continue;
 			if (offset >= maxoffset)
 				continue;
-			offsets[k++] = offset;
+			minoffset = offsets[k++] = offset;
 			skip_bytes(ctx, stm, 4);
-			minoffset = fz_mini(minoffset, offsets[i]);
 		}
 		offsets[k] = (uint32_t)mobi->len;
 
