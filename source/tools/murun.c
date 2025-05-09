@@ -3607,7 +3607,7 @@ static void ffi_Buffer_readByte(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	if (index >= 0 && index < len)
+	if (index < len)
 		js_pushnumber(J, p[index]);
 }
 
