@@ -74,6 +74,20 @@ static int eval_print(js_State *J, const char *source)
 	return 0;
 }
 
+static void jsB_enum(js_State *J, const char *object, const char *name, int value)
+{
+	js_getglobal(J, object);
+	if (!js_isobject(J, -1)) {
+		js_pop(J, 1);
+		js_newobject(J);
+		js_dup(J);
+		js_setglobal(J, object);
+	}
+	js_pushnumber(J, value);
+	js_setproperty(J, -2, name);
+	js_pop(J, 1);
+}
+
 static void jsB_propfun(js_State *J, const char *name, js_CFunction cfun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -263,6 +277,9 @@ static int murun_dofile(js_State *J, const char *filename)
 	fz_free(ctx, s);
 	return i;
 }
+
+#define ffi_toenum(J,N,D,FUN) (js_isnumber(J,N) ? js_tonumber(J,N) : js_isstring(J, N) ? FUN(js_tostring(J, N)) : D)
+#define ffi_toenumx(J,N,D,FUN) (js_isnumber(J,N) ? js_tonumber(J,N) : js_isstring(J, N) ? FUN(ctx, js_tostring(J, N)) : D)
 
 JS_NORETURN
 static void jsB_quit(js_State *J)
@@ -3133,14 +3150,14 @@ static void ffi_new_StrokeState(js_State *J)
 
 	if (js_hasproperty(J, 1, "lineCap"))
 	{
-		int linecap = fz_linecap_from_string(js_tostring(J, -1));
+		int linecap = ffi_toenum(J, -1, FZ_LINECAP_BUTT, fz_linecap_from_string);
 		stroke->start_cap = stroke->dash_cap = stroke->end_cap = linecap;
 		js_pop(J, 1);
 	}
 
 	if (js_hasproperty(J, 1, "lineJoin"))
 	{
-		stroke->linejoin = fz_linejoin_from_string(js_tostring(J, -1));
+		stroke->linejoin = ffi_toenum(J, -1, FZ_LINEJOIN_MITER, fz_linejoin_from_string);
 		js_pop(J, 1);
 	}
 
@@ -3542,8 +3559,8 @@ static void ffi_Device_beginStructure(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
-	fz_structure str = fz_structure_from_string(js_tostring(J, 1));
-	const char *raw = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	fz_structure str = ffi_toenum(J, 1, FZ_STRUCTURE_INVALID, fz_structure_from_string);
+	const char *raw = js_iscoercible(J, 2) ? js_tostring(J, 2) : "";
 	int idx = js_tointeger(J, 3);
 
 	fz_try(ctx)
@@ -4380,11 +4397,8 @@ static void ffi_Page_getBounds(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
-	fz_box_type box_type = FZ_CROP_BOX;
+	fz_box_type box_type = ffi_toenum(J, 1, FZ_CROP_BOX, fz_box_type_from_string);
 	fz_rect bounds;
-
-	if (js_iscoercible(J, 1))
-		box_type = fz_box_type_from_string(js_tostring(J, 1));
 
 	fz_try(ctx)
 		bounds = fz_bound_page_box(ctx, page, box_type);
@@ -5010,7 +5024,7 @@ static void ffi_Pixmap_deskew(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	float degrees = js_tonumber(J, 1);
-	int border = deskew_border_from_string(js_tostring(J, 2));
+	int border = ffi_toenum(J, 2, FZ_DESKEW_BORDER_INCREASE, deskew_border_from_string);
 	fz_pixmap *dest = NULL;
 
 	fz_try(ctx)
@@ -9099,15 +9113,11 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
-	const char *name = js_tostring(J, 1);
+	int type = ffi_toenumx(J, 1, PDF_ANNOT_UNKNOWN, pdf_annot_type_from_string);
 	pdf_annot *annot = NULL;
-	int type;
 
 	fz_try(ctx)
-	{
-		type = pdf_annot_type_from_string(ctx, name);
 		annot = pdf_create_annot(ctx, page, type);
-	}
 	fz_catch(ctx)
 		rethrow(J);
 	js_getregistry(J, "pdf_annot");
@@ -9194,15 +9204,8 @@ static void ffi_PDFPage_toPixmap(js_State *J)
 	int alpha = js_toboolean(J, 3);
 	int extra = js_isdefined(J, 4) ? js_toboolean(J, 4) : 1;
 	const char *usage = js_isdefined(J, 5) ? js_tostring(J, 5) : "View";
-	const char *box_name = js_isdefined(J, 6) ? js_tostring(J, 6) : NULL;
-	fz_box_type box = FZ_CROP_BOX;
+	fz_box_type box = ffi_toenum(J, 6, FZ_CROP_BOX, fz_box_type_from_string);
 	fz_pixmap *pixmap = NULL;
-
-	if (box_name) {
-		box = fz_box_type_from_string(box_name);
-		if (box == FZ_UNKNOWN_BOX)
-			js_error(J, "invalid page box name");
-	}
 
 	fz_try(ctx)
 		if (extra)
@@ -9234,11 +9237,9 @@ static void ffi_PDFPage_setPageBox(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
-	const char *box_name = js_tostring(J, 1);
+	int box = ffi_toenum(J, 1, FZ_CROP_BOX, fz_box_type_from_string);
 	fz_rect rect = ffi_torect(J, 2);
-	int box;
 
-	box = fz_box_type_from_string(box_name);
 	if (box == FZ_UNKNOWN_BOX)
 		js_error(J, "invalid page box name");
 
@@ -10078,8 +10079,8 @@ static void ffi_PDFAnnotation_setLineEndingStyles(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	enum pdf_line_ending start = line_ending_from_string(js_tostring(J, 1));
-	enum pdf_line_ending end = line_ending_from_string(js_tostring(J, 2));
+	enum pdf_line_ending start = ffi_toenum(J, 1, PDF_ANNOT_LE_NONE, line_ending_from_string);
+	enum pdf_line_ending end = ffi_toenum(J, 2, PDF_ANNOT_LE_NONE, line_ending_from_string);
 
 	fz_try(ctx)
 		pdf_set_annot_line_ending_styles(ctx, annot, start, end);
@@ -10138,8 +10139,7 @@ static void ffi_PDFAnnotation_setBorderStyle(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	const char *str = js_iscoercible(J, 1) ? js_tostring(J, 1) : "Solid";
-	enum pdf_border_style style = border_style_from_string(str);
+	enum pdf_border_style style = ffi_toenum(J, 1, PDF_BORDER_STYLE_SOLID, border_style_from_string);
 	fz_try(ctx)
 		pdf_set_annot_border_style(ctx, annot, style);
 	fz_catch(ctx)
@@ -10244,8 +10244,7 @@ static void ffi_PDFAnnotation_setBorderEffect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	const char *str = js_iscoercible(J, 1) ? js_tostring(J, 1) : "None";
-	enum pdf_border_effect effect = border_effect_from_string(str);
+	enum pdf_border_effect effect = ffi_toenum(J, 1, PDF_BORDER_EFFECT_NONE, border_effect_from_string);
 	fz_try(ctx)
 		pdf_set_annot_border_effect(ctx, annot, effect);
 	fz_catch(ctx)
@@ -10396,9 +10395,9 @@ static void ffi_PDFAnnotation_setIntent(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	const char *intent = js_tostring(J, 1);
+	enum pdf_intent intent = ffi_toenumx(J, 1, PDF_ANNOT_IT_DEFAULT, pdf_intent_from_string);
 	fz_try(ctx)
-		pdf_set_annot_intent(ctx, annot, pdf_intent_from_string(ctx, intent));
+		pdf_set_annot_intent(ctx, annot, intent);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -10945,7 +10944,7 @@ static void ffi_PDFAnnotation_setCalloutStyle(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	enum pdf_line_ending style = line_ending_from_string(js_tostring(J, 1));
+	enum pdf_line_ending style = ffi_toenum(J, 1, PDF_ANNOT_LE_NONE, line_ending_from_string);
 	fz_try(ctx)
 		pdf_set_annot_callout_style(ctx, annot, style);
 	fz_catch(ctx)
@@ -12535,6 +12534,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 
 		jsB_propfun(J, "installLoadFontFunction", ffi_installLoadFontFunction, 1);
+
 	}
 
 	// declare ColorSpace static objects
@@ -12575,6 +12575,210 @@ int murun_main(int argc, char **argv)
 	// Declare "mupdf" as alias to global object.
 	js_pushglobal(J);
 	js_setglobal(J, "mupdf");
+
+	/* define enums as constants on global objects and constructors */
+	{
+		jsB_enum(J, "Device", "BLEND_NORMAL", FZ_BLEND_NORMAL);
+		jsB_enum(J, "Device", "BLEND_MULTIPLY", FZ_BLEND_MULTIPLY);
+		jsB_enum(J, "Device", "BLEND_SCREEN", FZ_BLEND_SCREEN);
+		jsB_enum(J, "Device", "BLEND_OVERLAY", FZ_BLEND_OVERLAY);
+		jsB_enum(J, "Device", "BLEND_DARKEN", FZ_BLEND_DARKEN);
+		jsB_enum(J, "Device", "BLEND_LIGHTEN", FZ_BLEND_LIGHTEN);
+		jsB_enum(J, "Device", "BLEND_COLOR_DODGE", FZ_BLEND_COLOR_DODGE);
+		jsB_enum(J, "Device", "BLEND_COLOR_BURN", FZ_BLEND_COLOR_BURN);
+		jsB_enum(J, "Device", "BLEND_HARD_LIGHT", FZ_BLEND_HARD_LIGHT);
+		jsB_enum(J, "Device", "BLEND_SOFT_LIGHT", FZ_BLEND_SOFT_LIGHT);
+		jsB_enum(J, "Device", "BLEND_DIFFERENCE", FZ_BLEND_DIFFERENCE);
+		jsB_enum(J, "Device", "BLEND_EXCLUSION", FZ_BLEND_EXCLUSION);
+		jsB_enum(J, "Device", "BLEND_HUE", FZ_BLEND_HUE);
+		jsB_enum(J, "Device", "BLEND_SATURATION", FZ_BLEND_SATURATION);
+		jsB_enum(J, "Device", "BLEND_COLOR", FZ_BLEND_COLOR);
+		jsB_enum(J, "Device", "BLEND_LUMINOSITY", FZ_BLEND_LUMINOSITY);
+
+		jsB_enum(J, "Document", "PERMISSION_PRINT", FZ_PERMISSION_PRINT);
+		jsB_enum(J, "Document", "PERMISSION_COPY", FZ_PERMISSION_COPY);
+		jsB_enum(J, "Document", "PERMISSION_EDIT", FZ_PERMISSION_EDIT);
+		jsB_enum(J, "Document", "PERMISSION_ANNOTATE", FZ_PERMISSION_ANNOTATE);
+		jsB_enum(J, "Document", "PERMISSION_FORM", FZ_PERMISSION_FORM);
+		jsB_enum(J, "Document", "PERMISSION_ACCESSIBILITY", FZ_PERMISSION_ACCESSIBILITY);
+		jsB_enum(J, "Document", "PERMISSION_ASSEMBLE", FZ_PERMISSION_ASSEMBLE);
+		jsB_enum(J, "Document", "PERMISSION_PRINT_HQ", FZ_PERMISSION_PRINT_HQ);
+
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_LATIN", PDF_SIMPLE_ENCODING_LATIN);
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_GREEK", PDF_SIMPLE_ENCODING_GREEK);
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_CYRILLIC", PDF_SIMPLE_ENCODING_CYRILLIC);
+		jsB_enum(J, "Font", "ADOBE_CNS", FZ_ADOBE_CNS);
+		jsB_enum(J, "Font", "ADOBE_GB", FZ_ADOBE_GB);
+		jsB_enum(J, "Font", "ADOBE_JAPAN", FZ_ADOBE_JAPAN);
+		jsB_enum(J, "Font", "ADOBE_KOREA", FZ_ADOBE_KOREA);
+
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT", FZ_LINK_DEST_FIT);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_B", FZ_LINK_DEST_FIT_B);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_H", FZ_LINK_DEST_FIT_H);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_BH", FZ_LINK_DEST_FIT_BH);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_V", FZ_LINK_DEST_FIT_V);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_BV", FZ_LINK_DEST_FIT_BV);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_R", FZ_LINK_DEST_FIT_R);
+		jsB_enum(J, "LinkDestination", "LINK_DEST_XYZ", FZ_LINK_DEST_XYZ);
+
+		jsB_enum(J, "OutlineIterator", "FLAG_BOLD", FZ_OUTLINE_FLAG_BOLD);
+		jsB_enum(J, "OutlineIterator", "FLAG_ITALIC", FZ_OUTLINE_FLAG_ITALIC);
+
+		jsB_enum(J, "Page", "MEDIA_BOX", FZ_MEDIA_BOX);
+		jsB_enum(J, "Page", "CROP_BOX", FZ_CROP_BOX);
+		jsB_enum(J, "Page", "BLEED_BOX", FZ_BLEED_BOX);
+		jsB_enum(J, "Page", "TRIM_BOX", FZ_TRIM_BOX);
+		jsB_enum(J, "Page", "ART_BOX", FZ_ART_BOX);
+		jsB_enum(J, "Page", "UNKNOWN_BOX", FZ_UNKNOWN_BOX);
+
+		jsB_enum(J, "Pixmap", "DESKEW_BORDER_INCREASE", FZ_DESKEW_BORDER_INCREASE);
+		jsB_enum(J, "Pixmap", "DESKEW_BORDER_MAINTAIN", FZ_DESKEW_BORDER_MAINTAIN);
+		jsB_enum(J, "Pixmap", "DESKEW_BORDER_DECREASE", FZ_DESKEW_BORDER_DECREASE);
+
+		jsB_enum(J, "StrokeState", "LINE_CAP_BUTT", FZ_LINECAP_BUTT);
+		jsB_enum(J, "StrokeState", "LINE_CAP_ROUND", FZ_LINECAP_ROUND);
+		jsB_enum(J, "StrokeState", "LINE_CAP_SQUARE", FZ_LINECAP_SQUARE);
+		jsB_enum(J, "StrokeState", "LINE_CAP_TRIANGLE", FZ_LINECAP_TRIANGLE);
+		jsB_enum(J, "StrokeState", "LINE_JOIN_MITER", FZ_LINEJOIN_MITER);
+		jsB_enum(J, "StrokeState", "LINE_JOIN_ROUND", FZ_LINEJOIN_ROUND);
+		jsB_enum(J, "StrokeState", "LINE_JOIN_BEVEL", FZ_LINEJOIN_BEVEL);
+		jsB_enum(J, "StrokeState", "LINE_JOIN_MITER_XPS", FZ_LINEJOIN_MITER_XPS);
+
+		jsB_enum(J, "StructuredText", "SELECT_CHARS", FZ_SELECT_CHARS);
+		jsB_enum(J, "StructuredText", "SELECT_WORDS", FZ_SELECT_WORDS);
+		jsB_enum(J, "StructuredText", "SELECT_LINES", FZ_SELECT_LINES);
+
+		jsB_enum(J, "StructuredText", "VECTOR_IS_RECTANGLE", FZ_STEXT_VECTOR_IS_RECTANGLE);
+	}
+
+#if FZ_ENABLE_PDF
+	{
+		jsB_enum(J, "PDFAnnotation", "TYPE_TEXT", PDF_ANNOT_TEXT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_LINK", PDF_ANNOT_LINK);
+		jsB_enum(J, "PDFAnnotation", "TYPE_FREE_TEXT", PDF_ANNOT_FREE_TEXT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_LINE", PDF_ANNOT_LINE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_SQUARE", PDF_ANNOT_SQUARE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_CIRCLE", PDF_ANNOT_CIRCLE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_POLYGON", PDF_ANNOT_POLYGON);
+		jsB_enum(J, "PDFAnnotation", "TYPE_POLY_LINE", PDF_ANNOT_POLY_LINE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_HIGHLIGHT", PDF_ANNOT_HIGHLIGHT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_UNDERLINE", PDF_ANNOT_UNDERLINE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_SQUIGGLY", PDF_ANNOT_SQUIGGLY);
+		jsB_enum(J, "PDFAnnotation", "TYPE_STRIKE_OUT", PDF_ANNOT_STRIKE_OUT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_REDACT", PDF_ANNOT_REDACT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_STAMP", PDF_ANNOT_STAMP);
+		jsB_enum(J, "PDFAnnotation", "TYPE_CARET", PDF_ANNOT_CARET);
+		jsB_enum(J, "PDFAnnotation", "TYPE_INK", PDF_ANNOT_INK);
+		jsB_enum(J, "PDFAnnotation", "TYPE_POPUP", PDF_ANNOT_POPUP);
+		jsB_enum(J, "PDFAnnotation", "TYPE_FILE_ATTACHMENT", PDF_ANNOT_FILE_ATTACHMENT);
+		jsB_enum(J, "PDFAnnotation", "TYPE_SOUND", PDF_ANNOT_SOUND);
+		jsB_enum(J, "PDFAnnotation", "TYPE_MOVIE", PDF_ANNOT_MOVIE);
+		jsB_enum(J, "PDFAnnotation", "TYPE_RICH_MEDIA", PDF_ANNOT_RICH_MEDIA);
+		jsB_enum(J, "PDFAnnotation", "TYPE_WIDGET", PDF_ANNOT_WIDGET);
+		jsB_enum(J, "PDFAnnotation", "TYPE_SCREEN", PDF_ANNOT_SCREEN);
+		jsB_enum(J, "PDFAnnotation", "TYPE_PRINTER_MARK", PDF_ANNOT_PRINTER_MARK);
+		jsB_enum(J, "PDFAnnotation", "TYPE_TRAP_NET", PDF_ANNOT_TRAP_NET);
+		jsB_enum(J, "PDFAnnotation", "TYPE_WATERMARK", PDF_ANNOT_WATERMARK);
+		jsB_enum(J, "PDFAnnotation", "TYPE_3D", PDF_ANNOT_3D);
+		jsB_enum(J, "PDFAnnotation", "TYPE_PROJECTION", PDF_ANNOT_PROJECTION);
+		jsB_enum(J, "PDFAnnotation", "TYPE_UNKNOWN", PDF_ANNOT_UNKNOWN);
+
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_NONE", PDF_ANNOT_LE_NONE);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_SQUARE", PDF_ANNOT_LE_SQUARE);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_CIRCLE", PDF_ANNOT_LE_CIRCLE);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_DIAMOND", PDF_ANNOT_LE_DIAMOND);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_OPEN_ARROW", PDF_ANNOT_LE_OPEN_ARROW);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_CLOSED_ARROW", PDF_ANNOT_LE_CLOSED_ARROW);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_BUTT", PDF_ANNOT_LE_BUTT);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_R_OPEN_ARROW", PDF_ANNOT_LE_R_OPEN_ARROW);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_R_CLOSED_ARROW", PDF_ANNOT_LE_R_CLOSED_ARROW);
+		jsB_enum(J, "PDFAnnotation", "LINE_ENDING_SLASH", PDF_ANNOT_LE_SLASH);
+
+		jsB_enum(J, "PDFAnnotation", "BORDER_STYLE_SOLID", PDF_BORDER_STYLE_SOLID);
+		jsB_enum(J, "PDFAnnotation", "BORDER_STYLE_DASHED", PDF_BORDER_STYLE_DASHED);
+		jsB_enum(J, "PDFAnnotation", "BORDER_STYLE_BEVELED", PDF_BORDER_STYLE_BEVELED);
+		jsB_enum(J, "PDFAnnotation", "BORDER_STYLE_INSET", PDF_BORDER_STYLE_INSET);
+		jsB_enum(J, "PDFAnnotation", "BORDER_STYLE_UNDERLINE", PDF_BORDER_STYLE_UNDERLINE);
+		jsB_enum(J, "PDFAnnotation", "BORDER_EFFECT_NONE", PDF_BORDER_EFFECT_NONE);
+		jsB_enum(J, "PDFAnnotation", "BORDER_EFFECT_CLOUDY", PDF_BORDER_EFFECT_CLOUDY);
+
+		jsB_enum(J, "PDFAnnotation", "IS_INVISIBLE", PDF_ANNOT_IS_INVISIBLE);
+		jsB_enum(J, "PDFAnnotation", "IS_HIDDEN", PDF_ANNOT_IS_HIDDEN);
+		jsB_enum(J, "PDFAnnotation", "IS_PRINT", PDF_ANNOT_IS_PRINT);
+		jsB_enum(J, "PDFAnnotation", "IS_NO_ZOOM", PDF_ANNOT_IS_NO_ZOOM);
+		jsB_enum(J, "PDFAnnotation", "IS_NO_ROTATE", PDF_ANNOT_IS_NO_ROTATE);
+		jsB_enum(J, "PDFAnnotation", "IS_NO_VIEW", PDF_ANNOT_IS_NO_VIEW);
+		jsB_enum(J, "PDFAnnotation", "IS_READ_ONLY", PDF_ANNOT_IS_READ_ONLY);
+		jsB_enum(J, "PDFAnnotation", "IS_LOCKED", PDF_ANNOT_IS_LOCKED);
+		jsB_enum(J, "PDFAnnotation", "IS_TOGGLE_NO_VIEW", PDF_ANNOT_IS_TOGGLE_NO_VIEW);
+		jsB_enum(J, "PDFAnnotation", "IS_LOCKED_CONTENTS", PDF_ANNOT_IS_LOCKED_CONTENTS);
+
+		jsB_enum(J, "PDFAnnotation", "IT_DEFAULT", PDF_ANNOT_IT_DEFAULT);
+		jsB_enum(J, "PDFAnnotation", "IT_FREETEXT_CALLOUT", PDF_ANNOT_IT_FREETEXT_CALLOUT);
+		jsB_enum(J, "PDFAnnotation", "IT_FREETEXT_TYPEWRITER", PDF_ANNOT_IT_FREETEXT_TYPEWRITER);
+		jsB_enum(J, "PDFAnnotation", "IT_LINE_ARROW", PDF_ANNOT_IT_LINE_ARROW);
+		jsB_enum(J, "PDFAnnotation", "IT_LINE_DIMENSION", PDF_ANNOT_IT_LINE_DIMENSION);
+		jsB_enum(J, "PDFAnnotation", "IT_POLYLINE_DIMENSION", PDF_ANNOT_IT_POLYLINE_DIMENSION);
+		jsB_enum(J, "PDFAnnotation", "IT_POLYGON_CLOUD", PDF_ANNOT_IT_POLYGON_CLOUD);
+		jsB_enum(J, "PDFAnnotation", "IT_POLYGON_DIMENSION", PDF_ANNOT_IT_POLYGON_DIMENSION);
+		jsB_enum(J, "PDFAnnotation", "IT_STAMP_IMAGE", PDF_ANNOT_IT_STAMP_IMAGE);
+		jsB_enum(J, "PDFAnnotation", "IT_STAMP_SNAPSHOT", PDF_ANNOT_IT_STAMP_SNAPSHOT);
+		jsB_enum(J, "PDFAnnotation", "IT_UNKNOWN", PDF_ANNOT_IT_UNKNOWN);
+
+		jsB_enum(J, "PDFDocument", "LANGUAGE_UNSET", FZ_LANG_UNSET);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_ur", FZ_LANG_ur);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_urd", FZ_LANG_urd);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_ko", FZ_LANG_ko);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_ja", FZ_LANG_ja);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_zh", FZ_LANG_zh);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_zh_Hans", FZ_LANG_zh_Hans);
+		jsB_enum(J, "PDFDocument", "LANGUAGE_zh_Hant", FZ_LANG_zh_Hant);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_NONE", PDF_PAGE_LABEL_NONE);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_DECIMAL", PDF_PAGE_LABEL_DECIMAL);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_ROMAN_UC", PDF_PAGE_LABEL_ROMAN_UC);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_ROMAN_LC", PDF_PAGE_LABEL_ROMAN_LC);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_ALPHA_UC", PDF_PAGE_LABEL_ALPHA_UC);
+		jsB_enum(J, "PDFDocument", "PAGE_LABEL_ALPHA_LC", PDF_PAGE_LABEL_ALPHA_LC);
+
+		jsB_enum(J, "PDFPage", "REDACT_IMAGE_NONE", PDF_REDACT_IMAGE_NONE);
+		jsB_enum(J, "PDFPage", "REDACT_IMAGE_REMOVE", PDF_REDACT_IMAGE_REMOVE);
+		jsB_enum(J, "PDFPage", "REDACT_IMAGE_PIXELS", PDF_REDACT_IMAGE_PIXELS);
+		jsB_enum(J, "PDFPage", "REDACT_IMAGE_REMOVE_UNLESS_INVISIBLE", PDF_REDACT_IMAGE_REMOVE_UNLESS_INVISIBLE);
+		jsB_enum(J, "PDFPage", "REDACT_LINE_ART_NONE", PDF_REDACT_LINE_ART_NONE);
+		jsB_enum(J, "PDFPage", "REDACT_LINE_ART_REMOVE_IF_COVERED", PDF_REDACT_LINE_ART_REMOVE_IF_COVERED);
+		jsB_enum(J, "PDFPage", "REDACT_LINE_ART_REMOVE_IF_TOUCHED", PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED);
+		jsB_enum(J, "PDFPage", "REDACT_TEXT_REMOVE", PDF_REDACT_TEXT_REMOVE);
+		jsB_enum(J, "PDFPage", "REDACT_TEXT_NONE", PDF_REDACT_TEXT_NONE);
+
+		jsB_enum(J, "PDFWidget", "TYPE_UNKNOWN", PDF_WIDGET_TYPE_UNKNOWN);
+		jsB_enum(J, "PDFWidget", "TYPE_BUTTON", PDF_WIDGET_TYPE_BUTTON);
+		jsB_enum(J, "PDFWidget", "TYPE_CHECKBOX", PDF_WIDGET_TYPE_CHECKBOX);
+		jsB_enum(J, "PDFWidget", "TYPE_COMBOBOX", PDF_WIDGET_TYPE_COMBOBOX);
+		jsB_enum(J, "PDFWidget", "TYPE_LISTBOX", PDF_WIDGET_TYPE_LISTBOX);
+		jsB_enum(J, "PDFWidget", "TYPE_RADIOBUTTON", PDF_WIDGET_TYPE_RADIOBUTTON);
+		jsB_enum(J, "PDFWidget", "TYPE_SIGNATURE", PDF_WIDGET_TYPE_SIGNATURE);
+		jsB_enum(J, "PDFWidget", "TYPE_TEXT", PDF_WIDGET_TYPE_TEXT);
+		jsB_enum(J, "PDFWidget", "TX_FORMAT_NONE", PDF_WIDGET_TX_FORMAT_NONE);
+		jsB_enum(J, "PDFWidget", "TX_FORMAT_NUMBER", PDF_WIDGET_TX_FORMAT_NUMBER);
+		jsB_enum(J, "PDFWidget", "TX_FORMAT_SPECIAL", PDF_WIDGET_TX_FORMAT_SPECIAL);
+		jsB_enum(J, "PDFWidget", "TX_FORMAT_DATE", PDF_WIDGET_TX_FORMAT_DATE);
+		jsB_enum(J, "PDFWidget", "TX_FORMAT_TIME", PDF_WIDGET_TX_FORMAT_TIME);
+
+		jsB_enum(J, "PDFWidget", "FIELD_IS_READ_ONLY", PDF_FIELD_IS_READ_ONLY);
+		jsB_enum(J, "PDFWidget", "FIELD_IS_REQUIRED", PDF_FIELD_IS_REQUIRED);
+		jsB_enum(J, "PDFWidget", "FIELD_IS_NO_EXPORT", PDF_FIELD_IS_NO_EXPORT);
+		jsB_enum(J, "PDFWidget", "TX_FIELD_IS_MULTILINE", PDF_TX_FIELD_IS_MULTILINE);
+		jsB_enum(J, "PDFWidget", "TX_FIELD_IS_PASSWORD", PDF_TX_FIELD_IS_PASSWORD);
+		jsB_enum(J, "PDFWidget", "TX_FIELD_IS_COMB", PDF_TX_FIELD_IS_COMB);
+		jsB_enum(J, "PDFWidget", "BTN_FIELD_IS_NO_TOGGLE_TO_OFF", PDF_BTN_FIELD_IS_NO_TOGGLE_TO_OFF);
+		jsB_enum(J, "PDFWidget", "BTN_FIELD_IS_RADIO", PDF_BTN_FIELD_IS_RADIO);
+		jsB_enum(J, "PDFWidget", "BTN_FIELD_IS_PUSHBUTTON", PDF_BTN_FIELD_IS_PUSHBUTTON);
+		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_COMBO", PDF_CH_FIELD_IS_COMBO);
+		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_EDIT", PDF_CH_FIELD_IS_EDIT);
+		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_SORT", PDF_CH_FIELD_IS_SORT);
+		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_MULTI_SELECT", PDF_CH_FIELD_IS_MULTI_SELECT);
+#endif
+	}
 
 	js_dostring(J, postfix_js);
 
