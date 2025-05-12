@@ -196,6 +196,10 @@ static const char *import_stms[] = {
 	"import * as mupdf from 'mupdf'",
 	"import mupdf from \"mupdf\"",
 	"import mupdf from 'mupdf'",
+	"import * as fs from \"fs\"",
+	"import * as fs from 'fs'",
+	"import fs from \"fs\"",
+	"import fs from 'fs'",
 };
 
 static int murun_dofile(js_State *J, const char *filename)
@@ -287,11 +291,12 @@ static const char *prefix_js =
 	;
 
 const char *postfix_js =
-	"require.cache.mupdf = mupdf\n"
-	"require.cache.fs = {\n"
+	"var fs = {\n"
 	"	readFileSync: readFile,\n"
 	"	writeFileSync: function (fn, buf) { buf.save(fn) }\n"
 	"}\n"
+	"require.cache.mupdf = mupdf\n"
+	"require.cache.fs = fs\n"
 	"\n"
 	"mupdf.Matrix = {\n"
 	"	identity: [ 1, 0, 0, 1, 0, 0 ],\n"
