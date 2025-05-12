@@ -34,7 +34,8 @@ make-release-build:
 test-release-build: make-release-build pdfref17.pdf
 	/usr/bin/test 38b6fd1d44108881f06fe8a260b0c7b3 == $$(./build/release/mutool draw -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
 	/usr/bin/test a62d97b3506d05bc2dbd3214d6d07113 == $$(./build/release/mutool draw -N -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
-	/usr/bin/test 3208e5b2e4f7d2ce91e922d697f2be33 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 3208e5b2e4f7d2ce91e922d697f2be33 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | grep -v '^warning: ' | md5sum - | cut -d' ' -f1)
+	/usr/bin/test e0a97c8a2003b8d90edda1e45a45dea0 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | md5sum - | cut -d' ' -f1)
 
 make-no-icc-build:
 	$(MAKE) -j2 XCFLAGS=-DFZ_ENABLE_ICC=0 build=release build/release/mutool
