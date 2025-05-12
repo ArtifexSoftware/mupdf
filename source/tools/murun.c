@@ -4524,11 +4524,50 @@ static void ffi_Link_isExternal(js_State *J)
 	js_pushboolean(J, external);
 }
 
+static void ffi_new_ColorSpace(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *name = js_tostring(J, 2);
+	fz_colorspace *cs = NULL;
+	fz_buffer *buf = NULL;
+
+	fz_var(buf);
+
+	if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		buf = js_touserdata(J, 1, "fz_buffer");
+		fz_try(ctx)
+			cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, name, buf);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		fz_try(ctx)
+		{
+			buf = fz_read_file(ctx, js_tostring(J, 1));
+			cs = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_NONE, 0, name, buf);
+		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, buf);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	ffi_pushcolorspace(J, cs);
+}
+
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
 {
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
 	fz_context *ctx = js_getcontext(J);
 	js_pushnumber(J, fz_colorspace_n(ctx, colorspace));
+}
+
+static void ffi_ColorSpace_getName(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	fz_context *ctx = js_getcontext(J);
+	js_pushstring(J, fz_colorspace_name(ctx, colorspace));
 }
 
 static void ffi_ColorSpace_getType(js_State *J)
@@ -11770,6 +11809,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
+		jsB_propfun(J, "ColorSpace.getName", ffi_ColorSpace_getName, 0);
 		jsB_propfun(J, "ColorSpace.getType", ffi_ColorSpace_getType, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
 		jsB_propfun(J, "ColorSpace.isGray", ffi_ColorSpace_isGray, 0);
@@ -11781,44 +11821,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "ColorSpace.isSubtractive", ffi_ColorSpace_isSubtractive, 0);
 	}
 	js_dup(J);
-	js_setglobal(J, "ColorSpace");
 	js_setregistry(J, "fz_colorspace");
-
-	// create new Colorspace from icc buffer/filename
-
-	js_getglobal(J, "ColorSpace");
-	{
-		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_gray(ctx)), ffi_gc_fz_colorspace);
-		js_dup(J);
-		js_setregistry(J, "DeviceGray");
-		js_setproperty(J, -2, "DeviceGray");
-
-		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_rgb(ctx)), ffi_gc_fz_colorspace);
-		js_dup(J);
-		js_setregistry(J, "DeviceRGB");
-		js_setproperty(J, -2, "DeviceRGB");
-
-		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_bgr(ctx)), ffi_gc_fz_colorspace);
-		js_dup(J);
-		js_setregistry(J, "DeviceBGR");
-		js_setproperty(J, -2, "DeviceBGR");
-
-		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
-		js_dup(J);
-		js_setregistry(J, "DeviceCMYK");
-		js_setproperty(J, -2, "DeviceCMYK");
-
-		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_lab(ctx)), ffi_gc_fz_colorspace);
-		js_dup(J);
-		js_setregistry(J, "Lab");
-		js_setproperty(J, -2, "Lab");
-	}
-	js_pop(J, 1);
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
@@ -12374,6 +12377,7 @@ int murun_main(int argc, char **argv)
 			jsB_propfun(J, "encodeBarcode", ffi_encodeBarcode_Pixmap, 6);
 		}
 		js_pop(J, 1);
+		jsB_propcon(J, "fz_colorspace", "ColorSpace", ffi_new_ColorSpace, 2);
 		jsB_propcon(J, "fz_image", "Image", ffi_new_Image, 2);
 		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 3);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
@@ -12397,6 +12401,42 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "installLoadFontFunction", ffi_installLoadFontFunction, 1);
 	}
 
+	// declare ColorSpace static objects
+	js_getglobal(J, "ColorSpace");
+	{
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_gray(ctx)), ffi_gc_fz_colorspace);
+		js_dup(J);
+		js_setregistry(J, "DeviceGray");
+		js_setproperty(J, -2, "DeviceGray");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_rgb(ctx)), ffi_gc_fz_colorspace);
+		js_dup(J);
+		js_setregistry(J, "DeviceRGB");
+		js_setproperty(J, -2, "DeviceRGB");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_bgr(ctx)), ffi_gc_fz_colorspace);
+		js_dup(J);
+		js_setregistry(J, "DeviceBGR");
+		js_setproperty(J, -2, "DeviceBGR");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
+		js_dup(J);
+		js_setregistry(J, "DeviceCMYK");
+		js_setproperty(J, -2, "DeviceCMYK");
+
+		js_getregistry(J, "fz_colorspace");
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_lab(ctx)), ffi_gc_fz_colorspace);
+		js_dup(J);
+		js_setregistry(J, "Lab");
+		js_setproperty(J, -2, "Lab");
+	}
+	js_pop(J, 1);
+
+	// Declare "mupdf" as alias to global object.
 	js_pushglobal(J);
 	js_setglobal(J, "mupdf");
 
