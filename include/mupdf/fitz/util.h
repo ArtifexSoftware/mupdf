@@ -90,10 +90,49 @@ fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_l
 /**
 	Convert structured text into plain text.
 */
+typedef enum
+{
+	/* ALL: Flatten the text completely. All gaps between words/
+	 * paragraphs/lines are expressed as a single space. */
+	FZ_TEXT_FLATTEN_ALL = 0,
+
+	/* KEEP_WHITESPACE: Do not collate runs of whitespace together. */
+	FZ_TEXT_FLATTEN_KEEP_WHITESPACE = 1,
+
+	/* KEEP_LINES: Keep line splits as \n. */
+	FZ_TEXT_FLATTEN_KEEP_LINES = 2,
+
+	/* KEEP_PARAGRAPHS: Keep paragraph splits. If used without
+	 * KEEP_LINES, paragraphs will appear as \n. If used with
+	 * KEEP_LINES, paragraphs will appear as \n\n. */
+	FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS = 4
+} fz_text_flatten;
+
+/**
+	Create a new buffer by flattening the text from an stext
+	page.
+*/
+fz_buffer *fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *text, fz_text_flatten flatten);
+
+/**
+	Does the same as fz_new_buffer_from_flattened_stext_page(), with
+	the options FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS.
+*/
 fz_buffer *fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text);
+
+/**
+	Convenience functions built on fz_new_buffer_from_stext_page.
+*/
 fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options);
 fz_buffer *fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_stext_options *options);
 fz_buffer *fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_stext_options *options);
+
+/**
+	Convenience functions built on fz_new_buffer_from_flattened_stext_page.
+*/
+fz_buffer *fz_new_buffer_from_flattened_page(fz_context *ctx, fz_page *page, const fz_stext_options *options, fz_text_flatten flatten);
+fz_buffer *fz_new_buffer_from_flattened_page_number(fz_context *ctx, fz_document *doc, int number, const fz_stext_options *options, fz_text_flatten flatten);
+fz_buffer *fz_new_buffer_from_flattened_display_list(fz_context *ctx, fz_display_list *list, const fz_stext_options *options, fz_text_flatten flatten);
 
 /**
 	Search for the 'needle' text on the page.
