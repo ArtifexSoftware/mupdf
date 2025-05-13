@@ -51,6 +51,7 @@ static int usage(void)
 		"\t-b\tprint only stream contents, as raw binary data\n"
 		"\t-g\tprint only object, one line per object, suitable for grep\n"
 		"\t-r\tforce repair before showing any objects\n"
+		"\t-L\tshow object labels\n"
 		"\tpath: path to an object, starting with either an object number,\n"
 		"\t\t'pages', 'trailer', or a property in the trailer;\n"
 		"\t\tpath elements separated by '.' or '/'. Path elements must be\n"
