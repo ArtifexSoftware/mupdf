@@ -887,10 +887,10 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out)
 				float size = 0;
 				const char *name = NULL;
 
-				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\"",
+				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\" flags=\"%d\"",
 						line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1,
 						line->wmode,
-						line->dir.x, line->dir.y);
+						line->dir.x, line->dir.y, line->flags);
 
 				/* This is duplication of information, but it makes it MUCH easier to search for
 				 * text fragments in large output. */
@@ -1064,7 +1064,8 @@ as_json(fz_context *ctx, fz_stext_block *block, fz_output *out, float scale)
 				fz_write_printf(ctx, out, "%q:%d,", "x", (int)(line->bbox.x0 * scale));
 				fz_write_printf(ctx, out, "%q:%d,", "y", (int)(line->bbox.y0 * scale));
 				fz_write_printf(ctx, out, "%q:%d,", "w", (int)((line->bbox.x1 - line->bbox.x0) * scale));
-				fz_write_printf(ctx, out, "%q:%d},", "h", (int)((line->bbox.y1 - line->bbox.y0) * scale));
+				fz_write_printf(ctx, out, "%q:%d,", "h", (int)((line->bbox.y1 - line->bbox.y0) * scale));
+				fz_write_printf(ctx, out, "%q:%d},", "flags", line->flags);
 
 				/* Since we force preserve-spans, the first char has the style for the entire line. */
 				if (line->first_char)
@@ -1158,13 +1159,20 @@ do_as_text(fz_context *ctx, fz_output *out, fz_stext_block *first_block)
 		case FZ_STEXT_BLOCK_TEXT:
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
+				int break_line = 1;
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
+					if (ch->next == NULL && (line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0)
+					{
+						break_line = 0;
+						continue;
+					}
 					n = fz_runetochar(utf, ch->c);
 					for (i = 0; i < n; i++)
 						fz_write_byte(ctx, out, utf[i]);
 				}
-				fz_write_string(ctx, out, "\n");
+				if (break_line)
+					fz_write_string(ctx, out, "\n");
 			}
 			fz_write_string(ctx, out, "\n");
 			break;

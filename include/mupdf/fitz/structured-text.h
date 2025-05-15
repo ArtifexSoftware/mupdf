@@ -117,7 +117,9 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	between characters.
 
 	FZ_STEXT_DEHYPHENATE: If this option is set, hyphens at the
-	end of a line will be removed and the lines will be merged.
+	end of a line will be recorded as being soft-hyphens; when flattened
+	soft-hyphens at the end of lines will cause the lines to be
+	joined.
 
 	FZ_STEXT_PRESERVE_SPANS: If this option is set, spans on the same line
 	will not be merged. Each line will thus be a span of text with the same
@@ -380,12 +382,18 @@ struct fz_stext_block
 	fz_stext_block *prev, *next;
 };
 
+typedef enum
+{
+	FZ_STEXT_LINE_FLAGS_JOINED = 1
+} fz_stext_line_flags;
+
 /**
 	A text line is a list of characters that share a common baseline.
 */
 struct fz_stext_line
 {
-	int wmode; /* 0 for horizontal, 1 for vertical */
+	uint8_t wmode; /* 0 for horizontal, 1 for vertical */
+	uint8_t flags;
 	fz_point dir; /* normalized direction of baseline */
 	fz_rect bbox;
 	fz_stext_char *first_char, *last_char;
@@ -741,5 +749,10 @@ int fz_is_unicode_space_equivalent(int c);
 	Simple function to return if a given unicode char is whitespace.
 */
 int fz_is_unicode_whitespace(int c);
+
+/**
+	Simple function to return if a given unicode char is a hyphen.
+*/
+int fz_is_unicode_hyphen(int c);
 
 #endif

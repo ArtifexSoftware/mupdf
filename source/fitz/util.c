@@ -503,8 +503,25 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 		{
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
+				int break_line = 1;
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
+					/* Last character of a line where we aren't keeping hyphens; check for dehyphenation. */
+					if (ch == line->last_char && (flatten & FZ_TEXT_FLATTEN_KEEP_HYPHENS) == 0)
+					{
+						/* Soft hyphens are always removed. */
+						if (ch->c == 0xad)
+						{
+							break_line = 0;
+							continue;
+						}
+						/* Non-soft hyphens are only broken if we extracted with dehyphenation. */
+						if ((line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && fz_is_unicode_hyphen(ch->c))
+						{
+							break_line = 0;
+							continue;
+						}
+					}
 					if ((flatten & FZ_TEXT_FLATTEN_KEEP_WHITESPACE) == 0 && fz_is_unicode_whitespace(ch->c))
 					{
 						*ws = 1;
@@ -517,7 +534,11 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 					}
 					fz_append_rune(ctx, buf, ch->c);
 				}
-				if (flatten & FZ_TEXT_FLATTEN_KEEP_LINES)
+				if (break_line == 0)
+				{
+					/* No whitespace, no linebreak. */
+				}
+				else if (flatten & FZ_TEXT_FLATTEN_KEEP_LINES)
 				{
 					*ws = 0;
 					fz_append_byte(ctx, buf, '\n');

@@ -105,7 +105,10 @@ typedef enum
 	/* KEEP_PARAGRAPHS: Keep paragraph splits. If used without
 	 * KEEP_LINES, paragraphs will appear as \n. If used with
 	 * KEEP_LINES, paragraphs will appear as \n\n. */
-	FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS = 4
+	FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS = 4,
+
+	/* KEEP_HYPHENS: Do not join hyphenated lines. */
+	FZ_TEXT_FLATTEN_KEEP_HYPHENS = 8
 } fz_text_flatten;
 
 /**

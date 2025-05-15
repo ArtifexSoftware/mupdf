@@ -126,6 +126,7 @@ typedef struct
 	fz_matrix trm;
 	int new_obj;
 	int lastchar;
+	fz_stext_line *lastline;
 	int lastbidi;
 	int flags;
 	int color;
@@ -430,29 +431,6 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 	return ch;
 }
 
-static void
-remove_last_char(fz_context *ctx, fz_stext_line *line)
-{
-	if (line && line->first_char)
-	{
-		fz_stext_char *prev = NULL;
-		fz_stext_char *ch = line->first_char;
-		while (ch->next)
-		{
-			prev = ch;
-			ch = ch->next;
-		}
-		if (prev)
-		{
-			/* The characters are pool allocated, so we don't actually leak the removed node. */
-			/* We do need to drop the char's font reference though. */
-			fz_drop_font(ctx, prev->next->font);
-			line->last_char = prev;
-			line->last_char->next = NULL;
-		}
-	}
-}
-
 static fz_stext_char *reverse_bidi_span(fz_stext_char *curr, fz_stext_char *tail)
 {
 	fz_stext_char *prev, *next;
@@ -486,7 +464,7 @@ static void reverse_bidi_line(fz_stext_line *line)
 	}
 }
 
-static int is_hyphen(int c)
+int fz_is_unicode_hyphen(int c)
 {
 	/* check for: hyphen-minus, soft hyphen, hyphen, and non-breaking hyphen */
 	return (c == '-' || c == 0xAD || c == 0x2010 || c == 0x2011);
@@ -604,7 +582,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 {
 	fz_stext_page *page = dev->page;
 	fz_stext_block *cur_block;
-	fz_stext_line *cur_line;
+	fz_stext_line *cur_line = NULL;
 
 	int new_para = 0;
 	int new_line = 1;
@@ -692,6 +670,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags, dev->flags);
 		dev->lastbidi = bidi;
 		dev->lastchar = c;
+		dev->lastline = cur_line;
 		return;
 	}
 
@@ -842,11 +821,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		cur_line = cur_block->u.t.last_line;
 	}
 
-	if (new_line && (dev->flags & FZ_STEXT_DEHYPHENATE) && is_hyphen(dev->lastchar))
-	{
-		remove_last_char(ctx, cur_line);
-		new_line = 0;
-	}
+	if (new_line && (dev->flags & FZ_STEXT_DEHYPHENATE) && fz_is_unicode_hyphen(dev->lastchar) && dev->lastline != NULL)
+		dev->lastline->flags |= FZ_STEXT_LINE_FLAGS_JOINED;
 
 	/* Start a new line */
 	if (new_line || !cur_line || force_new_line)
@@ -864,6 +840,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 move_pen_and_exit:
 	dev->lastchar = c;
 	dev->lastbidi = bidi;
+	dev->lastline = cur_line;
 	dev->lag_pen = p;
 	dev->pen = q;
 
@@ -1773,6 +1750,9 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_page *page = tdev->page;
 
+	if ((tdev->flags & FZ_STEXT_DEHYPHENATE) && fz_is_unicode_hyphen(tdev->lastchar) && tdev->lastline != NULL)
+		tdev->lastline->flags |= FZ_STEXT_LINE_FLAGS_JOINED;
+
 	fixup_bboxes_and_bidi(ctx, page->first_block);
 
 	if (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES)
@@ -2503,6 +2483,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->pen.y = 0;
 	dev->trm = fz_identity;
 	dev->lastchar = ' ';
+	dev->lastline = NULL;
 	dev->lasttext = NULL;
 	dev->lastbidi = 0;
 	dev->last_was_fake_bold = 1;
