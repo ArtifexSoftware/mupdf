@@ -21,6 +21,7 @@ use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-mupdf&utm_m
 	:maxdepth: 1
 
 	guide/what-is-mupdf
+	license
 	guide/install
 	guide/using-with-javascript
 	guide/using-with-java
