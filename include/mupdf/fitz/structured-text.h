@@ -312,9 +312,20 @@ enum
  *	the logical data, a caller now has to do a depth-first traversal.
  */
 
+typedef struct
+{
+	fz_rect mediabox;
+	int chapter;
+	int page;
+} fz_stext_page_details;
+
 /**
 	A text page is a list of blocks, together with an overall
 	bounding box.
+
+	The name of this structure is now slightly out of date. It
+	should really be fz_stext_document, cos it can contain
+	content from multiple pages.
 */
 typedef struct
 {
@@ -329,7 +340,20 @@ typedef struct
 	 * not be used by anything outside of the stext device. */
 	fz_stext_block *last_block;
 	fz_stext_struct *last_struct;
+
+	/* An array of fz_stext_page_details */
+	fz_pool_array *id_list;
 } fz_stext_page;
+
+/**
+	Take a new reference to an fz_stext_page.
+*/
+fz_stext_page *fz_keep_stext_page(fz_context *ctx, fz_stext_page *page);
+
+/**
+	Helper function to retrieve the details for a given id from a block.
+*/
+fz_stext_page_details *fz_stext_page_details_for_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block);
 
 enum
 {
@@ -372,6 +396,7 @@ enum
 struct fz_stext_block
 {
 	int type;
+	int id;
 	fz_rect bbox;
 	union {
 		struct { fz_stext_line *first_line, *last_line; int flags;} t;
@@ -693,6 +718,42 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 	options: Options to configure the stext device.
 */
 fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options *options);
+
+/**
+	Create a device to extract the text on a page into an existing
+	fz_stext_page structure.
+
+	Gather the text on a page into blocks and lines.
+
+	The reading order is taken from the order the text is drawn in
+	the source file, so may not be accurate.
+
+	stext_page: The text page to which content should be added. This will
+	usually be a newly created (empty) text page, but it can be one
+	containing data already (for example when merging multiple
+	pages, or watermarking).
+
+	options: Options to configure the stext device.
+
+	The next 2 parameters are copied into the fz_stext_page structure's
+	ids section, so only have to be valid if you expect to interrogate
+	that section later.
+
+	chapter_num: The chapter number that this page came from.
+
+	page_num: The page number that this page came from.
+
+	The final parameter is copied into the fz_stext_page structure's
+	ids section. The mediabox for the enture fz_stext_page is unioned
+	with this, so pass fz_empty_bbox if you don't care about getting
+	a valid value back from the ids section, but you don't want to
+	upset the value in the page->mediabox field.
+
+	mediabox: The mediabox for this page.
+*/
+fz_device *
+fz_new_stext_device_for_page(fz_context *ctx, fz_stext_page *stext_page, const fz_stext_options *opts, int chapter_num, int page_num, fz_rect mediabox);
+
 
 /**
 	Create a device to OCR the text on the page.
