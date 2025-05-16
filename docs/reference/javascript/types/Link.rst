@@ -41,10 +41,14 @@ Instance methods
 
 	:param Rect rect: Desired bounds for link.
 
+	.. code-block:: javascript
+
+		link.setBounds([0, 0, 100, 100])
+
 .. method:: Link.prototype.getURI()
 
 	Returns a string URI describing the link's destination. If
-	`isExternal()` returns *true*, this is a URI for a suitable
+	`isExternal()` returns *true*, this is a URI suitable for a
 	browser, if it returns *false* pass it to `Document.prototype.resolveLink` to access
 	to the destination page in the document.
 

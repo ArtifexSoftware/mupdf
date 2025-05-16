@@ -20,8 +20,8 @@ Constructors
 
 Instances of this class are returned by `Story.prototype.document()`.
 
-Instance properties
--------------------
+Instance methods
+----------------
 
 .. method:: DOM.prototype.body()
 
@@ -49,6 +49,7 @@ Instance properties
 	the `DOM` yet.
 
 	:param string tag: Tag name to use for element.
+
 	:returns: `DOM`
 
 	.. code-block::
@@ -61,6 +62,7 @@ Instance properties
 	it into the `DOM` yet.
 
 	:param string text: Text contents to put into element.
+
 	:returns: `DOM`
 
 	.. code-block::
@@ -75,7 +77,8 @@ Instance properties
 	:param string tag: The tag of the element to look for.
 	:param string attribute: The attribute of the element to look for.
 	:param string value: The value of the attribute of the element to look for.
-	:returns: `DOM`
+
+	:returns: `DOM` | null
 
 	.. code-block::
 
@@ -89,7 +92,8 @@ Instance properties
 	:param string tag: The tag of the element to look for.
 	:param string attribute: The attribute of the element to look for.
 	:param string value: The value of the attribute of the element to look for.
-	:returns: `DOM`
+
+	:returns: `DOM` | null
 
 	.. code-block::
 
@@ -125,7 +129,7 @@ Instance properties
 	from its current position if required.
 
 	:param DOM dom: The reference DOM.
-	:param DOM elementDom: The DOM that will be inserter after.
+	:param DOM elementDom: The DOM that will be inserted after.
 
 	.. code-block::
 
@@ -135,8 +139,6 @@ Instance properties
 
 	Remove this element from the `DOM`. The element can be
 	added back elsewhere if required.
-
-	:returns: `DOM`
 
 	.. code-block::
 
@@ -197,6 +199,8 @@ Instance properties
 
 		var result = xml.previous()
 
+.. TODO is value == NULL handled correctly in c, js and java?
+
 .. method:: DOM.prototype.addAttribute(attribute, value)
 
 	Add attribute with the given value, returns the updated element as
@@ -213,13 +217,18 @@ Instance properties
 
 .. method:: DOM.prototype.removeAttribute(attribute)
 
-	Remove the specified attribute from the element.
+	Remove the specified attribute from the element, returns the
+	updated element as a DOM.
 
 	:param string attribute: The name of the attribute to remove.
+
+	:returns: `DOM`
 
 	.. code-block::
 
 		xml.removeAttribute("attribute")
+
+.. TODO rename attribute() to getAttribute()?
 
 .. method:: DOM.prototype.attribute(attribute)
 

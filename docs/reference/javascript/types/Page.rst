@@ -38,7 +38,7 @@ Instance properties
 
 	Calls device functions for all the contents on the page, using the
 	specified transform. The `Device` can be one of the built-in
-	devices or a JavaScript object with methods for the device calls. The
+	devices or a Javascript object with methods for the device calls. The
 	matrix maps from user space points to device space pixels.
 
 	:param Device device: The device object.
@@ -96,6 +96,7 @@ Instance properties
 	:param ColorSpace colorspace: The desired colorspace of the returned pixmap.
 	:param boolean alpha: Whether the resulting pixmap should have an alpha component. Defaults to ``true``.
 	:param boolean showExtras: Whether to render annotations and widgets. Defaults to ``true``.
+
 	:returns: `Pixmap`
 
 	.. code-block::
@@ -109,6 +110,7 @@ Instance properties
 	annotations and/or widgets on the page.
 
 	:param boolean showExtras: Whether to render annotations and widgets. Defaults to ``true``.
+
 	:returns: `DisplayList`
 
 	.. code-block::
@@ -118,13 +120,10 @@ Instance properties
 .. method:: Page.prototype.toStructuredText(options)
 
 	Extract the text on the page into a `StructuredText` object.
-	The options argument is a comma separated list of flags:
-	"preserve-ligatures", "preserve-whitespace", "preserve-spans",
-	"preserve-images", "inhibit-spaces", "dehyphenate", "structured",
-	"use-cid-for-unknown-unicode", "use-gid-for-unknown-unicode", and
-	"ignore-actualtext".
 
-	:param string options: A comma-separated list of options.
+	:param string options:
+		See :doc:`/reference/common/stext-options`.
+
 	:returns: `StructuredText`
 
 	.. code-block::
@@ -141,6 +140,7 @@ Instance properties
 
 	:param string needle: The text to search for.
 	:param number maxHits: Maximum number of hits to return.
+
 	:returns: Array of Array of `Quad`
 
 	.. code-block::
@@ -162,26 +162,27 @@ Instance properties
 	.. code-block::
 
 		var links = page.getLinks()
-		var link = links[0];
+		var link = links[0]
 		var linkDestination = doc.resolveLink(link)
 
 .. method:: Page.prototype.createLink(rect, uri)
 
 	Create a new link with the supplied metrics for the page, linking to the destination URI string.
 
-	To create links to other pages within the document see the `PDFDocument.prototype.formatLinkURI` method.
+	To create links to other pages within the document see the `Document.prototype.formatLinkURI` method.
 
 	:param Rect rect: Rectangle specifying the active area on the page the link should cover.
 	:param string destinationUri: A URI string describing the desired link destination.
+
 	:returns: `Link`.
 
 	.. code-block::
 
 		// create a link to an external URL
-		var link = page.createLink([0,0,100,50], "https://example.com")
+		var link = page.createLink([0, 0, 100, 50], "https://example.com")
 
 		// create a link to another page in the document
-		var link = page.createLink([0,100,100,150], "#page=1&view=FitV,0")
+		var link = page.createLink([0, 100, 100, 150], "#page=1&view=FitV,0")
 
 
 .. method:: Page.prototype.deleteLink(link)
@@ -224,11 +225,12 @@ Instance properties
 
 	|only_mutool|
 
-	Decodes a barcode detected in the pixmap, and returns an object with
+	Decodes a barcode detected on the page, and returns an object with
 	properties for barcode type and contents.
 
-	:param Rect subarea: Only detect barcode within subarea.
-	:param number rotate: Degrees of rotation to rotate pixmap before detecting barcode.
+	:param Rect subarea: Only detect barcode within subarea. Defaults to the entire page.
+	:param number rotate: Degrees of rotation to rotate page before detecting barcode. Defaults to 0.
+
 	:returns: Object with barcode information.
 
 	.. code-block:: javascript

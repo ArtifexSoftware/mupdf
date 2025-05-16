@@ -20,13 +20,15 @@ To obtain a StructuredText instance use `Page.prototype.toStructuredText()`.
 Instance methods
 ----------------
 
-.. method:: StructuredText.prototype.search(needle)
+.. method:: StructuredText.prototype.search(needle, maxHits)
 
 	Search the text for all instances of needle, and return an array with all matches found on the page.
 
 	Each match in the result is an array containing one or more Quads that cover the matching text.
 
-	:param string needle:
+	:param string needle: The text to search for.
+	:param number maxHits: Maximum number of hits to return.
+
 	:returns: Array of Array of `Quad`
 
 	.. code-block::
@@ -39,26 +41,26 @@ Instance methods
 
 	:param Point p: Start point.
 	:param Point q: End point.
-	:param number (default 100) max_hits: The maximum number of hits to return.
+	:param number max_hits: The maximum number of hits to return. Default 100.
 
 	:returns: Array of `Quad`
 
 	.. code-block::
 
-		var result = sText.highlight([100,100], [200,100])
+		var result = sText.highlight([100, 100], [200, 100])
 
 .. method:: StructuredText.prototype.copy(p, q)
 
 	Return the text from the selection defined by the start and end points.
 
-	:param Point p: start point
-	:param Point q: end point
+	:param Point p: Start point.
+	:param Point q: End point.
 
 	:returns: string
 
 	.. code-block::
 
-		var result = sText.copy([100,100], [200,100])
+		var result = sText.copy([100, 100], [200, 100])
 
 .. method:: StructuredText.prototype.walk(walker)
 
@@ -76,20 +78,29 @@ Instance methods
 			beginLine: function (bbox, wmode, direction) {
 				console.log("beginLine", bbox, wmode, direction)
 			},
-			beginTextBlock: function (bbox) {
-				console.log("beginTextBlock", bbox)
-			},
 			endLine: function () {
 				console.log("endLine")
+			},
+			beginTextBlock: function (bbox) {
+				console.log("beginTextBlock", bbox)
 			},
 			endTextBlock: function () {
 				console.log("endTextBlock")
 			},
-			onChar: function (utf, origin, font, size, quad) {
-				console.log("onChar", utf, origin, font, size, quad)
+			beginStruct: function (standard, raw, index) {
+				console.log("beginStruct", standard, raw, index)
+			},
+			endStruct: function () {
+				console.log("endStruct")
+			},
+			onChar: function (utf, origin, font, size, quad, argb) {
+				console.log("onChar", utf, origin, font, size, quad, argb)
 			},
 			onImageBlock: function (bbox, transform, image) {
 				console.log("onImageBlock", bbox, transform, image)
+			},
+			onVector: function (isStroked, isRectangle, argb) {
+				console.log("onVector", isStroked, isRectangle, argb)
 			},
 		})
 

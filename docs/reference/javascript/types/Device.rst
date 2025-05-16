@@ -6,7 +6,7 @@ Device
 ======
 
 All built-in devices have the methods listed below. Any function that
-accepts a device will also accept a JavaScript object with the same
+accepts a device will also accept a Javascript object with the same
 methods. Any missing methods are simply ignored, so you only need to
 create methods for the device calls you care about.
 
@@ -63,11 +63,10 @@ Line art
 	:param ColorSpace colorspace: The colorspace of the color to fill with.
 	:param Color color: The color to fill the path with.
 	:param number alpha: The :term:`opacity`.
-	:param number alpha: The :term:`opacity`.
 
 	.. code-block::
 
-		device.fillPath(path, false, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], true)
+		device.fillPath(path, false, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1, 0, 0], true)
 
 .. method:: Device.prototype.strokePath(path, stroke, ctm, colorspace, color, alpha)
 
@@ -83,11 +82,12 @@ Line art
 	.. code-block::
 
 		device.strokePath(path,
-					{dashes:[5,10], lineWidth:3, lineCap:'Round'},
-					mupdf.Matrix.identity,
-					mupdf.ColorSpace.DeviceRGB,
-					[0,1,0],
-					0.5)
+			{dashes: [5, 10], lineWidth: 3, lineCap: 'Round' },
+			mupdf.Matrix.identity,
+			mupdf.ColorSpace.DeviceRGB,
+			[0, 1, 0],
+			0.5
+		)
 
 .. method:: Device.prototype.clipPath(path, evenOdd, ctm)
 
@@ -128,7 +128,7 @@ Text
 
 	.. code-block::
 
-		device.fillText(text, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1,0,0], 1)
+		device.fillText(text, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [1, 0, 0], 1)
 
 .. method:: Device.prototype.strokeText(text, stroke, ctm, colorspace, color, alpha)
 
@@ -144,10 +144,12 @@ Text
 	.. code-block::
 
 		device.strokeText(text,
-					{dashes:[5,10], lineWidth:3, lineCap:'Round'},
-					mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB,
-					[1,0,0],
-					1)
+			{ dashes: [5, 10], lineWidth: 3, lineCap: 'Round' },
+			mupdf.Matrix.identity,
+			mupdf.ColorSpace.DeviceRGB,
+			[1, 0, 0],
+			1
+		)
 
 .. method:: Device.prototype.clipText(text, ctm)
 
@@ -170,7 +172,10 @@ Text
 
 	.. code-block::
 
-		device.clipStrokeText(text, {dashes:[5,10], lineWidth:3, lineCap:'Round'},  mupdf.Matrix.identity)
+		device.clipStrokeText(text,
+			{ dashes: [5, 10], lineWidth: 3, lineCap: 'Round' },
+			mupdf.Matrix.identity
+		)
 
 .. method:: Device.prototype.ignoreText(text, ctm)
 
@@ -190,24 +195,20 @@ Shadings
 
 	Fill a shading, also known as a gradient.
 
-	.. note::
-
-		The details of shadings are not exposed in JavaScript yet.
-
 	:param Shade shade: The gradient.
 	:param Matrix ctm: The transform to apply.
 	:param number alpha: The :term:`opacity`.
 
 	.. code-block::
 
-		device.fillShade(shade, mupdf.Matrix.identity, true, {overPrinting: true})
+		device.fillShade(shade, mupdf.Matrix.identity, true, { overPrinting: true })
 
 Images
 ^^^^^^
 
 .. method:: Device.prototype.fillImage(image, ctm, alpha)
 
-	Draw an image. An image always fills a unit rectangle [0,0,1,1], so must be transformed to be placed and drawn at the appropriate size.
+	Draw an image. An image always fills a unit rectangle [0, 0, 1, 1], so must be transformed to be placed and drawn at the appropriate size.
 
 	:param Image image: Image object.
 	:param Matrix ctm: The transform to apply.
@@ -215,7 +216,7 @@ Images
 
 	.. code-block::
 
-		device.fillImage(image, mupdf.Matrix.identity, false, {overPrinting: true})
+		device.fillImage(image, mupdf.Matrix.identity, false, { overPrinting: true })
 
 .. method:: Device.prototype.fillImageMask(image, ctm, colorspace, color, alpha)
 
@@ -229,7 +230,7 @@ Images
 
 	.. code-block::
 
-		device.fillImageMask(image, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [0,1,0], true)
+		device.fillImageMask(image, mupdf.Matrix.identity, mupdf.ColorSpace.DeviceRGB, [0, 1, 0], true)
 
 .. method:: Device.prototype.clipImageMask(image, ctm)
 
@@ -264,7 +265,7 @@ Clipping and masking
 
 	.. code-block::
 
-		device.beginMask([0,0,100,100], true, mupdf.ColorSpace.DeviceRGB, [1,0,1])
+		device.beginMask([0, 0, 100, 100], true, mupdf.ColorSpace.DeviceRGB, [1, 0, 1])
 
 .. method:: Device.prototype.endMask()
 
@@ -276,6 +277,8 @@ Clipping and masking
 
 Groups and transparency
 ^^^^^^^^^^^^^^^^^^^^^^^
+
+.. TODO in beginGroup() should blendmode be passed as an integer or as a string?
 
 .. method:: Device.prototype.beginGroup(area, colorspace, isolated, knockout, blendmode, alpha)
 
@@ -311,7 +314,7 @@ Groups and transparency
 
 	.. code-block::
 
-		device.beginGroup([0,0,100,100], mupdf.ColorSpace.DeviceRGB, true, true, "Multiply", 0.5)
+		device.beginGroup([0, 0, 100, 100], mupdf.ColorSpace.DeviceRGB, true, true, "Multiply", 0.5)
 
 .. method:: Device.prototype.endGroup()
 
@@ -340,7 +343,7 @@ Tiling
 
 	.. code-block::
 
-		device.beginTile([0,0,100,100], [100,100,200,200], 10, 10, mupdf.Matrix.identity, 0)
+		device.beginTile([0, 0, 100, 100], [100, 100, 200, 200], 10, 10, mupdf.Matrix.identity, 0)
 
 .. method:: Device.prototype.endTile()
 
@@ -375,12 +378,12 @@ Render flags
 	- "bbox-defined"
 	- "gridfit-as-tiled"
 
-	:param [string] set: Rendering flags to set.
-	:param [string] clear: Renderin flags to clear.
+	:param Array of string set: Rendering flags to set.
+	:param Array of string clear: Rendering flags to clear.
 
 	.. code-block::
 
-		device.renderFlags(["mask","startcap-undefined"], [])
+		device.renderFlags(["mask", "startcap-undefined"], [])
 
 Device colorspaces
 ^^^^^^^^^^^^^^^^^^

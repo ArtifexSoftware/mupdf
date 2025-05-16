@@ -14,8 +14,6 @@ Constructors
 
 	Create a new empty tree archive.
 
-	:returns: `TreeArchive`.
-
 	.. code-block::
 
 		var treeArchive = new mupdf.TreeArchive()
@@ -28,7 +26,7 @@ Instance properties
 	Add a named buffer to a tree archive.
 
 	:param string name: Name of archive entry to add.
-	:param Buffer buffer: Buffer of data to store with the entry.
+	:param Buffer | ArrayBuffer | Uint8Array | string buffer: Buffer of data to store with the entry.
 
 	.. code-block::
 

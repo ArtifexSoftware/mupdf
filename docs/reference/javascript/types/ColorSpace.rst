@@ -65,8 +65,8 @@ Instance methods
 
 	.. code-block::
 
-		var cs = mupdf.ColorSpace.DeviceRGB;
-		var num = cs.getNumberOfComponents(); // 3
+		var cs = mupdf.ColorSpace.DeviceRGB
+		var num = cs.getNumberOfComponents() // 3
 
 .. method:: ColorSpace.prototype.getType()
 
@@ -152,5 +152,5 @@ Instance methods
 
 	.. code-block::
 
-		var cs = mupdf.ColorSpace.DeviceRGB;
-		var name = cs.toString(); // "[ColorSpace DeviceRGB]"
+		var cs = mupdf.ColorSpace.DeviceRGB
+		var name = cs.toString() // "[ColorSpace DeviceRGB]"

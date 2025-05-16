@@ -118,7 +118,7 @@ Instance methods
 
 	Updates the current item properties with values from the supplied item's properties.
 
-	:param OutlineItem item: An item populated with the propertis that should be stored.
+	:param OutlineItem item: An item populated with the properties that should be stored.
 
 	.. code-block::
 

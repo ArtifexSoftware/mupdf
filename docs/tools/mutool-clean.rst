@@ -86,10 +86,10 @@ The ``clean`` command pretty prints and rewrites the syntax of a PDF file. It ca
 		 Subset fonts if possible. (EXPERIMENTAL!)
 
 	``-Z``
-		 Use object streams cross reference streams for extra compressoin.
+		 Use object streams cross reference streams for extra compression.
 
 	``--(color|gray|bitonal)-(|lossy-|lossless-)image-subsample-method method``
-		 Set the subsampling method (``average``, or ``bicubic``) for the desired image types, for example color-lossy and bitonal-loessless.
+		 Set the subsampling method (``average``, or ``bicubic``) for the desired image types, for example color-lossy and bitonal-lossless.
 
 	``--(color|gray|bitonal)-(|lossy-|lossless-)image-subsample-dpi dpi``
 		 Set the resolution at which to subsample.

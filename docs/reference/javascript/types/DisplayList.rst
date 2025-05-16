@@ -8,7 +8,7 @@ DisplayList
 A display list is a sequence of device calls that can be replayed multiple
 times. This is useful e.g. when you need to render a page at multiple
 resolutions, or when you want to both render a page and later search for
-text in it. Using a display list to do this, improves perfoamcne because
+text in it. Using a display list to do this, improves performance because
 it avoids repeatedly reinterpreting the document from file
 
 To populate a display list use the `DisplayListDevice`.
@@ -34,7 +34,6 @@ Constructors
 	bounds of the page.
 
 	:param Rect mediabox: The size of the page.
-	:returns: `DisplayList`
 
 	.. code-block::
 
@@ -71,6 +70,7 @@ Instance methods
 	:param Matrix matrix: Transformation matrix.
 	:param ColorSpace colorspace: The desired colorspace of the returned pixmap.
 	:param boolean alpha: Whether the returned pixmap has transparency or not. If the pixmap handles transparency, it starts out transparent (otherwise it is filled white), before the contents of the display list are rendered onto the pixmap.
+
 	:returns: `Pixmap`
 
 	.. code-block::
@@ -99,8 +99,25 @@ Instance methods
 
 	:param string needle: The text to search for.
 	:param number max_hits: Set to limit number of results, defaults to 500.
+
 	:returns: Array of Array of `Quad`
 
 	.. code-block::
 
 		var results = displayList.search("my search phrase")
+
+.. method:: DisplayList.protoype.decodeBarcode(subarea, rotate)
+
+	|only_mutool|
+
+	Decodes a barcode detected in the display list, and returns an
+	object with properties for barcode type and contents.
+
+	:param Rect subarea: Only detect barcode within subarea. Defaults to the entire area returned by `DisplayList.prototype.getBounds()`.
+	:param number rotate: Degrees of rotation to rotate display list before detecting barcode. Defaults to 0.
+
+	:returns: Object with barcode information.
+
+	.. code-block:: javascript
+
+		var barcodeInfo = displayList.decodeBarcode([0, 0, 100, 100 ], 0)

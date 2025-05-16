@@ -33,7 +33,7 @@ Instance methods
 	Add a glyph to the text object.
 
 	Transform is the text matrix, specifying font size and glyph location.
-	For example: ``[size,0,0,-size,x,y]``.
+	For example: ``[size, 0, 0, -size, x, y]``.
 
 	Glyph and unicode may be ``-1`` for n-to-m cluster mappings. For
 	example, the "fi" ligature would be added in two steps: first the glyph
@@ -66,7 +66,7 @@ Instance methods
 
 .. method:: Text.prototype.walk(walker)
 
-	:param walker: `TextWalker`. Function with protocol methods, see example below for details.
+	:param TextWalker walker: Function with protocol methods, see example below for details.
 
 	.. code-block::
 
@@ -75,11 +75,11 @@ Instance methods
 		}
 
 		var textPrinter = {
-			beginSpan: function (f,m,wmode, bidi, dir, lang) {
-				print("beginSpan",f,m,wmode,bidi,dir,Q(lang))
+			beginSpan: function (f, m, wmode, bidi, dir, lang) {
+				print("beginSpan", f, m, wmode, bidi, dir, Q(lang))
 			},
-			showGlyph: function (f,m,g,u,v,b) { print("glyph",f,m,g,String.fromCodePoint(u),v,b)},
-			endSpan: function () { print("endSpan"); }
+			showGlyph: function (f, m, g, u, v, b) { print("glyph", f, m, g, String.fromCodePoint(u), v, b) },
+			endSpan: function () { print("endSpan") }
 		}
 
 		var traceDevice = {

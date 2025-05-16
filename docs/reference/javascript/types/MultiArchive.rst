@@ -14,8 +14,6 @@ Constructors
 
 	Create a new empty multi archive.
 
-	:returns: `MultiArchive`.
-
 	.. code-block::
 
 		var multiArchive = new mupdf.MultiArchive()
