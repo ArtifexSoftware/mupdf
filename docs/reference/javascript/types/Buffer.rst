@@ -16,7 +16,7 @@ Constructors
 
 	Creates a new Buffer initialized with contents from data.
 
-	:param ArrayBuffer | Uint8Array | string | null data: Contents used to populate buffer, or leave it empty if ``null``.
+	:param Buffer | ArrayBuffer | Uint8Array | string | null data: Contents used to populate buffer, or leave it empty if ``null``.
 
 	.. code-block::
 
@@ -24,6 +24,18 @@ Constructors
 
 Instance properties
 -------------------
+
+.. attribute:: Buffer.prototype.length
+
+	|only_mutool|
+
+	The number of bytes in this buffer (read-only).
+
+	See `getLength()` for the equivalent in mupdf.js.
+
+	:throws: TypeError on attempted writes.
+
+	:returns: number
 
 .. attribute:: Buffer.prototype.[n]
 
@@ -39,9 +51,6 @@ Instance properties
 
 		var byte = buffer[0]
 
-.. attribute:: Buffer.prototype.length
-
-	The number of bytes in this buffer (read-only).
 
 Instance methods
 ----------------
@@ -57,6 +66,8 @@ Instance methods
 		var str = buffer.asString()
 
 .. method:: Buffer.prototype.asUint8Array()
+
+	|only_mupdfjs|
 
 	Returns the contents of this buffer as a Uint8Array.
 
@@ -78,14 +89,17 @@ Instance methods
 
 .. method:: Buffer.prototype.readByte(at)
 
-	Returns the byte at the specified index ``at``, if 0 <= ``at`` < `getLength()` is true. Otherwise returns ``undefined``.
+	Returns the byte at the specified index ``at`` if within ``0 <= at < getLength()``. Otherwise returns ``undefined``.
 
 	:param number at: Index to read byte at.
+
 	:returns: number
 
 	.. code-block::
 
 		buffer.readByte(0)
+
+.. TODO in murun Buffer.slice() if end == undefied, then buffer size is used, what happens in mupdf.js?
 
 .. method:: Buffer.prototype.slice(start, end)
 
@@ -95,6 +109,7 @@ Instance methods
 
 	:param number start: Start index.
 	:param number end: End index.
+
 	:returns: `Buffer`
 
 	.. code-block::
@@ -102,6 +117,8 @@ Instance methods
 		var buffer = new mupdf.Buffer()
 		buffer.write("hello world") // buffer contains "hello world"
 		var newBuffer = buffer.slice(1, -1) // newBuffer contains "ello worl"
+
+.. TODO in murun if Buffer.write() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
 
 .. method:: Buffer.prototype.write(str)
 
@@ -113,11 +130,13 @@ Instance methods
 
 		buffer.write("hello world")
 
+.. TODO in murun if Buffer.writeBuffer() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
+
 .. method:: Buffer.prototype.writeBuffer(data)
 
 	Append the contents of the ``data`` buffer to the end of this buffer.
 
-	:param `Buffer` | ArrayBuffer | Uint8Array | string data: Data buffer to append.
+	:param Buffer | ArrayBuffer | Uint8Array | string data: Data buffer to append.
 
 	.. code-block::
 
@@ -134,6 +153,9 @@ Instance methods
 
 		buffer.writeByte(0x2a)
 
+.. TODO in murun if Buffer.writeLine() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
+.. TODO also do we want LF after every string, or just the last one?
+
 .. method:: Buffer.prototype.writeLine(str)
 
 	Append string to the end of this buffer ending with a newline.
@@ -143,3 +165,28 @@ Instance methods
 	.. code-block::
 
 		buffer.writeLine("a line")
+
+.. method:: Buffer.prototype.writeRune(c)
+
+	|only_mutool|
+
+	Encode a unicode character as UTF-8 and append to the end of
+	the buffer.
+
+	:param number c: The character unicode codepoint.
+
+	.. code-block:: javascript
+
+		buffer.writeRune(0x4f60) // To append U+4f60, 你
+		buffer.writeRune(0x597d) // To append U+597d, 好
+		buffer.writeRune(0xff01) // To append U+ff01, ！
+
+.. method:: Buffer.prototype.save(filename)
+
+	Write the contents of the buffer to a file.
+
+	:param string filename: Filename to save to.
+
+	.. code-block:: javascript
+
+		buffer.save("my_buffer_filename")

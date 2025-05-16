@@ -25,16 +25,30 @@ PDF Terms
 			:tagtype: object
 			:width: 75%
 
-	FileSpec
+	File specification
 
-		TODO
+		In PDF a file specification names a file.
+
+		If a file specification only contains a file name or a path,
+		then it represents an external file. Such a file is assumed
+		to be found at the specified location in the file system.
+
+		In addition a file specifications may also embed the entire
+		file contents within an stream inside the PDF, then the file
+		specification represents an embedded file. In that case
+		further metadata may be stored, e.g. file size, creation and
+		modification date.
+
+		For more details read the PDF specification's section on
+		`file specifications
+		<https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G8.1640832>`_.
 
 	Knockout and Isolation
 
 		In a knockout transparency group each element overwrites the prior
 		elements in the group instead of compositing with them.
 
-		In an isolated transparency group the group does not composit with
+		In an isolated transparency group the group does not composite with
 		the group's backdrop, but rather a fully transparent backdrop.
 
 		For further details refer to the PDF specification's sections on
@@ -242,3 +256,28 @@ PDF Terms
 			NotForPublicRelease,
 			Sold,
 			TopSecret
+
+	MIME-type
+
+		A MIME-type is a string describing the type of data.
+		PDF data has the MIME-type "application/pdf", while
+		unknown data has the MIME-type
+		"application/octet-stream". For further details see the
+		specification that the PDF specification references:
+		`RFC 2048 - Multipurpose Internet Mail Extensions
+		(MIME) Part Two: Media Types
+		<https://www.rfc-editor.org/info/rfc2048>`_.
+
+	Language code
+
+		Language codes consists of a primary code, followed
+		zero or more by subcodes each preceded by a hyphen,
+		e.g. "en", "en-US", "kr", "zh-CN", "zh-TW".
+
+		For further details see the PDF specification's section
+		on `Language Identifiers
+		<https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G15.2262093>`_.
+
+	Associated File
+
+		TODO

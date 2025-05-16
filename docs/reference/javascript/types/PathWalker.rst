@@ -5,6 +5,13 @@
 PathWalker
 ==========
 
+Constructors
+------------
+
+.. class:: PathWalker
+
+	|no_new|
+
 An object implementing this interface of optional callback functions
 can be used to get calls whenever `Path.prototype.walk()` iterates over a
 basic drawing operation corresponding to that of the function name.
@@ -22,18 +29,12 @@ basic drawing operation corresponding to that of the function name.
 	.. imagesvg:: ../../../images/curveTo.svg
 	   :tagtype: object
 
-	:param x1: X1 coordinate.
-	:type x1: number
-	:param y1: Y1 coordinate.
-	:type y1: number
-	:param x2: X2 coordinate.
-	:type x2: number
-	:param y2: Y2 coordinate.
-	:type y2: number
-	:param x3: X3 coordinate.
-	:type x3: number
-	:param y3: Y3 coordinate.
-	:type y3: number
+	:param number x1: X1 coordinate.
+	:param number y1: Y1 coordinate.
+	:param number x2: X2 coordinate.
+	:param number y2: Y2 coordinate.
+	:param number x3: X3 coordinate.
+	:param number y3: Y3 coordinate.
 
 .. function:: lineTo(x, y)
 
@@ -43,17 +44,13 @@ basic drawing operation corresponding to that of the function name.
 	.. imagesvg:: ../../../images/lineTo.svg
 	   :tagtype: object
 
-	:param x: X coordinate.
-	:type x: number
-	:param y: Y coordinate.
-	:type y: number
+	:param number x: X coordinate.
+	:param number y: Y coordinate.
 
 .. function:: moveTo(x, y)
 
 	Called when `Path.prototype.walk()` encounters an operation moving the pen to
 	the given point, beginning a new subpath and sets the current point.
 
-	:param x: X coordinate.
-	:type x: number
-	:param y: Y coordinate.
-	:type y: number
+	:param number x: X coordinate.
+	:param number y: Y coordinate.

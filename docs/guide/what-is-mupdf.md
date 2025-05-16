@@ -80,10 +80,10 @@ tasks on PDF documents.
 For rendering and converting documents use these two commands:
 
 <dl>
-<dt><a href="manual-mutool-draw.html">mutool draw</a>
+<dt><a href="../tools/mutool-draw.html">mutool draw</a>
 <dd>This is the more customizable tool, but also has a more difficult set of command line options.
 It is primarily used for rendering a document to image files.
-<dt><a href="manual-mutool-convert.html">mutool convert</a>
+<dt><a href="../tools/mutool-convert.html">mutool convert</a>
 <dd>This tool is used for converting documents into other formats, and is easier to use.
 </dl>
 
@@ -115,7 +115,7 @@ And finally, there is a tool for doing anything you can imagine:
 
 The library is written in portable C.
 
-To learn more about the C interface, read the <a href="/cookbook/mupdf-explored.html">MuPDF Explored</a> book.
+To learn more about the C interface, read the <a href="../cookbook/mupdf-explored.html">MuPDF Explored</a> book.
 
 ### Javascript
 
@@ -130,7 +130,7 @@ The Javascript library is available as a module on NPM.
 There is also a Java library, which uses JNI to provide access to the C library.
 
 The Java classes provide an interface very similar to that available in the
-<a href="manual-mutool-run.html">mutool run</a> command line tool.
+<a href="../tools/mutool-run.html">mutool run</a> command line tool.
 This Java library also powers the Android viewers.
 
 If you want to build an application for Android, you have several options. You

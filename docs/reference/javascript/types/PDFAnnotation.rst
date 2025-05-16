@@ -23,14 +23,14 @@ Text
 
 	Set the appearance with the Icon attribute.
 
-	Attributes: Rect, Color, Icon.
+	Attributes: :ref:`rect-attribute`, :ref:`color-attribute`, :ref:`icon-attribute`.
 
 FreeText
 	Text in a rectangle on the page.
 
 	The text font and color is defined by DefaultAppearance.
 
-	Attributes: Border, Rect, DefaultAppearance.
+	Attributes: :ref:`border-attribute`, :ref:`rect-attribute`, :ref:`default-appearance-attribute`.
 
 Line
 	A line with optional arrow heads.
@@ -39,17 +39,17 @@ Line
 
 	The end points are defined by the Line attribute.
 
-	Attributes: Border, Color, Line, LineEndingStyles.
+	Attributes: :ref:`border-attribute`, :ref:`color-attribute`, :ref:`line-attribute`, :ref:`line-ending-styles-attribute`.
 
 Square
 	A rectangle.
 
-	Attributes: Rect, Border, Color, InteriorColor.
+	Attributes: :ref:`rect-attribute`, :ref:`rect-attribute`, :ref:`color-attribute`, :ref:`interior-color-attribute`.
 
 Circle
 	An ellipse.
 
-	Attributes: Rect, Border, Color, InteriorColor.
+	Attributes: :ref:`rect-attribute`, :ref:`border-attribute`, :ref:`color-attribute`, :ref:`interior-color-attribute`.
 
 Polygon, PolyLine
 	A polygon shape (closed and open).
@@ -58,30 +58,30 @@ Polygon, PolyLine
 
 	The line width is defined by the Border attribute.
 
-	Attributes: Vertices, Border, Color, InteriorColor, LineEndingStyles.
+	Attributes: :ref:`vertices-attribute`, :ref:`border-attribute`, :ref:`color-attribute`, :ref:`interior-color-attribute`, LineEndingStyles.
 
 Highlight, Underline, Squiggly, StrikeOut
 	Text markups.
 
-	The shape is defined by the QuadPoints.
+	The shape is defined by the :ref:`quadpoints-attribute`.
 
 Stamp
 	A rubber stamp.
 
-	The appearance is either a stock name, or a custom image.
+	The appearance is either a stock name, or a :ref:`custom image <stamp-image-attribute>`.
 
 Ink
 	A free-hand line.
 
-	The shape is defined by the InkList attribute.
+	The shape is defined by the :ref:`inklist-attribute` attribute.
 
 FileAttachment
 	A file attachment.
 
 	The appearance is an icon on the page.
 
-	Set the attached file contents with the FileSpec attribute,
-	and the appearance with the Icon attribute.
+	Set the attached file contents with the :ref:`filespec-attribute` attribute,
+	and the appearance with the :ref:`icon-attribute` attribute.
 
 Redaction
 	A black box.
@@ -173,12 +173,12 @@ Instance methods
 	desired appearance is given as a transform along with a bounding box, a
 	PDF dictionary of resources and a content stream.
 
-	:param string appearance: Appearance stream ("N", "R" or "D").
-	:param string state: The annotation state to set the appearance for or null for the current state. Only widget annotations of pushbutton, check box, or radio button type have states, which are "Off" or "Yes". For other types of annotations pass null.
+	:param string | null appearance: Appearance stream ("N" for normal, "R" for roll-over or "D" for down). Defaults to "N".
+	:param string | null state: The annotation state to set the appearance for or null for the current state. Only widget annotations of pushbutton, check box, or radio button type have states, which are "Off" or "Yes". For other types of annotations pass null.
 	:param Matrix transform: The transformation matrix.
 	:param Rect bbox: The bounding box.,
 	:param PDFObject resources: Resources object.
-	:param string contents: Contents string.
+	:param Buffer | ArrayBuffer | Uint8Array | string contents: Contents string.
 
 	.. code-block::
 
@@ -194,6 +194,10 @@ Instance methods
 .. method:: PDFAnnotation.prototype.update()
 
 	Update the appearance stream to account for changes in the annotation.
+
+	Returns true if the annotation appearance changed during the call.
+
+	:returns: boolean
 
 	.. code-block::
 
@@ -237,6 +241,76 @@ Instance methods
 	.. code-block::
 
 		annotation.setHiddenForEditing(true)
+
+.. method:: PDFAnnotation.prototype.getHot()
+
+	|only_mutool|
+
+	Check if the annotation is hot, i.e. that the pointing device's cursor
+	is hovering over the annotation.
+
+	:returns: boolean
+
+	.. code-block::
+
+		annotation.getHot()
+
+.. method:: PDFAnnotation.prototype.setHot(hot)
+
+	|only_mutool|
+
+	Set the annotation as being hot, i.e. that the pointing device's cursor
+	is hovering over the annotation.
+
+	:param boolean hot:
+
+	.. code-block::
+
+		annotation.setHot(true)
+
+.. method:: PDFAnnotation.prototype.requestSynthesis()
+
+	|only_mutool|
+
+	Request that if an annotation does not have an appearance stream, flag
+	the annotation to have one generated. The appearance stream
+	will be created during future calls to
+	`PDFAnnotation.prototype.update()` on or
+	`PDFPage.prototype.update()`.
+
+	.. code-block::
+
+		annotation.requestSynthesis()
+
+.. method:: PDFAnnotation.prototype.requestResynthesis()
+
+	|only_mutool|
+
+	Request that an appearance stream shall be re-generated for an
+	annotation next time update() is called on
+	`PDFAnnotation.prototype.update()` or
+	`PDFPage.prototype.update()`.
+
+	This is a side-effect of setting annotation attributes through
+	the PDFAnnotation interface, so normally this call does not
+	need to be done explicitly.
+
+	.. code-block::
+
+		annotation.requestResynthesis()
+
+.. method:: PDFAnnotation.prototype.process(processor)
+
+	|only_mutool|
+
+	Run through the annotation appearance stream and call methods
+	on the supplied `PDFProcessor`.
+
+	:param PDFProcessor processor: User defined function.
+
+	.. code-block::
+
+		annotation.process(processor)
 
 .. method:: PDFAnnotation.prototype.applyRedaction(blackBoxes, imageMethod, lineArtMethod, textMethod)
 
@@ -301,7 +375,7 @@ Common
 
 	.. code-block::
 
-		annotation.setFlags(4); // Clears all other flags and sets "NoZoom".
+		annotation.setFlags(4) // Clears all other flags and sets "NoZoom".
 
 .. method:: PDFAnnotation.prototype.getContents()
 
@@ -365,10 +439,8 @@ Common
 
 .. method:: PDFAnnotation.prototype.getLanguage()
 
-	Get the annotation language (or get the inherited document
-	language). These are follow the ISO 3166 and thus start with a two
-	character language code with a specialization, e.g. ``"en"``,
-	``"kr"``, ``"zh-CN"``, or ``"zh-TW"``.
+	Get the annotation :term:`language code` (or get the one
+	inherited from the document).
 
 	:returns: string
 
@@ -378,16 +450,15 @@ Common
 
 .. method:: PDFAnnotation.prototype.setLanguage(language)
 
-	Set the annotation language. These are follow the ISO 3166 and
-	thus start with a two character language code with a
-	specialization, e.g. ``"en"``, ``"kr"``, ``"zh-CN"``, or
-	``"zh-TW"``.
+	Set the annotation :term:`language code`.
 
 	:param string language: The desired language code.
 
 	.. code-block::
 
 		annotation.setLanguage("en")
+
+.. _rect-attribute:
 
 Rect
 ----
@@ -434,6 +505,67 @@ for these other annotation types.
 
 		annotation.setRect([0, 0, 100, 100])
 
+.. _rich-contents-attribute:
+
+Rich contents
+-------------
+
+.. method:: PDFAnnotation.prototype.hasRichContents()
+
+	Returns whether the annotation is capable of supporting rich text
+	contents.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var hasRichContents = annotation.hasRichContents()
+
+.. method:: PDFAnnotation.prototype.getRichContents()
+
+	Obtain the annotation's rich-text contents, as opposed to the plain
+	text contents obtained by `getContents()`.
+
+	:returns: string
+
+	.. code-block::
+
+		var richContents = annotation.getRichContents()
+
+.. method:: PDFAnnotation.prototype.setRichContents(plainText, richText)
+
+	Set the annotation's rich-text contents, as opposed to the plain
+	text contents set by `setContents()`.
+
+	:param string plainText:
+	:param string richText:
+
+	.. code-block::
+
+		annotation.setRichContents("plain text", "<b><i>Rich-Text</i></b>")
+
+.. method:: PDFAnnotation.prototype.getRichDefaults()
+
+	Get the default style used for the annotation's rich-text contents.
+
+	:returns: string
+
+	.. code-block::
+
+		var richDefaults = annotation.getRichDefaults()
+
+.. method:: PDFAnnotation.prototype.setRichDefaults(style)
+
+	Set the default style used for the annotation's rich-text contents.
+
+	:param string style:
+
+	.. code-block::
+
+		annotation.setRichDefaults("font-size: 16pt")
+
+.. _color-attribute:
+
 Color
 -----
 
@@ -460,6 +592,8 @@ of the border.
 
 		annotation.setColor([0, 1, 0])
 
+.. _opacity-attribute:
+
 Opacity
 -------
 
@@ -483,8 +617,23 @@ Opacity
 
 		annotation.setOpacity(0.5)
 
+.. _quadding-attribute:
+
 Quadding
 --------
+
+.. method:: PDFAnnotation.prototype.hasQuadding()
+
+	|only_mutool|
+
+	Returns whether the annotation is capable of supporting
+	quadding (justification).
+
+	:returns: boolean
+
+	.. code-block::
+
+		var hasQuadding = annotation.hasQuadding()
 
 .. method:: PDFAnnotation.prototype.getQuadding()
 
@@ -508,12 +657,14 @@ Quadding
 
 		annotation.setQuadding(1)
 
+.. _author-attribute:
+
 Author
 ------
 
 .. method:: PDFAnnotation.prototype.hasAuthor()
 
-	Checks whether the annotation has an author.
+	Returns whether the annotation is capable of supporting an author.
 
 	:returns: boolean
 
@@ -541,12 +692,14 @@ Author
 
 		annotation.setAuthor("Jane Doe")
 
+.. _border-attribute:
+
 Border
 ------
 
 .. method:: PDFAnnotation.prototype.hasBorder()
 
-	Check support for the annotation border style.
+	Returns whether the annotation is capable of supporting a border.
 
 	:returns: boolean
 
@@ -609,6 +762,7 @@ Border
 	Returns the length of dash pattern item idx.
 
 	:param number idx:
+
 	:returns: number
 
 	.. code-block::
@@ -645,7 +799,8 @@ Border
 
 .. method:: PDFAnnotation.prototype.hasBorderEffect()
 
-	Check support for annotation border effect.
+	Returns whether the annotation is capable of supporting a border
+	effect.
 
 	:returns: boolean
 
@@ -693,6 +848,8 @@ Border
 
 		annotation.setBorderEffectIntensity(1.5)
 
+.. _callout-attribute:
+
 Callout
 -------
 
@@ -705,13 +862,14 @@ allow for a graphical line to point to an area on a page.
 
 .. method:: PDFAnnotation.prototype.hasCallout()
 
-	Returns whether the annotation is capable of supporting a callout or not.
+	Returns whether the annotation is capable of supporting a callout.
 
 	:returns: boolean
 
 .. method:: PDFAnnotation.prototype.setCalloutLine(line)
 
-	Takes an array of 2 or 3 points.
+	Takes an array of 2 or 3 `points <Point>`. Supply an empty array to
+	remove the callout line.
 
 	:param Array of Point points:
 
@@ -725,7 +883,7 @@ allow for a graphical line to point to an area on a page.
 
 	Takes a point where the callout should point to.
 
-	:param points: `Point`.
+	:param Point p:
 
 .. method:: PDFAnnotation.prototype.getCalloutPoint()
 
@@ -745,6 +903,8 @@ allow for a graphical line to point to an area on a page.
 
 	:returns: string
 
+.. _default-appearance-attribute:
+
 Default Appearance
 ------------------
 
@@ -752,14 +912,14 @@ Default Appearance
 
 	|only_mutool|
 
-	Returns whether the annotation is capable of supporting a bounding
-	box.
+	Returns whether the annotation is capable of supporting a default
+	apperance.
 
-	:return: boolean
+	:returns: boolean
 
-	.. code-block:: javascript
+	.. code-block::
 
-		var hasRect = annotation.hasRect()
+		var hasRect = annotation.hasDefaultAppearance()
 
 .. method:: PDFAnnotation.prototype.getDefaultAppearance()
 
@@ -787,12 +947,17 @@ Default Appearance
 
 		annotation.setDefaultAppearance("Helv", 16, [0, 0, 0])
 
+.. _filespec-attribute:
+
 FileSpec
 --------
 
+.. TODO named hasFilespec() in mupdf.js and hasFileSpec in murun
+
 .. method:: PDFAnnotation.prototype.hasFileSpec()
 
-	Check support for the annotation file specification.
+	Returns whether the annotation is capable of supporting a
+	:term:`file specification`.
 
 	:returns: boolean
 
@@ -802,7 +967,7 @@ FileSpec
 
 .. method:: PDFAnnotation.prototype.getFileSpec()
 
-	Get the :term:`FileSpec` object for the file attachment.
+	Get the :term:`file specification` PDF object for the file attachment.
 
 	:returns: `PDFObject`
 
@@ -812,20 +977,22 @@ FileSpec
 
 .. method:: PDFAnnotation.prototype.setFileSpec(fs)
 
-	Set the :term:`FileSpec` object for the file attachment.
+	Set the :term:`file specification` PDF object for the file attachment.
 
-	:param PDFObject fs:
+	:param `PDFObject` fs:
 
 	.. code-block::
 
 		annotation.setFileSpec(fs)
+
+.. _icon-attribute:
 
 Icon
 ----
 
 .. method:: PDFAnnotation.prototype.hasIcon()
 
-	Checks the support for annotation icon.
+	Returns whether the annotation is capable of supporting an icon.
 
 	:returns: boolean
 
@@ -855,14 +1022,16 @@ Icon
 
 		annotation.setIcon("Note")
 
+.. _inklist-attribute:
+
 Ink List
 --------
 
-Ink annotations consist of a number of strokes, each consisting of a sequence of vertices between which a smooth line will be drawn. These can be controlled by:
+Ink annotations consist of a number of strokes, each consisting of a sequence of vertices between which a smooth line will be drawn.
 
 .. method:: PDFAnnotation.prototype.hasInkList()
 
-	Check support for the annotation ink list.
+	Returns whether the annotation is capable of supporting an ink list.
 
 	:returns: boolean
 
@@ -872,7 +1041,8 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: PDFAnnotation.prototype.getInkList()
 
-	Get the annotation ink list, represented as an array of strokes, each an array of points each an array of its X/Y coordinates.
+	Get the annotation ink list, represented as an array of strokes.
+	Each stroke consists of an array of points.
 
 	:returns: Array of Array of `Point`
 
@@ -882,18 +1052,23 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 .. method:: PDFAnnotation.prototype.setInkList(inkList)
 
-	Set the annotation ink list, represented as an array of strokes, each an array of points each an array of its X/Y coordinates.
+	Set the annotation ink list, represented as an array of strokes.
+	Each stroke consists of an array of points.
 
-	:param inkList: Array of Array of `Point`
+	:param Array of Array of Point inkList:
 
 	.. code-block::
 
+		// this draws a box with a cross in three strokes:
 		annotation.setInkList([
 			[
-				[0, 0]
+				[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]
 			],
 			[
-				[10, 10], [20, 20], [30, 30]
+				[10, 0], [0, 10]
+			],
+			[
+				[0, 0], [10, 10]
 			]
 		])
 
@@ -904,6 +1079,23 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 	.. code-block::
 
 		annotation.clearInkList()
+
+.. TODO addInkLink() in mupdf.js, maybe remove it everywhere?
+
+.. method:: PDFAnnotation.prototype.addInkList(list)
+
+	|only_mutool|
+
+	Appends a stroke, complete with all its vertices to the annotation.
+
+	:param Array of Point list:
+
+	.. code
+
+		// this draws a box
+		annotation.addInkList([
+			[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]
+		])
 
 .. method:: PDFAnnotation.prototype.addInkListStroke()
 
@@ -923,18 +1115,23 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 		annotation.addInkListStrokeVertex([0, 0])
 
+.. _interior-color-attribute:
+
 Interior Color
 --------------
 
 .. method:: PDFAnnotation.prototype.hasInteriorColor()
 
-	Checks whether the annotation has support for an interior color.
+	Returns whether the annotation is capable of supporting an interior
+	color.
 
 	:returns: boolean
 
 	.. code-block::
 
 		var hasInteriorColor = annotation.hasInteriorColor()
+
+.. TODO mupdf.js only allows 1 3 or 4 components, but 0 component colors denoting transparent are allowed by spec
 
 .. method:: PDFAnnotation.prototype.getInteriorColor()
 
@@ -946,6 +1143,8 @@ Interior Color
 
 		var interiorColor = annotation.getInteriorColor()
 
+.. TODO mupdf.js only allows 1 3 or 4 components, but 0 component colors denoting transparent are allowed by spec
+
 .. method:: PDFAnnotation.prototype.setInteriorColor(color)
 
 	Sets the annotation interior color.
@@ -956,12 +1155,14 @@ Interior Color
 
 		annotation.setInteriorColor([0, 1, 1])
 
+.. _line-attribute:
+
 Line
 ----
 
 .. method:: PDFAnnotation.prototype.hasLine()
 
-	Checks the support for annotation line.
+	Returns whether the annotation is capable of supporting a line.
 
 	:returns: boolean
 
@@ -990,12 +1191,15 @@ Line
 
 		annotation.setLine([100, 100], [150, 175])
 
+.. _line-ending-styles-attribute:
+
 Line Ending Styles
 ------------------
 
 .. method:: PDFAnnotation.prototype.hasLineEndingStyles()
 
-	Checks the support for :term:`line ending style`.
+	Returns whether the annotation is capable of supporting
+	:term:`line ending style`.
 
 	:returns: boolean
 
@@ -1005,9 +1209,9 @@ Line Ending Styles
 
 .. method:: PDFAnnotation.prototype.getLineEndingStyles()
 
-	Get the start and end :term:`line ending style` values.
+	Get the start and end :term:`line ending style` values for each end of the line annotation.
 
-	:returns: ``{start: string, end: string}`` Returns an object with the key/value pairs
+	:returns: ``{ start: string, end: string }`` Returns an object with the key/value pairs
 
 	.. code-block::
 
@@ -1015,7 +1219,7 @@ Line Ending Styles
 
 .. method:: PDFAnnotation.prototype.setLineEndingStyles(start, end)
 
-	Sets the :term:`line ending style` object.
+	Sets the :term:`line ending style` values for each end of the line annotation.
 
 	:param string start:
 	:param string end:
@@ -1024,10 +1228,14 @@ Line Ending Styles
 
 		annotation.setLineEndingStyles("Square", "OpenArrow")
 
+.. _line-leaders-attribute:
+
 Line Leaders
 ------------
 
-In a PDF line annotation, "line leaders" refer to visual elements that can be added to the endpoints of a line annotation to enhance its appearance or meaning.
+In a PDF line leaders refer to two lines at the ends of the line annotation,
+oriented perpendicular to the line itself. These are common in technical
+drawings when illustrating distances.
 
 .. image:: /images/leader-lines.png
 		  :alt: Leader lines explained
@@ -1092,11 +1300,12 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 	Sets whether line caption is enabled or not.
 
+	When line captions are enabled then calling the
+	`PDFAnnotation.prototype.setContents` on the line annotation will
+	render the contents onto the line as the caption text.
+
 	:param boolean on:
 
-	.. note::
-
-		When line captions are enabled then using the `setContents` method on the Line will graphically render the caption contents onto the line.
 
 .. method:: PDFAnnotation.prototype.getLineCaption()
 
@@ -1106,23 +1315,30 @@ In a PDF line annotation, "line leaders" refer to visual elements that can be ad
 
 .. method:: PDFAnnotation.prototype.setLineCaptionOffset(point)
 
-	Sets any line caption offset.
+	Sets the line caption offset.
 
-	:param point: `Point`. A point, [x, y], specifying the offset of the caption text from its normal position. The first value is the horizontal offset along the annotation line from its midpoint, with a positive value indicating offset to the right and a negative value indicating offset to the left. The second value is the vertical offset perpendicular to the annotation line, with a positive value indicating a shift up and a negative value indicating a shift down.
+	The x value of the offset point is the horizontal offset along the
+	annotation line from its midpoint, with a positive value indicating
+	offset to the right and a negative value indicating offset to the
+	left. The y value of the offset point is the vertical offset
+	perpendicular to the annotation line, with a positive value
+	indicating a shift up and a negative value indicating a shift down.
+
+	Setting a point of [0, 0] removes the caption offset.
 
 	.. image:: /images/offset-caption.png
 		  :alt: Offset caption explained
 		  :width: 100%
 
-	.. note::
-
-		Setting a point of [0, 0] effectively removes the caption offset.
+	:param Point point: A point specifying the offset of the caption text from its normal position.
 
 .. method:: PDFAnnotation.prototype.getLineCaptionOffset()
 
 	Returns the line caption offset as a point, [x, y].
 
 	:returns: `Point`
+
+.. _open-attribute:
 
 Open
 ----
@@ -1133,7 +1349,8 @@ clicked on it to view its contents.
 
 .. method:: PDFAnnotation.prototype.hasOpen()
 
-	Checks the support for annotation open state.
+	Returns whether the annotation is capable of supporting annotation
+	open state.
 
 	:returns: boolean
 
@@ -1161,12 +1378,16 @@ clicked on it to view its contents.
 
 		annotation.setIsOpen(true)
 
+.. _popup-attribute:
+
 Popup
 -----
 
 .. method:: PDFAnnotation.prototype.hasPopup()
 
-	Checks the support for annotation popup.
+	|only_mutool|
+
+	Returns whether the annotation is capable of supporting a popup.
 
 	:returns: boolean
 
@@ -1194,16 +1415,21 @@ Popup
 
 		annotation.setPopup([0, 0, 100, 100])
 
+.. _quadpoints-attribute:
+
 QuadPoints
 ----------
 
 Text markup and redaction annotations consist of a set of
-quadadrilaterals, or QuadPoints. These are used in e.g. Highlight
+quadadrilaterals, or :term:`QuadPoints <QuadPoint>`.
+These are used in e.g. Highlight
 annotations to mark up several disjoint spans of text.
+
+In Javascript QuadPoints are represented by the `Quad` class.
 
 .. method:: PDFAnnotation.prototype.hasQuadPoints()
 
-	Check whether the annotation type supports QuadPoints.
+	Returns whether the annotation is capable of supporting quadpoints.
 
 	:returns: boolean
 
@@ -1231,10 +1457,10 @@ annotations to mark up several disjoint spans of text.
 
 	.. code-block::
 
+		// two quads, the first one wider than the second one
 		annotation.setQuadPoints([
-			[1, 2, 3, 4, 5, 6, 7, 8],
-			[1, 2, 3, 4, 5, 6, 7, 8],
-			[1, 2, 3, 4, 5, 6, 7, 8]
+			[ 100, 100, 200, 100, 200, 150, 100, 150 ],
+			[ 125, 150, 175, 150, 175, 200, 125, 200 ]
 		])
 
 .. method:: PDFAnnotation.prototype.clearQuadPoints()
@@ -1247,14 +1473,15 @@ annotations to mark up several disjoint spans of text.
 
 .. method:: PDFAnnotation.prototype.addQuadPoint(quad)
 
-	Append a single quadrilateral as an array of 8 elements, where
-	each pair are the X/Y coordinates of a corner of the quad.
+	Append a single quadpoint to the annotation.
 
-	:param Quad quad: The quadrilateral to add.
+	:param Quad quad: The quadpoint to add.
 
 	.. code-block::
 
 		annotation.addQuadPoint([1, 2, 3, 4, 5, 6, 7, 8])
+
+.. _vertices-attribute:
 
 Vertices
 --------
@@ -1263,7 +1490,7 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: PDFAnnotation.prototype.hasVertices()
 
-	Check support for the annotation vertices.
+	Returns whether the annotation is capable of supporting vertices.
 
 	:returns: boolean
 
@@ -1273,7 +1500,7 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: PDFAnnotation.prototype.getVertices()
 
-	Get the annotation vertices, represented as an array of vertices each an array of its X/Y coordinates.
+	Get the annotation vertices, represented as an array of points.
 
 	:returns: Array of `Point`
 
@@ -1283,7 +1510,7 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: PDFAnnotation.prototype.setVertices(vertices)
 
-	Set the annotation vertices, represented as an array of vertices each an array of its X/Y coordinates.
+	Set the annotation vertices, represented as an array of points.
 
 	:param Array of Point vertices:
 
@@ -1305,10 +1532,189 @@ Polygon and polyline annotations consist of a sequence of vertices with a straig
 
 .. method:: PDFAnnotation.prototype.addVertex(vertex)
 
-	Append a single vertex as an array of its X/Y coordinates.
+	Append a single vertex point to the annotation.
 
 	:param Point vertex:
 
 	.. code-block::
 
 		annotation.addVertex([0, 0])
+
+.. _stamp-image-attribute:
+
+Stamp image
+-----------
+
+.. method:: PDFAnnotation.prototype.getStampImageObject()
+
+	|only_mutool|
+
+	If the annotation is a stamp annotation and it consists of an
+	image, return the `PDFObject` representing that image.
+
+	:returns: `PDFObject` | null
+
+	.. code-block::
+
+		var pdfobj = annotation.getStampImageObject()
+
+.. method:: PDFAnnotation.prototype.setStampImageObject(imgobj)
+
+	|only_mutool|
+
+	Create an appearance stream containing the image passed as
+	argument and set that as the normal appearance of the
+	annotation.
+
+	:param PDFObject imgobj: PDFObject corresponding to the desired image.
+
+	.. code-block::
+
+		annotation.setStampImageObject(imgobj)
+
+.. method:: PDFAnnotation.prototype.setStampImage(img)
+
+	|only_mutool|
+
+	Add the image passed as argument to the document as a PDF
+	object, and pass a reference to that object to when setting the
+	normal appearance of the stamp annotation.
+
+	:param Image img: The image to become the stamp annotations appearance.
+
+	.. code-block::
+
+		annotation.setStampImage(img)
+
+.. _intent-attribute:
+
+Intent
+------
+
+.. method:: PDFAnnotation.prototype.hasIntent()
+
+	|only_mutool|
+
+	Returns whether the annotation is capable of supporting an intent.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var hasIntent = annotation.hasIntent()
+
+
+.. method:: PDFAnnotation.prototype.getIntent()
+
+	Get the annotation intent, one of the values below:
+
+	* "FreeTextCallout"
+	* "FreeTextTypeWriter"
+	* "LineArrow"
+	* "LineDimension"
+	* "PolyLineDimension"
+	* "PolygonCloud"
+	* "PolygonDimension"
+	* "StampImage"
+	* "StampSnapshot"
+
+	:returns: string
+
+	.. code-block::
+
+		var intent = annotation.getIntent()
+
+.. method:: PDFAnnotation.prototype.setIntent(intent)
+
+	Set the annotation intent.
+
+	:param string intent: Intent value, see `getIntent()` for permissible values.
+
+	.. code-block::
+
+		annotation.setIntent("LineArrow")
+
+Events
+------
+
+PDF annotations can have different appearances depending on whether
+the pointing device's cursor is hovering over an annotation, or if the
+pointing device's button is pressed.
+
+PDF widgets, which is a type of annnotation, may also have associated
+Javascript handles that are executed when certain events occur.
+
+Therefore it is important to tell an PDFAnnotation when the pointing
+device's cursor enters/exits an annotation, when it's button is
+clicked, or when an annotation gains/loses input focus.
+
+.. method:: eventEnter()
+
+	|only_mutool|
+
+	Trigger appearance changes and event handlers to be
+	executed when the pointing device's cursor enters an
+	annotation's active area.
+
+	.. code-block::
+
+		annot.eventEnter()
+
+.. method:: eventExit()
+
+	|only_mutool|
+
+	Trigger appearance changes and event handlers to be
+	executed when the pointing device's cursor exits an
+	annotation's active area.
+
+	.. code-block::
+
+		annot.eventExit()
+
+.. method:: eventDown()
+
+	|only_mutool|
+
+	Trigger appearance changes and event handlers to be
+	executed when the pointing device's button is depressed within
+	an annotation's active area.
+
+	.. code-block::
+
+		widget.eventDown()
+
+.. method:: eventUp()
+
+	|only_mutool|
+
+	Trigger appearance changes and event handlers to be
+	executed when the pointing device's button is released within
+	an annotation's active area.
+
+	.. code-block::
+
+		widget.eventUp()
+
+
+.. method:: eventFocus()
+
+	|only_mutool|
+
+	Trigger event handles to be executed when an annotation gains
+	input focus.
+
+	.. code-block::
+
+		widget.eventFocus()
+
+.. method:: eventBlur()
+
+	|only_mutool|
+
+	Trigger event handles to be executed when an annotation loses
+	input focus.
+
+	.. code-block::
+
+		widget.eventBlur()

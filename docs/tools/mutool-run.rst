@@ -17,7 +17,7 @@ All of the MuPDF classes and functions live in the global object, and the
 	These are available in the global ``scriptArgs`` array.
 
 If invoked without any arguments, it will drop you into an interactive REPL (read-eval-print-loop).
-To exit call the ``quit()`` function or press *Ctl-D*.
+To exit call the ``quit()`` function or press *Ctrl-D*.
 
 Environment
 -----------

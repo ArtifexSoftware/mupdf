@@ -27,3 +27,22 @@ Functions
 	font, or ``null`` if an exact match cannot be found (so that the font
 	loading machinery can keep looking through the chain of fallback
 	fonts).
+
+.. method:: mupdf.enableICC()
+
+	Enable ICC-profiles based operation.
+
+.. method:: mupdf.disableICC()
+
+	Disable ICC-profiles based operation.
+
+.. TODO move readFile() below to mutool-run.rst?
+
+.. method:: readFile(filename)
+
+	|mutool_only|
+
+	Read the contents from a file of the given name. Throws an
+	exception if the file does not exist.
+
+	:returns: `Buffer`

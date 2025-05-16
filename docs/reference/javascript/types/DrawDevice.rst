@@ -18,8 +18,6 @@ Constructors
 	:param Matrix matrix: The matrix to apply.
 	:param Pixmap pixmap: The pixmap that will be drawn to.
 
-	:returns: `DrawDevice`
-
 	.. code-block::
 
 		var drawDevice = new mupdf.DrawDevice(mupdf.Matrix.identity, pixmap)

@@ -22,9 +22,12 @@ Instance methods
 
 .. method:: PDFGraftMap.prototype.graftObject(obj)
 
-	Use the graft map to copy objects, with the ability to remember previously copied objects.
+	Return a deep copy of the given object suitable for use within
+	the graft map's target document.
 
 	:param PDFObject object: The object to graft.
+
+	:returns: `PDFObject`
 
 	.. code-block::
 
@@ -33,9 +36,14 @@ Instance methods
 
 .. method:: PDFGraftMap.prototype.graftPage(to, srcDoc, srcPage)
 
-	Graft a page and its resources at the given page number from the source document to the requested page number in the destination document connected to the map.
+	Graft a page and its resources at the given page number from
+	the source document to the requested page number in the
+	destination document connected to the map.
 
-	:param number to: The page number to insert the page before. Page numbers start at 0 and -1 means at the end of the document.
+	Page numbers start at 0 and -1 means at the end of the
+	document.
+
+	:param number to: The page number to insert the page before.
 	:param PDFDocument srcDoc: Source document.
 	:param number srcPage: Source page number.
 

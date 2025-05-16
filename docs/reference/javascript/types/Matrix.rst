@@ -18,7 +18,7 @@ such as translations, rotations, scaling, and skewing:
 	\ e f 1 /
 
 Because of the fixes values in the right-most column, such a matrix is
-represented in JavaScript as an array of six numbers:
+represented in Javascript as an array of six numbers:
 
 .. code-block::
 
@@ -35,7 +35,7 @@ Constructors
 
 .. class:: Matrix
 
-	*You cannot create a Matrix with the new operator!*
+	|no_new|
 
 Matrices are not represented by a class; they are just plain arrays of six numbers.
 
@@ -48,7 +48,7 @@ Static properties
 
 	.. code-block::
 
-		var m = mupdf.Matrix.identity;
+		var m = mupdf.Matrix.identity
 
 Static methods
 --------------

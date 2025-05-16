@@ -58,7 +58,7 @@ objstms
 	 use object streams and cross reference streams
 
 appearance=yes|all
-	 synthesize just missing, or all, annotation/widget apperance streams
+	 synthesize just missing, or all, annotation/widget appearance streams
 
 continue-on-error
 	 continue saving the document even if there is an error

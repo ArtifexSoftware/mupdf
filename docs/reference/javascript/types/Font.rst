@@ -12,9 +12,12 @@ Type3 fonts.
 Constructors
 ------------
 
-.. class:: Font(name[, data, index])
+.. class::
+	Font(name, data, index)
+	Font(name, filename, index)
 
-	Create a new font. Either from a built-in font name, or a buffer or a file name.
+	Create a new font. Either from a buffer, a file name, or a
+	built-in font name.
 
 	The built-in standard PDF fonts are:
 
@@ -33,12 +36,13 @@ Constructors
 	- ``"Symbol"``
 	- ``"ZapfDingbats"``
 
-	The built-in CJK fonts are referenced by language code: ``"zh-Hant"``, ``"zh-Hans"``, ``"ja"``, ``"ko"``.
+	The built-in CJK fonts are referenced by language code:
+	``"zh-Hant"``, ``"zh-Hans"``, ``"ja"``, ``"ko"``.
 
-	:param string name: Font name or file name.
-	:param Buffer | AnyBuffer data: The font data if loaded from a buffer.
-	:arg number index: Subfont index (only used for TTC fonts).
-	:returns: `Font`
+	:param string name: Font name.
+	:param Buffer | ArrayBuffer | Uint8Array data: The font data if loaded from a buffer.
+	:param string filename: The name of the font file to load.
+	:param number index: Subfont index (only used for TTC fonts).
 
 	.. code-block::
 
@@ -65,14 +69,15 @@ Instance methods
 
 	Get the glyph index for a unicode character. Glyph ``0`` is returned if the font does not have a glyph for the character.
 
-	:param number unicode: The unicode character.
+	:param number | string unicode: The unicode character, or the first unicode character of a string.
+
 	:returns: number.
 
 	.. code-block::
 
 		var index = font.encodeCharacter(0x42)
 
-.. method:: Font.prototype.advanceGlyph(glyph[ , wmode])
+.. method:: Font.prototype.advanceGlyph(glyph , wmode)
 
 	Return advance width for a glyph in either horizontal or vertical writing mode.
 

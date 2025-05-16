@@ -19,7 +19,7 @@ point and ends with a close:
 * draw a cubic Bézier curve, append by calling either of `Path.prototype.curveTo()`,
   `Path.prototype.curveToV()`, or `Path.prototype.curveToY()`
 * draw a rectangle, append by calling `Path.prototype.rect()`, this is a subpath on
-  its own and is equivalent to a move to a postion, followed by drawing three
+  its own and is equivalent to a move to a position, followed by drawing three
   lines and closing the subpath.
 
 After a subpath is closed, the only operation that may be appended is a
@@ -38,8 +38,6 @@ Constructors
 
 	Create a new empty path.
 
-	:returns: `Path`
-
 	.. code-block::
 
 		var path = new mupdf.Path()
@@ -56,6 +54,8 @@ Instance methods
 	.. code-block::
 
 		path.closePath()
+
+.. TODO lacks checkType() in mupdf.js, why?
 
 .. method:: Path.prototype.curveTo(x1, y1, x2, y2, x3, y3)
 
@@ -77,6 +77,8 @@ Instance methods
 
 		path.curveTo(0, 0, 10, 10, 100, 100)
 
+.. TODO lacks checkType() in mupdf.js, why?
+
 .. method:: Path.prototype.curveToV(cx, cy, ex, ey)
 
 	Append operation drawing a cubic Bézier curve from the current point
@@ -96,9 +98,11 @@ Instance methods
 
 		path.curveToV(0, 0, 100, 100)
 
+.. TODO lacks checkType() in mupdf.js, why?
+
 .. method:: Path.prototype.curveToY(cx, cy, ex, ey)
 
-	Append operation drawing a cubic bézier curve from the current point
+	Append operation drawing a cubic Bézier curve from the current point
 	to (ex, ey) using the (cx, cy) and (ex, ey) as control points. Will be
 	converted to `Path.prototype.curveTo()` when appended to this Path.
 
@@ -119,7 +123,7 @@ Instance methods
 
 	Return a bounding rectangle for the path.
 
-	Since the path does not describe properites such as line width, line
+	Since the path does not describe properties such as line width, line
 	joins, etc., the caller must provide a ``strokeState``, containing
 	those properties, to determine the bounds of path if it is stroked.
 
@@ -153,7 +157,7 @@ Instance methods
 
 	.. code-block::
 
-		path.lineTo(20,20)
+		path.lineTo(20, 20)
 
 .. method:: Path.prototype.moveTo(x, y)
 
@@ -166,6 +170,8 @@ Instance methods
 	.. code-block::
 
 		path.moveTo(10, 10)
+
+.. TODO lacks checkType() in mupdf.js, why?
 
 .. method:: Path.prototype.rect(x1, y1, x2, y2)
 
@@ -190,7 +196,7 @@ Instance methods
 
 	.. code-block::
 
-		path.rect(0,0,100,100)
+		path.rect(0, 0, 100, 100)
 
 .. method:: Path.prototype.transform(matrix)
 
@@ -203,7 +209,7 @@ Instance methods
 
 	.. code-block::
 
-		path.transform(mupdf.Matrix.scale(2,2))
+		path.transform(mupdf.Matrix.scale(2, 2))
 
 .. method:: Path.prototype.walk(walker)
 
@@ -220,9 +226,9 @@ Instance methods
 		}
 
 		var pathPrinter = {
-			moveTo: function (x,y) { print("moveTo", x, y) },
-			lineTo: function (x,y) { print("lineTo", x, y) },
-			curveTo: function (x1,y1,x2,y2,x3,y3) { print("curveTo", x1, y1, x2, y2, x3, y3) },
+			moveTo: function (x, y) { print("moveTo", x, y) },
+			lineTo: function (x, y) { print("lineTo", x, y) },
+			curveTo: function (x1, y1, x2, y2, x3, y3) { print("curveTo", x1, y1, x2, y2, x3, y3) },
 			closePath: function () { print("closePath") },
 		}
 

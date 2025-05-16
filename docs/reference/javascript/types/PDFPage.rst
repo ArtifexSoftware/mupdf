@@ -20,6 +20,8 @@ Instances of this class are returned by :js:meth:`~Document.prototype.loadPage` 
 Static properties
 -----------------
 
+|only_mupdfjs|
+
 .. data:: PDFPage.REDACT_IMAGE_NONE
 
 	for no image redactions
@@ -98,18 +100,23 @@ Instance methods
 
 	.. code-block::
 
-		page.setPageBox("ArtBox", [10,10, 585, 832])
+		page.setPageBox("ArtBox", [10, 10, 585, 832])
+
+.. TODO in murun the array returned from getAnnotations/getWidgets() does not automagically get updated when creating a new annotation.
 
 .. method:: PDFPage.prototype.createAnnotation(type)
 
 	Create a new blank annotation of a given annotation type.
 
 	:param string type: The :term:`annotation type` to create.
+
 	:returns: `PDFAnnotation`.
 
 	.. code-block::
 
 		var annot = page.createAnnotation("Text")
+
+.. TODO in murun the array returned from getAnnotations/getWidgets() does not automagically get updated when deleting an annotation.
 
 .. method:: PDFPage.prototype.deleteAnnotation(annot)
 
@@ -124,12 +131,18 @@ Instance methods
 
 .. method:: PDFPage.prototype.update()
 
-	Loop through all annotations of the page and update them. Returns true if re-rendering is needed because at least one annotation was changed (due to either events or JavaScript actions or annotation editing).
+	Loop through all annotations of the page and update them.
+
+	Returns true if re-rendering is needed because at least one
+	annotation was changed (due to either events or Javascript
+	actions or annotation editing).
+
+	:returns: boolean
 
 	.. code-block::
 
 		// edit an annotation
-		page.update()
+		var updated = page.update()
 
 .. method:: PDFPage.prototype.toPixmap(matrix, colorspace, alpha, showExtras, usage, box)
 
@@ -138,8 +151,8 @@ Instance methods
 	:param Matrix matrix: The transformation matrix.
 	:param ColorSpace colorspace: The desired colorspace.
 	:param boolean alpha: Whether or not the returned pixmap will use alpha.
-	:param boolean renderExtra: Whether annotations and widgets should be rendered.
-	:param string usage: If the output is destined for viewing or printing.
+	:param boolean renderExtra: Whether annotations and widgets should be rendered. Defaults to true.
+	:param string usage: If the output is destined for viewing or printing. Defaults to "View".
 	:param string box: Default is "CropBox".
 
 	:returns: `Pixmap`
@@ -177,3 +190,78 @@ Instance methods
 		var annot2 = page.createAnnotation("Redaction")
 		annot2.setRect([0, 600, 500, 700])
 		page.applyRedactions(true, mupdf.PDFPage.REDACT_IMAGE_NONE)
+
+.. TODO murun doesn't really have a PDFProcessor, but you create an inline object with correct callbacks.
+
+.. method:: PDFPage.prototype.process(processor)
+
+	|only_mutool|
+
+	Run through the page contents stream and call methods on the
+	supplied `PDFProcessor`.
+
+	:param PDFProcessor processor: User defined function.
+
+	.. code-block:: javascript
+
+		pdfPage.process(processor)
+
+.. TODO Why was getTransform() marked redundant in the old docs?
+
+.. method:: PDFPage.prototype.getTransform()
+
+	Return the transform from MuPDF page space (upper left page origin,
+	y descending, 72 dpi) to PDF user space (arbitrary page origin, y
+	ascending, UserUnit dpi).
+
+	:returns: `Rect`
+
+	.. code-block:: javascript
+
+		var transform = pdfPage.getTransform()
+
+.. method:: PDFPage.prototype.createSignature(name)
+
+	|only_mutool|
+
+	Create a new signature widget with the given name as field
+	label.
+
+	:param string name: The desired field label.
+
+	:returns: `PDFWidget`
+
+	.. code-block:: javascript
+
+		var signatureWidget = pdfPage.createSignature("test")
+
+.. method:: PDFPage.prototype.countAssociatedFiles()
+
+	|only_mutool|
+
+	Return the number of :term:`associated files <associated file>`
+	associated with this page. Note that this is the number of
+	files associated with this page, not necessarily the
+	total number of files associated with elements throughout the
+	entire document.
+
+	:returns: number
+
+	.. code-block:: javascript
+
+		var count = pdfPage.countAssociatedFiles()
+
+.. method:: PDFPage.prototype.associatedFile(n)
+
+	|only_mutool|
+
+	Return the :term:`file specification` object that represents the nth
+	Associated File on this page.
+
+	``n`` should be in the range ``0 <= n < countAssociatedFiles()``.
+
+	:returns: `PDFObject`
+
+	.. code-block:: javascript
+
+		var obj = pdfPage.associatedFile(0)

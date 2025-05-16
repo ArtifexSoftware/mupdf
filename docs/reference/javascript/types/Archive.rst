@@ -14,12 +14,13 @@ Constructors
 
 	Create a new archive based either on a tar- or zip-file or the contents of a directory.
 
-	:param string path: Path string to the archive file.
+	:param string path: Path string to the archive file or directotry.
 
 	.. code-block::
 
-		var archive = new mupdf.Archive("example1.zip")
+		var archive1 = new mupdf.Archive("example1.zip")
 		var archive2 = new mupdf.Archive("example2.tar")
+		var archive3 = new mupdf.Archive("images/")
 
 Instance properties
 -------------------
@@ -78,7 +79,7 @@ Instance properties
 
 	:param string name: Name of entry to look for.
 
-	:returns: string
+	:returns: `Buffer`
 
 	.. code-block::
 

@@ -17,7 +17,7 @@ Types
 	Document
 	DocumentWriter
 	DrawDevice
-	FileSpecification
+	FileSpecificationParams
 	Font
 	Image
 	Link
