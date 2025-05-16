@@ -627,6 +627,7 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 							newblock->prev = last;
 						}
 						last = newblock;
+						newblock->id = block->id;
 					}
 
 					/* Unlink line from the current list. */
@@ -683,6 +684,7 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 	newblock->prev = block ? block->prev : *last_block;
 	newblock->next = block;
 	newblock->type = FZ_STEXT_BLOCK_STRUCT;
+	newblock->id = block->id;
 	newblock->u.s.index = idx;
 	newblock->u.s.down = NULL;
 	/* If this throws, we leak newblock but it's within the pool, so it doesn't matter. */

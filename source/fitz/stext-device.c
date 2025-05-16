@@ -231,6 +231,7 @@ fz_new_stext_page(fz_context *ctx, fz_rect mediabox)
 		page->mediabox = mediabox;
 		page->first_block = NULL;
 		page->last_block = NULL;
+		page->id_list = fz_new_pool_array(ctx, pool, fz_stext_page_details, 4);
 	}
 	fz_catch(ctx)
 	{
@@ -267,6 +268,14 @@ drop_run(fz_context *ctx, fz_stext_block *block)
 	}
 }
 
+fz_stext_page_details *fz_stext_page_details_for_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block)
+{
+	if (block == NULL || page == NULL)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "page details require a page and a block");
+
+	return (fz_stext_page_details *)fz_pool_array_lookup(ctx, page->id_list, block->id);
+}
+
 fz_stext_page *
 fz_keep_stext_page(fz_context *ctx, fz_stext_page *page)
 {
@@ -292,11 +301,13 @@ fz_drop_stext_page(fz_context *ctx, fz_stext_page *page)
  * with more complicated pointer setup.
  */
 static fz_stext_block *
-add_block_to_page(fz_context *ctx, fz_stext_page *page)
+add_block_to_page(fz_context *ctx, fz_stext_page *page, int type, int id)
 {
 	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
 	block->bbox = fz_empty_rect; /* Fixes bug 703267. */
 	block->prev = page->last_block;
+	block->type = type;
+	block->id = id;
 	if (page->last_struct)
 	{
 		if (page->last_struct->last_block)
@@ -323,18 +334,15 @@ add_block_to_page(fz_context *ctx, fz_stext_page *page)
 }
 
 static fz_stext_block *
-add_text_block_to_page(fz_context *ctx, fz_stext_page *page)
+add_text_block_to_page(fz_context *ctx, fz_stext_page *page, int id)
 {
-	fz_stext_block *block = add_block_to_page(ctx, page);
-	block->type = FZ_STEXT_BLOCK_TEXT;
-	return block;
+	return add_block_to_page(ctx, page, FZ_STEXT_BLOCK_TEXT, id);
 }
 
 static fz_stext_block *
-add_image_block_to_page(fz_context *ctx, fz_stext_page *page, fz_matrix ctm, fz_image *image)
+add_image_block_to_page(fz_context *ctx, fz_stext_page *page, fz_matrix ctm, fz_image *image, int id)
 {
-	fz_stext_block *block = add_block_to_page(ctx, page);
-	block->type = FZ_STEXT_BLOCK_IMAGE;
+	fz_stext_block *block = add_block_to_page(ctx, page, FZ_STEXT_BLOCK_IMAGE, id);
 	block->u.i.transform = ctm;
 	block->u.i.image = fz_keep_image(ctx, image);
 	block->bbox = fz_transform_rect(fz_unit_rect, ctm);
@@ -848,7 +856,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	/* Start a new block (but only at the beginning of a text object) */
 	if (new_para || !cur_block)
 	{
-		cur_block = add_text_block_to_page(ctx, page);
+		cur_block = add_text_block_to_page(ctx, page, dev->id);
 		cur_line = cur_block->u.t.last_line;
 	}
 
@@ -1474,7 +1482,7 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ct
 
 	/* If the alpha is less than 50% then it's probably a watermark or effect or something. Skip it. */
 	if (alpha >= 0.5f)
-		add_image_block_to_page(ctx, tdev->page, ctm, img);
+		add_image_block_to_page(ctx, tdev->page, ctm, img, tdev->id);
 
 }
 
@@ -2109,11 +2117,10 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 }
 
 static void
-add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, uint32_t flags, uint32_t argb)
+add_vector(fz_context *ctx, fz_stext_page *page, fz_rect bbox, uint32_t flags, uint32_t argb, int id)
 {
-	fz_stext_block *b = add_block_to_page(ctx, page);
+	fz_stext_block *b = add_block_to_page(ctx, page, FZ_STEXT_BLOCK_VECTOR, id);
 
-	b->type = FZ_STEXT_BLOCK_VECTOR;
 	b->bbox = bbox;
 	b->u.v.flags = flags;
 	b->u.v.argb = argb;
@@ -2129,6 +2136,7 @@ typedef struct
 	fz_rect pending;
 	int count;
 	fz_point p[5];
+	int id;
 } split_path_data;
 
 static void
@@ -2166,7 +2174,7 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 			for (i = 1; i < sp->count; i++)
 				bounds = fz_include_point_in_rect(bounds, sp->p[i]);
 			if (fz_is_valid_rect(sp->pending))
-				add_vector(ctx, sp->page, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb);
+				add_vector(ctx, sp->page, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb, sp->id);
 			sp->pending = bounds;
 			return;
 		}
@@ -2270,7 +2278,7 @@ fz_path_walker split_path_rects =
 };
 
 static void
-add_vectors_from_path(fz_context *ctx, fz_stext_page *page, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke)
+add_vectors_from_path(fz_context *ctx, fz_stext_page *page, int id, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke)
 {
 	int have_leftovers;
 	split_path_data sp;
@@ -2282,6 +2290,7 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, const fz_path *path,
 	sp.count = 0;
 	sp.leftovers = fz_empty_rect;
 	sp.pending = fz_empty_rect;
+	sp.id = id;
 	fz_walk_path(ctx, path, &split_path_rects, &sp);
 
 	have_leftovers = fz_is_valid_rect(sp.leftovers);
@@ -2289,9 +2298,9 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, const fz_path *path,
 	maybe_rect(ctx, &sp);
 
 	if (fz_is_valid_rect(sp.pending))
-		add_vector(ctx, page, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb);
+		add_vector(ctx, page, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb, id);
 	if (have_leftovers)
-		add_vector(ctx, page, sp.leftovers, sp.flags, sp.argb);
+		add_vector(ctx, page, sp.leftovers, sp.flags, sp.argb, id);
 }
 
 static void
@@ -2310,7 +2319,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, path, ctm, cs, color, alpha, cp, 0);
+		add_vectors_from_path(ctx, page, tdev->id, path, ctm, cs, color, alpha, cp, 0);
 }
 
 static void
@@ -2329,7 +2338,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, path, ctm, cs, color, alpha, cp, 1);
+		add_vectors_from_path(ctx, page, tdev->id, path, ctm, cs, color, alpha, cp, 1);
 }
 
 static void
@@ -2511,6 +2520,12 @@ fz_stext_end_structure(fz_context *ctx, fz_device *dev)
 fz_device *
 fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options *opts)
 {
+	return fz_new_stext_device_for_page(ctx, page, opts, 0, 0, fz_empty_rect);
+}
+
+fz_device *
+fz_new_stext_device_for_page(fz_context *ctx, fz_stext_page *page, const fz_stext_options *opts, int chapter_num, int page_num, fz_rect mediabox)
+{
 	fz_stext_device *dev = fz_new_derived_device(ctx, fz_stext_device);
 
 	dev->super.close_device = fz_stext_close_device;
@@ -2559,6 +2574,25 @@ fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options
 	dev->rect_max = 0;
 	dev->rect_len = 0;
 	dev->rects = NULL;
+
+	/* Push a new id */
+	fz_try(ctx)
+	{
+		fz_stext_page_details *deets;
+		size_t id;
+		deets = fz_pool_array_append(ctx, page->id_list, &id);
+		dev->id = (int)id;
+		deets->mediabox = mediabox;
+		deets->chapter = chapter_num;
+		deets->page = page_num;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, dev);
+		fz_rethrow(ctx);
+	}
+
+	page->mediabox = fz_union_rect(page->mediabox, mediabox);
 
 	return (fz_device*)dev;
 }

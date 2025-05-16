@@ -471,11 +471,12 @@
 
 
 static fz_stext_block *
-add_grid_block(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, fz_stext_block **last_block)
+add_grid_block(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, fz_stext_block **last_block, int id)
 {
 	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof(**first_block));
 	memset(block, 0, sizeof(*block));
 	block->type = FZ_STEXT_BLOCK_GRID;
+	block->id = id;
 	block->bbox = fz_empty_rect; /* Fixes bug 703267. */
 	block->next = *first_block;
 	if (*first_block)
@@ -589,6 +590,7 @@ add_struct_block_before(fz_context *ctx, fz_stext_block *before, fz_stext_page *
 	/* Now make our new struct block and insert it. */
 	block = fz_pool_alloc(ctx, page->pool, sizeof(*block));
 	block->type = FZ_STEXT_BLOCK_STRUCT;
+	block->id = 0; /* Safe because we only work on single pages */
 	block->bbox = fz_empty_rect; /* Fixes bug 703267. */
 	insert_block_before(block, before, page, parent);
 
@@ -2060,6 +2062,8 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					{
 						newblock = fz_pool_alloc(ctx, page->pool, sizeof(fz_stext_block));
 						insert_block_before(newblock, before, page, dest);
+						newblock->type = FZ_STEXT_BLOCK_TEXT;
+						newblock->id = 0;
 						newblock->u.t.flags = block->u.t.flags;
 						assert(before == newblock->next);
 					}
@@ -2129,6 +2133,8 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 
 							/* Add the block onto our target list */
 							insert_block_before(newblock, before, page, dest);
+							newblock->type = FZ_STEXT_BLOCK_TEXT;
+							newblock->id = 0;
 							newblock->u.t.flags = block->u.t.flags;
 							before = newblock->next;
 						}
@@ -2539,7 +2545,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 		fz_stext_block *block;
 		fz_stext_grid_positions *xps2 = copy_grid_positions_to_pool(ctx, page, gd->xpos);
 		fz_stext_grid_positions *yps2 = copy_grid_positions_to_pool(ctx, page, gd->ypos);
-		block = add_grid_block(ctx, page, &table->first_block, &table->last_block);
+		block = add_grid_block(ctx, page, &table->first_block, &table->last_block, table->up->id);
 		block->u.b.xs = xps2;
 		block->u.b.ys = yps2;
 		block->bbox.x0 = block->u.b.xs->list[0].pos;
