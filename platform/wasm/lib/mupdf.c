@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF WASM Library.
 //
@@ -144,6 +144,26 @@ EXPORT
 void wasm_set_user_css(char *text)
 {
 	VOID(fz_set_user_css, text)
+}
+
+EXPORT
+void wasm_Memento_checkAllMemory(void)
+{
+#ifdef MEMENTO
+	Memento_checkAllMemory();
+#else
+	fprintf(stderr, "memento is not available in release build\n");
+#endif
+}
+
+EXPORT
+void wasm_Memento_listBlocks(void)
+{
+#ifdef MEMENTO
+	Memento_listBlocks();
+#else
+	fprintf(stderr, "memento is not available in release build\n");
+#endif
 }
 
 // --- REFERENCE COUNTING ---
