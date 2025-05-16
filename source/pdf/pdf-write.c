@@ -1941,6 +1941,12 @@ int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
 static void
 prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in_opts)
 {
+	/* Make sure we have no pending annotation changes that need to be updated. */
+	if (doc->recalculate)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "form needs recalculation before saving");
+	if (doc->resynth_required)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "annotations need resynthesis before saving");
+
 	/* Rewrite (and possibly sanitize) the operator streams */
 	if (in_opts->do_clean || in_opts->do_sanitize)
 	{
