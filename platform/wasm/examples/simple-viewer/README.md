@@ -7,6 +7,6 @@ inserts rendered images and text in the DOM as pages scroll into view.
 
 To start the HTTP server and open your browser to the viewer:
 
-	npx http-server ../.. -o examples/simple-viewer
+	npx http-server ../.. -b -o examples/simple-viewer
 
 Use the File menu to open a PDF file.

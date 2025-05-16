@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF WASM Library.
 //
@@ -42,7 +42,16 @@ function Malloc<T>(size: number) {
 }
 
 function Free(ptr: any) {
-	return libmupdf._wasm_free(ptr as Pointer<"void">)
+	libmupdf._wasm_free(ptr as Pointer<"void">)
+}
+
+export const memento = {
+	listBlocks() {
+		libmupdf._wasm_Memento_listBlocks()
+	},
+	checkAllMemory() {
+		libmupdf._wasm_Memento_checkAllMemory()
+	},
 }
 
 /*
@@ -4393,4 +4402,7 @@ export default {
 	PDFAnnotation,
 	PDFWidget,
 	Stream,
+
+	// debugging
+	memento
 }

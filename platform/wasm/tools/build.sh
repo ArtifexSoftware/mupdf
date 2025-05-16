@@ -1,42 +1,82 @@
 #!/bin/bash
+#
+# Script to build the WASM binary.
+#
+# The following environment variables can be used to configure the build:
+#   EMSDK, BUILD, SUFFIX, DEFINES, FEATURES
+#
+# EMSDK must point to the directory where emsdk is installed
+# BUILD should be "small" or "memento"
+# DEFINES should be a set of -D defines (e.g. "-DTOFU")
+# FEATURES should be a list of "feature=no" (e.g. "brotli=no mujs=no extract=no xps=no svg=no html=no")
+# SUFFIX should be a tag to keep build files for different configurations separate
+#
 
-EMSDK_DIR=/opt/emsdk
+EMSDK=${EMSDK:-/opt/emsdk}
+BUILD=${BUILD:-small}
+DEFINES=${DEFINES:--DTOFU -DTOFU_CJK_EXT}
+FEATURES=${FEATURES:-brotli=no mujs=no extract=no xps=no svg=no}
 
-XCFLAGS="-Os"
-XCFLAGS="$XCFLAGS -DTOFU"
-XCFLAGS="$XCFLAGS -DTOFU_CJK_EXT"
-XCFLAGS="$XCFLAGS -DMEMENTO_STACKTRACE_METHOD=0"
-XCFLAGS="$XCFLAGS -DFZ_ENABLE_XPS=0"
-XCFLAGS="$XCFLAGS -DFZ_ENABLE_SVG=0"
-XCFLAGS="$XCFLAGS -DFZ_ENABLE_OCR_OUTPUT=0"
+if [ "$BUILD" = "memento" ]
+then
+	MEMENTO="-DMEMENTO -DMEMENTO_STACKTRACE_METHOD=0"
+fi
 
 export EMSDK_QUIET=1
-source $EMSDK_DIR/emsdk_env.sh
-echo
+source $EMSDK/emsdk_env.sh
 
+emsdk install 4.0.8 >/dev/null || exit
 emsdk activate 4.0.8 >/dev/null || exit
 
-BUILD=${1:-release}
-
-echo BUILDING MUPDF CORE
-make --no-print-directory -j4 -C ../.. build=$BUILD OS=wasm XCFLAGS="$XCFLAGS" brotli=no mujs=no libs
-echo
-
-echo BUILDING MUPDF WASM
 mkdir -p dist
-emcc -o dist/mupdf-wasm.js -I ../../include lib/mupdf.c \
+rm -f dist/*
+
+echo "COMPILING ($BUILD)"
+
+make --no-print-directory -j $(nproc) \
+	-C ../.. \
+	build=$BUILD \
+	build_suffix=$SUFFIX \
+	OS=wasm \
+	XCFLAGS="$MEMENTO $DEFINES" \
+	$FEATURES \
+	libs
+
+echo "LINKING"
+
+emcc -o dist/mupdf-wasm.js \
+	-I ../../include \
+	-Os -g2 \
+	$MEMENTO \
 	--no-entry \
-	-sABORTING_MALLOC=0 \
-	-sALLOW_MEMORY_GROWTH=1 \
-	-sNODEJS_CATCH_EXIT=0 \
+	-mno-nontrapping-fptoint \
+	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP=wasm \
 	-sMODULARIZE=1 \
 	-sEXPORT_ES6=1 \
 	-sEXPORT_NAME='"libmupdf_wasm"' \
-	-sEXPORTED_RUNTIME_METHODS='["UTF8ToString","lengthBytesUTF8","stringToUTF8","HEAPU8","HEAPU32","HEAPF32"]' \
-	 ../../build/wasm/$BUILD/libmupdf.a \
-	 ../../build/wasm/$BUILD/libmupdf-third.a
-echo
+	-sALLOW_MEMORY_GROWTH=1 \
+	-sTEXTDECODER=2 \
+	-sFILESYSTEM=0 \
+	-sEXPORTED_RUNTIME_METHODS='["UTF8ToString","lengthBytesUTF8","stringToUTF8","HEAPU8","HEAP32","HEAPU32","HEAPF32"]' \
+	lib/mupdf.c \
+	 ../../build/wasm/$BUILD$SUFFIX/libmupdf.a \
+	 ../../build/wasm/$BUILD$SUFFIX/libmupdf-third.a
 
-echo BUILDING TYPESCRIPT
-cat lib/mupdf.c | sed '/#include/d' | emcc -E - | node tools/make-wasm-type.js > lib/mupdf-wasm.d.ts
+# remove executable bit from wasm-ld output
+chmod -x dist/mupdf-wasm.wasm
+
+echo "TYPESCRIPT"
+
+sed < lib/mupdf.c '/#include/d' | emcc -E - | node tools/make-wasm-type.js > lib/mupdf-wasm.d.ts
+cp lib/mupdf-wasm.d.ts dist/mupdf-wasm.d.ts
+
 npx tsc -p .
+
+# convert spaces to tabs
+sed -i -e 's/    /\t/g' dist/mupdf.js
+
+echo "TERSER"
+
+npx terser --module -c -m -o dist/mupdf-wasm.js dist/mupdf-wasm.js
+# npx terser --module -c -m -o dist/mupdf.min.js dist/mupdf.js

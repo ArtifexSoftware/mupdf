@@ -363,6 +363,9 @@ ifeq "$(OS)" "wasm"
   HAVE_X11=no
   HAVE_OBJCOPY=no
   HAVE_LIBCRYPTO=no
+  CFLAGS += -mno-nontrapping-fptoint
+  CFLAGS += -fwasm-exceptions
+  CFLAGS += -sSUPPORT_LONGJMP=wasm
 endif
 
 ifeq "$(OS)" "wasm-mt"
@@ -374,6 +377,9 @@ ifeq "$(OS)" "wasm-mt"
   HAVE_X11=no
   HAVE_OBJCOPY=no
   HAVE_LIBCRYPTO=no
+  CFLAGS += -mno-nontrapping-fptoint
+  CFLAGS += -fwasm-exceptions
+  CFLAGS += -sSUPPORT_LONGJMP=wasm
   CFLAGS += -pthread
 endif
 

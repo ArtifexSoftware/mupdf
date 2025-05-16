@@ -1,6 +1,6 @@
 {
 	"name": "mupdf",
-	"version": "1.26.0",
+	"version": "1.27.0",
 	"description": "MuPDF.js",
 	"author": "Artifex Software, Inc.",
 	"license": "AGPL-3.0-or-later",
@@ -21,19 +21,17 @@
 		}
 	},
 	"files": [
-		"dist/mupdf-wasm.js",
-		"dist/mupdf-wasm.wasm",
-		"dist/mupdf.d.ts",
-		"dist/mupdf.js"
+		"dist/*"
 	],
 	"scripts": {
-		"prepare": "bash tools/build.sh",
-		"simple-viewer": "npx http-server . -o examples/simple-viewer",
-		"super-simple-viewer": "npx http-server . -o examples/super-simple-viewer"
+		"prepack": "bash tools/build.sh && bash tools/compress.sh",
+		"simple-viewer": "npx http-server -c -1 -b -o examples/simple-viewer",
+		"super-simple-viewer": "npx http-server -c -1 -b -o examples/super-simple-viewer"
 	},
 	"devDependencies": {
 		"@types/node": "latest",
 		"http-server": "latest",
-		"typescript": "latest"
+		"terser": "^5.39.2",
+		"typescript": "^5.8.3"
 	}
 }
