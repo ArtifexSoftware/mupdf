@@ -169,6 +169,45 @@ FUN(DOM_previous)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
+FUN(DOM_addAttribute)(JNIEnv *env, jobject self, jstring jatt, jstring jval)
+{
+	fz_context *ctx = get_context(env);
+	fz_xml *me = from_DOM_safe(env, self);
+	const char *att = NULL;
+	const char *val = NULL;
+
+	if (jatt)
+	{
+		att = (*env)->GetStringUTFChars(env, jatt, NULL);
+		if (!att) jni_throw_run(env, "cannot get characters in attribute name");
+	}
+	if (jval)
+	{
+		val = (*env)->GetStringUTFChars(env, jval, NULL);
+		if (!val)
+		{
+			if (jatt)
+				(*env)->ReleaseStringUTFChars(env, jatt, att);
+			jni_throw_run(env, "cannot get characters in attribute value");
+		}
+	}
+
+	fz_try(ctx)
+		fz_dom_add_attribute(ctx, me, att, val);
+	fz_always(ctx)
+	{
+		if (jval)
+			(*env)->ReleaseStringUTFChars(env, jval, val);
+		if (jatt)
+			(*env)->ReleaseStringUTFChars(env, jatt, att);
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return self;
+}
+
+JNIEXPORT jobject JNICALL
 FUN(DOM_removeAttribute)(JNIEnv *env, jobject self, jstring jatt)
 {
 	fz_context *ctx = get_context(env);
