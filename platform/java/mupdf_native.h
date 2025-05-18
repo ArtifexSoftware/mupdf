@@ -6712,25 +6712,25 @@ JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Pixmap_detectSkew
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    warp
- * Signature: ([Lcom/artifex/mupdf/fitz/Point;II)Lcom/artifex/mupdf/fitz/Pixmap;
+ * Signature: (Lcom/artifex/mupdf/fitz/Quad;II)Lcom/artifex/mupdf/fitz/Pixmap;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_warp
-  (JNIEnv *, jobject, jobjectArray, jint, jint);
+  (JNIEnv *, jobject, jobject, jint, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    autowarp
- * Signature: ([Lcom/artifex/mupdf/fitz/Point;)Lcom/artifex/mupdf/fitz/Pixmap;
+ * Signature: (Lcom/artifex/mupdf/fitz/Quad;)Lcom/artifex/mupdf/fitz/Pixmap;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_autowarp
-  (JNIEnv *, jobject, jobjectArray);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
- * Method:    nativeDetectDocument
- * Signature: ()[F
+ * Method:    detectDocument
+ * Signature: ()Lcom/artifex/mupdf/fitz/Quad;
  */
-JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_nativeDetectDocument
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_detectDocument
   (JNIEnv *, jobject);
 
 /*
