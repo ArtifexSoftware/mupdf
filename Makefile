@@ -173,9 +173,15 @@ THIRD_GLUT_OBJ := $(THIRD_GLUT_SRC:%.c=$(OUT)/%.o)
 MUPDF_SRC := $(sort $(wildcard source/fitz/*.c))
 MUPDF_SRC += $(sort $(wildcard source/fitz/*.cpp))
 MUPDF_SRC += $(sort $(wildcard source/pdf/*.c))
+ifneq ($(xps),no)
 MUPDF_SRC += $(sort $(wildcard source/xps/*.c))
+endif
+ifneq ($(svg),no)
 MUPDF_SRC += $(sort $(wildcard source/svg/*.c))
+endif
+ifneq ($(html),no)
 MUPDF_SRC += $(sort $(wildcard source/html/*.c))
+endif
 MUPDF_SRC += $(sort $(wildcard source/reflow/*.c))
 MUPDF_SRC += $(sort $(wildcard source/cbz/*.c))
 
