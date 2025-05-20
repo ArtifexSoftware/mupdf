@@ -493,7 +493,7 @@ static void save_attachment_dialog(void)
 		{
 			fz_try(ctx)
 			{
-				pdf_obj *fs = pdf_dict_get(ctx, pdf_annot_obj(ctx, ui.selected_annot), PDF_NAME(FS));
+				pdf_obj *fs = pdf_annot_filespec(ctx, ui.selected_annot);
 				fz_buffer *buf = pdf_load_embedded_file_contents(ctx, fs);
 				fz_save_buffer(ctx, buf, attach_filename);
 				fz_drop_buffer(ctx, buf);
