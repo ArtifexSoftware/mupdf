@@ -469,6 +469,10 @@ else
 	install -m 644 $(THIRD_LIB) $(DESTDIR)$(libdir)
 endif
 
+install-tools: tools
+	install -d $(DESTDIR)$(bindir)
+	install -m 755 $(TOOL_APPS) $(DESTDIR)$(bindir)
+
 install-apps: apps
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(TOOL_APPS) $(VIEW_APPS) $(DESTDIR)$(bindir)
