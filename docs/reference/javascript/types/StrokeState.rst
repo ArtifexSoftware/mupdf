@@ -44,12 +44,9 @@ Instance methods
 
 .. method:: StrokeState.prototype.getLineCap()
 
-	Get the
-	:term:`line cap style` to be used when stroking.
+	Get the :term:`line cap style`.
 
-	The style is either of these values: ``"Butt" | "Round" | "Square"``
-
-	:returns: number. The set line cap style.
+	:returns: ``"Butt" | "Round" | "Square"``
 
 	.. code-block::
 
@@ -57,12 +54,9 @@ Instance methods
 
 .. method:: StrokeState.prototype.getLineJoin()
 
-	Get the
-	:term:`line join style` to be used when stroking.
+	Get the :term:`line join style`.
 
-	The style is either of these values: ``"Miter" | "Round" | "Bevel"``
-
-	:returns: number. The set line cap style.
+	:returns: ``"Miter" | "Round" | "Bevel"``
 
 	.. code-block::
 
@@ -70,7 +64,7 @@ Instance methods
 
 .. method:: StrokeState.prototype.getLineWidth()
 
-	Get the line line width used for stroking operations.
+	Get the line line width.
 
 	:returns: number
 
@@ -80,8 +74,7 @@ Instance methods
 
 .. method:: StrokeState.prototype.getMiterLimit()
 
-	Get the
-	:term:`miter limit` to be used when stroking.
+	Get the :term:`miter limit`.
 
 	:returns: number
 
@@ -91,7 +84,7 @@ Instance methods
 
 .. method:: StrokeState.prototype.getDashPhase()
 
-	Get the dash phase.
+	Get the dash pattern phase (where in the dash pattern stroking starts).
 
 	:returns: number
 
@@ -101,8 +94,8 @@ Instance methods
 
 .. method:: StrokeState.prototype.getDashPattern()
 
-	Get an array of numbers of lengths for the dashes and gaps in
-	the dash pattern.
+	Get the dash pattern as an array of numbers specifying alternating
+	lengths of dashes and gaps.
 
 	:returns: Array of number
 
